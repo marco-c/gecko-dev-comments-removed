@@ -3,17 +3,29 @@ const DIRPATH = getRootDirectory(gTestPath).replace(
   ""
 );
 
+
+
+
+
+const TEST_BLOB_CONTENTS = `I'm a disk-backed test blob! Hooray!`;
+
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      
+      
+      
       ["browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true],
       ["browser.tabs.remote.separatedMozillaDomains", "example.org"],
       ["dom.ipc.processCount.privilegedmozilla", 1],
-      ["dom.ipc.processCount.webIsolated", 1],
       ["dom.ipc.processPrelaunch.enabled", false],
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.testing.enabled", true],
-      ["dom.serviceworkers.parent_intercept", true],
+      
+      
+      
+      ["dom.serviceWorkers.idle_timeout", 299999],
+      ["dom.serviceWorkers.idle_extended_timeout", 299999],
     ],
   });
 });
@@ -24,13 +36,52 @@ function countRemoteType(remoteType) {
   ).length;
 }
 
-async function waitForWorkerIdleShutdown(swRegInfo, remoteType) {
-  info(`waiting for ${remoteType} procs to shut down`);
-  ok(swRegInfo.activeWorker, "worker isn't currently active?");
+
+
+
+
+
+
+function debugRemotes() {
+  return ChromeUtils.getAllDOMProcesses()
+    .map(p => p.remoteType || "parent")
+    .join(",");
+}
+
+
+
+
+
+
+async function waitForNoProcessesOfType(remoteType) {
+  info(`waiting for there to be no ${remoteType} procs`);
+  await TestUtils.waitForCondition(
+    () => countRemoteType(remoteType) == 0,
+    "wait for the worker's process to shutdown"
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForWorkerAndProcessShutdown(swRegInfo, remoteType) {
+  info(`terminating worker and waiting for ${remoteType} procs to shut down`);
+  ok(swRegInfo.activeWorker, "worker should be in the active slot");
   is(
     countRemoteType(remoteType),
     1,
-    `should have a single ${remoteType} process`
+    `should have a single ${remoteType} process but have: ${debugRemotes()}`
   );
 
   
@@ -49,35 +100,29 @@ async function waitForWorkerIdleShutdown(swRegInfo, remoteType) {
   swRegInfo.activeWorker.detachDebugger();
 
   
-  await TestUtils.waitForCondition(
-    () => countRemoteType(remoteType) == 0,
-    "wait for the worker's process to shutdown"
-  );
+  await waitForNoProcessesOfType(remoteType);
 
   is(
     countRemoteType(remoteType),
     0,
-    "processes with `remoteType` type should have shut down"
+    `processes with remoteType=${remoteType} type should have shut down`
   );
 
   
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.serviceWorkers.idle_timeout", 299999],
-      ["dom.serviceWorkers.idle_extended_timeout", 299999],
-    ],
-  });
+  await SpecialPowers.popPrefEnv();
 }
 
-async function do_test_sw(host, remoteType) {
-  info(`entering test: host=${host}, remoteType=${remoteType}`);
+async function do_test_sw(host, remoteType, swMode, fileBlob) {
+  info(
+    `### entering test: host=${host}, remoteType=${remoteType}, mode=${swMode}`
+  );
 
   const prin = Services.scriptSecurityManager.createContentPrincipal(
     Services.io.newURI(`https://${host}`),
     {}
   );
   const sw = `https://${host}/${DIRPATH}file_service_worker_fetch_synthetic.js`;
-  const scope = `https://${host}/${DIRPATH}scope`;
+  const scope = `https://${host}/${DIRPATH}server_fetch_synthetic.sjs`;
 
   const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
     Ci.nsIServiceWorkerManager
@@ -97,55 +142,182 @@ async function do_test_sw(host, remoteType) {
     () => swRegInfo.activeWorker,
     "wait for the worker to become active"
   );
-  await waitForWorkerIdleShutdown(swRegInfo, remoteType);
+  await waitForWorkerAndProcessShutdown(swRegInfo, remoteType);
 
-  await BrowserTestUtils.withNewTab("about:blank", async browser => {
-    
-    
-    SpecialPowers.spawn(browser, [scope], async scope => {
-      content.location.href = `${scope}/intercepted.html`;
-    });
-    await BrowserTestUtils.browserLoaded(browser);
+  info(
+    `test navigation interception with mode=${swMode} starting from about:blank`
+  );
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:blank",
+    },
+    async browser => {
+      
+      
+      SpecialPowers.spawn(
+        browser,
+        [scope, swMode, fileBlob],
+        
+        async (scope, swMode, fileBlob) => {
+          const pageUrl = `${scope}?mode=${swMode}`;
+          if (!fileBlob) {
+            content.location.href = pageUrl;
+          } else {
+            const doc = content.document;
+            const formElem = doc.createElement("form");
+            doc.body.appendChild(formElem);
 
-    is(
-      countRemoteType(remoteType),
-      1,
-      "should have spawned a content process with the correct remoteType"
-    );
+            formElem.action = pageUrl;
+            formElem.method = "POST";
+            formElem.enctype = "multipart/form-data";
 
-    
-    const workerDebuggerURLs = await SpecialPowers.spawn(
-      browser,
-      [sw],
-      async url => {
-        await content.navigator.serviceWorker.ready;
-        const wdm = Cc[
-          "@mozilla.org/dom/workers/workerdebuggermanager;1"
-        ].getService(Ci.nsIWorkerDebuggerManager);
+            const fileElem = doc.createElement("input");
+            formElem.appendChild(fileElem);
 
-        return Array.from(wdm.getWorkerDebuggerEnumerator())
-          .map(wd => {
-            return wd.url;
-          })
-          .filter(swURL => swURL == url);
-      }
-    );
-    Assert.deepEqual(
-      workerDebuggerURLs,
-      [sw],
-      "The worker should be running in the correct child process"
-    );
+            fileElem.type = "file";
+            fileElem.name = "foo";
 
-    
-    await SpecialPowers.spawn(browser, [], async () => {
-      let registration = await content.navigator.serviceWorker.ready;
-      await registration.unregister();
-    });
-  });
+            fileElem.mozSetFileArray([fileBlob]);
 
-  await waitForWorkerIdleShutdown(swRegInfo, remoteType);
+            formElem.submit();
+          }
+        }
+      );
+
+      await BrowserTestUtils.browserLoaded(browser);
+
+      is(
+        countRemoteType(remoteType),
+        1,
+        `should have spawned a content process with remoteType=${remoteType}`
+      );
+
+      const { source, blobContents } = await SpecialPowers.spawn(
+        browser,
+        [],
+        () => {
+          return {
+            source: content.document.getElementById("source").textContent,
+            blobContents: content.document.getElementById("blob").textContent,
+          };
+        }
+      );
+
+      is(
+        source,
+        swMode === "synthetic" ? "ServiceWorker" : "ServerJS",
+        "The page contents should come from the right place."
+      );
+
+      is(
+        blobContents,
+        fileBlob ? TEST_BLOB_CONTENTS : "",
+        "The request blob contents should be the blob/empty as appropriate."
+      );
+
+      
+      const workerDebuggerURLs = await SpecialPowers.spawn(
+        browser,
+        [sw],
+        async url => {
+          if (!content.navigator.serviceWorker.controller) {
+            throw new Error("document not controlled!");
+          }
+          const wdm = Cc[
+            "@mozilla.org/dom/workers/workerdebuggermanager;1"
+          ].getService(Ci.nsIWorkerDebuggerManager);
+
+          return Array.from(wdm.getWorkerDebuggerEnumerator())
+            .map(wd => {
+              return wd.url;
+            })
+            .filter(swURL => swURL == url);
+        }
+      );
+      Assert.deepEqual(
+        workerDebuggerURLs,
+        [sw],
+        "The worker should be running in the correct child process"
+      );
+
+      
+      
+      
+      await SpecialPowers.spawn(browser, [], async () => {
+        let registration = await content.navigator.serviceWorker.ready;
+        await registration.unregister();
+      });
+    }
+  );
+
+  
+  
+  
+  
+  
+  await waitForNoProcessesOfType(remoteType);
+}
+
+
+
+
+
+
+
+async function makeFileBlob(blobContents) {
+  const tmpFile = Cc["@mozilla.org/file/directory_service;1"]
+    .getService(Ci.nsIDirectoryService)
+    .QueryInterface(Ci.nsIProperties)
+    .get("TmpD", Ci.nsIFile);
+  tmpFile.append("test-file-backed-blob.txt");
+  tmpFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
+
+  var outStream = Cc[
+    "@mozilla.org/network/file-output-stream;1"
+  ].createInstance(Ci.nsIFileOutputStream);
+  outStream.init(
+    tmpFile,
+    0x02 | 0x08 | 0x20, 
+    0o666,
+    0
+  );
+  outStream.write(blobContents, blobContents.length);
+  outStream.close();
+
+  const fileBlob = await File.createFromNsIFile(tmpFile);
+  return fileBlob;
 }
 
 add_task(async function test() {
-  await do_test_sw("example.org", "privilegedmozilla");
+  
+  
+  
+  await do_test_sw("example.org", "privilegedmozilla", "synthetic", null);
+
+  
+  
+  
+  
+  const fileBlob = await makeFileBlob(TEST_BLOB_CONTENTS);
+  await do_test_sw("example.org", "privilegedmozilla", "synthetic", fileBlob);
+
+  
+  
+  
+  
+  
+  await do_test_sw("example.org", "privilegedmozilla", "fetch", fileBlob);
+
+  
+  await do_test_sw("example.org", "privilegedmozilla", "clone", fileBlob);
+
+  
+  if (Services.appinfo.fissionAutostart) {
+    const fissionUrl = "example.com";
+    const fissionRemoteType = `webIsolated=https://example.com`;
+
+    await do_test_sw(fissionUrl, fissionRemoteType, "synthetic", null);
+    await do_test_sw(fissionUrl, fissionRemoteType, "synthetic", fileBlob);
+  }
 });
