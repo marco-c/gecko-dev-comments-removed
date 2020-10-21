@@ -1560,6 +1560,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     return "[StyleRuleActor for " + this.rawRule + "]";
   },
 
+  
   form: function() {
     const form = {
       actor: this.actorID,
@@ -1654,11 +1655,27 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
       
       
-      const CSS = this.pageStyle.inspector.targetActor.window.CSS;
+      const userAgent =
+        this._parentSheet &&
+        !SharedCssLogic.isAuthorStylesheet(this._parentSheet);
+      
+      const chrome =
+        this._parentSheet &&
+        this._parentSheet.href &&
+        this._parentSheet.href.startsWith("chrome:");
+      
+      
+      const quirks =
+        !userAgent && el && el.ownerDocument.compatMode == "BackCompat";
+      const supportsOptions = { userAgent, chrome, quirks };
       form.declarations = declarations.map(decl => {
         
         
-        decl.isValid = CSS.supports(`${decl.name}:${decl.value}`);
+        
+        decl.isValid = InspectorUtils.supports(
+          `${decl.name}:${decl.value}`,
+          supportsOptions
+        );
         
         decl.isUsed = inactivePropertyHelper.isPropertyUsed(
           el,
@@ -1667,7 +1684,10 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
           decl.name
         );
         
-        decl.isNameValid = CSS.supports(decl.name, "initial");
+        decl.isNameValid = InspectorUtils.supports(
+          `${decl.name}:initial`,
+          supportsOptions
+        );
         return decl;
       });
 
