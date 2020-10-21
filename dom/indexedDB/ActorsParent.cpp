@@ -1336,11 +1336,12 @@ class DatabaseConnection final {
   Result<uint32_t, nsresult> GetFreelistCount(
       CachedStatement& aCachedStatement);
 
-  nsresult ReclaimFreePagesWhileIdle(CachedStatement& aFreelistStatement,
-                                     CachedStatement& aRollbackStatement,
-                                     uint32_t aFreelistCount,
-                                     bool aNeedsCheckpoint,
-                                     bool* aFreedSomePages);
+  
+
+
+  Result<bool, nsresult> ReclaimFreePagesWhileIdle(
+      CachedStatement& aFreelistStatement, CachedStatement& aRollbackStatement,
+      uint32_t aFreelistCount, bool aNeedsCheckpoint);
 
   Result<int64_t, nsresult> GetFileSize(const nsAString& aPath);
 };
@@ -7402,20 +7403,22 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
     mInReadTransaction = false;
   }
 
-  bool freedSomePages = false;
-
-  if (freelistCount) {
-    nsresult rv =
-        ReclaimFreePagesWhileIdle(freelistStmt, rollbackStmt, freelistCount,
-                                  aNeedsCheckpoint, &freedSomePages);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_ASSERT(!freedSomePages);
-    }
+  const bool freedSomePages = freelistCount && [this, &freelistStmt,
+                                                &rollbackStmt, freelistCount,
+                                                aNeedsCheckpoint] {
+    
+    
+    IDB_TRY_INSPECT(const bool& res,
+                    ReclaimFreePagesWhileIdle(freelistStmt, rollbackStmt,
+                                              freelistCount, aNeedsCheckpoint),
+                    false);
 
     
     MOZ_ASSERT(!mInReadTransaction);
     MOZ_ASSERT(!mInWriteTransaction);
-  }
+
+    return res;
+  }();
 
   
   if (aNeedsCheckpoint || freedSomePages) {
@@ -7434,14 +7437,13 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
   }
 }
 
-nsresult DatabaseConnection::ReclaimFreePagesWhileIdle(
+Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
     CachedStatement& aFreelistStatement, CachedStatement& aRollbackStatement,
-    uint32_t aFreelistCount, bool aNeedsCheckpoint, bool* aFreedSomePages) {
+    uint32_t aFreelistCount, bool aNeedsCheckpoint) {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(aFreelistStatement);
   MOZ_ASSERT(aRollbackStatement);
   MOZ_ASSERT(aFreelistCount);
-  MOZ_ASSERT(aFreedSomePages);
   MOZ_ASSERT(!mInReadTransaction);
   MOZ_ASSERT(!mInWriteTransaction);
 
@@ -7452,8 +7454,7 @@ nsresult DatabaseConnection::ReclaimFreePagesWhileIdle(
   MOZ_ASSERT(currentThread);
 
   if (NS_HasPendingEvents(currentThread)) {
-    *aFreedSomePages = false;
-    return NS_OK;
+    return false;
   }
 
   
@@ -7530,8 +7531,7 @@ nsresult DatabaseConnection::ReclaimFreePagesWhileIdle(
             mInWriteTransaction = false;
           }));
 
-  *aFreedSomePages = freedSomePages;
-  return NS_OK;
+  return freedSomePages;
 }
 
 Result<uint32_t, nsresult> DatabaseConnection::GetFreelistCount(
