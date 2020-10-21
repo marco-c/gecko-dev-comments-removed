@@ -196,6 +196,10 @@ class Http3Session final : public nsAHttpTransaction,
   
   
   nsTArray<WeakPtr<Http3Stream>> mCannotDo0RTTStreams;
+
+  TimeStamp mConnectionIdleStart;
+  TimeStamp mConnectionIdleEnd;
+  Maybe<uint64_t> mFirstStreamIdReuseIdleConnection;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Http3Session, NS_HTTP3SESSION_IID);
