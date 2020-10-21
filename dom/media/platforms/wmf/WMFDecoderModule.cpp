@@ -60,6 +60,18 @@ WMFDecoderModule::~WMFDecoderModule() {
   }
 }
 
+static bool IsRemoteAcceleratedCompositor(const SupportDecoderParams& aParams) {
+  if (!aParams.mKnowsCompositor) {
+    return false;
+  }
+
+  TextureFactoryIdentifier ident =
+      aParams.mKnowsCompositor->GetTextureFactoryIdentifier();
+  return ident.mParentBackend != LayersBackend::LAYERS_BASIC &&
+         !ident.mUsingSoftwareWebRender &&
+         ident.mParentProcessType == GeckoProcessType_GPU;
+}
+
 static bool CanCreateMFTDecoder(const GUID& aGuid) {
   
   
@@ -229,6 +241,12 @@ bool WMFDecoderModule::SupportsMimeType(
 
 bool WMFDecoderModule::Supports(const SupportDecoderParams& aParams,
                                 DecoderDoctorDiagnostics* aDiagnostics) const {
+  
+  
+  if (XRE_IsGPUProcess() && !IsRemoteAcceleratedCompositor(aParams)) {
+    return false;
+  }
+
   const auto& trackInfo = aParams.mConfig;
   const auto* videoInfo = trackInfo.GetAsVideoInfo();
   if (videoInfo && !SupportsColorDepth(videoInfo->mColorDepth, aDiagnostics)) {
