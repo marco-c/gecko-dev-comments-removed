@@ -820,7 +820,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SearchTelemetry: "resource:///modules/SearchTelemetry.jsm",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
-  ShellService: "resource:///modules/ShellService.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TabUnloader: "resource:///modules/TabUnloader.jsm",
   TRRRacer: "resource:///modules/TRRPerformance.jsm",
@@ -3899,6 +3898,8 @@ BrowserGlue.prototype = {
           
           
           DefaultBrowserNotification.notifyModalDisplayed();
+          let win = BrowserWindowTracker.getTopWindow();
+          DefaultBrowserCheck.prompt(win);
         }
       }
     );
@@ -4721,9 +4722,9 @@ var DefaultBrowserCheck = {
       shouldAsk
     );
     if (rv == 0) {
-      ShellService.setAsDefault();
+      win.getShellService().setAsDefault();
     } else if (!shouldAsk.value) {
-      ShellService.shouldCheckDefaultBrowser = false;
+      win.getShellService().shouldCheckDefaultBrowser = false;
     }
 
     try {
@@ -4743,14 +4744,17 @@ var DefaultBrowserCheck = {
 
 
   async willCheckDefaultBrowser(isStartupCheck) {
+    let win = BrowserWindowTracker.getTopWindow();
+    let shellService = win.getShellService();
+
     
-    if (!ShellService) {
+    if (!shellService) {
       return false;
     }
 
     let shouldCheck =
       !AppConstants.DEBUG &&
-      ShellService.shouldCheckDefaultBrowser &&
+      shellService.shouldCheckDefaultBrowser &&
       !Services.prefs.getBoolPref(
         "browser.defaultbrowser.notificationbar",
         false
@@ -4787,7 +4791,7 @@ var DefaultBrowserCheck = {
     let isDefault = false;
     let isDefaultError = false;
     try {
-      isDefault = ShellService.isDefaultBrowser(isStartupCheck, false);
+      isDefault = shellService.isDefaultBrowser(isStartupCheck, false);
     } catch (ex) {
       isDefaultError = true;
     }
