@@ -228,6 +228,31 @@ uint16_t RotorUnvisitedLinkRule::Match(const AccessibleOrProxy& aAccOrProxy) {
 
 
 
+RotorNotMacRoleRule::RotorNotMacRoleRule(
+    NSString* aMacRole, AccessibleOrProxy& aDirectDescendantsFrom)
+    : RotorMacRoleRule(aMacRole, aDirectDescendantsFrom) {}
+
+RotorNotMacRoleRule::RotorNotMacRoleRule(NSString* aMacRole)
+    : RotorMacRoleRule(aMacRole) {}
+
+uint16_t RotorNotMacRoleRule::Match(const AccessibleOrProxy& aAccOrProxy) {
+  uint16_t result = RotorRule::Match(aAccOrProxy);
+
+  
+  
+  
+  
+  if ((result & nsIAccessibleTraversalRule::FILTER_MATCH)) {
+    mozAccessible* nativeMatch = GetNativeFromGeckoAccessible(aAccOrProxy);
+    if ([[nativeMatch moxRole] isEqualToString:mMacRole]) {
+      result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+  }
+  return result;
+}
+
+
+
 RotorStaticTextRule::RotorStaticTextRule(
     AccessibleOrProxy& aDirectDescendantsFrom)
     : RotorRule(aDirectDescendantsFrom){};
