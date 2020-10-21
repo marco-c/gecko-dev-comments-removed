@@ -29,21 +29,21 @@ namespace mozilla {
 namespace dom {
 
 bool MediaControlKeyManager::IsOpened() const {
-  
-  
-  
-  
-  
-  return true;
+  return mEventSource && mEventSource->IsOpened();
 }
 
 bool MediaControlKeyManager::Open() {
-  mControllerAmountChangedListener =
-      MediaControlService::GetService()
-          ->MediaControllerAmountChangedEvent()
-          .Connect(AbstractThread::MainThread(), this,
-                   &MediaControlKeyManager::ControllerAmountChanged);
-  return true;
+  if (IsOpened()) {
+    return true;
+  }
+  return StartMonitoringControlKeys();
+}
+
+void MediaControlKeyManager::Close() {
+  
+  
+  
+  StopMonitoringControlKeys();
 }
 
 MediaControlKeyManager::MediaControlKeyManager()
@@ -57,7 +57,6 @@ MediaControlKeyManager::~MediaControlKeyManager() { Shutdown(); }
 void MediaControlKeyManager::Shutdown() {
   StopMonitoringControlKeys();
   mEventSource = nullptr;
-  mControllerAmountChangedListener.DisconnectIfExists();
   if (mObserver) {
     nsContentUtils::UnregisterShutdownObserver(mObserver);
     Preferences::RemoveObserver(mObserver, MEDIA_CONTROL_PREF);
@@ -65,44 +64,31 @@ void MediaControlKeyManager::Shutdown() {
   }
 }
 
-void MediaControlKeyManager::StartMonitoringControlKeys() {
+bool MediaControlKeyManager::StartMonitoringControlKeys() {
   if (!StaticPrefs::media_hardwaremediakeys_enabled()) {
-    return;
+    return false;
   }
 
   if (!mEventSource) {
     mEventSource = widget::CreateMediaControlKeySource();
   }
-
-  
-  
-  if (!mEventSource) {
-    return;
-  }
-
-  if (!mEventSource->IsOpened() && mEventSource->Open()) {
+  if (mEventSource && mEventSource->Open()) {
     LOG_INFO("StartMonitoringControlKeys");
     mEventSource->SetPlaybackState(mPlaybackState);
     mEventSource->SetMediaMetadata(mMetadata);
     mEventSource->SetSupportedMediaKeys(mSupportedKeys);
     mEventSource->AddListener(this);
+    return true;
   }
+  
+  
+  return false;
 }
 
 void MediaControlKeyManager::StopMonitoringControlKeys() {
   if (mEventSource && mEventSource->IsOpened()) {
     LOG_INFO("StopMonitoringControlKeys");
     mEventSource->Close();
-  }
-}
-
-void MediaControlKeyManager::ControllerAmountChanged(
-    uint64_t aControllerAmount) {
-  LOG("Controller amount changed=%" PRId64, aControllerAmount);
-  if (aControllerAmount > 0) {
-    StartMonitoringControlKeys();
-  } else if (aControllerAmount == 0) {
-    StopMonitoringControlKeys();
   }
 }
 
@@ -197,7 +183,7 @@ void MediaControlKeyManager::OnPreferenceChange() {
   LOG_INFO("Preference change : %s media control",
            isPrefEnabled ? "enable" : "disable");
   if (shouldMonitorKeys) {
-    StartMonitoringControlKeys();
+    Unused << StartMonitoringControlKeys();
   } else {
     StopMonitoringControlKeys();
   }
