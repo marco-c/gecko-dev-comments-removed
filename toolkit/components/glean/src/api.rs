@@ -121,20 +121,12 @@ fn initialize_core_metrics(glean: &Glean, client_info: &ClientInfo) {
     if let Some(app_channel) = &client_info.channel {
         core_metrics.app_channel.set(glean, app_channel);
     }
-    
-    core_metrics.os.set(glean, "unknown".to_string());
     core_metrics
         .os_version
         .set(glean, &client_info.os_version[..]);
     core_metrics
         .architecture
         .set(glean, &client_info.architecture);
-    
-    core_metrics
-        .device_manufacturer
-        .set(glean, "unknown".to_string());
-    
-    core_metrics.device_model.set(glean, "unknown".to_string());
 }
 
 
