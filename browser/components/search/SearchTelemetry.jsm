@@ -11,8 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  RemoteSettings: "resource://services-settings/remote-settings.js",
-  SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -23,14 +21,107 @@ const SEARCH_AD_CLICKS_SCALAR = "browser.search.ad_clicks";
 const SEARCH_DATA_TRANSFERRED_SCALAR = "browser.search.data_transferred";
 const SEARCH_TELEMETRY_PRIVATE_BROWSING_KEY_SUFFIX = "pb";
 
-const TELEMETRY_SETTINGS_KEY = "search-telemetry";
 
-XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
-  return console.createInstance({
-    prefix: "SearchTelemetry",
-    maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
-  });
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const SEARCH_PROVIDER_INFO = {
+  google: {
+    regexp: /^https:\/\/www\.google\.(?:.+)\/search/,
+    queryParam: "q",
+    codeParam: "client",
+    codePrefixes: ["firefox"],
+    followonParams: ["oq", "ved", "ei"],
+    extraAdServersRegexps: [
+      /^https:\/\/www\.google(?:adservices)?\.com\/(?:pagead\/)?aclk/,
+    ],
+  },
+  duckduckgo: {
+    regexp: /^https:\/\/duckduckgo\.com\//,
+    queryParam: "q",
+    codeParam: "t",
+    codePrefixes: ["ff", "newext"],
+    extraAdServersRegexps: [
+      /^https:\/\/duckduckgo.com\/y\.js?.*ad_provider\=/,
+      /^https:\/\/www\.amazon\.(?:[a-z.]{2,24}).*(?:tag=duckduckgo-)/,
+    ],
+  },
+  yahoo: {
+    regexp: /^https:\/\/(?:.*)search\.yahoo\.com\/search/,
+    queryParam: "p",
+  },
+  baidu: {
+    regexp: /^https:\/\/www\.baidu\.com\/(?:s|baidu)/,
+    queryParam: "wd",
+    codeParam: "tn",
+    codePrefixes: ["34046034_", "monline_"],
+    followonParams: ["oq"],
+  },
+  bing: {
+    regexp: /^https:\/\/www\.bing\.com\/search/,
+    queryParam: "q",
+    codeParam: "pc",
+    codePrefixes: ["MOZ", "MZ"],
+    followonCookies: [
+      {
+        extraCodeParam: "form",
+        extraCodePrefixes: ["QBRE"],
+        host: "www.bing.com",
+        name: "SRCHS",
+        codeParam: "PC",
+        codePrefixes: ["MOZ", "MZ"],
+      },
+    ],
+    extraAdServersRegexps: [
+      /^https:\/\/www\.bing\.com\/acli?c?k/,
+      /^https:\/\/www\.bing\.com\/fd\/ls\/GLinkPingPost\.aspx.*acli?c?k/,
+    ],
+  },
+};
+
+const BROWSER_SEARCH_PREF = "browser.search.";
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "loggingEnabled",
+  BROWSER_SEARCH_PREF + "log",
+  false
+);
 
 
 
@@ -39,37 +130,23 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
 
 
 class TelemetryHandler {
-  
-  _initialized = false;
-
-  
-  _contentHandler;
-
-  
-  _originalProviderInfo = null;
-
-  
-  _searchProviderInfo = null;
-
-  
-  _telemetrySettings;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  _browserInfoByURL = new Map();
-
   constructor() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this._browserInfoByURL = new Map();
+    this._initialized = false;
+    this.__searchProviderInfo = null;
     this._contentHandler = new ContentHandler({
       browserInfoByURL: this._browserInfoByURL,
       findBrowserItemForURL: (...args) => this._findBrowserItemForURL(...args),
@@ -83,25 +160,12 @@ class TelemetryHandler {
 
 
 
-  async init() {
+  init() {
     if (this._initialized) {
       return;
     }
 
-    this._telemetrySettings = RemoteSettings(TELEMETRY_SETTINGS_KEY);
-    let rawProviderInfo = [];
-    try {
-      rawProviderInfo = await this._telemetrySettings.get();
-    } catch (ex) {
-      logConsole.error("Could not get settings:", ex);
-    }
-
-    
-    this._contentHandler.init(rawProviderInfo);
-    this._originalProviderInfo = rawProviderInfo;
-
-    
-    this._setSearchProviderInfo(rawProviderInfo);
+    this._contentHandler.init();
 
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
       this._registerWindow(win);
@@ -149,33 +213,18 @@ class TelemetryHandler {
 
 
 
-  overrideSearchTelemetryForTests(providerInfo) {
-    let info = providerInfo ? providerInfo : this._originalProviderInfo;
-    this._contentHandler.overrideSearchTelemetryForTests(info);
-    this._setSearchProviderInfo(info);
-  }
-
-  
-
-
-
-
-
-
-
-  _setSearchProviderInfo(providerInfo) {
-    this._searchProviderInfo = providerInfo.map(provider => {
-      let newProvider = {
-        ...provider,
-        searchPageRegexp: new RegExp(provider.searchPageRegexp),
-      };
-      if (provider.extraAdServersRegexps) {
-        newProvider.extraAdServersRegexps = provider.extraAdServersRegexps.map(
-          r => new RegExp(r)
-        );
+  overrideSearchTelemetryForTests(infoByProvider) {
+    if (infoByProvider) {
+      for (let info of Object.values(infoByProvider)) {
+        info.regexp = new RegExp(info.regexp);
       }
-      return newProvider;
-    });
+      this.__searchProviderInfo = infoByProvider;
+    } else {
+      this.__searchProviderInfo = SEARCH_PROVIDER_INFO;
+    }
+    this._contentHandler.overrideSearchTelemetryForTests(
+      this.__searchProviderInfo
+    );
   }
 
   reportPageWithAds(info) {
@@ -393,7 +442,7 @@ class TelemetryHandler {
 
   _getProviderInfoForURL(url, useOnlyExtraAdServers = false) {
     if (useOnlyExtraAdServers) {
-      return this._searchProviderInfo.find(info => {
+      return Object.entries(this._searchProviderInfo).find(([_, info]) => {
         if (info.extraAdServersRegexps) {
           for (let regexp of info.extraAdServersRegexps) {
             if (regexp.test(url)) {
@@ -405,8 +454,8 @@ class TelemetryHandler {
       });
     }
 
-    return this._searchProviderInfo.find(info =>
-      info.searchPageRegexp.test(url)
+    return Object.entries(this._searchProviderInfo).find(([_, info]) =>
+      info.regexp.test(url)
     );
   }
 
@@ -419,40 +468,41 @@ class TelemetryHandler {
 
 
   _checkURLForSerpMatch(url) {
-    let searchProviderInfo = this._getProviderInfoForURL(url);
-    if (!searchProviderInfo) {
+    let info = this._getProviderInfoForURL(url);
+    if (!info) {
       return null;
     }
+    let [provider, searchProviderInfo] = info;
     let queries = new URLSearchParams(url.split("#")[0].split("?")[1]);
-    if (!queries.get(searchProviderInfo.queryParamName)) {
+    if (!queries.get(searchProviderInfo.queryParam)) {
       return null;
     }
     
     
     let type = "organic";
     let code;
-    if (searchProviderInfo.codeParamName) {
-      code = queries.get(searchProviderInfo.codeParamName);
+    if (searchProviderInfo.codeParam) {
+      code = queries.get(searchProviderInfo.codeParam);
       if (
         code &&
         searchProviderInfo.codePrefixes.some(p => code.startsWith(p))
       ) {
         if (
-          searchProviderInfo.followOnParamNames &&
-          searchProviderInfo.followOnParamNames.some(p => queries.has(p))
+          searchProviderInfo.followonParams &&
+          searchProviderInfo.followonParams.some(p => queries.has(p))
         ) {
           type = "sap-follow-on";
         } else {
           type = "sap";
         }
-      } else if (searchProviderInfo.followOnCookies) {
+      } else if (searchProviderInfo.followonCookies) {
         
-        for (let followOnCookie of searchProviderInfo.followOnCookies) {
-          if (followOnCookie.extraCodeParamName) {
-            let eCode = queries.get(followOnCookie.extraCodeParamName);
+        for (let followonCookie of searchProviderInfo.followonCookies) {
+          if (followonCookie.extraCodeParam) {
+            let eCode = queries.get(followonCookie.extraCodeParam);
             if (
               !eCode ||
-              !followOnCookie.extraCodePrefixes.some(p => eCode.startsWith(p))
+              !followonCookie.extraCodePrefixes.some(p => eCode.startsWith(p))
             ) {
               continue;
             }
@@ -462,10 +512,10 @@ class TelemetryHandler {
           
           
           for (let cookie of Services.cookies.getCookiesFromHost(
-            followOnCookie.host,
+            followonCookie.host,
             {}
           )) {
-            if (cookie.name != followOnCookie.name) {
+            if (cookie.name != followonCookie.name) {
               continue;
             }
 
@@ -473,8 +523,8 @@ class TelemetryHandler {
               .split("=")
               .map(p => p.trim());
             if (
-              cookieParam == followOnCookie.codeParamName &&
-              followOnCookie.codePrefixes.some(p => cookieValue.startsWith(p))
+              cookieParam == followonCookie.codeParam &&
+              followonCookie.codePrefixes.some(p => cookieValue.startsWith(p))
             ) {
               type = "sap-follow-on";
               code = cookieValue;
@@ -484,7 +534,7 @@ class TelemetryHandler {
         }
       }
     }
-    return { provider: searchProviderInfo.telemetryId, type, code };
+    return { provider, type, code };
   }
 
   
@@ -503,7 +553,18 @@ class TelemetryHandler {
       SEARCH_COUNTS_HISTOGRAM_KEY
     );
     histogram.add(payload);
-    logConsole.debug("Counting", payload, "for", url);
+    LOG(`${payload} for ${url}`);
+  }
+
+  
+
+
+
+  get _searchProviderInfo() {
+    if (!this.__searchProviderInfo) {
+      this.__searchProviderInfo = SEARCH_PROVIDER_INFO;
+    }
+    return this.__searchProviderInfo;
   }
 }
 
@@ -534,11 +595,11 @@ class ContentHandler {
 
 
 
-
-
-
-  init(providerInfo) {
-    Services.ppmm.sharedData.set("SearchTelemetry:ProviderInfo", providerInfo);
+  init() {
+    Services.ppmm.sharedData.set(
+      "SearchTelemetry:ProviderInfo",
+      SEARCH_PROVIDER_INFO
+    );
 
     Cc["@mozilla.org/network/http-activity-distributor;1"]
       .getService(Ci.nsIHttpActivityDistributor)
@@ -683,7 +744,7 @@ class ContentHandler {
     let channel = ChannelWrapper.get(nativeChannel);
     
     if (channel._adClickRecorded) {
-      logConsole.debug("Ad click already recorded");
+      LOG("Ad click already recorded");
       return;
     }
 
@@ -694,7 +755,7 @@ class ContentHandler {
       
       
       if (channel.statusCode == 204) {
-        logConsole.debug("Ignoring activity from ambiguous responses");
+        LOG("Ignoring activity from ambiguous responses");
         return;
       }
 
@@ -711,18 +772,9 @@ class ContentHandler {
       }
 
       try {
-        Services.telemetry.keyedScalarAdd(
-          SEARCH_AD_CLICKS_SCALAR,
-          info.telemetryId,
-          1
-        );
+        Services.telemetry.keyedScalarAdd(SEARCH_AD_CLICKS_SCALAR, info[0], 1);
         channel._adClickRecorded = true;
-        logConsole.debug(
-          "Counting ad click in page for",
-          info.telemetryId,
-          originURL,
-          URL
-        );
+        LOG(`Counting ad click in page for ${info[0]} ${originURL} ${URL}`);
       } catch (e) {
         Cu.reportError(e);
       }
@@ -740,10 +792,8 @@ class ContentHandler {
   _reportPageWithAds(info) {
     let item = this._findBrowserItemForURL(info.url);
     if (!item) {
-      logConsole.warn(
-        "Expected to report URI for",
-        info.url,
-        "with ads but couldn't find the information"
+      LOG(
+        `Expected to report URI for ${info.url} with ads but couldn't find the information`
       );
       return;
     }
@@ -753,7 +803,19 @@ class ContentHandler {
       item.info.provider,
       1
     );
-    logConsole.debug("Counting ads in page for", item.info.provider, info.url);
+    LOG(`Counting ads in page for ${item.info.provider} ${info.url}`);
+  }
+}
+
+
+
+
+
+
+function LOG(msg) {
+  if (loggingEnabled) {
+    dump(`*** SearchTelemetry: ${msg}\n`);
+    Services.console.logStringMessage(msg);
   }
 }
 
