@@ -41,6 +41,8 @@
 .fxaccounts-enable-button {
   min-width: 120px;
   padding-inline: 16px;
+  
+  flex-shrink: 0;
 }
 
 .fxaccounts-avatar-button {
