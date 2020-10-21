@@ -295,6 +295,10 @@ void TraceCycleCollectorChildren(JS::CallbackTracer* trc, ObjectGroup* group);
 
 void TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments);
 
+
+void GetTraceThingInfo(char* buf, size_t bufsize, void* thing,
+                       JS::TraceKind kind, bool includeDetails);
+
 }  
 }  
 
