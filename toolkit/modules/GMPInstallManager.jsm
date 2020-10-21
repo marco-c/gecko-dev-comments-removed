@@ -36,6 +36,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "FileUtils",
+  "resource://gre/modules/FileUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "UpdateUtils",
   "resource://gre/modules/UpdateUtils.jsm"
 );
@@ -509,6 +514,8 @@ GMPAddon.prototype = {
 
 
 
+
+
 function GMPExtractor(zipPath, relativeInstallPath) {
   this.zipPath = zipPath;
   this.relativeInstallPath = relativeInstallPath;
@@ -525,6 +532,9 @@ GMPExtractor.prototype = {
     this._deferred = PromiseUtils.defer();
     let deferredPromise = this._deferred;
     let { zipPath, relativeInstallPath } = this;
+    
+    let zipFile = new FileUtils.File(zipPath);
+    let zipURI = Services.io.newFileURI(zipFile).spec;
     let worker = new ChromeWorker(
       "resource://gre/modules/GMPExtractorWorker.js"
     );
@@ -532,17 +542,17 @@ GMPExtractor.prototype = {
       let log = getScopedLogger("GMPExtractor");
       worker.terminate();
       if (msg.data.result != "success") {
-        log.error("Failed to extract zip file: " + zipPath);
+        log.error("Failed to extract zip file: " + zipURI);
         return deferredPromise.reject({
           target: this,
           status: msg.data.exception,
           type: "exception",
         });
       }
-      log.info("Successfully extracted zip file: " + zipPath);
+      log.info("Successfully extracted zip file: " + zipURI);
       return deferredPromise.resolve(msg.data.extractedPaths);
     };
-    worker.postMessage({ zipPath, relativeInstallPath });
+    worker.postMessage({ zipURI, relativeInstallPath });
     return this._deferred.promise;
   },
 };

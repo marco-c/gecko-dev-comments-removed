@@ -13,7 +13,9 @@ const FILE_ENTRY = "201: ";
 onmessage = async function(msg) {
   try {
     let extractedPaths = [];
-    let jarPath = "jar:file://" + msg.data.zipPath + "!/";
+    
+    
+    let jarPath = "jar:" + msg.data.zipURI + "!/";
     let jarResponse = await fetch(jarPath);
     let dirListing = await jarResponse.text();
     let lines = dirListing.split("\n");
