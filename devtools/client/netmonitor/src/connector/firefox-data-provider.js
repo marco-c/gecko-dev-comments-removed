@@ -30,18 +30,14 @@ class FirefoxDataProvider {
 
 
 
-
-  constructor({ webConsoleFront, actions, owner, resourceWatcher }) {
+  constructor({ webConsoleFront, actions, owner }) {
     
     this.webConsoleFront = webConsoleFront;
     this.actions = actions || {};
     this.actionsEnabled = true;
     this.owner = owner;
-    this.resourceWatcher = resourceWatcher;
     
     this.stackTraces = new Map();
-    
-    this.stackTraceRequestInfoByActorID = new Map();
 
     
     this.payloadQueue = new Map();
@@ -326,31 +322,8 @@ class FirefoxDataProvider {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-  async _getStackTraceFromWatcher(actor) {
-    const stacktracesFront = await actor.targetFront.getFront("stacktraces");
-    const stacktrace = await stacktracesFront.getStackTrace(
-      actor.stacktraceResourceId
-    );
-    return { stacktrace };
-  }
-
-  
-
-
-
-
-
   onStackTraceAvailable(resource) {
-    this.stackTraces.set(resource.resourceId, resource);
+    this.stackTraces.set(resource.channelId, resource);
   }
 
   
@@ -372,31 +345,15 @@ class FirefoxDataProvider {
       referrerPolicy,
       blockedReason,
       blockingExtension,
-      resourceId,
-      stacktraceResourceId,
+      channelId,
     } = resource;
 
     
-    
-    
-    if (this.stackTraces.has(stacktraceResourceId)) {
-      const {
-        stacktraceAvailable,
-        lastFrame,
-        targetFront,
-      } = this.stackTraces.get(stacktraceResourceId);
-      cause.stacktraceAvailable = stacktraceAvailable;
+    if (this.stackTraces.has(channelId)) {
+      const { stacktrace, lastFrame } = this.stackTraces.get(channelId);
+      cause.stacktraceAvailable = stacktrace;
       cause.lastFrame = lastFrame;
-      this.stackTraces.delete(stacktraceResourceId);
-      
-      
-      
-      
-      
-      this.stackTraceRequestInfoByActorID.set(actor, {
-        targetFront,
-        stacktraceResourceId,
-      });
+      this.stackTraces.delete(channelId);
     }
 
     
@@ -431,7 +388,7 @@ class FirefoxDataProvider {
       referrerPolicy,
       blockedReason,
       blockingExtension,
-      resourceId,
+      channelId,
       mimeType: resource?.content?.mimeType,
       contentSize: bodySize,
       ...responseProps,
@@ -681,15 +638,7 @@ class FirefoxDataProvider {
 
     let response = await new Promise((resolve, reject) => {
       
-      if (
-        clientMethodName == "getStackTrace" &&
-        this.resourceWatcher.hasWatcherSupport(
-          this.resourceWatcher.TYPES.NETWORK_EVENT_STACKTRACE
-        )
-      ) {
-        const requestInfo = this.stackTraceRequestInfoByActorID.get(actor);
-        resolve(this._getStackTraceFromWatcher(requestInfo));
-      } else if (typeof this.webConsoleFront[clientMethodName] === "function") {
+      if (typeof this.webConsoleFront[clientMethodName] === "function") {
         
         
         this.webConsoleFront[clientMethodName](

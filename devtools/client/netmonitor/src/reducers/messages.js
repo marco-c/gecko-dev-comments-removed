@@ -95,7 +95,7 @@ function setCurrentChannel(state, action) {
     return state;
   }
 
-  const { id, cause, resourceId, isEventStream } = action.request;
+  const { id, cause, channelId, isEventStream } = action.request;
   const { EVENT_STREAM, WEB_SOCKET } = CHANNEL_TYPE;
   let currentChannelType = null;
   let columnsKey = "columns";
@@ -113,7 +113,7 @@ function setCurrentChannel(state, action) {
       currentChannelType === state.currentChannelType
         ? { ...state.columns }
         : { ...state[columnsKey] },
-    currentChannelId: resourceId,
+    currentChannelId: channelId,
     currentChannelType,
     currentRequestId: id,
     
