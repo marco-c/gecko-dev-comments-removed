@@ -14,31 +14,49 @@ use crate::connection::State;
 use crate::frame::StreamType;
 use crate::stream_id::StreamId;
 use crate::AppError;
+use neqo_crypto::ResumptionToken;
 
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
 pub enum ConnectionEvent {
     
     AuthenticationNeeded,
     
-    NewStream { stream_id: StreamId },
+    NewStream {
+        stream_id: StreamId,
+    },
     
-    SendStreamWritable { stream_id: StreamId },
+    SendStreamWritable {
+        stream_id: StreamId,
+    },
     
-    RecvStreamReadable { stream_id: u64 },
+    RecvStreamReadable {
+        stream_id: u64,
+    },
     
-    RecvStreamReset { stream_id: u64, app_error: AppError },
+    RecvStreamReset {
+        stream_id: u64,
+        app_error: AppError,
+    },
     
-    SendStreamStopSending { stream_id: u64, app_error: AppError },
+    SendStreamStopSending {
+        stream_id: u64,
+        app_error: AppError,
+    },
     
-    SendStreamComplete { stream_id: u64 },
+    SendStreamComplete {
+        stream_id: u64,
+    },
     
-    SendStreamCreatable { stream_type: StreamType },
+    SendStreamCreatable {
+        stream_type: StreamType,
+    },
     
     StateChange(State),
     
     
     
     ZeroRttRejected,
+    ResumptionToken(ResumptionToken),
 }
 
 #[derive(Debug, Default, Clone)]
@@ -107,6 +125,10 @@ impl ConnectionEvents {
             _ => (),
         }
         self.insert(ConnectionEvent::StateChange(state));
+    }
+
+    pub fn client_resumption_token(&self, token: ResumptionToken) {
+        self.insert(ConnectionEvent::ResumptionToken(token));
     }
 
     pub fn client_0rtt_rejected(&self) {

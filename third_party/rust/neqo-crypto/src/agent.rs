@@ -19,7 +19,7 @@ use crate::prio;
 use crate::replay::AntiReplay;
 use crate::secrets::SecretHolder;
 use crate::ssl::{self, PRBool};
-use crate::time::TimeHolder;
+use crate::time::{Time, TimeHolder};
 
 use neqo_common::{hex_snip_middle, qdebug, qinfo, qtrace, qwarn};
 use std::cell::RefCell;
@@ -686,6 +686,33 @@ impl ::std::fmt::Display for SecretAgent {
     }
 }
 
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+pub struct ResumptionToken {
+    token: Vec<u8>,
+    expiration_time: Instant,
+}
+
+impl AsRef<[u8]> for ResumptionToken {
+    fn as_ref(&self) -> &[u8] {
+        &self.token
+    }
+}
+
+impl ResumptionToken {
+    #[must_use]
+    pub fn new(token: Vec<u8>, expiration_time: Instant) -> Self {
+        Self {
+            token,
+            expiration_time,
+        }
+    }
+
+    #[must_use]
+    pub fn expiration_time(&self) -> Instant {
+        self.expiration_time
+    }
+}
+
 
 #[derive(Debug)]
 #[allow(clippy::box_vec)] 
@@ -693,7 +720,7 @@ pub struct Client {
     agent: SecretAgent,
 
     
-    resumption: Pin<Box<Vec<Vec<u8>>>>,
+    resumption: Pin<Box<Vec<ResumptionToken>>>,
 }
 
 impl Client {
@@ -720,7 +747,24 @@ impl Client {
         len: c_uint,
         arg: *mut c_void,
     ) -> ssl::SECStatus {
-        let resumption_ptr = arg as *mut Vec<Vec<u8>>;
+        let mut info: MaybeUninit<ssl::SSLResumptionTokenInfo> = MaybeUninit::uninit();
+        if ssl::SSL_GetResumptionTokenInfo(
+            token,
+            len,
+            info.as_mut_ptr(),
+            c_uint::try_from(mem::size_of::<ssl::SSLResumptionTokenInfo>()).unwrap(),
+        )
+        .is_err()
+        {
+            
+            return ssl::SECSuccess;
+        }
+        let expiration_time = info.assume_init().expirationTime;
+        if ssl::SSL_DestroyResumptionTokenInfo(info.as_mut_ptr()).is_err() {
+            
+            return ssl::SECSuccess;
+        }
+        let resumption_ptr = arg as *mut Vec<ResumptionToken>;
         let resumption = resumption_ptr.as_mut().unwrap();
         let len = usize::try_from(len).unwrap();
         let mut v = Vec::with_capacity(len);
@@ -730,10 +774,13 @@ impl Client {
             "Got resumption token {}",
             hex_snip_middle(&v)
         );
+
         if resumption.len() >= MAX_TICKETS {
             resumption.remove(0);
         }
-        resumption.push(v);
+        if let Ok(t) = Time::try_from(expiration_time) {
+            resumption.push(ResumptionToken::new(v, *t));
+        }
         ssl::SECSuccess
     }
 
@@ -750,8 +797,14 @@ impl Client {
 
     
     #[must_use]
-    pub fn resumption_token(&mut self) -> Option<Vec<u8>> {
+    pub fn resumption_token(&mut self) -> Option<ResumptionToken> {
         (*self.resumption).pop()
+    }
+
+    
+    #[must_use]
+    pub fn has_resumption_token(&self) -> bool {
+        !(*self.resumption).is_empty()
     }
 
     
@@ -759,12 +812,12 @@ impl Client {
     
     
     
-    pub fn enable_resumption(&mut self, token: &[u8]) -> Res<()> {
+    pub fn enable_resumption(&mut self, token: impl AsRef<[u8]>) -> Res<()> {
         unsafe {
             ssl::SSL_SetResumptionToken(
                 self.agent.fd,
-                token.as_ptr(),
-                c_uint::try_from(token.len())?,
+                token.as_ref().as_ptr(),
+                c_uint::try_from(token.as_ref().len())?,
             )
         }
     }

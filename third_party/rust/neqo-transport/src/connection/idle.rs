@@ -78,7 +78,18 @@ impl IdleTimeout {
     }
 
     pub fn on_packet_received(&mut self, now: Instant) {
-        self.state = IdleTimeoutState::PacketReceived(now);
+        
+        
+        
+        let update = match self.state {
+            IdleTimeoutState::Init => true,
+            IdleTimeoutState::New(t)
+            | IdleTimeoutState::AckElicitingPacketSent(t)
+            | IdleTimeoutState::PacketReceived(t) => t <= now,
+        };
+        if update {
+            self.state = IdleTimeoutState::PacketReceived(now);
+        }
     }
 
     pub fn expired(&mut self, now: Instant, pto: Duration) -> bool {

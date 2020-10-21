@@ -13,6 +13,8 @@ use std::fmt::{self, Debug};
 use std::ops::Deref;
 use std::rc::Rc;
 
+pub(crate) const MAX_PTO_COUNTS: usize = 16;
+
 
 #[derive(Default, Clone)]
 #[allow(clippy::module_name_repetitions)]
@@ -40,6 +42,10 @@ pub struct Stats {
 
     
     pub resumed: bool,
+
+    
+    
+    pub pto_counts: [usize; MAX_PTO_COUNTS],
 }
 
 impl Stats {
@@ -55,6 +61,19 @@ impl Stats {
             reason.as_ref(),
             self.dropped_rx
         )
+    }
+
+    pub fn add_pto_count(&mut self, count: usize) {
+        debug_assert!(count > 0);
+        if count >= MAX_PTO_COUNTS {
+            
+            return;
+        }
+        self.pto_counts[count - 1] += 1;
+        if count > 1 {
+            debug_assert!(self.pto_counts[count - 2] > 0);
+            self.pto_counts[count - 2] -= 1;
+        }
     }
 }
 

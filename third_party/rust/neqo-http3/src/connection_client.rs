@@ -17,7 +17,7 @@ use crate::RecvMessageEvents;
 use neqo_common::{
     hex, hex_with_len, qdebug, qinfo, qlog::NeqoQlog, qtrace, Datagram, Decoder, Encoder, Role,
 };
-use neqo_crypto::{agent::CertificateInfo, AuthenticationStatus, SecretAgentInfo};
+use neqo_crypto::{agent::CertificateInfo, AuthenticationStatus, ResumptionToken, SecretAgentInfo};
 use neqo_qpack::{stats::Stats, QpackSettings};
 use neqo_transport::{
     AppError, Connection, ConnectionEvent, ConnectionId, ConnectionIdManager, Output, QuicVersion,
@@ -152,31 +152,24 @@ impl Http3Client {
     }
 
     
-    
-    #[must_use]
-    pub fn resumption_token(&mut self) -> Option<Vec<u8>> {
-        if let Some(token) = self.conn.resumption_token() {
-            if let Some(settings) = self.base_handler.get_settings() {
-                let mut enc = Encoder::default();
-                settings.encode_frame_contents(&mut enc);
-                enc.encode(&token[..]);
-                Some(enc.into())
-            } else {
-                None
-            }
-        } else {
-            None
+    fn create_resumption_token(&mut self, token: &ResumptionToken) {
+        if let Some(settings) = self.base_handler.get_settings() {
+            let mut enc = Encoder::default();
+            settings.encode_frame_contents(&mut enc);
+            enc.encode(token.as_ref());
+            self.events
+                .resumption_token(ResumptionToken::new(enc.into(), token.expiration_time()));
         }
     }
 
     
     
     
-    pub fn enable_resumption(&mut self, now: Instant, token: &[u8]) -> Res<()> {
+    pub fn enable_resumption(&mut self, now: Instant, token: impl AsRef<[u8]>) -> Res<()> {
         if self.base_handler.state != Http3State::Initializing {
             return Err(Error::InvalidState);
         }
-        let mut dec = Decoder::from(token);
+        let mut dec = Decoder::from(token.as_ref());
         let settings_slice = match dec.decode_vvec() {
             Some(v) => v,
             None => return Err(Error::InvalidResumptionToken),
@@ -566,6 +559,9 @@ impl Http3Client {
                     self.events.zero_rtt_rejected();
                     self.push_handler.borrow_mut().handle_zero_rtt_rejected();
                 }
+                ConnectionEvent::ResumptionToken(token) => {
+                    self.create_resumption_token(&token);
+                }
             }
         }
         Ok(())
@@ -695,16 +691,17 @@ mod tests {
         AuthenticationStatus, Connection, Error, HSettings, Header, Http3Client, Http3ClientEvent,
         Http3Parameters, Http3State, QpackSettings, Rc, RefCell, StreamType,
     };
-    use crate::hframe::HFrame;
-    use crate::settings::{HSetting, HSettingType};
+    use crate::hframe::{HFrame, H3_FRAME_TYPE_SETTINGS, H3_RESERVED_FRAME_TYPES};
+    use crate::settings::{HSetting, HSettingType, H3_RESERVED_SETTINGS};
     use neqo_common::{Datagram, Encoder};
-    use neqo_crypto::{AllowZeroRtt, AntiReplay};
+    use neqo_crypto::{AllowZeroRtt, AntiReplay, ResumptionToken};
     use neqo_qpack::encoder::QPackEncoder;
     use neqo_transport::{
         CloseError, ConnectionEvent, FixedConnectionIdManager, QuicVersion, State,
         RECV_BUFFER_SIZE, SEND_BUFFER_SIZE,
     };
     use std::convert::TryFrom;
+    use std::time::Duration;
     use test_fixture::{
         default_server, fixture_init, loopback, now, DEFAULT_ALPN, DEFAULT_SERVER_NAME,
     };
@@ -3249,13 +3246,24 @@ mod tests {
         assert!(recv_header);
     }
 
-    fn exchange_token(client: &mut Http3Client, server: &mut Connection) -> Vec<u8> {
+    fn exchange_token(client: &mut Http3Client, server: &mut Connection) -> ResumptionToken {
         server.send_ticket(now(), &[]).expect("can send ticket");
         let out = server.process_output(now());
         assert!(out.as_dgram_ref().is_some());
         client.process_input(out.dgram().unwrap(), now());
+        
+        client.process_output(now() + Duration::from_millis(250));
         assert_eq!(client.state(), Http3State::Connected);
-        client.resumption_token().expect("should have token")
+        client
+            .events()
+            .find_map(|e| {
+                if let Http3ClientEvent::ResumptionToken(token) = e {
+                    Some(token)
+                } else {
+                    None
+                }
+            })
+            .unwrap()
     }
 
     fn start_with_0rtt() -> (Http3Client, TestServer) {
@@ -5457,5 +5465,38 @@ mod tests {
             }
         }
         assert_eq!(count_responses, 2);
+    }
+
+    #[test]
+    fn reserved_frames() {
+        for f in H3_RESERVED_FRAME_TYPES {
+            let mut enc = Encoder::default();
+            enc.encode_varint(*f);
+            test_wrong_frame_on_control_stream(&enc);
+            test_wrong_frame_on_push_stream(&enc);
+            test_wrong_frame_on_request_stream(&enc);
+        }
+    }
+
+    #[test]
+    fn send_reserved_settings() {
+        for s in H3_RESERVED_SETTINGS {
+            let (mut client, mut server) = connect_only_transport();
+            let control_stream = server.conn.stream_create(StreamType::UniDi).unwrap();
+            
+            let _ = server.conn.stream_send(control_stream, CONTROL_STREAM_TYPE);
+            
+            let mut enc = Encoder::default();
+            enc.encode_varint(H3_FRAME_TYPE_SETTINGS);
+            enc.encode_varint(2_u64);
+            
+            enc.encode_varint(*s);
+            enc.encode_varint(1_u64);
+            let sent = server.conn.stream_send(control_stream, &enc);
+            assert_eq!(sent, Ok(4));
+            let out = server.conn.process(None, now());
+            client.process(out.dgram(), now());
+            assert_closed(&client, &Error::HttpSettings);
+        }
     }
 }

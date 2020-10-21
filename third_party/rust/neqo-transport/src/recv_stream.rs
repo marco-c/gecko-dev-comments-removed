@@ -78,16 +78,16 @@ impl RxStreamOrderer {
                     
                     
                     let overlap = prev_end.saturating_sub(new_start);
-                    if overlap != 0 {
-                        let truncate_to = prev_vec.len() - overlap as usize;
-                        prev_vec.truncate(truncate_to)
-                    }
                     qtrace!(
                         "New frame {}-{} received, overlap: {}",
                         new_start,
                         new_end,
                         overlap
                     );
+                    if overlap != 0 {
+                        new_data.drain(..overlap as usize);
+                        return self.inbound_frame(prev_end, new_data);
+                    }
                     (true, None)
                 }
                 (true, false) => {
@@ -104,15 +104,16 @@ impl RxStreamOrderer {
                 (false, true) => {
                     
                     
-                    
                     qtrace!(
-                        "New frame with {}-{} replaces existing {}-{}",
+                        "New frame with {}-{} overlaps with existing {}-{}",
                         new_start,
                         new_end,
                         prev_start,
                         prev_end
                     );
-                    (true, Some(prev_start))
+                    let overlap = prev_end.saturating_sub(new_start);
+                    new_data.drain(..overlap as usize);
+                    return self.inbound_frame(prev_end, new_data);
                 }
                 (false, false) => {
                     
@@ -170,7 +171,9 @@ impl RxStreamOrderer {
                 self.data_ranges.remove(&start);
             }
 
-            self.data_ranges.insert(new_start, new_data);
+            if !new_data.is_empty() {
+                self.data_ranges.insert(new_start, new_data);
+            }
         };
 
         Ok(())
@@ -232,6 +235,7 @@ impl RxStreamOrderer {
                 
                 let copy_offset =
                     usize::try_from(max(range_start, self.retired) - range_start).unwrap();
+                assert!(range_data.len() >= copy_offset);
                 let available = range_data.len() - copy_offset;
                 let space = buf.len() - copied;
                 let copy_bytes = if available > space {
@@ -707,6 +711,30 @@ mod tests {
         assert_eq!(count, EXTRA_SIZE * 2);
     }
 
+    #[test]
+    fn recv_overlap_while_reading() {
+        let mut s = RxStreamOrderer::new();
+
+        
+        s.inbound_frame(0, vec![0; 150]).unwrap();
+        assert_eq!(s.data_ranges.get(&0).unwrap().len(), 150);
+        
+        let mut buf = vec![0; 100];
+        let count = s.read(&mut buf);
+        assert_eq!(count, 100);
+        assert_eq!(s.retired, 100);
+
+        
+        
+        
+        s.inbound_frame(120, vec![0; 60]).unwrap();
+        assert_eq!(s.data_ranges.get(&0).unwrap().len(), 150);
+        assert_eq!(s.data_ranges.get(&150).unwrap().len(), 30);
+        
+        let count = s.read(&mut buf);
+        assert_eq!(count, 80);
+    }
+
     
     #[test]
     fn stop_reading_at_gap() {
@@ -843,10 +871,10 @@ mod tests {
             let mut i = s.state.recv_buf().unwrap().data_ranges.iter();
             let item = i.next().unwrap();
             assert_eq!(*item.0, 0);
-            assert_eq!(item.1.len(), 2);
-            let item = i.next().unwrap();
-            assert_eq!(*item.0, 2);
             assert_eq!(item.1.len(), 6);
+            let item = i.next().unwrap();
+            assert_eq!(*item.0, 6);
+            assert_eq!(item.1.len(), 2);
         }
 
         
@@ -855,10 +883,10 @@ mod tests {
             let mut i = s.state.recv_buf().unwrap().data_ranges.iter();
             let item = i.next().unwrap();
             assert_eq!(*item.0, 0);
-            assert_eq!(item.1.len(), 2);
-            let item = i.next().unwrap();
-            assert_eq!(*item.0, 2);
             assert_eq!(item.1.len(), 6);
+            let item = i.next().unwrap();
+            assert_eq!(*item.0, 6);
+            assert_eq!(item.1.len(), 2);
         }
 
         
@@ -867,10 +895,10 @@ mod tests {
             let mut i = s.state.recv_buf().unwrap().data_ranges.iter();
             let item = i.next().unwrap();
             assert_eq!(*item.0, 0);
-            assert_eq!(item.1.len(), 2);
+            assert_eq!(item.1.len(), 6);
             let item = i.next().unwrap();
-            assert_eq!(*item.0, 2);
-            assert_eq!(item.1.len(), 8);
+            assert_eq!(*item.0, 6);
+            assert_eq!(item.1.len(), 2);
         }
 
         
@@ -879,14 +907,14 @@ mod tests {
             let mut i = s.state.recv_buf().unwrap().data_ranges.iter();
             let item = i.next().unwrap();
             assert_eq!(*item.0, 0);
-            assert_eq!(item.1.len(), 2);
+            assert_eq!(item.1.len(), 6);
             let item = i.next().unwrap();
-            assert_eq!(*item.0, 2);
-            assert_eq!(item.1.len(), 8);
+            assert_eq!(*item.0, 6);
+            assert_eq!(item.1.len(), 2);
         }
 
         assert_eq!(s.read(&mut buf).unwrap(), (10, false));
-        assert_eq!(buf[..10], [1, 1, 4, 4, 4, 4, 4, 4, 4, 4]);
+        assert_eq!(buf[..10], [1, 1, 1, 1, 1, 1, 2, 2, 4, 4]);
 
         
         s.inbound_stream_frame(false, 100, vec![6; 6]).unwrap();

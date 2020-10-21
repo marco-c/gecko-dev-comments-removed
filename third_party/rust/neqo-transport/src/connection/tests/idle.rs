@@ -6,10 +6,12 @@
 
 use super::super::{IdleTimeout, Output, State, LOCAL_IDLE_TIMEOUT};
 use super::{
-    connect, connect_force_idle, connect_with_rtt, default_client, default_server, send_something,
+    connect, connect_force_idle, connect_with_rtt, default_client, default_server,
+    maybe_authenticate, send_something, split_datagram, AT_LEAST_PTO,
 };
-use crate::frame::StreamType;
+use crate::frame::{Frame, StreamType};
 use crate::tparams::{self, TransportParameter};
+use crate::tracking::PNSpace;
 
 use std::time::Duration;
 use test_fixture::{self, now};
@@ -203,4 +205,59 @@ fn idle_recv_packet() {
     let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(20));
 
     assert!(matches!(client.state(), State::Closed(_)));
+}
+
+
+
+
+#[test]
+fn idle_caching() {
+    let mut client = default_client();
+    let mut server = default_server();
+    let start = now();
+
+    
+    
+    let dgram = client.process_output(start).dgram();
+    let dgram = server.process(dgram, start).dgram();
+    let (_, handshake) = split_datagram(&dgram.unwrap());
+    client.process_input(handshake.unwrap(), start);
+
+    
+    
+    let middle = start + AT_LEAST_PTO;
+    let _ = client.process_output(middle);
+    let dgram = client.process_output(middle).dgram();
+
+    
+    let _ = server.process_output(middle).dgram();
+    
+    
+    let frames = server.test_process_input(dgram.unwrap(), middle);
+    assert_eq!(frames, vec![(Frame::Ping, PNSpace::Initial)]);
+    let crypto = server.crypto.streams.get_frame(PNSpace::Initial, 1000);
+    assert!(crypto.is_some());
+    let crypto = server.crypto.streams.get_frame(PNSpace::Initial, 1000);
+    assert!(crypto.is_none());
+    let dgram = server.process_output(middle).dgram();
+
+    
+    
+    let (initial, _) = split_datagram(&dgram.unwrap());
+    let frames = client.test_process_input(initial, middle);
+    assert_eq!(frames.len(), 2);
+    assert_eq!(frames[0], (Frame::Ping, PNSpace::Initial));
+    assert!(matches!(frames[1], (Frame::Ack { .. }, PNSpace::Initial)));
+
+    let end = start + LOCAL_IDLE_TIMEOUT + (AT_LEAST_PTO / 2);
+    
+    let dgram = server.process_output(end).dgram();
+    let (initial, _) = split_datagram(&dgram.unwrap());
+    let _ = client.process(Some(initial), end);
+    maybe_authenticate(&mut client);
+    let dgram = client.process_output(end).dgram();
+    let dgram = server.process(dgram, end).dgram();
+    client.process_input(dgram.unwrap(), end);
+    assert_eq!(*client.state(), State::Confirmed);
+    assert_eq!(*server.state(), State::Confirmed);
 }

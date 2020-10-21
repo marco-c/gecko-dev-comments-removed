@@ -11,6 +11,7 @@ use crate::send_message::SendMessageEvents;
 use crate::Header;
 use crate::RecvMessageEvents;
 
+use neqo_crypto::ResumptionToken;
 use neqo_transport::{AppError, StreamType};
 
 use std::cell::RefCell;
@@ -53,6 +54,8 @@ pub enum Http3ClientEvent {
     RequestsCreatable,
     
     AuthenticationNeeded,
+    
+    ResumptionToken(ResumptionToken),
     
     ZeroRttRejected,
     
@@ -140,6 +143,11 @@ impl Http3ClientEvents {
     
     pub(crate) fn authentication_needed(&self) {
         self.insert(Http3ClientEvent::AuthenticationNeeded);
+    }
+
+    
+    pub(crate) fn resumption_token(&self, token: ResumptionToken) {
+        self.insert(Http3ClientEvent::ResumptionToken(token));
     }
 
     

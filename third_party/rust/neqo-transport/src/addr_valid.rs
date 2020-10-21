@@ -276,6 +276,14 @@ impl NewTokenState {
     }
 
     
+    pub fn has_token(&self) -> bool {
+        match self {
+            Self::Client(ref token) => !token.is_empty(),
+            Self::Server(..) => false,
+        }
+    }
+
+    
     
     pub fn take_token(&mut self) -> Option<Vec<u8>> {
         if let Self::Client(ref mut tokens) = self {
