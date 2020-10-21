@@ -359,6 +359,10 @@ def virtualenv_python3(env_python, virtualenv_name, build_env, mozconfig, help):
         os.environ['PYTHONEXECUTABLE'] = python
         
         
+        
+        os.environ.pop('__PYVENV_LAUNCHER__', None)
+        
+        
         sys.exit(subprocess.call([python] + sys.argv))
 
     
