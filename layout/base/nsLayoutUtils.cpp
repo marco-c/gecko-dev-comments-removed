@@ -3197,11 +3197,11 @@ nsRect nsLayoutUtils::TransformFrameRectToAncestor(
     Maybe<Matrix4x4Flagged>* aMatrixCache ,
     bool aStopAtStackingContextAndDisplayPortAndOOFFrame ,
     nsIFrame** aOutAncestor ) {
-#if 0
   
-  MOZ_ASSERT(IsAncestorFrameCrossDoc(aAncestor.mFrame, aFrame),
+  
+  MOZ_ASSERT(aAncestor.mFrame->PresContext() != aFrame->PresContext() ||
+                 IsAncestorFrameCrossDoc(aAncestor.mFrame, aFrame),
              "Fix the caller");
-#endif
 
   SVGTextFrame* text = GetContainingSVGTextFrame(aFrame);
 
@@ -4575,7 +4575,9 @@ struct BoxToRect : public nsLayoutUtils::BoxCallback {
 
   BoxToRect(const nsIFrame* aRelativeTo, RectCallback* aCallback,
             uint32_t aFlags)
-      : mRelativeTo(aRelativeTo), mCallback(aCallback), mFlags(aFlags),
+      : mRelativeTo(aRelativeTo),
+        mCallback(aCallback),
+        mFlags(aFlags),
         mRelativeToIsRoot(!aRelativeTo->GetParent()) {}
 
   virtual void AddBox(nsIFrame* aFrame) override {

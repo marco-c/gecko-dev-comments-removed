@@ -500,8 +500,12 @@ nsIFrame* FindFrameTargetedByInputEvent(
   
   
   
-  const nsIFrame* restrictToDescendants =
-      target ? target->PresShell()->GetRootFrame() : aRootFrame.mFrame;
+  const nsIFrame* restrictToDescendants = [&]() -> const nsIFrame* {
+    if (target && target->PresContext() != aRootFrame.mFrame->PresContext()) {
+      return target->PresShell()->GetRootFrame();
+    }
+    return aRootFrame.mFrame;
+  }();
 
   nsRect targetRect = GetTargetRect(aRootFrame, aPointRelativeToRootFrame,
                                     restrictToDescendants, prefs, aFlags);
