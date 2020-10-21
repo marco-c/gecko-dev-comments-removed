@@ -110,6 +110,26 @@ var Policy = {
     AppConstants.platform == "android"
       ? PENDING_PINGS_QUOTA_BYTES_MOBILE
       : PENDING_PINGS_QUOTA_BYTES_DESKTOP,
+  
+
+
+
+
+
+
+
+
+  getUninstallPingPath: id => {
+    
+    const updateDirectory = Services.dirsvc.get("UpdRootD", Ci.nsIFile);
+    const installPathHash = updateDirectory.leafName;
+
+    return {
+      
+      directory: updateDirectory.parent.parent.clone(),
+      file: `uninstall_ping_${installPathHash}_${id}.json`,
+    };
+  },
 };
 
 
@@ -344,6 +364,31 @@ var TelemetryStorage = {
 
   removeAbortedSessionPing() {
     return TelemetryStorageImpl.removeAbortedSessionPing();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  saveUninstallPing(ping) {
+    return TelemetryStorageImpl.saveUninstallPing(ping);
+  },
+
+  
+
+
+
+
+
+
+  removeUninstallPings() {
+    return TelemetryStorageImpl.removeUninstallPings();
   },
 
   
@@ -1973,6 +2018,49 @@ var TelemetryStorageImpl = {
         }
       }
     });
+  },
+
+  async saveUninstallPing(ping) {
+    if (AppConstants.platform != "win") {
+      return;
+    }
+
+    
+    await this.removeUninstallPings();
+
+    let { directory: pingFile, file } = Policy.getUninstallPingPath(ping.id);
+    pingFile.append(file);
+
+    await this.savePingToFile(ping, pingFile.path,  true);
+  },
+
+  async removeUninstallPings() {
+    if (AppConstants.platform != "win") {
+      return;
+    }
+
+    const { directory, file } = Policy.getUninstallPingPath("*");
+
+    const iteratorOptions = { winPattern: file };
+    const iterator = new OS.File.DirectoryIterator(
+      directory.path,
+      iteratorOptions
+    );
+
+    await iterator.forEach(async entry => {
+      this._log.trace("removeUninstallPings - removing", entry.path);
+      try {
+        await OS.File.remove(entry.path);
+        this._log.trace("removeUninstallPings - success");
+      } catch (ex) {
+        if (ex.becauseNoSuchFile) {
+          this._log.trace("removeUninstallPings - no such file");
+        } else {
+          this._log.error("removeUninstallPings - error removing ping", ex);
+        }
+      }
+    });
+    iterator.close();
   },
 
   

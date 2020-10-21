@@ -440,6 +440,20 @@ function fakeIntlReady() {
 }
 
 
+function fakeUninstallPingPath(aPathFcn) {
+  const m = ChromeUtils.import(
+    "resource://gre/modules/TelemetryStorage.jsm",
+    null
+  );
+  m.Policy.getUninstallPingPath =
+    aPathFcn ||
+    (id => ({
+      directory: new FileUtils.File(OS.Constants.Path.profileDir),
+      file: `uninstall_ping_0123456789ABCDEF_${id}.json`,
+    }));
+}
+
+
 function futureDate(date, offset) {
   return new Date(date.getTime() + offset);
 }
@@ -570,3 +584,6 @@ fakeSchedulerTimer(
 );
 
 fakeMidnightPingFuzzingDelay(0);
+
+
+fakeUninstallPingPath();
