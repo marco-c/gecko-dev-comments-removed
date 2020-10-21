@@ -632,6 +632,12 @@ bool ClassEmitter::emitInitDefaultConstructor(uint32_t classStart,
 
   
   
+  if (!bce_->updateSourceCoordNotes(classStart)) {
+    return false;
+  }
+
+  
+  
   
   
   BytecodeOffset off;
