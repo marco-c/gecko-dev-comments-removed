@@ -580,13 +580,15 @@
 
 
 
+
+
+
 #define QM_TRY_RETURN_PROPAGATE_ERR(ns, tryResult, expr) \
   auto tryResult = (expr);                               \
   if (MOZ_UNLIKELY(tryResult.isErr())) {                 \
     ns::QM_HANDLE_ERROR(expr);                           \
-    return tryResult.propagateErr();                     \
   }                                                      \
-  return tryResult.unwrap();
+  return tryResult;
 
 
 
