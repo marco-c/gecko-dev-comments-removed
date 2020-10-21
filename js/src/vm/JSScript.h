@@ -1560,7 +1560,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   
   
-  RefPtr<js::RuntimeScriptData> sharedData_ = {};
+  RefPtr<js::SharedImmutableScriptData> sharedData_ = {};
 
   
 
@@ -1849,8 +1849,8 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
     return data_->getMemberInitializers();
   }
 
-  RuntimeScriptData* sharedData() const { return sharedData_; }
-  void initSharedData(RuntimeScriptData* data) {
+  SharedImmutableScriptData* sharedData() const { return sharedData_; }
+  void initSharedData(SharedImmutableScriptData* data) {
     MOZ_ASSERT(sharedData_ == nullptr);
     sharedData_ = data;
   }
