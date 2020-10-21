@@ -429,8 +429,6 @@ NON_IDL_EVENT(underflow, eScrollPortUnderflow, EventNameType_XUL,
 
 
 NON_IDL_EVENT(SVGLoad, eSVGLoad, EventNameType_None, eBasicEventClass)
-NON_IDL_EVENT(SVGUnload, eSVGUnload, EventNameType_None, eBasicEventClass)
-NON_IDL_EVENT(SVGResize, eSVGResize, EventNameType_None, eBasicEventClass)
 NON_IDL_EVENT(SVGScroll, eSVGScroll, EventNameType_None, eBasicEventClass)
 
 
