@@ -726,9 +726,9 @@ class BaseRustLibrary(object):
         
         
         assert self.crate_type == 'staticlib'
-        self.lib_name = '%s%s%s' % (context.config.rust_lib_prefix,
+        self.lib_name = '%s%s%s' % (context.config.lib_prefix,
                                     basename.replace('-', '_'),
-                                    context.config.rust_lib_suffix)
+                                    context.config.lib_suffix)
         self.dependencies = dependencies
         self.features = features
         self.target_dir = target_dir
