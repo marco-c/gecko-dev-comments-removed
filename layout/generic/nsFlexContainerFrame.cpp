@@ -1527,14 +1527,14 @@ static nscoord PartiallyResolveAutoMinSize(
     }
   }
 
-  
-  
-  if (aFlexItem.MainMaxSize() != NS_UNCONSTRAINEDSIZE) {
-    specifiedSizeSuggestion =
-        std::min(specifiedSizeSuggestion, aFlexItem.MainMaxSize());
-  }
-
   if (specifiedSizeSuggestion != nscoord_MAX) {
+    
+    
+    if (aFlexItem.MainMaxSize() != NS_UNCONSTRAINEDSIZE) {
+      specifiedSizeSuggestion =
+          std::min(specifiedSizeSuggestion, aFlexItem.MainMaxSize());
+    }
+
     
     
     FLEX_LOGV(" Specified size suggestion: %d", specifiedSizeSuggestion);
