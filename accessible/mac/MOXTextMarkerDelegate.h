@@ -71,6 +71,9 @@
 - (id)moxRightLineTextMarkerRangeForTextMarker:(id)textMarker;
 
 
+- (id)moxParagraphTextMarkerRangeForTextMarker:(id)textMarker;
+
+
 - (id)moxNextTextMarkerForTextMarker:(id)textMarker;
 
 
