@@ -2426,6 +2426,7 @@ BrowserGlue.prototype = {
 
 
   _scheduleStartupIdleTasks() {
+    let isNewProfile = this._isNewProfile;
     const idleTasks = [
       
       
@@ -2633,6 +2634,23 @@ BrowserGlue.prototype = {
             Ci.nsIFOG
           );
           FOG.initializeFOG();
+        },
+      },
+
+      
+      {
+        task: () => {
+          if (
+            isNewProfile &&
+            Services.prefs.getBoolPref(
+              "browser.toolbars.bookmarks.2h2020",
+              false
+            ) &&
+            
+            !Cu.isInAutomation
+          ) {
+            PlacesUIUtils.maybeAddImportButton();
+          }
         },
       },
 
