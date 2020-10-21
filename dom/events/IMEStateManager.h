@@ -56,6 +56,11 @@ class IMEStateManager {
     if (sInstalledMenuKeyboardListener) {
       return nullptr;
     }
+    
+    
+    if (sFocusedIMEBrowserParent) {
+      return sFocusedIMEBrowserParent;
+    }
     return BrowserParent::GetFocused();
   }
 
