@@ -4126,6 +4126,11 @@ pub struct RasterConfig {
     
     
     pub root_scaling_factor: f32,
+    
+    
+    
+    
+    pub clipped_bounding_rect: WorldRect,
 }
 
 bitflags! {
@@ -4691,7 +4696,6 @@ impl PicturePrimitive {
     pub fn take_context(
         &mut self,
         pic_index: PictureIndex,
-        clipped_prim_bounding_rect: WorldRect,
         surface_spatial_node_index: SpatialNodeIndex,
         raster_spatial_node_index: SpatialNodeIndex,
         parent_surface_index: SurfaceIndex,
@@ -4815,7 +4819,7 @@ impl PicturePrimitive {
                     pic_rect,
                     &map_pic_to_raster,
                     &map_raster_to_world,
-                    clipped_prim_bounding_rect.outer_rect(clip_inflation),
+                    raster_config.clipped_bounding_rect.outer_rect(clip_inflation),
                     device_pixel_scale,
                 ) {
                     Some(info) => info,
@@ -4926,7 +4930,7 @@ impl PicturePrimitive {
                         if let Some(scale) = adjust_scale_for_max_surface_size(
                             raster_config, frame_context.fb_config.max_target_size,
                             pic_rect, &map_pic_to_raster, &map_raster_to_world,
-                            clipped_prim_bounding_rect,
+                            raster_config.clipped_bounding_rect,
                             &mut device_pixel_scale, &mut device_rect, &mut unclipped,
                         ) {
                             blur_std_deviation = blur_std_deviation * scale;
@@ -4994,7 +4998,7 @@ impl PicturePrimitive {
                         if let Some(scale) = adjust_scale_for_max_surface_size(
                             raster_config, frame_context.fb_config.max_target_size,
                             pic_rect, &map_pic_to_raster, &map_raster_to_world,
-                            clipped_prim_bounding_rect,
+                            raster_config.clipped_bounding_rect,
                             &mut device_pixel_scale, &mut device_rect, &mut unclipped,
                         ) {
                             
@@ -5056,7 +5060,7 @@ impl PicturePrimitive {
                         if let Some(scale) = adjust_scale_for_max_surface_size(
                             raster_config, frame_context.fb_config.max_target_size,
                             pic_rect, &map_pic_to_raster, &map_raster_to_world,
-                            clipped_prim_bounding_rect,
+                            raster_config.clipped_bounding_rect,
                             &mut device_pixel_scale, &mut clipped, &mut unclipped,
                         ) {
                             raster_config.root_scaling_factor = scale;
@@ -5102,7 +5106,7 @@ impl PicturePrimitive {
                         if let Some(scale) = adjust_scale_for_max_surface_size(
                             raster_config, frame_context.fb_config.max_target_size,
                             pic_rect, &map_pic_to_raster, &map_raster_to_world,
-                            clipped_prim_bounding_rect,
+                            raster_config.clipped_bounding_rect,
                             &mut device_pixel_scale, &mut clipped, &mut unclipped,
                         ) {
                             raster_config.root_scaling_factor = scale;
@@ -5136,7 +5140,7 @@ impl PicturePrimitive {
                         if let Some(scale) = adjust_scale_for_max_surface_size(
                             raster_config, frame_context.fb_config.max_target_size,
                             pic_rect, &map_pic_to_raster, &map_raster_to_world,
-                            clipped_prim_bounding_rect,
+                            raster_config.clipped_bounding_rect,
                             &mut device_pixel_scale, &mut clipped, &mut unclipped,
                         ) {
                             raster_config.root_scaling_factor = scale;
@@ -5446,7 +5450,7 @@ impl PicturePrimitive {
                         if let Some(scale) = adjust_scale_for_max_surface_size(
                             raster_config, frame_context.fb_config.max_target_size,
                             pic_rect, &map_pic_to_raster, &map_raster_to_world,
-                            clipped_prim_bounding_rect,
+                            raster_config.clipped_bounding_rect,
                             &mut device_pixel_scale, &mut clipped, &mut unclipped,
                         ) {
                             raster_config.root_scaling_factor = scale;
@@ -5481,7 +5485,7 @@ impl PicturePrimitive {
                         if let Some(scale) = adjust_scale_for_max_surface_size(
                             raster_config, frame_context.fb_config.max_target_size,
                             pic_rect, &map_pic_to_raster, &map_raster_to_world,
-                            clipped_prim_bounding_rect,
+                            raster_config.clipped_bounding_rect,
                             &mut device_pixel_scale, &mut clipped, &mut unclipped,
                         ) {
                             raster_config.root_scaling_factor = scale;
@@ -5970,6 +5974,7 @@ impl PicturePrimitive {
                 establishes_raster_root,
                 surface_index: state.push_surface(surface),
                 root_scaling_factor: 1.0,
+                clipped_bounding_rect: WorldRect::zero(),
             });
         }
 
