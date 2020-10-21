@@ -6,7 +6,7 @@ mod common;
 use common::*;
 
 use fog::ipc;
-use fog::private::{CommonMetricData, CounterMetric, Lifetime, TimeUnit, TimespanMetric};
+use fog::private::{CommonMetricData, Lifetime, TimeUnit, TimespanMetric};
 
 #[test]
 fn smoke_test_timespan() {
@@ -40,48 +40,32 @@ fn timespan_ipc() {
     let _lock = lock_test();
     let _t = setup_glean(None);
 
-    let common = CommonMetricData {
-        name: "timespan_metric".into(),
-        category: "ipc".into(),
-        send_in_pings: vec!["store1".into()],
-        disabled: false,
-        lifetime: Lifetime::Ping,
-        ..Default::default()
-    };
+    let _raii = ipc::test_set_need_ipc(true);
+    let child_metric = TimespanMetric::new(
+        CommonMetricData {
+            name: "timespan_metric".into(),
+            category: "ipc".into(),
+            send_in_pings: vec!["store1".into()],
+            disabled: false,
+            lifetime: Lifetime::Ping,
+            ..Default::default()
+        },
+        TimeUnit::Nanosecond,
+    );
 
     
-    {
-        let _raii = ipc::test_set_need_ipc(true);
-
-        let child_metric = TimespanMetric::new(common.clone(), TimeUnit::Nanosecond);
-
-        
-        child_metric.start();
-        
-        
-        
-        child_metric.cancel();
-
-        
-
-        
-        let result = std::panic::catch_unwind(move || {
-            child_metric.test_get_value("store1");
-        });
-        assert!(result.is_err());
-    }
+    child_metric.start();
+    
+    
+    
+    child_metric.cancel();
 
     
-    let metric = TimespanMetric::new(common, TimeUnit::Nanosecond);
-    assert_eq!(None, metric.test_get_value("store1"));
+    
 
     
-    let error_metric = CounterMetric::new(CommonMetricData {
-        name: "invalid_overflow/ipc.timespan_metric".into(),
-        category: "glean.error".into(),
-        lifetime: Lifetime::Ping,
-        send_in_pings: vec!["metrics".into()],
-        ..Default::default()
+    let result = std::panic::catch_unwind(move || {
+        child_metric.test_get_value("store1");
     });
-    assert_eq!(None, error_metric.test_get_value("metrics"));
+    assert!(result.is_err());
 }
