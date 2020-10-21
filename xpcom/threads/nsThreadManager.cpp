@@ -374,10 +374,13 @@ nsresult nsThreadManager::Init() {
 
   TaskController::Initialize();
 
+  
   nsCOMPtr<nsIIdlePeriod> idlePeriod = new MainThreadIdlePeriod();
+  TaskController::Get()->SetIdleTaskManager(
+      new IdleTaskManager(idlePeriod.forget()));
 
-  UniquePtr<PrioritizedEventQueue> queue =
-      MakeUnique<PrioritizedEventQueue>(do_AddRef(idlePeriod));
+  
+  UniquePtr<PrioritizedEventQueue> queue = MakeUnique<PrioritizedEventQueue>();
 
   PrioritizedEventQueue* prioritized = queue.get();
 
