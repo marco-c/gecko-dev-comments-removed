@@ -15,40 +15,29 @@ TEST(TestSupportAlpn, testSvcParamKeyAlpn)
       do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "http");
 
   
-  Tuple<nsCString, bool> result =
+  nsCString result =
       SelectAlpnFromAlpnList("h3-28,h3-27,h2,http/1.1"_ns, false, false);
-  ASSERT_EQ(Get<0>(result), "h3-28"_ns);
-  ASSERT_EQ(Get<1>(result), true);
-
-  
-  result = SelectAlpnFromAlpnList("h3-26,h2,http/1.1"_ns, false, false);
-  ASSERT_EQ(Get<0>(result), "h2"_ns);
-  ASSERT_EQ(Get<1>(result), false);
+  ASSERT_EQ(result, "h3-28"_ns);
 
   
   result = SelectAlpnFromAlpnList("h3-28,h3-27,h2,http/1.1"_ns, false, true);
-  ASSERT_EQ(Get<0>(result), "h2"_ns);
-  ASSERT_EQ(Get<1>(result), false);
+  ASSERT_EQ(result, "h2"_ns);
 
   
   result = SelectAlpnFromAlpnList("h3-28,h3-27,http/1.1"_ns, false, true);
-  ASSERT_EQ(Get<0>(result), "http/1.1"_ns);
-  ASSERT_EQ(Get<1>(result), false);
+  ASSERT_EQ(result, "http/1.1"_ns);
 
   
   result = SelectAlpnFromAlpnList("h3-28,h3-27,h2,http/1.1"_ns, true, true);
-  ASSERT_EQ(Get<0>(result), "http/1.1"_ns);
-  ASSERT_EQ(Get<1>(result), false);
+  ASSERT_EQ(result, "http/1.1"_ns);
 
   
   result = SelectAlpnFromAlpnList("h3-28,h3-27,h2"_ns, true, true);
-  ASSERT_EQ(Get<0>(result), ""_ns);
-  ASSERT_EQ(Get<1>(result), false);
+  ASSERT_EQ(result, ""_ns);
 
   
   result = SelectAlpnFromAlpnList("ftp,h2c"_ns, true, true);
-  ASSERT_EQ(Get<0>(result), ""_ns);
-  ASSERT_EQ(Get<1>(result), false);
+  ASSERT_EQ(result, ""_ns);
 }
 
 }  

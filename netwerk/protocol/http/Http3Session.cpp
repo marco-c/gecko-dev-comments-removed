@@ -85,6 +85,7 @@ nsresult Http3Session::Init(const nsACString& aOrigin,
 
   mAlpnToken = aAlpnToken;
   mSocketTransport = aSocketTransport;
+  mSegmentReaderWriter = readerWriter;
 
   nsCOMPtr<nsISupports> info;
   Unused << mSocketTransport->GetSecurityInfo(getter_AddRefs(info));
@@ -175,11 +176,6 @@ nsresult Http3Session::Init(const nsACString& aOrigin,
                            "NS_DispatchToCurrentThread failed");
     }
   }
-
-  
-  
-  
-  mSegmentReaderWriter = readerWriter;
   return NS_OK;
 }
 

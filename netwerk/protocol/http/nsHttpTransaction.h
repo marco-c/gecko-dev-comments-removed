@@ -15,7 +15,6 @@
 #include "nsThreadUtils.h"
 #include "nsIDNSListener.h"
 #include "nsIInterfaceRequestor.h"
-#include "nsITimer.h"
 #include "TimingStruct.h"
 #include "Http2Push.h"
 #include "mozilla/net/DNS.h"
@@ -25,12 +24,10 @@
 
 
 class nsIHttpActivityObserver;
-class nsIDNSHTTPSSVCRecord;
 class nsIEventTarget;
 class nsIInputStream;
 class nsIOutputStream;
 class nsIRequestContext;
-class nsISVCBRecord;
 
 namespace mozilla {
 namespace net {
@@ -53,8 +50,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
                                 public nsIInputStreamCallback,
                                 public nsIOutputStreamCallback,
                                 public ARefBase,
-                                public nsIDNSListener,
-                                public nsITimerCallback {
+                                public nsIDNSListener {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSAHTTPTRANSACTION
@@ -62,7 +58,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   NS_DECL_NSIINPUTSTREAMCALLBACK
   NS_DECL_NSIOUTPUTSTREAMCALLBACK
   NS_DECL_NSIDNSLISTENER
-  NS_DECL_NSITIMERCALLBACK
 
   nsHttpTransaction();
 
@@ -103,7 +98,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void RemoveDispatchedAsBlocking();
 
   void DisableSpdy() override;
-  void DisableHttp3();
 
   nsHttpTransaction* QueryHttpTransaction() override { return this; }
 
@@ -204,14 +198,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   void NotifyTransactionObserver(nsresult reason);
 
-  
-  
-  
-  bool PrepareSVCBRecordsForRetry(const nsACString& aFailedDomainName,
-                                  bool& aAllRecordsHaveEchConfig);
-  
-  void PrepareConnInfoForRetry(nsresult aReason);
-
   already_AddRefed<Http2PushedStreamWrapper> TakePushedStreamById(
       uint32_t aStreamId);
 
@@ -272,14 +258,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<nsHttpConnectionInfo> mOrigConnInfo;
+  RefPtr<nsHttpConnectionInfo> mFallbackConnInfo;
   nsHttpRequestHead* mRequestHead;    
   nsHttpResponseHead* mResponseHead;  
 
@@ -482,12 +461,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsCOMPtr<nsICancelable> mDNSRequest;
   Maybe<uint32_t> mHTTPSSVCReceivedStage;
   bool m421Received = false;
-  nsCOMPtr<nsIDNSHTTPSSVCRecord> mHTTPSSVCRecord;
-  nsTArray<RefPtr<nsISVCBRecord>> mRecordsForRetry;
-  bool mDontRetryWithDirectRoute = false;
-  bool mFastFallbackTriggered = false;
-  nsCOMPtr<nsITimer> mFastFallbackTimer;
-  nsCOMPtr<nsISVCBRecord> mFastFallbackRecord;
 };
 
 }  

@@ -507,11 +507,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   bool UseHTTPSRRAsAltSvcEnabled() const;
 
   bool EchConfigEnabled() const;
-  
-  
-  
-  
-  bool FallbackToOriginIfConfigsAreECHAndAllFailed() const;
 
  private:
   nsHttpHandler();

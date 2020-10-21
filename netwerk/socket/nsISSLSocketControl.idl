@@ -161,10 +161,5 @@ interface nsISSLSocketControl : nsISupports {
 
 
     readonly attribute ACString peerId;
-
-    
-
-
-    readonly attribute ACString retryEchConfig;
 };
 
