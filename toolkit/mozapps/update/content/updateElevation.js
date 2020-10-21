@@ -42,7 +42,7 @@ const gUpdateElevationDialog = {
     let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
-    let update = um.activeUpdate;
+    let update = um.readyUpdate;
     let updateFinishedName = document.getElementById("updateFinishedName");
     updateFinishedName.value = update.name;
 
@@ -79,8 +79,8 @@ const gUpdateElevationDialog = {
     let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
-    let update = um.activeUpdate;
-    um.cleanupActiveUpdate();
+    let update = um.readyUpdate;
+    um.cleanupReadyUpdate();
     
     
     

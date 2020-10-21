@@ -1133,14 +1133,35 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
 
 
 
-function cleanupActiveUpdate() {
+
+function cleanupReadyUpdate() {
   
   var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
     Ci.nsIUpdateManager
   );
+  if (um.readyUpdate) {
+    um.addUpdateToHistory(um.readyUpdate);
+    um.readyUpdate = null;
+  }
+  um.saveUpdates();
+
   
+  cleanUpUpdatesDir();
+}
+
+
+
+
+
+function cleanupDownloadingUpdate() {
   
-  um.activeUpdate = null;
+  var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+    Ci.nsIUpdateManager
+  );
+  if (um.downloadingUpdate) {
+    um.addUpdateToHistory(um.downloadingUpdate);
+    um.downloadingUpdate = null;
+  }
   um.saveUpdates();
 
   
@@ -1262,7 +1283,7 @@ function handleUpdateFailure(update, errorCode) {
       
       maxCancels = Math.min(maxCancels, 5);
       if (osxCancelations >= maxCancels) {
-        cleanupActiveUpdate();
+        cleanupReadyUpdate();
       } else {
         writeStatusFile(
           getUpdatesDir(),
@@ -1323,7 +1344,7 @@ function handleUpdateFailure(update, errorCode) {
 
 
 function handleFallbackToCompleteUpdate(update, postStaging) {
-  cleanupActiveUpdate();
+  cleanupReadyUpdate();
 
   update.statusText = gUpdateBundle.GetStringFromName("patchApplyFailure");
   var oldType = update.selectedPatch ? update.selectedPatch.type : "complete";
@@ -1338,7 +1359,7 @@ function handleFallbackToCompleteUpdate(update, postStaging) {
       .getService(Ci.nsIApplicationUpdateService)
       .downloadUpdate(update, !postStaging);
     if (status == STATE_NONE) {
-      cleanupActiveUpdate();
+      cleanupReadyUpdate();
     }
   } else {
     LOG(
@@ -1487,9 +1508,10 @@ function handleCriticalWriteFailure(path) {
   if (!gUpdateFileWriteInfo.failure) {
     gUpdateFileWriteInfo.failure = true;
     let patchType = AUSTLMY.PATCH_UNKNOWN;
-    let update = Cc["@mozilla.org/updates/update-manager;1"].getService(
+    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
-    ).activeUpdate;
+    );
+    let update = um.readyUpdate || um.downloadingUpdate;
     if (update) {
       let patch = update.selectedPatch;
       if (patch.type == "complete") {
@@ -2311,6 +2333,13 @@ UpdateService.prototype = {
       );
       return;
     }
+    let status = readStatusFile(getUpdatesDir());
+    
+    
+    let cleanupUpdate =
+      status == STATE_DOWNLOADING
+        ? cleanupDownloadingUpdate
+        : cleanupReadyUpdate;
 
     if (!this.canApplyUpdates) {
       LOG(
@@ -2319,15 +2348,17 @@ UpdateService.prototype = {
       );
       
       
-      cleanupActiveUpdate();
+      cleanupUpdate();
       return;
     }
 
     var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
-    var update = um.activeUpdate;
-    var status = readStatusFile(getUpdatesDir());
+    
+    
+    
+    var update = um.readyUpdate || um.downloadingUpdate;
     if (status == STATE_NONE) {
       
       
@@ -2341,7 +2372,7 @@ UpdateService.prototype = {
       update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
       let newStatus = STATE_FAILED + ": " + ERR_UPDATE_STATE_NONE;
       pingStateAndStatusCodes(update, true, newStatus);
-      cleanupActiveUpdate();
+      cleanupUpdate();
       return;
     }
 
@@ -2372,7 +2403,7 @@ UpdateService.prototype = {
         update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
         let newStatus = STATE_FAILED + ": " + ERR_CHANNEL_CHANGE;
         pingStateAndStatusCodes(update, true, newStatus);
-        cleanupActiveUpdate();
+        cleanupUpdate();
         return;
       }
     }
@@ -2417,7 +2448,7 @@ UpdateService.prototype = {
         
         let newStatus = STATE_FAILED + ": " + ERR_OLDER_VERSION_OR_SAME_BUILD;
         pingStateAndStatusCodes(update, true, newStatus);
-        cleanupActiveUpdate();
+        cleanupUpdate();
         return;
       }
     }
@@ -2431,7 +2462,7 @@ UpdateService.prototype = {
       
       status = this.downloadUpdate(update, true);
       if (status == STATE_NONE) {
-        cleanupActiveUpdate();
+        cleanupDownloadingUpdate();
       }
       return;
     }
@@ -2466,7 +2497,7 @@ UpdateService.prototype = {
           "UpdateService:_postUpdateProcessing - patch found in applying " +
             "state for the second time"
         );
-        cleanupActiveUpdate();
+        cleanupUpdate();
       }
       return;
     }
@@ -2477,7 +2508,7 @@ UpdateService.prototype = {
           "UpdateService:_postUpdateProcessing - previous patch failed " +
             "and no patch available"
         );
-        cleanupActiveUpdate();
+        cleanupUpdate();
         return;
       }
       update = new Update(null);
@@ -2503,22 +2534,22 @@ UpdateService.prototype = {
 
       
       
-      if (!um.activeUpdate) {
-        um.activeUpdate = update;
+      if (!um.readyUpdate) {
+        um.readyUpdate = update;
       }
 
       
-      cleanupActiveUpdate();
+      cleanupUpdate();
 
       Services.prefs.setIntPref(PREF_APP_UPDATE_ELEVATE_ATTEMPTS, 0);
     } else if (status == STATE_PENDING_ELEVATE) {
       
-      if (!um.activeUpdate) {
+      if (!um.readyUpdate) {
         LOG(
           "UpdateService:_postUpdateProcessing - status is pending-elevate " +
-            "but there isn't an active update, removing update"
+            "but there isn't a ready update, removing update"
         );
-        cleanupActiveUpdate();
+        cleanupUpdate();
       } else {
         let uri = "chrome://mozapps/content/update/updateElevation.xhtml";
         let features =
@@ -2666,7 +2697,7 @@ UpdateService.prototype = {
       );
       LOG("UpdateService:_attemptResume - downloadUpdate status: " + status);
       if (status == STATE_NONE) {
-        cleanupActiveUpdate();
+        cleanupDownloadingUpdate();
       }
       return;
     }
@@ -3035,7 +3066,7 @@ UpdateService.prototype = {
     var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
-    if (um.activeUpdate) {
+    if (um.downloadingUpdate || um.readyUpdate) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_HAS_ACTIVEUPDATE);
       return;
     }
@@ -3106,7 +3137,7 @@ UpdateService.prototype = {
     LOG("UpdateService:_selectAndInstallUpdate - download the update");
     let status = this.downloadUpdate(update, true);
     if (status == STATE_NONE) {
-      cleanupActiveUpdate();
+      cleanupDownloadingUpdate();
     }
     AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DOWNLOAD_UPDATE);
   },
@@ -3317,7 +3348,7 @@ UpdateService.prototype = {
           "update build ID : " +
           update.buildID
       );
-      cleanupActiveUpdate();
+      cleanupDownloadingUpdate();
       return STATE_NONE;
     }
 
@@ -3436,26 +3467,44 @@ function UpdateManager() {
   let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
   if (activeUpdates.length) {
     
-    this._activeUpdate = activeUpdates[0];
+    this._readyUpdate = activeUpdates[0];
+    if (activeUpdates.length >= 2) {
+      this._downloadingUpdate = activeUpdates[1];
+    }
+    let status = readStatusFile(getUpdatesDir());
     
     
-    if (readStatusFile(getUpdatesDir()) == STATE_NONE) {
+    if (status == STATE_NONE) {
       
       
       
       
-      this._activeUpdate.state = STATE_FAILED;
-      this._activeUpdate.errorCode = ERR_UPDATE_STATE_NONE;
-      this._activeUpdate.statusText = gUpdateBundle.GetStringFromName(
+      this._readyUpdate.state = STATE_FAILED;
+      this._readyUpdate.errorCode = ERR_UPDATE_STATE_NONE;
+      this._readyUpdate.statusText = gUpdateBundle.GetStringFromName(
         "statusFailed"
       );
       let newStatus = STATE_FAILED + ": " + ERR_UPDATE_STATE_NONE;
-      pingStateAndStatusCodes(this._activeUpdate, true, newStatus);
-      
-      
-      this.activeUpdate = null;
+      pingStateAndStatusCodes(this._readyUpdate, true, newStatus);
+      this.addUpdateToHistory(this._readyUpdate);
+      this._readyUpdate = null;
       this.saveUpdates();
       cleanUpUpdatesDir();
+    } else if (status == STATE_DOWNLOADING) {
+      
+      
+      if (this._downloadUpdate) {
+        
+        
+        
+        
+        LOG(
+          "UpdateManager:UpdateManager - Warning: Found and discarded a " +
+            "second downloading update."
+        );
+      }
+      this._downloadingUpdate = this._readyUpdate;
+      this._readyUpdate = null;
     }
   }
 }
@@ -3463,7 +3512,12 @@ UpdateManager.prototype = {
   
 
 
-  _activeUpdate: null,
+  _readyUpdate: null,
+
+  
+
+
+  _downloadingUpdate: null,
 
   
 
@@ -3486,11 +3540,19 @@ UpdateManager.prototype = {
 
       let updates = [];
       this._updatesDirty = true;
-      this._activeUpdate = null;
+      this._readyUpdate = null;
+      this._downloadingUpdate = null;
       if (data != "skip-files") {
         let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
         if (activeUpdates.length) {
-          this._activeUpdate = activeUpdates[0];
+          this._readyUpdate = activeUpdates[0];
+          if (activeUpdates.length >= 2) {
+            this._downloadingUpdate = activeUpdates[1];
+          }
+          if (readStatusFile(getUpdatesDir()) == STATE_DOWNLOADING) {
+            this._downloadingUpdate = this._readyUpdate;
+            this._readyUpdate = null;
+          }
         }
         updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
       }
@@ -3623,20 +3685,32 @@ UpdateManager.prototype = {
   
 
 
-  get activeUpdate() {
-    return this._activeUpdate;
+  get readyUpdate() {
+    return this._readyUpdate;
   },
-  set activeUpdate(aActiveUpdate) {
-    if (!aActiveUpdate && this._activeUpdate) {
-      this._updatesDirty = true;
-      
-      let updates = this._getUpdates();
-      updates.unshift(this._activeUpdate);
-      
-      updates.splice(10);
-    }
+  set readyUpdate(aUpdate) {
+    this._readyUpdate = aUpdate;
+  },
 
-    this._activeUpdate = aActiveUpdate;
+  
+
+
+  get downloadingUpdate() {
+    return this._downloadingUpdate;
+  },
+  set downloadingUpdate(aUpdate) {
+    this._downloadingUpdate = aUpdate;
+  },
+
+  
+
+
+  addUpdateToHistory(aUpdate) {
+    this._updatesDirty = true;
+    let updates = this._getUpdates();
+    updates.unshift(aUpdate);
+    
+    updates.splice(10);
   },
 
   
@@ -3747,7 +3821,21 @@ UpdateManager.prototype = {
     
     
     
-    let updates = this._activeUpdate ? [this._activeUpdate] : [];
+    
+    
+    
+    
+    let updates = [];
+    if (this._readyUpdate) {
+      updates.push(this._readyUpdate);
+    }
+    if (this._downloadingUpdate) {
+      updates.push(this._downloadingUpdate);
+    }
+
+    
+    
+    
     let promises = [];
     promises[0] = this._writeUpdatesToXMLFile(
       updates,
@@ -3774,7 +3862,7 @@ UpdateManager.prototype = {
 
 
   refreshUpdateStatus: function UM_refreshUpdateStatus() {
-    var update = this._activeUpdate;
+    var update = this._readyUpdate;
     if (!update) {
       return;
     }
@@ -3828,7 +3916,7 @@ UpdateManager.prototype = {
 
   elevationOptedIn: function UM_elevationOptedIn() {
     
-    let update = this._activeUpdate;
+    let update = this._readyUpdate;
     if (!update) {
       return;
     }
@@ -3852,8 +3940,15 @@ UpdateManager.prototype = {
   
 
 
-  cleanupActiveUpdate: function UM_cleanupActiveUpdate() {
-    cleanupActiveUpdate();
+  cleanupDownloadingUpdate: function UM_cleanupDownloadingUpdate() {
+    cleanupDownloadingUpdate();
+  },
+
+  
+
+
+  cleanupReadyUpdate: function UM_cleanupReadyUpdate() {
+    cleanupReadyUpdate();
   },
 
   classID: Components.ID("{093C2356-4843-4C65-8709-D7DBCBBE7DFB}"),
@@ -4505,12 +4600,10 @@ Downloader.prototype = {
 
     update.isCompleteUpdate = selectedPatch.type == "complete";
 
-    
-    
     var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
-    um.activeUpdate = update;
+    um.downloadingUpdate = update;
 
     return selectedPatch;
   },
@@ -5270,11 +5363,10 @@ Downloader.prototype = {
     );
     if (deleteActiveUpdate) {
       this._update.installDate = new Date().getTime();
-      
-      
-      um.activeUpdate = null;
-    } else if (um.activeUpdate && um.activeUpdate.state != state) {
-      um.activeUpdate.state = state;
+      um.addUpdateToHistory(um.downloadingUpdate);
+      um.downloadingUpdate = null;
+    } else if (um.downloadingUpdate && um.downloadingUpdate.state != state) {
+      um.downloadingUpdate.state = state;
     }
     um.saveUpdates();
 
@@ -5303,7 +5395,7 @@ Downloader.prototype = {
         );
         let updateStatus = this.downloadUpdate(this._update);
         if (updateStatus == STATE_NONE) {
-          cleanupActiveUpdate();
+          cleanupDownloadingUpdate();
         } else {
           allFailed = false;
         }
@@ -5323,7 +5415,7 @@ Downloader.prototype = {
         let updateStatus = this.downloadUpdate(this._update);
 
         if (updateStatus == STATE_NONE) {
-          cleanupActiveUpdate();
+          cleanupDownloadingUpdate();
         } else {
           allFailed = false;
         }
@@ -5401,6 +5493,9 @@ Downloader.prototype = {
       state == STATE_PENDING_SERVICE ||
       state == STATE_PENDING_ELEVATE
     ) {
+      um.readyUpdate = um.downloadingUpdate;
+      um.downloadingUpdate = null;
+
       if (getCanStageUpdates()) {
         LOG(
           "Downloader:onStopRequest - attempting to stage update: " +
