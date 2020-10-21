@@ -5,7 +5,7 @@
 %endif
 
 
-:is([when-connection],[when-customroot],[when-mixedcontent],[when-ciphers],[when-httpsonlystatus]) {
+:is([when-connection],[when-customroot],[when-mixedcontent],[when-ciphers]) {
   display: none;
 }
 
@@ -72,11 +72,6 @@
 
 #identity-popup[mixedcontent~=active-blocked][mixedcontent~=passive-loaded] [when-mixedcontent~=active-blocked][when-mixedcontent~=passive-loaded],
 
-#identity-popup[httpsonlystatus=exception] [when-httpsonlystatus~=exception],
-#identity-popup[httpsonlystatus=upgraded] [when-httpsonlystatus~=upgraded],
-#identity-popup[httpsonlystatus=failed-top] [when-httpsonlystatus~=failed-top],
-#identity-popup[httpsonlystatus=failed-sub] [when-httpsonlystatus~=failed-sub],
-
 #identity-popup-securityView-body[mixedcontent~=active-blocked] > button[when-mixedcontent=active-blocked] {
   display: inherit;
 }
@@ -137,8 +132,7 @@
 
 #identity-popup-permissions-header,
 .identity-popup-security-connection,
-#identity-popup-security-description,
-#identity-popup-security-httpsonlymode {
+#identity-popup-security-description {
   
 
   padding-inline: calc(2em + 22px) 1em;
@@ -146,32 +140,6 @@
 
 #identity-popup-security-description > description {
   margin-top: 0.5em;
-}
-
-#identity-popup-security-httpsonlymode > label {
-  margin-top: 0.5em;
-}
-#identity-popup-security-httpsonlymode > div {
-  
-  display: flex;
-  margin-inline-start: 0.3em;
-}
-#identity-popup-security-httpsonlymode > label {
-  margin-block: 0.5em 0;
-}
-
-#identity-popup-security-httpsonlymode-menulist {
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-#identity-popup-security-httpsonlymode-info {
-  font-size: 0.85em;
-  
-  opacity: 0.65;
-}
-
-.identity-popup-connection-secure.upgraded {
-  margin-inline: 0;
 }
 
 #identity-popup-permissions-content {

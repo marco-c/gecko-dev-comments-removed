@@ -898,7 +898,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
   
   
-  topWC->AddSecurityState(newState);
+  topWC->AddMixedContentSecurityState(newState);
   return NS_OK;
 }
 

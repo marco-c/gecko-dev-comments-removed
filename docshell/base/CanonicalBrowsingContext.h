@@ -214,7 +214,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  void UpdateSecurityState();
+  void UpdateSecurityStateForLocationOrMixedContentChange();
 
   void MaybeAddAsProgressListener(nsIWebProgress* aWebProgress);
 

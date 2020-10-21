@@ -115,19 +115,6 @@ var gIdentityHandler = {
     );
   },
 
-  get _isContentHttpsOnlyModeUpgraded() {
-    return (
-      this._state & Ci.nsIWebProgressListener.STATE_HTTPS_ONLY_MODE_UPGRADED
-    );
-  },
-
-  get _isContentHttpsOnlyModeUpgradeFailed() {
-    return (
-      this._state &
-      Ci.nsIWebProgressListener.STATE_HTTPS_ONLY_MODE_UPGRADE_FAILED
-    );
-  },
-
   get _isCertUserOverridden() {
     return this._state & Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN;
   },
@@ -228,18 +215,6 @@ var gIdentityHandler = {
     delete this._identityPopupSecurityView;
     return (this._identityPopupSecurityView = document.getElementById(
       "identity-popup-securityView"
-    ));
-  },
-  get _identityPopupHttpsOnlyModeMenuList() {
-    delete this._identityPopupHttpsOnlyModeMenuList;
-    return (this._identityPopupHttpsOnlyModeMenuList = document.getElementById(
-      "identity-popup-security-httpsonlymode-menulist"
-    ));
-  },
-  get _identityPopupHttpsOnlyModeMenuListTempItem() {
-    delete this._identityPopupHttpsOnlyModeMenuListTempItem;
-    return (this._identityPopupHttpsOnlyModeMenuListTempItem = document.getElementById(
-      "identity-popup-security-menulist-tempitem"
     ));
   },
   get _identityPopupSecurityEVContentOwner() {
@@ -398,24 +373,7 @@ var gIdentityHandler = {
     );
     return this._protectionsPanelEnabled;
   },
-  get _httpsOnlyModeEnabled() {
-    delete this._httpsOnlyModeEnabled;
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_httpsOnlyModeEnabled",
-      "dom.security.https_only_mode"
-    );
-    return this._httpsOnlyModeEnabled;
-  },
-  get _httpsOnlyModeEnabledPBM() {
-    delete this._httpsOnlyModeEnabledPBM;
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_httpsOnlyModeEnabledPBM",
-      "dom.security.https_only_mode_pbm"
-    );
-    return this._httpsOnlyModeEnabledPBM;
-  },
+
   get _useGrayLockIcon() {
     delete this._useGrayLockIcon;
     XPCOMUtils.defineLazyPreferenceGetter(
@@ -525,115 +483,6 @@ var gIdentityHandler = {
     if (this._popupInitialized) {
       PanelMultiView.hidePopup(this._identityPopup);
     }
-  },
-
-  
-
-
-
-  _getHttpsOnlyPermission() {
-    const { state } = SitePermissions.getForPrincipal(
-      gBrowser.contentPrincipal,
-      "https-only-load-insecure"
-    );
-    switch (state) {
-      case Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION:
-        return 2; 
-      case Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW:
-        return 1; 
-      default:
-        return 0; 
-    }
-  },
-
-  
-
-
-  changeHttpsOnlyPermission() {
-    
-    
-    
-    const oldValue = this._getHttpsOnlyPermission();
-    let newValue = parseInt(
-      this._identityPopupHttpsOnlyModeMenuList.selectedItem.value,
-      10
-    );
-
-    
-    if (newValue === oldValue) {
-      return;
-    }
-
-    
-    
-    if (newValue === 1 && PrivateBrowsingUtils.isWindowPrivate(window)) {
-      newValue = 2;
-    }
-
-    
-    
-    let principal = gBrowser.contentPrincipal;
-    
-    
-    
-    let newURI;
-    if (this._isAboutHttpsOnlyErrorPage) {
-      newURI = gBrowser.currentURI
-        .mutate()
-        .setScheme("http")
-        .finalize();
-      principal = Services.scriptSecurityManager.createContentPrincipal(
-        newURI,
-        gBrowser.contentPrincipal.originAttributes
-      );
-    }
-
-    
-    if (newValue === 0) {
-      SitePermissions.removeFromPrincipal(
-        principal,
-        "https-only-load-insecure"
-      );
-    } else if (newValue === 1) {
-      SitePermissions.setForPrincipal(
-        principal,
-        "https-only-load-insecure",
-        Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW,
-        SitePermissions.SCOPE_PERSISTENT
-      );
-    } else {
-      SitePermissions.setForPrincipal(
-        principal,
-        "https-only-load-insecure",
-        Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION,
-        SitePermissions.SCOPE_SESSION
-      );
-    }
-
-    
-    
-    if (this._isAboutHttpsOnlyErrorPage) {
-      gBrowser.loadURI(newURI.spec, {
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-        loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
-      });
-      if (this._popupInitialized) {
-        PanelMultiView.hidePopup(this._identityPopup);
-      }
-      return;
-    }
-    
-    
-    
-    if (newValue + oldValue !== 3) {
-      BrowserReloadSkipCache();
-      if (this._popupInitialized) {
-        PanelMultiView.hidePopup(this._identityPopup);
-      }
-      return;
-    }
-    
-    this.refreshIdentityPopup();
   },
 
   
@@ -1144,41 +993,6 @@ var gIdentityHandler = {
     );
 
     
-    const privateBrowsingWindow = PrivateBrowsingUtils.isWindowPrivate(window);
-    let httpsOnlyStatus = "";
-    if (
-      this._httpsOnlyModeEnabled ||
-      (privateBrowsingWindow && this._httpsOnlyModeEnabledPBM)
-    ) {
-      
-      
-      let value = this._getHttpsOnlyPermission();
-
-      
-      if (privateBrowsingWindow) {
-        if (value === 2) {
-          value = 1;
-        }
-        
-        this._identityPopupHttpsOnlyModeMenuListTempItem.style.display = "none";
-      } else {
-        this._identityPopupHttpsOnlyModeMenuListTempItem.style.display = "";
-      }
-
-      this._identityPopupHttpsOnlyModeMenuList.value = value;
-
-      if (value > 0) {
-        httpsOnlyStatus = "exception";
-      } else if (this._isAboutHttpsOnlyErrorPage) {
-        httpsOnlyStatus = "failed-top";
-      } else if (this._isContentHttpsOnlyModeUpgradeFailed) {
-        httpsOnlyStatus = "failed-sub";
-      } else if (this._isContentHttpsOnlyModeUpgraded) {
-        httpsOnlyStatus = "upgraded";
-      }
-    }
-
-    
     let elementIDs = ["identity-popup", "identity-popup-securityView-body"];
 
     for (let id of elementIDs) {
@@ -1188,7 +1002,6 @@ var gIdentityHandler = {
       this._updateAttribute(element, "mixedcontent", mixedcontent);
       this._updateAttribute(element, "isbroken", this._isBrokenConnection);
       this._updateAttribute(element, "customroot", customRoot);
-      this._updateAttribute(element, "httpsonlystatus", httpsOnlyStatus);
     }
 
     
@@ -1687,7 +1500,8 @@ var gIdentityHandler = {
 
     if (
       (aPermission.id == "popup" && !isPolicyPermission) ||
-      aPermission.id == "autoplay-media"
+      aPermission.id == "autoplay-media" ||
+      aPermission.id == "https-only-load-insecure"
     ) {
       let menulist = document.createXULElement("menulist");
       let menupopup = document.createXULElement("menupopup");

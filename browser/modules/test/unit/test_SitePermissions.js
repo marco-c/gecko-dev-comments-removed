@@ -11,6 +11,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const RESIST_FINGERPRINTING_ENABLED = Services.prefs.getBoolPref(
   "privacy.resistFingerprinting"
 );
+const HTTPS_ONLY_MODE_ENABLED = Services.prefs.getBoolPref(
+  "dom.security.https_only_mode"
+);
 const MIDI_ENABLED = Services.prefs.getBoolPref("dom.webmidi.enabled");
 
 add_task(async function testPermissionsListing() {
@@ -34,6 +37,10 @@ add_task(async function testPermissionsListing() {
     
     
     expectedPermissions.push("canvas");
+  }
+  if (HTTPS_ONLY_MODE_ENABLED) {
+    
+    expectedPermissions.push("https-only-load-insecure");
   }
   if (MIDI_ENABLED) {
     
@@ -192,6 +199,10 @@ add_task(async function testExactHostMatch() {
     
     
     exactHostMatched.push("canvas");
+  }
+  if (HTTPS_ONLY_MODE_ENABLED) {
+    
+    exactHostMatched.push("https-only-load-insecure");
   }
   if (MIDI_ENABLED) {
     
@@ -352,6 +363,52 @@ add_task(async function testCanvasPermission() {
     "privacy.resistFingerprinting",
     resistFingerprinting
   );
+});
+
+add_task(async function testHttpsOnlyPermission() {
+  let originalValue = Services.prefs.getBoolPref(
+    "dom.security.https_only_mode",
+    false
+  );
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "https://example.com"
+  );
+
+  SitePermissions.setForPrincipal(
+    principal,
+    "https-only-load-insecure",
+    SitePermissions.ALLOW
+  );
+
+  
+  Services.prefs.setBoolPref("dom.security.https_only_mode", false);
+  Assert.equal(
+    SitePermissions.listPermissions().indexOf("https-only-load-insecure"),
+    -1
+  );
+  Assert.equal(
+    SitePermissions.getAllByPrincipal(principal).filter(
+      permission => permission.id === "https-only-load-insecure"
+    ).length,
+    0
+  );
+
+  
+  Services.prefs.setBoolPref("dom.security.https_only_mode", true);
+  Assert.notEqual(
+    SitePermissions.listPermissions().indexOf("https-only-load-insecure"),
+    -1
+  );
+  Assert.notEqual(
+    SitePermissions.getAllByPrincipal(principal).filter(
+      permission => permission.id === "https-only-load-insecure"
+    ).length,
+    0
+  );
+
+  
+  SitePermissions.removeFromPrincipal(principal, "https-only-load-insecure");
+  Services.prefs.setBoolPref("dom.security.https_only_mode", originalValue);
 });
 
 add_task(async function testFilePermissions() {
