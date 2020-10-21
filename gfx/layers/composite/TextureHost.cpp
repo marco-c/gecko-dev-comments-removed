@@ -523,7 +523,7 @@ void TextureHost::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
   
   
   if (Lock()) {
-    AppendToString(aStream, GetSize(), " [size=", "]");
+    aStream << " [size=" << GetSize() << "]";
     AppendToString(aStream, GetFormat(), " [format=", "]");
     Unlock();
   }
