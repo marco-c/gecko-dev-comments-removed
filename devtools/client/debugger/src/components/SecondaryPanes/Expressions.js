@@ -9,7 +9,7 @@ import classnames from "classnames";
 import { features } from "../../utils/prefs";
 
 
-import { objectInspector } from "devtools-reps";
+import { objectInspector } from "devtools/client/shared/components/reps/index";
 
 import actions from "../../actions";
 import {

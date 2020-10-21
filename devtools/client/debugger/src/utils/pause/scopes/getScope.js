@@ -4,7 +4,7 @@
 
 
 
-import { objectInspector } from "devtools-reps";
+import { objectInspector } from "devtools/client/shared/components/reps/index";
 import { getBindingVariables } from "./getVariables";
 import { getFramePopVariables, getThisVariable } from "./utils";
 import { simplifyDisplayName } from "../../pause/frames";

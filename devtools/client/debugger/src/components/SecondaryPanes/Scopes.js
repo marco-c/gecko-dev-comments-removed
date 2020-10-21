@@ -23,7 +23,7 @@ import { getScopes } from "../../utils/pause/scopes";
 import { getScopeItemPath } from "../../utils/pause/scopes/utils";
 
 
-import { objectInspector } from "devtools-reps";
+import { objectInspector } from "devtools/client/shared/components/reps/index";
 
 import type { ThreadContext, Why } from "../../types";
 import type { NamedValue } from "../../utils/pause/scopes/types";

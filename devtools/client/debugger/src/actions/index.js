@@ -24,7 +24,7 @@ import * as toolbox from "./toolbox";
 import * as preview from "./preview";
 
 
-import { objectInspector } from "devtools-reps";
+import { objectInspector } from "devtools/client/shared/components/reps/index";
 
 export default {
   ...ast,

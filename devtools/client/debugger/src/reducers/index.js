@@ -34,7 +34,8 @@ import exceptions, { initialExceptionsState } from "./exceptions";
 
 import type { SourceActorsState } from "./source-actors";
 
-import { objectInspector } from "devtools-reps";
+
+import { objectInspector } from "devtools/client/shared/components/reps/index";
 
 import { createInitial } from "../utils/resource";
 

@@ -57,7 +57,7 @@ export {
 } from "./pause";
 
 
-import { objectInspector } from "devtools-reps";
+import { objectInspector } from "devtools/client/shared/components/reps/index";
 
 const { reducer } = objectInspector;
 
