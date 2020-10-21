@@ -20,20 +20,14 @@ const startupPhases = {
   
   "before profile selection": [],
 
-  "before opening first browser window": [
-    {
-      name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
-      condition: LINUX,
-      maxCount: 1,
-    },
-  ],
+  "before opening first browser window": [],
 
   
   
   "before first paint": [
     {
       name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
-      condition: MAC,
+      condition: MAC || LINUX,
       maxCount: 1,
     },
     {
