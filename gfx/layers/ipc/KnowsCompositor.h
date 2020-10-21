@@ -60,6 +60,7 @@ class KnowsCompositor {
 
   void IdentifyTextureHost(const TextureFactoryIdentifier& aIdentifier);
 
+  
   SyncObjectClient* GetSyncObject() { return mSyncObject; }
 
   
