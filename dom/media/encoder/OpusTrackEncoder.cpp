@@ -296,10 +296,10 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
       AudioChunk chunk = *iter;
 
       
-      TrackTime frameToCopy = chunk.GetDuration();
-      if (frameToCopy > framesToFetch - frameCopied) {
-        frameToCopy = framesToFetch - frameCopied;
-      }
+      TrackTime frameToCopy =
+          std::min(chunk.GetDuration(),
+                   static_cast<TrackTime>(framesToFetch - frameCopied));
+
       
       
       
