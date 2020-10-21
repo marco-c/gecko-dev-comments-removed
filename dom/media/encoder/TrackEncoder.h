@@ -290,7 +290,7 @@ class AudioTrackEncoder : public TrackEncoder {
 
 
 
-  virtual int GetPacketDuration() { return 0; }
+  virtual int NumInputFramesPerPacket() const { return 0; }
 
   
 

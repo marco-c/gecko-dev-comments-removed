@@ -40,7 +40,11 @@ class OpusTrackEncoder : public AudioTrackEncoder {
   media::TimeUnit GetCodecDelay() const { return mCodecDelay; }
 
  protected:
-  int GetPacketDuration() override;
+  
+
+
+
+  int NumInputFramesPerPacket() const override;
 
   nsresult Init(int aChannels) override;
 
@@ -48,7 +52,13 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
 
 
-  int GetOutputSampleRate();
+  int NumOutputFramesPerPacket() const;
+
+  
+
+
+
+  int GetOutputSampleRate() const;
 
  private:
   
