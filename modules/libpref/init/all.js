@@ -1108,6 +1108,10 @@ pref("javascript.options.wasm_baselinejit",       true);
 
 
 
+
+
+
+
 #ifdef MOZ_AARCH64
   #ifdef ENABLE_WASM_CRANELIFT
     pref("javascript.options.wasm_cranelift",     true);
