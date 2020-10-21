@@ -81,7 +81,8 @@ enum class SpewChannel {
 #  define STRUCTURED_CHANNEL(name) name,
   STRUCTURED_CHANNEL_LIST(STRUCTURED_CHANNEL)
 #  undef STRUCTURED_CHANNEL
-      Count
+      Count,
+  Disabled
 };
 
 
@@ -90,20 +91,32 @@ enum class SpewChannel {
 
 class StructuredSpewFilter {
   
-  
-  mozilla::EnumSet<SpewChannel> bits_;
+  SpewChannel channel_ = SpewChannel::Disabled;
 
  public:
   
-  StructuredSpewFilter() : bits_() {}
+  bool isChannelSelected() const {
+    return !(channel_ == SpewChannel::Disabled);
+  }
 
   
   
-  bool enabled(SpewChannel x) const { return bits_.contains(x); }
+  bool enabled(SpewChannel x) const { return channel_ == x; }
 
-  void enableChannel(SpewChannel x) { bits_ += x; }
+  
+  bool enableChannel(SpewChannel x) {
+    
+    
+    MOZ_ASSERT(x != SpewChannel::Disabled);
+    if (!isChannelSelected()) {
+      channel_ = x;
+      return true;
+    }
 
-  void disableAllChannels() { bits_.clear(); }
+    return false;
+  }
+
+  void disableAllChannels() { channel_ = SpewChannel::Disabled; }
 };
 
 class StructuredSpewer {
@@ -112,7 +125,7 @@ class StructuredSpewer {
       : outputInitializationAttempted_(false),
         spewingEnabled_(false),
         json_(mozilla::Nothing()),
-        selectedChannels_() {
+        selectedChannel_() {
     if (getenv("SPEW")) {
       parseSpewFlags(getenv("SPEW"));
     }
@@ -174,15 +187,12 @@ class StructuredSpewer {
   mozilla::Maybe<JSONPrinter> json_;
 
   
-  StructuredSpewFilter selectedChannels_;
+  StructuredSpewFilter selectedChannel_;
 
   using NameArray =
       mozilla::EnumeratedArray<SpewChannel, SpewChannel::Count, const char*>;
   
   static NameArray const names_;
-
-  
-  StructuredSpewFilter& filter() { return selectedChannels_; }
 
   
   static const char* getName(SpewChannel channel) { return names_[channel]; }
@@ -201,7 +211,7 @@ class StructuredSpewer {
 
   
   bool enabled(SpewChannel channel) {
-    return (spewingEnabled_ && filter().enabled(channel));
+    return (spewingEnabled_ && selectedChannel_.enabled(channel));
   }
 
   
