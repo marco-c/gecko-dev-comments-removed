@@ -8627,8 +8627,8 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
           aLoadState->GetLoadingSessionHistoryInfo()->mInfo);
     }
     MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("nsDocShell %p NavBetweenSameDoc=%d", this,
-             aState.mHistoryNavBetweenSameDoc));
+            ("nsDocShell::IsSameDocumentNavigation %p NavBetweenSameDoc=%d",
+             this, aState.mHistoryNavBetweenSameDoc));
   } else {
     if (mOSHE && aLoadState->LoadIsFromSessionHistory()) {
       
@@ -8682,6 +8682,14 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
     return true;
   }
 
+  MOZ_LOG(
+      gSHLog, LogLevel::Debug,
+      ("nsDocShell::IsSameDocumentNavigation %p !LoadIsFromSessionHistory=%s "
+       "!PostDataStream: %s mSameExceptHashes: %s mNewURIHasRef: %s",
+       this, !aLoadState->LoadIsFromSessionHistory() ? "true" : "false",
+       !aLoadState->PostDataStream() ? "true" : "false",
+       aState.mSameExceptHashes ? "true" : "false",
+       aState.mNewURIHasRef ? "true" : "false"));
   return !aLoadState->LoadIsFromSessionHistory() &&
          !aLoadState->PostDataStream() && aState.mSameExceptHashes &&
          aState.mNewURIHasRef;
@@ -8694,6 +8702,10 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   MOZ_ASSERT(IsSameDocumentNavigation(aLoadState, state));
 #endif
 
+  MOZ_LOG(gSHLog, LogLevel::Debug,
+          ("nsDocShell::HandleSameDocumentNavigation %p %s -> %s", this,
+           mCurrentURI->GetSpecOrDefault().get(),
+           aLoadState->URI()->GetSpecOrDefault().get()));
   nsCOMPtr<nsIURI> currentURI = mCurrentURI;
 
   
@@ -8778,26 +8790,18 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   uint32_t cacheKey = 0;
 
   bool scrollRestorationIsManual = false;
-  if (mozilla::SessionHistoryInParent() ? !!mActiveEntry : !!mOSHE) {
-    if (mozilla::SessionHistoryInParent()) {
-      
-      scrollRestorationIsManual = mActiveEntry->GetScrollRestorationIsManual();
-    } else {
+  if (!mozilla::SessionHistoryInParent()) {
+    if (mOSHE) {
       
       mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
       scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
-    }
-    
-    
-    
-    
-    
-    
-    if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
-      if (mozilla::SessionHistoryInParent()) {
-        postData = mActiveEntry->GetPostData();
-        cacheKey = mActiveEntry->GetCacheKey();
-      } else {
+      
+      
+      
+      
+      
+      
+      if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
         postData = mOSHE->GetPostData();
         cacheKey = mOSHE->GetCacheKey();
       }
@@ -8805,14 +8809,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       
       
       
-      if (mLoadingEntry && !mLoadingEntry->mLoadIsFromSessionHistory) {
-        
-        
-        
-        
-        SetScrollRestorationIsManualOnHistoryEntry(nullptr,
-                                                   scrollRestorationIsManual);
-      }
       if (mLSHE) {
         if (!aLoadState->LoadIsFromSessionHistory()) {
           
@@ -8821,6 +8817,17 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
                                                      scrollRestorationIsManual);
         }
         mLSHE->AdoptBFCacheEntry(mOSHE);
+      }
+    }
+  } else {
+    if (mLoadingEntry) {
+      if (!mLoadingEntry->mLoadIsFromSessionHistory) {
+        
+        
+        
+        
+        SetScrollRestorationIsManualOnHistoryEntry(nullptr,
+                                                   scrollRestorationIsManual);
       }
     }
   }
@@ -8840,57 +8847,118 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
 
 
-  if (mLSHE) {
-    SetHistoryEntryAndUpdateBC(Nothing(), Some<nsISHEntry*>(mLSHE));
-    
-    
-    
-    
-    if (postData) {
-      mOSHE->SetPostData(postData);
-    }
-
-    
-    
-    if (cacheKey != 0) {
+  if (!mozilla::SessionHistoryInParent()) {
+    if (mLSHE) {
+      SetHistoryEntryAndUpdateBC(Nothing(), Some<nsISHEntry*>(mLSHE));
       
       
-      SetCacheKeyOnHistoryEntry(mOSHE, cacheKey);
-    }
-  }
-  if (mozilla::SessionHistoryInParent() && mLoadingEntry) {
-    MOZ_LOG(
-        gSHLog, LogLevel::Debug,
-        ("Moving the loading entry to the active entry on nsDocShell %p to %s",
-         this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
-    mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
-    nsID changeID = {};
-    if (XRE_IsParentProcess()) {
-      mBrowsingContext->Canonical()->SessionHistoryCommit(
-          mLoadingEntry->mLoadId, changeID, mLoadType);
-    } else {
-      RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
-      if (rootSH) {
-        
-        
-        rootSH->SetIndexAndLength(mLoadingEntry->mRequestedIndex,
-                                  mLoadingEntry->mSessionHistoryLength,
-                                  changeID);
+      
+      
+      if (postData) {
+        mOSHE->SetPostData(postData);
       }
-      ContentChild* cc = ContentChild::GetSingleton();
-      mozilla::Unused << cc->SendHistoryCommit(
-          mBrowsingContext, mLoadingEntry->mLoadId, changeID, mLoadType);
+
+      
+      
+      if (cacheKey != 0) {
+        mOSHE->SetCacheKey(cacheKey);
+      }
+    }
+
+    
+
+
+
+
+
+
+    SetTitleOnHistoryEntry();
+  } else {
+    if (aLoadState->LoadIsFromSessionHistory()) {
+      MOZ_LOG(
+          gSHLog, LogLevel::Debug,
+          ("Moving the loading entry to the active entry on nsDocShell %p to "
+           "%s",
+           this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
+      mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
+      nsID changeID = {};
+      if (XRE_IsParentProcess()) {
+        mBrowsingContext->Canonical()->SessionHistoryCommit(
+            mLoadingEntry->mLoadId, changeID, mLoadType);
+      } else {
+        RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
+        if (rootSH) {
+          
+          
+          rootSH->SetIndexAndLength(mLoadingEntry->mRequestedIndex,
+                                    mLoadingEntry->mSessionHistoryLength,
+                                    changeID);
+        }
+        ContentChild* cc = ContentChild::GetSingleton();
+        mozilla::Unused << cc->SendHistoryCommit(
+            mBrowsingContext, mLoadingEntry->mLoadId, changeID, mLoadType);
+      }
+      
+      SetCacheKeyOnHistoryEntry(nullptr, cacheKey);
+
+      
+      
+      SetTitleOnHistoryEntry();
+    } else {
+      Maybe<bool> scrollRestorationIsManual;
+      if (mActiveEntry) {
+        scrollRestorationIsManual.emplace(
+            mActiveEntry->GetScrollRestorationIsManual());
+
+        
+        
+        
+        
+        
+        if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
+          postData = mActiveEntry->GetPostData();
+          cacheKey = mActiveEntry->GetCacheKey();
+        }
+      }
+
+      MOZ_LOG(gSHLog, LogLevel::Debug,
+              ("Creating an active entry on nsDocShell %p to %s", this,
+               aLoadState->URI()->GetSpecOrDefault().get()));
+      mActiveEntry = MakeUnique<SessionHistoryInfo>(
+          mActiveEntry.get(), aLoadState->URI(), HistoryID(),
+          newURITriggeringPrincipal, newURIPrincipalToInherit,
+          newURIPartitionedPrincipalToInherit, newCsp, mContentTypeHint);
+
+      
+      
+      
+      if (postData) {
+        mActiveEntry->SetPostData(postData);
+      }
+
+      
+      
+      if (cacheKey != 0) {
+        mActiveEntry->SetCacheKey(cacheKey);
+      }
+
+      
+      
+      mActiveEntry->SetTitle(mTitle);
+
+      if (scrollRestorationIsManual.isSome()) {
+        mActiveEntry->SetScrollRestorationIsManual(
+            scrollRestorationIsManual.value());
+      }
+
+      
+      
+      mBrowsingContext->SetActiveSessionHistoryEntry(
+          Some(scrollPos), mActiveEntry.get(), mLoadType, mChildOffset,
+          cacheKey);
+      
     }
   }
-
-  
-
-
-
-
-
-
-  SetTitleOnHistoryEntry();
 
   
 
@@ -10590,6 +10658,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
       nsresult rv = httpChannel->GetResponseStatus(&responseStatus);
       if (mLSHE && NS_SUCCEEDED(rv) && responseStatus >= 400) {
         mLSHE->AbandonBFCacheEntry();
+        
       }
     }
   }
@@ -10681,7 +10750,6 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     
     
     
-
     SetCacheKeyOnHistoryEntry(mLSHE ? mLSHE : mOSHE, cacheKey);
 
     if (!mozilla::SessionHistoryInParent()) {
@@ -11224,6 +11292,7 @@ void nsDocShell::SetCacheKeyOnHistoryEntry(nsISHEntry* aSHEntry,
   }
 
   if (mActiveEntry && mBrowsingContext) {
+    mActiveEntry->SetCacheKey(aCacheKey);
     if (XRE_IsParentProcess()) {
       SessionHistoryEntry* entry =
           mBrowsingContext->Canonical()->GetActiveSessionHistoryEntry();
@@ -11523,7 +11592,8 @@ void nsDocShell::UpdateActiveEntry(
     
   } else {
     mActiveEntry = MakeUnique<SessionHistoryInfo>(
-        aURI, HistoryID(), aTriggeringPrincipal, aCsp, mContentTypeHint);
+        nullptr, aURI, HistoryID(), aTriggeringPrincipal, nullptr, nullptr,
+        aCsp, mContentTypeHint);
   }
   mActiveEntry->SetOriginalURI(aOriginalURI);
   mActiveEntry->SetTitle(aTitle);
@@ -11540,7 +11610,8 @@ void nsDocShell::UpdateActiveEntry(
     
     
     mBrowsingContext->SetActiveSessionHistoryEntry(
-        aPreviousScrollPos, mActiveEntry.get(), mLoadType, mChildOffset);
+        aPreviousScrollPos, mActiveEntry.get(), mLoadType, mChildOffset,
+         0);
     
   }
 }
