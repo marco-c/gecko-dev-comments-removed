@@ -84,12 +84,19 @@ class AboutNewTabChild extends JSWindowActorChild {
       (event.type == "pageshow" || event.type == "visibilitychange") &&
       
       
-      !this.contentWindow.location.pathname.includes("welcome") &&
-      
-      
-      !PrivateBrowsingUtils.isContentWindowPrivate(this.contentWindow)
+      !this.contentWindow.location.pathname.includes("welcome")
     ) {
-      if (this.document.visibilityState == "visible") {
+      
+      
+      let contentWindowPrivate = PrivateBrowsingUtils.isContentWindowPrivate(
+        this.contentWindow
+      );
+      if (
+        this.document.visibilityState == "visible" &&
+        (!contentWindowPrivate ||
+          (contentWindowPrivate &&
+            PrivateBrowsingUtils.permanentPrivateBrowsing))
+      ) {
         this.sendAsyncMessage("DefaultBrowserNotification");
       }
     }
