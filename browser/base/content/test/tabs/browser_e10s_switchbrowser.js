@@ -1,4 +1,4 @@
-/* eslint-env mozilla/frame-script */
+
 
 requestLongerTimeout(2);
 
@@ -83,10 +83,10 @@ function clear_history() {
   gExpectedHistory.entries = [];
 }
 
-// Waits for a load and updates the known history
+
 var waitForLoad = async function(uri) {
   info("Loading " + uri);
-  // Longwinded but this ensures we don't just shortcut to LoadInNewProcess
+  
   let loadURIOptions = {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   };
@@ -94,10 +94,10 @@ var waitForLoad = async function(uri) {
 
   await BrowserTestUtils.browserStopped(gBrowser, uri);
 
-  // Some of the documents we're using in this test use Fluent,
-  // and they may finish localization later.
-  // To prevent this test from being intermittent, we'll
-  // wait for the `document.l10n.ready` promise to resolve.
+  
+  
+  
+  
   if (
     gBrowser.selectedBrowser.contentWindow &&
     gBrowser.selectedBrowser.contentWindow.document.l10n
@@ -111,7 +111,7 @@ var waitForLoad = async function(uri) {
   });
 };
 
-// Waits for a load and updates the known history
+
 var waitForLoadWithFlags = async function(
   uri,
   flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE
@@ -151,8 +151,8 @@ var forward = async function() {
   gExpectedHistory.index++;
 };
 
-// Tests that navigating from a page that should be in the remote process and
-// a page that should be in the main process works and retains history
+
+
 add_task(async function test_navigation() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.navigation.requireUserInteraction", false]],
@@ -161,7 +161,7 @@ add_task(async function test_navigation() {
   let expectedRemote = gMultiProcessBrowser;
 
   info("1");
-  // Create a tab and load a remote page in it
+  
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
     skipAnimation: true,
   });
@@ -179,7 +179,7 @@ add_task(async function test_navigation() {
   );
 
   info("2");
-  // Load another page
+  
   await waitForLoad("http://example.com/" + DUMMY_PATH);
   is(
     gBrowser.selectedBrowser.isRemoteBrowser,
@@ -194,10 +194,10 @@ add_task(async function test_navigation() {
   await check_history();
 
   info("3");
-  // Load a non-remote page
+  
   await waitForLoad("about:robots");
   await TestUtils.waitForCondition(
-    () => gBrowser.selectedBrowser.contentTitle != "about:robots",
+    () => !!gBrowser.selectedBrowser.contentTitle.length,
     "Waiting for about:robots title to update"
   );
   is(
@@ -213,7 +213,7 @@ add_task(async function test_navigation() {
   await check_history();
 
   info("4");
-  // Load a remote page
+  
   await waitForLoad("http://example.org/" + DUMMY_PATH);
   is(
     gBrowser.selectedBrowser.isRemoteBrowser,
@@ -238,6 +238,10 @@ add_task(async function test_navigation() {
     gBrowser.selectedBrowser.permanentKey,
     permanentKey,
     "browser.permanentKey is still the same"
+  );
+  await TestUtils.waitForCondition(
+    () => !!gBrowser.selectedBrowser.contentTitle.length,
+    "Waiting for about:robots title to update"
   );
   await check_history();
 
@@ -267,6 +271,10 @@ add_task(async function test_navigation() {
     permanentKey,
     "browser.permanentKey is still the same"
   );
+  await TestUtils.waitForCondition(
+    () => !!gBrowser.selectedBrowser.contentTitle.length,
+    "Waiting for about:robots title to update"
+  );
   await check_history();
 
   info("8");
@@ -285,6 +293,10 @@ add_task(async function test_navigation() {
 
   info("9");
   await back();
+  await TestUtils.waitForCondition(
+    () => !!gBrowser.selectedBrowser.contentTitle.length,
+    "Waiting for about:robots title to update"
+  );
   is(
     gBrowser.selectedBrowser.isRemoteBrowser,
     false,
@@ -298,7 +310,7 @@ add_task(async function test_navigation() {
   await check_history();
 
   info("10");
-  // Load a new remote page, this should replace the last history entry
+  
   gExpectedHistory.entries.splice(gExpectedHistory.entries.length - 1, 1);
   await waitForLoad("http://example.com/" + DUMMY_PATH);
   is(
@@ -318,13 +330,13 @@ add_task(async function test_navigation() {
   clear_history();
 });
 
-// Tests that calling gBrowser.loadURI or browser.loadURI to load a page in a
-// different process updates the browser synchronously
+
+
 add_task(async function test_synchronous() {
   let expectedRemote = gMultiProcessBrowser;
 
   info("1");
-  // Create a tab and load a remote page in it
+  
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
     skipAnimation: true,
   });
@@ -342,7 +354,7 @@ add_task(async function test_synchronous() {
   );
 
   info("2");
-  // Load another page
+  
   info("Loading about:robots");
   await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:robots");
   is(
@@ -369,7 +381,7 @@ add_task(async function test_synchronous() {
   );
 
   info("3");
-  // Load the remote page again
+  
   info("Loading http://example.org/" + DUMMY_PATH);
   await BrowserTestUtils.loadURI(
     gBrowser.selectedBrowser,
@@ -403,13 +415,13 @@ add_task(async function test_synchronous() {
   clear_history();
 });
 
-// Tests that load flags are correctly passed through to the child process with
-// normal loads
+
+
 add_task(async function test_loadflags() {
   let expectedRemote = gMultiProcessBrowser;
 
   info("1");
-  // Create a tab and load a remote page in it
+  
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
     skipAnimation: true,
   });
@@ -426,7 +438,7 @@ add_task(async function test_loadflags() {
   await check_history();
 
   info("2");
-  // Load a page in the remote process with some custom flags
+  
   await waitForLoadWithFlags(
     "http://example.com/" + DUMMY_PATH,
     Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY
@@ -439,10 +451,10 @@ add_task(async function test_loadflags() {
   await check_history();
 
   info("3");
-  // Load a non-remote page
+  
   await waitForLoadWithFlags("about:robots");
   await TestUtils.waitForCondition(
-    () => gBrowser.selectedBrowser.contentTitle != "about:robots",
+    () => !!gBrowser.selectedBrowser.contentTitle.length,
     "Waiting for about:robots title to update"
   );
   is(
@@ -453,7 +465,7 @@ add_task(async function test_loadflags() {
   await check_history();
 
   info("4");
-  // Load another remote page
+  
   await waitForLoadWithFlags(
     "http://example.org/" + DUMMY_PATH,
     Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY
@@ -466,7 +478,7 @@ add_task(async function test_loadflags() {
   await check_history();
 
   info("5");
-  // Load another remote page from a different origin
+  
   await waitForLoadWithFlags(
     "http://example.com/" + DUMMY_PATH,
     Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY
