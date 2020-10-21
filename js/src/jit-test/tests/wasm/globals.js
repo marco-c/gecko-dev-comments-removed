@@ -300,7 +300,7 @@ wasmAssert(`(module
         let s = "";
         for ( let i in x )
             s = s + i + ",";
-        assertEq(s, "valueOf,value,");
+        assertEq(s, "valueOf,type,value,");
     }
 
     
