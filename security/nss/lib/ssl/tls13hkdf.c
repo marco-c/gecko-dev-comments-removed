@@ -38,6 +38,7 @@ tls13_HkdfExtract(PK11SymKey *ikm1, PK11SymKey *ikm2, SSLHashType baseHash,
     SECItem paramsi;
     PK11SymKey *prk;
     static const PRUint8 zeroKeyBuf[HASH_LENGTH_MAX];
+    SECItem zeroKeyItem = { siBuffer, CONST_CAST(PRUint8, zeroKeyBuf), kTlsHkdfInfo[baseHash].hashSize };
     PK11SlotInfo *slot = NULL;
     PK11SymKey *newIkm2 = NULL;
     PK11SymKey *newIkm1 = NULL;
@@ -102,44 +103,14 @@ tls13_HkdfExtract(PK11SymKey *ikm1, PK11SymKey *ikm2, SSLHashType baseHash,
 
     
     if (!ikm2) {
-        CK_OBJECT_CLASS ckoData = CKO_DATA;
-        CK_ATTRIBUTE template[2] = {
-            { CKA_CLASS, (CK_BYTE_PTR)&ckoData, sizeof(ckoData) },
-            { CKA_VALUE, (CK_BYTE_PTR)zeroKeyBuf, kTlsHkdfInfo[baseHash].hashSize }
-        };
-        CK_OBJECT_HANDLE handle;
-        PK11GenericObject *genObject;
-
         
         slot = ikm1 ? PK11_GetSlotFromKey(ikm1) : PK11_GetBestSlot(CKM_HKDF_DERIVE, NULL);
         if (!slot) {
             return SECFailure;
         }
-        genObject = PK11_CreateGenericObject(slot, template,
-                                             PR_ARRAY_SIZE(template), PR_FALSE);
-        if (genObject == NULL) {
-            return SECFailure;
-        }
-        handle = PK11_GetObjectHandle(PK11_TypeGeneric, genObject, NULL);
-        if (handle == CK_INVALID_HANDLE) {
-            return SECFailure;
-        }
-        
 
-
-
-
-
-        PK11_DestroyGenericObject(genObject);
-
-        
-
-
-
-
-        PORT_Assert(newIkm2 == NULL); 
-        newIkm2 = PK11_SymKeyFromHandle(slot, NULL, PK11_OriginUnwrap,
-                                        CKM_HKDF_DERIVE, handle, PR_TRUE, NULL);
+        newIkm2 = PK11_ImportDataKey(slot, CKM_HKDF_DERIVE, PK11_OriginUnwrap,
+                                     CKA_DERIVE, &zeroKeyItem, NULL);
         if (!newIkm2) {
             return SECFailure;
         }
