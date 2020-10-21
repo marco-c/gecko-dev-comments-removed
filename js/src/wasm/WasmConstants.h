@@ -425,11 +425,6 @@ enum class GcOp {
 
 
 
-
-
-
-static constexpr bool SimdExperimentalEnabled = true;
-
 enum class SimdOp {
   V128Load = 0x00,
   I16x8LoadS8x8 = 0x01,
