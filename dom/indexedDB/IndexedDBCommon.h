@@ -21,10 +21,11 @@
 #endif
 
 
-#define IDB_TRY_VAR_GLUE(...)                                         \
+#define IDB_TRY_VAR_GLUE(accessFunction, ...)                         \
   QM_TRY_VAR_META(mozilla::dom::indexedDB, MOZ_UNIQUE_VAR(tryResult), \
-                  ##__VA_ARGS__)
-#define IDB_TRY_VAR(...) IDB_TRY_VAR_GLUE(__VA_ARGS__)
+                  accessFunction, ##__VA_ARGS__)
+#define IDB_TRY_VAR(...) IDB_TRY_VAR_GLUE(unwrap, __VA_ARGS__)
+#define IDB_TRY_INSPECT(...) IDB_TRY_VAR_GLUE(inspect, __VA_ARGS__)
 
 #ifdef DEBUG
 #  define IDB_DEBUG_TRY_VAR(...) IDB_TRY_VAR(__VA_ARGS__)

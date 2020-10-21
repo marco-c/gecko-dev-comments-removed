@@ -1243,8 +1243,8 @@ Result<nsTArray<EntryId>, nsresult> QueryCache(mozIStorageConnection& aConn,
     return Err(rv);
   }
 
-  CACHE_TRY_VAR(const auto urlWithoutQueryHash,
-                HashCString(*crypto, aRequest.urlWithoutQuery()));
+  CACHE_TRY_INSPECT(const auto& urlWithoutQueryHash,
+                    HashCString(*crypto, aRequest.urlWithoutQuery()));
 
   rv = state->BindUTF8StringAsBlobByName("url_no_query_hash"_ns,
                                          urlWithoutQueryHash);
@@ -1253,8 +1253,8 @@ Result<nsTArray<EntryId>, nsresult> QueryCache(mozIStorageConnection& aConn,
   }
 
   if (!aParams.ignoreSearch()) {
-    CACHE_TRY_VAR(const auto urlQueryHash,
-                  HashCString(*crypto, aRequest.urlQuery()));
+    CACHE_TRY_INSPECT(const auto& urlQueryHash,
+                      HashCString(*crypto, aRequest.urlQuery()));
 
     rv = state->BindUTF8StringAsBlobByName("url_query_hash"_ns, urlQueryHash);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1607,7 +1607,7 @@ Result<int32_t, nsresult> InsertSecurityInfo(mozIStorageConnection& aConn,
   
   
   
-  CACHE_TRY_VAR(const auto hash, HashCString(aCrypto, aData));
+  CACHE_TRY_INSPECT(const auto& hash, HashCString(aCrypto, aData));
 
   
   
@@ -1919,8 +1919,8 @@ nsresult InsertEntry(mozIStorageConnection& aConn, CacheId aCacheId,
     return rv;
   }
 
-  CACHE_TRY_VAR(const auto urlWithoutQueryHash,
-                HashCString(*crypto, aRequest.urlWithoutQuery()));
+  CACHE_TRY_INSPECT(const auto& urlWithoutQueryHash,
+                    HashCString(*crypto, aRequest.urlWithoutQuery()));
 
   rv = state->BindUTF8StringAsBlobByName("request_url_no_query_hash"_ns,
                                          urlWithoutQueryHash);
@@ -1933,8 +1933,8 @@ nsresult InsertEntry(mozIStorageConnection& aConn, CacheId aCacheId,
     return rv;
   }
 
-  CACHE_TRY_VAR(const auto urlQueryHash,
-                HashCString(*crypto, aRequest.urlQuery()));
+  CACHE_TRY_INSPECT(const auto& urlQueryHash,
+                    HashCString(*crypto, aRequest.urlQuery()));
 
   rv = state->BindUTF8StringAsBlobByName("request_url_query_hash"_ns,
                                          urlQueryHash);

@@ -199,10 +199,12 @@
 #endif
 
 
-#define LS_TRY_VAR_GLUE(...)                                             \
+
+#define LS_TRY_VAR_GLUE(accessFunction, ...)                             \
   QM_TRY_VAR_META(mozilla::dom::localstorage, MOZ_UNIQUE_VAR(tryResult), \
-                  ##__VA_ARGS__)
-#define LS_TRY_VAR(...) LS_TRY_VAR_GLUE(__VA_ARGS__)
+                  accessFunction, ##__VA_ARGS__)
+#define LS_TRY_VAR(...) LS_TRY_VAR_GLUE(unwrap, __VA_ARGS__)
+#define LS_TRY_INSPECT(...) LS_TRY_VAR_GLUE(inspect, __VA_ARGS__)
 
 #ifdef DEBUG
 #  define LS_DEBUG_TRY_VAR(...) LS_TRY_VAR(__VA_ARGS__)

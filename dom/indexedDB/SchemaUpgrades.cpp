@@ -2430,8 +2430,9 @@ UpgradeIndexDataValuesFunction::ReadOldCompressedIDVFromBlob(
     }
 
     
-    IDB_TRY_VAR((const auto [keyBufferLength, remainderAfterKeyBufferLength]),
-                ReadCompressedNumber(remainder));
+    IDB_TRY_INSPECT(
+        (const auto& [keyBufferLength, remainderAfterKeyBufferLength]),
+        ReadCompressedNumber(remainder));
 
     if (NS_WARN_IF(remainderAfterKeyBufferLength.IsEmpty()) ||
         NS_WARN_IF(keyBufferLength > uint64_t(UINT32_MAX)) ||
@@ -2451,8 +2452,8 @@ UpgradeIndexDataValuesFunction::ReadOldCompressedIDVFromBlob(
     remainder = remainderAfterKeyBuffer;
     if (!remainder.IsEmpty()) {
       
-      IDB_TRY_VAR((const auto [maybeIndexId, remainderAfterIndexId]),
-                  ReadCompressedNumber(remainder));
+      IDB_TRY_INSPECT((const auto& [maybeIndexId, remainderAfterIndexId]),
+                      ReadCompressedNumber(remainder));
 
       
       
@@ -2508,8 +2509,8 @@ UpgradeIndexDataValuesFunction::OnFunctionCall(
     return rv;
   }
 
-  IDB_TRY_VAR(const auto oldIdv,
-              ReadOldCompressedIDVFromBlob(Span(oldBlob, oldBlobLength)));
+  IDB_TRY_INSPECT(const auto& oldIdv,
+                  ReadOldCompressedIDVFromBlob(Span(oldBlob, oldBlobLength)));
 
   IDB_TRY_VAR((auto [newIdv, newIdvLength]),
               MakeCompressedIndexDataValues(oldIdv));
