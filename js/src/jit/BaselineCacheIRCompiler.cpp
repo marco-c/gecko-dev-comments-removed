@@ -484,11 +484,9 @@ bool BaselineCacheIRCompiler::emitLoadDynamicSlotResult(ObjOperandId objId,
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitCallScriptedGetterResult(
+bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
     ValOperandId receiverId, uint32_t getterOffset, bool sameRealm,
-    uint32_t nargsAndFlagsOffset) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
+    uint32_t nargsAndFlagsOffset, Maybe<uint32_t> icScriptOffset) {
   ValueOperand receiver = allocator.useValueRegister(masm, receiverId);
   Address getterAddr(stubAddress(getterOffset));
 
@@ -496,9 +494,19 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterResult(
   AutoScratchRegister callee(allocator, masm);
   AutoScratchRegister scratch(allocator, masm);
 
+  bool isInlined = icScriptOffset.isSome();
+
   
   masm.loadPtr(getterAddr, callee);
-  masm.loadJitCodeRaw(callee, code);
+  if (isInlined) {
+    FailurePath* failure;
+    if (!addFailurePath(&failure)) {
+      return false;
+    }
+    masm.loadBaselineJitCodeRaw(callee, code, failure->label());
+  } else {
+    masm.loadJitCodeRaw(callee, code);
+  }
 
   allocator.discardStack(masm);
 
@@ -518,6 +526,13 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterResult(
   
   masm.Push(receiver);
 
+  if (isInlined) {
+    
+    Address icScriptAddr(stubAddress(*icScriptOffset));
+    masm.loadPtr(icScriptAddr, scratch);
+    masm.storeICScriptInJSContext(scratch);
+  }
+
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
   masm.Push(Imm32(0));  
   masm.Push(callee);
@@ -527,12 +542,14 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterResult(
   Label noUnderflow;
   masm.load16ZeroExtend(Address(callee, JSFunction::offsetOfNargs()), callee);
   masm.branch32(Assembler::Equal, callee, Imm32(0), &noUnderflow);
-  {
-    
-    TrampolinePtr argumentsRectifier =
-        cx_->runtime()->jitRuntime()->getArgumentsRectifier();
-    masm.movePtr(argumentsRectifier, code);
-  }
+
+  
+  ArgumentsRectifierKind kind = isInlined
+                                    ? ArgumentsRectifierKind::TrialInlining
+                                    : ArgumentsRectifierKind::Normal;
+  TrampolinePtr argumentsRectifier =
+      cx_->runtime()->jitRuntime()->getArgumentsRectifier(kind);
+  masm.movePtr(argumentsRectifier, code);
 
   masm.bind(&noUnderflow);
   masm.callJit(code);
@@ -544,6 +561,24 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterResult(
   }
 
   return true;
+}
+
+bool BaselineCacheIRCompiler::emitCallScriptedGetterResult(
+    ValOperandId receiverId, uint32_t getterOffset, bool sameRealm,
+    uint32_t nargsAndFlagsOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  Maybe<uint32_t> icScriptOffset = mozilla::Nothing();
+  return emitCallScriptedGetterShared(receiverId, getterOffset, sameRealm,
+                                      nargsAndFlagsOffset, icScriptOffset);
+}
+
+bool BaselineCacheIRCompiler::emitCallInlinedGetterResult(
+    ValOperandId receiverId, uint32_t getterOffset, uint32_t icScriptOffset,
+    bool sameRealm, uint32_t nargsAndFlagsOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  return emitCallScriptedGetterShared(receiverId, getterOffset, sameRealm,
+                                      nargsAndFlagsOffset,
+                                      mozilla::Some(icScriptOffset));
 }
 
 bool BaselineCacheIRCompiler::emitCallNativeGetterResult(
@@ -3360,9 +3395,7 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   
   Address icScriptAddr(stubAddress(icScriptOffset));
   masm.loadPtr(icScriptAddr, scratch);
-  masm.loadJSContext(scratch2);
-  masm.storePtr(scratch,
-                Address(scratch2, JSContext::offsetOfInlinedICScript()));
+  masm.storeICScriptInJSContext(scratch);
 
   if (isConstructing) {
     Label skip;
@@ -3383,9 +3416,6 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.Push(scratch);
 
-  
-  
-  
   
   Label noUnderflow;
   masm.load16ZeroExtend(Address(calleeReg, JSFunction::offsetOfNargs()),
