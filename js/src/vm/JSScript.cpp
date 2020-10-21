@@ -941,6 +941,29 @@ template
     XDRResult
     js::XDRSourceExtent(XDRState<XDR_DECODE>* xdr, SourceExtent* extent);
 
+void js::FillImmutableFlagsFromCompileOptionsForTopLevel(
+    const ReadOnlyCompileOptions& options, ImmutableScriptFlags& flags) {
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+
+  js::FillImmutableFlagsFromCompileOptionsForFunction(options, flags);
+
+  flags.setFlag(ImmutableFlags::TreatAsRunOnce, options.isRunOnce);
+  flags.setFlag(ImmutableFlags::NoScriptRval, options.noScriptRval);
+}
+
+void js::FillImmutableFlagsFromCompileOptionsForFunction(
+    const ReadOnlyCompileOptions& options, ImmutableScriptFlags& flags) {
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+
+  flags.setFlag(ImmutableFlags::SelfHosted, options.selfHostingMode);
+  flags.setFlag(ImmutableFlags::ForceStrict, options.forceStrictMode());
+  flags.setFlag(ImmutableFlags::HasNonSyntacticScope,
+                options.nonSyntacticScope);
+}
+
+
+
+
 
 
 

@@ -13,7 +13,8 @@
 #include "frontend/ModuleSharedContext.h"
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/StencilEnums.h"           
+#include "vm/JSScript.h"  
+#include "vm/StencilEnums.h"  
 #include "wasm/AsmJS.h"
 #include "wasm/WasmModule.h"
 
@@ -56,14 +57,12 @@ SharedContext::SharedContext(JSContext* cx, Kind kind,
   
   
   
-  setFlag(ImmutableFlags::SelfHosted, options.selfHostingMode);
-  setFlag(ImmutableFlags::ForceStrict, options.forceStrictMode());
-  setFlag(ImmutableFlags::HasNonSyntacticScope, options.nonSyntacticScope);
-
-  
   if (isTopLevelContext()) {
-    setFlag(ImmutableFlags::TreatAsRunOnce, options.isRunOnce);
-    setFlag(ImmutableFlags::NoScriptRval, options.noScriptRval);
+    js::FillImmutableFlagsFromCompileOptionsForTopLevel(options,
+                                                        immutableFlags_);
+  } else {
+    js::FillImmutableFlagsFromCompileOptionsForFunction(options,
+                                                        immutableFlags_);
   }
 
   
