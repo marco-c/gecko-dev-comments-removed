@@ -17,7 +17,7 @@ const NUMAGENTS = NUMWORKERS + 1;
 
 
 
-if (!wasmThreadsSupported() || helperThreadCount() < NUMWORKERS) {
+if (!wasmThreadsEnabled() || helperThreadCount() < NUMWORKERS) {
     if (DEBUG > 0)
         print("Threads not supported");
     quit(0);

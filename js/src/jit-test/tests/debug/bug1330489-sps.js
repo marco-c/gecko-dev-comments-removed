@@ -2,7 +2,7 @@
 
 load(libdir + "asserts.js");
 
-if (!wasmDebuggingIsSupported())
+if (!wasmDebuggingEnabled())
     throw "TestComplete";
 
 

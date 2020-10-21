@@ -297,7 +297,7 @@ for (let i = 0; i < 256; i++) {
 
 
 
-if (!wasmSimdSupported()) {
+if (!wasmSimdEnabled()) {
     for (let i = 0; i < 256; i++) {
         checkIllegalPrefixed(SimdPrefix, i);
     }

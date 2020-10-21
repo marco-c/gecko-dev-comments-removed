@@ -259,7 +259,6 @@ static inline bool WasmDebuggerActive(JSContext* cx) {
 
 
 
-
 bool wasm::BaselineAvailable(JSContext* cx) {
   
   return cx->options().wasmBaseline() && BaselinePlatformSupport();

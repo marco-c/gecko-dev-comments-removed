@@ -1,6 +1,6 @@
 
 
-if (!wasmDebuggingIsSupported())
+if (!wasmDebuggingEnabled())
      throw "TestComplete";
 
 let module = new WebAssembly.Module(wasmTextToBinary(`

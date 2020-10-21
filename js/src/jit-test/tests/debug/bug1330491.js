@@ -1,6 +1,6 @@
 
 
-if (!wasmDebuggingIsSupported())
+if (!wasmDebuggingEnabled())
      throw "TestComplete";
 
 (function createShortLivedDebugger() {
