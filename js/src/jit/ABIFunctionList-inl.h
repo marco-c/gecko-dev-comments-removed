@@ -115,6 +115,8 @@ namespace jit {
 
 
 #define ABIFUNCTIONSIG_LIST(_)                       \
+  _(AtomicsCompareExchangeFn)                        \
+  _(AtomicsReadWriteModifyFn)                        \
   _(float (*)(float))                                \
   _(JSJitGetterOp)                                   \
   _(JSJitMethodOp)                                   \
