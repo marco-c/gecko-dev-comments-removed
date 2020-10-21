@@ -413,6 +413,9 @@ static const double PretenureThreshold = 0.6;
 static const double PretenureGroupThreshold = 3000;
 
 
+static const double PretenureStringThreshold = 0.55;
+
+
 static const auto MinLastDitchGCPeriod = 60;  
 
 
@@ -555,6 +558,15 @@ class GCSchedulingTunables {
 
 
 
+
+  MainThreadData<double> pretenureStringThreshold_;
+
+  
+
+
+
+
+
   MainThreadData<mozilla::TimeDuration> minLastDitchGCPeriod_;
 
   
@@ -611,6 +623,7 @@ class GCSchedulingTunables {
   bool attemptPretenuring() const { return pretenureThreshold_ < 1.0; }
   double pretenureThreshold() const { return pretenureThreshold_; }
   uint32_t pretenureGroupThreshold() const { return pretenureGroupThreshold_; }
+  double pretenureStringThreshold() const { return pretenureStringThreshold_; }
 
   mozilla::TimeDuration minLastDitchGCPeriod() const {
     return minLastDitchGCPeriod_;

@@ -379,6 +379,12 @@ typedef enum JSGCParamKey {
 
   JSGC_HELPER_THREAD_COUNT = 41,
 
+  
+
+
+
+
+  JSGC_PRETENURE_STRING_THRESHOLD = 42,
 } JSGCParamKey;
 
 
