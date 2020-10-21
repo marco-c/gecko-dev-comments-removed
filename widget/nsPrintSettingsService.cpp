@@ -997,7 +997,18 @@ nsresult nsPrintSettingsService::SavePrintSettingsToPrefs(
   nsresult rv = GetAdjustedPrinterName(aPS, aUsePrinterNamePrefix, prtName);
   NS_ENSURE_SUCCESS(rv, rv);
 
+#ifndef MOZ_WIDGET_ANDROID
   
+  
+  
+  
+  
+  if (prtName.IsEmpty() && aFlags != nsIPrintSettings::kInitSavePrinterName) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "Print settings must be saved with a prefix");
+    return NS_ERROR_FAILURE;
+  }
+#endif
+
   return WritePrefs(aPS, prtName, aFlags);
 }
 
