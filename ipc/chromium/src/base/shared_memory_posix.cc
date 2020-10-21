@@ -16,6 +16,18 @@
 #  include "mozilla/Ashmem.h"
 #endif
 
+#ifdef OS_LINUX
+#  include "linux_memfd_defs.h"
+#endif
+
+#ifdef __FreeBSD__
+#  include <sys/capsicum.h>
+#endif
+
+#ifdef MOZ_VALGRIND
+#  include <valgrind/valgrind.h>
+#endif
+
 #include "base/eintr_wrapper.h"
 #include "base/logging.h"
 #include "base/string_util.h"
@@ -51,6 +63,7 @@ bool SharedMemory::SetHandle(SharedMemoryHandle handle, bool read_only) {
   freezeable_ = false;
   mapped_file_.reset(handle.fd);
   read_only_ = read_only;
+  
   return true;
 }
 
@@ -63,10 +76,119 @@ bool SharedMemory::IsHandleValid(const SharedMemoryHandle& handle) {
 SharedMemoryHandle SharedMemory::NULLHandle() { return SharedMemoryHandle(); }
 
 
+
+
+
+
+#if !defined(HAVE_MEMFD_CREATE) && defined(OS_LINUX) && \
+    defined(SYS_memfd_create)
+
+
+
+
+static int memfd_create(const char* name, unsigned int flags) {
+  return syscall(SYS_memfd_create, name, flags);
+}
+
+#  define HAVE_MEMFD_CREATE 1
+#endif
+
+
+
+
+
+
+
+
+
+
+
+#ifdef HAVE_MEMFD_CREATE
+#  define USE_MEMFD_CREATE 1
+#  ifdef OS_LINUX
+
+
+
+
+
+static int DupReadOnly(int fd) {
+  std::string path = StringPrintf("/proc/self/fd/%d", fd);
+  
+  return HANDLE_EINTR(open(path.c_str(), O_RDONLY | O_CLOEXEC));
+}
+
+#  elif defined(__FreeBSD__)
+
+
+
+
+static int DupReadOnly(int fd) {
+  int rofd = dup(fd);
+  if (rofd < 0) {
+    return -1;
+  }
+
+  cap_rights_t rights;
+  cap_rights_init(&rights, CAP_FSTAT, CAP_MMAP_R);
+  if (cap_rights_limit(rofd, &rights) < 0) {
+    int err = errno;
+    close(rofd);
+    errno = err;
+    return -1;
+  }
+
+  return rofd;
+}
+
+#  else  
+#    warning "OS has memfd_create but no DupReadOnly implementation"
+#    undef USE_MEMFD_CREATE
+#  endif  
+#endif    
+
+static bool HaveMemfd() {
+#ifdef USE_MEMFD_CREATE
+  static const bool kHave = [] {
+#  ifdef OS_LINUX
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!PR_GetEnv("MOZ_SANDBOXED") &&
+        access("/proc/self/fd", R_OK | X_OK) < 0) {
+      CHROMIUM_LOG(WARNING) << "can't use memfd without procfs";
+      return false;
+    }
+#  endif
+    int fd = memfd_create("mozilla-ipc-test", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    if (fd < 0) {
+      DCHECK_EQ(errno, ENOSYS);
+      return false;
+    }
+    close(fd);
+    return true;
+  }();
+  return kHave;
+#else
+  return false;
+#endif  
+}
+
+
 bool SharedMemory::AppendPosixShmPrefix(std::string* str, pid_t pid) {
 #if defined(ANDROID)
   return false;
 #else
+  if (HaveMemfd()) {
+    return false;
+  }
   *str += '/';
 #  ifdef OS_LINUX
   
@@ -103,47 +225,73 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
   mozilla::UniqueFileHandle fd;
   mozilla::UniqueFileHandle frozen_fd;
   bool needs_truncate = true;
+  bool is_memfd = false;
 
-#ifdef ANDROID
-  
-  fd.reset(mozilla::android::ashmem_create(nullptr, size));
-  if (!fd) {
-    CHROMIUM_LOG(WARNING) << "failed to open shm: " << strerror(errno);
-    return false;
-  }
-  needs_truncate = false;
-#else
-  
-  do {
-    
-    
-    static mozilla::Atomic<size_t> sNameCounter;
-    std::string name;
-    CHECK(AppendPosixShmPrefix(&name, getpid()));
-    StringAppendF(&name, "%zu", sNameCounter++);
-    
-    fd.reset(
-        HANDLE_EINTR(shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600)));
-    if (fd) {
-      if (freezeable) {
-        frozen_fd.reset(HANDLE_EINTR(shm_open(name.c_str(), O_RDONLY, 0400)));
-        if (!frozen_fd) {
-          int open_err = errno;
-          shm_unlink(name.c_str());
-          DLOG(FATAL) << "failed to re-open freezeable shm: "
-                      << strerror(open_err);
-          return false;
-        }
-      }
-      if (shm_unlink(name.c_str()) != 0) {
-        
-        
-        DLOG(FATAL) << "failed to unlink shm: " << strerror(errno);
+#ifdef USE_MEMFD_CREATE
+  if (HaveMemfd()) {
+    const unsigned flags = MFD_CLOEXEC | (freezeable ? MFD_ALLOW_SEALING : 0);
+    fd.reset(memfd_create("mozilla-ipc", flags));
+    if (!fd) {
+      
+      
+      
+      CHROMIUM_LOG(WARNING) << "failed to create memfd: " << strerror(errno);
+      return false;
+    }
+    is_memfd = true;
+    if (freezeable) {
+      frozen_fd.reset(DupReadOnly(fd.get()));
+      if (!frozen_fd) {
+        CHROMIUM_LOG(WARNING)
+            << "failed to create read-only memfd: " << strerror(errno);
         return false;
       }
     }
-  } while (!fd && errno == EEXIST);
+  }
 #endif
+
+  if (!fd) {
+#ifdef ANDROID
+    
+    fd.reset(mozilla::android::ashmem_create(nullptr, size));
+    if (!fd) {
+      CHROMIUM_LOG(WARNING) << "failed to open shm: " << strerror(errno);
+      return false;
+    }
+    needs_truncate = false;
+#else
+    
+    do {
+      
+      
+      static mozilla::Atomic<size_t> sNameCounter;
+      std::string name;
+      CHECK(AppendPosixShmPrefix(&name, getpid()));
+      StringAppendF(&name, "%zu", sNameCounter++);
+      
+      fd.reset(HANDLE_EINTR(
+          shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600)));
+      if (fd) {
+        if (freezeable) {
+          frozen_fd.reset(HANDLE_EINTR(shm_open(name.c_str(), O_RDONLY, 0400)));
+          if (!frozen_fd) {
+            int open_err = errno;
+            shm_unlink(name.c_str());
+            DLOG(FATAL) << "failed to re-open freezeable shm: "
+                        << strerror(open_err);
+            return false;
+          }
+        }
+        if (shm_unlink(name.c_str()) != 0) {
+          
+          
+          DLOG(FATAL) << "failed to unlink shm: " << strerror(errno);
+          return false;
+        }
+      }
+    } while (!fd && errno == EEXIST);
+#endif
+  }
 
   if (!fd) {
     CHROMIUM_LOG(WARNING) << "failed to open shm: " << strerror(errno);
@@ -200,6 +348,7 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
   frozen_file_ = std::move(frozen_fd);
   max_size_ = size;
   freezeable_ = freezeable;
+  is_memfd_ = is_memfd;
   return true;
 }
 
@@ -213,22 +362,80 @@ bool SharedMemory::ReadOnlyCopy(SharedMemory* ro_out) {
   }
 
   mozilla::UniqueFileHandle ro_file;
+  bool is_ashmem = false;
+
 #ifdef ANDROID
-  ro_file = std::move(mapped_file_);
-  if (mozilla::android::ashmem_setProt(ro_file.get(), PROT_READ) != 0) {
-    CHROMIUM_LOG(WARNING) << "failed to set ashmem read-only: "
-                          << strerror(errno);
-    return false;
+  if (!is_memfd_) {
+    is_ashmem = true;
+    DCHECK(!frozen_file_);
+    ro_file = std::move(mapped_file_);
+    if (mozilla::android::ashmem_setProt(ro_file.get(), PROT_READ) != 0) {
+      CHROMIUM_LOG(WARNING)
+          << "failed to set ashmem read-only: " << strerror(errno);
+      return false;
+    }
   }
-#else
-  DCHECK(frozen_file_);
-  mapped_file_ = nullptr;
-  ro_file = std::move(frozen_file_);
 #endif
+
+#ifdef USE_MEMFD_CREATE
+#  ifdef MOZ_VALGRIND
+  
+  static const bool haveSeals = RUNNING_ON_VALGRIND == 0;
+#  else
+  static const bool haveSeals = true;
+#  endif
+  static const bool useSeals = !PR_GetEnv("MOZ_SHM_NO_SEALS");
+  if (is_memfd_ && haveSeals && useSeals) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    const int seals = F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_SEAL;
+    int sealError = EINVAL;
+
+#  ifdef F_SEAL_FUTURE_WRITE
+    sealError =
+        fcntl(mapped_file_.get(), F_ADD_SEALS, seals | F_SEAL_FUTURE_WRITE) == 0
+            ? 0
+            : errno;
+#  endif  
+    if (sealError == EINVAL) {
+      sealError =
+          fcntl(mapped_file_.get(), F_ADD_SEALS, seals) == 0 ? 0 : errno;
+    }
+    if (sealError != 0) {
+      CHROMIUM_LOG(WARNING) << "failed to seal memfd: " << strerror(errno);
+      return false;
+    }
+  }
+#else  
+  DCHECK(!is_memfd_);
+#endif
+
+  if (!is_ashmem) {
+    DCHECK(frozen_file_);
+    DCHECK(mapped_file_);
+    mapped_file_ = nullptr;
+    ro_file = std::move(frozen_file_);
+  }
 
   DCHECK(ro_file);
   freezeable_ = false;
-
   ro_out->Close();
   ro_out->mapped_file_ = std::move(ro_file);
   ro_out->max_size_ = max_size_;
