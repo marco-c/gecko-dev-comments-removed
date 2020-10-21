@@ -3970,25 +3970,6 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
   return NS_OK;
 }
 
-static bool IsXULDisplayType(const nsStyleDisplay* aDisplay) {
-  
-  if (!StaticPrefs::layout_css_emulate_moz_box_with_flex() &&
-      aDisplay->DisplayInside() == StyleDisplayInside::MozBox) {
-    return true;
-  }
-
-#ifdef MOZ_XUL
-  return (aDisplay->mDisplay == StyleDisplay::MozGrid ||
-          aDisplay->mDisplay == StyleDisplay::MozStack ||
-          aDisplay->mDisplay == StyleDisplay::MozGridGroup ||
-          aDisplay->mDisplay == StyleDisplay::MozGridLine ||
-          aDisplay->mDisplay == StyleDisplay::MozDeck ||
-          aDisplay->mDisplay == StyleDisplay::MozPopup);
-#else
-  return false;
-#endif
-}
-
 
 #define SIMPLE_XUL_FCDATA(_func) \
   FCDATA_DECL(FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_SKIP_ABSPOS_PUSH, _func)
@@ -4172,10 +4153,8 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::BeginBuildingScrollFrame(
   if (!gfxScrollFrame) {
     
     
-    
-    
     const nsStyleDisplay* displayStyle = aContentStyle->StyleDisplay();
-    if (IsXULDisplayType(displayStyle)) {
+    if (displayStyle->IsXULDisplayStyle()) {
       gfxScrollFrame = NS_NewXULScrollFrame(
           mPresShell, contentStyle, aIsRoot,
           displayStyle->mDisplay == StyleDisplay::MozStack);
@@ -4289,7 +4268,7 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
   
   NS_ASSERTION(
       !(aDisplay.IsFloatingStyle() || aDisplay.IsAbsolutelyPositionedStyle()) ||
-          aDisplay.IsBlockOutsideStyle() || IsXULDisplayType(&aDisplay),
+          aDisplay.IsBlockOutsideStyle() || aDisplay.IsXULDisplayStyle(),
       "Style system did not apply CSS2.1 section 9.7 fixups");
 
   
