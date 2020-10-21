@@ -119,6 +119,9 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
 
     @IgnoreCrash
     @Test fun crashContentMultipleSessions() {
+        
+        assumeThat(sessionRule.env.isMultiprocess, equalTo(true))
+
         val newSession = getSecondGeckoSession()
 
         
@@ -158,6 +161,8 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
 
     @IgnoreCrash
     @Test fun killContentMultipleSessions() {
+        assumeThat(sessionRule.env.isMultiprocess, equalTo(true))
+
         val newSession = getSecondGeckoSession()
 
         val mainSessionKilled = GeckoResult<Void>()
