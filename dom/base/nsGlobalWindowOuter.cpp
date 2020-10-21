@@ -5209,6 +5209,13 @@ void nsGlobalWindowOuter::BlurOuter() {
 }
 
 void nsGlobalWindowOuter::StopOuter(ErrorResult& aError) {
+  
+  
+  
+  if (!mDocShell || !nsDocShell::Cast(mDocShell)->IsNavigationAllowed()) {
+    return;
+  }
+
   nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(mDocShell));
   if (webNav) {
     aError = webNav->Stop(nsIWebNavigation::STOP_ALL);
