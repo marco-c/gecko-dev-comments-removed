@@ -82,7 +82,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  ["CustomHighlighterActor", "isTypeRegistered", "HighlighterEnvironment"],
+  [
+    "HighlighterActor",
+    "CustomHighlighterActor",
+    "isTypeRegistered",
+    "HighlighterEnvironment",
+  ],
   "devtools/server/actors/highlighters",
   true
 );
@@ -115,6 +120,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this.destroyEyeDropper();
 
     this._compatibility = null;
+    this._highlighterPromise = null;
     this._pageStylePromise = null;
     this._walkerPromise = null;
     this.walker = null;
@@ -177,6 +183,34 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this._compatibility = CompatibilityActor(this);
     this.manage(this._compatibility);
     return this._compatibility;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getHighlighter: function(autohide) {
+    if (this._highlighterPromise) {
+      return this._highlighterPromise;
+    }
+
+    this._highlighterPromise = this.getWalker().then(async walker => {
+      const highlighter = HighlighterActor(this, autohide);
+      await highlighter.initializeInstance();
+      await highlighter.instance.isReady;
+      this.manage(highlighter);
+      return highlighter;
+    });
+    return this._highlighterPromise;
   },
 
   

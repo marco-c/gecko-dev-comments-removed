@@ -89,19 +89,24 @@ add_task(async function() {
   
   
   await toolbox.loadTool("inspector");
-  const highlighter = toolbox.getHighlighter();
 
   const elementNode = oi3.querySelector(".objectBox-node");
   ok(elementNode !== null, "Node was logged as expected");
   const view = node.ownerDocument.defaultView;
 
   info("Highlight the node by moving the cursor on it");
-  const onNodeHighlight = highlighter.waitForHighlighterShown();
+  
+  
+  const objectFront = hud.currentTarget.client.getFrontByID(
+    elementNode.getAttribute("data-link-actor-id")
+  );
+  const inspectorFront = await objectFront.targetFront.getFront("inspector");
+  const onNodeHighlight = inspectorFront.highlighter.once("node-highlight");
 
   EventUtils.synthesizeMouseAtCenter(elementNode, { type: "mousemove" }, view);
 
-  const { highlighter: activeHighlighter } = await onNodeHighlight;
-  ok(activeHighlighter, "Highlighter is displayed");
+  await onNodeHighlight;
+  ok(true, "Highlighter is displayed");
   
   EventUtils.synthesizeMouseAtCenter(oi1, { type: "mousemove" }, view);
 

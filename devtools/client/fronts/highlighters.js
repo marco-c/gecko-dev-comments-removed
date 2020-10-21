@@ -8,16 +8,80 @@ const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
-const { customHighlighterSpec } = require("devtools/shared/specs/highlighters");
+const flags = require("devtools/shared/flags");
 const { safeAsyncMethod } = require("devtools/shared/async-utils");
+const {
+  customHighlighterSpec,
+  highlighterSpec,
+} = require("devtools/shared/specs/highlighters");
+
+class HighlighterFront extends FrontClassWithSpec(highlighterSpec) {
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
+
+    this.isNodeFrontHighlighted = false;
+
+    
+    this.highlight = safeAsyncMethod(this.highlight.bind(this), () =>
+      this.isDestroyed()
+    );
+    this.unhighlight = safeAsyncMethod(this.unhighlight.bind(this), () =>
+      this.isDestroyed()
+    );
+  }
+
+  
+  form(json) {
+    this.actorID = json.actor;
+    
+    this.traits = json.traits || {};
+  }
+
+  
+
+
+
+
+
+
+
+  async highlight(nodeFront, options = {}) {
+    if (!nodeFront) {
+      return;
+    }
+
+    this.isNodeFrontHighlighted = true;
+    await this.showBoxModel(nodeFront, options);
+    this.emit("node-highlight", nodeFront);
+  }
+
+  
+
+
+
+
+
+
+
+
+  async unhighlight(forceHide = false) {
+    forceHide = forceHide || !flags.testing;
+
+    if (this.isNodeFrontHighlighted && forceHide) {
+      this.isNodeFrontHighlighted = false;
+      await this.hideBoxModel();
+    }
+
+    this.emit("node-unhighlight");
+  }
+}
+
+exports.HighlighterFront = HighlighterFront;
+registerFront(HighlighterFront);
 
 class CustomHighlighterFront extends FrontClassWithSpec(customHighlighterSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
-
-    
-    this.show = safeAsyncMethod(this.show.bind(this), () => this.isDestroyed());
-    this.hide = safeAsyncMethod(this.hide.bind(this), () => this.isDestroyed());
 
     this._isShown = false;
   }

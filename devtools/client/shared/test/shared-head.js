@@ -184,18 +184,7 @@ registerCleanupFunction(() => {
 
 
 async function getTestActor(toolbox) {
-  
-  
-  
-  const inspector = await toolbox.loadTool("inspector");
-  const testActor = await toolbox.target.getFront("test");
-  
-  
-  
-  testActor.highlighter = () => {
-    return inspector.highlighters.getActiveHighlighter("BoxModelHighlighter");
-  };
-  return testActor;
+  return toolbox.target.getFront("test");
 }
 
 

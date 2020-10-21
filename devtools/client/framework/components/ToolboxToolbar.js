@@ -266,7 +266,11 @@ class ToolboxToolbar extends Component {
         ref: "frameMenuButton",
         title: description,
         onCloseButton: () => {
-          return toolbox.getHighlighter().unhighlight();
+          
+          const inspectorFront = toolbox.target.getCachedFront("inspector");
+          if (inspectorFront) {
+            inspectorFront.highlighter.unhighlight();
+          }
         },
       },
       this.createFrameList

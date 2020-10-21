@@ -3067,14 +3067,13 @@ Toolbox.prototype = {
 
   onHighlightFrame: async function(frameId) {
     const inspectorFront = await this.target.getFront("inspector");
-    const highlighter = this.getHighlighter();
 
     
     if (this.rootFrameSelected) {
-      const nodeFront = await inspectorFront.walker.getNodeActorFromWindowID(
+      const frameActor = await inspectorFront.walker.getNodeActorFromWindowID(
         frameId
       );
-      return highlighter.highlight(nodeFront);
+      inspectorFront.highlighter.highlight(frameActor);
     }
   },
 
@@ -3403,49 +3402,9 @@ Toolbox.prototype = {
 
 
 
-
-
-
-
-
-
   getHighlighter() {
     let pendingHighlight;
-
-    
-
-
-    const _getInspector = async () => {
-      const inspector = this.getPanel("inspector");
-      if (inspector) {
-        return inspector;
-      }
-
-      return this.loadTool("inspector");
-    };
-
-    
-
-
-
-
-
-
-
-
-    async function _waitForHighlighterEvent(eventName) {
-      const inspector = await _getInspector();
-      return new Promise(resolve => {
-        function _handler(data) {
-          if (data.type === inspector.highlighters.TYPES.BOXMODEL) {
-            inspector.highlighters.off(eventName, _handler);
-            resolve(data);
-          }
-        }
-
-        inspector.highlighters.on(eventName, _handler);
-      });
-    }
+    let currentHighlighterFront;
 
     return {
       
@@ -3463,33 +3422,25 @@ Toolbox.prototype = {
             return null;
           }
 
-          const inspector = await _getInspector();
-          return inspector.highlighters.showHighlighterTypeForNode(
-            inspector.highlighters.TYPES.BOXMODEL,
-            nodeFront,
-            options
-          );
+          
+          currentHighlighterFront = nodeFront.highlighterFront;
+          return nodeFront.highlighterFront.highlight(nodeFront, options);
         })();
         return pendingHighlight;
       }),
-      unhighlight: this._safeAsyncAfterDestroy(async () => {
+      unhighlight: this._safeAsyncAfterDestroy(async forceHide => {
         if (pendingHighlight) {
           await pendingHighlight;
           pendingHighlight = null;
         }
 
-        const inspector = await _getInspector();
-        return inspector.highlighters.hideHighlighterType(
-          inspector.highlighters.TYPES.BOXMODEL
-        );
-      }),
+        if (!currentHighlighterFront) {
+          return null;
+        }
 
-      waitForHighlighterShown: this._safeAsyncAfterDestroy(async () => {
-        return _waitForHighlighterEvent("highlighter-shown");
-      }),
-
-      waitForHighlighterHidden: this._safeAsyncAfterDestroy(async () => {
-        return _waitForHighlighterEvent("highlighter-hidden");
+        const unHighlight = currentHighlighterFront.unhighlight(forceHide);
+        currentHighlighterFront = null;
+        return unHighlight;
       }),
     };
   },
@@ -3979,16 +3930,16 @@ Toolbox.prototype = {
     );
   },
 
-  viewElementInInspector: async function(objectActor, reason) {
+  viewElementInInspector: async function(objectActor, inspectFromAnnotation) {
     
     await this.loadTool("inspector");
     const inspector = this.getPanel("inspector");
     const nodeFound = await inspector.inspectNodeActor(
       objectActor.actor,
-      reason
+      inspectFromAnnotation
     );
     if (nodeFound) {
-      await this.selectTool("inspector", reason);
+      await this.selectTool("inspector");
     }
   },
 
