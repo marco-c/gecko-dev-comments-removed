@@ -38,18 +38,15 @@
 
 #ifndef MOZ_GECKO_PROFILER
 
-#  define BASE_PROFILER_MARKER_UNTYPED(markerName, categoryName, ...)
-#  define BASE_PROFILER_MARKER(markerName, categoryName, options, MarkerType, \
-                               ...)
-#  define BASE_PROFILER_MARKER_TEXT(markerName, categoryName, options, text)
-#  define AUTO_BASE_PROFILER_MARKER_TEXT(markerName, categoryName, options, \
-                                         text)
+#  define BASE_PROFILER_MARKER_UNTYPED(markerName, options)
+#  define BASE_PROFILER_MARKER(markerName, options, MarkerType, ...)
+#  define BASE_PROFILER_MARKER_TEXT(markerName, options, text)
+#  define AUTO_BASE_PROFILER_MARKER_TEXT(markerName, options, text)
 
 #else  
 
 #  include "mozilla/ProfileChunkedBuffer.h"
 #  include "mozilla/TimeStamp.h"
-#  include "mozilla/Unused.h"
 
 #  include <functional>
 #  include <string>
@@ -57,56 +54,27 @@
 
 namespace mozilla::baseprofiler {
 
-
-
-
-
-template <typename MarkerType, typename... PayloadArguments>
-ProfileBufferBlockIndex AddMarkerToBuffer(
-    ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
-    const MarkerCategory& aCategory, MarkerOptions&& aOptions,
-    MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
-  Unused << aMarkerType;  
+template <typename MarkerType = ::mozilla::baseprofiler::markers::NoPayload,
+          typename... Ts>
+ProfileBufferBlockIndex AddMarkerToBuffer(ProfileChunkedBuffer& aBuffer,
+                                          const ProfilerString8View& aName,
+                                          MarkerOptions&& aOptions,
+                                          const Ts&... aTs) {
   return base_profiler_markers_detail::AddMarkerToBuffer<MarkerType>(
-      aBuffer, aName, aCategory, std::move(aOptions),
-      ::mozilla::baseprofiler::profiler_capture_backtrace_into,
-      aPayloadArguments...);
+      aBuffer, aName, std::move(aOptions),
+      ::mozilla::baseprofiler::profiler_capture_backtrace_into, aTs...);
 }
 
-
-inline ProfileBufferBlockIndex AddMarkerToBuffer(
-    ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
-    const MarkerCategory& aCategory, MarkerOptions&& aOptions = {}) {
-  return AddMarkerToBuffer(aBuffer, aName, aCategory, std::move(aOptions),
-                           markers::NoPayload{});
-}
-
-
-
-
-
-
-
-
-
-template <typename MarkerType, typename... PayloadArguments>
-ProfileBufferBlockIndex AddMarker(
-    const ProfilerString8View& aName, const MarkerCategory& aCategory,
-    MarkerOptions&& aOptions, MarkerType aMarkerType,
-    const PayloadArguments&... aPayloadArguments) {
+template <typename MarkerType = ::mozilla::baseprofiler::markers::NoPayload,
+          typename... Ts>
+ProfileBufferBlockIndex AddMarker(const ProfilerString8View& aName,
+                                  MarkerOptions&& aOptions, const Ts&... aTs) {
   if (!baseprofiler::profiler_can_accept_markers()) {
     return {};
   }
-  return ::mozilla::baseprofiler::AddMarkerToBuffer(
-      base_profiler_markers_detail::CachedBaseCoreBuffer(), aName, aCategory,
-      std::move(aOptions), aMarkerType, aPayloadArguments...);
-}
-
-
-inline ProfileBufferBlockIndex AddMarker(const ProfilerString8View& aName,
-                                         const MarkerCategory& aCategory,
-                                         MarkerOptions&& aOptions = {}) {
-  return AddMarker(aName, aCategory, std::move(aOptions), markers::NoPayload{});
+  return ::mozilla::baseprofiler::AddMarkerToBuffer<MarkerType>(
+      base_profiler_markers_detail::CachedBaseCoreBuffer(), aName,
+      std::move(aOptions), aTs...);
 }
 
 
@@ -122,26 +90,20 @@ inline void WritePropertyTime(JSONWriter& aWriter,
 
 }  
 
-
-
-#  define BASE_PROFILER_MARKER_UNTYPED(markerName, categoryName, ...)  \
-    do {                                                               \
-      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_UNTYPED);               \
-      ::mozilla::baseprofiler::AddMarker(                              \
-          markerName, ::mozilla::baseprofiler::category::categoryName, \
-          ##__VA_ARGS__);                                              \
+#  define BASE_PROFILER_MARKER_UNTYPED(markerName, options)        \
+    do {                                                           \
+      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_UNTYPED);           \
+      ::mozilla::baseprofiler::AddMarker<>(                        \
+          markerName, ::mozilla::baseprofiler::category::options); \
     } while (false)
 
-
-
-#  define BASE_PROFILER_MARKER(markerName, categoryName, options, MarkerType, \
-                               ...)                                           \
-    do {                                                                      \
-      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_with_##MarkerType);            \
-      ::mozilla::baseprofiler::AddMarker(                                     \
-          markerName, ::mozilla::baseprofiler::category::categoryName,        \
-          options, ::mozilla::baseprofiler::markers::MarkerType{},            \
-          ##__VA_ARGS__);                                                     \
+#  define BASE_PROFILER_MARKER(markerName, options, MarkerType, ...) \
+    do {                                                             \
+      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_with_##MarkerType);   \
+      ::mozilla::baseprofiler::AddMarker<                            \
+          ::mozilla::baseprofiler::markers::MarkerType>(             \
+          markerName, ::mozilla::baseprofiler::category::options,    \
+          ##__VA_ARGS__);                                            \
     } while (false)
 
 namespace mozilla::baseprofiler::markers {
@@ -157,14 +119,12 @@ struct Text {
 };
 }  
 
-
-
-#  define BASE_PROFILER_MARKER_TEXT(markerName, categoryName, options, text) \
-    do {                                                                     \
-      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_TEXT);                        \
-      ::mozilla::baseprofiler::AddMarker(                                    \
-          markerName, ::mozilla::baseprofiler::category::categoryName,       \
-          options, ::mozilla::baseprofiler::markers::Text{}, text);          \
+#  define BASE_PROFILER_MARKER_TEXT(markerName, options, text)           \
+    do {                                                                 \
+      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_TEXT);                    \
+      ::mozilla::baseprofiler::AddMarker<                                \
+          ::mozilla::baseprofiler::markers::Text>(                       \
+          markerName, ::mozilla::baseprofiler::category::options, text); \
     } while (false)
 
 namespace mozilla::baseprofiler {
@@ -174,13 +134,9 @@ namespace mozilla::baseprofiler {
 
 class MOZ_RAII AutoProfilerTextMarker {
  public:
-  AutoProfilerTextMarker(const char* aMarkerName,
-                         const MarkerCategory& aCategory,
-                         MarkerOptions&& aOptions, const std::string& aText)
-      : mMarkerName(aMarkerName),
-        mCategory(aCategory),
-        mOptions(std::move(aOptions)),
-        mText(aText) {
+  AutoProfilerTextMarker(const char* aMarkerName, MarkerOptions&& aOptions,
+                         const std::string& aText)
+      : mMarkerName(aMarkerName), mOptions(std::move(aOptions)), mText(aText) {
     MOZ_ASSERT(mOptions.Timing().EndTime().IsNull(),
                "AutoProfilerTextMarker options shouldn't have an end time");
     if (mOptions.Timing().StartTime().IsNull()) {
@@ -190,27 +146,22 @@ class MOZ_RAII AutoProfilerTextMarker {
 
   ~AutoProfilerTextMarker() {
     mOptions.TimingRef().SetIntervalEnd();
-    AUTO_PROFILER_STATS(AUTO_BASE_PROFILER_MARKER_TEXT);
-    AddMarker(ProfilerString8View::WrapNullTerminatedString(mMarkerName),
-              mCategory, std::move(mOptions), markers::Text{}, mText);
+    BASE_PROFILER_MARKER_TEXT(
+        ProfilerString8View::WrapNullTerminatedString(mMarkerName),
+        MarkerOptions(std::move(mOptions)), mText);
   }
 
  protected:
   const char* mMarkerName;
-  MarkerCategory mCategory;
   MarkerOptions mOptions;
   std::string mText;
 };
 
 }  
 
-
-
-#  define AUTO_BASE_PROFILER_MARKER_TEXT(markerName, categoryName, options,   \
-                                         text)                                \
-    ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII(       \
-        markerName, ::mozilla::baseprofiler::category::categoryName, options, \
-        text)
+#  define AUTO_BASE_PROFILER_MARKER_TEXT(markerName, options, text)     \
+    ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII( \
+        markerName, ::mozilla::baseprofiler::category::options, text)
 
 #endif  
 

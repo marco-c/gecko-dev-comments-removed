@@ -213,6 +213,9 @@ using ProfilerString8View = ProfilerStringView<char>;
 using ProfilerString16View = ProfilerStringView<char16_t>;
 
 
+class MarkerOptions;
+
+
 class MarkerCategory {
  public:
   
@@ -220,17 +223,27 @@ class MarkerCategory {
       baseprofiler::ProfilingCategoryPair aCategoryPair)
       : mCategoryPair(aCategoryPair) {}
 
-  
   constexpr baseprofiler::ProfilingCategoryPair CategoryPair() const {
     return mCategoryPair;
   }
 
-  
   baseprofiler::ProfilingCategory GetCategory() const {
     return GetProfilingCategoryPairInfo(mCategoryPair).mCategory;
   }
 
+  
+  
+  template <typename... Options>
+  MarkerOptions WithOptions(Options&&... aOptions) const;
+
  private:
+  
+  
+  friend MarkerOptions;
+  constexpr MarkerCategory() = default;
+
+  friend ProfileBufferEntryReader::Deserializer<MarkerCategory>;
+
   baseprofiler::ProfilingCategoryPair mCategoryPair =
       baseprofiler::ProfilingCategoryPair::OTHER;
 };
@@ -259,9 +272,6 @@ MOZ_PROFILING_CATEGORY_LIST(CATEGORY_ENUM_BEGIN_CATEGORY,
 using MarkerCategory = ::mozilla::MarkerCategory;
 
 }  
-
-
-class MarkerOptions;
 
 
 
@@ -576,14 +586,21 @@ class MarkerInnerWindowId {
 };
 
 
+
+
+
+
+
 class MarkerOptions {
  public:
   
-  
-  
+  constexpr MOZ_IMPLICIT MarkerOptions(const MarkerCategory& aCategory)
+      : mCategory(aCategory) {}
+
   
   template <typename... Options>
-  MOZ_IMPLICIT MarkerOptions(Options&&... aOptions) {
+  explicit MarkerOptions(const MarkerCategory& aCategory, Options&&... aOptions)
+      : mCategory(aCategory) {
     (Set(std::forward<Options>(aOptions)), ...);
   }
 
@@ -608,6 +625,7 @@ class MarkerOptions {
   
   
   
+  
 #  define FUNCTIONS_ON_MEMBER(NAME)                      \
     MarkerOptions& Set(Marker##NAME&& a##NAME)& {        \
       m##NAME = std::move(a##NAME);                      \
@@ -623,6 +641,7 @@ class MarkerOptions {
                                                          \
     Marker##NAME& NAME##Ref() { return m##NAME; }
 
+  FUNCTIONS_ON_MEMBER(Category);
   FUNCTIONS_ON_MEMBER(ThreadId);
   FUNCTIONS_ON_MEMBER(Timing);
   FUNCTIONS_ON_MEMBER(Stack);
@@ -632,11 +651,30 @@ class MarkerOptions {
  private:
   friend ProfileBufferEntryReader::Deserializer<MarkerOptions>;
 
+  
+  constexpr MarkerOptions() = default;
+
+  MarkerCategory mCategory;
   MarkerThreadId mThreadId;
   MarkerTiming mTiming;
   MarkerStack mStack;
   MarkerInnerWindowId mInnerWindowId;
 };
+
+template <typename... Options>
+MarkerOptions MarkerCategory::WithOptions(Options&&... aOptions) const {
+  return MarkerOptions(*this, std::forward<Options>(aOptions)...);
+}
+
+namespace baseprofiler::category {
+
+
+
+
+
+using MarkerOptions = ::mozilla::MarkerOptions;
+
+}  
 
 }  
 
