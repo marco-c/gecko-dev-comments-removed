@@ -6582,11 +6582,17 @@ class MPhi final : public MDefinition,
   }
 
   
-  void addInput(MDefinition* ins) { inputs_.infallibleEmplaceBack(ins, this); }
+  void addInput(MDefinition* ins) {
+    MOZ_ASSERT_IF(JitOptions.warpBuilder && type() != MIRType::Value,
+                  ins->type() == type());
+    inputs_.infallibleEmplaceBack(ins, this);
+  }
 
   
   
   MOZ_MUST_USE bool addInputSlow(MDefinition* ins) {
+    MOZ_ASSERT_IF(JitOptions.warpBuilder && type() != MIRType::Value,
+                  ins->type() == type());
     return inputs_.emplaceBack(ins, this);
   }
 
