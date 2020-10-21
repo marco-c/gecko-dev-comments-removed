@@ -11,18 +11,27 @@ using GMPBufferType from "gmp-video-codec.h";
 namespace mozilla {
 namespace gmp {
 
+
+
+
+
+
+
+
+
+
+
 struct NodeIdData {
   nsString mOrigin;
   nsString mTopLevelOrigin;
   nsString mGMPName;
 };
 
-struct GMPVideoEncodedFrameData
-{
+struct GMPVideoEncodedFrameData {
   uint32_t mEncodedWidth;
   uint32_t mEncodedHeight;
-  uint64_t mTimestamp; 
-  uint64_t mDuration; 
+  uint64_t mTimestamp;  
+  uint64_t mDuration;   
   uint32_t mFrameType;
   uint32_t mSize;
   GMPBufferType mBufferType;
@@ -30,22 +39,20 @@ struct GMPVideoEncodedFrameData
   bool mCompleteFrame;
 };
 
-struct GMPPlaneData
-{
+struct GMPPlaneData {
   int32_t mSize;
   int32_t mStride;
   Shmem mBuffer;
 };
 
-struct GMPVideoi420FrameData
-{
+struct GMPVideoi420FrameData {
   GMPPlaneData mYPlane;
   GMPPlaneData mUPlane;
   GMPPlaneData mVPlane;
   int32_t mWidth;
   int32_t mHeight;
-  uint64_t mTimestamp; 
-  uint64_t mDuration; 
+  uint64_t mTimestamp;  
+  uint64_t mDuration;   
 };
 
 struct CDMInputBuffer {
@@ -93,5 +100,5 @@ struct CDMVideoFrame {
   int64_t mDuration;
 };
 
-}
-}
+}  
+}  
