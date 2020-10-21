@@ -220,6 +220,11 @@ class nsFocusManager final : public nsIFocusManager,
   void RaiseWindow(nsPIDOMWindowOuter* aWindow,
                    mozilla::dom::CallerType aCallerType);
 
+  
+
+
+  void WindowRaised(mozIDOMWindowProxy* aWindow);
+
   static uint32_t FocusOptionsToFocusManagerFlags(
       const mozilla::dom::FocusOptions& aOptions);
 
