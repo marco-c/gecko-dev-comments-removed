@@ -114,6 +114,19 @@ window.addEventListener(
   { once: true }
 );
 
+function ignoreDOMWindowClose(e) {
+  
+  
+  
+  
+  
+  
+  
+  
+  e.preventDefault();
+  e.stopPropagation();
+}
+
 var PrintEventHandler = {
   settings: null,
   defaultSettings: null,
@@ -305,6 +318,11 @@ var PrintEventHandler = {
 
   unload() {
     this.previewBrowser.frameLoader.exitPrintPreview();
+    this.previewBrowser.removeEventListener(
+      "DOMWindowClose",
+      ignoreDOMWindowClose
+    );
+    this.previewBrowser.remove();
   },
 
   _createPreviewBrowser(sourceBrowsingContext) {
@@ -315,6 +333,10 @@ var PrintEventHandler = {
       initialBrowsingContextGroupId: sourceBrowsingContext.group.id,
       skipLoad: true,
     });
+    printPreviewBrowser.addEventListener(
+      "DOMWindowClose",
+      ignoreDOMWindowClose
+    );
     printPreviewBrowser.classList.add("printPreviewBrowser");
     printPreviewBrowser.setAttribute("flex", "1");
     printPreviewBrowser.setAttribute("printpreview", "true");
