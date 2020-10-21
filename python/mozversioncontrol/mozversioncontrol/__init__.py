@@ -372,6 +372,9 @@ class HgRepository(Repository):
             
             return None
         match = re.search(r'<(.*)>', username)
+        if not match:
+            
+            return None
         return match.group(1)
 
     def get_upstream(self):
