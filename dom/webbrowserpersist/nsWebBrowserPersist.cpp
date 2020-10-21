@@ -2314,24 +2314,22 @@ void nsWebBrowserPersist::FinishDownload() {
 void nsWebBrowserPersist::EndDownload(nsresult aResult) {
   MOZ_ASSERT(NS_IsMainThread(), "Should end download on the main thread.");
 
-  if (mCancel && mEndCalled) {
-    
-    
-    return;
-  }
-
-  MOZ_DIAGNOSTIC_ASSERT(!mEndCalled, "Should only end the download once.");
   
   
   if (mEndCalled && (NS_SUCCEEDED(aResult) || mPersistResult == aResult)) {
     return;
   }
-  mEndCalled = true;
 
   
   if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(aResult)) {
     mPersistResult = aResult;
   }
+
+  if (mEndCalled) {
+    MOZ_ASSERT(!mEndCalled, "Should only end the download once.");
+    return;
+  }
+  mEndCalled = true;
 
   ClosePromise::All(GetCurrentSerialEventTarget(), mFileClosePromises)
       ->Then(GetCurrentSerialEventTarget(), __func__,
