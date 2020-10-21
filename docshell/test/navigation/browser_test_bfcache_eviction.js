@@ -15,7 +15,7 @@ add_task(async function() {
     browser
   ) {
     let testDone = {};
-    if (!SpecialPowers.getBoolPref("fission.sessionHistoryInParent")) {
+    if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
       
       testDone.promise = SpecialPowers.spawn(browser, [], async function() {
         return new Promise(resolve => {

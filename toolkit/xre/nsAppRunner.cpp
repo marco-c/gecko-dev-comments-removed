@@ -534,6 +534,12 @@ bool FissionAutostart() {
   return sFissionAutostart;
 }
 
+bool SessionHistoryInParent() {
+  
+  return 
+      StaticPrefs::fission_sessionHistoryInParent_AtStartup_DoNotUseDirectly();
+}
+
 }  
 
 
@@ -864,6 +870,12 @@ nsXULAppInfo::GetFissionAutostart(bool* aResult) {
 NS_IMETHODIMP
 nsXULAppInfo::GetFissionExperimentStatus(ExperimentStatus* aResult) {
   *aResult = FissionExperimentStatus();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::GetSessionHistoryInParent(bool* aResult) {
+  *aResult = SessionHistoryInParent();
   return NS_OK;
 }
 

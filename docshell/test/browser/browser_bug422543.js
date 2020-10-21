@@ -8,7 +8,7 @@ let getActor = browser => {
 };
 
 add_task(async function runTests() {
-  if (!Services.prefs.getBoolPref("fission.sessionHistoryInParent")) {
+  if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
     await setupAsync();
     let browser = gBrowser.selectedBrowser;
     

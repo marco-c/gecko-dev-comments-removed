@@ -122,6 +122,7 @@
 #include "SessionStoreFunctions.h"
 #include "mozilla/dom/CrashReport.h"
 #include "nsISecureBrowserUI.h"
+#include "nsIXULRuntime.h"
 
 #ifdef XP_WIN
 #  include "mozilla/plugins/PluginWidgetParent.h"
@@ -3519,7 +3520,7 @@ bool BrowserParent::CanCancelContentJS(
     nsIURI* aNavigationURI) const {
   
   
-  if (!StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
+  if (!mozilla::SessionHistoryInParent()) {
     
     
     return true;

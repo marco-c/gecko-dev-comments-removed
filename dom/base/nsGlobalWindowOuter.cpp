@@ -167,7 +167,7 @@
 #include "mozilla/dom/CustomEvent.h"
 #include "nsIScreenManager.h"
 #include "nsIClassifiedChannel.h"
-
+#include "nsIXULRuntime.h"
 #include "xpcprivate.h"
 
 #ifdef NS_PRINTING
@@ -6316,7 +6316,7 @@ bool nsGlobalWindowOuter::IsOnlyTopLevelDocumentInSHistory() {
   
   
 
-  if (StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
+  if (mozilla::SessionHistoryInParent()) {
     return mBrowsingContext->GetIsSingleToplevelInHistory();
   }
 
