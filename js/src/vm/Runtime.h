@@ -562,6 +562,11 @@ struct JSRuntime {
 #endif
 
   
+  
+  
+  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> numParseTasks;
+
+  
   mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>
       numActiveHelperThreadZones;
 
@@ -571,11 +576,15 @@ struct JSRuntime {
   void setUsedByHelperThread(JS::Zone* zone);
   void clearUsedByHelperThread(JS::Zone* zone);
 
+  bool hasParseTasks() const { return numParseTasks > 0; }
   bool hasHelperThreadZones() const { return numActiveHelperThreadZones > 0; }
+
+  void addParseTaskRef() { numParseTasks++; }
+  void decParseTaskRef() { numParseTasks--; }
 
 #ifdef DEBUG
   bool currentThreadHasScriptDataAccess() const {
-    if (!hasHelperThreadZones()) {
+    if (!hasParseTasks()) {
       return js::CurrentThreadCanAccessRuntime(this) &&
              activeThreadHasScriptDataAccess;
     }
