@@ -223,36 +223,35 @@ void gfxConfigManager::ConfigureWebRender() {
 
   bool guardedByQualifiedPref = ConfigureWebRenderQualified();
 
-  mFeatureWr->DisableByDefault(FeatureStatus::OptIn,
-                               "WebRender is an opt-in feature",
-                               "FEATURE_FAILURE_DEFAULT_OFF"_ns);
+  mFeatureWr->EnableByDefault();
 
   
   
   
   
   if (mWrEnvForceEnabled) {
-    mFeatureWr->UserEnable("Force enabled by envvar");
+    mFeatureWr->UserForceEnable("Force enabled by envvar");
   } else if (mWrForceEnabled) {
-    mFeatureWr->UserEnable("Force enabled by pref");
-  } else if (mFeatureWrQualified->IsEnabled()) {
+    mFeatureWr->UserForceEnable("Force enabled by pref");
+  } else if (mWrForceDisabled ||
+             (mWrEnvForceDisabled && mWrQualifiedOverride.isNothing())) {
     
     
     
-    if (!guardedByQualifiedPref) {
-      mFeatureWr->UserEnable("Qualified in release");
-    } else if (mWrQualified) {
-      mFeatureWr->UserEnable("Qualified enabled by pref");
-    }
-  }
-
-  
-  
-  
-  if (mWrForceDisabled ||
-      (mWrEnvForceDisabled && mWrQualifiedOverride.isNothing())) {
+    
     mFeatureWr->UserDisable("User force-disabled WR",
                             "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
+  }
+
+  if (!mFeatureWrQualified->IsEnabled()) {
+    mFeatureWr->Disable(FeatureStatus::Disabled, "Not qualified",
+                        "FEATURE_FAILURE_NOT_QUALIFIED"_ns);
+  } else if (guardedByQualifiedPref && !mWrQualified) {
+    
+    
+    
+    mFeatureWr->Disable(FeatureStatus::Disabled, "Control group for experiment",
+                        "FEATURE_FAILURE_IN_EXPERIMENT"_ns);
   }
 
   
@@ -276,24 +275,39 @@ void gfxConfigManager::ConfigureWebRender() {
                              "FEATURE_FAILURE_XRENDER"_ns);
   }
 
-  mFeatureWrAngle->DisableByDefault(FeatureStatus::OptIn,
-                                    "WebRender ANGLE is an opt-in feature",
-                                    "FEATURE_FAILURE_DEFAULT_OFF"_ns);
-
-  if (mFeatureD3D11HwAngle && mWrForceAngle) {
-    if (!mFeatureD3D11HwAngle->IsEnabled()) {
-      mFeatureWr->ForceDisable(FeatureStatus::UnavailableNoAngle,
-                               "ANGLE is disabled",
-                               mFeatureD3D11HwAngle->GetFailureId());
-    } else if (!mFeatureGPUProcess->IsEnabled() &&
-               (!mIsNightly || !mWrForceAngleNoGPUProcess)) {
-      
-      mFeatureWr->ForceDisable(FeatureStatus::UnavailableNoGpuProcess,
-                               "GPU Process is disabled",
-                               "FEATURE_FAILURE_GPU_PROCESS_DISABLED"_ns);
-    } else if (mFeatureWr->IsEnabled()) {
-      mFeatureWrAngle->UserEnable("Enabled");
+  mFeatureWrAngle->EnableByDefault();
+  if (mFeatureD3D11HwAngle) {
+    if (mWrForceAngle) {
+      if (!mFeatureD3D11HwAngle->IsEnabled()) {
+        mFeatureWrAngle->ForceDisable(FeatureStatus::UnavailableNoAngle,
+                                      "ANGLE is disabled",
+                                      mFeatureD3D11HwAngle->GetFailureId());
+      } else if (!mFeatureGPUProcess->IsEnabled() &&
+                 (!mIsNightly || !mWrForceAngleNoGPUProcess)) {
+        
+        mFeatureWrAngle->ForceDisable(
+            FeatureStatus::UnavailableNoGpuProcess, "GPU Process is disabled",
+            "FEATURE_FAILURE_GPU_PROCESS_DISABLED"_ns);
+      } else if (!mFeatureWr->IsEnabled()) {
+        mFeatureWrAngle->ForceDisable(FeatureStatus::Unavailable,
+                                      "WebRender disabled",
+                                      "FEATURE_FAILURE_WR_DISABLED"_ns);
+      }
+    } else {
+      mFeatureWrAngle->Disable(FeatureStatus::Disabled, "ANGLE is not forced",
+                               "FEATURE_FAILURE_ANGLE_NOT_FORCED"_ns);
     }
+  } else {
+    mFeatureWrAngle->Disable(FeatureStatus::Unavailable, "OS not supported",
+                             "FEATURE_FAILURE_OS_NOT_SUPPORTED"_ns);
+  }
+
+  if (mWrForceAngle && mFeatureWr->IsEnabled() &&
+      !mFeatureWrAngle->IsEnabled()) {
+    
+    mFeatureWr->ForceDisable(FeatureStatus::UnavailableNoAngle,
+                             "ANGLE is disabled",
+                             mFeatureWrAngle->GetFailureId());
   }
 
   if (!mFeatureWr->IsEnabled() && mDisableHwCompositingNoWr) {
