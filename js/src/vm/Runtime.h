@@ -33,7 +33,6 @@
 #include "gc/Tracer.h"
 #include "js/AllocationRecording.h"
 #include "js/BuildId.h"  
-#include "js/CompilationAndEvaluation.h"
 #include "js/Debug.h"
 #include "js/experimental/SourceHook.h"  
 #include "js/friend/StackLimits.h"       
