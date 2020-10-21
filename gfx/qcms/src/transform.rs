@@ -1171,7 +1171,7 @@ pub unsafe extern "C" fn qcms_profile_precache_output_transform(mut profile: *mu
             return;
         }
         
-        if !(*profile).mBA.is_null() {
+        if !(*profile).mBA.is_none() {
             return;
         }
     }
@@ -1335,8 +1335,8 @@ pub unsafe extern "C" fn qcms_transform_create(
             || in_type == QCMS_DATA_BGRA_8)
         && (!(*in_0).A2B0.is_none()
             || !(*out).B2A0.is_none()
-            || !(*in_0).mAB.is_null()
-            || !(*out).mAB.is_null())
+            || !(*in_0).mAB.is_none()
+            || !(*out).mAB.is_none())
     {
         
         
