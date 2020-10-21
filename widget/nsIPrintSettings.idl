@@ -197,6 +197,14 @@ interface nsIPrintSettings : nsISupports
   attribute long    orientation;   
   attribute long    numCopies;
 
+  
+
+
+
+
+
+  attribute long    numPagesPerSheet;
+
   attribute AString printerName;   
 
   attribute boolean printToFile;
