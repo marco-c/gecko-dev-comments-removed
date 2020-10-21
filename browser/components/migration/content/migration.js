@@ -372,7 +372,7 @@ var MigrationWizard = {
     }
 
     var items = this.spinResolve(
-      this._migrator.getMigrateData(this._selectedProfile, this._autoMigrate)
+      this._migrator.getMigrateData(this._selectedProfile)
     );
 
     for (let itemType of kDataToStringMap.keys()) {
@@ -485,7 +485,7 @@ var MigrationWizard = {
     
     if (this._autoMigrate) {
       this._itemsFlags = this.spinResolve(
-        this._migrator.getMigrateData(this._selectedProfile, this._autoMigrate)
+        this._migrator.getMigrateData(this._selectedProfile)
       );
     }
 

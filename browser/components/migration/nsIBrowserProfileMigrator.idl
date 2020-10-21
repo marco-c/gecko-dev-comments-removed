@@ -40,8 +40,7 @@ interface nsIBrowserProfileMigrator : nsISupports
 
 
 
-
-  jsval getMigrateData(in jsval aProfile, in boolean aDoingStartup);
+  jsval getMigrateData(in jsval aProfile);
 
   
 
