@@ -24,6 +24,7 @@
 
 #include "jit/CodeGenerator.h"
 #include "jit/CompileInfo.h"
+#include "jit/Ion.h"
 #include "jit/IonOptimizationLevels.h"
 #include "js/ScalarType.h"  
 #include "wasm/WasmBaselineCompile.h"
