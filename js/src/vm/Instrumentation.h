@@ -44,12 +44,12 @@ enum class InstrumentationKind {
 
 class RealmInstrumentation {
   
-  const GCPtrObject callback;
+  const HeapPtrObject callback;
 
   
   
   
-  const GCPtrObject dbgObject;
+  const HeapPtrObject dbgObject;
 
   
   uint32_t kinds = 0;
@@ -105,13 +105,5 @@ bool InstrumentationScriptIdOperation(JSContext* cx, HandleScript script,
                                       MutableHandleValue rv);
 
 }  
-
-namespace JS {
-
-template <>
-struct DeletePolicy<js::RealmInstrumentation>
-    : public js::GCManagedDeletePolicy<js::RealmInstrumentation> {};
-
-} 
 
 #endif 

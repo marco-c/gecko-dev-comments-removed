@@ -14,7 +14,6 @@
 #include "jsfriendapi.h"  
 
 #include "debugger/Debugger.h"        
-#include "gc/Barrier.h"               
 #include "js/friend/DumpFunctions.h"  
 #include "js/Promise.h"               
 #include "vm/JSContext.h"             

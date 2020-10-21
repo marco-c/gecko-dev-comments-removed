@@ -10,7 +10,6 @@
 #include "mozilla/LinkedList.h"
 
 #include "gc/Barrier.h"
-#include "gc/DeletePolicy.h"
 #include "gc/Tracer.h"
 #include "gc/ZoneAllocator.h"
 #include "js/HashTable.h"
@@ -181,7 +180,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
 #endif
 
   
-  GCPtrObject memberOf;
+  HeapPtrObject memberOf;
 
   
   JS::Zone* zone_;
@@ -437,14 +436,6 @@ class ObjectWeakMap {
   void checkAfterMovingGC();
 #endif
 };
-
-} 
-
-namespace JS {
-
-template <>
-struct DeletePolicy<js::ObjectValueWeakMap>
-    : public js::GCManagedDeletePolicy<js::ObjectValueWeakMap> {};
 
 } 
 

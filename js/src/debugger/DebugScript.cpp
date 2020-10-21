@@ -16,7 +16,6 @@
 
 #include "debugger/DebugAPI.h"    
 #include "debugger/Debugger.h"    
-#include "gc/Barrier.h"           
 #include "gc/Cell.h"              
 #include "gc/FreeOp.h"            
 #include "gc/GCEnum.h"            

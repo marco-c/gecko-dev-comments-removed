@@ -26,7 +26,6 @@
 #include "frontend/ParseNode.h"         
 #include "frontend/SourceNotes.h"       
 #include "frontend/Stencil.h"           
-#include "gc/Barrier.h"                 
 #include "gc/Rooting.h"                 
 #include "js/GCVariant.h"               
 #include "js/GCVector.h"                

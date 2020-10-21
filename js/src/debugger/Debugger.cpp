@@ -42,7 +42,6 @@
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ParseContext.h"       
 #include "frontend/Parser.h"             
-#include "gc/Barrier.h"                  
 #include "gc/FreeOp.h"                   
 #include "gc/GC.h"                       
 #include "gc/GCMarker.h"                 
