@@ -387,11 +387,26 @@ class WindowsDllInterceptor final
     
     
     if (!mModule) {
+      mDetourPatcher.SetLastError(DetourResultCode::INTERCEPTOR_MOD_NULL);
+      return false;
+    }
+
+    if (!mDetourPatcher.IsPageAccessible(
+            nt::PEHeaders::HModuleToBaseAddr<uintptr_t>(mModule))) {
+      mDetourPatcher.SetLastError(
+          DetourResultCode::INTERCEPTOR_MOD_INACCESSIBLE);
       return false;
     }
 
     FARPROC proc = mDetourPatcher.GetProcAddress(mModule, aName);
     if (!proc) {
+      mDetourPatcher.SetLastError(DetourResultCode::INTERCEPTOR_PROC_NULL);
+      return false;
+    }
+
+    if (!mDetourPatcher.IsPageAccessible(reinterpret_cast<uintptr_t>(proc))) {
+      mDetourPatcher.SetLastError(
+          DetourResultCode::INTERCEPTOR_PROC_INACCESSIBLE);
       return false;
     }
 
@@ -418,11 +433,26 @@ class WindowsDllInterceptor final
     
     
     if (!mModule) {
+      mDetourPatcher.SetLastError(DetourResultCode::INTERCEPTOR_MOD_NULL);
+      return false;
+    }
+
+    if (!mDetourPatcher.IsPageAccessible(
+            nt::PEHeaders::HModuleToBaseAddr<uintptr_t>(mModule))) {
+      mDetourPatcher.SetLastError(
+          DetourResultCode::INTERCEPTOR_MOD_INACCESSIBLE);
       return false;
     }
 
     FARPROC proc = mDetourPatcher.GetProcAddress(mModule, aName);
     if (!proc) {
+      mDetourPatcher.SetLastError(DetourResultCode::INTERCEPTOR_PROC_NULL);
+      return false;
+    }
+
+    if (!mDetourPatcher.IsPageAccessible(reinterpret_cast<uintptr_t>(proc))) {
+      mDetourPatcher.SetLastError(
+          DetourResultCode::INTERCEPTOR_PROC_INACCESSIBLE);
       return false;
     }
 
