@@ -10113,7 +10113,11 @@ class MGuardNullOrUndefined : public MUnaryInstruction,
 
 class MGuardFunctionFlags : public MUnaryInstruction,
                             public SingleObjectPolicy::Data {
+  
+  
   uint16_t expectedFlags_;
+
+  
   uint16_t unexpectedFlags_;
 
   explicit MGuardFunctionFlags(MDefinition* fun, uint16_t expectedFlags,
