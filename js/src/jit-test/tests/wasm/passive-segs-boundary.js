@@ -142,7 +142,7 @@ function tab_test_nofail(insn1, insn2,
 
 
 mem_test("data.drop 0", "",
-         WebAssembly.CompileError, /(data.drop segment index out of range)|(unknown data segment 0)/,
+         WebAssembly.CompileError, /data.drop segment index out of range/,
          false, false, false);
 
 
@@ -154,7 +154,7 @@ mem_test("data.drop 3", "",
 
 
 mem_test("data.drop 2", "",
-         WebAssembly.CompileError, /(data.drop segment index out of range)|(unknown data segment 2)/,
+         WebAssembly.CompileError, /data.drop segment index out of range/,
          false, false, true);
 
 
@@ -164,16 +164,16 @@ mem_test_nofail("data.drop 1", "",
 
 
 mem_test("(memory.init 1 (i32.const 1234) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.CompileError, /(can't touch memory without memory)|(unknown memory 0)/,
+         WebAssembly.CompileError, /can't touch memory without memory/,
          false, false, false);
 
 
 mem_test("data.drop 4", "",
-         WebAssembly.CompileError, /(data.drop segment index out of range)|(unknown data segment 4)/);
+         WebAssembly.CompileError, /data.drop segment index out of range/);
 
 
 mem_test("(memory.init 4 (i32.const 1234) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.CompileError, /(memory.init segment index out of range)|(unknown data segment 4)/);
+         WebAssembly.CompileError, /memory.init segment index out of range/);
 
 
 mem_test("data.drop 2", "");
@@ -236,17 +236,17 @@ mem_test("",
 
 mem_test("data.drop 1 (i32.const 42)", "",
          WebAssembly.CompileError,
-         /(unused values not explicitly dropped by end of block)|(values remaining on stack at end of block)/);
+         /unused values not explicitly dropped by end of block/);
 
 
 mem_test("(memory.init 1 (i32.const 1) (i32.const 1) (i32.const 1) (i32.const 1))",
          "",
-         WebAssembly.CompileError, /(unused values)|(values remaining on stack at end of block)/);
+         WebAssembly.CompileError, /unused values/);
 
 
 mem_test("(memory.init 1 (i32.const 1) (i32.const 1))", "",
          WebAssembly.CompileError,
-         /(popping value from empty stack)|(expected Some\(I32\) but nothing on stack)/);
+         /popping value from empty stack/);
 
 
 {
@@ -268,7 +268,7 @@ mem_test("(memory.init 1 (i32.const 1) (i32.const 1))", "",
 
 tab_test("elem.drop 0", "",
          WebAssembly.CompileError,
-         /(element segment index out of range for elem.drop)|(segment index out of bounds)/,
+         /element segment index out of range for elem.drop/,
          false, false, false);
 
 
@@ -281,7 +281,7 @@ tab_test("elem.drop 3", "",
 
 tab_test("elem.drop 2", "",
          WebAssembly.CompileError,
-         /(element segment index out of range for elem.drop)|(segment index out of bounds)/,
+         /element segment index out of range for elem.drop/,
          false, false, true);
 
 
@@ -291,16 +291,16 @@ tab_test_nofail("elem.drop 1", "",
 
 
 tab_test("(table.init 1 (i32.const 12) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.CompileError, /(table index out of range)|(table index out of bounds)/,
+         WebAssembly.CompileError, /table index out of range/,
          false, false, false);
 
 
 tab_test("elem.drop 4", "",
-         WebAssembly.CompileError, /(element segment index out of range for elem.drop)|(segment index out of bounds)/);
+         WebAssembly.CompileError, /element segment index out of range for elem.drop/);
 
 
 tab_test("(table.init 4 (i32.const 12) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.CompileError, /(table.init segment index out of range)|(segment index out of bounds)/);
+         WebAssembly.CompileError, /table.init segment index out of range/);
 
 
 tab_test("elem.drop 2", "");
@@ -362,17 +362,17 @@ tab_test("",
 
 tab_test("elem.drop 1 (i32.const 42)", "",
          WebAssembly.CompileError,
-         /(unused values not explicitly dropped by end of block)|(values remaining on stack at end of block)/);
+         /unused values not explicitly dropped by end of block/);
 
 
 tab_test("(table.init 1 (i32.const 1) (i32.const 1) (i32.const 1) (i32.const 1))",
          "",
-         WebAssembly.CompileError, /(unused values)|(values remaining on stack at end of block)/);
+         WebAssembly.CompileError, /unused values/);
 
 
 tab_test("(table.init 1 (i32.const 1) (i32.const 1))", "",
          WebAssembly.CompileError,
-         /(popping value from empty stack)|(expected Some\(I32\) but nothing on stack)/);
+         /popping value from empty stack/);
 
 
 {

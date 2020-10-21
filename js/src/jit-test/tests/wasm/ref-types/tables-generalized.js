@@ -92,7 +92,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
      (func (export "f")
        (table.copy 0 1 (i32.const 5) (i32.const 0) (i32.const 5))))`)),
     WebAssembly.CompileError,
-    /(expression has type funcref but expected externref)|(type mismatch)/);
+    /expression has type funcref but expected externref/);
 
 
 
@@ -103,7 +103,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func (export "f")
          (table.copy 0 1 (i32.const 0) (i32.const 0) (i32.const 5))))`)),
                    WebAssembly.CompileError,
-                   /(expression has type externref but expected funcref)|(type mismatch)/);
+                   /expression has type externref but expected funcref/);
 
 
 
@@ -136,7 +136,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func
          (table.init 0 (i32.const 0) (i32.const 0) (i32.const 0))))`)),
                    WebAssembly.CompileError,
-                   /(expression has type funcref but expected externref)|(type mismatch)/);
+                   /expression has type funcref but expected externref/);
 
 
 
@@ -149,7 +149,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func
          (table.init 0 (i32.const 0) (i32.const 0) (i32.const 0))))`)),
                    WebAssembly.CompileError,
-                   /(expression has type externref but expected funcref)|(type mismatch)/);
+                   /expression has type externref but expected funcref/);
 
 
 
@@ -170,7 +170,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func (result i32)
          (call_indirect (type $t) (i32.const 37))))`)),
                    WebAssembly.CompileError,
-                   /(indirect calls must go through a table of 'funcref')|(type mismatch)/);
+                   /indirect calls must go through a table of 'funcref'/);
 
 
 
@@ -243,7 +243,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func (export "f") (param i32)
          (drop (table.get (local.get 0)))))`)),
                    WebAssembly.CompileError,
-                   /(table index out of range for table.get)|(table index out of bounds)/);
+                   /table index out of range for table.get/);
 
 
 
@@ -276,7 +276,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
            (func (export "set_ref") (param i32) (param externref)
              (table.set (local.get 0) (local.get 1))))`)),
                    WebAssembly.CompileError,
-                   /(type mismatch: expression has type externref but expected funcref)|(type mismatch: expected Some\(FuncRef\), found Some\(ExternRef\))/);
+                   /type mismatch: expression has type externref but expected funcref/);
 
 
 
@@ -312,7 +312,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
       (func (export "f") (param externref)
        (table.set (i32.const 0) (local.get 0))))`)),
                    WebAssembly.CompileError,
-                   /(table index out of range for table.set)|(table index out of bounds)/);
+                   /table index out of range for table.set/);
 
 function testTableGrow(lhs_type, lhs_reftype, rhs_type, x) {
   let ins = wasmEvalText(
@@ -360,7 +360,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
         (func (export "grow2") (param i32) (param externref) (result i32)
          (table.grow (local.get 1) (local.get 0))))`)),
                    WebAssembly.CompileError,
-                   /(type mismatch: expression has type externref but expected funcref)|(type mismatch: expected Some\(FuncRef\), found Some\(ExternRef\))/);
+                   /type mismatch: expression has type externref but expected funcref/);
 
 
 
@@ -393,7 +393,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func (export "f") (param i32)
         (table.grow (ref.null extern) (local.get 0))))`)),
                    WebAssembly.CompileError,
-                   /(table index out of range for table.grow)|(table index out of bounds)/);
+                   /table index out of range for table.grow/);
 
 
 
