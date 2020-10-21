@@ -306,14 +306,17 @@ public class MediaSession {
         
 
 
+
         public final double duration;
 
         
 
 
+
         public final long width;
 
         
+
 
 
         public final long height;
@@ -726,7 +729,8 @@ public class MediaSession {
                 final long features = Feature.fromBundle(
                         message.getBundle("features"));
                 delegate.onFeatures(mSession, mMediaSession, features);
-            } else if (FULLSCREEN_EVENT.equals(event)) {
+            } else if (FULLSCREEN_EVENT.equals(event) &&
+                    mMediaSession.isActive()) {
                 final boolean enabled = message.getBoolean("enabled");
                 final ElementMetadata meta =
                         ElementMetadata.fromBundle(
