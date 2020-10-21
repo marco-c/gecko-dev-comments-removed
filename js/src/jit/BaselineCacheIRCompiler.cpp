@@ -1123,14 +1123,11 @@ bool BaselineCacheIRCompiler::emitStoreTypedObjectReferenceProperty(
   Register obj = allocator.useRegister(masm, objId);
   AutoScratchRegister scratch2(allocator, masm);
 
-  
-  if (type != ReferenceType::TYPE_STRING) {
-    LiveGeneralRegisterSet saveRegs;
-    saveRegs.add(obj);
-    saveRegs.add(val);
-    if (!callTypeUpdateIC(obj, val, scratch1, saveRegs)) {
-      return false;
-    }
+  LiveGeneralRegisterSet saveRegs;
+  saveRegs.add(obj);
+  saveRegs.add(val);
+  if (!callTypeUpdateIC(obj, val, scratch1, saveRegs)) {
+    return false;
   }
 
   
