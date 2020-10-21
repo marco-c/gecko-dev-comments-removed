@@ -31,8 +31,11 @@ const RESIZE_DEBOUNCE_RATE_MS = 500;
 
 
 
-function setupPlayer(id, wgp) {
-  Player.init(id, wgp);
+
+
+
+function setupPlayer(id, wgp, videoRef) {
+  Player.init(id, wgp, videoRef);
 }
 
 
@@ -102,7 +105,10 @@ let Player = {
 
 
 
-  init(id, wgp) {
+
+
+
+  init(id, wgp, videoRef) {
     this.id = id;
 
     let holder = document.querySelector(".player-holder");
@@ -125,7 +131,9 @@ let Player = {
     this.actor = browser.browsingContext.currentWindowGlobal.getActor(
       "PictureInPicture"
     );
-    this.actor.sendAsyncMessage("PictureInPicture:SetupPlayer");
+    this.actor.sendAsyncMessage("PictureInPicture:SetupPlayer", {
+      videoRef,
+    });
 
     for (let eventType of this.WINDOW_EVENTS) {
       addEventListener(eventType, this);

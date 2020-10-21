@@ -4,7 +4,11 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["PictureInPictureChild", "PictureInPictureToggleChild"];
+var EXPORTED_SYMBOLS = [
+  "PictureInPictureChild",
+  "PictureInPictureToggleChild",
+  "PictureInPictureLauncherChild",
+];
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -35,6 +39,11 @@ ChromeUtils.defineModuleGetter(
   this,
   "Rect",
   "resource://gre/modules/Geometry.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ContentDOMReference",
+  "resource://gre/modules/ContentDOMReference.jsm"
 );
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -68,6 +77,109 @@ var gWeakIntersectingVideosForTesting = new WeakSet();
 XPCOMUtils.defineLazyGetter(this, "gSiteOverrides", () => {
   return PictureInPictureToggleChild.getSiteOverrides();
 });
+
+
+
+
+
+
+
+
+function getWeakVideo() {
+  if (gWeakVideo) {
+    
+    
+    try {
+      return gWeakVideo.get();
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+
+
+
+
+
+
+
+
+function inPictureInPicture(video) {
+  return getWeakVideo() === video;
+}
+
+class PictureInPictureLauncherChild extends JSWindowActorChild {
+  handleEvent(event) {
+    switch (event.type) {
+      case "MozTogglePictureInPicture": {
+        if (event.isTrusted) {
+          this.togglePictureInPicture(event.target);
+        }
+        break;
+      }
+    }
+  }
+
+  receiveMessage(message) {
+    switch (message.name) {
+      case "PictureInPicture:KeyToggle": {
+        this.keyToggle();
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async togglePictureInPicture(video) {
+    const videoRef = ContentDOMReference.get(video);
+    this.sendAsyncMessage("PictureInPicture:Request", {
+      isMuted: PictureInPictureChild.videoIsMuted(video),
+      playing: PictureInPictureChild.videoIsPlaying(video),
+      videoHeight: video.videoHeight,
+      videoWidth: video.videoWidth,
+      videoRef,
+    });
+  }
+
+  
+  
+
+
+
+
+
+  keyToggle() {
+    let focusedWindow = Services.focus.focusedWindow;
+    if (focusedWindow) {
+      let doc = focusedWindow.document;
+      if (doc) {
+        let listOfVideos = [...doc.querySelectorAll("video")];
+        
+        
+        let video =
+          listOfVideos.filter(v => !v.paused)[0] ||
+          listOfVideos.sort((a, b) => b.duration - a.duration)[0];
+        if (video) {
+          this.togglePictureInPicture(video);
+        }
+      }
+    }
+  }
+}
 
 
 
@@ -1009,14 +1121,8 @@ class PictureInPictureChild extends JSWindowActorChild {
 
   handleEvent(event) {
     switch (event.type) {
-      case "MozTogglePictureInPicture": {
-        if (event.isTrusted) {
-          this.togglePictureInPicture(event.target);
-        }
-        break;
-      }
       case "MozStopPictureInPicture": {
-        if (event.isTrusted && event.target === this.getWeakVideo()) {
+        if (event.isTrusted && event.target === getWeakVideo()) {
           this.closePictureInPicture({ reason: "video-el-remove" });
         }
         break;
@@ -1040,7 +1146,7 @@ class PictureInPictureChild extends JSWindowActorChild {
         break;
       }
       case "volumechange": {
-        let video = this.getWeakVideo();
+        let video = getWeakVideo();
 
         
         
@@ -1061,7 +1167,7 @@ class PictureInPictureChild extends JSWindowActorChild {
       }
       case "resize": {
         let video = event.target;
-        if (this.inPictureInPicture(video)) {
+        if (inPictureInPicture(video)) {
           this.sendAsyncMessage("PictureInPicture:Resize", {
             videoHeight: video.videoHeight,
             videoWidth: video.videoWidth,
@@ -1070,26 +1176,6 @@ class PictureInPictureChild extends JSWindowActorChild {
         break;
       }
     }
-  }
-
-  
-
-
-
-
-
-
-  getWeakVideo() {
-    if (gWeakVideo) {
-      
-      
-      try {
-        return gWeakVideo.get();
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
   }
 
   
@@ -1121,64 +1207,8 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
-
-
-
-
-  async togglePictureInPicture(video) {
-    
-    
-    if (video.srcObject) {
-      return;
-    }
-
-    if (this.inPictureInPicture(video)) {
-      
-      
-      
-      
-      await this.closePictureInPicture({ reason: "contextmenu" });
-    } else {
-      if (this.getWeakVideo()) {
-        
-        
-        
-        await this.closePictureInPicture({ reason: "new-pip" });
-      }
-
-      gWeakVideo = Cu.getWeakReference(video);
-      this.sendAsyncMessage("PictureInPicture:Request", {
-        isMuted: PictureInPictureChild.videoIsMuted(video),
-        playing: PictureInPictureChild.videoIsPlaying(video),
-        videoHeight: video.videoHeight,
-        videoWidth: video.videoWidth,
-      });
-    }
-  }
-
-  
-
-
-
-
-
-
-
-  inPictureInPicture(video) {
-    return this.getWeakVideo() === video;
-  }
-
-  
-
-
-
-
-
-
-
-
   async closePictureInPicture({ reason }) {
-    let video = this.getWeakVideo();
+    let video = getWeakVideo();
     if (video) {
       this.untrackOriginatingVideo(video);
     }
@@ -1206,7 +1236,8 @@ class PictureInPictureChild extends JSWindowActorChild {
   receiveMessage(message) {
     switch (message.name) {
       case "PictureInPicture:SetupPlayer": {
-        this.setupPlayer();
+        const { videoRef } = message.data;
+        this.setupPlayer(videoRef);
         break;
       }
       case "PictureInPicture:Play": {
@@ -1227,10 +1258,6 @@ class PictureInPictureChild extends JSWindowActorChild {
       }
       case "PictureInPicture:KeyDown": {
         this.keyDown(message.data);
-        break;
-      }
-      case "PictureInPicture:KeyToggle": {
-        this.keyToggle();
         break;
       }
     }
@@ -1295,8 +1322,28 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
-  async setupPlayer() {
-    let originatingVideo = this.getWeakVideo();
+
+
+
+  async setupPlayer(videoRef) {
+    const video = await ContentDOMReference.resolve(videoRef);
+    const weakVideo = Cu.getWeakReference(video);
+
+    if (inPictureInPicture(weakVideo)) {
+      
+      
+      
+      
+      this.closePictureInPicture({ reason: "context-menu" });
+    } else {
+      if (getWeakVideo()) {
+        this.closePictureInPicture({ reason: "new-pip" });
+      }
+
+      gWeakVideo = weakVideo;
+    }
+
+    let originatingVideo = getWeakVideo();
     if (!originatingVideo) {
       
       
@@ -1341,7 +1388,7 @@ class PictureInPictureChild extends JSWindowActorChild {
     this.contentWindow.addEventListener(
       "unload",
       () => {
-        let video = this.getWeakVideo();
+        let video = getWeakVideo();
         if (video) {
           this.untrackOriginatingVideo(video);
           video.stopCloningElementVisually();
@@ -1353,28 +1400,28 @@ class PictureInPictureChild extends JSWindowActorChild {
   }
 
   play() {
-    let video = this.getWeakVideo();
+    let video = getWeakVideo();
     if (video) {
       video.play();
     }
   }
 
   pause() {
-    let video = this.getWeakVideo();
+    let video = getWeakVideo();
     if (video) {
       video.pause();
     }
   }
 
   mute() {
-    let video = this.getWeakVideo();
+    let video = getWeakVideo();
     if (video) {
       video.muted = true;
     }
   }
 
   unmute() {
-    let video = this.getWeakVideo();
+    let video = getWeakVideo();
     if (video) {
       video.muted = false;
     }
@@ -1385,7 +1432,7 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
   isKeyEnabled(key) {
-    const video = this.getWeakVideo();
+    const video = getWeakVideo();
     if (!video) {
       return false;
     }
@@ -1411,7 +1458,7 @@ class PictureInPictureChild extends JSWindowActorChild {
 
   
   keyDown({ altKey, shiftKey, metaKey, ctrlKey, keyCode }) {
-    let video = this.getWeakVideo();
+    let video = getWeakVideo();
     if (!video) {
       return;
     }
@@ -1555,30 +1602,6 @@ class PictureInPictureChild extends JSWindowActorChild {
       }
     } catch (e) {
       
-    }
-  }
-
-  
-
-
-
-
-
-  keyToggle() {
-    let focusedWindow = Services.focus.focusedWindow;
-    if (focusedWindow) {
-      let doc = focusedWindow.document;
-      if (doc) {
-        let listOfVideos = [...doc.querySelectorAll("video")];
-        
-        
-        let video =
-          listOfVideos.filter(v => !v.paused)[0] ||
-          listOfVideos.sort((a, b) => b.duration - a.duration)[0];
-        if (video) {
-          this.togglePictureInPicture(video);
-        }
-      }
     }
   }
 }
