@@ -157,6 +157,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   void UpdateConnectionInfo(nsHttpConnectionInfo* aConnInfo);
 
+  void SetClassOfService(uint32_t cos);
+
  private:
   friend class DeleteHttpTransaction;
   virtual ~nsHttpTransaction();
@@ -342,6 +344,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   Atomic<uint32_t> mCapsToClear;
   Atomic<bool, ReleaseAcquire> mResponseIsComplete;
+  Atomic<bool, ReleaseAcquire> mClosed;
 
   
   
@@ -350,7 +353,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   
   
-  bool mClosed;
   bool mConnected;
   bool mActivated;
   bool mHaveStatusLine;
@@ -436,7 +438,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   uint32_t ClassOfService() { return mClassOfService; }
 
  private:
-  uint32_t mClassOfService;
+  Atomic<uint32_t, Relaxed> mClassOfService;
 
  public:
   

@@ -96,8 +96,6 @@ class HttpTransactionShell : public nsISupports {
   virtual nsresult AsyncRead(nsIStreamListener* listener,
                              nsIRequest** pump) = 0;
 
-  virtual void SetClassOfService(uint32_t classOfService) = 0;
-
   
   
   virtual UniquePtr<nsHttpResponseHead> TakeResponseHead() = 0;
@@ -174,7 +172,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(HttpTransactionShell, HTTPTRANSACTIONSHELL_IID)
       override;                                                                \
   virtual nsresult AsyncRead(nsIStreamListener* listener, nsIRequest** pump)   \
       override;                                                                \
-  virtual void SetClassOfService(uint32_t classOfService) override;            \
   virtual UniquePtr<nsHttpResponseHead> TakeResponseHead() override;           \
   virtual UniquePtr<nsHttpHeaderArray> TakeResponseTrailers() override;        \
   virtual nsISupports* SecurityInfo() override;                                \
