@@ -573,7 +573,7 @@ impl SwCompositeGraphNode {
 
     
     
-    fn unblock_children(&self, sender: &channel::Sender<Arc<SwCompositeGraphNode>>) {
+    fn unblock_children(&self, sender: &channel::crossbeam::Sender<Arc<SwCompositeGraphNode>>) {
         if self.num_bands.fetch_sub(1, Ordering::SeqCst) > 1 {
             return;
         }
@@ -597,12 +597,12 @@ impl SwCompositeGraphNode {
 
 struct SwCompositeThread {
     
-    job_sender: channel::Sender<Arc<SwCompositeGraphNode>>,
-    job_receiver: channel::Receiver<Arc<SwCompositeGraphNode>>,
+    job_sender: channel::crossbeam::Sender<Arc<SwCompositeGraphNode>>,
+    job_receiver: channel::crossbeam::Receiver<Arc<SwCompositeGraphNode>>,
     
     job_count: AtomicUsize,
     
-    jobs_completed: channel::Receiver<()>,
+    jobs_completed: channel::crossbeam::Receiver<()>,
 }
 
 
@@ -613,8 +613,8 @@ impl SwCompositeThread {
     
     
     fn new() -> Arc<SwCompositeThread> {
-        let (job_sender, job_receiver) = channel::unbounded_channel();
-        let (notify_completed, jobs_completed) = channel::fast_channel(1);
+        let (job_sender, job_receiver) = channel::crossbeam::unbounded();
+        let (notify_completed, jobs_completed) = channel::crossbeam::bounded(1);
         let info = Arc::new(SwCompositeThread {
             job_sender,
             job_receiver,
@@ -717,7 +717,7 @@ impl SwCompositeThread {
         }
         
         loop {
-            channel::select! {
+            channel::crossbeam::select! {
                 // Steal jobs from the SwComposite thread if it is busy.
                 recv(self.job_receiver) -> graph_node => if let Ok(graph_node) = graph_node {
                     if self.process_job(graph_node) {

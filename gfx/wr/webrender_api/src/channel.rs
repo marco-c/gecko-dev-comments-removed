@@ -7,7 +7,14 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::io::{self, Cursor, Error, ErrorKind, Read};
 use std::mem;
-pub use crossbeam_channel::{select, Sender, Receiver};
+
+pub use crossbeam_channel as crossbeam;
+
+#[cfg(not(target_os = "windows"))]
+pub use crossbeam_channel::{Sender, Receiver};
+
+#[cfg(target_os = "windows")]
+pub use std::sync::mpsc::{Sender, Receiver};
 
 #[derive(Clone)]
 pub struct Payload {
@@ -132,6 +139,7 @@ impl<'de, T> Deserialize<'de> for MsgSender<T> {
 
 
 
+#[cfg(not(target_os = "windows"))]
 pub fn single_msg_channel<T>() -> (Sender<T>, Receiver<T>) {
     crossbeam_channel::bounded(1)
 }
@@ -144,6 +152,7 @@ pub fn single_msg_channel<T>() -> (Sender<T>, Receiver<T>) {
 
 
 
+#[cfg(not(target_os = "windows"))]
 pub fn fast_channel<T>(capacity: usize) -> (Sender<T>, Receiver<T>) {
     crossbeam_channel::bounded(capacity)
 }
@@ -151,4 +160,21 @@ pub fn fast_channel<T>(capacity: usize) -> (Sender<T>, Receiver<T>) {
 
 
 
+#[cfg(not(target_os = "windows"))]
 pub use crossbeam_channel::unbounded as unbounded_channel;
+
+
+#[cfg(target_os = "windows")]
+pub fn fast_channel<T>(_cap: usize) -> (Sender<T>, Receiver<T>) {
+    std::sync::mpsc::channel()
+}
+
+#[cfg(target_os = "windows")]
+pub fn unbounded_channel<T>() -> (Sender<T>, Receiver<T>) {
+    std::sync::mpsc::channel()
+}
+
+#[cfg(target_os = "windows")]
+pub fn single_msg_channel<T>() -> (Sender<T>, Receiver<T>) {
+    std::sync::mpsc::channel()
+}
