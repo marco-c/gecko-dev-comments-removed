@@ -11,6 +11,8 @@
 #include "jsmath.h"     
                         
 #include "builtin/Array.h"      
+#include "builtin/MapObject.h"  
+                                
 #include "builtin/RegExp.h"     
                                 
 
@@ -78,10 +80,12 @@ namespace jit {
   _(js::jit::InvalidationBailout)                           \
   _(js::jit::Printf0)                                       \
   _(js::jit::Printf1)                                       \
+  _(js::MapIteratorObject::next)                            \
   _(js::NumberMod)                                          \
   _(js::powi)                                               \
   _(js::RegExpInstanceOptimizableRaw)                       \
   _(js::RegExpPrototypeOptimizableRaw)                      \
+  _(js::SetIteratorObject::next)                            \
   _(js::TraceLogStartEventPrivate)                          \
   _(js::TraceLogStopEventPrivate)
 
