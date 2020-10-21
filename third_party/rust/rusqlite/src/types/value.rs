@@ -109,6 +109,7 @@ where
 }
 
 impl Value {
+    
     pub fn data_type(&self) -> Type {
         match *self {
             Value::Null => Type::Null,

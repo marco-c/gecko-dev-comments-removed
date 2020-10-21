@@ -12,20 +12,13 @@
 #![no_std]
 #![cfg_attr(
     feature = "nightly",
-    feature(
-        alloc_layout_extra,
-        allocator_api,
-        ptr_offset_from,
-        test,
-        core_intrinsics,
-        dropck_eyepatch,
-        specialization,
-    )
+    feature(test, core_intrinsics, dropck_eyepatch, min_specialization, extend_one)
 )]
 #![allow(
     clippy::doc_markdown,
     clippy::module_name_repetitions,
-    clippy::must_use_candidate
+    clippy::must_use_candidate,
+    clippy::option_if_let_else
 )]
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
@@ -34,11 +27,8 @@
 #[macro_use]
 extern crate std;
 
-#[cfg(has_extern_crate_alloc)]
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
-#[cfg(not(has_extern_crate_alloc))]
-extern crate std as alloc;
 
 #[cfg(feature = "nightly")]
 #[cfg(doctest)]
@@ -109,12 +99,13 @@ pub use crate::set::HashSet;
 
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub enum CollectionAllocErr {
+pub enum TryReserveError {
     
     
     CapacityOverflow,
+
     
-    AllocErr {
+    AllocError {
         
         layout: alloc::alloc::Layout,
     },

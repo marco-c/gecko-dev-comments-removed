@@ -26,6 +26,20 @@ impl BitMask {
     }
 
     
+    
+    
+    #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
+    #[cfg(feature = "raw")]
+    pub unsafe fn flip(&mut self, index: usize) -> bool {
+        
+        let mask = 1 << (index * BITMASK_STRIDE + BITMASK_STRIDE - 1);
+        self.0 ^= mask;
+        
+        self.0 & mask == 0
+    }
+
+    
     #[inline]
     #[must_use]
     pub fn remove_lowest_bit(self) -> Self {

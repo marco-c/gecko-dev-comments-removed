@@ -1,13 +1,13 @@
-use crate::CollectionAllocErr;
+use crate::TryReserveError;
+use alloc::borrow::ToOwned;
 use core::borrow::Borrow;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FromIterator, FusedIterator};
+use core::mem;
 use core::ops::{BitAnd, BitOr, BitXor, Sub};
 
-use super::map::{self, DefaultHashBuilder, HashMap, Keys};
-
-
+use super::map::{self, ConsumeAllOnDrop, DefaultHashBuilder, DrainFilterInner, HashMap, Keys};
 
 
 
@@ -128,7 +128,7 @@ impl<T: Clone, S: Clone> Clone for HashSet<T, S> {
 }
 
 #[cfg(feature = "ahash")]
-impl<T: Hash + Eq> HashSet<T, DefaultHashBuilder> {
+impl<T> HashSet<T, DefaultHashBuilder> {
     
     
     
@@ -168,6 +168,72 @@ impl<T: Hash + Eq> HashSet<T, DefaultHashBuilder> {
 }
 
 impl<T, S> HashSet<T, S> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub const fn with_hasher(hasher: S) -> Self {
+        Self {
+            map: HashMap::with_hasher(hasher),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> Self {
+        Self {
+            map: HashMap::with_capacity_and_hasher(capacity, hasher),
+        }
+    }
+
     
     
     
@@ -275,70 +341,69 @@ impl<T, S> HashSet<T, S> {
     
     
     
+    
+    
+    pub fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&T) -> bool,
+    {
+        self.map.retain(|k, _| f(k));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn drain_filter<F>(&mut self, f: F) -> DrainFilter<'_, T, F>
+    where
+        F: FnMut(&T) -> bool,
+    {
+        DrainFilter {
+            f,
+            inner: DrainFilterInner {
+                iter: unsafe { self.map.table.iter() },
+                table: &mut self.map.table,
+            },
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn clear(&mut self) {
         self.map.clear()
-    }
-}
-
-impl<T, S> HashSet<T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn with_hasher(hasher: S) -> Self {
-        Self {
-            map: HashMap::with_hasher(hasher),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> Self {
-        Self {
-            map: HashMap::with_capacity_and_hasher(capacity, hasher),
-        }
     }
 
     
@@ -359,7 +424,13 @@ where
     pub fn hasher(&self) -> &S {
         self.map.hasher()
     }
+}
 
+impl<T, S> HashSet<T, S>
+where
+    T: Eq + Hash,
+    S: BuildHasher,
+{
     
     
     
@@ -398,7 +469,7 @@ where
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), CollectionAllocErr> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.map.try_reserve(additional)
     }
 
@@ -559,7 +630,7 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn union<'a>(&'a self, other: &'a Self) -> Union<'a, T, S> {
-        let (smaller, larger) = if self.len() <= other.len() {
+        let (smaller, larger) = if self.len() >= other.len() {
             (self, other)
         } else {
             (other, self)
@@ -620,7 +691,11 @@ where
         T: Borrow<Q>,
         Q: Hash + Eq,
     {
-        self.map.get_key_value(value).map(|(k, _)| k)
+        
+        match self.map.get_key_value(value) {
+            Some((k, _)) => Some(k),
+            None => None,
+        }
     }
 
     
@@ -645,6 +720,39 @@ where
             .raw_entry_mut()
             .from_key(&value)
             .or_insert(value, ())
+            .0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn get_or_insert_owned<Q: ?Sized>(&mut self, value: &Q) -> &T
+    where
+        T: Borrow<Q>,
+        Q: Hash + Eq + ToOwned<Owned = T>,
+    {
+        
+        
+        self.map
+            .raw_entry_mut()
+            .from_key(value)
+            .or_insert_with(|| (value.to_owned(), ()))
             .0
     }
 
@@ -851,28 +959,11 @@ where
         T: Borrow<Q>,
         Q: Hash + Eq,
     {
-        self.map.remove_entry(value).map(|(k, _)| k)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn retain<F>(&mut self, mut f: F)
-    where
-        F: FnMut(&T) -> bool,
-    {
-        self.map.retain(|k, _| f(k));
+        
+        match self.map.remove_entry(value) {
+            Some((k, _)) => Some(k),
+            None => None,
+        }
     }
 }
 
@@ -929,6 +1020,18 @@ where
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         self.map.extend(iter.into_iter().map(|k| (k, ())));
     }
+
+    #[inline]
+    #[cfg(feature = "nightly")]
+    fn extend_one(&mut self, k: T) {
+        self.map.insert(k, ());
+    }
+
+    #[inline]
+    #[cfg(feature = "nightly")]
+    fn extend_reserve(&mut self, additional: usize) {
+        Extend::<(T, ())>::extend_reserve(&mut self.map, additional);
+    }
 }
 
 impl<'a, T, S> Extend<&'a T> for HashSet<T, S>
@@ -940,12 +1043,23 @@ where
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
         self.extend(iter.into_iter().cloned());
     }
+
+    #[inline]
+    #[cfg(feature = "nightly")]
+    fn extend_one(&mut self, k: &'a T) {
+        self.map.insert(*k, ());
+    }
+
+    #[inline]
+    #[cfg(feature = "nightly")]
+    fn extend_reserve(&mut self, additional: usize) {
+        Extend::<(T, ())>::extend_reserve(&mut self.map, additional);
+    }
 }
 
 impl<T, S> Default for HashSet<T, S>
 where
-    T: Eq + Hash,
-    S: BuildHasher + Default,
+    S: Default,
 {
     
     #[cfg_attr(feature = "inline-more", inline)]
@@ -1124,6 +1238,21 @@ pub struct Drain<'a, K> {
 
 
 
+pub struct DrainFilter<'a, K, F>
+where
+    F: FnMut(&K) -> bool,
+{
+    f: F,
+    inner: DrainFilterInner<'a, K, ()>,
+}
+
+
+
+
+
+
+
+
 pub struct Intersection<'a, T, S> {
     
     iter: Iter<'a, T>,
@@ -1248,7 +1377,11 @@ impl<K> Iterator for IntoIter<K> {
 
     #[cfg_attr(feature = "inline-more", inline)]
     fn next(&mut self) -> Option<K> {
-        self.iter.next().map(|(k, _)| k)
+        
+        match self.iter.next() {
+            Some((k, _)) => Some(k),
+            None => None,
+        }
     }
     #[cfg_attr(feature = "inline-more", inline)]
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -1275,7 +1408,11 @@ impl<K> Iterator for Drain<'_, K> {
 
     #[cfg_attr(feature = "inline-more", inline)]
     fn next(&mut self) -> Option<K> {
-        self.iter.next().map(|(k, _)| k)
+        
+        match self.iter.next() {
+            Some((k, _)) => Some(k),
+            None => None,
+        }
     }
     #[cfg_attr(feature = "inline-more", inline)]
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -1296,6 +1433,41 @@ impl<K: fmt::Debug> fmt::Debug for Drain<'_, K> {
         f.debug_list().entries(entries_iter).finish()
     }
 }
+
+impl<'a, K, F> Drop for DrainFilter<'a, K, F>
+where
+    F: FnMut(&K) -> bool,
+{
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn drop(&mut self) {
+        while let Some(item) = self.next() {
+            let guard = ConsumeAllOnDrop(self);
+            drop(item);
+            mem::forget(guard);
+        }
+    }
+}
+
+impl<K, F> Iterator for DrainFilter<'_, K, F>
+where
+    F: FnMut(&K) -> bool,
+{
+    type Item = K;
+
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn next(&mut self) -> Option<Self::Item> {
+        let f = &mut self.f;
+        let (k, _) = self.inner.next(&mut |k, _| f(k))?;
+        Some(k)
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.inner.iter.size_hint().1)
+    }
+}
+
+impl<K, F> FusedIterator for DrainFilter<'_, K, F> where F: FnMut(&K) -> bool {}
 
 impl<T, S> Clone for Intersection<'_, T, S> {
     #[cfg_attr(feature = "inline-more", inline)]
@@ -1734,13 +1906,15 @@ mod test_set {
 
     #[test]
     fn test_from_iter() {
-        let xs = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let xs = [1, 2, 2, 3, 4, 5, 6, 7, 8, 9];
 
         let set: HashSet<_> = xs.iter().cloned().collect();
 
         for x in &xs {
             assert!(set.contains(x));
         }
+
+        assert_eq!(set.iter().len(), xs.len() - 1);
     }
 
     #[test]
@@ -1902,5 +2076,44 @@ mod test_set {
         assert!(set.contains(&2));
         assert!(set.contains(&4));
         assert!(set.contains(&6));
+    }
+
+    #[test]
+    fn test_drain_filter() {
+        {
+            let mut set: HashSet<i32> = (0..8).collect();
+            let drained = set.drain_filter(|&k| k % 2 == 0);
+            let mut out = drained.collect::<Vec<_>>();
+            out.sort_unstable();
+            assert_eq!(vec![0, 2, 4, 6], out);
+            assert_eq!(set.len(), 4);
+        }
+        {
+            let mut set: HashSet<i32> = (0..8).collect();
+            drop(set.drain_filter(|&k| k % 2 == 0));
+            assert_eq!(set.len(), 4, "Removes non-matching items on drop");
+        }
+    }
+
+    #[test]
+    fn test_const_with_hasher() {
+        use core::hash::BuildHasher;
+        use std::collections::hash_map::DefaultHasher;
+
+        #[derive(Clone)]
+        struct MyHasher;
+        impl BuildHasher for MyHasher {
+            type Hasher = DefaultHasher;
+
+            fn build_hasher(&self) -> DefaultHasher {
+                DefaultHasher::new()
+            }
+        }
+
+        const EMPTY_SET: HashSet<u32, MyHasher> = HashSet::with_hasher(MyHasher);
+
+        let mut set = EMPTY_SET.clone();
+        set.insert(19);
+        assert!(set.contains(&19));
     }
 }

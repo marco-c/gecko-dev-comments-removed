@@ -6,8 +6,14 @@ use std::ops::Deref;
 #[derive(Copy, Clone)]
 #[non_exhaustive]
 pub enum TransactionBehavior {
+    
+    
     Deferred,
+    
+    
     Immediate,
+    
+    
     Exclusive,
 }
 

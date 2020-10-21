@@ -61,13 +61,13 @@ use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 
 
 #[repr(transparent)]
-pub struct Module<T: VTab> {
+pub struct Module<'vtab, T: VTab<'vtab>> {
     base: ffi::sqlite3_module,
-    phantom: PhantomData<T>,
+    phantom: PhantomData<&'vtab T>,
 }
 
-unsafe impl<T: VTab> Send for Module<T> {}
-unsafe impl<T: VTab> Sync for Module<T> {}
+unsafe impl<'vtab, T: VTab<'vtab>> Send for Module<'vtab, T> {}
+unsafe impl<'vtab, T: VTab<'vtab>> Sync for Module<'vtab, T> {}
 
 union ModuleZeroHack {
     bytes: [u8; std::mem::size_of::<ffi::sqlite3_module>()],
@@ -87,7 +87,7 @@ const ZERO_MODULE: ffi::sqlite3_module = unsafe {
 
 
 
-pub fn read_only_module<T: CreateVTab>() -> &'static Module<T> {
+pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab, T> {
     
     
     &Module {
@@ -118,14 +118,14 @@ pub fn read_only_module<T: CreateVTab>() -> &'static Module<T> {
             xRollbackTo: None,
             ..ZERO_MODULE
         },
-        phantom: PhantomData::<T>,
+        phantom: PhantomData::<&'vtab T>,
     }
 }
 
 
 
 
-pub fn eponymous_only_module<T: VTab>() -> &'static Module<T> {
+pub fn eponymous_only_module<'vtab, T: VTab<'vtab>>() -> &'static Module<'vtab, T> {
     
     
     
@@ -157,7 +157,7 @@ pub fn eponymous_only_module<T: VTab>() -> &'static Module<T> {
             xRollbackTo: None,
             ..ZERO_MODULE
         },
-        phantom: PhantomData::<T>,
+        phantom: PhantomData::<&'vtab T>,
     }
 }
 
@@ -204,8 +204,10 @@ impl VTabConnection {
 
 
 
-pub unsafe trait VTab: Sized {
+pub unsafe trait VTab<'vtab>: Sized {
+    
     type Aux;
+    
     type Cursor: VTabCursor;
 
     
@@ -223,13 +225,13 @@ pub unsafe trait VTab: Sized {
 
     
     
-    fn open(&self) -> Result<Self::Cursor>;
+    fn open(&'vtab self) -> Result<Self::Cursor>;
 }
 
 
 
 
-pub trait CreateVTab: VTab {
+pub trait CreateVTab<'vtab>: VTab<'vtab> {
     
     
     
@@ -256,8 +258,9 @@ pub trait CreateVTab: VTab {
 }
 
 
+
 #[derive(Debug, PartialEq)]
-#[allow(non_snake_case, non_camel_case_types)]
+#[allow(non_snake_case, non_camel_case_types, missing_docs)]
 #[non_exhaustive]
 pub enum IndexConstraintOp {
     SQLITE_INDEX_CONSTRAINT_EQ,
@@ -329,6 +332,7 @@ impl IndexInfo {
         unsafe { (*self.0).nOrderBy as usize }
     }
 
+    
     pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage<'_> {
         let constraint_usages = unsafe {
             slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize)
@@ -495,6 +499,7 @@ pub unsafe trait VTabCursor: Sized {
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
+    
     pub fn set_result<T: ToSql>(&mut self, value: &T) -> Result<()> {
         let t = value.to_sql()?;
         unsafe { set_result(self.0, &t) };
@@ -511,14 +516,17 @@ pub struct Values<'a> {
 }
 
 impl Values<'_> {
+    
     pub fn len(&self) -> usize {
         self.args.len()
     }
 
+    
     pub fn is_empty(&self) -> bool {
         self.args.is_empty()
     }
 
+    
     pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
@@ -542,7 +550,7 @@ impl Values<'_> {
     
     
     #[cfg(feature = "array")]
-    pub(crate) fn get_array(&self, idx: usize) -> Result<Option<array::Array>> {
+    fn get_array(&self, idx: usize) -> Result<Option<array::Array>> {
         use crate::types::Value;
         let arg = self.args[idx];
         let ptr = unsafe { ffi::sqlite3_value_pointer(arg, array::ARRAY_TYPE) };
@@ -558,6 +566,7 @@ impl Values<'_> {
         }
     }
 
+    
     pub fn iter(&self) -> ValueIter<'_> {
         ValueIter {
             iter: self.args.iter(),
@@ -573,6 +582,7 @@ impl<'a> IntoIterator for &'a Values<'a> {
         self.iter()
     }
 }
+
 
 pub struct ValueIter<'a> {
     iter: slice::Iter<'a, *mut ffi::sqlite3_value>,
@@ -597,10 +607,10 @@ impl Connection {
     
     
     
-    pub fn create_module<T: VTab>(
+    pub fn create_module<'vtab, T: VTab<'vtab>>(
         &self,
         module_name: &str,
-        module: &'static Module<T>,
+        module: &'static Module<'vtab, T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
         self.db.borrow_mut().create_module(module_name, module, aux)
@@ -608,10 +618,10 @@ impl Connection {
 }
 
 impl InnerConnection {
-    fn create_module<T: VTab>(
+    fn create_module<'vtab, T: VTab<'vtab>>(
         &mut self,
         module_name: &str,
-        module: &'static Module<T>,
+        module: &'static Module<'vtab, T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
         let c_name = str_to_cstring(module_name)?;
@@ -693,7 +703,7 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
     let _: Box<T> = Box::from_raw(p as *mut T);
 }
 
-unsafe extern "C" fn rust_create<T>(
+unsafe extern "C" fn rust_create<'vtab, T>(
     db: *mut ffi::sqlite3,
     aux: *mut c_void,
     argc: c_int,
@@ -702,7 +712,7 @@ unsafe extern "C" fn rust_create<T>(
     err_msg: *mut *mut c_char,
 ) -> c_int
 where
-    T: CreateVTab,
+    T: CreateVTab<'vtab>,
 {
     use std::ffi::CStr;
 
@@ -745,7 +755,7 @@ where
     }
 }
 
-unsafe extern "C" fn rust_connect<T>(
+unsafe extern "C" fn rust_connect<'vtab, T>(
     db: *mut ffi::sqlite3,
     aux: *mut c_void,
     argc: c_int,
@@ -754,7 +764,7 @@ unsafe extern "C" fn rust_connect<T>(
     err_msg: *mut *mut c_char,
 ) -> c_int
 where
-    T: VTab,
+    T: VTab<'vtab>,
 {
     use std::ffi::CStr;
 
@@ -797,12 +807,12 @@ where
     }
 }
 
-unsafe extern "C" fn rust_best_index<T>(
+unsafe extern "C" fn rust_best_index<'vtab, T>(
     vtab: *mut ffi::sqlite3_vtab,
     info: *mut ffi::sqlite3_index_info,
 ) -> c_int
 where
-    T: VTab,
+    T: VTab<'vtab>,
 {
     let vt = vtab as *mut T;
     let mut idx_info = IndexInfo(info);
@@ -821,9 +831,9 @@ where
     }
 }
 
-unsafe extern "C" fn rust_disconnect<T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
+unsafe extern "C" fn rust_disconnect<'vtab, T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
 where
-    T: VTab,
+    T: VTab<'vtab>,
 {
     if vtab.is_null() {
         return ffi::SQLITE_OK;
@@ -833,9 +843,9 @@ where
     ffi::SQLITE_OK
 }
 
-unsafe extern "C" fn rust_destroy<T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
+unsafe extern "C" fn rust_destroy<'vtab, T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
 where
-    T: CreateVTab,
+    T: CreateVTab<'vtab>,
 {
     if vtab.is_null() {
         return ffi::SQLITE_OK;
@@ -859,12 +869,12 @@ where
     }
 }
 
-unsafe extern "C" fn rust_open<T>(
+unsafe extern "C" fn rust_open<'vtab, T: 'vtab>(
     vtab: *mut ffi::sqlite3_vtab,
     pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor,
 ) -> c_int
 where
-    T: VTab,
+    T: VTab<'vtab>,
 {
     let vt = vtab as *mut T;
     match (*vt).open() {

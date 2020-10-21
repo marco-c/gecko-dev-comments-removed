@@ -6,33 +6,55 @@ use crate::ffi;
 use crate::{Connection, Result};
 
 
+
 #[repr(i32)]
 #[allow(non_snake_case, non_camel_case_types)]
 #[non_exhaustive]
 pub enum DbConfig {
     
     
+    
     SQLITE_DBCONFIG_ENABLE_FKEY = 1002,
+    
     SQLITE_DBCONFIG_ENABLE_TRIGGER = 1003,
+    
+    
     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER = 1004, 
     
+    
+    
     SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE = 1006, 
-    SQLITE_DBCONFIG_ENABLE_QPSG = 1007,      
-    SQLITE_DBCONFIG_TRIGGER_EQP = 1008,      
+    
+    SQLITE_DBCONFIG_ENABLE_QPSG = 1007, 
+    
+    
+    SQLITE_DBCONFIG_TRIGGER_EQP = 1008, 
+    
     
     SQLITE_DBCONFIG_DEFENSIVE = 1010, 
+    
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_WRITABLE_SCHEMA = 1011, 
+    
+    
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_LEGACY_ALTER_TABLE = 1012, 
+    
+    
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_DQS_DML = 1013, 
+    
+    
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_DQS_DDL = 1014, 
+    
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_ENABLE_VIEW = 1015, 
+    
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_LEGACY_FILE_FORMAT = 1016, 
+    
+    
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_TRUSTED_SCHEMA = 1017, 
 }

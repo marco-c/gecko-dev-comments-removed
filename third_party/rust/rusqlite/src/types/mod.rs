@@ -17,33 +17,35 @@
 
 
 
+#![cfg_attr(
+    feature = "time",
+    doc = r##"
+For example, to store datetimes as `i64`s counting the number of seconds since
+the Unix epoch:
 
+```
+use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use rusqlite::Result;
 
+pub struct DateTimeSql(pub time::OffsetDateTime);
 
+impl FromSql for DateTimeSql {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        i64::column_result(value).map(|as_i64| {
+            DateTimeSql(time::OffsetDateTime::from_unix_timestamp(as_i64))
+        })
+    }
+}
 
+impl ToSql for DateTimeSql {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(self.0.timestamp().into())
+    }
+}
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"##
+)]
 
 
 
@@ -60,6 +62,7 @@ mod chrono;
 mod from_sql;
 #[cfg(feature = "serde_json")]
 mod serde_json;
+#[cfg(feature = "time")]
 mod time;
 mod to_sql;
 #[cfg(feature = "url")]
@@ -82,12 +85,19 @@ mod value_ref;
 #[derive(Copy, Clone)]
 pub struct Null;
 
+
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Type {
+    
     Null,
+    
     Integer,
+    
     Real,
+    
     Text,
+    
     Blob,
 }
 
@@ -222,10 +232,7 @@ mod test {
     #[allow(clippy::cognitive_complexity)]
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
-            match err {
-                Error::InvalidColumnType(..) => true,
-                _ => false,
-            }
+            matches!(err, Error::InvalidColumnType(..))
         }
 
         let db = checked_memory_handle();
@@ -266,8 +273,9 @@ mod test {
         assert!(is_invalid_column_type(
             row.get::<_, String>(0).err().unwrap()
         ));
+        #[cfg(feature = "time")]
         assert!(is_invalid_column_type(
-            row.get::<_, time::Timespec>(0).err().unwrap()
+            row.get::<_, time::OffsetDateTime>(0).err().unwrap()
         ));
         assert!(is_invalid_column_type(
             row.get::<_, Option<c_int>>(0).err().unwrap()
@@ -328,8 +336,9 @@ mod test {
         assert!(is_invalid_column_type(
             row.get::<_, Vec<u8>>(4).err().unwrap()
         ));
+        #[cfg(feature = "time")]
         assert!(is_invalid_column_type(
-            row.get::<_, time::Timespec>(4).err().unwrap()
+            row.get::<_, time::OffsetDateTime>(4).err().unwrap()
         ));
     }
 

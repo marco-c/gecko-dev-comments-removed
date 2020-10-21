@@ -22,7 +22,7 @@ use crate::{errmsg_to_string, str_to_cstring, Connection, DatabaseName, Result};
 
 
 pub struct Session<'conn> {
-    phantom: PhantomData<&'conn ()>,
+    phantom: PhantomData<&'conn Connection>,
     s: *mut ffi::sqlite3_session,
     filter: Option<Box<dyn Fn(&str) -> bool>>,
 }
@@ -299,7 +299,7 @@ impl Drop for Changeset {
 
 
 pub struct ChangesetIter<'changeset> {
-    phantom: PhantomData<&'changeset ()>,
+    phantom: PhantomData<&'changeset Changeset>,
     it: *mut ffi::sqlite3_changeset_iter,
     item: Option<ChangesetItem>,
 }
@@ -356,18 +356,22 @@ pub struct Operation<'item> {
 }
 
 impl Operation<'_> {
+    
     pub fn table_name(&self) -> &str {
         self.table_name
     }
 
+    
     pub fn number_of_columns(&self) -> i32 {
         self.number_of_columns
     }
 
+    
     pub fn code(&self) -> Action {
         self.code
     }
 
+    
     pub fn indirect(&self) -> bool {
         self.indirect
     }
@@ -488,6 +492,7 @@ pub struct Changegroup {
 }
 
 impl Changegroup {
+    
     pub fn new() -> Result<Self> {
         let mut cg = ptr::null_mut();
         check!(unsafe { ffi::sqlite3changegroup_new(&mut cg) });
@@ -620,6 +625,8 @@ impl Connection {
 }
 
 
+
+#[allow(missing_docs)]
 #[repr(i32)]
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
@@ -645,6 +652,8 @@ impl From<i32> for ConflictType {
 }
 
 
+
+#[allow(missing_docs)]
 #[repr(i32)]
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]

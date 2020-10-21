@@ -1,20 +1,30 @@
+use crate::convert::Convert;
 use crate::AHasher;
+use core::fmt;
 use core::hash::BuildHasher;
 use core::sync::atomic::AtomicUsize;
 use core::sync::atomic::Ordering;
 
-#[cfg(feature = "compile-time-rng")]
+use crate::operations::folded_multiply;
+#[cfg(all(feature = "compile-time-rng", not(test)))]
 use const_random::const_random;
 
 
 pub(crate) const MULTIPLE: u64 = 6364136223846793005;
+pub(crate) const INCREMENT: u64 = 1442695040888963407;
 
 
-#[cfg(feature = "compile-time-rng")]
-static SEED: AtomicUsize = AtomicUsize::new(const_random!(u64));
+#[cfg(all(feature = "compile-time-rng", not(test)))]
+pub(crate) const INIT_SEED: [u64; 2] = [const_random!(u64), const_random!(u64)];
 
-#[cfg(not(feature = "compile-time-rng"))]
-static SEED: AtomicUsize = AtomicUsize::new(MULTIPLE as usize);
+#[cfg(any(not(feature = "compile-time-rng"), test))]
+pub(crate) const INIT_SEED: [u64; 2] = [0x2360_ED05_1FC6_5DA4, 0x4385_DF64_9FCC_F645]; 
+
+#[cfg(all(feature = "compile-time-rng", not(test)))]
+static SEED: AtomicUsize = AtomicUsize::new(const_random!(u64) as usize);
+
+#[cfg(any(not(feature = "compile-time-rng"), test))]
+static SEED: AtomicUsize = AtomicUsize::new(INCREMENT as usize);
 
 
 
@@ -27,6 +37,14 @@ static SEED: AtomicUsize = AtomicUsize::new(MULTIPLE as usize);
 pub struct RandomState {
     pub(crate) k0: u64,
     pub(crate) k1: u64,
+    pub(crate) k2: u64,
+    pub(crate) k3: u64,
+}
+
+impl fmt::Debug for RandomState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.pad("RandomState { .. }")
+    }
 }
 
 impl RandomState {
@@ -38,23 +56,39 @@ impl RandomState {
         
         
         let current_seed = previous
-            .wrapping_mul(MULTIPLE)
             .wrapping_add(stack_mem_loc)
-            .rotate_left(31);
+            .wrapping_mul(MULTIPLE)
+            .rotate_right(31);
         SEED.store(current_seed as usize, Ordering::Relaxed);
-        let (k0, k1) = scramble_keys(&SEED as *const _ as u64, current_seed);
-        RandomState { k0, k1 }
+        let (k0, k1, k2, k3) = scramble_keys(&SEED as *const _ as u64, current_seed);
+        RandomState { k0, k1, k2, k3 }
+    }
+
+    
+    pub const fn with_seeds(k0: u64, k1: u64) -> RandomState {
+        let (k0, k1, k2, k3) = scramble_keys(k0, k1);
+        RandomState { k0, k1, k2, k3 }
     }
 }
 
-pub(crate) fn scramble_keys(k0: u64, k1: u64) -> (u64, u64) {
-    
-    
-    let result1 = k0.wrapping_add(k1);
-    let k1 = k1 ^ k0;
-    let k0 = k0.rotate_left(24) ^ k1 ^ (k1.wrapping_shl(16));
-    let result2 = k0.wrapping_add(k1.rotate_left(37));
-    (result2, result1)
+
+#[inline]
+pub(crate) const fn scramble_keys(a: u64, b: u64) -> (u64, u64, u64, u64) {
+    let k1 = folded_multiply(INIT_SEED[0] ^ a, MULTIPLE).wrapping_add(b);
+    let k2 = folded_multiply(INIT_SEED[0] ^ b, MULTIPLE).wrapping_add(a);
+    let k3 = folded_multiply(INIT_SEED[1] ^ a, MULTIPLE).wrapping_add(b);
+    let k4 = folded_multiply(INIT_SEED[1] ^ b, MULTIPLE).wrapping_add(a);
+    let combined = folded_multiply(a ^ b, MULTIPLE).wrapping_add(INCREMENT);
+    let rot1 = (combined & 63) as u32;
+    let rot2 = ((combined >> 16) & 63) as u32;
+    let rot3 = ((combined >> 32) & 63) as u32;
+    let rot4 = ((combined >> 48) & 63) as u32;
+    (
+        k1.rotate_left(rot1),
+        k2.rotate_left(rot2),
+        k3.rotate_left(rot3),
+        k4.rotate_left(rot4),
+    )
 }
 
 impl Default for RandomState {
@@ -99,6 +133,21 @@ impl BuildHasher for RandomState {
     
     #[inline]
     fn build_hasher(&self) -> AHasher {
-        AHasher::new_with_keys(self.k0, self.k1)
+        AHasher::new_with_keys([self.k0, self.k1].convert(), [self.k2, self.k3].convert())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_const_rand_disabled() {
+        assert_eq!(INIT_SEED, [0x2360_ED05_1FC6_5DA4, 0x4385_DF64_9FCC_F645]);
+    }
+
+    #[test]
+    fn test_with_seeds_const() {
+        const _CONST_RANDOM_STATE: RandomState = RandomState::with_seeds(17, 19);
     }
 }

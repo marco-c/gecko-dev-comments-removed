@@ -28,16 +28,17 @@ impl Group {
     
     
     
-    
-    pub fn static_empty() -> &'static [u8] {
-        union AlignedBytes {
-            _align: Group,
+    pub const fn static_empty() -> &'static [u8; Group::WIDTH] {
+        #[repr(C)]
+        struct AlignedBytes {
+            _align: [Group; 0],
             bytes: [u8; Group::WIDTH],
         };
-        static ALIGNED_BYTES: AlignedBytes = AlignedBytes {
+        const ALIGNED_BYTES: AlignedBytes = AlignedBytes {
+            _align: [],
             bytes: [EMPTY; Group::WIDTH],
         };
-        unsafe { &ALIGNED_BYTES.bytes }
+        &ALIGNED_BYTES.bytes
     }
 
     

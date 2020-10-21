@@ -1,9 +1,11 @@
 use crate::convert::*;
+use crate::operations::folded_multiply;
+#[cfg(feature = "specialize")]
+use crate::HasherExt;
 use core::hash::Hasher;
 
 
 const MULTIPLE: u64 = crate::random_state::MULTIPLE;
-const INCREMENT: u64 = 1442695040888963407;
 const ROT: u32 = 23; 
 
 
@@ -21,23 +23,31 @@ const ROT: u32 = 23;
 pub struct AHasher {
     buffer: u64,
     pad: u64,
+    extra_keys: [u64; 2],
 }
 
 impl AHasher {
     
     #[inline]
-    pub fn new_with_keys(key1: u64, key2: u64) -> AHasher {
+    #[allow(dead_code)] 
+    pub fn new_with_keys(key1: u128, key2: u128) -> AHasher {
         AHasher {
-            buffer: key1,
-            pad: key2,
+            buffer: key1 as u64,
+            pad: key2 as u64,
+            extra_keys: (key1 ^ key2).convert(),
         }
     }
 
     #[cfg(test)]
+    #[allow(dead_code)] 
     pub(crate) fn test_with_keys(key1: u64, key2: u64) -> AHasher {
         use crate::random_state::scramble_keys;
-        let (k1, k2) = scramble_keys(key1, key2);
-        AHasher { buffer: k1, pad: k2 }
+        let (k1, k2, k3, k4) = scramble_keys(key1, key2);
+        AHasher {
+            buffer: k1,
+            pad: k2,
+            extra_keys: [k3, k4],
+        }
     }
 
     
@@ -71,8 +81,7 @@ impl AHasher {
     
     #[inline(always)]
     fn update(&mut self, new_data: u64) {
-        use crate::folded_multiply::FoldedMultiply;
-        self.buffer = (new_data ^ self.buffer).folded_multiply(&MULTIPLE);
+        self.buffer = folded_multiply(new_data ^ self.buffer, MULTIPLE);
     }
 
     
@@ -86,29 +95,25 @@ impl AHasher {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline(always)]
-    fn ordered_update(&mut self, new_data: u64, key: u64) -> u64 {
-        self.buffer ^= (new_data ^ key)
-            .wrapping_mul(MULTIPLE)
-            .rotate_left(ROT)
-            .wrapping_mul(MULTIPLE);
-        key.wrapping_add(INCREMENT)
+    fn large_update(&mut self, new_data: u128) {
+        let block: [u64; 2] = new_data.convert();
+        let combined = folded_multiply(block[0] ^ self.extra_keys[0], block[1] ^ self.extra_keys[1]);
+        self.buffer = (self.pad.wrapping_add(combined) ^ self.buffer).rotate_left(ROT);
+    }
+}
+
+#[cfg(feature = "specialize")]
+impl HasherExt for AHasher {
+    #[inline]
+    fn hash_u64(self, value: u64) -> u64 {
+        let rot = (self.pad & 64) as u32;
+        folded_multiply(value ^ self.buffer, MULTIPLE).rotate_left(rot)
+    }
+
+    #[inline]
+    fn short_finish(&self) -> u64 {
+        self.buffer.wrapping_add(self.pad)
     }
 }
 
@@ -147,49 +152,45 @@ impl Hasher for AHasher {
     }
 
     #[inline]
+    #[allow(clippy::collapsible_if)]
     fn write(&mut self, input: &[u8]) {
         let mut data = input;
         let length = data.len() as u64;
         
-        self.buffer = self.buffer.wrapping_add(length.wrapping_mul(MULTIPLE));
+        self.buffer = self.buffer.wrapping_add(length).wrapping_mul(MULTIPLE);
         
         if data.len() > 8 {
             if data.len() > 16 {
-                let tail = data.read_last_u64();
-                let mut key: u64 = self.buffer;
-                while data.len() > 8 {
-                    let (val, rest) = data.read_u64();
-                    key = self.ordered_update(val, key);
+                let tail = data.read_last_u128();
+                self.large_update(tail);
+                while data.len() > 16 {
+                    let (block, rest) = data.read_u128();
+                    self.large_update(block);
                     data = rest;
                 }
-                self.update(tail);
             } else {
-                self.update(data.read_u64().0);
-                self.update(data.read_last_u64());
+                self.large_update([data.read_u64().0, data.read_last_u64()].convert());
             }
         } else {
             if data.len() >= 2 {
                 if data.len() >= 4 {
-                    let block: [u32; 2] = [data.read_u32().0, data.read_last_u32()];
-                    self.update(block.convert());
+                    let block = [data.read_u32().0 as u64, data.read_last_u32() as u64];
+                    self.large_update(block.convert());
                 } else {
-                    let block: [u16; 2] = [data.read_u16().0, data.read_last_u16()];
-                    let val: u32 = block.convert();
-                    self.update(val as u64);
+                    let value = [data.read_u16().0 as u32, data[data.len() - 1] as u32];
+                    self.update(value.convert());
                 }
             } else {
-                let value = if data.len() > 0 {
-                    data[0] 
-                } else {
-                    0
-                };
-                self.update(value as u64);
+                if data.len() > 0 {
+                    self.update(data[0] as u64);
+                }
             }
         }
     }
     #[inline]
     fn finish(&self) -> u64 {
-        (self.buffer ^ self.pad)
+        let rot = (self.buffer & 63) as u32;
+        folded_multiply(self.buffer, self.pad).rotate_left(rot)
     }
 }
 

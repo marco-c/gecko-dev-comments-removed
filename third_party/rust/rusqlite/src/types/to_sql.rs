@@ -87,6 +87,7 @@ impl ToSql for ToSqlOutput<'_> {
 
 
 pub trait ToSql {
+    
     fn to_sql(&self) -> Result<ToSqlOutput<'_>>;
 }
 

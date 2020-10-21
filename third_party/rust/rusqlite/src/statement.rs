@@ -223,6 +223,8 @@ impl Statement<'_> {
     
     
     
+    
+    
     pub fn query_map<T, P, F>(&mut self, params: P, f: F) -> Result<MappedRows<'_, F>>
     where
         P: IntoIterator,
@@ -233,6 +235,8 @@ impl Statement<'_> {
         Ok(MappedRows::new(rows, f))
     }
 
+    
+    
     
     
     
@@ -450,7 +454,7 @@ impl Statement<'_> {
             self.bind_parameter(&p, index)?;
         }
         if index != expected {
-            Err(Error::InvalidParameterCount(expected, index))
+            Err(Error::InvalidParameterCount(index, expected))
         } else {
             Ok(())
         }
@@ -618,7 +622,7 @@ impl Statement<'_> {
     }
 
     fn finalize_(&mut self) -> Result<()> {
-        let mut stmt = unsafe { RawStatement::new(ptr::null_mut(), false) };
+        let mut stmt = unsafe { RawStatement::new(ptr::null_mut(), 0) };
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
     }
@@ -642,7 +646,7 @@ impl Statement<'_> {
     #[inline]
     fn check_update(&self) -> Result<()> {
         
-        if self.column_count() > 0 || self.stmt.readonly() {
+        if self.column_count() > 0 && self.stmt.readonly() {
             return Err(Error::ExecuteReturnedResults);
         }
         Ok(())
@@ -698,11 +702,12 @@ impl Statement<'_> {
     pub(crate) fn check_no_tail(&self) -> Result<()> {
         Ok(())
     }
-}
 
-impl Into<RawStatement> for Statement<'_> {
-    fn into(mut self) -> RawStatement {
-        let mut stmt = unsafe { RawStatement::new(ptr::null_mut(), false) };
+    
+    
+    
+    pub(crate) unsafe fn into_raw(mut self) -> RawStatement {
+        let mut stmt = RawStatement::new(ptr::null_mut(), 0);
         mem::swap(&mut stmt, &mut self.stmt);
         stmt
     }
@@ -731,11 +736,11 @@ impl Drop for Statement<'_> {
 }
 
 impl Statement<'_> {
-    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
+    pub(super) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
         Statement { conn, stmt }
     }
 
-    pub(crate) fn value_ref(&self, col: usize) -> ValueRef<'_> {
+    pub(super) fn value_ref(&self, col: usize) -> ValueRef<'_> {
         let raw = unsafe { self.stmt.ptr() };
 
         match self.stmt.column_type(col) {
@@ -791,7 +796,7 @@ impl Statement<'_> {
         }
     }
 
-    pub(crate) fn step(&self) -> Result<bool> {
+    pub(super) fn step(&self) -> Result<bool> {
         match self.stmt.step() {
             ffi::SQLITE_ROW => Ok(true),
             ffi::SQLITE_DONE => Ok(false),
@@ -799,7 +804,7 @@ impl Statement<'_> {
         }
     }
 
-    pub(crate) fn reset(&self) -> c_int {
+    pub(super) fn reset(&self) -> c_int {
         self.stmt.reset()
     }
 }

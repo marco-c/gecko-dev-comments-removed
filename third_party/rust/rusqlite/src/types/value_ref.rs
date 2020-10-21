@@ -20,6 +20,7 @@ pub enum ValueRef<'a> {
 }
 
 impl ValueRef<'_> {
+    
     pub fn data_type(&self) -> Type {
         match *self {
             ValueRef::Null => Type::Null,

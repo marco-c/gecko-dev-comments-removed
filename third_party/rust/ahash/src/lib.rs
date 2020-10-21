@@ -13,37 +13,42 @@
 #![deny(clippy::correctness, clippy::complexity, clippy::perf)]
 #![allow(clippy::pedantic, clippy::cast_lossless, clippy::unreadable_literal)]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
+#![cfg_attr(feature = "specialize", feature(specialization))]
 
 #[macro_use]
 mod convert;
 
-#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes"))]
+#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri)))]
 mod aes_hash;
 mod fallback_hash;
 #[cfg(test)]
 mod hash_quality_test;
 
-mod folded_multiply;
+mod operations;
 #[cfg(feature = "std")]
 mod hash_map;
 #[cfg(feature = "std")]
 mod hash_set;
 mod random_state;
+mod specialize;
 
 #[cfg(feature = "compile-time-rng")]
 use const_random::const_random;
 
-#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes"))]
+#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri)))]
 pub use crate::aes_hash::AHasher;
 
-#[cfg(not(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes")))]
+#[cfg(not(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri))))]
 pub use crate::fallback_hash::AHasher;
 pub use crate::random_state::RandomState;
+
+pub use crate::specialize::CallHasher;
 
 #[cfg(feature = "std")]
 pub use crate::hash_map::AHashMap;
 #[cfg(feature = "std")]
 pub use crate::hash_set::AHashSet;
+use core::hash::Hasher;
 
 
 
@@ -62,8 +67,38 @@ pub use crate::hash_set::AHashSet;
 
 
 
-#[cfg(feature = "compile-time-rng")]
+
+
+
+
 impl Default for AHasher {
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[cfg(feature = "compile-time-rng")]
+    fn default() -> AHasher {
+        AHasher::new_with_keys(const_random!(u128), const_random!(u128))
+    }
     
     
     
@@ -87,11 +122,45 @@ impl Default for AHasher {
     
     
     #[inline]
+    #[cfg(not(feature = "compile-time-rng"))]
     fn default() -> AHasher {
-        AHasher::new_with_keys(const_random!(u64), const_random!(u64))
+        const K1: u128 = (random_state::INIT_SEED[0] as u128).wrapping_mul(random_state::MULTIPLE as u128);
+        const K2: u128 = (random_state::INIT_SEED[1] as u128).wrapping_mul(random_state::MULTIPLE as u128);
+        AHasher::new_with_keys(K1, K2)
     }
 }
 
+
+pub(crate) trait HasherExt: Hasher {
+    #[doc(hidden)]
+    fn hash_u64(self, value: u64) -> u64;
+
+    #[doc(hidden)]
+    fn short_finish(&self) -> u64;
+}
+
+impl<T: Hasher> HasherExt for T {
+    #[inline]
+    #[cfg(feature = "specialize")]
+    default fn hash_u64(self, value: u64) -> u64 {
+        value.get_hash(self)
+    }
+    #[inline]
+    #[cfg(not(feature = "specialize"))]
+    fn hash_u64(self, value: u64) -> u64 {
+        value.get_hash(self)
+    }
+    #[inline]
+    #[cfg(feature = "specialize")]
+    default fn short_finish(&self) -> u64 {
+        self.finish()
+    }
+    #[inline]
+    #[cfg(not(feature = "specialize"))]
+    fn short_finish(&self) -> u64 {
+        self.finish()
+    }
+}
 
 
 
@@ -104,11 +173,13 @@ impl Default for AHasher {
 mod test {
     use crate::convert::Convert;
     use crate::*;
-    use core::hash::BuildHasherDefault;
     use std::collections::HashMap;
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_default_builder() {
+        use core::hash::BuildHasherDefault;
+
         let mut map = HashMap::<u32, u64, BuildHasherDefault<AHasher>>::default();
         map.insert(1, 3);
     }
@@ -127,6 +198,6 @@ mod test {
 
     #[test]
     fn test_ahasher_construction() {
-        let _ = AHasher::new_with_keys(1245, 5678);
+        let _ = AHasher::new_with_keys(1234, 5678);
     }
 }
