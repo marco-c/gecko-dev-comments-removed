@@ -790,7 +790,11 @@ MarkupContainer.prototype = {
 
     
     
-    if (event.target.dataset.event || event.target.dataset.display) {
+    if (
+      event.target.dataset.event ||
+      event.target.dataset.display ||
+      event.target.dataset.scrollable
+    ) {
       return;
     }
 
