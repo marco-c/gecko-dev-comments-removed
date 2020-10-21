@@ -121,8 +121,6 @@ namespace js {
 
 extern JS_FRIEND_API void AssertCompartmentHasSingleRealm(
     JS::Compartment* comp);
-
-extern JS_FRIEND_API JS::Realm* GetScriptRealm(JSScript* script);
 } 
 
 extern JS_FRIEND_API bool JS_ScriptHasMutedErrors(JSScript* script);
