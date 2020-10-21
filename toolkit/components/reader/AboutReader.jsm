@@ -361,7 +361,12 @@ AboutReader.prototype = {
       case "touchstart":
       
       case "mousedown":
-        if (!target.closest(".dropdown-popup")) {
+        if (
+          !target.closest(".dropdown-popup") &&
+          
+          
+          !target.classList.contains("dropdown-toggle")
+        ) {
           this._closeDropdowns();
         }
         break;
