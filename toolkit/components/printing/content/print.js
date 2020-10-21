@@ -900,11 +900,12 @@ var PrintSettingsViewProxy = {
     }
     printerInfo.settings = printerInfo.defaultSettings.clone();
     
-    PSSVC.initPrintSettingsFromPrefs(
-      printerInfo.settings,
-      true,
-      printerInfo.settings.kInitSaveAll
-    );
+    let flags = printerInfo.settings.kInitSaveAll;
+    if (printerName == PrintUtils.SAVE_TO_PDF_PRINTER) {
+      
+      flags ^= printerInfo.settings.kInitSavePrintToFile;
+    }
+    PSSVC.initPrintSettingsFromPrefs(printerInfo.settings, true, flags);
     
     
     
