@@ -3228,6 +3228,12 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
                                    CallInfo& callInfo) {
   jsbytecode* pc = loc.toRawBytecode();
 
+  if (callInfo.isSetter()) {
+    
+    
+    current->pop();
+  }
+
   callInfo.setImplicitlyUsedUnchecked();
 
   
@@ -3334,9 +3340,9 @@ MDefinition* WarpBuilder::patchInlinedReturn(CompileInfo* calleeCompileInfo,
     auto* filter = MReturnFromCtor::New(alloc(), rdef, callInfo.thisArg());
     exit->add(filter);
     rdef = filter;
-  }
-  if (callInfo.isSetter()) {
-    MOZ_CRASH("TODO");
+  } else if (callInfo.isSetter()) {
+    
+    rdef = callInfo.getArg(0);
   }
 
   exit->end(MGoto::New(alloc(), returnBlock));

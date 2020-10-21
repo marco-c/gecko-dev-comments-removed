@@ -3805,6 +3805,24 @@ bool WarpCacheIRTranspiler::emitCallScriptedSetter(
 bool WarpCacheIRTranspiler::emitCallInlinedSetter(
     ObjOperandId receiverId, uint32_t setterOffset, ValOperandId rhsId,
     uint32_t icScriptOffset, bool sameRealm, uint32_t nargsAndFlagsOffset) {
+  if (callInfo_) {
+    MOZ_ASSERT(callInfo_->isInlined());
+    
+    
+    
+    MDefinition* receiver = getOperand(receiverId);
+    MDefinition* setter = objectStubField(setterOffset);
+    MDefinition* rhs = getOperand(rhsId);
+    callInfo_->initForSetterCall(setter, receiver, rhs);
+
+    
+    if (!current->ensureHasSlots(3)) {
+      return false;
+    }
+
+    return true;
+  }
+
   return emitCallSetter(CallKind::Scripted, receiverId, setterOffset, rhsId,
                         sameRealm, nargsAndFlagsOffset);
 }
