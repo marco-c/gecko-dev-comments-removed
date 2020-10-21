@@ -130,6 +130,27 @@ class NS_ConvertUTF8toUTF16 : public nsAutoString {
 
 
 
+
+
+template <typename T, typename U>
+nsTAutoString<T> IntToTString(const U aInt, const int aRadix = 10) {
+  nsTAutoString<T> string;
+  string.AppendInt(aInt, aRadix);
+  return string;
+}
+
+template <typename U>
+nsAutoCString IntToCString(const U aInt, const int aRadix = 10) {
+  return IntToTString<char>(aInt, aRadix);
+}
+
+template <typename U>
+nsAutoString IntToString(const U aInt, const int aRadix = 10) {
+  return IntToTString<char16_t>(aInt, aRadix);
+}
+
+
+
 inline std::ostream& operator<<(std::ostream& aOut, const nsACString& aString) {
   aOut.write(aString.Data(), aString.Length());
   return aOut;
