@@ -75,7 +75,17 @@ class nsPrinterListBase : public nsIPrinterList {
   
   nsTArray<RefPtr<nsPaper>> FallbackPaperList() const;
 
+  
+  
+  void EnsureCommonPaperInfo(JSContext* aCx);
+
   RefPtr<Promise> mPrintersPromise;
+  
+  
+  
+  
+  
+  RefPtr<const mozilla::CommonPaperInfoArray> mCommonPaperInfo;
 };
 
 #endif

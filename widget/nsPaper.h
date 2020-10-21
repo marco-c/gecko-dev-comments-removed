@@ -34,13 +34,28 @@ struct PaperInfo {
         mSize(aSize),
         mUnwriteableMargin(aUnwriteableMargin) {}
 
-  const nsString mId;
-  const nsString mName;
+  nsString mId;
+  nsString mName;
 
   SizeDouble mSize;
 
   
-  const Maybe<MarginDouble> mUnwriteableMargin{Nothing()};
+  Maybe<MarginDouble> mUnwriteableMargin{Nothing()};
+};
+
+
+
+
+
+
+struct CommonPaperSize final {
+  
+  nsLiteralString mPWGName;
+  
+  
+  nsLiteralCString mLocalizableNameKey;
+  
+  gfx::SizeDouble mSize;
 };
 
 }  
@@ -49,6 +64,7 @@ class nsPrinterBase;
 
 class nsPaper final : public nsIPaper {
   using Promise = mozilla::dom::Promise;
+  using CommonPaperSize = mozilla::CommonPaperSize;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -59,6 +75,31 @@ class nsPaper final : public nsIPaper {
   explicit nsPaper(const mozilla::PaperInfo&);
   nsPaper(nsPrinterBase&, const mozilla::PaperInfo&);
 
+  
+  
+  
+  
+  
+  
+  
+#define mm *72.0 / 25.4
+#define in *72.0
+  static constexpr CommonPaperSize kCommonPaperSizes[] = {
+      CommonPaperSize{u"iso_a5"_ns, "a5"_ns, {148 mm, 210 mm}},
+      CommonPaperSize{u"iso_a4"_ns, "a4"_ns, {210 mm, 297 mm}},
+      CommonPaperSize{u"iso_a3"_ns, "a3"_ns, {297 mm, 420 mm}},
+      CommonPaperSize{u"iso_b5"_ns, "b5"_ns, {176 mm, 250 mm}},
+      CommonPaperSize{u"iso_b4"_ns, "b4"_ns, {250 mm, 353 mm}},
+      CommonPaperSize{u"jis_b5"_ns, "jis-b5"_ns, {182 mm, 257 mm}},
+      CommonPaperSize{u"jis_b4"_ns, "jis-b4"_ns, {257 mm, 364 mm}},
+      CommonPaperSize{u"na_letter"_ns, "letter"_ns, {8.5 in, 11 in}},
+      CommonPaperSize{u"na_legal"_ns, "legal"_ns, {8.5 in, 14 in}},
+      CommonPaperSize{u"na_ledger"_ns, "tabloid"_ns, {11 in, 17 in}}};
+#undef mm
+#undef in
+  static constexpr size_t kNumCommonPaperSizes =
+      mozilla::ArrayLength(kCommonPaperSizes);
+
  private:
   ~nsPaper();
 
@@ -68,5 +109,20 @@ class nsPaper final : public nsIPaper {
   RefPtr<Promise> mMarginPromise;
   const mozilla::PaperInfo mInfo;
 };
+
+namespace mozilla {
+
+
+class CommonPaperInfoArray
+    : public Array<PaperInfo, nsPaper::kNumCommonPaperSizes> {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CommonPaperInfoArray);
+  CommonPaperInfoArray() = default;
+
+ private:
+  ~CommonPaperInfoArray() = default;
+};
+
+}  
 
 #endif 
