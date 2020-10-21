@@ -36,6 +36,11 @@ class VideoStreamTrack : public MediaStreamTrack {
   void RemoveVideoOutput(VideoOutput* aOutput);
 
   
+
+
+  bool HasAlpha() const { return GetSource().HasAlpha(); }
+
+  
   void GetKind(nsAString& aKind) override { aKind.AssignLiteral("video"); }
 
   void GetLabel(nsAString& aLabel, CallerType aCallerType) override;

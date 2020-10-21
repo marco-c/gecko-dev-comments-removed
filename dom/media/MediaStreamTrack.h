@@ -145,6 +145,12 @@ class MediaStreamTrackSource : public nsISupports {
 
 
 
+  virtual bool HasAlpha() const { return false; }
+
+  
+
+
+
 
   virtual nsresult TakePhoto(MediaEnginePhotoCallback*) const {
     return NS_ERROR_NOT_IMPLEMENTED;
