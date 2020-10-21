@@ -83,7 +83,7 @@ void HTMLLegendElement::Focus(const FocusOptions& aOptions,
 
   
   
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
     return;
   }

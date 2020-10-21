@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/ElementBinding.h"
@@ -10,7 +10,7 @@
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/StaticPrefs_dom.h"
 
-// Expand NS_IMPL_NS_NEW_HTML_ELEMENT(Dialog) with pref check
+
 nsGenericHTMLElement* NS_NewHTMLDialogElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
@@ -117,9 +117,9 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
 }
 
 void HTMLDialogElement::FocusDialog() {
-  // 1) If subject is inert, return.
-  // 2) Let control be the first descendant element of subject, in tree
-  // order, that is not inert and has the autofocus attribute specified.
+  
+  
+  
   if (RefPtr<Document> doc = GetComposedDoc()) {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
@@ -132,14 +132,14 @@ void HTMLDialogElement::FocusDialog() {
       if (frame && frame->IsFocusable()) {
         if (child->AsElement()->HasAttr(kNameSpaceID_None,
                                         nsGkAtoms::autofocus)) {
-          // Find the first descendant of element of subject that this
-          // not inert and has autofucus attribute
-          // inert bug: https://bugzilla.mozilla.org/show_bug.cgi?id=921504
+          
+          
+          
           control = child->AsElement();
           break;
         }
-        // If there isn't one, then let control be the first non-inert
-        // descendant element of subject, in tree order.
+        
+        
         if (!control) {
           control = child->AsElement();
         }
@@ -147,12 +147,12 @@ void HTMLDialogElement::FocusDialog() {
     }
     child = child->GetNextNode(this);
   }
-  // If there isn't one of those either, then let control be subject.
+  
   if (!control) {
     control = this;
   }
 
-  // 3) Run the focusing steps for control.
+  
   ErrorResult rv;
   nsIFrame* frame = control->GetPrimaryFrame();
   if (frame && frame->IsFocusable()) {
@@ -161,24 +161,24 @@ void HTMLDialogElement::FocusDialog() {
       return;
     }
   } else {
-    nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+    nsFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
-      // Clear the focus which ends up making the body gets focused
+      
       fm->ClearFocus(OwnerDoc()->GetWindow());
     }
   }
 
-  // 4) Let topDocument be the active document of control's node document's
-  // browsing context's top-level browsing context.
-  // 5) If control's node document's origin is not the same as the origin of
-  // topDocument, then return.
+  
+  
+  
+  
   BrowsingContext* bc = control->OwnerDoc()->GetBrowsingContext();
   if (bc && bc->SameOriginWithTop()) {
     nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell();
     if (docShell) {
       if (Document* topDocument = docShell->GetDocument()) {
-        // 6) Empty topDocument's autofocus candidates.
-        // 7) Set topDocument's autofocus processed flag to true.
+        
+        
         topDocument->SetAutoFocusFired();
       }
     }
@@ -186,7 +186,7 @@ void HTMLDialogElement::FocusDialog() {
 }
 
 void HTMLDialogElement::QueueCancelDialog() {
-  // queues an element task on the user interaction task source
+  
   OwnerDoc()
       ->EventTargetFor(TaskCategory::UI)
       ->Dispatch(NewRunnableMethod("HTMLDialogElement::RunCancelDialogSteps",
@@ -195,15 +195,15 @@ void HTMLDialogElement::QueueCancelDialog() {
 }
 
 void HTMLDialogElement::RunCancelDialogSteps() {
-  // 1) Let close be the result of firing an event named cancel at dialog, with
-  // the cancelable attribute initialized to true.
+  
+  
   bool defaultAction = true;
   nsContentUtils::DispatchTrustedEvent(OwnerDoc(), this, u"cancel"_ns,
                                        CanBubble::eNo, Cancelable::eYes,
                                        &defaultAction);
 
-  // 2) If close is true and dialog has an open attribute, then close the dialog
-  // with no return value.
+  
+  
   if (defaultAction) {
     Optional<nsAString> retValue;
     Close(retValue);
@@ -215,5 +215,5 @@ JSObject* HTMLDialogElement::WrapNode(JSContext* aCx,
   return HTMLDialogElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  

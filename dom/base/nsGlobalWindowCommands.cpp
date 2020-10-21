@@ -237,7 +237,7 @@ nsresult nsSelectionCommandsBase::GetSelectionControllerFromWindow(
 
 static void AdjustFocusAfterCaretMove(nsPIDOMWindowOuter* aWindow) {
   
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
     RefPtr<dom::Element> result;
     fm->MoveFocus(aWindow, nullptr, nsIFocusManager::MOVEFOCUS_CARET,
