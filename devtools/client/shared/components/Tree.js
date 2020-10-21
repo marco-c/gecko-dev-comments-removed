@@ -2,12 +2,12 @@
 
 
 
-import React from "react";
-const { Component, createFactory } = React;
-import dom from "react-dom-factories";
-import PropTypes from "prop-types";
+"use strict";
 
-require("./tree.css");
+const React = require("devtools/client/shared/vendor/react");
+const { Component, createFactory } = React;
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 const AUTO_EXPAND_DEPTH = 0;
@@ -483,6 +483,7 @@ class Tree extends Component {
       style: PropTypes.object,
       
       preventBlur: PropTypes.bool,
+      initiallyExpanded: PropTypes.bool,
     };
   }
 
@@ -1052,4 +1053,4 @@ class Tree extends Component {
   }
 }
 
-export default Tree;
+module.exports = Tree;
