@@ -12803,27 +12803,22 @@ bool BaseCompiler::emitStructNarrow() {
 
   
 
-  MOZ_ASSERT(inputType.isExternRef() || moduleEnv_.isStructType(inputType));
-  MOZ_ASSERT(outputType.isExternRef() || moduleEnv_.isStructType(outputType));
-  MOZ_ASSERT_IF(outputType.isExternRef(), inputType.isExternRef());
+  MOZ_ASSERT(inputType.isEqRef() || moduleEnv_.isStructType(inputType));
+  MOZ_ASSERT(outputType.isEqRef() || moduleEnv_.isStructType(outputType));
+  MOZ_ASSERT_IF(outputType.isEqRef(), inputType.isEqRef());
 
   
 
-  if (inputType.isExternRef() && outputType.isExternRef()) {
+  if (inputType.isEqRef() && outputType.isEqRef()) {
     return true;
   }
 
   RegPtr rp = popRef();
 
   
-
-  bool mustUnboxAnyref = inputType.isExternRef();
-
-  
   const StructType& outputStruct =
       moduleEnv_.types[outputType.refType().typeIndex()].structType();
 
-  pushI32(mustUnboxAnyref);
   pushI32(outputStruct.moduleIndex_);
   pushRef(rp);
   return emitInstanceCall(lineOrBytecode, SASigStructNarrow);
@@ -14655,7 +14650,7 @@ bool BaseCompiler::emitBody() {
         if (!moduleEnv_.gcTypesEnabled()) {
           return iter_.unrecognizedOpcode(&op);
         }
-        CHECK_NEXT(dispatchComparison(emitCompareRef, RefType::extern_(),
+        CHECK_NEXT(dispatchComparison(emitCompareRef, RefType::eq(),
                                       Assembler::Equal));
 #endif
 #ifdef ENABLE_WASM_REFTYPES
