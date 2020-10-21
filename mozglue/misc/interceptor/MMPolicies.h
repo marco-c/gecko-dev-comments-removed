@@ -149,6 +149,20 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
     return aUnaligned + ((-aUnaligned) & (aAlignTo - 1));
   }
 
+  static PVOID AlignUpToRegion(PVOID aUnaligned, uintptr_t aAlignTo,
+                               size_t aLen, size_t aDesiredLen) {
+    uintptr_t unaligned = reinterpret_cast<uintptr_t>(aUnaligned);
+    uintptr_t aligned = AlignUp(unaligned, aAlignTo);
+    MOZ_ASSERT(aligned >= unaligned);
+
+    if (aLen < aligned - unaligned) {
+      return nullptr;
+    }
+
+    aLen -= (aligned - unaligned);
+    return reinterpret_cast<PVOID>((aLen >= aDesiredLen) ? aligned : 0);
+  }
+
  public:
 #if defined(NIGHTLY_BUILD)
   Maybe<DetourError> mLastError;
@@ -310,15 +324,19 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
 
   PVOID FindRegion(HANDLE aProcess, const size_t aDesiredBytesLen,
                    const uint8_t* aRangeMin, const uint8_t* aRangeMax) {
+    
+    
+    uintptr_t rangeMin = reinterpret_cast<uintptr_t>(aRangeMin);
+    uintptr_t rangeMax = reinterpret_cast<uintptr_t>(aRangeMax);
+
     const DWORD kGranularity = GetAllocGranularity();
-    MOZ_ASSERT(aDesiredBytesLen >= kGranularity);
     if (!aDesiredBytesLen) {
       SetLastDetourError(MMPOLICY_RESERVE_FINDREGION_INVALIDLEN);
       return nullptr;
     }
 
-    MOZ_ASSERT(aRangeMin < aRangeMax);
-    if (aRangeMin >= aRangeMax) {
+    MOZ_ASSERT(rangeMin < rangeMax);
+    if (rangeMin >= rangeMax) {
       SetLastDetourError(MMPOLICY_RESERVE_FINDREGION_INVALIDRANGE);
       return nullptr;
     }
@@ -330,32 +348,67 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
 
     
     uintptr_t maxOffset =
-        (aRangeMax - aRangeMin - aDesiredBytesLen) / kGranularity;
-    uintptr_t offset = (uintptr_t(rnd) % maxOffset) * kGranularity;
+        (rangeMax - rangeMin - aDesiredBytesLen) / kGranularity;
+    
+    uintptr_t offset = (uintptr_t(rnd) % (maxOffset + 1)) * kGranularity;
 
     
-    const uint8_t* address = aRangeMin + offset;
+    const uintptr_t searchStart = rangeMin + offset;
     
-    const uint8_t* const kMaxPtr = aRangeMax - aDesiredBytesLen;
+    const uintptr_t kMaxPtr = rangeMax - aDesiredBytesLen;
 
-    MOZ_DIAGNOSTIC_ASSERT(address <= kMaxPtr);
+    MOZ_DIAGNOSTIC_ASSERT(searchStart <= kMaxPtr);
 
     MEMORY_BASIC_INFORMATION mbi;
     SIZE_T len = sizeof(mbi);
 
     
     
-    while (address <= kMaxPtr &&
-           nt::VirtualQueryEx(aProcess, address, &mbi, len)) {
-      if (mbi.State == MEM_FREE && mbi.RegionSize >= aDesiredBytesLen) {
-        return mbi.BaseAddress;
+    
+    for (uintptr_t address = searchStart; address <= kMaxPtr;) {
+      if (nt::VirtualQueryEx(aProcess, reinterpret_cast<uint8_t*>(address),
+                             &mbi, len) != len) {
+        SetLastDetourError(MMPOLICY_RESERVE_FINDREGION_VIRTUALQUERY_ERROR,
+                           ::GetLastError());
+        return nullptr;
       }
 
-      address =
-          reinterpret_cast<const uint8_t*>(mbi.BaseAddress) + mbi.RegionSize;
+      if (mbi.State == MEM_FREE) {
+        
+        
+        
+        
+        PVOID regionStart = AlignUpToRegion(mbi.BaseAddress, kGranularity,
+                                            mbi.RegionSize, aDesiredBytesLen);
+        if (regionStart) {
+          return regionStart;
+        }
+      }
+
+      address = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
     }
 
-    SetLastDetourError(MMPOLICY_RESERVE_FINDREGION_VIRTUALQUERY_ERROR,
+    
+    for (uintptr_t address = rangeMin; address < searchStart;) {
+      if (nt::VirtualQueryEx(aProcess, reinterpret_cast<uint8_t*>(address),
+                             &mbi, len) != len) {
+        SetLastDetourError(MMPOLICY_RESERVE_FINDREGION_VIRTUALQUERY_ERROR,
+                           ::GetLastError());
+        return nullptr;
+      }
+
+      if (mbi.State == MEM_FREE) {
+        PVOID regionStart = AlignUpToRegion(mbi.BaseAddress, kGranularity,
+                                            mbi.RegionSize, aDesiredBytesLen);
+        if (regionStart) {
+          return regionStart;
+        }
+      }
+
+      address = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+    }
+
+    SetLastDetourError(MMPOLICY_RESERVE_FINDREGION_NO_FREE_REGION,
                        ::GetLastError());
     return nullptr;
   }
