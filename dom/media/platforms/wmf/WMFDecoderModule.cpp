@@ -104,7 +104,7 @@ void WMFDecoderModule::Init() {
     
     
     testForVPx = true;
-  } else if (XRE_IsGPUProcess()) {
+  } else if (XRE_IsGPUProcess() || XRE_IsRDDProcess()) {
     
     testForVPx = sDXVAEnabled = true;
   } else {

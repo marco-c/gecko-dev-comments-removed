@@ -10,12 +10,14 @@
 #include "gfxFeature.h"
 #include "gfxFallback.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 
 namespace mozilla {
 namespace gfx {
 
 
+class DevicePrefs;
 class FeatureFailure;
 
 
@@ -77,6 +79,10 @@ class gfxConfig {
 
   
   static void Inherit(Feature aFeature, FeatureStatus aStatus);
+
+  
+  static void Inherit(EnumSet<Feature> aFeatures,
+                      const DevicePrefs& aDevicePrefs);
 
   
   
