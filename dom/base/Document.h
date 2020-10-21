@@ -912,7 +912,8 @@ class Document : public nsINode,
   
 
 
-  Result<nsCOMPtr<nsIURI>, nsresult> ResolveWithBaseURI(const nsAString& aURI);
+  Result<OwningNonNull<nsIURI>, nsresult> ResolveWithBaseURI(
+      const nsAString& aURI);
 
   
 
