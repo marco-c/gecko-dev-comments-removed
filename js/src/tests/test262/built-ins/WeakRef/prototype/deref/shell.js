@@ -10,7 +10,6 @@
 
 
 
-
 function asyncGC(...targets) {
   var finalizationRegistry = new FinalizationRegistry(() => {});
   var length = targets.length;

@@ -13,18 +13,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-verifyProperty(Intl.DisplayNames, "length", {
-  value: 2,
+verifyProperty(Reflect, Symbol.toStringTag, {
+  value: 'Reflect',
   enumerable: false,
   writable: false,
   configurable: true,
