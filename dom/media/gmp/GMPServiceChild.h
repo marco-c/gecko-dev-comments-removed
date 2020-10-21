@@ -10,8 +10,10 @@
 #include "MediaResult.h"
 #include "base/process.h"
 #include "mozilla/dom/PContent.h"
-#include "mozilla/gmp/PGMPServiceChild.h"
 #include "mozilla/ipc/Transport.h"
+#include "mozilla/gmp/PGMPServiceChild.h"
+#include "mozilla/MozPromise.h"
+#include "nsIAsyncShutdown.h"
 #include "nsRefPtrHashtable.h"
 
 namespace mozilla {
@@ -20,11 +22,16 @@ namespace gmp {
 class GMPContentParent;
 class GMPServiceChild;
 
-class GeckoMediaPluginServiceChild : public GeckoMediaPluginService {
+class GeckoMediaPluginServiceChild : public GeckoMediaPluginService,
+                                     public nsIAsyncShutdownBlocker {
   friend class GMPServiceChild;
 
  public:
   static already_AddRefed<GeckoMediaPluginServiceChild> GetSingleton();
+  nsresult Init() override;
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
   NS_IMETHOD HasPluginForAPI(const nsACString& aAPI, nsTArray<nsCString>* aTags,
                              bool* aRetVal) override;
@@ -60,12 +67,74 @@ class GeckoMediaPluginServiceChild : public GeckoMediaPluginService {
  private:
   friend class OpenPGMPServiceChild;
 
+  ~GeckoMediaPluginServiceChild() override;
+
   typedef MozPromise<GMPServiceChild*, MediaResult,  true>
       GetServiceChildPromise;
   RefPtr<GetServiceChildPromise> GetServiceChild();
 
   nsTArray<MozPromiseHolder<GetServiceChildPromise>> mGetServiceChildPromises;
   RefPtr<GMPServiceChild> mServiceChild;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  nsresult AddShutdownBlocker();
+  
+  
+  
+  void RemoveShutdownBlocker();
+  
+  
+  
+  
+  
+  void RemoveShutdownBlockerIfNeeded();
+
+#ifdef DEBUG
+  
+  
+  bool mShutdownBlockerAdded = false;
+#endif  
+  
+  
+  
+  uint32_t mPendingGetContentParents = 0;
+  
 };
 
 class GMPServiceChild : public PGMPServiceChild {

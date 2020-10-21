@@ -201,8 +201,6 @@ class GeckoMediaPluginServiceParent final
   
   
   nsTArray<GMPServiceParent*> mServiceParents;
-
-  const nsCOMPtr<nsISerialEventTarget> mMainThread;
 };
 
 nsresult ReadSalt(nsIFile* aPath, nsACString& aOutData);
