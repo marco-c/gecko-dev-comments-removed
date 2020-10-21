@@ -46,13 +46,29 @@ var SiteDataManager = {
 
   _quotaUsageRequest: null,
 
-  async updateSites() {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async updateSites(entryUpdatedCallback) {
     Services.obs.notifyObservers(null, "sitedatamanager:updating-sites");
     
     this._sites.clear();
-    this._getAllCookies();
-    await this._getQuotaUsage();
-    this._updateAppCache();
+    this._getAllCookies(entryUpdatedCallback);
+    await this._getQuotaUsage(entryUpdatedCallback);
+    this._updateAppCache(entryUpdatedCallback);
     Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
   },
 
@@ -133,7 +149,7 @@ var SiteDataManager = {
     return this._getCacheSizePromise;
   },
 
-  _getQuotaUsage() {
+  _getQuotaUsage(entryUpdatedCallback) {
     this._cancelGetQuotaUsage();
     this._getQuotaUsagePromise = new Promise(resolve => {
       let onUsageResult = request => {
@@ -163,6 +179,9 @@ var SiteDataManager = {
               }
               site.principals.push(principal);
               site.quotaUsage += item.usage;
+              if (entryUpdatedCallback) {
+                entryUpdatedCallback(principal.host, site);
+              }
             }
           }
         }
@@ -176,9 +195,12 @@ var SiteDataManager = {
     return this._getQuotaUsagePromise;
   },
 
-  _getAllCookies() {
+  _getAllCookies(entryUpdatedCallback) {
     for (let cookie of Services.cookies.cookies) {
       let site = this._getOrInsertSite(cookie.rawHost);
+      if (entryUpdatedCallback) {
+        entryUpdatedCallback(cookie.rawHost, site);
+      }
       site.cookies.push(cookie);
       if (site.lastAccessed < cookie.lastAccessed) {
         site.lastAccessed = cookie.lastAccessed;
@@ -193,7 +215,7 @@ var SiteDataManager = {
     }
   },
 
-  _updateAppCache() {
+  _updateAppCache(entryUpdatedCallback) {
     let groups;
     try {
       groups = this._appCache.getGroups();
@@ -221,6 +243,9 @@ var SiteDataManager = {
         site.principals.push(principal);
       }
       site.appCacheList.push(cache);
+      if (entryUpdatedCallback) {
+        entryUpdatedCallback(principal.host, site);
+      }
     }
   },
 
@@ -503,9 +528,12 @@ var SiteDataManager = {
 
 
 
-  promptSiteDataRemoval(win, removals) {
-    if (removals) {
+
+
+  promptSiteDataRemoval(win, removals, baseDomain) {
+    if (baseDomain || removals) {
       let args = {
+        baseDomain,
         hosts: removals,
         allowed: false,
       };

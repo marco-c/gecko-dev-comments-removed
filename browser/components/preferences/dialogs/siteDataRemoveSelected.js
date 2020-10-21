@@ -5,29 +5,87 @@
 
 "use strict";
 
+const { SiteDataManager } = ChromeUtils.import(
+  "resource:///modules/SiteDataManager.jsm"
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let gSiteDataRemoveSelected = {
   init() {
-    let hosts = window.arguments[0].hosts;
-    hosts.sort();
-    let list = document.getElementById("removalList");
-    let fragment = document.createDocumentFragment();
-    for (let host of hosts) {
-      let listItem = document.createXULElement("richlistitem");
-      let label = document.createXULElement("label");
-      if (host) {
-        label.setAttribute("value", host);
-      } else {
-        document.l10n.setAttributes(label, "site-data-local-file-host");
-      }
-      listItem.appendChild(label);
-      fragment.appendChild(listItem);
-    }
-    list.appendChild(fragment);
     document.addEventListener("dialogaccept", function() {
       window.arguments[0].allowed = true;
     });
     document.addEventListener("dialogcancel", function() {
       window.arguments[0].allowed = false;
     });
+
+    let list = document.getElementById("removalList");
+
+    let baseDomain = window.arguments[0].baseDomain;
+    if (baseDomain) {
+      let hosts = new Set();
+      SiteDataManager.updateSites((host, site) => {
+        
+        if (!host) {
+          return;
+        }
+
+        if (site.baseDomain != baseDomain) {
+          return;
+        }
+
+        
+        if (hosts.has(host)) {
+          return;
+        }
+        hosts.add(host);
+
+        let listItem = document.createXULElement("richlistitem");
+        let label = document.createXULElement("label");
+        label.setAttribute("value", host);
+        listItem.appendChild(label);
+        list.appendChild(listItem);
+      });
+      return;
+    }
+
+    let hosts = window.arguments[0].hosts;
+    if (hosts) {
+      hosts.sort();
+      let fragment = document.createDocumentFragment();
+      for (let host of hosts) {
+        let listItem = document.createXULElement("richlistitem");
+        let label = document.createXULElement("label");
+        if (host) {
+          label.setAttribute("value", host);
+        } else {
+          document.l10n.setAttributes(label, "site-data-local-file-host");
+        }
+        listItem.appendChild(label);
+        fragment.appendChild(listItem);
+      }
+      list.appendChild(fragment);
+      return;
+    }
+
+    throw new Error(
+      "Must specify either a hosts or baseDomain option in arguments."
+    );
   },
 };

@@ -439,20 +439,19 @@ var gIdentityHandler = {
 
     
     
-    await SiteDataManager.updateSites();
+    
+    
+    let hidden = new Promise(c => {
+      this._identityPopup.addEventListener("popuphidden", c, { once: true });
+    });
+    PanelMultiView.hidePopup(this._identityPopup);
+    await hidden;
 
     let baseDomain = SiteDataManager.getBaseDomainFromHost(host);
-    let siteData = await SiteDataManager.getSites(baseDomain);
-
-    
-    
-    
-    
-    PanelMultiView.hidePopup(this._identityPopup);
-
-    if (siteData && siteData.length) {
-      let hosts = siteData.map(site => site.host);
-      if (SiteDataManager.promptSiteDataRemoval(window, hosts)) {
+    if (SiteDataManager.promptSiteDataRemoval(window, null, baseDomain)) {
+      let siteData = await SiteDataManager.getSites(baseDomain);
+      if (siteData && siteData.length) {
+        let hosts = siteData.map(site => site.host);
         SiteDataManager.remove(hosts);
       }
     }
