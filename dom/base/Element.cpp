@@ -1183,11 +1183,6 @@ void Element::AttachAndSetUAShadowRoot(NotifyUAWidgetSetup aNotify) {
 
 void Element::NotifyUAWidgetSetupOrChange() {
   MOZ_ASSERT(IsInComposedDoc());
-  Document* doc = OwnerDoc();
-  if (doc->IsStaticDocument()) {
-    return;
-  }
-
   
   
   
@@ -1195,8 +1190,9 @@ void Element::NotifyUAWidgetSetupOrChange() {
   
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "Element::NotifyUAWidgetSetupOrChange::UAWidgetSetupOrChange",
-      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]() {
-        nsContentUtils::DispatchChromeEvent(doc, self,
+      [self = RefPtr<Element>(this),
+       ownerDoc = RefPtr<Document>(OwnerDoc())]() {
+        nsContentUtils::DispatchChromeEvent(ownerDoc, self,
                                             u"UAWidgetSetupOrChange"_ns,
                                             CanBubble::eYes, Cancelable::eNo);
       }));
@@ -1212,25 +1208,22 @@ void Element::NotifyUAWidgetTeardown(UnattachShadowRoot aUnattachShadowRoot) {
     UnattachShadow();
   }
 
-  Document* doc = OwnerDoc();
-  if (doc->IsStaticDocument()) {
-    return;
-  }
-
+  
   
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "Element::NotifyUAWidgetTeardownAndUnattachShadow::UAWidgetTeardown",
-      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]() {
+      [self = RefPtr<Element>(this),
+       ownerDoc = RefPtr<Document>(OwnerDoc())]() {
         
         bool hasHadScriptObject = true;
         nsIScriptGlobalObject* scriptObject =
-            doc->GetScriptHandlingObject(hasHadScriptObject);
+            ownerDoc->GetScriptHandlingObject(hasHadScriptObject);
         if (!scriptObject && hasHadScriptObject) {
           return;
         }
 
         Unused << nsContentUtils::DispatchChromeEvent(
-            doc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
+            ownerDoc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
             Cancelable::eNo);
       }));
 }
