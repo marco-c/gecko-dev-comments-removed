@@ -257,5 +257,20 @@ void GPUVideoTextureHost::PushDisplayItems(
       aBuilder, aBounds, aClip, aFilter, aImageKeys, aPreferCompositorSurface);
 }
 
+void GPUVideoTextureHost::UnbindTextureSource() {
+  if (EnsureWrappedTextureHost()) {
+    EnsureWrappedTextureHost()->UnbindTextureSource();
+  }
+   
+  TextureHost::UnbindTextureSource();
+}
+
+void GPUVideoTextureHost::NotifyNotUsed() {
+  if (EnsureWrappedTextureHost()) {
+    EnsureWrappedTextureHost()->NotifyNotUsed();
+  }
+  TextureHost::NotifyNotUsed();
+}
+
 }  
 }  
