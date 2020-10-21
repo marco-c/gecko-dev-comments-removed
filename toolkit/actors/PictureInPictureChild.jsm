@@ -1126,6 +1126,12 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
   async togglePictureInPicture(video) {
+    
+    
+    if (video.srcObject) {
+      return;
+    }
+
     if (this.inPictureInPicture(video)) {
       
       
