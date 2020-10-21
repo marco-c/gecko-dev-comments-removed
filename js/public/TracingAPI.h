@@ -86,6 +86,71 @@ enum class WeakMapTraceAction {
   TraceKeysAndValues
 };
 
+class AutoTracingName;
+class AutoTracingIndex;
+class AutoTracingCallback;
+
+
+
+class TracingContext {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  const char* name() const {
+    MOZ_ASSERT(name_);
+    return name_;
+  }
+
+  
+  
+  
+  constexpr static size_t InvalidIndex = size_t(-1);
+  size_t index() const { return index_; }
+
+  
+  
+  
+  
+  
+  void getEdgeName(char* buffer, size_t bufferSize);
+
+  
+  
+  
+  
+  
+  class Functor {
+   public:
+    virtual void operator()(TracingContext* tcx, char* buf, size_t bufsize) = 0;
+  };
+
+ private:
+  friend class AutoTracingName;
+  const char* name_ = nullptr;
+
+  friend class AutoTracingIndex;
+  size_t index_ = InvalidIndex;
+
+  friend class AutoTracingDetails;
+  Functor* functor_ = nullptr;
+};
+
 }  
 
 namespace js {
@@ -96,6 +161,8 @@ class JS_PUBLIC_API JSTracer {
  public:
   
   JSRuntime* runtime() const { return runtime_; }
+
+  JS::TracingContext* maybeContext() { return maybeContext_; }
 
   JS::TracerKind kind() const { return kind_; }
   bool isMarkingTracer() const { return kind_ == JS::TracerKind::Marking; }
@@ -125,6 +192,8 @@ class JS_PUBLIC_API JSTracer {
                JS::WeakMapTraceAction::TraceValues)
       : runtime_(rt), kind_(kind), weakMapAction_(weakMapAction) {}
 
+  void setContext(JS::TracingContext* tcx) { maybeContext_ = tcx; }
+
   void setTraceWeakEdges(bool value) { traceWeakEdges_ = value; }
 
   
@@ -138,6 +207,7 @@ class JS_PUBLIC_API JSTracer {
 
  private:
   JSRuntime* const runtime_;
+  JS::TracingContext* maybeContext_ = nullptr;
   const JS::TracerKind kind_;
   const JS::WeakMapTraceAction weakMapAction_;
 
@@ -152,10 +222,6 @@ class JS_PUBLIC_API JSTracer {
 };
 
 namespace js {
-
-class AutoTracingName;
-class AutoTracingIndex;
-class AutoTracingCallback;
 
 class GenericTracer : public JSTracer {
  public:
@@ -212,78 +278,26 @@ class GenericTracer : public JSTracer {
 
 namespace JS {
 
-class AutoTracingName;
-class AutoTracingIndex;
-class AutoTracingCallback;
-
 class JS_PUBLIC_API CallbackTracer : public js::GenericTracer {
  public:
   CallbackTracer(
       JSRuntime* rt, JS::TracerKind kind = JS::TracerKind::Callback,
       WeakMapTraceAction weakMapAction = WeakMapTraceAction::TraceValues)
-      : GenericTracer(rt, kind, weakMapAction),
-        contextName_(nullptr),
-        contextIndex_(InvalidIndex),
-        contextFunctor_(nullptr) {
+      : GenericTracer(rt, kind, weakMapAction) {
     MOZ_ASSERT(isCallbackTracer());
+    setContext(&context_);
   }
   CallbackTracer(
       JSContext* cx, JS::TracerKind kind = JS::TracerKind::Callback,
       WeakMapTraceAction weakMapAction = WeakMapTraceAction::TraceValues);
+
+  TracingContext& context() { return context_; }
 
   
   
   
   
   virtual bool onChild(const JS::GCCellPtr& thing) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  const char* contextName() const {
-    MOZ_ASSERT(contextName_);
-    return contextName_;
-  }
-
-  
-  
-  
-  const static size_t InvalidIndex = size_t(-1);
-  size_t contextIndex() const { return contextIndex_; }
-
-  
-  
-  
-  
-  
-  void getTracingEdgeName(char* buffer, size_t bufferSize);
-
-  
-  
-  
-  
-  
-  class ContextFunctor {
-   public:
-    virtual void operator()(CallbackTracer* trc, char* buf, size_t bufsize) = 0;
-  };
 
  private:
   
@@ -321,61 +335,54 @@ class JS_PUBLIC_API CallbackTracer : public js::GenericTracer {
     return onChild(JS::GCCellPtr(*sharedp, JS::TraceKind::RegExpShared));
   }
 
-  friend class AutoTracingName;
-  const char* contextName_;
-
-  friend class AutoTracingIndex;
-  size_t contextIndex_;
-
-  friend class AutoTracingDetails;
-  ContextFunctor* contextFunctor_;
+  TracingContext context_;
 };
 
 
 class MOZ_RAII AutoTracingName {
-  CallbackTracer* trc_;
-  const char* prior_;
+  TracingContext* tcx_ = nullptr;
+  const char* prior_ = nullptr;
 
  public:
-  AutoTracingName(JSTracer* trc, const char* name) : trc_(nullptr) {
+  AutoTracingName(JSTracer* trc, const char* name) {
     MOZ_ASSERT(name);
-    if (trc->isCallbackTracer()) {
-      trc_ = trc->asCallbackTracer();
-      prior_ = trc_->contextName_;
-      trc_->contextName_ = name;
+    if (TracingContext* tcx = trc->maybeContext()) {
+      tcx_ = tcx;
+      prior_ = tcx_->name_;
+      tcx_->name_ = name;
     }
   }
   ~AutoTracingName() {
-    if (trc_) {
-      MOZ_ASSERT(trc_->contextName_);
-      trc_->contextName_ = prior_;
+    if (tcx_) {
+      MOZ_ASSERT(tcx_->name_);
+      tcx_->name_ = prior_;
     }
   }
 };
 
 
 class MOZ_RAII AutoTracingIndex {
-  CallbackTracer* trc_;
+  TracingContext* tcx_ = nullptr;
 
  public:
-  explicit AutoTracingIndex(JSTracer* trc, size_t initial = 0) : trc_(nullptr) {
-    if (trc->isCallbackTracer()) {
-      trc_ = trc->asCallbackTracer();
-      MOZ_ASSERT(trc_->contextIndex_ == CallbackTracer::InvalidIndex);
-      trc_->contextIndex_ = initial;
+  explicit AutoTracingIndex(JSTracer* trc, size_t initial = 0) {
+    if (TracingContext* tcx = trc->maybeContext()) {
+      tcx_ = tcx;
+      MOZ_ASSERT(tcx_->index_ == TracingContext::InvalidIndex);
+      tcx_->index_ = initial;
     }
   }
   ~AutoTracingIndex() {
-    if (trc_) {
-      MOZ_ASSERT(trc_->contextIndex_ != CallbackTracer::InvalidIndex);
-      trc_->contextIndex_ = CallbackTracer::InvalidIndex;
+    if (tcx_) {
+      MOZ_ASSERT(tcx_->index_ != TracingContext::InvalidIndex);
+      tcx_->index_ = TracingContext::InvalidIndex;
     }
   }
 
   void operator++() {
-    if (trc_) {
-      MOZ_ASSERT(trc_->contextIndex_ != CallbackTracer::InvalidIndex);
-      ++trc_->contextIndex_;
+    if (tcx_) {
+      MOZ_ASSERT(tcx_->index_ != TracingContext::InvalidIndex);
+      ++tcx_->index_;
     }
   }
 };
@@ -383,21 +390,20 @@ class MOZ_RAII AutoTracingIndex {
 
 
 class MOZ_RAII AutoTracingDetails {
-  CallbackTracer* trc_;
+  TracingContext* tcx_ = nullptr;
 
  public:
-  AutoTracingDetails(JSTracer* trc, CallbackTracer::ContextFunctor& func)
-      : trc_(nullptr) {
-    if (trc->isCallbackTracer()) {
-      trc_ = trc->asCallbackTracer();
-      MOZ_ASSERT(trc_->contextFunctor_ == nullptr);
-      trc_->contextFunctor_ = &func;
+  AutoTracingDetails(JSTracer* trc, TracingContext::Functor& func) {
+    if (TracingContext* tcx = trc->maybeContext()) {
+      tcx_ = tcx;
+      MOZ_ASSERT(tcx_->functor_ == nullptr);
+      tcx_->functor_ = &func;
     }
   }
   ~AutoTracingDetails() {
-    if (trc_) {
-      MOZ_ASSERT(trc_->contextFunctor_);
-      trc_->contextFunctor_ = nullptr;
+    if (tcx_) {
+      MOZ_ASSERT(tcx_->functor_);
+      tcx_->functor_ = nullptr;
     }
   }
 };
