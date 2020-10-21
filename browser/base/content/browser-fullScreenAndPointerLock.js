@@ -431,12 +431,27 @@ var FullScreen = {
     
     
     if (this._isRemoteBrowser(aBrowser)) {
-      if (
-        !this._sendMessageToTheRightContent(aActor, "DOMFullscreen:Entered")
-      ) {
+      let [targetActor, inProcessBC] = this._getNextMsgRecipientActor(aActor);
+      if (!targetActor) {
+        
+        
+        
+        this._abortEnterFullscreen();
+        return;
+      }
+      targetActor.sendAsyncMessage("DOMFullscreen:Entered", {
+        remoteFrameBC: inProcessBC,
+      });
+
+      
+      
+      targetActor.waitingForChildFullscreen = true;
+      if (inProcessBC) {
+        
         return;
       }
     }
+
     
     
     
@@ -448,9 +463,7 @@ var FullScreen = {
       
       Services.focus.activeWindow != window
     ) {
-      
-      
-      setTimeout(() => document.exitFullscreen(), 0);
+      this._abortEnterFullscreen();
       return;
     }
 
@@ -464,7 +477,6 @@ var FullScreen = {
         this._logWarningPermissionPromptFS("promptCanceled");
       }
     }
-
     document.documentElement.setAttribute("inDOMFullscreen", true);
 
     if (gFindBarInitialized) {
@@ -499,9 +511,25 @@ var FullScreen = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
   cleanupDomFullscreen(aActor) {
-    if (!this._sendMessageToTheRightContent(aActor, "DOMFullscreen:CleanUp")) {
-      return;
+    let [target, inProcessBC] = this._getNextMsgRecipientActor(aActor);
+    if (target) {
+      target.sendAsyncMessage("DOMFullscreen:CleanUp", {
+        remoteFrameBC: inProcessBC,
+      });
+      if (inProcessBC) {
+        return;
+      }
     }
 
     PopupNotifications.panel.removeEventListener(
@@ -517,6 +545,17 @@ var FullScreen = {
     );
 
     document.documentElement.removeAttribute("inDOMFullscreen");
+  },
+
+  _abortEnterFullscreen() {
+    
+    
+    setTimeout(() => document.exitFullscreen(), 0);
+    if (TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS")) {
+      
+      
+      TelemetryStopwatch.cancel("FULLSCREEN_CHANGE_MS");
+    }
   },
 
   
@@ -535,24 +574,16 @@ var FullScreen = {
 
 
 
-
-
-
-
-
-
-
-
-
-  _sendMessageToTheRightContent(aActor, aMessage) {
+  _getNextMsgRecipientActor(aActor) {
     if (aActor.hasBeenDestroyed()) {
-      
-      return true;
+      return [null, null];
     }
 
     let childBC = aActor.browsingContext;
     let parentBC = childBC.parent;
 
+    
+    
     while (parentBC) {
       if (!childBC.currentWindowGlobal || !parentBC.currentWindowGlobal) {
         break;
@@ -568,24 +599,20 @@ var FullScreen = {
       }
     }
 
+    let target = null;
+    let inProcessBC = null;
+
     if (parentBC && parentBC.currentWindowGlobal) {
-      let parentActor = parentBC.currentWindowGlobal.getActor("DOMFullscreen");
-      parentActor.sendAsyncMessage(aMessage, {
-        remoteFrameBC: childBC,
-      });
-      return false;
+      target = parentBC.currentWindowGlobal.getActor("DOMFullscreen");
+      inProcessBC = childBC;
+    } else {
+      target = aActor.requestOrigin;
     }
 
-    
-    
-    
-    
-    
-    if (!aActor.requestOrigin.hasBeenDestroyed()) {
-      aActor.requestOrigin.sendAsyncMessage(aMessage, {});
-      aActor.requestOrigin = null;
+    if (!target || target.hasBeenDestroyed()) {
+      return [null, null];
     }
-    return true;
+    return [target, inProcessBC];
   },
 
   _isRemoteBrowser(aBrowser) {

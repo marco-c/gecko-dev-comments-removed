@@ -9,6 +9,8 @@ var EXPORTED_SYMBOLS = ["DOMFullscreenParent"];
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 class DOMFullscreenParent extends JSWindowActorParent {
+  waitingForChildFullscreen = false;
+
   updateFullscreenWindowReference(aWindow) {
     if (aWindow.document.documentElement.hasAttribute("inDOMFullscreen")) {
       this._fullscreenWindow = aWindow;
@@ -20,6 +22,20 @@ class DOMFullscreenParent extends JSWindowActorParent {
   didDestroy() {
     let window = this._fullscreenWindow;
     if (!window) {
+      return;
+    }
+
+    if (this.waitingForChildFullscreen) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      window.document.exitFullscreen().catch(() => {});
       return;
     }
 
@@ -64,6 +80,7 @@ class DOMFullscreenParent extends JSWindowActorParent {
         break;
       }
       case "DOMFullscreen:Entered": {
+        this.waitingForChildFullscreen = false;
         window.FullScreen.enterDomFullscreen(browser, this);
         this.updateFullscreenWindowReference(window);
         break;
