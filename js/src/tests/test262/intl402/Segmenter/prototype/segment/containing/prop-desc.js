@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const segment = (new Intl.Segmenter()).segment("");
+assert.sameValue(
+  typeof segment.containing,
+  "function",
+  "typeof %Segments.prototype%.containing  is function"
+);
+
+
+reportCompare(0, 0);

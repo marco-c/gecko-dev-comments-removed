@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const custom = new Proxy(new Function(), {
+  get(target, key) {
+    if (key === 'prototype') {
+      throw new Test262Error();
+    }
+
+    return target[key];
+  }
+});
+
+assert.throws(Test262Error, () => {
+  Reflect.construct(Intl.Segmenter, [], custom);
+});
+
+reportCompare(0, 0);

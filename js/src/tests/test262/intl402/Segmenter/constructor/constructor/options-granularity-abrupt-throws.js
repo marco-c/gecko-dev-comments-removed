@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var options = {};
+Object.defineProperty(options, 'granularity', {
+  get() { throw new Test262Error(); },
+});
+
+assert.throws(Test262Error, () => {
+  new Intl.Segmenter(undefined, options);
+});
+
+reportCompare(0, 0);

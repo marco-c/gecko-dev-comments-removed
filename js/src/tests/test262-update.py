@@ -259,14 +259,6 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
 
     
     
-    isAsync = "async" in testRec
-    assert b"$DONE" not in testSource or isAsync, "Missing async attribute in: %s" % testName
-
-    
-    isModule = "module" in testRec
-
-    
-    
     
     
     isNegative = "negative" in testRec
@@ -274,9 +266,23 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     errorType = testRec["negative"]["type"] if isNegative else None
 
     
+    isAsync = "async" in testRec
+
     
-    if isNegative and isAsync:
-        isAsync = False
+    
+    
+    assert not (isNegative and isAsync), \
+           "Can't have both async and negative attributes: %s" % testName
+
+    
+    
+    
+    
+    assert b"$DONE" not in testSource or isAsync or isNegative, \
+           "Missing async attribute in: %s" % testName
+
+    
+    isModule = "module" in testRec
 
     
     

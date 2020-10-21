@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+class await {}
+
+assert.sameValue(new await instanceof await, true);
+
+reportCompare(0, 0);

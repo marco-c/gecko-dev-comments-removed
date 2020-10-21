@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Intl.Segmenter(undefined, null);
+}, 'null');
+
+reportCompare(0, 0);

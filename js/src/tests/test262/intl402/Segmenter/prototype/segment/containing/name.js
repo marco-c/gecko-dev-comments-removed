@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const segment = (new Intl.Segmenter()).segment("");
+verifyProperty(segment.containing, "name", {
+  value: "containing",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

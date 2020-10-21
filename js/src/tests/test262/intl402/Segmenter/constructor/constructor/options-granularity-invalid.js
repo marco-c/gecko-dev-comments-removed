@@ -27,6 +27,7 @@ const invalidOptions = [
   "Sentence",
   "SENTENCE",
   "sentence\0",
+  "line",
   "Line",
   "LINE",
   "line\0",
