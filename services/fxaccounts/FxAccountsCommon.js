@@ -113,6 +113,8 @@ exports.FX_OAUTH_CLIENT_ID = "5882386c6d801776";
 exports.SCOPE_PROFILE = "profile";
 exports.SCOPE_PROFILE_WRITE = "profile:write";
 exports.SCOPE_OLD_SYNC = "https://identity.mozilla.com/apps/oldsync";
+exports.SCOPE_ECOSYSTEM_TELEMETRY =
+  "https://identity.mozilla.com/ids/ecosystem_telemetry";
 
 
 
@@ -291,6 +293,7 @@ exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set([
   "authAt",
   "sessionToken",
   "uid",
+  "ecosystemAnonId",
   "ecosystemUserId",
   "oauthTokens",
   "profile",
