@@ -24,13 +24,16 @@
 #include "js/UniquePtr.h"        
 #include "util/TrailingArray.h"  
 #include "vm/StencilEnums.h"  
-#include "vm/Xdr.h"  
 
 
 
 
 
 namespace js {
+
+namespace frontend {
+class StencilXDR;
+}  
 
 
 class GCThingIndexType;
@@ -492,6 +495,7 @@ class SharedImmutableScriptData {
   
 
   friend class ::JSScript;
+  friend class js::frontend::StencilXDR;
 
  public:
   SharedImmutableScriptData() = default;
@@ -530,10 +534,6 @@ class SharedImmutableScriptData {
   SharedImmutableScriptData(const SharedImmutableScriptData&) = delete;
   SharedImmutableScriptData& operator=(const SharedImmutableScriptData&) =
       delete;
-
-  template <XDRMode mode>
-  static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
-                                    RefPtr<SharedImmutableScriptData>& sisd);
 
   static bool shareScriptData(JSContext* cx,
                               RefPtr<SharedImmutableScriptData>& sisd);
