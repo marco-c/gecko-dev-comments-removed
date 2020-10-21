@@ -705,6 +705,11 @@ bool GLContext::InitImpl() {
       MarkUnsupported(GLFeature::standard_derivatives);
     }
 
+    if (Renderer() == GLRenderer::AndroidEmulator) {
+      
+      mSymbols.fGetGraphicsResetStatus = 0;
+    }
+
     if (Vendor() == GLVendor::Vivante) {
       
       MarkUnsupported(GLFeature::standard_derivatives);
