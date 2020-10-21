@@ -24,39 +24,81 @@ def test_all_browser_abc():
             assert not inspect.isabstract(cls), "%s is abstract" % name
 
 
-@mock.patch('tools.wpt.browser.find_executable')
-def test_chrome_find_webdriver(mocked_find_executable):
+def test_edgechromium_webdriver_supports_browser():
     
-    chrome = browser.Chrome(logger)
-    mocked_find_executable.return_value = None
-    assert chrome.find_webdriver() is None
+    edge = browser.EdgeChromium(logger)
+    edge.webdriver_version = mock.MagicMock(return_value=None)
+    assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
 
     
+    edge = browser.EdgeChromium(logger)
+    edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
+    edge.version = mock.MagicMock(return_value=None)
+    assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
+
+    
+    edge = browser.EdgeChromium(logger)
+    edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
+    edge.version = mock.MagicMock(return_value='70.1.5')
+    assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
+
+    
+    edge = browser.EdgeChromium(logger)
+    edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
+    edge.version = mock.MagicMock(return_value='69.0.1')
+    assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
+
+
+
+
+@pytest.mark.skipif(sys.platform.startswith('win'), reason='just uses _get_fileversion on Windows')
+@mock.patch('tools.wpt.browser.call')
+def test_edgechromium_webdriver_version(mocked_call):
+    edge = browser.EdgeChromium(logger)
+    webdriver_binary = '/usr/bin/edgedriver'
+
+    
+    mocked_call.return_value = 'MSEdgeDriver 84.0.4147.30'
+    assert edge.webdriver_version(webdriver_binary) == '84.0.4147.30'
+    mocked_call.return_value = 'MSEdgeDriver 87.0.1 (abcd1234-refs/branch-heads/4147@{#310})'
+    assert edge.webdriver_version(webdriver_binary) == '87.0.1'
+
+    
+    mocked_call.return_value = 'Edge 84.0.4147.30 (dev)'
+    assert edge.webdriver_version(webdriver_binary) is None
+    mocked_call.return_value = 'MSEdgeDriver New 84.0.4147.30'
+    assert edge.webdriver_version(webdriver_binary) is None
+    mocked_call.return_value = ''
+    assert edge.webdriver_version(webdriver_binary) is None
+
+    
+    mocked_call.side_effect = subprocess.CalledProcessError(5, 'cmd', output='Call failed')
+    assert edge.webdriver_version(webdriver_binary) is None
+
+
+def test_chrome_webdriver_supports_browser():
+    
     chrome = browser.Chrome(logger)
-    mocked_find_executable.return_value = '/usr/bin/chromedriver'
     chrome.webdriver_version = mock.MagicMock(return_value=None)
-    assert chrome.find_webdriver() is None
+    assert not chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome')
 
     
     chrome = browser.Chrome(logger)
-    mocked_find_executable.return_value = '/usr/bin/chromedriver'
     chrome.webdriver_version = mock.MagicMock(return_value='70.0.1')
     chrome.version = mock.MagicMock(return_value=None)
-    assert chrome.find_webdriver(browser_binary='/usr/bin/chrome') == '/usr/bin/chromedriver'
+    assert chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome')
 
     
     chrome = browser.Chrome(logger)
-    mocked_find_executable.return_value = '/usr/bin/chromedriver'
     chrome.webdriver_version = mock.MagicMock(return_value='70.0.1')
     chrome.version = mock.MagicMock(return_value='70.1.5')
-    assert chrome.find_webdriver(browser_binary='/usr/bin/chrome') == '/usr/bin/chromedriver'
+    assert chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome')
 
     
     chrome = browser.Chrome(logger)
-    mocked_find_executable.return_value = '/usr/bin/chromedriver'
     chrome.webdriver_version = mock.MagicMock(return_value='70.0.1')
     chrome.version = mock.MagicMock(return_value='69.0.1')
-    assert chrome.find_webdriver(browser_binary='/usr/bin/chrome') is None
+    assert not chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome')
 
 
 
