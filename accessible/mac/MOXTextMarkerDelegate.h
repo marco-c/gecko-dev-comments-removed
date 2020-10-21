@@ -96,6 +96,9 @@
 - (id)moxTextMarkerRangeForUIElement:(id)element;
 
 
+- (NSString*)moxMozDebugDescriptionForTextMarker:(id)textMarker;
+
+
 - (void)moxSetSelectedTextMarkerRange:(id)textMarkerRange;
 
 @end
