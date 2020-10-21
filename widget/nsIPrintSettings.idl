@@ -180,6 +180,9 @@ interface nsIPrintSettings : nsISupports
   [infallible] attribute boolean printBGColors; 
   [infallible] attribute boolean printBGImages; 
 
+  
+  [infallible] attribute boolean honorPageRuleMargins;
+
   attribute short   printRange;
 
   attribute AString title;
