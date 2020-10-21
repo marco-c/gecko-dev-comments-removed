@@ -9,3 +9,16 @@ input {
 hbox {
   width: 100%;
 }
+
+#engineNameLabel,
+#engineUrlLabel,
+#engineAliasLabel {
+  
+  margin-inline-start: 4px;
+}
+
+#engineUrl {
+  
+  direction: ltr;
+  text-align: match-parent;
+}
