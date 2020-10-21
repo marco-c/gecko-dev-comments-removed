@@ -26,6 +26,32 @@ JS_FRIEND_API const char* GCTraceKindToAscii(JS::TraceKind kind);
 
 JS_FRIEND_API size_t GCTraceKindSize(JS::TraceKind kind);
 
+
+enum class TracerKind {
+  
+  
+  
+  Marking,
+
+  
+  
+  Tenuring,
+
+  
+  
+  
+  
+  Callback,
+
+  
+  Moving,
+  GrayBuffering,
+  ClearEdges,
+  Sweeping,
+  UnmarkGray,
+  VerifyTraceProtoAndIface
+};
+
 enum class WeakMapTraceAction {
   
 
@@ -59,27 +85,16 @@ class JS_PUBLIC_API JSTracer {
   
   JSRuntime* runtime() const { return runtime_; }
 
+  JS::TracerKind kind() const { return kind_; }
+  bool isMarkingTracer() const { return kind_ == JS::TracerKind::Marking; }
+  bool isTenuringTracer() const { return kind_ == JS::TracerKind::Tenuring; }
+  bool isCallbackTracer() const { return kind_ >= JS::TracerKind::Callback; }
+
   
   JS::WeakMapTraceAction weakMapAction() const { return weakMapAction_; }
 
-  enum class TracerKindTag {
-    
-    
-    
-    Marking,
-
-    
-    
-    Tenuring,
-
-    
-    
-    Callback
-  };
-  bool isMarkingTracer() const { return tag_ == TracerKindTag::Marking; }
-  bool isTenuringTracer() const { return tag_ == TracerKindTag::Tenuring; }
-  bool isCallbackTracer() const { return tag_ == TracerKindTag::Callback; }
   inline JS::CallbackTracer* asCallbackTracer();
+
   bool traceWeakEdges() const { return traceWeakEdges_; }
   bool canSkipJsids() const { return canSkipJsids_; }
 #ifdef DEBUG
@@ -91,12 +106,12 @@ class JS_PUBLIC_API JSTracer {
   uint32_t gcNumberForMarking() const;
 
  protected:
-  JSTracer(JSRuntime* rt, TracerKindTag tag,
+  JSTracer(JSRuntime* rt, JS::TracerKind kind,
            JS::WeakMapTraceAction weakMapAction =
                JS::WeakMapTraceAction::TraceValues)
       : runtime_(rt),
+        kind_(kind),
         weakMapAction_(weakMapAction),
-        tag_(tag),
         traceWeakEdges_(true),
 #ifdef DEBUG
         checkEdges_(true),
@@ -113,8 +128,8 @@ class JS_PUBLIC_API JSTracer {
 
  private:
   JSRuntime* const runtime_;
+  const JS::TracerKind kind_;
   const JS::WeakMapTraceAction weakMapAction_;
-  const TracerKindTag tag_;
 
   
   bool traceWeakEdges_;
@@ -135,14 +150,18 @@ class AutoTracingCallback;
 
 class JS_PUBLIC_API CallbackTracer : public JSTracer {
  public:
-  CallbackTracer(JSRuntime* rt, JS::WeakMapTraceAction weakMapAction =
-                                    JS::WeakMapTraceAction::TraceValues)
-      : JSTracer(rt, JSTracer::TracerKindTag::Callback, weakMapAction),
+  CallbackTracer(JSRuntime* rt, JS::TracerKind kind = JS::TracerKind::Callback,
+                 JS::WeakMapTraceAction weakMapAction =
+                     JS::WeakMapTraceAction::TraceValues)
+      : JSTracer(rt, kind, weakMapAction),
         contextName_(nullptr),
         contextIndex_(InvalidIndex),
-        contextFunctor_(nullptr) {}
-  CallbackTracer(JSContext* cx, JS::WeakMapTraceAction weakMapAction =
-                                    JS::WeakMapTraceAction::TraceValues);
+        contextFunctor_(nullptr) {
+    MOZ_ASSERT(isCallbackTracer());
+  }
+  CallbackTracer(JSContext* cx, JS::TracerKind kind = JS::TracerKind::Callback,
+                 JS::WeakMapTraceAction weakMapAction =
+                     JS::WeakMapTraceAction::TraceValues);
 
   
   
@@ -236,19 +255,6 @@ class JS_PUBLIC_API CallbackTracer : public JSTracer {
    public:
     virtual void operator()(CallbackTracer* trc, char* buf, size_t bufsize) = 0;
   };
-
-#ifdef DEBUG
-  enum class TracerKind {
-    Unspecified,
-    Moving,
-    GrayBuffering,
-    VerifyTraceProtoAndIface,
-    ClearEdges,
-    UnmarkGray,
-    Sweeping
-  };
-  virtual TracerKind getTracerKind() const { return TracerKind::Unspecified; }
-#endif
 
   
   
@@ -453,6 +459,10 @@ extern JS_PUBLIC_API void JS_GetTraceThingInfo(char* buf, size_t bufsize,
                                                bool includeDetails);
 
 namespace js {
+
+inline bool IsTracerKind(JSTracer* trc, JS::TracerKind kind) {
+  return trc->kind() == kind;
+}
 
 
 
