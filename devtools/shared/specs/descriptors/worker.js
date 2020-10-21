@@ -5,8 +5,8 @@
 
 const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
-const workerTargetSpec = generateActorSpec({
-  typeName: "workerTarget",
+const workerDescriptorSpec = generateActorSpec({
+  typeName: "workerDescriptor",
 
   methods: {
     attach: {
@@ -17,10 +17,16 @@ const workerTargetSpec = generateActorSpec({
       request: {},
       response: RetVal("json"),
     },
+    
+    
     connect: {
       request: {
         options: Arg(0, "json"),
       },
+      response: RetVal("json"),
+    },
+    getTarget: {
+      request: {},
       response: RetVal("json"),
     },
     push: {
@@ -39,4 +45,4 @@ const workerTargetSpec = generateActorSpec({
   },
 });
 
-exports.workerTargetSpec = workerTargetSpec;
+exports.workerDescriptorSpec = workerDescriptorSpec;

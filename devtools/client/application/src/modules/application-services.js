@@ -34,16 +34,16 @@ class ApplicationServices {
     return this._toolbox.selectTool(toolId, REASON);
   }
 
-  async openWorkerInDebugger(workerTargetFront) {
+  async openWorkerInDebugger(workerDescriptorFront) {
     const debuggerPanel = await this.selectTool("jsdebugger");
-    debuggerPanel.selectWorker(workerTargetFront);
+    debuggerPanel.selectWorker(workerDescriptorFront);
   }
 
-  async viewWorkerSource(workerTargetFront) {
+  async viewWorkerSource(workerDescriptorFront) {
     
     
     this._toolbox.viewSourceInDebugger(
-      workerTargetFront.url,
+      workerDescriptorFront.url,
       1,
       1,
       null,
