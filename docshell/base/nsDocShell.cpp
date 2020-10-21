@@ -8955,12 +8955,16 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
             scrollRestorationIsManual.value());
       }
 
-      
-      
-      mBrowsingContext->SetActiveSessionHistoryEntry(
-          Some(scrollPos), mActiveEntry.get(), mLoadType, mChildOffset,
-          cacheKey);
-      
+      if (LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY)) {
+        mBrowsingContext->ReplaceActiveSessionHistoryEntry(mActiveEntry.get());
+      } else {
+        
+        
+        mBrowsingContext->SetActiveSessionHistoryEntry(
+            Some(scrollPos), mActiveEntry.get(), mLoadType, mChildOffset,
+            cacheKey);
+        
+      }
     }
   }
 
