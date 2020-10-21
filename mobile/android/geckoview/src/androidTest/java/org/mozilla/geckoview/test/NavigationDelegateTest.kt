@@ -1539,6 +1539,10 @@ class NavigationDelegateTest : BaseSessionTest() {
         })
 
         
+        mainSession.loadTestPath(HELLO2_HTML_PATH)
+        sessionRule.waitForPageStop()
+
+        
         mainSession.loadUri(url)
         
         sessionRule.waitForPageStops(2)
@@ -1567,6 +1571,11 @@ class NavigationDelegateTest : BaseSessionTest() {
         sessionRule.waitForPageStops(if (isRemoteExtension) 1 else 2)
 
         assertThat("URL should match", currentUrl!!, equalTo(url))
+
+        sessionRule.session.goBack()
+        sessionRule.waitForPageStops(if (isRemoteExtension) 1 else 2)
+
+        assertThat("URL should match", currentUrl!!, endsWith(HELLO2_HTML_PATH))
 
         settings.aboutConfigEnabled = aboutConfigEnabled
     }
