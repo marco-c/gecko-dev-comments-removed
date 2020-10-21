@@ -1460,84 +1460,181 @@ public class GeckoSession {
 
     public static final int LOAD_FLAGS_REPLACE_HISTORY = 1 << 6;
 
-    private GeckoBundle additionalHeadersToBundle(final Map<String, String> additionalHeaders) {
-        final GeckoBundle bundle = new GeckoBundle(additionalHeaders.size());
-        for (Map.Entry<String, String> entry : additionalHeaders.entrySet()) {
-            if (entry.getKey() == null) {
-                
-                continue;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public static class Loader {
+        private String mUri;
+        private GeckoSession mReferrerSession;
+        private String mReferrerUri;
+        private GeckoBundle mHeaders;
+        private @LoadFlags int mLoadFlags = LOAD_FLAGS_NONE;
+        private boolean mIsDataUri;
+
+        private static @NonNull String createDataUri(@NonNull final byte[] bytes,
+                                                    @Nullable final String mimeType) {
+            return String.format("data:%s;base64,%s", mimeType != null ? mimeType : "",
+                    Base64.encodeToString(bytes, Base64.NO_WRAP));
+        }
+
+        private static @NonNull String createDataUri(@NonNull final String data,
+                                                    @Nullable final String mimeType) {
+            return String.format("data:%s,%s", mimeType != null ? mimeType : "", data);
+        }
+
+        
+
+
+
+
+        @NonNull
+        public Loader uri(final @NonNull String uri) {
+            mUri = uri;
+            mIsDataUri = false;
+            return this;
+        }
+
+        
+
+
+
+
+        @NonNull
+        public Loader uri(final @NonNull Uri uri) {
+            mUri = uri.toString();
+            mIsDataUri = false;
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        @NonNull
+        public Loader data(final @NonNull byte[] bytes, final @Nullable String mimeType) {
+            mUri = createDataUri(bytes, mimeType);
+            mIsDataUri = true;
+            return this;
+        }
+
+        
+
+
+
+
+
+
+        @NonNull
+        public Loader data(final @NonNull String data, final @Nullable String mimeType) {
+            mUri = createDataUri(data, mimeType);
+            mIsDataUri = true;
+            return this;
+        }
+
+        
+
+
+
+
+        @NonNull
+        public Loader referrer(final @NonNull GeckoSession referrer) {
+            mReferrerSession = referrer;
+            return this;
+        }
+
+        
+
+
+
+
+        @NonNull
+        public Loader referrer(final @NonNull Uri referrerUri) {
+            mReferrerUri = referrerUri != null ? referrerUri.toString() : null;
+            return this;
+        }
+
+        
+
+
+
+
+
+        @NonNull
+        public Loader referrer(final @NonNull String referrerUri) {
+            mReferrerUri = referrerUri;
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+        @NonNull
+        public Loader additionalHeaders(final @NonNull Map<String, String> headers) {
+            final GeckoBundle bundle = new GeckoBundle(headers.size());
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                if (entry.getKey() == null) {
+                    
+                    continue;
+                }
+                bundle.putString(entry.getKey(), entry.getValue());
             }
-            bundle.putString(entry.getKey(), entry.getValue());
-        }
-        return bundle;
-    }
-
-    
-
-
-
-    @AnyThread
-    public void loadUri(final @NonNull String uri) {
-        loadUri(uri, (GeckoSession)null, LOAD_FLAGS_NONE, (Map<String, String>) null);
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public void loadUri(final @NonNull String uri, final @Nullable Map<String, String> additionalHeaders) {
-        loadUri(uri, (GeckoSession)null, LOAD_FLAGS_NONE, additionalHeaders);
-    }
-
-    
-
-
-
-
-
-    @AnyThread
-    public void loadUri(final @NonNull String uri, final @LoadFlags int flags) {
-        loadUri(uri, (GeckoSession)null, flags, (Map<String, String>) null);
-    }
-
-    
-
-
-
-
-
-
-    @AnyThread
-    public void loadUri(final @NonNull String uri, final @Nullable String referrer,
-                        final @LoadFlags int flags) {
-        loadUri(uri, referrer, flags, (Map<String, String>) null);
-    }
-
-    
-
-
-
-
-
-
-
-    @AnyThread
-    public void loadUri(final @NonNull String uri, final @Nullable String referrer,
-                        final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
-        final GeckoBundle msg = new GeckoBundle();
-        msg.putString("uri", uri);
-        msg.putInt("flags", flags);
-
-        if (referrer != null) {
-            msg.putString("referrerUri", referrer);
+            mHeaders = bundle;
+            return this;
         }
 
-        if (additionalHeaders != null) {
-            msg.putBundle("headers", additionalHeadersToBundle(additionalHeaders));
+        
+
+
+
+
+
+        @NonNull
+        public Loader flags(final @LoadFlags int flags) {
+            mLoadFlags = flags;
+            return this;
         }
-        mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
     }
 
     
@@ -1546,58 +1643,180 @@ public class GeckoSession {
 
 
 
-
-
-
     @AnyThread
-    public void loadUri(final @NonNull String uri, final @Nullable GeckoSession referrer,
-                        final @LoadFlags int flags) {
-        loadUri(uri, referrer, flags, (Map<String, String>) null);
-    }
+    public void load(final @NonNull Loader request) {
+        if (request.mUri == null) {
+            throw new IllegalArgumentException(
+                    "You need to specify at least one between `uri` and `data`.");
+        }
 
-    
+        if (request.mReferrerUri != null && request.mReferrerSession != null) {
+            throw new IllegalArgumentException(
+                    "Cannot specify both a referrer session and a referrer URI.");
+        }
 
+        final int loadFlags = request.mIsDataUri
+                
+                ? request.mLoadFlags | LOAD_FLAGS_FORCE_ALLOW_DATA_URI
+                : request.mLoadFlags;
 
-
-
-
-
-
-
-
-    @AnyThread
-    public void loadUri(final @NonNull String uri, final @Nullable GeckoSession referrer,
-                        final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
         
         
-        final NavigationDelegate.LoadRequest request =
+        final NavigationDelegate.LoadRequest loadRequest =
                 new NavigationDelegate.LoadRequest(
-                        uri,
+                        request.mUri,
                         null, 
                         1, 
                         0, 
                         false, 
                         true );
 
-        shouldLoadUri(request).getOrAccept(allowOrDeny -> {
+        shouldLoadUri(loadRequest).getOrAccept(allowOrDeny -> {
             if (allowOrDeny == AllowOrDeny.DENY) {
                 return;
             }
 
             final GeckoBundle msg = new GeckoBundle();
-            msg.putString("uri", uri);
-            msg.putInt("flags", flags);
+            msg.putString("uri", request.mUri);
+            msg.putInt("flags", loadFlags);
 
-            if (referrer != null) {
-                msg.putString("referrerSessionId", referrer.mId);
+            if (request.mReferrerUri != null) {
+                msg.putString("referrerUri", request.mReferrerUri);
             }
 
-            if (additionalHeaders != null) {
-                msg.putBundle("headers", additionalHeadersToBundle(additionalHeaders));
+            if (request.mReferrerSession != null) {
+                msg.putString("referrerSessionId", request.mReferrerSession.mId);
+            }
+
+            if (request.mHeaders != null) {
+                msg.putBundle("headers", request.mHeaders);
             }
 
             mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
         });
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void loadUri(final @NonNull String uri) {
+        load(new Loader().uri(uri));
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    @Deprecated
+    public void loadUri(final @NonNull String uri, final @Nullable Map<String, String> additionalHeaders) {
+        load(new Loader()
+                .uri(uri)
+                .additionalHeaders(additionalHeaders));
+    }
+
+    
+
+
+
+
+
+
+    @AnyThread
+    @Deprecated
+    public void loadUri(final @NonNull String uri, final @LoadFlags int flags) {
+        load(new Loader()
+                .uri(uri)
+                .flags(flags));
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    @Deprecated
+    public void loadUri(final @NonNull String uri, final @Nullable String referrer,
+                        final @LoadFlags int flags) {
+        load(new Loader()
+                .uri(uri)
+                .referrer(referrer)
+                .flags(flags));
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    @Deprecated
+    public void loadUri(final @NonNull String uri, final @Nullable String referrer,
+                        final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
+        load(new Loader()
+                .uri(uri)
+                .referrer(referrer)
+                .flags(flags)
+                .additionalHeaders(additionalHeaders));
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    @Deprecated
+    public void loadUri(final @NonNull String uri, final @Nullable GeckoSession referrer,
+                        final @LoadFlags int flags) {
+        load(new Loader()
+                .uri(uri)
+                .referrer(referrer)
+                .flags(flags));
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    @Deprecated
+    public void loadUri(final @NonNull String uri, final @Nullable GeckoSession referrer,
+                        final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
+        load(new Loader()
+                .uri(uri)
+                .referrer(referrer)
+                .additionalHeaders(additionalHeaders)
+                .flags(flags));
     }
 
     private GeckoResult<AllowOrDeny> shouldLoadUri(final NavigationDelegate.LoadRequest request) {
@@ -1629,9 +1848,12 @@ public class GeckoSession {
 
 
 
+
     @AnyThread
+    @Deprecated
     public void loadUri(final @NonNull Uri uri) {
-        loadUri(uri.toString(), (GeckoSession)null, LOAD_FLAGS_NONE, (Map<String, String>) null);
+        load(new Loader()
+                .uri(uri));
     }
 
     
@@ -1639,9 +1861,13 @@ public class GeckoSession {
 
 
 
+
     @AnyThread
+    @Deprecated
     public void loadUri(final @NonNull Uri uri, final @Nullable Map<String, String> additionalHeaders) {
-        loadUri(uri.toString(), (GeckoSession)null, LOAD_FLAGS_NONE, additionalHeaders);
+        load(new Loader()
+                .uri(uri)
+                .additionalHeaders(additionalHeaders));
     }
 
     
@@ -1649,9 +1875,13 @@ public class GeckoSession {
 
 
 
+
     @AnyThread
+    @Deprecated
     public void loadUri(final @NonNull Uri uri, final @LoadFlags int flags) {
-        loadUri(uri.toString(), (GeckoSession)null, flags, (Map<String, String>) null);
+        load(new Loader()
+                .uri(uri)
+                .flags(flags));
     }
 
     
@@ -1660,10 +1890,15 @@ public class GeckoSession {
 
 
 
+
     @AnyThread
+    @Deprecated
     public void loadUri(final @NonNull Uri uri, final @Nullable Uri referrer,
                         final @LoadFlags int flags) {
-        loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags, (Map<String, String>) null);
+        load(new Loader()
+                .uri(uri)
+                .referrer(referrer)
+                .flags(flags));
     }
 
     
@@ -1673,10 +1908,16 @@ public class GeckoSession {
 
 
 
+
     @AnyThread
+    @Deprecated
     public void loadUri(final @NonNull Uri uri, final @Nullable Uri referrer,
                         final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
-        loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags, additionalHeaders);
+        load(new Loader()
+                .uri(uri)
+                .referrer(referrer)
+                .flags(flags)
+                .additionalHeaders(additionalHeaders));
     }
 
     
@@ -1688,12 +1929,9 @@ public class GeckoSession {
 
 
     @AnyThread
+    @Deprecated
     public void loadString(@NonNull final String data, @Nullable final String mimeType) {
-        if (data == null) {
-            throw new IllegalArgumentException("data cannot be null");
-        }
-
-        loadUri(createDataUri(data, mimeType), (GeckoSession)null, LOAD_FLAGS_NONE);
+        load(new Loader().data(data, mimeType));
     }
 
     
@@ -1703,13 +1941,11 @@ public class GeckoSession {
 
 
 
+
     @AnyThread
+    @Deprecated
     public void loadData(@NonNull final byte[] bytes, @Nullable final String mimeType) {
-        if (bytes == null) {
-            throw new IllegalArgumentException("data cannot be null");
-        }
-
-        loadUri(createDataUri(bytes, mimeType), (GeckoSession)null, LOAD_FLAGS_FORCE_ALLOW_DATA_URI);
+        load(new Loader().data(bytes, mimeType));
     }
 
     
@@ -1719,10 +1955,10 @@ public class GeckoSession {
 
 
     @AnyThread
+    @Deprecated
     public static @NonNull String createDataUri(@NonNull final byte[] bytes,
                                                 @Nullable final String mimeType) {
-        return String.format("data:%s;base64,%s", mimeType != null ? mimeType : "",
-                             Base64.encodeToString(bytes, Base64.NO_WRAP));
+        return Loader.createDataUri(bytes, mimeType);
     }
 
     
@@ -1732,9 +1968,10 @@ public class GeckoSession {
 
 
     @AnyThread
+    @Deprecated
     public static @NonNull String createDataUri(@NonNull final String data,
                                                 @Nullable final String mimeType) {
-        return String.format("data:%s,%s", mimeType != null ? mimeType : "", data);
+        return Loader.createDataUri(data, mimeType);
     }
 
     
