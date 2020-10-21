@@ -49,7 +49,6 @@
 #include "WrapperFactory.h"
 #include "nsGlobalWindow.h"
 #include "mozilla/AutoRestore.h"
-#include "mozilla/MainThreadIdlePeriod.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_javascript.h"
@@ -1151,10 +1150,6 @@ static void FinishAnyIncrementalGC() {
   }
 }
 
-static inline js::SliceBudget BudgetFromDuration(TimeDuration duration) {
-  return js::SliceBudget(js::TimeBudget(duration.ToMilliseconds()));
-}
-
 static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
                                 TimeStamp aDeadline) {
   AUTO_PROFILER_TRACING_MARKER(
@@ -1229,12 +1224,6 @@ static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
         uint32_t(idleDuration.ToSeconds() / duration.ToSeconds() * 100);
     Telemetry::Accumulate(Telemetry::FORGET_SKIPPABLE_DURING_IDLE, percent);
   }
-}
-
-MOZ_ALWAYS_INLINE
-static TimeDuration TimeBetween(TimeStamp start, TimeStamp end) {
-  MOZ_ASSERT(end >= start);
-  return end - start;
 }
 
 static TimeDuration TimeUntilNow(TimeStamp start) {
@@ -1501,48 +1490,16 @@ void nsJSContext::RunCycleCollectorSlice(TimeStamp aDeadline) {
   sCCStats.PrepareForCycleCollectionSlice(aDeadline);
 
   
-  
-  js::SliceBudget budget = js::SliceBudget::unlimited();
-
   if (sIncrementalCC) {
-    TimeDuration baseBudget = kICCSliceBudget;
-    if (!aDeadline.IsNull()) {
-      baseBudget = aDeadline - TimeStamp::Now();
-    }
-
-    if (sCCStats.mBeginTime.IsNull()) {
-      
-      budget = BudgetFromDuration(baseBudget);
-    } else {
-      TimeStamp now = TimeStamp::Now();
-
-      
-      TimeDuration runningTime = TimeBetween(sCCStats.mBeginTime, now);
-      if (runningTime < kMaxICCDuration) {
-        const TimeDuration maxSlice = TimeDuration::FromMilliseconds(
-            MainThreadIdlePeriod::GetLongIdlePeriod());
-
-        
-        double sliceDelayMultiplier =
-            TimeBetween(sCCStats.mEndSliceTime, now) / kICCIntersliceDelay;
-        TimeDuration delaySliceBudget =
-            std::min(baseBudget.MultDouble(sliceDelayMultiplier), maxSlice);
-
-        
-        
-        double percentToHalfDone =
-            std::min(2.0 * (runningTime / kMaxICCDuration), 1.0);
-        TimeDuration laterSliceBudget = maxSlice.MultDouble(percentToHalfDone);
-
-        budget = BudgetFromDuration(
-            std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
-      }
-    }
+    bool preferShorterSlices;
+    js::SliceBudget budget = sScheduler.ComputeCCSliceBudget(
+        aDeadline, sCCStats.mBeginTime, sCCStats.mEndSliceTime,
+        &preferShorterSlices);
+    nsCycleCollector_collectSlice(budget, preferShorterSlices);
+  } else {
+    js::SliceBudget budget = js::SliceBudget::unlimited();
+    nsCycleCollector_collectSlice(budget, false);
   }
-
-  nsCycleCollector_collectSlice(
-      budget,
-      aDeadline.IsNull() || (aDeadline - TimeStamp::Now()) < kICCSliceBudget);
 
   sCCStats.FinishCycleCollectionSlice();
 }

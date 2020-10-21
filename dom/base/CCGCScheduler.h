@@ -56,6 +56,16 @@ static const uint32_t kCCPurpleLimit = 200;
 
 namespace mozilla {
 
+MOZ_ALWAYS_INLINE
+static TimeDuration TimeBetween(TimeStamp aStart, TimeStamp aEnd) {
+  MOZ_ASSERT(aEnd >= aStart);
+  return aEnd - aStart;
+}
+
+static inline js::SliceBudget BudgetFromDuration(TimeDuration aDuration) {
+  return js::SliceBudget(js::TimeBudget(aDuration.ToMilliseconds()));
+}
+
 class CCGCScheduler {
  public:
   
@@ -124,6 +134,54 @@ class CCGCScheduler {
     double percentOfBlockedTime =
         std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
     return std::max(budget, maxSliceGCBudget.MultDouble(percentOfBlockedTime));
+  }
+
+  
+  
+  
+  js::SliceBudget ComputeCCSliceBudget(TimeStamp aDeadline,
+                                       TimeStamp aCCBeginTime,
+                                       TimeStamp aPrevSliceEndTime,
+                                       bool* aPreferShorterSlices) const {
+    TimeStamp now = TimeStamp::Now();
+
+    *aPreferShorterSlices =
+        aDeadline.IsNull() || (aDeadline - now) < kICCSliceBudget;
+
+    TimeDuration baseBudget =
+        aDeadline.IsNull() ? kICCSliceBudget : aDeadline - now;
+
+    if (aCCBeginTime.IsNull()) {
+      
+      return BudgetFromDuration(baseBudget);
+    }
+
+    
+    TimeDuration runningTime = TimeBetween(aCCBeginTime, now);
+    if (runningTime >= kMaxICCDuration) {
+      return js::SliceBudget::unlimited();
+    }
+
+    const TimeDuration maxSlice = TimeDuration::FromMilliseconds(
+        MainThreadIdlePeriod::GetLongIdlePeriod());
+
+    
+    double sliceDelayMultiplier =
+        TimeBetween(aPrevSliceEndTime, now) / kICCIntersliceDelay;
+    TimeDuration delaySliceBudget =
+        std::min(baseBudget.MultDouble(sliceDelayMultiplier), maxSlice);
+
+    
+    
+    double percentToHalfDone =
+        std::min(2.0 * (runningTime / kMaxICCDuration), 1.0);
+    TimeDuration laterSliceBudget = maxSlice.MultDouble(percentToHalfDone);
+
+    
+    
+    
+    return BudgetFromDuration(
+        std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
   }
 
   
