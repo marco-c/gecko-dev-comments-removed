@@ -117,7 +117,8 @@ PersistentBufferProviderShared::Create(gfx::IntSize aSize,
   
   if (gfxPlatform::GetPlatform()->GetPreferredCanvasBackend() ==
           BackendType::DIRECT2D1_1 &&
-      !TextureData::IsRemote(aKnowsCompositor, BackendSelector::Canvas)) {
+      !TextureData::IsRemote(aKnowsCompositor->GetCompositorBackendType(),
+                             BackendSelector::Canvas)) {
     return nullptr;
   }
 #endif
