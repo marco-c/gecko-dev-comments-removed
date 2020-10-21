@@ -838,7 +838,6 @@ bool PerHandlerParser<ParseHandler>::
   if (handler_.canSkipLazyClosedOverBindings()) {
     
     
-    uint32_t slotCount = scope.declaredCount();
     while (JSAtom* name = handler_.nextLazyClosedOverBinding()) {
       
       
@@ -851,12 +850,6 @@ bool PerHandlerParser<ParseHandler>::
       const ParserName* nameId = mbNameId.unwrap()->asName();
 
       scope.lookupDeclaredName(nameId)->value()->setClosedOver();
-      MOZ_ASSERT(slotCount > 0);
-      slotCount--;
-    }
-
-    if (pc_->isGeneratorOrAsync()) {
-      scope.setOwnStackSlotCount(slotCount);
     }
     return true;
   }
@@ -866,7 +859,6 @@ bool PerHandlerParser<ParseHandler>::
   uint32_t scriptId = pc_->scriptId();
   uint32_t scopeId = scope.id();
 
-  uint32_t slotCount = 0;
   for (BindingIter bi = scope.bindings(pc_); bi; bi++) {
     if (UsedNamePtr p = usedNames_.lookup(bi.name())) {
       bool closedOver;
@@ -880,14 +872,7 @@ bool PerHandlerParser<ParseHandler>::
             return false;
           }
         }
-      } else if constexpr (!isSyntaxParser) {
-        slotCount++;
       }
-    }
-  }
-  if constexpr (!isSyntaxParser) {
-    if (pc_->isGeneratorOrAsync()) {
-      scope.setOwnStackSlotCount(slotCount);
     }
   }
 
@@ -1180,10 +1165,7 @@ Maybe<ParserFunctionScopeData*> NewFunctionScopeData(JSContext* cx,
   ParserBindingNameVector formals(cx);
   ParserBindingNameVector vars(cx);
 
-  bool allBindingsClosedOver =
-      pc->sc()->allBindingsClosedOver() || scope.tooBigToOptimize();
-  bool argumentBindingsClosedOver =
-      allBindingsClosedOver || pc->isGeneratorOrAsync();
+  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
   bool hasDuplicateParams = pc->functionBox()->hasDuplicateParameters;
 
   
@@ -1199,7 +1181,7 @@ Maybe<ParserFunctionScopeData*> NewFunctionScopeData(JSContext* cx,
       
       
       bool closedOver =
-          argumentBindingsClosedOver || (p && p->value()->closedOver());
+          allBindingsClosedOver || (p && p->value()->closedOver());
 
       
       
@@ -1272,8 +1254,7 @@ Maybe<ParserFunctionScopeData*> NewFunctionScopeData(JSContext* cx,
 
 
 bool FunctionScopeHasClosedOverBindings(ParseContext* pc) {
-  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver() ||
-                               pc->functionScope().tooBigToOptimize();
+  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
 
   for (BindingIter bi = pc->functionScope().bindings(pc); bi; bi++) {
     switch (bi.kind()) {
@@ -1307,8 +1288,7 @@ Maybe<ParserVarScopeData*> NewVarScopeData(JSContext* cx,
                                            LifoAlloc& alloc, ParseContext* pc) {
   ParserBindingNameVector vars(cx);
 
-  bool allBindingsClosedOver =
-      pc->sc()->allBindingsClosedOver() || scope.tooBigToOptimize();
+  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
 
   for (BindingIter bi = scope.bindings(pc); bi; bi++) {
     if (bi.kind() == BindingKind::Var) {
@@ -1359,8 +1339,7 @@ Maybe<ParserLexicalScopeData*> NewLexicalScopeData(JSContext* cx,
   ParserBindingNameVector lets(cx);
   ParserBindingNameVector consts(cx);
 
-  bool allBindingsClosedOver =
-      pc->sc()->allBindingsClosedOver() || scope.tooBigToOptimize();
+  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
 
   for (BindingIter bi = scope.bindings(pc); bi; bi++) {
     ParserBindingName binding(bi.name(),
@@ -1403,8 +1382,7 @@ Maybe<ParserLexicalScopeData*> NewLexicalScopeData(JSContext* cx,
 
 bool LexicalScopeHasClosedOverBindings(ParseContext* pc,
                                        ParseContext::Scope& scope) {
-  bool allBindingsClosedOver =
-      pc->sc()->allBindingsClosedOver() || scope.tooBigToOptimize();
+  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
 
   for (BindingIter bi = scope.bindings(pc); bi; bi++) {
     switch (bi.kind()) {

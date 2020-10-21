@@ -5763,46 +5763,71 @@ bool BaselineCodeGen<Handler>::emit_Generator() {
 }
 
 template <typename Handler>
-bool BaselineCodeGen<Handler>::emitSuspend(JSOp op) {
-  MOZ_ASSERT(op == JSOp::InitialYield || op == JSOp::Yield ||
-             op == JSOp::Await);
+bool BaselineCodeGen<Handler>::emit_InitialYield() {
+  frame.syncStack(0);
+  frame.assertStackDepth(1);
 
-  
-  
   Register genObj = R2.scratchReg();
-  if (op == JSOp::InitialYield) {
-    
-    frame.syncStack(0);
-    frame.assertStackDepth(1);
-    masm.unboxObject(frame.addressOfStackValue(-1), genObj);
-  } else {
-    frame.popRegsAndSync(1);
-    masm.unboxObject(R0, genObj);
+  masm.unboxObject(frame.addressOfStackValue(-1), genObj);
+
+  MOZ_ASSERT_IF(handler.maybePC(), GET_RESUMEINDEX(handler.maybePC()) == 0);
+  masm.storeValue(
+      Int32Value(0),
+      Address(genObj, AbstractGeneratorObject::offsetOfResumeIndexSlot()));
+
+  Register envObj = R0.scratchReg();
+  Register temp = R1.scratchReg();
+  Address envChainSlot(genObj,
+                       AbstractGeneratorObject::offsetOfEnvironmentChainSlot());
+  masm.loadPtr(frame.addressOfEnvironmentChain(), envObj);
+  masm.guardedCallPreBarrierAnyZone(envChainSlot, MIRType::Value, temp);
+  masm.storeValue(JSVAL_TYPE_OBJECT, envObj, envChainSlot);
+
+  Label skipBarrier;
+  masm.branchPtrInNurseryChunk(Assembler::Equal, genObj, temp, &skipBarrier);
+  masm.branchPtrInNurseryChunk(Assembler::NotEqual, envObj, temp, &skipBarrier);
+  masm.push(genObj);
+  MOZ_ASSERT(genObj == R2.scratchReg());
+  masm.call(&postBarrierSlot_);
+  masm.pop(genObj);
+  masm.bind(&skipBarrier);
+
+  masm.tagValue(JSVAL_TYPE_OBJECT, genObj, JSReturnOperand);
+  if (!emitReturn()) {
+    return false;
   }
 
-  if (frame.hasKnownStackDepth(1) && !handler.canHaveFixedSlots()) {
+  
+  frame.incStackDepth(2);
+  return true;
+}
+
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_Yield() {
+  
+  frame.popRegsAndSync(1);
+
+  Register genObj = R2.scratchReg();
+  masm.unboxObject(R0, genObj);
+
+  if (frame.hasKnownStackDepth(1)) {
     
     
     
-    MOZ_ASSERT_IF(op == JSOp::InitialYield && handler.maybePC(),
-                  GET_RESUMEINDEX(handler.maybePC()) == 0);
+
+    Register temp = R1.scratchReg();
     Address resumeIndexSlot(genObj,
                             AbstractGeneratorObject::offsetOfResumeIndexSlot());
-    Register temp = R1.scratchReg();
-    if (op == JSOp::InitialYield) {
-      masm.storeValue(Int32Value(0), resumeIndexSlot);
-    } else {
-      jsbytecode* pc = handler.maybePC();
-      MOZ_ASSERT(pc, "compiler-only code never has a null pc");
-      masm.move32(Imm32(GET_RESUMEINDEX(pc)), temp);
-      masm.storeValue(JSVAL_TYPE_INT32, temp, resumeIndexSlot);
-    }
+    jsbytecode* pc = handler.maybePC();
+    MOZ_ASSERT(pc, "compiler-only code never has a null pc");
+    masm.move32(Imm32(GET_RESUMEINDEX(pc)), temp);
+    masm.storeValue(JSVAL_TYPE_INT32, temp, resumeIndexSlot);
 
     Register envObj = R0.scratchReg();
     Address envChainSlot(
         genObj, AbstractGeneratorObject::offsetOfEnvironmentChainSlot());
     masm.loadPtr(frame.addressOfEnvironmentChain(), envObj);
-    masm.guardedCallPreBarrierAnyZone(envChainSlot, MIRType::Value, temp);
+    masm.guardedCallPreBarrier(envChainSlot, MIRType::Value);
     masm.storeValue(JSVAL_TYPE_OBJECT, envObj, envChainSlot);
 
     Label skipBarrier;
@@ -5835,24 +5860,13 @@ bool BaselineCodeGen<Handler>::emitSuspend(JSOp op) {
   }
 
   
-  
   frame.incStackDepth(2);
   return true;
 }
 
 template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_InitialYield() {
-  return emitSuspend(JSOp::InitialYield);
-}
-
-template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_Yield() {
-  return emitSuspend(JSOp::Yield);
-}
-
-template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_Await() {
-  return emitSuspend(JSOp::Await);
+  return emit_Yield();
 }
 
 template <>
@@ -6135,10 +6149,10 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   masm.bind(&noArgsObj);
 
   
-  Label noStackStorage;
-  Address stackStorageSlot(genObj,
-                           AbstractGeneratorObject::offsetOfStackStorageSlot());
-  masm.fallibleUnboxObject(stackStorageSlot, scratch2, &noStackStorage);
+  Label noExprStack;
+  Address exprStackSlot(genObj,
+                        AbstractGeneratorObject::offsetOfExpressionStackSlot());
+  masm.fallibleUnboxObject(exprStackSlot, scratch2, &noExprStack);
   {
     Register initLength = regs.takeAny();
     masm.loadPtr(Address(scratch2, NativeObject::offsetOfElements()), scratch2);
@@ -6162,7 +6176,7 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
     regs.add(initLength);
   }
 
-  masm.bind(&noStackStorage);
+  masm.bind(&noExprStack);
 
   
   masm.pushValue(Address(callerStackPtr, sizeof(Value)));

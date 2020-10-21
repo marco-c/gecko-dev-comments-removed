@@ -263,7 +263,7 @@ class SharedContext {
 
   ImmutableScriptFlags immutableFlags() { return immutableFlags_; }
 
-  bool allBindingsClosedOver() { return bindingsAccessedDynamically(); }
+  inline bool allBindingsClosedOver();
 
   
   
@@ -536,7 +536,6 @@ class FunctionBox : public SharedContext {
 
   bool needsFinalYield() const { return isGenerator() || isAsync(); }
   bool needsDotGeneratorName() const { return isGenerator() || isAsync(); }
-  bool needsClearSlotsOnExit() const { return isGenerator() || isAsync(); }
   bool needsIteratorResult() const { return isGenerator() && !isAsync(); }
   bool needsPromiseResult() const { return isAsync() && !isGenerator(); }
 
@@ -746,6 +745,18 @@ class FunctionBox : public SharedContext {
 inline FunctionBox* SharedContext::asFunctionBox() {
   MOZ_ASSERT(isFunctionBox());
   return static_cast<FunctionBox*>(this);
+}
+
+
+
+
+
+
+
+inline bool SharedContext::allBindingsClosedOver() {
+  return bindingsAccessedDynamically() ||
+         (isFunctionBox() &&
+          (asFunctionBox()->isGenerator() || asFunctionBox()->isAsync()));
 }
 
 }  

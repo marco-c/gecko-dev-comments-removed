@@ -1408,24 +1408,9 @@ class NativeObject : public JSObject {
 
   inline void copyDenseElements(uint32_t dstStart, const Value* src,
                                 uint32_t count);
-
   inline void initDenseElements(const Value* src, uint32_t count);
   inline void initDenseElements(JSContext* cx, NativeObject* src,
                                 uint32_t srcStart, uint32_t count);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <typename Iter>
-  inline MOZ_MUST_USE bool initDenseElementsFromRange(JSContext* cx, Iter begin,
-                                                      Iter end);
-
   inline void moveDenseElements(uint32_t dstStart, uint32_t srcStart,
                                 uint32_t count);
   inline void reverseDenseElementsNoPreBarrier(uint32_t length);

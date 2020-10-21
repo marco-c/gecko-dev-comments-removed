@@ -33,21 +33,14 @@ class AbstractGeneratorObject : public NativeObject {
     CALLEE_SLOT = 0,
     ENV_CHAIN_SLOT,
     ARGS_OBJ_SLOT,
-    STACK_STORAGE_SLOT,
+    EXPRESSION_STACK_SLOT,
     RESUME_INDEX_SLOT,
     RESERVED_SLOTS
   };
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static constexpr uint32_t FixedSlotLimit = 256;
+ private:
+  static bool suspend(JSContext* cx, HandleObject obj, AbstractFramePtr frame,
+                      jsbytecode* pc, Value* vp, unsigned nvalues);
 
  public:
   static JSObject* create(JSContext* cx, AbstractFramePtr frame);
@@ -56,8 +49,16 @@ class AbstractGeneratorObject : public NativeObject {
                      Handle<AbstractGeneratorObject*> genObj, HandleValue arg,
                      HandleValue resumeKind);
 
-  static bool suspend(JSContext* cx, HandleObject obj, AbstractFramePtr frame,
-                      jsbytecode* pc, unsigned nvalues);
+  static bool initialSuspend(JSContext* cx, HandleObject obj,
+                             AbstractFramePtr frame, jsbytecode* pc) {
+    return suspend(cx, obj, frame, pc, nullptr, 0);
+  }
+
+  static bool normalSuspend(JSContext* cx, HandleObject obj,
+                            AbstractFramePtr frame, jsbytecode* pc, Value* vp,
+                            unsigned nvalues) {
+    return suspend(cx, obj, frame, pc, vp, nvalues);
+  }
 
   static void finalSuspend(HandleObject obj);
 
@@ -83,19 +84,21 @@ class AbstractGeneratorObject : public NativeObject {
     setFixedSlot(ARGS_OBJ_SLOT, ObjectValue(argsObj));
   }
 
-  bool hasStackStorage() const {
-    return getFixedSlot(STACK_STORAGE_SLOT).isObject();
+  bool hasExpressionStack() const {
+    return getFixedSlot(EXPRESSION_STACK_SLOT).isObject();
   }
-  bool isStackStorageEmpty() const {
-    return stackStorage().getDenseInitializedLength() == 0;
+  bool isExpressionStackEmpty() const {
+    return expressionStack().getDenseInitializedLength() == 0;
   }
-  ArrayObject& stackStorage() const {
-    return getFixedSlot(STACK_STORAGE_SLOT).toObject().as<ArrayObject>();
+  ArrayObject& expressionStack() const {
+    return getFixedSlot(EXPRESSION_STACK_SLOT).toObject().as<ArrayObject>();
   }
-  void setStackStorage(ArrayObject& stackStorage) {
-    setFixedSlot(STACK_STORAGE_SLOT, ObjectValue(stackStorage));
+  void setExpressionStack(ArrayObject& expressionStack) {
+    setFixedSlot(EXPRESSION_STACK_SLOT, ObjectValue(expressionStack));
   }
-  void clearStackStorage() { setFixedSlot(STACK_STORAGE_SLOT, NullValue()); }
+  void clearExpressionStack() {
+    setFixedSlot(EXPRESSION_STACK_SLOT, NullValue());
+  }
 
   
   
@@ -150,7 +153,7 @@ class AbstractGeneratorObject : public NativeObject {
     setFixedSlot(CALLEE_SLOT, NullValue());
     setFixedSlot(ENV_CHAIN_SLOT, NullValue());
     setFixedSlot(ARGS_OBJ_SLOT, NullValue());
-    setFixedSlot(STACK_STORAGE_SLOT, NullValue());
+    setFixedSlot(EXPRESSION_STACK_SLOT, NullValue());
     setFixedSlot(RESUME_INDEX_SLOT, NullValue());
   }
 
@@ -173,8 +176,8 @@ class AbstractGeneratorObject : public NativeObject {
   static size_t offsetOfResumeIndexSlot() {
     return getFixedSlotOffset(RESUME_INDEX_SLOT);
   }
-  static size_t offsetOfStackStorageSlot() {
-    return getFixedSlotOffset(STACK_STORAGE_SLOT);
+  static size_t offsetOfExpressionStackSlot() {
+    return getFixedSlotOffset(EXPRESSION_STACK_SLOT);
   }
 };
 
@@ -208,6 +211,8 @@ bool GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame,
 
 AbstractGeneratorObject* GetGeneratorObjectForFrame(JSContext* cx,
                                                     AbstractFramePtr frame);
+
+void SetGeneratorClosed(JSContext* cx, AbstractFramePtr frame);
 
 inline GeneratorResumeKind IntToResumeKind(int32_t value) {
   MOZ_ASSERT(uint32_t(value) <= uint32_t(GeneratorResumeKind::Return));

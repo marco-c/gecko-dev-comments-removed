@@ -75,6 +75,10 @@ void EmitterScope::updateFrameFixedSlots(BytecodeEmitter* bce,
   if (nextFrameSlot_ > bce->maxFixedSlots) {
     bce->maxFixedSlots = nextFrameSlot_;
   }
+  MOZ_ASSERT_IF(
+      bce->sc->isFunctionBox() && (bce->sc->asFunctionBox()->isGenerator() ||
+                                   bce->sc->asFunctionBox()->isAsync()),
+      bce->maxFixedSlots == 0);
 }
 
 bool EmitterScope::putNameInCache(BytecodeEmitter* bce, const ParserAtom* name,
@@ -409,9 +413,6 @@ bool EmitterScope::appendScopeNote(BytecodeEmitter* bce) {
 bool EmitterScope::deadZoneFrameSlotRange(BytecodeEmitter* bce,
                                           uint32_t slotStart,
                                           uint32_t slotEnd) const {
-  
-  
-  
   
   
   
@@ -1046,12 +1047,6 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
     case ScopeKind::Catch:
     case ScopeKind::FunctionLexical:
     case ScopeKind::ClassBody:
-      if (bce->sc->isFunctionBox() &&
-          bce->sc->asFunctionBox()->needsClearSlotsOnExit()) {
-        if (!deadZoneFrameSlots(bce)) {
-          return false;
-        }
-      }
       if (!bce->emit1(hasEnvironment() ? JSOp::PopLexicalEnv
                                        : JSOp::DebugLeaveLexicalEnv)) {
         return false;

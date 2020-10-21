@@ -11,12 +11,10 @@
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/CompilationInfo.h"
 #include "frontend/ErrorReporter.h"
-#include "frontend/NameAnalysisTypes.h"  
 #include "frontend/NameCollections.h"
 #include "frontend/SharedContext.h"
 #include "frontend/UsedNameTracker.h"
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/GeneratorObject.h"  
 
 namespace js {
 
@@ -110,13 +108,6 @@ class ParseContext : public Nestable<ParseContext> {
     
     uint32_t id_;
 
-    
-    
-    
-    
-    
-    uint32_t sizeBits_ = 0;
-
     bool maybeReportOOM(ParseContext* pc, bool result) {
       if (!result) {
         ReportOutOfMemory(pc->sc()->cx_);
@@ -149,12 +140,6 @@ class ParseContext : public Nestable<ParseContext> {
 
     bool isEmpty() const { return declared_->all().empty(); }
 
-    uint32_t declaredCount() const {
-      size_t count = declared_->count();
-      MOZ_ASSERT(count <= UINT32_MAX);
-      return uint32_t(count);
-    }
-
     DeclaredNamePtr lookupDeclaredName(const ParserAtom* name) {
       return declared_->lookup(name);
     }
@@ -165,10 +150,9 @@ class ParseContext : public Nestable<ParseContext> {
 
     MOZ_MUST_USE bool addDeclaredName(ParseContext* pc, AddDeclaredNamePtr& p,
                                       const ParserAtom* name,
-                                      DeclarationKind kind, uint32_t pos,
-                                      ClosedOver closedOver = ClosedOver::No) {
+                                      DeclarationKind kind, uint32_t pos) {
       return maybeReportOOM(
-          pc, declared_->add(p, name, DeclaredNameInfo(kind, pos, closedOver)));
+          pc, declared_->add(p, name, DeclaredNameInfo(kind, pos)));
     }
 
     
@@ -187,35 +171,6 @@ class ParseContext : public Nestable<ParseContext> {
     void useAsVarScope(ParseContext* pc) {
       MOZ_ASSERT(!pc->varScope_);
       pc->varScope_ = this;
-    }
-
-    
-    
-    
-    void setOwnStackSlotCount(uint32_t ownSlotCount) {
-      
-      
-      
-      uint32_t slotCount = ownSlotCount + sizeBits_;
-      if (slotCount > AbstractGeneratorObject::FixedSlotLimit) {
-        slotCount = sizeBits_;
-        sizeBits_ = UINT32_MAX;
-      } else {
-        sizeBits_ = 0;
-      }
-
-      
-      if (Scope* parent = enclosing()) {
-        if (slotCount > parent->sizeBits_) {
-          parent->sizeBits_ = slotCount;
-        }
-      }
-    }
-
-    bool tooBigToOptimize() const {
-      MOZ_ASSERT(sizeBits_ == 0 || sizeBits_ == UINT32_MAX,
-                 "call this only after the parser leaves the scope");
-      return sizeBits_ != 0;
     }
 
     
@@ -501,9 +456,7 @@ class ParseContext : public Nestable<ParseContext> {
     return sc_->isFunctionBox() && sc_->asFunctionBox()->isAsync();
   }
 
-  bool isGeneratorOrAsync() const { return isGenerator() || isAsync(); }
-
-  bool needsDotGeneratorName() const { return isGeneratorOrAsync(); }
+  bool needsDotGeneratorName() const { return isGenerator() || isAsync(); }
 
   FunctionAsyncKind asyncKind() const {
     return isAsync() ? FunctionAsyncKind::AsyncFunction
