@@ -19,6 +19,7 @@
 #include "jit/InlinableNatives.h"
 #include "jit/Ion.h"  
 #include "jit/JitContext.h"
+#include "jit/JitRuntime.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/friend/DOMProxy.h"       
 #include "js/friend/WindowProxy.h"  

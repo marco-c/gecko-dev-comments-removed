@@ -52,6 +52,7 @@
 #include "jit/InlinableNatives.h"
 #include "jit/Ion.h"
 #include "jit/JitRealm.h"
+#include "jit/JitRuntime.h"
 #include "jit/TrialInlining.h"
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  

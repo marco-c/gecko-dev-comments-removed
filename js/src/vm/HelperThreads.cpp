@@ -17,6 +17,7 @@
 #include "frontend/BytecodeCompilation.h"
 #include "frontend/CompilationInfo.h"  
 #include "jit/IonCompileTask.h"
+#include "jit/JitRuntime.h"
 #include "js/ContextOptions.h"      
 #include "js/friend/StackLimits.h"  
 #include "js/OffThreadScriptCompilation.h"  

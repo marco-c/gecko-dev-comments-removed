@@ -14,6 +14,7 @@
 #include "jit/CodeGenerator.h"
 #include "jit/JitFrames.h"
 #include "jit/JitRealm.h"
+#include "jit/JitRuntime.h"
 #include "jit/RangeAnalysis.h"
 #include "js/ScalarType.h"  
 #include "vm/TraceLogging.h"

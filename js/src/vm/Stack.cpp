@@ -18,6 +18,7 @@
 #include "gc/Marking.h"
 #include "gc/Tracer.h"  
 #include "jit/JitcodeMap.h"
+#include "jit/JitRuntime.h"
 #include "js/Value.h"      
 #include "vm/FrameIter.h"  
 #include "vm/JSContext.h"
