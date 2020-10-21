@@ -13,6 +13,7 @@
 #include "jit/JitRuntime.h"
 #include "js/friend/StackLimits.h"  
 #include "vm/Interpreter.h"
+#include "vm/JSContext.h"
 
 #include "vm/Stack-inl.h"
 
