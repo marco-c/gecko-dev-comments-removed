@@ -3711,6 +3711,12 @@ static bool RateMyCacheIR(JSContext* cx, unsigned argc, Value* vp) {
 
   js::jit::CacheIRHealth cih;
   RootedScript script(cx);
+
+  
+  
+  
+  
+  AutoSpewChannel channel(cx, SpewChannel::RateMyCacheIR, script);
   if (!argc) {
     
     
