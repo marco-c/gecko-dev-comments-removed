@@ -1556,20 +1556,16 @@ void VectorImage::MediaFeatureValuesChangedAllDocuments(
   }
 
   if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
-    if (nsPresContext* presContext = doc->GetPresContext()) {
+    if (RefPtr<nsPresContext> presContext = doc->GetPresContext()) {
       presContext->MediaFeatureValuesChangedAllDocuments(aChange);
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      SendInvalidationNotifications();
+      if (presContext->FlushPendingMediaFeatureValuesChanged()) {
+        
+        
+        SendInvalidationNotifications();
+      }
     }
   }
 }
