@@ -10,7 +10,7 @@
 #ifndef nsMenuItemIconX_h_
 #define nsMenuItemIconX_h_
 
-#include "nsIconLoaderService.h"
+#include "IconLoaderHelperCocoa.h"
 
 class nsIconLoaderService;
 class nsIURI;
@@ -21,7 +21,7 @@ class nsMenuObjectX;
 
 #import <Cocoa/Cocoa.h>
 
-class nsMenuItemIconX : public nsIconLoaderObserver {
+class nsMenuItemIconX : public mozilla::widget::IconLoaderListenerCocoa {
  public:
   nsMenuItemIconX(nsMenuObjectX* aMenuItem, nsIContent* aContent,
                   NSMenuItem* aNativeMenuItem);
@@ -39,13 +39,13 @@ class nsMenuItemIconX : public nsIconLoaderObserver {
 
   
   
-  nsresult OnComplete(NSImage* aImage) override;
-
-  
-  
   
   
   void Destroy();
+
+  
+  
+  nsresult OnComplete();
 
  protected:
   nsCOMPtr<nsIContent> mContent;
@@ -56,7 +56,8 @@ class nsMenuItemIconX : public nsIconLoaderObserver {
   NSMenuItem* mNativeMenuItem;  
   
   
-  RefPtr<nsIconLoaderService> mIconLoader;
+  RefPtr<mozilla::widget::IconLoader> mIconLoader;
+  RefPtr<mozilla::widget::IconLoaderHelperCocoa> mIconLoaderHelper;
 };
 
 #endif  
