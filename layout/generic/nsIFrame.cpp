@@ -11125,6 +11125,10 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
       result += CompositorHitTestFlags::eApzAwareListeners;
     }
+  } else if (IsRangeFrame()) {
+    
+    
+    result += CompositorHitTestFlags::eApzAwareListeners;
   }
 
   if (aBuilder->IsTouchEventPrefEnabledDoc()) {

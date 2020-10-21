@@ -39,8 +39,6 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::image;
 
-NS_IMPL_ISUPPORTS(nsRangeFrame::DummyTouchListener, nsIDOMEventListener)
-
 nsIFrame* NS_NewRangeFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsRangeFrame(aStyle, aPresShell->GetPresContext());
 }
@@ -57,30 +55,11 @@ NS_QUERYFRAME_HEAD(nsRangeFrame)
   NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
-void nsRangeFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
-                        nsIFrame* aPrevInFlow) {
-  
-  
-  
-  
-  
-  
-  
-  if (!mDummyTouchListener) {
-    mDummyTouchListener = new DummyTouchListener();
-  }
-  aContent->AddEventListener(u"touchstart"_ns, mDummyTouchListener, false);
-
-  return nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
-}
-
 void nsRangeFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                PostDestroyData& aPostDestroyData) {
   NS_ASSERTION(!GetPrevContinuation() && !GetNextContinuation(),
                "nsRangeFrame should not have continuations; if it does we "
                "need to call RegUnregAccessKey only for the first.");
-
-  mContent->RemoveEventListener(u"touchstart"_ns, mDummyTouchListener, false);
 
   nsCheckboxRadioFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
   aPostDestroyData.AddAnonymousContent(mTrackDiv.forget());

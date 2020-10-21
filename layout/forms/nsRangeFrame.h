@@ -42,9 +42,6 @@ class nsRangeFrame final : public nsContainerFrame,
   NS_DECL_FRAMEARENA_HELPERS(nsRangeFrame)
 
   
-  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) override;
-
   virtual void DestroyFrom(nsIFrame* aDestructRoot,
                            PostDestroyData& aPostDestroyData) override;
 
@@ -176,23 +173,6 @@ class nsRangeFrame final : public nsContainerFrame,
 
 
   nsCOMPtr<Element> mThumbDiv;
-
-  class DummyTouchListener final : public nsIDOMEventListener {
-   private:
-    ~DummyTouchListener() = default;
-
-   public:
-    NS_DECL_ISUPPORTS
-
-    NS_IMETHOD HandleEvent(mozilla::dom::Event* aEvent) override {
-      return NS_OK;
-    }
-  };
-
-  
-
-
-  RefPtr<DummyTouchListener> mDummyTouchListener;
 };
 
 #endif
