@@ -331,7 +331,9 @@ class UrlbarController {
           (this.input.value &&
             this.input.getAttribute("pageproxystate") != "valid");
         if (
-          this.view.isOpen &&
+          
+          
+          (this.view.isOpen || !executeAction) &&
           !event.ctrlKey &&
           !event.altKey &&
           allowTabbingThroughResults

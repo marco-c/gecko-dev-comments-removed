@@ -334,7 +334,10 @@ class UrlbarView {
     }
 
     
-    this.controller.cancelQuery();
+    
+    if (!this.input.eventBufferer.isDeferringEvents) {
+      this.controller.cancelQuery();
+    }
 
     let selectedElement = this._selectedElement;
 
@@ -642,6 +645,17 @@ class UrlbarView {
       
       
       this.input.formatValue();
+    }
+
+    if (queryContext.deferUserSelectionProviders.size) {
+      
+      
+      
+      
+      
+      queryContext.results.forEach(r => {
+        queryContext.deferUserSelectionProviders.delete(r.providerName);
+      });
     }
   }
 

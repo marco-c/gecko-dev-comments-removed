@@ -22,7 +22,8 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 );
 
 
-const DEFERRING_TIMEOUT_MS = 200;
+
+const DEFERRING_TIMEOUT_MS = Cu.isInAutomation ? 1000 : 300;
 
 
 const DEFERRED_KEY_CODES = new Set([
@@ -82,9 +83,7 @@ class UrlbarEventBufferer {
       
       status: QUERY_STATUS.UKNOWN,
       
-      searchString: "",
-      
-      results: [],
+      context: null,
     };
 
     
@@ -96,8 +95,7 @@ class UrlbarEventBufferer {
     this._lastQuery = {
       startDate: Cu.now(),
       status: QUERY_STATUS.RUNNING,
-      searchString: queryContext.searchString,
-      results: [],
+      context: queryContext,
     };
     if (this._deferringTimeout) {
       clearTimeout(this._deferringTimeout);
@@ -114,7 +112,6 @@ class UrlbarEventBufferer {
   }
 
   onQueryResults(queryContext) {
-    this._lastQuery.results = queryContext.results;
     
     Services.tm.dispatchToMainThread(() => {
       this.replayDeferredEvents(true);
@@ -178,7 +175,7 @@ class UrlbarEventBufferer {
     event.urlbarDeferred = true;
     
     
-    event.searchString = this._lastQuery.searchString;
+    event.searchString = this._lastQuery.context.searchString;
     this._eventsQueue.push({ event, callback });
 
     if (!this._deferringTimeout) {
@@ -214,7 +211,7 @@ class UrlbarEventBufferer {
     
     this._eventsQueue.shift();
     
-    if (event.searchString == this._lastQuery.searchString) {
+    if (event.searchString == this._lastQuery.context.searchString) {
       callback();
     }
     Services.tm.dispatchToMainThread(() => {
@@ -259,13 +256,34 @@ class UrlbarEventBufferer {
       return false;
     }
 
-    if (event.keyCode == KeyEvent.DOM_VK_TAB && !this.input.view.isOpen) {
+    if (
+      event.keyCode == KeyEvent.DOM_VK_TAB &&
+      !this.input.view.isOpen &&
+      !this.waitingDeferUserSelectionProviders
+    ) {
       
       
       return false;
     }
 
     return !this.isSafeToPlayDeferredEvent(event);
+  }
+
+  
+
+
+
+  get isDeferringEvents() {
+    return !!this._eventsQueue.length;
+  }
+
+  
+
+
+
+
+  get waitingDeferUserSelectionProviders() {
+    return !!this._lastQuery.context?.deferUserSelectionProviders.size;
   }
 
   
@@ -286,8 +304,12 @@ class UrlbarEventBufferer {
 
     let waitingFirstResult =
       this._lastQuery.status == QUERY_STATUS.RUNNING &&
-      !this._lastQuery.results.length;
+      !this._lastQuery.context.results.length;
     if (event.keyCode == KeyEvent.DOM_VK_RETURN) {
+      
+      if (this.waitingDeferUserSelectionProviders) {
+        return false;
+      }
       
       
       let selectedResult = this.input.view.selectedResult;
@@ -296,8 +318,11 @@ class UrlbarEventBufferer {
       );
     }
 
-    if (waitingFirstResult || !this.input.view.isOpen) {
-      
+    if (
+      waitingFirstResult ||
+      !this.input.view.isOpen ||
+      this.waitingDeferUserSelectionProviders
+    ) {
       
       return false;
     }
@@ -311,6 +336,7 @@ class UrlbarEventBufferer {
       
       
       
+      
       return !this.lastResultIsSelected;
     }
 
@@ -320,7 +346,7 @@ class UrlbarEventBufferer {
   get lastResultIsSelected() {
     
     
-    let results = this._lastQuery.results;
+    let results = this._lastQuery.context.results;
     return (
       results.length &&
       results[results.length - 1] == this.input.view.selectedResult

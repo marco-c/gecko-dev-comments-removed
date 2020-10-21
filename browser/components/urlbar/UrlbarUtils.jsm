@@ -1250,7 +1250,10 @@ class UrlbarQueryContext {
     }
 
     this.lastResultCount = 0;
+    
+    
     this.pendingHeuristicProviders = new Set();
+    this.deferUserSelectionProviders = new Set();
     this.trimmedSearchString = this.searchString.trim();
     this.userContextId =
       options.userContextId ||
@@ -1527,6 +1530,20 @@ class UrlbarProvider {
 
   getViewUpdate(result) {
     return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  get deferUserSelection() {
+    return false;
   }
 }
 

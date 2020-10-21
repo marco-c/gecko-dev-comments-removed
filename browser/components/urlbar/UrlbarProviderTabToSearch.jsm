@@ -129,6 +129,8 @@ class ProviderTabToSearch extends UrlbarProvider {
 
   async isActive(queryContext) {
     return (
+      queryContext.searchString &&
+      queryContext.tokens.length == 1 &&
       !queryContext.searchMode &&
       UrlbarPrefs.get("update2") &&
       UrlbarPrefs.get("update2.tabToComplete")
@@ -198,6 +200,16 @@ class ProviderTabToSearch extends UrlbarProvider {
       result,
       checkValue: false,
     });
+  }
+
+  
+
+
+
+
+
+  get deferUserSelection() {
+    return true;
   }
 
   
