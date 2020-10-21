@@ -28,9 +28,10 @@ const bug1002724_tests = [
     explanation: "Should load HTTP version of example.com",
   },
   {
-    original: "127.0.0.2",
-    expected: "https://127.0.0.2",
-    explanation: "Should reject 127.0.0.2 on HTTP but load the HTTPS version",
+    original: "secureonly.example.com",
+    expected: "https://secureonly.example.com",
+    explanation:
+      "Should reject secureonly.example.com on HTTP but load the HTTPS version",
   },
 ];
 
@@ -57,7 +58,12 @@ async function test_one(test_obj) {
 add_task(async function test_bug1002724() {
   await SpecialPowers.pushPrefEnv(
     
-    { set: [["network.stricttransportsecurity.preloadlist", false]] }
+    {
+      set: [
+        ["network.stricttransportsecurity.preloadlist", false],
+        ["network.dns.native-is-localhost", true],
+      ],
+    }
   );
 
   for (let test of bug1002724_tests) {
