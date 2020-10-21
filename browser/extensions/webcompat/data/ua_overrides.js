@@ -658,6 +658,25 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1666754",
+    platform: "android",
+    domain: "lffl.org",
+    bug: "1666754",
+    config: {
+      matches: ["*://*.lffl.org/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 const UAHelpers = {
