@@ -32,7 +32,7 @@ DNSListener.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsIDNSListener",
 ]);
 
-add_task(async function testEsniRequest() {
+add_task(async function testTXTResolve() {
   
   let listenerEsni = new DNSListener();
   let request = dns.asyncResolve(
@@ -54,7 +54,7 @@ add_task(async function testEsniRequest() {
   Assert.equal(answer, test_answer, "got correct answer");
 });
 
-add_task(async function testEsniHTTPSSVC() {
+add_task(async function testHTTPSSVCResolve() {
   
   let listenerEsni = new DNSListener();
   let request = dns.asyncResolve(
