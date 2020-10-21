@@ -77,7 +77,7 @@ def tryParseTestFile(test262parser, source, testName):
     Returns the result of test262parser.parseTestRecord() or None if a parser
     error occured.
 
-    See <https://github.com/tc39/test262/blob/master/INTERPRETING.md> for an
+    See <https://github.com/tc39/test262/blob/main/INTERPRETING.md> for an
     overview of the returned test attributes.
     """
     try:
@@ -512,26 +512,26 @@ def fetch_local_changes(inDir, outDir, srcDir, strictTests):
 
     
     files = subprocess.check_output(
-        ("git -C %s diff master --diff-filter=ACMR --name-only" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=ACMR --name-only" % srcDir).split(" ")
     )
 
     
     
     deletedFiles = subprocess.check_output(
-        ("git -C %s diff master --diff-filter=D --name-only" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=D --name-only" % srcDir).split(" ")
     )
 
     
     
     modifiedFiles = subprocess.check_output(
-        ("git -C %s diff master --diff-filter=M --name-only" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=M --name-only" % srcDir).split(" ")
     )
 
     
     
     
     renamedFiles = subprocess.check_output(
-        ("git -C %s diff master --diff-filter=R --summary" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=R --summary" % srcDir).split(" ")
     )
 
     
@@ -730,7 +730,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Update the test262 test suite.")
     parser.add_argument("--url", default="git://github.com/tc39/test262.git",
                         help="URL to git repository (default: %(default)s)")
-    parser.add_argument("--branch", default="master",
+    parser.add_argument("--branch", default="main",
                         help="Git branch (default: %(default)s)")
     parser.add_argument("--revision", default="HEAD",
                         help="Git revision (default: %(default)s)")
