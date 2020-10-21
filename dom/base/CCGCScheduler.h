@@ -264,17 +264,19 @@ class CCGCScheduler {
   enum class CCRunnerAction {
     None,
     ForgetSkippable,
-    PrepForCC,
+    CleanupContentUnbinder,
+    CleanupDeferred,
     CycleCollect,
     StopRunning
   };
 
   enum class CCRunnerState {
     Inactive,
-    EarlyTimer,
-    LateTimer,
-    LateTimerPostForgetSkippable,
-    FinalTimer
+    ReducePurple,
+    CleanupChildless,
+    CleanupContentUnbinder,
+    CleanupDeferred,
+    CycleCollect
   };
 
   enum CCRunnerYield { Continue, Yield };
@@ -300,7 +302,7 @@ class CCGCScheduler {
 
   void ActivateCCRunner() {
     MOZ_ASSERT(mCCRunnerState == CCRunnerState::Inactive);
-    mCCRunnerState = CCRunnerState::EarlyTimer;
+    mCCRunnerState = CCRunnerState::ReducePurple;
     mCCDelay = kCCDelay;
     mCCRunnerEarlyFireCount = 0;
   }
@@ -321,7 +323,7 @@ class CCGCScheduler {
         
         
         
-        mCCRunnerState = CCRunnerState::EarlyTimer;
+        mCCRunnerState = CCRunnerState::ReducePurple;
         mCCRunnerEarlyFireCount = 0;
         mCCDelay = kCCDelay / int64_t(3);
         return {CCRunnerAction::None, Yield};
@@ -335,32 +337,42 @@ class CCGCScheduler {
       
     }
 
-    if (mCCRunnerState != CCRunnerState::EarlyTimer) {
-      
-      
-      if (!IsCCNeeded(aSuspected, now)) {
-        mCCRunnerState = CCRunnerState::Inactive;
-        NoteForgetSkippableOnlyCycle();
-        if (mCCRunnerState == CCRunnerState::LateTimerPostForgetSkippable) {
+    
+    
+    
+    switch (mCCRunnerState) {
+      case CCRunnerState::ReducePurple:
+      case CCRunnerState::CleanupDeferred:
+        break;
+
+      default:
+        
+        
+        if (!IsCCNeeded(aSuspected, now)) {
+          mCCRunnerState = CCRunnerState::Inactive;
+          NoteForgetSkippableOnlyCycle();
+
+          
+          
+          if (mCCRunnerState != CCRunnerState::CleanupContentUnbinder &&
+              ShouldFireForgetSkippable(aSuspected)) {
+            
+            
+            return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+          }
           return {CCRunnerAction::StopRunning, Yield};
         }
-        if (ShouldFireForgetSkippable(aSuspected)) {
-          
-          
-          return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
-        }
-        return {CCRunnerAction::StopRunning, Yield};
-      }
     }
 
     switch (mCCRunnerState) {
       
       
       
-      case CCRunnerState::EarlyTimer:
+      
+      case CCRunnerState::ReducePurple:
         ++mCCRunnerEarlyFireCount;
         if (IsLastEarlyCCTimer(mCCRunnerEarlyFireCount)) {
-          mCCRunnerState = CCRunnerState::LateTimer;
+          mCCRunnerState = CCRunnerState::CleanupChildless;
         }
 
         if (ShouldFireForgetSkippable(aSuspected)) {
@@ -374,8 +386,9 @@ class CCGCScheduler {
         
         
         
-        mCCRunnerState = CCRunnerState::LateTimer;
+        mCCRunnerState = CCRunnerState::CleanupChildless;
 
+        
         
         return GetNextCCRunnerAction(aDeadline, aSuspected);
 
@@ -384,26 +397,49 @@ class CCGCScheduler {
       
       
       
-      case CCRunnerState::LateTimer:
-        mCCRunnerState = CCRunnerState::LateTimerPostForgetSkippable;
+      case CCRunnerState::CleanupChildless:
+        mCCRunnerState = CCRunnerState::CleanupContentUnbinder;
         return {CCRunnerAction::ForgetSkippable, Yield, RemoveChildless};
 
       
       
-      case CCRunnerState::LateTimerPostForgetSkippable:
-        
-        
-        mCCRunnerState = CCRunnerState::FinalTimer;
-
-        if (!aDeadline.IsNull() && TimeStamp::Now() < aDeadline) {
-          return {CCRunnerAction::PrepForCC, Yield};
+      case CCRunnerState::CleanupContentUnbinder:
+        if (aDeadline.IsNull()) {
+          
+          
+          mCCRunnerState = CCRunnerState::CycleCollect;
+          return {CCRunnerAction::None, Yield};
         }
 
-        [[fallthrough]];
+        
+
+        
+        if (now >= aDeadline) {
+          mCCRunnerState = CCRunnerState::CycleCollect;
+          return {CCRunnerAction::None, Yield};
+        }
+
+        mCCRunnerState = CCRunnerState::CleanupDeferred;
+        return {CCRunnerAction::CleanupContentUnbinder, Continue};
+
+      
+      case CCRunnerState::CleanupDeferred:
+        MOZ_ASSERT(!aDeadline.IsNull(),
+                   "Should only be in CleanupDeferred state when idle");
+
+        
+        
+        mCCRunnerState = CCRunnerState::CycleCollect;
+        if (now >= aDeadline) {
+          
+          return {CCRunnerAction::None, Yield};
+        }
+
+        return {CCRunnerAction::CleanupDeferred, Yield};
 
       
       
-      case CCRunnerState::FinalTimer:
+      case CCRunnerState::CycleCollect:
         
         
         
