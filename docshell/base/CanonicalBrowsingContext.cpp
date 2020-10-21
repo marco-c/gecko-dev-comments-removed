@@ -613,7 +613,11 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntryForFrame(
 
 void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
     SessionHistoryInfo* aInfo) {
+  nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
   mActiveEntry->SetInfo(aInfo);
+  
+  shistory->NotifyOnHistoryReplaceEntry();
+  shistory->UpdateRootBrowsingContextState();
   
 }
 

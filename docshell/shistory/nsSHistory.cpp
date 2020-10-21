@@ -828,6 +828,11 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist) {
   return NS_OK;
 }
 
+void
+nsSHistory::NotifyOnHistoryReplaceEntry() {
+  NOTIFY_LISTENERS(OnHistoryReplaceEntry, ());
+}
+
 
 NS_IMETHODIMP
 nsSHistory::GetCount(int32_t* aResult) {

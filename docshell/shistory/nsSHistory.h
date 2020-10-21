@@ -135,6 +135,8 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   nsTArray<nsCOMPtr<nsISHEntry>>& Entries() { return mEntries; }
 
+  void NotifyOnHistoryReplaceEntry();
+
   void RemoveEntries(nsTArray<nsID>& aIDs, int32_t aStartIndex,
                      bool* aDidRemove);
 
@@ -180,6 +182,10 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
     
     return mRequestedIndex == -1 ? mIndex : mRequestedIndex;
   }
+
+  
+  
+  void UpdateRootBrowsingContextState();
 
  protected:
   virtual ~nsSHistory();
@@ -242,10 +248,6 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   static void HandleEntriesToSwapInDocShell(mozilla::dom::BrowsingContext* aBC,
                                             nsISHEntry* aOldEntry,
                                             nsISHEntry* aNewEntry);
-
-  
-  
-  void UpdateRootBrowsingContextState();
 
  protected:
   bool mHasOngoingUpdate;
