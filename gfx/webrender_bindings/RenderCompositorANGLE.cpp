@@ -113,12 +113,9 @@ ID3D11Device* RenderCompositorANGLE::GetDeviceOfEGLDisplay(nsACString& aError) {
 
 bool RenderCompositorANGLE::ShutdownEGLLibraryIfNecessary(nsACString& aError) {
   const auto& displayDevice = GetDeviceOfEGLDisplay(aError);
-  if (!displayDevice) {
-    return false;
-  }
-
   RefPtr<ID3D11Device> device =
       gfx::DeviceManagerDx::Get()->GetCompositorDevice();
+
   
   
   
@@ -126,7 +123,8 @@ bool RenderCompositorANGLE::ShutdownEGLLibraryIfNecessary(nsACString& aError) {
   
   
   
-  if (device.get() != displayDevice &&
+
+  if ((!displayDevice || device.get() != displayDevice) &&
       RenderThread::Get()->RendererCount() == 0) {
     
     RenderThread::Get()->ClearSharedGL();
