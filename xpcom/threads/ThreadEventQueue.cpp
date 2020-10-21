@@ -164,17 +164,6 @@ already_AddRefed<nsIRunnable> ThreadEventQueue::GetEvent(
   return event.forget();
 }
 
-void ThreadEventQueue::DidRunEvent() {
-  MutexAutoLock lock(mLock);
-  if (mNestedQueues.IsEmpty()) {
-    mBaseQueue->DidRunEvent(lock);
-    
-    
-  } else {
-    mNestedQueues.LastElement().mQueue->DidRunEvent(lock);
-  }
-}
-
 bool ThreadEventQueue::HasPendingEvent() {
   MutexAutoLock lock(mLock);
 
