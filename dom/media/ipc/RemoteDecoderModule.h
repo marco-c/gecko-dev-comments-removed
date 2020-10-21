@@ -9,8 +9,7 @@
 
 namespace mozilla {
 
-
-
+enum class RemoteDecodeIn;
 
 
 class RemoteDecoderModule : public PlatformDecoderModule {
@@ -19,16 +18,25 @@ class RemoteDecoderModule : public PlatformDecoderModule {
 
  public:
   static void Init();
-  static already_AddRefed<PlatformDecoderModule> Create();
+  static already_AddRefed<PlatformDecoderModule> Create(
+      RemoteDecodeIn aLocation);
 
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const override;
+
+  bool Supports(const SupportDecoderParams& aParams,
+                DecoderDoctorDiagnostics* aDiagnostics) const override;
 
   already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
       const CreateDecoderParams& aParams) override;
 
   already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams) override;
+
+ private:
+  explicit RemoteDecoderModule(RemoteDecodeIn aLocation);
+
+  const RemoteDecodeIn mLocation;
 };
 
 }  

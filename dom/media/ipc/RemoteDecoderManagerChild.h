@@ -40,7 +40,7 @@ class RemoteDecoderManagerChild final
 
   
   static nsISerialEventTarget* GetManagerThread();
-  static void LaunchRDDProcessIfNeeded();
+  static void LaunchRDDProcessIfNeeded(RemoteDecodeIn aLocation);
 
   
   
