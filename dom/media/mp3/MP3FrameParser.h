@@ -221,13 +221,16 @@ class FrameParser {
     
     
     
-    bool Parse(BufferReader* aReader);
+    bool Parse(BufferReader* aReader, size_t aFrameSize);
+
+    uint32_t EncoderDelay() const { return mEncoderDelay; }
+    uint32_t EncoderPadding() const { return mEncoderPadding; }
 
    private:
     
     
     
-    Result<bool, nsresult> ParseXing(BufferReader* aReader);
+    Result<bool, nsresult> ParseXing(BufferReader* aReader, size_t aFrameSize);
 
     
     
@@ -250,6 +253,13 @@ class FrameParser {
 
     
     VBRHeaderType mType;
+
+    
+    
+    
+    
+    uint16_t mEncoderDelay = 0;
+    uint16_t mEncoderPadding = 0;
   };
 
   
