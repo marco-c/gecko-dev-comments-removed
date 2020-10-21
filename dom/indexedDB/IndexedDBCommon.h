@@ -14,12 +14,6 @@
   QM_TRY_META(mozilla::dom::indexedDB, MOZ_UNIQUE_VAR(tryResult), ##__VA_ARGS__)
 #define IDB_TRY(...) IDB_TRY_GLUE(__VA_ARGS__)
 
-#ifdef DEBUG
-#  define IDB_DEBUG_TRY(...) IDB_TRY(__VA_ARGS__)
-#else
-#  define IDB_DEBUG_TRY(...)
-#endif
-
 
 #define IDB_TRY_VAR_GLUE(accessFunction, ...)                         \
   QM_TRY_VAR_META(mozilla::dom::indexedDB, MOZ_UNIQUE_VAR(tryResult), \
@@ -27,33 +21,15 @@
 #define IDB_TRY_UNWRAP(...) IDB_TRY_VAR_GLUE(unwrap, __VA_ARGS__)
 #define IDB_TRY_INSPECT(...) IDB_TRY_VAR_GLUE(inspect, __VA_ARGS__)
 
-#ifdef DEBUG
-#  define IDB_DEBUG_TRY_UNWRAP(...) IDB_TRY_UNWRAP(__VA_ARGS__)
-#else
-#  define IDB_DEBUG_TRY_UNWRAP(...)
-#endif
-
 
 #define IDB_TRY_RETURN_GLUE(...)                                         \
   QM_TRY_RETURN_META(mozilla::dom::indexedDB, MOZ_UNIQUE_VAR(tryResult), \
                      ##__VA_ARGS__)
 #define IDB_TRY_RETURN(...) IDB_TRY_RETURN_GLUE(__VA_ARGS__)
 
-#ifdef DEBUG
-#  define IDB_DEBUG_TRY_RETURN(...) IDB_TRY_RETURN(__VA_ARGS__)
-#else
-#  define IDB_DEBUG_TRY_RETURN(...)
-#endif
-
 
 #define IDB_FAIL_GLUE(...) QM_FAIL_META(mozilla::dom::indexedDB, ##__VA_ARGS__)
 #define IDB_FAIL(...) IDB_FAIL_GLUE(__VA_ARGS__)
-
-#ifdef DEBUG
-#  define IDB_DEBUG_FAIL(...) IDB_FAIL(__VA_ARGS__)
-#else
-#  define IDB_DEBUG_FAIL(...)
-#endif
 
 namespace mozilla::dom::indexedDB {
 

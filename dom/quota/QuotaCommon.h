@@ -486,16 +486,6 @@
 
 
 
-#ifdef DEBUG
-#  define QM_DEBUG_TRY(...) QM_TRY(__VA_ARGS__)
-#else
-#  define QM_DEBUG_TRY(...)
-#endif
-
-
-
-
-
 
 #define QM_TRY_VAR_PROPAGATE_ERR(ns, tryResult, accessFunction, target, expr) \
   auto tryResult = (expr);                                                    \
@@ -577,16 +567,6 @@
 
 
 
-#ifdef DEBUG
-#  define QM_DEBUG_TRY_UNWRAP(...) QM_TRY_UNWRAP(__VA_ARGS__)
-#else
-#  define QM_DEBUG_TRY_UNWRAP(...)
-#endif
-
-
-
-
-
 
 
 
@@ -654,16 +634,6 @@
 
 
 
-#ifdef DEBUG
-#  define QM_DEBUG_TRY_RETURN(...) QM_TRY_RETURN(__VA_ARGS__)
-#else
-#  define QM_DEBUG_TRY_RETURN(...)
-#endif
-
-
-
-
-
 #define QM_FAIL_RET_VAL(ns, retVal) \
   ns::QM_HANDLE_ERROR(Failure);     \
   return retVal;
@@ -691,16 +661,6 @@
 
 
 #define QM_FAIL(...) QM_FAIL_GLUE(__VA_ARGS__)
-
-
-
-
-
-#ifdef DEBUG
-#  define QM_DEBUG_FAIL(...) QM_FAIL(__VA_ARGS__)
-#else
-#  define QM_DEBUG_FAIL(...)
-#endif
 
 
 #ifdef NIGHTLY_BUILD

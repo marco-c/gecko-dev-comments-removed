@@ -192,13 +192,6 @@
               ##__VA_ARGS__)
 #define LS_TRY(...) LS_TRY_GLUE(__VA_ARGS__)
 
-#ifdef DEBUG
-#  define LS_DEBUG_TRY(...) LS_TRY(__VA_ARGS__)
-#else
-#  define LS_DEBUG_TRY(...)
-#endif
-
-
 
 #define LS_TRY_VAR_GLUE(accessFunction, ...)                             \
   QM_TRY_VAR_META(mozilla::dom::localstorage, MOZ_UNIQUE_VAR(tryResult), \
@@ -206,34 +199,16 @@
 #define LS_TRY_UNWRAP(...) LS_TRY_VAR_GLUE(unwrap, __VA_ARGS__)
 #define LS_TRY_INSPECT(...) LS_TRY_VAR_GLUE(inspect, __VA_ARGS__)
 
-#ifdef DEBUG
-#  define LS_DEBUG_TRY_UNWRAP(...) LS_TRY_UNWRAP(__VA_ARGS__)
-#else
-#  define LS_DEBUG_TRY_UNWRAP(...)
-#endif
-
 
 #define LS_TRY_RETURN_GLUE(...)                                             \
   QM_TRY_RETURN_META(mozilla::dom::localstorage, MOZ_UNIQUE_VAR(tryResult), \
                      ##__VA_ARGS__)
 #define LS_TRY_RETURN(...) LS_TRY_RETURN_GLUE(__VA_ARGS__)
 
-#ifdef DEBUG
-#  define LS_DEBUG_TRY_RETURN(...) LS_TRY_RETURN(__VA_ARGS__)
-#else
-#  define LS_DEBUG_TRY_RETURN(...)
-#endif
-
 
 #define LS_FAIL_GLUE(...) \
   QM_FAIL_META(mozilla::dom::localstorage, ##__VA_ARGS__)
 #define LS_FAIL(...) LS_FAIL_GLUE(__VA_ARGS__)
-
-#ifdef DEBUG
-#  define LS_DEBUG_FAIL(...) LS_FAIL(__VA_ARGS__)
-#else
-#  define LS_DEBUG_FAIL(...)
-#endif
 
 namespace mozilla {
 
