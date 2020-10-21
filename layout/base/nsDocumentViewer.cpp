@@ -408,8 +408,7 @@ class nsDocumentViewer final : public nsIContentViewer,
 
   nsresult PrintPreviewScrollToPageForOldUI(int16_t aType, int32_t aPageNum);
 
-  std::tuple<const nsIFrame*, int32_t> GetCurrentSheetFrameAndPageNumber()
-      const;
+  std::tuple<const nsIFrame*, int32_t> GetCurrentSheetFrameAndNumber() const;
 
  protected:
   
@@ -3207,7 +3206,7 @@ nsresult nsDocumentViewer::PrintPreviewScrollToPageForOldUI(int16_t aType,
   }
 
   
-  auto [seqFrame, pageCount] = mPrintJob->GetSeqFrameAndCountPages();
+  auto [seqFrame, sheetCount] = mPrintJob->GetSeqFrameAndCountSheets();
   if (!seqFrame) {
     return NS_ERROR_FAILURE;
   }
@@ -3222,7 +3221,7 @@ nsresult nsDocumentViewer::PrintPreviewScrollToPageForOldUI(int16_t aType,
   
   if (aType == nsIWebBrowserPrint::PRINTPREVIEW_END) {
     aType = nsIWebBrowserPrint::PRINTPREVIEW_GOTO_PAGENUM;
-    aPageNum = pageCount;
+    aPageNum = sheetCount;
   }
 
   
@@ -3258,7 +3257,7 @@ nsresult nsDocumentViewer::PrintPreviewScrollToPageForOldUI(int16_t aType,
       return NS_OK;
     }
   } else {  
-    if (aPageNum < 0 || aPageNum > pageCount) {
+    if (aPageNum < 0 || aPageNum > sheetCount) {
       return NS_OK;
     }
   }
@@ -3319,8 +3318,8 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
       mPrintJob->GetPrintPreviewPresShell()->GetRootScrollFrameAsScrollable();
   if (!sf) return NS_OK;
 
-  auto [seqFrame, pageCount] = mPrintJob->GetSeqFrameAndCountPages();
-  Unused << pageCount;
+  auto [seqFrame, sheetCount] = mPrintJob->GetSeqFrameAndCountSheets();
+  Unused << sheetCount;
   if (!seqFrame) {
     return NS_ERROR_FAILURE;
   }
@@ -3338,9 +3337,8 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
       break;
     case nsIWebBrowserPrint::PRINTPREVIEW_PREV_PAGE:
     case nsIWebBrowserPrint::PRINTPREVIEW_NEXT_PAGE: {
-      auto [currentFrame, currentPageNumber] =
-          GetCurrentSheetFrameAndPageNumber();
-      Unused << currentPageNumber;
+      auto [currentFrame, currentSheetNumber] = GetCurrentSheetFrameAndNumber();
+      Unused << currentSheetNumber;
       if (!currentFrame) {
         return NS_OK;
       }
@@ -3359,7 +3357,7 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
       break;
     }
     case nsIWebBrowserPrint::PRINTPREVIEW_GOTO_PAGENUM: {
-      if (aPageNum < 0 || aPageNum > pageCount) {
+      if (aPageNum < 0 || aPageNum > sheetCount) {
         return NS_ERROR_INVALID_ARG;
       }
 
@@ -3380,13 +3378,13 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
 }
 
 std::tuple<const nsIFrame*, int32_t>
-nsDocumentViewer::GetCurrentSheetFrameAndPageNumber() const {
+nsDocumentViewer::GetCurrentSheetFrameAndNumber() const {
   MOZ_ASSERT(mPrintJob);
   MOZ_ASSERT(GetIsPrintPreview() && !mPrintJob->GetIsCreatingPrintPreview());
 
   
-  auto [seqFrame, pageCount] = mPrintJob->GetSeqFrameAndCountPages();
-  Unused << pageCount;
+  auto [seqFrame, sheetCount] = mPrintJob->GetSeqFrameAndCountSheets();
+  Unused << sheetCount;
   if (!seqFrame) {
     return {nullptr, 0};
   }
@@ -3402,12 +3400,12 @@ nsDocumentViewer::GetCurrentSheetFrameAndPageNumber() const {
   float halfwayPoint =
       currentScrollPosition.y + float(sf->GetScrollPortRect().height) / 2.0f;
   float lastDistanceFromHalfwayPoint = std::numeric_limits<float>::max();
-  int32_t pageNumber = 0;
+  int32_t sheetNumber = 0;
   const nsIFrame* currentSheet = nullptr;
   float previewScale = seqFrame->GetPrintPreviewScale();
   for (const nsIFrame* sheetFrame : seqFrame->PrincipalChildList()) {
     nsRect sheetRect = sheetFrame->GetRect();
-    pageNumber++;
+    sheetNumber++;
     currentSheet = sheetFrame;
 
     float bottomOfSheet = sheetRect.YMost() * previewScale;
@@ -3431,17 +3429,20 @@ nsDocumentViewer::GetCurrentSheetFrameAndPageNumber() const {
     if ((topOfSheet - halfwayPoint) >= lastDistanceFromHalfwayPoint) {
       
       
-      pageNumber--;
-      MOZ_ASSERT(pageNumber > 0);
+      sheetNumber--;
+      MOZ_ASSERT(sheetNumber > 0);
       currentSheet = currentSheet->GetPrevInFlow();
       MOZ_ASSERT(currentSheet);
     }
     break;
   }
 
-  MOZ_ASSERT(pageNumber <= pageCount);
-  return {currentSheet, pageNumber};
+  MOZ_ASSERT(sheetNumber <= sheetCount);
+  return {currentSheet, sheetNumber};
 }
+
+
+
 
 NS_IMETHODIMP
 nsDocumentViewer::GetPrintPreviewCurrentPageNumber(int32_t* aNumber) {
@@ -3451,13 +3452,13 @@ nsDocumentViewer::GetPrintPreviewCurrentPageNumber(int32_t* aNumber) {
     return NS_ERROR_FAILURE;
   }
 
-  auto [currentFrame, currentPageNumber] = GetCurrentSheetFrameAndPageNumber();
+  auto [currentFrame, currentSheetNumber] = GetCurrentSheetFrameAndNumber();
   Unused << currentFrame;
-  if (!currentPageNumber) {
+  if (!currentSheetNumber) {
     return NS_ERROR_FAILURE;
   }
 
-  *aNumber = currentPageNumber;
+  *aNumber = currentSheetNumber;
 
   return NS_OK;
 }
@@ -3542,12 +3543,14 @@ nsDocumentViewer::GetRawNumPages(int32_t* aRawNumPages) {
   return *aRawNumPages > 0 ? NS_OK : NS_ERROR_FAILURE;
 }
 
+
+
+
 NS_IMETHODIMP
 nsDocumentViewer::GetPrintPreviewNumPages(int32_t* aPrintPreviewNumPages) {
   NS_ENSURE_ARG_POINTER(aPrintPreviewNumPages);
   NS_ENSURE_TRUE(mPrintJob, NS_ERROR_FAILURE);
-
-  *aPrintPreviewNumPages = mPrintJob->GetPrintPreviewNumPages();
+  *aPrintPreviewNumPages = mPrintJob->GetPrintPreviewNumSheets();
   return *aPrintPreviewNumPages > 0 ? NS_OK : NS_ERROR_FAILURE;
 }
 

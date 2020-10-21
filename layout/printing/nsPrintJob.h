@@ -127,7 +127,12 @@ class nsPrintJob final : public nsIObserver,
   bool HasEverPrinted() const { return mHasEverPrinted; }
   
   int32_t GetRawNumPages() const;
-  int32_t GetPrintPreviewNumPages();
+
+  
+  
+  
+  
+  int32_t GetPrintPreviewNumSheets();
   already_AddRefed<nsIPrintSettings> GetCurrentPrintSettings();
 
   
@@ -136,11 +141,11 @@ class nsPrintJob final : public nsIObserver,
   void SetIsPrintPreview(bool aIsPrintPreview);
   bool GetIsCreatingPrintPreview() const { return mIsCreatingPrintPreview; }
 
-  std::tuple<nsPageSequenceFrame*, int32_t> GetSeqFrameAndCountPages();
+  std::tuple<nsPageSequenceFrame*, int32_t> GetSeqFrameAndCountSheets();
 
-  bool PrePrintPage();
-  bool PrintPage(nsPrintObject* aPOect, bool& aInRange);
-  bool DonePrintingPages(nsPrintObject* aPO, nsresult aResult);
+  bool PrePrintSheet();
+  bool PrintSheet(nsPrintObject* aPOect, bool& aInRange);
+  bool DonePrintingSheets(nsPrintObject* aPO, nsresult aResult);
 
   nsresult CleanupOnFailure(nsresult aResult, bool aIsPrinting);
   

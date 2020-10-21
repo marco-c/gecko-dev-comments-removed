@@ -221,7 +221,7 @@ static bool IsParentAFrameSet(nsIDocShell* aParent) {
 }
 
 static std::tuple<nsPageSequenceFrame*, int32_t>
-GetSeqFrameAndCountPagesInternal(const UniquePtr<nsPrintObject>& aPO) {
+GetSeqFrameAndCountSheetsInternal(const UniquePtr<nsPrintObject>& aPO) {
   if (!aPO) {
     return {nullptr, 0};
   }
@@ -231,7 +231,7 @@ GetSeqFrameAndCountPagesInternal(const UniquePtr<nsPrintObject>& aPO) {
   
   if (!aPO->mPresShell) {
     MOZ_DIAGNOSTIC_ASSERT(
-        false, "GetSeqFrameAndCountPages needs a non-null pres shell");
+        false, "GetSeqFrameAndCountSheets needs a non-null pres shell");
     return {nullptr, 0};
   }
 
@@ -427,12 +427,12 @@ nsresult nsPrintJob::Cancel() {
 
 
 std::tuple<nsPageSequenceFrame*, int32_t>
-nsPrintJob::GetSeqFrameAndCountPages() {
+nsPrintJob::GetSeqFrameAndCountSheets() {
   MOZ_ASSERT(mPrtPreview);
   
   
   RefPtr<nsPrintData> printDataForPrintPreview = mPrtPreview;
-  return GetSeqFrameAndCountPagesInternal(
+  return GetSeqFrameAndCountSheetsInternal(
       printDataForPrintPreview->mPrintObject);
 }
 
@@ -871,23 +871,23 @@ int32_t nsPrintJob::GetRawNumPages() const {
   if (NS_WARN_IF(!printData)) {
     return 0;
   }
-  auto [seqFrame, numPages] =
-      GetSeqFrameAndCountPagesInternal(printData->mPrintObject);
+  auto [seqFrame, numSheets] =
+      GetSeqFrameAndCountSheetsInternal(printData->mPrintObject);
 
-  Unused << numPages;
+  Unused << numSheets;
   return seqFrame ? seqFrame->GetRawNumPages() : 0;
 }
 
 
-int32_t nsPrintJob::GetPrintPreviewNumPages() {
+int32_t nsPrintJob::GetPrintPreviewNumSheets() {
   RefPtr<nsPrintData> printData = mPrtPreview ? mPrtPreview : mPrt;
   if (NS_WARN_IF(!printData)) {
     return 0;
   }
-  auto [seqFrame, numPages] =
-      GetSeqFrameAndCountPagesInternal(printData->mPrintObject);
+  auto [seqFrame, numSheets] =
+      GetSeqFrameAndCountSheetsInternal(printData->mPrintObject);
   Unused << seqFrame;
-  return numPages;
+  return numSheets;
 }
 
 
@@ -1032,7 +1032,7 @@ nsresult nsPrintJob::DocumentReadyForPrinting() {
   if (NS_FAILED(rv)) {
     
     
-    DonePrintingPages(nullptr, rv);
+    DonePrintingSheets(nullptr, rv);
   }
   return rv;
 }
@@ -2169,7 +2169,7 @@ void nsPrintJob::EllipseLongString(nsAString& aStr, const uint32_t aLen,
 }
 
 
-bool nsPrintJob::PrePrintPage() {
+bool nsPrintJob::PrePrintSheet() {
   NS_ASSERTION(mPageSeqFrame.IsAlive(), "mPageSeqFrame is not alive!");
   NS_ASSERTION(mPrt, "mPrt is null!");
 
@@ -2207,7 +2207,7 @@ bool nsPrintJob::PrePrintPage() {
   return done;
 }
 
-bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
+bool nsPrintJob::PrintSheet(nsPrintObject* aPO, bool& aInRange) {
   NS_ASSERTION(aPO, "aPO is null!");
   NS_ASSERTION(mPageSeqFrame.IsAlive(), "mPageSeqFrame is not alive!");
   NS_ASSERTION(mPrt, "mPrt is null!");
@@ -2232,7 +2232,7 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
   RefPtr<nsPrintData> printData = mPrt;
 
   PR_PL(("-----------------------------------\n"));
-  PR_PL(("------ In DV::PrintPage PO: %p (%s)\n", aPO,
+  PR_PL(("------ In DV::PrintSheet PO: %p (%s)\n", aPO,
          gFrameTypesStr[aPO->mFrameType]));
 
   
@@ -2365,9 +2365,9 @@ bool nsPrintJob::IsWindowsInOurSubTree(nsPIDOMWindowOuter* window) const {
 }
 
 
-bool nsPrintJob::DonePrintingPages(nsPrintObject* aPO, nsresult aResult) {
+bool nsPrintJob::DonePrintingSheets(nsPrintObject* aPO, nsresult aResult) {
   
-  PR_PL(("****** In DV::DonePrintingPages PO: %p (%s)\n", aPO,
+  PR_PL(("****** In DV::DonePrintingSheets PO: %p (%s)\n", aPO,
          aPO ? gFrameTypesStr[aPO->mFrameType] : ""));
 
   
@@ -2388,7 +2388,7 @@ bool nsPrintJob::DonePrintingPages(nsPrintObject* aPO, nsresult aResult) {
     bool didPrint = PrintDocContent(printData->mPrintObject, rv);
     if (NS_SUCCEEDED(rv) && didPrint) {
       PR_PL(
-          ("****** In DV::DonePrintingPages PO: %p (%s) didPrint:%s (Not Done "
+          ("****** In DV::DonePrintingSheets PO: %p (%s) didPrint:%s (Not Done "
            "Printing)\n",
            aPO, gFrameTypesStr[aPO->mFrameType], PRT_YESNO(didPrint)));
       return false;
@@ -2536,7 +2536,7 @@ nsresult nsPrintJob::FinishPrintPreview() {
 
   if (mPrintPreviewCallback) {
     mPrintPreviewCallback(PrintPreviewResultInfo(
-        GetPrintPreviewNumPages(), GetRawNumPages(),
+        GetPrintPreviewNumSheets(), GetRawNumPages(),
         !mDisallowSelectionPrint && printData->mSelectionRoot));
     mPrintPreviewCallback = nullptr;
   }
