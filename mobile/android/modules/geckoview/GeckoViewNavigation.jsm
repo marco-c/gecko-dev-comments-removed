@@ -28,6 +28,35 @@ XPCOMUtils.defineLazyGetter(this, "ReferrerInfo", () =>
 );
 
 
+
+
+
+const BAD_HEADERS = ["connection", "host"];
+
+
+
+const FORBIDDEN_HEADER_CHARACTERS = ["\n", "\r"];
+
+function validateHeader(key, value) {
+  if (!key) {
+    
+    return false;
+  }
+
+  for (const c of FORBIDDEN_HEADER_CHARACTERS) {
+    if (key.includes(c) || value?.includes(c)) {
+      return false;
+    }
+  }
+
+  if (BAD_HEADERS.includes(key.toLowerCase().trim())) {
+    return false;
+  }
+
+  return true;
+}
+
+
 const createReferrerInfo = aReferrer => {
   let referrerUri;
   try {
@@ -184,22 +213,16 @@ class GeckoViewNavigation extends GeckoViewModule {
 
         let additionalHeaders = null;
         if (headers) {
-          
-          
-          
-          
-          const badHeaders = ["connection", "host"];
           additionalHeaders = "";
-          headers.forEach(entry => {
-            const key = entry
-              .split(/:/)[0]
-              .toLowerCase()
-              .trim();
-
-            if (!badHeaders.includes(key)) {
-              additionalHeaders += entry + "\r\n";
+          for (const [key, value] of Object.entries(headers)) {
+            if (!validateHeader(key, value)) {
+              Cu.reportError(`Ignoring invalid header '${key}'='${value}'.`);
+              continue;
             }
-          });
+
+            additionalHeaders += `${key}:${value ?? ""}\r\n`;
+          }
+
           if (additionalHeaders != "") {
             additionalHeaders = E10SUtils.makeInputStream(additionalHeaders);
           } else {
