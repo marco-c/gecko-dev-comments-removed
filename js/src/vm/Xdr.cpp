@@ -318,7 +318,7 @@ static XDRResult ParserAtomTable(XDRState<mode>* xdr) {
 
   for (uint32_t i = 0; i < atomCount; i++) {
     const frontend::ParserAtom* atom = nullptr;
-    MOZ_TRY(XDRParserAtom(xdr, &atom));
+    MOZ_TRY(XDRParserAtomData(xdr, &atom));
     if (!xdr->parserAtomTable().append(atom)) {
       ReportOutOfMemory(xdr->cx());
       return xdr->fail(JS::TranscodeResult_Throw);
