@@ -95,8 +95,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   
-  nsDisplayWrapList* MaybeCreateTopLayerItems(nsDisplayListBuilder* aBuilder,
-                                              bool* aIsOpaque);
+  void MaybeAddTopLayerItems(nsDisplayListBuilder* aBuilder,
+                             const nsDisplayListSet& aLists);
 
   void AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
                            const nsDisplayListSet& aLists, bool aCreateLayer,
