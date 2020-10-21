@@ -273,21 +273,12 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
     
     
     const int framesLeft = mResampledLeftover.Length() / mChannels;
-    
-    
-    
-    
-    
-    const int frameRoundUp = framesLeft ? 1 : 0;
-
     MOZ_ASSERT(NumOutputFramesPerPacket() >= framesLeft);
     
     
-    const int framesToFetch = !mResampler
-                                  ? NumOutputFramesPerPacket()
-                                  : (NumOutputFramesPerPacket() - framesLeft) *
-                                            mTrackRate / kOpusSamplingRate +
-                                        frameRoundUp;
+    const int framesToFetch = NumInputFramesPerPacket() -
+                              (framesLeft * mTrackRate / kOpusSamplingRate) +
+                              (NeedsResampler() ? 1 : 0);
 
     if (!mEndOfStream && mSourceSegment.GetDuration() < framesToFetch) {
       
