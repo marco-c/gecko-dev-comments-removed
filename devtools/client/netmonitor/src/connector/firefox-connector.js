@@ -143,7 +143,12 @@ class FirefoxConnector {
     });
 
     
-    await this.addListeners();
+    if (isTargetSwitching) {
+      await this.addTargetListeners();
+    } else {
+      
+      await this.addListeners();
+    }
 
     
     this.responsiveFront = await this.currentTarget.getFront("responsive");
@@ -235,6 +240,10 @@ class FirefoxConnector {
       ignoreExistingResources,
     });
 
+    await this.addTargetListeners();
+  }
+
+  async addTargetListeners() {
     
     if (
       Services.prefs.getBoolPref(
