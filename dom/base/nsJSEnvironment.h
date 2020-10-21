@@ -116,7 +116,7 @@ class nsJSContext : public nsIScriptContext {
   
   static void LikelyShortLivingObjectCreated();
 
-  static uint32_t CleanupsSinceLastGC();
+  static bool HasHadCleanupSinceLastGC();
 
   nsIScriptGlobalObject* GetCachedGlobalObject() {
     

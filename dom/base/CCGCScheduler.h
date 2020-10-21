@@ -88,7 +88,13 @@ class CCGCScheduler {
 
   TimeStamp GetLastCCEndTime() const { return mLastCCEndTime; }
 
+  bool IsEarlyForgetSkippable(uint32_t aN = kMajorForgetSkippableCalls) const {
+    return mCleanupsSinceLastGC < aN;
+  }
+
   
+
+  void SetNeedsFullCC() { mNeedsFullCC = true; }
 
   void NoteGCBegin() {
     
@@ -98,6 +104,7 @@ class CCGCScheduler {
 
   void NoteGCEnd() {
     mCCBlockStart = TimeStamp();
+    mCleanupsSinceLastGC = 0;
     mInIncrementalGC = false;
   }
 
@@ -118,12 +125,23 @@ class CCGCScheduler {
 
   void UnblockCC() { mCCBlockStart = TimeStamp(); }
 
-  void NoteForgetSkippableComplete(TimeStamp now) {
+  
+  uint32_t NoteForgetSkippableComplete(
+      TimeStamp aNow, uint32_t aSuspectedBeforeForgetSkippable) {
     mLastForgetSkippableEndTime = aNow;
+    uint32_t suspected = nsCycleCollector_suspectedCount();
+    mPreviousSuspectedCount = suspected;
+    mCleanupsSinceLastGC++;
+    return aSuspectedBeforeForgetSkippable - suspected;
   }
 
-  void NoteCCEnd(TimeStamp when) { mLastCCEndTime = when; }
+  void NoteCCEnd(TimeStamp aWhen) {
+    mLastCCEndTime = aWhen;
+    mNeedsFullCC = false;
+  }
 
+  
+  
   void NoteForgetSkippableOnlyCycle() {
     mLastForgetSkippableCycleEndTime = TimeStamp::Now();
   }
@@ -196,12 +214,28 @@ class CCGCScheduler {
         std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
   }
 
-  bool ShouldScheduleCC(uint32_t aCleanupsSinceLastGC) const {
-    TimeStamp now;
+  bool ShouldFireForgetSkippable(uint32_t aSuspected) const {
+    
+    
+    return ((mPreviousSuspectedCount + 100) <= aSuspected) ||
+           mCleanupsSinceLastGC < kMajorForgetSkippableCalls;
+  }
+
+  
+  
+  
+  
+  bool IsCCNeeded(uint32_t aSuspected, TimeStamp aNow = TimeStamp::Now()) const {
+    return mNeedsFullCC || aSuspected > kCCPurpleLimit ||
+           (aSuspected > kCCForcedPurpleLimit && mLastCCEndTime &&
+            aNow - mLastCCEndTime > kCCForced);
+  }
+
+  bool ShouldScheduleCC() const {
+    TimeStamp now = TimeStamp::Now();
 
     
-    if (aCleanupsSinceLastGC && !mLastCCEndTime.IsNull()) {
-      now = TimeStamp::Now();
+    if (mCleanupsSinceLastGC && !mLastCCEndTime.IsNull()) {
       if (now - mLastCCEndTime < kCCDelay) {
         return false;
       }
@@ -209,18 +243,181 @@ class CCGCScheduler {
 
     
     
-    if ((aCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
+    if ((mCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
         !mLastForgetSkippableCycleEndTime.IsNull()) {
-      if (now.IsNull()) {
-        now = TimeStamp::Now();
-      }
       if (now - mLastForgetSkippableCycleEndTime <
           kTimeBetweenForgetSkippableCycles) {
         return false;
       }
     }
 
-    return true;
+    return IsCCNeeded(nsCycleCollector_suspectedCount(), now);
+  }
+
+  bool IsLastEarlyCCTimer(int32_t aCurrentFireCount) {
+    int32_t numEarlyTimerFires =
+        std::max(int32_t(mCCDelay / kCCSkippableDelay) - 2, 1);
+
+    return aCurrentFireCount >= numEarlyTimerFires;
+  }
+
+  enum class CCRunnerAction {
+    None,
+    ForgetSkippable,
+    PrepForCC,
+    CycleCollect,
+    StopRunning
+  };
+
+  enum class CCRunnerState {
+    Inactive,
+    EarlyTimer,
+    LateTimer,
+    LateTimerPostForgetSkippable,
+    FinalTimer
+  };
+
+  enum CCRunnerYield { Continue, Yield };
+
+  enum CCRunnerForgetSkippableRemoveChildless {
+    KeepChildless = false,
+    RemoveChildless = true
+  };
+
+  struct CCRunnerStep {
+    
+    CCRunnerAction mAction;
+
+    
+    
+    CCRunnerYield mYield;
+
+    
+    
+    
+    CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
+  };
+
+  void ActivateCCRunner() {
+    MOZ_ASSERT(mCCRunnerState == CCRunnerState::Inactive);
+    mCCRunnerState = CCRunnerState::EarlyTimer;
+    mCCDelay = kCCDelay;
+    mCCRunnerEarlyFireCount = 0;
+  }
+
+  void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
+
+  CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline, uint32_t aSuspected) {
+    if (mCCRunnerState == CCRunnerState::Inactive) {
+      
+      return {CCRunnerAction::StopRunning, Yield};
+    }
+
+    TimeStamp now = TimeStamp::Now();
+
+    if (InIncrementalGC()) {
+      if (EnsureCCIsBlocked(now) == StartingLockout) {
+        
+        
+        
+        
+        mCCRunnerState = CCRunnerState::EarlyTimer;
+        mCCRunnerEarlyFireCount = 0;
+        mCCDelay = kCCDelay / int64_t(3);
+        return {CCRunnerAction::None, Yield};
+      }
+
+      if (GetCCBlockedTime(now).value() < kMaxCCLockedoutTime) {
+        return {CCRunnerAction::None, Yield};
+      }
+
+      
+      
+    }
+
+    switch (mCCRunnerState) {
+      
+      
+      
+      case CCRunnerState::EarlyTimer:
+        ++mCCRunnerEarlyFireCount;
+        if (IsLastEarlyCCTimer(mCCRunnerEarlyFireCount)) {
+          mCCRunnerState = CCRunnerState::LateTimer;
+        }
+
+        if (ShouldFireForgetSkippable(aSuspected)) {
+          return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+        }
+
+        if (aDeadline.IsNull()) {
+          return {CCRunnerAction::None, Yield};
+        }
+
+        
+        
+        
+        mCCRunnerState = CCRunnerState::LateTimer;
+        [[fallthrough]];
+
+      
+      
+      
+      
+      
+      case CCRunnerState::LateTimer:
+        if (!IsCCNeeded(aSuspected, now)) {
+          mCCRunnerState = CCRunnerState::Inactive;
+          NoteForgetSkippableOnlyCycle();
+          if (ShouldFireForgetSkippable(aSuspected)) {
+            return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+          }
+          return {CCRunnerAction::StopRunning, Yield};
+        }
+
+        mCCRunnerState = CCRunnerState::LateTimerPostForgetSkippable;
+        return {CCRunnerAction::ForgetSkippable, Yield, RemoveChildless};
+
+      
+      
+      case CCRunnerState::LateTimerPostForgetSkippable:
+        if (!IsCCNeeded(aSuspected, now)) {
+          mCCRunnerState = CCRunnerState::Inactive;
+          NoteForgetSkippableOnlyCycle();
+          return {CCRunnerAction::StopRunning, Yield};
+        }
+
+        
+        
+        mCCRunnerState = CCRunnerState::FinalTimer;
+
+        if (!aDeadline.IsNull() && TimeStamp::Now() < aDeadline) {
+          return {CCRunnerAction::PrepForCC, Yield};
+        }
+
+        [[fallthrough]];
+
+      
+      
+      case CCRunnerState::FinalTimer:
+        if (!IsCCNeeded(aSuspected, now)) {
+          mCCRunnerState = CCRunnerState::Inactive;
+          NoteForgetSkippableOnlyCycle();
+          if (ShouldFireForgetSkippable(aSuspected)) {
+            return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+          }
+          return {CCRunnerAction::StopRunning, Yield};
+        }
+
+        
+        
+        
+        
+        mCCRunnerState = CCRunnerState::Inactive;
+        return {CCRunnerAction::CycleCollect, Yield};
+
+      default:
+        MOZ_CRASH("Unexpected CCRunner state");
+    };
   }
 
   
@@ -272,6 +469,14 @@ class CCGCScheduler {
   TimeStamp mForgetSkippableFrequencyStartTime;
   TimeStamp mLastCCEndTime;
   TimeStamp mLastForgetSkippableCycleEndTime;
+
+  CCRunnerState mCCRunnerState = CCRunnerState::Inactive;
+  int32_t mCCRunnerEarlyFireCount = 0;
+  TimeDuration mCCDelay = kCCDelay;
+  bool mNeedsFullCC = false;
+  uint32_t mPreviousSuspectedCount = 0;
+
+  uint32_t mCleanupsSinceLastGC = UINT32_MAX;
 
   
 

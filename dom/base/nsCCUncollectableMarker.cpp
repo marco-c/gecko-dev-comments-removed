@@ -316,7 +316,8 @@ nsresult nsCCUncollectableMarker::Observe(nsISupports* aSubject,
                "wrong topic");
 
   
-  const bool cleanupJS = nsJSContext::CleanupsSinceLastGC() == 0 &&
+  
+  const bool cleanupJS = nsJSContext::HasHadCleanupSinceLastGC() &&
                          !strcmp(aTopic, "cycle-collector-forget-skippable");
 
   const bool prepareForCC = !strcmp(aTopic, "cycle-collector-begin");

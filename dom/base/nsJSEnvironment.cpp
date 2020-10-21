@@ -89,8 +89,6 @@ using namespace mozilla::dom;
 #  undef CompareString
 #endif
 
-enum class CCRunnerState { Inactive, EarlyTimer, LateTimer, FinalTimer };
-
 static nsITimer* sGCTimer;
 static nsITimer* sShrinkingGCTimer;
 static StaticRefPtr<IdleTaskRunner> sCCRunner;
@@ -100,9 +98,6 @@ static StaticRefPtr<IdleTaskRunner> sInterSliceGCRunner;
 
 static TimeStamp sCurrentGCStartTime;
 
-static CCRunnerState sCCRunnerState = CCRunnerState::Inactive;
-static TimeDuration sCCDelay = kCCDelay;
-
 static JS::GCSliceCallback sPrevGCSliceCallback;
 
 static bool sHasRunGC;
@@ -110,10 +105,6 @@ static bool sHasRunGC;
 static uint32_t sCCollectedWaitingForGC;
 static uint32_t sCCollectedZonesWaitingForGC;
 static uint32_t sLikelyShortLivingObjectsNeedingGC;
-static int32_t sCCRunnerEarlyFireCount = 0;
-static uint32_t sPreviousSuspectedCount = 0;
-static uint32_t sCleanupsSinceLastGC = UINT32_MAX;
-static bool sNeedsFullCC = false;
 static bool sNeedsFullGC = false;
 static bool sNeedsGCAfterCC = false;
 static bool sIncrementalCC = false;
@@ -1157,18 +1148,15 @@ static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
 
   js::SliceBudget budget =
       sScheduler.ComputeForgetSkippableBudget(startTimeStamp, aDeadline);
-  bool earlyForgetSkippable = sCleanupsSinceLastGC < kMajorForgetSkippableCalls;
+  bool earlyForgetSkippable = sScheduler.IsEarlyForgetSkippable();
   nsCycleCollector_forgetSkippable(budget, aRemoveChildless,
                                    earlyForgetSkippable);
   TimeStamp now = TimeStamp::Now();
-  sScheduler.NoteForgetSkippableComplete(now);
-
-  sPreviousSuspectedCount = nsCycleCollector_suspectedCount();
-  ++sCleanupsSinceLastGC;
+  uint32_t removedPurples =
+      sScheduler.NoteForgetSkippableComplete(now, aSuspected);
 
   TimeDuration duration = now - startTimeStamp;
 
-  uint32_t removedPurples = aSuspected - sPreviousSuspectedCount;
   sCCStats.AfterForgetSkippable(duration, removedPurples);
 
   if (duration.ToSeconds()) {
@@ -1527,8 +1515,8 @@ void nsJSContext::BeginCycleCollectionCallback() {
 
   
   
-  if (sCleanupsSinceLastGC < kMajorForgetSkippableCalls) {
-    while (sCleanupsSinceLastGC < kMajorForgetSkippableCalls) {
+  if (sScheduler.IsEarlyForgetSkippable()) {
+    while (sScheduler.IsEarlyForgetSkippable()) {
       FireForgetSkippable(nsCycleCollector_suspectedCount(), false,
                           TimeStamp());
     }
@@ -1590,7 +1578,6 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 
   
   sScheduler.NoteCCEnd(endCCTimeStamp);
-  sNeedsFullCC = false;
   sNeedsGCAfterCC = false;
   sCCStats.Clear();
 }
@@ -1668,161 +1655,72 @@ void ShrinkingGCTimerFired(nsITimer* aTimer, void* aClosure) {
                                  nsJSContext::ShrinkingGC);
 }
 
-static bool ShouldTriggerCC(uint32_t aSuspected) {
-  return sNeedsFullCC || aSuspected > kCCPurpleLimit ||
-         (aSuspected > kCCForcedPurpleLimit &&
-          TimeUntilNow(sScheduler.GetLastCCEndTime()) > kCCForced);
-}
-
-static inline bool ShouldFireForgetSkippable(uint32_t aSuspected) {
-  
-  
-  return ((sPreviousSuspectedCount + 100) <= aSuspected) ||
-         sCleanupsSinceLastGC < kMajorForgetSkippableCalls;
-}
-
-static inline bool IsLastEarlyCCTimer(int32_t aCurrentFireCount) {
-  int32_t numEarlyTimerFires =
-      std::max(int32_t(sCCDelay / kCCSkippableDelay) - 2, 1);
-
-  return aCurrentFireCount >= numEarlyTimerFires;
-}
-
-static void ActivateCCRunner() {
-  MOZ_ASSERT(sCCRunnerState == CCRunnerState::Inactive);
-  sCCRunnerState = CCRunnerState::EarlyTimer;
-  sCCDelay = kCCDelay;
-  sCCRunnerEarlyFireCount = 0;
-}
-
 static bool CCRunnerFired(TimeStamp aDeadline) {
   if (sDidShutdown) {
     return false;
   }
 
-  if (sScheduler.InIncrementalGC()) {
-    TimeStamp now = TimeStamp::Now();
-    if (sScheduler.EnsureCCIsBlocked(now) == sScheduler.StartingLockout) {
-      
-      
-      
-      
-      sCCRunnerState = CCRunnerState::EarlyTimer;
-      sCCRunnerEarlyFireCount = 0;
-      sCCDelay = kCCDelay / int64_t(3);
-      return false;
-    }
-
-    if (sScheduler.GetCCBlockedTime(now).value() < kMaxCCLockedoutTime) {
-      return false;
-    }
-  }
-
   bool didDoWork = false;
 
+  using CCRunnerAction = CCGCScheduler::CCRunnerAction;
+  using CCRunnerStep = CCGCScheduler::CCRunnerStep;
+
   
-  bool finished = false;
-
-  uint32_t suspected = nsCycleCollector_suspectedCount();
-
-  switch (sCCRunnerState) {
-    case CCRunnerState::EarlyTimer:
-      ++sCCRunnerEarlyFireCount;
-      if (IsLastEarlyCCTimer(sCCRunnerEarlyFireCount)) {
-        sCCRunnerState = CCRunnerState::LateTimer;
-      }
-
-      if (ShouldFireForgetSkippable(suspected)) {
-        FireForgetSkippable(suspected,  false,
-                            aDeadline);
-        didDoWork = true;
+  
+  
+  
+  
+  
+  
+  
+  CCRunnerStep step;
+  do {
+    uint32_t suspected = nsCycleCollector_suspectedCount();
+    step = sScheduler.GetNextCCRunnerAction(aDeadline, suspected);
+    switch (step.mAction) {
+      case CCRunnerAction::None:
         break;
-      }
 
-      if (aDeadline.IsNull()) {
+      case CCRunnerAction::ForgetSkippable:
+        
+        FireForgetSkippable(suspected, bool(step.mRemoveChildless), aDeadline);
         break;
-      }
 
-      
-      
-      
-      MOZ_ASSERT(!didDoWork);
-
-      sCCRunnerState = CCRunnerState::LateTimer;
-      [[fallthrough]];
-
-    case CCRunnerState::LateTimer:
-      if (!ShouldTriggerCC(suspected)) {
-        if (ShouldFireForgetSkippable(suspected)) {
-          FireForgetSkippable(suspected,  false,
-                              aDeadline);
-          didDoWork = true;
-        }
-        finished = true;
-        break;
-      }
-
-      FireForgetSkippable(suspected,  true, aDeadline);
-      didDoWork = true;
-      if (!ShouldTriggerCC(nsCycleCollector_suspectedCount())) {
-        finished = true;
-        break;
-      }
-
-      
-      
-      sCCRunnerState = CCRunnerState::FinalTimer;
-
-      if (!aDeadline.IsNull() && TimeStamp::Now() < aDeadline) {
+      case CCRunnerAction::PrepForCC:
         
         Element::ClearContentUnbinder();
 
         if (TimeStamp::Now() < aDeadline) {
           
+          
           nsCycleCollector_doDeferredDeletion();
         }
-      }
-
-      break;
-
-    case CCRunnerState::FinalTimer:
-      if (!ShouldTriggerCC(suspected)) {
-        if (ShouldFireForgetSkippable(suspected)) {
-          FireForgetSkippable(suspected,  false,
-                              aDeadline);
-          didDoWork = true;
-        }
-        finished = true;
         break;
-      }
 
-      
-      
-      
-      nsJSContext::RunCycleCollectorSlice(aDeadline);
-      didDoWork = true;
-      finished = true;
-      break;
+      case CCRunnerAction::CycleCollect:
+        
+        nsJSContext::RunCycleCollectorSlice(aDeadline);
+        break;
 
-    default:
-      MOZ_CRASH("Unexpected CCRunner state");
-  }
-
-  if (finished) {
-    sPreviousSuspectedCount = 0;
-    nsJSContext::KillCCRunner();
-    if (!didDoWork) {
-      
-      
-      sScheduler.NoteForgetSkippableOnlyCycle();
+      case CCRunnerAction::StopRunning:
+        
+        
+        nsJSContext::KillCCRunner();
+        break;
     }
-  }
+
+    if (step.mAction != CCRunnerAction::None) {
+      didDoWork = true;
+    }
+  } while (step.mYield == CCGCScheduler::CCRunnerYield::Continue);
 
   return didDoWork;
 }
 
 
-uint32_t nsJSContext::CleanupsSinceLastGC() { return sCleanupsSinceLastGC; }
+bool nsJSContext::HasHadCleanupSinceLastGC() {
+  return sScheduler.IsEarlyForgetSkippable(1);
+}
 
 
 
@@ -1952,7 +1850,7 @@ void nsJSContext::PokeGC(JS::GCReason aReason, JSObject* aObj,
 
   if (sCCRunner) {
     
-    sNeedsFullCC = true;
+    sScheduler.SetNeedsFullCC();
     
     sNeedsGCAfterCC = true;
     return;
@@ -1995,12 +1893,11 @@ void nsJSContext::MaybePokeCC() {
     return;
   }
 
-  if (sScheduler.ShouldScheduleCC(sCleanupsSinceLastGC) &&
-      ShouldTriggerCC(nsCycleCollector_suspectedCount())) {
+  if (sScheduler.ShouldScheduleCC()) {
     
     nsCycleCollector_dispatchDeferredDeletion();
 
-    ActivateCCRunner();
+    sScheduler.ActivateCCRunner();
     sCCRunner =
         IdleTaskRunner::Create(CCRunnerFired, "MaybePokeCC::CCRunnerFired",
                                kCCSkippableDelay.ToMilliseconds(),
@@ -2042,7 +1939,7 @@ void nsJSContext::KillShrinkingGCTimer() {
 
 void nsJSContext::KillCCRunner() {
   sScheduler.UnblockCC();
-  sCCRunnerState = CCRunnerState::Inactive;
+  sScheduler.DeactivateCCRunner();
   if (sCCRunner) {
     sCCRunner->Cancel();
     sCCRunner = nullptr;
@@ -2098,8 +1995,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       sCCollectedWaitingForGC = 0;
       sCCollectedZonesWaitingForGC = 0;
       sLikelyShortLivingObjectsNeedingGC = 0;
-      sCleanupsSinceLastGC = 0;
-      sNeedsFullCC = true;
+      sScheduler.SetNeedsFullCC();
       sHasRunGC = true;
       nsJSContext::MaybePokeCC();
 
@@ -2114,7 +2010,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
         nsJSContext::KillFullGCTimer();
       }
 
-      if (ShouldTriggerCC(nsCycleCollector_suspectedCount())) {
+      if (sScheduler.IsCCNeeded(nsCycleCollector_suspectedCount())) {
         nsCycleCollector_dispatchDeferredDeletion();
       }
 
@@ -2150,7 +2046,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
             [] { return sShuttingDown; });
       }
 
-      if (ShouldTriggerCC(nsCycleCollector_suspectedCount())) {
+      if (sScheduler.IsCCNeeded(nsCycleCollector_suspectedCount())) {
         nsCycleCollector_dispatchDeferredDeletion();
       }
 
@@ -2196,7 +2092,6 @@ void mozilla::dom::StartupJSEnvironment() {
   sCCollectedWaitingForGC = 0;
   sCCollectedZonesWaitingForGC = 0;
   sLikelyShortLivingObjectsNeedingGC = 0;
-  sNeedsFullCC = false;
   sNeedsFullGC = true;
   sNeedsGCAfterCC = false;
   sIsInitialized = false;
