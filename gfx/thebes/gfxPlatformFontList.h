@@ -361,6 +361,10 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                                      nsACString& aFamilyName);
 
   
+  bool GetLocalizedFamilyName(const FontFamily& aFamily,
+                              nsACString& aFamilyName);
+
+  
   
   
   FamilyAndGeneric GetDefaultFontFamily(const nsACString& aLangGroup,

@@ -86,12 +86,10 @@ Family::Family(FontList* aList, const InitData& aData)
       mIndex(aData.mIndex),
       mVisibility(aData.mVisibility),
       mIsSimple(false),
+      mIsBundled(aData.mBundled),
       mIsBadUnderlineFamily(aData.mBadUnderline),
       mIsForceClassic(aData.mForceClassic),
-      mIsAltLocale(aData.mAltLocale) {
-  MOZ_ASSERT(aData.mIndex <= 0x7fffffffu);
-  mIndex = aData.mIndex | (aData.mBundled ? 0x80000000u : 0u);
-}
+      mIsAltLocale(aData.mAltLocale) {}
 
 class SetCharMapRunnable : public mozilla::Runnable {
  public:
@@ -787,7 +785,8 @@ void FontList::SetAliases(
   for (auto i = aAliasTable.Iter(); !i.Done(); i.Next()) {
     aliasArray.AppendElement(Family::InitData(
         i.Key(), i.Data()->mBaseFamily, i.Data()->mIndex, i.Data()->mVisibility,
-        i.Data()->mBundled, i.Data()->mBadUnderline, i.Data()->mForceClassic));
+        i.Data()->mBundled, i.Data()->mBadUnderline, i.Data()->mForceClassic,
+        true));
   }
   aliasArray.Sort();
 
@@ -877,6 +876,33 @@ void FontList::SetLocalNames(
   }
   header.mLocalFaces = ptr;
   header.mLocalFaceCount.store(count);
+}
+
+nsCString FontList::LocalizedFamilyName(const Family* aFamily) {
+  
+  
+  
+  
+  
+  
+  if (aFamily->IsAltLocaleFamily()) {
+    
+    
+    if (aFamily->Index() != Family::kNoIndex) {
+      const Family* families = Families();
+      for (uint32_t i = 0; i < NumFamilies(); ++i) {
+        if (families[i].Index() == aFamily->Index() &&
+            families[i].IsBundled() == aFamily->IsBundled() &&
+            !families[i].IsAltLocaleFamily()) {
+          return families[i].DisplayName().AsString(this);
+        }
+      }
+    }
+  }
+
+  
+  
+  return aFamily->DisplayName().AsString(this);
 }
 
 Family* FontList::FindFamily(const nsCString& aName) {

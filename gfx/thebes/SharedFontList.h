@@ -198,11 +198,13 @@ struct Face {
 
 
 struct Family {
+  static constexpr uint32_t kNoIndex = uint32_t(-1);
+
   
   struct InitData {
-    InitData(const nsACString& aKey,   
-             const nsACString& aName,  
-             uint32_t aIndex = 0,  
+    InitData(const nsACString& aKey,      
+             const nsACString& aName,     
+             uint32_t aIndex = kNoIndex,  
              FontVisibility aVisibility = FontVisibility::Unknown,
              bool aBundled = false,       
                                           
@@ -262,8 +264,8 @@ struct Family {
 
   const String& DisplayName() const { return mName; }
 
-  uint32_t Index() const { return mIndex & 0x7fffffffu; }
-  bool IsBundled() const { return mIndex & 0x80000000u; }
+  uint32_t Index() const { return mIndex; }
+  bool IsBundled() const { return mIsBundled; }
 
   uint32_t NumFaces() const {
     MOZ_ASSERT(IsInitialized());
@@ -310,6 +312,7 @@ struct Family {
   FontVisibility mVisibility;
   bool mIsSimple;  
                    
+  bool mIsBundled : 1;
   bool mIsBadUnderlineFamily : 1;
   bool mIsForceClassic : 1;
   bool mIsAltLocale : 1;
