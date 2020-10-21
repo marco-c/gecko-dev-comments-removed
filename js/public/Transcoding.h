@@ -121,6 +121,17 @@ extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
                                                     Handle<JSScript*> script,
                                                     TranscodeBuffer& buffer);
 
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool CheckCompileOptionsMatch(
+    const ReadOnlyCompileOptions& options, JSScript* script);
+
 }  
 
 #endif 
