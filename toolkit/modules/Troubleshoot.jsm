@@ -87,7 +87,6 @@ const PREFS_WHITELIST = [
   "places.",
   "plugin.",
   "plugins.",
-  "print.",
   "privacy.",
   "remote.enabled",
   "security.",
@@ -113,11 +112,6 @@ const PREFS_BLACKLIST = [
   /^media[.]webrtc[.]debug[.]aec_log_dir/,
   /^media[.]webrtc[.]debug[.]log_file/,
   /^network[.]proxy[.]/,
-  /[.]print_to_filename$/,
-  /^print[.]macosx[.]pagesetup/,
-  
-  
-  
 ];
 
 
@@ -137,19 +131,18 @@ const PREFS_UNIMPORTANT_LOCKED = [
   "privacy.restrict3rdpartystorage.url_decorations",
 ];
 
-
-
-function getPrefList(filter) {
-  filter = filter || (name => true);
-  function getPref(name) {
-    let type = Services.prefs.getPrefType(name);
-    if (!(type in PREFS_GETTERS)) {
-      throw new Error("Unknown preference type " + type + " for " + name);
-    }
-    return PREFS_GETTERS[type](Services.prefs, name);
+function getPref(name) {
+  let type = Services.prefs.getPrefType(name);
+  if (!(type in PREFS_GETTERS)) {
+    throw new Error("Unknown preference type " + type + " for " + name);
   }
+  return PREFS_GETTERS[type](Services.prefs, name);
+}
 
-  return PREFS_WHITELIST.reduce(function(prefs, branch) {
+
+
+function getPrefList(filter, whitelist = PREFS_WHITELIST) {
+  return whitelist.reduce(function(prefs, branch) {
     Services.prefs.getChildList(branch).forEach(function(name) {
       if (filter(name) && !PREFS_BLACKLIST.some(re => re.test(name))) {
         prefs[name] = getPref(name);
@@ -477,6 +470,20 @@ var dataProviders = {
           Services.prefs.prefIsLocked(name)
       )
     );
+  },
+
+  printingPreferences: function printingPreferences(done) {
+    let filter = name => Services.prefs.prefHasUserValue(name);
+    let prefs = getPrefList(filter, ["print."]);
+
+    
+    
+    
+    if (filter("print_printer")) {
+      prefs.print_printer = getPref("print_printer");
+    }
+
+    done(prefs);
   },
 
   graphics: function graphics(done) {
