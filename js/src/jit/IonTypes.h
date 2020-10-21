@@ -903,7 +903,10 @@ static constexpr int MakeABIFunctionType(
 
 }  
 
-enum ABIFunctionType {
+enum ABIFunctionType : uint32_t {
+  
+  
+
   
   
   Args_General0 = ArgType_General << RetType_Shift,
