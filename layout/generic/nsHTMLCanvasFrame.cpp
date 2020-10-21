@@ -400,7 +400,7 @@ IntrinsicSize nsHTMLCanvasFrame::GetIntrinsicSize() {
 }
 
 
-AspectRatio nsHTMLCanvasFrame::GetIntrinsicRatio() {
+AspectRatio nsHTMLCanvasFrame::GetIntrinsicRatio() const {
   if (StyleDisplay()->IsContainSize()) {
     return AspectRatio();
   }
