@@ -224,6 +224,7 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
   bool mWorkerShuttingDown;
 
   RefPtr<WebSocketEventService> mService;
+  nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
 
   
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
@@ -2689,62 +2690,47 @@ nsresult WebSocketImpl::GetLoadingPrincipal(nsIPrincipal** aPrincipal) {
     principal = globalObject->PrincipalOrNull();
   }
 
-  nsCOMPtr<nsPIDOMWindowInner> innerWindow;
+  nsCOMPtr<nsPIDOMWindowInner> innerWindow = do_QueryInterface(globalObject);
+  if (!innerWindow) {
+    
+    
+    
+    principal.forget(aPrincipal);
+    return NS_OK;
+  }
+
+  RefPtr<WindowContext> windowContext = innerWindow->GetWindowContext();
 
   while (true) {
     if (principal && !principal->GetIsNullPrincipal()) {
       break;
     }
 
-    if (!innerWindow) {
-      innerWindow = do_QueryInterface(globalObject);
-      if (!innerWindow) {
-        
-        
-        
-        break;
-      }
-    }
-
-    nsCOMPtr<nsPIDOMWindowOuter> parentWindow =
-        innerWindow->GetInProcessScriptableParent();
-    if (NS_WARN_IF(!parentWindow)) {
+    if (NS_WARN_IF(!windowContext)) {
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 
-    nsCOMPtr<nsPIDOMWindowInner> currentInnerWindow =
-        parentWindow->GetCurrentInnerWindow();
-    if (NS_WARN_IF(!currentInnerWindow)) {
+    if (windowContext->IsTop()) {
+      if (!windowContext->GetBrowsingContext()->HadOriginalOpener()) {
+        break;
+      }
+      
+      RefPtr<BrowsingContext> opener =
+          windowContext->GetBrowsingContext()->GetOpener();
+      if (!opener) {
+        break;
+      }
+      windowContext = opener->GetCurrentWindowContext();
+    } else {
+      
+      windowContext = windowContext->GetParentWindowContext();
+    }
+
+    if (NS_WARN_IF(!windowContext)) {
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 
-    
-    if (innerWindow == currentInnerWindow) {
-      parentWindow = nsGlobalWindowOuter::Cast(innerWindow->GetOuterWindow())
-                         ->GetSameProcessOpener();
-      if (!parentWindow) {
-        break;
-      }
-
-      if (parentWindow->GetInProcessScriptableTop() ==
-          innerWindow->GetInProcessScriptableTop()) {
-        break;
-      }
-
-      currentInnerWindow = parentWindow->GetCurrentInnerWindow();
-      if (NS_WARN_IF(!currentInnerWindow)) {
-        return NS_ERROR_DOM_SECURITY_ERR;
-      }
-
-      if (currentInnerWindow == innerWindow) {
-        
-        break;
-      }
-    }
-
-    innerWindow = currentInnerWindow;
-
-    nsCOMPtr<Document> document = innerWindow->GetExtantDoc();
+    nsCOMPtr<Document> document = windowContext->GetExtantDoc();
     if (NS_WARN_IF(!document)) {
       return NS_ERROR_DOM_SECURITY_ERR;
     }
