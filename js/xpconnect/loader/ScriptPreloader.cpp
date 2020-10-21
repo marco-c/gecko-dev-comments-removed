@@ -378,9 +378,13 @@ void ScriptPreloader::FinishContentStartup() {
   
   
   
-  mozilla::Telemetry::Accumulate(
-      mozilla::Telemetry::MEMORY_UNIQUE_CONTENT_STARTUP,
-      nsMemoryReporterManager::ResidentUnique() / 1024);
+  
+  
+  if (sProcessType != ProcessType::PrivilegedAbout) {
+    mozilla::Telemetry::Accumulate(
+        mozilla::Telemetry::MEMORY_UNIQUE_CONTENT_STARTUP,
+        nsMemoryReporterManager::ResidentUnique() / 1024);
+  }
 #endif
 }
 
