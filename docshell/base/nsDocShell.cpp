@@ -7847,7 +7847,7 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     if (failedURI) {
       errorOnLocationChangeNeeded =
           OnNewURI(failedURI, failedChannel, triggeringPrincipal, nullptr,
-                   nullptr, mLoadType, nullptr, false, false, false);
+                   nullptr, nullptr, false, false, false);
     }
 
     
@@ -7875,8 +7875,8 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
   if (finalURI) {
     
     onLocationChangeNeeded =
-        OnNewURI(finalURI, aOpenedChannel, nullptr, nullptr, nullptr, mLoadType,
-                 nullptr, false, true, false);
+        OnNewURI(finalURI, aOpenedChannel, nullptr, nullptr, nullptr, nullptr,
+                 false, true, false);
   }
 
   
@@ -8772,7 +8772,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   OnNewURI(aLoadState->URI(), nullptr, newURITriggeringPrincipal,
            newURIPrincipalToInherit, newURIPartitionedPrincipalToInherit,
-           mLoadType, newCsp, true, true, true);
+           newCsp, true, true, true);
 
   nsCOMPtr<nsIInputStream> postData;
   uint32_t cacheKey = 0;
@@ -10542,7 +10542,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                           nsIPrincipal* aTriggeringPrincipal,
                           nsIPrincipal* aPrincipalToInherit,
                           nsIPrincipal* aPartitionedPrincipalToInherit,
-                          uint32_t aLoadType, nsIContentSecurityPolicy* aCsp,
+                          nsIContentSecurityPolicy* aCsp,
                           bool aFireOnLocationChange, bool aAddToGlobalHistory,
                           bool aCloneSHChildren) {
   MOZ_ASSERT(aURI, "uri is null");
@@ -10562,7 +10562,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
     MOZ_LOG(gDocShellLog, LogLevel::Debug,
             ("nsDocShell[%p]::OnNewURI(\"%s\", [%s], 0x%x)\n", this,
-             aURI->GetSpecOrDefault().get(), chanName.get(), aLoadType));
+             aURI->GetSpecOrDefault().get(), chanName.get(), mLoadType));
   }
 #endif
 
@@ -10595,11 +10595,11 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
   }
 
   
-  bool updateGHistory = ShouldUpdateGlobalHistory(aLoadType);
+  bool updateGHistory = ShouldUpdateGlobalHistory(mLoadType);
 
   
   
-  bool updateSHistory = mBrowsingContext->ShouldUpdateSessionHistory(aLoadType);
+  bool updateSHistory = mBrowsingContext->ShouldUpdateSessionHistory(mLoadType);
 
   
   
@@ -10667,7 +10667,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
 
 
-  if (aChannel && IsForceReloadType(aLoadType)) {
+  if (aChannel && IsForceReloadType(mLoadType)) {
     MOZ_ASSERT(!updateSHistory || IsFrame(),
                "We shouldn't be updating session history for forced"
                " reloads unless we're in a newly created iframe!");
@@ -10695,7 +10695,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     
     
     
-    if (aLoadType == LOAD_REFRESH) {
+    if (mLoadType == LOAD_REFRESH) {
       ClearFrameHistory(mLSHE);
       ClearFrameHistory(mOSHE);
     }
@@ -10728,7 +10728,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     nsCOMPtr<nsIURI> previousURI;
     uint32_t previousFlags = 0;
 
-    if (aLoadType & LOAD_CMD_RELOAD) {
+    if (mLoadType & LOAD_CMD_RELOAD) {
       
       previousURI = aURI;
     } else {

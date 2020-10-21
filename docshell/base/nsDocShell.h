@@ -706,6 +706,7 @@ class nsDocShell final : public nsDocLoader,
   nsresult ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
                           nsACString& aNewHash, uint32_t aLoadType);
 
+ private:
   
   
   
@@ -724,10 +725,10 @@ class nsDocShell final : public nsDocLoader,
                 nsIPrincipal* aTriggeringPrincipal,
                 nsIPrincipal* aPrincipalToInherit,
                 nsIPrincipal* aPartitionedPrincipalToInehrit,
-                uint32_t aLoadType, nsIContentSecurityPolicy* aCsp,
-                bool aFireOnLocationChange, bool aAddToGlobalHistory,
-                bool aCloneSHChildren);
+                nsIContentSecurityPolicy* aCsp, bool aFireOnLocationChange,
+                bool aAddToGlobalHistory, bool aCloneSHChildren);
 
+ public:
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
