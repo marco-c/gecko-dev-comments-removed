@@ -237,15 +237,6 @@ extern JS_PUBLIC_API JSFunction* CompileFunctionUtf8(
 
 
 
-
-extern JS_PUBLIC_API bool InitScriptSourceElement(
-    JSContext* cx, Handle<JSScript*> script, Handle<JSObject*> element,
-    Handle<JSString*> elementAttrName = nullptr);
-
-
-
-
-
 extern JS_PUBLIC_API void ExposeScriptToDebugger(JSContext* cx,
                                                  Handle<JSScript*> script);
 
