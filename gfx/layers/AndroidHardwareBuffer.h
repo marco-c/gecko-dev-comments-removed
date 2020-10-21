@@ -126,6 +126,11 @@ class AndroidHardwareBuffer
 
   ipc::FileDescriptor GetAcquireFence();
 
+  RefPtr<TextureClient> GetTextureClientOfSharedSurfaceTextureData(
+      const layers::SurfaceDescriptor& aDesc, const gfx::SurfaceFormat aFormat,
+      const gfx::IntSize& aSize, const TextureFlags aFlags,
+      LayersIPCChannel* aAllocator);
+
   const gfx::IntSize mSize;
   const uint32_t mStride;
   const gfx::SurfaceFormat mFormat;
@@ -171,6 +176,14 @@ class AndroidHardwareBuffer
   
   
   ipc::FileDescriptor mAcquireFenceFd;
+
+  
+  
+  
+  
+  
+  
+  RefPtr<TextureClient> mTextureClientOfSharedSurfaceTextureData;
 
   static uint64_t GetNextId();
 

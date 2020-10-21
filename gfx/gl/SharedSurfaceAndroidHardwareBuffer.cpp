@@ -122,25 +122,12 @@ Maybe<layers::SurfaceDescriptor>
 SharedSurface_AndroidHardwareBuffer::ToSurfaceDescriptor() {
   
   
-  int fd[2] = {};
-  if (socketpair(AF_UNIX, SOCK_SEQPACKET, 0, fd) != 0) {
-    return Nothing();
-  }
-
-  UniqueFileHandle readerFd(fd[0]);
-  UniqueFileHandle writerFd(fd[1]);
-
   
   
   
   
-  int ret = mAndroidHardwareBuffer->SendHandleToUnixSocket(writerFd.get());
-  if (ret < 0) {
-    return Nothing();
-  }
-
   return Some(layers::SurfaceDescriptorAndroidHardwareBuffer(
-      ipc::FileDescriptor(readerFd.release()), mAndroidHardwareBuffer->mId,
+      ipc::FileDescriptor(), mAndroidHardwareBuffer->mId,
       mAndroidHardwareBuffer->mSize, mAndroidHardwareBuffer->mFormat));
 }
 
