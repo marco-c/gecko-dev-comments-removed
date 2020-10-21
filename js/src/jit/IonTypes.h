@@ -243,6 +243,12 @@ enum class BailoutKind : uint8_t {
   HasGetterSetterGuard,
 
   
+  DOMExpandoValueGenerationGuard,
+
+  
+  DOMExpandoMissingOrShapeGuard,
+
+  
   UninitializedLexical,
 
   
@@ -370,6 +376,10 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "PackedArrayGuard";
     case BailoutKind::HasGetterSetterGuard:
       return "HasGetterSetterGuard";
+    case BailoutKind::DOMExpandoValueGenerationGuard:
+      return "DOMExpandoValueGenerationGuard";
+    case BailoutKind::DOMExpandoMissingOrShapeGuard:
+      return "DOMExpandoMissingOrShapeGuard";
     case BailoutKind::UninitializedLexical:
       return "UninitializedLexical";
     case BailoutKind::IonExceptionDebugMode:
