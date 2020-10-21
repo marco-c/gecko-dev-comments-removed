@@ -30,11 +30,10 @@ namespace wasm {
 MOZ_MUST_USE bool BaselinePlatformSupport();
 
 
-MOZ_MUST_USE bool BaselineCompileFunctions(const ModuleEnvironment& moduleEnv,
-                                           LifoAlloc& lifo,
-                                           const FuncCompileInputVector& inputs,
-                                           CompiledCode* code,
-                                           UniqueChars* error);
+MOZ_MUST_USE bool BaselineCompileFunctions(
+    const ModuleEnvironment& moduleEnv, const CompilerEnvironment& compilerEnv,
+    LifoAlloc& lifo, const FuncCompileInputVector& inputs, CompiledCode* code,
+    UniqueChars* error);
 
 class BaseLocalIter {
  private:

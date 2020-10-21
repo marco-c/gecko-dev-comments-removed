@@ -32,6 +32,7 @@ MOZ_MUST_USE bool IonPlatformSupport();
 
 
 MOZ_MUST_USE bool IonCompileFunctions(const ModuleEnvironment& moduleEnv,
+                                      const CompilerEnvironment& compilerEnv,
                                       LifoAlloc& lifo,
                                       const FuncCompileInputVector& inputs,
                                       CompiledCode* code, UniqueChars* error);
