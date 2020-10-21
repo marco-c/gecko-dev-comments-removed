@@ -3,7 +3,7 @@
 
 
 const ObjectInspector = require("./components/ObjectInspector");
-const utils = require("./utils");
+const utils = require("./utils/index");
 const reducer = require("./reducer");
 const actions = require("./actions");
 

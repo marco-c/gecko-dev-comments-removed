@@ -2,7 +2,7 @@
 
 
 
-function documentHasSelection(doc = document): boolean {
+function documentHasSelection(doc = document) {
   const selection = doc.defaultView.getSelection();
   if (!selection) {
     return false;

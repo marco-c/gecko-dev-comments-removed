@@ -2,13 +2,13 @@
 
 
 
-const PropTypes = require("prop-types");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 const { wrapRender } = require("../reps/rep-utils");
 const { MODE } = require("../reps/constants");
 const { ModePropType } = require("../reps/array");
 
-const dom = require("react-dom-factories");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { span } = dom;
 
 GripLengthBubble.propTypes = {

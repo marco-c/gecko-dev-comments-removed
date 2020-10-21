@@ -2,16 +2,15 @@
 
 
 
-const { Component } = require("react");
-const dom = require("react-dom-factories");
+const { Component } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
 
-import Services from "devtools-services";
-const { appinfo } = Services;
-const isMacOS = appinfo.OS === "Darwin";
+const Services = require("Services");
+const isMacOS = Services.appinfo.OS === "Darwin";
 
 const { MODE } = require("../../reps/constants");
 
-const Utils = require("../utils");
+const Utils = require("../utils/index");
 
 const {
   getValue,

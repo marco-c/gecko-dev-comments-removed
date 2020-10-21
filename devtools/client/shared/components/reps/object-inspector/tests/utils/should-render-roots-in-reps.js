@@ -2,7 +2,7 @@
 
 
 
-const Utils = require("../../utils");
+const Utils = require("../../utils/index");
 const { shouldRenderRootsInReps } = Utils;
 
 const nullStubs = require("../../../reps/stubs/null");

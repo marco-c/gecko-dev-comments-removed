@@ -2,7 +2,7 @@
 
 
 
-const Utils = require("../../utils");
+const Utils = require("../../utils/index");
 const { createNode, getChildren, makeNodesForEntries } = Utils.node;
 
 const { shouldLoadItemEntries } = Utils.loadProperties;
