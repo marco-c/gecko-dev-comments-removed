@@ -180,6 +180,9 @@ class RenderThread final {
   void SetClearColor(wr::WindowId aWindowId, wr::ColorF aColor);
 
   
+  void SetProfilerUI(wr::WindowId aWindowId, nsCString aUI);
+
+  
   void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId,
                            float aWidth, float aHeight);
 
