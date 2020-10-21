@@ -1028,9 +1028,11 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   void NotifyPaintStatusReset();
   void NotifyDOMContentFlushed();
 
-  bool UsesExChUnits() const { return mUsesExChUnits; }
+  bool UsesFontMetricsFromStyle() const { return mUsesFontMetricsFromStyle; }
 
-  void SetUsesExChUnits(bool aValue) { mUsesExChUnits = aValue; }
+  void SetUsesFontMetricsFromStyle(bool aValue) {
+    mUsesFontMetricsFromStyle = aValue;
+  }
 
   bool IsDeviceSizePageSize();
 
@@ -1293,7 +1295,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   
-  unsigned mUsesExChUnits : 1;
+  unsigned mUsesFontMetricsFromStyle : 1;
 
   
   unsigned mCounterStylesDirty : 1;

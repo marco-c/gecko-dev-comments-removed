@@ -18,6 +18,12 @@ pub struct FontMetrics {
     pub x_height: Option<Length>,
     
     pub zero_advance_measure: Option<Length>,
+    
+    
+    pub script_percent_scale_down: Option<f32>,
+    
+    
+    pub script_script_percent_scale_down: Option<f32>,
 }
 
 
@@ -38,6 +44,7 @@ pub trait FontMetricsProvider {
         _context: &crate::values::computed::Context,
         _base_size: crate::values::specified::length::FontBaseSize,
         _orientation: FontMetricsOrientation,
+        _retrieve_math_scales: bool,
     ) -> FontMetrics {
         Default::default()
     }
