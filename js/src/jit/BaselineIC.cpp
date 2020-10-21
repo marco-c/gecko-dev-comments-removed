@@ -1602,33 +1602,8 @@ bool DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame,
   MOZ_ASSERT(obj->group() == group);
 #endif
 
-  
-  
-  bool addType = true;
-  if (MOZ_UNLIKELY(obj->is<TypedObject>()) && value.isNullOrUndefined()) {
-    StructTypeDescr* structDescr =
-        &obj->as<TypedObject>().typeDescr().as<StructTypeDescr>();
-    size_t fieldIndex;
-    MOZ_ALWAYS_TRUE(structDescr->fieldIndex(id, &fieldIndex));
-
-    TypeDescr* fieldDescr = &structDescr->fieldDescr(fieldIndex);
-    DebugOnly<ReferenceType> type = fieldDescr->as<ReferenceTypeDescr>().type();
-    MOZ_ASSERT(type == ReferenceType::TYPE_OBJECT ||
-               type == ReferenceType::TYPE_WASM_ANYREF);
-
-    
-    
-    
-    
-    if (value.isNull()) {
-      addType = false;
-    }
-  }
-
-  if (MOZ_LIKELY(addType)) {
-    JSObject* maybeSingleton = obj->isSingleton() ? obj.get() : nullptr;
-    AddTypePropertyId(cx, group, maybeSingleton, id, value);
-  }
+  JSObject* maybeSingleton = obj->isSingleton() ? obj.get() : nullptr;
+  AddTypePropertyId(cx, group, maybeSingleton, id, value);
 
   if (MOZ_UNLIKELY(
           !stub->addUpdateStubForValue(cx, script, obj, group, id, value))) {
