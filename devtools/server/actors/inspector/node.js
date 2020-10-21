@@ -103,12 +103,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     this.wasDisplayed = this.isDisplayed;
     this.wasScrollable = wasScrollable;
 
-    
-    
-    const OVERFLOW_DEBUGGING_ENABLED = Services.prefs.getBoolPref(
-      "devtools.overflow.debugging.enabled"
-    );
-    if (OVERFLOW_DEBUGGING_ENABLED && wasScrollable) {
+    if (wasScrollable) {
       this.walker.updateOverflowCausingElements(
         this,
         this.walker.overflowCausingElementsMap

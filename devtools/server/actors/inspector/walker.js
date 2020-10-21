@@ -214,13 +214,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     
     
-    this.isOverflowDebuggingEnabled = Services.prefs.getBoolPref(
-      "devtools.overflow.debugging.enabled",
-      false
-    );
-
-    
-    
     this.overflowCausingElementsMap = new Map();
 
     this.showAllAnonymousContent = options.showAllAnonymousContent;
@@ -568,7 +561,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         actor.wasScrollable = isScrollable;
       }
 
-      if (this.isOverflowDebuggingEnabled && isScrollable) {
+      if (isScrollable) {
         this.updateOverflowCausingElements(
           actor,
           currentOverflowCausingElementsMap
@@ -576,24 +569,22 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
     }
 
-    if (this.isOverflowDebuggingEnabled) {
-      
-      
-      const overflowStateChanges = [...currentOverflowCausingElementsMap.keys()]
-        .filter(node => !this.overflowCausingElementsMap.has(node))
-        .concat(
-          [...this.overflowCausingElementsMap.keys()].filter(
-            node => !currentOverflowCausingElementsMap.has(node)
-          )
+    
+    
+    const overflowStateChanges = [...currentOverflowCausingElementsMap.keys()]
+      .filter(node => !this.overflowCausingElementsMap.has(node))
+      .concat(
+        [...this.overflowCausingElementsMap.keys()].filter(
+          node => !currentOverflowCausingElementsMap.has(node)
         )
-        .filter(node => this.hasNode(node))
-        .map(node => this.getNode(node));
+      )
+      .filter(node => this.hasNode(node))
+      .map(node => this.getNode(node));
 
-      this.overflowCausingElementsMap = currentOverflowCausingElementsMap;
+    this.overflowCausingElementsMap = currentOverflowCausingElementsMap;
 
-      if (overflowStateChanges.length) {
-        this.emit("overflow-change", overflowStateChanges);
-      }
+    if (overflowStateChanges.length) {
+      this.emit("overflow-change", overflowStateChanges);
     }
 
     if (displayTypeChanges.length) {
