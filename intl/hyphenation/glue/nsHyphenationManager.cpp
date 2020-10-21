@@ -204,7 +204,8 @@ void nsHyphenationManager::LoadPatternList() {
 
 
 static already_AddRefed<nsAtom> LocaleAtomFromPath(const nsCString& aPath) {
-  MOZ_ASSERT(StringEndsWith(aPath, ".hyf"_ns));
+  MOZ_ASSERT(StringEndsWith(aPath, ".hyf"_ns) ||
+             StringEndsWith(aPath, ".dic"_ns));
   nsCString locale(aPath);
   locale.Truncate(locale.Length() - 4);      
   locale.Cut(0, locale.RFindChar('/') + 1);  
@@ -233,7 +234,7 @@ void nsHyphenationManager::LoadPatternListFromOmnijar(Omnijar::Type aType) {
   }
 
   nsZipFind* find;
-  zip->FindInit("hyphenation/hyph_*.hyf", &find);
+  zip->FindInit("hyphenation/hyph_*.*", &find);
   if (!find) {
     return;
   }
@@ -285,7 +286,7 @@ void nsHyphenationManager::LoadPatternListFromDir(nsIFile* aDir) {
     nsAutoString dictName;
     file->GetLeafName(dictName);
     NS_ConvertUTF16toUTF8 path(dictName);
-    if (!StringEndsWith(path, ".hyf"_ns)) {
+    if (!(StringEndsWith(path, ".hyf"_ns) || StringEndsWith(path, ".dic"_ns))) {
       continue;
     }
     RefPtr<nsAtom> localeAtom = LocaleAtomFromPath(path);
@@ -333,16 +334,17 @@ void nsHyphenationManager::ShareHyphDictToProcess(
   
   *aOutHandle = ipc::SharedMemoryBasic::NULLHandle();
   *aOutSize = 0;
-  nsCOMPtr<nsIJARURI> jar = do_QueryInterface(aURI);
-  if (!jar) {
-    MOZ_ASSERT_UNREACHABLE("not a JAR resource");
-    return;
-  }
 
   
   
   nsCString path;
-  jar->GetJAREntry(path);
+  nsCOMPtr<nsIJARURI> jar = do_QueryInterface(aURI);
+  if (jar) {
+    jar->GetJAREntry(path);
+  } else {
+    aURI->GetFilePath(path);
+  }
+
   RefPtr<nsAtom> localeAtom = LocaleAtomFromPath(path);
   RefPtr<nsHyphenator> hyph = GetHyphenator(localeAtom);
   if (!hyph) {

@@ -25,6 +25,11 @@ void DefaultDelete<const HyphDic>::operator()(const HyphDic* aHyph) const {
   mapped_hyph_free_dictionary(const_cast<HyphDic*>(aHyph));
 }
 
+void DefaultDelete<const CompiledData>::operator()(
+    const CompiledData* aData) const {
+  mapped_hyph_free_compiled_data(const_cast<CompiledData*>(aData));
+}
+
 static const void* GetItemPtrFromJarURI(nsIJARURI* aJAR, uint32_t* aLength) {
   
   
@@ -87,8 +92,33 @@ already_AddRefed<ipc::SharedMemoryBasic> GetHyphDictFromParent(
   return shm.forget();
 }
 
+static already_AddRefed<ipc::SharedMemoryBasic> CopyToShmem(
+    const CompiledData* aData) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  
+  
+  
+  uint32_t size = mapped_hyph_compiled_data_size(aData);
+  RefPtr<ipc::SharedMemoryBasic> shm = new ipc::SharedMemoryBasic();
+  if (!shm->Create(size)) {
+    return nullptr;
+  }
+  if (!shm->Map(size)) {
+    return nullptr;
+  }
+  char* buffer = static_cast<char*>(shm->memory());
+  if (!buffer) {
+    return nullptr;
+  }
+
+  memcpy(buffer, mapped_hyph_compiled_data_ptr(aData), size);
+
+  return shm.forget();
+}
+
 static already_AddRefed<ipc::SharedMemoryBasic> LoadInShmemFromURI(
-    nsIURI* aURI, uint32_t* aLength) {
+    nsIURI* aURI, uint32_t* aLength, bool aPrecompiled) {
   MOZ_ASSERT(XRE_IsParentProcess());
   nsCOMPtr<nsIChannel> channel;
   if (NS_FAILED(NS_NewChannel(
@@ -110,44 +140,110 @@ static already_AddRefed<ipc::SharedMemoryBasic> LoadInShmemFromURI(
     return nullptr;
   }
 
-  
-  
-  
-  RefPtr<ipc::SharedMemoryBasic> shm = new ipc::SharedMemoryBasic();
-  if (!shm->Create(available)) {
-    return nullptr;
-  }
-  if (!shm->Map(available)) {
-    return nullptr;
-  }
-  char* buffer = static_cast<char*>(shm->memory());
-  if (!buffer) {
-    return nullptr;
+  if (aPrecompiled) {
+    RefPtr<ipc::SharedMemoryBasic> shm = new ipc::SharedMemoryBasic();
+    if (!shm->Create(available)) {
+      return nullptr;
+    }
+    if (!shm->Map(available)) {
+      return nullptr;
+    }
+    char* buffer = static_cast<char*>(shm->memory());
+    if (!buffer) {
+      return nullptr;
+    }
+
+    uint32_t bytesRead = 0;
+    if (NS_FAILED(instream->Read(buffer, available, &bytesRead)) ||
+        bytesRead != available) {
+      return nullptr;
+    }
+
+    if (!mapped_hyph_is_valid_hyphenator(
+            reinterpret_cast<const uint8_t*>(buffer), bytesRead)) {
+      return nullptr;
+    }
+
+    *aLength = bytesRead;
+    return shm.forget();
   }
 
+  
+  
+  auto buffer = MakeUnique<char[]>(available);
   uint32_t bytesRead = 0;
-  if (NS_FAILED(instream->Read(buffer, available, &bytesRead)) ||
+  if (NS_FAILED(instream->Read(buffer.get(), available, &bytesRead)) ||
       bytesRead != available) {
     return nullptr;
   }
-  *aLength = bytesRead;
-  return shm.forget();
+
+  UniquePtr<const CompiledData> data(mapped_hyph_compile_buffer(
+      reinterpret_cast<const uint8_t*>(buffer.get()), bytesRead, false));
+  if (data) {
+    *aLength = mapped_hyph_compiled_data_size(data.get());
+    return CopyToShmem(data.get());
+  }
+
+  return nullptr;
 }
 
 nsHyphenator::nsHyphenator(nsIURI* aURI, bool aHyphenateCapitalized)
     : mDict(static_cast<const void*>(nullptr)),
       mDictSize(0),
       mHyphenateCapitalized(aHyphenateCapitalized) {
+  
+  
+  
+  nsAutoCString path;
+  aURI->GetFilePath(path);
+  bool precompiled = StringEndsWith(path, ".hyf"_ns);
+
+  
+  
+  
+  if (!precompiled && !XRE_IsParentProcess()) {
+    uint32_t length;
+    RefPtr<ipc::SharedMemoryBasic> shm = GetHyphDictFromParent(aURI, &length);
+    if (shm) {
+      
+      
+      mDictSize = length;
+      mDict = AsVariant(shm);
+    }
+    return;
+  }
+
   nsCOMPtr<nsIJARURI> jar = do_QueryInterface(aURI);
   if (jar) {
     
     
-    const void* ptr = GetItemPtrFromJarURI(jar, &mDictSize);
+    uint32_t length;
+    const void* ptr = GetItemPtrFromJarURI(jar, &length);
     if (ptr) {
-      if (mapped_hyph_is_valid_hyphenator(static_cast<const uint8_t*>(ptr),
-                                          mDictSize)) {
-        mDict = AsVariant(ptr);
-        return;
+      if (precompiled) {
+        
+        
+        if (mapped_hyph_is_valid_hyphenator(static_cast<const uint8_t*>(ptr),
+                                            length)) {
+          mDictSize = length;
+          mDict = AsVariant(ptr);
+          return;
+        }
+      } else {
+        
+        
+        
+        MOZ_ASSERT(XRE_IsParentProcess());
+        UniquePtr<const CompiledData> data(mapped_hyph_compile_buffer(
+            static_cast<const uint8_t*>(ptr), length, false));
+        if (data) {
+          RefPtr<ipc::SharedMemoryBasic> shm = CopyToShmem(data.get());
+          if (shm) {
+            mDictSize = mapped_hyph_compiled_data_size(data.get());
+            mDict = AsVariant(shm);
+            return;
+          }
+        }
       }
     } else {
       
@@ -156,17 +252,18 @@ nsHyphenator::nsHyphenator(nsIURI* aURI, bool aHyphenateCapitalized)
       
       RefPtr<ipc::SharedMemoryBasic> shm;
       if (XRE_IsParentProcess()) {
-        shm = LoadInShmemFromURI(aURI, &mDictSize);
-        if (shm && mapped_hyph_is_valid_hyphenator(
-                       static_cast<const uint8_t*>(shm->memory()), mDictSize)) {
+        shm = LoadInShmemFromURI(aURI, &length, precompiled);
+        if (shm) {
+          mDictSize = length;
           mDict = AsVariant(shm);
           return;
         }
       } else {
-        shm = GetHyphDictFromParent(aURI, &mDictSize);
+        shm = GetHyphDictFromParent(aURI, &length);
         if (shm) {
           
           
+          mDictSize = length;
           mDict = AsVariant(shm);
           return;
         }
@@ -174,14 +271,15 @@ nsHyphenator::nsHyphenator(nsIURI* aURI, bool aHyphenateCapitalized)
     }
   }
 
+  
+  
+  
   if (net::SchemeIsFile(aURI)) {
     
     
     
     
     
-    nsAutoCString path;
-    aURI->GetFilePath(path);
 #if XP_WIN
     
     
@@ -191,13 +289,35 @@ nsHyphenator::nsHyphenator(nsIURI* aURI, bool aHyphenateCapitalized)
       path.Cut(0, 1);
     }
 #endif
-    UniquePtr<const HyphDic> dic(mapped_hyph_load_dictionary(path.get()));
-    if (dic) {
-      mDict = AsVariant(std::move(dic));
-      return;
+    if (precompiled) {
+      
+      UniquePtr<const HyphDic> dic(mapped_hyph_load_dictionary(path.get()));
+      if (dic) {
+        mDict = AsVariant(std::move(dic));
+        return;
+      }
+    } else {
+      
+      
+      
+      MOZ_ASSERT(XRE_IsParentProcess());
+      MOZ_ASSERT(StringEndsWith(path, ".dic"_ns));
+      UniquePtr<const CompiledData> data(
+          mapped_hyph_compile_file(path.get(), false));
+      if (data) {
+        RefPtr<ipc::SharedMemoryBasic> shm = CopyToShmem(data.get());
+        if (shm) {
+          mDictSize = mapped_hyph_compiled_data_size(data.get());
+          mDict = AsVariant(shm);
+          return;
+        }
+      }
     }
   }
 
+  
+  
+  
   nsAutoCString msg;
   aURI->GetSpec(msg);
   msg.Insert("Invalid hyphenation resource: ", 0);
