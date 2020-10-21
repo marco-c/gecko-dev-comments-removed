@@ -738,11 +738,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
-  static void UpdateWebRenderProfilerUI();
-
-  
-
-
   Maybe<CollectedFramesParams> WrapCollectedFrames(CollectedFrames&& aFrames);
 
  protected:

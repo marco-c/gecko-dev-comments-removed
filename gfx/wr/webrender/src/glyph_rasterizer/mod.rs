@@ -19,7 +19,7 @@ use crate::texture_cache::{TextureCache, TextureCacheHandle, Eviction};
 use crate::gpu_cache::GpuCache;
 use crate::render_task_graph::RenderTaskGraph;
 use crate::render_task_cache::RenderTaskCache;
-use crate::profiler::{self, TransactionProfile};
+use crate::profiler::TextureCacheProfileCounters;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use rayon::ThreadPool;
 use rayon::prelude::*;
@@ -100,7 +100,6 @@ impl GlyphRasterizer {
             
             
             self.pending_glyph_count += 1;
-            self.glyph_request_count += 1;
 
             
             
@@ -220,10 +219,8 @@ impl GlyphRasterizer {
         gpu_cache: &mut GpuCache,
         _: &mut RenderTaskCache,
         _: &mut RenderTaskGraph,
-        profile: &mut TransactionProfile,
+        _: &mut TextureCacheProfileCounters,
     ) {
-        profile.start_time(profiler::GLYPH_RESOLVE_TIME);
-
         
         let mut pending_glyph_requests = mem::replace(
             &mut self.pending_glyph_requests,
@@ -243,11 +240,6 @@ impl GlyphRasterizer {
         self.pending_glyph_requests = pending_glyph_requests;
         debug_assert_eq!(self.pending_glyph_count, 0);
         debug_assert!(self.pending_glyph_requests.is_empty());
-
-        if self.glyph_request_count > 0 {
-            profile.set(profiler::RASTERIZED_GLYPHS, self.glyph_request_count);
-            self.glyph_request_count = 0;
-        }
 
         profile_scope!("resolve_glyphs");
         
@@ -315,8 +307,6 @@ impl GlyphRasterizer {
         
         
         self.remove_dead_fonts();
-
-        profile.end_time(profiler::GLYPH_RESOLVE_TIME);
     }
 }
 
@@ -947,9 +937,6 @@ pub struct GlyphRasterizer {
     pending_glyph_jobs: usize,
 
     
-    glyph_request_count: usize,
-
-    
     pending_glyph_requests: FastHashMap<FontInstance, SmallVec<[GlyphKey; 16]>>,
 
     
@@ -993,7 +980,6 @@ impl GlyphRasterizer {
             font_contexts: Arc::new(font_context),
             pending_glyph_jobs: 0,
             pending_glyph_count: 0,
-            glyph_request_count: 0,
             glyph_rx,
             glyph_tx,
             workers,
@@ -1074,7 +1060,6 @@ impl GlyphRasterizer {
         
         self.pending_glyph_jobs = 0;
         self.pending_glyph_count = 0;
-        self.glyph_request_count = 0;
         self.fonts_to_remove.clear();
         self.font_instances_to_remove.clear();
     }
@@ -1137,7 +1122,7 @@ mod test_glyph_rasterizer {
         use crate::gpu_cache::GpuCache;
         use crate::render_task_cache::RenderTaskCache;
         use crate::render_task_graph::{RenderTaskGraph, RenderTaskGraphCounters};
-        use crate::profiler::TransactionProfile;
+        use crate::profiler::TextureCacheProfileCounters;
         use api::{FontKey, FontInstanceKey, FontSize, FontTemplate, FontRenderMode,
                   IdNamespace, ColorU};
         use api::units::DevicePoint;
@@ -1208,7 +1193,7 @@ mod test_glyph_rasterizer {
             &mut gpu_cache,
             &mut render_task_cache,
             &mut render_task_tree,
-            &mut TransactionProfile::new(),
+            &mut TextureCacheProfileCounters::new(),
         );
     }
 
