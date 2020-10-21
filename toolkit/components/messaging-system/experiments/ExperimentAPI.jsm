@@ -123,7 +123,9 @@ const ExperimentAPI = {
       [recipe] = await this._remoteSettingsClient.get({
         
         syncIfEmpty: false,
-        filters: { slug },
+        filters: {
+          "arguments.slug": slug,
+        },
       });
     } catch (e) {
       Cu.reportError(e);
@@ -150,7 +152,7 @@ const ExperimentAPI = {
     }
 
     const recipe = await this.getRecipe(slug);
-    return recipe?.branches;
+    return recipe?.arguments.branches;
   },
 };
 
