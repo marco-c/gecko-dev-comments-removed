@@ -34,6 +34,7 @@
 #include "nsDisplayList.h"
 #include "nsRefreshDriver.h"     
 #include "mozilla/Assertions.h"  
+#include "mozilla/DisplayPortUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
@@ -996,7 +997,7 @@ void nsSliderFrame::StartAPZDrag(WidgetGUIEvent* aEvent) {
     return;
   }
 
-  if (!nsLayoutUtils::HasDisplayPort(scrollableContent)) {
+  if (!DisplayPortUtils::HasDisplayPort(scrollableContent)) {
     return;
   }
 

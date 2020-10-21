@@ -18,6 +18,7 @@
 
 #include "gfxContext.h"
 #include "gfxUtils.h"
+#include "mozilla/DisplayPortUtils.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/Selection.h"
@@ -487,7 +488,7 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
   bool inPartialUpdate =
       aBuilder->IsRetainingDisplayList() && aBuilder->IsPartialUpdate();
   if (StaticPrefs::apz_allow_zooming() &&
-      nsLayoutUtils::IsFixedPosFrameInDisplayPort(aFrame) &&
+      DisplayPortUtils::IsFixedPosFrameInDisplayPort(aFrame) &&
       aBuilder->IsPaintingToWindow() && !inPartialUpdate) {
     dirtyRectRelativeToDirtyFrame =
         nsRect(nsPoint(0, 0), aFrame->GetParent()->GetSize());
@@ -511,7 +512,7 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
         
         
         
-        if (nsLayoutUtils::GetHighResolutionDisplayPort(
+        if (DisplayPortUtils::GetHighResolutionDisplayPort(
                 rootScrollFrame->GetContent(), &displayport)) {
           dirtyRectRelativeToDirtyFrame = displayport;
         }
@@ -1570,14 +1571,14 @@ nsDisplayListBuilder::AGRState nsDisplayListBuilder::IsAnimatedGeometryRoot(
   }
 
   if (!aFrame->GetParent() &&
-      nsLayoutUtils::ViewportHasDisplayPort(aFrame->PresContext())) {
+      DisplayPortUtils::ViewportHasDisplayPort(aFrame->PresContext())) {
     
     
     return AGR_YES;
   }
 
   
-  if (nsLayoutUtils::IsFixedPosFrameInDisplayPort(aFrame)) {
+  if (DisplayPortUtils::IsFixedPosFrameInDisplayPort(aFrame)) {
     return AGR_YES;
   }
 
@@ -2351,7 +2352,7 @@ FrameLayerBuilder* nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
     if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
       nsIContent* content = rootScrollFrame->GetContent();
       if (content) {
-        usingDisplayport = nsLayoutUtils::HasDisplayPort(content);
+        usingDisplayport = DisplayPortUtils::HasDisplayPort(content);
       }
     }
     if (usingDisplayport &&
@@ -6493,7 +6494,7 @@ void nsDisplaySubDocument::Disown() {
 static bool UseDisplayPortForViewport(nsDisplayListBuilder* aBuilder,
                                       nsIFrame* aFrame) {
   return aBuilder->IsPaintingToWindow() &&
-         nsLayoutUtils::ViewportHasDisplayPort(aFrame->PresContext());
+         DisplayPortUtils::ViewportHasDisplayPort(aFrame->PresContext());
 }
 
 nsRect nsDisplaySubDocument::GetBounds(nsDisplayListBuilder* aBuilder,
@@ -6521,9 +6522,9 @@ bool nsDisplaySubDocument::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   nsRect displayport;
   nsIFrame* rootScrollFrame = mFrame->PresShell()->GetRootScrollFrame();
   MOZ_ASSERT(rootScrollFrame);
-  Unused << nsLayoutUtils::GetDisplayPort(rootScrollFrame->GetContent(),
-                                          &displayport,
-                                          DisplayportRelativeTo::ScrollFrame);
+  Unused << DisplayPortUtils::GetDisplayPort(
+      rootScrollFrame->GetContent(), &displayport,
+      DisplayportRelativeTo::ScrollFrame);
 
   nsRegion childVisibleRegion;
   
@@ -7379,7 +7380,7 @@ void nsDisplayTransform::SetReferenceFrameToAncestor(
   nsIFrame* outerFrame = nsLayoutUtils::GetCrossDocParentFrame(mFrame);
   mReferenceFrame = aBuilder->FindReferenceFrameFor(outerFrame);
   mToReferenceFrame = mFrame->GetOffsetToCrossDoc(mReferenceFrame);
-  if (nsLayoutUtils::IsFixedPosFrameInDisplayPort(mFrame)) {
+  if (DisplayPortUtils::IsFixedPosFrameInDisplayPort(mFrame)) {
     
     
     
