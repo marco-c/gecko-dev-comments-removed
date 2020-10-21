@@ -1490,8 +1490,18 @@ impl Device {
 
         info!("GL texture cache {:?}, bgra {:?} swizzle {:?}, texture storage {:?}, depth {:?}",
             color_formats, bgra_formats, bgra8_sampling_swizzle, texture_storage_usage, depth_format);
-        let supports_copy_image_sub_data = supports_extension(&extensions, "GL_EXT_copy_image") ||
-            supports_extension(&extensions, "GL_ARB_copy_image");
+
+        
+        
+        
+        
+        
+        let supports_copy_image_sub_data = if renderer_name.starts_with("Mali") {
+            false
+        } else {
+            supports_extension(&extensions, "GL_EXT_copy_image") ||
+            supports_extension(&extensions, "GL_ARB_copy_image")
+        };
 
         
         
