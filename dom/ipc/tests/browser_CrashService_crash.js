@@ -7,6 +7,7 @@
 
 
 SimpleTest.requestFlakyTimeout("untriaged");
+SimpleTest.requestCompleteLog();
 
 add_task(async function() {
   let tab = await BrowserTestUtils.openNewForegroundTab({
