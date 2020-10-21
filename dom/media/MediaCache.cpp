@@ -2766,6 +2766,7 @@ void MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal) {
   mCacheSuspended = true;
   mChannelEnded = true;
   mClient->CacheClientSuspend();
+  mMediaCache->QueueSuspendedStatusUpdate(lock, mResourceID);
 
   
   mMediaCache->OpenStream(lock, this, true );
