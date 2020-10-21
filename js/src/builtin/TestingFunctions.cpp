@@ -44,7 +44,7 @@
 #  include "frontend/TokenStream.h"
 #endif
 #include "frontend/BytecodeCompilation.h"
-#include "frontend/CompilationInfo.h"
+#include "frontend/CompilationInfo.h"  
 #include "gc/Allocator.h"
 #include "gc/Zone.h"
 #include "jit/BaselineJIT.h"
@@ -4964,21 +4964,21 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   options.setFileAndLine(filename, lineno);
   options.setForceFullParse();
 
-  Rooted<frontend::CompilationInfo> compilationInfo(
-      cx, frontend::CompilationInfo(cx, options));
-  if (!compilationInfo.get().input.initForGlobal(cx)) {
+  Rooted<frontend::CompilationInfoVector> compilationInfos(
+      cx, frontend::CompilationInfoVector(cx, options));
+  if (!compilationInfos.get().initial.input.initForGlobal(cx)) {
     return false;
   }
 
   
   JS::TranscodeRange xdrRange(src->dataPointer(), src->byteLength());
-  if (!compilationInfo.get().deserializeStencils(cx, xdrRange)) {
+  if (!compilationInfos.get().deserializeStencils(cx, xdrRange)) {
     return false;
   }
 
   
   frontend::CompilationGCOutput output(cx);
-  if (!compilationInfo.get().instantiateStencils(cx, output)) {
+  if (!compilationInfos.get().instantiateStencils(cx, output)) {
     return false;
   }
 
