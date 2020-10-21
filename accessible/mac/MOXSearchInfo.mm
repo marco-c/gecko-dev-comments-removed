@@ -77,9 +77,25 @@ using namespace mozilla::a11y;
   AccessibleOrProxy geckoRootAcc = [self rootGeckoAccessible];
   AccessibleOrProxy geckoStartAcc = [self startGeckoAccessible];
   Pivot p = Pivot(geckoRootAcc);
-  AccessibleOrProxy match = mSearchForward ? p.Next(geckoStartAcc, rule)
-                                           : p.Prev(geckoStartAcc, rule);
+  AccessibleOrProxy match;
+  if (mSearchForward) {
+    match = p.Next(geckoStartAcc, rule);
+  } else {
+    
+    if (geckoRootAcc == geckoStartAcc) {
+      
+      match = p.Last(rule);
+    } else {
+      match = p.Prev(geckoStartAcc, rule);
+    }
+  }
+
   while (!match.IsNull() && resultLimit != 0) {
+    if (!mSearchForward && match == geckoRootAcc) {
+      
+      break;
+    }
+
     
     
     
