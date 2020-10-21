@@ -96,6 +96,12 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
+    [noscript, must_use] readonly attribute bool isAuthChannel;
+
+    
+
+
+
     const unsigned long THIRD_PARTY_FORCE_ALLOW = 1 << 0;
 
     
