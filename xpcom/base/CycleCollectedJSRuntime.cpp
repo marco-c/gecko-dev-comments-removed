@@ -437,12 +437,6 @@ void TraversalTracer::onChild(const JS::GCCellPtr& aThing) {
   }
 }
 
-static void NoteJSChildGrayWrapperShim(void* aData, JS::GCCellPtr aThing,
-                                       const JS::AutoRequireNoGC& nogc) {
-  TraversalTracer* trc = static_cast<TraversalTracer*>(aData);
-  trc->onChild(aThing);
-}
-
 
 
 
@@ -917,7 +911,7 @@ void CycleCollectedJSRuntime::TraverseZone(
 
 
   TraversalTracer trc(mJSRuntime, aCb);
-  js::VisitGrayWrapperTargets(aZone, NoteJSChildGrayWrapperShim, &trc);
+  js::TraceGrayWrapperTargets(&trc, aZone);
 
   
 
