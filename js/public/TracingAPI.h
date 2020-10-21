@@ -123,17 +123,13 @@ class JS_PUBLIC_API JSTracer {
   JSTracer(JSRuntime* rt, JS::TracerKind kind,
            JS::WeakMapTraceAction weakMapAction =
                JS::WeakMapTraceAction::TraceValues)
-      : runtime_(rt),
-        kind_(kind),
-        weakMapAction_(weakMapAction),
-        traceWeakEdges_(true),
-#ifdef DEBUG
-        checkEdges_(true),
-#endif
-        canSkipJsids_(false) {
-  }
+      : runtime_(rt), kind_(kind), weakMapAction_(weakMapAction) {}
 
   void setTraceWeakEdges(bool value) { traceWeakEdges_ = value; }
+
+  
+  
+  void setCanSkipJsids(bool value) { canSkipJsids_ = value; }
 
 #ifdef DEBUG
   
@@ -146,14 +142,13 @@ class JS_PUBLIC_API JSTracer {
   const JS::WeakMapTraceAction weakMapAction_;
 
   
-  bool traceWeakEdges_;
+  bool traceWeakEdges_ = true;
+
+  bool canSkipJsids_ = false;
 
 #ifdef DEBUG
-  bool checkEdges_;
+  bool checkEdges_ = true;
 #endif
-
- protected:
-  bool canSkipJsids_;
 };
 
 namespace js {
@@ -289,11 +284,6 @@ class JS_PUBLIC_API CallbackTracer : public js::GenericTracer {
    public:
     virtual void operator()(CallbackTracer* trc, char* buf, size_t bufsize) = 0;
   };
-
- protected:
-  
-  
-  void setCanSkipJsids(bool value) { canSkipJsids_ = value; }
 
  private:
   
