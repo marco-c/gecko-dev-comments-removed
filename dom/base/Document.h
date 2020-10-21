@@ -3558,6 +3558,15 @@ class Document : public nsINode,
 
   bool IsSynthesized();
 
+  
+  
+  
+  
+  
+  void InitUseCounters();
+
+  
+  
   void ReportUseCounters();
 
   void SetUseCounter(UseCounter aUseCounter) {
@@ -3568,8 +3577,13 @@ class Document : public nsINode,
     return mStyleUseCounters.get();
   }
 
-  void PropagateUseCountersToPage();
-  void PropagateUseCounters(Document* aParentDocument);
+  
+  
+  
+  
+  
+  
+  void PropagateImageUseCounters(Document* aReferencingDocument);
 
   
   
@@ -3947,6 +3961,10 @@ class Document : public nsINode,
   bool ShouldAvoidNativeTheme() const;
 
  protected:
+  
+  
+  WindowContext* GetWindowContextForPageUseCounters() const;
+
   void DoUpdateSVGUseElementShadowTrees();
 
   already_AddRefed<nsIPrincipal> MaybeDowngradePrincipal(
@@ -3984,20 +4002,6 @@ class Document : public nsINode,
   
   
   bool ApplyFullscreen(UniquePtr<FullscreenRequest>);
-
-  bool GetUseCounter(UseCounter aUseCounter) {
-    return mUseCounters[aUseCounter];
-  }
-
-  void SetChildDocumentUseCounter(UseCounter aUseCounter) {
-    if (!mChildDocumentUseCounters[aUseCounter]) {
-      mChildDocumentUseCounters[aUseCounter] = true;
-    }
-  }
-
-  bool GetChildDocumentUseCounter(UseCounter aUseCounter) {
-    return mChildDocumentUseCounters[aUseCounter];
-  }
 
   void RemoveDocStyleSheetsFromStyleSets();
   void ResetStylesheetsToURI(nsIURI* aURI);
@@ -4841,10 +4845,25 @@ class Document : public nsINode,
   
   UseCounters mUseCounters;
   
+  
+  
+  
   UseCounters mChildDocumentUseCounters;
 
   
   UniquePtr<StyleUseCounters> mStyleUseCounters;
+
+  
+  
+  
+  bool mUseCountersInitialized : 1;
+
+  
+  bool mShouldReportUseCounters : 1;
+
+  
+  
+  bool mShouldSendPageUseCounters : 1;
 
   
   bool mUserHasInteracted;

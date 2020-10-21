@@ -3276,6 +3276,13 @@ class nsContentUtils {
     return uint32_t(int64_t(aTime) / int64_t(PR_USEC_PER_SEC));
   }
 
+  
+
+
+
+
+  static nsCString TruncatedURLForDisplay(nsIURI* aURL, uint32_t aMaxLen = 128);
+
  private:
   static bool InitializeEventTable();
 

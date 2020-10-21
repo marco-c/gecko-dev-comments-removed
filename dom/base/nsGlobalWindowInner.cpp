@@ -1058,6 +1058,16 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   }
   StartDying();
 
+  if (mDoc) {
+    
+    
+    
+    
+    
+    
+    mDoc->ReportUseCounters();
+  }
+
   
   
   

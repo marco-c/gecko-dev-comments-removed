@@ -2496,6 +2496,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   mStorageAccessPermissionGranted = ContentBlocking::ShouldAllowAccessFor(
       newInnerWindow, aDocument->GetDocumentURI(), nullptr);
 
+  
+  
+  mDoc->InitUseCounters();
+
   return NS_OK;
 }
 

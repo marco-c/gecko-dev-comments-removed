@@ -125,6 +125,13 @@ add_task(async function() {
     },
 
     
+    {
+      type: "undisplayed-iframe",
+      filename: "file_use_counter_svg_currentScale.svg",
+      counters: [{ name: "SVGSVGELEMENT_CURRENTSCALE_getter" }],
+    },
+
+    
     
     
     
@@ -136,7 +143,7 @@ add_task(async function() {
 
   for (let test of TESTS) {
     let file = test.filename;
-    info(`checking ${file}`);
+    info(`checking ${file} (${test.type})`);
 
     let newTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
     gBrowser.selectedTab = newTab;
@@ -154,6 +161,10 @@ add_task(async function() {
     switch (test.type) {
       case "iframe":
         url = gHttpTestRoot + "file_use_counter_outer.html";
+        targetElement = "content";
+        break;
+      case "undisplayed-iframe":
+        url = gHttpTestRoot + "file_use_counter_outer_display_none.html";
         targetElement = "content";
         break;
       case "img":
@@ -268,14 +279,20 @@ async function grabHistogramsFromContent(names, prev_sentinel = null) {
   let gatheredHistograms;
   return BrowserTestUtils.waitForCondition(
     function() {
-      let snapshots;
-      if (Services.appinfo.browserTabsRemoteAutostart) {
-        snapshots = telemetry.getSnapshotForHistograms("main", false).content;
-      } else {
-        snapshots = telemetry.getSnapshotForHistograms("main", false).parent;
-      }
+      
+      
+      let snapshots = telemetry.getSnapshotForHistograms("main", false);
       let checkGet = probe => {
-        return snapshots[probe] ? snapshots[probe].sum : 0;
+        
+        
+        
+        let process =
+          !Services.appinfo.browserTabsRemoteAutostart ||
+          probe.endsWith("_PAGE") ||
+          probe == "TOP_LEVEL_CONTENT_DOCUMENTS_DESTROYED"
+            ? "parent"
+            : "content";
+        return snapshots[process][probe] ? snapshots[process][probe].sum : 0;
       };
       let page = Object.fromEntries(
         names.map(name => [name, checkGet(`USE_COUNTER2_${name}_PAGE`)])
@@ -288,9 +305,16 @@ async function grabHistogramsFromContent(names, prev_sentinel = null) {
         document,
         docs: checkGet("CONTENT_DOCUMENTS_DESTROYED"),
         toplevel_docs: checkGet("TOP_LEVEL_CONTENT_DOCUMENTS_DESTROYED"),
-        sentinel: checkGet("USE_COUNTER2_CSS_PROPERTY_MarkerMid_DOCUMENT"),
+        sentinel: {
+          doc: checkGet("USE_COUNTER2_CSS_PROPERTY_MarkerMid_DOCUMENT"),
+          page: checkGet("USE_COUNTER2_CSS_PROPERTY_MarkerMid_PAGE"),
+        },
       };
-      return prev_sentinel !== gatheredHistograms.sentinel;
+      let sentinelChanged =
+        !prev_sentinel ||
+        (prev_sentinel.doc != gatheredHistograms.sentinel.doc &&
+          prev_sentinel.page != gatheredHistograms.sentinel.page);
+      return sentinelChanged;
     },
     "grabHistogramsFromContent",
     100,

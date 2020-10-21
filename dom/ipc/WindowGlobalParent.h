@@ -42,6 +42,7 @@ class BrowserParent;
 class WindowGlobalChild;
 class JSWindowActorParent;
 class JSActorMessageMeta;
+struct PageUseCounters;
 
 
 
@@ -262,6 +263,11 @@ class WindowGlobalParent final : public WindowContext,
       bool aHasInProcessBlocker, XPCOMPermitUnloadAction aAction,
       CheckPermitUnloadResolver&& aResolver);
 
+  mozilla::ipc::IPCResult RecvExpectPageUseCounters(
+      const MaybeDiscarded<dom::WindowContext>& aTop);
+  mozilla::ipc::IPCResult RecvAccumulatePageUseCounters(
+      const UseCounters& aUseCounters);
+
  private:
   WindowGlobalParent(CanonicalBrowsingContext* aBrowsingContext,
                      uint64_t aInnerWindowId, uint64_t aOuterWindowId,
@@ -270,6 +276,7 @@ class WindowGlobalParent final : public WindowContext,
   ~WindowGlobalParent();
 
   bool ShouldTrackSiteOriginTelemetry();
+  void FinishAccumulatingPageUseCounters();
 
   
   
@@ -318,6 +325,18 @@ class WindowGlobalParent final : public WindowContext,
 
   
   uint32_t mHttpsOnlyStatus;
+
+  
+  
+  
+  RefPtr<WindowGlobalParent> mPageUseCountersWindow;
+
+  
+  UniquePtr<PageUseCounters> mPageUseCounters;
+
+  
+  
+  bool mSentPageUseCounters = false;
 };
 
 }  

@@ -24,6 +24,8 @@ using mozilla::dom::XPCOMPermitUnloadAction from "mozilla/dom/DocShellMessageUti
 using mozilla::dom::TabId from "mozilla/dom/ipc/IdType.h";
 using mozilla::layers::LayersId from "mozilla/layers/LayersTypes.h";
 using refcounted class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
+using mozilla::UseCounters from "mozilla/UseCounter.h";
+using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 
 namespace mozilla {
 namespace dom {
@@ -167,6 +169,19 @@ parent:
   
   async CheckPermitUnload(bool aHasInProcessBlocker, XPCOMPermitUnloadAction aAction)
     returns (bool permitUnload);
+
+  
+
+
+
+
+  async ExpectPageUseCounters(MaybeDiscardedWindowContext aTop);
+
+  
+
+
+
+  async AccumulatePageUseCounters(UseCounters aUseCounters);
 
   async Destroy();
 };

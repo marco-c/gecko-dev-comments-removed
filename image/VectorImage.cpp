@@ -355,6 +355,7 @@ VectorImage::VectorImage(nsIURI* aURI )
       mHasPendingInvalidation(false) {}
 
 VectorImage::~VectorImage() {
+  ReportUseCounters();
   CancelAllListeners();
   SurfaceCache::RemoveImage(ImageKey(this));
 }
@@ -1291,11 +1292,6 @@ VectorImage::RequestDiscard() {
     mProgressTracker->OnDiscard();
   }
 
-  if (Document* doc =
-          mSVGDocumentWrapper ? mSVGDocumentWrapper->GetDocument() : nullptr) {
-    doc->ReportUseCounters();
-  }
-
   return NS_OK;
 }
 
@@ -1358,6 +1354,11 @@ VectorImage::OnStartRequest(nsIRequest* aRequest) {
   mLoadEventListener = new SVGLoadEventListener(document, this);
   mParseCompleteListener = new SVGParseCompleteListener(document, this);
 
+  
+  
+  
+  document->InitUseCounters();
+
   return NS_OK;
 }
 
@@ -1408,6 +1409,11 @@ void VectorImage::OnSVGDocumentLoaded() {
   
   mSVGDocumentWrapper->FlushLayout();
 
+  
+  
+  
+  mSVGDocumentWrapper->GetDocument()->ReportUseCounters();
+
   mIsFullyLoaded = true;
   mHaveAnimations = mSVGDocumentWrapper->IsAnimated();
 
@@ -1443,6 +1449,10 @@ void VectorImage::OnSVGDocumentError() {
   CancelAllListeners();
 
   mError = true;
+
+  
+  
+  ReportUseCounters();
 
   if (mProgressTracker) {
     
@@ -1511,10 +1521,9 @@ void VectorImage::InvalidateObserversOnNextRefreshDriverTick() {
                         NS_DISPATCH_NORMAL);
 }
 
-void VectorImage::PropagateUseCounters(Document* aParentDocument) {
-  Document* doc = mSVGDocumentWrapper->GetDocument();
-  if (doc) {
-    doc->PropagateUseCounters(aParentDocument);
+void VectorImage::PropagateUseCounters(Document* aReferencingDocument) {
+  if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
+    doc->PropagateImageUseCounters(aReferencingDocument);
   }
 }
 
@@ -1571,6 +1580,16 @@ nsresult VectorImage::GetHotspotX(int32_t* aX) {
 
 nsresult VectorImage::GetHotspotY(int32_t* aY) {
   return Image::GetHotspotY(aY);
+}
+
+void VectorImage::ReportUseCounters() {
+  if (!mSVGDocumentWrapper) {
+    return;
+  }
+
+  if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
+    doc->ReportUseCounters();
+  }
 }
 
 }  

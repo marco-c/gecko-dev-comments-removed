@@ -387,6 +387,16 @@ nsXMLContentSink::OnTransformDone(nsresult aResult, Document* aResultDocument) {
 
   DropParserAndPerfHint();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  originalDocument->ReportUseCounters();
+
   return NS_OK;
 }
 

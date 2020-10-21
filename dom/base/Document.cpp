@@ -367,6 +367,7 @@
 
 mozilla::LazyLogModule gPageCacheLog("PageCache");
 mozilla::LazyLogModule gTimeoutDeferralLog("TimeoutDefer");
+mozilla::LazyLogModule gUseCountersLog("UseCounters");
 
 namespace mozilla {
 namespace dom {
@@ -1363,6 +1364,9 @@ Document::Document(const char* aContentType)
       mBFCacheEntry(nullptr),
       mInSyncOperationCount(0),
       mBlockDOMContentLoaded(0),
+      mUseCountersInitialized(false),
+      mShouldReportUseCounters(false),
+      mShouldSendPageUseCounters(false),
       mUserHasInteracted(false),
       mHasUserInteractionTimerScheduled(false),
       mStackRefCnt(0),
@@ -7000,6 +7004,19 @@ void Document::SetScriptGlobalObject(
       
       mMaybeServiceWorkerControlled = false;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ReportUseCounters();
   }
 
   
@@ -10645,8 +10662,6 @@ void Document::Destroy() {
   
   
   if (mIsGoingAway) return;
-
-  ReportUseCounters();
 
   mIsGoingAway = true;
 
@@ -14958,27 +14973,32 @@ const Document* Document::GetTopLevelContentDocument() const {
   return parent;
 }
 
-void Document::PropagateUseCounters(Document* aParentDocument) {
-  MOZ_ASSERT(this != aParentDocument);
+void Document::PropagateImageUseCounters(Document* aReferencingDocument) {
+  MOZ_ASSERT(IsBeingUsedAsImage());
+  MOZ_ASSERT(aReferencingDocument);
 
-  
-  if (NodePrincipal()->SchemeIs("chrome")) {
+  if (!aReferencingDocument->mShouldReportUseCounters) {
+    
+    
     return;
   }
 
-  
-  
-  
-  
-  
-  Document* contentParent = aParentDocument->GetTopLevelContentDocument();
-  if (!contentParent) {
-    return;
+  MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+          ("PropagateImageUseCounters from %s to %s",
+           nsContentUtils::TruncatedURLForDisplay(mDocumentURI).get(),
+           nsContentUtils::TruncatedURLForDisplay(
+               aReferencingDocument->mDocumentURI)
+               .get()));
+
+  if (aReferencingDocument->IsBeingUsedAsImage()) {
+    NS_WARNING(
+        "Page use counters from nested image documents may not "
+        "propagate to the top-level document (bug 1657805)");
   }
 
   SetCssUseCounterBits();
-  contentParent->mChildDocumentUseCounters |= mUseCounters;
-  contentParent->mChildDocumentUseCounters |= mChildDocumentUseCounters;
+  aReferencingDocument->mChildDocumentUseCounters |= mUseCounters;
+  aReferencingDocument->mChildDocumentUseCounters |= mChildDocumentUseCounters;
 }
 
 bool Document::HasScriptsBlockedBySandbox() {
@@ -15040,163 +15060,171 @@ void Document::SetCssUseCounterBits() {
   }
 }
 
-void Document::PropagateUseCountersToPage() {
-  if (mDisplayDocument) {
+void Document::InitUseCounters() {
+  
+  
+  if (mUseCountersInitialized) {
+    return;
+  }
+  mUseCountersInitialized = true;
+
+  if (Telemetry::HistogramUseCounterCount == 0) {
     
-    
-    
-    MOZ_ASSERT(!mDocumentContainer);
-    return PropagateUseCounters(mDisplayDocument);
+    return;
   }
 
-  if (IsBeingUsedAsImage()) {
-    
-    
-    
-    
-    MOZ_ASSERT(!mDocumentContainer);
+  if (!ShouldIncludeInTelemetry( true)) {
     return;
   }
 
   
-  
-  
-  Document* contentParent = GetTopLevelContentDocument();
-  if (!contentParent || this == contentParent) {
+  mShouldReportUseCounters = true;
+
+  WindowContext* top = GetWindowContextForPageUseCounters();
+  if (!top) {
+    
+    
+    
+    
+    
+    MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+            ("InitUseCounters for a non-displayed document [%s]",
+             nsContentUtils::TruncatedURLForDisplay(mDocumentURI).get()));
     return;
   }
 
-  PropagateUseCounters(contentParent);
+  RefPtr<WindowGlobalChild> wgc = GetWindowGlobalChild();
+  if (!wgc) {
+    return;
+  }
+
+  MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+          ("InitUseCounters for a displayed document: %" PRIu64 " -> %" PRIu64
+           " [from %s]",
+           wgc->InnerWindowId(), top->Id(),
+           nsContentUtils::TruncatedURLForDisplay(mDocumentURI).get()));
+
+  
+  wgc->SendExpectPageUseCounters(top);
+  mShouldSendPageUseCounters = true;
 }
 
-void Document::ReportUseCounters() {
-  static const bool kDebugUseCounters = false;
 
-  if (mReportedUseCounters) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void Document::ReportUseCounters() {
+  if (!mShouldReportUseCounters || mReportedUseCounters) {
     return;
   }
 
   mReportedUseCounters = true;
+
+  
+  
+  
+  
+  Telemetry::Accumulate(Telemetry::CONTENT_DOCUMENTS_DESTROYED, 1);
+
+  
+  
+  
+  EnumerateExternalResources([](Document& aDoc) {
+    aDoc.ReportUseCounters();
+    return CallState::Continue;
+  });
+
+  
+  
+  
+  
+  
+
+  
   SetCssUseCounterBits();
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  {
-    if (mSubDocuments) {
-      for (auto iter = mSubDocuments->ConstIter(); !iter.Done(); iter.Next()) {
-        auto* entry = static_cast<SubDocMapEntry*>(iter.Get());
-        entry->mSubDocument->ReportUseCounters();
-      }
+  MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+          ("Reporting document use counters [%s]",
+           nsContentUtils::TruncatedURLForDisplay(GetDocumentURI()).get()));
+  for (int32_t c = 0; c < eUseCounter_Count; ++c) {
+    auto uc = static_cast<UseCounter>(c);
+    if (!mUseCounters[uc]) {
+      continue;
     }
-    if (Document* doc = GetLatestStaticClone()) {
-      doc->ReportUseCounters();
-    }
-    EnumerateExternalResources([](Document& aDoc) {
-      aDoc.ReportUseCounters();
-      return CallState::Continue;
-    });
+
+    auto id = static_cast<Telemetry::HistogramID>(
+        Telemetry::HistogramFirstUseCounter + uc * 2);
+    MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+            (" > %s\n", Telemetry::GetHistogramName(id)));
+    Telemetry::Accumulate(id, 1);
   }
 
-  PropagateUseCountersToPage();
-
-  if (Telemetry::HistogramUseCounterCount > 0 &&
-      ShouldIncludeInTelemetry( true)) {
-    if (kDebugUseCounters) {
-      nsCString spec;
-      NodePrincipal()->GetAsciiSpec(spec);
-
-      
-      
-      spec.Truncate(std::min(128U, spec.Length()));
-      printf("-- Use counters for %s --\n", spec.get());
+  
+  
+  
+  
+  
+  
+  
+  if (mShouldSendPageUseCounters) {
+    RefPtr<WindowGlobalChild> wgc = GetWindowGlobalChild();
+    if (!wgc) {
+      MOZ_ASSERT_UNREACHABLE(
+          "ReportUseCounters should be called while we still have access "
+          "to our WindowContext");
+      MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+              (" > too late to send page use counters"));
+      return;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+            (" > sending page use counters: from WindowContext %" PRIu64,
+             wgc->InnerWindowId()));
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Telemetry::Accumulate(Telemetry::CONTENT_DOCUMENTS_DESTROYED, 1);
-    if (IsTopLevelContentDocument()) {
-      Telemetry::Accumulate(Telemetry::TOP_LEVEL_CONTENT_DOCUMENTS_DESTROYED,
-                            1);
-    }
-
-    for (int32_t c = 0; c < eUseCounter_Count; ++c) {
-      UseCounter uc = static_cast<UseCounter>(c);
-
-      Telemetry::HistogramID id = static_cast<Telemetry::HistogramID>(
-          Telemetry::HistogramFirstUseCounter + uc * 2);
-      bool value = GetUseCounter(uc);
-
-      if (value) {
-        if (kDebugUseCounters) {
-          const char* name = Telemetry::GetHistogramName(id);
-          if (name) {
-            printf("  %s", name);
-          } else {
-            printf("  #%d", id);
-          }
-          printf(": %d\n", value);
-        }
-
-        Telemetry::Accumulate(id, 1);
-      }
-
-      if (IsTopLevelContentDocument()) {
-        id = static_cast<Telemetry::HistogramID>(
-            Telemetry::HistogramFirstUseCounter + uc * 2 + 1);
-        value = GetUseCounter(uc) || GetChildDocumentUseCounter(uc);
-
-        if (value) {
-          if (kDebugUseCounters) {
-            const char* name = Telemetry::GetHistogramName(id);
-            if (name) {
-              printf("  %s", name);
-            } else {
-              printf("  #%d", id);
-            }
-            printf(": %d\n", value);
-          }
-
-          Telemetry::Accumulate(id, 1);
-        }
-      }
-    }
+    UseCounters counters = mUseCounters | mChildDocumentUseCounters;
+    wgc->SendAccumulatePageUseCounters(counters);
   }
+}
+
+WindowContext* Document::GetWindowContextForPageUseCounters() const {
+  if (mDisplayDocument) {
+    
+    
+    return mDisplayDocument->GetWindowContextForPageUseCounters();
+  }
+
+  if (mOriginalDocument) {
+    
+    
+    return mOriginalDocument->GetWindowContextForPageUseCounters();
+  }
+
+  WindowContext* wc = GetTopLevelWindowContext();
+  if (!wc || !wc->GetBrowsingContext()->IsContent()) {
+    return nullptr;
+  }
+
+  return wc;
 }
 
 void Document::UpdateIntersectionObservations(TimeStamp aNowTime) {
