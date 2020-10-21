@@ -253,6 +253,12 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+  void ParentActivated(mozIDOMWindowProxy* aWindow, bool aActive);
+
+  
+
+
+
 
   nsresult FocusPlugin(mozilla::dom::Element* aPlugin);
 
