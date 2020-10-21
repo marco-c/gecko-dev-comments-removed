@@ -83,6 +83,10 @@ namespace jit {
 
 
 
+#define ABIFUNCTIONSIG_LIST(_)                       \
+
+
+
 #if MOZ_IS_GCC
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wignored-attributes"
@@ -104,6 +108,15 @@ ABIFUNCTION_LIST(DEF_TEMPLATE)
     static constexpr bool registered = true;  \
   };
 ABIFUNCTION_AND_TYPE_LIST(DEF_TEMPLATE)
+#undef DEF_TEMPLATE
+
+
+#define DEF_TEMPLATE(...)                        \
+  template <>                                    \
+  struct ABIFunctionSignatureData<__VA_ARGS__> { \
+    static constexpr bool registered = true;     \
+  };
+ABIFUNCTIONSIG_LIST(DEF_TEMPLATE)
 #undef DEF_TEMPLATE
 
 #if MOZ_IS_GCC
