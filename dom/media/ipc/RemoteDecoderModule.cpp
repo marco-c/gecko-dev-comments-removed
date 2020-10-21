@@ -29,11 +29,6 @@ using dom::ContentChild;
 using namespace ipc;
 using namespace layers;
 
-RemoteDecoderModule::RemoteDecoderModule()
-    : mManagerThread(RemoteDecoderManagerChild::GetManagerThread()) {
-  MOZ_DIAGNOSTIC_ASSERT(mManagerThread);
-}
-
 
 void RemoteDecoderModule::Init() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -85,82 +80,21 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
   
   
   
-  CreateDecoderParams::OptionSet options(aParams.mOptions);
   if (OpusDataDecoder::IsOpus(aParams.mConfig.mMimeType) &&
       IsDefaultPlaybackDeviceMono()) {
-    options += CreateDecoderParams::Option::DefaultPlaybackDeviceMono;
+    CreateDecoderParams params = aParams;
+    params.mOptions += CreateDecoderParams::Option::DefaultPlaybackDeviceMono;
+    return RemoteDecoderManagerChild::CreateAudioDecoder(params);
   }
 
-  RefPtr<RemoteAudioDecoderChild> child = new RemoteAudioDecoderChild();
-  MediaResult result(NS_OK);
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<Runnable> task =
-      NS_NewRunnableFunction("RemoteDecoderModule::CreateAudioDecoder", [&]() {
-        result = child->InitIPDL(aParams.AudioConfig(), options);
-        if (NS_FAILED(result)) {
-          
-          
-          child = nullptr;
-        }
-      });
-  SyncRunnable::DispatchToThread(mManagerThread, task);
-
-  if (NS_FAILED(result)) {
-    if (aParams.mError) {
-      *aParams.mError = result;
-    }
-    return nullptr;
-  }
-
-  RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(child);
-
-  return object.forget();
+  return RemoteDecoderManagerChild::CreateAudioDecoder(aParams);
 }
 
 already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
   RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded();
-
-  RefPtr<RemoteVideoDecoderChild> child = new RemoteVideoDecoderChild();
-  MediaResult result(NS_OK);
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<Runnable> task =
-      NS_NewRunnableFunction("RemoteDecoderModule::CreateVideoDecoder", [&]() {
-        result = child->InitIPDL(
-            aParams.VideoConfig(), aParams.mRate.mValue, aParams.mOptions,
-            aParams.mKnowsCompositor
-                ? &aParams.mKnowsCompositor->GetTextureFactoryIdentifier()
-                : nullptr);
-        if (NS_FAILED(result)) {
-          
-          
-          child = nullptr;
-        }
-      });
-  SyncRunnable::DispatchToThread(mManagerThread, task);
-
-  if (NS_FAILED(result)) {
-    if (aParams.mError) {
-      *aParams.mError = result;
-    }
-    return nullptr;
-  }
-
-  RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(child);
-
-  return object.forget();
+  return RemoteDecoderManagerChild::CreateVideoDecoder(
+      aParams, RemoteDecodeIn::RddProcess);
 }
 
 }  
