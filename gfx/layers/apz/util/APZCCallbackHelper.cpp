@@ -163,11 +163,15 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
         if (sf->SetVisualViewportOffset(
                 CSSPoint::ToAppUnits(aRequest.GetVisualScrollOffset()),
                  false)) {
+          
           sf->MarkEverScrolled();
         }
       }
     }
   }
+  
+  
+  sf = nsLayoutUtils::FindScrollableFrameFor(aRequest.GetScrollId());
   bool scrollUpdated = false;
   auto displayPortMargins =
       DisplayPortMargins::WithNoAdjustment(aRequest.GetDisplayPortMargins());
@@ -296,7 +300,8 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
   if (aRequest.GetScrollId() == ScrollableLayerGuid::NULL_SCROLL_ID) {
     return;
   }
-  nsIContent* content = nsLayoutUtils::FindContentFor(aRequest.GetScrollId());
+  RefPtr<nsIContent> content =
+      nsLayoutUtils::FindContentFor(aRequest.GetScrollId());
   if (!content) {
     return;
   }
@@ -352,7 +357,8 @@ void APZCCallbackHelper::UpdateSubFrame(const RepaintRequest& aRequest) {
   if (aRequest.GetScrollId() == ScrollableLayerGuid::NULL_SCROLL_ID) {
     return;
   }
-  nsIContent* content = nsLayoutUtils::FindContentFor(aRequest.GetScrollId());
+  RefPtr<nsIContent> content =
+      nsLayoutUtils::FindContentFor(aRequest.GetScrollId());
   if (!content) {
     return;
   }
