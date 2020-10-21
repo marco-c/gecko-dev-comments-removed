@@ -451,13 +451,10 @@ bool js::RunScript(JSContext* cx, RunState& state) {
     if (measuringTime) {
       mozilla::TimeDuration delta = ReallyNow() - startTime;
       cx->realm()->timers.executionTime += delta;
-
-#ifdef ENABLE_SPIDERMONKEY_TELEMETRY
-      int64_t runtimeMicros = delta.ToMicroseconds();
-      cx->runtime()->addTelemetry(JS_TELEMETRY_RUN_TIME_US, runtimeMicros);
-#endif
-
       cx->setIsMeasuringExecutionTime(false);
+
+      
+      
     }
   });
 
