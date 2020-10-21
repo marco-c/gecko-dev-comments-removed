@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <speex/speex_resampler.h>
+#include "TimeUnits.h"
 #include "TrackEncoder.h"
 
 struct OpusEncoder;
@@ -36,7 +37,7 @@ class OpusTrackEncoder : public AudioTrackEncoder {
   nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) override;
 
   int GetLookahead() const { return mLookahead; }
-  uint64_t GetCodecDelay() const { return mCodecDelayUs; }
+  media::TimeUnit GetCodecDelay() const { return mCodecDelay; }
 
  protected:
   int GetPacketDuration() override;
@@ -75,7 +76,7 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
 
 
-  uint64_t mCodecDelayUs;
+  media::TimeUnit mCodecDelay;
 
   
 
@@ -89,8 +90,7 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
   nsTArray<AudioDataValue> mResampledLeftover;
 
-  
-  uint64_t mOutputTimeStamp;
+  media::TimeUnit mOutputTimeStamp;
 };
 
 }  
