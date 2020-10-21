@@ -49,15 +49,8 @@ KnowsCompositorVideo::TryCreateForIdentifier(
     return nullptr;
   }
 
-  
-  
-  TextureFactoryIdentifier ident = aIdentifier;
-  if (XRE_IsRDDProcess()) {
-    ident.mSyncHandle = 0;
-  }
-
   RefPtr<KnowsCompositorVideo> knowsCompositor = new KnowsCompositorVideo();
-  knowsCompositor->IdentifyTextureHost(ident);
+  knowsCompositor->IdentifyTextureHost(aIdentifier);
   return knowsCompositor.forget();
 }
 
