@@ -820,8 +820,7 @@ class nsDocShell final : public nsDocLoader,
       nsIWidget* aWidget, uint32_t aLoadType);
 
   static already_AddRefed<nsIURIFixupInfo> KeywordToURI(
-      const nsACString& aKeyword, bool aIsPrivateContext,
-      nsIInputStream** aPostData);
+      const nsACString& aKeyword, bool aIsPrivateContext);
 
   
   

@@ -379,10 +379,7 @@ var E10SUtils = {
 
     let uri;
     try {
-      uri = Services.uriFixup.createFixupURI(
-        aURL,
-        Ci.nsIURIFixup.FIXUP_FLAG_NONE
-      );
+      uri = Services.uriFixup.getFixupURIInfo(aURL).preferredURI;
     } catch (e) {
       
       
@@ -886,7 +883,9 @@ var E10SUtils = {
       if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
         fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
-      uriObject = Services.uriFixup.createFixupURI(uri, fixupFlags);
+
+      uriObject = Services.uriFixup.getFixupURIInfo(uri, fixupFlags)
+        .preferredURI;
       
       
       requiredRemoteType = this.getRemoteTypeForURIObject(

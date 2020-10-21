@@ -256,11 +256,7 @@ URIFixup.prototype = {
     return FIXUP_FLAG_FIX_SCHEME_TYPOS;
   },
 
-  createFixupURI(uriString, fixupFlags = FIXUP_FLAG_NONE, postData) {
-    return this.getFixupURIInfo(uriString, fixupFlags, postData).preferredURI;
-  },
-
-  getFixupURIInfo(uriString, fixupFlags = FIXUP_FLAG_NONE, postData) {
+  getFixupURIInfo(uriString, fixupFlags = FIXUP_FLAG_NONE) {
     let isPrivateContext = fixupFlags & FIXUP_FLAG_PRIVATE_CONTEXT;
 
     
@@ -278,11 +274,9 @@ URIFixup.prototype = {
 
     let scheme = extractScheme(uriString);
     if (scheme == "view-source") {
-      info.preferredURI = info.fixedURI = fixupViewSource(
-        uriString,
-        fixupFlags,
-        postData
-      );
+      let { preferredURI, postData } = fixupViewSource(uriString, fixupFlags);
+      info.preferredURI = info.fixedURI = preferredURI;
+      info.postData = postData;
       return info;
     }
 
@@ -363,7 +357,7 @@ URIFixup.prototype = {
       scheme &&
       !canHandleProtocol
     ) {
-      tryKeywordFixupForURIInfo(uriString, info, isPrivateContext, postData);
+      tryKeywordFixupForURIInfo(uriString, info, isPrivateContext);
     }
 
     if (info.fixedURI) {
@@ -419,7 +413,7 @@ URIFixup.prototype = {
       fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &&
       !inputHadDuffProtocol &&
       !checkSuffix(info).suffix &&
-      keywordURIFixup(uriString, info, isPrivateContext, postData)
+      keywordURIFixup(uriString, info, isPrivateContext)
     ) {
       return info;
     }
@@ -434,12 +428,7 @@ URIFixup.prototype = {
     
     
     if (keywordEnabled && fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP) {
-      tryKeywordFixupForURIInfo(
-        info.originalInput,
-        info,
-        isPrivateContext,
-        postData
-      );
+      tryKeywordFixupForURIInfo(info.originalInput, info, isPrivateContext);
     }
 
     if (!info.preferredURI) {
@@ -473,7 +462,7 @@ URIFixup.prototype = {
     return fixupFlags;
   },
 
-  keywordToURI(keyword, isPrivateContext, postData) {
+  keywordToURI(keyword, isPrivateContext) {
     if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
       
       
@@ -518,20 +507,7 @@ URIFixup.prototype = {
     }
     let submissionPostDataStream = submission.postData;
     if (submissionPostDataStream) {
-      if (postData) {
-        
-        
-        postData.value = submissionPostDataStream;
-      } else {
-        
-        
-        
-        
-        throw new Components.Exception(
-          "Didn't request POST data",
-          Cr.NS_ERROR_NOT_AVAILABLE
-        );
-      }
+      info.postData = submissionPostDataStream;
     }
 
     info.keywordProviderName = engine.name;
@@ -606,6 +582,13 @@ URIFixupInfo.prototype = {
   },
   get originalInput() {
     return this._originalInput || "";
+  },
+
+  set postData(postData) {
+    this._postData = postData;
+  },
+  get postData() {
+    return this._postData || null;
   },
 
   classID: Components.ID("{33d75835-722f-42c0-89cc-44f328e56a86}"),
@@ -734,17 +717,11 @@ function checkAndFixPublicSuffix(info) {
   return { suffix: "", hasUnknownSuffix: true };
 }
 
-function tryKeywordFixupForURIInfo(
-  uriString,
-  fixupInfo,
-  isPrivateContext,
-  postData
-) {
+function tryKeywordFixupForURIInfo(uriString, fixupInfo, isPrivateContext) {
   try {
     let keywordInfo = Services.uriFixup.keywordToURI(
       uriString,
-      isPrivateContext,
-      postData
+      isPrivateContext
     );
     fixupInfo.keywordProviderName = keywordInfo.keywordProviderName;
     fixupInfo.keywordAsSent = keywordInfo.keywordAsSent;
@@ -891,7 +868,7 @@ function fixupURIProtocol(uriString) {
 
 
 
-function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
+function keywordURIFixup(uriString, fixupInfo, isPrivateContext) {
   
   
   
@@ -913,8 +890,7 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
     return tryKeywordFixupForURIInfo(
       fixupInfo.originalInput,
       fixupInfo,
-      isPrivateContext,
-      postData
+      isPrivateContext
     );
   }
 
@@ -951,8 +927,7 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
     return tryKeywordFixupForURIInfo(
       fixupInfo.originalInput,
       fixupInfo,
-      isPrivateContext,
-      postData
+      isPrivateContext
     );
   }
 
@@ -979,7 +954,7 @@ function extractScheme(uriString) {
 
 
 
-function fixupViewSource(uriString, fixupFlags, postData) {
+function fixupViewSource(uriString, fixupFlags) {
   
   
   let newFixupFlags =
@@ -998,16 +973,15 @@ function fixupViewSource(uriString, fixupFlags, postData) {
     );
   }
 
-  let info = Services.uriFixup.getFixupURIInfo(
-    innerURIString,
-    newFixupFlags,
-    postData
-  );
+  let info = Services.uriFixup.getFixupURIInfo(innerURIString, newFixupFlags);
   if (!info.preferredURI) {
     throw new Components.Exception(
       "Couldn't build a valid uri",
       Cr.NS_ERROR_MALFORMED_URI
     );
   }
-  return Services.io.newURI("view-source:" + info.preferredURI.spec);
+  return {
+    preferredURI: Services.io.newURI("view-source:" + info.preferredURI.spec),
+    postData: info.postData,
+  };
 }

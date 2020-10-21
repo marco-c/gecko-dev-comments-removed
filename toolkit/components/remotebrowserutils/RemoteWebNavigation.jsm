@@ -91,7 +91,8 @@ class RemoteWebNavigation {
       if (isBrowserPrivate) {
         fixupFlags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
-      uri = Services.uriFixup.createFixupURI(aURI, fixupFlags);
+
+      uri = Services.uriFixup.getFixupURIInfo(aURI, fixupFlags).preferredURI;
 
       
       

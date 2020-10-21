@@ -735,7 +735,8 @@ var gEditItemOverlay = {
 
     let newURI;
     try {
-      newURI = PlacesUIUtils.createFixedURI(this._locationField.value);
+      newURI = Services.uriFixup.getFixupURIInfo(this._locationField.value)
+        .preferredURI;
     } catch (ex) {
       
       return;

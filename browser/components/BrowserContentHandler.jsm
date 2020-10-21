@@ -65,10 +65,10 @@ function resolveURIInternal(aCmdLine, aArgument) {
   var uriFixup = Services.uriFixup;
 
   if (!(uri instanceof Ci.nsIFileURL)) {
-    return uriFixup.createFixupURI(
+    return Services.uriFixup.getFixupURIInfo(
       aArgument,
       uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS
-    );
+    ).preferredURI;
   }
 
   try {
@@ -83,7 +83,7 @@ function resolveURIInternal(aCmdLine, aArgument) {
   
 
   try {
-    uri = uriFixup.createFixupURI(aArgument, 0);
+    uri = Services.uriFixup.getFixupURIInfo(aArgument).preferredURI;
   } catch (e) {
     Cu.reportError(e);
   }

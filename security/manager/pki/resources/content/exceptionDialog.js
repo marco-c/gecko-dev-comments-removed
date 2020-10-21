@@ -142,7 +142,9 @@ function getURI() {
   
   
   let locationTextBox = document.getElementById("locationTextBox");
-  let uri = Services.uriFixup.createFixupURI(locationTextBox.value, 0);
+  let { preferredURI: uri } = Services.uriFixup.getFixupURIInfo(
+    locationTextBox.value
+  );
 
   if (!uri) {
     return null;
