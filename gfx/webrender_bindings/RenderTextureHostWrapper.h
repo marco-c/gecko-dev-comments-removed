@@ -33,9 +33,8 @@ class RenderTextureHostWrapper final : public RenderTextureHostSWGL {
                            wr::ImageRendering aRendering) override;
   void Unlock() override;
   void ClearCachedResources() override;
-  RenderMacIOSurfaceTextureHostOGL* AsRenderMacIOSurfaceTextureHostOGL()
-      override;
-  RenderDXGITextureHostOGL* AsRenderDXGITextureHostOGL() override;
+  RenderMacIOSurfaceTextureHost* AsRenderMacIOSurfaceTextureHost() override;
+  RenderDXGITextureHost* AsRenderDXGITextureHost() override;
 
   
   size_t GetPlaneCount() override;

@@ -32,7 +32,7 @@ class GLContextCGL;
 class MozFramebuffer;
 }  
 namespace wr {
-class RenderMacIOSurfaceTextureHostOGL;
+class RenderMacIOSurfaceTextureHost;
 }  
 
 namespace layers {
@@ -374,7 +374,7 @@ class NativeLayerCA : public NativeLayer {
   RefPtr<MacIOSurface> mInProgressLockedIOSurface;
 
   RefPtr<SurfacePoolHandleCA> mSurfacePoolHandle;
-  RefPtr<wr::RenderMacIOSurfaceTextureHostOGL> mTextureHost;
+  RefPtr<wr::RenderMacIOSurfaceTextureHost> mTextureHost;
 
   Representation mOnscreenRepresentation;
   Representation mOffscreenRepresentation;

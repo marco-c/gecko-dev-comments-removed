@@ -23,10 +23,9 @@ class GLContext;
 
 namespace wr {
 
-class RenderDXGITextureHostOGL;
-class RenderMacIOSurfaceTextureHostOGL;
+class RenderDXGITextureHost;
+class RenderMacIOSurfaceTextureHost;
 class RenderBufferTextureHost;
-class RenderTextureHostOGL;
 class RenderTextureHostSWGL;
 
 void ActivateBindAndTexParameteri(gl::GLContext* aGL, GLenum aActiveTexture,
@@ -67,12 +66,9 @@ class RenderTextureHost {
   
   virtual bool SyncObjectNeeded() { return false; }
 
-  virtual RenderDXGITextureHostOGL* AsRenderDXGITextureHostOGL() {
-    return nullptr;
-  }
+  virtual RenderDXGITextureHost* AsRenderDXGITextureHost() { return nullptr; }
 
-  virtual RenderMacIOSurfaceTextureHostOGL*
-  AsRenderMacIOSurfaceTextureHostOGL() {
+  virtual RenderMacIOSurfaceTextureHost* AsRenderMacIOSurfaceTextureHost() {
     return nullptr;
   }
 

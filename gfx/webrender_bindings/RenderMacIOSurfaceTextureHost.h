@@ -4,12 +4,12 @@
 
 
 
-#ifndef MOZILLA_GFX_RENDERMACIOSURFACETEXTUREHOSTOGL_H
-#define MOZILLA_GFX_RENDERMACIOSURFACETEXTUREHOSTOGL_H
+#ifndef MOZILLA_GFX_RENDERMACIOSURFACETEXTUREHOST_H
+#define MOZILLA_GFX_RENDERMACIOSURFACETEXTUREHOST_H
 
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/layers/TextureHostOGL.h"
-#include "RenderTextureHostOGL.h"
+#include "RenderTextureHost.h"
 
 namespace mozilla {
 
@@ -19,26 +19,25 @@ class SurfaceDescriptorMacIOSurface;
 
 namespace wr {
 
-class RenderMacIOSurfaceTextureHostOGL final : public RenderTextureHostOGL {
+class RenderMacIOSurfaceTextureHost final : public RenderTextureHost {
  public:
-  explicit RenderMacIOSurfaceTextureHostOGL(MacIOSurface* aSurface);
+  explicit RenderMacIOSurfaceTextureHost(MacIOSurface* aSurface);
 
   wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL,
                            wr::ImageRendering aRendering) override;
   void Unlock() override;
 
-  gfx::IntSize GetSize(uint8_t aChannelIndex) const override;
-  GLuint GetGLHandle(uint8_t aChannelIndex) const override;
+  gfx::IntSize GetSize(uint8_t aChannelIndex) const;
+  GLuint GetGLHandle(uint8_t aChannelIndex) const;
 
-  RenderMacIOSurfaceTextureHostOGL* AsRenderMacIOSurfaceTextureHostOGL()
-      override {
+  RenderMacIOSurfaceTextureHost* AsRenderMacIOSurfaceTextureHost() override {
     return this;
   }
 
   MacIOSurface* GetSurface() { return mSurface; }
 
  private:
-  virtual ~RenderMacIOSurfaceTextureHostOGL();
+  virtual ~RenderMacIOSurfaceTextureHost();
   void DeleteTextureHandle();
 
   RefPtr<MacIOSurface> mSurface;
