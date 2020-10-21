@@ -535,12 +535,13 @@
         var value = test_obj.step(func, test_obj, test_obj);
 
         if (value !== undefined) {
-            var msg = "Test named \"" + test_name +
-                "\" inappropriately returned a value";
+            var msg = 'Test named "' + test_name +
+                '" passed a function to `test` that returned a value.';
 
             try {
-                if (value && value.hasOwnProperty("then")) {
-                    msg += ", consider using `promise_test` instead";
+                if (value && typeof value.then === 'function') {
+                    msg += ' Consider using `promise_test` instead when ' +
+                        'using Promises or async/await.';
                 }
             } catch (err) {}
 
@@ -568,7 +569,30 @@
         var test_name = name ? name : test_environment.next_default_test_name();
         var test_obj = new Test(test_name, properties);
         if (func) {
-            test_obj.step(func, test_obj, test_obj);
+            var value = test_obj.step(func, test_obj, test_obj);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            if (value !== undefined) {
+                var msg = 'Test named "' + test_name +
+                    '" passed a function to `async_test` that returned a value.';
+
+                try {
+                    if (value && typeof value.then === 'function') {
+                        msg += ' Consider using `promise_test` instead when ' +
+                            'using Promises or async/await.';
+                    }
+                } catch (err) {}
+
+                tests.set_status(tests.status.ERROR, msg);
+                tests.complete();
+            }
         }
         return test_obj;
     }
