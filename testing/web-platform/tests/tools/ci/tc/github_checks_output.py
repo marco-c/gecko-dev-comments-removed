@@ -1,9 +1,11 @@
+import io
+from six import ensure_text
+
 MYPY = False
 if MYPY:
     
-    from typing import Any
-    from typing import Optional
-    from typing import Text
+    from typing import AnyStr, Optional, Text
+
 
 class GitHubChecksOutputter(object):
     """Provides a method to output data to be shown in the GitHub Checks UI.
@@ -12,7 +14,7 @@ class GitHubChecksOutputter(object):
     to enable developers to quickly understand what has gone wrong. The output
     supports markdown format.
 
-    See https://docs.taskcluster.net/docs/reference/integrations/github/checks#custom-text-output-in-checks
+    https://docs.taskcluster.net/docs/reference/integrations/github/checks#custom-text-output-in-checks
     """
     def __init__(self, path):
         
@@ -20,15 +22,19 @@ class GitHubChecksOutputter(object):
 
     def output(self, line):
         
+        text = ensure_text(line)
         
         
         
-        with open(self.path, 'a') as f:
-            f.write(line)
-            f.write('\n')
+        
+        with io.open(self.path, mode="a") as f:
+            f.write(text)
+            f.write(u"\n")
 
 
 __outputter = None
+
+
 def get_gh_checks_outputter(filepath):
     
     """Return the outputter for GitHub Checks output, if enabled.
