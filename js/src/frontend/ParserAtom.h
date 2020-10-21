@@ -23,6 +23,7 @@
 namespace js {
 namespace frontend {
 
+struct CompilationAtomCache;
 struct CompilationInfo;
 class ParserAtom;
 class ParserName;
@@ -234,8 +235,7 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
  public:
   
   
-  JS::Result<JSAtom*, OOM> toJSAtom(JSContext* cx,
-                                    CompilationInfo& compilationInfo) const;
+  JSAtom* toJSAtom(JSContext* cx, CompilationAtomCache& atomCache) const;
 
   
   bool toNumber(JSContext* cx, double* result) const;

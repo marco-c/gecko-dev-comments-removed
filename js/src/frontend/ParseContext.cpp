@@ -421,11 +421,11 @@ bool ParseContext::isVarRedeclaredInEval(const ParserName* name,
   MOZ_ASSERT(sc()->isEvalContext());
 
   
-  auto mbNameAtom = name->toJSAtom(sc()->cx_, sc()->compilationInfo());
-  if (mbNameAtom.isErr()) {
+  JSAtom* nameAtom =
+      name->toJSAtom(sc()->cx_, sc()->compilationInfo().input.atomCache);
+  if (!nameAtom) {
     return false;
   }
-  JSAtom* nameAtom = mbNameAtom.unwrap();
 
   
   
