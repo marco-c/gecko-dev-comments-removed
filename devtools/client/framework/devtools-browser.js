@@ -423,8 +423,12 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
 
 
-  async openWorkerToolbox(workerTarget, toolId) {
-    await gDevTools.showToolbox(workerTarget, toolId, Toolbox.HostType.WINDOW);
+  async openWorkerToolbox(workerDescriptorFront, toolId) {
+    await gDevTools.showToolbox(
+      workerDescriptorFront,
+      toolId,
+      Toolbox.HostType.WINDOW
+    );
   },
 
   
