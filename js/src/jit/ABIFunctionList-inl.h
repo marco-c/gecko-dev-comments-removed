@@ -91,6 +91,8 @@ namespace jit {
 
 
 #define ABIFUNCTIONSIG_LIST(_)                       \
+  _(float (*)(float))                                \
+  _(js::UnaryMathFunctionType)                       \
   _(void (*)(JSRuntime * rt, JSObject * *objp))      \
   _(void (*)(JSRuntime * rt, JSString * *stringp))   \
   _(void (*)(JSRuntime * rt, ObjectGroup * *groupp)) \
