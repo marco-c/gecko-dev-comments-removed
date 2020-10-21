@@ -162,19 +162,7 @@ static inline uint32_t MakeFrameDescriptor(uint32_t frameSize, FrameType type,
 }
 
 
-inline JSScript* GetTopJitJSScript(JSContext* cx) {
-  JSJitFrameIter frame(cx->activation()->asJit());
-  MOZ_ASSERT(frame.type() == FrameType::Exit);
-  ++frame;
-
-  if (frame.isBaselineStub()) {
-    ++frame;
-    MOZ_ASSERT(frame.isBaselineJS());
-  }
-
-  MOZ_ASSERT(frame.isScripted());
-  return frame.script();
-}
+JSScript* GetTopJitJSScript(JSContext* cx);
 
 #ifdef JS_CODEGEN_MIPS32
 uint8_t* alignDoubleSpill(uint8_t* pointer);
