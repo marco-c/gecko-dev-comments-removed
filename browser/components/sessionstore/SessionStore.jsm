@@ -1469,34 +1469,50 @@ var SessionStoreInternal = {
           );
         }
         break;
-      case "SessionStore:restoreTabContentStarted":
-        if (TAB_STATE_FOR_BROWSER.get(browser) == TAB_STATE_NEEDS_RESTORE) {
+      case "SessionStore:restoreTabContentStarted": {
+        let initiatedBySessionStore =
+          TAB_STATE_FOR_BROWSER.get(browser) != TAB_STATE_NEEDS_RESTORE;
+        let isNavigateAndRestore =
+          data.reason == RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let cacheState = TabStateCache.get(browser);
+        if (cacheState.searchMode) {
+          if (!initiatedBySessionStore || isNavigateAndRestore) {
+            TabStateCache.update(browser, {
+              searchMode: null,
+              userTypedValue: null,
+            });
+          }
+          break;
+        }
+
+        if (!initiatedBySessionStore) {
           
           
           this.markTabAsRestoring(tab);
-        } else if (
-          data.reason != RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE
-        ) {
+        } else if (!isNavigateAndRestore) {
+          
+          
+          
+          
+          
+          
+          
+          
           let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
-
-          
-          
-          
-          
-          
-          
-          if (tabData.searchMode) {
-            break;
-          }
-
-          
-          
-          
-          
-          
-          
-          
-          
           if (
             tabData.userTypedValue &&
             !tabData.userTypedClear &&
@@ -1515,13 +1531,14 @@ var SessionStoreInternal = {
           });
         }
         break;
+      }
       case "SessionStore:restoreTabContentComplete": {
         
         
-        let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
-        if (tabData.searchMode) {
-          win.gURLBar.setSearchMode(tabData.searchMode, browser);
-          browser.userTypedValue = tabData.userTypedValue;
+        let cacheState = TabStateCache.get(browser);
+        if (cacheState.searchMode) {
+          win.gURLBar.setSearchMode(cacheState.searchMode, browser);
+          browser.userTypedValue = cacheState.userTypedValue;
           if (tab.selected) {
             win.gURLBar.setURI();
           }
