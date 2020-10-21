@@ -29,6 +29,10 @@ const PREF_URLBAR_BRANCH = "browser.urlbar.";
 const PREF_URLBAR_DEFAULTS = new Map([
   
   
+  ["accessibility.tabToSearch.announceResults", true],
+
+  
+  
   
   ["autoFill", true],
 

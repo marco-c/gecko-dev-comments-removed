@@ -289,6 +289,10 @@ pref("browser.overlink-delay", 80);
 pref("browser.urlbar.ctrlCanonizesURLs", true);
 
 
+
+pref("browser.urlbar.accessibility.tabToSearch.announceResults", true);
+
+
 pref("browser.urlbar.autoFill", true);
 
 
