@@ -5289,12 +5289,10 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
   nsCOMPtr<nsIContentViewer> cv;
   RefPtr<BrowsingContext> bc;
   bool hasPrintCallbacks = false;
-  if (docToPrint->IsStaticDocument() && aIsPreview == IsPreview::Yes) {
+  if (docToPrint->IsStaticDocument() &&
+      (aIsPreview == IsPreview::Yes ||
+       StaticPrefs::print_tab_modal_enabled())) {
     MOZ_DIAGNOSTIC_ASSERT(aBlockUntilDone == BlockUntilDone::No);
-    
-    
-    
-    
     
     
     bc = sourceBC;
