@@ -1550,7 +1550,7 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
   nsCOMPtr<nsIURI> uriClone;
 
   while (ctx) {
-    nsCOMPtr<nsIPrincipal> currentPrincipal;
+    nsCOMPtr<nsIURI> currentURI;
     
     
     
@@ -1559,36 +1559,28 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
     if (XRE_IsParentProcess()) {
       WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
       if (window) {
-        
-        
-        
-        currentPrincipal = window->DocumentPrincipal();
+        currentURI = window->GetDocumentURI();
       }
     } else if (nsPIDOMWindowOuter* windowOuter = ctx->GetDOMWindow()) {
-      currentPrincipal = nsGlobalWindowOuter::Cast(windowOuter)->GetPrincipal();
+      currentURI = windowOuter->GetDocumentURI();
     }
 
-    if (currentPrincipal) {
-      nsCOMPtr<nsIURI> currentURI;
-      currentPrincipal->GetURI(getter_AddRefs(currentURI));
+    if (currentURI) {
+      nsAutoCString spec;
+      currentURI->GetSpec(spec);
+      
+      rv = NS_MutateURI(currentURI)
+               .SetRef(""_ns)
+               .SetUserPass(""_ns)
+               .Finalize(uriClone);
 
-      if (currentURI) {
-        nsAutoCString spec;
-        currentURI->GetSpec(spec);
-        
-        rv = NS_MutateURI(currentURI)
-                 .SetRef(""_ns)
-                 .SetUserPass(""_ns)
-                 .Finalize(uriClone);
-
-        
-        
-        if (NS_FAILED(rv)) {
-          rv = NS_GetURIWithoutRef(currentURI, getter_AddRefs(uriClone));
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-        ancestorsArray.AppendElement(uriClone);
+      
+      
+      if (NS_FAILED(rv)) {
+        rv = NS_GetURIWithoutRef(currentURI, getter_AddRefs(uriClone));
+        NS_ENSURE_SUCCESS(rv, rv);
       }
+      ancestorsArray.AppendElement(uriClone);
     }
     ctx = ctx->GetParent();
   }
