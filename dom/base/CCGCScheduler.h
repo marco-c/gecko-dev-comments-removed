@@ -86,6 +86,8 @@ class CCGCScheduler {
 
   bool InIncrementalGC() const { return mInIncrementalGC; }
 
+  TimeStamp GetLastCCEndTime() const { return mLastCCEndTime; }
+
   
 
   void NoteGCBegin() {
@@ -118,6 +120,12 @@ class CCGCScheduler {
 
   void NoteForgetSkippableComplete(TimeStamp now) {
     mLastForgetSkippableEndTime = aNow;
+  }
+
+  void NoteCCEnd(TimeStamp when) { mLastCCEndTime = when; }
+
+  void NoteForgetSkippableOnlyCycle() {
+    mLastForgetSkippableCycleEndTime = TimeStamp::Now();
   }
 
   
@@ -188,6 +196,33 @@ class CCGCScheduler {
         std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
   }
 
+  bool ShouldScheduleCC(uint32_t aCleanupsSinceLastGC) const {
+    TimeStamp now;
+
+    
+    if (aCleanupsSinceLastGC && !mLastCCEndTime.IsNull()) {
+      now = TimeStamp::Now();
+      if (now - mLastCCEndTime < kCCDelay) {
+        return false;
+      }
+    }
+
+    
+    
+    if ((aCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
+        !mLastForgetSkippableCycleEndTime.IsNull()) {
+      if (now.IsNull()) {
+        now = TimeStamp::Now();
+      }
+      if (now - mLastForgetSkippableCycleEndTime <
+          kTimeBetweenForgetSkippableCycles) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   
   
   js::SliceBudget ComputeForgetSkippableBudget(TimeStamp aStartTimeStamp,
@@ -235,6 +270,8 @@ class CCGCScheduler {
   TimeStamp mLastForgetSkippableEndTime;
   uint32_t mForgetSkippableCounter = 0;
   TimeStamp mForgetSkippableFrequencyStartTime;
+  TimeStamp mLastCCEndTime;
+  TimeStamp mLastForgetSkippableCycleEndTime;
 
   
 
