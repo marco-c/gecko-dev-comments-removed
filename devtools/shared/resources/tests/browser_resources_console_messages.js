@@ -7,17 +7,27 @@
 
 
 
+
+
 const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
 
+const FISSION_TEST_URL = URL_ROOT_SSL + "fission_document.html";
+const IFRAME_URL = URL_ROOT_ORG_SSL + "fission_iframe.html";
+
 add_task(async function() {
-  await testConsoleMessagesResources();
-  await testConsoleMessagesResourcesWithIgnoreExistingResources();
+  info("Execute test in top level document");
+  await testConsoleMessagesResources(false);
+  await testConsoleMessagesResourcesWithIgnoreExistingResources(false);
+
+  info("Execute test in an iframe document, possibly remote with fission");
+  await testConsoleMessagesResources(true);
+  await testConsoleMessagesResourcesWithIgnoreExistingResources(true);
 });
 
-async function testConsoleMessagesResources() {
-  const tab = await addTab("data:text/html,Console Messages");
+async function testConsoleMessagesResources(executeInIframe) {
+  const tab = await addTab(FISSION_TEST_URL);
 
   const {
     client,
@@ -29,11 +39,17 @@ async function testConsoleMessagesResources() {
     "Log some messages *before* calling ResourceWatcher.watchResources in order to " +
       "assert the behavior of already existing messages."
   );
-  await logExistingMessages(tab.linkedBrowser);
+  await logExistingMessages(tab.linkedBrowser, executeInIframe);
+
+  const targetDocumentUrl = executeInIframe ? IFRAME_URL : FISSION_TEST_URL;
 
   let runtimeDoneResolve;
-  const expectedExistingCalls = [...expectedExistingConsoleCalls];
-  const expectedRuntimeCalls = [...expectedRuntimeConsoleCalls];
+  const expectedExistingCalls = getExpectedExistingConsoleCalls(
+    targetDocumentUrl
+  );
+  const expectedRuntimeCalls = getExpectedRuntimeConsoleCalls(
+    targetDocumentUrl
+  );
   const onRuntimeDone = new Promise(resolve => (runtimeDoneResolve = resolve));
   const onAvailable = resources => {
     for (const resource of resources) {
@@ -69,7 +85,7 @@ async function testConsoleMessagesResources() {
   info(
     "Now log messages *after* the call to ResourceWatcher.watchResources and after having received all existing messages"
   );
-  await logRuntimeMessages(tab.linkedBrowser);
+  await logRuntimeMessages(tab.linkedBrowser, executeInIframe);
 
   info("Waiting for all runtime messages");
   await onRuntimeDone;
@@ -84,9 +100,11 @@ async function testConsoleMessagesResources() {
   await client.close();
 }
 
-async function testConsoleMessagesResourcesWithIgnoreExistingResources() {
+async function testConsoleMessagesResourcesWithIgnoreExistingResources(
+  executeInIframe
+) {
   info("Test ignoreExistingResources option for console messages");
-  const tab = await addTab("data:text/html,Console Messages");
+  const tab = await addTab(FISSION_TEST_URL);
 
   const {
     client,
@@ -97,7 +115,7 @@ async function testConsoleMessagesResourcesWithIgnoreExistingResources() {
   info(
     "Check whether onAvailable will not be called with existing console messages"
   );
-  await logExistingMessages(tab.linkedBrowser);
+  await logExistingMessages(tab.linkedBrowser, executeInIframe);
 
   const availableResources = [];
   await resourceWatcher.watchResources(
@@ -116,15 +134,25 @@ async function testConsoleMessagesResourcesWithIgnoreExistingResources() {
   info(
     "Check whether onAvailable will be called with the future console messages"
   );
-  await logRuntimeMessages(tab.linkedBrowser);
+  await logRuntimeMessages(tab.linkedBrowser, executeInIframe);
+  const targetDocumentUrl = executeInIframe ? IFRAME_URL : FISSION_TEST_URL;
+  const expectedRuntimeConsoleCalls = getExpectedRuntimeConsoleCalls(
+    targetDocumentUrl
+  );
   await waitUntil(
     () => availableResources.length === expectedRuntimeConsoleCalls.length
   );
+  const expectedTargetFront =
+    executeInIframe && isFissionEnabled()
+      ? targetList
+          .getAllTargets([targetList.TYPES.FRAME])
+          .find(target => target.url == IFRAME_URL)
+      : targetList.targetFront;
   for (let i = 0; i < expectedRuntimeConsoleCalls.length; i++) {
     const { message, targetFront } = availableResources[i];
     is(
       targetFront,
-      targetList.targetFront,
+      expectedTargetFront,
       "The targetFront property is the expected one"
     );
     const expected = expectedRuntimeConsoleCalls[i];
@@ -135,224 +163,257 @@ async function testConsoleMessagesResourcesWithIgnoreExistingResources() {
   await client.close();
 }
 
-
-
-
-
-const EXPECTED_FILENAME = /content-task.js/;
-const EXPECTED_FUNCTION_NAME = "frameScript";
-
-function logExistingMessages(browser) {
-  return ContentTask.spawn(browser, null, function frameScript() {
-    content.console.log("foobarBaz-log", undefined);
-    content.console.info("foobarBaz-info", null);
-    content.console.warn("foobarBaz-warn", content.document.body);
+async function logExistingMessages(browser, executeInIframe) {
+  let browsingContext = browser.browsingContext;
+  if (executeInIframe) {
+    browsingContext = await SpecialPowers.spawn(
+      browser,
+      [],
+      function frameScript() {
+        return content.document.querySelector("iframe").browsingContext;
+      }
+    );
+  }
+  return evalInBrowsingContext(browsingContext, function pageScript() {
+    console.log("foobarBaz-log", undefined);
+    console.info("foobarBaz-info", null);
+    console.warn("foobarBaz-warn", document.body);
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function evalInBrowsingContext(browsingContext, script) {
+  return SpecialPowers.spawn(browsingContext, [String(script)], expr => {
+    const document = content.document;
+    const scriptEl = document.createElement("script");
+    document.body.appendChild(scriptEl);
+    
+    scriptEl.textContent = "new " + expr;
+    scriptEl.remove();
+  });
+}
+
+
+
+
+const EXPECTED_FUNCTION_NAME = "pageScript";
+
 const NUMBER_REGEX = /^\d+$/;
 
-const defaultStackFrames = [
-  {
-    filename: "resource://testing-common/content-task.js",
-    lineNumber: NUMBER_REGEX,
-    columnNumber: NUMBER_REGEX,
-  },
-  {
-    filename: "resource://testing-common/content-task.js",
-    lineNumber: NUMBER_REGEX,
-    columnNumber: NUMBER_REGEX,
-    asyncCause: "MessageListener.receiveMessage",
-  },
-];
-
-const expectedExistingConsoleCalls = [
-  {
-    level: "log",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: ["foobarBaz-log", { type: "undefined" }],
-  },
-  {
-    level: "info",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: ["foobarBaz-info", { type: "null" }],
-  },
-  {
-    level: "warn",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: ["foobarBaz-warn", { type: "object", actor: /[a-z]/ }],
-  },
-];
+function getExpectedExistingConsoleCalls(documentFilename) {
+  return [
+    {
+      level: "log",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: ["foobarBaz-log", { type: "undefined" }],
+    },
+    {
+      level: "info",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: ["foobarBaz-info", { type: "null" }],
+    },
+    {
+      level: "warn",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: ["foobarBaz-warn", { type: "object", actor: /[a-z]/ }],
+    },
+  ];
+}
 
 const longString = new Array(DevToolsServer.LONG_STRING_LENGTH + 2).join("a");
-const expectedRuntimeConsoleCalls = [
-  {
-    level: "log",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: ["foobarBaz-log", { type: "undefined" }],
-  },
-  {
-    level: "log",
-    arguments: ["Float from not a number: NaN"],
-  },
-  {
-    level: "log",
-    arguments: ["Float from string: 1.200000"],
-  },
-  {
-    level: "log",
-    arguments: ["Float from number: 1.300000"],
-  },
-  {
-    level: "info",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: ["foobarBaz-info", { type: "null" }],
-  },
-  {
-    level: "warn",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: ["foobarBaz-warn", { type: "object", actor: /[a-z]/ }],
-  },
-  {
-    level: "debug",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: [{ type: "null" }],
-  },
-  {
-    level: "trace",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    stacktrace: [
-      {
-        filename: EXPECTED_FILENAME,
-        functionName: EXPECTED_FUNCTION_NAME,
-      },
-      ...defaultStackFrames,
-    ],
-  },
-  {
-    level: "dir",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: [
-      {
-        type: "object",
-        actor: /[a-z]/,
-        class: "HTMLDocument",
-      },
-      {
-        type: "object",
-        actor: /[a-z]/,
-        class: "Location",
-      },
-    ],
-  },
-  {
-    level: "log",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: [
-      "foo",
-      {
-        type: "longString",
-        initial: longString.substring(
-          0,
-          DevToolsServer.LONG_STRING_INITIAL_LENGTH
-        ),
-        length: longString.length,
-        actor: /[a-z]/,
-      },
-    ],
-  },
-  {
-    level: "log",
-    filename: EXPECTED_FILENAME,
-    functionName: EXPECTED_FUNCTION_NAME,
-    timeStamp: NUMBER_REGEX,
-    arguments: [
-      {
-        type: "object",
-        actor: /[a-z]/,
-        class: "Restricted",
-      },
-    ],
-  },
-  {
-    level: "error",
-    filename: EXPECTED_FILENAME,
-    functionName: "fromAsmJS",
-    timeStamp: NUMBER_REGEX,
-    arguments: ["foobarBaz-asmjs-error", { type: "undefined" }],
-
-    stacktrace: [
-      {
-        filename: EXPECTED_FILENAME,
-        functionName: "fromAsmJS",
-      },
-      {
-        filename: EXPECTED_FILENAME,
-        functionName: "inAsmJS2",
-      },
-      {
-        filename: EXPECTED_FILENAME,
-        functionName: "inAsmJS1",
-      },
-      {
-        filename: EXPECTED_FILENAME,
-        functionName: EXPECTED_FUNCTION_NAME,
-      },
-      ...defaultStackFrames,
-    ],
-  },
-];
-
-function logRuntimeMessages(browser) {
-  return ContentTask.spawn(browser, [], function frameScript() {
+function getExpectedRuntimeConsoleCalls(documentFilename) {
+  const defaultStackFrames = [
     
-    const { require } = ChromeUtils.import(
-      "resource://devtools/shared/Loader.jsm"
+    {
+      filename: documentFilename,
+      lineNumber: 1,
+      columnNumber: NUMBER_REGEX,
+    },
+  ];
+
+  return [
+    {
+      level: "log",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: ["foobarBaz-log", { type: "undefined" }],
+    },
+    {
+      level: "log",
+      arguments: ["Float from not a number: NaN"],
+    },
+    {
+      level: "log",
+      arguments: ["Float from string: 1.200000"],
+    },
+    {
+      level: "log",
+      arguments: ["Float from number: 1.300000"],
+    },
+    {
+      level: "info",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: ["foobarBaz-info", { type: "null" }],
+    },
+    {
+      level: "warn",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: ["foobarBaz-warn", { type: "object", actor: /[a-z]/ }],
+    },
+    {
+      level: "debug",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: [{ type: "null" }],
+    },
+    {
+      level: "trace",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      stacktrace: [
+        {
+          filename: documentFilename,
+          functionName: EXPECTED_FUNCTION_NAME,
+        },
+        ...defaultStackFrames,
+      ],
+    },
+    {
+      level: "dir",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: [
+        {
+          type: "object",
+          actor: /[a-z]/,
+          class: "HTMLDocument",
+        },
+        {
+          type: "object",
+          actor: /[a-z]/,
+          class: "Location",
+        },
+      ],
+    },
+    {
+      level: "log",
+      filename: documentFilename,
+      functionName: EXPECTED_FUNCTION_NAME,
+      timeStamp: NUMBER_REGEX,
+      arguments: [
+        "foo",
+        {
+          type: "longString",
+          initial: longString.substring(
+            0,
+            DevToolsServer.LONG_STRING_INITIAL_LENGTH
+          ),
+          length: longString.length,
+          actor: /[a-z]/,
+        },
+      ],
+    },
+    {
+      level: "error",
+      filename: documentFilename,
+      functionName: "fromAsmJS",
+      timeStamp: NUMBER_REGEX,
+      arguments: ["foobarBaz-asmjs-error", { type: "undefined" }],
+
+      stacktrace: [
+        {
+          filename: documentFilename,
+          functionName: "fromAsmJS",
+        },
+        {
+          filename: documentFilename,
+          functionName: "inAsmJS2",
+        },
+        {
+          filename: documentFilename,
+          functionName: "inAsmJS1",
+        },
+        {
+          filename: documentFilename,
+          functionName: EXPECTED_FUNCTION_NAME,
+        },
+        ...defaultStackFrames,
+      ],
+    },
+    {
+      level: "log",
+      filename: gTestPath,
+      functionName: "frameScript",
+      timeStamp: NUMBER_REGEX,
+      arguments: [
+        {
+          type: "object",
+          actor: /[a-z]/,
+          class: "Restricted",
+        },
+      ],
+    },
+  ];
+}
+
+async function logRuntimeMessages(browser, executeInIframe) {
+  let browsingContext = browser.browsingContext;
+  if (executeInIframe) {
+    browsingContext = await SpecialPowers.spawn(
+      browser,
+      [],
+      function frameScript() {
+        return content.document.querySelector("iframe").browsingContext;
+      }
     );
-    const { DevToolsServer } = require("devtools/server/devtools-server");
-    const _longString = new Array(DevToolsServer.LONG_STRING_LENGTH + 2).join(
-      "a"
-    );
+  }
+  
+  await evalInBrowsingContext(
+    browsingContext,
+    `function () {window.LONG_STRING_LENGTH = ${DevToolsServer.LONG_STRING_LENGTH};}`
+  );
+  await evalInBrowsingContext(browsingContext, function pageScript() {
+    const _longString = new Array(window.LONG_STRING_LENGTH + 2).join("a");
 
-    content.console.log("foobarBaz-log", undefined);
+    console.log("foobarBaz-log", undefined);
 
-    content.console.log("Float from not a number: %f", "foo");
-    content.console.log("Float from string: %f", "1.2");
-    content.console.log("Float from number: %f", 1.3);
+    console.log("Float from not a number: %f", "foo");
+    console.log("Float from string: %f", "1.2");
+    console.log("Float from number: %f", 1.3);
 
-    content.console.info("foobarBaz-info", null);
-    content.console.warn("foobarBaz-warn", content.document.documentElement);
-    content.console.debug(null);
-    content.console.trace();
-    content.console.dir(content.document, content.location);
-    content.console.log("foo", _longString);
-
-    const sandbox = new Cu.Sandbox(null, { invisibleToDebugger: true });
-    const sandboxObj = sandbox.eval("new Object");
-    content.console.log(sandboxObj);
+    console.info("foobarBaz-info", null);
+    console.warn("foobarBaz-warn", document.documentElement);
+    console.debug(null);
+    console.trace();
+    console.dir(document, location);
+    console.log("foo", _longString);
 
     function fromAsmJS() {
-      content.console.error("foobarBaz-asmjs-error", undefined);
+      console.error("foobarBaz-asmjs-error", undefined);
     }
 
     (function(global, foreign) {
@@ -365,6 +426,11 @@ function logRuntimeMessages(browser) {
       }
       return inAsmJS1;
     })(null, { fromAsmJS: fromAsmJS })();
+  });
+  await SpecialPowers.spawn(browsingContext, [], function frameScript() {
+    const sandbox = new Cu.Sandbox(null, { invisibleToDebugger: true });
+    const sandboxObj = sandbox.eval("new Object");
+    content.console.log(sandboxObj);
   });
 }
 
