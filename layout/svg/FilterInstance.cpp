@@ -723,8 +723,17 @@ void FilterInstance::BuildSourceImage(DrawTarget* aDest,
   ctx->SetMatrixDouble(devPxToCssPxTM * mPaintTransform *
                        gfxMatrix::Translation(-neededRect.TopLeft()));
 
-  mPaintCallback->Paint(*ctx, mTargetFrame, mPaintTransform, &dirty,
-                        aImgParams);
+  auto imageFlags = aImgParams.imageFlags;
+  if (mTargetFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+    
+    
+    
+    
+    imageFlags &= ~imgIContainer::FLAG_HIGH_QUALITY_SCALING;
+  }
+  imgDrawingParams imgParams(imageFlags);
+  mPaintCallback->Paint(*ctx, mTargetFrame, mPaintTransform, &dirty, imgParams);
+  aImgParams.result = imgParams.result;
 
   mSourceGraphic.mSourceSurface = offscreenDT->Snapshot();
   mSourceGraphic.mSurfaceRect = neededRect;
