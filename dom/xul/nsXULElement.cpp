@@ -485,7 +485,7 @@ bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
   if (elm) {
     
     if (!content->IsXULElement(nsGkAtoms::toolbarbutton)) {
-      nsFocusManager* fm = nsFocusManager::GetFocusManager();
+      nsIFocusManager* fm = nsFocusManager::GetFocusManager();
       if (fm) {
         nsCOMPtr<Element> elementToFocus;
         

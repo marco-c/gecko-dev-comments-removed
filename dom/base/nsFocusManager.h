@@ -211,12 +211,6 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  nsresult SetFocusedWindowWithCallerType(mozIDOMWindowProxy* aWindowToFocus,
-                                          mozilla::dom::CallerType aCallerType);
-
-  
-
-
 
   void ActivateRemoteFrameIfNeeded(mozilla::dom::Element&);
 
@@ -225,48 +219,6 @@ class nsFocusManager final : public nsIFocusManager,
 
   void RaiseWindow(nsPIDOMWindowOuter* aWindow,
                    mozilla::dom::CallerType aCallerType);
-
-  
-
-
-  void WindowRaised(mozIDOMWindowProxy* aWindow);
-
-  
-
-
-  void WindowLowered(mozIDOMWindowProxy* aWindow);
-
-  
-
-
-
-
-
-  void WindowShown(mozIDOMWindowProxy* aWindow, bool aNeedsFocus);
-
-  
-
-
-
-  void WindowHidden(mozIDOMWindowProxy* aWindow);
-
-  
-
-
-  void FireDelayedEvents(Document* aDocument);
-
-  
-
-
-
-  void ParentActivated(mozIDOMWindowProxy* aWindow, bool aActive);
-
-  
-
-
-
-
-  nsresult FocusPlugin(mozilla::dom::Element* aPlugin);
 
   static uint32_t FocusOptionsToFocusManagerFlags(
       const mozilla::dom::FocusOptions& aOptions);

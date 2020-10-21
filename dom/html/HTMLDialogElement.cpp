@@ -161,7 +161,7 @@ void HTMLDialogElement::FocusDialog() {
       return;
     }
   } else {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
+    nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
       
       fm->ClearFocus(OwnerDoc()->GetWindow());

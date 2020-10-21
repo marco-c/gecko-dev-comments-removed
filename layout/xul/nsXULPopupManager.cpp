@@ -764,7 +764,7 @@ void nsXULPopupManager::ShowTooltipAtScreen(nsIContent* aPopup,
 static void CheckCaretDrawingState() {
   
   
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
     nsCOMPtr<mozIDOMWindowProxy> window;
     fm->GetFocusedWindow(getter_AddRefs(window));
