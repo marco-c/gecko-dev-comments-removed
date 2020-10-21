@@ -64,47 +64,27 @@ NS_IMETHODIMP
 nsHangDetails::GetAnnotations(JSContext* aCx, JS::MutableHandleValue aVal) {
   
   
-  auto& annotations = mDetails.annotations();
-  size_t length = annotations.Length();
-  JS::RootedObject retObj(aCx, JS::NewArrayObject(aCx, length));
-  if (!retObj) {
+  JS::RootedObject jsAnnotation(aCx, JS_NewPlainObject(aCx));
+  if (!jsAnnotation) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  for (size_t i = 0; i < length; ++i) {
-    const auto& annotation = annotations[i];
-    JS::RootedObject annotationPair(aCx, JS::NewArrayObject(aCx, 2));
-    if (!annotationPair) {
+  for (auto& annot : mDetails.annotations()) {
+    JSString* jsString =
+        JS_NewUCStringCopyN(aCx, annot.value().get(), annot.value().Length());
+    if (!jsString) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-
-    JS::RootedString key(aCx, JS_NewUCStringCopyN(aCx, annotation.name().get(),
-                                                  annotation.name().Length()));
-    if (!key) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    JS::RootedString value(aCx,
-                           JS_NewUCStringCopyN(aCx, annotation.value().get(),
-                                               annotation.value().Length()));
-    if (!value) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    if (!JS_DefineElement(aCx, annotationPair, 0, key, JSPROP_ENUMERATE)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    if (!JS_DefineElement(aCx, annotationPair, 1, value, JSPROP_ENUMERATE)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    if (!JS_DefineElement(aCx, retObj, i, annotationPair, JSPROP_ENUMERATE)) {
+    JS::RootedValue jsValue(aCx);
+    jsValue.setString(jsString);
+    if (!JS_DefineUCProperty(aCx, jsAnnotation, annot.name().get(),
+                             annot.name().Length(), jsValue,
+                             JSPROP_ENUMERATE)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
 
-  aVal.setObject(*retObj);
+  aVal.setObject(*jsAnnotation);
   return NS_OK;
 }
 

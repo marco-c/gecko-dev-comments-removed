@@ -88,7 +88,6 @@
 #include "TelemetryHistogram.h"
 #include "TelemetryOrigin.h"
 #include "TelemetryScalar.h"
-#include "TelemetryUserInteraction.h"
 
 namespace {
 
@@ -1150,8 +1149,6 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   TelemetryEvent::InitializeGlobalState(XRE_IsParentProcess(),
                                         XRE_IsParentProcess());
   TelemetryOrigin::InitializeGlobalState();
-  
-  TelemetryUserInteraction::InitializeGlobalState(useTelemetry, useTelemetry);
 
   
   TelemetryImpl* telemetry = new TelemetryImpl();
@@ -1189,7 +1186,6 @@ void TelemetryImpl::ShutdownTelemetry() {
   TelemetryScalar::DeInitializeGlobalState();
   TelemetryEvent::DeInitializeGlobalState();
   TelemetryOrigin::DeInitializeGlobalState();
-  TelemetryUserInteraction::DeInitializeGlobalState();
   TelemetryIPCAccumulator::DeInitializeGlobalState();
 }
 
