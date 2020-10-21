@@ -35,7 +35,7 @@ use crate::segment::SegmentBuilder;
 use crate::space::SpaceMapper;
 use crate::texture_cache::TEXTURE_REGION_DIMENSIONS;
 use crate::util::{clamp_to_scale_factor, pack_as_float, raster_rect_to_device_pixels};
-use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility};
+use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility, VisibilityState, PrimitiveVisibilityMask};
 
 
 const MAX_MASK_SIZE: f32 = 4096.0;
@@ -72,32 +72,44 @@ pub fn prepare_primitives(
             let prim_instance_index = cluster.prim_range.start + idx;
 
             
-            
-            
-            if !prim_instance.is_visible() {
-                continue;
-            }
-
-            
-            
-            
-            
-            
-
-            
-            
-            prim_instance.clear_visibility();
-            let dirty_region = frame_state.current_dirty_region();
-
-            for dirty_region in &dirty_region.dirty_rects {
-                if prim_instance.vis.clipped_world_rect.intersects(&dirty_region.world_rect) {
-                    prim_instance.vis.visibility_mask.include(dirty_region.visibility_mask);
+            match prim_instance.vis.state {
+                VisibilityState::Unset => {
+                    panic!("bug: invalid vis state");
                 }
-            }
+                VisibilityState::Culled => {
+                    continue;
+                }
+                VisibilityState::Coarse { ref rect_in_pic_space } => {
+                    
+                    
+                    
+                    
+                    
 
-            
-            if !prim_instance.is_visible() {
-                continue;
+                    
+                    
+                    let dirty_region = frame_state.current_dirty_region();
+                    let mut visibility_mask = PrimitiveVisibilityMask::empty();
+
+                    for dirty_region in &dirty_region.dirty_rects {
+                        if rect_in_pic_space.intersects(&dirty_region.rect_in_pic_space) {
+                            visibility_mask.include(dirty_region.visibility_mask);
+                        }
+                    }
+
+                    
+                    if visibility_mask.is_empty() {
+                        prim_instance.clear_visibility();
+                        continue;
+                    } else {
+                        prim_instance.vis.state = VisibilityState::Detailed {
+                            visibility_mask,
+                        }
+                    }
+                }
+                VisibilityState::Detailed { .. } => {
+                    
+                }
             }
 
             let plane_split_anchor = PlaneSplitAnchor::new(cluster_index, prim_instance_index);

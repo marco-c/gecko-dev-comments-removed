@@ -13,7 +13,7 @@ use euclid::Scale;
 use std::{usize, mem};
 use crate::image_tiling;
 use crate::segment::EdgeAaSegmentMask;
-use crate::clip::{ClipStore, ClipChainStack, ClipNodeRange};
+use crate::clip::{ClipStore, ClipChainStack};
 use crate::composite::CompositeState;
 use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX, SpatialTree, SpatialNodeIndex};
 use crate::clip::{ClipInstance, ClipChainInstance};
@@ -138,6 +138,28 @@ bitflags! {
 }
 
 
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub enum VisibilityState {
+    
+    Unset,
+    
+    Culled,
+    
+    
+    
+    Coarse {
+        rect_in_pic_space: PictureRect,
+    },
+    
+    
+    Detailed {
+        
+        visibility_mask: PrimitiveVisibilityMask,
+    },
+}
+
+
 
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -148,8 +170,7 @@ pub struct PrimitiveVisibility {
     
     
     
-    
-    pub clipped_world_rect: WorldRect,
+    pub state: VisibilityState,
 
     
     
@@ -163,9 +184,6 @@ pub struct PrimitiveVisibility {
     pub flags: PrimitiveVisibilityFlags,
 
     
-    pub visibility_mask: PrimitiveVisibilityMask,
-
-    
     
     pub combined_local_clip_rect: LayoutRect,
 }
@@ -173,23 +191,18 @@ pub struct PrimitiveVisibility {
 impl PrimitiveVisibility {
     pub fn new() -> Self {
         PrimitiveVisibility {
-            clip_chain: ClipChainInstance {
-                clips_range: ClipNodeRange {
-                    first: 0,
-                    count: 0,
-                },
-                local_clip_rect: LayoutRect::zero(),
-                has_non_local_clips: false,
-                needs_mask: false,
-                pic_clip_rect: PictureRect::zero(),
-                pic_spatial_node_index: ROOT_SPATIAL_NODE_INDEX,
-            },
-            clipped_world_rect: WorldRect::zero(),
+            state: VisibilityState::Unset,
+            clip_chain: ClipChainInstance::empty(),
             clip_task_index: ClipTaskIndex::INVALID,
             flags: PrimitiveVisibilityFlags::empty(),
-            visibility_mask: PrimitiveVisibilityMask::empty(),
             combined_local_clip_rect: LayoutRect::zero(),
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.state = VisibilityState::Culled;
+        self.clip_task_index = ClipTaskIndex::INVALID;
+        self.flags = PrimitiveVisibilityFlags::empty();
     }
 }
 
@@ -375,13 +388,9 @@ pub fn update_primitive_visibility(
             };
 
             if is_passthrough {
-                prim_instance.vis = PrimitiveVisibility {
-                    clipped_world_rect: WorldRect::max_rect(),
-                    clip_chain: ClipChainInstance::empty(),
-                    clip_task_index: ClipTaskIndex::INVALID,
-                    combined_local_clip_rect: LayoutRect::zero(),
+                
+                prim_instance.vis.state = VisibilityState::Detailed {
                     visibility_mask: PrimitiveVisibilityMask::all(),
-                    flags: PrimitiveVisibilityFlags::empty(),
                 };
             } else {
                 if prim_local_rect.size.width <= 0.0 || prim_local_rect.size.height <= 0.0 {
@@ -443,61 +452,43 @@ pub fn update_primitive_visibility(
                 
                 frame_state.clip_chain_stack.pop_clip();
 
-                let clip_chain = match clip_chain {
+                prim_instance.vis.clip_chain = match clip_chain {
                     Some(clip_chain) => clip_chain,
                     None => {
                         if prim_instance.is_chased() {
                             println!("\tunable to build the clip chain, skipping");
                         }
-                        prim_instance.clear_visibility();
                         continue;
                     }
                 };
 
                 if prim_instance.is_chased() {
                     println!("\teffective clip chain from {:?} {}",
-                             clip_chain.clips_range,
+                             prim_instance.vis.clip_chain.clips_range,
                              if apply_local_clip_rect { "(applied)" } else { "" },
                     );
                     println!("\tpicture rect {:?} @{:?}",
-                             clip_chain.pic_clip_rect,
-                             clip_chain.pic_spatial_node_index,
+                             prim_instance.vis.clip_chain.pic_clip_rect,
+                             prim_instance.vis.clip_chain.pic_spatial_node_index,
                     );
                 }
 
-                
-                
-                let world_rect = match map_surface_to_world.map(&clip_chain.pic_clip_rect) {
-                    Some(world_rect) => world_rect,
-                    None => {
-                        continue;
-                    }
-                };
-
-                let clipped_world_rect = match world_rect.intersection(&world_culling_rect) {
-                    Some(rect) => rect,
-                    None => {
-                        continue;
-                    }
-                };
-
-                let combined_local_clip_rect = if apply_local_clip_rect {
-                    clip_chain.local_clip_rect
+                prim_instance.vis.combined_local_clip_rect = if apply_local_clip_rect {
+                    prim_instance.vis.clip_chain.local_clip_rect
                 } else {
                     prim_instance.clip_set.local_clip_rect
                 };
 
-                if combined_local_clip_rect.size.is_empty() {
+                if prim_instance.vis.combined_local_clip_rect.size.is_empty() {
                     if prim_instance.is_chased() {
                         println!("\tculled for zero local clip rectangle");
                     }
-                    prim_instance.clear_visibility();
                     continue;
                 }
 
                 
                 
-                match combined_local_clip_rect.intersection(&local_rect) {
+                match prim_instance.vis.combined_local_clip_rect.intersection(&local_rect) {
                     Some(visible_rect) => {
                         if let Some(rect) = map_local_to_surface.map(&visible_rect) {
                             surface_rect = surface_rect.union(&rect);
@@ -507,44 +498,55 @@ pub fn update_primitive_visibility(
                         if prim_instance.is_chased() {
                             println!("\tculled for zero visible rectangle");
                         }
-                        prim_instance.clear_visibility();
                         continue;
                     }
                 }
 
-                
-                
-                
-                let mut vis_flags = PrimitiveVisibilityFlags::empty();
-
-                if let Some(ref mut tile_cache) = frame_state.tile_cache {
-                    
-                    
-                    
-                    match tile_cache.update_prim_dependencies(
-                        prim_instance,
-                        cluster.spatial_node_index,
-                        &clip_chain,
-                        prim_local_rect,
-                        frame_context,
-                        frame_state.data_stores,
-                        frame_state.clip_store,
-                        &store.pictures,
-                        frame_state.resource_cache,
-                        &store.color_bindings,
-                        &frame_state.surface_stack,
-                        &mut frame_state.composite_state,
-                    ) {
-                        Some(flags) => {
-                            vis_flags = flags;
-                        }
-                        None => {
-                            prim_instance.clear_visibility();
-                            
-                            
-                            continue;
-                        }
+                match frame_state.tile_cache {
+                    Some(ref mut tile_cache) => {
+                        
+                        
+                        
+                        tile_cache.update_prim_dependencies(
+                            prim_instance,
+                            cluster.spatial_node_index,
+                            prim_local_rect,
+                            frame_context,
+                            frame_state.data_stores,
+                            frame_state.clip_store,
+                            &store.pictures,
+                            frame_state.resource_cache,
+                            &store.color_bindings,
+                            &frame_state.surface_stack,
+                            &mut frame_state.composite_state,
+                        );
                     }
+                    None => {
+                        
+                        let clipped_world_rect = calculate_prim_clipped_world_rect(
+                            &prim_instance.vis.clip_chain.pic_clip_rect,
+                            &world_culling_rect,
+                            &map_surface_to_world,
+                        );
+
+                        prim_instance.vis.state = match clipped_world_rect {
+                            Some(_) => {
+                                VisibilityState::Detailed {
+                                    visibility_mask: PrimitiveVisibilityMask::all(),
+                                }
+                            }
+                            None => {
+                                VisibilityState::Culled
+                            }
+                        };
+                    }
+                }
+
+                
+                match prim_instance.vis.state {
+                    VisibilityState::Unset => panic!("bug: invalid state"),
+                    VisibilityState::Culled => continue,
+                    VisibilityState::Coarse { .. } | VisibilityState::Detailed { .. } => {}
                 }
 
                 
@@ -566,8 +568,14 @@ pub fn update_primitive_visibility(
                         PrimitiveInstanceKind::Backdrop { .. } => debug_colors::MEDIUMAQUAMARINE,
                     };
                     if debug_color.a != 0.0 {
-                        let debug_rect = clipped_world_rect * frame_context.global_device_pixel_scale;
-                        frame_state.scratch.primitive.push_debug_rect(debug_rect, debug_color, debug_color.scale_alpha(0.5));
+                        if let Some(rect) = calculate_prim_clipped_world_rect(
+                            &prim_instance.vis.clip_chain.pic_clip_rect,
+                            &world_culling_rect,
+                            &map_surface_to_world,
+                        ) {
+                            let debug_rect = rect * frame_context.global_device_pixel_scale;
+                            frame_state.scratch.primitive.push_debug_rect(debug_rect, debug_color, debug_color.scale_alpha(0.5));
+                        }
                     }
                 } else if frame_context.debug_flags.contains(::api::DebugFlags::OBSCURE_IMAGES) {
                     let is_image = matches!(
@@ -576,25 +584,22 @@ pub fn update_primitive_visibility(
                     );
                     if is_image {
                         
-                        let rect = clipped_world_rect * frame_context.global_device_pixel_scale;
-                        if rect.size.width > 70.0 && rect.size.height > 70.0 {
-                            frame_state.scratch.primitive.push_debug_rect(rect, debug_colors::PURPLE, debug_colors::PURPLE);
+                        if let Some(rect) = calculate_prim_clipped_world_rect(
+                            &prim_instance.vis.clip_chain.pic_clip_rect,
+                            &world_culling_rect,
+                            &map_surface_to_world,
+                        ) {
+                            let rect = rect * frame_context.global_device_pixel_scale;
+                            if rect.size.width > 70.0 && rect.size.height > 70.0 {
+                                frame_state.scratch.primitive.push_debug_rect(rect, debug_colors::PURPLE, debug_colors::PURPLE);
+                            }
                         }
                     }
                 }
 
                 if prim_instance.is_chased() {
-                    println!("\tvisible with {:?}", combined_local_clip_rect);
+                    println!("\tvisible with {:?}", prim_instance.vis.combined_local_clip_rect);
                 }
-
-                prim_instance.vis = PrimitiveVisibility {
-                    clipped_world_rect: clipped_world_rect,
-                    clip_chain,
-                    clip_task_index: ClipTaskIndex::INVALID,
-                    combined_local_clip_rect,
-                    visibility_mask: PrimitiveVisibilityMask::all(),
-                    flags: vis_flags,
-                };
 
                 
                 update_prim_post_visibility(
@@ -903,4 +908,16 @@ pub fn compute_conservative_visible_rect(
         Some(rect) => rect,
         None => clip_chain.local_clip_rect,
     }
+}
+
+fn calculate_prim_clipped_world_rect(
+    pic_clip_rect: &PictureRect,
+    world_culling_rect: &WorldRect,
+    map_surface_to_world: &SpaceMapper<PicturePixel, WorldPixel>,
+) -> Option<WorldRect> {
+    map_surface_to_world
+        .map(pic_clip_rect)
+        .and_then(|world_rect| {
+            world_rect.intersection(world_culling_rect)
+        })
 }
