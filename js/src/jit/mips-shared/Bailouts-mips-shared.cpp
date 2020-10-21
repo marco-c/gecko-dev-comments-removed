@@ -5,6 +5,7 @@
 
 
 #include "jit/Bailouts.h"
+#include "jit/SafepointIndex.h"
 
 #include "vm/JSScript-inl.h"
 
