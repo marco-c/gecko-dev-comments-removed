@@ -48,11 +48,6 @@ class TemplateObject {
   
   inline gc::Cell* group() const;
   inline gc::Cell* shape() const;
-
-  
-  inline uint32_t getInlineTypedObjectSize() const;
-  inline uint8_t* getInlineTypedObjectMem(
-      const JS::AutoRequireNoGC& nogc) const;
 };
 
 class NativeTemplateObject : public TemplateObject {
