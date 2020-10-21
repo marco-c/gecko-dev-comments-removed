@@ -60,7 +60,7 @@ class SharedMemory {
   static bool IsHandleValid(const SharedMemoryHandle& handle);
 
   
-  bool IsValid() const;
+  bool IsValid() const { return static_cast<bool>(mapped_file_); }
 
   
   static SharedMemoryHandle NULLHandle();
@@ -103,14 +103,19 @@ class SharedMemory {
   
   
   
-  mozilla::UniqueFileHandle TakeHandle();
+  
+  mozilla::UniqueFileHandle TakeHandle() {
+    mozilla::UniqueFileHandle handle = std::move(mapped_file_);
+    Close();
+    return handle;
+  }
 
 #ifdef OS_WIN
   
   
   HANDLE GetHandle() {
     freezeable_ = false;
-    return mapped_file_;
+    return mapped_file_.get();
   }
 #endif
 
@@ -191,20 +196,19 @@ class SharedMemory {
 
   bool CreateInternal(size_t size, bool freezeable);
 
+  void* memory_;
+  size_t max_size_;
+  mozilla::UniqueFileHandle mapped_file_;
 #if defined(OS_WIN)
   
   
   bool external_section_;
-  HANDLE mapped_file_;
 #elif defined(OS_POSIX)
-  int mapped_file_;
-  int frozen_file_;
+  mozilla::UniqueFileHandle frozen_file_;
   size_t mapped_size_;
 #endif
-  void* memory_;
   bool read_only_;
   bool freezeable_;
-  size_t max_size_;
 
   DISALLOW_EVIL_CONSTRUCTORS(SharedMemory);
 };
