@@ -6,6 +6,9 @@ SpecialPowers.pushPrefEnv({
   set: [["permissions.delegation.enabled", true]],
 });
 
+
+requestLongerTimeout(2);
+
 let gShouldObserveSubframes = false;
 
 var gTests = [
