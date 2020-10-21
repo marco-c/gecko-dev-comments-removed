@@ -27,9 +27,9 @@ enum nsDateFormatSelector : long {
 
 enum nsTimeFormatSelector : long {
   kTimeFormatNone = 0,  
-  kTimeFormatSeconds,   
+  kTimeFormatLong,      
                         
-  kTimeFormatNoSeconds  
+  kTimeFormatShort      
                         
 };
 
