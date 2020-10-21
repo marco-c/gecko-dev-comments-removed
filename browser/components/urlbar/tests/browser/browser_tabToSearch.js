@@ -98,8 +98,7 @@ add_task(async function basic() {
   );
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ENGINE_NAME,
-    
-    entry: "keywordoffer",
+    entry: "tabtosearch",
     isPreview: true,
   });
 
