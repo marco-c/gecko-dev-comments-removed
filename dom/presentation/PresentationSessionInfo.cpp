@@ -34,9 +34,6 @@
 #  include "nsIPresentationNetworkHelper.h"
 #endif  
 
-using namespace mozilla;
-using namespace mozilla::dom;
-
 
 
 
@@ -127,9 +124,6 @@ class TCPPresentationChannelDescription final
   nsCString mAddress;
   uint16_t mPort;
 };
-
-}  
-}  
 
 NS_IMPL_ISUPPORTS(TCPPresentationChannelDescription,
                   nsIPresentationChannelDescription)
@@ -1537,3 +1531,6 @@ void PresentationPresentingInfo::RejectedCallback(
 
   ReplyError(NS_ERROR_DOM_OPERATION_ERR);
 }
+
+}  
+}  
