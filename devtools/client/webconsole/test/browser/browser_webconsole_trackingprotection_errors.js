@@ -94,6 +94,9 @@ add_task(async function testForeignCookieBlockedMessage() {
     message,
     getStorageErrorUrl("CookieBlockedForeign")
   );
+  
+  
+  await hud.toolbox.destroy();
   win.close();
 });
 
@@ -124,6 +127,9 @@ add_task(async function testLimitForeignCookieBlockedMessage() {
     message,
     getStorageErrorUrl("CookieBlockedForeign")
   );
+  
+  
+  await hud.toolbox.destroy();
   win.close();
 });
 
@@ -144,6 +150,9 @@ add_task(async function testAllCookieBlockedMessage() {
     message,
     getStorageErrorUrl("CookieBlockedAll")
   );
+  
+  
+  await hud.toolbox.destroy();
   win.close();
 });
 
@@ -164,6 +173,9 @@ add_task(async function testTrackerCookieBlockedMessage() {
     message,
     getStorageErrorUrl("CookieBlockedTracker")
   );
+  
+  
+  await hud.toolbox.destroy();
   win.close();
 });
 
@@ -184,6 +196,9 @@ add_task(async function testForeignCookiePartitionedMessage() {
     message,
     getStorageErrorUrl("CookiePartitionedForeign")
   );
+  
+  
+  await hud.toolbox.destroy();
   win.close();
 });
 
@@ -212,6 +227,9 @@ add_task(async function testCookieBlockedByPermissionMessage() {
     message,
     getStorageErrorUrl("CookieBlockedByPermission")
   );
+  
+  
+  await hud.toolbox.destroy();
   win.close();
 
   
