@@ -287,15 +287,15 @@ pub const TILE_SIZE_DEFAULT: DeviceIntSize = DeviceIntSize {
 
 
 pub const TILE_SIZE_SCROLLBAR_HORIZONTAL: DeviceIntSize = DeviceIntSize {
-    width: 1024,
-    height: 32,
+    width: 512,
+    height: 16,
     _unit: marker::PhantomData,
 };
 
 
 pub const TILE_SIZE_SCROLLBAR_VERTICAL: DeviceIntSize = DeviceIntSize {
-    width: 32,
-    height: 1024,
+    width: 16,
+    height: 512,
     _unit: marker::PhantomData,
 };
 
