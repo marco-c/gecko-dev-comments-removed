@@ -93,53 +93,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
  }),
 
- 102:
- (function(module, exports, __webpack_require__) {
-
-(function(process) {
-
-
-const flag = __webpack_require__(103);
-
-function isBrowser() {
-  return typeof window == "object";
-}
-
-function isNode() {
-  return process && process.release && process.release.name == 'node';
-}
-
-function isDevelopment() {
-  if (!isNode() && isBrowser()) {
-    const href = window.location ? window.location.href : "";
-    return href.match(/^file:/) || href.match(/localhost:/);
-  }
-
-  return "production" != "production";
-}
-
-function isTesting() {
-  return flag.testing;
-}
-
-function isFirefoxPanel() {
-  return !isDevelopment();
-}
-
-function isFirefox() {
-  return /firefox/i.test(navigator.userAgent);
-}
-
-module.exports = {
-  isDevelopment,
-  isTesting,
-  isFirefoxPanel,
-  isFirefox
-};
-}.call(exports, __webpack_require__(35)))
-
- }),
-
  103:
  (function(module, exports) {
 
@@ -2170,7 +2123,7 @@ var devtoolsConfig = _interopRequireWildcard(__webpack_require__(550));
 
 var devtoolsContextmenu = _interopRequireWildcard(__webpack_require__(552));
 
-var devtoolsEnvironment = _interopRequireWildcard(__webpack_require__(102));
+var devtoolsEnvironment = _interopRequireWildcard(__webpack_require__(554));
 
 var devtoolsModules = _interopRequireWildcard(__webpack_require__(538));
 
@@ -6539,6 +6492,53 @@ module.exports = {
  (function(module, exports) {
 
 
+
+ }),
+
+ 554:
+ (function(module, exports, __webpack_require__) {
+
+(function(process) {
+
+
+const flag = __webpack_require__(103);
+
+function isBrowser() {
+  return typeof window == "object";
+}
+
+function isNode() {
+  return process && process.release && process.release.name == 'node';
+}
+
+function isDevelopment() {
+  if (!isNode() && isBrowser()) {
+    const href = window.location ? window.location.href : "";
+    return href.match(/^file:/) || href.match(/localhost:/);
+  }
+
+  return "production" != "production";
+}
+
+function isTesting() {
+  return flag.testing;
+}
+
+function isFirefoxPanel() {
+  return !isDevelopment();
+}
+
+function isFirefox() {
+  return /firefox/i.test(navigator.userAgent);
+}
+
+module.exports = {
+  isDevelopment,
+  isTesting,
+  isFirefoxPanel,
+  isFirefox
+};
+}.call(exports, __webpack_require__(35)))
 
  }),
 
