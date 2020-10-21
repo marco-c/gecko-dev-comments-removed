@@ -23,9 +23,6 @@ pub enum CallConv {
     
     BaldrdashWindows,
     
-    
-    Baldrdash2020,
-    
     Probestack,
 }
 
@@ -51,7 +48,6 @@ impl CallConv {
             LibcallCallConv::WindowsFastcall => Self::WindowsFastcall,
             LibcallCallConv::BaldrdashSystemV => Self::BaldrdashSystemV,
             LibcallCallConv::BaldrdashWindows => Self::BaldrdashWindows,
-            LibcallCallConv::Baldrdash2020 => Self::Baldrdash2020,
             LibcallCallConv::Probestack => Self::Probestack,
         }
     }
@@ -67,7 +63,7 @@ impl CallConv {
     
     pub fn extends_baldrdash(self) -> bool {
         match self {
-            Self::BaldrdashSystemV | Self::BaldrdashWindows | Self::Baldrdash2020 => true,
+            Self::BaldrdashSystemV | Self::BaldrdashWindows => true,
             _ => false,
         }
     }
@@ -82,7 +78,6 @@ impl fmt::Display for CallConv {
             Self::WindowsFastcall => "windows_fastcall",
             Self::BaldrdashSystemV => "baldrdash_system_v",
             Self::BaldrdashWindows => "baldrdash_windows",
-            Self::Baldrdash2020 => "baldrdash_2020",
             Self::Probestack => "probestack",
         })
     }
@@ -98,7 +93,6 @@ impl str::FromStr for CallConv {
             "windows_fastcall" => Ok(Self::WindowsFastcall),
             "baldrdash_system_v" => Ok(Self::BaldrdashSystemV),
             "baldrdash_windows" => Ok(Self::BaldrdashWindows),
-            "baldrdash_2020" => Ok(Self::Baldrdash2020),
             "probestack" => Ok(Self::Probestack),
             _ => Err(()),
         }

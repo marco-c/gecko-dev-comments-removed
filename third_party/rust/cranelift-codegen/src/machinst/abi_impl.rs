@@ -127,24 +127,9 @@ use std::mem;
 #[derive(Clone, Copy, Debug)]
 pub enum ABIArg {
     
-    Reg(
-        RealReg,
-        ir::Type,
-        ir::ArgumentExtension,
-        ir::ArgumentPurpose,
-    ),
+    Reg(RealReg, ir::Type, ir::ArgumentExtension),
     
-    Stack(i64, ir::Type, ir::ArgumentExtension, ir::ArgumentPurpose),
-}
-
-impl ABIArg {
-    
-    fn get_purpose(self) -> ir::ArgumentPurpose {
-        match self {
-            ABIArg::Reg(_, _, _, purpose) => purpose,
-            ABIArg::Stack(_, _, _, purpose) => purpose,
-        }
-    }
+    Stack(i64, ir::Type, ir::ArgumentExtension),
 }
 
 
@@ -189,32 +174,6 @@ pub enum StackAMode {
 pub trait ABIMachineSpec {
     
     type I: VCodeInst;
-
-    
-    fn word_bits() -> u32;
-
-    
-    fn word_bytes() -> u32 {
-        return Self::word_bits() / 8;
-    }
-
-    
-    fn word_type() -> Type {
-        match Self::word_bits() {
-            32 => I32,
-            64 => I64,
-            _ => unreachable!(),
-        }
-    }
-
-    
-    fn word_reg_class() -> RegClass {
-        match Self::word_bits() {
-            32 => RegClass::I32,
-            64 => RegClass::I64,
-            _ => unreachable!(),
-        }
-    }
 
     
     
@@ -323,7 +282,6 @@ pub trait ABIMachineSpec {
     
     fn gen_clobber_save(
         call_conv: isa::CallConv,
-        flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
     ) -> (u64, SmallVec<[Self::I; 16]>);
 
@@ -333,7 +291,6 @@ pub trait ABIMachineSpec {
     
     fn gen_clobber_restore(
         call_conv: isa::CallConv,
-        flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
     ) -> SmallVec<[Self::I; 16]>;
 
@@ -496,8 +453,7 @@ impl<M: ABIMachineSpec> ABICalleeImpl<M> {
         for (stackslot, data) in f.stack_slots.iter() {
             let off = stack_offset;
             stack_offset += data.size;
-            let mask = M::word_bytes() - 1;
-            stack_offset = (stack_offset + mask) & !mask;
+            stack_offset = (stack_offset + 7) & !7;
             debug_assert_eq!(stackslot.as_u32() as usize, stackslots.len());
             stackslots.push(off);
         }
@@ -631,12 +587,7 @@ fn generate_gv<M: ABIMachineSpec>(
         } => {
             let base = generate_gv::<M>(f, abi, base, insts);
             let into_reg = Writable::from_reg(M::get_stacklimit_reg());
-            insts.push(M::gen_load_base_offset(
-                into_reg,
-                base,
-                offset.into(),
-                M::word_type(),
-            ));
+            insts.push(M::gen_load_base_offset(into_reg, base, offset.into(), I64));
             return into_reg.to_reg();
         }
         ref other => panic!("global value for stack limit not supported: {}", other),
@@ -652,13 +603,13 @@ fn generate_gv<M: ABIMachineSpec>(
 
 
 
-fn ty_from_ty_hint_or_reg_class<M: ABIMachineSpec>(r: Reg, ty: Option<Type>) -> Type {
+fn ty_from_ty_hint_or_reg_class(r: Reg, ty: Option<Type>) -> Type {
     match (ty, r.get_class()) {
         
         (Some(t), _) => t,
         
         
-        (None, rc) if rc == M::word_reg_class() => M::word_type(),
+        (None, RegClass::I64) => I64,
         _ => panic!("Unexpected register class!"),
     }
 }
@@ -717,8 +668,8 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         match &self.sig.args[idx] {
             
             
-            &ABIArg::Reg(r, ty, ..) => M::gen_move(into_reg, r.to_reg(), ty),
-            &ABIArg::Stack(off, ty, ..) => M::gen_load_stack(
+            &ABIArg::Reg(r, ty, _) => M::gen_move(into_reg, r.to_reg(), ty),
+            &ABIArg::Stack(off, ty, _) => M::gen_load_stack(
                 StackAMode::FPOffset(M::fp_to_arg_offset(self.call_conv, &self.flags) + off, ty),
                 into_reg,
                 ty,
@@ -726,40 +677,27 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         }
     }
 
-    fn arg_is_needed_in_body(&self, idx: usize) -> bool {
-        match self.sig.args[idx].get_purpose() {
-            
-            
-            
-            ir::ArgumentPurpose::CalleeTLS | ir::ArgumentPurpose::CallerTLS => false,
-            _ => true,
-        }
-    }
-
     fn gen_copy_reg_to_retval(&self, idx: usize, from_reg: Writable<Reg>) -> Vec<Self::I> {
         let mut ret = Vec::new();
-        let word_bits = M::word_bits() as u8;
         match &self.sig.rets[idx] {
-            &ABIArg::Reg(r, ty, ext, ..) => {
+            &ABIArg::Reg(r, ty, ext) => {
                 let from_bits = ty_bits(ty) as u8;
                 let dest_reg = Writable::from_reg(r.to_reg());
                 match (ext, from_bits) {
-                    (ArgumentExtension::Uext, n) | (ArgumentExtension::Sext, n)
-                        if n < word_bits =>
-                    {
+                    (ArgumentExtension::Uext, n) | (ArgumentExtension::Sext, n) if n < 64 => {
                         let signed = ext == ArgumentExtension::Sext;
                         ret.push(M::gen_extend(
                             dest_reg,
                             from_reg.to_reg(),
                             signed,
                             from_bits,
-                             word_bits,
+                             64,
                         ));
                     }
                     _ => ret.push(M::gen_move(dest_reg, from_reg.to_reg(), ty)),
                 };
             }
-            &ABIArg::Stack(off, mut ty, ext, ..) => {
+            &ABIArg::Stack(off, mut ty, ext) => {
                 let from_bits = ty_bits(ty) as u8;
                 
                 
@@ -768,20 +706,18 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
                     .expect("Argument stack offset greater than 2GB; should hit impl limit first");
                 
                 match (ext, from_bits) {
-                    (ArgumentExtension::Uext, n) | (ArgumentExtension::Sext, n)
-                        if n < word_bits =>
-                    {
-                        assert_eq!(M::word_reg_class(), from_reg.to_reg().get_class());
+                    (ArgumentExtension::Uext, n) | (ArgumentExtension::Sext, n) if n < 64 => {
+                        assert_eq!(RegClass::I64, from_reg.to_reg().get_class());
                         let signed = ext == ArgumentExtension::Sext;
                         ret.push(M::gen_extend(
                             from_reg,
                             from_reg.to_reg(),
                             signed,
                             from_bits,
-                             word_bits,
+                             64,
                         ));
                         
-                        ty = M::word_type();
+                        ty = I64;
                     }
                     _ => {}
                 };
@@ -866,7 +802,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
     fn load_spillslot(&self, slot: SpillSlot, ty: Type, into_reg: Writable<Reg>) -> Self::I {
         
         let islot = slot.get() as i64;
-        let spill_off = islot * M::word_bytes() as i64;
+        let spill_off = islot * 8; 
         let sp_off = self.stackslots_size as i64 + spill_off;
         trace!("load_spillslot: slot {:?} -> sp_off {}", slot, sp_off);
         M::gen_load_stack(StackAMode::NominalSPOffset(sp_off, ty), into_reg, ty)
@@ -876,7 +812,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
     fn store_spillslot(&self, slot: SpillSlot, ty: Type, from_reg: Reg) -> Self::I {
         
         let islot = slot.get() as i64;
-        let spill_off = islot * M::word_bytes() as i64;
+        let spill_off = islot * 8; 
         let sp_off = self.stackslots_size as i64 + spill_off;
         trace!("store_spillslot: slot {:?} -> sp_off {}", slot, sp_off);
         M::gen_store_stack(StackAMode::NominalSPOffset(sp_off, ty), from_reg, ty)
@@ -896,14 +832,12 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
             state
         );
         let map_size = (virtual_sp_offset + nominal_sp_to_fp) as u32;
-        let bytes = M::word_bytes();
-        let map_words = (map_size + bytes - 1) / bytes;
+        let map_words = (map_size + 7) / 8; 
         let mut bits = std::iter::repeat(false)
             .take(map_words as usize)
             .collect::<Vec<bool>>();
 
-        let first_spillslot_word =
-            ((self.stackslots_size + virtual_sp_offset as u32) / bytes) as usize;
+        let first_spillslot_word = ((self.stackslots_size + virtual_sp_offset as u32) / 8) as usize;
         for &slot in slots {
             let slot = slot.get() as usize;
             bits[first_spillslot_word + slot] = true;
@@ -919,17 +853,16 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
             insts.extend(M::gen_prologue_frame_setup().into_iter());
         }
 
-        let bytes = M::word_bytes();
-        let mut total_stacksize = self.stackslots_size + bytes * self.spillslots.unwrap() as u32;
+        let mut total_stacksize = self.stackslots_size + 8 * self.spillslots.unwrap() as u32;
         if self.call_conv.extends_baldrdash() {
             debug_assert!(
                 !self.flags.enable_probestack(),
                 "baldrdash does not expect cranelift to emit stack probes"
             );
-            total_stacksize += self.flags.baldrdash_prologue_words() as u32 * bytes;
+            
+            total_stacksize += self.flags.baldrdash_prologue_words() as u32 * 8;
         }
-        let mask = 2 * bytes - 1;
-        let total_stacksize = (total_stacksize + mask) & !mask; 
+        let total_stacksize = (total_stacksize + 15) & !15; 
 
         let mut total_sp_adjust = 0;
 
@@ -964,8 +897,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         }
 
         
-        let (clobber_size, clobber_insts) =
-            M::gen_clobber_save(self.call_conv, &self.flags, &self.clobbered);
+        let (clobber_size, clobber_insts) = M::gen_clobber_save(self.call_conv, &self.clobbered);
         insts.extend(clobber_insts);
 
         if clobber_size > 0 {
@@ -980,11 +912,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         let mut insts = vec![];
 
         
-        insts.extend(M::gen_clobber_restore(
-            self.call_conv,
-            &self.flags,
-            &self.clobbered,
-        ));
+        insts.extend(M::gen_clobber_restore(self.call_conv, &self.clobbered));
 
         
         
@@ -1015,7 +943,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
     }
 
     fn gen_spill(&self, to_slot: SpillSlot, from_reg: RealReg, ty: Option<Type>) -> Self::I {
-        let ty = ty_from_ty_hint_or_reg_class::<M>(from_reg.to_reg(), ty);
+        let ty = ty_from_ty_hint_or_reg_class(from_reg.to_reg(), ty);
         self.store_spillslot(to_slot, ty, from_reg.to_reg())
     }
 
@@ -1025,7 +953,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         from_slot: SpillSlot,
         ty: Option<Type>,
     ) -> Self::I {
-        let ty = ty_from_ty_hint_or_reg_class::<M>(to_reg.to_reg().to_reg(), ty);
+        let ty = ty_from_ty_hint_or_reg_class(to_reg.to_reg().to_reg(), ty);
         self.load_spillslot(from_slot, ty, to_reg.map(|r| r.to_reg()))
     }
 }
@@ -1164,13 +1092,11 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
         idx: usize,
         from_reg: Reg,
     ) {
-        let word_rc = M::word_reg_class();
-        let word_bits = M::word_bits() as usize;
         match &self.sig.args[idx] {
-            &ABIArg::Reg(reg, ty, ext, _)
-                if ext != ir::ArgumentExtension::None && ty_bits(ty) < word_bits =>
+            &ABIArg::Reg(reg, ty, ext)
+                if ext != ir::ArgumentExtension::None && ty_bits(ty) < 64 =>
             {
-                assert_eq!(word_rc, reg.get_class());
+                assert_eq!(RegClass::I64, reg.get_class());
                 let signed = match ext {
                     ir::ArgumentExtension::Uext => false,
                     ir::ArgumentExtension::Sext => true,
@@ -1181,15 +1107,15 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
                     from_reg,
                     signed,
                     ty_bits(ty) as u8,
-                    word_bits as u8,
+                    64,
                 ));
             }
-            &ABIArg::Reg(reg, ty, _, _) => {
+            &ABIArg::Reg(reg, ty, _) => {
                 ctx.emit(M::gen_move(Writable::from_reg(reg.to_reg()), from_reg, ty));
             }
-            &ABIArg::Stack(off, mut ty, ext, _) => {
-                if ext != ir::ArgumentExtension::None && ty_bits(ty) < word_bits {
-                    assert_eq!(word_rc, from_reg.get_class());
+            &ABIArg::Stack(off, mut ty, ext) => {
+                if ext != ir::ArgumentExtension::None && ty_bits(ty) < 64 {
+                    assert_eq!(RegClass::I64, from_reg.get_class());
                     let signed = match ext {
                         ir::ArgumentExtension::Uext => false,
                         ir::ArgumentExtension::Sext => true,
@@ -1203,10 +1129,10 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
                         from_reg,
                         signed,
                         ty_bits(ty) as u8,
-                        word_bits as u8,
+                        64,
                     ));
                     
-                    ty = M::word_type();
+                    ty = I64;
                 }
                 ctx.emit(M::gen_store_stack(
                     StackAMode::SPOffset(off, ty),
@@ -1226,8 +1152,8 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
         match &self.sig.rets[idx] {
             
             
-            &ABIArg::Reg(reg, ty, _, _) => ctx.emit(M::gen_move(into_reg, reg.to_reg(), ty)),
-            &ABIArg::Stack(off, ty, _, _) => {
+            &ABIArg::Reg(reg, ty, _) => ctx.emit(M::gen_move(into_reg, reg.to_reg(), ty)),
+            &ABIArg::Stack(off, ty, _) => {
                 let ret_area_base = self.sig.stack_arg_space;
                 ctx.emit(M::gen_load_stack(
                     StackAMode::SPOffset(off + ret_area_base, ty),
@@ -1243,10 +1169,8 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
             mem::replace(&mut self.uses, Default::default()),
             mem::replace(&mut self.defs, Default::default()),
         );
-        let word_rc = M::word_reg_class();
-        let word_type = M::word_type();
         if let Some(i) = self.sig.stack_ret_arg {
-            let rd = ctx.alloc_tmp(word_rc, word_type);
+            let rd = ctx.alloc_tmp(RegClass::I64, I64);
             let ret_area_base = self.sig.stack_arg_space;
             ctx.emit(M::gen_get_stack_addr(
                 StackAMode::SPOffset(ret_area_base, I8),
@@ -1255,7 +1179,7 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
             ));
             self.emit_copy_reg_to_arg(ctx, i, rd.to_reg());
         }
-        let tmp = ctx.alloc_tmp(word_rc, word_type);
+        let tmp = ctx.alloc_tmp(RegClass::I64, I64);
         for (is_safepoint, inst) in
             M::gen_call(&self.dest, uses, defs, self.loc, self.opcode, tmp).into_iter()
         {

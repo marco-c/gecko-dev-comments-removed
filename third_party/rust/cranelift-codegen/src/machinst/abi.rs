@@ -47,11 +47,6 @@ pub trait ABICallee {
     
     
     
-    fn arg_is_needed_in_body(&self, idx: usize) -> bool;
-
-    
-    
-    
     
     
     fn gen_retval_area_setup(&self) -> Option<Self::I>;
