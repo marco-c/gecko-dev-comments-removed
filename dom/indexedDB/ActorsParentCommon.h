@@ -42,8 +42,6 @@ struct StructuredCloneReadInfoParent;
 using IndexedDBCipherStrategy = quota::IPCStreamCipherStrategy;
 using CipherKey = IndexedDBCipherStrategy::KeyType;
 
-constexpr uint32_t kFileCopyBufferSize = 32768;
-
 
 
 

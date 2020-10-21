@@ -35,6 +35,11 @@ namespace mozilla::dom::indexedDB {
 
 QM_META_HANDLE_ERROR("IndexedDB"_ns)
 
+static constexpr uint32_t kFileCopyBufferSize = 32768;
+
+nsresult SnappyUncompressStructuredCloneData(
+    nsIInputStream& aInputStream, JSStructuredCloneData& aStructuredCloneData);
+
 }  
 
 #endif  
