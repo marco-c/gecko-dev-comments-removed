@@ -219,6 +219,12 @@ class NPZCSupport final
       }
 
       nsWindow* const window = win->GetNsWindow();
+      if (!window) {
+        
+        env->ExceptionClear();
+        return;
+      }
+
       window->UserActivity();
       return mLambda(window);
     }
