@@ -4,6 +4,9 @@
 
 
 
+with Files('**'):
+    BUG_COMPONENT = ('Toolkit', 'Video/Audio Controls')
+
 SPHINX_TREES['pictureinpicture'] = 'docs'
 
 JAR_MANIFESTS += ['jar.mn']
