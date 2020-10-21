@@ -35,7 +35,7 @@ class PDMFactory final {
 
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const;
-  bool Supports(const TrackInfo& aTrackInfo,
+  bool Supports(const SupportDecoderParams& aParams,
                 DecoderDoctorDiagnostics* aDiagnostics) const;
 
   
@@ -67,8 +67,8 @@ class PDMFactory final {
   bool StartupPDM(already_AddRefed<PlatformDecoderModule> aPDM,
                   bool aInsertAtBeginning = false);
   
-  already_AddRefed<PlatformDecoderModule> GetDecoder(
-      const TrackInfo& aTrackInfo,
+  already_AddRefed<PlatformDecoderModule> GetDecoderModule(
+      const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const;
 
   already_AddRefed<MediaDataDecoder> CreateDecoderWithPDM(

@@ -106,7 +106,8 @@ bool WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType) {
   
   RefPtr<PDMFactory> platform = new PDMFactory();
   for (const auto& track : tracks) {
-    if (!track || !platform->Supports(*track, nullptr )) {
+    if (!track || !platform->Supports(SupportDecoderParams(*track),
+                                      nullptr )) {
       return false;
     }
   }

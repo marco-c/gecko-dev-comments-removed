@@ -215,7 +215,8 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
       
       
       RefPtr<PDMFactory> pdm = new PDMFactory();
-      if (!pdm->Supports(*config, nullptr )) {
+      SupportDecoderParams params{*config};
+      if (!pdm->Supports(params, nullptr )) {
         auto info = MakeUnique<MediaCapabilitiesInfo>(
             false , false ,
             false );
