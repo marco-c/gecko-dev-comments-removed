@@ -13,9 +13,7 @@ const TEST_PAGE = TEST_ROOT + "get_user_media.html";
 
 
 
-
-
-add_task(async function test_popuphiding() {
+add_task(async function test_bug_1669801() {
   let prefs = [
     [PREF_PERMISSION_FAKE, true],
     [PREF_AUDIO_LOOPBACK, ""],
@@ -30,21 +28,27 @@ add_task(async function test_popuphiding() {
 
     await shareDevices(
       browser,
-      true ,
-      true ,
-      SHARE_SCREEN
+      false ,
+      false ,
+      SHARE_WINDOW
     );
 
     let indicator = await indicatorPromise;
     let doc = indicator.document;
 
-    Assert.ok(doc.body, "Should have a document body in the indicator.");
+    let menupopup = doc.querySelector("menupopup[type='Screen']");
+    let popupShownPromise = BrowserTestUtils.waitForEvent(
+      menupopup,
+      "popupshown"
+    );
+    menupopup.openPopup(doc.body, {});
+    await popupShownPromise;
 
-    let event = new indicator.MouseEvent("popuphiding", { bubbles: true });
-    doc.documentElement.dispatchEvent(event);
-
-    Assert.ok(doc.body, "Should still have a document body in the indicator.");
+    let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+      menupopup,
+      "popuphidden"
+    );
+    menupopup.hidePopup();
+    await popupHiddenPromise;
   });
-
-  await checkNotSharing();
 });
