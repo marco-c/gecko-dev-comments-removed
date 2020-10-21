@@ -8,7 +8,6 @@ import { setupCommands, clientCommands } from "./firefox/commands";
 import { setupEvents, clientEvents } from "./firefox/events";
 import { features, prefs } from "../utils/prefs";
 import { prepareSourcePayload } from "./firefox/create";
-import sourceQueue from "../utils/source-queue";
 
 let actions;
 let targetList;
@@ -49,12 +48,6 @@ export async function onConnect(
   await resourceWatcher.watchResources([resourceWatcher.TYPES.SOURCE], {
     onAvailable: onSourceAvailable,
   });
-
-  
-  
-  
-  
-  await sourceQueue.flush();
 }
 
 export function onDisconnect() {
@@ -143,22 +136,14 @@ function onTargetDestroyed({ targetFront }): void {
 }
 
 async function onSourceAvailable(sources) {
-  for (const source of sources) {
-    const threadFront = await source.targetFront.getFront("thread");
-    const frontendSource = prepareSourcePayload(threadFront, source);
-
-    
-    
-    
-    
-    
-    
-    
-    sourceQueue.queue({
-      type: "generated",
-      data: frontendSource,
-    });
-  }
+  const frontendSources = await Promise.all(
+    sources.map(async source => {
+      const threadFront = await source.targetFront.getFront("thread");
+      const frontendSource = prepareSourcePayload(threadFront, source);
+      return frontendSource;
+    })
+  );
+  await actions.newGeneratedSources(frontendSources);
 }
 
 export { clientCommands, clientEvents };
