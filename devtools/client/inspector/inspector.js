@@ -1927,6 +1927,11 @@ Inspector.prototype = {
 
 
   onShowBoxModelHighlighterForNode(nodeFront, options) {
+    
+    
+    if (this._destroyed) {
+      return;
+    }
     this.highlighters.showHighlighterTypeForNode(
       this.highlighters.TYPES.BOXMODEL,
       nodeFront,
