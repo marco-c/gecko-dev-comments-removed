@@ -242,16 +242,3 @@ manifest_loaders = {
     'bugbug': BugbugLoader,
     'default': DefaultLoader,
 }
-
-_loader_cache = {}
-
-
-def get_manifest_loader(name, params):
-    
-    
-    if name in _loader_cache:
-        return _loader_cache[name]
-
-    loader = manifest_loaders[name](dict(params))
-    _loader_cache[name] = loader
-    return loader
