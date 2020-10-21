@@ -21,6 +21,7 @@
 #include "js/Array.h"  
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/CompileOptions.h"         
 #include "js/friend/JSMEnvironment.h"  
 #include "js/Object.h"                 
 #include "js/Printf.h"
@@ -727,7 +728,15 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   rv = PathifyURI(aInfo.ResolvedURI(), cachePath);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  script = ScriptPreloader::GetSingleton().GetCachedScript(cx, cachePath);
+  CompileOptions options(cx);
+  options.setNoScriptRval(true)
+      .setForceStrictMode()
+      .setFileAndLine(nativePath.get(), 1)
+      .setSourceIsLazy(true)
+      .setNonSyntacticScope(true);
+
+  script =
+      ScriptPreloader::GetSingleton().GetCachedScript(cx, options, cachePath);
   if (!script && cache) {
     ReadCachedScript(cache, cachePath, cx, &script);
   }
@@ -751,14 +760,9 @@ nsresult mozJSComponentLoader::ObjectForLocation(
     
     
     
-    
-    
-    CompileOptions options(cx);
-    options.setNoScriptRval(true)
-        .setForceStrictMode()
-        .setFileAndLine(nativePath.get(), 1)
-        .setSourceIsLazy(cache || ScriptPreloader::GetSingleton().Active())
-        .setNonSyntacticScope(true);
+    if (!cache && !ScriptPreloader::GetSingleton().Active()) {
+      options.setSourceIsLazy(false);
+    }
 
     if (realFile) {
       AutoMemMap map;
@@ -800,9 +804,12 @@ nsresult mozJSComponentLoader::ObjectForLocation(
     return NS_ERROR_FAILURE;
   }
 
+  MOZ_ASSERT_IF(ScriptPreloader::GetSingleton().Active(), options.sourceIsLazy);
   ScriptPreloader::GetSingleton().NoteScript(nativePath, cachePath, script);
 
   if (writeToCache) {
+    MOZ_ASSERT(options.sourceIsLazy);
+
     
     rv = WriteCachedScript(cache, cachePath, cx, script);
 

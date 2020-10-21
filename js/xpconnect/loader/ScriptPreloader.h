@@ -26,6 +26,7 @@
 #include "nsITimer.h"
 
 #include "jsapi.h"
+#include "js/CompileOptions.h"  
 #include "js/GCAnnotations.h"
 
 #include <prio.h>
@@ -79,7 +80,9 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  JSScript* GetCachedScript(JSContext* cx, const nsCString& name);
+  JSScript* GetCachedScript(JSContext* cx,
+                            const JS::ReadOnlyCompileOptions& options,
+                            const nsCString& path);
 
   
   
@@ -105,7 +108,9 @@ class ScriptPreloader : public nsIObserver,
 
  private:
   Result<Ok, nsresult> InitCacheInternal(JS::HandleObject scope = nullptr);
-  JSScript* GetCachedScriptInternal(JSContext* cx, const nsCString& name);
+  JSScript* GetCachedScriptInternal(JSContext* cx,
+                                    const JS::ReadOnlyCompileOptions& options,
+                                    const nsCString& path);
 
  public:
   void Trace(JSTracer* trc);
@@ -267,7 +272,8 @@ class ScriptPreloader : public nsIObserver,
 
     bool HasArray() { return mXDRData.constructed<nsTArray<uint8_t>>(); }
 
-    JSScript* GetJSScript(JSContext* cx);
+    JSScript* GetJSScript(JSContext* cx,
+                          const JS::ReadOnlyCompileOptions& options);
 
     size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
       auto size = mallocSizeOf(this);
@@ -411,7 +417,9 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  JSScript* WaitForCachedScript(JSContext* cx, CachedScript* script);
+  JSScript* WaitForCachedScript(JSContext* cx,
+                                const JS::ReadOnlyCompileOptions& options,
+                                CachedScript* script);
 
   void DecodeNextBatch(size_t chunkSize, JS::HandleObject scope = nullptr);
 
