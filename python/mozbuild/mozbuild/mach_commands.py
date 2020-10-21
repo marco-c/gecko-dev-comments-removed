@@ -931,7 +931,6 @@ class RunProgram(MachCommandBase):
             extras['env{}'.format(i)] = e
         if args:
             extras['args'] = " ".join(args)
-        extras['use_multiprocess'] = True  
 
         if env or args:
             restart = True
