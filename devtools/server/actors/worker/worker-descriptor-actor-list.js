@@ -99,7 +99,7 @@ WorkerPauser.prototype = {
   },
 };
 
-function WorkerTargetActorList(conn, options) {
+function WorkerDescriptorActorList(conn, options) {
   this._conn = conn;
   this._options = options;
   this._actors = new Map();
@@ -110,7 +110,7 @@ function WorkerTargetActorList(conn, options) {
   this.onUnregister = this.onUnregister.bind(this);
 }
 
-WorkerTargetActorList.prototype = {
+WorkerDescriptorActorList.prototype = {
   destroy() {
     this.onListChanged = null;
     if (this._workerPauser) {
@@ -209,4 +209,4 @@ WorkerTargetActorList.prototype = {
   },
 };
 
-exports.WorkerTargetActorList = WorkerTargetActorList;
+exports.WorkerDescriptorActorList = WorkerDescriptorActorList;
