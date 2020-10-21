@@ -32,7 +32,7 @@
 #include "jit/Simulator.h"
 #include "js/Conversions.h"
 #include "js/friend/DOMProxy.h"  
-#include "js/ScalarType.h"  
+#include "js/ScalarType.h"       
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/FunctionFlags.h"  
@@ -1948,7 +1948,8 @@ void MacroAssembler::guardStringToInt32(Register str, Register output,
     bind(&vmCall);
 
     
-    reserveStack(sizeof(int32_t));
+    
+    reserveStack(sizeof(uintptr_t));
     moveStackPtrTo(output);
 
     volatileRegs.takeUnchecked(scratch);
@@ -1976,12 +1977,12 @@ void MacroAssembler::guardStringToInt32(Register str, Register output,
       
       
       
-      addToStackPtr(Imm32(sizeof(int32_t)));
+      addToStackPtr(Imm32(sizeof(uintptr_t)));
       jump(fail);
     }
     bind(&ok);
     load32(Address(output, 0), output);
-    freeStack(sizeof(int32_t));
+    freeStack(sizeof(uintptr_t));
   }
   bind(&done);
 }
