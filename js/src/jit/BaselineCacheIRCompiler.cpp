@@ -1941,27 +1941,44 @@ bool BaselineCacheIRCompiler::emitCallNativeSetter(
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitCallScriptedSetter(
+bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
     ObjOperandId receiverId, uint32_t setterOffset, ValOperandId rhsId,
-    bool sameRealm, uint32_t nargsAndFlagsOffset) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  AutoScratchRegister scratch1(allocator, masm);
-  AutoScratchRegister scratch2(allocator, masm);
+    bool sameRealm, uint32_t nargsAndFlagsOffset,
+    Maybe<uint32_t> icScriptOffset) {
+  AutoScratchRegister callee(allocator, masm);
+  AutoScratchRegister scratch(allocator, masm);
+#if defined(JS_CODEGEN_X86)
+  Register code = scratch;
+#else
+  AutoScratchRegister code(allocator, masm);
+#endif
 
   Register receiver = allocator.useRegister(masm, receiverId);
   Address setterAddr(stubAddress(setterOffset));
   ValueOperand val = allocator.useValueRegister(masm, rhsId);
 
+  bool isInlined = icScriptOffset.isSome();
+
   
-  masm.loadPtr(setterAddr, scratch1);
+  masm.loadPtr(setterAddr, callee);
+
+  if (isInlined) {
+    
+    
+    FailurePath* failure;
+    if (!addFailurePath(&failure)) {
+      return false;
+    }
+    masm.loadBaselineJitCodeRaw(callee, code, failure->label());
+  }
 
   allocator.discardStack(masm);
 
   AutoStubFrame stubFrame(*this);
-  stubFrame.enter(masm, scratch2);
+  stubFrame.enter(masm, scratch);
 
   if (!sameRealm) {
-    masm.switchToObjectRealm(scratch1, scratch2);
+    masm.switchToObjectRealm(callee, scratch);
   }
 
   
@@ -1973,34 +1990,51 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetter(
   masm.Push(val);
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(receiver)));
 
-  
-  
-  EmitBaselineCreateStubFrameDescriptor(masm, scratch2, JitFrameLayout::Size());
+  EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
   masm.Push(Imm32(1));  
 
   
-  masm.Push(scratch1);
+  masm.Push(callee);
 
   
-  masm.Push(scratch2);
+  masm.Push(scratch);
 
-  
-  Label noUnderflow;
-  masm.load16ZeroExtend(Address(scratch1, JSFunction::offsetOfNargs()),
-                        scratch2);
-  masm.loadJitCodeRaw(scratch1, scratch1);
-
-  
-  masm.branch32(Assembler::BelowOrEqual, scratch2, Imm32(1), &noUnderflow);
-  {
+  if (isInlined) {
     
-    TrampolinePtr argumentsRectifier =
-        cx_->runtime()->jitRuntime()->getArgumentsRectifier();
-    masm.movePtr(argumentsRectifier, scratch1);
+    Address icScriptAddr(stubAddress(*icScriptOffset));
+    masm.loadPtr(icScriptAddr, scratch);
+    masm.storeICScriptInJSContext(scratch);
   }
 
+  
+  if (isInlined) {
+    
+    
+    
+#ifdef JS_CODEGEN_X86
+    masm.loadBaselineJitCodeRaw(callee, code);
+#endif
+  } else {
+    masm.loadJitCodeRaw(callee, code);
+  }
+
+  
+  
+  Label noUnderflow;
+  Register scratch2 = val.scratchReg();
+  masm.load16ZeroExtend(Address(callee, JSFunction::offsetOfNargs()), scratch2);
+  masm.branch32(Assembler::BelowOrEqual, scratch2, Imm32(1), &noUnderflow);
+
+  
+  ArgumentsRectifierKind kind = isInlined
+                                    ? ArgumentsRectifierKind::TrialInlining
+                                    : ArgumentsRectifierKind::Normal;
+  TrampolinePtr argumentsRectifier =
+      cx_->runtime()->jitRuntime()->getArgumentsRectifier(kind);
+  masm.movePtr(argumentsRectifier, code);
+
   masm.bind(&noUnderflow);
-  masm.callJit(scratch1);
+  masm.callJit(code);
 
   stubFrame.leave(masm, true);
 
@@ -2009,6 +2043,25 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetter(
   }
 
   return true;
+}
+
+bool BaselineCacheIRCompiler::emitCallScriptedSetter(
+    ObjOperandId receiverId, uint32_t setterOffset, ValOperandId rhsId,
+    bool sameRealm, uint32_t nargsAndFlagsOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  Maybe<uint32_t> icScriptOffset = mozilla::Nothing();
+  return emitCallScriptedSetterShared(receiverId, setterOffset, rhsId,
+                                      sameRealm, nargsAndFlagsOffset,
+                                      icScriptOffset);
+}
+
+bool BaselineCacheIRCompiler::emitCallInlinedSetter(
+    ObjOperandId receiverId, uint32_t setterOffset, ValOperandId rhsId,
+    uint32_t icScriptOffset, bool sameRealm, uint32_t nargsAndFlagsOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  return emitCallScriptedSetterShared(receiverId, setterOffset, rhsId,
+                                      sameRealm, nargsAndFlagsOffset,
+                                      mozilla::Some(icScriptOffset));
 }
 
 bool BaselineCacheIRCompiler::emitCallDOMSetter(ObjOperandId objId,
