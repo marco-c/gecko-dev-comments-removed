@@ -126,13 +126,6 @@ void js::intl::AddICUCellMemory(JSObject* obj, size_t nbytes) {
   
   
   AddCellMemory(obj, nbytes, MemoryUse::ICUObject);
-
-  
-  
-  
-  
-  
-  obj->zone()->maybeMallocTriggerZoneGC();
 }
 
 void js::intl::RemoveICUCellMemory(JSFreeOp* fop, JSObject* obj,
