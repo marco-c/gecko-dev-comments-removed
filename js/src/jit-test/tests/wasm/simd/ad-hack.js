@@ -303,9 +303,6 @@ for ( let offset of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) {
                        /index out of bounds/)
 
     
-    let start = 65536 - 15 + offset;
-    let legalBytes = 65536 - start;
-    assertSame(get(mem8, start, legalBytes), iota(legalBytes).map((_) => 0));
 }
 
 
