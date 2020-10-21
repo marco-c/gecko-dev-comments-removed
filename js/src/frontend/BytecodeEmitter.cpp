@@ -11253,7 +11253,11 @@ bool BytecodeEmitter::intoScriptStencil(ScriptStencil* script) {
   script->gcThings = perScriptData().gcThingList().stealGCThings();
 
   
-  script->immutableScriptData = std::move(immutableScriptData);
+  script->sharedData =
+      RuntimeScriptData::createWith(cx, std::move(immutableScriptData));
+  if (!script->sharedData) {
+    return false;
+  }
 
   
   if (sc->isFunctionBox()) {
