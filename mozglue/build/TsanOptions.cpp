@@ -38,11 +38,27 @@ extern "C" const char* __tsan_default_suppressions() {
          MOZ_TSAN_DEFAULT_EXTLIB_SUPPRESSIONS
 
          
+         "race:__tsan::ProcessPendingSignals\n"
+         "race:__tsan::CallUserSignalHandler\n"
+
+
+
+
+
+         
+
+         
          
          "mutex:libGL.so\n"
          "mutex:libGLdispatch\n"
          "mutex:libGLX\n"
-
+         
+         "mutex:libEGL_mesa.so\n"
+         
+         "mutex:GLContextGLX::~GLContextGLX\n"
+         
+         "race:libavcodec.so*\n"
+         "race:libavutil.so*\n"
          
          
          "race:libpulse.so\n"
@@ -51,23 +67,141 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:pa_format_info_set_prop_string_array\n"
          "race:pa_stream_get_index\n"
          "race:pa_stream_update_timing_info\n"
-
          
          
          "race:g_main_context_dispatch\n"
-
          
          
          "mutex:GetMaiAtkType\n"
 
-         
-         "race:__tsan::ProcessPendingSignals\n"
-         "race:__tsan::CallUserSignalHandler\n"
+
+
+
 
          
          
          
          
+         
+         
+         
+         
+         
+
+         
+         "deadlock:SanctionsTestServer\n"
+         "deadlock:OCSPStaplingServer\n"
+         
+         "deadlock:BadCertAndPinningServer\n"
+         
+         "deadlock:cert_storage::SecurityState::open_db\n"
+         "deadlock:cert_storage::SecurityState::add_certs\n"
+         
+         "deadlock:mozilla::camera::LockAndDispatch\n"
+         
+         "deadlock:third_party/rust/rkv/src/env.rs\n"
+
+
+
+
+
+         
+
+         
+         
+         
+         
+         
+         
+         "race:init_simd\n"
+         "race:simd_support\n"
+         "race:jsimd_can_ycc_rgb\n"
+         
+         
+         
+         
+         
+         
+         "race:base::Thread::Stop\n"
+         
+         
+         
+         
+         
+         "race:mp_exptmod.max_window_bits\n"
+         
+         
+         
+         
+         
+         "race:Loggable\n"
+         "race:UpdateMinLogSeverity\n"
+         
+         
+         
+         
+         
+         "race:event_debug_mode_too_late\n"
+         
+         
+         
+         
+         "race:sctp_close\n"
+         "race:sctp_iterator_work\n"
+         
+         
+         
+         
+         "race:sctp_handle_tick\n"
+         "race:sctp_handle_sack\n"
+         
+         
+         
+         
+         "race:system_base_info\n"
+         
+         
+         
+         
+         
+         
+         
+         "race:third_party/sqlite3/*\n"
+         "deadlock:third_party/sqlite3/*\n"
+
+
+
+
+
+         
+         
+         
+
+         
+         "race:std::sync::mutex::Mutex\n"
+         
+         "race:sync..Arc\n"
+         "race:alloc::sync::Arc\n"
+         
+         "race:third_party/rust/parking_lot_core/*\n"
+         
+         "race:/rustc/*.rs\n"
+         "deadlock:/rustc/*.rs\n"
+         "thread:std::sys::unix::thread::Thread::new\n"
+
+
+
+
+
+         
+         
+         
+         
+         
+         
+         
+         
+
          
          "race:WalkDiskCacheRunnable::Run\n"
          
@@ -77,27 +211,12 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsHttpChannel::OnCacheEntryCheck\n"
          "race:~AutoCacheWaitFlags\n"
 
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         "deadlock:SanctionsTestServer\n"
-         "deadlock:OCSPStaplingServer\n"
-         
-         "deadlock:BadCertAndPinningServer\n"
-         
-         "deadlock:cert_storage::SecurityState::open_db\n"
-         "deadlock:cert_storage::SecurityState::add_certs\n"
+
+
+
 
          
-         "race:third_party/sqlite3/*\n"
-         "deadlock:third_party/sqlite3/*\n"
+         
 
          
          "race:TelemetryImpl::sTelemetry\n"
@@ -110,13 +229,6 @@ extern "C" const char* __tsan_default_suppressions() {
 
          
          "race:SystemGroupImpl::sSingleton\n"
-
-         
-         "race:std::sync::mutex::Mutex\n"
-
-         
-         "race:sync..Arc\n"
-         "race:alloc::sync::Arc\n"
 
          
          "race:nsThread::SizeOfEventQueues\n"
@@ -154,9 +266,6 @@ extern "C" const char* __tsan_default_suppressions() {
 
          
          "race:ipv6_is_present\n"
-
-         
-         "deadlock:third_party/rust/rkv/src/env.rs\n"
 
          
          "race:nsSocketTransport::Close\n"
@@ -210,9 +319,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:ScriptPreloader::OffThreadDecodeCallback\n"
 
          
-         "race:mp_exptmod.max_window_bits\n"
-
-         
          "race:setNeedsIncrementalBarrier\n"
          "race:needsIncrementalBarrier\n"
 
@@ -227,22 +333,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:WebRtcAec_Create\n"
 
          
-         
-         "mutex:GLContextGLX::~GLContextGLX\n"
-
-         
-         
-         "mutex:libEGL_mesa.so\n"
-
-         
-         "race:third_party/rust/parking_lot_core/*\n"
-
-         
-         "race:/rustc/*.rs\n"
-         "deadlock:/rustc/*.rs\n"
-         "thread:std::sys::unix::thread::Thread::new\n"
-
-         
          "race:mochitest/ssltunnel/ssltunnel.cpp\n"
 
          
@@ -253,47 +343,6 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "thread:mozilla::layers::ImageBridgeChild\n"
          "race:mozilla::layers::ImageBridgeChild::ShutDown\n"
-
-         
-         
-         
-         
-         
-         "race:init_simd\n"
-         "race:simd_support\n"
-         "race:jsimd_can_ycc_rgb\n"
-         
-         
-         
-         
-         "race:base::Thread::Stop\n"
-
-         
-         
-         
-         "race:Loggable\n"
-         "race:UpdateMinLogSeverity\n"
-
-         
-         "race:event_debug_mode_too_late\n"
-
-         
-         "race:libavcodec.so*\n"
-         "race:libavutil.so*\n"
-
-         
-         "race:system_base_info\n"
-
-         
-         "race:sctp_close\n"
-         "race:sctp_iterator_work\n"
-
-         
-         "deadlock:mozilla::camera::LockAndDispatch\n"
-
-         
-         "race:sctp_handle_tick\n"
-         "race:sctp_handle_sack\n"
 
          
          "mutex:XErrorTrap\n"
