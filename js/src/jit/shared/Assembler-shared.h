@@ -530,19 +530,6 @@ class MemoryAccessDesc {
   void setOffset(uint32_t offset) { offset_ = offset; }
 };
 
-
-
-
-struct GlobalAccess {
-  GlobalAccess(jit::CodeOffset patchAt, unsigned globalDataOffset)
-      : patchAt(patchAt), globalDataOffset(globalDataOffset) {}
-
-  jit::CodeOffset patchAt;
-  unsigned globalDataOffset;
-};
-
-typedef Vector<GlobalAccess, 0, SystemAllocPolicy> GlobalAccessVector;
-
 }  
 
 namespace jit {
