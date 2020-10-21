@@ -17,11 +17,33 @@ use {
     xpcom::interfaces::nsIXULRuntime,
 };
 
+use crate::private::Instant;
+
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum TimespanCommand {
+    Start(Instant),
+    Stop(Instant),
+    Cancel,
+}
+
+
+
+
+
+
+impl Default for TimespanCommand {
+    fn default() -> Self {
+        panic!("A TimespanCommand does not have a default value.")
+    }
+}
+
 
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct IPCPayload {
     pub counters: HashMap<MetricId, i32>,
+    pub timespans: HashMap<MetricId, Vec<TimespanCommand>>,
 }
 
 
@@ -41,11 +63,7 @@ impl MetricId {
 }
 
 
-static PAYLOAD: Lazy<Mutex<IPCPayload>> = Lazy::new(|| {
-    Mutex::new(IPCPayload {
-        counters: HashMap::new(),
-    })
-});
+static PAYLOAD: Lazy<Mutex<IPCPayload>> = Lazy::new(|| Mutex::new(IPCPayload::default()));
 
 pub fn with_ipc_payload<F, R>(f: F) -> R
 where
@@ -132,5 +150,10 @@ pub fn replay_from_buf(buf: &[u8]) -> Result<(), ()> {
     for (id, value) in ipc_payload.counters.iter() {
         log::info!("Asked to replay {:?}, {:?}", id, value);
     }
+
+    for (id, value) in ipc_payload.timespans.iter() {
+        log::info!("(Timespans) Asked to replay {:?}, {:?}", id, value);
+    }
+
     Ok(())
 }
