@@ -4031,7 +4031,8 @@ void AsyncPanZoomController::RequestContentRepaint(
     return;
   }
 
-  APZC_LOGV_FM(aFrameMetrics, "%p requesting content repaint", this);
+  APZC_LOGV("%p requesting content repaint %s", this,
+            ToString(request).c_str());
   {  
     MutexAutoLock lock(mCheckerboardEventLock);
     if (mCheckerboardEvent && mCheckerboardEvent->IsRecordingTrace()) {
