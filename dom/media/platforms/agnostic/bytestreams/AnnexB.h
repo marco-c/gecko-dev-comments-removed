@@ -2,14 +2,15 @@
 
 
 
-#ifndef MP4_DEMUXER_ANNEX_B_H_
-#define MP4_DEMUXER_ANNEX_B_H_
+#ifndef DOM_MEDIA_PLATFORMS_AGNOSTIC_BYTESTREAMS_ANNEX_B_H_
+#define DOM_MEDIA_PLATFORMS_AGNOSTIC_BYTESTREAMS_ANNEX_B_H_
 
-#include "mozilla/Result.h"
 #include "ErrorList.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 
-template <class T>
-struct already_AddRefed;
+template <class>
+class nsTArray;
 
 namespace mozilla {
 class BufferReader;
