@@ -2868,7 +2868,7 @@ Toolbox.prototype = {
 
 
   reloadTarget: function(force) {
-    this.target.reload({ force: force });
+    this.target.reload({ options: { force } });
   },
 
   
