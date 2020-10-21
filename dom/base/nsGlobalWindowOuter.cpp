@@ -5210,46 +5210,6 @@ void nsGlobalWindowOuter::StopOuter(ErrorResult& aError) {
   }
 }
 
-#ifdef NS_PRINTING
-static void SetIsPrintingInDocShellTree(nsIDocShellTreeItem* aParentNode,
-                                        bool aIsPrintingOrPP,
-                                        bool aStartAtTop = true) {
-  nsCOMPtr<nsIDocShellTreeItem> parentItem(aParentNode);
-
-  
-  if (aStartAtTop) {
-    while (parentItem) {
-      nsCOMPtr<nsIDocShellTreeItem> parent;
-      parentItem->GetInProcessSameTypeParent(getter_AddRefs(parent));
-      if (!parent) {
-        break;
-      }
-      parentItem = parent;
-    }
-  }
-
-  if (nsCOMPtr<nsIDocShell> viewerContainer = do_QueryInterface(parentItem)) {
-    viewerContainer->SetIsPrinting(aIsPrintingOrPP);
-  }
-
-  if (!aParentNode) {
-    return;
-  }
-
-  
-  int32_t n;
-  aParentNode->GetInProcessChildCount(&n);
-  for (int32_t i = 0; i < n; i++) {
-    nsCOMPtr<nsIDocShellTreeItem> child;
-    aParentNode->GetInProcessChildAt(i, getter_AddRefs(child));
-    NS_ASSERTION(child, "child isn't nsIDocShell");
-    if (child) {
-      SetIsPrintingInDocShellTree(child, aIsPrintingOrPP, false);
-    }
-  }
-}
-#endif
-
 void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
   if (!AreDialogsEnabled()) {
     
@@ -5289,10 +5249,18 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
     return;
   }
 
-  nsCOMPtr<nsIDocShell> docShell = mDocShell;
-  SetIsPrintingInDocShellTree(docShell, true);
-  auto unset =
-      MakeScopeExit([&] { SetIsPrintingInDocShellTree(docShell, false); });
+  RefPtr<BrowsingContext> top =
+      mBrowsingContext ? mBrowsingContext->Top() : nullptr;
+  bool oldIsPrinting = top && top->GetIsPrinting();
+  if (top) {
+    Unused << top->SetIsPrinting(true);
+  }
+
+  auto unset = MakeScopeExit([&] {
+    if (top) {
+      Unused << top->SetIsPrinting(oldIsPrinting);
+    }
+  });
 
   const bool isPreview = StaticPrefs::print_tab_modal_enabled() &&
                          !StaticPrefs::print_always_print_silent();

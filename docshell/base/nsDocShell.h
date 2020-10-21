@@ -1001,7 +1001,7 @@ class nsDocShell final : public nsDocLoader,
   bool ShouldDiscardLayoutState(nsIHttpChannel* aChannel);
   bool HasUnloadedParent();
   bool JustStartedNetworkLoad();
-  bool IsPrintingOrPP(bool aDisplayErrorDialog = true);
+  bool NavigationBlockedByPrinting(bool aDisplayErrorDialog = true);
   bool IsNavigationAllowed(bool aDisplayPrintErrorDialog = true,
                            bool aCheckIfUnloadFired = true);
   nsIScrollableFrame* GetRootScrollFrame();
@@ -1297,9 +1297,6 @@ class nsDocShell final : public nsDocLoader,
   bool mIsBeingDestroyed : 1;
 
   bool mIsExecutingOnLoadHandler : 1;
-
-  
-  bool mIsPrintingOrPP : 1;
 
   
   
