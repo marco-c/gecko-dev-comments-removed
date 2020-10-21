@@ -224,6 +224,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:EchoSubtraction\n"
 
          
+         "race:WebRtcAec_Create\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
