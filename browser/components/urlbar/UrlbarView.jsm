@@ -1834,7 +1834,21 @@ class UrlbarView {
     for (let item of this._rows.children) {
       let result = item.result;
 
-      if (!result.heuristic && result.type != UrlbarUtils.RESULT_TYPE.SEARCH) {
+      let isPrivateSearchWithoutPrivateEngine =
+        result.payload.inPrivateWindow && !result.payload.isPrivateEngine;
+      let isSearchHistory =
+        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.source == UrlbarUtils.RESULT_SOURCE.HISTORY;
+      let isSearchSuggestion = result.payload.suggestion && !isSearchHistory;
+
+      
+      
+      
+      if (
+        !result.heuristic &&
+        !isSearchSuggestion &&
+        !isPrivateSearchWithoutPrivateEngine
+      ) {
         continue;
       }
 
@@ -1878,14 +1892,9 @@ class UrlbarView {
         item.removeAttribute("source");
       }
 
-      if (
-        result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-        (!result.heuristic &&
-          (!result.payload.suggestion ||
-            (result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-              result.source == UrlbarUtils.RESULT_SOURCE.HISTORY)) &&
-          (!result.payload.inPrivateWindow || result.payload.isPrivateEngine))
-      ) {
+      
+      
+      if (result.type != UrlbarUtils.RESULT_TYPE.SEARCH) {
         continue;
       }
 
