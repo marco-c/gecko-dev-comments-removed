@@ -223,7 +223,7 @@ add_task(async function test_multistage_zeroOnboarding_experimentAPI() {
     
     ["div.search-wrapper", "body.activity-stream"],
     
-    ["div.multistageContainer", "main.AW_STEP1"]
+    ["div.onboardingContainer", "main.AW_STEP1"]
   );
 
   ExperimentAPI._store._deleteForTests("mochitest-1-aboutwelcome");
@@ -272,7 +272,7 @@ add_task(async function test_multistage_aboutwelcome_experimentAPI() {
     "multistage step 1",
     
     [
-      "div.multistageContainer",
+      "div.onboardingContainer",
       "main.AW_STEP1",
       "h1.welcomeZap",
       "span.zap.short",
@@ -292,7 +292,7 @@ add_task(async function test_multistage_aboutwelcome_experimentAPI() {
     "multistage step 2",
     
     [
-      "div.multistageContainer",
+      "div.onboardingContainer",
       "main.AW_STEP2",
       "button.secondary",
       "h1.welcomeZap",
@@ -308,7 +308,7 @@ add_task(async function test_multistage_aboutwelcome_experimentAPI() {
     "multistage step 3",
     
     [
-      "div.multistageContainer",
+      "div.onboardingContainer",
       "main.AW_STEP3",
       "div.brand-logo",
       "div.welcome-text",
@@ -323,7 +323,7 @@ add_task(async function test_multistage_aboutwelcome_experimentAPI() {
     
     ["body.activity-stream"],
     
-    ["div.multistageContainer"]
+    ["div.onboardingContainer"]
   );
 
   ExperimentAPI._store._deleteForTests("mochitest-aboutwelcome");
@@ -341,7 +341,7 @@ add_task(async function test_Multistage_About_Welcome_branches() {
     "multistage step 1",
     
     [
-      "div.multistageContainer",
+      "div.onboardingContainer",
       "main.AW_STEP1",
       "h1.welcomeZap",
       "span.zap.short",
@@ -361,7 +361,7 @@ add_task(async function test_Multistage_About_Welcome_branches() {
     "multistage step 2",
     
     [
-      "div.multistageContainer",
+      "div.onboardingContainer",
       "main.AW_STEP2",
       "h1.welcomeZap",
       "span.zap.long",
@@ -377,7 +377,7 @@ add_task(async function test_Multistage_About_Welcome_branches() {
     "multistage step 3",
     
     [
-      "div.multistageContainer",
+      "div.onboardingContainer",
       "main.AW_STEP3",
       "div.brand-logo",
       "div.welcome-text",
@@ -392,7 +392,7 @@ add_task(async function test_Multistage_About_Welcome_branches() {
     
     ["body.activity-stream"],
     
-    ["div.multistageContainer"]
+    ["div.onboardingContainer"]
   );
 });
 
@@ -411,7 +411,7 @@ add_task(async function test_Multistage_About_Welcome_navigation() {
     "multistage step 1",
     
     [
-      "div.multistageContainer",
+      "div.onboardingContainer",
       "main.AW_STEP1",
       "div.secondary-cta.top",
       "button.secondary",
@@ -426,7 +426,7 @@ add_task(async function test_Multistage_About_Welcome_navigation() {
     browser,
     "multistage step 2",
     
-    ["div.multistageContainer", "main.AW_STEP2", "button.secondary"],
+    ["div.onboardingContainer", "main.AW_STEP2", "button.secondary"],
     
     ["main.AW_STEP1", "main.AW_STEP3", "div.secondary-cta.top"]
   );
