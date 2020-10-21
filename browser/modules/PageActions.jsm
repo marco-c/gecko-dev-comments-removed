@@ -80,7 +80,7 @@ var PageActions = {
     
     
     for (let bpa of allBrowserPageActions()) {
-      bpa.placeAllActionsInUrlbar();
+      bpa.placeAllActions();
     }
 
     
