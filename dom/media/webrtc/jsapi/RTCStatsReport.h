@@ -38,9 +38,6 @@ class RTCStatsTimestampMaker {
   bool mCrossOriginIsolated = false;
 };
 
-
-
-
 typedef MozPromise<UniquePtr<RTCStatsCollection>, nsresult, true>
     RTCStatsPromise;
 
