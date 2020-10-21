@@ -42,6 +42,29 @@ struct ScriptedCaller {
 
 
 
+struct FeatureArgs {
+  FeatureArgs()
+      : sharedMemory(Shareable::False),
+        refTypes(false),
+        functionReferences(false),
+        gcTypes(false),
+        multiValue(false),
+        v128(false),
+        hugeMemory(false) {}
+
+  static FeatureArgs build(JSContext* cx);
+
+  Shareable sharedMemory;
+  bool refTypes;
+  bool functionReferences;
+  bool gcTypes;
+  bool multiValue;
+  bool v128;
+  bool hugeMemory;
+};
+
+
+
 struct CompileArgs;
 using MutableCompileArgs = RefPtr<CompileArgs>;
 using SharedCompileArgs = RefPtr<const CompileArgs>;
@@ -54,13 +77,9 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   bool ionEnabled;
   bool craneliftEnabled;
   bool debugEnabled;
-  bool sharedMemoryEnabled;
   bool forceTiering;
-  bool reftypesEnabled;
-  bool gcEnabled;
-  bool hugeMemory;
-  bool multiValuesEnabled;
-  bool v128Enabled;
+
+  FeatureArgs features;
 
   
   
@@ -80,13 +99,7 @@ struct CompileArgs : ShareableBase<CompileArgs> {
         ionEnabled(false),
         craneliftEnabled(false),
         debugEnabled(false),
-        sharedMemoryEnabled(false),
-        forceTiering(false),
-        reftypesEnabled(false),
-        gcEnabled(false),
-        hugeMemory(false),
-        multiValuesEnabled(false),
-        v128Enabled(false) {}
+        forceTiering(false) {}
 };
 
 

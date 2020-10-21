@@ -107,6 +107,9 @@ bool CodeCachingAvailable(JSContext* cx);
 bool ReftypesAvailable(JSContext* cx);
 
 
+bool FunctionReferencesAvailable(JSContext* cx);
+
+
 bool GcTypesAvailable(JSContext* cx);
 
 
