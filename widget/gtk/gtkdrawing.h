@@ -140,7 +140,7 @@ typedef enum {
 #define MOZ_GTK_WIDGET_INCONSISTENT (1 << 1)
 
 
-typedef enum {
+enum WidgetNodeType : int {
   
   MOZ_GTK_BUTTON,
   
@@ -350,7 +350,7 @@ typedef enum {
   MOZ_GTK_WINDOW_DECORATION_SOLID,
 
   MOZ_GTK_WIDGET_NODE_COUNT
-} WidgetNodeType;
+};
 
 
 
