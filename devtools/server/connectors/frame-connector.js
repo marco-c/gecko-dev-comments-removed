@@ -42,7 +42,7 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
   return new Promise(resolve => {
     
     
-    let mm = frame.messageManager || frame.frameLoader.messageManager;
+    const mm = frame.messageManager || frame.frameLoader.messageManager;
     mm.loadFrameScript("resource://devtools/server/startup/frame.js", false);
 
     const spawnInParentActorPool = new Pool(
@@ -52,7 +52,6 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
     connection.addActor(spawnInParentActorPool);
 
     const trackMessageManager = () => {
-      frame.addEventListener("DevTools:BrowserSwap", onBrowserSwap);
       mm.addMessageListener("debug:setup-in-parent", onSetupInParent);
       mm.addMessageListener(
         "debug:spawn-actor-in-parent",
@@ -65,7 +64,6 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
     };
 
     const untrackMessageManager = () => {
-      frame.removeEventListener("DevTools:BrowserSwap", onBrowserSwap);
       mm.removeMessageListener("debug:setup-in-parent", onSetupInParent);
       mm.removeMessageListener(
         "debug:spawn-actor-in-parent",
@@ -196,38 +194,6 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
       actor = msg.json.actor;
       resolve(actor);
     });
-
-    
-    const onBrowserSwap = ({ detail: newFrame }) => {
-      
-      untrackMessageManager();
-      
-      frame = newFrame;
-      
-      
-      mm = frame.messageManager || frame.frameLoader.messageManager;
-      
-      trackMessageManager();
-
-      
-      
-      parentModules.forEach(mod => {
-        if (mod.onBrowserSwap) {
-          mod.onBrowserSwap(mm);
-        }
-      });
-
-      
-      parentActors.forEach(parentActor => {
-        if (parentActor.onBrowserSwap) {
-          parentActor.onBrowserSwap(mm);
-        }
-      });
-
-      if (childTransport) {
-        childTransport.swapBrowser(mm);
-      }
-    };
 
     const destroy = DevToolsUtils.makeInfallible(function() {
       EventEmitter.off(connection, "closed", destroy);

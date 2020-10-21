@@ -1233,7 +1233,6 @@ exports.setupParentProcessForCookies = function({ mm, prefix }) {
   }
 
   return {
-    onBrowserSwap: setMessageManager,
     onDisconnected: () => {
       
       
@@ -1708,7 +1707,6 @@ exports.setupParentProcessForExtensionStorage = function({ mm, prefix }) {
   }
 
   return {
-    onBrowserSwap: setMessageManager,
     onDisconnected: () => {
       
       
@@ -3389,7 +3387,6 @@ exports.setupParentProcessForIndexedDB = function({ mm, prefix }) {
   }
 
   return {
-    onBrowserSwap: setMessageManager,
     onDisconnected: () => setMessageManager(null),
   };
 };
