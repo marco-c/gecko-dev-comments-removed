@@ -20,6 +20,9 @@
                        NS_GetLuminosity(b | 0xff000000)))
 
 
+#define NS_MAX_LUMINOSITY 255000
+
+
 void NS_GetSpecial3DColors(nscolor aResult[2], nscolor aBorderColor);
 
 
