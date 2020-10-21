@@ -119,7 +119,7 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
     
     
     
-    for target in gyp.common.AllTargets(flat_list, targets, path.replace('/', os.sep)):
+    for target in sorted(gyp.common.AllTargets(flat_list, targets, path.replace('/', os.sep))):
         build_file, target_name, toolset = gyp.common.ParseQualifiedTarget(target)
 
         
