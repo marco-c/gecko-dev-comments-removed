@@ -601,6 +601,12 @@
         BrowserSearch.searchBar._textbox.closePopup();
 
         
+        
+        if (event.button) {
+          this._maybeSelectAll();
+        }
+
+        
         for (let item of this._menupopup.querySelectorAll("menuitem[cmd]")) {
           let command = item.getAttribute("cmd");
           let controller = document.commandDispatcher.getControllerForCommand(
@@ -616,10 +622,6 @@
 
         this._menupopup.openPopupAtScreen(event.screenX, event.screenY, true);
 
-        
-        if (event.button) {
-          this._maybeSelectAll();
-        }
         event.preventDefault();
       });
     }
