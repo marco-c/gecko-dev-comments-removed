@@ -683,6 +683,15 @@ SandboxBrokerPolicyFactory::GetUtilityPolicy(int aPid) {
 
   AddSharedMemoryPaths(policy.get(), aPid);
 
+  
+  
+  
+  policy->AddPath(rdonly, "/proc/cpuinfo");
+  policy->AddPath(rdonly,
+                  "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+  policy->AddPath(rdonly, "/sys/devices/system/cpu/cpu0/cache/index2/size");
+  policy->AddPath(rdonly, "/sys/devices/system/cpu/cpu0/cache/index3/size");
+
   if (policy->IsEmpty()) {
     policy = nullptr;
   }
