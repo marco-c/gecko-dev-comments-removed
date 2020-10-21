@@ -1228,12 +1228,17 @@ class DatabaseConnection final {
    private:
     friend class CachedStatement;
 
+#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
     BorrowedStatement(NotNull<mozIStorageStatement*> aStatement,
                       const nsACString& aQuery)
         : mozStorageStatementScoper(aStatement),
           mExtraInfo{ScopedLogExtraInfo::kTagQuery, aQuery} {}
 
     ScopedLogExtraInfo mExtraInfo;
+#else
+    BorrowedStatement(NotNull<mozIStorageStatement*> aStatement)
+        : mozStorageStatementScoper(aStatement) {}
+#endif
   };
 
  private:
@@ -7724,7 +7729,7 @@ DatabaseConnection::CachedStatement::Borrow() const {
 #if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
   return BorrowedStatement{WrapNotNull(mStatement), mQuery};
 #else
-  return BorrowedStatement{WrapNotNull(mStatement), EmptyCString()};
+  return BorrowedStatement{WrapNotNull(mStatement)};
 #endif
 }
 
@@ -20641,218 +20646,225 @@ nsresult ObjectStoreAddOrPutRequestOp::DoDatabaseWork(
     }
   }
 
-  
-  
-  
-  
-  const auto optReplaceDirective =
-      (!mOverwrite || keyUnset) ? ""_ns : "OR REPLACE "_ns;
-  IDB_TRY_INSPECT(const auto& stmt,
-                  aConnection->BorrowCachedStatement(
-                      "INSERT "_ns + optReplaceDirective +
-                      "INTO object_data "
-                      "(object_store_id, key, file_ids, data) "
-                      "VALUES (:"_ns +
-                      kStmtParamNameObjectStoreId + ", :"_ns +
-                      kStmtParamNameKey + ", :"_ns + kStmtParamNameFileIds +
-                      ", :"_ns + kStmtParamNameData + ");"_ns));
-
-  rv = stmt->BindInt64ByName(kStmtParamNameObjectStoreId, osid);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  const SerializedStructuredCloneWriteInfo& cloneInfo = mParams.cloneInfo();
-  const JSStructuredCloneData& cloneData = cloneInfo.data().data;
-  size_t cloneDataSize = cloneData.Size();
-
-  MOZ_ASSERT(!keyUnset || mMetadata->mCommonMetadata.autoIncrement(),
-             "Should have key unless autoIncrement");
-
   int64_t autoIncrementNum = 0;
 
-  if (mMetadata->mCommonMetadata.autoIncrement()) {
-    if (keyUnset) {
-      autoIncrementNum = mMetadata->mNextAutoIncrementId;
-
-      MOZ_ASSERT(autoIncrementNum > 0);
-
-      if (autoIncrementNum > (1LL << 53)) {
-        return NS_ERROR_DOM_INDEXEDDB_CONSTRAINT_ERR;
-      }
-
-      key.SetFromInteger(autoIncrementNum);
-    } else if (key.IsFloat()) {
-      double numericKey = key.ToFloat();
-      numericKey = std::min(numericKey, double(1LL << 53));
-      numericKey = floor(numericKey);
-      if (numericKey >= mMetadata->mNextAutoIncrementId) {
-        autoIncrementNum = numericKey;
-      }
-    }
-
-    if (keyUnset && mMetadata->mCommonMetadata.keyPath().IsValid()) {
-      const SerializedStructuredCloneWriteInfo& cloneInfo = mParams.cloneInfo();
-      MOZ_ASSERT(cloneInfo.offsetToKeyProp());
-      MOZ_ASSERT(cloneDataSize > sizeof(uint64_t));
-      MOZ_ASSERT(cloneInfo.offsetToKeyProp() <=
-                 (cloneDataSize - sizeof(uint64_t)));
-
-      
-      
-      
-      uint64_t keyPropValue =
-          ReinterpretDoubleAsUInt64(static_cast<double>(autoIncrementNum));
-
-      static const size_t keyPropSize = sizeof(uint64_t);
-
-      char keyPropBuffer[keyPropSize];
-      LittleEndian::writeUint64(keyPropBuffer, keyPropValue);
-
-      auto iter = cloneData.Start();
-      MOZ_ALWAYS_TRUE(cloneData.Advance(iter, cloneInfo.offsetToKeyProp()));
-      MOZ_ALWAYS_TRUE(cloneData.UpdateBytes(iter, keyPropBuffer, keyPropSize));
-    }
-  }
-
-  key.BindToStatement(&*stmt, kStmtParamNameKey);
-
-  if (mDataOverThreshold) {
+  {
     
     
     
-    static const uint32_t kCompressedFlag = (1 << 0);
+    
+    const auto optReplaceDirective =
+        (!mOverwrite || keyUnset) ? ""_ns : "OR REPLACE "_ns;
+    IDB_TRY_INSPECT(const auto& stmt,
+                    aConnection->BorrowCachedStatement(
+                        "INSERT "_ns + optReplaceDirective +
+                        "INTO object_data "
+                        "(object_store_id, key, file_ids, data) "
+                        "VALUES (:"_ns +
+                        kStmtParamNameObjectStoreId + ", :"_ns +
+                        kStmtParamNameKey + ", :"_ns + kStmtParamNameFileIds +
+                        ", :"_ns + kStmtParamNameData + ");"_ns));
 
-    uint32_t flags = 0;
-    flags |= kCompressedFlag;
-
-    uint32_t index = mStoredFileInfos.Length() - 1;
-
-    int64_t data = (uint64_t(flags) << 32) | index;
-
-    rv = stmt->BindInt64ByName(kStmtParamNameData, data);
+    rv = stmt->BindInt64ByName(kStmtParamNameObjectStoreId, osid);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  } else {
-    nsCString flatCloneData;
-    if (!flatCloneData.SetLength(cloneDataSize, fallible)) {
-      return NS_ERROR_OUT_OF_MEMORY;
+
+    const SerializedStructuredCloneWriteInfo& cloneInfo = mParams.cloneInfo();
+    const JSStructuredCloneData& cloneData = cloneInfo.data().data;
+    size_t cloneDataSize = cloneData.Size();
+
+    MOZ_ASSERT(!keyUnset || mMetadata->mCommonMetadata.autoIncrement(),
+               "Should have key unless autoIncrement");
+
+    if (mMetadata->mCommonMetadata.autoIncrement()) {
+      if (keyUnset) {
+        autoIncrementNum = mMetadata->mNextAutoIncrementId;
+
+        MOZ_ASSERT(autoIncrementNum > 0);
+
+        if (autoIncrementNum > (1LL << 53)) {
+          return NS_ERROR_DOM_INDEXEDDB_CONSTRAINT_ERR;
+        }
+
+        key.SetFromInteger(autoIncrementNum);
+      } else if (key.IsFloat()) {
+        double numericKey = key.ToFloat();
+        numericKey = std::min(numericKey, double(1LL << 53));
+        numericKey = floor(numericKey);
+        if (numericKey >= mMetadata->mNextAutoIncrementId) {
+          autoIncrementNum = numericKey;
+        }
+      }
+
+      if (keyUnset && mMetadata->mCommonMetadata.keyPath().IsValid()) {
+        const SerializedStructuredCloneWriteInfo& cloneInfo =
+            mParams.cloneInfo();
+        MOZ_ASSERT(cloneInfo.offsetToKeyProp());
+        MOZ_ASSERT(cloneDataSize > sizeof(uint64_t));
+        MOZ_ASSERT(cloneInfo.offsetToKeyProp() <=
+                   (cloneDataSize - sizeof(uint64_t)));
+
+        
+        
+        
+        uint64_t keyPropValue =
+            ReinterpretDoubleAsUInt64(static_cast<double>(autoIncrementNum));
+
+        static const size_t keyPropSize = sizeof(uint64_t);
+
+        char keyPropBuffer[keyPropSize];
+        LittleEndian::writeUint64(keyPropBuffer, keyPropValue);
+
+        auto iter = cloneData.Start();
+        MOZ_ALWAYS_TRUE(cloneData.Advance(iter, cloneInfo.offsetToKeyProp()));
+        MOZ_ALWAYS_TRUE(
+            cloneData.UpdateBytes(iter, keyPropBuffer, keyPropSize));
+      }
     }
-    {
-      auto iter = cloneData.Start();
-      MOZ_ALWAYS_TRUE(cloneData.ReadBytes(iter, flatCloneData.BeginWriting(),
-                                          cloneDataSize));
+
+    key.BindToStatement(&*stmt, kStmtParamNameKey);
+
+    if (mDataOverThreshold) {
+      
+      
+      
+      
+      static const uint32_t kCompressedFlag = (1 << 0);
+
+      uint32_t flags = 0;
+      flags |= kCompressedFlag;
+
+      uint32_t index = mStoredFileInfos.Length() - 1;
+
+      int64_t data = (uint64_t(flags) << 32) | index;
+
+      rv = stmt->BindInt64ByName(kStmtParamNameData, data);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    } else {
+      nsCString flatCloneData;
+      if (!flatCloneData.SetLength(cloneDataSize, fallible)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      {
+        auto iter = cloneData.Start();
+        MOZ_ALWAYS_TRUE(cloneData.ReadBytes(iter, flatCloneData.BeginWriting(),
+                                            cloneDataSize));
+      }
+
+      
+      const char* uncompressed = flatCloneData.BeginReading();
+      size_t uncompressedLength = cloneDataSize;
+
+      size_t compressedLength = snappy::MaxCompressedLength(uncompressedLength);
+
+      UniqueFreePtr<char> compressed(
+          static_cast<char*>(malloc(compressedLength)));
+      if (NS_WARN_IF(!compressed)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+
+      snappy::RawCompress(uncompressed, uncompressedLength, compressed.get(),
+                          &compressedLength);
+
+      uint8_t* dataBuffer = reinterpret_cast<uint8_t*>(compressed.release());
+      size_t dataBufferLength = compressedLength;
+
+      rv = stmt->BindAdoptedBlobByName(kStmtParamNameData, dataBuffer,
+                                       dataBufferLength);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
-    
-    const char* uncompressed = flatCloneData.BeginReading();
-    size_t uncompressedLength = cloneDataSize;
+    if (!mStoredFileInfos.IsEmpty()) {
+      
+      
+      
+      Maybe<FileHelper> fileHelper;
+      nsAutoString fileIds;
 
-    size_t compressedLength = snappy::MaxCompressedLength(uncompressedLength);
+      for (auto& storedFileInfo : mStoredFileInfos) {
+        MOZ_ASSERT(storedFileInfo.IsValid());
 
-    UniqueFreePtr<char> compressed(
-        static_cast<char*>(malloc(compressedLength)));
-    if (NS_WARN_IF(!compressed)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+        IDB_TRY_INSPECT(const auto& inputStream,
+                        storedFileInfo.GetInputStream());
 
-    snappy::RawCompress(uncompressed, uncompressedLength, compressed.get(),
-                        &compressedLength);
+        if (inputStream) {
+          if (fileHelper.isNothing()) {
+            fileHelper.emplace(Transaction().GetDatabase().GetFileManagerPtr());
+            rv = fileHelper->Init();
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              IDB_REPORT_INTERNAL_ERR();
+              return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
+            }
+          }
 
-    uint8_t* dataBuffer = reinterpret_cast<uint8_t*>(compressed.release());
-    size_t dataBufferLength = compressedLength;
+          const FileInfo& fileInfo = storedFileInfo.GetFileInfo();
 
-    rv = stmt->BindAdoptedBlobByName(kStmtParamNameData, dataBuffer,
-                                     dataBufferLength);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
-  if (!mStoredFileInfos.IsEmpty()) {
-    
-    
-    Maybe<FileHelper> fileHelper;
-    nsAutoString fileIds;
-
-    for (auto& storedFileInfo : mStoredFileInfos) {
-      MOZ_ASSERT(storedFileInfo.IsValid());
-
-      IDB_TRY_INSPECT(const auto& inputStream, storedFileInfo.GetInputStream());
-
-      if (inputStream) {
-        if (fileHelper.isNothing()) {
-          fileHelper.emplace(Transaction().GetDatabase().GetFileManagerPtr());
-          rv = fileHelper->Init();
-          if (NS_WARN_IF(NS_FAILED(rv))) {
+          const auto file = fileHelper->GetFile(fileInfo);
+          if (NS_WARN_IF(!file)) {
             IDB_REPORT_INTERNAL_ERR();
             return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
           }
-        }
 
-        const FileInfo& fileInfo = storedFileInfo.GetFileInfo();
+          const auto journalFile = fileHelper->GetJournalFile(fileInfo);
+          if (NS_WARN_IF(!journalFile)) {
+            IDB_REPORT_INTERNAL_ERR();
+            return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
+          }
 
-        const auto file = fileHelper->GetFile(fileInfo);
-        if (NS_WARN_IF(!file)) {
-          IDB_REPORT_INTERNAL_ERR();
-          return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-        }
+          const bool compress = storedFileInfo.ShouldCompress();
 
-        const auto journalFile = fileHelper->GetJournalFile(fileInfo);
-        if (NS_WARN_IF(!journalFile)) {
-          IDB_REPORT_INTERNAL_ERR();
-          return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-        }
-
-        const bool compress = storedFileInfo.ShouldCompress();
-
-        rv = fileHelper->CreateFileFromStream(*file, *journalFile, *inputStream,
-                                              compress);
-        if (NS_FAILED(rv) &&
-            NS_ERROR_GET_MODULE(rv) != NS_ERROR_MODULE_DOM_INDEXEDDB) {
-          IDB_REPORT_INTERNAL_ERR();
-          rv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-        }
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          
-          nsresult rv2 =
-              Transaction().GetDatabase().GetFileManager().SyncDeleteFile(
-                  *file, *journalFile);
-          if (NS_WARN_IF(NS_FAILED(rv2))) {
+          rv = fileHelper->CreateFileFromStream(*file, *journalFile,
+                                                *inputStream, compress);
+          if (NS_FAILED(rv) &&
+              NS_ERROR_GET_MODULE(rv) != NS_ERROR_MODULE_DOM_INDEXEDDB) {
+            IDB_REPORT_INTERNAL_ERR();
+            rv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
+          }
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            
+            nsresult rv2 =
+                Transaction().GetDatabase().GetFileManager().SyncDeleteFile(
+                    *file, *journalFile);
+            if (NS_WARN_IF(NS_FAILED(rv2))) {
+              return rv;
+            }
             return rv;
           }
-          return rv;
+
+          storedFileInfo.NotifyWriteSucceeded();
         }
 
-        storedFileInfo.NotifyWriteSucceeded();
+        if (!fileIds.IsEmpty()) {
+          fileIds.Append(' ');
+        }
+        storedFileInfo.Serialize(fileIds);
       }
 
-      if (!fileIds.IsEmpty()) {
-        fileIds.Append(' ');
+      rv = stmt->BindStringByName(kStmtParamNameFileIds, fileIds);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
-      storedFileInfo.Serialize(fileIds);
+    } else {
+      rv = stmt->BindNullByName(kStmtParamNameFileIds);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
-    rv = stmt->BindStringByName(kStmtParamNameFileIds, fileIds);
+    rv = stmt->Execute();
+    if (rv == NS_ERROR_STORAGE_CONSTRAINT) {
+      MOZ_ASSERT(!keyUnset, "Generated key had a collision!");
+      return rv;
+    }
+
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  } else {
-    rv = stmt->BindNullByName(kStmtParamNameFileIds);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
-  rv = stmt->Execute();
-  if (rv == NS_ERROR_STORAGE_CONSTRAINT) {
-    MOZ_ASSERT(!keyUnset, "Generated key had a collision!");
-    return rv;
-  }
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
   }
 
   
