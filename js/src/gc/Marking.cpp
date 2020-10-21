@@ -218,10 +218,6 @@ void js::CheckTracedThing(JSTracer* trc, T* thing) {
     MOZ_ASSERT_IF(!isClearEdgesTracer, CurrentThreadIsPerformingGC());
   }
 
-  
-  
-  MOZ_ASSERT_IF(!isClearEdgesTracer, !zone->usedByHelperThread());
-
   MOZ_ASSERT(thing->isAligned());
   MOZ_ASSERT(MapTypeToTraceKind<std::remove_pointer_t<T>>::kind ==
              thing->getTraceKind());
