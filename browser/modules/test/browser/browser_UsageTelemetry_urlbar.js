@@ -1509,12 +1509,13 @@ add_task(async function test_formHistory_enterSelection() {
 add_task(async function test_privateWindow() {
   
   
-  SearchTelemetry.overrideSearchTelemetryForTests({
-    example: {
-      regexp: "^http://example\\.com/",
-      queryParam: "q",
+  SearchTelemetry.overrideSearchTelemetryForTests([
+    {
+      telemetryId: "example",
+      searchPageRegexp: "^http://example\\.com/",
+      queryParamName: "q",
     },
-  });
+  ]);
 
   let search_hist = TelemetryTestUtils.getAndClearKeyedHistogram(
     "SEARCH_COUNTS"
