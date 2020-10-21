@@ -1113,6 +1113,14 @@ Download.prototype = {
         }
         changeMade = true;
       }
+
+      if (
+        this.hasProgress &&
+        this.target &&
+        !this.target.partFileExists
+      ) {
+        this.target.refreshPartFileState();
+      }
     }
 
     if (changeMade) {
@@ -1513,6 +1521,12 @@ DownloadTarget.prototype = {
 
 
 
+  partFileExists: false,
+
+  
+
+
+
 
 
 
@@ -1540,15 +1554,31 @@ DownloadTarget.prototype = {
 
   async refresh() {
     try {
-      this.size = (await OS.File.stat(this.path)).size;
+      this.size = (await IOUtils.stat(this.path)).size;
       this.exists = true;
     } catch (ex) {
       
       
-      if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+      if (ex.name != "NotFoundError") {
         Cu.reportError(ex);
       }
       this.exists = false;
+    }
+    this.refreshPartFileState();
+  },
+
+  async refreshPartFileState() {
+    if (!this.partFilePath) {
+      this.partFileExists = false;
+      return;
+    }
+    try {
+      this.partFileExists = (await IOUtils.stat(this.partFilePath)).size > 0;
+    } catch (ex) {
+      if (ex.name != "NotFoundError") {
+        Cu.reportError(ex);
+      }
+      this.partFileExists = false;
     }
   },
 

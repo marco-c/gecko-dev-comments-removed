@@ -740,16 +740,9 @@ DownloadsViewUI.DownloadElementShell.prototype = {
         
         return this.download.target.exists;
       case "downloadsCmd_show":
-        
-        if (this.download.target.partFilePath) {
-          let partFile = new FileUtils.File(this.download.target.partFilePath);
-          if (partFile.exists()) {
-            return true;
-          }
-        }
+        let { target } = this.download;
+        return target.exists || target.partFileExists;
 
-        
-        return this.download.target.exists;
       case "downloadsCmd_delete":
       case "cmd_delete":
         
