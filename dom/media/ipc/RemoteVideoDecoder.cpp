@@ -159,47 +159,22 @@ RemoteVideoDecoderParent::RemoteVideoDecoderParent(
         KnowsCompositorVideo::TryCreateForIdentifier(*aIdentifier);
   }
 
-  RefPtr<layers::ImageContainer> container = new layers::ImageContainer();
+  
+  
+  auto imageContainer = MakeRefPtr<layers::ImageContainer>();
   if (mKnowsCompositor && XRE_IsRDDProcess()) {
     
-    container->EnsureRecycleAllocatorForRDD(mKnowsCompositor);
+    imageContainer->EnsureRecycleAllocatorForRDD(mKnowsCompositor);
   }
-
-  CreateDecoderParams params(mVideoInfo);
-  params.mKnowsCompositor = mKnowsCompositor;
-  params.mImageContainer = container;
-  params.mRate = CreateDecoderParams::VideoFrameRate(aFramerate);
-  params.mOptions = aOptions;
   MediaResult error(NS_OK);
-  params.mError = &error;
+  auto params = CreateDecoderParams{
+      mVideoInfo,     mKnowsCompositor,
+      imageContainer, CreateDecoderParams::VideoFrameRate(aFramerate),
+      aOptions,       CreateDecoderParams::NoWrapper(true),
+      &error};
 
-  RefPtr<MediaDataDecoder> decoder;
-  if (XRE_IsGPUProcess()) {
-#ifdef XP_WIN
-    
-    PDMFactory::EnsureInit();
-
-    
-    
-    RefPtr<WMFDecoderModule> pdm(new WMFDecoderModule());
-    pdm->Startup();
-    decoder = pdm->CreateVideoDecoder(params);
-#else
-    MOZ_ASSERT(false,
-               "Can't use RemoteVideoDecoder in the GPU process on non-Windows "
-               "platforms yet");
-#endif
-  }
-
-#ifdef MOZ_AV1
-  if (AOMDecoder::IsAV1(params.mConfig.mMimeType)) {
-    if (StaticPrefs::media_av1_use_dav1d()) {
-      decoder = new DAV1DDecoder(params);
-    } else {
-      decoder = new AOMDecoder(params);
-    }
-  }
-#endif
+  auto& factory = aParent->EnsurePDMFactory();
+  RefPtr<MediaDataDecoder> decoder = factory.CreateDecoder(params);
 
   if (NS_FAILED(error)) {
     MOZ_ASSERT(aErrorDescription);
