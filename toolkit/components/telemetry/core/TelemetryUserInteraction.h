@@ -1,0 +1,18 @@
+
+
+
+
+
+#ifndef TelemetryUserInteraction_h__
+#define TelemetryUserInteraction_h__
+
+namespace TelemetryUserInteraction {
+
+void InitializeGlobalState(bool canRecordBase, bool canRecordExtended);
+void DeInitializeGlobalState();
+
+bool CanRecord(const nsAString& aName);
+
+}  
+
+#endif  
