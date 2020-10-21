@@ -37,13 +37,10 @@ this.rpc = function(method, ...params) {
 loadSubScript("resource://devtools/shared/worker/loader.js");
 
 var defer = worker.require("devtools/shared/defer");
-const { Actor } = worker.require("devtools/shared/protocol/Actor");
-var { ThreadActor } = worker.require("devtools/server/actors/thread");
-var { WebConsoleActor } = worker.require("devtools/server/actors/webconsole");
-var { TabSources } = worker.require("devtools/server/actors/utils/TabSources");
-var makeDebugger = worker.require("devtools/server/actors/utils/make-debugger");
+const { WorkerTargetActor } = worker.require(
+  "devtools/server/actors/targets/worker"
+);
 var { DevToolsServer } = worker.require("devtools/server/devtools-server");
-var Targets = worker.require("devtools/server/actors/targets/index");
 
 DevToolsServer.init();
 DevToolsServer.createRootActor = function() {
@@ -62,58 +59,15 @@ this.addEventListener("message", function(event) {
       const connection = DevToolsServer.connectToParent(packet.id, this);
 
       
-      let sources = null;
+      const workerTargetActor = new WorkerTargetActor(connection, global);
 
-      const makeWorkerDebugger = makeDebugger.bind(null, {
-        findDebuggees: () => {
-          return [this.global];
-        },
-
-        shouldAddNewGlobalAsDebuggee: () => {
-          return true;
-        },
-      });
-
-      const targetActorMock = new Actor();
-      targetActorMock.initialize(connection);
-
-      const threadActor = new ThreadActor(targetActorMock, global);
-      targetActorMock.manage(threadActor);
-
-      Object.assign(targetActorMock, {
-        actorID: packet.id,
-        targetType: Targets.TYPES.FRAME,
-
-        
-        threadActor,
-        workerGlobal: global,
-
-        onThreadAttached() {
-          postMessage(JSON.stringify({ type: "attached" }));
-        },
-
-        get dbg() {
-          if (!this._dbg) {
-            this._dbg = makeWorkerDebugger();
-          }
-          return this._dbg;
-        },
-        makeDebugger: makeWorkerDebugger,
-
-        get sources() {
-          if (sources === null) {
-            sources = new TabSources(threadActor);
-          }
-          return sources;
-        },
-      });
-
-      const consoleActor = new WebConsoleActor(connection, targetActorMock);
-      targetActorMock.manage(consoleActor);
-
-      
-      
-      targetActorMock._consoleActor = consoleActor;
+      workerTargetActor.on(
+        "worker-thread-attached",
+        function onThreadAttached() {
+          postMessage(JSON.stringify({ type: "worker-thread-attached" }));
+        }
+      );
+      workerTargetActor.attach();
 
       
       
@@ -126,10 +80,10 @@ this.addEventListener("message", function(event) {
         JSON.stringify({
           type: "connected",
           id: packet.id,
-          threadActor: threadActor.actorID,
-          consoleActor: consoleActor.actorID,
+          workerTargetForm: workerTargetActor.form(),
         })
       );
+
       break;
 
     case "disconnect":

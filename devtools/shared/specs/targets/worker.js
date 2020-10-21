@@ -1,0 +1,17 @@
+
+
+
+"use strict";
+
+const { generateActorSpec } = require("devtools/shared/protocol");
+
+
+
+
+const workerTargetSpec = generateActorSpec({
+  typeName: "workerTarget",
+  methods: {},
+  events: {},
+});
+
+exports.workerTargetSpec = workerTargetSpec;
