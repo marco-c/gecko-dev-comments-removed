@@ -273,14 +273,27 @@ class PdfjsParent extends JSWindowActorParent {
     
     let messageSent = false;
     let sendMessage = download => {
-      this.sendAsyncMessage("PDFJS:Child:fallbackDownload", { download });
+      
+      
+      if (messageSent) {
+        return;
+      }
+      try {
+        this.sendAsyncMessage("PDFJS:Child:fallbackDownload", { download });
+        messageSent = true;
+      } catch (ex) {
+        
+        
+        if (!/JSWindowActorParent cannot send at the moment/.test(ex.message)) {
+          throw ex;
+        }
+      }
     };
     let buttons = [
       {
         label: data.label,
         accessKey: data.accessKey,
         callback() {
-          messageSent = true;
           sendMessage(true);
         },
       },
@@ -295,11 +308,6 @@ class PdfjsParent extends JSWindowActorParent {
         
         
         if (eventType !== "removed") {
-          return;
-        }
-        
-        
-        if (messageSent) {
           return;
         }
         sendMessage(false);
