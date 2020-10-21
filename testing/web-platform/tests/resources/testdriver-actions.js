@@ -23,6 +23,7 @@
     this.createSource("none");
     this.tickIdx = 0;
     this.defaultTickDuration = defaultTickDuration;
+    this.context = null;
   }
 
   Actions.prototype = {
@@ -66,7 +67,17 @@
       } catch(e) {
         return Promise.reject(e);
       }
-      return test_driver.action_sequence(actions);
+      return test_driver.action_sequence(actions, this.context);
+    },
+
+    
+
+
+
+
+    setContext: function(context) {
+      this.context = context;
+      return this;
     },
 
     

@@ -1,6 +1,7 @@
 (function() {
     "use strict";
     var idCounter = 0;
+    let testharness_context = null;
 
     function getInViewCenterPoint(rect) {
         var left = Math.max(0, rect.left);
@@ -53,6 +54,27 @@
 
 
 
+        set_test_context: function(context) {
+          if (window.test_driver_internal.set_test_context) {
+            window.test_driver_internal.set_test_context(context);
+          }
+          testharness_context = context;
+        },
+
+        
+
+
+
+
+        message_test: function(msg) {
+            let target = testharness_context;
+            if (testharness_context === null) {
+                target = window;
+            }
+            target.postMessage(msg, "*");
+        },
+
+        
 
 
 
@@ -63,24 +85,33 @@
 
 
 
-        bless: function(intent, action) {
-            var button = document.createElement("button");
+
+
+
+
+
+
+
+        bless: function(intent, action, context=null) {
+            let contextDocument = context ? context.document : document;
+            var button = contextDocument.createElement("button");
             button.innerHTML = "This test requires user interaction.<br />" +
                 "Please click here to allow " + intent + ".";
             button.id = "wpt-test-driver-bless-" + (idCounter += 1);
-            const elem = document.body || document.documentElement;
+            const elem = contextDocument.body || contextDocument.documentElement;
             elem.appendChild(button);
 
-            return new Promise(function(resolve, reject) {
-                    button.addEventListener("click", resolve);
+            let wait_click = new Promise(resolve => button.addEventListener("click", resolve));
 
-                    test_driver.click(button).catch(reject);
-                }).then(function() {
+            return test_driver.click(button)
+                .then(wait_click)
+                .then(function() {
                     button.remove();
 
                     if (typeof action === "function") {
                         return action();
                     }
+                    return null;
                 });
         },
 
@@ -154,7 +185,11 @@
 
 
 
-        freeze: function() {
+
+
+
+
+        freeze: function(context=null) {
             return window.test_driver_internal.freeze();
         },
 
@@ -177,8 +212,12 @@
 
 
 
-        action_sequence: function(actions) {
-            return window.test_driver_internal.action_sequence(actions);
+
+
+
+
+        action_sequence: function(actions, context=null) {
+            return window.test_driver_internal.action_sequence(actions, context);
         },
 
         
@@ -191,8 +230,12 @@
 
 
 
-        generate_test_report: function(message) {
-            return window.test_driver_internal.generate_test_report(message);
+
+
+
+
+        generate_test_report: function(message, context=null) {
+            return window.test_driver_internal.generate_test_report(message, context);
         },
 
         
@@ -213,132 +256,16 @@
 
 
 
-        set_permission: function(descriptor, state, one_realm) {
+
+
+
+        set_permission: function(descriptor, state, one_realm, context=null) {
             let permission_params = {
               descriptor,
               state,
               oneRealm: one_realm,
             };
-            return window.test_driver_internal.set_permission(permission_params);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        add_virtual_authenticator: function(config) {
-            return window.test_driver_internal.add_virtual_authenticator(config);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        remove_virtual_authenticator: function(authenticator_id) {
-            return window.test_driver_internal.remove_virtual_authenticator(authenticator_id);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        add_credential: function(authenticator_id, credential) {
-            return window.test_driver_internal.add_credential(authenticator_id, credential);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        get_credentials: function(authenticator_id) {
-            return window.test_driver_internal.get_credentials(authenticator_id);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        remove_credential: function(authenticator_id, credential_id) {
-            return window.test_driver_internal.remove_credential(authenticator_id, credential_id);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-
-        remove_all_credentials: function(authenticator_id) {
-            return window.test_driver_internal.remove_all_credentials(authenticator_id);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-        set_user_verified: function(authenticator_id, uv) {
-            return window.test_driver_internal.set_user_verified(authenticator_id, uv);
+            return window.test_driver_internal.set_permission(permission_params, context);
         },
 
         
@@ -359,12 +286,156 @@
 
 
 
-        set_storage_access: function(origin, embedding_origin, state) {
+        add_virtual_authenticator: function(config, context=null) {
+            return window.test_driver_internal.add_virtual_authenticator(config, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        remove_virtual_authenticator: function(authenticator_id, context=null) {
+            return window.test_driver_internal.remove_virtual_authenticator(authenticator_id, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        add_credential: function(authenticator_id, credential, context=null) {
+            return window.test_driver_internal.add_credential(authenticator_id, credential, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        get_credentials: function(authenticator_id, context=null) {
+            return window.test_driver_internal.get_credentials(authenticator_id, context=null);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        remove_credential: function(authenticator_id, credential_id, context=null) {
+            return window.test_driver_internal.remove_credential(authenticator_id, credential_id, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+        remove_all_credentials: function(authenticator_id, context=null) {
+            return window.test_driver_internal.remove_all_credentials(authenticator_id, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        set_user_verified: function(authenticator_id, uv, context=null) {
+            return window.test_driver_internal.set_user_verified(authenticator_id, uv, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        set_storage_access: function(origin, embedding_origin, state, context=null) {
             if (state !== "allowed" && state !== "blocked") {
                 throw new Error("storage access status must be 'allowed' or 'blocked'");
             }
             const blocked = state === "blocked";
-            return window.test_driver_internal.set_storage_access(origin, embedding_origin, blocked);
+            return window.test_driver_internal.set_storage_access(origin, embedding_origin, blocked, context);
         },
     };
 
@@ -377,13 +448,6 @@
 
         in_automation: false,
 
-        
-
-
-
-
-
-
         click: function(element, coords) {
             if (this.in_automation) {
                 return Promise.reject(new Error('Not implemented'));
@@ -393,14 +457,6 @@
                 element.addEventListener("click", resolve);
             });
         },
-
-        
-
-
-
-
-
-
 
         send_keys: function(element, keys) {
             if (this.in_automation) {
@@ -434,158 +490,52 @@
             });
         },
 
-        
-
-
-
-
-
-        freeze: function() {
+        freeze: function(context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-        action_sequence: function(actions) {
+        action_sequence: function(actions, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-        generate_test_report: function(message) {
+        generate_test_report: function(message, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
 
-        
-
-
-
-
-
-
-
-
-
-
-
-        set_permission: function(permission_params) {
+        set_permission: function(permission_params, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-
-        add_virtual_authenticator: function(config) {
+        add_virtual_authenticator: function(config, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-
-
-
-        remove_virtual_authenticator: function(authenticator_id) {
+        remove_virtual_authenticator: function(authenticator_id, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        add_credential: function(authenticator_id, credential) {
+        add_credential: function(authenticator_id, credential, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-
-
-
-
-
-        get_credentials: function(authenticator_id) {
+        get_credentials: function(authenticator_id, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-
-
-
-
-        remove_credential: function(authenticator_id, credential_id) {
+        remove_credential: function(authenticator_id, credential_id, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-
-
-
-        remove_all_credentials: function(authenticator_id) {
+        remove_all_credentials: function(authenticator_id, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-
-
-
-        set_user_verified: function(authenticator_id, uv) {
+        set_user_verified: function(authenticator_id, uv, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
-        
-
-
-
-        set_storage_access: function(origin, embedding_origin, blocked) {
+        set_storage_access: function(origin, embedding_origin, blocked, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
     };
