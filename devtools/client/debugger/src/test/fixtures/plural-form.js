@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+module.exports.PluralForm = {
+  get(num, str) {
+    return str.split(";")[1];
+  },
+};
