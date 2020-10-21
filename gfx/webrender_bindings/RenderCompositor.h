@@ -126,17 +126,6 @@ class RenderCompositor {
   virtual bool RequestFullRender() { return false; }
   virtual uint32_t GetMaxPartialPresentRects() { return 0; }
   virtual bool ShouldDrawPreviousPartialPresentRegions() { return false; }
-  
-  
-  
-  
-  virtual size_t GetBufferAge() const { return 0; }
-  
-  
-  
-  
-  virtual void SetBufferDamageRegion(const wr::DeviceIntRect* aRects,
-                                     size_t aNumRects) {}
 
   
   virtual bool SurfaceOriginIsTopLeft() { return false; }

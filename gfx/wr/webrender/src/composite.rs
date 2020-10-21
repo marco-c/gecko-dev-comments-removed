@@ -204,9 +204,6 @@ pub enum CompositorConfig {
         
         
         draw_previous_partial_present_regions: bool,
-        
-        
-        partial_present: Option<Box<dyn PartialPresentCompositor>>,
     },
     
     
@@ -232,18 +229,6 @@ impl CompositorConfig {
             }
         }
     }
-
-    pub fn partial_present(&mut self) -> Option<&mut Box<dyn PartialPresentCompositor>> {
-        match self {
-            CompositorConfig::Native { .. } => {
-                None
-            }
-            CompositorConfig::Draw { ref mut partial_present, .. } => {
-                partial_present.as_mut()
-            }
-        }
-    }
-
 }
 
 impl Default for CompositorConfig {
@@ -252,7 +237,6 @@ impl Default for CompositorConfig {
         CompositorConfig::Draw {
             max_partial_present_rects: 0,
             draw_previous_partial_present_regions: false,
-            partial_present: None,
         }
     }
 }
@@ -1015,21 +999,6 @@ pub trait Compositor {
     fn get_capabilities(&self) -> CompositorCapabilities;
 }
 
-
-
-
-
-pub trait PartialPresentCompositor {
-    
-    
-    
-    fn get_buffer_age(&self) -> usize;
-    
-    
-    
-    
-    fn set_buffer_damage_region(&mut self, rects: &[DeviceIntRect]);
-}
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
