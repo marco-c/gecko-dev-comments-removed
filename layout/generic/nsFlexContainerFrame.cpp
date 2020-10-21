@@ -460,8 +460,7 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   
-  bool IsCrossSizeDefinite(const ReflowInput& aItemReflowInput,
-                           const FlexboxAxisTracker& aAxisTracker) const;
+  bool IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const;
 
   
   
@@ -1511,7 +1510,7 @@ static nscoord PartiallyResolveAutoMinSize(
   
   nscoord transferredSizeSuggestion = nscoord_MAX;
   if (aFlexItem.HasIntrinsicRatio() &&
-      aFlexItem.IsCrossSizeDefinite(aItemReflowInput, aAxisTracker)) {
+      aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
     
     transferredSizeSuggestion = MainSizeFromAspectRatio(
         aFlexItem.CrossSize(), aFlexItem.IntrinsicRatio(), aAxisTracker);
@@ -1545,7 +1544,7 @@ static bool ResolveAutoFlexBasisFromRatio(
   
   
   if (aFlexItem.HasIntrinsicRatio() &&
-      aFlexItem.IsCrossSizeDefinite(aItemReflowInput, aAxisTracker)) {
+      aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
     
     nscoord mainSizeFromRatio = MainSizeFromAspectRatio(
         aFlexItem.CrossSize(), aFlexItem.IntrinsicRatio(), aAxisTracker);
@@ -2233,28 +2232,23 @@ bool FlexItem::IsCrossSizeAuto() const {
                                  : stylePos->BSize(mWM).IsAuto();
 }
 
-bool FlexItem::IsCrossSizeDefinite(
-    const ReflowInput& aItemReflowInput,
-    const FlexboxAxisTracker& aAxisTracker) const {
+bool FlexItem::IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const {
   if (IsStretched()) {
     
     return true;
   }
 
   const nsStylePosition* pos = aItemReflowInput.mStylePosition;
-  const WritingMode containerWM = aAxisTracker.GetWritingMode();
+  const auto itemWM = GetWritingMode();
 
   
   
-  if (aAxisTracker.IsColumnOriented()) {
-    
-    return !pos->ISize(containerWM).IsAuto();
+  if (IsInlineAxisCrossAxis()) {
+    return !pos->ISize(itemWM).IsAuto();
   }
-  
-  
-  
-  nscoord cbBSize = aItemReflowInput.mCBReflowInput->ComputedBSize();
-  return !nsLayoutUtils::IsAutoBSize(pos->BSize(containerWM), cbBSize);
+
+  nscoord cbBSize = aItemReflowInput.mContainingBlockSize.BSize(itemWM);
+  return !nsLayoutUtils::IsAutoBSize(pos->BSize(itemWM), cbBSize);
 }
 
 uint32_t FlexItem::NumAutoMarginsInAxis(LogicalAxis aAxis) const {
