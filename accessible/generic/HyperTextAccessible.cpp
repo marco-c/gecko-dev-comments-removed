@@ -57,41 +57,78 @@ using namespace mozilla::a11y;
 
 class ParagraphBoundaryRule : public PivotRule {
  public:
-  explicit ParagraphBoundaryRule(AccessibleOrProxy& aSkipSubtreeFor)
-      : mSkipSubtreeFor(aSkipSubtreeFor) {}
-
-  ParagraphBoundaryRule() : mSkipSubtreeFor(nullptr) {}
+  explicit ParagraphBoundaryRule(Accessible* aAnchor,
+                                 uint32_t aAnchorTextoffset,
+                                 nsDirection aDirection,
+                                 bool aSkipAnchorSubtree = false)
+      : mAnchor(aAnchor),
+        mAnchorTextOffset(aAnchorTextoffset),
+        mDirection(aDirection),
+        mSkipAnchorSubtree(aSkipAnchorSubtree),
+        mLastMatchTextOffset(0) {}
 
   virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override {
     MOZ_ASSERT(aAccOrProxy.IsAccessible());
+    Accessible* acc = aAccOrProxy.AsAccessible();
     uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
 
-    
-    
-    
-    if (aAccOrProxy == mSkipSubtreeFor) {
+    if (mSkipAnchorSubtree && acc == mAnchor) {
       result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     }
 
     
     
-    if (aAccOrProxy.Role() == roles::WHITESPACE) {
+    if (acc->Role() == roles::WHITESPACE) {
       result |= nsIAccessibleTraversalRule::FILTER_MATCH;
       return result;
     }
 
     
     
-    nsIFrame* frame = aAccOrProxy.AsAccessible()->GetFrame();
+    nsIFrame* frame = acc->GetFrame();
     if (frame && frame->IsBlockFrame()) {
       result |= nsIAccessibleTraversalRule::FILTER_MATCH;
+      return result;
+    }
+
+    
+    if (acc->IsTextLeaf()) {
+      nsAutoString name;
+      acc->Name(name);
+      int32_t offset;
+      if (mDirection == eDirPrevious) {
+        if (acc == mAnchor && mAnchorTextOffset == 0) {
+          
+          
+          return result;
+        }
+        
+        
+        offset =
+            name.RFindChar('\n', acc == mAnchor ? mAnchorTextOffset - 1 : -1);
+      } else {
+        offset = name.FindChar('\n', acc == mAnchor ? mAnchorTextOffset : 0);
+      }
+      if (offset != -1) {
+        
+        mLastMatchTextOffset = offset;
+        result |= nsIAccessibleTraversalRule::FILTER_MATCH;
+      }
     }
 
     return result;
   }
 
+  
+  
+  uint32_t GetLastMatchTextOffset() { return mLastMatchTextOffset; }
+
  private:
-  AccessibleOrProxy mSkipSubtreeFor;
+  Accessible* mAnchor;
+  uint32_t mAnchorTextOffset;
+  nsDirection mDirection;
+  bool mSkipAnchorSubtree;
+  uint32_t mLastMatchTextOffset;
 };
 
 
@@ -739,7 +776,9 @@ int32_t HyperTextAccessible::FindParagraphStartOffset(uint32_t aOffset) {
 
   
   Pivot p = Pivot(this);
-  ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule();
+  ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule(
+      child, child->IsTextLeaf() ? aOffset - GetChildOffset(child) : 0,
+      eDirPrevious);
   AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
   AccessibleOrProxy match = p.Prev(wrappedChild, boundaryRule, true);
   if (match.IsNull() || match.AsAccessible() == this) {
@@ -758,11 +797,18 @@ int32_t HyperTextAccessible::FindParagraphStartOffset(uint32_t aOffset) {
         
         return 0;
       }
-    } else {
+    } else if (!match.AsAccessible()->IsTextLeaf()) {
       
       
       return TransformOffset(match.AsAccessible(), 0, false);
     }
+  }
+
+  if (match.AsAccessible()->IsTextLeaf()) {
+    
+    
+    return TransformOffset(match.AsAccessible(),
+                           boundaryRule.GetLastMatchTextOffset() + 1, false);
   }
 
   
@@ -790,16 +836,27 @@ int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
   
   Pivot p = Pivot(this);
   AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
-  
-  
-  ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule(wrappedChild);
+  ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule(
+      child, child->IsTextLeaf() ? aOffset - GetChildOffset(child) : 0,
+      eDirNext,
+      
+      
+       true);
   
   
   AccessibleOrProxy match = p.Next(wrappedChild, boundaryRule, true);
   if (!match.IsNull()) {
     
     Accessible* matchAcc = match.AsAccessible();
-    return TransformOffset(matchAcc, nsAccUtils::TextLength(matchAcc), true);
+    uint32_t matchOffset;
+    if (matchAcc->IsTextLeaf()) {
+      
+      
+      matchOffset = boundaryRule.GetLastMatchTextOffset() + 1;
+    } else {
+      matchOffset = nsAccUtils::TextLength(matchAcc);
+    }
+    return TransformOffset(matchAcc, matchOffset, true);
   }
 
   
