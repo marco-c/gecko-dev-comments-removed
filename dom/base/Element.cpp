@@ -372,6 +372,7 @@ void Element::Focus(const FocusOptions& aOptions, CallerType aCallerType,
   
   
   if (fm->CanSkipFocus(this)) {
+    fm->NotifyOfReFocus(*this);
     fm->NeedsFlushBeforeEventHandling(this);
     return;
   }

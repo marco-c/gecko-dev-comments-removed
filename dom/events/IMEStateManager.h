@@ -216,6 +216,9 @@ class IMEStateManager {
   static void OnEditorDestroying(EditorBase& aEditorBase);
 
   
+  static void OnReFocus(nsPresContext* aPresContext, nsIContent& aContent);
+
+  
 
 
 
