@@ -12,7 +12,6 @@
 #include "jit/CalleeToken.h"
 #include "jit/JitFrames.h"
 #include "jit/ScriptFromCalleeToken.h"
-#include "vm/JSContext.h"
 #include "vm/Stack.h"
 
 namespace js {
@@ -238,19 +237,23 @@ class BaselineFrame {
     interpreterICEntry_ = nullptr;
   }
 
+ private:
+  bool uninlineIsProfilerSamplingEnabled(JSContext* cx);
+
+ public:
   
   
   
   
   
   void switchFromJitToInterpreter(JSContext* cx, jsbytecode* pc) {
-    MOZ_ASSERT(!cx->isProfilerSamplingEnabled());
+    MOZ_ASSERT(!uninlineIsProfilerSamplingEnabled(cx));
     MOZ_ASSERT(!runningInInterpreter());
     flags_ |= RUNNING_IN_INTERPRETER;
     setInterpreterFields(pc);
   }
   void switchFromJitToInterpreterAtPrologue(JSContext* cx) {
-    MOZ_ASSERT(!cx->isProfilerSamplingEnabled());
+    MOZ_ASSERT(!uninlineIsProfilerSamplingEnabled(cx));
     MOZ_ASSERT(!runningInInterpreter());
     flags_ |= RUNNING_IN_INTERPRETER;
     setInterpreterFieldsForPrologue(script());
@@ -262,7 +265,7 @@ class BaselineFrame {
   
   void switchFromJitToInterpreterForExceptionHandler(JSContext* cx,
                                                      jsbytecode* pc) {
-    MOZ_ASSERT(!cx->isProfilerSamplingEnabled());
+    MOZ_ASSERT(!uninlineIsProfilerSamplingEnabled(cx));
     MOZ_ASSERT(!runningInInterpreter());
     flags_ |= RUNNING_IN_INTERPRETER;
     interpreterScript_ = script();
