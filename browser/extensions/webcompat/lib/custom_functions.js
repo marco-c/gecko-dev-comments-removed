@@ -6,23 +6,32 @@
 
 
 
-const replaceStringInRequest = (
-  requestId,
-  inString,
-  outString,
-  inEncoding = "utf-8"
-) => {
+function getConsoleLogCallback(tabId) {
+  return () => {
+    
+    
+    promiseConsoleWarningScript("this site").then(script => {
+      browser.tabs.executeScript(tabId, script).catch(() => {});
+    });
+  };
+}
+
+const replaceStringInRequest = (requestId, inString, outString, callback) => {
   const filter = browser.webRequest.filterResponseData(requestId);
-  const decoder = new TextDecoder(inEncoding);
+  const decoder = new TextDecoder("utf-8");
   const encoder = new TextEncoder();
   const RE = new RegExp(inString, "g");
   const carryoverLength = inString.length;
   let carryover = "";
+  let doCallback = false;
 
   filter.ondata = event => {
     const replaced = (
       carryover + decoder.decode(event.data, { stream: true })
     ).replace(RE, outString);
+    if (callback && replaced.includes(outString)) {
+      doCallback = true;
+    }
     filter.write(encoder.encode(replaced.slice(0, -carryoverLength)));
     carryover = replaced.slice(-carryoverLength);
   };
@@ -32,17 +41,21 @@ const replaceStringInRequest = (
       filter.write(encoder.encode(carryover));
     }
     filter.close();
+    if (doCallback) {
+      callback();
+    }
   };
 };
 
 const CUSTOM_FUNCTIONS = {
   detectSwipeFix: injection => {
     const { urls, types } = injection.data;
-    const listener = (injection.data.listener = ({ requestId }) => {
+    const listener = (injection.data.listener = ({ requestId, tabId }) => {
       replaceStringInRequest(
         requestId,
         "preventDefault:true",
-        "preventDefault:false"
+        "preventDefault:false",
+        getConsoleLogCallback(tabId)
       );
       return {};
     });
@@ -55,6 +68,7 @@ const CUSTOM_FUNCTIONS = {
     browser.webRequest.onBeforeRequest.removeListener(listener);
     delete injection.data.listener;
   },
+
   noSniffFix: injection => {
     const { urls, contentType } = injection.data;
     const listener = (injection.data.listener = e => {
@@ -72,13 +86,15 @@ const CUSTOM_FUNCTIONS = {
     browser.webRequest.onHeadersReceived.removeListener(listener);
     delete injection.data.listener;
   },
+
   pdk5fix: injection => {
     const { urls, types } = injection.data;
-    const listener = (injection.data.listener = ({ requestId }) => {
+    const listener = (injection.data.listener = ({ requestId, tabId }) => {
       replaceStringInRequest(
         requestId,
         "VideoContextChromeAndroid",
-        "VideoContextAndroid"
+        "VideoContextAndroid",
+        getConsoleLogCallback(tabId)
       );
       return {};
     });

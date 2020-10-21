@@ -16,10 +16,6 @@
 
 
 
-console.info(
-  "window.controllers has been shimmed for compatibility reasons. See https://webcompat.com/issues/16401 for details."
-);
-
 Object.defineProperty(window.wrappedJSObject, "controllers", {
   get: exportFunction(function() {
     return true;
