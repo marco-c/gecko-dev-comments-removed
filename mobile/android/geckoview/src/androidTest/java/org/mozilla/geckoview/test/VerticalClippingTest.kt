@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -8,6 +8,7 @@ import android.graphics.*
 import androidx.test.filters.MediumTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.hamcrest.Matchers.notNullValue
+import org.junit.Assume.assumeThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoResult
@@ -22,7 +23,7 @@ import org.mozilla.geckoview.test.util.Callbacks
 
 private const val SCREEN_HEIGHT = 800
 private const val SCREEN_WIDTH = 800
-private const val BANNER_HEIGHT = SCREEN_HEIGHT * 0.1f // height: 10%
+private const val BANNER_HEIGHT = SCREEN_HEIGHT * 0.1f 
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -32,11 +33,11 @@ class VerticalClippingTest : BaseSessionTest() {
         val canvas = Canvas(screenshotFile)
         val paint = Paint()
 
-        // Draw body
+        
         paint.color = Color.rgb(0, 0, 255)
         canvas.drawRect(0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), paint)
 
-        // Draw bottom banner
+        
         paint.color = Color.rgb(0, 255, 0)
         canvas.drawRect(0f, SCREEN_HEIGHT - BANNER_HEIGHT - bottomOffset,
                 SCREEN_WIDTH.toFloat(), (SCREEN_HEIGHT - bottomOffset).toFloat(), paint)
@@ -62,6 +63,8 @@ class VerticalClippingTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun verticalClippingSucceeds() {
+        
+        assumeThat(sessionRule.env.isWebrender, equalTo(false))
         sessionRule.display?.setVerticalClipping(45)
         sessionRule.session.loadTestPath(FIXED_BOTTOM)
         sessionRule.waitUntilCalled(object : Callbacks.ContentDelegate {
