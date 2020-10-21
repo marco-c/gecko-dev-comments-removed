@@ -852,6 +852,9 @@ extern JS_FRIEND_API bool ReportIsNotFunction(JSContext* cx, JS::HandleValue v);
 extern JS_FRIEND_API JSObject* ConvertArgsToArray(JSContext* cx,
                                                   const JS::CallArgs& args);
 
+}  
+
+namespace JS {
 
 
 
@@ -866,22 +869,39 @@ extern JS_FRIEND_API JSObject* ConvertArgsToArray(JSContext* cx,
 
 
 
-extern bool AddMozDateTimeFormatConstructor(JSContext* cx,
-                                            JS::Handle<JSObject*> intl);
+
+
+
+
+extern JS_FRIEND_API bool AddMozDateTimeFormatConstructor(
+    JSContext* cx, Handle<JSObject*> intl);
 
 
 
 
 
-extern bool AddMozDisplayNamesConstructor(JSContext* cx,
-                                          JS::Handle<JSObject*> intl);
 
 
 
 
 
-extern bool AddDisplayNamesConstructor(JSContext* cx,
-                                       JS::Handle<JSObject*> intl);
+extern JS_FRIEND_API bool AddMozDisplayNamesConstructor(JSContext* cx,
+                                                        Handle<JSObject*> intl);
+
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API bool AddDisplayNamesConstructor(JSContext* cx,
+                                                     Handle<JSObject*> intl);
+
+}  
+
+namespace js {
 
 class MOZ_STACK_CLASS JS_FRIEND_API AutoAssertNoContentJS {
  public:
