@@ -1043,30 +1043,30 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
               
               
               
-              return MakeStringSpan("tracing");
+              return MakeStringSpan("DOMEvent");
             }
             static void StreamJSONMarkerData(
                 JSONWriter& aWriter, const ProfilerString16View& aEventType,
-                const TimeStamp& aEventTimeStamp) {
+                const TimeStamp& aStartTime, const TimeStamp& aEventTimeStamp) {
               aWriter.StringProperty(
                   "eventType", NS_ConvertUTF16toUTF8(aEventType.Data(),
                                                      aEventType.Length()));
               
               
               
-              baseprofiler::WritePropertyTime(aWriter, "timeStamp",
-                                              aEventTimeStamp);
               
               
-              
-              aWriter.StringProperty("category", "DOMEvent");
+              aWriter.DoubleProperty(
+                  "latency", (aStartTime - aEventTimeStamp).ToMilliseconds());
             }
           };
 
+          auto startTime = TimeStamp::NowUnfuzzed();
           profiler_add_marker("DOMEvent", geckoprofiler::category::DOM,
                               {MarkerTiming::IntervalStart(),
                                MarkerInnerWindowId(innerWindowId)},
-                              DOMEventMarker{}, typeStr, aEvent->mTimeStamp);
+                              DOMEventMarker{}, typeStr, startTime,
+                              aEvent->mTimeStamp);
 
           EventTargetChainItem::HandleEventTargetChain(chain, postVisitor,
                                                        aCallback, cd);
@@ -1074,7 +1074,7 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
           profiler_add_marker(
               "DOMEvent", geckoprofiler::category::DOM,
               {MarkerTiming::IntervalEnd(), std::move(innerWindowId)},
-              DOMEventMarker{}, typeStr, aEvent->mTimeStamp);
+              DOMEventMarker{}, typeStr, startTime, aEvent->mTimeStamp);
         } else
 #endif
         {
