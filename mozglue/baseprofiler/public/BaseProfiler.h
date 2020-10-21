@@ -823,7 +823,8 @@ MFBT_API void profiler_add_marker(const char* aMarkerName,
                                   ProfilingCategoryPair aCategoryPair,
                                   const ProfilerMarkerPayload& aPayload);
 
-MFBT_API void profiler_add_js_marker(const char* aMarkerName);
+MFBT_API void profiler_add_js_marker(const char* aMarkerName,
+                                     const char* aMarkerText);
 
 
 

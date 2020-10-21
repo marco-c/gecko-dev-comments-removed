@@ -3650,9 +3650,10 @@ void profiler_add_marker(const char* aMarkerName,
 
 
 
-void profiler_add_js_marker(const char* aMarkerName) {
-  BASE_PROFILER_MARKER_UNTYPED(
-      ProfilerString8View::WrapNullTerminatedString(aMarkerName), JS);
+void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText) {
+  BASE_PROFILER_MARKER_TEXT(
+      ProfilerString8View::WrapNullTerminatedString(aMarkerName), JS,
+      ProfilerString8View::WrapNullTerminatedString(aMarkerText));
 }
 
 static void maybelocked_profiler_add_marker_for_thread(
