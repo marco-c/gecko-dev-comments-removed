@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 DEFINES['CUBEB_GECKO_BUILD'] = True
 
@@ -40,6 +40,12 @@ if CONFIG['MOZ_JACK']:
     ]
     DEFINES['USE_JACK'] = True
 
+if CONFIG['OS_ARCH'] in ('DragonFly', 'FreeBSD', 'SunOS'):
+    SOURCES += [
+        'cubeb_oss.c',
+    ]
+    DEFINES['USE_OSS'] = True
+
 if CONFIG['OS_ARCH'] == 'OpenBSD':
     SOURCES += [
         'cubeb_sndio.c',
@@ -72,7 +78,7 @@ if CONFIG['OS_TARGET'] == 'WINNT':
       "avrt",
     ]
     if CONFIG['CC_TYPE'] == 'clang-cl':
-        CXXFLAGS += ['-Wno-macro-redefined'] # '_USE_MATH_DEFINES' : macro redefinition
+        CXXFLAGS += ['-Wno-macro-redefined'] 
 
 if CONFIG['OS_TARGET'] == 'Android':
     SOURCES += ['cubeb_opensl.c']
@@ -86,5 +92,5 @@ CFLAGS += CONFIG['MOZ_ALSA_CFLAGS']
 CFLAGS += CONFIG['MOZ_JACK_CFLAGS']
 CFLAGS += CONFIG['MOZ_PULSEAUDIO_CFLAGS']
 
-# We allow warnings for third-party code that can be updated from upstream.
+
 AllowCompilerWarnings()
