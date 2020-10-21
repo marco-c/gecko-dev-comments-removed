@@ -8,6 +8,8 @@
 #define GFX_FRAMEMETRICS_H
 
 #include <stdint.h>                 
+#include <iosfwd>
+
 #include "Units.h"                  
 #include "mozilla/DefineEnum.h"     
 #include "mozilla/HashFunctions.h"  
@@ -59,6 +61,8 @@ namespace layers {
 
 struct FrameMetrics {
   friend struct IPC::ParamTraits<mozilla::layers::FrameMetrics>;
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const FrameMetrics& aMetrics);
 
   typedef ScrollableLayerGuid::ViewID ViewID;
 
