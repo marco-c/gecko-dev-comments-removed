@@ -920,22 +920,6 @@
       );
     }
 
-    
-
-
-
-    restoreProgressListeners() {
-      let listeners = this.progressListeners;
-      this.progressListeners = [];
-
-      for (let { weakListener, mask } of listeners) {
-        let listener = weakListener.get();
-        if (listener) {
-          this.addProgressListener(listener, mask);
-        }
-      }
-    }
-
     onPageHide(aEvent) {
       if (!this.docShell || !this.fastFind) {
         return;
@@ -1050,7 +1034,6 @@
 
 
 
-        let oldNavigation = this._remoteWebNavigation;
         this._remoteWebNavigation = new LazyModules.RemoteWebNavigation(this);
 
         
@@ -1063,13 +1046,6 @@
         
         
         this._csp = null;
-
-        if (!oldNavigation) {
-          
-          
-          
-          this.restoreProgressListeners();
-        }
 
         this.messageManager.loadFrameScript(
           "chrome://global/content/browser-child.js",
@@ -1119,7 +1095,6 @@
 
       if (!this.isRemoteBrowser) {
         this._remoteWebNavigation = null;
-        this.restoreProgressListeners();
         this.addEventListener("pagehide", this.onPageHide, true);
       }
     }
