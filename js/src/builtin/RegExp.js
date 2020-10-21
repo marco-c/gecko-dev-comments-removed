@@ -1012,7 +1012,7 @@ function RegExpExec(R, S, forTest) {
     var result = callContentFunction(exec, R, S);
 
     
-    if (typeof result !== "object")
+    if (result !== null && !IsObject(result))
         ThrowTypeError(JSMSG_EXEC_NOT_OBJORNULL);
 
     
