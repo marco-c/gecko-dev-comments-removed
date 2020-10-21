@@ -9,6 +9,7 @@ import {
   addThreadEventListeners,
   clientEvents,
   removeThreadEventListeners,
+  ensureSourceActor,
 } from "./events";
 import { makePendingLocationId } from "../../utils/breakpoint";
 
@@ -316,6 +317,13 @@ function getProperties(thread: string, grip: Grip): Promise<*> {
 async function getFrames(thread: string) {
   const threadFront = lookupThreadFront(thread);
   const response = await threadFront.getFrames(0, CALL_STACK_PAGE_SIZE);
+
+  
+  
+  await Promise.all(
+    response.frames.map(frame => ensureSourceActor(frame.where.actor))
+  );
+
   return response.frames.map<?Frame>((frame, i) =>
     createFrame(thread, frame, i)
   );
