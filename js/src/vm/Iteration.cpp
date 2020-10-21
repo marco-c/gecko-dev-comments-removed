@@ -618,6 +618,11 @@ static inline size_t AllocationSize(size_t propertyCount, size_t guardCount) {
 static PropertyIteratorObject* CreatePropertyIterator(
     JSContext* cx, Handle<JSObject*> objBeingIterated, HandleIdVector props,
     uint32_t numGuards, uint32_t guardKey) {
+  if (props.length() > NativeIterator::PropCountLimit) {
+    ReportAllocationOverflow(cx);
+    return nullptr;
+  }
+
   Rooted<PropertyIteratorObject*> propIter(cx, NewPropertyIteratorObject(cx));
   if (!propIter) {
     return nullptr;
@@ -694,41 +699,23 @@ NativeIterator::NativeIterator(JSContext* cx,
           reinterpret_cast<GCPtrLinearString*>(guardsBegin() + numGuards)),
       propertiesEnd_(propertyCursor_),
       guardKey_(guardKey),
-      flagsAndCount_(0)  
+      flagsAndCount_(
+          initialFlagsAndCount(props.length()))  
 {
   MOZ_ASSERT(!*hadError);
 
   
   
+  
+  
   propIter->setNativeIterator(this);
 
-  if (!setInitialPropertyCount(props.length())) {
-    ReportAllocationOverflow(cx);
-    *hadError = true;
-    return;
-  }
-
+  
+  
+  
+  
   size_t nbytes = AllocationSize(props.length(), numGuards);
   AddCellMemory(propIter, nbytes, MemoryUse::NativeIterator);
-
-  for (size_t i = 0, len = props.length(); i < len; i++) {
-    JSLinearString* str = IdToString(cx, props[i]);
-    if (!str) {
-      *hadError = true;
-      return;
-    }
-
-    
-    
-    GCPtrLinearString* loc = propertiesEnd_;
-
-    
-    
-    
-    propertiesEnd_++;
-
-    new (loc) GCPtrLinearString(str);
-  }
 
   if (numGuards > 0) {
     
@@ -742,20 +729,11 @@ NativeIterator::NativeIterator(JSContext* cx,
     uint32_t key = 0;
     do {
       ReceiverGuard guard(pobj);
-
-      
-      
-      HeapReceiverGuard* loc = guardsEnd_;
-
-      
-      
-      
+      new (guardsEnd_) HeapReceiverGuard(guard);
       guardsEnd_++;
 #ifdef DEBUG
       i++;
 #endif
-
-      new (loc) HeapReceiverGuard(guard);
 
       key = mozilla::AddToHash(key, guard.hash());
 
@@ -768,10 +746,18 @@ NativeIterator::NativeIterator(JSContext* cx,
     guardKey_ = key;
     MOZ_ASSERT(i == numGuards);
   }
-
-  
-  
   MOZ_ASSERT(static_cast<void*>(guardsEnd_) == propertyCursor_);
+
+  for (size_t i = 0, len = props.length(); i < len; i++) {
+    JSLinearString* str = IdToString(cx, props[i]);
+    if (!str) {
+      *hadError = true;
+      return;
+    }
+    new (propertiesEnd_) GCPtrLinearString(str);
+    propertiesEnd_++;
+  }
+
   markInitialized();
 
   MOZ_ASSERT(!*hadError);
