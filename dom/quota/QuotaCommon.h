@@ -393,6 +393,14 @@
 
 #define QM_PROPAGATE Err(tryTempError)
 
+#define QM_ASSERT_UNREACHABLE \
+  [&tryTempError] {           \
+    MOZ_ASSERT(false);        \
+    return Err(tryTempError); \
+  }()
+
+#define QM_ASSERT_UNREACHABLE_VOID [] { MOZ_ASSERT(false); }()
+
 
 
 
