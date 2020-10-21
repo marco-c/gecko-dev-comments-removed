@@ -109,6 +109,7 @@
 #include "js/ErrorReport.h"                
 #include "js/Exception.h"                  
 #include "js/experimental/CodeCoverage.h"  
+#include "js/experimental/Intl.h"  
 #include "js/experimental/JitInfo.h"  
 #include "js/experimental/SourceHook.h"  
 #include "js/experimental/TypedData.h"   
