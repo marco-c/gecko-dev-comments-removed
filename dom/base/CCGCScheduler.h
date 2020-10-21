@@ -335,6 +335,24 @@ class CCGCScheduler {
       
     }
 
+    if (mCCRunnerState != CCRunnerState::EarlyTimer) {
+      
+      
+      if (!IsCCNeeded(aSuspected, now)) {
+        mCCRunnerState = CCRunnerState::Inactive;
+        NoteForgetSkippableOnlyCycle();
+        if (mCCRunnerState == CCRunnerState::LateTimerPostForgetSkippable) {
+          return {CCRunnerAction::StopRunning, Yield};
+        }
+        if (ShouldFireForgetSkippable(aSuspected)) {
+          
+          
+          return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+        }
+        return {CCRunnerAction::StopRunning, Yield};
+      }
+    }
+
     switch (mCCRunnerState) {
       
       
@@ -357,7 +375,9 @@ class CCGCScheduler {
         
         
         mCCRunnerState = CCRunnerState::LateTimer;
-        [[fallthrough]];
+
+        
+        return GetNextCCRunnerAction(aDeadline, aSuspected);
 
       
       
@@ -365,27 +385,12 @@ class CCGCScheduler {
       
       
       case CCRunnerState::LateTimer:
-        if (!IsCCNeeded(aSuspected, now)) {
-          mCCRunnerState = CCRunnerState::Inactive;
-          NoteForgetSkippableOnlyCycle();
-          if (ShouldFireForgetSkippable(aSuspected)) {
-            return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
-          }
-          return {CCRunnerAction::StopRunning, Yield};
-        }
-
         mCCRunnerState = CCRunnerState::LateTimerPostForgetSkippable;
         return {CCRunnerAction::ForgetSkippable, Yield, RemoveChildless};
 
       
       
       case CCRunnerState::LateTimerPostForgetSkippable:
-        if (!IsCCNeeded(aSuspected, now)) {
-          mCCRunnerState = CCRunnerState::Inactive;
-          NoteForgetSkippableOnlyCycle();
-          return {CCRunnerAction::StopRunning, Yield};
-        }
-
         
         
         mCCRunnerState = CCRunnerState::FinalTimer;
@@ -399,15 +404,6 @@ class CCGCScheduler {
       
       
       case CCRunnerState::FinalTimer:
-        if (!IsCCNeeded(aSuspected, now)) {
-          mCCRunnerState = CCRunnerState::Inactive;
-          NoteForgetSkippableOnlyCycle();
-          if (ShouldFireForgetSkippable(aSuspected)) {
-            return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
-          }
-          return {CCRunnerAction::StopRunning, Yield};
-        }
-
         
         
         
