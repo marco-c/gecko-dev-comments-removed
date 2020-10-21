@@ -263,8 +263,6 @@ var SitePermissions = {
   PROMPT: Services.perms.PROMPT_ACTION,
   ALLOW_COOKIES_FOR_SESSION: Ci.nsICookiePermission.ACCESS_SESSION,
   AUTOPLAY_BLOCKED_ALL: Ci.nsIAutoplay.BLOCKED_ALL,
-  ALLOW_INSECURE_LOAD_FOR_SESSION:
-    Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION,
 
   
   SCOPE_REQUEST: "{SitePermissions.SCOPE_REQUEST}",
@@ -302,14 +300,6 @@ var SitePermissions = {
       if (gPermissionObject[permission.type]) {
         
         if (permission.type == "canvas" && !this.resistFingerprinting) {
-          continue;
-        }
-
-        
-        if (
-          permission.type == "https-only-load-insecure" &&
-          !this.httpsOnlyModeEnabled
-        ) {
           continue;
         }
 
@@ -437,12 +427,6 @@ var SitePermissions = {
       
       if (!this.resistFingerprinting) {
         permissions = permissions.filter(permission => permission !== "canvas");
-      }
-      
-      if (!this.httpsOnlyModeEnabled) {
-        permissions = permissions.filter(
-          permission => permission !== "https-only-load-insecure"
-        );
       }
       this._permissionsArray = permissions;
     }
@@ -667,15 +651,6 @@ var SitePermissions = {
       );
     }
 
-    if (state == this.ALLOW_INSECURE_LOAD_FOR_SESSION) {
-      if (permissionID !== "https-only-load-insecure") {
-        throw new Error(
-          "ALLOW_INSECURE_LOAD_FOR_SESSION can only be set on the https-only-load-insecure permission"
-        );
-      }
-      scope = this.SCOPE_SESSION;
-    }
-
     
     if (scope == this.SCOPE_TEMPORARY) {
       
@@ -832,7 +807,6 @@ var SitePermissions = {
       case this.ALLOW:
         return gStringBundle.GetStringFromName("state.multichoice.allow");
       case this.ALLOW_COOKIES_FOR_SESSION:
-      case this.ALLOW_INSECURE_LOAD_FOR_SESSION:
         return gStringBundle.GetStringFromName(
           "state.multichoice.allowForSession"
         );
@@ -872,7 +846,6 @@ var SitePermissions = {
         }
         return gStringBundle.GetStringFromName("state.current.allowed");
       case this.ALLOW_COOKIES_FOR_SESSION:
-      case this.ALLOW_INSECURE_LOAD_FOR_SESSION:
         return gStringBundle.GetStringFromName(
           "state.current.allowedForSession"
         );
@@ -1064,19 +1037,6 @@ var gPermissionObject = {
       return SitePermissions.UNKNOWN;
     },
   },
-
-  "https-only-load-insecure": {
-    exactHostMatch: true,
-    labelID: "https-only-load-insecure",
-    getDefault() {
-      return SitePermissions.BLOCK;
-    },
-    states: [
-      SitePermissions.BLOCK,
-      SitePermissions.ALLOW_INSECURE_LOAD_FOR_SESSION,
-      SitePermissions.ALLOW,
-    ],
-  },
 };
 
 if (!Services.prefs.getBoolPref("dom.webmidi.enabled")) {
@@ -1097,13 +1057,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   SitePermissions,
   "resistFingerprinting",
   "privacy.resistFingerprinting",
-  false,
-  SitePermissions.invalidatePermissionList.bind(SitePermissions)
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  SitePermissions,
-  "httpsOnlyModeEnabled",
-  "dom.security.https_only_mode",
   false,
   SitePermissions.invalidatePermissionList.bind(SitePermissions)
 );
