@@ -339,6 +339,7 @@ pub enum Inst {
         src: RegMem,
         dst: Writable<Reg>,
         imm: u8,
+        is64: bool,
     },
 
     
@@ -481,6 +482,20 @@ pub enum Inst {
     
     
     VirtualSPOffsetAdj { offset: i64 },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    XmmUninitializedValue { dst: Writable<Reg> },
 }
 
 pub(crate) fn low32_will_sign_extend_to_64(x: u64) -> bool {
@@ -639,6 +654,11 @@ impl Inst {
         Inst::XMM_RM_R { op, src, dst }
     }
 
+    pub(crate) fn xmm_uninit_value(dst: Writable<Reg>) -> Self {
+        debug_assert!(dst.to_reg().get_class() == RegClass::V128);
+        Inst::XmmUninitializedValue { dst }
+    }
+
     pub(crate) fn xmm_mov_r_m(
         op: SseOpcode,
         src: Reg,
@@ -780,11 +800,20 @@ impl Inst {
         }
     }
 
-    pub(crate) fn xmm_rm_r_imm(op: SseOpcode, src: RegMem, dst: Writable<Reg>, imm: u8) -> Inst {
-        src.assert_regclass_is(RegClass::V128);
-        debug_assert!(dst.to_reg().get_class() == RegClass::V128);
-        debug_assert!(imm < 8);
-        Inst::XmmRmRImm { op, src, dst, imm }
+    pub(crate) fn xmm_rm_r_imm(
+        op: SseOpcode,
+        src: RegMem,
+        dst: Writable<Reg>,
+        imm: u8,
+        is64: bool,
+    ) -> Inst {
+        Inst::XmmRmRImm {
+            op,
+            src,
+            dst,
+            imm,
+            is64,
+        }
     }
 
     pub(crate) fn movzx_rm_r(
@@ -1115,10 +1144,16 @@ impl Inst {
                 src.to_reg() == Some(dst.to_reg())
                     && (*op == SseOpcode::Xorps
                         || *op == SseOpcode::Xorpd
-                        || *op == SseOpcode::Pxor)
+                        || *op == SseOpcode::Pxor
+                        || *op == SseOpcode::Pcmpeqb
+                        || *op == SseOpcode::Pcmpeqw
+                        || *op == SseOpcode::Pcmpeqd
+                        || *op == SseOpcode::Pcmpeqq)
             }
 
-            Self::XmmRmRImm { op, src, dst, imm } => {
+            Self::XmmRmRImm {
+                op, src, dst, imm, ..
+            } => {
                 src.to_reg() == Some(dst.to_reg())
                     && (*op == SseOpcode::Cmppd || *op == SseOpcode::Cmpps)
                     && *imm == FcmpImm::Equal.encode()
@@ -1300,11 +1335,17 @@ impl ShowWithRRU for Inst {
                 show_ireg_sized(rhs_dst.to_reg(), mb_rru, 8),
             ),
 
-            Inst::XmmRmRImm { op, src, dst, imm } => format!(
+            Inst::XmmRmRImm { op, src, dst, imm, is64 } => format!(
                 "{} ${}, {}, {}",
-                ljustify(op.to_string()),
+                ljustify(format!("{}{}", op.to_string(), if *is64 { ".w" } else { "" })),
                 imm,
                 src.show_rru(mb_rru),
+                dst.show_rru(mb_rru),
+            ),
+
+            Inst::XmmUninitializedValue { dst } => format!(
+                "{} {}",
+                ljustify("uninit".into()),
                 dst.show_rru(mb_rru),
             ),
 
@@ -1722,15 +1763,23 @@ fn x64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
                 collector.add_mod(*dst);
             }
         }
-        Inst::XmmRmRImm { src, dst, .. } => {
+        Inst::XmmRmRImm { op, src, dst, .. } => {
             if inst.produces_const() {
                 
+                collector.add_def(*dst);
+            } else if *op == SseOpcode::Pextrb
+                || *op == SseOpcode::Pextrw
+                || *op == SseOpcode::Pextrd
+                || *op == SseOpcode::Pshufd
+            {
+                src.get_regs_as_uses(collector);
                 collector.add_def(*dst);
             } else {
                 src.get_regs_as_uses(collector);
                 collector.add_mod(*dst);
             }
         }
+        Inst::XmmUninitializedValue { dst } => collector.add_def(*dst),
         Inst::XmmLoadConstSeq { dst, .. } => collector.add_def(*dst),
         Inst::XmmMinMaxSeq { lhs, rhs_dst, .. } => {
             collector.add_use(*lhs);
@@ -2024,12 +2073,20 @@ fn x64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             map_def(mapper, dst);
         }
         Inst::XmmRmRImm {
+            ref op,
             ref mut src,
             ref mut dst,
             ..
         } => {
             if produces_const {
                 src.map_as_def(mapper);
+                map_def(mapper, dst);
+            } else if *op == SseOpcode::Pextrb
+                || *op == SseOpcode::Pextrw
+                || *op == SseOpcode::Pextrd
+                || *op == SseOpcode::Pshufd
+            {
+                src.map_uses(mapper);
                 map_def(mapper, dst);
             } else {
                 src.map_uses(mapper);
@@ -2056,6 +2113,9 @@ fn x64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
         } => {
             src.map_uses(mapper);
             map_mod(mapper, dst);
+        }
+        Inst::XmmUninitializedValue { ref mut dst, .. } => {
+            map_def(mapper, dst);
         }
         Inst::XmmLoadConstSeq { ref mut dst, .. } => {
             map_def(mapper, dst);
@@ -2278,18 +2338,27 @@ impl MachInst for Inst {
     }
 
     fn is_move(&self) -> Option<(Writable<Reg>, Reg)> {
-        
-        
-        
-        
         match self {
+            
+            
+            
+            
             Self::Mov_R_R {
                 is_64, src, dst, ..
             } if *is_64 => Some((*dst, *src)),
+            
+            
+            
+            
             Self::XmmUnaryRmR { op, src, dst, .. }
                 if *op == SseOpcode::Movss
                     || *op == SseOpcode::Movsd
-                    || *op == SseOpcode::Movaps =>
+                    || *op == SseOpcode::Movaps
+                    || *op == SseOpcode::Movapd
+                    || *op == SseOpcode::Movups
+                    || *op == SseOpcode::Movupd
+                    || *op == SseOpcode::Movdqa
+                    || *op == SseOpcode::Movdqu =>
             {
                 if let RegMem::Reg { reg } = src {
                     Some((*dst, *reg))
