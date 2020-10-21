@@ -61,6 +61,11 @@ static NS_DEFINE_CID(kMultiplexInputStream, NS_MULTIPLEXINPUTSTREAM_CID);
 
 #define MAX_INVALID_RESPONSE_BODY_SIZE (1024 * 128)
 
+
+#define MOCK_SSL_ERROR_ECH_RETRY_WITH_ECH (SSL_ERROR_BASE + 188)
+#define MOCK_SSL_ERROR_ECH_RETRY_WITHOUT_ECH (SSL_ERROR_BASE + 189)
+#define MOCK_SSL_ERROR_ECH_FAILED (SSL_ERROR_BASE + 190)
+
 using namespace mozilla::net;
 
 namespace mozilla {
@@ -138,7 +143,8 @@ nsHttpTransaction::nsHttpTransaction()
       mFastOpenStatus(TFO_NOT_TRIED),
       mTrafficCategory(HttpTrafficCategory::eInvalid),
       mProxyConnectResponseCode(0),
-      m421Received(false) {
+      m421Received(false),
+      mDontRetryWithDirectRoute(false) {
   this->mSelfAddr.inet = {};
   this->mPeerAddr.inet = {};
   LOG(("Creating nsHttpTransaction @%p\n", this));
@@ -533,7 +539,7 @@ nsHttpRequestHead* nsHttpTransaction::RequestHead() { return mRequestHead; }
 uint32_t nsHttpTransaction::Http1xTransactionCount() { return 1; }
 
 nsresult nsHttpTransaction::TakeSubTransactions(
-    nsTArray<RefPtr<nsAHttpTransaction> >& outTransactions) {
+    nsTArray<RefPtr<nsAHttpTransaction>>& outTransactions) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -1101,6 +1107,136 @@ nsHttpTransaction::ErrorCodeToFailedReason(nsresult aErrorCode) {
   return reason;
 }
 
+bool nsHttpTransaction::PrepareSVCBRecordsForRetry(
+    const nsACString& aFailedDomainName, bool& aAllRecordsHaveEchConfig) {
+  MOZ_ASSERT(mRecordsForRetry.IsEmpty());
+  if (!mHTTPSSVCRecord) {
+    return false;
+  }
+
+  nsTArray<RefPtr<nsISVCBRecord>> records;
+  Unused << mHTTPSSVCRecord->GetAllRecordsWithEchConfig(
+      mCaps & NS_HTTP_DISALLOW_SPDY, mCaps & NS_HTTP_DISALLOW_HTTP3,
+      &aAllRecordsHaveEchConfig, records);
+  
+  
+  
+  MOZ_ASSERT(!records.IsEmpty());
+
+  
+  
+  if (!aAllRecordsHaveEchConfig) {
+    return false;
+  }
+
+  
+  for (const auto& record : records) {
+    nsAutoCString name;
+    record->GetName(name);
+    if (name == aFailedDomainName) {
+      
+      continue;
+    }
+
+    mRecordsForRetry.InsertElementAt(0, record);
+  }
+
+  
+  mHTTPSSVCRecord = nullptr;
+  return !mRecordsForRetry.IsEmpty();
+}
+
+void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
+  LOG(("nsHttpTransaction::PrepareConnInfoForRetry [this=%p reason=%" PRIx32
+       "]",
+       this, static_cast<uint32_t>(aReason)));
+  RefPtr<nsHttpConnectionInfo> failedConnInfo = mConnInfo->Clone();
+  mConnInfo = nullptr;
+
+  if (!gHttpHandler->EchConfigEnabled() ||
+      failedConnInfo->GetEchConfig().IsEmpty()) {
+    LOG((" echConfig is not used, fallback to origin conn info"));
+    mOrigConnInfo.swap(mConnInfo);
+    return;
+  }
+
+  if (aReason ==
+      psm::GetXPCOMFromNSSError(MOCK_SSL_ERROR_ECH_RETRY_WITHOUT_ECH)) {
+    LOG((" Got SSL_ERROR_ECH_RETRY_WITHOUT_ECH, use empty echConfig to retry"));
+    failedConnInfo->SetEchConfig(EmptyCString());
+    failedConnInfo.swap(mConnInfo);
+    return;
+  }
+
+  if (aReason == psm::GetXPCOMFromNSSError(MOCK_SSL_ERROR_ECH_RETRY_WITH_ECH)) {
+    LOG((" Got SSL_ERROR_ECH_RETRY_WITHOUT_ECH, use retry echConfig"));
+    MOZ_ASSERT(mConnection);
+
+    nsCOMPtr<nsISupports> secInfo;
+    if (mConnection) {
+      mConnection->GetSecurityInfo(getter_AddRefs(secInfo));
+    }
+
+    nsCOMPtr<nsISSLSocketControl> socketControl = do_QueryInterface(secInfo);
+    MOZ_ASSERT(socketControl);
+
+    nsAutoCString retryEchConfig;
+    if (socketControl &&
+        NS_SUCCEEDED(socketControl->GetRetryEchConfig(retryEchConfig))) {
+      MOZ_ASSERT(!retryEchConfig.IsEmpty());
+
+      failedConnInfo->SetEchConfig(retryEchConfig);
+      failedConnInfo.swap(mConnInfo);
+    }
+    return;
+  }
+
+  
+  
+  if (aReason == psm::GetXPCOMFromNSSError(MOCK_SSL_ERROR_ECH_FAILED) ||
+      NS_FAILED(aReason)) {
+    LOG((" Got SSL_ERROR_ECH_FAILED, try other records"));
+
+    if (mRecordsForRetry.IsEmpty()) {
+      if (mHTTPSSVCRecord) {
+        bool allRecordsHaveEchConfig = true;
+        if (!PrepareSVCBRecordsForRetry(failedConnInfo->GetRoutedHost(),
+                                        allRecordsHaveEchConfig)) {
+          LOG(
+              (" Can't find other records with echConfig, "
+               "allRecordsHaveEchConfig=%d",
+               allRecordsHaveEchConfig));
+          if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed() ||
+              !allRecordsHaveEchConfig) {
+            mOrigConnInfo.swap(mConnInfo);
+          }
+          return;
+        }
+      } else {
+        LOG((" No available records to retry"));
+        if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed()) {
+          mOrigConnInfo.swap(mConnInfo);
+        }
+        return;
+      }
+    }
+
+    if (LOG5_ENABLED()) {
+      LOG(("SvcDomainName to retry: ["));
+      for (const auto& r : mRecordsForRetry) {
+        nsAutoCString name;
+        r->GetName(name);
+        LOG((" name=%s", name.get()));
+      }
+      LOG(("]"));
+    }
+
+    RefPtr<nsISVCBRecord> recordsForRetry =
+        mRecordsForRetry.PopLastElement().forget();
+    mConnInfo = mOrigConnInfo->CloneAndAdoptHTTPSSVCRecord(recordsForRetry);
+  }
+}
+
 void nsHttpTransaction::Close(nsresult reason) {
   LOG(("nsHttpTransaction::Close [this=%p reason=%" PRIx32 "]\n", this,
        static_cast<uint32_t>(reason)));
@@ -1217,7 +1353,7 @@ void nsHttpTransaction::Close(nsresult reason) {
   if ((reason == NS_ERROR_NET_RESET || reason == NS_OK ||
        reason ==
            psm::GetXPCOMFromNSSError(SSL_ERROR_DOWNGRADE_WITH_EARLY_DATA) ||
-       mFallbackConnInfo) &&
+       mOrigConnInfo) &&
       (!(mCaps & NS_HTTP_STICKY_CONNECTION) ||
        (mCaps & NS_HTTP_CONNECTION_RESTARTABLE) ||
        (mEarlyDataDisposition == EARLY_425))) {
@@ -1250,7 +1386,7 @@ void nsHttpTransaction::Close(nsresult reason) {
     
     
     
-    bool restartToFallbackConnInfo = !reallySentData && mFallbackConnInfo;
+    bool restartToFallbackConnInfo = !reallySentData && mOrigConnInfo;
 
     if (reason ==
             psm::GetXPCOMFromNSSError(SSL_ERROR_DOWNGRADE_WITH_EARLY_DATA) ||
@@ -1267,18 +1403,22 @@ void nsHttpTransaction::Close(nsresult reason) {
           Unused << dns->ReportFailedSVCDomainName(mConnInfo->GetOrigin(),
                                                    mConnInfo->GetRoutedHost());
         }
-        mConnInfo = nullptr;
-        mFallbackConnInfo.swap(mConnInfo);
+
+        PrepareConnInfoForRetry(reason);
+        mDontRetryWithDirectRoute = true;
         LOG(
             ("transaction will be restarted with the fallback connection info "
              "key=%s",
-             mConnInfo->HashKey().get()));
+             mConnInfo ? mConnInfo->HashKey().get() : "None"));
       }
 
       
       
-
-      if (NS_SUCCEEDED(Restart())) return;
+      
+      
+      if (mConnInfo && NS_SUCCEEDED(Restart())) {
+        return;
+      }
     }
   }
 
@@ -1363,7 +1503,7 @@ void nsHttpTransaction::Close(nsresult reason) {
 
     
     
-    if (mFallbackConnInfo) {
+    if (mOrigConnInfo) {
       Telemetry::Accumulate(Telemetry::DNS_HTTPSSVC_CONNECTION_FAILED_REASON,
                             HTTPSSVC_CONNECTION_OK);
     }
@@ -1478,7 +1618,8 @@ nsresult nsHttpTransaction::Restart() {
   
   mReuseOnRestart = false;
 
-  if (!mDoNotRemoveAltSvc && !mConnInfo->GetRoutedHost().IsEmpty()) {
+  if (!mDoNotRemoveAltSvc && !mConnInfo->GetRoutedHost().IsEmpty() &&
+      !mDontRetryWithDirectRoute) {
     RefPtr<nsHttpConnectionInfo> ci;
     mConnInfo->CloneAsDirectRoute(getter_AddRefs(ci));
     mConnInfo = ci;
@@ -2724,7 +2865,7 @@ void nsHttpTransaction::UpdateConnectionInfo(nsHttpConnectionInfo* aConnInfo) {
     return;
   }
 
-  mFallbackConnInfo = mConnInfo->Clone();
+  mOrigConnInfo = mConnInfo->Clone();
   mConnInfo = aConnInfo;
 }
 
@@ -2783,6 +2924,10 @@ NS_IMETHODIMP nsHttpTransaction::OnLookupComplete(nsICancelable* aRequest,
                               : HTTPSSVC_CONNECTION_NO_USABLE_RECORD);
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  mHTTPSSVCRecord = record;
 
   RefPtr<nsHttpConnectionInfo> newInfo =
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);

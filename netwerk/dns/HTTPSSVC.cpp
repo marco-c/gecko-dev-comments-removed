@@ -241,6 +241,7 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
   uint32_t recordExcludedCount = 0;
   aRecordsAllExcluded = false;
   nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
+  bool RRSetHasEchConfig = false;
   for (const SVCB& record : aRecords) {
     if (record.mSvcFieldPriority == 0) {
       
@@ -250,6 +251,8 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
     if (record.NoDefaultAlpn()) {
       ++recordHasNoDefaultAlpnCount;
     }
+
+    RRSetHasEchConfig |= record.mHasEchConfig;
 
     bool excluded = false;
     if (NS_SUCCEEDED(dns->IsSVCDomainNameFailed(mHost, record.mSvcDomainName,
@@ -272,6 +275,12 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
       continue;
     }
 
+    if (gHttpHandler->EchConfigEnabled() && RRSetHasEchConfig &&
+        !record.mHasEchConfig) {
+      
+      continue;
+    }
+
     if (!selectedRecord) {
       selectedRecord = new SVCBRecord(record, std::move(port), std::move(alpn));
     }
@@ -287,6 +296,54 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
   }
 
   return selectedRecord.forget();
+}
+
+void DNSHTTPSSVCRecordBase::GetAllRecordsWithEchConfigInternal(
+    bool aNoHttp2, bool aNoHttp3, const nsTArray<SVCB>& aRecords,
+    bool* aAllRecordsHaveEchConfig, nsTArray<RefPtr<nsISVCBRecord>>& aResult) {
+  if (aRecords.IsEmpty()) {
+    return;
+  }
+
+  *aAllRecordsHaveEchConfig = aRecords[0].mHasEchConfig;
+  
+  if (!(*aAllRecordsHaveEchConfig)) {
+    return;
+  }
+
+  for (const SVCB& record : aRecords) {
+    if (record.mSvcFieldPriority == 0) {
+      
+      
+      
+      MOZ_ASSERT(false);
+      return;
+    }
+
+    
+    
+    *aAllRecordsHaveEchConfig &= record.mHasEchConfig;
+    if (!(*aAllRecordsHaveEchConfig)) {
+      aResult.Clear();
+      return;
+    }
+
+    Maybe<uint16_t> port = record.GetPort();
+    if (port && *port == 0) {
+      
+      continue;
+    }
+
+    Maybe<nsCString> alpn = record.GetAlpn(aNoHttp2, aNoHttp3);
+    if (alpn && alpn->IsEmpty()) {
+      
+      continue;
+    }
+
+    RefPtr<nsISVCBRecord> svcbRecord =
+        new SVCBRecord(record, std::move(port), std::move(alpn));
+    aResult.AppendElement(svcbRecord);
+  }
 }
 
 bool DNSHTTPSSVCRecordBase::HasIPAddressesInternal(
