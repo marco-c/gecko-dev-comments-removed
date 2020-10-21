@@ -8,6 +8,7 @@
 #define jit_ABIFunctionList_inl_h
 
 #include "jit/ABIFunctions.h"
+#include "js/Conversions.h"  
 
 #include "wasm/WasmBuiltins.h"  
 
@@ -37,6 +38,7 @@ namespace jit {
 
 
 #define ABIFUNCTION_AND_TYPE_LIST(_)                       \
+  _(JS::ToInt32, int32_t (*)(double))
 
 
 
