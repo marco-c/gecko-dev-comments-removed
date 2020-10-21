@@ -514,16 +514,13 @@ mozilla::StyleDefaultFontSizes Gecko_GetBaseSize(nsAtom* lang);
 
 struct GeckoFontMetrics {
   mozilla::Length mXSize;
-  mozilla::Length mChSize;              
-  float mScriptPercentScaleDown;        
-  float mScriptScriptPercentScaleDown;  
+  mozilla::Length mChSize;  
 };
 
 GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext*, bool is_vertical,
                                       const nsStyleFont* font,
                                       mozilla::Length font_size,
-                                      bool use_user_font_set,
-                                      bool retrieve_math_scales);
+                                      bool use_user_font_set);
 
 mozilla::StyleSheet* Gecko_StyleSheet_Clone(
     const mozilla::StyleSheet* aSheet,
