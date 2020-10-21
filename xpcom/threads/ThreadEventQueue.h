@@ -20,7 +20,6 @@ class nsIThreadObserver;
 namespace mozilla {
 
 class EventQueue;
-class PrioritizedEventQueue;
 class ThreadEventTarget;
 
 
@@ -95,7 +94,6 @@ class ThreadEventQueue final : public SynchronizedEventQueue {
 };
 
 extern template class ThreadEventQueue<EventQueue>;
-extern template class ThreadEventQueue<PrioritizedEventQueue>;
 
 };  
 
