@@ -43,8 +43,7 @@ namespace js {
 
 namespace frontend {
 
-struct CompilationInfo;
-
+class ParserAtomsTable;
 class ParseContext;
 class ParseNode;
 
@@ -64,15 +63,17 @@ using AsmJSParser = frontend::Parser<frontend::FullParseHandler, Unit>;
 
 
 
-extern MOZ_MUST_USE bool CompileAsmJS(
-    JSContext* cx, frontend::CompilationInfo& compilationInfo,
-    AsmJSParser<mozilla::Utf8Unit>& parser, frontend::ParseNode* stmtList,
-    bool* validated);
+extern MOZ_MUST_USE bool CompileAsmJS(JSContext* cx,
+                                      frontend::ParserAtomsTable& parserAtoms,
+                                      AsmJSParser<mozilla::Utf8Unit>& parser,
+                                      frontend::ParseNode* stmtList,
+                                      bool* validated);
 
-extern MOZ_MUST_USE bool CompileAsmJS(
-    JSContext* cx, frontend::CompilationInfo& compilationInfo,
-    AsmJSParser<char16_t>& parser, frontend::ParseNode* stmtList,
-    bool* validated);
+extern MOZ_MUST_USE bool CompileAsmJS(JSContext* cx,
+                                      frontend::ParserAtomsTable& parserAtoms,
+                                      AsmJSParser<char16_t>& parser,
+                                      frontend::ParseNode* stmtList,
+                                      bool* validated);
 
 
 
