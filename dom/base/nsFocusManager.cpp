@@ -1006,13 +1006,15 @@ void nsFocusManager::WindowShown(mozIDOMWindowProxy* aWindow,
   }
 }
 
-NS_IMETHODIMP
-nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
+void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
   
   
   
 
-  NS_ENSURE_TRUE(aWindow, NS_ERROR_INVALID_ARG);
+  if (!aWindow) {
+    return;
+  }
+
   nsCOMPtr<nsPIDOMWindowOuter> window = nsPIDOMWindowOuter::From(aWindow);
 
   if (MOZ_LOG_TEST(gFocusLog, LogLevel::Debug)) {
@@ -1042,7 +1044,9 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
     }
   }
 
-  if (!IsSameOrAncestor(window, mFocusedWindow)) return NS_OK;
+  if (!IsSameOrAncestor(window, mFocusedWindow)) {
+    return;
+  }
 
   
   
@@ -1052,7 +1056,7 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
 
   nsCOMPtr<nsIDocShell> focusedDocShell = mFocusedWindow->GetDocShell();
   if (!focusedDocShell) {
-    return NS_OK;
+    return;
   }
 
   RefPtr<PresShell> presShell = focusedDocShell->GetPresShell();
@@ -1116,7 +1120,7 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
         }  
       }
     }
-    return NS_OK;
+    return;
   }
 
   
@@ -1139,8 +1143,6 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
 
     SetFocusedWindowInternal(window);
   }
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
