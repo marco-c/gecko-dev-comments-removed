@@ -42,7 +42,6 @@ const mappingValues = Object.values(mappings);
 
 
 
-mappings["devtools-reps"] = "devtools/client/shared/components/reps/reps.js";
 mappings["devtools-source-map"] = "devtools/client/shared/source-map/index.js";
 
 function isRequire(t, node) {
@@ -102,8 +101,6 @@ function transformMC({ types: t }) {
           return;
         }
 
-        
-        
         
         if (Object.keys(mappings).includes(value)) {
           path.replaceWith(t.stringLiteral(mappings[value]));

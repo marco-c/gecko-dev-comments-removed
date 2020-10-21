@@ -22,7 +22,6 @@ module.exports = ({ file, options, env }) => {
   }
 
   
-  
   if (env === "production") {
     return {
       plugins: [mapUrl(mapUrlProduction)],

@@ -63,7 +63,6 @@ if (isProduction) {
   
   
   webpackConfig.entry.vendors = getEntry("src/vendors.js");
-  webpackConfig.entry.reps = getEntry("packages/devtools-reps/src/index.js");
 } else {
   webpackConfig.entry.debugger = getEntry("src/main.development.js");
 }
