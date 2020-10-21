@@ -181,6 +181,21 @@ ScreenPoint ComputeFixedMarginsOffset(
     const ScreenMargin& aCompositorFixedLayerMargins, SideBits aFixedSides,
     const ScreenMargin& aGeckoFixedLayerMargins);
 
+
+
+
+
+
+
+
+
+
+
+
+
+bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
+                         const FrameMetrics& aCompositorMetrics);
+
 }  
 
 }  

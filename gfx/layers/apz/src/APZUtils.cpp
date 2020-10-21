@@ -6,6 +6,8 @@
 
 #include "mozilla/layers/APZUtils.h"
 
+#include "mozilla/StaticPrefs_apz.h"
+
 namespace mozilla {
 namespace layers {
 
@@ -63,6 +65,35 @@ ScreenPoint ComputeFixedMarginsOffset(
   }
 
   return translation;
+}
+
+bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
+                         const FrameMetrics& aCompositorMetrics) {
+  
+  
+  
+  CSSRect painted = (aPaintedMetrics.GetCriticalDisplayPort().IsEmpty()
+                         ? aPaintedMetrics.GetDisplayPort()
+                         : aPaintedMetrics.GetCriticalDisplayPort()) +
+                    aPaintedMetrics.GetLayoutScrollOffset();
+  painted.Inflate(CSSMargin::FromAppUnits(nsMargin(1, 1, 1, 1)));
+
+  
+  
+  CSSRect visible =
+      CSSRect(aCompositorMetrics.GetVisualScrollOffset(),
+              aCompositorMetrics.CalculateBoundedCompositedSizeInCssPixels());
+  visible.Inflate(LayerSize(StaticPrefs::apz_danger_zone_x(),
+                            StaticPrefs::apz_danger_zone_y()) /
+                  aCompositorMetrics.LayersPixelsPerCSSPixel());
+
+  
+  
+  
+  painted = painted.Intersect(aPaintedMetrics.GetScrollableRect());
+  visible = visible.Intersect(aPaintedMetrics.GetScrollableRect());
+
+  return !painted.Contains(visible);
 }
 
 }  

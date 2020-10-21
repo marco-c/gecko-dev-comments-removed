@@ -14,10 +14,10 @@
 #include "gfxPlatform.h"              
 #include "gfxRect.h"                  
 #include "mozilla/MathAlgorithms.h"   
-#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Rect.h"   
 #include "mozilla/gfx/Tools.h"  
+#include "mozilla/layers/APZUtils.h"  
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorBridgeChild.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"
@@ -28,7 +28,6 @@
 #include "nsExpirationTracker.h"  
 #include "nsMathUtils.h"          
 #include "UnitTransforms.h"  
-#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/UniquePtr.h"
 
@@ -202,7 +201,7 @@ bool SharedFrameMetricsHelper::UpdateFromCompositorFrameMetrics(
     
     
     if (!scrollUpdatePending &&
-        AboutToCheckerboard(contentMetrics, compositorMetrics)) {
+        apz::AboutToCheckerboard(contentMetrics, compositorMetrics)) {
       mProgressiveUpdateWasInDanger = true;
       return true;
     }
@@ -216,48 +215,6 @@ bool SharedFrameMetricsHelper::UpdateFromCompositorFrameMetrics(
     return true;
   }
 
-  return false;
-}
-
-bool SharedFrameMetricsHelper::AboutToCheckerboard(
-    const FrameMetrics& aContentMetrics,
-    const FrameMetrics& aCompositorMetrics) {
-  
-  
-  
-  
-  CSSRect painted = (aContentMetrics.GetCriticalDisplayPort().IsEmpty()
-                         ? aContentMetrics.GetDisplayPort()
-                         : aContentMetrics.GetCriticalDisplayPort()) +
-                    aContentMetrics.GetLayoutScrollOffset();
-  painted.Inflate(CSSMargin::FromAppUnits(nsMargin(1, 1, 1, 1)));
-
-  
-  
-  CSSRect showing =
-      CSSRect(aCompositorMetrics.GetVisualScrollOffset(),
-              aCompositorMetrics.CalculateBoundedCompositedSizeInCssPixels());
-  showing.Inflate(LayerSize(StaticPrefs::apz_danger_zone_x(),
-                            StaticPrefs::apz_danger_zone_y()) /
-                  aCompositorMetrics.LayersPixelsPerCSSPixel());
-
-  
-  
-  
-  painted = painted.Intersect(aContentMetrics.GetScrollableRect());
-  showing = showing.Intersect(aContentMetrics.GetScrollableRect());
-
-  if (!painted.Contains(showing)) {
-    TILING_LOG("TILING: About to checkerboard; content %s\n",
-               Stringify(aContentMetrics).c_str());
-    TILING_LOG("TILING: About to checkerboard; painted %s\n",
-               Stringify(painted).c_str());
-    TILING_LOG("TILING: About to checkerboard; compositor %s\n",
-               Stringify(aCompositorMetrics).c_str());
-    TILING_LOG("TILING: About to checkerboard; showing %s\n",
-               Stringify(showing).c_str());
-    return true;
-  }
   return false;
 }
 
