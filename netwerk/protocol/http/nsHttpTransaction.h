@@ -24,10 +24,12 @@
 
 
 class nsIHttpActivityObserver;
+class nsIDNSHTTPSSVCRecord;
 class nsIEventTarget;
 class nsIInputStream;
 class nsIOutputStream;
 class nsIRequestContext;
+class nsISVCBRecord;
 
 namespace mozilla {
 namespace net {
@@ -198,6 +200,14 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   void NotifyTransactionObserver(nsresult reason);
 
+  
+  
+  
+  bool PrepareSVCBRecordsForRetry(const nsACString& aFailedDomainName,
+                                  bool& aAllRecordsHaveEchConfig);
+  
+  void PrepareConnInfoForRetry(nsresult aReason);
+
   already_AddRefed<Http2PushedStreamWrapper> TakePushedStreamById(
       uint32_t aStreamId);
 
@@ -258,7 +268,14 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   
-  RefPtr<nsHttpConnectionInfo> mFallbackConnInfo;
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<nsHttpConnectionInfo> mOrigConnInfo;
   nsHttpRequestHead* mRequestHead;    
   nsHttpResponseHead* mResponseHead;  
 
@@ -461,6 +478,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsCOMPtr<nsICancelable> mDNSRequest;
   Maybe<uint32_t> mHTTPSSVCReceivedStage;
   bool m421Received = false;
+  nsCOMPtr<nsIDNSHTTPSSVCRecord> mHTTPSSVCRecord;
+  nsTArray<RefPtr<nsISVCBRecord>> mRecordsForRetry;
+  bool mDontRetryWithDirectRoute = false;
 };
 
 }  
