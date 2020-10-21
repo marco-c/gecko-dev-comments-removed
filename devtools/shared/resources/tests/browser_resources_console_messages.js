@@ -53,12 +53,6 @@ async function testConsoleMessagesResources(executeInIframe) {
   const onRuntimeDone = new Promise(resolve => (runtimeDoneResolve = resolve));
   const onAvailable = resources => {
     for (const resource of resources) {
-      if (resource.message.arguments?.[0] === "[WORKER] started") {
-        
-        
-        continue;
-      }
-
       is(
         resource.resourceType,
         ResourceWatcher.TYPES.CONSOLE_MESSAGE,

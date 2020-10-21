@@ -14,8 +14,6 @@ const Targets = require("devtools/server/actors/targets/index");
 const makeDebuggerUtil = require("devtools/server/actors/utils/make-debugger");
 const { TabSources } = require("devtools/server/actors/utils/TabSources");
 
-const Resources = require("devtools/server/actors/resources/index");
-
 exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
   targetType: Targets.TYPES.WORKER,
 
@@ -25,17 +23,11 @@ exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
 
 
 
-
-
-
-
-  initialize: function(connection, workerGlobal, workerDebuggerData) {
+  initialize: function(connection, workerGlobal) {
     Actor.prototype.initialize.call(this, connection);
 
     
     this.workerGlobal = workerGlobal;
-
-    this._workerDebuggerData = workerDebuggerData;
     this._sources = null;
 
     this.makeDebugger = makeDebuggerUtil.bind(null, {
@@ -44,8 +36,6 @@ exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
       },
       shouldAddNewGlobalAsDebuggee: () => true,
     });
-
-    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
   },
 
   form() {
@@ -53,18 +43,10 @@ exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
       actor: this.actorID,
       threadActor: this.threadActor?.actorID,
       consoleActor: this._consoleActor?.actorID,
-      id: this._workerDebuggerData.id,
-      type: this._workerDebuggerData.type,
-      url: this._workerDebuggerData.url,
-      traits: {},
     };
   },
 
   attach() {
-    if (this.threadActor) {
-      return;
-    }
-
     
     this.threadActor = new ThreadActor(this, this.workerGlobal);
 
@@ -94,59 +76,5 @@ exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
   onThreadAttached() {
     
     this.emit("worker-thread-attached");
-  },
-
-  addWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      return this._watchTargetResources(entries);
-    }
-
-    return Promise.resolve();
-  },
-
-  removeWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      return this._unwatchTargetResources(entries);
-    }
-
-    return Promise.resolve();
-  },
-
-  
-
-
-
-
-  _watchTargetResources(resourceTypes) {
-    return Resources.watchResources(this, resourceTypes);
-  },
-
-  _unwatchTargetResources(resourceTypes) {
-    return Resources.unwatchResources(this, resourceTypes);
-  },
-
-  
-
-
-
-
-
-
-  notifyResourceAvailable(resources) {
-    this.emit("resource-available-form", resources);
-  },
-
-  destroy() {
-    Actor.prototype.destroy.call(this);
-
-    if (this._sources) {
-      this._sources.destroy();
-      this._sources = null;
-    }
-
-    this.workerGlobal = null;
-    this._dbg = null;
-    this.threadActor = null;
-    this._consoleActor = null;
   },
 });

@@ -3,17 +3,15 @@
 
 "use strict";
 
-const { Arg, generateActorSpec } = require("devtools/shared/protocol");
+const { generateActorSpec } = require("devtools/shared/protocol");
+
+
+
 
 const workerTargetSpec = generateActorSpec({
   typeName: "workerTarget",
   methods: {},
-  events: {
-    "resource-available-form": {
-      type: "resource-available-form",
-      resources: Arg(0, "array:json"),
-    },
-  },
+  events: {},
 });
 
 exports.workerTargetSpec = workerTargetSpec;

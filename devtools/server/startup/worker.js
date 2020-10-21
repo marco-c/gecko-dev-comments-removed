@@ -54,7 +54,7 @@ DevToolsServer.createRootActor = function() {
 
 const connections = new Map();
 
-this.addEventListener("message", async function(event) {
+this.addEventListener("message", function(event) {
   const packet = JSON.parse(event.data);
   switch (packet.type) {
     case "connect":
@@ -64,11 +64,7 @@ this.addEventListener("message", async function(event) {
       const connection = DevToolsServer.connectToParent(forwardingPrefix, this);
 
       
-      const workerTargetActor = new WorkerTargetActor(
-        connection,
-        global,
-        packet.workerDebuggerData
-      );
+      const workerTargetActor = new WorkerTargetActor(connection, global);
       
       workerTargetActor.manage(workerTargetActor);
 
@@ -84,7 +80,6 @@ this.addEventListener("message", async function(event) {
       
       connections.set(forwardingPrefix, {
         connection,
-        workerTargetActor,
       });
 
       postMessage(
@@ -95,36 +90,6 @@ this.addEventListener("message", async function(event) {
         })
       );
 
-      
-      if (packet.options?.watchedData) {
-        const promises = [];
-        for (const [type, entries] of Object.entries(
-          packet.options.watchedData
-        )) {
-          promises.push(workerTargetActor.addWatcherDataEntry(type, entries));
-        }
-        await Promise.all(promises);
-      }
-
-      break;
-
-    case "add-watcher-data-entry":
-      await connections
-        .get(packet.forwardingPrefix)
-        .workerTargetActor.addWatcherDataEntry(
-          packet.dataEntryType,
-          packet.entries
-        );
-      postMessage(JSON.stringify({ type: "watcher-data-entry-added" }));
-      break;
-
-    case "remove-watcher-data-entry":
-      await connections
-        .get(packet.forwardingPrefix)
-        .workerTargetActor.removeWatcherDataEntry(
-          packet.dataEntryType,
-          packet.entries
-        );
       break;
 
     case "disconnect":

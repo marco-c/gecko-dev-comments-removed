@@ -411,10 +411,7 @@ function TargetMixin(parentClass) {
     }
 
     get isWorkerTarget() {
-      
-      return (
-        this.typeName === "workerTarget" || this.typeName === "workerDescriptor"
-      );
+      return this.typeName === "workerDescriptor";
     }
 
     get isLegacyAddon() {
@@ -538,13 +535,7 @@ function TargetMixin(parentClass) {
       if (this.isDestroyedOrBeingDestroyed()) {
         return;
       }
-
-      
-      
-      if (this.attach) {
-        await this.attach();
-      }
-
+      await this.attach();
       const isBrowserToolbox = targetList.targetFront.isParentProcess;
       const isNonTopLevelFrameTarget =
         !this.isTopLevel && this.targetType === targetList.TYPES.FRAME;

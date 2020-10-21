@@ -298,45 +298,27 @@ let isJSWindowActorRegistered = false;
 
 
 
-
-const JSWindowActorsConfig = {
-  DevToolsFrame: {
-    parent: {
-      moduleURI:
-        "resource://devtools/server/connectors/js-window-actor/DevToolsFrameParent.jsm",
-    },
-    child: {
-      moduleURI:
-        "resource://devtools/server/connectors/js-window-actor/DevToolsFrameChild.jsm",
-      events: {
-        DOMWindowCreated: {},
-      },
-    },
-    allFrames: true,
-  },
-  DevToolsWorker: {
-    parent: {
-      moduleURI:
-        "resource://devtools/server/connectors/js-window-actor/DevToolsWorkerParent.jsm",
-    },
-    child: {
-      moduleURI:
-        "resource://devtools/server/connectors/js-window-actor/DevToolsWorkerChild.jsm",
-      events: {
-        DOMWindowCreated: {},
-      },
-    },
-    allFrames: true,
-  },
-};
-
 function registerJSWindowActor() {
   if (isJSWindowActorRegistered) {
     return;
   }
   isJSWindowActorRegistered = true;
-  ActorManagerParent.addJSWindowActors(JSWindowActorsConfig);
-
+  ActorManagerParent.addJSWindowActors({
+    DevToolsFrame: {
+      parent: {
+        moduleURI:
+          "resource://devtools/server/connectors/js-window-actor/DevToolsFrameParent.jsm",
+      },
+      child: {
+        moduleURI:
+          "resource://devtools/server/connectors/js-window-actor/DevToolsFrameChild.jsm",
+        events: {
+          DOMWindowCreated: {},
+        },
+      },
+      allFrames: true,
+    },
+  });
   
   
   ActorManagerParent.flush();
@@ -347,9 +329,6 @@ function unregisterJSWindowActor() {
     return;
   }
   isJSWindowActorRegistered = false;
-
-  for (const JSWindowActorName of Object.keys(JSWindowActorsConfig)) {
-    
-    ChromeUtils.unregisterWindowActor(JSWindowActorName);
-  }
+  
+  ChromeUtils.unregisterWindowActor("DevToolsFrame");
 }
