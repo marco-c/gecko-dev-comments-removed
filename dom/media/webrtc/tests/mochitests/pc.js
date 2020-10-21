@@ -2415,7 +2415,7 @@ function loadScript(...scripts) {
 
 var scriptsReady = loadScript("/tests/SimpleTest/SimpleTest.js").then(() => {
   return loadScript(
-    "../../test/manifest.js",
+    "../../../test/manifest.js",
     "head.js",
     "templates.js",
     "turnConfig.js",
