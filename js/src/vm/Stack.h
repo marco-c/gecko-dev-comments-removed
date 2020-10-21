@@ -11,6 +11,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Span.h"  
 #include "mozilla/Variant.h"
 
 #include <algorithm>
@@ -212,6 +213,9 @@ class AbstractFramePtr {
 
   inline bool isFunctionFrame() const;
   inline bool isGeneratorFrame() const;
+
+  inline bool saveGeneratorSlots(JSContext* cx, unsigned nslots,
+                                 ArrayObject* dest) const;
 
   inline unsigned numActualArgs() const;
   inline unsigned numFormalArgs() const;
@@ -640,6 +644,14 @@ class InterpreterFrame {
     rval_ = v;
     markReturnValue();
   }
+
+  
+  
+  MOZ_MUST_USE inline bool saveGeneratorSlots(JSContext* cx, unsigned nslots,
+                                              ArrayObject* dest) const;
+
+  
+  inline void restoreGeneratorSlots(ArrayObject* src);
 
   void resumeGeneratorFrame(JSObject* envChain) {
     MOZ_ASSERT(script()->isGenerator() || script()->isAsync());
