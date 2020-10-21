@@ -1806,10 +1806,7 @@ EditorDOMPoint HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
         !EditorUtils::IsEditableContent(*pointToInsert.ContainerAsContent(),
                                         EditorType::HTML)) {
       
-      
-      
-      pointToInsert = aPointToInsert;
-      break;
+      return EditorDOMPoint();
     }
   }
 
