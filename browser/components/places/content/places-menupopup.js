@@ -701,6 +701,9 @@
 
     on_popupshowing(event) {
       if (event.target == this) {
+        
+        
+        this.getBoundingClientRect();
         this.setAttribute("animate", "open");
       }
     }
