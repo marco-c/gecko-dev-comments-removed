@@ -167,6 +167,17 @@ async function testObjectInspectorPropertiesAreSet(objInspector) {
 const seenWorkerTargets = new Set();
 function waitForSourceMapWorker(hud) {
   const { targetList } = hud;
+  
+  
+  
+  const isFissionEnabledForBrowserConsole = Services.prefs.getBoolPref(
+    "devtools.browsertoolbox.fission",
+    false
+  );
+  if (!isFissionEnabledForBrowserConsole) {
+    return Promise.resolve();
+  }
+
   return new Promise(resolve => {
     const onAvailable = ({ targetFront }) => {
       if (
