@@ -545,10 +545,6 @@ NS_IMETHODIMP
 nsMultiMixedConv::OnStopRequest(nsIRequest* request, nsresult aStatus) {
   nsresult rv;
 
-  if (mBoundary.IsEmpty()) {  
-    return NS_ERROR_FAILURE;
-  }
-
   if (mPartChannel) {
     mPartChannel->SetIsLastPart();
 
