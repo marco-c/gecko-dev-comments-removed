@@ -33,7 +33,7 @@ const processComponentDataMiddleware = store => next => action => {
 
 function toMainProcessComponentData(process) {
   const type = DEBUG_TARGETS.PROCESS;
-  const id = process.processFront.actorID;
+  const id = process.id;
   const icon = "chrome://devtools/skin/images/aboutdebugging-process-icon.svg";
 
   const isMultiProcessToolboxEnabled = Services.prefs.getBoolPref(
@@ -41,6 +41,8 @@ function toMainProcessComponentData(process) {
     false
   );
 
+  
+  
   const name = isMultiProcessToolboxEnabled
     ? l10n.getString("about-debugging-multiprocess-toolbox-name")
     : l10n.getString("about-debugging-main-process-name");
