@@ -842,12 +842,6 @@ class ContentParent final
 
 
 
-  void MarkAsTroubled();
-
-  
-
-
-
   void MarkAsDead();
 
   
