@@ -810,10 +810,14 @@ bool WebRenderBridgeParent::UpdateSharedExternalImage(
     
     
     
-    if (!aScheduleRelease) {
-      aScheduleRelease = MakeUnique<ScheduleSharedSurfaceRelease>(this);
+    if (gfx::gfxVars::UseSoftwareWebRender()) {
+      mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch, it->second);
+    } else {
+      if (!aScheduleRelease) {
+        aScheduleRelease = MakeUnique<ScheduleSharedSurfaceRelease>(this);
+      }
+      aScheduleRelease->Add(aKey, it->second);
     }
-    aScheduleRelease->Add(aKey, it->second);
     it->second = aExtId;
   }
 
