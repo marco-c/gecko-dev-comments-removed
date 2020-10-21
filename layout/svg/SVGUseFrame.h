@@ -35,9 +35,6 @@ class SVGUseFrame final : public SVGGFrame {
             nsIFrame* aPrevInFlow) override;
 
   
-  void PositionAttributeChanged();
-
-  
   void HrefChanged();
 
   
@@ -45,7 +42,8 @@ class SVGUseFrame final : public SVGGFrame {
                                  bool aAttributeIsUsed);
 
   nsresult AttributeChanged(int32_t aNamespaceID, nsAtom* aAttribute,
-                            int32_t aModType) final;
+                            int32_t aModType) override;
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override {
@@ -60,6 +58,8 @@ class SVGUseFrame final : public SVGGFrame {
                               uint32_t aFlags) override;
 
  private:
+  std::pair<float, float> ResolvePosition() const;
+
   bool mHasValidDimensions;
 };
 

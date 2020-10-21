@@ -1467,9 +1467,13 @@ void SVGElement::DidAnimateLength(uint8_t aAttrEnum) {
     nsCSSPropertyID propId =
         SVGGeometryProperty::AttrEnumToCSSPropId(this, aAttrEnum);
 
-    SMILOverrideStyle()->SetSMILValue(propId,
-                                      GetLengthInfo().mLengths[aAttrEnum]);
-    return;
+    
+    
+    if (propId != eCSSProperty_UNKNOWN) {
+      SMILOverrideStyle()->SetSMILValue(propId,
+                                        GetLengthInfo().mLengths[aAttrEnum]);
+      return;
+    }
   }
 
   nsIFrame* frame = GetPrimaryFrame();

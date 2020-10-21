@@ -310,7 +310,8 @@ class SVGContentUtils {
 
 
 
-  static float CoordToFloat(dom::SVGElement* aContent, const LengthPercentage&);
+  static float CoordToFloat(dom::SVGElement* aContent, const LengthPercentage&,
+                            uint8_t aCtxType = SVGContentUtils::XY);
   
 
 
