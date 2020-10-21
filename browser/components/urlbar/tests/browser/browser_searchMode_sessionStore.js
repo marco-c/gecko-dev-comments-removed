@@ -14,6 +14,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabStateFlusher: "resource:///modules/sessionstore/TabStateFlusher.jsm",
 });
 
+
+
+
+requestLongerTimeout(5);
+
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
