@@ -1621,6 +1621,33 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
                 delay);
           }
         }
+      } else if (apz::AboutToCheckerboard(mLastContentPaintMetrics,
+                                          Metrics())) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        DoDelayedRequestContentRepaint();
       }
 
       UpdateSharedCompositorFrameMetrics();
