@@ -1160,10 +1160,9 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
       }
     }
   }
-  
-  
-  if (mDocument && mDocument->ScriptLoader()) {
-    mDocument->ScriptLoader()->LoadEventFired();
+
+  if (mDocument && !restoring) {
+    mDocument->LoadEventFired();
   }
 
   

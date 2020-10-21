@@ -5089,6 +5089,9 @@ class Document : public nsINode,
   
   PreloadService mPreloadService;
 
+  
+  void AccumulateJSTelemetry();
+
  public:
   
   JS::ExpandoAndGeneration mExpandoAndGeneration;
@@ -5104,6 +5107,8 @@ class Document : public nsINode,
   void SetSavedResolutionBeforeMVM(float aResolution) {
     mSavedResolutionBeforeMVM = aResolution;
   }
+
+  void LoadEventFired();
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Document, NS_IDOCUMENT_IID)

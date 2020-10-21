@@ -385,6 +385,10 @@ class JS::Realm : public JS::shadow::Realm {
   unsigned enterRealmDepthIgnoringJit_ = 0;
 
  public:
+  
+  
+  JS::JSTimers timers;
+
   struct DebuggerVectorEntry {
     
     
