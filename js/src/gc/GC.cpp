@@ -7925,13 +7925,6 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
 
   
   
-  
-  if (source->needsDelazificationForDebugger()) {
-    target->scheduleDelazificationForDebugger();
-  }
-
-  
-  
   releaseHeldRelocatedArenas();
 
   
