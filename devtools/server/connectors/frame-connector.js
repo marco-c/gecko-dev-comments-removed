@@ -7,6 +7,7 @@
 var Services = require("Services");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn } = DevToolsUtils;
+const { Pool } = require("devtools/shared/protocol/Pool");
 
 loader.lazyRequireGetter(
   this,
@@ -43,6 +44,12 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
     
     let mm = frame.messageManager || frame.frameLoader.messageManager;
     mm.loadFrameScript("resource://devtools/server/startup/frame.js", false);
+
+    const spawnInParentActorPool = new Pool(
+      connection,
+      "connectToFrame-spawnInParent"
+    );
+    connection.addActor(spawnInParentActorPool);
 
     const trackMessageManager = () => {
       frame.addEventListener("DevTools:BrowserSwap", onBrowserSwap);
@@ -147,7 +154,7 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
         instance.actorID = connection.allocID(
           contentPrefix + "/" + instance.typeName
         );
-        connection.addActor(instance);
+        spawnInParentActorPool.manage(instance);
 
         mm.sendAsyncMessage("debug:spawn-actor-in-parent:actor", {
           prefix: connPrefix,
@@ -241,6 +248,10 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
         mm,
         prefix: connPrefix,
       });
+
+      
+      
+      spawnInParentActorPool.destroy();
 
       if (childTransport) {
         
