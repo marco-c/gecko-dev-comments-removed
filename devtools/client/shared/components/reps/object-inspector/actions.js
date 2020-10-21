@@ -2,10 +2,6 @@
 
 
 
-
-
-import type { GripProperties, Node, Props, ReduxAction } from "./types";
-
 const { loadItemProperties } = require("./utils/load-properties");
 const {
   getPathExpression,
@@ -17,25 +13,18 @@ const {
 } = require("./utils/node");
 const { getLoadedProperties, getWatchpoints } = require("./reducer");
 
-type Dispatch = ReduxAction => void;
-
-type ThunkArg = {
-  getState: () => {},
-  dispatch: Dispatch,
-};
 
 
 
 
-
-function nodeExpand(node: Node, actor) {
-  return async ({ dispatch }: ThunkArg) => {
+function nodeExpand(node, actor) {
+  return async ({ dispatch }) => {
     dispatch({ type: "NODE_EXPAND", data: { node } });
     dispatch(nodeLoadProperties(node, actor));
   };
 }
 
-function nodeCollapse(node: Node) {
+function nodeCollapse(node) {
   return {
     type: "NODE_COLLAPSE",
     data: { node },
@@ -47,8 +36,8 @@ function nodeCollapse(node: Node) {
 
 
 
-function nodeLoadProperties(node: Node, actor) {
-  return async ({ dispatch, client, getState }: ThunkArg) => {
+function nodeLoadProperties(node, actor) {
+  return async ({ dispatch, client, getState }) => {
     const state = getState();
     const loadedProperties = getLoadedProperties(state);
     if (loadedProperties.has(node.path)) {
@@ -75,11 +64,7 @@ function nodeLoadProperties(node: Node, actor) {
   };
 }
 
-function nodePropertiesLoaded(
-  node: Node,
-  actor?: string,
-  properties: GripProperties
-) {
+function nodePropertiesLoaded(node, actor, properties) {
   return {
     type: "NODE_PROPERTIES_LOADED",
     data: { node, actor, properties },
@@ -89,8 +74,8 @@ function nodePropertiesLoaded(
 
 
 
-function addWatchpoint(item, watchpoint: string) {
-  return async function({ dispatch, client }: ThunkArgs) {
+function addWatchpoint(item, watchpoint) {
+  return async function({ dispatch, client }) {
     const { parent, name } = item;
     let object = getValue(parent);
 
@@ -120,7 +105,7 @@ function addWatchpoint(item, watchpoint: string) {
 
 
 function removeWatchpoint(item) {
-  return async function({ dispatch, client }: ThunkArgs) {
+  return async function({ dispatch, client }) {
     const { parent, name } = item;
     let object = getValue(parent);
 
@@ -149,7 +134,7 @@ function getActorIDs(roots) {
 }
 
 function closeObjectInspector(roots) {
-  return ({ dispatch, getState, client }: ThunkArg) => {
+  return ({ dispatch, getState, client }) => {
     releaseActors(roots, client, dispatch);
   };
 }
@@ -163,7 +148,7 @@ function closeObjectInspector(roots) {
 
 
 function rootsChanged(roots) {
-  return ({ dispatch, client, getState }: ThunkArg) => {
+  return ({ dispatch, client, getState }) => {
     releaseActors(roots, client, dispatch);
     dispatch({
       type: "ROOTS_CHANGED",
@@ -181,8 +166,8 @@ async function releaseActors(roots, client, dispatch) {
   await Promise.all(actors.map(client.releaseActor));
 }
 
-function invokeGetter(node: Node, receiverId: string | null) {
-  return async ({ dispatch, client, getState }: ThunkArg) => {
+function invokeGetter(node, receiverId) {
+  return async ({ dispatch, client, getState }) => {
     try {
       const objectFront =
         getParentFront(node) ||
