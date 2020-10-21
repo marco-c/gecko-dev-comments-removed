@@ -5,6 +5,9 @@
 
 
 #include "mozilla/dom/cache/ManagerId.h"
+
+#include "CacheCommon.h"
+
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "nsIPrincipal.h"
 #include "nsProxyRelease.h"
@@ -25,14 +28,8 @@ Result<SafeRefPtr<ManagerId>, nsresult> ManagerId::Create(
   
   
   
-  nsCString quotaOrigin;
-  nsresult rv = QuotaManager::GetInfoFromPrincipal(aPrincipal,
-                                                   nullptr,  
-                                                   nullptr,  
-                                                   &quotaOrigin);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
-  }
+  CACHE_TRY_INSPECT(const auto& quotaOrigin,
+                    QuotaManager::GetOriginFromPrincipal(aPrincipal));
 
   return MakeSafeRefPtr<ManagerId>(aPrincipal, quotaOrigin, ConstructorGuard{});
 }

@@ -2860,8 +2860,8 @@ nsresult UpgradeFileIdsFunction::Init(nsIFile* aFMDirectory,
                                       mozIStorageConnection& aConnection) {
   
   
-  auto fileManager = MakeSafeRefPtr<FileManager>(PERSISTENCE_TYPE_INVALID,
-                                                 ""_ns, ""_ns, u""_ns, false);
+  auto fileManager = MakeSafeRefPtr<FileManager>(
+      PERSISTENCE_TYPE_INVALID, quota::GroupAndOrigin{}, u""_ns, false);
 
   nsresult rv = fileManager->Init(aFMDirectory, aConnection);
   if (NS_WARN_IF(NS_FAILED(rv))) {
