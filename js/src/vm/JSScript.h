@@ -2016,14 +2016,15 @@ class JSScript : public js::BaseScript {
   static bool fullyInitFromStencil(
       JSContext* cx, js::frontend::CompilationInfo& compilationInfo,
       js::frontend::CompilationGCOutput& gcOutput, js::HandleScript script,
-      js::frontend::ScriptStencil& scriptStencil, js::HandleFunction function);
+      const js::frontend::ScriptStencil& scriptStencil,
+      js::HandleFunction function);
 
   
   
   static JSScript* fromStencil(JSContext* cx,
                                js::frontend::CompilationInfo& compilationInfo,
                                js::frontend::CompilationGCOutput& gcOutput,
-                               js::frontend::ScriptStencil& scriptStencil,
+                               const js::frontend::ScriptStencil& scriptStencil,
                                js::HandleFunction function);
 
 #ifdef DEBUG
