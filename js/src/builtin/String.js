@@ -890,6 +890,39 @@ function String_toLocaleUpperCase() {
 
 
 
+function String_item(index) {
+    
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("item", this);
+
+    
+    var str = ToString(this);
+
+    
+    var len = str.length;
+
+    
+    var relativeIndex = ToInteger(index);
+
+    
+    var k;
+    if (relativeIndex >= 0) {
+        k = relativeIndex;
+    } else {
+        k = len + relativeIndex;
+    }
+
+    
+    if (k < 0 || k >= len) {
+        return undefined;
+    }
+
+    
+    return str[k];
+}
+
+
+
 function String_static_raw(callSite) {
     
 
