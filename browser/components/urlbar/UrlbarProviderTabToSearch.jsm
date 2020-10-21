@@ -15,6 +15,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarView: "resource:///modules/UrlbarView.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
@@ -22,12 +23,85 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
+const DYNAMIC_RESULT_TYPE = "onboardTabToSearch";
+const VIEW_TEMPLATE = {
+  attributes: {
+    role: "group",
+    selectable: "true",
+  },
+  children: [
+    {
+      name: "no-wrap",
+      tag: "span",
+      classList: ["urlbarView-no-wrap"],
+      children: [
+        {
+          name: "icon",
+          tag: "img",
+          classList: ["urlbarView-favicon"],
+        },
+        {
+          name: "text-container",
+          tag: "span",
+          children: [
+            {
+              name: "first-row-container",
+              tag: "span",
+              children: [
+                {
+                  name: "title",
+                  tag: "span",
+                  classList: ["urlbarView-title"],
+                  children: [
+                    {
+                      name: "titleStrong",
+                      tag: "strong",
+                    },
+                  ],
+                },
+                {
+                  name: "title-separator",
+                  tag: "span",
+                  classList: ["urlbarView-title-separator"],
+                },
+                {
+                  name: "action",
+                  tag: "span",
+                  classList: ["urlbarView-action"],
+                  attributes: {
+                    "slide-in": true,
+                  },
+                },
+              ],
+            },
+            {
+              name: "description",
+              tag: "span",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+
+
+
+
+function initializeDynamicResult() {
+  UrlbarResult.addDynamicResultType(DYNAMIC_RESULT_TYPE);
+  UrlbarView.addDynamicViewTemplate(DYNAMIC_RESULT_TYPE, VIEW_TEMPLATE);
+}
+
 
 
 
 class ProviderTabToSearch extends UrlbarProvider {
   constructor() {
     super();
+    
+    this.onboardingResultCountThisSession = 0;
   }
 
   
@@ -77,6 +151,62 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
 
+
+  getViewUpdate(result) {
+    return {
+      icon: {
+        attributes: {
+          src: result.payload.icon,
+        },
+      },
+      titleStrong: {
+        l10n: {
+          id: "urlbar-result-action-search-w-engine",
+          args: {
+            engine: result.payload.engine,
+          },
+        },
+      },
+      action: {
+        l10n: {
+          id: UrlbarUtils.WEB_ENGINE_NAMES.has(result.payload.engine)
+            ? "urlbar-result-action-tabtosearch-web"
+            : "urlbar-result-action-tabtosearch-other-engine",
+          args: {
+            engine: result.payload.engine,
+          },
+        },
+      },
+      description: {
+        l10n: {
+          id: "urlbar-tabtosearch-onboard",
+        },
+      },
+    };
+  }
+
+  
+
+
+
+
+
+
+
+  pickResult(result, element) {
+    element.ownerGlobal.gURLBar.maybePromoteResultToSearchMode({
+      result,
+      checkValue: false,
+    });
+  }
+
+  
+
+
+
+
+
+
   async startQuery(queryContext, addCallback) {
     
     
@@ -95,26 +225,60 @@ class ProviderTabToSearch extends UrlbarProvider {
     let engines = await UrlbarSearchUtils.enginesForDomainPrefix(searchStr, {
       matchAllDomainLevels: true,
     });
+    let onboardingShownCount = UrlbarPrefs.get("tipShownCount.tabToSearch");
+    let showedOnboarding = false;
     for (let engine of engines) {
       
       
       let url = engine.getResultDomain();
       url = url.substr(0, url.length - engine.searchUrlPublicSuffix.length);
-      let result = new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.SEARCH,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
-        ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-          engine: engine.name,
-          url,
-          keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
-          icon: UrlbarUtils.ICON.SEARCH_GLASS_INVERTED,
-          query: "",
-        })
-      );
+      let result;
+      if (
+        onboardingShownCount <
+          UrlbarPrefs.get("tabToSearch.onboard.maxShown") &&
+        this.onboardingResultCountThisSession <
+          UrlbarPrefs.get("tabToSearch.onboard.maxShownPerSession")
+      ) {
+        result = new UrlbarResult(
+          UrlbarUtils.RESULT_TYPE.DYNAMIC,
+          UrlbarUtils.RESULT_SOURCE.SEARCH,
+          {
+            engine: engine.name,
+            url,
+            keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
+            icon: UrlbarUtils.ICON.SEARCH_GLASS_INVERTED,
+            dynamicType: DYNAMIC_RESULT_TYPE,
+          }
+        );
+        result.resultSpan = 2;
+        showedOnboarding = true;
+      } else {
+        result = new UrlbarResult(
+          UrlbarUtils.RESULT_TYPE.SEARCH,
+          UrlbarUtils.RESULT_SOURCE.SEARCH,
+          ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+            engine: engine.name,
+            url,
+            keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
+            icon: UrlbarUtils.ICON.SEARCH_GLASS_INVERTED,
+            query: "",
+          })
+        );
+      }
+
       result.suggestedIndex = 1;
       addCallback(this, result);
+    }
+
+    
+    
+    
+    if (showedOnboarding) {
+      this.onboardingResultCountThisSession++;
+      UrlbarPrefs.set("tipShownCount.tabToSearch", ++onboardingShownCount);
     }
   }
 }
 
 var UrlbarProviderTabToSearch = new ProviderTabToSearch();
+initializeDynamicResult();
