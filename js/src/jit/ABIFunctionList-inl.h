@@ -23,6 +23,8 @@
 #include "jit/Bailouts.h"  
                            
 
+#include "jit/VMFunctions.h"  
+
 #include "js/Conversions.h"  
 #include "vm/ArgumentsObject.h"  
 
@@ -58,6 +60,7 @@ namespace jit {
   _(js::irregexp::GrowBacktrackStack)                       \
   _(js::jit::Bailout)                                       \
   _(js::jit::FinishBailoutToBaseline)                       \
+  _(js::jit::InitBaselineFrameForOsr)                       \
   _(js::jit::InvalidationBailout)                           \
   _(js::NumberMod)                                          \
   _(js::powi)                                               \
