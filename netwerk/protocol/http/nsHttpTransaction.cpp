@@ -2342,6 +2342,23 @@ void nsHttpTransaction::DisableSpdy() {
   }
 }
 
+void nsHttpTransaction::DisableHttp3() {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  mCaps |= NS_HTTP_DISALLOW_HTTP3;
+  
+  
+  
+  
+  if (mConnInfo && !mOrigConnInfo) {
+    
+    RefPtr<nsHttpConnectionInfo> connInfo;
+    mConnInfo->CloneAsDirectRoute(getter_AddRefs(connInfo));
+    MOZ_ASSERT(!connInfo->IsHttp3());
+    mConnInfo.swap(connInfo);
+  }
+}
+
 void nsHttpTransaction::CheckForStickyAuthScheme() {
   LOG(("nsHttpTransaction::CheckForStickyAuthScheme this=%p", this));
 
