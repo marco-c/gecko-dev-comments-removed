@@ -607,14 +607,6 @@ already_AddRefed<PaymentRequest> PaymentRequest::Constructor(
   }
 
   
-  if (!doc->AllowPaymentRequest()) {
-    aRv.ThrowSecurityError(
-        "The PaymentRequest API is not enabled in this document, since "
-        "allowPaymentRequest property is false");
-    return nullptr;
-  }
-
-  
   nsCOMPtr<Document> topLevelDoc = doc->GetTopLevelContentDocument();
   MOZ_ASSERT(topLevelDoc);
   nsCOMPtr<nsIPrincipal> topLevelPrincipal = topLevelDoc->NodePrincipal();
