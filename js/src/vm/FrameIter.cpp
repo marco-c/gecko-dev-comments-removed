@@ -14,6 +14,7 @@
 #include <stdlib.h>  
 
 #include "jit/BaselineFrame.h"   
+#include "jit/JitFrames.h"       
 #include "jit/JSJitFrameIter.h"  
 #include "js/GCAPI.h"            
 #include "js/Principals.h"       

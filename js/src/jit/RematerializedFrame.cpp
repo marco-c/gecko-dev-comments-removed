@@ -10,11 +10,9 @@
 #include <utility>
 
 #include "debugger/DebugAPI.h"
-#include "jit/JitFrames.h"
 #include "js/friend/DumpFunctions.h"  
 #include "vm/ArgumentsObject.h"
 
-#include "jit/JitFrames-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/JSScript-inl.h"
 

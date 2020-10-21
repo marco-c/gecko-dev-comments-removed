@@ -5,6 +5,7 @@
 
 
 #include "jit/Bailouts.h"
+#include "jit/JitFrames.h"
 #include "jit/SafepointIndex.h"
 #include "jit/ScriptFromCalleeToken.h"
 
