@@ -6,7 +6,6 @@
 #ifndef _include_dom_media_ipc_RDDProcessManager_h_
 #define _include_dom_media_ipc_RDDProcessManager_h_
 #include "mozilla/RDDProcessHost.h"
-
 #include "mozilla/ipc/TaskFactory.h"
 
 namespace mozilla {
@@ -29,17 +28,17 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   ~RDDProcessManager();
 
   
-  bool LaunchRDDProcess();
+  
+  bool EnsureRDDProcessAndCreateBridge(
+      base::ProcessId aOtherProcess,
+      mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
+          aOutRemoteDecoderManager);
   bool IsRDDProcessLaunching();
 
   
   
   
   bool EnsureRDDReady();
-
-  bool CreateContentBridge(base::ProcessId aOtherProcess,
-                           mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
-                               aOutRemoteDecoderManager);
 
   void OnProcessLaunchComplete(RDDProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(RDDProcessHost* aHost) override;
@@ -96,6 +95,10 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   friend class Observer;
 
  private:
+  bool CreateContentBridge(base::ProcessId aOtherProcess,
+                           mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
+                               aOutRemoteDecoderManager);
+
   const RefPtr<Observer> mObserver;
   mozilla::ipc::TaskFactory<RDDProcessManager> mTaskFactory;
   uint32_t mNumProcessAttempts = 0;
