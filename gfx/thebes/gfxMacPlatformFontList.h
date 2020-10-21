@@ -85,8 +85,6 @@ class MacOSFontEntry final : public gfxFontEntry {
 
   static void DestroyBlobFunc(void* aUserData);
 
-  bool CheckForColorGlyphs();
-
   CGFontRef
       mFontRef;  
 
