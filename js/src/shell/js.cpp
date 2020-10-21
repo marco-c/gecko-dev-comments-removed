@@ -109,7 +109,6 @@
 #include "js/ErrorReport.h"                
 #include "js/Exception.h"                  
 #include "js/experimental/CodeCoverage.h"  
-#include "js/experimental/Intl.h"  
 #include "js/experimental/JitInfo.h"  
 #include "js/experimental/SourceHook.h"  
 #include "js/experimental/TypedData.h"   
@@ -1321,11 +1320,11 @@ static bool AddIntlExtras(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  if (!JS::AddMozDateTimeFormatConstructor(cx, intl)) {
+  if (!js::AddMozDateTimeFormatConstructor(cx, intl)) {
     return false;
   }
 
-  if (!JS::AddMozDisplayNamesConstructor(cx, intl)) {
+  if (!js::AddMozDisplayNamesConstructor(cx, intl)) {
     return false;
   }
 
