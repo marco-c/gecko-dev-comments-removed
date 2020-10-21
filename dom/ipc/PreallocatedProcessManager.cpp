@@ -357,6 +357,14 @@ void PreallocatedProcessManagerImpl::CloseProcesses() {
     process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
     
   }
+
+  
+  
+  
+  if (RefPtr<ContentParent> recycled =
+          ContentParent::sRecycledE10SProcess.forget()) {
+    recycled->MaybeBeginShutDown();
+  }
 }
 
 inline PreallocatedProcessManagerImpl*
@@ -365,6 +373,14 @@ PreallocatedProcessManager::GetPPMImpl() {
     return nullptr;
   }
   return PreallocatedProcessManagerImpl::Singleton();
+}
+
+
+bool PreallocatedProcessManager::Enabled() {
+  if (auto impl = GetPPMImpl()) {
+    return impl->mEnabled;
+  }
+  return false;
 }
 
 

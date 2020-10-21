@@ -2000,13 +2000,12 @@ void ContentParent::ActorDealloc() { mSelfRef = nullptr; }
 bool ContentParent::TryToRecycle() {
   
   
-  if (mRemoteType != DEFAULT_REMOTE_TYPE) {
-    return false;
-  }
-
   
   
-  if (mozilla::FissionAutostart()) {
+  
+  
+  if (mRemoteType != DEFAULT_REMOTE_TYPE || mozilla::FissionAutostart() ||
+      !PreallocatedProcessManager::Enabled()) {
     return false;
   }
 
