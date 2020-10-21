@@ -107,6 +107,16 @@ fn init_sig_from_wsig(
         ir::ArgumentPurpose::VMContext,
     ));
 
+    
+    sig.params.push(ir::AbiParam::special(
+        POINTER_TYPE,
+        ir::ArgumentPurpose::CalleeTLS,
+    ));
+    sig.params.push(ir::AbiParam::special(
+        POINTER_TYPE,
+        ir::ArgumentPurpose::CallerTLS,
+    ));
+
     Ok(sig)
 }
 
@@ -622,6 +632,15 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
                 POINTER_TYPE,
                 ir::ArgumentPurpose::VMContext,
             ));
+            
+            sig.params.push(ir::AbiParam::special(
+                POINTER_TYPE,
+                ir::ArgumentPurpose::CalleeTLS,
+            ));
+            sig.params.push(ir::AbiParam::special(
+                POINTER_TYPE,
+                ir::ArgumentPurpose::CallerTLS,
+            ));
             if let Some(ret) = &call.ret {
                 sig.returns.push(ir::AbiParam::new(*ret));
             }
@@ -643,6 +662,8 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
         built_arguments.push(instance, &mut pos.func.dfg.value_lists);
         built_arguments.extend(arguments.iter().cloned(), &mut pos.func.dfg.value_lists);
         built_arguments.push(vmctx, &mut pos.func.dfg.value_lists);
+        built_arguments.push(vmctx, &mut pos.func.dfg.value_lists);  
+        built_arguments.push(vmctx, &mut pos.func.dfg.value_lists);  
         pos.func.dfg[call_ins].put_value_list(built_arguments);
 
         self.switch_to_wasm_tls_realm(pos);
@@ -934,6 +955,10 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
             .trapz(callee_func, ir::TrapCode::IndirectCallToNull);
 
         
+        let vmctx_gv = self.get_vmctx_gv(&mut pos.func);
+        let caller_vmctx = pos.ins().global_value(POINTER_TYPE, vmctx_gv);
+
+        
         
         
         let callee_vmctx = pos.ins().load(
@@ -950,6 +975,8 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
         args.push(callee_func, &mut pos.func.dfg.value_lists);
         args.extend(call_args.iter().cloned(), &mut pos.func.dfg.value_lists);
         args.push(callee_vmctx, &mut pos.func.dfg.value_lists);
+        args.push(callee_vmctx, &mut pos.func.dfg.value_lists);
+        args.push(caller_vmctx, &mut pos.func.dfg.value_lists);
         if let Some(sigid) = sigid_value {
             args.push(sigid, &mut pos.func.dfg.value_lists);
         }
@@ -996,11 +1023,20 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
             );
 
             
+            let vmctx_gv = self.get_vmctx_gv(&mut pos.func);
+            let caller_vmctx = pos.ins().global_value(POINTER_TYPE, vmctx_gv);
+
+            
             self.switch_to_import_realm(&mut pos, fit_tls, gv_addr);
             self.load_pinned_reg(&mut pos, fit_tls);
 
             
             args.push(fit_tls, &mut pos.func.dfg.value_lists);
+
+            
+            args.push(fit_tls, &mut pos.func.dfg.value_lists);
+            
+            args.push(caller_vmctx, &mut pos.func.dfg.value_lists);
 
             
             
@@ -1023,6 +1059,11 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
                 .func
                 .special_param(ir::ArgumentPurpose::VMContext)
                 .expect("Missing vmctx arg");
+            args.push(vmctx, &mut pos.func.dfg.value_lists);
+
+            
+            args.push(vmctx, &mut pos.func.dfg.value_lists);
+            
             args.push(vmctx, &mut pos.func.dfg.value_lists);
 
             Ok(pos
