@@ -1383,6 +1383,36 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
+  
+  
+  
+  
+  
+  
+  const bool isSingleLine =
+      StyleFlexWrap::Nowrap == aParentReflowInput.mStylePosition->mFlexWrap;
+  if (isSingleLine) {
+    
+    
+    nscoord containerCrossSize = GET_CROSS_COMPONENT_LOGICAL(
+        aAxisTracker, aAxisTracker.GetWritingMode(),
+        aParentReflowInput.ComputedISize(), aParentReflowInput.ComputedBSize());
+    
+    
+    
+    
+    
+    if (aAxisTracker.IsColumnOriented() ||
+        containerCrossSize != NS_UNCONSTRAINEDSIZE) {
+      
+      
+      item->ResolveStretchedCrossSize(containerCrossSize);
+    }
+  }
+
+  
+  
+  
   if (isFixedSizeWidget || (flexGrow == 0.0f && flexShrink == 0.0f)) {
     item->Freeze();
     if (flexBaseSize < mainMinSize) {
@@ -1577,37 +1607,6 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
   FLEX_LOGV("Resolving auto main size or main min size for flex item %p",
             aFlexItem.Frame());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const ReflowInput* flexContainerRI = aItemReflowInput.mParentReflowInput;
-  MOZ_ASSERT(flexContainerRI,
-             "flex item's reflow input should have ptr to container's state");
-  if (StyleFlexWrap::Nowrap == flexContainerRI->mStylePosition->mFlexWrap) {
-    
-    
-    nscoord containerCrossSize = GET_CROSS_COMPONENT_LOGICAL(
-        aAxisTracker, aAxisTracker.GetWritingMode(),
-        flexContainerRI->ComputedISize(), flexContainerRI->ComputedBSize());
-    
-    
-    
-    
-    
-    if (aAxisTracker.IsColumnOriented() ||
-        containerCrossSize != NS_UNCONSTRAINEDSIZE) {
-      
-      
-      aFlexItem.ResolveStretchedCrossSize(containerCrossSize);
-    }
-  }
-
   nscoord resolvedMinSize;  
   bool minSizeNeedsToMeasureContent = false;  
   if (isMainMinSizeAuto) {
@@ -1663,9 +1662,10 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
           !flexBasisNeedsToMeasureContent;  
                                             
 
+      const ReflowInput& flexContainerRI = *aItemReflowInput.mParentReflowInput;
       nscoord contentBSize =
           MeasureFlexItemContentBSize(aFlexItem, forceBResizeForMeasuringReflow,
-                                      aHasLineClampEllipsis, *flexContainerRI);
+                                      aHasLineClampEllipsis, flexContainerRI);
       if (minSizeNeedsToMeasureContent) {
         contentSizeSuggestion = contentBSize;
       }
