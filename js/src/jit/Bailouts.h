@@ -16,12 +16,13 @@
 #include "jstypes.h"
 
 #include "jit/IonTypes.h"  
-#include "jit/JSJitFrameIter.h"  
-#include "jit/Registers.h"       
-#include "js/TypeDecls.h"        
-#include "vm/Stack.h"            
+#include "jit/Registers.h"  
+#include "js/TypeDecls.h"   
 
 namespace js {
+
+class AbstractFramePtr;
+
 namespace jit {
 
 
@@ -138,8 +139,10 @@ class BailoutStack;
 class InvalidationBailoutStack;
 
 class IonScript;
+class InlineFrameIterator;
 class JitActivation;
 class JitActivationIterator;
+class JSJitFrameIter;
 struct ResumeFromException;
 
 
