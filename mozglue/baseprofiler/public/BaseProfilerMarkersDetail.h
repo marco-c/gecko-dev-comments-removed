@@ -184,6 +184,26 @@ static ProfileBufferBlockIndex AddMarkerWithOptionalStackToBuffer(
                   "NoPayload does not accept any payload arguments.");
     
     
+    
+    
+    
+    
+    if (aOptions.Stack().GetChunkedBuffer() ||
+        !aOptions.InnerWindowId().IsUnspecified()) {
+      struct NoPayloadUserData {
+        static constexpr Span<const char> MarkerTypeName() {
+          return MakeStringSpan("NoPayloadUserData");
+        }
+        static void StreamJSONMarkerData(JSONWriter& aWriter) {
+          
+        }
+      };
+      return MarkerTypeSerialization<NoPayloadUserData>::Serialize(
+          aBuffer, aName, aCategory, std::move(aOptions));
+    }
+
+    
+    
     return aBuffer.PutObjects(
         ProfileBufferEntryKind::Marker, std::move(aOptions), aName, aCategory,
         base_profiler_markers_detail::Streaming::DeserializerTag(0));
