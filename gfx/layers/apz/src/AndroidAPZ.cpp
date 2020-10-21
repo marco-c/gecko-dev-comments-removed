@@ -162,19 +162,7 @@ StackScrollerFlingAnimation::StackScrollerFlingAnimation(
       ClampStart(mStartOffset.y, scrollRangeStartY, scrollRangeEndY);
   if (!state->mLastFling.IsNull()) {
     
-    
-    
-    
-    TimeDuration flingDuration = TimeStamp::Now() - state->mLastFling;
-    if (flingDuration.ToMilliseconds() <
-            StaticPrefs::apz_fling_accel_interval_ms() &&
-        velocity.Length() >= StaticPrefs::apz_fling_accel_interval_ms()) {
-      bool unused = false;
-      mOverScroller->ComputeScrollOffset(flingDuration.ToMilliseconds(),
-                                         &unused);
-    } else {
-      mOverScroller->ForceFinished(true);
-    }
+    mOverScroller->ForceFinished(true);
   }
   mOverScroller->Fling(
       originX, originY,
