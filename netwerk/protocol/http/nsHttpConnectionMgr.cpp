@@ -5125,8 +5125,11 @@ nsresult nsHttpConnectionMgr::nsHalfOpenSocket::SetupConn(
     
     
     
-    if (mEnt->mConnInfo->FirstHopSSL() && !mEnt->mUrgentStartQ.Length() &&
-        !mEnt->PendingQLength() && !mEnt->mConnInfo->UsingConnect()) {
+    
+    
+    if (!connTCP ||
+        (mEnt->mConnInfo->FirstHopSSL() && !mEnt->mUrgentStartQ.Length() &&
+         !mEnt->PendingQLength() && !mEnt->mConnInfo->UsingConnect())) {
       LOG(
           ("nsHalfOpenSocket::SetupConn null transaction will "
            "be used to finish SSL handshake on conn %p\n",
