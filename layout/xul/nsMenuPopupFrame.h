@@ -262,9 +262,8 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   
-  
   nsresult SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove,
-                            bool aSizedToPopup, bool aNotify);
+                            bool aSizedToPopup);
 
   
   void GenerateFrames();
