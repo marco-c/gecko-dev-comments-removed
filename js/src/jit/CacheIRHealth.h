@@ -67,7 +67,7 @@ class CacheIRHealth {
                                      jsbytecode* pc, JSOp op);
   
   
-  bool rateMyCacheIR(JSContext* cx, HandleScript script);
+  void rateMyCacheIR(JSContext* cx, HandleScript script);
 };
 
 }  
