@@ -690,6 +690,17 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
     MOZ_ASSERT_UNREACHABLE("Unimplemented");
   }
 
+  enum class PushDisplayItemFlag {
+    
+    
+    PREFER_COMPOSITOR_SURFACE,
+
+    
+    
+    SUPPORTS_EXTERNAL_BUFFER_TEXTURES,
+  };
+  using PushDisplayItemFlagSet = EnumSet<PushDisplayItemFlag>;
+
   
   
   virtual void PushDisplayItems(wr::DisplayListBuilder& aBuilder,
@@ -697,7 +708,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
                                 const wr::LayoutRect& aClip,
                                 wr::ImageRendering aFilter,
                                 const Range<wr::ImageKey>& aKeys,
-                                const bool aPreferCompositorSurface) {
+                                PushDisplayItemFlagSet aFlags) {
     MOZ_ASSERT_UNREACHABLE(
         "No PushDisplayItems() implementation for this TextureHost type.");
   }
@@ -845,7 +856,7 @@ class BufferTextureHost : public TextureHost {
                         const wr::LayoutRect& aBounds,
                         const wr::LayoutRect& aClip, wr::ImageRendering aFilter,
                         const Range<wr::ImageKey>& aImageKeys,
-                        const bool aPreferCompositorSurface) override;
+                        PushDisplayItemFlagSet aFlags) override;
 
   void ReadUnlock() override;
   bool IsDirectMap() override {
