@@ -1005,8 +1005,7 @@ async function synthesizeNativeTouchAndWaitForTransformEnd(
 
 
 
-
-async function pinchZoomOutWithTouchAtCenter() {
+function pinchZoomOutTouchSequenceAtCenter() {
   
   
   const deltaX = window.visualViewport.width / 16;
@@ -1030,7 +1029,15 @@ async function pinchZoomOutWithTouchAtCenter() {
       [ { x: centerX - (deltaX * 1), y: centerY - (deltaY * 1) },
         { x: centerX + (deltaX * 1), y: centerY + (deltaY * 1) } ],
   ];
+  return zoom_out;
+}
 
+
+
+
+
+async function pinchZoomOutWithTouchAtCenter() {
+  var zoom_out = pinchZoomOutTouchSequenceAtCenter();
   var touchIds = [0, 1];
   await synthesizeNativeTouchAndWaitForTransformEnd(zoom_out, touchIds);
 }

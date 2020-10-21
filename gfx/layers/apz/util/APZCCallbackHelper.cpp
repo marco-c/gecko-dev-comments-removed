@@ -312,14 +312,9 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     return;
   }
 
+  APZCCH_LOG("Handling request %s\n", ToString(aRequest).c_str());
   if (nsLayoutUtils::AllowZoomingForDocument(presShell->GetDocument()) &&
-      aRequest.GetScrollOffsetUpdated()) {
-    
-    
-    
-    
-    
-    
+      aRequest.GetAsyncZoom().scale != 1.0) {
     
     
     
@@ -343,6 +338,18 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
         aRequest.GetPresShellResolution() * aRequest.GetAsyncZoom().scale;
     presShell->SetResolutionAndScaleTo(presShellResolution,
                                        ResolutionChangeOrigin::Apz);
+
+    
+    
+    
+    
+    
+    
+    nsIScrollableFrame* sf =
+        nsLayoutUtils::FindScrollableFrameFor(aRequest.GetScrollId());
+    CSSPoint currentScrollPosition =
+        CSSPoint::FromAppUnits(sf->GetScrollPosition());
+    sf->ScrollToCSSPixelsApproximate(currentScrollPosition, ScrollOrigin::Apz);
   }
 
   
