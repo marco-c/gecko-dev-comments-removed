@@ -180,11 +180,11 @@ var interfaceNamesInGlobalScope = [
   
   { name: "AudioWorkletNode", insecureContext: false },
   
-  { name: "AuthenticatorAssertionResponse" },
+  { name: "AuthenticatorAssertionResponse", android: false },
   
-  { name: "AuthenticatorAttestationResponse" },
+  { name: "AuthenticatorAttestationResponse", android: false },
   
-  { name: "AuthenticatorResponse" },
+  { name: "AuthenticatorResponse", android: false },
   
   { name: "BarProp", insecureContext: true },
   
@@ -236,9 +236,9 @@ var interfaceNamesInGlobalScope = [
   
   { name: "ConvolverNode", insecureContext: true },
   
-  { name: "Credential" },
+  { name: "Credential", android: false },
   
-  { name: "CredentialsContainer" },
+  { name: "CredentialsContainer", android: false },
   
   { name: "Crypto", insecureContext: true },
   
@@ -942,7 +942,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PromiseRejectionEvent", insecureContext: true },
   
-  { name: "PublicKeyCredential" },
+  { name: "PublicKeyCredential", android: false },
   
   { name: "PushManager", insecureContext: true },
   
