@@ -58,7 +58,7 @@ interface nsIOpenWindowInfo : nsISupports {
 
 
   [infallible]
-  readonly attribute boolean isForPrintPreview;
+  readonly attribute boolean isForWindowDotPrint;
 
   
   [notxpcom, nostdcall]

@@ -5251,14 +5251,14 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
   const bool isPreview = StaticPrefs::print_tab_modal_enabled() &&
                          !StaticPrefs::print_always_print_silent();
   Print(nullptr, nullptr, nullptr, IsPreview(isPreview),
-        BlockUntilDone(isPreview), nullptr, aError);
+        IsForWindowDotPrint::Yes, nullptr, aError);
 #endif
 }
 
 Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     nsIPrintSettings* aPrintSettings, nsIWebProgressListener* aListener,
     nsIDocShell* aDocShellToCloneInto, IsPreview aIsPreview,
-    BlockUntilDone aBlockUntilDone,
+    IsForWindowDotPrint aForWindowDotPrint,
     PrintPreviewResolver&& aPrintPreviewCallback, ErrorResult& aError) {
 #ifdef NS_PRINTING
   nsCOMPtr<nsIPrintSettingsService> printSettingsService =
@@ -5292,7 +5292,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
   if (docToPrint->IsStaticDocument() &&
       (aIsPreview == IsPreview::Yes ||
        StaticPrefs::print_tab_modal_enabled())) {
-    MOZ_DIAGNOSTIC_ASSERT(aBlockUntilDone == BlockUntilDone::No);
+    MOZ_DIAGNOSTIC_ASSERT(aForWindowDotPrint == IsForWindowDotPrint::No);
     
     
     bc = sourceBC;
@@ -5315,8 +5315,9 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
       bc = aDocShellToCloneInto->GetBrowsingContext();
     } else {
       AutoNoJSAPI nojsapi;
-      auto printKind = aIsPreview == IsPreview::Yes ? PrintKind::PrintPreview
-                                                    : PrintKind::Print;
+      auto printKind = aForWindowDotPrint == IsForWindowDotPrint::Yes
+                           ? PrintKind::WindowDotPrint
+                           : PrintKind::InternalPrint;
       aError = OpenInternal(u""_ns, u""_ns, u""_ns,
                             false,             
                             false,             
@@ -5391,8 +5392,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     
     
     
-    
-    if (aBlockUntilDone != BlockUntilDone::Yes) {
+    if (aForWindowDotPrint == IsForWindowDotPrint::No) {
       aError = webBrowserPrint->PrintPreview(aPrintSettings, aListener,
                                              std::move(aPrintPreviewCallback));
       if (aError.Failed()) {
@@ -5410,7 +5410,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
   
   
   
-  if (aBlockUntilDone == BlockUntilDone::Yes && !hasPrintCallbacks) {
+  if (aIsPreview == IsPreview::Yes &&
+      aForWindowDotPrint == IsForWindowDotPrint::Yes && !hasPrintCallbacks) {
     SpinEventLoopUntil([&] { return bc->IsDiscarded(); });
   }
 
@@ -7249,10 +7250,10 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     switch (aPrintKind) {
       case PrintKind::None:
         return nsPIWindowWatcher::PRINT_NONE;
-      case PrintKind::Print:
-        return nsPIWindowWatcher::PRINT_REGULAR;
-      case PrintKind::PrintPreview:
-        return nsPIWindowWatcher::PRINT_PREVIEW;
+      case PrintKind::InternalPrint:
+        return nsPIWindowWatcher::PRINT_INTERNAL;
+      case PrintKind::WindowDotPrint:
+        return nsPIWindowWatcher::PRINT_WINDOW_DOT_PRINT;
     }
     MOZ_ASSERT_UNREACHABLE("Wat");
     return nsPIWindowWatcher::PRINT_NONE;

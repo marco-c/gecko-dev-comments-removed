@@ -33,7 +33,12 @@ add_task(async function print_selection() {
         });
 
         
-        PrintUtils.startPrintWindow(frameBC, null,  true);
+        PrintUtils.startPrintWindow(
+          "tests",
+          frameBC,
+          null,
+           true
+        );
 
         await BrowserTestUtils.waitForCondition(
           () => !!document.querySelector(".printPreviewBrowser")

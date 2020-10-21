@@ -225,8 +225,24 @@ var PrintUtils = {
 
 
 
-  startPrintWindow(aBrowsingContext, aOpenWindowInfo, aPrintSelectionOnly) {
+
+
+  startPrintWindow(
+    aTrigger,
+    aBrowsingContext,
+    aOpenWindowInfo,
+    aPrintSelectionOnly
+  ) {
     const printInitiationTime = Date.now();
+
+    
+    
+    
+    
+    if (!aOpenWindowInfo || aOpenWindowInfo.isForWindowDotPrint) {
+      Services.telemetry.keyedScalarAdd("printing.trigger", aTrigger, 1);
+    }
+
     let browser = null;
     if (aOpenWindowInfo) {
       browser = document.createXULElement("browser");
@@ -255,7 +271,7 @@ var PrintUtils = {
     if (
       PRINT_TAB_MODAL &&
       !PRINT_ALWAYS_SILENT &&
-      (!aOpenWindowInfo || aOpenWindowInfo.isForPrintPreview)
+      (!aOpenWindowInfo || aOpenWindowInfo.isForWindowDotPrint)
     ) {
       this._openTabModalPrint(
         aBrowsingContext,
@@ -370,7 +386,13 @@ var PrintUtils = {
 
 
 
-  printPreview(aListenerObj) {
+
+
+  printPreview(aTrigger, aListenerObj) {
+    if (aTrigger) {
+      Services.telemetry.keyedScalarAdd("printing.trigger", aTrigger, 1);
+    }
+
     if (PRINT_TAB_MODAL) {
       return this._openTabModalPrint(
         gBrowser.selectedBrowser.browsingContext,

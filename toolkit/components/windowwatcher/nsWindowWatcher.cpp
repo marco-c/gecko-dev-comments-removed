@@ -782,7 +782,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     openWindowInfo->mForceNoOpener = aForceNoOpener;
     openWindowInfo->mParent = parentBC;
     openWindowInfo->mIsForPrinting = aPrintKind != PRINT_NONE;
-    openWindowInfo->mIsForPrintPreview = aPrintKind == PRINT_PREVIEW;
+    openWindowInfo->mIsForWindowDotPrint = aPrintKind == PRINT_WINDOW_DOT_PRINT;
 
     
     
