@@ -50,6 +50,11 @@ async function doOfferAnswerExchange(t, caller) {
 function validateSenderRtpParameters(param) {
   validateRtpParameters(param);
 
+  assert_array_field(param, 'encodings');
+  for(const encoding of param.encodings) {
+    validateEncodingParameters(encoding);
+  }
+
   assert_not_equals(param.transactionId, undefined,
     'Expect sender param.transactionId to be set');
 
@@ -102,18 +107,8 @@ function validateReceiverRtpParameters(param) {
 
 
 
-
-
-
-
-
 function validateRtpParameters(param) {
   assert_optional_string_field(param, 'transactionId');
-
-  assert_array_field(param, 'encodings');
-  for(const encoding of param.encodings) {
-    validateEncodingParameters(encoding);
-  }
 
   assert_array_field(param, 'headerExtensions');
   for(const headerExt of param.headerExtensions) {
@@ -141,35 +136,9 @@ function validateRtpParameters(param) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function validateEncodingParameters(encoding) {
-  assert_optional_enum_field(encoding, 'dtx',
-    ['disabled', 'enabled']);
-
   assert_optional_boolean_field(encoding, 'active');
-  assert_optional_enum_field(encoding, 'priority',
-    ['very-low', 'low', 'medium', 'high']);
-  assert_optional_enum_field(encoding, 'networkPriority',
-    ['very-low', 'low', 'medium', 'high']);
-
-  assert_optional_unsigned_int_field(encoding, 'ptime');
   assert_optional_unsigned_int_field(encoding, 'maxBitrate');
-  assert_optional_number_field(encoding, 'maxFramerate');
 
   assert_optional_string_field(encoding, 'rid');
   assert_optional_number_field(encoding, 'scaleResolutionDownBy');
