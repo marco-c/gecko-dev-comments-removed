@@ -1070,25 +1070,6 @@ struct nsHypotheticalPosition {
   WritingMode mWritingMode;
 };
 
-static bool GetIntrinsicSizeFor(nsIFrame* aFrame, nsSize& aIntrinsicSize,
-                                LayoutFrameType aFrameType) {
-  
-  bool success = false;
-
-  
-  
-  
-  
-  if (aFrameType == LayoutFrameType::Image) {
-    Maybe<nsSize> size = aFrame->GetIntrinsicSize().ToSize();
-    if (size) {
-      aIntrinsicSize = *size;
-      success = true;
-    }
-  }
-  return success;
-}
-
 
 
 
@@ -1226,11 +1207,10 @@ void ReflowInput::CalculateHypotheticalPosition(
 
   const auto& styleISize = mStylePosition->ISize(wm);
   bool isAutoISize = styleISize.IsAuto();
-  nsSize intrinsicSize;
-  bool knowIntrinsicSize = false;
+  Maybe<nsSize> intrinsicSize;
   if (NS_FRAME_IS_REPLACED(mFrameType) && isAutoISize) {
     
-    knowIntrinsicSize = GetIntrinsicSizeFor(mFrame, intrinsicSize, aFrameType);
+    intrinsicSize = mFrame->GetIntrinsicSize().ToSize();
   }
 
   
@@ -1257,9 +1237,9 @@ void ReflowInput::CalculateHypotheticalPosition(
     if (NS_FRAME_IS_REPLACED(mFrameType) && isAutoISize) {
       
       
-      if (knowIntrinsicSize) {
-        boxISize = LogicalSize(wm, intrinsicSize).ISize(wm) + outsideBoxSizing +
-                   insideBoxSizing;
+      if (intrinsicSize) {
+        boxISize = LogicalSize(wm, *intrinsicSize).ISize(wm) +
+                   outsideBoxSizing + insideBoxSizing;
         knowBoxISize = true;
       }
 
@@ -1443,11 +1423,11 @@ void ReflowInput::CalculateHypotheticalPosition(
     nscoord boxBSize;
     const auto& styleBSize = mStylePosition->BSize(wm);
     if (styleBSize.BehavesLikeInitialValueOnBlockAxis()) {
-      if (NS_FRAME_IS_REPLACED(mFrameType) && knowIntrinsicSize) {
+      if (NS_FRAME_IS_REPLACED(mFrameType) && intrinsicSize) {
         
         
-        boxBSize = LogicalSize(wm, intrinsicSize).BSize(wm) + outsideBoxSizing +
-                   insideBoxSizing;
+        boxBSize = LogicalSize(wm, *intrinsicSize).BSize(wm) +
+                   outsideBoxSizing + insideBoxSizing;
       } else {
         
         
