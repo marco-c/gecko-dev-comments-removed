@@ -597,7 +597,28 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
   if (topWindowPrincipal && !topWindowPrincipal->GetIsNullPrincipal()) {
     auto* basePrin = BasePrincipal::Cast(topWindowPrincipal);
     bool isThirdParty = true;
-    basePrin->IsThirdPartyURI(uri, &isThirdParty);
+
+    
+    
+    
+    
+    if (NS_IsAboutBlank(uri)) {
+      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+      if (NS_WARN_IF(!ssm)) {
+        return;
+      }
+
+      nsCOMPtr<nsIPrincipal> principal;
+      nsresult rv =
+          ssm->GetChannelResultPrincipal(aChannel, getter_AddRefs(principal));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return;
+      }
+
+      basePrin->IsThirdPartyPrincipal(principal, &isThirdParty);
+    } else {
+      basePrin->IsThirdPartyURI(uri, &isThirdParty);
+    }
 
     loadInfo->SetIsThirdPartyContextToTopWindow(isThirdParty);
   }
