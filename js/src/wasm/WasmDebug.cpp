@@ -463,7 +463,7 @@ bool DebugState::getSourceMappingURL(JSContext* cx,
       return true;  
     }
 
-    UTF8Chars utf8Chars(reinterpret_cast<const char*>(chars), nchars);
+    JS::UTF8Chars utf8Chars(reinterpret_cast<const char*>(chars), nchars);
     JSString* str = JS_NewStringCopyUTF8N(cx, utf8Chars);
     if (!str) {
       return false;
@@ -475,7 +475,7 @@ bool DebugState::getSourceMappingURL(JSContext* cx,
   
   char* sourceMapURL = metadata().sourceMapURL.get();
   if (sourceMapURL && strlen(sourceMapURL)) {
-    UTF8Chars utf8Chars(sourceMapURL, strlen(sourceMapURL));
+    JS::UTF8Chars utf8Chars(sourceMapURL, strlen(sourceMapURL));
     JSString* str = JS_NewStringCopyUTF8N(cx, utf8Chars);
     if (!str) {
       return false;

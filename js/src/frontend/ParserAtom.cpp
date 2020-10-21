@@ -398,7 +398,7 @@ JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internUtf8(
   
   
   
-  UTF8Chars utf8(utf8Ptr, nbyte);
+  JS::UTF8Chars utf8(utf8Ptr, nbyte);
   JS::SmallestEncoding minEncoding = FindSmallestEncoding(utf8);
   if (minEncoding == JS::SmallestEncoding::ASCII) {
     
@@ -573,7 +573,7 @@ bool WellKnownParserAtoms::initSingle(JSContext* cx, const ParserName** name,
 
   
   MOZ_ASSERT(len <= MaxWellKnownLength);
-  MOZ_ASSERT(FindSmallestEncoding(UTF8Chars(str, len)) ==
+  MOZ_ASSERT(FindSmallestEncoding(JS::UTF8Chars(str, len)) ==
              JS::SmallestEncoding::ASCII);
 
   
@@ -614,7 +614,7 @@ bool WellKnownParserAtoms::initTinyStringAlias(JSContext* cx,
 
   
   MOZ_ASSERT(len <= MaxWellKnownLength);
-  MOZ_ASSERT(FindSmallestEncoding(UTF8Chars(str, len)) ==
+  MOZ_ASSERT(FindSmallestEncoding(JS::UTF8Chars(str, len)) ==
              JS::SmallestEncoding::ASCII);
 
   
