@@ -166,15 +166,15 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}
   overflow: scroll !important; 
   
   
-  margin-bottom: -50px; margin-right: -50px;
-  padding-bottom: 50px;
+  margin-bottom: -30px; margin-right: -30px;
+  padding-bottom: 30px;
   height: 100%;
   outline: none; 
   position: relative;
 }
 .CodeMirror-sizer {
   position: relative;
-  border-right: 50px solid transparent;
+  border-right: 30px solid transparent;
 }
 
 
@@ -184,7 +184,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}
   position: absolute;
   z-index: 6;
   display: none;
-  outline: none;
 }
 .CodeMirror-vscrollbar {
   right: 0; top: 0;
@@ -213,7 +212,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}
   height: 100%;
   display: inline-block;
   vertical-align: top;
-  margin-bottom: -50px;
+  margin-bottom: -30px;
 }
 .CodeMirror-gutter-wrapper {
   position: absolute;
@@ -237,6 +236,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}
 .CodeMirror-lines {
   cursor: text;
   min-height: 1px; 
+  text-align: left;
 }
 .CodeMirror pre.CodeMirror-line,
 .CodeMirror pre.CodeMirror-line-like {
