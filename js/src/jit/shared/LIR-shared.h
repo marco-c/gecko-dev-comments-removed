@@ -3158,6 +3158,27 @@ class LTruncateDToInt32 : public LInstructionHelper<1, 1, 1> {
 
 
 
+class LWasmBuiltinTruncateDToInt32 : public LInstructionHelper<1, 2, 1> {
+ public:
+  LIR_HEADER(WasmBuiltinTruncateDToInt32)
+
+  LWasmBuiltinTruncateDToInt32(const LAllocation& in, const LAllocation& tls,
+                               const LDefinition& temp)
+      : LInstructionHelper(classOpcode) {
+    setOperand(0, in);
+    setOperand(1, tls);
+    setTemp(0, temp);
+  }
+
+  const LDefinition* tempFloat() { return getTemp(0); }
+
+  MWasmBuiltinTruncateToInt32* mir() const {
+    return mir_->toWasmBuiltinTruncateToInt32();
+  }
+};
+
+
+
 
 class LTruncateFToInt32 : public LInstructionHelper<1, 1, 1> {
  public:
@@ -3172,6 +3193,27 @@ class LTruncateFToInt32 : public LInstructionHelper<1, 1, 1> {
   const LDefinition* tempFloat() { return getTemp(0); }
 
   MTruncateToInt32* mir() const { return mir_->toTruncateToInt32(); }
+};
+
+
+
+class LWasmBuiltinTruncateFToInt32 : public LInstructionHelper<1, 2, 1> {
+ public:
+  LIR_HEADER(WasmBuiltinTruncateFToInt32)
+
+  LWasmBuiltinTruncateFToInt32(const LAllocation& in, const LAllocation& tls,
+                               const LDefinition& temp)
+      : LInstructionHelper(classOpcode) {
+    setOperand(0, in);
+    setOperand(1, tls);
+    setTemp(0, temp);
+  }
+
+  const LDefinition* tempFloat() { return getTemp(0); }
+
+  MWasmBuiltinTruncateToInt32* mir() const {
+    return mir_->toWasmBuiltinTruncateToInt32();
+  }
 };
 
 class LWasmTruncateToInt32 : public LInstructionHelper<1, 1, 0> {
