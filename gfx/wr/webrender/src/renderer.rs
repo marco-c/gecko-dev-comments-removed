@@ -3557,7 +3557,7 @@ impl Renderer {
                 
                 self.device.clear_target(
                     Some([0.0, 0.0, 0.0, 0.0]),
-                    Some(1.0),
+                    None, 
                     None,
                 );
             }
