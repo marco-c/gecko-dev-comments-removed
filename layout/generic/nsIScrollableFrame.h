@@ -209,6 +209,17 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
+
+
+
+
+
+
+  virtual bool SetVisualViewportOffset(const nsPoint& aOffset,
+                                       bool aRepaint) = 0;
+  
+
+
   virtual nsRect GetVisualScrollRange() const = 0;
   
 
