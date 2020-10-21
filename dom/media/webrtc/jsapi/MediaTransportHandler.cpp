@@ -700,19 +700,7 @@ void MediaTransportHandlerSTS::StartIceGathering(
         
         if (!mIceCtx->GetStreams().empty()) {
           mIceCtx->StartGathering(aDefaultRouteOnly, aObfuscateHostAddresses);
-          return;
         }
-
-        CSFLogWarn(
-            LOGTAG,
-            "%s: No streams to start gathering on. Can happen with rollback",
-            __FUNCTION__);
-
-        
-        
-        
-        
-        OnGatheringStateChange(dom::RTCIceGatheringState::Complete);
       },
       [](const std::string& aError) {});
 }
