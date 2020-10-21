@@ -864,10 +864,6 @@ class MOZ_STACK_CLASS JS_FRIEND_API AutoAssertNoContentJS {
 
 
 
-extern JS_FRIEND_API bool SystemZoneAvailable(JSContext* cx);
-
-
-
 
 
 extern JS_FRIEND_API uint64_t GetGCHeapUsageForObjectZone(JSObject* obj);
