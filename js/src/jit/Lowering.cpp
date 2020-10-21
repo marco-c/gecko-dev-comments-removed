@@ -18,6 +18,7 @@
 #include "jit/MIRGraph.h"
 #include "js/experimental/JitInfo.h"  
 #include "util/Memory.h"
+#include "wasm/WasmTypes.h"
 
 #include "jit/shared/Lowering-shared-inl.h"
 #include "vm/BytecodeUtil-inl.h"
