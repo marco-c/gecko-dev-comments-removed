@@ -661,7 +661,7 @@ class Chrome(Browser):
     def find_webdriver(self, venv_path=None, channel=None, browser_binary=None):
         return find_executable("chromedriver")
 
-    def webdriver_supports_browser(self, webdriver_binary, browser_binary):
+    def webdriver_supports_browser(self, webdriver_binary, browser_binary, browser_channel):
         chromedriver_version = self.webdriver_version(webdriver_binary)
         if not chromedriver_version:
             self.logger.warning(
@@ -676,9 +676,17 @@ class Chrome(Browser):
             return True
 
         
-        chromedriver_major = chromedriver_version.split('.')[0]
-        browser_major = browser_version.split('.')[0]
+        chromedriver_major = int(chromedriver_version.split('.')[0])
+        browser_major = int(browser_version.split('.')[0])
         if chromedriver_major != browser_major:
+            
+            
+            
+            if browser_channel == "dev" and chromedriver_major == (browser_major + 1):
+                self.logger.debug(
+                    "Accepting ChromeDriver %s for Chrome/Chromium Dev %s" %
+                    (chromedriver_version, browser_version))
+                return True
             self.logger.warning(
                 "ChromeDriver %s does not match Chrome/Chromium %s" %
                 (chromedriver_version, browser_version))
