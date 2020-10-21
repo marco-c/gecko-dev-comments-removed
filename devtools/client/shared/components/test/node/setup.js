@@ -15,3 +15,13 @@ global.requestAnimationFrame = function(cb) {
   cb();
   return null;
 };
+
+
+if (!Array.prototype.flatMap) {
+  
+  Array.prototype.flatMap = function(cb) {
+    return this.reduce((acc, x, i, arr) => {
+      return acc.concat(cb(x, i, arr));
+    }, []);
+  };
+}

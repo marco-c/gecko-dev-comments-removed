@@ -3,9 +3,11 @@
 
 
 
-const { mountObjectInspector } = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
+const {
+  mountObjectInspector,
+} = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
 
-const gripRepStubs = require("devtools/client/shared/components/reps/reps/stubs/grip");
+const gripRepStubs = require("devtools/client/shared/components/test/node/stubs/reps/grip");
 const ObjectFront = require("devtools/client/shared/components/reps/object-inspector/tests/__mocks__/object-front");
 
 function generateDefaults(overrides) {

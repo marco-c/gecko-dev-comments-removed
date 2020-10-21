@@ -2,15 +2,19 @@
 
 
 
-const { MODE } = require("devtools/client/shared/components/reps/reps/constants");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 const {
   formatObjectInspector,
   waitForLoadedProperties,
   mountObjectInspector,
 } = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
 
-const { makeNodesForProperties } = require("devtools/client/shared/components/reps/object-inspector/utils/node");
-const accessorStubs = require("devtools/client/shared/components/reps/reps/stubs/accessor");
+const {
+  makeNodesForProperties,
+} = require("devtools/client/shared/components/reps/object-inspector/utils/node");
+const accessorStubs = require("devtools/client/shared/components/test/node/stubs/reps/accessor");
 const ObjectFront = require("devtools/client/shared/components/reps/object-inspector/tests/__mocks__/object-front");
 
 function generateDefaults(overrides) {
