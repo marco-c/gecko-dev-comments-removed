@@ -266,36 +266,46 @@ void ScriptPreloader::StartCacheWrite() {
 }
 
 void ScriptPreloader::InvalidateCache() {
-  mMonitor.AssertNotCurrentThreadOwns();
-  MonitorAutoLock mal(mMonitor);
+  {
+    mMonitor.AssertNotCurrentThreadOwns();
+    MonitorAutoLock mal(mMonitor);
 
-  mCacheInvalidated = true;
+    
+    
+    
+    FinishPendingParses(mal);
 
-  
-  
-  
-  FinishPendingParses(mal);
+    
+    
+    MOZ_ASSERT(mParsingScripts.empty());
+    MOZ_ASSERT(mParsingSources.empty());
+    MOZ_ASSERT(mPendingScripts.isEmpty());
 
-  
-  
-  MOZ_ASSERT(mParsingScripts.empty());
-  MOZ_ASSERT(mParsingSources.empty());
-  MOZ_ASSERT(mPendingScripts.isEmpty());
+    for (auto& script : IterHash(mScripts)) {
+      script.Remove();
+    }
 
-  for (auto& script : IterHash(mScripts)) {
-    script.Remove();
+    
+    
+    
+    
+    
+    if (mSaveComplete && mChildCache) {
+      mSaveComplete = false;
+
+      StartCacheWrite();
+    }
+  }
+
+  {
+    MonitorAutoLock saveMonitorAutoLock(mSaveMonitor);
+
+    mCacheInvalidated = true;
   }
 
   
   
-  
-  
-  
-  if (mSaveComplete && mChildCache) {
-    mSaveComplete = false;
-
-    StartCacheWrite();
-  }
+  mSaveMonitor.NotifyAll();
 }
 
 nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,

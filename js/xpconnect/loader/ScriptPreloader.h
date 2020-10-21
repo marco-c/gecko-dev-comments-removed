@@ -448,6 +448,7 @@ class ScriptPreloader : public nsIObserver,
   bool mCacheInitialized = false;
   bool mSaveComplete = false;
   bool mDataPrepared = false;
+  
   bool mCacheInvalidated = false;
 
   
