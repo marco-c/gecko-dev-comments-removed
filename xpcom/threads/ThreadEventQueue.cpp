@@ -130,11 +130,6 @@ already_AddRefed<nsIRunnable> ThreadEventQueue::GetEvent(
     bool aMayWait, EventQueuePriority* aPriority,
     mozilla::TimeDuration* aLastEventDelay) {
   nsCOMPtr<nsIRunnable> event;
-  bool eventIsIdleRunnable = false;
-  
-  
-  IdlePeriodState* idleState = nullptr;
-
   {
     
     
@@ -144,53 +139,16 @@ already_AddRefed<nsIRunnable> ThreadEventQueue::GetEvent(
     for (;;) {
       const bool noNestedQueue = mNestedQueues.IsEmpty();
       if (noNestedQueue) {
-        idleState = mBaseQueue->GetIdlePeriodState();
-        event = mBaseQueue->GetEvent(aPriority, lock, aLastEventDelay,
-                                     &eventIsIdleRunnable);
+        event = mBaseQueue->GetEvent(aPriority, lock, aLastEventDelay);
       } else {
         
         
-        MOZ_ASSERT(!mNestedQueues.LastElement().mQueue->GetIdlePeriodState());
-        event = mNestedQueues.LastElement().mQueue->GetEvent(
-            aPriority, lock, aLastEventDelay, &eventIsIdleRunnable);
-        MOZ_ASSERT(!eventIsIdleRunnable);
+        event = mNestedQueues.LastElement().mQueue->GetEvent(aPriority, lock,
+                                                             aLastEventDelay);
       }
 
       if (event) {
         break;
-      }
-
-      if (idleState) {
-        MOZ_ASSERT(noNestedQueue);
-        if (mBaseQueue->HasIdleRunnables(lock)) {
-          
-          
-          
-          
-          MutexAutoUnlock unlock(mLock);
-          idleState->UpdateCachedIdleDeadline(unlock);
-        } else {
-          
-          
-          MutexAutoUnlock unlock(mLock);
-          idleState->RanOutOfTasks(unlock);
-        }
-
-        
-        
-        
-        MOZ_ASSERT(
-            noNestedQueue == mNestedQueues.IsEmpty(),
-            "Who is pushing nested queues on us from some other thread?");
-        event = mBaseQueue->GetEvent(aPriority, lock, aLastEventDelay,
-                                     &eventIsIdleRunnable);
-        
-        
-        idleState->ClearCachedIdleDeadline();
-
-        if (event) {
-          break;
-        }
       }
 
       
@@ -201,19 +159,6 @@ already_AddRefed<nsIRunnable> ThreadEventQueue::GetEvent(
 
       AUTO_PROFILER_LABEL("ThreadEventQueue::GetEvent::Wait", IDLE);
       mEventsAvailable.Wait();
-    }
-  }
-
-  if (idleState) {
-    
-    
-    idleState->ForgetPendingTaskGuarantee();
-    if (event && !eventIsIdleRunnable) {
-      
-      
-      
-      
-      idleState->FlagNotIdle();
     }
   }
 
