@@ -1007,6 +1007,13 @@ class EditorBase : public nsIEditor,
 
     void AppendTargetRange(dom::StaticRange& aTargetRange);
 
+    
+
+
+    void MakeBeforeInputEventNonCancelable() {
+      mMakeBeforeInputEventNonCancelable = true;
+    }
+
     void Abort() { mAborted = true; }
     bool IsAborted() const { return mAborted; }
 
@@ -1218,6 +1225,9 @@ class EditorBase : public nsIEditor,
     bool mHasTriedToDispatchBeforeInputEvent;
     
     bool mBeforeInputEventCanceled;
+    
+    
+    bool mMakeBeforeInputEventNonCancelable;
 
 #ifdef DEBUG
     mutable bool mHasCanHandleChecked = false;
