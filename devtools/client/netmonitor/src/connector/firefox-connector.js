@@ -140,6 +140,7 @@ class FirefoxConnector {
       webConsoleFront: this.webConsoleFront,
       actions: this.actions,
       owner: this.owner,
+      resourceWatcher: this.toolbox.resourceWatcher,
     });
 
     

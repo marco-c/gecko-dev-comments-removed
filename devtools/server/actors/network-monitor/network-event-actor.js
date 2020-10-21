@@ -70,10 +70,12 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._isXHR = networkEvent.isXHR;
 
     this._cause = networkEvent.cause;
-    this._cause.stacktraceAvailable = !!(
-      this._stackTrace &&
-      (typeof this._stackTrace == "boolean" || this._stackTrace.length)
-    );
+    
+    
+    
+    if (this._cause.lastFrame) {
+      delete this._cause.lastFrame;
+    }
 
     this._fromCache = networkEvent.fromCache;
     this._fromServiceWorker = networkEvent.fromServiceWorker;
@@ -81,7 +83,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       networkEvent.isThirdPartyTrackingResource;
     this._referrerPolicy = networkEvent.referrerPolicy;
     this._channelId = networkEvent.channelId;
-
+    this._serial = networkEvent.serial;
     this._blockedReason = networkEvent.blockedReason;
     this._blockingExtension = networkEvent.blockingExtension;
 
@@ -119,7 +121,9 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       referrerPolicy: this._referrerPolicy,
       blockedReason: this._blockedReason,
       blockingExtension: this._blockingExtension,
-      channelId: this._channelId,
+      
+      stacktraceResourceId:
+        this._cause.type == "websocket" ? this._serial : this._channelId,
       updates: [],
     };
   },
@@ -257,23 +261,6 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       totalTime: this._totalTime,
       offsets: this._offsets,
       serverTimings: this._serverTimings,
-    };
-  },
-
-  
-
-
-
-
-
-  async getStackTrace() {
-    const stacktrace = this._stackTrace;
-    if (stacktrace && typeof stacktrace == "boolean") {
-      this._stackTrace = [];
-    }
-
-    return {
-      stacktrace,
     };
   },
 
@@ -491,10 +478,8 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     if (this.isDestroyed()) {
       return;
     }
-
-    this._onEventUpdate("responseCache", {
-      responseCache: content.responseCache,
-    });
+    this._response.responseCache = content.responseCache;
+    this._onEventUpdate("responseCache", {});
   },
 
   
