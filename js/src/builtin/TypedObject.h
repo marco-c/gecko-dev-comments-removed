@@ -336,12 +336,6 @@ class ReferenceTypeDescr : public SimpleTypeDescr {
 
 class ComplexTypeDescr : public TypeDescr {
  public:
-  
-  
-  TypedProto& instancePrototype() const {
-    return getReservedSlot(JS_DESCR_SLOT_TYPROTO).toObject().as<TypedProto>();
-  }
-
   bool allowConstruct() const {
     return getReservedSlot(JS_DESCR_SLOT_FLAGS).toInt32() &
            JS_DESCR_FLAG_ALLOW_CONSTRUCT;
@@ -532,8 +526,6 @@ class TypedObjectModuleObject : public NativeObject {
 
 
 class TypedObject : public JSObject {
-  static const bool IsTypedObjectClass = true;
-
   static MOZ_MUST_USE bool obj_getArrayElement(JSContext* cx,
                                                Handle<TypedObject*> typedObj,
                                                Handle<TypeDescr*> typeDescr,
@@ -677,11 +669,6 @@ class OutlineTypedObject : public TypedObject {
   static OutlineTypedObject* createDerived(JSContext* cx, HandleTypeDescr type,
                                            Handle<TypedObject*> typedContents,
                                            uint32_t offset);
-
-  static OutlineTypedObject* createOpaque(JSContext* cx, HandleTypeDescr descr,
-                                          Handle<TypedObject*> target,
-                                          uint32_t offset);
-
  private:
   
   void attach(ArrayBufferObject& buffer, uint32_t offset);
@@ -731,19 +718,7 @@ class InlineTypedObject : public TypedObject {
 
   static InlineTypedObject* create(JSContext* cx, HandleTypeDescr descr,
                                    gc::InitialHeap heap = gc::DefaultHeap);
-  static InlineTypedObject* createCopy(
-      JSContext* cx, Handle<InlineTypedObject*> templateObject,
-      gc::InitialHeap heap);
 };
-
-
-
-
-
-
-
-
-MOZ_MUST_USE bool NewOpaqueTypedObject(JSContext* cx, unsigned argc, Value* vp);
 
 
 
@@ -770,32 +745,9 @@ MOZ_MUST_USE bool ObjectIsTypedObject(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-MOZ_MUST_USE bool TypeDescrIsSimpleType(JSContext*, unsigned argc, Value* vp);
-
-
-
-
-
-
-MOZ_MUST_USE bool TypedObjectTypeDescr(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
 
 
 MOZ_MUST_USE bool ClampToUint8(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
-
-
-
-MOZ_MUST_USE bool GetTypedObjectModule(JSContext* cx, unsigned argc, Value* vp);
 
 
 
