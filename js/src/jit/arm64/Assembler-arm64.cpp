@@ -59,6 +59,19 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       floatRegIndex_++;
       break;
 
+#ifdef ENABLE_WASM_SIMD
+    case MIRType::Simd128:
+      if (floatRegIndex_ == NumFloatArgRegs) {
+        current_ = ABIArg(stackOffset_);
+        stackOffset_ += FloatRegister::SizeOfSimd128;
+        break;
+      }
+      current_ = ABIArg(FloatRegister(FloatRegisters::Encoding(floatRegIndex_),
+                                      FloatRegisters::Simd128));
+      floatRegIndex_++;
+      break;
+#endif
+
     default:
       
       

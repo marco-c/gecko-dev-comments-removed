@@ -326,7 +326,44 @@ class FloatRegisters {
   typedef FPRegisterID Encoding;
   typedef uint64_t SetType;
 
-  enum Kind : uint8_t { Double, Single, NumTypes };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  enum Kind : uint8_t {
+    Double,
+    Single,
+#ifdef ENABLE_WASM_SIMD
+    Simd128,
+#endif
+    NumTypes
+  };
+
+  static constexpr int NumScalarTypes = 2;
 
   static constexpr Code Invalid = 0x80;
 
@@ -339,10 +376,17 @@ class FloatRegisters {
         "d30", "d31", "s0",  "s1",  "s2",  "s3",  "s4",  "s5",  "s6",  "s7",
         "s8",  "s9",  "s10", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
         "s18", "s19", "s20", "s21", "s22", "s23", "s24", "s25", "s26", "s27",
-        "s28", "s29", "s30", "s31"};
-    static_assert(Total == sizeof(Names) / sizeof(Names[0]),
+        "s28", "s29", "s30", "s31",
+#ifdef ENABLE_WASM_SIMD
+        "v0",  "v1",  "v2",  "v3",  "v4",  "v5",  "v6",  "v7",  "v8",  "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+        "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29",
+        "v30", "v31",
+#endif
+    };
+    static_assert(TotalWithSimd == sizeof(Names) / sizeof(Names[0]),
                   "Table is the correct size");
-    if (code >= Total) {
+    if (code >= TotalWithSimd) {
       return "invalid";
     }
     return Names[code];
@@ -351,7 +395,8 @@ class FloatRegisters {
   static Code FromName(const char* name);
 
   static const uint32_t TotalPhys = 32;
-  static const uint32_t Total = TotalPhys * NumTypes;
+  static const uint32_t Total = TotalPhys * NumScalarTypes;
+  static const uint32_t TotalWithSimd = TotalPhys * NumTypes;
   static const uint32_t Allocatable = 31;  
 
   static_assert(sizeof(SetType) * 8 >= Total,
@@ -401,10 +446,12 @@ class FloatRegisters {
 
   static constexpr Encoding encoding(Code c) {
     
+    
     return Encoding(c & 31);
   }
 
   static constexpr Kind kind(Code c) {
+    
     
     return Kind((c >> 5) & 3);
   }
@@ -461,6 +508,8 @@ struct FloatRegister {
     return 63 - mozilla::CountLeadingZeroes64(x);
   }
 
+  static constexpr size_t SizeOfSimd128 = 16;
+
  private:
   
   
@@ -480,7 +529,7 @@ struct FloatRegister {
       : encoding_(0), kind_(FloatRegisters::Double), invalid_(true) {}
 
   static FloatRegister FromCode(uint32_t i) {
-    MOZ_ASSERT(i < Codes::Total);
+    MOZ_ASSERT(i < Codes::TotalWithSimd);
     return FloatRegister(FloatRegisters::encoding(i), FloatRegisters::kind(i));
   }
 
@@ -494,7 +543,11 @@ struct FloatRegister {
   }
   bool isSimd128() const {
     MOZ_ASSERT(!invalid_);
+#ifdef ENABLE_WASM_SIMD
+    return kind_ == FloatRegisters::Simd128;
+#else
     return false;
+#endif
   }
   bool isInvalid() const { return invalid_; }
 
@@ -506,15 +559,29 @@ struct FloatRegister {
     MOZ_ASSERT(!invalid_);
     return FloatRegister(Encoding(encoding_), FloatRegisters::Double);
   }
-  FloatRegister asSimd128() const { MOZ_CRASH(); }
+  FloatRegister asSimd128() const {
+    MOZ_ASSERT(!invalid_);
+#ifdef ENABLE_WASM_SIMD
+    return FloatRegister(Encoding(encoding_), FloatRegisters::Simd128);
+#else
+    MOZ_CRASH("No SIMD support");
+#endif
+  }
 
   constexpr uint32_t size() const {
     MOZ_ASSERT(!invalid_);
     if (kind_ == FloatRegisters::Double) {
       return sizeof(double);
     }
-    MOZ_ASSERT(kind_ == FloatRegisters::Single);
-    return sizeof(float);
+    if (kind_ == FloatRegisters::Single) {
+      return sizeof(float);
+    }
+#ifdef ENABLE_WASM_SIMD
+    MOZ_ASSERT(kind_ == FloatRegisters::Simd128);
+    return 16;
+#else
+    MOZ_CRASH("No SIMD support");
+#endif
   }
 
   constexpr Code code() const {
@@ -552,7 +619,10 @@ struct FloatRegister {
     return kind_ == other.kind_;
   }
 
-  uint32_t numAliased() const { return Codes::NumTypes; }
+  
+  
+  
+  uint32_t numAliased() const { return Codes::NumScalarTypes; }
   uint32_t numAlignedAliased() { return numAliased(); }
 
   FloatRegister aliased(uint32_t aliasIdx) {
@@ -585,6 +655,10 @@ struct FloatRegister {
   static TypedRegisterSet<FloatRegister> ReduceSetForPush(
       const TypedRegisterSet<FloatRegister>& s);
   static uint32_t GetPushSizeInBytes(const TypedRegisterSet<FloatRegister>& s);
+#ifdef ENABLE_WASM_SIMD
+  static uint32_t GetPushSizeInBytesForWasmStubs(
+      const TypedRegisterSet<FloatRegister>& s);
+#endif
   uint32_t getRegisterDumpOffsetInBytes();
 };
 

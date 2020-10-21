@@ -2217,9 +2217,7 @@ MachineState MachineState::FromBailout(RegisterDump::GPRArray& regs,
     machine.setRegisterLocation(
         FloatRegister(FloatRegisters::Encoding(i), FloatRegisters::Double),
         &fpregs[i]);
-#  ifdef ENABLE_WASM_SIMD
-#    error "More care needed here"
-#  endif
+    
   }
 
 #elif defined(JS_CODEGEN_NONE)

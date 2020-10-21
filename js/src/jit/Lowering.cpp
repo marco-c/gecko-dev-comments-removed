@@ -881,7 +881,8 @@ void LIRGenerator::visitTest(MTest* test) {
     }
   }
 
-#ifdef ENABLE_WASM_SIMD
+#if defined(ENABLE_WASM_SIMD) && \
+    (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64))
   
   
   
@@ -5660,7 +5661,8 @@ void LIRGenerator::visitWasmFloatConstant(MWasmFloatConstant* ins) {
     case MIRType::Float32:
       define(new (alloc()) LFloat32(ins->toFloat32()), ins);
       break;
-#ifdef ENABLE_WASM_SIMD
+#if defined(ENABLE_WASM_SIMD) && \
+    (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64))
     case MIRType::Simd128:
       define(new (alloc()) LSimd128(ins->toSimd128()), ins);
       break;

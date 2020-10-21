@@ -3363,6 +3363,9 @@ class DebugFrame {
   
   uint32_t padding_;
 #endif
+#if defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
+  uint64_t padding_;
+#endif
 
  private:
   
