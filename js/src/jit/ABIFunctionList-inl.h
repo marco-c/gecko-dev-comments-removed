@@ -10,6 +10,9 @@
 #include "jslibmath.h"  
 #include "jsmath.h"     
                         
+#include "builtin/RegExp.h"     
+                                
+
 #include "irregexp/RegExpAPI.h"
 
 
@@ -50,6 +53,8 @@ namespace jit {
   _(js::irregexp::GrowBacktrackStack)                       \
   _(js::NumberMod)                                          \
   _(js::powi)                                               \
+  _(js::RegExpInstanceOptimizableRaw)                       \
+  _(js::RegExpPrototypeOptimizableRaw)                      \
 
 
 
