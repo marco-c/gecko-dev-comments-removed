@@ -1271,6 +1271,10 @@ add_task(async function perWindowState() {
   Assert.equal(action.getTitle(newWindow), newGlobalTitle, "Title: new window");
 
   
+  newWindow.document.getElementById("pageActionButton").click();
+  await BrowserTestUtils.waitForEvent(newWindow.document, "popupshowing", true);
+
+  
   let panelButtonID = BrowserPageActions.panelButtonNodeIDForActionID(
     action.id
   );
