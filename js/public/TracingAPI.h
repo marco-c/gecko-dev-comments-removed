@@ -178,9 +178,6 @@ class JS_PUBLIC_API JSTracer {
 
   bool traceWeakEdges() const { return traceWeakEdges_; }
   bool canSkipJsids() const { return canSkipJsids_; }
-#ifdef DEBUG
-  bool checkEdges() { return checkEdges_; }
-#endif
 
   
   
@@ -200,11 +197,6 @@ class JS_PUBLIC_API JSTracer {
   
   void setCanSkipJsids(bool value) { canSkipJsids_ = value; }
 
-#ifdef DEBUG
-  
-  void setCheckEdges(bool check) { checkEdges_ = check; }
-#endif
-
  private:
   JSRuntime* const runtime_;
   JS::TracingContext* maybeContext_ = nullptr;
@@ -215,10 +207,6 @@ class JS_PUBLIC_API JSTracer {
   bool traceWeakEdges_ = true;
 
   bool canSkipJsids_ = false;
-
-#ifdef DEBUG
-  bool checkEdges_ = true;
-#endif
 };
 
 namespace js {
