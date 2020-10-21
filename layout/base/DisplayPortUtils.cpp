@@ -56,8 +56,18 @@ DisplayPortMargins DisplayPortMargins::WithNoAdjustment(
                         CSSToScreenScale2D(1.0, 1.0));
 }
 
-ScreenMargin DisplayPortMargins::GetRelativeToLayoutViewport() const {
-  ScreenPoint scrollDelta = (mVisualOffset - mLayoutOffset) * mScale;
+ScreenMargin DisplayPortMargins::GetRelativeToLayoutViewport(
+    ContentGeometryType aGeometryType,
+    nsIScrollableFrame* aScrollableFrame) const {
+  
+  
+  
+  
+  
+  
+  CSSPoint scrollDeltaCss =
+      ComputeAsyncTranslation(aGeometryType, aScrollableFrame);
+  ScreenPoint scrollDelta = scrollDeltaCss * mScale;
   ScreenMargin margins = mMargins;
   margins.left -= scrollDelta.x;
   margins.right += scrollDelta.x;
@@ -76,6 +86,58 @@ std::ostream& operator<<(std::ostream& aOs,
         << aMargins.mLayoutOffset << "}";
   }
   return aOs;
+}
+
+CSSPoint DisplayPortMargins::ComputeAsyncTranslation(
+    ContentGeometryType aGeometryType,
+    nsIScrollableFrame* aScrollableFrame) const {
+  
+  
+  
+  if (aGeometryType == ContentGeometryType::Scrolled) {
+    return mVisualOffset - mLayoutOffset;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aScrollableFrame) {
+    
+    
+    return CSSPoint();
+  }
+  
+  MOZ_ASSERT(aScrollableFrame->IsRootScrollFrameOfDocument());
+  nsIFrame* scrollFrame = do_QueryFrame(aScrollableFrame);
+  if (!scrollFrame->PresShell()->IsVisualViewportSizeSet()) {
+    
+    
+    return CSSPoint();
+  }
+  
+  
+  const CSSRect visualViewport{
+      mVisualOffset,
+      
+      
+      
+      
+      
+      
+      CSSSize::FromAppUnits(scrollFrame->PresShell()->GetVisualViewportSize())};
+  const CSSRect scrollableRect = CSSRect::FromAppUnits(
+      nsLayoutUtils::CalculateExpandedScrollableRect(scrollFrame));
+  CSSRect asyncLayoutViewport{
+      mLayoutOffset,
+      CSSSize::FromAppUnits(aScrollableFrame->GetScrollPortRect().Size())};
+  FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
+      visualViewport, scrollableRect,  asyncLayoutViewport);
+  return mVisualOffset - asyncLayoutViewport.TopLeft();
 }
 
 
@@ -177,8 +239,9 @@ static nsRect GetDisplayPortFromMarginsData(
     isRoot = true;
   }
 
+  nsIScrollableFrame* scrollableFrame = frame->GetScrollTargetFrame();
   nsPoint scrollPos;
-  if (nsIScrollableFrame* scrollableFrame = frame->GetScrollTargetFrame()) {
+  if (scrollableFrame) {
     scrollPos = scrollableFrame->GetScrollPosition();
   }
 
@@ -231,7 +294,8 @@ static nsRect GetDisplayPortFromMarginsData(
 
   bool useWebRender = gfxVars::UseWebRender();
 
-  ScreenMargin margins = aMarginsData->mMargins.GetRelativeToLayoutViewport();
+  ScreenMargin margins = aMarginsData->mMargins.GetRelativeToLayoutViewport(
+      aOptions.mGeometryType, scrollableFrame);
 
   if (presShell->IsDisplayportSuppressed()) {
     alignment = ScreenSize(1, 1);

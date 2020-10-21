@@ -35,11 +35,15 @@ enum class MaxSizeExceededBehaviour {
   Drop,
 };
 
+
+enum class ContentGeometryType { Scrolled, Fixed };
+
 struct DisplayPortOptions {
   
   DisplayportRelativeTo mRelativeTo = DisplayportRelativeTo::ScrollPort;
   MaxSizeExceededBehaviour mMaxSizeExceededBehaviour =
       MaxSizeExceededBehaviour::Assert;
+  ContentGeometryType mGeometryType = ContentGeometryType::Scrolled;
 
   
   DisplayPortOptions With(DisplayportRelativeTo aRelativeTo) const {
@@ -51,6 +55,11 @@ struct DisplayPortOptions {
       MaxSizeExceededBehaviour aMaxSizeExceededBehaviour) const {
     DisplayPortOptions result = *this;
     result.mMaxSizeExceededBehaviour = aMaxSizeExceededBehaviour;
+    return result;
+  }
+  DisplayPortOptions With(ContentGeometryType aGeometryType) const {
+    DisplayPortOptions result = *this;
+    result.mGeometryType = aGeometryType;
     return result;
   }
 };
@@ -92,10 +101,22 @@ struct DisplayPortMargins {
 
   static DisplayPortMargins Empty() { return WithNoAdjustment(ScreenMargin()); }
 
-  ScreenMargin GetRelativeToLayoutViewport() const;
+  
+  
+  
+  
+  
+  
+  ScreenMargin GetRelativeToLayoutViewport(
+      ContentGeometryType aGeometryType,
+      nsIScrollableFrame* aScrollableFrame) const;
 
   friend std::ostream& operator<<(std::ostream& aOs,
                                   const DisplayPortMargins& aMargins);
+
+ private:
+  CSSPoint ComputeAsyncTranslation(ContentGeometryType aGeometryType,
+                                   nsIScrollableFrame* aScrollableFrame) const;
 };
 
 struct DisplayPortMarginsPropertyData {
