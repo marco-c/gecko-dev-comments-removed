@@ -367,6 +367,11 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
   InitUnwriteableMargin(aHdc);
 
   int pixelsPerInchY = ::GetDeviceCaps(aHdc, LOGPIXELSY);
+  int physicalHeight = ::GetDeviceCaps(aHdc, PHYSICALHEIGHT);
+  double physicalHeightInch = double(physicalHeight) / pixelsPerInchY;
+  int pixelsPerInchX = ::GetDeviceCaps(aHdc, LOGPIXELSX);
+  int physicalWidth = ::GetDeviceCaps(aHdc, PHYSICALWIDTH);
+  double physicalWidthInch = double(physicalWidth) / pixelsPerInchX;
 
   
   double sizeUnitToTenthsOfAmm =
@@ -376,11 +381,14 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
   } else {
     
     
-    int physicalHeight = ::GetDeviceCaps(aHdc, PHYSICALHEIGHT);
-    double physicalHeightInch = double(physicalHeight) / pixelsPerInchY;
+    
+    
+    double paperHeightInch = mOrientation == kPortraitOrientation
+                                 ? physicalHeightInch
+                                 : physicalWidthInch;
     mPaperHeight = mPaperSizeUnit == kPaperSizeInches
-                       ? physicalHeightInch
-                       : physicalHeightInch * MM_PER_INCH_FLOAT;
+                       ? paperHeightInch
+                       : paperHeightInch * MM_PER_INCH_FLOAT;
   }
 
   if (aDevMode->dmFields & DM_PAPERWIDTH) {
@@ -388,12 +396,14 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
   } else {
     
     
-    int pixelsPerInchX = ::GetDeviceCaps(aHdc, LOGPIXELSX);
-    int physicalWidth = ::GetDeviceCaps(aHdc, PHYSICALWIDTH);
-    double physicalWidthInch = double(physicalWidth) / pixelsPerInchX;
+    
+    
+    double paperWidthInch = mOrientation == kPortraitOrientation
+                                ? physicalWidthInch
+                                : physicalHeightInch;
     mPaperWidth = mPaperSizeUnit == kPaperSizeInches
-                      ? physicalWidthInch
-                      : physicalWidthInch * MM_PER_INCH_FLOAT;
+                      ? paperWidthInch
+                      : paperWidthInch * MM_PER_INCH_FLOAT;
   }
 
   
