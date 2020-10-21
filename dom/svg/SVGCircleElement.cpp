@@ -72,9 +72,13 @@ already_AddRefed<DOMSVGAnimatedLength> SVGCircleElement::R() {
 bool SVGCircleElement::HasValidDimensions() const {
   float r;
 
-  DebugOnly<bool> ok = SVGGeometryProperty::ResolveAll<SVGT::R>(this, &r);
-  MOZ_ASSERT(ok, "SVGGeometryProperty::ResolveAll failed");
-  return r > 0;
+  if (SVGGeometryProperty::ResolveAll<SVGT::R>(this, &r)) {
+    return r > 0;
+  }
+  
+  
+  return mLengthAttributes[ATTR_R].IsExplicitlySet() &&
+         mLengthAttributes[ATTR_R].GetAnimValInSpecifiedUnits() > 0;
 }
 
 SVGElement::LengthAttributesInfo SVGCircleElement::GetLengthInfo() {

@@ -210,14 +210,12 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromMpathElem(
   mPathSourceType = ePathSourceType_Mpath;
 
   
-  SVGPathElement* pathElem = aMpathElem->GetReferencedPath();
-  
-  
-  if (pathElem && pathElem->HasValidDimensions()) {
-    bool ok =
-        pathElem->GetDistancesFromOriginToEndsOfVisibleSegments(&mPathVertices);
+  SVGGeometryElement* shapeElem = aMpathElem->GetReferencedPath();
+  if (shapeElem && shapeElem->HasValidDimensions()) {
+    bool ok = shapeElem->GetDistancesFromOriginToEndsOfVisibleSegments(
+        &mPathVertices);
     if (ok && mPathVertices.Length()) {
-      mPath = pathElem->GetOrBuildPathForMeasuring();
+      mPath = shapeElem->GetOrBuildPathForMeasuring();
     }
   }
 }

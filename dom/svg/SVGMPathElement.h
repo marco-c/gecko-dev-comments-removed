@@ -17,7 +17,7 @@ nsresult NS_NewSVGMPathElement(
 
 namespace mozilla {
 namespace dom {
-class SVGPathElement;
+class SVGGeometryElement;
 
 using SVGMPathElementBase = SVGElement;
 
@@ -61,7 +61,7 @@ class SVGMPathElement final : public SVGMPathElementBase,
   
   
   
-  SVGPathElement* GetReferencedPath();
+  SVGGeometryElement* GetReferencedPath();
 
   
   already_AddRefed<DOMSVGAnimatedString> Href();

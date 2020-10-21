@@ -178,6 +178,17 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
 
 
+  virtual bool GetDistancesFromOriginToEndsOfVisibleSegments(
+      FallibleTArray<double>* aOutput) {
+    aOutput->Clear();
+    double distances[] = {0.0, GetTotalLength()};
+    return aOutput->AppendElements(Span<double>(distances), fallible);
+  }
+
+  
+
+
+
 
 
 
