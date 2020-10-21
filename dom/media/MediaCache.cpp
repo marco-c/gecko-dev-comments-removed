@@ -303,8 +303,6 @@ class MediaCache {
       LOG("~MediaCache(Global file-backed MediaCache)");
       
       gMediaCache = nullptr;
-      LOG("MediaCache::~MediaCache(this=%p) MEDIACACHE_WATERMARK_KB=%u", this,
-          unsigned(mIndexWatermark * MediaCache::BLOCK_SIZE / 1024));
       LOG("MediaCache::~MediaCache(this=%p) "
           "MEDIACACHE_BLOCKOWNERS_WATERMARK=%u",
           this, unsigned(mBlockOwnersWatermark));
@@ -452,8 +450,6 @@ class MediaCache {
   nsTArray<MediaCacheStream*> mStreams;
   
   nsTArray<Block> mIndex;
-  
-  int32_t mIndexWatermark = 0;
   
   uint32_t mBlockOwnersWatermark = 0;
   
@@ -922,7 +918,6 @@ int32_t MediaCache::FindBlockForIncomingData(AutoLock& aLock, TimeStamp aNow,
       
       
       mIndex.AppendElement();
-      mIndexWatermark = std::max(mIndexWatermark, blockIndex + 1);
       mFreeBlocks.AddFirstBlock(blockIndex);
       return blockIndex;
     }
