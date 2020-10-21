@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_none_MacroAssembler_none_h
 #define jit_none_MacroAssembler_none_h
@@ -67,7 +67,7 @@ static constexpr Register RegExpMatcherStringReg{Registers::invalid_reg};
 static constexpr Register RegExpMatcherLastIndexReg{Registers::invalid_reg};
 static constexpr Register RegExpMatcherStickyReg{Registers::invalid_reg};
 
-// Uses |invalid_reg2| to avoid static_assert failures.
+
 static constexpr Register JSReturnReg_Type{Registers::invalid_reg2};
 static constexpr Register JSReturnReg_Data{Registers::invalid_reg2};
 static constexpr Register JSReturnReg{Registers::invalid_reg2};
@@ -602,7 +602,7 @@ class MacroAssemblerNone : public Assembler {
 
   Register getStackPointer() const { MOZ_CRASH(); }
 
-  // Instrumentation for entering and leaving the profiler.
+  
   void profilerEnterFrame(Register, Register) { MOZ_CRASH(); }
   void profilerExitFrame() { MOZ_CRASH(); }
 
@@ -619,14 +619,13 @@ class ABIArgGenerator {
   ABIArg next(MIRType) { MOZ_CRASH(); }
   ABIArg& current() { MOZ_CRASH(); }
   uint32_t stackBytesConsumedSoFar() const { MOZ_CRASH(); }
-  void increaseStackOffset(uint32_t) { MOZ_CRASH(); }
 };
 
 static inline bool GetTempRegForIntArg(uint32_t, uint32_t, Register*) {
   MOZ_CRASH();
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_none_MacroAssembler_none_h */
+#endif 

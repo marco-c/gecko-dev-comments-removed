@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/arm/MacroAssembler-arm.h"
 
@@ -23,9 +23,9 @@
 #include "jit/JitRuntime.h"
 #include "jit/MacroAssembler.h"
 #include "jit/MoveEmitter.h"
-#include "js/ScalarType.h"  // js::Scalar::Type
+#include "js/ScalarType.h"  
 #include "util/Memory.h"
-#include "vm/JitActivation.h"  // js::jit::JitActivation
+#include "vm/JitActivation.h"  
 #include "vm/JSContext.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -40,9 +40,9 @@ using mozilla::IsPositiveZero;
 using mozilla::Maybe;
 
 bool isValueDTRDCandidate(ValueOperand& val) {
-  // In order to be used for a DTRD memory function, the two target registers
-  // need to be a) Adjacent, with the tag larger than the payload, and b)
-  // Aligned to a multiple of two.
+  
+  
+  
   if ((val.typeReg().code() != (val.payloadReg().code() + 1))) {
     return false;
   }
@@ -53,14 +53,14 @@ bool isValueDTRDCandidate(ValueOperand& val) {
 }
 
 void MacroAssemblerARM::convertBoolToInt32(Register source, Register dest) {
-  // Note that C++ bool is only 1 byte, so zero extend it to clear the
-  // higher-order bits.
+  
+  
   as_and(dest, source, Imm8(0xff));
 }
 
 void MacroAssemblerARM::convertInt32ToDouble(Register src,
                                              FloatRegister dest_) {
-  // Direct conversions aren't possible.
+  
   VFPRegister dest = VFPRegister(dest_);
   as_vxfer(src, InvalidReg, dest.sintOverlay(), CoreToFloat);
   as_vcvt(dest, dest.sintOverlay());
@@ -92,7 +92,7 @@ void MacroAssemblerARM::convertInt32ToDouble(const BaseIndex& src,
 
 void MacroAssemblerARM::convertUInt32ToDouble(Register src,
                                               FloatRegister dest_) {
-  // Direct conversions aren't possible.
+  
   VFPRegister dest = VFPRegister(dest_);
   as_vxfer(src, InvalidReg, dest.uintOverlay(), CoreToFloat);
   as_vcvt(dest, dest.uintOverlay());
@@ -102,7 +102,7 @@ static const double TO_DOUBLE_HIGH_SCALE = 0x100000000;
 
 void MacroAssemblerARM::convertUInt32ToFloat32(Register src,
                                                FloatRegister dest_) {
-  // Direct conversions aren't possible.
+  
   VFPRegister dest = VFPRegister(dest_);
   as_vxfer(src, InvalidReg, dest.uintOverlay(), CoreToFloat);
   as_vcvt(VFPRegister(dest).singleOverlay(), dest.uintOverlay());
@@ -114,22 +114,22 @@ void MacroAssemblerARM::convertDoubleToFloat32(FloatRegister src,
   as_vcvt(VFPRegister(dest).singleOverlay(), VFPRegister(src), false, c);
 }
 
-// Checks whether a double is representable as a 32-bit integer. If so, the
-// integer is written to the output register. Otherwise, a bailout is taken to
-// the given snapshot. This function overwrites the scratch float register.
+
+
+
 void MacroAssemblerARM::convertDoubleToInt32(FloatRegister src, Register dest,
                                              Label* fail,
                                              bool negativeZeroCheck) {
-  // Convert the floating point value to an integer, if it did not fit, then
-  // when we convert it *back* to a float, it will have a different value,
-  // which we can test.
+  
+  
+  
   ScratchDoubleScope scratchDouble(asMasm());
   ScratchRegisterScope scratch(asMasm());
 
   FloatRegister scratchSIntReg = scratchDouble.sintOverlay();
 
   ma_vcvt_F64_I32(src, scratchSIntReg);
-  // Move the value into the dest register.
+  
   ma_vxfer(scratchSIntReg, dest);
   ma_vcvt_I32_F64(scratchSIntReg, scratchDouble);
   ma_vcmp(src, scratchDouble);
@@ -138,33 +138,33 @@ void MacroAssemblerARM::convertDoubleToInt32(FloatRegister src, Register dest,
 
   if (negativeZeroCheck) {
     as_cmp(dest, Imm8(0));
-    // Test and bail for -0.0, when integer result is 0. Move the top word
-    // of the double into the output reg, if it is non-zero, then the
-    // original value was -0.0.
+    
+    
+    
     as_vxfer(dest, InvalidReg, src, FloatToCore, Assembler::Equal, 1);
     ma_cmp(dest, Imm32(0x80000000), scratch, Assembler::Equal);
     ma_b(fail, Assembler::Equal);
   }
 }
 
-// Checks whether a float32 is representable as a 32-bit integer. If so, the
-// integer is written to the output register. Otherwise, a bailout is taken to
-// the given snapshot. This function overwrites the scratch float register.
+
+
+
 void MacroAssemblerARM::convertFloat32ToInt32(FloatRegister src, Register dest,
                                               Label* fail,
                                               bool negativeZeroCheck) {
-  // Converting the floating point value to an integer and then converting it
-  // back to a float32 would not work, as float to int32 conversions are
-  // clamping (e.g. float(INT32_MAX + 1) would get converted into INT32_MAX
-  // and then back to float(INT32_MAX + 1)).  If this ever happens, we just
-  // bail out.
+  
+  
+  
+  
+  
   ScratchFloat32Scope scratchFloat(asMasm());
   ScratchRegisterScope scratch(asMasm());
 
   FloatRegister ScratchSIntReg = scratchFloat.sintOverlay();
   ma_vcvt_F32_I32(src, ScratchSIntReg);
 
-  // Store the result
+  
   ma_vxfer(ScratchSIntReg, dest);
 
   ma_vcvt_I32_F32(ScratchSIntReg, scratchFloat);
@@ -172,16 +172,16 @@ void MacroAssemblerARM::convertFloat32ToInt32(FloatRegister src, Register dest,
   as_vmrs(pc);
   ma_b(fail, Assembler::VFP_NotEqualOrUnordered);
 
-  // Bail out in the clamped cases.
+  
   ma_cmp(dest, Imm32(0x7fffffff), scratch);
   ma_cmp(dest, Imm32(0x80000000), scratch, Assembler::NotEqual);
   ma_b(fail, Assembler::Equal);
 
   if (negativeZeroCheck) {
     as_cmp(dest, Imm8(0));
-    // Test and bail for -0.0, when integer result is 0. Move the float into
-    // the output reg, and if it is non-zero then the original value was
-    // -0.0
+    
+    
+    
     as_vxfer(dest, InvalidReg, VFPRegister(src).singleOverlay(), FloatToCore,
              Assembler::Equal, 0);
     ma_cmp(dest, Imm32(0x80000000), scratch, Assembler::Equal);
@@ -198,7 +198,7 @@ void MacroAssemblerARM::convertFloat32ToDouble(FloatRegister src,
 
 void MacroAssemblerARM::convertInt32ToFloat32(Register src,
                                               FloatRegister dest) {
-  // Direct conversions aren't possible.
+  
   as_vxfer(src, InvalidReg, dest.sintOverlay(), CoreToFloat);
   as_vcvt(dest.singleOverlay(), dest.sintOverlay());
 }
@@ -223,11 +223,11 @@ bool MacroAssemblerARM::alu_dbl(Register src1, Imm32 imm, Register dest,
     return false;
   }
 
-  // For the most part, there is no good reason to set the condition codes for
-  // the first instruction. We can do better things if the second instruction
-  // doesn't have a dest, such as check for overflow by doing first operation
-  // don't do second operation if first operation overflowed. This preserves
-  // the overflow condition code. Unfortunately, it is horribly brittle.
+  
+  
+  
+  
+  
   as_alu(dest, src1, Operand2(both.fst()), interop, LeaveCC, c);
   as_alu(dest, dest, Operand2(both.snd()), op, s, c);
   return true;
@@ -236,49 +236,49 @@ bool MacroAssemblerARM::alu_dbl(Register src1, Imm32 imm, Register dest,
 void MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, ALUOp op, SBit s,
                                Condition c) {
-  // ma_mov should be used for moves.
+  
   MOZ_ASSERT(op != OpMov);
   MOZ_ASSERT(op != OpMvn);
   MOZ_ASSERT(src1 != scratch);
 
-  // As it turns out, if you ask for a compare-like instruction you *probably*
-  // want it to set condition codes.
+  
+  
   MOZ_ASSERT_IF(dest == InvalidReg, s == SetCC);
 
-  // The operator gives us the ability to determine how this can be used.
+  
   Imm8 imm8 = Imm8(imm.value);
-  // One instruction: If we can encode it using an imm8m, then do so.
+  
   if (!imm8.invalid()) {
     as_alu(dest, src1, imm8, op, s, c);
     return;
   }
 
-  // One instruction, negated:
+  
   Imm32 negImm = imm;
   Register negDest;
   ALUOp negOp = ALUNeg(op, dest, scratch, &negImm, &negDest);
   Imm8 negImm8 = Imm8(negImm.value);
-  // 'add r1, r2, -15' can be replaced with 'sub r1, r2, 15'.
-  // The dest can be replaced (InvalidReg => scratch).
-  // This is useful if we wish to negate tst. tst has an invalid (aka not
-  // used) dest, but its negation bic requires a dest.
+  
+  
+  
+  
   if (negOp != OpInvalid && !negImm8.invalid()) {
     as_alu(negDest, src1, negImm8, negOp, s, c);
     return;
   }
 
-  // Start by attempting to generate a two instruction form. Some things
-  // cannot be made into two-inst forms correctly. Namely, adds dest, src,
-  // 0xffff. Since we want the condition codes (and don't know which ones
-  // will be checked), we need to assume that the overflow flag will be
-  // checked and add{,s} dest, src, 0xff00; add{,s} dest, dest, 0xff is not
-  // guaranteed to set the overflof flag the same as the (theoretical) one
-  // instruction variant.
+  
+  
+  
+  
+  
+  
+  
   if (alu_dbl(src1, imm, dest, op, s, c)) {
     return;
   }
 
-  // And try with its negative.
+  
   if (negOp != OpInvalid && alu_dbl(src1, negImm, negDest, negOp, s, c)) {
     return;
   }
@@ -317,13 +317,13 @@ BufferOffset MacroAssemblerARM::ma_movPatchable(ImmPtr imm, Register dest,
   return ma_movPatchable(Imm32(int32_t(imm.value)), dest, c);
 }
 
-/* static */
+
 template <class Iter>
 void MacroAssemblerARM::ma_mov_patch(Imm32 imm32, Register dest,
                                      Assembler::Condition c, RelocStyle rs,
                                      Iter iter) {
-  // The current instruction must be an actual instruction,
-  // not automatically-inserted boilerplate.
+  
+  
   MOZ_ASSERT(iter.cur());
   MOZ_ASSERT(iter.cur() == iter.maybeSkipAutomaticInstructions());
 
@@ -357,25 +357,25 @@ void MacroAssemblerARM::ma_mov(Register src, Register dest, SBit s,
 
 void MacroAssemblerARM::ma_mov(Imm32 imm, Register dest,
                                Assembler::Condition c) {
-  // Try mov with Imm8 operand.
+  
   Imm8 imm8 = Imm8(imm.value);
   if (!imm8.invalid()) {
     as_alu(dest, InvalidReg, imm8, OpMov, LeaveCC, c);
     return;
   }
 
-  // Try mvn with Imm8 operand.
+  
   Imm8 negImm8 = Imm8(~imm.value);
   if (!negImm8.invalid()) {
     as_alu(dest, InvalidReg, negImm8, OpMvn, LeaveCC, c);
     return;
   }
 
-  // Try movw/movt.
+  
   if (HasMOVWT()) {
-    // ARMv7 supports movw/movt. movw zero-extends its 16 bit argument,
-    // so we can set the register this way. movt leaves the bottom 16
-    // bits in tact, so we always need a movw.
+    
+    
+    
     as_movw(dest, Imm16(imm.value & 0xffff), c);
     if (uint32_t(imm.value) >> 16) {
       as_movt(dest, Imm16(uint32_t(imm.value) >> 16), c);
@@ -383,7 +383,7 @@ void MacroAssemblerARM::ma_mov(Imm32 imm, Register dest,
     return;
   }
 
-  // If we don't have movw/movt, we need a load.
+  
   as_Imm32Pool(dest, imm.value, c);
 }
 
@@ -398,7 +398,7 @@ void MacroAssemblerARM::ma_mov(ImmGCPtr ptr, Register dest) {
   writeDataRelocation(offset, ptr);
 }
 
-// Shifts (just a move with a shifting op2)
+
 void MacroAssemblerARM::ma_lsl(Imm32 shift, Register src, Register dst) {
   as_mov(dst, lsl(src, shift.value));
 }
@@ -419,7 +419,7 @@ void MacroAssemblerARM::ma_rol(Imm32 shift, Register src, Register dst) {
   as_mov(dst, rol(src, shift.value));
 }
 
-// Shifts (just a move with a shifting op2)
+
 void MacroAssemblerARM::ma_lsl(Register shift, Register src, Register dst) {
   as_mov(dst, lsl(src, shift));
 }
@@ -442,19 +442,19 @@ void MacroAssemblerARM::ma_rol(Register shift, Register src, Register dst,
   as_mov(dst, ror(src, scratch));
 }
 
-// Move not (dest <- ~src)
+
 void MacroAssemblerARM::ma_mvn(Register src1, Register dest, SBit s,
                                Assembler::Condition c) {
   as_alu(dest, InvalidReg, O2Reg(src1), OpMvn, s, c);
 }
 
-// Negate (dest <- -src), src is a register, rather than a general op2.
+
 void MacroAssemblerARM::ma_neg(Register src1, Register dest, SBit s,
                                Assembler::Condition c) {
   as_rsb(dest, src1, Imm8(0), s, c);
 }
 
-// And.
+
 void MacroAssemblerARM::ma_and(Register src, Register dest, SBit s,
                                Assembler::Condition c) {
   ma_and(dest, src, dest);
@@ -477,14 +477,14 @@ void MacroAssemblerARM::ma_and(Imm32 imm, Register src1, Register dest,
   ma_alu(src1, imm, dest, scratch, OpAnd, s, c);
 }
 
-// Bit clear (dest <- dest & ~imm) or (dest <- src1 & ~src2).
+
 void MacroAssemblerARM::ma_bic(Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, SBit s,
                                Assembler::Condition c) {
   ma_alu(dest, imm, dest, scratch, OpBic, s, c);
 }
 
-// Exclusive or.
+
 void MacroAssemblerARM::ma_eor(Register src, Register dest, SBit s,
                                Assembler::Condition c) {
   ma_eor(dest, src, dest, s, c);
@@ -507,7 +507,7 @@ void MacroAssemblerARM::ma_eor(Imm32 imm, Register src1, Register dest,
   ma_alu(src1, imm, dest, scratch, OpEor, s, c);
 }
 
-// Or.
+
 void MacroAssemblerARM::ma_orr(Register src, Register dest, SBit s,
                                Assembler::Condition c) {
   ma_orr(dest, src, dest, s, c);
@@ -530,8 +530,8 @@ void MacroAssemblerARM::ma_orr(Imm32 imm, Register src1, Register dest,
   ma_alu(src1, imm, dest, scratch, OpOrr, s, c);
 }
 
-// Arithmetic-based ops.
-// Add with carry.
+
+
 void MacroAssemblerARM::ma_adc(Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, SBit s,
                                Condition c) {
@@ -548,7 +548,7 @@ void MacroAssemblerARM::ma_adc(Register src1, Register src2, Register dest,
   as_alu(dest, src1, O2Reg(src2), OpAdc, s, c);
 }
 
-// Add.
+
 void MacroAssemblerARM::ma_add(Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, SBit s,
                                Condition c) {
@@ -576,7 +576,7 @@ void MacroAssemblerARM::ma_add(Register src1, Imm32 op, Register dest,
   ma_alu(src1, op, dest, scratch, OpAdd, s, c);
 }
 
-// Subtract with carry.
+
 void MacroAssemblerARM::ma_sbc(Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, SBit s,
                                Condition c) {
@@ -593,7 +593,7 @@ void MacroAssemblerARM::ma_sbc(Register src1, Register src2, Register dest,
   as_alu(dest, src1, O2Reg(src2), OpSbc, s, c);
 }
 
-// Subtract.
+
 void MacroAssemblerARM::ma_sub(Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, SBit s,
                                Condition c) {
@@ -621,7 +621,7 @@ void MacroAssemblerARM::ma_sub(Register src1, Imm32 op, Register dest,
   ma_alu(src1, op, dest, scratch, OpSub, s, c);
 }
 
-// Reverse subtract.
+
 void MacroAssemblerARM::ma_rsb(Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, SBit s,
                                Condition c) {
@@ -644,7 +644,7 @@ void MacroAssemblerARM::ma_rsb(Register src1, Imm32 op2, Register dest,
   ma_alu(src1, op2, dest, scratch, OpRsb, s, c);
 }
 
-// Reverse subtract with carry.
+
 void MacroAssemblerARM::ma_rsc(Imm32 imm, Register dest,
                                AutoRegisterScope& scratch, SBit s,
                                Condition c) {
@@ -661,8 +661,8 @@ void MacroAssemblerARM::ma_rsc(Register src1, Register src2, Register dest,
   as_alu(dest, src1, O2Reg(src2), OpRsc, s, c);
 }
 
-// Compares/tests.
-// Compare negative (sets condition codes as src1 + src2 would).
+
+
 void MacroAssemblerARM::ma_cmn(Register src1, Imm32 imm,
                                AutoRegisterScope& scratch, Condition c) {
   ma_alu(src1, imm, InvalidReg, scratch, OpCmn, SetCC, c);
@@ -676,14 +676,14 @@ void MacroAssemblerARM::ma_cmn(Register src1, Operand op, Condition c) {
   MOZ_CRASH("Feature NYI");
 }
 
-// Compare (src - src2).
+
 void MacroAssemblerARM::ma_cmp(Register src1, Imm32 imm,
                                AutoRegisterScope& scratch, Condition c) {
   ma_alu(src1, imm, InvalidReg, scratch, OpCmp, SetCC, c);
 }
 
 void MacroAssemblerARM::ma_cmp(Register src1, ImmTag tag, Condition c) {
-  // ImmTag comparisons can always be done without use of a scratch register.
+  
   Imm8 negtag = Imm8(-tag.value);
   MOZ_ASSERT(!negtag.invalid());
   as_cmn(src1, negtag, c);
@@ -720,7 +720,7 @@ void MacroAssemblerARM::ma_cmp(Register src1, Register src2, Condition c) {
   as_cmp(src1, O2Reg(src2), c);
 }
 
-// Test for equality, (src1 ^ src2).
+
 void MacroAssemblerARM::ma_teq(Register src1, Imm32 imm,
                                AutoRegisterScope& scratch, Condition c) {
   ma_alu(src1, imm, InvalidReg, scratch, OpTeq, SetCC, c);
@@ -734,7 +734,7 @@ void MacroAssemblerARM::ma_teq(Register src1, Operand op, Condition c) {
   as_teq(src1, op.toOp2(), c);
 }
 
-// Test (src1 & src2).
+
 void MacroAssemblerARM::ma_tst(Register src1, Imm32 imm,
                                AutoRegisterScope& scratch, Condition c) {
   ma_alu(src1, imm, InvalidReg, scratch, OpTst, SetCC, c);
@@ -763,8 +763,8 @@ Assembler::Condition MacroAssemblerARM::ma_check_mul(Register src1,
                                                      Register dest,
                                                      AutoRegisterScope& scratch,
                                                      Condition cond) {
-  // TODO: this operation is illegal on armv6 and earlier
-  // if src2 == scratch or src2 == dest.
+  
+  
   if (cond == Equal || cond == NotEqual) {
     as_smull(scratch, dest, src1, src2, SetCC);
     return cond;
@@ -814,68 +814,68 @@ void MacroAssemblerARM::ma_mod_mask(Register src, Register dest, Register hold,
                                     Register tmp, AutoRegisterScope& scratch,
                                     AutoRegisterScope& scratch2,
                                     int32_t shift) {
-  // We wish to compute x % (1<<y) - 1 for a known constant, y.
-  //
-  // 1. Let b = (1<<y) and C = (1<<y)-1, then think of the 32 bit dividend as
-  // a number in base b, namely c_0*1 + c_1*b + c_2*b^2 ... c_n*b^n
-  //
-  // 2. Since both addition and multiplication commute with modulus:
-  //   x % C == (c_0 + c_1*b + ... + c_n*b^n) % C ==
-  //    (c_0 % C) + (c_1%C) * (b % C) + (c_2 % C) * (b^2 % C)...
-  //
-  // 3. Since b == C + 1, b % C == 1, and b^n % C == 1 the whole thing
-  // simplifies to: c_0 + c_1 + c_2 ... c_n % C
-  //
-  // Each c_n can easily be computed by a shift/bitextract, and the modulus
-  // can be maintained by simply subtracting by C whenever the number gets
-  // over C.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   int32_t mask = (1 << shift) - 1;
   Label head;
 
-  // Register 'hold' holds -1 if the value was negative, 1 otherwise. The
-  // scratch reg holds the remaining bits that have not been processed lr
-  // serves as a temporary location to store extracted bits into as well as
-  // holding the trial subtraction as a temp value dest is the accumulator
-  // (and holds the final result)
-  //
-  // Move the whole value into tmp, setting the codition codes so we can muck
-  // with them later.
+  
+  
+  
+  
+  
+  
+  
+  
   as_mov(tmp, O2Reg(src), SetCC);
-  // Zero out the dest.
+  
   ma_mov(Imm32(0), dest);
-  // Set the hold appropriately.
+  
   ma_mov(Imm32(1), hold);
   ma_mov(Imm32(-1), hold, Signed);
   as_rsb(tmp, tmp, Imm8(0), SetCC, Signed);
 
-  // Begin the main loop.
+  
   bind(&head);
   {
-    // Extract the bottom bits.
+    
     ma_and(Imm32(mask), tmp, scratch, scratch2);
-    // Add those bits to the accumulator.
+    
     ma_add(scratch, dest, dest);
-    // Do a trial subtraction, this is the same operation as cmp, but we store
-    // the dest.
+    
+    
     ma_sub(dest, Imm32(mask), scratch, scratch2, SetCC);
-    // If (sum - C) > 0, store sum - C back into sum, thus performing a modulus.
+    
     ma_mov(scratch, dest, LeaveCC, NotSigned);
-    // Get rid of the bits that we extracted before, and set the condition
-    // codes.
+    
+    
     as_mov(tmp, lsr(tmp, shift), SetCC);
-    // If the shift produced zero, finish, otherwise, continue in the loop.
+    
     ma_b(&head, NonZero);
   }
 
-  // Check the hold to see if we need to negate the result. Hold can only be
-  // 1 or -1, so this will never set the 0 flag.
+  
+  
   as_cmp(hold, Imm8(0));
-  // If the hold was non-zero, negate the result to be in line with what JS
-  // wants this will set the condition codes if we try to negate.
+  
+  
   as_rsb(dest, dest, Imm8(0), SetCC, Signed);
-  // Since the Zero flag is not set by the compare, we can *only* set the Zero
-  // flag in the rsb, so Zero is set iff we negated zero (e.g. the result of
-  // the computation was -0.0).
+  
+  
+  
 }
 
 void MacroAssemblerARM::ma_smod(Register num, Register div, Register dest,
@@ -890,7 +890,7 @@ void MacroAssemblerARM::ma_umod(Register num, Register div, Register dest,
   as_mls(dest, num, scratch, div);
 }
 
-// Division
+
 void MacroAssemblerARM::ma_sdiv(Register num, Register div, Register dest,
                                 Condition cond) {
   as_sdiv(dest, num, div, cond);
@@ -901,23 +901,23 @@ void MacroAssemblerARM::ma_udiv(Register num, Register div, Register dest,
   as_udiv(dest, num, div, cond);
 }
 
-// Miscellaneous instructions.
+
 void MacroAssemblerARM::ma_clz(Register src, Register dest, Condition cond) {
   as_clz(dest, src, cond);
 }
 
 void MacroAssemblerARM::ma_ctz(Register src, Register dest,
                                AutoRegisterScope& scratch) {
-  // int c = __clz(a & -a);
-  // return a ? 31 - c : c;
+  
+  
   as_rsb(scratch, src, Imm8(0), SetCC);
   as_and(dest, src, O2Reg(scratch), LeaveCC);
   as_clz(dest, dest);
   as_rsb(dest, dest, Imm8(0x1F), LeaveCC, Assembler::NotEqual);
 }
 
-// Memory.
-// Shortcut for when we know we're transferring 32 bits of data.
+
+
 void MacroAssemblerARM::ma_dtr(LoadStore ls, Register rn, Imm32 offset,
                                Register rt, AutoRegisterScope& scratch,
                                Index mode, Assembler::Condition cc) {
@@ -986,7 +986,7 @@ void MacroAssemblerARM::ma_ldrd(EDtrAddr addr, Register rt,
   MOZ_ASSERT((rt.code() & 1) == 0);
   MOZ_ASSERT(rt2.value.code() == rt.code() + 1);
   MOZ_ASSERT(addr.maybeOffsetRegister() !=
-             rt);  // Undefined behavior if rm == rt/rt2.
+             rt);  
   MOZ_ASSERT(addr.maybeOffsetRegister() != rt2);
   as_extdtr(IsLoad, 64, true, mode, rt, addr, cc);
 }
@@ -1001,7 +1001,7 @@ void MacroAssemblerARM::ma_strb(Register rt, DTRAddr addr, Index mode,
   as_dtr(IsStore, 8, mode, rt, addr, cc);
 }
 
-// Specialty for moving N bits of data, where n == 8,16,32,64.
+
 BufferOffset MacroAssemblerARM::ma_dataTransferN(
     LoadStore ls, int size, bool IsSigned, Register rn, Register rm,
     Register rt, AutoRegisterScope& scratch, Index mode,
@@ -1022,7 +1022,7 @@ BufferOffset MacroAssemblerARM::ma_dataTransferN(
                    cc);
 }
 
-// No scratch register is required if scale is TimesOne.
+
 BufferOffset MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size,
                                                  bool IsSigned, Register rn,
                                                  Register rm, Register rt,
@@ -1049,32 +1049,32 @@ BufferOffset MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size,
 
   int off = offset.value;
 
-  // We can encode this as a standard ldr.
+  
   if (size == 32 || (size == 8 && !IsSigned)) {
     if (off < 4096 && off > -4096) {
-      // This encodes as a single instruction, Emulating mode's behavior
-      // in a multi-instruction sequence is not necessary.
+      
+      
       return as_dtr(ls, size, mode, rt, DTRAddr(rn, DtrOffImm(off)), cc);
     }
 
-    // We cannot encode this offset in a single ldr. For mode == index,
-    // try to encode it as |add scratch, base, imm; ldr dest, [scratch,
-    // +offset]|. This does not wark for mode == PreIndex or mode == PostIndex.
-    // PreIndex is simple, just do the add into the base register first,
-    // then do a PreIndex'ed load. PostIndexed loads can be tricky.
-    // Normally, doing the load with an index of 0, then doing an add would
-    // work, but if the destination is the PC, you don't get to execute the
-    // instruction after the branch, which will lead to the base register
-    // not being updated correctly. Explicitly handle this case, without
-    // doing anything fancy, then handle all of the other cases.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    // mode == Offset
-    //  add   scratch, base, offset_hi
-    //  ldr   dest, [scratch, +offset_lo]
-    //
-    // mode == PreIndex
-    //  add   base, base, offset_hi
-    //  ldr   dest, [base, +offset_lo]!
+    
+    
+    
+    
+    
+    
+    
 
     int bottom = off & 0xfff;
     int neg_bottom = 0x1000 - bottom;
@@ -1082,47 +1082,47 @@ BufferOffset MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size,
     MOZ_ASSERT(rn != scratch);
     MOZ_ASSERT(mode != PostIndex);
 
-    // At this point, both off - bottom and off + neg_bottom will be
-    // reasonable-ish quantities.
-    //
-    // Note a neg_bottom of 0x1000 can not be encoded as an immediate
-    // negative offset in the instruction and this occurs when bottom is
-    // zero, so this case is guarded against below.
+    
+    
+    
+    
+    
+    
     if (off < 0) {
-      Operand2 sub_off = Imm8(-(off - bottom));  // sub_off = bottom - off
+      Operand2 sub_off = Imm8(-(off - bottom));  
       if (!sub_off.invalid()) {
-        // - sub_off = off - bottom
+        
         as_sub(scratch, rn, sub_off, LeaveCC, cc);
         return as_dtr(ls, size, Offset, rt, DTRAddr(scratch, DtrOffImm(bottom)),
                       cc);
       }
 
-      // sub_off = -neg_bottom - off
+      
       sub_off = Imm8(-(off + neg_bottom));
       if (!sub_off.invalid() && bottom != 0) {
-        // Guarded against by: bottom != 0
+        
         MOZ_ASSERT(neg_bottom < 0x1000);
-        // - sub_off = neg_bottom + off
+        
         as_sub(scratch, rn, sub_off, LeaveCC, cc);
         return as_dtr(ls, size, Offset, rt,
                       DTRAddr(scratch, DtrOffImm(-neg_bottom)), cc);
       }
     } else {
-      // sub_off = off - bottom
+      
       Operand2 sub_off = Imm8(off - bottom);
       if (!sub_off.invalid()) {
-        //  sub_off = off - bottom
+        
         as_add(scratch, rn, sub_off, LeaveCC, cc);
         return as_dtr(ls, size, Offset, rt, DTRAddr(scratch, DtrOffImm(bottom)),
                       cc);
       }
 
-      // sub_off = neg_bottom + off
+      
       sub_off = Imm8(off + neg_bottom);
       if (!sub_off.invalid() && bottom != 0) {
-        // Guarded against by: bottom != 0
+        
         MOZ_ASSERT(neg_bottom < 0x1000);
-        // sub_off = neg_bottom + off
+        
         as_add(scratch, rn, sub_off, LeaveCC, cc);
         return as_dtr(ls, size, Offset, rt,
                       DTRAddr(scratch, DtrOffImm(-neg_bottom)), cc);
@@ -1133,56 +1133,56 @@ BufferOffset MacroAssemblerARM::ma_dataTransferN(LoadStore ls, int size,
     return as_dtr(ls, size, mode, rt,
                   DTRAddr(rn, DtrRegImmShift(scratch, LSL, 0)));
   } else {
-    // Should attempt to use the extended load/store instructions.
+    
     if (off < 256 && off > -256) {
       return as_extdtr(ls, size, IsSigned, mode, rt,
                        EDtrAddr(rn, EDtrOffImm(off)), cc);
     }
 
-    // We cannot encode this offset in a single extldr. Try to encode it as
-    // an add scratch, base, imm; extldr dest, [scratch, +offset].
+    
+    
     int bottom = off & 0xff;
     int neg_bottom = 0x100 - bottom;
-    // At this point, both off - bottom and off + neg_bottom will be
-    // reasonable-ish quantities.
-    //
-    // Note a neg_bottom of 0x100 can not be encoded as an immediate
-    // negative offset in the instruction and this occurs when bottom is
-    // zero, so this case is guarded against below.
+    
+    
+    
+    
+    
+    
     if (off < 0) {
-      // sub_off = bottom - off
+      
       Operand2 sub_off = Imm8(-(off - bottom));
       if (!sub_off.invalid()) {
-        // - sub_off = off - bottom
+        
         as_sub(scratch, rn, sub_off, LeaveCC, cc);
         return as_extdtr(ls, size, IsSigned, Offset, rt,
                          EDtrAddr(scratch, EDtrOffImm(bottom)), cc);
       }
-      // sub_off = -neg_bottom - off
+      
       sub_off = Imm8(-(off + neg_bottom));
       if (!sub_off.invalid() && bottom != 0) {
-        // Guarded against by: bottom != 0
+        
         MOZ_ASSERT(neg_bottom < 0x100);
-        // - sub_off = neg_bottom + off
+        
         as_sub(scratch, rn, sub_off, LeaveCC, cc);
         return as_extdtr(ls, size, IsSigned, Offset, rt,
                          EDtrAddr(scratch, EDtrOffImm(-neg_bottom)), cc);
       }
     } else {
-      // sub_off = off - bottom
+      
       Operand2 sub_off = Imm8(off - bottom);
       if (!sub_off.invalid()) {
-        // sub_off = off - bottom
+        
         as_add(scratch, rn, sub_off, LeaveCC, cc);
         return as_extdtr(ls, size, IsSigned, Offset, rt,
                          EDtrAddr(scratch, EDtrOffImm(bottom)), cc);
       }
-      // sub_off = neg_bottom + off
+      
       sub_off = Imm8(off + neg_bottom);
       if (!sub_off.invalid() && bottom != 0) {
-        // Guarded against by: bottom != 0
+        
         MOZ_ASSERT(neg_bottom < 0x100);
-        // sub_off = neg_bottom + off
+        
         as_add(scratch, rn, sub_off, LeaveCC, cc);
         return as_extdtr(ls, size, IsSigned, Offset, rt,
                          EDtrAddr(scratch, EDtrOffImm(-neg_bottom)), cc);
@@ -1200,7 +1200,7 @@ void MacroAssemblerARM::ma_pop(Register r) {
 
 void MacroAssemblerARM::ma_popn_pc(Imm32 n, AutoRegisterScope& scratch,
                                    AutoRegisterScope& scratch2) {
-  // pc <- [sp]; sp += n
+  
   int32_t nv = n.value;
 
   if (nv < 4096 && nv >= -4096) {
@@ -1218,7 +1218,7 @@ void MacroAssemblerARM::ma_push(Register r) {
 }
 
 void MacroAssemblerARM::ma_push_sp(Register r, AutoRegisterScope& scratch) {
-  // Pushing sp is not well-defined: use two instructions.
+  
   MOZ_ASSERT(r == sp);
   ma_mov(sp, scratch);
   as_dtr(IsStore, 32, PreIndex, scratch, DTRAddr(sp, DtrOffImm(-4)));
@@ -1236,7 +1236,7 @@ void MacroAssemblerARM::ma_vpush(VFPRegister r) {
   finishFloatTransfer();
 }
 
-// Barriers
+
 void MacroAssemblerARM::ma_dmb(BarrierOption option) {
   if (HasDMBDSBISB()) {
     as_dmb(option);
@@ -1253,7 +1253,7 @@ void MacroAssemblerARM::ma_dsb(BarrierOption option) {
   }
 }
 
-// Branches when done from within arm-specific code.
+
 BufferOffset MacroAssemblerARM::ma_b(Label* dest, Assembler::Condition c) {
   return as_b(dest, c);
 }
@@ -1263,12 +1263,12 @@ void MacroAssemblerARM::ma_bx(Register dest, Assembler::Condition c) {
 }
 
 void MacroAssemblerARM::ma_b(void* target, Assembler::Condition c) {
-  // An immediate pool is used for easier patching.
+  
   as_Imm32Pool(pc, uint32_t(target), c);
 }
 
-// This is almost NEVER necessary: we'll basically never be calling a label,
-// except possibly in the crazy bailout-table case.
+
+
 void MacroAssemblerARM::ma_bl(Label* dest, Assembler::Condition c) {
   as_bl(dest, c);
 }
@@ -1277,7 +1277,7 @@ void MacroAssemblerARM::ma_blx(Register reg, Assembler::Condition c) {
   as_blx(reg, c);
 }
 
-// VFP/ALU
+
 void MacroAssemblerARM::ma_vadd(FloatRegister src1, FloatRegister src2,
                                 FloatRegister dst) {
   as_vadd(VFPRegister(dst), VFPRegister(src1), VFPRegister(src2));
@@ -1379,7 +1379,7 @@ void MacroAssemblerARM::ma_vimm(double value, FloatRegister dest,
   if (HasVFPv3()) {
     if (DoubleLowWord(value) == 0) {
       if (DoubleHighWord(value) == 0) {
-        // To zero a register, load 1.0, then execute dN <- dN - dN
+        
         as_vimm(dest, VFPImm::One, cc);
         as_vsub(dest, dest, dest, cc);
         return;
@@ -1392,7 +1392,7 @@ void MacroAssemblerARM::ma_vimm(double value, FloatRegister dest,
       }
     }
   }
-  // Fall back to putting the value in a pool.
+  
   as_FImm64Pool(dest, value, cc);
 }
 
@@ -1401,19 +1401,19 @@ void MacroAssemblerARM::ma_vimm_f32(float value, FloatRegister dest,
   VFPRegister vd = VFPRegister(dest).singleOverlay();
   if (HasVFPv3()) {
     if (IsPositiveZero(value)) {
-      // To zero a register, load 1.0, then execute sN <- sN - sN.
+      
       as_vimm(vd, VFPImm::One, cc);
       as_vsub(vd, vd, vd, cc);
       return;
     }
 
-    // Note that the vimm immediate float32 instruction encoding differs
-    // from the vimm immediate double encoding, but this difference matches
-    // the difference in the floating point formats, so it is possible to
-    // convert the float32 to a double and then use the double encoding
-    // paths. It is still necessary to firstly check that the double low
-    // word is zero because some float32 numbers set these bits and this can
-    // not be ignored.
+    
+    
+    
+    
+    
+    
+    
     double doubleValue(value);
     if (DoubleLowWord(doubleValue) == 0) {
       VFPImm enc(DoubleHighWord(doubleValue));
@@ -1424,7 +1424,7 @@ void MacroAssemblerARM::ma_vimm_f32(float value, FloatRegister dest,
     }
   }
 
-  // Fall back to putting the value in a pool.
+  
   as_FImm32Pool(vd, value, cc);
 }
 
@@ -1538,54 +1538,54 @@ BufferOffset MacroAssemblerARM::ma_vdtr(LoadStore ls, const Address& addr,
     return as_vdtr(ls, rt, Operand(addr).toVFPAddr(), cc);
   }
 
-  // We cannot encode this offset in a a single ldr. Try to encode it as an
-  // add scratch, base, imm; ldr dest, [scratch, +offset].
+  
+  
   int bottom = off & (0xff << 2);
   int neg_bottom = (0x100 << 2) - bottom;
-  // At this point, both off - bottom and off + neg_bottom will be
-  // reasonable-ish quantities.
-  //
-  // Note a neg_bottom of 0x400 can not be encoded as an immediate negative
-  // offset in the instruction and this occurs when bottom is zero, so this
-  // case is guarded against below.
+  
+  
+  
+  
+  
+  
   if (off < 0) {
-    // sub_off = bottom - off
+    
     Operand2 sub_off = Imm8(-(off - bottom));
     if (!sub_off.invalid()) {
-      // - sub_off = off - bottom
+      
       as_sub(scratch, base, sub_off, LeaveCC, cc);
       return as_vdtr(ls, rt, VFPAddr(scratch, VFPOffImm(bottom)), cc);
     }
-    // sub_off = -neg_bottom - off
+    
     sub_off = Imm8(-(off + neg_bottom));
     if (!sub_off.invalid() && bottom != 0) {
-      // Guarded against by: bottom != 0
+      
       MOZ_ASSERT(neg_bottom < 0x400);
-      // - sub_off = neg_bottom + off
+      
       as_sub(scratch, base, sub_off, LeaveCC, cc);
       return as_vdtr(ls, rt, VFPAddr(scratch, VFPOffImm(-neg_bottom)), cc);
     }
   } else {
-    // sub_off = off - bottom
+    
     Operand2 sub_off = Imm8(off - bottom);
     if (!sub_off.invalid()) {
-      // sub_off = off - bottom
+      
       as_add(scratch, base, sub_off, LeaveCC, cc);
       return as_vdtr(ls, rt, VFPAddr(scratch, VFPOffImm(bottom)), cc);
     }
-    // sub_off = neg_bottom + off
+    
     sub_off = Imm8(off + neg_bottom);
     if (!sub_off.invalid() && bottom != 0) {
-      // Guarded against by: bottom != 0
+      
       MOZ_ASSERT(neg_bottom < 0x400);
-      // sub_off = neg_bottom + off
+      
       as_add(scratch, base, sub_off, LeaveCC, cc);
       return as_vdtr(ls, rt, VFPAddr(scratch, VFPOffImm(-neg_bottom)), cc);
     }
   }
 
-  // Safe to use scratch as dest, since ma_add() overwrites dest at the end
-  // and can't use it as internal scratch since it may also == base.
+  
+  
   ma_add(base, Imm32(off), scratch, scratch, LeaveCC, cc);
   return as_vdtr(ls, rt, VFPAddr(scratch, VFPOffImm(0)), cc);
 }
@@ -1627,7 +1627,7 @@ BufferOffset MacroAssemblerARM::ma_vstr(
   return ma_vstr(src, Address(scratch, offset), scratch2, cc);
 }
 
-// Without an offset, no second scratch register is necessary.
+
 BufferOffset MacroAssemblerARM::ma_vstr(VFPRegister src, Register base,
                                         Register index,
                                         AutoRegisterScope& scratch,
@@ -1640,7 +1640,7 @@ bool MacroAssemblerARMCompat::buildOOLFakeExitFrame(void* fakeReturnAddr) {
   uint32_t descriptor = MakeFrameDescriptor(
       asMasm().framePushed(), FrameType::IonJS, ExitFrameLayout::Size());
 
-  asMasm().Push(Imm32(descriptor));  // descriptor_
+  asMasm().Push(Imm32(descriptor));  
   asMasm().Push(ImmPtr(fakeReturnAddr));
 
   return true;
@@ -1713,7 +1713,7 @@ void MacroAssemblerARMCompat::load8SignExtend(const BaseIndex& src,
   ScratchRegisterScope scratch(asMasm());
   SecondScratchRegisterScope scratch2(asMasm());
 
-  // ARMv7 does not have LSL on an index register with an extended load.
+  
   if (src.scale != TimesOne) {
     ma_lsl(Imm32::ShiftOf(src.scale), index, scratch);
     index = scratch;
@@ -1743,7 +1743,7 @@ void MacroAssemblerARMCompat::load16ZeroExtend(const BaseIndex& src,
   ScratchRegisterScope scratch(asMasm());
   SecondScratchRegisterScope scratch2(asMasm());
 
-  // ARMv7 does not have LSL on an index register with an extended load.
+  
   if (src.scale != TimesOne) {
     ma_lsl(Imm32::ShiftOf(src.scale), index, scratch);
     index = scratch;
@@ -1773,7 +1773,7 @@ void MacroAssemblerARMCompat::load16SignExtend(const BaseIndex& src,
   ScratchRegisterScope scratch(asMasm());
   SecondScratchRegisterScope scratch2(asMasm());
 
-  // We don't have LSL on index register yet.
+  
   if (src.scale != TimesOne) {
     ma_lsl(Imm32::ShiftOf(src.scale), index, scratch);
     index = scratch;
@@ -1822,14 +1822,14 @@ void MacroAssemblerARMCompat::loadPtr(const BaseIndex& src, Register dest) {
 }
 
 void MacroAssemblerARMCompat::loadPtr(AbsoluteAddress address, Register dest) {
-  MOZ_ASSERT(dest != pc);  // Use dest as a scratch register.
+  MOZ_ASSERT(dest != pc);  
   movePtr(ImmWord(uintptr_t(address.addr)), dest);
   loadPtr(Address(dest, 0), dest);
 }
 
 void MacroAssemblerARMCompat::loadPtr(wasm::SymbolicAddress address,
                                       Register dest) {
-  MOZ_ASSERT(dest != pc);  // Use dest as a scratch register.
+  MOZ_ASSERT(dest != pc);  
   movePtr(address, dest);
   loadPtr(Address(dest, 0), dest);
 }
@@ -1848,8 +1848,8 @@ void MacroAssemblerARMCompat::loadDouble(const Address& address,
 
 void MacroAssemblerARMCompat::loadDouble(const BaseIndex& src,
                                          FloatRegister dest) {
-  // VFP instructions don't even support register Base + register Index modes,
-  // so just add the index, then handle the offset like normal.
+  
+  
   Register base = src.base;
   Register index = src.index;
   uint32_t scale = Imm32::ShiftOf(src.scale).value;
@@ -1873,8 +1873,8 @@ void MacroAssemblerARMCompat::loadFloatAsDouble(const Address& address,
 
 void MacroAssemblerARMCompat::loadFloatAsDouble(const BaseIndex& src,
                                                 FloatRegister dest) {
-  // VFP instructions don't even support register Base + register Index modes,
-  // so just add the index, then handle the offset like normal.
+  
+  
   Register base = src.base;
   Register index = src.index;
   uint32_t scale = Imm32::ShiftOf(src.scale).value;
@@ -1897,8 +1897,8 @@ void MacroAssemblerARMCompat::loadFloat32(const Address& address,
 
 void MacroAssemblerARMCompat::loadFloat32(const BaseIndex& src,
                                           FloatRegister dest) {
-  // VFP instructions don't even support register Base + register Index modes,
-  // so just add the index, then handle the offset like normal.
+  
+  
   Register base = src.base;
   Register index = src.index;
   uint32_t scale = Imm32::ShiftOf(src.scale).value;
@@ -1974,7 +1974,7 @@ void MacroAssemblerARMCompat::store16(Imm32 imm, const BaseIndex& dest) {
   ScratchRegisterScope scratch(asMasm());
   SecondScratchRegisterScope scratch2(asMasm());
 
-  // We don't have LSL on index register yet.
+  
   if (dest.scale != TimesOne) {
     ma_lsl(Imm32::ShiftOf(dest.scale), index, scratch);
     index = scratch;
@@ -1995,7 +1995,7 @@ void MacroAssemblerARMCompat::store16(Register src, const BaseIndex& address) {
   ScratchRegisterScope scratch(asMasm());
   SecondScratchRegisterScope scratch2(asMasm());
 
-  // We don't have LSL on index register yet.
+  
   if (address.scale != TimesOne) {
     ma_lsl(Imm32::ShiftOf(address.scale), index, scratch);
     index = scratch;
@@ -2111,7 +2111,7 @@ void MacroAssemblerARMCompat::storePtr(Register src, AbsoluteAddress dest) {
   ma_str(src, DTRAddr(scratch, DtrOffImm(0)));
 }
 
-// Note: this function clobbers the input register.
+
 void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
   if (HasVFPv3()) {
     Label notSplit;
@@ -2121,12 +2121,12 @@ void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
       loadConstantDouble(0.5, scratchDouble);
 
       ma_vadd(input, scratchDouble, scratchDouble);
-      // Convert the double into an unsigned fixed point value with 24 bits of
-      // precision. The resulting number will look like 0xII.DDDDDD
+      
+      
       as_vcvtFixed(scratchDouble, false, 24, true);
     }
 
-    // Move the fixed point value into an integer register.
+    
     {
       ScratchFloat32Scope scratchFloat(*this);
       as_vxfer(output, InvalidReg, scratchFloat.uintOverlay(), FloatToCore);
@@ -2134,19 +2134,19 @@ void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
 
     ScratchRegisterScope scratch(*this);
 
-    // See if this value *might* have been an exact integer after adding
-    // 0.5. This tests the 1/2 through 1/16,777,216th places, but 0.5 needs
-    // to be tested out to the 1/140,737,488,355,328th place.
+    
+    
+    
     ma_tst(output, Imm32(0x00ffffff), scratch);
-    // Convert to a uint8 by shifting out all of the fraction bits.
+    
     ma_lsr(Imm32(24), output, output);
-    // If any of the bottom 24 bits were non-zero, then we're good, since
-    // this number can't be exactly XX.0
+    
+    
     ma_b(&notSplit, NonZero);
     as_vxfer(scratch, InvalidReg, input, FloatToCore);
     as_cmp(scratch, Imm8(0));
-    // If the lower 32 bits of the double were 0, then this was an exact number,
-    // and it should be even.
+    
+    
     as_bic(output, output, Imm8(1), LeaveCC, Zero);
     bind(&notSplit);
   } else {
@@ -2156,21 +2156,21 @@ void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
 
     Label outOfRange;
     ma_vcmpz(input);
-    // Do the add, in place so we can reference it later.
+    
     ma_vadd(input, scratchDouble, input);
-    // Do the conversion to an integer.
+    
     as_vcvt(VFPRegister(scratchDouble).uintOverlay(), VFPRegister(input));
-    // Copy the converted value out.
+    
     as_vxfer(output, InvalidReg, scratchDouble, FloatToCore);
     as_vmrs(pc);
-    ma_mov(Imm32(0), output, Overflow);  // NaN => 0
-    ma_b(&outOfRange, Overflow);         // NaN
+    ma_mov(Imm32(0), output, Overflow);  
+    ma_b(&outOfRange, Overflow);         
     as_cmp(output, Imm8(0xff));
     ma_mov(Imm32(0xff), output, Above);
     ma_b(&outOfRange, Above);
-    // Convert it back to see if we got the same value back.
+    
     as_vcvt(scratchDouble, VFPRegister(scratchDouble).uintOverlay());
-    // Do the check.
+    
     as_vcmp(scratchDouble, input);
     as_vmrs(pc);
     as_bic(output, output, Imm8(1), LeaveCC, Zero);
@@ -2271,21 +2271,21 @@ void MacroAssemblerARMCompat::minMaxDouble(FloatRegister srcDest,
                                     : Assembler::VFP_GreaterThanOrEqual;
 
   compareDouble(first, second);
-  // First or second is NaN, result is NaN.
+  
   ma_b(&nan, Assembler::VFP_Unordered);
-  // Make sure we handle -0 and 0 right.
+  
   ma_b(&equal, Assembler::VFP_Equal);
   ma_b(&returnSecond, cond);
   ma_b(&done);
 
-  // Check for zero.
+  
   bind(&equal);
   compareDouble(first, NoVFPRegister);
-  // First wasn't 0 or -0, so just return it.
+  
   ma_b(&done, Assembler::VFP_NotEqualOrUnordered);
-  // So now both operands are either -0 or 0.
+  
   if (isMax) {
-    // -0 + -0 = -0 and -0 + 0 = 0.
+    
     ma_vadd(second, first, first);
   } else {
     ma_vneg(first, first);
@@ -2295,8 +2295,8 @@ void MacroAssemblerARMCompat::minMaxDouble(FloatRegister srcDest,
   ma_b(&done);
 
   bind(&nan);
-  // If the first argument is the NaN, return it; otherwise return the second
-  // operand.
+  
+  
   compareDouble(first, first);
   ma_vmov(first, srcDest, Assembler::VFP_Unordered);
   ma_b(&done, Assembler::VFP_Unordered);
@@ -2318,21 +2318,21 @@ void MacroAssemblerARMCompat::minMaxFloat32(FloatRegister srcDest,
                                     : Assembler::VFP_GreaterThanOrEqual;
 
   compareFloat(first, second);
-  // First or second is NaN, result is NaN.
+  
   ma_b(&nan, Assembler::VFP_Unordered);
-  // Make sure we handle -0 and 0 right.
+  
   ma_b(&equal, Assembler::VFP_Equal);
   ma_b(&returnSecond, cond);
   ma_b(&done);
 
-  // Check for zero.
+  
   bind(&equal);
   compareFloat(first, NoVFPRegister);
-  // First wasn't 0 or -0, so just return it.
+  
   ma_b(&done, Assembler::VFP_NotEqualOrUnordered);
-  // So now both operands are either -0 or 0.
+  
   if (isMax) {
-    // -0 + -0 = -0 and -0 + 0 = 0.
+    
     ma_vadd_f32(second, first, first);
   } else {
     ma_vneg_f32(first, first);
@@ -2342,7 +2342,7 @@ void MacroAssemblerARMCompat::minMaxFloat32(FloatRegister srcDest,
   ma_b(&done);
 
   bind(&nan);
-  // See comment in minMaxDouble.
+  
   compareFloat(first, first);
   ma_vmov_f32(first, srcDest, Assembler::VFP_Unordered);
   ma_b(&done, Assembler::VFP_Unordered);
@@ -2355,27 +2355,27 @@ void MacroAssemblerARMCompat::minMaxFloat32(FloatRegister srcDest,
 
 void MacroAssemblerARMCompat::compareDouble(FloatRegister lhs,
                                             FloatRegister rhs) {
-  // Compare the doubles, setting vector status flags.
+  
   if (rhs.isMissing()) {
     ma_vcmpz(lhs);
   } else {
     ma_vcmp(lhs, rhs);
   }
 
-  // Move vector status bits to normal status flags.
+  
   as_vmrs(pc);
 }
 
 void MacroAssemblerARMCompat::compareFloat(FloatRegister lhs,
                                            FloatRegister rhs) {
-  // Compare the doubles, setting vector status flags.
+  
   if (rhs.isMissing()) {
     as_vcmpz(VFPRegister(lhs).singleOverlay());
   } else {
     as_vcmp(VFPRegister(lhs).singleOverlay(), VFPRegister(rhs).singleOverlay());
   }
 
-  // Move vector status bits to normal status flags.
+  
   as_vmrs(pc);
 }
 
@@ -2456,7 +2456,7 @@ Assembler::Condition MacroAssemblerARMCompat::testGCThing(
   return testGCThing(cond, value.typeReg());
 }
 
-// Register-based tests.
+
 Assembler::Condition MacroAssemblerARMCompat::testInt32(
     Assembler::Condition cond, Register tag) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
@@ -2748,7 +2748,7 @@ Assembler::Condition MacroAssemblerARMCompat::testGCThing(
   return cond == Equal ? AboveOrEqual : Below;
 }
 
-// Unboxing code.
+
 void MacroAssemblerARMCompat::unboxNonDouble(const ValueOperand& operand,
                                              Register dest, JSValueType type) {
   auto movPayloadToDest = [&]() {
@@ -2761,15 +2761,15 @@ void MacroAssemblerARMCompat::unboxNonDouble(const ValueOperand& operand,
     return;
   }
 
-  // Spectre mitigation: We zero the payload if the tag does not match the
-  // expected type and if this is a pointer type.
+  
+  
   if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
     movPayloadToDest();
     return;
   }
 
-  // We zero the destination register and move the payload into it if
-  // the tag corresponds to the given type.
+  
+  
   ma_cmp(operand.typeReg(), ImmType(type));
   movPayloadToDest();
   ma_mov(Imm32(0), dest, NotEqual);
@@ -2783,15 +2783,15 @@ void MacroAssemblerARMCompat::unboxNonDouble(const Address& src, Register dest,
     return;
   }
 
-  // Spectre mitigation: We zero the payload if the tag does not match the
-  // expected type and if this is a pointer type.
+  
+  
   if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
     ma_ldr(ToPayload(src), dest, scratch);
     return;
   }
 
-  // We zero the destination register and move the payload into it if
-  // the tag corresponds to the given type.
+  
+  
   ma_ldr(ToType(src), scratch, scratch);
   ma_cmp(scratch, ImmType(type));
   ma_ldr(ToPayload(src), dest, scratch, Offset, Equal);
@@ -2859,17 +2859,17 @@ void MacroAssemblerARMCompat::boolValueToDouble(const ValueOperand& operand,
   VFPRegister d = VFPRegister(dest);
   loadConstantDouble(1.0, dest);
   as_cmp(operand.payloadReg(), Imm8(0));
-  // If the source is 0, then subtract the dest from itself, producing 0.
+  
   as_vsub(d, d, d, Equal);
 }
 
 void MacroAssemblerARMCompat::int32ValueToDouble(const ValueOperand& operand,
                                                  FloatRegister dest) {
-  // Transfer the integral value to a floating point register.
+  
   VFPRegister vfpdest = VFPRegister(dest);
   as_vxfer(operand.payloadReg(), InvalidReg, vfpdest.sintOverlay(),
            CoreToFloat);
-  // Convert the value to a double.
+  
   as_vcvt(vfpdest, vfpdest.sintOverlay());
 }
 
@@ -2878,17 +2878,17 @@ void MacroAssemblerARMCompat::boolValueToFloat32(const ValueOperand& operand,
   VFPRegister d = VFPRegister(dest).singleOverlay();
   loadConstantFloat32(1.0, dest);
   as_cmp(operand.payloadReg(), Imm8(0));
-  // If the source is 0, then subtract the dest from itself, producing 0.
+  
   as_vsub(d, d, d, Equal);
 }
 
 void MacroAssemblerARMCompat::int32ValueToFloat32(const ValueOperand& operand,
                                                   FloatRegister dest) {
-  // Transfer the integral value to a floating point register.
+  
   VFPRegister vfpdest = VFPRegister(dest).singleOverlay();
   as_vxfer(operand.payloadReg(), InvalidReg, vfpdest.sintOverlay(),
            CoreToFloat);
-  // Convert the value to a float.
+  
   as_vcvt(vfpdest, vfpdest.sintOverlay());
 }
 
@@ -2900,7 +2900,7 @@ void MacroAssemblerARMCompat::loadInt32OrDouble(const Address& src,
                                                 FloatRegister dest) {
   Label notInt32, end;
 
-  // If it's an int, convert to a double.
+  
   {
     ScratchRegisterScope scratch(asMasm());
     SecondScratchRegisterScope scratch2(asMasm());
@@ -2912,7 +2912,7 @@ void MacroAssemblerARMCompat::loadInt32OrDouble(const Address& src,
     ma_b(&end);
   }
 
-  // Not an int, just load as double.
+  
   bind(&notInt32);
   {
     ScratchRegisterScope scratch(asMasm());
@@ -2930,23 +2930,23 @@ void MacroAssemblerARMCompat::loadInt32OrDouble(Register base, Register index,
 
   ScratchRegisterScope scratch(asMasm());
 
-  // If it's an int, convert it to double.
+  
   ma_alu(base, lsl(index, shift), scratch, OpAdd);
 
-  // Since we only have one scratch register, we need to stomp over it with
-  // the tag.
+  
+  
   ma_ldr(DTRAddr(scratch, DtrOffImm(NUNBOX32_TYPE_OFFSET)), scratch);
   asMasm().branchTestInt32(Assembler::NotEqual, scratch, &notInt32);
 
-  // Implicitly requires NUNBOX32_PAYLOAD_OFFSET == 0: no offset provided
+  
   ma_ldr(DTRAddr(base, DtrRegImmShift(index, LSL, shift)), scratch);
   convertInt32ToDouble(scratch, dest);
   ma_b(&end);
 
-  // Not an int, just load as double.
+  
   bind(&notInt32);
-  // First, recompute the offset that had been stored in the scratch register
-  // since the scratch register was overwritten loading in the type.
+  
+  
   ma_alu(base, lsl(index, shift), scratch, OpAdd);
   ma_vldr(VFPAddr(scratch, VFPOffImm(0)), dest);
   bind(&end);
@@ -2957,7 +2957,7 @@ void MacroAssemblerARMCompat::loadConstantDouble(double dp,
   ma_vimm(dp, dest);
 }
 
-// Treat the value as a boolean, and set condition codes accordingly.
+
 Assembler::Condition MacroAssemblerARMCompat::testInt32Truthy(
     bool truthy, const ValueOperand& operand) {
   ma_tst(operand.payloadReg(), operand.payloadReg());
@@ -2999,9 +2999,9 @@ Register MacroAssemblerARMCompat::extractTag(const BaseIndex& address,
   return extractTag(Address(scratch, address.offset), scratch);
 }
 
-/////////////////////////////////////////////////////////////////
-// X86/X64-common (ARM too now) interface.
-/////////////////////////////////////////////////////////////////
+
+
+
 void MacroAssemblerARMCompat::storeValue(ValueOperand val, const Address& dst) {
   SecondScratchRegisterScope scratch2(asMasm());
   ma_str(val.payloadReg(), ToPayload(dst), scratch2);
@@ -3042,9 +3042,9 @@ void MacroAssemblerARMCompat::loadValue(const BaseIndex& addr,
     Register tmpIdx;
     if (addr.offset == 0) {
       if (addr.scale == TimesOne) {
-        // If the offset register is the same as one of the destination
-        // registers, LDRD's behavior is undefined. Use the scratch
-        // register to avoid this.
+        
+        
+        
         if (val.aliases(addr.index)) {
           ma_mov(addr.index, scratch);
           tmpIdx = scratch;
@@ -3069,11 +3069,11 @@ void MacroAssemblerARMCompat::loadValue(const BaseIndex& addr,
 }
 
 void MacroAssemblerARMCompat::loadValue(Address src, ValueOperand val) {
-  // TODO: copy this code into a generic function that acts on all sequences
-  // of memory accesses
+  
+  
   if (isValueDTRDCandidate(val)) {
-    // If the value we want is in two consecutive registers starting with an
-    // even register, they can be combined as a single ldrd.
+    
+    
     int offset = src.offset;
     if (offset < 256 && offset > -256) {
       ma_ldrd(EDtrAddr(src.base, EDtrOffImm(src.offset)), val.payloadReg(),
@@ -3081,13 +3081,13 @@ void MacroAssemblerARMCompat::loadValue(Address src, ValueOperand val) {
       return;
     }
   }
-  // If the value is lower than the type, then we may be able to use an ldm
-  // instruction.
+  
+  
 
   if (val.payloadReg().code() < val.typeReg().code()) {
     if (src.offset <= 4 && src.offset >= -8 && (src.offset & 3) == 0) {
-      // Turns out each of the 4 value -8, -4, 0, 4 corresponds exactly
-      // with one of LDM{DB, DA, IA, IB}
+      
+      
       DTMMode mode;
       switch (src.offset) {
         case -8:
@@ -3121,8 +3121,8 @@ void MacroAssemblerARMCompat::loadUnalignedValue(const Address& src,
   Address payload = ToPayload(src);
   Address type = ToType(src);
 
-  // Ensure that loading the payload does not erase the pointer to the Value
-  // in memory.
+  
+  
   if (type.base != dest.payloadReg()) {
     SecondScratchRegisterScope scratch2(asMasm());
     ma_ldr(payload, dest.payloadReg(), scratch2);
@@ -3194,13 +3194,13 @@ void MacroAssemblerARMCompat::storePayload(const Value& val,
     ma_mov(Imm32(val.toNunboxPayload()), scratch);
   }
 
-  // If NUNBOX32_PAYLOAD_OFFSET is not zero, the memory operand [base + index
-  // << shift + imm] cannot be encoded into a single instruction, and cannot
-  // be integrated into the as_dtr call.
+  
+  
+  
   static_assert(NUNBOX32_PAYLOAD_OFFSET == 0);
 
-  // If an offset is used, modify the base so that a [base + index << shift]
-  // instruction format can be used.
+  
+  
   if (dest.offset != 0) {
     ma_add(dest.base, Imm32(dest.offset), dest.base, scratch2);
   }
@@ -3208,7 +3208,7 @@ void MacroAssemblerARMCompat::storePayload(const Value& val,
   as_dtr(IsStore, 32, Offset, scratch,
          DTRAddr(dest.base, DtrRegImmShift(dest.index, LSL, shift)));
 
-  // Restore the original value of the base, if necessary.
+  
   if (dest.offset != 0) {
     ma_sub(dest.base, Imm32(dest.offset), dest.base, scratch);
   }
@@ -3221,18 +3221,18 @@ void MacroAssemblerARMCompat::storePayload(Register src,
 
   ScratchRegisterScope scratch(asMasm());
 
-  // If NUNBOX32_PAYLOAD_OFFSET is not zero, the memory operand [base + index
-  // << shift + imm] cannot be encoded into a single instruction, and cannot
-  // be integrated into the as_dtr call.
+  
+  
+  
   static_assert(NUNBOX32_PAYLOAD_OFFSET == 0);
 
-  // Save/restore the base if the BaseIndex has an offset, as above.
+  
   if (dest.offset != 0) {
     ma_add(dest.base, Imm32(dest.offset), dest.base, scratch);
   }
 
-  // Technically, shift > -32 can be handle by changing LSL to ASR, but should
-  // never come up, and this is one less code path to get wrong.
+  
+  
   as_dtr(IsStore, 32, Offset, src,
          DTRAddr(dest.base, DtrRegImmShift(dest.index, LSL, shift)));
 
@@ -3305,14 +3305,14 @@ void MacroAssemblerARMCompat::checkStackAlignment() {
 
 void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
     Label* profilerExitTail) {
-  // Reserve space for exception information.
+  
   int size = (sizeof(ResumeFromException) + 7) & ~7;
 
   Imm8 size8(size);
   as_sub(sp, sp, size8);
   ma_mov(sp, r0);
 
-  // Call the handler.
+  
   using Fn = void (*)(ResumeFromException * rfe);
   asMasm().setupUnalignedABICall(r1);
   asMasm().passABIArg(r0);
@@ -3345,10 +3345,10 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   asMasm().branch32(Assembler::Equal, r0,
                     Imm32(ResumeFromException::RESUME_WASM), &wasm);
 
-  breakpoint();  // Invalid kind.
+  breakpoint();  
 
-  // No exception handler. Load the error value, load the new stack pointer
-  // and return from the entry frame.
+  
+  
   bind(&entryFrame);
   asMasm().moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
   {
@@ -3357,12 +3357,12 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
            scratch);
   }
 
-  // We're going to be returning by the ion calling convention, which returns
-  // by ??? (for now, I think ldr pc, [sp]!)
+  
+  
   as_dtr(IsLoad, 32, PostIndex, pc, DTRAddr(sp, DtrOffImm(4)));
 
-  // If we found a catch handler, this must be a baseline frame. Restore state
-  // and jump to the catch block.
+  
+  
   bind(&catch_);
   {
     ScratchRegisterScope scratch(asMasm());
@@ -3374,8 +3374,8 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   }
   jump(r0);
 
-  // If we found a finally block, this must be a baseline frame. Push two
-  // values expected by JSOp::Retsub: BooleanValue(true) and the exception.
+  
+  
   bind(&finally);
   ValueOperand exception = ValueOperand(r1, r2);
   loadValue(Operand(sp, offsetof(ResumeFromException, exception)), exception);
@@ -3392,8 +3392,8 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   pushValue(exception);
   jump(r0);
 
-  // Only used in debug mode. Return BaselineFrame->returnValue() to the
-  // caller.
+  
+  
   bind(&return_);
   {
     ScratchRegisterScope scratch(asMasm());
@@ -3407,11 +3407,11 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   ma_mov(r11, sp);
   pop(r11);
 
-  // If profiling is enabled, then update the lastProfilingFrame to refer to
-  // caller frame before returning.
+  
+  
   {
     Label skipProfilingInstrumentation;
-    // Test if profiler enabled.
+    
     AbsoluteAddress addressOfEnabled(
         GetJitContext()->runtime->geckoProfiler().addressOfEnabled());
     asMasm().branch32(Assembler::Equal, addressOfEnabled, Imm32(0),
@@ -3422,8 +3422,8 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
 
   ret();
 
-  // If we are bailing out to baseline to handle an exception, jump to the
-  // bailout tail stub. Load 1 (true) in ReturnReg to indicate success.
+  
+  
   bind(&bailout);
   {
     ScratchRegisterScope scratch(asMasm());
@@ -3434,9 +3434,9 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   }
   jump(r1);
 
-  // If we are throwing and the innermost frame was a wasm frame, reset SP and
-  // FP; SP is pointing to the unwound return address to the wasm entry, so
-  // we can just ret().
+  
+  
+  
   bind(&wasm);
   {
     ScratchRegisterScope scratch(asMasm());
@@ -3481,13 +3481,13 @@ void MacroAssemblerARMCompat::floor(FloatRegister input, Register output,
   compareDouble(input, NoVFPRegister);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handleNeg, Assembler::Signed);
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
 
-  // The argument is a positive number, truncation is the path to glory. Since
-  // it is known to be > 0.0, explicitly convert to a larger range, then a
-  // value that rounds to INT_MAX is explicitly different from an argument
-  // that clamps to INT_MAX.
+  
+  
+  
+  
   ma_vcvt_F64_U32(input, scratchDouble.uintOverlay());
   ma_vxfer(scratchDouble.uintOverlay(), output);
   ma_mov(output, output, SetCC);
@@ -3495,29 +3495,29 @@ void MacroAssemblerARMCompat::floor(FloatRegister input, Register output,
   ma_b(&fin);
 
   bind(&handleZero);
-  // Move the top word of the double into the output reg, if it is non-zero,
-  // then the original value was -0.0.
+  
+  
   as_vxfer(output, InvalidReg, input, FloatToCore, Always, 1);
   as_cmp(output, Imm8(0));
   ma_b(bail, NonZero);
   ma_b(&fin);
 
   bind(&handleNeg);
-  // Negative case, negate, then start dancing.
+  
   ma_vneg(input, input);
   ma_vcvt_F64_U32(input, scratchDouble.uintOverlay());
   ma_vxfer(scratchDouble.uintOverlay(), output);
   ma_vcvt_U32_F64(scratchDouble.uintOverlay(), scratchDouble);
   compareDouble(scratchDouble, input);
   as_add(output, output, Imm8(1), LeaveCC, NotEqual);
-  // Negate the output. Since INT_MIN < -INT_MAX, even after adding 1, the
-  // result will still be a negative number.
+  
+  
   as_rsb(output, output, Imm8(0), SetCC);
-  // Flip the negated input back to its original value.
+  
   ma_vneg(input, input);
-  // If the result looks non-negative, then this value didn't actually fit
-  // into the int range, and special handling is required. Zero is also caught
-  // by this case, but floor of a negative number should never be zero.
+  
+  
+  
   ma_b(bail, NotSigned);
 
   bind(&fin);
@@ -3531,13 +3531,13 @@ void MacroAssemblerARMCompat::floorf(FloatRegister input, Register output,
   compareFloat(input, NoVFPRegister);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handleNeg, Assembler::Signed);
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
 
-  // The argument is a positive number, truncation is the path to glory; Since
-  // it is known to be > 0.0, explicitly convert to a larger range, then a
-  // value that rounds to INT_MAX is explicitly different from an argument
-  // that clamps to INT_MAX.
+  
+  
+  
+  
   {
     ScratchFloat32Scope scratch(asMasm());
     ma_vcvt_F32_U32(input, scratch.uintOverlay());
@@ -3548,8 +3548,8 @@ void MacroAssemblerARMCompat::floorf(FloatRegister input, Register output,
   ma_b(&fin);
 
   bind(&handleZero);
-  // Move the top word of the double into the output reg, if it is non-zero,
-  // then the original value was -0.0.
+  
+  
   as_vxfer(output, InvalidReg, VFPRegister(input).singleOverlay(), FloatToCore,
            Always, 0);
   as_cmp(output, Imm8(0));
@@ -3557,7 +3557,7 @@ void MacroAssemblerARMCompat::floorf(FloatRegister input, Register output,
   ma_b(&fin);
 
   bind(&handleNeg);
-  // Negative case, negate, then start dancing.
+  
   {
     ScratchFloat32Scope scratch(asMasm());
     ma_vneg_f32(input, input);
@@ -3567,14 +3567,14 @@ void MacroAssemblerARMCompat::floorf(FloatRegister input, Register output,
     compareFloat(scratch, input);
     as_add(output, output, Imm8(1), LeaveCC, NotEqual);
   }
-  // Negate the output. Since INT_MIN < -INT_MAX, even after adding 1, the
-  // result will still be a negative number.
+  
+  
   as_rsb(output, output, Imm8(0), SetCC);
-  // Flip the negated input back to its original value.
+  
   ma_vneg_f32(input, input);
-  // If the result looks non-negative, then this value didn't actually fit
-  // into the int range, and special handling is required. Zero is also caught
-  // by this case, but floor of a negative number should never be zero.
+  
+  
+  
   ma_b(bail, NotSigned);
 
   bind(&fin);
@@ -3587,21 +3587,21 @@ void MacroAssemblerARMCompat::ceil(FloatRegister input, Register output,
   Label fin;
 
   compareDouble(input, NoVFPRegister);
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handlePos, Assembler::NotSigned);
 
   ScratchDoubleScope scratchDouble(asMasm());
 
-  // We are in the ]-Inf; 0[ range
-  // If we are in the ]-1; 0[ range => bailout
+  
+  
   loadConstantDouble(-1.0, scratchDouble);
   compareDouble(input, scratchDouble);
   ma_b(bail, Assembler::GreaterThan);
 
-  // We are in the ]-Inf; -1] range: ceil(x) == -floor(-x) and floor can be
-  // computed with direct truncation here (x > 0).
+  
+  
   ma_vneg(input, scratchDouble);
   FloatRegister ScratchUIntReg = scratchDouble.uintOverlay();
   ma_vcvt_F64_U32(scratchDouble, ScratchUIntReg);
@@ -3610,23 +3610,23 @@ void MacroAssemblerARMCompat::ceil(FloatRegister input, Register output,
   ma_b(bail, NotSigned);
   ma_b(&fin);
 
-  // Test for 0.0 / -0.0: if the top word of the input double is not zero,
-  // then it was -0 and we need to bail out.
+  
+  
   bind(&handleZero);
   as_vxfer(output, InvalidReg, input, FloatToCore, Always, 1);
   as_cmp(output, Imm8(0));
   ma_b(bail, NonZero);
   ma_b(&fin);
 
-  // We are in the ]0; +inf] range: truncate integer values, maybe add 1 for
-  // non integer values, maybe bail if overflow.
+  
+  
   bind(&handlePos);
   ma_vcvt_F64_U32(input, ScratchUIntReg);
   ma_vxfer(ScratchUIntReg, output);
   ma_vcvt_U32_F64(ScratchUIntReg, scratchDouble);
   compareDouble(scratchDouble, input);
   as_add(output, output, Imm8(1), LeaveCC, NotEqual);
-  // Bail out if the add overflowed or the result is non positive.
+  
   ma_mov(output, output, SetCC);
   ma_b(bail, Signed);
   ma_b(bail, Zero);
@@ -3641,13 +3641,13 @@ void MacroAssemblerARMCompat::ceilf(FloatRegister input, Register output,
   Label fin;
 
   compareFloat(input, NoVFPRegister);
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handlePos, Assembler::NotSigned);
 
-  // We are in the ]-Inf; 0[ range
-  // If we are in the ]-1; 0[ range => bailout
+  
+  
   {
     ScratchFloat32Scope scratch(asMasm());
     loadConstantFloat32(-1.f, scratch);
@@ -3655,8 +3655,8 @@ void MacroAssemblerARMCompat::ceilf(FloatRegister input, Register output,
     ma_b(bail, Assembler::GreaterThan);
   }
 
-  // We are in the ]-Inf; -1] range: ceil(x) == -floor(-x) and floor can be
-  // computed with direct truncation here (x > 0).
+  
+  
   {
     ScratchDoubleScope scratchDouble(asMasm());
     FloatRegister scratchFloat = scratchDouble.asSingle();
@@ -3670,8 +3670,8 @@ void MacroAssemblerARMCompat::ceilf(FloatRegister input, Register output,
     ma_b(&fin);
   }
 
-  // Test for 0.0 / -0.0: if the top word of the input double is not zero,
-  // then it was -0 and we need to bail out.
+  
+  
   bind(&handleZero);
   as_vxfer(output, InvalidReg, VFPRegister(input).singleOverlay(), FloatToCore,
            Always, 0);
@@ -3679,8 +3679,8 @@ void MacroAssemblerARMCompat::ceilf(FloatRegister input, Register output,
   ma_b(bail, NonZero);
   ma_b(&fin);
 
-  // We are in the ]0; +inf] range: truncate integer values, maybe add 1 for
-  // non integer values, maybe bail if overflow.
+  
+  
   bind(&handlePos);
   {
     ScratchDoubleScope scratchDouble(asMasm());
@@ -3693,7 +3693,7 @@ void MacroAssemblerARMCompat::ceilf(FloatRegister input, Register output,
     compareFloat(scratchFloat, input);
     as_add(output, output, Imm8(1), LeaveCC, NotEqual);
 
-    // Bail on overflow or non-positive result.
+    
     ma_mov(output, output, SetCC);
     ma_b(bail, Signed);
     ma_b(bail, Zero);
@@ -3703,7 +3703,7 @@ void MacroAssemblerARMCompat::ceilf(FloatRegister input, Register output,
 }
 
 CodeOffset MacroAssemblerARMCompat::toggledJump(Label* label) {
-  // Emit a B that can be toggled to a CMP. See ToggleToJmp(), ToggleToCmp().
+  
   BufferOffset b = ma_b(label, Always);
   CodeOffset ret(b.getOffset());
   return ret;
@@ -3730,26 +3730,26 @@ void MacroAssemblerARMCompat::round(FloatRegister input, Register output,
 
   ScratchDoubleScope scratchDouble(asMasm());
 
-  // Do a compare based on the original value, then do most other things based
-  // on the shifted value.
+  
+  
   ma_vcmpz(input);
-  // Since we already know the sign bit, flip all numbers to be positive,
-  // stored in tmp.
+  
+  
   ma_vabs(input, tmp);
   as_vmrs(pc);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handleNeg, Assembler::Signed);
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
 
-  // The argument is a positive number, truncation is the path to glory; Since
-  // it is known to be > 0.0, explicitly convert to a larger range, then a
-  // value that rounds to INT_MAX is explicitly different from an argument
-  // that clamps to INT_MAX.
+  
+  
+  
+  
 
-  // Add the biggest number less than 0.5 (not 0.5, because adding that to
-  // the biggest number less than 0.5 would undesirably round up to 1), and
-  // store the result into tmp.
+  
+  
+  
   loadConstantDouble(GetBiggestNumberLessThan(0.5), scratchDouble);
   ma_vadd(scratchDouble, tmp, tmp);
 
@@ -3760,38 +3760,38 @@ void MacroAssemblerARMCompat::round(FloatRegister input, Register output,
   ma_b(&fin);
 
   bind(&handleZero);
-  // Move the top word of the double into the output reg, if it is non-zero,
-  // then the original value was -0.0
+  
+  
   as_vxfer(output, InvalidReg, input, FloatToCore, Always, 1);
   as_cmp(output, Imm8(0));
   ma_b(bail, NonZero);
   ma_b(&fin);
 
   bind(&handleNeg);
-  // Negative case, negate, then start dancing. This number may be positive,
-  // since we added 0.5.
+  
+  
 
-  // Add 0.5 to negative numbers, store the result into tmp
+  
   loadConstantDouble(0.5, scratchDouble);
   ma_vadd(scratchDouble, tmp, tmp);
 
   ma_vcvt_F64_U32(tmp, scratchDouble.uintOverlay());
   ma_vxfer(VFPRegister(scratchDouble).uintOverlay(), output);
 
-  // -output is now a correctly rounded value, unless the original value was
-  // exactly halfway between two integers, at which point, it has been rounded
-  // away from zero, when it should be rounded towards \infty.
+  
+  
+  
   ma_vcvt_U32_F64(scratchDouble.uintOverlay(), scratchDouble);
   compareDouble(scratchDouble, tmp);
   as_sub(output, output, Imm8(1), LeaveCC, Equal);
-  // Negate the output. Since INT_MIN < -INT_MAX, even after adding 1, the
-  // result will still be a negative number.
+  
+  
   as_rsb(output, output, Imm8(0), SetCC);
 
-  // If the result looks non-negative, then this value didn't actually fit
-  // into the int range, and special handling is required, or it was zero,
-  // which means the result is actually -0.0 which also requires special
-  // handling.
+  
+  
+  
+  
   ma_b(bail, NotSigned);
 
   bind(&fin);
@@ -3805,29 +3805,29 @@ void MacroAssemblerARMCompat::roundf(FloatRegister input, Register output,
 
   ScratchFloat32Scope scratchFloat(asMasm());
 
-  // Do a compare based on the original value, then do most other things based
-  // on the shifted value.
+  
+  
   compareFloat(input, NoVFPRegister);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handleNeg, Assembler::Signed);
 
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
 
-  // The argument is a positive number, truncation is the path to glory; Since
-  // it is known to be > 0.0, explicitly convert to a larger range, then a
-  // value that rounds to INT_MAX is explicitly different from an argument
-  // that clamps to INT_MAX.
+  
+  
+  
+  
 
-  // Add the biggest number less than 0.5f (not 0.5f, because adding that to
-  // the biggest number less than 0.5f would undesirably round up to 1), and
-  // store the result into tmp.
+  
+  
+  
   loadConstantFloat32(GetBiggestNumberLessThan(0.5f), scratchFloat);
   ma_vadd_f32(scratchFloat, input, tmp);
 
-  // Note: it doesn't matter whether x + .5 === x or not here, as it doesn't
-  // affect the semantics of the float to unsigned conversion (in particular,
-  // we are not applying any fixup after the operation).
+  
+  
+  
   ma_vcvt_F32_U32(tmp, scratchFloat.uintOverlay());
   ma_vxfer(VFPRegister(scratchFloat).uintOverlay(), output);
   ma_mov(output, output, SetCC);
@@ -3836,8 +3836,8 @@ void MacroAssemblerARMCompat::roundf(FloatRegister input, Register output,
 
   bind(&handleZero);
 
-  // Move the whole float32 into the output reg, if it is non-zero, then the
-  // original value was -0.0.
+  
+  
   as_vxfer(output, InvalidReg, input, FloatToCore, Always, 0);
   as_cmp(output, Imm8(0));
   ma_b(bail, NonZero);
@@ -3845,42 +3845,42 @@ void MacroAssemblerARMCompat::roundf(FloatRegister input, Register output,
 
   bind(&handleNeg);
 
-  // Add 0.5 to negative numbers, storing the result into tmp.
+  
   ma_vneg_f32(input, tmp);
   loadConstantFloat32(0.5f, scratchFloat);
   ma_vadd_f32(tmp, scratchFloat, scratchFloat);
 
-  // Adding 0.5 to a float input has chances to yield the wrong result, if
-  // the input is too large. In this case, skip the -1 adjustment made below.
+  
+  
   compareFloat(scratchFloat, tmp);
 
-  // Negative case, negate, then start dancing. This number may be positive,
-  // since we added 0.5.
-  // /!\ The conditional jump afterwards depends on these two instructions
-  //     *not* setting the status flags. They need to not change after the
-  //     comparison above.
+  
+  
+  
+  
+  
   ma_vcvt_F32_U32(scratchFloat, tmp.uintOverlay());
   ma_vxfer(VFPRegister(tmp).uintOverlay(), output);
 
   Label flipSign;
   ma_b(&flipSign, Equal);
 
-  // -output is now a correctly rounded value, unless the original value was
-  // exactly halfway between two integers, at which point, it has been rounded
-  // away from zero, when it should be rounded towards \infty.
+  
+  
+  
   ma_vcvt_U32_F32(tmp.uintOverlay(), tmp);
   compareFloat(tmp, scratchFloat);
   as_sub(output, output, Imm8(1), LeaveCC, Equal);
 
-  // Negate the output. Since INT_MIN < -INT_MAX, even after adding 1, the
-  // result will still be a negative number.
+  
+  
   bind(&flipSign);
   as_rsb(output, output, Imm8(0), SetCC);
 
-  // If the result looks non-negative, then this value didn't actually fit
-  // into the int range, and special handling is required, or it was zero,
-  // which means the result is actually -0.0 which also requires special
-  // handling.
+  
+  
+  
+  
   ma_b(bail, NotSigned);
 
   bind(&fin);
@@ -3893,21 +3893,21 @@ void MacroAssemblerARMCompat::trunc(FloatRegister input, Register output,
   Label fin;
 
   compareDouble(input, NoVFPRegister);
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handlePos, Assembler::NotSigned);
 
   ScratchDoubleScope scratchDouble(asMasm());
 
-  // We are in the ]-Inf; 0[ range
-  // If we are in the ]-1; 0[ range => bailout
+  
+  
   loadConstantDouble(-1.0, scratchDouble);
   compareDouble(input, scratchDouble);
   ma_b(bail, Assembler::GreaterThan);
 
-  // We are in the ]-Inf; -1] range: trunc(x) == -floor(-x) and floor can be
-  // computed with direct truncation here (x > 0).
+  
+  
   ma_vneg(input, scratchDouble);
   ma_vcvt_F64_U32(scratchDouble, scratchDouble.uintOverlay());
   ma_vxfer(scratchDouble.uintOverlay(), output);
@@ -3915,18 +3915,18 @@ void MacroAssemblerARMCompat::trunc(FloatRegister input, Register output,
   ma_b(bail, NotSigned);
   ma_b(&fin);
 
-  // Test for 0.0 / -0.0: if the top word of the input double is not zero,
-  // then it was -0 and we need to bail out.
+  
+  
   bind(&handleZero);
   as_vxfer(output, InvalidReg, input, FloatToCore, Always, 1);
   as_cmp(output, Imm8(0));
   ma_b(bail, NonZero);
   ma_b(&fin);
 
-  // We are in the ]0; +inf] range: truncation is the path to glory. Since
-  // it is known to be > 0.0, explicitly convert to a larger range, then a
-  // value that rounds to INT_MAX is explicitly different from an argument
-  // that clamps to INT_MAX.
+  
+  
+  
+  
   bind(&handlePos);
   ma_vcvt_F64_U32(input, scratchDouble.uintOverlay());
   ma_vxfer(scratchDouble.uintOverlay(), output);
@@ -3943,13 +3943,13 @@ void MacroAssemblerARMCompat::truncf(FloatRegister input, Register output,
   Label fin;
 
   compareFloat(input, NoVFPRegister);
-  // NaN is always a bail condition, just bail directly.
+  
   ma_b(bail, Assembler::Overflow);
   ma_b(&handleZero, Assembler::Equal);
   ma_b(&handlePos, Assembler::NotSigned);
 
-  // We are in the ]-Inf; 0[ range
-  // If we are in the ]-1; 0[ range => bailout
+  
+  
   {
     ScratchFloat32Scope scratch(asMasm());
     loadConstantFloat32(-1.f, scratch);
@@ -3957,8 +3957,8 @@ void MacroAssemblerARMCompat::truncf(FloatRegister input, Register output,
     ma_b(bail, Assembler::GreaterThan);
   }
 
-  // We are in the ]-Inf; -1] range: trunc(x) == -floor(-x) and floor can be
-  // computed with direct truncation here (x > 0).
+  
+  
   {
     ScratchDoubleScope scratchDouble(asMasm());
     FloatRegister scratchFloat = scratchDouble.asSingle();
@@ -3972,8 +3972,8 @@ void MacroAssemblerARMCompat::truncf(FloatRegister input, Register output,
     ma_b(&fin);
   }
 
-  // Test for 0.0 / -0.0: if the top word of the input double is not zero,
-  // then it was -0 and we need to bail out.
+  
+  
   bind(&handleZero);
   as_vxfer(output, InvalidReg, VFPRegister(input).singleOverlay(), FloatToCore,
            Always, 0);
@@ -3981,13 +3981,13 @@ void MacroAssemblerARMCompat::truncf(FloatRegister input, Register output,
   ma_b(bail, NonZero);
   ma_b(&fin);
 
-  // We are in the ]0; +inf] range: truncation is the path to glory; Since
-  // it is known to be > 0.0, explicitly convert to a larger range, then a
-  // value that rounds to INT_MAX is explicitly different from an argument
+  
+  
+  
   bind(&handlePos);
   {
-    // The argument is a positive number,
-    // that clamps to INT_MAX.
+    
+    
     {
       ScratchFloat32Scope scratch(asMasm());
       ma_vcvt_F32_U32(input, scratch.uintOverlay());
@@ -4037,16 +4037,16 @@ void MacroAssembler::subFromStackPtr(Imm32 imm32) {
   }
 }
 
-//{{{ check_macroassembler_style
-// ===============================================================
-// MacroAssembler high-level usage.
+
+
+
 
 void MacroAssembler::flush() { Assembler::flush(); }
 
 void MacroAssembler::comment(const char* msg) { Assembler::comment(msg); }
 
-// ===============================================================
-// Stack manipulation functions.
+
+
 
 void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
   int32_t diffF = set.fpus().getPushSizeInBytes();
@@ -4071,9 +4071,9 @@ void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
   }
   MOZ_ASSERT(diffG == 0);
 
-  // It's possible that the logic is just fine as it is if the reduced set
-  // maps SIMD pairs to plain doubles and transferMultipleByRuns() stores
-  // and loads doubles.
+  
+  
+  
 #ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
@@ -4111,7 +4111,7 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
   }
   MOZ_ASSERT(diffG == 0);
 
-  // See above.
+  
 #ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
@@ -4131,13 +4131,13 @@ void MacroAssembler::PopRegsInMaskIgnore(LiveRegisterSet set,
   const int32_t reservedG = diffG;
   const int32_t reservedF = diffF;
 
-  // See above.
+  
 #ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
-  // ARM can load multiple registers at once, but only if we want back all
-  // the registers we previously saved to the stack.
+  
+  
   if (ignore.emptyFloat()) {
     diffF -= transferMultipleByRuns(set.fpus(), IsLoad, StackPointer, IA);
     adjustFrame(-reservedF);
@@ -4231,8 +4231,8 @@ void MacroAssembler::PopStackPtr() {
   adjustFrame(-sizeof(intptr_t));
 }
 
-// ===============================================================
-// Simple call functions.
+
+
 
 CodeOffset MacroAssembler::call(Register reg) {
   as_blx(reg);
@@ -4240,7 +4240,7 @@ CodeOffset MacroAssembler::call(Register reg) {
 }
 
 CodeOffset MacroAssembler::call(Label* label) {
-  // For now, assume that it'll be nearby.
+  
   as_bl(label, Always);
   return CodeOffset(currentOffset());
 }
@@ -4272,9 +4272,9 @@ void MacroAssembler::call(JitCode* c) {
 }
 
 CodeOffset MacroAssembler::callWithPatch() {
-  // The caller ensures that the call is always in range using thunks (below)
-  // as necessary.
-  as_bl(BOffImm(), Always, /* documentation */ nullptr);
+  
+  
+  as_bl(BOffImm(), Always,  nullptr);
   return CodeOffset(currentOffset());
 }
 
@@ -4291,25 +4291,25 @@ CodeOffset MacroAssembler::farJumpWithPatch() {
                     wasm::MaxFuncs * 3 * sizeof(Instruction),
                 "always enough space for thunks");
 
-  // The goal of the thunk is to be able to jump to any address without the
-  // usual 32MiB branch range limitation. Additionally, to make the thunk
-  // simple to use, the thunk does not use the constant pool or require
-  // patching an absolute address. Instead, a relative offset is used which
-  // can be patched during compilation.
+  
+  
+  
+  
+  
 
-  // Inhibit pools since these three words must be contiguous so that the offset
-  // calculations below are valid.
+  
+  
   AutoForbidPoolsAndNops afp(this, 3);
 
-  // When pc is used, the read value is the address of the instruction + 8.
-  // This is exactly the address of the uint32 word we want to load.
+  
+  
   ScratchRegisterScope scratch(*this);
   ma_ldr(DTRAddr(pc, DtrOffImm(0)), scratch);
 
-  // Branch by making pc the destination register.
+  
   ma_add(pc, scratch, pc, LeaveCC, Always);
 
-  // Allocate space which will be patched by patchFarJump().
+  
   CodeOffset farJump(currentOffset());
   writeInst(UINT32_MAX);
 
@@ -4324,14 +4324,14 @@ void MacroAssembler::patchFarJump(CodeOffset farJump, uint32_t targetOffset) {
   uint32_t addOffset = farJump.offset() - 4;
   MOZ_ASSERT(editSrc(BufferOffset(addOffset))->is<InstALU>());
 
-  // When pc is read as the operand of the add, its value is the address of
-  // the add instruction + 8.
+  
+  
   *u32 = (targetOffset - addOffset) - 8;
 }
 
 CodeOffset MacroAssembler::nopPatchableToCall() {
   AutoForbidPoolsAndNops afp(this,
-                             /* max number of instructions in scope = */ 1);
+                              1);
   ma_nop();
   return CodeOffset(currentOffset());
 }
@@ -4355,15 +4355,15 @@ void MacroAssembler::pushReturnAddress() { push(lr); }
 
 void MacroAssembler::popReturnAddress() { pop(lr); }
 
-// ===============================================================
-// ABI function calls.
+
+
 
 void MacroAssembler::setupUnalignedABICall(Register scratch) {
-  setupNativeABICall();
+  setupABICall();
   dynamicAlignment_ = true;
 
   ma_mov(sp, scratch);
-  // Force sp to be aligned.
+  
   as_bic(sp, sp, Imm8(ABIStackAlignment - 1));
   ma_push(scratch);
 }
@@ -4373,8 +4373,8 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   uint32_t stackForCall = abiArgs_.stackBytesConsumedSoFar();
 
   if (dynamicAlignment_) {
-    // sizeof(intptr_t) accounts for the saved stack pointer pushed by
-    // setupUnalignedABICall.
+    
+    
     stackForCall += ComputeByteAlignment(stackForCall + sizeof(intptr_t),
                                          ABIStackAlignment);
   } else {
@@ -4386,7 +4386,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   *stackAdjust = stackForCall;
   reserveStack(stackForCall);
 
-  // Position all arguments.
+  
   {
     enoughMemory_ &= moveResolver_.resolve();
     if (!enoughMemory_) {
@@ -4400,7 +4400,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
 
   assertStackAlignment(ABIStackAlignment);
 
-  // Save the lr register if we need to preserve it.
+  
   if (secondScratchReg_ != lr) {
     ma_mov(lr, secondScratchReg_);
   }
@@ -4412,16 +4412,16 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
     ma_mov(secondScratchReg_, lr);
   }
 
-  // Calls to native functions in wasm pass through a thunk which already
-  // fixes up the return value for us.
+  
+  
   if (!callFromWasm && !UseHardFpABI()) {
     switch (result) {
       case MoveOp::DOUBLE:
-        // Move double from r0/r1 to ReturnFloatReg.
+        
         ma_vxfer(r0, r1, ReturnDoubleReg);
         break;
       case MoveOp::FLOAT32:
-        // Move float32 from r0 to ReturnFloatReg.
+        
         ma_vxfer(r0, ReturnFloat32Reg);
         break;
       case MoveOp::GENERAL:
@@ -4434,8 +4434,8 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
   freeStack(stackAdjust);
 
   if (dynamicAlignment_) {
-    // While the x86 supports pop esp, on ARM that isn't well defined, so
-    // just do it manually.
+    
+    
     as_dtr(IsLoad, 32, Offset, sp, DTRAddr(sp, DtrOffImm(0)));
   }
 
@@ -4446,7 +4446,7 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
 }
 
 void MacroAssembler::callWithABINoProfiler(Register fun, MoveOp::Type result) {
-  // Load the callee in r12, as above.
+  
   ma_mov(fun, r12);
   uint32_t stackAdjust;
   callWithABIPre(&stackAdjust);
@@ -4456,9 +4456,9 @@ void MacroAssembler::callWithABINoProfiler(Register fun, MoveOp::Type result) {
 
 void MacroAssembler::callWithABINoProfiler(const Address& fun,
                                            MoveOp::Type result) {
-  // Load the callee in r12, no instruction between the ldr and call should
-  // clobber it. Note that we can't use fun.base because it may be one of the
-  // IntArg registers clobbered before the call.
+  
+  
+  
   {
     ScratchRegisterScope scratch(*this);
     ma_ldr(fun, r12, scratch);
@@ -4469,20 +4469,20 @@ void MacroAssembler::callWithABINoProfiler(const Address& fun,
   callWithABIPost(stackAdjust, result);
 }
 
-// ===============================================================
-// Jit Frames.
+
+
 
 uint32_t MacroAssembler::pushFakeReturnAddress(Register scratch) {
-  // On ARM any references to the pc, adds an additional 8 to it, which
-  // correspond to 2 instructions of 4 bytes.  Thus we use an additional nop
-  // to pad until we reach the pushed pc.
-  //
-  // Note: In practice this should not be necessary, as this fake return
-  // address is never used for resuming any execution. Thus theoriticaly we
-  // could just do a Push(pc), and ignore the nop as well as the pool.
+  
+  
+  
+  
+  
+  
+  
   enterNoPool(2);
   DebugOnly<uint32_t> offsetBeforePush = currentOffset();
-  Push(pc);  // actually pushes $pc + 8.
+  Push(pc);  
   ma_nop();
   uint32_t pseudoReturnOffset = currentOffset();
   leaveNoPool();
@@ -4496,8 +4496,8 @@ void MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch,
   enterFakeExitFrame(cxreg, scratch, type);
 }
 
-// ===============================================================
-// Move instructions
+
+
 
 void MacroAssembler::moveValue(const TypedOrValueRegister& src,
                                const ValueOperand& dest) {
@@ -4533,11 +4533,11 @@ void MacroAssembler::moveValue(const ValueOperand& src,
   Register d0 = dest.typeReg();
   Register d1 = dest.payloadReg();
 
-  // Either one or both of the source registers could be the same as a
-  // destination register.
+  
+  
   if (s1 == d0) {
     if (s0 == d1) {
-      // If both are, this is just a swap of two registers.
+      
       ScratchRegisterScope scratch(*this);
       MOZ_ASSERT(d1 != scratch);
       MOZ_ASSERT(d0 != scratch);
@@ -4546,7 +4546,7 @@ void MacroAssembler::moveValue(const ValueOperand& src,
       ma_mov(scratch, d0);
       return;
     }
-    // If only one is, copy that source first.
+    
     std::swap(s0, s1);
     std::swap(d0, d1);
   }
@@ -4568,8 +4568,8 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
   }
 }
 
-// ===============================================================
-// Branch functions
+
+
 
 void MacroAssembler::loadStoreBuffer(Register ptr, Register buffer) {
   ma_lsr(Imm32(gc::ChunkShift), ptr, buffer);
@@ -4628,13 +4628,13 @@ void MacroAssembler::branchValueIsNurseryCell(Condition cond,
 void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  // If cond == NotEqual, branch when a.payload != b.payload || a.tag !=
-  // b.tag. If the payloads are equal, compare the tags. If the payloads are
-  // not equal, short circuit true (NotEqual).
-  //
-  // If cand == Equal, branch when a.payload == b.payload && a.tag == b.tag.
-  // If the payloads are equal, compare the tags. If the payloads are not
-  // equal, short circuit false (NotEqual).
+  
+  
+  
+  
+  
+  
+  
   ScratchRegisterScope scratch(*this);
 
   if (rhs.isGCThing()) {
@@ -4646,8 +4646,8 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
   ma_b(label, cond);
 }
 
-// ========================================================================
-// Memory access primitives.
+
+
 template <typename T>
 void MacroAssembler::storeUnboxedValue(const ConstantOrRegister& value,
                                        MIRType valueType, const T& dest,
@@ -4657,12 +4657,12 @@ void MacroAssembler::storeUnboxedValue(const ConstantOrRegister& value,
     return;
   }
 
-  // Store the type tag if needed.
+  
   if (valueType != slotType) {
     storeTypeTag(ImmType(ValueTypeFromMIRType(valueType)), dest);
   }
 
-  // Store the payload.
+  
   if (value.constant()) {
     storePayload(value.value(), dest);
   } else {
@@ -4709,7 +4709,7 @@ void MacroAssembler::wasmTruncateDoubleToUInt32(FloatRegister input,
                                                 Register output,
                                                 bool isSaturating,
                                                 Label* oolEntry) {
-  wasmTruncateToInt32(input, output, MIRType::Double, /* isUnsigned= */ true,
+  wasmTruncateToInt32(input, output, MIRType::Double,  true,
                       isSaturating, oolEntry);
 }
 
@@ -4717,7 +4717,7 @@ void MacroAssembler::wasmTruncateDoubleToInt32(FloatRegister input,
                                                Register output,
                                                bool isSaturating,
                                                Label* oolEntry) {
-  wasmTruncateToInt32(input, output, MIRType::Double, /* isUnsigned= */ false,
+  wasmTruncateToInt32(input, output, MIRType::Double,  false,
                       isSaturating, oolEntry);
 }
 
@@ -4725,7 +4725,7 @@ void MacroAssembler::wasmTruncateFloat32ToUInt32(FloatRegister input,
                                                  Register output,
                                                  bool isSaturating,
                                                  Label* oolEntry) {
-  wasmTruncateToInt32(input, output, MIRType::Float32, /* isUnsigned= */ true,
+  wasmTruncateToInt32(input, output, MIRType::Float32,  true,
                       isSaturating, oolEntry);
 }
 
@@ -4733,7 +4733,7 @@ void MacroAssembler::wasmTruncateFloat32ToInt32(FloatRegister input,
                                                 Register output,
                                                 bool isSaturating,
                                                 Label* oolEntry) {
-  wasmTruncateToInt32(input, output, MIRType::Float32, /* isUnsigned= */ false,
+  wasmTruncateToInt32(input, output, MIRType::Float32,  false,
                       isSaturating, oolEntry);
 }
 
@@ -4852,8 +4852,8 @@ void MacroAssembler::wasmUnalignedStoreI64(const wasm::MemoryAccessDesc& access,
                          ptrScratch, tmp);
 }
 
-// ========================================================================
-// Primitive atomic operations.
+
+
 
 static Register ComputePointerForAtomic(MacroAssembler& masm,
                                         const BaseIndex& src, Register r) {
@@ -4881,26 +4881,26 @@ static Register ComputePointerForAtomic(MacroAssembler& masm,
   return r;
 }
 
-// General algorithm:
-//
-//     ...    ptr, <addr>         ; compute address of item
-//     dmb
-// L0  ldrex* output, [ptr]
-//     sxt*   output, output, 0   ; sign-extend if applicable
-//     *xt*   tmp, oldval, 0      ; sign-extend or zero-extend if applicable
-//     cmp    output, tmp
-//     bne    L1                  ; failed - values are different
-//     strex* tmp, newval, [ptr]
-//     cmp    tmp, 1
-//     beq    L0                  ; failed - location is dirty, retry
-// L1  dmb
-//
-// Discussion here:  http://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html.
-// However note that that discussion uses 'isb' as the trailing fence.
-// I've not quite figured out why, and I've gone with dmb here which
-// is safe.  Also see the LLVM source, which uses 'dmb ish' generally.
-// (Apple's Swift CPU apparently handles ish in a non-default, faster
-// way.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template <typename T>
 static void CompareExchange(MacroAssembler& masm,
@@ -5015,7 +5015,7 @@ static void AtomicExchange(MacroAssembler& masm,
 
   MOZ_ASSERT(nbytes <= 4);
 
-  // Bug 1077321: We may further optimize for ARMv8 (AArch32) here.
+  
   Label again;
   Label done;
 
@@ -5088,24 +5088,24 @@ void MacroAssembler::wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
                  output);
 }
 
-// General algorithm:
-//
-//     ...    ptr, <addr>         ; compute address of item
-//     dmb
-// L0  ldrex* output, [ptr]
-//     sxt*   output, output, 0   ; sign-extend if applicable
-//     OP     tmp, output, value  ; compute value to store
-//     strex* tmp2, tmp, [ptr]    ; tmp2 required by strex
-//     cmp    tmp2, 1
-//     beq    L0                  ; failed - location is dirty, retry
-//     dmb                        ; ordering barrier required
-//
-// Also see notes above at compareExchange re the barrier strategy.
-//
-// Observe that the value being operated into the memory element need
-// not be sign-extended because no OP will make use of bits to the
-// left of the bits indicated by the width of the element, and neither
-// output nor the bits stored are affected by OP.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template <typename T>
 static void AtomicFetchOp(MacroAssembler& masm,
@@ -5170,7 +5170,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
       masm.as_eor(scratch, output, O2Reg(value));
       break;
   }
-  // Rd must differ from the two other arguments to strex.
+  
   switch (nbytes) {
     case 1:
       masm.as_strexb(flagTemp, scratch, ptr);
@@ -5218,17 +5218,17 @@ void MacroAssembler::wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
                 temp, output);
 }
 
-// Uses both scratch registers, one for the address and one for a temp,
-// but needs two temps for strex:
-//
-//     ...    ptr, <addr>         ; compute address of item
-//     dmb
-// L0  ldrex* temp, [ptr]
-//     OP     temp, temp, value   ; compute value to store
-//     strex* temp2, temp, [ptr]
-//     cmp    temp2, 1
-//     beq    L0                  ; failed - location is dirty, retry
-//     dmb                        ; ordering barrier required
+
+
+
+
+
+
+
+
+
+
+
 
 template <typename T>
 static void AtomicEffectOp(MacroAssembler& masm,
@@ -5285,7 +5285,7 @@ static void AtomicEffectOp(MacroAssembler& masm,
       masm.as_eor(scratch, scratch, O2Reg(value));
       break;
   }
-  // Rd must differ from the two other arguments to strex.
+  
   switch (nbytes) {
     case 1:
       masm.as_strexb(flagTemp, scratch, ptr);
@@ -5383,7 +5383,7 @@ static void CompareExchange64(MacroAssembler& masm,
 
   ScratchRegisterScope scratch(masm);
 
-  // Rd (temp) must differ from the two other arguments to strex.
+  
   masm.as_strexd(scratch, replace.low, replace.high, ptr);
   masm.as_cmp(scratch, Imm8(1));
   masm.as_b(&again, MacroAssembler::Equal);
@@ -5472,10 +5472,10 @@ static void WasmAtomicFetchOp64(MacroAssembler& masm,
   MOZ_ASSERT((temp.low.code() & 1) == 0);
   MOZ_ASSERT(temp.low.code() + 1 == temp.high.code());
 
-  // We could avoid this pair requirement but in that case we would end up
-  // with two moves in the loop to preserve the loaded value in output.  The
-  // prize would be less register spilling around this op since the pair
-  // requirement will tend to force more spilling.
+  
+  
+  
+  
 
   MOZ_ASSERT((output.low.code() & 1) == 0);
   MOZ_ASSERT(output.low.code() + 1 == output.high.code());
@@ -5515,7 +5515,7 @@ static void WasmAtomicFetchOp64(MacroAssembler& masm,
 
   ScratchRegisterScope scratch(masm);
 
-  // Rd (temp) must differ from the two other arguments to strex.
+  
   masm.as_strexd(scratch, temp.low, temp.high, ptr);
   masm.as_cmp(scratch, Imm8(1));
   masm.as_b(&again, MacroAssembler::Equal);
@@ -5537,8 +5537,8 @@ void MacroAssembler::wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access,
   WasmAtomicFetchOp64(*this, access, op, value, mem, temp, output);
 }
 
-// ========================================================================
-// JS atomic operations.
+
+
 
 template <typename T>
 static void CompareExchangeJS(MacroAssembler& masm, Scalar::Type arrayType,
@@ -5639,8 +5639,8 @@ void MacroAssembler::atomicEffectOpJS(Scalar::Type arrayType,
   AtomicEffectOp(*this, nullptr, arrayType, sync, op, value, mem, temp);
 }
 
-// ========================================================================
-// Convert floating point.
+
+
 
 bool MacroAssembler::convertUInt64ToDoubleNeedsTemp() { return false; }
 
@@ -5683,7 +5683,7 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
                                     Register rhs, Register lhsOutput,
                                     bool isUnsigned,
                                     const LiveRegisterSet& volatileLiveRegs) {
-  // Currently this helper can't handle this situation.
+  
   MOZ_ASSERT(lhsOutput != rhs);
 
   if (HasIDIV()) {
@@ -5693,7 +5693,7 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
       masm.quotient32(rhs, lhsOutput, isUnsigned);
     }
   } else {
-    // Ensure that the output registers are saved and restored properly,
+    
     MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal0));
     MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal1));
 
@@ -5741,7 +5741,7 @@ void MacroAssembler::flexibleRemainder32(
 void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
                                       Register remOutput, bool isUnsigned,
                                       const LiveRegisterSet& volatileLiveRegs) {
-  // Currently this helper can't handle this situation.
+  
   MOZ_ASSERT(lhsOutput != rhs);
 
   if (HasIDIV()) {
@@ -5749,7 +5749,7 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
     remainder32(rhs, remOutput, isUnsigned);
     quotient32(rhs, lhsOutput, isUnsigned);
   } else {
-    // Ensure that the output registers are saved and restored properly,
+    
     MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal0));
     MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal1));
     PushRegsInMask(volatileLiveRegs);
@@ -5786,12 +5786,12 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
   PatchDataWithValueCheck(loc, ImmPtr(target.raw()), ImmPtr(nullptr));
 }
 
-// ========================================================================
-// Spectre Mitigations.
+
+
 
 void MacroAssembler::speculationBarrier() {
-  // Spectre mitigation recommended by ARM for cases where csel/cmov cannot be
-  // used.
+  
+  
   as_csdb();
 }
 
@@ -5845,7 +5845,7 @@ void MacroAssembler::nearbyIntFloat32(RoundingMode mode, FloatRegister src,
   MOZ_CRASH("not supported on this platform");
 }
 
-//}}} check_macroassembler_style
+
 
 void MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input,
                                             Register output, MIRType fromType,
@@ -5855,10 +5855,10 @@ void MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input,
   ScratchRegisterScope scratchReg(asMasm());
   FloatRegister scratch = scratchScope.uintOverlay();
 
-  // ARM conversion instructions clamp the value to ensure it fits within the
-  // target's type bounds, so every time we see those, we need to check the
-  // input. A NaN check is not necessary because NaN is converted to zero and
-  // on a zero result we branch out of line to do further processing anyway.
+  
+  
+  
+  
   if (isUnsigned) {
     if (fromType == MIRType::Double) {
       ma_vcvt_F64_U32(input, scratch);
@@ -5871,7 +5871,7 @@ void MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input,
     ma_vxfer(scratch, output);
 
     if (!isSaturating) {
-      // int32_t(UINT32_MAX) == -1.
+      
       ma_cmp(output, Imm32(-1), scratchReg);
       as_cmp(output, Imm8(0), Assembler::NotEqual);
       ma_b(oolEntry, Assembler::Equal);
@@ -5880,7 +5880,7 @@ void MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input,
     return;
   }
 
-  // vcvt* converts NaN into 0, so check for NaNs here.
+  
   if (!isSaturating) {
     if (fromType == MIRType::Double) {
       asMasm().compareDouble(input, input);
@@ -5915,8 +5915,8 @@ void MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input,
 void MacroAssemblerARM::outOfLineWasmTruncateToIntCheck(
     FloatRegister input, MIRType fromType, MIRType toType, TruncFlags flags,
     Label* rejoin, wasm::BytecodeOffset trapOffset) {
-  // On ARM, saturating truncation codegen handles saturating itself rather
-  // than relying on out-of-line fixup code.
+  
+  
   if (flags & TRUNC_SATURATING) {
     return;
   }
@@ -5925,7 +5925,7 @@ void MacroAssemblerARM::outOfLineWasmTruncateToIntCheck(
   ScratchDoubleScope scratchScope(asMasm());
   FloatRegister scratch;
 
-  // Eagerly take care of NaNs.
+  
   Label inputIsNaN;
   if (fromType == MIRType::Double) {
     asMasm().branchDouble(Assembler::DoubleUnordered, input, input,
@@ -5936,14 +5936,14 @@ void MacroAssemblerARM::outOfLineWasmTruncateToIntCheck(
     MOZ_CRASH("unexpected type in visitOutOfLineWasmTruncateCheck");
   }
 
-  // Handle special values.
+  
   Label fail;
 
-  // By default test for the following inputs and bail:
-  // signed:   ] -Inf, INTXX_MIN - 1.0 ] and [ INTXX_MAX + 1.0 : +Inf [
-  // unsigned: ] -Inf, -1.0 ] and [ UINTXX_MAX + 1.0 : +Inf [
-  // Note: we cannot always represent those exact values. As a result
-  // this changes the actual comparison a bit.
+  
+  
+  
+  
+  
   double minValue, maxValue;
   Assembler::DoubleCondition minCond = Assembler::DoubleLessThanOrEqual;
   Assembler::DoubleCondition maxCond = Assembler::DoubleGreaterThanOrEqual;
@@ -5952,8 +5952,8 @@ void MacroAssemblerARM::outOfLineWasmTruncateToIntCheck(
       minValue = -1;
       maxValue = double(UINT64_MAX) + 1.0;
     } else {
-      // In the float32/double range there exists no value between
-      // INT64_MIN and INT64_MIN - 1.0. Making INT64_MIN the lower-bound.
+      
+      
       minValue = double(INT64_MIN);
       minCond = Assembler::DoubleLessThan;
       maxValue = double(INT64_MAX) + 1.0;
@@ -5964,8 +5964,8 @@ void MacroAssemblerARM::outOfLineWasmTruncateToIntCheck(
       maxValue = double(UINT32_MAX) + 1.0;
     } else {
       if (fromType == MIRType::Float32) {
-        // In the float32 range there exists no value between
-        // INT32_MIN and INT32_MIN - 1.0. Making INT32_MIN the lower-bound.
+        
+        
         minValue = double(INT32_MIN);
         minCond = Assembler::DoubleLessThan;
       } else {
@@ -5992,10 +5992,10 @@ void MacroAssemblerARM::outOfLineWasmTruncateToIntCheck(
     asMasm().branchFloat(maxCond, input, scratch, &fail);
   }
 
-  // We had an actual correct value, get back to where we were.
+  
   ma_b(rejoin);
 
-  // Handle errors.
+  
   bind(&fail);
   asMasm().wasmTrap(wasm::Trap::IntegerOverflow, trapOffset);
 
@@ -6014,7 +6014,7 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
 
   Scalar::Type type = access.type();
 
-  // Maybe add the offset.
+  
   if (offset || type == Scalar::Int64) {
     ScratchRegisterScope scratch(asMasm());
     if (offset) {
@@ -6033,7 +6033,7 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
     if (type == Scalar::Int64) {
       static_assert(INT64LOW_OFFSET == 0);
 
-      load = ma_dataTransferN(IsLoad, 32, /* signed = */ false, memoryBase, ptr,
+      load = ma_dataTransferN(IsLoad, 32,  false, memoryBase, ptr,
                               out64.low);
       append(access, load.getOffset());
 
@@ -6061,8 +6061,8 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
       ScratchRegisterScope scratch(asMasm());
       ma_add(memoryBase, ptr, scratch);
 
-      // See HandleUnalignedTrap() in WasmSignalHandler.cpp.  We depend on this
-      // being a single, unconditional VLDR with a base pointer other than PC.
+      
+      
       load = ma_vldr(Operand(Address(scratch, 0)).toVFPAddr(), output.fpu());
       append(access, load.getOffset());
     } else {
@@ -6090,14 +6090,14 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
   unsigned byteSize = access.byteSize();
   Scalar::Type type = access.type();
 
-  // Maybe add the offset.
+  
   if (offset || type == Scalar::Int64) {
     ScratchRegisterScope scratch(asMasm());
-    // We need to store the high word of an Int64 first, so always adjust the
-    // pointer to point to the high word in this case.  The adjustment is always
-    // OK because MaxOffsetGuardLimit is computed so that we can add up to
-    // sizeof(LargestValue)-1 without skipping past the guard page, and we
-    // assert above that offset < MaxOffsetGuardLimit.
+    
+    
+    
+    
+    
     if (type == Scalar::Int64) {
       offset += INT64HIGH_OFFSET;
     }
@@ -6110,13 +6110,13 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
 
   BufferOffset store;
   if (type == Scalar::Int64) {
-    store = ma_dataTransferN(IsStore, 32 /* bits */, /* signed */ false,
+    store = ma_dataTransferN(IsStore, 32 ,  false,
                              memoryBase, ptr, val64.high);
     append(access, store.getOffset());
 
     as_sub(ptr, ptr, Imm8(INT64HIGH_OFFSET));
 
-    store = ma_dataTransferN(IsStore, 32 /* bits */, /* signed */ true,
+    store = ma_dataTransferN(IsStore, 32 ,  true,
                              memoryBase, ptr, val64.low);
     append(access, store.getOffset());
   } else {
@@ -6126,16 +6126,16 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
       MOZ_ASSERT((byteSize == 4) == val.isSingle());
       ma_add(memoryBase, ptr, scratch);
 
-      // See HandleUnalignedTrap() in WasmSignalHandler.cpp.  We depend on this
-      // being a single, unconditional VLDR with a base pointer other than PC.
+      
+      
       store = ma_vstr(val, Operand(Address(scratch, 0)).toVFPAddr());
       append(access, store.getOffset());
     } else {
       bool isSigned = type == Scalar::Uint32 ||
-                      type == Scalar::Int32;  // see AsmJSStoreHeap;
+                      type == Scalar::Int32;  
       Register val = value.gpr();
 
-      store = ma_dataTransferN(IsStore, 8 * byteSize /* bits */, isSigned,
+      store = ma_dataTransferN(IsStore, 8 * byteSize , isSigned,
                                memoryBase, ptr, val);
       append(access, store.getOffset());
     }
@@ -6160,8 +6160,8 @@ void MacroAssemblerARM::wasmUnalignedLoadImpl(
     ma_add(Imm32(offset), ptr, scratch);
   }
 
-  // Add memoryBase to ptr, so we can use base+index addressing in the byte
-  // loads.
+  
+  
   ma_add(memoryBase, ptr);
 
   unsigned byteSize = access.byteSize();
@@ -6171,8 +6171,8 @@ void MacroAssemblerARM::wasmUnalignedLoadImpl(
   bool isSigned =
       type == Scalar::Int16 || type == Scalar::Int32 || type == Scalar::Int64;
 
-  // If it's a two-word load we must load the high word first to get signal
-  // handling right.
+  
+  
 
   asMasm().memoryBarrierBefore(access.sync());
 
@@ -6181,7 +6181,7 @@ void MacroAssemblerARM::wasmUnalignedLoadImpl(
       MOZ_ASSERT(byteSize == 4);
       MOZ_ASSERT(tmp2 != Register::Invalid() && tmp3 == Register::Invalid());
       MOZ_ASSERT(outAny.fpu().isSingle());
-      emitUnalignedLoad(&access, /*signed*/ false, /*size*/ 4, ptr, tmp, tmp2);
+      emitUnalignedLoad(&access,  false,  4, ptr, tmp, tmp2);
       ma_vxfer(tmp2, outAny.fpu());
       break;
     }
@@ -6189,9 +6189,9 @@ void MacroAssemblerARM::wasmUnalignedLoadImpl(
       MOZ_ASSERT(byteSize == 8);
       MOZ_ASSERT(tmp2 != Register::Invalid() && tmp3 != Register::Invalid());
       MOZ_ASSERT(outAny.fpu().isDouble());
-      emitUnalignedLoad(&access, /*signed=*/false, /*size=*/4, ptr, tmp, tmp3,
-                        /*offset=*/4);
-      emitUnalignedLoad(nullptr, /*signed=*/false, /*size=*/4, ptr, tmp, tmp2);
+      emitUnalignedLoad(&access, false, 4, ptr, tmp, tmp3,
+                        4);
+      emitUnalignedLoad(nullptr, false, 4, ptr, tmp, tmp2);
       ma_vxfer(tmp2, tmp3, outAny.fpu());
       break;
     }
@@ -6199,9 +6199,9 @@ void MacroAssemblerARM::wasmUnalignedLoadImpl(
       MOZ_ASSERT(byteSize == 8);
       MOZ_ASSERT(tmp2 == Register::Invalid() && tmp3 == Register::Invalid());
       MOZ_ASSERT(out64.high != ptr);
-      emitUnalignedLoad(&access, /*signed=*/false, /*size=*/4, ptr, tmp,
-                        out64.high, /*offset=*/4);
-      emitUnalignedLoad(nullptr, /*signed=*/false, /*size=*/4, ptr, tmp,
+      emitUnalignedLoad(&access, false, 4, ptr, tmp,
+                        out64.high, 4);
+      emitUnalignedLoad(nullptr, false, 4, ptr, tmp,
                         out64.low);
       break;
     }
@@ -6238,9 +6238,9 @@ void MacroAssemblerARM::wasmUnalignedStoreImpl(
     Register64 val64, Register memoryBase, Register ptr, Register ptrScratch,
     Register valOrTmp) {
   MOZ_ASSERT(ptr == ptrScratch);
-  // They can't both be valid, but they can both be invalid.
+  
   MOZ_ASSERT(floatValue.isInvalid() || val64 == Register64::Invalid());
-  // Don't try extremely clever optimizations.
+  
   MOZ_ASSERT_IF(val64 != Register64::Invalid(),
                 valOrTmp != val64.high && valOrTmp != val64.low);
 
@@ -6255,19 +6255,19 @@ void MacroAssemblerARM::wasmUnalignedStoreImpl(
     ma_add(Imm32(offset), ptr, scratch);
   }
 
-  // Add memoryBase to ptr, so we can use base+index addressing in the byte
-  // loads.
+  
+  
   ma_add(memoryBase, ptr);
 
   asMasm().memoryBarrierAfter(access.sync());
 
-  // If it's a two-word store we must store the high word first to get signal
-  // handling right.
+  
+  
 
   if (val64 != Register64::Invalid()) {
     if (byteSize == 8) {
-      emitUnalignedStore(&access, /*size=*/4, ptr, val64.high, /*offset=*/4);
-      emitUnalignedStore(nullptr, /*size=*/4, ptr, val64.low);
+      emitUnalignedStore(&access, 4, ptr, val64.high, 4);
+      emitUnalignedStore(nullptr, 4, ptr, val64.low);
     } else {
       emitUnalignedStore(&access, byteSize, ptr, val64.low);
     }
@@ -6276,12 +6276,12 @@ void MacroAssemblerARM::wasmUnalignedStoreImpl(
       MOZ_ASSERT(byteSize == 8);
       ScratchRegisterScope scratch(asMasm());
       ma_vxfer(floatValue, scratch, valOrTmp);
-      emitUnalignedStore(&access, /*size=*/4, ptr, valOrTmp, /*offset=*/4);
-      emitUnalignedStore(nullptr, /*size=*/4, ptr, scratch);
+      emitUnalignedStore(&access, 4, ptr, valOrTmp, 4);
+      emitUnalignedStore(nullptr, 4, ptr, scratch);
     } else {
       MOZ_ASSERT(byteSize == 4);
       ma_vxfer(floatValue, valOrTmp);
-      emitUnalignedStore(&access, /*size=*/4, ptr, valOrTmp);
+      emitUnalignedStore(&access, 4, ptr, valOrTmp);
     }
   } else {
     MOZ_ASSERT(byteSize == 2 || byteSize == 4);
@@ -6295,30 +6295,30 @@ void MacroAssemblerARM::emitUnalignedLoad(const wasm::MemoryAccessDesc* access,
                                           bool isSigned, unsigned byteSize,
                                           Register ptr, Register tmp,
                                           Register dest, unsigned offset) {
-  // Preconditions.
+  
   MOZ_ASSERT(ptr != tmp);
   MOZ_ASSERT(ptr != dest);
   MOZ_ASSERT(tmp != dest);
   MOZ_ASSERT(byteSize == 2 || byteSize == 4);
   MOZ_ASSERT(offset == 0 || offset == 4);
 
-  // The trap metadata is only valid for the first instruction, so we must
-  // make the first instruction fault if any of them is going to fault.  Hence
-  // byte loads must be issued from high addresses toward low addresses (or we
-  // must emit metadata for each load).
-  //
-  // So for a four-byte load from address x we will emit an eight-instruction
-  // sequence:
-  //
-  //   ldrsb [x+3], tmp           // note signed load *if appropriate*
-  //   lsl dest, tmp lsl 24       // move high byte + sign bits into place;
-  //                              // clear low bits
-  //   ldrb [x+2], tmp            // note unsigned load
-  //   or dest, dest, tmp lsl 16  // add another byte
-  //   ldrb [x+1], tmp            // ...
-  //   or dest, dest, tmp lsl 8
-  //   ldrb [x], tmp
-  //   or dest, dest, tmp
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   ScratchRegisterScope scratch(asMasm());
 
@@ -6333,7 +6333,7 @@ void MacroAssemblerARM::emitUnalignedLoad(const wasm::MemoryAccessDesc* access,
   --i;
 
   while (i >= 0) {
-    ma_dataTransferN(IsLoad, 8, /*signed=*/false, ptr, Imm32(offset + i), tmp,
+    ma_dataTransferN(IsLoad, 8, false, ptr, Imm32(offset + i), tmp,
                      scratch);
     as_orr(dest, dest, lsl(tmp, 8 * i));
     --i;
@@ -6343,34 +6343,34 @@ void MacroAssemblerARM::emitUnalignedLoad(const wasm::MemoryAccessDesc* access,
 void MacroAssemblerARM::emitUnalignedStore(const wasm::MemoryAccessDesc* access,
                                            unsigned byteSize, Register ptr,
                                            Register val, unsigned offset) {
-  // Preconditions.
+  
   MOZ_ASSERT(ptr != val);
   MOZ_ASSERT(byteSize == 2 || byteSize == 4);
   MOZ_ASSERT(offset == 0 || offset == 4);
 
-  // See comments above.  Here an additional motivation is that no side
-  // effects should be observed if any of the stores would fault, so we *must*
-  // go high-to-low, we can't emit metadata for individual stores in
-  // low-to-high order.
-  //
-  // For a four-byte store to address x we will emit a seven-instruction
-  // sequence:
-  //
-  //   lsr  scratch, val, 24
-  //   strb [x+3], scratch
-  //   lsr  scratch, val, 16
-  //   strb [x+2], scratch
-  //   lsr  scratch, val, 8
-  //   strb [x+1], scratch
-  //   strb [x], val
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // `val` may be scratch in the case when we store doubles.
+  
   SecondScratchRegisterScope scratch(asMasm());
 
   for (int i = byteSize - 1; i > 0; i--) {
     ma_lsr(Imm32(i * 8), val, scratch);
-    // Use as_dtr directly to avoid needing another scratch register; we can
-    // do this because `offset` is known to be small.
+    
+    
     BufferOffset store = as_dtr(IsStore, 8, Offset, scratch,
                                 DTRAddr(ptr, DtrOffImm(offset + i)));
     if (i == (int)byteSize - 1 && access) {

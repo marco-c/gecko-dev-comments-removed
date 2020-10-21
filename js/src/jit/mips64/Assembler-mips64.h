@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_mips64_Assembler_mips64_h
 #define jit_mips64_Assembler_mips64_h
@@ -38,46 +38,45 @@ class ABIArgGenerator {
 
     return (usedArgSlots_ - 8) * sizeof(int64_t);
   }
-  void increaseStackOffset(uint32_t bytes) { MOZ_CRASH("NYI"); }
 };
 
-// These registers may be volatile or nonvolatile.
+
 static constexpr Register ABINonArgReg0 = t0;
 static constexpr Register ABINonArgReg1 = t1;
 static constexpr Register ABINonArgReg2 = t2;
 static constexpr Register ABINonArgReg3 = t3;
 
-// This register may be volatile or nonvolatile. Avoid f23 which is the
-// ScratchDoubleReg.
+
+
 static constexpr FloatRegister ABINonArgDoubleReg{FloatRegisters::f21,
                                                   FloatRegisters::Double};
 
-// These registers may be volatile or nonvolatile.
-// Note: these three registers are all guaranteed to be different
+
+
 static constexpr Register ABINonArgReturnReg0 = t0;
 static constexpr Register ABINonArgReturnReg1 = t1;
 static constexpr Register ABINonVolatileReg = s0;
 
-// This register is guaranteed to be clobberable during the prologue and
-// epilogue of an ABI call which must preserve both ABI argument, return
-// and non-volatile registers.
+
+
+
 static constexpr Register ABINonArgReturnVolatileReg = t0;
 
-// TLS pointer argument register for WebAssembly functions. This must not alias
-// any other register used for passing function arguments or return values.
-// Preserved by WebAssembly functions.
+
+
+
 static constexpr Register WasmTlsReg = s5;
 
-// Registers used for wasm table calls. These registers must be disjoint
-// from the ABI argument registers, WasmTlsReg and each other.
+
+
 static constexpr Register WasmTableCallScratchReg0 = ABINonArgReg0;
 static constexpr Register WasmTableCallScratchReg1 = ABINonArgReg1;
 static constexpr Register WasmTableCallSigReg = ABINonArgReg2;
 static constexpr Register WasmTableCallIndexReg = ABINonArgReg3;
 
-// Register used as a scratch along the return path in the fast js -> wasm stub
-// code. This must not overlap ReturnReg, JSReturnOperand, or WasmTlsReg. It
-// must be a volatile register.
+
+
+
 static constexpr Register WasmJitEntryReturnScratch = t1;
 
 static constexpr Register InterpreterPCReg = t5;
@@ -170,8 +169,8 @@ static constexpr FloatRegister f30 = {FloatRegisters::f30,
 static constexpr FloatRegister f31 = {FloatRegisters::f31,
                                       FloatRegisters::Double};
 
-// MIPS64 CPUs can only load multibyte data that is "naturally"
-// eight-byte-aligned, sp register should be sixteen-byte-aligned.
+
+
 static constexpr uint32_t ABIStackAlignment = 16;
 static constexpr uint32_t JitStackAlignment = 16;
 
@@ -181,16 +180,16 @@ static_assert(JitStackAlignment % sizeof(Value) == 0 &&
                   JitStackValueAlignment >= 1,
               "Stack alignment should be a non-zero multiple of sizeof(Value)");
 
-// TODO this is just a filler to prevent a build failure. The MIPS SIMD
-// alignment requirements still need to be explored.
-// TODO Copy the static_asserts from x64/x86 assembler files.
+
+
+
 static constexpr uint32_t SimdMemoryAlignment = 16;
 
 static constexpr uint32_t WasmStackAlignment = SimdMemoryAlignment;
 static const uint32_t WasmTrapInstructionLength = 4;
 
-// The offsets are dynamically asserted during
-// code generation in the prologue/epilogue.
+
+
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
 static constexpr uint32_t WasmCheckedTailEntryOffset = 16u;
 
@@ -215,8 +214,8 @@ class Assembler : public AssemblerMIPSShared {
 
   void bind(InstImm* inst, uintptr_t branch, uintptr_t target);
 
-  // Copy the assembly code to the given buffer, and perform any pending
-  // relocations relying on the target address.
+  
+  
   void executableCopy(uint8_t* buffer);
 
   static uint32_t PatchWrite_NearCallSize();
@@ -237,7 +236,7 @@ class Assembler : public AssemblerMIPSShared {
   static uint64_t ExtractInstructionImmediate(uint8_t* code);
 
   static void ToggleCall(CodeLocationLabel inst_, bool enabled);
-};  // Assembler
+};  
 
 static const uint32_t NumIntArgRegs = 8;
 static const uint32_t NumFloatArgRegs = NumIntArgRegs;
@@ -258,23 +257,23 @@ static inline bool GetFloatArgReg(uint32_t usedArgSlots, FloatRegister* out) {
   return false;
 }
 
-// Get a register in which we plan to put a quantity that will be used as an
-// integer argument. This differs from GetIntArgReg in that if we have no more
-// actual argument registers to use we will fall back on using whatever
-// CallTempReg* don't overlap the argument registers, and only fail once those
-// run out too.
+
+
+
+
+
 static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
                                        uint32_t usedFloatArgs, Register* out) {
-  // NOTE: We can't properly determine which regs are used if there are
-  // float arguments. If this is needed, we will have to guess.
+  
+  
   MOZ_ASSERT(usedFloatArgs == 0);
 
   if (GetIntArgReg(usedIntArgs, out)) {
     return true;
   }
-  // Unfortunately, we have to assume things about the point at which
-  // GetIntArgReg returns false, because we need to know how many registers it
-  // can allocate.
+  
+  
+  
   usedIntArgs -= NumIntArgRegs;
   if (usedIntArgs >= NumCallTempNonArgRegs) {
     return false;
@@ -288,7 +287,7 @@ static inline uint32_t GetArgStackDisp(uint32_t usedArgSlots) {
   return (usedArgSlots - NumIntArgRegs) * sizeof(int64_t);
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_mips64_Assembler_mips64_h */
+#endif 

@@ -50,8 +50,8 @@ namespace js {
 namespace jit {
 class JitScript;
 enum class RoundingMode;
-template <class VecT, class ABIArgGeneratorT>
-class ABIArgIterBase;
+template <class VecT>
+class ABIArgIter;
 }  
 
 
@@ -1316,8 +1316,8 @@ class ArgTypeVector {
   
   
   size_t length() const { return args_.length() + size_t(hasStackResults_); }
-  template <class VecT, class ABIArgGeneratorT>
-  friend class jit::ABIArgIterBase;
+  friend jit::ABIArgIter<ArgTypeVector>;
+  friend jit::ABIArgIter<const ArgTypeVector>;
 
  public:
   ArgTypeVector(const ValTypeVector& args, StackResults stackResults)
@@ -2585,7 +2585,6 @@ class CallSiteDesc {
   }
   uint32_t lineOrBytecode() const { return lineOrBytecode_; }
   Kind kind() const { return Kind(kind_); }
-  bool mightBeCrossInstance() const { return kind() == CallSiteDesc::Dynamic; }
 };
 
 class CallSite : public CallSiteDesc {
@@ -3224,9 +3223,26 @@ class Frame {
 
   
   
+  TlsData* tls_;
+
+#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM64)
+  
+  
+  
+  
+  
+ protected:  
+  uintptr_t padding_;
+
+ private:
+#endif
+
+  
+  
   void* returnAddress_;
 
  public:
+  static constexpr uint32_t tlsOffset() { return offsetof(Frame, tls_); }
   static constexpr uint32_t callerFPOffset() {
     return offsetof(Frame, callerFP_);
   }
@@ -3243,6 +3259,8 @@ class Frame {
   }
 
   uint8_t* rawCaller() const { return callerFP_; }
+  TlsData* tls() const { return tls_; }
+  Instance* instance() const { return tls()->instance; }
 
   Frame* wasmCaller() const {
     MOZ_ASSERT(!callerIsExitOrJitEntryFP());
@@ -3278,37 +3296,6 @@ class Frame {
 };
 
 static_assert(!std::is_polymorphic_v<Frame>, "Frame doesn't need a vtable.");
-static_assert(sizeof(Frame) == 2 * sizeof(void*),
-              "Frame is a two pointer structure");
-
-class FrameWithTls : public Frame {
-  TlsData* calleeTls_;
-  TlsData* callerTls_;
-
- public:
-  TlsData* calleeTls() { return calleeTls_; }
-  TlsData* callerTls() { return callerTls_; }
-
-  constexpr static uint32_t sizeWithoutFrame() {
-    return sizeof(wasm::FrameWithTls) - sizeof(wasm::Frame);
-  }
-
-  constexpr static uint32_t calleeTLSOffset() {
-    return offsetof(FrameWithTls, calleeTls_) - sizeof(wasm::Frame);
-  }
-
-  constexpr static uint32_t callerTLSOffset() {
-    return offsetof(FrameWithTls, callerTls_) - sizeof(wasm::Frame);
-  }
-};
-
-static_assert(FrameWithTls::calleeTLSOffset() == 0u,
-              "Callee tls stored right above the return address.");
-static_assert(FrameWithTls::callerTLSOffset() == sizeof(void*),
-              "Caller tls stored right above the callee tls.");
-
-static_assert(FrameWithTls::sizeWithoutFrame() == 2 * sizeof(void*),
-              "There are only two additional slots");
 
 #if defined(JS_CODEGEN_ARM64)
 static_assert(sizeof(Frame) % 16 == 0, "frame is aligned");
@@ -3386,8 +3373,7 @@ class DebugFrame {
 
   
  protected:
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM) || \
-    defined(JS_CODEGEN_X86)
+#if defined(JS_CODEGEN_MIPS32)
   
   
   
@@ -3405,7 +3391,7 @@ class DebugFrame {
   static DebugFrame* from(Frame* fp);
   Frame& frame() { return frame_; }
   uint32_t funcIndex() const { return funcIndex_; }
-  Instance* instance() const;
+  Instance* instance() const { return frame_.instance(); }
   GlobalObject* global() const;
   bool hasGlobal(const GlobalObject* global) const;
   JSObject* environmentChain() const;

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_x86_Assembler_x86_h
 #define jit_x86_Assembler_x86_h
@@ -65,7 +65,7 @@ static constexpr FloatRegister ScratchDoubleReg =
 static constexpr FloatRegister ScratchSimd128Reg =
     FloatRegister(X86Encoding::xmm7, FloatRegisters::Simd128);
 
-// Avoid ebp, which is the FramePointer, which is unavailable in some modes.
+
 static constexpr Register CallTempReg0 = edi;
 static constexpr Register CallTempReg1 = eax;
 static constexpr Register CallTempReg2 = ebx;
@@ -73,7 +73,7 @@ static constexpr Register CallTempReg3 = ecx;
 static constexpr Register CallTempReg4 = esi;
 static constexpr Register CallTempReg5 = edx;
 
-// We have no arg regs, so our NonArgRegs are just our CallTempReg*
+
 static constexpr Register CallTempNonArgRegs[] = {edi, eax, ebx, ecx, esi, edx};
 static constexpr uint32_t NumCallTempNonArgRegs =
     mozilla::ArrayLength(CallTempNonArgRegs);
@@ -87,66 +87,65 @@ class ABIArgGenerator {
   ABIArg next(MIRType argType);
   ABIArg& current() { return current_; }
   uint32_t stackBytesConsumedSoFar() const { return stackOffset_; }
-  void increaseStackOffset(uint32_t bytes) { stackOffset_ += bytes; }
 };
 
-// These registers may be volatile or nonvolatile.
+
 static constexpr Register ABINonArgReg0 = eax;
 static constexpr Register ABINonArgReg1 = ebx;
 static constexpr Register ABINonArgReg2 = ecx;
 static constexpr Register ABINonArgReg3 = edx;
 
-// This register may be volatile or nonvolatile. Avoid xmm7 which is the
-// ScratchDoubleReg.
+
+
 static constexpr FloatRegister ABINonArgDoubleReg =
     FloatRegister(X86Encoding::xmm0, FloatRegisters::Double);
 
-// These registers may be volatile or nonvolatile.
-// Note: these three registers are all guaranteed to be different
+
+
 static constexpr Register ABINonArgReturnReg0 = ecx;
 static constexpr Register ABINonArgReturnReg1 = edx;
 static constexpr Register ABINonVolatileReg = ebx;
 
-// This register is guaranteed to be clobberable during the prologue and
-// epilogue of an ABI call which must preserve both ABI argument, return
-// and non-volatile registers.
+
+
+
 static constexpr Register ABINonArgReturnVolatileReg = ecx;
 
-// TLS pointer argument register for WebAssembly functions. This must not alias
-// any other register used for passing function arguments or return values.
-// Preserved by WebAssembly functions.
+
+
+
 static constexpr Register WasmTlsReg = esi;
 
-// Registers used for asm.js/wasm table calls. These registers must be disjoint
-// from the ABI argument registers, WasmTlsReg and each other.
+
+
 static constexpr Register WasmTableCallScratchReg0 = ABINonArgReg0;
 static constexpr Register WasmTableCallScratchReg1 = ABINonArgReg1;
 static constexpr Register WasmTableCallSigReg = ABINonArgReg2;
 static constexpr Register WasmTableCallIndexReg = ABINonArgReg3;
 
-// Register used as a scratch along the return path in the fast js -> wasm stub
-// code.  This must not overlap ReturnReg, JSReturnOperand, or WasmTlsReg. It
-// must be a volatile register.
+
+
+
 static constexpr Register WasmJitEntryReturnScratch = ebx;
 
 static constexpr Register OsrFrameReg = edx;
 static constexpr Register PreBarrierReg = edx;
 
-// Not enough registers for a PC register (R0-R2 use 2 registers each).
+
 static constexpr Register InterpreterPCReg = InvalidReg;
 
-// Registerd used in RegExpMatcher instruction (do not use JSReturnOperand).
+
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpMatcherStringReg = CallTempReg1;
 static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;
 
-// Registerd used in RegExpTester instruction (do not use ReturnReg).
+
 static constexpr Register RegExpTesterRegExpReg = CallTempReg0;
 static constexpr Register RegExpTesterStringReg = CallTempReg2;
 static constexpr Register RegExpTesterLastIndexReg = CallTempReg3;
 
-// GCC stack is aligned on 16 bytes. Ion does not maintain this for internal
-// calls. wasm code does.
+
+
 #if defined(__GNUC__) && !defined(__MINGW32__)
 static constexpr uint32_t ABIStackAlignment = 16;
 #else
@@ -179,8 +178,8 @@ static_assert(JitStackAlignment % SimdMemoryAlignment == 0,
 static constexpr uint32_t WasmStackAlignment = SimdMemoryAlignment;
 static constexpr uint32_t WasmTrapInstructionLength = 2;
 
-// The offsets are dynamically asserted during
-// code generation in the prologue/epilogue.
+
+
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
 static constexpr uint32_t WasmCheckedTailEntryOffset = 16u;
 
@@ -194,8 +193,8 @@ struct ImmType : public ImmTag {
 
 static constexpr Scale ScalePointer = TimesFour;
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
 #include "jit/x86-shared/Assembler-x86-shared.h"
 
@@ -224,7 +223,7 @@ static inline Operand HighWord(const Operand& op) {
   }
 }
 
-// Return operand from a JS -> JS call.
+
 static constexpr ValueOperand JSReturnOperand{JSReturnReg_Type,
                                               JSReturnReg_Data};
 
@@ -254,8 +253,8 @@ class Assembler : public AssemblerX86Shared {
   static void TraceJumpRelocations(JSTracer* trc, JitCode* code,
                                    CompactBufferReader& reader);
 
-  // Copy the assembly code to the given buffer, and perform any pending
-  // relocations relying on the target address.
+  
+  
   void executableCopy(uint8_t* buffer);
 
   void assertNoGCThings() const {
@@ -267,7 +266,7 @@ class Assembler : public AssemblerX86Shared {
 #endif
   }
 
-  // Actual assembly emitting functions.
+  
 
   void push(ImmGCPtr ptr) {
     masm.push_i32(int32_t(ptr.value));
@@ -328,9 +327,9 @@ class Assembler : public AssemblerX86Shared {
     movl(ImmWord(uintptr_t(imm.value)), dest);
   }
   void mov(ImmWord imm, Register dest) {
-    // Use xor for setting registers to zero, as it is specially optimized
-    // for this purpose on modern hardware. Note that it does clobber FLAGS
-    // though.
+    
+    
+    
     if (imm.value == 0) {
       xorl(dest, dest);
     } else {
@@ -348,7 +347,7 @@ class Assembler : public AssemblerX86Shared {
   void mov(Register src, const Operand& dest) { movl(src, dest); }
   void mov(Imm32 imm, const Operand& dest) { movl(imm, dest); }
   void mov(CodeLabel* label, Register dest) {
-    // Put a placeholder value in the instruction stream.
+    
     masm.movl_i32r(0, dest.encoding());
     label->patchAt()->bind(masm.size());
   }
@@ -507,8 +506,8 @@ class Assembler : public AssemblerX86Shared {
     addPendingJump(src, target, RelocationKind::HARDCODED);
   }
 
-  // Emit a CALL or CMP (nop) instruction. ToggleCall can be used to patch
-  // this instruction.
+  
+  
   CodeOffset toggledCall(JitCode* target, bool enabled) {
     CodeOffset offset(size());
     JmpSrc src = enabled ? masm.call() : masm.cmp_eax();
@@ -518,12 +517,12 @@ class Assembler : public AssemblerX86Shared {
   }
 
   static size_t ToggledCallSize(uint8_t* code) {
-    // Size of a call instruction.
+    
     return 5;
   }
 
-  // Re-routes pending jumps to an external target, flushing the label in the
-  // process.
+  
+  
   void retarget(Label* label, ImmPtr target, RelocationKind reloc) {
     if (label->used()) {
       bool more;
@@ -538,14 +537,14 @@ class Assembler : public AssemblerX86Shared {
     label->reset();
   }
 
-  // Move a 32-bit immediate into a register where the immediate can be
-  // patched.
+  
+  
   CodeOffset movlWithPatch(Imm32 imm, Register dest) {
     masm.movl_i32r(imm.value, dest.encoding());
     return CodeOffset(masm.currentOffset());
   }
 
-  // Load from *(base + disp32) where disp32 can be patched.
+  
   CodeOffset movsblWithPatch(const Operand& src, Register dest) {
     switch (src.kind()) {
       case Operand::MEM_REG_DISP:
@@ -730,7 +729,7 @@ class Assembler : public AssemblerX86Shared {
     return CodeOffset(masm.currentOffset());
   }
 
-  // Store to *(base + disp32) where disp32 can be patched.
+  
   CodeOffset movbWithPatch(Register src, const Operand& dest) {
     switch (dest.kind()) {
       case Operand::MEM_REG_DISP:
@@ -917,14 +916,14 @@ class Assembler : public AssemblerX86Shared {
     return CodeOffset(masm.currentOffset());
   }
 
-  // Load from *(addr + index*scale) where addr can be patched.
+  
   CodeOffset movlWithPatch(PatchedAbsoluteAddress addr, Register index,
                            Scale scale, Register dest) {
     masm.movl_mr(addr.addr, index.encoding(), scale, dest.encoding());
     return CodeOffset(masm.currentOffset());
   }
 
-  // Load from *src where src can be patched.
+  
   CodeOffset movsblWithPatch(PatchedAbsoluteAddress src, Register dest) {
     masm.movsbl_mr(src.addr, dest.encoding());
     return CodeOffset(masm.currentOffset());
@@ -986,7 +985,7 @@ class Assembler : public AssemblerX86Shared {
     return CodeOffset(masm.currentOffset());
   }
 
-  // Store to *dest where dest can be patched.
+  
   CodeOffset movbWithPatch(Register src, PatchedAbsoluteAddress dest) {
     masm.movb_rm(src.encoding(), dest.addr);
     return CodeOffset(masm.currentOffset());
@@ -1041,11 +1040,11 @@ class Assembler : public AssemblerX86Shared {
   }
 };
 
-// Get a register in which we plan to put a quantity that will be used as an
-// integer argument.  This differs from GetIntArgReg in that if we have no more
-// actual argument registers to use we will fall back on using whatever
-// CallTempReg* don't overlap the argument registers, and only fail once those
-// run out too.
+
+
+
+
+
 static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
                                        uint32_t usedFloatArgs, Register* out) {
   if (usedIntArgs >= NumCallTempNonArgRegs) {
@@ -1055,7 +1054,7 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
   return true;
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_x86_Assembler_x86_h */
+#endif 
