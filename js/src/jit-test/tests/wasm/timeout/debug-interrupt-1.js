@@ -3,6 +3,14 @@
 
 
 
+
+
+
+
+
+
+setJitCompilerOption("ion.warmup.trigger", 30);
+
 var g = newGlobal({newCompartment: true});
 g.parent = this;
 g.eval("Debugger(parent).onEnterFrame = function() {};");
