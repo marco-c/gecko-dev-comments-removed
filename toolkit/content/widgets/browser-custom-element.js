@@ -87,10 +87,6 @@
       this.mIconURL = null;
       this.lastURI = null;
 
-      
-      
-      this.progressListeners = [];
-
       XPCOMUtils.defineLazyGetter(this, "popupBlocker", () => {
         return new LazyModules.PopupBlocker(this);
       });
@@ -901,41 +897,11 @@
         aNotifyMask = Ci.nsIWebProgress.NOTIFY_ALL;
       }
 
-      this.progressListeners.push({
-        weakListener: Cu.getWeakReference(aListener),
-        mask: aNotifyMask,
-      });
-
       this.webProgress.addProgressListener(aListener, aNotifyMask);
     }
 
     removeProgressListener(aListener) {
       this.webProgress.removeProgressListener(aListener);
-
-      
-      
-      this.progressListeners = this.progressListeners.filter(
-        ({ weakListener }) =>
-          weakListener.get() && weakListener.get() !== aListener
-      );
-    }
-
-    
-
-
-
-
-
-    restoreProgressListeners() {
-      let listeners = this.progressListeners;
-      this.progressListeners = [];
-
-      for (let { weakListener, mask } of listeners) {
-        let listener = weakListener.get();
-        if (listener) {
-          this.addProgressListener(listener, mask);
-        }
-      }
     }
 
     onPageHide(aEvent) {
