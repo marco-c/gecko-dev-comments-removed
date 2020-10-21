@@ -53,15 +53,20 @@ namespace geckoprofiler::category {
 using namespace ::mozilla::baseprofiler::category;
 }
 
-template <typename MarkerType, typename... Ts>
+
+
+
+
+template <typename MarkerType, typename... PayloadArguments>
 mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     mozilla::ProfileChunkedBuffer& aBuffer,
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory, mozilla::MarkerOptions&& aOptions,
-    const Ts&... aTs) {
+    MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
+  mozilla::Unused << aMarkerType;  
   return mozilla::base_profiler_markers_detail::AddMarkerToBuffer<MarkerType>(
       aBuffer, aName, aCategory, std::move(aOptions),
-      ::profiler_capture_backtrace_into, aTs...);
+      ::profiler_capture_backtrace_into, aPayloadArguments...);
 }
 
 
@@ -70,21 +75,29 @@ inline mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory,
     mozilla::MarkerOptions&& aOptions = {}) {
-  return AddMarkerToBuffer<mozilla::baseprofiler::markers::NoPayload>(
-      aBuffer, aName, aCategory, std::move(aOptions));
+  return AddMarkerToBuffer(aBuffer, aName, aCategory, std::move(aOptions),
+                           mozilla::baseprofiler::markers::NoPayload{});
 }
 
-template <typename MarkerType, typename... Ts>
+
+
+
+
+
+
+
+
+template <typename MarkerType, typename... PayloadArguments>
 mozilla::ProfileBufferBlockIndex profiler_add_marker(
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory, mozilla::MarkerOptions&& aOptions,
-    const Ts&... aTs) {
+    MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
   if (!profiler_can_accept_markers()) {
     return {};
   }
-  return ::AddMarkerToBuffer<MarkerType>(
-      profiler_markers_detail::CachedCoreBuffer(), aName, aCategory,
-      std::move(aOptions), aTs...);
+  return ::AddMarkerToBuffer(profiler_markers_detail::CachedCoreBuffer(), aName,
+                             aCategory, std::move(aOptions), aMarkerType,
+                             aPayloadArguments...);
 }
 
 
@@ -92,9 +105,11 @@ inline mozilla::ProfileBufferBlockIndex profiler_add_marker(
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory,
     mozilla::MarkerOptions&& aOptions = {}) {
-  return profiler_add_marker<mozilla::baseprofiler::markers::NoPayload>(
-      aName, aCategory, std::move(aOptions));
+  return profiler_add_marker(aName, aCategory, std::move(aOptions),
+                             mozilla::baseprofiler::markers::NoPayload{});
 }
+
+
 
 #  define PROFILER_MARKER_UNTYPED(markerName, categoryName, ...)               \
     do {                                                                       \
@@ -103,12 +118,14 @@ inline mozilla::ProfileBufferBlockIndex profiler_add_marker(
           markerName, ::geckoprofiler::category::categoryName, ##__VA_ARGS__); \
     } while (false)
 
+
+
 #  define PROFILER_MARKER(markerName, categoryName, options, MarkerType, ...) \
     do {                                                                      \
       AUTO_PROFILER_STATS(PROFILER_MARKER_with_##MarkerType);                 \
-      ::profiler_add_marker<::geckoprofiler::markers::MarkerType>(            \
+      ::profiler_add_marker(                                                  \
           markerName, ::geckoprofiler::category::categoryName, options,       \
-          ##__VA_ARGS__);                                                     \
+          ::geckoprofiler::markers::MarkerType{}, ##__VA_ARGS__);             \
     } while (false)
 
 namespace geckoprofiler::markers {
@@ -116,11 +133,14 @@ namespace geckoprofiler::markers {
 using Text = ::mozilla::baseprofiler::markers::Text;
 }  
 
-#  define PROFILER_MARKER_TEXT(markerName, categoryName, options, text)        \
-    do {                                                                       \
-      AUTO_PROFILER_STATS(PROFILER_MARKER_TEXT);                               \
-      ::profiler_add_marker<::geckoprofiler::markers::Text>(                   \
-          markerName, ::geckoprofiler::category::categoryName, options, text); \
+
+
+#  define PROFILER_MARKER_TEXT(markerName, categoryName, options, text)       \
+    do {                                                                      \
+      AUTO_PROFILER_STATS(PROFILER_MARKER_TEXT);                              \
+      ::profiler_add_marker(markerName,                                       \
+                            ::geckoprofiler::category::categoryName, options, \
+                            ::geckoprofiler::markers::Text{}, text);          \
     } while (false)
 
 
@@ -146,9 +166,9 @@ class MOZ_RAII AutoProfilerTextMarker {
   ~AutoProfilerTextMarker() {
     mOptions.TimingRef().SetIntervalEnd();
     AUTO_PROFILER_STATS(AUTO_PROFILER_MARKER_TEXT);
-    profiler_add_marker<geckoprofiler::markers::Text>(
+    profiler_add_marker(
         mozilla::ProfilerString8View::WrapNullTerminatedString(mMarkerName),
-        mCategory, std::move(mOptions), mText);
+        mCategory, std::move(mOptions), geckoprofiler::markers::Text{}, mText);
   }
 
  protected:
@@ -157,6 +177,8 @@ class MOZ_RAII AutoProfilerTextMarker {
   mozilla::MarkerOptions mOptions;
   nsCString mText;
 };
+
+
 
 #  define AUTO_PROFILER_MARKER_TEXT(markerName, categoryName, options, text)  \
     AutoProfilerTextMarker PROFILER_RAII(                                     \
