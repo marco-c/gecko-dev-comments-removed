@@ -591,7 +591,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
     }
     
     IgnoredErrorResult ignoredError;
-    mHTMLEditor.SelectionRefPtr()->CollapseToStart(ignoredError);
+    MOZ_KnownLive(mHTMLEditor.SelectionRefPtr())->CollapseToStart(ignoredError);
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
                          "Selection::Collapse() failed, but ignored");
   }

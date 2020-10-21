@@ -586,7 +586,7 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
     
     AutoUpdateViewBatch preventSelectionChangeEvent(*this);
 
-    Element* rootElement = GetRoot();
+    RefPtr<Element> rootElement = GetRoot();
     if (NS_WARN_IF(!rootElement)) {
       return NS_ERROR_FAILURE;
     }
@@ -598,7 +598,7 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
     
     nsresult rv;
     if (IsEmpty()) {
-      rv = SelectionRefPtr()->CollapseInLimiter(rootElement, 0);
+      rv = MOZ_KnownLive(SelectionRefPtr())->CollapseInLimiter(rootElement, 0);
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rv),
           "Selection::CollapseInLimiter() failed, but ignored");
@@ -1542,7 +1542,7 @@ nsresult TextEditor::SelectEntireDocument() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  Element* anonymousDivElement = GetRoot();
+  RefPtr<Element> anonymousDivElement = GetRoot();
   if (NS_WARN_IF(!anonymousDivElement)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -1550,7 +1550,8 @@ nsresult TextEditor::SelectEntireDocument() {
   
   
   if (IsEmpty()) {
-    nsresult rv = SelectionRefPtr()->CollapseInLimiter(anonymousDivElement, 0);
+    nsresult rv = MOZ_KnownLive(SelectionRefPtr())
+                      ->CollapseInLimiter(anonymousDivElement, 0);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Selection::CollapseInLimiter() failed");
     return rv;
