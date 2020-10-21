@@ -48,6 +48,23 @@ function setResolutionAndScaleToFrameScript(resolution) {
 }
 
 this.test = class extends ExtensionAPI {
+  onStartup() {
+    ChromeUtils.registerWindowActor("TestSupport", {
+      child: {
+        moduleURI:
+          "resource://android/assets/web_extensions/test-support/TestSupportChild.jsm",
+      },
+      allFrames: true,
+    });
+  }
+
+  onShutdown(isAppShutdown) {
+    if (isAppShutdown) {
+      return;
+    }
+    ChromeUtils.unregisterWindowActor("TestSupport");
+  }
+
   getAPI(context) {
     return {
       test: {
@@ -161,6 +178,21 @@ this.test = class extends ExtensionAPI {
               "PanZoomControllerTest:SetResolutionAndScaleTo"
             );
           });
+        },
+
+        async flushApzRepaints(tabId) {
+          const tab = context.extension.tabManager.get(tabId);
+          const { browsingContext } = tab.browser;
+
+          
+          
+          
+          
+          
+          
+          await browsingContext.currentWindowGlobal
+            .getActor("TestSupport")
+            .sendQuery("FlushApzRepaints");
         },
       },
     };
