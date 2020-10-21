@@ -395,6 +395,7 @@ class AudioData : public MediaData {
   ~AudioData() = default;
 
  private:
+  friend class ArrayOfRemoteAudioData;
   AudioDataValue* GetAdjustedData() const;
   media::TimeUnit mOriginalTime;
   
