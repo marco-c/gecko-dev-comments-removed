@@ -75,8 +75,7 @@ class nsTypeAheadFind : public nsITypeAheadFind,
                                nsPresContext** aPresContext);
 
   
-  
-  already_AddRefed<mozilla::PresShell> GetPresShell();
+  already_AddRefed<mozilla::dom::Document> GetDocument();
 
   void ReleaseStrongMemberVariables();
 
@@ -137,8 +136,10 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   nsCOMPtr<nsIWebBrowserFind> mWebBrowserFind;
 
   
+  
   nsWeakPtr mDocShell;
-  nsWeakPtr mPresShell;
+  
+  nsWeakPtr mDocument;
   nsWeakPtr mSelectionController;
   
 };

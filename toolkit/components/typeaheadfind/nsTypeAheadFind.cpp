@@ -230,7 +230,7 @@ nsTypeAheadFind::SetDocShell(nsIDocShell* aDocShell) {
   mWebBrowserFind = do_GetInterface(aDocShell);
   NS_ENSURE_TRUE(mWebBrowserFind, NS_ERROR_FAILURE);
 
-  mPresShell = do_GetWeakReference(aDocShell->GetPresShell());
+  mDocument = do_GetWeakReference(aDocShell->GetExtantDocument());
 
   ReleaseStrongMemberVariables();
   return NS_OK;
@@ -341,27 +341,17 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
   mFoundEditable = nullptr;
   mFoundRange = nullptr;
   mCurrentWindow = nullptr;
-  RefPtr<PresShell> startingPresShell = GetPresShell();
-  if (!startingPresShell) {
-    nsCOMPtr<nsIDocShell> ds = do_QueryReferent(mDocShell);
-    NS_ENSURE_TRUE(ds, NS_ERROR_FAILURE);
-
-    startingPresShell = ds->GetPresShell();
-    mPresShell = do_GetWeakReference(startingPresShell);
-  }
-
-  RefPtr<PresShell> presShell = startingPresShell;
-  if (!presShell) {
-    return NS_ERROR_FAILURE;
-  }
+  RefPtr<Document> startingDocument = GetDocument();
+  NS_ENSURE_TRUE(startingDocument, NS_ERROR_FAILURE);
 
   
   
-  presShell->FlushPendingNotifications(mozilla::FlushType::Layout);
+  startingDocument->FlushPendingNotifications(mozilla::FlushType::Layout);
 
+  RefPtr<PresShell> presShell = startingDocument->GetPresShell();
+  NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
   RefPtr<nsPresContext> presContext = presShell->GetPresContext();
-
-  if (!presContext) return NS_ERROR_FAILURE;
+  NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
 
   RefPtr<Selection> selection;
   nsCOMPtr<nsISelectionController> selectionController =
@@ -494,15 +484,17 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
         SetSelectionModeAndRepaint(nsISelectionController::SELECTION_ON);
       }
 
-      
-      if (presShell != startingPresShell) {
-        
-        mPresShell = do_GetWeakReference(presShell);
-      }
-
       RefPtr<Document> document = presShell->GetDocument();
       NS_ASSERTION(document, "Wow, presShell doesn't have document!");
-      if (!document) return NS_ERROR_UNEXPECTED;
+      if (!document) {
+        return NS_ERROR_UNEXPECTED;
+      }
+
+      
+      if (document != startingDocument) {
+        
+        mDocument = do_GetWeakReference(document);
+      }
 
       nsCOMPtr<nsPIDOMWindowInner> window = document->GetInnerWindow();
       NS_ASSERTION(window, "document has no window");
@@ -778,9 +770,8 @@ nsresult nsTypeAheadFind::GetSearchContainers(
   
   
   RefPtr<const nsRange> currentSelectionRange;
-  RefPtr<PresShell> selectionPresShell = GetPresShell();
-  if (aSelectionController && selectionPresShell &&
-      selectionPresShell == presShell) {
+  RefPtr<Document> selectionDocument = GetDocument();
+  if (aSelectionController && selectionDocument && selectionDocument == doc) {
     RefPtr<Selection> selection = aSelectionController->GetSelection(
         nsISelectionController::SELECTION_NORMAL);
     if (selection) {
@@ -942,15 +933,11 @@ nsresult nsTypeAheadFind::FindInternal(uint32_t aMode,
                                        uint16_t* aResult) {
   *aResult = FIND_NOTFOUND;
 
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (!presShell) {
-    nsCOMPtr<nsIDocShell> ds(do_QueryReferent(mDocShell));
-    NS_ENSURE_TRUE(ds, NS_ERROR_FAILURE);
+  RefPtr<Document> doc = GetDocument();
+  NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
-    presShell = ds->GetPresShell();
-    NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
-    mPresShell = do_GetWeakReference(presShell);
-  }
+  RefPtr<PresShell> presShell = doc->GetPresShell();
+  NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
   RefPtr<Selection> selection;
   nsCOMPtr<nsISelectionController> selectionController =
@@ -1208,16 +1195,21 @@ bool nsTypeAheadFind::IsRangeRendered(nsRange* aRange) {
   return false;
 }
 
-already_AddRefed<PresShell> nsTypeAheadFind::GetPresShell() {
-  if (!mPresShell) {
+already_AddRefed<Document> nsTypeAheadFind::GetDocument() {
+  
+  RefPtr<Document> doc = do_QueryReferent(mDocument);
+  if (doc && doc->GetPresShell() && doc->GetDocShell()) {
+    return doc.forget();
+  }
+
+  
+  
+  mDocument = nullptr;
+  nsCOMPtr<nsIDocShell> ds = do_QueryReferent(mDocShell);
+  if (!ds) {
     return nullptr;
   }
-  RefPtr<PresShell> presShell = do_QueryReferent(mPresShell);
-  if (presShell) {
-    nsPresContext* pc = presShell->GetPresContext();
-    if (!pc || !pc->GetContainerWeak()) {
-      return nullptr;
-    }
-  }
-  return presShell.forget();
+  doc = ds->GetExtantDocument();
+  mDocument = do_GetWeakReference(doc);
+  return doc.forget();
 }
