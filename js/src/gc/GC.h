@@ -118,8 +118,6 @@ using IterateScriptCallback = void (*)(JSRuntime*, void*, BaseScript*,
 
 extern void IterateScripts(JSContext* cx, JS::Realm* realm, void* data,
                            IterateScriptCallback scriptCallback);
-extern void IterateLazyScripts(JSContext* cx, JS::Realm* realm, void* data,
-                               IterateScriptCallback lazyScriptCallback);
 
 JS::Realm* NewRealm(JSContext* cx, JSPrincipals* principals,
                     const JS::RealmOptions& options);

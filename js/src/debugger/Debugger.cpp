@@ -5122,7 +5122,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     MOZ_ASSERT(partialMatchVector.empty());
     oom = false;
     IterateScripts(cx, singletonRealm, this, considerScript);
-    IterateLazyScripts(cx, singletonRealm, this, considerLazyScript);
     if (oom) {
       ReportOutOfMemory(cx);
       return false;
@@ -5326,13 +5325,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   static void considerScript(JSRuntime* rt, void* data, BaseScript* script,
                              const JS::AutoRequireNoGC& nogc) {
     ScriptQuery* self = static_cast<ScriptQuery*>(data);
-    self->consider(script->asJSScript(), nogc);
-  }
-
-  static void considerLazyScript(JSRuntime* rt, void* data, BaseScript* script,
-                                 const JS::AutoRequireNoGC& nogc) {
-    ScriptQuery* self = static_cast<ScriptQuery*>(data);
-    self->considerLazy(script, nogc);
+    self->consider(script, nogc);
   }
 
   template <typename T>
@@ -5376,21 +5369,42 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
 
 
-  void consider(JSScript* script, const JS::AutoRequireNoGC& nogc) {
+  void consider(BaseScript* script, const JS::AutoRequireNoGC& nogc) {
     if (oom || script->selfHosted()) {
       return;
     }
+
     Realm* realm = script->realm();
     if (!realms.has(realm)) {
       return;
     }
+
     if (!commonFilter(script, nogc)) {
       return;
     }
+
+    bool partial = false;
+
     if (hasLine) {
-      if (line < script->lineno() ||
-          script->lineno() + GetScriptLineExtent(script) < line) {
-        return;
+      if (script->hasBytecode()) {
+        
+        if (line < script->lineno() ||
+            script->lineno() + GetScriptLineExtent(script->asJSScript()) <
+                line) {
+          return;
+        }
+      } else {
+        
+        
+        
+        
+        if (!script->isReadyForDelazification()) {
+          return;
+        }
+        if (line < script->lineno()) {
+          return;
+        }
+        partial = true;
       }
     }
 
@@ -5398,48 +5412,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     
     MOZ_ASSERT_IF(innermost, hasLine);
 
-    if (!scriptVector.append(script)) {
-      oom = true;
-      return;
-    }
-  }
-
-  void considerLazy(BaseScript* lazyScript, const JS::AutoRequireNoGC& nogc) {
-    if (oom) {
-      return;
-    }
-    Realm* realm = lazyScript->realm();
-    if (!realms.has(realm)) {
-      return;
-    }
-
-    
-    if (lazyScript->hasBytecode()) {
-      return;
-    }
-
-    if (!commonFilter(lazyScript, nogc)) {
-      return;
-    }
-
-    bool partial = false;
-
-    if (hasLine) {
-      
-      
-      
-      
-      if (!lazyScript->isReadyForDelazification()) {
-        return;
-      }
-      if (line < lazyScript->lineno()) {
-        return;
-      }
-      partial = true;
-    }
-
     Rooted<BaseScriptVector>& vec = partial ? partialMatchVector : scriptVector;
-    if (!vec.append(lazyScript)) {
+    if (!vec.append(script)) {
       oom = true;
     }
   }
@@ -5538,7 +5512,6 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
     MOZ_ASSERT(sources.empty());
     oom = false;
     IterateScripts(cx, singletonRealm, this, considerScript);
-    IterateLazyScripts(cx, singletonRealm, this, considerLazyScript);
     if (oom) {
       ReportOutOfMemory(cx);
       return false;
@@ -5568,50 +5541,20 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
   static void considerScript(JSRuntime* rt, void* data, BaseScript* script,
                              const JS::AutoRequireNoGC& nogc) {
     SourceQuery* self = static_cast<SourceQuery*>(data);
-    self->consider(script->asJSScript(), nogc);
+    self->consider(script, nogc);
   }
 
-  static void considerLazyScript(JSRuntime* rt, void* data, BaseScript* script,
-                                 const JS::AutoRequireNoGC& nogc) {
-    SourceQuery* self = static_cast<SourceQuery*>(data);
-    self->considerLazy(script, nogc);
-  }
-
-  void consider(JSScript* script, const JS::AutoRequireNoGC& nogc) {
+  void consider(BaseScript* script, const JS::AutoRequireNoGC& nogc) {
     if (oom || script->selfHosted()) {
       return;
     }
+
     Realm* realm = script->realm();
     if (!realms.has(realm)) {
       return;
     }
 
-    if (!script->sourceObject()) {
-      return;
-    }
-
-    ScriptSourceObject* source =
-        &UncheckedUnwrap(script->sourceObject())->as<ScriptSourceObject>();
-    if (!sources.put(source)) {
-      oom = true;
-    }
-  }
-
-  void considerLazy(BaseScript* lazyScript, const JS::AutoRequireNoGC& nogc) {
-    if (oom) {
-      return;
-    }
-    Realm* realm = lazyScript->realm();
-    if (!realms.has(realm)) {
-      return;
-    }
-
-    
-    if (lazyScript->hasBytecode()) {
-      return;
-    }
-
-    ScriptSourceObject* source = lazyScript->sourceObject();
+    ScriptSourceObject* source = script->sourceObject();
     if (!sources.put(source)) {
       oom = true;
     }
