@@ -25,13 +25,6 @@ class TestOpusTrackEncoder : public OpusTrackEncoder {
     }
     return false;
   }
-
-  
-  
-  
-  int TestGetOutputSampleRate() {
-    return mInitialized ? GetOutputSampleRate() : 0;
-  }
 };
 
 static bool TestOpusInit(int aChannels, TrackRate aSamplingRate) {
@@ -154,10 +147,9 @@ TEST(OpusAudioTrackEncoder, Init)
   }
 }
 
-static int TestOpusResampler(int aChannels, TrackRate aTrackRate) {
-  TestOpusTrackEncoder encoder(aTrackRate);
-  EXPECT_TRUE(encoder.TestOpusRawCreation(aChannels));
-  return encoder.TestGetOutputSampleRate();
+static int TestOpusResampler(TrackRate aSamplingRate) {
+  OpusTrackEncoder encoder(aSamplingRate);
+  return encoder.mOutputSampleRate;
 }
 
 TEST(OpusAudioTrackEncoder, Resample)
@@ -165,15 +157,15 @@ TEST(OpusAudioTrackEncoder, Resample)
   
   
   
-  EXPECT_TRUE(TestOpusResampler(1, 8000) == 8000);
-  EXPECT_TRUE(TestOpusResampler(1, 12000) == 12000);
-  EXPECT_TRUE(TestOpusResampler(1, 16000) == 16000);
-  EXPECT_TRUE(TestOpusResampler(1, 24000) == 24000);
-  EXPECT_TRUE(TestOpusResampler(1, 48000) == 48000);
+  EXPECT_TRUE(TestOpusResampler(8000) == 8000);
+  EXPECT_TRUE(TestOpusResampler(12000) == 12000);
+  EXPECT_TRUE(TestOpusResampler(16000) == 16000);
+  EXPECT_TRUE(TestOpusResampler(24000) == 24000);
+  EXPECT_TRUE(TestOpusResampler(48000) == 48000);
 
   
-  EXPECT_TRUE(TestOpusResampler(1, 9600) == 48000);
-  EXPECT_TRUE(TestOpusResampler(1, 44100) == 48000);
+  EXPECT_TRUE(TestOpusResampler(9600) == 48000);
+  EXPECT_TRUE(TestOpusResampler(44100) == 48000);
 }
 
 TEST(OpusAudioTrackEncoder, FetchMetadata)

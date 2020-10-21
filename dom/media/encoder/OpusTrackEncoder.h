@@ -58,7 +58,14 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
 
 
-  int GetOutputSampleRate() const;
+  bool NeedsResampler() const;
+
+ public:
+  
+
+
+
+  const TrackRate mOutputSampleRate;
 
  private:
   
