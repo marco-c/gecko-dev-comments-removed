@@ -215,6 +215,9 @@ Preferences.addAll([
     id: "media.videocontrols.picture-in-picture.video-toggle.enabled",
     type: "bool",
   },
+
+  
+  { id: "media.hardwaremediakeys.enabled", type: "bool" },
 ]);
 
 if (AppConstants.HAVE_SHELL_SERVICE) {
@@ -527,6 +530,22 @@ var gMainPane = {
       "command",
       gMainPane.showContainerSettings
     );
+
+    
+    
+    
+    if (
+      AppConstants.isPlatformAndVersionAtLeast("win", "6.3") ||
+      AppConstants.platform == "macosx" ||
+      AppConstants.MOZ_WIDGET_GTK
+    ) {
+      document.getElementById("mediaControlBox").hidden = false;
+      let mediaControlLearnMoreUrl =
+        Services.urlFormatter.formatURLPref("app.support.baseURL") +
+        "media-keyboard-control";
+      let link = document.getElementById("mediaControlLearnMore");
+      link.setAttribute("href", mediaControlLearnMoreUrl);
+    }
 
     
     this._rebuildFonts();
