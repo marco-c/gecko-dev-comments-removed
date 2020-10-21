@@ -16,15 +16,17 @@
 
 #include "gc/Allocator.h"             
 #include "gc/Cell.h"                  
-#include "jit/ExecutableAllocator.h"  
 #include "js/TraceKind.h"             
 #include "js/UbiNode.h"               
 
 namespace js {
 namespace jit {
 
+class ExecutablePool;
 class JitCode;
 class MacroAssembler;
+
+enum class CodeKind : uint8_t;
 
 
 struct JitCodeHeader {
