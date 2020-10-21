@@ -57,6 +57,8 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 
   uint64_t mCachedState;
+
+  nsStaticAtom* mARIARole;
 }
 
 

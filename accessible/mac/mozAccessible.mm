@@ -39,6 +39,8 @@ using namespace mozilla::a11y;
 
 @interface mozAccessible ()
 - (BOOL)providesLabelNotTitle;
+
+- (nsStaticAtom*)ARIARole;
 @end
 
 @implementation mozAccessible
@@ -387,6 +389,28 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 #undef ROLE
 }
 
+- (nsStaticAtom*)ARIARole {
+  MOZ_ASSERT(!mGeckoAccessible.IsNull());
+
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    if (acc->HasARIARole()) {
+      const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
+      return roleMap->roleAtom;
+    }
+
+    return nsGkAtoms::_empty;
+  }
+
+  if (!mARIARole) {
+    mARIARole = mGeckoAccessible.AsProxy()->ARIARoleAtom();
+    if (!mARIARole) {
+      mARIARole = nsGkAtoms::_empty;
+    }
+  }
+
+  return mARIARole;
+}
+
 - (NSString*)moxSubrole {
   MOZ_ASSERT(!mGeckoAccessible.IsNull());
 
@@ -417,33 +441,20 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   nsStaticAtom* roleAtom = nullptr;
 
   if (mRole == roles::DIALOG) {
-    if (acc && acc->HasARIARole()) {
-      const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
-      roleAtom = roleMap->roleAtom;
-    } else if (proxy) {
-      roleAtom = proxy->ARIARoleAtom();
-    }
+    roleAtom = [self ARIARole];
 
-    if (roleAtom) {
-      if (roleAtom == nsGkAtoms::alertdialog) {
-        return @"AXApplicationAlertDialog";
-      }
-      if (roleAtom == nsGkAtoms::dialog) {
-        return @"AXApplicationDialog";
-      }
+    if (roleAtom == nsGkAtoms::alertdialog) {
+      return @"AXApplicationAlertDialog";
+    }
+    if (roleAtom == nsGkAtoms::dialog) {
+      return @"AXApplicationDialog";
     }
   }
 
   if (mRole == roles::FORM) {
-    
-    if (acc && acc->HasARIARole()) {
-      const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
-      roleAtom = roleMap->roleAtom;
-    } else if (proxy) {
-      roleAtom = proxy->ARIARoleAtom();
-    }
+    roleAtom = [self ARIARole];
 
-    if (roleAtom && roleAtom == nsGkAtoms::form) {
+    if (roleAtom == nsGkAtoms::form) {
       return @"AXLandmarkForm";
     }
   }
@@ -463,21 +474,20 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 
   
   
-  if (acc && acc->HasARIARole()) {
-    const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
-    roleAtom = roleMap->roleAtom;
-  }
-  if (proxy) roleAtom = proxy->ARIARoleAtom();
+  roleAtom = [self ARIARole];
 
-  if (roleAtom) {
-    if (roleAtom == nsGkAtoms::log_) return @"AXApplicationLog";
-    if (roleAtom == nsGkAtoms::timer) return @"AXApplicationTimer";
-    
-    
-    
-    if (mRole == roles::FOOTNOTE || mRole == roles::SECTION) {
-      return @"AXApplicationGroup";
-    }
+  if (roleAtom == nsGkAtoms::log_) {
+    return @"AXApplicationLog";
+  }
+
+  if (roleAtom == nsGkAtoms::timer) {
+    return @"AXApplicationTimer";
+  }
+  
+  
+  
+  if (mRole == roles::FOOTNOTE || mRole == roles::SECTION) {
+    return @"AXApplicationGroup";
   }
 
   return NSAccessibilityUnknownSubrole;
