@@ -2,9 +2,15 @@
 
 
 
-const { MODE } = require("../constants");
-const stubs = require("../stubs/grip-array");
-const { getGripLengthBubbleText } = require("./test-helpers");
+"use strict";
+
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/grip-array");
+const {
+  getGripLengthBubbleText,
+} = require("devtools/client/shared/components/reps/reps/tests/test-helpers");
 
 describe("getGripLengthBubbleText - Zero length", () => {
   const object = stubs.get("testBasic");

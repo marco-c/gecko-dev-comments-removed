@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 module.exports = {
   ELEMENT_NODE: 1,
   ATTRIBUTE_NODE: 2,

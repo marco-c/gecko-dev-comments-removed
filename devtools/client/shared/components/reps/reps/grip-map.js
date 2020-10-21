@@ -2,20 +2,28 @@
 
 
 
+"use strict";
+
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const { lengthBubble } = require("../shared/grip-length-bubble");
+const {
+  lengthBubble,
+} = require("devtools/client/shared/components/reps/shared/grip-length-bubble");
 const {
   interleave,
   isGrip,
   wrapRender,
   ellipsisElement,
-} = require("./rep-utils");
-const PropRep = require("./prop-rep");
-const { MODE } = require("./constants");
-const { ModePropType } = require("./array");
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
+const {
+  ModePropType,
+} = require("devtools/client/shared/components/reps/reps/array");
 
 
 

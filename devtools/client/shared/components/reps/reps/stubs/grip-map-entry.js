@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const stubs = new Map();
 stubs.set("A → 0", {
   type: "mapEntry",

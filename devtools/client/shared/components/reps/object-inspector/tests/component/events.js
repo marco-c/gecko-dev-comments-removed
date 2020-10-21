@@ -3,10 +3,10 @@
 
 
 
-const { mountObjectInspector } = require("../test-utils");
+const { mountObjectInspector } = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
 
-const gripRepStubs = require("../../../reps/stubs/grip");
-const ObjectFront = require("../__mocks__/object-front");
+const gripRepStubs = require("devtools/client/shared/components/reps/reps/stubs/grip");
+const ObjectFront = require("devtools/client/shared/components/reps/object-inspector/tests/__mocks__/object-front");
 
 function generateDefaults(overrides) {
   return {

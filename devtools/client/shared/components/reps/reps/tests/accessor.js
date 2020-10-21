@@ -2,13 +2,18 @@
 
 
 
+"use strict";
+
 const { shallow } = require("enzyme");
 
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 
 const { Accessor, Rep } = REPS;
 
-const stubs = require("../stubs/accessor");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/accessor");
 
 describe("Accessor - getter", () => {
   const object = stubs.get("getter");

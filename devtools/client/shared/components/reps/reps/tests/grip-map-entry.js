@@ -2,19 +2,28 @@
 
 
 
+"use strict";
+
 
 const { shallow } = require("enzyme");
 
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 
 const { GripMapEntry } = REPS;
 const { createGripMapEntry } = GripMapEntry;
-const { MODE } = require("../constants");
-const { getGripLengthBubbleText } = require("./test-helpers");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
+const {
+  getGripLengthBubbleText,
+} = require("devtools/client/shared/components/reps/reps/tests/test-helpers");
 
-const stubs = require("../stubs/grip-map-entry");
-const nodeStubs = require("../stubs/element-node");
-const gripArrayStubs = require("../stubs/grip-array");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/grip-map-entry");
+const nodeStubs = require("devtools/client/shared/components/reps/reps/stubs/element-node");
+const gripArrayStubs = require("devtools/client/shared/components/reps/reps/stubs/grip-array");
 
 const renderRep = (object, mode, props) => {
   return shallow(

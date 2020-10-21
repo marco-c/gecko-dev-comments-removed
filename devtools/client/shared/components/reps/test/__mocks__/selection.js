@@ -2,6 +2,10 @@
 
 
 
+"use strict";
+
+
+
 let selection;
 const selectionObject = {
   toString: () => selection,

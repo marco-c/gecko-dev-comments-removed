@@ -2,19 +2,25 @@
 
 
 
+"use strict";
+
 const { shallow } = require("enzyme");
 
-const { lengthBubble } = require("../../shared/grip-length-bubble");
+const {
+  lengthBubble,
+} = require("devtools/client/shared/components/reps/shared/grip-length-bubble");
 const {
   maxLengthMap: arrayLikeMaxLengthMap,
   getLength: getArrayLikeLength,
-} = require("../grip-array");
+} = require("devtools/client/shared/components/reps/reps/grip-array");
 const {
   maxLengthMap: mapMaxLengths,
   getLength: getMapLength,
-} = require("../grip-map");
-const { getGripPreviewItems } = require("../rep-utils");
-const nodeConstants = require("../../shared/dom-node-constants");
+} = require("devtools/client/shared/components/reps/reps/grip-map");
+const {
+  getGripPreviewItems,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const nodeConstants = require("devtools/client/shared/components/reps/shared/dom-node-constants");
 
 
 

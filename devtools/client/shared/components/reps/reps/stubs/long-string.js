@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const multilineFullText = `a\n${Array(20000)
   .fill("a")
   .join("")}`;

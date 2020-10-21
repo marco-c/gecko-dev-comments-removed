@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { span } = require("devtools/client/shared/vendor/react-dom-factories");
@@ -12,7 +14,7 @@ const {
   isGrip,
   getURLDisplayString,
   wrapRender,
-} = require("./rep-utils");
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
 
 

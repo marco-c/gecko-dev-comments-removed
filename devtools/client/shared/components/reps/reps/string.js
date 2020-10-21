@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 const {
   a,
@@ -19,7 +21,7 @@ const {
   ELLIPSIS,
   uneatLastUrlCharsRegex,
   urlRegex,
-} = require("./rep-utils");
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
 
 

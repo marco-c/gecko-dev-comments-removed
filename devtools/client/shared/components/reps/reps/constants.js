@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 module.exports = {
   MODE: {
     TINY: Symbol("TINY"),

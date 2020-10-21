@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const stubs = new Map();
 stubs.set("Document", {
   actor: "server1.conn1.child1/accessible31",

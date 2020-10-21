@@ -2,13 +2,21 @@
 
 
 
+"use strict";
+
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
 
-const { getGripType, isGrip, wrapRender } = require("./rep-utils");
-const { rep: StringRep } = require("./string");
+const {
+  getGripType,
+  isGrip,
+  wrapRender,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const {
+  rep: StringRep,
+} = require("devtools/client/shared/components/reps/reps/string");
 
 
 

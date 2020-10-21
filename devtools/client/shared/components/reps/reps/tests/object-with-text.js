@@ -2,12 +2,19 @@
 
 
 
-const { REPS, getRep } = require("../rep");
+"use strict";
+
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 
 const { shallow } = require("enzyme");
-const { expectActorAttribute } = require("./test-helpers");
+const {
+  expectActorAttribute,
+} = require("devtools/client/shared/components/reps/reps/tests/test-helpers");
 
-const stubs = require("../stubs/object-with-text");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/object-with-text");
 const { ObjectWithText, Rep } = REPS;
 
 describe("Object with text - CSSStyleRule", () => {

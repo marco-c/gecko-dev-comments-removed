@@ -2,10 +2,10 @@
 
 
 
-const gripArrayStubs = require("../../../reps/stubs/grip-array");
-const gripMapStubs = require("../../../reps/stubs/grip-map");
+const gripArrayStubs = require("devtools/client/shared/components/reps/reps/stubs/grip-array");
+const gripMapStubs = require("devtools/client/shared/components/reps/reps/stubs/grip-map");
 
-const { createNode, nodeHasEntries } = require("../../utils/node");
+const { createNode, nodeHasEntries } = require("devtools/client/shared/components/reps/object-inspector/utils/node");
 
 const createRootNode = value =>
   createNode({ name: "root", contents: { value } });

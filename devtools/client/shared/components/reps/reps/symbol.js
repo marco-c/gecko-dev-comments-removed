@@ -2,13 +2,20 @@
 
 
 
+"use strict";
+
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const { getGripType, wrapRender } = require("./rep-utils");
+const {
+  getGripType,
+  wrapRender,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
-const { rep: StringRep } = require("./string");
+const {
+  rep: StringRep,
+} = require("devtools/client/shared/components/reps/reps/string");
 
 const MAX_STRING_LENGTH = 50;
 

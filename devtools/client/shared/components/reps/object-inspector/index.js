@@ -2,9 +2,9 @@
 
 
 
-const ObjectInspector = require("./components/ObjectInspector");
-const utils = require("./utils/index");
-const reducer = require("./reducer");
-const actions = require("./actions");
+const ObjectInspector = require("devtools/client/shared/components/reps/object-inspector/components/ObjectInspector");
+const utils = require("devtools/client/shared/components/reps/object-inspector/utils/index");
+const reducer = require("devtools/client/shared/components/reps/object-inspector/reducer");
+const actions = require("devtools/client/shared/components/reps/object-inspector/actions");
 
 module.exports = { ObjectInspector, utils, actions, reducer };

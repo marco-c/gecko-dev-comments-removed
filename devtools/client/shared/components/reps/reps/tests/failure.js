@@ -2,14 +2,16 @@
 
 
 
+"use strict";
+
 
 const { shallow } = require("enzyme");
 
-const { REPS } = require("../rep");
+const { REPS } = require("devtools/client/shared/components/reps/reps/rep");
 
 const { Rep } = REPS;
 
-const stubs = require("../stubs/failure");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/failure");
 
 let originalConsoleError;
 beforeAll(() => {

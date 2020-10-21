@@ -2,11 +2,17 @@
 
 
 
+"use strict";
+
 
 const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { wrapRender } = require("./rep-utils");
-const { MODE } = require("./constants");
+const {
+  wrapRender,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 
 const ModePropType = PropTypes.oneOf(
   
@@ -125,7 +131,7 @@ ItemRep.propTypes = {
 };
 
 function ItemRep(props) {
-  const { Rep } = require("./rep");
+  const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
 
   const { object, delim, mode } = props;
   return span(

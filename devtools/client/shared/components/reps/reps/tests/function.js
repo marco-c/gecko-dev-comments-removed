@@ -2,14 +2,20 @@
 
 
 
+"use strict";
+
 
 const { shallow } = require("enzyme");
-const { REPS } = require("../rep");
-const { MODE } = require("../constants");
+const { REPS } = require("devtools/client/shared/components/reps/reps/rep");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 const { Func } = REPS;
 const { getFunctionName } = Func;
-const stubs = require("../stubs/function");
-const { expectActorAttribute } = require("./test-helpers");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/function");
+const {
+  expectActorAttribute,
+} = require("devtools/client/shared/components/reps/reps/tests/test-helpers");
 const renderRep = (object, props) => {
   return shallow(Func.rep({ object, ...props }));
 };

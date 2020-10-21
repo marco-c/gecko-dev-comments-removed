@@ -2,13 +2,20 @@
 
 
 
+"use strict";
+
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const { wrapRender, ellipsisElement } = require("./rep-utils");
-const PropRep = require("./prop-rep");
-const { MODE } = require("./constants");
+const {
+  wrapRender,
+  ellipsisElement,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 
 const DEFAULT_TITLE = "Object";
 

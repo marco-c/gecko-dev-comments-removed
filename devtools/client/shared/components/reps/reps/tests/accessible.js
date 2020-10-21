@@ -2,13 +2,20 @@
 
 
 
+"use strict";
+
 
 const { mount, shallow } = require("enzyme");
 const { JSDOM } = require("jsdom");
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 const { Accessible } = REPS;
-const { ELLIPSIS } = require("../rep-utils");
-const stubs = require("../stubs/accessible");
+const {
+  ELLIPSIS,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/accessible");
 
 describe("Accessible - Document", () => {
   const stub = stubs.get("Document");

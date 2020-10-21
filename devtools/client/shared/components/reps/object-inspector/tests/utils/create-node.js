@@ -2,7 +2,7 @@
 
 
 
-const { createNode, NODE_TYPES } = require("../../utils/node");
+const { createNode, NODE_TYPES } = require("devtools/client/shared/components/reps/object-inspector/utils/node");
 
 describe("createNode", () => {
   it("returns null when contents is undefined", () => {

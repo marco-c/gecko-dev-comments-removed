@@ -2,11 +2,18 @@
 
 
 
+"use strict";
+
 const { shallow } = require("enzyme");
 
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 
-const { MODE } = require("../constants");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 const { ArrayRep, Rep } = REPS;
 const { maxLengthMap } = ArrayRep;
 

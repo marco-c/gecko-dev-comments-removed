@@ -2,11 +2,18 @@
 
 
 
+"use strict";
+
 const { shallow } = require("enzyme");
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 const { ObjectWithURL } = REPS;
-const stubs = require("../stubs/object-with-url");
-const { expectActorAttribute } = require("./test-helpers");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/object-with-url");
+const {
+  expectActorAttribute,
+} = require("devtools/client/shared/components/reps/reps/tests/test-helpers");
 
 describe("ObjectWithURL", () => {
   const stub = stubs.get("ObjectWithUrl");

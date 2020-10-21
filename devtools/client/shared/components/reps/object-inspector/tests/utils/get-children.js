@@ -2,19 +2,19 @@
 
 
 
-const accessorStubs = require("../../../reps/stubs/accessor");
-const performanceStubs = require("../../stubs/performance");
-const gripMapStubs = require("../../../reps/stubs/grip-map");
-const gripArrayStubs = require("../../../reps/stubs/grip-array");
-const gripMapEntryStubs = require("../../../reps/stubs/grip-map-entry");
-const gripStubs = require("../../../reps/stubs/grip");
+const accessorStubs = require("devtools/client/shared/components/reps/reps/stubs/accessor");
+const performanceStubs = require("devtools/client/shared/components/reps/object-inspector/stubs/performance");
+const gripMapStubs = require("devtools/client/shared/components/reps/reps/stubs/grip-map");
+const gripArrayStubs = require("devtools/client/shared/components/reps/reps/stubs/grip-array");
+const gripMapEntryStubs = require("devtools/client/shared/components/reps/reps/stubs/grip-map-entry");
+const gripStubs = require("devtools/client/shared/components/reps/reps/stubs/grip");
 
 const {
   createNode,
   getChildren,
   getValue,
   makeNodesForProperties,
-} = require("../../utils/node");
+} = require("devtools/client/shared/components/reps/object-inspector/utils/node");
 
 function createRootNodeWithAccessorProperty(accessorStub) {
   const node = { name: "root", path: "rootpath" };

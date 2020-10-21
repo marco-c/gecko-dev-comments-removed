@@ -2,17 +2,24 @@
 
 
 
+"use strict";
+
 
 const { shallow } = require("enzyme");
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 const { Event } = REPS;
 const {
   expectActorAttribute,
   getSelectableInInspectorGrips,
-} = require("./test-helpers");
+} = require("devtools/client/shared/components/reps/reps/tests/test-helpers");
 
-const { MODE } = require("../constants");
-const stubs = require("../stubs/event");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/event");
 
 describe("Event - beforeprint", () => {
   const object = stubs.get("testEvent");

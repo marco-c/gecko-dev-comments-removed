@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const {
@@ -10,8 +12,15 @@ const {
 } = require("devtools/client/shared/vendor/react-dom-factories");
 
 
-const { getGripType, isGrip, cropString, wrapRender } = require("./rep-utils");
-const { MODE } = require("./constants");
+const {
+  getGripType,
+  isGrip,
+  cropString,
+  wrapRender,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 
 const IGNORED_SOURCE_URLS = ["debugger eval code"];
 

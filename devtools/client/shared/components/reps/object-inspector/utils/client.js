@@ -2,7 +2,7 @@
 
 
 
-const { getValue, nodeHasFullText } = require("../utils/node");
+const { getValue, nodeHasFullText } = require("devtools/client/shared/components/reps/object-inspector/utils/node");
 
 async function enumIndexedProperties(objectFront, start, end) {
   try {

@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const WAIT_UNTIL_TYPE = "@@service/waitUntil";
 
 

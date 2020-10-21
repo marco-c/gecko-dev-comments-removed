@@ -2,13 +2,18 @@
 
 
 
+"use strict";
+
 const { shallow } = require("enzyme");
 
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 
 const { Undefined, Rep } = REPS;
 
-const stubs = require("../stubs/undefined");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/undefined");
 
 describe("Test Undefined", () => {
   const stub = stubs.get("Undefined");

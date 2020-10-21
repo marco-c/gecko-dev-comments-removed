@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 const {
   button,
@@ -10,8 +12,14 @@ const {
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
-const { isGrip, cropString, wrapRender } = require("./rep-utils");
-const { MODE } = require("./constants");
+const {
+  isGrip,
+  cropString,
+  wrapRender,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 
 
 

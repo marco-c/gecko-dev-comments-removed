@@ -2,9 +2,9 @@
 
 
 
-const gripWindowStubs = require("../../../reps/stubs/window");
+const gripWindowStubs = require("devtools/client/shared/components/reps/reps/stubs/window");
 
-const { createNode, nodeIsWindow } = require("../../utils/node");
+const { createNode, nodeIsWindow } = require("devtools/client/shared/components/reps/object-inspector/utils/node");
 
 const createRootNode = value =>
   createNode({ name: "root", contents: { value } });

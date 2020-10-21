@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const stubs = new Map();
 stubs.set("Int", 5);
 stubs.set("True", true);

@@ -2,15 +2,24 @@
 
 
 
+"use strict";
+
 const { shallow } = require("enzyme");
 
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 
-const { expectActorAttribute } = require("./test-helpers");
+const {
+  expectActorAttribute,
+} = require("devtools/client/shared/components/reps/reps/tests/test-helpers");
 
-const { MODE } = require("../constants");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
 const { Rep, CommentNode } = REPS;
-const stubs = require("../stubs/comment-node");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/comment-node");
 
 describe("CommentNode", () => {
   const stub = stubs.get("Comment");

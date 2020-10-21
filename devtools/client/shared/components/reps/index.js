@@ -2,16 +2,23 @@
 
 
 
-const { MODE } = require("./reps/constants");
-const { REPS, getRep } = require("./reps/rep");
-const objectInspector = require("./object-inspector/index");
+"use strict";
+
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
+const objectInspector = require("devtools/client/shared/components/reps/object-inspector/index");
 
 const {
   parseURLEncodedText,
   parseURLParams,
   maybeEscapePropertyName,
   getGripPreviewItems,
-} = require("./reps/rep-utils");
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
 module.exports = {
   REPS,

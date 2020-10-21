@@ -2,8 +2,14 @@
 
 
 
-const { MODE } = require("../constants");
-const { maxLengthMap } = require("../grip-map");
+"use strict";
+
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
+const {
+  maxLengthMap,
+} = require("devtools/client/shared/components/reps/reps/grip-map");
 
 const stubs = new Map();
 

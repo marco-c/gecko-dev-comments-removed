@@ -2,9 +2,13 @@
 
 
 
+"use strict";
+
 const { shallow, mount } = require("enzyme");
-const { ELLIPSIS } = require("../rep-utils");
-const { REPS } = require("../rep");
+const {
+  ELLIPSIS,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const { REPS } = require("devtools/client/shared/components/reps/reps/rep");
 const { Rep } = REPS;
 
 const renderRep = (string, props) =>

@@ -2,14 +2,21 @@
 
 
 
+"use strict";
+
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
-const { isGrip, wrapRender } = require("./rep-utils");
+const {
+  isGrip,
+  wrapRender,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
-const { MODE } = require("./constants");
-const { rep } = require("./grip");
+const {
+  MODE,
+} = require("devtools/client/shared/components/reps/reps/constants");
+const { rep } = require("devtools/client/shared/components/reps/reps/grip");
 
 
 

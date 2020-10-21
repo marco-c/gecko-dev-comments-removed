@@ -2,8 +2,8 @@
 
 
 
-const ObjectFront = require("../__mocks__/object-front");
-const { mountObjectInspector } = require("../test-utils");
+const ObjectFront = require("devtools/client/shared/components/reps/object-inspector/tests/__mocks__/object-front");
+const { mountObjectInspector } = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
 
 function generateDefaults(overrides) {
   return {

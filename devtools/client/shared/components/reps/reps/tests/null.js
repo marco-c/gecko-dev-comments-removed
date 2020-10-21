@@ -2,13 +2,18 @@
 
 
 
+"use strict";
+
 const { shallow } = require("enzyme");
 
-const { REPS, getRep } = require("../rep");
+const {
+  REPS,
+  getRep,
+} = require("devtools/client/shared/components/reps/reps/rep");
 
 const { Null, Rep } = REPS;
 
-const stubs = require("../stubs/null");
+const stubs = require("devtools/client/shared/components/reps/reps/stubs/null");
 
 describe("testNull", () => {
   const stub = stubs.get("Null");

@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
 
