@@ -77,13 +77,7 @@ class JSAPITest {
   bool knownFail;
   JSAPITestString msgs;
 
-  
-  
-  
-  
-  bool reuseGlobal;
-
-  JSAPITest() : cx(nullptr), knownFail(false), reuseGlobal(false) {
+  JSAPITest() : cx(nullptr), knownFail(false) {
     next = list;
     list = this;
   }
@@ -93,19 +87,7 @@ class JSAPITest {
     MOZ_RELEASE_ASSERT(!global);
   }
 
-  
-  bool init(JSContext* maybeReusedContext);
-
-  
-  
-  JSContext* maybeForgetContext();
-
-  static void MaybeFreeContext(JSContext* maybeCx);
-
-  
-  
-  
-  virtual bool init() { return true; }
+  virtual bool init();
   virtual void uninit();
 
   virtual const char* name() = 0;
@@ -369,6 +351,12 @@ class JSAPITest {
     JS::SetWarningReporter(cx, &reportWarning);
     setNativeStackQuota(cx);
     return cx;
+  }
+
+  virtual void destroyContext() {
+    MOZ_RELEASE_ASSERT(cx);
+    JS_DestroyContext(cx);
+    cx = nullptr;
   }
 
   static void reportWarning(JSContext* cx, JSErrorReport* report) {
