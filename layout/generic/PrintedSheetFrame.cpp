@@ -29,6 +29,42 @@ NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 NS_IMPL_FRAMEARENA_HELPERS(PrintedSheetFrame)
 
+
+gfx::Matrix4x4 ComputePagesPerSheetTransform(nsIFrame* aFrame,
+                                             float aAppUnitsPerPixel) {
+  MOZ_ASSERT(aFrame->IsPageFrame());
+  auto* pageFrame = static_cast<nsPageFrame*>(aFrame);
+
+  
+  float scale = 1.0f;
+  uint32_t rowIdx = 0;
+  uint32_t colIdx = 0;
+
+  nsSharedPageData* pd = pageFrame->GetSharedPageData();
+  if (pd) {
+    const auto* ppsInfo = pd->PagesPerSheetInfo();
+
+    
+    
+    
+    
+    
+    scale = 1.0f / static_cast<float>(ppsInfo->mNumCols);
+
+    std::tie(rowIdx, colIdx) =
+        ppsInfo->GetRowAndColFromIdx(pageFrame->IndexOnSheet());
+  }
+
+  
+  auto transform = gfx::Matrix4x4::Scaling(scale, scale, 1);
+
+  
+  nsSize pageSize = pageFrame->PresContext()->GetPageSize();
+  return transform.PreTranslate(
+      NSAppUnitsToFloatPixels(colIdx * pageSize.width, aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(rowIdx * pageSize.height, aAppUnitsPerPixel), 0);
+}
+
 void PrintedSheetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayListSet& aLists) {
   if (PresContext()->IsScreen()) {
@@ -37,10 +73,20 @@ void PrintedSheetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayBorderBackgroundOutline(aBuilder, aLists);
   }
 
+  const nsRect visible = aBuilder->GetVisibleRect();
+
+  
   
   for (auto* frame : mFrames) {
     if (!frame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE)) {
-      BuildDisplayListForChild(aBuilder, frame, aLists);
+      nsDisplayList content;
+
+      frame->BuildDisplayListForStackingContext(aBuilder, &content);
+      content.AppendNewToTop<nsDisplayTransform>(aBuilder, frame, &content,
+                                                 content.GetBuildingRect(),
+                                                 ComputePagesPerSheetTransform);
+
+      aLists.Content()->AppendToTop(&content);
     }
   }
 }
@@ -117,13 +163,10 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  
-  
   uint32_t numPagesOnThisSheet = 0;
 
   
-  
-  static const uint32_t kDesiredPagesPerSheet = 1;
+  const uint32_t desiredPagesPerSheet = mPD->PagesPerSheetInfo()->mNumPages;
 
   
   
@@ -140,11 +183,18 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
     pageFrame->DeterminePageNum();
 
     if (!TagIfSkippedByCustomRange(pageFrame, pageFrame->GetPageNum(), mPD)) {
-      numPagesOnThisSheet++;  
+      
+      
+      
+      pageFrame->SetIndexOnSheet(numPagesOnThisSheet);
+      numPagesOnThisSheet++;
     }
 
     ReflowInput pageReflowInput(aPresContext, aReflowInput, pageFrame,
                                 pageSize);
+
+    
+    
     
     
     LogicalPoint pagePos(wm);
@@ -191,7 +241,7 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      if (numPagesOnThisSheet == kDesiredPagesPerSheet &&
+      if (numPagesOnThisSheet >= desiredPagesPerSheet &&
           !isContinuingPageSkipped) {
         PushChildrenToOverflow(continuingPage, pageFrame);
         aStatus.SetIncomplete();
@@ -226,7 +276,7 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
                "Shouldn't create a sheet with no displayable pages on it");
   }
 
-  MOZ_ASSERT(numPagesOnThisSheet <= kDesiredPagesPerSheet,
+  MOZ_ASSERT(numPagesOnThisSheet <= desiredPagesPerSheet,
              "Shouldn't have more than desired number of displayable pages "
              "on this sheet");
 

@@ -65,6 +65,11 @@ class nsPageFrame final : public nsContainerFrame {
     return mPageContentMargin;
   }
 
+  uint32_t IndexOnSheet() const { return mIndexOnSheet; }
+  void SetIndexOnSheet(uint32_t aIndexOnSheet) {
+    mIndexOnSheet = aIndexOnSheet;
+  }
+
  protected:
   explicit nsPageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
   virtual ~nsPageFrame();
@@ -94,7 +99,12 @@ class nsPageFrame final : public nsContainerFrame {
   void ProcessSpecialCodes(const nsString& aStr, nsString& aNewStr);
 
   static constexpr int32_t kPageNumUnset = -1;
+  
   int32_t mPageNum = kPageNumUnset;
+
+  
+  
+  uint32_t mIndexOnSheet = 0;
 
   
   
