@@ -103,16 +103,11 @@ void PrincipalVerifier::VerifyOnMainThread() {
 
   
   
-  RefPtr<ContentParent> actor;
-  actor.swap(mActor);
+  RefPtr<ContentParent> actor = std::move(mActor);
 
-  auto principalOrErr = PrincipalInfoToPrincipal(mPrincipalInfo);
-  if (NS_WARN_IF(principalOrErr.isErr())) {
-    DispatchToInitiatingThread(principalOrErr.unwrapErr());
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+  CACHE_TRY_INSPECT(
+      const auto& principal, PrincipalInfoToPrincipal(mPrincipalInfo), QM_VOID,
+      [this](const nsresult result) { DispatchToInitiatingThread(result); });
 
   
   if (NS_WARN_IF(principal->GetIsNullPrincipal())) {
