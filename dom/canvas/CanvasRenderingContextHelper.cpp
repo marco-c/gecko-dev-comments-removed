@@ -4,6 +4,7 @@
 
 
 #include "CanvasRenderingContextHelper.h"
+#include "GLContext.h"
 #include "ImageBitmapRenderingContext.h"
 #include "ImageEncoder.h"
 #include "mozilla/dom/CanvasRenderingContext2D.h"

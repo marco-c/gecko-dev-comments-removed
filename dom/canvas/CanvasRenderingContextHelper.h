@@ -77,6 +77,9 @@ class CanvasRenderingContextHelper {
 };
 
 }  
+namespace CanvasUtils {
+bool GetCanvasContextType(const nsAString&, dom::CanvasContextType* const);
+}  
 }  
 
 #endif  
