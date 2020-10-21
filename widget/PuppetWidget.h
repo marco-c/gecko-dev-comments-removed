@@ -326,8 +326,6 @@ class PuppetWidget : public nsBaseWidget,
   virtual void OnMemoryPressure(layers::MemoryPressureReason aWhy) override;
 
  private:
-  nsresult Paint(bool aDoTick);
-
   void SetChild(PuppetWidget* aChild);
 
   nsresult RequestIMEToCommitComposition(bool aCancel);
@@ -352,19 +350,7 @@ class PuppetWidget : public nsBaseWidget,
   
   bool HaveValidInputContextCache() const;
 
-  class PaintTask : public Runnable {
-   public:
-    NS_DECL_NSIRUNNABLE
-    explicit PaintTask(PuppetWidget* widget, bool aDoTick)
-        : Runnable("PuppetWidget::PaintTask"),
-          mWidget(widget),
-          mDoTick(aDoTick) {}
-    void Revoke() { mWidget = nullptr; }
-
-   private:
-    PuppetWidget* mWidget;
-    bool mDoTick;
-  };
+  nsRefreshDriver* GetTopLevelRefreshDriver() const;
 
   
   
@@ -376,7 +362,6 @@ class PuppetWidget : public nsBaseWidget,
   
   
   RefPtr<PuppetWidget> mChild;
-  nsRevocableEventPtr<PaintTask> mPaintTask;
   RefPtr<layers::MemoryPressureObserver> mMemoryPressureObserver;
   
   
