@@ -29,10 +29,8 @@
 #  include <utility>
 #  include <vector>
 
-namespace mozilla::baseprofiler {
 
-MFBT_API int profiler_current_thread_id();
-}  
+#  include "BaseProfiler.h"
 
 namespace mozilla {
 
@@ -280,6 +278,12 @@ class MarkerThreadId {
   
   static MarkerThreadId CurrentThread() {
     return MarkerThreadId(baseprofiler::profiler_current_thread_id());
+  }
+
+  
+  
+  static MarkerThreadId MainThread() {
+    return MarkerThreadId(baseprofiler::profiler_main_thread_id());
   }
 
   [[nodiscard]] constexpr int ThreadId() const { return mThreadId; }
