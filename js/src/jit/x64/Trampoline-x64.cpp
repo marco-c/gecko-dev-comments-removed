@@ -18,6 +18,7 @@
 #  include "vtune/VTuneWrapper.h"
 #endif
 #include "vm/JitActivation.h"  
+#include "vm/JSContext.h"
 
 #include "jit/MacroAssembler-inl.h"
 

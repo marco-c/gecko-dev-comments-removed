@@ -15,6 +15,7 @@
 #include "jit/arm64/SharedICHelpers-arm64.h"
 #include "jit/VMFunctions.h"
 #include "vm/JitActivation.h"  
+#include "vm/JSContext.h"
 
 #include "jit/MacroAssembler-inl.h"
 
