@@ -10,6 +10,7 @@
 #include "jslibmath.h"  
 #include "jsmath.h"     
                         
+#include "builtin/Array.h"      
 #include "builtin/RegExp.h"     
                                 
 
@@ -43,6 +44,7 @@ namespace jit {
 #define ABIFUNCTION_LIST(_)                                 \
   ABIFUNCTION_WASM_CODEGEN_DEBUG_LIST(_)                    \
   _(js::ArgumentsObject::finishForIonPure)                  \
+  _(js::ArrayShiftMoveElements)                             \
   _(js::ecmaAtan2)                                          \
   _(js::ecmaHypot)                                          \
   _(js::ecmaPow)                                            \
