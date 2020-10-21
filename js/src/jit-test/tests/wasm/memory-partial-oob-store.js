@@ -6,6 +6,7 @@
 
 var conf = getBuildConfiguration();
 var excluded = conf.arm64 || conf["arm64-simulator"] || conf.arm || conf["arm-simulator"];
+var thirtytwobit = conf["pointer-byte-size"] == 4;
 
 const RuntimeError = WebAssembly.RuntimeError;
 
@@ -123,4 +124,6 @@ for (let align of [0,1,2,4]) {
 
 
 
-testStoreOOB('i64', '', 0x10000 - 4, 0, 0, '0x0123456789abcdef');
+if (thirtytwobit) {
+    testStoreOOB('i64', '', 0x10000 - 4, 0, 0, '0x0123456789abcdef');
+}
