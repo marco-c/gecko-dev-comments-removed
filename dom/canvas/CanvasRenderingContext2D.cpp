@@ -1317,8 +1317,11 @@ bool CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
     mCanvasElement->InvalidateCanvas();
   }
   
+  bool capturedFrameInvalid = mIsCapturedFrameInvalid;
+  
   
   Redraw();
+  mIsCapturedFrameInvalid = capturedFrameInvalid;
 
   return true;
 }
