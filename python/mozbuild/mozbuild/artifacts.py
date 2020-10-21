@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 '''
 Fetch build artifacts from a Firefox tree.
@@ -81,22 +81,22 @@ from mozpack.mozjar import (
 from mozpack.packager.unpack import UnpackFinder
 import mozpack.path as mozpath
 
-# Number of candidate pushheads to cache per parent changeset.
+
 NUM_PUSHHEADS_TO_QUERY_PER_PARENT = 50
 
-# Number of parent changesets to consider as possible pushheads.
-# There isn't really such a thing as a reasonable default here, because we don't
-# know how many pushheads we'll need to look at to find a build with our artifacts,
-# and we don't know how many changesets will be in each push. For now we assume
-# we'll find a build in the last 50 pushes, assuming each push contains 10 changesets.
+
+
+
+
+
 NUM_REVISIONS_TO_QUERY = 500
 
-MAX_CACHED_TASKS = 400  # Number of pushheads to cache Task Cluster task data for.
+MAX_CACHED_TASKS = 400  
 
-# Downloaded artifacts are cached, and a subset of their contents extracted for
-# easy installation.  This is most noticeable on Mac OS X: since mounting and
-# copying from DMG files is very slow, we extract the desired binaries to a
-# separate archive for fast re-installation.
+
+
+
+
 PROCESSED_SUFFIX = '.processed.jar'
 
 
@@ -110,11 +110,11 @@ class ArtifactJob(object):
     ]
     try_tree = 'try'
 
-    # These are a subset of TEST_HARNESS_BINS in testing/mochitest/Makefile.in.
-    # Each item is a pair of (pattern, (src_prefix, dest_prefix), where src_prefix
-    # is the prefix of the pattern relevant to its location in the archive, and
-    # dest_prefix is the prefix to be added that will yield the final path relative
-    # to dist/.
+    
+    
+    
+    
+    
     test_artifact_patterns = {
         ('bin/BadCertAndPinningServer', ('bin', 'bin')),
         ('bin/DelegatedCredentialsServer', ('bin', 'bin')),
@@ -133,8 +133,8 @@ class ArtifactJob(object):
         ('bin/components/*.xpt', ('bin/components', 'bin/components')),
     }
 
-    # We can tell our input is a test archive by this suffix, which happens to
-    # be the same across platforms.
+    
+    
     _test_zip_archive_suffix = '.common.tests.zip'
     _test_tar_archive_suffix = '.common.tests.tar.gz'
 
@@ -170,7 +170,7 @@ class ArtifactJob(object):
             self._log(*args, **kwargs)
 
     def find_candidate_artifacts(self, artifacts):
-        # TODO: Handle multiple artifacts, taking the latest one.
+        
         tests_artifact = None
         maven_zip_artifact = None
         for artifact in artifacts:
@@ -209,9 +209,9 @@ class ArtifactJob(object):
         if self._symbols_archive_suffix and filename.endswith(self._symbols_archive_suffix):
             return self.process_symbols_archive(filename, processed_filename)
         if self._host_bins_re:
-            # Turn 'HASH-mar.exe' into 'mar.exe'.  `filename` is a path on disk
-            # without the full path to the artifact, so we must reconstruct
-            # that path here.
+            
+            
+            
             orig_basename = os.path.basename(filename).split('-', 1)[1]
             if self._host_bins_re.match('public/build/host/bin/{}'.format(orig_basename)):
                 return self.process_host_bin(filename, processed_filename)
@@ -241,8 +241,8 @@ class ArtifactJob(object):
                     break
 
                 if filename.endswith('.ini'):
-                    # The artifact build writes test .ini files into the object
-                    # directory; they don't come from the upstream test archive.
+                    
+                    
                     self.log(logging.DEBUG, 'artifact',
                              {'filename': filename},
                              'Skipping test INI file {filename}')
@@ -287,8 +287,8 @@ class ArtifactJob(object):
                         break
 
                     if filename.endswith('.ini'):
-                        # The artifact build writes test .ini files into the object
-                        # directory; they don't come from the upstream test archive.
+                        
+                        
                         self.log(logging.DEBUG, 'artifact',
                                  {'filename': filename},
                                  'Skipping test INI file {filename}')
@@ -327,9 +327,9 @@ class ArtifactJob(object):
 
     def process_host_bin(self, filename, processed_filename):
         with JarWriter(file=processed_filename, compress_level=5) as writer:
-            # Turn 'HASH-mar.exe' into 'mar.exe'.  `filename` is a path on disk
-            # without any of the path parts of the artifact, so we must inject
-            # the desired `host/bin` prefix here.
+            
+            
+            
             orig_basename = os.path.basename(filename).split('-', 1)[1]
             destpath = mozpath.join('host/bin', orig_basename)
             writer.add(destpath.encode('utf-8'), open(filename, 'rb'))
@@ -363,7 +363,7 @@ class AndroidArtifactJob(ArtifactJob):
     }
 
     def process_package_artifact(self, filename, processed_filename):
-        # Extract all .so files into the root, which will get copied into dist/bin.
+        
         with JarWriter(file=processed_filename, compress_level=5) as writer:
             for p, f in UnpackFinder(JarFinder(filename, JarReader(filename))):
                 if not any(mozpath.match(p, pat) for pat in self.package_artifact_patterns):
@@ -394,15 +394,15 @@ class AndroidArtifactJob(ArtifactJob):
                 if not filename.endswith('.gz'):
                     continue
 
-                # Uncompress "libxul.so/D3271457813E976AE7BF5DAFBABABBFD0/libxul.so.dbg.gz"
-                # into "libxul.so.dbg".
-                #
-                # After running `settings append target.debug-file-search-paths $file`,
-                # where file=/path/to/topobjdir/dist/crashreporter-symbols,
-                # Android Studio's lldb (7.0.0, at least) will find the ELF debug symbol files.
-                #
-                # There are other paths that will work but none seem more desireable.  See
-                # https://github.com/llvm-mirror/lldb/blob/882670690ca69d9dd96b7236c620987b11894af9/source/Host/common/Symbols.cpp#L324.
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 basename = os.path.basename(filename).replace('.gz', '')
                 destpath = mozpath.join('crashreporter-symbols', basename)
                 self.log(logging.DEBUG, 'artifact',
@@ -444,8 +444,8 @@ class LinuxArtifactJob(ArtifactJob):
                     if not any(mozpath.match(p, pat) for pat in self.package_artifact_patterns):
                         continue
 
-                    # We strip off the relative "firefox/" bit from the path,
-                    # but otherwise preserve it.
+                    
+                    
                     destpath = mozpath.join('bin',
                                             mozpath.relpath(p, self.product))
                     self.log(logging.DEBUG, 'artifact',
@@ -464,7 +464,7 @@ class MacArtifactJob(ArtifactJob):
     package_re = r'public/build/target\.dmg'
     product = 'firefox'
 
-    # These get copied into dist/bin without the path, so "root/a/b/c" -> "dist/bin/c".
+    
     _paths_no_keep_path = ('Contents/MacOS', [
         'crashreporter.app/Contents/MacOS/crashreporter',
         '{product}',
@@ -472,13 +472,13 @@ class MacArtifactJob(ArtifactJob):
         'libfreebl3.dylib',
         'libgraphitewasm.dylib',
         'liblgpllibs.dylib',
-        # 'liblogalloc.dylib',
+        
         'libmozglue.dylib',
         'libnss3.dylib',
         'libnssckbi.dylib',
         'libplugin_child_interpose.dylib',
-        # 'libreplace_jemalloc.dylib',
-        # 'libreplace_malloc.dylib',
+        
+        
         'libmozavutil.dylib',
         'libmozavcodec.dylib',
         'liboggwasm.dylib',
@@ -488,7 +488,7 @@ class MacArtifactJob(ArtifactJob):
         'pingsender',
         'plugin-container.app/Contents/MacOS/plugin-container',
         'updater.app/Contents/MacOS/org.mozilla.updater',
-        # 'xpcshell',
+        
         'XUL',
     ])
 
@@ -505,7 +505,7 @@ class MacArtifactJob(ArtifactJob):
                      {'tempdir': tempdir},
                      'Unpacking DMG into {tempdir}')
             if self._substs['HOST_OS_ARCH'] == 'Linux':
-                # This is a cross build, use hfsplus and dmg tools to extract the dmg.
+                
                 os.chdir(tempdir)
                 with open(os.devnull, 'wb') as devnull:
                     subprocess.check_call([
@@ -527,15 +527,15 @@ class MacArtifactJob(ArtifactJob):
                 raise ValueError('Expected one source bundle, found: {}'.format(bundle_dirs))
             [source] = bundle_dirs
 
-            # These get copied into dist/bin with the path, so "root/a/b/c" -> "dist/bin/a/b/c".
+            
             paths_keep_path = [
                 ('Contents/Resources', [
                     'browser/components/libbrowsercomps.dylib',
                     'dependentlibs.list',
-                    # 'firefox',
+                    
                     'gmp-clearkey/0.1/libclearkey.dylib',
-                    # 'gmp-fake/1.0/libfake.dylib',
-                    # 'gmp-fakeopenh264/1.0/libfakeopenh264.dylib',
+                    
+                    
                 ]),
             ]
 
@@ -588,7 +588,7 @@ class WinArtifactJob(ArtifactJob):
             p.format(product=self.product) for p in self._package_artifact_patterns
         }
 
-    # These are a subset of TEST_HARNESS_BINS in testing/mochitest/Makefile.in.
+    
     test_artifact_patterns = {
         ('bin/BadCertAndPinningServer.exe', ('bin', 'bin')),
         ('bin/DelegatedCredentialsServer.exe', ('bin', 'bin')),
@@ -615,7 +615,7 @@ class WinArtifactJob(ArtifactJob):
                 if not any(mozpath.match(p, pat) for pat in self.package_artifact_patterns):
                     continue
 
-                # strip off the relative "firefox/" bit from the path:
+                
                 basename = mozpath.relpath(p, self.product)
                 basename = mozpath.join('bin', basename)
                 self.log(logging.DEBUG, 'artifact',
@@ -736,9 +736,9 @@ class CacheManager(object):
             for key, value in items:
                 self._cache[key] = value
         except Exception as e:
-            # Corrupt cache, perhaps?  Sadly, pickle raises many different
-            # exceptions, so it's not worth trying to be fine grained here.
-            # We ignore any exception, so the cache is effectively dropped.
+            
+            
+            
             self.log(logging.INFO, 'artifact',
                      {'filename': self._cache_filename, 'exception': repr(e)},
                      'Ignoring exception unpickling cache file {filename}: {exception}')
@@ -815,9 +815,9 @@ class TaskCache(CacheManager):
 
     @cachedmethod(operator.attrgetter('_cache'))
     def artifacts(self, tree, job, artifact_job_class, rev):
-        # Grab the second part of the repo name, which is generally how things
-        # are indexed. Eg: 'integration/autoland' is indexed as
-        # 'autoland'
+        
+        
+        
         tree = tree.split('/')[1] if '/' in tree else tree
 
         if job.endswith('-opt'):
@@ -836,8 +836,8 @@ class TaskCache(CacheManager):
         try:
             taskId = find_task_id(namespace)
         except KeyError:
-            # Not all revisions correspond to pushes that produce the job we
-            # care about; and even those that do may not have completed yet.
+            
+            
             raise ValueError(
                 'Task for {namespace} does not exist (yet)!'.format(namespace=namespace))
 
@@ -903,8 +903,8 @@ class Artifacts(object):
                                        **kwargs)
 
     def _guess_artifact_job(self):
-        # Add the "-debug" suffix to the guessed artifact job name
-        # if MOZ_DEBUG is enabled.
+        
+        
         if self._substs.get('MOZ_DEBUG'):
             target_suffix = '-debug'
         else:
@@ -930,8 +930,8 @@ class Artifacts(object):
                 return 'win64-aarch64' + target_suffix
             return ('win64' if target_64bit else 'win32') + target_suffix
         if self._defines.get('XP_MACOSX', False):
-            # We only produce unified builds in automation, so the target_cpu
-            # check is not relevant.
+            
+            
             return 'macosx64' + target_suffix
         raise Exception('Cannot determine default job for |mach artifact|!')
 
@@ -994,12 +994,25 @@ class Artifacts(object):
                 continue
             hashes.append(hg_hash)
         if not hashes:
-            raise UserError(
-                'Could not list any recent revisions in your clone. Does your '
-                'clone have git-cinnabar metadata? If not, consider re-cloning '
-                'using the directions at '
-                'https://github.com/glandium/git-cinnabar/wiki/Mozilla:-A-git-'
-                'workflow-for-Gecko-development')
+            msg = ('Could not list any recent revisions in your clone. Does '
+                   'your clone have git-cinnabar metadata? If not, consider '
+                   're-cloning using the directions at '
+                   'https://github.com/glandium/git-cinnabar/wiki/Mozilla:-A-'
+                   'git-workflow-for-Gecko-development')
+            try:
+                subprocess.check_output(
+                    [self._git, 'cat-file', '-e',
+                     '05e5d33a570d48aed58b2d38f5dfc0a7870ff8d3^{commit}'],
+                    stderr=subprocess.STDOUT)
+                
+                
+                msg += ('\n\nNOTE: Consider following the directions '
+                        'at https://github.com/glandium/git-cinnabar/wiki/'
+                        'Mozilla:-Using-a-git-clone-of-gecko%E2%80%90dev-'
+                        'to-push-to-mercurial to resolve this issue.')
+            except subprocess.CalledProcessError:
+                pass
+            raise UserError(msg)
         return hashes
 
     def _get_recent_public_revisions(self):
@@ -1011,8 +1024,8 @@ class Artifacts(object):
         if self._git:
             return self._get_hg_revisions_from_git()
 
-        # Mercurial updated the ordering of "last" in 4.3. We use revision
-        # numbers to order here to accommodate multiple versions of hg.
+        
+        
         last_revs = self.run_hg('log', '--template', '{rev}:{node}\n',
                                 '-r', 'last(public() and ::., {num})'.format(
                                     num=NUM_REVISIONS_TO_QUERY),
@@ -1036,8 +1049,8 @@ see https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Source_Code
 
         pairs = [to_pair(r) for r in last_revs]
 
-        # Python's tuple sort orders by first component: here, the (local)
-        # revision number.
+        
+        
         nodes = [pair[1] for pair in sorted(pairs, reverse=True)]
 
         for node in nodes[:20]:
@@ -1099,13 +1112,13 @@ see https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Source_Code
                  {'filename': filename},
                  'Installing from {filename}')
 
-        # Copy all .so files, avoiding modification where possible.
+        
         ensureParentDir(mozpath.join(distdir, '.dummy'))
 
         if self._no_process:
             orig_basename = os.path.basename(filename)
-            # Turn 'HASH-target...' into 'target...' if possible.  It might not
-            # be possible if the file is given directly on the command line.
+            
+            
             before, _sep, after = orig_basename.rpartition('-')
             if re.match(r'[0-9a-fA-F]{16}$', before):
                 orig_basename = after
@@ -1117,7 +1130,7 @@ see https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Source_Code
                      'Copied unprocessed artifact: to {path}')
             return
 
-        # Do we need to post-process?
+        
         processed_filename = filename + PROCESSED_SUFFIX
 
         if self._skip_cache and os.path.exists(processed_filename):
@@ -1152,10 +1165,10 @@ see https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Source_Code
                           'filename': n},
                          '{updating} {filename}')
                 if not file_existed or file_updated:
-                    # Libraries and binaries may need to be marked executable,
-                    # depending on platform.
-                    perms = info.external_attr >> 16  # See http://stackoverflow.com/a/434689.
-                    perms |= stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH  # u+w, a+r.
+                    
+                    
+                    perms = info.external_attr >> 16  
+                    perms |= stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH  
                     os.chmod(n, perms)
         return 0
 
@@ -1174,7 +1187,7 @@ see https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Source_Code
 
         urls = None
         count = 0
-        # with blocks handle handle persistence.
+        
         with self._task_cache as task_cache:
             for trees, hg_hash in hg_pushheads:
                 for tree in trees:
@@ -1211,13 +1224,13 @@ see https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Source_Code
                     stderr=open(os.devnull, 'w'), universal_newlines=True,
                     cwd=self._topsrcdir).strip()
             else:
-                # Fallback to the exception handling case from both hg and git
+                
                 raise subprocess.CalledProcessError()
         except subprocess.CalledProcessError:
-            # If the mercurial of git commands above failed, it means the given
-            # revset is not known locally to the VCS. But if the revset looks
-            # like a complete sha1, assume it is a mercurial sha1 that hasn't
-            # been pulled, and use that.
+            
+            
+            
+            
             if re.match(r'^[A-Fa-f0-9]{40}$', revset):
                 revision = revset
 
@@ -1236,7 +1249,7 @@ see https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Source_Code
                   'revision': revision},
                  'Will only accept artifacts from a pushhead at {revision} '
                  '(matched revset "{revset}").')
-        # Include try in our search to allow pulling from a specific push.
+        
         pushheads = [(
             self._artifact_job.candidate_trees + [self._artifact_job.try_tree],
             revision
