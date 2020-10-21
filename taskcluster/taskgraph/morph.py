@@ -68,7 +68,7 @@ def derive_misc_task(
 
     
     
-    image_taskid = label_to_taskid["build-docker-image-" + image]
+    image_taskid = label_to_taskid["docker-image-" + image]
 
     provisioner_id, worker_type = get_worker_type(
         graph_config, "misc", parameters["level"], parameters.release_level()
