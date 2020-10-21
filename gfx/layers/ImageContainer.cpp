@@ -5,13 +5,20 @@
 
 
 #include "ImageContainer.h"
-#include <string.h>    
-#include "GLImages.h"  
+
+#include <string.h>  
+
+#include "GLImages.h"    
+#include "YCbCrUtils.h"  
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"  
 #include "gfxUtils.h"     
 #include "libyuv.h"
-#include "mozilla/RefPtr.h"                 
+#include "mozilla/CheckedInt.h"
+#include "mozilla/RefPtr.h"  
+#include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/CrossProcessMutex.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ImageBridgeChild.h"     
@@ -19,25 +26,20 @@
 #include "mozilla/layers/ImageDataSerializer.h"  
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/SharedPlanarYCbCrImage.h"
-#include "mozilla/layers/SharedSurfacesChild.h"  
 #include "mozilla/layers/SharedRGBImage.h"
+#include "mozilla/layers/SharedSurfacesChild.h"  
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
-#include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "nsISupportsUtils.h"  
-#include "YCbCrUtils.h"        
-#include "gfx2DGlue.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/CheckedInt.h"
 
 #ifdef XP_MACOSX
-#  include "mozilla/gfx/QuartzSupport.h"
 #  include "MacIOSurfaceImage.h"
+#  include "mozilla/gfx/QuartzSupport.h"
 #endif
 
 #ifdef XP_WIN
-#  include "gfxWindowsPlatform.h"
 #  include <d3d10_1.h>
+
+#  include "gfxWindowsPlatform.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "mozilla/layers/D3D11YCbCrImage.h"
 #endif
@@ -479,8 +481,6 @@ nsresult PlanarYCbCrImage::BuildSurfaceDescriptorBuffer(
   MOZ_ASSERT(pdata, "must have PlanarYCbCrData");
   MOZ_ASSERT(pdata->mYSkip == 0 && pdata->mCbSkip == 0 && pdata->mCrSkip == 0,
              "YCbCrDescriptor doesn't hold skip values");
-  MOZ_ASSERT(pdata->mPicX == 0 && pdata->mPicY == 0,
-             "YCbCrDescriptor doesn't hold picx or picy");
 
   uint32_t yOffset;
   uint32_t cbOffset;
@@ -490,9 +490,9 @@ nsresult PlanarYCbCrImage::BuildSurfaceDescriptorBuffer(
       pdata->mCbCrSize.height, yOffset, cbOffset, crOffset);
 
   aSdBuffer.desc() = YCbCrDescriptor(
-      pdata->mYSize, pdata->mYStride, pdata->mCbCrSize, pdata->mCbCrStride,
-      yOffset, cbOffset, crOffset, pdata->mStereoMode, pdata->mColorDepth,
-      pdata->mYUVColorSpace, pdata->mColorRange,
+      pdata->GetPictureRect(), pdata->mYSize, pdata->mYStride, pdata->mCbCrSize,
+      pdata->mCbCrStride, yOffset, cbOffset, crOffset, pdata->mStereoMode,
+      pdata->mColorDepth, pdata->mYUVColorSpace, pdata->mColorRange,
        false);
 
   uint8_t* buffer = nullptr;

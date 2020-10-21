@@ -5,15 +5,15 @@
 
 
 #include "ImageDataSerializer.h"
+
+#include "YCbCrUtils.h"           
 #include "gfx2DGlue.h"            
-#include "mozilla/gfx/Point.h"    
 #include "mozilla/Assertions.h"   
 #include "mozilla/gfx/2D.h"       
 #include "mozilla/gfx/Logging.h"  
 #include "mozilla/gfx/Tools.h"    
 #include "mozilla/gfx/Types.h"
 #include "mozilla/mozalloc.h"  
-#include "YCbCrUtils.h"        
 
 namespace mozilla {
 namespace layers {
@@ -139,10 +139,24 @@ gfx::IntSize SizeFromBufferDescriptor(const BufferDescriptor& aDescriptor) {
   switch (aDescriptor.type()) {
     case BufferDescriptor::TRGBDescriptor:
       return aDescriptor.get_RGBDescriptor().size();
-    case BufferDescriptor::TYCbCrDescriptor:
-      return aDescriptor.get_YCbCrDescriptor().ySize();
+    case BufferDescriptor::TYCbCrDescriptor: {
+      return aDescriptor.get_YCbCrDescriptor().display().Size();
+    }
     default:
       MOZ_CRASH("GFX: SizeFromBufferDescriptor");
+  }
+}
+
+gfx::IntRect RectFromBufferDescriptor(const BufferDescriptor& aDescriptor) {
+  switch (aDescriptor.type()) {
+    case BufferDescriptor::TRGBDescriptor: {
+      auto size = aDescriptor.get_RGBDescriptor().size();
+      return gfx::IntRect(0, 0, size.Width(), size.Height());
+    }
+    case BufferDescriptor::TYCbCrDescriptor:
+      return aDescriptor.get_YCbCrDescriptor().display();
+    default:
+      MOZ_CRASH("GFX: RectFromBufferDescriptor");
   }
 }
 
@@ -245,13 +259,13 @@ uint8_t* GetCrChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor) {
 already_AddRefed<DataSourceSurface> DataSourceSurfaceFromYCbCrDescriptor(
     uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor,
     gfx::DataSourceSurface* aSurface) {
-  gfx::IntSize ySize = aDescriptor.ySize();
-
+  const gfx::IntRect display = aDescriptor.display();
+  const gfx::IntSize size = display.Size();
   RefPtr<DataSourceSurface> result;
   if (aSurface) {
-    MOZ_ASSERT(aSurface->GetSize() == ySize);
+    MOZ_ASSERT(aSurface->GetSize() == size);
     MOZ_ASSERT(aSurface->GetFormat() == gfx::SurfaceFormat::B8G8R8X8);
-    if (aSurface->GetSize() == ySize &&
+    if (aSurface->GetSize() == size &&
         aSurface->GetFormat() == gfx::SurfaceFormat::B8G8R8X8) {
       result = aSurface;
     }
@@ -259,7 +273,7 @@ already_AddRefed<DataSourceSurface> DataSourceSurfaceFromYCbCrDescriptor(
 
   if (!result) {
     result =
-        Factory::CreateDataSourceSurface(ySize, gfx::SurfaceFormat::B8G8R8X8);
+        Factory::CreateDataSourceSurface(size, gfx::SurfaceFormat::B8G8R8X8);
   }
   if (NS_WARN_IF(!result)) {
     return nullptr;
@@ -273,16 +287,18 @@ already_AddRefed<DataSourceSurface> DataSourceSurfaceFromYCbCrDescriptor(
   layers::PlanarYCbCrData ycbcrData;
   ycbcrData.mYChannel = GetYChannel(aBuffer, aDescriptor);
   ycbcrData.mYStride = aDescriptor.yStride();
-  ycbcrData.mYSize = ySize;
+  ycbcrData.mYSize = aDescriptor.ySize();
   ycbcrData.mCbChannel = GetCbChannel(aBuffer, aDescriptor);
   ycbcrData.mCrChannel = GetCrChannel(aBuffer, aDescriptor);
   ycbcrData.mCbCrStride = aDescriptor.cbCrStride();
   ycbcrData.mCbCrSize = aDescriptor.cbCrSize();
-  ycbcrData.mPicSize = ySize;
+  ycbcrData.mPicSize = size;
+  ycbcrData.mPicX = display.X();
+  ycbcrData.mPicY = display.Y();
   ycbcrData.mYUVColorSpace = aDescriptor.yUVColorSpace();
   ycbcrData.mColorDepth = aDescriptor.colorDepth();
 
-  gfx::ConvertYCbCrToRGB(ycbcrData, gfx::SurfaceFormat::B8G8R8X8, ySize,
+  gfx::ConvertYCbCrToRGB(ycbcrData, gfx::SurfaceFormat::B8G8R8X8, size,
                          map.mData, map.mStride);
 
   result->Unmap();
@@ -297,16 +313,19 @@ void ConvertAndScaleFromYCbCrDescriptor(uint8_t* aBuffer,
                                         int32_t aStride) {
   MOZ_ASSERT(aBuffer);
 
+  const gfx::IntRect display = aDescriptor.display();
+
   layers::PlanarYCbCrData ycbcrData;
   ycbcrData.mYChannel = GetYChannel(aBuffer, aDescriptor);
   ycbcrData.mYStride = aDescriptor.yStride();
-  ;
   ycbcrData.mYSize = aDescriptor.ySize();
   ycbcrData.mCbChannel = GetCbChannel(aBuffer, aDescriptor);
   ycbcrData.mCrChannel = GetCrChannel(aBuffer, aDescriptor);
   ycbcrData.mCbCrStride = aDescriptor.cbCrStride();
   ycbcrData.mCbCrSize = aDescriptor.cbCrSize();
-  ycbcrData.mPicSize = aDescriptor.ySize();
+  ycbcrData.mPicSize = display.Size();
+  ycbcrData.mPicX = display.X();
+  ycbcrData.mPicY = display.Y();
   ycbcrData.mYUVColorSpace = aDescriptor.yUVColorSpace();
   ycbcrData.mColorDepth = aDescriptor.colorDepth();
 

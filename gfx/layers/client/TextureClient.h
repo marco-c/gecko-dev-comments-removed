@@ -7,16 +7,19 @@
 #ifndef MOZILLA_GFX_TEXTURECLIENT_H
 #define MOZILLA_GFX_TEXTURECLIENT_H
 
-#include <stddef.h>              
-#include <stdint.h>              
-#include "GLTextureImage.h"      
+#include <stddef.h>  
+#include <stdint.h>  
+
+#include "GLTextureImage.h"  
+#include "GfxTexturesReporter.h"
 #include "ImageTypes.h"          
 #include "mozilla/Assertions.h"  
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"  
 #include "mozilla/DebugOnly.h"
-#include "mozilla/RefPtr.h"     
-#include "mozilla/gfx/2D.h"     
+#include "mozilla/RefPtr.h"  
+#include "mozilla/gfx/2D.h"  
+#include "mozilla/gfx/CriticalSection.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Types.h"  
 #include "mozilla/ipc/FileDescriptor.h"
@@ -24,16 +27,14 @@
 #include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/mozalloc.h"               
-#include "mozilla/gfx/CriticalSection.h"
+#include "mozilla/layers/LayersTypes.h"
+#include "mozilla/mozalloc.h"  
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"         
 #include "nsISupportsImpl.h"  
-#include "GfxTexturesReporter.h"
-#include "pratom.h"
 #include "nsThreadUtils.h"
+#include "pratom.h"
 
 class gfxImageSurface;
 struct ID3D11Device;
@@ -381,10 +382,12 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   
   static already_AddRefed<TextureClient> CreateForYCbCr(
-      KnowsCompositor* aAllocator, gfx::IntSize aYSize, uint32_t aYStride,
-      gfx::IntSize aCbCrSize, uint32_t aCbCrStride, StereoMode aStereoMode,
-      gfx::ColorDepth aColorDepth, gfx::YUVColorSpace aYUVColorSpace,
-      gfx::ColorRange aColorRange, TextureFlags aTextureFlags);
+      KnowsCompositor* aAllocator, const gfx::IntRect& aDisplay,
+      const gfx::IntSize& aYSize, uint32_t aYStride,
+      const gfx::IntSize& aCbCrSize, uint32_t aCbCrStride,
+      StereoMode aStereoMode, gfx::ColorDepth aColorDepth,
+      gfx::YUVColorSpace aYUVColorSpace, gfx::ColorRange aColorRange,
+      TextureFlags aTextureFlags);
 
   
   
@@ -893,7 +896,7 @@ class MOZ_RAII DualTextureClientAutoLock {
 
   bool Succeeded() const { return !!mTarget; }
 
-  operator gfx::DrawTarget*() const { return mTarget; }
+  operator gfx::DrawTarget *() const { return mTarget; }
   gfx::DrawTarget* operator->() const { return mTarget; }
 
   RefPtr<gfx::DrawTarget> mTarget;

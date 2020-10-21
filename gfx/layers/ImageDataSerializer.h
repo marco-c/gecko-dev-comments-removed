@@ -11,6 +11,7 @@
 #include "mozilla/Attributes.h"             
 #include "mozilla/RefPtr.h"                 
 #include "mozilla/gfx/Point.h"              
+#include "mozilla/gfx/Rect.h"               
 #include "mozilla/gfx/Types.h"              
 #include "mozilla/layers/LayersSurfaces.h"  
 
@@ -56,6 +57,8 @@ gfx::SurfaceFormat FormatFromBufferDescriptor(
     const BufferDescriptor& aDescriptor);
 
 gfx::IntSize SizeFromBufferDescriptor(const BufferDescriptor& aDescriptor);
+
+gfx::IntRect RectFromBufferDescriptor(const BufferDescriptor& aDescriptor);
 
 Maybe<gfx::IntSize> CbCrSizeFromBufferDescriptor(
     const BufferDescriptor& aDescriptor);
