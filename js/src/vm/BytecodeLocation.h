@@ -78,6 +78,8 @@ class BytecodeLocation {
   
   
   bool isInBounds(const JSScript* script) const;
+
+  const JSScript* getDebugOnlyScript() const;
 #endif
 
   inline uint32_t bytecodeToOffset(const JSScript* script) const;
