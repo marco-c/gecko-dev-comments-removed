@@ -909,6 +909,7 @@ async function promiseNativeMouseDrag(
 
 
 
+
 function* pinchZoomInTouchSequence(focusX, focusY) {
   
   var zoom_in = [
@@ -922,42 +923,6 @@ function* pinchZoomInTouchSequence(focusX, focusY) {
 
   var touchIds = [0, 1];
   yield* synthesizeNativeTouchSequences(document.body, zoom_in, null, touchIds);
-}
-
-
-
-function* pinchZoomOutTouchSequenceAtCenter() {
-  
-  
-  const deltaX = window.visualViewport.width / 16;
-  const deltaY = window.visualViewport.height / 16;
-  const centerX =
-    window.visualViewport.pageLeft + window.visualViewport.width / 2;
-  const centerY =
-    window.visualViewport.pageTop + window.visualViewport.height / 2;
-  
-  var zoom_out = [
-      [ { x: centerX - (deltaX * 6), y: centerY - (deltaY * 6) },
-        { x: centerX + (deltaX * 6), y: centerY + (deltaY * 6) } ],
-      [ { x: centerX - (deltaX * 5), y: centerY - (deltaY * 5) },
-        { x: centerX + (deltaX * 5), y: centerY + (deltaY * 5) } ],
-      [ { x: centerX - (deltaX * 4), y: centerY - (deltaY * 4) },
-        { x: centerX + (deltaX * 4), y: centerY + (deltaY * 4) } ],
-      [ { x: centerX - (deltaX * 3), y: centerY - (deltaY * 3) },
-        { x: centerX + (deltaX * 3), y: centerY + (deltaY * 3) } ],
-      [ { x: centerX - (deltaX * 2), y: centerY - (deltaY * 2) },
-        { x: centerX + (deltaX * 2), y: centerY + (deltaY * 2) } ],
-      [ { x: centerX - (deltaX * 1), y: centerY - (deltaY * 1) },
-        { x: centerX + (deltaX * 1), y: centerY + (deltaY * 1) } ],
-  ];
-
-  var touchIds = [0, 1];
-  yield* synthesizeNativeTouchSequences(
-    document.body,
-    zoom_out,
-    null,
-    touchIds
-  );
 }
 
 
@@ -989,6 +954,7 @@ function promiseTransformEnd() {
 
 
 
+
 async function pinchZoomInWithTouch(focusX, focusY) {
   
   let transformEndPromise = promiseTopic("APZ:TransformEnd");
@@ -1009,12 +975,22 @@ async function pinchZoomInWithTouch(focusX, focusY) {
 
 
 
-async function pinchZoomOutWithTouchAtCenter() {
+
+
+async function synthesizeNativeTouchAndWaitForTransformEnd(
+  touchSequence,
+  touchIds
+) {
   
   let transformEndPromise = promiseTopic("APZ:TransformEnd");
 
   
-  let generator = pinchZoomOutTouchSequenceAtCenter();
+  let generator = synthesizeNativeTouchSequences(
+    document.body,
+    touchSequence,
+    null,
+    touchIds
+  );
   while (true) {
     let yieldResult = generator.next();
     if (yieldResult.done) {
@@ -1024,4 +1000,37 @@ async function pinchZoomOutWithTouchAtCenter() {
 
   
   await transformEndPromise;
+}
+
+
+
+
+
+async function pinchZoomOutWithTouchAtCenter() {
+  
+  
+  const deltaX = window.visualViewport.width / 16;
+  const deltaY = window.visualViewport.height / 16;
+  const centerX =
+    window.visualViewport.pageLeft + window.visualViewport.width / 2;
+  const centerY =
+    window.visualViewport.pageTop + window.visualViewport.height / 2;
+  
+  var zoom_out = [
+      [ { x: centerX - (deltaX * 6), y: centerY - (deltaY * 6) },
+        { x: centerX + (deltaX * 6), y: centerY + (deltaY * 6) } ],
+      [ { x: centerX - (deltaX * 5), y: centerY - (deltaY * 5) },
+        { x: centerX + (deltaX * 5), y: centerY + (deltaY * 5) } ],
+      [ { x: centerX - (deltaX * 4), y: centerY - (deltaY * 4) },
+        { x: centerX + (deltaX * 4), y: centerY + (deltaY * 4) } ],
+      [ { x: centerX - (deltaX * 3), y: centerY - (deltaY * 3) },
+        { x: centerX + (deltaX * 3), y: centerY + (deltaY * 3) } ],
+      [ { x: centerX - (deltaX * 2), y: centerY - (deltaY * 2) },
+        { x: centerX + (deltaX * 2), y: centerY + (deltaY * 2) } ],
+      [ { x: centerX - (deltaX * 1), y: centerY - (deltaY * 1) },
+        { x: centerX + (deltaX * 1), y: centerY + (deltaY * 1) } ],
+  ];
+
+  var touchIds = [0, 1];
+  await synthesizeNativeTouchAndWaitForTransformEnd(zoom_out, touchIds);
 }
