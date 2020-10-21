@@ -982,6 +982,10 @@ inline AspectRatio StyleRatio<StyleNonNegativeNumber>::ToLayoutRatio() const {
   
   
   
+  
+  
+  
+  
   return AspectRatio::FromSize(_0, _1);
 }
 

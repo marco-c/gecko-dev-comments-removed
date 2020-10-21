@@ -951,13 +951,6 @@ impl Parse for Ratio {
             _ => One::one(),
         };
 
-        
-        
-        
-        
-        if a.is_zero() && b.is_zero() {
-            return Ok(GenericRatio(One::one(), Zero::zero()));
-        }
-        return Ok(GenericRatio(a, b));
+        Ok(GenericRatio(a, b))
     }
 }

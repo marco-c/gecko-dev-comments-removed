@@ -15,7 +15,7 @@ use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
 use crate::values::generics::position::Ratio as GenericRatio;
 use crate::values::generics::position::ZIndex as GenericZIndex;
 pub use crate::values::specified::position::{GridAutoFlow, GridTemplateAreas, MasonryAutoFlow};
-use crate::Zero;
+use crate::{One, Zero};
 use std::cmp::{Ordering, PartialOrd};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
@@ -88,6 +88,16 @@ impl Ratio {
     
     pub fn new(a: f32, b: f32) -> Self {
         GenericRatio(a.into(), b.into())
+    }
+
+    
+    
+    pub fn used_value(self) -> Self {
+        if self.0.is_zero() && self.1.is_zero() {
+            Ratio::new(One::one(), Zero::zero())
+        } else {
+            self
+        }
     }
 }
 

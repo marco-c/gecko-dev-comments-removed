@@ -87,8 +87,12 @@ fn eval_aspect_ratio_for<F>(
 where
     F: FnOnce(&Device) -> Size2D<Au>,
 {
+    
+    
+    
+    
     let query_value = match query_value {
-        Some(v) => v,
+        Some(v) => v.used_value(),
         None => return true,
     };
 
