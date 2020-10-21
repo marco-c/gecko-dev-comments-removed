@@ -829,6 +829,8 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+
+
   mozilla::LogicalSize ComputeSizeWithIntrinsicDimensions(
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::IntrinsicSize& aIntrinsicSize,

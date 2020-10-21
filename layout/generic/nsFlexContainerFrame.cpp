@@ -2191,16 +2191,6 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mAlignSelf = {StyleAlignFlags::FLEX_END};
     }
   }
-
-  
-  
-  
-  
-  const StyleAspectRatio& ratio =
-      aFlexItemReflowInput.mStylePosition->mAspectRatio;
-  if (!mFrame->IsFrameOfType(nsIFrame::eReplaced) && ratio.HasFiniteRatio()) {
-    mIntrinsicRatio = ratio.ratio.AsRatio().ToLayoutRatio();
-  }
 }
 
 

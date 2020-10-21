@@ -5964,7 +5964,28 @@ IntrinsicSize nsIFrame::GetIntrinsicSize() {
 
 AspectRatio nsIFrame::GetAspectRatio() const {
   
-  return GetIntrinsicRatio();
+  
+  
+  
+  
+  
+  
+
+  const StyleAspectRatio& aspectRatio = StylePosition()->mAspectRatio;
+  if (!aspectRatio.auto_) {
+    
+    return aspectRatio.ratio.AsRatio().ToLayoutRatio();
+  }
+
+  
+  if (auto intrinsicRatio = GetIntrinsicRatio()) {
+    return intrinsicRatio;
+  }
+  if (aspectRatio.HasRatio()) {
+    return aspectRatio.ratio.AsRatio().ToLayoutRatio();
+  }
+
+  return AspectRatio();
 }
 
 

@@ -251,11 +251,6 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
     return AspectRatio();
   }
 
-  const StyleAspectRatio& aspectRatio = StylePosition()->mAspectRatio;
-  if (!aspectRatio.auto_) {
-    return aspectRatio.ratio.AsRatio().ToLayoutRatio();
-  }
-
   
   
   
@@ -286,11 +281,6 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
 
   if (viewbox) {
     return AspectRatio::FromSize(viewbox->width, viewbox->height);
-  }
-
-  if (aspectRatio.HasRatio()) {
-    
-    return aspectRatio.ratio.AsRatio().ToLayoutRatio();
   }
 
   return SVGDisplayContainerFrame::GetIntrinsicRatio();
