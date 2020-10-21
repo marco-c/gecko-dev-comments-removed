@@ -1700,12 +1700,6 @@ bool CookieService::CheckDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
   aHostURI->GetAsciiHost(hostFromURI);
 
   
-  if (hostFromURI.Contains(':')) {
-    hostFromURI.Insert("[", 0);
-    hostFromURI.Append(']');
-  }
-
-  
   if (!aCookieData.host().IsEmpty()) {
     
     if (aCookieData.host().Length() > 1 && aCookieData.host().First() == '.') {
