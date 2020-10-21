@@ -26,6 +26,16 @@ class ThumbnailsChild extends JSWindowActorChild {
 
         return new Promise(resolve =>
           Services.tm.idleDispatchToMainThread(() => {
+            if (!this.manager) {
+              
+              
+              
+              
+              
+              
+              return;
+            }
+
             let result = PageThumbUtils.shouldStoreContentThumbnail(
               this.contentWindow,
               this.browsingContext.docShell
