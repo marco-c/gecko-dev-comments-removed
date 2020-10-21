@@ -5,7 +5,6 @@
 "use strict";
 
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
-const { TargetList } = require("devtools/shared/resources/target-list");
 
 
 
@@ -27,22 +26,13 @@ class NodePicker extends EventEmitter {
     super();
 
     this.targetList = targetList;
+    this.selection = selection;
 
     
     this.isPicking = false;
-    
-    this.doFocus = false;
 
     
-    this._currentInspectorFronts = new Set();
-
-    this._onInspectorFrontAvailable = this._onInspectorFrontAvailable.bind(
-      this
-    );
-    this._onInspectorFrontDestroyed = this._onInspectorFrontDestroyed.bind(
-      this
-    );
-    this._onTargetAvailable = this._onTargetAvailable.bind(this);
+    this._currentInspectorFronts = [];
 
     this.cancel = this.cancel.bind(this);
     this.start = this.start.bind(this);
@@ -77,65 +67,6 @@ class NodePicker extends EventEmitter {
 
 
 
-  async _onInspectorFrontAvailable(inspectorFront) {
-    this._currentInspectorFronts.add(inspectorFront);
-    
-    
-    await inspectorFront.initialize();
-    const { walker } = inspectorFront;
-    walker.on("picker-node-hovered", this._onHovered);
-    walker.on("picker-node-picked", this._onPicked);
-    walker.on("picker-node-previewed", this._onPreviewed);
-    walker.on("picker-node-canceled", this._onCanceled);
-    await walker.pick(this.doFocus);
-  }
-
-  
-
-
-
-
-
-
-  async _onInspectorFrontDestroyed(inspectorFront) {
-    this._currentInspectorFronts.delete(inspectorFront);
-
-    const { walker } = inspectorFront;
-    if (!walker) {
-      return;
-    }
-
-    walker.off("picker-node-hovered", this._onHovered);
-    walker.off("picker-node-picked", this._onPicked);
-    walker.off("picker-node-previewed", this._onPreviewed);
-    walker.off("picker-node-canceled", this._onCanceled);
-    await walker.cancelPick();
-  }
-
-  
-
-
-
-
-
-
-
-
-  async _onTargetAvailable({ targetFront }) {
-    targetFront.watchFronts(
-      "inspector",
-      this._onInspectorFrontAvailable,
-      this._onInspectorFrontDestroyed
-    );
-  }
-
-  
-
-
-
-
-
-
 
 
   async start(doFocus) {
@@ -143,11 +74,23 @@ class NodePicker extends EventEmitter {
       return;
     }
     this.isPicking = true;
-    this.doFocus = doFocus;
 
     this.emit("picker-starting");
 
-    this.targetList.watchTargets(TargetList.ALL_TYPES, this._onTargetAvailable);
+    
+    
+    this._currentInspectorFronts = await this.targetList.getAllFronts(
+      this.targetList.TYPES.FRAME,
+      "inspector"
+    );
+
+    for (const { walker } of this._currentInspectorFronts) {
+      walker.on("picker-node-hovered", this._onHovered);
+      walker.on("picker-node-picked", this._onPicked);
+      walker.on("picker-node-previewed", this._onPreviewed);
+      walker.on("picker-node-canceled", this._onCanceled);
+      await walker.pick(doFocus);
+    }
 
     this.emit("picker-started");
   }
@@ -161,18 +104,16 @@ class NodePicker extends EventEmitter {
       return;
     }
     this.isPicking = false;
-    this.doFocus = false;
 
-    this.targetList.unwatchTargets(
-      TargetList.ALL_TYPES,
-      this._onTargetAvailable
-    );
-
-    for (const inspectorFront of this._currentInspectorFronts) {
-      await this._onInspectorFrontDestroyed(inspectorFront);
+    for (const { walker } of this._currentInspectorFronts) {
+      walker.off("picker-node-hovered", this._onHovered);
+      walker.off("picker-node-picked", this._onPicked);
+      walker.off("picker-node-previewed", this._onPreviewed);
+      walker.off("picker-node-canceled", this._onCanceled);
+      await walker.cancelPick();
     }
 
-    this._currentInspectorFronts.clear();
+    this._currentInspectorFronts = [];
 
     this.emit("picker-stopped");
   }
