@@ -1631,7 +1631,10 @@ def enable_webrender(config, tasks):
             extra_options = task['mozharness'].setdefault('extra-options', [])
             extra_options.append("--enable-webrender")
             
-            if not task['attributes']['unittest_category'] in ['cppunittest', 'gtest', 'raptor']:
+            if not task['attributes']['unittest_category'] in ['cppunittest',
+                                                               'geckoview-junit',
+                                                               'gtest',
+                                                               'raptor']:
                 extra_options.append("--setpref=layers.d3d11.enable-blacklist=false")
 
             
