@@ -12,7 +12,6 @@
 #include "APZCTreeManager.h"
 #include "FrameMetrics.h"
 #include "mozilla/Telemetry.h"  
-#include "mozilla/layers/ScrollInputMethods.h"  
 
 namespace mozilla {
 namespace layers {
@@ -41,9 +40,6 @@ bool AutoscrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   if (!treeManager) {
     return false;
   }
-
-  Telemetry::Accumulate(Telemetry::SCROLL_INPUT_METHODS,
-                        (uint32_t)ScrollInputMethod::ApzAutoscrolling);
 
   ScreenPoint mouseLocation = treeManager->GetCurrentMousePosition();
 

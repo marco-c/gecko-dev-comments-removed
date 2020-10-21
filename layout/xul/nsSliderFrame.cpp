@@ -523,10 +523,6 @@ nsresult nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
           return NS_OK;
         }
 
-        mozilla::Telemetry::Accumulate(
-            mozilla::Telemetry::SCROLL_INPUT_METHODS,
-            (uint32_t)ScrollInputMethod::MainThreadScrollbarDrag);
-
         
         pos -= mDragStart;
         bool isMouseOutsideThumb = false;
@@ -1120,6 +1116,19 @@ nsresult nsSliderFrame::StartDrag(Event* aEvent) {
 nsresult nsSliderFrame::StopDrag() {
   AddListener();
   DragThumb(false);
+
+  if (!mScrollingWithAPZ) {
+    
+    
+    
+    
+    
+    
+    
+    mozilla::Telemetry::Accumulate(
+        mozilla::Telemetry::SCROLL_INPUT_METHODS,
+        (uint32_t)ScrollInputMethod::MainThreadScrollbarDrag);
+  }
 
   mScrollingWithAPZ = false;
 
