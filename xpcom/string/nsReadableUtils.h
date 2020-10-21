@@ -14,7 +14,7 @@
 
 
 #include "mozilla/Assertions.h"
-#include "nsAString.h"
+#include "nsString.h"
 #include "mozilla/TextUtils.h"
 
 #include "nsTArrayForwardDeclare.h"
@@ -446,6 +446,27 @@ void ToLowerCase(nsACString&);
 void ToUpperCase(const nsACString& aSource, nsACString& aDest);
 
 void ToLowerCase(const nsACString& aSource, nsACString& aDest);
+
+
+
+
+
+template <typename T, typename U>
+nsTAutoString<T> IntToTString(const U aInt, const int aRadix = 10) {
+  nsTAutoString<T> string;
+  string.AppendInt(aInt, aRadix);
+  return string;
+}
+
+template <typename U>
+nsAutoCString IntToCString(const U aInt, const int aRadix = 10) {
+  return IntToTString<char>(aInt, aRadix);
+}
+
+template <typename U>
+nsAutoString IntToString(const U aInt, const int aRadix = 10) {
+  return IntToTString<char16_t>(aInt, aRadix);
+}
 
 
 
