@@ -1,14 +1,14 @@
-# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Check for headers defining standard int types.
+
+
+
+
+
+
 check_header('stdint.h')
 have_inttypes = check_header('inttypes.h')
 
-# Assume we have ansi C header files available.
+
 set_define('STDC_HEADERS', True)
 
 set_config('HAVE_INTTYPES_H', have_inttypes)
@@ -30,7 +30,7 @@ check_headers(
     'fts.h',
 )
 
-# These are all the places some variant of statfs can be hiding.
+
 check_headers(
     'sys/statvfs.h',
     'sys/statfs.h',
@@ -38,9 +38,9 @@ check_headers(
     'sys/mount.h',
 )
 
-# Quota support
-# Check for both the header and quotactl() because Android headers can have the
-# header but not quotactl().
+
+
+
 set_define('HAVE_SYS_QUOTA_H',
            try_compile(includes=['sys/quota.h'],
                        body='quotactl(0, nullptr, 0, (caddr_t)nullptr);',
@@ -49,7 +49,7 @@ check_header('linux/quota.h',
              includes=['sys/socket.h'],
              when=building_linux)
 
-# SCTP support - needs various network include headers
+
 check_headers(
     'linux/if_addr.h',
     'linux/rtnetlink.h',
@@ -65,7 +65,15 @@ check_headers(
     'byteswap.h',
 )
 
-# TODO: Move these checks to file specific to --enable-project=js.
+
+
+
+set_define('HAVE_MEMFD_CREATE',
+           try_compile(includes=['sys/mman.h'],
+                       body='memfd_create("", 0);',
+                       check_msg='for memfd_create in sys/mman.h'))
+
+
 have_perf_event_h = check_header('linux/perf_event.h',
                                  when=building_linux)
 
