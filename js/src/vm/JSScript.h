@@ -1361,6 +1361,10 @@ struct MemberInitializers {
 
 
 
+
+
+
+
 class alignas(uintptr_t) PrivateScriptData final : public TrailingArray {
  private:
   uint32_t ngcthings = 0;
@@ -1953,16 +1957,6 @@ template <XDRMode mode>
 XDRResult XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
 
 extern void SweepScriptData(JSRuntime* rt);
-
-} 
-
-namespace JS {
-
-
-
-template <>
-struct DeletePolicy<js::PrivateScriptData>
-    : public js::GCManagedDeletePolicy<js::PrivateScriptData> {};
 
 } 
 

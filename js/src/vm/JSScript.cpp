@@ -647,6 +647,7 @@ void js::BaseScript::finalize(JSFreeOp* fop) {
   }
 
   if (data_) {
+    
     size_t size = data_->allocationSize();
     AlwaysPoison(data_, JS_POISONED_JSSCRIPT_DATA_PATTERN, size,
                  MemCheckKind::MakeNoAccess);
