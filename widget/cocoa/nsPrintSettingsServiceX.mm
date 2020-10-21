@@ -173,7 +173,17 @@ nsresult nsPrintSettingsServiceX::_CreatePrintSettings(nsIPrintSettings** _retva
     return rv;
   }
 
-  InitPrintSettingsFromPrefs(*_retval, false, nsIPrintSettings::kInitSaveAll);
+  auto globalPrintSettings =
+      nsIPrintSettings::kInitSaveShrinkToFit | nsIPrintSettings::kInitSaveHeaderLeft |
+      nsIPrintSettings::kInitSaveHeaderCenter | nsIPrintSettings::kInitSaveHeaderRight |
+      nsIPrintSettings::kInitSaveFooterLeft | nsIPrintSettings::kInitSaveFooterCenter |
+      nsIPrintSettings::kInitSaveFooterRight | nsIPrintSettings::kInitSaveEdges |
+      nsIPrintSettings::kInitSaveReversed | nsIPrintSettings::kInitSaveInColor;
+
+  
+  
+  
+  InitPrintSettingsFromPrefs(*_retval, false, globalPrintSettings);
   return rv;
 }
 

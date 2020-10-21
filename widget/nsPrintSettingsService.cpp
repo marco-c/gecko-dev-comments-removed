@@ -938,10 +938,24 @@ nsPrintSettingsService::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
 
   if (isInitialized) return NS_OK;
 
+  auto globalPrintSettings = aFlags;
+#ifndef MOZ_WIDGET_ANDROID
+  globalPrintSettings &= nsIPrintSettings::kInitSaveShrinkToFit |
+                         nsIPrintSettings::kInitSaveHeaderLeft |
+                         nsIPrintSettings::kInitSaveHeaderCenter |
+                         nsIPrintSettings::kInitSaveHeaderRight |
+                         nsIPrintSettings::kInitSaveFooterLeft |
+                         nsIPrintSettings::kInitSaveFooterCenter |
+                         nsIPrintSettings::kInitSaveFooterRight |
+                         nsIPrintSettings::kInitSaveEdges |
+                         nsIPrintSettings::kInitSaveReversed |
+                         nsIPrintSettings::kInitSaveInColor;
+#endif
+
   nsAutoString prtName;
   
   
-  nsresult rv = ReadPrefs(aPS, prtName, aFlags);
+  nsresult rv = ReadPrefs(aPS, prtName, globalPrintSettings);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
