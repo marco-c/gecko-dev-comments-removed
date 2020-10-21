@@ -57,10 +57,8 @@ class EventQueueInternal {
   
   
   
-  
-  
   already_AddRefed<nsIRunnable> GetEvent(
-      EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock,
+      const MutexAutoLock& aProofOfLock,
       mozilla::TimeDuration* aLastEventDelay = nullptr);
 
   void DidRunEvent(const MutexAutoLock& aProofOfLock) {}
@@ -72,10 +70,6 @@ class EventQueueInternal {
   
   
   bool HasReadyEvent(const MutexAutoLock& aProofOfLock);
-  bool HasPendingHighPriorityEvents(const MutexAutoLock& aProofOfLock) {
-    
-    return false;
-  }
 
   
   size_t Count(const MutexAutoLock& aProofOfLock) const;

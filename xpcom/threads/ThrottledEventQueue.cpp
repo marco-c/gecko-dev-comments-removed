@@ -225,7 +225,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
       
       
-      event = mEventQueue.GetEvent(nullptr, lock);
+      event = mEventQueue.GetEvent(lock);
       MOZ_ASSERT(event);
 
       
@@ -283,7 +283,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
   already_AddRefed<nsIRunnable> GetEvent() {
     MutexAutoLock lock(mMutex);
-    return mEventQueue.GetEvent(nullptr, lock);
+    return mEventQueue.GetEvent(lock);
   }
 
   void AwaitIdle() const {

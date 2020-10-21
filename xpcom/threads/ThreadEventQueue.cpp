@@ -127,8 +127,7 @@ bool ThreadEventQueue::PutEventInternal(already_AddRefed<nsIRunnable>&& aEvent,
 }
 
 already_AddRefed<nsIRunnable> ThreadEventQueue::GetEvent(
-    bool aMayWait, EventQueuePriority* aPriority,
-    mozilla::TimeDuration* aLastEventDelay) {
+    bool aMayWait, mozilla::TimeDuration* aLastEventDelay) {
   nsCOMPtr<nsIRunnable> event;
   {
     
@@ -139,12 +138,12 @@ already_AddRefed<nsIRunnable> ThreadEventQueue::GetEvent(
     for (;;) {
       const bool noNestedQueue = mNestedQueues.IsEmpty();
       if (noNestedQueue) {
-        event = mBaseQueue->GetEvent(aPriority, lock, aLastEventDelay);
+        event = mBaseQueue->GetEvent(lock, aLastEventDelay);
       } else {
         
         
-        event = mNestedQueues.LastElement().mQueue->GetEvent(aPriority, lock,
-                                                             aLastEventDelay);
+        event =
+            mNestedQueues.LastElement().mQueue->GetEvent(lock, aLastEventDelay);
       }
 
       if (event) {
@@ -184,18 +183,6 @@ bool ThreadEventQueue::HasPendingEvent() {
     return mBaseQueue->HasReadyEvent(lock);
   } else {
     return mNestedQueues.LastElement().mQueue->HasReadyEvent(lock);
-  }
-}
-
-bool ThreadEventQueue::HasPendingHighPriorityEvents() {
-  MutexAutoLock lock(mLock);
-
-  
-  if (mNestedQueues.IsEmpty()) {
-    return mBaseQueue->HasPendingHighPriorityEvents(lock);
-  } else {
-    return mNestedQueues.LastElement().mQueue->HasPendingHighPriorityEvents(
-        lock);
   }
 }
 
@@ -259,11 +246,11 @@ void ThreadEventQueue::PopEventQueue(nsIEventTarget* aTarget) {
 
   
   nsCOMPtr<nsIRunnable> event;
-  EventQueuePriority prio;
   TimeDuration delay;
-  while ((event = item.mQueue->GetEvent(&prio, lock, &delay))) {
+  while ((event = item.mQueue->GetEvent(lock, &delay))) {
     
-    prevQueue->PutEvent(event.forget(), prio, lock, &delay);
+    prevQueue->PutEvent(event.forget(), EventQueuePriority::Normal, lock,
+                        &delay);
   }
 
   mNestedQueues.RemoveLastElement();
