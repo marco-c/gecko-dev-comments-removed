@@ -177,8 +177,6 @@ class SVGLoadEventListener final : public nsIDOMEventListener {
 
     mDocument->AddEventListener(u"MozSVGAsImageDocumentLoad"_ns, this, true,
                                 false);
-    mDocument->AddEventListener(u"SVGAbort"_ns, this, true, false);
-    mDocument->AddEventListener(u"SVGError"_ns, this, true, false);
   }
 
  private:
@@ -199,18 +197,14 @@ class SVGLoadEventListener final : public nsIDOMEventListener {
     
     RefPtr<SVGLoadEventListener> kungFuDeathGrip(this);
 
+#ifdef DEBUG
     nsAutoString eventType;
     aEvent->GetType(eventType);
-    MOZ_ASSERT(eventType.EqualsLiteral("MozSVGAsImageDocumentLoad") ||
-                   eventType.EqualsLiteral("SVGAbort") ||
-                   eventType.EqualsLiteral("SVGError"),
+    MOZ_ASSERT(eventType.EqualsLiteral("MozSVGAsImageDocumentLoad"),
                "Received unexpected event");
+#endif
 
-    if (eventType.EqualsLiteral("MozSVGAsImageDocumentLoad")) {
-      mImage->OnSVGDocumentLoaded();
-    } else {
-      mImage->OnSVGDocumentError();
-    }
+    mImage->OnSVGDocumentLoaded();
 
     return NS_OK;
   }
@@ -220,8 +214,6 @@ class SVGLoadEventListener final : public nsIDOMEventListener {
     if (mDocument) {
       mDocument->RemoveEventListener(u"MozSVGAsImageDocumentLoad"_ns, this,
                                      true);
-      mDocument->RemoveEventListener(u"SVGAbort"_ns, this, true);
-      mDocument->RemoveEventListener(u"SVGError"_ns, this, true);
       mDocument = nullptr;
     }
   }
