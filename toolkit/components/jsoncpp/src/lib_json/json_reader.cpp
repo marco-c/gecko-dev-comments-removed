@@ -1175,8 +1175,11 @@ bool OurReader::readToken(Token& token) {
     if (features_.allowSingleQuotes_) {
       token.type_ = tokenString;
       ok = readStringSingleQuote();
-      break;
-    } 
+    } else {
+      
+      ok = false;
+    }
+    break;
   case '/':
     token.type_ = tokenComment;
     ok = readComment();
