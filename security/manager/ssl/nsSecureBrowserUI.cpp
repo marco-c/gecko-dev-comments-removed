@@ -51,7 +51,7 @@ nsSecureBrowserUI::GetState(uint32_t* aState) {
   return NS_OK;
 }
 
-void nsSecureBrowserUI::UpdateForLocationOrMixedContentChange() {
+void nsSecureBrowserUI::RecomputeSecurityFlags() {
   
   
   
@@ -88,8 +88,16 @@ void nsSecureBrowserUI::UpdateForLocationOrMixedContentChange() {
   }
 
   
+  
   if (win) {
-    mState |= win->GetMixedContentSecurityFlags();
+    
+    uint32_t httpsOnlyStatus = win->HttpsOnlyStatus();
+    if (!(httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UNINITIALIZED) &&
+        !(httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT)) {
+      mState |= nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADED;
+    }
+    
+    mState |= win->GetSecurityFlags();
   }
 
   

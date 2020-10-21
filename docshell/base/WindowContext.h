@@ -139,8 +139,7 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   
   
-  
-  void AddMixedContentSecurityState(uint32_t aStateFlags);
+  void AddSecurityState(uint32_t aStateFlags);
 
   
   

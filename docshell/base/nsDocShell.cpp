@@ -5820,9 +5820,7 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
     
     
     if (!(aFlags & nsIWebProgressListener::LOCATION_CHANGE_SAME_DOCUMENT)) {
-      GetBrowsingContext()
-          ->Canonical()
-          ->UpdateSecurityStateForLocationOrMixedContentChange();
+      GetBrowsingContext()->Canonical()->UpdateSecurityState();
     }
   }
   return NS_OK;
