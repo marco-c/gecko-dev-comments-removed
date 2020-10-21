@@ -2142,6 +2142,8 @@ pref("devtools.inspector.compatibility.enabled", false);
 
 pref("devtools.inspector.color-scheme-simulation.enabled", false);
 
+pref("devtools.overflow.debugging.enabled", true);
+
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
 pref("devtools.gridinspector.gridOutlineMaxRows", 50);
@@ -2476,10 +2478,6 @@ pref("devtools.debugger.features.async-live-stacks", false);
 
 
 pref("devtools.popup.disable_autohide", false);
-
-
-
-pref("devtools.overflow.debugging.enabled", false);
 
 
 pref("first-startup.timeout", 30000);
