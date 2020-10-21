@@ -261,7 +261,7 @@ class MouseInput : public InputData {
   bool IsLeftButton() const;
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
-  WidgetMouseEvent ToWidgetMouseEvent(nsIWidget* aWidget) const;
+  WidgetMouseEvent ToWidgetEvent(nsIWidget* aWidget) const;
 
   
   
@@ -351,7 +351,7 @@ class PanGestureInput : public InputData {
 
   bool IsMomentum() const;
 
-  WidgetWheelEvent ToWidgetWheelEvent(nsIWidget* aWidget) const;
+  WidgetWheelEvent ToWidgetEvent(nsIWidget* aWidget) const;
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
@@ -473,7 +473,7 @@ class PinchGestureInput : public InputData {
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
-  WidgetWheelEvent ToWidgetWheelEvent(nsIWidget* aWidget) const;
+  WidgetWheelEvent ToWidgetEvent(nsIWidget* aWidget) const;
 
   double ComputeDeltaY(nsIWidget* aWidget) const;
 
@@ -616,7 +616,7 @@ class ScrollWheelInput : public InputData {
   static uint32_t DeltaModeForDeltaType(ScrollDeltaType aDeltaType);
   static mozilla::ScrollUnit ScrollUnitForDeltaType(ScrollDeltaType aDeltaType);
 
-  WidgetWheelEvent ToWidgetWheelEvent(nsIWidget* aWidget) const;
+  WidgetWheelEvent ToWidgetEvent(nsIWidget* aWidget) const;
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
   bool IsCustomizedByUserPrefs() const;
