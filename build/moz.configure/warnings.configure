@@ -4,9 +4,9 @@
 
 
 
-js_option('--enable-warnings-as-errors', env='MOZ_ENABLE_WARNINGS_AS_ERRORS',
-          default=depends('MOZ_AUTOMATION')(lambda x: bool(x)),
-          help='{Enable|Disable} treating warnings as errors')
+option('--enable-warnings-as-errors', env='MOZ_ENABLE_WARNINGS_AS_ERRORS',
+       default=depends('MOZ_AUTOMATION')(lambda x: bool(x)),
+       help='{Enable|Disable} treating warnings as errors')
 
 
 @depends('--enable-warnings-as-errors')
