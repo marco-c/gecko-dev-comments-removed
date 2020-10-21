@@ -537,7 +537,7 @@ ShadowRoot::SlotAssignment ShadowRoot::SlotAssignmentFor(nsIContent& aContent) {
   
   
   if (Element* element = Element::FromNode(aContent)) {
-    element->GetAttr(kNameSpaceID_None, nsGkAtoms::slot, slotName);
+    element->GetAttr(nsGkAtoms::slot, slotName);
   }
 
   SlotArray* slots = mSlotMap.Get(slotName);
@@ -548,29 +548,30 @@ ShadowRoot::SlotAssignment ShadowRoot::SlotAssignmentFor(nsIContent& aContent) {
   HTMLSlotElement* slot = (*slots)->ElementAt(0);
   MOZ_ASSERT(slot);
 
+  if (!aContent.GetNextSibling()) {
+    
+    
+    
+    
+    return {slot, Nothing()};
+  }
+
   
   
   const nsTArray<RefPtr<nsINode>>& assignedNodes = slot->AssignedNodes();
   nsIContent* currentContent = GetHost()->GetFirstChild();
-  Maybe<uint32_t> insertionIndex;
   for (uint32_t i = 0; i < assignedNodes.Length(); i++) {
     
     
     while (currentContent && currentContent != assignedNodes[i]) {
       if (currentContent == &aContent) {
-        insertionIndex.emplace(i);
-        break;
+        return {slot, Some(i)};
       }
-
       currentContent = currentContent->GetNextSibling();
-    }
-
-    if (insertionIndex) {
-      break;
     }
   }
 
-  return {slot, insertionIndex};
+  return {slot, Nothing()};
 }
 
 void ShadowRoot::MaybeReassignElement(Element& aElement) {
