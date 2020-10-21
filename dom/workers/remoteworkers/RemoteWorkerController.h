@@ -86,6 +86,7 @@ namespace dom {
 
 
 class ErrorValue;
+class FetchEventOpParent;
 class RemoteWorkerControllerParent;
 class RemoteWorkerData;
 class RemoteWorkerManager;
@@ -134,6 +135,10 @@ class RemoteWorkerController final {
 
   RefPtr<ServiceWorkerOpPromise> ExecServiceWorkerOp(
       ServiceWorkerOpArgs&& aArgs);
+
+  RefPtr<ServiceWorkerFetchEventOpPromise> ExecServiceWorkerFetchEventOp(
+      const ServiceWorkerFetchEventOpArgs& aArgs,
+      RefPtr<FetchEventOpParent> aReal);
 
   RefPtr<GenericPromise> SetServiceWorkerSkipWaitingFlag() const;
 
@@ -197,7 +202,19 @@ class RemoteWorkerController final {
 
 
 
+
+
+
+
+
     virtual bool MaybeStart(RemoteWorkerController* const aOwner) = 0;
+
+    
+
+
+
+
+
 
     virtual void Cancel() = 0;
   };
@@ -247,6 +264,36 @@ class RemoteWorkerController final {
    private:
     ServiceWorkerOpArgs mArgs;
     RefPtr<ServiceWorkerOpPromise::Private> mPromise;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+  class PendingSWFetchEventOp final : public PendingOp {
+   public:
+    PendingSWFetchEventOp(
+        const ServiceWorkerFetchEventOpArgs& aArgs,
+        RefPtr<ServiceWorkerFetchEventOpPromise::Private> aPromise,
+        RefPtr<FetchEventOpParent>&& aReal);
+
+    ~PendingSWFetchEventOp();
+
+    bool MaybeStart(RemoteWorkerController* const aOwner) override;
+
+    void Cancel() override;
+
+   private:
+    ServiceWorkerFetchEventOpArgs mArgs;
+    RefPtr<ServiceWorkerFetchEventOpPromise::Private> mPromise;
+    RefPtr<FetchEventOpParent> mReal;
+    nsCOMPtr<nsIInputStream> mBodyStream;
   };
 
   nsTArray<UniquePtr<PendingOp>> mPendingOps;

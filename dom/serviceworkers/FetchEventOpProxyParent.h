@@ -9,6 +9,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PFetchEventOpProxyParent.h"
+#include "mozilla/dom/ServiceWorkerOpPromise.h"
 
 namespace mozilla {
 namespace dom {
@@ -21,18 +22,27 @@ class ServiceWorkerFetchEventOpArgs;
 
 
 
+
+
+
+
+
 class FetchEventOpProxyParent final : public PFetchEventOpProxyParent {
   friend class PFetchEventOpProxyParent;
 
  public:
-  static void Create(PRemoteWorkerParent* aManager,
-                     const ServiceWorkerFetchEventOpArgs& aArgs,
-                     RefPtr<FetchEventOpParent> aReal);
+  static void Create(
+      PRemoteWorkerParent* aManager,
+      RefPtr<ServiceWorkerFetchEventOpPromise::Private>&& aPromise,
+      const ServiceWorkerFetchEventOpArgs& aArgs,
+      RefPtr<FetchEventOpParent> aReal, nsCOMPtr<nsIInputStream> aBodyStream);
 
   ~FetchEventOpProxyParent();
 
  private:
-  explicit FetchEventOpProxyParent(RefPtr<FetchEventOpParent>&& aReal);
+  FetchEventOpProxyParent(
+      RefPtr<FetchEventOpParent>&& aReal,
+      RefPtr<ServiceWorkerFetchEventOpPromise::Private>&& aPromise);
 
   mozilla::ipc::IPCResult RecvAsyncLog(const nsCString& aScriptSpec,
                                        const uint32_t& aLineNumber,
@@ -49,6 +59,7 @@ class FetchEventOpProxyParent final : public PFetchEventOpProxyParent {
   void ActorDestroy(ActorDestroyReason) override;
 
   RefPtr<FetchEventOpParent> mReal;
+  RefPtr<ServiceWorkerFetchEventOpPromise::Private> mLifetimePromise;
 };
 
 }  
