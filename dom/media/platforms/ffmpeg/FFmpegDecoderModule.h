@@ -31,13 +31,6 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 
   already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
       const CreateDecoderParams& aParams) override {
-    
-    
-    
-    
-    if (aParams.VideoConfig().HasAlpha()) {
-      return nullptr;
-    }
     RefPtr<MediaDataDecoder> decoder = new FFmpegVideoDecoder<V>(
         mLib, aParams.VideoConfig(), aParams.mKnowsCompositor,
         aParams.mImageContainer,
@@ -56,8 +49,28 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const override {
-    AVCodecID videoCodec = FFmpegVideoDecoder<V>::GetCodecId(aMimeType);
-    AVCodecID audioCodec = FFmpegAudioDecoder<V>::GetCodecId(aMimeType);
+    UniquePtr<TrackInfo> trackInfo = CreateTrackInfoWithMIMEType(aMimeType);
+    if (!trackInfo) {
+      return false;
+    }
+    return Supports(SupportDecoderParams(*trackInfo), aDiagnostics);
+  }
+
+  bool Supports(const SupportDecoderParams& aParams,
+                DecoderDoctorDiagnostics* aDiagnostics) const override {
+    const auto& trackInfo = aParams.mConfig;
+    const nsACString& mimeType = trackInfo.mMimeType;
+
+    
+    
+    
+    
+    if (VPXDecoder::IsVPX(mimeType) && trackInfo.GetAsVideoInfo()->HasAlpha()) {
+      return false;
+    }
+
+    AVCodecID videoCodec = FFmpegVideoDecoder<V>::GetCodecId(mimeType);
+    AVCodecID audioCodec = FFmpegAudioDecoder<V>::GetCodecId(mimeType);
     if (audioCodec == AV_CODEC_ID_NONE && videoCodec == AV_CODEC_ID_NONE) {
       return false;
     }

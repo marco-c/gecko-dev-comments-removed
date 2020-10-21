@@ -317,7 +317,8 @@ bool PDMFactory::Supports(const SupportDecoderParams& aParams,
     return mEMEPDM->Supports(aParams, aDiagnostics);
   }
   if (VPXDecoder::IsVPX(aParams.MimeType(),
-                        VPXDecoder::VP8 | VPXDecoder::VP9)) {
+                        VPXDecoder::VP8 | VPXDecoder::VP9) &&
+      !aParams.mConfig.GetAsVideoInfo()->HasAlpha()) {
     
     
     
