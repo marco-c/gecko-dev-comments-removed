@@ -58,20 +58,55 @@ namespace mozilla {
 
 class CCGCScheduler {
  public:
+  
+
   void SetActiveIntersliceGCBudget(TimeDuration aDuration) {
     mActiveIntersliceGCBudget = aDuration;
   }
 
   
-  TimeStamp GetCCLockedOutTime() const {
-    return mCCLockedOut ? mCCLockedOutTime : TimeStamp();
+
+  Maybe<TimeDuration> GetCCBlockedTime(TimeStamp now) const {
+    MOZ_ASSERT_IF(mCCBlockStart.IsNull(), !mInIncrementalGC);
+    if (mCCBlockStart.IsNull()) {
+      return {};
+    }
+    return Some(now - mCCBlockStart);
   }
 
-  bool InIncrementalGC() const { return mCCLockedOut; }
+  bool InIncrementalGC() const { return mInIncrementalGC; }
 
-  void NoteGCBegin() { mCCLockedOut = true; }
+  
 
-  void NoteGCEnd() { mCCLockedOut = false; }
+  void NoteGCBegin() {
+    
+    
+    mInIncrementalGC = true;
+  }
+
+  void NoteGCEnd() {
+    mCCBlockStart = TimeStamp();
+    mInIncrementalGC = false;
+  }
+
+  
+  
+  
+  enum IsStartingCCLockout { StartingLockout = true, AlreadyLockedOut = false };
+  IsStartingCCLockout EnsureCCIsBlocked(TimeStamp aNow) {
+    MOZ_ASSERT(mInIncrementalGC);
+
+    if (mCCBlockStart) {
+      return AlreadyLockedOut;
+    }
+
+    mCCBlockStart = aNow;
+    return StartingLockout;
+  }
+
+  void UnblockCC() { mCCBlockStart = TimeStamp(); }
+
+  
 
   TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline) const {
     
@@ -80,12 +115,11 @@ class CCGCScheduler {
     
     TimeDuration budget = aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2
                                              : aDeadline - TimeStamp::Now();
-    TimeStamp CCLockedOutTime = GetCCLockedOutTime();
-    if (CCLockedOutTime.IsNull()) {
+    if (!mCCBlockStart) {
       return budget;
     }
 
-    TimeDuration blockedTime = TimeStamp::Now() - CCLockedOutTime;
+    TimeDuration blockedTime = TimeStamp::Now() - mCCBlockStart;
     TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 10;
     double percentOfBlockedTime =
         std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
@@ -93,11 +127,14 @@ class CCGCScheduler {
   }
 
   
-  bool mCCLockedOut = false;
 
   
   
-  TimeStamp mCCLockedOutTime;
+  bool mInIncrementalGC = false;
+
+  
+  
+  TimeStamp mCCBlockStart;
 
   
 
