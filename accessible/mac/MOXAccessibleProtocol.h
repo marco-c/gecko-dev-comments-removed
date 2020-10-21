@@ -261,6 +261,9 @@
 
 - (NSNumber* _Nullable)moxInsertionPointLineNumber;
 
+
+- (id _Nullable)moxEditableAncestor;
+
 #pragma mark - AttributeSetters
 
 
