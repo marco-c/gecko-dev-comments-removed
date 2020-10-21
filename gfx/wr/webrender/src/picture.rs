@@ -1273,6 +1273,22 @@ impl Tile {
             .unwrap_or_else(PictureRect::zero);
 
         
+        
+        let world_valid_rect = ctx.pic_to_world_mapper
+            .map(&self.current_descriptor.local_valid_rect)
+            .expect("bug: map local valid rect");
+
+        
+        
+        
+        
+        let device_rect = (self.world_tile_rect * ctx.global_device_pixel_scale).round();
+        self.device_valid_rect = (world_valid_rect * ctx.global_device_pixel_scale)
+            .round_out()
+            .intersection(&device_rect)
+            .unwrap_or_else(DeviceRect::zero);
+
+        
         self.update_content_validity(ctx, state, frame_context);
 
         
@@ -1290,20 +1306,6 @@ impl Tile {
             self.is_visible = false;
             return false;
         }
-
-        let world_valid_rect = ctx.pic_to_world_mapper
-            .map(&self.current_descriptor.local_valid_rect)
-            .expect("bug: map local valid rect");
-
-        
-        
-        
-        
-        let device_rect = (self.world_tile_rect * ctx.global_device_pixel_scale).round();
-        self.device_valid_rect = (world_valid_rect * ctx.global_device_pixel_scale)
-            .round_out()
-            .intersection(&device_rect)
-            .unwrap_or_else(DeviceRect::zero);
 
         
         
