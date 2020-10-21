@@ -5,6 +5,9 @@
 
 load(libdir + "jitopts.js");
 
+
+gczeal(0);
+
 if (!jitTogglesMatch(Opts_Ion2NoOffthreadCompilation))
   quit(0);
 
