@@ -2096,6 +2096,24 @@ void JsepSessionImpl::SetupDefaultCodecs() {
   
   red->UpdateRedundantEncodings(mSupportedCodecs);
   mSupportedCodecs.push_back(std::move(red));
+
+  
+  nsCString filteredCodecsPref;
+  if (NS_OK ==
+      Preferences::GetCString("media.peerconnection.default_codecs.blocklist",
+                              filteredCodecsPref)) {
+    for (const auto& codecName : filteredCodecsPref.Split(',')) {
+      nsCString blocked(codecName.BeginReading(), codecName.Length());
+      blocked.StripWhitespace();
+      
+      mSupportedCodecs.erase(
+          std::remove_if(mSupportedCodecs.begin(), mSupportedCodecs.end(),
+                         [&](const UniquePtr<JsepCodecDescription>& codec) {
+                           return blocked.EqualsASCII(codec->mName.c_str());
+                         }),
+          mSupportedCodecs.end());
+    }
+  }
 }
 
 void JsepSessionImpl::SetupDefaultRtpExtensions() {
