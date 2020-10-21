@@ -2560,6 +2560,10 @@ void gfxPlatform::InitAcceleration() {
       gfxVars::SetWebglAllowWindowsNativeGl(status ==
                                             nsIGfxInfo::FEATURE_STATUS_OK);
     }
+    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBGL_ANGLE,
+                                               discardFailureId, &status))) {
+      gfxVars::SetAllowWebglAccelAngle(status == nsIGfxInfo::FEATURE_STATUS_OK);
+    }
 
     if (kIsMacOS) {
       
@@ -2591,6 +2595,16 @@ void gfxPlatform::InitAcceleration() {
       }
 
       gfxVars::SetAllowWebglOop(allowWebGLOop);
+    }
+
+    if (kIsAndroid) {
+      
+      
+      nsAutoString renderer;
+      gfxInfo->GetAdapterDeviceID(renderer);
+      if (renderer.Find("Adreno (TM) 630") != -1) {
+        gfxVars::SetAllowEglRbab(false);
+      }
     }
   }
 

@@ -1398,49 +1398,6 @@ class GetFeatureStatusWorkerRunnable final
   nsresult mNSResult;
 };
 
-
-nsresult gfxUtils::ThreadSafeGetFeatureStatus(
-    const nsCOMPtr<nsIGfxInfo>& gfxInfo, int32_t feature, nsACString& failureId,
-    int32_t* status) {
-  if (NS_IsMainThread()) {
-    return gfxInfo->GetFeatureStatus(feature, failureId, status);
-  }
-
-  
-  
-  
-  bool isCompositionProcess = XRE_IsGPUProcess() || XRE_IsParentProcess();
-  MOZ_ASSERT(!isCompositionProcess || NS_IsInCompositorThread());
-
-  
-  if (!isCompositionProcess) {
-    dom::WorkerPrivate* workerPrivate = dom::GetCurrentThreadWorkerPrivate();
-
-    RefPtr<GetFeatureStatusWorkerRunnable> runnable =
-        new GetFeatureStatusWorkerRunnable(workerPrivate, gfxInfo, feature,
-                                           failureId, status);
-
-    ErrorResult rv;
-    runnable->Dispatch(dom::WorkerStatus::Canceling, rv);
-    if (rv.Failed()) {
-      
-      
-      
-      return rv.StealNSResult();
-    }
-    return runnable->GetNSResult();
-  }
-
-  nsresult rv;
-  SynchronousTask task("GetFeatureStatusSync");
-  NS_DispatchToMainThread(NS_NewRunnableFunction("GetFeatureStatusMain", [&]() {
-    AutoCompleteTask complete(&task);
-    rv = gfxInfo->GetFeatureStatus(feature, failureId, status);
-  }));
-  task.Wait();
-  return rv;
-}
-
 #define GFX_SHADER_CHECK_BUILD_VERSION_PREF "gfx-shader-check.build-version"
 #define GFX_SHADER_CHECK_DEVICE_ID_PREF "gfx-shader-check.device-id"
 #define GFX_SHADER_CHECK_DRIVER_VERSION_PREF "gfx-shader-check.driver-version"
