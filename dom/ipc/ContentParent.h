@@ -825,6 +825,14 @@ class ContentParent final
 
 
 
+
+
+  void StopRecycling(bool aForeground = true);
+
+  
+
+
+
   void RemoveFromList();
 
   
