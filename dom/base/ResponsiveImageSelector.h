@@ -82,6 +82,10 @@ class ResponsiveImageSelector {
   
   bool SelectImage(bool aReselect = false);
 
+  Span<const ResponsiveImageCandidate> AllCandidates() const {
+    return mCandidates;
+  }
+
  protected:
   virtual ~ResponsiveImageSelector();
 
@@ -161,6 +165,9 @@ class ResponsiveImageCandidate {
   
   
   double Density(double aMatchingWidth) const;
+
+  
+  void AppendDescriptors(nsAString&) const;
 
   bool IsValid() const { return mType != CandidateType::Invalid; }
 
