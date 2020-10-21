@@ -502,25 +502,15 @@ static bool gFissionAutostart = false;
 static bool gFissionAutostartInitialized = false;
 static nsIXULRuntime::FissionDecisionStatus gFissionDecisionStatus;
 
-static bool gBrowserTabsRemoteAutostart = false;
-static uint64_t gBrowserTabsRemoteStatus = 0;
-static bool gBrowserTabsRemoteAutostartInitialized = false;
-
-
-
-enum {
-  
-  kE10sEnabledByDefault = 1,
-  kE10sDisabledByUser = 2,
-  
-  
-  
-  
-  
-  kE10sForceDisabled = 8,
-  
-  
+enum E10sStatus {
+  kE10sEnabledByDefault,
+  kE10sDisabledByUser,
+  kE10sForceDisabled,
 };
+
+static bool gBrowserTabsRemoteAutostart = false;
+static E10sStatus gBrowserTabsRemoteStatus;
+static bool gBrowserTabsRemoteAutostartInitialized = false;
 
 namespace mozilla {
 
@@ -542,7 +532,7 @@ bool BrowserTabsRemoteAutostart() {
   bool allowSingleProcessOutsideAutomation = true;
 #endif
 
-  int status = kE10sEnabledByDefault;
+  E10sStatus status = kE10sEnabledByDefault;
   
   
   
@@ -756,7 +746,6 @@ bool SessionHistoryInParent() {
 
 
 class nsXULAppInfo : public nsIXULAppInfo,
-                     public nsIObserver,
 #ifdef XP_WIN
                      public nsIWinAppHelper,
 #endif
@@ -771,7 +760,6 @@ class nsXULAppInfo : public nsIXULAppInfo,
   NS_DECL_NSIPLATFORMINFO
   NS_DECL_NSIXULAPPINFO
   NS_DECL_NSIXULRUNTIME
-  NS_DECL_NSIOBSERVER
   NS_DECL_NSICRASHREPORTER
   NS_DECL_NSIFINISHDUMPINGCALLBACK
 #ifdef XP_WIN
@@ -782,7 +770,6 @@ class nsXULAppInfo : public nsIXULAppInfo,
 NS_INTERFACE_MAP_BEGIN(nsXULAppInfo)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIXULRuntime)
   NS_INTERFACE_MAP_ENTRY(nsIXULRuntime)
-  NS_INTERFACE_MAP_ENTRY(nsIObserver)
 #ifdef XP_WIN
   NS_INTERFACE_MAP_ENTRY(nsIWinAppHelper)
 #endif
@@ -1050,21 +1037,6 @@ nsXULAppInfo::GetLastAppBuildID(nsACString& aResult) {
 
   aResult.Assign(gLastAppBuildID);
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsXULAppInfo::Observe(nsISupports* aSubject, const char* aTopic,
-                      const char16_t* aData) {
-  
-  if (!nsCRT::strcmp(aTopic, "getE10SBlocked")) {
-    nsCOMPtr<nsISupportsPRUint64> ret = do_QueryInterface(aSubject);
-    if (!ret) return NS_ERROR_FAILURE;
-
-    ret->SetData(gBrowserTabsRemoteStatus);
-
-    return NS_OK;
-  }
-  return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
