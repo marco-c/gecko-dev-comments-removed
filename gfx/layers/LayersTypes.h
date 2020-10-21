@@ -8,17 +8,13 @@
 #define GFX_LAYERSTYPES_H
 
 #include <stdint.h>  
+#include <stdio.h>   
 
 #include "Units.h"
 #include "mozilla/DefineEnum.h"  
-#include "mozilla/gfx/Point.h"   
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"  
-#include "mozilla/TypedEnumBits.h"
 #include "nsRegion.h"
-
-#include <stdio.h>            
-#include "mozilla/Logging.h"  
 
 #ifndef MOZ_LAYERS_HAVE_LOG
 #  define MOZ_LAYERS_HAVE_LOG
@@ -238,10 +234,9 @@ struct EventRegions {
   
   bool mDTCRequiresTargetConfirmation;
 
-  EventRegions() : mDTCRequiresTargetConfirmation(false) {}
+  EventRegions();
 
-  explicit EventRegions(nsIntRegion aHitRegion)
-      : mHitRegion(aHitRegion), mDTCRequiresTargetConfirmation(false) {}
+  explicit EventRegions(nsIntRegion aHitRegion);
 
   
   
@@ -254,83 +249,18 @@ struct EventRegions {
                const nsIntRegion& aVerticalPanRegion,
                bool aDTCRequiresTargetConfirmation);
 
-  bool operator==(const EventRegions& aRegions) const {
-    return mHitRegion == aRegions.mHitRegion &&
-           mDispatchToContentHitRegion ==
-               aRegions.mDispatchToContentHitRegion &&
-           mNoActionRegion == aRegions.mNoActionRegion &&
-           mHorizontalPanRegion == aRegions.mHorizontalPanRegion &&
-           mVerticalPanRegion == aRegions.mVerticalPanRegion &&
-           mDTCRequiresTargetConfirmation ==
-               aRegions.mDTCRequiresTargetConfirmation;
-  }
-  bool operator!=(const EventRegions& aRegions) const {
-    return !(*this == aRegions);
-  }
+  bool operator==(const EventRegions& aRegions) const;
+  bool operator!=(const EventRegions& aRegions) const;
 
   void ApplyTranslationAndScale(float aXTrans, float aYTrans, float aXScale,
-                                float aYScale) {
-    mHitRegion.ScaleRoundOut(aXScale, aYScale);
-    mDispatchToContentHitRegion.ScaleRoundOut(aXScale, aYScale);
-    mNoActionRegion.ScaleRoundOut(aXScale, aYScale);
-    mHorizontalPanRegion.ScaleRoundOut(aXScale, aYScale);
-    mVerticalPanRegion.ScaleRoundOut(aXScale, aYScale);
+                                float aYScale);
+  void Transform(const gfx::Matrix4x4& aTransform);
+  void OrWith(const EventRegions& aOther);
 
-    mHitRegion.MoveBy(aXTrans, aYTrans);
-    mDispatchToContentHitRegion.MoveBy(aXTrans, aYTrans);
-    mNoActionRegion.MoveBy(aXTrans, aYTrans);
-    mHorizontalPanRegion.MoveBy(aXTrans, aYTrans);
-    mVerticalPanRegion.MoveBy(aXTrans, aYTrans);
-  }
+  bool IsEmpty() const;
+  void SetEmpty();
 
-  void Transform(const gfx::Matrix4x4& aTransform) {
-    mHitRegion.Transform(aTransform);
-    mDispatchToContentHitRegion.Transform(aTransform);
-    mNoActionRegion.Transform(aTransform);
-    mHorizontalPanRegion.Transform(aTransform);
-    mVerticalPanRegion.Transform(aTransform);
-  }
-
-  void OrWith(const EventRegions& aOther) {
-    mHitRegion.OrWith(aOther.mHitRegion);
-    mDispatchToContentHitRegion.OrWith(aOther.mDispatchToContentHitRegion);
-    
-    
-    bool alreadyHadRegions = !mNoActionRegion.IsEmpty() ||
-                             !mHorizontalPanRegion.IsEmpty() ||
-                             !mVerticalPanRegion.IsEmpty();
-    mNoActionRegion.OrWith(aOther.mNoActionRegion);
-    mHorizontalPanRegion.OrWith(aOther.mHorizontalPanRegion);
-    mVerticalPanRegion.OrWith(aOther.mVerticalPanRegion);
-    if (alreadyHadRegions) {
-      nsIntRegion combinedActionRegions;
-      combinedActionRegions.Or(mHorizontalPanRegion, mVerticalPanRegion);
-      combinedActionRegions.OrWith(mNoActionRegion);
-      mDispatchToContentHitRegion.OrWith(combinedActionRegions);
-    }
-    mDTCRequiresTargetConfirmation |= aOther.mDTCRequiresTargetConfirmation;
-  }
-
-  bool IsEmpty() const {
-    return mHitRegion.IsEmpty() && mDispatchToContentHitRegion.IsEmpty() &&
-           mNoActionRegion.IsEmpty() && mHorizontalPanRegion.IsEmpty() &&
-           mVerticalPanRegion.IsEmpty();
-  }
-
-  void SetEmpty() {
-    mHitRegion.SetEmpty();
-    mDispatchToContentHitRegion.SetEmpty();
-    mNoActionRegion.SetEmpty();
-    mHorizontalPanRegion.SetEmpty();
-    mVerticalPanRegion.SetEmpty();
-  }
-
-  nsCString ToString() const {
-    nsCString result = mHitRegion.ToString();
-    result.AppendLiteral(";dispatchToContent=");
-    result.Append(mDispatchToContentHitRegion.ToString());
-    return result;
-  }
+  nsCString ToString() const;
 };
 
 
