@@ -612,6 +612,10 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
 
 void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
     SessionHistoryInfo* aInfo) {
+  if (!mActiveEntry) {
+    return;
+  }
+
   mActiveEntry->SetInfo(aInfo);
   
   nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
