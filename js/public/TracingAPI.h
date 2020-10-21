@@ -26,33 +26,33 @@ JS_FRIEND_API const char* GCTraceKindToAscii(JS::TraceKind kind);
 
 JS_FRIEND_API size_t GCTraceKindSize(JS::TraceKind kind);
 
-}  
-
-enum WeakMapTraceKind {
+enum class WeakMapTraceAction {
   
 
 
 
-  DoNotTraceWeakMaps,
-
-  
-
-
-
-  ExpandWeakMaps,
+  Skip,
 
   
 
 
 
-  TraceWeakMapValues,
+  Expand,
 
   
 
 
 
-  TraceWeakMapKeysValues
+  TraceValues,
+
+  
+
+
+
+  TraceKeysAndValues
 };
+
+}  
 
 class JS_PUBLIC_API JSTracer {
  public:
@@ -60,7 +60,7 @@ class JS_PUBLIC_API JSTracer {
   JSRuntime* runtime() const { return runtime_; }
 
   
-  WeakMapTraceKind weakMapAction() const { return weakMapAction_; }
+  JS::WeakMapTraceAction weakMapAction() const { return weakMapAction_; }
 
   enum class TracerKindTag {
     
@@ -92,9 +92,10 @@ class JS_PUBLIC_API JSTracer {
 
  protected:
   JSTracer(JSRuntime* rt, TracerKindTag tag,
-           WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
+           JS::WeakMapTraceAction weakMapAction =
+               JS::WeakMapTraceAction::TraceValues)
       : runtime_(rt),
-        weakMapAction_(weakTraceKind),
+        weakMapAction_(weakMapAction),
         tag_(tag),
         traceWeakEdges_(true),
 #ifdef DEBUG
@@ -112,7 +113,7 @@ class JS_PUBLIC_API JSTracer {
 
  private:
   JSRuntime* const runtime_;
-  const WeakMapTraceKind weakMapAction_;
+  const JS::WeakMapTraceAction weakMapAction_;
   const TracerKindTag tag_;
 
   
@@ -134,14 +135,14 @@ class AutoTracingCallback;
 
 class JS_PUBLIC_API CallbackTracer : public JSTracer {
  public:
-  CallbackTracer(JSRuntime* rt,
-                 WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
-      : JSTracer(rt, JSTracer::TracerKindTag::Callback, weakTraceKind),
+  CallbackTracer(JSRuntime* rt, JS::WeakMapTraceAction weakMapAction =
+                                    JS::WeakMapTraceAction::TraceValues)
+      : JSTracer(rt, JSTracer::TracerKindTag::Callback, weakMapAction),
         contextName_(nullptr),
         contextIndex_(InvalidIndex),
         contextFunctor_(nullptr) {}
-  CallbackTracer(JSContext* cx,
-                 WeakMapTraceKind weakTraceKind = TraceWeakMapValues);
+  CallbackTracer(JSContext* cx, JS::WeakMapTraceAction weakMapAction =
+                                    JS::WeakMapTraceAction::TraceValues);
 
   
   

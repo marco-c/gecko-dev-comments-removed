@@ -208,7 +208,7 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &memberOf, "WeakMap owner");
 
   if (trc->isMarkingTracer()) {
-    MOZ_ASSERT(trc->weakMapAction() == ExpandWeakMaps);
+    MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
     auto marker = GCMarker::fromTracer(trc);
 
     
@@ -221,19 +221,18 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
     return;
   }
 
-  if (trc->weakMapAction() == DoNotTraceWeakMaps) {
+  if (trc->weakMapAction() == JS::WeakMapTraceAction::Skip) {
     return;
   }
 
   
-  if (trc->weakMapAction() == TraceWeakMapKeysValues) {
+  if (trc->weakMapAction() == JS::WeakMapTraceAction::TraceKeysAndValues) {
     for (Enum e(*this); !e.empty(); e.popFront()) {
       TraceWeakMapKeyEdge(trc, zone(), &e.front().mutableKey(),
                           "WeakMap entry key");
     }
   }
 
-  
   
   for (Range r = Base::all(); !r.empty(); r.popFront()) {
     TraceEdge(trc, &r.front().value(), "WeakMap entry value");
@@ -305,7 +304,7 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
     
     
     if (keyColor < mapColor) {
-      MOZ_ASSERT(marker->weakMapAction() == ExpandWeakMaps);
+      MOZ_ASSERT(marker->weakMapAction() == JS::WeakMapTraceAction::Expand);
       
       
       
