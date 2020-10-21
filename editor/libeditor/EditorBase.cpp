@@ -2483,7 +2483,7 @@ EditorBase::ComputeInsertedRange(const EditorDOMPointInText& aInsertedPoint,
   
   
   
-  if (!MaybeHasMutationEventListeners(
+  if (!MayHaveMutationEventListeners(
           NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED)) {
     EditorDOMPointInText endOfInsertion(
         aInsertedPoint.ContainerAsText(),

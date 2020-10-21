@@ -213,7 +213,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  bool MaybeHasMutationEventListeners(
+  bool MayHaveMutationEventListeners(
       uint32_t aMutationEventType = 0xFFFFFFFF) const {
     if (IsTextEditor()) {
       
@@ -230,6 +230,20 @@ class EditorBase : public nsIEditor,
     nsPIDOMWindowInner* window = GetInnerWindow();
     return window ? window->HasMutationListeners(aMutationEventType) : false;
 #endif  
+  }
+
+  
+
+
+
+
+
+
+  bool MayHaveBeforeInputEventListenersForTelemetry() const {
+    if (const nsPIDOMWindowInner* window = GetInnerWindow()) {
+      return window->HasBeforeInputEventListenersForTelemetry();
+    }
+    return false;
   }
 
   PresShell* GetPresShell() const {

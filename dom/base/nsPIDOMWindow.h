@@ -225,6 +225,24 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   }
 
   
+
+
+
+
+
+  bool HasBeforeInputEventListenersForTelemetry() const {
+    return mMayHaveBeforeInputEventListenerForTelemetry;
+  }
+
+  
+
+
+
+  void SetHasBeforeInputEventListenersForTelemetry() {
+    mMayHaveBeforeInputEventListenerForTelemetry = true;
+  }
+
+  
   
   
   
@@ -588,6 +606,9 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mMayHaveSelectionChangeEventListener;
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
+  
+  
+  bool mMayHaveBeforeInputEventListenerForTelemetry;
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
