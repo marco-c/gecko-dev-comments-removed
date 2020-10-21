@@ -69,10 +69,18 @@ add_task(async function testUpdateAutoPrefUI() {
   );
 
   await changeAndVerifyPref(tab, true);
-  ok(!gUpdateManager.activeUpdate, "There should not be an active update");
+  ok(
+    !gUpdateManager.downloadingUpdate,
+    "There should not be a downloading update"
+  );
+  ok(!gUpdateManager.readyUpdate, "There should not be a ready update");
 
   await changeAndVerifyPref(tab, false);
-  ok(!gUpdateManager.activeUpdate, "There should not be an active update");
+  ok(
+    !gUpdateManager.downloadingUpdate,
+    "There should not be a downloading update"
+  );
+  ok(!gUpdateManager.readyUpdate, "There should not be a ready update");
 
   let patchProps = { state: STATE_PENDING };
   let patches = getLocalPatchString(patchProps);
@@ -81,7 +89,7 @@ add_task(async function testUpdateAutoPrefUI() {
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
   writeStatusFile(STATE_PENDING);
   reloadUpdateManagerData();
-  ok(!!gUpdateManager.activeUpdate, "There should be an active update");
+  ok(!!gUpdateManager.readyUpdate, "There should be a ready update");
 
   
   
@@ -105,21 +113,25 @@ add_task(async function testUpdateAutoPrefUI() {
   
   discardUpdate = 1;
   await changeAndVerifyPref(tab, false);
-  ok(!!gUpdateManager.activeUpdate, "There should be an active update");
+  ok(!!gUpdateManager.readyUpdate, "There should be a ready update");
 
   
   
   
   discardUpdate = 0;
   await changeAndVerifyPref(tab, true);
-  ok(!!gUpdateManager.activeUpdate, "There should be an active update");
+  ok(!!gUpdateManager.readyUpdate, "There should be a ready update");
 
   
   
   
   discardUpdate = 0;
   await changeAndVerifyPref(tab, false);
-  ok(!gUpdateManager.activeUpdate, "There should not be an active update");
+  ok(
+    !gUpdateManager.downloadingUpdate,
+    "There should not be a downloading update"
+  );
+  ok(!gUpdateManager.readyUpdate, "There should not be a ready update");
 
   await BrowserTestUtils.removeTab(tab);
 });
