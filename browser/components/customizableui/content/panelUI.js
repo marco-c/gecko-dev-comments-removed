@@ -1118,11 +1118,10 @@ const PanelUI = {
     }
   },
   _ensureShortcutsShown(view = this.mainView) {
-    
-    
-    this._formatPrintButtonShortcuts();
-
     if (view.hasAttribute("added-shortcuts")) {
+      
+      
+      this._formatPrintButtonShortcuts();
       return;
     }
     view.setAttribute("added-shortcuts", "true");
@@ -1134,6 +1133,7 @@ const PanelUI = {
       }
       button.setAttribute("shortcut", ShortcutUtils.prettifyShortcut(key));
     }
+    this._formatPrintButtonShortcuts();
   },
 };
 
