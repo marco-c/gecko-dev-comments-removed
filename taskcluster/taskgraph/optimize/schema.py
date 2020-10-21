@@ -20,7 +20,6 @@ default_optimizations = (
     {'always': None},
     
     {'build': list(schedules.ALL_COMPONENTS)},
-    {'build-fuzzing': None},
     
     
     {'index-search': [text_type]},
