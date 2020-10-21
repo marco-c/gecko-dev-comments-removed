@@ -3851,13 +3851,28 @@ nsresult HTMLEditor::SelectAllInternal() {
   if (anchorContent->HasIndependentSelection()) {
     SelectionRefPtr()->SetAncestorLimiter(nullptr);
     rootContent = mRootElement;
+    if (NS_WARN_IF(!rootContent)) {
+      return NS_ERROR_UNEXPECTED;
+    }
   } else {
     RefPtr<PresShell> presShell = GetPresShell();
     rootContent = anchorContent->GetSelectionRootContent(presShell);
-  }
-
-  if (NS_WARN_IF(!rootContent)) {
-    return NS_ERROR_UNEXPECTED;
+    if (NS_WARN_IF(!rootContent)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    
+    
+    
+    if (Document* document = GetDocument()) {
+      if (document->IsHTMLDocument()) {
+        if (HTMLBodyElement* bodyElement = document->GetBodyElement()) {
+          if (nsContentUtils::ContentIsFlattenedTreeDescendantOf(bodyElement,
+                                                                 rootContent)) {
+            rootContent = bodyElement;
+          }
+        }
+      }
+    }
   }
 
   Maybe<Selection::AutoUserInitiated> userSelection;
