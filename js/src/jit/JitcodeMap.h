@@ -8,13 +8,14 @@
 #define jit_JitcodeMap_h
 
 #include "jit/CompactBuffer.h"
-#include "jit/CompileInfo.h"
 #include "jit/ExecutableAllocator.h"
 #include "jit/shared/Assembler-shared.h"
 #include "vm/BytecodeLocation.h"  
 
 namespace js {
 namespace jit {
+
+class InlineScriptTree;
 
 
 
