@@ -13,17 +13,18 @@
 #import <Cocoa/Cocoa.h>
 
 #include "mozilla/dom/Document.h"
+#include "nsIconLoaderService.h"
 #include "nsTouchBarInput.h"
 #include "nsTouchBarNativeAPIDefines.h"
-#include "IconLoaderHelperCocoa.h"
 
 using namespace mozilla::dom;
 
+class nsIconLoaderService;
 class nsIURI;
 class nsIPrincipal;
 class imgRequestProxy;
 
-class nsTouchBarInputIcon : public mozilla::widget::IconLoaderListenerCocoa {
+class nsTouchBarInputIcon : public nsIconLoaderObserver {
  public:
   explicit nsTouchBarInputIcon(RefPtr<Document> aDocument,
                                TouchBarInput* aInput, NSTouchBarItem* aItem);
@@ -38,7 +39,7 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoaderListenerCocoa {
 
   
   
-  nsresult OnComplete();
+  nsresult OnComplete(NSImage* aImage) override;
 
   
   
@@ -61,8 +62,7 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoaderListenerCocoa {
   NSPopoverTouchBarItem* mPopoverItem;
   
   
-  RefPtr<mozilla::widget::IconLoader> mIconLoader;
-  RefPtr<mozilla::widget::IconLoaderHelperCocoa> mIconLoaderHelper;
+  RefPtr<nsIconLoaderService> mIconLoader;
 };
 
 #endif  
