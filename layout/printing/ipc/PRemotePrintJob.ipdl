@@ -24,7 +24,7 @@ parent:
 
   
   
-  async ProcessPage();
+  async ProcessPage(uint64_t[] deps);
 
   
   
