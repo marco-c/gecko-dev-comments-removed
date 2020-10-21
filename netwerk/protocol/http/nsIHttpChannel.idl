@@ -152,6 +152,17 @@ interface nsIHttpChannel : nsIIdentChannel
 
 
 
+    [must_use] void setNewReferrerInfo(in ACString aUrl,
+                                       in nsIReferrerInfo_ReferrerPolicyIDL aPolicy,
+                                       in boolean aSendReferrer);
+
+    
+
+
+
+
+
+
 
 
 

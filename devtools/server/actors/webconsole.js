@@ -1789,10 +1789,20 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       Ci.nsIRequest.LOAD_ANONYMOUS;
 
     channel.requestMethod = method;
-
     if (headers) {
       for (const { name, value } of headers) {
-        channel.setRequestHeader(name, value, false);
+        if (name.toLowerCase() == "referer") {
+          
+          
+          
+          channel.setNewReferrerInfo(
+            value,
+            Ci.nsIReferrerInfo.UNSAFE_URL,
+            true
+          );
+        } else {
+          channel.setRequestHeader(name, value, false);
+        }
       }
     }
 
