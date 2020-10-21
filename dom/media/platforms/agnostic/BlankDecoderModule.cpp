@@ -133,9 +133,9 @@ bool BlankDecoderModule::SupportsMimeType(
   return true;
 }
 
-already_AddRefed<PlatformDecoderModule> CreateBlankDecoderModule() {
-  RefPtr<PlatformDecoderModule> pdm = new BlankDecoderModule();
-  return pdm.forget();
+
+already_AddRefed<PlatformDecoderModule> BlankDecoderModule::Create() {
+  return MakeAndAddRef<BlankDecoderModule>();
 }
 
 }  

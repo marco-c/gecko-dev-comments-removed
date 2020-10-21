@@ -13,6 +13,8 @@ namespace mozilla {
 
 class WMFDecoderModule : public PlatformDecoderModule {
  public:
+  static already_AddRefed<PlatformDecoderModule> Create();
+
   
   nsresult Startup() override;
 

@@ -18,7 +18,7 @@ class FFVPXRuntimeLinker {
   
   static bool Init();
   
-  static already_AddRefed<PlatformDecoderModule> CreateDecoderModule();
+  static already_AddRefed<PlatformDecoderModule> Create();
 
   
   static void GetRDFTFuncs(FFmpegRDFTFuncs* aOutFuncs);

@@ -114,4 +114,10 @@ already_AddRefed<MediaDataDecoder> AgnosticDecoderModule::CreateAudioDecoder(
   return m.forget();
 }
 
+
+already_AddRefed<PlatformDecoderModule> AgnosticDecoderModule::Create() {
+  RefPtr<PlatformDecoderModule> pdm = new AgnosticDecoderModule();
+  return pdm.forget();
+}
+
 }  

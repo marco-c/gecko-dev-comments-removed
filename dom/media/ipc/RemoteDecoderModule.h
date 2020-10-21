@@ -14,8 +14,12 @@ namespace mozilla {
 
 
 class RemoteDecoderModule : public PlatformDecoderModule {
+  template <typename T, typename... Args>
+  friend already_AddRefed<T> MakeAndAddRef(Args&&...);
+
  public:
   static void Init();
+  static already_AddRefed<PlatformDecoderModule> Create();
 
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const override;

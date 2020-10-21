@@ -51,11 +51,21 @@ class PDMFactory final {
   static constexpr int kYUV444 = 3;
 
  private:
-  virtual ~PDMFactory();
+  virtual ~PDMFactory() = default;
+
   void CreatePDMs();
   void CreateNullPDM();
+  void CreateGpuPDMs();
+  void CreateRddPDMs();
+  void CreateDefaultPDMs();
+
+  template <typename DECODER_MODULE, typename... ARGS>
+  bool CreateAndStartupPDM(ARGS&&... aArgs) {
+    return StartupPDM(DECODER_MODULE::Create(std::forward<ARGS>(aArgs)...));
+  }
   
-  bool StartupPDM(PlatformDecoderModule* aPDM, bool aInsertAtBeginning = false);
+  bool StartupPDM(already_AddRefed<PlatformDecoderModule> aPDM,
+                  bool aInsertAtBeginning = false);
   
   already_AddRefed<PlatformDecoderModule> GetDecoder(
       const TrackInfo& aTrackInfo,
