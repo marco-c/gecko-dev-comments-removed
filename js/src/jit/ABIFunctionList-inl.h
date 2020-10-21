@@ -7,6 +7,11 @@
 #ifndef jit_ABIFunctionList_inl_h
 #define jit_ABIFunctionList_inl_h
 
+#include "irregexp/RegExpAPI.h"
+
+
+
+
 #include "jit/ABIFunctions.h"
 #include "js/Conversions.h"  
 
@@ -30,6 +35,9 @@ namespace jit {
 
 #define ABIFUNCTION_LIST(_)                                 \
   ABIFUNCTION_WASM_CODEGEN_DEBUG_LIST(_)                    \
+  _(js::irregexp::CaseInsensitiveCompareNonUnicode)         \
+  _(js::irregexp::CaseInsensitiveCompareUnicode)            \
+  _(js::irregexp::GrowBacktrackStack)                       \
 
 
 
