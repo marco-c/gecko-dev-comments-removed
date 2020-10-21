@@ -8,6 +8,8 @@
 #define jit_ABIFunctionList_inl_h
 
 #include "jslibmath.h"  
+#include "jsmath.h"     
+                        
 #include "irregexp/RegExpAPI.h"
 
 
@@ -38,10 +40,16 @@ namespace jit {
 #define ABIFUNCTION_LIST(_)                                 \
   ABIFUNCTION_WASM_CODEGEN_DEBUG_LIST(_)                    \
   _(js::ArgumentsObject::finishForIonPure)                  \
+  _(js::ecmaAtan2)                                          \
+  _(js::ecmaHypot)                                          \
+  _(js::ecmaPow)                                            \
+  _(js::hypot3)                                             \
+  _(js::hypot4)                                             \
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)         \
   _(js::irregexp::CaseInsensitiveCompareUnicode)            \
   _(js::irregexp::GrowBacktrackStack)                       \
   _(js::NumberMod)                                          \
+  _(js::powi)                                               \
 
 
 
