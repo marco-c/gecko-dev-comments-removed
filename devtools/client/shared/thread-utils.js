@@ -6,14 +6,14 @@
 var Services = require("Services");
 const asyncStoreHelper = require("devtools/client/shared/async-store-helper");
 
-
-
-
-
 const asyncStore = asyncStoreHelper("debugger", {
-  breakpoints: ["pending-breakpoints", {}],
-  eventBreakpoints: ["event-listener-breakpoints", {}],
+  pendingBreakpoints: ["pending-breakpoints", {}],
+  tabs: ["tabs", []],
+  xhrBreakpoints: ["xhr-breakpoints", []],
+  eventListenerBreakpoints: ["event-listener-breakpoints", undefined],
+  tabsBlackBoxed: ["tabsBlackBoxed", []],
 });
+exports.asyncStore = asyncStore;
 
 exports.getThreadOptions = async function() {
   return {
@@ -40,11 +40,12 @@ exports.getThreadOptions = async function() {
     ),
     
     observeAsmJS: true,
-    breakpoints: await asyncStore.breakpoints,
+    breakpoints: await asyncStore.pendingBreakpoints,
     
     
     
     
-    eventBreakpoints: (await asyncStore.eventBreakpoints).active || [],
+    eventBreakpoints:
+      ((await asyncStore.eventListenerBreakpoints) || {}).active || [],
   };
 };
