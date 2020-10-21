@@ -7,20 +7,27 @@
 import { setupCommands, clientCommands } from "./firefox/commands";
 import { setupEvents, clientEvents } from "./firefox/events";
 import { features, prefs } from "../utils/prefs";
+import { prepareSourcePayload } from "./firefox/create";
+import sourceQueue from "../utils/source-queue";
 
 let actions;
 let targetList;
 
 export async function onConnect(
   connection: any,
-  _actions: Object
+  _actions: Object,
+  store: any
 ): Promise<void> {
-  const { devToolsClient, targetList: _targetList } = connection;
+  const {
+    devToolsClient,
+    targetList: _targetList,
+    resourceWatcher,
+  } = connection;
   actions = _actions;
   targetList = _targetList;
 
   setupCommands({ devToolsClient, targetList });
-  setupEvents({ actions, devToolsClient });
+  setupEvents({ actions, devToolsClient, store, resourceWatcher });
   const { targetFront } = targetList;
   if (targetFront.isBrowsingContext || targetFront.isParentProcess) {
     targetList.listenForWorkers = true;
@@ -36,6 +43,16 @@ export async function onConnect(
     onTargetAvailable,
     onTargetDestroyed
   );
+
+  await resourceWatcher.watchResources([resourceWatcher.TYPES.SOURCE], {
+    onAvailable: onSourceAvailable,
+  });
+
+  
+  
+  
+  
+  await sourceQueue.flush();
 }
 
 async function onTargetAvailable({
@@ -110,6 +127,25 @@ function onTargetDestroyed({ targetFront }): void {
     targetFront.off("navigate", actions.navigated);
   }
   actions.removeTarget(targetFront);
+}
+
+async function onSourceAvailable(sources) {
+  for (const source of sources) {
+    const threadFront = await source.targetFront.getFront("thread");
+    const frontendSource = prepareSourcePayload(threadFront, source);
+
+    
+    
+    
+    
+    
+    
+    
+    sourceQueue.queue({
+      type: "generated",
+      data: frontendSource,
+    });
+  }
 }
 
 export { clientCommands, clientEvents };
