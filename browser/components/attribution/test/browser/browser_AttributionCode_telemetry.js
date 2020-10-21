@@ -9,18 +9,6 @@ const { AttributionCode } = ChromeUtils.import(
 ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
-async function writeAttributionFile(data) {
-  let appDir = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
-  let file = appDir.clone();
-  file.append(Services.appinfo.vendor || "mozilla");
-  file.append(AppConstants.MOZ_APP_NAME);
-
-  await OS.File.makeDir(file.path, { from: appDir.path, ignoreExisting: true });
-
-  file.append("postSigningData");
-  await OS.File.writeAtomic(file.path, data);
-}
-
 add_task(function setup() {
   
   let env = Cc["@mozilla.org/process/environment;1"].getService(
@@ -56,7 +44,7 @@ add_task(async function test_parse_error() {
   
   await AttributionCode.deleteFileAsync();
   AttributionCode._clearCache();
-  await writeAttributionFile(""); 
+  await AttributionCode.writeAttributionFile(""); 
   result = await AttributionCode.getAttrDataAsync();
   Assert.deepEqual(result, {}, "Should have failed to parse");
 
