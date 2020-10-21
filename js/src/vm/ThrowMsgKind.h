@@ -9,7 +9,7 @@
 
 #include <stdint.h>  
 
-#include "jsfriendapi.h"  
+#include "js/friend/ErrorMessages.h"  
 
 namespace js {
 
