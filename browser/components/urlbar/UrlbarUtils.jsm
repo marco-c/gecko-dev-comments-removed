@@ -209,7 +209,6 @@ var UrlbarUtils = {
     "shortcut",
     "tabmenu",
     "tabtosearch",
-    "tabtosearch_onboard",
     "topsites_newtab",
     "topsites_urlbar",
     "touchbar",
@@ -528,9 +527,6 @@ var UrlbarUtils = {
 
 
   getSpanForResult(result) {
-    if (result.resultSpan) {
-      return result.resultSpan;
-    }
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.URL:
       case UrlbarUtils.RESULT_TYPE.BOOKMARKS:
