@@ -119,7 +119,7 @@ DefaultJitOptions::DefaultJitOptions() {
 
   
   
-  SET_DEFAULT(disableOptimizationLevels, false);
+  SET_DEFAULT(disableOptimizationLevels, true);
 
   
   SET_DEFAULT(baselineInterpreter, true);
@@ -131,7 +131,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(ion, true);
 
   
-  SET_DEFAULT(warpBuilder, false);
+  SET_DEFAULT(warpBuilder, true);
 
   
   
@@ -179,7 +179,7 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   
-  SET_DEFAULT(normalIonWarmUpThreshold, 1000);
+  SET_DEFAULT(normalIonWarmUpThreshold, 1500);
 
   
   
