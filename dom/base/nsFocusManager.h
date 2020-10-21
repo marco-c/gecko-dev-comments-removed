@@ -249,6 +249,13 @@ class nsFocusManager final : public nsIFocusManager,
 
   void FireDelayedEvents(Document* aDocument);
 
+  
+
+
+
+
+  nsresult FocusPlugin(mozilla::dom::Element* aPlugin);
+
   static uint32_t FocusOptionsToFocusManagerFlags(
       const mozilla::dom::FocusOptions& aOptions);
 
