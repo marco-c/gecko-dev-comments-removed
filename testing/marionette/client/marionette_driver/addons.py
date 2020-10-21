@@ -3,7 +3,6 @@
 
 
 from __future__ import absolute_import
-import os
 
 from . import errors
 
@@ -48,10 +47,6 @@ class Addons(object):
         :raises: :exc:`AddonInstallException`
 
         """
-        
-        
-        path = path.replace("/", os.path.sep)
-
         body = {"path": path, "temporary": temp}
         try:
             return self._mn._send_message("Addon:Install",
