@@ -1467,6 +1467,32 @@ public class GeckoSession {
 
 
 
+    public static final int HEADER_FILTER_CORS_SAFELISTED = 1;
+    
+
+
+
+
+
+
+
+
+
+
+
+    public static final int HEADER_FILTER_UNRESTRICTED_UNSAFE = 2;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(value = {HEADER_FILTER_CORS_SAFELISTED, HEADER_FILTER_UNRESTRICTED_UNSAFE})
+             @interface HeaderFilter {}
+
+    
+
+
+
+
+
+
 
 
 
@@ -1502,6 +1528,7 @@ public class GeckoSession {
         private GeckoBundle mHeaders;
         private @LoadFlags int mLoadFlags = LOAD_FLAGS_NONE;
         private boolean mIsDataUri;
+        private @HeaderFilter int mHeaderFilter = HEADER_FILTER_CORS_SAFELISTED;
 
         private static @NonNull String createDataUri(@NonNull final byte[] bytes,
                                                     @Nullable final String mimeType) {
@@ -1610,6 +1637,10 @@ public class GeckoSession {
 
 
 
+
+
+
+
         @NonNull
         public Loader additionalHeaders(final @NonNull Map<String, String> headers) {
             final GeckoBundle bundle = new GeckoBundle(headers.size());
@@ -1621,6 +1652,20 @@ public class GeckoSession {
                 bundle.putString(entry.getKey(), entry.getValue());
             }
             mHeaders = bundle;
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+        @NonNull
+        public Loader headerFilter(final @HeaderFilter int filter) {
+            mHeaderFilter = filter;
             return this;
         }
 
@@ -1679,6 +1724,7 @@ public class GeckoSession {
             final GeckoBundle msg = new GeckoBundle();
             msg.putString("uri", request.mUri);
             msg.putInt("flags", loadFlags);
+            msg.putInt("headerFilter", request.mHeaderFilter);
 
             if (request.mReferrerUri != null) {
                 msg.putString("referrerUri", request.mReferrerUri);
@@ -1721,6 +1767,7 @@ public class GeckoSession {
     public void loadUri(final @NonNull String uri, final @Nullable Map<String, String> additionalHeaders) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .additionalHeaders(additionalHeaders));
     }
 
@@ -1736,6 +1783,7 @@ public class GeckoSession {
     public void loadUri(final @NonNull String uri, final @LoadFlags int flags) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .flags(flags));
     }
 
@@ -1753,6 +1801,7 @@ public class GeckoSession {
                         final @LoadFlags int flags) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .referrer(referrer)
                 .flags(flags));
     }
@@ -1772,6 +1821,7 @@ public class GeckoSession {
                         final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .referrer(referrer)
                 .flags(flags)
                 .additionalHeaders(additionalHeaders));
@@ -1793,6 +1843,7 @@ public class GeckoSession {
                         final @LoadFlags int flags) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .referrer(referrer)
                 .flags(flags));
     }
@@ -1814,6 +1865,7 @@ public class GeckoSession {
                         final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .referrer(referrer)
                 .additionalHeaders(additionalHeaders)
                 .flags(flags));
@@ -1853,6 +1905,7 @@ public class GeckoSession {
     @Deprecated
     public void loadUri(final @NonNull Uri uri) {
         load(new Loader()
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .uri(uri));
     }
 
@@ -1867,6 +1920,7 @@ public class GeckoSession {
     public void loadUri(final @NonNull Uri uri, final @Nullable Map<String, String> additionalHeaders) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .additionalHeaders(additionalHeaders));
     }
 
@@ -1881,6 +1935,7 @@ public class GeckoSession {
     public void loadUri(final @NonNull Uri uri, final @LoadFlags int flags) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .flags(flags));
     }
 
@@ -1897,6 +1952,7 @@ public class GeckoSession {
                         final @LoadFlags int flags) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .referrer(referrer)
                 .flags(flags));
     }
@@ -1915,6 +1971,7 @@ public class GeckoSession {
                         final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
         load(new Loader()
                 .uri(uri)
+                .headerFilter(HEADER_FILTER_UNRESTRICTED_UNSAFE)
                 .referrer(referrer)
                 .flags(flags)
                 .additionalHeaders(additionalHeaders));
