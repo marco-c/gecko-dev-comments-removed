@@ -2092,6 +2092,10 @@ bool nsFocusManager::Blur(BrowsingContext* aBrowsingContextToClear,
     ancestorWindowToFocus->SetFocusedElement(nullptr, 0, true);
     ancestorWindowToFocusHandled = true;
   }
+  
+  
+  
+  SetFocusedWindowInternal(nullptr);
   contentChild->SendBlurToParent(
       focusedBrowsingContext, aBrowsingContextToClear,
       aAncestorBrowsingContextToFocus, aIsLeavingDocument, aAdjustWidget,
