@@ -217,6 +217,7 @@ class StructuredSpewer {
   
   void startObject(JSContext* cx, const JSScript* script, SpewChannel channel);
 
+  friend class AutoSpewChannel;
   friend class AutoStructuredSpewer;
 };
 
@@ -267,6 +268,24 @@ class MOZ_RAII AutoStructuredSpewer {
     MOZ_ASSERT(printer_.isSome());
     return *printer_.ref();
   }
+};
+
+
+
+
+
+class MOZ_RAII AutoSpewChannel {
+  JSContext* cx_;
+  bool wasChannelAutoSet = false;
+
+  AutoSpewChannel(const AutoSpewChannel&) = delete;
+  void operator=(AutoSpewChannel&) = delete;
+
+ public:
+  explicit AutoSpewChannel(JSContext* cx, SpewChannel channel,
+                           JSScript* script);
+
+  ~AutoSpewChannel();
 };
 
 }  
