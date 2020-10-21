@@ -671,7 +671,9 @@ class ProviderAutofill extends UrlbarProvider {
       return null;
     }
 
-    let engine = await UrlbarSearchUtils.engineForDomainPrefix(searchStr);
+    
+    
+    let engine = (await UrlbarSearchUtils.enginesForDomainPrefix(searchStr))[0];
     if (!engine) {
       return null;
     }

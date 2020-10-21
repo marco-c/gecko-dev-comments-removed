@@ -90,24 +90,24 @@ class ProviderTabToSearch extends UrlbarProvider {
       }
     );
 
-    let engine = await UrlbarSearchUtils.engineForDomainPrefix(searchStr);
-    if (!engine) {
-      return;
+    
+    
+    let engines = await UrlbarSearchUtils.enginesForDomainPrefix(searchStr);
+    for (let engine of engines) {
+      let result = new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+          engine: engine.name,
+          url: engine.getResultDomain(),
+          keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
+          icon: engine.iconURI?.spec,
+          query: "",
+        })
+      );
+      result.suggestedIndex = 1;
+      addCallback(this, result);
     }
-
-    let result = new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.SEARCH,
-      UrlbarUtils.RESULT_SOURCE.SEARCH,
-      ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        engine: engine.name,
-        url: engine.getResultDomain(),
-        keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
-        icon: engine.iconURI?.spec,
-        query: "",
-      })
-    );
-    result.suggestedIndex = 1;
-    addCallback(this, result);
   }
 }
 

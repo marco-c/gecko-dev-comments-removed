@@ -62,15 +62,16 @@ class SearchUtils {
 
 
 
-  async engineForDomainPrefix(prefix) {
+  async enginesForDomainPrefix(prefix) {
     await this.init();
+    let engines = [];
     for (let engine of await Services.search.getVisibleEngines()) {
       let domain = engine.getResultDomain();
       if (domain.startsWith(prefix) || domain.startsWith("www." + prefix)) {
-        return engine;
+        engines.push(engine);
       }
     }
-    return null;
+    return engines;
   }
 
   
