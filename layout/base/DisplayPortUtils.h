@@ -211,7 +211,9 @@ class DisplayPortUtils {
   
 
 
-  static bool GetCriticalDisplayPort(nsIContent* aContent, nsRect* aResult);
+  static bool GetCriticalDisplayPort(
+      nsIContent* aContent, nsRect* aResult,
+      const DisplayPortOptions& aOptions = DisplayPortOptions());
 
   
 
@@ -222,8 +224,9 @@ class DisplayPortUtils {
 
 
 
-  static bool GetHighResolutionDisplayPort(nsIContent* aContent,
-                                           nsRect* aResult);
+  static bool GetHighResolutionDisplayPort(
+      nsIContent* aContent, nsRect* aResult,
+      const DisplayPortOptions& aOptions = DisplayPortOptions());
 
   
 
