@@ -4,14 +4,6 @@
 
 "use strict";
 
-
-
-
-
-
-
-const DEBUG_PLATFORM_EVENTS = false;
-
 const { Cc, Ci, Cr, Cu } = require("chrome");
 const Services = require("Services");
 const {
@@ -58,12 +50,7 @@ loader.lazyGetter(
   () => Cu.getGlobalForObject(Cu).WebExtensionPolicy
 );
 
-function logPlatformEvent(eventName, channel, message = "") {
-  if (!DEBUG_PLATFORM_EVENTS) {
-    return;
-  }
-  dump(`[netmonitor] ${channel.channelId} - ${eventName} ${message}\n`);
-}
+
 
 
 const PR_UINT32_MAX = 4294967295;
@@ -305,8 +292,6 @@ NetworkObserver.prototype = {
       return;
     }
 
-    logPlatformEvent(topic, channel);
-
     this.interceptedChannels.add(subject);
 
     
@@ -331,8 +316,6 @@ NetworkObserver.prototype = {
     if (!matchRequest(channel, this.filters)) {
       return;
     }
-
-    logPlatformEvent(topic, channel);
 
     
     
@@ -366,8 +349,6 @@ NetworkObserver.prototype = {
       return;
     }
 
-    logPlatformEvent(topic, channel);
-
     let id;
     let reason;
 
@@ -390,7 +371,7 @@ NetworkObserver.prototype = {
     if (httpActivity.owner) {
       
       
-      httpActivity.owner.addServerTimings(serverTimings);
+      httpActivity.owner.addSeverTimings(serverTimings);
     } else {
       
       
@@ -435,8 +416,6 @@ NetworkObserver.prototype = {
     if (!matchRequest(channel, this.filters)) {
       return;
     }
-
-    logPlatformEvent(topic, subject, channel.responseStatus);
 
     const response = {
       id: gSequenceId(),
@@ -556,8 +535,6 @@ NetworkObserver.prototype = {
     if (throttler) {
       const channel = subject.QueryInterface(Ci.nsIHttpChannel);
       if (matchRequest(channel, this.filters)) {
-        logPlatformEvent("http-on-modify-request", channel);
-
         
         const httpActivity = this.createOrGetActivityObject(channel);
         this._onRequestBodySent(httpActivity);
@@ -611,27 +588,6 @@ NetworkObserver.prototype = {
     }
   },
 
-  getActivityTypeString(activityType, activitySubtype) {
-    if (
-      activityType === Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_SOCKET_TRANSPORT
-    ) {
-      for (const name in Ci.nsISocketTransport) {
-        if (Ci.nsISocketTransport[name] === activitySubtype) {
-          return "SOCKET_TRANSPORT:" + name;
-        }
-      }
-    } else if (
-      activityType === Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION
-    ) {
-      for (const name in Ci.nsIHttpActivityObserver) {
-        if (Ci.nsIHttpActivityObserver[name] === activitySubtype) {
-          return "HTTP_TRANSACTION:" + name.replace("ACTIVITY_SUBTYPE_", "");
-        }
-      }
-    }
-    return "unexpected-activity-types:" + activityType + ":" + activitySubtype;
-  },
-
   
 
 
@@ -669,13 +625,6 @@ NetworkObserver.prototype = {
 
     channel = channel.QueryInterface(Ci.nsIHttpChannel);
     channel = channel.QueryInterface(Ci.nsIClassifiedChannel);
-
-    if (DEBUG_PLATFORM_EVENTS) {
-      logPlatformEvent(
-        this.getActivityTypeString(activityType, activitySubtype),
-        channel
-      );
-    }
 
     if (
       activitySubtype == gActivityDistributor.ACTIVITY_SUBTYPE_REQUEST_HEADER

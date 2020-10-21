@@ -534,7 +534,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
 
-  addServerTimings(serverTimings) {
+  addSeverTimings(serverTimings) {
     if (serverTimings) {
       this._serverTimings = serverTimings;
     }
