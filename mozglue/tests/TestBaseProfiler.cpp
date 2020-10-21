@@ -3791,6 +3791,14 @@ void TestUserMarker() {
                                      const std::string& aText) {
       aWriter.StringProperty("text", aText);
     }
+    static mozilla::MarkerSchema MarkerTypeDisplay() {
+      using MS = mozilla::MarkerSchema;
+      MS schema{MS::Location::markerChart, MS::Location::markerTable};
+      schema.SetTooltipLabel("tooltip for test-minimal");
+      schema.AddKeyLabelFormatSearchable("text", "Text", MS::Format::string,
+                                         MS::Searchable::searchable);
+      return schema;
+    }
   };
 
   mozilla::ProfileBufferChunkManagerSingle chunkManager(1024);
@@ -3858,18 +3866,6 @@ void TestUserMarker() {
 
 void TestPredefinedMarkers() {
   printf("TestPredefinedMarkers...\n");
-
-  
-  
-  struct MarkerTypeTestMinimal {
-    static constexpr Span<const char> MarkerTypeName() {
-      return MakeStringSpan("test-minimal");
-    }
-    static void StreamJSONMarkerData(mozilla::JSONWriter& aWriter,
-                                     const std::string& aText) {
-      aWriter.StringProperty("text", aText);
-    }
-  };
 
   mozilla::ProfileBufferChunkManagerSingle chunkManager(1024);
   mozilla::ProfileChunkedBuffer buffer(
