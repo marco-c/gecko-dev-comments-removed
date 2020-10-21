@@ -129,7 +129,7 @@ OpusTrackEncoder::~OpusTrackEncoder() {
   }
 }
 
-nsresult OpusTrackEncoder::Init(int aChannels, int aSamplingRate) {
+nsresult OpusTrackEncoder::Init(int aChannels) {
   NS_ENSURE_TRUE((aChannels <= MAX_SUPPORTED_AUDIO_CHANNELS) && (aChannels > 0),
                  NS_ERROR_FAILURE);
 
@@ -139,8 +139,8 @@ nsresult OpusTrackEncoder::Init(int aChannels, int aSamplingRate) {
   mChannels = aChannels > MAX_CHANNELS ? MAX_CHANNELS : aChannels;
 
   
-  NS_ENSURE_TRUE(aSamplingRate >= 8000, NS_ERROR_INVALID_ARG);
-  NS_ENSURE_TRUE(aSamplingRate <= 192000, NS_ERROR_INVALID_ARG);
+  NS_ENSURE_TRUE(mTrackRate >= 8000, NS_ERROR_INVALID_ARG);
+  NS_ENSURE_TRUE(mTrackRate <= 192000, NS_ERROR_INVALID_ARG);
 
   
   
@@ -149,18 +149,15 @@ nsresult OpusTrackEncoder::Init(int aChannels, int aSamplingRate) {
   supportedSamplingRates.AppendElements(
       kOpusSupportedInputSamplingRates,
       ArrayLength(kOpusSupportedInputSamplingRates));
-  if (!supportedSamplingRates.Contains(aSamplingRate)) {
+  if (!supportedSamplingRates.Contains(mTrackRate)) {
     int error;
-    mResampler =
-        speex_resampler_init(mChannels, aSamplingRate, kOpusSamplingRate,
-                             SPEEX_RESAMPLER_QUALITY_DEFAULT, &error);
+    mResampler = speex_resampler_init(mChannels, mTrackRate, kOpusSamplingRate,
+                                      SPEEX_RESAMPLER_QUALITY_DEFAULT, &error);
 
     if (error != RESAMPLER_ERR_SUCCESS) {
       return NS_ERROR_FAILURE;
     }
   }
-  mSamplingRate = aSamplingRate;
-  NS_ENSURE_TRUE(mSamplingRate > 0, NS_ERROR_FAILURE);
 
   int error = 0;
   mEncoder = opus_encoder_create(GetOutputSampleRate(), mChannels,
@@ -196,7 +193,7 @@ nsresult OpusTrackEncoder::Init(int aChannels, int aSamplingRate) {
 }
 
 int OpusTrackEncoder::GetOutputSampleRate() {
-  return mResampler ? kOpusSamplingRate : mSamplingRate;
+  return mResampler ? kOpusSamplingRate : mTrackRate;
 }
 
 int OpusTrackEncoder::GetPacketDuration() {
@@ -218,12 +215,12 @@ already_AddRefed<TrackMetadataBase> OpusTrackEncoder::GetMetadata() {
 
   RefPtr<OpusMetadata> meta = new OpusMetadata();
   meta->mChannels = mChannels;
-  meta->mSamplingFrequency = mSamplingRate;
+  meta->mSamplingFrequency = mTrackRate;
 
   
   SerializeOpusIdHeader(
       mChannels, mLookahead * (kOpusSamplingRate / GetOutputSampleRate()),
-      mSamplingRate, &meta->mIdHeader);
+      mTrackRate, &meta->mIdHeader);
 
   nsCString vendor;
   vendor.AppendASCII(opus_get_version_string());
@@ -273,7 +270,7 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
     const int framesToFetch = !mResampler
                                   ? GetPacketDuration()
                                   : (GetPacketDuration() - framesLeft) *
-                                            mSamplingRate / kOpusSamplingRate +
+                                            mTrackRate / kOpusSamplingRate +
                                         frameRoundUp;
 
     if (!mEndOfStream && mSourceSegment.GetDuration() < framesToFetch) {
@@ -341,7 +338,7 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
       
       
       
-      uint32_t outframes = frameCopied * kOpusSamplingRate / mSamplingRate + 1;
+      uint32_t outframes = frameCopied * kOpusSamplingRate / mTrackRate + 1;
       uint32_t inframes = frameCopied;
 
       resamplingDest.SetLength(outframes * mChannels);
@@ -379,7 +376,7 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
       duration = framesInPCM;
     } else {
       
-      duration = frameCopied * (kOpusSamplingRate / mSamplingRate);
+      duration = frameCopied * (kOpusSamplingRate / mTrackRate);
     }
 
     

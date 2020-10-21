@@ -42,7 +42,7 @@ class OpusTrackEncoder : public AudioTrackEncoder {
  protected:
   int GetPacketDuration() override;
 
-  nsresult Init(int aChannels, int aSamplingRate) override;
+  nsresult Init(int aChannels) override;
 
   
 

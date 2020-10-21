@@ -175,7 +175,7 @@ class TrackEncoder {
   
 
 
-  TrackRate mTrackRate;
+  const TrackRate mTrackRate;
 
   
 
@@ -190,7 +190,6 @@ class AudioTrackEncoder : public TrackEncoder {
   explicit AudioTrackEncoder(TrackRate aTrackRate)
       : TrackEncoder(aTrackRate),
         mChannels(0),
-        mSamplingRate(0),
         mNotInitDuration(0),
         mAudioBitrate(0) {}
 
@@ -297,7 +296,7 @@ class AudioTrackEncoder : public TrackEncoder {
 
 
 
-  virtual nsresult Init(int aChannels, int aSamplingRate) = 0;
+  virtual nsresult Init(int aChannels) = 0;
 
   
 
@@ -306,11 +305,6 @@ class AudioTrackEncoder : public TrackEncoder {
 
 
   int mChannels;
-
-  
-
-
-  int mSamplingRate;
 
   
 
