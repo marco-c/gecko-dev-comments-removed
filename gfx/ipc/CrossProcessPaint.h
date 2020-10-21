@@ -18,6 +18,7 @@
 #include "nsHashKeys.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTHashtable.h"
+#include "mozilla/gfx/RecordedEvent.h"
 
 namespace IPC {
 template <typename T>
@@ -95,6 +96,9 @@ class CrossProcessPaint final {
   NS_INLINE_DECL_REFCOUNTING(CrossProcessPaint);
 
  public:
+  typedef nsRefPtrHashtable<nsUint64HashKey, RecordedDependentSurface>
+      ResolvedFragmentMap;
+  typedef MozPromise<ResolvedFragmentMap, nsresult, true> ResolvePromise;
   
 
 
@@ -123,12 +127,12 @@ class CrossProcessPaint final {
   void LostFragment(dom::WindowGlobalParent* aWGP);
 
  private:
-  typedef nsRefPtrHashtable<nsUint64HashKey, SourceSurface> ResolvedSurfaceMap;
   typedef nsDataHashtable<nsUint64HashKey, PaintFragment> ReceivedFragmentMap;
 
-  CrossProcessPaint(dom::Promise* aPromise, float aScale,
-                    dom::WindowGlobalParent* aRoot);
+  CrossProcessPaint(float aScale, dom::TabId aRoot);
   ~CrossProcessPaint();
+
+  void QueueDependencies(const nsTHashtable<nsUint64HashKey>& aDependencies);
 
   void QueuePaint(
       dom::WindowGlobalParent* aWGP, const Maybe<IntRect>& aRect,
@@ -137,7 +141,7 @@ class CrossProcessPaint final {
 
   
   
-  void Clear();
+  void Clear(nsresult aStatus);
 
   
   bool IsCleared() const;
@@ -145,10 +149,15 @@ class CrossProcessPaint final {
   
   
   void MaybeResolve();
-  nsresult ResolveInternal(dom::TabId aTabId, ResolvedSurfaceMap* aResolved);
+  nsresult ResolveInternal(dom::TabId aTabId, ResolvedFragmentMap* aResolved);
 
-  RefPtr<dom::Promise> mPromise;
-  RefPtr<dom::WindowGlobalParent> mRoot;
+  RefPtr<ResolvePromise> Init() {
+    MOZ_ASSERT(mPromise.IsEmpty());
+    return mPromise.Ensure(__func__);
+  }
+
+  MozPromiseHolder<ResolvePromise> mPromise;
+  dom::TabId mRoot;
   float mScale;
   uint32_t mPendingFragments;
   ReceivedFragmentMap mReceivedFragments;
