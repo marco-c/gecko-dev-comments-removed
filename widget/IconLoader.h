@@ -1,0 +1,77 @@
+
+
+
+
+
+#ifndef mozilla_widget_IconLoader_h_
+#define mozilla_widget_IconLoader_h_
+
+#include "imgINotificationObserver.h"
+#include "mozilla/RefPtr.h"
+#include "nsCOMPtr.h"
+#include "nsIContentPolicy.h"
+
+class nsIURI;
+class nsINode;
+class imgRequestProxy;
+class imgIContainer;
+
+namespace mozilla::widget {
+
+
+
+
+
+
+
+class IconLoader : public imgINotificationObserver {
+ public:
+  
+
+
+
+
+
+  class Helper {
+   public:
+    NS_INLINE_DECL_REFCOUNTING(mozilla::widget::IconLoader::Helper)
+    virtual nsresult OnComplete(imgIContainer* aContainer,
+                                const nsIntRect& aRect) = 0;
+
+   protected:
+    virtual ~Helper() = default;
+  };
+
+  IconLoader(Helper* aHelper, nsINode* aContent,
+             const nsIntRect& aImageRegionRect);
+
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_IMGINOTIFICATIONOBSERVER
+
+  
+  
+  
+  
+  nsresult LoadIcon(nsIURI* aIconURI, bool aIsInternalIcon = false);
+
+  void ReleaseJSObjects() { mContent = nullptr; }
+
+  void Destroy();
+
+ protected:
+  virtual ~IconLoader();
+
+ private:
+  nsresult OnFrameComplete(imgIRequest* aRequest);
+
+  nsCOMPtr<nsINode> mContent;
+  nsContentPolicyType mContentType;
+  RefPtr<imgRequestProxy> mIconRequest;
+  nsIntRect mImageRegionRect;
+  bool mLoadedIcon;
+  RefPtr<Helper> mHelper;
+};
+
+}  
+#endif  

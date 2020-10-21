@@ -36,6 +36,8 @@
 using namespace mozilla;
 
 using mozilla::dom::Element;
+using mozilla::widget::IconLoader;
+using mozilla::widget::IconLoaderHelperCocoa;
 
 static const uint32_t kIconSize = 16;
 
@@ -59,8 +61,10 @@ nsMenuItemIconX::~nsMenuItemIconX() {
 
 void nsMenuItemIconX::Destroy() {
   if (mIconLoader) {
-    mIconLoader->Destroy();
     mIconLoader = nullptr;
+  }
+  if (mIconLoaderHelper) {
+    mIconLoaderHelper = nullptr;
   }
   mMenuObject = nullptr;
   mNativeMenuItem = nil;
@@ -86,14 +90,15 @@ nsresult nsMenuItemIconX::SetupIcon() {
   }
 
   if (!mIconLoader) {
-    mIconLoader = new nsIconLoaderService(mContent, &mImageRegionRect, this, kIconSize, kIconSize);
+    mIconLoaderHelper = new IconLoaderHelperCocoa(this, kIconSize, kIconSize);
+    mIconLoader = new IconLoader(mIconLoaderHelper, mContent, mImageRegionRect);
     if (!mIconLoader) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
   if (!mSetIcon) {
     
-    [mNativeMenuItem setImage:mIconLoader->GetNativeIconImage()];
+    [mNativeMenuItem setImage:mIconLoaderHelper->GetNativeIconImage()];
   }
 
   rv = mIconLoader->LoadIcon(iconURI);
@@ -197,23 +202,27 @@ nsresult nsMenuItemIconX::GetIconURI(nsIURI** aIconURI) {
 
 
 
-nsresult nsMenuItemIconX::OnComplete(NSImage* aImage) {
-  if (!mNativeMenuItem) {
-    if (aImage) {
-      [aImage release];
-    }
+nsresult nsMenuItemIconX::OnComplete() {
+  if (!mIconLoaderHelper) {
     return NS_ERROR_FAILURE;
   }
 
-  if (!aImage) {
+  NSImage* image = mIconLoaderHelper->GetNativeIconImage();
+  if (!mNativeMenuItem) {
+    mIconLoaderHelper->Destroy();
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!image) {
     [mNativeMenuItem setImage:nil];
     return NS_OK;
   }
 
-  [mNativeMenuItem setImage:aImage];
+  [mNativeMenuItem setImage:image];
   if (mMenuObject) {
     mMenuObject->IconUpdated();
   }
-  [aImage release];
+
+  mIconLoaderHelper->Destroy();
   return NS_OK;
 }
