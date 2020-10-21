@@ -189,13 +189,14 @@ var UrlbarUtils = {
   
   
   WEB_ENGINE_NAMES: new Set([
-    "Baidu",
+    "百度", 
     "Bing",
     "DuckDuckGo",
     "Ecosia",
     "Google",
     "Qwant",
     "Yandex",
+    "Яндекс", 
   ]),
 
   
