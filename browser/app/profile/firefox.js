@@ -2016,6 +2016,15 @@ pref("browser.toolbars.keyboard_navigation", true);
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.toolbars.bookmarks.2h2020", true);
+#else
+pref("browser.toolbars.bookmarks.2h2020", false);
+#endif
+
+
+
+
 
 pref("identity.fxaccounts.toolbar.enabled", true);
 pref("identity.fxaccounts.toolbar.accessed", false);
