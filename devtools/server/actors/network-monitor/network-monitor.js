@@ -164,6 +164,18 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
     }
   },
 
+  
+
+
+
+  onBrowserSwap(mm) {
+    this.stopListening();
+    this.messageManager = mm;
+    this.stackTraces = new Set();
+    this.lastFrames.clear();
+    this.startListening();
+  },
+
   onStackTraceAvailable(msg) {
     const { channelId } = msg.data;
     if (!msg.data.stacktrace) {

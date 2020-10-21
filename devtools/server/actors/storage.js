@@ -1198,10 +1198,7 @@ exports.setupParentProcessForCookies = function({ mm, prefix }) {
   );
 
   
-  mm.addMessageListener(
-    "debug:storage-cookie-request-parent",
-    cookieHelpers.handleChildRequest
-  );
+  setMessageManager(mm);
 
   function callChildProcess(methodName, ...args) {
     if (methodName === "onCookieChanged") {
@@ -1219,17 +1216,31 @@ exports.setupParentProcessForCookies = function({ mm, prefix }) {
     }
   }
 
+  function setMessageManager(newMM) {
+    if (mm) {
+      mm.removeMessageListener(
+        "debug:storage-cookie-request-parent",
+        cookieHelpers.handleChildRequest
+      );
+    }
+    mm = newMM;
+    if (mm) {
+      mm.addMessageListener(
+        "debug:storage-cookie-request-parent",
+        cookieHelpers.handleChildRequest
+      );
+    }
+  }
+
   return {
+    onBrowserSwap: setMessageManager,
     onDisconnected: () => {
       
       
       
       
       cookieHelpers.removeCookieObservers();
-      mm.removeMessageListener(
-        "debug:storage-cookie-request-parent",
-        cookieHelpers.handleChildRequest
-      );
+      setMessageManager(null);
     },
   };
 };
@@ -1678,21 +1689,32 @@ const extensionStorageHelpers = {
 
 exports.setupParentProcessForExtensionStorage = function({ mm, prefix }) {
   
-  mm.addMessageListener(
-    "debug:storage-extensionStorage-request-parent",
-    extensionStorageHelpers.handleChildRequest
-  );
+  setMessageManager(mm);
+
+  function setMessageManager(newMM) {
+    if (mm) {
+      mm.removeMessageListener(
+        "debug:storage-extensionStorage-request-parent",
+        extensionStorageHelpers.handleChildRequest
+      );
+    }
+    mm = newMM;
+    if (mm) {
+      mm.addMessageListener(
+        "debug:storage-extensionStorage-request-parent",
+        extensionStorageHelpers.handleChildRequest
+      );
+    }
+  }
 
   return {
+    onBrowserSwap: setMessageManager,
     onDisconnected: () => {
       
       
       
       
-      mm.removeMessageListener(
-        "debug:storage-extensionStorage-request-parent",
-        extensionStorageHelpers.handleChildRequest
-      );
+      setMessageManager(null);
       extensionStorageHelpers.onDisconnected();
     },
   };
@@ -3347,18 +3369,28 @@ var indexedDBHelpers = {
 
 
 exports.setupParentProcessForIndexedDB = function({ mm, prefix }) {
-  mm.addMessageListener(
-    "debug:storage-indexedDB-request-parent",
-    indexedDBHelpers.handleChildRequest
-  );
+  
+  setMessageManager(mm);
 
-  return {
-    onDisconnected: () => {
+  function setMessageManager(newMM) {
+    if (mm) {
       mm.removeMessageListener(
         "debug:storage-indexedDB-request-parent",
         indexedDBHelpers.handleChildRequest
       );
-    },
+    }
+    mm = newMM;
+    if (mm) {
+      mm.addMessageListener(
+        "debug:storage-indexedDB-request-parent",
+        indexedDBHelpers.handleChildRequest
+      );
+    }
+  }
+
+  return {
+    onBrowserSwap: setMessageManager,
+    onDisconnected: () => setMessageManager(null),
   };
 };
 

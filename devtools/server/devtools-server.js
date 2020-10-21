@@ -4,7 +4,7 @@
 
 "use strict";
 
-var { Ci } = require("chrome");
+var { Ci, Cc } = require("chrome");
 var Services = require("Services");
 var { ActorRegistry } = require("devtools/server/actors/utils/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
@@ -45,6 +45,14 @@ loader.lazyRequireGetter(
   "devtools/shared/transport/worker-transport",
   true
 );
+
+loader.lazyGetter(this, "generateUUID", () => {
+  
+  const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(
+    Ci.nsIUUIDGenerator
+  );
+  return generateUUID;
+});
 
 const CONTENT_PROCESS_SERVER_STARTUP_SCRIPT =
   "resource://devtools/server/startup/content-process.js";
@@ -355,6 +363,68 @@ var DevToolsServer = {
       Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT
     );
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  setupInChild({ module, setupChild, args, waitForEval }) {
+    if (this._childMessageManagers.size == 0) {
+      return Promise.resolve();
+    }
+    return new Promise(done => {
+      
+      
+      if (typeof waitForEval != "boolean") {
+        waitForEval = false;
+      }
+      let count = this._childMessageManagers.size;
+      const id = waitForEval ? generateUUID().toString() : null;
+
+      this._childMessageManagers.forEach(mm => {
+        if (waitForEval) {
+          
+          const evalListener = msg => {
+            if (msg.data.id !== id) {
+              return;
+            }
+            mm.removeMessageListener(
+              "debug:setup-in-child-response",
+              evalListener
+            );
+            if (--count === 0) {
+              done();
+            }
+          };
+          mm.addMessageListener("debug:setup-in-child-response", evalListener);
+        }
+        mm.sendAsyncMessage("debug:setup-in-child", {
+          module: module,
+          setupChild: setupChild,
+          args: args,
+          id: id,
+        });
+      });
+
+      if (!waitForEval) {
+        done();
+      }
+    });
+  },
+
+  
+
+
+  _childMessageManagers: new Set(),
 
   
 
