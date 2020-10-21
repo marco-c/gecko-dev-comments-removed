@@ -75,6 +75,7 @@ pub use crate::capi::*;
 
 pub mod errors;
 pub mod statecallback;
+mod virtualdevices;
 
 
 bitflags! {
