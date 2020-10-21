@@ -198,26 +198,6 @@ extern JS_FRIEND_API bool GetIsSecureContext(JS::Realm* realm);
 extern JS_FRIEND_API bool JS_CopyOwnPropertiesAndPrivateFields(
     JSContext* cx, JS::HandleObject target, JS::HandleObject obj);
 
-
-
-
-
-
-
-
-
-
-
-typedef enum {
-  MakeNonConfigurableIntoConfigurable,
-  CopyNonConfigurableAsIs
-} PropertyCopyBehavior;
-
-extern JS_FRIEND_API bool JS_CopyPropertyFrom(
-    JSContext* cx, JS::HandleId id, JS::HandleObject target,
-    JS::HandleObject obj,
-    PropertyCopyBehavior copyBehavior = CopyNonConfigurableAsIs);
-
 extern JS_FRIEND_API bool JS_WrapPropertyDescriptor(
     JSContext* cx, JS::MutableHandle<JS::PropertyDescriptor> desc);
 
