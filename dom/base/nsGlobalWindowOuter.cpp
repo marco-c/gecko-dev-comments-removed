@@ -5191,7 +5191,7 @@ void nsGlobalWindowOuter::BlurOuter() {
     siteWindow->Blur();
 
     
-    nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+    nsFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm && mDoc) {
       RefPtr<Element> element;
       fm->GetFocusedElementForWindow(this, false, nullptr,
@@ -7512,7 +7512,7 @@ nsresult nsGlobalWindowOuter::RestoreWindowState(nsISupports* aState) {
   
   Element* focusedElement = inner->GetFocusedElement();
   if (nsContentUtils::ContentIsLink(focusedElement)) {
-    nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+    nsFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
       
       RefPtr<Element> kungFuDeathGrip(focusedElement);

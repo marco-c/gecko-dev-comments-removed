@@ -3148,7 +3148,7 @@ void EventStateManager::PostHandleKeyboardEvent(
         }
 
         EnsureDocument(mPresContext);
-        nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+        nsFocusManager* fm = nsFocusManager::GetFocusManager();
         if (fm && mDocument) {
           
           bool isDocMove = aKeyboardEvent->IsControl() ||
@@ -3329,7 +3329,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
         MOZ_ASSERT_IF(newFocus, newFocus->IsElement());
 
-        nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+        nsFocusManager* fm = nsFocusManager::GetFocusManager();
         if (fm) {
           
           
@@ -5703,7 +5703,7 @@ void EventStateManager::FlushLayout(nsPresContext* aPresContext) {
 }
 
 nsIContent* EventStateManager::GetFocusedContent() {
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
   EnsureDocument(mPresContext);
   if (!fm || !mDocument) return nullptr;
 
