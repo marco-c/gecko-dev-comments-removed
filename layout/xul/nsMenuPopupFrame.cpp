@@ -566,7 +566,9 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
 
   bool sizeChanged = (mPrefSize != prefSize);
   
+  
   if (sizeChanged) {
+    shouldPosition = true;
     SetXULBounds(aState, nsRect(0, 0, prefSize.width, prefSize.height), false);
     mPrefSize = prefSize;
 #if MOZ_WAYLAND
