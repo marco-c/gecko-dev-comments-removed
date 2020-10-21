@@ -223,6 +223,9 @@ var whitelist = [
 
   
   { file: "resource://gre/modules/RustFxAccount.js" },
+
+  
+  { file: "resource://gre/localization/en-US/dom/media.ftl" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
