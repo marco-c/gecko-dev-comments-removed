@@ -72,23 +72,10 @@ class UAOverrides {
       ) {
         for (const header of details.requestHeaders) {
           if (header.name.toLowerCase() === "user-agent") {
-            
-            
-            
-            
-            let isMobileWithDesktopMode =
-              override.currentPlatform == "android" &&
-              header.value.includes("X11; Linux x86_64");
-
-            if (!isMobileWithDesktopMode) {
-              header.value = uaTransformer(header.value);
-            }
+            header.value = uaTransformer(header.value);
           }
         }
       }
-      promiseConsoleWarningScript(override.domain).then(script => {
-        browser.tabs.executeScript(details.tabId, script).catch(() => {});
-      });
       return { requestHeaders: details.requestHeaders };
     };
 
@@ -190,7 +177,6 @@ class UAOverrides {
     for (const override of this._availableOverrides) {
       if (platformMatches.includes(override.platform)) {
         override.availableOnPlatform = true;
-        override.currentPlatform = platformInfo.os;
 
         
         override.experimentActive = false;
