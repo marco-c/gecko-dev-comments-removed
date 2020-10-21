@@ -26,7 +26,6 @@ const { FxAccountsTelemetry } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   FxAccountsConfig: "resource://gre/modules/FxAccountsConfig.jsm",
   jwcrypto: "resource://services-crypto/jwcrypto.jsm",
-  CryptoUtils: "resource://services-crypto/utils.js",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
 });
 
@@ -79,28 +78,18 @@ add_task(async function test_getEcosystemAnonId() {
     {
       
       throw: false,
-      accountStateObj: { ecosystemAnonId, ecosystemUserId: "eco-uid" },
-      profileObj: { ecosystemAnonId: "bbbbbbbbbbbbbb" },
-      expectedEcosystemAnonId: ecosystemAnonId,
-    },
-    {
-      
-      throw: false,
-      accountStateObj: {},
       profileObj: { ecosystemAnonId },
       expectedEcosystemAnonId: ecosystemAnonId,
     },
     {
       
       throw: false,
-      accountStateObj: {},
       profileObj: {},
       expectedEcosystemAnonId: null,
     },
     {
       
       throw: true,
-      accountStateObj: {},
       profileObj: null,
       expectedEcosystemAnonId: null,
     },
@@ -110,31 +99,21 @@ add_task(async function test_getEcosystemAnonId() {
     const profile = new FxAccountsProfile({
       profileServerUrl: "http://testURL",
     });
-    const telemetry = new FxAccountsTelemetry({
-      profile,
-      withCurrentAccountState: async cb => {
-        return cb({
-          getUserAccountData: async () => {
-            return { ...tc.accountStateObj };
-          },
-        });
-      },
-    });
+    const telemetry = new FxAccountsTelemetry({});
+    telemetry._fxai = { profile };
     const mockProfile = sinon.mock(profile);
     const mockTelemetry = sinon.mock(telemetry);
 
-    if (!tc.accountStateObj.ecosystemUserId) {
-      if (tc.throw) {
-        mockProfile
-          .expects("getProfile")
-          .once()
-          .throws(Error);
-      } else {
-        mockProfile
-          .expects("getProfile")
-          .once()
-          .returns(tc.profileObj);
-      }
+    if (tc.throw) {
+      mockProfile
+        .expects("getProfile")
+        .once()
+        .throws(Error);
+    } else {
+      mockProfile
+        .expects("getProfile")
+        .once()
+        .returns(tc.profileObj);
     }
 
     if (tc.expectedEcosystemAnonId) {
@@ -153,206 +132,14 @@ add_task(async function test_getEcosystemAnonId() {
   }
 });
 
-add_task(async function test_ensureEcosystemAnonId_useAnonIdFromAccountState() {
-  
-  
-  const expectedEcosystemAnonId = "account-state-anon-id";
-
-  const telemetry = new FxAccountsTelemetry({
-    withCurrentAccountState: async cb => {
-      return cb({
-        getUserAccountData: async () => {
-          return {
-            ecosystemAnonId: expectedEcosystemAnonId,
-            ecosystemUserId: "account-state-eco-uid",
-          };
-        },
-      });
-    },
-  });
-
-  const actualEcoSystemAnonId = await telemetry.ensureEcosystemAnonId();
-
-  Assert.equal(actualEcoSystemAnonId, expectedEcosystemAnonId);
-});
-
-add_task(async function test_ensureEcosystemAnonId_useUserIdFromAccountState() {
-  
-  
-  const expectedEcosystemUserId = "02".repeat(32);
-  const expectedEcosystemAnonId = "bbbbbbbbbbbb";
-
-  const mockedUpdate = sinon
-    .mock()
-    .once()
-    .withExactArgs({
-      ecosystemAnonId: expectedEcosystemAnonId,
-    });
-  const telemetry = new FxAccountsTelemetry({
-    withCurrentAccountState: async cb => {
-      return cb({
-        getUserAccountData: async () => {
-          return {
-            
-            ecosystemUserId: expectedEcosystemUserId,
-          };
-        },
-        updateUserAccountData: mockedUpdate,
-      });
-    },
-  });
-  const mockFxAccountsConfig = sinon.mock(FxAccountsConfig);
-  const mockJwcrypto = sinon.mock(jwcrypto);
-
-  mockFxAccountsConfig
-    .expects("fetchConfigDocument")
-    .once()
-    .returns({
-      ecosystem_anon_id_keys: ["testKey"],
-    });
-
-  mockJwcrypto
-    .expects("generateJWE")
-    .once()
-    .withExactArgs("testKey", new TextEncoder().encode(expectedEcosystemUserId))
-    .returns(expectedEcosystemAnonId);
-
-  const actualEcosystemAnonId = await telemetry.ensureEcosystemAnonId();
-  Assert.equal(expectedEcosystemAnonId, actualEcosystemAnonId);
-
-  mockFxAccountsConfig.verify();
-  mockJwcrypto.verify();
-  mockedUpdate.verify();
-});
-
-add_task(async function test_ensureEcosystemAnonId_useValueFromProfile() {
-  
-  
-  const expectedEcosystemAnonId = "bbbbbbbbbbbb";
-
-  const profileClient = new FxAccountsProfileClient({
-    serverURL: "http://testURL",
-  });
-  const profile = new FxAccountsProfile({ profileClient });
-  const telemetry = new FxAccountsTelemetry({
-    profile,
-    withCurrentAccountState: async cb => {
-      return cb({
-        getUserAccountData: async () => {
-          return {};
-        },
-      });
-    },
-  });
-  const mockProfile = sinon.mock(profile);
-
-  mockProfile
-    .expects("ensureProfile")
-    .withArgs(sinon.match({ staleOk: true }))
-    .once()
-    .returns({
-      ecosystemAnonId: expectedEcosystemAnonId,
-    });
-
-  const actualEcosystemAnonId = await telemetry.ensureEcosystemAnonId();
-  Assert.equal(expectedEcosystemAnonId, actualEcosystemAnonId);
-
-  mockProfile.verify();
-});
-
-add_task(
-  async function test_ensureEcosystemAnonId_generatePlaceholderInProfile() {
-    
-    
-    const expectedEcosystemUserIdBytes = new Uint8Array(32);
-    const expectedEcosystemUserId = "0".repeat(64);
-    const expectedEcosystemAnonId = "bbbbbbbbbbbb";
-    const profileClient = new FxAccountsProfileClient({
-      serverURL: "http://testURL",
-    });
-    const profile = new FxAccountsProfile({ profileClient });
-    const telemetry = new FxAccountsTelemetry({
-      profile,
-      withCurrentAccountState: async cb => {
-        return cb({
-          getUserAccountData: async () => {
-            return {};
-          },
-        });
-      },
-    });
-    const mockProfile = sinon.mock(profile);
-    const mockFxAccountsConfig = sinon.mock(FxAccountsConfig);
-    const mockJwcrypto = sinon.mock(jwcrypto);
-    const mockCryptoUtils = sinon.mock(CryptoUtils);
-    const mockProfileClient = sinon.mock(profileClient);
-
-    mockProfile
-      .expects("ensureProfile")
-      .once()
-      .returns({});
-
-    mockCryptoUtils
-      .expects("generateRandomBytes")
-      .once()
-      .withExactArgs(32)
-      .returns(expectedEcosystemUserIdBytes);
-
-    mockFxAccountsConfig
-      .expects("fetchConfigDocument")
-      .once()
-      .returns({
-        ecosystem_anon_id_keys: ["testKey"],
-      });
-
-    mockJwcrypto
-      .expects("generateJWE")
-      .once()
-      .withExactArgs(
-        "testKey",
-        new TextEncoder().encode(expectedEcosystemUserId)
-      )
-      .returns(expectedEcosystemAnonId);
-
-    mockProfileClient
-      .expects("setEcosystemAnonId")
-      .once()
-      .withExactArgs(expectedEcosystemAnonId)
-      .returns(null);
-
-    const actualEcosystemAnonId = await telemetry.ensureEcosystemAnonId(true);
-    Assert.equal(expectedEcosystemAnonId, actualEcosystemAnonId);
-
-    mockProfile.verify();
-    mockCryptoUtils.verify();
-    mockFxAccountsConfig.verify();
-    mockJwcrypto.verify();
-    mockProfileClient.verify();
-  }
-);
-
 add_task(async function test_ensureEcosystemAnonId_failToGenerateKeys() {
-  
-  
   const expectedErrorMessage =
     "Unable to fetch ecosystem_anon_id_keys from FxA server";
   const testCases = [
     {
-      accountStateObj: {},
       serverConfig: {},
     },
     {
-      accountStateObj: {},
-      serverConfig: {
-        ecosystem_anon_id_keys: [],
-      },
-    },
-    {
-      accountStateObj: { ecosystemUserId: "bbbbbbbbbb" },
-      serverConfig: {},
-    },
-    {
-      accountStateObj: { ecosystemUserId: "bbbbbbbbbb" },
       serverConfig: {
         ecosystem_anon_id_keys: [],
       },
@@ -365,24 +152,16 @@ add_task(async function test_ensureEcosystemAnonId_failToGenerateKeys() {
     const telemetry = new FxAccountsTelemetry({
       profile,
       withCurrentAccountState: async cb => {
-        return cb({
-          getUserAccountData: async () => {
-            return { ...tc.accountStateObj };
-          },
-        });
+        return cb({});
       },
     });
     const mockProfile = sinon.mock(profile);
     const mockFxAccountsConfig = sinon.mock(FxAccountsConfig);
 
-    if (!tc.accountStateObj.ecosystemUserId) {
-      mockProfile
-        .expects("ensureProfile")
-        .once()
-        .returns({});
-    } else {
-      mockProfile.expects("ensureProfile").never();
-    }
+    mockProfile
+      .expects("ensureProfile")
+      .once()
+      .returns({});
 
     mockFxAccountsConfig
       .expects("fetchConfigDocument")
@@ -400,10 +179,9 @@ add_task(async function test_ensureEcosystemAnonId_failToGenerateKeys() {
 });
 
 add_task(async function test_ensureEcosystemAnonId_selfRace() {
-  
-  
-  
   const expectedEcosystemAnonId = "self-race-id";
+
+  const mockedUpdate = sinon.mock().once();
 
   const profileClient = new FxAccountsProfileClient({
     serverURL: "http://testURL",
@@ -412,11 +190,7 @@ add_task(async function test_ensureEcosystemAnonId_selfRace() {
   const telemetry = new FxAccountsTelemetry({
     profile,
     withCurrentAccountState: async cb => {
-      return cb({
-        getUserAccountData: async () => {
-          return {};
-        },
-      });
+      return cb({ updateUserAccountData: mockedUpdate });
     },
   });
 
@@ -466,6 +240,7 @@ add_task(async function test_ensureEcosystemAnonId_selfRace() {
 
   
   
+  mockedUpdate.verify();
   mockProfile.verify();
   mockFxAccountsConfig.verify();
   mockJwcrypto.verify();
@@ -473,9 +248,6 @@ add_task(async function test_ensureEcosystemAnonId_selfRace() {
 });
 
 add_task(async function test_ensureEcosystemAnonId_clientRace() {
-  
-  
-  
   const expectedEcosystemAnonId = "bbbbbbbbbbbb";
   const expectedErrrorMessage = "test error at 'setEcosystemAnonId'";
 
@@ -498,11 +270,7 @@ add_task(async function test_ensureEcosystemAnonId_clientRace() {
     const telemetry = new FxAccountsTelemetry({
       profile,
       withCurrentAccountState: async cb => {
-        return cb({
-          getUserAccountData: async () => {
-            return {};
-          },
-        });
+        return cb({});
       },
     });
     const mockProfile = sinon.mock(profile);
@@ -560,4 +328,57 @@ add_task(async function test_ensureEcosystemAnonId_clientRace() {
     mockJwcrypto.verify();
     mockProfileClient.verify();
   }
+});
+
+add_task(async function test_ensureEcosystemAnonId_updateAccountData() {
+  const expectedEcosystemUserId = "aaaaaaaaaa";
+  const expectedEcosystemAnonId = "bbbbbbbbbbbb";
+  const profileClient = new FxAccountsProfileClient({
+    serverURL: "http://testURL",
+  });
+  const profile = new FxAccountsProfile({ profileClient });
+  const fxa = new FxAccounts();
+  fxa.withCurrentAccountState = async cb =>
+    cb({
+      ecosystemUserId: expectedEcosystemUserId,
+      updateUserAccountData: fields => {
+        Assert.equal(expectedEcosystemUserId, fields.ecosystemUserId);
+      },
+    });
+  fxa.profile = profile;
+  const telemetry = new FxAccountsTelemetry(fxa);
+  const mockProfile = sinon.mock(profile);
+  const mockFxAccountsConfig = sinon.mock(FxAccountsConfig);
+  const mockJwcrypto = sinon.mock(jwcrypto);
+  const mockProfileClient = sinon.mock(profileClient);
+
+  mockProfile
+    .expects("ensureProfile")
+    .once()
+    .returns({});
+
+  mockFxAccountsConfig
+    .expects("fetchConfigDocument")
+    .once()
+    .returns({
+      ecosystem_anon_id_keys: ["testKey"],
+    });
+
+  mockJwcrypto
+    .expects("generateJWE")
+    .once()
+    .returns(expectedEcosystemAnonId);
+
+  mockProfileClient
+    .expects("setEcosystemAnonId")
+    .once()
+    .returns(null);
+
+  const actualEcosystemAnonId = await telemetry.ensureEcosystemAnonId(true);
+  Assert.equal(expectedEcosystemAnonId, actualEcosystemAnonId);
+
+  mockProfile.verify();
+  mockFxAccountsConfig.verify();
+  mockJwcrypto.verify();
+  mockProfileClient.verify();
 });

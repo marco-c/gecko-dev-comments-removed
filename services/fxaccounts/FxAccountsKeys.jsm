@@ -17,7 +17,6 @@ const { CryptoUtils } = ChromeUtils.import(
 const {
   LEGACY_DERIVED_KEYS_NAMES,
   SCOPE_OLD_SYNC,
-  SCOPE_ECOSYSTEM_TELEMETRY,
   LEGACY_SCOPE_WEBEXT_SYNC,
   FX_OAUTH_CLIENT_ID,
   log,
@@ -394,14 +393,12 @@ class FxAccountsKeys {
     
     
     
-    const scopes = [SCOPE_OLD_SYNC, SCOPE_ECOSYSTEM_TELEMETRY].join(" ");
+    const scopes = [SCOPE_OLD_SYNC].join(" ");
     const scopedKeysMetadata = await this._fxai.fxAccountsClient.getScopedKeyData(
       sessionToken,
       FX_OAUTH_CLIENT_ID,
       scopes
     );
-    
-    
     if (!scopedKeysMetadata.hasOwnProperty(SCOPE_OLD_SYNC)) {
       log.warn(
         "The FxA server did not grant Firefox the `oldsync` scope; this is most unexpected!" +
@@ -455,12 +452,6 @@ class FxAccountsKeys {
       kExtKbHash: scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC]
         ? this.kidAsHex(scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC])
         : CommonUtils.bytesAsHex(await this._deriveWebExtKbHash(uid, kBbytes)),
-      
-      
-      
-      ecosystemUserId: scopedKeys[SCOPE_ECOSYSTEM_TELEMETRY]
-        ? CommonUtils.base64urlToHex(scopedKeys[SCOPE_ECOSYSTEM_TELEMETRY].k)
-        : null,
     };
   }
 
@@ -541,88 +532,10 @@ class FxAccountsKeys {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
   async _deriveScopedKey(uid, kBbytes, scope, scopedKeyMetadata) {
-    kBbytes = CommonUtils.byteStringToArrayBuffer(kBbytes);
-
-    const FINGERPRINT_LENGTH = 16;
-    const KEY_LENGTH = 32;
-    const VALID_UID = /^[0-9a-f]{32}$/i;
-    const VALID_ROTATION_SECRET = /^[0-9a-f]{64}$/i;
-
     
-    if (!VALID_UID.test(uid)) {
-      throw new Error("uid must be a 32-character hex string");
-    }
-    if (kBbytes.length != 32) {
-      throw new Error("kBbytes must be exactly 32 bytes");
-    }
-    if (
-      typeof scopedKeyMetadata.identifier !== "string" ||
-      scopedKeyMetadata.identifier.length < 10
-    ) {
-      throw new Error("identifier must be a string of length >= 10");
-    }
-    if (typeof scopedKeyMetadata.keyRotationTimestamp !== "number") {
-      throw new Error("keyRotationTimestamp must be a number");
-    }
-    if (!VALID_ROTATION_SECRET.test(scopedKeyMetadata.keyRotationSecret)) {
-      throw new Error("keyRotationSecret must be a 64-character hex string");
-    }
-
     
-    const keyRotationTimestamp =
-      "" + Math.round(scopedKeyMetadata.keyRotationTimestamp / 1000);
-    if (keyRotationTimestamp.length < 10) {
-      throw new Error("keyRotationTimestamp must round to a 10-digit number");
-    }
-
-    const keyRotationSecret = CommonUtils.hexToArrayBuffer(
-      scopedKeyMetadata.keyRotationSecret
-    );
-    const salt = CommonUtils.hexToArrayBuffer(uid);
-    const context = new TextEncoder("utf8").encode(
-      "identity.mozilla.com/picl/v1/scoped_key\n" + scopedKeyMetadata.identifier
-    );
-
-    const inputKey = new Uint8Array(64);
-    inputKey.set(kBbytes, 0);
-    inputKey.set(keyRotationSecret, 32);
-
-    const derivedKeyMaterial = await CryptoUtils.hkdf(
-      inputKey,
-      salt,
-      context,
-      FINGERPRINT_LENGTH + KEY_LENGTH
-    );
-    const fingerprint = derivedKeyMaterial.slice(0, FINGERPRINT_LENGTH);
-    const key = derivedKeyMaterial.slice(
-      FINGERPRINT_LENGTH,
-      FINGERPRINT_LENGTH + KEY_LENGTH
-    );
-
-    return {
-      kid:
-        keyRotationTimestamp +
-        "-" +
-        ChromeUtils.base64URLEncode(fingerprint, {
-          pad: false,
-        }),
-      k: ChromeUtils.base64URLEncode(key, {
-        pad: false,
-      }),
-      kty: "oct",
-    };
+    throw new Error("Only legacy scoped keys are currently implemented");
   }
 
   

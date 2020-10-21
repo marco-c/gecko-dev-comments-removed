@@ -71,14 +71,6 @@ class FxAccountsTelemetry {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
 
   
   
@@ -89,42 +81,22 @@ class FxAccountsTelemetry {
   
   
   async getEcosystemAnonId() {
-    return this._fxai.withCurrentAccountState(async state => {
+    try {
       
-      
-      let {
-        ecosystemAnonId,
-        ecosystemUserId,
-      } = await state.getUserAccountData([
-        "ecosystemAnonId",
-        "ecosystemUserId",
-      ]);
-      
-      if (!ecosystemUserId) {
-        try {
-          
-          const profile = await this._fxai.profile.getProfile();
-          if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
-            ecosystemAnonId = profile.ecosystemAnonId;
-          }
-        } catch (err) {
-          log.error("Getting ecosystemAnonId from profile failed", err);
-        }
+      const profile = await this._fxai.profile.getProfile();
+      if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
+        return profile.ecosystemAnonId;
       }
-      
-      
-      
-      if (!ecosystemAnonId) {
-        
-        this.ensureEcosystemAnonId().catch(err => {
-          log.error(
-            "Failed ensuring we have an anon-id in the background ",
-            err
-          );
-        });
-      }
-      return ecosystemAnonId || null;
+    } catch (err) {
+      log.error("Getting ecosystemAnonId from profile failed", err);
+    }
+    
+    
+    
+    this.ensureEcosystemAnonId().catch(err => {
+      log.error("Failed ensuring we have an anon-id in the background ", err);
     });
+    return null;
   }
 
   
@@ -146,95 +118,66 @@ class FxAccountsTelemetry {
     return this._promiseEnsureEcosystemAnonId;
   }
 
-  async _ensureEcosystemAnonId() {
-    return this._fxai.withCurrentAccountState(async state => {
+  async _ensureEcosystemAnonId(generatePlaceholder = true) {
+    const telemetry = this;
+    return this._fxai.withCurrentAccountState(async function(state) {
       
       
-      let {
-        ecosystemAnonId,
-        ecosystemUserId,
-      } = await state.getUserAccountData([
-        "ecosystemAnonId",
-        "ecosystemUserId",
-      ]);
-      if (ecosystemUserId) {
-        if (!ecosystemAnonId) {
-          ecosystemAnonId = await this._generateAnonIdFromUserId(
-            ecosystemUserId
-          );
-          await state.updateUserAccountData({ ecosystemAnonId });
-        }
-      } else {
-        ecosystemAnonId = await this._ensureEcosystemAnonIdInProfile();
+      
+      
+      
+      
+      
+      
+      let options = generatePlaceholder
+        ? { staleOk: true }
+        : { forceFresh: true };
+      const profile = await telemetry._fxai.profile.ensureProfile(options);
+      if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
+        return profile.ecosystemAnonId;
       }
+      if (!generatePlaceholder) {
+        throw new Error("Profile data does not contain an 'ecosystemAnonId'");
+      }
+      
+      
+      let ecosystemUserId = CommonUtils.bufferToHex(
+        CryptoUtils.generateRandomBytes(32)
+      );
+      
+      const serverConfig = await FxAccountsConfig.fetchConfigDocument();
+      const ecosystemKeys = serverConfig.ecosystem_anon_id_keys;
+      if (!ecosystemKeys || !ecosystemKeys.length) {
+        throw new Error(
+          "Unable to fetch ecosystem_anon_id_keys from FxA server"
+        );
+      }
+      const randomKey = Math.floor(
+        Math.random() * Math.floor(ecosystemKeys.length)
+      );
+      const ecosystemAnonId = await jwcrypto.generateJWE(
+        ecosystemKeys[randomKey],
+        new TextEncoder().encode(ecosystemUserId)
+      );
+      
+      try {
+        await telemetry._fxai.profile.client.setEcosystemAnonId(
+          ecosystemAnonId
+        );
+      } catch (err) {
+        if (err && err.code && err.code === 412) {
+          
+          return telemetry._ensureEcosystemAnonId(false);
+        }
+        throw err;
+      }
+      
+      ecosystemUserId = state.ecosystemUserId;
+      await state.updateUserAccountData({
+        ecosystemUserId,
+      });
       return ecosystemAnonId;
     });
-  }
-
-  
-  
-  
-  
-  
-  
-  async _ensureEcosystemAnonIdInProfile(generatePlaceholder = true) {
-    
-    
-    
-    
-    
-    
-    
-    
-    let options = generatePlaceholder
-      ? { staleOk: true }
-      : { forceFresh: true };
-    const profile = await this._fxai.profile.ensureProfile(options);
-    if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
-      return profile.ecosystemAnonId;
-    }
-    if (!generatePlaceholder) {
-      throw new Error("Profile data does not contain an 'ecosystemAnonId'");
-    }
-    
-    
-    const ecosystemUserId = CommonUtils.bufferToHex(
-      CryptoUtils.generateRandomBytes(32)
-    );
-    const ecosystemAnonId = await this._generateAnonIdFromUserId(
-      ecosystemUserId
-    );
-    
-    try {
-      await this._fxai.profile.client.setEcosystemAnonId(ecosystemAnonId);
-    } catch (err) {
-      if (err && err.code && err.code === 412) {
-        
-        return this._ensureEcosystemAnonIdInProfile(false);
-      }
-      throw err;
-    }
-    return ecosystemAnonId;
-  }
-
-  
-  
-  
-  
-  
-  async _generateAnonIdFromUserId(ecosystemUserId) {
-    const serverConfig = await FxAccountsConfig.fetchConfigDocument();
-    const ecosystemKeys = serverConfig.ecosystem_anon_id_keys;
-    if (!ecosystemKeys || !ecosystemKeys.length) {
-      throw new Error("Unable to fetch ecosystem_anon_id_keys from FxA server");
-    }
-    const randomKey = Math.floor(
-      Math.random() * Math.floor(ecosystemKeys.length)
-    );
-    return jwcrypto.generateJWE(
-      ecosystemKeys[randomKey],
-      new TextEncoder().encode(ecosystemUserId)
-    );
   }
 
   
