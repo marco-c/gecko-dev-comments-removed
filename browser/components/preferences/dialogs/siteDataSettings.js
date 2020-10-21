@@ -140,11 +140,11 @@ let gSiteDataSettings = {
     setEventListener("usageCol", "click", this.onClickTreeCol);
     setEventListener("lastAccessedCol", "click", this.onClickTreeCol);
     setEventListener("cookiesCol", "click", this.onClickTreeCol);
-    setEventListener("cancel", "command", this.close);
-    setEventListener("save", "command", this.saveChanges);
     setEventListener("searchBox", "command", this.onCommandSearch);
     setEventListener("removeAll", "command", this.onClickRemoveAll);
     setEventListener("removeSelected", "command", this.removeSelected);
+
+    document.addEventListener("dialogaccept", e => this.saveChanges(e));
   },
 
   _updateButtonsState() {
@@ -254,47 +254,30 @@ let gSiteDataSettings = {
     this._updateButtonsState();
   },
 
-  async saveChanges() {
-    
-    let allowed = false;
-
+  async saveChanges(event) {
     let removals = this._sites
       .filter(site => site.userAction == "remove")
       .map(site => site.host);
 
     if (removals.length) {
-      if (this._sites.length == removals.length) {
-        allowed = SiteDataManager.promptSiteDataRemoval(window);
-        if (allowed) {
-          try {
-            await SiteDataManager.removeAll();
-          } catch (e) {
-            Cu.reportError(e);
-          }
-        }
-      } else {
-        allowed = SiteDataManager.promptSiteDataRemoval(window, removals);
-        if (allowed) {
-          try {
-            await SiteDataManager.remove(removals);
-          } catch (e) {
-            Cu.reportError(e);
-          }
-        }
+      let removeAll = removals.length == this._sites.length;
+      let promptArg = removeAll ? undefined : removals;
+      if (!SiteDataManager.promptSiteDataRemoval(window, promptArg)) {
+        
+        
+        event.preventDefault();
+        return;
       }
-    } else {
-      allowed = true;
+      try {
+        if (removeAll) {
+          await SiteDataManager.removeAll();
+        } else {
+          await SiteDataManager.remove(removals);
+        }
+      } catch (e) {
+        Cu.reportError(e);
+      }
     }
-
-    
-    
-    if (allowed) {
-      this.close();
-    }
-  },
-
-  close() {
-    window.close();
   },
 
   removeSelected() {
@@ -334,9 +317,7 @@ let gSiteDataSettings = {
   },
 
   onKeyPress(e) {
-    if (e.keyCode == KeyEvent.DOM_VK_ESCAPE) {
-      this.close();
-    } else if (
+    if (
       e.keyCode == KeyEvent.DOM_VK_DELETE ||
       (AppConstants.platform == "macosx" &&
         e.keyCode == KeyEvent.DOM_VK_BACK_SPACE)
