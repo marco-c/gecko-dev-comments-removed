@@ -3,6 +3,8 @@
 
 "use strict";
 
+const kPref = "browser.bookmarks.addedImportButton";
+
 
 
 
@@ -22,6 +24,7 @@ add_task(async function test_bookmark_import_button() {
   );
   await PlacesUIUtils.maybeAddImportButton();
   ok(document.getElementById("import-button"), "Button should be added.");
+  is(Services.prefs.getBoolPref(kPref), true, "Pref should be set.");
 
   CustomizableUI.reset();
 
@@ -36,9 +39,15 @@ add_task(async function test_bookmark_import_button() {
       })
     )
   );
-  registerCleanupFunction(async () =>
-    Promise.all(bookmarks.map(b => PlacesUtils.bookmarks.remove(b.guid)))
-  );
+
+  
+  
+  let removeAllBookmarks = () => {
+    let removals = bookmarks.map(b => PlacesUtils.bookmarks.remove(b.guid));
+    bookmarks = [];
+    return Promise.all(removals);
+  };
+  registerCleanupFunction(removeAllBookmarks);
 
   await PlacesUIUtils.maybeAddImportButton();
   ok(
@@ -48,4 +57,132 @@ add_task(async function test_bookmark_import_button() {
 
   
   CustomizableUI.reset();
+
+  await removeAllBookmarks();
+});
+
+
+
+
+add_task(async function test_bookmark_import_button_removal() {
+  let bookmarkCount = PlacesUtils.getChildCountForFolder(
+    PlacesUtils.bookmarks.toolbarGuid
+  );
+  Assert.less(bookmarkCount, 3, "we should start with less than 3 bookmarks");
+
+  ok(
+    !document.getElementById("import-button"),
+    "Shouldn't have button to start with."
+  );
+  await PlacesUIUtils.maybeAddImportButton();
+  ok(document.getElementById("import-button"), "Button should be added.");
+  is(Services.prefs.getBoolPref(kPref), true, "Pref should be set.");
+
+  PlacesUIUtils.removeImportButtonWhenImportSucceeds();
+
+  Services.obs.notifyObservers(
+    null,
+    "Migration:ItemAfterMigrate",
+    Ci.nsIBrowserProfileMigrator.BOOKMARKS
+  );
+
+  is(
+    Services.prefs.getBoolPref(kPref, false),
+    true,
+    "Pref should stay without import."
+  );
+  ok(document.getElementById("import-button"), "Button should still be there.");
+
+  
+  MigrationUtils._importQuantities.bookmarks = 5;
+  Services.obs.notifyObservers(
+    null,
+    "Migration:ItemAfterMigrate",
+    Ci.nsIBrowserProfileMigrator.BOOKMARKS
+  );
+
+  is(Services.prefs.prefHasUserValue(kPref), false, "Pref should be removed.");
+  ok(
+    !document.getElementById("import-button"),
+    "Button should have been removed."
+  );
+
+  
+  MigrationUtils._importQuantities.bookmarks = 0;
+});
+
+
+
+
+
+add_task(async function test_bookmark_import_button_removal_cleanup() {
+  let bookmarkCount = PlacesUtils.getChildCountForFolder(
+    PlacesUtils.bookmarks.toolbarGuid
+  );
+  Assert.less(bookmarkCount, 3, "we should start with less than 3 bookmarks");
+
+  ok(
+    !document.getElementById("import-button"),
+    "Shouldn't have button to start with."
+  );
+  await PlacesUIUtils.maybeAddImportButton();
+  ok(document.getElementById("import-button"), "Button should be added.");
+  is(Services.prefs.getBoolPref(kPref), true, "Pref should be set.");
+
+  
+  CustomizableUI.removeWidgetFromArea("import-button");
+
+  
+  PlacesUIUtils.removeImportButtonWhenImportSucceeds();
+
+  
+  is(Services.prefs.prefHasUserValue(kPref), false, "Pref should be removed.");
+});
+
+
+
+
+
+add_task(async function test_bookmark_import_button_errors() {
+  let bookmarkCount = PlacesUtils.getChildCountForFolder(
+    PlacesUtils.bookmarks.toolbarGuid
+  );
+  Assert.less(bookmarkCount, 3, "we should start with less than 3 bookmarks");
+
+  ok(
+    !document.getElementById("import-button"),
+    "Shouldn't have button to start with."
+  );
+  await PlacesUIUtils.maybeAddImportButton();
+  ok(document.getElementById("import-button"), "Button should be added.");
+  is(Services.prefs.getBoolPref(kPref), true, "Pref should be set.");
+
+  PlacesUIUtils.removeImportButtonWhenImportSucceeds();
+
+  Services.obs.notifyObservers(
+    null,
+    "Migration:ItemError",
+    Ci.nsIBrowserProfileMigrator.BOOKMARKS
+  );
+
+  is(
+    Services.prefs.getBoolPref(kPref, false),
+    true,
+    "Pref should stay when fatal error happens."
+  );
+  ok(document.getElementById("import-button"), "Button should still be there.");
+
+  
+  MigrationUtils._importQuantities.bookmarks = 5;
+  Services.obs.notifyObservers(
+    null,
+    "Migration:ItemError",
+    Ci.nsIBrowserProfileMigrator.BOOKMARKS
+  );
+
+  is(Services.prefs.prefHasUserValue(kPref), false, "Pref should be removed.");
+  ok(
+    !document.getElementById("import-button"),
+    "Button should have been removed."
+  );
 });

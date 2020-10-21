@@ -2426,7 +2426,6 @@ BrowserGlue.prototype = {
 
 
   _scheduleStartupIdleTasks() {
-    let isNewProfile = this._isNewProfile;
     const idleTasks = [
       
       
@@ -2639,9 +2638,9 @@ BrowserGlue.prototype = {
 
       
       {
-        task: () => {
+        task: async () => {
           if (
-            isNewProfile &&
+            this._isNewProfile &&
             Services.prefs.getBoolPref(
               "browser.toolbars.bookmarks.2h2020",
               false
@@ -2649,7 +2648,16 @@ BrowserGlue.prototype = {
             
             !Cu.isInAutomation
           ) {
-            PlacesUIUtils.maybeAddImportButton();
+            await PlacesUIUtils.maybeAddImportButton();
+          }
+
+          if (
+            Services.prefs.getBoolPref(
+              "browser.bookmarks.addedImportButton",
+              false
+            )
+          ) {
+            PlacesUIUtils.removeImportButtonWhenImportSucceeds();
           }
         },
       },
