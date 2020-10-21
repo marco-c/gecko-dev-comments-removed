@@ -31,7 +31,7 @@ describe("Filtering", () => {
   let numMessages;
   
   
-  const numUnfilterableMessages = 3;
+  const numUnfilterableMessages = 2;
 
   beforeEach(() => {
     store = prepareBaseStore();
@@ -62,7 +62,7 @@ describe("Filtering", () => {
       store.dispatch(actions.filterToggle(FILTERS.LOG));
 
       const messages = getVisibleMessages(store.getState());
-      expect(messages.length).toEqual(numUnfilterableMessages + 5);
+      expect(messages.length).toEqual(numUnfilterableMessages + 6);
     });
 
     it("filters debug messages", () => {
@@ -318,7 +318,6 @@ function prepareBaseStore() {
     
     "ReferenceError: asdf is not defined",
     "TypeError longString message",
-    "console.group('bar')",
     "console.debug('debug message');",
     "console.info('info message');",
     "console.error('error message');",
@@ -326,6 +325,8 @@ function prepareBaseStore() {
     "console.assert(false, {message: 'foobar'})",
     
     "GET request update",
+    "console.group('bar')",
+    "console.groupEnd()",
   ]);
 
   
