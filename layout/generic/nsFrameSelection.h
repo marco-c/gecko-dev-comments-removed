@@ -257,8 +257,7 @@ class nsFrameSelection final {
 
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HandleDrag(nsIFrame* aFrame,
-                                              const nsPoint& aPoint);
+  MOZ_CAN_RUN_SCRIPT void HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint);
 
   
 
@@ -714,10 +713,9 @@ class nsFrameSelection final {
 
   nsresult MaintainSelection(nsSelectionAmount aAmount = eSelectNoAmount);
 
-  nsresult ConstrainFrameAndPointToAnchorSubtree(nsIFrame* aFrame,
-                                                 const nsPoint& aPoint,
-                                                 nsIFrame** aRetFrame,
-                                                 nsPoint& aRetPoint) const;
+  MOZ_CAN_RUN_SCRIPT nsresult ConstrainFrameAndPointToAnchorSubtree(
+      nsIFrame* aFrame, const nsPoint& aPoint, nsIFrame** aRetFrame,
+      nsPoint& aRetPoint) const;
 
   
 

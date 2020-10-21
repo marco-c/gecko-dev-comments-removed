@@ -744,12 +744,13 @@ bool EditorEventListener::NotifyIMEOfMouseButtonEvent(
     return false;
   }
 
-  nsPresContext* presContext = GetPresContext();
+  RefPtr<nsPresContext> presContext = GetPresContext();
   if (NS_WARN_IF(!presContext)) {
     return false;
   }
+  nsCOMPtr<nsIContent> focusedRootContent = GetFocusedRootContent();
   return IMEStateManager::OnMouseButtonEventInEditor(
-      presContext, GetFocusedRootContent(), aMouseEvent);
+      presContext, focusedRootContent, aMouseEvent);
 }
 
 nsresult EditorEventListener::MouseDown(MouseEvent* aMouseEvent) {
@@ -1101,9 +1102,7 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
 
   
   SpellCheckIfNeeded();
-  if (!editorBase) {
-    
-    
+  if (DetachedFromEditor()) {
     return NS_OK;
   }
 
@@ -1160,7 +1159,7 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
     return NS_OK;
   }
 
-  nsPresContext* presContext = GetPresContext();
+  RefPtr<nsPresContext> presContext = GetPresContext();
   if (NS_WARN_IF(!presContext)) {
     return NS_OK;
   }

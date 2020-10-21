@@ -448,19 +448,18 @@ class TextComposition final {
 
 
 
-  void DispatchCompositionEvent(WidgetCompositionEvent* aCompositionEvent,
-                                nsEventStatus* aStatus,
-                                EventDispatchingCallback* aCallBack,
-                                bool aIsSynthesized);
+  MOZ_CAN_RUN_SCRIPT void DispatchCompositionEvent(
+      WidgetCompositionEvent* aCompositionEvent, nsEventStatus* aStatus,
+      EventDispatchingCallback* aCallBack, bool aIsSynthesized);
 
   
 
 
 
-  void DispatchEvent(WidgetCompositionEvent* aDispatchEvent,
-                     nsEventStatus* aStatus,
-                     EventDispatchingCallback* aCallback,
-                     const WidgetCompositionEvent* aOriginalEvent = nullptr);
+  MOZ_CAN_RUN_SCRIPT void DispatchEvent(
+      WidgetCompositionEvent* aDispatchEvent, nsEventStatus* aStatus,
+      EventDispatchingCallback* aCallback,
+      const WidgetCompositionEvent* aOriginalEvent = nullptr);
 
   
 
@@ -483,7 +482,7 @@ class TextComposition final {
 
 
 
-  bool MaybeDispatchCompositionUpdate(
+  MOZ_CAN_RUN_SCRIPT bool MaybeDispatchCompositionUpdate(
       const WidgetCompositionEvent* aCompositionEvent);
 
   
@@ -492,10 +491,10 @@ class TextComposition final {
 
 
 
-  BaseEventFlags CloneAndDispatchAs(
-      const WidgetCompositionEvent* aCompositionEvent, EventMessage aMessage,
-      nsEventStatus* aStatus = nullptr,
-      EventDispatchingCallback* aCallBack = nullptr);
+  MOZ_CAN_RUN_SCRIPT BaseEventFlags
+  CloneAndDispatchAs(const WidgetCompositionEvent* aCompositionEvent,
+                     EventMessage aMessage, nsEventStatus* aStatus = nullptr,
+                     EventDispatchingCallback* aCallBack = nullptr);
 
   
 
@@ -516,7 +515,7 @@ class TextComposition final {
 
 
 
-  void OnCompositionEventDispatched(
+  MOZ_CAN_RUN_SCRIPT void OnCompositionEventDispatched(
       const WidgetCompositionEvent* aDispatchEvent);
 
   
@@ -532,7 +531,7 @@ class TextComposition final {
 
 
 
-  uint32_t GetSelectionStartOffset();
+  MOZ_CAN_RUN_SCRIPT uint32_t GetSelectionStartOffset();
 
   
 
@@ -554,7 +553,7 @@ class TextComposition final {
                                EventMessage aEventMessage,
                                const nsAString& aData,
                                bool aIsSynthesizedEvent = false);
-    NS_IMETHOD Run() override;
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override;
 
    private:
     RefPtr<TextComposition> mTextComposition;

@@ -164,15 +164,19 @@ class IMEStateManager {
   
   
   
-  static void UpdateIMEState(const IMEState& aNewIMEState, nsIContent* aContent,
-                             EditorBase* aEditorBase);
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void UpdateIMEState(
+      const IMEState& aNewIMEState, nsIContent* aContent,
+      EditorBase* aEditorBase);
 
   
   
   
-  static bool OnMouseButtonEventInEditor(nsPresContext* aPresContext,
-                                         nsIContent* aContent,
-                                         WidgetMouseEvent* aMouseEvent);
+  MOZ_CAN_RUN_SCRIPT static bool OnMouseButtonEventInEditor(
+      nsPresContext* aPresContext, nsIContent* aContent,
+      WidgetMouseEvent* aMouseEvent);
 
   
   
@@ -203,7 +207,7 @@ class IMEStateManager {
 
 
 
-  static void DispatchCompositionEvent(
+  MOZ_CAN_RUN_SCRIPT static void DispatchCompositionEvent(
       nsINode* aEventTargetNode, nsPresContext* aPresContext,
       BrowserParent* aBrowserParent, WidgetCompositionEvent* aCompositionEvent,
       nsEventStatus* aStatus, EventDispatchingCallback* aCallBack,
@@ -282,7 +286,13 @@ class IMEStateManager {
                                  nsIContent* aContent);
 
   static void EnsureTextCompositionArray();
-  static void CreateIMEContentObserver(EditorBase* aEditorBase);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void CreateIMEContentObserver(
+      EditorBase* aEditorBase);
+
   static void DestroyIMEContentObserver();
 
   static bool IsEditable(nsINode* node);

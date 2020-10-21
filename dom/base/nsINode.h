@@ -1446,7 +1446,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsIContent* GetSelectionRootContent(
+  MOZ_CAN_RUN_SCRIPT nsIContent* GetSelectionRootContent(
       mozilla::PresShell* aPresShell);
 
   nsINodeList* ChildNodes();

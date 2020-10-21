@@ -102,32 +102,40 @@ class MOZ_STACK_CLASS ContentEventHandler {
   explicit ContentEventHandler(nsPresContext* aPresContext);
 
   
-  nsresult HandleQueryContentEvent(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  HandleQueryContentEvent(WidgetQueryContentEvent* aEvent);
 
   
-  nsresult OnQuerySelectedText(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQuerySelectedText(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryTextContent(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQueryTextContent(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryCaretRect(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult OnQueryCaretRect(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryTextRect(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult OnQueryTextRect(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryTextRectArray(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQueryTextRectArray(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryEditorRect(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQueryEditorRect(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryContentState(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQueryContentState(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQuerySelectionAsTransferable(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQuerySelectionAsTransferable(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryCharacterAtPoint(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQueryCharacterAtPoint(WidgetQueryContentEvent* aEvent);
   
-  nsresult OnQueryDOMWidgetHittest(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQueryDOMWidgetHittest(WidgetQueryContentEvent* aEvent);
 
   
-  MOZ_CAN_RUN_SCRIPT
-  nsresult OnSelectionEvent(WidgetSelectionEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult OnSelectionEvent(WidgetSelectionEvent* aEvent);
 
  protected:
   RefPtr<dom::Document> mDocument;
@@ -140,19 +148,20 @@ class MOZ_STACK_CLASS ContentEventHandler {
   RawRange mFirstSelectedRawRange;
   nsCOMPtr<nsIContent> mRootContent;
 
-  nsresult Init(WidgetQueryContentEvent* aEvent);
-  nsresult Init(WidgetSelectionEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult Init(WidgetQueryContentEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult Init(WidgetSelectionEvent* aEvent);
 
   nsresult InitBasic(bool aRequireFlush = true);
-  nsresult InitCommon(SelectionType aSelectionType = SelectionType::eNormal,
-                      bool aRequireFlush = true);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  InitCommon(SelectionType aSelectionType = SelectionType::eNormal,
+             bool aRequireFlush = true);
   
 
 
 
 
 
-  nsresult InitRootContent(Selection* aNormalSelection);
+  MOZ_CAN_RUN_SCRIPT nsresult InitRootContent(Selection* aNormalSelection);
 
  public:
   
