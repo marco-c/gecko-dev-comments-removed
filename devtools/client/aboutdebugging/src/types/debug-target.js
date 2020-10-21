@@ -27,8 +27,6 @@ const extensionTargetDetails = {
 const processTargetDetails = {
   
   description: PropTypes.string.isRequired,
-  
-  processId: PropTypes.number.isRequired,
 };
 
 const tabTargetDetails = {
