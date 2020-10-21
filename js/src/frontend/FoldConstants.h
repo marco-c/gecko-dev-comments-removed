@@ -34,12 +34,12 @@ class PerHandlerParser;
 
 
 extern MOZ_MUST_USE bool FoldConstants(JSContext* cx,
-                                       ParserAtomsTable& parserAtoms,
+                                       CompilationInfo& compilationInfo,
                                        ParseNode** pnp,
                                        FullParseHandler* handler);
 
 inline MOZ_MUST_USE bool FoldConstants(JSContext* cx,
-                                       ParserAtomsTable& parserAtoms,
+                                       CompilationInfo& compilationInfo,
                                        typename SyntaxParseHandler::Node* pnp,
                                        SyntaxParseHandler* handler) {
   return true;

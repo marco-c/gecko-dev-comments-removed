@@ -58,7 +58,6 @@ class RegExpObject;
 namespace frontend {
 
 class ParseContext;
-class ParserAtomsTable;
 struct CompilationStencil;
 class ParserSharedBase;
 class FullParseHandler;
@@ -1573,7 +1572,8 @@ class NumericLiteral : public ParseNode {
   void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
 
   
-  const ParserAtom* toAtom(JSContext* cx, ParserAtomsTable& parserAtoms) const;
+  const ParserAtom* toAtom(JSContext* cx,
+                           CompilationInfo& compilationInfo) const;
 };
 
 class BigIntLiteral : public ParseNode {
