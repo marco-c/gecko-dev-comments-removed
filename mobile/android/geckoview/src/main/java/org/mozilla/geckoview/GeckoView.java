@@ -62,6 +62,8 @@ public class GeckoView extends FrameLayout {
     private static final boolean DEBUG = false;
 
     protected final @NonNull Display mDisplay = new Display();
+
+    private Integer mLastCoverColor;
     protected @Nullable GeckoSession mSession;
     private boolean mStateSaved;
 
@@ -239,8 +241,19 @@ public class GeckoView extends FrameLayout {
 
 
 
-
     public void coverUntilFirstPaint(final int color) {
+        mLastCoverColor = color;
+        if (mSession != null) {
+            mSession.getCompositorController().setClearColor(color);
+        }
+        coverUntilFirstPaintInternal(color);
+    }
+
+    private void uncover() {
+        coverUntilFirstPaintInternal(Color.TRANSPARENT);
+    }
+
+    private void coverUntilFirstPaintInternal(final int color) {
         ThreadUtils.assertOnUiThread();
 
         if (mSurfaceWrapper != null) {
@@ -335,6 +348,25 @@ public class GeckoView extends FrameLayout {
     }
 
     
+    
+    final static int DEFAULT_DARK_COLOR = 0xFF2A2A2E;
+
+    private int defaultColor() {
+        
+        if (mLastCoverColor != null) {
+            return mLastCoverColor;
+        }
+
+        if (mSession == null || !mSession.isOpen()) {
+            return Color.WHITE;
+        }
+
+        
+        return mSession.getRuntime().usesDarkTheme() ?
+                DEFAULT_DARK_COLOR : Color.WHITE;
+    }
+
+    
 
 
 
@@ -351,9 +383,6 @@ public class GeckoView extends FrameLayout {
         if (mSession == null) {
             return null;
         }
-
-        
-        coverUntilFirstPaint(Color.WHITE);
 
         GeckoSession session = mSession;
         mSession.releaseDisplay(mDisplay.release());
@@ -403,6 +432,10 @@ public class GeckoView extends FrameLayout {
 
         mSession = session;
 
+        
+        mSession.getCompositorController()
+                .setClearColor(defaultColor());
+
         if (ViewCompat.isAttachedToWindow(this)) {
             mDisplay.acquire(session.acquireDisplay());
         }
@@ -429,12 +462,7 @@ public class GeckoView extends FrameLayout {
             session.getPanZoomController().setScrollFactor(0.075f * metrics.densityDpi);
         }
 
-        session.getCompositorController().setFirstPaintCallback(new Runnable() {
-            @Override
-            public void run() {
-                coverUntilFirstPaint(Color.TRANSPARENT);
-            }
-        });
+        session.getCompositorController().setFirstPaintCallback(this::uncover);
 
         if (session.getTextInput().getView() == null) {
             session.getTextInput().setView(this);
