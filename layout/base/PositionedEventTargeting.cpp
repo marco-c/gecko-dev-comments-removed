@@ -463,6 +463,21 @@ static nsIFrame* GetClosest(RelativeTo aRoot,
   return bestTarget;
 }
 
+
+
+static const nsIFrame* FindZIndexAncestor(const nsIFrame* aTarget,
+                                          const nsIFrame* aRoot) {
+  const nsIFrame* candidate = aTarget;
+  while (candidate && candidate != aRoot) {
+    if (candidate->ZIndex().valueOr(0) > 0) {
+      PET_LOG("Restricting search to z-index root %p\n", candidate);
+      return candidate;
+    }
+    candidate = candidate->GetParent();
+  }
+  return aRoot;
+}
+
 nsIFrame* FindFrameTargetedByInputEvent(
     WidgetGUIEvent* aEvent, RelativeTo aRootFrame,
     const nsPoint& aPointRelativeToRootFrame, uint32_t aFlags) {
@@ -506,6 +521,12 @@ nsIFrame* FindFrameTargetedByInputEvent(
     }
     return aRootFrame.mFrame;
   }();
+
+  
+  
+  
+  
+  restrictToDescendants = FindZIndexAncestor(target, restrictToDescendants);
 
   nsRect targetRect = GetTargetRect(aRootFrame, aPointRelativeToRootFrame,
                                     restrictToDescendants, prefs, aFlags);
@@ -555,7 +576,11 @@ nsIFrame* FindFrameTargetedByInputEvent(
   
   
   if (MOZ_LOG_TEST(sEvtTgtLog, LogLevel::Verbose)) {
-    aRootFrame.mFrame->DumpFrameTree();
+    if (target) {
+      target->DumpFrameTree();
+    } else {
+      aRootFrame.mFrame->DumpFrameTree();
+    }
   }
 #endif
 
