@@ -26,13 +26,13 @@ add_task(async function() {
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     await content.wrappedJSObject.openConnection(0);
     content.wrappedJSObject.sendData(
-      `SEND\nx-firefox-test:true\ncontent-length:17\n\n[{"key":"value"}]\u0000\n`
+      `a[\"SEND\\nx-firefox-test:true\\ncontent-length:17\\n\\n[{\\\"key\\\":\\\"value\\\"}]\\u0000\"]`
     );
   });
   await onNetworkEvents;
 
   const requests = document.querySelectorAll(".request-list-item");
-  is(requests.length, 1, "There should be one request");
+  is(requests.length, 1, "There should be one requests");
 
   
   const wait = waitForDOM(
@@ -62,15 +62,15 @@ add_task(async function() {
   
   await waitForTick();
   const waitForData = waitForDOM(document, "#message-formattedData");
-  const [requestFrame] = frames;
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requestFrame);
+  const [, responseFrame] = frames;
+  EventUtils.sendMouseEvent({ type: "mousedown" }, responseFrame);
 
   await waitForData;
 
   is(
     document.querySelector("#message-formattedData-header").innerText,
-    "STOMP",
-    "The STOMP payload panel should be displayed"
+    "SockJS",
+    "The SockJS payload panel should be displayed"
   );
 
   ok(
@@ -79,15 +79,15 @@ add_task(async function() {
   );
 
   ok(
-    document.getElementById("/command"),
+    document.getElementById("/0/command"),
     "The message 'command' should be displayed"
   );
   ok(
-    document.getElementById("/headers"),
+    document.getElementById("/0/headers"),
     "The message 'headers' should be displayed"
   );
   ok(
-    document.getElementById("/body"),
+    document.getElementById("/0/body"),
     "The message 'body' should be displayed"
   );
 
