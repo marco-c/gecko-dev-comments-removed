@@ -219,6 +219,9 @@ def package(manifest, pkg, target):
         
         
         info = manifest['pkg'][pkg]['target']['*']
+    if 'xz_url' in info:
+        info['url'] = info.pop('xz_url')
+        info['hash'] = info.pop('xz_hash')
     return (version, info)
 
 
