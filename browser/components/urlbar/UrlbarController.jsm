@@ -802,6 +802,8 @@ class TelemetryEvent {
 
 
 
+
+
   record(event, details) {
     
     try {
@@ -880,6 +882,7 @@ class TelemetryEvent {
     if (method == "engagement") {
       extra.selIndex = details.selIndex.toString();
       extra.selType = details.selType;
+      extra.provider = details.provider || "";
     }
 
     
