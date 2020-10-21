@@ -8,7 +8,6 @@
 
 #include <utility>
 
-#include "LayersLogging.h"               
 #include "composite/CompositableHost.h"  
 #include "ipc/IPCMessageUtils.h"         
 #include "mozilla/layers/Compositor.h"   

@@ -34,7 +34,6 @@
 #include "base/message_loop.h"          
 #include "base/task.h"                  
 #include "gfxTypes.h"                   
-#include "LayersLogging.h"              
 #include "mozilla/Assertions.h"         
 #include "mozilla/BasicEvents.h"        
 #include "mozilla/ClearOnShutdown.h"    

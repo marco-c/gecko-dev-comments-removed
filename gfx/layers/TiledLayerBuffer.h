@@ -15,7 +15,6 @@
 #include <stdint.h>     
 #include <sys/types.h>  
 #include <type_traits>
-#include "LayersLogging.h"  
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"         
 #include "mozilla/layers/LayersTypes.h"  

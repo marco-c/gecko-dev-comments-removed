@@ -5,7 +5,6 @@
 
 
 #include "mozilla/layers/ContentHost.h"
-#include "LayersLogging.h"                  
 #include "gfx2DGlue.h"                      
 #include "mozilla/gfx/Point.h"              
 #include "mozilla/Assertions.h"             

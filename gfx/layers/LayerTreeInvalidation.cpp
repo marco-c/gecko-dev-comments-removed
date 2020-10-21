@@ -27,7 +27,6 @@
 #include "mozilla/layers/ImageHost.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "TreeTraversal.h"  
-#include "LayersLogging.h"
 
 
 #define LTI_DEBUG 0

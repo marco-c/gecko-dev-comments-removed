@@ -11,7 +11,6 @@
 #include "ImageContainer.h"    
 #include "ImageLayers.h"       
 #include "LayerSorter.h"       
-#include "LayersLogging.h"     
 #include "LayerUserData.h"
 #include "ReadbackLayer.h"   
 #include "UnitTransforms.h"  

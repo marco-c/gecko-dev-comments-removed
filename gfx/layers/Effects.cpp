@@ -5,7 +5,6 @@
 
 
 #include "Effects.h"
-#include "LayersLogging.h"  
 #include "nsAString.h"
 #include "nsPrintfCString.h"  
 #include "nsString.h"         

@@ -27,7 +27,6 @@
 #include "nsISupportsImpl.h"      
 #include "nsExpirationTracker.h"  
 #include "nsMathUtils.h"          
-#include "LayersLogging.h"
 #include "UnitTransforms.h"  
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_layers.h"

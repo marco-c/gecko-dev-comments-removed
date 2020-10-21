@@ -49,7 +49,6 @@
 #include "nsThreadUtils.h"           
 #include "OverscrollHandoffState.h"  
 #include "TreeTraversal.h"           
-#include "LayersLogging.h"           
 #include "Units.h"                   
 #include "GestureEventListener.h"  
 #include "UnitTransforms.h"        

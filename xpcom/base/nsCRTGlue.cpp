@@ -291,3 +291,26 @@ void fprintf_stderr(FILE* aFile, const char* aFmt, ...) {
   }
   va_end(args);
 }
+
+void print_stderr(std::stringstream& aStr) {
+#if defined(ANDROID)
+  
+  
+  
+  
+  std::string line;
+  while (std::getline(aStr, line)) {
+    printf_stderr("%s\n", line.c_str());
+  }
+#else
+  printf_stderr("%s", aStr.str().c_str());
+#endif
+}
+
+void fprint_stderr(FILE* aFile, std::stringstream& aStr) {
+  if (aFile == stderr) {
+    print_stderr(aStr);
+  } else {
+    fprintf_stderr(aFile, "%s", aStr.str().c_str());
+  }
+}
