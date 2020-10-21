@@ -28,8 +28,8 @@ const Targets = require("devtools/server/actors/targets/index");
 
 loader.lazyRequireGetter(
   this,
-  "WorkerDescriptorActorList",
-  "devtools/server/actors/worker/worker-descriptor-actor-list",
+  "WorkerTargetActorList",
+  "devtools/server/actors/worker/worker-target-actor-list",
   true
 );
 loader.lazyRequireGetter(
@@ -72,7 +72,7 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     this._consoleScope = sandbox;
 
     this._workerList = null;
-    this._workerDescriptorActorPool = null;
+    this._workerTargetActorPool = null;
     this._onWorkerListChanged = this._onWorkerListChanged.bind(this);
 
     
@@ -155,7 +155,7 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
 
   ensureWorkerList() {
     if (!this._workerList) {
-      this._workerList = new WorkerDescriptorActorList(this.conn, {});
+      this._workerList = new WorkerTargetActorList(this.conn, {});
     }
     return this._workerList;
   },
@@ -171,11 +171,11 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
 
         
         
-        if (this._workerDescriptorActorPool) {
-          this._workerDescriptorActorPool.destroy();
+        if (this._workerTargetActorPool) {
+          this._workerTargetActorPool.destroy();
         }
 
-        this._workerDescriptorActorPool = pool;
+        this._workerTargetActorPool = pool;
         this._workerList.onListChanged = this._onWorkerListChanged;
 
         return {

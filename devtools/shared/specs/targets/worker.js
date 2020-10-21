@@ -3,15 +3,40 @@
 
 "use strict";
 
-const { generateActorSpec } = require("devtools/shared/protocol");
-
-
-
+const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
 const workerTargetSpec = generateActorSpec({
   typeName: "workerTarget",
-  methods: {},
-  events: {},
+
+  methods: {
+    attach: {
+      request: {},
+      response: RetVal("json"),
+    },
+    detach: {
+      request: {},
+      response: RetVal("json"),
+    },
+    connect: {
+      request: {
+        options: Arg(0, "json"),
+      },
+      response: RetVal("json"),
+    },
+    push: {
+      request: {},
+      response: RetVal("json"),
+    },
+  },
+
+  events: {
+    
+    
+    
+    "worker-close": {
+      type: "close",
+    },
+  },
 });
 
 exports.workerTargetSpec = workerTargetSpec;

@@ -218,8 +218,8 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     if (this._addonTargetActorPool) {
       this._addonTargetActorPool.destroy();
     }
-    if (this._workerDescriptorActorPool) {
-      this._workerDescriptorActorPool.destroy();
+    if (this._workerTargetActorPool) {
+      this._workerTargetActorPool.destroy();
     }
     if (this._frameDescriptorActorPool) {
       this._frameDescriptorActorPool.destroy();
@@ -426,11 +426,11 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
       
       
-      if (this._workerDescriptorActorPool) {
-        this._workerDescriptorActorPool.destroy();
+      if (this._workerTargetActorPool) {
+        this._workerTargetActorPool.destroy();
       }
 
-      this._workerDescriptorActorPool = pool;
+      this._workerTargetActorPool = pool;
 
       return {
         workers: actors,

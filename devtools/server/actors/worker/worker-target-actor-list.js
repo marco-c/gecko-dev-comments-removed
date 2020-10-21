@@ -8,8 +8,8 @@ const { Ci } = require("chrome");
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 loader.lazyRequireGetter(
   this,
-  "WorkerDescriptorActor",
-  "devtools/server/actors/descriptors/worker",
+  "WorkerTargetActor",
+  "devtools/server/actors/targets/worker",
   true
 );
 
@@ -99,7 +99,7 @@ WorkerPauser.prototype = {
   },
 };
 
-function WorkerDescriptorActorList(conn, options) {
+function WorkerTargetActorList(conn, options) {
   this._conn = conn;
   this._options = options;
   this._actors = new Map();
@@ -110,7 +110,7 @@ function WorkerDescriptorActorList(conn, options) {
   this.onUnregister = this.onUnregister.bind(this);
 }
 
-WorkerDescriptorActorList.prototype = {
+WorkerTargetActorList.prototype = {
   destroy() {
     this.onListChanged = null;
     if (this._workerPauser) {
@@ -138,7 +138,7 @@ WorkerDescriptorActorList.prototype = {
     
     for (const dbg of dbgs) {
       if (!this._actors.has(dbg)) {
-        this._actors.set(dbg, new WorkerDescriptorActor(this._conn, dbg));
+        this._actors.set(dbg, new WorkerTargetActor(this._conn, dbg));
       }
     }
 
@@ -209,4 +209,4 @@ WorkerDescriptorActorList.prototype = {
   },
 };
 
-exports.WorkerDescriptorActorList = WorkerDescriptorActorList;
+exports.WorkerTargetActorList = WorkerTargetActorList;

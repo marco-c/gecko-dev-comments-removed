@@ -38,7 +38,7 @@ function connectToWorker(connection, dbg, id, options) {
         onMessage: message => {
           message = JSON.parse(message);
           if (message.type !== "rpc") {
-            if (message.type == "worker-thread-attached") {
+            if (message.type == "attached") {
               
               
               dbg.setDebuggerReady(true);
@@ -164,7 +164,8 @@ function connectToWorker(connection, dbg, id, options) {
         connection.setForwarding(id, transport);
 
         resolve({
-          workerTargetForm: message.workerTargetForm,
+          threadActor: message.threadActor,
+          consoleActor: message.consoleActor,
           transport: transport,
         });
       },

@@ -4,17 +4,15 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const {
-  workerDescriptorSpec,
-} = require("devtools/shared/specs/descriptors/worker");
+const { workerTargetSpec } = require("devtools/shared/specs/targets/worker");
 const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
 const { TargetMixin } = require("devtools/client/fronts/targets/target-mixin");
 
-class WorkerDescriptorFront extends TargetMixin(
-  FrontClassWithSpec(workerDescriptorSpec)
+class WorkerTargetFront extends TargetMixin(
+  FrontClassWithSpec(workerTargetSpec)
 ) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
@@ -62,11 +60,6 @@ class WorkerDescriptorFront extends TargetMixin(
   }
 
   async attach() {
-    
-    return this.getTarget();
-  }
-
-  async getTarget() {
     if (this._attach) {
       return this._attach;
     }
@@ -92,15 +85,8 @@ class WorkerDescriptorFront extends TargetMixin(
       }
 
       
-      let connectResponse;
-      if (this.actorID.includes("workerDescriptor")) {
-        connectResponse = await super.getTarget();
-      } else {
-        
-        
-        connectResponse = await this.connect({});
-      }
-
+      
+      const connectResponse = await this.connect({});
       
       
       this.targetForm.consoleActor = connectResponse.consoleActor;
@@ -149,5 +135,5 @@ class WorkerDescriptorFront extends TargetMixin(
   }
 }
 
-exports.WorkerDescriptorFront = WorkerDescriptorFront;
-registerFront(exports.WorkerDescriptorFront);
+exports.WorkerTargetFront = WorkerTargetFront;
+registerFront(exports.WorkerTargetFront);
