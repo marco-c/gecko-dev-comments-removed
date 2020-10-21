@@ -205,6 +205,10 @@ class Http3Session final : public nsAHttpTransaction,
   uint64_t mBlockedByStreamLimitCount = 0;
   uint64_t mTransactionsBlockedByStreamLimitCount = 0;
   uint64_t mTransactionsSenderBlockedByFlowControlCount = 0;
+
+  
+  
+  RefPtr<nsHttpTransaction> mFirstHttpTransaction;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Http3Session, NS_HTTP3SESSION_IID);

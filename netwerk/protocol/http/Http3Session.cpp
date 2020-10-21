@@ -473,6 +473,10 @@ nsresult Http3Session::ProcessEvents(uint32_t count) {
           }
         }
 
+        OnTransportStatus(mSocketTransport, NS_NET_STATUS_CONNECTED_TO, 0);
+        
+        OnTransportStatus(mSocketTransport, NS_NET_STATUS_TLS_HANDSHAKE_ENDED, 0);
+
         ReportHttp3Connection();
       } break;
       case Http3Event::Tag::GoawayReceived:
@@ -676,6 +680,14 @@ bool Http3Session::AddStream(nsAHttpTransaction* aHttpTransaction,
       m0RTTStreams.AppendElement(stream);
     }
   }
+
+  if (!mFirstHttpTransaction && !IsConnected()) {
+    mFirstHttpTransaction = aHttpTransaction->QueryHttpTransaction();
+    LOG3(("Http3Session::AddStream first session=%p trans=%p ", this,
+          mFirstHttpTransaction.get()));
+
+  }
+
   StreamReadyToWrite(stream);
 
   return true;
@@ -867,6 +879,68 @@ void Http3Session::GetSecurityCallbacks(nsIInterfaceRequestor** aOut) {
 void Http3Session::OnTransportStatus(nsITransport* aTransport, nsresult aStatus,
                                      int64_t aProgress) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  if ((aStatus == NS_NET_STATUS_CONNECTED_TO) && !IsConnected()) {
+    
+    
+    
+    aStatus = NS_NET_STATUS_TLS_HANDSHAKE_STARTING;
+  }
+
+  switch (aStatus) {
+      
+      
+    case NS_NET_STATUS_RESOLVING_HOST:
+    case NS_NET_STATUS_RESOLVED_HOST:
+    case NS_NET_STATUS_CONNECTING_TO:
+    case NS_NET_STATUS_CONNECTED_TO:
+    case NS_NET_STATUS_TLS_HANDSHAKE_STARTING:
+    case NS_NET_STATUS_TLS_HANDSHAKE_ENDED: {
+      if (!mFirstHttpTransaction) {
+        
+        
+        
+        if (mConnection) {
+          RefPtr<HttpConnectionBase> conn = mConnection->HttpConnection();
+          conn->SetEvent(aStatus);
+        }
+      } else {
+        mFirstHttpTransaction->OnTransportStatus(aTransport, aStatus,
+                                                 aProgress);
+      }
+
+      if (aStatus == NS_NET_STATUS_CONNECTED_TO) {
+        mFirstHttpTransaction = nullptr;
+      }
+      break;
+    }
+
+    default:
+      
+      
+      
+      
+
+      
+      
+      
+      
+      
+      
+      
+
+      
+      
+      
+      
+      
+      
+
+      
+      
+
+      break;
+  }
 }
 
 bool Http3Session::IsDone() { return mState == CLOSED; }
