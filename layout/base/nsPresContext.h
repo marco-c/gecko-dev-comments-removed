@@ -283,6 +283,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void ContentLanguageChanged();
 
+  enum class RecurseIntoInProcessSubDocuments : bool { No, Yes };
+
   
 
 
@@ -296,7 +298,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
   void MediaFeatureValuesChangedAllDocuments(
-      const mozilla::MediaFeatureChange&);
+      const mozilla::MediaFeatureChange&,
+      RecurseIntoInProcessSubDocuments = RecurseIntoInProcessSubDocuments::Yes);
 
   
 
