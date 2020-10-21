@@ -503,7 +503,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
     }
   } else {
     
-    
     [mWindow setOpaque:YES];
   }
 
@@ -1078,14 +1077,15 @@ nsTransparencyMode nsCocoaWindow::GetTransparencyMode() {
 }
 
 
-
 void nsCocoaWindow::SetTransparencyMode(nsTransparencyMode aMode) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (!mWindow) return;
-
   
-  BOOL isTransparent = aMode == eTransparencyTransparent && mWindowType == eWindowType_popup;
+  if (!mWindow || mWindowType != eWindowType_popup) {
+    return;
+  }
+
+  BOOL isTransparent = aMode == eTransparencyTransparent;
   BOOL currentTransparency = ![mWindow isOpaque];
   if (isTransparent != currentTransparency) {
     [mWindow setOpaque:!isTransparent];
