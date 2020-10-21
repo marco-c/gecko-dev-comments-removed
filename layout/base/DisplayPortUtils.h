@@ -101,9 +101,8 @@ class DisplayPortUtils {
 
 
 
-  static bool GetDisplayPortForVisibilityTesting(
-      nsIContent* aContent, nsRect* aResult,
-      DisplayportRelativeTo aRelativeTo = DisplayportRelativeTo::ScrollPort);
+  static bool GetDisplayPortForVisibilityTesting(nsIContent* aContent,
+                                                 nsRect* aResult);
 
   enum class RepaintMode : uint8_t { Repaint, DoNotRepaint };
 

@@ -486,10 +486,8 @@ void DisplayPortUtils::MarkDisplayPortAsPainted(nsIContent* aContent) {
 }
 
 
-bool DisplayPortUtils::GetDisplayPortForVisibilityTesting(
-    nsIContent* aContent, nsRect* aResult,
-    DisplayportRelativeTo
-        aRelativeTo ) {
+bool DisplayPortUtils::GetDisplayPortForVisibilityTesting(nsIContent* aContent,
+                                                          nsRect* aResult) {
   MOZ_ASSERT(aResult);
   
   
@@ -498,7 +496,7 @@ bool DisplayPortUtils::GetDisplayPortForVisibilityTesting(
   
   bool usingDisplayPort = GetDisplayPortImpl(aContent, aResult, 1.0f,
                                              MaxSizeExceededBehaviour::Drop);
-  if (usingDisplayPort && aRelativeTo == DisplayportRelativeTo::ScrollFrame) {
+  if (usingDisplayPort) {
     TranslateFromScrollPortToScrollFrame(aContent, aResult);
   }
   return usingDisplayPort;
