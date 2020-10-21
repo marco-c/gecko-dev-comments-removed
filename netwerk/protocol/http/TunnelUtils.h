@@ -271,7 +271,6 @@ class SpdyConnectTransaction final : public NullHttpTransaction {
 
   bool mForcePlainText;
   TimeStamp mTimestampSyn;
-  RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   
   
