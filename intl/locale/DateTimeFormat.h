@@ -22,9 +22,7 @@ enum nsDateFormatSelector : long {
   kDateFormatLong,       
   kDateFormatShort,      
   kDateFormatYearMonth,  
-  kDateFormatWeekday,    
   kDateFormatYearMonthLong,  
-  kDateFormatMonthLong       
 };
 
 enum nsTimeFormatSelector : long {
