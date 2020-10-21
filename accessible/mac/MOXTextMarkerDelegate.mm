@@ -100,23 +100,6 @@ static nsDataHashtable<nsUint64HashKey, MOXTextMarkerDelegate*> sDelegates;
 }
 
 - (NSString*)moxStringForTextMarkerRange:(id)textMarkerRange {
-  if (mGeckoDocAccessible.IsAccessible()) {
-    if (!mGeckoDocAccessible.AsAccessible()->AsDoc()->HasLoadState(
-            DocAccessible::eTreeConstructed)) {
-      
-      
-      return @"";
-    }
-  } else {
-    if (mGeckoDocAccessible.AsProxy()->State() & states::STALE) {
-      
-      
-      
-      
-      return @"";
-    }
-  }
-
   mozilla::a11y::GeckoTextMarkerRange range(mGeckoDocAccessible,
                                             textMarkerRange);
   if (!range.IsValid()) {
