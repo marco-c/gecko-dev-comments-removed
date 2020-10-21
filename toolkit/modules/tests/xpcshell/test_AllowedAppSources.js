@@ -38,6 +38,13 @@ var gErrorDetectingAppSourcesFeature = false;
 function setup() {
   
   
+  Services.prefs.setBoolPref(
+    "toolkit.telemetry.testing.overrideProductsCheck",
+    true
+  );
+
+  
+  
   OsEnvironment.Policy.getAllowedAppSources = () => {
     if (gErrorReadingRegistryValue) {
       throw new Error("Arbitrary Testing Error");
