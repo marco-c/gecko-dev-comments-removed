@@ -97,25 +97,6 @@
 
 namespace js {
 
-
-
-
-
-
-
-template <typename T>
-static T ConvertScalar(double d) {
-  if (TypeIsFloatingPoint<T>()) {
-    return T(d);
-  }
-  if (TypeIsUnsigned<T>()) {
-    uint32_t n = JS::ToUint32(d);
-    return T(n);
-  }
-  int32_t n = JS::ToInt32(d);
-  return T(n);
-}
-
 namespace type {
 
 enum Kind {
@@ -129,11 +110,6 @@ enum Kind {
 
 
 
-
-class SimpleTypeDescr;
-class ComplexTypeDescr;
-class StructTypeDescr;
-class TypedProto;
 
 
 
@@ -203,6 +179,9 @@ class TypeDescr : public NativeObject {
 using HandleTypeDescr = Handle<TypeDescr*>;
 
 class SimpleTypeDescr : public TypeDescr {};
+
+
+class ComplexTypeDescr : public TypeDescr {};
 
 
 
@@ -332,18 +311,6 @@ class ReferenceTypeDescr : public SimpleTypeDescr {
   MACRO_(ReferenceType::TYPE_OBJECT, GCPtrObject, Object)          \
   MACRO_(ReferenceType::TYPE_STRING, GCPtrString, string)
 
-
-
-class ComplexTypeDescr : public TypeDescr {
- public:
-  bool allowConstruct() const {
-    return getReservedSlot(JS_DESCR_SLOT_FLAGS).toInt32() &
-           JS_DESCR_FLAG_ALLOW_CONSTRUCT;
-  }
-};
-
-bool IsTypedObjectClass(const JSClass* clasp);  
-
 class ArrayTypeDescr;
 
 
@@ -412,6 +379,8 @@ struct StructFieldProps {
   uint32_t alignAsV128 : 1;
 };
 
+class StructTypeDescr;
+
 
 
 
@@ -427,9 +396,8 @@ class StructMetaTypeDescr : public NativeObject {
   
   
   static StructTypeDescr* createFromArrays(
-      JSContext* cx, HandleObject structTypePrototype, bool allowConstruct,
-      HandleIdVector ids, HandleValueVector fieldTypeObjs,
-      Vector<StructFieldProps>& fieldProps);
+      JSContext* cx, HandleObject structTypePrototype, HandleIdVector ids,
+      HandleValueVector fieldTypeObjs, Vector<StructFieldProps>& fieldProps);
 
   
   
@@ -758,62 +726,7 @@ MOZ_MUST_USE bool IsBoxableWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-MOZ_MUST_USE bool BoxWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
 MOZ_MUST_USE bool UnboxBoxedWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define JS_STORE_SCALAR_CLASS_DEFN(_constant, T, _name)                     \
-  class StoreScalar##T {                                                    \
-   public:                                                                  \
-    static MOZ_MUST_USE bool Func(JSContext* cx, unsigned argc, Value* vp); \
-    static const JSJitInfo JitInfo;                                         \
-  };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define JS_STORE_REFERENCE_CLASS_DEFN(_constant, T, _name)                  \
-  class StoreReference##_name {                                             \
-   private:                                                                 \
-    static MOZ_MUST_USE bool store(JSContext* cx, T* heap, const Value& v,  \
-                                   TypedObject* obj, jsid id);              \
-                                                                            \
-   public:                                                                  \
-    static MOZ_MUST_USE bool Func(JSContext* cx, unsigned argc, Value* vp); \
-    static const JSJitInfo JitInfo;                                         \
-  };
 
 
 
@@ -850,11 +763,8 @@ MOZ_MUST_USE bool UnboxBoxedWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-JS_FOR_EACH_UNIQUE_SCALAR_NUMBER_TYPE_REPR_CTYPE(JS_STORE_SCALAR_CLASS_DEFN)
 JS_FOR_EACH_UNIQUE_SCALAR_NUMBER_TYPE_REPR_CTYPE(JS_LOAD_SCALAR_CLASS_DEFN)
-JS_FOR_EACH_SCALAR_BIGINT_TYPE_REPR(JS_STORE_SCALAR_CLASS_DEFN)
 JS_FOR_EACH_SCALAR_BIGINT_TYPE_REPR(JS_LOAD_SCALAR_CLASS_DEFN)
-JS_FOR_EACH_REFERENCE_TYPE_REPR(JS_STORE_REFERENCE_CLASS_DEFN)
 JS_FOR_EACH_REFERENCE_TYPE_REPR(JS_LOAD_REFERENCE_CLASS_DEFN)
 
 inline bool IsTypedObjectClass(const JSClass* class_) {

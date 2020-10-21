@@ -108,57 +108,6 @@ static inline CheckedInt32 RoundUpToAlignment(CheckedInt32 address,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool ConvertAndCopyTo(JSContext* cx, HandleTypeDescr typeObj,
-                             HandleTypedObject typedObj, int32_t offset,
-                             HandleAtom name, HandleValue val) {
-  FixedInvokeArgs<5> args(cx);
-
-  args[0].setObject(*typeObj);
-  args[1].setObject(*typedObj);
-  args[2].setInt32(offset);
-  if (name) {
-    args[3].setString(name);
-  } else {
-    args[3].setNull();
-  }
-  args[4].set(val);
-
-  RootedValue dummy(cx);  
-  return CallSelfHostedFunction(cx, cx->names().ConvertAndCopyTo, dummy, args,
-                                &dummy);
-}
-
-static bool ConvertAndCopyTo(JSContext* cx, HandleTypedObject typedObj,
-                             HandleValue val) {
-  Rooted<TypeDescr*> type(cx, &typedObj->typeDescr());
-  return ConvertAndCopyTo(cx, type, typedObj, 0, nullptr, val);
-}
-
-
-
-
-
 static bool Reify(JSContext* cx, HandleTypeDescr type,
                   HandleTypedObject typedObj, size_t offset,
                   MutableHandleValue to) {
@@ -249,6 +198,25 @@ uint32_t ScalarTypeDescr::alignment(Type t) {
       break;
   }
   MOZ_CRASH("Invalid type");
+}
+
+
+
+
+
+
+
+template <typename T>
+static T ConvertScalar(double d) {
+  if (TypeIsFloatingPoint<T>()) {
+    return T(d);
+  }
+  if (TypeIsUnsigned<T>()) {
+    uint32_t n = JS::ToUint32(d);
+    return T(n);
+  }
+  int32_t n = JS::ToInt32(d);
+  return T(n);
 }
 
 bool ScalarTypeDescr::call(JSContext* cx, unsigned argc, Value* vp) {
@@ -553,8 +521,6 @@ ArrayTypeDescr* ArrayMetaTypeDescr::create(JSContext* cx,
   obj->initReservedSlot(JS_DESCR_SLOT_ARRAY_ELEM_TYPE,
                         ObjectValue(*elementType));
   obj->initReservedSlot(JS_DESCR_SLOT_ARRAY_LENGTH, Int32Value(length));
-  obj->initReservedSlot(JS_DESCR_SLOT_FLAGS,
-                        Int32Value(JS_DESCR_FLAG_ALLOW_CONSTRUCT));
 
   RootedValue elementTypeVal(cx, ObjectValue(*elementType));
   if (!DefineDataProperty(cx, obj, cx->names().elementType, elementTypeVal,
@@ -807,16 +773,14 @@ JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
     return nullptr;
   }
 
-  return createFromArrays(cx, structTypePrototype,
-                           true, ids, fieldTypeObjs,
+  return createFromArrays(cx, structTypePrototype, ids, fieldTypeObjs,
                           fieldProps);
 }
 
 
 StructTypeDescr* StructMetaTypeDescr::createFromArrays(
-    JSContext* cx, HandleObject structTypePrototype, bool allowConstruct,
-    HandleIdVector ids, JS::HandleValueVector fieldTypeObjs,
-    Vector<StructFieldProps>& fieldProps) {
+    JSContext* cx, HandleObject structTypePrototype, HandleIdVector ids,
+    JS::HandleValueVector fieldTypeObjs, Vector<StructFieldProps>& fieldProps) {
   StringBuffer stringBuffer(cx);       
   RootedValueVector fieldNames(cx);    
   RootedValueVector fieldOffsets(cx);  
@@ -936,9 +900,6 @@ StructTypeDescr* StructMetaTypeDescr::createFromArrays(
   descr->initReservedSlot(JS_DESCR_SLOT_ALIGNMENT,
                           Int32Value(AssertedCast<int32_t>(alignment)));
   descr->initReservedSlot(JS_DESCR_SLOT_SIZE, Int32Value(totalSize.value()));
-  descr->initReservedSlot(
-      JS_DESCR_SLOT_FLAGS,
-      Int32Value(allowConstruct ? JS_DESCR_FLAG_ALLOW_CONSTRUCT : 0));
 
   
   {
@@ -1186,7 +1147,6 @@ static bool DefineSimpleTypeDescr(JSContext* cx, Handle<GlobalObject*> global,
   descr->initReservedSlot(JS_DESCR_SLOT_SIZE,
                           Int32Value(AssertedCast<int32_t>(T::size(type))));
   descr->initReservedSlot(JS_DESCR_SLOT_TYPE, Int32Value(int32_t(type)));
-  descr->initReservedSlot(JS_DESCR_SLOT_FLAGS, Int32Value(0));
 
   if (!JS_DefineFunctions(cx, descr, T::typeObjectMethods)) {
     return false;
@@ -1824,13 +1784,9 @@ bool TypedObject::obj_setProperty(JSContext* cx, HandleObject obj, HandleId id,
           return false;
         }
 
-        Rooted<TypeDescr*> elementType(cx);
-        elementType = &typedObj->typeDescr().as<ArrayTypeDescr>().elementType();
-        size_t offset = elementType->size() * index;
-        if (!ConvertAndCopyTo(cx, elementType, typedObj, offset, nullptr, v)) {
-          return false;
-        }
-        return result.succeed();
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TYPEDOBJECT_SETTING_IMMUTABLE);
+        return false;
       }
       break;
     }
@@ -1854,13 +1810,9 @@ bool TypedObject::obj_setProperty(JSContext* cx, HandleObject obj, HandleId id,
         return SetPropertyByDefining(cx, id, v, receiver, result);
       }
 
-      size_t offset = descr->fieldOffset(fieldIndex);
-      Rooted<TypeDescr*> fieldType(cx, &descr->fieldDescr(fieldIndex));
-      RootedAtom fieldName(cx, &descr->fieldName(fieldIndex));
-      if (!ConvertAndCopyTo(cx, fieldType, typedObj, offset, fieldName, v)) {
-        return false;
-      }
-      return result.succeed();
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TYPEDOBJECT_SETTING_IMMUTABLE);
+      return false;
     }
   }
 
@@ -2115,50 +2067,8 @@ bool TypedObject::construct(JSContext* cx, unsigned int argc, Value* vp) {
   Rooted<TypeDescr*> callee(cx, &args.callee().as<TypeDescr>());
 
   MOZ_ASSERT(cx->realm() == callee->realm());
-
-  
-  
-  if (callee->is<ComplexTypeDescr>() &&
-      !callee->as<ComplexTypeDescr>().allowConstruct()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPEDOBJECT_NOT_CONSTRUCTIBLE);
-    return false;
-  }
-
-  
-  
-  
-  
-
-  
-  if (args.length() == 0) {
-    Rooted<TypedObject*> obj(cx, createZeroed(cx, callee));
-    if (!obj) {
-      return false;
-    }
-    args.rval().setObject(*obj);
-    return true;
-  }
-
-  
-  if (args[0].isObject()) {
-    
-    Rooted<TypedObject*> obj(cx, createZeroed(cx, callee));
-    if (!obj) {
-      return false;
-    }
-
-    
-    if (!ConvertAndCopyTo(cx, obj, args[0])) {
-      return false;
-    }
-    args.rval().setObject(*obj);
-    return true;
-  }
-
-  
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_TYPEDOBJECT_BAD_ARGS);
+                            JSMSG_TYPEDOBJECT_NOT_CONSTRUCTIBLE);
   return false;
 }
 
@@ -2215,77 +2125,6 @@ bool js::ClampToUint8(JSContext*, unsigned argc, Value* vp) {
   args.rval().setNumber(ClampDoubleToUint8(args[0].toNumber()));
   return true;
 }
-
-#define JS_STORE_NUMBER_CLASS_IMPL(_constant, T, _name)                     \
-  bool js::StoreScalar##T::Func(JSContext* cx, unsigned argc, Value* vp) {  \
-    CallArgs args = CallArgsFromVp(argc, vp);                               \
-    MOZ_ASSERT(args.length() == 3);                                         \
-    MOZ_ASSERT(args[0].isObject() && args[0].toObject().is<TypedObject>()); \
-    MOZ_RELEASE_ASSERT(args[1].isInt32());                                  \
-    MOZ_ASSERT(args[2].isNumber());                                         \
-                                                                            \
-    TypedObject& typedObj = args[0].toObject().as<TypedObject>();           \
-    int32_t offset = args[1].toInt32();                                     \
-                                                                            \
-    /* Should be guaranteed by the typed objects API: */                    \
-    MOZ_ASSERT(offset % MOZ_ALIGNOF(T) == 0);                               \
-                                                                            \
-    JS::AutoCheckCannotGC nogc(cx);                                         \
-    T* target = reinterpret_cast<T*>(typedObj.typedMem(offset, nogc));      \
-    double d = args[2].toNumber();                                          \
-    *target = ConvertScalar<T>(d);                                          \
-    args.rval().setUndefined();                                             \
-    return true;                                                            \
-  }
-
-#define JS_STORE_BIGINT_CLASS_IMPL(_constant, T, _name)                     \
-  bool js::StoreScalar##T::Func(JSContext* cx, unsigned argc, Value* vp) {  \
-    CallArgs args = CallArgsFromVp(argc, vp);                               \
-    MOZ_ASSERT(args.length() == 3);                                         \
-    MOZ_ASSERT(args[0].isObject() && args[0].toObject().is<TypedObject>()); \
-    MOZ_RELEASE_ASSERT(args[1].isInt32());                                  \
-    int32_t offset = args[1].toInt32();                                     \
-    BigInt* bi = ToBigInt(cx, args[2]);                                     \
-    if (!bi) {                                                              \
-      return false;                                                         \
-    }                                                                       \
-    TypedObject& typedObj = args[0].toObject().as<TypedObject>();           \
-                                                                            \
-    /* Should be guaranteed by the typed objects API: */                    \
-    MOZ_ASSERT(offset % MOZ_ALIGNOF(T) == 0);                               \
-                                                                            \
-    JS::AutoCheckCannotGC nogc(cx);                                         \
-    T* target = reinterpret_cast<T*>(typedObj.typedMem(offset, nogc));      \
-    *target = ConvertBigInt<T>(bi);                                         \
-    args.rval().setUndefined();                                             \
-    return true;                                                            \
-  }
-
-#define JS_STORE_REFERENCE_CLASS_IMPL(_constant, T, _name)                  \
-  bool js::StoreReference##_name::Func(JSContext* cx, unsigned argc,        \
-                                       Value* vp) {                         \
-    CallArgs args = CallArgsFromVp(argc, vp);                               \
-    MOZ_ASSERT(args.length() == 4);                                         \
-    MOZ_ASSERT(args[0].isObject() && args[0].toObject().is<TypedObject>()); \
-    MOZ_RELEASE_ASSERT(args[1].isInt32());                                  \
-    MOZ_ASSERT(args[2].isString() || args[2].isNull());                     \
-                                                                            \
-    TypedObject& typedObj = args[0].toObject().as<TypedObject>();           \
-    int32_t offset = args[1].toInt32();                                     \
-                                                                            \
-    jsid id = args[2].isString()                                            \
-                  ? IdToTypeId(AtomToId(&args[2].toString()->asAtom()))     \
-                  : JSID_VOID;                                              \
-                                                                            \
-    /* Should be guaranteed by the typed objects API: */                    \
-    MOZ_ASSERT(offset % MOZ_ALIGNOF(T) == 0);                               \
-                                                                            \
-    JS::AutoCheckCannotGC nogc(cx);                                         \
-    T* target = reinterpret_cast<T*>(typedObj.typedMem(offset, nogc));      \
-    if (!store(cx, target, args[3], &typedObj, id)) return false;           \
-    args.rval().setUndefined();                                             \
-    return true;                                                            \
-  }
 
 #define JS_LOAD_NUMBER_CLASS_IMPL(_constant, T, _name)                      \
   bool js::LoadScalar##T::Func(JSContext* cx, unsigned argc, Value* vp) {   \
@@ -2352,75 +2191,6 @@ bool js::ClampToUint8(JSContext*, unsigned argc, Value* vp) {
     return true;                                                            \
   }
 
-
-
-
-
-bool StoreReferenceAny::store(JSContext* cx, GCPtrValue* heap, const Value& v,
-                              TypedObject* obj, jsid id) {
-  
-  
-  
-  if (!v.isUndefined()) {
-    if (!cx->isHelperThreadContext()) {
-      AddTypePropertyId(cx, obj, id, v);
-    } else if (!HasTypePropertyId(obj, id, v)) {
-      return false;
-    }
-  }
-
-  *heap = v;
-  return true;
-}
-
-bool StoreReferenceObject::store(JSContext* cx, GCPtrObject* heap,
-                                 const Value& v, TypedObject* obj, jsid id) {
-  MOZ_ASSERT(v.isObjectOrNull());  
-
-  
-  
-  
-  if (v.isObject()) {
-    if (!cx->isHelperThreadContext()) {
-      AddTypePropertyId(cx, obj, id, v);
-    } else if (!HasTypePropertyId(obj, id, v)) {
-      return false;
-    }
-  }
-
-  *heap = v.toObjectOrNull();
-  return true;
-}
-
-bool StoreReferenceWasmAnyRef::store(JSContext* cx, GCPtrObject* heap,
-                                     const Value& v, TypedObject* obj,
-                                     jsid id) {
-  
-  
-  
-  
-  
-  
-
-  MOZ_ASSERT(v.isObjectOrNull());
-
-  
-
-  *heap = v.toObjectOrNull();
-  return true;
-}
-
-bool StoreReferencestring::store(JSContext* cx, GCPtrString* heap,
-                                 const Value& v, TypedObject* obj, jsid id) {
-  MOZ_ASSERT(v.isString());  
-
-  
-  
-  *heap = v.toString();
-
-  return true;
-}
-
 void LoadReferenceAny::load(GCPtrValue* heap, MutableHandleValue v) {
   v.set(*heap);
 }
@@ -2449,11 +2219,8 @@ void LoadReferencestring::load(GCPtrString* heap, MutableHandleValue v) {
 
 
 
-JS_FOR_EACH_UNIQUE_SCALAR_NUMBER_TYPE_REPR_CTYPE(JS_STORE_NUMBER_CLASS_IMPL)
 JS_FOR_EACH_UNIQUE_SCALAR_NUMBER_TYPE_REPR_CTYPE(JS_LOAD_NUMBER_CLASS_IMPL)
-JS_FOR_EACH_SCALAR_BIGINT_TYPE_REPR(JS_STORE_BIGINT_CLASS_IMPL)
 JS_FOR_EACH_SCALAR_BIGINT_TYPE_REPR(JS_LOAD_BIGINT_CLASS_IMPL)
-JS_FOR_EACH_REFERENCE_TYPE_REPR(JS_STORE_REFERENCE_CLASS_IMPL)
 JS_FOR_EACH_REFERENCE_TYPE_REPR(JS_LOAD_REFERENCE_CLASS_IMPL)
 
 

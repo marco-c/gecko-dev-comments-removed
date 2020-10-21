@@ -1266,7 +1266,6 @@ bool Module::makeStructTypeDescrs(
     RootedIdVector ids(cx);
     RootedValueVector fieldTypeObjs(cx);
     Vector<StructFieldProps> fieldProps(cx);
-    bool allowConstruct = true;
 
     uint32_t k = 0;
     for (StructField sf : structType.fields_) {
@@ -1279,7 +1278,6 @@ bool Module::makeStructTypeDescrs(
         
         
         sf.isMutable = false;
-        allowConstruct = false;
 
         if (!MakeStructField(cx, ValType::I64, sf.isMutable, "_%d_low", k, &ids,
                              &fieldTypeObjs, &fieldProps)) {
@@ -1293,7 +1291,6 @@ bool Module::makeStructTypeDescrs(
         
         
         sf.isMutable = false;
-        allowConstruct = false;
 
         if (!MakeStructField(cx, ValType::V128, sf.isMutable, "_%d_x", k, &ids,
                              &fieldTypeObjs, &fieldProps)) {
@@ -1321,7 +1318,6 @@ bool Module::makeStructTypeDescrs(
         if (v.isTypeIndex()) {
           
           sf.isMutable = false;
-          allowConstruct = false;
         }
 
         if (!MakeStructField(cx, v, sf.isMutable, "_%d", k++, &ids,
@@ -1336,8 +1332,8 @@ bool Module::makeStructTypeDescrs(
     
 
     Rooted<StructTypeDescr*> structTypeDescr(
-        cx, StructMetaTypeDescr::createFromArrays(
-                cx, prototype, allowConstruct, ids, fieldTypeObjs, fieldProps));
+        cx, StructMetaTypeDescr::createFromArrays(cx, prototype, ids,
+                                                  fieldTypeObjs, fieldProps));
 
     if (!structTypeDescr || !structTypeDescrs.append(structTypeDescr)) {
       return false;
