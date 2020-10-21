@@ -79,12 +79,11 @@ async function checkInspectorIcon(dbg) {
 
   
   const view = node.ownerDocument.defaultView;
-  const inspectorFront = await toolbox.target.getFront("inspector");
-  const onNodeHighlight = inspectorFront.highlighter.once("node-highlight");
+  const onNodeHighlight = toolbox.getHighlighter().waitForHighlighterShown();
 
   EventUtils.synthesizeMouseAtCenter(node, { type: "mousemove" }, view);
 
-  const nodeFront = await onNodeHighlight;
+  const { nodeFront } = await onNodeHighlight;
   is(nodeFront.displayName, "button", "The correct node was highlighted");
 
   

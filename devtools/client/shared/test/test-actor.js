@@ -845,13 +845,9 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
     this.formAttributeName = "testActor";
-  }
-
-  async initialize() {
     
     
-    const inspectorFront = await this.targetFront.getFront("inspector");
-    this._highlighter = inspectorFront.highlighter;
+    this._highlighter = null;
   }
 
   
@@ -861,12 +857,7 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
 
 
   set highlighter(_customHighlighterGetter) {
-    if (typeof _customHighlighterGetter === "function") {
-      this._customHighlighterGetter = _customHighlighterGetter;
-    } else {
-      this._customHighlighterGetter = null;
-      this._highlighter = _customHighlighterGetter;
-    }
+    this._highlighter = _customHighlighterGetter;
   }
 
   
@@ -876,10 +867,9 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
 
 
   get highlighter() {
-    if (this._customHighlighterGetter) {
-      return this._customHighlighterGetter();
-    }
-    return this._highlighter;
+    return typeof this._highlighter === "function"
+      ? this._highlighter()
+      : this._highlighter;
   }
 
   

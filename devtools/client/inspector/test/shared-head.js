@@ -36,12 +36,6 @@ var openInspector = async function(hostType) {
   }
 
   const testActor = await getTestActor(toolbox);
-  
-  
-  
-  testActor.highlighter = () => {
-    return inspector.highlighters.getActiveHighlighter("BoxModelHighlighter");
-  };
 
   return { toolbox, inspector, testActor };
 };
