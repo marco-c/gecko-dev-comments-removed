@@ -14,7 +14,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsAHttpConnection.h"
-#include "nsClassHashtable.h"
+#include "nsRefPtrHashtable.h"
 #include "nsDataHashtable.h"
 #include "nsDeque.h"
 #include "nsHashKeys.h"
@@ -363,7 +363,7 @@ class Http2Session final : public ASpdySession,
   
   
   
-  nsAHttpSegmentReader* mSegmentReader;
+  RefPtr<nsAHttpSegmentReader> mSegmentReader;
   nsAHttpSegmentWriter* mSegmentWriter;
 
   uint32_t mSendingChunkSize; 
@@ -378,11 +378,8 @@ class Http2Session final : public ASpdySession,
   
   
   
-  
-  
-  
   nsDataHashtable<nsUint32HashKey, Http2Stream*> mStreamIDHash;
-  nsClassHashtable<nsPtrHashKey<nsAHttpTransaction>, Http2Stream>
+  nsRefPtrHashtable<nsPtrHashKey<nsAHttpTransaction>, Http2Stream>
       mStreamTransactionHash;
 
   nsDeque<Http2Stream> mReadyForWrite;
