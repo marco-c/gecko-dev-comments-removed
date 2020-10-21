@@ -409,6 +409,7 @@ var View = {
     
     {
       let fluentName;
+      let classNames = [];
       switch (data.type) {
         case "web":
           fluentName = "about-processes-web-process-name";
@@ -424,6 +425,7 @@ var View = {
           break;
         case "extension":
           fluentName = "about-processes-extension-process-name";
+          classNames = ["extensions"];
           break;
         case "privilegedabout":
           fluentName = "about-processes-privilegedabout-process-name";
@@ -476,7 +478,7 @@ var View = {
           origin: data.origin,
           type: data.type,
         },
-        classes: ["type", "favicon"],
+        classes: ["type", "favicon", ...classNames],
       });
 
       let image;
@@ -592,6 +594,7 @@ var View = {
     let tab = tabFinder.get(data.outerWindowId);
     let fluentName;
     let name;
+    let className;
     if (parent.type == "extension") {
       fluentName = "about-processes-extension-name";
       if (data.addon) {
@@ -605,15 +608,19 @@ var View = {
     } else if (tab && tab.tabbrowser) {
       fluentName = "about-processes-tab-name";
       name = data.documentTitle;
+      className = "tab";
     } else if (tab) {
       fluentName = "about-processes-preloaded-tab";
       name = null;
+      className = "preloaded-tab";
     } else if (data.count == 1) {
       fluentName = "about-processes-frame-name-one";
       name = data.prePath;
+      className = "frame-one";
     } else {
       fluentName = "about-processes-frame-name-many";
       name = data.prePath;
+      className = "frame-many";
     }
     let elt = this._addCell(row, {
       fluentName,
@@ -626,7 +633,7 @@ var View = {
             ? data.documentURI.spec
             : data.documentURI.prePath,
       },
-      classes: ["name", "indent", "favicon"],
+      classes: ["name", "indent", "favicon", className],
     });
     let image = tab?.tab.getAttribute("image");
     if (image) {
@@ -848,6 +855,10 @@ var Control = {
     this._initHangReports();
 
     let tbody = document.getElementById("process-tbody");
+
+    
+    
+    
     tbody.addEventListener("click", event => {
       this._updateLastMouseEvent();
 
@@ -880,10 +891,44 @@ var Control = {
       }
     });
 
+    
+    
+    
+    tbody.addEventListener("dblclick", event => {
+      this._updateLastMouseEvent();
+      event.stopPropagation();
+
+      
+      for (
+        let target = event.target;
+        target && target.getAttribute("id") != "process-tbody";
+        target = target.parentNode
+      ) {
+        if (target.classList.contains("tab")) {
+          
+          let { tab, tabbrowser } = target.parentNode.win.tab;
+          tabbrowser.selectedTab = tab;
+          tabbrowser.ownerGlobal.focus();
+          return;
+        }
+        if (target.classList.contains("extensions")) {
+          
+          let parentWin =
+            window.docShell.browsingContext.embedderElement.ownerGlobal;
+          parentWin.BrowserOpenAddonsMgr();
+          return;
+        }
+        
+      }
+    });
+
     tbody.addEventListener("mousemove", () => {
       this._updateLastMouseEvent();
     });
 
+    
+    
+    
     window.addEventListener("visibilitychange", event => {
       if (!document.hidden) {
         this._updateDisplay(true);

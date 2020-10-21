@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -7,9 +7,9 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-
-
-
+// A bunch of assumptions we make about the behavior of the parent process,
+// and which we use as sanity checks. If Firefox evolves, we will need to
+// update these values.
 const HARDCODED_ASSUMPTIONS_PROCESS = {
   minimalNumberOfThreads: 10,
   maximalNumberOfThreads: 1000,
@@ -17,8 +17,8 @@ const HARDCODED_ASSUMPTIONS_PROCESS = {
   maximalCPUPercentage: 1000,
   minimalCPUTotalDurationMS: 100,
   maximalCPUTotalDurationMS: 10000000,
-  minimalRAMBytesUsage: 1024 * 1024 ,
-  maximalRAMBytesUsage: 1024 * 1024 * 1024 * 1024 * 1 ,
+  minimalRAMBytesUsage: 1024 * 1024 /* 1 Megabyte */,
+  maximalRAMBytesUsage: 1024 * 1024 * 1024 * 1024 * 1 /* 1 Tb */,
 };
 
 const HARDCODED_ASSUMPTIONS_THREAD = {
@@ -28,14 +28,35 @@ const HARDCODED_ASSUMPTIONS_THREAD = {
   maximalCPUTotalDurationMS: 10000000,
 };
 
-
+// How close we accept our rounding up/down.
 const APPROX_FACTOR = 1.1;
 const MS_PER_NS = 1000000;
 const MEMORY_REGEXP = /([0-9.,]+)(TB|GB|MB|KB|B)( \(([-+]?)([0-9.,]+)(GB|MB|KB|B)\))?/;
-
+//Example: "383.55MB (-12.5MB)"
 const CPU_REGEXP = /(\~0%|idle|[0-9.,]+%|[?]) \(([0-9.,]+) ?(ms)\)/;
+//Example: "13% (4,470ms)"
 
+function promiseTabSwitched() {
+  return new Promise(resolve => {
+    gBrowser.addEventListener(
+      "TabSwitchDone",
+      function() {
+        TestUtils.executeSoon(() => resolve(gBrowser.selectedTab));
+      },
+      { once: true }
+    );
+  });
+}
 
+function promiseAboutProcessesUpdated({ doc, tbody }) {
+  new Promise(resolve => {
+    let observer = new doc.ownerGlobal.MutationObserver(() => {
+      observer.disconnect();
+      resolve();
+    });
+    observer.observe(tbody, { childList: true });
+  });
+}
 function isCloseEnough(value, expected) {
   if (value < 0 || expected < 0) {
     throw new Error(`Invalid isCloseEnough(${value}, ${expected})`);
@@ -101,24 +122,24 @@ function testCpu(string, total, slope, assumptions) {
   switch (extractedPercentage) {
     case "idle":
       Assert.equal(slope, 0, "Idle means exactly 0%");
-      
+      // Nothing else to do here.
       return;
     case "~0%":
       Assert.ok(slope > 0 && slope < 0.0001);
       break;
     case "?":
       Assert.ok(slope == null);
-      
+      // Nothing else to do here.
       return;
     default: {
-      
+      // `Number.parseFloat("99%")` returns `99`.
       let computedPercentage = Number.parseFloat(extractedPercentage);
       Assert.ok(
         isCloseEnough(computedPercentage, slope * 100),
         `The displayed approximation of the slope is reasonable: ${computedPercentage} vs ${slope *
           100}`
       );
-      
+      // Also, sanity checks.
       Assert.ok(
         computedPercentage / 100 >= assumptions.minimalCPUPercentage,
         `Not too little: ${computedPercentage / 100} >=? ${
@@ -137,9 +158,9 @@ function testCpu(string, total, slope, assumptions) {
 
   let totalMS = total / MS_PER_NS;
   let computedTotal =
-    
-    
-    
+    // We produce localized numbers, with "," as a thousands separator in en-US builds,
+    // but `parseFloat` doesn't understand the ",", so we need to remove it
+    // before parsing.
     Number.parseFloat(extractedTotal.replace(/,/g, "")) *
     getTimeMultiplier(extractedUnit);
   Assert.ok(
@@ -185,15 +206,15 @@ function testMemory(string, total, delta, assumptions) {
     );
   }
 
-  
+  // Now check that the conversion was meaningful.
   let computedTotal = getMemoryMultiplier(extractedUnit) * extractedTotalNumber;
   Assert.ok(
     isCloseEnough(computedTotal, total),
     `The displayed approximation of the total amount of memory is reasonable: ${computedTotal} vs ${total}`
   );
   if (!AppConstants.ASAN) {
-    
-    
+    // ASAN plays tricks with RAM (e.g. allocates the entirety of virtual memory),
+    // which makes this test unrealistic.
     Assert.ok(
       assumptions.minimalRAMBytesUsage <= computedTotal &&
         computedTotal <= assumptions.maximalRAMBytesUsage,
@@ -215,8 +236,8 @@ function testMemory(string, total, delta, assumptions) {
     `Delta unit is reasonable: ${extractedDeltaUnit}`
   );
 
-  
-  
+  // Now check that the conversion was meaningful.
+  // Let's just check that the number displayed is within 10% of `delta`.
   let computedDelta =
     getMemoryMultiplier(extractedDeltaUnit, extractedDeltaSign) *
     extractedDeltaTotal;
@@ -262,18 +283,33 @@ function extractProcessDetails(row) {
   return process;
 }
 
+async function findProcess({ doc, tbody, predicate }) {
+  for (let i = 0; i < 3; ++i) {
+    let row = tbody.firstChild;
+    while (row) {
+      if (predicate(row)) {
+        return row;
+      }
+      row = row.nextSibling;
+      // If we're too early, we may need to wait for an update.
+      await promiseAboutProcessesUpdated({ doc, tbody });
+    }
+  }
+  return null;
+}
+
 add_task(async function testAboutProcesses() {
   info("Setting up about:processes");
 
-  
-  
+  // Install a test extension to also cover processes and sub-frames related to the
+  // extension process.
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
       applications: { gecko: { id: "test-aboutprocesses@mochi.test" } },
     },
     background() {
-      
-      
+      // Creates an about:blank iframe in the extension process to make sure that
+      // Bug 1665099 doesn't regress.
       document.body.appendChild(document.createElement("iframe"));
 
       this.browser.test.sendMessage("bg-page-loaded");
@@ -283,19 +319,19 @@ add_task(async function testAboutProcesses() {
   await extension.startup();
   await extension.awaitMessage("bg-page-loaded");
 
-  
+  // Test twice, once without `showAllSubframes`, once with it.
   for (let showAllFrames of [false, true]) {
     Services.prefs.setBoolPref(
       "toolkit.aboutProcesses.showAllSubframes",
       showAllFrames
     );
-    
+    // Test twice, once without `showThreads`, once with it.
     for (let showThreads of [false, true]) {
       Services.prefs.setBoolPref(
         "toolkit.aboutProcesses.showThreads",
         showThreads
       );
-      
+      // The tab we're testing.
       let tabAboutProcesses = (gBrowser.selectedTab = BrowserTestUtils.addTab(
         gBrowser,
         "about:processes"
@@ -303,11 +339,11 @@ add_task(async function testAboutProcesses() {
       await BrowserTestUtils.browserLoaded(tabAboutProcesses.linkedBrowser);
 
       info("Setting up example.com");
-      
+      // Another tab that we'll pretend is hung.
       let tabHung = BrowserTestUtils.addTab(gBrowser, "http://example.com");
       await BrowserTestUtils.browserLoaded(tabHung.linkedBrowser);
       await SpecialPowers.spawn(tabHung.linkedBrowser, [], async () => {
-        
+        // Open an in-process iframe to test toolkit.aboutProcesses.showAllSubframes
         let frame = content.document.createElement("iframe");
         content.document.body.appendChild(frame);
       });
@@ -318,15 +354,15 @@ add_task(async function testAboutProcesses() {
       let doc = tabAboutProcesses.linkedBrowser.contentDocument;
       let tbody = doc.getElementById("process-tbody");
 
-      
-      
+      // Keep informing about:processes that `tabHung` is hung.
+      // Note: this is a background task, do not `await` it.
       let fakeProcessHangMonitor = async function() {
         for (let i = 0; i < 100; ++i) {
           if (!tabHung.linkedBrowser) {
-            
+            // Let's stop spamming as soon as we can.
             return;
           }
-          
+          // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
           await new Promise(resolve => setTimeout(resolve, 300));
           Services.obs.notifyObservers(
             {
@@ -342,38 +378,32 @@ add_task(async function testAboutProcesses() {
       fakeProcessHangMonitor();
 
       info("Waiting for the first update of about:processes");
-      
+      // Wait until the table has first been populated.
       await TestUtils.waitForCondition(() => tbody.childElementCount);
 
       info("Waiting for the second update of about:processes");
-      
-      
-      await new Promise(resolve => {
-        let observer = new doc.ownerGlobal.MutationObserver(() => {
-          observer.disconnect();
-          resolve();
-        });
-        observer.observe(tbody, { childList: true });
-      });
+      // And wait for another update using a mutation observer, to give our newly created test tab some time
+      // to burn some CPU.
+      await promiseAboutProcessesUpdated({ doc, tbody });
 
       info("Looking at the contents of about:processes");
       let processesToBeFound = [
-        
+        // The browser process.
         {
           name: "browser",
           type: ["browser"],
           predicate: row => row.process.type == "browser",
         },
-        
+        // The hung process.
         {
           name: "hung",
           type: ["web", "webIsolated"],
           predicate: row =>
             row.classList.contains("hung") && row.classList.contains("process"),
         },
-        
+        // Any non-hung process
         {
-          name: "hung",
+          name: "non-hung",
           type: ["web", "webIsolated"],
           predicate: row =>
             !row.classList.contains("hung") &&
@@ -383,13 +413,11 @@ add_task(async function testAboutProcesses() {
       ];
       for (let finder of processesToBeFound) {
         info(`Running sanity tests on ${finder.name}`);
-        let row = tbody.firstChild;
-        while (row) {
-          if (finder.predicate(row)) {
-            break;
-          }
-          row = row.nextSibling;
-        }
+        let row = await findProcess({
+          doc,
+          tbody,
+          predicate: finder.predicate,
+        });
         Assert.ok(row, `found a table row for ${finder.name}`);
         let {
           memoryResidentContent,
@@ -426,7 +454,7 @@ add_task(async function testAboutProcesses() {
           HARDCODED_ASSUMPTIONS_PROCESS
         );
 
-        
+        // Testing threads.
         if (!showThreads) {
           info("In this mode, we shouldn't display any threads");
           Assert.equal(
@@ -483,7 +511,7 @@ add_task(async function testAboutProcesses() {
           );
         }
 
-        
+        // Testing subframes.
         let foundAtLeastOneInProcessSubframe = false;
         for (let row of doc.getElementsByClassName("window")) {
           let subframe = row.win;
@@ -516,6 +544,111 @@ add_task(async function testAboutProcesses() {
         Assert.equal(typeContent, row.process.type);
         Assert.equal(Number.parseInt(pidContent), row.process.pid);
       }
+
+      await promiseAboutProcessesUpdated({ doc, tbody });
+
+      info("Double-clicking on a tab");
+      let whenTabSwitchedToWeb = promiseTabSwitched();
+      await SpecialPowers.spawn(
+        tabAboutProcesses.linkedBrowser,
+        [],
+        async () => {
+          // Locate and double-click on the representation of `tabHung`.
+          let tbody = content.document.getElementById("process-tbody");
+          let foundTab = false;
+          for (let row of tbody.getElementsByClassName("tab")) {
+            if (row.parentNode.win.documentURI.spec != "http://example.com/") {
+              continue;
+            }
+            // Simulate double-click.
+            row.scrollIntoView();
+            let evt = new content.window.MouseEvent("dblclick", {
+              bubbles: true,
+              cancelable: true,
+              view: content.window,
+            });
+            row.dispatchEvent(evt);
+            foundTab = true;
+            break;
+          }
+          Assert.ok(foundTab, "We should have found the hung tab");
+        }
+      );
+
+      info("Waiting for tab switch");
+      await whenTabSwitchedToWeb;
+      while (
+        gBrowser.selectedTab.linkedBrowser.currentURI.spec !=
+        tabHung.linkedBrowser.currentURI.spec
+      ) {
+        // Sometimes, when running the test, we seem to catch another tab switched event, so let's try that again.
+        info(
+          `...waiting some more, we're currently on ${gBrowser.selectedTab.linkedBrowser.currentURI.spec}`
+        );
+        info("Double-clicking on a tab (again)");
+        whenTabSwitchedToWeb = promiseTabSwitched();
+        await SpecialPowers.spawn(
+          tabAboutProcesses.linkedBrowser,
+          [],
+          async () => {
+            // Locate and double-click on the representation of `tabHung`.
+            let tbody = content.document.getElementById("process-tbody");
+            let foundTab = false;
+            for (let row of tbody.getElementsByClassName("tab")) {
+              // Simulate double-click.
+              row.scrollIntoView();
+              let evt = new content.window.MouseEvent("dblclick", {
+                bubbles: true,
+                cancelable: true,
+                view: content.window,
+              });
+              row.dispatchEvent(evt);
+              foundTab = true;
+            }
+            Assert.ok(foundTab, "We should have found the hung tab");
+          }
+        );
+        await whenTabSwitchedToWeb;
+      }
+      Assert.equal(
+        gBrowser.selectedTab.linkedBrowser.currentURI.spec,
+        tabHung.linkedBrowser.currentURI.spec,
+        "We should have focused the hung tab"
+      );
+      gBrowser.selectedTab = tabAboutProcesses;
+
+      info("Double-clicking on the extensions process");
+      let whenTabSwitchedToAddons = promiseTabSwitched();
+      await SpecialPowers.spawn(
+        tabAboutProcesses.linkedBrowser,
+        [],
+        async () => {
+          let extensionsRow = content.document.getElementsByClassName(
+            "extensions"
+          )[0];
+          Assert.ok(
+            !!extensionsRow,
+            "We should have found the extensions process"
+          );
+          extensionsRow.scrollIntoView();
+          let evt = new content.window.MouseEvent("dblclick", {
+            bubbles: true,
+            cancelable: true,
+            view: content.window,
+          });
+          extensionsRow.dispatchEvent(evt);
+        }
+      );
+      info("Waiting for tab switch");
+      await whenTabSwitchedToAddons;
+      Assert.equal(
+        gBrowser.selectedTab.linkedBrowser.currentURI.spec,
+        "about:addons",
+        "We should now see the addon tab"
+      );
+      BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+      info("Cleaning up tabs");
       BrowserTestUtils.removeTab(tabAboutProcesses);
       BrowserTestUtils.removeTab(tabHung);
     }
