@@ -13,32 +13,11 @@
 
 
 
-use crate::{FuncType, TypeDef};
-
-
-
-
-
-pub trait WasmType: PartialEq<crate::Type> + PartialEq + Eq {
-    
-    
-    
-    
-    
-    fn to_parser_type(&self) -> crate::Type;
-}
-
-pub trait WasmTypeDef {
-    type FuncType: WasmFuncType;
-
-    fn as_func(&self) -> Option<&Self::FuncType>;
-}
+use crate::{FuncType, GlobalType, MemoryType, TableType, Type};
+use std::ops::Range;
 
 
 pub trait WasmFuncType {
-    
-    type Type: WasmType;
-
     
     fn len_inputs(&self) -> usize;
     
@@ -49,230 +28,162 @@ pub trait WasmFuncType {
     
     
     
-    fn input_at(&self, at: u32) -> Option<&Self::Type>;
+    fn input_at(&self, at: u32) -> Option<Type>;
     
     
     
     
     
     
-    fn output_at(&self, at: u32) -> Option<&Self::Type>;
-}
+    fn output_at(&self, at: u32) -> Option<Type>;
 
+    
+    fn inputs(&self) -> WasmFuncTypeInputs<'_, Self>
+    where
+        Self: Sized,
+    {
+        WasmFuncTypeInputs {
+            func_type: self,
+            range: 0..self.len_inputs() as u32,
+        }
+    }
 
-pub(crate) struct WasmFuncTypeInputs<'a, F, T>
-where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
-{
     
-    func_type: &'a F,
-    
-    start: u32,
-    
-    end: u32,
-}
-
-impl<'a, F, T> WasmFuncTypeInputs<'a, F, T>
-where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
-{
-    fn new(func_type: &'a F) -> Self {
-        Self {
-            func_type,
-            start: 0,
-            end: func_type.len_inputs() as u32,
+    fn outputs(&self) -> WasmFuncTypeOutputs<'_, Self>
+    where
+        Self: Sized,
+    {
+        WasmFuncTypeOutputs {
+            func_type: self,
+            range: 0..self.len_outputs() as u32,
         }
     }
 }
 
-impl<'a, F, T> Iterator for WasmFuncTypeInputs<'a, F, T>
+impl<T> WasmFuncType for &'_ T
 where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
+    T: ?Sized + WasmFuncType,
 {
-    type Item = &'a T;
+    fn len_inputs(&self) -> usize {
+        T::len_inputs(self)
+    }
+    fn len_outputs(&self) -> usize {
+        T::len_outputs(self)
+    }
+    fn input_at(&self, at: u32) -> Option<Type> {
+        T::input_at(self, at)
+    }
+    fn output_at(&self, at: u32) -> Option<Type> {
+        T::output_at(self, at)
+    }
+}
+
+
+pub struct WasmFuncTypeInputs<'a, T> {
+    
+    func_type: &'a T,
+    
+    range: Range<u32>,
+}
+
+impl<T> Iterator for WasmFuncTypeInputs<'_, T>
+where
+    T: WasmFuncType,
+{
+    type Item = crate::Type;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start == self.end {
-            return None;
-        }
-        let ty = self
-            .func_type
-            .input_at(self.start)
-            
-            .expect("we expect to receive an input type at this point");
-        self.start += 1;
-        Some(ty)
+        self.range
+            .next()
+            .map(|i| self.func_type.input_at(i).unwrap())
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+        self.range.size_hint()
     }
 }
 
-impl<'a, F, T> DoubleEndedIterator for WasmFuncTypeInputs<'a, F, T>
+impl<T> DoubleEndedIterator for WasmFuncTypeInputs<'_, T>
 where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
+    T: WasmFuncType,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.start == self.end {
-            return None;
-        }
-        let ty = self
-            .func_type
-            .input_at(self.end)
-            
-            .expect("we expect to receive an input type at this point");
-        self.end -= 1;
-        Some(ty)
+        self.range
+            .next_back()
+            .map(|i| self.func_type.input_at(i).unwrap())
     }
 }
 
-impl<'a, F, T> ExactSizeIterator for WasmFuncTypeInputs<'a, F, T>
+impl<T> ExactSizeIterator for WasmFuncTypeInputs<'_, T>
 where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
+    T: WasmFuncType,
 {
     fn len(&self) -> usize {
-        (self.end as usize) - (self.start as usize)
+        self.range.len()
     }
 }
 
-
-pub(crate) struct WasmFuncTypeOutputs<'a, F, T>
-where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
-{
-    
-    func_type: &'a F,
-    
-    start: u32,
-    
-    end: u32,
-}
-
-impl<'a, F, T> WasmFuncTypeOutputs<'a, F, T>
-where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
-{
-    fn new(func_type: &'a F) -> Self {
-        Self {
-            func_type,
-            start: 0,
-            end: func_type.len_outputs() as u32,
+impl<'a, T> Clone for WasmFuncTypeInputs<'a, T> {
+    fn clone(&self) -> WasmFuncTypeInputs<'a, T> {
+        WasmFuncTypeInputs {
+            func_type: self.func_type,
+            range: self.range.clone(),
         }
     }
 }
 
-impl<'a, F, T> Iterator for WasmFuncTypeOutputs<'a, F, T>
+
+pub struct WasmFuncTypeOutputs<'a, T> {
+    
+    func_type: &'a T,
+    
+    range: Range<u32>,
+}
+
+impl<T> Iterator for WasmFuncTypeOutputs<'_, T>
 where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
+    T: WasmFuncType,
 {
-    type Item = &'a T;
+    type Item = crate::Type;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start == self.end {
-            return None;
-        }
-        let ty = self
-            .func_type
-            .output_at(self.start)
-            
-            .expect("we expect to receive an input type at this point");
-        self.start += 1;
-        Some(ty)
+        self.range
+            .next()
+            .map(|i| self.func_type.output_at(i).unwrap())
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+        self.range.size_hint()
     }
 }
 
-impl<'a, F, T> DoubleEndedIterator for WasmFuncTypeOutputs<'a, F, T>
+impl<T> DoubleEndedIterator for WasmFuncTypeOutputs<'_, T>
 where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
+    T: WasmFuncType,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.start == self.end {
-            return None;
-        }
-        let ty = self
-            .func_type
-            .output_at(self.end)
-            
-            .expect("we expect to receive an input type at this point");
-        self.end -= 1;
-        Some(ty)
+        self.range
+            .next_back()
+            .map(|i| self.func_type.output_at(i).unwrap())
     }
 }
 
-impl<'a, F, T> ExactSizeIterator for WasmFuncTypeOutputs<'a, F, T>
+impl<T> ExactSizeIterator for WasmFuncTypeOutputs<'_, T>
 where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
+    T: WasmFuncType,
 {
     fn len(&self) -> usize {
-        (self.end as usize) - (self.start as usize)
+        self.range.len()
     }
 }
 
-
-pub(crate) fn wasm_func_type_inputs<'a, F, T>(func_type: &'a F) -> WasmFuncTypeInputs<'a, F, T>
-where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
-{
-    WasmFuncTypeInputs::new(func_type)
-}
-
-
-pub(crate) fn wasm_func_type_outputs<'a, F, T>(func_type: &'a F) -> WasmFuncTypeOutputs<'a, F, T>
-where
-    F: WasmFuncType<Type = T>,
-    T: WasmType + 'a,
-{
-    WasmFuncTypeOutputs::new(func_type)
-}
-
-
-pub trait WasmTableType {
-    
-    type Type: WasmType;
-
-    
-    fn element_type(&self) -> &Self::Type;
-    
-    fn initial_limit(&self) -> u32;
-    
-    fn maximum_limit(&self) -> Option<u32>;
-}
-
-
-pub trait WasmMemoryType {
-    
-    fn is_shared(&self) -> bool;
-    
-    fn initial_limit(&self) -> u32;
-    
-    fn maximum_limit(&self) -> Option<u32>;
-}
-
-
-pub trait WasmGlobalType {
-    
-    type Type: WasmType;
-
-    
-    fn is_mutable(&self) -> bool;
-    
-    fn content_type(&self) -> &Self::Type;
+impl<'a, T> Clone for WasmFuncTypeOutputs<'a, T> {
+    fn clone(&self) -> WasmFuncTypeOutputs<'a, T> {
+        WasmFuncTypeOutputs {
+            func_type: self.func_type,
+            range: self.range.clone(),
+        }
+    }
 }
 
 
@@ -285,26 +196,20 @@ pub trait WasmGlobalType {
 
 pub trait WasmModuleResources {
     
-    type TypeDef: WasmTypeDef;
-    
-    type TableType: WasmTableType;
-    
-    type MemoryType: WasmMemoryType;
-    
-    type GlobalType: WasmGlobalType;
+    type FuncType: WasmFuncType;
 
     
-    fn type_at(&self, at: u32) -> Option<&Self::TypeDef>;
+    fn table_at(&self, at: u32) -> Option<TableType>;
     
-    fn table_at(&self, at: u32) -> Option<&Self::TableType>;
+    fn memory_at(&self, at: u32) -> Option<MemoryType>;
     
-    fn memory_at(&self, at: u32) -> Option<&Self::MemoryType>;
+    fn global_at(&self, at: u32) -> Option<GlobalType>;
     
-    fn global_at(&self, at: u32) -> Option<&Self::GlobalType>;
+    fn func_type_at(&self, type_idx: u32) -> Option<&Self::FuncType>;
     
-    fn func_type_at(&self, at: u32) -> Option<&<Self::TypeDef as WasmTypeDef>::FuncType>;
+    fn type_of_function(&self, func_idx: u32) -> Option<&Self::FuncType>;
     
-    fn element_type_at(&self, at: u32) -> Option<crate::Type>;
+    fn element_type_at(&self, at: u32) -> Option<Type>;
 
     
     fn element_count(&self) -> u32;
@@ -319,27 +224,24 @@ impl<T> WasmModuleResources for &'_ T
 where
     T: ?Sized + WasmModuleResources,
 {
-    type TypeDef = T::TypeDef;
-    type TableType = T::TableType;
-    type MemoryType = T::MemoryType;
-    type GlobalType = T::GlobalType;
+    type FuncType = T::FuncType;
 
-    fn type_at(&self, at: u32) -> Option<&Self::TypeDef> {
-        T::type_at(self, at)
-    }
-    fn table_at(&self, at: u32) -> Option<&Self::TableType> {
+    fn table_at(&self, at: u32) -> Option<TableType> {
         T::table_at(self, at)
     }
-    fn memory_at(&self, at: u32) -> Option<&Self::MemoryType> {
+    fn memory_at(&self, at: u32) -> Option<MemoryType> {
         T::memory_at(self, at)
     }
-    fn global_at(&self, at: u32) -> Option<&Self::GlobalType> {
+    fn global_at(&self, at: u32) -> Option<GlobalType> {
         T::global_at(self, at)
     }
-    fn func_type_at(&self, at: u32) -> Option<&<T::TypeDef as WasmTypeDef>::FuncType> {
+    fn func_type_at(&self, at: u32) -> Option<&Self::FuncType> {
         T::func_type_at(self, at)
     }
-    fn element_type_at(&self, at: u32) -> Option<crate::Type> {
+    fn type_of_function(&self, func_idx: u32) -> Option<&Self::FuncType> {
+        T::type_of_function(self, func_idx)
+    }
+    fn element_type_at(&self, at: u32) -> Option<Type> {
         T::element_type_at(self, at)
     }
 
@@ -354,26 +256,7 @@ where
     }
 }
 
-impl WasmType for crate::Type {
-    fn to_parser_type(&self) -> crate::Type {
-        *self
-    }
-}
-
-impl<'a> WasmTypeDef for TypeDef<'a> {
-    type FuncType = FuncType;
-
-    fn as_func(&self) -> Option<&Self::FuncType> {
-        match self {
-            TypeDef::Func(f) => Some(f),
-            _ => None,
-        }
-    }
-}
-
-impl WasmFuncType for crate::FuncType {
-    type Type = crate::Type;
-
+impl WasmFuncType for FuncType {
     fn len_inputs(&self) -> usize {
         self.params.len()
     }
@@ -382,52 +265,11 @@ impl WasmFuncType for crate::FuncType {
         self.returns.len()
     }
 
-    fn input_at(&self, at: u32) -> Option<&Self::Type> {
-        self.params.get(at as usize)
+    fn input_at(&self, at: u32) -> Option<Type> {
+        self.params.get(at as usize).copied()
     }
 
-    fn output_at(&self, at: u32) -> Option<&Self::Type> {
-        self.returns.get(at as usize)
-    }
-}
-
-impl WasmGlobalType for crate::GlobalType {
-    type Type = crate::Type;
-
-    fn is_mutable(&self) -> bool {
-        self.mutable
-    }
-
-    fn content_type(&self) -> &Self::Type {
-        &self.content_type
-    }
-}
-
-impl WasmTableType for crate::TableType {
-    type Type = crate::Type;
-
-    fn element_type(&self) -> &Self::Type {
-        &self.element_type
-    }
-
-    fn initial_limit(&self) -> u32 {
-        self.limits.initial
-    }
-
-    fn maximum_limit(&self) -> Option<u32> {
-        self.limits.maximum
-    }
-}
-
-impl WasmMemoryType for crate::MemoryType {
-    fn is_shared(&self) -> bool {
-        self.shared
-    }
-
-    fn initial_limit(&self) -> u32 {
-        self.limits.initial
-    }
-    fn maximum_limit(&self) -> Option<u32> {
-        self.limits.maximum
+    fn output_at(&self, at: u32) -> Option<Type> {
+        self.returns.get(at as usize).copied()
     }
 }
