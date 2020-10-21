@@ -11254,7 +11254,7 @@ bool BytecodeEmitter::intoScriptStencil(ScriptStencil* script) {
 
   
   script->sharedData =
-      RuntimeScriptData::createWith(cx, std::move(immutableScriptData));
+      SharedImmutableScriptData::createWith(cx, std::move(immutableScriptData));
   if (!script->sharedData) {
     return false;
   }

@@ -453,7 +453,7 @@ class ScriptStencil {
   ScriptThingsVector gcThings;
 
   
-  RefPtr<js::RuntimeScriptData> sharedData = {};
+  RefPtr<js::SharedImmutableScriptData> sharedData = {};
 
   
   SourceExtent extent = {};

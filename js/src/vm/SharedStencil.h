@@ -481,7 +481,7 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
 
 
 
-class RuntimeScriptData {
+class SharedImmutableScriptData {
   
   
   
@@ -494,8 +494,9 @@ class RuntimeScriptData {
   friend class ::JSScript;
 
  public:
-  RuntimeScriptData() = default;
+  SharedImmutableScriptData() = default;
 
+  
   
   struct Hasher;
 
@@ -511,14 +512,14 @@ class RuntimeScriptData {
   }
 
   static constexpr size_t offsetOfISD() {
-    return offsetof(RuntimeScriptData, isd_);
+    return offsetof(SharedImmutableScriptData, isd_);
   }
 
  private:
-  static RuntimeScriptData* create(JSContext* cx);
+  static SharedImmutableScriptData* create(JSContext* cx);
 
  public:
-  static RuntimeScriptData* createWith(
+  static SharedImmutableScriptData* createWith(
       JSContext* cx, js::UniquePtr<ImmutableScriptData>&& isd);
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
@@ -526,36 +527,38 @@ class RuntimeScriptData {
   }
 
   
-  RuntimeScriptData(const RuntimeScriptData&) = delete;
-  RuntimeScriptData& operator=(const RuntimeScriptData&) = delete;
+  SharedImmutableScriptData(const SharedImmutableScriptData&) = delete;
+  SharedImmutableScriptData& operator=(const SharedImmutableScriptData&) =
+      delete;
 
   template <XDRMode mode>
   static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
-                                    RefPtr<RuntimeScriptData>& rsd);
+                                    RefPtr<SharedImmutableScriptData>& sisd);
 
-  static bool shareScriptData(JSContext* cx, RefPtr<RuntimeScriptData>& rsd);
+  static bool shareScriptData(JSContext* cx,
+                              RefPtr<SharedImmutableScriptData>& sisd);
 
   size_t immutableDataLength() const { return isd_->immutableData().Length(); }
 };
 
 
 
-struct RuntimeScriptData::Hasher {
-  using Lookup = RefPtr<RuntimeScriptData>;
+struct SharedImmutableScriptData::Hasher {
+  using Lookup = RefPtr<SharedImmutableScriptData>;
 
   static mozilla::HashNumber hash(const Lookup& l) {
     mozilla::Span<const uint8_t> immutableData = l->isd_->immutableData();
     return mozilla::HashBytes(immutableData.data(), immutableData.size());
   }
 
-  static bool match(RuntimeScriptData* entry, const Lookup& lookup) {
+  static bool match(SharedImmutableScriptData* entry, const Lookup& lookup) {
     return (entry->isd_->immutableData() == lookup->isd_->immutableData());
   }
 };
 
-using RuntimeScriptDataTable =
-    mozilla::HashSet<RuntimeScriptData*, RuntimeScriptData::Hasher,
-                     SystemAllocPolicy>;
+using SharedImmutableScriptDataTable =
+    mozilla::HashSet<SharedImmutableScriptData*,
+                     SharedImmutableScriptData::Hasher, SystemAllocPolicy>;
 
 }  
 

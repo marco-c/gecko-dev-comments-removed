@@ -886,10 +886,10 @@ struct JSRuntime {
   
   
  private:
-  js::ScriptDataLockData<js::RuntimeScriptDataTable> scriptDataTable_;
+  js::ScriptDataLockData<js::SharedImmutableScriptDataTable> scriptDataTable_;
 
  public:
-  js::RuntimeScriptDataTable& scriptDataTable(
+  js::SharedImmutableScriptDataTable& scriptDataTable(
       const js::AutoLockScriptData& lock) {
     return scriptDataTable_.ref();
   }
