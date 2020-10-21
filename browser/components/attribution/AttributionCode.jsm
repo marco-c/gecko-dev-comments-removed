@@ -19,6 +19,23 @@ ChromeUtils.defineModuleGetter(
   "Services",
   "resource://gre/modules/Services.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "MacAttribution",
+  "resource:///modules/MacAttribution.jsm"
+);
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {})
+    .ConsoleAPI;
+  let consoleOptions = {
+    
+    
+    maxLogLevel: "error",
+    maxLogLevelPref: "browser.attribution.loglevel",
+    prefix: "AttributionCode",
+  };
+  return new ConsoleAPI(consoleOptions);
+});
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 const ATTR_CODE_MAX_LENGTH = 1010;
@@ -41,13 +58,53 @@ var AttributionCode = {
   
 
 
+
+
   get attributionFile() {
-    let file = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
-    
-    file.append(Services.appinfo.vendor || "mozilla");
-    file.append(AppConstants.MOZ_APP_NAME);
-    file.append("postSigningData");
-    return file;
+    if (AppConstants.platform == "win") {
+      let file = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
+      
+      file.append(Services.appinfo.vendor || "mozilla");
+      file.append(AppConstants.MOZ_APP_NAME);
+      if (!file.exists()) {
+        file.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+      }
+      file.append("postSigningData");
+      return file;
+    } else if (AppConstants.platform == "macosx") {
+      
+      
+      
+      let file;
+      try {
+        file = Services.dirsvc.get("UpdRootD", Ci.nsIFile);
+      } catch (ex) {
+        let env = Cc["@mozilla.org/process/environment;1"].getService(
+          Ci.nsIEnvironment
+        );
+        
+        
+        if (
+          ex instanceof Ci.nsIException &&
+          ex.result == Cr.NS_ERROR_FAILURE &&
+          env.exists("XPCSHELL_TEST_PROFILE_DIR")
+        ) {
+          let path = env.get("XPCSHELL_TEST_TEMP_DIR");
+          file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+          file.initWithPath(path);
+        } else {
+          throw ex;
+        }
+      }
+
+      if (!file.exists()) {
+        file.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+      }
+      file.append("macAttributionData");
+      return file;
+    }
+
+    return null;
   },
 
   
@@ -89,6 +146,9 @@ var AttributionCode = {
           parsed[key] = value;
         }
       } else {
+        log.debug(
+          `parseAttributionCode: "${code}" => isValid = false: "${key}", "${value}"`
+        );
         isValid = false;
         break;
       }
@@ -103,6 +163,43 @@ var AttributionCode = {
       .add("decode_error");
 
     return {};
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  parseAttributionCodeFromUrl(url) {
+    if (!url) {
+      return {};
+    }
+
+    let parsed = {};
+
+    let params = new URL(url).searchParams;
+    for (let key of ATTR_CODE_KEYS) {
+      
+      
+      for (let paramKey of [`utm_${key}`, `funnel_${key}`, key]) {
+        if (params.has(paramKey)) {
+          
+          let value = encodeURIComponent(params.get(paramKey));
+          if (value && ATTR_CODE_VALUE_REGEX.test(value)) {
+            parsed[key] = value;
+          }
+        }
+      }
+    }
+
+    return parsed;
   },
 
   
@@ -137,58 +234,125 @@ var AttributionCode = {
 
   async getAttrDataAsync() {
     if (gCachedAttrData != null) {
+      log.debug(
+        `getAttrDataAsync: attribution is cached: ${JSON.stringify(
+          gCachedAttrData
+        )}`
+      );
       return gCachedAttrData;
     }
 
     gCachedAttrData = {};
-    if (AppConstants.platform == "win") {
-      let bytes;
+    let attributionFile = this.attributionFile;
+    if (!attributionFile) {
+      
+      log.debug(`getAttrDataAsync: no attribution (attributionFile is null)`);
+      return gCachedAttrData;
+    }
+
+    if (
+      AppConstants.platform == "macosx" &&
+      !(await OS.File.exists(attributionFile.path))
+    ) {
+      log.debug(
+        `getAttrDataAsync: macOS && !exists("${attributionFile.path}")`
+      );
+
+      
       try {
-        bytes = await OS.File.read(this.attributionFile.path);
+        let referrer = await MacAttribution.getReferrerUrl();
+        log.debug(
+          `getAttrDataAsync: macOS attribution getReferrerUrl: "${referrer}"`
+        );
+
+        gCachedAttrData = this.parseAttributionCodeFromUrl(referrer);
       } catch (ex) {
-        if (ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
-          return gCachedAttrData;
-        }
-        Services.telemetry
-          .getHistogramById("BROWSER_ATTRIBUTION_ERRORS")
-          .add("read_error");
-      }
-      if (bytes) {
-        try {
-          let decoder = new TextDecoder();
-          let code = decoder.decode(bytes);
-          gCachedAttrData = this.parseAttributionCode(code);
-        } catch (ex) {
+        
+        gCachedAttrData = {};
+
+        
+        log.warn("Caught exception fetching macOS attribution codes!", ex);
+
+        if (
+          ex instanceof Ci.nsIException &&
+          ex.result == Cr.NS_ERROR_UNEXPECTED
+        ) {
           
           Services.telemetry
             .getHistogramById("BROWSER_ATTRIBUTION_ERRORS")
-            .add("decode_error");
+            .add("quarantine_error");
         }
       }
-    } else if (AppConstants.platform == "macosx") {
-      const { MacAttribution } = ChromeUtils.import(
-        "resource:///modules/MacAttribution.jsm"
-      );
+
+      log.debug(`macOS attribution data is ${JSON.stringify(gCachedAttrData)}`);
+
+      
+      
       try {
-        let referrer = await MacAttribution.getReferrerUrl();
-        let params = new URL(referrer).searchParams;
-        for (let key of ATTR_CODE_KEYS) {
+        let s = this.serializeAttributionData(gCachedAttrData);
+        log.debug(`macOS attribution data serializes as "${s}"`);
+        let bytes = new TextEncoder().encode(s);
+        await OS.File.writeAtomic(attributionFile.path, bytes);
+      } catch (ex) {
+        log.debug(`Caught exception writing "${attributionFile.path}"`, ex);
+        Services.telemetry
+          .getHistogramById("BROWSER_ATTRIBUTION_ERRORS")
+          .add("write_error");
+        return gCachedAttrData;
+      }
+
+      log.debug(
+        `Returning after successfully writing "${attributionFile.path}"`
+      );
+      return gCachedAttrData;
+    }
+
+    log.debug(`getAttrDataAsync: !macOS || !exists("${attributionFile.path}")`);
+
+    let bytes;
+    try {
+      bytes = await OS.File.read(attributionFile.path);
+    } catch (ex) {
+      if (ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
+        log.debug(
+          `getAttrDataAsync: !exists("${
+            attributionFile.path
+          }"), returning ${JSON.stringify(gCachedAttrData)}`
+        );
+        return gCachedAttrData;
+      }
+      Services.telemetry
+        .getHistogramById("BROWSER_ATTRIBUTION_ERRORS")
+        .add("read_error");
+    }
+    if (bytes) {
+      try {
+        let decoder = new TextDecoder();
+        let code = decoder.decode(bytes);
+        log.debug(
+          `getAttrDataAsync: ${attributionFile.path} deserializes to ${code}`
+        );
+        if (AppConstants.platform == "macosx" && !code) {
           
           
-          for (let paramKey of [`utm_${key}`, `funnel_${key}`, key]) {
-            if (params.has(paramKey)) {
-              
-              let value = encodeURIComponent(params.get(paramKey));
-              if (value && ATTR_CODE_VALUE_REGEX.test(value)) {
-                gCachedAttrData[key] = value;
-              }
-            }
-          }
+          
+          return gCachedAttrData;
         }
+
+        gCachedAttrData = this.parseAttributionCode(code);
+        log.debug(
+          `getAttrDataAsync: ${code} parses to ${JSON.stringify(
+            gCachedAttrData
+          )}`
+        );
       } catch (ex) {
         
+        Services.telemetry
+          .getHistogramById("BROWSER_ATTRIBUTION_ERRORS")
+          .add("decode_error");
       }
     }
+
     return gCachedAttrData;
   },
 

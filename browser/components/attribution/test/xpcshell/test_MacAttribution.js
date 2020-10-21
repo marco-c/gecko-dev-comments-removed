@@ -8,6 +8,10 @@ const { MacAttribution } = ChromeUtils.import(
   "resource:///modules/MacAttribution.jsm"
 );
 
+add_task(async () => {
+  await setupStubs();
+});
+
 add_task(async function testValidAttrCodes() {
   let appPath = MacAttribution.applicationPath;
   let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
@@ -26,8 +30,18 @@ add_task(async function testValidAttrCodes() {
     equal(referrer, url, "overwrite referrer url");
 
     
+    await AttributionCode.deleteFileAsync();
     AttributionCode._clearCache();
     let result = await AttributionCode.getAttrDataAsync();
+    Assert.deepEqual(
+      result,
+      entry.parsed,
+      "Parsed code should match expected value, code was: " + entry.code
+    );
+
+    
+    AttributionCode._clearCache();
+    result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(
       result,
       entry.parsed,
@@ -71,6 +85,7 @@ add_task(async function testInvalidAttrCodes() {
     equal(referrer, url, "overwrite referrer url");
 
     
+    await AttributionCode.deleteFileAsync();
     AttributionCode._clearCache();
     let result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(result, {}, "Code should have failed to parse: " + code);
