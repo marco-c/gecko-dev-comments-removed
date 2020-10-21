@@ -53,16 +53,37 @@ const ONE_SECOND_NS: u64 = 1_000_000_000;
 
 
 static PROFILER_PRESETS: &'static[(&'static str, &'static str)] = &[
-    (&"Transaction times", &"DisplayList,Scene building,Content send,API send"),
-    (&"Frame times", &"Frame CPU total,Frame building,Visibility,Prepare,Batching,Glyph resolve,Renderer,GPU"),
-    (&"Frame stats", &"Primitives,Visible primitives,Draw calls,Vertices,Color passes,Alpha passes,Rendered picture tiles,Rasterized glyphs"),
-    (&"Time graphs", &"#DisplayList,#Scene building,#Blob rasterization, ,#Frame CPU total,#Frame building,#Renderer,#Texture cache upload, ,#GPU"),
-    (&"Memory", &"Image templates,Image templates mem,Font templates,Font templates mem,DisplayList mem,Picture tiles mem"),
-    (&"GPU samplers", &"Alpha targets samplers,Transparent pass samplers,Opaque pass samplers,Total samplers"),
-    (&"Interners", "Interned primitives,Interned clips,Interned pictures,Interned text runs,Interned normal borders,Interned image borders,Interned images,Interned YUV images,Interned line decorations,Interned linear gradients,Interned radial gradients,Interned conic gradients,Interned filter data,Interned backdrops"),
-    (&"Slow indicators", &"*Slow transaction,*Slow frame"),
-    (&"Compact", &"FPS, ,Frame times, ,Frame stats"),
+    
     (&"Default", &"FPS,|,Slow indicators,_,Time graphs,|,Frame times, ,Transaction times, ,Frame stats, ,Memory, ,Interners,_,GPU time queries"),
+    
+    (&"Compact", &"FPS, ,Frame times, ,Frame stats"),
+    
+    (&"Slow indicators", &"*Slow transaction,*Slow frame"),
+
+    
+
+    
+    (&"Transaction times", &"DisplayList,Scene building,Content send,API send"),
+    
+    (&"Frame times", &"Frame CPU total,Frame building,Visibility,Prepare,Batching,Glyph resolve,Texture cache update,Renderer,GPU"),
+    
+    (&"Frame stats", &"Primitives,Visible primitives,Draw calls,Vertices,Color passes,Alpha passes,Rendered picture tiles,Rasterized glyphs"),
+
+    
+
+    
+    (&"Time graphs", &"#DisplayList,#Scene building,#Blob rasterization, ,#Frame CPU total,#Frame building,#Renderer,#Texture cache update, ,#GPU"),
+    
+    (&"Backend graphs", &"#Frame building, #Visibility, #Prepare, #Batching, #Glyph resolve"),
+    
+    (&"Renderer graphs", &"#Rendered picture tiles,#Draw calls,#Rasterized glyphs,#Texture uploads,#Texture uploads mem, ,#Texture cache update,#Renderer,"),
+
+    
+
+    (&"Memory", &"Image templates,Image templates mem,Font templates,Font templates mem,DisplayList mem,Picture tiles mem"),
+    (&"Interners", "Interned primitives,Interned clips,Interned pictures,Interned text runs,Interned normal borders,Interned image borders,Interned images,Interned YUV images,Interned line decorations,Interned linear gradients,Interned radial gradients,Interned conic gradients,Interned filter data,Interned backdrops"),
+    
+    (&"GPU samplers", &"Alpha targets samplers,Transparent pass samplers,Opaque pass samplers,Total samplers"),
 ];
 
 fn find_preset(name: &str) -> Option<&'static str> {
@@ -268,7 +289,7 @@ impl Profiler {
             float("Slow transaction", "", SLOW_TXN, expected(0.0..0.0)),
 
             float("GPU cache upload", "ms", GPU_CACHE_UPLOAD_TIME, expected(0.0..2.0)),
-            float("Texture cache upload", "ms", TEXTURE_CACHE_UPLOAD_TIME, expected(0.0..3.0)),
+            float("Texture cache update", "ms", TEXTURE_CACHE_UPLOAD_TIME, expected(0.0..3.0)),
 
             float("Frame", "ms", FRAME_TIME, Expected::none()),
 
@@ -624,7 +645,7 @@ impl Profiler {
             );
         }
 
-        rect.size.width += 200.0;
+        rect.size.width += 220.0;
         debug_renderer.add_quad(
             rect.min_x(),
             rect.min_y(),
