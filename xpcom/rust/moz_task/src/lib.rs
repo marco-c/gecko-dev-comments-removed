@@ -7,10 +7,21 @@
 
 
 
+#[macro_use]
+extern crate cstr;
 extern crate libc;
 extern crate nserror;
 extern crate nsstring;
 extern crate xpcom;
+
+mod event_loop;
+
+
+
+
+pub mod gtest_only {
+    pub use event_loop::spin_event_loop_until;
+}
 
 use nserror::{nsresult, NS_OK};
 use nsstring::{nsACString, nsCString};
