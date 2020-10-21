@@ -9,6 +9,8 @@
 
 #include "jsfriendapi.h"
 
+#include "gc/GC.h"
+
 #include "js/RootingAPI.h"
 #include "js/StableStringChars.h"
 #include "js/String.h"  
@@ -40,29 +42,44 @@ BEGIN_TEST(testDeduplication_ASSC) {
       "eearth.Theirtagsshallblinkuntiltheendofdays.";
 
   
-  JS::RootedString original(cx, JS_NewStringCopyZ(cx, text));
-  CHECK(original);
+  JS::RootedString original(cx);
+  JS::RootedString str(cx);
+  JS::RootedString dep(cx);
+  JS::RootedString depdep(cx);
+  JS::RootedString str2(cx);
+  JS::RootedString dep2(cx);
+  JS::RootedString depdep2(cx);
 
-  
-  
-  JS::RootedString str(cx, JS_NewStringCopyZ(cx, text));
-  CHECK(str);
+  {
+    
+    
+    
+    js::gc::AutoSuppressGC suppress(cx);
 
-  JS::RootedString dep(cx, JS_NewDependentString(cx, str, 10, 100));
-  CHECK(str);
+    original = JS_NewStringCopyZ(cx, text);
+    CHECK(original);
 
-  JS::RootedString depdep(cx, JS_NewDependentString(cx, dep, 10, 80));
-  CHECK(str);
+    
+    
+    str = JS_NewStringCopyZ(cx, text);
+    CHECK(str);
 
-  
-  JS::RootedString str2(cx, JS_NewStringCopyZ(cx, text));
-  CHECK(str);
+    dep = JS_NewDependentString(cx, str, 10, 100);
+    CHECK(dep);
 
-  JS::RootedString dep2(cx, JS_NewDependentString(cx, str2, 10, 100));
-  CHECK(str);
+    depdep = JS_NewDependentString(cx, dep, 10, 80);
+    CHECK(depdep);
 
-  JS::RootedString depdep2(cx, JS_NewDependentString(cx, dep2, 10, 80));
-  CHECK(str);
+    
+    str2 = JS_NewStringCopyZ(cx, text);
+    CHECK(str2);
+
+    dep2 = JS_NewDependentString(cx, str2, 10, 100);
+    CHECK(dep2);
+
+    depdep2 = JS_NewDependentString(cx, dep2, 10, 80);
+    CHECK(depdep2);
+  }
 
   
   
