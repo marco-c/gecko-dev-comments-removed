@@ -14,21 +14,57 @@ const { CryptoUtils } = ChromeUtils.import(
   "resource://services-crypto/utils.js"
 );
 
-const { DERIVED_KEYS_NAMES, SCOPE_OLD_SYNC, log, logPII } = ChromeUtils.import(
-  "resource://gre/modules/FxAccountsCommon.js"
-);
+const {
+  LEGACY_DERIVED_KEYS_NAMES,
+  SCOPE_OLD_SYNC,
+  LEGACY_SCOPE_WEBEXT_SYNC,
+  FX_OAUTH_CLIENT_ID,
+  log,
+  logPII,
+} = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
+
+
+
+
+const LEGACY_DERIVED_KEY_SCOPES = [SCOPE_OLD_SYNC, LEGACY_SCOPE_WEBEXT_SYNC];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class FxAccountsKeys {
   constructor(fxAccountsInternal) {
-    this._fxia = fxAccountsInternal;
+    this._fxai = fxAccountsInternal;
   }
 
   
 
 
 
-  canGetKeys() {
-    return this._fxia.withCurrentAccountState(async currentState => {
+
+
+
+  canGetKeyForScope(scope) {
+    return this._fxai.withCurrentAccountState(async currentState => {
       let userData = await currentState.getUserAccountData();
       if (!userData) {
         throw new Error("Can't possibly get keys; User is not signed in");
@@ -37,16 +73,96 @@ class FxAccountsKeys {
         log.info("Can't get keys; user is not verified");
         return false;
       }
+
+      if (userData.scopedKeys && userData.scopedKeys.hasOwnProperty(scope)) {
+        return true;
+      }
+
       
+      if (scope == SCOPE_OLD_SYNC) {
+        if (userData.kSync && userData.kXCS) {
+          return true;
+        }
+      }
+      if (scope == LEGACY_SCOPE_WEBEXT_SYNC) {
+        if (userData.kExtSync && userData.kExtKbHash) {
+          return true;
+        }
+      }
+
       
+      if (userData.kB) {
+        return true;
+      }
+
       
-      return (
-        userData &&
-        (userData.keyFetchToken ||
-          DERIVED_KEYS_NAMES.every(k => userData[k]) ||
-          userData.kB)
-      );
+      if (userData.keyFetchToken) {
+        return true;
+      }
+
+      log.info("Can't get keys; no key material or tokens available");
+      return false;
     });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getKeyForScope(scope) {
+    const { scopedKeys } = await this._loadOrFetchKeys();
+    if (!scopedKeys.hasOwnProperty(scope)) {
+      throw new Error(`Key not available for scope "${scope}"`);
+    }
+    return {
+      scope,
+      ...scopedKeys[scope],
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+  keyAsHex(jwk) {
+    return CommonUtils.base64urlToHex(jwk.k);
+  }
+
+  
+
+
+
+
+
+
+
+
+  kidAsHex(jwk) {
+    
+    
+    
+    const idx = jwk.kid.indexOf("-") + 1;
+    if (idx <= 1) {
+      throw new Error(`Invalid kid: ${jwk.kid}`);
+    }
+    return CommonUtils.base64urlToHex(jwk.kid.slice(idx));
   }
 
   
@@ -70,55 +186,44 @@ class FxAccountsKeys {
 
 
 
-  async getKeys() {
-    return this._fxia.withCurrentAccountState(async currentState => {
+
+
+  async _loadOrFetchKeys() {
+    return this._fxai.withCurrentAccountState(async currentState => {
       try {
         let userData = await currentState.getUserAccountData();
         if (!userData) {
           throw new Error("Can't get keys; User is not signed in");
         }
-        if (userData.kB) {
-          
-          log.info("Migrating kB to derived keys.");
-          const { uid, kB } = userData;
-          await currentState.updateUserAccountData({
-            uid,
-            ...(await this._deriveKeys(uid, CommonUtils.hexToBytes(kB))),
-            kA: null, 
-            kB: null,
-          });
-          userData = await currentState.getUserAccountData();
+        
+        if (userData.scopedKeys) {
+          if (
+            LEGACY_DERIVED_KEY_SCOPES.every(scope =>
+              userData.scopedKeys.hasOwnProperty(scope)
+            )
+          ) {
+            return userData;
+          }
         }
-        if (DERIVED_KEYS_NAMES.every(k => !!userData[k])) {
-          return userData;
-        }
+        
         if (!currentState.whenKeysReadyDeferred) {
           currentState.whenKeysReadyDeferred = PromiseUtils.defer();
-          if (userData.keyFetchToken) {
-            this.fetchAndUnwrapKeys(userData.keyFetchToken).then(
-              dataWithKeys => {
-                if (DERIVED_KEYS_NAMES.some(k => !dataWithKeys[k])) {
-                  const missing = DERIVED_KEYS_NAMES.filter(
-                    k => !dataWithKeys[k]
-                  );
-                  currentState.whenKeysReadyDeferred.reject(
-                    new Error(`user data missing: ${missing.join(", ")}`)
-                  );
-                  return;
-                }
-                currentState.whenKeysReadyDeferred.resolve(dataWithKeys);
-              },
-              err => {
-                currentState.whenKeysReadyDeferred.reject(err);
-              }
-            );
-          } else {
-            currentState.whenKeysReadyDeferred.reject("No keyFetchToken");
-          }
+          
+          
+          this._migrateOrFetchKeys(currentState, userData).then(
+            dataWithKeys => {
+              currentState.whenKeysReadyDeferred.resolve(dataWithKeys);
+              currentState.whenKeysReadyDeferred = null;
+            },
+            err => {
+              currentState.whenKeysReadyDeferred.reject(err);
+              currentState.whenKeysReadyDeferred = null;
+            }
+          );
         }
         return await currentState.whenKeysReadyDeferred.promise;
       } catch (err) {
-        return this._fxia._handleTokenError(err);
+        return this._fxai._handleTokenError(err);
       }
     });
   }
@@ -126,8 +231,149 @@ class FxAccountsKeys {
   
 
 
-  fetchKeys(keyFetchToken) {
-    let client = this._fxia.fxAccountsClient;
+
+
+
+
+  async _migrateOrFetchKeys(currentState, userData) {
+    
+    
+    if (
+      LEGACY_DERIVED_KEYS_NAMES.every(name => userData.hasOwnProperty(name))
+    ) {
+      log.info("Migrating from legacy key fields to scopedKeys.");
+      const scopedKeys = userData.scopedKeys || {};
+      await currentState.updateUserAccountData({
+        scopedKeys: {
+          ...scopedKeys,
+          ...(await this._deriveScopedKeysFromAccountData(userData)),
+        },
+      });
+      userData = await currentState.getUserAccountData();
+      return userData;
+    }
+    
+    if (userData.kB) {
+      log.info("Migrating kB to derived keys.");
+      const { uid, kB, sessionToken } = userData;
+      const scopedKeysMetadata = await this._fetchScopedKeysMetadata(
+        sessionToken
+      );
+      await currentState.updateUserAccountData({
+        uid,
+        ...(await this._deriveKeys(
+          uid,
+          CommonUtils.hexToBytes(kB),
+          scopedKeysMetadata
+        )),
+        kA: null, 
+        kB: null,
+      });
+      userData = await currentState.getUserAccountData();
+      return userData;
+    }
+    
+    if (!userData.sessionToken) {
+      throw new Error("No sessionToken");
+    }
+    if (!userData.keyFetchToken) {
+      throw new Error("No keyFetchToken");
+    }
+    return this._fetchAndUnwrapAndDeriveKeys(
+      currentState,
+      userData.sessionToken,
+      userData.keyFetchToken
+    );
+  }
+
+  
+
+
+
+
+
+
+  async _fetchAndUnwrapAndDeriveKeys(
+    currentState,
+    sessionToken,
+    keyFetchToken
+  ) {
+    if (logPII) {
+      log.debug(
+        `fetchAndUnwrapKeys: sessionToken: ${sessionToken}, keyFetchToken: ${keyFetchToken}`
+      );
+    }
+
+    
+    if (!sessionToken || !keyFetchToken) {
+      
+      log.warn("improper _fetchAndUnwrapKeys() call: token missing");
+      await this._fxai.signOut();
+      return null;
+    }
+
+    
+    
+    
+    
+    const scopedKeysMetadata = await this._fetchScopedKeysMetadata(
+      sessionToken
+    );
+
+    
+    
+    
+    let { wrapKB } = await this._fetchKeys(keyFetchToken);
+
+    let data = await currentState.getUserAccountData();
+
+    
+    
+    if (data.keyFetchToken !== keyFetchToken) {
+      throw new Error("Signed in user changed while fetching keys!");
+    }
+
+    let kBbytes = CryptoUtils.xor(
+      CommonUtils.hexToBytes(data.unwrapBKey),
+      wrapKB
+    );
+
+    if (logPII) {
+      log.debug("kBbytes: " + kBbytes);
+    }
+
+    let updateData = {
+      ...(await this._deriveKeys(data.uid, kBbytes, scopedKeysMetadata)),
+      keyFetchToken: null, 
+      unwrapBKey: null,
+    };
+
+    if (logPII) {
+      log.debug(`Keys Obtained: ${updateData.scopedKeys}`);
+    } else {
+      log.debug(
+        "Keys Obtained: " + Object.keys(updateData.scopedKeys).join(", ")
+      );
+    }
+
+    
+    const EXPECTED_FIELDS = LEGACY_DERIVED_KEYS_NAMES.concat(["scopedKeys"]);
+    if (EXPECTED_FIELDS.some(k => !updateData[k])) {
+      const missing = EXPECTED_FIELDS.filter(k => !updateData[k]);
+      throw new Error(`user data missing: ${missing.join(", ")}`);
+    }
+
+    await currentState.updateUserAccountData(updateData);
+    return currentState.getUserAccountData();
+  }
+
+  
+
+
+
+
+  _fetchKeys(keyFetchToken) {
+    let client = this._fxai.fxAccountsClient;
     log.debug(
       `Fetching keys with token ${!!keyFetchToken} from ${client.host}`
     );
@@ -137,82 +383,203 @@ class FxAccountsKeys {
     return client.accountKeys(keyFetchToken);
   }
 
-  fetchAndUnwrapKeys(keyFetchToken) {
-    return this._fxia.withCurrentAccountState(async currentState => {
-      if (logPII) {
-        log.debug("fetchAndUnwrapKeys: token: " + keyFetchToken);
-      }
-      
-      if (!keyFetchToken) {
-        
-        log.warn("improper fetchAndUnwrapKeys() call: token missing");
-        await this._fxia.signOut();
-        return null;
-      }
+  
 
-      let { wrapKB } = await this.fetchKeys(keyFetchToken);
 
-      let data = await currentState.getUserAccountData();
 
-      
-      
-      if (data.keyFetchToken !== keyFetchToken) {
-        throw new Error("Signed in user changed while fetching keys!");
-      }
 
-      let kBbytes = CryptoUtils.xor(
-        CommonUtils.hexToBytes(data.unwrapBKey),
-        wrapKB
+
+  async _fetchScopedKeysMetadata(sessionToken) {
+    
+    
+    
+    const scopes = [SCOPE_OLD_SYNC].join(" ");
+    const scopedKeysMetadata = await this._fxai.fxAccountsClient.getScopedKeyData(
+      sessionToken,
+      FX_OAUTH_CLIENT_ID,
+      scopes
+    );
+    if (!scopedKeysMetadata.hasOwnProperty(SCOPE_OLD_SYNC)) {
+      log.warn(
+        "The FxA server did not grant Firefox the `oldsync` scope; this is most unexpected!" +
+          ` scopes were: ${Object.keys(scopedKeysMetadata)}`
       );
-
-      if (logPII) {
-        log.debug("kBbytes: " + kBbytes);
-      }
-      let updateData = {
-        ...(await this._deriveKeys(data.uid, kBbytes)),
-        keyFetchToken: null, 
-        unwrapBKey: null,
-      };
-
-      log.debug(
-        "Keys Obtained:" +
-          DERIVED_KEYS_NAMES.map(k => `${k}=${!!updateData[k]}`).join(", ")
+      throw new Error(
+        "The FxA server did not grant Firefox the `oldsync` scope"
       );
-      if (logPII) {
-        log.debug(
-          "Keys Obtained:" +
-            DERIVED_KEYS_NAMES.map(k => `${k}=${updateData[k]}`).join(", ")
-        );
-      }
-
-      await currentState.updateUserAccountData(updateData);
-      data = await currentState.getUserAccountData();
-      return data;
-    });
+    }
+    
+    
+    
+    
+    
+    scopedKeysMetadata[LEGACY_SCOPE_WEBEXT_SYNC] = {
+      ...scopedKeysMetadata[SCOPE_OLD_SYNC],
+      identifier: LEGACY_SCOPE_WEBEXT_SYNC,
+    };
+    return scopedKeysMetadata;
   }
 
   
 
 
-  async getKeyForScope(scope, { keyRotationTimestamp }) {
-    if (scope !== SCOPE_OLD_SYNC) {
-      throw new Error(`Unavailable key material for ${scope}`);
-    }
-    let { kSync, kXCS } = await this.getKeys();
-    if (!kSync || !kXCS) {
-      throw new Error("Could not find requested key.");
-    }
-    kXCS = ChromeUtils.base64URLEncode(CommonUtils.hexToArrayBuffer(kXCS), {
-      pad: false,
-    });
-    kSync = ChromeUtils.base64URLEncode(CommonUtils.hexToArrayBuffer(kSync), {
-      pad: false,
-    });
-    const kid = `${keyRotationTimestamp}-${kXCS}`;
+
+
+
+
+
+
+  async _deriveKeys(uid, kBbytes, scopedKeysMetadata) {
+    const scopedKeys = await this._deriveScopedKeys(
+      uid,
+      kBbytes,
+      scopedKeysMetadata
+    );
     return {
-      scope,
-      kid,
-      k: kSync,
+      scopedKeys,
+      
+      
+      
+      kSync: scopedKeys[SCOPE_OLD_SYNC]
+        ? this.keyAsHex(scopedKeys[SCOPE_OLD_SYNC])
+        : CommonUtils.bytesAsHex(await this._deriveSyncKey(kBbytes)),
+      kXCS: scopedKeys[SCOPE_OLD_SYNC]
+        ? this.kidAsHex(scopedKeys[SCOPE_OLD_SYNC])
+        : CommonUtils.bytesAsHex(await this._deriveXClientState(kBbytes)),
+      kExtSync: scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC]
+        ? this.keyAsHex(scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC])
+        : CommonUtils.bytesAsHex(await this._deriveWebExtSyncStoreKey(kBbytes)),
+      kExtKbHash: scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC]
+        ? this.kidAsHex(scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC])
+        : CommonUtils.bytesAsHex(await this._deriveWebExtKbHash(uid, kBbytes)),
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async _deriveScopedKeys(uid, kBbytes, scopedKeysMetadata) {
+    const scopedKeys = {};
+    for (const scope in scopedKeysMetadata) {
+      if (LEGACY_DERIVED_KEY_SCOPES.includes(scope)) {
+        scopedKeys[scope] = await this._deriveLegacyScopedKey(
+          uid,
+          kBbytes,
+          scope,
+          scopedKeysMetadata[scope]
+        );
+      } else {
+        scopedKeys[scope] = await this._deriveScopedKey(
+          uid,
+          kBbytes,
+          scope,
+          scopedKeysMetadata[scope]
+        );
+      }
+    }
+    return scopedKeys;
+  }
+
+  
+
+
+
+
+
+
+
+  async _deriveScopedKeysFromAccountData(userData) {
+    const scopedKeysMetadata = await this._fetchScopedKeysMetadata(
+      userData.sessionToken
+    );
+    const scopedKeys = userData.scopedKeys || {};
+    for (const scope of LEGACY_DERIVED_KEY_SCOPES) {
+      if (scopedKeysMetadata.hasOwnProperty(scope)) {
+        let kid, key;
+        if (scope == SCOPE_OLD_SYNC) {
+          ({ kXCS: kid, kSync: key } = userData);
+        } else if (scope == LEGACY_SCOPE_WEBEXT_SYNC) {
+          ({ kExtKbHash: kid, kExtSync: key } = userData);
+        } else {
+          
+          throw new Error(`Unexpected legacy key-bearing scope: ${scope}`);
+        }
+        if (!kid || !key) {
+          throw new Error(
+            `Account is missing legacy key fields for scope: ${scope}`
+          );
+        }
+        scopedKeys[scope] = await this._formatLegacyScopedKey(
+          CommonUtils.hexToArrayBuffer(kid),
+          CommonUtils.hexToArrayBuffer(key),
+          scope,
+          scopedKeysMetadata[scope]
+        );
+      }
+    }
+    return scopedKeys;
+  }
+
+  
+
+
+
+  async _deriveScopedKey(uid, kBbytes, scope, scopedKeyMetadata) {
+    
+    
+    throw new Error("Only legacy scoped keys are currently implemented");
+  }
+
+  
+
+
+
+
+
+
+  async _deriveLegacyScopedKey(uid, kBbytes, scope, scopedKeyMetadata) {
+    let kid, key;
+    if (scope == SCOPE_OLD_SYNC) {
+      kid = await this._deriveXClientState(kBbytes);
+      key = await this._deriveSyncKey(kBbytes);
+    } else if (scope == LEGACY_SCOPE_WEBEXT_SYNC) {
+      kid = await this._deriveWebExtKbHash(uid, kBbytes);
+      key = await this._deriveWebExtSyncStoreKey(kBbytes);
+    } else {
+      throw new Error(`Unexpected legacy key-bearing scope: ${scope}`);
+    }
+    kid = CommonUtils.byteStringToArrayBuffer(kid);
+    key = CommonUtils.byteStringToArrayBuffer(key);
+    return this._formatLegacyScopedKey(kid, key, scope, scopedKeyMetadata);
+  }
+
+  
+
+
+
+
+
+
+
+
+  _formatLegacyScopedKey(kid, key, scope, { keyRotationTimestamp }) {
+    kid = ChromeUtils.base64URLEncode(kid, {
+      pad: false,
+    });
+    key = ChromeUtils.base64URLEncode(key, {
+      pad: false,
+    });
+    return {
+      kid: `${keyRotationTimestamp}-${kid}`,
+      k: key,
       kty: "oct",
     };
   }
@@ -221,39 +588,8 @@ class FxAccountsKeys {
 
 
 
-  async getScopedKeys(scopes, clientId) {
-    const { sessionToken } = await this._fxia._getVerifiedAccountOrReject();
-    const keyData = await this._fxia.fxAccountsClient.getScopedKeyData(
-      sessionToken,
-      clientId,
-      scopes
-    );
-    const scopedKeys = {};
-    for (const [scope, data] of Object.entries(keyData)) {
-      scopedKeys[scope] = await this.getKeyForScope(scope, data);
-    }
-    return scopedKeys;
-  }
 
-  async _deriveKeys(uid, kBbytes) {
-    return {
-      kSync: CommonUtils.bytesAsHex(await this._deriveSyncKey(kBbytes)),
-      kXCS: CommonUtils.bytesAsHex(this._deriveXClientState(kBbytes)),
-      kExtSync: CommonUtils.bytesAsHex(
-        await this._deriveWebExtSyncStoreKey(kBbytes)
-      ),
-      kExtKbHash: CommonUtils.bytesAsHex(
-        this._deriveWebExtKbHash(uid, kBbytes)
-      ),
-    };
-  }
-
-  
-
-
-
-
-  _deriveSyncKey(kBbytes) {
+  async _deriveSyncKey(kBbytes) {
     return CryptoUtils.hkdfLegacy(
       kBbytes,
       undefined,
@@ -267,7 +603,16 @@ class FxAccountsKeys {
 
 
 
-  _deriveWebExtSyncStoreKey(kBbytes) {
+  async _deriveXClientState(kBbytes) {
+    return this._sha256(kBbytes).slice(0, 16);
+  }
+
+  
+
+
+
+
+  async _deriveWebExtSyncStoreKey(kBbytes) {
     return CryptoUtils.hkdfLegacy(
       kBbytes,
       undefined,
@@ -281,17 +626,8 @@ class FxAccountsKeys {
 
 
 
-  _deriveWebExtKbHash(uid, kBbytes) {
+  async _deriveWebExtKbHash(uid, kBbytes) {
     return this._sha256(uid + kBbytes);
-  }
-
-  
-
-
-
-
-  _deriveXClientState(kBbytes) {
-    return this._sha256(kBbytes).slice(0, 16);
   }
 
   _sha256(bytes) {

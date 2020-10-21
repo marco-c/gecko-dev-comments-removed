@@ -116,6 +116,10 @@ exports.SCOPE_OLD_SYNC = "https://identity.mozilla.com/apps/oldsync";
 
 
 
+exports.LEGACY_SCOPE_WEBEXT_SYNC = "sync:addon_storage";
+
+
+
 exports.FX_MONITOR_OAUTH_CLIENT_ID = "802d56ef2a9af9fa";
 
 
@@ -265,7 +269,14 @@ exports.ERROR_INVALID_PARAMETER = "INVALID_PARAMETER";
 exports.ERROR_CODE_METHOD_NOT_ALLOWED = 405;
 exports.ERROR_MSG_METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED";
 
-exports.DERIVED_KEYS_NAMES = ["kSync", "kXCS", "kExtSync", "kExtKbHash"];
+
+
+
+
+
+
+
+exports.LEGACY_DERIVED_KEYS_NAMES = ["kSync", "kXCS", "kExtSync", "kExtKbHash"];
 
 
 
@@ -289,7 +300,7 @@ exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set([
 
 
 exports.FXA_PWDMGR_SECURE_FIELDS = new Set([
-  ...exports.DERIVED_KEYS_NAMES,
+  ...exports.LEGACY_DERIVED_KEYS_NAMES,
   "keyFetchToken",
   "unwrapBKey",
   "assertion",

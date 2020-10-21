@@ -28,6 +28,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "jwcrypto",
+  "resource://services-crypto/jwcrypto.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "FxAccountsPairingChannel",
   "resource://gre/modules/FxAccountsPairingChannel.js"
 );
@@ -214,6 +219,7 @@ this.FxAccountsPairingFlow = class FxAccountsPairingFlow {
     this._pairingChannel = options.pairingChannel;
     this._emitter = options.emitter;
     this._fxa = options.fxa;
+    this._fxai = options.fxai || this._fxa._internal;
     this._fxaConfig = options.fxaConfig;
     this._weave = options.weave;
     this._stateMachine = new PairingStateMachine(this._emitter);
@@ -312,9 +318,7 @@ this.FxAccountsPairingFlow = class FxAccountsPairingFlow {
             code_challenge_method,
             keys_jwk,
           };
-          const codeAndState = await this._fxa.authorizeOAuthCode(
-            authorizeParams
-          );
+          const codeAndState = await this._authorizeOAuthCode(authorizeParams);
           if (codeAndState.state != state) {
             throw new Error(`OAuth state mismatch`);
           }
@@ -432,6 +436,86 @@ this.FxAccountsPairingFlow = class FxAccountsPairingFlow {
     ) {
       this.finalize();
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _authorizeOAuthCode(options) {
+    return this._fxa._withVerifiedAccountState(async state => {
+      const { sessionToken } = await state.getUserAccountData(["sessionToken"]);
+      const params = { ...options };
+      if (params.keys_jwk) {
+        const jwk = JSON.parse(
+          new TextDecoder().decode(
+            ChromeUtils.base64URLDecode(params.keys_jwk, { padding: "reject" })
+          )
+        );
+        params.keys_jwe = await this._createKeysJWE(
+          sessionToken,
+          params.client_id,
+          params.scope,
+          jwk
+        );
+        delete params.keys_jwk;
+      }
+      try {
+        return await this._fxai.fxAccountsClient.oauthAuthorize(
+          sessionToken,
+          params
+        );
+      } catch (err) {
+        throw this._fxai._errorToErrorClass(err);
+      }
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _createKeysJWE(sessionToken, clientId, scopes, jwk) {
+    
+    
+    const clientKeyData = await this._fxai.fxAccountsClient.getScopedKeyData(
+      sessionToken,
+      clientId,
+      scopes
+    );
+    const scopedKeys = {};
+    for (const scope of Object.keys(clientKeyData)) {
+      const key = await this._fxai.keys.getKeyForScope(scope);
+      if (!key) {
+        throw new Error(`Key not available for scope "${scope}"`);
+      }
+      scopedKeys[scope] = key;
+    }
+    return jwcrypto.generateJWE(
+      jwk,
+      new TextEncoder().encode(JSON.stringify(scopedKeys))
+    );
   }
 };
 

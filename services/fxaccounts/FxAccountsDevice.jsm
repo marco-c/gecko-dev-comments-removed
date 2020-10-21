@@ -384,6 +384,15 @@ class FxAccountsDevice {
   
   
   async _registerOrUpdateDevice(currentState, signedInUser) {
+    
+    
+    
+    if (!currentState.isCurrent) {
+      throw new Error(
+        "_registerOrUpdateDevice called after a different user has signed in"
+      );
+    }
+
     const { sessionToken, device: currentDevice } = signedInUser;
     if (!sessionToken) {
       throw new Error("_registerOrUpdateDevice called without a session token");
@@ -550,7 +559,7 @@ class FxAccountsDevice {
     
     log.error("device registration failed", error);
     try {
-      currentState.updateUserAccountData({
+      await currentState.updateUserAccountData({
         device: null,
       });
     } catch (secondError) {
