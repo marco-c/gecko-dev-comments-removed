@@ -245,22 +245,15 @@ gfxPlatformFontList* gfxPlatformGtk::CreatePlatformFontList() {
   return nullptr;
 }
 
-
-
-static int32_t sDPI = 0;
-
 int32_t gfxPlatformGtk::GetFontScaleDPI() {
-  if (MOZ_UNLIKELY(!sDPI)) {
+  GdkScreen* screen = gdk_screen_get_default();
+  gtk_settings_get_for_screen(screen);
+  int32_t dpi = int32_t(round(gdk_screen_get_resolution(screen)));
+  if (dpi <= 0) {
     
-    GdkScreen* screen = gdk_screen_get_default();
-    gtk_settings_get_for_screen(screen);
-    sDPI = int32_t(round(gdk_screen_get_resolution(screen)));
-    if (sDPI <= 0) {
-      
-      sDPI = 96;
-    }
+    dpi = 96;
   }
-  return sDPI;
+  return dpi;
 }
 
 double gfxPlatformGtk::GetFontScaleFactor() {
