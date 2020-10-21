@@ -780,7 +780,7 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
   if (doCollapse) {
     const nsRange* anchorFocusRange = sel->GetAnchorFocusRange();
     if (anchorFocusRange) {
-      nsINode* node;
+      RefPtr<nsINode> node;
       int32_t offset;
       if (visualMovement && nsBidiPresUtils::IsReversedDirectionFrame(frame)) {
         direction = nsDirection(1 - direction);
@@ -876,7 +876,8 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
     
     
     bool isBRFrame = frame->IsBrFrame();
-    sel->CollapseInLimiter(sel->GetFocusNode(), sel->FocusOffset());
+    RefPtr<nsINode> node = sel->GetFocusNode();
+    sel->CollapseInLimiter(node, sel->FocusOffset());
     
     if (!isBRFrame) {
       mCaret.mHint = CARET_ASSOCIATE_BEFORE;  
@@ -1422,7 +1423,8 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
         bool oldDesiredPosSet =
             mDesiredCaretPos.mIsSet;  
                                       
-        mDomSelections[index]->CollapseInLimiter(aNewFocus, aContentOffset);
+        RefPtr<Selection> selection = mDomSelections[index];
+        selection->CollapseInLimiter(aNewFocus, aContentOffset);
         mDesiredCaretPos.mIsSet =
             oldDesiredPosSet;  
         mBatching = saveBatching;
