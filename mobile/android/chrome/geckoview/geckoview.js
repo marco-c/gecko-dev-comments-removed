@@ -80,6 +80,11 @@ var ModuleManager = {
     
     
     aBrowser.docShellIsActive = true;
+    
+    
+    
+    
+    aBrowser.preserveLayers(true);
 
     WindowEventDispatcher.registerListener(this, [
       "GeckoView:UpdateModuleState",
