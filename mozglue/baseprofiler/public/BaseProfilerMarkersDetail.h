@@ -44,7 +44,23 @@ inline ProfileChunkedBuffer& CachedBaseCoreBuffer() {
 struct Streaming {
   
   
-  using Deserializer = void (*)(ProfileBufferEntryReader&, JSONWriter&);
+  using MarkerDataDeserializer = void (*)(ProfileBufferEntryReader&,
+                                          JSONWriter&);
+
+  
+  
+  using MarkerTypeNameFunction = Span<const char> (*)();
+
+  
+  
+  
+  using MarkerSchemaFunction = MarkerSchema (*)();
+
+  struct MarkerTypeFunctions {
+    MarkerDataDeserializer mMarkerDataDeserializer = nullptr;
+    MarkerTypeNameFunction mMarkerTypeNameFunction = nullptr;
+    MarkerSchemaFunction mMarkerSchemaFunction = nullptr;
+  };
 
   
   
@@ -54,11 +70,16 @@ struct Streaming {
   
   
   
-  MFBT_API static DeserializerTag TagForDeserializer(
-      Deserializer aDeserializer);
+  
+  
+  MFBT_API static DeserializerTag TagForMarkerTypeFunctions(
+      MarkerDataDeserializer aDeserializer,
+      MarkerTypeNameFunction aMarkerTypeNameFunction,
+      MarkerSchemaFunction aMarkerSchemaFunction);
 
   
-  MFBT_API static Deserializer DeserializerForTag(DeserializerTag aTag);
+  MFBT_API static MarkerDataDeserializer DeserializerForTag(
+      DeserializerTag aTag);
 };
 
 
@@ -125,8 +146,11 @@ struct MarkerTypeSerialization {
     
     
     
+    
     static const Streaming::DeserializerTag tag =
-        Streaming::TagForDeserializer(Deserialize);
+        Streaming::TagForMarkerTypeFunctions(Deserialize,
+                                             MarkerType::MarkerTypeName,
+                                             MarkerType::MarkerTypeDisplay);
     return StreamFunctionType::Serialize(aBuffer, aName, aCategory,
                                          std::move(aOptions), tag, aTs...);
   }
@@ -325,7 +349,7 @@ template <typename NameCallback, typename StackCallback>
         }
 
         
-        mozilla::base_profiler_markers_detail::Streaming::Deserializer
+        mozilla::base_profiler_markers_detail::Streaming::MarkerDataDeserializer
             deserializer = mozilla::base_profiler_markers_detail::Streaming::
                 DeserializerForTag(tag);
         MOZ_RELEASE_ASSERT(deserializer);

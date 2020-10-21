@@ -31,29 +31,42 @@ static_assert(
 
 
 
-static Streaming::Deserializer sDeserializers1Based[DeserializerMax];
 
- Streaming::DeserializerTag Streaming::TagForDeserializer(
-    Streaming::Deserializer aDeserializer) {
+
+
+
+
+
+
+static Streaming::MarkerTypeFunctions
+    sMarkerTypeFunctions1Based[DeserializerMax];
+
+ Streaming::DeserializerTag Streaming::TagForMarkerTypeFunctions(
+    Streaming::MarkerDataDeserializer aDeserializer,
+    Streaming::MarkerTypeNameFunction aMarkerTypeNameFunction,
+    Streaming::MarkerSchemaFunction aMarkerSchemaFunction) {
   MOZ_RELEASE_ASSERT(!!aDeserializer);
+  MOZ_RELEASE_ASSERT(!!aMarkerTypeNameFunction);
+  MOZ_RELEASE_ASSERT(!!aMarkerSchemaFunction);
 
   DeserializerTagAtomic tag = ++sDeserializerCount;
   MOZ_RELEASE_ASSERT(
       tag <= DeserializerMax,
       "Too many deserializers, consider increasing DeserializerMax. "
       "Or is a deserializer stored again and again?");
-  sDeserializers1Based[tag - 1] = aDeserializer;
+  sMarkerTypeFunctions1Based[tag - 1] = {aDeserializer, aMarkerTypeNameFunction,
+                                         aMarkerSchemaFunction};
 
   return static_cast<DeserializerTag>(tag);
 }
 
- Streaming::Deserializer Streaming::DeserializerForTag(
+ Streaming::MarkerDataDeserializer Streaming::DeserializerForTag(
     Streaming::DeserializerTag aTag) {
   MOZ_RELEASE_ASSERT(
       aTag > 0 && static_cast<DeserializerTagAtomic>(aTag) <=
                       static_cast<DeserializerTagAtomic>(sDeserializerCount),
       "Out-of-range tag value");
-  return sDeserializers1Based[aTag - 1];
+  return sMarkerTypeFunctions1Based[aTag - 1].mMarkerDataDeserializer;
 }
 
 }  
