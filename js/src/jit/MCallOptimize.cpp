@@ -944,7 +944,7 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPush(CallInfo& callInfo) {
 
     
     
-    if (!callInfo.pushPriorCallStack(&mirGen_, current)) {
+    if (!callInfo.pushPriorCallStack(current)) {
       return abort(AbortReason::Alloc);
     }
   }

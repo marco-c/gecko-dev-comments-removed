@@ -3236,7 +3236,7 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   callInfo.setImplicitlyUsedUnchecked();
 
   
-  if (!callInfo.pushCallStack(&mirGen(), current)) {
+  if (!callInfo.pushCallStack(current)) {
     return false;
   }
   MResumePoint* outerResumePoint =
