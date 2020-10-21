@@ -244,6 +244,11 @@ class nsFocusManager final : public nsIFocusManager,
 
   void WindowHidden(mozIDOMWindowProxy* aWindow);
 
+  
+
+
+  void FireDelayedEvents(Document* aDocument);
+
   static uint32_t FocusOptionsToFocusManagerFlags(
       const mozilla::dom::FocusOptions& aOptions);
 
