@@ -401,6 +401,10 @@ add_task(async function testAboutPage() {
   const cachedContent = JSON.stringify(CACHED_CONTENT);
   const cachedAddons = JSON.stringify(CACHED_ADDONS);
 
+  
+  
+  await TelemetryStorage.runCleanPingArchiveTask();
+
   await SpecialPowers.pushPrefEnv({
     set: [
       [PREF_TEST_CACHED_ADDONS, cachedAddons],
@@ -771,6 +775,10 @@ add_task(async function testEnrollmentPings() {
 
   
   await TelemetryStorage.testClearPendingPings();
+
+  
+  
+  await TelemetryStorage.runCleanPingArchiveTask();
 
   await BrowserTestUtils.withNewTab(
     {
