@@ -398,7 +398,8 @@ uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
 }
 
 
-void JitRuntime::Trace(JSTracer* trc, const AutoAccessAtomsZone& access) {
+void JitRuntime::TraceAtomZoneRoots(JSTracer* trc,
+                                    const AutoAccessAtomsZone& access) {
   MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
 
   
