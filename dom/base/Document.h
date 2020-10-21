@@ -25,6 +25,7 @@
 #include "nsIChannelEventSink.h"
 #include "nsIProgressEventSink.h"
 #include "nsIRadioGroupContainer.h"
+#include "nsIScriptGlobalObject.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIURI.h"                 
 #include "nsIWeakReferenceUtils.h"  
@@ -106,7 +107,6 @@ class nsILayoutHistoryState;
 class nsIObjectLoadingContent;
 class nsIRequest;
 class nsIRunnable;
-class nsIScriptGlobalObject;
 class nsISecurityConsoleMessage;
 class nsIStructuredCloneContainer;
 class nsIVariant;
