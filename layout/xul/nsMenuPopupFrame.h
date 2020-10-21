@@ -262,8 +262,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   
+  
   nsresult SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove,
-                            bool aSizedToPopup);
+                            bool aSizedToPopup, bool aNotify);
 
   
   void GenerateFrames();
@@ -436,8 +437,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   void CheckForAnchorChange(nsRect& aRect);
-
-  void WillDispatchPopupPositioned() { mPendingPositionedEvent = false; }
 
   
   virtual bool ReflowFinished() override;
@@ -662,9 +661,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   bool mHFlip;
   bool mVFlip;
-
-  
-  bool mPendingPositionedEvent = false;
 
   
   
