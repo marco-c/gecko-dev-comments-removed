@@ -1337,45 +1337,6 @@ function TypedArraySubarray(begin, end) {
 
 
 
-function TypedArrayItem(index) {
-    
-    var obj = this;
-
-    
-    
-    if (!IsObject(obj) || !IsTypedArray(obj)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, obj, index,
-                            "TypedArrayItem");
-    }
-    GetAttachedArrayBuffer(obj);
-
-    
-
-    
-    var len = TypedArrayLength(obj);
-
-    
-    var relativeIndex = ToInteger(index);
-
-    
-    var k;
-    if (relativeIndex >= 0) {
-        k = relativeIndex;
-    } else {
-        k = len + relativeIndex;
-    }
-
-    
-    if (k < 0 || k >= len) {
-        return undefined;
-    }
-
-    
-    return obj[k];
-}
-
-
-
 
 
 function $TypedArrayValues() {
