@@ -5,7 +5,12 @@
 
 
 import { parse } from "../url";
-import { getUnicodeHostname, getUnicodeUrlPath } from "devtools-modules";
+
+const {
+  getUnicodeHostname,
+  getUnicodeUrlPath,
+  
+} = require("devtools/client/shared/unicode-url");
 
 import type { DisplaySource, Source } from "../../types";
 export type ParsedURL = {

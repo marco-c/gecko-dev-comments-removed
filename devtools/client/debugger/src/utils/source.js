@@ -9,7 +9,8 @@
 
 
 
-import { getUnicodeUrl } from "devtools-modules";
+
+const { getUnicodeUrl } = require("devtools/client/shared/unicode-url");
 
 import { isOriginalSource } from "../utils/source-maps";
 import { endTruncateStr } from "./utils";
