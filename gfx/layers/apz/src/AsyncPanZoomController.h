@@ -339,14 +339,21 @@ class AsyncPanZoomController {
   static gfx::IntSize GetDisplayportAlignmentMultiplier(
       const ScreenSize& aBaseSize);
 
+  enum class ZoomInProgress {
+    No,
+    Yes,
+  };
+
   
 
 
 
 
 
+
   static const ScreenMargin CalculatePendingDisplayPort(
-      const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity);
+      const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity,
+      ZoomInProgress aZoomInProgress);
 
   nsEventStatus HandleDragEvent(const MouseInput& aEvent,
                                 const AsyncDragMetrics& aDragMetrics,
