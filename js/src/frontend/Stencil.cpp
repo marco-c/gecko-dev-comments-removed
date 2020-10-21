@@ -707,6 +707,11 @@ bool CompilationInfoVector::instantiateStencils(JSContext* cx,
     return false;
   }
 
+  
+  if (delazifications.empty()) {
+    return true;
+  }
+
   FunctionMap functionMap(cx);
   if (!buildDelazificationStencilMap(functionMap)) {
     return false;
