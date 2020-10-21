@@ -2,9 +2,13 @@
 
 
 
+use std::sync::Arc;
+
 use super::CommonMetricData;
 
 use super::TimeUnit;
+use crate::dispatcher;
+use crate::ipc::need_ipc;
 use chrono::{DateTime, FixedOffset};
 
 
@@ -12,12 +16,23 @@ use chrono::{DateTime, FixedOffset};
 
 
 #[derive(Debug)]
-pub struct DatetimeMetric(glean_core::metrics::DatetimeMetric);
+pub enum DatetimeMetric {
+    Parent(Arc<DatetimeMetricImpl>),
+    Child(DatetimeMetricIpc),
+}
+#[derive(Debug)]
+pub struct DatetimeMetricImpl(glean_core::metrics::DatetimeMetric);
+#[derive(Debug)]
+pub struct DatetimeMetricIpc();
 
 impl DatetimeMetric {
     
     pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
-        Self(glean_core::metrics::DatetimeMetric::new(meta, time_unit))
+        if need_ipc() {
+            DatetimeMetric::Child(DatetimeMetricIpc {})
+        } else {
+            DatetimeMetric::Parent(Arc::new(DatetimeMetricImpl::new(meta, time_unit)))
+        }
     }
 
     
@@ -27,7 +42,19 @@ impl DatetimeMetric {
     
     
     pub fn set(&self, value: Option<DateTime<FixedOffset>>) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
+        match self {
+            DatetimeMetric::Parent(p) => {
+                let metric = Arc::clone(&p);
+                dispatcher::launch(move || metric.set(value));
+            }
+            DatetimeMetric::Child(_) => {
+                log::error!(
+                    "Unable to set datetime metric {:?} in non-parent process. Ignoring.",
+                    self
+                );
+                
+            }
+        }
     }
 
     
@@ -47,6 +74,29 @@ impl DatetimeMetric {
     
     
     
+    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
+        match self {
+            DatetimeMetric::Parent(p) => {
+                dispatcher::block_on_queue();
+                p.test_get_value(storage_name)
+            }
+            DatetimeMetric::Child(_) => panic!(
+                "Cannot get test value for {:?} in non-parent process!",
+                self
+            ),
+        }
+    }
+}
+
+impl DatetimeMetricImpl {
+    pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
+        Self(glean_core::metrics::DatetimeMetric::new(meta, time_unit))
+    }
+
+    pub fn set(&self, value: Option<DateTime<FixedOffset>>) {
+        crate::with_glean(move |glean| self.0.set(glean, value))
+    }
+
     pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
         crate::with_glean(move |glean| self.0.test_get_value_as_string(glean, storage_name))
     }
