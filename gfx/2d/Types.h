@@ -109,6 +109,8 @@ enum class SurfaceFormat : int8_t {
   OS_RGBX = X8R8G8B8_UINT32
 };
 
+std::ostream& operator<<(std::ostream& aOut, const SurfaceFormat& aFormat);
+
 
 
 enum class SurfaceFormatBit : uint32_t {

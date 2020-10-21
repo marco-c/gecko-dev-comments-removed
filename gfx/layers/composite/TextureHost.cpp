@@ -8,7 +8,6 @@
 
 #include "CompositableHost.h"  
 #include "LayerScope.h"
-#include "LayersLogging.h"   
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/Shmem.h"  
@@ -527,8 +526,8 @@ void TextureHost::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
   
   
   if (Lock()) {
-    aStream << " [size=" << GetSize() << "]";
-    AppendToString(aStream, GetFormat(), " [format=", "]");
+    aStream << " [size=" << GetSize() << "]"
+            << " [format=" << GetFormat() << "]";
     Unlock();
   }
   aStream << " [flags=" << mFlags << "]";
