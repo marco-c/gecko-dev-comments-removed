@@ -91,6 +91,11 @@ namespace jit {
 
 
 #define ABIFUNCTIONSIG_LIST(_)                       \
+  _(void (*)(JSRuntime * rt, JSObject * *objp))      \
+  _(void (*)(JSRuntime * rt, JSString * *stringp))   \
+  _(void (*)(JSRuntime * rt, ObjectGroup * *groupp)) \
+  _(void (*)(JSRuntime * rt, Shape * *shapep))       \
+  _(void (*)(JSRuntime * rt, Value * vp))
 
 
 
