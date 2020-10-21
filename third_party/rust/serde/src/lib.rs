@@ -75,14 +75,21 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.104")]
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/serde/1.0.116")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
 
 
-#![cfg_attr(feature = "unstable", feature(specialization, never_type))]
+#![cfg_attr(feature = "unstable", feature(never_type))]
 #![allow(unknown_lints, bare_trait_objects, deprecated)]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
@@ -90,6 +97,8 @@
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(
+        
+        unnested_or_patterns,
         
         checked_conversions,
         empty_enum,
@@ -102,23 +111,30 @@
         
         cast_lossless,
         module_name_repetitions,
+        option_if_let_else,
         single_match_else,
         type_complexity,
         use_self,
         zero_prefixed_literal,
+        
+        enum_glob_use,
+        wildcard_imports,
         
         needless_pass_by_value,
         similar_names,
         too_many_lines,
         
         doc_markdown,
+        unseparated_literal_suffix,
         
         needless_doctest_main,
         
+        missing_errors_doc,
         must_use_candidate,
     )
 )]
 
+#![forbid(unsafe_code)]
 #![deny(missing_docs, unused_imports)]
 
 
