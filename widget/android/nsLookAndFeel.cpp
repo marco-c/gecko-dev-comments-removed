@@ -409,6 +409,12 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       break;
     }
 
+    case IntID::DragThresholdX:
+    case IntID::DragThresholdY:
+      
+      aResult = 25;
+      break;
+
     default:
       aResult = 0;
       rv = NS_ERROR_FAILURE;
