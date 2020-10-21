@@ -1758,7 +1758,12 @@
           }
         );
 
-        Services.tm.spinEventLoopUntilOrShutdown(() => success !== undefined);
+        
+        
+        
+        Services.tm.spinEventLoopUntilOrShutdown(
+          () => window.closed || success !== undefined
+        );
         if (success) {
           return result;
         }
