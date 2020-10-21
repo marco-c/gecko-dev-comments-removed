@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/RDDProcessManager.h"
@@ -9,7 +9,7 @@
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeChild.h"
-#include "mozilla/layers/ISurfaceAllocator.h"  
+#include "mozilla/layers/ISurfaceAllocator.h"  // for GfxMemoryImageReporter
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/TiledContentClient.h"
 #include "mozilla/webrender/RenderThread.h"
@@ -77,7 +77,7 @@
 #  include "gfxAndroidPlatform.h"
 #endif
 #if defined(MOZ_WIDGET_ANDROID)
-#  include "mozilla/jni/Utils.h"  
+#  include "mozilla/jni/Utils.h"  // for IsFennec
 #endif
 
 #ifdef XP_WIN
@@ -97,7 +97,7 @@
 #include "gfxGraphiteShaper.h"
 #include "gfx2DGlue.h"
 #include "gfxGradientCache.h"
-#include "gfxUtils.h"  
+#include "gfxUtils.h"  // for NextPowerOfTwo
 #include "gfxFontMissingGlyphs.h"
 
 #include "nsExceptionHandler.h"
@@ -148,7 +148,7 @@ static const uint32_t kDefaultGlyphCacheSize = -1;
 #include "nsIXULRuntime.h"
 #include "VsyncSource.h"
 #include "SoftwareVsyncSource.h"
-#include "nscore.h"  
+#include "nscore.h"  // for NS_FREE_PERMANENT_DATA
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "gfxVR.h"
@@ -172,7 +172,7 @@ const ContentDeviceData* gContentDeviceInitData = nullptr;
 
 static Mutex* gGfxPlatformPrefsLock = nullptr;
 
-
+// These two may point to the same profile
 static qcms_profile* gCMSOutputProfile = nullptr;
 static qcms_profile* gCMSsRGBProfile = nullptr;
 
@@ -190,8 +190,8 @@ static void ShutdownCMS();
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/SourceSurfaceCairo.h"
 
-
-
+/* Class to listen for pref changes so that chrome code can dynamically
+   force sRGB as an output profile. See Bug #452125. */
 class SRGBOverrideObserver final : public nsIObserver,
                                    public nsSupportsWeakReference {
   ~SRGBOverrideObserver() = default;
@@ -201,12 +201,12 @@ class SRGBOverrideObserver final : public nsIObserver,
   NS_DECL_NSIOBSERVER
 };
 
-
-
-
-
-
-
+/// This override of the LogForwarder, initially used for the critical graphics
+/// errors, is sending the log to the crash annotations as well, but only
+/// if the capacity set with the method below is >= 2.  We always retain the
+/// very first critical message, and the latest capacity-1 messages are
+/// rotated through. Note that we don't expect the total number of times
+/// this gets called to be large - it is meant for critical errors only.
 
 class CrashStatsLogForwarder : public mozilla::gfx::LogForwarder {
  public:
@@ -220,7 +220,7 @@ class CrashStatsLogForwarder : public mozilla::gfx::LogForwarder {
   void SetCircularBufferSize(uint32_t aCapacity);
 
  private:
-  
+  // Helper for the Log()
   void UpdateCrashReport();
 
  private:
@@ -251,7 +251,7 @@ LoggingRecord CrashStatsLogForwarder::LoggingRecordCopy() {
 }
 
 bool CrashStatsLogForwarder::UpdateStringsVector(const std::string& aString) {
-  
+  // We want at least the first one and the last one.  Otherwise, no point.
   if (mMaxCapacity < 2) {
     return false;
   }
@@ -259,7 +259,7 @@ bool CrashStatsLogForwarder::UpdateStringsVector(const std::string& aString) {
   mIndex += 1;
   MOZ_ASSERT(mIndex >= 0);
 
-  
+  // index will count 0, 1, 2, ..., max-1, 1, 2, ..., max-1, 1, 2, ...
   int32_t index = mIndex ? (mIndex - 1) % (mMaxCapacity - 1) + 1 : 0;
   MOZ_ASSERT(index >= 0 && index < (int32_t)mMaxCapacity);
   MOZ_ASSERT(index <= mIndex && index <= (int32_t)mBuffer.size());
@@ -267,8 +267,8 @@ bool CrashStatsLogForwarder::UpdateStringsVector(const std::string& aString) {
   double tStamp = (TimeStamp::NowLoRes() - TimeStamp::ProcessCreation())
                       .ToSecondsSigDigits();
 
-  
-  
+  // Checking for index >= mBuffer.size(), rather than index == mBuffer.size()
+  // just out of paranoia, but we know index <= mBuffer.size().
   LoggingRecordEntry newEntry(mIndex, aString, tStamp);
   if (index >= static_cast<int32_t>(mBuffer.size())) {
     mBuffer.push_back(newEntry);
@@ -348,7 +348,7 @@ void CrashStatsLogForwarder::Log(const std::string& aString) {
     UpdateCrashReport();
   }
 
-  
+  // Add it to the parent strings
   if (!XRE_IsParentProcess()) {
     nsCString stringToSend(aString.c_str());
     if (NS_IsMainThread()) {
@@ -387,18 +387,18 @@ class CrashTelemetryEvent : public Runnable {
 
 void CrashStatsLogForwarder::CrashAction(LogReason aReason) {
 #ifndef RELEASE_OR_BETA
-  
-  
+  // Non-release builds crash by default, but will use telemetry
+  // if this environment variable is present.
   static bool useTelemetry = gfxEnv::GfxDevCrashTelemetry();
 #else
-  
-  
+  // Release builds use telemetry by default, but will crash instead
+  // if this environment variable is present.
   static bool useTelemetry = !gfxEnv::GfxDevCrashMozCrash();
 #endif
 
   if (useTelemetry) {
-    
-    
+    // The callers need to assure that aReason is in the range
+    // that the telemetry call below supports.
     if (NS_IsMainThread()) {
       Telemetry::Accumulate(Telemetry::GFX_CRASH, (uint32_t)aReason);
     } else {
@@ -406,7 +406,7 @@ void CrashStatsLogForwarder::CrashAction(LogReason aReason) {
       NS_DispatchToMainThread(r1);
     }
   } else {
-    
+    // ignoring aReason, we can get the information we need from the stack
     MOZ_CRASH("GFX_CRASH");
   }
 }
@@ -440,11 +440,11 @@ SRGBOverrideObserver::Observe(nsISupports* aSubject, const char* aTopic,
   NS_ASSERTION(NS_strcmp(someData, (u"" GFX_PREF_CMS_FORCE_SRGB)) == 0,
                "Restarting CMS on wrong pref!");
   ShutdownCMS();
-  
+  // Update current cms profile.
   gfxPlatform::CreateCMSOutputProfile();
-  
-  
-  
+  // FIXME(aosmond): This is also racy for the transforms but the pref is only
+  // used for dev purposes. It can be made a static pref in a followup once the
+  // dependency on it is removed from the gtest suite (see bug 1620600).
   gfxPlatform::GetCMSRGBTransform();
   gfxPlatform::GetCMSRGBATransform();
   gfxPlatform::GetCMSBGRATransform();
@@ -514,13 +514,13 @@ gfxPlatform* gfxPlatform::GetPlatform() {
 
 bool gfxPlatform::Initialized() { return !!gPlatform; }
 
-
+/* static */
 void gfxPlatform::InitChild(const ContentDeviceData& aData) {
   MOZ_ASSERT(XRE_IsContentProcess());
   MOZ_RELEASE_ASSERT(!gPlatform,
                      "InitChild() should be called before first GetPlatform()");
-  
-  
+  // Make the provided initial ContentDeviceData available to the init
+  // routines, so they don't have to do a sync request from the parent.
   gContentDeviceInitData = &aData;
   Init();
   gContentDeviceInitData = nullptr;
@@ -602,8 +602,8 @@ static void WebRenderDebugPrefChangeCallback(const char* aPrefName, void*) {
   GFX_WEBRENDER_DEBUG(".tile-cache-logging",
                       wr::DebugFlags::TILE_CACHE_LOGGING_DBG)
   GFX_WEBRENDER_DEBUG(".primitives", wr::DebugFlags::PRIMITIVE_DBG)
-  
-  
+  // Bit 18 is for the zoom display, which requires the mouse position and thus
+  // currently only works in wrench.
   GFX_WEBRENDER_DEBUG(".small-screen", wr::DebugFlags::SMALL_SCREEN)
   GFX_WEBRENDER_DEBUG(".disable-opaque-pass",
                       wr::DebugFlags::DISABLE_OPAQUE_PASS)
@@ -641,13 +641,13 @@ static void WebRenderBatchingPrefChangeCallback(const char* aPrefName, void*) {
 
 #if defined(USE_SKIA)
 static uint32_t GetSkiaGlyphCacheSize() {
-  
+  // Only increase font cache size on non-android to save memory.
 #  if !defined(MOZ_WIDGET_ANDROID)
-  
-  
-  
-  
-  
+  // 10mb as the default pref cache size on desktop due to talos perf tweaking.
+  // Chromium uses 20mb and skia default uses 2mb.
+  // We don't need to change the font cache count since we usually
+  // cache thrash due to asian character sets in talos.
+  // Only increase memory on the content process
   uint32_t cacheSize =
       StaticPrefs::gfx_content_skia_font_cache_size_AtStartup() * 1024 * 1024;
   if (mozilla::BrowserTabsRemoteAutostart()) {
@@ -657,7 +657,7 @@ static uint32_t GetSkiaGlyphCacheSize() {
   return cacheSize;
 #  else
   return kDefaultGlyphCacheSize;
-#  endif  
+#  endif  // MOZ_WIDGET_ANDROID
 }
 #endif
 
@@ -670,20 +670,20 @@ class WebRenderMemoryReporter final : public nsIMemoryReporter {
   ~WebRenderMemoryReporter() = default;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Memory reporter for WebRender.
+//
+// The reporting within WebRender is manual and incomplete. We could do a much
+// more thorough job by depending on the malloc_size_of crate, but integrating
+// that into WebRender is tricky [1].
+//
+// So the idea is to start with manual reporting for the large allocations
+// detected by DMD, and see how much that can cover in practice (which may
+// require a few rounds of iteration). If that approach turns out to be
+// fundamentally insufficient, we can either duplicate more of the
+// malloc_size_of functionality in WebRender, or deal with the complexity of a
+// gecko-only crate dependency.
+//
+// [1] See https://bugzilla.mozilla.org/show_bug.cgi?id=1480293#c1
 struct WebRenderMemoryReporterHelper {
   WebRenderMemoryReporterHelper(nsIHandleReportCallback* aCallback,
                                 nsISupports* aData)
@@ -712,11 +712,11 @@ struct WebRenderMemoryReporterHelper {
 
   void ReportInternal(size_t aBytes, nsACString& aPath, nsACString& aDesc,
                       int32_t aKind) const {
-    
-    
-    
-    
-    
+    // Generally, memory reporters pass the empty string as the process name to
+    // indicate "current process". However, if we're using a GPU process, the
+    // measurements will actually take place in that process, and it's easier to
+    // just note that here rather than trying to invoke the memory reporter in
+    // the GPU process.
     nsAutoCString processName;
     if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
       GPUParent::GetGPUProcessName(processName);
@@ -735,12 +735,12 @@ static void FinishAsyncMemoryReport() {
   }
 }
 
-
-
+// clang-format off
+// (For some reason, clang-format gets the second macro right, but totally mangles the first).
 #define REPORT_INTERNER(id)                      \
   helper.Report(aReport.interning.interners.id, \
                 "interning/" #id "/interners");
-
+// clang-format on
 
 #define REPORT_DATA_STORE(id)                     \
   helper.Report(aReport.interning.data_stores.id, \
@@ -763,7 +763,7 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   WebRenderMemoryReporterHelper helper(aHandleReport, aData);
   manager->SendReportMemory(
       [=](wr::MemoryReport aReport) {
-        
+        // CPU Memory.
         helper.Report(aReport.clip_stores, "clip-stores");
         helper.Report(aReport.gpu_cache_metadata, "gpu-cache/metadata");
         helper.Report(aReport.gpu_cache_cpu_mirror, "gpu-cache/cpu-mirror");
@@ -779,7 +779,7 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
         WEBRENDER_FOR_EACH_INTERNER(REPORT_INTERNER);
         WEBRENDER_FOR_EACH_INTERNER(REPORT_DATA_STORE);
 
-        
+        // GPU Memory.
         helper.ReportTexture(aReport.gpu_cache_textures, "gpu-cache");
         helper.ReportTexture(aReport.vertex_data_textures, "vertex-data");
         helper.ReportTexture(aReport.render_target_textures, "render-targets");
@@ -871,17 +871,17 @@ void gfxPlatform::Init() {
     }
   }
 
-  
-  
-  
-  
+  // Drop a note in the crash report if we end up forcing an option that could
+  // destabilize things.  New items should be appended at the end (of an
+  // existing or in a new section), so that we don't have to know the version to
+  // interpret these cryptic strings.
   {
     nsAutoCString forcedPrefs;
-    
+    // D2D prefs
     forcedPrefs.AppendPrintf(
         "FP(D%d%d", StaticPrefs::gfx_direct2d_disabled_AtStartup(),
         StaticPrefs::gfx_direct2d_force_enabled_AtStartup());
-    
+    // Layers prefs
     forcedPrefs.AppendPrintf(
         "-L%d%d%d%d",
         StaticPrefs::layers_amd_switchable_gfx_enabled_AtStartup(),
@@ -889,7 +889,7 @@ void gfxPlatform::Init() {
         StaticPrefs::
             layers_acceleration_force_enabled_AtStartup_DoNotUseDirectly(),
         StaticPrefs::layers_d3d11_force_warp_AtStartup());
-    
+    // WebGL prefs
     forcedPrefs.AppendPrintf(
         "-W%d%d%d%d%d%d%d%d", StaticPrefs::webgl_angle_force_d3d11(),
         StaticPrefs::webgl_angle_force_warp(), StaticPrefs::webgl_disabled(),
@@ -897,10 +897,10 @@ void gfxPlatform::Init() {
         StaticPrefs::webgl_force_enabled(),
         StaticPrefs::webgl_force_layers_readback(),
         StaticPrefs::webgl_msaa_force());
-    
+    // Prefs that don't fit into any of the other sections
     forcedPrefs.AppendPrintf("-T%d%d%d) ",
                              StaticPrefs::gfx_android_rgb16_force_AtStartup(),
-                             0,  
+                             0,  // SkiaGL canvas no longer supported
                              StaticPrefs::layers_force_shmem_tiles_AtStartup());
     ScopedGfxFeatureReporter::AppNote(forcedPrefs);
   }
@@ -909,19 +909,19 @@ void gfxPlatform::Init() {
 
   gGfxPlatformPrefsLock = new Mutex("gfxPlatform::gGfxPlatformPrefsLock");
 
-  
-
-
-
-
-
-
+  /* Initialize the GfxInfo service.
+   * Note: we can't call functions on GfxInfo that depend
+   * on gPlatform until after it has been initialized
+   * below. GfxInfo initialization annotates our
+   * crash reports so we want to do it before
+   * we try to load any drivers and do device detection
+   * incase that code crashes. See bug #591561. */
   nsCOMPtr<nsIGfxInfo> gfxInfo;
-  
+  /* this currently will only succeed on Windows */
   gfxInfo = services::GetGfxInfo();
 
   if (XRE_IsParentProcess()) {
-    
+    // Some gfxVars must be initialized prior gPlatform for coherent results.
     gfxVars::SetDXInterop2Blocked(IsDXInterop2Blocked());
     gfxVars::SetDXNV12Blocked(IsDXNV12Blocked());
     gfxVars::SetDXP010Blocked(IsDXP010Blocked());
@@ -945,10 +945,10 @@ void gfxPlatform::Init() {
 
   gPlatform->InitWebGPUConfig();
 
-  
-  
-  
-  
+  // When using WebRender, we defer initialization of the D3D11 devices until
+  // the (rare) cases where they're used. Note that the GPU process where
+  // WebRender runs doesn't initialize gfxPlatform and performs explicit
+  // initialization of the bits it needs.
   if (!UseWebRender()
 #if defined(XP_WIN) && defined(NIGHTLY_BUILD)
       || (UseWebRender() && XRE_IsParentProcess() &&
@@ -970,7 +970,7 @@ void gfxPlatform::Init() {
   Preferences::RegisterCallback(
       FrameRatePrefChanged,
       nsDependentCString(StaticPrefs::GetPrefName_layout_frame_rate()));
-  
+  // Set up the vsync source for the parent process.
   ReInitFrameRate();
 
 #ifdef USE_SKIA
@@ -1003,9 +1003,9 @@ void gfxPlatform::Init() {
                                                   SurfaceFormat::B8G8R8A8);
   if (!gPlatform->mScreenReferenceDrawTarget ||
       !gPlatform->mScreenReferenceDrawTarget->IsValid()) {
-    
-    
-    
+    // If TDR is detected, create a draw target with software backend
+    // and it should be replaced later when the process gets the device
+    // reset notification.
     if (!gPlatform->DidRenderingDeviceReset()) {
       gfxCriticalError() << "Could not initialize mScreenReferenceDrawTarget";
     }
@@ -1016,7 +1016,7 @@ void gfxPlatform::Init() {
     MOZ_CRASH("Could not initialize gfxFontCache");
   }
 
-  
+  /* Create and register our CMS Override observer. */
   gPlatform->mSRGBOverrideObserver = new SRGBOverrideObserver();
   Preferences::AddWeakObserver(gPlatform->mSRGBOverrideObserver,
                                GFX_PREF_CMS_FORCE_SRGB);
@@ -1030,17 +1030,17 @@ void gfxPlatform::Init() {
 
   CreateCMSOutputProfile();
 
-  
-  
+  // Create the sRGB to output display profile transforms. They can be accessed
+  // off the main thread so we want to avoid a race condition.
   GetCMSRGBTransform();
   GetCMSRGBATransform();
   GetCMSBGRATransform();
 
-  
+  // Listen to memory pressure event so we can purge DrawTarget caches
   gPlatform->mMemoryPressureObserver =
       layers::MemoryPressureObserver::Create(gPlatform);
 
-  
+  // Request the imgITools service, implicitly initializing ImageLib.
   nsCOMPtr<imgITools> imgTools = do_GetService("@mozilla.org/image/tools;1");
   if (!imgTools) {
     MOZ_CRASH("Could not initialize ImageLib");
@@ -1069,7 +1069,7 @@ void gfxPlatform::Init() {
   if (XRE_IsParentProcess()) {
     Preferences::Unlock(FONT_VARIATIONS_PREF);
     if (!gPlatform->HasVariationFontSupport()) {
-      
+      // Ensure variation fonts are disabled and the pref is locked.
       Preferences::SetBool(FONT_VARIATIONS_PREF, false, PrefValueKind::Default);
       Preferences::SetBool(FONT_VARIATIONS_PREF, false);
       Preferences::Lock(FONT_VARIATIONS_PREF);
@@ -1162,46 +1162,46 @@ static bool IsFeatureSupported(long aFeature, bool aDefault) {
   return status == nsIGfxInfo::FEATURE_STATUS_OK;
 }
 
-
+/* static*/
 bool gfxPlatform::IsDXInterop2Blocked() {
   return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_INTEROP2, false);
 }
 
-
+/* static*/
 bool gfxPlatform::IsDXNV12Blocked() {
   return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_NV12, false);
 }
 
-
+/* static*/
 bool gfxPlatform::IsDXP010Blocked() {
   return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P010, false);
 }
 
-
+/* static*/
 bool gfxPlatform::IsDXP016Blocked() {
   return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P016, false);
 }
 
-
+/* static */
 int32_t gfxPlatform::MaxTextureSize() {
-  
-  
+  // Make sure we don't completely break rendering because of a typo in the
+  // pref or whatnot.
   const int32_t kMinSizePref = 2048;
   return std::max(
       kMinSizePref,
       StaticPrefs::gfx_max_texture_size_AtStartup_DoNotUseDirectly());
 }
 
-
+/* static */
 int32_t gfxPlatform::MaxAllocSize() {
-  
-  
+  // Make sure we don't completely break rendering because of a typo in the
+  // pref or whatnot.
   const int32_t kMinAllocPref = 10000000;
   return std::max(kMinAllocPref,
                   StaticPrefs::gfx_max_alloc_size_AtStartup_DoNotUseDirectly());
 }
 
-
+/* static */
 void gfxPlatform::InitMoz2DLogging() {
   auto fwd = new CrashStatsLogForwarder(
       CrashReporter::Annotation::GraphicsCriticalError);
@@ -1215,7 +1215,7 @@ void gfxPlatform::InitMoz2DLogging() {
   gfx::Factory::Init(cfg);
 }
 
-
+/* static */
 bool gfxPlatform::IsHeadless() {
   static bool initialized = false;
   static bool headless = false;
@@ -1226,10 +1226,10 @@ bool gfxPlatform::IsHeadless() {
   return headless;
 }
 
-
+/* static */
 bool gfxPlatform::UseWebRender() { return gfx::gfxVars::UseWebRender(); }
 
-
+/* static */
 bool gfxPlatform::CanMigrateMacGPUs() {
   int32_t pMigration = StaticPrefs::gfx_compositor_gpu_migration();
 
@@ -1241,23 +1241,23 @@ bool gfxPlatform::CanMigrateMacGPUs() {
 
 static bool sLayersIPCIsUp = false;
 
-
+/* static */
 void gfxPlatform::InitNullMetadata() {
   ScrollMetadata::sNullMetadata = new ScrollMetadata();
   ClearOnShutdown(&ScrollMetadata::sNullMetadata);
 }
 
 void gfxPlatform::Shutdown() {
-  
-  
+  // In some cases, gPlatform may not be created but Shutdown() called,
+  // e.g., during xpcshell tests.
   if (!gPlatform) {
     return;
   }
 
   MOZ_ASSERT(!sLayersIPCIsUp);
 
-  
-  
+  // These may be called before the corresponding subsystems have actually
+  // started up. That's OK, they can handle it.
   gfxFontCache::Shutdown();
   gfxGradientCache::Shutdown();
   gfxAlphaBoxBlur::ShutdownBlurCache();
@@ -1266,10 +1266,10 @@ void gfxPlatform::Shutdown() {
   gfxFontMissingGlyphs::Shutdown();
   ShutdownTileCache();
 
-  
+  // Free the various non-null transforms and loaded profiles
   ShutdownCMS();
 
-  
+  /* Unregister our CMS Override callback. */
   NS_ASSERTION(gPlatform->mSRGBOverrideObserver,
                "mSRGBOverrideObserver has alreay gone");
   Preferences::RemoveObserver(gPlatform->mSRGBOverrideObserver,
@@ -1291,16 +1291,16 @@ void gfxPlatform::Shutdown() {
 
   gPlatform->mVsyncSource = nullptr;
 
-  
+  // Shut down the default GL context provider.
   GLContextProvider::Shutdown();
 
 #if defined(XP_WIN)
-  
-  
-  
-  
-  
-  
+  // The above shutdown calls operate on the available context providers on
+  // most platforms.  Windows is a "special snowflake", though, and has three
+  // context providers available, so we have to shut all of them down.
+  // We should only support the default GL provider on Windows; then, this
+  // could go away. Unfortunately, we currently support WGL (the default) for
+  // WebGL on Optimus.
   GLContextProviderEGL::Shutdown();
 #endif
 
@@ -1325,7 +1325,7 @@ void gfxPlatform::Shutdown() {
   gPlatform = nullptr;
 }
 
-
+/* static */
 void gfxPlatform::InitLayersIPC() {
   if (sLayersIPCIsUp) {
     return;
@@ -1348,7 +1348,7 @@ void gfxPlatform::InitLayersIPC() {
   }
 }
 
-
+/* static */
 void gfxPlatform::ShutdownLayersIPC() {
   if (!sLayersIPCIsUp) {
     return;
@@ -1361,7 +1361,7 @@ void gfxPlatform::ShutdownLayersIPC() {
 
   if (XRE_IsContentProcess()) {
     gfx::VRManagerChild::ShutDown();
-    
+    // cf bug 1215265.
     if (StaticPrefs::layers_child_process_shutdown()) {
       layers::CompositorManagerChild::Shutdown();
       layers::ImageBridgeChild::ShutDown();
@@ -1374,11 +1374,11 @@ void gfxPlatform::ShutdownLayersIPC() {
     gfx::VRManagerChild::ShutDown();
     layers::CompositorManagerChild::Shutdown();
     layers::ImageBridgeChild::ShutDown();
-    
+    // This has to happen after shutting down the child protocols.
     layers::CompositorThreadHolder::Shutdown();
     image::ImageMemoryReporter::ShutdownForWebRender();
-    
-    
+    // There is a case that RenderThread exists when UseWebRender() is
+    // false. This could happen when WebRender was fallbacked to compositor.
     if (wr::RenderThread::Get()) {
       wr::RenderThread::ShutDown();
 
@@ -1387,32 +1387,32 @@ void gfxPlatform::ShutdownLayersIPC() {
     }
 
   } else {
-    
-    
+    // TODO: There are other kind of processes and we should make sure gfx
+    // stuff is either not created there or shut down properly.
   }
 }
 
 void gfxPlatform::WillShutdown() {
-  
-  
-  
+  // Destoy these first in case they depend on backend-specific resources.
+  // Otherwise, the backend's destructor would be called before the
+  // base gfxPlatform destructor.
   mScreenReferenceSurface = nullptr;
   mScreenReferenceDrawTarget = nullptr;
 
 #ifdef USE_SKIA
-  
-  
-  
+  // Always clear out the Skia font cache here, in case it is referencing any
+  // SharedFTFaces that would otherwise outlive destruction of the FT_Library
+  // that owns them.
   SkGraphics::PurgeFontCache();
 #endif
 
-  
-  
-  
-  
-  
-  
-  
+  // The cairo folks think we should only clean up in debug builds,
+  // but we're generally in the habit of trying to shut down as
+  // cleanly as possible even in production code, so call this
+  // cairo_debug_* function unconditionally.
+  //
+  // because cairo can assert and thus crash on shutdown, don't do this in
+  // release builds
 #ifdef NS_FREE_PERMANENT_DATA
 #  if MOZ_TREE_CAIRO
   cairo_debug_reset_static_data();
@@ -1422,7 +1422,7 @@ void gfxPlatform::WillShutdown() {
 
 gfxPlatform::~gfxPlatform() = default;
 
-
+/* static */
 already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForSurface(
     gfxASurface* aSurface, const IntSize& aSize) {
   SurfaceFormat format = aSurface->GetSurfaceFormat();
@@ -1438,13 +1438,13 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForSurface(
 
 cairo_user_data_key_t kSourceSurface;
 
-
-
-
-
-
-
-
+/**
+ * Record the backend that was used to construct the SourceSurface.
+ * When getting the cached SourceSurface for a gfxASurface/DrawTarget pair,
+ * we check to make sure the DrawTarget's backend matches the backend
+ * for the cached SourceSurface, and only use it if they match. This
+ * can avoid expensive and unnecessary readbacks.
+ */
 struct SourceSurfaceUserData {
   RefPtr<SourceSurface> mSrcSurface;
   BackendType mBackendType;
@@ -1468,7 +1468,7 @@ void gfxPlatform::ClearSourceSurfaceForSurface(gfxASurface* aSurface) {
   aSurface->SetData(&kSourceSurface, nullptr, nullptr);
 }
 
-
+/* static */
 already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
     RefPtr<DrawTarget> aTarget, gfxASurface* aSurface, bool aIsPlugin) {
   if (!aSurface->CairoSurface() || aSurface->CairoStatus()) {
@@ -1489,44 +1489,44 @@ already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
       RefPtr<SourceSurface> srcSurface(surf->mSrcSurface);
       return srcSurface.forget();
     }
-    
-    
+    // We can just continue here as when setting new user data the destroy
+    // function will be called for the old user data.
   }
 
   SurfaceFormat format = aSurface->GetSurfaceFormat();
 
   if (aTarget->GetBackendType() == BackendType::CAIRO) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // If we're going to be used with a CAIRO DrawTarget, then just create a
+    // SourceSurfaceCairo since we don't know the underlying type of the CAIRO
+    // DrawTarget and can't pick a better surface type. Doing this also avoids
+    // readback of aSurface's surface into memory if, for example, aSurface
+    // wraps an xlib cairo surface (which can be important to avoid a major
+    // slowdown).
+    //
+    // We return here regardless of whether CreateSourceSurfaceFromNativeSurface
+    // succeeds or not since we don't expect to be able to do any better below
+    // if it fails.
+    //
+    // Note that the returned SourceSurfaceCairo holds a strong reference to
+    // the cairo_surface_t* that it wraps, which essencially means it holds a
+    // strong reference to aSurface since aSurface shares its
+    // cairo_surface_t*'s reference count variable. As a result we can't cache
+    // srcBuffer on aSurface (see below) since aSurface would then hold a
+    // strong reference back to srcBuffer, creating a reference loop and a
+    // memory leak. Not caching is fine since wrapping is cheap enough (no
+    // copying) so we can just wrap again next time we're called.
     return Factory::CreateSourceSurfaceForCairoSurface(
         aSurface->CairoSurface(), aSurface->GetSize(), format);
   }
 
   RefPtr<SourceSurface> srcBuffer;
 
-  
-  
+  // Currently no other DrawTarget types implement
+  // CreateSourceSurfaceFromNativeSurface
 
   if (!srcBuffer) {
-    
-    
+    // If aSurface wraps data, we can create a SourceSurfaceRawData that wraps
+    // the same data, then optimize it for aTarget:
     RefPtr<DataSourceSurface> surf = GetWrappedDataSourceSurface(aSurface);
     if (surf) {
       srcBuffer = aIsPlugin
@@ -1534,17 +1534,17 @@ already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
                       : aTarget->OptimizeSourceSurface(surf);
 
       if (srcBuffer == surf) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // GetWrappedDataSourceSurface returns a SourceSurface that holds a
+        // strong reference to aSurface since it wraps aSurface's data and
+        // needs it to stay alive. As a result we can't cache srcBuffer on
+        // aSurface (below) since aSurface would then hold a strong reference
+        // back to srcBuffer, creating a reference loop and a memory leak. Not
+        // caching is fine since wrapping is cheap enough (no copying) so we
+        // can just wrap again next time we're called.
+        //
+        // Note that the check below doesn't catch this since srcBuffer will be
+        // a SourceSurfaceRawData object (even if aSurface is not a
+        // gfxImageSurface object), which is why we need this separate check.
         return srcBuffer.forget();
       }
     }
@@ -1554,13 +1554,13 @@ already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
     MOZ_ASSERT(aTarget->GetBackendType() != BackendType::CAIRO,
                "We already tried CreateSourceSurfaceFromNativeSurface with a "
                "DrawTargetCairo above");
-    
-    
-    
-    
-    
-    
-    
+    // We've run out of performant options. We now try creating a SourceSurface
+    // using a temporary DrawTargetCairo and then optimizing it to aTarget's
+    // actual type. The CreateSourceSurfaceFromNativeSurface() call will
+    // likely create a DataSourceSurface (possibly involving copying and/or
+    // readback), and the OptimizeSourceSurface may well copy again and upload
+    // to the GPU. So, while this code path is rarely hit, hitting it may be
+    // very slow.
     srcBuffer = Factory::CreateSourceSurfaceForCairoSurface(
         aSurface->CairoSurface(), aSurface->GetSize(), format);
     if (srcBuffer) {
@@ -1578,11 +1578,11 @@ already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
       (srcBuffer->GetType() == SurfaceType::CAIRO_IMAGE &&
        static_cast<DataSourceSurfaceCairo*>(srcBuffer.get())->GetSurface() ==
            aSurface->CairoSurface())) {
-    
+    // See the "Note that the returned SourceSurfaceCairo..." comment above.
     return srcBuffer.forget();
   }
 
-  
+  // Add user data to aSurface so we can cache lookups in the future.
   auto* srcSurfUD = new SourceSurfaceUserData;
   srcSurfUD->mBackendType = aTarget->GetBackendType();
   srcSurfUD->mSrcSurface = srcBuffer;
@@ -1605,8 +1605,8 @@ already_AddRefed<DataSourceSurface> gfxPlatform::GetWrappedDataSourceSurface(
     return nullptr;
   }
 
-  
-  
+  // If we wrapped the underlying data of aSurface, then we need to add user
+  // data to make sure aSurface stays alive until we are done with the data.
   auto* srcSurfUD = new DependentSourceSurfaceUserData;
   srcSurfUD->mSurface = aSurface;
   result->AddUserData(&kThebesSurface, srcSurfUD, SourceSurfaceDestroyed);
@@ -1615,8 +1615,8 @@ already_AddRefed<DataSourceSurface> gfxPlatform::GetWrappedDataSourceSurface(
 }
 
 void gfxPlatform::ComputeTileSize() {
-  
-  
+  // The tile size should be picked in the parent processes
+  // and sent to the child processes over IPDL GetTileSize.
   if (!XRE_IsParentProcess()) {
     return;
   }
@@ -1627,15 +1627,15 @@ void gfxPlatform::ComputeTileSize() {
   if (StaticPrefs::layers_tiles_adjust_AtStartup()) {
     gfx::IntSize screenSize = GetScreenSize();
     if (screenSize.width > 0) {
-      
-      
-      
+      // Choose a size so that there are between 2 and 4 tiles per screen width.
+      // FIXME: we should probably make sure this is within the max texture
+      // size, but I think everything should at least support 1024
       w = h = clamped(int32_t(RoundUpPow2(screenSize.width)) / 4, 256, 1024);
     }
   }
 
-  
-  
+  // Don't allow changing the tile size after we've set it.
+  // Right now the code assumes that the tile size doesn't change.
   MOZ_ASSERT(gfxVars::TileSize().width == -1 &&
              gfxVars::TileSize().height == -1);
 
@@ -1652,7 +1652,7 @@ void gfxPlatform::PopulateScreenInfo() {
   nsCOMPtr<nsIScreen> screen;
   manager->GetPrimaryScreen(getter_AddRefs(screen));
   if (!screen) {
-    
+    // This can happen in xpcshell, for instance
     return;
   }
 
@@ -1684,14 +1684,14 @@ void gfxPlatform::PurgeSkiaFontCache() {
 
 already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForBackend(
     BackendType aBackend, const IntSize& aSize, SurfaceFormat aFormat) {
-  
-  
-  
-  
-  
-  
-  
-  
+  // There is a bunch of knowledge in the gfxPlatform heirarchy about how to
+  // create the best offscreen surface for the current system and situation. We
+  // can easily take advantage of this for the Cairo backend, so that's what we
+  // do.
+  // mozilla::gfx::Factory can get away without having all this knowledge for
+  // now, but this might need to change in the future (using
+  // CreateOffscreenSurface() and CreateDrawTargetForSurface() for all
+  // backends).
   if (aBackend == BackendType::CAIRO) {
     RefPtr<gfxASurface> surf =
         CreateOffscreenSurface(aSize, SurfaceFormatToImageFormat(aFormat));
@@ -1713,7 +1713,7 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateOffscreenCanvasDrawTarget(
   }
 
 #ifdef XP_WIN
-  
+  // On Windows, the fallback backend (Cairo) should use its image backend.
   return Factory::CreateDrawTarget(mFallbackCanvasBackend, aSize, aFormat);
 #else
   return CreateDrawTargetForBackend(mFallbackCanvasBackend, aSize, aFormat);
@@ -1730,9 +1730,9 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateOffscreenContentDrawTarget(
     return nullptr;
   }
 
-  
-  
-  
+  // We'd prefer this to take proper care and return a CaptureDT, but for the
+  // moment since we can't and this means we're going to be drawing on the main
+  // thread force it's initialization. See bug 1526045 and bug 1521368.
   dt->ClearRect(gfx::Rect());
   if (!dt->IsValid()) {
     return nullptr;
@@ -1758,7 +1758,7 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateSimilarSoftwareDrawTarget(
   return dt.forget();
 }
 
-
+/* static */
 already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForData(
     unsigned char* aData, const IntSize& aSize, int32_t aStride,
     SurfaceFormat aFormat, bool aUninitialized) {
@@ -1779,7 +1779,7 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForData(
   return dt.forget();
 }
 
-
+/* static */
 BackendType gfxPlatform::BackendTypeForName(const nsCString& aName) {
   if (aName.EqualsLiteral("cairo")) return BackendType::CAIRO;
   if (aName.EqualsLiteral("skia")) return BackendType::SKIA;
@@ -1809,8 +1809,8 @@ void gfxPlatform::GetStandardFamilyName(const nsCString& aFontName,
 
 nsAutoCString gfxPlatform::GetDefaultFontName(
     const nsACString& aLangGroup, const nsACString& aGenericFamily) {
-  
-  
+  // To benefit from Return Value Optimization, all paths here must return
+  // this one variable:
   nsAutoCString result;
 
   FamilyAndGeneric fam =
@@ -1824,7 +1824,7 @@ nsAutoCString gfxPlatform::GetDefaultFontName(
     }
   } else if (fam.mFamily.mUnshared) {
     fam.mFamily.mUnshared->LocalizedName(result);
-  }  
+  }  // (else, leave 'result' empty)
 
   return result;
 }
@@ -1889,21 +1889,21 @@ bool gfxPlatform::UseGraphiteShaping() {
 }
 
 bool gfxPlatform::IsFontFormatSupported(uint32_t aFormatFlags) {
-  
+  // check for strange format flags
   MOZ_ASSERT(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
              "strange font format hint set");
 
-  
+  // accept "common" formats that we support on all platforms
   if (aFormatFlags & gfxUserFontSet::FLAG_FORMATS_COMMON) {
     return true;
   }
 
-  
+  // reject all other formats, known and unknown
   if (aFormatFlags != 0) {
     return false;
   }
 
-  
+  // no format hint set, need to look at data
   return true;
 }
 
@@ -1975,9 +1975,9 @@ void gfxPlatform::InitBackendPrefs(BackendPrefsData&& aPrefsData) {
   }
 
   if (mPreferredCanvasBackend == BackendType::DIRECT2D1_1) {
-    
-    
-    
+    // Falling back to D2D 1.0 won't help us here. When D2D 1.1 DT creation
+    // fails it means the surface was too big or there's something wrong with
+    // the device. D2D 1.0 will encounter a similar situation.
     mFallbackCanvasBackend = GetCanvasBackendPref(
         aPrefsData.mCanvasBitmask & ~(BackendTypeBit(mPreferredCanvasBackend) |
                                       BackendTypeBit(BackendType::DIRECT2D)));
@@ -1990,9 +1990,9 @@ void gfxPlatform::InitBackendPrefs(BackendPrefsData&& aPrefsData) {
   mContentBackend = GetContentBackendPref(mContentBackendBitmask);
   if (mContentBackend == BackendType::NONE) {
     mContentBackend = aPrefsData.mContentDefault;
-    
-    
-    
+    // mContentBackendBitmask is our canonical reference for supported
+    // backends so we need to add the default if we are using it and
+    // overriding the prefs.
     mContentBackendBitmask |= BackendTypeBit(aPrefsData.mContentDefault);
   }
 
@@ -2011,17 +2011,17 @@ void gfxPlatform::InitBackendPrefs(BackendPrefsData&& aPrefsData) {
   }
 }
 
-
+/* static */
 BackendType gfxPlatform::GetCanvasBackendPref(uint32_t aBackendBitmask) {
   return GetBackendPref("gfx.canvas.azure.backends", aBackendBitmask);
 }
 
-
+/* static */
 BackendType gfxPlatform::GetContentBackendPref(uint32_t& aBackendBitmask) {
   return GetBackendPref("gfx.content.azure.backends", aBackendBitmask);
 }
 
-
+/* static */
 BackendType gfxPlatform::GetBackendPref(const char* aBackendPrefName,
                                         uint32_t& aBackendBitmask) {
   nsTArray<nsCString> backendList;
@@ -2096,16 +2096,16 @@ void gfxPlatform::SetCMSModeOverride(eCMSMode aMode) {
 }
 
 int gfxPlatform::GetRenderingIntent() {
-  
-  
-  
-  
+  // StaticPrefList.yaml is using 0 as the default for the rendering
+  // intent preference, based on that being the value for
+  // QCMS_INTENT_DEFAULT.  Assert here to catch if that ever
+  // changes and we can then figure out what to do about it.
   MOZ_ASSERT(QCMS_INTENT_DEFAULT == 0);
 
-  
+  /* Try to query the pref system for a rendering intent. */
   int32_t pIntent = StaticPrefs::gfx_color_management_rendering_intent();
   if ((pIntent < QCMS_INTENT_MIN) || (pIntent > QCMS_INTENT_MAX)) {
-    
+    /* If the pref is out of range, use embedded profile. */
     pIntent = -1;
   }
   return pIntent;
@@ -2114,16 +2114,16 @@ int gfxPlatform::GetRenderingIntent() {
 DeviceColor gfxPlatform::TransformPixel(const sRGBColor& in,
                                         qcms_transform* transform) {
   if (transform) {
-    
+    /* we want the bytes in RGB order */
 #ifdef IS_LITTLE_ENDIAN
-    
+    /* ABGR puts the bytes in |RGBA| order on little endian */
     uint32_t packed = in.ToABGR();
     qcms_transform_data(transform, (uint8_t*)&packed, (uint8_t*)&packed, 1);
     auto out = DeviceColor::FromABGR(packed);
 #else
-    
+    /* ARGB puts the bytes in |ARGB| order on big endian */
     uint32_t packed = in.UnusualToARGB();
-    
+    /* add one to move past the alpha byte */
     qcms_transform_data(transform, (uint8_t*)&packed + 1, (uint8_t*)&packed + 1,
                         1);
     auto out = DeviceColor::UnusualFromARGB(packed);
@@ -2166,13 +2166,13 @@ const mozilla::gfx::ContentDeviceData* gfxPlatform::GetInitContentDeviceData() {
 
 void gfxPlatform::CreateCMSOutputProfile() {
   if (!gCMSOutputProfile) {
-    
+    /* Determine if we're using the internal override to force sRGB as
+       an output profile for reftests. See Bug 452125.
 
-
-
-
-
-
+       Note that we don't normally (outside of tests) set a default value
+       of this preference, which means nsIPrefBranch::GetBoolPref will
+       typically throw (and leave its out-param untouched).
+     */
     if (Preferences::GetBool(GFX_PREF_CMS_FORCE_SRGB, false)) {
       gCMSOutputProfile = GetCMSsRGBProfile();
     }
@@ -2186,8 +2186,8 @@ void gfxPlatform::CreateCMSOutputProfile() {
       }
     }
 
-    
-
+    /* Determine if the profile looks bogus. If so, close the profile
+     * and use sRGB instead. See bug 460629, */
     if (gCMSOutputProfile && qcms_profile_is_bogus(gCMSOutputProfile)) {
       NS_ASSERTION(gCMSOutputProfile != GetCMSsRGBProfile(),
                    "Builtin sRGB profile tagged as bogus!!!");
@@ -2198,8 +2198,8 @@ void gfxPlatform::CreateCMSOutputProfile() {
     if (!gCMSOutputProfile) {
       gCMSOutputProfile = GetCMSsRGBProfile();
     }
-    
-
+    /* Precache the LUT16 Interpolations for the output profile. See
+       bug 444661 for details. */
     qcms_profile_precache_output_transform(gCMSOutputProfile);
   }
 }
@@ -2208,7 +2208,7 @@ qcms_profile* gfxPlatform::GetCMSOutputProfile() { return gCMSOutputProfile; }
 
 qcms_profile* gfxPlatform::GetCMSsRGBProfile() {
   if (!gCMSsRGBProfile) {
-    
+    /* Create the profile using qcms. */
     gCMSsRGBProfile = qcms_profile_sRGB();
   }
   return gCMSsRGBProfile;
@@ -2288,7 +2288,7 @@ qcms_transform* gfxPlatform::GetCMSOSRGBATransform() {
     case SurfaceFormat::R8G8B8A8:
       return GetCMSRGBATransform();
     default:
-      
+      // We do not support color management with big endian.
       return nullptr;
   }
 }
@@ -2300,12 +2300,12 @@ qcms_data_type gfxPlatform::GetCMSOSRGBAType() {
     case SurfaceFormat::R8G8B8A8:
       return QCMS_DATA_RGBA_8;
     default:
-      
+      // We do not support color management with big endian.
       return QCMS_DATA_RGBA_8;
   }
 }
 
-
+/* Shuts down various transforms and profiles for CMS. */
 static void ShutdownCMS() {
   if (gCMSRGBTransform) {
     qcms_transform_release(gCMSRGBTransform);
@@ -2326,7 +2326,7 @@ static void ShutdownCMS() {
   if (gCMSOutputProfile) {
     qcms_profile_release(gCMSOutputProfile);
 
-    
+    // handle the aliased case
     if (gCMSsRGBProfile == gCMSOutputProfile) gCMSsRGBProfile = nullptr;
     gCMSOutputProfile = nullptr;
   }
@@ -2335,7 +2335,7 @@ static void ShutdownCMS() {
     gCMSsRGBProfile = nullptr;
   }
 
-  
+  // Reset the state variables
   gCMSMode = eCMSMode_Off;
   gCMSInitialized = false;
 }
@@ -2347,7 +2347,7 @@ int32_t gfxPlatform::GetBidiNumeralOption() {
   return mBidiNumeralOption;
 }
 
-
+/* static */
 void gfxPlatform::FlushFontAndWordCaches() {
   gfxFontCache* fontCache = gfxFontCache::GetCache();
   if (fontCache) {
@@ -2357,18 +2357,18 @@ void gfxPlatform::FlushFontAndWordCaches() {
   gfxPlatform::PurgeSkiaFontCache();
 }
 
-
+/* static */
 void gfxPlatform::ForceGlobalReflow() {
   MOZ_ASSERT(NS_IsMainThread());
   if (XRE_IsParentProcess()) {
-    
-    
+    // Modify a preference that will trigger reflow everywhere (in all
+    // content processes, as well as the parent).
     static const char kPrefName[] = "font.internaluseonly.changed";
     bool fontInternalChange = Preferences::GetBool(kPrefName, false);
     Preferences::SetBool(kPrefName, !fontInternalChange);
   } else {
-    
-    
+    // Send a notification that will be observed by PresShells in this
+    // process only.
     nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
     if (obs) {
       obs->NotifyObservers(nullptr, "font-info-updated", nullptr);
@@ -2407,7 +2407,7 @@ void gfxPlatform::FontsPrefsChanged(const char* aPref) {
 }
 
 mozilla::LogModule* gfxPlatform::GetLog(eGfxLog aWhichLog) {
-  
+  // logs shared across gfx
   static LazyLogModule sFontlistLog("fontlist");
   static LazyLogModule sFontInitLog("fontinit");
   static LazyLogModule sTextrunLog("textrun");
@@ -2482,13 +2482,13 @@ gfxImageFormat gfxPlatform::OptimalFormatForContent(gfxContentType aContent) {
   }
 }
 
-
-
-
-
-
-
-
+/**
+ * There are a number of layers acceleration (or layers in general) preferences
+ * that should be consistent for the lifetime of the application (bug 840967).
+ * As such, we will evaluate them all as soon as one of them is evaluated
+ * and remember the values.  Changing these preferences during the run will
+ * not have any effect until we restart.
+ */
 static mozilla::Atomic<bool> sLayersSupportsHardwareVideoDecoding(false);
 static bool sLayersHardwareVideoDecodingFailed = false;
 static bool sBufferRotationCheckPref = true;
@@ -2519,10 +2519,10 @@ void gfxPlatform::InitAcceleration() {
 
   InitCompositorAccelerationPrefs();
 
-  
-  
-  
-  
+  // If this is called for the first time on a non-main thread, we're screwed.
+  // At the moment there's no explicit guarantee that the main thread calls
+  // this before the compositor thread, but let's at least make the assumption
+  // explicit.
   MOZ_ASSERT(NS_IsMainThread(), "can only initialize prefs on the main thread");
 
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
@@ -2540,8 +2540,8 @@ void gfxPlatform::InitAcceleration() {
                                       discardFailureId, &status))) {
       gfxVars::SetAllowD3D11KeyedMutex(status == nsIGfxInfo::FEATURE_STATUS_OK);
     } else {
-      
-      
+      // If we couldn't properly evaluate the status, err on the side
+      // of caution and give this functionality to the user.
       gfxCriticalNote << "Cannot evaluate keyed mutex feature status";
       gfxVars::SetAllowD3D11KeyedMutex(true);
     }
@@ -2551,26 +2551,46 @@ void gfxPlatform::InitAcceleration() {
     }
 #endif
 
-    if (NS_SUCCEEDED(
-            gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBGL2,
-                                      discardFailureId, &status))) {
+    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBGL2,
+                                               discardFailureId, &status))) {
       gfxVars::SetAllowWebgl2(status == nsIGfxInfo::FEATURE_STATUS_OK);
     }
-    if (NS_SUCCEEDED(
-            gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBGL_OPENGL,
-                                      discardFailureId, &status))) {
-      gfxVars::SetWebglAllowWindowsNativeGl(status == nsIGfxInfo::FEATURE_STATUS_OK);
+    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBGL_OPENGL,
+                                               discardFailureId, &status))) {
+      gfxVars::SetWebglAllowWindowsNativeGl(status ==
+                                            nsIGfxInfo::FEATURE_STATUS_OK);
     }
 
     if (kIsMacOS) {
-      
+      // Avoid crash for Intel HD Graphics 3000 on OSX. (Bug 1413269)
       nsString vendorID, deviceID;
       gfxInfo->GetAdapterVendorID(vendorID);
       gfxInfo->GetAdapterDeviceID(deviceID);
       if (vendorID.EqualsLiteral("0x8086") &&
-          (deviceID.EqualsLiteral("0x0116") || deviceID.EqualsLiteral("0x0126"))) {
+          (deviceID.EqualsLiteral("0x0116") ||
+           deviceID.EqualsLiteral("0x0126"))) {
         gfxVars::SetWebglAllowCoreProfile(false);
       }
+    }
+
+    const auto IsFeatureOk = [&](const int32_t feature) {
+      nsCString discardFailureId;
+      int32_t status;
+      MOZ_RELEASE_ASSERT(NS_SUCCEEDED(
+          gfxInfo->GetFeatureStatus(feature, discardFailureId, &status)));
+      return (status == nsIGfxInfo::FEATURE_STATUS_OK);
+    };
+
+    {
+      bool allowWebGLOop =
+          IsFeatureOk(nsIGfxInfo::FEATURE_ALLOW_WEBGL_OUT_OF_PROCESS);
+
+      const bool threadsafeGl = IsFeatureOk(nsIGfxInfo::FEATURE_THREADSAFE_GL);
+      if (gfxVars::UseWebRender() && !threadsafeGl) {
+        allowWebGLOop = false;
+      }
+
+      gfxVars::SetAllowWebglOop(allowWebGLOop);
     }
   }
 
@@ -2601,8 +2621,8 @@ void gfxPlatform::InitAcceleration() {
 }
 
 void gfxPlatform::InitGPUProcessPrefs() {
-  
-  
+  // We want to hide this from about:support, so only set a default if the
+  // pref is known to be true.
   if (!StaticPrefs::layers_gpu_process_enabled_AtStartup() &&
       !StaticPrefs::layers_gpu_process_force_enabled_AtStartup()) {
     return;
@@ -2610,9 +2630,9 @@ void gfxPlatform::InitGPUProcessPrefs() {
 
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
-  
-  
-  
+  // We require E10S - otherwise, there is very little benefit to the GPU
+  // process, since the UI process must still use acceleration for
+  // performance.
   if (!BrowserTabsRemoteAutostart()) {
     gpuProc.DisableByDefault(FeatureStatus::Unavailable,
                              "Multi-process mode is not enabled",
@@ -2652,7 +2672,7 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
 
   FeatureState& feature = gfxConfig::GetFeature(Feature::HW_COMPOSITING);
 
-  
+  // Base value - does the platform allow acceleration?
   if (feature.SetDefault(AccelerateLayersByDefault(), FeatureStatus::Blocked,
                          "Acceleration blocked by platform")) {
     if (StaticPrefs::
@@ -2667,13 +2687,13 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
     }
   }
 
-  
+  // This has specific meaning elsewhere, so we always record it.
   if (StaticPrefs::
           layers_acceleration_force_enabled_AtStartup_DoNotUseDirectly()) {
     feature.UserForceEnable("Force-enabled by pref");
   }
 
-  
+  // Safe, headless, and record/replay modes override everything.
   if (InSafeMode()) {
     feature.ForceDisable(FeatureStatus::Blocked,
                          "Acceleration blocked by safe-mode",
@@ -2686,19 +2706,19 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
   }
 }
 
-
+/*static*/
 bool gfxPlatform::WebRenderPrefEnabled() {
   return StaticPrefs::gfx_webrender_all_AtStartup() ||
          StaticPrefs::gfx_webrender_enabled_AtStartup_DoNotUseDirectly();
 }
 
-
+/*static*/
 bool gfxPlatform::WebRenderEnvvarEnabled() {
   const char* env = PR_GetEnv("MOZ_WEBRENDER");
   return (env && *env == '1');
 }
 
-
+/*static*/
 bool gfxPlatform::WebRenderEnvvarDisabled() {
   const char* env = PR_GetEnv("MOZ_WEBRENDER");
   return (env && *env == '0');
@@ -2708,34 +2728,34 @@ void gfxPlatform::InitWebRenderConfig() {
   bool prefEnabled = WebRenderPrefEnabled();
   bool envvarEnabled = WebRenderEnvvarEnabled();
 
-  
-  
-  
+  // This would ideally be in the nsCSSProps code
+  // but nsCSSProps is initialized before gfxPlatform
+  // so it has to be done here.
   gfxVars::AddReceiver(&nsCSSProps::GfxVarReceiver());
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // WR? WR+   => means WR was enabled via gfx.webrender.all.qualified on
+  //              qualified hardware
+  // WR! WR+   => means WR was enabled via gfx.webrender.{all,enabled} or
+  //              envvar, possibly on unqualified hardware
+  // In all cases WR- means WR was not enabled, for one of many possible
+  // reasons. Prior to bug 1523788 landing the gfx.webrender.{all,enabled}
+  // prefs only worked on Nightly so keep that in mind when looking at older
+  // crash reports.
   ScopedGfxFeatureReporter reporter("WR", prefEnabled || envvarEnabled);
   if (!XRE_IsParentProcess()) {
-    
-    
-    
+    // The parent process runs through all the real decision-making code
+    // later in this function. For other processes we still want to report
+    // the state of the feature for crash reports.
     if (gfxVars::UseWebRender()) {
-      
-      
+      // gfxVars doesn't notify receivers when initialized on content processes
+      // we need to explicitly recompute backdrop-filter's enabled state here.
       nsCSSProps::RecomputeEnabledState("layout.css.backdrop-filter.enabled");
       reporter.SetSuccessful();
     }
     return;
   }
 
-  
+  // Update the gfxConfig feature states.
   gfxConfigManager manager;
   manager.Init();
   manager.ConfigureWebRender();
@@ -2760,8 +2780,8 @@ void gfxPlatform::InitWebRenderConfig() {
     gfxVars::SetUseSoftwareWebRender(gfxConfig::IsEnabled(Feature::WEBRENDER));
   }
 
-  
-  
+  // gfxFeature is not usable in the GPU process, so we use gfxVars to transmit
+  // this feature
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxVars::SetUseWebRender(true);
     reporter.SetSuccessful();
@@ -2798,7 +2818,7 @@ void gfxPlatform::InitWebRenderConfig() {
     }
   }
   if (Preferences::GetBool("gfx.webrender.flip-sequential", false)) {
-    
+    // XXX relax win version to windows 8.
     if (IsWin10OrLater() && UseWebRender() && gfxVars::UseWebRenderANGLE()) {
       gfxVars::SetUseWebRenderFlipSequentialWin(true);
     }
@@ -2824,14 +2844,14 @@ void gfxPlatform::InitWebRenderConfig() {
         StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup());
   }
 
-  
+  // Set features that affect WR's RendererOptions
   gfxVars::SetUseGLSwizzle(
       IsFeatureSupported(nsIGfxInfo::FEATURE_GL_SWIZZLE, true));
   gfxVars::SetUseWebRenderScissoredCacheClears(IsFeatureSupported(
       nsIGfxInfo::FEATURE_WEBRENDER_SCISSORED_CACHE_CLEARS, true));
 
-  
-  
+  // The RemoveShaderCacheFromDiskIfNecessary() needs to be called after
+  // WebRenderConfig initialization.
   gfxUtils::RemoveShaderCacheFromDiskIfNecessary();
 }
 
@@ -2852,9 +2872,9 @@ void gfxPlatform::InitOMTPConfig() {
   int32_t paintWorkerCount = PaintThread::CalculatePaintWorkerCount();
 
   if (!XRE_IsParentProcess()) {
-    
-    
-    
+    // The parent process runs through all the real decision-making code
+    // later in this function. For other processes we still want to report
+    // the state of the feature for crash reports.
     if (gfxVars::UseOMTP()) {
       reporter.SetSuccessful(paintWorkerCount);
     }
@@ -2867,7 +2887,7 @@ void gfxPlatform::InitOMTPConfig() {
 
   if (sizeof(void*) <= sizeof(uint32_t)) {
     int32_t cpuCores = PR_GetNumberOfProcessors();
-    const uint64_t kMinSystemMemory = 2147483648;  
+    const uint64_t kMinSystemMemory = 2147483648;  // 2 GB
     if (cpuCores <= 2) {
       omtp.ForceDisable(FeatureStatus::Broken,
                         "OMTP is not supported on 32-bit with <= 2 cores",
@@ -2904,8 +2924,8 @@ void gfxPlatform::InitOMTPConfig() {
 }
 
 bool gfxPlatform::CanUseHardwareVideoDecoding() {
-  
-  
+  // this function is called from the compositor thread, so it is not
+  // safe to init the prefs etc. from here.
   MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
   return sLayersSupportsHardwareVideoDecoding &&
          !sLayersHardwareVideoDecodingFailed;
@@ -2932,7 +2952,7 @@ void gfxPlatform::DisableBufferRotation() {
   sBufferRotationCheckPref = false;
 }
 
-
+/* static */
 bool gfxPlatform::UsesOffMainThreadCompositing() {
   if (XRE_GetProcessType() == GeckoProcessType_GPU) {
     return true;
@@ -2947,7 +2967,7 @@ bool gfxPlatform::UsesOffMainThreadCompositing() {
              !StaticPrefs::
                  layers_offmainthreadcomposition_force_disabled_AtStartup();
 #if defined(MOZ_WIDGET_GTK)
-    
+    // Linux users who chose OpenGL are being included in OMTC
     result |= StaticPrefs::
         layers_acceleration_force_enabled_AtStartup_DoNotUseDirectly();
 
@@ -2961,9 +2981,9 @@ bool gfxPlatform::UsesOffMainThreadCompositing() {
 bool gfxPlatform::UsesTiling() const {
   bool usesSkia = GetDefaultContentBackend() == BackendType::SKIA;
 
-  
-  
-  
+  // We can't just test whether the PaintThread is initialized here because
+  // this function is used when initializing the PaintThread. So instead we
+  // check the conditions that enable OMTP with parallel painting.
   bool usesPOMTP = XRE_IsContentProcess() && gfxVars::UseOMTP() &&
                    (StaticPrefs::layers_omtp_paint_workers_AtStartup() == -1 ||
                     StaticPrefs::layers_omtp_paint_workers_AtStartup() > 1);
@@ -2991,36 +3011,36 @@ bool gfxPlatform::ContentUsesTiling() const {
           contentUsesSkia && contentUsesPOMTP);
 }
 
-
-
-
-
-
-
-
-
+/***
+ * The preference "layout.frame_rate" has 3 meanings depending on the value:
+ *
+ * -1 = Auto (default), use hardware vsync or software vsync @ 60 hz if hw
+ *      vsync fails.
+ *  0 = ASAP mode - used during talos testing.
+ *  X = Software vsync at a rate of X times per second.
+ */
 already_AddRefed<mozilla::gfx::VsyncSource>
 gfxPlatform::CreateHardwareVsyncSource() {
   RefPtr<mozilla::gfx::VsyncSource> softwareVsync = new SoftwareVsyncSource();
   return softwareVsync.forget();
 }
 
-
+/* static */
 bool gfxPlatform::IsInLayoutAsapMode() {
-  
-  
-  
-  
-  
+  // There are 2 modes of ASAP mode.
+  // 1 is that the refresh driver and compositor are in lock step
+  // the second is that the compositor goes ASAP and the refresh driver
+  // goes at whatever the configurated rate is. This only checks the version
+  // talos uses, which is the refresh driver and compositor are in lockstep.
   return StaticPrefs::layout_frame_rate() == 0;
 }
 
-
+/* static */
 bool gfxPlatform::ForceSoftwareVsync() {
   return StaticPrefs::layout_frame_rate() > 0;
 }
 
-
+/* static */
 int gfxPlatform::GetSoftwareVsyncRate() {
   int preferenceRate = StaticPrefs::layout_frame_rate();
   if (preferenceRate <= 0) {
@@ -3029,22 +3049,22 @@ int gfxPlatform::GetSoftwareVsyncRate() {
   return preferenceRate;
 }
 
-
+/* static */
 int gfxPlatform::GetDefaultFrameRate() { return 60; }
 
-
+/* static */
 void gfxPlatform::ReInitFrameRate() {
   if (XRE_IsParentProcess()) {
     RefPtr<VsyncSource> oldSource = gPlatform->mVsyncSource;
 
-    
+    // Start a new one:
     if (gfxPlatform::ForceSoftwareVsync()) {
       gPlatform->mVsyncSource =
           (gPlatform)->gfxPlatform::CreateHardwareVsyncSource();
     } else {
       gPlatform->mVsyncSource = gPlatform->CreateHardwareVsyncSource();
     }
-    
+    // Tidy up old vsync source.
     if (oldSource) {
       oldSource->MoveListenersToNewSource(gPlatform->mVsyncSource);
       oldSource->Shutdown();
@@ -3061,7 +3081,7 @@ void gfxPlatform::GetAzureBackendInfo(mozilla::widget::InfoObject& aObj) {
     aObj.DefineProperty("AzureContentBackend (UI Process)",
                         GetBackendName(mContentBackend));
 
-    
+    // Assume content process' backend prefs.
     BackendPrefsData data = GetBackendPrefs();
     BackendType canvasBackend = GetCanvasBackendPref(data.mCanvasBitmask);
     if (canvasBackend == BackendType::NONE) {
@@ -3158,8 +3178,8 @@ void gfxPlatform::GetCMSSupportInfo(mozilla::widget::InfoObject& aObj) {
     return;
   }
 
-  
-  
+  // Some profiles can be quite large. We don't want to include giant profiles
+  // by default in about:support. For now, we only accept less than 8kiB.
   const size_t kMaxProfileSize = 8192;
   if (outputProfileData.Length() >= kMaxProfileSize) {
     nsPrintfCString msg("%zu bytes, too large", outputProfileData.Length());
@@ -3204,8 +3224,8 @@ class FrameStatsComparator {
   bool Equals(const FrameStats& aA, const FrameStats& aB) const {
     return aA.contentFrameTime() == aB.contentFrameTime();
   }
-  
-  
+  // Reverse the condition here since we want the array sorted largest to
+  // smallest.
   bool LessThan(const FrameStats& aA, const FrameStats& aB) const {
     return aA.contentFrameTime() > aB.contentFrameTime();
   }
@@ -3225,7 +3245,7 @@ void gfxPlatform::NotifyFrameStats(nsTArray<FrameStats>&& aFrameStats) {
   }
 }
 
-
+/*static*/
 uint32_t gfxPlatform::TargetFrameRate() {
   if (gPlatform && gPlatform->mVsyncSource) {
     VsyncSource::Display& display = gPlatform->mVsyncSource->GetGlobalDisplay();
@@ -3234,20 +3254,20 @@ uint32_t gfxPlatform::TargetFrameRate() {
   return 0;
 }
 
-
+/* static */
 bool gfxPlatform::UseDesktopZoomingScrollbars() {
-  
+  // bug 1657822 to enable this by default
   return StaticPrefs::apz_allow_zooming() &&
          !StaticPrefs::apz_force_disable_desktop_zooming_scrollbars();
 }
 
-
+/*static*/
 bool gfxPlatform::AsyncPanZoomEnabled() {
 #if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_UIKIT)
-  
-  
-  
-  
+  // For XUL applications (everything but Firefox on Android)
+  // we only want to use APZ when E10S is enabled. If
+  // we ever get input events off the main thread we can consider relaxing
+  // this requirement.
   if (!BrowserTabsRemoteAutostart()) {
     return false;
   }
@@ -3260,7 +3280,7 @@ bool gfxPlatform::AsyncPanZoomEnabled() {
 #endif
 }
 
-
+/*static*/
 bool gfxPlatform::PerfWarnings() {
   return StaticPrefs::gfx_perf_warnings_enabled();
 }
@@ -3301,7 +3321,7 @@ void gfxPlatform::NotifyCompositorCreated(LayersBackend aBackend) {
                     << "," << int(aBackend) << ")";
   }
 
-  
+  // Set the backend before we notify so it's available immediately.
   mCompositorBackend = aBackend;
 
   if (XRE_IsParentProcess()) {
@@ -3310,7 +3330,7 @@ void gfxPlatform::NotifyCompositorCreated(LayersBackend aBackend) {
         NS_ConvertUTF8toUTF16(GetLayersBackendName(mCompositorBackend)));
   }
 
-  
+  // Notify that we created a compositor, so telemetry can update.
   NS_DispatchToMainThread(
       NS_NewRunnableFunction("gfxPlatform::NotifyCompositorCreated", [] {
         if (nsCOMPtr<nsIObserverService> obsvc =
@@ -3320,7 +3340,7 @@ void gfxPlatform::NotifyCompositorCreated(LayersBackend aBackend) {
       }));
 }
 
-
+/* static */
 void gfxPlatform::NotifyGPUProcessDisabled() {
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxConfig::GetFeature(Feature::WEBRENDER)
@@ -3360,7 +3380,7 @@ void gfxPlatform::BuildContentDeviceData(
     mozilla::gfx::ContentDeviceData* aOut) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  
+  // Make sure our settings are synchronized from the GPU process.
   GPUProcessManager::Get()->EnsureGPUReady();
 
   aOut->prefs().hwCompositing() = gfxConfig::GetValue(Feature::HW_COMPOSITING);
@@ -3398,8 +3418,8 @@ bool gfxPlatform::SupportsApzZooming() const {
 
 void gfxPlatform::InitOpenGLConfig() {
 #ifdef XP_WIN
-  
-  
+  // Don't enable by default on Windows, since it could show up in about:support
+  // even though it'll never get used. Only attempt if user enables the pref
   if (!Preferences::GetBool("layers.prefer-opengl")) {
     return;
   }
@@ -3408,7 +3428,7 @@ void gfxPlatform::InitOpenGLConfig() {
   FeatureState& openGLFeature =
       gfxConfig::GetFeature(Feature::OPENGL_COMPOSITING);
 
-  
+  // Check to see hw comp supported
   if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
     openGLFeature.DisableByDefault(FeatureStatus::Unavailable,
                                    "Hardware compositing is disabled",
@@ -3424,8 +3444,8 @@ void gfxPlatform::InitOpenGLConfig() {
   openGLFeature.EnableByDefault();
 #endif
 
-  
-  
+  // When layers acceleration is force-enabled, enable it even for blocklisted
+  // devices.
   if (StaticPrefs::
           layers_acceleration_force_enabled_AtStartup_DoNotUseDirectly()) {
     openGLFeature.UserForceEnable("Force-enabled by pref");
