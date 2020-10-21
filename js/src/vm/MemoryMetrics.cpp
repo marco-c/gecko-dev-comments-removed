@@ -625,6 +625,7 @@ static bool CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats,
   
   
   gc::FinishGC(cx);
+  gc::WaitForBackgroundTasks(cx);
   JS::AutoAssertNoGC nogc(cx);
 
   JSRuntime* rt = cx->runtime();

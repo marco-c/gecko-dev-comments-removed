@@ -126,6 +126,8 @@ namespace gc {
 
 void FinishGC(JSContext* cx, JS::GCReason = JS::GCReason::FINISH_GC);
 
+void WaitForBackgroundTasks(JSContext* cx);
+
 
 
 
