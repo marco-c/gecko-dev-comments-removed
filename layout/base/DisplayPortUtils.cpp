@@ -858,10 +858,27 @@ bool DisplayPortUtils::CalculateAndSetDisplayPortMargins(
   ScreenMargin displayportMargins = layers::apz::CalculatePendingDisplayPort(
       metrics, ParentLayerPoint(0.0f, 0.0f));
   PresShell* presShell = frame->PresContext()->GetPresShell();
-  return SetDisplayPortMargins(
-      content, presShell,
-      DisplayPortMargins::WithNoAdjustment(displayportMargins), 0,
-      aRepaintMode);
+
+  DisplayPortMargins margins;
+  if (metrics.IsRootContent()) {
+    
+    
+    
+    margins = DisplayPortMargins::WithAdjustment(
+        displayportMargins, metrics.GetVisualScrollOffset(),
+        metrics.GetLayoutScrollOffset(),
+        metrics.DisplayportPixelsPerCSSPixel());
+  } else {
+    
+    
+    
+    
+    MOZ_ASSERT(metrics.GetVisualScrollOffset() ==
+               metrics.GetLayoutScrollOffset());
+    margins = DisplayPortMargins::WithNoAdjustment(displayportMargins);
+  }
+
+  return SetDisplayPortMargins(content, presShell, margins, 0, aRepaintMode);
 }
 
 bool DisplayPortUtils::MaybeCreateDisplayPort(nsDisplayListBuilder* aBuilder,

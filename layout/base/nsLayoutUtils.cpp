@@ -2726,6 +2726,7 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
   float resolution = 1.0f;
   bool isRcdRsf = aScrollFrame->IsRootScrollFrameOfDocument() &&
                   presContext->IsRootContentDocumentCrossProcess();
+  metrics.SetIsRootContent(isRcdRsf);
   if (isRcdRsf) {
     
     
