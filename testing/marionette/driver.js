@@ -1752,7 +1752,9 @@ GeckoDriver.prototype.switchToParentFrame = async function() {
     
     
     
-    await this.listener.setBrowsingContextId(browsingContext.id);
+    if (this.context == Context.Content) {
+      await this.listener.setBrowsingContextId(browsingContext.id);
+    }
 
     return;
   }
@@ -1804,7 +1806,9 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
     
     
     
-    await this.listener.setBrowsingContextId(browsingContext.id);
+    if (this.context == Context.Content) {
+      await this.listener.setBrowsingContextId(browsingContext.id);
+    }
 
     return;
   }
