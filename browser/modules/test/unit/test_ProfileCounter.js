@@ -6,7 +6,6 @@
 const { BrowserUsageTelemetry } = ChromeUtils.import(
   "resource:///modules/BrowserUsageTelemetry.jsm"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TelemetryTestUtils } = ChromeUtils.import(
   "resource://testing-common/TelemetryTestUtils.jsm"
@@ -16,12 +15,9 @@ const PROFILE_COUNT_SCALAR = "browser.engagement.profile_count";
 
 const SCALAR_ERROR_VALUE = 0;
 
-
-
 const FILE_OPEN_OPERATION = "open";
-
-const ERROR_FILE_NOT_FOUND = 2;
-const ERROR_ACCESS_DENIED = 5;
+const ERROR_FILE_NOT_FOUND = "NotFoundError";
+const ERROR_ACCESS_DENIED = "NotAllowedError";
 
 
 
@@ -34,7 +30,6 @@ var gFakeProfileCounterFile = null;
 
 
 var gProfileCounterFilePath = null;
-
 
 
 
@@ -116,14 +111,14 @@ function setup() {
     }
     
     if (gNextReadExceptionReason !== null) {
-      let ex = new OS.File.Error(FILE_OPEN_OPERATION, gNextReadExceptionReason);
+      let ex = new DOMException(FILE_OPEN_OPERATION, gNextReadExceptionReason);
       gNextReadExceptionReason = null;
       throw ex;
     }
     
     
     if (gFakeProfileCounterFile === null) {
-      throw new OS.File.Error(FILE_OPEN_OPERATION, ERROR_FILE_NOT_FOUND);
+      throw new DOMException(FILE_OPEN_OPERATION, ERROR_FILE_NOT_FOUND);
     }
     return gFakeProfileCounterFile;
   };
@@ -141,10 +136,7 @@ function setup() {
     }
     
     if (gNextWriteExceptionReason !== null) {
-      let ex = new OS.File.Error(
-        FILE_OPEN_OPERATION,
-        gNextWriteExceptionReason
-      );
+      let ex = new DOMException(FILE_OPEN_OPERATION, gNextWriteExceptionReason);
       gNextWriteExceptionReason = null;
       throw ex;
     }
