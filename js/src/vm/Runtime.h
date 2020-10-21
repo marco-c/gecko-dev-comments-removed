@@ -60,6 +60,7 @@
 #include "vm/OffThreadPromiseRuntimeState.h"  
 #include "vm/Scope.h"
 #include "vm/SharedImmutableStringsCache.h"
+#include "vm/SharedStencil.h"  
 #include "vm/Stack.h"
 #include "vm/SymbolType.h"
 #include "wasm/WasmTypes.h"
