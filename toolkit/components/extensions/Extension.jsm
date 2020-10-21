@@ -999,6 +999,9 @@ class ExtensionData {
           continue;
         }
 
+        
+        
+        
         permissions.add(perm);
       }
 
@@ -1463,6 +1466,57 @@ class ExtensionData {
 
 
 
+  static classifyOriginPermissions(origins = []) {
+    let allUrls = null,
+      wildcards = new Set(),
+      sites = new Set();
+    for (let permission of origins) {
+      if (permission == "<all_urls>") {
+        allUrls = permission;
+        break;
+      }
+
+      
+      
+      let match = /^[a-z*]+:\/\/([^/]*)\/|^about:/.exec(permission);
+      if (!match) {
+        throw new Error(`Unparseable host permission ${permission}`);
+      }
+      
+      
+      if (!match[1] || match[1] == "*") {
+        allUrls = permission;
+      } else if (match[1].startsWith("*.")) {
+        wildcards.add(match[1].slice(2));
+      } else {
+        sites.add(match[1]);
+      }
+    }
+    return { allUrls, wildcards, sites };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1490,41 +1544,26 @@ class ExtensionData {
     bundle,
     { collapseOrigins = false } = {}
   ) {
-    let result = {};
+    let result = {
+      msgs: [],
+      optionalPermissions: {},
+      optionalOrigins: {},
+    };
 
     let perms = info.permissions || { origins: [], permissions: [] };
+    let optional_permissions = info.optionalPermissions || {
+      origins: [],
+      permissions: [],
+    };
 
     
-    let allUrls = false,
-      wildcards = new Set(),
-      sites = new Set();
-    for (let permission of perms.origins) {
-      if (permission == "<all_urls>") {
-        allUrls = true;
-        break;
-      }
-
-      
-      
-      let match = /^[a-z*]+:\/\/([^/]*)\/|^about:/.exec(permission);
-      if (!match) {
-        throw new Error(`Unparseable host permission ${permission}`);
-      }
-      
-      
-      if (!match[1] || match[1] == "*") {
-        allUrls = true;
-      } else if (match[1].startsWith("*.")) {
-        wildcards.add(match[1].slice(2));
-      } else {
-        sites.add(match[1]);
-      }
-    }
+    let { allUrls, wildcards, sites } = ExtensionData.classifyOriginPermissions(
+      perms.origins
+    );
 
     
     
     
-    result.msgs = [];
     if (allUrls) {
       result.msgs.push(
         bundle.GetStringFromName("webextPerms.hostDescription.allUrls")
@@ -1584,7 +1623,7 @@ class ExtensionData {
     let permissionsCopy = perms.permissions.slice(0);
     for (let permission of permissionsCopy.sort()) {
       
-      if (permission == "nativeMessaging") {
+      if (permission == NATIVE_MSG_PERM) {
         continue;
       }
       try {
@@ -1593,6 +1632,35 @@ class ExtensionData {
         
         
       }
+    }
+
+    
+    
+    for (let permission of optional_permissions.permissions) {
+      if (permission == NATIVE_MSG_PERM) {
+        result.optionalPermissions[
+          permission
+        ] = bundle.formatStringFromName(permissionKey(permission), [
+          info.appName,
+        ]);
+        continue;
+      }
+      try {
+        result.optionalPermissions[permission] = bundle.GetStringFromName(
+          permissionKey(permission)
+        );
+      } catch (err) {
+        
+        
+      }
+    }
+    allUrls = ExtensionData.classifyOriginPermissions(
+      optional_permissions.origins
+    ).allUrls;
+    if (allUrls) {
+      result.optionalOrigins[allUrls] = bundle.GetStringFromName(
+        "webextPerms.hostDescription.allUrls"
+      );
     }
 
     const haveAccessKeys = AppConstants.platform !== "android";
