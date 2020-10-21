@@ -613,15 +613,6 @@ pref("gfx.downloadable_fonts.disable_cache", false);
 pref("gfx.missing_fonts.notify", false);
 
 
-#ifdef XP_WIN
-  pref("gfx.font_loader.delay", 120000);       
-  pref("gfx.font_loader.interval", 1000);      
-#else
-  pref("gfx.font_loader.delay", 8000);         
-  pref("gfx.font_loader.interval", 50);        
-#endif
-
-
 pref("gfx.font_rendering.fallback.always_use_cmaps", false);
 
 
