@@ -1,10 +1,10 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
-
+// Test that the correct declaration is identified and changed after removing a
+// declaration positioned ahead of it in the same CSS rule.
 
 const TEST_URI = `
   <style type='text/css'>
@@ -41,16 +41,13 @@ add_task(async function() {
   info("Wait for change to be tracked");
   await onTrackChange;
 
-  const removeDecl = getRemovedDeclarations(doc);
-  const addDecl = getAddedDeclarations(doc);
-
-  is(removeDecl.length, 2, "Two declarations tracked as removed");
-  is(addDecl.length, 1, "One declaration tracked as added");
-  
-  is(
-    addDecl[0].property,
-    "display",
-    "Added declaration has updated property name"
+  // Ensure changes to the second declaration were tracked after removing the first one.
+  await waitFor(
+    () => getRemovedDeclarations(doc).length == 2,
+    "Two declarations should have been tracked as removed"
   );
-  is(addDecl[0].value, "flex", "Added declaration has updated property value");
+  await waitFor(() => {
+    const addDecl = getAddedDeclarations(doc);
+    return addDecl.length == 1 && addDecl[0].value == "flex";
+  }, "One declaration should have been tracked as added, and the added declaration to have updated property value");
 });
