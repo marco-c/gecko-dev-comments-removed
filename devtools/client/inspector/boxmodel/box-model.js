@@ -233,11 +233,6 @@ BoxModel.prototype = {
 
 
   onHideBoxModelHighlighter() {
-    
-    
-    if (!this.inspector) {
-      return;
-    }
     this.inspector.highlighters.hideHighlighterType(
       this.inspector.highlighters.TYPES.BOXMODEL
     );

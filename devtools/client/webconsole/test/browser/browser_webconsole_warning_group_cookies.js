@@ -144,11 +144,6 @@ add_task(async function testInvalidSameSiteMessage() {
     `| ${message2}`,
   ]);
 
-  
-  
-  
-  await hud.toolbox.sourceMapURLService.waitForSourcesLoading();
-
   await win.close();
 });
 
