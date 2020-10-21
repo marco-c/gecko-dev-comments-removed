@@ -1772,6 +1772,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_UNQUALIFIED_WEBRENDER_WINDOWS_8_1");
 #endif
 
+#ifndef NIGHTLY_BUILD
     
     
     APPEND_TO_DRIVER_BLOCKLIST2(
@@ -1780,6 +1781,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_EQUAL,
         V(23, 20, 16, 4973),
         "FEATURE_FAILURE_WEBRENDER_VIDEO_CRASH_INTEL_23.20.16.4973");
+#endif
 
     
     
