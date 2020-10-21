@@ -152,7 +152,7 @@ var State = {
 
 
 
-  async update() {
+  async update(force = false) {
     
     if (!this._buffer.length) {
       this._latest = await this._promiseSnapshot();
@@ -165,7 +165,7 @@ var State = {
     
     let latestInBuffer = this._buffer[this._buffer.length - 1];
     let deltaT = now - latestInBuffer.date;
-    if (deltaT > BUFFER_SAMPLING_RATE_MS) {
+    if (force || deltaT > BUFFER_SAMPLING_RATE_MS) {
       this._latest = await this._promiseSnapshot();
       this._buffer.push(this._latest);
     }
@@ -374,7 +374,11 @@ var State = {
 
 var View = {
   _fragment: document.createDocumentFragment(),
+  
+  
+  _killedRecently: [],
   async commit() {
+    this._killedRecently.length = 0;
     let tbody = document.getElementById("process-tbody");
 
     
@@ -547,6 +551,34 @@ var View = {
       });
     }
 
+    
+    let killButton = this._addCell(row, {
+      content: "",
+      classes: ["action-icon"],
+    });
+
+    if (["web", "webIsolated", "webLargeAllocation"].includes(data.type)) {
+      
+      if (this._killedRecently.some(kill => kill.pid && kill.pid == data.pid)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        row.classList.add("killed");
+      } else {
+        
+        killButton.classList.add("close-icon");
+        document.l10n.setAttributes(
+          killButton,
+          "about-processes-shutdown-process"
+        );
+      }
+    }
+
     this._fragment.appendChild(row);
     return row;
   },
@@ -580,6 +612,12 @@ var View = {
     this._addCell(row, {
       content: "",
       classes: ["cpu"],
+    });
+
+    
+    this._addCell(row, {
+      content: "",
+      classes: ["action-icon"],
     });
 
     this._fragment.appendChild(row);
@@ -652,6 +690,34 @@ var View = {
       classes: ["cpu"],
     });
 
+    
+    let killButton = this._addCell(row, {
+      content: "",
+      classes: ["action-icon"],
+    });
+
+    if (data.tab && data.tab.tabbrowser) {
+      
+      if (
+        this._killedRecently.some(
+          kill => kill.windowId && kill.windowId == data.outerWindowId
+        )
+      ) {
+        
+        
+        
+        
+        
+        
+        
+        
+        row.classList.add("killed");
+      } else {
+        
+        killButton.classList.add("close-icon");
+        document.l10n.setAttributes(killButton, "about-processes-shutdown-tab");
+      }
+    }
     this._fragment.appendChild(row);
     return row;
   },
@@ -693,6 +759,12 @@ var View = {
         classes: ["cpu"],
       });
     }
+
+    
+    this._addCell(row, {
+      content: "",
+      classes: [],
+    });
 
     this._fragment.appendChild(row);
     return row;
@@ -865,16 +937,11 @@ var Control = {
       
       let target = event.target;
       if (target.classList.contains("twisty")) {
-        let row = target.parentNode.parentNode;
-        let id = row.process.pid;
-        if (target.classList.toggle("open")) {
-          this._openItems.add(id);
-          this._showThreads(row);
-          View.insertAfterRow(row);
-        } else {
-          this._openItems.delete(id);
-          this._removeSubtree(row);
-        }
+        this._handleTwisty(target);
+        return;
+      }
+      if (target.classList.contains("close-icon")) {
+        this._handleKill(target);
         return;
       }
 
@@ -995,8 +1062,8 @@ var Control = {
       { once: true }
     );
   },
-  async update() {
-    await State.update();
+  async update(force = false) {
+    await State.update(force);
 
     if (document.hidden) {
       return;
@@ -1004,7 +1071,7 @@ var Control = {
 
     await wait(0);
 
-    await this._updateDisplay();
+    await this._updateDisplay(force);
   },
 
   
@@ -1211,6 +1278,87 @@ var Control = {
       
       default:
         return RANK_UTILITY;
+    }
+  },
+
+  
+  _handleTwisty(target) {
+    let row = target.parentNode.parentNode;
+    let id = row.process.pid;
+    if (target.classList.toggle("open")) {
+      this._openItems.add(id);
+      this._showThreads(row);
+      View.insertAfterRow(row);
+    } else {
+      this._openItems.delete(id);
+      this._removeSubtree(row);
+    }
+  },
+
+  
+  _handleKill(target) {
+    let row = target.parentNode;
+    if (row.process) {
+      
+      let pid = row.process.pid;
+
+      
+      
+      View._killedRecently.push({ pid });
+
+      
+      row.classList.add("killing");
+      for (
+        let childRow = row.nextSibling;
+        childRow && !childRow.classList.contains("process");
+        childRow = childRow.nextSibling
+      ) {
+        childRow.classList.add("killing");
+        let win = childRow.win;
+        if (win) {
+          View._killedRecently.push({ pid: win.outerWindowId });
+          if (win.tab && win.tab.tabbrowser) {
+            win.tab.tabbrowser.discardBrowser(
+              win.tab.tab,
+               true
+            );
+          }
+        }
+      }
+
+      
+      const ProcessTools = Cc["@mozilla.org/processtools-service;1"].getService(
+        Ci.nsIProcessToolsService
+      );
+      ProcessTools.kill(pid);
+    } else if (row.win && row.win.tab && row.win.tab.tabbrowser) {
+      
+      row.win.tab.tabbrowser.removeTab(row.win.tab.tab, {
+        skipPermitUnload: true,
+        animate: true,
+      });
+      View._killedRecently.push({ outerWindowId: row.win.outerWindowId });
+      row.classList.add("killing");
+
+      
+      if (row.previousSibling.classList.contains("process")) {
+        let parentRow = row.previousSibling;
+        let roots = 0;
+        for (let win of parentRow.process.windows) {
+          if (win.isProcessRoot) {
+            roots += 1;
+          }
+        }
+        if (roots <= 1) {
+          
+          
+          
+          
+          
+          View._killedRecently.push({ pid: parentRow.process.pid });
+          parentRow.classList.add("killing");
+        }
+      }
     }
   },
 };

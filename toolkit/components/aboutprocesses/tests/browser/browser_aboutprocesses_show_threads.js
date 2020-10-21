@@ -1,0 +1,7 @@
+
+add_task(async function testShowThreads() {
+  return testAboutProcessesWithConfig({
+    showAllFrames: false,
+    showThreads: true,
+  });
+});
