@@ -36,9 +36,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsPrintSettingsGTK, nsPrintSettings,
 
 
 nsPrintSettingsGTK::nsPrintSettingsGTK()
-    : mPageSetup(nullptr),
-      mPrintSettings(nullptr),
-      mGTKPrinter(nullptr) {
+    : mPageSetup(nullptr), mPrintSettings(nullptr), mGTKPrinter(nullptr) {
   
   
   mPrintSettings = gtk_print_settings_new();
@@ -77,9 +75,7 @@ nsPrintSettingsGTK::~nsPrintSettingsGTK() {
 
 
 nsPrintSettingsGTK::nsPrintSettingsGTK(const nsPrintSettingsGTK& aPS)
-    : mPageSetup(nullptr),
-      mPrintSettings(nullptr),
-      mGTKPrinter(nullptr) {
+    : mPageSetup(nullptr), mPrintSettings(nullptr), mGTKPrinter(nullptr) {
   *this = aPS;
 }
 

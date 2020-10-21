@@ -1048,8 +1048,8 @@ struct NativePtrTraits<Impl,  NativePtrType::WEAK_NON_INTRUSIVE> {
 
     
     
-    const auto holder = reinterpret_cast<HandleType>(
-        GetNativeHandle(env, instance.Get()));
+    const auto holder =
+        reinterpret_cast<HandleType>(GetNativeHandle(env, instance.Get()));
     MOZ_CATCH_JNI_EXCEPTION(env);
 
     if (!holder || !holder->IsAttached()) {

@@ -287,7 +287,6 @@ class TenuredCell : public Cell {
     return static_cast<const T*>(this);
   }
 
-
   
   void fixupAfterMovingGC() {}
 
