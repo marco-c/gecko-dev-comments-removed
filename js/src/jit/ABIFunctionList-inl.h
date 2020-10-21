@@ -23,6 +23,7 @@
 #include "jit/Bailouts.h"  
                            
 
+#include "jit/JitFrames.h"    
 #include "jit/VMFunctions.h"  
 
 #include "js/Conversions.h"  
@@ -61,6 +62,7 @@ namespace jit {
   _(js::jit::AssumeUnreachable)                             \
   _(js::jit::Bailout)                                       \
   _(js::jit::FinishBailoutToBaseline)                       \
+  _(js::jit::HandleException)                               \
   _(js::jit::InitBaselineFrameForOsr)                       \
   _(js::jit::InvalidationBailout)                           \
   _(js::jit::Printf0)                                       \
