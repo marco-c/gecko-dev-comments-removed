@@ -31,7 +31,10 @@
 #include "jit/JitFrames.h"    
 #include "jit/VMFunctions.h"  
 
-#include "js/Conversions.h"      
+#include "js/CallArgs.h"     
+#include "js/Conversions.h"  
+
+#include "js/experimental/JitInfo.h"
 #include "vm/ArgumentsObject.h"  
 #include "vm/RegExpShared.h"     
 #include "vm/TraceLogging.h"     
@@ -110,6 +113,10 @@ namespace jit {
 
 #define ABIFUNCTIONSIG_LIST(_)                       \
   _(float (*)(float))                                \
+  _(JSJitGetterOp)                                   \
+  _(JSJitMethodOp)                                   \
+  _(JSJitSetterOp)                                   \
+  _(JSNative)                                        \
   _(js::UnaryMathFunctionType)                       \
   _(void (*)(JSRuntime * rt, JSObject * *objp))      \
   _(void (*)(JSRuntime * rt, JSString * *stringp))   \
