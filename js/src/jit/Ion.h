@@ -49,8 +49,6 @@ MethodStatus CanEnterIon(JSContext* cx, RunState& state);
 
 MethodStatus Recompile(JSContext* cx, HandleScript script, bool force);
 
-struct EnterJitData;
-
 
 void Invalidate(TypeZone& types, JSFreeOp* fop,
                 const RecompileInfoVector& invalid, bool resetUses = true,
