@@ -51,8 +51,7 @@ class DisplayPortUtils {
 
   static bool GetDisplayPort(
       nsIContent* aContent, nsRect* aResult,
-      DisplayportRelativeTo aRelativeTo = DisplayportRelativeTo::ScrollPort,
-      bool* aOutPainted = nullptr);
+      DisplayportRelativeTo aRelativeTo = DisplayportRelativeTo::ScrollPort);
 
   
 
@@ -148,8 +147,7 @@ class DisplayPortUtils {
   
 
 
-  static bool GetCriticalDisplayPort(nsIContent* aContent, nsRect* aResult,
-                                     bool* aOutPainted = nullptr);
+  static bool GetCriticalDisplayPort(nsIContent* aContent, nsRect* aResult);
 
   
 
@@ -161,8 +159,7 @@ class DisplayPortUtils {
 
 
   static bool GetHighResolutionDisplayPort(nsIContent* aContent,
-                                           nsRect* aResult,
-                                           bool* aOutPainted = nullptr);
+                                           nsRect* aResult);
 
   
 
