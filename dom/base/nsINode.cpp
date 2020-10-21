@@ -3305,7 +3305,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
         
         ShadowRoot* originalShadowRoot = aNode->AsElement()->GetShadowRoot();
-        if (originalShadowRoot && originalShadowRoot->ShouldStaticClone()) {
+        if (originalShadowRoot) {
           RefPtr<ShadowRoot> newShadowRoot =
               clone->AsElement()->AttachShadowWithoutNameChecks(
                   originalShadowRoot->Mode());
