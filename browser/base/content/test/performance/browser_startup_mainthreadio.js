@@ -813,14 +813,6 @@ add_task(async function() {
       
       
       
-      if (LINUX && filename.startsWith("/memfd:")) {
-        continue;
-      }
-
-      
-      
-      
-      
       if (MAC && filename.startsWith(tmpPath + "/org.mozilla.ipc.")) {
         continue;
       }

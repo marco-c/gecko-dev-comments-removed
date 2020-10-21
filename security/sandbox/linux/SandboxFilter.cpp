@@ -705,10 +705,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         return Allow();
 
         
-      case __NR_memfd_create:
-        return Allow();
-
-        
       case __NR_mprotect:
         return Allow();
 
@@ -1398,6 +1394,11 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
       case __NR_eventfd2:
         return Allow();
+
+#  ifdef __NR_memfd_create
+      case __NR_memfd_create:
+        return Allow();
+#  endif
 
 #  ifdef __NR_rt_tgsigqueueinfo
         
