@@ -486,9 +486,6 @@ JS_FRIEND_API bool StringIsArrayIndex(JSLinearString* str, uint32_t* indexp);
 
 
 
-JS_FRIEND_API bool StringIsArrayIndex(const char* str, uint32_t length,
-                                      uint32_t* indexp);
-
 JS_FRIEND_API bool StringIsArrayIndex(const char16_t* str, uint32_t length,
                                       uint32_t* indexp);
 
