@@ -19,6 +19,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  ContentDOMReference: "resource://gre/modules/ContentDOMReference.jsm",
+
   assert: "chrome://marionette/content/assert.js",
   atom: "chrome://marionette/content/atom.js",
   error: "chrome://marionette/content/error.js",
@@ -762,6 +764,55 @@ element.findClosest = function(startNode, selector) {
     }
   }
   return null;
+};
+
+
+
+
+
+
+
+
+
+
+
+element.getElementId = function(el) {
+  const id = ContentDOMReference.get(el);
+  const webEl = WebElement.from(el);
+  id.webElRef = webEl.toJSON();
+  return id;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+element.resolveElement = function(id) {
+  let webEl;
+  if (id.webElRef) {
+    webEl = WebElement.fromJSON(id.webElRef);
+  }
+  const el = ContentDOMReference.resolve(id);
+  if (element.isStale(el, this.content)) {
+    throw new error.StaleElementReferenceError(
+      pprint`The element reference of ${el || webEl?.uuid} is stale; ` +
+        "either the element is no longer attached to the DOM, " +
+        "it is not in the current frame context, " +
+        "or the document has been refreshed"
+    );
+  }
+  return el;
 };
 
 

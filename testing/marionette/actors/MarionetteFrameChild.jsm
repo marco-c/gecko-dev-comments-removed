@@ -12,14 +12,11 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   atom: "chrome://marionette/content/atom.js",
-  ContentDOMReference: "resource://gre/modules/ContentDOMReference.jsm",
   element: "chrome://marionette/content/element.js",
   error: "chrome://marionette/content/error.js",
   evaluate: "chrome://marionette/content/evaluate.js",
   interaction: "chrome://marionette/content/interaction.js",
   Log: "chrome://marionette/content/log.js",
-  pprint: "chrome://marionette/content/format.js",
-  WebElement: "chrome://marionette/content/element.js",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
@@ -121,66 +118,14 @@ class MarionetteFrameChild extends JSWindowActorChild {
           break;
       }
 
+      
+      
+      
       return { data: evaluate.toJSON(result) };
     } catch (e) {
       
       return { error: error.wrap(e).toJSON() };
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async getElementId(el) {
-    const id = ContentDOMReference.get(el);
-    const webEl = WebElement.from(el);
-    id.webElRef = webEl.toJSON();
-    
-    
-    id.webElRef = await this.sendQuery(
-      "MarionetteFrameChild:ElementIdCacheAdd",
-      id
-    );
-    return id;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  resolveElement(id) {
-    let webEl;
-    if (id.webElRef) {
-      webEl = WebElement.fromJSON(id.webElRef);
-    }
-    const el = ContentDOMReference.resolve(id);
-    if (element.isStale(el, this.contentWindow)) {
-      throw new error.StaleElementReferenceError(
-        pprint`The element reference of ${el || webEl?.uuid} is stale; ` +
-          "either the element is no longer attached to the DOM, " +
-          "it is not in the current frame context, " +
-          "or the document has been refreshed"
-      );
-    }
-    return el;
   }
 
   
@@ -191,20 +136,19 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
 
   clearElement(options = {}) {
-    const { webEl } = options;
-    const el = this.resolveElement(webEl);
-    interaction.clearElement(el);
+    const { elem } = options;
+
+    interaction.clearElement(elem);
   }
 
   
 
 
   async clickElement(options = {}) {
-    const { capabilities, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { capabilities, elem } = options;
 
     return interaction.clickElement(
-      el,
+      elem,
       capabilities["moz:accessibilityChecks"],
       capabilities["moz:webdriverClick"]
     );
@@ -226,13 +170,8 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
     opts.all = false;
 
-    if (opts.startNode) {
-      opts.startNode = this.resolveElement(opts.startNode);
-    }
-
     const container = { frame: this.contentWindow };
-    const el = await element.find(container, strategy, selector, opts);
-    return this.getElementId(el);
+    return element.find(container, strategy, selector, opts);
   }
 
   
@@ -251,25 +190,20 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
     opts.all = true;
 
-    if (opts.startNode) {
-      opts.startNode = this.resolveElement(opts.startNode);
-    }
-
     const container = { frame: this.contentWindow };
-    const els = await element.find(container, strategy, selector, opts);
-    return Promise.all(els.map(el => this.getElementId(el)));
+    return element.find(container, strategy, selector, opts);
   }
 
   
 
 
   async getActiveElement() {
-    let el = this.document.activeElement;
-    if (!el) {
+    let elem = this.document.activeElement;
+    if (!elem) {
       throw new error.NoSuchElementError();
     }
 
-    return this.getElementId(el);
+    return elem;
   }
 
   
@@ -283,36 +217,33 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
 
   async getElementAttribute(options = {}) {
-    const { name, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { name, elem } = options;
 
-    if (element.isBooleanAttribute(el, name)) {
-      if (el.hasAttribute(name)) {
+    if (element.isBooleanAttribute(elem, name)) {
+      if (elem.hasAttribute(name)) {
         return "true";
       }
       return null;
     }
-    return el.getAttribute(name);
+    return elem.getAttribute(name);
   }
 
   
 
 
   async getElementProperty(options = {}) {
-    const { name, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { name, elem } = options;
 
-    return typeof el[name] != "undefined" ? el[name] : null;
+    return typeof elem[name] != "undefined" ? elem[name] : null;
   }
 
   
 
 
   async getElementRect(options = {}) {
-    const { webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { elem } = options;
 
-    const rect = el.getBoundingClientRect();
+    const rect = elem.getBoundingClientRect();
     return {
       x: rect.x + this.content.pageXOffset,
       y: rect.y + this.content.pageYOffset,
@@ -325,28 +256,27 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
 
   async getElementTagName(options = {}) {
-    const { webEl } = options;
-    const el = this.resolveElement(webEl);
-    return el.tagName.toLowerCase();
+    const { elem } = options;
+
+    return elem.tagName.toLowerCase();
   }
 
   
 
 
   async getElementText(options = {}) {
-    const { webEl } = options;
-    const el = this.resolveElement(webEl);
-    return atom.getElementText(el, this.contentWindow);
+    const { elem } = options;
+
+    return atom.getElementText(elem, this.contentWindow);
   }
 
   
 
 
   async getElementValueOfCssProperty(options = {}) {
-    const { name, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { name, elem } = options;
 
-    const style = this.contentWindow.getComputedStyle(el);
+    const style = this.contentWindow.getComputedStyle(elem);
     return style.getPropertyValue(name);
   }
 
@@ -361,11 +291,10 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
 
   async isElementDisplayed(options = {}) {
-    const { capabilities, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { capabilities, elem } = options;
 
     return interaction.isElementDisplayed(
-      el,
+      elem,
       capabilities["moz:accessibilityChecks"]
     );
   }
@@ -374,11 +303,10 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
 
   async isElementEnabled(options = {}) {
-    const { capabilities, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { capabilities, elem } = options;
 
     return interaction.isElementEnabled(
-      el,
+      elem,
       capabilities["moz:accessibilityChecks"]
     );
   }
@@ -387,11 +315,10 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
 
   async isElementSelected(options = {}) {
-    const { capabilities, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { capabilities, elem } = options;
 
     return interaction.isElementSelected(
-      el,
+      elem,
       capabilities["moz:accessibilityChecks"]
     );
   }
@@ -400,8 +327,7 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
 
   async sendKeysToElement(options = {}) {
-    const { capabilities, text, webEl } = options;
-    const el = this.resolveElement(webEl);
+    const { capabilities, elem, text } = options;
 
     const opts = {
       strictFileInteractability: capabilities.strictFileInteractability,
@@ -409,11 +335,10 @@ class MarionetteFrameChild extends JSWindowActorChild {
       webdriverClick: capabilities["moz:webdriverClick"],
     };
 
-    return interaction.sendKeysToElement(el, text, opts);
+    return interaction.sendKeysToElement(elem, text, opts);
   }
 
   
-
 
 
 
@@ -437,11 +362,9 @@ class MarionetteFrameChild extends JSWindowActorChild {
         );
       }
       browsingContext = childContexts[id];
-      await this.getElementId(browsingContext.embedderElement);
     } else {
-      const frameElement = this.resolveElement(id);
       const context = childContexts.find(context => {
-        return context.embedderElement === frameElement;
+        return context.embedderElement === id;
       });
       if (!context) {
         throw new error.NoSuchFrameError(
