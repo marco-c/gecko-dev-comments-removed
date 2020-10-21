@@ -39,6 +39,8 @@ class DateTimeFormat {
 
   enum class Style { Wide, Abbreviated };
 
+  enum class Skeleton { yyyyMM, yyyyMMMM };
+
   
   
   static nsresult FormatPRTime(const nsDateFormatSelector aDateFormatSelector,
@@ -51,6 +53,12 @@ class DateTimeFormat {
       const nsDateFormatSelector aDateFormatSelector,
       const nsTimeFormatSelector aTimeFormatSelector,
       const PRExplodedTime* aExplodedTime, nsAString& aStringOut);
+
+  
+  
+  static nsresult FormatDateTime(const PRExplodedTime* aExplodedTime,
+                                 const Skeleton aSkeleton,
+                                 nsAString& aStringOut);
 
   
   
