@@ -1304,7 +1304,7 @@ class MOZ_RAII AutoSuppressNurseryCellAlloc {
 } 
 
 #define CHECK_THREAD(cx)                            \
-  MOZ_ASSERT_IF(cx && !cx->isHelperThreadContext(), \
-                js::CurrentThreadCanAccessRuntime(cx->runtime()))
+  MOZ_ASSERT_IF(cx, !cx->isHelperThreadContext() && \
+                        js::CurrentThreadCanAccessRuntime(cx->runtime()))
 
 #endif 
