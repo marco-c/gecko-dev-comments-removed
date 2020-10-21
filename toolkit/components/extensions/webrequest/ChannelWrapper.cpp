@@ -538,6 +538,15 @@ const URLInfo& ChannelWrapper::FinalURLInfo() const {
     ErrorResult rv;
     nsCOMPtr<nsIURI> uri = FinalURI();
     MOZ_ASSERT(uri);
+
+    
+    while (uri && uri->SchemeIs("view-source")) {
+      nsCOMPtr<nsINestedURI> nested = do_QueryInterface(uri);
+      if (!nested) {
+        break;
+      }
+      nested->GetInnerURI(getter_AddRefs(uri));
+    }
     mFinalURLInfo.emplace(uri.get(), true);
 
     
