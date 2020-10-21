@@ -63,6 +63,38 @@ uint16_t RotorRoleRule::Match(const AccessibleOrProxy& aAccOrProxy) {
 
 
 
+RotorMacRoleRule::RotorMacRoleRule(NSString* aMacRole,
+                                   AccessibleOrProxy& aDirectDescendantsFrom)
+    : RotorRule(aDirectDescendantsFrom), mMacRole(aMacRole) {
+  [mMacRole retain];
+};
+
+RotorMacRoleRule::RotorMacRoleRule(NSString* aMacRole)
+    : RotorRule(), mMacRole(aMacRole) {
+  [mMacRole retain];
+};
+
+RotorMacRoleRule::~RotorMacRoleRule() { [mMacRole release]; }
+
+uint16_t RotorMacRoleRule::Match(const AccessibleOrProxy& aAccOrProxy) {
+  uint16_t result = RotorRule::Match(aAccOrProxy);
+
+  
+  
+  
+  
+  if ((result & nsIAccessibleTraversalRule::FILTER_MATCH)) {
+    mozAccessible* nativeMatch = GetNativeFromGeckoAccessible(aAccOrProxy);
+    if (![[nativeMatch moxRole] isEqualToString:mMacRole]) {
+      result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+  }
+
+  return result;
+}
+
+
+
 RotorControlRule::RotorControlRule(AccessibleOrProxy& aDirectDescendantsFrom)
     : RotorRule(aDirectDescendantsFrom){};
 
