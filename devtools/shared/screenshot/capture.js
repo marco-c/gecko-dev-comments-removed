@@ -96,18 +96,6 @@ function createScreenshotDataURL(document, args) {
     height -= scrollbarHeight.value;
   }
 
-  let ratio;
-  if (args.fullpage) {
-    
-    ratio = 1;
-    
-    if ((args.dpr && args.dpr > 1) || window.devicePixelRatio > 1) {
-      logWarningInPage(L10N.getStr("screenshotDPRDecreasedWarning"), window);
-    }
-  } else {
-    ratio = args.dpr ? args.dpr : window.devicePixelRatio;
-  }
-
   
   if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
     width = Math.min(width, MAX_IMAGE_WIDTH);
@@ -118,23 +106,37 @@ function createScreenshotDataURL(document, args) {
     );
   }
 
+  const ratio = args.dpr ? args.dpr : window.devicePixelRatio;
+
   const canvas = document.createElementNS(
     "http://www.w3.org/1999/xhtml",
     "canvas"
   );
   const ctx = canvas.getContext("2d");
 
-  
-  
-  
-  let data = null;
-  try {
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    ctx.scale(ratio, ratio);
-    ctx.drawWindow(window, left, top, width, height, "#fff");
-    data = canvas.toDataURL("image/png", "");
-  } catch (e) {
+  const drawToCanvas = actualRatio => {
+    
+    
+    
+    try {
+      canvas.width = width * actualRatio;
+      canvas.height = height * actualRatio;
+      ctx.scale(actualRatio, actualRatio);
+      ctx.drawWindow(window, left, top, width, height, "#fff");
+      return canvas.toDataURL("image/png", "");
+    } catch (e) {
+      return null;
+    }
+  };
+
+  let data = drawToCanvas(ratio);
+  if (!data && ratio > 1.0) {
+    
+    
+    logWarningInPage(L10N.getStr("screenshotDPRDecreasedWarning"), window);
+    data = drawToCanvas(1.0);
+  }
+  if (!data) {
     logErrorInPage(L10N.getStr("screenshotRenderingError"), window);
   }
 
