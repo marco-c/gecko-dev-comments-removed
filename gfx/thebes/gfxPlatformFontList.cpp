@@ -127,6 +127,10 @@ const gfxFontEntry::ScriptRange gfxPlatformFontList::sComplexScriptRanges[] = {
     {0, 0, 0, {0, 0, 0}}  
 };
 
+
+#define FONT_LOADER_DELAY_PREF "gfx.font_loader.delay"
+#define FONT_LOADER_INTERVAL_PREF "gfx.font_loader.interval"
+
 static const char* kObservedPrefs[] = {"font.",
                                        "font.name-list.",
                                        "intl.accept_languages",  
@@ -634,7 +638,7 @@ void gfxPlatformFontList::InitOtherFamilyNames(
   
   
   if (aDeferOtherFamilyNamesLoading &&
-      StaticPrefs::gfx_font_loader_delay_AtStartup() > 0) {
+      Preferences::GetUint(FONT_LOADER_DELAY_PREF) > 0) {
     if (!mPendingOtherFamilyNameTask) {
       RefPtr<mozilla::CancelableRunnable> task =
           new InitOtherFamilyNamesRunnable();
@@ -2100,7 +2104,7 @@ void gfxPlatformFontList::InitLoader() {
 }
 
 #define FONT_LOADER_MAX_TIMESLICE \
-  20  // max time for one pass through RunLoader = 20ms
+  100  // max time for one pass through RunLoader = 100ms
 
 bool gfxPlatformFontList::LoadFontInfo() {
   TimeStamp start = TimeStamp::Now();
@@ -2139,15 +2143,11 @@ bool gfxPlatformFontList::LoadFontInfo() {
     }
 
     
-    
-    
-    if (StaticPrefs::gfx_font_loader_delay_AtStartup() > 0) {
-      TimeDuration elapsed = TimeStamp::Now() - start;
-      if (elapsed.ToMilliseconds() > FONT_LOADER_MAX_TIMESLICE &&
-          i + 1 != endIndex) {
-        endIndex = i + 1;
-        break;
-      }
+    TimeDuration elapsed = TimeStamp::Now() - start;
+    if (elapsed.ToMilliseconds() > FONT_LOADER_MAX_TIMESLICE &&
+        i + 1 != endIndex) {
+      endIndex = i + 1;
+      break;
     }
   }
 
@@ -2216,8 +2216,11 @@ void gfxPlatformFontList::CleanupLoader() {
 }
 
 void gfxPlatformFontList::GetPrefsAndStartLoader() {
-  uint32_t delay = std::max(1u, StaticPrefs::gfx_font_loader_delay_AtStartup());
-  StartLoader(delay);
+  uint32_t delay = std::max(1u, Preferences::GetUint(FONT_LOADER_DELAY_PREF));
+  uint32_t interval =
+      std::max(1u, Preferences::GetUint(FONT_LOADER_INTERVAL_PREF));
+
+  StartLoader(delay, interval);
 }
 
 void gfxPlatformFontList::ForceGlobalReflow() {

@@ -137,21 +137,24 @@ class gfxFontInfoLoader {
   
   
   
+  
   typedef enum {
     stateInitial,
     stateTimerOnDelay,
     stateAsyncLoad,
+    stateTimerOnInterval,
     stateTimerOff
   } TimerState;
 
-  gfxFontInfoLoader() : mState(stateInitial) {
+  gfxFontInfoLoader() : mInterval(0), mState(stateInitial) {
     MOZ_COUNT_CTOR(gfxFontInfoLoader);
   }
 
   virtual ~gfxFontInfoLoader();
 
   
-  void StartLoader(uint32_t aDelay);
+  
+  void StartLoader(uint32_t aDelay, uint32_t aInterval);
 
   
   virtual void FinalizeLoader(FontInfoData* aFontInfo);
@@ -159,9 +162,9 @@ class gfxFontInfoLoader {
   
   void CancelLoader();
 
- protected:
-  friend class FinalizeLoaderRunnable;
+  uint32_t GetInterval() { return mInterval; }
 
+ protected:
   class ShutdownObserver : public nsIObserver {
    public:
     NS_DECL_ISUPPORTS
@@ -191,9 +194,15 @@ class gfxFontInfoLoader {
   
   virtual void CleanupLoader() { mFontInfo = nullptr; }
 
+  
+  static void LoadFontInfoCallback(nsITimer* aTimer, void* aThis) {
+    gfxFontInfoLoader* loader = static_cast<gfxFontInfoLoader*>(aThis);
+    loader->LoadFontInfoTimerFire();
+  }
+
   static void DelayedStartCallback(nsITimer* aTimer, void* aThis) {
     gfxFontInfoLoader* loader = static_cast<gfxFontInfoLoader*>(aThis);
-    loader->StartLoader(0);
+    loader->StartLoader(0, loader->GetInterval());
   }
 
   void LoadFontInfoTimerFire();
@@ -204,6 +213,7 @@ class gfxFontInfoLoader {
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsIObserver> mObserver;
   nsCOMPtr<nsIThread> mFontLoaderThread;
+  uint32_t mInterval;
   TimerState mState;
 
   
