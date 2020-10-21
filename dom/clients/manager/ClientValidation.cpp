@@ -111,13 +111,6 @@ bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
 
       
       
-      if (!StaticPrefs::security_data_uri_unique_opaque_origin() &&
-          scheme.LowerCaseEqualsLiteral("data")) {
-        return true;
-      }
-
-      
-      
       
       
       return false;
@@ -133,10 +126,7 @@ bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
              scheme.LowerCaseEqualsLiteral("resource") ||
              scheme.LowerCaseEqualsLiteral("blob") ||
              scheme.LowerCaseEqualsLiteral("javascript") ||
-             scheme.LowerCaseEqualsLiteral("view-source") ||
-
-             (!StaticPrefs::security_data_uri_unique_opaque_origin() &&
-              scheme.LowerCaseEqualsLiteral("data"));
+             scheme.LowerCaseEqualsLiteral("view-source");
     }
     case PrincipalInfo::TNullPrincipalInfo: {
       

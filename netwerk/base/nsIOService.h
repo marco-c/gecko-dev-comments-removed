@@ -103,8 +103,6 @@ class nsIOService final : public nsIIOService,
 
   bool IsLinkUp();
 
-  static bool IsDataURIUniqueOpaqueOrigin();
-
   
   
   static already_AddRefed<nsIURI> CreateExposableURI(nsIURI*);

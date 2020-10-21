@@ -50,12 +50,8 @@ const TEST_URL =
 
 addRDMTask(TEST_URL, async function({ ui, manager }) {
   
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["layout.testing.overlay-scrollbars.always-visible", true],
-      ["security.data_uri.unique_opaque_origin", false],
-    ],
+    set: [["layout.testing.overlay-scrollbars.always-visible", true]],
   });
 
   info("--- Starting viewport test output ---");
