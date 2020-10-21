@@ -7,25 +7,12 @@
 
 
 
-
-
-add_task(async function test_disabledForMediaStreamVideos() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "media.videocontrols.picture-in-picture.video-toggle.always-show",
-        false,
-      ],
-    ],
-  });
-
+add_task(async function test_mediaStreamVideos() {
   await testToggle(
     TEST_PAGE,
     {
-      "with-controls": { canToggle: false },
-      "no-controls": { canToggle: false },
+      "with-controls": { canToggle: true },
+      "no-controls": { canToggle: true },
     },
     async browser => {
       await SpecialPowers.spawn(browser, [], async () => {
@@ -35,6 +22,11 @@ add_task(async function test_disabledForMediaStreamVideos() {
         newVideo.src = "test-video.mp4";
         content.document.body.appendChild(newVideo);
         newVideo.loop = true;
+      });
+      await ensureVideosReady(browser);
+
+      await SpecialPowers.spawn(browser, [], async () => {
+        let newVideo = content.document.body.lastChild;
         await newVideo.play();
 
         for (let videoID of ["with-controls", "no-controls"]) {

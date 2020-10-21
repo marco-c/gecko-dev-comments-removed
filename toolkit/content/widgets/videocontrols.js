@@ -167,15 +167,6 @@ this.VideoControlsWidget = class {
       return false;
     }
 
-    
-    
-    
-    
-    
-    if (someVideo.srcObject) {
-      return false;
-    }
-
     return true;
   }
 
