@@ -196,18 +196,18 @@ class EdgeVectorTracer final : public JS::CallbackTracer {
   
   bool wantNames;
 
-  bool onChild(const JS::GCCellPtr& thing) override {
+  void onChild(const JS::GCCellPtr& thing) override {
     if (!okay) {
-      return true;
+      return;
     }
 
     
     
     if (thing.is<JSString>() && thing.as<JSString>().isPermanentAtom()) {
-      return true;
+      return;
     }
     if (thing.is<JS::Symbol>() && thing.as<JS::Symbol>().isWellKnownSymbol()) {
-      return true;
+      return;
     }
 
     char16_t* name16 = nullptr;
@@ -221,7 +221,7 @@ class EdgeVectorTracer final : public JS::CallbackTracer {
       name16 = js_pod_malloc<char16_t>(strlen(name) + 1);
       if (!name16) {
         okay = false;
-        return true;
+        return;
       }
 
       size_t i;
@@ -237,10 +237,8 @@ class EdgeVectorTracer final : public JS::CallbackTracer {
     
     if (!vec->append(Edge(name16, Node(thing)))) {
       okay = false;
-      return true;
+      return;
     }
-
-    return true;
   }
 
  public:
