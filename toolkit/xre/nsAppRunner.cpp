@@ -535,9 +535,9 @@ bool FissionAutostart() {
 }
 
 bool SessionHistoryInParent() {
-  
-  return 
-      StaticPrefs::fission_sessionHistoryInParent_AtStartup_DoNotUseDirectly();
+  return FissionAutostart() ||
+         StaticPrefs::
+             fission_sessionHistoryInParent_AtStartup_DoNotUseDirectly();
 }
 
 }  
