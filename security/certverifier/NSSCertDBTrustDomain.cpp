@@ -74,6 +74,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
     ValidityCheckingMode validityCheckingMode, CertVerifier::SHA1Mode sha1Mode,
     NetscapeStepUpPolicy netscapeStepUpPolicy,
     DistrustedCAPolicy distrustedCAPolicy, CRLiteMode crliteMode,
+    uint64_t crliteCTMergeDelaySeconds,
     const OriginAttributes& originAttributes,
     const Vector<Input>& thirdPartyRootInputs,
     const Vector<Input>& thirdPartyIntermediateInputs,
@@ -96,6 +97,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
       mNetscapeStepUpPolicy(netscapeStepUpPolicy),
       mDistrustedCAPolicy(distrustedCAPolicy),
       mCRLiteMode(crliteMode),
+      mCRLiteCTMergeDelaySeconds(crliteCTMergeDelaySeconds),
       mSawDistrustedCAByPolicyError(false),
       mOriginAttributes(originAttributes),
       mThirdPartyRootInputs(thirdPartyRootInputs),
@@ -711,6 +713,27 @@ Result NSSCertDBTrustDomain::CheckRevocation(
       
       Time earliestCertificateTimestamp(
           TimeFromEpochInSeconds(*earliestSCTTimestamp / 1000));
+      Result result =
+          earliestCertificateTimestamp.AddSeconds(mCRLiteCTMergeDelaySeconds);
+      if (result != Success) {
+        
+        
+        MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+                ("NSSCertDBTrustDomain::CheckRevocation: integer overflow "
+                 "calculating sct timestamp + merge delay (%llu + %llu)",
+                 static_cast<unsigned long long>(*earliestSCTTimestamp / 1000),
+                 static_cast<unsigned long long>(mCRLiteCTMergeDelaySeconds)));
+        if (mCRLiteMode == CRLiteMode::Enforce) {
+          
+          
+          
+          
+          return Result::ERROR_REVOKED_CERTIFICATE;
+        }
+        
+        
+        
+      }
       if (earliestCertificateTimestamp <= filterTimestampTime &&
           crliteRevocationState == nsICertStorage::STATE_ENFORCE) {
         if (mCRLiteTelemetryInfo) {
