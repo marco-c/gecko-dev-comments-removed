@@ -372,6 +372,12 @@ var UITour = {
       }
 
       case "showHighlight": {
+        if (data.target.startsWith("pageAction-")) {
+          
+          
+          
+          window.BrowserPageActions.initializePanel();
+        }
         let targetPromise = this.getTarget(window, data.target);
         targetPromise
           .then(target => {
