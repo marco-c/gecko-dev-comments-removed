@@ -246,6 +246,23 @@ class EditorBase : public nsIEditor,
     return false;
   }
 
+  
+
+
+
+
+
+
+
+
+
+  bool MutationObserverHasObservedNodeForTelemetry() const {
+    if (const nsPIDOMWindowInner* window = GetInnerWindow()) {
+      return window->MutationObserverHasObservedNodeForTelemetry();
+    }
+    return false;
+  }
+
   PresShell* GetPresShell() const {
     return mDocument ? mDocument->GetPresShell() : nullptr;
   }

@@ -243,6 +243,26 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   }
 
   
+
+
+
+
+
+
+
+  bool MutationObserverHasObservedNodeForTelemetry() const {
+    return mMutationObserverHasObservedNodeForTelemetry;
+  }
+
+  
+
+
+
+  void SetMutationObserverHasObservedNodeForTelemetry() {
+    mMutationObserverHasObservedNodeForTelemetry = true;
+  }
+
+  
   
   
   
@@ -609,6 +629,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   bool mMayHaveBeforeInputEventListenerForTelemetry;
+  bool mMutationObserverHasObservedNodeForTelemetry;
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
