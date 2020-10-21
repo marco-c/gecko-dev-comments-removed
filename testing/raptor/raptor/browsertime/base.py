@@ -12,6 +12,7 @@ import os
 import json
 import re
 import six
+import sys
 
 import mozprocess
 from benchmark import Benchmark
@@ -55,6 +56,9 @@ class Browsertime(Perftest):
         )
         LOG.info("cwd: '{}'".format(os.getcwd()))
         self.config["browsertime"] = True
+
+        
+        self.results_handler.browsertime_visualmetrics = self.browsertime_visualmetrics
 
         
         for k in (
@@ -215,7 +219,6 @@ class Browsertime(Perftest):
             "--firefox.disableBrowsertimeExtension", "true",
             "--pageCompleteCheckStartWait", "5000",
             "--pageCompleteCheckPollTimeout", "1000",
-            "--visualMetrics", "false",
             
             "--timeouts.pageLoad", str(timeout),
             
@@ -231,7 +234,8 @@ class Browsertime(Perftest):
             
             
             browsertime_options.extend([
-                "--video", "true"
+                "--video", "true",
+                "--visualMetrics", "true" if self.browsertime_visualmetrics else "false",
             ])
 
             if self.browsertime_no_ffwindowrecorder:
@@ -247,6 +251,7 @@ class Browsertime(Perftest):
         else:
             browsertime_options.extend([
                 "--video", "false",
+                "--visualMetrics", "false"
             ])
 
         
@@ -380,6 +385,29 @@ class Browsertime(Perftest):
                     LOG.warning(msg)
                 else:
                     LOG.info(msg)
+
+            if self.browsertime_visualmetrics and self.run_local:
+                
+                self.vismet_failed = False
+
+                def _vismet_line_handler(line):
+                    LOG.info(line)
+                    if "FAIL" in line:
+                        self.vismet_failed = True
+
+                proc = self.process_handler(
+                    [sys.executable, self.browsertime_vismet_script, "--check"],
+                    processOutputLine=_vismet_line_handler,
+                    env=env
+                )
+                proc.run()
+                proc.wait()
+
+                if self.vismet_failed:
+                    raise Exception(
+                        "Browsertime visual metrics dependencies were not "
+                        "installed correctly."
+                    )
 
             proc = self.process_handler(cmd, processOutputLine=_line_handler, env=env)
             proc.run(

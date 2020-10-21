@@ -29,6 +29,8 @@ def test_verify_options(filedir):
         memory_test=False,
         enable_webrender=False,
         chimera=False,
+        browsertime_video=False,
+        browsertime_visualmetrics=False,
     )
     parser = ArgumentParser()
 
@@ -51,6 +53,8 @@ def test_verify_options(filedir):
         memory_test=False,
         enable_webrender=False,
         chimera=False,
+        browsertime_video=False,
+        browsertime_visualmetrics=False,
     )
     verify_options(parser, args)  
 
@@ -67,6 +71,8 @@ def test_verify_options(filedir):
         memory_test=False,
         enable_webrender=False,
         chimera=False,
+        browsertime_video=False,
+        browsertime_visualmetrics=False,
     )
     verify_options(parser, args)  
 
@@ -83,6 +89,8 @@ def test_verify_options(filedir):
         memory_test=False,
         enable_webrender=False,
         chimera=False,
+        browsertime_video=False,
+        browsertime_visualmetrics=False,
     )
     verify_options(parser, args)  
 
@@ -99,6 +107,8 @@ def test_verify_options(filedir):
         memory_test=False,
         enable_webrender=False,
         chimera=False,
+        browsertime_video=False,
+        browsertime_visualmetrics=False,
     )
     verify_options(parser, args)  
 
@@ -115,6 +125,8 @@ def test_verify_options(filedir):
         memory_test=False,
         enable_webrender=False,
         chimera=False,
+        browsertime_video=False,
+        browsertime_visualmetrics=False,
     )
     parser = ArgumentParser()
 
