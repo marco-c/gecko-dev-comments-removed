@@ -679,8 +679,8 @@ DevTools.prototype = {
 
 
 
-  createTargetForTab: function(tab) {
-    return TargetFactory.createTargetForTab(tab);
+  createDescriptorForTab: function(tab) {
+    return TargetFactory.createDescriptorForTab(tab);
   },
 
   

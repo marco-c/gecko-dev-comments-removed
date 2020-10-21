@@ -39,7 +39,9 @@ exports.TargetFactory = {
     if (target) {
       return target;
     }
-    const promise = this.createTargetForTab(tab, client);
+
+    const promise = this._createTargetForTab(tab, client);
+
     
     targets.set(tab, promise);
     target = await promise;
@@ -49,6 +51,11 @@ exports.TargetFactory = {
       targets.delete(tab);
     });
     return target;
+  },
+
+  async _createTargetForTab(tab, client) {
+    const tabDescriptor = await this.createDescriptorForTab(tab, client);
+    return tabDescriptor.getTarget();
   },
 
   
@@ -67,7 +74,7 @@ exports.TargetFactory = {
 
 
 
-  async createTargetForTab(tab, client) {
+  async createDescriptorForTab(tab, client) {
     function createLocalServer() {
       
       
@@ -96,9 +103,7 @@ exports.TargetFactory = {
       await client.connect();
     }
 
-    
-    const descriptor = await client.mainRoot.getTab({ tab });
-    return descriptor.getTarget();
+    return client.mainRoot.getTab({ tab });
   },
 
   
