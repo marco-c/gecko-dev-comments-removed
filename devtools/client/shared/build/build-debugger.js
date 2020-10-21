@@ -112,7 +112,13 @@ function shouldLazyLoad(value) {
     !value.includes("vendors") &&
     !value.includes("codemirror/") &&
     !value.endsWith(".properties") &&
-    !value.startsWith("devtools/")
+    !value.startsWith("devtools/") &&
+    
+    
+    
+    
+    
+    value !== "resource://gre/modules/AppConstants.jsm"
   );
 }
 
