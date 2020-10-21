@@ -4,7 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const {
   WatcherRegistry,
 } = require("devtools/server/actors/watcher/WatcherRegistry.jsm");
@@ -12,6 +11,10 @@ const {
   WindowGlobalLogger,
 } = require("devtools/server/connectors/js-window-actor/WindowGlobalLogger.jsm");
 const Targets = require("devtools/server/actors/targets/index");
+const {
+  getAllRemoteBrowsingContexts,
+  shouldNotifyWindowGlobal,
+} = require("devtools/server/actors/watcher/target-helpers/utils.js");
 
 
 
@@ -186,107 +189,6 @@ function getFilteredRemoteBrowsingContext(browserElement) {
     browserElement?.browsingContext
   ).filter(browsingContext =>
     shouldNotifyWindowGlobal(browsingContext, browserElement?.browserId)
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getAllRemoteBrowsingContexts(topBrowsingContext) {
-  const browsingContexts = [];
-
-  
-  
-  function walk(browsingContext) {
-    if (browsingContexts.includes(browsingContext)) {
-      return;
-    }
-    browsingContexts.push(browsingContext);
-
-    for (const child of browsingContext.children) {
-      walk(child);
-    }
-
-    if (browsingContext.window) {
-      
-      
-      
-      for (const browser of browsingContext.window.document.querySelectorAll(
-        `browser[remote="true"]`
-      )) {
-        walk(browser.browsingContext);
-      }
-    }
-  }
-
-  
-  if (topBrowsingContext) {
-    walk(topBrowsingContext);
-    
-    browsingContexts.shift();
-  } else {
-    
-    
-    for (const window of Services.ww.getWindowEnumerator()) {
-      if (window.docShell.browsingContext) {
-        walk(window.docShell.browsingContext);
-      }
-    }
-  }
-
-  return browsingContexts;
-}
-
-
-
-
-
-
-
-function shouldNotifyWindowGlobal(browsingContext, watchedBrowserId) {
-  const windowGlobal = browsingContext.currentWindowGlobal;
-  
-  
-  if (!windowGlobal) {
-    return false;
-  }
-  
-  if (browsingContext.currentRemoteType == "extension") {
-    return false;
-  }
-  
-  
-  
-  if (windowGlobal.osPid == -1 && windowGlobal.isInProcess) {
-    return false;
-  }
-  
-  
-  if (
-    windowGlobal.documentURI &&
-    windowGlobal.documentURI.spec == "about:blank"
-  ) {
-    return false;
-  }
-
-  if (watchedBrowserId && browsingContext.browserId != watchedBrowserId) {
-    return false;
-  }
-
-  
-  
-  return (
-    !browsingContext.parent ||
-    windowGlobal.osPid != browsingContext.parent.currentWindowGlobal.osPid
   );
 }
 
