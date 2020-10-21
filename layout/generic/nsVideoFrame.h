@@ -85,14 +85,14 @@ class nsVideoFrame final : public nsContainerFrame,
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                 uint32_t aFilters) override;
 
-  mozilla::dom::Element* GetPosterImage() { return mPosterImage; }
+  mozilla::dom::Element* GetPosterImage() const { return mPosterImage; }
 
   
   
-  bool ShouldDisplayPoster();
+  bool ShouldDisplayPoster() const;
 
-  nsIContent* GetCaptionOverlay() { return mCaptionDiv; }
-  nsIContent* GetVideoControls();
+  nsIContent* GetCaptionOverlay() const { return mCaptionDiv; }
+  nsIContent* GetVideoControls() const;
 
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
@@ -106,12 +106,15 @@ class nsVideoFrame final : public nsContainerFrame,
  protected:
   
   
-  bool HasVideoElement();
+  bool HasVideoElement() const;
 
   
   
   
-  bool HasVideoData();
+  bool HasVideoData() const;
+
+  
+  mozilla::Maybe<nsSize> PosterImageSize() const;
 
   
   
