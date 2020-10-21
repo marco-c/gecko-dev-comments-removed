@@ -15,7 +15,6 @@
 
 #include "jsapi-tests/tests.h"
 
-#include "gc/GC.h"
 #include "vm/JSContext.h"
 #include "vm/StringType.h"
 
@@ -41,44 +40,29 @@ BEGIN_TEST(testDeduplication_ASSC) {
       "eearth.Theirtagsshallblinkuntiltheendofdays.";
 
   
-  JS::RootedString original(cx);
-  JS::RootedString str(cx);
-  JS::RootedString dep(cx);
-  JS::RootedString depdep(cx);
-  JS::RootedString str2(cx);
-  JS::RootedString dep2(cx);
-  JS::RootedString depdep2(cx);
+  JS::RootedString original(cx, JS_NewStringCopyZ(cx, text));
+  CHECK(original);
 
-  {
-    
-    
-    
-    js::gc::AutoSuppressGC suppress(cx);
+  
+  
+  JS::RootedString str(cx, JS_NewStringCopyZ(cx, text));
+  CHECK(str);
 
-    original = JS_NewStringCopyZ(cx, text);
-    CHECK(original);
+  JS::RootedString dep(cx, JS_NewDependentString(cx, str, 10, 100));
+  CHECK(str);
 
-    
-    
-    str = JS_NewStringCopyZ(cx, text);
-    CHECK(str);
+  JS::RootedString depdep(cx, JS_NewDependentString(cx, dep, 10, 80));
+  CHECK(str);
 
-    dep = JS_NewDependentString(cx, str, 10, 100);
-    CHECK(dep);
+  
+  JS::RootedString str2(cx, JS_NewStringCopyZ(cx, text));
+  CHECK(str);
 
-    depdep = JS_NewDependentString(cx, dep, 10, 80);
-    CHECK(depdep);
+  JS::RootedString dep2(cx, JS_NewDependentString(cx, str2, 10, 100));
+  CHECK(str);
 
-    
-    str2 = JS_NewStringCopyZ(cx, text);
-    CHECK(str2);
-
-    dep2 = JS_NewDependentString(cx, str2, 10, 100);
-    CHECK(dep2);
-
-    depdep2 = JS_NewDependentString(cx, dep2, 10, 80);
-    CHECK(depdep2);
-  }
+  JS::RootedString depdep2(cx, JS_NewDependentString(cx, dep2, 10, 80));
+  CHECK(str);
 
   
   
