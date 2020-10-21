@@ -2833,7 +2833,6 @@ function _computeSrcElementFromSrcSelection(aSrcSelection) {
 
 
 
-
 async function synthesizePlainDragAndDrop(aParams) {
   let {
     dragEvent = {},
@@ -2846,7 +2845,6 @@ async function synthesizePlainDragAndDrop(aParams) {
     stepY = 9,
     finalX = srcX + stepX * 2,
     finalY = srcY + stepY * 2,
-    id = _getDOMWindowUtils(window).DEFAULT_MOUSE_POINTER_ID,
     srcWindow = window,
     destWindow = window,
     expectCancelDragStart = false,
@@ -2918,13 +2916,7 @@ async function synthesizePlainDragAndDrop(aParams) {
 
     await new Promise(r => setTimeout(r, 0));
 
-    synthesizeMouse(
-      srcElement,
-      srcX,
-      srcY,
-      { type: "mousedown", id },
-      srcWindow
-    );
+    synthesizeMouse(srcElement, srcX, srcY, { type: "mousedown" }, srcWindow);
     if (logFunc) {
       logFunc(`mousedown at ${srcX}, ${srcY}`);
     }
@@ -2964,13 +2956,7 @@ async function synthesizePlainDragAndDrop(aParams) {
 
       srcX += stepX;
       srcY += stepY;
-      synthesizeMouse(
-        srcElement,
-        srcX,
-        srcY,
-        { type: "mousemove", id },
-        srcWindow
-      );
+      synthesizeMouse(srcElement, srcX, srcY, { type: "mousemove" }, srcWindow);
       if (logFunc) {
         logFunc(`first mousemove at ${srcX}, ${srcY}`);
       }
@@ -2979,13 +2965,7 @@ async function synthesizePlainDragAndDrop(aParams) {
 
       srcX += stepX;
       srcY += stepY;
-      synthesizeMouse(
-        srcElement,
-        srcX,
-        srcY,
-        { type: "mousemove", id },
-        srcWindow
-      );
+      synthesizeMouse(srcElement, srcX, srcY, { type: "mousemove" }, srcWindow);
       if (logFunc) {
         logFunc(`second mousemove at ${srcX}, ${srcY}`);
       }
@@ -3011,7 +2991,7 @@ async function synthesizePlainDragAndDrop(aParams) {
           srcElement,
           finalX,
           finalY,
-          { type: "mouseup", id },
+          { type: "mouseup" },
           srcWindow
         );
         return;

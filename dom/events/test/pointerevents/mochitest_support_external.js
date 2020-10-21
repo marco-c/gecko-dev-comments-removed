@@ -222,16 +222,6 @@ function sendTouchEvent(int_win, elemId, touchEventType, params) {
 }
 
 
-async function doDragAndDrop(int_win, srcElemId, destElemId, params = {}) {
-  params.srcElement = int_win.document.getElementById(srcElemId);
-  params.destElement = int_win.document.getElementById(destElemId);
-  params.srcWindow = int_win;
-  params.destWindow = int_win;
-  params.id = MouseEventHelper.MOUSE_ID;
-  await synthesizePlainDragAndDrop(params);
-}
-
-
 function runTestInNewWindow(aFile) {
   var testURL =
     location.href.substring(0, location.href.lastIndexOf("/") + 1) + aFile;
@@ -246,10 +236,7 @@ function runTestInNewWindow(aFile) {
     function() {
       var e = testWindow.document.createElement("script");
       e.type = "text/javascript";
-      e.src =
-        aFile.lastIndexOf("/") < 0
-          ? "mochitest_support_internal.js"
-          : "../mochitest_support_internal.js";
+      e.src = "mochitest_support_internal.js";
       testWindow.document.getElementsByTagName("head")[0].appendChild(e);
     },
     { once: true }
