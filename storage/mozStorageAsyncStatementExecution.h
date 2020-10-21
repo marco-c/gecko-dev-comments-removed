@@ -236,13 +236,6 @@ class AsyncExecuteStatements final : public Runnable,
 
 
   SQLiteMutex& mDBMutex;
-
-  
-
-
-
-
-  TimeStamp mRequestStartDate;
 };
 
 }  
