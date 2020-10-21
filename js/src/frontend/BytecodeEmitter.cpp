@@ -11260,11 +11260,6 @@ bool BytecodeEmitter::intoScriptStencil(ScriptStencil* script) {
   }
 
   
-  if (!SharedImmutableScriptData::shareScriptData(cx, script->sharedData)) {
-    return false;
-  }
-
-  
   if (sc->isFunctionBox()) {
     FunctionBox* funbox = sc->asFunctionBox();
     funbox->copyScriptFields(*script);
