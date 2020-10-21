@@ -5327,8 +5327,14 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent(
   }
 
   RefPtr<Element> targetElement = mEditorBase.GetInputEventTargetElement();
-  if (NS_WARN_IF(!targetElement)) {
-    return NS_ERROR_FAILURE;
+  if (!targetElement) {
+    
+    
+    
+    
+    
+    
+    return NS_OK;
   }
   OwningNonNull<TextEditor> textEditor = *mEditorBase.AsTextEditor();
   EditorInputType inputType = ToInputType(mEditAction);
