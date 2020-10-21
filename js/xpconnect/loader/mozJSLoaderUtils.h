@@ -9,6 +9,8 @@
 
 #include "nsString.h"
 
+#include "js/CompileOptions.h"  
+
 namespace mozilla {
 namespace scache {
 class StartupCache;
@@ -16,7 +18,9 @@ class StartupCache;
 }  
 
 nsresult ReadCachedScript(mozilla::scache::StartupCache* cache, nsACString& uri,
-                          JSContext* cx, JS::MutableHandleScript scriptp);
+                          JSContext* cx,
+                          const JS::ReadOnlyCompileOptions& options,
+                          JS::MutableHandleScript scriptp);
 
 nsresult WriteCachedScript(mozilla::scache::StartupCache* cache,
                            nsACString& uri, JSContext* cx,

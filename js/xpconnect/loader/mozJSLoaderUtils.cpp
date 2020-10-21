@@ -19,8 +19,8 @@ using mozilla::UniquePtr;
 
 
 nsresult ReadCachedScript(StartupCache* cache, nsACString& uri, JSContext* cx,
+                          const JS::ReadOnlyCompileOptions& options,
                           MutableHandleScript scriptp) {
-  JS::CompileOptions options(cx);  
   const char* buf;
   uint32_t len;
   nsresult rv = cache->GetBuffer(PromiseFlatCString(uri).get(), &buf, &len);
