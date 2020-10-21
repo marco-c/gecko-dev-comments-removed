@@ -185,7 +185,8 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
                       &childReflowOuput, myWM, childOffset, borderBoxSize,
                       ReflowChildFlags::Default);
 
-    if (!aReflowInput.mStyleDisplay->IsContainLayout()) {
+    if (!aReflowInput.mStyleDisplay->IsContainLayout() &&
+        childDesiredSize.BlockStartAscent() != ReflowOutput::ASK_FOR_BASELINE) {
       nsSize contentBoxSize =
           LogicalSize(myWM, contentBoxISize, contentBoxBSize)
               .GetPhysicalSize(myWM);
