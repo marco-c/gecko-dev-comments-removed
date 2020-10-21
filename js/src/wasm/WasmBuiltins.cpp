@@ -797,39 +797,11 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
     case SymbolicAddress::ReportV128JSCall:
       *abiType = Args_General0;
       return FuncCast(WasmReportV128JSCall, *abiType);
-    case SymbolicAddress::CallImport_Void:
+    case SymbolicAddress::CallImport_General:
       *abiType = MakeABIFunctionType(
           ArgType_Int32,
           {ArgType_General, ArgType_Int32, ArgType_Int32, ArgType_General});
-      return FuncCast(Instance::callImport_void, *abiType);
-    case SymbolicAddress::CallImport_I32:
-      *abiType = MakeABIFunctionType(
-          ArgType_Int32,
-          {ArgType_General, ArgType_Int32, ArgType_Int32, ArgType_General});
-      return FuncCast(Instance::callImport_i32, *abiType);
-    case SymbolicAddress::CallImport_I64:
-      *abiType = MakeABIFunctionType(
-          ArgType_Int32,
-          {ArgType_General, ArgType_Int32, ArgType_Int32, ArgType_General});
-      return FuncCast(Instance::callImport_i64, *abiType);
-    case SymbolicAddress::CallImport_V128:
-      *abiType = Args_General4;
-      return FuncCast(Instance::callImport_v128, *abiType);
-    case SymbolicAddress::CallImport_F64:
-      *abiType = MakeABIFunctionType(
-          ArgType_Int32,
-          {ArgType_General, ArgType_Int32, ArgType_Int32, ArgType_General});
-      return FuncCast(Instance::callImport_f64, *abiType);
-    case SymbolicAddress::CallImport_FuncRef:
-      *abiType = MakeABIFunctionType(
-          ArgType_Int32,
-          {ArgType_General, ArgType_Int32, ArgType_Int32, ArgType_General});
-      return FuncCast(Instance::callImport_funcref, *abiType);
-    case SymbolicAddress::CallImport_AnyRef:
-      *abiType = MakeABIFunctionType(
-          ArgType_Int32,
-          {ArgType_General, ArgType_Int32, ArgType_Int32, ArgType_General});
-      return FuncCast(Instance::callImport_anyref, *abiType);
+      return FuncCast(Instance::callImport_general, *abiType);
     case SymbolicAddress::CoerceInPlace_ToInt32:
       *abiType = Args_General1;
       return FuncCast(CoerceInPlace_ToInt32, *abiType);
@@ -1123,16 +1095,10 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
   
   
   switch (sym) {
-    case SymbolicAddress::HandleDebugTrap:  
-    case SymbolicAddress::HandleThrow:      
-    case SymbolicAddress::HandleTrap:       
-    case SymbolicAddress::CallImport_Void:  
-    case SymbolicAddress::CallImport_I32:
-    case SymbolicAddress::CallImport_I64:
-    case SymbolicAddress::CallImport_V128:
-    case SymbolicAddress::CallImport_F64:
-    case SymbolicAddress::CallImport_FuncRef:
-    case SymbolicAddress::CallImport_AnyRef:
+    case SymbolicAddress::HandleDebugTrap:        
+    case SymbolicAddress::HandleThrow:            
+    case SymbolicAddress::HandleTrap:             
+    case SymbolicAddress::CallImport_General:     
     case SymbolicAddress::CoerceInPlace_ToInt32:  
     case SymbolicAddress::CoerceInPlace_ToNumber:
     case SymbolicAddress::CoerceInPlace_ToBigInt:
