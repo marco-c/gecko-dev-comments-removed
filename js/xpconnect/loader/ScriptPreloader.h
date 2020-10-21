@@ -80,6 +80,10 @@ class ScriptPreloader : public nsIObserver,
 
   
   
+  static void FillCompileOptionsForCachedScript(JS::CompileOptions& options);
+
+  
+  
   JSScript* GetCachedScript(JSContext* cx,
                             const JS::ReadOnlyCompileOptions& options,
                             const nsCString& path);
