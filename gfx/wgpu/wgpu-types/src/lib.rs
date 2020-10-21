@@ -18,8 +18,10 @@ pub const COPY_BYTES_PER_ROW_ALIGNMENT: u32 = 256;
 
 pub const BIND_BUFFER_ALIGNMENT: u64 = 256;
 
+pub const COPY_BUFFER_ALIGNMENT: u64 = 4;
+
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "peek-poke", derive(PeekPoke))]
 #[cfg_attr(
     feature = "trace",
@@ -34,7 +36,13 @@ pub const BIND_BUFFER_ALIGNMENT: u64 = 256;
 pub struct BufferSize(pub u64);
 
 impl BufferSize {
-    pub const WHOLE: BufferSize = BufferSize(!0u64);
+    pub const WHOLE: BufferSize = BufferSize(!0);
+}
+
+impl Default for BufferSize {
+    fn default() -> Self {
+        BufferSize::WHOLE
+    }
 }
 
 #[repr(u8)]
@@ -59,6 +67,12 @@ pub enum PowerPreference {
     Default = 0,
     LowPower = 1,
     HighPerformance = 2,
+}
+
+impl Default for PowerPreference {
+    fn default() -> PowerPreference {
+        PowerPreference::Default
+    }
 }
 
 bitflags::bitflags! {
@@ -88,16 +102,102 @@ impl From<Backend> for BackendBit {
     }
 }
 
-#[repr(C)]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+
+
+
+
+
+
+
+
+
+
+
+
+#[doc(hidden)]
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct Extensions {
-    
-    
-    
-    
-    pub anisotropic_filtering: bool,
+pub struct NonExhaustive(());
+
+impl NonExhaustive {
+    pub unsafe fn new() -> Self {
+        Self(())
+    }
+}
+
+bitflags::bitflags! {
+    #[repr(transparent)]
+    #[derive(Default)]
+    #[cfg_attr(feature = "trace", derive(Serialize))]
+    #[cfg_attr(feature = "replay", derive(Deserialize))]
+    pub struct Extensions: u64 {
+        /// Allow anisotropic filtering in samplers.
+        ///
+        /// Supported platforms:
+        /// - OpenGL 4.6+ (or 1.2+ with widespread GL_EXT_texture_filter_anisotropic)
+        /// - DX11/12
+        /// - Metal
+        /// - Vulkan
+        ///
+        /// This is a native only extension. Support is planned to be added to webgpu,
+        /// but it is not yet implemented.
+        ///
+        /// https://github.com/gpuweb/gpuweb/issues/696
+        const ANISOTROPIC_FILTERING = 0x0000_0000_0001_0000;
+        /// Webgpu only allows the MAP_READ and MAP_WRITE buffer usage to be matched with
+        /// COPY_DST and COPY_SRC respectively. This removes this requirement.
+        ///
+        /// This is only beneficial on systems that share memory between CPU and GPU. If enabled
+        /// on a system that doesn't, this can severely hinder performance. Only use if you understand
+        /// the consequences.
+        ///
+        /// Supported platforms:
+        /// - All
+        ///
+        /// This is a native only extension.
+        const MAPPABLE_PRIMARY_BUFFERS = 0x0000_0000_0002_0000;
+        /// Allows the user to create uniform arrays of textures in shaders:
+        ///
+        /// eg. `uniform texture2D textures[10]`.
+        ///
+        /// This extension only allows them to exist and to be indexed by compile time constant
+        /// values.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Metal (with MSL 2.0+ on macOS 10.13+)
+        /// - Vulkan
+        ///
+        /// This is a native only extension.
+        const TEXTURE_BINDING_ARRAY = 0x0000_0000_0004_0000;
+        /// Extensions which are part of the upstream webgpu standard
+        const ALL_WEBGPU = 0x0000_0000_0000_FFFF;
+        /// Extensions that require activating the unsafe extension flag
+        const ALL_UNSAFE = 0xFFFF_0000_0000_0000;
+        /// Extensions that are only available when targeting native (not web)
+        const ALL_NATIVE = 0xFFFF_FFFF_FFFF_0000;
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct UnsafeExtensions {
+    allow_unsafe: bool,
+}
+impl UnsafeExtensions {
+    pub unsafe fn allow() -> Self {
+        Self { allow_unsafe: true }
+    }
+    pub fn disallow() -> Self {
+        Self {
+            allow_unsafe: false,
+        }
+    }
+    pub fn allowed(self) -> bool {
+        self.allow_unsafe
+    }
 }
 
 #[repr(C)]
@@ -106,11 +206,15 @@ pub struct Extensions {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Limits {
     pub max_bind_groups: u32,
+    pub _non_exhaustive: NonExhaustive,
 }
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits { max_bind_groups: 4 }
+        Limits {
+            max_bind_groups: 4,
+            _non_exhaustive: unsafe { NonExhaustive::new() },
+        }
     }
 }
 
@@ -121,6 +225,9 @@ impl Default for Limits {
 pub struct DeviceDescriptor {
     pub extensions: Extensions,
     pub limits: Limits,
+    
+    
+    pub shader_validation: bool,
 }
 
 
@@ -166,7 +273,7 @@ pub fn read_spirv<R: io::Read + io::Seek>(mut x: R) -> io::Result<Vec<u32>> {
 bitflags::bitflags! {
     #[repr(transparent)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
+    #[cfg_attr(feature = "replay", derive(Deserialize))]
     pub struct ShaderStage: u32 {
         const NONE = 0;
         const VERTEX = 1;
@@ -389,7 +496,7 @@ pub enum TextureFormat {
 bitflags::bitflags! {
     #[repr(transparent)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
+    #[cfg_attr(feature = "replay", derive(Deserialize))]
     pub struct ColorWrite: u32 {
         const RED = 1;
         const GREEN = 2;
@@ -423,6 +530,9 @@ pub struct DepthStencilStateDescriptor {
 impl DepthStencilStateDescriptor {
     pub fn needs_stencil_reference(&self) -> bool {
         !self.stencil_front.compare.is_trivial() || !self.stencil_back.compare.is_trivial()
+    }
+    pub fn is_read_only(&self) -> bool {
+        !self.depth_write_enabled && self.stencil_write_mask == 0
     }
 }
 
@@ -590,6 +700,7 @@ pub struct BufferDescriptor<L> {
     pub label: L,
     pub size: BufferAddress,
     pub usage: BufferUsage,
+    pub mapped_at_creation: bool,
 }
 
 impl<L> BufferDescriptor<L> {
@@ -598,6 +709,7 @@ impl<L> BufferDescriptor<L> {
             label: fun(&self.label),
             size: self.size,
             usage: self.usage,
+            mapped_at_creation: self.mapped_at_creation,
         }
     }
 }
@@ -719,9 +831,11 @@ pub struct RenderPassDepthStencilAttachmentDescriptorBase<T> {
     pub depth_load_op: LoadOp,
     pub depth_store_op: StoreOp,
     pub clear_depth: f32,
+    pub depth_read_only: bool,
     pub stencil_load_op: LoadOp,
     pub stencil_store_op: StoreOp,
     pub clear_stencil: u32,
+    pub stencil_read_only: bool,
 }
 
 #[repr(C)]
@@ -920,8 +1034,7 @@ impl Default for FilterMode {
     }
 }
 
-#[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SamplerDescriptor<L> {
@@ -934,12 +1047,13 @@ pub struct SamplerDescriptor<L> {
     pub mipmap_filter: FilterMode,
     pub lod_min_clamp: f32,
     pub lod_max_clamp: f32,
-    pub compare: CompareFunction,
+    pub compare: Option<CompareFunction>,
     
     
     
     
-    pub anisotropy_clamp: u8,
+    pub anisotropy_clamp: Option<u8>,
+    pub _non_exhaustive: NonExhaustive,
 }
 
 impl<L> SamplerDescriptor<L> {
@@ -956,6 +1070,7 @@ impl<L> SamplerDescriptor<L> {
             lod_max_clamp: self.lod_max_clamp,
             compare: self.compare,
             anisotropy_clamp: self.anisotropy_clamp,
+            _non_exhaustive: self._non_exhaustive,
         }
     }
 }
@@ -1033,6 +1148,155 @@ pub struct TextureDataLayout {
     pub offset: BufferAddress,
     pub bytes_per_row: u32,
     pub rows_per_image: u32,
+}
+
+
+
+#[non_exhaustive]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum BindingType {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    UniformBuffer {
+        
+        
+        dynamic: bool,
+    },
+    
+    
+    
+    
+    
+    
+    
+    
+    StorageBuffer {
+        
+        
+        dynamic: bool,
+        
+        
+        
+        
+        
+        
+        
+        
+        readonly: bool,
+    },
+    
+    
+    
+    
+    
+    
+    
+    Sampler {
+        
+        
+        comparison: bool,
+    },
+    
+    
+    
+    
+    
+    
+    
+    SampledTexture {
+        
+        dimension: TextureViewDimension,
+        
+        
+        component_type: TextureComponentType,
+        
+        multisampled: bool,
+    },
+    
+    
+    
+    
+    
+    
+    
+    
+    StorageTexture {
+        
+        dimension: TextureViewDimension,
+        
+        
+        component_type: TextureComponentType,
+        
+        format: TextureFormat,
+        
+        
+        
+        
+        
+        
+        readonly: bool,
+    },
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct BindGroupLayoutEntry {
+    pub binding: u32,
+    pub visibility: ShaderStage,
+    pub ty: BindingType,
+    
+    
+    
+    
+    
+    pub count: Option<u32>,
+    
+    
+    pub _non_exhaustive: NonExhaustive,
+}
+
+impl Default for BindGroupLayoutEntry {
+    fn default() -> Self {
+        Self {
+            binding: 0,
+            visibility: ShaderStage::NONE,
+            ty: BindingType::UniformBuffer { dynamic: false },
+            count: None,
+            _non_exhaustive: unsafe { NonExhaustive::new() },
+        }
+    }
+}
+
+impl BindGroupLayoutEntry {
+    pub fn has_dynamic_offset(&self) -> bool {
+        match self.ty {
+            BindingType::UniformBuffer { dynamic, .. }
+            | BindingType::StorageBuffer { dynamic, .. } => dynamic,
+            _ => false,
+        }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub struct BindGroupLayoutDescriptor<'a> {
+    
+    
+    pub label: Option<&'a str>,
+
+    pub bindings: &'a [BindGroupLayoutEntry],
 }
 
 
