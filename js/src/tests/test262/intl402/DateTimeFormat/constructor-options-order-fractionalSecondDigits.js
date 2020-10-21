@@ -24,6 +24,7 @@
 
 
 
+
 const expected = [
   
   
@@ -32,9 +33,8 @@ const expected = [
   "localeMatcher",
   
   "second",
-  "timeZoneName",
-  
   "fractionalSecondDigits",
+  "timeZoneName",
   
   "formatMatcher",
 ];

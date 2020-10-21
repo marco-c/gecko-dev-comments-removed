@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var IsHTMLDDA = $262.IsHTMLDDA;
+
+assert(!IsHTMLDDA);
+assert.sameValue(!!IsHTMLDDA, false);
+
+reportCompare(0, 0);

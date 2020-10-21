@@ -17,6 +17,12 @@
 
 
 
+
+
+
+
+
+
 const i32a = new Int32Array(
   new ArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
 );
@@ -30,7 +36,7 @@ const poisoned = {
 try {
   $DETACHBUFFER(i32a.buffer); 
 } catch (error) {
-  $ERROR(`An unexpected error occurred when detaching ArrayBuffer: ${error}`);
+  $ERROR(`An unexpected error occurred when detaching ArrayBuffer: ${error.message}`);
 }
 
 assert.throws(TypeError, function() {

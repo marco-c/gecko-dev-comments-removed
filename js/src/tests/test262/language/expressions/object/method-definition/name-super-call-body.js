@@ -15,6 +15,6 @@ $DONOTEVALUATE();
 
 ({
   method() {
-    super;
+    super();
   }
 });

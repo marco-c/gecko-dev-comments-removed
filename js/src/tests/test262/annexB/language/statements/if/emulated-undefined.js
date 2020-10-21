@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = false;
+if ($262.IsHTMLDDA) {
+  throw new Test262Error("unreachable");
+} else {
+  result = true;
+}
+
+assert(result);
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = $262.IsHTMLDDA;
+assert.sameValue(value ||= 2, 2);
+assert.sameValue(value, 2);
+
+reportCompare(0, 0);

@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const [...x] = [1];
+
+assert(Array.isArray(x));
+assert.compareArray(x, [1]);
+
+reportCompare(0, 0);

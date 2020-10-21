@@ -24,6 +24,9 @@ var obj = {
   proto__: null,
   ['__proto__']: null,
   __proto__() {},
+  * __proto__() {},
+  async __proto__() {},
+  async * __proto__() {},
   get __proto__() { return 33; },
   set __proto__(_) { return 44; }
 };

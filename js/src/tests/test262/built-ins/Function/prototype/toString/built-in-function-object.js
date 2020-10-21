@@ -17,34 +17,42 @@
 
 
 
-var visited = [];
-var verified = [];
 
-function visit(object) {
-  if (visited.includes(object)) {
+
+
+const visited = [];
+function visit(ns, path) {
+  if (visited.includes(ns)) {
+    return;
+  }
+  visited.push(ns);
+
+  if (typeof ns === 'function') {
+    assertNativeFunction(ns, path);
+  }
+  if (typeof ns !== 'function' && (typeof ns !== 'object' || ns === null)) {
     return;
   }
 
-  visited.push(object);
-
-  if (typeof object === "function") {
-    assertNativeFunction(object);
-    verified.push(object.name);
-  }
-
-  for (var property of Object.getOwnPropertyNames(object)) {
-    if (typeof object[property] === "function" ||
-        typeof object[property] === "object") {
-      try {
-        visit(object[property], assertNativeFunction);
-      } catch(error) {
-        
+  const descriptors = Object.getOwnPropertyDescriptors(ns);
+  Reflect.ownKeys(descriptors)
+    .forEach((name) => {
+      const desc = descriptors[name];
+      const p = typeof name === 'symbol'
+        ? `${path}[Symbol(${name.description})]`
+        : `${path}.${name}`;
+      if ('value' in desc) {
+        visit(desc.value, p);
+      } else {
+        visit(desc.get, p);
+        visit(desc.set, p);
       }
-    }
-  }
+    });
 }
 
-visit(WellKnownIntrinsicObjects.map(wkio => wkio.reference));
-assert.notSameValue(verified.length, 0);
+WellKnownIntrinsicObjects.forEach((intrinsic) => {
+  visit(intrinsic.value, intrinsic.name);
+});
+assert.notSameValue(visited.length, 0);
 
 reportCompare(0, 0);

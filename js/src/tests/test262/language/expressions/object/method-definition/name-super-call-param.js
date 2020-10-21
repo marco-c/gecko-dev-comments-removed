@@ -14,5 +14,5 @@
 $DONOTEVALUATE();
 
 ({
-  method(param = super) {}
+  method(param = super()) {}
 });

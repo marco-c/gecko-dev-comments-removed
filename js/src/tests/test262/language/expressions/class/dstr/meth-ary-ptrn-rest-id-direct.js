@@ -1,0 +1,87 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var callCount = 0;
+var C = class {
+  method([...x]) {
+    assert(Array.isArray(x));
+    assert.compareArray(x, [1]);
+    callCount = callCount + 1;
+  }
+};
+
+new C().method([1]);
+assert.sameValue(callCount, 1, 'method invoked exactly once');
+
+reportCompare(0, 0);

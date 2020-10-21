@@ -1,0 +1,63 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+delete Array.prototype[Symbol.iterator];
+
+assert.throws(TypeError, function() {
+  for (let [x, y, z] of [[1, 2, 3]]) {
+    return;
+  }
+});
+
+reportCompare(0, 0);

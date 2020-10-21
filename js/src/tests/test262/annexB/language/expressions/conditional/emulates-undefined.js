@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue($262.IsHTMLDDA ? unresolved : 2, 2);
+
+reportCompare(0, 0);

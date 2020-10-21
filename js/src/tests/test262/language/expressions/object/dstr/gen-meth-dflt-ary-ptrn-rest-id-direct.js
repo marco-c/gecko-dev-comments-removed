@@ -1,0 +1,72 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var callCount = 0;
+var obj = {
+  *method([...x] = [1]) {
+    assert(Array.isArray(x));
+    assert.compareArray(x, [1]);
+    callCount = callCount + 1;
+  }
+};
+
+obj.method().next();
+assert.sameValue(callCount, 1, 'generator method invoked exactly once');
+
+reportCompare(0, 0);

@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MyRegExp extends RegExp {}
+
+for (let i = 1; i <= 9; i++) {
+  const property = "$" + i;
+  assert.throws(
+    TypeError,
+    function () {
+      MyRegExp[property];
+    },
+    "RegExp." + property + " getter throws for subclass receiver"
+  );
+}
+
+reportCompare(0, 0);

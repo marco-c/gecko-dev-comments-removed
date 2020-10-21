@@ -1,0 +1,57 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+delete Array.prototype[Symbol.iterator];
+
+assert.throws(TypeError, function() {
+  for (var [x, y, z] = [1, 2, 3]; iterCount < 1; ) {
+    return;
+  }
+});
+
+reportCompare(0, 0);

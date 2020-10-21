@@ -10,29 +10,15 @@
 
 
 
-
-var caught;
-
 class C extends Object {
   constructor() {
     super();
-    try {
-      delete super.x;
-    } catch (err) {
-      caught = err;
-    }
+    delete super.x;
   }
 }
 
-
-
-
-
-try {
+assert.throws(ReferenceError, () => {
   new C();
-} catch (_) {}
-
-assert.sameValue(typeof caught, 'object');
-assert.sameValue(caught.constructor, ReferenceError);
+});
 
 reportCompare(0, 0);

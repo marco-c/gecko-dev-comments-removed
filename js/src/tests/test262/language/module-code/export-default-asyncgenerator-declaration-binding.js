@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export default async function * AG() {}
+AG.foo = '';
+
+reportCompare(0, 0);

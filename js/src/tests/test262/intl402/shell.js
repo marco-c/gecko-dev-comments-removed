@@ -37,6 +37,7 @@
 
 
 
+
 function testWithIntlConstructors(f) {
   var constructors = ["Collator", "NumberFormat", "DateTimeFormat"];
 
@@ -2003,6 +2004,7 @@ var regExpProperties = ["$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9",
 
 var regExpPropertiesDefaultValues = (function () {
   var values = Object.create(null);
+  (/(?:)/).test("");
   regExpProperties.forEach(function (property) {
     values[property] = RegExp[property];
   });
@@ -2016,9 +2018,7 @@ var regExpPropertiesDefaultValues = (function () {
 
 
 function testForUnwantedRegExpChanges(testFunc) {
-  regExpProperties.forEach(function (property) {
-    RegExp[property] = regExpPropertiesDefaultValues[property];
-  });
+  (/(?:)/).test("");
   testFunc();
   regExpProperties.forEach(function (property) {
     if (RegExp[property] !== regExpPropertiesDefaultValues[property]) {

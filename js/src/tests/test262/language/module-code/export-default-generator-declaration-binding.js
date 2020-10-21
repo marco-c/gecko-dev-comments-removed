@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export default function * G() {}
+G.foo = '';
+
+reportCompare(0, 0);
