@@ -315,8 +315,15 @@ Maybe<wr::WrSpaceAndClip> ClipManager::DefineScrollLayers(
   if (parent) {
     parent->space = SpatialIdAfterOverride(parent->space);
   }
-  LayoutDevicePoint scrollOffset =
-      metrics.GetLayoutScrollOffset() * metrics.GetDevPixelsPerCSSPixel();
+  
+  
+  
+  
+  
+  
+  LayoutDevicePoint scrollOffset = LayoutDevicePoint::FromAppUnitsRounded(
+      scrollableFrame->GetScrollPosition(), auPerDevPixel);
+
   return Some(mBuilder->DefineScrollLayer(
       viewId, parent, wr::ToLayoutRect(contentRect),
       wr::ToLayoutRect(clipBounds), wr::ToLayoutPoint(scrollOffset)));
