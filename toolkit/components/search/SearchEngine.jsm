@@ -351,9 +351,7 @@ class EngineURL {
 
 
 
-
-
-  constructor(mimeType, requestMethod, template, resultDomain) {
+  constructor(mimeType, requestMethod, template) {
     if (!mimeType || !requestMethod || !template) {
       throw Components.Exception(
         "missing mimeType, method or template for EngineURL!",
@@ -398,9 +396,6 @@ class EngineURL {
     }
 
     this.templateHost = templateURI.host;
-    
-    
-    this.resultDomain = resultDomain || this.templateHost;
   }
 
   addParam(name, value, purpose) {
@@ -549,7 +544,6 @@ class EngineURL {
     var json = {
       params: this.params,
       rels: this.rels,
-      resultDomain: this.resultDomain,
       template: this.template,
     };
 
@@ -1145,8 +1139,7 @@ class SearchEngine {
       let engineURL = new EngineURL(
         url.type || SearchUtils.URL_TYPE.SEARCH,
         url.method || "GET",
-        url.template,
-        url.resultDomain || undefined
+        url.template
       );
       engineURL._initWithJSON(url);
       this._urls.push(engineURL);
@@ -1489,7 +1482,7 @@ class SearchEngine {
 
     let url = this._getURLOfType(responseType);
     if (url) {
-      return url.resultDomain;
+      return url.templateHost;
     }
     return "";
   }
