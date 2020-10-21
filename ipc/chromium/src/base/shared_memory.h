@@ -36,7 +36,7 @@ typedef FileDescriptor SharedMemoryHandle;
 class SharedMemory {
  public:
   
-  SharedMemory();
+  SharedMemory() = default;
 
   
   
@@ -46,7 +46,7 @@ class SharedMemory {
   }
 
   
-  SharedMemory(SharedMemory&& other);
+  SharedMemory(SharedMemory&& other) = default;
 
   
   ~SharedMemory();
@@ -85,9 +85,7 @@ class SharedMemory {
   bool Map(size_t bytes, void* fixed_address = nullptr);
 
   
-  
-  
-  bool Unmap();
+  void Unmap() { memory_ = nullptr; }
 
   
   
@@ -98,7 +96,7 @@ class SharedMemory {
 
   
   
-  void* memory() const { return memory_; }
+  void* memory() const { return memory_.get(); }
 
   
   
@@ -196,19 +194,33 @@ class SharedMemory {
 
   bool CreateInternal(size_t size, bool freezeable);
 
-  void* memory_;
-  size_t max_size_;
+  
+  
+  struct MappingDeleter {
+#ifdef OS_POSIX
+    
+    
+    
+    size_t mapped_size_ = 0;
+    explicit MappingDeleter(size_t size) : mapped_size_(size) {}
+#endif
+    MappingDeleter() = default;
+    void operator()(void* ptr);
+  };
+  using UniqueMapping = mozilla::UniquePtr<void, MappingDeleter>;
+
+  UniqueMapping memory_;
+  size_t max_size_ = 0;
   mozilla::UniqueFileHandle mapped_file_;
 #if defined(OS_WIN)
   
   
-  bool external_section_;
+  bool external_section_ = false;
 #elif defined(OS_POSIX)
   mozilla::UniqueFileHandle frozen_file_;
-  size_t mapped_size_;
 #endif
-  bool read_only_;
-  bool freezeable_;
+  bool read_only_ = false;
+  bool freezeable_ = false;
 
   DISALLOW_EVIL_CONSTRUCTORS(SharedMemory);
 };
