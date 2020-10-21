@@ -103,6 +103,11 @@ class VirtualenvManager(VirtualenvHelper):
         """
         super(VirtualenvManager, self).__init__(virtualenv_path)
 
+        
+        
+        
+        os.environ.pop('__PYVENV_LAUNCHER__', None)
+
         assert os.path.isabs(
             manifest_path), "manifest_path must be an absolute path: %s" % (manifest_path)
         self.topsrcdir = topsrcdir
@@ -212,9 +217,6 @@ class VirtualenvManager(VirtualenvHelper):
         This should be the main API used from this class as it is the
         highest-level.
         """
-        
-        
-        os.environ.pop('__PYVENV_LAUNCHER__', None)
         if self.up_to_date(python):
             return self.virtualenv_root
         return self.build(python)
@@ -501,9 +503,6 @@ class VirtualenvManager(VirtualenvHelper):
         else:
             thismodule = __file__
 
-        
-        
-        os.environ.pop('__PYVENV_LAUNCHER__', None)
         args = [self.python_path, thismodule, 'populate', self.topsrcdir,
                 self.virtualenv_root, self.manifest_path]
         if self.populate_local_paths:
