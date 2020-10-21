@@ -613,6 +613,9 @@ class SearchEngine {
   
   
   _searchUrlQueryParamName = null;
+  
+  
+  _searchUrlPublicSuffix = null;
 
   
 
@@ -1464,6 +1467,20 @@ class SearchEngine {
     }
 
     return (this._searchUrlQueryParamName = searchUrlQueryParamName);
+  }
+
+  get searchUrlPublicSuffix() {
+    if (this._searchUrlPublicSuffix != null) {
+      return this._searchUrlPublicSuffix;
+    }
+    let submission = this.getSubmission(
+      "{searchTerms}",
+      SearchUtils.URL_TYPE.SEARCH
+    );
+    let searchURLPublicSuffix = Services.eTLD.getKnownPublicSuffix(
+      submission.uri
+    );
+    return (this._searchUrlPublicSuffix = searchURLPublicSuffix);
   }
 
   

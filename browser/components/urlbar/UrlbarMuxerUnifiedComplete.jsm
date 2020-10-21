@@ -90,6 +90,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       canShowPrivateSearch: context.results.length > 1,
       canShowTailSuggestions: true,
       formHistorySuggestions: new Set(),
+      canAddTabToSearch: true,
     };
 
     let resultsWithSuggestedIndex = [];
@@ -167,10 +168,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       (a, b) => a.suggestedIndex - b.suggestedIndex
     );
     
-    
     for (let result of resultsWithSuggestedIndex) {
       this._updateStatePreAdd(result, state);
-      this._updateStatePostAdd(result, state);
     }
     
     for (let result of resultsWithSuggestedIndex) {
@@ -180,6 +179,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
             ? result.suggestedIndex
             : sortedResults.length;
         sortedResults.splice(index, 0, result);
+        this._updateStatePostAdd(result, state);
       }
     }
 
@@ -293,9 +293,11 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     if (result.providerName == "TabToSearch") {
       
+      
       if (
         state.context.heuristicResult.type != UrlbarUtils.RESULT_TYPE.URL ||
-        !state.context.heuristicResult.autofill
+        !state.context.heuristicResult.autofill ||
+        !state.canAddTabToSearch
       ) {
         return false;
       }
@@ -307,15 +309,18 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       });
       
       
+      autofillDomain = UrlbarUtils.stripPublicSuffixFromHost(autofillDomain);
+      if (!autofillDomain) {
+        return false;
+      }
+
+      
       
       let [engineDomain] = UrlbarUtils.stripPrefixAndTrim(result.payload.url, {
-        stripHttp: true,
-        stripHttps: true,
         stripWww: true,
       });
       
-      
-      if (autofillDomain != engineDomain) {
+      if (!engineDomain.endsWith(autofillDomain)) {
         return false;
       }
     }
@@ -491,6 +496,12 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       result.source == UrlbarUtils.RESULT_SOURCE.HISTORY
     ) {
       state.formHistorySuggestions.add(result.payload.lowerCaseSuggestion);
+    }
+
+    
+    
+    if (result.providerName == "TabToSearch") {
+      state.canAddTabToSearch = false;
     }
   }
 

@@ -92,14 +92,20 @@ class ProviderTabToSearch extends UrlbarProvider {
 
     
     
-    let engines = await UrlbarSearchUtils.enginesForDomainPrefix(searchStr);
+    let engines = await UrlbarSearchUtils.enginesForDomainPrefix(searchStr, {
+      matchAllDomainLevels: true,
+    });
     for (let engine of engines) {
+      
+      
+      let url = engine.getResultDomain();
+      url = url.substr(0, url.length - engine.searchUrlPublicSuffix.length);
       let result = new UrlbarResult(
         UrlbarUtils.RESULT_TYPE.SEARCH,
         UrlbarUtils.RESULT_SOURCE.SEARCH,
         ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
           engine: engine.name,
-          url: engine.getResultDomain(),
+          url,
           keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
           icon: engine.iconURI?.spec,
           query: "",

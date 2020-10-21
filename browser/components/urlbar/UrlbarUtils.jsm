@@ -673,6 +673,21 @@ var UrlbarUtils = {
 
 
 
+
+
+  stripPublicSuffixFromHost(host) {
+    return host.substring(
+      0,
+      host.length - Services.eTLD.getKnownPublicSuffixFromHost(host).length
+    );
+  },
+
+  
+
+
+
+
+
   stripUnsafeProtocolOnPaste(pasteData) {
     while (true) {
       let scheme = "";
