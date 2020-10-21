@@ -4,6 +4,10 @@
 
 
 
+
+
+extern crate itertools;
+
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::iter::repeat;
@@ -40,7 +44,7 @@ impl FromStr for Iris {
 
         
         for (index, part) in parts.by_ref().take(4).enumerate() {
-            iris.data[index] = part.parse::<f32>()?;
+            iris.data[index] = try!(part.parse::<f32>());
         }
         if let Some(name) = parts.next() {
             iris.name = name.into();

@@ -1,7 +1,8 @@
+
 use std::iter::Peekable;
-use crate::PutBack;
+use PutBack;
 #[cfg(feature = "use_std")]
-use crate::PutBackN;
+use PutBackN;
 
 
 
@@ -88,8 +89,8 @@ pub fn peeking_take_while<I, F>(iter: &mut I, f: F) -> PeekingTakeWhile<I, F>
     where I: Iterator,
 {
     PeekingTakeWhile {
-        iter,
-        f,
+        iter: iter,
+        f: f,
     }
 }
 

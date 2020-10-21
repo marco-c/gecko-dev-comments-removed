@@ -5,8 +5,8 @@
 
 
 
-use crate::free::put_back;
-use crate::structs::PutBack;
+use free::put_back;
+use structs::PutBack;
 
 
 
