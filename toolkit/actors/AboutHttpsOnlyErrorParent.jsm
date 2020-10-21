@@ -79,9 +79,20 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
           .setScheme("http")
           .finalize();
 
+    const oldOriginAttributes = aBrowser.contentPrincipal.originAttributes;
+    const hasFpiAttribute = !!oldOriginAttributes.firstPartyDomain.length;
+
+    
+    
+    
     let principal = Services.scriptSecurityManager.createContentPrincipal(
       newURI,
-      aBrowser.contentPrincipal.originAttributes
+      {
+        ...oldOriginAttributes,
+        firstPartyDomain: hasFpiAttribute
+          ? Services.eTLD.getBaseDomain(newURI)
+          : "",
+      }
     );
 
     
