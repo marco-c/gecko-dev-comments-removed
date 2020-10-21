@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -114,14 +115,12 @@ const SEARCH_PROVIDER_INFO = {
   },
 };
 
-const BROWSER_SEARCH_PREF = "browser.search.";
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "loggingEnabled",
-  BROWSER_SEARCH_PREF + "log",
-  false
-);
+XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
+  return console.createInstance({
+    prefix: "SearchTelemetry",
+    maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
+  });
+});
 
 
 
@@ -553,7 +552,7 @@ class TelemetryHandler {
       SEARCH_COUNTS_HISTOGRAM_KEY
     );
     histogram.add(payload);
-    LOG(`${payload} for ${url}`);
+    logConsole.debug("Counting", payload, "for", url);
   }
 
   
@@ -744,7 +743,7 @@ class ContentHandler {
     let channel = ChannelWrapper.get(nativeChannel);
     
     if (channel._adClickRecorded) {
-      LOG("Ad click already recorded");
+      logConsole.debug("Ad click already recorded");
       return;
     }
 
@@ -755,7 +754,7 @@ class ContentHandler {
       
       
       if (channel.statusCode == 204) {
-        LOG("Ignoring activity from ambiguous responses");
+        logConsole.debug("Ignoring activity from ambiguous responses");
         return;
       }
 
@@ -774,7 +773,12 @@ class ContentHandler {
       try {
         Services.telemetry.keyedScalarAdd(SEARCH_AD_CLICKS_SCALAR, info[0], 1);
         channel._adClickRecorded = true;
-        LOG(`Counting ad click in page for ${info[0]} ${originURL} ${URL}`);
+        logConsole.debug(
+          "Counting ad click in page for",
+          info[0],
+          originURL,
+          URL
+        );
       } catch (e) {
         Cu.reportError(e);
       }
@@ -792,8 +796,10 @@ class ContentHandler {
   _reportPageWithAds(info) {
     let item = this._findBrowserItemForURL(info.url);
     if (!item) {
-      LOG(
-        `Expected to report URI for ${info.url} with ads but couldn't find the information`
+      logConsole.warn(
+        "Expected to report URI for",
+        info.url,
+        "with ads but couldn't find the information"
       );
       return;
     }
@@ -803,19 +809,7 @@ class ContentHandler {
       item.info.provider,
       1
     );
-    LOG(`Counting ads in page for ${item.info.provider} ${info.url}`);
-  }
-}
-
-
-
-
-
-
-function LOG(msg) {
-  if (loggingEnabled) {
-    dump(`*** SearchTelemetry: ${msg}\n`);
-    Services.console.logStringMessage(msg);
+    logConsole.debug("Counting ads in page for", item.info.provider, info.url);
   }
 }
 
