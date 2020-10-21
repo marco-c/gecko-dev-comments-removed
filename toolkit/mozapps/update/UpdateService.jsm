@@ -1359,7 +1359,7 @@ function handleFallbackToCompleteUpdate(update, postStaging) {
       .getService(Ci.nsIApplicationUpdateService)
       .downloadUpdate(update, !postStaging);
     if (!success) {
-      cleanupReadyUpdate();
+      cleanupDownloadingUpdate();
     }
   } else {
     LOG(
@@ -3495,7 +3495,7 @@ function UpdateManager() {
     } else if (status == STATE_DOWNLOADING) {
       
       
-      if (this._downloadUpdate) {
+      if (this._downloadingUpdate) {
         
         
         
