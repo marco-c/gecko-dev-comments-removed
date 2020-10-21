@@ -479,6 +479,7 @@ class nsFlexContainerFrame::FlexItem final {
   
   bool IsStrut() const { return mIsStrut; }
 
+  
   LogicalAxis MainAxis() const { return mMainAxis; }
   LogicalAxis CrossAxis() const { return GetOrthogonalAxis(mMainAxis); }
 
@@ -738,6 +739,12 @@ class nsFlexContainerFrame::FlexItem final {
   }
 
   void ResolveStretchedCrossSize(nscoord aLineCrossSize);
+
+  
+  
+  void ResolveFlexBaseSizeFromAspectRatio(
+      const ReflowInput& aItemReflowInput,
+      const FlexboxAxisTracker& aAxisTracker);
 
   uint32_t NumAutoMarginsInMainAxis() const {
     return NumAutoMarginsInAxis(MainAxis());
@@ -1413,6 +1420,12 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
+  
+  item->ResolveFlexBaseSizeFromAspectRatio(childRI, aAxisTracker);
+
+  
+  
+  
   if (isFixedSizeWidget || (flexGrow == 0.0f && flexShrink == 0.0f)) {
     item->Freeze();
     if (flexBaseSize < mainMinSize) {
@@ -1557,35 +1570,6 @@ static nscoord PartiallyResolveAutoMinSize(
 
 
 
-
-
-static bool ResolveAutoFlexBasisFromRatio(
-    FlexItem& aFlexItem, const ReflowInput& aItemReflowInput,
-    const FlexboxAxisTracker& aAxisTracker) {
-  MOZ_ASSERT(NS_UNCONSTRAINEDSIZE == aFlexItem.FlexBaseSize(),
-             "Should only be called to resolve an 'auto' flex-basis");
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aFlexItem.HasIntrinsicRatio() &&
-      aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
-    
-    nscoord mainSizeFromRatio = MainSizeFromAspectRatio(
-        aFlexItem.CrossSize(), aFlexItem.IntrinsicRatio(), aAxisTracker);
-    aFlexItem.SetFlexBaseSizeAndMainSize(mainSizeFromRatio);
-    return true;
-  }
-  return false;
-}
-
-
-
 void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
     FlexItem& aFlexItem, const ReflowInput& aItemReflowInput,
     const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
@@ -1621,13 +1605,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
     }
   }
 
-  bool flexBasisNeedsToMeasureContent = false;  
-  if (isMainSizeAuto) {
-    if (!ResolveAutoFlexBasisFromRatio(aFlexItem, aItemReflowInput,
-                                       aAxisTracker)) {
-      flexBasisNeedsToMeasureContent = true;
-    }
-  }
+  const bool flexBasisNeedsToMeasureContent = isMainSizeAuto;
 
   
   if (minSizeNeedsToMeasureContent || flexBasisNeedsToMeasureContent) {
@@ -2249,6 +2227,28 @@ bool FlexItem::IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const {
 
   nscoord cbBSize = aItemReflowInput.mContainingBlockSize.BSize(itemWM);
   return !nsLayoutUtils::IsAutoBSize(pos->BSize(itemWM), cbBSize);
+}
+
+void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
+    const ReflowInput& aItemReflowInput,
+    const FlexboxAxisTracker& aAxisTracker) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (HasIntrinsicRatio() &&
+      nsFlexContainerFrame::IsUsedFlexBasisContent(
+          aItemReflowInput.mStylePosition->mFlexBasis,
+          aItemReflowInput.mStylePosition->Size(MainAxis(), mCBWM)) &&
+      IsCrossSizeDefinite(aItemReflowInput)) {
+    const nscoord mainSizeFromRatio =
+        MainSizeFromAspectRatio(CrossSize(), IntrinsicRatio(), aAxisTracker);
+    SetFlexBaseSizeAndMainSize(mainSizeFromRatio);
+  }
 }
 
 uint32_t FlexItem::NumAutoMarginsInAxis(LogicalAxis aAxis) const {
