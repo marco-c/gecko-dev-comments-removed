@@ -526,10 +526,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
 
 
-
-
-
-
   js::ContextData<int32_t> suppressGC;
 
   
