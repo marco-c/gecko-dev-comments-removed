@@ -7378,22 +7378,34 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
 
   mInWriteTransaction = true;
 
-  bool freedSomePages = false;
+  bool freedSomePages = false, interrupted = false;
+
+  const auto rollback = [&aRollbackStatement, this](const auto&) {
+    MOZ_ASSERT(mInWriteTransaction);
+
+    
+    Unused << aRollbackStatement.Borrow()->Execute();
+
+    
+
+    mInWriteTransaction = false;
+  };
 
   IDB_TRY(CollectWhile(
-              [&aFreelistCount]() -> Result<bool, nsresult> {
+              [&aFreelistCount, &interrupted,
+               currentThread]() -> Result<bool, nsresult> {
+                if (NS_HasPendingEvents(currentThread)) {
+                  
+                  
+                  
+                  
+                  interrupted = true;
+                  return false;
+                }
                 return aFreelistCount != 0;
               },
-              [&aFreelistStatement, &aFreelistCount, currentThread,
-               &incrementalVacuumStmt, &freedSomePages,
-               this]() -> mozilla::Result<Ok, nsresult> {
-                
-                
-                
-                
-                IDB_TRY(OkIf(!NS_HasPendingEvents(currentThread)),
-                        Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR));
-
+              [&aFreelistStatement, &aFreelistCount, &incrementalVacuumStmt,
+               &freedSomePages, this]() -> mozilla::Result<Ok, nsresult> {
                 IDB_TRY(incrementalVacuumStmt.Borrow()->Execute());
 
                 freedSomePages = true;
@@ -7403,8 +7415,13 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
 
                 return Ok{};
               })
-              .andThen([&commitStmt, &freedSomePages,
+              .andThen([&commitStmt, &freedSomePages, &interrupted, &rollback,
                         this](Ok) -> Result<Ok, nsresult> {
+                if (interrupted) {
+                  rollback(Ok{});
+                  freedSomePages = false;
+                }
+
                 if (freedSomePages) {
                   
                   IDB_TRY(commitStmt.Borrow()->Execute(), QM_PROPAGATE,
@@ -7415,14 +7432,7 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
 
                 return Ok{};
               }),
-          QM_PROPAGATE, ([&aRollbackStatement, this](const auto&) {
-            MOZ_ASSERT(mInWriteTransaction);
-
-            
-            Unused << aRollbackStatement.Borrow()->Execute();
-
-            mInWriteTransaction = false;
-          }));
+          QM_PROPAGATE, rollback);
 
   return freedSomePages;
 }
