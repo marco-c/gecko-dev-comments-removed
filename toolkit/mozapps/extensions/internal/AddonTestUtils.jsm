@@ -1029,8 +1029,20 @@ var AddonTestUtils = {
       this.overrideEntry = null;
     }
 
+    const XPIscope = ChromeUtils.import(
+      "resource://gre/modules/addons/XPIProvider.jsm",
+      null
+    );
+
     Services.obs.notifyObservers(null, "quit-application-granted");
     await MockAsyncShutdown.quitApplicationGranted.trigger();
+
+    
+    
+    
+    
+    await XPIscope.XPIDatabase._dbPromise;
+
     await MockAsyncShutdown.profileBeforeChange.trigger();
     await MockAsyncShutdown.profileChangeTeardown.trigger();
 
@@ -1052,10 +1064,7 @@ var AddonTestUtils = {
 
     
     
-    let XPIscope = ChromeUtils.import(
-      "resource://gre/modules/addons/XPIProvider.jsm",
-      null
-    );
+
     
     
     let shutdownError = XPIscope.XPIDatabase._saveError;

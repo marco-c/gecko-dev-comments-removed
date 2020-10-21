@@ -2558,8 +2558,6 @@ var XPIProvider = {
         async () => {
           XPIProvider._closing = true;
 
-          XPIDatabase.asyncLoadDB();
-
           await XPIProvider.cleanupTemporaryAddons();
           for (let addon of XPIProvider.sortBootstrappedAddons().reverse()) {
             
@@ -2621,10 +2619,18 @@ var XPIProvider = {
       
       
       
+      
+      
+      
+      
+      
+      
+      
       if (!this.isDBLoaded) {
         const EVENTS = [
           "sessionstore-windows-restored",
           "xul-window-visible",
+          "profile-before-change",
           "test-load-xpi-database",
         ];
         let observer = (subject, topic, data) => {
@@ -2687,13 +2693,6 @@ var XPIProvider = {
     if (Services.prefs.getBoolPref(PREF_PENDING_OPERATIONS, false)) {
       XPIDatabase.updateActiveAddons();
       Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
-    }
-
-    
-    
-    
-    if (!XPIDatabase.initialized) {
-      await XPIDatabase.asyncLoadDB();
     }
 
     await XPIDatabase.shutdown();
