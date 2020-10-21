@@ -12,59 +12,61 @@
 
 
 
-module.exports = function(context) {
-  
-  
-  
+module.exports = {
+  meta: {
+    type: "suggestion",
+    fixable: "code",
+  },
+  create(context) {
+    return {
+      "Program > FunctionDeclaration": function(node) {
+        if (
+          node.id.name === "run_test" &&
+          node.body.type === "BlockStatement" &&
+          node.body.body.length === 1 &&
+          node.body.body[0].type === "ExpressionStatement" &&
+          node.body.body[0].expression.type === "CallExpression" &&
+          node.body.body[0].expression.callee.name === "run_next_test"
+        ) {
+          context.report({
+            node,
+            fix: fixer => {
+              let sourceCode = context.getSourceCode();
+              let startNode;
+              if (sourceCode.getCommentsBefore) {
+                
+                startNode = sourceCode.getCommentsBefore(node);
+              } else if (node && node.body && node.leadingComments) {
+                
+                startNode = node.leadingComments;
+              }
 
-  return {
-    "Program > FunctionDeclaration": function(node) {
-      if (
-        node.id.name === "run_test" &&
-        node.body.type === "BlockStatement" &&
-        node.body.body.length === 1 &&
-        node.body.body[0].type === "ExpressionStatement" &&
-        node.body.body[0].expression.type === "CallExpression" &&
-        node.body.body[0].expression.callee.name === "run_next_test"
-      ) {
-        context.report({
-          node,
-          fix: fixer => {
-            let sourceCode = context.getSourceCode();
-            let startNode;
-            if (sourceCode.getCommentsBefore) {
               
-              startNode = sourceCode.getCommentsBefore(node);
-            } else if (node && node.body && node.leadingComments) {
               
-              startNode = node.leadingComments;
-            }
+              
+              
+              if (startNode && startNode.length) {
+                startNode = startNode[startNode.length - 1];
+              } else {
+                startNode = sourceCode.getTokenBefore(node);
+              }
 
-            
-            
-            
-            
-            if (startNode && startNode.length) {
-              startNode = startNode[startNode.length - 1];
-            } else {
-              startNode = sourceCode.getTokenBefore(node);
-            }
-
-            return fixer.removeRange([
-              
-              
-              startNode ? startNode.range[1] + 1 : 0,
-              
-              
-              
-              
-              node.range[1] + 1,
-            ]);
-          },
-          message:
-            "Useless run_test function - only contains run_next_test; whole function can be removed",
-        });
-      }
-    },
-  };
+              return fixer.removeRange([
+                
+                
+                startNode ? startNode.range[1] + 1 : 0,
+                
+                
+                
+                
+                node.range[1] + 1,
+              ]);
+            },
+            message:
+              "Useless run_test function - only contains run_next_test; whole function can be removed",
+          });
+        }
+      },
+    };
+  },
 };
