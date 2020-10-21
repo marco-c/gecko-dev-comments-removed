@@ -72,6 +72,9 @@ class nsJSContext : public nsIScriptContext {
   static void CycleCollectNow(nsICycleCollectorListener* aListener = nullptr);
 
   
+  static void PrepareForCycleCollectionSlice(mozilla::TimeStamp aDeadline);
+
+  
   
   static void RunCycleCollectorSlice(mozilla::TimeStamp aDeadline);
 

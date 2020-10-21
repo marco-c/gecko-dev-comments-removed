@@ -138,12 +138,13 @@ struct CycleCollectorStats {
   constexpr CycleCollectorStats() = default;
   void Init();
   void Clear();
-  void PrepareForCycleCollectionSlice(TimeStamp aDeadline = TimeStamp());
-  void FinishCycleCollectionSlice();
-  void RunForgetSkippable();
-  void UpdateAfterForgetSkippable(TimeDuration duration,
-                                  uint32_t aRemovedPurples);
-  void UpdateAfterCycleCollection();
+  void AfterPrepareForCycleCollectionSlice(TimeStamp aDeadline,
+                                           TimeStamp aBeginTime,
+                                           TimeStamp aMaybeAfterGCTime);
+  void AfterCycleCollectionSlice();
+  void AfterSyncForgetSkippable(TimeStamp beginTime);
+  void AfterForgetSkippable(TimeDuration duration, uint32_t aRemovedPurples);
+  void AfterCycleCollection();
 
   void SendTelemetry(TimeDuration aCCNowDuration) const;
   void MaybeLogStats(const CycleCollectorResults& aResults,
@@ -1168,7 +1169,7 @@ static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
   TimeDuration duration = now - startTimeStamp;
 
   uint32_t removedPurples = aSuspected - sPreviousSuspectedCount;
-  sCCStats.UpdateAfterForgetSkippable(duration, removedPurples);
+  sCCStats.AfterForgetSkippable(duration, removedPurples);
 
   if (duration.ToSeconds()) {
     TimeDuration idleDuration;
@@ -1224,7 +1225,7 @@ void CycleCollectorStats::Clear() {
   *this = CycleCollectorStats();
 }
 
-void CycleCollectorStats::FinishCycleCollectionSlice() {
+void CycleCollectorStats::AfterCycleCollectionSlice() {
   if (mBeginSliceTime.IsNull()) {
     
     
@@ -1258,38 +1259,25 @@ void CycleCollectorStats::FinishCycleCollectionSlice() {
   mBeginSliceTime = TimeStamp();
 }
 
-void CycleCollectorStats::PrepareForCycleCollectionSlice(TimeStamp aDeadline) {
-  mBeginSliceTime = TimeStamp::Now();
+void CycleCollectorStats::AfterPrepareForCycleCollectionSlice(
+    TimeStamp aDeadline, TimeStamp aBeginTime, TimeStamp aMaybeAfterGCTime) {
+  mBeginSliceTime = aBeginTime;
   mIdleDeadline = aDeadline;
 
-  
-  if (sScheduler.InIncrementalGC()) {
+  if (!aMaybeAfterGCTime.IsNull()) {
     mAnyLockedOut = true;
-    FinishAnyIncrementalGC();
-    TimeDuration gcTime = TimeUntilNow(mBeginSliceTime);
-    mMaxGCDuration = std::max(mMaxGCDuration, gcTime);
+    mMaxGCDuration = std::max(mMaxGCDuration, aMaybeAfterGCTime - aBeginTime);
   }
 }
 
-void CycleCollectorStats::RunForgetSkippable() {
-  
-  
-  TimeStamp beginForgetSkippable = TimeStamp::Now();
-  bool ranSyncForgetSkippable = false;
-  while (sCleanupsSinceLastGC < kMajorForgetSkippableCalls) {
-    FireForgetSkippable(nsCycleCollector_suspectedCount(), false, TimeStamp());
-    ranSyncForgetSkippable = true;
-  }
-
-  if (ranSyncForgetSkippable) {
-    mMaxSkippableDuration =
-        std::max(mMaxSkippableDuration, TimeUntilNow(beginForgetSkippable));
-    mRanSyncForgetSkippable = true;
-  }
+void CycleCollectorStats::AfterSyncForgetSkippable(TimeStamp beginTime) {
+  mMaxSkippableDuration =
+      std::max(mMaxSkippableDuration, TimeUntilNow(beginTime));
+  mRanSyncForgetSkippable = true;
 }
 
-void CycleCollectorStats::UpdateAfterForgetSkippable(TimeDuration duration,
-                                                     uint32_t aRemovedPurples) {
+void CycleCollectorStats::AfterForgetSkippable(TimeDuration duration,
+                                               uint32_t aRemovedPurples) {
   if (!mMinForgetSkippableTime || mMinForgetSkippableTime > duration) {
     mMinForgetSkippableTime = duration;
   }
@@ -1435,9 +1423,23 @@ void nsJSContext::CycleCollectNow(nsICycleCollectorListener* aListener) {
 
   AUTO_PROFILER_LABEL("nsJSContext::CycleCollectNow", GCCC);
 
-  sCCStats.PrepareForCycleCollectionSlice(TimeStamp());
+  PrepareForCycleCollectionSlice(TimeStamp());
   nsCycleCollector_collect(aListener);
-  sCCStats.FinishCycleCollectionSlice();
+  sCCStats.AfterCycleCollectionSlice();
+}
+
+
+void nsJSContext::PrepareForCycleCollectionSlice(TimeStamp aDeadline) {
+  TimeStamp beginTime = TimeStamp::Now();
+
+  
+  TimeStamp afterGCTime;
+  if (sScheduler.InIncrementalGC()) {
+    FinishAnyIncrementalGC();
+    afterGCTime = TimeStamp::Now();
+  }
+  sCCStats.AfterPrepareForCycleCollectionSlice(aDeadline, beginTime,
+                                               afterGCTime);
 }
 
 
@@ -1451,7 +1453,7 @@ void nsJSContext::RunCycleCollectorSlice(TimeStamp aDeadline) {
 
   AUTO_PROFILER_LABEL("nsJSContext::RunCycleCollectorSlice", GCCC);
 
-  sCCStats.PrepareForCycleCollectionSlice(aDeadline);
+  PrepareForCycleCollectionSlice(aDeadline);
 
   
   if (sIncrementalCC) {
@@ -1465,7 +1467,7 @@ void nsJSContext::RunCycleCollectorSlice(TimeStamp aDeadline) {
     nsCycleCollector_collectSlice(budget, false);
   }
 
-  sCCStats.FinishCycleCollectionSlice();
+  sCCStats.AfterCycleCollectionSlice();
 }
 
 
@@ -1476,12 +1478,12 @@ void nsJSContext::RunCycleCollectorWorkSlice(int64_t aWorkBudget) {
 
   AUTO_PROFILER_LABEL("nsJSContext::RunCycleCollectorWorkSlice", GCCC);
 
-  sCCStats.PrepareForCycleCollectionSlice();
+  PrepareForCycleCollectionSlice(TimeStamp());
 
   js::SliceBudget budget = js::SliceBudget(js::WorkBudget(aWorkBudget));
   nsCycleCollector_collectSlice(budget);
 
-  sCCStats.FinishCycleCollectionSlice();
+  sCCStats.AfterCycleCollectionSlice();
 }
 
 void nsJSContext::ClearMaxCCSliceTime() {
@@ -1516,14 +1518,22 @@ static bool ICCRunnerFired(TimeStamp aDeadline) {
 void nsJSContext::BeginCycleCollectionCallback() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  sCCStats.mBeginTime = sCCStats.mBeginSliceTime.IsNull()
-                            ? TimeStamp::Now()
-                            : sCCStats.mBeginSliceTime;
+  TimeStamp startTime = TimeStamp::Now();
+  sCCStats.mBeginTime =
+      sCCStats.mBeginSliceTime.IsNull() ? startTime : sCCStats.mBeginSliceTime;
   sCCStats.mSuspected = nsCycleCollector_suspectedCount();
 
   KillCCRunner();
 
-  sCCStats.RunForgetSkippable();
+  
+  
+  if (sCleanupsSinceLastGC < kMajorForgetSkippableCalls) {
+    while (sCleanupsSinceLastGC < kMajorForgetSkippableCalls) {
+      FireForgetSkippable(nsCycleCollector_suspectedCount(), false,
+                          TimeStamp());
+    }
+    sCCStats.AfterSyncForgetSkippable(startTime);
+  }
 
   MOZ_ASSERT(!sICCRunner,
              "Tried to create a new ICC timer when one already existed.");
@@ -1550,7 +1560,7 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
   
   
   
-  sCCStats.FinishCycleCollectionSlice();
+  sCCStats.AfterCycleCollectionSlice();
 
   sCCollectedWaitingForGC += aResults.mFreedGCed;
   sCCollectedZonesWaitingForGC += aResults.mFreedJSZones;
