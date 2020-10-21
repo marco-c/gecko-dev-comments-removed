@@ -455,6 +455,11 @@ impl Device {
             .and(Ok(()))
     }
 
+    pub fn path_exists(&self, path: &Path) -> Result<bool> {
+        self.execute_host_shell_command(format!("ls {}", path.display()).as_str())
+            .map(|path| !path.contains("No such file or directory"))
+    }
+
     pub fn push(&self, buffer: &mut dyn Read, dest: &Path, mode: u32) -> Result<()> {
         
         
@@ -463,6 +468,43 @@ impl Device {
         
         
         
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut current = dest.parent();
+        let mut leaf: Option<&Path> = None;
+        let mut root: Option<&Path> = None;
+        loop {
+            match current {
+                Some(p) => {
+                    if self.path_exists(p)? {
+                        break;
+                    }
+                    if leaf.is_none() {
+                        leaf = Some(p);
+                    }
+                    root = Some(p);
+                    current = p.parent();
+                }
+                None => break,
+            }
+        }
+        if let Some(p) = leaf {
+            self.execute_host_shell_command(format!("mkdir -p {}", p.display()).as_str())?;
+        }
+        if let Some(p) = root {
+            self.execute_host_shell_command(format!("chmod -R 777 {}", p.display()).as_str())?;
+        }
+
         let mut stream = self.host.connect()?;
 
         let message = encode_message(&format!("host:transport:{}", self.serial))?;
