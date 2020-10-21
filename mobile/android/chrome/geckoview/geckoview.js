@@ -158,79 +158,42 @@ var ModuleManager = {
     );
   },
 
-  shouldLoadInThisProcess(aURI) {
-    const currentType = this.browser.remoteType || E10SUtils.NOT_REMOTE;
-    return currentType === this.remoteTypeFor(aURI, currentType);
-  },
-
-  async updateRemoteAndNavigate(aURI, aLoadOptions, aHistoryIndex = -1) {
-    const currentType = this.browser.remoteType || E10SUtils.NOT_REMOTE;
-    const remoteType = this.remoteTypeFor(aURI, currentType);
-
-    debug`updateRemoteAndNavigate: uri=${aURI} currentType=${currentType}
-                             remoteType=${remoteType}`;
-
-    if (
-      remoteType !== E10SUtils.NOT_REMOTE &&
-      !GeckoViewSettings.useMultiprocess
-    ) {
-      warn`Tried to create a remote browser in non-multiprocess mode`;
-      return false;
-    }
-
+  
+  async prepareToChangeRemoteness() {
     
     
     
     
     const { history } = await this.getActor("GeckoViewContent").collectState();
-    
-    
-    const sessionState = { history };
 
     
     
-    if (aHistoryIndex >= 0) {
-      
-      history.index = aHistoryIndex + 1;
-      history.index = Math.max(
-        1,
-        Math.min(history.index, history.entries.length)
-      );
-    } else {
-      sessionState.loadOptions = aLoadOptions;
-    }
+    this.sessionState = { history };
+  },
+
+  willChangeBrowserRemoteness() {
+    debug`WillChangeBrowserRemoteness`;
 
     
-    const disabledModules = [];
+    this.disabledModules = [];
     this.forEach(module => {
       if (module.enabled) {
         module.enabled = false;
-        disabledModules.push(module);
+        this.disabledModules.push(module);
       }
     });
 
     this.forEach(module => {
       module.onDestroyBrowser();
     });
+  },
 
-    const parent = this.browser.parentNode;
-    this.browser.remove();
-    if (remoteType) {
-      this.browser.setAttribute("remote", "true");
-      this.browser.setAttribute("remoteType", remoteType);
-    } else {
-      this.browser.setAttribute("remote", "false");
-      this.browser.removeAttribute("remoteType");
-    }
-
+  didChangeBrowserRemoteness() {
     this.forEach(module => {
       if (module.impl) {
         module.impl.onInitBrowser();
       }
     });
-
-    parent.appendChild(this.browser);
-    this.browser.restoreProgressListeners();
 
     this.messageManager.addMessageListener(
       "GeckoView:ContentModuleLoaded",
@@ -242,12 +205,22 @@ var ModuleManager = {
       module.loadInitFrameScript();
     });
 
-    disabledModules.forEach(module => {
+    this.disabledModules.forEach(module => {
       module.enabled = true;
     });
+    this.disabledModules = null;
+  },
+
+  afterBrowserRemotenessChange(aSwitchId) {
+    const { sessionState } = this;
+    this.sessionState = null;
+
+    sessionState.switchId = aSwitchId;
 
     this.getActor("GeckoViewContent").restoreState(sessionState);
     this.browser.focus();
+
+    
     return true;
   },
 
@@ -531,6 +504,7 @@ function createBrowser() {
   browser.setAttribute("type", "content");
   browser.setAttribute("primary", "true");
   browser.setAttribute("flex", "1");
+  browser.setAttribute("maychangeremoteness", "true");
 
   if (GeckoViewSettings.useMultiprocess) {
     const pointerEventsEnabled = Services.prefs.getBoolPref(
@@ -714,6 +688,21 @@ function startup() {
       },
     },
   ]);
+
+  if (!Services.appinfo.sessionHistoryInParent) {
+    browser.prepareToChangeRemoteness = () =>
+      ModuleManager.prepareToChangeRemoteness();
+    browser.afterChangeRemoteness = switchId =>
+      ModuleManager.afterBrowserRemotenessChange(switchId);
+  }
+
+  browser.addEventListener("WillChangeBrowserRemoteness", event =>
+    ModuleManager.willChangeBrowserRemoteness()
+  );
+
+  browser.addEventListener("DidChangeBrowserRemoteness", event =>
+    ModuleManager.didChangeBrowserRemoteness()
+  );
 
   
   window.moduleManager = ModuleManager;

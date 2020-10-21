@@ -20,7 +20,7 @@ class GeckoViewContentParent extends GeckoViewActorParent {
     return this.sendQuery("CollectSessionState");
   }
 
-  restoreState({ history, loadOptions, formdata, scrolldata }) {
+  restoreState({ history, switchId, formdata, scrolldata }) {
     
     
     
@@ -31,7 +31,7 @@ class GeckoViewContentParent extends GeckoViewActorParent {
     
     this.sendAsyncMessage("RestoreHistoryAndNavigate", {
       history,
-      loadOptions,
+      switchId,
     });
 
     if (!formdata && !scrolldata) {

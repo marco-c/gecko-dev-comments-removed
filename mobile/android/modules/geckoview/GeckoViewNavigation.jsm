@@ -264,8 +264,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         
         
         
-        this.loadURI({
-          uri: parsedUri ? parsedUri.spec : uri,
+        this.browser.loadURI(parsedUri ? parsedUri.spec : uri, {
           flags: navFlags,
           referrerInfo,
           triggeringPrincipal,
@@ -288,39 +287,6 @@ class GeckoViewNavigation extends GeckoViewModule {
         this.browser.purgeSessionHistory();
         break;
     }
-  }
-
-  async loadURI({
-    uri,
-    flags,
-    referrerInfo,
-    triggeringPrincipal,
-    headers,
-    csp,
-  }) {
-    if (!this.moduleManager.shouldLoadInThisProcess(uri)) {
-      referrerInfo = E10SUtils.serializeReferrerInfo(referrerInfo);
-      triggeringPrincipal = E10SUtils.serializePrincipal(triggeringPrincipal);
-      csp = E10SUtils.serializeCSP(csp);
-
-      this.moduleManager.updateRemoteAndNavigate(uri, {
-        referrerInfo,
-        triggeringPrincipal,
-        headers,
-        csp,
-        flags,
-        uri,
-      });
-      return;
-    }
-
-    this.browser.loadURI(uri, {
-      flags,
-      referrerInfo,
-      triggeringPrincipal,
-      csp,
-      headers,
-    });
   }
 
   waitAndSetupWindow(aSessionId, aOpenWindowInfo) {
