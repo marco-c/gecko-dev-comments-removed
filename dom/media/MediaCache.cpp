@@ -303,9 +303,6 @@ class MediaCache {
       LOG("~MediaCache(Global file-backed MediaCache)");
       
       gMediaCache = nullptr;
-      LOG("MediaCache::~MediaCache(this=%p) "
-          "MEDIACACHE_BLOCKOWNERS_WATERMARK=%u",
-          this, unsigned(mBlockOwnersWatermark));
     } else {
       LOG("~MediaCache(Memory-backed MediaCache %p)", this);
     }
@@ -450,8 +447,6 @@ class MediaCache {
   nsTArray<MediaCacheStream*> mStreams;
   
   nsTArray<Block> mIndex;
-  
-  uint32_t mBlockOwnersWatermark = 0;
   
   RefPtr<MediaBlockCacheBase> mBlockCache;
   
@@ -1116,8 +1111,6 @@ void MediaCache::AddBlockOwnerAsReadahead(AutoLock& aLock, int32_t aBlockIndex,
     mFreeBlocks.RemoveBlock(aBlockIndex);
   }
   BlockOwner* bo = block->mOwners.AppendElement();
-  mBlockOwnersWatermark =
-      std::max(mBlockOwnersWatermark, uint32_t(block->mOwners.Length()));
   bo->mStream = aStream;
   bo->mStreamBlock = aStreamBlockIndex;
   aStream->mBlocks[aStreamBlockIndex] = aBlockIndex;
@@ -1707,8 +1700,6 @@ void MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
         block->mOwners.Clear();
         return;
       }
-      mBlockOwnersWatermark =
-          std::max(mBlockOwnersWatermark, uint32_t(block->mOwners.Length()));
       bo->mStream = stream;
     }
 
