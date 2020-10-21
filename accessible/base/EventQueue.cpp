@@ -15,8 +15,8 @@
 #  include "Logging.h"
 #endif
 
-using namespace mozilla;
-using namespace mozilla::a11y;
+namespace mozilla {
+namespace a11y {
 
 
 
@@ -330,3 +330,6 @@ void EventQueue::ProcessEventQueue() {
     if (!mDocument) return;
   }
 }
+
+}  
+}  

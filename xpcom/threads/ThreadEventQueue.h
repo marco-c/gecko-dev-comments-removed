@@ -7,7 +7,7 @@
 #ifndef mozilla_ThreadEventQueue_h
 #define mozilla_ThreadEventQueue_h
 
-#include "mozilla/AbstractEventQueue.h"
+#include "mozilla/EventQueue.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/SynchronizedEventQueue.h"
 #include "nsCOMPtr.h"
@@ -27,10 +27,9 @@ class ThreadEventTarget;
 
 
 
-template <class InnerQueueT>
 class ThreadEventQueue final : public SynchronizedEventQueue {
  public:
-  explicit ThreadEventQueue(UniquePtr<InnerQueueT> aQueue,
+  explicit ThreadEventQueue(UniquePtr<EventQueue> aQueue,
                             bool aIsMainThread = false);
 
   bool PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
@@ -72,15 +71,14 @@ class ThreadEventQueue final : public SynchronizedEventQueue {
   bool PutEventInternal(already_AddRefed<nsIRunnable>&& aEvent,
                         EventQueuePriority aPriority, NestedSink* aQueue);
 
-  UniquePtr<InnerQueueT> mBaseQueue;
+  UniquePtr<EventQueue> mBaseQueue;
 
   struct NestedQueueItem {
     UniquePtr<EventQueue> mQueue;
     RefPtr<ThreadEventTarget> mEventTarget;
 
     NestedQueueItem(UniquePtr<EventQueue> aQueue,
-                    ThreadEventTarget* aEventTarget)
-        : mQueue(std::move(aQueue)), mEventTarget(aEventTarget) {}
+                    ThreadEventTarget* aEventTarget);
   };
 
   nsTArray<NestedQueueItem> mNestedQueues;
@@ -93,8 +91,6 @@ class ThreadEventQueue final : public SynchronizedEventQueue {
   bool mIsMainThread;
 };
 
-extern template class ThreadEventQueue<EventQueue>;
-
-};  
+}  
 
 #endif  

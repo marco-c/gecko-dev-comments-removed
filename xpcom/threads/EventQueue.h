@@ -7,7 +7,7 @@
 #ifndef mozilla_EventQueue_h
 #define mozilla_EventQueue_h
 
-#include "mozilla/AbstractEventQueue.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/Queue.h"
 #include "nsCOMPtr.h"
 
@@ -15,24 +15,53 @@ class nsIRunnable;
 
 namespace mozilla {
 
+enum class EventQueuePriority {
+  Idle,
+  DeferredTimers,
+  InputLow,
+  Normal,
+  MediumHigh,
+  InputHigh,
+  High,
+
+  Count
+};
+
 class IdlePeriodState;
 
 namespace detail {
 
+
+
+
+
+
+
 template <size_t ItemsPerPage>
-class EventQueueInternal : public AbstractEventQueue {
+class EventQueueInternal {
  public:
-  static const bool SupportsPrioritization = false;
-
   explicit EventQueueInternal(bool aForwardToTC) : mForwardToTC(aForwardToTC) {}
-  explicit EventQueueInternal(EventQueuePriority aPriority);
 
+  
+  
+  
+  
+  
+  
+  
   void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                 EventQueuePriority aPriority, const MutexAutoLock& aProofOfLock,
-                mozilla::TimeDuration* aDelay = nullptr) final;
+                mozilla::TimeDuration* aDelay = nullptr);
+
+  
+  
+  
+  
+  
+  
   already_AddRefed<nsIRunnable> GetEvent(
       EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock,
-      mozilla::TimeDuration* aLastEventDelay = nullptr) final;
+      mozilla::TimeDuration* aLastEventDelay = nullptr);
   already_AddRefed<nsIRunnable> GetEvent(EventQueuePriority* aPriority,
                                          const MutexAutoLock& aProofOfLock,
                                          TimeDuration* aLastEventDelay,
@@ -43,14 +72,20 @@ class EventQueueInternal : public AbstractEventQueue {
 
   void DidRunEvent(const MutexAutoLock& aProofOfLock) {}
 
-  bool IsEmpty(const MutexAutoLock& aProofOfLock) final;
-  bool HasReadyEvent(const MutexAutoLock& aProofOfLock) final;
-  bool HasPendingHighPriorityEvents(const MutexAutoLock& aProofOfLock) final {
+  
+  bool IsEmpty(const MutexAutoLock& aProofOfLock);
+
+  
+  
+  
+  bool HasReadyEvent(const MutexAutoLock& aProofOfLock);
+  bool HasPendingHighPriorityEvents(const MutexAutoLock& aProofOfLock) {
     
     return false;
   }
 
-  size_t Count(const MutexAutoLock& aProofOfLock) const final;
+  
+  size_t Count(const MutexAutoLock& aProofOfLock) const;
   
   already_AddRefed<nsIRunnable> PeekEvent(const MutexAutoLock& aProofOfLock) {
     if (mQueue.IsEmpty()) {
@@ -61,12 +96,13 @@ class EventQueueInternal : public AbstractEventQueue {
     return result.forget();
   }
 
-  void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {
-  }
-  void FlushInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {}
-  void SuspendInputEventPrioritization(
-      const MutexAutoLock& aProofOfLock) final {}
-  void ResumeInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {
+  void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) {}
+  void FlushInputEventPrioritization(const MutexAutoLock& aProofOfLock) {}
+  void SuspendInputEventPrioritization(const MutexAutoLock& aProofOfLock) {}
+  void ResumeInputEventPrioritization(const MutexAutoLock& aProofOfLock) {}
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
   IdlePeriodState* GetIdlePeriodState() const { return nullptr; }
@@ -75,8 +111,7 @@ class EventQueueInternal : public AbstractEventQueue {
     return false;
   }
 
-  size_t SizeOfExcludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const override {
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t size = mQueue.ShallowSizeOfExcludingThis(aMallocSizeOf);
 #ifdef MOZ_GECKO_PROFILER
     size += mDispatchTimes.ShallowSizeOfExcludingThis(aMallocSizeOf);
@@ -102,8 +137,6 @@ class EventQueue final : public mozilla::detail::EventQueueInternal<16> {
  public:
   explicit EventQueue(bool aForwardToTC = false)
       : mozilla::detail::EventQueueInternal<16>(aForwardToTC) {}
-  explicit EventQueue(EventQueuePriority aPriority)
-      : mozilla::detail::EventQueueInternal<16>(aPriority){};
 };
 
 template <size_t ItemsPerPage = 16>
@@ -112,8 +145,6 @@ class EventQueueSized final
  public:
   explicit EventQueueSized(bool aForwardToTC = false)
       : mozilla::detail::EventQueueInternal<ItemsPerPage>(aForwardToTC) {}
-  explicit EventQueueSized(EventQueuePriority aPriority)
-      : mozilla::detail::EventQueueInternal<ItemsPerPage>(aPriority){};
 };
 
 }  
