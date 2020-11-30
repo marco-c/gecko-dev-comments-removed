@@ -65,6 +65,8 @@ struct LayersId {
 
   bool operator!=(const LayersId& aOther) const { return !(*this == aOther); }
 
+  friend std::ostream& operator<<(std::ostream& aStream, const LayersId& aId);
+
   
   
   
