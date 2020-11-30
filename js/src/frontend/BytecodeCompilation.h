@@ -67,6 +67,18 @@ extern UniquePtr<CompilationInfo> CompileGlobalScriptToStencil(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,
     JS::SourceText<mozilla::Utf8Unit>& srcBuf, ScopeKind scopeKind);
 
+
+
+
+
+
+extern bool PrepareForInstantiate(JSContext* cx,
+                                  CompilationInfo& compilationInfo,
+                                  CompilationGCOutput& gcOutput);
+extern bool PrepareForInstantiate(JSContext* cx,
+                                  CompilationInfoVector& compilationInfos,
+                                  CompilationGCOutput& gcOutput);
+
 extern bool InstantiateStencils(JSContext* cx, CompilationInfo& compilationInfo,
                                 CompilationGCOutput& gcOutput);
 
@@ -104,17 +116,6 @@ extern MOZ_MUST_USE bool CompileLazyFunctionToStencil(
 
 extern bool InstantiateStencilsForDelazify(JSContext* cx,
                                            CompilationInfo& compilationInfo);
-
-
-
-
-
-extern bool PrepareForInstantiate(JSContext* cx,
-                                  CompilationInfo& compilationInfo,
-                                  CompilationGCOutput& gcOutput);
-extern bool PrepareForInstantiate(JSContext* cx,
-                                  CompilationInfoVector& compilationInfos,
-                                  CompilationGCOutput& gcOutput);
 
 }  
 

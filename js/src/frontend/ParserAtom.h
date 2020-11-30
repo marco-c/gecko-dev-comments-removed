@@ -268,6 +268,9 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   JSAtom* toJSAtom(JSContext* cx, CompilationAtomCache& atomCache) const;
 
   
+  JSAtom* instantiate(JSContext* cx, CompilationAtomCache& atomCache) const;
+
+  
   bool toNumber(JSContext* cx, double* result) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -522,6 +525,9 @@ class ParserAtomsTable {
   
   
   size_t requiredNonStaticAtomCount() const;
+
+  bool instantiateMarkedAtoms(JSContext* cx,
+                              CompilationAtomCache& atomCache) const;
 
   JS::Result<const ParserAtom*, OOM> internAscii(JSContext* cx,
                                                  const char* asciiPtr,
