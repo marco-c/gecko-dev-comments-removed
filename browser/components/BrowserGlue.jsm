@@ -2643,10 +2643,12 @@ BrowserGlue.prototype = {
       
       {
         task: () => {
-          let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(
-            Ci.nsIFOG
-          );
-          FOG.initializeFOG();
+          if (AppConstants.MOZ_GLEAN) {
+            let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(
+              Ci.nsIFOG
+            );
+            FOG.initializeFOG();
+          }
         },
       },
 
