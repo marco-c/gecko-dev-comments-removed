@@ -375,6 +375,10 @@ struct CompilationInfo {
 
   
   
+  bool preparationIsPerformed = false;
+
+  
+  
   
   struct RewindToken {
     size_t scriptDataLength = 0;
@@ -388,6 +392,7 @@ struct CompilationInfo {
   CompilationInfo(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
       : input(options), stencil(cx->runtime()) {}
 
+  MOZ_MUST_USE bool prepareForInstantiate(JSContext* cx);
   MOZ_MUST_USE bool instantiateStencils(JSContext* cx,
                                         CompilationGCOutput& gcOutput);
   MOZ_MUST_USE bool serializeStencils(JSContext* cx, JS::TranscodeBuffer& buf,
@@ -442,6 +447,7 @@ struct CompilationInfoVector {
   CompilationInfoVector& operator=(const CompilationInfoVector&) = delete;
   CompilationInfoVector& operator=(CompilationInfoVector&&) = delete;
 
+  MOZ_MUST_USE bool prepareForInstantiate(JSContext* cx);
   MOZ_MUST_USE bool instantiateStencils(JSContext* cx,
                                         CompilationGCOutput& gcOutput);
   MOZ_MUST_USE bool deserializeStencils(JSContext* cx,

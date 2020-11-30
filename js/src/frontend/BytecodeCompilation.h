@@ -105,6 +105,15 @@ extern MOZ_MUST_USE bool CompileLazyFunctionToStencil(
 extern bool InstantiateStencilsForDelazify(JSContext* cx,
                                            CompilationInfo& compilationInfo);
 
+
+
+
+
+extern bool PrepareForInstantiate(JSContext* cx,
+                                  CompilationInfo& compilationInfo);
+extern bool PrepareForInstantiate(JSContext* cx,
+                                  CompilationInfoVector& compilationInfos);
+
 }  
 
 }  

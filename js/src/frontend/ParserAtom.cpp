@@ -230,7 +230,10 @@ JSAtom* ParserAtomEntry::toJSAtom(JSContext* cx,
     case AtomIndexKind::Static2:
       return cx->staticStrings().getLength2FromIndex(atomIndex_);
 
-    case AtomIndexKind::Unresolved:
+    case AtomIndexKind::NotInstantiatedAndNotMarked:
+    case AtomIndexKind::NotInstantiatedAndMarked:
+      
+      
       break;
   }
 
@@ -507,7 +510,7 @@ JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internJSAtom(
     id = result.unwrap();
   }
 
-  if (id->atomIndexKind_ == ParserAtomEntry::AtomIndexKind::Unresolved) {
+  if (id->isNotInstantiatedAndNotMarked() || id->isNotInstantiatedAndMarked()) {
     MOZ_ASSERT(id->equalsJSAtom(atom));
 
     auto index = AtomIndex(compilationInfo.input.atomCache.atoms.length());
@@ -598,6 +601,17 @@ const ParserAtom* ParserAtomsTable::getStatic1(StaticParserString1 s) const {
 
 const ParserAtom* ParserAtomsTable::getStatic2(StaticParserString2 s) const {
   return WellKnownParserAtoms::rom_.length2Table[size_t(s)].asAtom();
+}
+
+size_t ParserAtomsTable::requiredNonStaticAtomCount() const {
+  size_t count = 0;
+  for (auto iter = entrySet_.iter(); !iter.done(); iter.next()) {
+    const auto& entry = iter.get();
+    if (entry->isNotInstantiatedAndMarked() || entry->isAtomIndex()) {
+      count++;
+    }
+  }
+  return count;
 }
 
 template <typename CharT>
@@ -824,6 +838,11 @@ XDRResult XDRParserAtomData(XDRState<mode>* xdr, const ParserAtom** atomp) {
   if (!atom) {
     return xdr->fail(JS::TranscodeResult_Throw);
   }
+
+  
+  
+  atom->markUsedByStencil();
+
   *atomp = atom;
   return Ok();
 }

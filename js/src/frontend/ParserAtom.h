@@ -105,14 +105,25 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
 
   
   enum class AtomIndexKind : uint8_t {
-    Unresolved,  
-    AtomIndex,   
-    WellKnown,   
-    Static1,     
-    Static2,     
+    
+    NotInstantiatedAndNotMarked,
+    
+    
+    
+    
+    
+    NotInstantiatedAndMarked,
+    
+    AtomIndex,
+    
+    WellKnown,
+    
+    Static1,
+    
+    Static2,
   };
   uint32_t atomIndex_ = 0;
-  AtomIndexKind atomIndexKind_ = AtomIndexKind::Unresolved;
+  AtomIndexKind atomIndexKind_ = AtomIndexKind::NotInstantiatedAndNotMarked;
 
   
   bool hasTwoByteChars_ = false;
@@ -180,6 +191,22 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   HashNumber hash() const { return hash_; }
   uint32_t length() const { return length_; }
 
+  bool isNotInstantiatedAndNotMarked() const {
+    return atomIndexKind_ == AtomIndexKind::NotInstantiatedAndNotMarked;
+  }
+  bool isNotInstantiatedAndMarked() const {
+    return atomIndexKind_ == AtomIndexKind::NotInstantiatedAndMarked;
+  }
+
+  void markUsedByStencil() const {
+    if (isNotInstantiatedAndNotMarked()) {
+      
+      
+      const_cast<ParserAtomEntry*>(this)->atomIndexKind_ =
+          AtomIndexKind::NotInstantiatedAndMarked;
+    }
+  }
+
   bool equalsJSAtom(JSAtom* other) const;
 
   template <typename CharT>
@@ -198,6 +225,9 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
     return StaticParserString2(atomIndex_);
   }
 
+  bool isAtomIndex() const {
+    return atomIndexKind_ == AtomIndexKind::AtomIndex;
+  }
   bool isWellKnownAtomId() const {
     return atomIndexKind_ == AtomIndexKind::WellKnown;
   }
@@ -488,6 +518,10 @@ class ParserAtomsTable {
 
  public:
   bool empty() const { return entrySet_.empty(); }
+
+  
+  
+  size_t requiredNonStaticAtomCount() const;
 
   JS::Result<const ParserAtom*, OOM> internAscii(JSContext* cx,
                                                  const char* asciiPtr,
