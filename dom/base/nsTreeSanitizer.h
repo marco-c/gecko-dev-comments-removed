@@ -203,6 +203,12 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
+  void RemoveAllAttributesFromDescendants(mozilla::dom::Element* aElement);
+
+  
+
+
+
 
 
 
