@@ -6,11 +6,14 @@
 
 #include "LSObserver.h"
 
-#include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/ipc/PBackgroundChild.h"
-#include "nsContentUtils.h"
-#include "nsIScriptObjectPrincipal.h"
+
+#include "ActorsChild.h"
+
+
+#include <utility>
+#include "mozilla/StaticPtr.h"
+#include "nsDataHashtable.h"
+#include "nsHashKeys.h"
 
 namespace mozilla {
 namespace dom {

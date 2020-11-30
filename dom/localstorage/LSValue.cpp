@@ -4,7 +4,13 @@
 
 
 
-#include "LSValue.h"
+#include "mozilla/dom/LSValue.h"
+
+#include "mozIStorageStatement.h"
+#include "mozilla/dom/SnappyUtils.h"
+#include "mozilla/fallible.h"
+#include "nsDebug.h"
+#include "nsError.h"
 
 namespace mozilla {
 namespace dom {

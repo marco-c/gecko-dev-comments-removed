@@ -7,11 +7,19 @@
 #ifndef mozilla_dom_localstorage_ActorsChild_h
 #define mozilla_dom_localstorage_ActorsChild_h
 
+#include <cstdint>
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/PBackgroundLSDatabaseChild.h"
 #include "mozilla/dom/PBackgroundLSObserverChild.h"
+#include "mozilla/dom/PBackgroundLSRequest.h"
 #include "mozilla/dom/PBackgroundLSRequestChild.h"
+#include "mozilla/dom/PBackgroundLSSimpleRequest.h"
 #include "mozilla/dom/PBackgroundLSSimpleRequestChild.h"
 #include "mozilla/dom/PBackgroundLSSnapshotChild.h"
+#include "mozilla/ipc/ProtocolUtils.h"
+#include "nsISupports.h"
+#include "nsStringFwd.h"
+#include "nscore.h"
 
 namespace mozilla {
 
@@ -181,7 +189,7 @@ class NS_NO_VTABLE LSRequestChildCallback {
   virtual void OnResponse(const LSRequestResponse& aResponse) = 0;
 
  protected:
-  virtual ~LSRequestChildCallback() {}
+  virtual ~LSRequestChildCallback() = default;
 };
 
 
@@ -228,7 +236,7 @@ class NS_NO_VTABLE LSSimpleRequestChildCallback {
   virtual void OnResponse(const LSSimpleRequestResponse& aResponse) = 0;
 
  protected:
-  virtual ~LSSimpleRequestChildCallback() {}
+  virtual ~LSSimpleRequestChildCallback() = default;
 };
 
 
