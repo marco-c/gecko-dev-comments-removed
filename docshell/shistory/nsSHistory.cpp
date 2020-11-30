@@ -1653,8 +1653,10 @@ nsSHistory::EnsureCorrectEntryAtCurrIndex(nsISHEntry* aEntry) {
 }
 
 nsresult nsSHistory::GotoIndex(int32_t aIndex,
-                               nsTArray<LoadEntryResult>& aLoadResults) {
-  return LoadEntry(aIndex, LOAD_HISTORY, HIST_CMD_GOTOINDEX, aLoadResults);
+                               nsTArray<LoadEntryResult>& aLoadResults,
+                               bool aSameEpoch) {
+  return LoadEntry(aIndex, LOAD_HISTORY, HIST_CMD_GOTOINDEX, aLoadResults,
+                   aSameEpoch);
 }
 
 NS_IMETHODIMP_(bool)
@@ -1682,28 +1684,59 @@ nsresult nsSHistory::LoadNextPossibleEntry(
 
 nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
                                uint32_t aHistCmd,
-                               nsTArray<LoadEntryResult>& aLoadResults) {
+                               nsTArray<LoadEntryResult>& aLoadResults,
+                               bool aSameEpoch) {
+  MOZ_LOG(gSHistoryLog, LogLevel::Debug,
+          ("LoadEntry(%d, 0x%lx, %u)", aIndex, aLoadType, aHistCmd));
   if (!mRootBC) {
     return NS_ERROR_FAILURE;
   }
 
   if (aIndex < 0 || aIndex >= Length()) {
+    MOZ_LOG(gSHistoryLog, LogLevel::Debug, ("Index out of range"));
     
     return NS_ERROR_FAILURE;
   }
 
   
-  
-  mRequestedIndex = aIndex;
 
   nsCOMPtr<nsISHEntry> prevEntry;
   nsCOMPtr<nsISHEntry> nextEntry;
   GetEntryAtIndex(mIndex, getter_AddRefs(prevEntry));
-  GetEntryAtIndex(mRequestedIndex, getter_AddRefs(nextEntry));
+  GetEntryAtIndex(aIndex, getter_AddRefs(nextEntry));
   if (!nextEntry || !prevEntry) {
     mRequestedIndex = -1;
     return NS_ERROR_FAILURE;
   }
+
+  if (mozilla::SessionHistoryInParent()) {
+    if (aHistCmd == HIST_CMD_GOTOINDEX) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aSameEpoch) {
+        bool same_doc = false;
+        prevEntry->SharesDocumentWith(nextEntry, &same_doc);
+        if (!same_doc) {
+          MOZ_LOG(
+              gSHistoryLog, LogLevel::Debug,
+              ("Aborting GotoIndex %d - same epoch and not same doc", aIndex));
+          
+          
+          
+          return NS_ERROR_FAILURE;
+        }
+      }
+    }
+  }
+  
+  mRequestedIndex = aIndex;
 
   
 
