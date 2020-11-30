@@ -887,10 +887,6 @@ void nsContainerFrame::DoInlineIntrinsicISize(gfxContext* aRenderingContext,
                                               IntrinsicISizeType aType) {
   if (GetPrevInFlow()) return;  
 
-  MOZ_ASSERT(
-      aType == nsLayoutUtils::MIN_ISIZE || aType == nsLayoutUtils::PREF_ISIZE,
-      "bad type");
-
   WritingMode wm = GetWritingMode();
   mozilla::Side startSide = wm.PhysicalSideForInlineAxis(eLogicalEdgeStart);
   mozilla::Side endSide = wm.PhysicalSideForInlineAxis(eLogicalEdgeEnd);
@@ -944,12 +940,13 @@ void nsContainerFrame::DoInlineIntrinsicISize(gfxContext* aRenderingContext,
       aData->mCurrentLine = clonePBM;
     }
     for (nsIFrame* kid : nif->mFrames) {
-      if (aType == nsLayoutUtils::MIN_ISIZE)
+      if (aType == IntrinsicISizeType::MinISize) {
         kid->AddInlineMinISize(aRenderingContext,
                                static_cast<InlineMinISizeData*>(aData));
-      else
+      } else {
         kid->AddInlinePrefISize(aRenderingContext,
                                 static_cast<InlinePrefISizeData*>(aData));
+      }
     }
 
     

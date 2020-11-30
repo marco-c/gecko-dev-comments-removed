@@ -1404,8 +1404,6 @@ class nsLayoutUtils {
 
 
 
-  static const auto MIN_ISIZE = mozilla::IntrinsicISizeType::MinISize;
-  static const auto PREF_ISIZE = mozilla::IntrinsicISizeType::PrefISize;
   enum {
     IGNORE_PADDING = 0x01,
     BAIL_IF_REFLOW_NEEDED = 0x02,  

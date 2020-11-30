@@ -960,7 +960,7 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
       
       
       nscoord width = nsLayoutUtils::IntrinsicForContainer(
-          aRenderingContext, childFrame, nsLayoutUtils::PREF_ISIZE);
+          aRenderingContext, childFrame, IntrinsicISizeType::PrefISize);
 
       childDesiredSize.Width() = width;
       childDesiredSize.mBoundingMetrics.width = width;

@@ -93,7 +93,7 @@ nscoord FixedTableLayoutStrategy::GetMinISize(gfxContext* aRenderingContext) {
               styleISize->AsExtremumLength() ==
                   StyleExtremumLength::MinContent))) {
           nscoord cellISize = nsLayoutUtils::IntrinsicForContainer(
-              aRenderingContext, cellFrame, nsLayoutUtils::MIN_ISIZE);
+              aRenderingContext, cellFrame, IntrinsicISizeType::MinISize);
           if (colSpan > 1) {
             
             
@@ -245,7 +245,7 @@ void FixedTableLayoutStrategy::ComputeColumnISizes(
           
           colISize = nsLayoutUtils::IntrinsicForContainer(
               aReflowInput.mRenderingContext, cellFrame,
-              nsLayoutUtils::MIN_ISIZE);
+              IntrinsicISizeType::MinISize);
         } else if (styleISize->ConvertsToPercentage()) {
           
           float pct = styleISize->ToPercentage();
