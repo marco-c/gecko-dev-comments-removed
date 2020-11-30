@@ -3109,6 +3109,7 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   
   
   
+  
 
   
   
@@ -3647,9 +3648,20 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     }
   }
 
+  bool preventDefault =
+      aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault;
+  if (IsDisabled() && oldType != NS_FORM_INPUT_CHECKBOX &&
+      oldType != NS_FORM_INPUT_RADIO) {
+    
+    
+    
+    
+    preventDefault = true;
+  }
+
   
   if (mCheckedIsToggled && outerActivateEvent) {
-    if (aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault) {
+    if (preventDefault) {
       
       
       
@@ -3704,7 +3716,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       StepNumberControlForUserEvent(keyEvent->mKeyCode == NS_VK_UP ? 1 : -1);
       FireChangeEventIfNeeded();
       aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-    } else if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
+    } else if (!preventDefault) {
       switch (aVisitor.mEvent->mMessage) {
         case eFocus: {
           
