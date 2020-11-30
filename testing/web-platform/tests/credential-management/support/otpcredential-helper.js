@@ -1,4 +1,3 @@
-'use strict';
 
 
 
@@ -7,46 +6,109 @@
 
 
 
+import {isChromiumBased} from '/resources/test-only-api.m.js';
 
-const Status = {};
 
-async function loadChromiumResources() {
-  const resources = [
-    '/gen/mojo/public/mojom/base/time.mojom-lite.js',
-    '/gen/third_party/blink/public/mojom/sms/webotp_service.mojom-lite.js',
-  ];
 
-  await loadMojoResources(resources, true);
-  await loadScript('/resources/chromium/mock-sms-receiver.js');
 
-  Status.kSuccess = blink.mojom.SmsStatus.kSuccess;
-  Status.kTimeout = blink.mojom.SmsStatus.kTimeout;
-  Status.kCancelled = blink.mojom.SmsStatus.kCancelled;
+
+export const Status = {
+  SUCCESS: 0,
+  UNHANDLED_REQUEST: 1,
+  CANCELLED: 2,
+  ABORTED: 3,
 };
 
-async function create_sms_provider() {
-  if (typeof SmsProvider === 'undefined') {
-    if (isChromiumBased) {
-      await loadChromiumResources();
-    } else {
-      throw new Error('Mojo testing interface is not available.');
-    }
-  }
-  if (typeof SmsProvider === 'undefined') {
-    throw new Error('Failed to set up SmsProvider.');
-  }
-  return new SmsProvider();
+
+
+
+export class MockWebOTPService {
+  
+
+
+
+
+
+
+
+
+
+  async handleNextOTPRequest(responseFunc) {}
 }
 
-function receive() {
-  throw new Error("expected to be overriden by tests");
+
+
+
+
+async function createBrowserSpecificMockImpl() {
+  if (isChromiumBased) {
+    return await createChromiumMockImpl();
+  }
+  throw new Error('Unsupported browser.');
 }
 
-function expect(call) {
+const asyncMock = createBrowserSpecificMockImpl();
+
+export function expectOTPRequest() {
   return {
     async andReturn(callback) {
-      const mock = await create_sms_provider();
-      mock.pushReturnValuesForTesting(call.name, callback);
+      const mock = await asyncMock;
+      mock.handleNextOTPRequest(callback);
     }
   }
 }
+
+
+
+
+async function createChromiumMockImpl() {
+  const {SmsStatus, WebOTPService, WebOTPServiceReceiver} = await import(
+      '/gen/third_party/blink/public/mojom/sms/webotp_service.mojom.m.js');
+  const MockWebOTPServiceChromium = class extends MockWebOTPService {
+    constructor() {
+      super();
+      this.mojoReceiver_ = new WebOTPServiceReceiver(this);
+      this.interceptor_ =
+          new MojoInterfaceInterceptor(WebOTPService.$interfaceName);
+      this.interceptor_.oninterfacerequest = (e) => {
+        this.mojoReceiver_.$.bindHandle(e.handle);
+      };
+      this.interceptor_.start();
+      this.requestHandlers_ = [];
+      Object.freeze(this);
+    }
+
+    handleNextOTPRequest(responseFunc) {
+      this.requestHandlers_.push(responseFunc);
+    }
+
+    async receive() {
+      if (this.requestHandlers_.length == 0) {
+        throw new Error('Mock received unexpected OTP request.');
+      }
+
+      const responseFunc = this.requestHandlers_.shift();
+      const response = await responseFunc();
+      switch (response.status) {
+        case Status.SUCCESS:
+          if (typeof response.otp != 'string') {
+            throw new Error('Mock success results require an OTP string.');
+          }
+          return {status: SmsStatus.kSuccess, otp: response.otp};
+        case Status.UNHANDLED_REQUEST:
+          return {status: SmsStatus.kUnhandledRequest};
+        case Status.CANCELLED:
+          return {status: SmsStatus.kCancelled};
+        case Status.ABORTED:
+          return {status: SmsStatus.kAborted};
+        default:
+          throw new Error(
+              `Mock result contains unknown status: ${response.status}`);
+      }
+    }
+
+    async abort() {}
+  };
+  return new MockWebOTPServiceChromium();
+}
+
