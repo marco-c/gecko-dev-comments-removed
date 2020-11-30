@@ -257,41 +257,42 @@ struct CompilationStencil {
 };
 
 
-struct MOZ_RAII CompilationGCOutput {
+struct CompilationGCOutput {
   
   
-  JS::Rooted<JSScript*> script;
+  JSScript* script = nullptr;
 
   
-  JS::Rooted<ModuleObject*> module;
-
-  
-  
-  
-  
-  JS::RootedVector<JSFunction*> functions;
+  ModuleObject* module = nullptr;
 
   
   
-  JS::RootedVector<js::Scope*> scopes;
+  
+  
+  JS::GCVector<JSFunction*, 0, js::SystemAllocPolicy> functions;
 
   
-  JS::Rooted<ScriptSourceObject*> sourceObject;
+  
+  JS::GCVector<js::Scope*, 0, js::SystemAllocPolicy> scopes;
 
-  explicit CompilationGCOutput(JSContext* cx)
-      : script(cx), module(cx), functions(cx), scopes(cx), sourceObject(cx) {}
-};
+  
+  ScriptSourceObject* sourceObject = nullptr;
+
+  CompilationGCOutput() = default;
+
+  void trace(JSTracer* trc);
+} JS_HAZ_GC_POINTER;
 
 class ScriptStencilIterable {
  public:
   class ScriptAndFunction {
    public:
     const ScriptStencil& script;
-    HandleFunction function;
+    JSFunction* function;
     FunctionIndex functionIndex;
 
     ScriptAndFunction() = delete;
-    ScriptAndFunction(const ScriptStencil& script, HandleFunction function,
+    ScriptAndFunction(const ScriptStencil& script, JSFunction* function,
                       FunctionIndex functionIndex)
         : script(script), function(function), functionIndex(functionIndex) {}
   };
