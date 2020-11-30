@@ -201,6 +201,14 @@ extern MOZ_MUST_USE bool StringToNumberPure(JSContext* cx, JSString* str,
                                             double* result);
 
 
+
+
+
+
+extern MOZ_MUST_USE bool MaybeStringToNumber(JSLinearString* str,
+                                             double* result);
+
+
 MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToNumber(JSContext* cx,
                                              JS::MutableHandleValue vp) {
   if (vp.isNumber()) {
