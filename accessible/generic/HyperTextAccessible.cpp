@@ -853,6 +853,11 @@ int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
       
       
       matchOffset = boundaryRule.GetLastMatchTextOffset() + 1;
+    } else if (matchAcc->Role() != roles::WHITESPACE && matchAcc != child) {
+      
+      
+      
+      matchOffset = 0;
     } else {
       matchOffset = nsAccUtils::TextLength(matchAcc);
     }
