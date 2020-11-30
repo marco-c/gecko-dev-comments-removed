@@ -2051,11 +2051,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   inline void shuffleInt8x16(const uint8_t lanes[16], FloatRegister rhs,
-                             FloatRegister lhsDest, FloatRegister temp)
-      DEFINED_ON(x86_shared);
-
-  inline void shuffleInt8x16(const uint8_t lanes[16], FloatRegister rhs,
-                             FloatRegister lhsDest) DEFINED_ON(arm64);
+                             FloatRegister lhsDest)
+      DEFINED_ON(x86_shared, arm64);
 
   
   inline void blendInt8x16(const uint8_t lanes[16], FloatRegister rhs,
