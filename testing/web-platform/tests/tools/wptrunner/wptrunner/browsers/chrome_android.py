@@ -49,7 +49,6 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
                                              **kwargs)
     
     del executor_kwargs["capabilities"]["goog:chromeOptions"]["prefs"]
-    del executor_kwargs["capabilities"]["goog:chromeOptions"]["useAutomationExtension"]
 
     assert kwargs["package_name"], "missing --package-name"
     executor_kwargs["capabilities"]["goog:chromeOptions"]["androidPackage"] = \
