@@ -67,9 +67,6 @@ class GeckoViewModule {
   onInitBrowser() {}
 
   
-  onDestroyBrowser() {}
-
-  
   onInit() {}
 
   

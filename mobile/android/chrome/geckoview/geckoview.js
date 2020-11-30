@@ -382,9 +382,6 @@ class ModuleInfo {
 
 
   onDestroyBrowser() {
-    if (this._impl) {
-      this._impl.onDestroyBrowser();
-    }
     this._contentModuleLoaded = false;
   }
 
