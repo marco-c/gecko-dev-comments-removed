@@ -61,6 +61,33 @@ async function waitForTabSoundIndicatorDisappears(tab) {
 
 
 
-function createBlankForegroundTab() {
-  return BrowserTestUtils.openNewForegroundTab(gBrowser, gEMPTY_PAGE_URL);
+
+
+
+
+async function createBlankForegroundTab({ needObserver } = {}) {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    gEMPTY_PAGE_URL
+  );
+  if (needObserver) {
+    tab.observer = createSoundIndicatorObserver(tab);
+  }
+  return tab;
+}
+
+function createSoundIndicatorObserver(tab) {
+  let hasEverUpdated = false;
+  let listener = event => {
+    if (event.detail.changed.includes("soundplaying")) {
+      hasEverUpdated = true;
+    }
+  };
+  tab.addEventListener("TabAttrModified", listener);
+  return {
+    hasEverUpdated: () => {
+      tab.removeEventListener("TabAttrModified", listener);
+      return hasEverUpdated;
+    },
+  };
 }
