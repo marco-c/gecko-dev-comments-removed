@@ -23,6 +23,8 @@ pub mod private;
 pub mod dispatcher;
 pub mod ipc;
 
+mod ffi;
+
 
 fn with_glean<F, R>(f: F) -> R
 where

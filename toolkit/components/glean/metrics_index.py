@@ -8,6 +8,7 @@
 
 metrics_yamls = [
     'toolkit/components/glean/metrics.yaml',
+    'toolkit/components/glean/test_metrics.yaml',
 ]
 
 
