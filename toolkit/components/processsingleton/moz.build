@@ -4,18 +4,18 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "General")
+with Files('**'):
+    BUG_COMPONENT = ('Toolkit', 'General')
 
 EXTRA_COMPONENTS += [
-    "ProcessSingleton.manifest",
+    'ProcessSingleton.manifest',
 ]
 
 EXTRA_JS_MODULES += [
-    "CustomElementsListener.jsm",
-    "MainProcessSingleton.jsm",
+    'CustomElementsListener.jsm',
+    'MainProcessSingleton.jsm',
 ]
 
 XPCOM_MANIFESTS += [
-    "components.conf",
+    'components.conf',
 ]

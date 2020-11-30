@@ -4,12 +4,12 @@
 
 
 
-Library("zlib")
+Library('zlib')
 
-if CONFIG["MOZ_SYSTEM_ZLIB"]:
-    OS_LIBS += CONFIG["MOZ_ZLIB_LIBS"]
+if CONFIG['MOZ_SYSTEM_ZLIB']:
+    OS_LIBS += CONFIG['MOZ_ZLIB_LIBS']
 else:
-    if CONFIG["ZLIB_IN_MOZGLUE"]:
+    if CONFIG['ZLIB_IN_MOZGLUE']:
         
         
         
@@ -17,5 +17,5 @@ else:
         
         pass
     DIRS += [
-        "../../../modules/zlib",
+        '../../../modules/zlib',
     ]

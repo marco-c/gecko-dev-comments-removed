@@ -5,8 +5,8 @@
 
 
 DevToolsModules(
-    "content-process.js",
-    "content-process.jsm",
-    "frame.js",
-    "worker.js",
+    'content-process.js',
+    'content-process.jsm',
+    'frame.js',
+    'worker.js',
 )

@@ -4,4 +4,4 @@
 
 
 
-RustLibrary("defaultagent-static")
+RustLibrary('defaultagent-static')

@@ -4,4 +4,8 @@
 
 
 
-DevToolsModules("channel-map.js", "error-codes.js", "wildcard-to-regexp.js")
+DevToolsModules(
+    'channel-map.js',
+    'error-codes.js',
+    'wildcard-to-regexp.js'
+)

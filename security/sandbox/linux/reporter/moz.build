@@ -5,30 +5,30 @@
 
 
 EXPORTS.mozilla += [
-    "SandboxReporter.h",
-    "SandboxReporterCommon.h",
+    'SandboxReporter.h',
+    'SandboxReporterCommon.h',
 ]
 
 UNIFIED_SOURCES += [
-    "SandboxReporter.cpp",
-    "SandboxReporterWrappers.cpp",
+    'SandboxReporter.cpp',
+    'SandboxReporterWrappers.cpp',
 ]
 
 XPCOM_MANIFESTS += [
-    "components.conf",
+    'components.conf',
 ]
 
 LOCAL_INCLUDES += [
-    "/security/sandbox/linux",  
+    '/security/sandbox/linux', 
 ]
 
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
 
 
 LOCAL_INCLUDES += [
-    "/security/sandbox/chromium",
+    '/security/sandbox/chromium',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

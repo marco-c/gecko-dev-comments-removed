@@ -4,56 +4,52 @@
 
 
 
-SPHINX_TREES["/toolkit/components/glean"] = "docs"
+SPHINX_TREES['/toolkit/components/glean'] = 'docs'
 
-if CONFIG["MOZ_GLEAN"]:
+if CONFIG['MOZ_GLEAN']:
     
-    include("/ipc/chromium/chromium-config.mozbuild")
+    include('/ipc/chromium/chromium-config.mozbuild')
 
-    FINAL_LIBRARY = "xul"
+    FINAL_LIBRARY = 'xul'
 
     EXPORTS.mozilla += [
-        "ipc/FOGIPC.h",
+        'ipc/FOGIPC.h',
     ]
 
     UNIFIED_SOURCES += [
-        "ipc/FOGIPC.cpp",
+        'ipc/FOGIPC.cpp',
     ]
 
     TEST_DIRS += [
-        "gtest",
+        'gtest',
     ]
 
     PYTHON_UNITTEST_MANIFESTS += [
-        "pytest/python.ini",
+        'pytest/python.ini',
     ]
 
     
-    include("metrics_index.py")
+    include('metrics_index.py')
     
     
-    metrics_yamls = ["../../../" + x for x in metrics_yamls]
-    pings_yamls = ["../../../" + x for x in pings_yamls]
-    GeneratedFile(
-        "api/src/metrics.rs",
-        script="build_scripts/glean_parser_ext/run_glean_parser.py",
-        flags=[CONFIG["MOZ_APP_VERSION"]],
-        inputs=["metrics_index.py"] + metrics_yamls,
-    )
+    metrics_yamls = ['../../../' + x for x in metrics_yamls]
+    pings_yamls = ['../../../' + x for x in pings_yamls]
+    GeneratedFile('api/src/metrics.rs',
+                  script='build_scripts/glean_parser_ext/run_glean_parser.py',
+                  flags=[CONFIG['MOZ_APP_VERSION']],
+                  inputs=['metrics_index.py'] + metrics_yamls)
 
-    GeneratedFile(
-        "api/src/pings.rs",
-        script="build_scripts/glean_parser_ext/run_glean_parser.py",
-        flags=[CONFIG["MOZ_APP_VERSION"]],
-        inputs=["metrics_index.py"] + pings_yamls,
-    )
+    GeneratedFile('api/src/pings.rs',
+                  script='build_scripts/glean_parser_ext/run_glean_parser.py',
+                  flags=[CONFIG['MOZ_APP_VERSION']],
+                  inputs=['metrics_index.py'] + pings_yamls)
 
     DIRS += [
-        "xpcom",
+        'xpcom',
     ]
 
-with Files("docs/**"):
-    SCHEDULES.exclusive = ["docs"]
+with Files('docs/**'):
+    SCHEDULES.exclusive = ['docs']
 
-with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "Telemetry")
+with Files('**'):
+    BUG_COMPONENT = ('Toolkit', 'Telemetry')

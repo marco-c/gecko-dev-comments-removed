@@ -4,6 +4,6 @@
 
 
 
-SOURCES += ["ShortcutKeyDefinitions.cpp"]
+SOURCES += ['ShortcutKeyDefinitions.cpp']
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

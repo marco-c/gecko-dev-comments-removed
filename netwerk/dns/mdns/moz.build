@@ -4,10 +4,10 @@
 
 
 
-DIRS += ["libmdns"]
+DIRS += ['libmdns']
 
 XPIDL_SOURCES += [
-    "nsIDNSServiceDiscovery.idl",
+    'nsIDNSServiceDiscovery.idl',
 ]
 
-XPIDL_MODULE = "necko_mdns"
+XPIDL_MODULE = 'necko_mdns'

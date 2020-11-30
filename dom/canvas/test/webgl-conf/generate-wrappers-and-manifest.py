@@ -12,80 +12,77 @@ import re
 import shutil
 
 
-WRAPPER_TEMPLATE_FILE = "mochi-wrapper.html.template"
-MANIFEST_TEMPLATE_FILE = "mochitest.ini.template"
-ERRATA_FILE = "mochitest-errata.ini"
-DEST_MANIFEST_PATHSTR = "generated-mochitest.ini"
+WRAPPER_TEMPLATE_FILE = 'mochi-wrapper.html.template'
+MANIFEST_TEMPLATE_FILE = 'mochitest.ini.template'
+ERRATA_FILE = 'mochitest-errata.ini'
+DEST_MANIFEST_PATHSTR = 'generated-mochitest.ini'
 
-BASE_TEST_LIST_PATHSTR = "checkout/00_test_list.txt"
-GENERATED_PATHSTR = "generated"
-WEBGL2_TEST_MANGLE = "2_"
-PATH_SEP_MANGLING = "__"
+BASE_TEST_LIST_PATHSTR = 'checkout/00_test_list.txt'
+GENERATED_PATHSTR = 'generated'
+WEBGL2_TEST_MANGLE = '2_'
+PATH_SEP_MANGLING = '__'
 
 SUPPORT_DIRS = [
-    "checkout",
+    'checkout',
 ]
 
 EXTRA_SUPPORT_FILES = [
-    "always-fail.html",
-    "iframe-passthrough.css",
-    "mochi-single.html",
+    'always-fail.html',
+    'iframe-passthrough.css',
+    'mochi-single.html',
 ]
 
-ACCEPTABLE_ERRATA_KEYS = set(
-    [
-        "fail-if",
-        "skip-if",
-    ]
-)
+ACCEPTABLE_ERRATA_KEYS = set([
+    'fail-if',
+    'skip-if',
+])
 
 
 def ChooseSubsuite(name):
     
 
-    split = name.split("__")
+    split = name.split('__')
 
-    version = "1"
-    if "/test_2_" in split[0]:
-        version = "2"
+    version = '1'
+    if '/test_2_' in split[0]:
+        version = '2'
 
-    category = "core"
+    category = 'core'
 
-    split[0] = split[0].split("/")[1]
-    if "deqp" in split[0]:
-        if version == "1":
+    split[0] = split[0].split('/')[1]
+    if 'deqp' in split[0]:
+        if version == '1':
             
-            category = "ext"
+            category = 'ext'
         else:
-            category = "deqp"
-    elif "conformance" in split[0]:
-        if split[1] in ("glsl", "glsl3", "ogles"):
-            category = "ext"
-        elif split[1] == "textures" and split[2] != "misc":
-            category = "ext"
+            category = 'deqp'
+    elif 'conformance' in split[0]:
+        if split[1] in ('glsl', 'glsl3', 'ogles'):
+            category = 'ext'
+        elif split[1] == 'textures' and split[2] != 'misc':
+            category = 'ext'
 
-    return "webgl{}-{}".format(version, category)
-
+    return 'webgl{}-{}'.format(version, category)
 
 
 
 
 
 def GetTestList():
-    split = BASE_TEST_LIST_PATHSTR.rsplit("/", 1)
-    basePath = "."
+    split = BASE_TEST_LIST_PATHSTR.rsplit('/', 1)
+    basePath = '.'
     testListFile = split[-1]
     if len(split) == 2:
         basePath = split[0]
 
     allowWebGL1 = True
     allowWebGL2 = True
-    alwaysFailEntry = TestEntry("always-fail.html", True, False)
+    alwaysFailEntry = TestEntry('always-fail.html', True, False)
     testList = [alwaysFailEntry]
     AccumTests(basePath, testListFile, allowWebGL1, allowWebGL2, testList)
 
     for x in testList:
-        x.path = os.path.relpath(x.path, basePath).replace(os.sep, "/")
+        x.path = os.path.relpath(x.path, basePath).replace(os.sep, '/')
         continue
 
     return testList
@@ -94,10 +91,9 @@ def GetTestList():
 
 
 
-
 def IsVersionLess(a, b):
-    aSplit = [int(x) for x in a.split(".")]
-    bSplit = [int(x) for x in b.split(".")]
+    aSplit = [int(x) for x in a.split('.')]
+    bSplit = [int(x) for x in b.split('.')]
 
     while len(aSplit) < len(bSplit):
         aSplit.append(0)
@@ -126,12 +122,12 @@ class TestEntry:
 
 
 def AccumTests(pathStr, listFile, allowWebGL1, allowWebGL2, out_testList):
-    listPathStr = pathStr + "/" + listFile
+    listPathStr = pathStr + '/' + listFile
 
-    listPath = listPathStr.replace("/", os.sep)
-    assert os.path.exists(listPath), "Bad `listPath`: " + listPath
+    listPath = listPathStr.replace('/', os.sep)
+    assert os.path.exists(listPath), 'Bad `listPath`: ' + listPath
 
-    with open(listPath, "r") as fIn:
+    with open(listPath, 'r') as fIn:
         lineNum = 0
         for line in fIn:
             lineNum += 1
@@ -141,60 +137,58 @@ def AccumTests(pathStr, listFile, allowWebGL1, allowWebGL2, out_testList):
                 continue
 
             curLine = line.lstrip()
-            if curLine.startswith("//"):
+            if curLine.startswith('//'):
                 continue
-            if curLine.startswith("#"):
+            if curLine.startswith('#'):
                 continue
 
             webgl1 = allowWebGL1
             webgl2 = allowWebGL2
-            while curLine.startswith("--"):  
-                (flag, curLine) = curLine.split(" ", 1)
-                if flag == "--min-version":
-                    (minVersion, curLine) = curLine.split(" ", 1)
+            while curLine.startswith('--'):  
+                (flag, curLine) = curLine.split(' ', 1)
+                if flag == '--min-version':
+                    (minVersion, curLine) = curLine.split(' ', 1)
                     if not IsVersionLess(minVersion, "2.0.0"):  
                         webgl1 = False
                         break
-                elif flag == "--max-version":
-                    (maxVersion, curLine) = curLine.split(" ", 1)
+                elif flag == '--max-version':
+                    (maxVersion, curLine) = curLine.split(' ', 1)
                     if IsVersionLess(maxVersion, "2.0.0"):
                         webgl2 = False
                         break
-                elif flag == "--slow":
+                elif flag == '--slow':
                     continue  
                 else:
-                    text = "Unknown flag '{}': {}:{}: {}".format(
-                        flag, listPath, lineNum, line
-                    )
+                    text = 'Unknown flag \'{}\': {}:{}: {}'.format(flag, listPath,
+                                                                   lineNum, line)
                     assert False, text
                 continue
 
-            assert webgl1 or webgl2
+            assert(webgl1 or webgl2)
 
-            split = curLine.rsplit(".", 1)
-            assert len(split) == 2, "Bad split for `line`: " + line
+            split = curLine.rsplit('.', 1)
+            assert len(split) == 2, 'Bad split for `line`: ' + line
             (name, ext) = split
 
-            if ext == "html":
-                newTestFilePathStr = pathStr + "/" + curLine
+            if ext == 'html':
+                newTestFilePathStr = pathStr + '/' + curLine
                 entry = TestEntry(newTestFilePathStr, webgl1, webgl2)
                 out_testList.append(entry)
                 continue
 
-            assert ext == "txt", "Bad `ext` on `line`: " + line
+            assert ext == 'txt', 'Bad `ext` on `line`: ' + line
 
-            split = curLine.rsplit("/", 1)
+            split = curLine.rsplit('/', 1)
             nextListFile = split[-1]
-            nextPathStr = ""
+            nextPathStr = ''
             if len(split) != 1:
                 nextPathStr = split[0]
 
-            nextPathStr = pathStr + "/" + nextPathStr
+            nextPathStr = pathStr + '/' + nextPathStr
             AccumTests(nextPathStr, nextListFile, webgl1, webgl2, out_testList)
             continue
 
     return
-
 
 
 
@@ -207,14 +201,14 @@ def FillTemplate(inFilePath, templateDict, outFilePath):
 
 
 def ImportTemplate(inFilePath):
-    with open(inFilePath, "r") as f:
+    with open(inFilePath, 'r') as f:
         return TemplateShell(f)
 
 
 def OutputFilledTemplate(templateShell, templateDict, outFilePath):
     spanStrList = templateShell.Fill(templateDict)
 
-    with open(outFilePath, "w", newline="\n") as f:
+    with open(outFilePath, 'w', newline='\n') as f:
         f.writelines(spanStrList)
     return
 
@@ -222,22 +216,21 @@ def OutputFilledTemplate(templateShell, templateDict, outFilePath):
 
 
 
-
 def WrapWithIndent(lines, indentLen):
-    split = lines.split("\n")
+    split = lines.split('\n')
     if len(split) == 1:
         return lines
 
     ret = [split[0]]
-    indentSpaces = " " * indentLen
+    indentSpaces = ' ' * indentLen
     for line in split[1:]:
         ret.append(indentSpaces + line)
 
-    return "\n".join(ret)
+    return '\n'.join(ret)
 
 
-templateRE = re.compile("(%%.*?%%)")
-assert templateRE.split("  foo = %%BAR%%;") == ["  foo = ", "%%BAR%%", ";"]
+templateRE = re.compile('(%%.*?%%)')
+assert templateRE.split('  foo = %%BAR%%;') == ['  foo = ', '%%BAR%%', ';']
 
 
 class TemplateShellSpan:
@@ -245,7 +238,7 @@ class TemplateShellSpan:
         self.span = span
 
         self.isLiteralSpan = True
-        if self.span.startswith("%%") and self.span.endswith("%%"):
+        if self.span.startswith('%%') and self.span.endswith('%%'):
             self.isLiteralSpan = False
             self.span = self.span[2:-2]
 
@@ -255,7 +248,7 @@ class TemplateShellSpan:
         if self.isLiteralSpan:
             return self.span
 
-        assert self.span in templateDict, "'" + self.span + "' not in dict!"
+        assert self.span in templateDict, '\'' + self.span + '\' not in dict!'
 
         filling = templateDict[self.span]
 
@@ -270,13 +263,13 @@ class TemplateShell:
             split = templateRE.split(line)
 
             for cur in split:
-                isTemplateSpan = cur.startswith("%%") and cur.endswith("%%")
+                isTemplateSpan = cur.startswith('%%') and cur.endswith('%%')
                 if not isTemplateSpan:
                     curLiteralSpan.append(cur)
                     continue
 
                 if curLiteralSpan:
-                    span = "".join(curLiteralSpan)
+                    span = ''.join(curLiteralSpan)
                     span = TemplateShellSpan(span)
                     spanList.append(span)
                     curLiteralSpan = []
@@ -289,7 +282,7 @@ class TemplateShell:
             continue
 
         if curLiteralSpan:
-            span = "".join(curLiteralSpan)
+            span = ''.join(curLiteralSpan)
             span = TemplateShellSpan(span)
             spanList.append(span)
 
@@ -307,7 +300,7 @@ class TemplateShell:
 
             
             try:
-                lineStartPos = span.rindex("\n") + 1
+                lineStartPos = span.rindex('\n') + 1
 
                 
                 
@@ -323,32 +316,31 @@ class TemplateShell:
 
 
 
-
 def IsWrapperWebGL2(wrapperPath):
-    return wrapperPath.startswith(GENERATED_PATHSTR + "/test_" + WEBGL2_TEST_MANGLE)
+    return wrapperPath.startswith(GENERATED_PATHSTR + '/test_' + WEBGL2_TEST_MANGLE)
 
 
 def WriteWrapper(entryPath, webgl2, templateShell, wrapperPathAccum):
-    mangledPath = entryPath.replace("/", PATH_SEP_MANGLING)
-    maybeWebGL2Mangle = ""
+    mangledPath = entryPath.replace('/', PATH_SEP_MANGLING)
+    maybeWebGL2Mangle = ''
     if webgl2:
         maybeWebGL2Mangle = WEBGL2_TEST_MANGLE
 
     
     
     
-    wrapperFileName = "test_" + maybeWebGL2Mangle + mangledPath
+    wrapperFileName = 'test_' + maybeWebGL2Mangle + mangledPath
 
-    wrapperPath = GENERATED_PATHSTR + "/" + wrapperFileName
-    print("Adding wrapper: " + wrapperPath)
+    wrapperPath = GENERATED_PATHSTR + '/' + wrapperFileName
+    print('Adding wrapper: ' + wrapperPath)
 
-    args = ""
+    args = ''
     if webgl2:
-        args = "?webglVersion=2"
+        args = '?webglVersion=2'
 
     templateDict = {
-        "TEST_PATH": entryPath,
-        "ARGS": args,
+        'TEST_PATH': entryPath,
+        'ARGS': args,
     }
 
     OutputFilledTemplate(templateShell, templateDict, wrapperPath)
@@ -363,7 +355,7 @@ def WriteWrapper(entryPath, webgl2, templateShell, wrapperPathAccum):
 def WriteWrappers(testEntryList):
     templateShell = ImportTemplate(WRAPPER_TEMPLATE_FILE)
 
-    generatedDirPath = GENERATED_PATHSTR.replace("/", os.sep)
+    generatedDirPath = GENERATED_PATHSTR.replace('/', os.sep)
     if not os.path.exists(generatedDirPath):
         os.mkdir(generatedDirPath)
     assert os.path.isdir(generatedDirPath)
@@ -376,52 +368,52 @@ def WriteWrappers(testEntryList):
             WriteWrapper(entry.path, True, templateShell, wrapperPathList)
         continue
 
-    print("{} wrappers written.\n".format(len(wrapperPathList)))
+    print('{} wrappers written.\n'.format(len(wrapperPathList)))
     return wrapperPathList
 
 
-kManifestRelPathStr = os.path.relpath(".", os.path.dirname(DEST_MANIFEST_PATHSTR))
-kManifestRelPathStr = kManifestRelPathStr.replace(os.sep, "/")
+kManifestRelPathStr = os.path.relpath('.', os.path.dirname(DEST_MANIFEST_PATHSTR))
+kManifestRelPathStr = kManifestRelPathStr.replace(os.sep, '/')
 
 
 def ManifestPathStr(pathStr):
-    pathStr = kManifestRelPathStr + "/" + pathStr
-    return os.path.normpath(pathStr).replace(os.sep, "/")
+    pathStr = kManifestRelPathStr + '/' + pathStr
+    return os.path.normpath(pathStr).replace(os.sep, '/')
 
 
 def WriteManifest(wrapperPathStrList, supportPathStrList):
     destPathStr = DEST_MANIFEST_PATHSTR
-    print("Generating manifest: " + destPathStr)
+    print('Generating manifest: ' + destPathStr)
 
     errataMap = LoadErrata()
 
     
-    defaultSectionName = "DEFAULT"
+    defaultSectionName = 'DEFAULT'
 
     defaultSectionLines = []
     if defaultSectionName in errataMap:
         defaultSectionLines = errataMap[defaultSectionName]
         del errataMap[defaultSectionName]
 
-    defaultSectionStr = "\n".join(defaultSectionLines)
+    defaultSectionStr = '\n'.join(defaultSectionLines)
 
     
     supportPathStrList = [ManifestPathStr(x) for x in supportPathStrList]
     supportPathStrList = sorted(supportPathStrList)
-    supportFilesStr = "\n".join(supportPathStrList)
+    supportFilesStr = '\n'.join(supportPathStrList)
 
     
     manifestTestLineList = []
     wrapperPathStrList = sorted(wrapperPathStrList)
     for wrapperPathStr in wrapperPathStrList:
         wrapperManifestPathStr = ManifestPathStr(wrapperPathStr)
-        sectionName = "[" + wrapperManifestPathStr + "]"
+        sectionName = '[' + wrapperManifestPathStr + ']'
         manifestTestLineList.append(sectionName)
 
         errataLines = []
 
         subsuite = ChooseSubsuite(wrapperPathStr)
-        errataLines.append("subsuite = " + subsuite)
+        errataLines.append('subsuite = ' + subsuite)
 
         if wrapperPathStr in errataMap:
             assert subsuite
@@ -432,21 +424,21 @@ def WriteManifest(wrapperPathStrList, supportPathStrList):
         continue
 
     if errataMap:
-        print("Errata left in map:")
+        print('Errata left in map:')
         for x in errataMap.keys():
-            print(" " * 4 + x)
+            print(' '*4 + x)
         assert False
 
-    manifestTestsStr = "\n".join(manifestTestLineList)
+    manifestTestsStr = '\n'.join(manifestTestLineList)
 
     
     templateDict = {
-        "DEFAULT_ERRATA": defaultSectionStr,
-        "SUPPORT_FILES": supportFilesStr,
-        "MANIFEST_TESTS": manifestTestsStr,
+        'DEFAULT_ERRATA': defaultSectionStr,
+        'SUPPORT_FILES': supportFilesStr,
+        'MANIFEST_TESTS': manifestTestsStr,
     }
 
-    destPath = destPathStr.replace("/", os.sep)
+    destPath = destPathStr.replace('/', os.sep)
     FillTemplate(MANIFEST_TEMPLATE_FILE, templateDict, destPath)
     return
 
@@ -454,8 +446,7 @@ def WriteManifest(wrapperPathStrList, supportPathStrList):
 
 
 
-
-kManifestHeaderRegex = re.compile(r"[[]([^]]*)[]]")
+kManifestHeaderRegex = re.compile(r'[[]([^]]*)[]]')
 
 
 def LoadINI(path):
@@ -467,7 +458,7 @@ def LoadINI(path):
     ret = {}
     ret[curSectionName] = (lineNum, curSectionMap)
 
-    with open(path, "r") as f:
+    with open(path, 'r') as f:
         for line in f:
             lineNum += 1
 
@@ -475,24 +466,23 @@ def LoadINI(path):
             if not line:
                 continue
 
-            if line[0] in [";", "#"]:
+            if line[0] in [';', '#']:
                 continue
 
-            if line[0] == "[":
-                assert line[-1] == "]", "{}:{}".format(path, lineNum)
+            if line[0] == '[':
+                assert line[-1] == ']', '{}:{}'.format(path, lineNum)
 
                 curSectionName = line[1:-1]
-                assert (
-                    curSectionName not in ret
-                ), "Line {}: Duplicate section: {}".format(lineNum, line)
+                assert curSectionName not in ret, 'Line {}: Duplicate section: {}'.format(
+                    lineNum, line)
 
                 curSectionMap = {}
                 ret[curSectionName] = (lineNum, curSectionMap)
                 continue
 
-            split = line.split("=", 1)
+            split = line.split('=', 1)
             key = split[0].strip()
-            val = ""
+            val = ''
             if len(split) == 2:
                 val = split[1].strip()
 
@@ -512,16 +502,15 @@ def LoadErrata():
 
         if sectionName is None:
             continue
-        elif sectionName != "DEFAULT":
-            path = sectionName.replace("/", os.sep)
-            assert os.path.exists(path), "Errata line {}: Invalid file: {}".format(
-                sectionLineNum, sectionName
-            )
+        elif sectionName != 'DEFAULT':
+            path = sectionName.replace('/', os.sep)
+            assert os.path.exists(path), 'Errata line {}: Invalid file: {}'.format(
+                sectionLineNum, sectionName)
 
         for (key, (lineNum, val)) in sectionMap.items():
-            assert key in ACCEPTABLE_ERRATA_KEYS, "Line {}: {}".format(lineNum, key)
+            assert key in ACCEPTABLE_ERRATA_KEYS, 'Line {}: {}'.format(lineNum, key)
 
-            curLine = "{} = {}".format(key, val)
+            curLine = '{} = {}'.format(key, val)
             curLines.append(curLine)
             continue
 
@@ -529,7 +518,6 @@ def LoadErrata():
         continue
 
     return ret
-
 
 
 
@@ -542,8 +530,8 @@ def GetSupportFileList():
         continue
 
     for pathStr in ret:
-        path = pathStr.replace("/", os.sep)
-        assert os.path.exists(path), path + "\n\n\n" + "pathStr: " + str(pathStr)
+        path = pathStr.replace('/', os.sep)
+        assert os.path.exists(path), path + '\n\n\n' + 'pathStr: ' + str(pathStr)
         continue
 
     return ret
@@ -554,16 +542,16 @@ def GetFilePathListForDir(baseDir):
     for root, folders, files in os.walk(baseDir):
         for f in files:
             filePath = os.path.join(root, f)
-            filePath = filePath.replace(os.sep, "/")
+            filePath = filePath.replace(os.sep, '/')
             ret.append(filePath)
 
     return ret
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     file_dir = Path(__file__).parent
     os.chdir(str(file_dir))
-    shutil.rmtree(file_dir / "generated", True)
+    shutil.rmtree(file_dir / 'generated', True)
 
     testEntryList = GetTestList()
     wrapperPathStrList = WriteWrappers(testEntryList)
@@ -571,4 +559,4 @@ if __name__ == "__main__":
     supportPathStrList = GetSupportFileList()
     WriteManifest(wrapperPathStrList, supportPathStrList)
 
-    print("Done!")
+    print('Done!')

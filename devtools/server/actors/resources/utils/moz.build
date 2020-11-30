@@ -5,8 +5,8 @@
 
 
 DevToolsModules(
-    "nsi-console-listener-watcher.js",
+    'nsi-console-listener-watcher.js',
 )
 
-with Files("nsi-console-listener-watcher.js"):
-    BUG_COMPONENT = ("DevTools", "Console")
+with Files('nsi-console-listener-watcher.js'):
+    BUG_COMPONENT = ('DevTools', 'Console')

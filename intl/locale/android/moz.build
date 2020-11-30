@@ -4,10 +4,12 @@
 
 
 
-UNIFIED_SOURCES += ["OSPreferences_android.cpp"]
+UNIFIED_SOURCES += [
+    'OSPreferences_android.cpp'
+]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
 LOCAL_INCLUDES += [
-    "..",
+    '..',
 ]

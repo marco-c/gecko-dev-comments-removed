@@ -7,50 +7,50 @@
 
 
 
-if CONFIG["MOZ_BUILD_APP"] == "mobile/android":
+if CONFIG['MOZ_BUILD_APP'] == 'mobile/android':
     hyphenation_ext = ".dic"
 else:
     hyphenation_ext = ".hyf"
 
 locales = [
-    "af",
-    "bg",
-    "ca",
-    "cy",
-    "da",
-    "de-1901",
-    "de-1996",
-    "de-CH",
+    'af',
+    'bg',
+    'ca',
+    'cy',
+    'da',
+    'de-1901',
+    'de-1996',
+    'de-CH',
     
-    "eo",
-    "es",
-    "et",
-    "fi",
-    "fr",
-    "gl",
-    "hr",
-    "hsb",
-    "hu",
-    "ia",
-    "is",
-    "it",
-    "kmr",
-    "la",
-    "lt",
-    "mn",
-    "nb",
-    "nl",
-    "nn",
-    "pl",
-    "pt",
-    "ru",
-    "sh",
-    "sl",
-    "sv",
-    "tr",
-    "uk",
+    'eo',
+    'es',
+    'et',
+    'fi',
+    'fr',
+    'gl',
+    'hr',
+    'hsb',
+    'hu',
+    'ia',
+    'is',
+    'it',
+    'kmr',
+    'la',
+    'lt',
+    'mn',
+    'nb',
+    'nl',
+    'nn',
+    'pl',
+    'pt',
+    'ru',
+    'sh',
+    'sl',
+    'sv',
+    'tr',
+    'uk',
 ]
-filename = "{locale}/hyphenation/hyph_{locale}" + hyphenation_ext
+filename = '{locale}/hyphenation/hyph_{locale}' + hyphenation_ext
 FINAL_TARGET_FILES.hyphenation += [filename.format(locale=locale) for locale in locales]
 
-FINAL_TARGET_FILES.hyphenation += ["en-US/hyphenation/hyph_en_US" + hyphenation_ext]
+FINAL_TARGET_FILES.hyphenation += ['en-US/hyphenation/hyph_en_US' + hyphenation_ext]

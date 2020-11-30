@@ -4,4 +4,5 @@
 
 
 
-BROWSER_CHROME_MANIFESTS += ["browser.ini"]
+BROWSER_CHROME_MANIFESTS += ['browser.ini']
+

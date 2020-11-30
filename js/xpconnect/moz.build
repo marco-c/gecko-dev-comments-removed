@@ -4,9 +4,9 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "XPConnect")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'XPConnect')
 
-DIRS += ["public", "idl", "wrappers", "loader", "src"]
-DIRS += ["shell"]
-TEST_DIRS += ["tests"]
+DIRS += ['public', 'idl', 'wrappers', 'loader', 'src']
+DIRS += ['shell']
+TEST_DIRS += ['tests']

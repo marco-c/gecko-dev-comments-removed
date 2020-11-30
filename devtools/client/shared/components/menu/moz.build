@@ -5,8 +5,8 @@
 
 
 DevToolsModules(
-    "MenuButton.js",
-    "MenuItem.js",
-    "MenuList.js",
-    "utils.js",
+    'MenuButton.js',
+    'MenuItem.js',
+    'MenuList.js',
+    'utils.js',
 )

@@ -4,37 +4,31 @@
 
 
 
-option("--enable-foo", help="enable foo")
+option('--enable-foo', help='enable foo')
 
-
-@depends("--enable-foo")
+@depends('--enable-foo')
 def foo(value):
     if value:
         return False
 
-
-imply_option("--enable-bar", foo)
-
-
-option("--disable-hoge", help="enable hoge")
+imply_option('--enable-bar', foo)
 
 
-@depends("--disable-hoge")
+option('--disable-hoge', help='enable hoge')
+
+@depends('--disable-hoge')
 def hoge(value):
     if not value:
         return False
 
-
-imply_option("--enable-bar", hoge)
-
-
-option("--enable-bar", default=True, help="enable bar")
+imply_option('--enable-bar', hoge)
 
 
-@depends("--enable-bar")
+option('--enable-bar', default=True, help='enable bar')
+
+@depends('--enable-bar')
 def bar(value):
     if not value:
         return value
 
-
-set_config("BAR", bar)
+set_config('BAR', bar)

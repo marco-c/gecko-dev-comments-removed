@@ -2,6 +2,6 @@
 
 
 
-DIRS = ["foo"]
+DIRS = ['foo']
 
-include("included.build")
+include('included.build')

@@ -4,35 +4,35 @@
 
 
 
-include("gkrust-features.mozbuild")
+include('gkrust-features.mozbuild')
 
-RustLibrary("gkrust", gkrust_features, is_gkrust=True)
+RustLibrary('gkrust', gkrust_features, is_gkrust=True)
 
 
 
 RUST_TESTS = [
-    "selectors",
-    "servo_arc",
-    "stylo_tests",
-    "qcms",
+    'selectors',
+    'servo_arc',
+    'stylo_tests',
+    'qcms',
 ]
 
-if not CONFIG["MOZ_CODE_COVERAGE"]:
+if not CONFIG['MOZ_CODE_COVERAGE']:
     
     
-    RUST_TESTS += ["fog"]
+    RUST_TESTS += ['fog']
 
 for feature in gkrust_features:
     
     
     
-    if feature not in ("gecko_refcount_logging", "glean_with_gecko"):
+    if feature not in ('gecko_refcount_logging', 'glean_with_gecko'):
         RUST_TEST_FEATURES.append(feature)
 
-if CONFIG["CPU_ARCH"] != "x86":
+if CONFIG['CPU_ARCH'] != 'x86':
     
     
-    RUST_TESTS += ["malloc_size_of_derive"]
+    RUST_TESTS += ['malloc_size_of_derive']
 
-if CONFIG["MOZ_BITS_DOWNLOAD"]:
-    RUST_TESTS += ["bits_client"]
+if CONFIG['MOZ_BITS_DOWNLOAD']:
+    RUST_TESTS += ['bits_client']

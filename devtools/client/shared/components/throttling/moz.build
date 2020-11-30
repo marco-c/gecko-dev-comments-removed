@@ -5,9 +5,9 @@
 
 
 DevToolsModules(
-    "actions.js",
-    "NetworkThrottlingMenu.js",
-    "profiles.js",
-    "reducer.js",
-    "types.js",
+    'actions.js',
+    'NetworkThrottlingMenu.js',
+    'profiles.js',
+    'reducer.js',
+    'types.js',
 )

@@ -16,19 +16,19 @@ from awsy.awsy_test_case import AwsyTestCase
 
 CHECKPOINTS = [
     {
-        "name": "After tabs open [+30s, forced GC]",
-        "path": "memory-report-TabsOpenForceGC-4.json.gz",
-        "name_filter": ["web ", "Web Content"],  
-        "median": True,  
+        'name': "After tabs open [+30s, forced GC]",
+        'path': "memory-report-TabsOpenForceGC-4.json.gz",
+        'name_filter': ['web ', 'Web Content'],  
+        'median': True,  
     },
 ]
 
 
 PERF_SUITES = [
-    {"name": "Base Content Resident Unique Memory", "node": "resident-unique"},
-    {"name": "Base Content Heap Unclassified", "node": "explicit/heap-unclassified"},
-    {"name": "Base Content JS", "node": "js-main-runtime/", "alertThreshold": 0.25},
-    {"name": "Base Content Explicit", "node": "explicit/"},
+    {'name': "Base Content Resident Unique Memory", 'node': "resident-unique"},
+    {'name': "Base Content Heap Unclassified", 'node': "explicit/heap-unclassified"},
+    {'name': "Base Content JS", 'node': "js-main-runtime/", 'alertThreshold': 0.25},
+    {'name': "Base Content Explicit", 'node': "explicit/"},
 ]
 
 
@@ -60,22 +60,16 @@ class TestMemoryUsage(AwsyTestCase):
         
         
         
-        process_count = self.marionette.get_pref("dom.ipc.processCount")
+        process_count = self.marionette.get_pref('dom.ipc.processCount')
         self._pages_to_load = process_count
-        self._urls = ["about:blank"] * process_count
+        self._urls = ['about:blank'] * process_count
 
-        self.logger.info(
-            "areweslimyet run by %d pages, "
-            "%d iterations, %d perTabPause, %d settleWaitTime, "
-            "%d content processes"
-            % (
-                self._pages_to_load,
-                self._iterations,
-                self._perTabPause,
-                self._settleWaitTime,
-                process_count,
-            )
-        )
+        self.logger.info("areweslimyet run by %d pages, "
+                         "%d iterations, %d perTabPause, %d settleWaitTime, "
+                         "%d content processes"
+                         % (self._pages_to_load, self._iterations,
+                            self._perTabPause, self._settleWaitTime,
+                            process_count))
         self.logger.info("done setting up!")
 
     def tearDown(self):
@@ -91,10 +85,10 @@ class TestMemoryUsage(AwsyTestCase):
         as appropriate.
         """
         if enabled:
-            self.logger.info("re-enabling preallocated process")
+            self.logger.info('re-enabling preallocated process')
         else:
-            self.logger.info("disabling preallocated process")
-        self.marionette.set_pref("dom.ipc.processPrelaunch.enabled", enabled)
+            self.logger.info('disabling preallocated process')
+        self.marionette.set_pref('dom.ipc.processPrelaunch.enabled', enabled)
 
     def test_open_tabs(self):
         """Marionette test entry that returns an array of checkpoint arrays.

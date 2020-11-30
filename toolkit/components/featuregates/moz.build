@@ -4,18 +4,15 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "General")
+with Files('**'):
+    BUG_COMPONENT = ('Toolkit', 'General')
 
-SPHINX_TREES["featuregates"] = "docs"
+SPHINX_TREES['featuregates'] = 'docs'
 
-XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.ini"]
-PYTHON_UNITTEST_MANIFESTS += ["test/python/python.ini"]
+XPCSHELL_TESTS_MANIFESTS += ['test/unit/xpcshell.ini']
+PYTHON_UNITTEST_MANIFESTS += ['test/python/python.ini']
 
-JAR_MANIFESTS += ["jar.mn"]
+JAR_MANIFESTS += ['jar.mn']
 
-GeneratedFile(
-    "feature_definitions.json",
-    script="gen_feature_definitions.py",
-    inputs=["Features.toml"],
-)
+GeneratedFile('feature_definitions.json', script='gen_feature_definitions.py',
+              inputs=['Features.toml'])

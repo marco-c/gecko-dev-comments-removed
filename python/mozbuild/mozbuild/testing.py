@@ -37,45 +37,42 @@ from mozpack.manifests import InstallManifest
 
 
 TEST_MANIFESTS = dict(
-    A11Y=("a11y", "testing/mochitest", "a11y", True),
-    BROWSER_CHROME=("browser-chrome", "testing/mochitest", "browser", True),
-    ANDROID_INSTRUMENTATION=("instrumentation", "instrumentation", ".", False),
-    FIREFOX_UI_FUNCTIONAL=("firefox-ui-functional", "firefox-ui", ".", False),
-    FIREFOX_UI_UPDATE=("firefox-ui-update", "firefox-ui", ".", False),
-    PYTHON_UNITTEST=("python", "python", ".", False),
-    CRAMTEST=("cram", "cram", ".", False),
+    A11Y=('a11y', 'testing/mochitest', 'a11y', True),
+    BROWSER_CHROME=('browser-chrome', 'testing/mochitest', 'browser', True),
+    ANDROID_INSTRUMENTATION=('instrumentation', 'instrumentation', '.', False),
+    FIREFOX_UI_FUNCTIONAL=('firefox-ui-functional', 'firefox-ui', '.', False),
+    FIREFOX_UI_UPDATE=('firefox-ui-update', 'firefox-ui', '.', False),
+    PYTHON_UNITTEST=('python', 'python', '.', False),
+    CRAMTEST=('cram', 'cram', '.', False),
     TELEMETRY_TESTS_CLIENT=(
-        "telemetry-tests-client",
-        "toolkit/components/telemetry/tests/marionette/",
-        ".",
-        False,
-    ),
+        'telemetry-tests-client',
+        'toolkit/components/telemetry/tests/marionette/', '.', False),
+
     
     
-    MARIONETTE=("marionette", "marionette", ".", False),
-    MARIONETTE_UNIT=("marionette", "marionette", ".", False),
-    MARIONETTE_WEBAPI=("marionette", "marionette", ".", False),
-    MOCHITEST=("mochitest", "testing/mochitest", "tests", True),
-    MOCHITEST_CHROME=("chrome", "testing/mochitest", "chrome", True),
-    WEBRTC_SIGNALLING_TEST=("steeplechase", "steeplechase", ".", True),
-    XPCSHELL_TESTS=("xpcshell", "xpcshell", ".", True),
-    PERFTESTS=("perftest", "testing/perf", "perf", True),
+    MARIONETTE=('marionette', 'marionette', '.', False),
+    MARIONETTE_UNIT=('marionette', 'marionette', '.', False),
+    MARIONETTE_WEBAPI=('marionette', 'marionette', '.', False),
+
+    MOCHITEST=('mochitest', 'testing/mochitest', 'tests', True),
+    MOCHITEST_CHROME=('chrome', 'testing/mochitest', 'chrome', True),
+    WEBRTC_SIGNALLING_TEST=('steeplechase', 'steeplechase', '.', True),
+    XPCSHELL_TESTS=('xpcshell', 'xpcshell', '.', True),
+    PERFTESTS=('perftest', 'testing/perf', 'perf', True)
 )
 
 
 
-REFTEST_FLAVORS = ("crashtest", "reftest")
-PUPPETEER_FLAVORS = ("puppeteer",)
-WEB_PLATFORM_TESTS_FLAVORS = ("web-platform-tests",)
+REFTEST_FLAVORS = ('crashtest', 'reftest')
+PUPPETEER_FLAVORS = ('puppeteer',)
+WEB_PLATFORM_TESTS_FLAVORS = ('web-platform-tests',)
 
 
 def all_test_flavors():
-    return (
-        [v[0] for v in TEST_MANIFESTS.values()]
-        + list(REFTEST_FLAVORS)
-        + list(PUPPETEER_FLAVORS)
-        + list(WEB_PLATFORM_TESTS_FLAVORS)
-    )
+    return ([v[0] for v in TEST_MANIFESTS.values()] +
+            list(REFTEST_FLAVORS) +
+            list(PUPPETEER_FLAVORS) +
+            list(WEB_PLATFORM_TESTS_FLAVORS))
 
 
 class TestInstallInfo(object):
@@ -105,11 +102,9 @@ class SupportFilesConverter(object):
     """
 
     def __init__(self):
-        self._fields = (
-            ("head", set()),
-            ("support-files", set()),
-            ("generated-files", set()),
-        )
+        self._fields = (('head', set()),
+                        ('support-files', set()),
+                        ('generated-files', set()))
 
     def convert_support_files(self, test, install_root, manifest_dir, out_dir):
         
@@ -124,7 +119,7 @@ class SupportFilesConverter(object):
         
         info = TestInstallInfo()
         for field, seen in self._fields:
-            value = test.get(field, "")
+            value = test.get(field, '')
             for pattern in value.split():
 
                 
@@ -135,34 +130,28 @@ class SupportFilesConverter(object):
                 if key in info.seen:
                     raise ValueError(
                         "%s appears multiple times in a test manifest under a %s field,"
-                        " please omit the duplicate entry." % (pattern, field)
-                    )
+                        " please omit the duplicate entry." % (pattern, field))
                 info.seen.add(key)
                 if key in seen:
                     continue
                 seen.add(key)
 
-                if field == "generated-files":
-                    info.external_installs.add(
-                        mozpath.normpath(mozpath.join(out_dir, pattern))
-                    )
+                if field == 'generated-files':
+                    info.external_installs.add(mozpath.normpath(mozpath.join(out_dir, pattern)))
                 
                 
-                elif pattern[0] == "!":
+                elif pattern[0] == '!':
                     info.deferred_installs.add(pattern)
                 
                 
-                elif "*" in pattern and field == "support-files":
+                elif '*' in pattern and field == 'support-files':
                     info.pattern_installs.append((manifest_dir, pattern, out_dir))
                 
                 
-                elif pattern[0] == "/":
-                    full = mozpath.normpath(
-                        mozpath.join(manifest_dir, mozpath.basename(pattern))
-                    )
-                    info.installs.append(
-                        (full, mozpath.join(install_root, pattern[1:]))
-                    )
+                elif pattern[0] == '/':
+                    full = mozpath.normpath(mozpath.join(manifest_dir,
+                                                         mozpath.basename(pattern)))
+                    info.installs.append((full, mozpath.join(install_root, pattern[1:])))
                 else:
                     full = mozpath.normpath(mozpath.join(manifest_dir, pattern))
                     dest_path = mozpath.join(out_dir, pattern)
@@ -177,8 +166,9 @@ class SupportFilesConverter(object):
                         
                         
                         
-                        if field == "support-files":
-                            dest_path = mozpath.join(out_dir, os.path.basename(pattern))
+                        if field == 'support-files':
+                            dest_path = mozpath.join(out_dir,
+                                                     os.path.basename(pattern))
                         
                         
                         
@@ -195,13 +185,11 @@ def install_test_files(topsrcdir, topobjdir, tests_root):
     only a few tests need to be run.
     """
 
-    manifest = InstallManifest(
-        mozpath.join(topobjdir, "_build_manifests", "install", "_test_files")
-    )
+    manifest = InstallManifest(mozpath.join(topobjdir, '_build_manifests',
+                                            'install', '_test_files'))
 
-    harness_files_manifest = mozpath.join(
-        topobjdir, "_build_manifests", "install", tests_root
-    )
+    harness_files_manifest = mozpath.join(topobjdir, '_build_manifests',
+                                          'install', tests_root)
 
     if os.path.isfile(harness_files_manifest):
         
@@ -211,24 +199,21 @@ def install_test_files(topsrcdir, topobjdir, tests_root):
 
     copier = FileCopier()
     manifest.populate_registry(copier)
-    copier.copy(mozpath.join(topobjdir, tests_root), remove_unaccounted=False)
+    copier.copy(mozpath.join(topobjdir, tests_root),
+                remove_unaccounted=False)
 
 
 
 def read_manifestparser_manifest(context, manifest_path):
     path = manifest_path.full_path
-    return manifestparser.TestManifest(
-        manifests=[path],
-        strict=True,
-        rootdir=context.config.topsrcdir,
-        finder=context._finder,
-        handle_defaults=False,
-    )
+    return manifestparser.TestManifest(manifests=[path], strict=True,
+                                       rootdir=context.config.topsrcdir,
+                                       finder=context._finder,
+                                       handle_defaults=False)
 
 
 def read_reftest_manifest(context, manifest_path):
     import reftest
-
     path = manifest_path.full_path
     manifest = reftest.ReftestManifest(finder=context._finder)
     manifest.load(path)
@@ -245,14 +230,8 @@ def read_wpt_manifest(context, paths):
         
         
         
-        paths_file = os.path.join(
-            context.config.topsrcdir,
-            "testing",
-            "web-platform",
-            "tests",
-            "tools",
-            "localpaths.py",
-        )
+        paths_file = os.path.join(context.config.topsrcdir, "testing",
+                                  "web-platform", "tests", "tools", "localpaths.py")
         _globals = {"__file__": paths_file}
         execfile(paths_file, _globals)
         import manifest as wptmanifest

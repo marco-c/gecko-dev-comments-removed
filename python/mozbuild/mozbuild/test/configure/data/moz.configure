@@ -4,86 +4,79 @@
 
 
 
-option("--enable-simple", help="Enable simple")
+option('--enable-simple', help='Enable simple')
 
 
 
-option("--enable-with-env", env="MOZ_WITH_ENV", help="Enable with env")
+option('--enable-with-env', env='MOZ_WITH_ENV', help='Enable with env')
 
 
-option("--enable-values", nargs="*", help="Enable values")
-
-
-
-
+option('--enable-values', nargs='*', help='Enable values')
 
 
 
 
 
-option("--without-thing", help="Build without thing")
 
 
 
 
-option("--with-stuff", default=False, help="Build with stuff")
+option('--without-thing', help='Build without thing')
 
 
 
-option("--option", env="MOZ_OPTION", help="Option")
 
-
-option(env="CC", nargs=1, help="C Compiler")
+option('--with-stuff', default=False, help='Build with stuff')
 
 
 
-@depends("--enable-simple")
+option('--option', env='MOZ_OPTION', help='Option')
+
+
+option(env='CC', nargs=1, help='C Compiler')
+
+
+
+@depends('--enable-simple')
 def simple(simple):
     if simple:
         return simple
 
+set_config('ENABLED_SIMPLE', simple)
 
-set_config("ENABLED_SIMPLE", simple)
 
-
-@depends("--enable-simple")
+@depends('--enable-simple')
 def simple(simple):
     return simple
 
+set_config('SIMPLE', simple)
 
-set_config("SIMPLE", simple)
-
-
-@depends("--enable-with-env")
+@depends('--enable-with-env')
 def with_env(with_env):
     return with_env
 
+set_config('WITH_ENV', with_env)
 
-set_config("WITH_ENV", with_env)
 
-
-@depends("--disable-values")
+@depends('--disable-values')
 def with_env2(values):
     return values
 
+set_config('VALUES', with_env2)
 
-set_config("VALUES", with_env2)
 
-
-@depends("CC")
+@depends('CC')
 def is_gcc(cc):
-    return cc and "gcc" in cc[0]
+    return cc and 'gcc' in cc[0]
 
-
-set_config("IS_GCC", is_gcc)
+set_config('IS_GCC', is_gcc)
 
 
 @depends(with_env2)
 def with_env3(values):
     return values
 
-
-set_config("VALUES2", with_env3)
+set_config('VALUES2', with_env3)
 
 
 
@@ -91,72 +84,59 @@ set_config("VALUES2", with_env3)
 def with_env4(values):
     return values
 
-
 @depends(with_env4)
 def with_env5(values):
     return values
 
-
-set_config("VALUES3", with_env5)
-
+set_config('VALUES3', with_env5)
 
 
-@depends("--enable-simple")
+
+@depends('--enable-simple')
 def simple(simple):
-    return "simple" if simple else "not-simple"
+    return 'simple' if simple else 'not-simple'
 
+option('--with-returned-default', default=simple, help='Returned default')
 
-option("--with-returned-default", default=simple, help="Returned default")
-
-
-@depends("--with-returned-default")
+@depends('--with-returned-default')
 def default(value):
     return value
 
+set_config('DEFAULTED', default)
 
-set_config("DEFAULTED", default)
-
-
-@depends("--enable-values")
+@depends('--enable-values')
 def choices(values):
     if len(values):
         return {
-            "alpha": ("a", "b", "c"),
-            "numeric": ("0", "1", "2"),
+            'alpha': ('a', 'b', 'c'),
+            'numeric': ('0', '1', '2'),
         }.get(values[0])
 
+option('--returned-choices', choices=choices, help='Choices')
 
-option("--returned-choices", choices=choices, help="Choices")
-
-
-@depends("--returned-choices")
+@depends('--returned-choices')
 def returned_choices(values):
     return values
 
-
-set_config("CHOICES", returned_choices)
-
+set_config('CHOICES', returned_choices)
 
 
-@depends("--without-thing", "--with-stuff", with_env4, "--option")
+
+@depends('--without-thing', '--with-stuff', with_env4, '--option')
 def remainder(*args):
     return args
 
-
-set_config("REMAINDER", remainder)
-
-
-include("included.configure")
+set_config('REMAINDER', remainder)
 
 
+include('included.configure')
 
-option("--enable-include", nargs=1, help="Include")
 
 
-@depends("--enable-include")
+option('--enable-include', nargs=1, help='Include')
+@depends('--enable-include')
 def include_path(path):
     return path[0] if path else None
-
 
 include(include_path)
 
@@ -164,42 +144,36 @@ include(include_path)
 
 
 
-option("--with-imports", nargs="?", help="Imports")
+option('--with-imports', nargs='?', help='Imports')
 
 
-@depends("--with-imports")
+@depends('--with-imports')
 def with_imports(value):
     if len(value):
-        return hasattr(os.path, "abspath")
+        return hasattr(os.path, 'abspath')
+
+set_config('HAS_ABSPATH', with_imports)
 
 
-set_config("HAS_ABSPATH", with_imports)
 
-
-
-@depends("--with-imports")
-@imports("os.path")
+@depends('--with-imports')
+@imports('os.path')
 def with_imports(value):
     if len(value):
-        return hasattr(os.path, "getatime")
+        return hasattr(os.path, 'getatime')
 
+set_config('HAS_GETATIME', with_imports)
 
-set_config("HAS_GETATIME", with_imports)
-
-
-@depends("--with-imports")
+@depends('--with-imports')
 def with_imports(value):
     if len(value):
-        return hasattr(os.path, "getatime")
+        return hasattr(os.path, 'getatime')
+
+set_config('HAS_GETATIME2', with_imports)
 
 
-set_config("HAS_GETATIME2", with_imports)
 
-
-
-indirectly_define_option("--indirect-option", help="Indirectly defined option")
-
-
-@depends("--indirect-option")
+indirectly_define_option('--indirect-option', help='Indirectly defined option')
+@depends('--indirect-option')
 def indirect_option(option):
     return option

@@ -4,11 +4,11 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Navigation")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'DOM: Navigation')
 
 EXTRA_JS_MODULES += [
-    "RemoteWebNavigation.jsm",
+    'RemoteWebNavigation.jsm',
 ]
 
-BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.ini"]
+BROWSER_CHROME_MANIFESTS += ['tests/browser/browser.ini']

@@ -4,12 +4,12 @@
 
 
 
-FINAL_LIBRARY = "mozglue"
+FINAL_LIBRARY = 'mozglue'
 
 EXPORTS.mozilla.mscom += [
-    "ProcessRuntimeShared.h",
+    'ProcessRuntimeShared.h',
 ]
 
 UNIFIED_SOURCES += [
-    "ProcessRuntimeShared.cpp",
+    'ProcessRuntimeShared.cpp',
 ]

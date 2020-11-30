@@ -5,11 +5,13 @@
 
 
 UNIFIED_SOURCES += [
-    "TestCrashThreadAnnotation.cpp",
+    'TestCrashThreadAnnotation.cpp',
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
-LOCAL_INCLUDES += ["../../"]
+LOCAL_INCLUDES += [
+    '../../'
+]
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'

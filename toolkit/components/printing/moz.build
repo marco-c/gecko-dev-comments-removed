@@ -4,9 +4,11 @@
 
 
 
-JAR_MANIFESTS += ["jar.mn"]
+JAR_MANIFESTS += ['jar.mn']
 
-BROWSER_CHROME_MANIFESTS += ["tests/browser.ini"]
+BROWSER_CHROME_MANIFESTS += [
+    'tests/browser.ini'
+]
 
-with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "Printing")
+with Files('**'):
+    BUG_COMPONENT = ('Toolkit', 'Printing')

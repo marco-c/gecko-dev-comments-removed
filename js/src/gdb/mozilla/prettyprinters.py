@@ -20,7 +20,7 @@ def check_for_reused_pretty_printer(fn):
     
     
     
-    if hasattr(fn, "enabled"):
+    if hasattr(fn, 'enabled'):
         raise RuntimeError("pretty-printer function %r registered more than once" % fn)
 
 
@@ -37,7 +37,6 @@ def pretty_printer(type_name):
         add_to_subprinter_list(fn, type_name)
         printers_by_tag[type_name] = fn
         return fn
-
     return add
 
 
@@ -55,7 +54,6 @@ def ptr_pretty_printer(type_name):
         add_to_subprinter_list(fn, "ptr-to-" + type_name)
         ptr_printers_by_tag[type_name] = fn
         return fn
-
     return add
 
 
@@ -73,7 +71,6 @@ def ref_pretty_printer(type_name):
         add_to_subprinter_list(fn, "ref-to-" + type_name)
         ref_printers_by_tag[type_name] = fn
         return fn
-
     return add
 
 
@@ -88,10 +85,9 @@ template_printers_by_tag = {}
 def template_pretty_printer(template_name):
     def add(fn):
         check_for_reused_pretty_printer(fn)
-        add_to_subprinter_list(fn, "instantiations-of-" + template_name)
+        add_to_subprinter_list(fn, 'instantiations-of-' + template_name)
         template_printers_by_tag[template_name] = fn
         return fn
-
     return add
 
 
@@ -114,9 +110,7 @@ def pretty_printer_for_regexp(pattern, name):
         add_to_subprinter_list(fn, name)
         printers_by_regexp.append((compiled, fn))
         return fn
-
     return add
-
 
 
 
@@ -175,17 +169,14 @@ def add_to_subprinter_list(subprinter, name):
 
 
 
-
 def remove_from_subprinter_list(subprinter):
     subprinters.remove(subprinter)
 
 
 
 
-
 class NotSpiderMonkeyObjfileError(TypeError):
     pass
-
 
 
 
@@ -211,13 +202,13 @@ class TypeCache(object):
         
         
         
-        self.void_t = gdb.lookup_type("void")
+        self.void_t = gdb.lookup_type('void')
         self.void_ptr_t = self.void_t.pointer()
-        self.uintptr_t = gdb.lookup_type("uintptr_t")
+        self.uintptr_t = gdb.lookup_type('uintptr_t')
         try:
-            self.JSString_ptr_t = gdb.lookup_type("JSString").pointer()
-            self.JSSymbol_ptr_t = gdb.lookup_type("JS::Symbol").pointer()
-            self.JSObject_ptr_t = gdb.lookup_type("JSObject").pointer()
+            self.JSString_ptr_t = gdb.lookup_type('JSString').pointer()
+            self.JSSymbol_ptr_t = gdb.lookup_type('JS::Symbol').pointer()
+            self.JSObject_ptr_t = gdb.lookup_type('JSObject').pointer()
         except gdb.error:
             raise NotSpiderMonkeyObjfileError
 
@@ -229,7 +220,6 @@ class TypeCache(object):
         self.mod_JS_Value = None
         self.mod_ExecutableAllocator = None
         self.mod_IonGraph = None
-
 
 
 
@@ -286,17 +276,14 @@ def is_struct_or_union_or_enum(t):
 
 
 
-
 def lookup_for_objfile(objfile):
     
     try:
         cache = TypeCache(objfile)
     except NotSpiderMonkeyObjfileError:
         if gdb.parameter("verbose"):
-            gdb.write(
-                "objfile '%s' has no SpiderMonkey code; not registering pretty-printers\n"
-                % (objfile.filename,)
-            )
+            gdb.write("objfile '%s' has no SpiderMonkey code; not registering pretty-printers\n"
+                      % (objfile.filename,))
         return None
 
     
@@ -385,7 +372,6 @@ def lookup_for_objfile(objfile):
 
 
 
-
 class Pointer(object):
     def __new__(cls, value, cache):
         
@@ -399,19 +385,19 @@ class Pointer(object):
 
     def to_string(self):
         
-        assert not hasattr(self, "display_hint") or self.display_hint() != "string"
+        assert not hasattr(self, 'display_hint') or self.display_hint() != 'string'
         concrete_type = self.value.type.strip_typedefs()
         if concrete_type.code == gdb.TYPE_CODE_PTR:
             address = self.value.cast(self.cache.void_ptr_t)
         elif concrete_type.code == gdb.TYPE_CODE_REF:
-            address = "@" + str(self.value.address.cast(self.cache.void_ptr_t))
+            address = '@' + str(self.value.address.cast(self.cache.void_ptr_t))
         else:
             assert not "mozilla.prettyprinters.Pointer applied to bad value type"
         try:
             summary = self.summary()
         except gdb.MemoryError as r:
             summary = str(r)
-        v = "(%s) %s %s" % (self.value.type, address, summary)
+        v = '(%s) %s %s' % (self.value.type, address, summary)
         return v
 
     def summary(self):
@@ -433,14 +419,8 @@ def enum_value(t, name):
     f = t[name]
     
     if not field_enum_value:
-        if hasattr(f, "enumval"):
-
-            def field_enum_value(f):
-                return f.enumval
-
+        if hasattr(f, 'enumval'):
+            def field_enum_value(f): return f.enumval
         else:
-
-            def field_enum_value(f):
-                return f.bitpos
-
+            def field_enum_value(f): return f.bitpos
     return field_enum_value(f)

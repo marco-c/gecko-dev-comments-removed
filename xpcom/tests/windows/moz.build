@@ -5,12 +5,12 @@
 
 
 UNIFIED_SOURCES += [
-    "TestCOM.cpp",
-    "TestNtPathToDosPath.cpp",
+    'TestCOM.cpp',
+    'TestNtPathToDosPath.cpp',
 ]
 
 OS_LIBS += [
-    "mpr",
+    'mpr',
 ]
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'

@@ -3,114 +3,114 @@
 
 
 
-include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
+include('/dom/media/webrtc/third_party_build/webrtc.mozbuild')
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "WebRTC: Audio/Video")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'WebRTC: Audio/Video')
 
-with Files("PeerIdentity.*"):
-    BUG_COMPONENT = ("Core", "WebRTC: Signaling")
+with Files('PeerIdentity.*'):
+    BUG_COMPONENT = ('Core', 'WebRTC: Signaling')
 
-with Files("common/**"):
-    BUG_COMPONENT = ("CORE", "WebRTC: Signaling")
-with Files("jsep/**"):
-    BUG_COMPONENT = ("CORE", "WebRTC: Signaling")
-with Files("libwebrtcglue/**"):
-    BUG_COMPONENT = ("CORE", "WebRTC: Signaling")
-with Files("transportbridge/**"):
-    BUG_COMPONENT = ("CORE", "WebRTC: Signaling")
-with Files("jsapi/**"):
-    BUG_COMPONENT = ("CORE", "WebRTC: Signaling")
-with Files("sdp/**"):
-    BUG_COMPONENT = ("CORE", "WebRTC: Signaling")
+with Files('common/**'):
+    BUG_COMPONENT = ('CORE', 'WebRTC: Signaling')
+with Files('jsep/**'):
+    BUG_COMPONENT = ('CORE', 'WebRTC: Signaling')
+with Files('libwebrtcglue/**'):
+    BUG_COMPONENT = ('CORE', 'WebRTC: Signaling')
+with Files('transportbridge/**'):
+    BUG_COMPONENT = ('CORE', 'WebRTC: Signaling')
+with Files('jsapi/**'):
+    BUG_COMPONENT = ('CORE', 'WebRTC: Signaling')
+with Files('sdp/**'):
+    BUG_COMPONENT = ('CORE', 'WebRTC: Signaling')
 
 EXPORTS += [
-    "CubebDeviceEnumerator.h",
-    "MediaEngine.h",
-    "MediaEngineDefault.h",
-    "MediaEnginePrefs.h",
-    "MediaEngineSource.h",
-    "MediaTrackConstraints.h",
-    "SineWaveGenerator.h",
+    'CubebDeviceEnumerator.h',
+    'MediaEngine.h',
+    'MediaEngineDefault.h',
+    'MediaEnginePrefs.h',
+    'MediaEngineSource.h',
+    'MediaTrackConstraints.h',
+    'SineWaveGenerator.h',
 ]
 
 SOURCES += [
-    "CubebDeviceEnumerator.cpp",
+    'CubebDeviceEnumerator.cpp',
 ]
 
-if CONFIG["MOZ_WEBRTC"]:
+if CONFIG['MOZ_WEBRTC']:
     EXPORTS += [
-        "MediaEngineRemoteVideoSource.h",
-        "MediaEngineWebRTC.h",
-        "MediaEngineWebRTCAudio.h",
+        'MediaEngineRemoteVideoSource.h',
+        'MediaEngineWebRTC.h',
+        'MediaEngineWebRTCAudio.h',
     ]
-    EXPORTS.mozilla.dom += ["RTCIdentityProviderRegistrar.h"]
+    EXPORTS.mozilla.dom += [ 'RTCIdentityProviderRegistrar.h' ]
     UNIFIED_SOURCES += [
-        "MediaEngineRemoteVideoSource.cpp",
-        "MediaEngineWebRTCAudio.cpp",
-        "RTCCertificate.cpp",
-        "RTCIdentityProviderRegistrar.cpp",
+        'MediaEngineRemoteVideoSource.cpp',
+        'MediaEngineWebRTCAudio.cpp',
+        'RTCCertificate.cpp',
+        'RTCIdentityProviderRegistrar.cpp',
     ]
     
     SOURCES += [
-        "MediaEngineWebRTC.cpp",
+        'MediaEngineWebRTC.cpp',
     ]
     LOCAL_INCLUDES += [
-        "..",
-        "/dom/base",
-        "/dom/media",
-        "/dom/media/webrtc/common",
-        "/dom/media/webrtc/common/browser_logging",
-        "/media/libyuv/libyuv/include",
-        "/third_party/libwebrtc",
-        "/third_party/libwebrtc/webrtc",
+        '..',
+        '/dom/base',
+        '/dom/media',
+        '/dom/media/webrtc/common',
+        '/dom/media/webrtc/common/browser_logging',
+        '/media/libyuv/libyuv/include',
+        '/third_party/libwebrtc',
+        '/third_party/libwebrtc/webrtc',
     ]
 
-if CONFIG["MOZ_WEBRTC_SIGNALING"]:
+if CONFIG['MOZ_WEBRTC_SIGNALING']:
     DIRS += [
-        "common",
-        "jsapi",
-        "jsep",
-        "libwebrtcglue",
-        "sdp",
-        "third_party_build",
-        "transportbridge",
+        'common',
+        'jsapi',
+        'jsep',
+        'libwebrtcglue',
+        'sdp',
+        'third_party_build',
+        'transportbridge',
     ]
 
     
-    if CONFIG["CC_TYPE"] == "clang-cl":
-        CXXFLAGS += ["-Wno-invalid-source-encoding"]
+    if CONFIG['CC_TYPE'] == 'clang-cl':
+        CXXFLAGS += ['-Wno-invalid-source-encoding']
 
 
 PREPROCESSED_IPDL_SOURCES += [
-    "PMediaTransport.ipdl",
-    "PWebrtcGlobal.ipdl",
+    'PMediaTransport.ipdl',
+    'PWebrtcGlobal.ipdl',
 ]
 
 UNIFIED_SOURCES += [
-    "MediaEngineDefault.cpp",
-    "MediaEngineSource.cpp",
-    "MediaTrackConstraints.cpp",
-    "PeerIdentity.cpp",
+    'MediaEngineDefault.cpp',
+    'MediaEngineSource.cpp',
+    'MediaTrackConstraints.cpp',
+    'PeerIdentity.cpp',
 ]
 
 EXPORTS.mozilla += [
-    "PeerIdentity.h",
+    'PeerIdentity.h',
 ]
 EXPORTS.mozilla.dom += [
-    "RTCCertificate.h",
+    'RTCCertificate.h',
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
 
 
 
 
 CXXFLAGS += [
-    "-Wno-error=attributes",
-    "-Wno-error=shadow",
+    '-Wno-error=attributes',
+    '-Wno-error=shadow',
 ]
 
-DEFINES["TRACING"] = True
-FINAL_LIBRARY = "xul"
+DEFINES['TRACING'] = True
+FINAL_LIBRARY = 'xul'

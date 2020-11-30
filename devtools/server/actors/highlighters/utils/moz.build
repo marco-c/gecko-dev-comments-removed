@@ -4,4 +4,8 @@
 
 
 
-DevToolsModules("accessibility.js", "canvas.js", "markup.js")
+DevToolsModules(
+    'accessibility.js',
+    'canvas.js',
+    'markup.js'
+)

@@ -4,13 +4,13 @@
 
 
 
-Library("fuzzer-runner")
+Library('fuzzer-runner')
 
 SOURCES += [
-    "FuzzerRunner.cpp",
+    'FuzzerRunner.cpp',
 ]
 EXPORTS += [
-    "FuzzerRunner.h",
+    'FuzzerRunner.h',
 ]
 
 FINAL_LIBRARY = "xul"

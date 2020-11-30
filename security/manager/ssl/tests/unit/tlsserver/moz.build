@@ -5,4 +5,4 @@
 
 
 
-DIRS += ["lib", "cmd"]
+DIRS += ['lib', 'cmd']

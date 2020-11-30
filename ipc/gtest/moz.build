@@ -4,13 +4,13 @@
 
 
 
-Library("ipctest")
+Library('ipctest')
 
 SOURCES += [
-    "TestLogging.cpp",
-    "TestSharedMemory.cpp",
+    'TestLogging.cpp',
+    'TestSharedMemory.cpp',
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'

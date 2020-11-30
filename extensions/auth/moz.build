@@ -5,35 +5,35 @@
 
 
 UNIFIED_SOURCES += [
-    "nsAuthGSSAPI.cpp",
+    'nsAuthGSSAPI.cpp',
 ]
 
 SOURCES += [
-    "nsAuthSASL.cpp",
-    "nsHttpNegotiateAuth.cpp",  
-    "nsIAuthModule.cpp",  
+    'nsAuthSASL.cpp',
+    'nsHttpNegotiateAuth.cpp', 
+    'nsIAuthModule.cpp',       
 ]
 
-if CONFIG["OS_ARCH"] == "WINNT":
+if CONFIG['OS_ARCH'] == 'WINNT':
     SOURCES += [
-        "nsAuthSSPI.cpp",
+        'nsAuthSSPI.cpp',
     ]
-    DEFINES["USE_SSPI"] = True
+    DEFINES['USE_SSPI'] = True
 else:
     UNIFIED_SOURCES += [
-        "nsAuthSambaNTLM.cpp",
+        'nsAuthSambaNTLM.cpp',
     ]
 
 LOCAL_INCLUDES += [
-    "/netwerk/dns",  
-    "/security/manager/ssl",
+    '/netwerk/dns', 
+    '/security/manager/ssl',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "Networking")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'Networking')
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+include('/tools/fuzzing/libfuzzer-config.mozbuild')
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')

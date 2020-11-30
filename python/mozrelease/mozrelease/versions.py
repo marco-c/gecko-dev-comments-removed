@@ -19,46 +19,42 @@ def _cmp(cls, first, other):
     return cls._cmp(first, other)
 
 
-class MozillaVersionCompareMixin:
+class MozillaVersionCompareMixin():
     def __cmp__(self, other):
         
         raise AssertionError()
 
     def _cmp(self, other):
         has_esr = set()
-        if isinstance(other, LooseModernMozillaVersion) and str(other).endswith("esr"):
+        if isinstance(other, LooseModernMozillaVersion) and str(other).endswith('esr'):
             
             
-            has_esr.add("other")
+            has_esr.add('other')
             other = MozillaVersion(str(other)[:-3])  
-        if isinstance(self, LooseModernMozillaVersion) and str(self).endswith("esr"):
+        if isinstance(self, LooseModernMozillaVersion) and str(self).endswith('esr'):
             
             
-            has_esr.add("self")
+            has_esr.add('self')
             self = MozillaVersion(str(self)[:-3])  
-        if isinstance(other, LooseModernMozillaVersion) or isinstance(
-            self, LooseModernMozillaVersion
-        ):
+        if isinstance(other, LooseModernMozillaVersion) or \
+                isinstance(self, LooseModernMozillaVersion):
             
             
-            val = _cmp(
-                LooseVersion,
-                LooseModernMozillaVersion(str(self)),
-                LooseModernMozillaVersion(str(other)),
-            )
+            val = _cmp(LooseVersion,
+                       LooseModernMozillaVersion(str(self)),
+                       LooseModernMozillaVersion(str(other)))
         else:
             
             val = _cmp(StrictVersion, self, other)
-        if has_esr.isdisjoint(set(["other", "self"])) or has_esr.issuperset(
-            set(["other", "self"])
-        ):
+        if has_esr.isdisjoint(set(['other', 'self'])) or \
+                has_esr.issuperset(set(['other', 'self'])):
             
             return val
         elif val != 0:
             
             
             return val
-        elif "other" in has_esr:
+        elif 'other' in has_esr:
             return -1  
         return 1  
 
@@ -81,38 +77,29 @@ class MozillaVersionCompareMixin:
 
 class ModernMozillaVersion(MozillaVersionCompareMixin, StrictVersion):
     """A version class that is slightly less restrictive than StrictVersion.
-    Instead of just allowing "a" or "b" as prerelease tags, it allows any
-    alpha. This allows us to support the once-shipped "3.6.3plugin1" and
-    similar versions."""
-
-    version_re = re.compile(
-        r"""^(\d+) \. (\d+) (\. (\d+))?
-                                ([a-zA-Z]+(\d+))?$""",
-        re.VERBOSE,
-    )
+       Instead of just allowing "a" or "b" as prerelease tags, it allows any
+       alpha. This allows us to support the once-shipped "3.6.3plugin1" and
+       similar versions."""
+    version_re = re.compile(r"""^(\d+) \. (\d+) (\. (\d+))?
+                                ([a-zA-Z]+(\d+))?$""", re.VERBOSE)
 
 
 class AncientMozillaVersion(MozillaVersionCompareMixin, StrictVersion):
     """A version class that is slightly less restrictive than StrictVersion.
-    Instead of just allowing "a" or "b" as prerelease tags, it allows any
-    alpha. This allows us to support the once-shipped "3.6.3plugin1" and
-    similar versions.
-    It also supports versions w.x.y.z by transmuting to w.x.z, which
-    is useful for versions like 1.5.0.x and 2.0.0.y"""
-
-    version_re = re.compile(
-        r"""^(\d+) \. (\d+) \. \d (\. (\d+))
-                                ([a-zA-Z]+(\d+))?$""",
-        re.VERBOSE,
-    )
+       Instead of just allowing "a" or "b" as prerelease tags, it allows any
+       alpha. This allows us to support the once-shipped "3.6.3plugin1" and
+       similar versions.
+       It also supports versions w.x.y.z by transmuting to w.x.z, which
+       is useful for versions like 1.5.0.x and 2.0.0.y"""
+    version_re = re.compile(r"""^(\d+) \. (\d+) \. \d (\. (\d+))
+                                ([a-zA-Z]+(\d+))?$""", re.VERBOSE)
 
 
 class LooseModernMozillaVersion(MozillaVersionCompareMixin, LooseVersion):
     """A version class that is more restrictive than LooseVersion.
-    This class reduces the valid strings to "esr", "a", "b" and "rc" in order
-    to support esr. StrictVersion requires a trailing number after all strings."""
-
-    component_re = re.compile(r"(\d+ | a | b | rc | esr | \.)", re.VERBOSE)
+       This class reduces the valid strings to "esr", "a", "b" and "rc" in order
+       to support esr. StrictVersion requires a trailing number after all strings."""
+    component_re = re.compile(r'(\d+ | a | b | rc | esr | \.)', re.VERBOSE)
 
     def __repr__(self):
         return "LooseModernMozillaVersion ('%s')" % str(self)
@@ -124,7 +111,7 @@ def MozillaVersion(version):
     except ValueError:
         pass
     try:
-        if version.count(".") == 3:
+        if version.count('.') == 3:
             return AncientMozillaVersion(version)
     except ValueError:
         pass
@@ -136,7 +123,7 @@ def MozillaVersion(version):
 
 
 def getPrettyVersion(version):
-    version = re.sub(r"a([0-9]+)$", r" Alpha \1", version)
-    version = re.sub(r"b([0-9]+)$", r" Beta \1", version)
-    version = re.sub(r"rc([0-9]+)$", r" RC \1", version)
+    version = re.sub(r'a([0-9]+)$', r' Alpha \1', version)
+    version = re.sub(r'b([0-9]+)$', r' Beta \1', version)
+    version = re.sub(r'rc([0-9]+)$', r' RC \1', version)
     return version

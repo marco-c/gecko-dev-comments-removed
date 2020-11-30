@@ -4,45 +4,48 @@
 
 
 
-FINAL_LIBRARY = "js"
+FINAL_LIBRARY = 'js'
 
 
-LOCAL_INCLUDES += ["!..", ".."]
+LOCAL_INCLUDES += [
+    '!..',
+    '..'
+]
 
-include("../js-config.mozbuild")
-include("../js-cxxflags.mozbuild")
+include('../js-config.mozbuild')
+include('../js-cxxflags.mozbuild')
 
-if CONFIG["ENABLE_WASM_CRANELIFT"]:
+if CONFIG['ENABLE_WASM_CRANELIFT']:
     UNIFIED_SOURCES += [
-        "WasmCraneliftCompile.cpp",
+        'WasmCraneliftCompile.cpp',
     ]
 
 UNIFIED_SOURCES += [
-    "AsmJS.cpp",
-    "TypedObject.cpp",
-    "WasmBaselineCompile.cpp",
-    "WasmBuiltins.cpp",
-    "WasmCode.cpp",
-    "WasmCompile.cpp",
-    "WasmDebug.cpp",
-    "WasmFrameIter.cpp",
-    "WasmGC.cpp",
-    "WasmGenerator.cpp",
-    "WasmInstance.cpp",
-    "WasmIonCompile.cpp",
-    "WasmJS.cpp",
-    "WasmModule.cpp",
-    "WasmOpIter.cpp",
-    "WasmProcess.cpp",
-    "WasmRealm.cpp",
-    "WasmSignalHandlers.cpp",
-    "WasmStubs.cpp",
-    "WasmTable.cpp",
-    "WasmTypes.cpp",
-    "WasmValidate.cpp",
+    'AsmJS.cpp',
+    'TypedObject.cpp',
+    'WasmBaselineCompile.cpp',
+    'WasmBuiltins.cpp',
+    'WasmCode.cpp',
+    'WasmCompile.cpp',
+    'WasmDebug.cpp',
+    'WasmFrameIter.cpp',
+    'WasmGC.cpp',
+    'WasmGenerator.cpp',
+    'WasmInstance.cpp',
+    'WasmIonCompile.cpp',
+    'WasmJS.cpp',
+    'WasmModule.cpp',
+    'WasmOpIter.cpp',
+    'WasmProcess.cpp',
+    'WasmRealm.cpp',
+    'WasmSignalHandlers.cpp',
+    'WasmStubs.cpp',
+    'WasmTable.cpp',
+    'WasmTypes.cpp',
+    'WasmValidate.cpp'
 ]
 
 
 
-if CONFIG["FUZZING_INTERFACES"] and CONFIG["LIBFUZZER"]:
-    include("/tools/fuzzing/libfuzzer-config.mozbuild")
+if CONFIG['FUZZING_INTERFACES'] and CONFIG['LIBFUZZER']:
+    include('/tools/fuzzing/libfuzzer-config.mozbuild')

@@ -2,5 +2,5 @@
 
 
 
-GENERATED_FILES += ["abc.ini"]
-LOCALIZED_FILES += ["!abc.ini"]
+GENERATED_FILES += [ 'abc.ini' ]
+LOCALIZED_FILES += [ '!abc.ini' ]

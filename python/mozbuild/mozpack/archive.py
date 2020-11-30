@@ -10,8 +10,7 @@ import stat
 import tarfile
 
 from .files import (
-    BaseFile,
-    File,
+    BaseFile, File,
 )
 
 
@@ -33,9 +32,8 @@ def create_tar_from_files(fp, files):
     """
     
     
-    with tarfile.open(
-        name="", mode="w", fileobj=fp, dereference=True, format=tarfile.GNU_FORMAT
-    ) as tf:
+    with tarfile.open(name='', mode='w', fileobj=fp, dereference=True,
+                      format=tarfile.GNU_FORMAT) as tf:
         for archive_path, f in sorted(files.items()):
             if not isinstance(f, BaseFile):
                 f = File(f)
@@ -45,20 +43,21 @@ def create_tar_from_files(fp, files):
             ti.type = tarfile.REGTYPE
 
             if not ti.isreg():
-                raise ValueError("not a regular file: %s" % f)
+                raise ValueError('not a regular file: %s' % f)
 
             
             
             
             
             if ti.mode & (stat.S_ISUID | stat.S_ISGID):
-                raise ValueError("cannot add file with setuid or setgid set: " "%s" % f)
+                raise ValueError('cannot add file with setuid or setgid set: '
+                                 '%s' % f)
 
             
             ti.uid = 0
             ti.gid = 0
-            ti.uname = ""
-            ti.gname = ""
+            ti.uname = ''
+            ti.gname = ''
 
             
             ti.mtime = DEFAULT_MTIME
@@ -80,13 +79,8 @@ def create_tar_gz_from_files(fp, files, filename=None, compresslevel=9):
     """
     
     
-    gf = gzip.GzipFile(
-        filename=filename or "",
-        mode="wb",
-        fileobj=fp,
-        compresslevel=compresslevel,
-        mtime=DEFAULT_MTIME,
-    )
+    gf = gzip.GzipFile(filename=filename or '', mode='wb', fileobj=fp,
+                       compresslevel=compresslevel, mtime=DEFAULT_MTIME)
     with gf:
         create_tar_from_files(gf, files)
 

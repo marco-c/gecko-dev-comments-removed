@@ -35,17 +35,15 @@ _log = logging.getLogger()
 resetGlobalLog(sys.stdout)
 
 
-fennecLogcatFilters = [
-    "The character encoding of the HTML document was not declared",
-    "Use of Mutation Events is deprecated. Use MutationObserver instead.",
-    "Unexpected value from nativeGetEnabledTags: 0",
-]
+fennecLogcatFilters = ["The character encoding of the HTML document was not declared",
+                       "Use of Mutation Events is deprecated. Use MutationObserver instead.",
+                       "Unexpected value from nativeGetEnabledTags: 0"]
 
 
 class RemoteAutomation(object):
-    def __init__(
-        self, device, appName="", remoteProfile=None, remoteLog=None, processArgs=None
-    ):
+
+    def __init__(self, device, appName='', remoteProfile=None, remoteLog=None,
+                 processArgs=None):
         super(RemoteAutomation, self).__init__()
         self.device = device
         self.appName = appName
@@ -55,22 +53,9 @@ class RemoteAutomation(object):
         self.lastTestSeen = "remoteautomation.py"
         self.log = _log
 
-    def runApp(
-        self,
-        testURL,
-        env,
-        app,
-        profileDir,
-        extraArgs,
-        utilityPath=None,
-        xrePath=None,
-        debuggerInfo=None,
-        symbolsPath=None,
-        timeout=-1,
-        maxTime=None,
-        e10s=True,
-        **kwargs
-    ):
+    def runApp(self, testURL, env, app, profileDir, extraArgs,
+               utilityPath=None, xrePath=None, debuggerInfo=None, symbolsPath=None,
+               timeout=-1, maxTime=None, e10s=True, **kwargs):
         """
         Run the app, log the duration it took to execute, return the status code.
         Kills the app if it runs for longer than |maxTime| seconds, or outputs nothing
@@ -84,26 +69,19 @@ class RemoteAutomation(object):
             timeout = self.DEFAULT_TIMEOUT
         self.utilityPath = utilityPath
 
-        cmd, args = self.buildCommandLine(
-            app, debuggerInfo, profileDir, testURL, extraArgs
-        )
+        cmd, args = self.buildCommandLine(app, debuggerInfo, profileDir, testURL, extraArgs)
         startTime = datetime.datetime.now()
 
         self.lastTestSeen = "remoteautomation.py"
-        self.launchApp(
-            [cmd] + args,
-            env=self.environment(env=env, crashreporter=not debuggerInfo),
-            e10s=e10s,
-            **self.processArgs
-        )
+        self.launchApp([cmd] + args,
+                       env=self.environment(env=env, crashreporter=not debuggerInfo),
+                       e10s=e10s, **self.processArgs)
 
         self.log.info("remoteautomation.py | Application pid: %d" % self.pid)
 
         status = self.waitForFinish(timeout, maxTime)
-        self.log.info(
-            "remoteautomation.py | Application ran for: %s"
-            % str(datetime.datetime.now() - startTime)
-        )
+        self.log.info("remoteautomation.py | Application ran for: %s" %
+                      str(datetime.datetime.now() - startTime))
 
         crashed = self.checkForCrashes(symbolsPath)
         if crashed:
@@ -119,36 +97,36 @@ class RemoteAutomation(object):
             env = {}
 
         if crashreporter:
-            env["MOZ_CRASHREPORTER_NO_REPORT"] = "1"
-            env["MOZ_CRASHREPORTER"] = "1"
-            env["MOZ_CRASHREPORTER_SHUTDOWN"] = "1"
+            env['MOZ_CRASHREPORTER_NO_REPORT'] = '1'
+            env['MOZ_CRASHREPORTER'] = '1'
+            env['MOZ_CRASHREPORTER_SHUTDOWN'] = '1'
         else:
-            env["MOZ_CRASHREPORTER_DISABLE"] = "1"
+            env['MOZ_CRASHREPORTER_DISABLE'] = '1'
 
         
         
         
         
-        env.setdefault("MOZ_DISABLE_NONLOCAL_CONNECTIONS", "1")
+        env.setdefault('MOZ_DISABLE_NONLOCAL_CONNECTIONS', '1')
 
         
         
         
         
         
-        env.setdefault("MOZ_IN_AUTOMATION", "1")
+        env.setdefault('MOZ_IN_AUTOMATION', '1')
 
         
-        env.setdefault("R_LOG_LEVEL", "6")
-        env.setdefault("R_LOG_DESTINATION", "stderr")
-        env.setdefault("R_LOG_VERBOSE", "1")
+        env.setdefault('R_LOG_LEVEL', '6')
+        env.setdefault('R_LOG_DESTINATION', 'stderr')
+        env.setdefault('R_LOG_VERBOSE', '1')
 
         return env
 
     def waitForFinish(self, timeout, maxTime):
-        """Wait for tests to finish.
-        If maxTime seconds elapse or no output is detected for timeout
-        seconds, kill the process and fail the test.
+        """ Wait for tests to finish.
+            If maxTime seconds elapse or no output is detected for timeout
+            seconds, kill the process and fail the test.
         """
         
         status = self.wait(timeout=maxTime, noOutputTimeout=timeout)
@@ -159,44 +137,38 @@ class RemoteAutomation(object):
             self.kill(True)
         if status == 1:
             if maxTime:
-                self.log.error(
-                    "TEST-UNEXPECTED-FAIL | %s | "
-                    "application ran for longer than allowed maximum time "
-                    "of %s seconds" % (self.lastTestSeen, maxTime)
-                )
+                self.log.error("TEST-UNEXPECTED-FAIL | %s | "
+                               "application ran for longer than allowed maximum time "
+                               "of %s seconds" % (self.lastTestSeen, maxTime))
             else:
-                self.log.error(
-                    "TEST-UNEXPECTED-FAIL | %s | "
-                    "application ran for longer than allowed maximum time"
-                    % self.lastTestSeen
-                )
+                self.log.error("TEST-UNEXPECTED-FAIL | %s | "
+                               "application ran for longer than allowed maximum time"
+                               % self.lastTestSeen)
         if status == 2:
-            self.log.error(
-                "TEST-UNEXPECTED-FAIL | %s | "
-                "application timed out after %d seconds with no output"
-                % (self.lastTestSeen, int(timeout))
-            )
+            self.log.error("TEST-UNEXPECTED-FAIL | %s | "
+                           "application timed out after %d seconds with no output"
+                           % (self.lastTestSeen, int(timeout)))
 
         return status
 
     def checkForCrashes(self, symbolsPath):
         try:
             dumpDir = tempfile.mkdtemp()
-            remoteCrashDir = posixpath.join(self.remoteProfile, "minidumps")
+            remoteCrashDir = posixpath.join(self.remoteProfile, 'minidumps')
             if not self.device.is_dir(remoteCrashDir):
                 return False
             self.device.pull(remoteCrashDir, dumpDir)
 
             logger = get_default_logger()
             crashed = mozcrash.log_crashes(
-                logger, dumpDir, symbolsPath, test=self.lastTestSeen
-            )
+                logger, dumpDir, symbolsPath, test=self.lastTestSeen)
 
         finally:
             try:
                 shutil.rmtree(dumpDir)
             except Exception as e:
-                print("WARNING: unable to remove directory %s: %s" % (dumpDir, str(e)))
+                print("WARNING: unable to remove directory %s: %s" % (
+                    dumpDir, str(e)))
         return crashed
 
     def buildCommandLine(self, app, debuggerInfo, profileDir, testURL, extraArgs):
@@ -206,7 +178,7 @@ class RemoteAutomation(object):
 
         
         
-        if app == "am" and extraArgs[0] in ("instrument", "start"):
+        if app == "am" and extraArgs[0] in ('instrument', 'start'):
             return app, extraArgs
 
         cmd = os.path.abspath(app)
@@ -226,7 +198,7 @@ class RemoteAutomation(object):
         args.extend(extraArgs)
 
         try:
-            args.remove("-foreground")
+            args.remove('-foreground')
         except Exception:
             pass
         return app, args
@@ -236,19 +208,17 @@ class RemoteAutomation(object):
         self.stdoutlen = 0
 
         if self.appName and self.device.process_exist(self.appName):
-            print(
-                "remoteautomation.py %s is already running. Stopping..." % self.appName
-            )
+            print("remoteautomation.py %s is already running. Stopping..." % self.appName)
             self.device.stop_application(self.appName)
 
         self.counts = counts
         if self.counts is not None:
-            self.counts["pass"] = 0
-            self.counts["fail"] = 0
-            self.counts["todo"] = 0
+            self.counts['pass'] = 0
+            self.counts['fail'] = 0
+            self.counts['todo'] = 0
 
-        if cmd[0] == "am":
-            cmd = " ".join(cmd)
+        if cmd[0] == 'am':
+            cmd = ' '.join(cmd)
             self.procName = self.appName
             if not self.device.shell_bool(cmd):
                 print("remoteautomation.py failed to launch %s" % cmd)
@@ -258,25 +228,17 @@ class RemoteAutomation(object):
             if args[0] == self.appName:
                 args = args[1:]
             url = args[-1:][0]
-            if url.startswith("/"):
+            if url.startswith('/'):
                 
                 url = None
             else:
                 args = args[:-1]
-            if "geckoview" in self.appName:
+            if 'geckoview' in self.appName:
                 activity = "TestRunnerActivity"
-                self.device.launch_activity(
-                    self.appName,
-                    activity_name=activity,
-                    e10s=e10s,
-                    moz_env=env,
-                    extra_args=args,
-                    url=url,
-                )
+                self.device.launch_activity(self.appName, activity_name=activity, e10s=e10s,
+                                            moz_env=env, extra_args=args, url=url)
             else:
-                self.device.launch_fennec(
-                    self.appName, moz_env=env, extra_args=args, url=url
-                )
+                self.device.launch_fennec(self.appName, moz_env=env, extra_args=args, url=url)
 
         
         
@@ -306,15 +268,13 @@ class RemoteAutomation(object):
         except ADBTimeoutError:
             raise
         except Exception as e:
-            self.log.exception(
-                "remoteautomation.py | exception reading log: %s" % str(e)
-            )
+            self.log.exception("remoteautomation.py | exception reading log: %s" % str(e))
             return False
         if not newLogContent:
             return False
 
         self.stdoutlen += len(newLogContent)
-        newLogContent = six.ensure_str(newLogContent, errors="replace")
+        newLogContent = six.ensure_str(newLogContent, errors='replace')
 
         if self.messageLogger is None:
             testStartFilenames = re.findall(r"TEST-START \| ([^\s]*)", newLogContent)
@@ -324,11 +284,11 @@ class RemoteAutomation(object):
             return True
 
         self.logBuffer += newLogContent
-        lines = self.logBuffer.split("\n")
+        lines = self.logBuffer.split('\n')
         lines = [l for l in lines if l]
 
         if lines:
-            if self.logBuffer.endswith("\n"):
+            if self.logBuffer.endswith('\n'):
                 
                 self.logBuffer = ""
             else:
@@ -343,35 +303,33 @@ class RemoteAutomation(object):
             
             if isinstance(line, six.text_type):
                 
-                parsed_messages = self.messageLogger.write(
-                    line.encode("UTF-8", "replace")
-                )
+                parsed_messages = self.messageLogger.write(line.encode('UTF-8', 'replace'))
             else:
                 
                 parsed_messages = self.messageLogger.write(line)
 
             for message in parsed_messages:
                 if isinstance(message, dict):
-                    if message.get("action") == "test_start":
-                        self.lastTestSeen = message["test"]
-                    elif message.get("action") == "test_end":
-                        self.lastTestSeen = "{} (finished)".format(message["test"])
-                    elif message.get("action") == "suite_end":
+                    if message.get('action') == 'test_start':
+                        self.lastTestSeen = message['test']
+                    elif message.get('action') == 'test_end':
+                        self.lastTestSeen = '{} (finished)'.format(message['test'])
+                    elif message.get('action') == 'suite_end':
                         self.lastTestSeen = "Last test finished"
-                    elif message.get("action") == "log":
-                        line = message["message"].strip()
+                    elif message.get('action') == 'log':
+                        line = message['message'].strip()
                         if self.counts:
                             m = re.match(".*:\s*(\d*)", line)
                             if m:
                                 try:
                                     val = int(m.group(1))
                                     if "Passed:" in line:
-                                        self.counts["pass"] += val
+                                        self.counts['pass'] += val
                                         self.lastTestSeen = "Last test finished"
                                     elif "Failed:" in line:
-                                        self.counts["fail"] += val
+                                        self.counts['fail'] += val
                                     elif "Todo:" in line:
-                                        self.counts["todo"] += val
+                                        self.counts['todo'] += val
                                 except ADBTimeoutError:
                                     raise
                                 except Exception:
@@ -412,13 +370,11 @@ class RemoteAutomation(object):
             if (not slowLog) or (timer % 60 == 0):
                 startRead = datetime.datetime.now()
                 hasOutput = self.read_stdout()
-                if (datetime.datetime.now() - startRead) > datetime.timedelta(
-                    seconds=5
-                ):
+                if (datetime.datetime.now() - startRead) > datetime.timedelta(seconds=5):
                     slowLog = True
                 if hasOutput:
                     noOutputTimer = 0
-                if self.counts and "pass" in self.counts and self.counts["pass"] > 0:
+                if self.counts and 'pass' in self.counts and self.counts['pass'] > 0:
                     interval = 0.5
             time.sleep(interval)
             timer += interval
@@ -426,7 +382,7 @@ class RemoteAutomation(object):
             if datetime.datetime.now() > endTime:
                 status = 1
                 break
-            if noOutputTimeout and noOutputTimer > noOutputTimeout:
+            if (noOutputTimeout and noOutputTimer > noOutputTimeout):
                 status = 2
                 break
             if not hasOutput:
@@ -446,7 +402,7 @@ class RemoteAutomation(object):
         
         
         
-        if not self.device._device_serial.startswith("emulator-"):
+        if not self.device._device_serial.startswith('emulator-'):
             dump_device_screen(self.device, get_default_logger())
         elif self.utilityPath:
             dump_screen(self.utilityPath, get_default_logger())
@@ -503,5 +459,5 @@ class RemoteAutomation(object):
 
     @staticmethod
     def elf_arm(filename):
-        data = open(filename, "rb").read(20)
+        data = open(filename, 'rb').read(20)
         return data[:4] == "\x7fELF" and ord(data[18]) == 40  

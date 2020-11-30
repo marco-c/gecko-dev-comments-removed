@@ -4,15 +4,15 @@
 
 
 
-BROWSER_CHROME_MANIFESTS += ["test/browser/browser.ini"]
+BROWSER_CHROME_MANIFESTS += ['test/browser/browser.ini']
 
 EXTRA_JS_MODULES += [
-    "WebProtocolHandlerRegistrar.jsm",
+    'WebProtocolHandlerRegistrar.jsm',
 ]
 
 XPCOM_MANIFESTS += [
-    "components.conf",
+    'components.conf',
 ]
 
-with Files("**"):
-    BUG_COMPONENT = ("Firefox", "General")
+with Files('**'):
+    BUG_COMPONENT = ('Firefox', 'General')

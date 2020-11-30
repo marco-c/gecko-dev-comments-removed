@@ -4,12 +4,12 @@
 
 
 
-MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.ini"]
-XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.ini"]
+MOCHITEST_CHROME_MANIFESTS += ['tests/chrome/chrome.ini']
+XPCSHELL_TESTS_MANIFESTS += ['tests/xpcshell/xpcshell.ini']
 
 DevToolsModules(
-    "auth.js",
-    "cert.js",
-    "prompt.js",
-    "socket.js",
+    'auth.js',
+    'cert.js',
+    'prompt.js',
+    'socket.js',
 )

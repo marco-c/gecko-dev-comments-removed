@@ -4,4 +4,6 @@
 
 
 
-TEST_DIRS += ["test_remote_settings_signatures"]
+TEST_DIRS += [
+    'test_remote_settings_signatures'
+]

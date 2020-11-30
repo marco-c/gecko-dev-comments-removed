@@ -4,9 +4,9 @@
 
 
 
-MOCHITEST_CHROME_MANIFESTS += ["chrome.ini"]
+MOCHITEST_CHROME_MANIFESTS += ['chrome.ini']
 
 TEST_HARNESS_FILES.testing.mochitest.tests.js.xpconnect.tests.chrome += [
-    "file_discardSystemSource.html",
-    "worker_discardSystemSource.js",
+    'file_discardSystemSource.html',
+    'worker_discardSystemSource.js',
 ]

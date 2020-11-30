@@ -4,7 +4,7 @@
 
 
 
-DIRS += ["glue", "src"]
+DIRS += ['glue', 'src']
 
-if CONFIG["ENABLE_TESTS"]:
-    XPCSHELL_TESTS_MANIFESTS += ["tests/unit/xpcshell.ini"]
+if CONFIG['ENABLE_TESTS']:
+    XPCSHELL_TESTS_MANIFESTS += ['tests/unit/xpcshell.ini']    

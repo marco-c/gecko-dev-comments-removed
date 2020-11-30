@@ -7,10 +7,10 @@ import pytest
 def get_installer(request):
     def _get_installer(extension):
         """Get path to the installer for the specified extension."""
-        stub_dir = request.node.fspath.dirpath("installer_stubs")
+        stub_dir = request.node.fspath.dirpath('installer_stubs')
 
         
         
-        return stub_dir.join("firefox.{}".format(extension)).strpath
+        return stub_dir.join('firefox.{}'.format(extension)).strpath
 
     return _get_installer

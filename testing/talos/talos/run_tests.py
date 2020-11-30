@@ -36,57 +36,47 @@ def useBaseTestDefaults(base, tests):
             if item not in test:
                 test[item] = base[item]
                 if test[item] is None:
-                    test[item] = ""
+                    test[item] = ''
     return tests
 
 
 def set_tp_preferences(test, browser_config):
     
     
-    if test["tpcycles"] not in range(1, 1000):
-        raise TalosError("pageloader cycles must be int 1 to 1,000")
-    if "tpmanifest" not in test:
+    if test['tpcycles'] not in range(1, 1000):
+        raise TalosError('pageloader cycles must be int 1 to 1,000')
+    if 'tpmanifest' not in test:
         raise TalosError("tpmanifest not found in test: %s" % test)
 
     
-    if test["gecko_profile"]:
-        LOG.info(
-            "Gecko profiling is enabled so talos is reducing the number "
-            "of cycles, please disregard reported numbers"
-        )
-        for cycle_var in ["tppagecycles", "tpcycles", "cycles"]:
+    if test['gecko_profile']:
+        LOG.info("Gecko profiling is enabled so talos is reducing the number "
+                 "of cycles, please disregard reported numbers")
+        for cycle_var in ['tppagecycles', 'tpcycles', 'cycles']:
             if test[cycle_var] > 2:
                 test[cycle_var] = 2
 
-    CLI_bool_options = [
-        "tpchrome",
-        "tphero",
-        "tpmozafterpaint",
-        "tploadnocache",
-        "tpscrolltest",
-        "fnbpaint",
-        "pdfpaint",
-        "a11y",
-    ]
-    CLI_options = ["tpcycles", "tppagecycles", "tptimeout", "tpmanifest"]
+    CLI_bool_options = ['tpchrome', 'tphero', 'tpmozafterpaint', 'tploadnocache', 'tpscrolltest',
+                        'fnbpaint', 'pdfpaint', 'a11y']
+    CLI_options = ['tpcycles', 'tppagecycles', 'tptimeout', 'tpmanifest']
     for key in CLI_bool_options:
         _pref_name = "talos.%s" % key
         if key in test:
-            test["preferences"][_pref_name] = test.get(key)
+            test['preferences'][_pref_name] = test.get(key)
         else:
             
-            if _pref_name in test["preferences"]:
-                del test["preferences"][_pref_name]
+            if _pref_name in test['preferences']:
+                del test['preferences'][_pref_name]
 
     for key in CLI_options:
         value = test.get(key)
         _pref_name = "talos.%s" % key
         if value:
-            test["preferences"][_pref_name] = value
+            test['preferences'][_pref_name] = value
         else:
             
-            if _pref_name in test["preferences"]:
-                del test["preferences"][_pref_name]
+            if _pref_name in test['preferences']:
+                del test['preferences'][_pref_name]
 
 
 def setup_webserver(webserver):
@@ -101,20 +91,20 @@ def setup_webserver(webserver):
             content = file.read()
         return headers, content
 
-    host, port = webserver.split(":")
+    host, port = webserver.split(':')
     httpd = server.WebTestHttpd(host=host, port=int(port), doc_root=here)
     httpd.router.register(
-        "GET", "tests/pdfpaint/tracemonkey.pdf", tracemonkey_pdf_handler
-    )
+        "GET", "tests/pdfpaint/tracemonkey.pdf", tracemonkey_pdf_handler)
     return httpd
 
 
 def run_tests(config, browser_config):
-    """Runs the talos tests on the given configuration and generates a report."""
+    """Runs the talos tests on the given configuration and generates a report.
+    """
     
-    tests = config["tests"]
-    tests = useBaseTestDefaults(config.get("basetest", {}), tests)
-    paths = ["profile_path", "tpmanifest", "extensions", "setup", "cleanup"]
+    tests = config['tests']
+    tests = useBaseTestDefaults(config.get('basetest', {}), tests)
+    paths = ['profile_path', 'tpmanifest', 'extensions', 'setup', 'cleanup']
 
     for test in tests:
         
@@ -122,115 +112,109 @@ def run_tests(config, browser_config):
         
         for path in paths:
             if test.get(path):
-                if path == "extensions":
-                    for _index, _ext in enumerate(test["extensions"]):
-                        test["extensions"][_index] = utils.interpolate(_ext)
+                if path == 'extensions':
+                    for _index, _ext in enumerate(test['extensions']):
+                        test['extensions'][_index] = utils.interpolate(_ext)
                 else:
                     test[path] = utils.interpolate(test[path])
-        if test.get("tpmanifest"):
-            test["tpmanifest"] = os.path.normpath(
-                "file:/%s" % (urllib.quote(test["tpmanifest"], "/\\t:\\"))
-            )
-            test["preferences"]["talos.tpmanifest"] = test["tpmanifest"]
+        if test.get('tpmanifest'):
+            test['tpmanifest'] = \
+                os.path.normpath('file:/%s' % (urllib.quote(test['tpmanifest'],
+                                               '/\\t:\\')))
+            test['preferences']['talos.tpmanifest'] = test['tpmanifest']
 
         
         
-        if test.get("fnbpaint", False):
+        if test.get('fnbpaint', False):
             LOG.info("Test is using firstNonBlankPaint, browser pref will be turned on")
-            test["preferences"][
-                "dom.performance.time_to_non_blank_paint.enabled"
-            ] = True
+            test['preferences']['dom.performance.time_to_non_blank_paint.enabled'] = True
 
-        test["setup"] = utils.interpolate(test["setup"])
-        test["cleanup"] = utils.interpolate(test["cleanup"])
+        test['setup'] = utils.interpolate(test['setup'])
+        test['cleanup'] = utils.interpolate(test['cleanup'])
 
-        if not test.get("profile", False):
-            test["profile"] = config.get("profile")
+        if not test.get('profile', False):
+            test['profile'] = config.get('profile')
 
-    if mozinfo.os == "win":
-        browser_config["extra_args"] = ["-wait-for-browser", "-no-deelevate"]
+    if mozinfo.os == 'win':
+        browser_config['extra_args'] = ['-wait-for-browser', '-no-deelevate']
     else:
-        browser_config["extra_args"] = []
+        browser_config['extra_args'] = []
 
     
     
     
-    if browser_config["develop"]:
-        browser_config["extra_args"].append("--no-remote")
+    if browser_config['develop']:
+        browser_config['extra_args'].append('--no-remote')
 
     
-    if browser_config["subtests"]:
-        browser_config["preferences"]["talos.subtests"] = browser_config["subtests"]
+    if browser_config['subtests']:
+        browser_config['preferences']['talos.subtests'] = browser_config['subtests']
 
-    if browser_config.get("enable_fission", False):
-        browser_config["preferences"]["fission.autostart"] = True
-        browser_config["preferences"]["dom.serviceWorkers.parent_intercept"] = True
+    if browser_config.get('enable_fission', False):
+        browser_config['preferences']['fission.autostart'] = True
+        browser_config['preferences']['dom.serviceWorkers.parent_intercept'] = True
 
-    browser_config["preferences"]["network.proxy.type"] = 2
-    browser_config["preferences"]["network.proxy.autoconfig_url"] = (
-        """data:text/plain,
+    browser_config['preferences']['network.proxy.type'] = 2
+    browser_config['preferences']['network.proxy.autoconfig_url'] = """data:text/plain,
 function FindProxyForURL(url, host) {
   if (url.startsWith('http')) {
    return 'PROXY %s';
   }
   return 'DIRECT';
-}"""
-        % browser_config["webserver"]
-    )
+}""" % browser_config['webserver']
 
     
     
     
     
     
-    if config.get("code_coverage", False):
-        if browser_config["develop"]:
-            raise TalosError(
-                "Aborting: talos --code-coverage flag is only "
-                "supported in production"
-            )
+    if config.get('code_coverage', False):
+        if browser_config['develop']:
+            raise TalosError('Aborting: talos --code-coverage flag is only '
+                             'supported in production')
         else:
-            browser_config["code_coverage"] = True
+            browser_config['code_coverage'] = True
 
     
-    testdate = config.get("testdate", "")
+    testdate = config.get('testdate', '')
 
     
-    if not browser_config["process"]:
-        browser_config["process"] = os.path.basename(browser_config["browser_path"])
+    if not browser_config['process']:
+        browser_config['process'] = \
+            os.path.basename(browser_config['browser_path'])
 
     
     
     
-    browser_config["extensions"] = [
-        utils.interpolate(i) for i in browser_config["extensions"]
-    ]
-    browser_config["bcontroller_config"] = utils.interpolate(
-        browser_config["bcontroller_config"]
-    )
+    browser_config['extensions'] = [utils.interpolate(i)
+                                    for i in browser_config['extensions']]
+    browser_config['bcontroller_config'] = \
+        utils.interpolate(browser_config['bcontroller_config'])
 
     
-    browser_config["browser_path"] = os.path.normpath(browser_config["browser_path"])
+    browser_config['browser_path'] = \
+        os.path.normpath(browser_config['browser_path'])
 
     binary = browser_config["browser_path"]
     version_info = mozversion.get_version(binary=binary)
-    browser_config["browser_name"] = version_info["application_name"]
-    browser_config["browser_version"] = version_info["application_version"]
-    browser_config["buildid"] = version_info["application_buildid"]
+    browser_config['browser_name'] = version_info['application_name']
+    browser_config['browser_version'] = version_info['application_version']
+    browser_config['buildid'] = version_info['application_buildid']
     try:
-        browser_config["repository"] = version_info["application_repository"]
-        browser_config["sourcestamp"] = version_info["application_changeset"]
+        browser_config['repository'] = version_info['application_repository']
+        browser_config['sourcestamp'] = version_info['application_changeset']
     except KeyError:
-        if not browser_config["develop"]:
+        if not browser_config['develop']:
             print("Abort: unable to find changeset or repository: %s" % version_info)
             sys.exit(1)
         else:
-            browser_config["repository"] = "develop"
-            browser_config["sourcestamp"] = "develop"
+            browser_config['repository'] = 'develop'
+            browser_config['sourcestamp'] = 'develop'
 
     
     if testdate:
-        date = int(time.mktime(time.strptime(testdate, "%a, %d %b %Y %H:%M:%S GMT")))
+        date = int(time.mktime(time.strptime(testdate,
+                                             '%a, %d %b %Y %H:%M:%S GMT')))
     else:
         date = int(time.time())
     LOG.debug("using testdate: %d" % date)
@@ -240,74 +224,69 @@ function FindProxyForURL(url, host) {
     talos_results = TalosResults()
 
     
-    if not browser_config["develop"] and not config["gecko_profile"]:
+    if not browser_config['develop'] and not config['gecko_profile']:
         results_urls = dict(
             
             
-            output_urls=["local.json"],
+            output_urls=['local.json'],
         )
     else:
         
-        results_urls = dict(output_urls=[os.path.abspath("local.json")])
+        results_urls = dict(output_urls=[os.path.abspath('local.json')])
 
-    httpd = setup_webserver(browser_config["webserver"])
+    httpd = setup_webserver(browser_config['webserver'])
     httpd.start()
 
     
-    talos_results.add_extra_option("e10s")
-    talos_results.add_extra_option("stylo")
+    talos_results.add_extra_option('e10s')
+    talos_results.add_extra_option('stylo')
 
     
-    if config.get("stylothreads", 0) > 0:
-        talos_results.add_extra_option("%s_thread" % config["stylothreads"])
+    if config.get('stylothreads', 0) > 0:
+        talos_results.add_extra_option('%s_thread' % config['stylothreads'])
 
-    if config["gecko_profile"]:
-        talos_results.add_extra_option("gecko-profile")
+    if config['gecko_profile']:
+        talos_results.add_extra_option('gecko-profile')
 
     
-    if browser_config.get("enable_fission", False):
-        talos_results.add_extra_option("fission")
+    if browser_config.get('enable_fission', False):
+        talos_results.add_extra_option('fission')
 
     testname = None
 
     
     timer = utils.Timer()
-    LOG.suite_start(tests=[test["name"] for test in tests])
+    LOG.suite_start(tests=[test['name'] for test in tests])
     try:
         for test in tests:
-            testname = test["name"]
+            testname = test['name']
             LOG.test_start(testname)
 
-            if not test.get("url"):
+            if not test.get('url'):
                 
-                test["url"] = None
+                test['url'] = None
                 set_tp_preferences(test, browser_config)
 
             mytest = TTest()
 
             
-            if test.get("firstpaint", False) or test.get("userready", None):
+            if test.get('firstpaint', False) or test.get('userready', None):
                 
                 multi_value_result = None
                 separate_results_list = []
 
-                test_event_map = test.get("testeventmap", None)
+                test_event_map = test.get('testeventmap', None)
                 if test_event_map is None:
-                    raise TalosError(
-                        "Need 'testeventmap' in test.py for %s" % test.get("name")
-                    )
+                    raise TalosError("Need 'testeventmap' in test.py for %s" % test.get('name'))
 
                 
                 multi_value_result = mytest.runTest(browser_config, test)
                 if multi_value_result is None:
-                    raise TalosError(
-                        "Abort: no results returned for %s" % test.get("name")
-                    )
+                    raise TalosError("Abort: no results returned for %s" % test.get('name'))
 
                 
-                separate_results_list = convert_to_separate_test_results(
-                    multi_value_result, test_event_map
-                )
+                separate_results_list = convert_to_separate_test_results(multi_value_result,
+                                                                         test_event_map)
 
                 
                 for test_result in separate_results_list:
@@ -316,7 +295,7 @@ function FindProxyForURL(url, host) {
             
             
             
-            elif test.get("base_vs_ref", False):
+            elif test.get('base_vs_ref', False):
                 
                 base_and_reference_results = mytest.runTest(browser_config, test)
                 
@@ -324,23 +303,21 @@ function FindProxyForURL(url, host) {
             else:
                 
                 talos_results.add(mytest.runTest(browser_config, test))
-            LOG.test_end(testname, status="OK")
+            LOG.test_end(testname, status='OK')
 
     except TalosRegression as exc:
         LOG.error("Detected a regression for %s" % testname)
         
         
-        LOG.test_end(
-            testname, status="FAIL", message=str(exc), stack=traceback.format_exc()
-        )
+        LOG.test_end(testname, status='FAIL', message=str(exc),
+                     stack=traceback.format_exc())
         return 1
     except Exception as exc:
         
         
         
-        LOG.test_end(
-            testname, status="ERROR", message=str(exc), stack=traceback.format_exc()
-        )
+        LOG.test_end(testname, status='ERROR', message=str(exc),
+                     stack=traceback.format_exc())
         
         return 2
     finally:
@@ -350,21 +327,17 @@ function FindProxyForURL(url, host) {
     LOG.info("Completed test suite (%s)" % timer.elapsed())
 
     
-    if results_urls and not browser_config["no_upload_results"]:
+    if results_urls and not browser_config['no_upload_results']:
         talos_results.output(results_urls)
-        if browser_config["develop"] or config["gecko_profile"]:
-            print(
-                "Thanks for running Talos locally. Results are in %s"
-                % (results_urls["output_urls"])
-            )
+        if browser_config['develop'] or config['gecko_profile']:
+            print("Thanks for running Talos locally. Results are in %s"
+                  % (results_urls['output_urls']))
 
     
     
-    if config["gecko_profile"] and browser_config["develop"]:
-        if os.environ.get("DISABLE_PROFILE_LAUNCH", "0") == "1":
-            LOG.info(
-                "Not launching profiler.firefox.com because DISABLE_PROFILE_LAUNCH=1"
-            )
+    if config['gecko_profile'] and browser_config['develop']:
+        if os.environ.get('DISABLE_PROFILE_LAUNCH', '0') == '1':
+            LOG.info("Not launching profiler.firefox.com because DISABLE_PROFILE_LAUNCH=1")
         else:
             view_gecko_profile_from_talos()
 
@@ -374,11 +347,9 @@ function FindProxyForURL(url, host) {
 
 
 def view_gecko_profile_from_talos():
-    profile_zip_path = os.environ.get("TALOS_LATEST_GECKO_PROFILE_ARCHIVE", None)
+    profile_zip_path = os.environ.get('TALOS_LATEST_GECKO_PROFILE_ARCHIVE', None)
     if profile_zip_path is None or not os.path.exists(profile_zip_path):
-        LOG.info(
-            "No local talos gecko profiles were found so not launching profiler.firefox.com"
-        )
+        LOG.info("No local talos gecko profiles were found so not launching profiler.firefox.com")
         return
 
     LOG.info("Profile saved locally to: %s" % profile_zip_path)
@@ -386,7 +357,7 @@ def view_gecko_profile_from_talos():
 
 
 def make_comparison_result(base_and_reference_results):
-    """Receive a test result object meant to be used as a base vs reference test. The result
+    ''' Receive a test result object meant to be used as a base vs reference test. The result
     object will have one test with two subtests; instead of traditional subtests we want to
     treat them as separate tests, comparing them together and reporting the comparison results.
 
@@ -407,7 +378,7 @@ def make_comparison_result(base_and_reference_results):
     "subtests": [{"name": "", "lowerIsBetter": true, "alertThreshold": 5.0, "replicates":
     [16.705, ...], "value": 16.705, "unit": "ms"}], "extraOptions": ["e10s"], "name":
     "bloom_basic", "alertThreshold": 5.0}]}
-    """
+    '''
     
     comparison_result = copy.deepcopy(base_and_reference_results)
 
@@ -424,29 +395,25 @@ def make_comparison_result(base_and_reference_results):
 
         
         results = base_and_reference_results.results[0].results
-        base_result_runs = results[x]["runs"]
-        ref_result_runs = results[x + 1]["runs"]
+        base_result_runs = results[x]['runs']
+        ref_result_runs = results[x + 1]['runs']
 
         
         
-        sub_test_name = base_and_reference_results.results[0].results[x]["page"]
+        sub_test_name = base_and_reference_results.results[0].results[x]['page']
 
         
-        comp_results.append(
-            {
-                "index": 0,
-                "runs": [],
-                "page": sub_test_name,
-                "base_runs": base_result_runs,
-                "ref_runs": ref_result_runs,
-            }
-        )
+        comp_results.append({'index': 0,
+                             'runs': [],
+                             'page': sub_test_name,
+                             'base_runs': base_result_runs,
+                             'ref_runs': ref_result_runs})
 
         
         _index = 0
-        for next_ref in comp_results[subtest_index]["ref_runs"]:
-            diff = abs(next_ref - comp_results[subtest_index]["base_runs"][_index])
-            comp_results[subtest_index]["runs"].append(round(diff, 3))
+        for next_ref in comp_results[subtest_index]['ref_runs']:
+            diff = abs(next_ref - comp_results[subtest_index]['base_runs'][_index])
+            comp_results[subtest_index]['runs'].append(round(diff, 3))
             _index += 1
 
         
@@ -456,7 +423,7 @@ def make_comparison_result(base_and_reference_results):
 
 
 def convert_to_separate_test_results(multi_value_result, test_event_map):
-    """Receive a test result that actually contains multiple values in a single iteration, and
+    ''' Receive a test result that actually contains multiple values in a single iteration, and
     parse it out in order to 'fake' three seprate test results.
 
     Incoming result looks like this:
@@ -474,19 +441,19 @@ def convert_to_separate_test_results(multi_value_result, test_event_map):
     1438}], "extraOptions": ["e10s"], "name": "ts_first_paint"}, {"subtests": [{"replicates":
     [1538, ...], "name": "ts_user_ready", "value": 1538}], "extraOptions": ["e10s"], "name":
     "ts_user_ready"}]}
-    """
+    '''
     list_of_separate_tests = []
 
     for next_test in test_event_map:
         
         separate_test = copy.deepcopy(multi_value_result)
         
-        separate_test.test_config["name"] = next_test["name"]
+        separate_test.test_config['name'] = next_test['name']
         
         for x in separate_test.results:
             for item in x.results:
-                all_runs = item["runs"]
-                item["runs"] = all_runs[next_test["label"]]
+                all_runs = item['runs']
+                item['runs'] = all_runs[next_test['label']]
         
         list_of_separate_tests.append(separate_test)
 
@@ -501,5 +468,5 @@ def main(args=sys.argv[1:]):
     sys.exit(run_tests(config, browser_config))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

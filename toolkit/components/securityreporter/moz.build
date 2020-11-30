@@ -4,19 +4,19 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Firefox", "General")
+with Files('**'):
+    BUG_COMPONENT = ('Firefox', 'General')
 
-XPIDL_MODULE = "toolkit_securityreporter"
+XPIDL_MODULE = 'toolkit_securityreporter'
 
 XPIDL_SOURCES += [
-    "nsISecurityReporter.idl",
+    'nsISecurityReporter.idl',
 ]
 
 EXTRA_JS_MODULES += [
-    "SecurityReporter.jsm",
+    'SecurityReporter.jsm',
 ]
 
 XPCOM_MANIFESTS += [
-    "components.conf",
+    'components.conf',
 ]

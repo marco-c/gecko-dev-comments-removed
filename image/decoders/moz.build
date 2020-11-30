@@ -4,53 +4,53 @@
 
 
 
-toolkit = CONFIG["MOZ_WIDGET_TOOLKIT"]
+toolkit = CONFIG['MOZ_WIDGET_TOOLKIT']
 
 
 
-if toolkit == "gtk":
-    DIRS += ["icon/gtk", "icon"]
+if toolkit == 'gtk':
+    DIRS += ['icon/gtk', 'icon']
 
-if CONFIG["OS_ARCH"] == "WINNT":
-    DIRS += ["icon/win", "icon"]
+if CONFIG['OS_ARCH'] == 'WINNT':
+    DIRS += ['icon/win', 'icon']
 
-if toolkit == "cocoa":
-    DIRS += ["icon/mac", "icon"]
-elif toolkit == "android":
-    DIRS += ["icon/android", "icon"]
+if toolkit == 'cocoa':
+    DIRS += ['icon/mac', 'icon']
+elif toolkit == 'android':
+    DIRS += ['icon/android', 'icon']
 
 UNIFIED_SOURCES += [
-    "EXIF.cpp",
-    "iccjpeg.c",
-    "nsBMPDecoder.cpp",
-    "nsGIFDecoder2.cpp",
-    "nsICODecoder.cpp",
-    "nsIconDecoder.cpp",
-    "nsJPEGDecoder.cpp",
-    "nsPNGDecoder.cpp",
-    "nsWebPDecoder.cpp",
+    'EXIF.cpp',
+    'iccjpeg.c',
+    'nsBMPDecoder.cpp',
+    'nsGIFDecoder2.cpp',
+    'nsICODecoder.cpp',
+    'nsIconDecoder.cpp',
+    'nsJPEGDecoder.cpp',
+    'nsPNGDecoder.cpp',
+    'nsWebPDecoder.cpp',
 ]
 
-if CONFIG["MOZ_AV1"]:
+if CONFIG['MOZ_AV1']:
     UNIFIED_SOURCES += [
-        "nsAVIFDecoder.cpp",
+        'nsAVIFDecoder.cpp',
     ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
 LOCAL_INCLUDES += [
     
-    "/gfx/2d",
+    '/gfx/2d',
     
-    "/image",
+    '/image',
 ]
 
-LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
+LOCAL_INCLUDES += CONFIG['SKIA_INCLUDES']
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wno-error=shadow"]
+if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+    CXXFLAGS += ['-Wno-error=shadow']
 
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+include('/tools/fuzzing/libfuzzer-config.mozbuild')

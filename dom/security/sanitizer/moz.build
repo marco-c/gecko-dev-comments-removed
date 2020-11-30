@@ -5,31 +5,31 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Security")
+    BUG_COMPONENT = ('Core', 'DOM: Security')
 
 
 
-MOCHITEST_MANIFESTS += ["tests/mochitest/mochitest.ini"]
+MOCHITEST_MANIFESTS += ['tests/mochitest/mochitest.ini']
 
 
 EXPORTS.mozilla.dom += [
-    "Sanitizer.h",
+  'Sanitizer.h',
 ]
 
 UNIFIED_SOURCES += [
-    "Sanitizer.cpp",
+  'Sanitizer.cpp',
 ]
 
 LOCAL_INCLUDES += [
-    "/dom/base",
-    "/dom/bindings",
-    "/dom/html",
+  '/dom/base',
+  '/dom/bindings',
+  '/dom/html',
 ]
 
 
 
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
 
 

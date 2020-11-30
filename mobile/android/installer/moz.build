@@ -4,5 +4,5 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("GeckoView", "General")
+with Files('**'):
+    BUG_COMPONENT = ('GeckoView', 'General')

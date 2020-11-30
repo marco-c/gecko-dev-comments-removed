@@ -4,8 +4,8 @@
 
 
 
-SharedLibrary("npthirdtest")
+SharedLibrary('npthirdtest')
 
-relative_path = "thirdplugin"
-cocoa_name = "ThirdTest"
-include("../testplugin.mozbuild")
+relative_path = 'thirdplugin'
+cocoa_name = 'ThirdTest'
+include('../testplugin.mozbuild')

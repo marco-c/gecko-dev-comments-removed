@@ -15,7 +15,7 @@ import traceback
 from collections import namedtuple
 from datetime import datetime
 
-if sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
+if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
     from .tasks_unix import run_all_tests
 else:
     from .tasks_win import run_all_tests
@@ -28,10 +28,10 @@ from .structuredlog import TestLogger
 TESTS_LIB_DIR = os.path.dirname(os.path.abspath(__file__))
 JS_DIR = os.path.dirname(os.path.dirname(TESTS_LIB_DIR))
 TOP_SRC_DIR = os.path.dirname(os.path.dirname(JS_DIR))
-TEST_DIR = os.path.join(JS_DIR, "jit-test", "tests")
-LIB_DIR = os.path.join(JS_DIR, "jit-test", "lib") + os.path.sep
-MODULE_DIR = os.path.join(JS_DIR, "jit-test", "modules") + os.path.sep
-JS_TESTS_DIR = posixpath.join(JS_DIR, "tests")
+TEST_DIR = os.path.join(JS_DIR, 'jit-test', 'tests')
+LIB_DIR = os.path.join(JS_DIR, 'jit-test', 'lib') + os.path.sep
+MODULE_DIR = os.path.join(JS_DIR, 'jit-test', 'modules') + os.path.sep
+JS_TESTS_DIR = posixpath.join(JS_DIR, 'tests')
 
 
 
@@ -51,7 +51,7 @@ def _relpath(path, start=None):
     
     i = len(os.path.commonprefix([start_list, path_list]))
 
-    rel_list = [os.pardir] * (len(start_list) - i) + path_list[i:]
+    rel_list = [os.pardir] * (len(start_list)-i) + path_list[i:]
     if not rel_list:
         return os.curdir
     return os.path.join(*rel_list)
@@ -59,13 +59,13 @@ def _relpath(path, start=None):
 
 
 QUOTE_MAP = {
-    "\\": "\\\\",
-    "\b": "\\b",
-    "\f": "\\f",
-    "\n": "\\n",
-    "\r": "\\r",
-    "\t": "\\t",
-    "\v": "\\v",
+    '\\': '\\\\',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
+    '\v': '\\v'
 }
 
 
@@ -75,7 +75,7 @@ def js_quote(quote, s):
     result = quote
     for c in s:
         if c == quote:
-            result += "\\" + quote
+            result += '\\' + quote
         elif c in QUOTE_MAP:
             result += QUOTE_MAP[c]
         else:
@@ -97,20 +97,16 @@ def extend_condition(condition, value):
 class JitTest:
 
     VALGRIND_CMD = []
-    paths = (d for d in os.environ["PATH"].split(os.pathsep))
-    valgrinds = (os.path.join(d, "valgrind") for d in paths)
+    paths = (d for d in os.environ['PATH'].split(os.pathsep))
+    valgrinds = (os.path.join(d, 'valgrind') for d in paths)
     if any(os.path.exists(p) for p in valgrinds):
         VALGRIND_CMD = [
-            "valgrind",
-            "-q",
-            "--smc-check=all-non-file",
-            "--error-exitcode=1",
-            "--gen-suppressions=all",
-            "--show-possibly-lost=no",
-            "--leak-check=full",
+            'valgrind', '-q', '--smc-check=all-non-file',
+            '--error-exitcode=1', '--gen-suppressions=all',
+            '--show-possibly-lost=no', '--leak-check=full',
         ]
-        if os.uname()[0] == "Darwin":
-            VALGRIND_CMD.append("--dsymutil=yes")
+        if os.uname()[0] == 'Darwin':
+            VALGRIND_CMD.append('--dsymutil=yes')
 
     del paths
     del valgrinds
@@ -147,7 +143,7 @@ class JitTest:
         
         self.test_join = []
         
-        self.expect_error = ""
+        self.expect_error = ''
         
         self.expect_status = 0
         
@@ -158,7 +154,7 @@ class JitTest:
 
         
         
-        self.skip_if_cond = ""
+        self.skip_if_cond = ''
         self.skip_variant_if_cond = {}
 
         
@@ -192,9 +188,7 @@ class JitTest:
         t.jitflags.extend(variant)
         for flags in variant:
             if flags in self.skip_variant_if_cond:
-                t.skip_if_cond = extend_condition(
-                    t.skip_if_cond, self.skip_variant_if_cond[flags]
-                )
+                t.skip_if_cond = extend_condition(t.skip_if_cond, self.skip_variant_if_cond[flags])
         return t
 
     def copy_variants(self, variants):
@@ -210,7 +204,7 @@ class JitTest:
         
         return [self.copy_and_extend_jitflags(v) for v in variants]
 
-    COOKIE = b"|jit-test|"
+    COOKIE = b'|jit-test|'
 
     
     SKIPPED_EXIT_STATUS = 59
@@ -218,11 +212,11 @@ class JitTest:
 
     @classmethod
     def find_directives(cls, file_name):
-        meta = ""
+        meta = ''
         line = open(file_name, "rb").readline()
         i = line.find(cls.COOKIE)
         if i != -1:
-            meta = ";" + line[i + len(cls.COOKIE) :].decode(errors="strict").strip("\n")
+            meta = ';' + line[i + len(cls.COOKIE):].decode(errors='strict').strip('\n')
         return meta
 
     @classmethod
@@ -235,7 +229,7 @@ class JitTest:
         
         
 
-        dir_meta = ""
+        dir_meta = ''
         dir_name = os.path.dirname(path)
         if dir_name in cls.Directives:
             dir_meta = cls.Directives[dir_name]
@@ -248,103 +242,86 @@ class JitTest:
         filename, file_extension = os.path.splitext(path)
         meta = cls.find_directives(path)
 
-        if meta != "" or dir_meta != "":
+        if meta != '' or dir_meta != '':
             meta = meta + dir_meta
-            parts = meta.split(";")
+            parts = meta.split(';')
             for part in parts:
                 part = part.strip()
                 if not part:
                     continue
-                name, _, value = part.partition(":")
+                name, _, value = part.partition(':')
                 if value:
                     value = value.strip()
-                    if name == "error":
+                    if name == 'error':
                         test.expect_error = value
-                    elif name == "exitstatus":
+                    elif name == 'exitstatus':
                         try:
                             status = int(value, 0)
                             if status == test.SKIPPED_EXIT_STATUS:
-                                print(
-                                    "warning: jit-tests uses {} as a sentinel"
-                                    " return value {}",
-                                    test.SKIPPED_EXIT_STATUS,
-                                    path,
-                                )
+                                print("warning: jit-tests uses {} as a sentinel"
+                                      " return value {}", test.SKIPPED_EXIT_STATUS, path)
                             else:
                                 test.expect_status = status
                         except ValueError:
-                            print(
-                                "warning: couldn't parse exit status"
-                                " {}".format(value)
-                            )
-                    elif name == "thread-count":
+                            print("warning: couldn't parse exit status"
+                                  " {}".format(value))
+                    elif name == 'thread-count':
                         try:
-                            test.jitflags.append(
-                                "--thread-count={}".format(int(value, 0))
-                            )
+                            test.jitflags.append('--thread-count={}'.format(
+                                int(value, 0)))
                         except ValueError:
-                            print(
-                                "warning: couldn't parse thread-count"
-                                " {}".format(value)
-                            )
-                    elif name == "include":
+                            print("warning: couldn't parse thread-count"
+                                  " {}".format(value))
+                    elif name == 'include':
                         test.other_lib_includes.append(value)
-                    elif name == "local-include":
+                    elif name == 'local-include':
                         test.other_script_includes.append(value)
-                    elif name == "skip-if":
+                    elif name == 'skip-if':
                         test.skip_if_cond = extend_condition(test.skip_if_cond, value)
-                    elif name == "skip-variant-if":
+                    elif name == 'skip-variant-if':
                         try:
-                            [variant, condition] = value.split(",")
+                            [variant, condition] = value.split(',')
                             test.skip_variant_if_cond[variant] = extend_condition(
-                                test.skip_if_cond, condition
-                            )
+                                test.skip_if_cond,
+                                condition)
                         except ValueError:
                             print("warning: couldn't parse skip-variant-if")
                     else:
-                        print(
-                            "{}: warning: unrecognized |jit-test| attribute"
-                            " {}".format(path, part)
-                        )
+                        print('{}: warning: unrecognized |jit-test| attribute'
+                              ' {}'.format(path, part))
                 else:
-                    if name == "slow":
+                    if name == 'slow':
                         test.slow = True
-                    elif name == "allow-oom":
+                    elif name == 'allow-oom':
                         test.allow_oom = True
-                    elif name == "allow-unhandlable-oom":
+                    elif name == 'allow-unhandlable-oom':
                         test.allow_unhandlable_oom = True
-                    elif name == "allow-overrecursed":
+                    elif name == 'allow-overrecursed':
                         test.allow_overrecursed = True
-                    elif name == "valgrind":
+                    elif name == 'valgrind':
                         test.valgrind = options.valgrind
-                    elif name == "tz-pacific":
+                    elif name == 'tz-pacific':
                         test.tz_pacific = True
-                    elif name.startswith("test-also="):
-                        test.test_also.append(
-                            re.split(r"\s+", name[len("test-also=") :])
-                        )
-                    elif name.startswith("test-join="):
-                        test.test_join.append(
-                            re.split(r"\s+", name[len("test-join=") :])
-                        )
-                    elif name == "module":
+                    elif name.startswith('test-also='):
+                        test.test_also.append(re.split(r'\s+', name[len('test-also='):]))
+                    elif name.startswith('test-join='):
+                        test.test_join.append(re.split(r'\s+', name[len('test-join='):]))
+                    elif name == 'module':
                         test.is_module = True
-                    elif name == "crash":
+                    elif name == 'crash':
                         test.expect_crash = True
-                    elif name.startswith("--"):
+                    elif name.startswith('--'):
                         
                         test.jitflags.append(name)
                     else:
-                        print(
-                            "{}: warning: unrecognized |jit-test| attribute"
-                            " {}".format(path, part)
-                        )
+                        print('{}: warning: unrecognized |jit-test| attribute'
+                              ' {}'.format(path, part))
 
         if options.valgrind_all:
             test.valgrind = True
 
         if options.test_reflect_stringify is not None:
-            test.expect_error = ""
+            test.expect_error = ''
             test.expect_status = 0
 
         return test
@@ -355,8 +332,8 @@ class JitTest:
             path = self.path.replace(TEST_DIR, remote_prefix)
 
         scriptdir_var = os.path.dirname(path)
-        if not scriptdir_var.endswith("/"):
-            scriptdir_var += "/"
+        if not scriptdir_var.endswith('/'):
+            scriptdir_var += '/'
 
         
         
@@ -369,40 +346,35 @@ class JitTest:
 
         
         
-        exprs = [
-            "const platform={}".format(js_quote(quotechar, sys.platform)),
-            "const libdir={}".format(js_quote(quotechar, libdir)),
-            "const scriptdir={}".format(js_quote(quotechar, scriptdir_var)),
-        ]
+        exprs = ["const platform={}".format(js_quote(quotechar, sys.platform)),
+                 "const libdir={}".format(js_quote(quotechar, libdir)),
+                 "const scriptdir={}".format(js_quote(quotechar, scriptdir_var))]
 
         
         
         cmd = prefix + []
         cmd += list(set(self.jitflags))
         for expr in exprs:
-            cmd += ["-e", expr]
+            cmd += ['-e', expr]
         for inc in self.other_lib_includes:
-            cmd += ["-f", libdir + inc]
+            cmd += ['-f', libdir + inc]
         for inc in self.other_script_includes:
-            cmd += ["-f", scriptdir_var + inc]
+            cmd += ['-f', scriptdir_var + inc]
         if self.skip_if_cond:
-            cmd += [
-                "-e",
-                "if ({}) quit({})".format(self.skip_if_cond, self.SKIPPED_EXIT_STATUS),
-            ]
-        cmd += ["--module-load-path", moduledir]
+            cmd += ['-e', 'if ({}) quit({})'.format(self.skip_if_cond, self.SKIPPED_EXIT_STATUS)]
+        cmd += ['--module-load-path', moduledir]
         if self.is_module:
-            cmd += ["--module", path]
+            cmd += ['--module', path]
         elif self.test_reflect_stringify is None:
-            cmd += ["-f", path]
+            cmd += ['-f', path]
         else:
-            cmd += ["--", self.test_reflect_stringify, "--check", path]
+            cmd += ['--', self.test_reflect_stringify, "--check", path]
 
         if self.valgrind:
             cmd = self.VALGRIND_CMD + cmd
 
         if self.allow_unhandlable_oom or self.expect_crash:
-            cmd += ["--suppress-minidump"]
+            cmd += ['--suppress-minidump']
 
         return cmd
 
@@ -419,16 +391,17 @@ def find_tests(substring=None):
     for dirpath, dirnames, filenames in os.walk(TEST_DIR):
         dirnames.sort()
         filenames.sort()
-        if dirpath == ".":
+        if dirpath == '.':
             continue
 
         for filename in filenames:
-            if not filename.endswith(".js"):
+            if not filename.endswith('.js'):
                 continue
-            if filename in ("shell.js", "browser.js"):
+            if filename in ('shell.js', 'browser.js'):
                 continue
             test = os.path.join(dirpath, filename)
-            if substring is None or substring in os.path.relpath(test, TEST_DIR):
+            if substring is None \
+               or substring in os.path.relpath(test, TEST_DIR):
                 ans.append(test)
     return ans
 
@@ -438,19 +411,19 @@ def run_test_remote(test, device, prefix, options):
 
     if options.test_reflect_stringify:
         raise ValueError("can't run Reflect.stringify tests remotely")
-    cmd = test.command(
-        prefix,
-        posixpath.join(options.remote_test_root, "lib/"),
-        posixpath.join(options.remote_test_root, "modules/"),
-        posixpath.join(options.remote_test_root, "tests"),
-    )
+    cmd = test.command(prefix,
+                       posixpath.join(options.remote_test_root, 'lib/'),
+                       posixpath.join(options.remote_test_root, 'modules/'),
+                       posixpath.join(options.remote_test_root, 'tests'))
     if options.show_cmd:
         print(escape_cmdline(cmd))
 
-    env = {"LD_LIBRARY_PATH": os.path.dirname(prefix[0])}
+    env = {
+        'LD_LIBRARY_PATH': os.path.dirname(prefix[0])
+    }
 
     if test.tz_pacific:
-        env["TZ"] = "PST8PDT"
+        env['TZ'] = 'PST8PDT'
 
     
     cmd = ADBDevice._escape_command_line(cmd)
@@ -459,16 +432,16 @@ def run_test_remote(test, device, prefix, options):
         
         
         
-        out = device.shell_output(
-            cmd, env=env, cwd=options.remote_test_root, timeout=int(options.timeout)
-        )
+        out = device.shell_output(cmd, env=env,
+                                  cwd=options.remote_test_root,
+                                  timeout=int(options.timeout))
         returncode = 0
     except ADBProcessError as e:
         
         
         out = str(e.adb_process.stdout)
         returncode = e.adb_process.exitcode
-        re_ignore = re.compile(r"error: (closed|device .* not found)")
+        re_ignore = re.compile(r'error: (closed|device .* not found)')
         if returncode == 1 and re_ignore.search(out):
             print("Skipping {} due to ignorable adb error {}".format(test.path, out))
             test.skip_if_cond = "true"
@@ -488,17 +461,15 @@ def check_output(out, err, rc, timed_out, test, options):
             return True
 
     if timed_out:
-        if (
-            os.path.normpath(test.relpath_tests).replace(os.sep, "/")
-            in options.ignore_timeouts
-        ):
+        if os.path.normpath(test.relpath_tests).replace(os.sep, '/') \
+                in options.ignore_timeouts:
             return True
 
         
         
         
         
-        if sys.platform == "win32":
+        if sys.platform == 'win32':
             ver = sys.getwindowsversion()
             if ver.major == 6 and ver.minor <= 1:
                 return True
@@ -508,7 +479,7 @@ def check_output(out, err, rc, timed_out, test, options):
         
         
         
-        if sys.platform in ["win32", "cygwin"]:
+        if sys.platform in ['win32', 'cygwin']:
             if rc != 3 and rc != 0:
                 return False
         else:
@@ -517,22 +488,22 @@ def check_output(out, err, rc, timed_out, test, options):
 
         return test.expect_error in err
 
-    for line in out.split("\n"):
-        if line.startswith("Trace stats check failed"):
+    for line in out.split('\n'):
+        if line.startswith('Trace stats check failed'):
             return False
 
-    for line in err.split("\n"):
-        if "Assertion failed:" in line:
+    for line in err.split('\n'):
+        if 'Assertion failed:' in line:
             return False
 
     if test.expect_crash:
         
         
         
-        if sys.platform == "win32" and rc in (3 - 2 ** 31, 3 + 2 ** 31):
+        if sys.platform == 'win32' and rc in (3 - 2 ** 31, 3 + 2 ** 31):
             return True
 
-        if sys.platform != "win32" and rc == -11:
+        if sys.platform != 'win32' and rc == -11:
             return True
 
         
@@ -550,31 +521,24 @@ def check_output(out, err, rc, timed_out, test, options):
         
         
         
-        if sys.platform in ["win32", "cygwin"] and rc == 0:
+        if sys.platform in ['win32', 'cygwin'] and rc == 0:
             return True
 
         
         
-        if (
-            test.allow_oom
-            and "out of memory" in err
-            and "Assertion failure" not in err
-            and "MOZ_CRASH" not in err
-        ):
+        if test.allow_oom and 'out of memory' in err \
+           and 'Assertion failure' not in err and 'MOZ_CRASH' not in err:
             return True
 
         
         
-        if test.allow_unhandlable_oom and "MOZ_CRASH([unhandlable oom]" in err:
+        if test.allow_unhandlable_oom and 'MOZ_CRASH([unhandlable oom]' in err:
             return True
 
         
         
-        if (
-            test.allow_overrecursed
-            and "too much recursion" in err
-            and "Assertion failure" not in err
-        ):
+        if test.allow_overrecursed and 'too much recursion' in err \
+           and 'Assertion failure' not in err:
             return True
 
         
@@ -604,21 +568,18 @@ def print_automation_format(ok, res, slog):
     result = "TEST-PASS" if ok else "TEST-UNEXPECTED-FAIL"
     message = "Success" if ok else res.describe_failure()
     jitflags = " ".join(res.test.jitflags)
-    print(
-        '{} | {} | {} (code {}, args "{}") [{:.1f} s]'.format(
-            result, res.test.relpath_top, message, res.rc, jitflags, res.dt
-        )
-    )
+    print("{} | {} | {} (code {}, args \"{}\") [{:.1f} s]".format(
+        result, res.test.relpath_top, message, res.rc, jitflags, res.dt))
 
     details = {
-        "message": message,
-        "extra": {
-            "jitflags": jitflags,
-        },
+        'message': message,
+        'extra': {
+            'jitflags': jitflags,
+        }
     }
     if res.extra:
-        details["extra"].update(res.extra)
-    slog.test(res.test.relpath_tests, "PASS" if ok else "FAIL", res.dt, **details)
+        details['extra'].update(res.extra)
+    slog.test(res.test.relpath_tests, 'PASS' if ok else 'FAIL', res.dt, **details)
 
     
     if ok:
@@ -635,72 +596,63 @@ def print_test_summary(num_tests, failures, complete, doing, options):
     if failures:
         if options.write_failures:
             try:
-                out = open(options.write_failures, "w")
+                out = open(options.write_failures, 'w')
                 
                 
                 written = set()
                 for res in failures:
                     if res.test.path not in written:
-                        out.write(os.path.relpath(res.test.path, TEST_DIR) + "\n")
+                        out.write(os.path.relpath(res.test.path, TEST_DIR)
+                                  + '\n')
                         if options.write_failure_output:
                             out.write(res.out)
                             out.write(res.err)
-                            out.write("Exit code: " + str(res.rc) + "\n")
+                            out.write('Exit code: ' + str(res.rc) + "\n")
                         written.add(res.test.path)
                 out.close()
             except IOError:
-                sys.stderr.write(
-                    "Exception thrown trying to write failure"
-                    " file '{}'\n".format(options.write_failures)
-                )
+                sys.stderr.write("Exception thrown trying to write failure"
+                                 " file '{}'\n".format(options.write_failures))
                 traceback.print_exc()
-                sys.stderr.write("---\n")
+                sys.stderr.write('---\n')
 
         def show_test(res):
             if options.show_failed:
-                print("    " + escape_cmdline(res.cmd))
+                print('    ' + escape_cmdline(res.cmd))
             else:
-                print("    " + " ".join(res.test.jitflags + [res.test.relpath_tests]))
+                print('    ' + ' '.join(res.test.jitflags + [res.test.relpath_tests]))
 
-        print("FAILURES:")
+        print('FAILURES:')
         for res in failures:
             if not res.timed_out:
                 show_test(res)
 
-        print("TIMEOUTS:")
+        print('TIMEOUTS:')
         for res in failures:
             if res.timed_out:
                 show_test(res)
     else:
-        print(
-            "PASSED ALL"
-            + (
-                ""
-                if complete
-                else " (partial run -- interrupted by user {})".format(doing)
-            )
-        )
+        print('PASSED ALL'
+              + ('' if complete
+                 else ' (partial run -- interrupted by user {})'.format(doing)))
 
-    if options.format == "automation":
+    if options.format == 'automation':
         num_failures = len(failures) if failures else 0
-        print("Result summary:")
-        print("Passed: {:d}".format(num_tests - num_failures))
-        print("Failed: {:d}".format(num_failures))
+        print('Result summary:')
+        print('Passed: {:d}'.format(num_tests - num_failures))
+        print('Failed: {:d}'.format(num_failures))
 
     return not failures
 
 
 def create_progressbar(num_tests, options):
-    if (
-        not options.hide_progress
-        and not options.show_cmd
-        and ProgressBar.conservative_isatty()
-    ):
+    if not options.hide_progress and not options.show_cmd \
+       and ProgressBar.conservative_isatty():
         fmt = [
-            {"value": "PASS", "color": "green"},
-            {"value": "FAIL", "color": "red"},
-            {"value": "TIMEOUT", "color": "blue"},
-            {"value": "SKIP", "color": "brightgray"},
+            {'value': 'PASS',    'color': 'green'},
+            {'value': 'FAIL',    'color': 'red'},
+            {'value': 'TIMEOUT', 'color': 'blue'},
+            {'value': 'SKIP',    'color': 'brightgray'},
         ]
         return ProgressBar(num_tests, fmt)
     return NullProgressBar()
@@ -711,7 +663,7 @@ def process_test_results(results, num_tests, pb, options, slog):
     timeouts = 0
     complete = False
     output_dict = {}
-    doing = "before starting"
+    doing = 'before starting'
 
     if num_tests == 0:
         pb.finish(True)
@@ -720,9 +672,8 @@ def process_test_results(results, num_tests, pb, options, slog):
 
     try:
         for i, res in enumerate(results):
-            ok = check_output(
-                res.out, res.err, res.rc, res.timed_out, res.test, options
-            )
+            ok = check_output(res.out, res.err, res.rc, res.timed_out,
+                              res.test, options)
 
             if ok:
                 show_output = options.show_output and not options.failed_only
@@ -733,7 +684,7 @@ def process_test_results(results, num_tests, pb, options, slog):
                 pb.beginline()
                 sys.stdout.write(res.out)
                 sys.stdout.write(res.err)
-                sys.stdout.write("Exit code: {}\n".format(res.rc))
+                sys.stdout.write('Exit code: {}\n'.format(res.rc))
 
             if res.test.valgrind and not show_output:
                 pb.beginline()
@@ -742,13 +693,11 @@ def process_test_results(results, num_tests, pb, options, slog):
             if options.check_output:
                 if res.test.path in output_dict.keys():
                     if output_dict[res.test.path] != res.out:
-                        pb.message(
-                            "FAIL - OUTPUT DIFFERS {}".format(res.test.relpath_tests)
-                        )
+                        pb.message("FAIL - OUTPUT DIFFERS {}".format(res.test.relpath_tests))
                 else:
                     output_dict[res.test.path] = res.out
 
-            doing = "after {}".format(res.test.relpath_tests)
+            doing = 'after {}'.format(res.test.relpath_tests)
             if not ok:
                 failures.append(res)
                 if res.timed_out:
@@ -757,25 +706,20 @@ def process_test_results(results, num_tests, pb, options, slog):
                 else:
                     pb.message("FAIL - {}".format(res.test.relpath_tests))
 
-            if options.format == "automation":
+            if options.format == 'automation':
                 print_automation_format(ok, res, slog)
 
             n = i + 1
-            pb.update(
-                n,
-                {
-                    "PASS": n - len(failures),
-                    "FAIL": len(failures),
-                    "TIMEOUT": timeouts,
-                    "SKIP": 0,
-                },
-            )
+            pb.update(n, {
+                'PASS': n - len(failures),
+                'FAIL': len(failures),
+                'TIMEOUT': timeouts,
+                'SKIP': 0
+            })
         complete = True
     except KeyboardInterrupt:
-        print(
-            "TEST-UNEXPECTED-FAIL | jit_test.py"
-            + " : Test execution interrupted by user"
-        )
+        print("TEST-UNEXPECTED-FAIL | jit_test.py" +
+              " : Test execution interrupted by user")
 
     pb.finish(True)
     return print_test_summary(num_tests, failures, complete, doing, options)
@@ -783,7 +727,7 @@ def process_test_results(results, num_tests, pb, options, slog):
 
 def run_tests(tests, num_tests, prefix, options, remote=False):
     slog = None
-    if options.format == "automation":
+    if options.format == 'automation':
         slog = TestLogger("jittests")
         slog.suite_start()
 
@@ -803,27 +747,11 @@ def run_tests_local(tests, num_tests, prefix, options, slog):
     
     
     
-    AdaptorOptions = namedtuple(
-        "AdaptorOptions",
-        [
-            "worker_count",
-            "passthrough",
-            "timeout",
-            "output_fp",
-            "hide_progress",
-            "run_skipped",
-            "show_cmd",
-        ],
-    )
-    shim_options = AdaptorOptions(
-        options.max_jobs,
-        False,
-        options.timeout,
-        sys.stdout,
-        False,
-        True,
-        options.show_cmd,
-    )
+    AdaptorOptions = namedtuple("AdaptorOptions", [
+        "worker_count", "passthrough", "timeout", "output_fp",
+        "hide_progress", "run_skipped", "show_cmd"])
+    shim_options = AdaptorOptions(options.max_jobs, False, options.timeout,
+                                  sys.stdout, False, True, options.show_cmd)
 
     
     JitTest.js_cmd_prefix = prefix
@@ -849,24 +777,25 @@ def get_remote_results(tests, device, prefix, options):
 def run_tests_remote(tests, num_tests, prefix, options, slog):
     
     from mozdevice import ADBError, ADBTimeoutError
-
     try:
         device = init_device(options)
 
-        prefix[0] = posixpath.join(options.remote_test_root, "bin", "js")
+        prefix[0] = posixpath.join(options.remote_test_root, 'bin', 'js')
         
-        jit_tests_dir = posixpath.join(options.remote_test_root, "tests")
-        options.remote_test_root = posixpath.join(jit_tests_dir, "tests")
+        jit_tests_dir = posixpath.join(options.remote_test_root, 'tests')
+        options.remote_test_root = posixpath.join(jit_tests_dir, 'tests')
         jtd_tests = posixpath.join(options.remote_test_root)
 
         init_remote_dir(device, jit_tests_dir)
         device.push(JS_TESTS_DIR, jtd_tests, timeout=600)
         device.chmod(jtd_tests, recursive=True)
 
-        device.push(os.path.dirname(TEST_DIR), options.remote_test_root, timeout=600)
+        device.push(os.path.dirname(TEST_DIR), options.remote_test_root,
+                    timeout=600)
         device.chmod(options.remote_test_root, recursive=True)
     except (ADBError, ADBTimeoutError):
-        print("TEST-UNEXPECTED-FAIL | jit_test.py" + " : Device initialization failed")
+        print("TEST-UNEXPECTED-FAIL | jit_test.py" +
+              " : Device initialization failed")
         raise
 
     
@@ -875,7 +804,8 @@ def run_tests_remote(tests, num_tests, prefix, options, slog):
         gen = get_remote_results(tests, device, prefix, options)
         ok = process_test_results(gen, num_tests, pb, options, slog)
     except (ADBError, ADBTimeoutError):
-        print("TEST-UNEXPECTED-FAIL | jit_test.py" + " : Device error during test")
+        print("TEST-UNEXPECTED-FAIL | jit_test.py" +
+              " : Device error during test")
         raise
     return ok
 
@@ -887,7 +817,6 @@ def platform_might_be_android():
         
         
         import android  
-
         return True
     except ImportError:
         return False
@@ -897,5 +826,5 @@ def stdio_might_be_broken():
     return platform_might_be_android()
 
 
-if __name__ == "__main__":
-    print("Use ../jit-test/jit_test.py to run these tests.")
+if __name__ == '__main__':
+    print('Use ../jit-test/jit_test.py to run these tests.')

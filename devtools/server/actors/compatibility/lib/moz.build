@@ -4,8 +4,8 @@
 
 
 
-XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.ini"]
+XPCSHELL_TESTS_MANIFESTS += ['test/xpcshell/xpcshell.ini']
 
 DevToolsModules(
-    "MDNCompatibility.js",
+    'MDNCompatibility.js',
 )

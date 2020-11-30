@@ -21,17 +21,13 @@ from .decorators import SettingsProvider
 
 
 @SettingsProvider
-class DispatchSettings:
+class DispatchSettings():
     config_settings = [
-        (
-            "alias.*",
-            "string",
-            """
+        ('alias.*', 'string', """
 Create a command alias of the form `<alias>=<command> <args>`.
 Aliases can also be used to set default arguments:
 <command>=<command> <args>
-""".strip(),
-        ),
+""".strip()),
     ]
 
 
@@ -72,30 +68,16 @@ class CommandAction(argparse.Action):
 
     For more, read the docs in __call__.
     """
-
-    def __init__(
-        self,
-        option_strings,
-        dest,
-        required=True,
-        default=None,
-        registrar=None,
-        context=None,
-    ):
+    def __init__(self, option_strings, dest, required=True, default=None,
+                 registrar=None, context=None):
         
         
         
         
         
         
-        argparse.Action.__init__(
-            self,
-            option_strings,
-            dest,
-            required=required,
-            help=argparse.SUPPRESS,
-            nargs=argparse.REMAINDER,
-        )
+        argparse.Action.__init__(self, option_strings, dest, required=required,
+                                 help=argparse.SUPPRESS, nargs=argparse.REMAINDER)
 
         self._mach_registrar = registrar
         self._context = context
@@ -123,21 +105,18 @@ class CommandAction(argparse.Action):
         elif values:
             command = values[0].lower()
             args = values[1:]
-            if command == "help":
-                if args and args[0] not in ["-h", "--help"]:
+            if command == 'help':
+                if args and args[0] not in ['-h', '--help']:
                     
                     self._handle_command_help(parser, args[0], args)
                 else:
                     self._handle_main_help(parser, namespace.verbose)
                 sys.exit(0)
-            elif "-h" in args or "--help" in args:
+            elif '-h' in args or '--help' in args:
                 
-                if "--" in args:
+                if '--' in args:
                     
-                    if (
-                        "-h" in args[: args.index("--")]
-                        or "--help" in args[: args.index("--")]
-                    ):
+                    if '-h' in args[:args.index('--')] or '--help' in args[:args.index('--')]:
                         
                         self._handle_command_help(parser, command, args)
                         sys.exit(0)
@@ -161,28 +140,24 @@ class CommandAction(argparse.Action):
         handler = self._mach_registrar.command_handlers.get(command)
 
         prog = command
-        usage = "%(prog)s [global arguments] " + command + " [command arguments]"
+        usage = '%(prog)s [global arguments] ' + command + \
+            ' [command arguments]'
 
         subcommand = None
 
         
         if handler.subcommand_handlers and args:
             
-            if set(args).intersection(("help", "--help")):
+            if set(args).intersection(('help', '--help')):
                 self._handle_subcommand_help(parser, handler, args)
                 sys.exit(0)
             
             elif args[0] in handler.subcommand_handlers:
                 subcommand = args[0]
                 handler = handler.subcommand_handlers[subcommand]
-                prog = prog + " " + subcommand
-                usage = (
-                    "%(prog)s [global arguments] "
-                    + command
-                    + " "
-                    + subcommand
-                    + " [command arguments]"
-                )
+                prog = prog + ' ' + subcommand
+                usage = '%(prog)s [global arguments] ' + command + ' ' + \
+                    subcommand + ' [command arguments]'
                 args.pop(0)
 
         
@@ -191,8 +166,8 @@ class CommandAction(argparse.Action):
         
 
         parser_args = {
-            "add_help": False,
-            "usage": usage,
+            'add_help': False,
+            'usage': usage,
         }
 
         remainder = None
@@ -200,42 +175,41 @@ class CommandAction(argparse.Action):
         if handler.parser:
             subparser = handler.parser
             subparser.context = self._context
-            subparser.prog = subparser.prog + " " + prog
+            subparser.prog = subparser.prog + ' ' + prog
             for arg in subparser._actions[:]:
                 if arg.nargs == argparse.REMAINDER:
                     subparser._actions.remove(arg)
-                    remainder = (
-                        (arg.dest,),
-                        {"default": arg.default, "nargs": arg.nargs, "help": arg.help},
-                    )
+                    remainder = (arg.dest,), {'default': arg.default,
+                                              'nargs': arg.nargs,
+                                              'help': arg.help}
         else:
             subparser = argparse.ArgumentParser(**parser_args)
 
         for arg in handler.arguments:
             
-            group_name = arg[1].get("group")
+            group_name = arg[1].get('group')
             if group_name:
-                del arg[1]["group"]
+                del arg[1]['group']
 
-            if arg[1].get("nargs") == argparse.REMAINDER:
+            if arg[1].get('nargs') == argparse.REMAINDER:
                 
                 
                 
                 
                 assert len(arg[0]) == 1
-                assert all(k in ("default", "nargs", "help", "metavar") for k in arg[1])
+                assert all(k in ('default', 'nargs', 'help', 'metavar') for k in arg[1])
                 remainder = arg
             else:
                 subparser.add_argument(*arg[0], **arg[1])
 
         
         
-        setattr(namespace, "mach_handler", handler)
-        setattr(namespace, "command", command)
-        setattr(namespace, "subcommand", subcommand)
+        setattr(namespace, 'mach_handler', handler)
+        setattr(namespace, 'command', command)
+        setattr(namespace, 'subcommand', subcommand)
 
         command_namespace, extra = subparser.parse_known_args(args)
-        setattr(namespace, "command_args", command_namespace)
+        setattr(namespace, 'command_args', command_namespace)
         if remainder:
             (name,), options = remainder
             
@@ -243,8 +217,8 @@ class CommandAction(argparse.Action):
             
             
             
-            if "--" in extra:
-                extra.remove("--")
+            if '--' in extra:
+                extra.remove('--')
 
             
             
@@ -253,15 +227,15 @@ class CommandAction(argparse.Action):
             
             for args, _ in handler.arguments:
                 for arg in args:
-                    arg = arg.replace("-", "+", 1)
+                    arg = arg.replace('-', '+', 1)
                     if arg in extra:
                         raise UnrecognizedArgumentError(command, [arg])
 
             if extra:
                 setattr(command_namespace, name, extra)
             else:
-                setattr(command_namespace, name, options.get("default", []))
-        elif extra and handler.cls.__name__ != "DeprecatedCommands":
+                setattr(command_namespace, name, options.get('default', []))
+        elif extra and handler.cls.__name__ != 'DeprecatedCommands':
             raise UnrecognizedArgumentError(command, extra)
 
     def _handle_main_help(self, parser, verbose):
@@ -284,9 +258,8 @@ class CommandAction(argparse.Action):
                 
                 
                 if handler.conditions:
-                    instance = handler.create_instance(
-                        self._context, handler.virtualenv_name
-                    )
+                    instance = handler.create_instance(self._context,
+                                                       handler.virtualenv_name)
 
                     is_filtered = False
                     for c in handler.conditions:
@@ -295,10 +268,7 @@ class CommandAction(argparse.Action):
                             break
                     if is_filtered:
                         description = handler.description
-                        disabled_command = {
-                            "command": command,
-                            "description": description,
-                        }
+                        disabled_command = {'command': command, 'description': description}
                         disabled_commands.append(disabled_command)
                         continue
 
@@ -307,30 +277,31 @@ class CommandAction(argparse.Action):
                     group = parser.add_argument_group(title, description)
 
                 description = handler.description
-                group.add_argument(command, help=description, action="store_true")
+                group.add_argument(command, help=description,
+                                   action='store_true')
 
-        if disabled_commands and "disabled" in r.categories:
-            title, description, _priority = r.categories["disabled"]
+        if disabled_commands and 'disabled' in r.categories:
+            title, description, _priority = r.categories['disabled']
             group = parser.add_argument_group(title, description)
             if verbose:
                 for c in disabled_commands:
-                    group.add_argument(
-                        c["command"], help=c["description"], action="store_true"
-                    )
+                    group.add_argument(c['command'], help=c['description'],
+                                       action='store_true')
 
         parser.print_help()
 
     def _populate_command_group(self, parser, handler, group):
         extra_groups = {}
         for group_name in handler.argument_group_names:
-            group_full_name = "Command Arguments for " + group_name
-            extra_groups[group_name] = parser.add_argument_group(group_full_name)
+            group_full_name = 'Command Arguments for ' + group_name
+            extra_groups[group_name] = \
+                parser.add_argument_group(group_full_name)
 
         for arg in handler.arguments:
             
-            group_name = arg[1].get("group")
+            group_name = arg[1].get('group')
             if group_name:
-                del arg[1]["group"]
+                del arg[1]['group']
                 group = extra_groups[group_name]
             group.add_argument(*arg[0], **arg[1])
 
@@ -346,8 +317,8 @@ class CommandAction(argparse.Action):
         
         
         parser_args = {
-            "formatter_class": CommandFormatter,
-            "add_help": False,
+            'formatter_class': CommandFormatter,
+            'add_help': False,
         }
 
         if handler.parser:
@@ -362,15 +333,15 @@ class CommandAction(argparse.Action):
             
             
             
-            c_parser._action_groups[0].title = "Command Parameters"
-            c_parser._action_groups[1].title = "Command Arguments"
+            c_parser._action_groups[0].title = 'Command Parameters'
+            c_parser._action_groups[1].title = 'Command Arguments'
 
             if not handler.description:
                 handler.description = c_parser.description
                 c_parser.description = None
         else:
             c_parser = argparse.ArgumentParser(**parser_args)
-            group = c_parser.add_argument_group("Command Arguments")
+            group = c_parser.add_argument_group('Command Arguments')
 
         self._populate_command_group(c_parser, handler, group)
 
@@ -380,7 +351,7 @@ class CommandAction(argparse.Action):
         handler = self._mach_registrar.command_handlers.get(command)
 
         if not handler:
-            raise UnknownCommandError(command, "query")
+            raise UnknownCommandError(command, 'query')
 
         if handler.subcommand_handlers:
             self._handle_subcommand_help(parser, handler, args)
@@ -395,37 +366,31 @@ class CommandAction(argparse.Action):
         elif handler.description:
             parser.description = handler.description
 
-        parser.usage = "%(prog)s [global arguments] " + command + " [command arguments]"
+        parser.usage = '%(prog)s [global arguments] ' + command + \
+            ' [command arguments]'
 
         
         
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.print_help()
-        print("")
+        print('')
         c_parser.print_help()
 
     def _handle_subcommand_main_help(self, parser, handler):
-        parser.usage = (
-            "%(prog)s [global arguments] "
-            + handler.name
-            + " subcommand [subcommand arguments]"
-        )
-        group = parser.add_argument_group("Sub Commands")
+        parser.usage = '%(prog)s [global arguments] ' + handler.name + \
+            ' subcommand [subcommand arguments]'
+        group = parser.add_argument_group('Sub Commands')
 
-        def by_decl_order(item):
-            return item[1].decl_order
-
-        def by_name(item):
-            return item[1].subcommand
+        def by_decl_order(item): return item[1].decl_order
+        def by_name(item): return item[1].subcommand
 
         subhandlers = handler.subcommand_handlers.items()
         for subcommand, subhandler in sorted(
-            subhandlers,
-            key=by_decl_order if handler.order == "declaration" else by_name,
+                subhandlers,
+                key=by_decl_order if handler.order == 'declaration' else by_name
         ):
-            group.add_argument(
-                subcommand, help=subhandler.description, action="store_true"
-            )
+            group.add_argument(subcommand, help=subhandler.description,
+                               action='store_true')
 
         if handler.docstring:
             parser.description = format_docstring(handler.docstring)
@@ -435,7 +400,7 @@ class CommandAction(argparse.Action):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
 
         parser.print_help()
-        print("")
+        print('')
         c_parser.print_help()
 
     def _handle_subcommand_help(self, parser, handler, args):
@@ -449,32 +414,24 @@ class CommandAction(argparse.Action):
         c_parser = subhandler.parser or argparse.ArgumentParser(add_help=False)
         c_parser.formatter_class = CommandFormatter
 
-        group = c_parser.add_argument_group("Sub Command Arguments")
+        group = c_parser.add_argument_group('Sub Command Arguments')
         self._populate_command_group(c_parser, subhandler, group)
 
         if subhandler.docstring:
             parser.description = format_docstring(subhandler.docstring)
 
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
-        parser.usage = (
-            "%(prog)s [global arguments] "
-            + handler.name
-            + " "
-            + subcommand
-            + " [command arguments]"
-        )
+        parser.usage = '%(prog)s [global arguments] ' + handler.name + \
+            ' ' + subcommand + ' [command arguments]'
 
         parser.print_help()
-        print("")
+        print('')
         c_parser.print_help()
 
     def _suggest_command(self, command):
         
-        names = [
-            h.name
-            for h in self._mach_registrar.command_handlers.values()
-            if h.cls.__name__ != "DeprecatedCommands"
-        ]
+        names = [h.name for h in self._mach_registrar.command_handlers.values()
+                 if h.cls.__name__ != 'DeprecatedCommands']
 
         
         
@@ -486,7 +443,7 @@ class CommandAction(argparse.Action):
         
         suggested_commands = set(difflib.get_close_matches(command, names, cutoff=0.5))
         suggested_commands |= {cmd for cmd in names if cmd.startswith(command)}
-        raise UnknownCommandError(command, "run", suggested_commands)
+        raise UnknownCommandError(command, 'run', suggested_commands)
 
 
 class NoUsageFormatter(argparse.HelpFormatter):
@@ -500,7 +457,7 @@ def format_docstring(docstring):
     This function is based on the example function in PEP-0257.
     """
     if not docstring:
-        return ""
+        return ''
     lines = docstring.expandtabs().splitlines()
     indent = sys.maxsize
     for line in lines[1:]:
@@ -515,4 +472,4 @@ def format_docstring(docstring):
         trimmed.pop()
     while trimmed and not trimmed[0]:
         trimmed.pop(0)
-    return "\n".join(trimmed)
+    return '\n'.join(trimmed)

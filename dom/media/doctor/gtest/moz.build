@@ -4,19 +4,19 @@
 
 
 
-if CONFIG["OS_TARGET"] != "Android":
+if CONFIG['OS_TARGET'] != 'Android':
     UNIFIED_SOURCES += [
-        "TestMultiWriterQueue.cpp",
-        "TestRollingNumber.cpp",
+        'TestMultiWriterQueue.cpp',
+        'TestRollingNumber.cpp',
     ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
 LOCAL_INCLUDES += [
-    "/dom/media/doctor",
+    '/dom/media/doctor',
 ]
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'
 
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wno-error=shadow"]
+if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+    CXXFLAGS += ['-Wno-error=shadow']

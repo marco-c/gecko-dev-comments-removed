@@ -18,27 +18,31 @@ from mozprofile.profile import Profile
 def test_nonce(tmpdir):
     
     path = tmpdir.strpath
-    profile = Profile(path, preferences={"foo": "bar"}, restore=False)
-    user_js = os.path.join(profile.profile, "user.js")
+    profile = Profile(path,
+                      preferences={'foo': 'bar'},
+                      restore=False)
+    user_js = os.path.join(profile.profile, 'user.js')
     assert os.path.exists(user_js)
 
     
     prefs = Preferences.read_prefs(user_js)
-    assert dict(prefs) == {"foo": "bar"}
+    assert dict(prefs) == {'foo': 'bar'}
 
     del profile
 
     
-    profile = Profile(path, preferences={"fleem": "baz"}, restore=True)
+    profile = Profile(path,
+                      preferences={'fleem': 'baz'},
+                      restore=True)
     prefs = Preferences.read_prefs(user_js)
-    assert dict(prefs) == {"foo": "bar", "fleem": "baz"}
+    assert dict(prefs) == {'foo': 'bar', 'fleem': 'baz'}
 
     
     
     profile.cleanup()
     prefs = Preferences.read_prefs(user_js)
-    assert dict(prefs) == {"foo": "bar"}
+    assert dict(prefs) == {'foo': 'bar'}
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     mozunit.main()

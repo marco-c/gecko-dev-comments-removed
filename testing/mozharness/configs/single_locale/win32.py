@@ -1,6 +1,7 @@
 config = {
     "mozconfig_platform": "win32",
     "log_name": "single_locale",
+
     
     "ignore_locales": ["en-US", "ja-JP-mac"],
 }

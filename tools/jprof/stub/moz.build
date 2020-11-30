@@ -5,13 +5,13 @@
 
 
 EXPORTS += [
-    "jprof.h",
+    'jprof.h',
 ]
 
 SOURCES += [
-    "libmalloc.cpp",
+    'libmalloc.cpp',
 ]
 
-SharedLibrary("jprof")
+SharedLibrary('jprof')
 
-DEFINES["_IMPL_JPROF_API"] = True
+DEFINES['_IMPL_JPROF_API'] = True

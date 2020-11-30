@@ -4,31 +4,31 @@
 
 
 
-DIRS += ["resources"]
+DIRS += ['resources']
 
 UNIFIED_SOURCES += [
-    "nsNSSDialogHelper.cpp",
-    "nsNSSDialogs.cpp",
+    'nsNSSDialogHelper.cpp',
+    'nsNSSDialogs.cpp',
 ]
 
 XPCOM_MANIFESTS += [
-    "components.conf",
+    'components.conf',
 ]
 
 LOCAL_INCLUDES += [
-    "!/dist/public/nss",
+    '!/dist/public/nss',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
+if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CXXFLAGS += [
-        "-Wextra",
+        '-Wextra',
         
-        "-Wno-missing-field-initializers",
+        '-Wno-missing-field-initializers',
     ]
 
     
     CXXFLAGS += [
-        "-Wno-unused-parameter",
+        '-Wno-unused-parameter',
     ]

@@ -27,14 +27,13 @@ def repackage_dmg(infile, output):
         
         
         try:
-            os.remove(mozpath.join(tmpdir, " "))
+            os.remove(mozpath.join(tmpdir, ' '))
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
 
-        volume_name = get_application_ini_value(
-            tmpdir, "App", "CodeName", fallback="Name"
-        )
+        volume_name = get_application_ini_value(tmpdir, 'App', 'CodeName',
+                                                fallback='Name')
 
         
         

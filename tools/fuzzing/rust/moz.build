@@ -4,13 +4,13 @@
 
 
 
-Library("fuzzer-rust-targets")
+Library('fuzzer-rust-targets')
 
 SOURCES += [
-    "RustFuzzingTargets.cpp",
+    'RustFuzzingTargets.cpp',
 ]
 
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+include('/tools/fuzzing/libfuzzer-config.mozbuild')
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'

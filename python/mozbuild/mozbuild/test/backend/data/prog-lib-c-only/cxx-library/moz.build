@@ -2,9 +2,9 @@
 
 
 
-SharedLibrary("cxx-library")
+SharedLibrary('cxx-library')
 
 SOURCES = [
-    "c-source.c",
-    "cxx-library.cpp",
+    'c-source.c',
+    'cxx-library.cpp',
 ]

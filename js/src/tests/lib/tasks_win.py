@@ -39,7 +39,8 @@ def _do_work(qTasks, qResults, qWatch, prefix, run_skipped, timeout, show_cmd):
         if show_cmd:
             print(escape_cmdline(cmd))
         tStart = datetime.now()
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         
         
@@ -50,22 +51,15 @@ def _do_work(qTasks, qResults, qWatch, prefix, run_skipped, timeout, show_cmd):
         
         
         
-        system_encoding = "mbcs" if sys.platform == "win32" else "utf-8"
+        system_encoding = 'mbcs' if sys.platform == 'win32' else 'utf-8'
         out = out.decode(system_encoding)
         err = err.decode(system_encoding)
         qWatch.put(TaskFinishedMarker)
 
         
         dt = datetime.now() - tStart
-        result = TestOutput(
-            test,
-            cmd,
-            out,
-            err,
-            proc.returncode,
-            dt.total_seconds(),
-            dt > timedelta(seconds=timeout),
-        )
+        result = TestOutput(test, cmd, out, err, proc.returncode, dt.total_seconds(),
+                            dt > timedelta(seconds=timeout))
         qResults.put(result)
 
 
@@ -105,18 +99,9 @@ def run_all_tests(tests, prefix, pb, options):
         watcher.setDaemon(True)
         watcher.start()
         watchdogs.append(watcher)
-        worker = Thread(
-            target=_do_work,
-            args=(
-                qTasks,
-                qResults,
-                qWatch,
-                prefix,
-                options.run_skipped,
-                options.timeout,
-                options.show_cmd,
-            ),
-        )
+        worker = Thread(target=_do_work, args=(qTasks, qResults, qWatch,
+                                               prefix, options.run_skipped,
+                                               options.timeout, options.show_cmd))
         worker.setDaemon(True)
         worker.start()
         workers.append(worker)
@@ -131,7 +116,6 @@ def run_all_tests(tests, prefix, pb, options):
             qTasks.put(test)
         for _ in range(num_workers):
             qTasks.put(EndMarker)
-
     pusher = Thread(target=_do_push, args=(len(workers), qTasks))
     pusher.setDaemon(True)
     pusher.start()

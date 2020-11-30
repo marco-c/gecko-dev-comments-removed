@@ -21,34 +21,32 @@ LABEL = "test-vismet-%(platform)s-%(raptor_try_name)s"
 @transforms.add
 def run_visual_metrics(config, jobs):
     for job in jobs:
-        dep_job = job.pop("primary-dependency", None)
+        dep_job = job.pop('primary-dependency', None)
         if dep_job is not None:
-            platform = dep_job.task["extra"]["treeherder-platform"]
-            job["dependencies"] = {dep_job.label: dep_job.label}
-            job["fetches"][dep_job.label] = [
-                "/public/test_info/browsertime-results.tgz"
-            ]
+            platform = dep_job.task['extra']['treeherder-platform']
+            job['dependencies'] = {dep_job.label: dep_job.label}
+            job['fetches'][dep_job.label] = ['/public/test_info/browsertime-results.tgz']
             attributes = dict(dep_job.attributes)
-            attributes["platform"] = platform
-            job["label"] = LABEL % attributes
-            treeherder_info = dict(dep_job.task["extra"]["treeherder"])
-            job["treeherder"]["symbol"] = SYMBOL % treeherder_info
+            attributes['platform'] = platform
+            job['label'] = LABEL % attributes
+            treeherder_info = dict(dep_job.task['extra']['treeherder'])
+            job['treeherder']['symbol'] = SYMBOL % treeherder_info
 
             
             
-            job["worker"].setdefault("env", {})["TC_LABEL"] = dep_job.label
+            job['worker'].setdefault('env', {})['TC_LABEL'] = dep_job.label
 
             
             
-            job["worker"]["env"]["TC_GROUP_ID"] = os.getenv("TC_GROUP_ID", "")
+            job['worker']['env']['TC_GROUP_ID'] = os.getenv("TC_GROUP_ID", "")
 
             
             
             
-            job["treeherder"]["platform"] = platform
-            job["treeherder"]["tier"] = treeherder_info["tier"]
+            job['treeherder']['platform'] = platform
+            job['treeherder']['tier'] = treeherder_info['tier']
 
             
-            job["run-on-projects"] = attributes["run_on_projects"]
+            job['run-on-projects'] = attributes['run_on_projects']
 
             yield job

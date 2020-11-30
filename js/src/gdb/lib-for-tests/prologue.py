@@ -18,7 +18,7 @@ active_fragment = None
 
 
 
-def run_fragment(fragment, function="gdb-tests.cpp:breakpoint"):
+def run_fragment(fragment, function='gdb-tests.cpp:breakpoint'):
     
     bp = gdb.Breakpoint(function)
     try:
@@ -27,7 +27,7 @@ def run_fragment(fragment, function="gdb-tests.cpp:breakpoint"):
         assert bp.hit_count == 1
     finally:
         bp.delete()
-    gdb.execute("frame 1")
+    gdb.execute('frame 1')
 
     global active_fragment
     active_fragment = fragment
@@ -35,29 +35,20 @@ def run_fragment(fragment, function="gdb-tests.cpp:breakpoint"):
 
 
 
-
 def assert_eq(actual, expected):
     if actual != expected:
-        raise AssertionError(
-            """Unexpected result:
+        raise AssertionError("""Unexpected result:
 expected: %r
-actual:   %r"""
-            % (expected, actual)
-        )
-
+actual:   %r""" % (expected, actual))
 
 
 
 
 def assert_match(actual, expected):
     if re.match(expected, actual, re.MULTILINE) is None:
-        raise AssertionError(
-            """Unexpected result:
+        raise AssertionError("""Unexpected result:
 expected pattern: %r
-actual:           %r"""
-            % (expected, actual)
-        )
-
+actual:           %r""" % (expected, actual))
 
 
 
@@ -73,7 +64,6 @@ def assert_pretty(value, form):
 
 
 
-
 def assert_regexp_pretty(value, form):
     if isinstance(value, str):
         value = gdb.parse_and_eval(value)
@@ -83,46 +73,43 @@ def assert_regexp_pretty(value, form):
 
 
 
-
 def assert_subprinter_registered(printer, subprinter):
     
     
 
-    names = {"printer": re.escape(printer), "subprinter": re.escape(subprinter)}
-    pat = r"^( +)%(printer)s *\n(\1 +.*\n)*\1 +%(subprinter)s *\n" % names
-    output = gdb.execute("info pretty-printer", to_string=True)
+    names = {'printer': re.escape(printer), 'subprinter': re.escape(subprinter)}
+    pat = r'^( +)%(printer)s *\n(\1 +.*\n)*\1 +%(subprinter)s *\n' % names
+    output = gdb.execute('info pretty-printer', to_string=True)
     if not re.search(pat, output, re.MULTILINE):
-        raise AssertionError(
-            "assert_subprinter_registered failed to find pretty-printer:\n"
-            "  %s:%s\n"
-            "'info pretty-printer' says:\n"
-            "%s" % (printer, subprinter, output)
-        )
+        raise AssertionError("assert_subprinter_registered failed to find pretty-printer:\n"
+                             "  %s:%s\n"
+                             "'info pretty-printer' says:\n"
+                             "%s" % (printer, subprinter, output))
 
 
 
-gdb.execute("set python print-stack full")
+gdb.execute('set python print-stack full')
 
 
-gdb.execute("set confirm off", False)
+gdb.execute('set confirm off', False)
 
 
-gdb.execute("set print static-members off")
-gdb.execute("set print address off")
-gdb.execute("set print pretty off")
-gdb.execute("set width 0")
+gdb.execute('set print static-members off')
+gdb.execute('set print address off')
+gdb.execute('set print pretty off')
+gdb.execute('set width 0')
 
 try:
     
     
     execfile(testscript, globals(), locals())
 except AssertionError as err:
-    header = "\nAssertion traceback"
+    header = '\nAssertion traceback'
     if active_fragment:
-        header += " for " + active_fragment
-    sys.stderr.write(header + ":\n")
+        header += ' for ' + active_fragment
+    sys.stderr.write(header + ':\n')
     (t, v, tb) = sys.exc_info()
     traceback.print_tb(tb)
-    sys.stderr.write("\nTest assertion failed:\n")
+    sys.stderr.write('\nTest assertion failed:\n')
     sys.stderr.write(str(err))
     sys.exit(1)

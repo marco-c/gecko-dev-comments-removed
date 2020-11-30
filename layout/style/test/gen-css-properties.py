@@ -8,11 +8,10 @@ import os
 import sys
 import subprocess
 
-
 def main(output, css_properties, exe):
     
     
-    run_exe = exe if os.path.isabs(exe) else "./%s" % exe
+    run_exe = exe if os.path.isabs(exe) else './%s' % exe
 
     
     
@@ -21,6 +20,5 @@ def main(output, css_properties, exe):
         data += f.read()
     output.write(data)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(sys.stdout, *sys.argv[1:])

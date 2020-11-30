@@ -5,16 +5,14 @@
 
 
 CONFIGURE_SUBST_FILES += [
-    "js-config",
-    "js.pc",
+    'js-config',
+    'js.pc',
 ]
 
-LIBRARY_DEFINES["EXPORT_JS_API"] = True
+LIBRARY_DEFINES['EXPORT_JS_API'] = True
 
-if not CONFIG["JS_STANDALONE"]:
-    LIBRARY_DEFINES["MOZ_HAS_MOZGLUE"] = True
-
-
+if not CONFIG['JS_STANDALONE']:
+    LIBRARY_DEFINES['MOZ_HAS_MOZGLUE'] = True
 
 
 
@@ -22,63 +20,62 @@ if not CONFIG["JS_STANDALONE"]:
 
 
 
-if CONFIG["JS_SHARED_LIBRARY"]:
-    GeckoSharedLibrary("js", linkage=None)
-    SHARED_LIBRARY_NAME = CONFIG["JS_LIBRARY_NAME"]
+
+
+if CONFIG['JS_SHARED_LIBRARY']:
+    GeckoSharedLibrary('js', linkage=None)
+    SHARED_LIBRARY_NAME = CONFIG['JS_LIBRARY_NAME']
 
     
     
-    if CONFIG["OS_TARGET"] == "Linux":
-        GeneratedFile(
-            "symverscript",
-            script="/build/gen_symverscript.py",
-            inputs=["symverscript.in"],
-            flags=[CONFIG["JS_LIBRARY_NAME"].replace("-", "_")],
-        )
-        SYMBOLS_FILE = "!symverscript"
+    if CONFIG['OS_TARGET'] == 'Linux':
+        GeneratedFile('symverscript', script='/build/gen_symverscript.py', 
+                      inputs=['symverscript.in'], 
+                      flags=[CONFIG['JS_LIBRARY_NAME'].replace('-', '_')])
+        SYMBOLS_FILE = '!symverscript'
 else:
-    Library("js")
+    Library('js')
 
 FORCE_STATIC_LIB = True
-STATIC_LIBRARY_NAME = "js_static"
+STATIC_LIBRARY_NAME = 'js_static'
 
-if CONFIG["JS_HAS_INTL_API"]:
+if CONFIG['JS_HAS_INTL_API']:
     USE_LIBS += [
-        "icu",
+        'icu',
     ]
 
 USE_LIBS += [
-    "nspr",
-    "zlib",
+    'nspr',
+    'zlib',
 ]
 
-if CONFIG["OS_ARCH"] not in ("WINNT", "HP-UX"):
+if CONFIG['OS_ARCH'] not in ('WINNT', 'HP-UX'):
     OS_LIBS += [
-        "m",
+        'm',
     ]
 
-if CONFIG["OS_ARCH"] == "FreeBSD":
+if CONFIG['OS_ARCH'] == 'FreeBSD':
     OS_LIBS += [
-        "-pthread",
+        '-pthread',
     ]
 
-if CONFIG["OS_ARCH"] == "Linux":
+if CONFIG['OS_ARCH'] == 'Linux':
     OS_LIBS += [
-        "dl",
+        'dl',
     ]
 
-if CONFIG["OS_ARCH"] == "SunOS":
+if CONFIG['OS_ARCH'] == 'SunOS':
     OS_LIBS += [
-        "posix4",
-        "dl",
-        "nsl",
-        "socket",
+        'posix4',
+        'dl',
+        'nsl',
+        'socket',
     ]
 
-if CONFIG["MOZ_NEEDS_LIBATOMIC"]:
-    OS_LIBS += ["atomic"]
+if CONFIG['MOZ_NEEDS_LIBATOMIC']:
+    OS_LIBS += ['atomic']
 
-OS_LIBS += CONFIG["REALTIME_LIBS"]
+OS_LIBS += CONFIG['REALTIME_LIBS']
 
 NO_EXPAND_LIBS = True
 
@@ -87,12 +84,10 @@ DIST_INSTALL = True
 
 
 GeneratedFile(
-    "spidermonkey_checks",
-    script="/config/run_spidermonkey_checks.py",
+    'spidermonkey_checks', script='/config/run_spidermonkey_checks.py',
     inputs=[
-        "!%sjs_static.%s" % (CONFIG["LIB_PREFIX"], CONFIG["LIB_SUFFIX"]),
-        "/config/check_spidermonkey_style.py",
-        "/config/check_macroassembler_style.py",
-        "/config/check_js_opcode.py",
-    ],
-)
+        '!%sjs_static.%s' % (CONFIG['LIB_PREFIX'], CONFIG['LIB_SUFFIX']),
+        '/config/check_spidermonkey_style.py',
+        '/config/check_macroassembler_style.py',
+        '/config/check_js_opcode.py'
+        ])

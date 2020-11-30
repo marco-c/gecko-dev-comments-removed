@@ -4,15 +4,18 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "Networking")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'Networking')
 
-TEST_DIRS += ["tests/gtest"]
+TEST_DIRS += ['tests/gtest']
 
-SOURCES += ["nsWindowsSystemProxySettings.cpp", "ProxyUtils.cpp"]
-
-XPCOM_MANIFESTS += [
-    "components.conf",
+SOURCES += [
+    'nsWindowsSystemProxySettings.cpp',
+    'ProxyUtils.cpp'
 ]
 
-FINAL_LIBRARY = "xul"
+XPCOM_MANIFESTS += [
+    'components.conf',
+]
+
+FINAL_LIBRARY = 'xul'

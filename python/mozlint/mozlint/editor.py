@@ -10,7 +10,7 @@ from mozlint import formatters
 
 
 def get_editor():
-    return os.environ.get("EDITOR")
+    return os.environ.get('EDITOR')
 
 
 def edit_issues(result):
@@ -19,37 +19,31 @@ def edit_issues(result):
 
     editor = get_editor()
     if not editor:
-        print("warning: could not find a default editor")
+        print('warning: could not find a default editor')
         return
 
     name = os.path.basename(editor)
-    if name in ("vim", "nvim", "gvim"):
+    if name in ('vim', 'nvim', 'gvim'):
         cmd = [
             editor,
             
-            "--cmd",
-            "set errorformat+=%f:\\ line\\ %l\\\\,\\ col\\ %c\\\\,\\ %trror\\ -\\ %m",
-            "--cmd",
-            "set errorformat+=%f:\\ line\\ %l\\\\,\\ col\\ %c\\\\,\\ %tarning\\ -\\ %m",
-            "--cmd",
-            "set errorformat+=%f:\\ line\\ %l\\\\,\\ %trror\\ -\\ %m",
-            "--cmd",
-            "set errorformat+=%f:\\ line\\ %l\\\\,\\ %tarning\\ -\\ %m",
+            '--cmd', 'set errorformat+=%f:\\ line\\ %l\\\\,\\ col\\ %c\\\\,\\ %trror\\ -\\ %m',
+            '--cmd', 'set errorformat+=%f:\\ line\\ %l\\\\,\\ col\\ %c\\\\,\\ %tarning\\ -\\ %m',
+            '--cmd', 'set errorformat+=%f:\\ line\\ %l\\\\,\\ %trror\\ -\\ %m',
+            '--cmd', 'set errorformat+=%f:\\ line\\ %l\\\\,\\ %tarning\\ -\\ %m',
             
-            "-c",
-            "copen",
+            '-c', 'copen',
             
             
-            "-c",
-            "1bd",
+            '-c', '1bd',
         ]
 
-        with tempfile.NamedTemporaryFile(mode="w") as fh:
-            s = formatters.get("compact", summary=False)(result)
+        with tempfile.NamedTemporaryFile(mode='w') as fh:
+            s = formatters.get('compact', summary=False)(result)
             fh.write(s)
             fh.flush()
 
-            cmd.extend(["-q", fh.name])
+            cmd.extend(['-q', fh.name])
             subprocess.call(cmd)
 
     else:

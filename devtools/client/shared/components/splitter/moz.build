@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
-    "Draggable.js",
-    "GridElementWidthResizer.js",
-    "SplitBox.js",
+    'Draggable.js',
+    'GridElementWidthResizer.js',
+    'SplitBox.js',
 )

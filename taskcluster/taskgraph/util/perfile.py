@@ -25,31 +25,25 @@ def perfile_number_of_chunks(is_try, try_task_config, head_repository, head_rev,
         
         return 3
     tests_per_chunk = 10.0
-    if type.startswith("test-coverage"):
+    if type.startswith('test-coverage'):
         tests_per_chunk = 30.0
 
-    if type.startswith("test-verify-wpt") or type.startswith("test-coverage-wpt"):
-        file_patterns = [
-            "testing/web-platform/tests/**",
-            "testing/web-platform/mozilla/tests/**",
-        ]
-    elif type.startswith("test-verify-gpu") or type.startswith("test-coverage-gpu"):
-        file_patterns = [
-            "**/*webgl*/**/test_*",
-            "**/dom/canvas/**/test_*",
-            "**/gfx/tests/**/test_*",
-            "**/devtools/canvasdebugger/**/browser_*",
-            "**/reftest*/**",
-        ]
-    elif type.startswith("test-verify") or type.startswith("test-coverage"):
-        file_patterns = [
-            "**/test_*",
-            "**/browser_*",
-            "**/crashtest*/**",
-            "js/src/tests/test/**",
-            "js/src/tests/non262/**",
-            "js/src/tests/test262/**",
-        ]
+    if type.startswith('test-verify-wpt') or type.startswith('test-coverage-wpt'):
+        file_patterns = ['testing/web-platform/tests/**',
+                         'testing/web-platform/mozilla/tests/**']
+    elif type.startswith('test-verify-gpu') or type.startswith('test-coverage-gpu'):
+        file_patterns = ['**/*webgl*/**/test_*',
+                         '**/dom/canvas/**/test_*',
+                         '**/gfx/tests/**/test_*',
+                         '**/devtools/canvasdebugger/**/browser_*',
+                         '**/reftest*/**']
+    elif type.startswith('test-verify') or type.startswith('test-coverage'):
+        file_patterns = ['**/test_*',
+                         '**/browser_*',
+                         '**/crashtest*/**',
+                         'js/src/tests/test/**',
+                         'js/src/tests/non262/**',
+                         'js/src/tests/test262/**']
     else:
         
         return 1
@@ -63,28 +57,24 @@ def perfile_number_of_chunks(is_try, try_task_config, head_repository, head_rev,
     if is_try:
         changed_files.update(files_changed.get_locally_changed_files(GECKO))
     else:
-        changed_files.update(files_changed.get_changed_files(head_repository, head_rev))
+        changed_files.update(files_changed.get_changed_files(head_repository,
+                                                             head_rev))
 
     test_count = 0
     for pattern in file_patterns:
         for path in changed_files:
             
-            if path.endswith(".list") or path.endswith(".ini"):
+            if path.endswith('.list') or path.endswith('.ini'):
                 continue
-            if path.endswith("^headers^"):
+            if path.endswith('^headers^'):
                 continue
 
             if mozpackmatch(path, pattern):
                 gpu = False
-                if type == "test-verify-e10s" or type == "test-coverage-e10s":
+                if type == 'test-verify-e10s' or type == 'test-coverage-e10s':
                     
                     
-                    gpu_dirs = [
-                        "dom/canvas",
-                        "gfx/tests",
-                        "devtools/canvasdebugger",
-                        "webgl",
-                    ]
+                    gpu_dirs = ['dom/canvas', 'gfx/tests', 'devtools/canvasdebugger', 'webgl']
                     for gdir in gpu_dirs:
                         if len(path.split(gdir)) > 1:
                             gpu = True
@@ -92,7 +82,7 @@ def perfile_number_of_chunks(is_try, try_task_config, head_repository, head_rev,
                 if not gpu:
                     test_count += 1
 
-    chunks = test_count / tests_per_chunk
+    chunks = test_count/tests_per_chunk
     chunks = int(math.ceil(chunks))
 
     

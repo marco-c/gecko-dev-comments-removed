@@ -4,7 +4,7 @@
 
 
 
-Library("winlauncher-freestanding")
+Library('winlauncher-freestanding')
 
 FORCE_STATIC_LIB = True
 
@@ -14,43 +14,43 @@ FORCE_STATIC_LIB = True
 NO_PGO = True
 
 UNIFIED_SOURCES += [
-    "DllBlocklist.cpp",
-    "FunctionTableResolver.cpp",
-    "LoaderPrivateAPI.cpp",
-    "ModuleLoadFrame.cpp",
+    'DllBlocklist.cpp',
+    'FunctionTableResolver.cpp',
+    'LoaderPrivateAPI.cpp',
+    'ModuleLoadFrame.cpp',
 ]
 
 
 
-if CONFIG["CC_TYPE"] == "clang-cl":
-    CXXFLAGS += ["-Xclang"]
+if CONFIG['CC_TYPE'] == 'clang-cl':
+    CXXFLAGS += ['-Xclang']
 
 CXXFLAGS += [
-    "-ffreestanding",
+    '-ffreestanding',
 ]
 
 
-if CONFIG["CC_TYPE"] == "clang-cl":
-    CXXFLAGS += ["-FI"]
+if CONFIG['CC_TYPE'] == 'clang-cl':
+    CXXFLAGS += ['-FI']
 else:
-    CXXFLAGS += ["-include"]
+    CXXFLAGS += ['-include']
 
-CXXFLAGS += [SRCDIR + "/Freestanding.h"]
+CXXFLAGS += [ SRCDIR + '/Freestanding.h' ]
 
 OS_LIBS += [
-    "ntdll",
-    "ntdll_freestanding",
+    'ntdll',
+    'ntdll_freestanding',
 ]
 
-if CONFIG["COMPILE_ENVIRONMENT"] and CONFIG["LLVM_DLLTOOL"]:
+if CONFIG['COMPILE_ENVIRONMENT'] and CONFIG['LLVM_DLLTOOL']:
     GeneratedFile(
-        "%sntdll_freestanding.%s" % (CONFIG["LIB_PREFIX"], CONFIG["LIB_SUFFIX"]),
-        script="gen_ntdll_freestanding_lib.py",
-        inputs=["ntdll_freestanding.def"],
-        flags=[CONFIG["LLVM_DLLTOOL"]] + CONFIG["LLVM_DLLTOOL_FLAGS"],
-    )
+        '%sntdll_freestanding.%s' % (CONFIG['LIB_PREFIX'],
+                                     CONFIG['LIB_SUFFIX']),
+        script='gen_ntdll_freestanding_lib.py',
+        inputs=['ntdll_freestanding.def'],
+        flags=[CONFIG['LLVM_DLLTOOL']] + CONFIG['LLVM_DLLTOOL_FLAGS'])
 
 DisableStlWrapping()
 
-with Files("**"):
-    BUG_COMPONENT = ("Firefox", "Launcher Process")
+with Files('**'):
+    BUG_COMPONENT = ('Firefox', 'Launcher Process')

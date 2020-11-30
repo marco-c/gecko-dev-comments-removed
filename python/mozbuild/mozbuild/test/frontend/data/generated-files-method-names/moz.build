@@ -2,12 +2,12 @@
 
 
 
-GENERATED_FILES += ["bar.c", "foo.c"]
+GENERATED_FILES += [ 'bar.c', 'foo.c' ]
 
-bar = GENERATED_FILES["bar.c"]
-bar.script = "script.py:make_bar"
+bar = GENERATED_FILES['bar.c']
+bar.script = 'script.py:make_bar'
 bar.inputs = []
 
-foo = GENERATED_FILES["foo.c"]
-foo.script = "script.py"
+foo = GENERATED_FILES['foo.c']
+foo.script = 'script.py'
 foo.inputs = []

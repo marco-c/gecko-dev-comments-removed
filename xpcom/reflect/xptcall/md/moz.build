@@ -4,9 +4,9 @@
 
 
 
-arch = CONFIG["OS_ARCH"]
+arch = CONFIG['OS_ARCH']
 
-if arch == "WINNT":
-    DIRS += ["win32"]
+if arch == 'WINNT':
+    DIRS += ['win32']
 else:
-    DIRS += ["unix"]
+    DIRS += ['unix']

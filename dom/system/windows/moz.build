@@ -4,8 +4,13 @@
 
 
 
-SOURCES += ["nsHapticFeedback.cpp", "WindowsLocationProvider.cpp"]
+SOURCES += [
+    'nsHapticFeedback.cpp',
+    'WindowsLocationProvider.cpp'
+]
 
-LOCAL_INCLUDES += ["/dom/geolocation"]
+LOCAL_INCLUDES += [
+    '/dom/geolocation'
+]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

@@ -4,12 +4,10 @@
 
 
 
-option("--extra", help="Extra")
+option('--extra', help='Extra')
 
-
-@depends("--extra")
+@depends('--extra')
 def extra(extra):
     return extra
 
-
-set_config("EXTRA", extra)
+set_config('EXTRA', extra)

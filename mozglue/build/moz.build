@@ -7,102 +7,102 @@
 
 
 
-if CONFIG["JS_STANDALONE"] and not CONFIG["MOZ_MEMORY"]:
-    Library("mozglue")
-elif CONFIG["OS_TARGET"] in ("WINNT", "Darwin", "Android"):
-    SharedLibrary("mozglue")
+if CONFIG['JS_STANDALONE'] and not CONFIG['MOZ_MEMORY']:
+    Library('mozglue')
+elif CONFIG['OS_TARGET'] in ('WINNT', 'Darwin', 'Android'):
+    SharedLibrary('mozglue')
 else:
-    Library("mozglue")
+    Library('mozglue')
 
-if CONFIG["OS_TARGET"] == "Android":
-    LDFLAGS += ["-Wl,--version-script,%s/mozglue.ver" % SRCDIR]
+if CONFIG['OS_TARGET'] == 'Android':
+    LDFLAGS += ['-Wl,--version-script,%s/mozglue.ver' % SRCDIR]
     SOURCES += [
-        "BionicGlue.cpp",
+        'BionicGlue.cpp',
     ]
 
-if CONFIG["MOZ_ASAN"]:
+if CONFIG['MOZ_ASAN']:
     SOURCES += [
-        "AsanOptions.cpp",
+        'AsanOptions.cpp',
     ]
 
-if CONFIG["MOZ_UBSAN"]:
+if CONFIG['MOZ_UBSAN']:
     SOURCES += [
-        "UbsanOptions.cpp",
+        'UbsanOptions.cpp',
     ]
 
-if CONFIG["MOZ_TSAN"]:
+if CONFIG['MOZ_TSAN']:
     SOURCES += [
-        "TsanOptions.cpp",
+        'TsanOptions.cpp',
     ]
 
-if CONFIG["OS_TARGET"] == "WINNT":
-    if CONFIG["MOZ_MEMORY"]:
-        DEFFILE = "mozglue.def"
+if CONFIG['OS_TARGET'] == 'WINNT':
+    if CONFIG['MOZ_MEMORY']:
+        DEFFILE = 'mozglue.def'
     
     
     
     DELAYLOAD_DLLS += [
-        "user32.dll",
-        "winmm.dll",
+        'user32.dll',
+        'winmm.dll',
     ]
 
-if CONFIG["MOZ_WIDGET_TOOLKIT"]:
+if CONFIG['MOZ_WIDGET_TOOLKIT']:
 
-    if CONFIG["MOZ_MEMORY"] and FORCE_SHARED_LIB:
+    if CONFIG['MOZ_MEMORY'] and FORCE_SHARED_LIB:
         pass
         
     else:
         
         NoVisibilityFlags()
         SOURCES += [
-            "dummy.cpp",
+            'dummy.cpp',
         ]
 
-    if CONFIG["OS_TARGET"] == "WINNT":
+    if CONFIG['OS_TARGET'] == 'WINNT':
         LOCAL_INCLUDES += [
-            "/memory/build",
+            '/memory/build',
         ]
 
     EXPORTS.mozilla += [
-        "arm.h",
-        "mips.h",
-        "ppc.h",
-        "SSE.h",
+        'arm.h',
+        'mips.h',
+        'ppc.h',
+        'SSE.h',
     ]
 
-    if CONFIG["CPU_ARCH"].startswith("x86"):
+    if CONFIG['CPU_ARCH'].startswith('x86'):
         SOURCES += [
-            "SSE.cpp",
+            'SSE.cpp',
         ]
 
-    if CONFIG["CPU_ARCH"] == "arm":
+    if CONFIG['CPU_ARCH'] == 'arm':
         SOURCES += [
-            "arm.cpp",
+            'arm.cpp',
         ]
 
-    if CONFIG["CPU_ARCH"].startswith("mips"):
+    if CONFIG['CPU_ARCH'].startswith('mips'):
         SOURCES += [
-            "mips.cpp",
+            'mips.cpp',
         ]
 
-    if CONFIG["CPU_ARCH"].startswith("ppc"):
+    if CONFIG['CPU_ARCH'].startswith('ppc'):
         SOURCES += [
-            "ppc.cpp",
+            'ppc.cpp',
         ]
 
-    if CONFIG["MOZ_LINKER"]:
+    if CONFIG['MOZ_LINKER']:
         USE_LIBS += [
-            "zlib",
+            'zlib',
         ]
 
 USE_LIBS += [
-    "mfbt",
+    'mfbt',
 ]
 
-LIBRARY_DEFINES["IMPL_MFBT"] = True
-LIBRARY_DEFINES["MOZ_HAS_MOZGLUE"] = True
+LIBRARY_DEFINES['IMPL_MFBT'] = True
+LIBRARY_DEFINES['MOZ_HAS_MOZGLUE'] = True
 
-if CONFIG["OS_TARGET"] == "Darwin":
+if CONFIG['OS_TARGET'] == 'Darwin':
     
     
     
@@ -110,11 +110,11 @@ if CONFIG["OS_TARGET"] == "Darwin":
     
     
     
-    LDFLAGS += ["-Wl,-bind_at_load"]
+    LDFLAGS += ['-Wl,-bind_at_load']
 
-if CONFIG["MOZ_LINKER"] and CONFIG["CPU_ARCH"] == "arm":
-    LDFLAGS += ["-Wl,-version-script,%s/arm-eabi-filter" % SRCDIR]
+if CONFIG['MOZ_LINKER'] and CONFIG['CPU_ARCH'] == 'arm':
+    LDFLAGS += ['-Wl,-version-script,%s/arm-eabi-filter' % SRCDIR]
 
 DIST_INSTALL = True
 
-include("replace_malloc.mozbuild")
+include('replace_malloc.mozbuild')

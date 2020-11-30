@@ -4,16 +4,20 @@
 
 
 
-JAR_MANIFESTS += ["jar.mn"]
+JAR_MANIFESTS += ['jar.mn']
 
-BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.ini"]
-
-MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.ini"]
-
-EXTRA_JS_MODULES += [
-    "AboutCertViewerChild.jsm",
-    "AboutCertViewerParent.jsm",
+BROWSER_CHROME_MANIFESTS += [
+  'tests/browser/browser.ini'
 ]
 
-with Files("**"):
+MOCHITEST_CHROME_MANIFESTS += [
+  'tests/chrome/chrome.ini'
+]
+
+EXTRA_JS_MODULES += [
+  'AboutCertViewerChild.jsm',
+  'AboutCertViewerParent.jsm',
+]
+
+with Files('**'):
     BUG_COMPONENT = ("Firefox", "Security")

@@ -5,34 +5,34 @@
 
 
 UNIFIED_SOURCES += [
-    "../SandboxLogging.cpp",
-    "SandboxCrash.cpp",
-    "SandboxPrefBridge.cpp",
+    '../SandboxLogging.cpp',
+    'SandboxCrash.cpp',
+    'SandboxPrefBridge.cpp',
 ]
 
 SOURCES += [
-    "../../chromium/base/strings/safe_sprintf.cc",
+    '../../chromium/base/strings/safe_sprintf.cc',
 ]
 
 
 
-SOURCES["../../chromium/base/strings/safe_sprintf.cc"].flags += ["-DNDEBUG"]
+SOURCES['../../chromium/base/strings/safe_sprintf.cc'].flags += ['-DNDEBUG']
 
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
 LOCAL_INCLUDES += [
     
     
-    "/security/sandbox/chromium",
-    "/security/sandbox/linux",
+    '/security/sandbox/chromium',
+    '/security/sandbox/linux',
 ]
 
 USE_LIBS += [
-    "mozsandbox",
+    'mozsandbox',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wno-error=shadow"]
+if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+    CXXFLAGS += ['-Wno-error=shadow']

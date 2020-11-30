@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
-    "grids.js",
-    "highlighter-settings.js",
-    "index.js",
+    'grids.js',
+    'highlighter-settings.js',
+    'index.js',
 )
