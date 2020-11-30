@@ -1442,19 +1442,18 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
     return rv;
   }
 
-  
-  RefPtr<Element> firstSelectedCellElement =
-      GetFirstSelectedTableCellElement(error);
-  if (error.Failed()) {
-    NS_WARNING("HTMLEditor::GetFirstSelectedTableCellElement() failed");
-    return error.StealNSResult();
+  if (NS_WARN_IF(!SelectionRefPtr()->RangeCount())) {
+    return NS_ERROR_FAILURE;  
   }
 
-  MOZ_ASSERT(SelectionRefPtr()->RangeCount());
-
-  if (firstSelectedCellElement && SelectionRefPtr()->RangeCount() > 1) {
+  SelectedTableCellScanner scanner(*SelectionRefPtr());
+  if (scanner.IsInTableCellSelectionMode() &&
+      SelectionRefPtr()->RangeCount() > 1) {
     const RefPtr<PresShell> presShell{GetPresShell()};
-    CellIndexes firstCellIndexes(*firstSelectedCellElement, presShell, error);
+    
+    
+    CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
+                                 presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return error.StealNSResult();
@@ -1469,7 +1468,8 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
 
   
   
-  if (!firstSelectedCellElement || SelectionRefPtr()->RangeCount() == 1) {
+  if (!scanner.IsInTableCellSelectionMode() ||
+      SelectionRefPtr()->RangeCount() == 1) {
     int32_t columnCountToRemove = std::min(
         aNumberOfColumnsToDelete, tableSize.mColumnCount - startColIndex);
     for (int32_t i = 0; i < columnCountToRemove; i++) {
@@ -1485,9 +1485,10 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
   
   
   const RefPtr<PresShell> presShell{GetPresShell()};
-  for (cell = firstSelectedCellElement; cell;) {
-    if (cell != firstSelectedCellElement) {
-      CellIndexes cellIndexes(*cell, presShell, error);
+  for (RefPtr<Element> selectedCellElement = scanner.GetFirstElement();
+       selectedCellElement;) {
+    if (selectedCellElement != scanner.ElementsRef()[0]) {
+      CellIndexes cellIndexes(*selectedCellElement, presShell, error);
       if (error.Failed()) {
         NS_WARNING("CellIndexes failed");
         return error.StealNSResult();
@@ -1499,15 +1500,11 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
     
     int32_t nextCol = startColIndex;
     while (nextCol == startColIndex) {
-      cell = GetNextSelectedTableCellElement(error);
-      if (error.Failed()) {
-        NS_WARNING("HTMLEditor::GetNextSelectedTableCellElement() failed");
-        return error.StealNSResult();
-      }
-      if (!cell) {
+      selectedCellElement = scanner.GetNextElement();
+      if (!selectedCellElement) {
         break;
       }
-      CellIndexes cellIndexes(*cell, presShell, error);
+      CellIndexes cellIndexes(*selectedCellElement, presShell, error);
       if (error.Failed()) {
         NS_WARNING("CellIndexes failed");
         return error.StealNSResult();
