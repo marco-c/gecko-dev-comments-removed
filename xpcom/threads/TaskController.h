@@ -17,6 +17,7 @@
 #include "nsISupportsImpl.h"
 #include "nsIEventTarget.h"
 
+#include <atomic>
 #include <thread>
 #include <memory>
 #include <vector>
@@ -106,7 +107,7 @@ class TaskManager {
   bool mCurrentSuspended = false;
   int32_t mCurrentPriorityModifier = 0;
 
-  Atomic<uint32_t> mTaskCount;
+  std::atomic<uint32_t> mTaskCount;
 };
 
 
@@ -212,7 +213,7 @@ class Task {
   bool mIsInGraph = false;
 #endif
 
-  static uint64_t sCurrentTaskSeqNo;
+  static std::atomic<uint64_t> sCurrentTaskSeqNo;
   int64_t mSeqNo;
   uint32_t mPriority;
   
