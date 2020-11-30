@@ -784,7 +784,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     for (let i = domRules.length - 1; i >= 0; i--) {
       const domRule = domRules[i];
 
-      const isSystem = !SharedCssLogic.isAuthorStylesheet(
+      const isSystem = SharedCssLogic.isAgentStylesheet(
         domRule.parentStyleSheet
       );
 
@@ -807,8 +807,8 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
       rules.push({
         rule: ruleActor,
-        inherited: inherited,
-        isSystem: isSystem,
+        inherited,
+        isSystem,
         pseudoElement: pseudo,
       });
     }
@@ -1657,12 +1657,25 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       
       const userAgent =
         this._parentSheet &&
-        !SharedCssLogic.isAuthorStylesheet(this._parentSheet);
+        SharedCssLogic.isAgentStylesheet(this._parentSheet);
       
-      const chrome =
-        this._parentSheet &&
-        this._parentSheet.href &&
-        this._parentSheet.href.startsWith("chrome:");
+      
+      
+      
+      
+      
+      const chrome = (() => {
+        if (!this._parentSheet) {
+          return false;
+        }
+        if (SharedCssLogic.isUserStylesheet(this._parentSheet)) {
+          return true;
+        }
+        if (this._parentSheet.href) {
+          return this._parentSheet.href.startsWith("chrome:");
+        }
+        return el && el.ownerDocument.documentURI.startsWith("chrome:");
+      })();
       
       
       const quirks =
