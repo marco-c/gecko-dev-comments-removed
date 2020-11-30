@@ -190,6 +190,7 @@ var UrlbarUtils = {
   
   WEB_ENGINE_NAMES: new Set([
     "百度", 
+    "百度搜索", 
     "Bing",
     "DuckDuckGo",
     "Ecosia",
