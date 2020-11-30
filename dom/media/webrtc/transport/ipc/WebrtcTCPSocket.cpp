@@ -554,12 +554,6 @@ WebrtcTCPSocket::OnTransportAvailable(nsISocketTransport* aTransport,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-WebrtcTCPSocket::OnWebSocketConnectionAvailable(
-    nsIWebSocketConnection* aConnection) {
-  return NS_OK;
-}
-
 void WebrtcTCPSocket::FinishOpen() {
   MOZ_ASSERT(OnSocketThread());
   
