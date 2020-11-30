@@ -11119,7 +11119,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
                          Some(scrollPos), aNewURI,
                          nullptr,
                          aDocument->NodePrincipal(),
-                        csp, title, Some(scrollRestorationIsManual), aData,
+                        csp, title, scrollRestorationIsManual, aData,
                         uriWasModified);
     } else {
       
@@ -11166,7 +11166,8 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     UpdateActiveEntry(
         true,  Nothing(), aNewURI, aNewURI,
         aDocument->NodePrincipal(), aDocument->GetCsp(), title,
-         Nothing(), aData, uriWasModified);
+        mActiveEntry && mActiveEntry->GetScrollRestorationIsManual(), aData,
+        uriWasModified);
   } else {
     
     newSHEntry = mOSHE;
@@ -11585,8 +11586,8 @@ void nsDocShell::UpdateActiveEntry(
     bool aReplace, const Maybe<nsPoint>& aPreviousScrollPos, nsIURI* aURI,
     nsIURI* aOriginalURI, nsIPrincipal* aTriggeringPrincipal,
     nsIContentSecurityPolicy* aCsp, const nsAString& aTitle,
-    const Maybe<bool>& aScrollRestorationIsManual,
-    nsIStructuredCloneContainer* aData, bool aURIWasModified) {
+    bool aScrollRestorationIsManual, nsIStructuredCloneContainer* aData,
+    bool aURIWasModified) {
   MOZ_ASSERT(mozilla::SessionHistoryInParent());
   MOZ_ASSERT(aURI, "uri is null");
   MOZ_ASSERT(mLoadType == LOAD_PUSHSTATE,
@@ -11616,10 +11617,7 @@ void nsDocShell::UpdateActiveEntry(
   mActiveEntry->SetTitle(aTitle);
   mActiveEntry->SetStateData(static_cast<nsStructuredCloneContainer*>(aData));
   mActiveEntry->SetURIWasModified(aURIWasModified);
-  if (aScrollRestorationIsManual.isSome()) {
-    mActiveEntry->SetScrollRestorationIsManual(
-        aScrollRestorationIsManual.value());
-  }
+  mActiveEntry->SetScrollRestorationIsManual(aScrollRestorationIsManual);
 
   if (replace) {
     mBrowsingContext->ReplaceActiveSessionHistoryEntry(mActiveEntry.get());
