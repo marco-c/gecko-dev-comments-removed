@@ -320,11 +320,6 @@ var Impl = {
   
   
   _isUserActive: true,
-  
-  
-  
-  
-  _fogUserActive: false,
   _startupIO: {},
   
   
@@ -840,9 +835,6 @@ var Impl = {
     
     this.addObserver("user-interaction-active");
     this.addObserver("user-interaction-inactive");
-    
-    this.addObserver("window-raised");
-    this.addObserver("window-lowered");
   },
 
   
@@ -1136,43 +1128,8 @@ var Impl = {
   
 
 
-  _onWindowChange(aWindow, aRaised) {
-    Telemetry.scalarSet("fog.eval.window_raised", aRaised);
-    let error = false;
-    if (aRaised) {
-      error = !TelemetryStopwatch.start("FOG_EVAL_WINDOW_RAISED_S", aWindow, {
-        inSeconds: true,
-      });
-    } else if (
-      this._fogFirstWindowChange !== false &&
-      !TelemetryStopwatch.running("FOG_EVAL_WINDOW_RAISED_S", aWindow)
-    ) {
-      
-      
-      let histogram = Telemetry.getHistogramById("FOG_EVAL_WINDOW_RAISED_S");
-      histogram.add(
-        Math.floor(
-          (Policy.monotonicNow() - this._subsessionStartTimeMonotonic) / 1000
-        )
-      );
-    } else {
-      error = !TelemetryStopwatch.finish("FOG_EVAL_WINDOW_RAISED_S", aWindow);
-    }
-    if (error) {
-      Telemetry.scalarAdd("fog.eval.window_raised_error", 1);
-    }
-    this._fogFirstWindowChange = false;
-  },
-
-  
-
-
   _onActiveTick(aUserActive) {
     const needsUpdate = aUserActive && this._isUserActive;
-    const userActivityChanged =
-      (aUserActive && !this._fogUserActive) ||
-      (!aUserActive && this._fogUserActive);
-    this._fogUserActive = aUserActive;
     this._isUserActive = aUserActive;
 
     
@@ -1180,41 +1137,6 @@ var Impl = {
     if (needsUpdate) {
       this._sessionActiveTicks++;
       Telemetry.scalarAdd("browser.engagement.active_ticks", 1);
-    }
-
-    if (userActivityChanged) {
-      
-      Telemetry.scalarSet("fog.eval.user_active", aUserActive);
-      let error = false;
-      let inactiveError = false;
-      if (aUserActive) {
-        
-        
-        if (this._fogFirstActivityChange === false) {
-          inactiveError = !TelemetryStopwatch.finish(
-            "FOG_EVAL_USER_INACTIVE_S"
-          );
-        }
-        error = !TelemetryStopwatch.start("FOG_EVAL_USER_ACTIVE_S", null, {
-          inSeconds: true,
-        });
-      } else {
-        inactiveError = !TelemetryStopwatch.start(
-          "FOG_EVAL_USER_INACTIVE_S",
-          null,
-          {
-            inSeconds: true,
-          }
-        );
-        error = !TelemetryStopwatch.finish("FOG_EVAL_USER_ACTIVE_S");
-      }
-      if (error) {
-        Telemetry.scalarAdd("fog.eval.user_active_error", 1);
-      }
-      if (inactiveError) {
-        Telemetry.scalarAdd("fog.eval.user_inactive_error", 1);
-      }
-      this._fogFirstActivityChange = false;
     }
   },
 
@@ -1291,12 +1213,6 @@ var Impl = {
         break;
       case "user-interaction-inactive":
         this._onActiveTick(false);
-        break;
-      case "window-raised":
-        this._onWindowChange(aSubject, true);
-        break;
-      case "window-lowered":
-        this._onWindowChange(aSubject, false);
         break;
     }
     return undefined;
