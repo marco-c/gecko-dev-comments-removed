@@ -19,7 +19,7 @@ class ServiceWorkerParent;
 
 class ServiceWorkerProxy final {
   
-  ServiceWorkerParent* mActor;
+  RefPtr<ServiceWorkerParent> mActor;
 
   
   nsCOMPtr<nsISerialEventTarget> mEventTarget;
