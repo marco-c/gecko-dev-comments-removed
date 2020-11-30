@@ -2283,6 +2283,7 @@ void MacroAssemblerMIPS64Compat::wasmLoadI64Impl(
 
   MOZ_ASSERT(!access.isZeroExtendSimd128Load());
   MOZ_ASSERT(!access.isSplatSimd128Load());
+  MOZ_ASSERT(!access.isWidenSimd128Load());
 
   
   if (offset) {
