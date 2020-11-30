@@ -1107,7 +1107,8 @@ static bool DisplayListIsNonBlank(nsDisplayList* aList) {
 
 
 
-static bool DisplayListIsContentful(nsDisplayList* aList) {
+static bool DisplayListIsContentful(nsDisplayListBuilder* aBuilder,
+                                    nsDisplayList* aList) {
   for (nsDisplayItem* i : *aList) {
     DisplayItemType type = i->GetType();
     nsDisplayList* children = i->GetChildren();
@@ -1119,10 +1120,14 @@ static bool DisplayListIsContentful(nsDisplayList* aList) {
       
       default:
         if (i->IsContentful()) {
-          return true;
+          bool dummy;
+          nsRect bound = i->GetBounds(aBuilder, &dummy);
+          if (!bound.IsEmpty()) {
+            return true;
+          }
         }
         if (children) {
-          if (DisplayListIsContentful(children)) {
+          if (DisplayListIsContentful(aBuilder, children)) {
             return true;
           }
         }
