@@ -263,8 +263,10 @@ class FaviconLoad {
     let canStoreIcon = this.icon.beforePageShow;
     if (canStoreIcon) {
       
+      
       try {
         if (
+          this.icon.iconUri.filePath != "/favicon.ico" &&
           this.channel instanceof Ci.nsIHttpChannel &&
           this.channel.isNoStoreResponse()
         ) {
