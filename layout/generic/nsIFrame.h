@@ -3773,6 +3773,9 @@ class nsIFrame : public nsQueryFrame {
     bool mJumpedHardBreak = false;
     
     bool mMovedOverNonSelectableText = false;
+    
+
+    bool mHasSelectableFrame = false;
 
     FrameSearchResult PeekOffsetNoAmount(bool aForward) {
       return mFrame->PeekOffsetNoAmount(aForward, &mOffset);
@@ -5766,4 +5769,4 @@ template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
   return true;
 }
 
-#endif 
+#endif
