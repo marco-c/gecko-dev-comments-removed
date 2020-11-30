@@ -6,9 +6,18 @@
 
 #include "SDBRequest.h"
 
-#include "nsISDBCallbacks.h"
-#include "nsThreadUtils.h"
+
 #include "SDBConnection.h"
+
+
+#include <utility>
+#include "mozilla/MacroForEach.h"
+#include "nsError.h"
+#include "nsISDBCallbacks.h"
+#include "nsISupportsUtils.h"
+#include "nsIVariant.h"
+#include "nsThreadUtils.h"
+#include "nscore.h"
 
 namespace mozilla {
 namespace dom {

@@ -6,10 +6,18 @@
 
 #include "ActorsChild.h"
 
-#include "nsVariant.h"
+
 #include "SDBConnection.h"
 #include "SDBRequest.h"
 #include "SDBResults.h"
+
+
+#include "mozilla/Assertions.h"
+#include "mozilla/dom/PBackgroundSDBRequest.h"
+#include "nsError.h"
+#include "nsID.h"
+#include "nsISDBResults.h"
+#include "nsVariant.h"
 
 namespace mozilla {
 namespace dom {
