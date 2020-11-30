@@ -51,6 +51,10 @@ class FissionTestHelperChild extends JSWindowActorChild {
       defineAs: "subtestDone",
     });
 
+    Cu.exportFunction(this.subtestFailed.bind(this), FissionTestHelper, {
+      defineAs: "subtestFailed",
+    });
+
     Cu.exportFunction(this.sendToOopif.bind(this), FissionTestHelper, {
       defineAs: "sendToOopif",
     });
@@ -67,6 +71,13 @@ class FissionTestHelperChild extends JSWindowActorChild {
       cw.ApzCleanup.execute();
     }
     this.sendAsyncMessage("Test:Complete", {});
+  }
+
+  
+  
+  subtestFailed(msg) {
+    this.sendAsyncMessage("ok", { cond: false, msg });
+    this.subtestDone();
   }
 
   
