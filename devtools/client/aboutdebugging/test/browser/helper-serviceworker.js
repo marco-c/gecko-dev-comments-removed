@@ -29,12 +29,18 @@ async function enableServiceWorkerDebugging() {
 
 
 
-function onTabMessage(tab, message) {
-  const mm = tab.linkedBrowser.messageManager;
-  return new Promise(resolve => {
-    mm.addMessageListener(message, function listener() {
-      mm.removeMessageListener(message, listener);
-      resolve();
+function onServiceWorkerMessage(tab, message) {
+  info("Make the test page notify us when the service worker sends a message.");
+  return SpecialPowers.spawn(tab.linkedBrowser, [message], function(
+    messageChild
+  ) {
+    return new Promise(resolve => {
+      const win = content.wrappedJSObject;
+      win.navigator.serviceWorker.addEventListener("message", function(event) {
+        if (event.data == messageChild) {
+          resolve();
+        }
+      });
     });
   });
 }
@@ -74,25 +80,6 @@ async function waitForRegistration(tab) {
       return !!(await content.wrappedJSObject.getRegistration());
     })
   );
-}
-
-
-
-
-
-
-
-
-
-
-function forwardServiceWorkerMessage(tab) {
-  info("Make the test page notify us when the service worker sends a message.");
-  return ContentTask.spawn(tab.linkedBrowser, {}, function() {
-    const win = content.wrappedJSObject;
-    win.navigator.serviceWorker.addEventListener("message", function(event) {
-      sendAsyncMessage(event.data);
-    });
-  });
 }
 
 
