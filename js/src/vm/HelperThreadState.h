@@ -20,6 +20,7 @@
 #include "jsapi.h"
 
 #include "ds/Fifo.h"
+#include "frontend/CompilationInfo.h"  
 #include "js/CompileOptions.h"
 #include "js/TypeDecls.h"
 #include "threading/ConditionVariable.h"
@@ -41,11 +42,6 @@ class PromiseObject;
 namespace jit {
 class IonCompileTask;
 class IonFreeTask;
-}  
-
-namespace frontend {
-struct CompilationInfo;
-struct CompilationInfoVector;
 }  
 
 namespace wasm {
@@ -527,6 +523,8 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
   
   UniquePtr<frontend::CompilationInfoVector> compilationInfos_;
+
+  frontend::CompilationGCOutput gcOutput_;
 
   
   
