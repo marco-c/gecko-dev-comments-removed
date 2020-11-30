@@ -8,6 +8,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EditorDOMPoint.h"
+#include "mozilla/EditorUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AncestorIterator.h"
@@ -899,6 +900,33 @@ class MOZ_STACK_CLASS SelectedTableCellScanner final {
     mSelectedCellElements.AppendElement(*firstSelectedCellElement);
     for (uint32_t i = 1; i < aSelection.RangeCount(); i++) {
       nsRange* range = aSelection.GetRangeAt(i);
+      if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
+        continue;  
+      }
+      
+      
+      
+      if (dom::Element* selectedCellElement =
+              HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(*range)) {
+        mSelectedCellElements.AppendElement(*selectedCellElement);
+      }
+    }
+  }
+
+  explicit SelectedTableCellScanner(const AutoRangeArray& aRanges) {
+    if (aRanges.Ranges().IsEmpty()) {
+      return;
+    }
+    dom::Element* firstSelectedCellElement =
+        HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(
+            aRanges.FirstRangeRef());
+    if (!firstSelectedCellElement) {
+      return;  
+    }
+    mSelectedCellElements.SetCapacity(aRanges.Ranges().Length());
+    mSelectedCellElements.AppendElement(*firstSelectedCellElement);
+    for (uint32_t i = 1; i < aRanges.Ranges().Length(); i++) {
+      nsRange* range = aRanges.Ranges()[i];
       if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
         continue;  
       }

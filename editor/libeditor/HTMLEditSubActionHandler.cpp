@@ -3273,6 +3273,25 @@ nsresult HTMLEditor::ComputeTargetRanges(
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
+  SelectedTableCellScanner scanner(aRangesToDelete);
+  if (scanner.IsInTableCellSelectionMode()) {
+    
+    
+    if (scanner.ElementsRef().Length() == aRangesToDelete.Ranges().Length()) {
+      return NS_OK;
+    }
+    
+    size_t removedRanges = 0;
+    for (size_t i = 1; i < scanner.ElementsRef().Length(); i++) {
+      if (HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(
+              aRangesToDelete.Ranges()[i - removedRanges]) !=
+          scanner.ElementsRef()[i]) {
+        aRangesToDelete.Ranges().RemoveElementAt(i - removedRanges);
+        removedRanges++;
+      }
+    }
+    return NS_OK;
+  }
 
   AutoDeleteRangesHandler deleteHandler;
   nsresult rv = deleteHandler.ComputeRangesToDelete(*this, aDirectionAndAmount,
