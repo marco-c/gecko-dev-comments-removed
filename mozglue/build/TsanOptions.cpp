@@ -352,6 +352,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:GetCompositorBackendType\n"
          "race:SupportsTextureDirectMapping\n"
 
+         
+         "thread:StartupCache\n"
+
       
       ;  
 }
