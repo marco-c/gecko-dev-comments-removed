@@ -156,6 +156,10 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.tabs.warnOnOpen", false],
 
   
+  
+  ["browser.toolbars.bookmarks.visibility", "never"],
+
+  
   ["browser.usedOnWindows10.introURL", ""],
 
   

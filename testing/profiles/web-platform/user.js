@@ -6,6 +6,9 @@ user_pref("browser.newtabpage.enabled", false);
 user_pref("browser.sessionstore.resume_from_crash", false);
 
 
+user_pref("browser.toolbars.bookmarks.visibility", "never");
+
+
 
 user_pref("extensions.autoDisableScopes", 10);
 

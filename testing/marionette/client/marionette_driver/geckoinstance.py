@@ -586,6 +586,10 @@ class DesktopInstance(GeckoInstance):
         "browser.tabs.warnOnOpen": False,
 
         
+        
+        "browser.toolbars.bookmarks.visibility": "never",
+
+        
         "browser.uitour.enabled": False,
 
         

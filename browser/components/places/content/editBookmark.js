@@ -6,6 +6,10 @@ var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
+});
+
 var gEditItemOverlay = {
   
   
@@ -877,7 +881,7 @@ var gEditItemOverlay = {
 
       
       if (containerGuid == PlacesUtils.bookmarks.toolbarGuid) {
-        Services.obs.notifyObservers(null, "autoshow-bookmarks-toolbar");
+        this._autoshowBookmarksToolbar();
       }
     }
 
@@ -892,6 +896,22 @@ var gEditItemOverlay = {
         this._folderTree.selectItems([containerGuid]);
       }
     }
+  },
+
+  _autoshowBookmarksToolbar() {
+    let toolbar = document.getElementById("PersonalToolbar");
+    if (!toolbar.collapsed) {
+      return;
+    }
+
+    let placement = CustomizableUI.getPlacementOfWidget("personal-bookmarks");
+    let area = placement && placement.area;
+    if (area != CustomizableUI.AREA_BOOKMARKS) {
+      return;
+    }
+
+    
+    setToolbarVisibility(toolbar, true, false);
   },
 
   onFolderTreeSelect() {
