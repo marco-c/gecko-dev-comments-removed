@@ -690,6 +690,8 @@ const browsingContextTargetPrototype = {
     
     this._originalWindow = this.window;
 
+    this._docShellsObserved = false;
+
     
     
     DevToolsUtils.executeSoon(() => this._watchDocshells());
@@ -699,14 +701,39 @@ const browsingContextTargetPrototype = {
 
   _watchDocshells() {
     
+    
+    if (this.exited) {
+      return;
+    }
+
+    
     Services.obs.addObserver(this, "webnavigation-create");
     Services.obs.addObserver(this, "webnavigation-destroy");
+    this._docShellsObserved = true;
 
     
     this._progressListener.watch(this.docShell);
 
     
     this._updateChildDocShells();
+  },
+
+  _unwatchDocshells() {
+    if (this._progressListener) {
+      this._progressListener.destroy();
+      this._progressListener = null;
+      this._originalWindow = null;
+    }
+
+    
+    
+    
+    
+    if (this._docShellsObserved) {
+      Services.obs.removeObserver(this, "webnavigation-create");
+      Services.obs.removeObserver(this, "webnavigation-destroy");
+      this._docShellsObserved = true;
+    }
   },
 
   _unwatchDocShell(docShell) {
@@ -1033,15 +1060,7 @@ const browsingContextTargetPrototype = {
       this._unwatchDocShell(this.docShell);
       this._restoreDocumentSettings();
     }
-    if (this._progressListener) {
-      this._progressListener.destroy();
-      this._progressListener = null;
-      this._originalWindow = null;
-
-      
-      Services.obs.removeObserver(this, "webnavigation-create");
-      Services.obs.removeObserver(this, "webnavigation-destroy");
-    }
+    this._unwatchDocshells();
 
     this._destroyThreadActor();
 
