@@ -110,9 +110,11 @@ extern bool InstantiateStencilsForDelazify(JSContext* cx,
 
 
 extern bool PrepareForInstantiate(JSContext* cx,
-                                  CompilationInfo& compilationInfo);
+                                  CompilationInfo& compilationInfo,
+                                  CompilationGCOutput& gcOutput);
 extern bool PrepareForInstantiate(JSContext* cx,
-                                  CompilationInfoVector& compilationInfos);
+                                  CompilationInfoVector& compilationInfos,
+                                  CompilationGCOutput& gcOutput);
 
 }  
 
