@@ -12890,17 +12890,14 @@ bool Document::IsPotentiallyScrollable(HTMLBodyElement* aBody) {
   
   MOZ_ASSERT(aBody->GetParent() == aBody->OwnerDoc()->GetRootElement());
   nsIFrame* parentFrame = nsLayoutUtils::GetStyleFrame(aBody->GetParent());
-  if (parentFrame && !parentFrame->StyleDisplay()->IsScrollableOverflow()) {
+  if (parentFrame &&
+      parentFrame->StyleDisplay()->OverflowIsVisibleInBothAxis()) {
     return false;
   }
 
   
   
-  if (!bodyFrame->StyleDisplay()->IsScrollableOverflow()) {
-    return false;
-  }
-
-  return true;
+  return !bodyFrame->StyleDisplay()->OverflowIsVisibleInBothAxis();
 }
 
 Element* Document::GetScrollingElement() {

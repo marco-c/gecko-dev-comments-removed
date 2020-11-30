@@ -1120,8 +1120,9 @@ static bool CheckOverflow(const ComputedStyle* aComputedStyle,
     return false;
   }
 
-  if (display->mOverflowX == StyleOverflow::Visible &&
-      display->mOverflowY == StyleOverflow::Visible) {
+  
+  
+  if (display->OverflowIsVisibleInBothAxis()) {
     return false;
   }
 
