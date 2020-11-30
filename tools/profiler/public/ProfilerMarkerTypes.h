@@ -37,6 +37,7 @@ namespace geckoprofiler::markers {
 
 
 using Tracing = mozilla::baseprofiler::markers::Tracing;
+using FileIO = mozilla::baseprofiler::markers::FileIO;
 using UserTimingMark = mozilla::baseprofiler::markers::UserTimingMark;
 using UserTimingMeasure = mozilla::baseprofiler::markers::UserTimingMeasure;
 using Hang = mozilla::baseprofiler::markers::Hang;

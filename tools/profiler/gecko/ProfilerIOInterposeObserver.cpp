@@ -3,45 +3,11 @@
 
 
 #include "ProfilerIOInterposeObserver.h"
+
 #include "GeckoProfiler.h"
+#include "ProfilerMarkerPayload.h"
 
 using namespace mozilla;
-
-namespace geckoprofiler::markers {
-struct FileIOMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("FileIO");
-  }
-  static void StreamJSONMarkerData(JSONWriter& aWriter,
-                                   const ProfilerString8View& aOperation,
-                                   const ProfilerString8View& aSource,
-                                   const ProfilerString8View& aFilename,
-                                   MarkerThreadId aOperationThreadId) {
-    aWriter.StringProperty("operation", aOperation);
-    aWriter.StringProperty("source", aSource);
-    if (aFilename.Length() != 0) {
-      aWriter.StringProperty("filename", aFilename);
-    }
-    if (!aOperationThreadId.IsUnspecified()) {
-      aWriter.IntProperty("threadId", aOperationThreadId.ThreadId());
-    }
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::markerChart, MS::Location::markerTable,
-              MS::Location::timelineFileIO};
-    schema.AddKeyLabelFormatSearchable("operation", "Operation",
-                                       MS::Format::string,
-                                       MS::Searchable::searchable);
-    schema.AddKeyLabelFormatSearchable("source", "Source", MS::Format::string,
-                                       MS::Searchable::searchable);
-    schema.AddKeyLabelFormatSearchable("filename", "Filename",
-                                       MS::Format::filePath,
-                                       MS::Searchable::searchable);
-    return schema;
-  }
-};
-}  
 
 static auto GetFilename(IOInterposeObserver::Observation& aObservation) {
   AUTO_PROFILER_STATS(IO_filename);
@@ -53,6 +19,14 @@ static auto GetFilename(IOInterposeObserver::Observation& aObservation) {
     CopyUTF16toUTF8(filename16, filename8);
   }
   return filename8;
+}
+
+static UniqueProfilerBacktrace GetBacktraceUnless(bool aPrevent) {
+  if (aPrevent) {
+    return nullptr;
+  }
+  AUTO_PROFILER_STATS(IO_backtrace);
+  return profiler_get_backtrace();
 }
 
 void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
@@ -73,7 +47,6 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
     return;
   }
 
-  const bool doCaptureStack = !(features & ProfilerFeature::NoIOStacks);
   if (IsMainThread()) {
     
     
@@ -85,25 +58,12 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
     AUTO_PROFILER_STATS(IO_MT);
     nsAutoCString type{aObservation.FileType()};
     type.AppendLiteral("IO");
-
-    
-    PROFILER_MARKER(
-        type, OTHER,
-        MarkerOptions(
-            MarkerTiming::Interval(aObservation.Start(), aObservation.End()),
-            MarkerStack::MaybeCapture(doCaptureStack)),
-        FileIOMarker,
-        
-        ProfilerString8View::WrapNullTerminatedString(
-            aObservation.ObservedOperationString()),
-        
-        ProfilerString8View::WrapNullTerminatedString(aObservation.Reference()),
-        
-        GetFilename(aObservation),
-        
-        
-        
-        MarkerThreadId{});
+    PROFILER_ADD_MARKER_WITH_PAYLOAD(
+        type.get(), OTHER, FileIOMarkerPayload,
+        (aObservation.ObservedOperationString(), aObservation.Reference(),
+         GetFilename(aObservation).get(), aObservation.Start(),
+         aObservation.End(),
+         GetBacktraceUnless(features & ProfilerFeature::NoIOStacks)));
 
   } else if (profiler_thread_is_being_profiled()) {
     
@@ -111,57 +71,23 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
       return;
     }
     AUTO_PROFILER_STATS(IO_off_MT);
-
+    FileIOMarkerPayload payload{
+        aObservation.ObservedOperationString(),
+        aObservation.Reference(),
+        GetFilename(aObservation).get(),
+        aObservation.Start(),
+        aObservation.End(),
+        GetBacktraceUnless(features & ProfilerFeature::NoIOStacks)};
     nsAutoCString type{aObservation.FileType()};
     type.AppendLiteral("IO");
-
     
     
-    UniquePtr<ProfileChunkedBuffer> backtrace =
-        doCaptureStack ? profiler_capture_backtrace() : nullptr;
-
+    profiler_add_marker(type.get(), JS::ProfilingCategoryPair::OTHER, payload);
     
-    PROFILER_MARKER(
-        type, OTHER,
-        MarkerOptions(
-            MarkerTiming::Interval(aObservation.Start(), aObservation.End()),
-            backtrace ? MarkerStack::UseBacktrace(*backtrace)
-                      : MarkerStack::NoStack()),
-        FileIOMarker,
-        
-        ProfilerString8View::WrapNullTerminatedString(
-            aObservation.ObservedOperationString()),
-        
-        ProfilerString8View::WrapNullTerminatedString(aObservation.Reference()),
-        
-        GetFilename(aObservation),
-        
-        
-        
-        MarkerThreadId{});
-
-    
-    
+    payload.SetIOThreadId(profiler_current_thread_id());
     type.AppendLiteral(" (non-main thread)");
-    PROFILER_MARKER(
-        type, OTHER,
-        MarkerOptions(
-            MarkerTiming::Interval(aObservation.Start(), aObservation.End()),
-            backtrace ? MarkerStack::UseBacktrace(*backtrace)
-                      : MarkerStack::NoStack(),
-            
-            
-            MarkerThreadId(profiler_main_thread_id())),
-        FileIOMarker,
-        
-        ProfilerString8View::WrapNullTerminatedString(
-            aObservation.ObservedOperationString()),
-        
-        ProfilerString8View::WrapNullTerminatedString(aObservation.Reference()),
-        
-        GetFilename(aObservation),
-        
-        MarkerThreadId::CurrentThread());
+    profiler_add_marker_for_mainthread(JS::ProfilingCategoryPair::OTHER,
+                                       type.get(), payload);
 
   } else {
     
@@ -176,25 +102,13 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
     } else {
       type.AppendLiteral("IO (unregistered thread)");
     }
-
-    
-    
-    PROFILER_MARKER(
-        type, OTHER,
-        MarkerOptions(
-            MarkerTiming::Interval(aObservation.Start(), aObservation.End()),
-            doCaptureStack ? MarkerStack::Capture() : MarkerStack::NoStack(),
-            
-            MarkerThreadId(profiler_main_thread_id())),
-        FileIOMarker,
-        
-        ProfilerString8View::WrapNullTerminatedString(
-            aObservation.ObservedOperationString()),
-        
-        ProfilerString8View::WrapNullTerminatedString(aObservation.Reference()),
-        
-        GetFilename(aObservation),
-        
-        MarkerThreadId::CurrentThread());
+    profiler_add_marker_for_mainthread(
+        JS::ProfilingCategoryPair::OTHER, type.get(),
+        FileIOMarkerPayload(
+            aObservation.ObservedOperationString(), aObservation.Reference(),
+            GetFilename(aObservation).get(), aObservation.Start(),
+            aObservation.End(),
+            GetBacktraceUnless(features & ProfilerFeature::NoIOStacks),
+            Some(profiler_current_thread_id())));
   }
 }

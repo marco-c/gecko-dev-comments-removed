@@ -153,37 +153,3 @@ async function stopAndGetProfile() {
   Services.profiler.StopProfiler();
   return profile;
 }
-
-
-
-
-
-
-
-function isIntervalMarker(inflatedMarker) {
-  return (
-    inflatedMarker.phase === 1 &&
-    typeof inflatedMarker.startTime === "number" &&
-    typeof inflatedMarker.endTime === "number"
-  );
-}
-
-
-
-
-
-function getThreads(profile) {
-  const threads = [];
-
-  function getThreadsRecursive(process) {
-    for (const thread of process.threads) {
-      threads.push(thread);
-    }
-    for (const subprocess of process.processes) {
-      getThreadsRecursive(subprocess);
-    }
-  }
-
-  getThreadsRecursive(profile);
-  return threads;
-}
