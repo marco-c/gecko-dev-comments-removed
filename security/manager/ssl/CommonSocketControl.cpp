@@ -143,6 +143,8 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
     return NS_OK;
   }
 
+  MutexAutoLock lock(mMutex);
+
   
   
   if (mSucceededCertChain.IsEmpty()) {
