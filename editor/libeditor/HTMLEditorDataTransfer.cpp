@@ -538,12 +538,8 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
 
   
   
-  bool cellSelectionMode = false;
-  RefPtr<Element> cellElement =
-      mHTMLEditor.GetFirstSelectedTableCellElement(ignoredError);
-  if (cellElement) {
-    cellSelectionMode = true;
-  }
+  bool cellSelectionMode =
+      HTMLEditUtils::IsInTableCellSelectionMode(*mHTMLEditor.SelectionRefPtr());
 
   if (cellSelectionMode) {
     
