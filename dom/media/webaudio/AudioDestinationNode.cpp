@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "AudioDestinationNode.h"
 
@@ -60,7 +60,7 @@ class OnCompleteTask final : public Runnable {
   RefPtr<AudioContext> mAudioContext;
   RefPtr<AudioBuffer> mRenderedBuffer;
 };
-}  // anonymous namespace
+}  
 
 class OfflineDestinationNodeEngine final : public AudioNodeEngine {
  public:
@@ -75,20 +75,20 @@ class OfflineDestinationNodeEngine final : public AudioNodeEngine {
   void ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
                     const AudioBlock& aInput, AudioBlock* aOutput,
                     bool* aFinished) override {
-    // Do this just for the sake of political correctness; this output
-    // will not go anywhere.
+    
+    
     *aOutput = aInput;
 
-    // The output buffer is allocated lazily, on the rendering thread, when
-    // non-null input is received.
+    
+    
     if (!mBufferAllocated && !aInput.IsNull()) {
-      // These allocations might fail if content provides a huge number of
-      // channels or size, but it's OK since we'll deal with the failure
-      // gracefully.
+      
+      
+      
       mBuffer = ThreadSharedFloatArrayBufferList::Create(mNumberOfChannels,
                                                          mLength, fallible);
       if (mBuffer && mWriteIndex) {
-        // Zero leading for any null chunks that were skipped.
+        
         for (uint32_t i = 0; i < mNumberOfChannels; ++i) {
           float* channelData = mBuffer->GetDataForWrite(i);
           PodZero(channelData, mWriteIndex);
@@ -98,10 +98,10 @@ class OfflineDestinationNodeEngine final : public AudioNodeEngine {
       mBufferAllocated = true;
     }
 
-    // Skip copying if there is no buffer.
+    
     uint32_t outputChannelCount = mBuffer ? mNumberOfChannels : 0;
 
-    // Record our input buffer
+    
     MOZ_ASSERT(mWriteIndex < mLength, "How did this happen?");
     const uint32_t duration =
         std::min(WEBAUDIO_BLOCK_SIZE, mLength - mWriteIndex);
@@ -114,7 +114,7 @@ class OfflineDestinationNodeEngine final : public AudioNodeEngine {
         const float* inputBuffer =
             static_cast<const float*>(aInput.mChannelData[i]);
         if (duration == WEBAUDIO_BLOCK_SIZE && IS_ALIGNED16(inputBuffer)) {
-          // Use the optimized version of the copy with scale operation
+          
           AudioBlockCopyChannelWithScale(inputBuffer, aInput.mVolume,
                                          outputData);
         } else {
@@ -132,22 +132,22 @@ class OfflineDestinationNodeEngine final : public AudioNodeEngine {
 
     if (mWriteIndex >= mLength) {
       NS_ASSERTION(mWriteIndex == mLength, "Overshot length");
-      // Go to finished state. When the graph's current time eventually reaches
-      // the end of the track, then the main thread will be notified and we'll
-      // shut down the AudioContext.
+      
+      
+      
       *aFinished = true;
     }
   }
 
   bool IsActive() const override {
-    // Keep processing to track track time, which is used for all timelines
-    // associated with the same AudioContext.
+    
+    
     return true;
   }
 
   already_AddRefed<AudioBuffer> CreateAudioBuffer(AudioContext* aContext) {
     MOZ_ASSERT(NS_IsMainThread());
-    // Create the input buffer
+    
     ErrorResult rv;
     RefPtr<AudioBuffer> renderedBuffer =
         AudioBuffer::Create(aContext->GetOwner(), mNumberOfChannels, mLength,
@@ -173,14 +173,14 @@ class OfflineDestinationNodeEngine final : public AudioNodeEngine {
   }
 
  private:
-  // The input to the destination node is recorded in mBuffer.
-  // When this buffer fills up with mLength frames, the buffered input is sent
-  // to the main thread in order to dispatch OfflineAudioCompletionEvent.
+  
+  
+  
   RefPtr<ThreadSharedFloatArrayBufferList> mBuffer;
-  // An index representing the next offset in mBuffer to be written to.
+  
   uint32_t mWriteIndex;
   uint32_t mNumberOfChannels;
-  // How many frames the OfflineAudioContext intends to produce.
+  
   uint32_t mLength;
   float mSampleRate;
   bool mBufferAllocated;
@@ -196,7 +196,7 @@ class DestinationNodeEngine final : public AudioNodeEngine {
             mSampleRate,
             StaticPrefs::dom_media_silence_duration_for_audibility()),
         mSuspended(false),
-        mLastInputAudible(false) {
+        mIsAudible(false) {
     MOZ_ASSERT(aNode);
   }
 
@@ -211,18 +211,18 @@ class DestinationNodeEngine final : public AudioNodeEngine {
     }
 
     mAudibilityMonitor.Process(aInput);
-    bool isInputAudible = mAudibilityMonitor.RecentlyAudible();
-
-    if (isInputAudible != mLastInputAudible) {
-      mLastInputAudible = isInputAudible;
+    bool isAudible =
+        mAudibilityMonitor.RecentlyAudible() && aOutput->mVolume > 0.0;
+    if (isAudible != mIsAudible) {
+      mIsAudible = isAudible;
       RefPtr<AudioNodeTrack> track = aTrack;
-      auto r = [track, isInputAudible]() -> void {
+      auto r = [track, isAudible]() -> void {
         MOZ_ASSERT(NS_IsMainThread());
         RefPtr<AudioNode> node = track->Engine()->NodeMainThread();
         if (node) {
           RefPtr<AudioDestinationNode> destinationNode =
               static_cast<AudioDestinationNode*>(node.get());
-          destinationNode->NotifyDataAudibleStateChanged(isInputAudible);
+          destinationNode->NotifyDataAudibleStateChanged(isAudible);
         }
       };
 
@@ -232,11 +232,11 @@ class DestinationNodeEngine final : public AudioNodeEngine {
   }
 
   bool IsActive() const override {
-    // Keep processing to track track time, which is used for all timelines
-    // associated with the same AudioContext.  If there are no other engines
-    // for the AudioContext, then this could return false to suspend the
-    // track, but the track is blocked anyway through
-    // AudioDestinationNode::SetIsOnlyNodeForContext().
+    
+    
+    
+    
+    
     return true;
   }
 
@@ -250,7 +250,7 @@ class DestinationNodeEngine final : public AudioNodeEngine {
     if (aIndex == SUSPENDED) {
       mSuspended = !!aParam;
       if (mSuspended) {
-        mLastInputAudible = false;
+        mIsAudible = false;
       }
     }
   }
@@ -269,7 +269,7 @@ class DestinationNodeEngine final : public AudioNodeEngine {
   float mVolume;
   AudibilityMonitor mAudibilityMonitor;
   bool mSuspended;
-  bool mLastInputAudible;
+  bool mIsAudible;
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(AudioDestinationNode, AudioNode,
@@ -296,13 +296,13 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
       mIsOffline(aIsOffline),
       mCreatedTime(TimeStamp::Now()) {
   if (aIsOffline) {
-    // The track is created on demand to avoid creating a graph thread that
-    // may not be used.
+    
+    
     return;
   }
 
-  // GetParentObject can return nullptr here. This will end up creating another
-  // MediaTrackGraph
+  
+  
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER, aContext->GetParentObject(),
       aContext->SampleRate(), MediaTrackGraph::DEFAULT_OUTPUT_DEVICE);
@@ -310,16 +310,16 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
 
   mTrack = AudioNodeTrack::Create(aContext, engine, kTrackFlags, graph);
   mTrack->AddMainThreadListener(this);
-  // null key is fine: only one output per mTrack
+  
   mTrack->AddAudioOutput(nullptr);
 }
 
 void AudioDestinationNode::Init() {
-  // The reason we don't do that in ctor is because we have to keep AudioContext
-  // holding a strong reference to the destination node first. If we don't do
-  // that, initializing the agent would cause an unexpected destroy of the
-  // destination node when destroying the local weak reference inside
-  // `InitWithWeakCallback()`.
+  
+  
+  
+  
+  
   if (!mIsOffline) {
     CreateAndStartAudioChannelAgent();
   }
@@ -362,8 +362,8 @@ AudioDestinationNode::~AudioDestinationNode() {
 size_t AudioDestinationNode::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
   size_t amount = AudioNode::SizeOfExcludingThis(aMallocSizeOf);
-  // Might be useful in the future:
-  // - mAudioChannelAgent
+  
+  
   return amount;
 }
 
@@ -378,14 +378,14 @@ AudioNodeTrack* AudioDestinationNode::Track() {
   }
 
   AudioContext* context = Context();
-  if (!context) {  // This node has been unlinked.
+  if (!context) {  
     return nullptr;
   }
 
   MOZ_ASSERT(mIsOffline, "Realtime tracks are created in constructor");
 
-  // GetParentObject can return nullptr here when the document has been
-  // unlinked.
+  
+  
   MediaTrackGraph* graph = MediaTrackGraph::CreateNonRealtimeInstance(
       context->SampleRate(), context->GetParentObject());
   AudioNodeEngine* engine = new OfflineDestinationNodeEngine(this);
@@ -637,7 +637,7 @@ void AudioDestinationNode::NotifyDataAudibleStateChanged(bool aAudible) {
 
 void AudioDestinationNode::UpdateFinalAudibleStateIfNeeded(
     AudibleChangedReasons aReason) {
-  // The audio context has been closed and we've destroyed the agent.
+  
   if (!mAudioChannelAgent) {
     return;
   }
@@ -659,14 +659,14 @@ void AudioDestinationNode::UpdateFinalAudibleStateIfNeeded(
 }
 
 bool AudioDestinationNode::IsAudible() const {
-  // The desitionation node will be regarded as audible if all following
-  // conditions are true.
-  // (1) data audible state : both audio input and output are audible
-  // (2) window audible state : the tab isn't muted by tab sound indicator
-  // (3) audio context state : audio context should be running
+  
+  
+  
+  
+  
   return Context()->State() == AudioContextState::Running && mIsDataAudible &&
          mAudioChannelVolume != 0.0;
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
