@@ -367,7 +367,7 @@ action.PointerOrigin.get = function(obj) {
     let name = capitalize(obj);
     assert.in(name, this, pprint`Unknown pointer-move origin: ${obj}`);
     origin = this[name];
-  } else if (!element.isDOMElement(obj)) {
+  } else if (!element.isElement(obj)) {
     throw new error.InvalidArgumentError(
       "Expected 'origin' to be undefined, " +
         '"viewport", "pointer", ' +
@@ -410,7 +410,7 @@ action.PointerType.get = function(str) {
 
 
 
-action.inputStateMap = undefined;
+action.inputStateMap = new Map();
 
 
 
@@ -419,7 +419,7 @@ action.inputStateMap = undefined;
 
 
 
-action.inputsToCancel = undefined;
+action.inputsToCancel = [];
 
 
 
@@ -1496,7 +1496,7 @@ function inViewPort(x, y, win) {
 }
 
 function getElementCenter(el, win) {
-  if (element.isDOMElement(el)) {
+  if (element.isElement(el)) {
     if (action.specCompatPointerOrigin) {
       return element.getInViewCentrePoint(el.getClientRects()[0], win);
     }
