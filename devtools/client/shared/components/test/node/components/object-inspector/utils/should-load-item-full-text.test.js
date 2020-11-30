@@ -2,7 +2,7 @@
 
 
 
-const Utils = require("devtools/client/shared/components/reps/object-inspector/utils/index");
+const Utils = require("devtools/client/shared/components/object-inspector/utils/index");
 const { createNode } = Utils.node;
 const { shouldLoadItemFullText } = Utils.loadProperties;
 

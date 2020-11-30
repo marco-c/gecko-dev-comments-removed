@@ -5,7 +5,6 @@
 
 
 DIRS += [
-    'object-inspector',
     'reps',
     'shared',
 ]

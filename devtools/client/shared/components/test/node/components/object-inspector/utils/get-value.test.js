@@ -2,7 +2,7 @@
 
 
 
-const { getValue } = require("devtools/client/shared/components/reps/object-inspector/utils/node");
+const { getValue } = require("devtools/client/shared/components/object-inspector/utils/node");
 
 describe("getValue", () => {
   it("get the value from contents.value", () => {

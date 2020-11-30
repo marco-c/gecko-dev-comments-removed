@@ -1,0 +1,16 @@
+
+
+
+
+function documentHasSelection(doc = document) {
+  const selection = doc.defaultView.getSelection();
+  if (!selection) {
+    return false;
+  }
+
+  return selection.type === "Range";
+}
+
+module.exports = {
+  documentHasSelection,
+};

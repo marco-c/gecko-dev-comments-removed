@@ -5,6 +5,7 @@
 
 
 DIRS += [
+    'object-inspector',
     'menu',
     'reps',
     'splitter',
