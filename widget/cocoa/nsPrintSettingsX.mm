@@ -55,6 +55,11 @@ nsPrintSettingsX& nsPrintSettingsX::operator=(const nsPrintSettingsX& rhs) {
   mDestination = rhs.mDestination;
   mDisposition = rhs.mDisposition;
 
+  
+  
+  
+  
+
   return *this;
 }
 
@@ -88,7 +93,14 @@ nsresult nsPrintSettingsX::ReadPageFormatFromPrefs() {
 nsresult nsPrintSettingsX::WritePageFormatToPrefs() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  NSPrintInfo* printInfo = CreatePrintInfo();
+  
+  
+  
+  
+  
+  
+
+  NSPrintInfo* printInfo = CreateOrCopyPrintInfo();
   if (NS_WARN_IF(!printInfo)) {
     return NS_ERROR_FAILURE;
   }
@@ -133,7 +145,7 @@ NS_IMETHODIMP nsPrintSettingsX::_Assign(nsIPrintSettings* aPS) {
 
 void nsPrintSettingsX::SetPMPageFormat(PMPageFormat aPageFormat) {
   
-  NSPrintInfo* printInfo = CreatePrintInfo();
+  NSPrintInfo* printInfo = CreateOrCopyPrintInfo();
   if (NS_WARN_IF(!printInfo)) {
     return;
   }
@@ -146,8 +158,17 @@ void nsPrintSettingsX::SetPMPageFormat(PMPageFormat aPageFormat) {
   [printInfo release];
 }
 
-NSPrintInfo* nsPrintSettingsX::CreatePrintInfo(bool aWithScaling) {
+NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+
+  
+  
+  if (mSystemPrintInfo) {
+    NSPrintInfo* sysPrintInfo = [mSystemPrintInfo copy];
+    
+    [sysPrintInfo setScalingFactor:1.0f];
+    return sysPrintInfo;
+  }
 
   
   
@@ -273,11 +294,29 @@ void nsPrintSettingsX::SetPageFormatFromPrintInfo(const NSPrintInfo* aPrintInfo)
   SetIsInitializedFromPrinter(true);
 }
 
-void nsPrintSettingsX::SetFromPrintInfo(const NSPrintInfo* aPrintInfo) {
+void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrintInfo) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
   SetPageFormatFromPrintInfo(aPrintInfo);
+
+  if (aAdoptPrintInfo) {
+    
+    
+    if (mSystemPrintInfo != aPrintInfo) {
+      if (mSystemPrintInfo) {
+        [mSystemPrintInfo release];
+      }
+      mSystemPrintInfo = aPrintInfo;
+      [mSystemPrintInfo retain];
+    }
+  } else {
+    
+    if (mSystemPrintInfo) {
+      [mSystemPrintInfo release];
+      mSystemPrintInfo = nullptr;
+    }
+  }
 
   nsCocoaUtils::GetStringForNSString([[aPrintInfo printer] name], mPrinter);
 

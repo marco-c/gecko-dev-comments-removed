@@ -45,14 +45,25 @@ class nsPrintSettingsX : public nsPrintSettings {
   
   
   
-  NSPrintInfo* CreatePrintInfo(bool aWithScaling = false);
+  NSPrintInfo* CreateOrCopyPrintInfo(bool aWithScaling = false);
 
   
   
-  void SetFromPrintInfo(const NSPrintInfo* aPrintInfo);
+  
+  
+  
+  
+  
+  
+  
+  void SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrintInfo);
 
  protected:
-  virtual ~nsPrintSettingsX(){};
+  virtual ~nsPrintSettingsX() {
+    if (mSystemPrintInfo) {
+      [mSystemPrintInfo release];
+    }
+  };
 
   nsPrintSettingsX& operator=(const nsPrintSettingsX& rhs);
 
@@ -90,6 +101,16 @@ class nsPrintSettingsX : public nsPrintSettings {
   
   nsString mDisposition;
   uint16_t mDestination;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  NSPrintInfo* mSystemPrintInfo = nullptr;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPrintSettingsX, NS_PRINTSETTINGSX_IID)

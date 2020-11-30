@@ -50,7 +50,7 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
   
   printSettingsSvc->InitPrintSettingsFromPrefs(settingsX, true, nsIPrintSettings::kInitSaveAll);
 
-  NSPrintInfo* printInfo = settingsX->CreatePrintInfo( true);
+  NSPrintInfo* printInfo = settingsX->CreateOrCopyPrintInfo( true);
   if (NS_WARN_IF(!printInfo)) {
     return NS_ERROR_FAILURE;
   }
@@ -113,7 +113,10 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
   [viewController exportSettings];
 
   
-  settingsX->SetFromPrintInfo(result);
+  
+  
+  
+  settingsX->SetFromPrintInfo(result,  true);
 
   
   if (Preferences::GetBool("print.save_print_settings", false)) {
@@ -139,7 +142,7 @@ nsPrintDialogServiceX::ShowPageSetup(nsPIDOMWindowOuter* aParent, nsIPrintSettin
     return NS_ERROR_FAILURE;
   }
 
-  NSPrintInfo* printInfo = settingsX->CreatePrintInfo( true);
+  NSPrintInfo* printInfo = settingsX->CreateOrCopyPrintInfo( true);
   if (NS_WARN_IF(!printInfo)) {
     return NS_ERROR_FAILURE;
   }
@@ -151,7 +154,10 @@ nsPrintDialogServiceX::ShowPageSetup(nsPIDOMWindowOuter* aParent, nsIPrintSettin
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
   if (button == NSFileHandlingPanelOKButton) {
-    settingsX->SetFromPrintInfo(printInfo);
+    
+    
+    
+    settingsX->SetFromPrintInfo(printInfo,  false);
     nsCOMPtr<nsIPrintSettingsService> printSettingsService =
         do_GetService("@mozilla.org/gfx/printsettings-service;1");
     if (printSettingsService && Preferences::GetBool("print.save_print_settings", false)) {
