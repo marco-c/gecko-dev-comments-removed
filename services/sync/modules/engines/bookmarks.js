@@ -30,7 +30,6 @@ const { Svc, Utils } = ChromeUtils.import("resource://services-sync/util.js");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BookmarkValidator: "resource://services-sync/bookmark_validator.js",
-  LiveBookmarkMigrator: "resource:///modules/LiveBookmarkMigrator.jsm",
   Observers: "resource://services-common/observers.js",
   OS: "resource://gre/modules/osfile.jsm",
   PlacesBackups: "resource://gre/modules/PlacesBackups.jsm",
@@ -396,17 +395,11 @@ BookmarksEngine.prototype = {
 
     try {
       
-      
-      
       let lastSync = await this.getLastSync();
       if (!lastSync) {
         this._log.debug("Bookmarks backup starting");
         await PlacesBackups.create(null, true);
         this._log.debug("Bookmarks backup done");
-
-        this._log.debug("Livemarks backup starting");
-        await LiveBookmarkMigrator.migrate();
-        this._log.debug("Livemarks backup done");
       }
     } catch (ex) {
       
