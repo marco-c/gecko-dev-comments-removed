@@ -52,6 +52,7 @@
 #include "nsICookieService.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsIDocShell.h"
+#include "nsIDNSService.h"
 #include "nsIEncodedChannel.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsILoadGroupChild.h"
@@ -1852,6 +1853,19 @@ HttpBaseChannel::GetAllowSTS(bool* value) {
 NS_IMETHODIMP
 HttpBaseChannel::SetAllowSTS(bool value) {
   ENSURE_CALLED_BEFORE_CONNECT();
+
+  if (!value) {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
+    uint32_t trrMode = 0;
+    if (dns && NS_SUCCEEDED(dns->GetCurrentTrrMode(&trrMode)) && trrMode == 3) {
+      SetTRRMode(nsIRequest::TRR_FIRST_MODE);
+    }
+  }
 
   mAllowSTS = value;
   return NS_OK;
