@@ -29,13 +29,6 @@ add_task(async function() {
   
   
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.toolbars.bookmarks.visibility", "never"]],
-  });
-
-  
-  
-  
   
   const TAB_COUNT_FOR_SQUEEZE = computeMaxTabCount() - 1;
 

@@ -129,14 +129,32 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
 
 
 function promiseSetToolbarVisibility(aToolbar, aVisible, aCallback) {
-  if (isToolbarVisible(aToolbar) != aVisible) {
-    let visibilityChanged = TestUtils.waitForCondition(
-      () => aToolbar.collapsed != aVisible
-    );
-    setToolbarVisibility(aToolbar, aVisible, undefined, false);
-    return visibilityChanged;
-  }
-  return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    function listener(event) {
+      if (event.propertyName == "max-height") {
+        aToolbar.removeEventListener("transitionend", listener);
+        resolve();
+      }
+    }
+
+    let transitionProperties = window
+      .getComputedStyle(aToolbar)
+      .transitionProperty.split(", ");
+    if (
+      isToolbarVisible(aToolbar) != aVisible &&
+      transitionProperties.some(prop => prop == "max-height" || prop == "all")
+    ) {
+      
+      
+      aToolbar.addEventListener("transitionend", listener);
+      setToolbarVisibility(aToolbar, aVisible);
+      return;
+    }
+
+    
+    setToolbarVisibility(aToolbar, aVisible);
+    resolve();
+  });
 }
 
 

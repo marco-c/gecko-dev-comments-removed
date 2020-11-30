@@ -30,17 +30,9 @@ add_task(async function() {
 
   
   
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.toolbars.bookmarks.visibility", "never"]],
-  });
-
-  
-  
   gURLBar.focus();
 
   let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
-
   let firstTabRect = gBrowser.selectedTab.getBoundingClientRect();
   let firstTabLabelRect = gBrowser.selectedTab.textLabel.getBoundingClientRect();
   let textBoxRect = gURLBar

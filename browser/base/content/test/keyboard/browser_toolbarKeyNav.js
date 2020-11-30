@@ -303,12 +303,10 @@ add_task(async function testArrowsRtl() {
 
 
 add_task(async function testArrowsBookmarksOverflowButton() {
-  let toolbarOpened = TestUtils.waitForCondition(() => {
-    let toolbar = gNavToolbox.querySelector("#PersonalToolbar");
-    return !toolbar.collapsed;
-  }, "waiting for toolbar to become visible");
+  let toolbar = document.getElementById("PersonalToolbar");
+  let transitionEnded = BrowserTestUtils.waitForEvent(toolbar, "transitionend");
   CustomizableUI.setToolbarVisibility("PersonalToolbar", true);
-  await toolbarOpened;
+  await transitionEnded;
   let items = document.getElementById("PlacesToolbarItems").children;
   let lastVisible;
   for (let item of items) {
