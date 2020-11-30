@@ -1921,6 +1921,7 @@ class UrlbarView {
 
       let action = item.querySelector(".urlbarView-action");
       let favicon = item.querySelector(".urlbarView-favicon");
+      let title = item.querySelector(".urlbarView-title");
 
       
       
@@ -1946,10 +1947,28 @@ class UrlbarView {
 
       
       
-      if (result.type != UrlbarUtils.RESULT_TYPE.SEARCH) {
+      if (
+        !this.oneOffsRefresh &&
+        result.type != UrlbarUtils.RESULT_TYPE.SEARCH
+      ) {
         continue;
       }
 
+      
+      
+      
+      if (
+        this.oneOffsRefresh &&
+        result.heuristic &&
+        result.type == UrlbarUtils.RESULT_TYPE.URL
+      ) {
+        title.textContent =
+          source || engine
+            ? this._queryContext.searchString
+            : result.payload.title;
+      }
+
+      
       if (source) {
         
         this.document.l10n.setAttributes(action, source.l10nId);
@@ -1979,6 +1998,11 @@ class UrlbarView {
 
       
       let iconOverride = source?.icon || engine?.iconURI?.spec;
+      if (!iconOverride && result.type == UrlbarUtils.RESULT_TYPE.URL) {
+        
+        
+        iconOverride = UrlbarUtils.ICON.SEARCH_GLASS;
+      }
       if (
         
         

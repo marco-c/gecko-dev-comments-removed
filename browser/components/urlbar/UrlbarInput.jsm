@@ -665,8 +665,19 @@ class UrlbarInput {
       allowInheritPrincipal: false,
     };
 
+    
+    
+    
+    
+    
+    let urlResultWillPromoteSearchMode =
+      this.searchMode &&
+      result.heuristic &&
+      result.type == UrlbarUtils.RESULT_TYPE.URL &&
+      this.view.oneOffSearchButtons.selectedButton;
+
     let selIndex = result.rowIndex;
-    if (!result.payload.keywordOffer) {
+    if (!result.payload.keywordOffer && !urlResultWillPromoteSearchMode) {
       this.view.close( true);
     }
 
@@ -694,6 +705,11 @@ class UrlbarInput {
 
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.URL: {
+        if (urlResultWillPromoteSearchMode) {
+          this.promoteSearchMode();
+          this.search(this.value);
+          return;
+        }
         
         
         
