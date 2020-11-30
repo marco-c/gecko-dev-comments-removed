@@ -379,26 +379,22 @@ void MacroAssemblerX86Shared::compareInt8x16(FloatRegister lhs, Operand rhs,
       break;
     case Assembler::Condition::LessThan:
       
+      
       if (rhs.kind() == Operand::FPREG) {
         moveSimd128Int(ToSimdFloatRegister(rhs), scratch);
       } else {
         loadAlignedSimd128Int(rhs, scratch);
       }
-
-      
       
       vpcmpgtb(Operand(lhs), scratch, scratch);
       moveSimd128Int(scratch, output);
       break;
     case Assembler::Condition::NotEqual:
-      
-      
-      
-      asMasm().loadConstantSimd128Int(allOnes, scratch);
       vpcmpeqb(rhs, lhs, output);
-      bitwiseXorSimdInt(output, Operand(scratch), output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
       break;
     case Assembler::Condition::GreaterThanOrEqual:
+      
       
       if (rhs.kind() == Operand::FPREG) {
         moveSimd128Int(ToSimdFloatRegister(rhs), scratch);
@@ -411,9 +407,8 @@ void MacroAssemblerX86Shared::compareInt8x16(FloatRegister lhs, Operand rhs,
       break;
     case Assembler::Condition::LessThanOrEqual:
       
-      asMasm().loadConstantSimd128Int(allOnes, scratch);
       vpcmpgtb(rhs, lhs, output);
-      bitwiseXorSimdInt(output, Operand(scratch), output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
       break;
     default:
       MOZ_CRASH("unexpected condition op");
@@ -516,26 +511,22 @@ void MacroAssemblerX86Shared::compareInt16x8(FloatRegister lhs, Operand rhs,
       break;
     case Assembler::Condition::LessThan:
       
+      
       if (rhs.kind() == Operand::FPREG) {
         moveSimd128Int(ToSimdFloatRegister(rhs), scratch);
       } else {
         loadAlignedSimd128Int(rhs, scratch);
       }
-
-      
       
       vpcmpgtw(Operand(lhs), scratch, scratch);
       moveSimd128Int(scratch, output);
       break;
     case Assembler::Condition::NotEqual:
-      
-      
-      
-      asMasm().loadConstantSimd128Int(allOnes, scratch);
       vpcmpeqw(rhs, lhs, output);
-      bitwiseXorSimdInt(output, Operand(scratch), output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
       break;
     case Assembler::Condition::GreaterThanOrEqual:
+      
       
       if (rhs.kind() == Operand::FPREG) {
         moveSimd128Int(ToSimdFloatRegister(rhs), scratch);
@@ -548,9 +539,8 @@ void MacroAssemblerX86Shared::compareInt16x8(FloatRegister lhs, Operand rhs,
       break;
     case Assembler::Condition::LessThanOrEqual:
       
-      asMasm().loadConstantSimd128Int(allOnes, scratch);
       vpcmpgtw(rhs, lhs, output);
-      bitwiseXorSimdInt(output, Operand(scratch), output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
       break;
     default:
       MOZ_CRASH("unexpected condition op");
@@ -620,48 +610,43 @@ void MacroAssemblerX86Shared::compareInt32x4(FloatRegister lhs, Operand rhs,
   ScratchSimd128Scope scratch(asMasm());
   switch (cond) {
     case Assembler::Condition::GreaterThan:
-      packedGreaterThanInt32x4(rhs, lhs);
+      vpcmpgtd(rhs, lhs, lhs);
       break;
     case Assembler::Condition::Equal:
-      packedEqualInt32x4(rhs, lhs);
+      vpcmpeqd(rhs, lhs, lhs);
       break;
     case Assembler::Condition::LessThan:
       
+      
       if (rhs.kind() == Operand::FPREG) {
         moveSimd128Int(ToSimdFloatRegister(rhs), scratch);
       } else {
         loadAlignedSimd128Int(rhs, scratch);
       }
-
       
-      
-      packedGreaterThanInt32x4(Operand(lhs), scratch);
+      vpcmpgtd(Operand(lhs), scratch, scratch);
       moveSimd128Int(scratch, lhs);
       break;
     case Assembler::Condition::NotEqual:
-      
-      
-      
-      asMasm().loadConstantSimd128Int(allOnes, scratch);
-      packedEqualInt32x4(rhs, lhs);
-      bitwiseXorSimdInt(lhs, Operand(scratch), lhs);
+      vpcmpeqd(rhs, lhs, lhs);
+      asMasm().bitwiseXorSimd128(allOnes, lhs);
       break;
     case Assembler::Condition::GreaterThanOrEqual:
+      
       
       if (rhs.kind() == Operand::FPREG) {
         moveSimd128Int(ToSimdFloatRegister(rhs), scratch);
       } else {
         loadAlignedSimd128Int(rhs, scratch);
       }
-      packedGreaterThanInt32x4(Operand(lhs), scratch);
+      vpcmpgtd(Operand(lhs), scratch, scratch);
       asMasm().loadConstantSimd128Int(allOnes, lhs);
       bitwiseXorSimdInt(lhs, Operand(scratch), lhs);
       break;
     case Assembler::Condition::LessThanOrEqual:
       
-      asMasm().loadConstantSimd128Int(allOnes, scratch);
-      packedGreaterThanInt32x4(rhs, lhs);
-      bitwiseXorSimdInt(lhs, Operand(scratch), lhs);
+      vpcmpgtd(rhs, lhs, lhs);
+      asMasm().bitwiseXorSimd128(allOnes, lhs);
       break;
     default:
       MOZ_CRASH("unexpected condition op");
@@ -751,8 +736,6 @@ void MacroAssemblerX86Shared::compareFloat32x4(FloatRegister lhs, Operand rhs,
 
   
   
-  
-  
   ScratchSimd128Scope scratch(asMasm());
   if (!lhs.aliases(output)) {
     if (rhs.kind() == Operand::FPREG &&
@@ -793,8 +776,6 @@ void MacroAssemblerX86Shared::compareFloat64x2(FloatRegister lhs, Operand rhs,
     MOZ_CRASH("Can do better here with three-address compares");
   }
 
-  
-  
   
   
   ScratchSimd128Scope scratch(asMasm());
