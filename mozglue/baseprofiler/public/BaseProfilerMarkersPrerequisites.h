@@ -478,6 +478,11 @@ class MarkerStack {
   }
 
   
+  static MarkerStack MaybeCapture(bool aDoCapture) {
+    return MarkerStack(aDoCapture);
+  }
+
+  
   
   static MarkerStack UseBacktrace(
       ProfileChunkedBuffer& aExternalChunkedBuffer) {
