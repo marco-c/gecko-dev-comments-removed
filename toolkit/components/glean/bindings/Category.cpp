@@ -7,6 +7,7 @@
 #include "mozilla/glean/Glean.h"
 #include "mozilla/glean/Category.h"
 #include "mozilla/dom/GleanBinding.h"
+#include "mozilla/glean/GleanJSMetricsLookup.h"
 
 namespace mozilla::glean {
 
@@ -27,11 +28,44 @@ JSObject* Category::WrapObject(JSContext* aCx,
 already_AddRefed<nsISupports> Category::NamedGetter(const nsAString& aName,
                                                     bool& aFound) {
   aFound = false;
-  return nullptr;
+
+  nsCString metricName;
+  metricName.AppendASCII(GetCategoryName(mId), mLength);
+  metricName.AppendLiteral(".");
+  AppendUTF16toUTF8(aName, metricName);
+
+  Maybe<uint32_t> metricIdx = MetricByNameLookup(metricName);
+
+  if (metricIdx.isNothing()) {
+    aFound = false;
+    return nullptr;
+  }
+
+  aFound = true;
+  return NewMetricFromId(metricIdx.value());
 }
 
 bool Category::NameIsEnumerable(const nsAString& aName) { return false; }
 
-void Category::GetSupportedNames(nsTArray<nsString>& aNames) {}
+void Category::GetSupportedNames(nsTArray<nsString>& aNames) {
+  const char* category = GetCategoryName(mId);
+
+  for (metric_entry_t entry : sMetricByNameLookupEntries) {
+    const char* identifier = GetMetricIdentifier(entry);
+
+    
+    
+    
+    
+    
+    
+    
+    if (strncmp(category, identifier, mLength) == 0 &&
+        identifier[mLength] == '.') {
+      const char* metricName = &identifier[mLength + 1];
+      aNames.AppendElement()->AssignASCII(metricName);
+    }
+  }
+}
 
 }  
