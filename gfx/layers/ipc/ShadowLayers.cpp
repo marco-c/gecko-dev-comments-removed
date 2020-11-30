@@ -4,43 +4,44 @@
 
 
 
-#include "ClientLayerManager.h"  
 #include "ShadowLayers.h"
-#include <set>                  
-#include <vector>               
-#include "GeckoProfiler.h"      
-#include "ISurfaceAllocator.h"  
-#include "Layers.h"             
-#include "RenderTrace.h"        
-#include "gfx2DGlue.h"          
-#include "gfxPlatform.h"        
 
+#include <set>     
+#include <vector>  
 
-#include "ipc/IPCMessageUtils.h"  
+#include "ClientLayerManager.h"  
+#include "GeckoProfiler.h"       
 #include "IPDLActor.h"
-#include "mozilla/Assertions.h"                 
-#include "mozilla/gfx/Point.h"                  
+#include "ISurfaceAllocator.h"    
+#include "Layers.h"               
+#include "RenderTrace.h"          
+#include "gfx2DGlue.h"            
+#include "gfxPlatform.h"          
+#include "ipc/IPCMessageUtils.h"  
+#include "mozilla/Assertions.h"   
+#include "mozilla/gfx/Point.h"    
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/ContentClient.h"
-#include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/ImageBridgeChild.h"
+#include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"     
-#include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/PTextureChild.h"
 #include "mozilla/layers/SyncObject.h"
 #ifdef XP_DARWIN
 #  include "mozilla/layers/TextureSync.h"
 #endif
 #include "ShadowLayerUtils.h"
-#include "mozilla/layers/TextureClient.h"  
-#include "mozilla/mozalloc.h"              
-#include "nsTArray.h"                      
-#include "nsXULAppAPI.h"                   
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/layers/TextureClient.h"  
+#include "mozilla/mozalloc.h"              
+#include "nsIXULRuntime.h"                 
+#include "nsTArray.h"                      
+#include "nsXULAppAPI.h"                   
 
 namespace mozilla {
 namespace ipc {
@@ -146,7 +147,7 @@ void KnowsCompositor::IdentifyTextureHost(
     const TextureFactoryIdentifier& aIdentifier) {
   mTextureFactoryIdentifier = aIdentifier;
 
-  if (XRE_IsContentProcess()) {
+  if (XRE_IsContentProcess() || !mozilla::BrowserTabsRemoteAutostart()) {
     mSyncObject = SyncObjectClient::CreateSyncObjectClientForContentDevice(
         aIdentifier.mSyncHandle);
   }
