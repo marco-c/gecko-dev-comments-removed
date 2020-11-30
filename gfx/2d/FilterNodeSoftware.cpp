@@ -796,7 +796,14 @@ FilterNodeSoftware::GetInputDataSourceSurface(
     IntRect srcRect = aTransparencyPaddedSourceRect->Intersect(aRect);
     surface =
         GetDataSurfaceInRect(surface, surfaceRect, srcRect, EDGE_MODE_NONE);
-    surfaceRect = srcRect;
+    if (surface) {
+      surfaceRect = srcRect;
+    } else {
+      
+      
+      
+      surfaceRect.SetEmpty();
+    }
   }
 
   RefPtr<DataSourceSurface> result =
