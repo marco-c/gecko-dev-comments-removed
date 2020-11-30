@@ -233,7 +233,8 @@ void SVGSwitchFrame::ReflowSVG() {
     
     ConsiderChildOverflow(overflowRects, child);
   } else if (child && shouldReflowSVGTextFrameInside(child)) {
-    MOZ_ASSERT(child->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
+    MOZ_ASSERT(child->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY) ||
+                   !child->IsFrameOfType(nsIFrame::eSVG),
                "Check for this explicitly in the |if|, then");
     ReflowSVGNonDisplayText(child);
   }
