@@ -39,16 +39,16 @@ class ProfilerBacktrace {
   
   
   
-  ProfilerBacktrace(
-      const char* aName, int aThreadId,
+  explicit ProfilerBacktrace(
+      const char* aName,
       UniquePtr<ProfileChunkedBuffer> aProfileChunkedBufferStorage,
       UniquePtr<ProfileBuffer> aProfileBufferStorageOrNull = nullptr);
 
   
   
   
-  ProfilerBacktrace(
-      const char* aName, int aThreadId,
+  explicit ProfilerBacktrace(
+      const char* aName,
       ProfileChunkedBuffer* aExternalProfileChunkedBufferOrNull = nullptr,
       ProfileBuffer* aExternalProfileBufferOrNull = nullptr);
 
@@ -66,9 +66,9 @@ class ProfilerBacktrace {
   
   
   
-  void StreamJSON(SpliceableJSONWriter& aWriter,
-                  const TimeStamp& aProcessStartTime,
-                  UniqueStacks& aUniqueStacks);
+  int StreamJSON(SpliceableJSONWriter& aWriter,
+                 const TimeStamp& aProcessStartTime,
+                 UniqueStacks& aUniqueStacks);
 
  private:
   
@@ -76,7 +76,6 @@ class ProfilerBacktrace {
   friend ProfileBufferEntryReader::Deserializer<ProfilerBacktrace>;
 
   std::string mName;
-  int mThreadId;
 
   
   
@@ -105,7 +104,7 @@ struct ProfileBufferEntryWriter::Serializer<baseprofiler::ProfilerBacktrace> {
       
       return ULEB128Size(0u);
     }
-    return bufferBytes + SumBytes(aBacktrace.mThreadId, aBacktrace.mName);
+    return bufferBytes + SumBytes(aBacktrace.mName);
   }
 
   static void Write(ProfileBufferEntryWriter& aEW,
@@ -117,7 +116,6 @@ struct ProfileBufferEntryWriter::Serializer<baseprofiler::ProfilerBacktrace> {
       return;
     }
     aEW.WriteObject(*aBacktrace.mProfileChunkedBuffer);
-    aEW.WriteObject(aBacktrace.mThreadId);
     aEW.WriteObject(aBacktrace.mName);
   }
 };

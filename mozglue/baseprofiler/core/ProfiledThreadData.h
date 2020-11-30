@@ -103,7 +103,10 @@ class ProfiledThreadData final {
   TimeStamp mUnregisterTime;
 };
 
-void StreamSamplesAndMarkers(
+
+
+
+int StreamSamplesAndMarkers(
     const char* aName, int aThreadId, const ProfileBuffer& aBuffer,
     SpliceableJSONWriter& aWriter, const std::string& aProcessName,
     const std::string& aETLDplus1, const TimeStamp& aProcessStartTime,

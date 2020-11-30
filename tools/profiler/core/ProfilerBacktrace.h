@@ -43,8 +43,8 @@ class ProfilerBacktrace {
   
   
   
-  ProfilerBacktrace(
-      const char* aName, int aThreadId,
+  explicit ProfilerBacktrace(
+      const char* aName,
       mozilla::UniquePtr<mozilla::ProfileChunkedBuffer>
           aProfileChunkedBufferStorage,
       mozilla::UniquePtr<ProfileBuffer> aProfileBufferStorageOrNull = nullptr);
@@ -52,10 +52,11 @@ class ProfilerBacktrace {
   
   
   
-  ProfilerBacktrace(const char* aName, int aThreadId,
-                    mozilla::ProfileChunkedBuffer*
-                        aExternalProfileChunkedBufferOrNull = nullptr,
-                    ProfileBuffer* aExternalProfileBufferOrNull = nullptr);
+  explicit ProfilerBacktrace(
+      const char* aName,
+      mozilla::ProfileChunkedBuffer* aExternalProfileChunkedBufferOrNull =
+          nullptr,
+      ProfileBuffer* aExternalProfileBufferOrNull = nullptr);
 
   ~ProfilerBacktrace();
 
@@ -72,9 +73,9 @@ class ProfilerBacktrace {
   
   
   
-  void StreamJSON(mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-                  const mozilla::TimeStamp& aProcessStartTime,
-                  UniqueStacks& aUniqueStacks);
+  int StreamJSON(mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+                 const mozilla::TimeStamp& aProcessStartTime,
+                 UniqueStacks& aUniqueStacks);
 
  private:
   
@@ -84,7 +85,6 @@ class ProfilerBacktrace {
       ProfilerBacktrace>;
 
   std::string mName;
-  int mThreadId;
 
   
   
@@ -114,7 +114,7 @@ struct mozilla::ProfileBufferEntryWriter::Serializer<ProfilerBacktrace> {
       
       return ULEB128Size(0u);
     }
-    return bufferBytes + SumBytes(aBacktrace.mThreadId, aBacktrace.mName);
+    return bufferBytes + SumBytes(aBacktrace.mName);
   }
 
   static void Write(mozilla::ProfileBufferEntryWriter& aEW,
@@ -126,7 +126,6 @@ struct mozilla::ProfileBufferEntryWriter::Serializer<ProfilerBacktrace> {
       return;
     }
     aEW.WriteObject(*aBacktrace.mProfileChunkedBuffer);
-    aEW.WriteObject(aBacktrace.mThreadId);
     aEW.WriteObject(aBacktrace.mName);
   }
 };
@@ -174,10 +173,9 @@ struct mozilla::ProfileBufferEntryReader::Deserializer<
     MOZ_ASSERT(
         !profileChunkedBuffer->IsThreadSafe(),
         "ProfilerBacktrace only stores non-thread-safe ProfileChunkedBuffers");
-    int threadId = aER.ReadObject<int>();
     std::string name = aER.ReadObject<std::string>();
-    return UniquePtr<ProfilerBacktrace, Destructor>{new ProfilerBacktrace(
-        name.c_str(), threadId, std::move(profileChunkedBuffer))};
+    return UniquePtr<ProfilerBacktrace, Destructor>{
+        new ProfilerBacktrace(name.c_str(), std::move(profileChunkedBuffer))};
   }
 };
 

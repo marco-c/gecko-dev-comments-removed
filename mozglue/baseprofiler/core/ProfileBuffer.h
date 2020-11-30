@@ -52,9 +52,10 @@ class ProfileBuffer final {
   
   
   
-  void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
-                           double aSinceTime,
-                           UniqueStacks& aUniqueStacks) const;
+  
+  
+  int StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
+                          double aSinceTime, UniqueStacks& aUniqueStacks) const;
 
   void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            const TimeStamp& aProcessStartTime,

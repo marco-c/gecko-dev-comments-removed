@@ -13,13 +13,12 @@
 #include "mozilla/ProfileJSONWriter.h"
 
 ProfilerBacktrace::ProfilerBacktrace(
-    const char* aName, int aThreadId,
+    const char* aName,
     mozilla::UniquePtr<mozilla::ProfileChunkedBuffer>
         aProfileChunkedBufferStorage,
     mozilla::UniquePtr<ProfileBuffer>
         aProfileBufferStorageOrNull )
     : mName(aName),
-      mThreadId(aThreadId),
       mOptionalProfileChunkedBufferStorage(
           std::move(aProfileChunkedBufferStorage)),
       mProfileChunkedBuffer(mOptionalProfileChunkedBufferStorage.get()),
@@ -41,11 +40,10 @@ ProfilerBacktrace::ProfilerBacktrace(
 }
 
 ProfilerBacktrace::ProfilerBacktrace(
-    const char* aName, int aThreadId,
+    const char* aName,
     mozilla::ProfileChunkedBuffer* aExternalProfileChunkedBuffer,
     ProfileBuffer* aExternalProfileBuffer)
     : mName(aName),
-      mThreadId(aThreadId),
       mProfileChunkedBuffer(aExternalProfileChunkedBuffer),
       mProfileBuffer(aExternalProfileBuffer) {
   MOZ_COUNT_CTOR(ProfilerBacktrace);
@@ -73,26 +71,32 @@ ProfilerBacktrace::ProfilerBacktrace(
 
 ProfilerBacktrace::~ProfilerBacktrace() { MOZ_COUNT_DTOR(ProfilerBacktrace); }
 
-void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
-                                   const mozilla::TimeStamp& aProcessStartTime,
-                                   UniqueStacks& aUniqueStacks) {
+int ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
+                                  const mozilla::TimeStamp& aProcessStartTime,
+                                  UniqueStacks& aUniqueStacks) {
+  int processedThreadId = 0;
+
   
   
   
   
   if (mProfileBuffer) {
-    StreamSamplesAndMarkers(mName.c_str(), mThreadId, *mProfileBuffer, aWriter,
-                            ""_ns, ""_ns, aProcessStartTime,
-                             mozilla::TimeStamp(),
-                             mozilla::TimeStamp(),
-                             0, aUniqueStacks);
+    processedThreadId =
+        StreamSamplesAndMarkers(mName.c_str(), 0, *mProfileBuffer, aWriter,
+                                ""_ns, ""_ns, aProcessStartTime,
+                                 mozilla::TimeStamp(),
+                                 mozilla::TimeStamp(),
+                                 0, aUniqueStacks);
   } else if (mProfileChunkedBuffer) {
     ProfileBuffer profileBuffer(*mProfileChunkedBuffer);
-    StreamSamplesAndMarkers(mName.c_str(), mThreadId, profileBuffer, aWriter,
-                            ""_ns, ""_ns, aProcessStartTime,
-                             mozilla::TimeStamp(),
-                             mozilla::TimeStamp(),
-                             0, aUniqueStacks);
+    processedThreadId =
+        StreamSamplesAndMarkers(mName.c_str(), 0, profileBuffer, aWriter, ""_ns,
+                                ""_ns, aProcessStartTime,
+                                 mozilla::TimeStamp(),
+                                 mozilla::TimeStamp(),
+                                 0, aUniqueStacks);
   }
   
+
+  return processedThreadId;
 }
