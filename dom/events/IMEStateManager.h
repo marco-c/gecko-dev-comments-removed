@@ -83,8 +83,14 @@ class IMEStateManager {
 
 
 
-  static bool CanSendNotificationToTheMainProcess() {
+
+
+  static bool CanSendNotificationToWidget() {
+#ifdef MOZ_WIDGET_ANDROID
+    return true;
+#else
     return !sCleaningUpForStoppingIMEStateManagement;
+#endif
   }
 
   
