@@ -22,7 +22,7 @@ class ServiceWorkerRegistrationParent;
 class ServiceWorkerRegistrationProxy final
     : public ServiceWorkerRegistrationListener {
   
-  ServiceWorkerRegistrationParent* mActor;
+  RefPtr<ServiceWorkerRegistrationParent> mActor;
 
   
   nsCOMPtr<nsISerialEventTarget> mEventTarget;
