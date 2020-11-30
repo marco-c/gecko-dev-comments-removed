@@ -286,9 +286,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:geckoservo::glue::traverse_subtree\n"
 
          
-         "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
-
-         
          "race:CacheFileMetadata::SetHash\n"
          "race:CacheFileMetadata::OnDataWritten\n"
 
