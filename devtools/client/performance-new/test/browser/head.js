@@ -138,7 +138,8 @@ function getElementByXPath(document, path) {
 
 
 async function getElementFromDocumentByText(document, text) {
-  const xpath = `//*[contains(text(), '${text}')]`;
+  
+  const xpath = `//*[contains(text(), '${text}')] | //*[contains(@aria-label, '${text}')]`;
   return waitUntil(
     () => getElementByXPath(document, xpath),
     `Trying to find the element with the text "${text}".`
