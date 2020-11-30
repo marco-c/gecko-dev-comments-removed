@@ -4186,13 +4186,14 @@ already_AddRefed<Element> HTMLEditor::GetSelectedOrParentTableElement(
     *aIsCellSelected = false;
   }
 
-  
-  RefPtr<Element> cellElement = GetFirstSelectedTableCellElement(aRv);
-  if (aRv.Failed()) {
-    NS_WARNING("HTMLEditor::GetFirstSelectedTableCellElement() failed");
+  if (NS_WARN_IF(!SelectionRefPtr()->RangeCount())) {
+    aRv.Throw(NS_ERROR_FAILURE);  
     return nullptr;
   }
 
+  
+  RefPtr<Element> cellElement =
+      HTMLEditUtils::GetFirstSelectedTableCellElement(*SelectionRefPtr());
   if (cellElement) {
     if (aIsCellSelected) {
       *aIsCellSelected = true;
