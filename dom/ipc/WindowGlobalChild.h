@@ -48,8 +48,8 @@ class WindowGlobalChild final : public WindowGlobalActor,
   }
 
   dom::BrowsingContext* BrowsingContext() override;
-  dom::WindowContext* WindowContext() { return mWindowContext; }
-  nsGlobalWindowInner* GetWindowGlobal() { return mWindowGlobal; }
+  dom::WindowContext* WindowContext() const { return mWindowContext; }
+  nsGlobalWindowInner* GetWindowGlobal() const { return mWindowGlobal; }
 
   
   bool IsClosed() { return !CanSend(); }
@@ -106,6 +106,14 @@ class WindowGlobalChild final : public WindowGlobalActor,
 
   
   void OnNewDocument(Document* aNewDocument);
+
+  
+  
+  
+  
+  
+  
+  bool IsSameOriginWith(const dom::WindowContext* aOther) const;
 
   bool SameOriginWithTop();
 
