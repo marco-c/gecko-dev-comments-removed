@@ -103,6 +103,14 @@ already_AddRefed<Animation> Animation::ClonePausedAnimation(
   animation->mEffect = &aEffect;
   animation->mEffect->SetAnimation(animation);
 
+  animation->mPendingState = PendingState::PausePending;
+
+  Document* doc = animation->GetRenderedDocument();
+  MOZ_ASSERT(doc,
+             "Cloning animation should already have the rendered document");
+  PendingAnimationTracker* tracker = doc->GetOrCreatePendingAnimationTracker();
+  tracker->AddPausePending(*animation);
+
   
   animation->mIsRelevant = aOther.mIsRelevant;
 
