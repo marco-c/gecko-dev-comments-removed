@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
+  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
@@ -384,7 +385,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
             submission.engine,
             resultQuery
           );
-          if (this._serpURLsHaveSameParams(newSerpURL, result.payload.url)) {
+          if (
+            UrlbarSearchUtils.serpsAreEquivalent(result.payload.url, newSerpURL)
+          ) {
             return false;
           }
         }
@@ -503,40 +506,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     if (result.providerName == "TabToSearch") {
       state.canAddTabToSearch = false;
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _serpURLsHaveSameParams(url1, url2) {
-    let params1 = new URL(url1).searchParams;
-    let params2 = new URL(url2).searchParams;
-    
-    
-    for (let params of [params1, params2]) {
-      params.delete("client");
-    }
-    
-    for (let [p1, p2] of [
-      [params1, params2],
-      [params2, params1],
-    ]) {
-      for (let [key, value] of p1) {
-        if (!p2.getAll(key).includes(value)) {
-          return false;
-        }
-      }
-    }
-    return true;
   }
 }
 

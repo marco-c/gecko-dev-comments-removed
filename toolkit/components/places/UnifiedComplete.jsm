@@ -1229,9 +1229,27 @@ Search.prototype = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _maybeRestyleSearchMatch(match) {
     
-    let parseResult = Services.search.parseSubmissionURL(match.value);
+    let historyUrl = match.value;
+    let parseResult = Services.search.parseSubmissionURL(historyUrl);
     if (!parseResult?.engine) {
       return false;
     }
@@ -1247,29 +1265,19 @@ Search.prototype = {
     }
 
     
-    let [typedSuggestionUrl] = UrlbarUtils.getSearchQueryUrl(
+    let [generatedSuggestionUrl] = UrlbarUtils.getSearchQueryUrl(
       parseResult.engine,
       this._searchTokens.map(t => t.value).join(" ")
     );
-
-    let historyParams = new URL(match.value).searchParams;
-    let typedParams = new URL(typedSuggestionUrl).searchParams;
 
     
     
     
     if (
-      Array.from(historyParams).length != Array.from(typedParams).length ||
-      !Array.from(historyParams.entries()).every(
-        ([key, value]) =>
-          
-          
-          
-          
-          
-          
-          key == parseResult.termsParameterName ||
-          value === typedParams.get(key)
+      !UrlbarSearchUtils.serpsAreEquivalent(
+        historyUrl,
+        generatedSuggestionUrl,
+        [parseResult.termsParameterName]
       )
     ) {
       return false;

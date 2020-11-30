@@ -174,6 +174,43 @@ class SearchUtils {
 
 
 
+
+
+
+
+
+
+
+
+
+  serpsAreEquivalent(historySerp, generatedSerp, ignoreParams = []) {
+    let historyParams = new URL(historySerp).searchParams;
+    let generatedParams = new URL(generatedSerp).searchParams;
+    if (
+      !Array.from(historyParams.entries()).every(
+        ([key, value]) =>
+          ignoreParams.includes(key) || value === generatedParams.get(key)
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   _aliasesForEngine(engine) {
     return engine.aliases.reduce((aliases, aliasWithCase) => {
       
