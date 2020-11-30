@@ -5,6 +5,7 @@
 
 
 #include "FileBlobImpl.h"
+#include "BaseBlobImpl.h"
 #include "mozilla/SlicedInputStream.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
