@@ -368,39 +368,34 @@ function checkVideoDidPlay(browser, args) {
 
 
 
-function getWakeLockState(topic, needLock, isTabInForeground) {
+async function waitForExpectedWakeLockState(
+  topic,
+  { needLock, isForegroundLock }
+) {
   const powerManagerService = Cc["@mozilla.org/power/powermanagerservice;1"];
   const powerManager = powerManagerService.getService(
     Ci.nsIPowerManagerService
   );
-  const tabState = isTabInForeground ? "foreground" : "background";
-  return {
-    check: async () => {
-      if (needLock) {
-        const expectedLockState = `locked-${tabState}`;
-        if (powerManager.getWakeLockState(topic) != expectedLockState) {
-          await wakeLockObserved(
-            powerManager,
-            topic,
-            state => state == expectedLockState
-          );
-        }
-        ok(true, `requested '${topic}' wakelock in ${tabState}`);
-      } else {
-        if (powerManager.getWakeLockState(topic) != "unlocked") {
-          await wakeLockObserved(
-            powerManager,
-            topic,
-            state => state == "unlocked"
-          );
-        }
-        ok(
-          powerManager.getWakeLockState(topic) == "unlocked",
-          `doesn't request lock for '${topic}'`
-        );
-      }
-    },
-  };
+  const wakelockState = powerManager.getWakeLockState(topic);
+  let expectedLockState = "unlocked";
+  if (needLock) {
+    expectedLockState = isForegroundLock
+      ? "locked-foreground"
+      : "locked-background";
+  }
+  if (wakelockState != expectedLockState) {
+    info(`wait until wakelock becomes ${expectedLockState}`);
+    await wakeLockObserved(
+      powerManager,
+      topic,
+      state => state == expectedLockState
+    );
+  }
+  is(
+    powerManager.getWakeLockState(topic),
+    expectedLockState,
+    `the wakelock state for '${topic}' is equal to '${expectedLockState}'`
+  );
 }
 
 function wakeLockObserved(powerManager, observeTopic, checkFn) {
