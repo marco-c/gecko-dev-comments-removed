@@ -185,7 +185,7 @@ class AutoSetOnScopeExit {
 };
 
 enum class MediaThreadType {
-  CONTROLLER,  
+  SUPERVISOR,  
                
   PLATFORM_DECODER,  
   PLATFORM_ENCODER,  
