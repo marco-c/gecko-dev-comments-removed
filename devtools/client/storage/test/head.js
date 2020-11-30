@@ -8,6 +8,41 @@
 
 
 
+
+
+
+
+registerCleanupFunction(async () => {
+  const browser = gBrowser.selectedBrowser;
+  const contexts = browser.browsingContext.getAllBrowsingContextsInSubtree();
+  for (const context of contexts) {
+    await SpecialPowers.spawn(context, [], async () => {
+      const win = content.wrappedJSObject;
+
+      
+      try {
+        win.localStorage.clear();
+        win.sessionStorage.clear();
+      } catch (ex) {
+        
+      }
+
+      if (win.clear) {
+        await win.clear();
+      }
+    });
+  }
+
+  Services.cookies.removeAll();
+
+  
+  while (gBrowser.tabs.length > 1) {
+    await closeTabAndToolbox(gBrowser.selectedTab);
+  }
+  forceCollections();
+});
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js",
   this
@@ -59,34 +94,12 @@ registerCleanupFunction(() => {
 async function openTab(url, options = {}) {
   const tab = await addTab(url, options);
 
-  
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
-    
+  const browser = gBrowser.selectedBrowser;
+  const contexts = browser.browsingContext.getAllBrowsingContextsInSubtree();
 
-
-
-
-
-
-
-
-    function getAllWindows(baseWindow) {
-      const windows = new Set();
-
-      const _getAllWindows = function(win) {
-        windows.add(win.wrappedJSObject);
-
-        for (let i = 0; i < win.length; i++) {
-          _getAllWindows(win[i]);
-        }
-      };
-      _getAllWindows(baseWindow);
-
-      return windows;
-    }
-
-    const windows = getAllWindows(content);
-    for (const win of windows) {
+  for (const context of contexts) {
+    await SpecialPowers.spawn(context, [], async () => {
+      const win = content.wrappedJSObject;
       const readyState = win.document.readyState;
       info(`Found a window: ${readyState}`);
       if (readyState != "complete") {
@@ -101,8 +114,8 @@ async function openTab(url, options = {}) {
       if (win.setup) {
         await win.setup();
       }
-    }
-  });
+    });
+  }
 
   return tab;
 }
@@ -212,60 +225,6 @@ function forceCollections() {
   Cu.forceGC();
   Cu.forceCC();
   Cu.forceShrinkingGC();
-}
-
-
-
-
-async function finishTests() {
-  while (gBrowser.tabs.length > 1) {
-    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
-      
-
-
-
-
-
-
-
-
-      function getAllWindows(baseWindow) {
-        const windows = new Set();
-
-        const _getAllWindows = function(win) {
-          windows.add(win.wrappedJSObject);
-
-          for (let i = 0; i < win.length; i++) {
-            _getAllWindows(win[i]);
-          }
-        };
-        _getAllWindows(baseWindow);
-
-        return windows;
-      }
-
-      const windows = getAllWindows(content);
-      for (const win of windows) {
-        
-        try {
-          win.localStorage.clear();
-          win.sessionStorage.clear();
-        } catch (ex) {
-          
-        }
-
-        if (win.clear) {
-          await win.clear();
-        }
-      }
-    });
-
-    await closeTabAndToolbox(gBrowser.selectedTab);
-  }
-
-  Services.cookies.removeAll();
-  forceCollections();
-  finish();
 }
 
 

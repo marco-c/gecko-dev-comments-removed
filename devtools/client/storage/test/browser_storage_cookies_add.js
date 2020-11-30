@@ -6,15 +6,13 @@
 
 "use strict";
 
-add_task(function* () {
-  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies.html");
+add_task(async function() {
+  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies.html");
   showAllColumns(true);
 
-  yield performAdd(["cookies", "http://test1.example.org"]);
-  yield performAdd(["cookies", "http://test1.example.org"]);
-  yield performAdd(["cookies", "http://test1.example.org"]);
-  yield performAdd(["cookies", "http://test1.example.org"]);
-  yield performAdd(["cookies", "http://test1.example.org"]);
-
-  yield finishTests();
+  await performAdd(["cookies", "http://test1.example.org"]);
+  await performAdd(["cookies", "http://test1.example.org"]);
+  await performAdd(["cookies", "http://test1.example.org"]);
+  await performAdd(["cookies", "http://test1.example.org"]);
+  await performAdd(["cookies", "http://test1.example.org"]);
 });
