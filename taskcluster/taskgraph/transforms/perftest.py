@@ -26,52 +26,41 @@ from taskgraph.util.treeherder import split_symbol, join_symbol
 transforms = TransformSequence()
 
 
-perftest_description_schema = Schema({
-
-    
-    Optional('perftest'): [[text_type]],
-
-    
-    
-    Optional('perftest-metrics'): optionally_keyed_by(
-        'perftest',
-        Any(
-            [text_type],
-            {text_type: Any(
-                None,
-                {text_type: Any(None, text_type, [text_type])}
-            )}
-        )
-    ),
-
-    
-    
-    Optional('perftest-perfherder-global'): optionally_keyed_by(
-        'perftest',
-        {text_type: Any(None, text_type, [text_type])}
-    ),
-
-    
-    Optional('perftest-extra-options'): optionally_keyed_by(
-        'perftest',
-        [text_type]
-    ),
-
-
-    
-    
-    
-    
-    
-    
-    Optional('perftest-btime-variants'): optionally_keyed_by(
-        'perftest',
-        [[Any(None, text_type)]]
-    ),
-
-    
-    Extra: object,
-})
+perftest_description_schema = Schema(
+    {
+        
+        Optional("perftest"): [[text_type]],
+        
+        
+        Optional("perftest-metrics"): optionally_keyed_by(
+            "perftest",
+            Any(
+                [text_type],
+                {text_type: Any(None, {text_type: Any(None, text_type, [text_type])})},
+            ),
+        ),
+        
+        
+        Optional("perftest-perfherder-global"): optionally_keyed_by(
+            "perftest", {text_type: Any(None, text_type, [text_type])}
+        ),
+        
+        Optional("perftest-extra-options"): optionally_keyed_by(
+            "perftest", [text_type]
+        ),
+        
+        
+        
+        
+        
+        
+        Optional("perftest-btime-variants"): optionally_keyed_by(
+            "perftest", [[Any(None, text_type)]]
+        ),
+        
+        Extra: object,
+    }
+)
 
 
 transforms.add_validate(perftest_description_schema)
@@ -93,8 +82,7 @@ def split_tests(config, jobs):
                 symbol=test_symbol
             )
             job_new["run"]["command"] = job["run"]["command"].replace(
-                "{perftest_testname}",
-                test_name
+                "{perftest_testname}", test_name
             )
 
             yield job_new
@@ -102,18 +90,14 @@ def split_tests(config, jobs):
 
 @transforms.add
 def handle_keyed_by_perftest(config, jobs):
-    fields = [
-        'perftest-metrics',
-        'perftest-extra-options',
-        'perftest-btime-variants'
-    ]
+    fields = ["perftest-metrics", "perftest-extra-options", "perftest-btime-variants"]
     for job in jobs:
         if job.get("perftest") is None:
             yield job
             continue
 
         for field in fields:
-            resolve_keyed_by(job, field, item_name=job['name'])
+            resolve_keyed_by(job, field, item_name=job["name"])
 
         job.pop("perftest")
         yield job
@@ -135,10 +119,7 @@ def parse_perftest_metrics(config, jobs):
 
         
         if isinstance(perftest_metrics, list):
-            new_metrics_info = [
-                {"name": metric}
-                for metric in perftest_metrics
-            ]
+            new_metrics_info = [{"name": metric} for metric in perftest_metrics]
         else:
             new_metrics_info = []
             for metric, options in perftest_metrics.items():
@@ -239,23 +220,31 @@ def setup_perftest_metrics(config, jobs):
                 elif not (isinstance(val, list) and len(val) == 0):
                     metric_info[opt] = val
 
-        quote_escape = '\\\"'
+        quote_escape = '\\"'
         if "win" in job.get("platform", ""):
             
-            quote_escape = '\\\\\\\"'
+            quote_escape = '\\\\\\"'
 
         job["run"]["command"] = job["run"]["command"].replace(
             "{perftest_metrics}",
-            " ".join([
-                ",".join([
-                    ":".join([
-                        option,
-                        str(value).replace(" ", "").replace("'", quote_escape)
-                    ])
-                    for option, value in metric_info.items()
-                ])
-                for metric_info in perftest_metrics
-            ])
+            " ".join(
+                [
+                    ",".join(
+                        [
+                            ":".join(
+                                [
+                                    option,
+                                    str(value)
+                                    .replace(" ", "")
+                                    .replace("'", quote_escape),
+                                ]
+                            )
+                            for option, value in metric_info.items()
+                        ]
+                    )
+                    for metric_info in perftest_metrics
+                ]
+            ),
         )
 
         yield job
@@ -268,8 +257,9 @@ def setup_perftest_browsertime_variants(config, jobs):
             yield job
             continue
 
-        job["run"]["command"] += " --browsertime-extra-options %s" % \
-            ",".join([opt.strip() for opt in job.pop("perftest-btime-variants")])
+        job["run"]["command"] += " --browsertime-extra-options %s" % ",".join(
+            [opt.strip() for opt in job.pop("perftest-btime-variants")]
+        )
 
         yield job
 
@@ -287,9 +277,9 @@ def setup_perftest_extra_options(config, jobs):
 @transforms.add
 def pass_perftest_options(config, jobs):
     for job in jobs:
-        env = job.setdefault('worker', {}).setdefault('env', {})
-        env['PERFTEST_OPTIONS'] = ensure_text(
-            json.dumps(config.params["try_task_config"].get('perftest-options'))
+        env = job.setdefault("worker", {}).setdefault("env", {})
+        env["PERFTEST_OPTIONS"] = ensure_text(
+            json.dumps(config.params["try_task_config"].get("perftest-options"))
         )
         yield job
 
@@ -297,8 +287,10 @@ def pass_perftest_options(config, jobs):
 @transforms.add
 def setup_perftest_test_date(config, jobs):
     for job in jobs:
-        if (job.get("attributes", {}).get("batch", False) and
-            "--test-date" not in job["run"]["command"]):
+        if (
+            job.get("attributes", {}).get("batch", False)
+            and "--test-date" not in job["run"]["command"]
+        ):
             yesterday = (date.today() - timedelta(1)).strftime("%Y.%m.%d")
             job["run"]["command"] += " --test-date %s" % yesterday
         yield job

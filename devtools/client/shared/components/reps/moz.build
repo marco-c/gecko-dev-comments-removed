@@ -5,11 +5,11 @@
 
 
 DIRS += [
-    'object-inspector',
-    'reps',
-    'shared',
+    "object-inspector",
+    "reps",
+    "shared",
 ]
 
 DevToolsModules(
-    'index.js',
+    "index.js",
 )

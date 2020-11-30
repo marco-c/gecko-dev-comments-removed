@@ -17,24 +17,29 @@ from voluptuous import Schema, Optional, Any, All, Required, Length, Range, Msg,
 Text = Any(six.text_type, six.binary_type)
 
 
-id_regex = re.compile(r'^[a-z0-9-]+$')
-feature_schema = Schema({
-    Match(id_regex): {
-        Required('title'): All(Text, Length(min=1)),
-        Required('description'): All(Text, Length(min=1)),
-        Required('bug-numbers'): All(Length(min=1), [All(int, Range(min=1))]),
-        Required('restart-required'): bool,
-        Required('type'): 'boolean', 
-        Optional('preference'): Text,
-        Optional('default-value'): Any(bool, dict), 
-        Optional('is-public'): Any(bool, dict),
-        Optional('description-links'): dict,
-    },
-})
+id_regex = re.compile(r"^[a-z0-9-]+$")
+feature_schema = Schema(
+    {
+        Match(id_regex): {
+            Required("title"): All(Text, Length(min=1)),
+            Required("description"): All(Text, Length(min=1)),
+            Required("bug-numbers"): All(Length(min=1), [All(int, Range(min=1))]),
+            Required("restart-required"): bool,
+            Required("type"): "boolean",  
+            Optional("preference"): Text,
+            Optional("default-value"): Any(
+                bool, dict
+            ),  
+            Optional("is-public"): Any(bool, dict),
+            Optional("description-links"): dict,
+        },
+    }
+)
 
 
 EXIT_OK = 0
 EXIT_ERROR = 1
+
 
 def main(output, *filenames):
     features = {}
@@ -53,14 +58,14 @@ class ExceptionGroup(Exception):
         self.errors = errors
 
     def __str__(self):
-        rv = ['There were errors while processing feature definitions:']
+        rv = ["There were errors while processing feature definitions:"]
         for error in self.errors:
             
-            s = '\n'.join('    ' + line for line in str(error).split('\n'))
+            s = "\n".join("    " + line for line in str(error).split("\n"))
             
-            s = '  * ' + s[4:]
+            s = "  * " + s[4:]
             rv.append(s)
-        return '\n'.join(rv)
+        return "\n".join(rv)
 
 
 class FeatureGateException(Exception):
@@ -76,12 +81,12 @@ class FeatureGateException(Exception):
         else:
             rv.append('file "{}":'.format(self.filename))
         rv.append(message)
-        return ' '.join(rv)
+        return " ".join(rv)
 
     def __repr__(self):
         
         original = super(FeatureGateException, self).__repr__()
-        return original[:-1] + ' filename={!r})'.format(self.filename)
+        return original[:-1] + " filename={!r})".format(self.filename)
 
 
 def process_files(filenames):
@@ -90,13 +95,15 @@ def process_files(filenames):
 
     for filename in filenames:
         try:
-            with open(filename, 'r') as f:
+            with open(filename, "r") as f:
                 feature_data = pytoml.load(f)
 
-            voluptuous.humanize.validate_with_humanized_errors(feature_data, feature_schema)
+            voluptuous.humanize.validate_with_humanized_errors(
+                feature_data, feature_schema
+            )
 
             for feature_id, feature in feature_data.items():
-                feature['id'] = feature_id
+                feature["id"] = feature_id
                 features[feature_id] = expand_feature(feature)
         except (voluptuous.error.Error, IOError, FeatureGateException) as e:
             
@@ -113,14 +120,13 @@ def process_files(filenames):
 
 def hyphens_to_camel_case(s):
     """Convert names-with-hyphens to namesInCamelCase"""
-    rv = ''
-    for part in s.split('-'):
-        if rv == '':
+    rv = ""
+    for part in s.split("-"):
+        if rv == "":
             rv = part.lower()
         else:
             rv += part[0].upper() + part[1:].lower()
     return rv
-
 
 
 def expand_feature(feature):
@@ -129,7 +135,7 @@ def expand_feature(feature):
     
     key_changes = []
     for key in feature.keys():
-        if '-' in key:
+        if "-" in key:
             new_key = hyphens_to_camel_case(key)
             key_changes.append((key, new_key))
 
@@ -137,41 +143,61 @@ def expand_feature(feature):
         feature[new_key] = feature[old_key]
         del feature[old_key]
 
-    if feature['type'] == 'boolean':
-        feature.setdefault('preference', 'features.{}.enabled'.format(feature['id']))
-        feature.setdefault('defaultValue', False)
-    elif 'preference' not in feature:
+    if feature["type"] == "boolean":
+        feature.setdefault("preference", "features.{}.enabled".format(feature["id"]))
+        feature.setdefault("defaultValue", False)
+    elif "preference" not in feature:
         raise FeatureGateException(
-            'Features of type {} must specify an explicit preference name'.format(feature['type'])
+            "Features of type {} must specify an explicit preference name".format(
+                feature["type"]
+            )
         )
 
-    feature.setdefault('isPublic', False)
+    feature.setdefault("isPublic", False)
 
     try:
-        for key in ['defaultValue', 'isPublic']:
+        for key in ["defaultValue", "isPublic"]:
             feature[key] = process_configured_value(key, feature[key])
     except FeatureGateException as e:
         raise FeatureGateException(
-            "Error when processing feature {}: {}".format(feature['id'], e.message))
+            "Error when processing feature {}: {}".format(feature["id"], e.message)
+        )
 
     return feature
 
 
 def process_configured_value(name, value):
     if not isinstance(value, dict):
-        return {'default': value}
+        return {"default": value}
 
-    if 'default' not in value:
-        raise FeatureGateException("Config for {} has no default: {}".format(name, value))
+    if "default" not in value:
+        raise FeatureGateException(
+            "Config for {} has no default: {}".format(name, value)
+        )
 
-    expected_keys = set({'default', 'win', 'mac', 'linux', 'android', 'nightly', 'beta', 'release', 'dev-edition', 'esr'})
+    expected_keys = set(
+        {
+            "default",
+            "win",
+            "mac",
+            "linux",
+            "android",
+            "nightly",
+            "beta",
+            "release",
+            "dev-edition",
+            "esr",
+        }
+    )
 
     for key in value.keys():
         parts = [p.strip() for p in key.split(",")]
         for part in parts:
             if part not in expected_keys:
                 raise FeatureGateException(
-                    "Unexpected target {}, expected any of {}".format(part, expected_keys)
+                    "Unexpected target {}, expected any of {}".format(
+                        part, expected_keys
+                    )
                 )
 
     
@@ -179,5 +205,5 @@ def process_configured_value(name, value):
     return value
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.stdout, *sys.argv[1:]))

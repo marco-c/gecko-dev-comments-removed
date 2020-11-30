@@ -5,11 +5,11 @@
 
 
 DevToolsModules(
-    'browsing-context.js',
-    'chrome-window.js',
-    'content-process.js',
-    'frame.js',
-    'parent-process.js',
-    'webextension.js',
-    'worker.js',
+    "browsing-context.js",
+    "chrome-window.js",
+    "content-process.js",
+    "frame.js",
+    "parent-process.js",
+    "webextension.js",
+    "worker.js",
 )

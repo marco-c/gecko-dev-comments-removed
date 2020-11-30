@@ -14,7 +14,7 @@ class StringVersion(six.text_type):
     """
 
     
-    pat = re.compile(r'(\d+)|([^\d.]+)')
+    pat = re.compile(r"(\d+)|([^\d.]+)")
 
     def __init__(self, vstring):
         super(StringVersion, self).__init__()

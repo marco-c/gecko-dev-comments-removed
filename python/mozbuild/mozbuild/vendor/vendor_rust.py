@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, # You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -68,7 +68,7 @@ class VendorRust(MozbuildObject):
         try:
             return self.substs["CARGO"]
         except (BuildEnvironmentNotFoundException, KeyError):
-            # Default if this tree isn't configured.
+            
             from mozfile import which
 
             cargo = which("cargo")
@@ -93,10 +93,12 @@ class VendorRust(MozbuildObject):
         version = LooseVersion(out.split()[1])
         if platform.system() == "Windows":
             if version >= "1.47" and "nightly" in out:
-                # parsing the date from "cargo 1.47.0-nightly (aa6872140 2020-07-23)"
-                date_format = '%Y-%m-%d'
+                
+                date_format = "%Y-%m-%d"
                 req_nightly = datetime.strptime("2020-07-23", date_format)
-                nightly = datetime.strptime(out.rstrip(")").rsplit(" ", 1)[1], date_format)
+                nightly = datetime.strptime(
+                    out.rstrip(")").rsplit(" ", 1)[1], date_format
+                )
                 if nightly < req_nightly:
                     self.log(
                         logging.ERROR,
@@ -166,11 +168,11 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         if any(
             [os.path.exists(os.path.join(path, "openssl/ssl.h")) for path in test_paths]
         ):
-            # Assume we can use one of these system headers.
+            
             return None
 
         if os.path.exists("/usr/local/opt/openssl/include/openssl/ssl.h"):
-            # Found a likely homebrew install.
+            
             self.log(
                 logging.INFO, "openssl", {}, "Using OpenSSL in /usr/local/opt/openssl"
             )
@@ -193,28 +195,28 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
             return None
         return cargo
 
-    # A whitelist of acceptable license identifiers for the
-    # packages.license field from https://spdx.org/licenses/.  Cargo
-    # documentation claims that values are checked against the above
-    # list and that multiple entries can be separated by '/'.  We
-    # choose to list all combinations instead for the sake of
-    # completeness and because some entries below obviously do not
-    # conform to the format prescribed in the documentation.
-    #
-    # It is insufficient to have additions to this whitelist reviewed
-    # solely by a build peer; any additions must be checked by somebody
-    # competent to review licensing minutiae.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    # Licenses for code used at runtime. Please see the above comment before
-    # adding anything to this list.
+    
+    
     RUNTIME_LICENSE_WHITELIST = [
         "Apache-2.0",
         "Apache-2.0 WITH LLVM-exception",
-        # BSD-2-Clause and BSD-3-Clause are ok, but packages using them
-        # must be added to the appropriate section of about:licenses.
-        # To encourage people to remember to do that, we do not whitelist
-        # the licenses themselves, and we require the packages to be added
-        # to RUNTIME_LICENSE_PACKAGE_WHITELIST below.
+        
+        
+        
+        
+        
         "CC0-1.0",
         "ISC",
         "MIT",
@@ -223,8 +225,8 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         "Zlib",
     ]
 
-    # Licenses for code used at build time (e.g. code generators). Please see the above
-    # comments before adding anything to this list.
+    
+    
     BUILDTIME_LICENSE_WHITELIST = {
         "BSD-3-Clause": [
             "bindgen",
@@ -235,33 +237,32 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         ]
     }
 
-    # This whitelist should only be used for packages that use an acceptable
-    # license, but that also need to explicitly mentioned in about:license.
+    
+    
     RUNTIME_LICENSE_PACKAGE_WHITELIST = {
-        'BSD-2-Clause': [
-            'arrayref',
-            'cloudabi',
-            'Inflector',
-            'mach',
-            'qlog',
+        "BSD-2-Clause": [
+            "arrayref",
+            "cloudabi",
+            "Inflector",
+            "mach",
+            "qlog",
         ],
-        'BSD-3-Clause': [
-        ]
+        "BSD-3-Clause": [],
     }
 
-    # This whitelist should only be used for packages that use a
-    # license-file and for which the license-file entry has been
-    # reviewed.  The table is keyed by package names and maps to the
-    # sha256 hash of the license file that we reviewed.
-    #
-    # As above, it is insufficient to have additions to this whitelist
-    # reviewed solely by a build peer; any additions must be checked by
-    # somebody competent to review licensing minutiae.
+    
+    
+    
+    
+    
+    
+    
+    
     RUNTIME_LICENSE_FILE_PACKAGE_WHITELIST = {
-        # MIT
+        
         "deque": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
-        # we're whitelisting this fuchsia crate because it doesn't get built in the final
-        # product but has a license-file that needs ignoring
+        
+        
         "fuchsia-cprng": "03b114f53e6587a398931762ee11e2395bfdba252a329940e2c8c9e81813845b",
     }
 
@@ -346,9 +347,9 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
 
             toml_file = os.path.join(vendor_dir, package, "Cargo.toml")
 
-            # pytoml is not sophisticated enough to parse Cargo.toml files
-            # with [target.'cfg(...)'.dependencies sections, so we resort
-            # to scanning individual lines.
+            
+            
+            
             with io.open(toml_file, "r", encoding="utf-8") as f:
                 license_lines = [l for l in f if l.strip().startswith("license")]
                 license_matches = list(
@@ -363,8 +364,8 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
                     )
                 )
 
-                # License information is optional for crates to provide, but
-                # we require it.
+                
+                
                 if not license_matches and not license_file_matches:
                     self.log(
                         logging.ERROR,
@@ -374,9 +375,9 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
                     )
                     return False
 
-                # The Cargo.toml spec suggests that crates should either have
-                # `license` or `license-file`, but not both.  We might as well
-                # be defensive about that, though.
+                
+                
+                
                 if (
                     len(license_matches) > 1
                     or len(license_file_matches) > 1
@@ -442,9 +443,9 @@ license file's hash.
 
                 return True
 
-        # Force all of the packages to be checked for license information
-        # before reducing via `all`, so all license issues are found in a
-        # single `mach vendor rust` invocation.
+        
+        
+        
         results = [
             check_package(p)
             for p in os.listdir(vendor_dir)
@@ -467,33 +468,33 @@ license file's hash.
         relative_vendor_dir = "third_party/rust"
         vendor_dir = mozpath.join(self.topsrcdir, relative_vendor_dir)
 
-        # We use check_call instead of mozprocess to ensure errors are displayed.
-        # We do an |update -p| here to regenerate the Cargo.lock file with minimal
-        # changes. See bug 1324462
+        
+        
+        
         subprocess.check_call([cargo, "update", "-p", "gkrust"], cwd=self.topsrcdir)
 
         output = subprocess.check_output(
             [cargo, "vendor", vendor_dir], stderr=subprocess.STDOUT, cwd=self.topsrcdir
         ).decode("UTF-8")
 
-        # Get the snippet of configuration that cargo vendor outputs, and
-        # update .cargo/config with it.
-        # XXX(bug 1576765): Hopefully do something better after
-        # https://github.com/rust-lang/cargo/issues/7280 is addressed.
+        
+        
+        
+        
         config = "\n".join(
             dropwhile(lambda l: not l.startswith("["), output.splitlines())
         )
 
-        # The config is toml, parse it as such.
+        
         config = pytoml.loads(config)
 
-        # For each replace-with, extract their configuration and update the
-        # corresponding directory to be relative to topsrcdir.
+        
+        
         replaces = {
             v["replace-with"] for v in config["source"].values() if "replace-with" in v
         }
 
-        # We only really expect one replace-with
+        
         if len(replaces) != 1:
             self.log(
                 logging.ERROR,
@@ -511,7 +512,7 @@ license file's hash.
             mozpath.normsep(os.path.normcase(self.topsrcdir)),
         )
 
-        # Introduce some determinism for the output.
+        
         def recursive_sort(obj):
             if isinstance(obj, dict):
                 return OrderedDict(
@@ -523,9 +524,9 @@ license file's hash.
 
         config = recursive_sort(config)
 
-        # Normalize pytoml output:
-        # - removing empty lines
-        # - remove empty [section]
+        
+        
+        
         def toml_dump(data):
             dump = pytoml.dumps(data)
             if isinstance(data, dict):
@@ -560,7 +561,7 @@ license file's hash.
 
         self.repository.add_remove_files(vendor_dir)
 
-        # 100k is a reasonable upper bound on source file size.
+        
         FILESIZE_LIMIT = 100 * 1024
         large_files = set()
         cumulative_added_size = 0
@@ -571,8 +572,8 @@ license file's hash.
             if size > FILESIZE_LIMIT:
                 large_files.add(f)
 
-        # Forcefully complain about large files being added, as history has
-        # shown that large-ish files typically are not needed.
+        
+        
         if large_files and not build_peers_said_large_imports_were_ok:
             self.log(
                 logging.ERROR,
@@ -598,8 +599,8 @@ The changes from `mach vendor rust` will NOT be added to version control.
             self.repository.clean_directory(vendor_dir)
             sys.exit(1)
 
-        # Only warn for large imports, since we may just have large code
-        # drops from time to time (e.g. importing features into m-c).
+        
+        
         SIZE_WARN_THRESHOLD = 5 * 1024 * 1024
         if cumulative_added_size >= SIZE_WARN_THRESHOLD:
             self.log(

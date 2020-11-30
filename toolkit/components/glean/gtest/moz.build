@@ -4,10 +4,10 @@
 
 
 
-if CONFIG['MOZ_GLEAN']:
+if CONFIG["MOZ_GLEAN"]:
     UNIFIED_SOURCES += [
-        'TestFog.cpp',
-        'TestFogIPC.cpp',
+        "TestFog.cpp",
+        "TestFogIPC.cpp",
     ]
 
-FINAL_LIBRARY = 'xul-gtest'
+FINAL_LIBRARY = "xul-gtest"

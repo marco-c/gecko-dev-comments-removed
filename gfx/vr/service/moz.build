@@ -5,47 +5,44 @@
 
 
 
-if CONFIG['OS_TARGET'] == 'WINNT':
+if CONFIG["OS_TARGET"] == "WINNT":
     SOURCES += [
-        'OculusSession.cpp',
-        'OpenVRWMRMapper.cpp',
+        "OculusSession.cpp",
+        "OpenVRWMRMapper.cpp",
     ]
 
 
-if CONFIG['OS_TARGET'] != 'Android':
+if CONFIG["OS_TARGET"] != "Android":
     UNIFIED_SOURCES += [
-        'OSVRSession.cpp',
-        'VRService.cpp',
-        'VRSession.cpp',
+        "OSVRSession.cpp",
+        "VRService.cpp",
+        "VRSession.cpp",
     ]
     
     
     
     SOURCES += [
-        'PuppetSession.cpp',
+        "PuppetSession.cpp",
     ]
-    include('/ipc/chromium/chromium-config.mozbuild')
+    include("/ipc/chromium/chromium-config.mozbuild")
 
 
-if CONFIG['OS_TARGET'] in ('WINNT', 'Linux', 'Darwin'):
+if CONFIG["OS_TARGET"] in ("WINNT", "Linux", "Darwin"):
     DIRS += [
-        'openvr',
+        "openvr",
     ]
-    LOCAL_INCLUDES += [
-        '/dom/base',
-        '/gfx/layers/d3d11'
-    ]
+    LOCAL_INCLUDES += ["/dom/base", "/gfx/layers/d3d11"]
 
     
     
     
     SOURCES += [
-        'OpenVRControllerMapper.cpp',
-        'OpenVRCosmosMapper.cpp',
-        'OpenVRDefaultMapper.cpp',
-        'OpenVRKnucklesMapper.cpp',
-        'OpenVRSession.cpp',
-        'OpenVRViveMapper.cpp',
+        "OpenVRControllerMapper.cpp",
+        "OpenVRCosmosMapper.cpp",
+        "OpenVRDefaultMapper.cpp",
+        "OpenVRKnucklesMapper.cpp",
+        "OpenVRSession.cpp",
+        "OpenVRViveMapper.cpp",
     ]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

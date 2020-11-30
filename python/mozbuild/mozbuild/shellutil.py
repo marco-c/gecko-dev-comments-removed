@@ -16,35 +16,36 @@ def _tokens2re(**tokens):
     
     
     
-    all_tokens = '|'.join('(?P<%s>%s)' % (name, value)
-                          for name, value in tokens.items())
-    nonescaped = r'(?<!\\)(?:%s)' % all_tokens
+    all_tokens = "|".join(
+        "(?P<%s>%s)" % (name, value) for name, value in tokens.items()
+    )
+    nonescaped = r"(?<!\\)(?:%s)" % all_tokens
 
     
     
-    return re.compile('(?:%s|%s)' % (nonescaped, r'(?P<escape>\\\\)'))
+    return re.compile("(?:%s|%s)" % (nonescaped, r"(?P<escape>\\\\)"))
 
 
 UNQUOTED_TOKENS_RE = _tokens2re(
-  whitespace=r'[\t\r\n ]+',
-  quote=r'[\'"]',
-  comment='#',
-  special=r'[<>&|`(){}$;\*\?]',
-  backslashed=r'\\[^\\]',
+    whitespace=r"[\t\r\n ]+",
+    quote=r'[\'"]',
+    comment="#",
+    special=r"[<>&|`(){}$;\*\?]",
+    backslashed=r"\\[^\\]",
 )
 
 DOUBLY_QUOTED_TOKENS_RE = _tokens2re(
-  quote='"',
-  backslashedquote=r'\\"',
-  special='\$',
-  backslashed=r'\\[^\\"]',
+    quote='"',
+    backslashedquote=r'\\"',
+    special="\$",
+    backslashed=r'\\[^\\"]',
 )
 
-ESCAPED_NEWLINES_RE = re.compile(r'\\\n')
+ESCAPED_NEWLINES_RE = re.compile(r"\\\n")
 
 
 
-SHELL_QUOTE_RE = re.compile(r'[\\\t\r\n \'\"#<>&|`(){}$;\*\?]')
+SHELL_QUOTE_RE = re.compile(r"[\\\t\r\n \'\"#<>&|`(){}$;\*\?]")
 
 
 class MetaCharacterException(Exception):
@@ -53,10 +54,10 @@ class MetaCharacterException(Exception):
 
 
 class _ClineSplitter(object):
-    '''
+    """
     Parses a given command line string and creates a list of command
     and arguments, with wildcard expansion.
-    '''
+    """
 
     def __init__(self, cline):
         self.arg = None
@@ -65,26 +66,26 @@ class _ClineSplitter(object):
         self._parse_unquoted()
 
     def _push(self, str):
-        '''
+        """
         Push the given string as part of the current argument
-        '''
+        """
         if self.arg is None:
-            self.arg = ''
+            self.arg = ""
         self.arg += str
 
     def _next(self):
-        '''
+        """
         Finalize current argument, effectively adding it to the list.
-        '''
+        """
         if self.arg is None:
             return
         self.result.append(self.arg)
         self.arg = None
 
     def _parse_unquoted(self):
-        '''
+        """
         Parse command line remainder in the context of an unquoted string.
-        '''
+        """
         while self.cline:
             
             m = UNQUOTED_TOKENS_RE.search(self.cline)
@@ -96,35 +97,34 @@ class _ClineSplitter(object):
             
             
             if m.start():
-                self._push(self.cline[:m.start()])
-            self.cline = self.cline[m.end():]
+                self._push(self.cline[: m.start()])
+            self.cline = self.cline[m.end() :]
 
-            match = {name: value
-                     for name, value in m.groupdict().items() if value}
-            if 'quote' in match:
+            match = {name: value for name, value in m.groupdict().items() if value}
+            if "quote" in match:
                 
-                if match['quote'] == '"':
+                if match["quote"] == '"':
                     self._parse_doubly_quoted()
                 else:
                     self._parse_quoted()
-            elif 'comment' in match:
+            elif "comment" in match:
                 
                 
                 break
-            elif 'special' in match:
+            elif "special" in match:
                 
                 
-                raise MetaCharacterException(match['special'])
-            elif 'whitespace' in match:
+                raise MetaCharacterException(match["special"])
+            elif "whitespace" in match:
                 
                 self._next()
-            elif 'escape' in match:
+            elif "escape" in match:
                 
-                self._push('\\')
-            elif 'backslashed' in match:
+                self._push("\\")
+            elif "backslashed" in match:
                 
                 
-                self._push(match['backslashed'][1])
+                self._push(match["backslashed"][1])
             else:
                 raise Exception("Shouldn't reach here")
         if self.arg:
@@ -134,61 +134,60 @@ class _ClineSplitter(object):
         
         index = self.cline.find("'")
         if index == -1:
-            raise Exception('Unterminated quoted string in command')
+            raise Exception("Unterminated quoted string in command")
         self._push(self.cline[:index])
-        self.cline = self.cline[index+1:]
+        self.cline = self.cline[index + 1 :]
 
     def _parse_doubly_quoted(self):
         if not self.cline:
-            raise Exception('Unterminated quoted string in command')
+            raise Exception("Unterminated quoted string in command")
         while self.cline:
             m = DOUBLY_QUOTED_TOKENS_RE.search(self.cline)
             if not m:
-                raise Exception('Unterminated quoted string in command')
-            self._push(self.cline[:m.start()])
-            self.cline = self.cline[m.end():]
-            match = {name: value
-                     for name, value in m.groupdict().items() if value}
-            if 'quote' in match:
+                raise Exception("Unterminated quoted string in command")
+            self._push(self.cline[: m.start()])
+            self.cline = self.cline[m.end() :]
+            match = {name: value for name, value in m.groupdict().items() if value}
+            if "quote" in match:
                 
                 
                 return
-            elif 'special' in match:
+            elif "special" in match:
                 
                 
                 
-                raise MetaCharacterException(match['special'])
-            elif 'escape' in match:
+                raise MetaCharacterException(match["special"])
+            elif "escape" in match:
                 
-                self._push('\\')
-            elif 'backslashedquote' in match:
+                self._push("\\")
+            elif "backslashedquote" in match:
                 
                 self._push('"')
-            elif 'backslashed' in match:
+            elif "backslashed" in match:
                 
-                self._push(match['backslashed'])
+                self._push(match["backslashed"])
 
 
 def split(cline):
-    '''
+    """
     Split the given command line string.
-    '''
-    s = ESCAPED_NEWLINES_RE.sub('', cline)
+    """
+    s = ESCAPED_NEWLINES_RE.sub("", cline)
     return _ClineSplitter(s).result
 
 
 def _quote(s):
-    '''Given a string, returns a version that can be used literally on a shell
+    """Given a string, returns a version that can be used literally on a shell
     command line, enclosing it with single quotes if necessary.
 
     As a special case, if given an int, returns a string containing the int,
     not enclosed in quotes.
-    '''
+    """
     if type(s) == int:
-        return '%d' % s
+        return "%d" % s
 
     
-    if s and not SHELL_QUOTE_RE.search(s) and not s.startswith('~'):
+    if s and not SHELL_QUOTE_RE.search(s) and not s.startswith("~"):
         return s
 
     
@@ -199,15 +198,15 @@ def _quote(s):
 
 
 def quote(*strings):
-    '''Given one or more strings, returns a quoted string that can be used
+    """Given one or more strings, returns a quoted string that can be used
     literally on a shell command line.
 
         >>> quote('a', 'b')
         "a b"
         >>> quote('a b', 'c')
         "'a b' c"
-    '''
-    return ' '.join(_quote(s) for s in strings)
+    """
+    return " ".join(_quote(s) for s in strings)
 
 
-__all__ = ['MetaCharacterException', 'split', 'quote']
+__all__ = ["MetaCharacterException", "split", "quote"]

@@ -5,10 +5,10 @@
 
 
 UNIFIED_SOURCES += [
-    'bench-collections/Bench.cpp',
-    'moz_task/Test.cpp',
-    'nsstring/Test.cpp',
-    'xpcom/Test.cpp',
+    "bench-collections/Bench.cpp",
+    "moz_task/Test.cpp",
+    "nsstring/Test.cpp",
+    "xpcom/Test.cpp",
 ]
 
-FINAL_LIBRARY = 'xul-gtest'
+FINAL_LIBRARY = "xul-gtest"

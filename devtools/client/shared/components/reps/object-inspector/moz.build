@@ -5,12 +5,12 @@
 
 
 DIRS += [
-    'components',
-    'utils',
+    "components",
+    "utils",
 ]
 
 DevToolsModules(
-    'actions.js',
-    'index.js',
-    'reducer.js',
+    "actions.js",
+    "index.js",
+    "reducer.js",
 )

@@ -21,49 +21,51 @@ from taskgraph.transforms.job.common import (
     add_tooltool,
 )
 
-haz_run_schema = Schema({
-    Required('using'): 'hazard',
-
-    
-    Required('command'): text_type,
-
-    
-    Optional('mozconfig'): text_type,
-
-    
-    
-    
-    
-    
-    Optional('secrets'): Any(bool, [text_type]),
-
-    
-    Optional('workdir'): text_type,
-})
+haz_run_schema = Schema(
+    {
+        Required("using"): "hazard",
+        
+        Required("command"): text_type,
+        
+        Optional("mozconfig"): text_type,
+        
+        
+        
+        
+        
+        Optional("secrets"): Any(bool, [text_type]),
+        
+        Optional("workdir"): text_type,
+    }
+)
 
 
 @run_job_using("docker-worker", "hazard", schema=haz_run_schema)
 def docker_worker_hazard(config, job, taskdesc):
-    run = job['run']
+    run = job["run"]
 
-    worker = taskdesc['worker'] = job['worker']
-    worker.setdefault('artifacts', [])
+    worker = taskdesc["worker"] = job["worker"]
+    worker.setdefault("artifacts", [])
 
     docker_worker_add_artifacts(config, job, taskdesc)
-    worker.setdefault('required-volumes', []).append('{workdir}/workspace'.format(**run))
+    worker.setdefault("required-volumes", []).append(
+        "{workdir}/workspace".format(**run)
+    )
     add_tooltool(config, job, taskdesc)
     setup_secrets(config, job, taskdesc)
 
-    env = worker['env']
-    env.update({
-        'MOZ_BUILD_DATE': config.params['moz_build_date'],
-        'MOZ_SCM_LEVEL': config.params['level'],
-    })
+    env = worker["env"]
+    env.update(
+        {
+            "MOZ_BUILD_DATE": config.params["moz_build_date"],
+            "MOZ_SCM_LEVEL": config.params["level"],
+        }
+    )
 
     
-    if run.get('mozconfig'):
-        env['MOZCONFIG'] = run.pop('mozconfig')
+    if run.get("mozconfig"):
+        env["MOZCONFIG"] = run.pop("mozconfig")
 
-    run['using'] = 'run-task'
-    run['cwd'] = run['workdir']
-    configure_taskdesc_for_run(config, job, taskdesc, worker['implementation'])
+    run["using"] = "run-task"
+    run["cwd"] = run["workdir"]
+    configure_taskdesc_for_run(config, job, taskdesc, worker["implementation"])
