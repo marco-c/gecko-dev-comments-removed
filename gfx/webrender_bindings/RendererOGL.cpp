@@ -205,12 +205,8 @@ RenderedFrameId RendererOGL::UpdateAndRender(
                            aReadbackSize.ref().height, aReadbackFormat.ref(),
                            &aReadbackBuffer.ref()[0],
                            aReadbackBuffer.ref().length());
-
-      
-      
       if (aNeedsYFlip) {
-        *aNeedsYFlip =
-            !gfx::gfxVars::UseSoftwareWebRender() && !mCompositor->UseANGLE();
+        *aNeedsYFlip = !mCompositor->SurfaceOriginIsTopLeft();
       }
     }
   }
