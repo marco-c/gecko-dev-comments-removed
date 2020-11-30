@@ -536,6 +536,7 @@ var BrowserUtils = {
     let url;
     let linkText;
 
+    let isDocumentLevelSelection = true;
     
     if (!selectionStr && focusedElement) {
       
@@ -546,6 +547,7 @@ var BrowserUtils = {
       ) {
         selection = focusedElement.editor.selection;
         selectionStr = selection.toString();
+        isDocumentLevelSelection = false;
       }
     }
 
@@ -619,6 +621,7 @@ var BrowserUtils = {
     return {
       text: selectionStr,
       docSelectionIsCollapsed: collapsed,
+      isDocumentLevelSelection,
       fullText,
       linkURL: url ? url.spec : null,
       linkText: url ? linkText : "",

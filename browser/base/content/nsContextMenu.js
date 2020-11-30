@@ -483,12 +483,16 @@ class nsContextMenu {
     
     this.showItem(
       "context-viewpartialsource-selection",
-      !this.inAboutDevtoolsToolbox && this.isContentSelected
+      !this.inAboutDevtoolsToolbox &&
+        this.isContentSelected &&
+        this.selectionInfo.isDocumentLevelSelection
     );
 
     this.showItem(
       "context-print-selection",
-      !this.inAboutDevtoolsToolbox && this.isContentSelected
+      !this.inAboutDevtoolsToolbox &&
+        this.isContentSelected &&
+        this.selectionInfo.isDocumentLevelSelection
     );
 
     var shouldShow = !(
