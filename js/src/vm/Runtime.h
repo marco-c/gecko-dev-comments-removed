@@ -302,6 +302,7 @@ struct JSRuntime {
   
 
   JSAccumulateTelemetryDataCallback telemetryCallback;
+  JSAccumulateXYTelemetryDataCallback xyTelemetryCallback;
 
   
   js::MainThreadData<JSSetUseCounterCallback> useCounterCallback;
@@ -318,6 +319,11 @@ struct JSRuntime {
 
   void setTelemetryCallback(JSRuntime* rt,
                             JSAccumulateTelemetryDataCallback callback);
+
+  void addXYTelemetry(int id, uint32_t xSample, uint32_t ySample);
+
+  void setXYTelemetryCallback(JSRuntime* rt,
+                              JSAccumulateXYTelemetryDataCallback callback);
 
   void setElementCallback(JSRuntime* rt, JSGetElementCallback callback);
 
