@@ -126,7 +126,22 @@ add_task(async function test_fullscreen_api_cross_origin_tree() {
 
   async function check_events(expected_events) {
     for (let [name, expected] of expected_events) {
-      let events = await frames.get(name).actor.sendQuery("GetEvents");
+      let actor = frames.get(name).actor;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      let events;
+      await TestUtils.waitForCondition(async () => {
+        events = await actor.sendQuery("GetEvents");
+        return events.length == expected.length;
+      }, `Waiting for number of events to match`);
+
       Assert.equal(events.length, expected.length, "Number of events equal");
       events.forEach((value, i) => {
         Assert.equal(value, expected[i], "Event type matches");
