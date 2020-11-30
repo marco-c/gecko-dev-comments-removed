@@ -161,7 +161,7 @@ class OpenTypeSILF : public Table {
     uint8_t numUserDefn;
     uint8_t maxCompPerLig;
     uint8_t direction;
-    uint8_t attCollisions;  
+    uint8_t attrCollisions;  
     uint8_t reserved4;
     uint8_t reserved5;
     uint8_t reserved6;
