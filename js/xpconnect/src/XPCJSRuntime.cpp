@@ -2656,8 +2656,7 @@ static void AccumulateTelemetryCallback(int id, uint32_t sample,
                            sample);
       break;
     default:
-      
-      break;
+      MOZ_ASSERT_UNREACHABLE("Unexpected JS_TELEMETRY id");
   }
 }
 
