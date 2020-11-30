@@ -2194,11 +2194,14 @@ void BrowsingContext::DidSet(FieldIndex<IDX_DisplayMode>,
   PreOrderWalk([&](BrowsingContext* aContext) {
     if (nsIDocShell* shell = aContext->GetDocShell()) {
       if (nsPresContext* pc = shell->GetPresContext()) {
-        pc->MediaFeatureValuesChangedAllDocuments(
+        pc->MediaFeatureValuesChanged(
             {MediaFeatureChangeReason::DisplayModeChange},
             
             
-            nsPresContext::RecurseIntoInProcessSubDocuments::No);
+            
+            
+            
+            MediaFeatureChangePropagation::JustThisDocument);
       }
     }
   });

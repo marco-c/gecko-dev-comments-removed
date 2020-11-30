@@ -6330,7 +6330,9 @@ already_AddRefed<PresShell> Document::CreatePresShell(
 
   
   
-  aContext->MediaFeatureValuesChanged({MediaFeatureChange::kAllChanges});
+  aContext->MediaFeatureValuesChanged(
+      {MediaFeatureChange::kAllChanges},
+      MediaFeatureChangePropagation::JustThisDocument);
 
   
   nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);

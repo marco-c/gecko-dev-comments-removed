@@ -13,6 +13,7 @@
 #include "imgFrame.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/MediaFeatureChange.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGDocument.h"
@@ -1557,7 +1558,8 @@ void VectorImage::MediaFeatureValuesChangedAllDocuments(
 
   if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
     if (RefPtr<nsPresContext> presContext = doc->GetPresContext()) {
-      presContext->MediaFeatureValuesChangedAllDocuments(aChange);
+      presContext->MediaFeatureValuesChanged(
+          aChange, MediaFeatureChangePropagation::All);
       
       
       

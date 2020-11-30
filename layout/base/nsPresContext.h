@@ -82,6 +82,7 @@ class PresShell;
 class RestyleManager;
 class StaticPresData;
 struct MediaFeatureChange;
+enum class MediaFeatureChangePropagation : uint8_t;
 namespace layers {
 class ContainerLayer;
 class LayerManager;
@@ -283,13 +284,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void ContentLanguageChanged();
 
-  enum class RecurseIntoInProcessSubDocuments : bool { No, Yes };
-
-  
-
-
-  void MediaFeatureValuesChanged(const mozilla::MediaFeatureChange& aChange);
-
   
   bool FlushPendingMediaFeatureValuesChanged();
 
@@ -297,10 +291,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
 
-
-  void MediaFeatureValuesChangedAllDocuments(
-      const mozilla::MediaFeatureChange&,
-      RecurseIntoInProcessSubDocuments = RecurseIntoInProcessSubDocuments::Yes);
+  void MediaFeatureValuesChanged(const mozilla::MediaFeatureChange&,
+                                 mozilla::MediaFeatureChangePropagation);
 
   
 
