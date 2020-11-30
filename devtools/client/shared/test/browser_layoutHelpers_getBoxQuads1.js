@@ -13,37 +13,24 @@ add_task(async function() {
 
   info("Running tests");
 
-  
-  
-  
-  const mm = tab.linkedBrowser.messageManager;
-  mm.addMessageListener("devtools-test:command", async function({ data }) {
-    switch (data) {
-      case "zoom-enlarge":
-        window.FullZoom.enlarge();
-        break;
-      case "zoom-reset":
-        await window.FullZoom.reset();
-        break;
-      case "zoom-reduce":
-        window.FullZoom.reduce();
-        break;
-    }
-    mm.sendAsyncMessage("devtools-test:done");
-  });
-
-  await ContentTask.spawn(tab.linkedBrowser, null, async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     
     
     function sendCommand(cmd) {
-      const onDone = new Promise(done => {
-        addMessageListener("devtools-test:done", function listener() {
-          removeMessageListener("devtools-test:done", listener);
-          done();
-        });
+      return SpecialPowers.spawnChrome([cmd], async data => {
+        const window = this.browsingContext.topChromeWindow;
+        switch (data) {
+          case "zoom-enlarge":
+            window.FullZoom.enlarge();
+            break;
+          case "zoom-reset":
+            await window.FullZoom.reset();
+            break;
+          case "zoom-reduce":
+            window.FullZoom.reduce();
+            break;
+        }
       });
-      sendAsyncMessage("devtools-test:command", cmd);
-      return onDone;
     }
 
     const doc = content.document;
