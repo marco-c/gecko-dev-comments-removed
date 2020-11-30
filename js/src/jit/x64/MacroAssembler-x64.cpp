@@ -588,6 +588,11 @@ void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
                               Operand srcAddr, AnyRegister out) {
   memoryBarrierBefore(access.sync());
 
+  MOZ_ASSERT_IF(
+      access.isZeroExtendSimd128Load(),
+      access.type() == Scalar::Float32 || access.type() == Scalar::Float64);
+  MOZ_ASSERT_IF(access.isSplatSimd128Load(), access.type() == Scalar::Float64);
+
   append(access, size());
   switch (access.type()) {
     case Scalar::Int8:
@@ -611,8 +616,12 @@ void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
       vmovss(srcAddr, out.fpu());
       break;
     case Scalar::Float64:
-      
-      vmovsd(srcAddr, out.fpu());
+      if (access.isSplatSimd128Load()) {
+        vmovddup(srcAddr, out.fpu());
+      } else {
+        
+        vmovsd(srcAddr, out.fpu());
+      }
       break;
     case Scalar::Simd128:
       MacroAssemblerX64::loadUnalignedSimd128(srcAddr, out.fpu());

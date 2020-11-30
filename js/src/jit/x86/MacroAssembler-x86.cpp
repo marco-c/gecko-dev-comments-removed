@@ -605,6 +605,11 @@ void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
   MOZ_ASSERT(srcAddr.kind() == Operand::MEM_REG_DISP ||
              srcAddr.kind() == Operand::MEM_SCALE);
 
+  MOZ_ASSERT_IF(
+      access.isZeroExtendSimd128Load(),
+      access.type() == Scalar::Float32 || access.type() == Scalar::Float64);
+  MOZ_ASSERT_IF(access.isSplatSimd128Load(), access.type() == Scalar::Float64);
+
   memoryBarrierBefore(access.sync());
 
   append(access, size());
@@ -630,8 +635,12 @@ void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
       vmovss(srcAddr, out.fpu());
       break;
     case Scalar::Float64:
-      
-      vmovsd(srcAddr, out.fpu());
+      if (access.isSplatSimd128Load()) {
+        vmovddup(srcAddr, out.fpu());
+      } else {
+        
+        vmovsd(srcAddr, out.fpu());
+      }
       break;
     case Scalar::Simd128:
       vmovups(srcAddr, out.fpu());
@@ -653,6 +662,8 @@ void MacroAssembler::wasmLoadI64(const wasm::MemoryAccessDesc& access,
   MOZ_ASSERT_IF(access.isAtomic(), access.byteSize() <= 4);
   MOZ_ASSERT(srcAddr.kind() == Operand::MEM_REG_DISP ||
              srcAddr.kind() == Operand::MEM_SCALE);
+  MOZ_ASSERT(!access.isZeroExtendSimd128Load());  
+  MOZ_ASSERT(!access.isSplatSimd128Load());       
 
   memoryBarrierBefore(access.sync());
 
