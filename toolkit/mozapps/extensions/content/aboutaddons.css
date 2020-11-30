@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --addon-icon-size: 32px;
@@ -14,7 +14,7 @@
 @media (max-width: 830px) {
   :root {
     --main-margin-start: 16px;
-    
+    /* Maintain a main margin so card shadows don't overlap the sidebar. */
     --sidebar-width: calc(var(--in-content-sidebar-width) - var(--main-margin-start));
   }
 }
@@ -25,7 +25,7 @@
 
 body {
   cursor: default;
-  
+  /* The page starts to look really bad lower than this. */
   min-width: 500px;
 }
 
@@ -45,7 +45,7 @@ body {
 }
 
 @media (prefers-reduced-motion) {
-  
+  /* Setting border-inline-end on #sidebar makes it a focusable element */
   #sidebar::after {
     content: "";
     width: 1px;
@@ -60,7 +60,7 @@ body {
 #categories {
   display: flex;
   flex-direction: column;
-  padding-inline-end: 4px; 
+  padding-inline-end: 4px; /* Leave space for the button focus styles. */
 }
 
 .category {
@@ -76,7 +76,7 @@ body {
   background-color: var(--blue-50);
   color: #fff;
   font-weight: bold;
-  
+  /* Use a large border-radius to get semi-circles on the sides. */
   border-radius: 1000px;
   padding: 2px 6px;
   content: attr(badge-count);
@@ -165,8 +165,8 @@ search-addons > search-textbox {
   margin-inline-end: 16px;
 }
 
-
-
+/* Plugins aren't yet disabled by safemode (bug 342333),
+   so don't show that warning when viewing plugins. */
 #page-header[current-param="plugin"] message-bar[warning-type="safe-mode"] {
   display: none;
 }
@@ -183,12 +183,12 @@ global-warnings,
   max-width: var(--section-width);
 }
 
-
+/* The margin between message bars. */
 message-bar-stack > * {
   margin-bottom: 8px;
 }
 
-
+/* List sections */
 
 .list-section-heading {
   font-size: 17px;
@@ -200,7 +200,7 @@ message-bar-stack > * {
   margin-bottom: 32px;
 }
 
-
+/* Add-on cards */
 
 .addon.card {
   margin-bottom: 16px;
@@ -252,25 +252,25 @@ addon-card[expanded] .update-postponed-bar {
 }
 
 addon-card[expanded] .update-postponed-bar + .addon-card-message {
-  
-
+  /* Remove margin between the two message bars when they are both
+   * visible in the detail view */
   margin-top: 0px;
 }
 
 .update-postponed-bar + .addon-card-message {
-  
-
-
+  /* Prevent the small overlapping between the two message bars
+   * when they are both visible at the same time one after the
+   * other on the same addon card */
   margin-top: 12px;
 }
 
-
+/* Theme preview image. */
 .card-heading-image {
-  
-
+  /* If the width, height or aspect ratio changes, don't forget to update the
+   * getScreenshotUrlForAddon function in aboutaddons.js */
   width: var(--section-width);
-  
-
+  /* Adjust height so that the image preserves the aspect ratio from AMO.
+   * For details, see https://bugzilla.mozilla.org/show_bug.cgi?id=1546123 */
   height: calc(var(--section-width) * 92 / 680);
   object-fit: cover;
 }
@@ -292,7 +292,7 @@ addon-card[expanded] .update-postponed-bar + .addon-card-message {
 }
 
 .addon-name-container {
-  
+  /* Subtract the top line-height so the text and icon align at the top. */
   margin-top: -3px;
   display: flex;
   align-items: center;
@@ -365,15 +365,15 @@ addon-card[expanded] .update-postponed-bar + .addon-card-message {
   font-weight: 400;
 }
 
-
+/* Prevent the content from wrapping unless expanded. */
 addon-card:not([expanded]) .card-contents {
-  
-
+  /* We're hiding the content when it's too long, so we need to define the
+   * width. As long as this is less than the width of its parent it works. */
   width: 1px;
   white-space: nowrap;
 }
 
-
+/* Ellipsize if the content is too long. */
 addon-card:not([expanded]) .addon-name,
 addon-card:not([expanded]) .addon-description {
   text-overflow: ellipsis;
@@ -390,13 +390,13 @@ addon-card:not([expanded]) .addon-description {
   height: 32px;
 }
 
-
+/* Recommended add-ons on list views */
 .recommended-heading {
   margin-bottom: 24px;
   margin-top: 48px;
 }
 
-
+/* Discopane extensions to the add-on card */
 
 recommended-addon-card .addon-description:not(:empty) {
   margin-top: 0.5em;
@@ -560,7 +560,7 @@ addon-details {
   background-image: url("chrome://global/skin/icons/more.svg");
   background-repeat: no-repeat;
   background-position: center center;
-  
+  /* Get the -badged ::after element in the right spot. */
   padding: 1px;
   display: flex;
   justify-content: flex-end;
@@ -625,7 +625,7 @@ panel-item-separator {
 }
 
 .inline-options-stack {
-  
+  /* If the options browser triggers an alert we need room to show it. */
   min-height: 250px;
   width: 100%;
   background-color: white;
@@ -652,14 +652,18 @@ addon-permissions-list > .addon-detail-row {
   background-repeat: no-repeat;
 }
 
+.addon-permissions-list > li:dir(rtl) {
+  background-position-x: right 0;
+}
 
+/* justify the permission toggle */
 li.permission-info > label {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-
+/* using a list-style-image prevents aligning the image */
 .addon-permissions-list > li.permission-checked {
   background-image: url("chrome://global/skin/icons/check.svg");
   -moz-context-properties: fill;
@@ -673,7 +677,7 @@ li.permission-info > label {
 .tab-group {
   display: block;
   margin-top: 8px;
-  
+  /* Pull the buttons flush with the side of the card */
   margin-inline: calc(var(--card-padding) * -1);
   border-bottom: 1px solid var(--in-content-box-border-color);
   border-top: 1px solid var(--in-content-box-border-color);
