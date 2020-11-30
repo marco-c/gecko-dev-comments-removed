@@ -6,11 +6,9 @@
 const URI =
   "chrome://mochitests/content/browser/devtools/client/shared/sourceeditor/" +
   "test/codemirror/codemirror.html";
-loadHelperScript("helper_codemirror_runner.js");
 
-async function test() {
+add_task(async function test() {
   requestLongerTimeout(3);
-  waitForExplicitFinish();
 
   
 
@@ -24,14 +22,12 @@ async function test() {
 
 
 
-  await pushPref("privacy.reduceTimerPrecision", true);
-  await pushPref(
-    "privacy.resistFingerprinting.reduceTimerPrecision.microseconds",
-    2000
-  );
-  
-  await pushPref("security.allow_parent_unrestricted_js_loads", true);
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.reduceTimerPrecision", true],
+      ["privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000],
+    ],
+  });
 
-  const tab = await addTab(URI);
-  runCodeMirrorTest(tab.linkedBrowser);
-}
+  await runCodeMirrorTest(URI);
+});
