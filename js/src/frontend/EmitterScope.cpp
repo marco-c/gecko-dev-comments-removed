@@ -406,9 +406,13 @@ bool EmitterScope::appendScopeNote(BytecodeEmitter* bce) {
                          : ScopeNote::NoScopeNoteIndex);
 }
 
-bool EmitterScope::deadZoneFrameSlotRange(BytecodeEmitter* bce,
-                                          uint32_t slotStart,
-                                          uint32_t slotEnd) const {
+bool EmitterScope::clearFrameSlotRange(BytecodeEmitter* bce, JSOp opcode,
+                                       uint32_t slotStart,
+                                       uint32_t slotEnd) const {
+  MOZ_ASSERT(opcode == JSOp::Uninitialized || opcode == JSOp::Undefined);
+
+  
+  
   
   
   
@@ -420,7 +424,7 @@ bool EmitterScope::deadZoneFrameSlotRange(BytecodeEmitter* bce,
   
   
   if (slotStart != slotEnd) {
-    if (!bce->emit1(JSOp::Uninitialized)) {
+    if (!bce->emit1(opcode)) {
       return false;
     }
     for (uint32_t slot = slotStart; slot < slotEnd; slot++) {
@@ -712,12 +716,24 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
       }
 
       NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
+      MOZ_ASSERT(bi.kind() == BindingKind::Var);
       if (!putNameInCache(bce, bi.name(), loc)) {
         return false;
       }
     }
 
+    uint32_t priorEnd = bce->maxFixedSlots;
     updateFrameFixedSlots(bce, bi);
+
+    
+    
+    
+    uint32_t end = std::min(priorEnd, nextFrameSlot_);
+    if (firstFrameSlot < end) {
+      if (!clearFrameSlotRange(bce, JSOp::Undefined, firstFrameSlot, end)) {
+        return false;
+      }
+    }
   } else {
     nextFrameSlot_ = firstFrameSlot;
   }
