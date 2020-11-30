@@ -158,113 +158,41 @@ void MacroAssemblerX86Shared::extractLaneInt8x16(FloatRegister input,
   }
 }
 
-void MacroAssemblerX86Shared::insertLaneSimdInt(FloatRegister input,
-                                                Register value,
-                                                FloatRegister output,
-                                                unsigned lane,
-                                                unsigned numLanes) {
-  if (numLanes == 8) {
-    
-    vpinsrw(lane, value, input, output);
-    return;
-  }
-
-  
-  
-  
-  if (AssemblerX86Shared::HasSSE41()) {
-    
-    switch (numLanes) {
-      case 4:
-        vpinsrd(lane, value, input, output);
-        return;
-      case 16:
-        vpinsrb(lane, value, input, output);
-        return;
-    }
-  }
-
-  asMasm().reserveStack(Simd128DataSize);
-  storeAlignedSimd128Int(input, Address(StackPointer, 0));
-  switch (numLanes) {
-    case 4:
-      store32(value, Address(StackPointer, lane * sizeof(int32_t)));
-      break;
-    case 16:
-      
-      
-      store8(value, Address(StackPointer, lane * sizeof(int8_t)));
-      break;
-    default:
-      MOZ_CRASH("Unsupported SIMD numLanes");
-  }
-  loadAlignedSimd128Int(Address(StackPointer, 0), output);
-  asMasm().freeStack(Simd128DataSize);
-}
-
-void MacroAssemblerX86Shared::insertLaneFloat32x4(FloatRegister input,
-                                                  FloatRegister value,
-                                                  FloatRegister output,
-                                                  unsigned lane) {
-  
-  MOZ_RELEASE_ASSERT(input == output);
+void MacroAssemblerX86Shared::replaceLaneFloat32x4(FloatRegister rhs,
+                                                   FloatRegister lhsDest,
+                                                   unsigned lane) {
+  MOZ_ASSERT(AssemblerX86Shared::HasSSE41());
+  MOZ_ASSERT(lhsDest.isSimd128() && rhs.isSingle());
 
   if (lane == 0) {
-    if (value != output) {
-      vmovss(value, input, output);
-    }
-    return;
-  }
-
-  if (AssemblerX86Shared::HasSSE41()) {
-    
-    vinsertps(vinsertpsMask(0, lane), value, output, output);
-    return;
-  }
-
-  asMasm().reserveStack(Simd128DataSize);
-  storeAlignedSimd128Float(input, Address(StackPointer, 0));
-  asMasm().storeFloat32(value, Address(StackPointer, lane * sizeof(int32_t)));
-  loadAlignedSimd128Float(Address(StackPointer, 0), output);
-  asMasm().freeStack(Simd128DataSize);
-}
-
-void MacroAssemblerX86Shared::insertLaneFloat64x2(FloatRegister input,
-                                                  FloatRegister value,
-                                                  FloatRegister output,
-                                                  unsigned lane) {
-  if (input == output && output == value) {
-    
-    return;
-  }
-
-  if (input != output && value != output) {
-    
-    vmovapd(input, output);
-    input = output;
-  }
-
-  if (input == output) {
-    
-    if (lane == 0) {
+    if (rhs.asSimd128() == lhsDest) {
       
-      vmovsd(value, output, output);
+      
     } else {
       
-      vshufpd(0, value, output, output);
+      vmovss(rhs, lhsDest, lhsDest);
     }
   } else {
-    MOZ_ASSERT(value == output);
-    
-    if (lane == 0) {
+    vinsertps(vinsertpsMask(0, lane), rhs, lhsDest, lhsDest);
+  }
+}
+
+void MacroAssemblerX86Shared::replaceLaneFloat64x2(FloatRegister rhs,
+                                                   FloatRegister lhsDest,
+                                                   unsigned lane) {
+  MOZ_ASSERT(lhsDest.isSimd128() && rhs.isDouble());
+
+  if (lane == 0) {
+    if (rhs.asSimd128() == lhsDest) {
       
-      vshufpd(2, input, output, output);
+      
     } else {
       
-      vmovddup(output, output);
-      
-      vmovsd(input, output, output);
+      vmovsd(rhs, lhsDest, lhsDest);
     }
+  } else {
+    
+    vshufpd(0, rhs, lhsDest, lhsDest);
   }
 }
 
