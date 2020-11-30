@@ -14,7 +14,7 @@ class ServiceWorkerContainerParent;
 
 class ServiceWorkerContainerProxy final {
   
-  ServiceWorkerContainerParent* mActor;
+  RefPtr<ServiceWorkerContainerParent> mActor;
 
   ~ServiceWorkerContainerProxy();
 
