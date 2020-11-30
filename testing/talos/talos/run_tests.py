@@ -252,6 +252,16 @@ function FindProxyForURL(url, host) {
     if browser_config.get('enable_fission', False):
         talos_results.add_extra_option('fission')
 
+    
+    if browser_config['preferences'].get('gfx.webrender.software', False):
+        talos_results.add_extra_option("webrender-sw")
+    elif browser_config.get('enable_webrender', False):
+        talos_results.add_extra_option('webrender')
+
+    
+    if browser_config['preferences'].get('webgl.out-of-process', False):
+        talos_results.add_extra_option('webgl-ipc')
+
     testname = None
 
     
