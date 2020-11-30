@@ -4513,8 +4513,6 @@ js::UniquePtr<ImmutableScriptData> ImmutableScriptData::new_(
     mozilla::Span<const ScopeNote> scopeNotes,
     mozilla::Span<const TryNote> tryNotes) {
   MOZ_RELEASE_ASSERT(code.Length() <= frontend::MaxBytecodeLength);
-  MOZ_ASSERT_IF(!resumeOffsets.IsEmpty(),
-                nfixed <= GeneratorObject::FixedSlotLimit);
 
   
   

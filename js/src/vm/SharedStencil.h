@@ -540,6 +540,7 @@ class SharedImmutableScriptData {
                               RefPtr<SharedImmutableScriptData>& sisd);
 
   size_t immutableDataLength() const { return isd_->immutableData().Length(); }
+  uint32_t nfixed() const { return isd_->nfixed; }
 };
 
 
