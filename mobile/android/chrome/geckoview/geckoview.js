@@ -177,7 +177,7 @@ var ModuleManager = {
     
     this.disabledModules = [];
     this.forEach(module => {
-      if (module.enabled) {
+      if (module.enabled && module.disableOnProcessSwitch) {
         module.enabled = false;
         this.disabledModules.push(module);
       }
@@ -427,6 +427,13 @@ class ModuleInfo {
 
   get manager() {
     return this._manager;
+  }
+
+  get disableOnProcessSwitch() {
+    
+    return (
+      !!this._onInitPhase?.frameScript || !!this._onEnablePhase?.frameScript
+    );
   }
 
   get name() {
