@@ -2,21 +2,39 @@
 
 
 
+use std::sync::Arc;
+
 use super::{CommonMetricData, DistributionData, MemoryUnit};
+
+use crate::dispatcher;
+use crate::ipc::{need_ipc, with_ipc_payload, MetricId};
 
 
 
 
 #[derive(Debug)]
-pub struct MemoryDistributionMetric {
+pub enum MemoryDistributionMetric {
+    Parent(Arc<MemoryDistributionMetricImpl>),
+    Child(MemoryDistributionMetricIpc),
+}
+#[derive(Debug)]
+pub struct MemoryDistributionMetricImpl {
     inner: glean_core::metrics::MemoryDistributionMetric,
 }
+#[derive(Debug)]
+pub struct MemoryDistributionMetricIpc(MetricId);
 
 impl MemoryDistributionMetric {
     
     pub fn new(meta: CommonMetricData, memory_unit: MemoryUnit) -> Self {
-        let inner = glean_core::metrics::MemoryDistributionMetric::new(meta, memory_unit);
-        Self { inner }
+        if need_ipc() {
+            MemoryDistributionMetric::Child(MemoryDistributionMetricIpc(MetricId::new(meta)))
+        } else {
+            MemoryDistributionMetric::Parent(Arc::new(MemoryDistributionMetricImpl::new(
+                meta,
+                memory_unit,
+            )))
+        }
     }
 
     
@@ -31,7 +49,23 @@ impl MemoryDistributionMetric {
     
     
     pub fn accumulate(&self, sample: u64) {
-        crate::with_glean(|glean| self.inner.accumulate(glean, sample))
+        match self {
+            MemoryDistributionMetric::Parent(p) => {
+                let metric = Arc::clone(&p);
+                dispatcher::launch(move || metric.accumulate(sample));
+            }
+            MemoryDistributionMetric::Child(c) => {
+                with_ipc_payload(move |payload| {
+                    if let Some(v) = payload.memory_samples.get_mut(&c.0) {
+                        v.push(sample);
+                    } else {
+                        let mut v = vec![];
+                        v.push(sample);
+                        payload.memory_samples.insert(c.0.clone(), v);
+                    }
+                });
+            }
+        }
     }
 
     
@@ -46,6 +80,30 @@ impl MemoryDistributionMetric {
     
     
     
+    pub fn test_get_value(&self, storage_name: &str) -> Option<DistributionData> {
+        match self {
+            MemoryDistributionMetric::Parent(p) => {
+                dispatcher::block_on_queue();
+                p.test_get_value(storage_name)
+            }
+            MemoryDistributionMetric::Child(_c) => panic!(
+                "Cannot get test value for {:?} in non-parent process!",
+                self
+            ),
+        }
+    }
+}
+
+impl MemoryDistributionMetricImpl {
+    pub fn new(meta: CommonMetricData, memory_unit: MemoryUnit) -> Self {
+        let inner = glean_core::metrics::MemoryDistributionMetric::new(meta, memory_unit);
+        Self { inner }
+    }
+
+    pub fn accumulate(&self, sample: u64) {
+        crate::with_glean(|glean| self.inner.accumulate(glean, sample))
+    }
+
     pub fn test_get_value(&self, storage_name: &str) -> Option<DistributionData> {
         crate::with_glean(move |glean| self.inner.test_get_value(glean, storage_name))
     }
