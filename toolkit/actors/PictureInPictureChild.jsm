@@ -61,10 +61,9 @@ const TOGGLE_HIDING_TIMEOUT_MS = 2000;
 
 
 
-var gWeakVideo = null;
 
+var gPlayerContents = new WeakSet();
 
-var gWeakPlayerContent = null;
 
 
 
@@ -77,38 +76,6 @@ var gWeakIntersectingVideosForTesting = new WeakSet();
 XPCOMUtils.defineLazyGetter(this, "gSiteOverrides", () => {
   return PictureInPictureToggleChild.getSiteOverrides();
 });
-
-
-
-
-
-
-
-
-function getWeakVideo() {
-  if (gWeakVideo) {
-    
-    
-    try {
-      return gWeakVideo.get();
-    } catch (e) {
-      return null;
-    }
-  }
-  return null;
-}
-
-
-
-
-
-
-
-
-
-function inPictureInPicture(video) {
-  return getWeakVideo() === video;
-}
 
 class PictureInPictureLauncherChild extends JSWindowActorChild {
   handleEvent(event) {
@@ -145,7 +112,7 @@ class PictureInPictureLauncherChild extends JSWindowActorChild {
 
 
   async togglePictureInPicture(video) {
-    if (inPictureInPicture(video)) {
+    if (video.isCloningElementVisually) {
       
       
       
@@ -349,15 +316,9 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       return;
     }
 
-    if (gWeakPlayerContent) {
-      try {
-        if (this.contentWindow == gWeakPlayerContent.get()) {
-          
-          return;
-        }
-      } catch (e) {
-        return;
-      }
+    
+    if (gPlayerContents.has(this.contentWindow)) {
+      return;
     }
 
     switch (event.type) {
@@ -1135,6 +1096,64 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
 }
 
 class PictureInPictureChild extends JSWindowActorChild {
+  
+  weakVideo = null;
+
+  
+  weakPlayerContent = null;
+
+  
+
+
+
+
+
+
+  getWeakVideo() {
+    if (this.weakVideo) {
+      
+      
+      try {
+        return this.weakVideo.get();
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+  getWeakPlayerContent() {
+    if (this.weakPlayerContent) {
+      
+      
+      try {
+        return this.weakPlayerContent.get();
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+  inPictureInPicture(video) {
+    return this.getWeakVideo() === video;
+  }
+
   static videoIsPlaying(video) {
     return !!(!video.paused && !video.ended && video.readyState > 2);
   }
@@ -1146,7 +1165,7 @@ class PictureInPictureChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
       case "MozStopPictureInPicture": {
-        if (event.isTrusted && event.target === getWeakVideo()) {
+        if (event.isTrusted && event.target === this.getWeakVideo()) {
           const reason = event.detail?.reason || "video-el-remove";
           this.closePictureInPicture({ reason });
         }
@@ -1171,7 +1190,7 @@ class PictureInPictureChild extends JSWindowActorChild {
         break;
       }
       case "volumechange": {
-        let video = getWeakVideo();
+        let video = this.getWeakVideo();
 
         
         
@@ -1192,7 +1211,7 @@ class PictureInPictureChild extends JSWindowActorChild {
       }
       case "resize": {
         let video = event.target;
-        if (inPictureInPicture(video)) {
+        if (this.inPictureInPicture(video)) {
           this.sendAsyncMessage("PictureInPicture:Resize", {
             videoHeight: video.videoHeight,
             videoWidth: video.videoWidth,
@@ -1210,30 +1229,10 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
-  getWeakPlayerContent() {
-    if (gWeakPlayerContent) {
-      
-      
-      try {
-        return gWeakPlayerContent.get();
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  
-
-
-
-
-
-
 
 
   async closePictureInPicture({ reason }) {
-    let video = getWeakVideo();
+    let video = this.getWeakVideo();
     if (video) {
       this.untrackOriginatingVideo(video);
     }
@@ -1254,7 +1253,7 @@ class PictureInPictureChild extends JSWindowActorChild {
       
       
       
-      gWeakPlayerContent = null;
+      this.weakPlayerContent = null;
     }
   }
 
@@ -1308,6 +1307,11 @@ class PictureInPictureChild extends JSWindowActorChild {
         this,
         true
       );
+      chromeEventHandler.addEventListener(
+        "MozStopPictureInPicture",
+        this,
+        true
+      );
     }
   }
 
@@ -1332,6 +1336,11 @@ class PictureInPictureChild extends JSWindowActorChild {
         this,
         true
       );
+      chromeEventHandler.removeEventListener(
+        "MozStopPictureInPicture",
+        this,
+        true
+      );
     }
   }
 
@@ -1352,9 +1361,9 @@ class PictureInPictureChild extends JSWindowActorChild {
 
   async setupPlayer(videoRef) {
     const video = await ContentDOMReference.resolve(videoRef);
-    gWeakVideo = Cu.getWeakReference(video);
 
-    let originatingVideo = getWeakVideo();
+    this.weakVideo = Cu.getWeakReference(video);
+    let originatingVideo = this.getWeakVideo();
     if (!originatingVideo) {
       
       
@@ -1376,7 +1385,8 @@ class PictureInPictureChild extends JSWindowActorChild {
     
     
     
-    gWeakPlayerContent = Cu.getWeakReference(this.contentWindow);
+    this.weakPlayerContent = Cu.getWeakReference(this.contentWindow);
+    gPlayerContents.add(this.contentWindow);
 
     let doc = this.document;
     let playerVideo = doc.createElement("video");
@@ -1399,40 +1409,40 @@ class PictureInPictureChild extends JSWindowActorChild {
     this.contentWindow.addEventListener(
       "unload",
       () => {
-        let video = getWeakVideo();
+        let video = this.getWeakVideo();
         if (video) {
           this.untrackOriginatingVideo(video);
           video.stopCloningElementVisually();
         }
-        gWeakVideo = null;
+        this.weakVideo = null;
       },
       { once: true }
     );
   }
 
   play() {
-    let video = getWeakVideo();
+    let video = this.getWeakVideo();
     if (video) {
       video.play();
     }
   }
 
   pause() {
-    let video = getWeakVideo();
+    let video = this.getWeakVideo();
     if (video) {
       video.pause();
     }
   }
 
   mute() {
-    let video = getWeakVideo();
+    let video = this.getWeakVideo();
     if (video) {
       video.muted = true;
     }
   }
 
   unmute() {
-    let video = getWeakVideo();
+    let video = this.getWeakVideo();
     if (video) {
       video.muted = false;
     }
@@ -1443,7 +1453,7 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
   isKeyEnabled(key) {
-    const video = getWeakVideo();
+    const video = this.getWeakVideo();
     if (!video) {
       return false;
     }
@@ -1469,7 +1479,7 @@ class PictureInPictureChild extends JSWindowActorChild {
 
   
   keyDown({ altKey, shiftKey, metaKey, ctrlKey, keyCode }) {
-    let video = getWeakVideo();
+    let video = this.getWeakVideo();
     if (!video) {
       return;
     }
