@@ -745,9 +745,51 @@ uint32_t HyperTextAccessible::FindLineBoundary(
       
       
       uint32_t tmpOffset = FindOffset(aOffset, eDirNext, eSelectLine);
-      if (tmpOffset == CharacterCount()) return tmpOffset;
+      uint32_t characterCount = CharacterCount();
+      if (tmpOffset == characterCount) {
+        return tmpOffset;
+      }
 
-      return FindOffset(tmpOffset, eDirPrevious, eSelectBeginLine);
+      
+      uint32_t nextLineBeginOffset =
+          FindOffset(tmpOffset, eDirPrevious, eSelectBeginLine);
+      
+      
+      
+      
+      if (IsCharAt(nextLineBeginOffset, kEmbeddedObjectChar)) {
+        
+        
+        
+        
+        
+        uint32_t thisLineEndOffset =
+            FindOffset(aOffset, eDirNext, eSelectEndLine);
+        if (thisLineEndOffset == nextLineBeginOffset + 1) {
+          
+          
+          
+          if (nextLineBeginOffset == aOffset) {
+            uint32_t thisLineEndOffset2 =
+                FindOffset(thisLineEndOffset, eDirNext, eSelectEndLine);
+            
+            
+            
+            
+            
+            return (thisLineEndOffset2 == characterCount ||
+                    (IsCharAt(thisLineEndOffset, kEmbeddedObjectChar) &&
+                     thisLineEndOffset2 == thisLineEndOffset + 1) ||
+                    IsCharAt(thisLineEndOffset2, kEmbeddedObjectChar))
+                       ? thisLineEndOffset2
+                       : thisLineEndOffset2 + 1;
+          }
+
+          return thisLineEndOffset;
+        }
+      }
+
+      return nextLineBeginOffset;
     }
 
     case eNextLineEnd: {
