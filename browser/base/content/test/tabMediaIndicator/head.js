@@ -1,6 +1,11 @@
 
 
 
+const gEMPTY_PAGE_URL = GetTestWebBasedURL("file_empty.html");
+
+
+
+
 
 
 
