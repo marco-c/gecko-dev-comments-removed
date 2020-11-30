@@ -552,6 +552,16 @@ class SimdConstant {
     return type_;
   }
 
+  bool isFloatingType() const {
+    MOZ_ASSERT(defined());
+    return type_ >= Float32x4;
+  }
+
+  bool isIntegerType() const {
+    MOZ_ASSERT(defined());
+    return type_ <= Int64x2;
+  }
+
   
   const void* bytes() const { return u.i8x16; }
 
@@ -585,28 +595,32 @@ class SimdConstant {
     return u.f64x2;
   }
 
-  bool operator==(const SimdConstant& rhs) const {
+  bool bitwiseEqual(const SimdConstant& rhs) const {
     MOZ_ASSERT(defined() && rhs.defined());
-    if (type() != rhs.type()) {
-      return false;
-    }
-    
     return memcmp(&u, &rhs.u, sizeof(u)) == 0;
   }
-  bool operator!=(const SimdConstant& rhs) const { return !operator==(rhs); }
 
-  bool isIntegerZero() const {
-    return type_ <= Int64x2 && u.i64x2[0] == 0 && u.i64x2[1] == 0;
+  bool isZeroBits() const {
+    MOZ_ASSERT(defined());
+    return u.i64x2[0] == 0 && u.i64x2[1] == 0;
+  }
+
+  bool isOneBits() const {
+    MOZ_ASSERT(defined());
+    return ~u.i64x2[0] == 0 && ~u.i64x2[1] == 0;
   }
 
   
+  
   using Lookup = SimdConstant;
+
   static HashNumber hash(const SimdConstant& val) {
     uint32_t hash = mozilla::HashBytes(&val.u, sizeof(val.u));
     return mozilla::AddToHash(hash, val.type_);
   }
+
   static bool match(const SimdConstant& lhs, const SimdConstant& rhs) {
-    return lhs == rhs;
+    return lhs.type() == rhs.type() && lhs.bitwiseEqual(rhs);
   }
 };
 
