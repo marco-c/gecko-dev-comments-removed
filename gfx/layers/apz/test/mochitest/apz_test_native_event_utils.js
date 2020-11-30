@@ -526,6 +526,14 @@ function synthesizeNativeTouchSequences(
     for (let j = 0; j < aTouchIds.length; j++) {
       if (aPositions[i][j] != null) {
         lastNonNullValue = i * aTouchIds.length + j;
+        
+        
+        
+        aPositions[i][j] = coordinatesRelativeToScreen(
+          aPositions[i][j].x,
+          aPositions[i][j].y,
+          aTarget
+        );
       }
     }
   }
@@ -548,6 +556,7 @@ function synthesizeNativeTouchSequences(
   var currentPositions = new Array(aTouchIds.length);
   currentPositions.fill(null);
 
+  var utils = utilsForTarget(aTarget);
   
   for (let i = 0; i < aPositions.length; i++) {
     for (let j = 0; j < aTouchIds.length; j++) {
@@ -560,24 +569,26 @@ function synthesizeNativeTouchSequences(
           
           var thisIndex = i * aTouchIds.length + j;
           var observer = lastSynthesizeCall == thisIndex ? aObserver : null;
-          synthesizeNativeTouch(
-            aTarget,
+          utils.sendNativeTouchPoint(
+            aTouchIds[j],
+            SpecialPowers.DOMWindowUtils.TOUCH_REMOVE,
             currentPositions[j].x,
             currentPositions[j].y,
-            SpecialPowers.DOMWindowUtils.TOUCH_REMOVE,
-            observer,
-            aTouchIds[j]
+            1,
+            90,
+            observer
           );
           currentPositions[j] = null;
         }
       } else {
-        synthesizeNativeTouch(
-          aTarget,
+        utils.sendNativeTouchPoint(
+          aTouchIds[j],
+          SpecialPowers.DOMWindowUtils.TOUCH_CONTACT,
           aPositions[i][j].x,
           aPositions[i][j].y,
-          SpecialPowers.DOMWindowUtils.TOUCH_CONTACT,
-          null,
-          aTouchIds[j]
+          1,
+          90,
+          null
         );
         currentPositions[j] = aPositions[i][j];
       }
