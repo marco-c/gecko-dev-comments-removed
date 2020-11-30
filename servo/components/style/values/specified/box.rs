@@ -1643,9 +1643,6 @@ pub enum Appearance {
     Resizer,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Scrollbar,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarHorizontal,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarVertical,
