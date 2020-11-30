@@ -150,5 +150,3 @@ LayoutDeviceIntRegion VibrancyManager::GetUnionOfVibrantRegions() const {
   return aIsContainer ? [[MOZVibrantView alloc] initWithFrame:NSZeroRect vibrancyType:aType]
                       : [[MOZVibrantLeafView alloc] initWithFrame:NSZeroRect vibrancyType:aType];
 }
-
- bool VibrancyManager::SystemSupportsVibrancy() { return true; }

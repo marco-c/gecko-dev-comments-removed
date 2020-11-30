@@ -57,9 +57,7 @@ class VibrancyManager {
 
 
   VibrancyManager(const nsChildView& aCoordinateConverter, NSView* aContainerView)
-      : mCoordinateConverter(aCoordinateConverter), mContainerView(aContainerView) {
-    MOZ_ASSERT(SystemSupportsVibrancy(), "Don't instantiate this if !SystemSupportsVibrancy()");
-  }
+      : mCoordinateConverter(aCoordinateConverter), mContainerView(aContainerView) {}
 
   
 
@@ -74,13 +72,6 @@ class VibrancyManager {
   bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
 
   LayoutDeviceIntRegion GetUnionOfVibrantRegions() const;
-
-  
-
-
-
-
-  static bool SystemSupportsVibrancy();
 
   
 
