@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -18,7 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ToolbarPanelHub: "resource://activity-stream/lib/ToolbarPanelHub.jsm",
   MomentsPageHub: "resource://activity-stream/lib/MomentsPageHub.jsm",
   ASRouterTargeting: "resource://activity-stream/lib/ASRouterTargeting.jsm",
-  QueryCache: "resource://activity-stream/lib/ASRouterTargeting.jsm",
   ASRouterPreferences: "resource://activity-stream/lib/ASRouterPreferences.jsm",
   TARGETING_PREFERENCES:
     "resource://activity-stream/lib/ASRouterPreferences.jsm",
@@ -43,7 +43,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.aboutwelcome.enabled",
   true
 );
-const { actionTypes: at, actionCreators: ac } = ChromeUtils.import(
+const { actionCreators: ac } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
 );
 
@@ -68,8 +68,6 @@ const TRAILHEAD_CONFIG = {
   DYNAMIC_TRIPLET_BUNDLE_LENGTH: 3,
 };
 
-const INCOMING_MESSAGE_NAME = "ASRouter:child-to-parent";
-const OUTGOING_MESSAGE_NAME = "ASRouter:parent-to-child";
 
 
 const DEFAULT_ALLOWLIST_HOSTS = {
@@ -298,7 +296,7 @@ const MessageLoaderUtils = {
           MessageLoaderUtils._handleRemoteSettingsUndesiredEvent(
             "ASR_RS_NO_MESSAGES",
             provider.id,
-            options.dispatchToAS
+            options.dispatchCFRAction
           );
         } else if (RS_PROVIDERS_WITH_L10N.includes(provider.id)) {
           const locale = Services.locale.appLocaleAsBCP47;
@@ -324,7 +322,7 @@ const MessageLoaderUtils = {
             MessageLoaderUtils._handleRemoteSettingsUndesiredEvent(
               "ASR_RS_NO_MESSAGES",
               RS_COLLECTION_L10N,
-              options.dispatchToAS
+              options.dispatchCFRAction
             );
           }
         }
@@ -332,7 +330,7 @@ const MessageLoaderUtils = {
         MessageLoaderUtils._handleRemoteSettingsUndesiredEvent(
           "ASR_RS_ERROR",
           provider.id,
-          options.dispatchToAS
+          options.dispatchCFRAction
         );
         MessageLoaderUtils.reportError(e);
       }
@@ -398,9 +396,9 @@ const MessageLoaderUtils = {
     return experiments;
   },
 
-  _handleRemoteSettingsUndesiredEvent(event, providerId, dispatchToAS) {
-    if (dispatchToAS) {
-      dispatchToAS(
+  _handleRemoteSettingsUndesiredEvent(event, providerId, dispatchCFRAction) {
+    if (dispatchCFRAction) {
+      dispatchCFRAction(
         ac.ASRouterUserEvent({
           action: "asrouter_undesired_event",
           event,
@@ -545,8 +543,10 @@ this.MessageLoaderUtils = MessageLoaderUtils;
 class _ASRouter {
   constructor(localProviders = LOCAL_MESSAGE_PROVIDERS) {
     this.initialized = false;
-    this.messageChannel = null;
-    this.dispatchToAS = null;
+    this.clearChildMessages = null;
+    this.updateAdminState = null;
+    this.sendTelemetry = null;
+    this.dispatchCFRAction = null;
     this._storage = null;
     this._resetInitialization();
     this._state = {
@@ -562,23 +562,22 @@ class _ASRouter {
     this._localProviders = localProviders;
     this.blockMessageById = this.blockMessageById.bind(this);
     this.unblockMessageById = this.unblockMessageById.bind(this);
-    this.onMessage = this.onMessage.bind(this);
     this.handleMessageRequest = this.handleMessageRequest.bind(this);
     this.addImpression = this.addImpression.bind(this);
     this._handleTargetingError = this._handleTargetingError.bind(this);
     this.onPrefChange = this.onPrefChange.bind(this);
-    this.dispatch = this.dispatch.bind(this);
     this._onLocaleChanged = this._onLocaleChanged.bind(this);
     this.isUnblockedMessage = this.isUnblockedMessage.bind(this);
+    this.unblockAll = this.unblockAll.bind(this);
     this.renderWNMessages = this.renderWNMessages.bind(this);
     this.forceWNPanel = this.forceWNPanel.bind(this);
     Services.telemetry.setEventRecordingEnabled(REACH_EVENT_CATEGORY, true);
   }
 
   async onPrefChange(prefName) {
+    let invalidMessages = [];
     if (TARGETING_PREFERENCES.includes(prefName)) {
       
-      const invalidMessages = [];
       const context = this._getMessagesContext();
       const targetingContext = new TargetingContext(context);
 
@@ -591,61 +590,63 @@ class _ASRouter {
           invalidMessages.push(msg.id);
         }
       }
-      this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-        type: at.AS_ROUTER_TARGETING_UPDATE,
-        data: invalidMessages,
-      });
     } else {
       
       this._loadLocalProviders();
-      this._updateMessageProviders();
+      invalidMessages = await this._updateMessageProviders();
       await this.loadMessagesFromAllProviders();
       
       await this.setState(state => ({
         groups: state.groups.map(this._checkGroupEnabled),
       }));
     }
+    this.clearChildMessages(invalidMessages);
   }
 
   
-  _updateMessageProviders() {
+  async _updateMessageProviders() {
     const previousProviders = this.state.providers;
-    const providers = [
-      
-      ...previousProviders.filter(p => p.id === "preview"),
-      ...ASRouterPreferences.providers.filter(
-        p => p.enabled && ASRouterPreferences.getUserPreference(p.id) !== false
-      ),
-    ].map(_provider => {
-      
-      const provider = { ..._provider };
-
-      if (provider.type === "local" && !provider.messages) {
+    const providers = await Promise.all(
+      [
         
-        const localProvider = this._localProviders[provider.localProvider];
-        provider.messages = localProvider ? localProvider.getMessages() : [];
-      }
-      if (provider.type === "remote" && provider.url) {
-        provider.url = provider.url.replace(
-          /%STARTPAGE_VERSION%/g,
-          STARTPAGE_VERSION
-        );
-        provider.url = Services.urlFormatter.formatURL(provider.url);
-      }
-      
-      provider.lastUpdated = undefined;
-      return provider;
-    });
+        ...previousProviders.filter(p => p.id === "preview"),
+        
+        ...ASRouterPreferences.providers.filter(
+          p =>
+            p.enabled && ASRouterPreferences.getUserPreference(p.id) !== false
+        ),
+      ].map(async _provider => {
+        
+        const provider = { ..._provider };
+
+        if (provider.type === "local" && !provider.messages) {
+          
+          const localProvider = this._localProviders[provider.localProvider];
+          provider.messages = [];
+          if (localProvider) {
+            provider.messages = await localProvider.getMessages();
+          }
+        }
+        if (provider.type === "remote" && provider.url) {
+          provider.url = provider.url.replace(
+            /%STARTPAGE_VERSION%/g,
+            STARTPAGE_VERSION
+          );
+          provider.url = Services.urlFormatter.formatURL(provider.url);
+        }
+        
+        provider.lastUpdated = undefined;
+        return provider;
+      })
+    );
 
     const providerIDs = providers.map(p => p.id);
+    let invalidMessages = [];
 
     
     for (const prevProvider of previousProviders) {
       if (!providerIDs.includes(prevProvider.id)) {
-        this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-          type: "CLEAR_PROVIDER",
-          data: { id: prevProvider.id },
-        });
+        invalidMessages.push(prevProvider.id);
       }
     }
 
@@ -657,7 +658,7 @@ class _ASRouter {
           providerIDs.includes(message.provider)
         ),
       ],
-    }));
+    })).then(() => invalidMessages);
   }
 
   get state() {
@@ -759,7 +760,7 @@ class _ASRouter {
         provider,
         {
           storage: this._storage,
-          dispatchToAS: this.dispatchToAS,
+          dispatchCFRAction: this.dispatchCFRAction,
         }
       );
       remoteMessages = messages;
@@ -791,7 +792,7 @@ class _ASRouter {
             errors,
           } = await MessageLoaderUtils.loadMessagesForProvider(provider, {
             storage: this._storage,
-            dispatchToAS: this.dispatchToAS,
+            dispatchCFRAction: this.dispatchCFRAction,
           });
           newState.providers.push({ ...provider, lastUpdated, errors });
           newState.messages = [...newState.messages, ...messages];
@@ -827,6 +828,7 @@ class _ASRouter {
       await this.setState(this._removePreviewEndpoint(newState));
       await this.cleanupImpressions();
     }
+    return this.state;
   }
 
   async _maybeUpdateL10nAttachment() {
@@ -850,6 +852,7 @@ class _ASRouter {
         await this.loadMessagesFromAllProviders();
       }
     }
+    return this.state;
   }
 
   async _onLocaleChanged(subject, topic, data) {
@@ -864,48 +867,54 @@ class _ASRouter {
     }
   }
 
+  toWaitForInitFunc(func) {
+    return (...args) => this.waitForInitialized.then(() => func(...args));
+  }
+
   
 
 
 
 
 
-
-
-
-  async init(channel, storage, dispatchToAS) {
-    this.messageChannel = channel;
-    this.messageChannel.addMessageListener(
-      INCOMING_MESSAGE_NAME,
-      this.onMessage
-    );
+  async init({
+    storage,
+    sendTelemetry,
+    clearChildMessages,
+    updateAdminState,
+    dispatchCFRAction,
+  }) {
     this._storage = storage;
     this.ALLOWLIST_HOSTS = this._loadSnippetsAllowHosts();
-    this.dispatchToAS = dispatchToAS;
+    this.clearChildMessages = this.toWaitForInitFunc(clearChildMessages);
+    
+    this.updateAdminState = this.toWaitForInitFunc(updateAdminState);
+    this.sendTelemetry = sendTelemetry;
+    this.dispatchCFRAction = this.toWaitForInitFunc(dispatchCFRAction);
 
     ASRouterPreferences.init();
     ASRouterPreferences.addListener(this.onPrefChange);
     BookmarkPanelHub.init(
       this.handleMessageRequest,
       this.addImpression,
-      this.dispatch
+      this.sendTelemetry
     );
     ToolbarBadgeHub.init(this.waitForInitialized, {
       handleMessageRequest: this.handleMessageRequest,
       addImpression: this.addImpression,
       blockMessageById: this.blockMessageById,
       unblockMessageById: this.unblockMessageById,
-      dispatch: this.dispatch,
+      sendTelemetry: this.sendTelemetry,
     });
     ToolbarPanelHub.init(this.waitForInitialized, {
       getMessages: this.handleMessageRequest,
-      dispatch: this.dispatch,
+      sendTelemetry: this.sendTelemetry,
     });
     MomentsPageHub.init(this.waitForInitialized, {
       handleMessageRequest: this.handleMessageRequest,
       addImpression: this.addImpression,
       blockMessageById: this.blockMessageById,
-      dispatch: this.dispatch,
+      sendTelemetry: this.sendTelemetry,
     });
 
     this._loadLocalProviders();
@@ -923,41 +932,28 @@ class _ASRouter {
       groupImpressions,
       messageImpressions,
       previousSessionEnd,
+      ...(ASRouterPreferences.specialConditions || {}),
+      initialized: false,
     });
-    this._updateMessageProviders();
+    await this._updateMessageProviders();
     await this.loadMessagesFromAllProviders();
     await MessageLoaderUtils.cleanupCache(this.state.providers, storage);
-
-    
-    this.dispatchToAS(
-      ac.BroadcastToContent({
-        type: at.AS_ROUTER_INITIALIZED,
-        data: ASRouterPreferences.specialConditions,
-        meta: {
-          isStartup: true,
-        },
-      })
-    );
 
     SpecialMessageActions.blockMessageById = this.blockMessageById;
     Services.obs.addObserver(this._onLocaleChanged, TOPIC_INTL_LOCALE_CHANGED);
     Services.prefs.addObserver(USE_REMOTE_L10N_PREF, this);
     
     this._finishInitializing();
+    return this.state;
   }
 
   uninit() {
     this._storage.set("previousSessionEnd", Date.now());
 
-    this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-      type: "CLEAR_ALL",
-    });
-    this.messageChannel.removeMessageListener(
-      INCOMING_MESSAGE_NAME,
-      this.onMessage
-    );
-    this.messageChannel = null;
-    this.dispatchToAS = null;
+    this.clearChildMessages = null;
+    this.updateAdminState = null;
+    this.sendTelemetry = null;
+    this.dispatchCFRAction = null;
 
     ASRouterPreferences.removeListener(this.onPrefChange);
     ASRouterPreferences.uninit();
@@ -985,21 +981,35 @@ class _ASRouter {
       typeof callbackOrObj === "function"
         ? callbackOrObj(this.state)
         : callbackOrObj;
-    this._state = { ...this.state, ...newState };
-    return new Promise(resolve => {
-      this._onStateChanged(this.state);
-      resolve();
-    });
+    this._state = {
+      ...this.state,
+      ...newState,
+    };
+    if (ASRouterPreferences.devtoolsEnabled) {
+      return this.updateTargetingParameters().then(state => {
+        this.updateAdminState(state);
+        return state;
+      });
+    }
+    return Promise.resolve(this.state);
+  }
+
+  updateTargetingParameters() {
+    return this.getTargetingParameters(
+      ASRouterTargeting.Environment,
+      this._getMessagesContext()
+    ).then(targetingParameters => ({
+      ...this.state,
+      providerPrefs: ASRouterPreferences.providers,
+      userPrefs: ASRouterPreferences.getAllUserPreferences(),
+      targetingParameters,
+      trailhead: ASRouterPreferences.trailhead,
+      errors: this.errors,
+    }));
   }
 
   getMessageById(id) {
     return this.state.messages.find(message => message.id === id);
-  }
-
-  _onStateChanged(state) {
-    if (ASRouterPreferences.devtoolsEnabled) {
-      this._updateAdminState();
-    }
   }
 
   _loadLocalProviders() {
@@ -1029,35 +1039,16 @@ class _ASRouter {
     return targetingParameters;
   }
 
-  async _updateAdminState(target) {
-    const channel = target || this.messageChannel;
-    channel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-      type: "ADMIN_SET_STATE",
-      data: {
-        ...this.state,
-        providerPrefs: ASRouterPreferences.providers,
-        userPrefs: ASRouterPreferences.getAllUserPreferences(),
-        targetingParameters: await this.getTargetingParameters(
-          ASRouterTargeting.Environment,
-          this._getMessagesContext()
-        ),
-        trailheadTriplet: ASRouterPreferences.trailheadTriplet,
-        errors: this.errors,
-      },
-    });
-  }
-
-  _handleTargetingError(error, message) {
+  _handleTargetingError(type, error, message) {
     Cu.reportError(error);
-    if (this.dispatchToAS) {
-      this.dispatchToAS(
-        ac.ASRouterUserEvent({
-          message_id: message.id,
-          action: "asrouter_undesired_event",
-          event: "TARGETING_EXPRESSION_ERROR",
-        })
-      );
-    }
+    this.dispatchCFRAction(
+      ac.ASRouterUserEvent({
+        message_id: message.id,
+        action: "asrouter_undesired_event",
+        event: "TARGETING_EXPRESSION_ERROR",
+        event_context: type,
+      })
+    );
   }
 
   
@@ -1074,8 +1065,7 @@ class _ASRouter {
     };
   }
 
-  async evaluateExpression(target, { expression, context }) {
-    const channel = target || this.messageChannel;
+  async evaluateExpression({ expression, context }) {
     const targetingContext = new TargetingContext(context);
     let evaluationStatus;
     try {
@@ -1086,18 +1076,15 @@ class _ASRouter {
     } catch (e) {
       evaluationStatus = { result: e.message, success: false };
     }
-
-    channel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-      type: "ADMIN_SET_STATE",
-      data: {
-        ...this.state,
-        evaluationStatus,
-      },
-    });
+    return Promise.resolve({ evaluationStatus });
   }
 
   _orderBundle(bundle) {
     return bundle.sort((a, b) => a.order - b.order);
+  }
+
+  unblockAll() {
+    return this.setState({ messageBlockList: [] });
   }
 
   isUnblockedMessage(message) {
@@ -1155,7 +1142,7 @@ class _ASRouter {
     return true;
   }
 
-  async _getBundledMessages(originalMessage, target, trigger, force = false) {
+  async _getBundledMessages(originalMessage, trigger, force = false) {
     let result = [];
     let bundleLength;
     let bundleTemplate;
@@ -1262,44 +1249,49 @@ class _ASRouter {
     ];
   }
 
-  
-
-
-  routeMessageToTarget(message, target, trigger, force = false) {
+  routeCFRMessage(message, browser, trigger, force = false) {
     switch (message.template) {
       case "whatsnew_panel_message":
         if (force) {
-          ToolbarPanelHub.forceShowMessage(target, message);
+          ToolbarPanelHub.forceShowMessage(browser, message);
         }
         break;
       case "cfr_doorhanger":
       case "milestone_message":
         if (force) {
-          CFRPageActions.forceRecommendation(target, message, this.dispatch);
+          CFRPageActions.forceRecommendation(
+            browser,
+            message,
+            this.dispatchCFRAction
+          );
         } else {
           CFRPageActions.addRecommendation(
-            target,
+            browser,
             trigger.param && trigger.param.host,
             message,
-            this.dispatch
+            this.dispatchCFRAction
           );
         }
         break;
       case "cfr_urlbar_chiclet":
         if (force) {
-          CFRPageActions.forceRecommendation(target, message, this.dispatch);
+          CFRPageActions.forceRecommendation(
+            browser,
+            message,
+            this.dispatchCFRAction
+          );
         } else {
           CFRPageActions.addRecommendation(
-            target,
+            browser,
             null,
             message,
-            this.dispatch
+            this.dispatchCFRAction
           );
         }
         break;
       case "fxa_bookmark_panel":
         if (force) {
-          BookmarkPanelHub._forceShowMessage(target, message);
+          BookmarkPanelHub.forceShowMessage(browser, message);
         }
         break;
       case "toolbar_badge":
@@ -1309,62 +1301,38 @@ class _ASRouter {
         MomentsPageHub.executeAction(message);
         break;
       default:
-        try {
-          target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-            type: "SET_MESSAGE",
-            data: message,
-          });
-        } catch (e) {}
         break;
     }
   }
 
-  async _sendMessageToTarget(message, target, trigger, force = false) {
-    
+  async sendMessage(message, trigger, force, browser) {
     if (!message) {
-      try {
-        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, { type: "CLEAR_ALL" });
-      } catch (e) {}
-
-      
+      return { message: {} };
     } else if (message.bundled) {
-      const bundledMessages = await this._getBundledMessages(
-        message,
-        target,
-        trigger,
-        force
-      );
-      const action = bundledMessages
-        ? { type: "SET_BUNDLED_MESSAGES", data: bundledMessages }
-        : { type: "CLEAR_ALL" };
-      try {
-        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
-      } catch (e) {}
-
-      
+      const bundle =
+        (await this._getBundledMessages(message, trigger, force)) || {};
+      return { message: bundle };
     } else if (message.includeBundle) {
       const bundledMessages = await this._getBundledMessages(
         message,
-        target,
         message.includeBundle.trigger,
         force
       );
-      try {
-        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-          type: "SET_MESSAGE",
-          data: {
-            ...message,
-            trailheadTriplet: ASRouterPreferences.trailheadTriplet || "",
-            bundle: bundledMessages && bundledMessages.bundle,
-          },
-        });
-      } catch (e) {}
-    } else {
-      this.routeMessageToTarget(message, target, trigger, force);
+      return {
+        message: {
+          ...message,
+          trailheadTriplet:
+            ASRouterPreferences.trailhead.trailheadTriplet || "",
+          bundle: bundledMessages && bundledMessages.bundle,
+        },
+      };
     }
+    this.routeCFRMessage(message, browser, trigger, force);
+
+    return { message };
   }
 
-  async addImpression(message) {
+  addImpression(message) {
     const groupsWithFrequency = this.state.groups.filter(
       ({ frequency, id }) => frequency && message.groups.includes(id)
     );
@@ -1372,7 +1340,7 @@ class _ASRouter {
     
     if (message.frequency || groupsWithFrequency.length) {
       const time = Date.now();
-      await this.setState(state => {
+      return this.setState(state => {
         const messageImpressions = this._addImpressionForItem(
           state,
           message,
@@ -1391,6 +1359,7 @@ class _ASRouter {
         return { messageImpressions, groupImpressions };
       });
     }
+    return Promise.resolve();
   }
 
   
@@ -1435,8 +1404,8 @@ class _ASRouter {
 
 
 
-  async cleanupImpressions() {
-    await this.setState(state => {
+  cleanupImpressions() {
+    return this.setState(state => {
       const messageImpressions = this._cleanupImpressionsForItems(
         state,
         state.messages,
@@ -1550,20 +1519,14 @@ class _ASRouter {
     });
   }
 
-  async modifyMessageJson(content, target, force = true, action = {}) {
-    await this._sendMessageToTarget(content, target, action.data, force);
+  setMessageById({ id, ...data }, force, browser) {
+    return this.sendMessage(this.getMessageById(id), data, force, browser);
   }
 
-  async setMessageById(id, target, force = true, action = {}) {
-    const newMessage = this.getMessageById(id);
-
-    await this._sendMessageToTarget(newMessage, target, action.data, force);
-  }
-
-  async blockMessageById(idOrIds) {
+  blockMessageById(idOrIds) {
     const idsToBlock = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
 
-    await this.setState(state => {
+    return this.setState(state => {
       const messageBlockList = [...state.messageBlockList];
       const messageImpressions = { ...state.messageImpressions };
 
@@ -1642,9 +1605,6 @@ class _ASRouter {
         addonInstallObs,
         "webextension-install-notify"
       );
-      this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-        type: "CLEAR_INTERRUPT",
-      });
     };
     Services.obs.addObserver(addonInstallObs, "webextension-install-notify");
   }
@@ -1684,15 +1644,12 @@ class _ASRouter {
   }
 
   
-  async _triggerHandler(target, trigger) {
+  _triggerHandler(browser, trigger) {
     
     if (BrowserHandler.kiosk) {
-      return;
+      return Promise.resolve();
     }
-    await this.onMessage({
-      target,
-      data: { type: "TRIGGER", data: { trigger } },
-    });
+    return this.sendTriggerMessage({ ...trigger, browser });
   }
 
   _removePreviewEndpoint(state) {
@@ -1700,16 +1657,13 @@ class _ASRouter {
     return state;
   }
 
-  async _addPreviewEndpoint(url, portID) {
+  addPreviewEndpoint(url) {
     
     const providers = [...this.state.providers];
     if (
       this._validPreviewEndpoint(url) &&
       !providers.find(p => p.url === url)
     ) {
-      this.dispatchToAS(
-        ac.OnlyToOneContent({ type: at.SNIPPETS_PREVIEW_MODE }, portID)
-      );
       providers.push({
         id: "preview",
         type: "remote",
@@ -1717,8 +1671,9 @@ class _ASRouter {
         url,
         updateCycleInMs: 0,
       });
-      await this.setState({ providers });
+      return this.setState({ providers });
     }
+    return Promise.resolve();
   }
 
   
@@ -1763,67 +1718,16 @@ class _ASRouter {
     
     AttributionCode._clearCache();
     await AttributionCode.getAttrDataAsync();
-    this._updateMessageProviders();
-    await this.loadMessagesFromAllProviders();
+    await this._updateMessageProviders();
+    return this.loadMessagesFromAllProviders();
   }
 
-  
-
-
-
-
-  sendAsyncMessageToPreloaded(action) {
-    const preloadedBrowsers = this.getPreloadedBrowser();
-    if (preloadedBrowsers) {
-      for (let preloadedBrowser of preloadedBrowsers) {
-        try {
-          preloadedBrowser.sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
-        } catch (e) {
-          
-        }
-      }
-    }
-  }
-
-  
-
-
-
-
-
-  getPreloadedBrowser() {
-    let preloadedPorts = [];
-    for (let port of this.messageChannel.messagePorts) {
-      if (this.isPreloadedBrowser(port.browser)) {
-        preloadedPorts.push(port);
-      }
-    }
-    return preloadedPorts.length ? preloadedPorts : null;
-  }
-
-  
-
-
-
-
-
-
-
-  isPreloadedBrowser(browser) {
-    return browser.getAttribute("preloadedState") === "preloaded";
-  }
-
-  dispatch(action, target) {
-    this.onMessage({ data: action, target });
-  }
-
-  async sendNewTabMessage(target, options = {}) {
-    const { endpoint } = options;
+  async sendNewTabMessage({ endpoint, tabId, browser }) {
     let message;
 
     
     if (endpoint) {
-      await this._addPreviewEndpoint(endpoint.url, target.portID);
+      await this.addPreviewEndpoint(endpoint.url);
     }
 
     
@@ -1839,7 +1743,7 @@ class _ASRouter {
         }));
       }
     } else {
-      const telemetryObject = { port: target.portID };
+      const telemetryObject = { tabId };
       TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
       
       
@@ -1855,7 +1759,7 @@ class _ASRouter {
       TelemetryStopwatch.finish("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
     }
 
-    await this._sendMessageToTarget(message, target);
+    return this.sendMessage(message, undefined, false, browser);
   }
 
   _recordReachEvent(message) {
@@ -1872,10 +1776,15 @@ class _ASRouter {
     );
   }
 
-  async sendTriggerMessage(target, trigger) {
+  async sendTriggerMessage({ tabId, browser, ...trigger }) {
     await this.loadMessagesFromAllProviders();
 
-    const telemetryObject = { port: target.portID };
+    if (trigger.id === "firstRun") {
+      
+      await this.setTrailHeadMessageSeen();
+    }
+
+    const telemetryObject = { tabId };
     TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
     
     const messages =
@@ -1900,11 +1809,11 @@ class _ASRouter {
         nonReachMessages.push(message);
       }
     }
-
-    await this._sendMessageToTarget(
+    return this.sendMessage(
       nonReachMessages[0] || null,
-      target,
-      trigger
+      trigger,
+      false,
+      browser
     );
   }
 
@@ -1916,142 +1825,6 @@ class _ASRouter {
 
   async forceWNPanel(browserWindow) {
     await ToolbarPanelHub.enableToolbarButton();
-
-    browserWindow.PanelUI.showSubView(
-      "PanelUI-whatsNew",
-      browserWindow.document.getElementById("whats-new-menu-button")
-    );
-  }
-
-  async onMessage({ data: action, target }) {
-    switch (action.type) {
-      case "USER_ACTION":
-        
-        if (action.data.type === "INSTALL_ADDON_FROM_URL") {
-          this._updateOnboardingState();
-        }
-        await SpecialMessageActions.handleAction(action.data, target.browser);
-        break;
-      case "NEWTAB_MESSAGE_REQUEST":
-        await this.waitForInitialized;
-        await this.sendNewTabMessage(target, action.data);
-        break;
-      case "TRIGGER":
-        await this.waitForInitialized;
-        await this.sendTriggerMessage(
-          target,
-          action.data && action.data.trigger
-        );
-        break;
-      case "BLOCK_MESSAGE_BY_ID":
-        await this.blockMessageById(action.data.id);
-        
-        
-        if (action.data.preventDismiss) {
-          break;
-        }
-
-        const outgoingMessage = {
-          type: "CLEAR_MESSAGE",
-          data: { id: action.data.id },
-        };
-        if (action.data.preloadedOnly) {
-          this.sendAsyncMessageToPreloaded(outgoingMessage);
-        } else {
-          this.messageChannel.sendAsyncMessage(
-            OUTGOING_MESSAGE_NAME,
-            outgoingMessage
-          );
-        }
-        break;
-      case "MODIFY_MESSAGE_JSON":
-        await this.modifyMessageJson(action.data.content, target, true, action);
-        break;
-      case "DISMISS_MESSAGE_BY_ID":
-        this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-          type: "CLEAR_MESSAGE",
-          data: { id: action.data.id },
-        });
-        break;
-      case "BLOCK_BUNDLE":
-        await this.blockMessageById(action.data.bundle.map(b => b.id));
-        this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
-          type: "CLEAR_BUNDLE",
-        });
-        break;
-      case "UNBLOCK_MESSAGE_BY_ID":
-        this.unblockMessageById(action.data.id);
-        break;
-      case "UNBLOCK_BUNDLE":
-        await this.setState(state => {
-          const messageBlockList = [...state.messageBlockList];
-          for (let message of action.data.bundle) {
-            messageBlockList.splice(messageBlockList.indexOf(message.id), 1);
-          }
-          this._storage.set("messageBlockList", messageBlockList);
-          return { messageBlockList };
-        });
-        break;
-      case "OVERRIDE_MESSAGE":
-        await this.setMessageById(action.data.id, target, true, action);
-        break;
-      case "ADMIN_CONNECT_STATE":
-        if (action.data && action.data.endpoint) {
-          this._addPreviewEndpoint(action.data.endpoint.url, target.portID);
-          await this.loadMessagesFromAllProviders();
-        } else {
-          await this._updateAdminState(target);
-        }
-        break;
-      case "IMPRESSION":
-        await this.addImpression(action.data);
-        break;
-      case "DOORHANGER_TELEMETRY":
-      case "TOOLBAR_BADGE_TELEMETRY":
-      case "TOOLBAR_PANEL_TELEMETRY":
-      case "MOMENTS_PAGE_TELEMETRY":
-        if (this.dispatchToAS) {
-          this.dispatchToAS(ac.ASRouterUserEvent(action.data));
-        }
-        break;
-      case "EXPIRE_QUERY_CACHE":
-        QueryCache.expireAll();
-        break;
-      case "ENABLE_PROVIDER":
-        ASRouterPreferences.enableOrDisableProvider(action.data, true);
-        break;
-      case "DISABLE_PROVIDER":
-        ASRouterPreferences.enableOrDisableProvider(action.data, false);
-        break;
-      case "RESET_PROVIDER_PREF":
-        ASRouterPreferences.resetProviderPref();
-        break;
-      case "SET_PROVIDER_USER_PREF":
-        ASRouterPreferences.setUserPreference(
-          action.data.id,
-          action.data.value
-        );
-        break;
-      case "RESET_GROUPS_STATE":
-        await this.resetGroupsState(action.data);
-        await this.loadMessagesFromAllProviders();
-        break;
-      case "EVALUATE_JEXL_EXPRESSION":
-        this.evaluateExpression(target, action.data);
-        break;
-      case "FORCE_ATTRIBUTION":
-        this.forceAttribution(action.data);
-        break;
-      case "FORCE_WHATSNEW_PANEL":
-        this.forceWNPanel(target.browser.ownerGlobal);
-        break;
-      case "RENDER_WHATSNEW_MESSAGES":
-        this.renderWNMessages(target.browser.ownerGlobal, action.data);
-        break;
-      default:
-        Cu.reportError("Unknown message received");
-        break;
-    }
   }
 }
 this._ASRouter = _ASRouter;

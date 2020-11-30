@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 ChromeUtils.defineModuleGetter(
   this,
   "AboutNewTab",

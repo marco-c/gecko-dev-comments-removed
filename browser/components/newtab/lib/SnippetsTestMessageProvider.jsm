@@ -706,7 +706,7 @@ const MESSAGES = () => [
 
 const SnippetsTestMessageProvider = {
   getMessages() {
-    return (
+    return Promise.resolve(
       MESSAGES()
         
         .map(message => ({

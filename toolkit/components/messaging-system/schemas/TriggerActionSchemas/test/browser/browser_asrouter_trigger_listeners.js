@@ -99,7 +99,7 @@ add_task(async function check_openURL_listener() {
   });
 
   
-  await openURLListener.init(triggerHandler, ["example.com"]);
+  openURLListener.init(triggerHandler, ["example.com"]);
 
   await openURLInWindow(normalWindow, TEST_URL);
   await BrowserTestUtils.waitForCondition(
