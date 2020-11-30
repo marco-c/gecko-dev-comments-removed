@@ -7,16 +7,11 @@
 #ifndef mozilla_RemoteLazyInputStreamUtils_h
 #define mozilla_RemoteLazyInputStreamUtils_h
 
-#include <cstdint>
 
 
 
 
 
-
-
-class nsIInputStream;
-enum class nsresult : uint32_t;
 
 namespace mozilla {
 

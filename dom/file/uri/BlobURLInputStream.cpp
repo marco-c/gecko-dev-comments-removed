@@ -5,9 +5,6 @@
 
 
 #include "BlobURLInputStream.h"
-#include "BlobURL.h"
-#include "BlobURLChannel.h"
-#include "BlobURLProtocolHandler.h"
 
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/IPCBlobUtils.h"
