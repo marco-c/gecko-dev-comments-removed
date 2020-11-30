@@ -2042,6 +2042,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     DevToolsUtils.executeSoon(() => {
+      if (this.isDestroyed()) {
+        return;
+      }
       this.emit("newSource", {
         source: source.form(),
       });
