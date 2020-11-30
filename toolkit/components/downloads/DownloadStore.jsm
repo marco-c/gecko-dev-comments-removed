@@ -39,7 +39,6 @@ ChromeUtils.defineModuleGetter(
   "Downloads",
   "resource://gre/modules/Downloads.jsm"
 );
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function() {
   return new TextDecoder();
@@ -91,9 +90,9 @@ DownloadStore.prototype = {
     return (async () => {
       let bytes;
       try {
-        bytes = await OS.File.read(this.path);
+        bytes = await IOUtils.read(this.path);
       } catch (ex) {
-        if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
+        if (!(ex.name == "NotFoundError")) {
           throw ex;
         }
         
@@ -169,18 +168,15 @@ DownloadStore.prototype = {
       if (atLeastOneDownload) {
         
         let bytes = gTextEncoder.encode(JSON.stringify(storeData));
-        await OS.File.writeAtomic(this.path, bytes, {
+        await IOUtils.writeAtomic(this.path, bytes, {
           tmpPath: this.path + ".tmp",
         });
       } else {
         
         try {
-          await OS.File.remove(this.path);
+          await IOUtils.remove(this.path);
         } catch (ex) {
-          if (
-            !(ex instanceof OS.File.Error) ||
-            !(ex.becauseNoSuchFile || ex.becauseAccessDenied)
-          ) {
+          if (!(ex.name == "NotFoundError" || ex.name == "NotAllowedError")) {
             throw ex;
           }
           
