@@ -899,6 +899,24 @@ class LiveEnvironmentVal {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern JSObject* GetDebugEnvironmentForFunction(JSContext* cx,
                                                 HandleFunction fun);
 
