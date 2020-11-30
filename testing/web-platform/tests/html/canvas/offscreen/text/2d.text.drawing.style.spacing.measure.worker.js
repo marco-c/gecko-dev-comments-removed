@@ -18,19 +18,31 @@ var ctx = offscreenCanvas.getContext('2d');
 
 _assertSame(ctx.textLetterSpacing, 0, "ctx.textLetterSpacing", "0");
 _assertSame(ctx.textWordSpacing, 0, "ctx.textWordSpacing", "0");
+var width_normal = ctx.measureText('Hello World').width;
 
 ctx.textLetterSpacing = 3;
 _assertSame(ctx.textLetterSpacing, 3, "ctx.textLetterSpacing", "3");
 _assertSame(ctx.textWordSpacing, 0, "ctx.textWordSpacing", "0");
+var width_with_spacing = ctx.measureText('Hello World').width;
+
+_assertSame(width_with_spacing, width_normal + 33, "width_with_spacing", "width_normal + 33");
 
 ctx.textWordSpacing = 5;
-_assertSame(ctx.textLetterSpacing, 3, "ctx.textLetterSpacing", "3");
+ctx.textLetterSpacing = 0;
+_assertSame(ctx.textLetterSpacing, 0, "ctx.textLetterSpacing", "0");
 _assertSame(ctx.textWordSpacing, 5, "ctx.textWordSpacing", "5");
 
-ctx.textLetterSpacing = -1;
+width_with_spacing = ctx.measureText('Hello World').width;
+_assertSame(width_with_spacing, width_normal + 5, "width_with_spacing", "width_normal + 5");
+
+ctx.textLetterSpacing = -2;
 ctx.textWordSpacing = -1;
-_assertSame(ctx.textLetterSpacing, -1, "ctx.textLetterSpacing", "-1");
+_assertSame(ctx.textLetterSpacing, -2, "ctx.textLetterSpacing", "-2");
 _assertSame(ctx.textWordSpacing, -1, "ctx.textWordSpacing", "-1");
+
+
+width_with_spacing = ctx.measureText('Hello World').width;
+_assertSame(width_with_spacing, width_normal - 23, "width_with_spacing", "width_normal - 23");
 t.done();
 
 });
