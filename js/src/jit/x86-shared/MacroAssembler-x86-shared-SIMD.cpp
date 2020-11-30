@@ -1148,6 +1148,9 @@ void MacroAssemblerX86Shared::selectSimd128(FloatRegister mask,
                                             FloatRegister onFalse,
                                             FloatRegister temp,
                                             FloatRegister output) {
+  
+  
+
   if (onTrue != output) {
     vmovaps(onTrue, output);
   }
