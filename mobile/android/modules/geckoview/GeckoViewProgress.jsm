@@ -197,6 +197,12 @@ class ProgressTracker extends Tracker {
   start(aUri) {
     debug`ProgressTracker start ${aUri}`;
 
+    if (this._data?.uri == aUri) {
+      
+      
+      return;
+    }
+
     if (this._eventReceived) {
       
       this.stop( false);
@@ -413,6 +419,12 @@ class StateTracker extends Tracker {
   }
 
   start(aUri) {
+    if (this._inProgress && this._uri == aUri) {
+      
+      
+      return;
+    }
+
     this._inProgress = true;
     this._uri = aUri;
     this.eventDispatcher.sendRequest({
