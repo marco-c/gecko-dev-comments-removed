@@ -174,8 +174,9 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
   
   
   const bool allowedToStart = AutoplayPolicy::IsAllowedToPlay(*this);
-  mDestination = new AudioDestinationNode(this, aIsOffline, allowedToStart,
-                                          aNumberOfChannels, aLength);
+  mDestination =
+      new AudioDestinationNode(this, aIsOffline, aNumberOfChannels, aLength);
+  mDestination->Init();
   
   
   
@@ -217,17 +218,6 @@ void AudioContext::StartBlockedAudioContextIfAllowed() {
   } else {
     ReportBlocked();
   }
-}
-
-nsresult AudioContext::Init() {
-  if (!mIsOffline) {
-    nsresult rv = mDestination->CreateAudioChannelAgent();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
-  return NS_OK;
 }
 
 void AudioContext::DisconnectFromWindow() {
@@ -292,10 +282,6 @@ already_AddRefed<AudioContext> AudioContext::Constructor(
 
   RefPtr<AudioContext> object =
       new AudioContext(window, false, 2, 0, sampleRate);
-  aRv = object->Init();
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
 
   RegisterWeakMemoryReporter(object);
 
@@ -887,6 +873,7 @@ void AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState) {
   }
 
   mAudioContextState = aNewState;
+  Destination()->NotifyAudioContextStateChanged();
 }
 
 nsTArray<RefPtr<mozilla::MediaTrack>> AudioContext::GetAllTracks() const {
@@ -1157,7 +1144,7 @@ void AudioContext::CloseInternal(void* aPromise,
   
   AudioNodeTrack* ds = DestinationTrack();
   if (ds && !mIsOffline) {
-    Destination()->DestroyAudioChannelAgent();
+    Destination()->Close();
 
     nsTArray<RefPtr<mozilla::MediaTrack>> tracks;
     
