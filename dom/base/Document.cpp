@@ -12325,6 +12325,12 @@ static nsINode* GetCorrespondingNodeInDocument(const nsINode* aOrigNode,
     return nullptr;
   }
 
+  
+  
+  if (NS_WARN_IF(!aOrigNode->IsInComposedDoc())) {
+    return nullptr;
+  }
+
   nsTArray<int32_t> indexArray;
   const nsINode* current = aOrigNode;
   while (const nsINode* parent = current->GetParentNode()) {
