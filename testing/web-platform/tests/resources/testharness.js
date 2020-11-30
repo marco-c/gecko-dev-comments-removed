@@ -541,14 +541,15 @@
                 trimmed = trimmed.replace(/^([^;]*)(;\s*)+$/, "$1");
 
                 if (trimmed) {
-                    
+                    let name = trimmed;
                     if (seen_func_name[trimmed]) {
-                        trimmed = trimmed + " " + seen_func_name[trimmed];
-                        seen_func_name[trimmed]++;
+                        
+                        name += " " + seen_func_name[trimmed];
                     } else {
-                        seen_func_name[trimmed] = 1;
+                        seen_func_name[trimmed] = 0;
                     }
-                    return trimmed;
+                    seen_func_name[trimmed] += 1;
+                    return name;
                 }
             }
         }
