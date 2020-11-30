@@ -161,7 +161,7 @@ def load_image(url, imageName=None, imageTag=None):
 
                     
                     data = json.dumps({imageName or image: {imageTag or tag: layer}})
-                    reader = BytesIO(data)
+                    reader = BytesIO(data.encode("utf-8"))
                     member.size = len(data)
 
                 
@@ -177,7 +177,7 @@ def load_image(url, imageName=None, imageTag=None):
                 
                 remainder = member.size % 512
                 if remainder:
-                    yield '\0' * (512 - remainder)
+                    yield ('\0' * (512 - remainder)).encode("utf-8")
 
                 reader.close()
 
