@@ -22,10 +22,13 @@ loader.lazyRequireGetter(
 
 
 
+
+
 function connectToWorker(connection, dbg, forwardingPrefix, options) {
   return new Promise((resolve, reject) => {
-    if (dbg.isClosed) {
+    if (!DevToolsUtils.isWorkerDebuggerAlive(dbg)) {
       reject("closed");
+      return;
     }
 
     
@@ -90,8 +93,9 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
       dbg.addListener(listener);
     }
 
-    if (dbg.isClosed) {
+    if (!DevToolsUtils.isWorkerDebuggerAlive(dbg)) {
       reject("closed");
+      return;
     }
 
     
@@ -100,6 +104,11 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
         type: "connect",
         forwardingPrefix,
         options,
+        workerDebuggerData: {
+          id: dbg.id,
+          type: dbg.type,
+          url: dbg.url,
+        },
       })
     );
 
@@ -134,7 +143,7 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
         transport.ready();
         transport.hooks = {
           onClosed: () => {
-            if (!dbg.isClosed) {
+            if (DevToolsUtils.isWorkerDebuggerAlive(dbg)) {
               
               
               

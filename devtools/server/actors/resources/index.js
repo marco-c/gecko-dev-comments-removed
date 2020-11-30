@@ -72,6 +72,17 @@ const ProcessTargetResources = augmentResourceDictionary({
     path: "devtools/server/actors/resources/platform-messages",
   },
 });
+
+
+
+
+
+const WorkerTargetResources = augmentResourceDictionary({
+  [TYPES.CONSOLE_MESSAGE]: {
+    path: "devtools/server/actors/resources/console-messages",
+  },
+});
+
 const ParentProcessResources = augmentResourceDictionary({
   [TYPES.NETWORK_EVENT]: {
     path: "devtools/server/actors/resources/network-events",
@@ -115,6 +126,8 @@ function getResourceTypeDictionaryForTargetType(targetType) {
       return FrameTargetResources;
     case Targets.TYPES.PROCESS:
       return ProcessTargetResources;
+    case Targets.TYPES.WORKER:
+      return WorkerTargetResources;
     default:
       throw new Error(`Unsupported target actor typeName '${targetType}'`);
   }

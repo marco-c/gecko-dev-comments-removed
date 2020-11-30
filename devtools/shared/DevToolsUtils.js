@@ -969,3 +969,12 @@ exports.getTopWindow = getTopWindow;
 exports.deepEqual = (a, b) => {
   return ObjectUtils.deepEqual(a, b);
 };
+
+function isWorkerDebuggerAlive(dbg) {
+  
+  
+  
+  
+  return !dbg.isClosed && (!dbg.window || dbg.window.docShell);
+}
+exports.isWorkerDebuggerAlive = isWorkerDebuggerAlive;

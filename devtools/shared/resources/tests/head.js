@@ -28,7 +28,11 @@ async function createLocalClient() {
   return client;
 }
 
-async function _initResourceWatcherFromDescriptor(client, descriptor) {
+async function _initResourceWatcherFromDescriptor(
+  client,
+  descriptor,
+  { listenForWorkers = false } = {}
+) {
   const { TargetList } = require("devtools/shared/resources/target-list");
   const {
     ResourceWatcher,
@@ -36,6 +40,9 @@ async function _initResourceWatcherFromDescriptor(client, descriptor) {
 
   const target = await descriptor.getTarget();
   const targetList = new TargetList(client.mainRoot, target);
+  if (listenForWorkers) {
+    targetList.listenForWorkers = true;
+  }
   await targetList.startListening();
 
   
@@ -57,10 +64,12 @@ async function _initResourceWatcherFromDescriptor(client, descriptor) {
 
 
 
-async function initResourceWatcher(tab) {
+
+
+async function initResourceWatcher(tab, options) {
   const client = await createLocalClient();
   const descriptor = await client.mainRoot.getTab({ tab });
-  return _initResourceWatcherFromDescriptor(client, descriptor);
+  return _initResourceWatcherFromDescriptor(client, descriptor, options);
 }
 
 

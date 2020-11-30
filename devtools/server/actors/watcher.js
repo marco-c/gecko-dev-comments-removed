@@ -27,6 +27,11 @@ loader.lazyRequireGetter(
   Targets.TYPES.PROCESS,
   "devtools/server/actors/watcher/target-helpers/process-helper"
 );
+loader.lazyRequireGetter(
+  TARGET_HELPERS,
+  Targets.TYPES.WORKER,
+  "devtools/server/actors/watcher/target-helpers/worker-helper"
+);
 
 exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
@@ -101,6 +106,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         [Targets.TYPES.FRAME]: true,
         
         [Targets.TYPES.PROCESS]: true,
+        
+        [Targets.TYPES.WORKER]: hasBrowserElement,
         resources: {
           
           
