@@ -697,10 +697,6 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       
       APPEND_DEVICE(0x1636);
 
-#ifdef EARLY_BETA_OR_EARLIER
-      
-      APPEND_DEVICE(0x98e4);
-
       
       APPEND_RANGE(0x6840, 0x684b);
       APPEND_RANGE(0x6850, 0x685f);
@@ -708,6 +704,10 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_RANGE(0x9800, 0x980a);
       APPEND_RANGE(0x9640, 0x964f);
       APPEND_RANGE(0x6720, 0x677f);
+
+#ifdef EARLY_BETA_OR_EARLIER
+      
+      APPEND_DEVICE(0x98e4);
 
       
       APPEND_RANGE(0x9870, 0x9877);
