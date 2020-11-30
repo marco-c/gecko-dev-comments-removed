@@ -9,6 +9,11 @@ def get_events(session):
             key = e["key"]
             hex_suffix = key[key.index("+") + 1:]
             e["key"] = unichr(int(hex_suffix, 16))
+
+        
+        
+        if "code" in e and e["code"] == "Unidentified":
+            e["code"] = ""
     return events
 
 
