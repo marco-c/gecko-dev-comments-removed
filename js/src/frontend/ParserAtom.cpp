@@ -282,6 +282,9 @@ JSAtom* ParserAtomEntry::instantiate(JSContext* cx,
     return nullptr;
   }
   auto index = atomCache.atoms.length();
+
+  
+  
   if (!atomCache.atoms.append(atom)) {
     js::ReportOutOfMemory(cx);
     return nullptr;
