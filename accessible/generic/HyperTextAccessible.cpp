@@ -727,11 +727,30 @@ uint32_t HyperTextAccessible::FindLineBoundary(
       return FindOffset(tmpOffset, eDirNext, eSelectEndLine);
     }
 
-    case eThisLineBegin:
+    case eThisLineBegin: {
       if (IsEmptyLastLineOffset(aOffset)) return aOffset;
 
       
-      return FindOffset(aOffset, eDirPrevious, eSelectBeginLine);
+      uint32_t thisLineBeginOffset =
+          FindOffset(aOffset, eDirPrevious, eSelectBeginLine);
+      if (IsCharAt(thisLineBeginOffset, kEmbeddedObjectChar)) {
+        
+        
+        return thisLineBeginOffset;
+      }
+
+      
+      
+      
+      uint32_t tmpOffset = FindOffset(aOffset, eDirPrevious, eSelectLine);
+      tmpOffset = FindOffset(tmpOffset, eDirNext, eSelectEndLine);
+      if (tmpOffset > thisLineBeginOffset && tmpOffset < aOffset) {
+        
+        
+        return IsLineEndCharAt(tmpOffset) ? tmpOffset + 1 : tmpOffset;
+      }
+      return thisLineBeginOffset;
+    }
 
     case eThisLineEnd:
       if (IsEmptyLastLineOffset(aOffset)) return aOffset;
@@ -787,6 +806,21 @@ uint32_t HyperTextAccessible::FindLineBoundary(
 
           return thisLineEndOffset;
         }
+        return nextLineBeginOffset;
+      }
+
+      
+      
+      
+      if (nextLineBeginOffset <= aOffset) {
+        
+        
+        nextLineBeginOffset = tmpOffset;
+        while (nextLineBeginOffset >= aOffset &&
+               !IsLineEndCharAt(nextLineBeginOffset - 1)) {
+          nextLineBeginOffset--;
+        }
+        return nextLineBeginOffset;
       }
 
       return nextLineBeginOffset;
