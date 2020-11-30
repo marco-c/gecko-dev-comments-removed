@@ -11,6 +11,8 @@ const TLS_ERROR_REPORT_TELEMETRY_AUTO_CHECKED = 2;
 const TLS_ERROR_REPORT_TELEMETRY_AUTO_UNCHECKED = 3;
 const TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN = 0;
 
+const HOST_NAME = new URL(RPMGetInnerMostURI(document.location.href)).hostname;
+
 
 const KNOWN_ERROR_TITLE_IDS = new Set([
   
@@ -138,7 +140,7 @@ function setupAdvancedButton() {
   
   var panel = document.getElementById("badCertAdvancedPanel");
   for (var span of panel.querySelectorAll("span.hostname")) {
-    span.textContent = document.location.hostname;
+    span.textContent = HOST_NAME;
   }
 
   
@@ -430,7 +432,7 @@ function initPage() {
 
     var container = document.getElementById("errorLongDesc");
     for (var span of container.querySelectorAll("span.hostname")) {
-      span.textContent = document.location.hostname;
+      span.textContent = HOST_NAME;
     }
   }
 }
@@ -555,7 +557,8 @@ function onSetBlockingReportAutomatic(checked) {
 }
 
 async function setNetErrorMessageFromCode() {
-  let hostString = document.location.hostname;
+  let hostString = HOST_NAME;
+
   let port = document.location.port;
   if (port && port != 443) {
     hostString += ":" + port;
@@ -644,7 +647,7 @@ function initPageCaptivePortal() {
 function initPageCertError() {
   document.body.classList.add("certerror");
   for (let host of document.querySelectorAll(".hostname")) {
-    host.textContent = document.location.hostname;
+    host.textContent = HOST_NAME;
   }
 
   addAutofocus("#returnButton");
@@ -853,12 +856,11 @@ function setCertErrorDetails(event) {
     
     case "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED":
       desc = document.getElementById("errorShortDescText2");
-      let hostname = document.location.hostname;
       document.l10n.setAttributes(
         desc,
         "cert-error-symantec-distrust-description",
         {
-          hostname,
+          HOST_NAME,
         }
       );
 
@@ -998,7 +1000,7 @@ function setCertErrorDetails(event) {
         sd.innerHTML = errDesc.innerHTML;
 
         let span = sd.querySelector(".hostname");
-        span.textContent = document.location.hostname;
+        span.textContent = HOST_NAME;
 
         
         
@@ -1088,7 +1090,7 @@ async function setTechnicalDetailsOnCertError(
   let cssClass = getCSSClass();
   let error = getErrorCode();
 
-  let hostString = document.location.hostname;
+  let hostString = HOST_NAME;
   let port = document.location.port;
   if (port && port != 443) {
     hostString += ":" + port;
@@ -1154,7 +1156,7 @@ async function setTechnicalDetailsOnCertError(
         
         let okHost = failedCertInfo.subjectAltNames;
         let href = "";
-        let thisHost = document.location.hostname;
+        let thisHost = HOST_NAME;
         let proto = document.location.protocol + "//";
         
         
