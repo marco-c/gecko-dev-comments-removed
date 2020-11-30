@@ -7372,8 +7372,9 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
         return false;
       }
 
-      initializerIfPrivate =
-          Some(privateMethodInitializer(propAtom, storedMethodAtom));
+      TokenPos propNamePos(propNameOffset, pos().end);
+      initializerIfPrivate = Some(
+          privateMethodInitializer(propNamePos, propAtom, storedMethodAtom));
     }
   }
 
@@ -7834,7 +7835,8 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
 template <class ParseHandler, typename Unit>
 typename ParseHandler::FunctionNodeType
 GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
-    const ParserAtom* propAtom, const ParserAtom* storedMethodAtom) {
+    TokenPos propNamePos, const ParserAtom* propAtom,
+    const ParserAtom* storedMethodAtom) {
   
   
   FunctionSyntaxKind syntaxKind = FunctionSyntaxKind::FieldInitializer;
@@ -7843,17 +7845,16 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
   bool isSelfHosting = options().selfHostingMode;
   FunctionFlags flags =
       InitialFunctionFlags(syntaxKind, generatorKind, asyncKind, isSelfHosting);
-  TokenPos firstTokenPos = pos();
 
-  FunctionNodeType funNode = handler_.newFunction(syntaxKind, firstTokenPos);
+  FunctionNodeType funNode = handler_.newFunction(syntaxKind, propNamePos);
   if (!funNode) {
     return null();
   }
 
   Directives directives(true);
   FunctionBox* funbox =
-      newFunctionBox(funNode, nullptr, flags, 0, directives, generatorKind,
-                     asyncKind, TopLevelFunction::No);
+      newFunctionBox(funNode, nullptr, flags, propNamePos.begin, directives,
+                     generatorKind, asyncKind, TopLevelFunction::No);
   if (!funbox) {
     return null();
   }
@@ -7869,7 +7870,7 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
 
   
   ListNodeType argsbody =
-      handler_.newList(ParseNodeKind::ParamsBody, firstTokenPos);
+      handler_.newList(ParseNodeKind::ParamsBody, propNamePos);
   if (!argsbody) {
     return null();
   }
@@ -7900,7 +7901,7 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
   
   
   
-  ListNodeType stmtList = handler_.newStatementList(firstTokenPos);
+  ListNodeType stmtList = handler_.newStatementList(propNamePos);
   if (!stmtList) {
     return null();
   }
@@ -7915,8 +7916,8 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
 
   
   
-  funbox->setStart(0, 0, 0);
-  funbox->setEnd(0);
+  setFunctionStartAtPosition(funbox, propNamePos);
+  setFunctionEndFromCurrentToken(funbox);
 
   if (!finishFunction()) {
     return null();

@@ -34,6 +34,7 @@ function getScriptSourceExtent(source) {
     
     
     for (let script of scripts) {
+        assertEq(script.startLine, 1);
         assertEq(script.startColumn, script.sourceStart);
     }
 
@@ -289,28 +290,28 @@ testSourceExtent(`class C { static #field = 1 }`,
 
 testSourceExtent(` class C { #field() { } }`,
                  `                 ^-----^ `,
-                 ` ^-----------------------`,
-                 `^                        `);
+                 `           ^-----------^ `,
+                 ` ^-----------------------`);
 testSourceExtent(` class C { get #field() { } }`,
                  `                     ^-----^ `,
-                 ` ^---------------------------`,
-                 `^                            `);
+                 `           ^---------------^ `,
+                 ` ^---------------------------`);
 testSourceExtent(` class C { set #field(v) { } }`,
                  `                     ^------^ `,
-                 ` ^----------------------------`,
-                 `^                             `);
+                 `           ^----------------^ `,
+                 ` ^----------------------------`);
 testSourceExtent(` class C { * #field() { } }`,
                  `                   ^-----^ `,
-                 ` ^-------------------------`,
-                 `^                          `);
+                 `           ^-------------^ `,
+                 ` ^-------------------------`);
 testSourceExtent(` class C { async #field() { } }`,
                  `                       ^-----^ `,
-                 ` ^-----------------------------`,
-                 `^                              `);
+                 `           ^-----------------^ `,
+                 ` ^-----------------------------`);
 testSourceExtent(` class C { async * #field() { } }`,
                  `                         ^-----^ `,
-                 ` ^-------------------------------`,
-                 `^                                `);
+                 `           ^-------------------^ `,
+                 ` ^-------------------------------`);
 
 
 testSourceExtent(` class C { static #mtd() { } }`,
