@@ -17,35 +17,21 @@ add_task(async () => {
     return;
   }
 
-  
-  
-  await wait(10);
-
   {
     const filename = "profiler-mainthreadio-test-firstrun";
-    const payloads = await startProfilerAndgetFileIOPayloads(
+    const markers = await startProfilerAndGetFileIOPayloads(
       ["mainthreadio"],
       filename
     );
-
-    greater(
-      payloads.length,
-      0,
-      "FileIO markers were found when using the mainthreadio feature on the profiler."
-    );
-
-    
-    
-    
-    
+    info("Check the FileIO markers when using the mainthreadio feature");
+    checkInflatedFileIOMarkers(markers, filename);
   }
 
   {
     const filename = "profiler-mainthreadio-test-no-instrumentation";
-    const payloads = await startProfilerAndgetFileIOPayloads([], filename);
-
+    const markers = await startProfilerAndGetFileIOPayloads([], filename);
     equal(
-      payloads.length,
+      markers.length,
       0,
       "No FileIO markers are found when the mainthreadio feature is not turned on " +
         "in the profiler."
@@ -54,22 +40,12 @@ add_task(async () => {
 
   {
     const filename = "profiler-mainthreadio-test-secondrun";
-    const payloads = await startProfilerAndgetFileIOPayloads(
+    const markers = await startProfilerAndGetFileIOPayloads(
       ["mainthreadio"],
       filename
     );
-
-    greater(
-      payloads.length,
-      0,
-      "FileIO markers were found when re-starting the mainthreadio feature on the " +
-        "profiler."
-    );
-    
-    
-    
-    
-    
+    info("Check the FileIO markers when re-starting the mainthreadio feature");
+    checkInflatedFileIOMarkers(markers, filename);
   }
 });
 
@@ -78,12 +54,14 @@ add_task(async () => {
 
 
 
-async function startProfilerAndgetFileIOPayloads(features, filename) {
+
+async function startProfilerAndGetFileIOPayloads(features, filename) {
   const entries = 10000;
   const interval = 10;
   const threads = [];
   Services.profiler.StartProfiler(entries, interval, features, threads);
 
+  info("Get the file");
   const file = FileUtils.getFile("TmpD", [filename]);
   if (file.exists()) {
     console.warn(
@@ -95,17 +73,20 @@ async function startProfilerAndgetFileIOPayloads(features, filename) {
     file.remove(false);
   }
 
+  info(
+    "Generate file IO on the main thread using FileUtils.openSafeFileOutputStream."
+  );
   const outputStream = FileUtils.openSafeFileOutputStream(file);
 
   const data = "Test data.";
+  info("Write to the file");
   outputStream.write(data, data.length);
+
+  info("Close the file");
   FileUtils.closeSafeFileOutputStream(outputStream);
 
+  info("Remove the file");
   file.remove(false);
-
-  
-  
-  await wait(500);
 
   
   
@@ -113,15 +94,7 @@ async function startProfilerAndgetFileIOPayloads(features, filename) {
 
   const profile = await Services.profiler.getProfileDataAsync();
   Services.profiler.StopProfiler();
-  return getPayloadsOfTypeFromAllThreads(profile, "FileIO");
-}
+  const mainThread = profile.threads.find(({ name }) => name === "GeckoMain");
 
-
-
-
-
-
-
-function hasWritePayload(payloads, filename) {
-  return payloads.some(payload => payload.filename.endsWith(filename));
+  return getInflatedFileIOMarkers(mainThread, filename);
 }
