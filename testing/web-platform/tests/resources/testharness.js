@@ -520,6 +520,8 @@
             Object.prototype.toString.call(worker) == '[object ServiceWorker]';
     }
 
+    var seen_func_name = Object.create(null);
+
     function get_test_name(func, name)
     {
         if (name) {
@@ -537,8 +539,17 @@
                 var trimmed = (arrow[1] !== undefined ? arrow[1] : arrow[2]).trim();
                 
                 trimmed = trimmed.replace(/^([^;]*)(;\s*)+$/, "$1");
-                
-                if (trimmed) return trimmed;
+
+                if (trimmed) {
+                    
+                    if (seen_func_name[trimmed]) {
+                        trimmed = trimmed + " " + seen_func_name[trimmed];
+                        seen_func_name[trimmed]++;
+                    } else {
+                        seen_func_name[trimmed] = 1;
+                    }
+                    return trimmed;
+                }
             }
         }
 
