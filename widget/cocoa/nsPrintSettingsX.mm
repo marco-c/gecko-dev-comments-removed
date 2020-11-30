@@ -13,6 +13,7 @@
 #include "nsXULAppAPI.h"
 
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_print.h"
 
 using namespace mozilla;
 
@@ -143,6 +144,38 @@ NS_IMETHODIMP nsPrintSettingsX::_Assign(nsIPrintSettings* aPS) {
   return NS_OK;
 }
 
+struct KnownMonochromeSetting {
+  const NSString* mName;
+  const NSString* mValue;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const KnownMonochromeSetting kKnownMonochromeSettings[] = {
+    {@"ColorModel", @"Gray"},             
+    {@"BRMonoColor", @"Mono"},            
+    {@"BRPrintQuality", @"Black"},        
+    {@"INK", @"MONO"},                    
+    {@"HPColorMode", @"GrayscalePrint"},  
+    {@"ColorMode", @"Mono"},              
+    {@"PrintoutMode", @"Normal.Gray"},    
+    {@"ProcessColorModel", @"Mono"},      
+    {@"ARCMode", @"CMBW"},                
+    {@"XRXColor", @"BW"}                  
+};
+
 void nsPrintSettingsX::SetPMPageFormat(PMPageFormat aPageFormat) {
   
   NSPrintInfo* printInfo = CreateOrCopyPrintInfo();
@@ -269,6 +302,12 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
     }
   }
 
+  if (StaticPrefs::print_mac_monochrome_enabled() && !GetPrintInColor()) {
+    for (const auto& setting : kKnownMonochromeSettings) {
+      [printSettings setObject:setting.mValue forKey:setting.mName];
+    }
+  }
+
   return printInfo;
 
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(nullptr);
@@ -374,6 +413,25 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
   if (value) {
     mDestination = [value unsignedShortValue];
   }
+
+  const bool color = [&] {
+    if (StaticPrefs::print_mac_monochrome_enabled()) {
+      for (const auto& setting : kKnownMonochromeSettings) {
+        NSString* value = [printSettings objectForKey:setting.mName];
+        if (!value) {
+          continue;
+        }
+        if ([setting.mValue isEqualToString:value]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }();
+
+  SetPrintInColor(color);
+
+  SetIsInitializedFromPrinter(true);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
