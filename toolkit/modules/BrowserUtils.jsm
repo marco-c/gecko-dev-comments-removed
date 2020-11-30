@@ -87,29 +87,28 @@ var BrowserUtils = {
     }
     let contentPrincipal = browser.contentPrincipal;
     
-    if (contentPrincipal.URI) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      let uriToCheck = browser.documentURI || uri;
-      if (
-        (uriToCheck.spec == "about:blank" &&
-          contentPrincipal.isNullPrincipal) ||
-        contentPrincipal.spec == "about:blank"
-      ) {
-        return true;
-      }
-      return contentPrincipal.URI.equals(uri);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let uriToCheck = browser.documentURI || uri;
+    if (
+      (uriToCheck.spec == "about:blank" && contentPrincipal.isNullPrincipal) ||
+      contentPrincipal.spec == "about:blank"
+    ) {
+      return true;
+    }
+    if (contentPrincipal.isContentPrincipal) {
+      return contentPrincipal.equalsURI(uri);
     }
     
     
