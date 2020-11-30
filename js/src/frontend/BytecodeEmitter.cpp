@@ -123,7 +123,7 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
     : sc(sc),
       cx(sc->cx_),
       parent(parent),
-      bytecodeSection_(cx, sc->extent().lineno),
+      bytecodeSection_(cx, sc->extent().lineno, sc->extent().column),
       perScriptData_(cx, compilationInfo),
       compilationInfo(compilationInfo),
       compilationState(compilationState),
@@ -555,6 +555,11 @@ bool BytecodeEmitter::updateLineNumberNotes(uint32_t offset) {
     unsigned delta = line - bytecodeSection().currentLine();
 
     
+    
+    unsigned initialLine = sc->extent().lineno;
+    MOZ_ASSERT(line >= initialLine);
+
+    
 
 
 
@@ -566,10 +571,9 @@ bool BytecodeEmitter::updateLineNumberNotes(uint32_t offset) {
 
 
     bytecodeSection().setCurrentLine(line, offset);
-    if (delta >= SrcNote::SetLine::lengthFor(line)) {
-      MOZ_ASSERT(line >= sc->extent().lineno);
+    if (delta >= SrcNote::SetLine::lengthFor(line, initialLine)) {
       if (!newSrcNote2(SrcNoteType::SetLine,
-                       SrcNote::SetLine::toOperand(line))) {
+                       SrcNote::SetLine::toOperand(line, initialLine))) {
         return false;
       }
     } else {

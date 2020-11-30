@@ -189,7 +189,7 @@ typedef Vector<js::SrcNote, 64> SrcNotesVector;
 
 class BytecodeSection {
  public:
-  BytecodeSection(JSContext* cx, uint32_t lineNum);
+  BytecodeSection(JSContext* cx, uint32_t lineNum, uint32_t column);
 
   
 
