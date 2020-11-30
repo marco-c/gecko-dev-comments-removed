@@ -361,8 +361,8 @@ macro_rules! instructions {
             $name:ident $(($($arg:tt)*))? : [$($binary:tt)*] : $instr:tt $( | $deprecated:tt )?,
         )*
     }) => (
-        
-        
+        /// A listing of all WebAssembly instructions that can be in a module
+        /// that this crate currently parses.
         #[derive(Debug)]
         #[allow(missing_docs)]
         pub enum Instruction<'a> {
@@ -449,11 +449,11 @@ instructions! {
         Call(ast::Index<'a>) : [0x10] : "call",
         CallIndirect(CallIndirect<'a>) : [0x11] : "call_indirect",
 
-        
+        // tail-call proposal
         ReturnCall(ast::Index<'a>) : [0x12] : "return_call",
         ReturnCallIndirect(CallIndirect<'a>) : [0x13] : "return_call_indirect",
 
-        
+        // function-references proposal
         CallRef : [0x14] : "call_ref",
         ReturnCallRef : [0x15] : "return_call_ref",
         FuncBind(FuncBindType<'a>) : [0x16] : "func.bind",
@@ -494,7 +494,7 @@ instructions! {
         I64Store16(MemArg<2>) : [0x3d] : "i64.store16",
         I64Store32(MemArg<4>) : [0x3e] : "i64.store32",
 
-        
+        // Lots of bulk memory proposal here as well
         MemorySize(MemoryArg<'a>) : [0x3f] : "memory.size" | "current_memory",
         MemoryGrow(MemoryArg<'a>) : [0x40] : "memory.grow" | "grow_memory",
         MemoryInit(MemoryInit<'a>) : [0xfc, 0x08] : "memory.init",
@@ -510,20 +510,20 @@ instructions! {
 
         RefNull(HeapType<'a>) : [0xd0] : "ref.null",
         RefIsNull : [0xd1] : "ref.is_null",
-        RefExtern(u32) : [0xff] : "ref.extern", 
+        RefExtern(u32) : [0xff] : "ref.extern", // only used in test harness
         RefFunc(ast::Index<'a>) : [0xd2] : "ref.func",
 
-        
+        // function-references proposal
         RefAsNonNull : [0xd3] : "ref.as_non_null",
         BrOnNull(ast::Index<'a>) : [0xd4] : "br_on_null",
 
-        
+        // gc proposal: eqref
         RefEq : [0xd5] : "ref.eq",
 
-        
+        // gc proposal (moz specific, will be removed)
         StructNew(ast::Index<'a>) : [0xfb, 0x0] : "struct.new",
 
-        
+        // gc proposal: struct
         StructNewWithRtt(ast::Index<'a>) : [0xfb, 0x01] : "struct.new_with_rtt",
         StructNewDefaultWithRtt(ast::Index<'a>) : [0xfb, 0x02] : "struct.new_default_with_rtt",
         StructGet(StructAccess<'a>) : [0xfb, 0x03] : "struct.get",
@@ -531,10 +531,10 @@ instructions! {
         StructGetU(StructAccess<'a>) : [0xfb, 0x05] : "struct.get_u",
         StructSet(StructAccess<'a>) : [0xfb, 0x06] : "struct.set",
 
-        
+        // gc proposal (moz specific, will be removed)
         StructNarrow(StructNarrow<'a>) : [0xfb, 0x07] : "struct.narrow",
 
-        
+        // gc proposal: array
         ArrayNewWithRtt(ast::Index<'a>) : [0xfb, 0x11] : "array.new_with_rtt",
         ArrayNewDefaultWithRtt(ast::Index<'a>) : [0xfb, 0x12] : "array.new_default_with_rtt",
         ArrayGet(ast::Index<'a>) : [0xfb, 0x13] : "array.get",
@@ -543,12 +543,12 @@ instructions! {
         ArraySet(ast::Index<'a>) : [0xfb, 0x16] : "array.set",
         ArrayLen(ast::Index<'a>) : [0xfb, 0x17] : "array.len",
 
-        
+        // gc proposal, i31
         I31New : [0xfb, 0x20] : "i31.new",
         I31GetS : [0xfb, 0x21] : "i31.get_s",
         I31GetU : [0xfb, 0x22] : "i31.get_u",
 
-        
+        // gc proposal, rtt/casting
         RTTCanon(HeapType<'a>) : [0xfb, 0x30] : "rtt.canon",
         RTTSub(RTTSub<'a>) : [0xfb, 0x31] : "rtt.sub",
         RefTest(RefTest<'a>) : [0xfb, 0x40] : "ref.test",
@@ -692,7 +692,7 @@ instructions! {
         F32ReinterpretI32 : [0xbe] : "f32.reinterpret_i32" | "f32.reinterpret/i32",
         F64ReinterpretI64 : [0xbf] : "f64.reinterpret_i64" | "f64.reinterpret/i64",
 
-        
+        // non-trapping float to int
         I32TruncSatF32S : [0xfc, 0x00] : "i32.trunc_sat_f32_s" | "i32.trunc_s:sat/f32",
         I32TruncSatF32U : [0xfc, 0x01] : "i32.trunc_sat_f32_u" | "i32.trunc_u:sat/f32",
         I32TruncSatF64S : [0xfc, 0x02] : "i32.trunc_sat_f64_s" | "i32.trunc_s:sat/f64",
@@ -702,14 +702,14 @@ instructions! {
         I64TruncSatF64S : [0xfc, 0x06] : "i64.trunc_sat_f64_s" | "i64.trunc_s:sat/f64",
         I64TruncSatF64U : [0xfc, 0x07] : "i64.trunc_sat_f64_u" | "i64.trunc_u:sat/f64",
 
-        
+        // sign extension proposal
         I32Extend8S : [0xc0] : "i32.extend8_s",
         I32Extend16S : [0xc1] : "i32.extend16_s",
         I64Extend8S : [0xc2] : "i64.extend8_s",
         I64Extend16S : [0xc3] : "i64.extend16_s",
         I64Extend32S : [0xc4] : "i64.extend32_s",
 
-        
+        // atomics proposal
         MemoryAtomicNotify(MemArg<4>) : [0xfe, 0x00] : "memory.atomic.notify" | "atomic.notify",
         MemoryAtomicWait32(MemArg<4>) : [0xfe, 0x01] : "memory.atomic.wait32" | "i32.atomic.wait",
         MemoryAtomicWait64(MemArg<8>) : [0xfe, 0x02] : "memory.atomic.wait64" | "i64.atomic.wait",
@@ -786,7 +786,7 @@ instructions! {
         I64AtomicRmw16CmpxchgU(MemArg<2>) : [0xfe, 0x4d] : "i64.atomic.rmw16.cmpxchg_u",
         I64AtomicRmw32CmpxchgU(MemArg<4>) : [0xfe, 0x4e] : "i64.atomic.rmw32.cmpxchg_u",
 
-        
+        // proposal: simd
         V128Load(MemArg<16>) : [0xfd, 0x00] : "v128.load",
         V128Load8x8S(MemArg<8>) : [0xfd, 0x01] : "v128.load8x8_s",
         V128Load8x8U(MemArg<8>) : [0xfd, 0x02] : "v128.load8x8_u",
@@ -993,7 +993,10 @@ instructions! {
         F32x4ConvertI32x4S : [0xfd, 0xfa] : "f32x4.convert_i32x4_s",
         F32x4ConvertI32x4U : [0xfd, 0xfb] : "f32x4.convert_i32x4_u",
 
-        
+        V128Load32Zero(MemArg<4>) : [0xfd, 0xfc] : "v128.load32_zero",
+        V128Load64Zero(MemArg<8>) : [0xfd, 0xfd] : "v128.load64_zero",
+
+        // Exception handling proposal
         Try(BlockType<'a>) : [0x06] : "try",
         Catch : [0x07] : "catch",
         Throw(ast::Index<'a>) : [0x08] : "throw",
