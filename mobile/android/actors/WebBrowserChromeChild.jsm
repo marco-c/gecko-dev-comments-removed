@@ -42,6 +42,12 @@ class WebBrowserChromeChild extends GeckoViewActorChild {
   ) {
     debug`shouldLoadURI ${aURI.displaySpec}`;
 
+    if (!GeckoViewSettings.useMultiprocess) {
+      
+      
+      return true;
+    }
+
     if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aHasPostData)) {
       E10SUtils.redirectLoad(
         aDocShell,

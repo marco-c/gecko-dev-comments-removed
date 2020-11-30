@@ -556,13 +556,8 @@ bool BrowserTabsRemoteAutostart() {
   
   if (gBrowserTabsRemoteAutostart) {
     const char* forceDisable = PR_GetEnv("MOZ_FORCE_DISABLE_E10S");
-#if defined(MOZ_WIDGET_ANDROID)
     
-    if (forceDisable && *forceDisable) {
-#else
-
     if (forceDisable && gAppData && !strcmp(forceDisable, gAppData->version)) {
-#endif
       gBrowserTabsRemoteAutostart = false;
       status = kE10sForceDisabled;
     }
