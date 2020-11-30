@@ -88,14 +88,25 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   mPageContentMargin = aPresContext->GetDefaultPageMargin();
 
   
+  
+  
+  
+  
   if (mPD->mPrintSettings->GetHonorPageRuleMargins()) {
     const auto& margin = kidReflowInput.mStyleMargin->mMargin;
     for (const auto side : mozilla::AllPhysicalSides()) {
       if (!margin.Get(side).IsAuto()) {
-        nscoord unwriteable = nsPresContext::CSSTwipsToAppUnits(
-            mPD->mPrintSettings->GetUnwriteableMarginInTwips().Side(side));
-        mPageContentMargin.Side(side) = std::max(
-            kidReflowInput.ComputedPhysicalMargin().Side(side), unwriteable);
+        nscoord computed = kidReflowInput.ComputedPhysicalMargin().Side(side);
+        
+        
+        if (computed == 0) {
+          mPageContentMargin.Side(side) = 0;
+        } else {
+          nscoord unwriteable = nsPresContext::CSSTwipsToAppUnits(
+              mPD->mPrintSettings->GetUnwriteableMarginInTwips().Side(side));
+          mPageContentMargin.Side(side) = std::max(
+              kidReflowInput.ComputedPhysicalMargin().Side(side), unwriteable);
+        }
       }
     }
   }
