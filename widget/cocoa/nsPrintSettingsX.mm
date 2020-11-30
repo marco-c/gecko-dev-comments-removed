@@ -14,6 +14,7 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_print.h"
+#include "nsPrinterCUPS.h"
 
 using namespace mozilla;
 
@@ -149,32 +150,11 @@ struct KnownMonochromeSetting {
   const NSString* mValue;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#define DECLARE_KNOWN_MONOCHROME_SETTING(key_, value_) {@key_, @value_},
 static const KnownMonochromeSetting kKnownMonochromeSettings[] = {
-    {@"ColorModel", @"Gray"},             
-    {@"BRMonoColor", @"Mono"},            
-    {@"BRPrintQuality", @"Black"},        
-    {@"INK", @"MONO"},                    
-    {@"HPColorMode", @"GrayscalePrint"},  
-    {@"ColorMode", @"Mono"},              
-    {@"PrintoutMode", @"Normal.Gray"},    
-    {@"ProcessColorModel", @"Mono"},      
-    {@"ARCMode", @"CMBW"},                
-    {@"XRXColor", @"BW"}                  
+  CUPS_EACH_MONOCHROME_PRINTER_SETTING(DECLARE_KNOWN_MONOCHROME_SETTING)
 };
+#undef DECLARE_KNOWN_MONOCHROME_SETTING
 
 void nsPrintSettingsX::SetPMPageFormat(PMPageFormat aPageFormat) {
   
@@ -302,7 +282,7 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
     }
   }
 
-  if (StaticPrefs::print_mac_monochrome_enabled() && !GetPrintInColor()) {
+  if (StaticPrefs::print_cups_monochrome_enabled() && !GetPrintInColor()) {
     for (const auto& setting : kKnownMonochromeSettings) {
       [printSettings setObject:setting.mValue forKey:setting.mName];
     }
@@ -415,7 +395,7 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
   }
 
   const bool color = [&] {
-    if (StaticPrefs::print_mac_monochrome_enabled()) {
+    if (StaticPrefs::print_cups_monochrome_enabled()) {
       for (const auto& setting : kKnownMonochromeSettings) {
         NSString* value = [printSettings objectForKey:setting.mName];
         if (!value) {
