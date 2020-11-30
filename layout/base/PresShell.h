@@ -87,8 +87,6 @@ class ZoomConstraintsClient;
 
 struct nsCallbackEventRequest;
 
-enum class ScrollableDirection;
-
 namespace mozilla {
 class AccessibleCaretEventHub;
 class EventStates;
@@ -419,7 +417,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   nsIScrollableFrame* GetScrollableFrameToScrollForContent(
-      nsIContent* aContent, ScrollableDirection aDirection);
+      nsIContent* aContent, layers::ScrollDirections aDirections);
 
   
 
@@ -429,7 +427,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   nsIScrollableFrame* GetScrollableFrameToScroll(
-      ScrollableDirection aDirection);
+      layers::ScrollDirections aDirections);
 
   
 

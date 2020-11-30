@@ -5,7 +5,6 @@
 
 
 #include "mozilla/layers/FocusTarget.h"
-
 #include "mozilla/dom/BrowserBridgeChild.h"  
 #include "mozilla/dom/EventTarget.h"         
 #include "mozilla/dom/RemoteBrowser.h"       
@@ -189,10 +188,10 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
   
   nsIScrollableFrame* horizontal =
       presShell->GetScrollableFrameToScrollForContent(
-          selectedContent.get(), ScrollableDirection::Horizontal);
+          selectedContent.get(), HorizontalScrollDirection);
   nsIScrollableFrame* vertical =
-      presShell->GetScrollableFrameToScrollForContent(
-          selectedContent.get(), ScrollableDirection::Vertical);
+      presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
+                                                      VerticalScollDirection);
 
   
   
