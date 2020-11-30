@@ -9,54 +9,13 @@
 
 
 
-const { Cc, Ci } = require("chrome");
-
-const FRAME_SCRIPT_UTILS_URL =
-  "chrome://mochitests/content/browser/devtools/client/shared/test/frame-script-utils.js";
-
-let gMM = null;
+let gSelectedBrowser = null;
 
 
 
 
-exports.pmmLoadFrameScripts = gBrowser => {
-  gMM = gBrowser.selectedBrowser.messageManager;
-  gMM.loadFrameScript(FRAME_SCRIPT_UTILS_URL, false);
-};
-
-
-
-
-exports.pmmClearFrameScripts = () => {
-  gMM = null;
-};
-
-
-
-
-
-
-exports.pmmUniqueMessage = function(message, payload) {
-  if (!gMM) {
-    throw new Error(
-      "`pmmLoadFrameScripts()` must be called when using MessageManager."
-    );
-  }
-
-  const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(
-    Ci.nsIUUIDGenerator
-  );
-  payload.id = generateUUID().toString();
-
-  return new Promise(resolve => {
-    gMM.addMessageListener(message + ":response", function onHandler({ data }) {
-      if (payload.id == data.id) {
-        gMM.removeMessageListener(message + ":response", onHandler);
-        resolve(data.data);
-      }
-    });
-    gMM.sendAsyncMessage(message, payload);
-  });
+exports.pmmInitWithBrowser = gBrowser => {
+  gSelectedBrowser = gBrowser.selectedBrowser;
 };
 
 
@@ -96,15 +55,15 @@ exports.pmmStopProfiler = async function() {
 
 
 exports.pmmSendProfilerCommand = (method, args = []) => {
-  return exports.pmmUniqueMessage("devtools:test:profiler", { method, args });
-};
-
-
-
-
-
-exports.pmmEvalInDebuggee = script => {
-  return exports.pmmUniqueMessage("devtools:test:eval", { script });
+  
+  
+  return gSelectedBrowser.ownerGlobal.SpecialPowers.spawn(
+    gSelectedBrowser,
+    [method, args],
+    (methodChild, argsChild) => {
+      return Services.profiler[methodChild](...argsChild);
+    }
+  );
 };
 
 
@@ -113,12 +72,11 @@ exports.pmmEvalInDebuggee = script => {
 exports.pmmConsoleMethod = function(method, ...args) {
   
   
-  
-  
-  
-  
-  if (args[0] == null) {
-    args[0] = "";
-  }
-  return exports.pmmUniqueMessage("devtools:test:console", { method, args });
+  return gSelectedBrowser.ownerGlobal.SpecialPowers.spawn(
+    gSelectedBrowser,
+    [method, args],
+    (methodChild, argsChild) => {
+      content.console[methodChild].apply(content.console, argsChild);
+    }
+  );
 };

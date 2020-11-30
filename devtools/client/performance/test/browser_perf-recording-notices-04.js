@@ -12,9 +12,8 @@ const {
   PROFILER_BUFFER_SIZE_PREF,
 } = require("devtools/client/performance/test/helpers/prefs");
 const {
-  pmmLoadFrameScripts,
+  pmmInitWithBrowser,
   pmmStopProfiler,
-  pmmClearFrameScripts,
 } = require("devtools/client/performance/test/helpers/profiler-mm-utils");
 const {
   initPerformanceInNewTab,
@@ -33,7 +32,7 @@ const {
 
 add_task(async function() {
   
-  pmmLoadFrameScripts(gBrowser);
+  pmmInitWithBrowser(gBrowser);
   await pmmStopProfiler();
 
   
@@ -88,6 +87,4 @@ add_task(async function() {
   await stopRecording(panel);
 
   await teardownToolboxAndRemoveTab(panel);
-
-  pmmClearFrameScripts();
 });

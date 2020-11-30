@@ -39,9 +39,6 @@ async function addTestTab(url) {
   const tab = await addTab(url);
 
   
-  loadFrameScriptUtils();
-
-  
   const panel = await initDOMPanel(tab);
 
   

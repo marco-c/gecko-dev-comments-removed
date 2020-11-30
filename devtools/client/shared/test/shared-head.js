@@ -259,18 +259,6 @@ registerCleanupFunction(() => {
   Services.obs.removeObserver(ConsoleObserver, "console-api-log-event");
 });
 
-function loadFrameScriptUtils(browser = gBrowser.selectedBrowser) {
-  let mm = browser.messageManager;
-  const frameURL =
-    "chrome://mochitests/content/browser/devtools/client/shared/test/frame-script-utils.js";
-  info("Loading the helper frame script " + frameURL);
-  mm.loadFrameScript(frameURL, false);
-  SimpleTest.registerCleanupFunction(() => {
-    mm = null;
-  });
-  return mm;
-}
-
 Services.prefs.setBoolPref("devtools.inspector.three-pane-enabled", true);
 
 
@@ -933,30 +921,6 @@ async function asyncWaitUntil(predicate, interval = 10) {
     
     success = await predicate();
   }
-}
-
-
-
-
-
-let MM_INC_ID = 0;
-function evalInDebuggee(script, browser = gBrowser.selectedBrowser) {
-  return new Promise(resolve => {
-    const id = MM_INC_ID++;
-    const mm = browser.messageManager;
-    mm.sendAsyncMessage("devtools:test:eval", { script, id });
-    mm.addMessageListener("devtools:test:eval:response", handler);
-
-    function handler({ data }) {
-      if (id !== data.id) {
-        return;
-      }
-
-      info(`Successfully evaled in debuggee: ${script}`);
-      mm.removeMessageListener("devtools:test:eval:response", handler);
-      resolve(data.value);
-    }
-  });
 }
 
 
