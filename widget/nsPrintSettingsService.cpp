@@ -339,18 +339,10 @@ nsresult nsPrintSettingsService::ReadPrefs(nsIPrintSettings* aPS,
     if (gotPaperSizeFromPrefs) {
       
       
-      constexpr double minInMM = 10.0;
-      constexpr double maxInMM = 4500.0;
-      constexpr double minInIn = minInMM / 25.4;
-      constexpr double maxInIn = 100.0;  
-
-      if ((paperSizeUnit == nsIPrintSettings::kPaperSizeMillimeters &&
-           (paperWidth < minInMM || paperWidth > maxInMM ||
-            paperHeight < minInMM || paperHeight > maxInMM)) ||
-          (paperWidth < minInIn || paperWidth > maxInIn ||
-           paperHeight < minInIn || paperHeight > maxInIn)) {
-        gotPaperSizeFromPrefs = false;
-      }
+      
+      gotPaperSizeFromPrefs =
+          (paperSizeUnit != nsIPrintSettings::kPaperSizeInches) ||
+          (paperWidth < 100.0) || (paperHeight < 100.0);
     }
 
     if (gotPaperSizeFromPrefs) {
