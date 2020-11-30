@@ -22,11 +22,6 @@ loader.lazyRequireGetter(
 
 
 
-
-
-
-
-
 const highlighterTypes = new Map();
 
 
@@ -35,8 +30,6 @@ const highlighterTypes = new Map();
 
 const isTypeRegistered = typeName => highlighterTypes.has(typeName);
 exports.isTypeRegistered = isTypeRegistered;
-
-
 
 
 
@@ -55,12 +48,11 @@ exports.register = register;
 
 
 
+
 exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
   customHighlighterSpec,
   {
     
-
-
 
 
     initialize: function(parent, typeName) {
@@ -120,8 +112,6 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
     },
 
     
-
-
 
 
 
