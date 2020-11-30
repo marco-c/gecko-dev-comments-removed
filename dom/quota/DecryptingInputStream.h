@@ -7,14 +7,34 @@
 #ifndef mozilla_dom_quota_DecryptingInputStream_h
 #define mozilla_dom_quota_DecryptingInputStream_h
 
-#include "mozilla/InitializedOnce.h"
-#include "nsCOMPtr.h"
-#include "nsICloneableInputStream.h"
-#include "nsIInputStream.h"
-#include "nsIIPCSerializableInputStream.h"
-#include "nsISeekableStream.h"
 
 #include "EncryptedBlock.h"
+
+
+#include <cstddef>
+#include <cstdint>
+#include "ErrorList.h"
+#include "mozilla/InitializedOnce.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/NotNull.h"
+#include "mozilla/ipc/InputStreamParams.h"
+#include "nsCOMPtr.h"
+#include "nsICloneableInputStream.h"
+#include "nsIIPCSerializableInputStream.h"
+#include "nsIInputStream.h"
+#include "nsISeekableStream.h"
+#include "nsISupports.h"
+#include "nsITellableStream.h"
+#include "nsTArray.h"
+#include "nscore.h"
+
+namespace mozilla::ipc {
+class ChildToParentStreamActorManager;
+class ParentToChildStreamActorManager;
+}  
+
+template <class T>
+class nsCOMPtr;
 
 namespace mozilla::dom::quota {
 

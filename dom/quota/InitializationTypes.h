@@ -7,8 +7,18 @@
 #ifndef mozilla_dom_quota_InitializationTypes_h
 #define mozilla_dom_quota_InitializationTypes_h
 
-#include "mozilla/Telemetry.h"
+#include <cstdint>
+#include "ErrorList.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/TypedEnumBits.h"
+#include "nsError.h"
+#include "nsLiteralString.h"
+#include "nsStringFwd.h"
+
+
+
+#include "mozilla/Telemetry.h"
+#include "mozilla/TelemetryHistogramEnums.h"
 
 namespace mozilla {
 namespace dom {

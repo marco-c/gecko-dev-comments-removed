@@ -7,13 +7,20 @@
 
 #include "nsIndexedDBProtocolHandler.h"
 
+#include <cstdint>
+#include "ErrorList.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/MacroForEach.h"
+#include "nsIWeakReference.h"
 #include "nsStandardURL.h"
+#include "nsStringFwd.h"
+#include "nscore.h"
 
 using namespace mozilla::net;
 
-nsIndexedDBProtocolHandler::nsIndexedDBProtocolHandler() {}
+nsIndexedDBProtocolHandler::nsIndexedDBProtocolHandler() = default;
 
-nsIndexedDBProtocolHandler::~nsIndexedDBProtocolHandler() {}
+nsIndexedDBProtocolHandler::~nsIndexedDBProtocolHandler() = default;
 
 NS_IMPL_ISUPPORTS(nsIndexedDBProtocolHandler, nsIProtocolHandler,
                   nsISupportsWeakReference)

@@ -7,13 +7,29 @@
 #ifndef mozilla_dom_quota_filestreams_h__
 #define mozilla_dom_quota_filestreams_h__
 
-#include "QuotaCommon.h"
 
+#include "Client.h"
+
+
+#include <cstdint>
+#include "ErrorList.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/dom/quota/PersistenceType.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/dom/quota/QuotaInfo.h"
+#include "mozilla/dom/quota/QuotaObject.h"
 #include "nsFileStreams.h"
+#include "nsISupports.h"
+#include "nsStringFwd.h"
+#include "nscore.h"
 
-#include "PersistenceType.h"
-#include "QuotaInfo.h"
-#include "QuotaObject.h"
+class nsIFile;
+
+namespace mozilla {
+class Runnable;
+}
 
 BEGIN_QUOTA_NAMESPACE
 
@@ -120,4 +136,4 @@ already_AddRefed<FileStream> CreateFileStream(
 
 END_QUOTA_NAMESPACE
 
-#endif
+#endif 

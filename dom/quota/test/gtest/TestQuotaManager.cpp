@@ -1,13 +1,27 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
+#include "mozilla/dom/quota/OriginScope.h"
 
 #include "gtest/gtest.h"
-#include "mozilla/dom/quota/OriginScope.h"
+
+#include <cstdint>
+#include <memory>
+#include "ErrorList.h"
+#include "mozilla/Result.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/fallible.h"
+#include "nsCOMPtr.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsIFile.h"
+#include "nsLiteralString.h"
+#include "nsString.h"
+#include "nsStringFwd.h"
+#include "nsTLiteralString.h"
 
 using namespace mozilla;
 using namespace mozilla::dom::quota;
@@ -67,13 +81,13 @@ void CheckUnknownFileEntry(nsIFile& aBase, const nsAString& aName,
   ASSERT_EQ(rv, NS_OK);
 }
 
-}  // namespace
+}  
 
 TEST(QuotaManager, OriginScope)
 {
   OriginScope originScope;
 
-  // Sanity checks.
+  
 
   {
     constexpr auto origin = "http://www.mozilla.org"_ns;
@@ -95,7 +109,7 @@ TEST(QuotaManager, OriginScope)
     EXPECT_TRUE(originScope.IsNull());
   }
 
-  // Test each origin scope type against particular origins.
+  
 
   {
     originScope.SetFromOrigin("http://www.mozilla.org"_ns);
