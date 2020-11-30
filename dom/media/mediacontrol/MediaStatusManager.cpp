@@ -455,5 +455,21 @@ bool MediaStatusManager::IsAnyMediaBeingControlled() const {
   return mPlaybackStatusDelegate.IsAnyMediaBeingControlled();
 }
 
+void MediaStatusManager::NotifyPageTitleChanged() {
+  
+  
+  if (mActiveMediaSessionContextId &&
+      mMediaSessionInfoMap.GetValue(*mActiveMediaSessionContextId)->mMetadata) {
+    return;
+  }
+  
+  
+  if (IsInPrivateBrowsing()) {
+    return;
+  }
+  LOG("page title changed, update default metadata");
+  mMetadataChangedEvent.Notify(GetCurrentMediaMetadata());
+}
+
 }  
 }  

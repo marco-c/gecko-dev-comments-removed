@@ -192,6 +192,10 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   MediaSessionPlaybackState PlaybackState() const;
 
+  
+  
+  void NotifyPageTitleChanged();
+
  protected:
   ~MediaStatusManager() = default;
   virtual void HandleActualPlaybackStateChanged() = 0;

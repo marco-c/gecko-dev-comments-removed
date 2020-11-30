@@ -196,6 +196,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   MediaController* GetMediaController();
+  bool HasCreatedMediaController() const;
 
   
   
