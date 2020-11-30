@@ -77,8 +77,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void AddKeepAlive();
   void RemoveKeepAlive();
 
-  bool GetToplevelsSuspended() { return mToplevelsSuspended; }
-  void SetToplevelsSuspended(bool aSuspended);
+  
+  
+  void UpdateToplevelsSuspendedIfNeeded();
 
   
   
@@ -157,6 +158,8 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void MaybeDestroy();
   void Destroy();
 
+  bool ShouldSuspendAllTopLevelContexts() const;
+
   uint64_t mId;
 
   uint32_t mKeepAliveCount = 0;
@@ -179,7 +182,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   nsTArray<RefPtr<BrowsingContext>> mToplevels;
 
   
-  bool mToplevelsSuspended;
+  bool mToplevelsSuspended = false;
 
   
   

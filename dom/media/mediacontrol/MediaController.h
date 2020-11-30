@@ -145,6 +145,11 @@ class MediaController final : public DOMEventTargetHelper,
 
   bool IsBeingUsedInPIPModeOrFullscreen() const;
 
+  
+  
+  void Select() const;
+  void Unselect() const;
+
  private:
   ~MediaController();
   void HandleActualPlaybackStateChanged() override;
