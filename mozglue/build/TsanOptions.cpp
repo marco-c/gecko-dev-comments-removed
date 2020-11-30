@@ -359,6 +359,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:CamerasParent::ActorDestroy\n"
          "race:CamerasParent::DispatchToVideoCaptureThread\n"
 
+         
+         "race:ScriptPreloader::Trace\n"
+         "race:ScriptPreloader::WriteCache\n"
+
       
       ;  
 }
