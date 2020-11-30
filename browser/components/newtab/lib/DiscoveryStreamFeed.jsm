@@ -962,6 +962,36 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  sortItem(a, b) {
+    
+    
+    
+    if (a.priority === b.priority) {
+      return b.score - a.score;
+    } else if (!a.priority || a.priority <= 0) {
+      
+      
+      return 1;
+    } else if (!b.priority || b.priority <= 0) {
+      
+      return -1;
+    }
+    
+    return a.priority - b.priority;
+  }
+
   async scoreItems(items, type) {
     const filtered = [];
     const scoreStart = Cu.now();
@@ -988,7 +1018,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         return false;
       })
       
-      .sort((a, b) => b.score - a.score);
+      .sort(this.sortItem);
 
     if (this.personalized && personalizedByType) {
       this.providerSwitcher.dispatchRelevanceScoreDuration(scoreStart);
