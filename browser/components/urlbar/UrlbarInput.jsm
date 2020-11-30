@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   ReaderMode: "resource://gre/modules/ReaderMode.jsm",
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
@@ -557,7 +558,7 @@ class UrlbarInput {
       isValidUrl = true;
     } catch (ex) {}
     if (isValidUrl) {
-      this._loadURL(url, where, openParams);
+      this._loadURL(url, event, where, openParams);
       return;
     }
 
@@ -613,7 +614,7 @@ class UrlbarInput {
             browser.lastLocationChange == lastLocationChange
           ) {
             openParams.postData = postData;
-            this._loadURL(uri.spec, where, openParams, null, browser);
+            this._loadURL(uri.spec, event, where, openParams, null, browser);
           }
         }
       });
@@ -696,7 +697,7 @@ class UrlbarInput {
         selType: "canonized",
         provider: result.providerName,
       });
-      this._loadURL(this.value, where, openParams, browser);
+      this._loadURL(this.value, event, where, openParams, browser);
       return;
     }
 
@@ -950,6 +951,7 @@ class UrlbarInput {
 
     this._loadURL(
       url,
+      event,
       where,
       openParams,
       {
@@ -2285,8 +2287,11 @@ class UrlbarInput {
 
 
 
+
+
   _loadURL(
     url,
+    event,
     openUILinkWhere,
     params,
     resultDetails = null,
@@ -2345,10 +2350,19 @@ class UrlbarInput {
       params.initiatingDoc = this.window.document;
     }
 
+    if (event?.keyCode === KeyEvent.DOM_VK_RETURN) {
+      if (openUILinkWhere === "current") {
+        params.avoidBrowserFocus = true;
+        this._keyDownEnterDeferred?.resolve(browser);
+      }
+    }
+
     
     
     
-    browser.focus();
+    if (!params.avoidBrowserFocus) {
+      browser.focus();
+    }
 
     if (openUILinkWhere != "current") {
       this.handleRevert();
@@ -2704,6 +2718,13 @@ class UrlbarInput {
       this.window.UpdatePopupNotificationsVisibility();
     }
 
+    
+    
+    if (this._keyDownEnterDeferred) {
+      this._keyDownEnterDeferred.resolve();
+      this._keyDownEnterDeferred = null;
+    }
+
     Services.obs.notifyObservers(null, "urlbar-blur");
   }
 
@@ -3030,6 +3051,13 @@ class UrlbarInput {
   }
 
   _on_keydown(event) {
+    if (event.keyCode === KeyEvent.DOM_VK_RETURN) {
+      if (this._keyDownEnterDeferred) {
+        this._keyDownEnterDeferred.reject();
+      }
+      this._keyDownEnterDeferred = PromiseUtils.defer();
+    }
+
     
     
     
@@ -3046,7 +3074,25 @@ class UrlbarInput {
     });
   }
 
-  _on_keyup(event) {
+  async _on_keyup(event) {
+    if (
+      event.keyCode === KeyEvent.DOM_VK_RETURN &&
+      this._keyDownEnterDeferred
+    ) {
+      try {
+        const loadingBrowser = await this._keyDownEnterDeferred.promise;
+        
+        if (this.window.gBrowser.selectedBrowser === loadingBrowser) {
+          loadingBrowser.focus();
+        }
+      } catch (ex) {
+        
+        
+      }
+      this._keyDownEnterDeferred = null;
+      return;
+    }
+
     this._toggleActionOverride(event);
   }
 

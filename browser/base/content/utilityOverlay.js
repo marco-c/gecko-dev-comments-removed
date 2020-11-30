@@ -698,7 +698,11 @@ function openLinkIn(url, where, params) {
       break;
   }
 
-  if (!focusUrlBar && targetBrowser == w.gBrowser.selectedBrowser) {
+  if (
+    !params.avoidBrowserFocus &&
+    !focusUrlBar &&
+    targetBrowser == w.gBrowser.selectedBrowser
+  ) {
     
     targetBrowser.focus();
   }
