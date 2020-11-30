@@ -268,6 +268,10 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   JSAtom* toJSAtom(JSContext* cx, CompilationAtomCache& atomCache) const;
 
   
+  JSAtom* toExistingJSAtom(JSContext* cx,
+                           CompilationAtomCache& atomCache) const;
+
+  
   JSAtom* instantiate(JSContext* cx, CompilationAtomCache& atomCache) const;
 
   
