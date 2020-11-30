@@ -148,6 +148,37 @@ struct ScopeNote {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct SourceExtent {
   SourceExtent() = default;
 
