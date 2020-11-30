@@ -13,22 +13,14 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::extensions;
 
-static WebRequestService* sWeakWebRequestService;
-
-WebRequestService::~WebRequestService() { sWeakWebRequestService = nullptr; }
+static StaticRefPtr<WebRequestService> sWebRequestService;
 
  WebRequestService& WebRequestService::GetSingleton() {
-  static RefPtr<WebRequestService> instance;
-  if (!sWeakWebRequestService) {
-    instance = new WebRequestService();
-    ClearOnShutdown(&instance);
-
-    
-    
-    
-    sWeakWebRequestService = instance;
+  if (!sWebRequestService) {
+    sWebRequestService = new WebRequestService();
+    ClearOnShutdown(&sWebRequestService);
   }
-  return *sWeakWebRequestService;
+  return *sWebRequestService;
 }
 
 UniquePtr<WebRequestChannelEntry> WebRequestService::RegisterChannel(
@@ -56,7 +48,7 @@ WebRequestChannelEntry::WebRequestChannelEntry(ChannelWrapper* aChannel)
     : mChannelId(aChannel->Id()), mChannel(aChannel) {}
 
 WebRequestChannelEntry::~WebRequestChannelEntry() {
-  if (sWeakWebRequestService) {
-    sWeakWebRequestService->mChannelEntries.Remove(mChannelId);
+  if (sWebRequestService) {
+    sWebRequestService->mChannelEntries.Remove(mChannelId);
   }
 }
