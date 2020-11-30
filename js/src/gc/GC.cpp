@@ -4339,21 +4339,6 @@ IncrementalProgress GCRuntime::markWeakReferences(
 
   
   if (!marker.isWeakMarking() && marker.enterWeakMarkingMode()) {
-    
-    
-    
-    
-    
-    if (!marker.incrementalWeakMapMarkingEnabled) {
-      for (ZoneIterT zone(this); !zone.done(); zone.next()) {
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        MOZ_ASSERT(zone->gcWeakKeys().count() == 0);
-        if (!zone->gcWeakKeys().clear()) {
-          oomUnsafe.crash("clearing weak keys when entering weak marking mode");
-        }
-      }
-    }
-
     for (ZoneIterT zone(this); !zone.done(); zone.next()) {
       if (zone->enterWeakMarkingMode(&marker, budget) == NotFinished) {
         MOZ_ASSERT(marker.incrementalWeakMapMarkingEnabled);
@@ -6465,7 +6450,6 @@ void GCRuntime::updateAllGCStartThresholds(const AutoLockGC& lock) {
     zone->updateGCStartThresholds(*this, GC_NORMAL, lock);
   }
 }
-
 
 static const char* GCHeapStateToLabel(JS::HeapState heapState) {
   switch (heapState) {
