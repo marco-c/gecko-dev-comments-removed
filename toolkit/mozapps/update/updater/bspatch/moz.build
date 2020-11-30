@@ -4,19 +4,19 @@
 
 
 
-if CONFIG['OS_ARCH'] == 'WINNT':
+if CONFIG["OS_ARCH"] == "WINNT":
     USE_STATIC_LIBS = True
 
 EXPORTS += [
-    'bspatch.h',
+    "bspatch.h",
 ]
 
 SOURCES += [
-    'bspatch.cpp',
+    "bspatch.cpp",
 ]
 
 USE_LIBS += [
-    'updatecommon',
+    "updatecommon",
 ]
 
-Library('bspatch')
+Library("bspatch")

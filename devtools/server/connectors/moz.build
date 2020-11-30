@@ -5,11 +5,11 @@
 
 
 DIRS += [
-    'js-window-actor',
+    "js-window-actor",
 ]
 
 DevToolsModules(
-    'content-process-connector.js',
-    'frame-connector.js',
-    'worker-connector.js',
+    "content-process-connector.js",
+    "frame-connector.js",
+    "worker-connector.js",
 )

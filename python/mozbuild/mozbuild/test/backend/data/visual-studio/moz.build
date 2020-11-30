@@ -2,6 +2,6 @@
 
 
 
-DIRS += ['dir1']
+DIRS += ["dir1"]
 
-Library('test')
+Library("test")

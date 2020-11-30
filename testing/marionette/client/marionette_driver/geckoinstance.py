@@ -34,7 +34,6 @@ class GeckoInstance(object):
     required_prefs = {
         
         "app.normandy.api_url": "",
-
         
         
         
@@ -42,31 +41,24 @@ class GeckoInstance(object):
         
         
         "apz.content_response_timeout": 60000,
-
         
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
         "datareporting.healthreport.logging.consoleEnabled": False,
         "datareporting.healthreport.service.enabled": False,
         "datareporting.healthreport.service.firstRun": False,
         "datareporting.healthreport.uploadEnabled": False,
-
         
         "datareporting.policy.dataSubmissionEnabled": False,
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
-
         
         "dom.disable_beforeunload": True,
-
         
         "dom.ipc.reportProcessHangs": False,
-
         
         "dom.max_chrome_script_run_time": 0,
         "dom.max_script_run_time": 0,
-
         
         "dom.push.connection.enabled": False,
-
         
         
         "extensions.autoDisableScopes": 0,
@@ -75,75 +67,70 @@ class GeckoInstance(object):
         "extensions.getAddons.cache.enabled": False,
         
         "extensions.installDistroAddons": False,
-
         
         "extensions.update.enabled": False,
         "extensions.update.notifyUser": False,
         
         "extensions.getAddons.discovery.api_url": "data:, ",
-
         
         "focusmanager.testmode": True,
-
         
         "general.useragent.updates.enabled": False,
-
         
         
         "geo.provider.testing": True,
         
         "geo.wifi.scan": False,
-
         
         
         "idle.lastDailyNotification": -1,
-
         "javascript.options.showInConsole": True,
-
         
         "marionette.defaultPrefs.enabled": True,
-
         
         "marionette.prefs.recommended": False,
-
         
         "media.gmp-manager.updateEnabled": False,
-
         "media.volume_scale": "0.01",
-
         
         "network.http.prompt-temp-redirect": False,
         
         "network.manage-offline-status": False,
         
         "network.sntp.pools": "%(server)s",
-
         
         "privacy.trackingprotection.enabled": False,
-
         
         "security.certerrors.mitm.priming.enabled": False,
-
         
         "security.notification_enable_delay": 0,
-
         
         "services.settings.server": "http://%(server)s/dummy/blocklist/",
-
         
         
         "signon.rememberSignons": False,
-
         
         "toolkit.startup.max_resumed_crashes": -1,
-
         
         "dom.file.createInChild": True,
     }
 
-    def __init__(self, host=None, port=None, bin=None, profile=None, addons=None,
-                 app_args=None, symbols_path=None, gecko_log=None, prefs=None,
-                 workspace=None, verbose=0, headless=False, enable_webrender=False):
+    def __init__(
+        self,
+        host=None,
+        port=None,
+        bin=None,
+        profile=None,
+        addons=None,
+        app_args=None,
+        symbols_path=None,
+        gecko_log=None,
+        prefs=None,
+        workspace=None,
+        verbose=0,
+        headless=False,
+        enable_webrender=False,
+    ):
         self.runner_class = Runner
         self.app_args = app_args or []
         self.runner = None
@@ -210,8 +197,10 @@ class GeckoInstance(object):
         :param name: Profile name to be used in the path.
         """
         if self.runner and self.runner.is_running():
-            raise errors.MarionetteException("The current profile can only be updated "
-                                             "when the instance is not running")
+            raise errors.MarionetteException(
+                "The current profile can only be updated "
+                "when the instance is not running"
+            )
 
         if isinstance(profile, Profile):
             
@@ -226,8 +215,11 @@ class GeckoInstance(object):
             if isinstance(profile_path, six.string_types):
                 profile_args["path_from"] = profile_path
                 profile_args["path_to"] = tempfile.mkdtemp(
-                    suffix=u".{}".format(profile_name or os.path.basename(profile_path)),
-                    dir=self.workspace)
+                    suffix=u".{}".format(
+                        profile_name or os.path.basename(profile_path)
+                    ),
+                    dir=self.workspace,
+                )
                 
                 os.rmdir(profile_args["path_to"])
 
@@ -237,7 +229,8 @@ class GeckoInstance(object):
             else:
                 profile_args["profile"] = tempfile.mkdtemp(
                     suffix=u".{}".format(profile_name or "mozrunner"),
-                    dir=self.workspace)
+                    dir=self.workspace,
+                )
                 profile = Profile(**profile_args)
                 profile.create_new = True
 
@@ -279,13 +272,15 @@ class GeckoInstance(object):
             args["preferences"]["marionette.logging"] = level
 
         if "-jsdebugger" in self.app_args:
-            args["preferences"].update({
-                "devtools.browsertoolbox.panel": "jsdebugger",
-                "devtools.debugger.remote-enabled": True,
-                "devtools.chrome.enabled": True,
-                "devtools.debugger.prompt-connection": False,
-                "marionette.debugging.clicktostart": True,
-            })
+            args["preferences"].update(
+                {
+                    "devtools.browsertoolbox.panel": "jsdebugger",
+                    "devtools.debugger.remote-enabled": True,
+                    "devtools.chrome.enabled": True,
+                    "devtools.debugger.prompt-connection": False,
+                    "marionette.debugging.clicktostart": True,
+                }
+            )
 
         if self.addons:
             args["addons"] = self.addons
@@ -302,7 +297,9 @@ class GeckoInstance(object):
             instance_class = apps[app]
         except (IOError, KeyError):
             exc, val, tb = sys.exc_info()
-            msg = 'Application "{0}" unknown (should be one of {1})'.format(app, list(apps.keys()))
+            msg = 'Application "{0}" unknown (should be one of {1})'.format(
+                app, list(apps.keys())
+            )
             reraise(NotImplementedError, NotImplementedError(msg), tb)
 
         return instance_class(*args, **kwargs)
@@ -320,9 +317,9 @@ class GeckoInstance(object):
 
         if self.gecko_log == "-":
             if six.PY2:
-                process_args["stream"] = codecs.getwriter('utf-8')(sys.stdout)
+                process_args["stream"] = codecs.getwriter("utf-8")(sys.stdout)
             else:
-                process_args["stream"] = codecs.getwriter('utf-8')(sys.stdout.buffer)
+                process_args["stream"] = codecs.getwriter("utf-8")(sys.stdout.buffer)
         else:
             process_args["logfile"] = self.gecko_log
 
@@ -340,10 +337,13 @@ class GeckoInstance(object):
 
         
         
-        env.update({"MOZ_CRASHREPORTER": "1",
-                    "MOZ_CRASHREPORTER_NO_REPORT": "1",
-                    "MOZ_CRASHREPORTER_SHUTDOWN": "1",
-                    })
+        env.update(
+            {
+                "MOZ_CRASHREPORTER": "1",
+                "MOZ_CRASHREPORTER_NO_REPORT": "1",
+                "MOZ_CRASHREPORTER_SHUTDOWN": "1",
+            }
+        )
 
         return {
             "binary": self.binary,
@@ -351,7 +351,7 @@ class GeckoInstance(object):
             "cmdargs": ["-no-remote", "-marionette"] + self.app_args,
             "env": env,
             "symbols_path": self.symbols_path,
-            "process_args": process_args
+            "process_args": process_args,
         }
 
     def close(self, clean=False):
@@ -394,28 +394,34 @@ class FennecInstance(GeckoInstance):
         
         "browser.dom.window.dump.enabled": True,
         "devtools.console.stdout.chrome": True,
-
         
         "browser.safebrowsing.blockedURIs.enabled": False,
         "browser.safebrowsing.downloads.enabled": False,
         "browser.safebrowsing.passwords.enabled": False,
         "browser.safebrowsing.malware.enabled": False,
         "browser.safebrowsing.phishing.enabled": False,
-
         
         "browser.sessionstore.resume_from_crash": False,
-
         
         "browser.tabs.remote.autostart": False,
-
         
         
         "browser.tabs.disableBackgroundZombification": True,
     }
 
-    def __init__(self, emulator_binary=None, avd_home=None, avd=None,
-                 adb_path=None, serial=None, connect_to_running_emulator=False,
-                 package_name=None, env=None, *args, **kwargs):
+    def __init__(
+        self,
+        emulator_binary=None,
+        avd_home=None,
+        avd=None,
+        adb_path=None,
+        serial=None,
+        connect_to_running_emulator=False,
+        package_name=None,
+        env=None,
+        *args,
+        **kwargs
+    ):
         required_prefs = deepcopy(FennecInstance.fennec_prefs)
         required_prefs.update(kwargs.get("prefs", {}))
 
@@ -456,13 +462,17 @@ class FennecInstance(GeckoInstance):
             self.runner.start()
         except Exception:
             exc_cls, exc, tb = sys.exc_info()
-            reraise(exc_cls, exc_cls(
-                "Error possibly due to runner or device args: {}".format(exc)), tb)
+            reraise(
+                exc_cls,
+                exc_cls("Error possibly due to runner or device args: {}".format(exc)),
+                tb,
+            )
 
         
         self.runner.device.device.forward(
             local="tcp:{}".format(self.marionette_port),
-            remote="tcp:{}".format(self.marionette_port))
+            remote="tcp:{}".format(self.marionette_port),
+        )
 
     def _get_runner_args(self):
         process_args = {
@@ -507,7 +517,8 @@ class FennecInstance(GeckoInstance):
         if clean and self.runner and self.runner.device.connected:
             try:
                 self.runner.device.device.remove_forwards(
-                    "tcp:{}".format(self.marionette_port))
+                    "tcp:{}".format(self.marionette_port)
+                )
                 self.unresponsive_count = 0
             except Exception:
                 self.unresponsive_count += 1
@@ -518,7 +529,6 @@ class DesktopInstance(GeckoInstance):
     desktop_prefs = {
         
         "app.update.checkInstallTime": False,
-
         
         
         
@@ -527,78 +537,59 @@ class DesktopInstance(GeckoInstance):
         
         
         "app.update.auto": False,
-
         
         
         
         "browser.contentblocking.introCount": 99,
-
         
         "browser.dom.window.dump.enabled": True,
         "devtools.console.stdout.chrome": True,
-
         
         
         "browser.download.panel.shown": True,
-
         
         "browser.EULA.override": True,
-
         
         "browser.newtabpage.enabled": False,
-
         
         
         "browser.pagethumbnails.capturing_disabled": True,
-
         
         "browser.safebrowsing.blockedURIs.enabled": False,
         "browser.safebrowsing.downloads.enabled": False,
         "browser.safebrowsing.passwords.enabled": False,
         "browser.safebrowsing.malware.enabled": False,
         "browser.safebrowsing.phishing.enabled": False,
-
         
         "browser.search.update": False,
-
         
         "browser.sessionstore.resume_from_crash": False,
-
         
         "browser.shell.checkDefaultBrowser": False,
-
         
         "browser.startup.homepage_override.mstone": "ignore",
         
         "browser.startup.page": 0,
-
         
         "browser.tabs.remote.separatePrivilegedContentProcess": False,
-
         
         "browser.tabs.unloadOnLowMemory": False,
-
         
         "browser.tabs.warnOnClose": False,
         
         "browser.tabs.warnOnCloseOtherTabs": False,
         
         "browser.tabs.warnOnOpen": False,
-
         
         
         "browser.toolbars.bookmarks.visibility": "never",
-
         
         "browser.uitour.enabled": False,
-
         
         
         "browser.urlbar.suggest.searches": False,
-
         
         "browser.warnOnQuit": False,
-
         
         "startup.homepage_welcome_url": "about:blank",
         "startup.homepage_welcome_url.additional": "",
@@ -633,13 +624,13 @@ class NullOutput(object):
 
 
 apps = {
-    'fennec': FennecInstance,
-    'fxdesktop': DesktopInstance,
-    'thunderbird': ThunderbirdInstance,
+    "fennec": FennecInstance,
+    "fxdesktop": DesktopInstance,
+    "thunderbird": ThunderbirdInstance,
 }
 
 app_ids = {
-    '{aa3c5121-dab2-40e2-81ca-7ea25febc110}': 'fennec',
-    '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}': 'fxdesktop',
-    '{3550f703-e582-4d05-9a08-453d09bdfdc6}': 'thunderbird',
+    "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "fennec",
+    "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}": "fxdesktop",
+    "{3550f703-e582-4d05-9a08-453d09bdfdc6}": "thunderbird",
 }

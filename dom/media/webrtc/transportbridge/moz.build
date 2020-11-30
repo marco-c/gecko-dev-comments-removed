@@ -3,27 +3,27 @@
 
 
 
-include('/dom/media/webrtc/third_party_build/webrtc.mozbuild')
+include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
 
 LOCAL_INCLUDES += [
-    '!/ipc/ipdl/_ipdlheaders',
-    '/dom/media',
-    '/dom/media/webrtc',
-    '/ipc/chromium/src',
-    '/media/libyuv/libyuv/include',
-    '/media/webrtc',
-    '/netwerk/srtp/src/crypto/include',
-    '/netwerk/srtp/src/include',
-    '/third_party/libwebrtc',
-    '/third_party/libwebrtc/webrtc',
+    "!/ipc/ipdl/_ipdlheaders",
+    "/dom/media",
+    "/dom/media/webrtc",
+    "/ipc/chromium/src",
+    "/media/libyuv/libyuv/include",
+    "/media/webrtc",
+    "/netwerk/srtp/src/crypto/include",
+    "/netwerk/srtp/src/include",
+    "/third_party/libwebrtc",
+    "/third_party/libwebrtc/webrtc",
 ]
 
 UNIFIED_SOURCES += [
-    'MediaPipeline.cpp',
-    'MediaPipelineFilter.cpp',
-    'RtpLogger.cpp',
+    "MediaPipeline.cpp",
+    "MediaPipelineFilter.cpp",
+    "RtpLogger.cpp",
 ]
 
-DEFINES['TRACING'] = True
+DEFINES["TRACING"] = True
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

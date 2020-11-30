@@ -5,7 +5,7 @@
 
 
 TEST_DIRS += [
-    'browser',
-    'mixedcontent',
-    'stricttransportsecurity',
+    "browser",
+    "mixedcontent",
+    "stricttransportsecurity",
 ]

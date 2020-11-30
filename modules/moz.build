@@ -4,8 +4,8 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Core', 'General')
+with Files("**"):
+    BUG_COMPONENT = ("Core", "General")
 
-with Files('freetype2/**'):
-    BUG_COMPONENT = ('Core', 'Graphics: Text')
+with Files("freetype2/**"):
+    BUG_COMPONENT = ("Core", "Graphics: Text")

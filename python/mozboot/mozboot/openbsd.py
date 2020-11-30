@@ -12,27 +12,27 @@ class OpenBSDBootstrapper(BaseBootstrapper):
         BaseBootstrapper.__init__(self, **kwargs)
 
         self.packages = [
-            'gmake',
-            'gtar',
-            'rust',
-            'wget',
-            'unzip',
-            'zip',
+            "gmake",
+            "gtar",
+            "rust",
+            "wget",
+            "unzip",
+            "zip",
         ]
 
         self.browser_packages = [
-            'llvm',
-            'nasm',
-            'yasm',
-            'gtk+2',
-            'gtk+3',
-            'dbus-glib',
-            'pulseaudio',
+            "llvm",
+            "nasm",
+            "yasm",
+            "gtk+2",
+            "gtk+3",
+            "dbus-glib",
+            "pulseaudio",
         ]
 
     def install_system_packages(self):
         
-        self.run_as_root(['pkg_add', '-z'] + self.packages)
+        self.run_as_root(["pkg_add", "-z"] + self.packages)
 
     def install_browser_packages(self, mozconfig_builder):
         self.ensure_browser_packages()
@@ -43,7 +43,7 @@ class OpenBSDBootstrapper(BaseBootstrapper):
     def ensure_browser_packages(self, artifact_mode=False):
         
         
-        self.run_as_root(['pkg_add', '-z'] + self.browser_packages)
+        self.run_as_root(["pkg_add", "-z"] + self.browser_packages)
 
     def ensure_clang_static_analysis_package(self, state_dir, checkout_root):
         
@@ -51,11 +51,11 @@ class OpenBSDBootstrapper(BaseBootstrapper):
 
     def ensure_stylo_packages(self, state_dir, checkout_root):
         
-        self.run_as_root(['pkg_add', 'cbindgen'])
+        self.run_as_root(["pkg_add", "cbindgen"])
 
     def ensure_nasm_packages(self, state_dir, checkout_root):
         
         pass
 
     def ensure_node_packages(self, state_dir, checkout_root):
-        self.run_as_root(['pkg_add', 'node'])
+        self.run_as_root(["pkg_add", "node"])

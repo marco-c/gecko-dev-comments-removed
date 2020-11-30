@@ -5,15 +5,15 @@
 
 
 DIRS += [
-    'components',
-    'utils',
-    'views',
+    "components",
+    "utils",
+    "views",
 ]
 
 DevToolsModules(
-    'markup-context-menu.js',
-    'markup.js',
-    'utils.js',
+    "markup-context-menu.js",
+    "markup.js",
+    "utils.js",
 )
 
-BROWSER_CHROME_MANIFESTS += ['test/browser.ini']
+BROWSER_CHROME_MANIFESTS += ["test/browser.ini"]

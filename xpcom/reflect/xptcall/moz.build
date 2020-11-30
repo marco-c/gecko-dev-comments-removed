@@ -4,17 +4,17 @@
 
 
 
-DIRS += ['md']
+DIRS += ["md"]
 
 SOURCES += [
-    'xptcall.cpp',
+    "xptcall.cpp",
 ]
 
 EXPORTS += [
-    'nsXPTCUtils.h',
-    'xptcall.h',
-    'xptcstubsdecl.inc',
-    'xptcstubsdef.inc',
+    "nsXPTCUtils.h",
+    "xptcall.h",
+    "xptcstubsdecl.inc",
+    "xptcstubsdef.inc",
 ]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

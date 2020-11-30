@@ -7,9 +7,7 @@ from __future__ import absolute_import, print_function
 import os
 import subprocess
 import platform
-from distutils.version import (
-    StrictVersion,
-)
+from distutils.version import StrictVersion
 
 from mozboot.util import get_state_dir
 from mozfile import which
@@ -20,32 +18,32 @@ NPM_MIN_VERSION = StrictVersion("6.14.6")
 
 
 def find_node_paths():
-    """ Determines the possible paths for node executables.
+    """Determines the possible paths for node executables.
 
     Returns a list of paths, which includes the build state directory.
     """
     
     
-    if 'MOZ_FETCHES_DIR' in os.environ:
-        mozbuild_state_dir = os.environ['MOZ_FETCHES_DIR']
+    if "MOZ_FETCHES_DIR" in os.environ:
+        mozbuild_state_dir = os.environ["MOZ_FETCHES_DIR"]
     else:
         mozbuild_state_dir = get_state_dir()
 
     if platform.system() == "Windows":
-        mozbuild_node_path = os.path.join(mozbuild_state_dir, 'node')
+        mozbuild_node_path = os.path.join(mozbuild_state_dir, "node")
     else:
-        mozbuild_node_path = os.path.join(mozbuild_state_dir, 'node', 'bin')
+        mozbuild_node_path = os.path.join(mozbuild_state_dir, "node", "bin")
 
     
     
-    paths = [mozbuild_node_path] + os.environ.get('PATH').split(os.pathsep)
+    paths = [mozbuild_node_path] + os.environ.get("PATH").split(os.pathsep)
 
     if platform.system() == "Windows":
         paths += [
             "%s\\nodejs" % os.environ.get("SystemDrive"),
             os.path.join(os.environ.get("ProgramFiles"), "nodejs"),
             os.path.join(os.environ.get("PROGRAMW6432"), "nodejs"),
-            os.path.join(os.environ.get("PROGRAMFILES"), "nodejs")
+            os.path.join(os.environ.get("PROGRAMFILES"), "nodejs"),
         ]
 
     return paths
@@ -61,18 +59,28 @@ def check_executable_version(exe, wrap_call_with_node=False):
     if wrap_call_with_node and platform.system() != "Windows":
         binary, _ = find_node_executable()
         if binary:
-            out = subprocess.check_output([binary, exe, "--version"],
-                                          universal_newlines=PY3).lstrip('v').rstrip()
+            out = (
+                subprocess.check_output(
+                    [binary, exe, "--version"], universal_newlines=PY3
+                )
+                .lstrip("v")
+                .rstrip()
+            )
 
     
     
     if not out:
-        out = subprocess.check_output([exe, "--version"],
-                                      universal_newlines=PY3).lstrip('v').rstrip()
+        out = (
+            subprocess.check_output([exe, "--version"], universal_newlines=PY3)
+            .lstrip("v")
+            .rstrip()
+        )
     return StrictVersion(out)
 
 
-def find_node_executable(nodejs_exe=os.environ.get('NODEJS'), min_version=NODE_MIN_VERSION):
+def find_node_executable(
+    nodejs_exe=os.environ.get("NODEJS"), min_version=NODE_MIN_VERSION
+):
     """Find a Node executable from the mozbuild directory.
 
     Returns a tuple containing the the path to an executable binary and a
@@ -93,7 +101,7 @@ def find_node_executable(nodejs_exe=os.environ.get('NODEJS'), min_version=NODE_M
     
     
     
-    return find_executable(['nodejs', 'node'], min_version)
+    return find_executable(["nodejs", "node"], min_version)
 
 
 def find_npm_executable(min_version=NPM_MIN_VERSION):

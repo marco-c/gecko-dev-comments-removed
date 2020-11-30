@@ -1,11 +1,16 @@
 def main(output, stylesheet):
-    css = open(stylesheet, 'r').read()
-    css = css.replace('\\', '\\\\').replace('\r', '\\r').replace('\n', '\\n').replace('"', '\\"')
+    css = open(stylesheet, "r").read()
+    css = (
+        css.replace("\\", "\\\\")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace('"', '\\"')
+    )
 
     
     
     chunk_size = 10000
-    chunks = ('"%s"' % css[i:i + chunk_size] for i in range(0, len(css), chunk_size))
+    chunks = ('"%s"' % css[i : i + chunk_size] for i in range(0, len(css), chunk_size))
 
-    header = '#define EXAMPLE_STYLESHEET ' + ' '.join(chunks)
+    header = "#define EXAMPLE_STYLESHEET " + " ".join(chunks)
     output.write(header)

@@ -4,19 +4,17 @@
 
 
 
-DIRS += [
-    'reps'
-]
+DIRS += ["reps"]
 
 DevToolsModules(
-    'Headers.js',
-    'HeadersPanel.js',
-    'HeadersToolbar.js',
-    'JsonPanel.js',
-    'JsonToolbar.js',
-    'LiveText.js',
-    'MainTabbedArea.js',
-    'SearchBox.js',
-    'TextPanel.js',
-    'TextToolbar.js'
+    "Headers.js",
+    "HeadersPanel.js",
+    "HeadersToolbar.js",
+    "JsonPanel.js",
+    "JsonToolbar.js",
+    "LiveText.js",
+    "MainTabbedArea.js",
+    "SearchBox.js",
+    "TextPanel.js",
+    "TextToolbar.js",
 )

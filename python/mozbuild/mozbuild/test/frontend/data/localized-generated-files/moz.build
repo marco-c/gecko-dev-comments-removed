@@ -2,4 +2,4 @@
 
 
 
-LOCALIZED_GENERATED_FILES += [ 'abc.ini', ('bar', 'baz') ]
+LOCALIZED_GENERATED_FILES += ["abc.ini", ("bar", "baz")]

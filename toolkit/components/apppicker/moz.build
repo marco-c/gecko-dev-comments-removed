@@ -4,7 +4,7 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Toolkit', 'Preferences')
+with Files("**"):
+    BUG_COMPONENT = ("Toolkit", "Preferences")
 
-JAR_MANIFESTS += ['jar.mn']
+JAR_MANIFESTS += ["jar.mn"]

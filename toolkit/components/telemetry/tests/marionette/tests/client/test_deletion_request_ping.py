@@ -3,7 +3,11 @@
 
 
 from telemetry_harness.testcase import TelemetryTestCase
-from telemetry_harness.ping_filters import ANY_PING, DELETION_REQUEST_PING, MAIN_SHUTDOWN_PING
+from telemetry_harness.ping_filters import (
+    ANY_PING,
+    DELETION_REQUEST_PING,
+    MAIN_SHUTDOWN_PING,
+)
 
 
 class TestDeletionRequestPing(TelemetryTestCase):

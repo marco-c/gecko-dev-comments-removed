@@ -5,9 +5,9 @@
 
 
 UNIFIED_SOURCES += [
-    'TestPsshParser.cpp',
+    "TestPsshParser.cpp",
 ]
 
-USE_LIBS += ['psshparser']
+USE_LIBS += ["psshparser"]
 
-FINAL_LIBRARY = 'xul-gtest'
+FINAL_LIBRARY = "xul-gtest"

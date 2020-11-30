@@ -1,15 +1,14 @@
 
 
 from __future__ import absolute_import
+
 old = self._mach_context.post_dispatch_handler  
 
 
-def handler(context, handler, instance, result,
-            start_time, end_time, depth, args):
+def handler(context, handler, instance, result, start_time, end_time, depth, args):
     global old
     
-    old(context, handler, instance, result,
-        int(start_time), end_time, depth, args)
+    old(context, handler, instance, result, int(start_time), end_time, depth, args)
 
 
 self._mach_context.post_dispatch_handler = handler  

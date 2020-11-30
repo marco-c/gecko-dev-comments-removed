@@ -4,7 +4,7 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('GeckoView', 'General')
+with Files("**"):
+    BUG_COMPONENT = ("GeckoView", "General")
 
-JAR_MANIFESTS += ['jar.mn']
+JAR_MANIFESTS += ["jar.mn"]

@@ -3,9 +3,9 @@
 
 
 
-if CONFIG['ENABLE_TESTS']:
+if CONFIG["ENABLE_TESTS"]:
     SOURCES += [
-        'BlackBox.cpp',
+        "BlackBox.cpp",
     ]
 
-    FINAL_LIBRARY = 'xul-gtest'
+    FINAL_LIBRARY = "xul-gtest"

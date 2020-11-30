@@ -5,8 +5,8 @@
 
 
 DIRS += [
-    'ico',
-    'png',
-    'jpeg',
-    'bmp',
+    "ico",
+    "png",
+    "jpeg",
+    "bmp",
 ]

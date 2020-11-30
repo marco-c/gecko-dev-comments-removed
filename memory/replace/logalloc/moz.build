@@ -4,27 +4,27 @@
 
 
 
-ReplaceMalloc('logalloc')
+ReplaceMalloc("logalloc")
 
 SOURCES += [
-    'FdPrintf.cpp',
-    'LogAlloc.cpp',
+    "FdPrintf.cpp",
+    "LogAlloc.cpp",
 ]
 
 DisableStlWrapping()
 NO_PGO = True
-DEFINES['MOZ_NO_MOZALLOC'] = True
+DEFINES["MOZ_NO_MOZALLOC"] = True
 
 LOCAL_INCLUDES += [
-    '/memory/build',
+    "/memory/build",
 ]
 
 
-if CONFIG['OS_TARGET'] == 'Android' and FORCE_SHARED_LIB:
+if CONFIG["OS_TARGET"] == "Android" and FORCE_SHARED_LIB:
     USE_LIBS += [
-        'mozglue',
+        "mozglue",
     ]
 
 DIRS += [
-    'replay',
+    "replay",
 ]

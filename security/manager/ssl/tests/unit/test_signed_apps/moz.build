@@ -4,23 +4,24 @@
 
 
 
+
 @template
-def SignedAppFile(name, flags, app_directory='app/'):
-    if not CONFIG['COMPILE_ENVIRONMENT']:
+def SignedAppFile(name, flags, app_directory="app/"):
+    if not CONFIG["COMPILE_ENVIRONMENT"]:
         return
 
     GENERATED_FILES += [name]
     props = GENERATED_FILES[name]
-    props.script = '/security/manager/ssl/tests/unit/sign_app.py'
+    props.script = "/security/manager/ssl/tests/unit/sign_app.py"
     props.inputs = [app_directory]
     props.flags = flags
     
     
     
     files = TEST_HARNESS_FILES.xpcshell
-    for part in RELATIVEDIR.split('/'):
+    for part in RELATIVEDIR.split("/"):
         files = files[part]
-    files += ['!%s' % name]
+    files += ["!%s" % name]
 
 
 

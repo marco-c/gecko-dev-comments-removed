@@ -6,7 +6,7 @@
 
 
 
-DIRS += ['ipdl']
+DIRS += ["ipdl"]
 
-if CONFIG['MOZ_IPDL_TESTS']:
-    DIRS += ['cxx']
+if CONFIG["MOZ_IPDL_TESTS"]:
+    DIRS += ["cxx"]

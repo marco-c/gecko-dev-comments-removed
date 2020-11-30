@@ -4,15 +4,15 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Firefox Build System', 'Task Configuration')
+with Files("**"):
+    BUG_COMPONENT = ("Firefox Build System", "Task Configuration")
 
 PYTHON_UNITTEST_MANIFESTS += [
-    'taskgraph/test/python.ini',
-    'test/python.ini',
+    "taskgraph/test/python.ini",
+    "test/python.ini",
 ]
-SPHINX_TREES['/taskcluster'] = 'docs'
-SPHINX_PYTHON_PACKAGE_DIRS += ['taskgraph']
+SPHINX_TREES["/taskcluster"] = "docs"
+SPHINX_PYTHON_PACKAGE_DIRS += ["taskgraph"]
 
-with Files('docs/**'):
-    SCHEDULES.exclusive = ['docs']
+with Files("docs/**"):
+    SCHEDULES.exclusive = ["docs"]

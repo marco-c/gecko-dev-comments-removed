@@ -2,8 +2,8 @@
 
 
 
-GENERATED_FILES += ['bar.c', 'foo.c']
+GENERATED_FILES += ["bar.c", "foo.c"]
 
-foo = GENERATED_FILES['foo.c']
-foo.script = 'script.py'
-foo.inputs = ['datafile']
+foo = GENERATED_FILES["foo.c"]
+foo.script = "script.py"
+foo.inputs = ["datafile"]

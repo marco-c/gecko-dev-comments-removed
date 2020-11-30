@@ -12,14 +12,14 @@ SIGINT.
 import signal
 import sys
 
-if __name__ == '__main__':
-    sys.path = ['pywebsocket3'] + sys.path
+if __name__ == "__main__":
+    sys.path = ["pywebsocket3"] + sys.path
     from mod_pywebsocket import standalone
 
     
     
     
-    if len(sys.argv) >= 2 and sys.argv[1] == '--interactive':
+    if len(sys.argv) >= 2 and sys.argv[1] == "--interactive":
         del sys.argv[1]
         signal.signal(signal.SIGINT, signal.SIG_IGN)
     else:

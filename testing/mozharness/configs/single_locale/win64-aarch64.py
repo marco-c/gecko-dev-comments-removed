@@ -1,6 +1,5 @@
 config = {
     "mozconfig_platform": "win64-aarch64",
-
     
     "ignore_locales": ["en-US", "ja-JP-mac"],
 }

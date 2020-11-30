@@ -2,8 +2,8 @@
 
 
 
-FINAL_LIBRARY = 'test'
-SOURCES += ['bar.cpp', 'foo.cpp']
-LOCAL_INCLUDES += ['/includeA/foo']
-DEFINES['DEFINEFOO'] = True
-DEFINES['DEFINEBAR'] = 'bar'
+FINAL_LIBRARY = "test"
+SOURCES += ["bar.cpp", "foo.cpp"]
+LOCAL_INCLUDES += ["/includeA/foo"]
+DEFINES["DEFINEFOO"] = True
+DEFINES["DEFINEBAR"] = "bar"

@@ -4,6 +4,4 @@
 
 
 
-DevToolsModules(
-    'require.js'
-)
+DevToolsModules("require.js")

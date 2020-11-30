@@ -3,7 +3,7 @@
 
 
 
-class Atom():
+class Atom:
     def __init__(self, ident, string, ty="nsStaticAtom"):
         self.ident = ident
         self.string = string
@@ -59,6 +59,6 @@ def hash_string(s):
 
 def is_ascii_lowercase(s):
     for c in s:
-        if c >= 'A' and c <= 'Z':
+        if c >= "A" and c <= "Z":
             return False
     return True

@@ -5,35 +5,35 @@
 
 
 LOCAL_INCLUDES += [
-    '../..',
+    "../..",
 ]
 
-DEFINES['GOOGLE_PROTOBUF_NO_RTTI'] = True
-DEFINES['GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER'] = True
+DEFINES["GOOGLE_PROTOBUF_NO_RTTI"] = True
+DEFINES["GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER"] = True
 
 UNIFIED_SOURCES += [
-    'Common.cpp',
-    'TestCaching.cpp',
-    'TestChunkSet.cpp',
-    'TestClassifier.cpp',
-    'TestFailUpdate.cpp',
-    'TestFindFullHash.cpp',
-    'TestLookupCacheV4.cpp',
-    'TestPerProviderDirectory.cpp',
-    'TestProtocolParser.cpp',
-    'TestRiceDeltaDecoder.cpp',
-    'TestSafebrowsingHash.cpp',
-    'TestSafeBrowsingProtobuf.cpp',
-    'TestTable.cpp',
-    'TestUrlClassifierTableUpdateV4.cpp',
-    'TestUrlClassifierUtils.cpp',
-    'TestURLsAndHashing.cpp',
-    'TestVariableLengthPrefixSet.cpp',
+    "Common.cpp",
+    "TestCaching.cpp",
+    "TestChunkSet.cpp",
+    "TestClassifier.cpp",
+    "TestFailUpdate.cpp",
+    "TestFindFullHash.cpp",
+    "TestLookupCacheV4.cpp",
+    "TestPerProviderDirectory.cpp",
+    "TestProtocolParser.cpp",
+    "TestRiceDeltaDecoder.cpp",
+    "TestSafebrowsingHash.cpp",
+    "TestSafeBrowsingProtobuf.cpp",
+    "TestTable.cpp",
+    "TestUrlClassifierTableUpdateV4.cpp",
+    "TestUrlClassifierUtils.cpp",
+    "TestURLsAndHashing.cpp",
+    "TestVariableLengthPrefixSet.cpp",
 ]
 
 
 
-if CONFIG['NIGHTLY_BUILD'] or CONFIG['MOZ_DEBUG']:
-    DEFINES['MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES'] = True
+if CONFIG["NIGHTLY_BUILD"] or CONFIG["MOZ_DEBUG"]:
+    DEFINES["MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES"] = True
 
-FINAL_LIBRARY = 'xul-gtest'
+FINAL_LIBRARY = "xul-gtest"

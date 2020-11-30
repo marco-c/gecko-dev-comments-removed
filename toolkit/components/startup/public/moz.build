@@ -5,8 +5,7 @@
 
 
 XPIDL_SOURCES += [
-    'nsIAppStartup.idl',
+    "nsIAppStartup.idl",
 ]
 
-XPIDL_MODULE = 'appstartup'
-
+XPIDL_MODULE = "appstartup"

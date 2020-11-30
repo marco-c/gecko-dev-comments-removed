@@ -3,6 +3,6 @@
 
 
 FINAL_TARGET_PP_FILES += [
-    'install.rdf',
-    'main.js',
+    "install.rdf",
+    "main.js",
 ]

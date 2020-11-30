@@ -4,15 +4,15 @@
 
 
 
-DIRS += ['../../../third_party/sqlite3/src']
-if CONFIG['MOZ_FOLD_LIBS']:
-    Library('sqlite')
+DIRS += ["../../../third_party/sqlite3/src"]
+if CONFIG["MOZ_FOLD_LIBS"]:
+    Library("sqlite")
     
     USE_LIBS += [
-        'nss',
+        "nss",
     ]
 else:
-    SharedLibrary('sqlite')
-    SHARED_LIBRARY_NAME = 'mozsqlite3'
+    SharedLibrary("sqlite")
+    SHARED_LIBRARY_NAME = "mozsqlite3"
 
-    SYMBOLS_FILE = '/third_party/sqlite3/src/sqlite.symbols'
+    SYMBOLS_FILE = "/third_party/sqlite3/src/sqlite.symbols"

@@ -2,4 +2,4 @@
 
 
 
-SimplePrograms(['cxx_simple_program'])
+SimplePrograms(["cxx_simple_program"])

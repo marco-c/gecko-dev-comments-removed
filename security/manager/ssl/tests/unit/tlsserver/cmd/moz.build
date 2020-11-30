@@ -4,23 +4,26 @@
 
 
 
-GeckoSimplePrograms([
-    'BadCertAndPinningServer',
-    'DelegatedCredentialsServer',
-    'GenerateOCSPResponse',
-    'OCSPStaplingServer',
-    'SanctionsTestServer',
-], linkage=None)
+GeckoSimplePrograms(
+    [
+        "BadCertAndPinningServer",
+        "DelegatedCredentialsServer",
+        "GenerateOCSPResponse",
+        "OCSPStaplingServer",
+        "SanctionsTestServer",
+    ],
+    linkage=None,
+)
 
 LOCAL_INCLUDES += [
-    '../lib',
+    "../lib",
 ]
 
 USE_LIBS += [
-    'mozpkix',
-    'nspr',
-    'nss',
-    'tlsserver',
+    "mozpkix",
+    "nspr",
+    "nss",
+    "tlsserver",
 ]
 
-CXXFLAGS += CONFIG['TK_CFLAGS']
+CXXFLAGS += CONFIG["TK_CFLAGS"]

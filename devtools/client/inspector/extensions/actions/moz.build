@@ -5,6 +5,6 @@
 
 
 DevToolsModules(
-    'index.js',
-    'sidebar.js',
+    "index.js",
+    "sidebar.js",
 )

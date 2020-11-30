@@ -18,7 +18,7 @@ class Common(object):
     
 
     
-    member = 'ptr'
+    member = "ptr"
 
     
     
@@ -82,21 +82,23 @@ class MutableHandle(Common):
 
 @template_pretty_printer("js::BarrieredBase")
 class BarrieredBase(Common):
-    member = 'value'
+    member = "value"
 
 
 def deref(root):
     
     tag = root.type.strip_typedefs().tag
     if not tag:
-        raise TypeError("Can't dereference type with no structure tag: %s" % (root.type,))
-    elif tag.startswith('js::HeapPtr<'):
-        return root['value']
-    elif tag.startswith('JS::Rooted<'):
-        return root['ptr']
-    elif tag.startswith('JS::Handle<'):
-        return root['ptr']
-    elif tag.startswith('js::GCPtr<'):
-        return root['value']
+        raise TypeError(
+            "Can't dereference type with no structure tag: %s" % (root.type,)
+        )
+    elif tag.startswith("js::HeapPtr<"):
+        return root["value"]
+    elif tag.startswith("JS::Rooted<"):
+        return root["ptr"]
+    elif tag.startswith("JS::Handle<"):
+        return root["ptr"]
+    elif tag.startswith("js::GCPtr<"):
+        return root["value"]
     else:
         raise NotImplementedError("Unrecognized tag: " + tag)

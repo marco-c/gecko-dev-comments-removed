@@ -7,12 +7,12 @@
 
 
 metrics_yamls = [
-    'toolkit/components/glean/metrics.yaml',
-    'toolkit/components/glean/test_metrics.yaml',
+    "toolkit/components/glean/metrics.yaml",
+    "toolkit/components/glean/test_metrics.yaml",
 ]
 
 
 
 pings_yamls = [
-    'toolkit/components/glean/pings.yaml',
+    "toolkit/components/glean/pings.yaml",
 ]

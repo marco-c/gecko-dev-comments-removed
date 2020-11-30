@@ -17,28 +17,28 @@ default_optimizations = (
     
     None,
     
-    {'always': None},
+    {"always": None},
     
-    {'build': list(schedules.ALL_COMPONENTS)},
+    {"build": list(schedules.ALL_COMPONENTS)},
     
     
-    {'index-search': [text_type]},
+    {"index-search": [text_type]},
     
-    {'never': None},
+    {"never": None},
     
-    {'skip-unless-expanded': None},
-    {'skip-unless-backstop': None},
+    {"skip-unless-expanded": None},
+    {"skip-unless-backstop": None},
     
-    {'skip-unless-changed': [text_type]},
+    {"skip-unless-changed": [text_type]},
     
-    {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
+    {"skip-unless-schedules": list(schedules.ALL_COMPONENTS)},
     
-    {'test': list(schedules.ALL_COMPONENTS)},
-    {'test-inclusive': list(schedules.ALL_COMPONENTS)},
+    {"test": list(schedules.ALL_COMPONENTS)},
+    {"test-inclusive": list(schedules.ALL_COMPONENTS)},
     
-    {'test-verify': list(schedules.ALL_COMPONENTS)},
+    {"test-verify": list(schedules.ALL_COMPONENTS)},
     
-    {'upload-symbols': None},
+    {"upload-symbols": None},
 )
 
 OptimizationSchema = voluptuous.Any(*default_optimizations)
@@ -57,4 +57,4 @@ def set_optimization_schema(schema_tuple):
         logger.info("OptimizationSchema updated.")
         OptimizationSchema = voluptuous.Any(*schema_tuple)
     else:
-        raise Exception('Can only call set_optimization_schema once.')
+        raise Exception("Can only call set_optimization_schema once.")

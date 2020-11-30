@@ -5,6 +5,5 @@
 
 
 DevToolsModules(
-    'rule-rewriter.js',
+    "rule-rewriter.js",
 )
-

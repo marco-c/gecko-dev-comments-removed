@@ -4,15 +4,15 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Firefox', 'Installer')
+with Files("**"):
+    BUG_COMPONENT = ("Firefox", "Installer")
 
-XPCSHELL_TESTS_MANIFESTS += ['test/unit/xpcshell.ini']
+XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.ini"]
 
 EXTRA_JS_MODULES += [
-    'InstallerPrefs.jsm',
+    "InstallerPrefs.jsm",
 ]
 
 XPCOM_MANIFESTS += [
-    'components.conf',
+    "components.conf",
 ]

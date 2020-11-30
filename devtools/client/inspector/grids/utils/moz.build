@@ -5,5 +5,5 @@
 
 
 DevToolsModules(
-    'utils.js',
+    "utils.js",
 )

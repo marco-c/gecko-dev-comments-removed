@@ -4,7 +4,7 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Core', 'DOM: HTML Parser')
+with Files("**"):
+    BUG_COMPONENT = ("Core", "DOM: HTML Parser")
 
-TEST_DIRS += ['test']
+TEST_DIRS += ["test"]

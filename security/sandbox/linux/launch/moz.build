@@ -5,28 +5,28 @@
 
 
 EXPORTS.mozilla += [
-    'SandboxLaunch.h',
+    "SandboxLaunch.h",
 ]
 
 UNIFIED_SOURCES += [
-    'LinuxCapabilities.cpp',
-    'SandboxLaunch.cpp',
+    "LinuxCapabilities.cpp",
+    "SandboxLaunch.cpp",
 ]
 
-include('/ipc/chromium/chromium-config.mozbuild')
+include("/ipc/chromium/chromium-config.mozbuild")
 
 LOCAL_INCLUDES += [
     
     
-    '/security/sandbox/chromium',
-    '/security/sandbox/linux',
+    "/security/sandbox/chromium",
+    "/security/sandbox/linux",
 ]
 
 USE_LIBS += [
-    'mozsandbox',
+    "mozsandbox",
 ]
 
 
-CXXFLAGS += CONFIG['TK_CFLAGS']
+CXXFLAGS += CONFIG["TK_CFLAGS"]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

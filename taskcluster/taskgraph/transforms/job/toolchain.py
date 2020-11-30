@@ -17,74 +17,66 @@ from taskgraph.transforms.job import (
     configure_taskdesc_for_run,
     run_job_using,
 )
-from taskgraph.transforms.job.common import (
-    docker_worker_add_artifacts,
-)
+from taskgraph.transforms.job.common import docker_worker_add_artifacts
 from taskgraph.util.hash import hash_paths
 from taskgraph.util.attributes import RELEASE_PROJECTS
 from taskgraph import GECKO
 import taskgraph
 
 
-CACHE_TYPE = 'toolchains.v3'
+CACHE_TYPE = "toolchains.v3"
 
-toolchain_run_schema = Schema({
-    Required('using'): 'toolchain-script',
-
-    
-    
-    
-    Required('script'): text_type,
-
-    
-    Optional('arguments'): [text_type],
-
-    
-    
-    Required('tooltool-downloads'): Any(
-        False,
-        'public',
-        'internal',
-    ),
-
-    
-    
-    
-    
-    
-    Required('sparse-profile'): Any(text_type, None),
-
-    
-    
-    Optional('resources'): [text_type],
-
-    
-    Required('toolchain-artifact'): text_type,
-
-    Optional(
-        "toolchain-alias",
-        description="An alias that can be used instead of the real toolchain job name in "
-        "fetch stanzas for jobs.",
-    ): text_type,
-
-    
-    Optional('workdir'): text_type,
-})
+toolchain_run_schema = Schema(
+    {
+        Required("using"): "toolchain-script",
+        
+        
+        
+        Required("script"): text_type,
+        
+        Optional("arguments"): [text_type],
+        
+        
+        Required("tooltool-downloads"): Any(
+            False,
+            "public",
+            "internal",
+        ),
+        
+        
+        
+        
+        
+        Required("sparse-profile"): Any(text_type, None),
+        
+        
+        Optional("resources"): [text_type],
+        
+        Required("toolchain-artifact"): text_type,
+        Optional(
+            "toolchain-alias",
+            description="An alias that can be used instead of the real toolchain job name in "
+            "fetch stanzas for jobs.",
+        ): text_type,
+        
+        Optional("workdir"): text_type,
+    }
+)
 
 
 def get_digest_data(config, run, taskdesc):
-    files = list(run.pop('resources', []))
+    files = list(run.pop("resources", []))
     
-    files.append('taskcluster/scripts/misc/{}'.format(run['script']))
+    files.append("taskcluster/scripts/misc/{}".format(run["script"]))
     
-    tooltool_manifest = taskdesc['worker']['env'].get('TOOLTOOL_MANIFEST')
+    tooltool_manifest = taskdesc["worker"]["env"].get("TOOLTOOL_MANIFEST")
     if tooltool_manifest:
         files.append(tooltool_manifest)
 
     
     data = [hash_paths(GECKO, files)]
 
-    data.append(taskdesc['attributes']['toolchain-artifact'])
+    data.append(taskdesc["attributes"]["toolchain-artifact"])
 
     
     
@@ -93,132 +85,149 @@ def get_digest_data(config, run, taskdesc):
     
     
     
-    image = taskdesc['worker'].get('docker-image', {}).get('in-tree')
+    image = taskdesc["worker"].get("docker-image", {}).get("in-tree")
     if image:
         data.append(image)
 
     
-    args = run.get('arguments')
+    args = run.get("arguments")
     if args:
         data.extend(args)
 
-    if taskdesc['attributes'].get('rebuild-on-release'):
+    if taskdesc["attributes"].get("rebuild-on-release"):
         
-        data.append(str(config.params['project'] in RELEASE_PROJECTS))
+        data.append(str(config.params["project"] in RELEASE_PROJECTS))
     return data
 
 
 toolchain_defaults = {
-    'tooltool-downloads': False,
-    'sparse-profile': 'toolchain-build',
+    "tooltool-downloads": False,
+    "sparse-profile": "toolchain-build",
 }
 
 
-@run_job_using("docker-worker", "toolchain-script",
-               schema=toolchain_run_schema, defaults=toolchain_defaults)
+@run_job_using(
+    "docker-worker",
+    "toolchain-script",
+    schema=toolchain_run_schema,
+    defaults=toolchain_defaults,
+)
 def docker_worker_toolchain(config, job, taskdesc):
-    run = job['run']
+    run = job["run"]
 
-    worker = taskdesc['worker'] = job['worker']
-    worker['chain-of-trust'] = True
-
-    
-    worker.setdefault('docker-image', {'in-tree': 'deb8-toolchain-build'})
+    worker = taskdesc["worker"] = job["worker"]
+    worker["chain-of-trust"] = True
 
     
+    worker.setdefault("docker-image", {"in-tree": "deb8-toolchain-build"})
+
     
-    artifacts = worker.setdefault('artifacts', [])
+    
+    artifacts = worker.setdefault("artifacts", [])
     if not artifacts:
         docker_worker_add_artifacts(config, job, taskdesc)
 
     
-    workspace = '{workdir}/workspace/build'.format(**run)
-    gecko_path = '{}/src'.format(workspace)
+    workspace = "{workdir}/workspace/build".format(**run)
+    gecko_path = "{}/src".format(workspace)
 
-    env = worker.setdefault('env', {})
-    env.update({
-        'MOZ_BUILD_DATE': config.params['moz_build_date'],
-        'MOZ_SCM_LEVEL': config.params['level'],
-        'GECKO_PATH': gecko_path,
-    })
-
-    attributes = taskdesc.setdefault('attributes', {})
-    attributes['toolchain-artifact'] = run.pop('toolchain-artifact')
-    if 'toolchain-alias' in run:
-        attributes['toolchain-alias'] = run.pop('toolchain-alias')
-
-    if not taskgraph.fast:
-        name = taskdesc['label'].replace('{}-'.format(config.kind), '', 1)
-        taskdesc['cache'] = {
-            'type': CACHE_TYPE,
-            'name': name,
-            'digest-data': get_digest_data(config, run, taskdesc),
+    env = worker.setdefault("env", {})
+    env.update(
+        {
+            "MOZ_BUILD_DATE": config.params["moz_build_date"],
+            "MOZ_SCM_LEVEL": config.params["level"],
+            "GECKO_PATH": gecko_path,
         }
-
-    run['using'] = 'run-task'
-    run['cwd'] = run['workdir']
-    run["command"] = (
-        ["workspace/build/src/taskcluster/scripts/misc/{}".format(run.pop("script"))]
-        + run.pop("arguments", [])
     )
 
-    configure_taskdesc_for_run(config, job, taskdesc, worker['implementation'])
-
-
-@run_job_using("generic-worker", "toolchain-script",
-               schema=toolchain_run_schema, defaults=toolchain_defaults)
-def windows_toolchain(config, job, taskdesc):
-    run = job['run']
-
-    worker = taskdesc['worker'] = job['worker']
-
-    
-    worker.setdefault('artifacts', [{
-        'path': r'public\build',
-        'type': 'directory',
-    }])
-
-    worker['chain-of-trust'] = True
-
-    
-    
-    
-    run['use-caches'] = False
-
-    env = worker.setdefault('env', {})
-    env.update({
-        'MOZ_BUILD_DATE': config.params['moz_build_date'],
-        'MOZ_SCM_LEVEL': config.params['level'],
-    })
-
-    
-    if run['script'].endswith('.py'):
-        raise NotImplementedError("Python scripts don't work on Windows")
-
-    args = run.get('arguments', '')
-    if args:
-        args = ' ' + shell_quote(*args)
-
-    attributes = taskdesc.setdefault('attributes', {})
-    attributes['toolchain-artifact'] = run.pop('toolchain-artifact')
-    if 'toolchain-alias' in run:
-        attributes['toolchain-alias'] = run.pop('toolchain-alias')
+    attributes = taskdesc.setdefault("attributes", {})
+    attributes["toolchain-artifact"] = run.pop("toolchain-artifact")
+    if "toolchain-alias" in run:
+        attributes["toolchain-alias"] = run.pop("toolchain-alias")
 
     if not taskgraph.fast:
-        name = taskdesc['label'].replace('{}-'.format(config.kind), '', 1)
-        taskdesc['cache'] = {
-            'type': CACHE_TYPE,
-            'name': name,
-            'digest-data': get_digest_data(config, run, taskdesc),
+        name = taskdesc["label"].replace("{}-".format(config.kind), "", 1)
+        taskdesc["cache"] = {
+            "type": CACHE_TYPE,
+            "name": name,
+            "digest-data": get_digest_data(config, run, taskdesc),
         }
 
-    bash = r'c:\mozilla-build\msys\bin\bash'
+    run["using"] = "run-task"
+    run["cwd"] = run["workdir"]
+    run["command"] = [
+        "workspace/build/src/taskcluster/scripts/misc/{}".format(run.pop("script"))
+    ] + run.pop("arguments", [])
 
-    run['using'] = 'run-task'
-    run['command'] = [
+    configure_taskdesc_for_run(config, job, taskdesc, worker["implementation"])
+
+
+@run_job_using(
+    "generic-worker",
+    "toolchain-script",
+    schema=toolchain_run_schema,
+    defaults=toolchain_defaults,
+)
+def windows_toolchain(config, job, taskdesc):
+    run = job["run"]
+
+    worker = taskdesc["worker"] = job["worker"]
+
+    
+    worker.setdefault(
+        "artifacts",
+        [
+            {
+                "path": r"public\build",
+                "type": "directory",
+            }
+        ],
+    )
+
+    worker["chain-of-trust"] = True
+
+    
+    
+    
+    run["use-caches"] = False
+
+    env = worker.setdefault("env", {})
+    env.update(
+        {
+            "MOZ_BUILD_DATE": config.params["moz_build_date"],
+            "MOZ_SCM_LEVEL": config.params["level"],
+        }
+    )
+
+    
+    if run["script"].endswith(".py"):
+        raise NotImplementedError("Python scripts don't work on Windows")
+
+    args = run.get("arguments", "")
+    if args:
+        args = " " + shell_quote(*args)
+
+    attributes = taskdesc.setdefault("attributes", {})
+    attributes["toolchain-artifact"] = run.pop("toolchain-artifact")
+    if "toolchain-alias" in run:
+        attributes["toolchain-alias"] = run.pop("toolchain-alias")
+
+    if not taskgraph.fast:
+        name = taskdesc["label"].replace("{}-".format(config.kind), "", 1)
+        taskdesc["cache"] = {
+            "type": CACHE_TYPE,
+            "name": name,
+            "digest-data": get_digest_data(config, run, taskdesc),
+        }
+
+    bash = r"c:\mozilla-build\msys\bin\bash"
+
+    run["using"] = "run-task"
+    run["command"] = [
         
-        r'{} build/src/taskcluster/scripts/misc/{}{}'.format(
-            bash, run.pop('script'), args)
+        r"{} build/src/taskcluster/scripts/misc/{}{}".format(
+            bash, run.pop("script"), args
+        )
     ]
-    run.pop('arguments', None)
-    configure_taskdesc_for_run(config, job, taskdesc, worker['implementation'])
+    run.pop("arguments", None)
+    configure_taskdesc_for_run(config, job, taskdesc, worker["implementation"])

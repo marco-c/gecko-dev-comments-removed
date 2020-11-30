@@ -4,4 +4,4 @@
 
 
 
-DIRS += ['baz']
+DIRS += ["baz"]

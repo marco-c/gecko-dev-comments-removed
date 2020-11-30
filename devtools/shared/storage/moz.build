@@ -4,10 +4,6 @@
 
 
 
-DIRS += [
-    'vendor'
-]
+DIRS += ["vendor"]
 
-DevToolsModules(
-    'utils.js'
-)
+DevToolsModules("utils.js")

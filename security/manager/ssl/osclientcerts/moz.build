@@ -4,6 +4,6 @@
 
 
 
-DIRS += [ 'dynamic-library' ]
+DIRS += ["dynamic-library"]
 
-RustLibrary('osclientcerts-static')
+RustLibrary("osclientcerts-static")

@@ -31,7 +31,7 @@ def is_backstop(
         bool: True if this is a backtop, otherwise False.
     """
     
-    if params.get('backstop', False):
+    if params.get("backstop", False):
         return True
 
     project = params["project"]
@@ -64,7 +64,9 @@ def is_backstop(
         return True
 
     try:
-        last_pushdate = get_artifact(last_backstop_id, 'public/parameters.yml')["pushdate"]
+        last_pushdate = get_artifact(last_backstop_id, "public/parameters.yml")[
+            "pushdate"
+        ]
     except HTTPError as e:
         
         

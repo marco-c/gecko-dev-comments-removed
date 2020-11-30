@@ -2,4 +2,4 @@
 
 
 
-DIST_SUBDIR = 'asubdir'
+DIST_SUBDIR = "asubdir"

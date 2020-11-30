@@ -15,7 +15,7 @@ from mozbuild import preprocessor
 
 def main(output, bookmarks_html_in, bookmarks_inc, locale=None):
     if not locale:
-        raise ValueError('locale must be specified!')
+        raise ValueError("locale must be specified!")
 
     CONFIG = buildconfig.substs
 
@@ -25,19 +25,19 @@ def main(output, bookmarks_html_in, bookmarks_inc, locale=None):
     
     
     defines = {}
-    defines['AB_CD'] = locale
-    if defines['AB_CD'] == 'ja-JP-mac':
-        defines['AB_CD'] = 'ja'
+    defines["AB_CD"] = locale
+    if defines["AB_CD"] == "ja-JP-mac":
+        defines["AB_CD"] = "ja"
 
-    defines['BOOKMARKS_INCLUDE_PATH'] = bookmarks_inc
+    defines["BOOKMARKS_INCLUDE_PATH"] = bookmarks_inc
 
-    for var in ('NIGHTLY_BUILD',):
+    for var in ("NIGHTLY_BUILD",):
         if var in CONFIG:
             defines[var] = CONFIG[var]
 
-    includes = preprocessor.preprocess(includes=[bookmarks_html_in],
-                                       defines=defines,
-                                       output=output)
+    includes = preprocessor.preprocess(
+        includes=[bookmarks_html_in], defines=defines, output=output
+    )
     return includes
 
 

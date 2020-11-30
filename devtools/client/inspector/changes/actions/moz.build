@@ -5,6 +5,6 @@
 
 
 DevToolsModules(
-    'changes.js',
-    'index.js',
+    "changes.js",
+    "index.js",
 )

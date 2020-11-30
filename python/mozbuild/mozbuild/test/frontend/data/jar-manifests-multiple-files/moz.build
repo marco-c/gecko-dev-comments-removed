@@ -4,5 +4,4 @@
 
 
 
-JAR_MANIFESTS += ['jar.mn', 'other.jar']
-
+JAR_MANIFESTS += ["jar.mn", "other.jar"]

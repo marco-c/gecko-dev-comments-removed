@@ -4,7 +4,6 @@
 
 
 
-MOCHITEST_MANIFESTS += ['mochitest.ini']
+MOCHITEST_MANIFESTS += ["mochitest.ini"]
 
-MOCHITEST_CHROME_MANIFESTS += ['chrome.ini']
-
+MOCHITEST_CHROME_MANIFESTS += ["chrome.ini"]

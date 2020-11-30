@@ -4,7 +4,7 @@
 
 
 
-DIRS += CONFIG['MOZ_EXTENSIONS']
+DIRS += CONFIG["MOZ_EXTENSIONS"]
 
-with Files('**'):
-    BUG_COMPONENT = ('Core', 'General')
+with Files("**"):
+    BUG_COMPONENT = ("Core", "General")

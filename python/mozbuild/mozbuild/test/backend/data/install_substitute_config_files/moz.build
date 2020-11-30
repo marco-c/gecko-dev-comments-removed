@@ -3,4 +3,4 @@
 
 
 
-DIRS += ['sub']
+DIRS += ["sub"]

@@ -4,9 +4,9 @@
 
 
 
-if CONFIG['OS_ARCH'] == 'Linux':
+if CONFIG["OS_ARCH"] == "Linux":
     SOURCES += [
-        'NetlinkService.cpp',
+        "NetlinkService.cpp",
     ]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

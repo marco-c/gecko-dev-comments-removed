@@ -1,20 +1,20 @@
 
 test.compile("source.cpp")
-test.run_analysis_script('gcTypes', upto='gcFunctions')
+test.run_analysis_script("gcTypes", upto="gcFunctions")
 
 
 suppressed = test.load_suppressed_functions()
 
 
 
-assert len(list(filter(lambda f: 'suppressedFunction' in f, suppressed))) == 1
-assert len(list(filter(lambda f: 'halfSuppressedFunction' in f, suppressed))) == 0
-assert len(list(filter(lambda f: 'unsuppressedFunction' in f, suppressed))) == 0
+assert len(list(filter(lambda f: "suppressedFunction" in f, suppressed))) == 1
+assert len(list(filter(lambda f: "halfSuppressedFunction" in f, suppressed))) == 0
+assert len(list(filter(lambda f: "unsuppressedFunction" in f, suppressed))) == 0
 
 
 gcFunctions = test.load_gcFunctions()
-assert 'void GC()' in gcFunctions
-assert 'void suppressedFunction()' not in gcFunctions
-assert 'void halfSuppressedFunction()' in gcFunctions
-assert 'void unsuppressedFunction()' in gcFunctions
-assert 'void f()' in gcFunctions
+assert "void GC()" in gcFunctions
+assert "void suppressedFunction()" not in gcFunctions
+assert "void halfSuppressedFunction()" in gcFunctions
+assert "void unsuppressedFunction()" in gcFunctions
+assert "void f()" in gcFunctions

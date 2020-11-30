@@ -4,11 +4,9 @@
 
 
 
-UNIFIED_SOURCES += [
-    'OSPreferences_mac.cpp'
-]
+UNIFIED_SOURCES += ["OSPreferences_mac.cpp"]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
-    '..',
+    "..",
 ]

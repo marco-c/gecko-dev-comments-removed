@@ -4,27 +4,27 @@
 
 
 
-USE_LIBS += ['osclientcerts-static']
+USE_LIBS += ["osclientcerts-static"]
 
 UNIFIED_SOURCES += [
-    'stub.cpp',
+    "stub.cpp",
 ]
 
-if CONFIG['OS_ARCH'] == 'WINNT':
+if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
-        'crypt32',
-        'kernel32',
-        'ncrypt',
-        'userenv',
-        'ws2_32',
+        "crypt32",
+        "kernel32",
+        "ncrypt",
+        "userenv",
+        "ws2_32",
     ]
 
-if CONFIG['OS_ARCH'] == 'Darwin':
+if CONFIG["OS_ARCH"] == "Darwin":
     OS_LIBS += [
-        '-framework Security',
+        "-framework Security",
     ]
 
-SharedLibrary('osclientcerts')
+SharedLibrary("osclientcerts")
 
 NoVisibilityFlags()
-SYMBOLS_FILE = 'osclientcerts.symbols'
+SYMBOLS_FILE = "osclientcerts.symbols"

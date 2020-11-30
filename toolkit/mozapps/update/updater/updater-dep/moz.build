@@ -4,11 +4,10 @@
 
 
 
-FINAL_TARGET = '_tests/updater-dep'
+FINAL_TARGET = "_tests/updater-dep"
 
-Program('updater-dep')
+Program("updater-dep")
 
-updater_rel_path = '../'
-DEFINES['DEP_UPDATER'] = True
-include('../updater-common.build')
-
+updater_rel_path = "../"
+DEFINES["DEP_UPDATER"] = True
+include("../updater-common.build")

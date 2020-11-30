@@ -4,5 +4,4 @@
 
 
 
-DIRS += ['xptinfo', 'xptcall']
-
+DIRS += ["xptinfo", "xptcall"]

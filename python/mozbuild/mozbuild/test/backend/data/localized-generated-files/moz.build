@@ -2,14 +2,14 @@
 
 
 
-LOCALIZED_GENERATED_FILES += [ 'foo.xyz' ]
+LOCALIZED_GENERATED_FILES += ["foo.xyz"]
 
-foo = LOCALIZED_GENERATED_FILES['foo.xyz']
-foo.script = 'generate-foo.py'
+foo = LOCALIZED_GENERATED_FILES["foo.xyz"]
+foo.script = "generate-foo.py"
 foo.inputs = [
-    'en-US/localized-input',
-    'non-localized-input',
+    "en-US/localized-input",
+    "non-localized-input",
 ]
 
 
-LOCALIZED_FILES += [ '!foo.xyz' ]
+LOCALIZED_FILES += ["!foo.xyz"]

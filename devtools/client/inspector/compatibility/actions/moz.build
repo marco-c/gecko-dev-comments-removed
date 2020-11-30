@@ -5,6 +5,6 @@
 
 
 DevToolsModules(
-    'compatibility.js',
-    'index.js',
+    "compatibility.js",
+    "index.js",
 )
