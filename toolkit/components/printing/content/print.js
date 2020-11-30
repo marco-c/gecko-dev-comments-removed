@@ -183,6 +183,8 @@ var PrintEventHandler = {
     this.originalSourceCurrentURI =
       sourceBrowsingContext.currentWindowContext.documentURI.spec;
 
+    this.printForm = document.getElementById("print");
+
     
     await ourBrowser._dialogReady;
 
@@ -212,7 +214,13 @@ var PrintEventHandler = {
     logger.debug("availablePrinters: ", Object.keys(printersByName));
     logger.debug("defaultSystemPrinter: ", defaultSystemPrinter);
 
-    document.addEventListener("print", e => this.print());
+    document.addEventListener("print", async () => {
+      let didPrint = await this.print();
+      if (!didPrint) {
+        
+        this.printForm.enable();
+      }
+    });
     document.addEventListener("update-print-settings", e =>
       this.onUserSettingsChange(e.detail)
     );
@@ -223,9 +231,7 @@ var PrintEventHandler = {
 
       if (document.body.getAttribute("rendering")) {
         
-        for (let element of document.querySelector("#print").elements) {
-          element.disabled = true;
-        }
+        this.printForm.disable();
         await window._initialized;
       }
 
@@ -322,9 +328,7 @@ var PrintEventHandler = {
 
   async print(systemDialogSettings) {
     
-    for (let element of document.querySelector("#print").elements) {
-      element.disabled = true;
-    }
+    this.printForm.disable();
 
     let settings = systemDialogSettings || this.settings;
 
@@ -335,9 +339,7 @@ var PrintEventHandler = {
           this.originalSourceCurrentURI
         );
       } catch (e) {
-        
-        window.close();
-        return;
+        return false;
       }
     }
 
@@ -359,6 +361,7 @@ var PrintEventHandler = {
     }
 
     window.close();
+    return true;
   },
 
   cancelPrint() {
@@ -1543,6 +1546,20 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
       AppConstants.platform === "win" && !settings.defaultSystemPrinter;
 
     this.querySelector("#copies").hidden = settings.willSaveToFile;
+  }
+
+  enable() {
+    for (let element of this.elements) {
+      if (!element.hasAttribute("disallowed")) {
+        element.disabled = false;
+      }
+    }
+  }
+
+  disable() {
+    for (let element of this.elements) {
+      element.disabled = true;
+    }
   }
 
   handleEvent(e) {
