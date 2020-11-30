@@ -5,6 +5,6 @@
 
 
 DIRS += [
-    "bar",
-    "foo",
+    'bar',
+    'foo',
 ]

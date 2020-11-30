@@ -22,9 +22,9 @@ class Bisect(object):
         status = 0
         self.contents.clear()
         
-        self.contents["totalTests"] = tests
-        self.contents["tests"] = tests
-        self.contents["loop"] = 0
+        self.contents['totalTests'] = tests
+        self.contents['tests'] = tests
+        self.contents['loop'] = 0
         return status
 
     def reset(self, expectedError, result):
@@ -50,9 +50,8 @@ class Bisect(object):
             return tests
         
         
-        elif "loop" not in self.contents or not self.contents["tests"][-1].endswith(
-            options.bisectChunk
-        ):
+        elif ('loop' not in self.contents or not self.contents['tests'][-1].endswith(
+                options.bisectChunk)):
             tests = self.get_tests_for_bisection(options, tests)
             status = self.setup(tests)
 
@@ -69,11 +68,11 @@ class Bisect(object):
         if status == -1 and options.bisectChunk in self.expectedError:
             
             
-            if mozinfo.info["debug"]:
+            if mozinfo.info['debug']:
                 return status
 
-            testBleedThrough = self.contents["testsToRun"][0]
-            tests = self.contents["totalTests"]
+            testBleedThrough = self.contents['testsToRun'][0]
+            tests = self.contents['totalTests']
             tests.remove(testBleedThrough)
             
             
@@ -89,74 +88,74 @@ class Bisect(object):
         "This method is used to bisect the tests in a reverse search fashion."
 
         
-        if self.contents["loop"] <= 1:
-            self.contents["testsToRun"] = self.contents["tests"]
-            if self.contents["loop"] == 1:
-                self.contents["testsToRun"] = [self.contents["tests"][-1]]
-            self.contents["loop"] += 1
-            return self.contents["testsToRun"]
+        if self.contents['loop'] <= 1:
+            self.contents['testsToRun'] = self.contents['tests']
+            if self.contents['loop'] == 1:
+                self.contents['testsToRun'] = [self.contents['tests'][-1]]
+            self.contents['loop'] += 1
+            return self.contents['testsToRun']
 
-        if "result" in self.contents:
-            if self.contents["result"] == "PASS":
-                chunkSize = self.contents["end"] - self.contents["start"]
-                self.contents["end"] = self.contents["start"] - 1
-                self.contents["start"] = self.contents["end"] - chunkSize
+        if 'result' in self.contents:
+            if self.contents['result'] == "PASS":
+                chunkSize = self.contents['end'] - self.contents['start']
+                self.contents['end'] = self.contents['start'] - 1
+                self.contents['start'] = self.contents['end'] - chunkSize
 
-            
-            elif self.contents["result"] == "FAIL":
-                self.contents["tests"] = self.contents["testsToRun"]
+        
+            elif self.contents['result'] == "FAIL":
+                self.contents['tests'] = self.contents['testsToRun']
                 status = 1  
 
         
         if status:
-            totalTests = len(self.contents["tests"])
+            totalTests = len(self.contents['tests'])
             chunkSize = int(math.ceil(totalTests / 10.0))
-            self.contents["start"] = totalTests - chunkSize - 1
-            self.contents["end"] = totalTests - 2
+            self.contents['start'] = totalTests - chunkSize - 1
+            self.contents['end'] = totalTests - 2
 
-        start = self.contents["start"]
-        end = self.contents["end"] + 1
-        self.contents["testsToRun"] = self.contents["tests"][start:end]
-        self.contents["testsToRun"].append(self.contents["tests"][-1])
-        self.contents["loop"] += 1
+        start = self.contents['start']
+        end = self.contents['end'] + 1
+        self.contents['testsToRun'] = self.contents['tests'][start:end]
+        self.contents['testsToRun'].append(self.contents['tests'][-1])
+        self.contents['loop'] += 1
 
-        return self.contents["testsToRun"]
+        return self.contents['testsToRun']
 
     def next_chunk_binary(self, options, status):
         "This method is used to bisect the tests in a binary search fashion."
 
         
-        if self.contents["loop"] <= 1:
-            self.contents["testsToRun"] = self.contents["tests"]
-            if self.contents["loop"] == 1:
-                self.contents["testsToRun"] = [self.contents["tests"][-1]]
-            self.contents["loop"] += 1
-            return self.contents["testsToRun"]
+        if self.contents['loop'] <= 1:
+            self.contents['testsToRun'] = self.contents['tests']
+            if self.contents['loop'] == 1:
+                self.contents['testsToRun'] = [self.contents['tests'][-1]]
+            self.contents['loop'] += 1
+            return self.contents['testsToRun']
 
         
         if status:
-            totalTests = len(self.contents["tests"])
-            self.contents["start"] = 0
-            self.contents["end"] = totalTests - 2
+            totalTests = len(self.contents['tests'])
+            self.contents['start'] = 0
+            self.contents['end'] = totalTests - 2
 
-        mid = (self.contents["start"] + self.contents["end"]) / 2
-        if "result" in self.contents:
-            if self.contents["result"] == "PASS":
-                self.contents["end"] = mid
+        mid = (self.contents['start'] + self.contents['end']) / 2
+        if 'result' in self.contents:
+            if self.contents['result'] == "PASS":
+                self.contents['end'] = mid
 
-            elif self.contents["result"] == "FAIL":
-                self.contents["start"] = mid + 1
+            elif self.contents['result'] == "FAIL":
+                self.contents['start'] = mid + 1
 
-        mid = (self.contents["start"] + self.contents["end"]) / 2
+        mid = (self.contents['start'] + self.contents['end']) / 2
         start = mid + 1
-        end = self.contents["end"] + 1
-        self.contents["testsToRun"] = self.contents["tests"][start:end]
-        if not self.contents["testsToRun"]:
-            self.contents["testsToRun"].append(self.contents["tests"][mid])
-        self.contents["testsToRun"].append(self.contents["tests"][-1])
-        self.contents["loop"] += 1
+        end = self.contents['end'] + 1
+        self.contents['testsToRun'] = self.contents['tests'][start:end]
+        if not self.contents['testsToRun']:
+            self.contents['testsToRun'].append(self.contents['tests'][mid])
+        self.contents['testsToRun'].append(self.contents['tests'][-1])
+        self.contents['loop'] += 1
 
-        return self.contents["testsToRun"]
+        return self.contents['testsToRun']
 
     def summarize_chunk(self, options):
         "This method is used summarize the results after the list of tests is run."
@@ -166,7 +165,9 @@ class Bisect(object):
             if len(self.expectedError) == 0:
                 return -1
             options.bisectChunk = self.expectedError.keys()[0]
-            self.summary.append("\tFound Error in test: %s" % options.bisectChunk)
+            self.summary.append(
+                "\tFound Error in test: %s" %
+                options.bisectChunk)
             return 0
 
         
@@ -174,64 +175,59 @@ class Bisect(object):
         if options.bisectChunk not in self.result:
             return -1
 
-        self.summary.append("\tPass %d:" % self.contents["loop"])
-        if len(self.contents["testsToRun"]) > 1:
+        self.summary.append("\tPass %d:" % self.contents['loop'])
+        if len(self.contents['testsToRun']) > 1:
             self.summary.append(
-                "\t\t%d test files(start,end,failing). [%s, %s, %s]"
-                % (
-                    len(self.contents["testsToRun"]),
-                    self.contents["testsToRun"][0],
-                    self.contents["testsToRun"][-2],
-                    self.contents["testsToRun"][-1],
-                )
-            )
+                "\t\t%d test files(start,end,failing). [%s, %s, %s]" % (len(
+                    self.contents['testsToRun']),
+                    self.contents['testsToRun'][0],
+                    self.contents['testsToRun'][
+                    -2],
+                    self.contents['testsToRun'][
+                    -1]))
         else:
-            self.summary.append("\t\t1 test file [%s]" % self.contents["testsToRun"][0])
+            self.summary.append(
+                "\t\t1 test file [%s]" %
+                self.contents['testsToRun'][0])
             return self.check_for_intermittent(options)
 
         if self.result[options.bisectChunk] == "PASS":
             self.summary.append("\t\tno failures found.")
-            if self.contents["loop"] == 1:
+            if self.contents['loop'] == 1:
                 status = -1
             else:
-                self.contents["result"] = "PASS"
+                self.contents['result'] = "PASS"
                 status = 0
 
         elif self.result[options.bisectChunk] == "FAIL":
-            if "expectedError" not in self.contents:
-                self.summary.append("\t\t%s failed." % self.contents["testsToRun"][-1])
-                self.contents["expectedError"] = self.expectedError[options.bisectChunk]
+            if 'expectedError' not in self.contents:
+                self.summary.append("\t\t%s failed." %
+                                    self.contents['testsToRun'][-1])
+                self.contents['expectedError'] = self.expectedError[
+                    options.bisectChunk]
                 status = 0
 
-            elif (
-                self.expectedError[options.bisectChunk]
-                == self.contents["expectedError"]
-            ):
+            elif self.expectedError[options.bisectChunk] == self.contents['expectedError']:
                 self.summary.append(
-                    "\t\t%s failed with expected error."
-                    % self.contents["testsToRun"][-1]
-                )
-                self.contents["result"] = "FAIL"
+                    "\t\t%s failed with expected error." % self.contents['testsToRun'][-1])
+                self.contents['result'] = "FAIL"
                 status = 0
 
                 
                 
-                numberOfTests = len(self.contents["testsToRun"])
+                numberOfTests = len(self.contents['testsToRun'])
                 if numberOfTests < 3:
                     
                     
                     
                     self.summary.append(
                         "TEST-UNEXPECTED-FAIL | %s | Bleedthrough detected, this test is the "
-                        "root cause for many of the above failures"
-                        % self.contents["testsToRun"][0]
-                    )
+                        "root cause for many of the above failures" %
+                        self.contents['testsToRun'][0])
                     status = -1
             else:
                 self.summary.append(
-                    "\t\t%s failed with different error."
-                    % self.contents["testsToRun"][-1]
-                )
+                    "\t\t%s failed with different error." % self.contents['testsToRun'][-1])
                 status = -1
 
         return status
@@ -240,11 +236,11 @@ class Bisect(object):
         "This method is used to check whether a test is an intermittent."
         if self.result[options.bisectChunk] == "PASS":
             self.summary.append(
-                "\t\tThe test %s passed." % self.contents["testsToRun"][0]
-            )
+                "\t\tThe test %s passed." %
+                self.contents['testsToRun'][0])
             if self.repeat > 0:
                 
-                self.contents["loop"] = 1
+                self.contents['loop'] = 1
                 self.repeat -= 1
                 return 0
             else:
@@ -254,14 +250,14 @@ class Bisect(object):
                     return -1
                 
                 
-                self.contents["loop"] = 2
+                self.contents['loop'] = 2
                 return 1
         elif self.result[options.bisectChunk] == "FAIL":
             self.summary.append(
-                "\t\tThe test %s failed." % self.contents["testsToRun"][0]
-            )
+                "\t\tThe test %s failed." %
+                self.contents['testsToRun'][0])
             self.failcount += 1
-            self.contents["loop"] = 1
+            self.contents['loop'] = 1
             self.repeat -= 1
             
             
@@ -275,9 +271,8 @@ class Bisect(object):
             else:
                 self.summary.append(
                     "TEST-UNEXPECTED-FAIL | %s | Bleedthrough detected, this test is the "
-                    "root cause for many of the above failures"
-                    % self.contents["testsToRun"][0]
-                )
+                    "root cause for many of the above failures" %
+                    self.contents['testsToRun'][0])
                 return -1
 
     def print_summary(self):

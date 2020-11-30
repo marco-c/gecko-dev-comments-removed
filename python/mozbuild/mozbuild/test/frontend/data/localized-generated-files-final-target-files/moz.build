@@ -2,5 +2,5 @@
 
 
 
-LOCALIZED_GENERATED_FILES += ["abc.ini"]
-FINAL_TARGET_FILES += ["!abc.ini"]
+LOCALIZED_GENERATED_FILES += [ 'abc.ini' ]
+FINAL_TARGET_FILES += [ '!abc.ini' ]

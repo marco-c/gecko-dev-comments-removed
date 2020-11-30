@@ -2,4 +2,4 @@
 
 
 
-FINAL_TARGET = "random-final-target"
+FINAL_TARGET = 'random-final-target'

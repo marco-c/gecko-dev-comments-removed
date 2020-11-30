@@ -19,8 +19,8 @@ import os
 
 
 
-sys.path.insert(0, os.path.abspath("../scripts"))
-sys.path.insert(0, os.path.abspath("../mozharness"))
+sys.path.insert(0, os.path.abspath('../scripts'))
+sys.path.insert(0, os.path.abspath('../mozharness'))
 
 
 
@@ -31,35 +31,35 @@ sys.path.insert(0, os.path.abspath("../mozharness"))
 
 
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.viewcode",
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
 ]
 
 
-templates_path = ["_templates"]
+templates_path = ['_templates']
 
 
-source_suffix = ".rst"
+source_suffix = '.rst'
 
 
 
 
 
-master_doc = "index"
+master_doc = 'index'
 
 
-project = "Mozharness"
-copyright = "2019, mozilla"
+project = 'Mozharness'
+copyright = '2019, mozilla'
 
 
 
 
 
 
-version = "0.1"
+version = '0.1'
 
-release = "0.1"
+release = '0.1'
 
 
 
@@ -73,7 +73,7 @@ release = "0.1"
 
 
 
-exclude_patterns = ["_build"]
+exclude_patterns = ['_build']
 
 
 
@@ -91,7 +91,7 @@ exclude_patterns = ["_build"]
 
 
 
-pygments_style = "sphinx"
+pygments_style = 'sphinx'
 
 
 
@@ -104,7 +104,7 @@ pygments_style = "sphinx"
 
 
 
-html_theme = "default"
+html_theme = 'default'
 
 
 
@@ -133,7 +133,7 @@ html_theme = "default"
 
 
 
-html_static_path = ["_static"]
+html_static_path = ['_static']
 
 
 
@@ -182,25 +182,28 @@ html_show_copyright = False
 
 
 
-htmlhelp_basename = "MozHarnessdoc"
+htmlhelp_basename = 'MozHarnessdoc'
 
 
 
 
 latex_elements = {
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
 }
 
 
 
 
 latex_documents = [
-    ("index", "MozHarness.tex", "Mozharness Documentation", "mozilla", "manual"),
+  ('index', 'MozHarness.tex', 'Mozharness Documentation',
+   'mozilla', 'manual'),
 ]
 
 
@@ -228,7 +231,10 @@ latex_documents = [
 
 
 
-man_pages = [("index", "mozharness", "Mozharness Documentation", ["mozilla"], 1)]
+man_pages = [
+    ('index', 'mozharness', 'Mozharness Documentation',
+     ['mozilla'], 1)
+]
 
 
 
@@ -240,15 +246,9 @@ man_pages = [("index", "mozharness", "Mozharness Documentation", ["mozilla"], 1)
 
 
 texinfo_documents = [
-    (
-        "index",
-        "Mozharness",
-        "Mozharness Documentation",
-        "mozilla",
-        "Mozharness",
-        "One line description of project.",
-        "Miscellaneous",
-    ),
+  ('index', 'Mozharness', 'Mozharness Documentation',
+   'mozilla', 'Mozharness', 'One line description of project.',
+   'Miscellaneous'),
 ]
 
 
@@ -265,4 +265,4 @@ texinfo_documents = [
 
 
 
-intersphinx_mapping = {"http://docs.python.org/": None}
+intersphinx_mapping = {'http://docs.python.org/': None}

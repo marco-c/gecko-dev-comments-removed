@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
-    "push-subscription.js",
-    "service-worker-registration.js",
-    "service-worker.js",
+    'push-subscription.js',
+    'service-worker-registration.js',
+    'service-worker.js',
 )

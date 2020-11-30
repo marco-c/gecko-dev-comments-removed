@@ -5,5 +5,5 @@
 
 
 DevToolsModules(
-    "sidebar.js",
+    'sidebar.js',
 )

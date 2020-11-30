@@ -4,13 +4,15 @@
 
 
 
-EXPORTS.mozilla.dom += ["ImageCapture.h"]
-
-UNIFIED_SOURCES += [
-    "CaptureTask.cpp",
-    "ImageCapture.cpp",
+EXPORTS.mozilla.dom += [
+    'ImageCapture.h'
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+UNIFIED_SOURCES += [
+    'CaptureTask.cpp',
+    'ImageCapture.cpp',
+]
 
-FINAL_LIBRARY = "xul"
+include('/ipc/chromium/chromium-config.mozbuild')
+
+FINAL_LIBRARY = 'xul'

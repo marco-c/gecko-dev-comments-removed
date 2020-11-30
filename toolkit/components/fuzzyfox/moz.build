@@ -5,9 +5,11 @@
 
 
 SOURCES += [
-    "Fuzzyfox.cpp",
+    'Fuzzyfox.cpp',
 ]
 
-EXPORTS.mozilla += ["Fuzzyfox.h"]
+EXPORTS.mozilla += [
+    'Fuzzyfox.h'
+]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

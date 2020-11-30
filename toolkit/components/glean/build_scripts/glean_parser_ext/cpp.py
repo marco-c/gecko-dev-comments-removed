@@ -33,7 +33,7 @@ def output_cpp(objs, output_fd, options={}):
     """
 
     
-    util.snake_case = lambda value: value.replace(".", "_").replace("-", "_")
+    util.snake_case = lambda value: value.replace('.', '_').replace('-', '_')
     
 
     def get_local_template(template_name, filters=()):

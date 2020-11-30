@@ -4,12 +4,12 @@
 
 
 
-MOCHITEST_CHROME_MANIFESTS += ["tests/chrome.ini"]
+MOCHITEST_CHROME_MANIFESTS += ['tests/chrome.ini']
 XPCSHELL_TESTS_MANIFESTS += [
-    "tests/xpcshell/xpcshell.ini",
+    'tests/xpcshell/xpcshell.ini',
 ]
 
-JAR_MANIFESTS += ["jar.mn"]
+JAR_MANIFESTS += ['jar.mn']
 
-with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "about:memory")
+with Files('**'):
+    BUG_COMPONENT = ('Toolkit', 'about:memory')

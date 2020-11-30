@@ -2,5 +2,5 @@
 
 
 
-XPI_NAME = "mycrazyxpi"
-DIST_SUBDIR = "asubdir"
+XPI_NAME = 'mycrazyxpi'
+DIST_SUBDIR = 'asubdir'

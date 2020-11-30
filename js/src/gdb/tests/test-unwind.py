@@ -7,10 +7,9 @@ def do_unwinder_test():
     
     
     import gdb
-
     gdb.execute("enable unwinder .* SpiderMonkey")
 
-    run_fragment("unwind.simple", "Something")
+    run_fragment('unwind.simple', 'Something')
 
     first = True
     
@@ -51,11 +50,10 @@ def do_unwinder_test():
 
 
 
-if platform.machine() == "x86_64" and platform.system() == "Linux":
+if platform.machine() == 'x86_64' and platform.system() == 'Linux':
     
     try:
         import gdb.unwinder  
-
         do_unwinder_test()
     except Exception:
         pass

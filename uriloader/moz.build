@@ -4,14 +4,14 @@
 
 
 
-SPHINX_TREES["/uriloader"] = "docs"
+SPHINX_TREES['/uriloader'] = 'docs'
 
-with Files("**"):
-    BUG_COMPONENT = ("Firefox", "File Handling")
+with Files('**'):
+    BUG_COMPONENT = ('Firefox', 'File Handling')
 
 DIRS += [
-    "base",
-    "exthandler",
-    "prefetch",
-    "preload",
+    'base',
+    'exthandler',
+    'prefetch',
+    'preload',
 ]

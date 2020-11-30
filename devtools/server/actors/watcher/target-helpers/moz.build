@@ -5,6 +5,7 @@
 
 
 DevToolsModules(
-    "frame-helper.js",
-    "process-helper.js",
+    'frame-helper.js',
+    'process-helper.js',
 )
+

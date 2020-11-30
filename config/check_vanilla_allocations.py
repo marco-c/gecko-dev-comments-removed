@@ -62,40 +62,39 @@ has_failed = False
 
 
 def fail(msg):
-    print("TEST-UNEXPECTED-FAIL | check_vanilla_allocations.py |", msg)
+    print('TEST-UNEXPECTED-FAIL | check_vanilla_allocations.py |', msg)
     global has_failed
     has_failed = True
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--aggressive",
-        action="store_true",
-        help="also check for malloc, calloc, realloc and free",
-    )
-    parser.add_argument("file", type=str, help="name of the file to check")
+    parser.add_argument('--aggressive', action='store_true',
+                        help='also check for malloc, calloc, realloc and free')
+    parser.add_argument('file', type=str,
+                        help='name of the file to check')
     args = parser.parse_args()
 
     
     
     
     
-    nm = buildconfig.substs.get("NM") or "nm"
-    cmd = [nm, "-u", "-C", "-A", args.file]
-    lines = subprocess.check_output(
-        cmd, universal_newlines=True, stderr=subprocess.PIPE
-    ).split("\n")
+    nm = buildconfig.substs.get('NM') or 'nm'
+    cmd = [nm, '-u', '-C', '-A', args.file]
+    lines = subprocess.check_output(cmd, universal_newlines=True,
+                                    stderr=subprocess.PIPE).split('\n')
 
     
     
 
     alloc_fns = [
         
-        r"operator new\(unsigned",
+        r'operator new\(unsigned',
+
         
-        r"operator new\[\]\(unsigned",
-        r"memalign",
+        r'operator new\[\]\(unsigned',
+
+        r'memalign',
         
         
         
@@ -103,17 +102,23 @@ def main():
     ]
 
     if args.aggressive:
-        alloc_fns += [r"malloc", r"calloc", r"realloc", r"free", r"strdup"]
+        alloc_fns += [
+            r'malloc',
+            r'calloc',
+            r'realloc',
+            r'free',
+            r'strdup'
+        ]
 
     
-    alloc_fns_unescaped = [fn.replace("\\", "") for fn in alloc_fns]
+    alloc_fns_unescaped = [fn.replace('\\', '') for fn in alloc_fns]
 
     
     
     
     
     
-    alloc_fns_re = r"([^:/ ]+):\s+U (" + r"|".join(alloc_fns) + r")"
+    alloc_fns_re = r'([^:/ ]+):\s+U (' + r'|'.join(alloc_fns) + r')'
 
     
     
@@ -131,7 +136,7 @@ def main():
 
         
         
-        if "stdc++compat" in filename:
+        if 'stdc++compat' in filename:
             continue
 
         
@@ -153,15 +158,15 @@ def main():
         
         
         
-        if filename == "umutex.o":
+        if filename == 'umutex.o':
             continue
 
         
-        if filename == "Decimal.o":
+        if filename == 'Decimal.o':
             continue
 
         fn = m.group(2)
-        if filename == "Utility.o":
+        if filename == 'Utility.o':
             util_Utility_cpp.add(fn)
         else:
             
@@ -179,51 +184,45 @@ def main():
 
     
     if util_Utility_cpp:
-        fail(
-            "unexpected allocation fns used in util/Utility.cpp: "
-            + ", ".join(util_Utility_cpp)
-        )
+        fail('unexpected allocation fns used in util/Utility.cpp: ' +
+             ', '.join(util_Utility_cpp))
 
     
     
     
     
     if emit_line_info:
-        print("check_vanilla_allocations.py: Source lines with allocation calls:")
-        print(
-            "check_vanilla_allocations.py: Accurate in unoptimized builds; "
-            "util/Utility.cpp expected."
-        )
+        print('check_vanilla_allocations.py: Source lines with allocation calls:')
+        print('check_vanilla_allocations.py: Accurate in unoptimized builds; '
+              'util/Utility.cpp expected.')
 
         
         
         
         
-        cmd = ["nm", "-u", "-C", "-l", args.file]
-        lines = subprocess.check_output(
-            cmd, universal_newlines=True, stderr=subprocess.PIPE
-        ).split("\n")
+        cmd = ['nm', '-u', '-C', '-l', args.file]
+        lines = subprocess.check_output(cmd, universal_newlines=True,
+                                        stderr=subprocess.PIPE).split('\n')
 
         
         
         
         
         
-        alloc_lines_re = r"U ((" + r"|".join(alloc_fns) + r").*)\s+(\S+:\d+)$"
+        alloc_lines_re = r'U ((' + r'|'.join(alloc_fns) + r').*)\s+(\S+:\d+)$'
 
         for line in lines:
             m = re.search(alloc_lines_re, line)
             if m:
-                print(
-                    "check_vanilla_allocations.py:", m.group(1), "called at", m.group(3)
-                )
+                print('check_vanilla_allocations.py:',
+                      m.group(1), 'called at', m.group(3))
 
     if has_failed:
         sys.exit(1)
 
-    print("TEST-PASS | check_vanilla_allocations.py | ok")
+    print('TEST-PASS | check_vanilla_allocations.py | ok')
     sys.exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

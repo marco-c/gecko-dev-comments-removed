@@ -63,7 +63,7 @@ def fixture_marionette(binary, ping_server):
         
         
         
-        "browser.region.network.url": "",
+        "browser.region.network.url": '',
         
         "browser.cache.disk.smart_size.enabled": False,
         "toolkit.telemetry.server": server_url,

@@ -4,7 +4,7 @@
 
 
 
-JAR_MANIFESTS += ["jar.mn"]
+JAR_MANIFESTS += ['jar.mn']
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "Panning and Zooming")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'Panning and Zooming')

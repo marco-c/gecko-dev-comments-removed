@@ -5,6 +5,6 @@
 
 
 XPCSHELL_TESTS_MANIFESTS += [
-    "unit/xpcshell.ini",
-    "unit_ipc/xpcshell.ini",
+    'unit/xpcshell.ini',
+    'unit_ipc/xpcshell.ini',
 ]

@@ -5,35 +5,35 @@
 
 
 EXPORTS += [
-    "OmxDecoderModule.h",
+    'OmxDecoderModule.h',
 ]
 
 UNIFIED_SOURCES += [
-    "OmxDataDecoder.cpp",
-    "OmxDecoderModule.cpp",
-    "OmxPlatformLayer.cpp",
-    "OmxPromiseLayer.cpp",
+    'OmxDataDecoder.cpp',
+    'OmxDecoderModule.cpp',
+    'OmxPlatformLayer.cpp',
+    'OmxPromiseLayer.cpp',
 ]
 
 LOCAL_INCLUDES += [
-    "/media/openmax_il/il112",
+    '/media/openmax_il/il112',
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
-if CONFIG["MOZ_OMX"]:
+if CONFIG['MOZ_OMX']:
     UNIFIED_SOURCES += [
-        "PureOmxPlatformLayer.cpp",
+        'PureOmxPlatformLayer.cpp',
     ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wno-error=shadow"]
-
-
-if CONFIG["CC_TYPE"] == "clang-cl":
-    CXXFLAGS += ["-Wno-invalid-source-encoding"]
+if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+    CXXFLAGS += ['-Wno-error=shadow']
 
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+if CONFIG['CC_TYPE'] == 'clang-cl':
+    CXXFLAGS += ['-Wno-invalid-source-encoding']
+
+
+include('/tools/fuzzing/libfuzzer-config.mozbuild')

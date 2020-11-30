@@ -20,7 +20,6 @@ from ipdl.cxx.ast import Node, Whitespace, GroupNode, VerbatimNode
 
 
 
-
 def StmtCode(tmpl, **kwargs):
     """Perform template substitution to build opaque C++ AST nodes. See the
     module documentation for more information on the templating syntax.
@@ -58,11 +57,10 @@ def ExprVerbatim(text):
 
 
 
-
 def _code(tmpl, inline, context):
     
     
-    if tmpl.startswith("\n"):
+    if tmpl.startswith('\n'):
         tmpl = tmpl[1:]
     tmpl = textwrap.dedent(tmpl)
 
@@ -87,54 +85,53 @@ def _verbatim(text, inline):
     
     
     
-    return _code(text.replace("$", "$$"), inline, {})
+    return _code(text.replace('$', '$$'), inline, {})
 
 
 
 _substPat = re.compile(
-    r"""
+    r'''
     \$(?:
         (?P<escaped>\$)                  | # '$$' is an escaped '$'
         (?P<list>[*,])?{(?P<expr>[^}]+)} | # ${expr}, $*{expr}, or $,{expr}
         (?P<invalid>)                      # For error reporting
     )
-    """,
-    re.IGNORECASE | re.VERBOSE,
-)
+    ''',
+    re.IGNORECASE | re.VERBOSE)
 
 
 def _line(raw, skip_indent, lineno, context):
-    assert "\n" not in raw
+    assert '\n' not in raw
 
     
     line = raw.lstrip()
     offset = int(math.ceil((len(raw) - len(line)) / 4))
 
     
-    if line.startswith("#"):
+    if line.startswith('#'):
         skip_indent = True
 
     column = 0
     children = []
     for match in _substPat.finditer(line):
-        if match.group("invalid") is not None:
+        if match.group('invalid') is not None:
             raise ValueError("Invalid substitution on line %d" % lineno)
 
         
         
         if match.start() > column:
-            before = line[column : match.start()]
+            before = line[column:match.start()]
             children.append(VerbatimNode(before))
         column = match.end()
 
         
-        if match.group("escaped") is not None:
-            children.append(VerbatimNode("$"))
+        if match.group('escaped') is not None:
+            children.append(VerbatimNode('$'))
             continue
 
         
-        list_chr = match.group("list")
-        expr = match.group("expr")
+        list_chr = match.group('list')
+        expr = match.group('expr')
         assert expr is not None
 
         
@@ -150,12 +147,12 @@ def _line(raw, skip_indent, lineno, context):
             values = [values]
 
         
-        inline = match.span() != (0, len(line))
+        inline = (match.span() != (0, len(line)))
 
         for idx, value in enumerate(values):
             
-            if idx > 0 and list_chr == ",":
-                children.append(VerbatimNode(", "))
+            if idx > 0 and list_chr == ',':
+                children.append(VerbatimNode(', '))
 
             
             
@@ -177,11 +174,11 @@ def _line(raw, skip_indent, lineno, context):
     
     
     if len(children) == 0:
-        return VerbatimNode("")
+        return VerbatimNode('')
 
     
     if not skip_indent:
-        children.insert(0, VerbatimNode("", indent=True))
+        children.insert(0, VerbatimNode('', indent=True))
 
     
     return GroupNode(children, offset=offset)

@@ -4,8 +4,8 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Firefox", "Installer")
+with Files('**'):
+    BUG_COMPONENT = ('Firefox', 'Installer')
 
-with Files("windows/**"):
-    BUG_COMPONENT = ("Toolkit", "NSIS Installer")
+with Files('windows/**'):
+    BUG_COMPONENT = ('Toolkit', 'NSIS Installer')

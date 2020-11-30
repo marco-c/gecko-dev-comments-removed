@@ -4,8 +4,12 @@
 
 
 
-SOURCES += ["MessageManagerFuzzer.cpp"]
+SOURCES += [
+  'MessageManagerFuzzer.cpp'
+]
 
-EXPORTS += ["MessageManagerFuzzer.h"]
+EXPORTS += [
+  'MessageManagerFuzzer.h'
+]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

@@ -4,10 +4,10 @@
 
 
 
-DIRS += ["util"]
+DIRS += ['util']
 
 EXPORTS += [
-    "nsUGenCategory.h",
+    'nsUGenCategory.h',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

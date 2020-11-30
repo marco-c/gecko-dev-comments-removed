@@ -4,4 +4,5 @@
 
 
 
-MOCHITEST_MANIFESTS += ["mochitest.ini"]
+MOCHITEST_MANIFESTS += ['mochitest.ini']
+

@@ -4,7 +4,7 @@
 
 
 
-XPIDL_MODULE = "foobar"
+XPIDL_MODULE = 'foobar'
 export("XPIDL_MODULE")
 
-DIRS += ["foo", "bar"]
+DIRS += ['foo', 'bar']

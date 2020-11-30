@@ -2,5 +2,5 @@
 
 
 
-LOCALIZED_GENERATED_FILES += ["abc.ini", ("bar", "baz")]
-LOCALIZED_GENERATED_FILES["abc.ini"].force = True
+LOCALIZED_GENERATED_FILES += [ 'abc.ini', ('bar', 'baz') ]
+LOCALIZED_GENERATED_FILES['abc.ini'].force = True

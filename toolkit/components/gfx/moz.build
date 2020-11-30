@@ -4,15 +4,15 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "Graphics")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'Graphics')
 
 EXTRA_JS_MODULES += [
-    "SanityTest.jsm",
+    'SanityTest.jsm',
 ]
 
 XPCOM_MANIFESTS += [
-    "components.conf",
+    'components.conf',
 ]
 
-JAR_MANIFESTS += ["jar.mn"]
+JAR_MANIFESTS += ['jar.mn']

@@ -5,12 +5,13 @@
 
 
 XPIDL_SOURCES += [
-    "mozIJSSubScriptLoader.idl",
-    "nsIXPConnect.idl",
-    "nsIXPCScriptable.idl",
-    "xpccomponents.idl",
-    "xpcIJSGetFactory.idl",
-    "xpcIJSWeakReference.idl",
+    'mozIJSSubScriptLoader.idl',
+    'nsIXPConnect.idl',
+    'nsIXPCScriptable.idl',
+    'xpccomponents.idl',
+    'xpcIJSGetFactory.idl',
+    'xpcIJSWeakReference.idl',
 ]
 
-XPIDL_MODULE = "xpconnect"
+XPIDL_MODULE = 'xpconnect'
+

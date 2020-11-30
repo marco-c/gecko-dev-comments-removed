@@ -4,13 +4,15 @@
 
 
 
-Library("FuzzingCompositorManagerParentIPC")
+Library('FuzzingCompositorManagerParentIPC')
 
-SOURCES += ["compositor_manager_parent_ipc_libfuzz.cpp"]
+SOURCES += [
+    'compositor_manager_parent_ipc_libfuzz.cpp'
+]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'
 
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+include('/tools/fuzzing/libfuzzer-config.mozbuild')

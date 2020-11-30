@@ -4,4 +4,6 @@
 
 
 
-DIRS += ["data"]
+DIRS += [
+    'data'
+]

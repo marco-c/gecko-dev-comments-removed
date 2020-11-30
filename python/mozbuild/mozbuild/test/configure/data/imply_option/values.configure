@@ -4,25 +4,21 @@
 
 
 
-option("--enable-foo", nargs="*", help="enable foo")
+option('--enable-foo', nargs='*', help='enable foo')
 
-
-@depends("--enable-foo")
+@depends('--enable-foo')
 def foo(value):
     if value:
         return value
 
-
-imply_option("--enable-bar", foo)
-
-
-option("--enable-bar", nargs="*", help="enable bar")
+imply_option('--enable-bar', foo)
 
 
-@depends("--enable-bar")
+option('--enable-bar', nargs='*', help='enable bar')
+
+@depends('--enable-bar')
 def bar(value):
     if value:
         return value
 
-
-set_config("BAR", bar)
+set_config('BAR', bar)

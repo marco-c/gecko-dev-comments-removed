@@ -5,10 +5,10 @@
 
 
 DIRS += [
-    "reps",
-    "shared",
+    'reps',
+    'shared',
 ]
 
 DevToolsModules(
-    "index.js",
+    'index.js',
 )

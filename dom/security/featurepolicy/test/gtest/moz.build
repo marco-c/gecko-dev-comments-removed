@@ -5,9 +5,10 @@
 
 
 UNIFIED_SOURCES = [
-    "TestFeaturePolicyParser.cpp",
+    'TestFeaturePolicyParser.cpp',
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'
+

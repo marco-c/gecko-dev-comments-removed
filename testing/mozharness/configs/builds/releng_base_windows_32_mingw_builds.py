@@ -7,43 +7,39 @@ config = {
     
     
     
-    "secret_files": [
-        {
-            "filename": "/builds/gls-gapi.data",
-            "secret_name": "project/releng/gecko/build/level-%(scm-level)s/gls-gapi.data",
-            "min_scm_level": 1,
-        },
-        {
-            "filename": "/builds/sb-gapi.data",
-            "secret_name": "project/releng/gecko/build/level-%(scm-level)s/sb-gapi.data",
-            "min_scm_level": 1,
-        },
-        {
-            "filename": "/builds/mozilla-desktop-geoloc-api.key",
-            "secret_name": "project/releng/gecko/build/level-%(scm-level)s/mozilla-desktop-geoloc-api.key",
-            "min_scm_level": 2,
-            "default": "try-build-has-no-secrets",
-        },
+
+    'secret_files': [
+        {'filename': '/builds/gls-gapi.data',
+         'secret_name': 'project/releng/gecko/build/level-%(scm-level)s/gls-gapi.data',
+         'min_scm_level': 1},
+        {'filename': '/builds/sb-gapi.data',
+         'secret_name': 'project/releng/gecko/build/level-%(scm-level)s/sb-gapi.data',
+         'min_scm_level': 1},
+        {'filename': '/builds/mozilla-desktop-geoloc-api.key',
+         'secret_name': 'project/releng/gecko/build/level-%(scm-level)s/mozilla-desktop-geoloc-api.key',
+         'min_scm_level': 2, 'default': 'try-build-has-no-secrets'},
     ],
-    "vcs_share_base": "/builds/hg-shared",
+    'vcs_share_base': '/builds/hg-shared',
+    
+
+
     
     
-    
-    "platform": "win32-mingw32",
-    "stage_platform": "win32-mingw32",
-    "env": {
-        "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
-        "DISPLAY": ":2",
-        "HG_SHARE_BASE_DIR": "/builds/hg-shared",
-        "MOZ_OBJDIR": "%(abs_obj_dir)s",
-        "TINDERBOX_OUTPUT": "1",
-        "TOOLTOOL_CACHE": "/builds/worker/tooltool-cache",
-        "TOOLTOOL_HOME": "/builds",
-        "MOZ_CRASHREPORTER_NO_REPORT": "1",
-        "LC_ALL": "C",
+    'platform': 'win32-mingw32',
+    'stage_platform': 'win32-mingw32',
+    'env': {
+        'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),
+        'DISPLAY': ':2',
+        'HG_SHARE_BASE_DIR': '/builds/hg-shared',
+        'MOZ_OBJDIR': '%(abs_obj_dir)s',
+        'TINDERBOX_OUTPUT': '1',
+        'TOOLTOOL_CACHE': '/builds/worker/tooltool-cache',
+        'TOOLTOOL_HOME': '/builds',
+        'MOZ_CRASHREPORTER_NO_REPORT': '1',
+        'LC_ALL': 'C',
         
-        "PATH": "/usr/local/bin:/bin:/usr/bin",
+        'PATH': '/usr/local/bin:/bin:/usr/bin',
     },
-    "mozconfig_platform": "win32",
+    'mozconfig_platform': 'win32',
     
 }

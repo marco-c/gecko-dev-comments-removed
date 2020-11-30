@@ -4,10 +4,10 @@
 
 
 
-DIRS += ["secondplugin", "thirdplugin", "flashplugin"]
+DIRS += ['secondplugin', 'thirdplugin', 'flashplugin']
 
-SharedLibrary("nptest")
+SharedLibrary('nptest')
 
-relative_path = "."
-cocoa_name = "Test"
-include("testplugin.mozbuild")
+relative_path = '.'
+cocoa_name = 'Test'
+include('testplugin.mozbuild')

@@ -5,6 +5,6 @@
 
 
 DevToolsModules(
-    "capture.js",
-    "save.js",
+    'capture.js',
+    'save.js',
 )

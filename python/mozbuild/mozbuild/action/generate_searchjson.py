@@ -13,7 +13,7 @@ engines = []
 locale = sys.argv[2]
 output_file = sys.argv[3]
 
-output = open(output_file, "w")
+output = open(output_file, 'w')
 
 with open(sys.argv[1]) as f:
     searchinfo = json.load(f)
@@ -38,9 +38,7 @@ validateDefault("visibleDefaultEngines")
 
 
 if "searchDefault" not in localeSearchInfo["default"]:
-    localeSearchInfo["default"]["searchDefault"] = searchinfo["default"][
-        "searchDefault"
-    ]
+    localeSearchInfo["default"]["searchDefault"] = searchinfo["default"]["searchDefault"]
 
 
 
@@ -59,10 +57,7 @@ if "regionOverrides" in searchinfo:
     for region in regionOverrides:
         
         enginesToOverride = set(regionOverrides[region].keys())
-        if (
-            region in localeSearchInfo
-            and "visibleDefaultEngines" in localeSearchInfo[region]
-        ):
+        if region in localeSearchInfo and "visibleDefaultEngines" in localeSearchInfo[region]:
             visibleDefaultEngines = localeSearchInfo[region]["visibleDefaultEngines"]
         else:
             visibleDefaultEngines = localeSearchInfo["default"]["visibleDefaultEngines"]
@@ -70,16 +65,12 @@ if "regionOverrides" in searchinfo:
             if region not in localeSearchInfo:
                 localeSearchInfo[region] = {}
             localeSearchInfo[region]["visibleDefaultEngines"] = copy.deepcopy(
-                visibleDefaultEngines
-            )
-            for i, engine in enumerate(
-                localeSearchInfo[region]["visibleDefaultEngines"]
-            ):
+                visibleDefaultEngines)
+            for i, engine in enumerate(localeSearchInfo[region]["visibleDefaultEngines"]):
                 if engine in regionOverrides[region]:
-                    localeSearchInfo[region]["visibleDefaultEngines"][
-                        i
-                    ] = regionOverrides[region][engine]
+                    localeSearchInfo[region]["visibleDefaultEngines"][i] = \
+                        regionOverrides[region][engine]
 
-output.write(json.dumps(localeSearchInfo, ensure_ascii=False).encode("utf8"))
+output.write(json.dumps(localeSearchInfo, ensure_ascii=False).encode('utf8'))
 
 output.close()

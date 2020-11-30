@@ -5,34 +5,34 @@
 
 
 TEST_DIRS += [
-    "gtest",
+    'gtest',
 ]
 
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
 EXPORTS += [
-    "DDLogCategory.h",
-    "DDLoggedTypeTraits.h",
-    "DDLogObject.h",
-    "DDLogValue.h",
-    "DecoderDoctorDiagnostics.h",
-    "DecoderDoctorLogger.h",
+    'DDLogCategory.h',
+    'DDLoggedTypeTraits.h',
+    'DDLogObject.h',
+    'DDLogValue.h',
+    'DecoderDoctorDiagnostics.h',
+    'DecoderDoctorLogger.h',
 ]
 
 UNIFIED_SOURCES += [
-    "DDLifetime.cpp",
-    "DDLifetimes.cpp",
-    "DDLogCategory.cpp",
-    "DDLogMessage.cpp",
-    "DDLogObject.cpp",
-    "DDLogUtils.cpp",
-    "DDLogValue.cpp",
-    "DDMediaLog.cpp",
-    "DDMediaLogs.cpp",
-    "DDTimeStamp.cpp",
-    "DecoderDoctorDiagnostics.cpp",
-    "DecoderDoctorLogger.cpp",
+    'DDLifetime.cpp',
+    'DDLifetimes.cpp',
+    'DDLogCategory.cpp',
+    'DDLogMessage.cpp',
+    'DDLogObject.cpp',
+    'DDLogUtils.cpp',
+    'DDLogValue.cpp',
+    'DDMediaLog.cpp',
+    'DDMediaLogs.cpp',
+    'DDTimeStamp.cpp',
+    'DecoderDoctorDiagnostics.cpp',
+    'DecoderDoctorLogger.cpp',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

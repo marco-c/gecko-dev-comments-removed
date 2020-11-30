@@ -18,7 +18,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 try:
     from mozbuild.base import MozbuildObject
-
     build = MozbuildObject.from_environment(cwd=here)
 except ImportError:
     build = None
@@ -33,12 +32,12 @@ environment variable is required.
 def _get_test_harness(suite, install_dir):
     
     if build:
-        harness_root = os.path.join(build.topobjdir, "_tests", install_dir)
+        harness_root = os.path.join(build.topobjdir, '_tests', install_dir)
         if os.path.isdir(harness_root):
             return harness_root
 
-    if "TEST_HARNESS_ROOT" in os.environ:
-        harness_root = os.path.join(os.environ["TEST_HARNESS_ROOT"], suite)
+    if 'TEST_HARNESS_ROOT' in os.environ:
+        harness_root = os.path.join(os.environ['TEST_HARNESS_ROOT'], suite)
         if os.path.isdir(harness_root):
             return harness_root
 
@@ -46,11 +45,10 @@ def _get_test_harness(suite, install_dir):
     return None
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def setup_test_harness(request):
     """Fixture for setting up a mozharness-based test harness like
     mochitest or reftest"""
-
     def inner(files_dir, *args, **kwargs):
         harness_root = _get_test_harness(*args, **kwargs)
         if harness_root:
@@ -59,17 +57,17 @@ def setup_test_harness(request):
             
             
             if files_dir:
-                test_root = os.path.join(harness_root, "tests", "selftests")
+                test_root = os.path.join(harness_root, 'tests', 'selftests')
                 if not os.path.exists(test_root):
                     if os.path.lexists(test_root):
                         os.remove(test_root)
 
-                    if hasattr(os, "symlink"):
+                    if hasattr(os, 'symlink'):
                         os.symlink(files_dir, test_root)
                     else:
                         shutil.copytree(files_dir, test_root)
 
-        elif "TEST_HARNESS_ROOT" in os.environ:
+        elif 'TEST_HARNESS_ROOT' in os.environ:
             
             
             
@@ -79,11 +77,10 @@ def setup_test_harness(request):
             
             
             pass
-
     return inner
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def binary():
     """Return a Firefox binary"""
     try:
@@ -91,13 +88,13 @@ def binary():
     except Exception:
         pass
 
-    app = "firefox"
-    bindir = os.path.join(os.environ["PYTHON_TEST_TMP"], app)
+    app = 'firefox'
+    bindir = os.path.join(os.environ['PYTHON_TEST_TMP'], app)
     if os.path.isdir(bindir):
         try:
             return mozinstall.get_binary(bindir, app_name=app)
         except Exception:
             pass
 
-    if "GECKO_BINARY_PATH" in os.environ:
-        return os.environ["GECKO_BINARY_PATH"]
+    if 'GECKO_BINARY_PATH' in os.environ:
+        return os.environ['GECKO_BINARY_PATH']

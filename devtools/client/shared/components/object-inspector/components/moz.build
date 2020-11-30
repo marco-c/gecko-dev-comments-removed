@@ -5,6 +5,6 @@
 
 
 DevToolsModules(
-    "ObjectInspector.js",
-    "ObjectInspectorItem.js",
+    'ObjectInspector.js',
+    'ObjectInspectorItem.js',
 )

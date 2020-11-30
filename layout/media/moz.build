@@ -4,24 +4,24 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "Audio/Video")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'Audio/Video')
 
 
 
 
 
-Library("gkmedias")
+Library('gkmedias')
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'
 
-if CONFIG["MOZ_WEBRTC"]:
-    DIRS += ["webrtc"]
+if CONFIG['MOZ_WEBRTC']:
+    DIRS += ['webrtc']
 
-if CONFIG["OS_TARGET"] == "WINNT":
+if CONFIG['OS_TARGET'] == 'WINNT':
     OS_LIBS += [
-        "usp10",
-        "ole32",
-        "msimg32",
-        "winmm",
+        'usp10',
+        'ole32',
+        'msimg32',
+        'winmm',
     ]

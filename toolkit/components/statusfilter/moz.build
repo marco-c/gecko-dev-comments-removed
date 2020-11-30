@@ -4,15 +4,15 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Navigation")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'DOM: Navigation')
 
 SOURCES += [
-    "nsBrowserStatusFilter.cpp",
+    'nsBrowserStatusFilter.cpp',
 ]
 
 EXPORTS += [
-    "nsBrowserStatusFilter.h",
+    'nsBrowserStatusFilter.h',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

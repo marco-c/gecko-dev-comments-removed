@@ -5,12 +5,9 @@
 
 
 FINAL_TARGET_FILES += [
-    "!Accessible.tlb",
+    '!Accessible.tlb',
 ]
 
-GeneratedFile(
-    "Accessible.tlb",
-    inputs=["Accessible.idl"],
-    script="/build/midl.py",
-    entry_point="midl",
-)
+GeneratedFile('Accessible.tlb',
+              inputs=['Accessible.idl'],
+              script='/build/midl.py', entry_point='midl')

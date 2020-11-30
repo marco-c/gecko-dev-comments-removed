@@ -4,17 +4,19 @@
 
 
 
-Library("FuzzingContentParentIPC")
+Library('FuzzingContentParentIPC')
 
 LOCAL_INCLUDES += [
-    "/dom/base",
+    '/dom/base',
 ]
 
-SOURCES += ["content_parent_ipc_libfuzz.cpp"]
+SOURCES += [
+    'content_parent_ipc_libfuzz.cpp'
+]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+include('/ipc/chromium/chromium-config.mozbuild')
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'
 
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+include('/tools/fuzzing/libfuzzer-config.mozbuild')

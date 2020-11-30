@@ -10,16 +10,7 @@ from logging import *
 
 
 
-
-from logging import (
-    getLoggerClass,
-    addLevelName,
-    setLoggerClass,
-    shutdown,
-    debug,
-    info,
-    basicConfig,
-)
+from logging import getLoggerClass, addLevelName, setLoggerClass, shutdown, debug, info, basicConfig
 import json
 
 _default_level = INFO
@@ -33,12 +24,12 @@ KNOWN_FAIL = _default_level + 4
 FAIL = _default_level + 5
 CRASH = _default_level + 6
 
-addLevelName(START, "TEST-START")
-addLevelName(END, "TEST-END")
-addLevelName(PASS, "TEST-PASS")
-addLevelName(KNOWN_FAIL, "TEST-KNOWN-FAIL")
-addLevelName(FAIL, "TEST-UNEXPECTED-FAIL")
-addLevelName(CRASH, "PROCESS-CRASH")
+addLevelName(START, 'TEST-START')
+addLevelName(END, 'TEST-END')
+addLevelName(PASS, 'TEST-PASS')
+addLevelName(KNOWN_FAIL, 'TEST-KNOWN-FAIL')
+addLevelName(FAIL, 'TEST-UNEXPECTED-FAIL')
+addLevelName(CRASH, 'PROCESS-CRASH')
 
 
 class MozLogger(_LoggerClass):
@@ -77,11 +68,11 @@ class MozLogger(_LoggerClass):
         if params is None:
             params = {}
 
-        level = params.get("_level", _default_level)
+        level = params.get('_level', _default_level)
         if isinstance(level, int):
-            params["_level"] = getLevelName(level)
+            params['_level'] = getLevelName(level)
         else:
-            params["_level"] = level
+            params['_level'] = level
             level = getLevelName(level.upper())
 
             
@@ -91,13 +82,13 @@ class MozLogger(_LoggerClass):
             if not isinstance(level, int):
                 level = _default_level
 
-        params["action"] = action
+        params['action'] = action
 
         
         
-        message = params.get("_message")
+        message = params.get('_message')
 
-        self.log(level, message, extra={"params": params})
+        self.log(level, message, extra={'params': params})
 
 
 class JSONFormatter(Formatter):
@@ -106,22 +97,22 @@ class JSONFormatter(Formatter):
     def format(self, record):
         
         output = {
-            "_time": int(round(record.created * 1000, 0)),
-            "_namespace": record.name,
-            "_level": getLevelName(record.levelno),
+            '_time': int(round(record.created * 1000, 0)),
+            '_namespace': record.name,
+            '_level': getLevelName(record.levelno),
         }
 
         
         
         
-        output.update(getattr(record, "params", {}))
+        output.update(getattr(record, 'params', {}))
 
-        if record.msg and output.get("_message") is None:
+        if record.msg and output.get('_message') is None:
             
             
-            output["_message"] = Formatter.format(self, record)
+            output['_message'] = Formatter.format(self, record)
 
-        return json.dumps(output, indent=output.get("indent"))
+        return json.dumps(output, indent=output.get('indent'))
 
 
 class MozFormatter(Formatter):
@@ -130,9 +121,8 @@ class MozFormatter(Formatter):
     If a different format is desired, this can be explicitly
     overriden with the log handler's setFormatter() method
     """
-
     level_length = 0
-    max_level_length = len("TEST-START")
+    max_level_length = len('TEST-START')
 
     def __init__(self, include_timestamp=False):
         """
@@ -153,10 +143,10 @@ class MozFormatter(Formatter):
                 self.level_length = len(record.levelname)
         else:
             pad = self.level_length - len(record.levelname) + 1
-        sep = "|".rjust(pad)
-        fmt = "%(name)s %(levelname)s " + sep + " %(message)s"
+        sep = '|'.rjust(pad)
+        fmt = '%(name)s %(levelname)s ' + sep + ' %(message)s'
         if self.include_timestamp:
-            fmt = "%(asctime)s " + fmt
+            fmt = '%(asctime)s ' + fmt
         
         
         self._fmt = fmt
@@ -180,11 +170,9 @@ def getLogger(name, handler=None):
 
     if name in Logger.manager.loggerDict:
         if handler:
-            raise ValueError(
-                "The handler parameter requires "
-                + "that a logger by this name does "
-                + "not already exist"
-            )
+            raise ValueError('The handler parameter requires ' +
+                             'that a logger by this name does ' +
+                             'not already exist')
         return Logger.manager.loggerDict[name]
 
     logger = getSysLogger(name)

@@ -5,11 +5,11 @@
 
 
 SOURCES += [
-    "nsBMPEncoder.cpp",
+    'nsBMPEncoder.cpp',
 ]
 
 LOCAL_INCLUDES += [
-    "/image",
+    '/image',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

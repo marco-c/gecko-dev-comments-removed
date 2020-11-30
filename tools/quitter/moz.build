@@ -4,14 +4,14 @@
 
 
 
-XPI_NAME = "quitter"
+XPI_NAME = 'quitter'
 
 USE_EXTENSION_MANIFEST = True
 
 FINAL_TARGET_FILES += [
-    "background.js",
-    "contentscript.js",
-    "manifest.json",
-    "parent.js",
-    "schema.json",
+    'background.js',
+    'contentscript.js',
+    'manifest.json',
+    'parent.js',
+    'schema.json',
 ]

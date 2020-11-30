@@ -4,8 +4,8 @@
 
 
 
-MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.ini"]
+MOCHITEST_CHROME_MANIFESTS += ['tests/chrome/chrome.ini']
 
 DevToolsModules(
-    "websocket-server.js",
+    'websocket-server.js',
 )

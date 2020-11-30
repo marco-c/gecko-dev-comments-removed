@@ -5,7 +5,8 @@
 
 
 UNIFIED_SOURCES += [
-    "PermissionManagerTest.cpp",
+    'PermissionManagerTest.cpp',
 ]
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'
+

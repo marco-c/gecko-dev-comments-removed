@@ -5,6 +5,6 @@
 
 
 DevToolsModules(
-    "browsers.json",
-    "css-properties.json",
+    'browsers.json',
+    'css-properties.json',
 )

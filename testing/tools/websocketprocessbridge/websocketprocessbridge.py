@@ -15,9 +15,10 @@ import os
 
 
 commands = {
-    "iceserver": [sys.executable, "-u", os.path.join("iceserver", "iceserver.py")]
+    'iceserver' : [sys.executable,
+                   "-u",
+                   os.path.join("iceserver", "iceserver.py")]
 }
-
 
 class ProcessSide(protocol.ProcessProtocol):
     """Handles the spawned process (I/O, process termination)"""
@@ -59,9 +60,10 @@ class SocketSide(protocol.Protocol):
             
             
             data = six.ensure_str(data)
-            reactor.spawnProcess(
-                self.processSide, commands[data][0], commands[data], env=os.environ
-            )
+            reactor.spawnProcess(self.processSide,
+                                 commands[data][0],
+                                 commands[data],
+                                 env=os.environ)
 
     def connectionLost(self, reason):
         if self.processSide:
@@ -81,9 +83,7 @@ class ProcessSocketBridgeFactory(protocol.Factory):
 
 
 
-
 parent_process = psutil.Process(os.getpid()).parent()
-
 
 def check_parent():
     """ Checks if parent process is still alive, and exits if not """
@@ -91,16 +91,10 @@ def check_parent():
         print("websocket/process bridge exiting because parent process is gone")
         reactor.stop()
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Starts websocket/process bridge.")
-    parser.add_argument(
-        "--port",
-        type=str,
-        dest="port",
-        default="8191",
-        help="Port for websocket/process bridge. Default 8191.",
-    )
+    parser = argparse.ArgumentParser(description='Starts websocket/process bridge.')
+    parser.add_argument("--port", type=str, dest="port", default="8191",
+                    help="Port for websocket/process bridge. Default 8191.")
     args = parser.parse_args()
 
     parent_checker = LoopingCall(check_parent)
@@ -110,3 +104,5 @@ if __name__ == "__main__":
     reactor.listenTCP(int(args.port), txws.WebSocketFactory(bridgeFactory))
     print("websocket/process bridge listening on port %s" % args.port)
     reactor.run()
+
+

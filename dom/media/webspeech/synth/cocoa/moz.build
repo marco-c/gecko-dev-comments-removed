@@ -5,11 +5,11 @@
 
 
 SOURCES += [
-    "OSXSpeechSynthesizerService.mm",
+    'OSXSpeechSynthesizerService.mm',
 ]
 
 XPCOM_MANIFESTS += [
-    "components.conf",
+    'components.conf',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

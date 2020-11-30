@@ -4,33 +4,33 @@
 
 
 
-Library("devtoolstests")
+Library('devtoolstests')
 
 LOCAL_INCLUDES += [
-    "../..",
+    '../..',
 ]
 
-DEFINES["GOOGLE_PROTOBUF_NO_RTTI"] = True
-DEFINES["GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER"] = True
+DEFINES['GOOGLE_PROTOBUF_NO_RTTI'] = True
+DEFINES['GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER'] = True
 
 UNIFIED_SOURCES = [
-    "DeserializedNodeUbiNodes.cpp",
-    "DeserializedStackFrameUbiStackFrames.cpp",
-    "DoesCrossCompartmentBoundaries.cpp",
-    "DoesntCrossCompartmentBoundaries.cpp",
-    "SerializesEdgeNames.cpp",
-    "SerializesEverythingInHeapGraphOnce.cpp",
-    "SerializesTypeNames.cpp",
+    'DeserializedNodeUbiNodes.cpp',
+    'DeserializedStackFrameUbiStackFrames.cpp',
+    'DoesCrossCompartmentBoundaries.cpp',
+    'DoesntCrossCompartmentBoundaries.cpp',
+    'SerializesEdgeNames.cpp',
+    'SerializesEverythingInHeapGraphOnce.cpp',
+    'SerializesTypeNames.cpp',
 ]
 
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wno-error=shadow"]
+if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+    CXXFLAGS += ['-Wno-error=shadow']
 
 
 
-if CONFIG["CC_TYPE"] == "clang":
-    CXXFLAGS += ["-Wno-inconsistent-missing-override"]
-    
-    CXXFLAGS += ["-Wno-null-dereference"]
+if CONFIG['CC_TYPE'] == 'clang':
+  CXXFLAGS += ['-Wno-inconsistent-missing-override']
+  
+  CXXFLAGS += ['-Wno-null-dereference']
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'

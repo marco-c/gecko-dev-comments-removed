@@ -4,21 +4,21 @@
 
 
 
-DIRS += ["converters"]
+DIRS += ['converters']
 
 XPIDL_SOURCES += [
-    "mozITXTToHTMLConv.idl",
-    "nsIDirIndex.idl",
-    "nsIDirIndexListener.idl",
-    "nsIStreamConverter.idl",
-    "nsIStreamConverterService.idl",
-    "nsITXTToHTMLConv.idl",
+    'mozITXTToHTMLConv.idl',
+    'nsIDirIndex.idl',
+    'nsIDirIndexListener.idl',
+    'nsIStreamConverter.idl',
+    'nsIStreamConverterService.idl',
+    'nsITXTToHTMLConv.idl',
 ]
 
 SOURCES += [
-    "nsStreamConverterService.cpp",
+    'nsStreamConverterService.cpp',
 ]
 
-XPIDL_MODULE = "necko_strconv"
+XPIDL_MODULE = 'necko_strconv'
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

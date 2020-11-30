@@ -10,5 +10,5 @@
 
 
 
-GeckoSharedLibrary("lgpllibs", linkage=None)
-SHARED_LIBRARY_NAME = "lgpllibs"
+GeckoSharedLibrary('lgpllibs', linkage=None)
+SHARED_LIBRARY_NAME = 'lgpllibs'

@@ -4651,14 +4651,6 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
     nsDisplayImageContainer::RemoveFrame(aFrame);
   }
 
-  
-  bool IsContentful() const override {
-    const auto& styleImage =
-        mBackgroundStyle->StyleBackground()->mImage.mLayers[mLayer].mImage;
-
-    return styleImage.IsSizeAvailable() && styleImage.IsUrl();
-  }
-
  protected:
   typedef class mozilla::layers::ImageContainer ImageContainer;
   typedef class mozilla::layers::ImageLayer ImageLayer;

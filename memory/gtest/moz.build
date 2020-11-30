@@ -5,18 +5,16 @@
 
 
 
-if CONFIG["OS_TARGET"] != "Android" and not (
-    CONFIG["OS_TARGET"] == "WINNT" and CONFIG["CPU_ARCH"] == "aarch64"
-):
+if CONFIG['OS_TARGET'] != 'Android' and not(CONFIG['OS_TARGET'] == 'WINNT' and CONFIG['CPU_ARCH'] == 'aarch64'):
     UNIFIED_SOURCES += [
-        "TestJemalloc.cpp",
+        'TestJemalloc.cpp',
     ]
 
-    if CONFIG["MOZ_PHC"]:
-        DEFINES["MOZ_PHC"] = True
+    if CONFIG['MOZ_PHC']:
+      DEFINES['MOZ_PHC'] = True
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'
 
 LOCAL_INCLUDES += [
-    "../build",
+    '../build',
 ]

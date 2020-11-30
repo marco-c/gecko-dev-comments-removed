@@ -4,24 +4,24 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "Find Toolbar")
+with Files('**'):
+    BUG_COMPONENT = ('Toolkit', 'Find Toolbar')
 
 XPIDL_SOURCES += [
-    "nsIFind.idl",
-    "nsIFindService.idl",
-    "nsIWebBrowserFind.idl",
+    'nsIFind.idl',
+    'nsIFindService.idl',
+    'nsIWebBrowserFind.idl',
 ]
 
-XPIDL_MODULE = "mozfind"
+XPIDL_MODULE = 'mozfind'
 
 UNIFIED_SOURCES += [
-    "nsFind.cpp",
-    "nsWebBrowserFind.cpp",
+    'nsFind.cpp',
+    'nsWebBrowserFind.cpp',
 ]
 
 SOURCES += [
-    "nsFindService.cpp",
+    'nsFindService.cpp',
 ]
 
-FINAL_LIBRARY = "xul"
+FINAL_LIBRARY = 'xul'

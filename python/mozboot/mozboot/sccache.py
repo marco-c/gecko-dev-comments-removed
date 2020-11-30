@@ -4,12 +4,12 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-LINUX_SCCACHE = "linux64-sccache"
-MACOS_SCCACHE = "macosx64-sccache"
-WIN64_SCCACHE = "win64-sccache"
+LINUX_SCCACHE = 'linux64-sccache'
+MACOS_SCCACHE = 'macosx64-sccache'
+WIN64_SCCACHE = 'win64-sccache'
 
 
 
 
-RUSTC_DIST_TOOLCHAIN = "rustc-dist-toolchain"
-CLANG_DIST_TOOLCHAIN = "clang-dist-toolchain"
+RUSTC_DIST_TOOLCHAIN = 'rustc-dist-toolchain'
+CLANG_DIST_TOOLCHAIN = 'clang-dist-toolchain'

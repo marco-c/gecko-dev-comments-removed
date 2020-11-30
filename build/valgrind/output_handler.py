@@ -9,7 +9,7 @@ import re
 
 
 class OutputHandler(object):
-    """
+    '''
     A class for handling Valgrind output.
 
     Valgrind errors look like this:
@@ -38,32 +38,31 @@ class OutputHandler(object):
     the count of these lines doesn't match the error count found during
     parsing, then the parsing has missed one or more errors and we can fail
     appropriately.
-    """  
+    '''  
 
     def __init__(self, logger):
         
         
         
         self.logger = logger
-        self.re_error = (
-            r"==\d+== ("
-            + r"(Use of uninitialised value of size \d+)|"
-            + r"(Conditional jump or move depends on uninitialised value\(s\))|"
-            + r"(Syscall param .* contains uninitialised byte\(s\))|"
-            + r"(Syscall param .* points to (unaddressable|uninitialised) byte\(s\))|"
-            + r"((Unaddressable|Uninitialised) byte\(s\) found during client check request)|"
-            + r"(Invalid free\(\) / delete / delete\[\] / realloc\(\))|"
-            + r"(Mismatched free\(\) / delete / delete \[\])|"
-            + r"(Invalid (read|write) of size \d+)|"
-            + r"(Jump to the invalid address stated on the next line)|"
-            + r"(Source and destination overlap in .*)|"
-            + r"(.* bytes in .* blocks are .* lost)"
-            + r")"
-        )
+        self.re_error = \
+            r'==\d+== (' + \
+            r'(Use of uninitialised value of size \d+)|' + \
+            r'(Conditional jump or move depends on uninitialised value\(s\))|' + \
+            r'(Syscall param .* contains uninitialised byte\(s\))|' + \
+            r'(Syscall param .* points to (unaddressable|uninitialised) byte\(s\))|' + \
+            r'((Unaddressable|Uninitialised) byte\(s\) found during client check request)|' + \
+            r'(Invalid free\(\) / delete / delete\[\] / realloc\(\))|' + \
+            r'(Mismatched free\(\) / delete / delete \[\])|' + \
+            r'(Invalid (read|write) of size \d+)|' + \
+            r'(Jump to the invalid address stated on the next line)|' + \
+            r'(Source and destination overlap in .*)|' + \
+            r'(.* bytes in .* blocks are .* lost)' + \
+            r')'
         
         
-        self.re_stack_entry = r"^==\d+==.*0x[A-Z0-9]+: ([A-Za-z0-9_:\?]+)"
-        self.re_suppression = r" *<insert_a_suppression_name_here>"
+        self.re_stack_entry = r'^==\d+==.*0x[A-Z0-9]+: ([A-Za-z0-9_:\?]+)'
+        self.re_suppression = r' *<insert_a_suppression_name_here>'
         self.error_count = 0
         self.suppression_count = 0
         self.number_of_stack_entries_to_get = 0
@@ -72,7 +71,7 @@ class OutputHandler(object):
         self.buffered_lines = None
 
     def log(self, line):
-        self.logger(logging.INFO, "valgrind-output", {"line": line}, "{line}")
+        self.logger(logging.INFO, 'valgrind-output', {'line': line}, '{line}')
 
     def __call__(self, line):
         if self.number_of_stack_entries_to_get == 0:
@@ -95,20 +94,18 @@ class OutputHandler(object):
             if m:
                 self.curr_location += m.group(1)
             else:
-                self.curr_location += "?!?"
+                self.curr_location += '?!?'
 
             self.number_of_stack_entries_to_get -= 1
             if self.number_of_stack_entries_to_get != 0:
-                self.curr_location += " / "
+                self.curr_location += ' / '
             else:
                 
                 
-                self.logger(
-                    logging.ERROR,
-                    "valgrind-error-msg",
-                    {"error": self.curr_error, "location": self.curr_location},
-                    "TEST-UNEXPECTED-FAIL | valgrind-test | {error} at {location}",
-                )
+                self.logger(logging.ERROR, 'valgrind-error-msg',
+                            {'error': self.curr_error,
+                             'location': self.curr_location},
+                            'TEST-UNEXPECTED-FAIL | valgrind-test | {error} at {location}')
                 for b in self.buffered_lines:
                     self.log(b)
                 self.curr_error = None

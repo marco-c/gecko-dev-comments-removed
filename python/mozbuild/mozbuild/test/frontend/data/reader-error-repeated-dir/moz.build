@@ -2,6 +2,6 @@
 
 
 
-DIRS = ["foo"]
+DIRS = ['foo']
 
-DIRS += ["foo"]
+DIRS += ['foo']

@@ -4,11 +4,11 @@
 
 
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Security")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'DOM: Security')
 
 EXTRA_JS_MODULES += [
-    "ContextualIdentityService.jsm",
+    'ContextualIdentityService.jsm',
 ]
 
-XPCSHELL_TESTS_MANIFESTS += ["tests/unit/xpcshell.ini"]
+XPCSHELL_TESTS_MANIFESTS += ['tests/unit/xpcshell.ini']

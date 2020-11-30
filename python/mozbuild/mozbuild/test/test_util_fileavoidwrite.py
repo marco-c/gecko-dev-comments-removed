@@ -2,7 +2,6 @@
 
 
 from __future__ import absolute_import, print_function, unicode_literals
-
 """Tests for the FileAvoidWrite object."""
 
 import locale

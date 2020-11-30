@@ -4,8 +4,8 @@
 
 
 
-DIRS += ["msaa", "ia2", "sdn", "uia"]
+DIRS += ['msaa', 'ia2', 'sdn', 'uia']
 
 EXPORTS.mozilla.a11y += [
-    "ProxyWrappers.h",
+    'ProxyWrappers.h',
 ]

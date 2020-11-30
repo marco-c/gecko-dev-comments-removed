@@ -2,4 +2,5 @@
 
 
 
-error("Some error.")
+error('Some error.')
+

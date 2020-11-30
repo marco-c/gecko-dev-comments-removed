@@ -16,12 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 @register_callback_action(
-    title="Cancel Task",
-    name="cancel",
-    symbol="cx",
-    description=("Cancel the given task"),
+    title='Cancel Task',
+    name='cancel',
+    symbol='cx',
+    description=(
+        'Cancel the given task'
+    ),
     order=350,
-    context=[{}],
+    context=[{}]
 )
 def cancel_action(parameters, graph_config, input, task_group_id, task_id):
     
@@ -33,8 +35,6 @@ def cancel_action(parameters, graph_config, input, task_group_id, task_id):
             
             
             
-            logger.info(
-                "Task {} is past its deadline and cannot be cancelled.".format(task_id)
-            )
+            logger.info('Task {} is past its deadline and cannot be cancelled.'.format(task_id))
             return
         raise

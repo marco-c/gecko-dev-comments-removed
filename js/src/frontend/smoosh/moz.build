@@ -4,12 +4,15 @@
 
 
 
-FINAL_LIBRARY = "js"
+FINAL_LIBRARY = 'js'
 
 
-LOCAL_INCLUDES += ["!../..", "../.."]
+LOCAL_INCLUDES += [
+    '!../..',
+    '../..'
+]
 
-include("../../js-config.mozbuild")
-include("../../js-cxxflags.mozbuild")
+include('../../js-config.mozbuild')
+include('../../js-cxxflags.mozbuild')
 
-DIRS += ["../../rust"]
+DIRS += ['../../rust']

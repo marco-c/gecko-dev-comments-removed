@@ -5,8 +5,8 @@
 
 
 UNIFIED_SOURCES += [
-    "test_casing.cpp",
-    "test_IHistory.cpp",
+    'test_casing.cpp',
+    'test_IHistory.cpp',
 ]
 
 FINAL_LIBRARY = "xul-gtest"

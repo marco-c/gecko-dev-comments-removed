@@ -5,12 +5,12 @@
 
 
 DIRS += [
-    "middleware",
+    'middleware',
 ]
 
 DevToolsModules(
-    "create-store.js",
-    "non-react-subscriber.js",
-    "subscriber.js",
-    "visibility-handler-connect.js",
+    'create-store.js',
+    'non-react-subscriber.js',
+    'subscriber.js',
+    'visibility-handler-connect.js',
 )

@@ -5,12 +5,12 @@
 
 
 DIRS += [
-    "lib",
+    'lib',
 ]
 
 DevToolsModules(
-    "compatibility.js",
+    'compatibility.js',
 )
 
-with Files("**"):
-    BUG_COMPONENT = ("DevTools", "Inspector: Compatibility")
+with Files('**'):
+    BUG_COMPONENT = ('DevTools', 'Inspector: Compatibility')

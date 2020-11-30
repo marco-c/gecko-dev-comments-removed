@@ -5,26 +5,26 @@
 
 
 SOURCES += [
-    "../FileUtils.cpp",
-    "../MemUtils.cpp",
-    "nsXPCOMGlue.cpp",
+    '../FileUtils.cpp',
+    '../MemUtils.cpp',
+    'nsXPCOMGlue.cpp',
 ]
 
-Library("xpcomglue")
+Library('xpcomglue')
 
 FORCE_STATIC_LIB = True
 
-if CONFIG["CC_TYPE"] == "clang-cl":
-    DEFINES["_USE_ANSI_CPP"] = True
+if CONFIG['CC_TYPE'] == 'clang-cl':
+    DEFINES['_USE_ANSI_CPP'] = True
     
-    CFLAGS += ["-Zl"]
-    CXXFLAGS += ["-Zl"]
+    CFLAGS += ['-Zl']
+    CXXFLAGS += ['-Zl']
 
-DEFINES["XPCOM_GLUE"] = True
+DEFINES['XPCOM_GLUE'] = True
 
 LOCAL_INCLUDES += [
-    "../../build",
-    "../../threads",
+    '../../build',
+    '../../threads',
 ]
 
 
@@ -32,5 +32,5 @@ DisableStlWrapping()
 
 DIST_INSTALL = True
 
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
-    CXXFLAGS += CONFIG["GLIB_CFLAGS"]
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk':
+    CXXFLAGS += CONFIG['GLIB_CFLAGS']

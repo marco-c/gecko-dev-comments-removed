@@ -4,7 +4,7 @@
 
 import mozilla.prettyprinters
 
-run_fragment("prettyprinters.implemented_types")
+run_fragment('prettyprinters.implemented_types')
 
 
 def implemented_type_names(expr):
@@ -13,13 +13,13 @@ def implemented_type_names(expr):
     return [str(_) for _ in it]
 
 
-assert_eq(implemented_type_names("i"), ["int"])
-assert_eq(implemented_type_names("a"), ["A", "int"])
-assert_eq(implemented_type_names("b"), ["B", "A", "int"])
-assert_eq(implemented_type_names("c"), ["C"])
-assert_eq(implemented_type_names("c_"), ["C_", "C"])
-assert_eq(implemented_type_names("e"), ["E", "C", "D"])
-assert_eq(implemented_type_names("e_"), ["E_", "E", "C", "D"])
+assert_eq(implemented_type_names('i'), ['int'])
+assert_eq(implemented_type_names('a'), ['A', 'int'])
+assert_eq(implemented_type_names('b'), ['B', 'A', 'int'])
+assert_eq(implemented_type_names('c'), ['C'])
+assert_eq(implemented_type_names('c_'), ['C_', 'C'])
+assert_eq(implemented_type_names('e'), ['E', 'C', 'D'])
+assert_eq(implemented_type_names('e_'), ['E_', 'E', 'C', 'D'])
 
 
 
@@ -27,14 +27,14 @@ assert_eq(implemented_type_names("e_"), ["E_", "E", "C", "D"])
 
 
 
-if gdb.lookup_type("F").fields()[0].name == "C_":
+if gdb.lookup_type('F').fields()[0].name == 'C_':
     
-    assert_eq(implemented_type_names("f"), ["F", "C_", "D_", "C", "D"])
-    assert_eq(implemented_type_names("h"), ["H", "F", "G", "C_", "D_", "C", "D"])
+    assert_eq(implemented_type_names('f'), ['F', 'C_', 'D_', 'C', 'D'])
+    assert_eq(implemented_type_names('h'), ['H', 'F', 'G', 'C_', 'D_', 'C', 'D'])
 else:
-    assert_eq(implemented_type_names("f"), ["F", "C", "D"])
-    assert_eq(implemented_type_names("h"), ["H", "F", "G", "C", "D"])
+    assert_eq(implemented_type_names('f'), ['F', 'C', 'D'])
+    assert_eq(implemented_type_names('h'), ['H', 'F', 'G', 'C', 'D'])
 
 
-assert_pretty("10", "10")
-assert_pretty("(void*) 0", "")  
+assert_pretty('10', '10')
+assert_pretty('(void*) 0', '')  

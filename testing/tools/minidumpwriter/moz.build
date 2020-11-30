@@ -4,16 +4,16 @@
 
 
 
-if CONFIG["ENABLE_TESTS"] and CONFIG["OS_ARCH"] == "WINNT":
-    Program("minidumpwriter")
+if CONFIG['ENABLE_TESTS'] and CONFIG['OS_ARCH'] == 'WINNT':
+    Program('minidumpwriter')
     OS_LIBS += [
-        "dbghelp",
+        'dbghelp',
     ]
     SOURCES += [
-        "minidumpwriter.cpp",
+        'minidumpwriter.cpp',
     ]
     USE_STATIC_LIBS = True
-    if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-        WIN32_EXE_LDFLAGS += ["-municode"]
+    if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+        WIN32_EXE_LDFLAGS += ['-municode']
 
 NO_PGO = True

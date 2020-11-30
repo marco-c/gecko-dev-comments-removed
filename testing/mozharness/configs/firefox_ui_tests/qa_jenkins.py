@@ -3,7 +3,8 @@
 
 config = {
     
-    "developer_mode": True,
+    'developer_mode': True,
+
     
-    "download_symbols": "ondemand",
+    'download_symbols': 'ondemand',
 }

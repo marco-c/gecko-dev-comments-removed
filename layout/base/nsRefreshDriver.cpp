@@ -1244,10 +1244,10 @@ void nsRefreshDriver::RestoreNormalRefresh() {
   mCompletedTransaction = mOutstandingTransactionId = mNextTransactionId;
 }
 
-TimeStamp nsRefreshDriver::MostRecentRefresh(bool aEnsureTimerStarted) const {
+TimeStamp nsRefreshDriver::MostRecentRefresh() const {
   
   
-  if (aEnsureTimerStarted && !ServoStyleSet::IsInServoTraversal()) {
+  if (!ServoStyleSet::IsInServoTraversal()) {
     const_cast<nsRefreshDriver*>(this)->EnsureTimerStarted();
   }
 

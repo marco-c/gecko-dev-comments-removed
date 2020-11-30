@@ -3,7 +3,7 @@
 
 
 LOCALIZED_FILES.foo += [
-    "en-US/bar.ini",
-    "en-US/code/*.js",
-    "en-US/foo.js",
+    'en-US/bar.ini',
+    'en-US/code/*.js',
+    'en-US/foo.js',
 ]

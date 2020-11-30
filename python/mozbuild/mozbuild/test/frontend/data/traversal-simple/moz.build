@@ -2,4 +2,4 @@
 
 
 
-DIRS = ["foo", "bar"]
+DIRS = ['foo', 'bar']

@@ -4,25 +4,25 @@
 
 
 
-Library("nspr")
+Library('nspr')
 
-if CONFIG["MOZ_BUILD_NSPR"]:
+if CONFIG['MOZ_BUILD_NSPR']:
     DIRS += [
-        "pr",
-        "ds",
-        "libc",
+        'pr',
+        'ds',
+        'libc',
     ]
-    if CONFIG["MOZ_FOLD_LIBS"]:
+    if CONFIG['MOZ_FOLD_LIBS']:
         
         USE_LIBS += [
-            "nss",
+            'nss',
         ]
     else:
         USE_LIBS += [
-            "nspr4",
-            "plc4",
-            "plds4",
+            'nspr4',
+            'plc4',
+            'plds4',
         ]
-    EXPORTS.nspr += ["prcpucfg.h"]
+    EXPORTS.nspr += ['prcpucfg.h']
 else:
-    OS_LIBS += CONFIG["NSPR_LIBS"]
+    OS_LIBS += CONFIG['NSPR_LIBS']

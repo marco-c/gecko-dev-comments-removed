@@ -4,15 +4,18 @@
 
 
 
-Library("FuzzingDOMSecurity")
+Library('FuzzingDOMSecurity')
 
 LOCAL_INCLUDES += [
-    "/dom/security",
-    "/netwerk/base",
+    '/dom/security',
+    '/netwerk/base',
 ]
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+include('/tools/fuzzing/libfuzzer-config.mozbuild')
 
-SOURCES += ["csp_fuzzer.cpp"]
+SOURCES += [
+    'csp_fuzzer.cpp'
+]
 
-FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = 'xul-gtest'
+

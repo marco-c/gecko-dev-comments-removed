@@ -4,7 +4,7 @@
 
 
 
-TEST_DIRS += ["tests"]
+TEST_DIRS += ['tests']
 
-with Files("**"):
-    BUG_COMPONENT = ("Core", "Internationalization")
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'Internationalization')

@@ -4,13 +4,13 @@
 
 
 
-JAR_MANIFESTS += ["jar.mn"]
+JAR_MANIFESTS += ['jar.mn']
 
 EXTRA_COMPONENTS += [
-    "extensions-mobile.manifest",
+    'extensions-mobile.manifest',
 ]
 
-DIRS += ["schemas"]
+DIRS += ['schemas']
 
-MOCHITEST_MANIFESTS += ["test/mochitest/mochitest.ini"]
-MOCHITEST_CHROME_MANIFESTS += ["test/mochitest/chrome.ini"]
+MOCHITEST_MANIFESTS += ['test/mochitest/mochitest.ini']
+MOCHITEST_CHROME_MANIFESTS += ['test/mochitest/chrome.ini']
