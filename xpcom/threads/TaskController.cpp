@@ -13,6 +13,7 @@
 #include "mozilla/EventQueue.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/InputTaskManager.h"
+#include "mozilla/IOInterposer.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
@@ -20,11 +21,31 @@
 #include "nsIThreadInternal.h"
 #include "nsQueryObject.h"
 #include "nsThread.h"
+#include "prsystem.h"
 
 namespace mozilla {
 
 std::unique_ptr<TaskController> TaskController::sSingleton;
+thread_local size_t mThreadPoolIndex = -1;
 std::atomic<uint64_t> Task::sCurrentTaskSeqNo = 0;
+
+const int32_t kMaximumPoolThreadCount = 8;
+
+static int32_t GetPoolThreadCount() {
+  if (PR_GetEnv("MOZ_TASKCONTROLLER_THREADCOUNT")) {
+    return strtol(PR_GetEnv("MOZ_TASKCONTROLLER_THREADCOUNT"), nullptr, 0);
+  }
+
+  int32_t numCores = std::max<int32_t>(1, PR_GetNumberOfProcessors());
+
+  if (numCores == 1) {
+    return 1;
+  }
+  if (numCores == 2) {
+    return 2;
+  }
+  return std::min<int32_t>(kMaximumPoolThreadCount, numCores - 1);
+}
 
 bool TaskManager::
     UpdateCachesForCurrentIterationAndReportPriorityModifierChanged(
@@ -78,6 +99,11 @@ bool TaskController::Initialize() {
   return sSingleton->InitializeInternal();
 }
 
+void ThreadFuncPoolThread(TaskController* aController, size_t aIndex) {
+  mThreadPoolIndex = aIndex;
+  aController->RunPoolThread();
+}
+
 bool TaskController::InitializeInternal() {
   InputTaskManager::Init();
   mMTProcessingRunnable = NS_NewRunnableFunction(
@@ -90,6 +116,19 @@ bool TaskController::InitializeInternal() {
   return true;
 }
 
+void TaskController::InitializeThreadPool() {
+  mPoolInitializationMutex.AssertCurrentThreadOwns();
+  MOZ_ASSERT(!mThreadPoolInitialized);
+  mThreadPoolInitialized = true;
+
+  int32_t poolSize = GetPoolThreadCount();
+  for (int32_t i = 0; i < poolSize; i++) {
+    mPoolThreads.push_back(
+        {std::make_unique<std::thread>(ThreadFuncPoolThread, this, i),
+         nullptr});
+  }
+}
+
 void TaskController::SetPerformanceCounterState(
     PerformanceCounterState* aPerformanceCounterState) {
   mPerformanceCounterState = aPerformanceCounterState;
@@ -99,17 +138,143 @@ void TaskController::SetPerformanceCounterState(
 void TaskController::Shutdown() {
   InputTaskManager::Cleanup();
   if (sSingleton) {
+    sSingleton->ShutdownThreadPoolInternal();
     sSingleton->ShutdownInternal();
   }
   MOZ_ASSERT(!sSingleton);
 }
 
+void TaskController::ShutdownThreadPoolInternal() {
+  {
+    
+    MutexAutoLock lock(mGraphMutex);
+
+    mShuttingDown = true;
+    mThreadPoolCV.NotifyAll();
+  }
+  for (PoolThread& thread : mPoolThreads) {
+    thread.mThread->join();
+  }
+}
+
 void TaskController::ShutdownInternal() { sSingleton = nullptr; }
 
-void TaskController::AddTask(already_AddRefed<Task>&& aTask) {
-  MutexAutoLock lock(mGraphMutex);
+void TaskController::RunPoolThread() {
+  IOInterposer::RegisterCurrentThread();
 
+  
+  
+  
+  RefPtr<Task> lastTask;
+
+  MutexAutoLock lock(mGraphMutex);
+  while (true) {
+    if (mShuttingDown) {
+      IOInterposer::UnregisterCurrentThread();
+      return;
+    }
+    bool ranTask = false;
+
+    if (!mThreadableTasks.empty()) {
+      for (auto iter = mThreadableTasks.begin(); iter != mThreadableTasks.end();
+           ++iter) {
+        
+        
+
+        
+        
+        
+        Task* task = iter->get();
+
+        MOZ_ASSERT(!task->mTaskManager);
+
+        mPoolThreads[mThreadPoolIndex].mEffectiveTaskPriority =
+            task->GetPriority();
+
+        Task* nextTask;
+        while ((nextTask = task->GetHighestPriorityDependency())) {
+          task = nextTask;
+        }
+
+        if (task->IsMainThreadOnly() || task->mInProgress) {
+          continue;
+        }
+
+        mPoolThreads[mThreadPoolIndex].mCurrentTask = task;
+        mThreadableTasks.erase(task->mIterator);
+        task->mIterator = mThreadableTasks.end();
+        task->mInProgress = true;
+
+        bool taskCompleted = false;
+        {
+          MutexAutoUnlock unlock(mGraphMutex);
+          lastTask = nullptr;
+          taskCompleted = task->Run();
+          ranTask = true;
+        }
+
+        task->mInProgress = false;
+
+        if (!taskCompleted) {
+          
+          
+          auto insertion = mThreadableTasks.insert(
+              mPoolThreads[mThreadPoolIndex].mCurrentTask);
+          MOZ_ASSERT(insertion.second);
+          task->mIterator = insertion.first;
+        } else {
+          task->mCompleted = true;
+#ifdef DEBUG
+          task->mIsInGraph = false;
+#endif
+          task->mDependencies.clear();
+          
+          
+          
+          mMayHaveMainThreadTask = true;
+          
+          
+          EnsureMainThreadTasksScheduled();
+
+          MaybeInterruptTask(GetHighestPriorityMTTask());
+        }
+
+        
+        
+        lastTask = mPoolThreads[mThreadPoolIndex].mCurrentTask.forget();
+        break;
+      }
+    }
+
+    
+    if (lastTask) {
+      MutexAutoUnlock unlock(mGraphMutex);
+      lastTask = nullptr;
+
+      
+      
+      continue;
+    }
+
+    if (!ranTask) {
+      AUTO_PROFILER_LABEL("TaskController::RunPoolThread", IDLE);
+      mThreadPoolCV.Wait();
+    }
+  }
+}
+
+void TaskController::AddTask(already_AddRefed<Task>&& aTask) {
   RefPtr<Task> task(aTask);
+
+  if (!task->IsMainThreadOnly()) {
+    MutexAutoLock lock(mPoolInitializationMutex);
+    if (!mThreadPoolInitialized) {
+      InitializeThreadPool();
+      mThreadPoolInitialized = true;
+    }
+  }
+
+  MutexAutoLock lock(mGraphMutex);
 
   if (TaskManager* manager = task->GetManager()) {
     if (manager->mTaskCount == 0) {
@@ -137,9 +302,15 @@ void TaskController::AddTask(already_AddRefed<Task>&& aTask) {
 
   LogTask::LogDispatch(task);
 
-  auto insertion = mMainThreadTasks.insert(std::move(task));
-  MOZ_ASSERT(insertion.second);
+  std::pair<std::set<RefPtr<Task>, Task::PriorityCompare>::iterator, bool>
+      insertion;
+  if (task->IsMainThreadOnly()) {
+    insertion = mMainThreadTasks.insert(std::move(task));
+  } else {
+    insertion = mThreadableTasks.insert(std::move(task));
+  }
   (*insertion.first)->mIterator = insertion.first;
+  MOZ_ASSERT(insertion.second);
 
   MaybeInterruptTask(*insertion.first);
 }
@@ -195,6 +366,9 @@ void TaskController::ProcessPendingMTTask(bool aMayWait) {
 void TaskController::ReprioritizeTask(Task* aTask, uint32_t aPriority) {
   MutexAutoLock lock(mGraphMutex);
   std::set<RefPtr<Task>, Task::PriorityCompare>* queue = &mMainThreadTasks;
+  if (!aTask->IsMainThreadOnly()) {
+    queue = &mThreadableTasks;
+  }
 
   MOZ_ASSERT(aTask->mIterator != queue->end());
   queue->erase(aTask->mIterator);
@@ -545,6 +719,15 @@ bool TaskController::DoExecuteNextTaskOnlyMainThreadInternal(
 #endif
         
         task->mDependencies.clear();
+
+        if (!mThreadableTasks.empty()) {
+          
+          
+          
+          
+          
+          mThreadPoolCV.NotifyAll();
+        }
       }
 
       mCurrentTasksMT.pop();
@@ -602,20 +785,50 @@ void TaskController::MaybeInterruptTask(Task* aTask) {
 
   EnsureMainThreadTasksScheduled();
 
-  mMayHaveMainThreadTask = true;
+  if (aTask->IsMainThreadOnly()) {
+    mMayHaveMainThreadTask = true;
 
-  if (mCurrentTasksMT.empty()) {
-    return;
-  }
+    if (mCurrentTasksMT.empty()) {
+      return;
+    }
 
-  
-  
-  if (!finalDependency->IsMainThreadOnly()) {
-    return;
-  }
+    
+    
+    if (!finalDependency->IsMainThreadOnly()) {
+      return;
+    }
 
-  if (mCurrentTasksMT.top()->GetPriority() < aTask->GetPriority()) {
-    mCurrentTasksMT.top()->RequestInterrupt(aTask->GetPriority());
+    if (mCurrentTasksMT.top()->GetPriority() < aTask->GetPriority()) {
+      mCurrentTasksMT.top()->RequestInterrupt(aTask->GetPriority());
+    }
+  } else {
+    Task* lowestPriorityTask = nullptr;
+    for (PoolThread& thread : mPoolThreads) {
+      if (!thread.mCurrentTask) {
+        
+        return;
+      }
+
+      if (!lowestPriorityTask) {
+        lowestPriorityTask = thread.mCurrentTask.get();
+        continue;
+      }
+
+      
+      
+      
+      
+      if (lowestPriorityTask->GetPriority() > thread.mEffectiveTaskPriority) {
+        lowestPriorityTask = thread.mCurrentTask.get();
+      }
+    }
+
+    if (lowestPriorityTask->GetPriority() < aTask->GetPriority()) {
+      lowestPriorityTask->RequestInterrupt(aTask->GetPriority());
+    }
+
+    
+    
   }
 }
 

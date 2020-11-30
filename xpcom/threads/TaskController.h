@@ -225,6 +225,14 @@ class Task {
 #endif
 };
 
+struct PoolThread {
+  std::unique_ptr<std::thread> mThread;
+  RefPtr<Task> mCurrentTask;
+  
+  
+  uint32_t mEffectiveTaskPriority;
+};
+
 
 
 class IdleTaskManager : public TaskManager {
@@ -252,6 +260,7 @@ class TaskController {
  public:
   TaskController()
       : mGraphMutex("TaskController::mGraphMutex"),
+        mThreadPoolCV(mGraphMutex, "TaskController::mThreadPoolCV"),
         mMainThreadCV(mGraphMutex, "TaskController::mMainThreadCV") {}
 
   static TaskController* Get();
@@ -271,7 +280,6 @@ class TaskController {
   IdleTaskManager* GetIdleTaskManager() { return mIdleTaskManager.get(); }
 
   
-  bool InitializeInternal();
   void SetPerformanceCounterState(
       PerformanceCounterState* aPerformanceCounterState);
 
@@ -307,6 +315,12 @@ class TaskController {
   bool MTTaskRunnableProcessedTask() { return mMTTaskRunnableProcessedTask; }
 
  private:
+  friend void ThreadFuncPoolThread(TaskController* aController, size_t aIndex);
+
+  bool InitializeInternal();
+
+  void InitializeThreadPool();
+
   
   
   
@@ -325,7 +339,10 @@ class TaskController {
 
   void ProcessUpdatedPriorityModifier(TaskManager* aManager);
 
+  void ShutdownThreadPoolInternal();
   void ShutdownInternal();
+
+  void RunPoolThread();
 
   static std::unique_ptr<TaskController> sSingleton;
   static StaticMutex sSingletonMutex;
@@ -333,13 +350,22 @@ class TaskController {
   
   Mutex mGraphMutex;
 
+  
+  
+  
+  Mutex mPoolInitializationMutex =
+      Mutex("TaskController::mPoolInitializationMutex");
+
+  CondVar mThreadPoolCV;
   CondVar mMainThreadCV;
 
   
 
+  std::vector<PoolThread> mPoolThreads;
   std::stack<RefPtr<Task>> mCurrentTasksMT;
 
   
+  std::set<RefPtr<Task>, Task::PriorityCompare> mThreadableTasks;
   std::set<RefPtr<Task>, Task::PriorityCompare> mMainThreadTasks;
 
   
@@ -348,9 +374,15 @@ class TaskController {
 
   
   bool mMayHaveMainThreadTask = true;
+  bool mShuttingDown = false;
 
   
   bool mMTTaskRunnableProcessedTask = false;
+
+  
+  
+  
+  bool mThreadPoolInitialized = false;
 
   
   
