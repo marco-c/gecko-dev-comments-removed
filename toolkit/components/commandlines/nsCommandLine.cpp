@@ -183,7 +183,42 @@ nsCommandLine::GetWorkingDirectory(nsIFile** aResult) {
 
 NS_IMETHODIMP
 nsCommandLine::ResolveFile(const nsAString& aArgument, nsIFile** aResult) {
-  NS_ENSURE_TRUE(mWorkingDir, NS_ERROR_NOT_INITIALIZED);
+  
+  
+  
+#if defined(XP_UNIX)
+  if (aArgument.First() == '/') {
+    nsCOMPtr<nsIFile> lf(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID));
+    NS_ENSURE_TRUE(lf, NS_ERROR_OUT_OF_MEMORY);
+    nsresult rv = lf->InitWithPath(aArgument);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    lf.forget(aResult);
+    return NS_OK;
+  }
+#elif defined(XP_WIN)
+  nsCOMPtr<nsIFile> lf(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID));
+  NS_ENSURE_TRUE(lf, NS_ERROR_OUT_OF_MEMORY);
+
+  
+  
+  if (NS_SUCCEEDED(lf->InitWithPath(aArgument))) {
+    lf.forget(aResult);
+    return NS_OK;
+  }
+#endif
+  
+  return ResolveRelativeFile(aArgument, aResult);
+}
+
+nsresult nsCommandLine::ResolveRelativeFile(const nsAString& aArgument,
+                                            nsIFile** aResult) {
+  if (!mWorkingDir) {
+    *aResult = nullptr;
+    return NS_OK;
+  }
 
   
   
@@ -222,15 +257,6 @@ nsCommandLine::ResolveFile(const nsAString& aArgument, nsIFile** aResult) {
   nsCOMPtr<nsIFile> lf(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID));
   NS_ENSURE_TRUE(lf, NS_ERROR_OUT_OF_MEMORY);
 
-  if (aArgument.First() == '/') {
-    
-    rv = lf->InitWithPath(aArgument);
-    if (NS_FAILED(rv)) return rv;
-
-    NS_ADDREF(*aResult = lf);
-    return NS_OK;
-  }
-
   nsAutoCString nativeArg;
   NS_CopyUnicodeToNative(aArgument, nativeArg);
 
@@ -253,26 +279,23 @@ nsCommandLine::ResolveFile(const nsAString& aArgument, nsIFile** aResult) {
   nsCOMPtr<nsIFile> lf(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID));
   NS_ENSURE_TRUE(lf, NS_ERROR_OUT_OF_MEMORY);
 
-  rv = lf->InitWithPath(aArgument);
-  if (NS_FAILED(rv)) {
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
 
-    nsAutoString fullPath;
-    mWorkingDir->GetPath(fullPath);
+  nsAutoString fullPath;
+  mWorkingDir->GetPath(fullPath);
 
-    fullPath.Append('\\');
-    fullPath.Append(aArgument);
+  fullPath.Append('\\');
+  fullPath.Append(aArgument);
 
-    WCHAR pathBuf[MAX_PATH];
-    if (!_wfullpath(pathBuf, fullPath.get(), MAX_PATH)) return NS_ERROR_FAILURE;
+  WCHAR pathBuf[MAX_PATH];
+  if (!_wfullpath(pathBuf, fullPath.get(), MAX_PATH)) return NS_ERROR_FAILURE;
 
-    rv = lf->InitWithPath(nsDependentString(pathBuf));
-    if (NS_FAILED(rv)) return rv;
-  }
+  rv = lf->InitWithPath(nsDependentString(pathBuf));
+  if (NS_FAILED(rv)) return rv;
   lf.forget(aResult);
   return NS_OK;
 

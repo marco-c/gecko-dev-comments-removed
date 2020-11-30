@@ -4896,7 +4896,10 @@ nsresult XREMain::XRE_mainRun() {
   nsCOMPtr<nsIFile> workingDir;
   rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
                               getter_AddRefs(workingDir));
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  if (NS_FAILED(rv)) {
+    
+    workingDir = nullptr;
+  }
 
   if (!mShuttingDown) {
     cmdLine = new nsCommandLine();
