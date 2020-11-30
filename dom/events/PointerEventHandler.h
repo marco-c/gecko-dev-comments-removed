@@ -19,8 +19,9 @@ namespace mozilla {
 class PresShell;
 
 namespace dom {
+class BrowserParent;
 class Element;
-};
+};  
 
 class PointerCaptureInfo final {
  public:
@@ -52,10 +53,23 @@ class PointerEventHandler final {
   static void UpdateActivePointerState(WidgetMouseEvent* aEvent);
 
   
-  static void SetPointerCaptureById(uint32_t aPointerId,
-                                    dom::Element* aElement);
+  static void RequestPointerCaptureById(uint32_t aPointerId,
+                                        dom::Element* aElement);
   static void ReleasePointerCaptureById(uint32_t aPointerId);
   static void ReleaseAllPointerCapture();
+
+  
+  
+  static bool SetPointerCaptureRemoteTarget(uint32_t aPointerId,
+                                            dom::BrowserParent* aBrowserParent);
+  static void ReleasePointerCaptureRemoteTarget(
+      dom::BrowserParent* aBrowserParent);
+  static void ReleasePointerCaptureRemoteTarget(uint32_t aPointerId);
+  static void ReleaseAllPointerCaptureRemoteTarget();
+
+  
+  static dom::BrowserParent* GetPointerCapturingRemoteTarget(
+      uint32_t aPointerId);
 
   
   static PointerCaptureInfo* GetPointerCaptureInfo(uint32_t aPointerId);
@@ -147,7 +161,8 @@ class PointerEventHandler final {
 
   static bool ShouldGeneratePointerEventFromMouse(WidgetGUIEvent* aEvent) {
     return aEvent->mMessage == eMouseDown || aEvent->mMessage == eMouseUp ||
-           aEvent->mMessage == eMouseMove;
+           aEvent->mMessage == eMouseMove ||
+           aEvent->mMessage == eMouseExitFromWidget;
   }
 
   static bool ShouldGeneratePointerEventFromTouch(WidgetGUIEvent* aEvent) {
@@ -161,6 +176,10 @@ class PointerEventHandler final {
   }
 
  private:
+  
+  static void SetPointerCaptureById(uint32_t aPointerId,
+                                    dom::Element* aElement);
+
   
   
   
