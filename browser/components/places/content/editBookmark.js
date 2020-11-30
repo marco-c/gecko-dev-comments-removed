@@ -791,6 +791,9 @@ var gEditItemOverlay = {
       ).hidden = false;
       
       
+      this._folderTree.stopEditing(false);
+      
+      
       this._folderTree.view = null;
     } else {
       expander.setAttribute(

@@ -28,7 +28,6 @@ add_task(async function setup() {
   registerCleanupFunction(async () => {
     bookmarkPanel = null;
     win.StarUI._autoCloseTimeout = oldTimeout;
-    
     await BrowserTestUtils.closeWindow(win);
     win = null;
     await PlacesUtils.bookmarks.eraseEverything();
@@ -89,6 +88,42 @@ add_task(async function test_selectChoose() {
     PlacesUtils.getString("OtherBookmarksFolderTitle"),
     "Should have kept the same menu label"
   );
+
+  let input = folderTree.shadowRoot.querySelector("input");
+
+  let newFolderButton = win.document.getElementById(
+    "editBMPanel_newFolderButton"
+  );
+  newFolderButton.click(); 
+
+  
+  await TestUtils.waitForCondition(() => !input.hidden);
+
+  
+  EventUtils.synthesizeMouseAtCenter(
+    win.document.getElementById("editBMPanel_foldersExpander"),
+    {},
+    win
+  );
+
+  await TestUtils.waitForCondition(
+    () => folderTreeRow.collapsed,
+    "Should hide the folder tree"
+  );
+  ok(input.hidden, "Folder tree should not be broken.");
+
+  
+  EventUtils.synthesizeMouseAtCenter(
+    win.document.getElementById("editBMPanel_foldersExpander"),
+    {},
+    win
+  );
+
+  await TestUtils.waitForCondition(
+    () => !folderTreeRow.collapsed,
+    "Should re-show the folder tree"
+  );
+  ok(input.hidden, "Folder tree should still not be broken.");
 
   await hideBookmarksPanel(win);
   Assert.ok(!folderTree.view, "The view should have been disconnected");
