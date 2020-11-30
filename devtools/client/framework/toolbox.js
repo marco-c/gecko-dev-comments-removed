@@ -3402,9 +3402,49 @@ Toolbox.prototype = {
 
 
 
+
+
+
+
+
+
   getHighlighter() {
     let pendingHighlight;
-    let currentHighlighterFront;
+
+    
+
+
+    const _getInspector = async () => {
+      const inspector = this.getPanel("inspector");
+      if (inspector) {
+        return inspector;
+      }
+
+      return this.loadTool("inspector");
+    };
+
+    
+
+
+
+
+
+
+
+
+    async function _waitForHighlighterEvent(eventName) {
+      const inspector = await _getInspector();
+      return new Promise(resolve => {
+        function _handler(data) {
+          if (data.type === inspector.highlighters.TYPES.BOXMODEL) {
+            inspector.highlighters.off(eventName, _handler);
+            resolve(data);
+          }
+        }
+
+        inspector.highlighters.on(eventName, _handler);
+      });
+    }
 
     return {
       
@@ -3422,25 +3462,33 @@ Toolbox.prototype = {
             return null;
           }
 
-          
-          currentHighlighterFront = nodeFront.highlighterFront;
-          return nodeFront.highlighterFront.highlight(nodeFront, options);
+          const inspector = await _getInspector();
+          return inspector.highlighters.showHighlighterTypeForNode(
+            inspector.highlighters.TYPES.BOXMODEL,
+            nodeFront,
+            options
+          );
         })();
         return pendingHighlight;
       }),
-      unhighlight: this._safeAsyncAfterDestroy(async forceHide => {
+      unhighlight: this._safeAsyncAfterDestroy(async () => {
         if (pendingHighlight) {
           await pendingHighlight;
           pendingHighlight = null;
         }
 
-        if (!currentHighlighterFront) {
-          return null;
-        }
+        const inspector = await _getInspector();
+        return inspector.highlighters.hideHighlighterType(
+          inspector.highlighters.TYPES.BOXMODEL
+        );
+      }),
 
-        const unHighlight = currentHighlighterFront.unhighlight(forceHide);
-        currentHighlighterFront = null;
-        return unHighlight;
+      waitForHighlighterShown: this._safeAsyncAfterDestroy(async () => {
+        return _waitForHighlighterEvent("highlighter-shown");
+      }),
+
+      waitForHighlighterHidden: this._safeAsyncAfterDestroy(async () => {
+        return _waitForHighlighterEvent("highlighter-hidden");
       }),
     };
   },
