@@ -16,6 +16,12 @@ const TEST_SPACES = [" ", "\u3000", " \u3000", "\u3000 "];
 
 let testEngine;
 
+
+
+if (AppConstants.platform == "macosx") {
+  requestLongerTimeout(5);
+}
+
 add_task(async function init() {
   
   await SpecialPowers.pushPrefEnv({
