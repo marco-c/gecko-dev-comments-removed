@@ -112,7 +112,12 @@ int32_t nsStandardURL::nsSegmentEncoder::EncodeSegmentCount(
   
   
   if (mEncoding) {
-    size_t upTo = Encoding::ASCIIValidUpTo(AsBytes(span));
+    size_t upTo;
+    if (MOZ_UNLIKELY(mEncoding == ISO_2022_JP_ENCODING)) {
+      upTo = Encoding::ISO2022JPASCIIValidUpTo(AsBytes(span));
+    } else {
+      upTo = Encoding::ASCIIValidUpTo(AsBytes(span));
+    }
     if (upTo != span.Length()) {
       
       char bufferArr[512];
