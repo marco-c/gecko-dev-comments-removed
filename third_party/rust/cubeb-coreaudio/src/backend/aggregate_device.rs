@@ -292,15 +292,14 @@ impl AggregateDevice {
             return Err(status);
         }
 
-        let _teardown = finally(|| {
-            let r = audio_object_remove_property_listener(
+        let remove_listener = || -> OSStatus {
+            audio_object_remove_property_listener(
                 device_id,
                 &address,
                 devices_changed_callback,
                 data_ptr as *mut c_void,
-            );
-            assert_eq!(r, NO_ERR);
-        });
+            )
+        };
 
         Self::set_sub_devices(device_id, input_id, output_id)?;
 
@@ -318,6 +317,13 @@ impl AggregateDevice {
                 );
             }
             if *dev != device_id {
+                let r = remove_listener();
+                
+                
+                assert!(r == NO_ERR || r == (kAudioHardwareBadObjectError as OSStatus));
+                
+                
+                
                 return Err(APPLE_EVENT_TIMEOUT);
             }
         }
@@ -336,6 +342,8 @@ impl AggregateDevice {
             NO_ERR
         }
 
+        let r = remove_listener();
+        assert_eq!(r, NO_ERR);
         Ok(())
     }
 
