@@ -12,10 +12,12 @@
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 #include "nsCRT.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLTags.h"
+#include "nsTArray.h"
 
 class nsAtom;
 
@@ -637,7 +639,7 @@ class HTMLEditUtils final {
 
   static Element* GetElementIfOnlyOneSelected(
       const dom::AbstractRange& aRange) {
-    if (!aRange.IsPositioned()) {
+    if (!aRange.IsPositioned() || aRange.Collapsed()) {
       return nullptr;
     }
     const RangeBoundary& start = aRange.StartRef();
@@ -667,6 +669,35 @@ class HTMLEditUtils final {
       const dom::AbstractRange& aRange) {
     Element* element = HTMLEditUtils::GetElementIfOnlyOneSelected(aRange);
     return element && HTMLEditUtils::IsTableCell(element) ? element : nullptr;
+  }
+
+  
+
+
+
+
+  static Element* GetFirstSelectedTableCellElement(
+      const Selection& aSelection) {
+    if (!aSelection.RangeCount()) {
+      return nullptr;
+    }
+    const nsRange* firstRange = aSelection.GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange) || NS_WARN_IF(!firstRange->IsPositioned())) {
+      return nullptr;
+    }
+    return GetTableCellElementIfOnlyOneSelected(*firstRange);
+  }
+
+  
+
+
+
+
+
+
+
+  static bool IsInTableCellSelectionMode(const Selection& aSelection) {
+    return GetFirstSelectedTableCellElement(aSelection) != nullptr;
   }
 
   static EditAction GetEditActionForInsert(const nsAtom& aTagName);
@@ -848,6 +879,67 @@ class MOZ_STACK_CLASS DefinitionListItemScanner final {
  private:
   bool mDTFound = false;
   bool mDDFound = false;
+};
+
+
+
+
+
+
+class MOZ_STACK_CLASS SelectedTableCellScanner final {
+ public:
+  SelectedTableCellScanner() = delete;
+  explicit SelectedTableCellScanner(const dom::Selection& aSelection) {
+    dom::Element* firstSelectedCellElement =
+        HTMLEditUtils::GetFirstSelectedTableCellElement(aSelection);
+    if (!firstSelectedCellElement) {
+      return;  
+    }
+    mSelectedCellElements.SetCapacity(aSelection.RangeCount());
+    mSelectedCellElements.AppendElement(*firstSelectedCellElement);
+    for (uint32_t i = 1; i < aSelection.RangeCount(); i++) {
+      nsRange* range = aSelection.GetRangeAt(i);
+      if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
+        continue;  
+      }
+      
+      
+      
+      if (dom::Element* selectedCellElement =
+              HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(*range)) {
+        mSelectedCellElements.AppendElement(*selectedCellElement);
+      }
+    }
+  }
+
+  bool IsInTableCellSelectionMode() const {
+    return !mSelectedCellElements.IsEmpty();
+  }
+
+  const nsTArray<OwningNonNull<dom::Element>>& ElementsRef() const {
+    return mSelectedCellElements;
+  }
+
+  
+
+
+
+  dom::Element* GetFirstElement() const {
+    MOZ_ASSERT(!mSelectedCellElements.IsEmpty());
+    mIndex = 0;
+    return !mSelectedCellElements.IsEmpty() ? mSelectedCellElements[0]
+                                            : nullptr;
+  }
+  dom::Element* GetNextElement() const {
+    MOZ_ASSERT(mIndex < mSelectedCellElements.Length());
+    return ++mIndex < mSelectedCellElements.Length()
+               ? mSelectedCellElements[mIndex]
+               : nullptr;
+  }
+
+ private:
+  AutoTArray<OwningNonNull<dom::Element>, 16> mSelectedCellElements;
+  mutable size_t mIndex = 0;
 };
 
 }  
