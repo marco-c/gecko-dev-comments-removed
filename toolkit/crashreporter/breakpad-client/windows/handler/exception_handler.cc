@@ -29,10 +29,6 @@
 
 #include <objbase.h>
 
-#if !defined(STATUS_HEAP_CORRUPTION) 
-#define STATUS_HEAP_CORRUPTION ((DWORD)0xC0000374L)
-#endif 
-
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
