@@ -219,9 +219,6 @@ extern "C" const char* __tsan_default_suppressions() {
          
 
          
-         "race:TelemetryImpl::sTelemetry\n"
-
-         
          "race:BeginBackgroundRead\n"
 
          
