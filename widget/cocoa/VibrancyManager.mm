@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "VibrancyManager.h"
 
@@ -32,28 +32,28 @@ LayoutDeviceIntRegion VibrancyManager::GetUnionOfVibrantRegions() const {
 }
 
 static NSView* HitTestNil(id self, SEL _cmd, NSPoint aPoint) {
-  // This view must be transparent to mouse events.
+  
   return nil;
 }
 
 static BOOL AllowsVibrancyYes(id self, SEL _cmd) {
-  // Means that the foreground is blended using a vibrant blend mode.
+  
   return YES;
 }
 
 static Class CreateEffectViewClass(BOOL aForegroundVibrancy, BOOL aIsContainer) {
-  // Create a class that inherits from NSVisualEffectView and overrides the
-  // methods -[NSView hitTest:] and  -[NSVisualEffectView allowsVibrancy].
+  
+  
   Class NSVisualEffectViewClass = NSClassFromString(@"NSVisualEffectView");
   const char* className = aForegroundVibrancy ? "EffectViewWithForegroundVibrancy"
                                               : "EffectViewWithoutForegroundVibrancy";
   Class EffectViewClass = objc_allocateClassPair(NSVisualEffectViewClass, className, 0);
   if (!aIsContainer) {
-    // Make this view transparent to mouse events.
+    
     class_addMethod(EffectViewClass, @selector(hitTest:), (IMP)HitTestNil, "@@:{CGPoint=dd}");
   }
   if (aForegroundVibrancy) {
-    // Override the -[NSView allowsVibrancy] method to return YES.
+    
     class_addMethod(EffectViewClass, @selector(allowsVibrancy), (IMP)AllowsVibrancyYes, "I@:");
   }
   return EffectViewClass;
@@ -98,9 +98,9 @@ static NSUInteger VisualEffectStateForVibrancyType(VibrancyType aType) {
     case VibrancyType::MENU:
     case VibrancyType::HIGHLIGHTED_MENUITEM:
     case VibrancyType::SHEET:
-      // Tooltip and menu windows are never "key" and sheets always looks
-      // active, so we need to tell the vibrancy effect to look active
-      // regardless of window state.
+      
+      
+      
       return NSVisualEffectStateActive;
     default:
       return NSVisualEffectStateFollowsWindowActiveState;
@@ -126,15 +126,15 @@ enum { NSVisualEffectMaterialSelection = 4 };
 - (void)setEmphasized:(BOOL)emphasized;
 @end
 
-/* static */ NSView* VibrancyManager::CreateEffectView(VibrancyType aType, BOOL aIsContainer) {
+ NSView* VibrancyManager::CreateEffectView(VibrancyType aType, BOOL aIsContainer) {
   static Class EffectViewWithoutForegroundVibrancy = CreateEffectViewClass(NO, NO);
   static Class EffectViewWithForegroundVibrancy = CreateEffectViewClass(YES, NO);
   static Class EffectViewContainer = CreateEffectViewClass(NO, YES);
 
-  // Pick the right NSVisualEffectView subclass for the desired vibrancy mode.
-  // For "container" views, never use foreground vibrancy, because returning
-  // YES from allowsVibrancy forces on foreground vibrancy for all descendant
-  // views which can have unintended effects.
+  
+  
+  
+  
   Class EffectViewClass = aIsContainer
                               ? EffectViewContainer
                               : (HasVibrantForeground(aType) ? EffectViewWithForegroundVibrancy
@@ -147,9 +147,9 @@ enum { NSVisualEffectMaterialSelection = 4 };
 
   BOOL canUseElCapitanMaterials = nsCocoaFeatures::OnElCapitanOrLater();
   if (aType == VibrancyType::MENU) {
-    // Before 10.11 there is no material that perfectly matches the menu
-    // look. Of all available material types, NSVisualEffectMaterialTitlebar
-    // is the one that comes closest.
+    
+    
+    
     [effectView setMaterial:canUseElCapitanMaterials ? NSVisualEffectMaterialMenu
                                                      : NSVisualEffectMaterialTitlebar];
   } else if (aType == VibrancyType::SOURCE_LIST && canUseElCapitanMaterials) {
@@ -168,15 +168,10 @@ enum { NSVisualEffectMaterialSelection = 4 };
 }
 
 static bool ComputeSystemSupportsVibrancy() {
-#ifdef __x86_64__
   return NSClassFromString(@"NSAppearance") && NSClassFromString(@"NSVisualEffectView");
-#else
-  // objc_allocateClassPair doesn't work in 32 bit mode, so turn off vibrancy.
-  return false;
-#endif
 }
 
-/* static */ bool VibrancyManager::SystemSupportsVibrancy() {
+ bool VibrancyManager::SystemSupportsVibrancy() {
   static bool supportsVibrancy = ComputeSystemSupportsVibrancy();
   return supportsVibrancy;
 }
