@@ -3686,15 +3686,9 @@ var ctx = canvas.getContext('2d');
 
 ctx.fillStyle = '#0f0';
 ctx.fillRect(0, 0, 100, 50);
-var _thrown = undefined; try {
-  ctx.drawImage(document.getElementById('red_14.png'), 10, 10, 0, 1, 0, 0, 100, 50);
-} catch (e) { _thrown = e }; ok(_thrown && _thrown.name == "IndexSizeError" && _thrown.code == DOMException.INDEX_SIZE_ERR, "should throw IndexSizeError");
-var _thrown = undefined; try {
-  ctx.drawImage(document.getElementById('red_14.png'), 10, 10, 1, 0, 0, 0, 100, 50);
-} catch (e) { _thrown = e }; ok(_thrown && _thrown.name == "IndexSizeError" && _thrown.code == DOMException.INDEX_SIZE_ERR, "should throw IndexSizeError");
-var _thrown = undefined; try {
-  ctx.drawImage(document.getElementById('red_14.png'), 10, 10, 0, 0, 0, 0, 100, 50);
-} catch (e) { _thrown = e }; ok(_thrown && _thrown.name == "IndexSizeError" && _thrown.code == DOMException.INDEX_SIZE_ERR, "should throw IndexSizeError");
+ctx.drawImage(document.getElementById('red_14.png'), 10, 10, 0, 1, 0, 0, 100, 50);
+ctx.drawImage(document.getElementById('red_14.png'), 10, 10, 1, 0, 0, 0, 100, 50);
+ctx.drawImage(document.getElementById('red_14.png'), 10, 10, 0, 0, 0, 0, 100, 50);
 isPixel(ctx, 50,25, 0,255,0,255, 2);
 
 
