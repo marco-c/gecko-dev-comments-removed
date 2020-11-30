@@ -1086,34 +1086,44 @@ void GCMarker::traverse(AccessorShape* thing) {
 }  
 
 template <typename S, typename T>
-static void CheckTraversedEdge(S source, T* target) {
+static inline void CheckTraversedEdge(S source, T* target) {
+#ifdef DEBUG
   
   
   MOZ_ASSERT(!source->isPermanentAndMayBeShared());
 
-  
-  MOZ_ASSERT_IF(
-      !target->isPermanentAndMayBeShared(),
-      target->zone()->isAtomsZone() || target->zone() == source->zone());
+  if (target->isPermanentAndMayBeShared()) {
+    MOZ_ASSERT(!target->maybeCompartment());
+
+    
+    return;
+  }
+
+  Zone* sourceZone = source->zone();
+  Zone* targetZone = target->zone();
 
   
   
-  MOZ_ASSERT_IF(!target->isPermanentAndMayBeShared() &&
-                    target->zone()->isAtomsZone() &&
-                    !source->zone()->isAtomsZone(),
-                target->runtimeFromAnyThread()->gc.atomMarking.atomIsMarked(
-                    source->zone(), reinterpret_cast<TenuredCell*>(target)));
+  MOZ_ASSERT_IF(targetZone->isAtomsZone(), !target->maybeCompartment());
+
+  
+  MOZ_ASSERT(targetZone == sourceZone || targetZone->isAtomsZone());
 
   
   
-  MOZ_ASSERT_IF(target->isPermanentAndMayBeShared(),
-                !target->maybeCompartment());
-  MOZ_ASSERT_IF(target->zoneFromAnyThread()->isAtomsZone(),
-                !target->maybeCompartment());
+  if (!sourceZone->isAtomsZone() && targetZone->isAtomsZone()) {
+    
+    if (!gHelperThreadLock.ownedByCurrentThread()) {
+      MOZ_ASSERT(target->runtimeFromAnyThread()->gc.atomMarking.atomIsMarked(
+          sourceZone, reinterpret_cast<TenuredCell*>(target)));
+    }
+  }
+
   
   
   MOZ_ASSERT_IF(source->maybeCompartment() && target->maybeCompartment(),
                 source->maybeCompartment() == target->maybeCompartment());
+#endif
 }
 
 template <typename S, typename T>
