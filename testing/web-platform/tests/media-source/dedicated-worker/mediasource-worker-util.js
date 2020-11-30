@@ -13,11 +13,11 @@ let mediaLoad;
 
 let MEDIA_LIST = [
   {
-    url: 'mp4/test.mp4',
+    url: '../mp4/test.mp4',
     type: 'video/mp4; codecs="mp4a.40.2,avc1.4d400d"',
   },
   {
-    url: 'webm/test.webm',
+    url: '../webm/test.webm',
     type: 'video/webm; codecs="vp8, vorbis"',
   },
 ];
@@ -56,9 +56,6 @@ onmessage = function(evt) {
   postMessage("Error: No message expected by Worker");
 };
 
-
-
-
 mediaSource.addEventListener("sourceopen", () => {
   URL.revokeObjectURL(mediaSourceObjectUrl);
   sourceBuffer = mediaSource.addSourceBuffer(mediaMetadata.type);
@@ -67,9 +64,15 @@ mediaSource.addEventListener("sourceopen", () => {
   };
   sourceBuffer.onupdateend = () => {
     
+    
+    sourceBuffer.abort();
+    
     sourceBuffer.remove(0.5, Infinity);
     sourceBuffer.onupdateend = () => {
       sourceBuffer.duration = 0.5;
+      
+      
+      sourceBuffer.changeType(mediaMetadata.type);
       mediaSource.endOfStream();
     };
   };
