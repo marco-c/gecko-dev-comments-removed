@@ -500,7 +500,9 @@ MFBT_API int profiler_current_process_id();
 
 MFBT_API int profiler_current_thread_id();
 
-extern MFBT_DATA const int scProfilerMainThreadId;
+
+
+extern MFBT_DATA int scProfilerMainThreadId;
 
 inline int profiler_main_thread_id() { return scProfilerMainThreadId; }
 

@@ -640,7 +640,9 @@ int profiler_current_process_id();
 
 int profiler_current_thread_id();
 
-extern const int scProfilerMainThreadId;
+
+
+extern int scProfilerMainThreadId;
 
 inline int profiler_main_thread_id() { return scProfilerMainThreadId; }
 
