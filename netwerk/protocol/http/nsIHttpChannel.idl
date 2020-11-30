@@ -235,6 +235,10 @@ interface nsIHttpChannel : nsIIdentChannel
 
     [must_use] attribute unsigned long redirectionLimit;
 
+    
+
+
+    [must_use] readonly attribute boolean supportsHTTP3;
 
     
 
