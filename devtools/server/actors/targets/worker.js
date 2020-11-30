@@ -137,6 +137,15 @@ exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
   },
 
   destroy() {
+    if (this.threadActor) {
+      
+      
+      
+      
+      this.threadActor.exit();
+      this.threadActor = null;
+    }
+
     Actor.prototype.destroy.call(this);
 
     if (this._sources) {
@@ -146,7 +155,6 @@ exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
 
     this.workerGlobal = null;
     this._dbg = null;
-    this.threadActor = null;
     this._consoleActor = null;
   },
 });
