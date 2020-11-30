@@ -19,7 +19,6 @@
 #include "nsIWritablePropertyBag2.h"
 #include "nsIChannel.h"
 #include "nsIScriptError.h"
-#include "nsIEnterprisePolicies.h"
 #include "nsIClassInfoImpl.h"
 
 #include "mozilla/ipc/URIUtils.h"
@@ -167,26 +166,6 @@ nsresult nsAboutProtocolHandler::CreateNewURI(const nsACString& aSpec,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-static const char kAboutPageEnterpriseWhitelist[][10] = {
-    
-    "blank",
-    "certerror",
-    "home",
-    "neterror",
-    "newtab",
-    "welcome",
-    
-};
-
 NS_IMETHODIMP
 nsAboutProtocolHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
                                    nsIChannel** result) {
@@ -196,34 +175,14 @@ nsAboutProtocolHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
   nsCOMPtr<nsIAboutModule> aboutMod;
   nsresult rv = NS_GetAboutModule(uri, getter_AddRefs(aboutMod));
 
-  bool aboutPageAllowed = true;
   nsAutoCString path;
   nsresult rv2 = NS_GetAboutModuleName(uri, path);
-  if (NS_SUCCEEDED(rv2)) {
-    size_t matchIdx;
-    if (path.EqualsLiteral("srcdoc")) {
-      
-      
-      
-      
-      rv = NS_ERROR_FACTORY_NOT_REGISTERED;
-    } else if (!BinarySearchIf(
-                   kAboutPageEnterpriseWhitelist, 0,
-                   ArrayLength(kAboutPageEnterpriseWhitelist),
-                   [&path](const char* aOther) { return path.Compare(aOther); },
-                   &matchIdx)) {
-      nsCOMPtr<nsIEnterprisePolicies> policyManager =
-          do_GetService("@mozilla.org/enterprisepolicies;1", &rv2);
-      if (NS_SUCCEEDED(rv2)) {
-        nsAutoCString normalizedURL;
-        normalizedURL.AssignLiteral("about:");
-        normalizedURL.Append(path);
-        rv2 = policyManager->IsAllowed(normalizedURL, &aboutPageAllowed);
-        if (NS_FAILED(rv2)) {
-          aboutPageAllowed = false;
-        }
-      }
-    }
+  if (NS_SUCCEEDED(rv2) && path.EqualsLiteral("srcdoc")) {
+    
+    
+    
+    
+    rv = NS_ERROR_FACTORY_NOT_REGISTERED;
   }
 
   if (NS_SUCCEEDED(rv)) {
@@ -268,9 +227,6 @@ nsAboutProtocolHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
           writableBag->SetPropertyAsInterface(u"baseURI"_ns,
                                               aboutURI->GetBaseURI());
         }
-      }
-      if (!aboutPageAllowed) {
-        (*result)->Cancel(NS_ERROR_BLOCKED_BY_POLICY);
       }
     }
     return rv;
