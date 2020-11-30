@@ -445,7 +445,9 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     }
 
     
+    
     while (
+      maxInitialFormHistory &&
       results.length < queryContext.maxResults + 1 &&
       fetchData.local.length
     ) {
