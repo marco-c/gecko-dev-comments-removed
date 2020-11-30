@@ -15,6 +15,12 @@ SOURCES += [
     'Replay.cpp',
 ]
 
+if CONFIG['OS_TARGET'] == 'Darwin':
+    
+    
+    
+    SOURCES['Replay.cpp'].flags += ['-Wno-unguarded-availability-new']
+
 if CONFIG['MOZ_REPLACE_MALLOC_STATIC'] and \
    (CONFIG['MOZ_DMD'] or CONFIG['MOZ_PHC']):
     UNIFIED_SOURCES += [
