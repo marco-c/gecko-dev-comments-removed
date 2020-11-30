@@ -35,7 +35,7 @@ class TaskController;
 class PerformanceCounter;
 class PerformanceCounterState;
 
-const uint32_t kDefaultPriorityValue = uint32_t(EventQueuePriority::Normal);
+const EventQueuePriority kDefaultPriorityValue = EventQueuePriority::Normal;
 
 
 
@@ -171,10 +171,17 @@ class Task {
   virtual PerformanceCounter* GetPerformanceCounter() const { return nullptr; }
 
  protected:
-  Task(bool aMainThreadOnly, uint32_t aPriority = kDefaultPriorityValue)
+  Task(bool aMainThreadOnly,
+       uint32_t aPriority = static_cast<uint32_t>(kDefaultPriorityValue))
       : mMainThreadOnly(aMainThreadOnly),
         mSeqNo(sCurrentTaskSeqNo++),
         mPriority(aPriority) {}
+
+  Task(bool aMainThreadOnly,
+       EventQueuePriority aPriority = kDefaultPriorityValue)
+      : mMainThreadOnly(aMainThreadOnly),
+        mSeqNo(sCurrentTaskSeqNo++),
+        mPriority(static_cast<uint32_t>(aPriority)) {}
 
   virtual ~Task() {}
 
