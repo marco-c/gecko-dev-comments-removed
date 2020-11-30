@@ -1054,38 +1054,6 @@ nsresult nsBoxFrame::LayoutChildAt(nsBoxLayoutState& aState, nsIFrame* aBox,
   return NS_OK;
 }
 
-nsresult nsBoxFrame::XULRelayoutChildAtOrdinal(nsIFrame* aChild) {
-  int32_t ord = aChild->StyleXUL()->mBoxOrdinal;
-
-  nsIFrame* child = mFrames.FirstChild();
-  nsIFrame* newPrevSib = nullptr;
-
-  while (child) {
-    if (ord < child->StyleXUL()->mBoxOrdinal) {
-      break;
-    }
-
-    if (child != aChild) {
-      newPrevSib = child;
-    }
-
-    child = GetNextXULBox(child);
-  }
-
-  if (aChild->GetPrevSibling() == newPrevSib) {
-    
-    return NS_OK;
-  }
-
-  
-  mFrames.RemoveFrame(aChild);
-
-  
-  mFrames.InsertFrame(nullptr, newPrevSib, aChild);
-
-  return NS_OK;
-}
-
 
 
 
