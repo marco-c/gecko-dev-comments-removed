@@ -7,12 +7,14 @@
 use std::convert::TryFrom;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::{Deserialize, Serialize};
+
 
 
 
 pub use glean_core::{
-    metrics::DistributionData, metrics::MemoryUnit, metrics::TimeUnit, CommonMetricData, ErrorType,
-    Lifetime,
+    metrics::DistributionData, metrics::MemoryUnit, metrics::RecordedEvent, metrics::TimeUnit,
+    CommonMetricData, ErrorType, Lifetime,
 };
 
 mod boolean;
@@ -49,7 +51,8 @@ pub use self::uuid::UuidMetric;
 
 
 
-struct Instant(u64);
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Instant(u64);
 
 impl Instant {
     

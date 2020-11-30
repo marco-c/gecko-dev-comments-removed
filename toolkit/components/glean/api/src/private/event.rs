@@ -5,8 +5,12 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
-use super::{CommonMetricData, Instant};
+use super::{CommonMetricData, Instant, RecordedEvent};
+
+use crate::dispatcher;
+use crate::ipc::{need_ipc, with_ipc_payload, MetricId};
 
 
 
@@ -38,7 +42,7 @@ pub trait ExtraKeys: Hash + Eq + PartialEq + Copy {
 
 
 
-#[derive(Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub enum NoExtraKeys {}
 
 impl ExtraKeys for NoExtraKeys {
@@ -55,21 +59,26 @@ impl ExtraKeys for NoExtraKeys {
 
 
 
+#[derive(Debug)]
+pub enum EventMetric<K> {
+    Parent(Arc<EventMetricImpl<K>>),
+    Child(EventMetricIpc),
+}
 #[derive(Clone, Debug)]
-pub struct EventMetric<K> {
+pub struct EventMetricImpl<K> {
     inner: glean_core::metrics::EventMetric,
     extra_keys: PhantomData<K>,
 }
+#[derive(Debug)]
+pub struct EventMetricIpc(MetricId);
 
-impl<K: ExtraKeys> EventMetric<K> {
+impl<K: 'static + ExtraKeys + std::fmt::Debug + Send + Sync> EventMetric<K> {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        let allowed_extra_keys = K::ALLOWED_KEYS.iter().map(|s| s.to_string()).collect();
-        let inner = glean_core::metrics::EventMetric::new(meta, allowed_extra_keys);
-
-        Self {
-            inner,
-            extra_keys: PhantomData,
+        if need_ipc() {
+            EventMetric::Child(EventMetricIpc(MetricId::new(meta)))
+        } else {
+            EventMetric::Parent(Arc::new(EventMetricImpl::new(meta)))
         }
     }
 
@@ -81,15 +90,35 @@ impl<K: ExtraKeys> EventMetric<K> {
     
     
     
-    pub fn record<M: Into<Option<HashMap<K, String>>>>(&self, extra: M) {
-        let now = Instant::now();
-
-        
-        let extra = extra
-            .into()
-            .map(|h| h.into_iter().map(|(k, v)| (k.index(), v)).collect());
-
-        crate::with_glean(|glean| self.inner.record(glean, now.as_millis(), extra))
+    pub fn record<M: Into<Option<HashMap<K, String>>> + Send + Sync>(&self, extra: M) {
+        match self {
+            EventMetric::Parent(p) => {
+                let metric = Arc::clone(&p);
+                let extra = extra.into().clone();
+                let now = Instant::now();
+                dispatcher::launch(move || metric.record(now, extra));
+            }
+            EventMetric::Child(c) => {
+                let extra = extra.into().and_then(|hash_map| {
+                    Some(
+                        hash_map
+                            .iter()
+                            .map(|(k, v)| (k.index(), v.clone()))
+                            .collect(),
+                    )
+                });
+                let now = Instant::now();
+                with_ipc_payload(move |payload| {
+                    if let Some(v) = payload.events.get_mut(&c.0) {
+                        v.push((now, extra));
+                    } else {
+                        let mut v = vec![];
+                        v.push((now, extra));
+                        payload.events.insert(c.0.clone(), v);
+                    }
+                });
+            }
+        }
     }
 
     
@@ -111,17 +140,41 @@ impl<K: ExtraKeys> EventMetric<K> {
     
     
     
-    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
-        crate::with_glean(|glean| {
-            
-            
-
-            let inner = &self.inner;
-            if inner.test_has_value(glean, storage_name) {
-                Some(inner.test_get_value_as_json_string(glean, storage_name))
-            } else {
-                None
+    pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<RecordedEvent>> {
+        match self {
+            EventMetric::Parent(p) => {
+                dispatcher::block_on_queue();
+                p.test_get_value(storage_name)
             }
-        })
+            EventMetric::Child(_) => panic!(
+                "Cannot get test value for {:?} in non-parent process!",
+                self
+            ),
+        }
+    }
+}
+
+impl<K: ExtraKeys> EventMetricImpl<K> {
+    pub fn new(meta: CommonMetricData) -> Self {
+        let allowed_extra_keys = K::ALLOWED_KEYS.iter().map(|s| s.to_string()).collect();
+        let inner = glean_core::metrics::EventMetric::new(meta, allowed_extra_keys);
+
+        Self {
+            inner,
+            extra_keys: PhantomData,
+        }
+    }
+
+    pub fn record<M: Into<Option<HashMap<K, String>>>>(&self, then: Instant, extra: M) {
+        
+        let extra = extra
+            .into()
+            .map(|h| h.into_iter().map(|(k, v)| (k.index(), v)).collect());
+
+        crate::with_glean(|glean| self.inner.record(glean, then.as_millis(), extra))
+    }
+
+    pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<RecordedEvent>> {
+        crate::with_glean(|glean| self.inner.test_get_value(glean, storage_name))
     }
 }
