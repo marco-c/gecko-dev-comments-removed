@@ -521,7 +521,7 @@ static bool ParseIntImpl(JSContext* cx, const CharT* chars, size_t length,
 }
 
 
-bool js::num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
+static bool num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
