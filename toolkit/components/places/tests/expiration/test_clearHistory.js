@@ -12,7 +12,6 @@
 
 
 add_task(async function test_historyClear() {
-  let as = PlacesUtils.annotations;
   
   setInterval(3600); 
 
@@ -24,14 +23,11 @@ add_task(async function test_historyClear() {
     let pageURI = uri("http://item_anno." + i + ".mozilla.org/");
     
     await PlacesTestUtils.addVisits({ uri: pageURI });
-    let bm = await PlacesUtils.bookmarks.insert({
+    await PlacesUtils.bookmarks.insert({
       parentGuid: PlacesUtils.bookmarks.unfiledGuid,
       url: pageURI,
       title: null,
     });
-    let id = await PlacesUtils.promiseItemId(bm.guid);
-    
-    as.setItemAnnotation(id, "persist", "test", 0, as.EXPIRE_NEVER);
     
     await PlacesUtils.history.update({
       url: pageURI,
@@ -58,12 +54,4 @@ add_task(async function test_historyClear() {
 
   let pages = await getPagesWithAnnotation("persist");
   Assert.equal(pages.length, 5);
-
-  let items = await getItemsWithAnnotation("persist");
-  Assert.equal(items.length, 5);
-
-  for (let guid of items) {
-    
-    Assert.ok(await PlacesUtils.bookmarks.fetch({ guid }), "item exists");
-  }
 });

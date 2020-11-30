@@ -13,12 +13,6 @@
 
 
 
-
-
-var as = Cc["@mozilla.org/browser/annotation-service;1"].getService(
-  Ci.nsIAnnotationService
-);
-
 add_task(async function test_annos_expire_never() {
   
   setInterval(3600); 
@@ -46,26 +40,6 @@ add_task(async function test_annos_expire_never() {
   Assert.equal(pages.length, 5);
 
   
-  for (let i = 0; i < 5; i++) {
-    let pageURI = uri("http://item_anno." + i + ".mozilla.org/");
-    
-    await PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
-    let bm = await PlacesUtils.bookmarks.insert({
-      parentGuid: PlacesUtils.bookmarks.unfiledGuid,
-      url: pageURI,
-      title: null,
-    });
-    let id = await PlacesUtils.promiseItemId(bm.guid);
-    as.setItemAnnotation(id, "item_persist1", "test", 0, as.EXPIRE_NEVER);
-    as.setItemAnnotation(id, "item_persist2", "test", 0, as.EXPIRE_NEVER);
-  }
-
-  let items = await getItemsWithAnnotation("item_persist1");
-  Assert.equal(items.length, 5);
-  items = await getItemsWithAnnotation("item_persist2");
-  Assert.equal(items.length, 5);
-
-  
   
   for (let i = 0; i < 5; i++) {
     let pageURI = uri("http://persist_page_anno." + i + ".mozilla.org/");
@@ -85,16 +59,12 @@ add_task(async function test_annos_expire_never() {
   Assert.equal(pages.length, 5);
 
   
-  await promiseForceExpirationStep(10);
+  await promiseForceExpirationStep(5);
 
   pages = await getPagesWithAnnotation("page_expire1");
   Assert.equal(pages.length, 0);
   pages = await getPagesWithAnnotation("page_expire2");
   Assert.equal(pages.length, 0);
-  items = await getItemsWithAnnotation("item_persist1");
-  Assert.equal(items.length, 5);
-  items = await getItemsWithAnnotation("item_persist2");
-  Assert.equal(items.length, 5);
   pages = await getPagesWithAnnotation("page_persist1");
   Assert.equal(pages.length, 5);
   pages = await getPagesWithAnnotation("page_persist2");

@@ -124,6 +124,11 @@ function notify(observers, notification, args = []) {
 }
 
 var History = Object.freeze({
+  ANNOTATION_EXPIRE_NEVER: 4,
+  
+  ANNOTATION_TYPE_STRING: 3,
+  ANNOTATION_TYPE_INT64: 5,
+
   
 
 
@@ -1685,8 +1690,8 @@ var update = async function(db, pageInfo) {
           
           let type =
             typeof content == "string"
-              ? Ci.nsIAnnotationService.TYPE_STRING
-              : Ci.nsIAnnotationService.TYPE_INT64;
+              ? History.ANNOTATION_TYPE_STRING
+              : History.ANNOTATION_TYPE_INT64;
           let date = PlacesUtils.toPRTime(new Date());
 
           
@@ -1705,7 +1710,7 @@ var update = async function(db, pageInfo) {
               id,
               anno_name: anno,
               content,
-              expiration: PlacesUtils.annotations.EXPIRE_NEVER,
+              expiration: History.ANNOTATION_EXPIRE_NEVER,
               type,
               
               date_added: date,

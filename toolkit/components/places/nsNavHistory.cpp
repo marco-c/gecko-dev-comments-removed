@@ -13,7 +13,6 @@
 
 #include "mozIPlacesAutoComplete.h"
 #include "nsNavBookmarks.h"
-#include "nsAnnotationService.h"
 #include "nsFaviconService.h"
 #include "nsPlacesMacros.h"
 #include "nsPlacesTriggers.h"
@@ -116,9 +115,6 @@ using namespace mozilla::places;
 
 
 #define RENEW_CACHED_NOW_TIMEOUT ((int32_t)3 * PR_MSEC_PER_SEC)
-
-
-#define CHARSET_ANNO "URIProperties/characterSet"_ns
 
 
 
