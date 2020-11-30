@@ -324,6 +324,7 @@ async function promiseApzFlushedRepaints() {
 
 
 
+
 function runSubtestsSeriallyInFreshWindows(aSubtests) {
   return new Promise(function(resolve, reject) {
     var testIndex = -1;
@@ -335,6 +336,11 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
       "apz.subtest",
        ""
     );
+
+    function advanceSubtestExecutionWithFailure(msg) {
+      SimpleTest.ok(false, msg);
+      advanceSubtestExecution();
+    }
 
     function advanceSubtestExecution() {
       var test = aSubtests[testIndex];
@@ -417,6 +423,7 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
       function spawnTest(aFile) {
         w = window.open("", "_blank");
         w.subtestDone = advanceSubtestExecution;
+        w.subtestFailed = advanceSubtestExecutionWithFailure;
         w.isApzSubtest = true;
         w.SimpleTest = SimpleTest;
         w.dump = function(msg) {
