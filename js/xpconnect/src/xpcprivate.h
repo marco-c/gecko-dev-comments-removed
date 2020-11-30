@@ -1508,7 +1508,7 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
 
   
   
-  char* ToString(JSContext* cx, XPCWrappedNativeTearOff* to = nullptr) const;
+  char* ToString(XPCWrappedNativeTearOff* to = nullptr) const;
 
   static nsIXPCScriptable* GatherProtoScriptable(nsIClassInfo* classInfo);
 
