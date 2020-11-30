@@ -12,7 +12,7 @@
 
 let expected = `
 000000..  48 8b ec                  mov %rsp, %rbp
-000000..  0f 28 da                  movaps %xmm2, %xmm3
+000000..  66 0f 6f da               movdqa %xmm2, %xmm3
 000000..  66 0f db c3               pand %xmm3, %xmm0
 000000..  66 0f df d9               pandn %xmm1, %xmm3
 000000..  66 0f eb c3               por %xmm3, %xmm0

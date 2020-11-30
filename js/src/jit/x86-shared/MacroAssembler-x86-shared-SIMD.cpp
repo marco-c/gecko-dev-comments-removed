@@ -50,18 +50,14 @@ void MacroAssemblerX86Shared::splatX4(Register input, FloatRegister output) {
 void MacroAssemblerX86Shared::splatX4(FloatRegister input,
                                       FloatRegister output) {
   MOZ_ASSERT(input.isSingle() && output.isSimd128());
-  if (input.asSimd128() != output) {
-    vmovaps(input, output);
-  }
+  asMasm().moveSimd128Float(input.asSimd128(), output);
   vshufps(0, output, output, output);
 }
 
 void MacroAssemblerX86Shared::splatX2(FloatRegister input,
                                       FloatRegister output) {
   MOZ_ASSERT(input.isDouble() && output.isSimd128());
-  if (input.asSimd128() != output) {
-    vmovapd(input, output);
-  }
+  asMasm().moveSimd128Float(input.asSimd128(), output);
   vshufpd(0, output, output, output);
 }
 
@@ -674,10 +670,10 @@ void MacroAssemblerX86Shared::compareFloat32x4(FloatRegister lhs, Operand rhs,
   if (!lhs.aliases(output)) {
     if (rhs.kind() == Operand::FPREG &&
         output.aliases(FloatRegister::FromCode(rhs.fpu()))) {
-      vmovdqa(rhs, scratch);
+      vmovaps(rhs, scratch);
       rhs = Operand(scratch);
     }
-    vmovdqa(lhs, output);
+    vmovaps(lhs, output);
   }
 
   switch (cond) {
@@ -716,10 +712,10 @@ void MacroAssemblerX86Shared::compareFloat64x2(FloatRegister lhs, Operand rhs,
   if (!lhs.aliases(output)) {
     if (rhs.kind() == Operand::FPREG &&
         output.aliases(FloatRegister::FromCode(rhs.fpu()))) {
-      vmovdqa(rhs, scratch);
+      vmovapd(rhs, scratch);
       rhs = Operand(scratch);
     }
-    vmovdqa(lhs, output);
+    vmovapd(lhs, output);
   }
 
   switch (cond) {
@@ -987,9 +983,7 @@ void MacroAssemblerX86Shared::packedLeftShiftByScalarInt8x16(
 void MacroAssemblerX86Shared::packedLeftShiftByScalarInt8x16(
     Imm32 count, FloatRegister src, FloatRegister dest) {
   MOZ_ASSERT(count.value <= 7);
-  if (src != dest) {
-    asMasm().moveSimd128(src, dest);
-  }
+  asMasm().moveSimd128(src, dest);
   
   
   
@@ -1039,9 +1033,7 @@ void MacroAssemblerX86Shared::packedUnsignedRightShiftByScalarInt8x16(
 void MacroAssemblerX86Shared::packedUnsignedRightShiftByScalarInt8x16(
     Imm32 count, FloatRegister src, FloatRegister dest) {
   MOZ_ASSERT(count.value <= 7);
-  if (src != dest) {
-    asMasm().moveSimd128(src, dest);
-  }
+  asMasm().moveSimd128(src, dest);
   asMasm().bitwiseAndSimd128(
       SimdConstant::SplatX16((0xFF << count.value) & 0xFF), dest);
   vpsrlw(count, dest, dest);
@@ -1136,9 +1128,7 @@ void MacroAssemblerX86Shared::packedRightShiftByScalarInt64x2(
       SimdConstant::SplatX2(int64_t(0xFFFFFFFF00000000LL)), scratch);
   
   
-  if (src != dest) {
-    asMasm().moveSimd128(src, dest);
-  }
+  asMasm().moveSimd128(src, dest);
   vpsrlq(count, dest, dest);
   
   vpor(scratch, dest, dest);
@@ -1152,12 +1142,8 @@ void MacroAssemblerX86Shared::selectSimd128(FloatRegister mask,
   
   
 
-  if (onTrue != output) {
-    vmovaps(onTrue, output);
-  }
-  if (mask != temp) {
-    vmovaps(mask, temp);
-  }
+  asMasm().moveSimd128Int(onTrue, output);
+  asMasm().moveSimd128Int(mask, temp);
 
   
   
@@ -1172,9 +1158,7 @@ void MacroAssemblerX86Shared::selectSimd128(FloatRegister mask,
 void MacroAssemblerX86Shared::unsignedConvertInt32x4ToFloat32x4(
     FloatRegister src, FloatRegister dest) {
   ScratchSimd128Scope scratch(asMasm());
-  if (src != dest) {
-    vmovaps(src, dest);
-  }
+  asMasm().moveSimd128Int(src, dest);
   vpxor(Operand(scratch), scratch, scratch);  
   vpblendw(0x55, dest, scratch, scratch);     
   vpsubd(Operand(scratch), dest, dest);       
@@ -1188,9 +1172,7 @@ void MacroAssemblerX86Shared::unsignedConvertInt32x4ToFloat32x4(
 void MacroAssemblerX86Shared::truncSatFloat32x4ToInt32x4(FloatRegister src,
                                                          FloatRegister dest) {
   ScratchSimd128Scope scratch(asMasm());
-  if (src != dest) {
-    vmovaps(src, dest);
-  }
+  asMasm().moveSimd128Float(src, dest);
 
   
   
@@ -1224,9 +1206,7 @@ void MacroAssemblerX86Shared::truncSatFloat32x4ToInt32x4(FloatRegister src,
 void MacroAssemblerX86Shared::unsignedTruncSatFloat32x4ToInt32x4(
     FloatRegister src, FloatRegister temp, FloatRegister dest) {
   ScratchSimd128Scope scratch(asMasm());
-  if (src != dest) {
-    vmovaps(src, dest);
-  }
+  asMasm().moveSimd128Float(src, dest);
 
   
   
