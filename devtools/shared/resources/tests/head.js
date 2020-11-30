@@ -28,21 +28,11 @@ async function createLocalClient() {
   return client;
 }
 
-async function initResourceWatcherAndTarget(tab) {
+async function _initResourceWatcherFromDescriptor(client, descriptor) {
   const { TargetList } = require("devtools/shared/resources/target-list");
   const {
     ResourceWatcher,
   } = require("devtools/shared/resources/resource-watcher");
-
-  
-  const client = await createLocalClient();
-
-  let descriptor;
-  if (tab) {
-    descriptor = await client.mainRoot.getTab({ tab });
-  } else {
-    descriptor = await client.mainRoot.getMainProcess();
-  }
 
   const target = await descriptor.getTarget();
   const targetList = new TargetList(client.mainRoot, target);
@@ -52,6 +42,42 @@ async function initResourceWatcherAndTarget(tab) {
   const resourceWatcher = new ResourceWatcher(targetList);
 
   return { client, resourceWatcher, targetList };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function initResourceWatcher(tab) {
+  const client = await createLocalClient();
+  const descriptor = await client.mainRoot.getTab({ tab });
+  return _initResourceWatcherFromDescriptor(client, descriptor);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function initMultiProcessResourceWatcher() {
+  const client = await createLocalClient();
+  const descriptor = await client.mainRoot.getMainProcess();
+  return _initResourceWatcherFromDescriptor(client, descriptor);
 }
 
 

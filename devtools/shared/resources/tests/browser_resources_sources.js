@@ -17,11 +17,9 @@ add_task(async function() {
   const htmlRequest = await fetch(TEST_URL);
   const htmlContent = await htmlRequest.text();
 
-  const {
-    client,
-    resourceWatcher,
-    targetList,
-  } = await initResourceWatcherAndTarget(tab);
+  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+    tab
+  );
 
   
   targetList.listenForWorkers = true;

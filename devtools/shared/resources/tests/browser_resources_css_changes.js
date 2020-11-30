@@ -15,11 +15,9 @@ add_task(async function() {
     "data:text/html,<body style='color: lime;'>CSS Changes</body>"
   );
 
-  const {
-    client,
-    resourceWatcher,
-    targetList,
-  } = await initResourceWatcherAndTarget(tab);
+  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+    tab
+  );
 
   
   
