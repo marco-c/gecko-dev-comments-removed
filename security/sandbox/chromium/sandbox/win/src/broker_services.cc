@@ -368,12 +368,13 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
 
       ::UnregisterWait(tracker->wait_handle);
       tracker->wait_handle = INVALID_HANDLE_VALUE;
-
+      
+      
+      const DWORD process_id = tracker->process_id;
       
       processes.erase(std::remove_if(processes.begin(), processes.end(),
                                      [&](auto&& p) -> bool {
-                                       return p->process_id ==
-                                              tracker->process_id;
+                                       return p->process_id == process_id;
                                      }),
                       processes.end());
     } else if (THREAD_CTRL_GET_POLICY_INFO == key) {
