@@ -104,7 +104,7 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
 
   
 
-  void Abort() override;
+  void RunAbortAlgorithm() override;
 
  protected:
   

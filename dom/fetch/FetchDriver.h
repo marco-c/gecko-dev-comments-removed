@@ -126,7 +126,7 @@ class FetchDriver final : public nsIStreamListener,
   }
 
   
-  void Abort() override;
+  void RunAbortAlgorithm() override;
 
  private:
   nsCOMPtr<nsIPrincipal> mPrincipal;

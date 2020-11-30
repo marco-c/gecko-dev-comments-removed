@@ -90,7 +90,7 @@ class BodyConsumer final : public nsIObserver,
   }
 
   
-  void Abort() override;
+  void RunAbortAlgorithm() override;
 
  private:
   BodyConsumer(nsIEventTarget* aMainThreadEventTarget,

@@ -23,7 +23,7 @@ class AbortFollower {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
-  virtual void Abort() = 0;
+  virtual void RunAbortAlgorithm() = 0;
 
   void Follow(AbortSignalImpl* aSignal);
 
@@ -39,18 +39,13 @@ class AbortFollower {
   RefPtr<AbortSignalImpl> mFollowingSignal;
 };
 
-
-
-class AbortSignalImpl : public AbortFollower, public nsISupports {
+class AbortSignalImpl : public nsISupports {
  public:
-  using nsISupports::AddRef;
-  using nsISupports::Release;
-
   explicit AbortSignalImpl(bool aAborted);
 
   bool Aborted() const;
 
-  void Abort() override;
+  virtual void SignalAbort();
 
   void AddFollower(AbortFollower* aFollower);
 
@@ -66,7 +61,21 @@ class AbortSignalImpl : public AbortFollower, public nsISupports {
   bool mAborted;
 };
 
-class AbortSignal final : public DOMEventTargetHelper, public AbortSignalImpl {
+
+
+
+
+
+
+
+
+
+
+
+
+class AbortSignal final : public DOMEventTargetHelper,
+                          public AbortSignalImpl,
+                          public AbortFollower {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AbortSignal, DOMEventTargetHelper)
@@ -78,7 +87,11 @@ class AbortSignal final : public DOMEventTargetHelper, public AbortSignalImpl {
 
   IMPL_EVENT_HANDLER(abort);
 
-  void Abort() override;
+  
+  void SignalAbort() override;
+
+  
+  void RunAbortAlgorithm() override { SignalAbort(); }
 
  private:
   ~AbortSignal() = default;
