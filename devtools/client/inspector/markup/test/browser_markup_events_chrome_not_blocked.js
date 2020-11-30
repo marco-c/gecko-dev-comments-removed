@@ -2,13 +2,12 @@
 
 
 
-"use strict";
+("use strict");
 
 
 
 
 const TEST_URL = URL_ROOT + "doc_markup_events_chrome_listeners.html";
-const FRAMESCRIPT_URL = `data:,(${frameScript.toString()})()`;
 
 loadHelperScript("helper_events_test_runner.js");
 
@@ -18,9 +17,13 @@ const TEST_DATA = [
     expected: [
       {
         type: "click",
-        filename: `${FRAMESCRIPT_URL}:1:109`,
+        filename:
+          getRootDirectory(gTestPath) +
+          "browser_markup_events_chrome_not_blocked.js:45:34",
         attributes: ["Bubbling", "DOM2"],
-        handler: `() => { /* Do nothing */ }`,
+        handler: `() => {
+          /* Do nothing */
+        }`,
       },
     ],
   },
@@ -32,21 +35,19 @@ add_task(async function() {
 
   const { tab, inspector, testActor } = await openInspectorForURL(TEST_URL);
   const browser = tab.linkedBrowser;
-  const mm = browser.messageManager;
 
   const eventBadgeAdded = inspector.markup.once("badge-added-event");
   info("Loading frame script");
-  mm.loadFrameScript(`${FRAMESCRIPT_URL}`, false);
+
+  await SpecialPowers.spawn(browser, [], () => {
+    const div = content.document.querySelector("div");
+    div.addEventListener("click", () => {
+      
+    });
+  });
   await eventBadgeAdded;
 
   for (const test of TEST_DATA) {
     await checkEventsForNode(test, inspector, testActor);
   }
 });
-
-function frameScript() {
-  const div = content.document.querySelector("div");
-  div.addEventListener("click", () => {
-    
-  });
-}
