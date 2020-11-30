@@ -1835,6 +1835,25 @@ class nsContentUtils {
 
 
 
+  static already_AddRefed<Document> CreateInertHTMLDocument(
+      const Document* aTemplate);
+
+  
+
+
+
+  static already_AddRefed<Document> CreateInertXMLDocument(
+      const Document* aTemplate);
+
+ private:
+  static already_AddRefed<Document> CreateInertDocument(
+      const Document* aTemplate, DocumentFlavor aFlavor);
+
+ public:
+  
+
+
+
 
 
 
