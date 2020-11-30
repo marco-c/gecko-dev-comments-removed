@@ -740,6 +740,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   uint32_t mHTTPSSVCTelemetryReported : 1;
 
   
+  bool mSupportsHTTP3 = false;
+
+  
   
   nsCString mTopWindowOrigin;
 
