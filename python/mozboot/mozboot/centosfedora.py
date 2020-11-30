@@ -26,7 +26,6 @@ class CentOSFedoraBootstrapper(
         
         
         self.packages = [
-            'autoconf213',
             'nodejs',
             'which',
         ]
