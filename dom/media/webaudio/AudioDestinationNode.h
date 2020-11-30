@@ -25,7 +25,8 @@ class AudioDestinationNode final : public AudioNode,
   
   
   AudioDestinationNode(AudioContext* aContext, bool aIsOffline,
-                       uint32_t aNumberOfChannels, uint32_t aLength);
+                       bool aAllowedToStart, uint32_t aNumberOfChannels,
+                       uint32_t aLength);
 
   void DestroyMediaTrack() override;
 
@@ -40,9 +41,6 @@ class AudioDestinationNode final : public AudioNode,
 
   uint32_t MaxChannelCount() const;
   void SetChannelCount(uint32_t aChannelCount, ErrorResult& aRv) override;
-
-  void Init();
-  void Close();
 
   
   AudioNodeTrack* Track();
@@ -60,20 +58,21 @@ class AudioDestinationNode final : public AudioNode,
   void NotifyMainThreadTrackEnded() override;
   void FireOfflineCompletionEvent();
 
+  nsresult CreateAudioChannelAgent();
+  void DestroyAudioChannelAgent();
+
   const char* NodeType() const override { return "AudioDestinationNode"; }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
-  void NotifyDataAudibleStateChanged(bool aAudible);
+  void NotifyAudibleStateChanged(bool aAudible);
   void ResolvePromise(AudioBuffer* aRenderedBuffer);
 
   unsigned long Length() {
     MOZ_ASSERT(mIsOffline);
     return mFramesToProduce;
   }
-
-  void NotifyAudioContextStateChanged();
 
  protected:
   virtual ~AudioDestinationNode();
@@ -82,46 +81,26 @@ class AudioDestinationNode final : public AudioNode,
   
   
   
-  void CreateAndStartAudioChannelAgent();
-  void DestroyAudioChannelAgentIfExists();
-  RefPtr<AudioChannelAgent> mAudioChannelAgent;
-
-  
-  
-  
   
   bool IsCapturingAudio() const;
   void StartAudioCapturingTrack();
   void StopAudioCapturingTrack();
-  RefPtr<MediaInputPort> mCaptureTrackPort;
-
-  
-  
-  using AudibleChangedReasons = AudioChannelService::AudibleChangedReasons;
-  using AudibleState = AudioChannelService::AudibleState;
-  void UpdateFinalAudibleStateIfNeeded(AudibleChangedReasons aReason);
-  bool IsAudible() const;
-  bool mFinalAudibleState = false;
-  bool mIsDataAudible = false;
-  float mAudioChannelVolume = 1.0;
-
-  
-  
-  
-  bool mAudioChannelDisabled = false;
-
-  
-  
   void CreateAudioWakeLockIfNeeded();
   void ReleaseAudioWakeLockIfExists();
-  RefPtr<WakeLock> mWakeLock;
 
   SelfReference<AudioDestinationNode> mOfflineRenderingRef;
   uint32_t mFramesToProduce;
 
+  RefPtr<AudioChannelAgent> mAudioChannelAgent;
+  RefPtr<MediaInputPort> mCaptureTrackPort;
+
   RefPtr<Promise> mOfflineRenderingPromise;
+  RefPtr<WakeLock> mWakeLock;
 
   bool mIsOffline;
+  bool mAudioChannelSuspended;
+
+  AudioChannelService::AudibleState mAudible;
 
   
   
