@@ -461,6 +461,11 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  virtual bool HasScrollUpdates() const = 0;
+  
+
+
+
 
 
 
