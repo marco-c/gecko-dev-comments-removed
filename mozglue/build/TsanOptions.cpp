@@ -282,9 +282,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:TemporaryIPCBlobParent::CreateAndShareFile\n"
 
          
-         "race:nsHtml5OwningUTF16Buffer::Release\n"
-
-         
          "race:makeOwnBaseShape\n"
          "race:numDynamicSlots\n"
 
