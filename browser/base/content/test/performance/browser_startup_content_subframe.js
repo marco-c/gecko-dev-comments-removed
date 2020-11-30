@@ -47,7 +47,6 @@ const known_scripts = {
 
     
     "resource:///actors/PageStyleChild.jsm",
-    "resource://gre/actors/AutoCompleteChild.jsm",
 
     
     "resource://gre/modules/TelemetryControllerBase.jsm", 
