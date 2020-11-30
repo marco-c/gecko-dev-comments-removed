@@ -595,6 +595,12 @@ function TargetMixin(parentClass) {
     _addListeners() {
       this.client.on("closed", this.destroy);
 
+      
+      
+      
+      
+      
+      
       this.on("tabDetached", this.destroy);
     }
 

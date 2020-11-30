@@ -198,6 +198,11 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     if (this.isDestroyed()) {
       return;
     }
+
+    
+    
+    this.emit("tabDetached");
+
     Actor.prototype.destroy.call(this);
 
     
