@@ -678,13 +678,6 @@ function bookmarkNodesToInfos(nodes) {
     if (node.children) {
       info.children = bookmarkNodesToInfos(node.children);
     }
-    
-    if (PlacesUtils.annotations.itemHasAnnotation(node.id, "sync/parent")) {
-      info.requestedParent = PlacesUtils.annotations.getItemAnnotation(
-        node.id,
-        "sync/parent"
-      );
-    }
     return info;
   });
 }
