@@ -63,8 +63,6 @@ if (isProduction) {
   
   
   webpackConfig.entry.vendors = getEntry("src/vendors.js");
-} else {
-  webpackConfig.entry.debugger = getEntry("src/main.development.js");
 }
 
 const envConfig = getConfig();
