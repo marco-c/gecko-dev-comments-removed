@@ -181,7 +181,6 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
         
         
         onPacket: connection.send.bind(connection),
-        onClosed() {},
       };
       childTransport.ready();
 
