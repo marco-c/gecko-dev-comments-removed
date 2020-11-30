@@ -6591,21 +6591,21 @@ function setToolbarVisibility(
     hidingAttribute = "collapsed";
   }
 
-  if (persist) {
-    if (toolbar.id == "PersonalToolbar") {
-      let prefValue;
-      if (typeof isVisible == "string") {
-        prefValue = isVisible;
-      } else {
-        prefValue = isVisible ? "always" : "never";
-      }
-      Services.prefs.setCharPref(
-        "browser.toolbars.bookmarks.visibility",
-        prefValue
-      );
+  
+  
+  
+  
+  if (persist && toolbar.id == "PersonalToolbar") {
+    let prefValue;
+    if (typeof isVisible == "string") {
+      prefValue = isVisible;
     } else {
-      Services.xulStore.persist(toolbar, hidingAttribute);
+      prefValue = isVisible ? "always" : "never";
     }
+    Services.prefs.setCharPref(
+      "browser.toolbars.bookmarks.visibility",
+      prefValue
+    );
   }
 
   if (typeof isVisible == "string") {
@@ -6633,6 +6633,12 @@ function setToolbarVisibility(
 
   toolbar.classList.toggle("instant", !animated);
   toolbar.setAttribute(hidingAttribute, !isVisible);
+  
+  
+  
+  if (persist && toolbar.id != "PersonalToolbar") {
+    Services.xulStore.persist(toolbar, hidingAttribute);
+  }
 
   let eventParams = {
     detail: {
