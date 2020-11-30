@@ -1141,7 +1141,7 @@ class UrlbarView {
       result.type == UrlbarUtils.RESULT_TYPE.SEARCH ||
       result.type == UrlbarUtils.RESULT_TYPE.KEYWORD
     ) {
-      favicon.src = this._iconForSearchResult(result);
+      favicon.src = this._iconForResult(result);
     } else {
       favicon.src = result.payload.icon || UrlbarUtils.ICON.DEFAULT;
     }
@@ -1356,9 +1356,11 @@ class UrlbarView {
     );
   }
 
-  _iconForSearchResult(result, iconUrlOverride = null) {
+  _iconForResult(result, iconUrlOverride = null) {
     return (
       (result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+        (result.type == UrlbarUtils.RESULT_TYPE.SEARCH ||
+          result.type == UrlbarUtils.RESULT_TYPE.KEYWORD) &&
         UrlbarUtils.ICON.HISTORY) ||
       iconUrlOverride ||
       result.payload.icon ||
@@ -1852,8 +1854,6 @@ class UrlbarView {
       return;
     }
 
-    
-    
     let engine = this.oneOffSearchButtons.selectedButton?.engine;
     let source = this.oneOffSearchButtons.selectedButton?.source;
     switch (source) {
@@ -1904,6 +1904,21 @@ class UrlbarView {
         continue;
       }
 
+      
+      
+      
+      
+      if (
+        this.oneOffsRefresh &&
+        result.heuristic &&
+        !engine &&
+        !source &&
+        this.input.searchMode &&
+        !this.input.searchMode.isPreview
+      ) {
+        continue;
+      }
+
       let action = item.querySelector(".urlbarView-action");
       let favicon = item.querySelector(".urlbarView-favicon");
 
@@ -1915,33 +1930,18 @@ class UrlbarView {
         item.removeAttribute("show-action-text");
       }
 
-      if (source) {
-        
-        this.document.l10n.setAttributes(action, source.l10nId);
-        item._actionOverride = true;
-        
-        if (result.heuristic) {
-          item.setAttribute("source", source.attribute);
-          favicon.src = this._iconForSearchResult(result, source?.icon);
-        }
-        
-        continue;
-      }
-
       
       
-      
-      if (item._actionOverride) {
-        if (item._originalActionSetter) {
-          item._originalActionSetter();
-          if (result.heuristic) {
-            favicon.src = result.payload.icon || UrlbarUtils.ICON.DEFAULT;
+      if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
+        if (engine) {
+          if (!result.payload.originalEngine) {
+            result.payload.originalEngine = result.payload.engine;
           }
-        } else {
-          Cu.reportError("An item is missing the action setter");
+          result.payload.engine = engine.name;
+        } else if (result.payload.originalEngine) {
+          result.payload.engine = result.payload.originalEngine;
+          delete result.payload.originalEngine;
         }
-        item._actionOverride = false;
-        item.removeAttribute("source");
       }
 
       
@@ -1950,26 +1950,35 @@ class UrlbarView {
         continue;
       }
 
-      if (engine) {
-        if (!result.payload.originalEngine) {
-          result.payload.originalEngine = result.payload.engine;
+      if (source) {
+        
+        this.document.l10n.setAttributes(action, source.l10nId);
+        if (result.heuristic) {
+          item.setAttribute("source", source.attribute);
         }
-        result.payload.engine = engine.name;
-      } else if (result.payload.originalEngine) {
-        result.payload.engine = result.payload.originalEngine;
-        delete result.payload.originalEngine;
-      }
-
-      
-      if (!result.payload.inPrivateWindow) {
+      } else if (engine && !result.payload.inPrivateWindow) {
+        
         this.document.l10n.setAttributes(
           action,
           "urlbar-result-action-search-w-engine",
-          { engine: (engine && engine.name) || result.payload.engine }
+          { engine: engine.name }
         );
+      } else {
+        
+        
+        if (item._originalActionSetter) {
+          item._originalActionSetter();
+          if (result.heuristic) {
+            favicon.src = result.payload.icon || UrlbarUtils.ICON.DEFAULT;
+          }
+        } else {
+          Cu.reportError("An item is missing the action setter");
+        }
+        item.removeAttribute("source");
       }
 
       
+      let iconOverride = source?.icon || engine?.iconURI?.spec;
       if (
         
         
@@ -1981,7 +1990,7 @@ class UrlbarView {
         
         
         
-        favicon.src = this._iconForSearchResult(result, engine?.iconURI?.spec);
+        favicon.src = this._iconForResult(result, iconOverride);
       }
     }
   }
