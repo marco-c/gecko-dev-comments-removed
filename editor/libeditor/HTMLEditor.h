@@ -3206,7 +3206,6 @@ class HTMLEditor final : public TextEditor,
   Element* GetNextTableRowElement(Element& aTableRowElement,
                                   ErrorResult& aRv) const;
 
-  struct CellAndIndexes;
   struct CellData;
 
   
@@ -3274,33 +3273,7 @@ class HTMLEditor final : public TextEditor,
    private:
     CellIndexes() : mRow(-1), mColumn(-1) {}
 
-    friend struct CellAndIndexes;
     friend struct CellData;
-  };
-
-  struct MOZ_STACK_CLASS CellAndIndexes final {
-    RefPtr<Element> mElement;
-    CellIndexes mIndexes;
-
-    
-
-
-
-
-
-    MOZ_CAN_RUN_SCRIPT CellAndIndexes(HTMLEditor& aHTMLEditor,
-                                      Selection& aSelection, ErrorResult& aRv) {
-      Update(aHTMLEditor, aSelection, aRv);
-    }
-
-    
-
-
-
-
-
-    MOZ_CAN_RUN_SCRIPT void Update(HTMLEditor& aHTMLEditor,
-                                   Selection& aSelection, ErrorResult& aRv);
   };
 
   struct MOZ_STACK_CLASS CellData final {
