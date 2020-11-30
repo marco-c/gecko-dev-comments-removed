@@ -3290,6 +3290,10 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
   MOZ_ASSERT(aStripWrappers == nsIEditor::eStrip ||
              aStripWrappers == nsIEditor::eNoStrip);
 
+  if (!SelectionRefPtr()->RangeCount()) {
+    return EditActionCanceled();
+  }
+
   
   
   TopLevelEditSubActionDataRef().mDidDeleteSelection = true;
@@ -3301,9 +3305,7 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
   }
 
   
-  ErrorResult error;
-  if (RefPtr<Element> cellElement = GetFirstSelectedTableCellElement(error)) {
-    error.SuppressException();
+  if (HTMLEditUtils::IsInTableCellSelectionMode(*SelectionRefPtr())) {
     nsresult rv = DeleteTableCellContentsWithTransaction();
     if (NS_WARN_IF(Destroyed())) {
       return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
@@ -3312,14 +3314,6 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
         NS_SUCCEEDED(rv),
         "HTMLEditor::DeleteTableCellContentsWithTransaction() failed");
     return EditActionHandled(rv);
-  }
-
-  
-  
-  
-  if (error.Failed()) {
-    NS_WARNING("HTMLEditor::GetFirstSelectedTableCellElement() failed");
-    return EditActionResult(error.StealNSResult());
   }
 
   AutoRangeArray rangesToDelete(*SelectionRefPtr());
