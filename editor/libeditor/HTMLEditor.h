@@ -764,51 +764,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<Element> GetFirstSelectedTableCellElement(
-      ErrorResult& aRv) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<Element> GetNextSelectedTableCellElement(
-      ErrorResult& aRv) const;
-
-  
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult DeleteTableCellContentsWithTransaction();
 
   static void IsNextCharInNodeWhiteSpace(nsIContent* aContent, int32_t aOffset,
@@ -4704,11 +4659,6 @@ class HTMLEditor final : public TextEditor,
 
   bool mCSSAware;
   UniquePtr<CSSEditUtils> mCSSEditUtils;
-
-  
-  
-  
-  mutable uint32_t mSelectedCellIndex;
 
   
   bool mIsObjectResizingEnabled;
