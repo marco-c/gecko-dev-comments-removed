@@ -839,6 +839,20 @@ var DownloadIntegration = {
 
     
     
+    
+    
+    
+    
+    
+    if (!fileExtension && AppConstants.platform == "win") {
+      
+      
+      this.showContainingDirectory(aDownload.target.path);
+      return;
+    }
+
+    
+    
     if (mimeInfo) {
       mimeInfo.preferredAction = Ci.nsIMIMEInfo.useSystemDefault;
       try {
@@ -872,6 +886,8 @@ var DownloadIntegration = {
   },
 
   
+
+
 
 
   launchFile(file, mimeInfo) {
