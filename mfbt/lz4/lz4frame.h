@@ -254,6 +254,15 @@ LZ4FLIB_API LZ4F_errorCode_t LZ4F_freeCompressionContext(LZ4F_cctx* cctx);
 #define LZ4F_HEADER_SIZE_MAX 19
 
 
+#define LZ4F_BLOCK_HEADER_SIZE 4
+
+
+#define LZ4F_BLOCK_CHECKSUM_SIZE 4
+
+
+#define LZ4F_CONTENT_CHECKSUM_SIZE 4
+
+
 
 
 
