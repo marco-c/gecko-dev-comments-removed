@@ -625,7 +625,7 @@ static bool CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats,
   
   
   JSRuntime* rt = cx->runtime();
-  CancelOffThreadParses(rt);
+  WaitForOffThreadParses(rt);
 
   
   

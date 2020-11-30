@@ -178,6 +178,12 @@ bool HasOffThreadIonCompile(JS::Realm* realm);
 #endif
 
 
+
+
+
+void WaitForOffThreadParses(JSRuntime* runtime);
+
+
 void CancelOffThreadParses(JSRuntime* runtime);
 
 

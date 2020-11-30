@@ -879,24 +879,12 @@ void MultiScriptsDecodeTask::parse(JSContext* cx) {
   }
 }
 
-void js::CancelOffThreadParses(JSRuntime* rt) {
-  AutoLockHelperThreadState lock;
-
+static void WaitForOffThreadParses(JSRuntime* rt,
+                                   AutoLockHelperThreadState& lock) {
   if (HelperThreadState().threads(lock).empty()) {
     return;
   }
 
-#ifdef DEBUG
-  GlobalHelperThreadState::ParseTaskVector& waitingOnGC =
-      HelperThreadState().parseWaitingOnGC(lock);
-  for (size_t i = 0; i < waitingOnGC.length(); i++) {
-    MOZ_ASSERT(!waitingOnGC[i]->runtimeMatches(rt));
-  }
-#endif
-
-  
-  
-  
   while (true) {
     bool pending = false;
     GlobalHelperThreadState::ParseTaskVector& worklist =
@@ -923,6 +911,26 @@ void js::CancelOffThreadParses(JSRuntime* rt) {
     }
     HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
   }
+}
+
+void js::WaitForOffThreadParses(JSRuntime* rt) {
+  AutoLockHelperThreadState lock;
+  WaitForOffThreadParses(rt, lock);
+}
+
+void js::CancelOffThreadParses(JSRuntime* rt) {
+  AutoLockHelperThreadState lock;
+
+#ifdef DEBUG
+  for (const auto& task : HelperThreadState().parseWaitingOnGC(lock)) {
+    MOZ_ASSERT(!task->runtimeMatches(rt));
+  }
+#endif
+
+  
+  
+  
+  WaitForOffThreadParses(rt, lock);
 
   
   auto& finished = HelperThreadState().parseFinishedList(lock);
@@ -945,9 +953,7 @@ void js::CancelOffThreadParses(JSRuntime* rt) {
   }
 
 #ifdef DEBUG
-  GlobalHelperThreadState::ParseTaskVector& worklist =
-      HelperThreadState().parseWorklist(lock);
-  for (const auto& task : worklist) {
+  for (const auto& task : HelperThreadState().parseWorklist(lock)) {
     MOZ_ASSERT(!task->runtimeMatches(rt));
   }
 #endif
