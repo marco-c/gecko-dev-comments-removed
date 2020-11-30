@@ -9,11 +9,9 @@ from six.moves.collections_abc import MutableMapping
 
 from .utils import git
 
-try:
-    from ..gitignore import gitignore
-except ValueError:
-    
-    from gitignore import gitignore  
+
+
+from gitignore import gitignore  
 
 
 MYPY = False
