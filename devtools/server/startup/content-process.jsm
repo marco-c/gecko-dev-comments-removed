@@ -66,6 +66,7 @@ function setupServer(mm) {
 function init(msg) {
   const mm = msg.target;
   const prefix = msg.data.prefix;
+  const watcherActorID = msg.data.watcherActorID;
 
   
   const loader = setupServer(mm);
@@ -82,7 +83,7 @@ function init(msg) {
   const actor = new ContentProcessTargetActor(conn);
   actor.manage(actor);
 
-  const response = { actor: actor.form() };
+  const response = { watcherActorID, prefix, actor: actor.form() };
   mm.sendAsyncMessage("debug:content-process-actor", response);
 
   
@@ -102,4 +103,8 @@ function init(msg) {
     
     conn.close();
   });
+  return {
+    actor,
+    connection: conn,
+  };
 }

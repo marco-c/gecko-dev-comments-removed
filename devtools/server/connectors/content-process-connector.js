@@ -32,6 +32,11 @@ function connectToContentProcess(connection, mm, onDestroy) {
     mm.addMessageListener("debug:content-process-actor", function listener(
       msg
     ) {
+      
+      
+      if (msg.watcherActorID) {
+        return;
+      }
       mm.removeMessageListener("debug:content-process-actor", listener);
 
       

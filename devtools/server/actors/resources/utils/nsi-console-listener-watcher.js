@@ -34,7 +34,9 @@ class nsIConsoleListenerWatcher {
     
     
     
-    targetActor.attach();
+    if (!targetActor.threadActor) {
+      targetActor.attach();
+    }
 
     
     const listener = {

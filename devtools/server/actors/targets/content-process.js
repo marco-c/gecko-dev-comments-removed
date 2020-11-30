@@ -25,6 +25,7 @@ const {
   contentProcessTargetSpec,
 } = require("devtools/shared/specs/targets/content-process");
 const Targets = require("devtools/server/actors/targets/index");
+const Resources = require("devtools/server/actors/resources/index");
 
 loader.lazyRequireGetter(
   this,
@@ -85,6 +86,8 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     
     this.destroyObserver = this.destroy.bind(this);
     Services.obs.addObserver(this.destroyObserver, "xpcom-shutdown");
+
+    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
   },
 
   targetType: Targets.TYPES.FRAME,
@@ -146,6 +149,7 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
       consoleActor: this._consoleActor.actorID,
       threadActor: this.threadActor.actorID,
       memoryActor: this.memoryActor.actorID,
+      processID: Services.appinfo.processID,
 
       traits: {
         networkMonitor: false,
@@ -194,10 +198,54 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     this.ensureWorkerList().workerPauser.setPauseServiceWorkers(request.origin);
   },
 
+  
+
+
+
+
+
+
+
+  _watchTargetResources(resourceTypes) {
+    return Resources.watchResources(this, resourceTypes);
+  },
+
+  _unwatchTargetResources(resourceTypes) {
+    return Resources.unwatchResources(this, resourceTypes);
+  },
+
+  addWatcherDataEntry(type, entries) {
+    if (type == "resources") {
+      this._watchTargetResources(entries);
+    }
+  },
+
+  removeWatcherDataEntry(type, entries) {
+    if (type == "resources") {
+      this._unwatchTargetResources(entries);
+    }
+  },
+
+  
+
+
+
+
+
+
+  notifyResourceAvailable(resources) {
+    if (this.isDestroyed()) {
+      
+      return;
+    }
+    this.emit("resource-available-form", resources);
+  },
+
   destroy: function() {
     if (this.isDestroyed()) {
       return;
     }
+    Resources.unwatchAllTargetResources(this);
 
     
     

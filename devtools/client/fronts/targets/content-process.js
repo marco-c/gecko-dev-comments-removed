@@ -23,6 +23,7 @@ class ContentProcessTargetFront extends TargetMixin(
 
   form(json) {
     this.actorID = json.actor;
+    this.processID = json.processID;
 
     
     

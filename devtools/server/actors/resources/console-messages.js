@@ -42,7 +42,9 @@ class ConsoleMessageWatcher {
     
     
     
-    targetActor.attach();
+    if (!targetActor.threadActor) {
+      targetActor.attach();
+    }
 
     
     const onConsoleAPICall = message => {

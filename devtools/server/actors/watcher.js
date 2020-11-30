@@ -22,6 +22,11 @@ loader.lazyRequireGetter(
   Targets.TYPES.FRAME,
   "devtools/server/actors/watcher/target-helpers/frame-helper"
 );
+loader.lazyRequireGetter(
+  TARGET_HELPERS,
+  Targets.TYPES.PROCESS,
+  "devtools/server/actors/watcher/target-helpers/process-helper"
+);
 
 exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
@@ -93,7 +98,9 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       actor: this.actorID,
       traits: {
         
-        frame: true,
+        [Targets.TYPES.FRAME]: true,
+        
+        [Targets.TYPES.PROCESS]: true,
         resources: {
           
           
