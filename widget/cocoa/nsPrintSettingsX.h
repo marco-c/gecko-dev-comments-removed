@@ -23,94 +23,58 @@ class nsPrintSettingsX : public nsPrintSettings {
 
   nsPrintSettingsX();
   explicit nsPrintSettingsX(const PrintSettingsInitializer& aSettings);
-  nsresult Init();
-  NSPrintInfo* GetCocoaPrintInfo() { return mPrintInfo; }
-  void SetCocoaPrintInfo(NSPrintInfo* aPrintInfo);
+
+  nsresult Init() { return NS_OK; }
   nsresult ReadPageFormatFromPrefs();
   nsresult WritePageFormatToPrefs();
-  nsresult GetEffectivePageSize(double* aWidth, double* aHeight) override;
-  void GetFilePageSize(double* aWidth, double* aHeight);
 
-  nsresult GetPaperWidth(double* aPaperWidth) override;
-  nsresult GetPaperHeight(double* aPaperWidth) override;
+  void SetDestination(uint16_t aDestination) { mDestination = aDestination; }
+  void GetDestination(uint16_t* aDestination) { *aDestination = mDestination; }
 
-  
-  
-  
-  
-  nsresult SetPaperWidth(double aPaperWidth) override;
-  nsresult SetPaperHeight(double aPaperWidth) override;
-
-  PMPrintSettings GetPMPrintSettings();
-  PMPrintSession GetPMPrintSession();
-  PMPageFormat GetPMPageFormat();
-  void SetPMPageFormat(PMPageFormat aPageFormat);
-
-  
-  
-  nsresult InitUnwriteableMargin();
-
-  
-  
-  nsresult InitAdjustedPaperSize();
-
-  void SetInchesScale(float aWidthScale, float aHeightScale);
-  void GetInchesScale(float* aWidthScale, float* aHeightScale);
-
-  
-  
-  NS_IMETHOD SetPrintRange(int16_t aPrintRange) final;
+  void SetDisposition(const nsString& aDisposition) {
+    mDisposition = aDisposition;
+  }
+  void GetDisposition(nsString& aDisposition) { aDisposition = mDisposition; }
 
   
   
   
   
-  NS_IMETHOD SetPrinterName(const nsAString& aName) override;
-
-  NS_IMETHOD GetStartPageRange(int32_t* aStartPageRange) final;
-  NS_IMETHOD SetStartPageRange(int32_t aStartPageRange) final;
-
-  NS_IMETHOD GetEndPageRange(int32_t* aEndPageRange) final;
-  NS_IMETHOD SetEndPageRange(int32_t aEndPageRange) final;
-
-  NS_IMETHOD SetScaling(double aScaling) override;
-  NS_IMETHOD GetScaling(double* aScaling) override;
-
-  NS_IMETHOD SetToFileName(const nsAString& aToFileName) override;
-
-  NS_IMETHOD GetOrientation(int32_t* aOrientation) override;
-  NS_IMETHOD SetOrientation(int32_t aOrientation) override;
-
-  NS_IMETHOD GetNumCopies(int32_t* aCopies) override;
-  NS_IMETHOD SetNumCopies(int32_t aCopies) override;
-
-  NS_IMETHOD GetDuplex(int32_t* aDuplex) override;
-  NS_IMETHOD SetDuplex(int32_t aDuplex) override;
-
-  NS_IMETHOD SetUnwriteableMarginTop(double aUnwriteableMarginTop) override;
-  NS_IMETHOD SetUnwriteableMarginLeft(double aUnwriteableMarginLeft) override;
-  NS_IMETHOD SetUnwriteableMarginBottom(
-      double aUnwriteableMarginBottom) override;
-  NS_IMETHOD SetUnwriteableMarginRight(double aUnwriteableMarginRight) override;
-
-  void SetAdjustedPaperSize(double aWidth, double aHeight);
-  void GetAdjustedPaperSize(double* aWidth, double* aHeight);
-  nsresult SetCocoaPaperSize(double aWidth, double aHeight);
+  
+  
+  
+  
+  
+  NSPrintInfo* CreatePrintInfo(bool aWithScaling = false);
 
   
-  void SetPrinterNameFromPrintInfo();
-
-  void SetDispositionSaveToFile();
+  
+  void SetFromPrintInfo(const NSPrintInfo* aPrintInfo);
 
  protected:
-  virtual ~nsPrintSettingsX();
+  virtual ~nsPrintSettingsX(){};
 
   nsPrintSettingsX& operator=(const nsPrintSettingsX& rhs);
 
   nsresult _Clone(nsIPrintSettings** _retval) override;
   nsresult _Assign(nsIPrintSettings* aPS) override;
 
+  void SetPMPageFormat(PMPageFormat aPageFormat);
+
+  
+  void SetPageFormatFromPrintInfo(const NSPrintInfo* aPrintInfo);
+
   int GetCocoaUnit(int16_t aGeckoUnit);
+
+  double PaperSizeFromCocoaPoints(double aPointsValue) {
+    return aPointsValue *
+           (mPaperSizeUnit == kPaperSizeInches ? 1.0 / 72.0 : 25.4 / 72.0);
+  }
+
+  double CocoaPointsFromPaperSize(double aSizeUnitValue) {
+    return aSizeUnitValue *
+           (mPaperSizeUnit == kPaperSizeInches ? 72.0 : 72.0 / 25.4);
+  }
 
   
   
@@ -119,14 +83,13 @@ class nsPrintSettingsX : public nsPrintSettings {
   OSStatus CreateDefaultPrintSettings(PMPrintSession aSession,
                                       PMPrintSettings& outSettings);
 
-  NSPrintInfo* mPrintInfo;
-
   
   
-  float mWidthScale;
-  float mHeightScale;
-  double mAdjustedPaperWidth;
-  double mAdjustedPaperHeight;
+  
+  
+  
+  nsString mDisposition;
+  uint16_t mDestination;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPrintSettingsX, NS_PRINTSETTINGSX_IID)

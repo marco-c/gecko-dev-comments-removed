@@ -18,13 +18,6 @@ class nsPrintSettingsServiceX final : public nsPrintSettingsService {
  public:
   nsPrintSettingsServiceX() {}
 
-  
-
-
-
-
-
-
   NS_IMETHODIMP SerializeToPrintData(
       nsIPrintSettings* aSettings,
       mozilla::embedding::PrintData* data) override;
@@ -41,11 +34,6 @@ class nsPrintSettingsServiceX final : public nsPrintSettingsService {
                       uint32_t aFlags) override;
 
   nsresult _CreatePrintSettings(nsIPrintSettings** _retval) override;
-
- private:
-  
-  nsresult SerializeToPrintDataParent(nsIPrintSettings* aSettings,
-                                      mozilla::embedding::PrintData* data);
 };
 
 #endif  

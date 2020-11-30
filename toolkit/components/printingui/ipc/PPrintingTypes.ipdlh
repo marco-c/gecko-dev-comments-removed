@@ -86,33 +86,9 @@ struct PrintData {
   
 
 
-  nsString printJobName;
-  bool printAllPages;
-  bool mustCollate;
+
   nsString disposition;
-  
-  short pagesAcross;
-  short pagesDown;
-  double printTime;
-  bool detailedErrorReporting;
-  nsString faxNumber;
-  bool addHeaderAndFooter;
-  bool fileNameExtensionHidden;
-  
-
-
-
-
-
-  float scalingFactor;
-  
-
-
-
-  float widthScale;
-  float heightScale;
-  double adjustedPaperWidth;
-  double adjustedPaperHeight;
+  uint16_t destination;
 };
 
 } 

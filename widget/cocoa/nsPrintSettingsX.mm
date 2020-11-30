@@ -17,23 +17,13 @@
 using namespace mozilla;
 
 #define MAC_OS_X_PAGE_SETUP_PREFNAME "print.macosx.pagesetup-2"
-#define COCOA_PAPER_UNITS_PER_INCH 72.0
 
 NS_IMPL_ISUPPORTS_INHERITED(nsPrintSettingsX, nsPrintSettings, nsPrintSettingsX)
 
-nsPrintSettingsX::nsPrintSettingsX() : mAdjustedPaperWidth{0.0}, mAdjustedPaperHeight{0.0} {
+nsPrintSettingsX::nsPrintSettingsX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  
-  
-  
-  
-  
-  
-  
-  mPrintInfo = [[NSPrintInfo sharedPrintInfo] copy];
-  mWidthScale = COCOA_PAPER_UNITS_PER_INCH;
-  mHeightScale = COCOA_PAPER_UNITS_PER_INCH;
+  mDestination = kPMDestinationInvalid;
 
   
 
@@ -55,111 +45,17 @@ already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(
   return settings.forget();
 }
 
-nsPrintSettingsX::~nsPrintSettingsX() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [mPrintInfo release];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
 nsPrintSettingsX& nsPrintSettingsX::operator=(const nsPrintSettingsX& rhs) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
-
   if (this == &rhs) {
     return *this;
   }
 
   nsPrintSettings::operator=(rhs);
 
-  [mPrintInfo release];
-  mPrintInfo = [rhs.mPrintInfo copy];
-
-  mWidthScale = rhs.mWidthScale;
-  mHeightScale = rhs.mHeightScale;
-  mAdjustedPaperWidth = rhs.mAdjustedPaperWidth;
-  mAdjustedPaperHeight = rhs.mAdjustedPaperHeight;
+  mDestination = rhs.mDestination;
+  mDisposition = rhs.mDisposition;
 
   return *this;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(*this);
-}
-
-nsresult nsPrintSettingsX::Init() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  InitUnwriteableMargin();
-  InitAdjustedPaperSize();
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-
-NS_IMETHODIMP nsPrintSettingsX::InitUnwriteableMargin() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  PMPaper paper;
-  PMPaperMargins paperMargin;
-  PMPageFormat pageFormat = GetPMPageFormat();
-  ::PMGetPageFormatPaper(pageFormat, &paper);
-  ::PMPaperGetMargins(paper, &paperMargin);
-  mUnwriteableMargin.top = NS_POINTS_TO_INT_TWIPS(paperMargin.top);
-  mUnwriteableMargin.left = NS_POINTS_TO_INT_TWIPS(paperMargin.left);
-  mUnwriteableMargin.bottom = NS_POINTS_TO_INT_TWIPS(paperMargin.bottom);
-  mUnwriteableMargin.right = NS_POINTS_TO_INT_TWIPS(paperMargin.right);
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::InitAdjustedPaperSize() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  PMPageFormat pageFormat = GetPMPageFormat();
-
-  PMRect paperRect;
-  ::PMGetAdjustedPaperRect(pageFormat, &paperRect);
-
-  mAdjustedPaperWidth = paperRect.right - paperRect.left;
-  mAdjustedPaperHeight = paperRect.bottom - paperRect.top;
-
-  int32_t orientation;
-  GetOrientation(&orientation);
-  if (kLandscapeOrientation == orientation) {
-    
-    
-    
-    
-    
-    std::swap(mAdjustedPaperWidth, mAdjustedPaperHeight);
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-void nsPrintSettingsX::SetCocoaPrintInfo(NSPrintInfo* aPrintInfo) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  if (mPrintInfo != aPrintInfo) {
-    [mPrintInfo release];
-    mPrintInfo = [aPrintInfo retain];
-  }
-
-  NSDictionary* dict = [mPrintInfo dictionary];
-  NSString* printerName = [dict objectForKey:NSPrintPrinterName];
-  if (printerName) {
-    
-    nsAutoString name;
-    nsCocoaUtils::GetStringForNSString(printerName, name);
-    nsPrintSettings::SetPrinterName(name);
-  }
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 nsresult nsPrintSettingsX::ReadPageFormatFromPrefs() {
@@ -174,14 +70,15 @@ nsresult nsPrintSettingsX::ReadPageFormatFromPrefs() {
   
   char* decodedData = PL_Base64Decode(encodedData.get(), encodedData.Length(), nullptr);
   NSData* data = [NSData dataWithBytes:decodedData length:strlen(decodedData)];
-  if (!data) return NS_ERROR_FAILURE;
+  if (!data) {
+    return NS_ERROR_FAILURE;
+  }
 
   PMPageFormat newPageFormat;
   OSStatus status = ::PMPageFormatCreateWithDataRepresentation((CFDataRef)data, &newPageFormat);
   if (status == noErr) {
     SetPMPageFormat(newPageFormat);
   }
-  InitUnwriteableMargin();
 
   return NS_OK;
 
@@ -191,17 +88,26 @@ nsresult nsPrintSettingsX::ReadPageFormatFromPrefs() {
 nsresult nsPrintSettingsX::WritePageFormatToPrefs() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  PMPageFormat pageFormat = GetPMPageFormat();
-  if (pageFormat == kPMNoPageFormat) return NS_ERROR_NOT_INITIALIZED;
+  NSPrintInfo* printInfo = CreatePrintInfo();
+  if (NS_WARN_IF(!printInfo)) {
+    return NS_ERROR_FAILURE;
+  }
+  [printInfo autorelease];
+
+  PMPageFormat pageFormat = static_cast<PMPageFormat>([printInfo PMPageFormat]);
 
   NSData* data = nil;
   OSStatus err = ::PMPageFormatCreateDataRepresentation(pageFormat, (CFDataRef*)&data,
                                                         kPMDataFormatXMLDefault);
-  if (err != noErr) return NS_ERROR_FAILURE;
+  if (err != noErr) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsAutoCString encodedData;
   encodedData.Adopt(PL_Base64Encode((char*)[data bytes], [data length], nullptr));
-  if (!encodedData.get()) return NS_ERROR_OUT_OF_MEMORY;
+  if (!encodedData.get()) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
   return Preferences::SetCString(MAC_OS_X_PAGE_SETUP_PREFNAME, encodedData);
 
@@ -218,338 +124,79 @@ nsresult nsPrintSettingsX::_Clone(nsIPrintSettings** _retval) {
 
 NS_IMETHODIMP nsPrintSettingsX::_Assign(nsIPrintSettings* aPS) {
   nsPrintSettingsX* printSettingsX = static_cast<nsPrintSettingsX*>(aPS);
-  if (!printSettingsX) return NS_ERROR_UNEXPECTED;
+  if (!printSettingsX) {
+    return NS_ERROR_UNEXPECTED;
+  }
   *this = *printSettingsX;
   return NS_OK;
 }
 
-PMPrintSettings nsPrintSettingsX::GetPMPrintSettings() {
-  return static_cast<PMPrintSettings>([mPrintInfo PMPrintSettings]);
-}
-
-PMPrintSession nsPrintSettingsX::GetPMPrintSession() {
-  return static_cast<PMPrintSession>([mPrintInfo PMPrintSession]);
-}
-
-PMPageFormat nsPrintSettingsX::GetPMPageFormat() {
-  return static_cast<PMPageFormat>([mPrintInfo PMPageFormat]);
-}
-
 void nsPrintSettingsX::SetPMPageFormat(PMPageFormat aPageFormat) {
-  PMPageFormat oldPageFormat = GetPMPageFormat();
+  
+  NSPrintInfo* printInfo = CreatePrintInfo();
+  if (NS_WARN_IF(!printInfo)) {
+    return;
+  }
+  
+  PMPageFormat oldPageFormat = static_cast<PMPageFormat>([printInfo PMPageFormat]);
   ::PMCopyPageFormat(aPageFormat, oldPageFormat);
-  [mPrintInfo updateFromPMPageFormat];
+  [printInfo updateFromPMPageFormat];
+  
+  SetPageFormatFromPrintInfo(printInfo);
+  [printInfo release];
 }
 
-void nsPrintSettingsX::SetInchesScale(float aWidthScale, float aHeightScale) {
-  if (aWidthScale > 0 && aHeightScale > 0) {
-    mWidthScale = aWidthScale;
-    mHeightScale = aHeightScale;
-  }
-}
-
-void nsPrintSettingsX::GetInchesScale(float* aWidthScale, float* aHeightScale) {
-  *aWidthScale = mWidthScale;
-  *aHeightScale = mHeightScale;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::GetPaperWidth(double* aPaperWidth) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+NSPrintInfo* nsPrintSettingsX::CreatePrintInfo(bool aWithScaling) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
   
-  if (XRE_IsParentProcess()) {
-    NSSize paperSize = [mPrintInfo paperSize];
-    int32_t orientation;
-    GetOrientation(&orientation);
-    if (kLandscapeOrientation == orientation) {
-      *aPaperWidth = paperSize.height / mHeightScale;
-    } else {
-      *aPaperWidth = paperSize.width / mWidthScale;
-    }
+  
+  
+  
+  
+  
+  
+  NSPrintInfo* printInfo = [[NSPrintInfo sharedPrintInfo] copy];
+
+  NSSize paperSize;
+  if (mOrientation == kPortraitOrientation) {
+    [printInfo setOrientation:NSPaperOrientationPortrait];
+    paperSize.width = CocoaPointsFromPaperSize(mPaperWidth);
+    paperSize.height = CocoaPointsFromPaperSize(mPaperHeight);
+    [printInfo setPaperSize:paperSize];
   } else {
-    nsPrintSettings::GetPaperWidth(aPaperWidth);
-  }
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::SetPaperWidth(double aPaperWidth) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  mPaperWidth = aPaperWidth;
-  mAdjustedPaperWidth = aPaperWidth * mWidthScale;
-
-  
-  if (XRE_IsParentProcess()) {
-    
-    
-    auto orientation = [mPrintInfo orientation];
-    NSSize paperSize = [mPrintInfo paperSize];
-    if (orientation == kLandscapeOrientation) {
-      paperSize.height = mPaperWidth * mHeightScale;
-    } else {
-      paperSize.width = mAdjustedPaperWidth;
-    }
-    [mPrintInfo setPaperSize:paperSize];
-    [mPrintInfo setOrientation:orientation];
+    [printInfo setOrientation:NSPaperOrientationLandscape];
+    paperSize.width = CocoaPointsFromPaperSize(mPaperHeight);
+    paperSize.height = CocoaPointsFromPaperSize(mPaperWidth);
+    [printInfo setPaperSize:paperSize];
   }
 
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::GetPaperHeight(double* aPaperHeight) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  if (XRE_IsParentProcess()) {
-    NSSize paperSize = [mPrintInfo paperSize];
-    int32_t orientation;
-    GetOrientation(&orientation);
-    if (kLandscapeOrientation == orientation) {
-      *aPaperHeight = paperSize.width / mWidthScale;
-    } else {
-      *aPaperHeight = paperSize.height / mHeightScale;
-    }
-  } else {
-    nsPrintSettings::GetPaperHeight(aPaperHeight);
-  }
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::SetPaperHeight(double aPaperHeight) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  mPaperHeight = aPaperHeight;
-  mAdjustedPaperHeight = aPaperHeight * mHeightScale;
-
-  
-  if (XRE_IsParentProcess()) {
-    
-    
-    auto orientation = [mPrintInfo orientation];
-    NSSize paperSize = [mPrintInfo paperSize];
-    if (orientation == kLandscapeOrientation) {
-      paperSize.width = mPaperHeight * mWidthScale;
-    } else {
-      paperSize.height = mAdjustedPaperHeight;
-    }
-    [mPrintInfo setPaperSize:paperSize];
-    [mPrintInfo setOrientation:orientation];
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::GetEffectivePageSize(double* aWidth, double* aHeight) {
-  if (kPaperSizeInches == GetCocoaUnit(mPaperSizeUnit)) {
-    *aWidth = NS_INCHES_TO_TWIPS(mAdjustedPaperWidth / mWidthScale);
-    *aHeight = NS_INCHES_TO_TWIPS(mAdjustedPaperHeight / mHeightScale);
-  } else {
-    *aWidth = NS_MILLIMETERS_TO_TWIPS(mAdjustedPaperWidth / mWidthScale);
-    *aHeight = NS_MILLIMETERS_TO_TWIPS(mAdjustedPaperHeight / mHeightScale);
-  }
-  int32_t orientation;
-  GetOrientation(&orientation);
-  if (kLandscapeOrientation == orientation) {
-    std::swap(*aWidth, *aHeight);
-  }
-  return NS_OK;
-}
-
-void nsPrintSettingsX::GetFilePageSize(double* aWidth, double* aHeight) {
-  double height, width;
-  if (kPaperSizeInches == GetCocoaUnit(mPaperSizeUnit)) {
-    width = NS_INCHES_TO_TWIPS(mAdjustedPaperWidth / mWidthScale);
-    height = NS_INCHES_TO_TWIPS(mAdjustedPaperHeight / mHeightScale);
-  } else {
-    width = NS_MILLIMETERS_TO_TWIPS(mAdjustedPaperWidth / mWidthScale);
-    height = NS_MILLIMETERS_TO_TWIPS(mAdjustedPaperHeight / mHeightScale);
-  }
-  width /= TWIPS_PER_POINT_FLOAT;
-  height /= TWIPS_PER_POINT_FLOAT;
-
-  *aWidth = width;
-  *aHeight = height;
-}
-
-void nsPrintSettingsX::SetAdjustedPaperSize(double aWidth, double aHeight) {
-  mAdjustedPaperWidth = aWidth;
-  mAdjustedPaperHeight = aHeight;
-}
-
-void nsPrintSettingsX::GetAdjustedPaperSize(double* aWidth, double* aHeight) {
-  *aWidth = mAdjustedPaperWidth;
-  *aHeight = mAdjustedPaperHeight;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::SetPrintRange(int16_t aPrintRange) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  [printInfo setTopMargin:mUnwriteableMargin.top];
+  [printInfo setRightMargin:mUnwriteableMargin.right];
+  [printInfo setBottomMargin:mUnwriteableMargin.bottom];
+  [printInfo setLeftMargin:mUnwriteableMargin.left];
 
   
   
   
-  
-  
-  nsPrintSettings::SetPrintRange(aPrintRange);
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    BOOL allPages = aPrintRange == nsIPrintSettings::kRangeSpecifiedPageRange ? NO : YES;
-    NSMutableDictionary* dict = [mPrintInfo dictionary];
-    [dict setObject:[NSNumber numberWithBool:allPages] forKey:NSPrintAllPages];
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::SetPrinterName(const nsAString& aName) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  [printInfo setPrinter:[NSPrinter printerWithName:nsCocoaUtils::ToNSString(mPrinter)]];
 
   
   
   
-  nsPrintSettings::SetPrinterName(aName);
+  [printInfo setScalingFactor:CGFloat(aWithScaling ? mScaling : 1.0f)];
 
-  
-  
-  if (XRE_IsParentProcess()) {
-    NSString* name = nsCocoaUtils::ToNSString(aName);
-    
-    
-    [mPrintInfo setPrinter:[NSPrinter printerWithName:name]];
-  }
+  BOOL allPages = mPrintRange == nsIPrintSettings::kRangeAllPages ? YES : NO;
 
-  return NS_OK;
+  NSMutableDictionary* dict = [printInfo dictionary];
+  [dict setObject:[NSNumber numberWithInt:mNumCopies] forKey:NSPrintCopies];
+  [dict setObject:[NSNumber numberWithBool:allPages] forKey:NSPrintAllPages];
+  [dict setObject:[NSNumber numberWithInt:mStartPageNum] forKey:NSPrintFirstPage];
+  [dict setObject:[NSNumber numberWithInt:mEndPageNum] forKey:NSPrintLastPage];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::GetStartPageRange(int32_t* aStartPageRange) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-  MOZ_ASSERT(aStartPageRange);
-
-  
-  if (XRE_IsParentProcess()) {
-    NSDictionary* dict = [mPrintInfo dictionary];
-    *aStartPageRange = [[dict objectForKey:NSPrintFirstPage] intValue];
-  } else {
-    nsPrintSettings::GetStartPageRange(aStartPageRange);
-  }
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::SetStartPageRange(int32_t aStartPageRange) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  if (XRE_IsParentProcess()) {
-    NSMutableDictionary* dict = [mPrintInfo dictionary];
-    [dict setObject:[NSNumber numberWithInt:aStartPageRange] forKey:NSPrintFirstPage];
-  } else {
-    nsPrintSettings::SetStartPageRange(aStartPageRange);
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::GetEndPageRange(int32_t* aEndPageRange) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-  MOZ_ASSERT(aEndPageRange);
-
-  
-  if (XRE_IsParentProcess()) {
-    NSDictionary* dict = [mPrintInfo dictionary];
-    *aEndPageRange = [[dict objectForKey:NSPrintLastPage] intValue];
-  } else {
-    nsPrintSettings::GetEndPageRange(aEndPageRange);
-  }
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP nsPrintSettingsX::SetEndPageRange(int32_t aEndPageRange) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  if (XRE_IsParentProcess()) {
-    NSMutableDictionary* dict = [mPrintInfo dictionary];
-    [dict setObject:[NSNumber numberWithInt:aEndPageRange] forKey:NSPrintLastPage];
-  } else {
-    nsPrintSettings::SetEndPageRange(aEndPageRange);
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::SetScaling(double aScaling) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  [mPrintInfo setScalingFactor:CGFloat(1.0)];
-  nsPrintSettings::SetScaling(aScaling);
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::GetScaling(double* aScaling) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  nsPrintSettings::GetScaling(aScaling);
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::SetToFileName(const nsAString& aToFileName) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  if (XRE_IsContentProcess() && Preferences::GetBool("print.print_via_parent")) {
-    
-    
-    return nsPrintSettings::SetToFileName(aToFileName);
-  }
-
-  if (!aToFileName.IsEmpty()) {
-    NSURL* jobSavingURL = [NSURL fileURLWithPath:nsCocoaUtils::ToNSString(aToFileName)];
+  NSURL* jobSavingURL = nullptr;
+  if (!mToFileName.IsEmpty()) {
+    jobSavingURL = [NSURL fileURLWithPath:nsCocoaUtils::ToNSString(mToFileName)];
     if (jobSavingURL) {
       
       
@@ -557,274 +204,136 @@ nsPrintSettingsX::SetToFileName(const nsAString& aToFileName) {
       
       
       
-      
-      
-      
-      
-      NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-      [printInfoDict setObject:jobSavingURL forKey:NSPrintJobSavingURL];
+      [dict setObject:jobSavingURL forKey:NSPrintJobSavingURL];
     }
-    mToFileName = aToFileName;
-  } else {
-    mToFileName.Truncate();
   }
-  return NS_OK;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-void nsPrintSettingsX::SetDispositionSaveToFile() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [mPrintInfo setJobDisposition:NSPrintSaveJob];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::GetOrientation(int32_t* aOrientation) {
-  
-  
-  if (XRE_IsParentProcess()) {
-    if ([mPrintInfo orientation] == NSPaperOrientationPortrait) {
-      *aOrientation = nsIPrintSettings::kPortraitOrientation;
+  if (mDisposition.IsEmpty()) {
+    if (mPrintToFile) {
+      [printInfo setJobDisposition:NSPrintSaveJob];
     } else {
-      *aOrientation = nsIPrintSettings::kLandscapeOrientation;
+      [printInfo setJobDisposition:NSPrintSpoolJob];
     }
   } else {
-    nsPrintSettings::GetOrientation(aOrientation);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::SetOrientation(int32_t aOrientation) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    if (aOrientation == nsIPrintSettings::kPortraitOrientation) {
-      [mPrintInfo setOrientation:NSPaperOrientationPortrait];
-    } else {
-      [mPrintInfo setOrientation:NSPaperOrientationLandscape];
-    }
-  } else {
-    nsPrintSettings::SetOrientation(aOrientation);
+    [printInfo setJobDisposition:nsCocoaUtils::ToNSString(mDisposition)];
   }
 
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::GetNumCopies(int32_t* aCopies) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    NSDictionary* dict = [mPrintInfo dictionary];
-    *aCopies = [[dict objectForKey:NSPrintCopies] intValue];
-  } else {
-    nsPrintSettings::GetNumCopies(aCopies);
-  }
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::SetNumCopies(int32_t aCopies) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    NSMutableDictionary* dict = [mPrintInfo dictionary];
-    [dict setObject:[NSNumber numberWithInt:aCopies] forKey:NSPrintCopies];
-  } else {
-    nsPrintSettings::SetNumCopies(aCopies);
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::GetDuplex(int32_t* aDuplex) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  if (XRE_IsParentProcess()) {
-    NSDictionary* settings = [mPrintInfo printSettings];
-    NSNumber* value = [settings objectForKey:@"com_apple_print_PrintSettings_PMDuplexing"];
-    if (value) {
-      PMDuplexMode duplexSetting = [value unsignedShortValue];
-      switch (duplexSetting) {
-        case kPMDuplexNone:
-          *aDuplex = kSimplex;
-          break;
-        case kPMDuplexNoTumble:
-          *aDuplex = kDuplexHorizontal;
-          break;
-        case kPMDuplexTumble:
-          *aDuplex = kDuplexVertical;
-          break;
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unknown duplex value");
-          return NS_ERROR_FAILURE;
-      }
-    } else {
+  PMDuplexMode duplexSetting;
+  switch (mDuplex) {
+    default:
       
-      
-      
-      *aDuplex = kSimplex;
-    }
-  } else {
-    nsPrintSettings::GetDuplex(aDuplex);
+      MOZ_FALLTHROUGH_ASSERT("Unknown duplex value");
+    case kSimplex:
+      duplexSetting = kPMDuplexNone;
+      break;
+    case kDuplexVertical:
+      duplexSetting = kPMDuplexTumble;
+      break;
+    case kDuplexHorizontal:
+      duplexSetting = kPMDuplexNoTumble;
+      break;
   }
-  return NS_OK;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
+  NSMutableDictionary* printSettings = [printInfo printSettings];
+  [printSettings setObject:[NSNumber numberWithUnsignedShort:duplexSetting]
+                    forKey:@"com_apple_print_PrintSettings_PMDuplexing"];
 
-NS_IMETHODIMP
-nsPrintSettingsX::SetDuplex(int32_t aDuplex) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  if (XRE_IsParentProcess()) {
+  if (mDestination != kPMDestinationInvalid) {
     
-    PMDuplexMode duplexSetting;
-    switch (aDuplex) {
-      case kSimplex:
-        duplexSetting = kPMDuplexNone;
-        break;
-      case kDuplexVertical:
-        duplexSetting = kPMDuplexNoTumble;
-        break;
-      case kDuplexHorizontal:
-        duplexSetting = kPMDuplexTumble;
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Unknown duplex value");
-        return NS_ERROR_FAILURE;
+    [printSettings setObject:[NSNumber numberWithUnsignedShort:mDestination]
+                      forKey:@"com_apple_print_PrintSettings_PMDestinationType"];
+    if (jobSavingURL) {
+      [printSettings setObject:[jobSavingURL absoluteString]
+                        forKey:@"com_apple_print_PrintSettings_PMOutputFilename"];
     }
-    NSMutableDictionary* settings = [mPrintInfo printSettings];
-    [settings setObject:[NSNumber numberWithUnsignedShort:duplexSetting]
-                 forKey:@"com_apple_print_PrintSettings_PMDuplexing"];
+  }
+
+  return printInfo;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(nullptr);
+}
+
+void nsPrintSettingsX::SetPageFormatFromPrintInfo(const NSPrintInfo* aPrintInfo) {
+  NSSize paperSize = [aPrintInfo paperSize];
+  if ([aPrintInfo orientation] == NSPaperOrientationPortrait) {
+    mOrientation = nsIPrintSettings::kPortraitOrientation;
+    SetPaperWidth(PaperSizeFromCocoaPoints(paperSize.width));
+    SetPaperHeight(PaperSizeFromCocoaPoints(paperSize.height));
   } else {
-    nsPrintSettings::SetDuplex(aDuplex);
+    mOrientation = nsIPrintSettings::kLandscapeOrientation;
+    SetPaperWidth(PaperSizeFromCocoaPoints(paperSize.height));
+    SetPaperHeight(PaperSizeFromCocoaPoints(paperSize.width));
   }
 
-  return NS_OK;
+  mUnwriteableMargin.top = [aPrintInfo topMargin];
+  mUnwriteableMargin.right = [aPrintInfo rightMargin];
+  mUnwriteableMargin.bottom = [aPrintInfo bottomMargin];
+  mUnwriteableMargin.left = [aPrintInfo leftMargin];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  SetIsInitializedFromPrinter(true);
 }
 
-NS_IMETHODIMP
-nsPrintSettingsX::SetUnwriteableMarginTop(double aUnwriteableMarginTop) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  nsPrintSettings::SetUnwriteableMarginTop(aUnwriteableMarginTop);
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    [mPrintInfo setTopMargin:aUnwriteableMarginTop];
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::SetUnwriteableMarginLeft(double aUnwriteableMarginLeft) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  nsPrintSettings::SetUnwriteableMarginLeft(aUnwriteableMarginLeft);
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    [mPrintInfo setLeftMargin:aUnwriteableMarginLeft];
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::SetUnwriteableMarginBottom(double aUnwriteableMarginBottom) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  nsPrintSettings::SetUnwriteableMarginBottom(aUnwriteableMarginBottom);
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    [mPrintInfo setBottomMargin:aUnwriteableMarginBottom];
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsX::SetUnwriteableMarginRight(double aUnwriteableMarginRight) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  nsPrintSettings::SetUnwriteableMarginRight(aUnwriteableMarginRight);
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    [mPrintInfo setRightMargin:aUnwriteableMarginRight];
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-int nsPrintSettingsX::GetCocoaUnit(int16_t aGeckoUnit) {
-  if (aGeckoUnit == kPaperSizeMillimeters)
-    return kPaperSizeMillimeters;
-  else
-    return kPaperSizeInches;
-}
-
-nsresult nsPrintSettingsX::SetCocoaPaperSize(double aWidth, double aHeight) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  if ([mPrintInfo orientation] == NSPaperOrientationPortrait) {
-    [mPrintInfo setPaperSize:NSMakeSize(aWidth, aHeight)];
-  } else {
-    [mPrintInfo setPaperSize:NSMakeSize(aHeight, aWidth)];
-  }
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-void nsPrintSettingsX::SetPrinterNameFromPrintInfo() {
+void nsPrintSettingsX::SetFromPrintInfo(const NSPrintInfo* aPrintInfo) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
-  
-  
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(mPrintInfo);
+  SetPageFormatFromPrintInfo(aPrintInfo);
 
-  NSString* nsPrinterNameValue = [[mPrintInfo printer] name];
-  if (nsPrinterNameValue) {
-    nsAutoString printerName;
-    nsCocoaUtils::GetStringForNSString(nsPrinterNameValue, printerName);
-    mPrinter.Assign(printerName);
+  nsCocoaUtils::GetStringForNSString([[aPrintInfo printer] name], mPrinter);
+
+  
+  bool isShrinkToFitChecked;
+  GetShrinkToFit(&isShrinkToFitChecked);
+  if (!isShrinkToFitChecked) {
+    
+    mScaling = round(double([aPrintInfo scalingFactor]) * 100.0) / 100.0;
+  }
+
+  mPrintToFile = [aPrintInfo jobDisposition] == NSPrintSaveJob;
+
+  NSDictionary* dict = [aPrintInfo dictionary];
+  const char* filePath = [[dict objectForKey:NSPrintJobSavingURL] fileSystemRepresentation];
+  if (filePath && *filePath) {
+    CopyUTF8toUTF16(Span(filePath, strlen(filePath)), mToFileName);
+  }
+
+  nsCocoaUtils::GetStringForNSString([aPrintInfo jobDisposition], mDisposition);
+
+  mNumCopies = [[dict objectForKey:NSPrintCopies] intValue];
+  mPrintRange = [[dict objectForKey:NSPrintAllPages] boolValue]
+                    ? nsIPrintSettings::kRangeAllPages
+                    : nsIPrintSettings::kRangeSpecifiedPageRange;
+  mStartPageNum = [[dict objectForKey:NSPrintFirstPage] intValue];
+  mEndPageNum = [[dict objectForKey:NSPrintLastPage] intValue];
+
+  NSDictionary* printSettings = [aPrintInfo printSettings];
+  NSNumber* value = [printSettings objectForKey:@"com_apple_print_PrintSettings_PMDuplexing"];
+  if (value) {
+    PMDuplexMode duplexSetting = [value unsignedShortValue];
+    switch (duplexSetting) {
+      default:
+        
+        MOZ_FALLTHROUGH_ASSERT("Unknown duplex value");
+      case kPMDuplexNone:
+        mDuplex = kSimplex;
+        break;
+      case kPMDuplexNoTumble:
+        mDuplex = kDuplexHorizontal;
+        break;
+      case kPMDuplexTumble:
+        mDuplex = kDuplexVertical;
+        break;
+    }
+  } else {
+    
+    
+    
+    mDuplex = kSimplex;
+  }
+
+  value = [printSettings objectForKey:@"com_apple_print_PrintSettings_PMDestinationType"];
+  if (value) {
+    mDestination = [value unsignedShortValue];
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;

@@ -167,17 +167,6 @@ nsPrintSettingsService::SerializeToPrintData(nsIPrintSettings* aSettings,
   
   
   
-  
-  data->printAllPages() = true;
-  data->mustCollate() = false;
-  
-  data->pagesAcross() = 1;
-  data->pagesDown() = 1;
-  data->printTime() = 0;
-  data->detailedErrorReporting() = true;
-  
-  data->addHeaderAndFooter() = false;
-  data->fileNameExtensionHidden() = false;
 
   return NS_OK;
 }

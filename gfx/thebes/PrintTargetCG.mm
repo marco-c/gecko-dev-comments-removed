@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "PrintTargetCG.h"
 
@@ -15,16 +15,20 @@ namespace gfx {
 
 PrintTargetCG::PrintTargetCG(PMPrintSession aPrintSession, PMPageFormat aPageFormat,
                              PMPrintSettings aPrintSettings, const IntSize& aSize)
-    : PrintTarget(/* aCairoSurface */ nullptr, aSize),
+    : PrintTarget( nullptr, aSize),
       mPrintSession(aPrintSession),
       mPageFormat(aPageFormat),
       mPrintSettings(aPrintSettings) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  ::PMRetain(mPrintSession);
+  MOZ_ASSERT(mPrintSession && mPageFormat && mPrintSettings);
 
-  // TODO: Add memory reporting like gfxQuartzSurface.
-  // RecordMemoryUsed(mSize.height * 4 + sizeof(gfxQuartzSurface));
+  ::PMRetain(mPrintSession);
+  ::PMRetain(mPageFormat);
+  ::PMRetain(mPrintSettings);
+
+  
+  
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -32,12 +36,14 @@ PrintTargetCG::PrintTargetCG(PMPrintSession aPrintSession, PMPageFormat aPageFor
 PrintTargetCG::~PrintTargetCG() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (mPrintSession) ::PMRelease(mPrintSession);
+  ::PMRelease(mPrintSession);
+  ::PMRelease(mPageFormat);
+  ::PMRelease(mPrintSettings);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-/* static */ already_AddRefed<PrintTargetCG> PrintTargetCG::CreateOrNull(
+ already_AddRefed<PrintTargetCG> PrintTargetCG::CreateOrNull(
     PMPrintSession aPrintSession, PMPageFormat aPageFormat, PMPrintSettings aPrintSettings,
     const IntSize& aSize) {
   if (!Factory::CheckSurfaceSize(aSize)) {
@@ -72,7 +78,7 @@ already_AddRefed<DrawTarget> PrintTargetCG::GetReferenceDrawTarget() {
 
     RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForCairoSurface(similar, size);
 
-    // The DT addrefs the surface, so we need drop our own reference to it:
+    
     cairo_surface_destroy(similar);
 
     if (!dt || !dt->IsValid()) {
@@ -88,9 +94,9 @@ nsresult PrintTargetCG::BeginPrinting(const nsAString& aTitle, const nsAString& 
                                       int32_t aStartPage, int32_t aEndPage) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  // Print Core of Application Service sent print job with names exceeding
-  // 255 bytes. This is a workaround until fix it.
-  // (https://openradar.appspot.com/34428043)
+  
+  
+  
   nsAutoString adjustedTitle;
   PrintTarget::AdjustPrintJobNameForIPP(aTitle, adjustedTitle);
 
@@ -143,8 +149,8 @@ nsresult PrintTargetCG::BeginPage() {
   }
 
   CGContextRef context;
-  // This call will fail if it wasn't called between the PMSessionBeginPage/
-  // PMSessionEndPage calls:
+  
+  
   ::PMSessionGetCGGraphicsContext(mPrintSession, &context);
 
   if (!context) {
@@ -154,8 +160,8 @@ nsresult PrintTargetCG::BeginPage() {
   unsigned int width = static_cast<unsigned int>(mSize.width);
   unsigned int height = static_cast<unsigned int>(mSize.height);
 
-  // Initially, origin is at bottom-left corner of the paper.
-  // Here, we translate it to top-left corner of the paper.
+  
+  
   CGContextTranslateCTM(context, 0, height);
   CGContextScaleCTM(context, 1.0, -1.0);
 
@@ -188,5 +194,5 @@ nsresult PrintTargetCG::EndPage() {
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
-}  // namespace gfx
-}  // namespace mozilla
+}  
+}  
