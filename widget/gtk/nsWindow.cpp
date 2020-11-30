@@ -3991,7 +3991,8 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
 }
 
 void nsWindow::ThemeChanged() {
-  NotifyThemeChanged();
+  
+  NotifyThemeChanged(ThemeChangeKind::StyleAndLayout);
 
   if (!mGdkWindow || MOZ_UNLIKELY(mIsDestroyed)) return;
 
@@ -4018,7 +4019,8 @@ void nsWindow::OnDPIChanged() {
     if (PresShell* presShell = mWidgetListener->GetPresShell()) {
       presShell->BackingScaleFactorChanged();
       
-      presShell->ThemeChanged();
+      
+      presShell->ThemeChanged(ThemeChangeKind::StyleAndLayout);
     }
     mWidgetListener->UIResolutionChanged();
   }
@@ -4027,12 +4029,9 @@ void nsWindow::OnDPIChanged() {
 void nsWindow::OnCheckResize() { mPendingConfigures++; }
 
 void nsWindow::OnCompositedChanged() {
-  if (mWidgetListener) {
-    if (PresShell* presShell = mWidgetListener->GetPresShell()) {
-      
-      presShell->ThemeChanged();
-    }
-  }
+  
+  
+  NotifyThemeChanged(ThemeChangeKind::MediaQueriesOnly);
 }
 
 void nsWindow::OnScaleChanged(GtkAllocation* aAllocation) {

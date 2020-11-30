@@ -294,7 +294,8 @@ void nsXPLookAndFeel::IntPrefChanged(nsLookAndFeelIntPref* data) {
 #endif
   }
 
-  NotifyChangedAllWindows();
+  
+  NotifyChangedAllWindows(widget::ThemeChangeKind::MediaQueriesOnly);
 }
 
 
@@ -320,7 +321,8 @@ void nsXPLookAndFeel::FloatPrefChanged(nsLookAndFeelFloatPref* data) {
 #endif
   }
 
-  NotifyChangedAllWindows();
+  
+  NotifyChangedAllWindows(widget::ThemeChangeKind::MediaQueriesOnly);
 }
 
 
@@ -354,7 +356,8 @@ void nsXPLookAndFeel::ColorPrefChanged(unsigned int index,
 #endif
   }
 
-  NotifyChangedAllWindows();
+  
+  NotifyChangedAllWindows(widget::ThemeChangeKind::Style);
 }
 
 void nsXPLookAndFeel::InitFromPref(nsLookAndFeelIntPref* aPref) {
@@ -1031,9 +1034,10 @@ void nsXPLookAndFeel::RecordTelemetry() {
 namespace mozilla {
 
 
-void LookAndFeel::NotifyChangedAllWindows() {
+void LookAndFeel::NotifyChangedAllWindows(widget::ThemeChangeKind aKind) {
   if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
-    obs->NotifyObservers(nullptr, "look-and-feel-changed", nullptr);
+    obs->NotifyObservers(nullptr, "look-and-feel-changed",
+                         reinterpret_cast<char16_t*>(uintptr_t(aKind)));
   }
 }
 

@@ -5215,7 +5215,9 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_SYSCOLORCHANGE:
-      NotifyThemeChanged();
+      
+      
+      NotifyThemeChanged(widget::ThemeChangeKind::Style);
       break;
 
     case WM_THEMECHANGED: {
@@ -5226,7 +5228,8 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       UpdateNonClientMargins();
       nsUXThemeData::UpdateNativeThemeInfo();
 
-      NotifyThemeChanged();
+      
+      NotifyThemeChanged(widget::ThemeChangeKind::StyleAndLayout);
 
       
       
@@ -5270,7 +5273,9 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       if (wParam == SPI_SETCLIENTAREAANIMATION ||
           
           wParam == SPI_SETKEYBOARDDELAY) {
-        NotifyThemeChanged();
+        
+        
+        NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
         break;
       }
       if (wParam == SPI_SETFONTSMOOTHING ||
@@ -5281,7 +5286,9 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       if (lParam) {
         auto lParamString = reinterpret_cast<const wchar_t*>(lParam);
         if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
-          NotifyThemeChanged();
+          
+          
+          NotifyThemeChanged(widget::ThemeChangeKind::Style);
           break;
         }
         if (IsWin10OrLater() && mWindowType == eWindowType_invisible) {
@@ -5304,7 +5311,8 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         
         
         if (hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
-          NotifyThemeChanged();
+          
+          NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
         }
       }
     } break;
@@ -6147,7 +6155,9 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       UpdateNonClientMargins();
       BroadcastMsg(mWnd, WM_DWMCOMPOSITIONCHANGED);
-      NotifyThemeChanged();
+      
+      
+      NotifyThemeChanged(widget::ThemeChangeKind::StyleAndLayout);
       UpdateGlass();
       Invalidate(true, true, true);
       break;

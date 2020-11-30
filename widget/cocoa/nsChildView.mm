@@ -2502,7 +2502,10 @@ NSEvent* gLastDragMouseDownEvent = nil;
 }
 
 - (void)systemMetricsChanged {
-  if (mGeckoChild) mGeckoChild->NotifyThemeChanged();
+  
+  
+  
+  if (mGeckoChild) mGeckoChild->NotifyThemeChanged(widget::ThemeChangeKind::StyleAndLayout);
 }
 
 - (void)scrollbarSystemMetricChanged {
