@@ -247,6 +247,15 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     }
     Resources.unwatchAllTargetResources(this);
 
+    if (this.threadActor) {
+      
+      
+      
+      
+      this.threadActor.exit();
+      this.threadActor = null;
+    }
+
     
     
     this.emit("tabDetached");
