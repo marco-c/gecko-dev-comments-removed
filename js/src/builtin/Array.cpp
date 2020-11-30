@@ -3101,42 +3101,46 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
     
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    if (obj->is<ArrayObject>() && !ObjectMayHaveExtraIndexedProperties(obj) &&
-        len <= UINT32_MAX) {
-      HandleArrayObject arr = obj.as<ArrayObject>();
-      if (arr->lengthIsWritable() && arr->isExtensible()) {
-        DenseElementResult result = arr->ensureDenseElements(
-            cx, uint32_t(len), itemCount - deleteCount);
-        if (result == DenseElementResult::Failure) {
-          return false;
-        }
+    auto extendElements = [len, itemCount, deleteCount](JSContext* cx,
+                                                        HandleObject obj) {
+      if (!obj->is<ArrayObject>()) {
+        return DenseElementResult::Incomplete;
       }
-    }
+      if (len > UINT32_MAX) {
+        return DenseElementResult::Incomplete;
+      }
 
-    if (CanOptimizeForDenseStorage<ArrayAccess::Write>(obj, finalLength, cx)) {
+      
+      if (ObjectMayHaveExtraIndexedProperties(obj)) {
+        return DenseElementResult::Incomplete;
+      }
+
+      
+      
+      
+      
+      
+      HandleArrayObject arr = obj.as<ArrayObject>();
+      if (!arr->lengthIsWritable() || !arr->isExtensible()) {
+        return DenseElementResult::Incomplete;
+      }
+
+      
+      
+      if (arr->denseElementsMaybeInIteration()) {
+        return DenseElementResult::Incomplete;
+      }
+
+      return arr->ensureDenseElements(cx, uint32_t(len),
+                                      itemCount - deleteCount);
+    };
+
+    DenseElementResult res = extendElements(cx, obj);
+    if (res == DenseElementResult::Failure) {
+      return false;
+    }
+    if (res == DenseElementResult::Success) {
+      MOZ_ASSERT(finalLength <= UINT32_MAX);
       MOZ_ASSERT((actualStart + actualDeleteCount) <= len && len <= UINT32_MAX,
                  "start and deleteCount are uint32 array indices");
       MOZ_ASSERT(actualStart + itemCount <= UINT32_MAX,
@@ -3157,6 +3161,8 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
       
       SetInitializedLength(cx, obj.as<NativeObject>(), finalLength);
     } else {
+      MOZ_ASSERT(res == DenseElementResult::Incomplete);
+
       RootedValue fromValue(cx);
       for (uint64_t k = len - actualDeleteCount; k > actualStart; k--) {
         if (!CheckForInterrupt(cx)) {
