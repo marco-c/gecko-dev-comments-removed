@@ -19,6 +19,7 @@
 namespace mozilla {
 class AnimationEventDispatcher;
 class PendingFullscreenEvent;
+class PresShell;
 class RefreshDriverTimer;
 namespace layout {
 class VsyncChild;
@@ -63,5 +64,29 @@ class nsAPostRefreshObserver {
  public:
   virtual void DidRefresh() = 0;
 };
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+class OneShotPostRefreshObserver : public nsAPostRefreshObserver {
+ public:
+  using Action = std::function<void(mozilla::PresShell*)>;
+  OneShotPostRefreshObserver(mozilla::PresShell* aPresShell, Action&& aAction);
+  virtual ~OneShotPostRefreshObserver();
+  void DidRefresh() override;
+
+ protected:
+  RefPtr<mozilla::PresShell> mPresShell;
+  Action mAction;
+};
+
+}  
 
 #endif
