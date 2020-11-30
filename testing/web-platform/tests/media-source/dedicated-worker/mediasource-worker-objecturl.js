@@ -1,23 +1,35 @@
 importScripts("/resources/testharness.js");
 
-test((t) => {
+test(t => {
+  
+  
+  
+  
+
+  
+  assert_true(self instanceof DedicatedWorkerGlobalScope, "self instanceof DedicatedWorkerGlobalScope");
+  assert_true(MediaSource.hasOwnProperty("canConstructInDedicatedWorker", "DedicatedWorker MediaSource hasOwnProperty 'canConstructInDedicatedWorker'"));
+  assert_true(MediaSource.canConstructInDedicatedWorker, "DedicatedWorker MediaSource.canConstructInDedicatedWorker");
+}, "MediaSource in DedicatedWorker context must have true-valued canConstructInDedicatedWorker if Window context had it");
+
+test(t => {
   const ms = new MediaSource();
   assert_equals(ms.readyState, "closed");
-}, "MediaSource construction succeeds with initial closed readyState in dedicated worker");
+}, "MediaSource construction succeeds with initial closed readyState in DedicatedWorker");
 
-test((t) => {
+test(t => {
   const ms = new MediaSource();
   const url = URL.createObjectURL(ms);
   assert_true(url != null);
   assert_true(url.match(/^blob:.+/) != null);
-}, "URL.createObjectURL(mediaSource) in dedicated worker returns a Blob URI");
+}, "URL.createObjectURL(mediaSource) in DedicatedWorker returns a Blob URI");
 
-test((t) => {
+test(t => {
   const ms = new MediaSource();
   const url1 = URL.createObjectURL(ms);
   const url2 = URL.createObjectURL(ms);
   URL.revokeObjectURL(url1);
   URL.revokeObjectURL(url2);
-}, "URL.revokeObjectURL(mediaSource) in dedicated worker with two url for same MediaSource");
+}, "URL.revokeObjectURL(mediaSource) in DedicatedWorker with two url for same MediaSource");
 
 done();
