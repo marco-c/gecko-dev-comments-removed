@@ -2658,17 +2658,27 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(x86_shared, arm64);
 
   
+  
+  
+  
+  
+  
+  
 
-  inline void pseudoMinFloat32x4(FloatRegister rhs, FloatRegister lhsDest)
+  inline void pseudoMinFloat32x4(FloatRegister rhsOrRhsDest,
+                                 FloatRegister lhsOrLhsDest)
       DEFINED_ON(x86_shared, arm64);
 
-  inline void pseudoMinFloat64x2(FloatRegister rhs, FloatRegister lhsDest)
+  inline void pseudoMinFloat64x2(FloatRegister rhsOrRhsDest,
+                                 FloatRegister lhsOrLhsDest)
       DEFINED_ON(x86_shared, arm64);
 
-  inline void pseudoMaxFloat32x4(FloatRegister rhs, FloatRegister lhsDest)
+  inline void pseudoMaxFloat32x4(FloatRegister rhsOrRhsDest,
+                                 FloatRegister lhsOrLhsDest)
       DEFINED_ON(x86_shared, arm64);
 
-  inline void pseudoMaxFloat64x2(FloatRegister rhs, FloatRegister lhsDest)
+  inline void pseudoMaxFloat64x2(FloatRegister rhsOrRhsDest,
+                                 FloatRegister lhsOrLhsDest)
       DEFINED_ON(x86_shared, arm64);
 
   

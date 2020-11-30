@@ -815,6 +815,15 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
       op = wasm::SimdOp::F64x2Le;
       break;
     }
+    case wasm::SimdOp::F32x4PMin:
+    case wasm::SimdOp::F32x4PMax:
+    case wasm::SimdOp::F64x2PMin:
+    case wasm::SimdOp::F64x2PMax: {
+      
+      
+      swap = true;
+      break;
+    }
     default:
       break;
   }
@@ -854,6 +863,21 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
     default:
       break;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
   LAllocation rhsAlloc =
@@ -1720,6 +1744,10 @@ void LIRGenerator::visitWasmShuffleSimd128(MWasmShuffleSimd128* ins) {
 void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
   MOZ_ASSERT(ins->lhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
+
+  
+  
+  
 
   if (ins->rhs()->type() == MIRType::Int64) {
     auto* lir = new (alloc()) LWasmReplaceInt64LaneSimd128(
