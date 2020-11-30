@@ -21,19 +21,8 @@ void MacroAssemblerX86Shared::splatX16(Register input, FloatRegister output) {
   ScratchSimd128Scope scratch(asMasm());
 
   vmovd(input, output);
-  if (AssemblerX86Shared::HasSSSE3()) {
-    zeroSimd128Int(scratch);
-    vpshufb(scratch, output, output);
-  } else {
-    
-    vpsllw(Imm32(8), output, output);
-    vmovdqa(output, scratch);
-    vpsrlw(Imm32(8), scratch, scratch);
-    vpor(scratch, output, output);
-    
-    vpshuflw(0, output, output);
-    vpshufd(0, output, output);
-  }
+  zeroSimd128Int(scratch);
+  vpshufb(scratch, output, output);
 }
 
 void MacroAssemblerX86Shared::splatX8(Register input, FloatRegister output) {
@@ -67,13 +56,8 @@ void MacroAssemblerX86Shared::extractLaneInt32x4(FloatRegister input,
   if (lane == 0) {
     
     moveLowInt32(input, output);
-  } else if (AssemblerX86Shared::HasSSE41()) {
-    vpextrd(lane, input, output);
   } else {
-    uint32_t mask = MacroAssembler::ComputeShuffleMask(lane);
-    ScratchSimd128Scope scratch(asMasm());
-    shuffleInt32(mask, input, scratch);
-    moveLowInt32(scratch, output);
+    vpextrd(lane, input, output);
   }
 }
 
@@ -109,7 +93,6 @@ void MacroAssemblerX86Shared::extractLaneFloat64x2(FloatRegister input,
 void MacroAssemblerX86Shared::extractLaneInt16x8(FloatRegister input,
                                                  Register output, unsigned lane,
                                                  SimdSign sign) {
-  
   vpextrw(lane, input, output);
   if (sign == SimdSign::Signed) {
     movswl(output, output);
@@ -119,45 +102,15 @@ void MacroAssemblerX86Shared::extractLaneInt16x8(FloatRegister input,
 void MacroAssemblerX86Shared::extractLaneInt8x16(FloatRegister input,
                                                  Register output, unsigned lane,
                                                  SimdSign sign) {
-  if (AssemblerX86Shared::HasSSE41()) {
-    vpextrb(lane, input, output);
-    
-    if (sign == SimdSign::Unsigned) {
-      sign = SimdSign::NotApplicable;
-    }
-  } else {
-    
-    
-    extractLaneInt16x8(input, output, lane / 2, SimdSign::Unsigned);
-    if (lane % 2) {
-      shrl(Imm32(8), output);
-      
-      if (sign == SimdSign::Unsigned) {
-        sign = SimdSign::NotApplicable;
-      }
-    }
-  }
-
-  
-  
-  
-  switch (sign) {
-    case SimdSign::Signed:
-      movsbl(output, output);
-      break;
-    case SimdSign::Unsigned:
-      movzbl(output, output);
-      break;
-    case SimdSign::NotApplicable:
-      
-      break;
+  vpextrb(lane, input, output);
+  if (sign == SimdSign::Signed) {
+    movsbl(output, output);
   }
 }
 
 void MacroAssemblerX86Shared::replaceLaneFloat32x4(FloatRegister rhs,
                                                    FloatRegister lhsDest,
                                                    unsigned lane) {
-  MOZ_ASSERT(AssemblerX86Shared::HasSSE41());
   MOZ_ASSERT(lhsDest.isSimd128() && rhs.isSingle());
 
   if (lane == 0) {
@@ -196,7 +149,6 @@ void MacroAssemblerX86Shared::blendInt8x16(FloatRegister lhs, FloatRegister rhs,
                                            FloatRegister output,
                                            FloatRegister temp,
                                            const uint8_t lanes[16]) {
-  MOZ_ASSERT(AssemblerX86Shared::HasSSSE3());
   MOZ_ASSERT(lhs == output);
   MOZ_ASSERT(lhs == rhs || !temp.isInvalid());
 
@@ -222,7 +174,6 @@ void MacroAssemblerX86Shared::blendInt8x16(FloatRegister lhs, FloatRegister rhs,
 void MacroAssemblerX86Shared::blendInt16x8(FloatRegister lhs, FloatRegister rhs,
                                            FloatRegister output,
                                            const uint16_t lanes[8]) {
-  MOZ_ASSERT(AssemblerX86Shared::HasSSE41());
   MOZ_ASSERT(lhs == output);
 
   uint32_t mask = 0;
@@ -234,61 +185,40 @@ void MacroAssemblerX86Shared::blendInt16x8(FloatRegister lhs, FloatRegister rhs,
   vpblendw(mask, rhs, lhs, lhs);
 }
 
-void MacroAssemblerX86Shared::shuffleInt8x16(
-    FloatRegister lhs, FloatRegister rhs, FloatRegister output,
-    const Maybe<FloatRegister>& maybeFloatTemp,
-    const Maybe<Register>& maybeTemp, const uint8_t lanes[16]) {
-  DebugOnly<bool> hasSSSE3 = AssemblerX86Shared::HasSSSE3();
-  MOZ_ASSERT(hasSSSE3 == !!maybeFloatTemp);
-  MOZ_ASSERT(!hasSSSE3 == !!maybeTemp);
+void MacroAssemblerX86Shared::shuffleInt8x16(FloatRegister lhs,
+                                             FloatRegister rhs,
+                                             FloatRegister output,
+                                             FloatRegister temp,
+                                             const uint8_t lanes[16]) {
+  ScratchSimd128Scope scratch(asMasm());
 
   
-  if (AssemblerX86Shared::HasSSSE3()) {
-    ScratchSimd128Scope scratch(asMasm());
-
-    
-    
-
-    
-    int8_t idx[16];
-    for (unsigned i = 0; i < 16; i++) {
-      idx[i] = lanes[i] < 16 ? lanes[i] : -1;
-    }
-    asMasm().loadConstantSimd128Int(SimdConstant::CreateX16(idx),
-                                    *maybeFloatTemp);
-    FloatRegister lhsCopy = reusedInputInt32x4(lhs, scratch);
-    vpshufb(*maybeFloatTemp, lhsCopy, scratch);
-
-    
-    
-    
-    
-    
-    
-    for (unsigned i = 0; i < 16; i++) {
-      idx[i] = lanes[i] >= 16 ? lanes[i] - 16 : -1;
-    }
-    asMasm().loadConstantSimd128Int(SimdConstant::CreateX16(idx),
-                                    *maybeFloatTemp);
-    FloatRegister rhsCopy = reusedInputInt32x4(rhs, output);
-    vpshufb(*maybeFloatTemp, rhsCopy, output);
-
-    
-    vpor(scratch, output, output);
-    return;
-  }
+  
 
   
-  asMasm().reserveStack(3 * Simd128DataSize);
-  storeAlignedSimd128Int(lhs, Address(StackPointer, Simd128DataSize));
-  storeAlignedSimd128Int(rhs, Address(StackPointer, 2 * Simd128DataSize));
+  int8_t idx[16];
   for (unsigned i = 0; i < 16; i++) {
-    load8ZeroExtend(Address(StackPointer, Simd128DataSize + lanes[i]),
-                    *maybeTemp);
-    store8(*maybeTemp, Address(StackPointer, i));
+    idx[i] = lanes[i] < 16 ? lanes[i] : -1;
   }
-  loadAlignedSimd128Int(Address(StackPointer, 0), output);
-  asMasm().freeStack(3 * Simd128DataSize);
+  asMasm().loadConstantSimd128Int(SimdConstant::CreateX16(idx), temp);
+  FloatRegister lhsCopy = reusedInputInt32x4(lhs, scratch);
+  vpshufb(temp, lhsCopy, scratch);
+
+  
+  
+  
+  
+  
+  
+  for (unsigned i = 0; i < 16; i++) {
+    idx[i] = lanes[i] >= 16 ? lanes[i] - 16 : -1;
+  }
+  asMasm().loadConstantSimd128Int(SimdConstant::CreateX16(idx), temp);
+  FloatRegister rhsCopy = reusedInputInt32x4(rhs, output);
+  vpshufb(temp, rhsCopy, output);
+
+  
+  vpor(scratch, output, output);
 }
 
 static inline FloatRegister ToSimdFloatRegister(const Operand& op) {
@@ -356,7 +286,6 @@ void MacroAssemblerX86Shared::unsignedCompareInt8x16(
   
   
 
-  MOZ_ASSERT(AssemblerX86Shared::HasSSE41());  
   MOZ_ASSERT(lhs == output);
   MOZ_ASSERT(lhs != tmp1 && lhs != tmp2);
   MOZ_ASSERT_IF(rhs.kind() == Operand::FPREG,
@@ -482,7 +411,6 @@ void MacroAssemblerX86Shared::unsignedCompareInt16x8(
     FloatRegister output, FloatRegister tmp1, FloatRegister tmp2) {
   
 
-  MOZ_ASSERT(AssemblerX86Shared::HasSSE41());  
   MOZ_ASSERT(lhs == output);
 
   bool complement = false;
@@ -590,7 +518,6 @@ void MacroAssemblerX86Shared::unsignedCompareInt32x4(
   
   
 
-  MOZ_ASSERT(AssemblerX86Shared::HasSSE41());  
   MOZ_ASSERT(lhs == output);
 
   bool complement = false;
@@ -739,30 +666,6 @@ void MacroAssemblerX86Shared::compareFloat64x2(FloatRegister lhs, Operand rhs,
     default:
       MOZ_CRASH("unexpected condition op");
   }
-}
-
-void MacroAssemblerX86Shared::mulInt32x4(FloatRegister lhs, Operand rhs,
-                                         const Maybe<FloatRegister>& temp,
-                                         FloatRegister output) {
-  if (AssemblerX86Shared::HasSSE41()) {
-    vpmulld(rhs, lhs, output);
-    return;
-  }
-
-  ScratchSimd128Scope scratch(asMasm());
-  loadAlignedSimd128Int(rhs, scratch);
-  vpmuludq(lhs, scratch, scratch);
-  
-
-  MOZ_ASSERT(!!temp);
-  vpshufd(MacroAssembler::ComputeShuffleMask(1, 1, 3, 3), lhs, lhs);
-  vpshufd(MacroAssembler::ComputeShuffleMask(1, 1, 3, 3), rhs, *temp);
-  vpmuludq(*temp, lhs, lhs);
-  
-
-  vshufps(MacroAssembler::ComputeShuffleMask(0, 2, 0, 2), scratch, lhs, lhs);
-  
-  vshufps(MacroAssembler::ComputeShuffleMask(2, 0, 3, 1), lhs, lhs, lhs);
 }
 
 
