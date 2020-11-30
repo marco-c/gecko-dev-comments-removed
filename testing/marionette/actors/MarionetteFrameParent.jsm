@@ -307,6 +307,8 @@ class MarionetteFrameParent extends JSWindowActorParent {
 
 
 function getMarionetteFrameActorProxy(browsingContextFn) {
+  const MAX_ATTEMPTS = 10;
+
   
 
 
@@ -325,6 +327,7 @@ function getMarionetteFrameActorProxy(browsingContextFn) {
     {
       get(target, methodName) {
         return async (...args) => {
+          let attempts = 0;
           while (true) {
             try {
               
@@ -342,6 +345,13 @@ function getMarionetteFrameActorProxy(browsingContextFn) {
 
               if (NO_RETRY_METHODS.includes(methodName)) {
                 return null;
+              }
+
+              if (++attempts > MAX_ATTEMPTS) {
+                logger.trace(
+                  `[${this.browsingContext.id}] Query "${methodName}" reached the limit of retry attempts (${MAX_ATTEMPTS})`
+                );
+                throw e;
               }
             }
           }
