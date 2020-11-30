@@ -1038,7 +1038,16 @@ async function runTests(tests, options = {}) {
 
 
 
-async function shareDevices(browser, camera, mic, screenOrWin = 0) {
+
+
+
+async function shareDevices(
+  browser,
+  camera,
+  mic,
+  screenOrWin = 0,
+  remember = false
+) {
   if (camera || mic) {
     let promise = promisePopupNotificationShown(
       "webRTC-shareDevices",
@@ -1052,6 +1061,12 @@ async function shareDevices(browser, camera, mic, screenOrWin = 0) {
     checkDeviceSelectors(mic, camera);
     let observerPromise1 = expectObserverCalled("getUserMedia:response:allow");
     let observerPromise2 = expectObserverCalled("recording-device-events");
+
+    let rememberCheck = PopupNotifications.panel.querySelector(
+      ".popup-notification-checkbox"
+    );
+    rememberCheck.checked = remember;
+
     promise = promiseMessage("ok", () => {
       PopupNotifications.panel.firstElementChild.button.click();
     });

@@ -9,12 +9,7 @@ const TEST_ROOT = getRootDirectory(gTestPath).replace(
 );
 const TEST_PAGE = TEST_ROOT + "get_user_media.html";
 
-
-
-
-
-
-add_task(async function test_close_indicator() {
+add_task(async function setup() {
   let prefs = [
     [PREF_PERMISSION_FAKE, true],
     [PREF_AUDIO_LOOPBACK, ""],
@@ -23,23 +18,38 @@ add_task(async function test_close_indicator() {
     [PREF_FOCUS_SOURCE, false],
   ];
   await SpecialPowers.pushPrefEnv({ set: prefs });
+});
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_close_indicator_no_global_toggles() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.webrtc.globalMuteToggles", false]],
+  });
 
   let indicatorPromise = promiseIndicatorWindow();
 
   info("Opening first tab");
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
   info("Sharing camera, microphone and screen");
-  await shareDevices(tab1.linkedBrowser, true, true, SHARE_SCREEN);
+  await shareDevices(tab1.linkedBrowser, true, true, SHARE_SCREEN, false);
 
   info("Opening second tab");
   let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
-  info("Sharing camera and screen");
-  await shareDevices(tab2.linkedBrowser, true, false, SHARE_SCREEN);
+  info("Sharing camera, microphone and screen");
+  await shareDevices(tab2.linkedBrowser, true, true, SHARE_SCREEN, true);
 
   info("Opening third tab");
   let tab3 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
   info("Sharing screen");
-  await shareDevices(tab3.linkedBrowser, false, false, SHARE_SCREEN);
+  await shareDevices(tab3.linkedBrowser, false, false, SHARE_SCREEN, false);
 
   info("Opening fourth tab");
   let tab4 = await BrowserTestUtils.openNewForegroundTab(
@@ -57,19 +67,147 @@ add_task(async function test_close_indicator() {
 
   indicator.close();
 
-  await checkNotSharing();
+  
+  
+  await new Promise(resolve => executeSoon(resolve));
 
+  
+  await getMediaCaptureState();
+
+  
+  let camStreams = webrtcUI.getActiveStreams(true, false);
+  Assert.equal(camStreams.length, 2, "Should have found two camera streams");
+  let micStreams = webrtcUI.getActiveStreams(false, true);
   Assert.equal(
-    webrtcUI.activePerms.size,
-    0,
-    "There shouldn't be any active stream permissions."
+    micStreams.length,
+    2,
+    "Should have found two microphone streams"
   );
+
+  
+  
+  let { state: camState, scope: camScope } = SitePermissions.getForPrincipal(
+    tab2.linkedBrowser.contentPrincipal,
+    "camera",
+    tab2.linkedBrowser
+  );
+  Assert.equal(camState, SitePermissions.ALLOW);
+  Assert.equal(camScope, SitePermissions.SCOPE_PERSISTENT);
+
+  let { state: micState, scope: micScope } = SitePermissions.getForPrincipal(
+    tab2.linkedBrowser.contentPrincipal,
+    "microphone",
+    tab2.linkedBrowser
+  );
+  Assert.equal(micState, SitePermissions.ALLOW);
+  Assert.equal(micScope, SitePermissions.SCOPE_PERSISTENT);
 
   Assert.equal(
     gBrowser.selectedTab,
     tab3,
     "Most recently tab that streams were shared with is selected"
   );
+
+  SitePermissions.removeFromPrincipal(
+    tab2.linkedBrowser.contentPrincipal,
+    "camera",
+    tab2.linkedBrowser
+  );
+
+  SitePermissions.removeFromPrincipal(
+    tab2.linkedBrowser.contentPrincipal,
+    "microphone",
+    tab2.linkedBrowser
+  );
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab3);
+  BrowserTestUtils.removeTab(tab4);
+});
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_close_indicator_with_global_toggles() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.webrtc.globalMuteToggles", true]],
+  });
+
+  let indicatorPromise = promiseIndicatorWindow();
+
+  info("Opening first tab");
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+  info("Sharing camera, microphone and screen");
+  await shareDevices(tab1.linkedBrowser, true, true, SHARE_SCREEN, false);
+
+  info("Opening second tab");
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+  info("Sharing camera, microphone and screen");
+  await shareDevices(tab2.linkedBrowser, true, true, SHARE_SCREEN, true);
+
+  info("Opening third tab");
+  let tab3 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+  info("Sharing screen");
+  await shareDevices(tab3.linkedBrowser, false, false, SHARE_SCREEN, false);
+
+  info("Opening fourth tab");
+  let tab4 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com"
+  );
+
+  Assert.equal(
+    gBrowser.selectedTab,
+    tab4,
+    "Most recently opened tab is selected"
+  );
+
+  let indicator = await indicatorPromise;
+
+  indicator.close();
+
+  
+  
+  await new Promise(resolve => executeSoon(resolve));
+
+  Assert.deepEqual(
+    await getMediaCaptureState(),
+    {},
+    "expected nothing to be shared"
+  );
+
+  
+  let streams = webrtcUI.getActiveStreams(true, true, true, true);
+  Assert.equal(streams.length, 0, "Should have found no active streams");
+
+  
+  let { state: camState } = SitePermissions.getForPrincipal(
+    tab2.linkedBrowser.contentPrincipal,
+    "camera",
+    tab2.linkedBrowser
+  );
+  Assert.equal(camState, SitePermissions.UNKNOWN);
+
+  let { state: micState } = SitePermissions.getForPrincipal(
+    tab2.linkedBrowser.contentPrincipal,
+    "microphone",
+    tab2.linkedBrowser
+  );
+  Assert.equal(micState, SitePermissions.UNKNOWN);
+
+  Assert.equal(
+    gBrowser.selectedTab,
+    tab3,
+    "Most recently tab that streams were shared with is selected"
+  );
+
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
   BrowserTestUtils.removeTab(tab3);

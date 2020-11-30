@@ -189,6 +189,10 @@ async function ensureWarning(tab) {
 }
 
 add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.webrtc.sharedTabWarning", true]],
+  });
+
   
   
   let uris = new Array(NEW_BACKGROUND_TABS_TO_OPEN).fill("about:blank");

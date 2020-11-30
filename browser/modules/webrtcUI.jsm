@@ -506,6 +506,9 @@ var webrtcUI = {
 
 
 
+
+
+
   stopSharingStreams(
     activeStreams,
     stopCameras = true,
@@ -572,49 +575,54 @@ var webrtcUI = {
       }
 
       for (let permission of permissions) {
-        let windowId = tab._sharingState.webRTC.windowId;
+        if (clearRequested[permission.id]) {
+          let windowId = tab._sharingState.webRTC.windowId;
 
-        if (permission.id == "screen") {
-          windowId = `screen:${webrtcState.windowId}`;
-        } else if (permission.id == "camera" || permission.id == "microphone") {
-          
-          
-          
-          let origins = browser.getDevicePermissionOrigins("webrtc");
-          for (let origin of origins) {
+          if (permission.id == "screen") {
+            windowId = `screen:${webrtcState.windowId}`;
+          } else if (
+            permission.id == "camera" ||
+            permission.id == "microphone"
+          ) {
             
             
-            let principal;
-            for (let id of ["camera", "microphone"]) {
-              if (webrtcState[id]) {
-                if (!principal) {
-                  principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-                    origin
-                  );
-                }
-                let perm = SitePermissions.getForPrincipal(principal, id);
-                if (
-                  perm.state == SitePermissions.ALLOW &&
-                  perm.scope == SitePermissions.SCOPE_PERSISTENT
-                ) {
-                  SitePermissions.removeFromPrincipal(principal, id);
+            
+            let origins = browser.getDevicePermissionOrigins("webrtc");
+            for (let origin of origins) {
+              
+              
+              let principal;
+              for (let id of ["camera", "microphone"]) {
+                if (webrtcState[id]) {
+                  if (!principal) {
+                    principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+                      origin
+                    );
+                  }
+                  let perm = SitePermissions.getForPrincipal(principal, id);
+                  if (
+                    perm.state == SitePermissions.ALLOW &&
+                    perm.scope == SitePermissions.SCOPE_PERSISTENT
+                  ) {
+                    SitePermissions.removeFromPrincipal(principal, id);
+                  }
                 }
               }
             }
           }
+
+          let bc = webrtcState.browsingContext;
+          bc.currentWindowGlobal
+            .getActor("WebRTC")
+            .sendAsyncMessage("webrtc:StopSharing", windowId);
+          webrtcUI.forgetActivePermissionsFromBrowser(browser);
+
+          SitePermissions.removeFromPrincipal(
+            browser.contentPrincipal,
+            permission.id,
+            browser
+          );
         }
-
-        let bc = webrtcState.browsingContext;
-        bc.currentWindowGlobal
-          .getActor("WebRTC")
-          .sendAsyncMessage("webrtc:StopSharing", windowId);
-        webrtcUI.forgetActivePermissionsFromBrowser(browser);
-
-        SitePermissions.removeFromPrincipal(
-          browser.contentPrincipal,
-          permission.id,
-          browser
-        );
       }
     }
 

@@ -351,6 +351,11 @@ const WebRTCIndicator = {
         this.onCommand(event);
         break;
       }
+      case "DOMWindowClose":
+      case "close": {
+        this.onClose(event);
+        break;
+      }
     }
   },
 
@@ -368,6 +373,12 @@ const WebRTCIndicator = {
     window.addEventListener("click", this);
     window.addEventListener("change", this);
     window.addEventListener("sizemodechange", this);
+
+    
+    
+    
+    window.addEventListener("DOMWindowClose", this);
+    window.addEventListener("close", this);
 
     if (this.statusBar) {
       
@@ -390,6 +401,48 @@ const WebRTCIndicator = {
     this.loaded = true;
   },
 
+  onClose(event) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      !this.showGlobalMuteToggles &&
+      (webrtcUI.showCameraIndicator || webrtcUI.showMicrophoneIndicator)
+    ) {
+      event.preventDefault();
+      this.setVisibility(false);
+    }
+
+    if (!this.isClosingInternally) {
+      
+      
+      
+      
+      
+      
+      
+      
+      let activeStreams = webrtcUI.getActiveStreams(
+        this.showGlobalMuteToggles ,
+        this.showGlobalMuteToggles ,
+        true ,
+        true 
+      );
+      webrtcUI.stopSharingStreams(
+        activeStreams,
+        this.showGlobalMuteToggles ,
+        this.showGlobalMuteToggles ,
+        true ,
+        true 
+      );
+    }
+  },
+
   onUnload() {
     Services.ppmm.sharedData.set("WebRTC:GlobalCameraMute", false);
     Services.ppmm.sharedData.set("WebRTC:GlobalMicrophoneMute", false);
@@ -399,20 +452,6 @@ const WebRTCIndicator = {
       for (let menu of this.statusBarMenus) {
         this.statusBar.removeItem(menu);
       }
-    }
-
-    if (!this.isClosingInternally) {
-      
-      
-      
-      
-      let activeStreams = webrtcUI.getActiveStreams(
-        true ,
-        true ,
-        true ,
-        true 
-      );
-      webrtcUI.stopSharingStreams(activeStreams);
     }
   },
 
