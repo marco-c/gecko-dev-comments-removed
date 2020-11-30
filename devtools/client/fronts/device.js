@@ -17,21 +17,6 @@ class DeviceFront extends FrontClassWithSpec(deviceSpec) {
     
     this.formAttributeName = "deviceActor";
   }
-
-  
-
-
-
-  async getDescription() {
-    const description = await super.getDescription();
-
-    
-    if (typeof description.canDebugServiceWorkers === "undefined") {
-      description.canDebugServiceWorkers = !description.isMultiE10s;
-    }
-
-    return description;
-  }
 }
 
 exports.DeviceFront = DeviceFront;
