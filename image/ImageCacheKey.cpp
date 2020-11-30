@@ -152,15 +152,11 @@ nsCString ImageCacheKey::GetIsolationKey(Document* aDocument, nsIURI* aURI) {
   
   if (!ContentBlocking::ApproximateAllowAccessForWithoutChannel(
           aDocument->GetInnerWindow(), aURI)) {
-    nsPIDOMWindowOuter* top =
-        aDocument->GetInnerWindow()->GetInProcessScriptableTop();
-    nsPIDOMWindowInner* topInner = top ? top->GetCurrentInnerWindow() : nullptr;
-    if (!topInner) {
-      return aDocument
-          ->GetBaseDomain();  
-    }
-    return topInner->GetExtantDoc() ? topInner->GetExtantDoc()->GetBaseDomain()
-                                    : ""_ns;
+    
+    
+    
+    return aDocument
+        ->GetBaseDomain();  
   }
 
   return ""_ns;
