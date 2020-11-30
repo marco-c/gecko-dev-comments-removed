@@ -9,35 +9,6 @@
 
 
 
-
-
-
-async function testPageInfoNotEncrypted(uri) {
-  let pageInfo = BrowserPageInfo(uri, "securityTab");
-  await BrowserTestUtils.waitForEvent(pageInfo, "load");
-  let pageInfoDoc = pageInfo.document;
-  let securityTab = pageInfoDoc.getElementById("securityTab");
-  await TestUtils.waitForCondition(
-    () => BrowserTestUtils.is_visible(securityTab),
-    "Security tab should be visible."
-  );
-  let labelText = pageInfoDoc.getElementById("security-technical-shortform")
-    .value;
-  is(
-    labelText,
-    "Connection Not Encrypted",
-    "pageInfo 'Security Details' should show not encrypted"
-  );
-  let viewCertBtn = pageInfoDoc.getElementById("security-view-cert");
-  ok(
-    viewCertBtn.collapsed,
-    "pageInfo 'View Cert' button should not be visible"
-  );
-  pageInfo.close();
-}
-
-
-
 add_task(async function() {
   let uri =
     getRootDirectory(gTestPath).replace(
@@ -56,7 +27,6 @@ add_task(async function() {
     await BrowserTestUtils.browserLoaded(browser);
     let identityMode = window.document.getElementById("identity-box").className;
     is(identityMode, "localResource", "identity should be 'localResource'");
-    await testPageInfoNotEncrypted(uri);
   });
 });
 
@@ -193,7 +163,5 @@ add_task(async function() {
   await BrowserTestUtils.withNewTab("http://example.com/", async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
     is(identityMode, "notSecure", "identity should be 'not secure'");
-
-    await testPageInfoNotEncrypted("http://example.com");
   });
 });
