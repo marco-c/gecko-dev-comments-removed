@@ -89,13 +89,6 @@ class nsPrintSettingsX : public nsPrintSettings {
 
   
   
-  OSStatus CreateDefaultPageFormat(PMPrintSession aSession,
-                                   PMPageFormat& outFormat);
-  OSStatus CreateDefaultPrintSettings(PMPrintSession aSession,
-                                      PMPrintSettings& outSettings);
-
-  
-  
   
   
   
