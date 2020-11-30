@@ -2663,42 +2663,32 @@ void MacroAssembler::unsignedWidenLowInt32x4(FloatRegister src,
 
 
 
-void MacroAssembler::pseudoMinFloat32x4(FloatRegister rhsOrRhsDest,
-                                        FloatRegister lhsOrLhsDest) {
-  
-  
-  FloatRegister rhs = rhsOrRhsDest;
-  FloatRegister lhsDest = lhsOrLhsDest;
+void MacroAssembler::pseudoMinFloat32x4(FloatRegister rhs,
+                                        FloatRegister lhsDest) {
   ScratchSimd128Scope scratch(*this);
   Fcmgt(Simd4S(scratch), Simd4S(lhsDest), Simd4S(rhs));
   Bsl(Simd16B(scratch), Simd16B(rhs), Simd16B(lhsDest));
   Mov(SimdReg(lhsDest), scratch);
 }
 
-void MacroAssembler::pseudoMinFloat64x2(FloatRegister rhsOrRhsDest,
-                                        FloatRegister lhsOrLhsDest) {
-  FloatRegister rhs = rhsOrRhsDest;
-  FloatRegister lhsDest = lhsOrLhsDest;
+void MacroAssembler::pseudoMinFloat64x2(FloatRegister rhs,
+                                        FloatRegister lhsDest) {
   ScratchSimd128Scope scratch(*this);
   Fcmgt(Simd2D(scratch), Simd2D(lhsDest), Simd2D(rhs));
   Bsl(Simd16B(scratch), Simd16B(rhs), Simd16B(lhsDest));
   Mov(SimdReg(lhsDest), scratch);
 }
 
-void MacroAssembler::pseudoMaxFloat32x4(FloatRegister rhsOrRhsDest,
-                                        FloatRegister lhsOrLhsDest) {
-  FloatRegister rhs = rhsOrRhsDest;
-  FloatRegister lhsDest = lhsOrLhsDest;
+void MacroAssembler::pseudoMaxFloat32x4(FloatRegister rhs,
+                                        FloatRegister lhsDest) {
   ScratchSimd128Scope scratch(*this);
   Fcmgt(Simd4S(scratch), Simd4S(rhs), Simd4S(lhsDest));
   Bsl(Simd16B(scratch), Simd16B(rhs), Simd16B(lhsDest));
   Mov(SimdReg(lhsDest), scratch);
 }
 
-void MacroAssembler::pseudoMaxFloat64x2(FloatRegister rhsOrRhsDest,
-                                        FloatRegister lhsOrLhsDest) {
-  FloatRegister rhs = rhsOrRhsDest;
-  FloatRegister lhsDest = lhsOrLhsDest;
+void MacroAssembler::pseudoMaxFloat64x2(FloatRegister rhs,
+                                        FloatRegister lhsDest) {
   ScratchSimd128Scope scratch(*this);
   Fcmgt(Simd2D(scratch), Simd2D(rhs), Simd2D(lhsDest));
   Bsl(Simd16B(scratch), Simd16B(rhs), Simd16B(lhsDest));

@@ -337,10 +337,6 @@ void MacroAssemblerCompat::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
   uint32_t offset = access.offset();
   MOZ_ASSERT(offset < wasm::MaxOffsetGuardLimit);
 
-  
-  MOZ_ASSERT(!access.isSplatSimd128Load());
-  MOZ_ASSERT(!access.isWidenSimd128Load());
-
   MOZ_ASSERT(ptr_ == ptrScratch_);
 
   ARMRegister memoryBase(memoryBase_, 64);

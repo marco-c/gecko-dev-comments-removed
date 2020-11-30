@@ -36,7 +36,7 @@ void MacroAssemblerX86Shared::checkedConvertFloat32x4ToInt32x4(
 
   ScratchSimd128Scope scratch(asMasm());
   asMasm().loadConstantSimd128Int(InvalidResult, scratch);
-  vpcmpeqd(Operand(dest), scratch, scratch);
+  packedEqualInt32x4(Operand(dest), scratch);
   
   
   vmovmskps(scratch, temp);
@@ -115,7 +115,7 @@ void MacroAssemblerX86Shared::checkedConvertFloat32x4ToUint32x4(
   
   
   zeroSimd128Float(tempF);
-  vpcmpgtd(Operand(out), tempF, tempF);
+  packedGreaterThanInt32x4(Operand(out), tempF);
 
   
   bitwiseAndSimdInt(scratch, Operand(tempF), scratch);
@@ -274,7 +274,7 @@ void MacroAssemblerX86Shared::swizzleFloat32x4(FloatRegister input,
 
   if (LanesMatch(lanes, 0, 1, 0, 1)) {
     if (AssemblerX86Shared::HasSSE3() && !AssemblerX86Shared::HasAVX()) {
-      vmovddup(Operand(input), output);
+      vmovddup(input, output);
       return;
     }
     FloatRegister inputCopy = reusedInputSimd128Float(input, output);
