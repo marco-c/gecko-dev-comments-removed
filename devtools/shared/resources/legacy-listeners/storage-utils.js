@@ -51,7 +51,6 @@ function makeStorageLegacyListener(storageKey, storageType) {
     }
 
     storage.resourceType = storageType;
-    storage.resourceKey = storageKey;
     
     
     storage.resourceId = storageType;
@@ -67,7 +66,6 @@ function makeStorageLegacyListener(storageKey, storageType) {
         {
           resourceId: storageType,
           resourceType: storageType,
-          resourceKey: storageKey,
           changed: response.changed,
           added: response.added,
           deleted: response.deleted,

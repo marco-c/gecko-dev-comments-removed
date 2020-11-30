@@ -101,7 +101,6 @@ var ILLEGAL_CHAR_REGEX = new RegExp(illegalFileNameCharacters, "g");
 
 
 var storageTypePool = new Map();
-exports.storageTypePool = storageTypePool;
 
 
 

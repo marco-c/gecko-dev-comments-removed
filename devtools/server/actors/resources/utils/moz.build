@@ -5,7 +5,6 @@
 
 
 DevToolsModules(
-    'content-process-storage.js',
     'nsi-console-listener-watcher.js',
 )
 
