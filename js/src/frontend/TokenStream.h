@@ -225,6 +225,16 @@ namespace js {
 
 namespace frontend {
 
+
+
+
+
+
+
+
+
+static constexpr uint32_t ColumnLimit = std::numeric_limits<int32_t>::max() / 2;
+
 extern TokenKind ReservedWordTokenKind(const ParserName* name);
 
 extern const char* ReservedWordToCharZ(const ParserName* name);

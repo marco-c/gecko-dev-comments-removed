@@ -35,7 +35,7 @@ assertEq(evaluate("saveStack().column", { columnNumber: maxColumn }),
 
 
 assertEq(evaluate(" saveStack().column", { columnNumber: maxColumn }),
-         1);
+         maxColumn + 1);
 
 
 
