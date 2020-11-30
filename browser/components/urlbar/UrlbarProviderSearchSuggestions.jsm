@@ -492,7 +492,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     
     
-    if (UrlbarPrefs.get("update2") && !query.startsWith(" ")) {
+    if (
+      UrlbarPrefs.get("update2") &&
+      !UrlbarTokenizer.REGEXP_SPACES_START.test(query)
+    ) {
       return null;
     }
 

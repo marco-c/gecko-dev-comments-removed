@@ -10,6 +10,12 @@
 const ALIAS = "testalias";
 const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
 
+
+
+
+
+const TEST_SPACES = [" ", "\u3000", " \u3000", "\u3000 "];
+
 let defaultEngine, aliasEngine;
 
 add_task(async function setup() {
@@ -103,57 +109,75 @@ add_task(async function noTrailingSpace_typed() {
 
 
 add_task(async function trailingSpace() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: ALIAS + " ",
-  });
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: aliasEngine.name,
-    entry: "typed",
-  });
-  Assert.ok(!gURLBar.value, "The urlbar value should be cleared.");
-  await UrlbarTestUtils.exitSearchMode(window);
-  await UrlbarTestUtils.promisePopupClose(window);
+  for (let spaces of TEST_SPACES) {
+    info("Testing: " + JSON.stringify({ spaces: codePoints(spaces) }));
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: ALIAS + spaces,
+    });
+    await UrlbarTestUtils.assertSearchMode(window, {
+      engineName: aliasEngine.name,
+      entry: "typed",
+    });
+    Assert.ok(!gURLBar.value, "The urlbar value should be cleared.");
+    await UrlbarTestUtils.exitSearchMode(window);
+    await UrlbarTestUtils.promisePopupClose(window);
+  }
 });
 
 
 add_task(async function trailingSpace_typed() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: ALIAS,
-  });
-  await UrlbarTestUtils.assertSearchMode(window, null);
+  for (let spaces of TEST_SPACES) {
+    if (spaces.length != 1) {
+      continue;
+    }
+    info("Testing: " + JSON.stringify({ spaces: codePoints(spaces) }));
 
-  
-  
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  EventUtils.synthesizeKey(" ");
-  await searchPromise;
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: ALIAS,
+    });
+    await UrlbarTestUtils.assertSearchMode(window, null);
 
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: aliasEngine.name,
-    entry: "typed",
-  });
-  Assert.ok(!gURLBar.value, "The urlbar value should be cleared.");
-  await UrlbarTestUtils.exitSearchMode(window);
-  await UrlbarTestUtils.promisePopupClose(window);
+    
+    
+    let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+    EventUtils.synthesizeKey(spaces);
+    await searchPromise;
+
+    await UrlbarTestUtils.assertSearchMode(window, {
+      engineName: aliasEngine.name,
+      entry: "typed",
+    });
+    Assert.ok(!gURLBar.value, "The urlbar value should be cleared.");
+    await UrlbarTestUtils.exitSearchMode(window);
+    await UrlbarTestUtils.promisePopupClose(window);
+  }
 });
 
 
 
 add_task(async function trailingSpace_query() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: ALIAS + " query",
-  });
+  for (let spaces of TEST_SPACES) {
+    info("Testing: " + JSON.stringify({ spaces: codePoints(spaces) }));
 
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: aliasEngine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "query", "The urlbar value should be the query.");
-  await UrlbarTestUtils.exitSearchMode(window);
-  await UrlbarTestUtils.promisePopupClose(window);
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: ALIAS + spaces + "query",
+    });
+
+    await UrlbarTestUtils.assertSearchMode(window, {
+      engineName: aliasEngine.name,
+      entry: "typed",
+    });
+    Assert.equal(
+      gURLBar.value,
+      "query",
+      "The urlbar value should be the query."
+    );
+    await UrlbarTestUtils.exitSearchMode(window);
+    await UrlbarTestUtils.promisePopupClose(window);
+  }
 });
 
 add_task(async function() {
@@ -248,3 +272,16 @@ add_task(async function() {
   await UrlbarTestUtils.exitSearchMode(window);
   await UrlbarTestUtils.promisePopupClose(window);
 });
+
+
+
+
+
+
+
+
+
+
+function codePoints(str) {
+  return str.split("").map(s => s.charCodeAt(0).toString(16));
+}
