@@ -1389,9 +1389,6 @@ class Runnable;
 
 
 
-
-
-
 #if defined(NS_BUILD_REFCNT_LOGGING)
 #  define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super)  \
     NS_IMETHOD_(MozExternalRefCountType) AddRef() override {  \
@@ -1401,7 +1398,15 @@ class Runnable;
       NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super);           \
     }
 #else  
-#  define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super)
+   
+   
+   
+   
+   
+   
+#  define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super) \
+    using Super::AddRef;                                     \
+    using Super::Release;
 #endif  
 
 
