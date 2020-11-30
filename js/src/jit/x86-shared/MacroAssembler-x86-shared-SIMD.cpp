@@ -734,8 +734,7 @@ void MacroAssemblerX86Shared::minMaxFloat32x4(bool isMin, FloatRegister lhs_,
 
   vmovaps(temp1, temp2);                     
   vpandn(output, temp2, temp2);              
-  asMasm().loadConstantSimd128Float(quietBits, output);
-  vandps(output, temp1, temp1);              
+  asMasm().bitwiseAndSimd128(quietBits, temp1); 
   vorps(temp1, temp2, temp2);                
   vmovaps(lhs, temp1);                       
   vcmpunordps(Operand(temp1), temp1);        
@@ -788,8 +787,7 @@ void MacroAssemblerX86Shared::minMaxFloat64x2(bool isMin, FloatRegister lhs_,
 
   vmovapd(temp1, temp2);                     
   vpandn(output, temp2, temp2);              
-  asMasm().loadConstantSimd128Float(quietBits, output);
-  vandpd(output, temp1, temp1);              
+  asMasm().bitwiseAndSimd128(quietBits, temp1); 
   vorpd(temp1, temp2, temp2);                
   vmovapd(lhs, temp1);                       
   vcmpunordpd(Operand(temp1), temp1);        
