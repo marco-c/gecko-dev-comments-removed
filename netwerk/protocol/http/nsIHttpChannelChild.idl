@@ -5,8 +5,15 @@
 
 #include "nsISupports.idl"
 
+%{ C++
+namespace mozilla {
+class OriginAttributes;
+} 
+%}
+
 [ptr] native RequestHeaderTuples(mozilla::net::RequestHeaderTuples);
 [ref] native MaybeCorsPreflightArgsRef(mozilla::Maybe<mozilla::net::CorsPreflightArgs>);
+[ref] native const_OriginAttributes(const mozilla::OriginAttributes);
 
 interface nsIPrincipal;
 interface nsIURI;
@@ -26,5 +33,6 @@ interface nsIHttpChannelChild : nsISupports
   
   
   [must_use]
-  void removeCorsPreflightCacheEntry(in nsIURI aURI, in nsIPrincipal aRequestingPrincipal);
+  void removeCorsPreflightCacheEntry(in nsIURI aURI, in nsIPrincipal aRequestingPrincipal,
+                                     in const_OriginAttributes aOriginAttributes);
 };

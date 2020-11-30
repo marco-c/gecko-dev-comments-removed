@@ -16,6 +16,8 @@ include HttpChannelParams;
 
 include "mozilla/net/NeckoMessageUtils.h";
 
+using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
+
 namespace mozilla {
 namespace net {
 
@@ -69,7 +71,8 @@ parent:
   
   
   async RemoveCorsPreflightCacheEntry(URIParams uri,
-                                      PrincipalInfo requestingPrincipal);
+                                      PrincipalInfo requestingPrincipal,
+                                      OriginAttributes originAttributes);
 
   
   

@@ -341,7 +341,9 @@ interface nsIPrincipal : nsISerializable
     
 
 
-    ACString getPrefLightCacheKey(in nsIURI aURI ,in bool aWithCredentials);
+    [noscript]
+    ACString getPrefLightCacheKey(in nsIURI aURI ,in bool aWithCredentials,
+                                  in const_OriginAttributes aOriginAttributes);
 
 
     
