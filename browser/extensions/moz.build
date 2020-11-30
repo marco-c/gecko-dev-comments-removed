@@ -4,10 +4,4 @@
 
 
 
-DIRS += [
-    'doh-rollout',
-    'formautofill',
-    'screenshots',
-    'webcompat',
-    'report-site-issue'
-]
+DIRS += ["doh-rollout", "formautofill", "screenshots", "webcompat", "report-site-issue"]

@@ -3,35 +3,35 @@
 
 
 
-include('/dom/media/webrtc/third_party_build/webrtc.mozbuild')
+include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
 
 LOCAL_INCLUDES += [
-    '!/ipc/ipdl/_ipdlheaders',
-    '/dom/base',
-    '/dom/media',
-    '/dom/media/webrtc',
-    '/ipc/chromium/src',
-    '/media/webrtc',
-    '/netwerk/srtp/src/include',
-    '/third_party/libwebrtc',
-    '/third_party/libwebrtc/webrtc',
+    "!/ipc/ipdl/_ipdlheaders",
+    "/dom/base",
+    "/dom/media",
+    "/dom/media/webrtc",
+    "/ipc/chromium/src",
+    "/media/webrtc",
+    "/netwerk/srtp/src/include",
+    "/third_party/libwebrtc",
+    "/third_party/libwebrtc/webrtc",
 ]
 
 UNIFIED_SOURCES += [
-    'MediaTransportHandler.cpp',
-    'MediaTransportHandlerIPC.cpp',
-    'MediaTransportParent.cpp',
-    'PacketDumper.cpp',
-    'PeerConnectionCtx.cpp',
-    'PeerConnectionImpl.cpp',
-    'PeerConnectionMedia.cpp',
-    'RTCDtlsTransport.cpp',
-    'RTCDTMFSender.cpp',
-    'RTCRtpReceiver.cpp',
-    'RTCStatsIdGenerator.cpp',
-    'RTCStatsReport.cpp',
-    'TransceiverImpl.cpp',
-    'WebrtcGlobalInformation.cpp',
+    "MediaTransportHandler.cpp",
+    "MediaTransportHandlerIPC.cpp",
+    "MediaTransportParent.cpp",
+    "PacketDumper.cpp",
+    "PeerConnectionCtx.cpp",
+    "PeerConnectionImpl.cpp",
+    "PeerConnectionMedia.cpp",
+    "RTCDtlsTransport.cpp",
+    "RTCDTMFSender.cpp",
+    "RTCRtpReceiver.cpp",
+    "RTCStatsIdGenerator.cpp",
+    "RTCStatsReport.cpp",
+    "TransceiverImpl.cpp",
+    "WebrtcGlobalInformation.cpp",
 ]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

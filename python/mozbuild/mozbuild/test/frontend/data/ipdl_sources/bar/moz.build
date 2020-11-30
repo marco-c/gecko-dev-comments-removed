@@ -5,10 +5,10 @@
 
 
 PREPROCESSED_IPDL_SOURCES += [
-    'bar1.ipdl',
+    "bar1.ipdl",
 ]
 
 IPDL_SOURCES += [
-    'bar.ipdl',
-    'bar2.ipdlh',
+    "bar.ipdl",
+    "bar2.ipdlh",
 ]

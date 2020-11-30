@@ -4,12 +4,12 @@
 
 
 
-TEST_DIRS += ['example', 'moz-http2']
+TEST_DIRS += ["example", "moz-http2"]
 
 TESTING_JS_MODULES += [
-    'dbg-actors.js',
+    "dbg-actors.js",
 ]
 
 with Files("**"):
     BUG_COMPONENT = ("Testing", "XPCShell Harness")
-    SCHEDULES.exclusive = ['xpcshell', 'xpcshell-coverage']
+    SCHEDULES.exclusive = ["xpcshell", "xpcshell-coverage"]

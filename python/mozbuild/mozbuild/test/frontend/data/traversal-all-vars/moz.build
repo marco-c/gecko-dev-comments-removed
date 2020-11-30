@@ -2,5 +2,5 @@
 
 
 
-DIRS += ['regular']
-TEST_DIRS += ['test']
+DIRS += ["regular"]
+TEST_DIRS += ["test"]

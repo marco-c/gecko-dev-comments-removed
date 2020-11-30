@@ -5,11 +5,11 @@
 
 
 UNIFIED_SOURCES = [
-    'TestTimeConverter.cpp',
+    "TestTimeConverter.cpp",
 ]
 
-FINAL_LIBRARY = 'xul-gtest'
+FINAL_LIBRARY = "xul-gtest"
 
 LOCAL_INCLUDES += [
-    '/widget',
+    "/widget",
 ]

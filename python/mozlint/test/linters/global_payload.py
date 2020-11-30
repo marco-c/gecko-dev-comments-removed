@@ -11,12 +11,12 @@ from external import external
 
 def global_payload(config, **lintargs):
     
-    finder = FileFinder(lintargs['root'])
-    files = [mozpath.join(lintargs['root'], p) for p, _ in finder.find('files/**')]
+    finder = FileFinder(lintargs["root"])
+    files = [mozpath.join(lintargs["root"], p) for p, _ in finder.find("files/**")]
     issues = external(files, config, **lintargs)
     for issue in issues:
         
-        issue.linter = 'global_payload'
+        issue.linter = "global_payload"
     return issues
 
 
@@ -27,9 +27,12 @@ def global_skipped(config, **lintargs):
     
     
 
-    finder = FileFinder(lintargs['root'])
-    files = [mozpath.join(lintargs['root'], p) for p, _ in finder.find('files/**')]
+    finder = FileFinder(lintargs["root"])
+    files = [mozpath.join(lintargs["root"], p) for p, _ in finder.find("files/**")]
 
     issues = []
-    issues.append(result.from_config(
-        config, path=files[0], lineno=1, column=1, rule="not-skipped"))
+    issues.append(
+        result.from_config(
+            config, path=files[0], lineno=1, column=1, rule="not-skipped"
+        )
+    )

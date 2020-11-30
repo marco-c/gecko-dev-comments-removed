@@ -5,7 +5,7 @@
 
 
 XPIDL_SOURCES += [
-    'nsIToolkitShellService.idl',
+    "nsIToolkitShellService.idl",
 ]
 
-XPIDL_MODULE = 'toolkit_shell'
+XPIDL_MODULE = "toolkit_shell"

@@ -4,5 +4,5 @@
 
 
 
-with Files('**'):
-     BUG_COMPONENT = ('Firefox Build System', 'Source Code Analysis')
+with Files("**"):
+    BUG_COMPONENT = ("Firefox Build System", "Source Code Analysis")

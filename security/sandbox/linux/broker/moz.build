@@ -5,33 +5,33 @@
 
 
 EXPORTS.mozilla += [
-    'SandboxBroker.h',
-    'SandboxBrokerCommon.h',
-    'SandboxBrokerPolicyFactory.h',
+    "SandboxBroker.h",
+    "SandboxBrokerCommon.h",
+    "SandboxBrokerPolicyFactory.h",
 ]
 
 UNIFIED_SOURCES += [
-    'SandboxBroker.cpp',
-    'SandboxBrokerCommon.cpp',
-    'SandboxBrokerPolicyFactory.cpp',
-    'SandboxBrokerRealpath.cpp',
+    "SandboxBroker.cpp",
+    "SandboxBrokerCommon.cpp",
+    "SandboxBrokerPolicyFactory.cpp",
+    "SandboxBrokerRealpath.cpp",
 ]
 
 LOCAL_INCLUDES += [
-    '/security/sandbox/linux', 
+    "/security/sandbox/linux",  
 ]
 
 
-include('/ipc/chromium/chromium-config.mozbuild')
+include("/ipc/chromium/chromium-config.mozbuild")
 
 
 
 LOCAL_INCLUDES += [
-    '/security/sandbox/chromium',
+    "/security/sandbox/chromium",
 ]
 
-if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk':
-    CXXFLAGS += CONFIG['GLIB_CFLAGS']
-    CXXFLAGS += CONFIG['TK_CFLAGS']
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
+    CXXFLAGS += CONFIG["GLIB_CFLAGS"]
+    CXXFLAGS += CONFIG["TK_CFLAGS"]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

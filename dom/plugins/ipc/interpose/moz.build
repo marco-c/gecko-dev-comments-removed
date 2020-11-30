@@ -4,10 +4,10 @@
 
 
 
-SharedLibrary('plugin_child_interpose')
+SharedLibrary("plugin_child_interpose")
 
-UNIFIED_SOURCES += [ "%s.mm" % (LIBRARY_NAME) ]
+UNIFIED_SOURCES += ["%s.mm" % (LIBRARY_NAME)]
 
-OS_LIBS += ['-framework Carbon']
+OS_LIBS += ["-framework Carbon"]
 
 DIST_INSTALL = True

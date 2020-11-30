@@ -5,41 +5,41 @@
 
 
 EXPORTS += [
-    'Atom.h',
-    'AtomType.h',
-    'Box.h',
-    'BufferStream.h',
-    'ByteStream.h',
-    'DecoderData.h',
-    'Index.h',
-    'MoofParser.h',
-    'MP4Decoder.h',
-    'MP4Demuxer.h',
-    'MP4Interval.h',
-    'MP4Metadata.h',
-    'ResourceStream.h',
-    'SinfParser.h',
+    "Atom.h",
+    "AtomType.h",
+    "Box.h",
+    "BufferStream.h",
+    "ByteStream.h",
+    "DecoderData.h",
+    "Index.h",
+    "MoofParser.h",
+    "MP4Decoder.h",
+    "MP4Demuxer.h",
+    "MP4Interval.h",
+    "MP4Metadata.h",
+    "ResourceStream.h",
+    "SinfParser.h",
 ]
 
 UNIFIED_SOURCES += [
-    'Box.cpp',
-    'BufferStream.cpp',
-    'DecoderData.cpp',
-    'Index.cpp',
-    'MoofParser.cpp',
-    'MP4Decoder.cpp',
-    'MP4Demuxer.cpp',
-    'MP4Metadata.cpp',
-    'ResourceStream.cpp',
-    'SinfParser.cpp',
+    "Box.cpp",
+    "BufferStream.cpp",
+    "DecoderData.cpp",
+    "Index.cpp",
+    "MoofParser.cpp",
+    "MP4Decoder.cpp",
+    "MP4Demuxer.cpp",
+    "MP4Metadata.cpp",
+    "ResourceStream.cpp",
+    "SinfParser.cpp",
 ]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"
 
 
 CXXFLAGS += [
-    '-Wno-sign-compare',
+    "-Wno-sign-compare",
 ]
 
 
-include('/tools/fuzzing/libfuzzer-config.mozbuild')
+include("/tools/fuzzing/libfuzzer-config.mozbuild")

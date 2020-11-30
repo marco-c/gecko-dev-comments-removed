@@ -11,10 +11,7 @@ import os
 import re
 import taskcluster_urls
 
-from .util import (
-    create_tasks,
-    fetch_graph_and_labels
-)
+from .util import create_tasks, fetch_graph_and_labels
 from taskgraph.util.taskcluster import (
     send_email,
     get_root_url,
@@ -25,12 +22,12 @@ from taskgraph.util import taskcluster
 
 logger = logging.getLogger(__name__)
 
-EMAIL_SUBJECT = 'Your Interactive Task for {label}'
-EMAIL_CONTENT = '''\
+EMAIL_SUBJECT = "Your Interactive Task for {label}"
+EMAIL_CONTENT = """\
 As you requested, Firefox CI has created an interactive task to run {label}
 on revision {revision} in {repo}. Click the button below to connect to the
 task. You may need to wait for it to begin running.
-'''
+"""
 
 
 
@@ -52,63 +49,61 @@ task. You may need to wait for it to begin running.
 
 SCOPE_WHITELIST = [
     
-    re.compile(r'^secrets:get:project/taskcluster/gecko/(hgfingerprint|hgmointernal)$'),
+    re.compile(r"^secrets:get:project/taskcluster/gecko/(hgfingerprint|hgmointernal)$"),
     
-    re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.public$'),
-    re.compile(r'^project:releng:services/tooltool/api/download/public$'),
+    re.compile(r"^docker-worker:relengapi-proxy:tooltool.download.public$"),
+    re.compile(r"^project:releng:services/tooltool/api/download/public$"),
     
-    re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.internal$'),
-    re.compile(r'^project:releng:services/tooltool/api/download/internal$'),
+    re.compile(r"^docker-worker:relengapi-proxy:tooltool.download.internal$"),
+    re.compile(r"^project:releng:services/tooltool/api/download/internal$"),
     
-    re.compile(r'^queue:get-artifact:project/gecko/.*$'),
+    re.compile(r"^queue:get-artifact:project/gecko/.*$"),
     
     
     
-    re.compile(r'^secrets:get:project/releng/gecko/build/level-[0-9]/\*'),
+    re.compile(r"^secrets:get:project/releng/gecko/build/level-[0-9]/\*"),
     
-    re.compile(r'^docker-worker:feature:allowPtrace$'),
+    re.compile(r"^docker-worker:feature:allowPtrace$"),
     
-    re.compile(r'^docker-worker:capability:device:.*$'),
+    re.compile(r"^docker-worker:capability:device:.*$"),
 ]
 
 
 def context(params):
     
     
-    if int(params['level']) < 3:
-        return [{'worker-implementation': 'docker-worker'}]
+    if int(params["level"]) < 3:
+        return [{"worker-implementation": "docker-worker"}]
     else:
-        return [{'worker-implementation': 'docker-worker', 'kind': 'test'}]
+        return [{"worker-implementation": "docker-worker", "kind": "test"}]
     
     
     
 
 
 @register_callback_action(
-    title='Create Interactive Task',
-    name='create-interactive',
-    symbol='create-inter',
-    description=(
-        'Create a a copy of the task that you can interact with'
-    ),
+    title="Create Interactive Task",
+    name="create-interactive",
+    symbol="create-inter",
+    description=("Create a a copy of the task that you can interact with"),
     order=50,
     context=context,
     schema={
-        'type': 'object',
-        'properties': {
-            'notify': {
-                'type': 'string',
-                'format': 'email',
-                'title': 'Who to notify of the pending interactive task',
-                'description': (
-                    'Enter your email here to get an email containing a link '
-                    'to interact with the task'
+        "type": "object",
+        "properties": {
+            "notify": {
+                "type": "string",
+                "format": "email",
+                "title": "Who to notify of the pending interactive task",
+                "description": (
+                    "Enter your email here to get an email containing a link "
+                    "to interact with the task"
                 ),
                 
-                'default': 'noreply@noreply.mozilla.org',
+                "default": "noreply@noreply.mozilla.org",
             },
         },
-        'additionalProperties': False,
+        "additionalProperties": False,
     },
 )
 def create_interactive_action(parameters, graph_config, input, task_group_id, task_id):
@@ -116,9 +111,10 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
     
     
     decision_task_id, full_task_graph, label_to_taskid = fetch_graph_and_labels(
-        parameters, graph_config)
+        parameters, graph_config
+    )
     task = taskcluster.get_task_definition(task_id)
-    label = task['metadata']['name']
+    label = task["metadata"]["name"]
 
     def edit(task):
         if task.label != label:
@@ -126,62 +122,75 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
         task_def = task.task
 
         
-        task_def['routes'] = []
+        task_def["routes"] = []
 
         
-        task_def['retries'] = 0
+        task_def["retries"] = 0
 
         
-        task_def['deadline'] = {'relative-datestamp': '12 hours'}
-        task_def['created'] = {'relative-datestamp': '0 hours'}
-        task_def['expires'] = {'relative-datestamp': '1 day'}
+        task_def["deadline"] = {"relative-datestamp": "12 hours"}
+        task_def["created"] = {"relative-datestamp": "0 hours"}
+        task_def["expires"] = {"relative-datestamp": "1 day"}
 
         
-        task.task['scopes'] = [s for s in task.task.get('scopes', [])
-                               if any(p.match(s) for p in SCOPE_WHITELIST)]
+        task.task["scopes"] = [
+            s
+            for s in task.task.get("scopes", [])
+            if any(p.match(s) for p in SCOPE_WHITELIST)
+        ]
 
-        payload = task_def['payload']
-
-        
-        payload['maxRunTime'] = max(3600 * 3, payload.get('maxRunTime', 0))
-
-        
-        payload['cache'] = {}
-        payload['artifacts'] = {}
+        payload = task_def["payload"]
 
         
-        payload.setdefault('features', {})['interactive'] = True
-        payload.setdefault('env', {})['TASKCLUSTER_INTERACTIVE'] = 'true'
+        payload["maxRunTime"] = max(3600 * 3, payload.get("maxRunTime", 0))
+
+        
+        payload["cache"] = {}
+        payload["artifacts"] = {}
+
+        
+        payload.setdefault("features", {})["interactive"] = True
+        payload.setdefault("env", {})["TASKCLUSTER_INTERACTIVE"] = "true"
 
         return task
 
     
     
-    action_task_id = os.environ.get('TASK_ID')
-    label_to_taskid = create_tasks(graph_config, [label], full_task_graph, label_to_taskid,
-                                   parameters, decision_task_id=action_task_id, modifier=edit)
+    action_task_id = os.environ.get("TASK_ID")
+    label_to_taskid = create_tasks(
+        graph_config,
+        [label],
+        full_task_graph,
+        label_to_taskid,
+        parameters,
+        decision_task_id=action_task_id,
+        modifier=edit,
+    )
 
     taskId = label_to_taskid[label]
-    logger.info('Created interactive task {}; sending notification'.format(taskId))
+    logger.info("Created interactive task {}; sending notification".format(taskId))
 
-    if input and 'notify' in input:
-        email = input['notify']
+    if input and "notify" in input:
+        email = input["notify"]
         
-        if email == 'noreply@noreply.mozilla.org':
+        if email == "noreply@noreply.mozilla.org":
             return
 
         info = {
-            'url': taskcluster_urls.ui(get_root_url(False), 'tasks/{}/connect'.format(taskId)),
-            'label': label,
-            'revision': parameters['head_rev'],
-            'repo': parameters['head_repository'],
+            "url": taskcluster_urls.ui(
+                get_root_url(False), "tasks/{}/connect".format(taskId)
+            ),
+            "label": label,
+            "revision": parameters["head_rev"],
+            "repo": parameters["head_repository"],
         }
         send_email(
             email,
             subject=EMAIL_SUBJECT.format(**info),
             content=EMAIL_CONTENT.format(**info),
             link={
-                'text': 'Connect',
-                'href': info['url'],
+                "text": "Connect",
+                "href": info["url"],
             },
-            use_proxy=True)
+            use_proxy=True,
+        )

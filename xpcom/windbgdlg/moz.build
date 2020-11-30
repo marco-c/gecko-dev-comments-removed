@@ -4,6 +4,4 @@
 
 
 
-SimplePrograms([
-    'windbgdlg'
-])
+SimplePrograms(["windbgdlg"])

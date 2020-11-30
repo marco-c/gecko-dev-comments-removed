@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
-    'browsing-context.js',
-    'content-process.js',
-    'target-mixin.js',
+    "browsing-context.js",
+    "content-process.js",
+    "target-mixin.js",
 )

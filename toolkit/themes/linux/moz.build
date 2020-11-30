@@ -4,5 +4,4 @@
 
 
 
-DIRS += ['global', 'mozapps']
-
+DIRS += ["global", "mozapps"]

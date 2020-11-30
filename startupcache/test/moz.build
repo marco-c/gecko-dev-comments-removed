@@ -5,6 +5,6 @@
 
 
 UNIFIED_SOURCES += [
-    'TestStartupCache.cpp',
+    "TestStartupCache.cpp",
 ]
-FINAL_LIBRARY = 'xul-gtest'
+FINAL_LIBRARY = "xul-gtest"

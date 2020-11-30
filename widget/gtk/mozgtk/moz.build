@@ -4,4 +4,4 @@
 
 
 
-DIRS += ['stub', 'gtk2', 'gtk3']
+DIRS += ["stub", "gtk2", "gtk3"]

@@ -10,19 +10,22 @@ config = {
     ],
     "replacements": [
         
-        ("build/mozconfig.common",
-         "# Enable enforcing that add-ons are signed by the trusted root",
-         "# Disable enforcing that add-ons are signed by the trusted root"),
-        ("build/mozconfig.common",
-         "MOZ_REQUIRE_SIGNING=${MOZ_REQUIRE_SIGNING-1}",
-         "MOZ_REQUIRE_SIGNING=${MOZ_REQUIRE_SIGNING-0}"),
+        (
+            "build/mozconfig.common",
+            "# Enable enforcing that add-ons are signed by the trusted root",
+            "# Disable enforcing that add-ons are signed by the trusted root",
+        ),
+        (
+            "build/mozconfig.common",
+            "MOZ_REQUIRE_SIGNING=${MOZ_REQUIRE_SIGNING-1}",
+            "MOZ_REQUIRE_SIGNING=${MOZ_REQUIRE_SIGNING-0}",
+        ),
     ],
-    "vcs_share_base": os.path.join(ABS_WORK_DIR, 'hg-shared'),
+    "vcs_share_base": os.path.join(ABS_WORK_DIR, "hg-shared"),
     
     
     "from_repo_url": NEW_ESR_REPO,
     "to_repo_url": NEW_ESR_REPO,
-
     "base_tag": "FIREFOX_ESR_%(major_version)s_BASE",
     "migration_behavior": "release_to_esr",
     "require_remove_locales": False,

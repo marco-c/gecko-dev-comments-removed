@@ -2,4 +2,4 @@
 
 
 
-DIRS += ['test', 'src']
+DIRS += ["test", "src"]

@@ -5,5 +5,5 @@
 
 
 DevToolsModules(
-    'fluent-l10n.js',
+    "fluent-l10n.js",
 )

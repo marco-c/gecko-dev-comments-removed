@@ -71,6 +71,7 @@ def ErrCheckBool(result, func, args):
 
 
 
+
 class AutoHANDLE(HANDLE):
     """Subclass of HANDLE which will call CloseHandle() on deletion."""
 
@@ -101,10 +102,12 @@ def ErrCheckHandle(result, func, args):
 
 
 class PROCESS_INFORMATION(Structure):
-    _fields_ = [("hProcess", HANDLE),
-                ("hThread", HANDLE),
-                ("dwProcessID", DWORD),
-                ("dwThreadID", DWORD)]
+    _fields_ = [
+        ("hProcess", HANDLE),
+        ("hThread", HANDLE),
+        ("dwProcessID", DWORD),
+        ("dwThreadID", DWORD),
+    ]
 
     def __init__(self):
         Structure.__init__(self)
@@ -119,25 +122,26 @@ LPPROCESS_INFORMATION = POINTER(PROCESS_INFORMATION)
 
 
 class STARTUPINFO(Structure):
-    _fields_ = [("cb", DWORD),
-                ("lpReserved", LPWSTR),
-                ("lpDesktop", LPWSTR),
-                ("lpTitle", LPWSTR),
-                ("dwX", DWORD),
-                ("dwY", DWORD),
-                ("dwXSize", DWORD),
-                ("dwYSize", DWORD),
-                ("dwXCountChars", DWORD),
-                ("dwYCountChars", DWORD),
-                ("dwFillAttribute", DWORD),
-                ("dwFlags", DWORD),
-                ("wShowWindow", WORD),
-                ("cbReserved2", WORD),
-                ("lpReserved2", LPBYTE),
-                ("hStdInput", HANDLE),
-                ("hStdOutput", HANDLE),
-                ("hStdError", HANDLE)
-                ]
+    _fields_ = [
+        ("cb", DWORD),
+        ("lpReserved", LPWSTR),
+        ("lpDesktop", LPWSTR),
+        ("lpTitle", LPWSTR),
+        ("dwX", DWORD),
+        ("dwY", DWORD),
+        ("dwXSize", DWORD),
+        ("dwYSize", DWORD),
+        ("dwXCountChars", DWORD),
+        ("dwYCountChars", DWORD),
+        ("dwFillAttribute", DWORD),
+        ("dwFlags", DWORD),
+        ("wShowWindow", WORD),
+        ("cbReserved2", WORD),
+        ("lpReserved2", LPBYTE),
+        ("hStdInput", HANDLE),
+        ("hStdOutput", HANDLE),
+        ("hStdError", HANDLE),
+    ]
 
 
 LPSTARTUPINFO = POINTER(STARTUPINFO)
@@ -167,12 +171,12 @@ class EnvironmentBlock:
             self._as_parameter_ = None
         else:
             values = []
-            fs_encoding = sys.getfilesystemencoding() or 'mbcs'
+            fs_encoding = sys.getfilesystemencoding() or "mbcs"
             for k, v in env.items():
                 if isinstance(k, bytes):
-                    k = k.decode(fs_encoding, 'replace')
+                    k = k.decode(fs_encoding, "replace")
                 if isinstance(v, bytes):
-                    v = v.decode(fs_encoding, 'replace')
+                    v = v.decode(fs_encoding, "replace")
                 values.append("{}={}".format(k, v))
 
             
@@ -199,40 +203,49 @@ GetLastError = GetLastErrorProto(("GetLastError", windll.kernel32), GetLastError
 
 
 
-CreateProcessProto = WINFUNCTYPE(BOOL,  
-                                 LPCWSTR,  
-                                 LPWSTR,  
-                                 LPVOID,  
-                                 LPVOID,  
-                                 BOOL,  
-                                 DWORD,  
-                                 LPVOID,  
-                                 LPCWSTR,  
-                                 LPSTARTUPINFO,  
-                                 LPPROCESS_INFORMATION  
-                                 )
+CreateProcessProto = WINFUNCTYPE(
+    BOOL,  
+    LPCWSTR,  
+    LPWSTR,  
+    LPVOID,  
+    LPVOID,  
+    BOOL,  
+    DWORD,  
+    LPVOID,  
+    LPCWSTR,  
+    LPSTARTUPINFO,  
+    LPPROCESS_INFORMATION,  
+)
 
-CreateProcessFlags = ((1, "lpApplicationName", None),
-                      (1, "lpCommandLine"),
-                      (1, "lpProcessAttributes", None),
-                      (1, "lpThreadAttributes", None),
-                      (1, "bInheritHandles", True),
-                      (1, "dwCreationFlags", 0),
-                      (1, "lpEnvironment", None),
-                      (1, "lpCurrentDirectory", None),
-                      (1, "lpStartupInfo"),
-                      (2, "lpProcessInformation"))
+CreateProcessFlags = (
+    (1, "lpApplicationName", None),
+    (1, "lpCommandLine"),
+    (1, "lpProcessAttributes", None),
+    (1, "lpThreadAttributes", None),
+    (1, "bInheritHandles", True),
+    (1, "dwCreationFlags", 0),
+    (1, "lpEnvironment", None),
+    (1, "lpCurrentDirectory", None),
+    (1, "lpStartupInfo"),
+    (2, "lpProcessInformation"),
+)
 
 
 def ErrCheckCreateProcess(result, func, args):
     ErrCheckBool(result, func, args)
     
     pi = args[9]
-    return AutoHANDLE(pi.hProcess), AutoHANDLE(pi.hThread), pi.dwProcessID, pi.dwThreadID
+    return (
+        AutoHANDLE(pi.hProcess),
+        AutoHANDLE(pi.hThread),
+        pi.dwProcessID,
+        pi.dwThreadID,
+    )
 
 
-CreateProcess = CreateProcessProto(("CreateProcessW", windll.kernel32),
-                                   CreateProcessFlags)
+CreateProcess = CreateProcessProto(
+    ("CreateProcessW", windll.kernel32), CreateProcessFlags
+)
 CreateProcess.errcheck = ErrCheckCreateProcess
 
 
@@ -301,115 +314,126 @@ def ErrCheckOpenProcess(result, func, args):
     return AutoHANDLE(result)
 
 
-OpenProcess = OpenProcessProto(("OpenProcess", windll.kernel32),
-                               OpenProcessFlags)
+OpenProcess = OpenProcessProto(("OpenProcess", windll.kernel32), OpenProcessFlags)
 OpenProcess.errcheck = ErrCheckOpenProcess
 
 
 
-GetQueuedCompletionStatusProto = WINFUNCTYPE(BOOL,  
-                                             HANDLE,  
-                                             LPDWORD,  
-                                             LPULONG,  
-                                             
-                                             LPULONG,
-                                             DWORD)  
-GetQueuedCompletionStatusFlags = ((1, "CompletionPort", INVALID_HANDLE_VALUE),
-                                  (1, "lpNumberOfBytes", None),
-                                  (1, "lpCompletionKey", None),
-                                  (1, "lpPID", None),
-                                  (1, "dwMilliseconds", 0))
-GetQueuedCompletionStatus = GetQueuedCompletionStatusProto(("GetQueuedCompletionStatus",
-                                                            windll.kernel32),
-                                                           GetQueuedCompletionStatusFlags)
+GetQueuedCompletionStatusProto = WINFUNCTYPE(
+    BOOL,  
+    HANDLE,  
+    LPDWORD,  
+    LPULONG,  
+    
+    LPULONG,
+    DWORD,
+)  
+GetQueuedCompletionStatusFlags = (
+    (1, "CompletionPort", INVALID_HANDLE_VALUE),
+    (1, "lpNumberOfBytes", None),
+    (1, "lpCompletionKey", None),
+    (1, "lpPID", None),
+    (1, "dwMilliseconds", 0),
+)
+GetQueuedCompletionStatus = GetQueuedCompletionStatusProto(
+    ("GetQueuedCompletionStatus", windll.kernel32), GetQueuedCompletionStatusFlags
+)
 
 
 
-CreateIoCompletionPortProto = WINFUNCTYPE(HANDLE,  
-                                          HANDLE,  
-                                          HANDLE,  
-                                          c_ulong,  
-                                          DWORD)  
+CreateIoCompletionPortProto = WINFUNCTYPE(
+    HANDLE,  
+    HANDLE,  
+    HANDLE,  
+    c_ulong,  
+    DWORD,
+)  
 
-CreateIoCompletionPortFlags = ((1, "FileHandle", INVALID_HANDLE_VALUE),
-                               (1, "ExistingCompletionPort", 0),
-                               (1, "CompletionKey", c_ulong(0)),
-                               (1, "NumberOfConcurrentThreads", 0))
-CreateIoCompletionPort = CreateIoCompletionPortProto(("CreateIoCompletionPort",
-                                                      windll.kernel32),
-                                                     CreateIoCompletionPortFlags)
+CreateIoCompletionPortFlags = (
+    (1, "FileHandle", INVALID_HANDLE_VALUE),
+    (1, "ExistingCompletionPort", 0),
+    (1, "CompletionKey", c_ulong(0)),
+    (1, "NumberOfConcurrentThreads", 0),
+)
+CreateIoCompletionPort = CreateIoCompletionPortProto(
+    ("CreateIoCompletionPort", windll.kernel32), CreateIoCompletionPortFlags
+)
 CreateIoCompletionPort.errcheck = ErrCheckHandle
 
 
-SetInformationJobObjectProto = WINFUNCTYPE(BOOL,  
-                                           HANDLE,  
-                                           DWORD,  
-                                           LPVOID,  
-                                           DWORD)  
+SetInformationJobObjectProto = WINFUNCTYPE(
+    BOOL,  
+    HANDLE,  
+    DWORD,  
+    LPVOID,  
+    DWORD,
+)  
 
-SetInformationJobObjectProtoFlags = ((1, "hJob", None),
-                                     (1, "JobObjectInfoClass", None),
-                                     (1, "lpJobObjectInfo", None),
-                                     (1, "cbJobObjectInfoLength", 0))
-SetInformationJobObject = SetInformationJobObjectProto(("SetInformationJobObject",
-                                                        windll.kernel32),
-                                                       SetInformationJobObjectProtoFlags)
+SetInformationJobObjectProtoFlags = (
+    (1, "hJob", None),
+    (1, "JobObjectInfoClass", None),
+    (1, "lpJobObjectInfo", None),
+    (1, "cbJobObjectInfoLength", 0),
+)
+SetInformationJobObject = SetInformationJobObjectProto(
+    ("SetInformationJobObject", windll.kernel32), SetInformationJobObjectProtoFlags
+)
 SetInformationJobObject.errcheck = ErrCheckBool
 
 
-CreateJobObjectProto = WINFUNCTYPE(HANDLE,  
-                                   LPVOID,  
-                                   LPCWSTR  
-                                   )
+CreateJobObjectProto = WINFUNCTYPE(
+    HANDLE, LPVOID, LPCWSTR  
+)
 
-CreateJobObjectFlags = ((1, "lpJobAttributes", None),
-                        (1, "lpName", None))
+CreateJobObjectFlags = ((1, "lpJobAttributes", None), (1, "lpName", None))
 
-CreateJobObject = CreateJobObjectProto(("CreateJobObjectW", windll.kernel32),
-                                       CreateJobObjectFlags)
+CreateJobObject = CreateJobObjectProto(
+    ("CreateJobObjectW", windll.kernel32), CreateJobObjectFlags
+)
 CreateJobObject.errcheck = ErrCheckHandle
 
 
 
-AssignProcessToJobObjectProto = WINFUNCTYPE(BOOL,  
-                                            HANDLE,  
-                                            HANDLE  
-                                            )
-AssignProcessToJobObjectFlags = ((1, "hJob"),
-                                 (1, "hProcess"))
+AssignProcessToJobObjectProto = WINFUNCTYPE(
+    BOOL, HANDLE, HANDLE  
+)
+AssignProcessToJobObjectFlags = ((1, "hJob"), (1, "hProcess"))
 AssignProcessToJobObject = AssignProcessToJobObjectProto(
-    ("AssignProcessToJobObject", windll.kernel32),
-    AssignProcessToJobObjectFlags)
+    ("AssignProcessToJobObject", windll.kernel32), AssignProcessToJobObjectFlags
+)
 AssignProcessToJobObject.errcheck = ErrCheckBool
 
 
 
-GetCurrentProcessProto = WINFUNCTYPE(HANDLE  
-                                     )
+GetCurrentProcessProto = WINFUNCTYPE(HANDLE)  
 GetCurrentProcessFlags = ()
 GetCurrentProcess = GetCurrentProcessProto(
-    ("GetCurrentProcess", windll.kernel32),
-    GetCurrentProcessFlags)
+    ("GetCurrentProcess", windll.kernel32), GetCurrentProcessFlags
+)
 GetCurrentProcess.errcheck = ErrCheckHandle
 
 
 try:
-    IsProcessInJobProto = WINFUNCTYPE(BOOL,  
-                                      HANDLE,  
-                                      HANDLE,  
-                                      LPBOOL  
-                                      )
-    IsProcessInJobFlags = ((1, "ProcessHandle"),
-                           (1, "JobHandle", HANDLE(0)),
-                           (2, "Result"))
+    IsProcessInJobProto = WINFUNCTYPE(
+        BOOL,  
+        HANDLE,  
+        HANDLE,  
+        LPBOOL,  
+    )
+    IsProcessInJobFlags = (
+        (1, "ProcessHandle"),
+        (1, "JobHandle", HANDLE(0)),
+        (2, "Result"),
+    )
     IsProcessInJob = IsProcessInJobProto(
-        ("IsProcessInJob", windll.kernel32),
-        IsProcessInJobFlags)
+        ("IsProcessInJob", windll.kernel32), IsProcessInJobFlags
+    )
     IsProcessInJob.errcheck = ErrCheckBool
 except AttributeError:
     
     def IsProcessInJob(process):
         return False
+
 
 
 
@@ -421,51 +445,44 @@ def ErrCheckResumeThread(result, func, args):
     return args
 
 
-ResumeThreadProto = WINFUNCTYPE(DWORD,  
-                                HANDLE  
-                                )
+ResumeThreadProto = WINFUNCTYPE(DWORD, HANDLE)  
 ResumeThreadFlags = ((1, "hThread"),)
-ResumeThread = ResumeThreadProto(("ResumeThread", windll.kernel32),
-                                 ResumeThreadFlags)
+ResumeThread = ResumeThreadProto(("ResumeThread", windll.kernel32), ResumeThreadFlags)
 ResumeThread.errcheck = ErrCheckResumeThread
 
 
 
-TerminateProcessProto = WINFUNCTYPE(BOOL,  
-                                    HANDLE,  
-                                    UINT  
-                                    )
-TerminateProcessFlags = ((1, "hProcess"),
-                         (1, "uExitCode", 127))
+TerminateProcessProto = WINFUNCTYPE(
+    BOOL, HANDLE, UINT  
+)
+TerminateProcessFlags = ((1, "hProcess"), (1, "uExitCode", 127))
 TerminateProcess = TerminateProcessProto(
-    ("TerminateProcess", windll.kernel32),
-    TerminateProcessFlags)
+    ("TerminateProcess", windll.kernel32), TerminateProcessFlags
+)
 TerminateProcess.errcheck = ErrCheckBool
 
 
 
-TerminateJobObjectProto = WINFUNCTYPE(BOOL,  
-                                      HANDLE,  
-                                      UINT  
-                                      )
-TerminateJobObjectFlags = ((1, "hJob"),
-                           (1, "uExitCode", 127))
+TerminateJobObjectProto = WINFUNCTYPE(
+    BOOL, HANDLE, UINT  
+)
+TerminateJobObjectFlags = ((1, "hJob"), (1, "uExitCode", 127))
 TerminateJobObject = TerminateJobObjectProto(
-    ("TerminateJobObject", windll.kernel32),
-    TerminateJobObjectFlags)
+    ("TerminateJobObject", windll.kernel32), TerminateJobObjectFlags
+)
 TerminateJobObject.errcheck = ErrCheckBool
 
 
 
-WaitForSingleObjectProto = WINFUNCTYPE(DWORD,  
-                                       HANDLE,  
-                                       DWORD,  
-                                       )
-WaitForSingleObjectFlags = ((1, "hHandle"),
-                            (1, "dwMilliseconds", -1))
+WaitForSingleObjectProto = WINFUNCTYPE(
+    DWORD,
+    HANDLE,
+    DWORD,  
+)
+WaitForSingleObjectFlags = ((1, "hHandle"), (1, "dwMilliseconds", -1))
 WaitForSingleObject = WaitForSingleObjectProto(
-    ("WaitForSingleObject", windll.kernel32),
-    WaitForSingleObjectFlags)
+    ("WaitForSingleObject", windll.kernel32), WaitForSingleObjectFlags
+)
 
 
 INFINITE = -1
@@ -477,29 +494,32 @@ WAIT_ABANDONED = 0x0080
 STILL_ACTIVE = 259
 
 
-ERROR_CONTROL_C_EXIT = 0x23c
+ERROR_CONTROL_C_EXIT = 0x23C
 
 
 
-GetExitCodeProcessProto = WINFUNCTYPE(BOOL,  
-                                      HANDLE,  
-                                      LPDWORD,  
-                                      )
-GetExitCodeProcessFlags = ((1, "hProcess"),
-                           (2, "lpExitCode"))
+GetExitCodeProcessProto = WINFUNCTYPE(
+    BOOL,
+    HANDLE,
+    LPDWORD,  
+)
+GetExitCodeProcessFlags = ((1, "hProcess"), (2, "lpExitCode"))
 GetExitCodeProcess = GetExitCodeProcessProto(
-    ("GetExitCodeProcess", windll.kernel32),
-    GetExitCodeProcessFlags)
+    ("GetExitCodeProcess", windll.kernel32), GetExitCodeProcessFlags
+)
 GetExitCodeProcess.errcheck = ErrCheckBool
 
 
 def CanCreateJobObject():
     currentProc = GetCurrentProcess()
     if IsProcessInJob(currentProc):
-        jobinfo = QueryInformationJobObject(HANDLE(0), 'JobObjectExtendedLimitInformation')
-        limitflags = jobinfo['BasicLimitInformation']['LimitFlags']
-        return bool(limitflags & JOB_OBJECT_LIMIT_BREAKAWAY_OK) or \
-            bool(limitflags & JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK)
+        jobinfo = QueryInformationJobObject(
+            HANDLE(0), "JobObjectExtendedLimitInformation"
+        )
+        limitflags = jobinfo["BasicLimitInformation"]["LimitFlags"]
+        return bool(limitflags & JOB_OBJECT_LIMIT_BREAKAWAY_OK) or bool(
+            limitflags & JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK
+        )
     else:
         return True
 
@@ -508,33 +528,35 @@ def CanCreateJobObject():
 
 
 def parent():
-    print('Starting parent')
+    print("Starting parent")
     currentProc = GetCurrentProcess()
     if IsProcessInJob(currentProc):
         print("You should not be in a job object to test", file=sys.stderr)
         sys.exit(1)
     assert CanCreateJobObject()
-    print('File: %s' % __file__)
-    command = [sys.executable, __file__, '-child']
-    print('Running command: %s' % command)
+    print("File: %s" % __file__)
+    command = [sys.executable, __file__, "-child"]
+    print("Running command: %s" % command)
     process = subprocess.Popen(command)
     process.kill()
     code = process.returncode
-    print('Child code: %s' % code)
+    print("Child code: %s" % code)
     assert code == 127
 
 
 def child():
-    print('Starting child')
+    print("Starting child")
     currentProc = GetCurrentProcess()
     injob = IsProcessInJob(currentProc)
     print("Is in a job?: %s" % injob)
     can_create = CanCreateJobObject()
-    print('Can create job?: %s' % can_create)
-    process = subprocess.Popen('c:\\windows\\notepad.exe')
+    print("Can create job?: %s" % can_create)
+    process = subprocess.Popen("c:\\windows\\notepad.exe")
     assert process._job
-    jobinfo = QueryInformationJobObject(process._job, 'JobObjectExtendedLimitInformation')
-    print('Job info: %s' % jobinfo)
-    limitflags = jobinfo['BasicLimitInformation']['LimitFlags']
-    print('LimitFlags: %s' % limitflags)
+    jobinfo = QueryInformationJobObject(
+        process._job, "JobObjectExtendedLimitInformation"
+    )
+    print("Job info: %s" % jobinfo)
+    limitflags = jobinfo["BasicLimitInformation"]["LimitFlags"]
+    print("LimitFlags: %s" % limitflags)
     process.kill()

@@ -5,8 +5,8 @@
 
 
 DIRS += [
-    'dataset',
+    "dataset",
 ]
 
-with Files('**'):
-    BUG_COMPONENT = ('DevTools', 'Inspector: Compatibility')
+with Files("**"):
+    BUG_COMPONENT = ("DevTools", "Inspector: Compatibility")

@@ -13,38 +13,38 @@ from mozbuild.util import DefinesAction
 
 
 def generate_symbols_file(output, *args):
-    ''' '''
+    """ """
     parser = argparse.ArgumentParser()
-    parser.add_argument('input')
-    parser.add_argument('-D', action=DefinesAction)
-    parser.add_argument('-U', action='append', default=[])
+    parser.add_argument("input")
+    parser.add_argument("-D", action=DefinesAction)
+    parser.add_argument("-U", action="append", default=[])
     args = parser.parse_args(args)
     input = os.path.abspath(args.input)
 
     pp = Preprocessor()
-    pp.context.update(buildconfig.defines['ALLDEFINES'])
+    pp.context.update(buildconfig.defines["ALLDEFINES"])
     if args.D:
         pp.context.update(args.D)
     for undefine in args.U:
         if undefine in pp.context:
             del pp.context[undefine]
     
-    if buildconfig.substs.get('MOZ_DEBUG'):
-        pp.context['DEBUG'] = '1'
+    if buildconfig.substs.get("MOZ_DEBUG"):
+        pp.context["DEBUG"] = "1"
     
-    if buildconfig.substs['OS_TARGET'] == 'WINNT':
-        pp.context['DATA'] = 'DATA'
+    if buildconfig.substs["OS_TARGET"] == "WINNT":
+        pp.context["DATA"] = "DATA"
     else:
-        pp.context['DATA'] = ''
+        pp.context["DATA"] = ""
     pp.out = StringIO()
-    pp.do_filter('substitution')
+    pp.do_filter("substitution")
     pp.do_include(input)
 
     symbols = [s.strip() for s in pp.out.getvalue().splitlines() if s.strip()]
 
     libname, ext = os.path.splitext(os.path.basename(output.name))
 
-    if buildconfig.substs['OS_TARGET'] == 'WINNT':
+    if buildconfig.substs["OS_TARGET"] == "WINNT":
         
         
         
@@ -68,10 +68,9 @@ def generate_symbols_file(output, *args):
         
         
         
-        assert ext == '.def'
-        output.write('LIBRARY %s\nEXPORTS\n  %s\n'
-                     % (libname, '\n  '.join(symbols)))
-    elif buildconfig.substs.get('GCC_USE_GNU_LD'):
+        assert ext == ".def"
+        output.write("LIBRARY %s\nEXPORTS\n  %s\n" % (libname, "\n  ".join(symbols)))
+    elif buildconfig.substs.get("GCC_USE_GNU_LD"):
         
         
         
@@ -82,11 +81,12 @@ def generate_symbols_file(output, *args):
         
         
         
-        output.write('%s {\nglobal:\n  %s;\nlocal:\n  *;\n};'
-                     % (libname, ';\n  '.join(symbols)))
-    elif buildconfig.substs['OS_TARGET'] == 'Darwin':
+        output.write(
+            "%s {\nglobal:\n  %s;\nlocal:\n  *;\n};" % (libname, ";\n  ".join(symbols))
+        )
+    elif buildconfig.substs["OS_TARGET"] == "Darwin":
         
         
-        output.write(''.join('_%s\n' % s for s in symbols))
+        output.write("".join("_%s\n" % s for s in symbols))
 
     return set(pp.includes)

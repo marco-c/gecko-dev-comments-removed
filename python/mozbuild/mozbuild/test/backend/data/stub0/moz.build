@@ -2,6 +2,6 @@
 
 
 
-DIRS += ['dir1']
-DIRS += ['dir2']
-TEST_DIRS += ['dir3']
+DIRS += ["dir1"]
+DIRS += ["dir2"]
+TEST_DIRS += ["dir3"]

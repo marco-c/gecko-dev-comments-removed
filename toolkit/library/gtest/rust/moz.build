@@ -4,7 +4,10 @@
 
 
 
-include('../../rust/gkrust-features.mozbuild')
+include("../../rust/gkrust-features.mozbuild")
 
-RustLibrary('gkrust-gtest', gkrust_features,
-            output_category=None if CONFIG['LINK_GTEST_DURING_COMPILE'] else 'gtest')
+RustLibrary(
+    "gkrust-gtest",
+    gkrust_features,
+    output_category=None if CONFIG["LINK_GTEST_DURING_COMPILE"] else "gtest",
+)

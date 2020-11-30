@@ -5,10 +5,9 @@
 
 
 DIRS += [
-    'target-helpers',
+    "target-helpers",
 ]
 
 DevToolsModules(
-    'WatcherRegistry.jsm',
+    "WatcherRegistry.jsm",
 )
-

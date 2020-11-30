@@ -1,2 +1,2 @@
 
-DIRS = ['biz']
+DIRS = ["biz"]

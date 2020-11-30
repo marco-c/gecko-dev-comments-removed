@@ -5,10 +5,10 @@
 
 
 DevToolsModules(
-    'BoxModel.js',
-    'BoxModelEditable.js',
-    'BoxModelInfo.js',
-    'BoxModelMain.js',
-    'BoxModelProperties.js',
-    'ComputedProperty.js',
+    "BoxModel.js",
+    "BoxModelEditable.js",
+    "BoxModelInfo.js",
+    "BoxModelMain.js",
+    "BoxModelProperties.js",
+    "ComputedProperty.js",
 )

@@ -2,4 +2,4 @@
 
 
 
-DIRS += ['xpi-name', 'dist-subdir', 'both', 'final-target']
+DIRS += ["xpi-name", "dist-subdir", "both", "final-target"]

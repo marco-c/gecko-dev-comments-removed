@@ -32,26 +32,23 @@ sys.path.insert(0, parent)
 
 
 
-extensions = ['sphinx.ext.autodoc']
+extensions = ["sphinx.ext.autodoc"]
 
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 
-source_suffix = '.rst'
-
-
-
-
-
-master_doc = 'index'
-
-
-project = u'Marionette Python Client'
-copyright = u'2013, Mozilla Automation and Tools and individual contributors'
+source_suffix = ".rst"
 
 
 
+
+
+master_doc = "index"
+
+
+project = u"Marionette Python Client"
+copyright = u"2013, Mozilla Automation and Tools and individual contributors"
 
 
 
@@ -71,7 +68,10 @@ copyright = u'2013, Mozilla Automation and Tools and individual contributors'
 
 
 
-exclude_patterns = ['_build']
+
+
+
+exclude_patterns = ["_build"]
 
 
 
@@ -88,7 +88,7 @@ exclude_patterns = ['_build']
 
 
 
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 
 
@@ -99,14 +99,15 @@ pygments_style = 'sphinx'
 
 
 
-html_theme = 'default'
+html_theme = "default"
 
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 if not on_rtd:
     try:
         import sphinx_rtd_theme
-        html_theme = 'sphinx_rtd_theme'
+
+        html_theme = "sphinx_rtd_theme"
         html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
     except ImportError:
         pass
@@ -183,7 +184,7 @@ html_show_copyright = False
 
 
 
-htmlhelp_basename = 'MarionettePythonClientdoc'
+htmlhelp_basename = "MarionettePythonClientdoc"
 
 
 
@@ -191,10 +192,8 @@ htmlhelp_basename = 'MarionettePythonClientdoc'
 latex_elements = {
     
     
-
     
     
-
     
     
 }
@@ -202,8 +201,13 @@ latex_elements = {
 
 
 latex_documents = [
-    ('index', 'MarionettePythonClient.tex', u'Marionette Python Client Documentation',
-     u'Mozilla Automation and Tools team', 'manual'),
+    (
+        "index",
+        "MarionettePythonClient.tex",
+        u"Marionette Python Client Documentation",
+        u"Mozilla Automation and Tools team",
+        "manual",
+    ),
 ]
 
 
@@ -232,8 +236,13 @@ latex_documents = [
 
 
 man_pages = [
-    ('index', 'marionettepythonclient', u'Marionette Python Client Documentation',
-     [u'Mozilla Automation and Tools team'], 1)
+    (
+        "index",
+        "marionettepythonclient",
+        u"Marionette Python Client Documentation",
+        [u"Mozilla Automation and Tools team"],
+        1,
+    )
 ]
 
 
@@ -246,9 +255,15 @@ man_pages = [
 
 
 texinfo_documents = [
-    ('index', 'MarionettePythonClient', 'Marionette Python Client Documentation',
-     'Mozilla Automation and Tools team', 'MarionettePythonClient',
-     'One line description of project.', 'Miscellaneous'),
+    (
+        "index",
+        "MarionettePythonClient",
+        "Marionette Python Client Documentation",
+        "Mozilla Automation and Tools team",
+        "MarionettePythonClient",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 

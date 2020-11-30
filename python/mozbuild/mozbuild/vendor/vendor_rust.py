@@ -94,9 +94,11 @@ class VendorRust(MozbuildObject):
         if platform.system() == "Windows":
             if version >= "1.47" and "nightly" in out:
                 
-                date_format = '%Y-%m-%d'
+                date_format = "%Y-%m-%d"
                 req_nightly = datetime.strptime("2020-07-23", date_format)
-                nightly = datetime.strptime(out.rstrip(")").rsplit(" ", 1)[1], date_format)
+                nightly = datetime.strptime(
+                    out.rstrip(")").rsplit(" ", 1)[1], date_format
+                )
                 if nightly < req_nightly:
                     self.log(
                         logging.ERROR,
@@ -238,15 +240,14 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     
     
     RUNTIME_LICENSE_PACKAGE_WHITELIST = {
-        'BSD-2-Clause': [
-            'arrayref',
-            'cloudabi',
-            'Inflector',
-            'mach',
-            'qlog',
+        "BSD-2-Clause": [
+            "arrayref",
+            "cloudabi",
+            "Inflector",
+            "mach",
+            "qlog",
         ],
-        'BSD-3-Clause': [
-        ]
+        "BSD-3-Clause": [],
     }
 
     

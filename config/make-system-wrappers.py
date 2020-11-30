@@ -6,13 +6,13 @@ from __future__ import print_function
 import os
 from mozbuild.util import FileAvoidWrite
 
-header_template = '''#pragma GCC system_header
+header_template = """#pragma GCC system_header
 #pragma GCC visibility push(default)
 {includes}
 #pragma GCC visibility pop
-'''
+"""
 
-include_next_template = '#include_next <{header}>'
+include_next_template = "#include_next <{header}>"
 
 
 
@@ -21,13 +21,13 @@ def gen_wrappers(unused, outdir, *header_list):
     for header in header_list:
         with FileAvoidWrite(os.path.join(outdir, header)) as f:
             includes = include_next_template.format(header=header)
-            if header == 'wayland-util.h':
+            if header == "wayland-util.h":
                 
                 
                 
                 
-                includes = '#include <math.h>\n' + includes
-            elif header == 'wayland-client.h':
+                includes = "#include <math.h>\n" + includes
+            elif header == "wayland-client.h":
                 
                 
                 

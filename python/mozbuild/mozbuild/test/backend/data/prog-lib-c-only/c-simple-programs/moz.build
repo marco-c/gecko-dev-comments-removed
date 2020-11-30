@@ -2,4 +2,4 @@
 
 
 
-SimplePrograms(['c_simple_program'], ext='.c')
+SimplePrograms(["c_simple_program"], ext=".c")

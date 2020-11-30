@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
-    'font-editor.js',
-    'font-options.js',
-    'fonts.js',
+    "font-editor.js",
+    "font-options.js",
+    "fonts.js",
 )

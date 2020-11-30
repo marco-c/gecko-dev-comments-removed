@@ -4,18 +4,18 @@
 
 
 
-DIRS += ['test']
+DIRS += ["test"]
 
-include('/ipc/chromium/chromium-config.mozbuild')
-
-
-SOURCES += ['!IPCMessageTypeName.cpp']
-
-FINAL_LIBRARY = 'xul'
+include("/ipc/chromium/chromium-config.mozbuild")
 
 
+SOURCES += ["!IPCMessageTypeName.cpp"]
 
-CXXFLAGS += CONFIG['TK_CFLAGS']
+FINAL_LIBRARY = "xul"
 
 
-include('/tools/fuzzing/libfuzzer-config.mozbuild')
+
+CXXFLAGS += CONFIG["TK_CFLAGS"]
+
+
+include("/tools/fuzzing/libfuzzer-config.mozbuild")

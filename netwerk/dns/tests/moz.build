@@ -4,6 +4,4 @@
 
 
 
-DIRS += [
-    'unit'
-]
+DIRS += ["unit"]

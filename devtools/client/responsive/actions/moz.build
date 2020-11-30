@@ -5,9 +5,9 @@
 
 
 DevToolsModules(
-    'devices.js',
-    'index.js',
-    'screenshot.js',
-    'ui.js',
-    'viewports.js',
+    "devices.js",
+    "index.js",
+    "screenshot.js",
+    "ui.js",
+    "viewports.js",
 )

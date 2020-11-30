@@ -4,9 +4,9 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Core', 'JavaScript Engine')
+with Files("**"):
+    BUG_COMPONENT = ("Core", "JavaScript Engine")
 
 DIRS += [
-    '../../../modules/fdlibm',
+    "../../../modules/fdlibm",
 ]

@@ -4,12 +4,12 @@
 
 
 
-SOURCES += ['OSPreferences_gtk.cpp']
+SOURCES += ["OSPreferences_gtk.cpp"]
 
-CXXFLAGS += CONFIG['GLIB_CFLAGS']
+CXXFLAGS += CONFIG["GLIB_CFLAGS"]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"
 
 LOCAL_INCLUDES += [
-    '..',
+    "..",
 ]

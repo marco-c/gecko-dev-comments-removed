@@ -4,15 +4,15 @@
 
 
 
-BROWSER_CHROME_MANIFESTS += ['test/browser.ini']
+BROWSER_CHROME_MANIFESTS += ["test/browser.ini"]
 
 DevToolsModules(
-    'original-source.js',
-    'panel.js',
-    'StyleEditorUI.jsm',
-    'StyleEditorUtil.jsm',
-    'StyleSheetEditor.jsm',
+    "original-source.js",
+    "panel.js",
+    "StyleEditorUI.jsm",
+    "StyleEditorUtil.jsm",
+    "StyleSheetEditor.jsm",
 )
 
-with Files('**'):
-    BUG_COMPONENT = ('DevTools', 'Style Editor')
+with Files("**"):
+    BUG_COMPONENT = ("DevTools", "Style Editor")

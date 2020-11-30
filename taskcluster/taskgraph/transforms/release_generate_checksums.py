@@ -1,7 +1,6 @@
 
 
 
-
 """
 Transform the checksums task into an actual task description.
 """
@@ -11,11 +10,10 @@ import copy
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.scriptworker import get_release_config
-from taskgraph.util.schema import (
-    resolve_keyed_by,
-)
+from taskgraph.util.schema import resolve_keyed_by
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 transforms = TransformSequence()
@@ -34,8 +32,8 @@ def handle_keyed_by(config, jobs):
             resolve_keyed_by(
                 item=job,
                 field=field,
-                item_name=job['name'],
-                **{'release-level': config.params.release_level()}
+                item_name=job["name"],
+                **{"release-level": config.params.release_level()}
             )
         yield job
 
@@ -46,8 +44,10 @@ def interpolate(config, jobs):
     for job in jobs:
         mh_options = list(job["run"]["options"])
         job["run"]["options"] = [
-            option.format(version=release_config["version"],
-                          build_number=release_config["build_number"])
+            option.format(
+                version=release_config["version"],
+                build_number=release_config["build_number"],
+            )
             for option in mh_options
         ]
         yield job

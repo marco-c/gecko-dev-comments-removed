@@ -5,12 +5,11 @@
 
 
 TEST_DIRS += [
-    'gtest',
+    "gtest",
 ]
 
 XPCSHELL_TESTS_MANIFESTS += [
-    'unit/xpcshell.ini',
+    "unit/xpcshell.ini",
 ]
 
-BROWSER_CHROME_MANIFESTS += ['browser.ini']
-
+BROWSER_CHROME_MANIFESTS += ["browser.ini"]

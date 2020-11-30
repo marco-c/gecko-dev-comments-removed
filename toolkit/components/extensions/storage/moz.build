@@ -7,27 +7,27 @@
 with Files("**"):
     BUG_COMPONENT = ("WebExtensions", "Storage")
 
-XPIDL_MODULE = 'webextensions-storage'
+XPIDL_MODULE = "webextensions-storage"
 
 XPIDL_SOURCES += [
-    'mozIExtensionStorageArea.idl',
+    "mozIExtensionStorageArea.idl",
 ]
 
 
 
 
 
-if CONFIG['MOZ_WIDGET_TOOLKIT'] != "android":
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
     EXPORTS.mozilla.extensions.storage += [
-        'ExtensionStorageComponents.h',
+        "ExtensionStorageComponents.h",
     ]
 
     EXTRA_JS_MODULES += [
-        'ExtensionStorageComponents.jsm',
+        "ExtensionStorageComponents.jsm",
     ]
 
     XPCOM_MANIFESTS += [
-        'components.conf',
+        "components.conf",
     ]
 
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"

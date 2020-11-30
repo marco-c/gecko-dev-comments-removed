@@ -2,6 +2,6 @@
 
 
 
-SharedLibrary('c_library')
+SharedLibrary("c_library")
 
-SOURCES = ['c-library.c']
+SOURCES = ["c-library.c"]

@@ -4,14 +4,14 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Toolkit', 'Application Update')
+with Files("**"):
+    BUG_COMPONENT = ("Toolkit", "Application Update")
 
 DIRS += [
-    'src',
-    'sign',
-    'tool',
-    'verify',
+    "src",
+    "sign",
+    "tool",
+    "verify",
 ]
 
-TEST_DIRS += ['tests']
+TEST_DIRS += ["tests"]

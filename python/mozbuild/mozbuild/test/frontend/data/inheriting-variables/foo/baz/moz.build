@@ -4,4 +4,4 @@
 
 
 
-XPIDL_MODULE = 'baz'
+XPIDL_MODULE = "baz"

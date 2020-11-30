@@ -4,24 +4,24 @@
 
 
 
-Library('fuzzer-ipc-protocol')
+Library("fuzzer-ipc-protocol")
 
 LOCAL_INCLUDES += [
-    '/dom/base',
-    '/dom/ipc',
+    "/dom/base",
+    "/dom/ipc",
 ]
 
 SOURCES += [
-    'ProtocolFuzzer.cpp',
+    "ProtocolFuzzer.cpp",
 ]
 
 EXPORTS += [
-    'ProtocolFuzzer.h',
+    "ProtocolFuzzer.h",
 ]
 
-include('/ipc/chromium/chromium-config.mozbuild')
+include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
 
 
-include('/tools/fuzzing/libfuzzer-config.mozbuild')
+include("/tools/fuzzing/libfuzzer-config.mozbuild")

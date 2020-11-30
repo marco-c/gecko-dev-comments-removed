@@ -3,6 +3,6 @@
 
 
 LOCALIZED_PP_FILES += [
-    'en-US/bar.ini',
-    'en-US/foo.js',
+    "en-US/bar.ini",
+    "en-US/foo.js",
 ]

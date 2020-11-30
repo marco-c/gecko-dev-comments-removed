@@ -4,14 +4,14 @@
 
 
 
-FINAL_TARGET = '_tests/xpcshell/browser/components/migration/tests/unit'
+FINAL_TARGET = "_tests/xpcshell/browser/components/migration/tests/unit"
 
-Program('InsertIEHistory')
+Program("InsertIEHistory")
 OS_LIBS += [
-    'ole32',
+    "ole32",
 ]
 SOURCES += [
-    'InsertIEHistory.cpp',
+    "InsertIEHistory.cpp",
 ]
 
 NO_PGO = True

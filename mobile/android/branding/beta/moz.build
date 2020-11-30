@@ -4,4 +4,4 @@
 
 
 
-DIRS += ['content', 'locales']
+DIRS += ["content", "locales"]

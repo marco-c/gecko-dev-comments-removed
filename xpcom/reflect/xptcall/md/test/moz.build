@@ -4,6 +4,8 @@
 
 
 
-SimplePrograms([
-    'stub_test',
-])
+SimplePrograms(
+    [
+        "stub_test",
+    ]
+)

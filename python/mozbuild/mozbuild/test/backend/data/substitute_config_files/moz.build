@@ -2,4 +2,4 @@
 
 
 
-CONFIGURE_SUBST_FILES = ['foo']
+CONFIGURE_SUBST_FILES = ["foo"]

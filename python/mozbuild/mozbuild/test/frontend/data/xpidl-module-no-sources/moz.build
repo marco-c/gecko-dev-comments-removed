@@ -2,4 +2,4 @@
 
 
 
-XPIDL_MODULE = 'xpidl_module'
+XPIDL_MODULE = "xpidl_module"
