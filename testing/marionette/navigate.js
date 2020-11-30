@@ -175,20 +175,19 @@ navigate.refresh = async function(browsingContext) {
 
 
 
-
 navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
   driver,
   callback,
   options = {}
 ) {
   const {
-    browsingContext = driver.getBrowsingContext({ top: true }),
+    browsingContext = driver.getBrowsingContext(),
     loadEventExpected = true,
     requireBeforeUnload = true,
   } = options;
 
-  const pageLoadStrategy = driver.capabilities.get("pageLoadStrategy");
   const chromeWindow = browsingContext.topChromeWindow;
+  const pageLoadStrategy = driver.capabilities.get("pageLoadStrategy");
 
   
   if (!loadEventExpected || pageLoadStrategy === PageLoadStrategy.None) {
