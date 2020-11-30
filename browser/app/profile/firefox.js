@@ -254,7 +254,11 @@ pref("browser.defaultbrowser.notificationbar.checklimit", 10000);
 
 pref("browser.startup.page",                1);
 pref("browser.startup.homepage",            "about:home");
+#ifdef NIGHTLY_BUILD
+pref("browser.startup.homepage.abouthome_cache.enabled", true);
+#else
 pref("browser.startup.homepage.abouthome_cache.enabled", false);
+#endif
 pref("browser.startup.homepage.abouthome_cache.loglevel", "Warn");
 
 
