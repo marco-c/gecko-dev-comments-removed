@@ -5117,6 +5117,9 @@ class Document : public nsINode,
   
   void AccumulateJSTelemetry();
 
+  
+  void AccumulatePageLoadTelemetry();
+
  public:
   
   JS::ExpandoAndGeneration mExpandoAndGeneration;

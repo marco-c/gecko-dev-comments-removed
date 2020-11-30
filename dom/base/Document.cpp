@@ -1881,6 +1881,9 @@ void Document::LoadEventFired() {
   AccumulateJSTelemetry();
 
   
+  AccumulatePageLoadTelemetry();
+
+  
   
   if (ScriptLoader()) {
     ScriptLoader()->LoadEventFired();
@@ -1893,14 +1896,67 @@ static uint32_t CalcPercentage(TimeDuration aSubTimer,
                                aTotalTimer.ToMilliseconds());
 }
 
-void Document::AccumulateJSTelemetry() {
-  if (!IsTopLevelContentDocument()) {
+void Document::AccumulatePageLoadTelemetry() {
+  
+  
+  if (!ShouldIncludeInTelemetry(false) || !IsTopLevelContentDocument() ||
+      !GetNavigationTiming() ||
+      !GetNavigationTiming()->DocShellHasBeenActiveSinceNavigationStart()) {
+    return;
+  }
+
+  if (!GetChannel()) {
+    return;
+  }
+
+  nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(GetChannel()));
+  if (!timedChannel) {
+    return;
+  }
+
+  TimeStamp responseStart;
+  timedChannel->GetResponseStart(&responseStart);
+
+  TimeStamp navigationStart =
+      GetNavigationTiming()->GetNavigationStartTimeStamp();
+
+  if (!responseStart || !navigationStart) {
     return;
   }
 
   
-  if (!(GetDocumentURI()->SchemeIs("http") ||
-        GetDocumentURI()->SchemeIs("https"))) {
+  if (TimeStamp firstContentfulPaint =
+          GetNavigationTiming()->GetFirstContentfulPaintTimeStamp()) {
+    Telemetry::AccumulateTimeDelta(Telemetry::PERF_FIRST_CONTENTFUL_PAINT_MS,
+                                   navigationStart, firstContentfulPaint);
+    Telemetry::AccumulateTimeDelta(
+        Telemetry::PERF_FIRST_CONTENTFUL_PAINT_FROM_RESPONSESTART_MS,
+        responseStart, firstContentfulPaint);
+  }
+
+  
+  if (TimeStamp dclEventStart =
+          GetNavigationTiming()->GetDOMContentLoadedEventStartTimeStamp()) {
+    Telemetry::AccumulateTimeDelta(Telemetry::PERF_DOM_CONTENT_LOADED_TIME_MS,
+                                   navigationStart, dclEventStart);
+    Telemetry::AccumulateTimeDelta(
+        Telemetry::PERF_DOM_CONTENT_LOADED_TIME_FROM_RESPONSESTART_MS,
+        responseStart, dclEventStart);
+  }
+
+  
+  if (TimeStamp loadEventStart =
+          GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
+    Telemetry::AccumulateTimeDelta(Telemetry::PERF_PAGE_LOAD_TIME_MS,
+                                   navigationStart, loadEventStart);
+    Telemetry::AccumulateTimeDelta(
+        Telemetry::PERF_PAGE_LOAD_TIME_FROM_RESPONSESTART_MS, responseStart,
+        loadEventStart);
+  }
+}
+
+void Document::AccumulateJSTelemetry() {
+  if (!IsTopLevelContentDocument() || !ShouldIncludeInTelemetry(false)) {
     return;
   }
 
@@ -1940,15 +1996,17 @@ void Document::AccumulateJSTelemetry() {
         CalcPercentage(totalBaselineCompileTime, totalExecutionTime));
   }
 
-  TimeStamp loadEventStart =
-      GetNavigationTiming()->GetLoadEventStartTimeStamp();
-  TimeStamp navigationStart =
-      GetNavigationTiming()->GetNavigationStartTimeStamp();
+  if (GetNavigationTiming()) {
+    TimeStamp loadEventStart =
+        GetNavigationTiming()->GetLoadEventStartTimeStamp();
+    TimeStamp navigationStart =
+        GetNavigationTiming()->GetNavigationStartTimeStamp();
 
-  if (loadEventStart && navigationStart) {
-    TimeDuration pageLoadTime = loadEventStart - navigationStart;
-    Telemetry::Accumulate(Telemetry::JS_EXECUTION_PROPORTION,
-                          CalcPercentage(totalExecutionTime, pageLoadTime));
+    if (loadEventStart && navigationStart) {
+      TimeDuration pageLoadTime = loadEventStart - navigationStart;
+      Telemetry::Accumulate(Telemetry::JS_EXECUTION_PROPORTION,
+                            CalcPercentage(totalExecutionTime, pageLoadTime));
+    }
   }
 }
 
