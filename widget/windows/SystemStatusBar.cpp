@@ -208,10 +208,6 @@ LRESULT StatusBarEntry::OnMessage(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
       return TRUE;
     }
 
-    double scale = GetDesktopToDeviceScale().scale;
-    int32_t x = NSToIntRound(GET_X_LPARAM(wp) * scale);
-    int32_t y = NSToIntRound(GET_Y_LPARAM(wp) * scale);
-
     
     
     
@@ -221,7 +217,8 @@ LRESULT StatusBarEntry::OnMessage(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     
     ::SetForegroundWindow(win);
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    pm->ShowPopupAtScreen(popupFrame->GetContent(), x, y, false, nullptr);
+    pm->ShowPopupAtScreen(popupFrame->GetContent(), GET_X_LPARAM(wp),
+                          GET_Y_LPARAM(wp), false, nullptr);
   }
 
   return DefWindowProc(hWnd, msg, wp, lp);
