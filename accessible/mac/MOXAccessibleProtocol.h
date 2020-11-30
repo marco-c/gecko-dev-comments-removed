@@ -345,6 +345,9 @@
 
 - (id _Nullable)moxCellForColumnAndRow:(NSArray* _Nonnull)columnAndRow;
 
+
+- (NSNumber* _Nullable)moxIndexForChildUIElement:(id _Nonnull)child;
+
 @end
 
 

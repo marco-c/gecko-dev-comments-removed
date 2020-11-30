@@ -115,6 +115,12 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 - (id<mozAccessible>)moxParent;
 
 
+- (NSNumber*)moxIndexForChildUIElement:(id)child;
+
+
+- (id)moxTopLevelUIElement;
+
+
 - (id<MOXTextMarkerSupport>)moxTextMarkerDelegate;
 
 #pragma mark -
