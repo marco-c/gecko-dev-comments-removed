@@ -76,7 +76,7 @@ already_AddRefed<DrawTarget> PrintTargetRecording::MakeDrawTarget(
 
   RefPtr<DrawTarget> dt = PrintTarget::MakeDrawTarget(aSize, nullptr);
   if (dt) {
-    dt = CreateWrapAndRecordDrawTarget(aRecorder, dt);
+    dt = CreateRecordingDrawTarget(aRecorder, dt);
     if (!dt || !dt->IsValid()) {
       return nullptr;
     }
@@ -86,7 +86,7 @@ already_AddRefed<DrawTarget> PrintTargetRecording::MakeDrawTarget(
 }
 
 already_AddRefed<DrawTarget>
-PrintTargetRecording::CreateWrapAndRecordDrawTarget(
+PrintTargetRecording::CreateRecordingDrawTarget(
     DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget) {
   MOZ_ASSERT(aRecorder);
   MOZ_ASSERT(aDrawTarget);
