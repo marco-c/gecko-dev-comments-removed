@@ -1440,6 +1440,11 @@ SimpleTest.timeout = async function() {
   SimpleTest._timeoutFunctions = [];
 };
 
+SimpleTest.finishWithFailure = function(msg) {
+  SimpleTest.ok(false, msg);
+  SimpleTest.finish();
+};
+
 
 
 
