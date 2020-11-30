@@ -96,7 +96,7 @@ namespace jit {
   _(js_free)                                                \
   _(js::hypot3)                                             \
   _(js::hypot4)                                             \
-  _(js::Int32ToStringHelperPure)                            \
+  _(js::Int32ToStringPure)                                  \
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)         \
   _(js::irregexp::CaseInsensitiveCompareUnicode)            \
   _(js::irregexp::GrowBacktrackStack)                       \
@@ -159,7 +159,7 @@ namespace jit {
   _(js::NativeObject::addDenseElementPure)                  \
   _(js::NativeObject::growSlotsPure)                        \
   _(js::NumberMod)                                          \
-  _(js::NumberToStringHelperPure)                           \
+  _(js::NumberToStringPure)                                 \
   _(js::powi)                                               \
   _(js::ProxyGetProperty)                                   \
   _(js::RegExpInstanceOptimizableRaw)                       \
