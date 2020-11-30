@@ -188,7 +188,6 @@ void MacroAssemblerX86Shared::blendInt16x8(FloatRegister lhs, FloatRegister rhs,
 void MacroAssemblerX86Shared::shuffleInt8x16(FloatRegister lhs,
                                              FloatRegister rhs,
                                              FloatRegister output,
-                                             FloatRegister temp,
                                              const uint8_t lanes[16]) {
   ScratchSimd128Scope scratch(asMasm());
 
@@ -196,26 +195,21 @@ void MacroAssemblerX86Shared::shuffleInt8x16(FloatRegister lhs,
   
 
   
-  int8_t idx[16];
-  for (unsigned i = 0; i < 16; i++) {
-    idx[i] = lanes[i] < 16 ? lanes[i] : -1;
-  }
-  asMasm().loadConstantSimd128Int(SimdConstant::CreateX16(idx), temp);
-  FloatRegister lhsCopy = reusedInputInt32x4(lhs, scratch);
-  vpshufb(temp, lhsCopy, scratch);
 
   
-  
-  
-  
-  
-  
+  int8_t idx[16];
   for (unsigned i = 0; i < 16; i++) {
     idx[i] = lanes[i] >= 16 ? lanes[i] - 16 : -1;
   }
-  asMasm().loadConstantSimd128Int(SimdConstant::CreateX16(idx), temp);
-  FloatRegister rhsCopy = reusedInputInt32x4(rhs, output);
-  vpshufb(temp, rhsCopy, output);
+  moveSimd128Int(rhs, scratch);
+  asMasm().vpshufbSimd128(SimdConstant::CreateX16(idx), scratch);
+
+  
+  for (unsigned i = 0; i < 16; i++) {
+    idx[i] = lanes[i] < 16 ? lanes[i] : -1;
+  }
+  moveSimd128Int(lhs, output);
+  asMasm().vpshufbSimd128(SimdConstant::CreateX16(idx), output);
 
   
   vpor(scratch, output, output);
