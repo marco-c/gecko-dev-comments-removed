@@ -797,13 +797,18 @@ element.getElementId = function(el) {
 
 
 
-element.resolveElement = function(id) {
+
+
+
+
+
+element.resolveElement = function(id, win = undefined) {
   let webEl;
   if (id.webElRef) {
     webEl = WebElement.fromJSON(id.webElRef);
   }
   const el = ContentDOMReference.resolve(id);
-  if (element.isStale(el, this.content)) {
+  if (element.isStale(el, win)) {
     throw new error.StaleElementReferenceError(
       pprint`The element reference of ${el || webEl?.uuid} is stale; ` +
         "either the element is no longer attached to the DOM, " +
