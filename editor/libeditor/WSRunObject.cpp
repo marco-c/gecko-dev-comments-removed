@@ -1681,11 +1681,10 @@ WSRunScanner::TextFragmentData::GetNonCollapsedRangeInTexts(
   if (!aRange.IsPositioned()) {
     return EditorDOMRangeInTexts();
   }
-  if (aRange.Collapsed()) {
-    
-    return EditorDOMRangeInTexts();
-  }
   if (aRange.IsInTextNodes()) {
+    if (aRange.Collapsed()) {
+      return EditorDOMRangeInTexts();
+    }
     
     
     return aRange.GetAsInTexts();

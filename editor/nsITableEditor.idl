@@ -434,6 +434,23 @@ interface nsITableEditor : nsISupports
 
 
 
+  Element getFirstSelectedCell(out Range aFirstRangeOfSelection);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -450,5 +467,17 @@ interface nsITableEditor : nsISupports
 
 
 
-  Array<Element> getSelectedCells();
+
+
+
+
+
+
+
+
+
+
+
+
+  Element getNextSelectedCell(out Range aNextSelectedCellRange);
 };
