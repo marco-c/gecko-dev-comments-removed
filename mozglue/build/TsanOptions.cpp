@@ -225,9 +225,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:gMozillaPoisonValue\n"
 
          
-         "race:nsThread::SizeOfEventQueues\n"
-
-         
          "race:setFlagBit\n"
          "race:isFatInline\n"
          "race:AtomizeAndCopyCharsFromLookup\n"
