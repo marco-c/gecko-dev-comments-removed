@@ -1613,6 +1613,15 @@ GeckoDriver.prototype.switchToWindow = async function(cmd) {
     try {
       await this.setWindowHandle(found, focus);
       selected = true;
+
+      
+      
+      
+      if (this.context == Context.Content) {
+        await this.listener.setBrowsingContextId(
+          this.contentBrowsingContext.id
+        );
+      }
     } catch (e) {
       logger.error(e);
     }
