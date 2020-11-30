@@ -2,18 +2,34 @@
 
 
 
+use std::sync::Arc;
+
 use super::CommonMetricData;
 
+use crate::dispatcher;
+use crate::ipc::{need_ipc, with_ipc_payload, MetricId};
 
 
 
+
+#[derive(Debug)]
+pub enum StringListMetric {
+    Parent(Arc<StringListMetricImpl>),
+    Child(StringListMetricIpc),
+}
 #[derive(Clone, Debug)]
-pub struct StringListMetric(glean_core::metrics::StringListMetric);
+pub struct StringListMetricImpl(glean_core::metrics::StringListMetric);
+#[derive(Debug)]
+pub struct StringListMetricIpc(MetricId);
 
 impl StringListMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self(glean_core::metrics::StringListMetric::new(meta))
+        if need_ipc() {
+            StringListMetric::Child(StringListMetricIpc(MetricId::new(meta)))
+        } else {
+            StringListMetric::Parent(Arc::new(StringListMetricImpl::new(meta)))
+        }
     }
 
     
@@ -27,7 +43,24 @@ impl StringListMetric {
     
     
     pub fn add<S: Into<String>>(&self, value: S) {
-        crate::with_glean(move |glean| self.0.add(glean, value))
+        match self {
+            StringListMetric::Parent(p) => {
+                let metric = Arc::clone(&p);
+                let value = value.into();
+                dispatcher::launch(move || metric.add(value));
+            }
+            StringListMetric::Child(c) => {
+                with_ipc_payload(move |payload| {
+                    if let Some(v) = payload.string_lists.get_mut(&c.0) {
+                        v.push(value.into());
+                    } else {
+                        let mut v = vec![];
+                        v.push(value.into());
+                        payload.string_lists.insert(c.0.clone(), v);
+                    }
+                });
+            }
+        }
     }
 
     
@@ -42,7 +75,19 @@ impl StringListMetric {
     
     
     pub fn set(&self, value: Vec<String>) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
+        match self {
+            StringListMetric::Parent(p) => {
+                let metric = Arc::clone(&p);
+                dispatcher::launch(move || metric.set(value));
+            }
+            StringListMetric::Child(_c) => {
+                log::error!(
+                    "Unable to set string list metric {:?} in non-main process. Ignoring.",
+                    self
+                );
+                
+            }
+        }
     }
 
     
@@ -57,6 +102,33 @@ impl StringListMetric {
     
     
     
+    pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<String>> {
+        match self {
+            StringListMetric::Parent(p) => {
+                dispatcher::block_on_queue();
+                p.test_get_value(storage_name)
+            }
+            StringListMetric::Child(_c) => panic!(
+                "Cannot get test value for {:?} in non-parent process!",
+                self
+            ),
+        }
+    }
+}
+
+impl StringListMetricImpl {
+    pub fn new(meta: CommonMetricData) -> Self {
+        Self(glean_core::metrics::StringListMetric::new(meta))
+    }
+
+    pub fn add<S: Into<String>>(&self, value: S) {
+        crate::with_glean(move |glean| self.0.add(glean, value))
+    }
+
+    pub fn set(&self, value: Vec<String>) {
+        crate::with_glean(move |glean| self.0.set(glean, value))
+    }
+
     pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<String>> {
         crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
     }
