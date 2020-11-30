@@ -719,7 +719,7 @@ bool BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat) {
   nsFlowAreaRect floatAvailableSpace =
       GetFloatAvailableSpaceForPlacingFloat(mBCoord);
   LogicalRect adjustedAvailableSpace = mBlock->AdjustFloatAvailableSpace(
-      *this, floatAvailableSpace.mRect, aFloat);
+      *this, floatAvailableSpace.mRect);
 
   NS_ASSERTION(aFloat->GetParent() == mBlock, "Float frame has wrong parent");
 
@@ -759,9 +759,6 @@ bool BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat) {
              "Invalid float type!");
 
   
-  bool keepFloatOnSameLine = false;
-
-  
   
   
   bool mustPlaceFloat = mReflowInput.mFlags.mIsTopOfPage && IsAdjacentWithTop();
@@ -780,63 +777,11 @@ bool BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat) {
     }
 
     
-    if (StyleDisplay::Table != floatDisplay->mDisplay ||
-        eCompatibility_NavQuirks != mPresContext->CompatibilityMode()) {
-      mBCoord += floatAvailableSpace.mRect.BSize(wm);
-      if (adjustedAvailableSpace.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
-        adjustedAvailableSpace.BSize(wm) -= floatAvailableSpace.mRect.BSize(wm);
-      }
-      floatAvailableSpace = GetFloatAvailableSpaceForPlacingFloat(mBCoord);
-    } else {
-      
-      
-
-      
-      nsFloatCache* fc = mCurrentLineFloats.Head();
-      nsIFrame* prevFrame = nullptr;
-      while (fc) {
-        if (fc->mFloat == aFloat) {
-          break;
-        }
-        prevFrame = fc->mFloat;
-        fc = fc->Next();
-      }
-
-      if (prevFrame) {
-        
-        if (prevFrame->IsTableWrapperFrame()) {
-          
-          
-          
-          
-          
-          
-          
-          nsIContent* content = prevFrame->GetContent();
-          if (content && content->IsElement() &&
-              content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                nsGkAtoms::align, u"left"_ns,
-                                                eIgnoreCase)) {
-            keepFloatOnSameLine = true;
-            
-            
-            
-            break;
-          }
-        }
-      }
-
-      
-      mBCoord += floatAvailableSpace.mRect.BSize(wm);
-      
-      
-      floatAvailableSpace = GetFloatAvailableSpaceForPlacingFloat(mBCoord);
-      adjustedAvailableSpace = mBlock->AdjustFloatAvailableSpace(
-          *this, floatAvailableSpace.mRect, aFloat);
-      floatMarginISize = FloatMarginISize(
-          mReflowInput, adjustedAvailableSpace.ISize(wm), aFloat, offsets);
+    mBCoord += floatAvailableSpace.mRect.BSize(wm);
+    if (adjustedAvailableSpace.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
+      adjustedAvailableSpace.BSize(wm) -= floatAvailableSpace.mRect.BSize(wm);
     }
-
+    floatAvailableSpace = GetFloatAvailableSpaceForPlacingFloat(mBCoord);
     mustPlaceFloat = false;
   }
 
@@ -855,14 +800,7 @@ bool BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat) {
   if (leftFloat == wm.IsBidiLTR()) {
     floatPos.I(wm) = floatAvailableSpace.mRect.IStart(wm);
   } else {
-    if (!keepFloatOnSameLine) {
-      floatPos.I(wm) = floatAvailableSpace.mRect.IEnd(wm) - floatMarginISize;
-    } else {
-      
-      
-      
-      floatPos.I(wm) = floatAvailableSpace.mRect.IStart(wm);
-    }
+    floatPos.I(wm) = floatAvailableSpace.mRect.IEnd(wm) - floatMarginISize;
   }
   
   

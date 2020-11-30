@@ -755,7 +755,7 @@ class nsBlockFrame : public nsContainerFrame {
   
   mozilla::LogicalRect AdjustFloatAvailableSpace(
       BlockReflowInput& aState,
-      const mozilla::LogicalRect& aFloatAvailableSpace, nsIFrame* aFloatFrame);
+      const mozilla::LogicalRect& aFloatAvailableSpace);
   
   nscoord ComputeFloatISize(BlockReflowInput& aState,
                             const mozilla::LogicalRect& aFloatAvailableSpace,
