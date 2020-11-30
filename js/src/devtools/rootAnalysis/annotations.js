@@ -57,12 +57,6 @@ function indirectCallCannotGC(fullCaller, fullVariable)
         return true;
 
     
-    if (name == "op" && caller.includes("bool js::WeakMap<Key, Value, HashPolicy>::keyNeedsMark(JSObject*)"))
-    {
-        return true;
-    }
-
-    
     
     if (name == "callback" && caller.includes("js::ErrorToException"))
         return true;
