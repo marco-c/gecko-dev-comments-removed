@@ -222,6 +222,11 @@ check_and_add_gcc_warning('-Werror=implicit-function-declaration')
 check_and_add_gcc_warning('-Wno-psabi')
 
 
+check_and_add_gcc_warning(
+    '-Wno-missing-braces',
+    when=depends(c_compiler)(lambda c: c.type == 'clang' and c.version < '6.0'))
+
+
 
 add_old_configure_assignment('_WARNINGS_CFLAGS', warnings_flags.cflags)
 add_old_configure_assignment('_WARNINGS_CXXFLAGS', warnings_flags.cxxflags)
