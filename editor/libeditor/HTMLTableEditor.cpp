@@ -2649,6 +2649,10 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     return NS_OK;
   }
 
+  if (NS_WARN_IF(!SelectionRefPtr()->RangeCount())) {
+    return NS_ERROR_FAILURE;  
+  }
+
   AutoPlaceholderBatch treateAsOneTransaction(*this,
                                               ScrollSelectionIntoView::Yes);
   
@@ -2658,40 +2662,34 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
   
   
 
-  ErrorResult error;
-  CellAndIndexes firstSelectedCell(*this, MOZ_KnownLive(*SelectionRefPtr()),
-                                   error);
-  if (error.Failed()) {
-    NS_WARNING("CellAndIndexes failed");
-    return EditorBase::ToGenericNSResult(error.StealNSResult());
-  }
+  SelectedTableCellScanner scanner(*SelectionRefPtr());
 
-  bool joinSelectedCells = false;
-  if (firstSelectedCell.mElement) {
-    RefPtr<Element> secondCell = GetNextSelectedTableCellElement(error);
-    if (error.Failed()) {
-      NS_WARNING("HTMLEditor::GetNextSelectedTableCellElement() failed");
-      return EditorBase::ToGenericNSResult(error.StealNSResult());
-    }
-
-    
-    joinSelectedCells = (secondCell != nullptr);
-  }
-
-  if (joinSelectedCells) {
+  
+  if (scanner.ElementsRef().Length() > 1) {
     
     
+    ErrorResult error;
     TableSize tableSize(*this, *table, error);
     if (error.Failed()) {
       NS_WARNING("TableSize failed");
       return EditorBase::ToGenericNSResult(error.StealNSResult());
     }
 
+    RefPtr<PresShell> presShell = GetPresShell();
+    
+    
+    CellIndexes firstSelectedCellIndexes(
+        MOZ_KnownLive(scanner.ElementsRef()[0]), presShell, error);
+    if (error.Failed()) {
+      NS_WARNING("CellIndexes failed");
+      return EditorBase::ToGenericNSResult(error.StealNSResult());
+    }
+
     
     int32_t firstRowSpan, firstColSpan;
-    nsresult rv = GetCellSpansAt(table, firstSelectedCell.mIndexes.mRow,
-                                 firstSelectedCell.mIndexes.mColumn,
-                                 firstRowSpan, firstColSpan);
+    nsresult rv = GetCellSpansAt(table, firstSelectedCellIndexes.mRow,
+                                 firstSelectedCellIndexes.mColumn, firstRowSpan,
+                                 firstColSpan);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::GetCellSpansAt() failed");
       return EditorBase::ToGenericNSResult(rv);
@@ -2702,13 +2700,13 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     
     
     
-    int32_t lastRowIndex = firstSelectedCell.mIndexes.mRow;
-    int32_t lastColIndex = firstSelectedCell.mIndexes.mColumn;
+    int32_t lastRowIndex = firstSelectedCellIndexes.mRow;
+    int32_t lastColIndex = firstSelectedCellIndexes.mColumn;
 
     
     
     IgnoredErrorResult ignoredError;
-    for (int32_t rowIndex = firstSelectedCell.mIndexes.mRow;
+    for (int32_t rowIndex = firstSelectedCellIndexes.mRow;
          rowIndex <= lastRowIndex; rowIndex++) {
       int32_t currentRowCount = tableSize.mRowCount;
       
@@ -2723,8 +2721,8 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
       bool cellFoundInRow = false;
       bool lastRowIsSet = false;
       int32_t lastColInRow = 0;
-      int32_t firstColInRow = firstSelectedCell.mIndexes.mColumn;
-      int32_t colIndex = firstSelectedCell.mIndexes.mColumn;
+      int32_t firstColInRow = firstSelectedCellIndexes.mColumn;
+      int32_t colIndex = firstSelectedCellIndexes.mColumn;
       for (CellData cellData; colIndex < tableSize.mColumnCount;
            colIndex = cellData.NextColumnIndex()) {
         cellData.Update(*this, *table, rowIndex, colIndex, ignoredError);
@@ -2739,8 +2737,8 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
             
             firstColInRow = cellData.mCurrent.mColumn;
           }
-          if (cellData.mCurrent.mRow > firstSelectedCell.mIndexes.mRow &&
-              firstColInRow != firstSelectedCell.mIndexes.mColumn) {
+          if (cellData.mCurrent.mRow > firstSelectedCellIndexes.mRow &&
+              firstColInRow != firstSelectedCellIndexes.mColumn) {
             
             
             
@@ -2756,7 +2754,7 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
           cellFoundInRow = true;
         } else if (cellFoundInRow) {
           
-          if (cellData.mCurrent.mRow > firstSelectedCell.mIndexes.mRow + 1 &&
+          if (cellData.mCurrent.mRow > firstSelectedCellIndexes.mRow + 1 &&
               cellData.mCurrent.mColumn <= lastColIndex) {
             
             
@@ -2772,7 +2770,7 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
 
       
       if (cellFoundInRow) {
-        if (rowIndex == firstSelectedCell.mIndexes.mRow) {
+        if (rowIndex == firstSelectedCellIndexes.mRow) {
           
           lastColIndex = lastColInRow;
         }
@@ -2820,10 +2818,10 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
 
         
         if (cellData.mIsSelected &&
-            cellData.mElement != firstSelectedCell.mElement) {
-          if (cellData.mCurrent.mRow >= firstSelectedCell.mIndexes.mRow &&
+            cellData.mElement != scanner.ElementsRef()[0]) {
+          if (cellData.mCurrent.mRow >= firstSelectedCellIndexes.mRow &&
               cellData.mCurrent.mRow <= lastRowIndex &&
-              cellData.mCurrent.mColumn >= firstSelectedCell.mIndexes.mColumn &&
+              cellData.mCurrent.mColumn >= firstSelectedCellIndexes.mColumn &&
               cellData.mCurrent.mColumn <= lastColIndex) {
             
             
@@ -2850,8 +2848,8 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
               }
             }
 
-            nsresult rv = MergeCells(firstSelectedCell.mElement,
-                                     cellData.mElement, false);
+            nsresult rv =
+                MergeCells(scanner.ElementsRef()[0], cellData.mElement, false);
             if (NS_FAILED(rv)) {
               NS_WARNING("HTMLEditor::MergeCells() failed");
               return EditorBase::ToGenericNSResult(rv);
@@ -2861,8 +2859,8 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
             deleteList.AppendElement(cellData.mElement.get());
           } else if (aMergeNonContiguousContents) {
             
-            nsresult rv = MergeCells(firstSelectedCell.mElement,
-                                     cellData.mElement, false);
+            nsresult rv =
+                MergeCells(scanner.ElementsRef()[0], cellData.mElement, false);
             if (NS_FAILED(rv)) {
               NS_WARNING("HTMLEditor::MergeCells() failed");
               return rv;
@@ -2920,14 +2918,14 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     }
 
     
-    rv = SetRowSpan(MOZ_KnownLive(firstSelectedCell.mElement),
-                    lastRowIndex - firstSelectedCell.mIndexes.mRow + 1);
+    rv = SetRowSpan(MOZ_KnownLive(scanner.ElementsRef()[0]),
+                    lastRowIndex - firstSelectedCellIndexes.mRow + 1);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::SetRowSpan() failed");
       return EditorBase::ToGenericNSResult(rv);
     }
-    rv = SetColSpan(MOZ_KnownLive(firstSelectedCell.mElement),
-                    lastColIndex - firstSelectedCell.mIndexes.mColumn + 1);
+    rv = SetColSpan(MOZ_KnownLive(scanner.ElementsRef()[0]),
+                    lastColIndex - firstSelectedCellIndexes.mColumn + 1);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::SetColSpan() failed");
       return EditorBase::ToGenericNSResult(rv);
