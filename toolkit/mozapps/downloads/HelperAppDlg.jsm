@@ -476,7 +476,11 @@ nsUnknownContentTypeDialog.prototype = {
       
       
       let leaf = validatedFile.leafName;
-      if (ext && !leaf.endsWith(ext) && validatedFile.isExecutable()) {
+      if (
+        ext &&
+        !leaf.toLowerCase().endsWith(ext.toLowerCase()) &&
+        validatedFile.isExecutable()
+      ) {
         validatedFile.remove(false);
         aLocalFolder.leafName = leaf + ext;
         if (!aAllowExisting) {
