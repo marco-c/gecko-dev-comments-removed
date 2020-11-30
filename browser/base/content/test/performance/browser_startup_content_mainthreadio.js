@@ -316,16 +316,16 @@ add_task(async function() {
         continue;
       }
 
-      
-      
-      
-      let filename = marker.filename.toLowerCase();
-
-      if (!filename) {
+      if (!marker.filename) {
         
         
         continue;
       }
+
+      
+      
+      
+      let filename = marker.filename.toLowerCase();
 
       if (!WIN && filename == "/dev/urandom") {
         continue;
