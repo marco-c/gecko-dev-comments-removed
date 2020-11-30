@@ -38,8 +38,13 @@ TextureHost* GPUVideoTextureHost::EnsureWrappedTextureHost() {
 
   const auto& sd =
       static_cast<const SurfaceDescriptorRemoteDecoder&>(mDescriptor);
-  mWrappedTextureHost =
-      VideoBridgeParent::GetSingleton(sd.source())->LookupTexture(sd.handle());
+  VideoBridgeParent* parent = VideoBridgeParent::GetSingleton(sd.source());
+  if (!parent) {
+    
+    
+    return nullptr;
+  }
+  mWrappedTextureHost = parent->LookupTexture(sd.handle());
 
   if (!mWrappedTextureHost) {
     
