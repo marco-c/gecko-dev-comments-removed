@@ -14,7 +14,7 @@
 
 
 
-const EXPORTED_SYMBOLS = ["init"];
+const EXPORTED_SYMBOLS = ["initContentProcessTarget"];
 
 let gLoader;
 
@@ -63,7 +63,7 @@ function setupServer(mm) {
   return gLoader;
 }
 
-function init(msg) {
+function initContentProcessTarget(msg) {
   const mm = msg.target;
   const prefix = msg.data.prefix;
   const watcherActorID = msg.data.watcherActorID;
