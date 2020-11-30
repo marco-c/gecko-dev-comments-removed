@@ -748,6 +748,8 @@ bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
 
 uvec2 ClientWebGLContext::DrawingBufferSize() {
   if (IsContextLost()) return {};
+  const auto notLost =
+      mNotLost;  
   auto& state = State();
   auto& size = state.mDrawingBufferSize;
 
