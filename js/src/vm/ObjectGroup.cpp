@@ -70,12 +70,6 @@ void ObjectGroup::setProto(TaggedProto proto) {
 }
 
 
-bool ObjectGroup::useSingletonForClone(JSFunction* fun) {
-  MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
-  return false;
-}
-
-
 
 
 

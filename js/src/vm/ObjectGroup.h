@@ -181,18 +181,11 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   static const JS::TraceKind TraceKind = JS::TraceKind::ObjectGroup;
 
- public:
-  const ObjectGroupFlags* addressOfFlags() const { return &flags_; }
-
   static void staticAsserts() {
     static_assert(offsetof(ObjectGroup, proto_) ==
                   offsetof(JS::shadow::ObjectGroup, proto));
   }
 
-  
-  static bool useSingletonForClone(JSFunction* fun);
-
- public:
   
 
   static ObjectGroup* defaultNewGroup(JSContext* cx, const JSClass* clasp,

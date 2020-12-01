@@ -2653,10 +2653,7 @@ void LIRGenerator::visitDynamicImport(MDynamicImport* ins) {
 }
 
 void LIRGenerator::visitLambda(MLambda* ins) {
-  if (ins->info().singletonType || ins->info().useSingletonForClone) {
-    
-    
-    
+  if (ins->info().singletonType) {
     
     
     LLambdaForSingleton* lir = new (alloc())

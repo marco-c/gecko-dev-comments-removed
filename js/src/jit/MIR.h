@@ -7159,25 +7159,21 @@ struct LambdaFunctionInfo {
   js::FunctionFlags flags;
   uint16_t nargs;
   bool singletonType;
-  bool useSingletonForClone;
 
   LambdaFunctionInfo(JSFunction* fun, BaseScript* baseScript,
-                     FunctionFlags flags, uint16_t nargs, bool singletonType,
-                     bool useSingletonForClone)
+                     FunctionFlags flags, uint16_t nargs, bool singletonType)
       : fun_(fun),
         baseScript(baseScript),
         flags(flags),
         nargs(nargs),
-        singletonType(singletonType),
-        useSingletonForClone(useSingletonForClone) {}
+        singletonType(singletonType) {}
 
   LambdaFunctionInfo(const LambdaFunctionInfo& other)
       : fun_(static_cast<JSFunction*>(other.fun_)),
         baseScript(other.baseScript),
         flags(other.flags),
         nargs(other.nargs),
-        singletonType(other.singletonType),
-        useSingletonForClone(other.useSingletonForClone) {}
+        singletonType(other.singletonType) {}
 
   
   

@@ -2613,10 +2613,8 @@ bool WarpBuilder::build_InitElemInc(BytecodeLocation loc) {
 static LambdaFunctionInfo LambdaInfoFromSnapshot(JSFunction* fun,
                                                  const WarpLambda* snapshot) {
   
-  
   return LambdaFunctionInfo(fun, snapshot->baseScript(), snapshot->flags(),
-                            snapshot->nargs(),  false,
-                             false);
+                            snapshot->nargs(),  false);
 }
 
 bool WarpBuilder::build_Lambda(BytecodeLocation loc) {
