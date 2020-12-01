@@ -543,8 +543,8 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   
   
   
-  if (nsCOMPtr<nsIViewSourceChannel> viewSourceChannel =
-          do_QueryInterface(mChannel)) {
+  nsCOMPtr<nsIViewSourceChannel> viewSourceChannel;
+  if (aPid && (viewSourceChannel = do_QueryInterface(mChannel))) {
     viewSourceChannel->SetReplaceRequest(false);
   }
 
@@ -2174,31 +2174,6 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
     
     if (loadingContext->GetContentParent()) {
       willBeRemote = true;
-    }
-  }
-
-  
-  
-  
-  
-  nsCOMPtr<nsIViewSourceChannel> viewSourceChannel =
-      do_QueryInterface(mChannel);
-  if (!willBeRemote && viewSourceChannel) {
-    MOZ_ALWAYS_SUCCEEDS(viewSourceChannel->SetReplaceRequest(true));
-
-    
-    for (auto& variant : mStreamListenerFunctions) {
-      variant.match(
-          [&](OnStartRequestParams& aParams) {
-            aParams.request = viewSourceChannel;
-          },
-          [&](OnDataAvailableParams& aParams) {
-            aParams.request = viewSourceChannel;
-          },
-          [&](OnStopRequestParams& aParams) {
-            aParams.request = viewSourceChannel;
-          },
-          [&](OnAfterLastPartParams& aParams) {});
     }
   }
 
