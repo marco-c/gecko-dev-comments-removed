@@ -891,6 +891,10 @@ pref("devtools.performance.popup.intro-displayed", false);
 pref("devtools.inspector.compatibility.target-browsers", "");
 
 
+
+pref("devtools.storage.test.forceLegacyActors", false);
+
+
 pref("view_source.editor.path", "");
 
 

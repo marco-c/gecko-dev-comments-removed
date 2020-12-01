@@ -3404,12 +3404,30 @@ const StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
     this.fetchChildWindows(this.parentActor.docShell);
 
     
+    
+    const isAddonTarget = !!this.parentActor.addonId;
+    const isWatcherEnabled = !isAddonTarget && !this.parentActor.isRootActor;
+    const shallUseLegacyActors = Services.prefs.getBoolPref(
+      "devtools.storage.test.forceLegacyActors",
+      false
+    );
+    const resourcesInWatcher = {
+      localStorage: isWatcherEnabled,
+      sessionStorage: isWatcherEnabled,
+    };
+
+    
     for (const [store, ActorConstructor] of storageTypePool) {
       
       
-      if (store === "extensionStorage" && !this.parentActor.addonId) {
+      if (store === "extensionStorage" && !isAddonTarget) {
         continue;
       }
+      
+      if (resourcesInWatcher[store] && !shallUseLegacyActors) {
+        continue;
+      }
+
       this.childActorPool.set(store, new ActorConstructor(this));
     }
 
