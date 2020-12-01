@@ -3626,18 +3626,22 @@ function BrowserReloadWithFlags(reloadFlags) {
   for (let tab of gBrowser.selectedTabs) {
     let browser = tab.linkedBrowser;
     let url = browser.currentURI.spec;
+    
+    
+    
+    let principal = tab.linkedBrowser.contentPrincipal;
     if (gBrowser.updateBrowserRemotenessByURL(browser, url)) {
       
       
       
       if (tab.linkedPanel) {
-        loadBrowserURI(browser, url);
+        loadBrowserURI(browser, url, principal);
       } else {
         
         
         tab.addEventListener(
           "SSTabRestoring",
-          () => loadBrowserURI(browser, url),
+          () => loadBrowserURI(browser, url, principal),
           { once: true }
         );
         gBrowser._insertBrowser(tab);
@@ -3676,10 +3680,10 @@ function BrowserReloadWithFlags(reloadFlags) {
     }
   }
 
-  function loadBrowserURI(browser, url) {
+  function loadBrowserURI(browser, url, principal) {
     browser.loadURI(url, {
       flags: reloadFlags,
-      triggeringPrincipal: browser.contentPrincipal,
+      triggeringPrincipal: principal,
     });
   }
 
