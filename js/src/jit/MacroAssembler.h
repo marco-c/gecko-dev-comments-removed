@@ -260,6 +260,11 @@ static inline DynFn DynamicFunction(Sig fun);
 
 enum class CharEncoding { Latin1, TwoByte };
 
+constexpr uint32_t WasmCallerTLSOffsetBeforeCall =
+    wasm::FrameWithTls::callerTLSOffset() + ShadowStackSpace;
+constexpr uint32_t WasmCalleeTLSOffsetBeforeCall =
+    wasm::FrameWithTls::calleeTLSOffset() + ShadowStackSpace;
+
 
 
 
@@ -667,7 +672,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
  private:
   
   
-  void setupABICall();
+  template <class ABIArgGeneratorT>
+  void setupABICallHelper();
+
+  
+  
+  void setupNativeABICall();
 
   
   void callWithABIPre(uint32_t* stackAdjust,
@@ -1090,6 +1100,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void signDouble(FloatRegister input, FloatRegister output);
   void signDoubleToInt32(FloatRegister input, Register output,
                          FloatRegister temp, Label* fail);
+
+  void copySignDouble(FloatRegister lhs, FloatRegister rhs,
+                      FloatRegister output) DEFINED_ON(x86_shared);
+  void copySignFloat32(FloatRegister lhs, FloatRegister rhs,
+                       FloatRegister output) DEFINED_ON(x86_shared);
 
   
   
@@ -3541,8 +3556,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void guardStringToInt32(Register str, Register output, Register scratch,
                           LiveRegisterSet volatileRegs, Label* fail);
 
-  void loadWasmTlsRegFromFrame(Register dest = WasmTlsReg);
-
   template <typename T>
   void loadTypedOrValue(const T& src, TypedOrValueRegister dest) {
     if (dest.hasValue()) {
@@ -4335,9 +4348,9 @@ static inline MIRType ToMIRType(ABIArgType argType) {
 
 inline DynFn JitMarkFunction(MIRType type);
 
-template <class VecT>
-class ABIArgIter {
-  ABIArgGenerator gen_;
+template <class VecT, class ABIArgGeneratorT>
+class ABIArgIterBase {
+  ABIArgGeneratorT gen_;
   const VecT& types_;
   unsigned i_;
 
@@ -4346,7 +4359,9 @@ class ABIArgIter {
   }
 
  public:
-  explicit ABIArgIter(const VecT& types) : types_(types), i_(0) { settle(); }
+  explicit ABIArgIterBase(const VecT& types) : types_(types), i_(0) {
+    settle();
+  }
   void operator++(int) {
     MOZ_ASSERT(!done());
     i_++;
@@ -4376,7 +4391,35 @@ class ABIArgIter {
   }
 };
 
+
+
+template <class VecT>
+class ABIArgIter : public ABIArgIterBase<VecT, ABIArgGenerator> {
+ public:
+  explicit ABIArgIter(const VecT& types)
+      : ABIArgIterBase<VecT, ABIArgGenerator>(types) {}
+};
+
+class WasmABIArgGenerator : public ABIArgGenerator {
+ public:
+  WasmABIArgGenerator() {
+    increaseStackOffset(wasm::FrameWithTls::sizeWithoutFrame());
+  }
+};
+
+template <class VecT>
+class WasmABIArgIter : public ABIArgIterBase<VecT, WasmABIArgGenerator> {
+ public:
+  explicit WasmABIArgIter(const VecT& types)
+      : ABIArgIterBase<VecT, WasmABIArgGenerator>(types) {}
+};
 }  
+
+namespace wasm {
+const TlsData* ExtractCalleeTlsFromFrameWithTls(const Frame* fp);
+const TlsData* ExtractCallerTlsFromFrameWithTls(const Frame* fp);
+}  
+
 }  
 
 #endif 
