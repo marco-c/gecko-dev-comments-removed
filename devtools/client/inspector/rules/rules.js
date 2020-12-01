@@ -452,7 +452,6 @@ CssRuleView.prototype = {
     
     
     
-    
     this.contentViewerFront = await this.currentTarget.getFront(
       "contentViewer"
     );
@@ -467,17 +466,10 @@ CssRuleView.prototype = {
 
     
     
-    
-    const isEmulateColorSchemeSupported = await this.currentTarget.actorHasMethod(
-      "contentViewer",
-      "getEmulatedColorScheme"
-    );
-
     if (
       Services.prefs.getBoolPref(
         "devtools.inspector.color-scheme-simulation.enabled"
-      ) &&
-      isEmulateColorSchemeSupported
+      )
     ) {
       this.colorSchemeSimulationButton.removeAttribute("hidden");
       this.colorSchemeSimulationButton.addEventListener(
