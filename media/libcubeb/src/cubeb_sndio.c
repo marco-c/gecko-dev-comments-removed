@@ -220,6 +220,7 @@ sndio_mainloop(void *arg)
 
       
       if (nfr < s->nfr) {
+
         if (!(s->mode & SIO_PLAY) || nfr == 0) {
           state = CUBEB_STATE_DRAINED;
           break;

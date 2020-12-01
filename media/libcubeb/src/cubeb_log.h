@@ -46,6 +46,7 @@ void cubeb_async_log_reset_threads();
   } while(0)
 
 
+
 #define ALOGV(fmt, ...)                   \
 do {                                      \
   cubeb_async_log(fmt, ##__VA_ARGS__);    \

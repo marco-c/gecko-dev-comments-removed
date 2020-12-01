@@ -242,6 +242,10 @@ typedef enum {
 
 
 
+
+  CUBEB_STREAM_PREF_JACK_NO_AUTO_CONNECT = 0x20  
+
+
 } cubeb_stream_prefs;
 
 
@@ -486,6 +490,8 @@ CUBEB_EXPORT int cubeb_get_preferred_sample_rate(cubeb * context, uint32_t * rat
 
 
 CUBEB_EXPORT void cubeb_destroy(cubeb * context);
+
+
 
 
 
