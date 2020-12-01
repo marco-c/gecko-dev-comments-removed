@@ -7,70 +7,64 @@
 #ifndef GFX_LAYERS_H
 #define GFX_LAYERS_H
 
-#include <map>
-#include <unordered_set>
-#include <stdint.h>        
-#include <stdio.h>         
-#include <sys/types.h>     
-#include "FrameMetrics.h"  
-#include "Units.h"         
-#include "gfxContext.h"
-#include "gfxTypes.h"
-#include "gfxPoint.h"  
-#include "gfxRect.h"   
-#include "gfx2DGlue.h"
+#include <cstdint>           
+#include <cstring>           
+#include <iosfwd>            
+#include <new>               
+#include <unordered_set>     
+#include <utility>           
+#include "FrameMetrics.h"    
+#include "ImageContainer.h"  
+#include "Units.h"           
+#include "gfxPoint.h"        
+#include "gfxRect.h"         
+#include "mozilla/AlreadyAddRefed.h"  
+#include "mozilla/Maybe.h"            
+#include "mozilla/Poison.h"           
+#include "mozilla/RefPtr.h"           
+#include "mozilla/TimeStamp.h"        
+#include "mozilla/UniquePtr.h"        
+#include "mozilla/dom/Animation.h"    
+#include "mozilla/gfx/BasePoint.h"  
+#include "mozilla/gfx/BaseSize.h"     
+#include "mozilla/gfx/Matrix.h"       
+#include "mozilla/gfx/Point.h"        
+#include "mozilla/gfx/Polygon.h"      
+#include "mozilla/gfx/Rect.h"         
+#include "mozilla/gfx/TiledRegion.h"  
+#include "mozilla/gfx/Types.h"  
+#include "mozilla/gfx/UserData.h"  
+#include "mozilla/layers/AnimationInfo.h"    
+#include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/LayerAttributes.h"  
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "nsHashKeys.h"                          
+#include "nsISupports.h"        
+#include "nsIWidget.h"          
+#include "nsPoint.h"            
+#include "nsRect.h"             
+#include "nsRefPtrHashtable.h"  
+#include "nsRegion.h"           
+#include "nsStringFlags.h"      
+#include "nsStringFwd.h"        
+#include "nsTArray.h"  
+
+
+
+#include "gfx2DGlue.h"           
 #include "mozilla/Assertions.h"  
-#include "mozilla/Array.h"
-#include "mozilla/DebugOnly.h"      
-#include "mozilla/EventForwards.h"  
-#include "mozilla/Maybe.h"          
-#include "mozilla/Poison.h"
-#include "mozilla/RefPtr.h"                
-#include "mozilla/TimeStamp.h"             
-#include "mozilla/UniquePtr.h"             
-#include "mozilla/dom/Animation.h"         
-#include "mozilla/gfx/BaseMargin.h"        
-#include "mozilla/gfx/BasePoint.h"         
-#include "mozilla/gfx/Point.h"             
-#include "mozilla/gfx/TiledRegion.h"       
-#include "mozilla/gfx/Types.h"             
-#include "mozilla/gfx/UserData.h"          
-#include "mozilla/layers/AnimationInfo.h"  
-#include "mozilla/layers/BSPTree.h"        
-#include "mozilla/layers/CanvasRenderer.h"
-#include "mozilla/layers/LayerAttributes.h"
-#include "mozilla/layers/LayersTypes.h"
-#include "mozilla/webrender/WebRenderTypes.h"
-#include "mozilla/mozalloc.h"        
-#include "nsCOMPtr.h"                
-#include "nsCSSPropertyID.h"         
-#include "nsDebug.h"                 
-#include "nsISupportsImpl.h"         
-#include "nsRect.h"                  
-#include "nsRefPtrHashtable.h"       
-#include "nsRegion.h"                
-#include "nsString.h"                
-#include "nsTArray.h"                
-#include "nsTArrayForwardDeclare.h"  
-#include "nscore.h"                  
-#include "mozilla/Logging.h"         
-#include "nsIWidget.h"  
-#include "ImageContainer.h"
+#include "mozilla/DebugOnly.h"              
+#include "mozilla/layers/CanvasRenderer.h"  
+#include "mozilla/layers/LayersTypes.h"  
+#include "nsDebug.h"                     
 
 class gfxContext;
-class nsDisplayListBuilder;
-class nsDisplayItem;
 
 extern uint8_t gLayerManagerLayerBuilder;
 
 namespace mozilla {
 
-class ComputedTimingFunction;
 class FrameLayerBuilder;
-
-namespace gl {
-class GLContext;
-}  
 
 namespace gfx {
 class DrawTarget;
@@ -108,6 +102,7 @@ class FrameUniformityData;
 class PersistentBufferProvider;
 class GlyphArray;
 class WebRenderLayerManager;
+struct LayerPolygon;
 struct AnimData;
 
 namespace layerscope {
