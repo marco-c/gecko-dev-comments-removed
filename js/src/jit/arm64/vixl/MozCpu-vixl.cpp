@@ -33,7 +33,7 @@
 #  include <libkern/OSCacheControl.h>
 #endif
 
-#if defined(__aarch64__) && !defined(_MSC_VER) && !defined(XP_DARWIN)
+#if defined(__aarch64__) && (defined(__linux__) || defined(__android__))
 #   if defined(__linux__)
 #    include <linux/membarrier.h>
 #    include <sys/syscall.h>
@@ -100,7 +100,7 @@ void CPU::SetUp() {
 
 
 uint32_t CPU::GetCacheType() {
-#if defined(__aarch64__) && !defined(_MSC_VER) && !defined(XP_DARWIN)
+#if defined(__aarch64__) && (defined(__linux__) || defined(__android__))
   uint64_t cache_type_register;
   
   __asm__ __volatile__ ("mrs %[ctr], ctr_el0"  
@@ -116,7 +116,7 @@ uint32_t CPU::GetCacheType() {
 }
 
 bool CPU::CanFlushICacheFromBackgroundThreads() {
-#if defined(__aarch64__) && !defined(_MSC_VER) && !defined(XP_DARWIN)
+#if defined(__aarch64__) && (defined(__linux__) || defined(__android__))
   
   
   
@@ -185,7 +185,7 @@ void CPU::EnsureIAndDCacheCoherency(void *address, size_t length, bool codeIsThr
   FlushInstructionCache(GetCurrentProcess(), address, length);
 #elif defined(XP_DARWIN)
   sys_icache_invalidate(address, length);
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) && (defined(__linux__) || defined(__android__))
   
   
   
