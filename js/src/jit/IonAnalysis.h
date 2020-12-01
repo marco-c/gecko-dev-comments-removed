@@ -169,7 +169,7 @@ class LinearSum {
 
 
 MDefinition* ConvertLinearSum(TempAllocator& alloc, MBasicBlock* block,
-                              const LinearSum& sum);
+                              const LinearSum& sum, BailoutKind bailoutKind);
 
 MOZ_MUST_USE bool AnalyzeNewScriptDefiniteProperties(
     JSContext* cx, DPAConstraintInfo& constraintInfo, JS::HandleFunction fun,
