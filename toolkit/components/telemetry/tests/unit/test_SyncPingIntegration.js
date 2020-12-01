@@ -2,6 +2,13 @@
 
 
 
+
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
 add_task(async function test_setup() {
   
   do_get_profile();
