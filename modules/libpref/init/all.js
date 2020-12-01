@@ -2981,77 +2981,75 @@ pref("font.size.monospace.x-math", 13);
   
   pref("intl.ime.hack.set_input_scope_of_url_bar_to_default", true);
 
-  #ifdef NS_ENABLE_TSF
-    
-    pref("intl.tsf.enable", true);
+  
+  pref("intl.tsf.enable", true);
 
-    
-    pref("intl.tsf.support_imm", true);
+  
+  pref("intl.tsf.support_imm", true);
 
-    
-    
-    
-    
-    pref("intl.tsf.associate_imc_only_when_imm_ime_is_active", false);
+  
+  
+  
+  
+  pref("intl.tsf.associate_imc_only_when_imm_ime_is_active", false);
 
-    
+  
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #ifdef EARLY_BETA_OR_EARLIER
-      pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", true);
-    #else
-      pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", false);
-    #endif
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #ifdef EARLY_BETA_OR_EARLIER
+    pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", true);
+  #else
+    pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", false);
+  #endif
 
-    
-    pref("intl.tsf.hack.atok.create_native_caret", true);
-    
-    
-    
-    
-    
-    pref("intl.tsf.hack.atok.do_not_return_no_layout_error_of_composition_string", true);
-    
-    
-    
-    
-    pref("intl.tsf.hack.japanist10.do_not_return_no_layout_error_of_composition_string", true);
-    
-    
-    
-    
-    pref("intl.tsf.hack.free_chang_jie.do_not_return_no_layout_error", true);
-    
-    pref("intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error", true);
-    
-    pref("intl.tsf.hack.ms_traditional_chinese.do_not_return_no_layout_error", true);
-    
-    
-    
-    pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_first_char", true);
-    
-    
-    
-    pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_caret", true);
-    
-    
-    
-    
-    
-    
-    pref("intl.tsf.hack.ms_simplified_chinese.query_insert_result", true);
-    
-    pref("intl.tsf.hack.ms_traditional_chinese.query_insert_result", true);
-  #endif // NS_ENABLE_TSF
+  
+  pref("intl.tsf.hack.atok.create_native_caret", true);
+  
+  
+  
+  
+  
+  pref("intl.tsf.hack.atok.do_not_return_no_layout_error_of_composition_string", true);
+  
+  
+  
+  
+  pref("intl.tsf.hack.japanist10.do_not_return_no_layout_error_of_composition_string", true);
+  
+  
+  
+  
+  pref("intl.tsf.hack.free_chang_jie.do_not_return_no_layout_error", true);
+  
+  pref("intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error", true);
+  
+  pref("intl.tsf.hack.ms_traditional_chinese.do_not_return_no_layout_error", true);
+  
+  
+  
+  pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_first_char", true);
+  
+  
+  
+  pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_caret", true);
+  
+  
+  
+  
+  
+  
+  pref("intl.tsf.hack.ms_simplified_chinese.query_insert_result", true);
+  
+  pref("intl.tsf.hack.ms_traditional_chinese.query_insert_result", true);
 
   
   

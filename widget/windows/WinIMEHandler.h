@@ -162,12 +162,10 @@ class IMEHandler final {
   static void DefaultProcOfPluginEvent(nsWindow* aWindow,
                                        const NPEvent* aPluginEvent);
 
-#ifdef NS_ENABLE_TSF
   
 
 
   static void OnKeyboardLayoutChanged();
-#endif  
 
 #ifdef DEBUG
   
@@ -207,7 +205,6 @@ class IMEHandler final {
 
   static bool MaybeCreateNativeCaret(nsWindow* aWindow);
 
-#ifdef NS_ENABLE_TSF
   static decltype(SetInputScopes)* sSetInputScopes;
   static void SetInputScopeForIMM32(nsWindow* aWindow,
                                     const nsAString& aHTMLInputType,
@@ -252,7 +249,6 @@ class IMEHandler final {
 
 
   static HWND GetOnScreenKeyboardWindow();
-#endif  
 };
 
 }  
