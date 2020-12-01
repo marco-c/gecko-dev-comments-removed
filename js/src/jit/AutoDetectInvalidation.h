@@ -18,6 +18,7 @@
 
 namespace js::jit {
 
+
 class AutoDetectInvalidation {
   JSContext* cx_;
   IonScript* ionScript_;
