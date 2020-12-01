@@ -251,8 +251,42 @@ bool Client::TypeFromPrefix(char aPrefix, Type& aType, const fallible_t&) {
   return true;
 }
 
+void Client::MaybeRecordShutdownStep(const nsACString& aStepDescription) {
+  AssertIsOnBackgroundThread();
+
+  if (!mShutdownStartedAt) {
+    
+    
+    
+    return;
+  }
+
+  const TimeDuration elapsedSinceShutdownStart =
+      TimeStamp::NowLoRes() - *mShutdownStartedAt;
+
+  const auto stepString =
+      nsPrintfCString("%fs: %s", elapsedSinceShutdownStart.ToSeconds(),
+                      nsPromiseFlatCString(aStepDescription).get());
+
+  mShutdownSteps.Append(stepString + "\n"_ns);
+
+#ifdef DEBUG
+  
+
+  NS_DebugBreak(
+      NS_DEBUG_WARNING,
+      nsAutoCString(TypeToText(GetType()) + " shutdown step"_ns).get(),
+      stepString.get(), __FILE__, __LINE__);
+#endif
+}
+
 void Client::ShutdownWorkThreads() {
   AssertIsOnBackgroundThread();
+  MOZ_ASSERT(mShutdownSteps.IsEmpty());
+
+  mShutdownStartedAt.init(TimeStamp::NowLoRes());
+
+  MaybeRecordShutdownStep("starting"_ns);
 
   InitiateShutdown();
 
@@ -275,8 +309,10 @@ void Client::ShutdownWorkThreads() {
 
                 CrashReporter::AnnotateCrashReport(
                     CrashReporter::Annotation::QuotaManagerShutdownTimeout,
-                    nsPrintfCString("%s: %s", type.get(),
-                                    quotaClient->GetShutdownStatus().get()));
+                    nsPrintfCString("%s: %s\nIntermediate steps:\n%s",
+                                    type.get(),
+                                    quotaClient->GetShutdownStatus().get(),
+                                    quotaClient->mShutdownSteps.get()));
 
                 MOZ_CRASH_UNSAFE_PRINTF("%s shutdown timed out", type.get());
               },
@@ -292,6 +328,8 @@ void Client::ShutdownWorkThreads() {
 
     MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
   }
+
+  MaybeRecordShutdownStep("completed"_ns);
 
   FinalizeShutdown();
 }
