@@ -2,8 +2,8 @@
 
 
 
-use api::{ColorF, DocumentId, ExternalImageData, ExternalImageId, ExternalImageType, PrimitiveFlags};
-use api::{ImageFormat, NotificationRequest, Shadow, FilterOp, ImageBufferKind};
+use api::{ColorF, DocumentId, ExternalImageData, ExternalImageId, PrimitiveFlags};
+use api::{ImageFormat, NotificationRequest, Shadow, FilterOp};
 use api::units::*;
 use api;
 use crate::render_api::DebugCommand;
@@ -287,31 +287,6 @@ pub enum TextureSource {
     Dummy,
 }
 
-impl TextureSource {
-    pub fn image_buffer_kind(&self) -> ImageBufferKind {
-        match *self {
-            TextureSource::TextureCache(..) => ImageBufferKind::Texture2D,
-
-            TextureSource::External(external_image) => {
-                match external_image.image_type {
-                    ExternalImageType::TextureHandle(kind) => kind,
-                    
-                    ExternalImageType::Buffer => ImageBufferKind::Texture2D,
-                }
-            },
-
-            
-            TextureSource::PrevPassAlpha
-            | TextureSource::PrevPassColor
-            | TextureSource::RenderTaskCache(..)
-            | TextureSource::Dummy => ImageBufferKind::Texture2DArray,
-
-
-            TextureSource::Invalid => ImageBufferKind::Texture2D,
-        }
-    }
-}
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -348,7 +323,6 @@ pub struct TextureCacheAllocInfo {
     pub layer_count: i32,
     pub format: ImageFormat,
     pub filter: TextureFilter,
-    pub target: ImageBufferKind,
     
     pub is_shared_cache: bool,
     
@@ -360,6 +334,10 @@ pub struct TextureCacheAllocInfo {
 pub enum TextureCacheAllocationKind {
     
     Alloc(TextureCacheAllocInfo),
+    
+    
+    
+    Realloc(TextureCacheAllocInfo),
     
     Reset(TextureCacheAllocInfo),
     
@@ -458,6 +436,28 @@ impl TextureUpdateList {
 
     
     
+    pub fn push_realloc(&mut self, id: CacheTextureId, info: TextureCacheAllocInfo) {
+        self.debug_assert_coalesced(id);
+
+        
+        if let Some(cur) = self.allocations.iter_mut().find(|x| x.id == id) {
+            match cur.kind {
+                TextureCacheAllocationKind::Alloc(ref mut i) => *i = info,
+                TextureCacheAllocationKind::Realloc(ref mut i) => *i = info,
+                TextureCacheAllocationKind::Reset(ref mut i) => *i = info,
+                TextureCacheAllocationKind::Free => panic!("Reallocating freed texture"),
+            }
+            return
+        }
+
+        self.allocations.push(TextureCacheAllocation {
+            id,
+            kind: TextureCacheAllocationKind::Realloc(info),
+        });
+    }
+
+    
+    
     pub fn push_reset(&mut self, id: CacheTextureId, info: TextureCacheAllocInfo) {
         self.debug_assert_coalesced(id);
 
@@ -470,6 +470,10 @@ impl TextureUpdateList {
                 TextureCacheAllocationKind::Alloc(ref mut i) => *i = info,
                 TextureCacheAllocationKind::Reset(ref mut i) => *i = info,
                 TextureCacheAllocationKind::Free => panic!("Resetting freed texture"),
+                TextureCacheAllocationKind::Realloc(_) => {
+                    
+                    cur.kind = TextureCacheAllocationKind::Reset(info);
+                }
             }
             return
         }
@@ -495,6 +499,7 @@ impl TextureUpdateList {
         match removed_kind {
             Some(TextureCacheAllocationKind::Alloc(..)) => {  },
             Some(TextureCacheAllocationKind::Free) => panic!("Double free"),
+            Some(TextureCacheAllocationKind::Realloc(..)) |
             Some(TextureCacheAllocationKind::Reset(..)) |
             None => {
                 self.allocations.push(TextureCacheAllocation {
