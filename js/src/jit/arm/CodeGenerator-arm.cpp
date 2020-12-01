@@ -688,12 +688,7 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
-  Register callTemp = ToRegister(ins->callTemp());
   MMod* mir = ins->mir();
-
-  
-  
-  masm.ma_mov(lhs, callTemp);
 
   
   
@@ -726,7 +721,7 @@ void CodeGenerator::visitModI(LModI* ins) {
       
       masm.as_cmp(output, Imm8(0));
       masm.ma_b(&done, Assembler::NotEqual);
-      masm.as_cmp(callTemp, Imm8(0));
+      masm.as_cmp(lhs, Imm8(0));
       bailoutIf(Assembler::Signed, ins->snapshot());
     }
   }
