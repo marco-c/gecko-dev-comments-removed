@@ -13,7 +13,6 @@ const TAB_CUSTOM_VALUES = new WeakMap();
 const TAB_LAZY_STATES = new WeakMap();
 const TAB_STATE_NEEDS_RESTORE = 1;
 const TAB_STATE_RESTORING = 2;
-const TAB_STATE_WILL_RESTORE = 3;
 const TAB_STATE_FOR_BROWSER = new WeakMap();
 const WINDOW_RESTORE_IDS = new WeakMap();
 const WINDOW_RESTORE_ZINDICES = new WeakMap();
@@ -430,14 +429,6 @@ var SessionStore = {
     return SessionStoreInternal.reviveAllCrashedTabs();
   },
 
-  navigateAndRestore(tab, loadArguments, historyIndex) {
-    return SessionStoreInternal.navigateAndRestore(
-      tab,
-      loadArguments,
-      historyIndex
-    );
-  },
-
   updateSessionStoreFromTablistener(aBrowser, aBrowsingContext, aData) {
     return SessionStoreInternal.updateSessionStoreFromTablistener(
       aBrowser,
@@ -603,11 +594,6 @@ var SessionStoreInternal = {
   
   
   _saveableClosedWindowData: new WeakSet(),
-
-  
-  
-  
-  _remotenessChangingBrowsers: new WeakMap(),
 
   
   _browserSetState: false,
@@ -3876,148 +3862,6 @@ var SessionStoreInternal = {
 
 
 
-
-
-
-
-
-  navigateAndRestore(tab, loadArguments, historyIndex) {
-    let window = tab.ownerGlobal;
-
-    if (!window.__SSi) {
-      Cu.reportError("Tab's window must be tracked.");
-      return Promise.reject();
-    }
-
-    let browser = tab.linkedBrowser;
-
-    
-    
-    
-    if (this._remotenessChangingBrowsers.has(browser.permanentKey)) {
-      let opts = this._remotenessChangingBrowsers.get(browser.permanentKey);
-      
-      
-      
-      opts.loadArguments = loadArguments;
-      return opts.promise;
-    }
-
-    
-    
-    let promise = this._asyncNavigateAndRestore(tab);
-    this._remotenessChangingBrowsers.set(browser.permanentKey, {
-      loadArguments,
-      historyIndex,
-      promise,
-    });
-
-    
-    
-    let uriObj;
-    try {
-      uriObj = Services.io.newURI(loadArguments.uri);
-    } catch (e) {}
-
-    
-    
-    
-    if (!uriObj || (uriObj && !uriObj.schemeIs("about"))) {
-      tab.setAttribute("busy", "true");
-    }
-
-    
-    
-    
-    window.gBrowser.setDefaultIcon(tab, uriObj);
-
-    TAB_STATE_FOR_BROWSER.set(tab.linkedBrowser, TAB_STATE_WILL_RESTORE);
-
-    
-    this._notifyOfClosedObjectsChange();
-
-    return promise;
-  },
-
-  
-
-
-
-
-
-
-
-
-  async _asyncNavigateAndRestore(tab) {
-    let permanentKey = tab.linkedBrowser.permanentKey;
-    let browser = tab.linkedBrowser;
-
-    
-    
-    await this.prepareToChangeRemoteness(browser);
-
-    
-    
-    
-    let { loadArguments, historyIndex } = this._remotenessChangingBrowsers.get(
-      permanentKey
-    );
-    this._remotenessChangingBrowsers.delete(permanentKey);
-
-    
-    if (tab.closing || !tab.linkedBrowser) {
-      return;
-    }
-
-    
-    let window = tab.ownerGlobal;
-    if (!window || !window.__SSi || window.closed) {
-      return;
-    }
-
-    let tabState = TabState.clone(tab, TAB_CUSTOM_VALUES.get(tab));
-    let options = {
-      restoreImmediately: true,
-      
-      
-      
-      newFrameloader: loadArguments.newFrameloader,
-      remoteType: loadArguments.remoteType,
-      
-      
-      restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
-    };
-
-    if (historyIndex >= 0) {
-      tabState.index = historyIndex + 1;
-      tabState.index = Math.max(
-        1,
-        Math.min(tabState.index, tabState.entries.length)
-      );
-    } else {
-      options.loadArguments = loadArguments;
-    }
-
-    
-    if (TAB_STATE_FOR_BROWSER.has(tab.linkedBrowser)) {
-      this._resetLocalTabRestoringState(tab);
-    }
-
-    
-    this.restoreTab(tab, tabState, options);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
   getSessionHistory(tab, updatedCallback) {
     if (updatedCallback) {
       TabStateFlusher.flush(tab.linkedBrowser).then(() => {
@@ -4943,9 +4787,6 @@ var SessionStoreInternal = {
     let activeIndex = tabData.index - 1;
     let activePageData = tabData.entries[activeIndex] || null;
     let uri = activePageData ? activePageData.url || null : null;
-    if (loadArguments) {
-      uri = loadArguments.uri;
-    }
 
     this.markTabAsRestoring(aTab);
 
@@ -4953,22 +4794,10 @@ var SessionStoreInternal = {
     
     let isRemotenessUpdate = aOptions.isRemotenessUpdate;
     if (!isRemotenessUpdate) {
-      let newFrameloader = aOptions.newFrameloader;
-      if (aOptions.remoteType !== undefined) {
-        
-        isRemotenessUpdate = tabbrowser.updateBrowserRemoteness(browser, {
-          remoteType: aOptions.remoteType,
-          newFrameloader,
-        });
-      } else {
-        isRemotenessUpdate = tabbrowser.updateBrowserRemotenessByURL(
-          browser,
-          uri,
-          {
-            newFrameloader,
-          }
-        );
-      }
+      isRemotenessUpdate = tabbrowser.updateBrowserRemotenessByURL(
+        browser,
+        uri
+      );
 
       if (isRemotenessUpdate) {
         

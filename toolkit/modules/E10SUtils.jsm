@@ -11,12 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm"
-);
-
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "useSeparateFileUriProcess",
@@ -121,17 +115,6 @@ const kSafeSchemes = [
   "wtai",
   "xmpp",
 ];
-
-const kDocumentChannelDeniedSchemes = ["javascript"];
-const kDocumentChannelDeniedURIs = ["about:crashcontent", "about:printpreview"];
-
-
-function documentChannelPermittedForURI(aURI) {
-  return (
-    !kDocumentChannelDeniedSchemes.includes(aURI.scheme) &&
-    !kDocumentChannelDeniedURIs.includes(aURI.spec)
-  );
-}
 
 
 
@@ -856,120 +839,6 @@ var E10SUtils = {
       }
     }
     return deserialized;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  shouldLoadURIInBrowser(
-    browser,
-    uri,
-    multiProcess = true,
-    remoteSubframes = false,
-    flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE
-  ) {
-    let currentRemoteType = browser.remoteType;
-    let requiredRemoteType;
-    let uriObject;
-    try {
-      let fixupFlags = Ci.nsIURIFixup.FIXUP_FLAG_NONE;
-      if (flags & Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
-        fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
-      }
-      if (flags & Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
-        fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
-      }
-      if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
-        fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
-      }
-
-      uriObject = Services.uriFixup.getFixupURIInfo(uri, fixupFlags)
-        .preferredURI;
-      
-      
-      requiredRemoteType = this.getRemoteTypeForURIObject(
-        uriObject,
-        multiProcess,
-        remoteSubframes,
-        currentRemoteType,
-        browser.currentURI
-      );
-    } catch (e) {
-      
-      
-      requiredRemoteType = multiProcess ? DEFAULT_REMOTE_TYPE : NOT_REMOTE;
-    }
-
-    let mustChangeProcess = requiredRemoteType != currentRemoteType;
-
-    let newFrameloader = false;
-    if (
-      browser.getAttribute("preloadedState") === "consumed" &&
-      uri != "about:newtab"
-    ) {
-      
-      
-      mustChangeProcess = true;
-      newFrameloader = true;
-    }
-
-    
-    
-    
-    if (uriObject && documentChannelPermittedForURI(uriObject)) {
-      mustChangeProcess = false;
-      newFrameloader = false;
-    }
-
-    return {
-      uriObject,
-      requiredRemoteType,
-      mustChangeProcess,
-      newFrameloader,
-    };
   },
 
   wrapHandlingUserInput(aWindow, aIsHandling, aCallback) {

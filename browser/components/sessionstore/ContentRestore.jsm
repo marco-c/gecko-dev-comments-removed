@@ -18,11 +18,6 @@ ChromeUtils.defineModuleGetter(
   "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "E10SUtils",
-  "resource://gre/modules/E10SUtils.jsm"
-);
 
 
 
@@ -254,56 +249,12 @@ ContentRestoreInternal.prototype = {
       if (loadArguments) {
         
         
-        if (loadArguments.redirectLoadSwitchId) {
-          webNavigation.resumeRedirectedLoad(
-            loadArguments.redirectLoadSwitchId,
-            loadArguments.redirectHistoryIndex
-          );
-          return true;
-        }
-
         
         
-        
-        
-        
-        let referrerInfo = loadArguments.referrerInfo;
-        if (referrerInfo) {
-          referrerInfo = E10SUtils.deserializeReferrerInfo(referrerInfo);
-        } else {
-          let referrer = loadArguments.referrer
-            ? Services.io.newURI(loadArguments.referrer)
-            : null;
-          let referrerPolicy =
-            "referrerPolicy" in loadArguments
-              ? loadArguments.referrerPolicy
-              : Ci.nsIReferrerInfo.EMPTY;
-          let ReferrerInfo = Components.Constructor(
-            "@mozilla.org/referrer-info;1",
-            "nsIReferrerInfo",
-            "init"
-          );
-          referrerInfo = new ReferrerInfo(referrerPolicy, true, referrer);
-        }
-        let postData = loadArguments.postData
-          ? E10SUtils.makeInputStream(loadArguments.postData)
-          : null;
-        let triggeringPrincipal = E10SUtils.deserializePrincipal(
-          loadArguments.triggeringPrincipal,
-          () => Services.scriptSecurityManager.createNullPrincipal({})
+        webNavigation.resumeRedirectedLoad(
+          loadArguments.redirectLoadSwitchId,
+          loadArguments.redirectHistoryIndex
         );
-        let csp = loadArguments.csp
-          ? E10SUtils.deserializeCSP(loadArguments.csp)
-          : null;
-
-        let loadURIOptions = {
-          triggeringPrincipal,
-          loadFlags: loadArguments.flags,
-          referrerInfo,
-          postData,
-          csp,
-        };
-        webNavigation.loadURI(loadArguments.uri, loadURIOptions);
       } else if (tabData.userTypedValue && tabData.userTypedClear) {
         
         
