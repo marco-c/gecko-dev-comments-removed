@@ -340,7 +340,11 @@ class DevToolsWorkerChild extends JSWindowActorChild {
     try {
       await onConnectToWorker;
     } catch (e) {
-      dbg.setDebuggerReady(true);
+      
+      
+      if (!dbg.isClosed) {
+        dbg.setDebuggerReady(true);
+      }
       return;
     }
 
