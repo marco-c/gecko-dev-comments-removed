@@ -19,20 +19,6 @@ using namespace dom;
 
 Maybe<int32_t> PointerEventHandler::sSpoofedPointerId;
 
-class PointerInfo final {
- public:
-  uint16_t mPointerType;
-  bool mActiveState;
-  bool mPrimaryState;
-  bool mPreventMouseEventByContent;
-  explicit PointerInfo(bool aActiveState, uint16_t aPointerType,
-                       bool aPrimaryState)
-      : mPointerType(aPointerType),
-        mActiveState(aActiveState),
-        mPrimaryState(aPrimaryState),
-        mPreventMouseEventByContent(false) {}
-};
-
 
 
 
@@ -81,7 +67,8 @@ bool PointerEventHandler::IsPointerEventImplicitCaptureForTouchEnabled() {
 }
 
 
-void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent) {
+void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
+                                                   nsIContent* aTargetContent) {
   if (!StaticPrefs::dom_w3c_pointer_events_enabled() || !aEvent) {
     return;
   }
@@ -90,17 +77,21 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent) {
       
       sActivePointersIds->Put(
           aEvent->pointerId,
-          new PointerInfo(false, aEvent->mInputSource, true));
+          new PointerInfo(false, aEvent->mInputSource, true, nullptr));
 
       MaybeCacheSpoofedPointerID(aEvent->mInputSource, aEvent->pointerId);
       break;
     case ePointerDown:
       
       if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
+        
+        
+        
         sActivePointersIds->Put(
             pointerEvent->pointerId,
-            new PointerInfo(true, pointerEvent->mInputSource,
-                            pointerEvent->mIsPrimary));
+            new PointerInfo(
+                true, pointerEvent->mInputSource, pointerEvent->mIsPrimary,
+                aTargetContent ? aTargetContent->OwnerDoc() : nullptr));
         MaybeCacheSpoofedPointerID(pointerEvent->mInputSource,
                                    pointerEvent->pointerId);
       }
@@ -118,7 +109,7 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent) {
           sActivePointersIds->Put(
               pointerEvent->pointerId,
               new PointerInfo(false, pointerEvent->mInputSource,
-                              pointerEvent->mIsPrimary));
+                              pointerEvent->mIsPrimary, nullptr));
         } else {
           sActivePointersIds->Remove(pointerEvent->pointerId);
         }
@@ -267,14 +258,8 @@ void PointerEventHandler::ReleaseAllPointerCaptureRemoteTarget() {
 }
 
 
-bool PointerEventHandler::GetPointerInfo(uint32_t aPointerId,
-                                         bool& aActiveState) {
-  PointerInfo* pointerInfo = nullptr;
-  if (sActivePointersIds->Get(aPointerId, &pointerInfo) && pointerInfo) {
-    aActiveState = pointerInfo->mActiveState;
-    return true;
-  }
-  return false;
+const PointerInfo* PointerEventHandler::GetPointerInfo(uint32_t aPointerId) {
+  return sActivePointersIds->Get(aPointerId);
 }
 
 

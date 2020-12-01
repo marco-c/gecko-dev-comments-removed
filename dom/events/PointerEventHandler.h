@@ -10,6 +10,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/TouchEvents.h"
+#include "mozilla/WeakPtr.h"
 
 class nsIFrame;
 class nsIContent;
@@ -20,6 +21,7 @@ class PresShell;
 
 namespace dom {
 class BrowserParent;
+class Document;
 class Element;
 };  
 
@@ -38,6 +40,22 @@ class PointerCaptureInfo final {
   bool Empty() { return !(mPendingElement || mOverrideElement); }
 };
 
+class PointerInfo final {
+ public:
+  uint16_t mPointerType;
+  bool mActiveState;
+  bool mPrimaryState;
+  bool mPreventMouseEventByContent;
+  WeakPtr<dom::Document> mActiveDocument;
+  explicit PointerInfo(bool aActiveState, uint16_t aPointerType,
+                       bool aPrimaryState, dom::Document* aActiveDocument)
+      : mPointerType(aPointerType),
+        mActiveState(aActiveState),
+        mPrimaryState(aPrimaryState),
+        mPreventMouseEventByContent(false),
+        mActiveDocument(aActiveDocument) {}
+};
+
 class PointerEventHandler final {
  public:
   
@@ -50,7 +68,8 @@ class PointerEventHandler final {
 
   
   
-  static void UpdateActivePointerState(WidgetMouseEvent* aEvent);
+  static void UpdateActivePointerState(WidgetMouseEvent* aEvent,
+                                       nsIContent* aTargetContent);
 
   
   static void RequestPointerCaptureById(uint32_t aPointerId,
@@ -76,9 +95,7 @@ class PointerEventHandler final {
 
   
   
-  
-  
-  static bool GetPointerInfo(uint32_t aPointerId, bool& aActiveState);
+  static const PointerInfo* GetPointerInfo(uint32_t aPointerId);
 
   
   
