@@ -10,6 +10,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -166,6 +167,21 @@ class PreprocessorHook : public PPCallbacks {
 
 public:
   PreprocessorHook(IndexConsumer *C) : Indexer(C) {}
+
+  virtual void FileChanged(SourceLocation Loc, FileChangeReason Reason,
+                           SrcMgr::CharacteristicKind FileType,
+                           FileID PrevFID) override;
+
+  virtual void InclusionDirective(SourceLocation HashLoc,
+                                  const Token &IncludeTok,
+                                  StringRef FileName,
+                                  bool IsAngled,
+                                  CharSourceRange FileNameRange,
+                                  const FileEntry *File,
+                                  StringRef SearchPath,
+                                  StringRef RelativePath,
+                                  const Module *Imported,
+                                  SrcMgr::CharacteristicKind FileType) override;
 
   virtual void MacroDefined(const Token &Tok,
                             const MacroDirective *Md) override;
@@ -401,6 +417,48 @@ private:
       Filename = std::string(Platform ? Platform : "") + std::string("@") + Filename;
     }
     return hash(Filename + std::string("@") + locationToString(Loc));
+  }
+
+  bool isAcceptableSymbolChar(char c) {
+    return isalpha(c) || isdigit(c) || c == '_' || c == '/';
+  }
+
+  std::string mangleFile(std::string Filename, FileType Type) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (size_t i = 0; i < Filename.length(); i++) {
+      char c = Filename[i];
+      if (isAcceptableSymbolChar(c)) {
+        continue;
+      }
+      char hex[4];
+      sprintf(hex, "@%02X", ((int)c) & 0xFF);
+      Filename.replace(i, 1, hex);
+      i += 2;
+    }
+
+    if (Type == FileType::Generated) {
+      
+      
+      
+      
+      char* Platform = getenv("MOZSEARCH_PLATFORM");
+      Filename = std::string(Platform ? Platform : "") + std::string("@") + Filename;
+    }
+    return Filename;
   }
 
   std::string mangleQualifiedName(std::string Name) {
@@ -997,7 +1055,7 @@ public:
     NoCrossref = 1 << 0,
     
     
-    OperatorToken = 1 << 1,
+    NotIdentifierToken = 1 << 1,
     
     
     
@@ -1028,7 +1086,7 @@ public:
     std::string RangeStr = locationToString(Loc, EndOffset - StartOffset);
     std::string PeekRangeStr;
 
-    if (!(Flags & OperatorToken)) {
+    if (!(Flags & NotIdentifierToken)) {
       
       const char *StartChars = SM.getCharacterData(Loc);
       std::string Text(StartChars, EndOffset - StartOffset);
@@ -1465,7 +1523,7 @@ public:
       
       CXXOperatorCallExpr *Op = dyn_cast<CXXOperatorCallExpr>(E);
       Loc = Op->getOperatorLoc();
-      Flags |= OperatorToken;
+      Flags |= NotIdentifierToken;
     } else if (MemberExpr::classof(CalleeExpr)) {
       MemberExpr *Member = dyn_cast<MemberExpr>(CalleeExpr);
       Loc = Member->getMemberLoc();
@@ -1648,6 +1706,36 @@ public:
     return true;
   }
 
+  void enterSourceFile(SourceLocation Loc) {
+    normalizeLocation(&Loc);
+    FileInfo* newFile = getFileInfo(Loc);
+    if (!newFile->Interesting) {
+      return;
+    }
+    FileType type = newFile->Generated ? FileType::Generated : FileType::Source;
+    std::vector<std::string> symbols = {
+        std::string("FILE_") + mangleFile(newFile->Realname, type)
+    };
+    
+    
+    
+    visitIdentifier("def", "file", newFile->Realname, SourceRange(Loc),
+                    symbols, Context(), NotIdentifierToken | LocRangeEndValid);
+  }
+
+  void inclusionDirective(SourceRange FileNameRange, const FileEntry* File) {
+    std::string includedFile(File->tryGetRealPathName());
+    FileType type = relativizePath(includedFile);
+    if (type == FileType::Unknown) {
+      return;
+    }
+    std::vector<std::string> symbols = {
+        std::string("FILE_") + mangleFile(includedFile, type)
+    };
+    visitIdentifier("use", "file", includedFile, FileNameRange, symbols,
+                    Context(), NotIdentifierToken | LocRangeEndValid);
+  }
+
   void macroDefined(const Token &Tok, const MacroDirective *Macro) {
     if (Macro->getMacroInfo()->isBuiltinMacro()) {
       return;
@@ -1688,6 +1776,36 @@ public:
     }
   }
 };
+
+void PreprocessorHook::FileChanged(SourceLocation Loc, FileChangeReason Reason,
+                                   SrcMgr::CharacteristicKind FileType,
+                                   FileID PrevFID = FileID()) {
+  switch (Reason) {
+    case PPCallbacks::RenameFile:
+    case PPCallbacks::SystemHeaderPragma:
+      
+      break;
+    case PPCallbacks::EnterFile:
+      Indexer->enterSourceFile(Loc);
+      break;
+    case PPCallbacks::ExitFile:
+      
+      break;
+  }
+}
+
+void PreprocessorHook::InclusionDirective(SourceLocation HashLoc,
+                                          const Token &IncludeTok,
+                                          StringRef FileName,
+                                          bool IsAngled,
+                                          CharSourceRange FileNameRange,
+                                          const FileEntry *File,
+                                          StringRef SearchPath,
+                                          StringRef RelativePath,
+                                          const Module *Imported,
+                                          SrcMgr::CharacteristicKind FileType) {
+  Indexer->inclusionDirective(FileNameRange.getAsRange(), File);
+}
 
 void PreprocessorHook::MacroDefined(const Token &Tok,
                                     const MacroDirective *Md) {
