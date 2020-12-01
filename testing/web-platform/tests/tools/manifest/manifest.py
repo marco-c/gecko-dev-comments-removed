@@ -1,6 +1,5 @@
 import io
 import itertools
-import json
 import os
 from atomicwrites import atomic_write
 from copy import deepcopy
@@ -13,6 +12,7 @@ from six import (
     string_types,
 )
 
+from . import jsonlib
 from . import vcs
 from .item import (ConformanceCheckerTest,
                    CrashTest,
@@ -45,11 +45,6 @@ if MYPY:
     from typing import Type
     from typing import Union
 
-try:
-    import ujson
-    fast_json = ujson
-except ImportError:
-    fast_json = json  
 
 CURRENT_VERSION = 8  
 
@@ -354,7 +349,7 @@ def _load(logger,
         try:
             with io.open(manifest, "r", encoding="utf-8") as f:
                 rv = Manifest.from_json(tests_root,
-                                        fast_json.load(f),
+                                        jsonlib.load(f),
                                         types=types,
                                         callee_owns_obj=True)
         except IOError:
@@ -364,7 +359,7 @@ def _load(logger,
             return None
     else:
         rv = Manifest.from_json(tests_root,
-                                fast_json.load(manifest),
+                                jsonlib.load(manifest),
                                 types=types,
                                 callee_owns_obj=True)
 
@@ -476,6 +471,5 @@ def write(manifest, manifest_path):
     with atomic_write(manifest_path, overwrite=True) as f:
         
         
-        json.dump(manifest.to_json(caller_owns_obj=True), f,
-                  sort_keys=True, indent=1, separators=(',', ': '))
+        jsonlib.dump_dist(manifest.to_json(caller_owns_obj=True), f)
         f.write("\n")
