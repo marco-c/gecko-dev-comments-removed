@@ -83,14 +83,30 @@ const clearCookies = async function(options) {
   
   let yieldCounter = 0;
 
-  if (options.since || options.hostnames) {
+  if (options.since || options.hostnames || options.cookieStoreId) {
     
-    for (const cookie of cookieMgr.cookies) {
+    let cookies = cookieMgr.cookies;
+    if (
+      !options.cookieStoreId ||
+      isPrivateCookieStoreId(options.cookieStoreId)
+    ) {
+      
+      const privateCookies = cookieMgr.getCookiesWithOriginAttributes(
+        JSON.stringify({
+          privateBrowsingId: 1,
+        })
+      );
+      cookies = cookies.concat(privateCookies);
+    }
+    for (const cookie of cookies) {
       if (
         (!options.since ||
           cookie.creationTime >= PlacesUtils.toPRTime(options.since)) &&
         (!options.hostnames ||
-          options.hostnames.includes(cookie.host.replace(/^\./, "")))
+          options.hostnames.includes(cookie.host.replace(/^\./, ""))) &&
+        (!options.cookieStoreId ||
+          getCookieStoreIdForOriginAttributes(cookie.originAttributes) ===
+            options.cookieStoreId)
       ) {
         
         cookieMgr.remove(
@@ -291,6 +307,28 @@ const doRemoval = (options, dataToRemove, extension) => {
       message:
         "Firefox does not support protectedWeb or extension as originTypes.",
     });
+  }
+
+  if (options.cookieStoreId) {
+    const SUPPORTED_TYPES = ["cookies"];
+
+    for (let dataType in dataToRemove) {
+      if (dataToRemove[dataType] && !SUPPORTED_TYPES.includes(dataType)) {
+        return Promise.reject({
+          message: `Firefox does not support clearing ${dataType} with 'cookieStoreId'.`,
+        });
+      }
+    }
+
+    if (
+      !isPrivateCookieStoreId(options.cookieStoreId) &&
+      !isDefaultCookieStoreId(options.cookieStoreId) &&
+      !getContainerForCookieStoreId(options.cookieStoreId)
+    ) {
+      return Promise.reject({
+        message: `Invalid cookieStoreId: ${options.cookieStoreId}`,
+      });
+    }
   }
 
   let removalPromises = [];
