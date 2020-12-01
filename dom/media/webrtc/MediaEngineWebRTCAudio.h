@@ -16,7 +16,7 @@
 namespace mozilla {
 
 class AudioInputProcessing;
-class AudioInputProcessingPullListener;
+class AudioInputTrack;
 
 
 
@@ -125,17 +125,10 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
   
   
-  RefPtr<SourceMediaTrack> mTrack;
+  RefPtr<AudioInputTrack> mTrack;
 
   
   RefPtr<AudioInputProcessing> mInputProcessing;
-
-  
-  
-  
-  
-  
-  RefPtr<AudioInputProcessingPullListener> mPullListener;
 };
 
 
@@ -144,10 +137,10 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 class AudioInputProcessing : public AudioDataListener {
  public:
   AudioInputProcessing(uint32_t aMaxChannelCount,
-                       RefPtr<SourceMediaTrack> aTrack,
                        const PrincipalHandle& aPrincipalHandle);
 
-  void Pull(TrackTime aEndOfAppendedData, TrackTime aDesiredTime);
+  void Pull(MediaTrackGraphImpl* aGraph, GraphTime aFrom, GraphTime aTo,
+            GraphTime aTrackEnd, AudioSegment* aSegment, bool* aEnded);
 
   void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
                         size_t aFrames, TrackRate aRate,
@@ -168,22 +161,24 @@ class AudioInputProcessing : public AudioDataListener {
 
   void DeviceChanged(MediaTrackGraphImpl* aGraph) override;
 
-  uint32_t RequestedInputChannelCount(MediaTrackGraphImpl* aGraph) override {
-    return GetRequestedInputChannelCount(aGraph);
+  uint32_t RequestedInputChannelCount(MediaTrackGraphImpl*) override {
+    return GetRequestedInputChannelCount();
   }
 
   void Disconnect(MediaTrackGraphImpl* aGraph) override;
 
   template <typename T>
-  void InsertInGraph(const T* aBuffer, size_t aFrames, uint32_t aChannels);
+  void InsertInGraph(MediaTrackGraphImpl* aGraph, const T* aBuffer,
+                     size_t aFrames, uint32_t aChannels);
 
   void PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
                            const AudioDataValue* aBuffer, size_t aFrames,
                            TrackRate aRate, uint32_t aChannels);
 
   void SetPassThrough(bool aPassThrough);
-  uint32_t GetRequestedInputChannelCount(MediaTrackGraphImpl* aGraphImpl);
-  void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
+  uint32_t GetRequestedInputChannelCount();
+  void SetRequestedInputChannelCount(MediaTrackGraphImpl* aGraph,
+                                     uint32_t aRequestedInputChannelCount);
   
   
   bool PassThrough(MediaTrackGraphImpl* aGraphImpl) const;
@@ -202,7 +197,6 @@ class AudioInputProcessing : public AudioDataListener {
 
  private:
   ~AudioInputProcessing() = default;
-  const RefPtr<SourceMediaTrack> mTrack;
   
   
   
@@ -232,6 +226,8 @@ class AudioInputProcessing : public AudioDataListener {
   AlignedFloatBuffer mDeinterleavedBuffer;
   
   AlignedFloatBuffer mInputDownmixBuffer;
+  
+  AudioSegment mSegment;
 #ifdef DEBUG
   
   
@@ -254,25 +250,50 @@ class AudioInputProcessing : public AudioDataListener {
 };
 
 
+class AudioInputTrack : public ProcessedMediaTrack {
+  
+  RefPtr<AudioInputProcessing> mInputProcessing;
 
-class AudioInputProcessingPullListener : public MediaTrackListener {
+  
+  
+  
+  
+  RefPtr<AudioDataListener> mInputListener;
+
+  explicit AudioInputTrack(TrackRate aSampleRate)
+      : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
+                            new AudioSegment()) {}
+
+  ~AudioInputTrack() = default;
+
  public:
-  explicit AudioInputProcessingPullListener(
-      RefPtr<AudioInputProcessing> aInputProcessing)
-      : mInputProcessing(std::move(aInputProcessing)) {
-    MOZ_COUNT_CTOR(AudioInputProcessingPullListener);
+  
+  
+  
+  
+  nsresult OpenAudioInput(CubebUtils::AudioDeviceID aId,
+                          AudioDataListener* aListener);
+  void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aId);
+  void Destroy() override;
+  void SetInputProcessing(RefPtr<AudioInputProcessing> aInputProcessing);
+  static AudioInputTrack* Create(MediaTrackGraph* aGraph);
+
+  
+  void DestroyImpl() override;
+  void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
+  uint32_t NumberOfChannels() const override {
+    MOZ_DIAGNOSTIC_ASSERT(
+        mInputProcessing,
+        "Must set mInputProcessing before exposing to content");
+    return mInputProcessing->GetRequestedInputChannelCount();
   }
 
-  ~AudioInputProcessingPullListener() {
-    MOZ_COUNT_DTOR(AudioInputProcessingPullListener);
-  }
+  
+  AudioInputTrack* AsAudioInputTrack() override { return this; }
 
-  void NotifyPull(MediaTrackGraph* aGraph, TrackTime aEndOfAppendedData,
-                  TrackTime aDesiredTime) override {
-    mInputProcessing->Pull(aEndOfAppendedData, aDesiredTime);
-  }
-
-  const RefPtr<AudioInputProcessing> mInputProcessing;
+ private:
+  
+  void SetInputProcessingImpl(RefPtr<AudioInputProcessing> aInputProcessing);
 };
 
 class MediaEngineWebRTCAudioCaptureSource : public MediaEngineSource {

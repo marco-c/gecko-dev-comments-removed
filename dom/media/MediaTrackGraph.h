@@ -86,13 +86,17 @@ enum class AudioContextState : uint8_t;
 
 
 
+class AudioInputTrack;
 class AudioNodeEngine;
 class AudioNodeExternalInputTrack;
 class AudioNodeTrack;
+class DirectMediaTrackListener;
+class ForwardedInputTrack;
 class MediaInputPort;
 class MediaTrack;
 class MediaTrackGraph;
 class MediaTrackGraphImpl;
+class MediaTrackListener;
 class ProcessedMediaTrack;
 class SourceMediaTrack;
 
@@ -190,16 +194,6 @@ struct AudioNodeSizes {
 
 
 enum class DisabledTrackMode { ENABLED, SILENCE_BLACK, SILENCE_FREEZE };
-
-class AudioNodeEngine;
-class AudioNodeExternalInputTrack;
-class AudioNodeTrack;
-class DirectMediaTrackListener;
-class MediaTrackGraphImpl;
-class MediaTrackListener;
-class ProcessedMediaTrack;
-class SourceMediaTrack;
-class ForwardedInputTrack;
 
 
 
@@ -379,6 +373,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   friend class MediaInputPort;
   friend class AudioNodeExternalInputTrack;
 
+  virtual AudioInputTrack* AsAudioInputTrack() { return nullptr; }
   virtual SourceMediaTrack* AsSourceTrack() { return nullptr; }
   virtual ProcessedMediaTrack* AsProcessedTrack() { return nullptr; }
   virtual AudioNodeTrack* AsAudioNodeTrack() { return nullptr; }
@@ -627,16 +622,6 @@ class SourceMediaTrack : public MediaTrack {
   void SetPullingEnabled(bool aEnabled);
 
   
-  
-  
-  nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
-                          AudioDataListener* aListener);
-  
-  void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID);
-
-  
-  void Destroy() override;
-  
   void DestroyImpl() override;
 
   
@@ -762,12 +747,6 @@ class SourceMediaTrack : public MediaTrack {
 
   virtual void AdvanceTimeVaryingValuesToCurrentTime(
       GraphTime aCurrentTime, GraphTime aBlockedTime) override;
-
-  
-  
-  
-  
-  RefPtr<AudioDataListener> mInputListener;
 
   
   
