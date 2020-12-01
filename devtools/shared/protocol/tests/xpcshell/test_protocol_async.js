@@ -9,8 +9,9 @@
 
 
 
-var protocol = require("devtools/shared/protocol");
-var { Arg, RetVal } = protocol;
+const { waitForTick } = require("devtools/shared/DevToolsUtils");
+const protocol = require("devtools/shared/protocol");
+const { Arg, RetVal } = protocol;
 
 function simpleHello() {
   return {
@@ -35,12 +36,13 @@ const rootSpec = protocol.generateActorSpec({
       response: { value: RetVal("number") },
     },
     promiseThrow: {
+      request: { toWait: Arg(0, "number") },
       response: { value: RetVal("number") },
     },
   },
 });
 
-var RootActor = protocol.ActorClassWithSpec(rootSpec, {
+const RootActor = protocol.ActorClassWithSpec(rootSpec, {
   initialize: function(conn) {
     protocol.Actor.prototype.initialize.call(this, conn);
     
@@ -55,37 +57,26 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
     return this.sequence++;
   },
 
-  promiseReturn: function(toWait) {
-    
-    return new Promise(resolve => {
-      const sequence = this.sequence++;
+  
+  promiseReturn: async function(toWait) {
+    const sequence = this.sequence++;
 
-      
-      
-      const check = () => {
-        if (this.sequence - sequence < toWait) {
-          executeSoon(check);
-          return;
-        }
-        resolve(sequence);
-      };
-      executeSoon(check);
-    });
+    
+    
+    while (this.sequence - sequence < toWait) {
+      await waitForTick();
+    }
+
+    return sequence;
   },
 
   simpleThrow: function() {
     throw new Error(this.sequence++);
   },
 
-  promiseThrow: function() {
-    
-    return new Promise((resolve, reject) => {
-      let sequence = this.sequence++;
-      
-      do_timeout(150, () => {
-        reject(sequence++);
-      });
-    });
+  
+  promiseThrow: function(toWait) {
+    return this.promiseReturn(toWait).then(Promise.reject);
   },
 });
 
@@ -155,13 +146,8 @@ add_task(async function() {
     )
   );
 
-  
-  
-  
-  const deferAfterRejection = defer();
-
   calls.push(
-    rootFront.promiseThrow().then(
+    rootFront.promiseThrow(2).then(
       () => {
         Assert.ok(false, "promiseThrow shouldn't succeed!");
       },
@@ -169,19 +155,16 @@ add_task(async function() {
         
         Assert.equal(sequence++, 4);
         Assert.ok(true, "simple throw should throw");
-        deferAfterRejection.resolve();
       }
     )
   );
 
   calls.push(
     rootFront.simpleReturn().then(ret => {
-      return deferAfterRejection.promise.then(function() {
-        
-        Assert.equal(sequence, 5);
-        
-        Assert.equal(ret, sequence++);
-      });
+      
+      Assert.equal(sequence, 5);
+      
+      Assert.equal(ret, sequence++);
     })
   );
 
@@ -189,23 +172,19 @@ add_task(async function() {
   
   calls.push(
     rootFront.promiseReturn(1).then(ret => {
-      return deferAfterRejection.promise.then(function() {
-        
-        Assert.equal(sequence, 6);
-        
-        Assert.equal(ret, sequence++);
-      });
+      
+      Assert.equal(sequence, 6);
+      
+      Assert.equal(ret, sequence++);
     })
   );
 
   calls.push(
     rootFront.simpleReturn().then(ret => {
-      return deferAfterRejection.promise.then(function() {
-        
-        Assert.equal(sequence, 7);
-        
-        Assert.equal(ret, sequence++);
-      });
+      
+      Assert.equal(sequence, 7);
+      
+      Assert.equal(ret, sequence++);
     })
   );
 
