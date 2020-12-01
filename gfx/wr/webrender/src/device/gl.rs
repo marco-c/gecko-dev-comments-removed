@@ -962,6 +962,9 @@ pub struct Capabilities {
     
     pub supports_render_target_partial_update: bool,
     
+    
+    pub prefers_batched_texture_uploads: bool,
+    
     pub renderer_name: String,
 }
 
@@ -1580,10 +1583,16 @@ impl Device {
         
         let supports_nonzero_pbo_offsets = !is_macos;
 
+        let is_mali_g = renderer_name.starts_with("Mali-G");
+
         
         
         
-        let supports_render_target_partial_update = !renderer_name.starts_with("Mali-G");
+        let supports_render_target_partial_update = !is_mali_g;
+
+        
+        
+        let prefers_batched_texture_uploads = is_mali_g;
 
         Device {
             gl,
@@ -1606,6 +1615,7 @@ impl Device {
                 supports_nonzero_pbo_offsets,
                 supports_texture_usage,
                 supports_render_target_partial_update,
+                prefers_batched_texture_uploads,
                 renderer_name,
             },
 
