@@ -110,8 +110,8 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
   get threadActor() {
     return this._threadActor;
   },
-  get sources() {
-    return this._threadActor.sources;
+  get sourcesManager() {
+    return this._threadActor.sourcesManager;
   },
   get dbg() {
     return this.threadActor.dbg;
@@ -172,7 +172,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       actor: this.actorID,
       extensionName: this.extensionName,
       url: this.url,
-      isBlackBoxed: this.threadActor.sources.isBlackBoxed(this.url),
+      isBlackBoxed: this.sourcesManager.isBlackBoxed(this.url),
       sourceMapBaseURL: getSourcemapBaseURL(
         this.url,
         this.threadActor._parent.window
@@ -220,7 +220,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       };
     }
 
-    return this.sources.urlContents(
+    return this.sourcesManager.urlContents(
       this.url,
        false,
        this._isInlineSource
@@ -288,7 +288,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     
     
     
-    const fileContents = this.sources.urlContents(
+    const fileContents = this.sourcesManager.urlContents(
       this.url,
        true,
        this._isInlineSource
@@ -608,7 +608,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
   blackbox: function(range) {
-    this.threadActor.sources.blackBox(this.url, range);
+    this.sourcesManager.blackBox(this.url, range);
     if (
       this.threadActor.state == "paused" &&
       this.threadActor.youngestFrame &&
@@ -623,7 +623,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
   unblackbox: function(range) {
-    this.threadActor.sources.unblackBox(this.url, range);
+    this.sourcesManager.unblackBox(this.url, range);
   },
 
   

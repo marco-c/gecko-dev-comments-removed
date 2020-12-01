@@ -146,10 +146,10 @@ BreakpointActor.prototype = {
   hit: function(frame) {
     
     
-    const location = this.threadActor.sources.getFrameLocation(frame);
+    const location = this.threadActor.sourcesManager.getFrameLocation(frame);
 
     if (
-      this.threadActor.sources.isFrameBlackBoxed(frame) ||
+      this.threadActor.sourcesManager.isFrameBlackBoxed(frame) ||
       this.threadActor.skipBreakpoints
     ) {
       return undefined;

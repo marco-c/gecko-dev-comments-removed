@@ -22,66 +22,65 @@ loader.lazyRequireGetter(
 
 
 
-function TabSources(threadActor, allowSourceFn = () => true) {
-  EventEmitter.decorate(this);
-
-  this._thread = threadActor;
-  this.allowSource = source => {
-    return !isHiddenSource(source) && allowSourceFn(source);
-  };
-
-  this.blackBoxedSources = new Map();
-
-  
-  this._sourceActors = new Map();
-
-  
-  
-  
-  this._urlContents = new Map();
-
-  
-  
-  
-  this._urlWaiters = new Map();
-
-  
-  
-  
-  
-  
-  
-  
-  this._sourcesByInternalSourceId = null;
-
-  if (!isWorker) {
-    Services.obs.addObserver(this, "devtools-html-content");
-  }
-}
-
-
-
-
-
 
 const MINIFIED_SOURCE_REGEXP = /\bmin\.js$/;
 
-TabSources.prototype = {
+
+
+
+
+class SourcesManager extends EventEmitter {
+  constructor(threadActor, allowSourceFn = () => true) {
+    super();
+    this._thread = threadActor;
+    this.allowSource = source => {
+      return !isHiddenSource(source) && allowSourceFn(source);
+    };
+
+    this.blackBoxedSources = new Map();
+
+    
+    this._sourceActors = new Map();
+
+    
+    
+    
+    this._urlContents = new Map();
+
+    
+    
+    
+    this._urlWaiters = new Map();
+
+    
+    
+    
+    
+    
+    
+    
+    this._sourcesByInternalSourceId = null;
+
+    if (!isWorker) {
+      Services.obs.addObserver(this, "devtools-html-content");
+    }
+  }
+
   destroy() {
     if (!isWorker) {
       Services.obs.removeObserver(this, "devtools-html-content");
     }
-  },
+  }
 
   
 
 
-  reset: function() {
+  reset() {
     this._sourceActors = new Map();
     this._urlContents = new Map();
     this._urlWaiters = new Map();
     this._sourcesByInternalSourceId = null;
-  },
+  }
 
   
 
@@ -90,8 +89,8 @@ TabSources.prototype = {
 
 
 
-  createSourceActor: function(source) {
-    assert(source, "TabSources.prototype.source needs a source");
+  createSourceActor(source) {
+    assert(source, "SourcesManager.prototype.source needs a source");
 
     if (!this.allowSource(source)) {
       return null;
@@ -115,21 +114,21 @@ TabSources.prototype = {
 
     this.emit("newSource", actor);
     return actor;
-  },
+  }
 
-  _getSourceActor: function(source) {
+  _getSourceActor(source) {
     if (this._sourceActors.has(source)) {
       return this._sourceActors.get(source);
     }
 
     return null;
-  },
+  }
 
-  hasSourceActor: function(source) {
+  hasSourceActor(source) {
     return !!this._getSourceActor(source);
-  },
+  }
 
-  getSourceActor: function(source) {
+  getSourceActor(source) {
     const sourceActor = this._getSourceActor(source);
 
     if (!sourceActor) {
@@ -139,7 +138,7 @@ TabSources.prototype = {
     }
 
     return sourceActor;
-  },
+  }
 
   getOrCreateSourceActor(source) {
     
@@ -159,9 +158,9 @@ TabSources.prototype = {
       return this.getSourceActor(source);
     }
     return this.createSourceActor(source);
-  },
+  }
 
-  getSourceActorByInternalSourceId: function(id) {
+  getSourceActorByInternalSourceId(id) {
     if (!this._sourcesByInternalSourceId) {
       this._sourcesByInternalSourceId = new Map();
       for (const source of this._thread.dbg.findSources()) {
@@ -175,9 +174,9 @@ TabSources.prototype = {
       return this.getOrCreateSourceActor(source);
     }
     return null;
-  },
+  }
 
-  getSourceActorsByURL: function(url) {
+  getSourceActorsByURL(url) {
     const rv = [];
     if (url) {
       for (const [, actor] of this._sourceActors) {
@@ -187,7 +186,7 @@ TabSources.prototype = {
       }
     }
     return rv;
-  },
+  }
 
   getSourceActorById(actorId) {
     for (const [, actor] of this._sourceActors) {
@@ -196,7 +195,7 @@ TabSources.prototype = {
       }
     }
     return null;
-  },
+  }
 
   
 
@@ -206,7 +205,7 @@ TabSources.prototype = {
 
 
 
-  _isMinifiedURL: function(uri) {
+  _isMinifiedURL(uri) {
     if (!uri) {
       return false;
     }
@@ -222,7 +221,7 @@ TabSources.prototype = {
       
       return MINIFIED_SOURCE_REGEXP.test(uri);
     }
-  },
+  }
 
   
 
@@ -234,14 +233,14 @@ TabSources.prototype = {
 
 
 
-  getScriptOffsetLocation: function(script, offset) {
+  getScriptOffsetLocation(script, offset) {
     const { lineNumber, columnNumber } = script.getOffsetMetadata(offset);
     return new SourceLocation(
       this.createSourceActor(script.source),
       lineNumber,
       columnNumber
     );
-  },
+  }
 
   
 
@@ -252,12 +251,12 @@ TabSources.prototype = {
 
 
 
-  getFrameLocation: function(frame) {
+  getFrameLocation(frame) {
     if (!frame || !frame.script) {
       return new SourceLocation();
     }
     return this.getScriptOffsetLocation(frame.script, frame.offset);
-  },
+  }
 
   
 
@@ -266,7 +265,7 @@ TabSources.prototype = {
 
 
 
-  isBlackBoxed: function(url, line, column) {
+  isBlackBoxed(url, line, column) {
     const ranges = this.blackBoxedSources.get(url);
     if (!ranges) {
       return this.blackBoxedSources.has(url);
@@ -274,12 +273,12 @@ TabSources.prototype = {
 
     const range = ranges.find(r => isLocationInRange({ line, column }, r));
     return !!range;
-  },
+  }
 
-  isFrameBlackBoxed: function(frame) {
+  isFrameBlackBoxed(frame) {
     const { url, line, column } = this.getFrameLocation(frame);
     return this.isBlackBoxed(url, line, column);
-  },
+  }
 
   
 
@@ -287,7 +286,7 @@ TabSources.prototype = {
 
 
 
-  blackBox: function(url, range) {
+  blackBox(url, range) {
     if (!range) {
       
       return this.blackBoxedSources.set(url, null);
@@ -302,7 +301,7 @@ TabSources.prototype = {
     ranges.splice(index + 1, 0, range);
     this.blackBoxedSources.set(url, ranges);
     return true;
-  },
+  }
 
   
 
@@ -310,7 +309,7 @@ TabSources.prototype = {
 
 
 
-  unblackBox: function(url, range) {
+  unblackBox(url, range) {
     if (!range) {
       return this.blackBoxedSources.delete(url);
     }
@@ -333,11 +332,11 @@ TabSources.prototype = {
     }
 
     return this.blackBoxedSources.set(url, ranges);
-  },
+  }
 
-  iter: function() {
+  iter() {
     return [...this._sourceActors.values()];
-  },
+  }
 
   
 
@@ -374,7 +373,7 @@ TabSources.prototype = {
         });
       }
     }
-  },
+  }
 
   
 
@@ -405,9 +404,9 @@ TabSources.prototype = {
     }
 
     return this._fetchURLContents(url, partial, canUseCache);
-  },
+  }
 
-  _fetchURLContents: async function(url, partial, canUseCache) {
+  async _fetchURLContents(url, partial, canUseCache) {
     
     
     
@@ -469,9 +468,9 @@ TabSources.prototype = {
     this._urlContents.set(url, { ...result, complete: true });
 
     return result;
-  },
+  }
 
-  _reportLoadSourceError: function(error) {
+  _reportLoadSourceError(error) {
     try {
       DevToolsUtils.reportException("SourceActor", error);
 
@@ -480,8 +479,8 @@ TabSources.prototype = {
     } catch (e) {
       
     }
-  },
-};
+  }
+}
 
 
 
@@ -500,5 +499,5 @@ function isLocationInRange({ line, column }, range) {
   );
 }
 
-exports.TabSources = TabSources;
+exports.SourcesManager = SourcesManager;
 exports.isHiddenSource = isHiddenSource;

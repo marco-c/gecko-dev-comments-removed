@@ -30,7 +30,9 @@ const ChromeUtils = require("ChromeUtils");
 var { ActorRegistry } = require("devtools/server/actors/utils/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
-var { TabSources } = require("devtools/server/actors/utils/TabSources");
+var {
+  SourcesManager,
+} = require("devtools/server/actors/utils/sources-manager");
 var makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const InspectorUtils = require("InspectorUtils");
 const Targets = require("devtools/server/actors/targets/index");
@@ -492,7 +494,7 @@ const browsingContextTargetPrototype = {
 
   get sources() {
     if (!this._sources) {
-      this._sources = new TabSources(this.threadActor, this._allowSource);
+      this._sources = new SourcesManager(this.threadActor, this._allowSource);
     }
     return this._sources;
   },
