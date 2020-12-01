@@ -44,7 +44,7 @@ class FirefoxDataProvider {
     this.stackTraceRequestInfoByActorID = new Map();
 
     
-    this.payloadQueue = new Map();
+    this.pendingRequests = new Set();
 
     
     
@@ -86,30 +86,12 @@ class FirefoxDataProvider {
 
 
 
-  async addRequest(id, data) {
-    const { startedDateTime, ...payload } = data;
-
+  async addRequest(id, resource) {
     
-    
-    this.pushRequestToQueue(id, {
-      blockedReason: payload.blockedReason,
-    });
+    this.pendingRequests.add(id);
 
     if (this.actionsEnabled && this.actions.addRequest) {
-      await this.actions.addRequest(
-        id,
-        {
-          ...payload,
-          
-          startedMs: Date.parse(startedDateTime),
-
-          
-          
-          
-          stacktrace: payload.cause.stacktrace,
-        },
-        true
-      );
+      await this.actions.addRequest(id, resource, true);
     }
 
     this.emit(EVENTS.REQUEST_ADDED, id);
@@ -289,23 +271,8 @@ class FirefoxDataProvider {
 
 
 
-  isPayloadQueueEmpty() {
-    return this.payloadQueue.size === 0;
-  }
-
-  
-
-
-
-
-
-  pushRequestToQueue(id, payload) {
-    let payloadFromQueue = this.payloadQueue.get(id);
-    if (!payloadFromQueue) {
-      payloadFromQueue = {};
-      this.payloadQueue.set(id, payloadFromQueue);
-    }
-    Object.assign(payloadFromQueue, payload);
+  hasPendingRequests() {
+    return this.pendingRequests.size > 0;
   }
 
   
@@ -359,22 +326,7 @@ class FirefoxDataProvider {
 
 
   async onNetworkResourceAvailable(resource) {
-    const {
-      actor,
-      cause,
-      fromCache,
-      fromServiceWorker,
-      isXHR,
-      request: { method, url },
-      response: { bodySize, ...responseProps },
-      startedDateTime,
-      isThirdPartyTrackingResource,
-      referrerPolicy,
-      blockedReason,
-      blockingExtension,
-      resourceId,
-      stacktraceResourceId,
-    } = resource;
+    const { actor, stacktraceResourceId } = resource;
 
     
     
@@ -385,8 +337,10 @@ class FirefoxDataProvider {
         lastFrame,
         targetFront,
       } = this.stackTraces.get(stacktraceResourceId);
-      cause.stacktraceAvailable = stacktraceAvailable;
-      cause.lastFrame = lastFrame;
+
+      resource.cause.stacktraceAvailable = stacktraceAvailable;
+      resource.cause.lastFrame = lastFrame;
+
       this.stackTraces.delete(stacktraceResourceId);
       
       
@@ -398,45 +352,7 @@ class FirefoxDataProvider {
         stacktraceResourceId,
       });
     }
-
-    
-    
-    
-    const available = {};
-    [
-      "eventTimings",
-      "requestHeaders",
-      "requestPostData",
-      "responseHeaders",
-      "responseStart",
-      "responseContent",
-      "securityInfo",
-      "responseCache",
-      "responseCookies",
-    ].forEach(updateType => {
-      if (resource.updates.includes(updateType)) {
-        available[`${updateType}Available`] = true;
-      }
-    });
-
-    await this.addRequest(actor, {
-      cause,
-      fromCache,
-      fromServiceWorker,
-      isXHR,
-      method,
-      startedDateTime,
-      url,
-      isThirdPartyTrackingResource,
-      referrerPolicy,
-      blockedReason,
-      blockingExtension,
-      resourceId,
-      mimeType: resource?.content?.mimeType,
-      contentSize: bodySize,
-      ...responseProps,
-      ...available,
-    });
+    await this.addRequest(actor, resource);
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT, resource);
   }
 
@@ -445,66 +361,23 @@ class FirefoxDataProvider {
 
 
 
-  async onNetworkResourceUpdated(resource, update) {
-    switch (update.updateType) {
-      case "securityInfo":
-        this.pushRequestToQueue(resource.actor, {
-          securityState: resource.securityState,
-          isRacing: resource.isRacing,
-        });
-        break;
-      case "responseStart":
-        this.pushRequestToQueue(resource.actor, {
-          httpVersion: resource.response.httpVersion,
-          remoteAddress: resource.response.remoteAddress,
-          remotePort: resource.response.remotePort,
-          status: resource.response.status,
-          statusText: resource.response.statusText,
-          headersSize: resource.response.headersSize,
-          waitingTime: resource.response.waitingTime,
-        });
+  async onNetworkResourceUpdated(resource) {
+    
+    if (resource?.mimeType?.includes("text/event-stream")) {
+      await this.setEventStreamFlag(resource.actor);
+    }
 
-        
-        if (resource.response.content.mimeType?.includes("text/event-stream")) {
-          await this.setEventStreamFlag(resource.actor);
-        }
-
-        this.emitForTests(
-          TEST_EVENTS.STARTED_RECEIVING_RESPONSE,
-          resource.actor
-        );
-        break;
-      case "responseContent":
-        this.pushRequestToQueue(resource.actor, {
-          contentSize: resource.response.bodySize,
-          transferredSize: resource.response.transferredSize,
-          mimeType: resource.response.content.mimeType,
-          blockingExtension: resource.blockingExtension,
-          blockedReason: resource.blockedReason,
-        });
-        break;
-      case "eventTimings":
-        
-        
-        
-        
-        if (typeof resource.totalTime !== "undefined") {
-          this.pushRequestToQueue(resource.actor, {
-            totalTime: resource.totalTime,
-          });
-        }
-        break;
+    this.pendingRequests.delete(resource.actor);
+    if (this.actionsEnabled && this.actions.updateRequest) {
+      await this.actions.updateRequest(resource.actor, resource, true);
     }
 
     
     
-    this.pushRequestToQueue(resource.actor, {
-      [`${update.updateType}Available`]: true,
-    });
-
-    await this.onPayloadDataReceived(resource);
-
+    
+    
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT_UPDATED, resource.actor);
+    this.emit(EVENTS.PAYLOAD_READY, resource);
   }
 
   
@@ -562,42 +435,6 @@ class FirefoxDataProvider {
       await this.actions.addMessage(httpChannelId, data, true);
     }
     
-  }
-
-  
-
-
-
-
-
-
-  async onPayloadDataReceived(resource) {
-    const payload = this.payloadQueue.get(resource.actor) || {};
-
-    
-    
-    if (!payload.requestHeadersAvailable || !payload.requestCookiesAvailable) {
-      return;
-    }
-    
-    if (
-      !payload.blockedReason &&
-      (!payload.eventTimingsAvailable || !payload.responseContentAvailable)
-    ) {
-      return;
-    }
-
-    this.payloadQueue.delete(resource.actor);
-
-    if (this.actionsEnabled && this.actions.updateRequest) {
-      await this.actions.updateRequest(resource.actor, payload, true);
-    }
-
-    
-    
-    
-    
-    this.emit(EVENTS.PAYLOAD_READY, resource);
   }
 
   
