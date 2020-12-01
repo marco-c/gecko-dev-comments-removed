@@ -183,8 +183,7 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
   WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
   LogicalSize availSize(lineWM, aReflowInput.AvailableISize(),
                         aReflowInput.AvailableBSize());
-  WritingMode rubyWM = GetWritingMode();
-  NS_ASSERTION(!rubyWM.IsOrthogonalTo(lineWM),
+  NS_ASSERTION(!GetWritingMode().IsOrthogonalTo(lineWM),
                "Ruby frame writing-mode shouldn't be orthogonal to its line");
 
   AutoRubyTextContainerArray textContainers(aBaseContainer);
@@ -297,9 +296,7 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
     
     NS_ASSERTION(textReflowStatus.IsEmpty(),
                  "Ruby text container must not break itself inside");
-    
-    
-    LogicalSize size = textMetrics.Size(rubyWM).ConvertTo(lineWM, rubyWM);
+    const LogicalSize size = textMetrics.Size(lineWM);
     textContainer->SetSize(lineWM, size);
 
     nscoord reservedISize = RubyUtils::GetReservedISize(textContainer);
