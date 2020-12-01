@@ -79,6 +79,8 @@ def output_js(objs, output_fd, options={}):
     """
 
     
+    util.snake_case = lambda value: value.replace(".", "_").replace("-", "_")
+    
 
     def get_local_template(template_name, filters=()):
         env = jinja2.Environment(
@@ -117,6 +119,7 @@ def output_js(objs, output_fd, options={}):
     metric_type_ids = {}
 
     for category_name, objs in objs.items():
+        category_name = util.snake_case(category_name)
         id = category_string_table.stringIndex(category_name)
         categories.append((category_name, id))
 
