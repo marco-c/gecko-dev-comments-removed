@@ -4,10 +4,11 @@
 
 
 
+include "mozilla/GfxMessageUtils.h";
 include "mozilla/dom/IPCBlobUtils.h";
 
 using mozilla::void_t from "ipc/IPCMessageUtils.h";
-using nsPoint from "mozilla/GfxMessageUtils.h";
+using struct nsPoint from "nsPoint.h";
 using refcounted class mozilla::dom::BlobImpl from "mozilla/dom/BlobImpl.h";
 
 namespace mozilla {
