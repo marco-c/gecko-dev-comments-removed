@@ -3,6 +3,7 @@
 
 
 
+
 const url = RESOURCES_DIR + 'redirect-empty-location.py';
 
 promise_test(t => {

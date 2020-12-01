@@ -1,5 +1,6 @@
 
 
+
 const BASE = location.href;
 const IS_HTTPS = new URL(BASE).protocol === 'https:';
 const REMOTE_HOST = get_host_info()['REMOTE_HOST'];

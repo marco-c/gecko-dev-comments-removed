@@ -1,5 +1,6 @@
 
 
+
 function redirectLocation(desc, redirectUrl, redirectLocation, redirectStatus, redirectMode, shouldPass) {
   var url = redirectUrl;
   var urlParameters = "?redirect_status=" + redirectStatus;

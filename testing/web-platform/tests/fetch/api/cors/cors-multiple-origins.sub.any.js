@@ -1,5 +1,6 @@
 
 
+
 function corsMultipleOrigins(originList) {
   var urlParameters = "?origin=" + encodeURIComponent(originList.join(", "));
   var url = "http://{{host}}:{{ports[http][1]}}" + dirname(location.pathname) + RESOURCES_DIR + "preflight.py";

@@ -1,5 +1,6 @@
 
 
+
 function checkNetworkError(url, method) {
   method = method || "GET";
   const desc = "Fetching " + url.substring(0, 45) + " with method " + method + " is KO"

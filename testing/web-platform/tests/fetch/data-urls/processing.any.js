@@ -1,3 +1,5 @@
+
+
 promise_test(() => fetch("resources/data-urls.json").then(res => res.json()).then(runDataURLTests), "Setup.");
 function runDataURLTests(tests) {
   for(let i = 0; i < tests.length; i++) {

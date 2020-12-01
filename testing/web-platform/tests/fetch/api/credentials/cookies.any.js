@@ -1,5 +1,6 @@
 
 
+
 function cookies(desc, credentials1, credentials2 ,cookies) {
   var url = RESOURCES_DIR + "top.txt"
   var urlParameters = "";

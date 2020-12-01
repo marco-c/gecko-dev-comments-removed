@@ -11,6 +11,7 @@
 
 
 
+
 function redirectLocation(
     desc, redirectUrl, locationHeader, expectedUrlSuffix) {
   promise_test(function(test) {

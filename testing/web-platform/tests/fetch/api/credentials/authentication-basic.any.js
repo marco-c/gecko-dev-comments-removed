@@ -1,5 +1,6 @@
 
 
+
 function basicAuth(desc, user, pass, mode, status) {
   promise_test(function(test) {
     var headers = { "Authorization": "Basic " + btoa(user + ":" + pass)};

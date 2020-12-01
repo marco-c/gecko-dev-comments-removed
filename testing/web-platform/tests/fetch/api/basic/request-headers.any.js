@@ -1,5 +1,6 @@
 
 
+
 function checkContentType(contentType, body)
 {
     if (self.FormData && body instanceof self.FormData) {

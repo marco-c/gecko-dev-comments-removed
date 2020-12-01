@@ -1,5 +1,6 @@
 
 
+
 function testReferrer(referrer, expected, desc) {
   promise_test(function(test) {
     var url = RESOURCES_DIR + "inspect-headers.py?headers=referer"

@@ -2,6 +2,7 @@
 
 
 
+
 function corsPreflightRedirect(desc, redirectUrl, redirectLocation, redirectStatus, redirectPreflight) {
   var uuid_token = token();
   var url = redirectUrl;

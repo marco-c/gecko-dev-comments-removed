@@ -1,5 +1,6 @@
 
 
+
 promise_test(function() {
   return fetch(RESOURCES_DIR + "inspect-headers.py?headers=Accept").then(function(response) {
     assert_equals(response.status, 200, "HTTP status is 200");
