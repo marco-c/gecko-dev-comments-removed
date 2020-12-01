@@ -264,10 +264,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsJARChannel::Resume\n"
 
          
-         "race:nsUrlClassifierDBServiceWorker::OpenDb\n"
-         "race:nsUrlClassifierDBServiceWorker::Shutdown\n"
-
-         
          "race:TemporaryIPCBlobParent::CreateAndShareFile\n"
 
          
