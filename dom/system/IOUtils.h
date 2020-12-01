@@ -18,7 +18,6 @@
 #include "mozilla/dom/TypedArray.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISerialEventTarget.h"
-#include "nsLocalFile.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
@@ -229,9 +228,8 @@ class IOUtils final {
 
 
 
-
-  static Result<Ok, IOError> MoveSync(const nsAString& aSourcePath,
-                                      const nsAString& aDestPath,
+  static Result<Ok, IOError> MoveSync(already_AddRefed<nsIFile> aSourceFile,
+                                      already_AddRefed<nsIFile> aDestFile,
                                       bool aNoOverwrite);
 
   
@@ -242,10 +240,8 @@ class IOUtils final {
 
 
 
-
-
-  static Result<Ok, IOError> CopySync(const nsAString& aSourcePath,
-                                      const nsAString& aDestPath,
+  static Result<Ok, IOError> CopySync(already_AddRefed<nsIFile> aSourceFile,
+                                      already_AddRefed<nsIFile> aDestFile,
                                       bool aNoOverWrite, bool aRecursive);
 
   
@@ -266,8 +262,7 @@ class IOUtils final {
   template <typename CopyOrMoveFn>
   static Result<Ok, IOError> CopyOrMoveSync(CopyOrMoveFn aMethod,
                                             const char* aMethodName,
-                                            const RefPtr<nsLocalFile>& aSource,
-                                            const RefPtr<nsLocalFile>& aDest,
+                                            nsIFile* aSource, nsIFile* aDest,
                                             bool aNoOverwrite);
 
   
