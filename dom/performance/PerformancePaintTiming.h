@@ -13,6 +13,8 @@
 namespace mozilla {
 namespace dom {
 
+class Performance;
+
 
 
 

@@ -5,6 +5,9 @@
 
 
 #include "PerformanceStorageWorker.h"
+#include "Performance.h"
+#include "PerformanceResourceTiming.h"
+#include "PerformanceTiming.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerPrivate.h"
