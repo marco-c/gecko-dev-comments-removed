@@ -405,6 +405,27 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
+    
+    if (state.context.searchMode?.engineName && result.payload.url) {
+      let engine = Services.search.getEngineByName(
+        state.context.searchMode.engineName
+      );
+      if (engine) {
+        let searchModeRootDomain = UrlbarSearchUtils.getRootDomainFromEngine(
+          engine
+        );
+        let resultUrl = new URL(result.payload.url);
+        
+        
+        
+        
+        if (!resultUrl.hostname.includes(`${searchModeRootDomain}.`)) {
+          return false;
+        }
+      }
+    }
+
+    
     return true;
   }
 

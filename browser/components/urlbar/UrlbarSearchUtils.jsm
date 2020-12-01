@@ -146,6 +146,32 @@ class SearchUtils {
     return tokenAliasEngines;
   }
 
+  
+
+
+
+
+
+
+  getRootDomainFromEngine(engine) {
+    let domain = engine.getResultDomain();
+    let suffix = engine.searchUrlPublicSuffix;
+    if (!suffix) {
+      if (domain.endsWith(".test")) {
+        suffix = "test";
+      } else {
+        return domain;
+      }
+    }
+    domain = domain.substr(
+      0,
+      
+      domain.length - suffix.length - 1
+    );
+    let domainParts = domain.split(".");
+    return domainParts.pop();
+  }
+
   getDefaultEngine(isPrivate = false) {
     return this.separatePrivateDefaultUIEnabled &&
       this.separatePrivateDefault &&
