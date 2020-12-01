@@ -498,6 +498,8 @@ static const char kEventTypeNames[][40] = {
     "text value change",                
     "scrolling",                        
     "announcement",                     
+    "live region added",                
+    "live region removed",              
 };
 
 #endif
