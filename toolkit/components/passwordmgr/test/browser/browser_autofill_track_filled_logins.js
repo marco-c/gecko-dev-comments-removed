@@ -98,6 +98,6 @@ add_task(async function test() {
     BrowserTestUtils.removeTab(tab);
 
     
-    Services.logins.removeAllLogins();
+    Services.logins.removeAllUserFacingLogins();
   }
 });

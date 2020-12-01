@@ -90,7 +90,7 @@ async function loginBackupDeleted() {
 
 add_task(async function test_deleteLoginsBackup_removeAll() {
   
-  info("Testing the removeAllLogins() case");
+  info("Testing the removeAllUserFacingLogins() case");
 
   await OS.File.remove(loginStorePath, { ignoreAbsent: true });
   await OS.File.remove(loginBackupPath, { ignoreAbsent: true });
@@ -113,7 +113,7 @@ add_task(async function test_deleteLoginsBackup_removeAll() {
 
   storageUpdatePromise = TestUtils.topicObserved("password-storage-updated");
   info("Removing all logins");
-  Services.logins.removeAllLogins();
+  Services.logins.removeAllUserFacingLogins();
 
   await storageUpdatePromise;
   info("Writes to storage are complete when removeAllLogins() is called");

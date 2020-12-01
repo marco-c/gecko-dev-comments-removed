@@ -35,6 +35,11 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIUUIDGenerator"
 );
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.js",
+  FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.js",
+});
+
 class LoginManagerStorage_json {
   constructor() {
     this.__crypto = null; 
@@ -641,17 +646,48 @@ class LoginManagerStorage_json {
   
 
 
+
+
+
   removeAllLogins() {
     this._store.ensureDataReady();
-
-    this.log("Removing all logins");
     this._store.data.logins = [];
     this._store.data.potentiallyVulnerablePasswords = [];
     this.__decryptedPotentiallyVulnerablePasswords = null;
     this._store.data.dismissedBreachAlertsByLoginGUID = {};
     this._store.saveSoon();
 
-    LoginHelper.notifyStorageChanged("removeAllLogins", null);
+    LoginHelper.notifyStorageChanged("removeAllLogins", []);
+  }
+
+  
+
+
+
+
+  removeAllUserFacingLogins() {
+    this._store.ensureDataReady();
+    this.log("Removing all logins");
+
+    let [allLogins, ids] = this._searchLogins({});
+
+    let fxaKey = this._store.data.logins.find(
+      login =>
+        login.hostname == FXA_PWDMGR_HOST && login.httpRealm == FXA_PWDMGR_REALM
+    );
+    if (fxaKey) {
+      this._store.data.logins = [fxaKey];
+      allLogins = allLogins.filter(item => item != fxaKey);
+    } else {
+      this._store.data.logins = [];
+    }
+
+    this._store.data.potentiallyVulnerablePasswords = [];
+    this.__decryptedPotentiallyVulnerablePasswords = null;
+    this._store.data.dismissedBreachAlertsByLoginGUID = {};
+    this._store.saveSoon();
+
+    LoginHelper.notifyStorageChanged("removeAllLogins", allLogins);
   }
 
   findLogins(origin, formActionOrigin, httpRealm) {

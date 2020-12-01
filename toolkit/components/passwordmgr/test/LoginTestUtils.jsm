@@ -50,7 +50,7 @@ this.LoginTestUtils = {
 
 
   clearData() {
-    Services.logins.removeAllLogins();
+    Services.logins.removeAllUserFacingLogins();
     for (let origin of Services.logins.getAllDisabledHosts()) {
       Services.logins.setLoginSavingEnabled(origin, true);
     }
