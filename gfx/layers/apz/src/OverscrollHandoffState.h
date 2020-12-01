@@ -164,6 +164,10 @@ struct FlingHandoffState {
 
   
   
+  ParentLayerCoord mMinPanVelocity;
+
+  
+  
   bool mIsHandoff;
 
   

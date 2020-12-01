@@ -1684,6 +1684,7 @@ class AsyncPanZoomController {
   
   
   TimeDuration mTouchStartRestingTimeBeforePan;
+  Maybe<ParentLayerCoord> mMinimumVelocityDuringPan;
   
   CSSPoint mTestAsyncScrollOffset;
   
