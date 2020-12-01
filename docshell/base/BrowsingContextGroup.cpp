@@ -228,10 +228,16 @@ void BrowsingContextGroup::Destroy() {
   mDestroyed = true;
 #endif
 
-  mHosts.Clear();
+  
+  
+  
+  for (auto& entry : mHosts) {
+    entry.GetData()->RemoveBrowsingContextGroup(this);
+  }
   for (auto& entry : mSubscribers) {
     entry.GetKey()->RemoveBrowsingContextGroup(this);
   }
+  mHosts.Clear();
   mSubscribers.Clear();
 
   if (sBrowsingContextGroups) {
