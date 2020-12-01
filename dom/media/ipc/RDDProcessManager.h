@@ -5,13 +5,14 @@
 
 #ifndef _include_dom_media_ipc_RDDProcessManager_h_
 #define _include_dom_media_ipc_RDDProcessManager_h_
+#include "mozilla/MozPromise.h"
+#include "mozilla/PRemoteDecoderManagerChild.h"
 #include "mozilla/RDDProcessHost.h"
 #include "mozilla/ipc/TaskFactory.h"
 
 namespace mozilla {
 
 class MemoryReportingProcess;
-class PRemoteDecoderManagerChild;
 class RDDChild;
 
 
@@ -27,18 +28,12 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
 
   ~RDDProcessManager();
 
+  using EnsureRDDPromise =
+      MozPromise<ipc::Endpoint<PRemoteDecoderManagerChild>, nsresult, true>;
   
   
-  bool EnsureRDDProcessAndCreateBridge(
-      base::ProcessId aOtherProcess,
-      mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
-          aOutRemoteDecoderManager);
-  bool IsRDDProcessLaunching();
-
-  
-  
-  
-  bool EnsureRDDReady();
+  RefPtr<EnsureRDDPromise> EnsureRDDProcessAndCreateBridge(
+      base::ProcessId aOtherProcess);
 
   void OnProcessLaunchComplete(RDDProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(RDDProcessHost* aHost) override;
@@ -67,6 +62,11 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   RDDProcessHost* Process() { return mProcess; }
 
  private:
+  bool IsRDDProcessLaunching();
+  
+  
+  
+  bool EnsureRDDReady();
   bool CreateVideoBridge();
 
   
@@ -94,13 +94,12 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   };
   friend class Observer;
 
- private:
-  bool CreateContentBridge(base::ProcessId aOtherProcess,
-                           mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
-                               aOutRemoteDecoderManager);
+  bool CreateContentBridge(
+      base::ProcessId aOtherProcess,
+      ipc::Endpoint<PRemoteDecoderManagerChild>* aOutRemoteDecoderManager);
 
   const RefPtr<Observer> mObserver;
-  mozilla::ipc::TaskFactory<RDDProcessManager> mTaskFactory;
+  ipc::TaskFactory<RDDProcessManager> mTaskFactory;
   uint32_t mNumProcessAttempts = 0;
 
   
@@ -110,7 +109,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   
   
   
-  nsTArray<mozilla::dom::Pref> mQueuedPrefs;
+  nsTArray<dom::Pref> mQueuedPrefs;
 };
 
 }  
