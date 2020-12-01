@@ -9,6 +9,7 @@
 #include "PendingTransactionInfo.h"
 #include "PendingTransactionQueue.h"
 #include "HalfOpenSocket.h"
+#include "DashboardTypes.h"
 
 namespace mozilla {
 namespace net {
@@ -44,11 +45,27 @@ class ConnectionEntry {
 
   void CancelAllTransactions(nsresult reason);
 
+  nsresult CloseIdleConnection(nsHttpConnection* conn);
+  void CloseIdleConnections();
+  void CloseIdleConnections(uint32_t maxToClose);
+  nsresult RemoveIdleConnection(nsHttpConnection* conn);
+  bool IsInIdleConnections(nsHttpConnection* conn);
+  size_t IdleConnectionsLength() const { return mIdleConns.Length(); }
+  void InsertIntoIdleConnections(nsHttpConnection* conn);
+  already_AddRefed<nsHttpConnection> GetIdleConnection(bool respectUrgency,
+                                                       bool urgentTrans,
+                                                       bool* onlyUrgent);
+
+  uint32_t PruneDeadConnections();
+  void VerifyTraffic();
+
+  HttpRetParams GetConnectionData();
+  void LogConnections();
+
   RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
-  nsTArray<RefPtr<nsHttpConnection>> mIdleConns;  
-  nsTArray<HalfOpenSocket*> mHalfOpens;           
+  nsTArray<HalfOpenSocket*> mHalfOpens;               
   nsTArray<RefPtr<HalfOpenSocket>>
       mHalfOpenFastOpenBackups;  
                                  
@@ -142,6 +159,11 @@ class ConnectionEntry {
   uint32_t TotalActiveConnections() const;
 
  private:
+  void RemoveFromIdleConnectionsIndex(size_t inx);
+  bool RemoveFromIdleConnections(nsHttpConnection* conn);
+
+  nsTArray<RefPtr<nsHttpConnection>> mIdleConns;  
+
   PendingTransactionQueue mPendingQ;
   ~ConnectionEntry();
 };
