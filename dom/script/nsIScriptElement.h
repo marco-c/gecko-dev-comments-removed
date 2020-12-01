@@ -7,22 +7,21 @@
 #ifndef nsIScriptElement_h___
 #define nsIScriptElement_h___
 
-#include "nsISupports.h"
-#include "nsIURI.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/CORSMode.h"
+#include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"
+#include "nsID.h"
 #include "nsIScriptLoaderObserver.h"
 #include "nsIWeakReferenceUtils.h"
-#include "nsIParser.h"
-#include "nsIContent.h"
-#include "nsContentCreatorFunctions.h"
-#include "mozilla/CORSMode.h"
-#include "ReferrerInfo.h"
 #include "nsStringFwd.h"
 #include "nscore.h"
 
 
 #include "nsIPrincipal.h"
 
+class nsIParser;
 class nsIPrincipal;
 class nsIURI;
 
@@ -173,57 +172,32 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
     mDefer = false;
   }
 
-  void SetCreatorParser(nsIParser* aParser) {
-    mCreatorParser = do_GetWeakReference(aParser);
-  }
+  void SetCreatorParser(nsIParser* aParser);
 
   
 
 
-  void UnblockParser() {
-    nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
-    if (parser) {
-      parser->UnblockParser();
-    }
-  }
+  void UnblockParser();
 
   
 
 
-  void ContinueParserAsync() {
-    nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
-    if (parser) {
-      parser->ContinueInterruptedParsingAsync();
-    }
-  }
+  void ContinueParserAsync();
 
   
 
 
-  void BeginEvaluating() {
-    nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
-    if (parser) {
-      parser->IncrementScriptNestingLevel();
-    }
-  }
+  void BeginEvaluating();
 
   
 
 
-  void EndEvaluating() {
-    nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
-    if (parser) {
-      parser->DecrementScriptNestingLevel();
-    }
-  }
+  void EndEvaluating();
 
   
 
 
-  already_AddRefed<nsIParser> GetCreatorParser() {
-    nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
-    return parser.forget();
-  }
+  already_AddRefed<nsIParser> GetCreatorParser();
 
   
 
@@ -254,9 +228,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
   
 
 
-  virtual mozilla::dom::ReferrerPolicy GetReferrerPolicy() {
-    return mozilla::dom::ReferrerPolicy::_empty;
-  }
+  virtual mozilla::dom::ReferrerPolicy GetReferrerPolicy();
 
   
 
