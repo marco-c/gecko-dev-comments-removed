@@ -11,6 +11,7 @@
 
 #include "mozilla/HangAnnotations.h"
 #include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/Result.h"
 
 
 
@@ -21,14 +22,24 @@
 
 namespace mozilla {
 
+
+
 enum CPUUsageWatcherError : uint8_t {
-  ClockGetTimeError,
+  ClockGetTimeError = 1,
   GetNumberOfProcessorsError,
   GetProcessTimesError,
   GetSystemTimesError,
   HostStatisticsError,
   ProcStatError,
 };
+
+namespace detail {
+
+template <>
+struct UnusedZero<CPUUsageWatcherError> : UnusedZeroEnum<CPUUsageWatcherError> {
+};
+
+}  
 
 class CPUUsageHangAnnotator : public BackgroundHangAnnotator {
  public:
