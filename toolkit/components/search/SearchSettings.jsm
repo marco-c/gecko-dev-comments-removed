@@ -190,18 +190,9 @@ class SearchSettings {
     }
 
     let settings = {};
-    let locale = Services.locale.requestedLocale;
-    let buildID = Services.appinfo.platformBuildID;
 
     
     settings.version = SearchUtils.SETTINGS_VERSION;
-    
-    
-    
-    
-    
-    settings.buildID = buildID;
-    settings.locale = locale;
     settings.engines = [...this._searchService._engines.values()];
     settings.metaData = this._metaData;
 
