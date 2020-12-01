@@ -846,7 +846,8 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
   
   if (globalsc->bindings) {
     
-    if (!bce->emit1(JSOp::CheckGlobalOrEvalDecl)) {
+    if (!bce->emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation,
+                            GCThingIndex())) {
       return false;
     }
 
@@ -922,7 +923,8 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
     
     if (!hasEnvironment() && evalsc->bindings) {
       
-      if (!bce->emit1(JSOp::CheckGlobalOrEvalDecl)) {
+      if (!bce->emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation,
+                              GCThingIndex())) {
         return false;
       }
 

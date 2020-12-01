@@ -6790,11 +6790,12 @@ class MThrowRuntimeLexicalError : public MNullaryInstruction {
 };
 
 
-class MGlobalNameConflictsCheck : public MNullaryInstruction {
-  MGlobalNameConflictsCheck() : MNullaryInstruction(classOpcode) { setGuard(); }
+
+class MGlobalDeclInstantiation : public MNullaryInstruction {
+  MGlobalDeclInstantiation() : MNullaryInstruction(classOpcode) { setGuard(); }
 
  public:
-  INSTRUCTION_HEADER(GlobalNameConflictsCheck)
+  INSTRUCTION_HEADER(GlobalDeclInstantiation)
   TRIVIAL_NEW_WRAPPERS
 };
 
