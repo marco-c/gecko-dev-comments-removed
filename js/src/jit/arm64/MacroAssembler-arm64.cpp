@@ -1099,7 +1099,7 @@ void MacroAssembler::popReturnAddress() {
 
 
 void MacroAssembler::setupUnalignedABICall(Register scratch) {
-  setupABICall();
+  setupNativeABICall();
   dynamicAlignment_ = true;
 
   int64_t alignment = ~(int64_t(ABIStackAlignment) - 1);
@@ -2656,6 +2656,21 @@ void MacroAssembler::nearbyIntFloat32(RoundingMode mode, FloatRegister src,
       return;
   }
   MOZ_CRASH("unexpected mode");
+}
+
+void MacroAssembler::copySignDouble(FloatRegister lhs, FloatRegister rhs,
+                                    FloatRegister output) {
+  ScratchDoubleScope scratch(*this);
+
+  
+  loadConstantDouble(0, scratch);
+  negateDouble(scratch);
+
+  moveDouble(lhs, output);
+
+  bit(ARMFPRegister(output.encoding(), vixl::VectorFormat::kFormat8B),
+      ARMFPRegister(rhs.encoding(), vixl::VectorFormat::kFormat8B),
+      ARMFPRegister(scratch.encoding(), vixl::VectorFormat::kFormat8B));
 }
 
 
