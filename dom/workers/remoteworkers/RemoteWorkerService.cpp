@@ -131,11 +131,13 @@ void RemoteWorkerService::InitializeOnTargetThread() {
 void RemoteWorkerService::ShutdownOnTargetThread() {
   MOZ_ASSERT(mThread);
   MOZ_ASSERT(mThread->IsOnCurrentThread());
-  MOZ_ASSERT(mActor);
 
   
-  mActor->Send__delete__(mActor);
-  mActor = nullptr;
+  if (mActor) {
+    
+    mActor->Send__delete__(mActor);
+    mActor = nullptr;
+  }
 
   
   RefPtr<RemoteWorkerService> self = this;
