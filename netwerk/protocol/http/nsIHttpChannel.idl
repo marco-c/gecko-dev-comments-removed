@@ -238,11 +238,6 @@ interface nsIHttpChannel : nsIIdentChannel
     
 
 
-    [must_use] readonly attribute boolean supportsHTTP3;
-
-    
-
-
 
 
 
