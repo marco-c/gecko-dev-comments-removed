@@ -6,7 +6,6 @@
 
 var { Ci, Cc } = require("chrome");
 var Services = require("Services");
-var defer = require("devtools/shared/defer");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn, dumpv } = DevToolsUtils;
 loader.lazyRequireGetter(this, "prompt", "devtools/shared/security/prompt");
@@ -319,69 +318,69 @@ OOBCert.Client.prototype = {
 
   
   authenticate({ host, port, cert, transport }) {
-    const deferred = defer();
-    let oobData;
+    return new Promise((resolve, reject) => {
+      let oobData;
 
-    let activeSendDialog;
-    const closeDialog = () => {
-      
-      
-      if (activeSendDialog?.close) {
-        activeSendDialog.close();
-        activeSendDialog = null;
-      }
-    };
-
-    transport.hooks = {
-      onPacket: async packet => {
-        closeDialog();
-        const { authResult } = packet;
-        switch (authResult) {
-          case AuthenticationResult.PENDING:
-            
-            
-            oobData = await this._createOOB();
-            activeSendDialog = this.sendOOB({
-              host,
-              port,
-              cert,
-              authResult,
-              oob: oobData,
-            });
-            break;
-          case AuthenticationResult.ALLOW:
-            
-            
-            if (packet.k != oobData.k) {
-              transport.close(new Error("Auth secret mismatch"));
-              return;
-            }
-            
-            
-            transport.hooks = null;
-            deferred.resolve(transport);
-            break;
-          case AuthenticationResult.ALLOW_PERSIST:
-            
-            
-            
-            transport.hooks = null;
-            deferred.resolve(transport);
-            break;
-          default:
-            transport.close(new Error("Invalid auth result: " + authResult));
-            break;
-        }
-      },
-      onClosed(reason) {
-        closeDialog();
+      let activeSendDialog;
+      const closeDialog = () => {
         
-        transport.hooks = null;
-        deferred.reject(reason);
-      },
-    };
-    transport.ready();
-    return deferred.promise;
+        
+        if (activeSendDialog?.close) {
+          activeSendDialog.close();
+          activeSendDialog = null;
+        }
+      };
+
+      transport.hooks = {
+        onPacket: async packet => {
+          closeDialog();
+          const { authResult } = packet;
+          switch (authResult) {
+            case AuthenticationResult.PENDING:
+              
+              
+              oobData = await this._createOOB();
+              activeSendDialog = this.sendOOB({
+                host,
+                port,
+                cert,
+                authResult,
+                oob: oobData,
+              });
+              break;
+            case AuthenticationResult.ALLOW:
+              
+              
+              if (packet.k != oobData.k) {
+                transport.close(new Error("Auth secret mismatch"));
+                return;
+              }
+              
+              
+              transport.hooks = null;
+              resolve(transport);
+              break;
+            case AuthenticationResult.ALLOW_PERSIST:
+              
+              
+              
+              transport.hooks = null;
+              resolve(transport);
+              break;
+            default:
+              transport.close(new Error("Invalid auth result: " + authResult));
+              break;
+          }
+        },
+        onClosed(reason) {
+          closeDialog();
+          
+          transport.hooks = null;
+          reject(reason);
+        },
+      };
+      transport.ready();
+    });
   },
 
   
