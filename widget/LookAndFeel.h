@@ -18,9 +18,11 @@
 
 struct gfxFontStyle;
 
-struct LookAndFeelCache;
-
 namespace mozilla {
+
+namespace widget {
+class LookAndFeelCache;
+}  
 
 enum class StyleSystemColor : uint8_t;
 
@@ -331,6 +333,11 @@ class LookAndFeel {
 
 
     GTKCSDMaximizeButtonPosition,
+
+    
+
+
+    End,
   };
 
   
@@ -546,41 +553,12 @@ class LookAndFeel {
 
 
 
-  static LookAndFeelCache GetCache();
-  static void SetCache(const LookAndFeelCache& aCache);
+  static widget::LookAndFeelCache GetCache();
+  static void SetCache(const widget::LookAndFeelCache& aCache);
   static void NotifyChangedAllWindows(widget::ThemeChangeKind);
 };
 
 }  
-
-struct LookAndFeelInt {
-  mozilla::LookAndFeel::IntID id;
-  int32_t value;
-};
-
-struct LookAndFeelFont {
-  bool haveFont;
-  nsString fontName;
-  float pixelHeight;
-  bool italic;
-  bool bold;
-};
-
-struct LookAndFeelColor {
-  mozilla::LookAndFeel::ColorID id;
-  nscolor color;
-};
-
-struct LookAndFeelCache {
-  void Clear() {
-    mInts.Clear();
-    mFonts.Clear();
-    mColors.Clear();
-  }
-  nsTArray<LookAndFeelInt> mInts;
-  nsTArray<LookAndFeelFont> mFonts;
-  nsTArray<LookAndFeelColor> mColors;
-};
 
 
 
