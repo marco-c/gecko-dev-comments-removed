@@ -90,7 +90,7 @@ bool ArrayBufferViewObject::init(JSContext* cx,
 
   MOZ_ASSERT_IF(
       is<TypedArrayObject>(),
-      length.get() < TypedArrayObject::MAX_BYTE_LENGTH / bytesPerElement);
+      length.get() < TypedArrayObject::maxByteLength() / bytesPerElement);
 
   
   

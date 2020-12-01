@@ -146,7 +146,9 @@ class TypedArrayObject : public ArrayBufferViewObject {
   
 
 
-  static constexpr size_t MAX_BYTE_LENGTH = INT32_MAX;
+  static size_t maxByteLength() {
+    return ArrayBufferObject::maxBufferByteLength();
+  }
 
   
 

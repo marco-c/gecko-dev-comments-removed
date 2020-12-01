@@ -1747,8 +1747,8 @@ bool CacheIRCompiler::emitGuardToTypedArrayIndex(ValOperandId inputId,
         
       },
       [&](FloatRegister floatReg) {
-        static_assert(
-            TypedArrayObject::MAX_BYTE_LENGTH <= INT32_MAX,
+        MOZ_ASSERT(
+            TypedArrayObject::maxByteLength() <= INT32_MAX,
             "Double exceeding Int32 range can't be in-bounds array access");
 
         
