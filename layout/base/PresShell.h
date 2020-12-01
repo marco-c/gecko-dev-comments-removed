@@ -2862,7 +2862,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   UniquePtr<ProfileChunkedBuffer> mStyleCause;
-  UniqueProfilerBacktrace mReflowCause;
+  UniquePtr<ProfileChunkedBuffer> mReflowCause;
 #endif
 
   nsTArray<UniquePtr<DelayedEvent>> mDelayedEvents;

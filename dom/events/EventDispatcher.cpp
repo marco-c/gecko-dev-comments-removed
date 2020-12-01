@@ -1039,10 +1039,6 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
 
           struct DOMEventMarker {
             static constexpr Span<const char> MarkerTypeName() {
-              
-              
-              
-              
               return MakeStringSpan("DOMEvent");
             }
             static void StreamJSONMarkerData(
