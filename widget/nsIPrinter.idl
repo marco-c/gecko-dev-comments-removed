@@ -4,7 +4,21 @@
 
 
 #include "nsIPaper.idl"
+#include "nsIPrintSettings.idl"
 #include "nsISupports.idl"
+
+[scriptable, uuid(855ae9dd-62a4-64aa-9c60-b1078ff028f1)]
+interface nsIPrinterInfo : nsISupports
+{
+  
+
+
+  readonly attribute Array<nsIPaper> paperList;
+  
+
+
+  readonly attribute nsIPrintSettings defaultSettings;
+};
 
 [scriptable, uuid(d2dde9bb-df86-469c-bfcc-fd95a44b1db8)]
 interface nsIPrinter : nsISupports
@@ -28,15 +42,7 @@ interface nsIPrinter : nsISupports
 
 
   [implicit_jscontext]
-  Promise createDefaultSettings();
-
-  
-
-
-
-
-  [implicit_jscontext]
-  readonly attribute Promise paperList;
+  readonly attribute Promise printerInfo;
 
   
 

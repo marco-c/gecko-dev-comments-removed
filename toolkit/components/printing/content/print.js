@@ -981,24 +981,26 @@ var PrintSettingsViewProxy = {
 
     
     if (printerInfo.printer) {
+      let basePrinterInfo;
       try {
         [
           printerInfo.supportsColor,
           printerInfo.supportsMonochrome,
-          printerInfo.paperList,
-          printerInfo.defaultSettings,
+          basePrinterInfo,
         ] = await Promise.all([
           printerInfo.printer.supportsColor,
           printerInfo.printer.supportsMonochrome,
-          printerInfo.printer.paperList,
-          
-          printerInfo.printer.createDefaultSettings(),
+          printerInfo.printer.printerInfo,
         ]);
       } catch (e) {
         this.reportPrintingError("PRINTER_SETTINGS");
         throw e;
       }
-      printerInfo.defaultSettings.QueryInterface(Ci.nsIPrintSettings);
+      basePrinterInfo.QueryInterface(Ci.nsIPrinterInfo);
+      basePrinterInfo.defaultSettings.QueryInterface(Ci.nsIPrintSettings);
+
+      printerInfo.paperList = basePrinterInfo.paperList;
+      printerInfo.defaultSettings = basePrinterInfo.defaultSettings;
     } else if (printerName == PrintUtils.SAVE_TO_PDF_PRINTER) {
       
       printerInfo.defaultSettings = PSSVC.newPrintSettings;

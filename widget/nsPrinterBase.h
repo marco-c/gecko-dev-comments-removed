@@ -31,12 +31,11 @@ class nsPrinterBase : public nsIPrinter {
   using MarginDouble = mozilla::gfx::MarginDouble;
   using PrintSettingsInitializer = mozilla::PrintSettingsInitializer;
 
-  NS_IMETHOD CreateDefaultSettings(JSContext*, Promise**) final;
   NS_IMETHOD GetSupportsDuplex(JSContext*, Promise**) final;
   NS_IMETHOD GetSupportsColor(JSContext*, Promise**) final;
   NS_IMETHOD GetSupportsMonochrome(JSContext*, Promise**) final;
   NS_IMETHOD GetSupportsCollation(JSContext*, Promise**) final;
-  NS_IMETHOD GetPaperList(JSContext*, Promise**) final;
+  NS_IMETHOD GetPrinterInfo(JSContext*, Promise**) final;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPrinterBase)
@@ -57,6 +56,12 @@ class nsPrinterBase : public nsIPrinter {
   void CachePrintSettingsInitializer(
       const PrintSettingsInitializer& aInitializer);
 
+  
+  struct PrinterInfo {
+    nsTArray<mozilla::PaperInfo> mPaperList;
+    PrintSettingsInitializer mDefaultSettings;
+  };
+
  private:
   enum class AsyncAttribute {
     
@@ -65,7 +70,7 @@ class nsPrinterBase : public nsIPrinter {
     SupportsColor,
     SupportsMonochrome,
     SupportsCollation,
-    PaperList,
+    PrinterInfo,
     
     Last,
   };
@@ -78,13 +83,6 @@ class nsPrinterBase : public nsIPrinter {
   nsresult AsyncPromiseAttributeGetter(JSContext*, Promise**, AsyncAttribute,
                                        BackgroundTask<T, Args...>,
                                        Args... aArgs);
-
-  
-
-
-
-
-  Maybe<PrintSettingsInitializer> mPrintSettingsInitializer;
 
  protected:
   nsPrinterBase(const mozilla::CommonPaperInfoArray* aPaperInfoArray);
@@ -99,6 +97,7 @@ class nsPrinterBase : public nsIPrinter {
   virtual bool SupportsCollation() const = 0;
   virtual nsTArray<mozilla::PaperInfo> PaperList() const = 0;
   virtual MarginDouble GetMarginsForPaper(nsString aPaperId) const = 0;
+  virtual PrinterInfo CreatePrinterInfo() const;
   
   
   const mozilla::PaperInfo* FindCommonPaperSize(
