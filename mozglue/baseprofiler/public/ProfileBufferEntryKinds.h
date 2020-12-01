@@ -71,7 +71,10 @@ enum class ProfileBufferEntryKind : ProfileBufferEntryKindUnderlyingType {
   
 
   
-  Marker = LEGACY_LIMIT,
+  MarkerData = LEGACY_LIMIT,
+
+  
+  Marker,
 
   
   UnresponsiveDurationMs,

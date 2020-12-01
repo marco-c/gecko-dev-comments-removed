@@ -37,6 +37,10 @@
 using namespace mozilla::tasktracer;
 #endif
 
+#ifdef MOZ_GECKO_PROFILER
+#  include "ProfilerMarkerPayload.h"
+#endif
+
 
 #undef compress
 
@@ -2785,11 +2789,11 @@ void MessageChannel::AddProfilerMarker(const IPC::Message& aMessage,
   if (profiler_feature_active(ProfilerFeature::IPCMessages)) {
     int32_t pid = mListener->OtherPidMaybeInvalid();
     if (pid != kInvalidProcessId) {
-      
-      const TimeStamp now = TimeStamp::NowUnfuzzed();
-      PROFILER_MARKER("IPC", IPC, MarkerTiming::InstantAt(now), IPCMarker, now,
-                      now, pid, aMessage.seqno(), aMessage.type(), mSide,
-                      aDirection, MessagePhase::Endpoint, aMessage.is_sync());
+      PROFILER_ADD_MARKER_WITH_PAYLOAD(
+          "IPC", IPC, IPCMarkerPayload,
+          (pid, aMessage.seqno(), aMessage.type(), mSide, aDirection,
+           MessagePhase::Endpoint, aMessage.is_sync(),
+           TimeStamp::NowUnfuzzed()));
     }
   }
 #endif
