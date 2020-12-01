@@ -135,7 +135,7 @@ class MockCubebStream {
                   cubeb_stream_params* aOutputStreamParams,
                   cubeb_data_callback aDataCallback,
                   cubeb_state_callback aStateCallback, void* aUserPtr,
-                  SmartMockCubebStream* aSelf);
+                  SmartMockCubebStream* aSelf, bool aFrozenStart);
 
   ~MockCubebStream();
 
@@ -154,6 +154,7 @@ class MockCubebStream {
 
   void SetDriftFactor(float aDriftFactor);
   void ForceError();
+  void Unfreeze();
 
   MediaEventSource<uint32_t>& FramesProcessedEvent();
   MediaEventSource<uint32_t>& FramesVerifiedEvent();
@@ -170,6 +171,11 @@ class MockCubebStream {
   SmartMockCubebStream* const mSelf;
 
  private:
+  
+  Monitor mFrozenStartMonitor;
+  
+  
+  bool mFrozenStart;
   
   std::atomic_bool mStreamStop{true};
   
@@ -211,10 +217,11 @@ class SmartMockCubebStream
                        cubeb_devid aOutputDevice,
                        cubeb_stream_params* aOutputStreamParams,
                        cubeb_data_callback aDataCallback,
-                       cubeb_state_callback aStateCallback, void* aUserPtr)
+                       cubeb_state_callback aStateCallback, void* aUserPtr,
+                       bool aFrozenStart)
       : MockCubebStream(aContext, aInputDevice, aInputStreamParams,
                         aOutputDevice, aOutputStreamParams, aDataCallback,
-                        aStateCallback, aUserPtr, this) {}
+                        aStateCallback, aUserPtr, this, aFrozenStart) {}
 };
 
 
@@ -256,6 +263,11 @@ class MockCubeb {
   
   
   void SetSupportDeviceChangeCallback(bool aSupports);
+
+  
+  
+  
+  void SetStreamStartFreezeEnabled(bool aEnabled);
 
   int StreamInit(cubeb* aContext, cubeb_stream** aStream,
                  cubeb_devid aInputDevice,
@@ -304,6 +316,8 @@ class MockCubeb {
   
   
   bool mSupportsDeviceCollectionChangedCallback = true;
+  
+  Atomic<bool> mStreamStartFreezeEnabled{false};
   
   nsTArray<cubeb_device_info> mInputDevices;
   nsTArray<cubeb_device_info> mOutputDevices;
