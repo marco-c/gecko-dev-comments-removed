@@ -277,27 +277,54 @@ class JSONSchemaWriter {
   ~JSONSchemaWriter() { mWriter.EndObject(); }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class UniqueJSONStrings {
  public:
+  
   MFBT_API UniqueJSONStrings();
 
+  
   MFBT_API explicit UniqueJSONStrings(const UniqueJSONStrings& aOther);
 
   MFBT_API ~UniqueJSONStrings();
 
-  MFBT_API void SpliceStringTableElements(SpliceableJSONWriter& aWriter);
-
+  
+  
   void WriteProperty(JSONWriter& aWriter, const char* aName, const char* aStr) {
     aWriter.IntProperty(MakeStringSpan(aName), GetOrAddIndex(aStr));
   }
 
+  
+  
   void WriteElement(JSONWriter& aWriter, const char* aStr) {
     aWriter.IntElement(GetOrAddIndex(aStr));
   }
 
-  MFBT_API uint32_t GetOrAddIndex(const char* aStr);
+  
+  
+  MFBT_API void SpliceStringTableElements(SpliceableJSONWriter& aWriter);
 
  private:
+  
+  
+  MFBT_API uint32_t GetOrAddIndex(const char* aStr);
+
   SpliceableChunkedJSONWriter mStringTableWriter;
   HashMap<HashNumber, uint32_t> mStringHashToIndexMap;
 };
