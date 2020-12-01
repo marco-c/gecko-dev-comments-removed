@@ -275,12 +275,6 @@ pref("browser.startup.firstrunSkipsHomepage", true);
 
 
 
-#if defined(XP_WIN)
-pref("browser.startup.preXulSkeletonUI", false);
-#endif
-
-
-
 pref("toolkit.lazyHiddenWindow", true);
 
 pref("browser.slowStartup.notificationDisabled", false);
