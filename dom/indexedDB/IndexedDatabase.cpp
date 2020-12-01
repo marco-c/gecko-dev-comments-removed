@@ -4,7 +4,7 @@
 
 
 
-#include "IndexedDatabase.h"
+#include "mozilla/dom/IndexedDatabase.h"
 #include "IndexedDatabaseInlines.h"
 
 #include "IDBDatabase.h"

@@ -5,6 +5,9 @@
 
 
 #include "mozilla/dom/KeyAlgorithmProxy.h"
+
+#include "js/StructuredClone.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/WebCryptoCommon.h"
 
