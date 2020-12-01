@@ -2956,22 +2956,16 @@
     }
 
     function sanitize_unpaired_surrogates(str) {
-        return str.replace(/([\ud800-\udbff])(?![\udc00-\udfff])/g,
-                           function(_, unpaired)
-                           {
-                               return code_unit_str(unpaired);
-                           })
-                  
-                  
-                  
-                  .replace(/(^|[^\ud800-\udbff])([\udc00-\udfff])/g,
-                           function(_, previous, unpaired) {
-                              if (/[\udc00-\udfff]/.test(previous)) {
-                                  previous = code_unit_str(previous);
-                              }
-
-                              return previous + code_unit_str(unpaired);
-                           });
+        return str.replace(
+            /([\ud800-\udbff]+)(?![\udc00-\udfff])|(^|[^\ud800-\udbff])([\udc00-\udfff]+)/g,
+            function(_, low, prefix, high) {
+                var output = prefix || "";  
+                var string = low || high;  
+                for (var i = 0; i < string.length; i++) {
+                    output += code_unit_str(string[i]);
+                }
+                return output;
+            });
     }
 
     function sanitize_all_unpaired_surrogates(tests) {
@@ -3612,6 +3606,9 @@
 
     function AssertionError(message)
     {
+        if (typeof message == "string") {
+            message = sanitize_unpaired_surrogates(message);
+        }
         this.message = message;
         this.stack = this.get_stack();
     }
