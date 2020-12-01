@@ -5975,7 +5975,9 @@ AspectRatio nsIFrame::GetAspectRatio() const {
   
 
   const StyleAspectRatio& aspectRatio = StylePosition()->mAspectRatio;
-  if (!aspectRatio.auto_) {
+  
+  
+  if (!aspectRatio.BehavesAsAuto()) {
     
     return aspectRatio.ratio.AsRatio().ToLayoutRatio();
   }
@@ -5984,7 +5986,10 @@ AspectRatio nsIFrame::GetAspectRatio() const {
   if (auto intrinsicRatio = GetIntrinsicRatio()) {
     return intrinsicRatio;
   }
+
   if (aspectRatio.HasRatio()) {
+    
+    
     return aspectRatio.ratio.AsRatio().ToLayoutRatio();
   }
 
