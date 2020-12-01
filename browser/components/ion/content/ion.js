@@ -82,6 +82,16 @@ function showEnrollmentStatus() {
     `ion-${ionId ? "un" : ""}enrollment-button`
   );
   enrollmentButton.classList.toggle("primary", !ionId);
+
+  
+  for (const section of ["details", "data"]) {
+    const details = document.getElementById(section);
+    if (ionId) {
+      details.removeAttribute("open");
+    } else {
+      details.setAttribute("open", true);
+    }
+  }
 }
 
 function toggleContentBasedOnLocale() {
