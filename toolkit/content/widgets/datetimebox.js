@@ -640,8 +640,13 @@ this.DateTimeInputBaseImplWidget = class {
       case " ": {
         if (this.mIsPickerOpen) {
           this.mInputElement.closeDateTimePicker();
-          aEvent.preventDefault();
+        } else if (aEvent.key != "Escape") {
+          this.mInputElement.openDateTimePicker(this.getCurrentValue());
+        } else {
+          
+          break;
         }
+        aEvent.preventDefault();
         break;
       }
       case "Backspace": {
