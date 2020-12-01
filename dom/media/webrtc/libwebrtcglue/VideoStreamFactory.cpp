@@ -31,7 +31,7 @@ static VideoStreamFactory::ResolutionAndBitrateLimits
         
   {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
   {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
-  {MB_OF(800, 480), KBPS(600), KBPS(800), KBPS(2500)}, 
+  {MB_OF(800, 480), KBPS(200), KBPS(800), KBPS(2500)}, 
   {MB_OF(480, 270), KBPS(150), KBPS(500), KBPS(2000)}, 
   {tl::Max<MB_OF(400, 240), MB_OF(352, 288)>::value, KBPS(125), KBPS(300), KBPS(1300)}, 
   {MB_OF(176, 144), KBPS(100), KBPS(150), KBPS(500)}, 
