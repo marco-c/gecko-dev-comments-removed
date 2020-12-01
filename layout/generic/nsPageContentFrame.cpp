@@ -8,6 +8,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
 
+#include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
@@ -86,9 +87,22 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
             xmost + padding.right +
             kidReflowInput.mStyleBorder->GetComputedBorderWidth(eSideRight);
         float ratio = float(maxSize.width) / widthToFit;
-        NS_ASSERTION(ratio >= 0.0 && ratio < 1.0,
-                     "invalid shrink-to-fit ratio");
+        MOZ_ASSERT(ratio >= 0.0 && ratio < 1.0);
         mPD->mShrinkToFitRatio = std::min(mPD->mShrinkToFitRatio, ratio);
+      }
+      
+      
+      
+      if (nsContentUtils::IsPDFJS(PresContext()->Document()->GetPrincipal())) {
+        nscoord ymost = aReflowOutput.ScrollableOverflow().YMost();
+        if (ymost > aReflowOutput.Height()) {
+          nscoord heightToFit =
+              ymost + padding.bottom +
+              kidReflowInput.mStyleBorder->GetComputedBorderWidth(eSideBottom);
+          float ratio = float(maxSize.height) / heightToFit;
+          MOZ_ASSERT(ratio >= 0.0 && ratio < 1.0);
+          mPD->mShrinkToFitRatio = std::min(mPD->mShrinkToFitRatio, ratio);
+        }
       }
     }
 
