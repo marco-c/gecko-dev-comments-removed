@@ -1462,6 +1462,15 @@ var PlacesUIUtils = {
     let { unfiledGuid, toolbarGuid } = PlacesUtils.bookmarks;
     return this._2020h2bookmarks ? toolbarGuid : unfiledGuid;
   },
+
+  get defaultParentGuid() {
+    if (!PlacesUIUtils._2020h2bookmarks) {
+      return PlacesUtils.bookmarks.unfiledGuid;
+    }
+    
+    
+    return this._defaultParentGuid;
+  },
 };
 
 
@@ -1518,16 +1527,21 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+
+
+
+
+
+
+
+
 XPCOMUtils.defineLazyPreferenceGetter(
   PlacesUIUtils,
-  "defaultParentGuid",
+  "_defaultParentGuid",
   "browser.bookmarks.defaultLocation",
   "", 
   null,
   prefValue => {
-    if (!PlacesUIUtils._2020h2bookmarks) {
-      return PlacesUtils.bookmarks.unfiledGuid;
-    }
     if (!prefValue) {
       return PlacesUIUtils._nonPrefDefaultParentGuid;
     }

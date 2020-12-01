@@ -137,7 +137,10 @@ add_task(async function test_existing_on_toolbar() {
 
 
 
-add_task(async function test_existing_on_toolbar() {
+add_task(async function test_move_existing_to_toolbar() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.2h2020", false]],
+  });
   
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
