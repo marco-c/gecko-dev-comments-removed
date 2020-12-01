@@ -40,6 +40,8 @@ Types = (
 )
 
 
+
+
 HeaderIncludes = (
     "mozilla/Attributes.h",
     "IPCMessageStart.h",
@@ -58,5 +60,6 @@ CppIncludes = (
     "ipc/IPCMessageUtils.h",
     "nsIFile.h",
     "GeckoProfiler.h",
+    "mozilla/ipc/ShmemMessageUtils.h",
     "mozilla/ipc/TaintingIPCUtils.h",
 )
