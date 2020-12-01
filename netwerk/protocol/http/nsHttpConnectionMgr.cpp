@@ -593,9 +593,9 @@ void nsHttpConnectionMgr::OnMsgClearConnectionHistory(int32_t,
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<ConnectionEntry> ent = iter.Data();
     if (ent->IdleConnectionsLength() == 0 && ent->ActiveConnsLength() == 0 &&
-        ent->mHalfOpens.Length() == 0 && ent->UrgentStartQueueLength() == 0 &&
+        ent->HalfOpensLength() == 0 && ent->UrgentStartQueueLength() == 0 &&
         ent->PendingQueueLength() == 0 &&
-        ent->mHalfOpenFastOpenBackups.Length() == 0 && !ent->mDoNotDestroy) {
+        ent->HalfOpenFastOpenBackupsLength() == 0 && !ent->mDoNotDestroy) {
       iter.Remove();
     }
   }
@@ -810,33 +810,11 @@ void nsHttpConnectionMgr::UpdateCoalescingForNewConn(
 
   
   
-  for (int32_t index = ent->mHalfOpens.Length() - 1; index >= 0; --index) {
-    RefPtr<HalfOpenSocket> half = ent->mHalfOpens[index];
-    LOG(("UpdateCoalescingForNewConn() forcing halfopen abandon %p\n",
-         half.get()));
-    ent->mHalfOpens[index]->Abandon();
-  }
-
-  if (ent->ActiveConnsLength() > 1) {
-    
-    
-    
-    
-    
-    
-    ent->MakeAllDontReuseExcept(newConn);
-  }
-
-  for (int32_t index = ent->mHalfOpenFastOpenBackups.Length() - 1; index >= 0;
-       --index) {
-    LOG(
-        ("UpdateCoalescingForNewConn() shutting down connection in fast "
-         "open state (%p) because new spdy connection (%p) takes "
-         "precedence\n",
-         ent->mHalfOpenFastOpenBackups[index].get(), newConn));
-    RefPtr<HalfOpenSocket> half = ent->mHalfOpenFastOpenBackups[index];
-    half->CancelFastOpenConnection();
-  }
+  
+  
+  
+  
+  ent->MakeAllDontReuseExcept(newConn);
 }
 
 
@@ -1235,40 +1213,15 @@ bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
 
 nsresult nsHttpConnectionMgr::MakeNewConnection(
     ConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo) {
-  nsHttpTransaction* trans = pendingTransInfo->mTransaction;
-
   LOG(("nsHttpConnectionMgr::MakeNewConnection %p ent=%p trans=%p", this, ent,
-       trans));
+       pendingTransInfo->mTransaction.get()));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  uint32_t halfOpenLength = ent->mHalfOpens.Length();
-  for (uint32_t i = 0; i < halfOpenLength; i++) {
-    auto halfOpen = ent->mHalfOpens[i];
-    if (halfOpen->AcceptsTransaction(trans) && halfOpen->Claim()) {
-      
-      
-      
-      
-      
-      LOG(
-          ("nsHttpConnectionMgr::MakeNewConnection [ci = %s]\n"
-           "Found a speculative or a free-to-use half open connection\n",
-           ent->mConnInfo->HashKey().get()));
-      pendingTransInfo->mHalfOpen = do_GetWeakReference(
-          static_cast<nsISupportsWeakReference*>(ent->mHalfOpens[i]));
-      
-      
-      return NS_OK;
-    }
-  }
-
-  
-  
-  
-  if ((trans->Caps() & NS_HTTP_ALLOW_KEEPALIVE) &&
-      ent->FindConnToClaim(pendingTransInfo)) {
+  if (ent->FindConnToClaim(pendingTransInfo)) {
     return NS_OK;
   }
+
+  nsHttpTransaction* trans = pendingTransInfo->mTransaction;
 
   
   
@@ -1858,8 +1811,7 @@ nsresult nsHttpConnectionMgr::CreateTransport(
     MOZ_ASSERT(claimed);
   }
 
-  ent->mHalfOpens.AppendElement(sock);
-  mNumHalfOpenConns++;
+  ent->InsertIntoHalfOpens(sock);
   return NS_OK;
 }
 
@@ -2003,11 +1955,9 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     ent->CancelAllTransactions(NS_ERROR_ABORT);
 
     
-    for (int32_t i = int32_t(ent->mHalfOpens.Length()) - 1; i >= 0; i--) {
-      ent->mHalfOpens[i]->Abandon();
-    }
+    ent->CloseAllHalfOpens();
 
-    MOZ_ASSERT(ent->mHalfOpenFastOpenBackups.Length() == 0 &&
+    MOZ_ASSERT(ent->HalfOpenFastOpenBackupsLength() == 0 &&
                !ent->mDoNotDestroy);
     iter.Remove();
   }
@@ -2297,10 +2247,10 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
       
       
       if (mCT.Count() > 125 && ent->IdleConnectionsLength() == 0 &&
-          ent->ActiveConnsLength() == 0 && ent->mHalfOpens.Length() == 0 &&
+          ent->ActiveConnsLength() == 0 && ent->HalfOpensLength() == 0 &&
           ent->PendingQueueLength() == 0 &&
           ent->UrgentStartQueueLength() == 0 &&
-          ent->mHalfOpenFastOpenBackups.Length() == 0 && !ent->mDoNotDestroy &&
+          ent->HalfOpenFastOpenBackupsLength() == 0 && !ent->mDoNotDestroy &&
           (!ent->mUsingSpdy || mCT.Count() > 300)) {
         LOG(("    removing empty connection entry\n"));
         iter.Remove();
@@ -3548,13 +3498,13 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard ent %p "
        "idle=%zu active=%zu half=%zu pending=%zu\n",
        ent, ent->IdleConnectionsLength(), ent->ActiveConnsLength(),
-       ent->mHalfOpens.Length(), ent->PendingQueueLength()));
+       ent->HalfOpensLength(), ent->PendingQueueLength()));
 
   LOG(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard wc-ent %p "
        "idle=%zu active=%zu half=%zu pending=%zu\n",
        wcEnt, wcEnt->IdleConnectionsLength(), wcEnt->ActiveConnsLength(),
-       wcEnt->mHalfOpens.Length(), wcEnt->PendingQueueLength()));
+       wcEnt->HalfOpensLength(), wcEnt->PendingQueueLength()));
 
   ent->MoveConnection(proxyConn, wcEnt);
 }
@@ -3614,6 +3564,8 @@ bool nsHttpConnectionMgr::MoveTransToHTTPSSVCConnEntry(
   Unused << ProcessNewTransaction(aTrans);
   return true;
 }
+
+void nsHttpConnectionMgr::IncreaseNumHalfOpenConns() { mNumHalfOpenConns++; }
 
 void nsHttpConnectionMgr::DecreaseNumHalfOpenConns() {
   MOZ_ASSERT(mNumHalfOpenConns);
