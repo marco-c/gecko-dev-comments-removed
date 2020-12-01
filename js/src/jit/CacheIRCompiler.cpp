@@ -2668,7 +2668,10 @@ bool CacheIRCompiler::emitInt32DivResult(Int32OperandId lhsId,
   masm.branchTest32(Assembler::Zero, rhs, rhs, failure->label());
 
   
-  masm.branch32(Assembler::Equal, lhs, Imm32(INT32_MIN), failure->label());
+  Label notOverflow;
+  masm.branch32(Assembler::NotEqual, lhs, Imm32(INT32_MIN), &notOverflow);
+  masm.branch32(Assembler::Equal, rhs, Imm32(-1), failure->label());
+  masm.bind(&notOverflow);
 
   
   Label notZero;
@@ -2704,7 +2707,13 @@ bool CacheIRCompiler::emitInt32ModResult(Int32OperandId lhsId,
   masm.branchTest32(Assembler::Zero, rhs, rhs, failure->label());
 
   
-  masm.branch32(Assembler::Equal, lhs, Imm32(INT32_MIN), failure->label());
+  
+  
+  
+  Label notOverflow;
+  masm.branch32(Assembler::NotEqual, lhs, Imm32(INT32_MIN), &notOverflow);
+  masm.branch32(Assembler::Equal, rhs, Imm32(-1), failure->label());
+  masm.bind(&notOverflow);
 
   masm.mov(lhs, scratch);
   LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
