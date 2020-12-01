@@ -180,6 +180,8 @@ class gfxWindowsPlatform final : public gfxPlatform {
   }
   inline DWRITE_MEASURING_MODE DWriteMeasuringMode() { return mMeasuringMode; }
 
+  
+  
   IDWriteRenderingParams* GetRenderingParams(TextRenderingMode aRenderMode) {
     return mRenderingParams[aRenderMode];
   }

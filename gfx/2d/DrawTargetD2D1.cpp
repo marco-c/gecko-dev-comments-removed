@@ -724,6 +724,7 @@ void DrawTargetD2D1::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
 
   ScaledFontDWrite* font = static_cast<ScaledFontDWrite*>(aFont);
 
+  
   IDWriteRenderingParams* params = font->mParams;
 
   AntialiasMode aaMode = font->GetDefaultAAMode();
@@ -767,6 +768,10 @@ void DrawTargetD2D1::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   mDC->SetTextAntialiasMode(d2dAAMode);
 
   if (params != mTextRenderingParams) {
+    
+    
+    
+    
     mDC->SetTextRenderingParams(params);
     mTextRenderingParams = params;
   }
