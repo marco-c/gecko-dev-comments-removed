@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/JSProcessActorBinding.h"
 #include "mozilla/dom/JSProcessActorChild.h"
 #include "mozilla/dom/InProcessChild.h"

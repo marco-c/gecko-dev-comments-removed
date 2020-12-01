@@ -5,6 +5,7 @@
 
 
 #include "RefMessageBodyService.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "nsContentUtils.h"
 
 namespace mozilla {
