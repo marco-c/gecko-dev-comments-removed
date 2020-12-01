@@ -164,9 +164,6 @@ class JUnitTestRunner(MochitestDesktop):
         
         cmd = cmd + " -e args '-profile %s'" % self.remote_profile
         
-        e10s = "true" if self.options.e10s else "false"
-        cmd = cmd + " -e use_multiprocess %s" % e10s
-        
         shards = self.options.totalChunks
         shard = self.options.thisChunk
         if shards is not None and shard is not None:
@@ -452,13 +449,6 @@ class JunitArgumentParser(argparse.ArgumentParser):
             dest="remoteTestRoot",
             help="Remote directory to use as test root "
             "(eg. /data/local/tmp/test_root).",
-        )
-        self.add_argument(
-            "--disable-e10s",
-            action="store_false",
-            dest="e10s",
-            default=True,
-            help="Disable multiprocess mode in test app.",
         )
         self.add_argument(
             "--max-time",
