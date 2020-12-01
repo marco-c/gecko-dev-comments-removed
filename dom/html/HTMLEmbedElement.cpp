@@ -164,17 +164,6 @@ nsresult HTMLEmbedElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
 bool HTMLEmbedElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                                        int32_t* aTabIndex) {
   
-  if ((Type() == eType_Null) &&
-      (PluginFallbackType() == eFallbackBlockAllPlugins)) {
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-
-    *aIsFocusable = false;
-    return false;
-  }
-
-  
   
   if (aTabIndex) {
     *aTabIndex = TabIndex();

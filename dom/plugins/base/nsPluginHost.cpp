@@ -77,6 +77,8 @@
 
 #include "mozilla/dom/Promise.h"
 
+#include "PluginFinder.h"
+
 #if defined(XP_WIN)
 #  include "nsIWindowMediator.h"
 #  include "nsIBaseWindow.h"
@@ -182,6 +184,14 @@ class BlocklistPromiseHandler final
         RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
         
         
+        
+        
+        
+        
+        PluginFinder::WritePluginInfo(host->mFlashOnly, host->mPlugins);
+
+        
+        
         host->IncrementChromeEpoch();
         host->BroadcastPluginsToContent();
       }
@@ -255,11 +265,17 @@ nsPluginHost::nsPluginHost()
     : mPluginsLoaded(false),
       mOverrideInternalTypes(false),
       mPluginsDisabled(false),
+      mFlashOnly(true),
+      mDoReloadOnceFindingFinished(false),
+      mAddedFinderShutdownBlocker(false),
       mPluginEpoch(0) {
   
   
   mOverrideInternalTypes =
       Preferences::GetBool("plugin.override_internal_types", false);
+  if (xpc::IsInAutomation()) {
+    mFlashOnly = Preferences::GetBool("plugin.load_flash_only", true);
+  }
 
   bool waylandBackend = false;
 #if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
@@ -350,8 +366,56 @@ bool nsPluginHost::IsRunningPlugin(nsPluginTag* aPluginTag) {
 }
 
 nsresult nsPluginHost::ReloadPlugins() {
-  PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("nsPluginHost::ReloadPlugins\n"));
-  return NS_ERROR_PLUGINS_PLUGINSNOTCHANGED;
+  PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("nsPluginHost::ReloadPlugins Begin\n"));
+
+  
+  
+  
+  if (XRE_IsContentProcess()) {
+    Unused
+        << mozilla::dom::ContentChild::GetSingleton()->SendMaybeReloadPlugins();
+    
+    
+    
+    
+    
+    
+    return NS_ERROR_PLUGINS_PLUGINSNOTCHANGED;
+  }
+  
+  
+  if (!mPluginsLoaded) return LoadPlugins();
+
+  
+  
+  if (mPendingFinder) {
+    mDoReloadOnceFindingFinished = true;
+    return NS_ERROR_PLUGINS_PLUGINSNOTCHANGED;
+  }
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<PluginFinder> pf = new PluginFinder(mFlashOnly);
+  bool pluginschanged;
+  MOZ_TRY(pf->HavePluginsChanged([&pluginschanged](bool aPluginsChanged) {
+    pluginschanged = aPluginsChanged;
+  }));
+  pf->Run();
+
+  
+  if (!pluginschanged) return NS_ERROR_PLUGINS_PLUGINSNOTCHANGED;
+
+  return ActuallyReloadPlugins();
 }
 
 void nsPluginHost::ClearNonRunningPlugins() {
@@ -573,8 +637,35 @@ void nsPluginHost::OnPluginInstanceDestroyed(nsPluginTag* aPluginTag) {
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!hasInstance) {
-    aPluginTag->TryUnloadPlugin(false);
+    if (UnloadPluginsASAP()) {
+      aPluginTag->TryUnloadPlugin(false);
+    } else {
+      if (aPluginTag->mUnloadTimer) {
+        aPluginTag->mUnloadTimer->Cancel();
+      } else {
+        aPluginTag->mUnloadTimer = NS_NewTimer();
+      }
+      uint32_t unloadTimeout = StaticPrefs::dom_ipc_plugins_unloadTimeoutSecs();
+      aPluginTag->mUnloadTimer->InitWithCallback(this, 1000 * unloadTimeout,
+                                                 nsITimer::TYPE_ONE_SHOT);
+    }
   }
 }
 
@@ -1737,6 +1828,27 @@ void nsPluginHost::SetChromeEpochForContent(uint32_t aEpoch) {
   mPluginEpoch = aEpoch;
 }
 
+#ifdef XP_WIN
+static void WatchRegKey(uint32_t aRoot, nsCOMPtr<nsIWindowsRegKey>& aKey) {
+  if (aKey) {
+    return;
+  }
+
+  aKey = do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!aKey) {
+    return;
+  }
+  nsresult rv = aKey->Open(
+      aRoot, u"Software\\MozillaPlugins"_ns,
+      nsIWindowsRegKey::ACCESS_READ | nsIWindowsRegKey::ACCESS_NOTIFY);
+  if (NS_FAILED(rv)) {
+    aKey = nullptr;
+    return;
+  }
+  aKey->StartWatching(true);
+}
+#endif
+
 already_AddRefed<nsIAsyncShutdownClient> GetProfileChangeTeardownPhase() {
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc =
       services::GetAsyncShutdownService();
@@ -1752,9 +1864,133 @@ already_AddRefed<nsIAsyncShutdownClient> GetProfileChangeTeardownPhase() {
   return shutdownPhase.forget();
 }
 
-nsresult nsPluginHost::LoadPlugins() { return NS_OK; }
+nsresult nsPluginHost::LoadPlugins() {
+  
+  
+  if (XRE_IsContentProcess()) {
+    return NS_OK;
+  }
+  
+  
+  if (mPluginsLoaded) return NS_OK;
 
-void nsPluginHost::FindingFinished() {}
+  
+  
+  if (mPendingFinder) {
+    mDoReloadOnceFindingFinished = true;
+    return NS_OK;
+  }
+
+  if (mPluginsDisabled) return NS_OK;
+
+#ifdef XP_WIN
+  WatchRegKey(nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE, mRegKeyHKLM);
+  WatchRegKey(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER, mRegKeyHKCU);
+#endif
+
+  
+  
+  mPendingFinder = new PluginFinder(mFlashOnly);
+  mDoReloadOnceFindingFinished = false;
+  mAddedFinderShutdownBlocker = false;
+  RefPtr<nsPluginHost> self = this;
+  
+  
+  
+  
+  nsresult rv = mPendingFinder->DoFullSearch(
+      [self](bool aPluginsChanged, RefPtr<nsPluginTag> aPlugins,
+             const nsTArray<std::pair<bool, RefPtr<nsPluginTag>>>&
+                 aBlocklistRequests) {
+        MOZ_ASSERT(NS_IsMainThread(),
+                   "Callback should only be called on the main thread.");
+        self->mPluginsLoaded = true;
+        if (aPluginsChanged) {
+          self->ClearNonRunningPlugins();
+          while (aPlugins) {
+            RefPtr<nsPluginTag> pluginTag = aPlugins;
+            aPlugins = aPlugins->mNext;
+            self->AddPluginTag(pluginTag);
+          }
+          self->IncrementChromeEpoch();
+          self->BroadcastPluginsToContent();
+        }
+
+        
+        for (auto pair : aBlocklistRequests) {
+          RefPtr<nsPluginTag> pluginTag = pair.second;
+          bool shouldSoftblock = pair.first;
+          self->UpdatePluginBlocklistState(pluginTag, shouldSoftblock);
+        }
+
+        if (aPluginsChanged) {
+          nsCOMPtr<nsIObserverService> obsService =
+              mozilla::services::GetObserverService();
+          if (obsService) {
+            obsService->NotifyObservers(nullptr, "plugins-list-updated",
+                                        nullptr);
+          }
+        }
+      });
+  
+  
+  if (NS_FAILED(rv)) {
+    mPendingFinder = nullptr;
+    if (rv == NS_ERROR_NOT_AVAILABLE) {
+      return NS_OK;
+    }
+    return rv;
+  }
+  bool dispatched = false;
+
+  
+  
+  
+  if (mFlashOnly) {
+    
+    
+    nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase =
+        GetProfileChangeTeardownPhase();
+    if (shutdownPhase) {
+      rv = shutdownPhase->AddBlocker(mPendingFinder,
+                                     NS_LITERAL_STRING_FROM_CSTRING(__FILE__),
+                                     __LINE__, u""_ns);
+      mAddedFinderShutdownBlocker = NS_SUCCEEDED(rv);
+    }
+
+    nsCOMPtr<nsIEventTarget> target =
+        do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+    if (NS_SUCCEEDED(rv)) {
+      rv = target->Dispatch(mPendingFinder, nsIEventTarget::DISPATCH_NORMAL);
+      dispatched = NS_SUCCEEDED(rv);
+    }
+    
+    if (mAddedFinderShutdownBlocker && !dispatched) {
+      shutdownPhase->RemoveBlocker(mPendingFinder);
+      mAddedFinderShutdownBlocker = false;
+    }
+  }
+  if (!dispatched) {
+    mPendingFinder->Run();
+    
+    mPendingFinder = nullptr;
+  }
+
+  return NS_OK;
+}
+
+void nsPluginHost::FindingFinished() {
+  if (mAddedFinderShutdownBlocker) {
+    nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase =
+        GetProfileChangeTeardownPhase();
+    shutdownPhase->RemoveBlocker(mPendingFinder);
+    mAddedFinderShutdownBlocker = false;
+  }
+  mPendingFinder = nullptr;
+  if (mDoReloadOnceFindingFinished) {
+    Unused << ReloadPlugins();
+  }
+}
 
 nsresult nsPluginHost::SetPluginsInContent(
     uint32_t aPluginEpoch, nsTArray<mozilla::plugins::PluginTag>& aPlugins,
@@ -2653,7 +2889,9 @@ bool nsPluginHost::CanUsePluginForMIMEType(const nsACString& aMIMEType) {
   if (nsPluginHost::GetSpecialType(aMIMEType) ==
           nsPluginHost::eSpecialType_Flash ||
       MimeTypeIsAllowedForFakePlugin(NS_ConvertUTF8toUTF16(aMIMEType)) ||
-      aMIMEType.LowerCaseEqualsLiteral("application/x-test")) {
+      aMIMEType.LowerCaseEqualsLiteral("application/x-test") ||
+      aMIMEType.LowerCaseEqualsLiteral("application/x-second-test") ||
+      aMIMEType.LowerCaseEqualsLiteral("application/x-third-test")) {
     return true;
   }
 

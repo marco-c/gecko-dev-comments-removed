@@ -4,7 +4,7 @@
 
 
 
-DIRS += ["secondplugin", "flashplugin"]
+DIRS += ["secondplugin", "thirdplugin", "flashplugin"]
 
 SharedLibrary("nptest")
 

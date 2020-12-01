@@ -59,6 +59,8 @@ struct _NPP;
 typedef _NPP* NPP;
 #endif
 
+class PluginFinder;
+
 class nsPluginHost final : public nsIPluginHost,
                            public nsIObserver,
                            public nsITimerCallback,
@@ -66,6 +68,7 @@ class nsPluginHost final : public nsIPluginHost,
                            public nsINamed {
   friend class nsPluginTag;
   friend class nsFakePluginTag;
+  friend class PluginFinder;
   virtual ~nsPluginHost();
 
  public:
@@ -312,6 +315,7 @@ class nsPluginHost final : public nsIPluginHost,
   void ClearNonRunningPlugins();
   nsresult ActuallyReloadPlugins();
 
+  
   void FindingFinished();
 
   RefPtr<nsPluginTag> mPlugins;
@@ -328,6 +332,14 @@ class nsPluginHost final : public nsIPluginHost,
 
   
   bool mPluginsDisabled;
+
+  
+  bool mFlashOnly;
+
+  
+  RefPtr<PluginFinder> mPendingFinder;
+  bool mDoReloadOnceFindingFinished;
+  bool mAddedFinderShutdownBlocker;
 
   
   
