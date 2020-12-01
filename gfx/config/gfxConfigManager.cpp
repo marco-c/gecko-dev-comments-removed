@@ -308,7 +308,7 @@ void gfxConfigManager::ConfigureWebRender() {
                                       "ANGLE is disabled",
                                       mFeatureD3D11HwAngle->GetFailureId());
       } else if (!mFeatureGPUProcess->IsEnabled() &&
-                 (!mIsNightly || !mWrForceAngleNoGPUProcess)) {
+                 !mWrForceAngleNoGPUProcess) {
         
         mFeatureWrAngle->ForceDisable(
             FeatureStatus::UnavailableNoGpuProcess, "GPU Process is disabled",
