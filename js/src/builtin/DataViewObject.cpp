@@ -906,7 +906,7 @@ bool DataViewObject::byteLengthGetterImpl(JSContext* cx, const CallArgs& args) {
   }
 
   
-  args.rval().set(DataViewObject::byteLengthValue(thisView));
+  args.rval().set(thisView->byteLengthValue());
   return true;
 }
 
