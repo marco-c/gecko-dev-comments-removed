@@ -305,12 +305,6 @@ const startupPhases = {
       stat: 1,
     },
     {
-      
-      path: "UserPlugins.parent:",
-      condition: WIN,
-      stat: 1,
-    },
-    {
       path: "XREAppFeat:formautofill@mozilla.org.xpi",
       condition: !WIN,
       stat: 1,
