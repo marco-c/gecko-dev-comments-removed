@@ -2081,8 +2081,12 @@ bool ContentParent::ShouldKeepProcessAlive() {
     return true;
   }
 
+  if (IsLaunching()) {
+    return true;
+  }
+
   
-  if (!IsAlive()) {
+  if (IsDead()) {
     return false;
   }
 
