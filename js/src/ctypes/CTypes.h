@@ -388,7 +388,7 @@ struct ClosureInfo {
 bool IsCTypesGlobal(HandleValue v);
 bool IsCTypesGlobal(JSObject* obj);
 
-const JSCTypesCallbacks* GetCallbacks(JSObject* obj);
+const JS::CTypesCallbacks* GetCallbacks(JSObject* obj);
 
 
 
@@ -512,7 +512,7 @@ ffi_type* GetFFIType(JSContext* cx, JSObject* obj);
 JSString* GetName(JSContext* cx, HandleObject obj);
 JSObject* GetProtoFromCtor(JSObject* obj, CTypeProtoSlot slot);
 JSObject* GetProtoFromType(JSContext* cx, JSObject* obj, CTypeProtoSlot slot);
-const JSCTypesCallbacks* GetCallbacksFromType(JSObject* obj);
+const JS::CTypesCallbacks* GetCallbacksFromType(JSObject* obj);
 }  
 
 namespace PointerType {

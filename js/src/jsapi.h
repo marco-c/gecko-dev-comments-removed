@@ -668,27 +668,29 @@ extern JS_PUBLIC_API bool IsProfileTimelineRecordingEnabled();
 
 #ifdef JS_HAS_CTYPES
 
-
-
-
-extern JS_PUBLIC_API bool JS_InitCTypesClass(JSContext* cx,
-                                             JS::HandleObject global);
+namespace JS {
 
 
 
 
 
-
-using JSCTypesUnicodeToNativeFun = char* (*)(JSContext*, const char16_t*,
-                                             size_t);
+extern JS_PUBLIC_API bool InitCTypesClass(JSContext* cx,
+                                          JS::Handle<JSObject*> global);
 
 
 
 
 
 
-struct JSCTypesCallbacks {
-  JSCTypesUnicodeToNativeFun unicodeToNative;
+using CTypesUnicodeToNativeFun = char* (*)(JSContext*, const char16_t*, size_t);
+
+
+
+
+
+
+struct CTypesCallbacks {
+  CTypesUnicodeToNativeFun unicodeToNative;
 };
 
 
@@ -697,8 +699,11 @@ struct JSCTypesCallbacks {
 
 
 
-extern JS_PUBLIC_API void JS_SetCTypesCallbacks(
-    JSObject* ctypesObj, const JSCTypesCallbacks* callbacks);
+extern JS_PUBLIC_API void SetCTypesCallbacks(JSObject* ctypesObj,
+                                             const CTypesCallbacks* callbacks);
+
+}  
+
 #endif
 
 

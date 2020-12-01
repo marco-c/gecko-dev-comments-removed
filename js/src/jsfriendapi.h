@@ -300,11 +300,6 @@ extern JS_FRIEND_API void IterateGrayObjects(
 extern JS_FRIEND_API bool CheckGrayMarkingState(JSRuntime* rt);
 #endif
 
-#ifdef JS_HAS_CTYPES
-extern JS_FRIEND_API size_t
-SizeOfDataIfCDataObject(mozilla::MallocSizeOf mallocSizeOf, JSObject* obj);
-#endif
-
 
 extern JS_FRIEND_API JS::Realm* GetAnyRealmInZone(JS::Zone* zone);
 
@@ -648,12 +643,23 @@ extern JS_FRIEND_API void PrepareScriptEnvironmentAndInvoke(
 JS_FRIEND_API void SetScriptEnvironmentPreparer(
     JSContext* cx, ScriptEnvironmentPreparer* preparer);
 
-enum CTypesActivityType {
-  CTYPES_CALL_BEGIN,
-  CTYPES_CALL_END,
-  CTYPES_CALLBACK_BEGIN,
-  CTYPES_CALLBACK_END
+}  
+
+namespace JS {
+
+
+
+
+enum class CTypesActivityType {
+  BeginCall,
+  EndCall,
+  BeginCallback,
+  EndCallback,
 };
+
+
+
+
 
 using CTypesActivityCallback = void (*)(JSContext*, CTypesActivityType);
 
@@ -661,8 +667,8 @@ using CTypesActivityCallback = void (*)(JSContext*, CTypesActivityType);
 
 
 
-JS_FRIEND_API void SetCTypesActivityCallback(JSContext* cx,
-                                             CTypesActivityCallback cb);
+extern JS_FRIEND_API void SetCTypesActivityCallback(JSContext* cx,
+                                                    CTypesActivityCallback cb);
 
 class MOZ_RAII JS_FRIEND_API AutoCTypesActivityCallback {
  private:
@@ -673,7 +679,9 @@ class MOZ_RAII JS_FRIEND_API AutoCTypesActivityCallback {
  public:
   AutoCTypesActivityCallback(JSContext* cx, CTypesActivityType beginType,
                              CTypesActivityType endType);
+
   ~AutoCTypesActivityCallback() { DoEndCallback(); }
+
   void DoEndCallback() {
     if (callback) {
       callback(cx, endType);
@@ -681,6 +689,10 @@ class MOZ_RAII JS_FRIEND_API AutoCTypesActivityCallback {
     }
   }
 };
+
+}  
+
+namespace js {
 
 
 
