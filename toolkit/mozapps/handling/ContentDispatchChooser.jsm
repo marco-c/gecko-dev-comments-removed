@@ -5,112 +5,368 @@
 
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-const CONTENT_HANDLING_URL = "chrome://mozapps/content/handling/dialog.xhtml";
-const STRINGBUNDLE_URL = "chrome://mozapps/locale/handling/handling.properties";
+const DIALOG_URL_APP_CHOOSER =
+  "chrome://mozapps/content/handling/appChooser.xhtml";
+const DIALOG_URL_PERMISSION =
+  "chrome://mozapps/content/handling/permissionDialog.xhtml";
 
+var EXPORTED_SYMBOLS = ["nsContentDispatchChooser"];
 
+const PROTOCOL_HANDLER_OPEN_PERM_KEY = "open-protocol-handler";
+const PERMISSION_KEY_DELIMITER = "^";
 
-function nsContentDispatchChooser() {}
-
-nsContentDispatchChooser.prototype = {
-  classID: Components.ID("e35d5067-95bc-4029-8432-e8f1e431148d"),
-
+class nsContentDispatchChooser {
   
 
-  ask: function ask(aHandler, aURI, aPrincipal, aBrowsingContext, aReason) {
-    var bundle = Services.strings.createBundle(STRINGBUNDLE_URL);
 
-    let strings = [
-      bundle.GetStringFromName("protocol.title"),
-      "",
-      bundle.GetStringFromName("protocol.description"),
-      bundle.GetStringFromName("protocol.choices.label"),
-      bundle.formatStringFromName("protocol.checkbox.label", [aURI.scheme]),
-      bundle.GetStringFromName("protocol.checkbox.accesskey"),
-      bundle.formatStringFromName("protocol.checkbox.extra", [
-        Services.appinfo.name,
-      ]),
-    ];
 
-    if (aBrowsingContext) {
-      if (!aBrowsingContext.topChromeWindow) {
-        Cu.reportError(
-          "Can't show external protocol dialog. BrowsingContext has no chrome window associated."
-        );
-        return;
+
+
+
+
+
+
+
+  async handleURI(aHandler, aURI, aPrincipal, aBrowsingContext) {
+    let callerHasPermission = this._hasProtocolHandlerPermission(
+      aHandler.type,
+      aPrincipal
+    );
+
+    
+    
+    if (
+      callerHasPermission &&
+      !aHandler.alwaysAskBeforeHandling &&
+      (aHandler.preferredAction == Ci.nsIHandlerInfo.useHelperApp ||
+        aHandler.preferredAction == Ci.nsIHandlerInfo.useSystemDefault)
+    ) {
+      try {
+        aHandler.launchWithURI(aURI, aBrowsingContext);
+      } catch (error) {
+        
+        
+        
+        if (error.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
+          aHandler.alwaysAskBeforeHandling = true;
+        } else {
+          throw error;
+        }
       }
+    }
 
-      this._openTabDialog(
-        strings,
+    let shouldOpenHandler = false;
+    try {
+      shouldOpenHandler = await this._prompt(
         aHandler,
-        aURI,
         aPrincipal,
+        callerHasPermission,
         aBrowsingContext
       );
+    } catch (error) {
+      Cu.reportError(error.message);
+    }
+
+    if (!shouldOpenHandler) {
       return;
     }
 
     
-    this._openWindowDialog(
-      strings,
-      aHandler,
-      aURI,
-      aPrincipal,
-      aBrowsingContext
-    );
-  },
-
-  _openWindowDialog(strings, aHandler, aURI, aPrincipal, aBrowsingContext) {
-    let params = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-    let SupportsString = Components.Constructor(
-      "@mozilla.org/supports-string;1",
-      "nsISupportsString"
-    );
-    for (let text of strings) {
-      let string = new SupportsString();
-      string.data = text;
-      params.appendElement(string);
-    }
-    params.appendElement(aHandler);
-    params.appendElement(aURI);
-    params.appendElement(aPrincipal);
-    params.appendElement(aBrowsingContext);
-
-    Services.ww.openWindow(
-      null,
-      CONTENT_HANDLING_URL,
-      null,
-      "chrome,dialog=yes,resizable,centerscreen",
-      params
-    );
-  },
-
-  _openTabDialog(strings, aHandler, aURI, aPrincipal, aBrowsingContext) {
-    let window = aBrowsingContext.topChromeWindow;
-
-    let tabDialogBox = window.gBrowser.getTabDialogBox(
-      aBrowsingContext.embedderElement
-    );
-
-    tabDialogBox.open(
-      CONTENT_HANDLING_URL,
-      {
-        features: "resizable=yes",
-        allowDuplicateDialogs: false,
-        keepOpenSameOriginNav: true,
-      },
-      ...strings,
-      aHandler,
-      aURI,
-      aPrincipal,
-      aBrowsingContext
-    );
-  },
+    
+    aHandler.launchWithURI(aURI, aBrowsingContext);
+  }
 
   
 
-  QueryInterface: ChromeUtils.generateQI(["nsIContentDispatchChooser"]),
-};
 
-var EXPORTED_SYMBOLS = ["nsContentDispatchChooser"];
+
+
+
+  _getHandlerName(aHandler) {
+    if (aHandler.alwaysAskBeforeHandling) {
+      return null;
+    }
+    if (
+      aHandler.preferredAction == Ci.nsIHandlerInfo.useSystemDefault &&
+      aHandler.hasDefaultHandler
+    ) {
+      return aHandler.defaultDescription;
+    }
+    return aHandler.preferredApplicationHandler?.name;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async _prompt(aHandler, aPrincipal, aHasPermission, aBrowsingContext) {
+    let shouldOpenHandler = false;
+    let resetHandlerChoice = false;
+
+    
+    if (!aHasPermission) {
+      let canPersistPermission = this._isSupportedPrincipal(aPrincipal);
+
+      let outArgs = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+        Ci.nsIWritablePropertyBag
+      );
+      
+      outArgs.setProperty("granted", false);
+      
+      
+      outArgs.setProperty("resetHandlerChoice", null);
+      
+      outArgs.setProperty("remember", null);
+
+      await this._openDialog(
+        DIALOG_URL_PERMISSION,
+        {
+          handler: aHandler,
+          principal: aPrincipal,
+          browsingContext: aBrowsingContext,
+          outArgs,
+          canPersistPermission,
+          preferredHandlerName: this._getHandlerName(aHandler),
+        },
+        aBrowsingContext
+      );
+      if (!outArgs.getProperty("granted")) {
+        
+        return false;
+      }
+
+      
+      resetHandlerChoice = outArgs.getProperty("resetHandlerChoice");
+
+      
+      if (!resetHandlerChoice) {
+        let remember = outArgs.getProperty("remember");
+        this._updatePermission(aPrincipal, aHandler.type, remember);
+      }
+
+      shouldOpenHandler = true;
+    }
+
+    
+    if (aHandler.alwaysAskBeforeHandling || resetHandlerChoice) {
+      
+      
+      let outArgs = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+        Ci.nsIWritablePropertyBag
+      );
+      outArgs.setProperty("openHandler", false);
+      outArgs.setProperty("preferredAction", aHandler.preferredAction);
+      outArgs.setProperty(
+        "preferredApplicationHandler",
+        aHandler.preferredApplicationHandler
+      );
+      outArgs.setProperty(
+        "alwaysAskBeforeHandling",
+        aHandler.alwaysAskBeforeHandling
+      );
+      let usePrivateBrowsing = aBrowsingContext?.usePrivateBrowsing;
+      await this._openDialog(
+        DIALOG_URL_APP_CHOOSER,
+        {
+          handler: aHandler,
+          outArgs,
+          usePrivateBrowsing,
+          enableButtonDelay: aHasPermission,
+        },
+        aBrowsingContext
+      );
+
+      shouldOpenHandler = outArgs.getProperty("openHandler");
+
+      
+      if (shouldOpenHandler) {
+        for (let prop of [
+          "preferredAction",
+          "preferredApplicationHandler",
+          "alwaysAskBeforeHandling",
+        ]) {
+          aHandler[prop] = outArgs.getProperty(prop);
+        }
+
+        
+        Cc["@mozilla.org/uriloader/handler-service;1"]
+          .getService(Ci.nsIHandlerService)
+          .store(aHandler);
+      }
+    }
+
+    return shouldOpenHandler;
+  }
+
+  
+
+
+
+
+
+
+  _hasProtocolHandlerPermission(scheme, aPrincipal) {
+    
+    if (!nsContentDispatchChooser.isPermissionEnabled) {
+      return true;
+    }
+
+    
+    if (
+      Services.prefs.getBoolPref(
+        "network.protocol-handler.external." + scheme,
+        false
+      )
+    ) {
+      return true;
+    }
+
+    if (!aPrincipal) {
+      return false;
+    }
+
+    let key = this._getSkipProtoDialogPermissionKey(scheme);
+    return (
+      Services.perms.testPermissionFromPrincipal(aPrincipal, key) ===
+      Services.perms.ALLOW_ACTION
+    );
+  }
+
+  
+
+
+
+
+  _getSkipProtoDialogPermissionKey(aProtocolScheme) {
+    return (
+      PROTOCOL_HANDLER_OPEN_PERM_KEY +
+      PERMISSION_KEY_DELIMITER +
+      aProtocolScheme
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  async _openDialog(aDialogURL, aDialogArgs, aBrowsingContext) {
+    
+    let resizable = `resizable=${
+      aDialogURL == DIALOG_URL_APP_CHOOSER ? "yes" : "no"
+    }`;
+
+    if (aBrowsingContext) {
+      if (!aBrowsingContext.topChromeWindow) {
+        throw new Error(
+          "Can't show external protocol dialog. BrowsingContext has no chrome window associated."
+        );
+      }
+
+      let window = aBrowsingContext.topChromeWindow;
+      let tabDialogBox = window.gBrowser.getTabDialogBox(
+        aBrowsingContext.embedderElement
+      );
+
+      return tabDialogBox.open(
+        aDialogURL,
+        {
+          features: resizable,
+          allowDuplicateDialogs: false,
+          keepOpenSameOriginNav: true,
+        },
+        aDialogArgs
+      );
+    }
+
+    
+    let win = Services.ww.openWindow(
+      null,
+      aDialogURL,
+      null,
+      `chrome,dialog=yes,centerscreen,${resizable}`,
+      aDialogArgs
+    );
+
+    
+    return new Promise(resolve => {
+      win.addEventListener("unload", function onUnload(event) {
+        if (event.target.location != aDialogURL) {
+          return;
+        }
+        win.removeEventListener("unload", onUnload);
+        resolve();
+      });
+    });
+  }
+
+  
+
+
+
+
+
+
+  _updatePermission(aPrincipal, aScheme, aAllow) {
+    
+    if (
+      !nsContentDispatchChooser.isPermissionEnabled ||
+      aPrincipal.isSystemPrincipal ||
+      !this._isSupportedPrincipal(aPrincipal)
+    ) {
+      return;
+    }
+
+    let permKey = this._getSkipProtoDialogPermissionKey(aScheme);
+    if (aAllow) {
+      Services.perms.addFromPrincipal(
+        aPrincipal,
+        permKey,
+        Services.perms.ALLOW_ACTION,
+        Services.perms.EXPIRE_NEVER
+      );
+    } else {
+      Services.perms.removeFromPrincipal(aPrincipal, permKey);
+    }
+  }
+
+  
+
+
+
+
+  _isSupportedPrincipal(aPrincipal) {
+    return (
+      aPrincipal &&
+      ["http", "https", "moz-extension", "file"].some(scheme =>
+        aPrincipal.schemeIs(scheme)
+      )
+    );
+  }
+}
+
+nsContentDispatchChooser.prototype.classID = Components.ID(
+  "e35d5067-95bc-4029-8432-e8f1e431148d"
+);
+nsContentDispatchChooser.prototype.QueryInterface = ChromeUtils.generateQI([
+  "nsIContentDispatchChooser",
+]);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  nsContentDispatchChooser,
+  "isPermissionEnabled",
+  "security.external_protocol_requires_permission",
+  true
+);

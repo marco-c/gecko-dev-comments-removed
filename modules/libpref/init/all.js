@@ -4736,3 +4736,8 @@ pref("dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled", false
 
 
 pref("browser.privatebrowsing.autostart", false);
+
+
+
+
+pref("security.external_protocol_requires_permission", true);
