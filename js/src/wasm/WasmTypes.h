@@ -3230,26 +3230,9 @@ class Frame {
 
   
   
-  TlsData* tls_;
-
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM64)
-  
-  
-  
-  
-  
- protected:  
-  uintptr_t padding_;
-
- private:
-#endif
-
-  
-  
   void* returnAddress_;
 
  public:
-  static constexpr uint32_t tlsOffset() { return offsetof(Frame, tls_); }
   static constexpr uint32_t callerFPOffset() {
     return offsetof(Frame, callerFP_);
   }
@@ -3266,7 +3249,6 @@ class Frame {
   }
 
   uint8_t* rawCaller() const { return callerFP_; }
-  TlsData* tls() const { return tls_; }
 
   Frame* wasmCaller() const {
     MOZ_ASSERT(!callerIsExitOrJitEntryFP());
@@ -3302,6 +3284,8 @@ class Frame {
 };
 
 static_assert(!std::is_polymorphic_v<Frame>, "Frame doesn't need a vtable.");
+static_assert(sizeof(Frame) == 2 * sizeof(void*),
+              "Frame is a two pointer structure");
 
 class FrameWithTls : public Frame {
   TlsData* calleeTls_;
@@ -3408,7 +3392,8 @@ class DebugFrame {
 
   
  protected:
-#if defined(JS_CODEGEN_MIPS32)
+#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM) || \
+    defined(JS_CODEGEN_X86)
   
   
   
