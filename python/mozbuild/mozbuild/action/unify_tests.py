@@ -16,8 +16,7 @@ class UnifiedTestFinder(UnifiedFinder):
     def unify_file(self, path, file1, file2):
         unified = super(UnifiedTestFinder, self).unify_file(path, file1, file2)
         basename = mozpath.basename(path)
-        if basename in ("mozinfo.json", "wptrunner.local.ini"):
-            
+        if basename == "mozinfo.json":
             
             
             
