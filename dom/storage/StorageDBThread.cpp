@@ -565,8 +565,11 @@ nsresult StorageDBThread::OpenAndUpdateDatabase() {
   rv = OpenDatabaseConnection();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = TryJournalMode();
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  if (mPrivateBrowsingId == 0) {
+    rv = TryJournalMode();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   return NS_OK;
 }
