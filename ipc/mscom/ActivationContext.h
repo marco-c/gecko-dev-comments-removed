@@ -23,10 +23,15 @@ namespace mscom {
 
 class ActivationContext final {
  public:
+  
+  
+  static constexpr WORD kDllManifestDefaultResourceId = 2;
+
   ActivationContext() : mActCtx(INVALID_HANDLE_VALUE) {}
 
   explicit ActivationContext(WORD aResourceId);
-  explicit ActivationContext(HMODULE aLoadFromModule, WORD aResourceId = 2);
+  explicit ActivationContext(HMODULE aLoadFromModule,
+                             WORD aResourceId = kDllManifestDefaultResourceId);
 
   ActivationContext(ActivationContext&& aOther);
   ActivationContext& operator=(ActivationContext&& aOther);
