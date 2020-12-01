@@ -254,12 +254,6 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
   return true;
 }
 
-static inline uint32_t GetArgStackDisp(uint32_t usedArgSlots) {
-  MOZ_ASSERT(usedArgSlots >= NumIntArgRegs);
-  
-  return usedArgSlots * sizeof(intptr_t);
-}
-
 }  
 }  
 
