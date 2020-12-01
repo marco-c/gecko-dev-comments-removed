@@ -291,6 +291,18 @@ var testSpec = protocol.generateActorSpec({
         value: RetVal("json"),
       },
     },
+    isPausedDebuggerOverlayVisible: {
+      request: {},
+      response: {
+        value: RetVal("boolean"),
+      },
+    },
+    clickPausedDebuggerOverlayButton: {
+      request: {
+        id: Arg(0, "string"),
+      },
+      response: {},
+    },
   },
 });
 
@@ -833,6 +845,44 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
 
   getWindowDimensions: function() {
     return getWindowDimensions(this.content);
+  },
+
+  
+
+
+  _getPausedDebuggerOverlay() {
+    
+    
+    return this.targetActor?.threadActor?._pauseOverlay;
+  },
+
+  isPausedDebuggerOverlayVisible() {
+    const pauseOverlay = this._getPausedDebuggerOverlay();
+    if (!pauseOverlay) {
+      return false;
+    }
+
+    const root = pauseOverlay.getElement("root");
+    return root.getAttribute("hidden") !== "true";
+  },
+
+  
+
+
+
+
+  async clickPausedDebuggerOverlayButton(id) {
+    const pauseOverlay = this._getPausedDebuggerOverlay();
+    if (!pauseOverlay) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    pauseOverlay.handleEvent({ type: "mousedown", target: { id } });
   },
 });
 exports.TestActor = TestActor;

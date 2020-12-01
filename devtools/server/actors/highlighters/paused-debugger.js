@@ -234,6 +234,10 @@ PausedDebuggerOverlay.prototype = {
     this.getElement("reason").setTextContent(reason);
     toolbar.removeAttribute("hidden");
 
+    
+    
+    
+    
     this.env.window.document.setSuppressedEventListener(this);
     return true;
   },
