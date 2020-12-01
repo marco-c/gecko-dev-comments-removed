@@ -75,10 +75,6 @@ namespace mozilla {
 
 
 
-typedef uintptr_t WindowsHandle;
-
-
-
 struct void_t {
   bool operator==(const void_t&) const { return true; }
 };

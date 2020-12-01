@@ -1,7 +1,7 @@
-/* -*- Mode: C++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 8 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 include protocol PPluginBackgroundDestroyer;
 include protocol PPluginModule;
@@ -25,7 +25,7 @@ using gfxSurfaceType from "gfxTypes.h";
 using mozilla::gfx::IntSize from "mozilla/gfx/2D.h";
 using mozilla::gfx::IntRect from "mozilla/gfx/2D.h";
 using struct mozilla::null_t from "ipc/IPCMessageUtils.h";
-using mozilla::WindowsHandle from "ipc/IPCMessageUtils.h";
+using mozilla::WindowsHandle from "mozilla/ipc/IPCTypes.h";
 using mozilla::plugins::WindowsSharedMemoryHandle from "mozilla/plugins/PluginMessageUtils.h";
 using mozilla::layers::SurfaceDescriptorX11 from "gfxipc/ShadowLayerUtils.h";
 using nsIntRect from "nsRect.h";
@@ -45,13 +45,13 @@ struct IOSurfaceDescriptor {
 union SurfaceDescriptor {
   Shmem;
   SurfaceDescriptorX11;
-  PPluginSurface; // used on Windows
-  IOSurfaceDescriptor; // used on OSX 10.5+
-  // Descriptor can be null here in case
-  // 1) of first Show call (prevSurface is null)
-  // 2) when child is going to destroy
-  //    and it just want to grab prevSurface
-  //     back without giving new surface
+  PPluginSurface; 
+  IOSurfaceDescriptor; 
+  
+  
+  
+  
+  
   null_t;
 };
 
@@ -68,12 +68,12 @@ intr protocol PPluginInstance
 child:
   async __delete__();
 
-  // This is only used on Windows and, for windowed plugins, must be called
-  // before the first call to NPP_SetWindow.
+  
+  
   intr CreateChildPluginWindow()
     returns (NativeWindowHandle childPluginWindow);
 
-  // This is only used on Windows and, for windowless plugins.
+  
   async CreateChildPopupSurrogate(NativeWindowHandle netscapeWindow);
 
   intr NPP_SetWindow(NPRemoteWindow window);
@@ -94,36 +94,36 @@ child:
 
   intr NPP_HandleEvent(NPRemoteEvent event)
     returns (int16_t handled);
-  // special cases where we need to a shared memory buffer
+  
   intr NPP_HandleEvent_Shmem(NPRemoteEvent event, Shmem buffer)
     returns (int16_t handled, Shmem rtnbuffer);
-  // special cases where we need an iosurface
+  
   intr NPP_HandleEvent_IOSurface(NPRemoteEvent event, uint32_t surfaceid)
     returns (int16_t handled);
-  // special cases of HandleEvent to make mediating races simpler
+  
   intr Paint(NPRemoteEvent event)
     returns (int16_t handled);
-  // this is only used on windows to forward WM_WINDOWPOSCHANGE
+  
   async WindowPosChanged(NPRemoteEvent event);
-  // used on OS X to tell the child the contents scale factor
-  // of its parent has changed
+  
+  
   async ContentsScaleFactorChanged(double aContentsScaleFactor);
 
-  // ********************** Async plugins rendering
-  // see https://wiki.mozilla.org/Gecko:AsyncPluginPainting
-  // **********************
+  
+  
+  
 
-  // Async version of SetWindow call
-  // @param surfaceType - gfxASurface::gfxSurfaceType
-  //        plugin child must create offscreen buffer
-  //        with type equals to surfaceType
+  
+  
+  
+  
   async AsyncSetWindow(gfxSurfaceType surfaceType, NPRemoteWindow window);
 
-  // There is now an opaque background behind this instance (or the
-  // background was updated).  The changed area is |rect|.  The
-  // browser owns the background surface, and it's read-only from
-  // within the plugin process.  |background| is either null_t to
-  // refer to the existing background or a fresh descriptor.
+  
+  
+  
+  
+  
   async UpdateBackground(SurfaceDescriptor background, nsIntRect rect);
 
   async NPP_DidComposite();
@@ -131,13 +131,13 @@ child:
   intr NPP_Destroy()
     returns (NPError rv);
 
-  // HandledWindowedPluginKeyEvent() is always called after posting a native
-  // key event with OnWindowedPluginKeyEvent().
-  //
-  // @param aKeyEventData      The key event which was posted to the parent
-  //                           process.
-  // @param aIsConsumed        true if aKeyEventData is consumed in the
-  //                           parent process.  Otherwise, false.
+  
+  
+  
+  
+  
+  
+  
   async HandledWindowedPluginKeyEvent(NativeEventData aKeyEventData,
                                       bool aIsConsumed);
 
@@ -179,50 +179,50 @@ parent:
   intr NPN_PostURL(nsCString url, nsCString target, nsCString buffer, bool file)
     returns (NPError result);
 
-  /**
-   * Covers both NPN_GetURLNotify and NPN_PostURLNotify.
-   * @TODO This would be more readable as an overloaded method,
-   *       but IPDL doesn't allow that for constructors.
-   */
+  
+
+
+
+
   intr PStreamNotify(nsCString url, nsCString target, bool post,
                     nsCString buffer, bool file)
     returns (NPError result);
 
   async NPN_InvalidateRect(NPRect rect);
 
-  // Clear the current plugin image.
+  
   sync RevokeCurrentDirectSurface();
 
-  // Create a new DXGI shared surface with the given format and size. The
-  // returned handle, on success, can be opened as an ID3D10Texture2D or
-  // ID3D11Texture2D on a corresponding device.
+  
+  
+  
   sync InitDXGISurface(SurfaceFormat format, IntSize size)
     returns (WindowsHandle handle, NPError result);
 
-  // Destroy a surface previously allocated with InitDXGISurface().
+  
   sync FinalizeDXGISurface(WindowsHandle handle);
 
-  // Set the current plugin image to the bitmap in the given shmem buffer. The
-  // format must be B8G8R8A8 or B8G8R8X8.
+  
+  
   sync ShowDirectBitmap(Shmem buffer,
                         SurfaceFormat format,
                         uint32_t stride,
                         IntSize size,
                         IntRect dirty);
 
-  // Set the current plugin image to the DXGI surface in |handle|.
+  
   sync ShowDirectDXGISurface(WindowsHandle handle,
                               IntRect dirty);
 
-  // Give |newSurface|, containing this instance's updated pixels, to
-  // the browser for compositing.  When this method returns, any surface
-  // previously passed to Show may be destroyed.
-  //
-  // @param rect - actually updated rectangle, comparing to prevSurface content
-  //               could be used for partial render of layer to topLevel context
-  // @param newSurface - remotable surface
-  // @param prevSurface - if the previous surface was shared-memory, returns
-  //                      the shmem for reuse
+  
+  
+  
+  
+  
+  
+  
+  
+  
   sync Show(NPRect updatedRect, SurfaceDescriptor newSurface)
     returns (SurfaceDescriptor prevSurface);
 
@@ -247,43 +247,43 @@ parent:
 
   async RedrawPlugin();
 
-  // Sends a native window to be adopted by the native window that would be
-  // returned by NPN_GetValue_NPNVnetscapeWindow. Only used on Windows.
+  
+  
   async SetNetscapeWindowAsParent(NativeWindowHandle childWindow);
 
   sync GetCompositionString(uint32_t aType)
                             returns (uint8_t[] aDist, int32_t aLength);
-  // Set candidate window position.
-  //
-  // @param aPosition  position information of candidate window
+  
+  
+  
   async SetCandidateWindow(CandidateWindowPosition aPosition);
   async RequestCommitOrCancel(bool aCommitted);
 
-  // Control IME can enable or disable
-  //
-  // @param aEanble  whether IME is enabled or disabled
+  
+  
+  
   async EnableIME(bool aEnable);
 
-  // Notifies the parent process of a plugin instance receiving key event
-  // directly.
-  //
-  // @param aKeyEventData       The native key event which will be sent to
-  //                            plugin from native event handler.
+  
+  
+  
+  
+  
   async OnWindowedPluginKeyEvent(NativeEventData aKeyEventData);
 
 both:
   async PPluginScriptableObject();
 
 child:
-  /* NPP_NewStream */
+  
   async PBrowserStream(nsCString url,
                        uint32_t length,
                        uint32_t lastmodified,
                        nullable PStreamNotify notifyData,
                        nsCString headers);
 
-  // Implements the legacy (synchronous) version of NPP_NewStream for when
-  // async plugin init is preffed off.
+  
+  
   intr NPP_NewStream(PBrowserStream actor, nsCString mimeType, bool seekable)
     returns (NPError rv,
              uint16_t stype);
@@ -298,5 +298,5 @@ child:
   async PPluginBackgroundDestroyer();
 };
 
-} // namespace plugins
-} // namespace mozilla
+} 
+} 

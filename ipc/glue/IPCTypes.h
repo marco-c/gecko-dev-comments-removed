@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef IPC_GLUE_IPCTYPES_H_
+#define IPC_GLUE_IPCTYPES_H_
+
+#include <cstdint>
+
+namespace mozilla {
+
+
+
+typedef uintptr_t WindowsHandle;
+
+}  
+
+#endif  

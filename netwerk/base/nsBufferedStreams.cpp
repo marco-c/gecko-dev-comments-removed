@@ -3,8 +3,6 @@
 
 
 
-#include "ipc/IPCMessageUtils.h"
-
 #include "nsBufferedStreams.h"
 #include "nsStreamUtils.h"
 #include "nsNetCID.h"
