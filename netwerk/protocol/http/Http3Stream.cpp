@@ -284,7 +284,7 @@ nsresult Http3Stream::OnWriteSegment(char* buf, uint32_t count,
       rv = mSession->ReadResponseData(mStreamId, buf, count, countWritten,
                                       &mFin);
       if (NS_FAILED(rv)) {
-        return rv;
+        break;
       }
       if (*countWritten == 0) {
         if (mFin) {
@@ -310,6 +310,11 @@ nsresult Http3Stream::OnWriteSegment(char* buf, uint32_t count,
     case RECV_DONE:
       rv = NS_ERROR_UNEXPECTED;
   }
+
+  
+  
+  
+  mSocketInCondition = rv;
 
   return rv;
 }
@@ -380,12 +385,17 @@ nsresult Http3Stream::WriteSegments(nsAHttpSegmentWriter* writer,
   LOG(("Http3Stream::WriteSegments [this=%p]", this));
   nsresult rv = NS_OK;
   uint32_t countWrittenSingle = 0;
+  bool again = true;
+
   do {
-    rv = mTransaction->WriteSegments(this, count, &countWrittenSingle);
+    mSocketInCondition = NS_OK;
+    rv = mTransaction->WriteSegmentsAgain(this, count, &countWrittenSingle,
+                                          &again);
     *countWritten += countWrittenSingle;
     LOG(("Http3Stream::WriteSegments rv=0x%" PRIx32
-         " countWrittenSingle=%" PRIu32 " [this=%p]",
-         static_cast<uint32_t>(rv), countWrittenSingle, this));
+         " countWrittenSingle=%" PRIu32 " socketin=%" PRIx32 " [this=%p]",
+         static_cast<uint32_t>(rv), countWrittenSingle,
+         static_cast<uint32_t>(mSocketInCondition), this));
     if (mTransaction->IsDone()) {
       
       
@@ -394,16 +404,22 @@ nsresult Http3Stream::WriteSegments(nsAHttpSegmentWriter* writer,
       mRecvState = RECV_DONE;
     }
 
+    if (NS_FAILED(rv)) {
+      
+      
+      if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+        rv = NS_OK;
+      }
+      again = false;
+    } else if (NS_FAILED(mSocketInCondition)) {
+      if (mSocketInCondition != NS_BASE_STREAM_WOULD_BLOCK) {
+        rv = mSocketInCondition;
+      }
+      again = false;
+    }
     
-    
-    
-    
-    
-    
-    
-  } while (NS_SUCCEEDED(rv) &&
-           ((countWrittenSingle > 0) || (mRecvState == RECEIVED_FIN)) &&
-           !Done());
+  } while (again && gHttpHandler->Active());
+
   return rv;
 }
 
