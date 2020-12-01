@@ -319,8 +319,16 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
 
   LayoutDeviceIntSize size = mWidget->GetClientSize();
 
-  wr::DisplayListBuilder builder(WrBridge()->GetPipeline(),
-                                 mLastDisplayListSize, &mDisplayItemCache);
+  
+  
+  
+  
+  static const size_t kMaxPrealloc = 300000;
+  size_t preallocate =
+      mLastDisplayListSize < kMaxPrealloc ? mLastDisplayListSize : kMaxPrealloc;
+
+  wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), preallocate,
+                                 &mDisplayItemCache);
 
   wr::IpcResourceUpdateQueue resourceUpdates(WrBridge());
   wr::usize builderDumpIndex = 0;
