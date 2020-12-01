@@ -277,7 +277,8 @@ class ContentCacheInChild final : public ContentCache {
   
   
   
-  Maybe<OffsetAndData<uint32_t>> mLastCommit;
+  Maybe<uint32_t> mLastCommitStringStart;
+  nsString mLastCommitString;
 };
 
 class ContentCacheInParent final : public ContentCache {
