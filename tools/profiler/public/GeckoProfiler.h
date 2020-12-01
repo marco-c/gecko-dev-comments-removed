@@ -65,14 +65,6 @@
 #  define PROFILER_ADD_MARKER_WITH_PAYLOAD(markerName, categoryPair, \
                                            PayloadType, payloadArgs)
 
-#  define PROFILER_TRACING_MARKER(categoryString, markerName, categoryPair, \
-                                  kind)
-#  define PROFILER_TRACING_MARKER_DOCSHELL(categoryString, markerName, \
-                                           categoryPair, kind, docshell)
-#  define AUTO_PROFILER_TRACING_MARKER(categoryString, markerName, categoryPair)
-#  define AUTO_PROFILER_TRACING_MARKER_DOCSHELL(categoryString, markerName, \
-                                                categoryPair, docShell)
-
 
 
 
@@ -972,40 +964,6 @@ inline mozilla::MarkerInnerWindowId MarkerInnerWindowIdFromDocShell(
 
 
 
-#  define PROFILER_TRACING_MARKER(categoryString, markerName, categoryPair, \
-                                  kind)                                     \
-    profiler_tracing_marker(categoryString, markerName,                     \
-                            JS::ProfilingCategoryPair::categoryPair, kind)
-#  define PROFILER_TRACING_MARKER_DOCSHELL(categoryString, markerName,       \
-                                           categoryPair, kind, docShell)     \
-    profiler_tracing_marker(                                                 \
-        categoryString, markerName, JS::ProfilingCategoryPair::categoryPair, \
-        kind, profiler_get_inner_window_id_from_docshell(docShell))
-
-void profiler_tracing_marker(
-    const char* aCategoryString, const char* aMarkerName,
-    JS::ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-    const mozilla::Maybe<uint64_t>& aInnerWindowID = mozilla::Nothing());
-void profiler_tracing_marker(
-    const char* aCategoryString, const char* aMarkerName,
-    JS::ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-    UniqueProfilerBacktrace aCause,
-    const mozilla::Maybe<uint64_t>& aInnerWindowID = mozilla::Nothing());
-
-
-#  define AUTO_PROFILER_TRACING_MARKER(categoryString, markerName,           \
-                                       categoryPair)                         \
-    mozilla::AutoProfilerTracing PROFILER_RAII(                              \
-        categoryString, markerName, JS::ProfilingCategoryPair::categoryPair, \
-        mozilla::Nothing())
-#  define AUTO_PROFILER_TRACING_MARKER_DOCSHELL(categoryString, markerName,  \
-                                                categoryPair, docShell)      \
-    mozilla::AutoProfilerTracing PROFILER_RAII(                              \
-        categoryString, markerName, JS::ProfilingCategoryPair::categoryPair, \
-        profiler_get_inner_window_id_from_docshell(docShell))
-
-
-
 
 
 
@@ -1224,44 +1182,6 @@ class MOZ_RAII AutoProfilerLabel {
 
     static MOZ_THREAD_LOCAL(ProfilingStackOwner*) sProfilingStackOwnerTLS;
   };
-};
-
-class MOZ_RAII AutoProfilerTracing {
- public:
-  AutoProfilerTracing(const char* aCategoryString, const char* aMarkerName,
-                      JS::ProfilingCategoryPair aCategoryPair,
-                      const mozilla::Maybe<uint64_t>& aInnerWindowID)
-      : mCategoryString(aCategoryString),
-        mMarkerName(aMarkerName),
-        mCategoryPair(aCategoryPair),
-        mInnerWindowID(aInnerWindowID) {
-    profiler_tracing_marker(mCategoryString, mMarkerName, aCategoryPair,
-                            TRACING_INTERVAL_START, mInnerWindowID);
-  }
-
-  AutoProfilerTracing(const char* aCategoryString, const char* aMarkerName,
-                      JS::ProfilingCategoryPair aCategoryPair,
-                      UniqueProfilerBacktrace aBacktrace,
-                      const mozilla::Maybe<uint64_t>& aInnerWindowID)
-      : mCategoryString(aCategoryString),
-        mMarkerName(aMarkerName),
-        mCategoryPair(aCategoryPair),
-        mInnerWindowID(aInnerWindowID) {
-    profiler_tracing_marker(mCategoryString, mMarkerName, aCategoryPair,
-                            TRACING_INTERVAL_START, std::move(aBacktrace),
-                            mInnerWindowID);
-  }
-
-  ~AutoProfilerTracing() {
-    profiler_tracing_marker(mCategoryString, mMarkerName, mCategoryPair,
-                            TRACING_INTERVAL_END, mInnerWindowID);
-  }
-
- protected:
-  const char* mCategoryString;
-  const char* mMarkerName;
-  const JS::ProfilingCategoryPair mCategoryPair;
-  const mozilla::Maybe<uint64_t> mInnerWindowID;
 };
 
 
