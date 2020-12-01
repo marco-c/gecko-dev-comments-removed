@@ -16,8 +16,6 @@
 #  endif
 #endif
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/mscom/Objref.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/RefPtr.h"
@@ -140,50 +138,6 @@ uintptr_t GetContainingModuleHandle() {
 #endif
   return reinterpret_cast<uintptr_t>(thisModule);
 }
-
-namespace detail {
-
-long BuildRegGuidPath(REFGUID aGuid, const GuidType aGuidType, wchar_t* aBuf,
-                      const size_t aBufLen) {
-  constexpr wchar_t kClsid[] = L"CLSID\\";
-  constexpr wchar_t kAppid[] = L"AppID\\";
-  constexpr wchar_t kSubkeyBase[] = L"SOFTWARE\\Classes\\";
-
-  
-  
-  
-  constexpr size_t kSubkeyBaseLen = mozilla::ArrayLength(kSubkeyBase) - 1;
-  constexpr size_t kSubkeyLen =
-      kSubkeyBaseLen + mozilla::ArrayLength(kClsid) - 1;
-  
-  
-  constexpr size_t kGuidLen = kGuidRegFormatCharLenInclNul - 1;
-  constexpr size_t kExpectedPathLenInclNul = kSubkeyLen + kGuidLen + 1;
-
-  if (aBufLen < kExpectedPathLenInclNul) {
-    
-    return E_INVALIDARG;
-  }
-
-  if (wcscpy_s(aBuf, aBufLen, kSubkeyBase)) {
-    return E_INVALIDARG;
-  }
-
-  const wchar_t* strGuidType = aGuidType == GuidType::CLSID ? kClsid : kAppid;
-  if (wcscat_s(aBuf, aBufLen, strGuidType)) {
-    return E_INVALIDARG;
-  }
-
-  int guidConversionResult =
-      ::StringFromGUID2(aGuid, &aBuf[kSubkeyLen], aBufLen - kSubkeyLen);
-  if (!guidConversionResult) {
-    return E_INVALIDARG;
-  }
-
-  return S_OK;
-}
-
-}  
 
 long CreateStream(const uint8_t* aInitBuf, const uint32_t aInitBufSize,
                   IStream** aOutStream) {
@@ -315,15 +269,6 @@ void GUIDToString(REFGUID aGuid, nsAString& aOutString) {
     
     aOutString.SetLength(result - 1);
   }
-}
-
-#else
-
-void GUIDToString(REFGUID aGuid,
-                  wchar_t (&aOutBuf)[kGuidRegFormatCharLenInclNul]) {
-  DebugOnly<int> result =
-      ::StringFromGUID2(aGuid, aOutBuf, ArrayLength(aOutBuf));
-  MOZ_ASSERT(result);
 }
 
 #endif  
