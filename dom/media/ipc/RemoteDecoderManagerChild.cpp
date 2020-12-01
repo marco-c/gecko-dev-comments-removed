@@ -193,103 +193,97 @@ bool RemoteDecoderManagerChild::Supports(
 }
 
 
-already_AddRefed<MediaDataDecoder>
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
 RemoteDecoderManagerChild::CreateAudioDecoder(
     const CreateDecoderParams& aParams) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
     
-    return nullptr;
+    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+        NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   }
-
-  RefPtr<RemoteAudioDecoderChild> child;
-  MediaResult result(NS_ERROR_DOM_MEDIA_CANCELED);
-
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<Runnable> task =
-      NS_NewRunnableFunction("RemoteDecoderModule::CreateAudioDecoder", [&]() {
-        child = new RemoteAudioDecoderChild();
-        result = child->InitIPDL(aParams.AudioConfig(), aParams.mOptions);
+  return InvokeAsync(
+      managerThread, __func__,
+      [params = CreateDecoderParamsForAsync(aParams)]() {
+        auto child = MakeRefPtr<RemoteAudioDecoderChild>();
+        MediaResult result =
+            child->InitIPDL(params.AudioConfig(), params.mOptions);
         if (NS_FAILED(result)) {
-          
-          
-          child = nullptr;
+          return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+              result, __func__);
         }
+        return Construct(std::move(child));
       });
-  SyncRunnable::DispatchToThread(managerThread, task);
-
-  if (NS_FAILED(result)) {
-    if (aParams.mError) {
-      *aParams.mError = result;
-    }
-    return nullptr;
-  }
-
-  RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(child);
-
-  return object.forget();
 }
 
 
-already_AddRefed<MediaDataDecoder>
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
 RemoteDecoderManagerChild::CreateVideoDecoder(
     const CreateDecoderParams& aParams, RemoteDecodeIn aLocation) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
     
-    return nullptr;
+    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+        NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   }
-
-  MOZ_ASSERT(aLocation != RemoteDecodeIn::Unspecified);
 
   if (!aParams.mKnowsCompositor && aLocation == RemoteDecodeIn::GpuProcess) {
     
     
-    return nullptr;
+    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+        NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR, __func__);
   }
 
-  RefPtr<RemoteVideoDecoderChild> child;
-  MediaResult result(NS_ERROR_DOM_MEDIA_CANCELED);
-
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<Runnable> task = NS_NewRunnableFunction(
-      "RemoteDecoderManagerChild::CreateVideoDecoder", [&]() {
-        child = new RemoteVideoDecoderChild(aLocation);
-        result = child->InitIPDL(
-            aParams.VideoConfig(), aParams.mRate.mValue, aParams.mOptions,
-            aParams.mKnowsCompositor
-                ? &aParams.mKnowsCompositor->GetTextureFactoryIdentifier()
+  MOZ_ASSERT(aLocation != RemoteDecodeIn::Unspecified);
+  return InvokeAsync(
+      managerThread, __func__,
+      [aLocation, params = CreateDecoderParamsForAsync(aParams)]()
+          -> RefPtr<PlatformDecoderModule::CreateDecoderPromise> {
+        auto child = MakeRefPtr<RemoteVideoDecoderChild>(aLocation);
+        MediaResult result = child->InitIPDL(
+            params.VideoConfig(), params.mRate.mValue, params.mOptions,
+            params.mKnowsCompositor
+                ? &params.mKnowsCompositor->GetTextureFactoryIdentifier()
                 : nullptr);
         if (NS_FAILED(result)) {
-          
-          
-          child = nullptr;
+          return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+              result, __func__);
         }
+        return Construct(std::move(child));
       });
-  SyncRunnable::DispatchToThread(managerThread, task);
+}
 
-  if (NS_FAILED(result)) {
-    if (aParams.mError) {
-      *aParams.mError = result;
-    }
-    return nullptr;
+
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+RemoteDecoderManagerChild::Construct(RefPtr<RemoteDecoderChild>&& aChild) {
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    
+    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+        NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   }
+  MOZ_ASSERT(managerThread->IsOnCurrentThread());
 
-  RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(child);
-
-  return object.forget();
+  RefPtr<PlatformDecoderModule::CreateDecoderPromise> p =
+      aChild->SendConstruct()->Then(
+          managerThread, __func__,
+          [child = std::move(aChild)](MediaResult aResult) {
+            if (NS_FAILED(aResult)) {
+              
+              child->DestroyIPDL();
+              return PlatformDecoderModule::CreateDecoderPromise::
+                  CreateAndReject(aResult, __func__);
+            }
+            return PlatformDecoderModule::CreateDecoderPromise::
+                CreateAndResolve(MakeRefPtr<RemoteMediaDataDecoder>(child),
+                                 __func__);
+          },
+          [](const mozilla::ipc::ResponseRejectReason& aReason) {
+            
+            return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+                NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
+          });
+  return p;
 }
 
 
@@ -357,8 +351,7 @@ void RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded(
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
     const RemoteDecoderInfoIPDL& ,
     const CreateDecoderParams::OptionSet& aOptions,
-    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier, bool* aSuccess,
-    nsCString* ) {
+    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier) {
   
   
   MOZ_ASSERT(false,

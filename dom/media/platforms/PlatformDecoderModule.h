@@ -470,6 +470,9 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   
   
   
+  
+  
+  
   virtual RefPtr<ShutdownPromise> Shutdown() = 0;
 
   

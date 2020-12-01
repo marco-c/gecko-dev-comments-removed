@@ -47,7 +47,8 @@ WaveDataDecoder::WaveDataDecoder(const CreateDecoderParams& aParams)
     : mInfo(aParams.AudioConfig()) {}
 
 RefPtr<ShutdownPromise> WaveDataDecoder::Shutdown() {
-  MOZ_ASSERT(mThread->IsOnCurrentThread());
+  
+  MOZ_ASSERT(!mThread || mThread->IsOnCurrentThread());
   return ShutdownPromise::CreateAndResolve(true, __func__);
 }
 

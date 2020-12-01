@@ -2,19 +2,19 @@
 
 
 
-#include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
+#include <jni.h>
+
 #include "MediaInfo.h"
 #include "OpusDecoder.h"
 #include "RemoteDataDecoder.h"
+#include "TheoraDecoder.h"
 #include "VPXDecoder.h"
 #include "VorbisDecoder.h"
-
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 #include "nsIGfxInfo.h"
 #include "nsPromiseFlatString.h"
-
 #include "prlog.h"
-
-#include <jni.h>
 
 #undef LOG
 #define LOG(arg, ...)                                     \
