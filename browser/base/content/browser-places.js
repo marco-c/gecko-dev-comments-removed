@@ -1593,7 +1593,7 @@ var BookmarkingUI = {
     ];
     menuItems.map(([menuItem, l10nId, visibilityEnum]) => {
       document.l10n.setAttributes(menuItem, l10nId);
-      menuItem.setAttribute("type", "checkbox");
+      menuItem.setAttribute("type", "radio");
       
       
       menuItem.setAttribute(
