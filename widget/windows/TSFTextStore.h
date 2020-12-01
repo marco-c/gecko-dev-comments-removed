@@ -824,12 +824,12 @@ class TSFTextStore final : public ITextStoreACP,
       } else {
         mLastComposition.reset();
       }
-      mMinTextModifiedOffset = NOT_MODIFIED;
+      mMinModifiedOffset.reset();
       mLatestCompositionRange.reset();
       mInitialized = true;
     }
 
-    void OnLayoutChanged() { mMinTextModifiedOffset = NOT_MODIFIED; }
+    void OnLayoutChanged() { mMinModifiedOffset.reset(); }
 
     
     
@@ -879,9 +879,9 @@ class TSFTextStore final : public ITextStoreACP,
       MOZ_ASSERT(mInitialized);
       return mLastComposition;
     }
-    uint32_t MinTextModifiedOffset() const {
+    const Maybe<uint32_t>& MinModifiedOffset() const {
       MOZ_ASSERT(mInitialized);
-      return mMinTextModifiedOffset;
+      return mMinModifiedOffset;
     }
     const Maybe<StartAndEndOffsets<LONG>>& LatestCompositionRange() const {
       MOZ_ASSERT(mInitialized);
@@ -891,18 +891,13 @@ class TSFTextStore final : public ITextStoreACP,
     
     
     bool IsLayoutChangedAt(uint32_t aOffset) const {
-      return IsLayoutChanged() && (mMinTextModifiedOffset <= aOffset);
+      return IsLayoutChanged() && (mMinModifiedOffset.value() <= aOffset);
     }
     
     
     bool IsLayoutChanged() const {
-      return mInitialized && (mMinTextModifiedOffset != NOT_MODIFIED);
+      return mInitialized && mMinModifiedOffset.isSome();
     }
-    
-    uint32_t MinOffsetOfLayoutChanged() const {
-      return mInitialized ? mMinTextModifiedOffset : NOT_MODIFIED;
-    }
-
     bool HasOrHadComposition() const {
       return mLatestCompositionRange.isSome();
     }
@@ -919,7 +914,7 @@ class TSFTextStore final : public ITextStoreACP,
               << ", mLastComposition=" << aContent.mLastComposition
               << ", mLatestCompositionRange="
               << aContent.mLatestCompositionRange
-              << ", mMinTextModifiedOffset=" << aContent.mMinTextModifiedOffset
+              << ", mMinModifiedOffset=" << aContent.mMinModifiedOffset
               << ", mInitialized=" << aContent.mInitialized << " }";
       return aStream;
     }
@@ -939,8 +934,7 @@ class TSFTextStore final : public ITextStoreACP,
     Maybe<StartAndEndOffsets<LONG>> mLatestCompositionRange;
 
     
-    enum : uint32_t { NOT_MODIFIED = UINT32_MAX };
-    uint32_t mMinTextModifiedOffset;
+    Maybe<uint32_t> mMinModifiedOffset;
 
     bool mInitialized;
   };
