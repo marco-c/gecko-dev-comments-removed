@@ -22,13 +22,12 @@ var proxy = new Proxy({
     }
 }));
 
-var fractionalSecondDigits = isNightly ? ["fractionalSecondDigits"] : [];
 var dayPeriod = isNightly ? ["dayPeriod"] : [];
 
 var constructorAccesses = [
     
     "weekday", "year", "month", "day",
-    ...dayPeriod, "hour", "minute", "second", ...fractionalSecondDigits,
+    ...dayPeriod, "hour", "minute", "second", "fractionalSecondDigits",
     "dateStyle", "timeStyle",
 
     
@@ -36,7 +35,7 @@ var constructorAccesses = [
 
     
     "weekday", "era", "year", "month", "day", ...dayPeriod, "hour", "minute", "second",
-    ...fractionalSecondDigits, "timeZoneName",
+    "fractionalSecondDigits", "timeZoneName",
 
     
     "formatMatcher",
@@ -54,7 +53,7 @@ new Date().toLocaleString(undefined, proxy);
 assertEqArray(log, [
     
     "weekday", "year", "month", "day",
-    ...dayPeriod, "hour", "minute", "second", ...fractionalSecondDigits,
+    ...dayPeriod, "hour", "minute", "second", "fractionalSecondDigits",
     "dateStyle", "timeStyle",
 
     ...constructorAccesses
@@ -76,7 +75,7 @@ new Date().toLocaleTimeString(undefined, proxy);
 
 assertEqArray(log, [
     
-    ...dayPeriod, "hour", "minute", "second", ...fractionalSecondDigits,
+    ...dayPeriod, "hour", "minute", "second", "fractionalSecondDigits",
     "dateStyle", "timeStyle",
 
     ...constructorAccesses
