@@ -43,6 +43,10 @@ class PresShell;
 class RefreshDriverTimer;
 class Runnable;
 
+namespace layout {
+class VsyncChild;
+}  
+
 }  
 
 class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
@@ -293,6 +297,14 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
   nsPresContext* GetPresContext() const;
+
+  
+
+
+
+
+
+  static void PVsyncActorCreated(mozilla::layout::VsyncChild* aVsyncChild);
 
   void CreateVsyncRefreshTimer();
 
