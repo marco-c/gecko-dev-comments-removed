@@ -342,6 +342,7 @@ nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,
     }
 #endif  
     mNativeIMEContext = compositionEvent->mNativeIMEContext;
+    mContentCache.OnCompositionEvent(*compositionEvent);
   }
 
   

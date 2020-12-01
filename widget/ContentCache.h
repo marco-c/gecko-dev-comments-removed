@@ -215,7 +215,9 @@ class ContentCache {
     LayoutDeviceIntRect GetUnionRect(uint32_t aOffset, uint32_t aLength) const;
     LayoutDeviceIntRect GetUnionRectAsFarAsPossible(
         uint32_t aOffset, uint32_t aLength, bool aRoundToExistingOffset) const;
-  } mTextRectArray;
+  };
+  TextRectArray mTextRectArray;
+  TextRectArray mLastCommitStringTextRectArray;
 
   LayoutDeviceIntRect mEditorRect;
 
@@ -225,7 +227,13 @@ class ContentCache {
 
 class ContentCacheInChild final : public ContentCache {
  public:
-  ContentCacheInChild();
+  ContentCacheInChild() = default;
+
+  
+
+
+
+  void OnCompositionEvent(const WidgetCompositionEvent& aCompositionEvent);
 
   
 
@@ -264,6 +272,13 @@ class ContentCacheInChild final : public ContentCache {
                   const IMENotification* aNotification = nullptr);
   bool CacheTextRects(nsIWidget* aWidget,
                       const IMENotification* aNotification = nullptr);
+
+  
+  
+  
+  
+  Maybe<uint32_t> mLastCommitStringStart;
+  nsString mLastCommitString;
 };
 
 class ContentCacheInParent final : public ContentCache {

@@ -1997,12 +1997,6 @@ pref("intl.fallbackCharsetList.ISO-8859-1", "windows-1252");
 pref("font.language.group",                 "chrome://global/locale/intl.properties");
 pref("font.cjk_pref_fallback_order",        "zh-cn,zh-hk,zh-tw,ja,ko");
 
-
-
-
-
-pref("intl.ime.remove_placeholder_character_at_commit", false);
-
 pref("intl.uidirection", -1); 
 
 
@@ -4342,13 +4336,6 @@ pref("narrate.rate", 0);
 pref("narrate.voice", " { \"default\": \"automatic\" }");
 
 pref("narrate.filter-voices", true);
-
-
-
-
-
-
-pref("dom.compositionevent.allow_control_characters", false);
 
 pref("memory.report_concurrency", 10);
 

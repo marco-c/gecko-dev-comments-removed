@@ -56,6 +56,8 @@ class TextComposition final {
   
   const nsString& LastData() const { return mLastData; }
   
+  nsString CommitStringIfCommittedAsIs() const;
+  
   
   
   
