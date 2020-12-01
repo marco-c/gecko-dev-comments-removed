@@ -19,7 +19,6 @@
 #include "js/GCHashTable.h"
 #include "js/TypeDecls.h"
 #include "vm/TaggedProto.h"
-#include "vm/TypeSet.h"
 
 namespace js {
 
@@ -55,6 +54,19 @@ enum NewObjectKind {
 
   TenuredObject
 };
+
+
+enum : uint32_t {
+  
+  OBJECT_FLAG_SINGLETON = 0x2,
+
+  
+
+
+
+  OBJECT_FLAG_LAZY_SINGLETON = 0x4,
+};
+using ObjectGroupFlags = uint32_t;
 
 
 
