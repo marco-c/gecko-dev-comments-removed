@@ -269,16 +269,14 @@ impl Parse for CrossFadeElement {
 }
 
 impl PercentOrNone {
-    fn parse_or_none<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Self {
+    fn parse_or_none<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Self {
         
         
         
         
         
-        if let Ok(percent) = input.try_parse(|input| Percentage::parse_non_negative(context, input)) {
+        if let Ok(percent) = input.try_parse(|input| Percentage::parse_non_negative(context, input))
+        {
             Self::Percent(percent.clamp_to_hundred())
         } else {
             Self::None

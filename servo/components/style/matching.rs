@@ -421,11 +421,12 @@ trait PrivateMatchMethods: TElement {
             new_values,
              None,
         ) {
-            let after_change_style = if self.has_css_transitions(context.shared,  None) {
-                self.after_change_style(context, new_values)
-            } else {
-                None
-            };
+            let after_change_style =
+                if self.has_css_transitions(context.shared,  None) {
+                    self.after_change_style(context, new_values)
+                } else {
+                    None
+                };
 
             
             
