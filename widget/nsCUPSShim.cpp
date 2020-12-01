@@ -44,32 +44,21 @@ static bool LoadCupsFunc(PRLibrary*& lib, FuncT*& dest,
   return true;
 }
 
-bool nsCUPSShim::Init() {
-  mozilla::OffTheBooksMutexAutoLock lock(mInitMutex);
-  if (mInited) {
-    return true;
-  }
-
+nsCUPSShim::nsCUPSShim() {
   mCupsLib = PR_LoadLibrary(gCUPSLibraryName);
   if (!mCupsLib) {
-    return false;
+    return;
   }
 
-
-
+  
+  
 #  define CUPS_SHIM_LOAD(NAME) \
-    if (!LoadCupsFunc(mCupsLib, NAME, #NAME)) return false;
+    if (!LoadCupsFunc(mCupsLib, NAME, #NAME)) return;
   CUPS_SHIM_ALL_FUNCS(CUPS_SHIM_LOAD)
 #  undef CUPS_SHIM_LOAD
-  mInited = true;
-  return true;
-}
 
-#else  
-
-bool nsCUPSShim::Init() {
-  mInited = true;
-  return true;
+  
+  mInitOkay = true;
 }
 
 #endif

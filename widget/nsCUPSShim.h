@@ -18,10 +18,15 @@
 
 struct PRLibrary;
 
-
 class nsCUPSShim {
  public:
-  bool EnsureInitialized() { return mInited || Init(); }
+#ifdef CUPS_SHIM_RUNTIME_LINK
+  nsCUPSShim();
+  bool InitOkay() { return mInitOkay; }
+#else
+  nsCUPSShim() = default;
+  bool InitOkay() { return true; }
+#endif
 
   
 
@@ -60,7 +65,7 @@ class nsCUPSShim {
 
 #ifdef CUPS_SHIM_RUNTIME_LINK
   
-#  define CUPS_SHIM_FUNC_DECL(X) decltype(::X)* X;
+#  define CUPS_SHIM_FUNC_DECL(X) decltype(::X)* X = nullptr;
 #else
   
   
@@ -70,25 +75,10 @@ class nsCUPSShim {
   CUPS_SHIM_ALL_FUNCS(CUPS_SHIM_FUNC_DECL)
 #undef CUPS_SHIM_FUNC_DECL
 
- private:
-  
-
-
-
-
-
-
-
-  bool Init();
-
-  
-  
-  
-  
-  mozilla::Atomic<bool, mozilla::ReleaseAcquire> mInited{false};
 #ifdef CUPS_SHIM_RUNTIME_LINK
-  mozilla::OffTheBooksMutex mInitMutex{"nsCUPSShim::mInitMutex"};
-  PRLibrary* mCupsLib;
+ private:
+  bool mInitOkay = false;
+  PRLibrary* mCupsLib = nullptr;
 #endif
 };
 
