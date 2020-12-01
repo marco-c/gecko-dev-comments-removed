@@ -2229,23 +2229,18 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       
       BrowsingContext* topLevelBrowsingContext = remote->GetBrowsingContext();
       topLevelBrowsingContext->PreOrderWalk([&](BrowsingContext* aContext) {
-        WindowGlobalParent* windowGlobalParent =
-            aContext->Canonical()->GetCurrentWindowGlobal();
-        if (windowGlobalParent) {
-          RefPtr<BrowserParent> browserParent =
-              windowGlobalParent->GetBrowserParent();
-          if (browserParent) {
+        if (WindowGlobalParent* windowGlobalParent =
+                aContext->Canonical()->GetCurrentWindowGlobal()) {
+          if (RefPtr<BrowserParent> browserParent =
+                  windowGlobalParent->GetBrowserParent()) {
             browserParent->Deactivate(windowBeingLowered);
-            LOGFOCUS(("OOP iframe remote browser deactivated %p, %d", remote,
-                      windowBeingLowered));
+            LOGFOCUS(("%s remote browser deactivated %p, %d",
+                      aContext == topLevelBrowsingContext ? "Top-level"
+                                                          : "OOP iframe",
+                      browserParent.get(), windowBeingLowered));
           }
         }
       });
-
-      
-      remote->Deactivate(windowBeingLowered);
-      LOGFOCUS(("Top-level Remote browser deactivated %p, %d", remote,
-                windowBeingLowered));
     }
 
     
