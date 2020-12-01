@@ -1843,29 +1843,27 @@ class _ASRouter {
     );
   }
 
-  async forceWNPanel(browserWindow) {
+  async forceWNPanel(browser) {
+    let win = browser.ownerGlobal;
     await ToolbarPanelHub.enableToolbarButton();
 
-    browserWindow.PanelUI.showSubView(
+    win.PanelUI.showSubView(
       "PanelUI-whatsNew",
-      browserWindow.document.getElementById("whats-new-menu-button")
+      win.document.getElementById("whats-new-menu-button")
     );
 
-    let panel = browserWindow.document.getElementById(
-      "customizationui-widget-panel"
-    );
+    let panel = win.document.getElementById("customizationui-widget-panel");
     
     panel.setAttribute("noautohide", true);
   }
 
-  async closeWNPanel(browserWindow) {
-    let panel = browserWindow.document.getElementById(
-      "customizationui-widget-panel"
-    );
+  async closeWNPanel(browser) {
+    let win = browser.ownerGlobal;
+    let panel = win.document.getElementById("customizationui-widget-panel");
     
     panel.setAttribute("noautohide", false);
     
-    await ToolbarPanelHub._hideToolbarButton(browserWindow);
+    await ToolbarPanelHub._hideToolbarButton(win);
   }
 }
 this._ASRouter = _ASRouter;
