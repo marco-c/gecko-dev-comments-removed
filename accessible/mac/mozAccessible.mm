@@ -941,6 +941,9 @@ struct RoleDescrComparator {
                 NSAccessibilitySelectedChildrenChangedNotification];
       break;
     case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED: {
+      if (![self stateWithMask:states::SELECTABLE_TEXT]) {
+        break;
+      }
       
       
       
