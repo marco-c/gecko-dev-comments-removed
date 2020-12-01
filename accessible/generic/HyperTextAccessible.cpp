@@ -821,12 +821,13 @@ uint32_t HyperTextAccessible::FindLineBoundary(
       if (nextLineBeginOffset <= aOffset) {
         
         
-        nextLineBeginOffset = tmpOffset;
-        while (nextLineBeginOffset >= aOffset &&
-               !IsLineEndCharAt(nextLineBeginOffset - 1)) {
-          nextLineBeginOffset--;
+        nextLineBeginOffset = aOffset;
+        while (nextLineBeginOffset < tmpOffset) {
+          if (IsLineEndCharAt(nextLineBeginOffset)) {
+            return nextLineBeginOffset + 1;
+          }
+          nextLineBeginOffset++;
         }
-        return nextLineBeginOffset;
       }
 
       return nextLineBeginOffset;
