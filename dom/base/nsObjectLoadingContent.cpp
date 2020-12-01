@@ -2621,6 +2621,14 @@ void nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
       thisEl->NotifyUAWidgetTeardown();
     } else if (!hadProblemState && hasProblemState) {
       thisEl->AttachAndSetUAShadowRoot();
+      
+      
+      if (PluginFallbackType() == eFallbackBlockAllPlugins) {
+        nsFocusManager* fm = nsFocusManager::GetFocusManager();
+        if (fm && fm->GetFocusedElement() == thisEl) {
+          fm->ClearFocus(doc->GetWindow());
+        }
+      }
     }
   } else if (aOldType != mType) {
     
