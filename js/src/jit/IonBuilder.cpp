@@ -8890,7 +8890,8 @@ TypedArrayObject* IonBuilder::tryTypedArrayEmbedConstantElements(
   
   
   MOZ_ASSERT(tarr->hasBuffer());
-  MOZ_ASSERT(tarr->byteLength() >= TypedArrayObject::SINGLETON_BYTE_LENGTH ||
+  MOZ_ASSERT(tarr->byteLength().get() >=
+                 TypedArrayObject::SINGLETON_BYTE_LENGTH ||
              tarr->hasDetachedBuffer());
 
   

@@ -1963,11 +1963,11 @@ inline void GCMarker::processMarkStackTop(SliceBudget& budget) {
 
 
 
-  JSObject* obj;   
+  JSObject* obj;             
   SlotsOrElementsKind kind;  
-  HeapSlot* base;  
-  size_t index;    
-  size_t end;      
+  HeapSlot* base;            
+  size_t index;              
+  size_t end;                
 
   gc::MarkStack& stack = currentStack();
 
@@ -3310,7 +3310,7 @@ JSObject* js::TenuringTracer::moveToTenuredSlow(JSObject* src) {
     if (tarray->hasInlineElements()) {
       AllocKind srcKind = GetGCObjectKind(TypedArrayObject::FIXED_DATA_START);
       size_t headerSize = Arena::thingSize(srcKind);
-      srcSize = headerSize + tarray->byteLength();
+      srcSize = headerSize + tarray->byteLength().get();
     }
   }
 
