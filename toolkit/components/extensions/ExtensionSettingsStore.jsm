@@ -183,36 +183,6 @@ function getItem(type, key, id) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-function getAllItems(type, key) {
-  ensureType(type);
-
-  let keyInfo = _store.data[type][key];
-  if (!keyInfo) {
-    return [];
-  }
-
-  let items = keyInfo.precedenceList;
-  return items
-    ? items.map(item => ({
-        key,
-        value: item.value,
-        id: item.id,
-        enabled: item.enabled,
-      }))
-    : [];
-}
-
-
 function precedenceComparator(a, b) {
   if (a.enabled && !b.enabled) {
     return -1;
@@ -563,21 +533,6 @@ var ExtensionSettingsStore = {
 
   getSetting(type, key, id) {
     return getItem(type, key, id);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  getAllSettings(type, key) {
-    return getAllItems(type, key);
   },
 
   
