@@ -10,10 +10,6 @@ const EXPORTED_SYMBOLS = ["MarionetteReftestParent"];
 
 
 class MarionetteReftestParent extends JSWindowActorParent {
-  actorCreated() {
-    logger.trace(`[${this.browsingContext.id}] Reftest Parent actor created`);
-  }
-
   
 
 
