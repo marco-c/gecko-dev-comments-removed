@@ -133,6 +133,12 @@ async function updateZoomUI(aBrowser, aAnimate = false) {
     win.document,
     "appMenu-zoomReset-button"
   );
+
+  
+  if (!appMenuZoomReset) {
+    return;
+  }
+
   let customizableZoomControls = win.document.getElementById("zoom-controls");
   let customizableZoomReset = win.document.getElementById("zoom-reset-button");
   let urlbarZoomButton = win.document.getElementById("urlbar-zoom-button");
