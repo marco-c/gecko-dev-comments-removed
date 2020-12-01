@@ -183,7 +183,8 @@ class ScopeStencil {
   
   
   
-  js::UniquePtr<BaseParserScopeData> data_;
+  
+  BaseParserScopeData* data_ = nullptr;
 
  public:
   
@@ -202,8 +203,6 @@ class ScopeStencil {
         functionIndex_(functionIndex),
         isArrow_(isArrow),
         data_(data) {}
-
-  js::UniquePtr<BaseParserScopeData>& data() { return data_; }
 
   static bool createForFunctionScope(JSContext* cx, CompilationStencil& stencil,
                                      ParserFunctionScopeData* dataArg,
@@ -281,7 +280,7 @@ class ScopeStencil {
         typename SpecificScopeType ::template AbstractData<const ParserAtom>;
 
     MOZ_ASSERT(data_);
-    return *static_cast<Data*>(data_.get());
+    return *static_cast<Data*>(data_);
   }
 
   
