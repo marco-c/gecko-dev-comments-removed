@@ -26,6 +26,7 @@
 #include "nsCRT.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsXULAppAPI.h"
 #include "ContentHandlerService.h"
 #include "prenv.h"  
 #include "mozilla/Preferences.h"

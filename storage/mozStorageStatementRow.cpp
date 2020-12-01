@@ -7,12 +7,14 @@
 #include "nsMemory.h"
 #include "nsString.h"
 
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/MozStorageStatementRowBinding.h"
 #include "mozStorageStatementRow.h"
 #include "mozStorageStatement.h"
 
 #include "jsapi.h"
 #include "js/Array.h"  
+#include "js/Value.h"
 
 #include "xpc_make_class.h"
 

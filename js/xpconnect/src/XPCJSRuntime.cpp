@@ -53,6 +53,7 @@
 #include "js/MemoryMetrics.h"
 #include "js/Object.h"  
 #include "js/Stream.h"  
+#include "js/SliceBudget.h"
 #include "js/UbiNode.h"
 #include "js/UbiNodeUtils.h"
 #include "js/friend/UsageStatistics.h"  

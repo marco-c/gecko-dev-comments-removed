@@ -4,6 +4,7 @@
 
 
 #include "DynamicImage.h"
+#include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"

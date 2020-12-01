@@ -12,6 +12,9 @@
 
 
 namespace mozilla {
+
+class LazyLogModule;
+
 namespace dom {
 extern mozilla::LazyLogModule gPresentationLog;
 }

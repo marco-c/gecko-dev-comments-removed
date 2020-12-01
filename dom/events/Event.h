@@ -22,6 +22,10 @@
 #include "js/TypeDecls.h"
 #include "nsIGlobalObject.h"
 
+
+
+#include "mozilla/HoldDropJSObjects.h"
+
 class nsIContent;
 class nsPresContext;
 class PickleIterator;

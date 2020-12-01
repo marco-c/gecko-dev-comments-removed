@@ -3,6 +3,8 @@
 
 
 
+#include "nsCOMPtr.h"
+#include "nsDependentString.h"
 #include "prenv.h"
 
 namespace mozilla {

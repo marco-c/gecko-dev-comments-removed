@@ -10,7 +10,6 @@
 #include "mozilla/DebugOnly.h"      
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/Range.h"          
-#include "mozilla/Variant.h"        
 
 #include "ds/LifoAlloc.h"         
 #include "frontend/TypedIndex.h"  

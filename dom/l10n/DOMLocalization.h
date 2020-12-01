@@ -15,6 +15,9 @@
 #include "mozilla/dom/L10nOverlaysBinding.h"
 #include "mozilla/dom/LocalizationBinding.h"
 
+
+#include "nsINode.h"
+
 namespace mozilla {
 namespace dom {
 

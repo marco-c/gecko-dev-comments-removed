@@ -11,6 +11,7 @@
 #include "nsIChannel.h"
 #include "nsILoadGroup.h"
 #include "nsIInterfaceRequestorUtils.h"
+#include "nsIRedirectResultListener.h"
 
 
 

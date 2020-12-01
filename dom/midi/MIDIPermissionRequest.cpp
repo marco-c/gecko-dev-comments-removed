@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MIDIPermissionRequest.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MIDIAccessManager.h"
 #include "mozilla/dom/MIDIOptionsBinding.h"
 #include "nsIGlobalObject.h"

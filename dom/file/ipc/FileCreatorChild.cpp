@@ -5,6 +5,7 @@
 
 
 #include "FileCreatorChild.h"
+#include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/IPCBlobUtils.h"
 

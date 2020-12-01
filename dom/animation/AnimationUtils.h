@@ -25,7 +25,8 @@ class EffectSet;
 
 namespace dom {
 class Document;
-}
+class Element;
+}  
 
 class AnimationUtils {
  public:

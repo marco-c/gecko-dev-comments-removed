@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PushUtil.h"
+#include "mozilla/dom/UnionTypes.h"
 
 namespace mozilla {
 namespace dom {

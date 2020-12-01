@@ -7,9 +7,12 @@
 #include "TimelineConsumers.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Services.h"
 #include "jsapi.h"
 #include "nsAppRunner.h"  
+#include "nsCRT.h"
 #include "nsDocShell.h"
+#include "nsIObserverService.h"
 
 namespace mozilla {
 

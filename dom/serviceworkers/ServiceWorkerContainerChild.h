@@ -9,6 +9,9 @@
 
 #include "mozilla/dom/PServiceWorkerContainerChild.h"
 
+
+#include "mozilla/dom/WorkerRef.h"
+
 namespace mozilla {
 namespace dom {
 

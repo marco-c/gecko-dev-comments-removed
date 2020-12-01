@@ -12,6 +12,10 @@
 #include "mozilla/TouchEvents.h"
 #include "mozilla/WeakPtr.h"
 
+
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+
 class nsIFrame;
 class nsIContent;
 

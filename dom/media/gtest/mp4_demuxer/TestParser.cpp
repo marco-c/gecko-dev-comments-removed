@@ -4,6 +4,7 @@
 
 
 #include "gtest/gtest.h"
+#include "js/Conversions.h"
 #include "MediaData.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"

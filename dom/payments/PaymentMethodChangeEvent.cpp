@@ -5,6 +5,7 @@
 
 
 #include "BasicCardPayment.h"
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/PaymentMethodChangeEvent.h"
 #include "mozilla/dom/PaymentRequestUpdateEvent.h"
 #include "PaymentRequestUtils.h"

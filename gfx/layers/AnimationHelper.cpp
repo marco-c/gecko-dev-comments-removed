@@ -5,6 +5,7 @@
 
 
 #include "AnimationHelper.h"
+#include "base/process_util.h"
 #include "gfx2DGlue.h"                       
 #include "gfxLineSegment.h"                  
 #include "gfxPoint.h"                        

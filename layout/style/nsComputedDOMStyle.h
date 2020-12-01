@@ -22,10 +22,16 @@
 #include "mozilla/gfx/Types.h"
 #include "nsCoord.h"
 #include "nsColor.h"
+#include "nsStubMutationObserver.h"
 #include "nsStyleStruct.h"
 #include "mozilla/WritingModes.h"
 
+
+#include "mozilla/dom/Element.h"
+
 namespace mozilla {
+enum class FlushType : uint8_t;
+
 namespace dom {
 class DocGroup;
 class Element;

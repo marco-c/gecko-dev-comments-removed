@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MIDIAccessManager.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MIDIAccess.h"
 #include "mozilla/dom/MIDIManagerChild.h"
 #include "mozilla/dom/MIDIPermissionRequest.h"

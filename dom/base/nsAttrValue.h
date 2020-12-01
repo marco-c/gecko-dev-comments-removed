@@ -37,6 +37,10 @@ struct MiscContainer;
 namespace mozilla {
 class DeclarationBlock;
 class ShadowParts;
+
+namespace dom {
+class DOMString;
+}
 }  
 
 #define NS_ATTRVALUE_MAX_STRINGLENGTH_ATOM 12

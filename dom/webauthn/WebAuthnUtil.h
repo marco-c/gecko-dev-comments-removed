@@ -11,6 +11,7 @@
 
 
 
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/dom/CryptoBuffer.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "ipc/IPCMessageUtils.h"

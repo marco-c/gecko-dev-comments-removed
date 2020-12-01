@@ -12,6 +12,9 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
+
+#include "nsIPrincipal.h"
+
 class nsIPrincipal;
 class nsPIDOMWindowInner;
 

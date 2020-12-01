@@ -7,7 +7,12 @@
 #ifndef DOM_SMIL_SMILTARGETIDENTIFIER_H_
 #define DOM_SMIL_SMILTARGETIDENTIFIER_H_
 
+
+#include "nsAtom.h"
+#include "nsIContent.h"
 #include "mozilla/dom/Element.h"
+
+class nsIContent;
 
 namespace mozilla {
 

@@ -17,6 +17,10 @@
 #include "js/String.h"  
 #include "nsString.h"
 
+
+
+#include "jsfriendapi.h"
+
 namespace mozilla {
 namespace dom {
 

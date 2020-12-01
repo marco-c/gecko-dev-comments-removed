@@ -19,6 +19,7 @@
 #include "nsString.h"
 #include "nsWeakReference.h"
 #include "mozilla/dom/Document.h"
+#include "nsIHttpChannel.h"
 #include "nsIPrincipal.h"
 #include "nsContentUtils.h"  
 #include "nsThreadUtils.h"

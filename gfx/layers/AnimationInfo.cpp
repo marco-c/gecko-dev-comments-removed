@@ -5,6 +5,7 @@
 
 
 #include "AnimationInfo.h"
+#include "Layers.h"
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/AnimationHelper.h"
@@ -13,6 +14,7 @@
 #include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/EffectSet.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"

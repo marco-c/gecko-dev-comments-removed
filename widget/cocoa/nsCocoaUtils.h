@@ -18,6 +18,7 @@
 #include "nsObjCExceptions.h"
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 
 

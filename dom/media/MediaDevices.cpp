@@ -3,6 +3,8 @@
 
 
 #include "mozilla/dom/MediaDevices.h"
+
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaDeviceInfo.h"
 #include "mozilla/dom/MediaDevicesBinding.h"

@@ -5,6 +5,7 @@
 
 
 #include "Hal.h"
+#include "base/process_util.h"
 #include "mozilla/HalWakeLock.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
@@ -12,6 +13,7 @@
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
 #include "nsIPropertyBag2.h"
+#include "nsIObserver.h"
 #include "nsIObserverService.h"
 
 using namespace mozilla;

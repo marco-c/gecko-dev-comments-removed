@@ -20,6 +20,9 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 
+
+#undef None
+
 namespace mozilla {
 namespace dom {
 namespace quota {

@@ -23,6 +23,9 @@
 
 #include <type_traits>
 
+
+#include "mozilla/FloatingPoint.h"
+
 class imgRequestProxy;
 class nsAtom;
 class nsIContent;

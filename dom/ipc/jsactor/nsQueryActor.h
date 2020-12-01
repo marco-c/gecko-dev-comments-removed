@@ -16,6 +16,9 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 
+class nsIDOMProcessChild;
+class nsIDOMProcessParent;
+
 
 
 class MOZ_STACK_CLASS nsQueryJSActor final : public nsCOMPtr_helper {

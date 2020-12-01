@@ -3,6 +3,7 @@
 
 
 
+#include "nsIThread.h"
 #include "nsThreadUtils.h"
 #include "mozilla/SyncRunnable.h"
 

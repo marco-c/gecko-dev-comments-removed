@@ -5,8 +5,11 @@
 
 
 #include "mozilla/dom/GamepadTouch.h"
+
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/GamepadManager.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/TypedArray.h"
 
 namespace mozilla::dom {
 

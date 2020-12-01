@@ -4,12 +4,13 @@
 
 
 
+#include "mozStorageRow.h"
+
 #include "nsString.h"
 
 #include "sqlite3.h"
 #include "mozStoragePrivateHelpers.h"
 #include "Variant.h"
-#include "mozStorageRow.h"
 
 namespace mozilla {
 namespace storage {

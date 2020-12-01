@@ -10,6 +10,7 @@
 #include "nsIAccessibleText.h"
 #include "nsIAccessibleTypes.h"
 #include "nsIFrame.h"  
+#include "nsISelectionController.h"
 #include "nsDirection.h"
 #include "WordMovementType.h"
 

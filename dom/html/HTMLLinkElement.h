@@ -17,6 +17,8 @@
 namespace mozilla {
 class EventChainPostVisitor;
 class EventChainPreVisitor;
+class PreloaderBase;
+
 namespace dom {
 
 

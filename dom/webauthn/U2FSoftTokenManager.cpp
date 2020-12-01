@@ -1,14 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "WebAuthnCoseIdentifiers.h"
 #include "mozilla/dom/U2FSoftTokenManager.h"
 #include "CryptoBuffer.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
+#include "mozilla/Preferences.h"
 #include "nsNSSComponent.h"
 #include "nsThreadUtils.h"
 #include "pk11pub.h"
@@ -29,16 +30,16 @@ const nsCString U2FSoftTokenManager::mSecretNickname = "U2F_NSSTOKEN"_ns;
 namespace {
 constexpr auto kAttestCertSubjectName = "CN=Firefox U2F Soft Token"_ns;
 
-// This U2F-compatible soft token uses FIDO U2F-compatible ECDSA keypairs
-// on the SEC_OID_SECG_EC_SECP256R1 curve. When asked to Register, it will
-// generate and return a new keypair KP, where the private component is wrapped
-// using AES-KW with the 128-bit mWrappingKey to make an opaque "key handle".
-// In other words, Register yields { KP_pub, AES-KW(KP_priv, key=mWrappingKey) }
-//
-// The value mWrappingKey is long-lived; it is persisted as part of the NSS DB
-// for the current profile. The attestation certificates that are produced are
-// ephemeral to counteract profiling. They have little use for a soft-token
-// at any rate, but are required by the specification.
+
+
+
+
+
+
+
+
+
+
 
 const uint32_t kParamLen = 32;
 const uint32_t kPublicKeyLen = 65;
@@ -49,10 +50,10 @@ const uint32_t kVersion1KeyHandleLen = 162;
 constexpr auto kEcAlgorithm =
     NS_LITERAL_STRING_FROM_CSTRING(WEBCRYPTO_NAMED_CURVE_P256);
 
-const PRTime kOneDay = PRTime(PR_USEC_PER_SEC) * PRTime(60)  // sec
-                       * PRTime(60)                          // min
-                       * PRTime(24);                         // hours
-const PRTime kExpirationSlack = kOneDay;  // Pre-date for clock skew
+const PRTime kOneDay = PRTime(PR_USEC_PER_SEC) * PRTime(60)  
+                       * PRTime(60)                          
+                       * PRTime(24);                         
+const PRTime kExpirationSlack = kOneDay;  
 const PRTime kExpirationLife = kOneDay;
 
 static mozilla::LazyLogModule gNSSTokenLog("webauth_u2f");
@@ -61,20 +62,20 @@ enum SoftTokenHandle {
   Version1 = 0,
 };
 
-}  // namespace
+}  
 
 U2FSoftTokenManager::U2FSoftTokenManager(uint32_t aCounter)
     : mInitialized(false), mCounter(aCounter) {}
 
-/**
- * Gets the first key with the given nickname from the given slot. Any other
- * keys found are not returned.
- * PK11_GetNextSymKey() should not be called on the returned key.
- *
- * @param aSlot Slot to search.
- * @param aNickname Nickname the key should have.
- * @return The first key found. nullptr if no key could be found.
- */
+
+
+
+
+
+
+
+
+
 static UniquePK11SymKey GetSymKeyByNickname(const UniquePK11SlotInfo& aSlot,
                                             const nsCString& aNickname) {
   MOZ_ASSERT(aSlot);
@@ -87,19 +88,19 @@ static UniquePK11SymKey GetSymKeyByNickname(const UniquePK11SlotInfo& aSlot,
 
   UniquePK11SymKey keyListHead(
       PK11_ListFixedKeysInSlot(aSlot.get(), const_cast<char*>(aNickname.get()),
-                               /* wincx */ nullptr));
+                                nullptr));
   if (NS_WARN_IF(!keyListHead)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("Symmetric key not found."));
     return nullptr;
   }
 
-  // Sanity check PK11_ListFixedKeysInSlot() only returns keys with the correct
-  // nickname.
+  
+  
   MOZ_ASSERT(aNickname ==
              UniquePORTString(PK11_GetSymKeyNickname(keyListHead.get())).get());
   MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("Symmetric key found!"));
 
-  // Free any remaining keys in the key list.
+  
   UniquePK11SymKey freeKey(PK11_GetNextSymKey(keyListHead.get()));
   while (freeKey) {
     freeKey = UniquePK11SymKey(PK11_GetNextSymKey(freeKey.get()));
@@ -109,8 +110,8 @@ static UniquePK11SymKey GetSymKeyByNickname(const UniquePK11SlotInfo& aSlot,
 }
 
 static nsresult GenEcKeypair(const UniquePK11SlotInfo& aSlot,
-                             /*out*/ UniqueSECKEYPrivateKey& aPrivKey,
-                             /*out*/ UniqueSECKEYPublicKey& aPubKey) {
+                              UniqueSECKEYPrivateKey& aPrivKey,
+                              UniqueSECKEYPublicKey& aPubKey) {
   MOZ_ASSERT(aSlot);
   if (NS_WARN_IF(!aSlot)) {
     return NS_ERROR_INVALID_ARG;
@@ -121,27 +122,27 @@ static nsresult GenEcKeypair(const UniquePK11SlotInfo& aSlot,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  // Set the curve parameters; keyParams belongs to the arena memory space
+  
   SECItem* keyParams = CreateECParamsForCurve(kEcAlgorithm, arena.get());
   if (NS_WARN_IF(!keyParams)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  // Generate a key pair
+  
   CK_MECHANISM_TYPE mechanism = CKM_EC_KEY_PAIR_GEN;
 
   SECKEYPublicKey* pubKeyRaw;
   aPrivKey = UniqueSECKEYPrivateKey(
       PK11_GenerateKeyPair(aSlot.get(), mechanism, keyParams, &pubKeyRaw,
-                           /* ephemeral */ false, false,
-                           /* wincx */ nullptr));
+                            false, false,
+                            nullptr));
   aPubKey = UniqueSECKEYPublicKey(pubKeyRaw);
   pubKeyRaw = nullptr;
   if (NS_WARN_IF(!aPrivKey.get() || !aPubKey.get())) {
     return NS_ERROR_FAILURE;
   }
 
-  // Check that the public key has the correct length
+  
   if (NS_WARN_IF(aPubKey->u.ec.publicValue.len != kPublicKeyLen)) {
     return NS_ERROR_FAILURE;
   }
@@ -156,8 +157,8 @@ nsresult U2FSoftTokenManager::GetOrCreateWrappingKey(
     return NS_ERROR_INVALID_ARG;
   }
 
-  // Search for an existing wrapping key. If we find it,
-  // store it for later and mark ourselves initialized.
+  
+  
   mWrappingKey = GetSymKeyByNickname(aSlot, mSecretNickname);
   if (mWrappingKey) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("U2F Soft Token Key found."));
@@ -168,15 +169,15 @@ nsresult U2FSoftTokenManager::GetOrCreateWrappingKey(
   MOZ_LOG(gNSSTokenLog, LogLevel::Info,
           ("No keys found. Generating new U2F Soft Token wrapping key."));
 
-  // We did not find an existing wrapping key, so we generate one in the
-  // persistent database (e.g, Token).
+  
+  
   mWrappingKey = UniquePK11SymKey(PK11_TokenKeyGenWithFlags(
       aSlot.get(), CKM_AES_KEY_GEN,
-      /* default params */ nullptr, kWrappingKeyByteLen,
-      /* empty keyid */ nullptr,
-      /* flags */ CKF_WRAP | CKF_UNWRAP,
-      /* attributes */ PK11_ATTR_TOKEN | PK11_ATTR_PRIVATE,
-      /* wincx */ nullptr));
+       nullptr, kWrappingKeyByteLen,
+       nullptr,
+       CKF_WRAP | CKF_UNWRAP,
+       PK11_ATTR_TOKEN | PK11_ATTR_PRIVATE,
+       nullptr));
 
   if (NS_WARN_IF(!mWrappingKey)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning,
@@ -206,8 +207,8 @@ nsresult U2FSoftTokenManager::GetOrCreateWrappingKey(
 
 static nsresult GetAttestationCertificate(
     const UniquePK11SlotInfo& aSlot,
-    /*out*/ UniqueSECKEYPrivateKey& aAttestPrivKey,
-    /*out*/ UniqueCERTCertificate& aAttestCert) {
+     UniqueSECKEYPrivateKey& aAttestPrivKey,
+     UniqueCERTCertificate& aAttestCert) {
   MOZ_ASSERT(aSlot);
   if (NS_WARN_IF(!aSlot)) {
     return NS_ERROR_INVALID_ARG;
@@ -215,7 +216,7 @@ static nsresult GetAttestationCertificate(
 
   UniqueSECKEYPublicKey pubKey;
 
-  // Construct an ephemeral keypair for this Attestation Certificate
+  
   nsresult rv = GenEcKeypair(aSlot, aAttestPrivKey, pubKey);
   if (NS_WARN_IF(NS_FAILED(rv) || !aAttestPrivKey || !pubKey)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning,
@@ -223,7 +224,7 @@ static nsresult GetAttestationCertificate(
     return NS_ERROR_FAILURE;
   }
 
-  // Construct the Attestation Certificate itself
+  
   UniqueCERTName subjectName(CERT_AsciiToName(kAttestCertSubjectName.get()));
   if (NS_WARN_IF(!subjectName)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning,
@@ -268,13 +269,13 @@ static nsresult GetAttestationCertificate(
             ("Failed to gen serial, NSS error #%d", PORT_GetError()));
     return NS_ERROR_FAILURE;
   }
-  // Ensure that the most significant bit isn't set (which would
-  // indicate a negative number, which isn't valid for serial
-  // numbers).
+  
+  
+  
   serialBytes[0] &= 0x7f;
-  // Also ensure that the least significant bit on the most
-  // significant byte is set (to prevent a leading zero byte,
-  // which also wouldn't be valid).
+  
+  
+  
   serialBytes[0] |= 0x01;
 
   aAttestCert = UniqueCERTCertificate(CERT_CreateCertificate(
@@ -289,12 +290,12 @@ static nsresult GetAttestationCertificate(
 
   srv = SECOID_SetAlgorithmID(arena, &aAttestCert->signature,
                               SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE,
-                              /* wincx */ nullptr);
+                               nullptr);
   if (NS_WARN_IF(srv != SECSuccess)) {
     return NS_ERROR_FAILURE;
   }
 
-  // Set version to X509v3.
+  
   *(aAttestCert->version.data) = SEC_CERTIFICATE_VERSION_3;
   aAttestCert->version.len = 1;
 
@@ -322,10 +323,10 @@ static nsresult GetAttestationCertificate(
   return NS_OK;
 }
 
-// Set up the context for the soft U2F Token. This is called by NSS
-// initialization.
+
+
 nsresult U2FSoftTokenManager::Init() {
-  // If we've already initialized, just return.
+  
   if (mInitialized) {
     return NS_OK;
   }
@@ -333,7 +334,7 @@ nsresult U2FSoftTokenManager::Init() {
   UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   MOZ_ASSERT(slot.get());
 
-  // Search for an existing wrapping key, or create one.
+  
   nsresult rv = GetOrCreateWrappingKey(slot);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -344,9 +345,9 @@ nsresult U2FSoftTokenManager::Init() {
   return NS_OK;
 }
 
-// Convert a Private Key object into an opaque key handle, using AES Key Wrap
-// with the long-lived aPersistentKey mixed with aAppParam to convert aPrivKey.
-// The key handle's format is version || saltLen || salt || wrappedPrivateKey
+
+
+
 static UniqueSECItem KeyHandleFromPrivateKey(
     const UniquePK11SlotInfo& aSlot, const UniquePK11SymKey& aPersistentKey,
     uint8_t* aAppParam, uint32_t aAppParamLen,
@@ -359,7 +360,7 @@ static UniqueSECItem KeyHandleFromPrivateKey(
     return nullptr;
   }
 
-  // Generate a random salt
+  
   uint8_t saltParam[kSaltByteLen];
   SECStatus srv =
       PK11_GenerateRandomOnSlot(aSlot.get(), saltParam, sizeof(saltParam));
@@ -369,15 +370,15 @@ static UniqueSECItem KeyHandleFromPrivateKey(
     return nullptr;
   }
 
-  // Prepare the HKDF (https://tools.ietf.org/html/rfc5869)
+  
   CK_NSS_HKDFParams hkdfParams = {true, saltParam, sizeof(saltParam),
                                   true, aAppParam, aAppParamLen};
   SECItem kdfParams = {siBuffer, (unsigned char*)&hkdfParams,
                        sizeof(hkdfParams)};
 
-  // Derive a wrapping key from aPersistentKey, the salt, and the aAppParam.
-  // CKM_AES_KEY_GEN and CKA_WRAP are key type and usage attributes of the
-  // derived symmetric key and don't matter because we ignore them anyway.
+  
+  
+  
   UniquePK11SymKey wrapKey(
       PK11_Derive(aPersistentKey.get(), CKM_NSS_HKDF_SHA256, &kdfParams,
                   CKM_AES_KEY_GEN, CKA_WRAP, kWrappingKeyByteLen));
@@ -388,8 +389,8 @@ static UniqueSECItem KeyHandleFromPrivateKey(
     return nullptr;
   }
 
-  UniqueSECItem wrappedKey(::SECITEM_AllocItem(/* default arena */ nullptr,
-                                               /* no buffer */ nullptr,
+  UniqueSECItem wrappedKey(::SECITEM_AllocItem( nullptr,
+                                                nullptr,
                                                kWrappedKeyBufLen));
   if (NS_WARN_IF(!wrappedKey)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning, ("Failed to allocate memory"));
@@ -397,19 +398,19 @@ static UniqueSECItem KeyHandleFromPrivateKey(
   }
 
   UniqueSECItem param(PK11_ParamFromIV(CKM_NSS_AES_KEY_WRAP_PAD,
-                                       /* default IV */ nullptr));
+                                        nullptr));
 
   srv =
       PK11_WrapPrivKey(aSlot.get(), wrapKey.get(), aPrivKey.get(),
                        CKM_NSS_AES_KEY_WRAP_PAD, param.get(), wrappedKey.get(),
-                       /* wincx */ nullptr);
+                        nullptr);
   if (NS_WARN_IF(srv != SECSuccess)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning,
             ("Failed to wrap U2F key, NSS error #%d", PORT_GetError()));
     return nullptr;
   }
 
-  // Concatenate the salt and the wrapped Private Key together
+  
   mozilla::dom::CryptoBuffer keyHandleBuf;
   if (NS_WARN_IF(!keyHandleBuf.SetCapacity(
           wrappedKey.get()->len + sizeof(saltParam) + 2, mozilla::fallible))) {
@@ -417,8 +418,8 @@ static UniqueSECItem KeyHandleFromPrivateKey(
     return nullptr;
   }
 
-  // It's OK to ignore the return values here because we're writing into
-  // pre-allocated space
+  
+  
   (void)keyHandleBuf.AppendElement(SoftTokenHandle::Version1,
                                    mozilla::fallible);
   (void)keyHandleBuf.AppendElement(sizeof(saltParam), mozilla::fallible);
@@ -432,7 +433,7 @@ static UniqueSECItem KeyHandleFromPrivateKey(
     return nullptr;
   }
 
-  if (NS_WARN_IF(!keyHandleBuf.ToSECItem(/* default arena */ nullptr,
+  if (NS_WARN_IF(!keyHandleBuf.ToSECItem( nullptr,
                                          keyHandle.get()))) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning, ("Failed to allocate memory"));
     return nullptr;
@@ -440,9 +441,9 @@ static UniqueSECItem KeyHandleFromPrivateKey(
   return keyHandle;
 }
 
-// Convert an opaque key handle aKeyHandle back into a Private Key object, using
-// the long-lived aPersistentKey mixed with aAppParam and the AES Key Wrap
-// algorithm.
+
+
+
 static UniqueSECKEYPrivateKey PrivateKeyFromKeyHandle(
     const UniquePK11SlotInfo& aSlot, const UniquePK11SymKey& aPersistentKey,
     uint8_t* aKeyHandle, uint32_t aKeyHandleLen, uint8_t* aAppParam,
@@ -457,14 +458,14 @@ static UniqueSECKEYPrivateKey PrivateKeyFromKeyHandle(
     return nullptr;
   }
 
-  // As we only support one key format ourselves (right now), fail early if
-  // we aren't that length
+  
+  
   if (NS_WARN_IF(aKeyHandleLen != kVersion1KeyHandleLen)) {
     return nullptr;
   }
 
   if (NS_WARN_IF(aKeyHandle[0] != SoftTokenHandle::Version1)) {
-    // Unrecognized version
+    
     return nullptr;
   }
 
@@ -474,15 +475,15 @@ static UniqueSECKEYPrivateKey PrivateKeyFromKeyHandle(
     return nullptr;
   }
 
-  // Prepare the HKDF (https://tools.ietf.org/html/rfc5869)
+  
   CK_NSS_HKDFParams hkdfParams = {true, saltPtr,   saltLen,
                                   true, aAppParam, aAppParamLen};
   SECItem kdfParams = {siBuffer, (unsigned char*)&hkdfParams,
                        sizeof(hkdfParams)};
 
-  // Derive a wrapping key from aPersistentKey, the salt, and the aAppParam.
-  // CKM_AES_KEY_GEN and CKA_WRAP are key type and usage attributes of the
-  // derived symmetric key and don't matter because we ignore them anyway.
+  
+  
+  
   UniquePK11SymKey wrapKey(
       PK11_Derive(aPersistentKey.get(), CKM_NSS_HKDF_SHA256, &kdfParams,
                   CKM_AES_KEY_GEN, CKA_WRAP, kWrappingKeyByteLen));
@@ -502,7 +503,7 @@ static UniqueSECKEYPrivateKey PrivateKeyFromKeyHandle(
   ScopedAutoSECItem pubKey(kPublicKeyLen);
 
   UniqueSECItem param(PK11_ParamFromIV(CKM_NSS_AES_KEY_WRAP_PAD,
-                                       /* default IV */ nullptr));
+                                        nullptr));
 
   CK_ATTRIBUTE_TYPE usages[] = {CKA_SIGN};
   int usageCount = 1;
@@ -510,13 +511,13 @@ static UniqueSECKEYPrivateKey PrivateKeyFromKeyHandle(
   UniqueSECKEYPrivateKey unwrappedKey(
       PK11_UnwrapPrivKey(aSlot.get(), wrapKey.get(), CKM_NSS_AES_KEY_WRAP_PAD,
                          param.get(), &wrappedKeyItem,
-                         /* no nickname */ nullptr,
-                         /* discard pubkey */ &pubKey,
-                         /* not permanent */ false,
-                         /* non-exportable */ true, CKK_EC, usages, usageCount,
-                         /* wincx */ nullptr));
+                          nullptr,
+                          &pubKey,
+                          false,
+                          true, CKK_EC, usages, usageCount,
+                          nullptr));
   if (NS_WARN_IF(!unwrappedKey)) {
-    // Not our key.
+    
     MOZ_LOG(gNSSTokenLog, LogLevel::Debug,
             ("Could not unwrap key handle, NSS Error #%d", PORT_GetError()));
     return nullptr;
@@ -525,7 +526,7 @@ static UniqueSECKEYPrivateKey PrivateKeyFromKeyHandle(
   return unwrappedKey;
 }
 
-// IsRegistered determines if the provided key handle is usable by this token.
+
 nsresult U2FSoftTokenManager::IsRegistered(const nsTArray<uint8_t>& aKeyHandle,
                                            const nsTArray<uint8_t>& aAppParam,
                                            bool& aResult) {
@@ -539,7 +540,7 @@ nsresult U2FSoftTokenManager::IsRegistered(const nsTArray<uint8_t>& aKeyHandle,
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   MOZ_ASSERT(slot.get());
 
-  // Decode the key handle
+  
   UniqueSECKEYPrivateKey privKey = PrivateKeyFromKeyHandle(
       slot, mWrappingKey, const_cast<uint8_t*>(aKeyHandle.Elements()),
       aKeyHandle.Length(), const_cast<uint8_t*>(aAppParam.Elements()),
@@ -548,25 +549,25 @@ nsresult U2FSoftTokenManager::IsRegistered(const nsTArray<uint8_t>& aKeyHandle,
   return NS_OK;
 }
 
-// A U2F Register operation causes a new key pair to be generated by the token.
-// The token then returns the public key of the key pair, and a handle to the
-// private key, which is a fancy way of saying "key wrapped private key", as
-// well as the generated attestation certificate and a signature using that
-// certificate's private key.
-//
-// The KeyHandleFromPrivateKey and PrivateKeyFromKeyHandle methods perform
-// the actual key wrap/unwrap operations.
-//
-// The format of the return registration data is as follows:
-//
-// Bytes  Value
-// 1      0x05
-// 65     public key
-// 1      key handle length
-// *      key handle
-// ASN.1  attestation certificate
-// *      attestation signature
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
     const WebAuthnMakeCredentialInfo& aInfo, bool aForceNoneAttestation) {
   if (!mInitialized) {
@@ -595,8 +596,8 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
       }
     }
 
-    // The U2F softtoken neither supports resident keys or
-    // user verification, nor is it a platform authenticator.
+    
+    
     if (sel.requireResidentKey() || requireUserVerification ||
         requirePlatformAttachment) {
       return U2FRegisterPromise::CreateAndReject(NS_ERROR_DOM_NOT_ALLOWED_ERR,
@@ -614,14 +615,14 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
       }
     }
 
-    // Only if no algorithms were specified, default to the one the soft token
-    // supports.
+    
+    
     if (extra.coseAlgs().IsEmpty()) {
       coseAlgos.AppendElement(
           static_cast<int32_t>(CoseAlgorithmIdentifier::ES256));
     }
 
-    // If there are no acceptable/supported algorithms, reject the promise.
+    
     if (coseAlgos.IsEmpty()) {
       return U2FRegisterPromise::CreateAndReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
                                                  __func__);
@@ -637,7 +638,7 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
                                                __func__);
   }
 
-  // Optional exclusion list.
+  
   for (const WebAuthnScopedCredential& cred : aInfo.ExcludeList()) {
     bool isRegistered = false;
     nsresult rv = IsRegistered(cred.id(), rpIdHash, isRegistered);
@@ -650,13 +651,13 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
     }
   }
 
-  // We should already have a wrapping key
+  
   MOZ_ASSERT(mWrappingKey);
 
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   MOZ_ASSERT(slot.get());
 
-  // Construct a one-time-use Attestation Certificate
+  
   UniqueSECKEYPrivateKey attestPrivKey;
   UniqueCERTCertificate attestCert;
   rv = GetAttestationCertificate(slot, attestPrivKey, attestCert);
@@ -666,7 +667,7 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
   MOZ_ASSERT(attestCert);
   MOZ_ASSERT(attestPrivKey);
 
-  // Generate a new keypair; the private will be wrapped into a Key Handle
+  
   UniqueSECKEYPrivateKey privKey;
   UniqueSECKEYPublicKey pubKey;
   rv = GenEcKeypair(slot, privKey, pubKey);
@@ -674,7 +675,7 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
     return U2FRegisterPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  // The key handle will be the result of keywrap(privKey, key=mWrappingKey)
+  
   UniqueSECItem keyHandleItem = KeyHandleFromPrivateKey(
       slot, mWrappingKey, const_cast<uint8_t*>(rpIdHash.Elements()),
       rpIdHash.Length(), privKey);
@@ -682,7 +683,7 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
     return U2FRegisterPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  // Sign the challenge using the Attestation privkey (from attestCert)
+  
   mozilla::dom::CryptoBuffer signedDataBuf;
   if (NS_WARN_IF(!signedDataBuf.SetCapacity(
           1 + rpIdHash.Length() + clientDataHash.Length() + keyHandleItem->len +
@@ -692,8 +693,8 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
                                                __func__);
   }
 
-  // // It's OK to ignore the return values here because we're writing into
-  // // pre-allocated space
+  
+  
   (void)signedDataBuf.AppendElement(0x00, mozilla::fallible);
   (void)signedDataBuf.AppendElements(rpIdHash, mozilla::fallible);
   (void)signedDataBuf.AppendElements(clientDataHash, mozilla::fallible);
@@ -710,7 +711,7 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
     return U2FRegisterPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  // Serialize the registration data
+  
   mozilla::dom::CryptoBuffer registrationBuf;
   if (NS_WARN_IF(!registrationBuf.SetCapacity(
           1 + kPublicKeyLen + 1 + keyHandleItem->len +
@@ -764,8 +765,8 @@ RefPtr<U2FRegisterPromise> U2FSoftTokenManager::Register(
 bool U2FSoftTokenManager::FindRegisteredKeyHandle(
     const nsTArray<nsTArray<uint8_t>>& aAppIds,
     const nsTArray<WebAuthnScopedCredential>& aCredentials,
-    /*out*/ nsTArray<uint8_t>& aKeyHandle,
-    /*out*/ nsTArray<uint8_t>& aAppId) {
+     nsTArray<uint8_t>& aKeyHandle,
+     nsTArray<uint8_t>& aAppId) {
   for (const nsTArray<uint8_t>& app_id : aAppIds) {
     for (const WebAuthnScopedCredential& cred : aCredentials) {
       bool isRegistered = false;
@@ -781,22 +782,22 @@ bool U2FSoftTokenManager::FindRegisteredKeyHandle(
   return false;
 }
 
-// A U2F Sign operation creates a signature over the "param" arguments (plus
-// some other stuff) using the private key indicated in the key handle argument.
-//
-// The format of the signed data is as follows:
-//
-//  32    Application parameter
-//  1     User presence (0x01)
-//  4     Counter
-//  32    Challenge parameter
-//
-// The format of the signature data is as follows:
-//
-//  1     User presence
-//  4     Counter
-//  *     Signature
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
     const WebAuthnGetAssertionInfo& aInfo) {
   if (!mInitialized) {
@@ -825,13 +826,13 @@ RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
     UserVerificationRequirement userVerificaitonReq =
         extra.userVerificationRequirement();
 
-    // The U2F softtoken doesn't support user verification.
+    
     if (userVerificaitonReq == UserVerificationRequirement::Required) {
       return U2FSignPromise::CreateAndReject(NS_ERROR_DOM_NOT_ALLOWED_ERR,
                                              __func__);
     }
 
-    // Process extensions.
+    
     for (const WebAuthnExtension& ext : extra.Extensions()) {
       if (ext.type() == WebAuthnExtension::TWebAuthnExtensionAppId) {
         appIdHashExt = Some(ext.get_WebAuthnExtensionAppId().AppId().Clone());
@@ -843,7 +844,7 @@ RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
   nsTArray<uint8_t> chosenAppId;
   nsTArray<uint8_t> keyHandle;
 
-  // Fail if we can't find a valid key handle.
+  
   if (!FindRegisteredKeyHandle(appIds, aInfo.AllowList(), keyHandle,
                                chosenAppId)) {
     return U2FSignPromise::CreateAndReject(NS_ERROR_DOM_INVALID_STATE_ERR,
@@ -865,7 +866,7 @@ RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
     return U2FSignPromise::CreateAndReject(NS_ERROR_ILLEGAL_VALUE, __func__);
   }
 
-  // Decode the key handle
+  
   UniqueSECKEYPrivateKey privKey = PrivateKeyFromKeyHandle(
       slot, mWrappingKey, const_cast<uint8_t*>(keyHandle.Elements()),
       keyHandle.Length(), const_cast<uint8_t*>(chosenAppId.Elements()),
@@ -875,7 +876,7 @@ RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
     return U2FSignPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  // Increment the counter and turn it into a SECItem
+  
   mCounter += 1;
   ScopedAutoSECItem counterItem(4);
   counterItem.data[0] = (mCounter >> 24) & 0xFF;
@@ -889,15 +890,15 @@ RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
         Preferences::SetUint(PREF_U2F_NSSTOKEN_COUNTER, counter);
       }));
 
-  // Compute the signature
+  
   mozilla::dom::CryptoBuffer signedDataBuf;
   if (NS_WARN_IF(!signedDataBuf.SetCapacity(1 + 4 + (2 * kParamLen),
                                             mozilla::fallible))) {
     return U2FSignPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
 
-  // It's OK to ignore the return values here because we're writing into
-  // pre-allocated space
+  
+  
   (void)signedDataBuf.AppendElements(chosenAppId.Elements(),
                                      chosenAppId.Length(), mozilla::fallible);
   (void)signedDataBuf.AppendElement(0x01, mozilla::fallible);
@@ -928,15 +929,15 @@ RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
     return U2FSignPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  // Assemble the signature data into a buffer for return
+  
   mozilla::dom::CryptoBuffer signatureDataBuf;
   if (NS_WARN_IF(!signatureDataBuf.SetCapacity(
           1 + counterItem.len + signatureItem.len, mozilla::fallible))) {
     return U2FSignPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
 
-  // It's OK to ignore the return values here because we're writing into
-  // pre-allocated space
+  
+  
   (void)signatureDataBuf.AppendElement(0x01, mozilla::fallible);
   signatureDataBuf.AppendSECItem(counterItem);
   signatureDataBuf.AppendSECItem(signatureItem);
@@ -980,8 +981,8 @@ RefPtr<U2FSignPromise> U2FSoftTokenManager::Sign(
 }
 
 void U2FSoftTokenManager::Cancel() {
-  // This implementation is sync, requests can't be aborted.
+  
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  

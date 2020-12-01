@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/BaseBlobImpl.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "nsRFPService.h"
 #include "prtime.h"
 

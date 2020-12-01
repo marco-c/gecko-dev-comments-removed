@@ -46,7 +46,7 @@ class nsPrinterListBase : public nsIPrinterList {
   
   virtual RefPtr<nsIPrinter> CreatePrinter(PrinterInfo) const = 0;
 
-  Maybe<PrinterInfo> NamedOrDefaultPrinter(nsString aName) const;
+  mozilla::Maybe<PrinterInfo> NamedOrDefaultPrinter(nsString aName) const;
 
   
   nsPrinterListBase(const nsPrinterListBase&) = delete;
@@ -59,13 +59,14 @@ class nsPrinterListBase : public nsIPrinterList {
   
   
   
-  virtual Maybe<PrinterInfo> PrinterByName(nsString aName) const = 0;
+  virtual mozilla::Maybe<PrinterInfo> PrinterByName(nsString aName) const = 0;
 
   
   
   
   
-  virtual Maybe<PrinterInfo> PrinterBySystemName(nsString aName) const = 0;
+  virtual mozilla::Maybe<PrinterInfo> PrinterBySystemName(
+      nsString aName) const = 0;
 
   
   

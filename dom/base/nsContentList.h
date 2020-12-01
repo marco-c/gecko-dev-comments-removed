@@ -30,6 +30,9 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 
+
+#include "nsIContent.h"
+
 namespace mozilla {
 namespace dom {
 class Element;

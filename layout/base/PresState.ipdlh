@@ -4,9 +4,11 @@
 
 
 
+include "mozilla/dom/IPCBlobUtils.h";
+
 using mozilla::void_t from "ipc/IPCMessageUtils.h";
 using nsPoint from "mozilla/GfxMessageUtils.h";
-using refcounted class mozilla::dom::BlobImpl from "mozilla/dom/IPCBlobUtils.h";
+using refcounted class mozilla::dom::BlobImpl from "mozilla/dom/BlobImpl.h";
 
 namespace mozilla {
 

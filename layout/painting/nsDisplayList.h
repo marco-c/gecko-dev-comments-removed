@@ -53,6 +53,7 @@
 #include "Units.h"
 
 #include <stdint.h>
+#include "nsClassHashtable.h"
 #include "nsTHashtable.h"
 
 #include <stdlib.h>
@@ -531,7 +532,9 @@ class nsDisplayListBuilder {
   const nsIFrame* FindReferenceFrameFor(const nsIFrame* aFrame,
                                         nsPoint* aOffset = nullptr) const;
 
-  const Maybe<nsPoint>& AdditionalOffset() const { return mAdditionalOffset; }
+  const mozilla::Maybe<nsPoint>& AdditionalOffset() const {
+    return mAdditionalOffset;
+  }
 
   
 
@@ -3258,7 +3261,7 @@ class nsPaintedDisplayItem : public nsDisplayItem {
 
 
 
-  Maybe<uint16_t>& CacheIndex() { return mCacheIndex; }
+  mozilla::Maybe<uint16_t>& CacheIndex() { return mCacheIndex; }
 
  protected:
   nsPaintedDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
@@ -6966,7 +6969,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
         const mozilla::StyleTranslate& aTranslate,
         const mozilla::StyleRotate& aRotate, const mozilla::StyleScale& aScale,
         const mozilla::StyleTransform& aTransform,
-        const Maybe<mozilla::ResolvedMotionPathData>& aMotion,
+        const mozilla::Maybe<mozilla::ResolvedMotionPathData>& aMotion,
         const Point3D& aToTransformOrigin)
         : mFrame(nullptr),
           mTranslate(aTranslate),

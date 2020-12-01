@@ -4,9 +4,11 @@
 
 
 
+#include "mozilla/dom/IdleDeadline.h"
+
 #include <algorithm>
 
-#include "mozilla/dom/IdleDeadline.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/IdleDeadlineBinding.h"
 #include "mozilla/dom/Performance.h"
 #include "nsCOMPtr.h"

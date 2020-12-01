@@ -9,6 +9,7 @@
 
 #include <stdint.h>  
 #include "gfxTypes.h"
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"     
 #include "mozilla/layers/TextureClient.h"   
@@ -16,9 +17,6 @@
 #include "nsISerialEventTarget.h"
 
 namespace mozilla {
-namespace ipc {
-class IShmemAllocator;
-}
 namespace layers {
 class CanvasChild;
 

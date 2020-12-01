@@ -1,7 +1,7 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 4; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "SharedSurfaceIO.h"
 
@@ -9,14 +9,15 @@
 #include "MozFramebuffer.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/MacIOSurface.h"
-#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
+#include "mozilla/layers/LayersSurfaces.h"  
+#include "mozilla/layers/LayersTypes.h"
 #include "ScopedGLHelpers.h"
 
 namespace mozilla {
 namespace gl {
 
-// -
-// Factory
+
+
 
 SurfaceFactory_IOSurface::SurfaceFactory_IOSurface(GLContext& gl)
     : SurfaceFactory({&gl, SharedSurfaceType::IOSurface,
@@ -24,8 +25,8 @@ SurfaceFactory_IOSurface::SurfaceFactory_IOSurface(GLContext& gl)
       mMaxDims(gfx::IntSize::Truncate(MacIOSurface::GetMaxWidth(),
                                       MacIOSurface::GetMaxHeight())) {}
 
-// -
-// Surface
+
+
 
 static void BackTextureWithIOSurf(GLContext* const gl, const GLuint tex,
                                   MacIOSurface* const ioSurf) {
@@ -48,7 +49,7 @@ static void BackTextureWithIOSurf(GLContext* const gl, const GLuint tex,
   ioSurf->CGLTexImageIOSurface2D(gl, cgl, 0);
 }
 
-/*static*/
+
 UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
     const SharedSurfaceDesc& desc) {
   const auto& size = desc.size;
@@ -89,11 +90,11 @@ void SharedSurface_IOSurface::ProducerReleaseImpl() {
 
 Maybe<layers::SurfaceDescriptor>
 SharedSurface_IOSurface::ToSurfaceDescriptor() {
-  const bool isOpaque = false;  // RGBA
+  const bool isOpaque = false;  
   return Some(layers::SurfaceDescriptorMacIOSurface(
       mIOSurf->GetIOSurfaceID(), mIOSurf->GetContentsScaleFactor(), isOpaque,
       mIOSurf->GetYUVColorSpace()));
 }
 
-}  // namespace gl
-}  // namespace mozilla
+}  
+}  

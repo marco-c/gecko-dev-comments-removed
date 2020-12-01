@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MIDIInput.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MIDIPortChild.h"
 #include "mozilla/dom/MIDIInputBinding.h"
 #include "mozilla/dom/MIDIMessageEvent.h"

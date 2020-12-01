@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/WebAuthnManagerBase.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"

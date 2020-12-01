@@ -10,6 +10,10 @@
 #include "mozilla/Mutex.h"
 #include "nsTArray.h"
 
+
+
+#include "mozilla/dom/MIDITypes.h"
+
 namespace mozilla {
 
 class TimeStamp;

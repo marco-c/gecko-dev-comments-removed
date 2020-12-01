@@ -5,6 +5,7 @@
 
 
 #include "ChromiumCDMCallback.h"
+#include "ChromiumCDMParent.h"
 #include "GMPServiceParent.h"
 #include "GMPTestMonitor.h"
 #include "MediaResult.h"

@@ -684,13 +684,13 @@ constexpr HalfCorner FullToHalfCorner(Corner aCorner, bool aIsVertical) {
   return HalfCorner(aCorner * 2 + aIsVertical);
 }
 
-constexpr bool SideIsVertical(Side aSide) { return aSide % 2; }
+constexpr bool SideIsVertical(mozilla::Side aSide) { return aSide % 2; }
 
 
 
 
 
-constexpr Corner SideToFullCorner(Side aSide, bool aIsSecond) {
+constexpr Corner SideToFullCorner(mozilla::Side aSide, bool aIsSecond) {
   return Corner((aSide + aIsSecond) % 4);
 }
 
@@ -701,7 +701,7 @@ constexpr Corner SideToFullCorner(Side aSide, bool aIsSecond) {
 
 
 
-constexpr HalfCorner SideToHalfCorner(Side aSide, bool aIsSecond,
+constexpr HalfCorner SideToHalfCorner(mozilla::Side aSide, bool aIsSecond,
                                       bool aIsParallel) {
   return HalfCorner(((aSide + aIsSecond) * 2 + (aSide + !aIsParallel) % 2) % 8);
 }

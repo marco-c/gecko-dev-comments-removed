@@ -20,6 +20,10 @@
 #include "nsWrapperCache.h"
 #include "U2FAuthenticator.h"
 
+
+
+#include "mozilla/dom/Document.h"
+
 namespace mozilla {
 namespace dom {
 

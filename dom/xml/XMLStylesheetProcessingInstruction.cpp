@@ -5,6 +5,9 @@
 
 
 #include "XMLStylesheetProcessingInstruction.h"
+
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/ReferrerInfo.h"
 #include "nsContentUtils.h"
 #include "nsNetUtil.h"
 

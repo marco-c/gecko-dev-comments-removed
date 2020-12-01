@@ -5,6 +5,7 @@
 
 
 #include "nsNetUtil.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/PermissionManager.h"
 #include "mozilla/RefPtr.h"

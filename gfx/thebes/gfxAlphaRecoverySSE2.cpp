@@ -5,6 +5,7 @@
 
 #include "gfxAlphaRecovery.h"
 #include "gfxImageSurface.h"
+#include "nsDebug.h"
 #include <emmintrin.h>
 
 

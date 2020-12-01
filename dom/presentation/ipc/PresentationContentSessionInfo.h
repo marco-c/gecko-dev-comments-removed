@@ -10,6 +10,10 @@
 #include "nsCOMPtr.h"
 #include "nsIPresentationSessionTransport.h"
 
+
+#include "nsIPresentationService.h"
+#include "nsXULAppAPI.h"
+
 namespace mozilla {
 namespace dom {
 

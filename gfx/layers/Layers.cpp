@@ -53,6 +53,10 @@
 
 uint8_t gLayerManagerLayerBuilder;
 
+
+#undef compress
+#include "mozilla/Compression.h"
+
 namespace mozilla {
 namespace layers {
 

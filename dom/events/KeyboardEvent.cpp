@@ -5,8 +5,11 @@
 
 
 #include "mozilla/dom/KeyboardEvent.h"
+
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
+#include "nsRFPService.h"
 #include "prtime.h"
 
 namespace mozilla::dom {

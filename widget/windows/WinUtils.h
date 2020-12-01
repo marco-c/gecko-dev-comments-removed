@@ -36,7 +36,9 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Vector.h"
 #include "mozilla/WindowsDpiAwareness.h"
+#include "mozilla/gfx/2D.h"
 
 
 

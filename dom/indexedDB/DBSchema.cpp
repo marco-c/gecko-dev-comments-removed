@@ -7,6 +7,10 @@
 #include "DBSchema.h"
 
 
+#include "ActorsParentCommon.h"
+#include "IndexedDBCommon.h"
+
+
 #include "ErrorList.h"
 #include "GeckoProfiler.h"
 #include "js/StructuredClone.h"

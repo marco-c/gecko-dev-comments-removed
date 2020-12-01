@@ -17,6 +17,19 @@
 #include "nsContentCreatorFunctions.h"
 #include "mozilla/CORSMode.h"
 #include "ReferrerInfo.h"
+#include "nsStringFwd.h"
+#include "nscore.h"
+
+
+#include "nsIPrincipal.h"
+
+class nsIPrincipal;
+class nsIURI;
+
+namespace mozilla::dom {
+class Document;
+enum class ReferrerPolicy : uint8_t;
+}  
 
 
 #define NS_ISCRIPTELEMENT_IID                        \

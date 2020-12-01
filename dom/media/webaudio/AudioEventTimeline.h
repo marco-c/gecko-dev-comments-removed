@@ -18,6 +18,9 @@
 #include "math.h"
 #include "WebAudioUtils.h"
 
+
+#include "js/GCAPI.h"
+
 namespace mozilla {
 
 class AudioNodeTrack;

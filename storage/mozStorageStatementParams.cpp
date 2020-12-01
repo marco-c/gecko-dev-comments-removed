@@ -4,14 +4,18 @@
 
 
 
+#include "mozStorageStatementParams.h"
+
 #include "nsJSUtils.h"
 #include "nsMemory.h"
 #include "nsString.h"
 
 #include "jsapi.h"
 
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/MozStorageStatementParamsBinding.h"
 #include "mozStoragePrivateHelpers.h"
+#include "mozStorageStatement.h"
 
 namespace mozilla {
 namespace storage {

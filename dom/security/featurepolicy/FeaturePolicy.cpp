@@ -5,6 +5,7 @@
 
 
 #include "FeaturePolicy.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Feature.h"
 #include "mozilla/dom/FeaturePolicyBinding.h"
 #include "mozilla/dom/FeaturePolicyParser.h"

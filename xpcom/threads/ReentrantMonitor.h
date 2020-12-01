@@ -14,6 +14,7 @@
 #endif  
 
 #include "mozilla/BlockingResourceBase.h"
+#include "nsISupports.h"
 
 
 

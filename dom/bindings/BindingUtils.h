@@ -27,6 +27,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/DOMJSProxyHandler.h"
+#include "mozilla/dom/JSSlots.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/PrototypeList.h"
@@ -46,6 +47,11 @@
 #include "mozilla/dom/FakeString.h"
 
 #include "nsWrapperCacheInlines.h"
+
+
+
+#include "mozilla/BasePrincipal.h"
+#include "nsJSPrincipals.h"
 
 namespace mozilla {
 

@@ -8,6 +8,7 @@
 #define mozilla_dom_U2FTokenTransport_h
 
 #include "mozilla/dom/PWebAuthnTransaction.h"
+#include "mozilla/MozPromise.h"
 
 
 

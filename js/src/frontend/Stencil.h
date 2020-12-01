@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"       
 #include "mozilla/Range.h"       
 #include "mozilla/Span.h"        
+#include "mozilla/Variant.h"     
 
 #include <stdint.h>  
 #include <stdlib.h>  

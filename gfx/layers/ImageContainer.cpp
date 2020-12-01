@@ -8,6 +8,7 @@
 
 #include <string.h>  
 
+#include "GeckoProfiler.h"
 #include "GLImages.h"    
 #include "YCbCrUtils.h"  
 #include "gfx2DGlue.h"
@@ -29,6 +30,7 @@
 #include "mozilla/layers/SharedRGBImage.h"
 #include "mozilla/layers/SharedSurfacesChild.h"  
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
+#include "nsProxyRelease.h"
 #include "nsISupportsUtils.h"  
 
 #ifdef XP_MACOSX

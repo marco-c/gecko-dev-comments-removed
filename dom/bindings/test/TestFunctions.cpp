@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/TestFunctions.h"
 #include "mozilla/dom/TestFunctionsBinding.h"
 #include "mozilla/dom/WindowBinding.h"

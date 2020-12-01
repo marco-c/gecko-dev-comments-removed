@@ -29,6 +29,9 @@
 #include "Units.h"
 
 
+#include "mozilla/dom/Element.h"
+
+
 #ifdef KeyPress
 #  undef KeyPress
 #endif

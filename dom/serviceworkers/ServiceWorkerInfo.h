@@ -9,8 +9,10 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/dom/ServiceWorkerBinding.h"  
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/OriginAttributes.h"
+#include "mozilla/TimeStamp.h"
 #include "nsIServiceWorkerManager.h"
 
 namespace mozilla {

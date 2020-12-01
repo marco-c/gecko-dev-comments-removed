@@ -24,6 +24,8 @@
 #  include "nsXULAppAPI.h"
 #endif  
 
+class nsIPrincipal;
+
 namespace IPC {
 template <typename T>
 struct ParamTraits;

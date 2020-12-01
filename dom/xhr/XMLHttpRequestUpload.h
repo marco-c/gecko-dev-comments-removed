@@ -9,6 +9,9 @@
 
 #include "mozilla/dom/XMLHttpRequestEventTarget.h"
 
+
+#include "mozilla/EventListenerManager.h"
+
 namespace mozilla {
 namespace dom {
 

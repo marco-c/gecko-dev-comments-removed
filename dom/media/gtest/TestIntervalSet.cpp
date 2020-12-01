@@ -4,6 +4,7 @@
 
 
 #include "gtest/gtest.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/TimeRanges.h"
 #include "TimeUnits.h"
 #include "Intervals.h"

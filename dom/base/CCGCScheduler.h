@@ -3,9 +3,11 @@
 
 
 #include "js/SliceBudget.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/MainThreadIdlePeriod.h"
 #include "nsCycleCollector.h"
+#include "nsJSEnvironment.h"
 
 static const mozilla::TimeDuration kOneMinute =
     mozilla::TimeDuration::FromSeconds(60.0f);

@@ -5,6 +5,8 @@
 
 
 #include "mozilla/ConsoleReportCollector.h"
+
+#include "mozilla/dom/Document.h"
 #include "mozilla/net/NeckoChannelParams.h"
 
 #include "ConsoleUtils.h"

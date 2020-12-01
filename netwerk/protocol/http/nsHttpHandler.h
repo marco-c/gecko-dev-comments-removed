@@ -30,7 +30,11 @@
 #  include "nsIOService.h"
 #endif
 
-class nsIHttpChannel;
+
+
+#include "nsIChannel.h"
+#include "nsIHttpChannel.h"
+
 class nsIHttpUpgradeListener;
 class nsIPrefBranch;
 class nsICancelable;
@@ -50,6 +54,7 @@ class EventTokenBucket;
 class Tickler;
 class nsHttpConnection;
 class nsHttpConnectionInfo;
+class HttpBaseChannel;
 class HttpHandlerInitArgs;
 class HttpTransactionShell;
 class AltSvcMapping;

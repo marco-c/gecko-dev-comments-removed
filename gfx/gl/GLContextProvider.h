@@ -12,6 +12,7 @@
 #include "SurfaceTypes.h"
 
 #include "nsSize.h"  
+#include "nsStringFwd.h"  
 
 class nsIWidget;
 

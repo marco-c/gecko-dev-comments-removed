@@ -9,12 +9,13 @@
 
 #include <string>
 
-#include "js/TypeDecls.h"         
-#include "mozilla/ErrorResult.h"  
-#include "mozilla/StaticPtr.h"    
-#include "nsCOMPtr.h"             
-#include "nsISupports.h"          
-#include "nsWrapperCache.h"       
+#include "js/TypeDecls.h"            
+#include "mozilla/ErrorResult.h"     
+#include "mozilla/StaticPtr.h"       
+#include "nsCOMPtr.h"                
+#include "nsISupports.h"             
+#include "nsTArrayForwardDeclare.h"  
+#include "nsWrapperCache.h"          
 
 namespace mozilla {
 

@@ -22,6 +22,9 @@
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 
+
+#include "nsPIDOMWindow.h"
+
 namespace mozilla {
 namespace dom {
 

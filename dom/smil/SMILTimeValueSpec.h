@@ -13,6 +13,9 @@
 #include "nsStringFwd.h"
 #include "nsIDOMEventListener.h"
 
+
+#include "mozilla/dom/Element.h"
+
 namespace mozilla {
 
 class EventListenerManager;

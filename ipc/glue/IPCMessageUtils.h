@@ -62,6 +62,16 @@ struct FileDescriptor {};
 #endif
 
 namespace mozilla {
+template <typename...>
+class Variant;
+
+namespace detail {
+template <typename...>
+struct VariantTag;
+}
+}  
+
+namespace mozilla {
 
 
 

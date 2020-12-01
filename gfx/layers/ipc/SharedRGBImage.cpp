@@ -20,7 +20,8 @@
 #include "mozilla/mozalloc.h"                 
 #include "nsDebug.h"                          
 #include "nsISupportsImpl.h"                  
-#include "nsRect.h"                           
+#include "nsProxyRelease.h"
+#include "nsRect.h"  
 
 
 #define MAX_FRAME_SIZE (16 * 1024 * 1024)

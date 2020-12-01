@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MediaMetadata.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"

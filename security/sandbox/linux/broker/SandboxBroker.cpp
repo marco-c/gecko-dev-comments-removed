@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "SandboxBroker.h"
 #include "SandboxInfo.h"
@@ -24,6 +24,7 @@
 
 #include <utility>
 
+#include "GeckoProfiler.h"
 #include "SpecialSystemDirectory.h"
 #include "base/string_util.h"
 #include "mozilla/Assertions.h"
@@ -37,10 +38,10 @@
 
 namespace mozilla {
 
-// Default/fallback temporary directory
+
 static const nsLiteralCString tempDirPrefix("/tmp");
 
-// This constructor signals failure by setting mFileDesc and aClientFd to -1.
+
 SandboxBroker::SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid,
                              int& aClientFd)
     : mChildPid(aChildPid), mPolicy(std::move(aPolicy)) {
@@ -77,7 +78,7 @@ UniquePtr<SandboxBroker> SandboxBroker::Create(
     UniquePtr<const Policy> aPolicy, int aChildPid,
     ipc::FileDescriptor& aClientFdOut) {
   int clientFd;
-  // Can't use MakeUnique here because the constructor is private.
+  
   UniquePtr<SandboxBroker> rv(
       new SandboxBroker(std::move(aPolicy), aChildPid, clientFd));
   if (clientFd < 0) {
@@ -89,18 +90,18 @@ UniquePtr<SandboxBroker> SandboxBroker::Create(
 }
 
 SandboxBroker::~SandboxBroker() {
-  // If the constructor failed, there's nothing to be done here.
+  
   if (mFileDesc < 0) {
     return;
   }
 
   shutdown(mFileDesc, SHUT_RD);
-  // The thread will now get EOF even if the client hasn't exited.
+  
   PlatformThread::Join(mThread);
-  // Now that the thread has exited, the fd will no longer be accessed.
+  
   close(mFileDesc);
-  // Having ensured that this object outlives the thread, this
-  // destructor can now return.
+  
+  
 }
 
 SandboxBroker::Policy::Policy() = default;
@@ -112,26 +113,26 @@ SandboxBroker::Policy::Policy(const Policy& aOther) {
   }
 }
 
-// Chromium
-// sandbox/linux/syscall_broker/broker_file_permission.cc
-// Async signal safe
+
+
+
 bool SandboxBroker::Policy::ValidatePath(const char* path) const {
   if (!path) return false;
 
   const size_t len = strlen(path);
-  // No empty paths
+  
   if (len == 0) return false;
-  // Paths must be absolute and not relative
+  
   if (path[0] != '/') return false;
-  // No trailing / (but "/" is valid)
+  
   if (len > 1 && path[len - 1] == '/') return false;
-  // No trailing /.
+  
   if (len >= 2 && path[len - 2] == '/' && path[len - 1] == '.') return false;
-  // No trailing /..
+  
   if (len >= 3 && path[len - 3] == '/' && path[len - 2] == '.' &&
       path[len - 1] == '.')
     return false;
-  // No /../ anywhere
+  
   for (size_t i = 0; i < len; i++) {
     if (path[i] == '/' && (len - i) > 3) {
       if (path[i + 1] == '.' && path[i + 2] == '.' && path[i + 3] == '/') {
@@ -182,7 +183,7 @@ void SandboxBroker::Policy::AddTree(int aPerms, const char* aPath) {
       if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) {
         continue;
       }
-      // Note: could optimize the string handling.
+      
       nsAutoCString subPath;
       subPath.Assign(aPath);
       subPath.Append('/');
@@ -204,18 +205,18 @@ void SandboxBroker::Policy::AddDir(int aPerms, const char* aPath) {
     return;
   }
 
-  // Add a Prefix permission on things inside the dir.
+  
   nsDependentCString path(aPath);
   MOZ_ASSERT(path.Length() <= kMaxPathLen - 1);
-  // Enforce trailing / on aPath
+  
   if (path.Last() != '/') {
     path.Append('/');
   }
   Policy::AddPrefixInternal(aPerms, path);
 
-  // Add a path permission on the dir itself so it can
-  // be opened. We're guaranteed to have a trailing / now,
-  // so just cut that.
+  
+  
+  
   path.Truncate(path.Length() - 1);
   if (!path.IsEmpty()) {
     Policy::AddPath(aPerms, path.get(), AddAlways);
@@ -294,8 +295,8 @@ void SandboxBroker::Policy::AddAncestors(const char* aPath, int aPerms) {
 }
 
 void SandboxBroker::Policy::FixRecursivePermissions() {
-  // This builds an entirely new hashtable in order to avoid iterator
-  // invalidation problems.
+  
+  
   PathPermissionMap oldMap;
   mMap.SwapElements(oldMap);
 
@@ -309,13 +310,13 @@ void SandboxBroker::Policy::FixRecursivePermissions() {
     int inheritedPerms = 0;
 
     nsAutoCString ancestor(path);
-    // This is slightly different from the loop in AddAncestors: it
-    // leaves the trailing slashes attached so they'll match AddDir
-    // entries.
+    
+    
+    
     while (true) {
-      // Last() release-asserts that the string is not empty.  We
-      // should never have empty keys in the map, and the Truncate()
-      // below will always give us a non-empty string.
+      
+      
+      
       if (ancestor.Last() == '/') {
         ancestor.Truncate(ancestor.Length() - 1);
       }
@@ -337,7 +338,7 @@ void SandboxBroker::Policy::FixRecursivePermissions() {
         SANDBOX_LOG_ERROR("removing redundant %s: %d -> %d",
                           PromiseFlatCString(path).get(), localPerms, newPerms);
       }
-      // Skip adding this entry to the new map.
+      
       continue;
     }
     if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
@@ -349,21 +350,21 @@ void SandboxBroker::Policy::FixRecursivePermissions() {
 }
 
 int SandboxBroker::Policy::Lookup(const nsACString& aPath) const {
-  // Early exit for paths explicitly found in the
-  // whitelist.
-  // This means they will not gain extra permissions
-  // from recursive paths.
+  
+  
+  
+  
   int perms = mMap.Get(aPath);
   if (perms) {
     return perms;
   }
 
-  // Not a legally constructed path
+  
   if (!ValidatePath(PromiseFlatCString(aPath).get())) return 0;
 
-  // Now it's either an illegal access, or a recursive
-  // directory permission. We'll have to check the entire
-  // whitelist for the best match (slower).
+  
+  
+  
   int allPerms = 0;
   for (auto iter = mMap.ConstIter(); !iter.Done(); iter.Next()) {
     const nsACString& whiteListPath = iter.Key();
@@ -371,14 +372,14 @@ int SandboxBroker::Policy::Lookup(const nsACString& aPath) const {
 
     if (!(perms & RECURSIVE)) continue;
 
-    // passed part starts with something on the whitelist
+    
     if (StringBeginsWith(aPath, whiteListPath)) {
       allPerms |= perms;
     }
   }
 
-  // Strip away the RECURSIVE flag as it doesn't
-  // necessarily apply to aPath.
+  
+  
   return allPerms & ~RECURSIVE;
 }
 
@@ -390,9 +391,9 @@ static bool AllowOperation(int aReqFlags, int aPerms) {
   if (aReqFlags & W_OK) {
     needed |= SandboxBroker::MAY_WRITE;
   }
-  // We don't really allow executing anything,
-  // so in true unix tradition we hijack this
-  // for directory access (creation).
+  
+  
+  
   if (aReqFlags & X_OK) {
     needed |= SandboxBroker::MAY_CREATE;
   }
@@ -413,17 +414,17 @@ static bool AllowAccess(int aReqFlags, int aPerms) {
   return (aPerms & needed) == needed;
 }
 
-// These flags are added to all opens to prevent possible side-effects
-// on this process.  These shouldn't be relevant to the child process
-// in any case due to the sandboxing restrictions on it.  (See also
-// the use of MSG_CMSG_CLOEXEC in SandboxBrokerCommon.cpp).
+
+
+
+
 static const int kRequiredOpenFlags = O_CLOEXEC | O_NOCTTY;
 
-// Linux originally assigned a flag bit to O_SYNC but implemented the
-// semantics standardized as O_DSYNC; later, that bit was renamed and
-// a new bit was assigned to the full O_SYNC, and O_SYNC was redefined
-// to be both bits.  As a result, this #define is needed to compensate
-// for outdated kernel headers like Android's.
+
+
+
+
+
 #define O_SYNC_NEW 04010000
 static const int kAllowedOpenFlags =
     O_APPEND | O_ASYNC | O_DIRECT | O_DIRECTORY | O_EXCL | O_LARGEFILE |
@@ -452,7 +453,7 @@ static bool AllowOpen(int aReqFlags, int aPerms) {
   if (aReqFlags & O_CREAT) {
     needed |= SandboxBroker::MAY_CREATE;
   }
-  // Linux allows O_TRUNC even with O_RDONLY
+  
   if (aReqFlags & O_TRUNC) {
     needed |= SandboxBroker::MAY_WRITE;
   }
@@ -478,21 +479,21 @@ static int DoLink(const char* aPath, const char* aPath2,
 }
 
 static int DoConnect(const char* aPath, size_t aLen, int aType) {
-  // Deny SOCK_DGRAM for the same reason it's denied for socketpair.
+  
   if (aType != SOCK_STREAM && aType != SOCK_SEQPACKET) {
     errno = EACCES;
     return -1;
   }
-  // Ensure that the address is a pathname.  (An empty string
-  // resulting from an abstract address probably shouldn't have made
-  // it past the policy check, but check explicitly just in case.)
+  
+  
+  
   if (aPath[0] == '\0') {
     errno = ECONNREFUSED;
     return -1;
   }
 
-  // Try to copy the name into a normal-sized sockaddr_un, with
-  // null-termination:
+  
+  
   struct sockaddr_un sun;
   memset(&sun, 0, sizeof(sun));
   sun.sun_family = AF_UNIX;
@@ -502,7 +503,7 @@ static int DoConnect(const char* aPath, size_t aLen, int aType) {
   }
   memcpy(&sun.sun_path, aPath, aLen);
 
-  // Finally, the actual socket connection.
+  
   const int fd = socket(AF_UNIX, aType | SOCK_CLOEXEC, 0);
   if (fd < 0) {
     return -1;
@@ -519,7 +520,7 @@ size_t SandboxBroker::RealPath(char* aPath, size_t aBufSize, size_t aPathLen) {
   if (result != nullptr) {
     base::strlcpy(aPath, result, aBufSize);
     free(result);
-    // Size changed, but guaranteed to be 0 terminated
+    
     aPathLen = strlen(aPath);
   }
   return aPathLen;
@@ -548,7 +549,7 @@ size_t SandboxBroker::RemapTempDirs(char* aPath, size_t aBufSize,
     const nsDependentCSubstring cutPath =
         Substring(path, prefixLen, path.Length() - prefixLen);
 
-    // Only now try to get the content process temp dir
+    
     if (!mContentTempPath.IsEmpty()) {
       nsAutoCString tmpPath;
       tmpPath.Assign(mContentTempPath);
@@ -562,7 +563,7 @@ size_t SandboxBroker::RemapTempDirs(char* aPath, size_t aBufSize,
 }
 
 nsCString SandboxBroker::ReverseSymlinks(const nsACString& aPath) {
-  // Revert any symlinks we previously resolved.
+  
   int32_t cutLength = aPath.Length();
   nsCString cutPath(Substring(aPath, 0, cutLength));
 
@@ -573,13 +574,13 @@ nsCString SandboxBroker::ReverseSymlinks(const nsACString& aPath) {
       orig.Append(Substring(aPath, cutLength, aPath.Length() - cutLength));
       return orig;
     }
-    // Not found? Remove a path component and try again.
+    
     int32_t pos = cutPath.RFindChar('/');
     if (pos == kNotFound || pos <= 0) {
-      // will be empty
+      
       return orig;
     } else {
-      // Cut until just before the /
+      
       cutLength = pos;
       cutPath.Assign(Substring(cutPath, 0, cutLength));
     }
@@ -588,9 +589,9 @@ nsCString SandboxBroker::ReverseSymlinks(const nsACString& aPath) {
 
 int SandboxBroker::SymlinkPermissions(const char* aPath,
                                       const size_t aPathLen) {
-  // Work on a temporary copy, so we can reverse it.
-  // Because we bail on a writable dir, SymlinkPath
-  // might not restore the callers' path exactly.
+  
+  
+  
   char pathBufSymlink[kMaxPathLen + 1];
   strcpy(pathBufSymlink, aPath);
 
@@ -604,24 +605,24 @@ int SandboxBroker::SymlinkPermissions(const char* aPath,
   }
 
   int perms = 0;
-  // Resolve relative paths, propagate permissions and
-  // fail if a symlink is in a writable path. The output is in perms.
+  
+  
   char* result =
       SandboxBroker::SymlinkPath(mPolicy.get(), pathBufSymlink, NULL, &perms);
   if (result != NULL) {
     free(result);
-    // We finished the translation, so we have a usable return in "perms".
+    
     return perms;
   } else {
-    // Empty path means we got a writable dir in the chain or tried
-    // to back out of a link target.
+    
+    
     return 0;
   }
 }
 
 void SandboxBroker::ThreadMain(void) {
-  // Create a nsThread wrapper for the current platform thread, and register it
-  // with the thread manager.
+  
+  
   (void)NS_GetCurrentThread();
 
   char threadName[16];
@@ -630,26 +631,26 @@ void SandboxBroker::ThreadMain(void) {
 
   AUTO_PROFILER_REGISTER_THREAD(threadName);
 
-  // Permissive mode can only be enabled through an environment variable,
-  // therefore it is sufficient to fetch the value once
-  // before the main thread loop starts
+  
+  
+  
   bool permissive = SandboxInfo::Get().Test(SandboxInfo::kPermissive);
 
-  // Find the current temporary directory
+  
   nsCOMPtr<nsIFile> tmpDir;
   nsresult rv =
       GetSpecialSystemDirectory(OS_TemporaryDirectory, getter_AddRefs(tmpDir));
   if (NS_SUCCEEDED(rv)) {
     rv = tmpDir->GetNativePath(mTempPath);
     if (NS_SUCCEEDED(rv)) {
-      // Make sure there's no terminating /
+      
       if (mTempPath.Last() == '/') {
         mTempPath.Truncate(mTempPath.Length() - 1);
       }
     }
   }
-  // If we can't find it, we aren't bothered much: we will
-  // always try /tmp anyway in the substitution code
+  
+  
   if (NS_FAILED(rv) || mTempPath.IsEmpty()) {
     if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
       SANDBOX_LOG_ERROR("Tempdir: /tmp");
@@ -658,8 +659,8 @@ void SandboxBroker::ThreadMain(void) {
     if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
       SANDBOX_LOG_ERROR("Tempdir: %s", mTempPath.get());
     }
-    // If it's /tmp, clear it here so we don't compare against
-    // it twice. Just let the fallback code do the work.
+    
+    
     if (mTempPath.Equals(tempDirPrefix)) {
       mTempPath.Truncate();
     }
@@ -667,21 +668,21 @@ void SandboxBroker::ThreadMain(void) {
 
   while (true) {
     struct iovec ios[2];
-    // We will receive the path strings in 1 buffer and split them back up.
+    
     char recvBuf[2 * (kMaxPathLen + 1)];
     char pathBuf[kMaxPathLen + 1];
     char pathBuf2[kMaxPathLen + 1];
     size_t pathLen = 0;
     size_t pathLen2 = 0;
-    char respBuf[kMaxPathLen + 1];  // Also serves as struct stat
+    char respBuf[kMaxPathLen + 1];  
     Request req;
     Response resp;
     int respfd;
 
-    // Make sure stat responses fit in the response buffer
+    
     MOZ_ASSERT((kMaxPathLen + 1) > sizeof(struct stat));
 
-    // This makes our string handling below a bit less error prone.
+    
     memset(recvBuf, 0, sizeof(recvBuf));
 
     ios[0].iov_base = &req;
@@ -696,9 +697,9 @@ void SandboxBroker::ThreadMain(void) {
       }
       break;
     }
-    // It could be possible to continue after errors and short reads,
-    // at least in some cases, but protocol violation indicates a
-    // hostile client, so terminate the broker instead.
+    
+    
+    
     if (recvd < 0) {
       SANDBOX_LOG_ERROR("bad read from pid %d: %s", mChildPid, strerror(errno));
       shutdown(mFileDesc, SHUT_RD);
@@ -716,7 +717,7 @@ void SandboxBroker::ThreadMain(void) {
       break;
     }
 
-    // Initialize the response with the default failure.
+    
     memset(&resp, 0, sizeof(resp));
     memset(&respBuf, 0, sizeof(respBuf));
     resp.mError = -EACCES;
@@ -726,11 +727,11 @@ void SandboxBroker::ThreadMain(void) {
     ios[1].iov_len = 0;
     int openedFd = -1;
 
-    // Clear permissions
+    
     int perms;
 
-    // Find end of first string, make sure the buffer is still
-    // 0 terminated.
+    
+    
     size_t recvBufLen = static_cast<size_t>(recvd) - sizeof(req);
     if (recvBufLen > 0 && recvBuf[recvBufLen - 1] != 0) {
       SANDBOX_LOG_ERROR("corrupted path buffer from pid %d", mChildPid);
@@ -738,73 +739,73 @@ void SandboxBroker::ThreadMain(void) {
       break;
     }
 
-    // First path should fit in maximum path length buffer.
+    
     size_t first_len = strlen(recvBuf);
     if (first_len <= kMaxPathLen) {
       strcpy(pathBuf, recvBuf);
-      // Skip right over the terminating 0, and try to copy in the
-      // second path, if any. If there's no path, this will hit a
-      // 0 immediately (we nulled the buffer before receiving).
-      // We do not assume the second path is 0-terminated, this is
-      // enforced below.
+      
+      
+      
+      
+      
       strncpy(pathBuf2, recvBuf + first_len + 1, kMaxPathLen + 1);
 
-      // First string is guaranteed to be 0-terminated.
+      
       pathLen = first_len;
 
-      // Look up the first pathname but first translate relative paths.
+      
       pathLen = ConvertRelativePath(pathBuf, sizeof(pathBuf), pathLen);
       perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
 
-      // We don't have permissions on the requested dir.
+      
       if (!perms) {
-        // Was it a tempdir that we can remap?
+        
         pathLen = RemapTempDirs(pathBuf, sizeof(pathBuf), pathLen);
         perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
       }
       if (!perms) {
-        // Did we arrive from a symlink in a path that is not writable?
-        // Then try to figure out the original path and see if that is
-        // readable. Work on the original path, this reverses
-        // ConvertRelative above.
+        
+        
+        
+        
         int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
         if (symlinkPerms > 0) {
           perms = symlinkPerms;
         }
       }
       if (!perms) {
-        // Now try the opposite case: translate symlinks to their
-        // actual destination file. Firefox always resolves symlinks,
-        // and in most cases we have whitelisted fixed paths that
-        // libraries will rely on and try to open. So this codepath
-        // is mostly useful for Mesa which had its kernel interface
-        // moved around.
+        
+        
+        
+        
+        
+        
         pathLen = RealPath(pathBuf, sizeof(pathBuf), pathLen);
         perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
       }
 
-      // Same for the second path.
+      
       pathLen2 = strnlen(pathBuf2, kMaxPathLen);
       if (pathLen2 > 0) {
-        // Force 0 termination.
+        
         pathBuf2[pathLen2] = '\0';
         pathLen2 = ConvertRelativePath(pathBuf2, sizeof(pathBuf2), pathLen2);
         int perms2 = mPolicy->Lookup(nsDependentCString(pathBuf2, pathLen2));
 
-        // Take the intersection of the permissions for both paths.
+        
         perms &= perms2;
       }
     } else {
-      // Failed to receive intelligible paths.
+      
       perms = 0;
     }
 
-    // And now perform the operation if allowed.
+    
     if (perms & CRASH_INSTEAD) {
-      // This is somewhat nonmodular, but it works.
+      
       resp.mError = -ENOSYS;
     } else if (permissive || perms & MAY_ACCESS) {
-      // If the operation was only allowed because of permissive mode, log it.
+      
       if (permissive && !(perms & MAY_ACCESS)) {
         AuditPermissive(req.mOp, req.mFlags, perms, pathBuf);
       }
@@ -812,10 +813,10 @@ void SandboxBroker::ThreadMain(void) {
       switch (req.mOp) {
         case SANDBOX_FILE_OPEN:
           if (permissive || AllowOpen(req.mFlags, perms)) {
-            // Permissions for O_CREAT hardwired to 0600; if that's
-            // ever a problem we can change the protocol (but really we
-            // should be trying to remove uses of MAY_CREATE, not add
-            // new ones).
+            
+            
+            
+            
             openedFd = open(pathBuf, req.mFlags | kRequiredOpenFlags, 0600);
             if (openedFd >= 0) {
               resp.mError = 0;
@@ -895,8 +896,8 @@ void SandboxBroker::ThreadMain(void) {
             }
           } else {
             struct stat sb;
-            // This doesn't need an additional policy check because
-            // MAY_ACCESS is required to even enter this switch statement.
+            
+            
             if (lstat(pathBuf, &sb) == 0) {
               resp.mError = -EEXIST;
             } else {
@@ -935,8 +936,8 @@ void SandboxBroker::ThreadMain(void) {
                 readlink(pathBuf, (char*)&respBuf, sizeof(respBuf));
             if (respSize >= 0) {
               if (respSize > 0) {
-                // Record the mapping so we can invert the file to the original
-                // symlink.
+                
+                
                 nsDependentCString orig(pathBuf, pathLen);
                 nsDependentCString xlat(respBuf, respSize);
                 if (!orig.Equals(xlat) && xlat[0] == '/') {
@@ -946,9 +947,9 @@ void SandboxBroker::ThreadMain(void) {
                   }
                   mSymlinkMap.Put(xlat, orig);
                 }
-                // Make sure we can invert a fully resolved mapping too. If our
-                // caller is realpath, and there's a relative path involved, the
-                // client side will try to open this one.
+                
+                
+                
                 char* resolvedBuf = realpath(pathBuf, nullptr);
                 if (resolvedBuf) {
                   nsDependentCString resolvedXlat(resolvedBuf);
@@ -1001,21 +1002,21 @@ void SandboxBroker::ThreadMain(void) {
       MOZ_ASSERT(static_cast<size_t>(sent) == ios[0].iov_len + ios[1].iov_len);
     }
 
-    // Work around Linux kernel bug: recvmsg checks for pending data
-    // and then checks for EOF or shutdown, without synchronization;
-    // if the sendmsg and last close occur between those points, it
-    // will see no pending data (before) and a closed socket (after),
-    // and incorrectly return EOF even though there is a message to be
-    // read.  To avoid this, we send an extra message with a reference
-    // to respfd, so the last close can't happen until after the real
-    // response is read.
-    //
-    // See also: https://bugzil.la/1243108#c48
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const struct Response fakeResp = {-4095};
     const struct iovec fakeIO = {const_cast<Response*>(&fakeResp),
                                  sizeof(fakeResp)};
-    // If the client has already read the real response and closed its
-    // socket then this will fail, but that's fine.
+    
+    
     if (SendWithFd(respfd, &fakeIO, 1, respfd) < 0) {
       MOZ_ASSERT(errno == EPIPE || errno == ECONNREFUSED || errno == ENOTCONN);
     }
@@ -1035,7 +1036,7 @@ void SandboxBroker::AuditPermissive(int aOp, int aFlags, int aPerms,
   struct stat statBuf;
 
   if (lstat(aPath, &statBuf) == 0) {
-    // Path exists, set errno to 0 to indicate "success".
+    
     errno = 0;
   }
 
@@ -1056,4 +1057,4 @@ void SandboxBroker::AuditDenial(int aOp, int aFlags, int aPerms,
   }
 }
 
-}  // namespace mozilla
+}  

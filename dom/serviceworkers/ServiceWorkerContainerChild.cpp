@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PServiceWorkerContainerChild.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
 
 #include "RemoteServiceWorkerContainerImpl.h"
