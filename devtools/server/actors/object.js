@@ -81,7 +81,7 @@ const proto = {
     {
       thread,
       createValueGrip: createValueGripHook,
-      sources,
+      getSourcesManager,
       createEnvironmentActor,
       getGripDepth,
       incrementGripDepth,
@@ -100,7 +100,7 @@ const proto = {
     this.thread = thread;
     this.hooks = {
       createValueGrip: createValueGripHook,
-      sources,
+      getSourcesManager,
       createEnvironmentActor,
       getGripDepth,
       incrementGripDepth,
@@ -294,7 +294,9 @@ const proto = {
     }
 
     return {
-      source: this.hooks.sources().createSourceActor(this.obj.script.source),
+      source: this.hooks
+        .getSourcesManager()
+        .createSourceActor(this.obj.script.source),
       line: this.obj.script.startLine,
       column: 0, 
     };

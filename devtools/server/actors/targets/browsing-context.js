@@ -264,7 +264,7 @@ const browsingContextTargetPrototype = {
     
     this._extraActors = {};
     this._exited = false;
-    this._sources = null;
+    this._sourcesManager = null;
 
     
     this._styleSheetActors = new Map();
@@ -492,11 +492,14 @@ const browsingContextTargetPrototype = {
     return null;
   },
 
-  get sources() {
-    if (!this._sources) {
-      this._sources = new SourcesManager(this.threadActor, this._allowSource);
+  get sourcesManager() {
+    if (!this._sourcesManager) {
+      this._sourcesManager = new SourcesManager(
+        this.threadActor,
+        this._allowSource
+      );
     }
-    return this._sources;
+    return this._sourcesManager;
   },
 
   _createExtraActors() {
@@ -977,9 +980,9 @@ const browsingContextTargetPrototype = {
     this.threadActor.destroy();
     this.threadActor = null;
 
-    if (this._sources) {
-      this._sources.destroy();
-      this._sources = null;
+    if (this._sourcesManager) {
+      this._sourcesManager.destroy();
+      this._sourcesManager = null;
     }
   },
 
