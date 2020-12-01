@@ -2,11 +2,6 @@
 
 
 
-#description-image:not([src]) {
-  height: 32px;
-  width: 32px;
-}
-
 richlistitem[type] {
   min-height: 36px; 
   padding-inline-start: 2px;
