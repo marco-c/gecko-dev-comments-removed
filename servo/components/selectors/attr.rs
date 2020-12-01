@@ -134,7 +134,7 @@ impl AttrSelectorOperator {
 }
 
 
-pub static SELECTOR_WHITESPACE: &'static [char] = &[' ', '\t', '\n', '\r', '\x0C'];
+pub static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
 pub enum ParsedCaseSensitivity {

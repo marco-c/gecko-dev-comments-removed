@@ -27,7 +27,7 @@ fn main() {
 }
 
 
-static ASCII_CASE_INSENSITIVE_HTML_ATTRIBUTES: &'static str = r#"
+static ASCII_CASE_INSENSITIVE_HTML_ATTRIBUTES: &str = r#"
     accept
     accept-charset
     align

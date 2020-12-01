@@ -60,7 +60,7 @@ fn dump_bounds(blob: &[u8], dirty_rect: Box2d) {
 }
 
 
-fn dump_index(blob: &[u8]) -> () {
+fn dump_index(blob: &[u8]) {
     let mut index = BlobReader::new(blob);
     
     
@@ -107,7 +107,7 @@ struct BufReader<'a> {
 impl<'a> BufReader<'a> {
     
     fn new(buf: &'a [u8]) -> BufReader<'a> {
-        BufReader { buf: buf, pos: 0 }
+        BufReader { buf, pos: 0 }
     }
 
     
@@ -565,7 +565,7 @@ impl AsyncBlobImageRasterizer for Moz2dBlobRasterizer {
         let _marker = GeckoProfilerMarker::new(b"BlobRasterization\0");
 
         let requests: Vec<Job> = requests
-            .into_iter()
+            .iter()
             .map(|params| {
                 let command = &self.blob_commands[&params.request.key];
                 let blob = Arc::clone(&command.data);
@@ -789,8 +789,8 @@ impl Moz2dBlobImageHandler {
     pub fn new(workers: Arc<ThreadPool>, workers_low_priority: Arc<ThreadPool>) -> Self {
         Moz2dBlobImageHandler {
             blob_commands: HashMap::new(),
-            workers: workers,
-            workers_low_priority: workers_low_priority,
+            workers,
+            workers_low_priority,
             enable_multithreading: true,
         }
     }

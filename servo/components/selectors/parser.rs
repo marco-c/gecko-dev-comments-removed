@@ -493,10 +493,8 @@ where
                 
                 
                 
-                if list.len() == 1 {
-                    if !collect_ancestor_hashes(list[0].iter(), quirks_mode, hashes, len) {
-                        return false;
-                    }
+                if list.len() == 1 && !collect_ancestor_hashes(list[0].iter(), quirks_mode, hashes, len) {
+                    return false;
                 }
                 continue;
             },
@@ -2777,8 +2775,8 @@ pub mod tests {
         assert!(list.is_ok());
     }
 
-    const MATHML: &'static str = "http://www.w3.org/1998/Math/MathML";
-    const SVG: &'static str = "http://www.w3.org/2000/svg";
+    const MATHML: &str = "http://www.w3.org/1998/Math/MathML";
+    const SVG: &str = "http://www.w3.org/2000/svg";
 
     #[test]
     fn test_parsing() {
