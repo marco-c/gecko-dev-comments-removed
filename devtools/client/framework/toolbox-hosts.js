@@ -250,6 +250,14 @@ WindowHost.prototype = {
         flags += ",private";
       }
 
+      
+      
+      
+      
+      if (this.hostTab && !this.hostTab.ownerGlobal.gFissionBrowser) {
+        flags += ",non-fission";
+      }
+
       const win = Services.ww.openWindow(
         null,
         this.WINDOW_URL,
