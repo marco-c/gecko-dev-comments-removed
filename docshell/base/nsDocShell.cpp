@@ -13245,6 +13245,7 @@ void nsDocShell::MoveLoadingToActiveEntry() {
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("nsDocShell %p MoveLoadingToActiveEntry", this));
 
+  bool hadActiveEntry = !!mActiveEntry;
   mActiveEntry = nullptr;
   mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> loadingEntry;
   mActiveEntryIsLoadingFromSessionHistory =
@@ -13272,8 +13273,15 @@ void nsDocShell::MoveLoadingToActiveEntry() {
         if (!loadingEntry->mLoadIsFromSessionHistory) {
           
           
+          
+          
+          
+          
+          
           if (!LOAD_TYPE_HAS_FLAGS(
-                  mLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY)) {
+                  mLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY) &&
+              (mBrowsingContext->IsTop() || hadActiveEntry) &&
+              mBrowsingContext->ShouldUpdateSessionHistory(loadType)) {
             changeID = rootSH->AddPendingHistoryChange();
           }
         } else {
