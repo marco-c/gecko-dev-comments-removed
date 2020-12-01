@@ -924,6 +924,8 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
 
   Telemetry::AutoTimer<Telemetry::MAC_INITFONTLIST_TOTAL> timer;
 
+  InitSystemFontNames();
+
   if (XRE_IsContentProcess()) {
     
     
@@ -932,6 +934,13 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
     for (FontFamilyListEntry& ffe : fontList) {
       switch (ffe.entryType()) {
         case kStandardFontFamily:
+          
+          
+          if (nsCocoaFeatures::OnCatalinaOrLater() &&
+              (ffe.familyName() == mSystemTextFontFamilyName ||
+               ffe.familyName() == mSystemDisplayFontFamilyName)) {
+            continue;
+          }
           AddFamily(ffe.familyName(), ffe.visibility());
           break;
         case kTextSizeSystemFontFamily:
@@ -947,7 +956,6 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
   } else {
     
     
-    InitSystemFontNames();
     CFArrayRef familyNames = CTFontManagerCopyAvailableFontFamilyNames();
     for (NSString* familyName in (NSArray*)familyNames) {
       AddFamily((CFStringRef)familyName);
