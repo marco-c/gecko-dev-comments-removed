@@ -51,22 +51,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
-
-
-
-        @Deprecated 
-        public @NonNull Builder useMultiprocess(final boolean use) {
-            getSettings().mUseMultiprocess.set(use);
-            return this;
-        }
-
-        
-
-
-
-
-
         public @NonNull Builder arguments(final @NonNull String[] args) {
             if (args == null) {
                 throw new IllegalArgumentException("Arguments must not  be null");
@@ -503,8 +487,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "general.aboutConfig.enable", false);
      final Pref<Boolean> mForceUserScalable = new Pref<>(
             "browser.ui.zoom.force-user-scalable", false);
-     final Pref<Boolean> mUseMultiprocess = new Pref<>(
-            "browser.tabs.remote.autostart", true);
      final Pref<Boolean> mAutofillLogins = new Pref<Boolean>(
         "signon.autofillForms", true);
 
@@ -576,20 +558,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         commitLocales();
         commitResetPrefs();
     }
-
-    
-
-
-
-
-
-
-
-    @Deprecated 
-    public boolean getUseMultiprocess() {
-        return mUseMultiprocess.get();
-    }
-
 
     
 
