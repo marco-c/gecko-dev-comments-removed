@@ -14,6 +14,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -40,14 +41,14 @@ class ContentCache {
   typedef CopyableTArray<LayoutDeviceIntRect> RectArray;
   typedef widget::IMENotification IMENotification;
 
-  ContentCache();
+  ContentCache() = default;
 
  protected:
   
   nsString mText;
 
   
-  uint32_t mCompositionStart;
+  Maybe<uint32_t> mCompositionStart;
 
   enum { ePrevCharRect = 1, eNextCharRect = 0 };
 
@@ -409,7 +410,7 @@ class ContentCacheInParent final : public ContentCache {
   uint32_t mPendingEventsNeedingAck;
   
   
-  uint32_t mCompositionStartInChild;
+  Maybe<uint32_t> mCompositionStartInChild;
   
   
   
