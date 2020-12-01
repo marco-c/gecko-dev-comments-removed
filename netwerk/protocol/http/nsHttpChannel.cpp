@@ -2171,15 +2171,6 @@ void nsHttpChannel::ProcessAltService() {
         this, originAttributes);
   }
 
-  if (!altSvc.IsEmpty()) {
-    for (uint32_t i = 0; i < kHttp3VersionCount; i++) {
-      if (PL_strstr(altSvc.get(), kHttp3Versions[i].get())) {
-        mSupportsHTTP3 = true;
-        break;
-      }
-    }
-  }
-
   AltSvcMapping::ProcessHeader(
       altSvc, scheme, originHost, originPort, mUsername, GetTopWindowOrigin(),
       mPrivateBrowsing, IsIsolated(), callbacks, proxyInfo,
@@ -7486,6 +7477,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     
     
     mResponseHead = mTransaction->TakeResponseHead();
+    mSupportsHTTP3 = mTransaction->GetSupportsHTTP3();
     
     
     if (mResponseHead) return ProcessResponse();

@@ -93,6 +93,12 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   void SetPendingTime(bool now = true) {
+    if (!now && !mPendingTime.IsNull()) {
+      
+      
+      
+      mPendingDurationTime = TimeStamp::Now() - mPendingTime;
+    }
     mPendingTime = now ? TimeStamp::Now() : TimeStamp();
   }
   const TimeStamp GetPendingTime() { return mPendingTime; }
@@ -401,6 +407,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   
   TimeStamp mPendingTime;
+  TimeDuration mPendingDurationTime;
 
   uint64_t mTopLevelOuterContentWindowId;
 
@@ -508,6 +515,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   };
 
   nsDataHashtable<nsUint32HashKey, uint32_t> mEchRetryCounterMap;
+
+  bool mSupportsHTTP3 = false;
 };
 
 }  

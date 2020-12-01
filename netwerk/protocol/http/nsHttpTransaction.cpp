@@ -1414,6 +1414,7 @@ void nsHttpTransaction::Close(nsresult reason) {
       mNoContent = false;
       mSentData = false;
       mReceivedData = false;
+      mSupportsHTTP3 = false;
       LOG(("transaction force restarted\n"));
       
       if (!mRestartCount) {
@@ -2090,6 +2091,27 @@ nsresult nsHttpTransaction::HandleContentStart() {
           return NS_ERROR_NET_RESET;
         }
         break;
+    }
+
+    
+    if ((mHttpVersion >= HttpVersion::v2_0) &&
+        (mResponseHead->Status() < 500) && (mResponseHead->Status() != 421)) {
+      nsAutoCString altSvc;
+      Unused << mResponseHead->GetHeader(nsHttp::Alternate_Service, altSvc);
+      if (!altSvc.IsEmpty() || nsHttp::IsReasonableHeaderValue(altSvc)) {
+        for (uint32_t i = 0; i < kHttp3VersionCount; i++) {
+          if (PL_strstr(altSvc.get(), kHttp3Versions[i].get())) {
+            mSupportsHTTP3 = true;
+            break;
+          }
+        }
+      }
+    }
+
+    
+    if (mSupportsHTTP3) {
+      Accumulate(Telemetry::TRANSACTION_WAIT_TIME_HTTP2_SUP_HTTP3,
+                 mPendingDurationTime.ToMilliseconds());
     }
 
     
@@ -3134,6 +3156,8 @@ nsHttpTransaction::Notify(nsITimer* aTimer) {
 
   return NS_OK;
 }
+
+bool nsHttpTransaction::GetSupportsHTTP3() { return mSupportsHTTP3; }
 
 }  
 }  
