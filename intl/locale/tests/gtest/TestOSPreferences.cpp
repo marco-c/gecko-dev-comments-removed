@@ -134,15 +134,55 @@ TEST(Intl_Locale_OSPreferences, GetDateTimePatternPrefOverrides)
                                      config.DateTimeFormatStyle,
                                      nsDependentCString(""), pattern);
     ASSERT_TRUE(NS_SUCCEEDED(nr));
-    ASSERT_TRUE(pattern.EqualsASCII("yy-MM, HH:mm"));
+    ASSERT_TRUE(pattern.Find("yy-MM") != kNotFound);
+    ASSERT_TRUE(pattern.Find("HH:mm") != kNotFound);
 
     
-    mozilla::Preferences::SetCString(config.DatePref, "");
-    mozilla::Preferences::SetCString(config.TimePref, "");
+    mozilla::Preferences::ClearUser(config.DatePref);
+    mozilla::Preferences::ClearUser(config.TimePref);
     nr = osprefs->GetDateTimePattern(config.DateTimeFormatStyle,
                                      mozIOSPreferences::dateTimeFormatStyleNone,
                                      nsDependentCString(""), pattern);
     ASSERT_TRUE(NS_SUCCEEDED(nr));
     ASSERT_EQ(default_pattern, pattern);
   }
+
+  
+  nr = osprefs->GetDateTimePattern(mozIOSPreferences::dateTimeFormatStyleShort,
+                                   mozIOSPreferences::dateTimeFormatStyleShort,
+                                   nsDependentCString(""), default_pattern);
+
+  mozilla::Preferences::SetCString("intl.date_time.pattern_override.date_short",
+                                   "yyyy-MM-dd");
+  mozilla::Preferences::SetCString("intl.date_time.pattern_override.time_short",
+                                   "HH:mm:ss");
+  mozilla::Preferences::SetCString(
+      "intl.date_time.pattern_override.date_time_short", "{1} {0}");
+  nr = osprefs->GetDateTimePattern(mozIOSPreferences::dateTimeFormatStyleShort,
+                                   mozIOSPreferences::dateTimeFormatStyleShort,
+                                   nsDependentCString(""), pattern);
+  ASSERT_TRUE(NS_SUCCEEDED(nr));
+  ASSERT_TRUE(pattern.EqualsASCII("yyyy-MM-dd HH:mm:ss"));
+
+  
+  mozilla::Preferences::ClearUser("intl.date_time.pattern_override.date_short");
+  mozilla::Preferences::ClearUser("intl.date_time.pattern_override.time_short");
+
+  
+  mozilla::Preferences::SetCString(
+      "intl.date_time.pattern_override.date_time_short", "hello, world!");
+  nr = osprefs->GetDateTimePattern(mozIOSPreferences::dateTimeFormatStyleShort,
+                                   mozIOSPreferences::dateTimeFormatStyleShort,
+                                   nsDependentCString(""), pattern);
+  ASSERT_TRUE(NS_SUCCEEDED(nr));
+  ASSERT_EQ(default_pattern, pattern);
+
+  
+  mozilla::Preferences::ClearUser(
+      "intl.date_time.pattern_override.date_time_short");
+  nr = osprefs->GetDateTimePattern(mozIOSPreferences::dateTimeFormatStyleShort,
+                                   mozIOSPreferences::dateTimeFormatStyleShort,
+                                   nsDependentCString(""), pattern);
+  ASSERT_TRUE(NS_SUCCEEDED(nr));
+  ASSERT_EQ(default_pattern, pattern);
 }
