@@ -1281,6 +1281,9 @@ BrowserGlue.prototype = {
     if (AppConstants.platform == "win") {
       JawsScreenReaderVersionCheck.init();
     }
+
+    
+    this._placesTelemetryGathered = false;
   },
 
   
@@ -1907,6 +1910,13 @@ BrowserGlue.prototype = {
     this._collectStartupConditionsTelemetry();
 
     this._collectFirstPartyIsolationTelemetry();
+
+    if (!this._placesTelemetryGathered) {
+      Cc["@mozilla.org/places/categoriesStarter;1"]
+        .getService(Ci.nsIObserver)
+        .observe(null, "gather-places-telemetry", null);
+      this._placesTelemetryGathered = true;
+    }
 
     
     PlacesUtils.favicons.setDefaultIconURIPreferredSize(

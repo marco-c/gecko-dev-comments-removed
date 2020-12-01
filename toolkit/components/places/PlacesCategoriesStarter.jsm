@@ -5,7 +5,8 @@
 
 
 
-const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
+
+const TOPIC_GATHER_TELEMETRY = "gather-places-telemetry";
 
 
 const MAINTENANCE_INTERVAL_SECONDS = 7 * 86400;
@@ -42,7 +43,10 @@ PlacesCategoriesStarter.prototype = {
         }
         break;
       case TOPIC_GATHER_TELEMETRY:
-        PlacesDBUtils.telemetry();
+        
+        Services.tm.idleDispatchToMainThread(() => {
+          PlacesDBUtils.telemetry();
+        });
         break;
       case "idle-daily":
         

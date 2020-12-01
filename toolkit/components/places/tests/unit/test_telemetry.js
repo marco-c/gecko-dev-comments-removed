@@ -102,7 +102,7 @@ add_task(async function test_execute() {
   
   Cc["@mozilla.org/places/categoriesStarter;1"]
     .getService(Ci.nsIObserver)
-    .observe(null, "gather-telemetry", null);
+    .observe(null, "gather-places-telemetry", null);
 
   await PlacesTestUtils.promiseAsyncUpdates();
 
