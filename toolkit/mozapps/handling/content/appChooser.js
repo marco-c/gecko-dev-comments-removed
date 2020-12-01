@@ -2,40 +2,12 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const { EnableDelayHelper } = ChromeUtils.import(
-  "resource://gre/modules/SharedPromptUtils.jsm"
-);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { PrivateBrowsingUtils } = ChromeUtils.import(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
+const { EnableDelayHelper } = ChromeUtils.import(
+  "resource://gre/modules/SharedPromptUtils.jsm"
 );
 
 class MozHandler extends window.MozElements.MozRichlistitem {
@@ -82,97 +54,62 @@ let loadPromise = new Promise(resolve => {
   window.addEventListener("load", resolve, { once: true });
 });
 
-var dialog = {
-  
-
-  _handlerInfo: null,
-  _URI: null,
-  _itemChoose: null,
-  _okButton: null,
-  _browsingContext: null,
-  _buttonDisabled: true,
-
-  
-
+let dialog = {
   
 
 
   initialize: function initialize() {
-    this._handlerInfo = window.arguments[7].QueryInterface(Ci.nsIHandlerInfo);
-    this._URI = window.arguments[8].QueryInterface(Ci.nsIURI);
-    let principal = window.arguments[9]?.QueryInterface(Ci.nsIPrincipal);
-    this._browsingContext = window.arguments[10];
-    let usePrivateBrowsing = false;
-    if (this._browsingContext) {
-      usePrivateBrowsing = this._browsingContext.usePrivateBrowsing;
-    }
+    let args = window.arguments[0].wrappedJSObject || window.arguments[0];
+    let { handler, outArgs, usePrivateBrowsing, enableButtonDelay } = args;
+
+    this._handlerInfo = handler.QueryInterface(Ci.nsIHandlerInfo);
+    this._outArgs = outArgs;
 
     this.isPrivate =
       usePrivateBrowsing ||
       (window.opener && PrivateBrowsingUtils.isWindowPrivate(window.opener));
 
+    this._dialog = document.querySelector("dialog");
     this._itemChoose = document.getElementById("item-choose");
-    this._okButton = document.getElementById("handling").getButton("extra1");
+    this._rememberCheck = document.getElementById("remember");
 
-    var description = {
-      image: document.getElementById("description-image"),
-      text: document.getElementById("description-text"),
-    };
-    var options = document.getElementById("item-action-text");
-    var checkbox = {
-      desc: document.getElementById("remember"),
-      text: document.getElementById("remember-text"),
-    };
+    let rememberLabel = document.getElementById("remember-label");
+    document.l10n.setAttributes(rememberLabel, "chooser-dialog-remember", {
+      scheme: this._handlerInfo.type,
+    });
 
     
-    document.title = window.arguments[0];
-    description.image.src = window.arguments[1];
-    description.text.textContent = window.arguments[2];
-    options.value = window.arguments[3];
-    checkbox.desc.label = window.arguments[4];
-    checkbox.desc.accessKey = window.arguments[5];
-    checkbox.text.textContent = window.arguments[6];
+    this._rememberCheck.addEventListener("change", () => this.onCheck());
 
-    if (principal && principal.isContentPrincipal) {
-      let hostContainer = document.getElementById("originating-host");
-      document.l10n.pauseObserving();
-      document.l10n.setAttributes(hostContainer, "handler-dialog-host", {
-        host: principal.exposablePrePath,
-        scheme: this._URI.scheme,
-      });
-      document.mozSubdialogReady = document.l10n
-        .translateElements([hostContainer])
-        .then(() => window.sizeToContent());
-      document.l10n.resumeObserving();
-      hostContainer.parentNode.removeAttribute("hidden");
-    }
+    let description = document.getElementById("description");
+    document.l10n.setAttributes(description, "chooser-dialog-description", {
+      scheme: this._handlerInfo.type,
+    });
 
-    
-    if (!checkbox.desc.label) {
-      checkbox.desc.hidden = true;
-    }
+    document.addEventListener("dialogaccept", () => {
+      this.onAccept();
+    });
 
     
     this.populateList();
-    
-    document.addEventListener("dialogextra1", () => {
-      this.onOK();
-    });
-    document.addEventListener("dialogaccept", e => {
-      e.preventDefault();
+
+    document.mozSubdialogReady = document.l10n.ready.then(() => {
+      window.sizeToContent();
     });
 
-    this._delayHelper = new EnableDelayHelper({
-      disableDialog: () => {
-        this._buttonDisabled = true;
-        this.updateOKButton();
-      },
-      enableDialog: () => {
-        this._buttonDisabled = false;
-        this.updateOKButton();
-      },
-      focusTarget: window,
-    });
+    if (enableButtonDelay) {
+      this._delayHelper = new EnableDelayHelper({
+        disableDialog: () => {
+          this._acceptBtnDisabled = true;
+          this.updateAcceptButton();
+        },
+        enableDialog: () => {
+          this._acceptBtnDisabled = false;
+          this.updateAcceptButton();
+        },
+        focusTarget: window,
+      });
+    }
   },
 
   
@@ -218,12 +155,10 @@ var dialog = {
         if (this.isPrivate) {
           let policy = WebExtensionPolicy.getByURI(uri);
           if (policy && !policy.privateBrowsingAllowed) {
-            var bundle = document.getElementById("base-strings");
-            var disabledLabel = bundle.getString(
-              "privatebrowsing.disabled.label"
-            );
             elm.setAttribute("disabled", true);
-            elm.setAttribute("description", disabledLabel);
+            this.getPrivateBrowsingDisabledLabel().then(label => {
+              elm.setAttribute("description", label);
+            });
             if (app == preferredHandler) {
               preferredHandler = null;
             }
@@ -262,7 +197,7 @@ var dialog = {
       let gIOSvc = Cc["@mozilla.org/gio-service;1"].getService(
         Ci.nsIGIOService
       );
-      var gioApps = gIOSvc.getAppsForURIScheme(this._URI.scheme);
+      var gioApps = gIOSvc.getAppsForURIScheme(this._handlerInfo.type);
       for (let handler of gioApps.enumerate(Ci.nsIHandlerApp)) {
         
         if (handler.name == this._handlerInfo.defaultDescription) {
@@ -295,9 +230,8 @@ var dialog = {
   
 
 
-  chooseApplication: function chooseApplication() {
-    var bundle = document.getElementById("base-strings");
-    var title = bundle.getString("choose.application.title");
+  async chooseApplication() {
+    let title = await this.getChooseAppWindowTitle();
 
     var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     fp.init(window, title, Ci.nsIFilePicker.modeOpen);
@@ -342,43 +276,51 @@ var dialog = {
   
 
 
-  onOK: function onOK() {
-    if (this._buttonDisabled) {
-      return;
-    }
-    var checkbox = document.getElementById("remember");
-    if (!checkbox.hidden) {
-      
-      if (this.selectedItem.obj) {
-        
-        this._handlerInfo.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
-        this._handlerInfo.preferredApplicationHandler = this.selectedItem.obj;
-      } else {
-        this._handlerInfo.preferredAction = Ci.nsIHandlerInfo.useSystemDefault;
-      }
-    }
-    this._handlerInfo.alwaysAskBeforeHandling = !checkbox.checked;
+  onAccept() {
+    this.updateHandlerData(this._rememberCheck.checked);
+    this._outArgs.setProperty("openHandler", true);
+  },
 
-    var hs = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
-      Ci.nsIHandlerService
+  
+
+
+  updateAcceptButton() {
+    this._dialog.setAttribute(
+      "buttondisabledaccept",
+      this._acceptBtnDisabled || this._itemChoose.selected
     );
-    hs.store(this._handlerInfo);
-
-    this._handlerInfo.launchWithURI(this._URI, this._browsingContext);
-    window.close();
   },
 
   
 
 
-  updateOKButton: function updateOKButton() {
-    this._okButton.disabled = this._itemChoose.selected || this._buttonDisabled;
+
+
+  updateHandlerData(skipAsk) {
+    
+    if (this.selectedItem.obj) {
+      
+      this._outArgs.setProperty(
+        "preferredAction",
+        Ci.nsIHandlerInfo.useHelperApp
+      );
+      this._outArgs.setProperty(
+        "preferredApplicationHandler",
+        this.selectedItem.obj
+      );
+    } else {
+      this._outArgs.setProperty(
+        "preferredAction",
+        Ci.nsIHandlerInfo.useSystemDefault
+      );
+    }
+    this._outArgs.setProperty("alwaysAskBeforeHandling", !skipAsk);
   },
 
   
 
 
-  onCheck: function onCheck() {
+  onCheck() {
     if (document.getElementById("remember").checked) {
       document.getElementById("remember-text").setAttribute("visible", "true");
     } else {
@@ -393,7 +335,7 @@ var dialog = {
     if (this.selectedItem == this._itemChoose) {
       this.chooseApplication();
     } else {
-      this.onOK();
+      this._dialog.acceptDialog();
     }
   },
 
@@ -406,6 +348,31 @@ var dialog = {
     return document.getElementById("items").selectedItem;
   },
   set selectedItem(aItem) {
-    return (document.getElementById("items").selectedItem = aItem);
+    document.getElementById("items").selectedItem = aItem;
+  },
+
+  
+
+
+  async getChooseAppWindowTitle() {
+    if (!this._chooseAppWindowTitle) {
+      this._chooseAppWindowTitle = await document.l10n.formatValues([
+        "choose-other-app-window-title",
+      ]);
+    }
+    return this._chooseAppWindowTitle;
+  },
+
+  
+
+
+
+  async getPrivateBrowsingDisabledLabel() {
+    if (!this._privateBrowsingDisabledLabel) {
+      this._privateBrowsingDisabledLabel = await document.l10n.formatValues([
+        "choose-dialog-privatebrowsing-disabled",
+      ]);
+    }
+    return this._privateBrowsingDisabledLabel;
   },
 };
