@@ -521,7 +521,7 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
     
     MOZ_ASSERT_IF(mUsePartialPresent && mUseAlpha, mFullRender);
 
-    if (mUsePartialPresent && !mUseAlpha) {
+    if (mUsePartialPresent && !mUseAlpha && mSwapChain1) {
       
       mFullRender = false;
       
