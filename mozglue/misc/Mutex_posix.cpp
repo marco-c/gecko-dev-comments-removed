@@ -5,17 +5,15 @@
 
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 
+#include <algorithm>
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
-
-#if defined(XP_DARWIN)
-#  include <pthread_spis.h>
-#endif
+#include <unistd.h>
 
 #include "mozilla/PlatformMutex.h"
-#include "mozilla/Unused.h"
 #include "MutexPlatformData_posix.h"
 
 #define REPORT_PTHREADS_ERROR(result, msg) \
@@ -33,22 +31,53 @@
     }                                     \
   }
 
-mozilla::detail::MutexImpl::MutexImpl() {
+#ifdef XP_DARWIN
+
+
+
+
+static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed> sCPUCount(0);
+
+static void EnsureCPUCount() {
+  if (sCPUCount) {
+    return;
+  }
+
+  
+  
+#  if defined(_SC_NPROCESSORS_CONF)
+  long n = sysconf(_SC_NPROCESSORS_CONF);
+  sCPUCount = (n > 0) ? uint32_t(n) : 1;
+#  elif defined(_SC_NPROCESSORS_ONLN)
+  long n = sysconf(_SC_NPROCESSORS_ONLN);
+  sCPUCount = (n > 0) ? uint32_t(n) : 1;
+#  else
+  sCPUCount = 1;
+#  endif
+}
+
+#endif  
+
+mozilla::detail::MutexImpl::MutexImpl()
+#ifdef XP_DARWIN
+    : averageSpins(0)
+#endif
+{
   pthread_mutexattr_t* attrp = nullptr;
 
-#if defined(DEBUG)
-#  define MUTEX_KIND PTHREAD_MUTEX_ERRORCHECK
-
-
-
-#elif (defined(__linux__) && defined(__GLIBC__)) || defined(__FreeBSD__)
-#  define MUTEX_KIND PTHREAD_MUTEX_ADAPTIVE_NP
-#elif defined(XP_DARWIN)
-#  define POLICY_KIND _PTHREAD_MUTEX_POLICY_FIRSTFIT
+  
+  
+  
+#if (defined(__linux__) && defined(__GLIBC__)) || defined(__FreeBSD__)
+#  define ADAPTIVE_MUTEX_SUPPORTED
 #endif
 
-#if defined(MUTEX_KIND) || defined(POLICY_KIND)
+#if defined(DEBUG)
 #  define ATTR_REQUIRED
+#  define MUTEX_KIND PTHREAD_MUTEX_ERRORCHECK
+#elif defined(ADAPTIVE_MUTEX_SUPPORTED)
+#  define ATTR_REQUIRED
+#  define MUTEX_KIND PTHREAD_MUTEX_ADAPTIVE_NP
 #endif
 
 #if defined(ATTR_REQUIRED)
@@ -58,14 +87,9 @@ mozilla::detail::MutexImpl::MutexImpl() {
       pthread_mutexattr_init(&attr),
       "mozilla::detail::MutexImpl::MutexImpl: pthread_mutexattr_init failed");
 
-#  if defined(MUTEX_KIND)
   TRY_CALL_PTHREADS(pthread_mutexattr_settype(&attr, MUTEX_KIND),
                     "mozilla::detail::MutexImpl::MutexImpl: "
                     "pthread_mutexattr_settype failed");
-#  elif defined(POLICY_KIND)
-  
-  Unused << pthread_mutexattr_setpolicy_np(&attr, POLICY_KIND);
-#  endif
   attrp = &attr;
 #endif
 
@@ -77,6 +101,10 @@ mozilla::detail::MutexImpl::MutexImpl() {
   TRY_CALL_PTHREADS(pthread_mutexattr_destroy(&attr),
                     "mozilla::detail::MutexImpl::MutexImpl: "
                     "pthread_mutexattr_destroy failed");
+#endif
+
+#ifdef XP_DARWIN
+  EnsureCPUCount();
 #endif
 }
 
@@ -109,7 +137,49 @@ bool mozilla::detail::MutexImpl::mutexTryLock() {
       "mozilla::detail::MutexImpl::mutexTryLock: pthread_mutex_trylock failed");
 }
 
-void mozilla::detail::MutexImpl::lock() { mutexLock(); }
+void mozilla::detail::MutexImpl::lock() {
+#ifndef XP_DARWIN
+  mutexLock();
+#else
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(sCPUCount);
+  if (sCPUCount == 1) {
+    mutexLock();
+    return;
+  }
+
+  if (!mutexTryLock()) {
+    const int32_t SpinLimit = 100;
+
+    int32_t count = 0;
+    int32_t maxSpins = std::min(SpinLimit, 2 * averageSpins + 10);
+    do {
+      if (count >= maxSpins) {
+        mutexLock();
+        break;
+      }
+      
+#  ifdef __x86_64__
+#    define SPIN_HINT "pause"
+#  elif defined(__aarch64__)
+#    define SPIN_HINT "yield"
+#  endif
+      asm volatile(SPIN_HINT ::: "memory");
+#  undef SPIN_HINT
+      count++;
+    } while (!mutexTryLock());
+
+    
+    averageSpins += (count - averageSpins) / 8;
+    MOZ_ASSERT(averageSpins >= 0 && averageSpins <= SpinLimit);
+  }
+#endif  
+}
 
 void mozilla::detail::MutexImpl::unlock() {
   TRY_CALL_PTHREADS(
