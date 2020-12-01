@@ -126,13 +126,16 @@ const clearHistory = options => {
   return Sanitizer.items.history.clear(makeRange(options));
 };
 
-const clearIndexedDB = async function(options) {
+
+
+
+async function clearQuotaManager(options, dataType) {
   let promises = [];
 
   await new Promise((resolve, reject) => {
     quotaManagerService.getUsage(request => {
       if (request.resultCode != Cr.NS_OK) {
-        reject({ message: "Clear indexedDB failed" });
+        reject({ message: `Clear ${dataType} failed` });
         return;
       }
 
@@ -140,30 +143,43 @@ const clearIndexedDB = async function(options) {
         let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
           item.origin
         );
-        if (
-          principal.schemeIs("http") ||
-          principal.schemeIs("https") ||
-          principal.schemeIs("file")
-        ) {
-          let host = principal.hostPort;
-          if (!options.hostnames || options.hostnames.includes(host)) {
-            promises.push(
-              new Promise((resolve, reject) => {
-                let clearRequest = quotaManagerService.clearStoragesForPrincipal(
+
+        
+        
+        
+        
+        if (!["http", "https", "file"].includes(principal.scheme)) {
+          continue;
+        }
+
+        let host = principal.hostPort;
+        if (!options.hostnames || options.hostnames.includes(host)) {
+          promises.push(
+            new Promise((resolve, reject) => {
+              let clearRequest;
+              if (dataType === "indexedDB") {
+                clearRequest = quotaManagerService.clearStoragesForPrincipal(
                   principal,
                   null,
                   "idb"
                 );
-                clearRequest.callback = () => {
-                  if (clearRequest.resultCode == Cr.NS_OK) {
-                    resolve();
-                  } else {
-                    reject({ message: "Clear indexedDB failed" });
-                  }
-                };
-              })
-            );
-          }
+              } else {
+                clearRequest = quotaManagerService.clearStoragesForPrincipal(
+                  principal,
+                  "default",
+                  "ls"
+                );
+              }
+
+              clearRequest.callback = () => {
+                if (clearRequest.resultCode == Cr.NS_OK) {
+                  resolve();
+                } else {
+                  reject({ message: `Clear ${dataType} failed` });
+                }
+              };
+            })
+          );
         }
       }
 
@@ -172,6 +188,10 @@ const clearIndexedDB = async function(options) {
   });
 
   return Promise.all(promises);
+}
+
+const clearIndexedDB = async function(options) {
+  return clearQuotaManager(options, "indexedDB");
 };
 
 const clearLocalStorage = async function(options) {
@@ -181,6 +201,7 @@ const clearLocalStorage = async function(options) {
     });
   }
 
+  
   
   
   
@@ -196,62 +217,7 @@ const clearLocalStorage = async function(options) {
     Services.obs.notifyObservers(null, "extension:purge-localStorage");
   }
 
-  if (Services.domStorageManager.nextGenLocalStorageEnabled) {
-    
-    
-    
-    
-
-    let promises = [];
-
-    await new Promise((resolve, reject) => {
-      quotaManagerService.getUsage(request => {
-        if (request.resultCode != Cr.NS_OK) {
-          reject({ message: "Clear localStorage failed" });
-          return;
-        }
-
-        for (let item of request.result) {
-          let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-            item.origin
-          );
-          
-          
-          
-          
-          if (
-            principal.schemeIs("http") ||
-            principal.schemeIs("https") ||
-            principal.schemeIs("file")
-          ) {
-            let host = principal.hostPort;
-            if (!options.hostnames || options.hostnames.includes(host)) {
-              promises.push(
-                new Promise((resolve, reject) => {
-                  let clearRequest = quotaManagerService.clearStoragesForPrincipal(
-                    principal,
-                    "default",
-                    "ls"
-                  );
-                  clearRequest.callback = () => {
-                    if (clearRequest.resultCode == Cr.NS_OK) {
-                      resolve();
-                    } else {
-                      reject({ message: "Clear localStorage failed" });
-                    }
-                  };
-                })
-              );
-            }
-          }
-        }
-
-        resolve();
-      });
-    });
-
-    return Promise.all(promises);
-  }
+  return clearQuotaManager(options, "localStorage");
 };
 
 const clearPasswords = async function(options) {
