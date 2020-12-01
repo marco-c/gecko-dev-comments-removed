@@ -814,7 +814,7 @@ ConfigureVideoEncoderSettings(const VideoCodecConfig* aConfig,
     }
     
     vp9_settings.denoisingOn = codec_default_denoising ? false : denoising;
-    vp9_settings.frameDroppingOn = frame_dropping;
+    vp9_settings.frameDroppingOn = true;  
     return new rtc::RefCountedObject<
         webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
   }
