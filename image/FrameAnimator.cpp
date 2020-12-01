@@ -54,9 +54,20 @@ const gfx::IntRect AnimationState::UpdateStateInternal(
 
     
     
-    mIsCurrentlyDecoded =
-        bool(aResult.Surface()) &&
-        NS_SUCCEEDED(aResult.Surface().Seek(mCurrentAnimationFrameIndex));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<imgFrame> currentFrame =
+        bool(aResult.Surface())
+            ? aResult.Surface().GetFrame(mCurrentAnimationFrameIndex)
+            : nullptr;
+    mIsCurrentlyDecoded = !!currentFrame;
   }
 
   gfx::IntRect ret;
