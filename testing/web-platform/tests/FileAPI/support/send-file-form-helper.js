@@ -1,6 +1,18 @@
 'use strict';
 
 
+function escapeString(string) {
+  return string.replace(/\\/g, "\\\\").replace(
+    /[^\x20-\x7E]/g,
+    (x) => {
+      let hex = x.charCodeAt(0).toString(16);
+      if (hex.length < 2) hex = "0" + hex;
+      return `\\x${hex}`;
+    },
+  ).replace(/\\x0d\\x0a/g, "\r\n");
+}
+
+
 
 
 
@@ -75,23 +87,32 @@ const kTestChars = 'ABC~‾¥≈¤･・•∙·☼★星🌟星★☼·∙•�
 
 
 
-const kTestFallbackIso2022jp =
-      ('ABC~\x1B(J~\\≈¤\x1B$B!&!&\x1B(B•∙·☼\x1B$B!z@1\x1B(B🌟' +
-       '\x1B$B@1!z\x1B(B☼·∙•\x1B$B!&!&\x1B(B¤≈\x1B(J\\~\x1B(B~XYZ').replace(
-             /[^\0-\x7F]/gu,
-           x => `&#${x.codePointAt(0)};`);
 
 
+const kTestFallbackUtf8 = (
+  "ABC~\xE2\x80\xBE\xC2\xA5\xE2\x89\x88\xC2\xA4\xEF\xBD\xA5\xE3\x83\xBB\xE2" +
+    "\x80\xA2\xE2\x88\x99\xC2\xB7\xE2\x98\xBC\xE2\x98\x85\xE6\x98\x9F\xF0\x9F" +
+    "\x8C\x9F\xE6\x98\x9F\xE2\x98\x85\xE2\x98\xBC\xC2\xB7\xE2\x88\x99\xE2\x80" +
+    "\xA2\xE3\x83\xBB\xEF\xBD\xA5\xC2\xA4\xE2\x89\x88\xC2\xA5\xE2\x80\xBE~XYZ"
+);
 
+const kTestFallbackIso2022jp = (
+  ("ABC~\x1B(J~\\≈¤\x1B$B!&!&\x1B(B•∙·☼\x1B$B!z@1\x1B(B🌟" +
+    "\x1B$B@1!z\x1B(B☼·∙•\x1B$B!&!&\x1B(B¤≈\x1B(J\\~\x1B(B~XYZ")
+    .replace(/[^\0-\x7F]/gu, (x) => `&#${x.codePointAt(0)};`)
+);
 
+const kTestFallbackWindows1252 = (
+  "ABC~‾\xA5≈\xA4･・\x95∙\xB7☼★星🌟星★☼\xB7∙\x95・･\xA4≈\xA5‾~XYZ".replace(
+    /[^\0-\xFF]/gu,
+    (x) => `&#${x.codePointAt(0)};`,
+  )
+);
 
-const kTestFallbackWindows1252 =
-      'ABC~‾\xA5≈\xA4･・\x95∙\xB7☼★星🌟星★☼\xB7∙\x95・･\xA4≈\xA5‾~XYZ'.replace(
-            /[^\0-\xFF]/gu,
-          x => `&#${x.codePointAt(0)};`).replace(/[\x80-\xFF]/g, '\uFFFD');
-
-const kTestFallbackXUserDefined =
-      kTestChars.replace(/[^\0-\x7F]/gu, x => `&#${x.codePointAt(0)};`);
+const kTestFallbackXUserDefined = kTestChars.replace(
+  /[^\0-\x7F]/gu,
+  (x) => `&#${x.codePointAt(0)};`,
+);
 
 
 
@@ -140,7 +161,7 @@ const formPostFileUploadTest = ({
 
     const form = Object.assign(document.createElement('form'), {
       acceptCharset: formEncoding,
-      action: '/fetch/api/resources/echo-content.py',
+      action: '/FileAPI/file/resources/echo-content-escaped.py',
       method: 'POST',
       enctype: 'multipart/form-data',
       target: formTargetFrame.name,
@@ -194,7 +215,7 @@ const formPostFileUploadTest = ({
       
       
       assert_equals(
-          fileInput.files[0].name,
+          baseNameOfFilePath(fileInput.files[0].name),
           baseNameOfFilePath(fileInput.value),
           `The basename of the field's value should match its files[0].name`);
       form.submit();
@@ -219,6 +240,15 @@ const formPostFileUploadTest = ({
         `${fileBaseName}: multipart form data must end with ${boundary}--: ${
              JSON.stringify(formDataText)
            }`);
+
+    const asValue = expectedEncodedBaseName.replace(/\r\n?|\n/g, "\r\n");
+    const asName = asValue.replace(/[\r\n"]/g, encodeURIComponent);
+    const asFilename = expectedEncodedBaseName.replace(/[\r\n"]/g, encodeURIComponent);
+
+    
+    
+    
+    
     const expectedText = [
       boundary,
       'Content-Disposition: form-data; name="_charset_"',
@@ -227,19 +257,22 @@ const formPostFileUploadTest = ({
       boundary,
       'Content-Disposition: form-data; name="filename"',
       '',
-      expectedEncodedBaseName,
+      
+      
+      escapeString(asValue).replace(/\r\n/g, "\n"),
       boundary,
-      `Content-Disposition: form-data; name="${expectedEncodedBaseName}"`,
+      `Content-Disposition: form-data; name="${escapeString(asName)}"`,
       '',
       'filename',
       boundary,
       `Content-Disposition: form-data; name="file"; ` +
-          `filename="${expectedEncodedBaseName}"`,
+          `filename="${escapeString(asFilename)}"`,
       'Content-Type: text/plain',
       '',
-      kTestChars,
+      escapeString(kTestFallbackUtf8),
       boundary + '--',
     ].join('\n');
+
     assert_true(
         formDataText.startsWith(expectedText),
         `Unexpected multipart-shaped form data received:\n${
