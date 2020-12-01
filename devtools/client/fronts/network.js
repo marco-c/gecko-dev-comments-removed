@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+const { networkSpec } = require("devtools/shared/specs/network");
+
+
+
+
+
+class NetworkFront extends FrontClassWithSpec(networkSpec) {
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
+    
+    this.formAttributeName = "networkActor";
+  }
+}
+
+registerFront(NetworkFront);
