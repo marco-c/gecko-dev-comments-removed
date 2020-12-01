@@ -10,7 +10,6 @@
 #include "prnetdb.h"
 #include "PLDHashTable.h"
 #include "mozilla/CondVar.h"
-#include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
 #include "nsISupportsImpl.h"
 #include "nsIDNSListener.h"
@@ -35,7 +34,6 @@ class nsResolveHostCallback;
 namespace mozilla {
 namespace net {
 class TRR;
-class TRRQuery;
 enum ResolverMode {
   MODE_NATIVEONLY,  
   MODE_RESERVED1,   
@@ -135,7 +133,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
  protected:
   friend class nsHostResolver;
   friend class mozilla::net::TRR;
-  friend class mozilla::net::TRRQuery;
 
   explicit nsHostRecord(const nsHostKey& key);
   virtual ~nsHostRecord() = default;
@@ -168,7 +165,8 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   };
   static DnsPriority GetPriority(uint16_t aFlags);
 
-  virtual void Cancel();
+  virtual void Cancel() {}
+
   virtual bool HasUsableResultInternal() const { return false; }
 
   mozilla::LinkedList<RefPtr<nsResolveHostCallback>> mCallbacks;
@@ -199,10 +197,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   TRRSkippedReason mTRRAFailReason = TRR_UNSET;
   TRRSkippedReason mTRRAAAAFailReason = TRR_UNSET;
 
-  mozilla::DataMutex<RefPtr<mozilla::net::TRRQuery>> mTRRQuery;
-
-  mozilla::Atomic<int32_t>
-      mResolving;  
+  uint16_t mResolving;  
 
   uint8_t negative : 1; 
 
@@ -259,13 +254,14 @@ class AddrHostRecord final : public nsHostRecord {
  private:
   friend class nsHostResolver;
   friend class mozilla::net::TRR;
-  friend class mozilla::net::TRRQuery;
 
   explicit AddrHostRecord(const nsHostKey& key);
   ~AddrHostRecord();
 
   
   bool HasUsableResultInternal() const override;
+
+  void Cancel() override;
 
   bool RemoveOrRefresh(bool aTrrToo);  
                                        
@@ -285,6 +281,9 @@ class AddrHostRecord final : public nsHostRecord {
   mozilla::TimeDuration mTrrDuration;
   mozilla::TimeDuration mNativeDuration;
 
+  RefPtr<mozilla::net::AddrInfo> mFirstTRR;  
+  nsresult mFirstTRRresult;
+
   mozilla::Atomic<bool> mTRRUsed;  
   uint8_t mTRRSuccess;             
   uint8_t mNativeSuccess;          
@@ -297,11 +296,18 @@ class AddrHostRecord final : public nsHostRecord {
                                 
   uint16_t usingAnyThread : 1;  
                                 
+  uint16_t mDidCallbacks : 1;
   uint16_t mGetTtl : 1;
 
   
   
   uint16_t mResolveAgain : 1;
+
+  enum { INIT, STARTED, OK, FAILED } mTrrAUsed, mTrrAAAAUsed;
+
+  Mutex mTrrLock;  
+  RefPtr<mozilla::net::TRR> mTrrA;
+  RefPtr<mozilla::net::TRR> mTrrAAAA;
 
   
   
@@ -339,7 +345,6 @@ class TypeHostRecord final : public nsHostRecord,
 
  private:
   friend class nsHostResolver;
-  friend class mozilla::net::TRRQuery;
 
   explicit TypeHostRecord(const nsHostKey& key);
   ~TypeHostRecord();
@@ -347,7 +352,12 @@ class TypeHostRecord final : public nsHostRecord,
   
   bool HasUsableResultInternal() const override;
 
+  void Cancel() override;
+
   bool HasUsableResult();
+
+  mozilla::Mutex mTrrLock;  
+  RefPtr<mozilla::net::TRR> mTrr;
 
   mozilla::net::TypeRecordResultType mResults = AsVariant(mozilla::Nothing());
   mozilla::Mutex mResultsLock;
@@ -485,7 +495,6 @@ class nsHostResolver : public nsISupports, public AHostResolver {
                        nsResolveHostCallback* callback);
 
   nsHostRecord* InitRecord(const nsHostKey& key);
-  mozilla::net::NetworkConnectivityService* GetNCS() { return mNCS; }
 
   
 
