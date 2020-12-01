@@ -84,9 +84,10 @@ add_task(async function testWritesSizeValuesOnChange() {
     "Height",
     "ScreenX",
     "ScreenY",
-    "UrlbarHorizontalOffsetCSS",
-    "UrlbarWidthCSS",
+    "UrlbarCSSSpan",
     "CssToDevPixelScaling",
+    "SpringsCSSSpan",
+    "SearchbarCSSSpan",
   ];
 
   
