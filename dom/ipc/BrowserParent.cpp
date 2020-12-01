@@ -3700,28 +3700,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvRemotePaintIsReady() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult BrowserParent::RecvNotifyCompositorTransaction() {
-  RefPtr<nsFrameLoader> frameLoader = GetFrameLoader();
-
-  if (!frameLoader) {
-    return IPC_OK();
-  }
-
-  nsIFrame* docFrame = frameLoader->GetPrimaryFrameOfOwningContent();
-
-  if (!docFrame) {
-    
-    
-    
-    
-    
-    return IPC_OK();
-  }
-
-  docFrame->InvalidateLayer(DisplayItemType::TYPE_REMOTE);
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult BrowserParent::RecvRemoteIsReadyToHandleInputEvents() {
   
   

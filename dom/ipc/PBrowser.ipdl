@@ -641,11 +641,6 @@ parent:
     
 
 
-    async NotifyCompositorTransaction();
-
-    
-
-
 
     async RemoteIsReadyToHandleInputEvents();
 
