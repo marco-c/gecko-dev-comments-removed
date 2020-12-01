@@ -50,21 +50,6 @@ inline void EmitCallIC(MacroAssembler& masm, CodeOffset* callOffset) {
   *callOffset = CodeOffset(masm.currentOffset());
 }
 
-inline void EmitEnterTypeMonitorIC(
-    MacroAssembler& masm,
-    size_t monitorStubOffset = ICMonitoredStub::offsetOfFirstMonitorStub()) {
-  
-  
-  masm.loadPtr(Address(ICStubReg, (uint32_t)monitorStubOffset), ICStubReg);
-
-  
-  
-  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), R2.scratchReg());
-
-  
-  masm.branch(R2.scratchReg());
-}
-
 inline void EmitReturnFromIC(MacroAssembler& masm) { masm.branch(ra); }
 
 inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm,

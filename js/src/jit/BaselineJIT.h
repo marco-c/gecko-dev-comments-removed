@@ -114,9 +114,6 @@ class RetAddrEntry {
     IC,
 
     
-    PrologueIC,
-
-    
     CallVM,
 
     
@@ -462,10 +459,6 @@ struct alignas(uintptr_t) BaselineBailoutInfo {
 
   
   void* resumeAddr = nullptr;
-
-  
-  
-  jsbytecode* monitorPC = nullptr;
 
   
   jsbytecode* tryPC = nullptr;

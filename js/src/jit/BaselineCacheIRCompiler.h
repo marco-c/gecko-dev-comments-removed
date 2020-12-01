@@ -19,7 +19,8 @@ namespace jit {
 class ICFallbackStub;
 class ICStub;
 
-enum class BaselineCacheIRStubKind { Regular, Monitored, Updated };
+
+enum class BaselineCacheIRStubKind { Regular };
 
 ICStub* AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
                                   CacheKind kind,

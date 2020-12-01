@@ -13,18 +13,6 @@ namespace jit {
 
 
 #define IC_BASELINE_STUB_KIND_LIST(_) \
-  _(TypeMonitor_Fallback)             \
-  _(TypeMonitor_SingleObject)         \
-  _(TypeMonitor_ObjectGroup)          \
-  _(TypeMonitor_PrimitiveSet)         \
-  _(TypeMonitor_AnyValue)             \
-                                      \
-  _(TypeUpdate_Fallback)              \
-  _(TypeUpdate_SingleObject)          \
-  _(TypeUpdate_ObjectGroup)           \
-  _(TypeUpdate_PrimitiveSet)          \
-  _(TypeUpdate_AnyValue)              \
-                                      \
   _(NewArray_Fallback)                \
   _(NewObject_Fallback)               \
                                       \
@@ -67,9 +55,7 @@ namespace jit {
                                       \
   _(GetProp_Fallback)                 \
                                       \
-  _(CacheIR_Regular)                  \
-  _(CacheIR_Monitored)                \
-  _(CacheIR_Updated)
+  _(CacheIR_Regular)
 
 
 
@@ -77,8 +63,6 @@ namespace jit {
 
 
 #define IC_BASELINE_FALLBACK_CODE_KIND_LIST(_) \
-  _(TypeMonitor)                               \
-  _(TypeUpdate)                                \
   _(NewArray)                                  \
   _(NewObject)                                 \
   _(ToBool)                                    \

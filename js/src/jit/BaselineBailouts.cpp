@@ -366,8 +366,6 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 
   void setResumeAddr(void* resumeAddr) { header_->resumeAddr = resumeAddr; }
 
-  void setMonitorPC(jsbytecode* pc) { header_->monitorPC = pc; }
-
   void setFrameSizeOfInnerMostFrame(uint32_t size) {
     header_->frameSizeOfInnerMostFrame = size;
   }
@@ -1148,16 +1146,6 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   }
 
   
-  
-  if (BytecodeOpHasTypeSet(op_) && IsTypeInferenceEnabled()) {
-    ICFallbackStub* fallbackStub = icEntry.fallbackStub();
-    if (!fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(
-            cx_, script_)) {
-      return false;
-    }
-  }
-
-  
   void* baselineCallReturnAddr = getStubReturnAddress();
   MOZ_ASSERT(baselineCallReturnAddr);
   if (!writePtr(baselineCallReturnAddr, "ReturnAddr")) {
@@ -1313,11 +1301,6 @@ bool BaselineStackBuilder::finishLastFrame() {
     blFrame()->setInterpreterFields(script_, throwPC);
     resumeAddr = baselineInterp.interpretOpAddr().value;
   } else {
-    
-    
-    if (resumeAfter() && BytecodeOpHasTypeSet(op_)) {
-      setMonitorPC(pc_);
-    }
     jsbytecode* resumePC = getResumePC();
     blFrame()->setInterpreterFields(script_, resumePC);
     resumeAddr = baselineInterp.interpretOpAddr().value;
@@ -1963,29 +1946,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
   
   if (!EnsureHasEnvironmentObjects(cx, topFrame)) {
     return false;
-  }
-
-  
-  if (jsbytecode* monitorPC = bailoutInfo->monitorPC) {
-    MOZ_ASSERT(BytecodeOpHasTypeSet(JSOp(*monitorPC)));
-    MOZ_ASSERT(GetNextPc(monitorPC) == topFrame->interpreterPC());
-
-    RootedScript script(cx, topFrame->script());
-    uint32_t monitorOffset = script->pcToOffset(monitorPC);
-    ICEntry& icEntry = script->jitScript()->icEntryFromPCOffset(monitorOffset);
-    ICFallbackStub* fallbackStub = icEntry.fallbackStub();
-
-    
-    
-    
-    if (fallbackStub->isMonitoredFallback()) {
-      ICMonitoredFallbackStub* stub = fallbackStub->toMonitoredFallbackStub();
-      uint32_t frameSize = bailoutInfo->frameSizeOfInnerMostFrame;
-      RootedValue val(cx, topFrame->topStackValue(frameSize));
-      if (!TypeMonitorResult(cx, stub, topFrame, script, monitorPC, val)) {
-        return false;
-      }
-    }
   }
 
   
