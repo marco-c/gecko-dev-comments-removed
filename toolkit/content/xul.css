@@ -587,6 +587,12 @@ findbar {
 }
 
 
+tabmodalprompt {
+  overflow: hidden;
+  text-shadow: none;
+}
+
+
 label, button, image {
   display: -moz-inline-box;
 }
