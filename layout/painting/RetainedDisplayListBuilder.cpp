@@ -283,7 +283,9 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
     
     
     
-    item->RestoreState();
+    if (item->RestoreState()) {
+      item->InvalidateItemCacheEntry();
+    }
 
     
     
