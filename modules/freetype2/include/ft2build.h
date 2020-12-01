@@ -31,8 +31,6 @@
 
 
 
-
-
 #ifndef FT2BUILD_H_
 #define FT2BUILD_H_
 

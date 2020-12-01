@@ -30,10 +30,12 @@
 
 
 
-#ifdef __cplusplus
-#define FT_BEGIN_HEADER  extern "C" {
-#else
-#define FT_BEGIN_HEADER
+#ifndef FT_BEGIN_HEADER
+#  ifdef __cplusplus
+#    define FT_BEGIN_HEADER  extern "C" {
+#  else
+#  define FT_BEGIN_HEADER
+#  endif
 #endif
 
 
@@ -48,10 +50,12 @@
   
   
   
-#ifdef __cplusplus
-#define FT_END_HEADER  }
-#else
-#define FT_END_HEADER
+#ifndef FT_END_HEADER
+#  ifdef __cplusplus
+#    define FT_END_HEADER  }
+#  else
+#   define FT_END_HEADER
+#  endif
 #endif
 
 
@@ -62,6 +66,9 @@
 
 
   
+
+
+
 
 
 
@@ -798,15 +805,18 @@
 #define FT_CACHE_INTERNAL_SBITS_H    FT_CACHE_H
 
 
-  
-
-
-
 #ifdef FT2_BUILD_LIBRARY
-#define  FT_INTERNAL_INTERNAL_H  <freetype/internal/internal.h>
-#include FT_INTERNAL_INTERNAL_H
-#endif 
+#if defined( _MSC_VER )      
 
+  
+  
+  
+  
+  
+#pragma warning( disable : 4127 )
+
+#endif 
+#endif 
 
 #endif 
 

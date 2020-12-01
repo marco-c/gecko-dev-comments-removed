@@ -22,6 +22,7 @@
 #include <ft2build.h>
 #include FT_CONFIG_STANDARD_LIBRARY_H   
 
+#include "compiler-macros.h"
 
 FT_BEGIN_HEADER
 

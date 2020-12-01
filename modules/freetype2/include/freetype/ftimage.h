@@ -30,7 +30,6 @@
 
 
 #ifndef STANDALONE_
-#include <ft2build.h>
 #endif
 
 
@@ -425,6 +424,13 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
 #define FT_OUTLINE_NONE             0x0
 #define FT_OUTLINE_OWNER            0x1
 #define FT_OUTLINE_EVEN_ODD_FILL    0x2
@@ -432,6 +438,7 @@ FT_BEGIN_HEADER
 #define FT_OUTLINE_IGNORE_DROPOUTS  0x8
 #define FT_OUTLINE_SMART_DROPOUTS   0x10
 #define FT_OUTLINE_INCLUDE_STUBS    0x20
+#define FT_OUTLINE_OVERLAP          0x40
 
 #define FT_OUTLINE_HIGH_PRECISION   0x100
 #define FT_OUTLINE_SINGLE_PASS      0x200
@@ -970,6 +977,12 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
+
 
 
 

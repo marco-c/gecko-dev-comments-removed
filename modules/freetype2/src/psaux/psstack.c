@@ -37,7 +37,7 @@
 
 
 #include "psft.h"
-#include FT_INTERNAL_DEBUG_H
+#include <freetype/internal/ftdebug.h>
 
 #include "psglue.h"
 #include "psfont.h"
@@ -59,12 +59,12 @@
     CF2_Stack  stack = NULL;
 
 
-    if ( !FT_NEW( stack ) )
-    {
-      
-      stack->memory = memory;
-      stack->error  = e;
-    }
+    if ( FT_NEW( stack ) )
+      return NULL;
+
+    
+    stack->memory = memory;
+    stack->error  = e;
 
     
     if ( FT_NEW_ARRAY( stack->buffer, stackSize ) )

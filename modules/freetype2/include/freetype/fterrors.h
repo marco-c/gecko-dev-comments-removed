@@ -124,7 +124,7 @@
 
 
 
-#include FT_MODULE_ERRORS_H
+#include <freetype/ftmoderr.h>
 
 
   
@@ -197,7 +197,7 @@
 
 
   
-#include FT_ERROR_DEFINITIONS_H
+#include <freetype/fterrdef.h>
 
 
 #ifdef FT_ERROR_END_LIST
@@ -232,6 +232,11 @@
 #undef FT_ERR_PREFIX
 #endif
 
+  
+  
+  
+  
+  
   
   
   

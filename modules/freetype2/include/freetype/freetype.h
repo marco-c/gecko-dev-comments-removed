@@ -20,19 +20,10 @@
 #define FREETYPE_H_
 
 
-#ifndef FT_FREETYPE_H
-#error "`ft2build.h' hasn't been included yet!"
-#error "Please always use macros to include FreeType header files."
-#error "Example:"
-#error "  #include <ft2build.h>"
-#error "  #include FT_FREETYPE_H"
-#endif
-
-
 #include <ft2build.h>
 #include FT_CONFIG_CONFIG_H
-#include FT_TYPES_H
-#include FT_ERRORS_H
+#include <freetype/fttypes.h>
+#include <freetype/fterrors.h>
 
 
 FT_BEGIN_HEADER
@@ -40,13 +31,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
-
-
-
-
-
 
 
 
@@ -865,6 +849,9 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
 
 
 
@@ -3196,6 +3183,12 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
   FT_EXPORT( void )
   FT_Set_Transform( FT_Face     face,
                     FT_Matrix*  matrix,
@@ -3203,14 +3196,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
-
-
-
-
-
-
 
 
 
@@ -4782,7 +4767,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  10
-#define FREETYPE_PATCH  2
+#define FREETYPE_PATCH  4
 
 
   
