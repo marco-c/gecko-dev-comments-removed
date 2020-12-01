@@ -248,12 +248,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     
     
     
-    
-    RecompileInfoVector inlinedCompilations_;
-
-    
-    
-    
     const HeapPtr<EnvironmentObject*> templateEnv = nullptr;
 
     
@@ -342,24 +336,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   void setHadIonOSR() { flags_.hadIonOSR = true; }
   bool hadIonOSR() const { return flags_.hadIonOSR; }
-
-  RecompileInfoVector* maybeInlinedCompilations(
-      const js::AutoSweepJitScript& sweep) {
-    MOZ_ASSERT(sweep.jitScript() == this);
-    if (!hasCachedIonData()) {
-      return nullptr;
-    }
-    return &cachedIonData().inlinedCompilations_;
-  }
-  MOZ_MUST_USE bool addInlinedCompilation(const js::AutoSweepJitScript& sweep,
-                                          RecompileInfo info) {
-    MOZ_ASSERT(sweep.jitScript() == this);
-    auto& inlinedCompilations = cachedIonData().inlinedCompilations_;
-    if (!inlinedCompilations.empty() && inlinedCompilations.back() == info) {
-      return true;
-    }
-    return inlinedCompilations.append(info);
-  }
 
   uint32_t numICEntries() const { return icScript_.numICEntries(); }
 

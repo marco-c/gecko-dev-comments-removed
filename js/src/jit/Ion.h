@@ -66,15 +66,6 @@ MethodStatus CanEnterIon(JSContext* cx, RunState& state);
 
 MethodStatus Recompile(JSContext* cx, HandleScript script, bool force);
 
-
-void Invalidate(TypeZone& types, JSFreeOp* fop,
-                const RecompileInfoVector& invalid, bool resetUses = true,
-                bool cancelOffThread = true);
-void Invalidate(JSContext* cx, const RecompileInfoVector& invalid,
-                bool resetUses = true, bool cancelOffThread = true);
-void Invalidate(JSContext* cx, JSScript* script, bool resetUses = true,
-                bool cancelOffThread = true);
-
 class MIRGenerator;
 class LIRGraph;
 class CodeGenerator;

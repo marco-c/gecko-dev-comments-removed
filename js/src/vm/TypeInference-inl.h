@@ -22,6 +22,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/IonScript.h"
 #include "jit/JitScript.h"
+#include "jit/JitZone.h"
 #include "js/HeapAPI.h"
 #include "util/DiagnosticAssertions.h"
 #include "vm/ArrayObject.h"
@@ -42,43 +43,6 @@
 #include "vm/ObjectGroup-inl.h"
 
 namespace js {
-
-
-
-
-
-jit::IonScript* RecompileInfo::maybeIonScriptToInvalidate(
-    const TypeZone& zone) const {
-  MOZ_ASSERT(script_->zone() == zone.zone());
-
-  
-  
-  MOZ_ASSERT_IF(zone.currentCompilationId(),
-                zone.currentCompilationId().ref() != id_);
-
-  if (!script_->hasIonScript() ||
-      script_->ionScript()->compilationId() != id_) {
-    return nullptr;
-  }
-
-  return script_->ionScript();
-}
-
-inline bool RecompileInfo::shouldSweep(const TypeZone& zone) {
-  if (IsAboutToBeFinalizedUnbarriered(&script_)) {
-    return true;
-  }
-
-  MOZ_ASSERT(script_->zone() == zone.zone());
-
-  
-  
-  if (zone.currentCompilationId() && zone.currentCompilationId().ref() == id_) {
-    return false;
-  }
-
-  return maybeIonScriptToInvalidate(zone) == nullptr;
-}
 
 class MOZ_RAII AutoSuppressAllocationMetadataBuilder {
   JS::Zone* zone;
@@ -112,9 +76,6 @@ struct MOZ_RAII AutoEnterAnalysis {
   gc::AutoSuppressGC suppressGC;
 
   
-  RecompileInfoVector pendingRecompiles;
-
-  
   js::AutoSuppressAllocationMetadataBuilder suppressMetadata;
 
   JSFreeOp* freeOp;
@@ -136,10 +97,6 @@ struct MOZ_RAII AutoEnterAnalysis {
     }
 
     zone->types.activeAnalysis = nullptr;
-
-    if (!pendingRecompiles.empty()) {
-      zone->types.processPendingRecompiles(freeOp, pendingRecompiles);
-    }
   }
 
  private:

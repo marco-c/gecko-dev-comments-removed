@@ -71,29 +71,6 @@ inline bool isInlinableCall(jsbytecode* pc);
 
 bool ClassCanHaveExtraProperties(const JSClass* clasp);
 
-class RecompileInfo {
-  JSScript* script_;
-  IonCompilationId id_;
-
- public:
-  RecompileInfo(JSScript* script, IonCompilationId id)
-      : script_(script), id_(id) {}
-
-  JSScript* script() const { return script_; }
-
-  inline jit::IonScript* maybeIonScriptToInvalidate(const TypeZone& zone) const;
-
-  inline bool shouldSweep(const TypeZone& zone);
-
-  bool operator==(const RecompileInfo& other) const {
-    return script_ == other.script_ && id_ == other.id_;
-  }
-};
-
-
-
-typedef Vector<RecompileInfo, 1, SystemAllocPolicy> RecompileInfoVector;
-
 struct AutoEnterAnalysis;
 
 class TypeZone {
@@ -138,12 +115,6 @@ class TypeZone {
 
   void beginSweep();
   void endSweep(JSRuntime* rt);
-
-  
-  void addPendingRecompile(JSContext* cx, const RecompileInfo& info);
-  void addPendingRecompile(JSContext* cx, JSScript* script);
-
-  void processPendingRecompiles(JSFreeOp* fop, RecompileInfoVector& recompiles);
 
   bool isSweepingTypes() const { return sweepingTypes; }
   void setSweepingTypes(bool sweeping) {

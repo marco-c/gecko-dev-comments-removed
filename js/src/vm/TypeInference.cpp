@@ -24,6 +24,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "jit/IonAnalysis.h"
+#include "jit/JitZone.h"
 #include "js/MemoryMetrics.h"
 #include "js/ScalarType.h"  
 #include "js/UniquePtr.h"
@@ -61,62 +62,6 @@ bool js::ClassCanHaveExtraProperties(const JSClass* clasp) {
          clasp->getOpsGetProperty() || IsTypedArrayClass(clasp);
 }
 
-void TypeZone::processPendingRecompiles(JSFreeOp* fop,
-                                        RecompileInfoVector& recompiles) {
-  MOZ_ASSERT(!recompiles.empty());
-
-  
-  
-  
-  RecompileInfoVector pending(std::move(recompiles));
-  recompiles.clear();
-
-  jit::Invalidate(*this, fop, pending);
-
-  MOZ_ASSERT(recompiles.empty());
-}
-
-void TypeZone::addPendingRecompile(JSContext* cx, const RecompileInfo& info) {
-  AutoEnterOOMUnsafeRegion oomUnsafe;
-  RecompileInfoVector& vector =
-      cx->zone()->types.activeAnalysis->pendingRecompiles;
-  if (!vector.append(info)) {
-    
-    
-    
-    size_t allocSize = 2 * sizeof(RecompileInfo) * vector.capacity();
-    oomUnsafe.crash(allocSize, "Could not update pendingRecompiles");
-  }
-}
-
-void TypeZone::addPendingRecompile(JSContext* cx, JSScript* script) {
-  MOZ_ASSERT(script);
-
-  CancelOffThreadIonCompile(script);
-
-  
-  script->resetWarmUpCounterToDelayIonCompilation();
-
-  if (JitScript* jitScript = script->maybeJitScript()) {
-    
-    if (jitScript->hasIonScript()) {
-      addPendingRecompile(
-          cx, RecompileInfo(script, jitScript->ionScript()->compilationId()));
-    }
-
-    
-    AutoSweepJitScript sweep(script);
-    RecompileInfoVector* inlinedCompilations =
-        jitScript->maybeInlinedCompilations(sweep);
-    if (inlinedCompilations) {
-      for (const RecompileInfo& info : *inlinedCompilations) {
-        addPendingRecompile(cx, info);
-      }
-      inlinedCompilations->clearAndFree();
-    }
-  }
-}
-
 
 
 
@@ -135,22 +80,6 @@ void JitScript::sweepTypes(const js::AutoSweepJitScript& sweep, Zone* zone) {
   setTypesGeneration(zone->types.generation);
 
   AssertGCStateForSweep(zone);
-
-  TypeZone& types = zone->types;
-
-  
-  if (maybeInlinedCompilations(sweep)) {
-    RecompileInfoVector& inlinedCompilations = *maybeInlinedCompilations(sweep);
-    size_t dest = 0;
-    for (size_t i = 0; i < inlinedCompilations.length(); i++) {
-      if (inlinedCompilations[i].shouldSweep(types)) {
-        continue;
-      }
-      inlinedCompilations[dest] = inlinedCompilations[i];
-      dest++;
-    }
-    inlinedCompilations.shrinkTo(dest);
-  }
 }
 
 TypeZone::TypeZone(Zone* zone)

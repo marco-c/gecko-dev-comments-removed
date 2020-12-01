@@ -55,8 +55,9 @@
 #include "gc/ZoneAllocator.h"            
 #include "jit/BaselineDebugModeOSR.h"  
 #include "jit/BaselineJIT.h"           
-#include "jit/Ion.h"                   
-#include "jit/JitScript.h"             
+#include "jit/Invalidation.h"         
+#include "jit/Ion.h"                  
+#include "jit/JitScript.h"            
 #include "jit/JSJitFrameIter.h"       
 #include "jit/RematerializedFrame.h"  
 #include "js/Conversions.h"           
@@ -3129,13 +3130,14 @@ static inline void MarkJitScriptActiveIfObservable(
 
 static bool AppendAndInvalidateScript(JSContext* cx, Zone* zone,
                                       JSScript* script,
+                                      jit::RecompileInfoVector& invalid,
                                       Vector<JSScript*>& scripts) {
   
   
   
   MOZ_ASSERT(script->zone() == zone);
   AutoRealm ar(cx, script);
-  zone->types.addPendingRecompile(cx, script);
+  AddPendingInvalidation(invalid, script);
   return scripts.append(script);
 }
 
@@ -3153,10 +3155,10 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
   
   
   {
-    AutoEnterAnalysis enter(fop, zone);
+    RecompileInfoVector invalid;
     if (JSScript* script = obs.singleScriptForZoneInvalidation()) {
       if (obs.shouldRecompileOrInvalidate(script)) {
-        if (!AppendAndInvalidateScript(cx, zone, script, scripts)) {
+        if (!AppendAndInvalidateScript(cx, zone, script, invalid, scripts)) {
           return false;
         }
       }
@@ -3168,12 +3170,13 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
         }
         JSScript* script = base->asJSScript();
         if (obs.shouldRecompileOrInvalidate(script)) {
-          if (!AppendAndInvalidateScript(cx, zone, script, scripts)) {
+          if (!AppendAndInvalidateScript(cx, zone, script, invalid, scripts)) {
             return false;
           }
         }
       }
     }
+    Invalidate(cx, invalid);
   }
 
   
