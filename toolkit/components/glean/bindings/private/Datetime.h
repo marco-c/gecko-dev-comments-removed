@@ -44,8 +44,8 @@ class DatetimeMetric {
     int32_t offset =
         exploded.tm_params.tp_gmt_offset + exploded.tm_params.tp_dst_offset;
     fog_datetime_set(mId, exploded.tm_year, exploded.tm_month + 1,
-                    exploded.tm_mday, exploded.tm_hour, exploded.tm_min,
-                    exploded.tm_sec, exploded.tm_usec * 1000, offset);
+                     exploded.tm_mday, exploded.tm_hour, exploded.tm_min,
+                     exploded.tm_sec, exploded.tm_usec * 1000, offset);
   }
 
   
@@ -62,28 +62,13 @@ class DatetimeMetric {
 
 
 
-  bool TestHasValue(const char* aStorageName) const {
-    return fog_datetime_test_has_value(mId, aStorageName) != 0;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsCString TestGetValue(const char* aStorageName) const {
+  Maybe<nsCString> TestGetValue(const char* aStorageName) const {
+    if (!fog_datetime_test_has_value(mId, aStorageName)) {
+      return Nothing();
+    }
     nsCString ret;
     fog_datetime_test_get_value(mId, aStorageName, ret);
-    return ret;
+    return Some(ret);
   }
 
  private:

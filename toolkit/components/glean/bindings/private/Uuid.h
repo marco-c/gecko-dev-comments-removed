@@ -52,29 +52,14 @@ class UuidMetric {
 
 
 
-  bool TestHasValue(const char* aStorageName) const {
-    return fog_uuid_test_has_value(mId, aStorageName) != 0;
-  }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsCString TestGetValue(const char* aStorageName) const {
+  Maybe<nsCString> TestGetValue(const char* aStorageName) const {
+    if (!fog_uuid_test_has_value(mId, aStorageName)) {
+      return Nothing();
+    }
     nsCString ret;
     fog_uuid_test_get_value(mId, aStorageName, ret);
-    return ret;
+    return Some(ret);
   }
 
  private:

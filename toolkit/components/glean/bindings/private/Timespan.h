@@ -57,26 +57,11 @@ class TimespanMetric {
 
 
 
-  bool TestHasValue(const char* aStorageName) const {
-    return fog_timespan_test_has_value(mId, aStorageName) != 0;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  int64_t TestGetValue(const char* aStorageName) const {
-    return fog_timespan_test_get_value(mId, aStorageName);
+  Maybe<int64_t> TestGetValue(const char* aStorageName) const {
+    if (!fog_timespan_test_has_value(mId, aStorageName)) {
+      return Nothing();
+    }
+    return Some(fog_timespan_test_get_value(mId, aStorageName));
   }
 
  private:

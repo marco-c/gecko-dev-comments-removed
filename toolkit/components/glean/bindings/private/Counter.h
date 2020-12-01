@@ -44,26 +44,11 @@ class CounterMetric {
 
 
 
-  bool TestHasValue(const char* aStorageName) const {
-    return fog_counter_test_has_value(mId, aStorageName) != 0;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  int32_t TestGetValue(const char* aStorageName) const {
-    return fog_counter_test_get_value(mId, aStorageName);
+  Maybe<int32_t> TestGetValue(const char* aStorageName) const {
+    if (!fog_counter_test_has_value(mId, aStorageName)) {
+      return Nothing();
+    }
+    return Some(fog_counter_test_get_value(mId, aStorageName));
   }
 
  private:
