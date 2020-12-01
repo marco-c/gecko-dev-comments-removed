@@ -724,6 +724,12 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
                                      expirationType, when);
   Unused << NS_WARN_IF(NS_FAILED(rv));
 
+  if (StaticPrefs::privacy_antitracking_testing()) {
+    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+    obs->NotifyObservers(nullptr, "antitracking-test-storage-access-perm-added",
+                         nullptr);
+  }
+
   if (NS_SUCCEEDED(rv) && (aAllowMode == eAllowAutoGrant)) {
     
     TemporaryAccessGrantObserver::Create(permManager, aParentPrincipal, type);
