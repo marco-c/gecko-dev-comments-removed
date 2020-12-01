@@ -81,10 +81,6 @@ enum : uint32_t {
 
 
   OBJECT_FLAG_LAZY_SINGLETON = 0x4,
-
-  
-  OBJECT_FLAG_ADDENDUM_MASK = 0x38000000,
-  OBJECT_FLAG_ADDENDUM_SHIFT = 27,
 };
 using ObjectGroupFlags = uint32_t;
 

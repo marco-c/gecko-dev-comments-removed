@@ -94,8 +94,7 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   ObjectGroupFlags flags_;  
 
   
-  
-  void* addendum_ = nullptr;
+  TypeDescr* typeDescr_ = nullptr;
 
   
 
@@ -112,10 +111,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   static inline uint32_t offsetOfFlags() {
     return offsetof(ObjectGroup, flags_);
-  }
-
-  static inline uint32_t offsetOfAddendum() {
-    return offsetof(ObjectGroup, addendum_);
   }
 
   friend class gc::GCRuntime;
@@ -155,43 +150,22 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   JS::Compartment* maybeCompartment() const { return compartment(); }
   JS::Realm* realm() const { return realm_; }
 
- public:
-  
-  enum AddendumKind {
-    Addendum_None,
-
-    
-    Addendum_TypeDescr
-  };
-
  private:
-  void setAddendum(AddendumKind kind, void* addendum, bool isSweeping = false);
-
-  AddendumKind addendumKind() const {
-    return (AddendumKind)((flags_ & OBJECT_FLAG_ADDENDUM_MASK) >>
-                          OBJECT_FLAG_ADDENDUM_SHIFT);
-  }
-
   ObjectGroupFlags flags() const { return flags_; }
 
  public:
   TypeDescr* maybeTypeDescr() {
     
     
-    if (addendumKind() == Addendum_TypeDescr) {
-      return &typeDescr();
-    }
-    return nullptr;
+    return typeDescr_;
   }
 
   TypeDescr& typeDescr() {
-    MOZ_ASSERT(addendumKind() == Addendum_TypeDescr);
-    return *reinterpret_cast<TypeDescr*>(addendum_);
+    MOZ_ASSERT(typeDescr_);
+    return *typeDescr_;
   }
 
-  void setTypeDescr(TypeDescr* descr) {
-    setAddendum(Addendum_TypeDescr, descr);
-  }
+  void setTypeDescr(TypeDescr* descr) { typeDescr_ = descr; }
 
  public:
   inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm,
