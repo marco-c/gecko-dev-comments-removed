@@ -401,22 +401,18 @@ nsICollation* Service::getLocaleCollation() {
 
 
 NS_IMETHODIMP
-Service::OpenSpecialDatabase(const char* aStorageKey,
+Service::OpenSpecialDatabase(const nsACString& aStorageKey,
+                             const nsACString& aName,
                              mozIStorageConnection** _connection) {
-  nsresult rv;
-
-  nsCOMPtr<nsIFile> storageFile;
-  if (::strcmp(aStorageKey, "memory") == 0) {
-    
-    
-  } else {
+  if (!aStorageKey.Equals(kMozStorageMemoryStorageKey)) {
     return NS_ERROR_INVALID_ARG;
   }
 
   RefPtr<Connection> msc =
-      new Connection(this, SQLITE_OPEN_READWRITE, Connection::SYNCHRONOUS);
+      new Connection(this, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
+                     Connection::SYNCHRONOUS);
 
-  rv = storageFile ? msc->initialize(storageFile) : msc->initialize();
+  nsresult rv = msc->initialize(aStorageKey, aName);
   NS_ENSURE_SUCCESS(rv, rv);
 
   msc.forget(_connection);
@@ -550,7 +546,7 @@ Service::OpenAsyncDatabase(nsIVariant* aDatabaseStore,
     
     nsAutoCString keyString;
     rv = aDatabaseStore->GetAsACString(keyString);
-    if (NS_FAILED(rv) || !keyString.EqualsLiteral("memory")) {
+    if (NS_FAILED(rv) || !keyString.Equals(kMozStorageMemoryStorageKey)) {
       return NS_ERROR_INVALID_ARG;
     }
 
