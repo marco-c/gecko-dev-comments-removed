@@ -230,6 +230,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:SkSpriteBlitter_Memcpy\n"
 
          
+         "race:ScriptPreloader::MaybeFinishOffThreadDecode\n"
+         "race:ScriptPreloader::DoFinishOffThreadDecode\n"
+
+         
          "race:nsPluginTag::nsPluginTag\n"
          "race:nsFakePluginTag\n"
 
@@ -250,6 +254,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:fill_CERTCertificateFields\n"
          "race:CERT_DestroyCertificate\n"
+
+         
+         "race:makeOwnBaseShape\n"
+         "race:numDynamicSlots\n"
 
          
          "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
