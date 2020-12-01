@@ -351,7 +351,7 @@ static const uint16_t kValNBSP = 160;
 #define _ 0
 
 
-static const uint8_t kEntities[] = {
+const uint8_t nsHTMLContentSerializer::kEntities[] = {
     
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
@@ -374,7 +374,7 @@ static const uint8_t kEntities[] = {
 };
 
 
-static const uint8_t kAttrEntities[] = {
+const uint8_t nsHTMLContentSerializer::kAttrEntities[] = {
     
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
@@ -398,7 +398,7 @@ static const uint8_t kAttrEntities[] = {
 
 #undef _
 
-static const char* const kEntityStrings[] = {
+const char* const nsHTMLContentSerializer::kEntityStrings[] = {
      nullptr,
      "&quot;",
      "&amp;",
