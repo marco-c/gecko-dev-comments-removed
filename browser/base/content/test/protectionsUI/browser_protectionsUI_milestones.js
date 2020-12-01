@@ -36,9 +36,11 @@ add_task(async function doTest() {
       "browser.contentblocking.cfr-milestone.milestone-achieved",
       milestone
     );
+
     await TestUtils.waitForCondition(
       () => gProtectionsHandler._milestoneTextSet
     );
+
     
     
     
@@ -46,6 +48,7 @@ add_task(async function doTest() {
       "browser.contentblocking.cfr-milestone.milestone-shown-time",
       Date.now().toString()
     );
+
     await openProtectionsPanel();
 
     ok(
