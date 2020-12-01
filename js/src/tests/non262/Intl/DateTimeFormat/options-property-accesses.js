@@ -35,10 +35,10 @@ var constructorAccesses = [
     "localeMatcher", "calendar", "numberingSystem", "hour12", "hourCycle", "timeZone",
 
     
-    "weekday", "era", "year", "month", "day", ...dayPeriod, "hour", "minute", "second", "timeZoneName",
+    "weekday", "era", "year", "month", "day", ...dayPeriod, "hour", "minute", "second",
+    ...fractionalSecondDigits, "timeZoneName",
 
     
-    ...fractionalSecondDigits,
     "formatMatcher",
     "dateStyle", "timeStyle",
 ];
