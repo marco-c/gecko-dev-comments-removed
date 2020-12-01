@@ -255,14 +255,15 @@ class ScriptInfo(defaultdict):
 
         
         for opt, val in result.items():
-            if "metrics" in opt:
-                if not isinstance(val, list):
-                    raise BadOptionTypeError("Metrics should be defined within a list")
-                for metric in val:
-                    if not isinstance(metric, dict):
-                        raise BadOptionTypeError(
-                            "Each individual metrics must be defined within a JSON-like object"
-                        )
+            if opt.startswith("visualmetrics") or "metrics" not in opt:
+                continue
+            if not isinstance(val, list):
+                raise BadOptionTypeError("Metrics should be defined within a list")
+            for metric in val:
+                if not isinstance(metric, dict):
+                    raise BadOptionTypeError(
+                        "Each individual metrics must be defined within a JSON-like object"
+                    )
 
         if self.script_type == ScriptType.xpcshell:
             result["flavor"] = "xpcshell"
