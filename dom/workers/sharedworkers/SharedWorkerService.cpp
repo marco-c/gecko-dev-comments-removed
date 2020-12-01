@@ -5,7 +5,9 @@
 
 
 #include "SharedWorkerService.h"
+#include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
+#include "mozilla/dom/SharedWorkerManager.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/SchedulerGroup.h"
