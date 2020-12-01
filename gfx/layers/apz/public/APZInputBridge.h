@@ -20,6 +20,18 @@ namespace layers {
 class APZInputBridgeParent;
 struct ScrollableLayerGuid;
 
+enum class APZHandledResult : uint8_t {
+  Unhandled = 0,         
+                         
+  HandledByRoot = 1,     
+                         
+  HandledByContent = 2,  
+                         
+                         
+  Invalid = 3,
+  Last = Invalid
+};
+
 
 
 
@@ -60,6 +72,7 @@ struct APZEventResult {
 
   ScrollableLayerGuid mTargetGuid;
   
+
 
 
 
@@ -144,6 +157,9 @@ class APZInputBridge {
 
   virtual ~APZInputBridge() = default;
 };
+
+std::ostream& operator<<(std::ostream& aOut,
+                         const APZHandledResult& aHandledResult);
 
 }  
 }  
