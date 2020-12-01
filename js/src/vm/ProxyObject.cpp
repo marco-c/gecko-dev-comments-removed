@@ -132,14 +132,11 @@ ProxyObject* ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler,
   
   
   gc::InitialHeap heap;
-  {
-    AutoSweepObjectGroup sweep(group);
-    if ((priv.isGCThing() && priv.toGCThing()->isTenured()) ||
-        !handler->canNurseryAllocate()) {
-      heap = gc::TenuredHeap;
-    } else {
-      heap = gc::DefaultHeap;
-    }
+  if ((priv.isGCThing() && priv.toGCThing()->isTenured()) ||
+      !handler->canNurseryAllocate()) {
+    heap = gc::TenuredHeap;
+  } else {
+    heap = gc::DefaultHeap;
   }
 
   debugCheckNewObject(group, shape, allocKind, heap);

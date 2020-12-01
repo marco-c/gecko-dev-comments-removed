@@ -68,22 +68,6 @@ class MOZ_RAII AutoSweepBase {
 
 
 
-class MOZ_RAII AutoSweepObjectGroup : public AutoSweepBase {
-#ifdef DEBUG
-  ObjectGroup* group_;
-#endif
-
- public:
-  inline explicit AutoSweepObjectGroup(ObjectGroup* group);
-#ifdef DEBUG
-  inline ~AutoSweepObjectGroup();
-
-  ObjectGroup* group() const { return group_; }
-#endif
-};
-
-
-
 class MOZ_RAII AutoSweepJitScript : public AutoSweepBase {
 #ifdef DEBUG
   Zone* zone_;

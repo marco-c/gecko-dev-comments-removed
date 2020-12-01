@@ -56,8 +56,6 @@ ObjectGroup::ObjectGroup(const JSClass* clasp, TaggedProto proto,
     AssertTargetIsNotGray(global);
   }
 #endif
-
-  setGeneration(zone()->types.generation);
 }
 
 void ObjectGroup::setProtoUnchecked(TaggedProto proto) {
@@ -73,8 +71,6 @@ void ObjectGroup::setProto(TaggedProto proto) {
 
 void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
                               bool isSweeping ) {
-  MOZ_ASSERT(!needsSweep());
-
   
   MOZ_ASSERT(unsigned(kind) <=
              (OBJECT_FLAG_ADDENDUM_MASK >> OBJECT_FLAG_ADDENDUM_SHIFT));

@@ -13,13 +13,6 @@
 
 namespace js {
 
-inline bool ObjectGroup::needsSweep() {
-  
-  
-  MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
-  return generation() != zoneFromAnyThread()->types.generation;
-}
-
  inline ObjectGroup* ObjectGroup::lazySingletonGroup(
     JSContext* cx, ObjectGroup* oldGroup, const JSClass* clasp,
     TaggedProto proto) {

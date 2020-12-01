@@ -202,12 +202,6 @@ void js::PrintTypes(JSContext* cx, Compartment* comp, bool force) {
   if (!force && !InferSpewActive(ISpewResult)) {
     return;
   }
-
-  for (auto group = zone->cellIter<ObjectGroup>(); !group.done();
-       group.next()) {
-    AutoSweepObjectGroup sweep(group);
-    group->print(sweep);
-  }
 #endif
 }
 
@@ -217,10 +211,6 @@ void js::PrintTypes(JSContext* cx, Compartment* comp, bool force) {
 
 void js::AddTypePropertyId(JSContext* cx, ObjectGroup* group, JSObject* obj,
                            jsid id, const Value& value) {
-  MOZ_CRASH("TODO(no-TI): remove");
-}
-
-void ObjectGroup::print(const AutoSweepObjectGroup& sweep) {
   MOZ_CRASH("TODO(no-TI): remove");
 }
 
@@ -234,20 +224,6 @@ static inline void AssertGCStateForSweep(Zone* zone) {
   
   
   MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
-}
-
-
-
-
-
-
-
-
-void ObjectGroup::sweep(const AutoSweepObjectGroup& sweep) {
-  MOZ_ASSERT(generation() != zoneFromAnyThread()->types.generation);
-  setGeneration(zone()->types.generation);
-
-  AssertGCStateForSweep(zone());
 }
 
 

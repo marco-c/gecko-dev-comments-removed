@@ -279,8 +279,6 @@ class ArenaLists {
   ZoneData<Arena*> gcAccessorShapeArenasToUpdate;
   ZoneData<Arena*> gcScriptArenasToUpdate;
   ZoneData<Arena*> gcNewScriptArenasToUpdate;
-  ZoneData<Arena*> gcObjectGroupArenasToUpdate;
-  ZoneData<Arena*> gcNewObjectGroupArenasToUpdate;
 
   
   
