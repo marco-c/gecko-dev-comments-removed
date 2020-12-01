@@ -19,12 +19,8 @@ const BUFFER_DURATION_MS = 10000;
 
 const UPDATE_INTERVAL_MS = 2000;
 
-const NS_PER_US = 1000;
-const NS_PER_MS = 1000 * 1000;
-const NS_PER_S = 1000 * 1000 * 1000;
-const NS_PER_MIN = NS_PER_S * 60;
-const NS_PER_HOUR = NS_PER_MIN * 60;
-const NS_PER_DAY = NS_PER_HOUR * 24;
+const MS_PER_NS = 1000000;
+const NS_PER_S = 1000000000;
 
 const ONE_GIGA = 1024 * 1024 * 1024;
 const ONE_MEGA = 1024 * 1024;
@@ -67,18 +63,6 @@ function wait(ms = 0) {
     return undefined;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-let gPromisePrefetchedUnits;
 
 let tabFinder = {
   update() {
@@ -329,7 +313,7 @@ var State = {
     if (prev.pid != cur.pid) {
       throw new Error("Assertion failed: A process cannot change pid.");
     }
-    let deltaT = (cur.date - prev.date) * NS_PER_MS;
+    let deltaT = (cur.date - prev.date) * MS_PER_NS;
     let threads = null;
     if (SHOW_THREADS) {
       let prevThreads = new Map();
@@ -418,7 +402,7 @@ var View = {
 
 
 
-  appendProcessRow(data, units) {
+  appendProcessRow(data) {
     let row = document.createElement("tr");
     row.classList.add("process");
 
@@ -435,10 +419,10 @@ var View = {
           fluentName = "about-processes-web-process-name";
           break;
         case "webIsolated":
-          fluentName = "about-processes-web-isolated-process-name";
+          fluentName = "about-processes-webIsolated-process-name";
           break;
         case "webLargeAllocation":
-          fluentName = "about-processes-web-large-allocation-process-name";
+          fluentName = "about-processes-webLargeAllocation-process-name";
           break;
         case "file":
           fluentName = "about-processes-file-process-name";
@@ -451,7 +435,7 @@ var View = {
           fluentName = "about-processes-privilegedabout-process-name";
           break;
         case "withCoopCoep":
-          fluentName = "about-processes-with-coop-coep-process-name";
+          fluentName = "about-processes-withCoopCoep-process-name";
           break;
         case "browser":
           fluentName = "about-processes-browser-process-name";
@@ -460,7 +444,7 @@ var View = {
           fluentName = "about-processes-plugin-process-name";
           break;
         case "gmpPlugin":
-          fluentName = "about-processes-gmp-plugin-process-name";
+          fluentName = "about-processes-gmpPlugin-process-name";
           break;
         case "gpu":
           fluentName = "about-processes-gpu-process-name";
@@ -475,10 +459,10 @@ var View = {
           fluentName = "about-processes-socket-process-name";
           break;
         case "remoteSandboxBroker":
-          fluentName = "about-processes-remote-sandbox-broker-process-name";
+          fluentName = "about-processes-remoteSandboxBroker-process-name";
           break;
         case "forkServer":
-          fluentName = "about-processes-fork-server-process-name";
+          fluentName = "about-processes-forkServer-process-name";
           break;
         case "preallocated":
           fluentName = "about-processes-preallocated-process-name";
@@ -542,61 +526,29 @@ var View = {
 
     
     {
-      let formattedTotal = this._formatMemory(data.totalResidentUniqueSize);
-      if (data.deltaResidentUniqueSize) {
-        let formattedDelta = this._formatMemory(data.deltaResidentUniqueSize);
-        this._addCell(row, {
-          fluentName: "about-processes-total-memory-size",
-          fluentArgs: {
-            total: formattedTotal.amount,
-            totalUnit: units.memory[formattedTotal.unit],
-            delta: Math.abs(formattedDelta.amount),
-            deltaUnit: units.memory[formattedDelta.unit],
-            deltaSign: data.deltaResidentUniqueSize > 0 ? "+" : "-",
-          },
-          classes: ["totalMemorySize"],
-        });
-      } else {
-        this._addCell(row, {
-          fluentName: "about-processes-total-memory-size-no-change",
-          fluentArgs: {
-            total: formattedTotal.amount,
-            totalUnit: units.memory[formattedTotal.unit],
-          },
-          classes: ["totalMemorySize"],
-        });
-      }
+      let { formatedDelta, formatedValue } = this._formatMemoryAndDelta(
+        data.totalResidentUniqueSize,
+        data.deltaResidentUniqueSize
+      );
+      let content = formatedDelta
+        ? `${formatedValue}${formatedDelta}`
+        : formatedValue;
+      this._addCell(row, {
+        content,
+        classes: ["totalMemorySize"],
+      });
     }
 
     
-    if (data.slopeCpu == null) {
+    {
+      let slope = this._formatPercentage(data.slopeCpu);
+      let content = `${slope} (${(
+        data.totalCpu / MS_PER_NS
+      ).toLocaleString(undefined, { maximumFractionDigits: 0 })}ms)`;
       this._addCell(row, {
-        fluentName: "about-processes-cpu-user-and-kernel-not-ready",
+        content,
         classes: ["cpu"],
       });
-    } else {
-      let { duration, unit } = this._getDuration(data.totalCpu);
-      let localizedUnit = units.duration[unit];
-      if (data.slopeCpu == 0) {
-        this._addCell(row, {
-          fluentName: "about-processes-cpu-user-and-kernel-idle",
-          fluentArgs: {
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      } else {
-        this._addCell(row, {
-          fluentName: "about-processes-cpu-user-and-kernel",
-          fluentArgs: {
-            percent: data.slopeCpu,
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      }
     }
 
     
@@ -776,7 +728,7 @@ var View = {
 
 
 
-  appendThreadRow(data, units) {
+  appendThreadRow(data) {
     let row = document.createElement("tr");
     row.classList.add("thread");
 
@@ -797,34 +749,15 @@ var View = {
     });
 
     
-    if (data.slopeCpu == null) {
+    {
+      let slope = this._formatPercentage(data.slopeCpu);
+      let text = `${slope} (${(
+        data.totalCpu / MS_PER_NS
+      ).toLocaleString(undefined, { maximumFractionDigits: 0 })} ms)`;
       this._addCell(row, {
-        fluentName: "about-processes-cpu-user-and-kernel-not-ready",
+        content: text,
         classes: ["cpu"],
       });
-    } else {
-      let { duration, unit } = this._getDuration(data.totalCpu);
-      let localizedUnit = units.duration[unit];
-      if (data.slopeCpu == 0) {
-        this._addCell(row, {
-          fluentName: "about-processes-cpu-user-and-kernel-idle",
-          fluentArgs: {
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      } else {
-        this._addCell(row, {
-          fluentName: "about-processes-cpu-user-and-kernel",
-          fluentArgs: {
-            percent: data.slopeCpu,
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      }
     }
 
     
@@ -852,26 +785,43 @@ var View = {
     return elt;
   },
 
-  _getDuration(rawDurationNS) {
-    if (rawDurationNS <= NS_PER_US) {
-      return { duration: rawDurationNS, unit: "ns" };
+  
+
+
+
+
+
+
+
+
+
+
+  _formatPercentage(value) {
+    if (value == null) {
+      return "?";
     }
-    if (rawDurationNS <= NS_PER_MS) {
-      return { duration: rawDurationNS / NS_PER_US, unit: "us" };
+    if (value < 0 || typeof value != "number") {
+      throw new Error(`Invalid percentage value ${value}`);
     }
-    if (rawDurationNS <= NS_PER_S) {
-      return { duration: rawDurationNS / NS_PER_MS, unit: "ms" };
+    if (value == 0) {
+      
+      
+      return "idle";
     }
-    if (rawDurationNS <= NS_PER_MIN) {
-      return { duration: rawDurationNS / NS_PER_S, unit: "s" };
+    
+    let percentage = value * 100;
+    if (percentage < 0.01) {
+      
+      return "~0%";
     }
-    if (rawDurationNS <= NS_PER_HOUR) {
-      return { duration: rawDurationNS / NS_PER_MIN, unit: "m" };
+    if (percentage < 1) {
+      
+      return `${percentage.toLocaleString(undefined, {
+        maximumFractionDigits: 2,
+      })}%`;
     }
-    if (rawDurationNS <= NS_PER_DAY) {
-      return { duration: rawDurationNS / NS_PER_HOUR, unit: "h" };
-    }
-    return { duration: rawDurationNS / NS_PER_DAY, unit: "d" };
+    
+    return `${Math.round(percentage)}%`;
   },
 
   
@@ -888,31 +838,69 @@ var View = {
     if (value == null) {
       return { unit: "?", amount: 0 };
     }
-    if (typeof value != "number") {
+    if (value < 0 || typeof value != "number") {
       throw new Error(`Invalid memory value ${value}`);
     }
-    let abs = Math.abs(value);
-    if (abs >= ONE_GIGA) {
+    if (value >= ONE_GIGA) {
       return {
         unit: "GB",
-        amount: value / ONE_GIGA,
+        amount: Math.ceil((value / ONE_GIGA) * 100) / 100,
       };
     }
-    if (abs >= ONE_MEGA) {
+    if (value >= ONE_MEGA) {
       return {
         unit: "MB",
-        amount: value / ONE_MEGA,
+        amount: Math.ceil((value / ONE_MEGA) * 100) / 100,
       };
     }
-    if (abs >= ONE_KILO) {
+    if (value >= ONE_KILO) {
       return {
         unit: "KB",
-        amount: value / ONE_KILO,
+        amount: Math.ceil((value / ONE_KILO) * 100) / 100,
       };
     }
     return {
       unit: "B",
-      amount: value,
+      amount: Math.round(value),
+    };
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _formatMemoryAndDelta(value, delta) {
+    let formatedDelta;
+    let unitDelta;
+    if (delta == null) {
+      formatedDelta == "";
+      unitDelta = null;
+    } else if (delta == 0) {
+      formatedDelta = null;
+      unitDelta = null;
+    } else if (delta >= 0) {
+      let { unit, amount } = this._formatMemory(delta);
+      formatedDelta = ` (+${amount}${unit})`;
+      unitDelta = unit;
+    } else {
+      let { unit, amount } = this._formatMemory(-delta);
+      formatedDelta = ` (-${amount}${unit})`;
+      unitDelta = unit;
+    }
+    let { unit: unitValue, amount } = this._formatMemory(value);
+    return {
+      unitValue,
+      unitDelta,
+      formatedDelta,
+      formatedValue: `${amount}${unitValue}`,
     };
   },
 };
@@ -937,45 +925,6 @@ var Control = {
   },
   init() {
     this._initHangReports();
-
-    
-    gPromisePrefetchedUnits = (async function() {
-      let [
-        ns,
-        us,
-        ms,
-        s,
-        min,
-        h,
-        d,
-        B,
-        KB,
-        MB,
-        GB,
-        TB,
-        PB,
-        EB,
-      ] = await document.l10n.formatValues([
-        { id: "duration-unit-ns" },
-        { id: "duration-unit-us" },
-        { id: "duration-unit-ms" },
-        { id: "duration-unit-s" },
-        { id: "duration-unit-m" },
-        { id: "duration-unit-h" },
-        { id: "duration-unit-d" },
-        { id: "memory-unit-B" },
-        { id: "memory-unit-KB" },
-        { id: "memory-unit-MB" },
-        { id: "memory-unit-GB" },
-        { id: "memory-unit-TB" },
-        { id: "memory-unit-PB" },
-        { id: "memory-unit-EB" },
-      ]);
-      return {
-        duration: { ns, us, ms, s, min, h, d },
-        memory: { B, KB, MB, GB, TB, PB, EB },
-      };
-    })();
 
     let tbody = document.getElementById("process-tbody");
 
@@ -1136,7 +1085,6 @@ var Control = {
     }
 
     let counters = State.getCounters();
-    let units = await gPromisePrefetchedUnits;
 
     
     
@@ -1161,7 +1109,7 @@ var Control = {
       let isHung = process.childID && hungItems.has(process.childID);
       process.isHung = isHung;
 
-      let processRow = View.appendProcessRow(process, units);
+      let processRow = View.appendProcessRow(process, isOpen);
       processRow.process = process;
 
       if (process.type != "extension") {
@@ -1181,7 +1129,7 @@ var Control = {
 
         if (isOpen) {
           this._openItems.add(process.pid);
-          this._showThreads(processRow, units);
+          this._showThreads(processRow);
         }
       }
       if (
@@ -1197,13 +1145,13 @@ var Control = {
 
     await View.commit();
   },
-  _showThreads(row, units) {
+  _showThreads(row) {
     let process = row.process;
     this._sortThreads(process.threads);
     let elt = row;
     for (let thread of process.threads) {
       
-      elt = View.appendThreadRow(thread, units);
+      elt = View.appendThreadRow(thread);
       elt.thread = thread;
     }
     return elt;
@@ -1334,15 +1282,12 @@ var Control = {
   },
 
   
-  async _handleTwisty(target) {
-    
-    
-    let units = await gPromisePrefetchedUnits;
+  _handleTwisty(target) {
     let row = target.parentNode.parentNode;
     let id = row.process.pid;
     if (target.classList.toggle("open")) {
       this._openItems.add(id);
-      this._showThreads(row, units);
+      this._showThreads(row);
       View.insertAfterRow(row);
     } else {
       this._openItems.delete(id);
