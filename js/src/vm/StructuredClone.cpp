@@ -1271,7 +1271,7 @@ bool JSStructuredCloneWriter::writeTypedArray(HandleObject obj) {
   }
 
   
-  RootedValue val(context(), TypedArrayObject::bufferValue(tarr));
+  RootedValue val(context(), tarr->bufferValue());
   if (!startWrite(val)) {
     return false;
   }
@@ -1288,7 +1288,7 @@ bool JSStructuredCloneWriter::writeDataView(HandleObject obj) {
   }
 
   
-  RootedValue val(context(), DataViewObject::bufferValue(view));
+  RootedValue val(context(), view->bufferValue());
   if (!startWrite(val)) {
     return false;
   }
