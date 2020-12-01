@@ -11,8 +11,7 @@
 #include "mozilla/dom/WindowBinding.h"
 #include "xpcprivate.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -164,5 +163,4 @@ bool RemoteOuterWindowProxy::getOwnEnumerablePropertyKeys(
   return AppendIndexedPropertyNames(aCx, GetBrowsingContext(aProxy), aProps);
 }
 
-}  
 }  

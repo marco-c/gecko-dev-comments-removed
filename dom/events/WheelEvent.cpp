@@ -9,8 +9,7 @@
 #include "mozilla/MouseEvents.h"
 #include "prtime.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 WheelEvent::WheelEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                        WidgetWheelEvent* aWheelEvent)
@@ -99,7 +98,6 @@ already_AddRefed<WheelEvent> WheelEvent::Constructor(
   return e.forget();
 }
 
-}  
 }  
 
 using namespace mozilla;

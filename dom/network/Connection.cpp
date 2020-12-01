@@ -17,10 +17,7 @@
 
 #define CHANGE_EVENT_NAME u"typechange"_ns
 
-namespace mozilla {
-namespace dom {
-
-namespace network {
+namespace mozilla::dom::network {
 
 
 
@@ -86,6 +83,4 @@ already_AddRefed<Connection> Connection::CreateForWorker(
   return ConnectionWorker::Create(aWorkerPrivate, aRv);
 }
 
-}  
-}  
 }  

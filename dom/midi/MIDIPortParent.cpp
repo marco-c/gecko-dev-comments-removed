@@ -9,8 +9,7 @@
 #include "nsContentUtils.h"
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -106,5 +105,4 @@ MIDIPortParent::MIDIPortParent(const MIDIPortInfo& aPortInfo,
   MIDIPlatformService::Get()->AddPort(this);
 }
 
-}  
 }  

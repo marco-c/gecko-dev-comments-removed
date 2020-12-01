@@ -8,8 +8,7 @@
 #include "mozilla/MiscEvents.h"
 #include "prtime.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 CommandEvent::CommandEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                            WidgetCommandEvent* aEvent)
@@ -31,7 +30,6 @@ void CommandEvent::GetCommand(nsAString& aCommand) {
   }
 }
 
-}  
 }  
 
 using namespace mozilla;

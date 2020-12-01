@@ -7,8 +7,7 @@
 #include "mozilla/dom/DeviceMotionEvent.h"
 #include "nsContentUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -126,7 +125,6 @@ DeviceRotationRate::DeviceRotationRate(DeviceMotionEvent* aOwner,
 
 DeviceRotationRate::~DeviceRotationRate() = default;
 
-}  
 }  
 
 using namespace mozilla;

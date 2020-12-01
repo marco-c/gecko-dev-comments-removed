@@ -11,8 +11,7 @@
 #include "MediaControlService.h"
 #include "mozilla/Logging.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 #undef LOG_SOURCE
@@ -120,5 +119,4 @@ MediaSessionPlaybackState MediaControlKeySource::GetPlaybackState() const {
   return mPlaybackState;
 }
 
-}  
 }  

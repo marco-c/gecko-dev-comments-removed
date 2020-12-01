@@ -19,8 +19,7 @@
 #include "nsIContentPolicy.h"
 #include "nsStreamUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 SafeRefPtr<InternalRequest> InternalRequest::GetRequestConstructorCopy(
     nsIGlobalObject* aGlobal, ErrorResult& aRv) const {
@@ -435,5 +434,4 @@ void InternalRequest::SetPrincipalInfo(
   mPrincipalInfo = std::move(aPrincipalInfo);
 }
 
-}  
 }  

@@ -25,8 +25,7 @@
 #include "nsISupportsImpl.h"  
 #include "IPCMessageUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(MIDIAccess)
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(MIDIAccess, DOMEventTargetHelper)
@@ -219,5 +218,4 @@ void MIDIAccess::RemovePortListener(MIDIAccessDestructionObserver* aObs) {
   mDestructionObservers.RemoveObserver(aObs);
 }
 
-}  
 }  

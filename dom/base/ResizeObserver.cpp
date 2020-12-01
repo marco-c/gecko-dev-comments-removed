@@ -13,8 +13,7 @@
 #include "nsIContentInlines.h"
 #include <limits>
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -321,5 +320,4 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ResizeObserverSize)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-}  
 }  

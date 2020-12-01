@@ -87,8 +87,7 @@ extern mozilla::LazyLogModule gAutoplayPermissionLog;
 
 using std::move;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -1333,5 +1332,4 @@ WebCore::PeriodicWave* BasicWaveFormCache::GetBasicWaveForm(
   return nullptr;
 }
 
-}  
 }  

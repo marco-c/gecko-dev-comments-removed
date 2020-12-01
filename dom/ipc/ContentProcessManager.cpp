@@ -13,8 +13,7 @@
 
 #include "nsPrintfCString.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 StaticAutoPtr<ContentProcessManager> ContentProcessManager::sSingleton;
@@ -121,5 +120,4 @@ ContentProcessManager::GetTopLevelBrowserParentByProcessAndTabId(
   return browserParent.forget();
 }
 
-}  
 }  

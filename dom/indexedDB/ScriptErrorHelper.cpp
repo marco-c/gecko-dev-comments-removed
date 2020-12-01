@@ -149,9 +149,7 @@ class ScriptErrorRunnable final : public mozilla::Runnable {
 
 }  
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 
 void ScriptErrorHelper::Dump(const nsAString& aMessage,
@@ -188,6 +186,4 @@ void ScriptErrorHelper::DumpLocalizedMessage(
   }
 }
 
-}  
-}  
 }  

@@ -391,9 +391,7 @@ static void OnWrapperDestroyed() {
   }
 }
 
-namespace mozilla {
-namespace plugins {
-namespace parent {
+namespace mozilla::plugins::parent {
 
 static nsIGlobalObject* GetGlobalObject(NPP npp) {
   NS_ENSURE_TRUE(npp, nullptr);
@@ -411,8 +409,6 @@ static nsIGlobalObject* GetGlobalObject(NPP npp) {
   return doc->GetScopeObject();
 }
 
-}  
-}  
 }  
 
 static NPP LookupNPP(NPObject* npobj);

@@ -13,8 +13,7 @@
 #include "mozilla/dom/DocumentType.h"
 #include "nsTextNode.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMImplementation)
@@ -187,5 +186,4 @@ already_AddRefed<Document> DOMImplementation::CreateHTMLDocument(
   return document.forget();
 }
 
-}  
 }  

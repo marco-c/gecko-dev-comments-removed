@@ -8,8 +8,7 @@
 #include "BasicCardPayment.h"
 #include "PaymentRequestUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -418,5 +417,4 @@ BasicCardMethodChangeDetails::InitData(nsIPaymentAddress* aBillingAddress) {
   return NS_OK;
 }
 
-}  
 }  

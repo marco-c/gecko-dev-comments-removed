@@ -11,9 +11,7 @@
 #include "nsContentUtils.h"
 #include "nsPrintfCString.h"
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 void ReportInternalError(const char* aFile, uint32_t aLine, const char* aStr) {
   
@@ -30,6 +28,4 @@ void ReportInternalError(const char* aFile, uint32_t aLine, const char* aStr) {
       true );
 }
 
-}  
-}  
 }  

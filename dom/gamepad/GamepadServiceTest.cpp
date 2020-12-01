@@ -19,8 +19,7 @@
 
 #include "mozilla/Unused.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -284,5 +283,4 @@ JSObject* GamepadServiceTest::WrapObject(JSContext* aCx,
   return GamepadServiceTest_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  
 }  

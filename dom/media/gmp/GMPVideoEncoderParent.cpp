@@ -19,14 +19,12 @@
 #include "runnable_utils.h"
 #include "GMPLog.h"
 
-namespace mozilla {
+namespace mozilla::gmp {
 
 #ifdef __CLASS__
 #  undef __CLASS__
 #endif
 #define __CLASS__ "GMPVideoEncoderParent"
-
-namespace gmp {
 
 
 
@@ -314,7 +312,6 @@ mozilla::ipc::IPCResult GMPVideoEncoderParent::Recv__delete__() {
   return IPC_OK();
 }
 
-}  
 }  
 
 #undef __CLASS__

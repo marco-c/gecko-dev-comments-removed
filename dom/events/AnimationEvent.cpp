@@ -8,8 +8,7 @@
 #include "mozilla/ContentEvents.h"
 #include "prtime.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 AnimationEvent::AnimationEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                                InternalAnimationEvent* aEvent)
@@ -55,7 +54,6 @@ void AnimationEvent::GetPseudoElement(nsAString& aPseudoElement) {
   aPseudoElement = mEvent->AsAnimationEvent()->mPseudoElement;
 }
 
-}  
 }  
 
 using namespace mozilla;

@@ -52,8 +52,7 @@
 
 #include "ActorsChild.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using namespace mozilla::dom::indexedDB;
 using namespace mozilla::dom::quota;
@@ -1828,5 +1827,4 @@ bool IDBObjectStore::ValueWrapper::Clone(JSContext* aCx) {
   return true;
 }
 
-}  
 }  

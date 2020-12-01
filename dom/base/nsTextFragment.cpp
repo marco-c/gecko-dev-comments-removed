@@ -160,10 +160,8 @@ static inline int32_t FirstNon8BitUnvectorized(const char16_t* str,
 }
 
 #ifdef MOZILLA_MAY_SUPPORT_SSE2
-namespace mozilla {
-namespace SSE2 {
+namespace mozilla::SSE2 {
 int32_t FirstNon8Bit(const char16_t* str, const char16_t* end);
-}  
 }  
 #endif
 

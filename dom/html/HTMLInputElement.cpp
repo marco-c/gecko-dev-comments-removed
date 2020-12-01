@@ -121,8 +121,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Input)
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 #define NS_OUTER_ACTIVATE_EVENT (1 << 9)
@@ -7034,7 +7033,6 @@ already_AddRefed<nsINodeList> HTMLInputElement::GetLabels() {
   return nsGenericHTMLElement::Labels();
 }
 
-}  
 }  
 
 #undef NS_ORIGINAL_CHECKED_VALUE

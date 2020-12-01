@@ -7,8 +7,7 @@
 #include "mozilla/dom/XULCommandEvent.h"
 #include "prtime.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 XULCommandEvent::XULCommandEvent(EventTarget* aOwner,
                                  nsPresContext* aPresContext,
@@ -60,7 +59,6 @@ void XULCommandEvent::InitCommandEvent(
   mInputSource = aInputSource;
 }
 
-}  
 }  
 
 using namespace mozilla;
