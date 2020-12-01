@@ -131,7 +131,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool InDriverIteration(const GraphDriver* aDriver) const override;
+  bool InDriverIteration(GraphDriver* aDriver) override;
 #endif
 
   
@@ -222,14 +222,14 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  IterationResult OneIteration(GraphTime aStateTime, GraphTime aIterationEnd,
+  IterationResult OneIteration(GraphTime aStateEnd, GraphTime aIterationEnd,
                                AudioMixer* aMixer) override;
 
   
 
 
-  IterationResult OneIterationImpl(GraphTime aStateTime,
-                                   GraphTime aIterationEnd, AudioMixer* aMixer);
+  IterationResult OneIterationImpl(GraphTime aStateEnd, GraphTime aIterationEnd,
+                                   AudioMixer* aMixer);
 
   
 
