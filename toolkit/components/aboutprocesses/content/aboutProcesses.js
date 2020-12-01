@@ -954,7 +954,7 @@ var Control = {
         us,
         ms,
         s,
-        min,
+        m,
         h,
         d,
         B,
@@ -981,7 +981,7 @@ var Control = {
         { id: "memory-unit-EB" },
       ]);
       return {
-        duration: { ns, us, ms, s, min, h, d },
+        duration: { ns, us, ms, s, m, h, d },
         memory: { B, KB, MB, GB, TB, PB, EB },
       };
     })();
