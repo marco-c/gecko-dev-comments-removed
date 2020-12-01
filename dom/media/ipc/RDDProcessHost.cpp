@@ -5,12 +5,11 @@
 
 #include "RDDProcessHost.h"
 
+#include "ProcessUtils.h"
+#include "RDDChild.h"
 #include "chrome/common/process_watcher.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-
-#include "ProcessUtils.h"
-#include "RDDChild.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Sandbox.h"
@@ -27,11 +26,7 @@ bool RDDProcessHost::sLaunchWithMacSandbox = false;
 RDDProcessHost::RDDProcessHost(Listener* aListener)
     : GeckoChildProcessHost(GeckoProcessType_RDD),
       mListener(aListener),
-      mTaskFactory(this),
-      mLaunchPhase(LaunchPhase::Unlaunched),
-      mProcessToken(0),
-      mShutdownRequested(false),
-      mChannelClosed(false) {
+      mLiveToken(new media::Refcountable<bool>(true)) {
   MOZ_COUNT_CTOR(RDDProcessHost);
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -45,6 +40,8 @@ RDDProcessHost::RDDProcessHost(Listener* aListener)
 RDDProcessHost::~RDDProcessHost() { MOZ_COUNT_DTOR(RDDProcessHost); }
 
 bool RDDProcessHost::Launch(StringVector aExtraOpts) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   MOZ_ASSERT(mLaunchPhase == LaunchPhase::Unlaunched);
   MOZ_ASSERT(!mRDDChild);
 
@@ -61,19 +58,6 @@ bool RDDProcessHost::Launch(StringVector aExtraOpts) {
   mLaunchPhase = LaunchPhase::Waiting;
   mLaunchTime = TimeStamp::Now();
 
-  if (!GeckoChildProcessHost::AsyncLaunch(aExtraOpts)) {
-    mLaunchPhase = LaunchPhase::Complete;
-    mPrefSerializer = nullptr;
-    return false;
-  }
-  return true;
-}
-
-bool RDDProcessHost::WaitForLaunch() {
-  if (mLaunchPhase == LaunchPhase::Complete) {
-    return !!mRDDChild;
-  }
-
   int32_t timeoutMs = StaticPrefs::media_rdd_process_startup_timeout_ms();
 
   
@@ -83,13 +67,62 @@ bool RDDProcessHost::WaitForLaunch() {
       PR_GetEnv("MOZ_DEBUG_CHILD_PAUSE")) {
     timeoutMs = 0;
   }
+  if (timeoutMs) {
+    
+    
+    GetMainThreadSerialEventTarget()->DelayedDispatch(
+        NS_NewRunnableFunction(
+            "RDDProcessHost::Launchtimeout",
+            [this, liveToken = mLiveToken]() {
+              if (!*liveToken || mTimerChecked) {
+                
+                
+                return;
+              }
+              InitAfterConnect(false);
+              MOZ_ASSERT(mTimerChecked,
+                         "InitAfterConnect must have acted on the promise");
+            }),
+        timeoutMs);
+  }
 
-  
-  
-  
-  bool result = GeckoChildProcessHost::WaitUntilConnected(timeoutMs);
-  InitAfterConnect(result);
-  return result;
+  if (!GeckoChildProcessHost::AsyncLaunch(aExtraOpts)) {
+    mLaunchPhase = LaunchPhase::Complete;
+    mPrefSerializer = nullptr;
+    return false;
+  }
+  return true;
+}
+
+RefPtr<GenericNonExclusivePromise> RDDProcessHost::LaunchPromise() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mLaunchPromise) {
+    return mLaunchPromise;
+  }
+  mLaunchPromise = MakeRefPtr<GenericNonExclusivePromise::Private>(__func__);
+  WhenProcessHandleReady()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [this, liveToken = mLiveToken](
+          const ipc::ProcessHandlePromise::ResolveOrRejectValue& aResult) {
+        if (!*liveToken) {
+          
+          
+          return;
+        }
+        if (mTimerChecked) {
+          
+          return;
+        }
+        mTimerChecked = true;
+        if (aResult.IsReject()) {
+          RejectPromise();
+        }
+        
+        
+        
+      });
+  return mLaunchPromise;
 }
 
 void RDDProcessHost::OnChannelConnected(int32_t peer_pid) {
@@ -97,15 +130,12 @@ void RDDProcessHost::OnChannelConnected(int32_t peer_pid) {
 
   GeckoChildProcessHost::OnChannelConnected(peer_pid);
 
-  
-  
-  RefPtr<Runnable> runnable;
-  {
-    MonitorAutoLock lock(mMonitor);
-    runnable =
-        mTaskFactory.NewRunnableMethod(&RDDProcessHost::OnChannelConnectedTask);
-  }
-  NS_DispatchToMainThread(runnable);
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "RDDProcessHost::OnChannelConnected", [this, liveToken = mLiveToken]() {
+        if (*liveToken && mLaunchPhase == LaunchPhase::Waiting) {
+          InitAfterConnect(true);
+        }
+      }));
 }
 
 void RDDProcessHost::OnChannelError() {
@@ -113,71 +143,59 @@ void RDDProcessHost::OnChannelError() {
 
   GeckoChildProcessHost::OnChannelError();
 
-  
-  
-  RefPtr<Runnable> runnable;
-  {
-    MonitorAutoLock lock(mMonitor);
-    runnable =
-        mTaskFactory.NewRunnableMethod(&RDDProcessHost::OnChannelErrorTask);
-  }
-  NS_DispatchToMainThread(runnable);
-}
-
-void RDDProcessHost::OnChannelConnectedTask() {
-  if (mLaunchPhase == LaunchPhase::Waiting) {
-    InitAfterConnect(true);
-  }
-}
-
-void RDDProcessHost::OnChannelErrorTask() {
-  if (mLaunchPhase == LaunchPhase::Waiting) {
-    InitAfterConnect(false);
-  }
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "RDDProcessHost::OnChannelError", [this, liveToken = mLiveToken]() {
+        if (*liveToken && mLaunchPhase == LaunchPhase::Waiting) {
+          InitAfterConnect(false);
+        }
+      }));
 }
 
 static uint64_t sRDDProcessTokenCounter = 0;
 
 void RDDProcessHost::InitAfterConnect(bool aSucceeded) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   MOZ_ASSERT(mLaunchPhase == LaunchPhase::Waiting);
   MOZ_ASSERT(!mRDDChild);
 
   mLaunchPhase = LaunchPhase::Complete;
 
-  if (aSucceeded) {
-    mProcessToken = ++sRDDProcessTokenCounter;
-    mRDDChild = MakeUnique<RDDChild>(this);
-    DebugOnly<bool> rv = mRDDChild->Open(
-        TakeChannel(), base::GetProcId(GetChildProcessHandle()));
-    MOZ_ASSERT(rv);
-
-    
-    
-    
-    
-    mPrefSerializer = nullptr;
-
-    if (!mRDDChild->Init()) {
-      
-      
-      
-      
-      
-      
-      mRDDChild->Close();
-      return;
-    }
+  if (!aSucceeded) {
+    RejectPromise();
+    return;
   }
+  mProcessToken = ++sRDDProcessTokenCounter;
+  mRDDChild = MakeUnique<RDDChild>(this);
+  DebugOnly<bool> rv =
+      mRDDChild->Open(TakeChannel(), base::GetProcId(GetChildProcessHandle()));
+  MOZ_ASSERT(rv);
 
-  if (mListener) {
-    mListener->OnProcessLaunchComplete(this);
+  
+  
+  
+  
+  mPrefSerializer = nullptr;
+
+  if (!mRDDChild->Init()) {
+    
+    
+    
+    
+    
+    
+    mRDDChild->Close();
+    RejectPromise();
+  } else {
+    ResolvePromise();
   }
 }
 
 void RDDProcessHost::Shutdown() {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mShutdownRequested);
 
-  mListener = nullptr;
+  RejectPromise();
 
   if (mRDDChild) {
     
@@ -208,7 +226,10 @@ void RDDProcessHost::Shutdown() {
 }
 
 void RDDProcessHost::OnChannelClosed() {
+  MOZ_ASSERT(NS_IsMainThread());
+
   mChannelClosed = true;
+  RejectPromise();
 
   if (!mShutdownRequested && mListener) {
     
@@ -219,10 +240,11 @@ void RDDProcessHost::OnChannelClosed() {
 
   
   RDDChild::Destroy(std::move(mRDDChild));
-  MOZ_ASSERT(!mRDDChild);
 }
 
 void RDDProcessHost::KillHard(const char* aReason) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   ProcessHandle handle = GetChildProcessHandle();
   if (!base::KillProcess(handle, base::PROCESS_END_KILLED_BY_USER, false)) {
     NS_WARNING("failed to kill subprocess!");
@@ -231,20 +253,44 @@ void RDDProcessHost::KillHard(const char* aReason) {
   SetAlreadyDead();
 }
 
-uint64_t RDDProcessHost::GetProcessToken() const { return mProcessToken; }
-
-void RDDProcessHost::KillProcess() { KillHard("DiagnosticKill"); }
+uint64_t RDDProcessHost::GetProcessToken() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  return mProcessToken;
+}
 
 void RDDProcessHost::DestroyProcess() {
-  
-  
-  {
-    MonitorAutoLock lock(mMonitor);
-    mTaskFactory.RevokeAll();
-  }
+  MOZ_ASSERT(NS_IsMainThread());
+  RejectPromise();
 
-  GetCurrentSerialEventTarget()->Dispatch(
+  
+  *mLiveToken = false;
+
+  NS_DispatchToMainThread(
       NS_NewRunnableFunction("DestroyProcessRunnable", [this] { Destroy(); }));
+}
+
+void RDDProcessHost::ResolvePromise() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mLaunchPromiseSettled) {
+    mLaunchPromise->Resolve(true, __func__);
+    mLaunchPromiseSettled = true;
+  }
+  
+  
+  mTimerChecked = true;
+}
+
+void RDDProcessHost::RejectPromise() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mLaunchPromiseSettled) {
+    mLaunchPromise->Reject(NS_ERROR_FAILURE, __func__);
+    mLaunchPromiseSettled = true;
+  }
+  
+  
+  mTimerChecked = true;
 }
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)

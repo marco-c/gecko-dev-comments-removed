@@ -6,12 +6,10 @@
 
 #ifndef _include_dom_media_ipc_RDDProcessHost_h_
 #define _include_dom_media_ipc_RDDProcessHost_h_
-#include "mozilla/ipc/GeckoChildProcessHost.h"
-
-#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/ipc/TaskFactory.h"
+#include "mozilla/media/MediaUtils.h"
 
 namespace mozilla {
 namespace ipc {
@@ -37,8 +35,6 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
  public:
   class Listener {
    public:
-    virtual void OnProcessLaunchComplete(RDDProcessHost* aHost) {}
-
     
     
     
@@ -59,8 +55,7 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  
-  bool WaitForLaunch();
+  RefPtr<GenericNonExclusivePromise> LaunchPromise();
 
   
   
@@ -72,13 +67,19 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   
-  RDDChild* GetActor() const { return mRDDChild.get(); }
+  RDDChild* GetActor() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mRDDChild.get();
+  }
 
   
   
   uint64_t GetProcessToken() const;
 
-  bool IsConnected() const { return !!mRDDChild; }
+  bool IsConnected() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return !!mRDDChild;
+  }
 
   
   
@@ -92,9 +93,6 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   void SetListener(Listener* aListener);
 
-  
-  void KillProcess();
-
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   static MacSandboxType GetMacSandboxType();
@@ -104,9 +102,6 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   ~RDDProcessHost();
 
   
-  void OnChannelConnectedTask();
-  void OnChannelErrorTask();
-
   
   void InitAfterConnect(bool aSucceeded);
 
@@ -130,21 +125,37 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   DISALLOW_COPY_AND_ASSIGN(RDDProcessHost);
 
-  Listener* mListener;
-  mozilla::ipc::TaskFactory<RDDProcessHost> mTaskFactory;
+  Listener* const mListener;
 
+  
   enum class LaunchPhase { Unlaunched, Waiting, Complete };
-  LaunchPhase mLaunchPhase;
+  LaunchPhase mLaunchPhase = LaunchPhase::Unlaunched;
 
   UniquePtr<RDDChild> mRDDChild;
-  uint64_t mProcessToken;
+  uint64_t mProcessToken = 0;
 
   UniquePtr<ipc::SharedPreferenceSerializer> mPrefSerializer;
 
-  bool mShutdownRequested;
-  bool mChannelClosed;
+  bool mShutdownRequested = false;
+  bool mChannelClosed = false;
 
   TimeStamp mLaunchTime;
+  void RejectPromise();
+  void ResolvePromise();
+
+  
+  
+  
+  
+  
+  
+  const RefPtr<media::Refcountable<bool>> mLiveToken;
+  RefPtr<GenericNonExclusivePromise::Private> mLaunchPromise;
+  bool mLaunchPromiseSettled = false;
+  
+  
+  
+  bool mTimerChecked = false;
 };
 
 }  

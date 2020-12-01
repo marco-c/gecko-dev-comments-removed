@@ -35,15 +35,11 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   RefPtr<EnsureRDDPromise> EnsureRDDProcessAndCreateBridge(
       base::ProcessId aOtherProcess);
 
-  void OnProcessLaunchComplete(RDDProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(RDDProcessHost* aHost) override;
 
   
   
   void NotifyRemoteActorDestroyed(const uint64_t& aProcessToken);
-
-  
-  void KillProcess();
 
   
   base::ProcessId RDDProcessPid();
@@ -63,10 +59,6 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
 
  private:
   bool IsRDDProcessLaunching();
-  
-  
-  
-  bool EnsureRDDReady();
   bool CreateVideoBridge();
 
   
