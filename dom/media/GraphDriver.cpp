@@ -1070,8 +1070,13 @@ void AudioCallbackDriver::StateCallback(cubeb_state aState) {
     
     if (streamState == AudioStreamState::Running) {
       MOZ_ASSERT(!ThreadRunning());
-      FallbackToSystemClockDriver();
       mStarted = false;
+      if (mFallbackDriverState == FallbackDriverState::None) {
+        
+        
+        
+        FallbackToSystemClockDriver();
+      }
     }
   } else if (aState == CUBEB_STATE_STOPPED) {
     MOZ_ASSERT(!ThreadRunning());
