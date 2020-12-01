@@ -856,10 +856,28 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvUpdateResources(
   wr::TransactionBuilder txn;
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
 
+  Unused << GetNextWrEpoch();
+
   bool success =
       UpdateResources(aResourceUpdates, aSmallShmems, aLargeShmems, txn);
   wr::IpcResourceUpdateQueue::ReleaseShmems(this, aSmallShmems);
   wr::IpcResourceUpdateQueue::ReleaseShmems(this, aLargeShmems);
+
+  
+  
+  
+  if (!txn.IsResourceUpdatesEmpty() || txn.IsRenderedFrameInvalidated()) {
+    
+    txn.UpdateEpoch(mPipelineId, mWrEpoch);
+    mAsyncImageManager->SetWillGenerateFrame();
+    ScheduleGenerateFrame();
+  } else {
+    
+    
+    
+    
+    RollbackWrEpoch();
+  }
 
   if (!success) {
     return IPC_FAIL(this, "Invalid WebRender resource data shmem or address.");
