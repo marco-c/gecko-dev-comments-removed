@@ -35,20 +35,6 @@ class VsyncChild final : public PVsyncChild {
 
   TimeDuration GetVsyncRate();
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
  private:
   virtual ~VsyncChild();
 
