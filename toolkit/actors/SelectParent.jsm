@@ -142,7 +142,13 @@ var SelectParentHelper = {
           sheet.insertRule("#ContentSelectDropdown > menupopup {}", 0);
           addedRule = true;
         }
-        sheet.cssRules[0].style[property] = selectStyle[property];
+        let value = selectStyle[property];
+        if (property == "scrollbar-width") {
+          
+          
+          property = "--content-select-scrollbar-width";
+        }
+        sheet.cssRules[0].style.setProperty(property, value);
       }
       
       
