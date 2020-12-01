@@ -11429,8 +11429,7 @@ static bool AddInlinedCompilations(HandleScript script,
   return true;
 }
 
-bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints,
-                         const WarpSnapshot* snapshot) {
+bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   
   
   
