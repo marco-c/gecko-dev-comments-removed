@@ -996,7 +996,12 @@ InterceptedHttpChannel::OnRedirectVerifyCallback(nsresult rv) {
   MaybeCallBodyCallback();
 
   mIsPending = false;
-  ReleaseListeners();
+  
+  
+  
+  if (NS_SUCCEEDED(rv)) {
+    ReleaseListeners();
+  }
 
   return NS_OK;
 }
