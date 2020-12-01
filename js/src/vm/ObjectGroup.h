@@ -248,7 +248,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   inline bool shouldPreTenureDontCheckGeneration();
 
   inline bool canPreTenure(const AutoSweepObjectGroup& sweep);
-  inline bool fromAllocationSite(const AutoSweepObjectGroup& sweep);
   inline void setShouldPreTenure(const AutoSweepObjectGroup& sweep,
                                  JSContext* cx);
 
@@ -296,14 +295,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   
   static bool useSingletonForClone(JSFunction* fun);
-
-  
-  static bool useSingletonForNewObject(JSContext* cx, JSScript* script,
-                                       jsbytecode* pc);
-
-  
-  static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
-                                            JSProtoKey key);
 
  public:
   
@@ -361,20 +352,10 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   static ObjectGroup* callingAllocationSiteGroup(JSContext* cx, JSProtoKey key,
                                                  HandleObject proto = nullptr);
 
-  
-  
-  static bool setAllocationSiteObjectGroup(JSContext* cx, HandleScript script,
-                                           jsbytecode* pc, HandleObject obj,
-                                           bool singleton);
-
   static ArrayObject* getOrFixupCopyOnWriteObject(JSContext* cx,
                                                   HandleScript script,
                                                   jsbytecode* pc);
   static ArrayObject* getCopyOnWriteObject(JSScript* script, jsbytecode* pc);
-
-  
-  static bool findAllocationSite(JSContext* cx, const ObjectGroup* group,
-                                 JSScript** script, uint32_t* offset);
 
  private:
   static ObjectGroup* defaultNewGroup(JSContext* cx, JSProtoKey key);
@@ -384,7 +365,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 class ObjectGroupRealm {
  private:
   class NewTable;
-  class AllocationSiteTable;
 
  private:
   
@@ -411,9 +391,6 @@ class ObjectGroupRealm {
   } defaultNewGroupCache = {};
 
   
-  AllocationSiteTable* allocationSiteTable = nullptr;
-
-  
   
   
   
@@ -425,9 +402,6 @@ class ObjectGroupRealm {
 
  private:
   friend class ObjectGroup;
-
-  struct AllocationSiteKey;
-  friend struct MovableCellHasher<AllocationSiteKey>;
 
  public:
   struct NewEntry;

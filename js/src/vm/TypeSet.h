@@ -75,9 +75,6 @@ class TypeZone;
 
 enum : uint32_t {
   
-  OBJECT_FLAG_FROM_ALLOCATION_SITE = 0x1,
-
-  
   OBJECT_FLAG_SINGLETON = 0x2,
 
   

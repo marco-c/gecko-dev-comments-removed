@@ -997,28 +997,9 @@ bool js::NewObjectScriptedCall(JSContext* cx, MutableHandleObject pobj) {
   gc::AllocKind allocKind = NewObjectGCKind(&PlainObject::class_);
   NewObjectKind newKind = GenericObject;
 
-  jsbytecode* pc = nullptr;
-  RootedScript script(cx);
-  if (IsTypeInferenceEnabled()) {
-    script = cx->currentScript(&pc);
-  }
-
-  if (script &&
-      ObjectGroup::useSingletonForAllocationSite(script, pc, JSProto_Object)) {
-    newKind = SingletonObject;
-  }
-  RootedObject obj(
-      cx, NewBuiltinClassInstance<PlainObject>(cx, allocKind, newKind));
+  JSObject* obj = NewBuiltinClassInstance<PlainObject>(cx, allocKind, newKind);
   if (!obj) {
     return false;
-  }
-
-  if (script) {
-    
-    if (!ObjectGroup::setAllocationSiteObjectGroup(
-            cx, script, pc, obj, newKind == SingletonObject)) {
-      return false;
-    }
   }
 
   pobj.set(obj);
