@@ -5,6 +5,7 @@
 
 
 #include "RtpLogger.h"
+#include "mozilla/Logging.h"
 
 #include <ctime>
 #include <iomanip>
