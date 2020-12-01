@@ -19,6 +19,7 @@
 #include "js/Value.h"
 
 #include "jsapi-tests/tests.h"
+#include "jsapi-tests/testsJit.h"
 
 #include "jit/ABIFunctionList-inl.h"
 #include "jit/MacroAssembler-inl.h"
@@ -615,55 +616,6 @@ JSAPITest* DefineCheckArgs<Res (*)(Args...)>::instance_ = nullptr;
 template <typename Res, typename... Args>
 bool* DefineCheckArgs<Res (*)(Args...)>::reportTo_ = nullptr;
 
-typedef void (*EnterTest)();
-
-
-static void Prepare(MacroAssembler& masm) {
-#if defined(JS_CODEGEN_ARM64)
-  masm.Mov(PseudoStackPointer64, sp);
-  masm.SetStackPointer64(PseudoStackPointer64);
-#endif
-  AllocatableRegisterSet regs(RegisterSet::All());
-  LiveRegisterSet save(regs.asLiveSet());
-  masm.PushRegsInMask(save);
-}
-
-
-
-static bool Execute(JSContext* cx, MacroAssembler& masm) {
-  AllocatableRegisterSet regs(RegisterSet::All());
-  LiveRegisterSet save(regs.asLiveSet());
-  masm.PopRegsInMask(save);
-#if defined(JS_CODEGEN_ARM64)
-  
-  masm.abiret();
-
-  
-  masm.SetStackPointer64(PseudoStackPointer64);
-#else
-  masm.ret();  
-#endif
-
-  if (masm.oom()) {
-    return false;
-  }
-
-  Linker linker(masm);
-  JitCode* code = linker.newCode(cx, CodeKind::Other);
-  if (!code) {
-    return false;
-  }
-  if (!ExecutableAllocator::makeExecutableAndFlushICache(
-          FlushICacheSpec::LocalThreadOnly, code->raw(), code->bufferSize())) {
-    return false;
-  }
-
-  JS::AutoSuppressGCAnalysis suppress;
-  EnterTest test = code->as<EnterTest>();
-  test();
-  return true;
-}
-
 
 
 
@@ -682,7 +634,7 @@ class JitABICall final : public JSAPITest, public DefineCheckArgs<Sig> {
     this->set_instance(this, &result);
 
     StackMacroAssembler masm(cx);
-    Prepare(masm);
+    PrepareJit(masm);
 
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
     
@@ -713,7 +665,7 @@ class JitABICall final : public JSAPITest, public DefineCheckArgs<Sig> {
 
     this->generateCalls(masm, base, setup);
 
-    if (!Execute(cx, masm)) {
+    if (!ExecuteJit(cx, masm)) {
       return false;
     }
     this->set_instance(nullptr, nullptr);
