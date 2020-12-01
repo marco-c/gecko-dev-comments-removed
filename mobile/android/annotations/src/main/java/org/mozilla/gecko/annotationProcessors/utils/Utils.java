@@ -14,6 +14,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -64,6 +65,69 @@ public class Utils {
         CLASS_DESCRIPTORS.put("double", "D");
     }
 
+    private static boolean isMozClass(final Class<?> type) {
+        return type.getName().startsWith("org.mozilla.");
+    }
+
+    private static boolean useObjectForType(final Class<?> type, final boolean isHint) {
+        
+        
+        
+        return !isHint || type.equals(Object.class) || !isMozClass(type) || type.isInterface();
+    }
+
+    
+
+
+
+
+
+
+
+
+    private static String getSimplifiedClassName(final Class<?> genScope, final Class<?> type, final String connector) {
+        final ArrayList<String> names = new ArrayList<>();
+
+        
+        
+        
+        Class<?> c = type;
+        do {
+            names.add(c.getSimpleName());
+            c = c.getEnclosingClass();
+        } while (c != null && (genScope == null || !genScope.equals(c)));
+
+        
+        final StringBuilder builder = new StringBuilder();
+        for (int i = names.size() - 1; i >= 0; --i) {
+            builder.append(names.get(i));
+            if (i > 0) {
+                builder.append(connector);
+            }
+        }
+
+        return builder.toString();
+    }
+
+    
+
+
+
+
+
+
+
+    public static String getSimplifiedJavaClassName(final Class<?> genScope, final Class<?> type) {
+        return getSimplifiedClassName(genScope, type, ".");
+    }
+
+    
+
+
+    public static String getWrappedNativeClassName(final Class<?> type) {
+        return "mozilla::java::" + getSimplifiedClassName(null, type, "::");
+    }
+
     
 
 
@@ -71,16 +135,34 @@ public class Utils {
 
 
     public static String getNativeParameterType(Class<?> type, AnnotationInfo info) {
+        return getNativeParameterType(type, info, false);
+    }
+
+    
+
+
+
+
+
+
+
+    public static String getNativeParameterTypeHint(Class<?> type, AnnotationInfo info) {
+        return getNativeParameterType(type, info, true);
+    }
+
+    private static String getNativeParameterType(final Class<?> type, final AnnotationInfo info, final boolean isHint) {
         final String name = type.getName().replace('.', '/');
 
-        if (NATIVE_TYPES.containsKey(name)) {
-            return NATIVE_TYPES.get(name);
+        String value = NATIVE_TYPES.get(name);
+        if (value != null) {
+            return value;
         }
 
         if (type.isArray()) {
             final String compName = type.getComponentType().getName();
-            if (NATIVE_ARRAY_TYPES.containsKey(compName)) {
-                return NATIVE_ARRAY_TYPES.get(compName) + "::Param";
+            value = NATIVE_ARRAY_TYPES.get(compName);
+            if (value != null) {
+                return value + "::Param";
             }
             return "mozilla::jni::ObjectArray::Param";
         }
@@ -103,20 +185,48 @@ public class Utils {
             return "mozilla::jni::ByteBuffer::Param";
         }
 
-        return "mozilla::jni::Object::Param";
+        if (useObjectForType(type, isHint)) {
+            return "mozilla::jni::Object::Param";
+        }
+
+        return getWrappedNativeClassName(type) + "::Param";
     }
 
+    
+
+
+
+
+
     public static String getNativeReturnType(Class<?> type, AnnotationInfo info) {
+        return getNativeReturnType(type, info, false);
+    }
+
+    
+
+
+
+
+
+
+
+    public static String getNativeReturnTypeHint(Class<?> type, AnnotationInfo info) {
+        return getNativeReturnType(type, info, true);
+    }
+
+    private static String getNativeReturnType(final Class<?> type, final AnnotationInfo info, final boolean isHint) {
         final String name = type.getName().replace('.', '/');
 
-        if (NATIVE_TYPES.containsKey(name)) {
-            return NATIVE_TYPES.get(name);
+        String value = NATIVE_TYPES.get(name);
+        if (value != null) {
+            return value;
         }
 
         if (type.isArray()) {
             final String compName = type.getComponentType().getName();
-            if (NATIVE_ARRAY_TYPES.containsKey(compName)) {
-                return NATIVE_ARRAY_TYPES.get(compName) + "::LocalRef";
+            value = NATIVE_ARRAY_TYPES.get(compName);
+            if (value != null) {
+                return value + "::LocalRef";
             }
             return "mozilla::jni::ObjectArray::LocalRef";
         }
@@ -139,7 +249,11 @@ public class Utils {
             return "mozilla::jni::ByteBuffer::LocalRef";
         }
 
-        return "mozilla::jni::Object::LocalRef";
+        if (useObjectForType(type, isHint)) {
+            return "mozilla::jni::Object::LocalRef";
+        }
+
+        return getWrappedNativeClassName(type) + "::LocalRef";
     }
 
     
@@ -151,8 +265,9 @@ public class Utils {
     public static String getClassDescriptor(Class<?> type) {
         final String name = type.getName().replace('.', '/');
 
-        if (CLASS_DESCRIPTORS.containsKey(name)) {
-            return CLASS_DESCRIPTORS.get(name);
+        final String classDescriptor = CLASS_DESCRIPTORS.get(name);
+        if (classDescriptor != null) {
+            return classDescriptor;
         }
 
         if (type.isArray()) {
