@@ -277,9 +277,6 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
 
   int32_t cookieBehavior = cookieJarSettings->GetCookieBehavior();
 
-  bool rejectForeignWithExceptions =
-      net::CookieJarSettings::IsRejectThirdPartyWithExceptions(cookieBehavior);
-
   
   
   
@@ -295,11 +292,7 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
     return false;
   }
 
-  uint64_t targetWindowId =
-      (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-       rejectForeignWithExceptions)
-          ? GetTopLevelStorageAreaWindowId(bc)
-          : GetTopLevelAntiTrackingWindowId(bc);
+  uint64_t targetWindowId = GetTopLevelAntiTrackingWindowId(bc);
   nsCOMPtr<nsIPrincipal> targetPrincipal;
 
   if (targetWindowId) {

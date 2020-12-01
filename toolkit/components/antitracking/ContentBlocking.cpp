@@ -766,7 +766,6 @@ void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
   }
 
   BrowsingContext* top = aParentContext->Top();
-  uint32_t behavior = AntiTrackingUtils::GetCookieBehavior(top);
 
   
   top->PreOrderWalk([&](BrowsingContext* aContext) {
@@ -775,13 +774,6 @@ void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
       nsAutoCString origin;
       Unused << AntiTrackingUtils::GetPrincipalAndTrackingOrigin(
           aContext, nullptr, origin);
-
-      
-      if ((aParentContext != aContext) &&
-          (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-           !AntiTrackingUtils::IsFirstLevelSubContext(aContext))) {
-        return;
-      }
 
       if (aTrackingOrigin == origin) {
         nsCOMPtr<nsPIDOMWindowInner> inner =
@@ -805,8 +797,6 @@ void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
 void ContentBlocking::UpdateAllowAccessOnParentProcess(
     BrowsingContext* aParentContext, const nsACString& aTrackingOrigin) {
   MOZ_ASSERT(XRE_IsParentProcess());
-
-  uint32_t behavior = AntiTrackingUtils::GetCookieBehavior(aParentContext);
 
   nsAutoCString topKey;
   nsCOMPtr<nsIPrincipal> topPrincipal =
@@ -849,11 +839,6 @@ void ContentBlocking::UpdateAllowAccessOnParentProcess(
     topContext->PreOrderWalk([&](BrowsingContext* aContext) {
       WindowGlobalParent* wgp = aContext->Canonical()->GetCurrentWindowGlobal();
       if (!wgp) {
-        return;
-      }
-
-      if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-          !AntiTrackingUtils::IsFirstLevelSubContext(aContext)) {
         return;
       }
 
@@ -1015,16 +1000,6 @@ bool ContentBlocking::ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow,
   
   if (doc && (doc->StorageAccessSandboxed())) {
     LOG(("Our document is sandboxed"));
-    *aRejectedReason = blockedReason;
-    return false;
-  }
-
-  
-  
-  
-  if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-      !AntiTrackingUtils::IsFirstLevelSubContext(
-          aWindow->GetBrowsingContext())) {
     *aRejectedReason = blockedReason;
     return false;
   }
@@ -1211,16 +1186,6 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
   rv = loadInfo->GetTargetBrowsingContext(getter_AddRefs(targetBC));
   if (!targetBC || NS_WARN_IF(NS_FAILED(rv))) {
     LOG(("Failed to get the channel's target browsing context"));
-    return false;
-  }
-
-  
-  
-  
-  if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-      !targetBC->IsTopContent() &&
-      !AntiTrackingUtils::IsFirstLevelSubContext(targetBC)) {
-    *aRejectedReason = blockedReason;
     return false;
   }
 
