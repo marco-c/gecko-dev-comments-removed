@@ -518,8 +518,8 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   void InitiateShutdown() override;
   bool IsShutdownCompleted() const override;
+  nsCString GetShutdownStatus() const override;
   void ForceKillActors() override;
-  void ShutdownTimedOut() override;
   void FinalizeShutdown() override;
 };
 
@@ -1815,9 +1815,9 @@ void QuotaClient::ForceKillActors() {
   
 }
 
-void QuotaClient::ShutdownTimedOut() {
+nsCString QuotaClient::GetShutdownStatus() const {
   
-  
+  return "To be implemented"_ns;
 }
 
 void QuotaClient::FinalizeShutdown() {

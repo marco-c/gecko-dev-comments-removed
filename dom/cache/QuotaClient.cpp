@@ -262,9 +262,9 @@ void CacheQuotaClient::ForceKillActors() {
   
 }
 
-void CacheQuotaClient::ShutdownTimedOut() {
+nsCString CacheQuotaClient::GetShutdownStatus() const {
   
-  
+  return "To be implemented"_ns;
 }
 
 void CacheQuotaClient::FinalizeShutdown() {
