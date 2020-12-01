@@ -1467,14 +1467,20 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
     case eHTMLTextFieldType:
       newAcc = new HTMLTextFieldAccessible(aContent, document);
       break;
-    case eHyperTextType:
+    case eHyperTextType: {
+      if (aContext->IsTable() || aContext->IsTableRow()) {
+        
+        
+        return nullptr;
+      }
+
       if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::dt, nsGkAtoms::dd,
                                          nsGkAtoms::div, nsGkAtoms::thead,
                                          nsGkAtoms::tfoot, nsGkAtoms::tbody)) {
         newAcc = new HyperTextAccessibleWrap(aContent, document);
       }
       break;
-
+    }
     case eImageType:
       newAcc = new ImageAccessibleWrap(aContent, document);
       break;
