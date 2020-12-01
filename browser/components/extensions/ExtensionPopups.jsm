@@ -180,6 +180,8 @@ class BasePopup {
     }
     browser.removeEventListener("pagetitlechanged", this);
     browser.removeEventListener("DOMWindowClose", this);
+    browser.removeEventListener("DoZoomEnlargeBy10", this);
+    browser.removeEventListener("DoZoomReduceBy10", this);
   }
 
   
@@ -263,6 +265,30 @@ class BasePopup {
       case "DOMWindowClose":
         this.closePopup();
         break;
+
+      case "DoZoomEnlargeBy10": {
+        const browser = event.target;
+        let { ZoomManager } = browser.ownerGlobal;
+        let zoom = this.browser.fullZoom;
+        zoom += 0.1;
+        if (zoom > ZoomManager.MAX) {
+          zoom = ZoomManager.MAX;
+        }
+        browser.fullZoom = zoom;
+        break;
+      }
+
+      case "DoZoomReduceBy10": {
+        const browser = event.target;
+        let { ZoomManager } = browser.ownerGlobal;
+        let zoom = browser.fullZoom;
+        zoom -= 0.1;
+        if (zoom < ZoomManager.MIN) {
+          zoom = ZoomManager.MIN;
+        }
+        browser.fullZoom = zoom;
+        break;
+      }
     }
   }
 
@@ -319,6 +345,7 @@ class BasePopup {
 
     stack.appendChild(browser);
     viewNode.appendChild(stack);
+
     if (!this.extension.remote) {
       
       
@@ -335,6 +362,9 @@ class BasePopup {
       mm.addMessageListener("Extension:BrowserResized", this);
       browser.addEventListener("pagetitlechanged", this);
       browser.addEventListener("DOMWindowClose", this);
+      browser.addEventListener("DoZoomEnlargeBy10", this, true); 
+      browser.addEventListener("DoZoomReduceBy10", this, true); 
+
       return browser;
     };
 
