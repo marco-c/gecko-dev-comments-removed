@@ -9,7 +9,6 @@
 
 #include <utility>
 
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 
 #if !defined(XP_WIN)
@@ -53,12 +52,6 @@ class MutexImpl {
   static_assert(sizeof(pthread_mutex_t) / sizeof(void*) != 0 &&
                     sizeof(pthread_mutex_t) % sizeof(void*) == 0,
                 "pthread_mutex_t must have pointer alignment");
-#  ifdef XP_DARWIN
-  
-  
-  
-  mozilla::Atomic<int32_t, mozilla::MemoryOrdering::Relaxed> averageSpins;
-#  endif
 #else
   void* platformData_[6];
 #endif
