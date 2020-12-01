@@ -334,7 +334,7 @@ void MacroAssembler::subFromStackPtr(Imm32 imm32) {
 
 
 void MacroAssembler::setupUnalignedABICall(Register scratch) {
-  setupABICall();
+  setupNativeABICall();
   dynamicAlignment_ = true;
 
   movl(esp, scratch);
