@@ -10,6 +10,9 @@
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/StaticPrefs_dom.h"
 
+#include "nsFocusManager.h"
+#include "nsIFrame.h"
+
 
 nsGenericHTMLElement* NS_NewHTMLDialogElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
