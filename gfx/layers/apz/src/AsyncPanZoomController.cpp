@@ -1771,11 +1771,11 @@ nsEventStatus AsyncPanZoomController::HandleEndOfPan() {
   StateChangeNotificationBlocker blocker(this);
   SetState(NOTHING);
 
-  APZC_LOG("%p starting a fling animation if %f >= %f\n", this,
+  APZC_LOG("%p starting a fling animation if %f > %f\n", this,
            flingVelocity.Length().value,
            StaticPrefs::apz_fling_min_velocity_threshold());
 
-  if (flingVelocity.Length() <
+  if (flingVelocity.Length() <=
       StaticPrefs::apz_fling_min_velocity_threshold()) {
     
     
@@ -3359,7 +3359,7 @@ ParentLayerPoint AsyncPanZoomController::AttemptFling(
   
   ParentLayerPoint velocity = GetVelocityVector();
   if (!velocity.IsFinite() ||
-      velocity.Length() < StaticPrefs::apz_fling_min_velocity_threshold()) {
+      velocity.Length() <= StaticPrefs::apz_fling_min_velocity_threshold()) {
     
     
     aHandoffState.mChain->SnapBackOverscrolledApzc(this);

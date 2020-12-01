@@ -282,6 +282,7 @@ TEST_F(APZCPinchGestureDetectorTester, Pinch_PreventDefault_NoAPZZoom) {
 }
 
 #ifndef MOZ_WIDGET_ANDROID  
+#  if 0
 TEST_F(APZCPinchGestureDetectorTester, Panning_TwoFingerFling_ZoomDisabled) {
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
 
@@ -297,6 +298,7 @@ TEST_F(APZCPinchGestureDetectorTester, Panning_TwoFingerFling_ZoomDisabled) {
   
   apzc->AssertStateIsFling();
 }
+#  endif
 #endif
 
 TEST_F(APZCPinchGestureDetectorTester, Panning_TwoFingerFling_ZoomEnabled) {
