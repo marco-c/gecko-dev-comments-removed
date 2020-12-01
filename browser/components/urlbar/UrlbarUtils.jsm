@@ -1628,6 +1628,21 @@ class UrlbarProvider {
 
 
 
+  onSelection(result, element) {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
