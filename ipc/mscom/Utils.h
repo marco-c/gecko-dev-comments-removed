@@ -105,6 +105,15 @@ constexpr size_t kGuidRegFormatCharLenInclNul = 39;
 bool IsClassThreadAwareInprocServer(REFCLSID aClsid);
 
 void GUIDToString(REFGUID aGuid, nsAString& aOutString);
+
+
+
+
+
+
+
+
+void DiagnosticNameForIID(REFIID aIid, nsACString& aOutString);
 #else
 void GUIDToString(REFGUID aGuid,
                   wchar_t (&aOutBuf)[kGuidRegFormatCharLenInclNul]);
