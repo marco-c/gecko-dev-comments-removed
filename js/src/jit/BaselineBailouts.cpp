@@ -604,99 +604,59 @@ bool BaselineStackBuilder::buildBaselineFrame() {
     flags |= BaselineFrame::DEBUGGEE;
   }
 
+  
   JSObject* envChain = nullptr;
-  Value returnValue = UndefinedValue();
-  ArgumentsObject* argsObj = nullptr;
-
-  BailoutKind bailoutKind = iter_.bailoutKind();
-  if (bailoutKind == BailoutKind::ArgumentCheck) {
+  Value envChainSlot = iter_.read();
+  if (envChainSlot.isObject()) {
     
     
-    
-    
-    
-    JitSpew(JitSpew_BaselineBailouts,
-            "      BailoutKind::ArgumentCheck! Using function's environment");
-    envChain = fun_->environment();
+    envChain = &envChainSlot.toObject();
 
     
-    iter_.skip();
-
-    
-    iter_.skip();
-
-    
-    
-    if (script_->argumentsHasVarBinding()) {
-      JitSpew(JitSpew_BaselineBailouts,
-              "      BailoutKind::ArgumentCheck for script with "
-              "argumentsHasVarBinding! "
-              "Using empty arguments object");
-      iter_.skip();
+    if (fun_ && fun_->needsFunctionEnvironmentObjects()) {
+      MOZ_ASSERT(fun_->nonLazyScript()->initialEnvironmentShape());
+      MOZ_ASSERT(!fun_->needsExtraBodyVarEnvironment());
+      flags |= BaselineFrame::HAS_INITIAL_ENV;
     }
   } else {
-    
-    Value envChainSlot = iter_.read();
-    if (envChainSlot.isObject()) {
-      
-      
-      envChain = &envChainSlot.toObject();
+    MOZ_ASSERT(envChainSlot.isUndefined() ||
+               envChainSlot.isMagic(JS_OPTIMIZED_OUT));
+    MOZ_ASSERT(envChainSlotCanBeOptimized());
 
-      
-      if (fun_ && fun_->needsFunctionEnvironmentObjects()) {
-        MOZ_ASSERT(fun_->nonLazyScript()->initialEnvironmentShape());
-        MOZ_ASSERT(!fun_->needsExtraBodyVarEnvironment());
-        flags |= BaselineFrame::HAS_INITIAL_ENV;
-      }
+    
+    
+    if (fun_) {
+      envChain = fun_->environment();
+    } else if (script_->module()) {
+      envChain = script_->module()->environment();
     } else {
-      MOZ_ASSERT(envChainSlot.isUndefined() ||
-                 envChainSlot.isMagic(JS_OPTIMIZED_OUT));
-      MOZ_ASSERT(envChainSlotCanBeOptimized());
-
       
       
-      if (fun_) {
-        envChain = fun_->environment();
-      } else if (script_->module()) {
-        envChain = script_->module()->environment();
-      } else {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!script_->isForEval());
-        MOZ_ASSERT(!script_->hasNonSyntacticScope());
-        envChain = &(script_->global().lexicalEnvironment());
-      }
-    }
-
-    
-    if (script_->noScriptRval()) {
       
       
-      iter_.skip();
-    } else {
-      returnValue = iter_.read();
-      flags |= BaselineFrame::HAS_RVAL;
-    }
-
-    
-    if (script_->argumentsHasVarBinding()) {
-      Value maybeArgsObj = iter_.read();
-      MOZ_ASSERT(maybeArgsObj.isObject() || maybeArgsObj.isUndefined() ||
-                 maybeArgsObj.isMagic(JS_OPTIMIZED_OUT));
-      if (maybeArgsObj.isObject()) {
-        argsObj = &maybeArgsObj.toObject().as<ArgumentsObject>();
-      }
+      
+      
+      MOZ_ASSERT(!script_->isForEval());
+      MOZ_ASSERT(!script_->hasNonSyntacticScope());
+      envChain = &(script_->global().lexicalEnvironment());
     }
   }
-  MOZ_ASSERT(envChain);
 
   
+  MOZ_ASSERT(envChain);
   JitSpew(JitSpew_BaselineBailouts, "      EnvChain=%p", envChain);
   blFrame()->setEnvironmentChain(envChain);
+
+  
+  Value returnValue = UndefinedValue();
+  if (script_->noScriptRval()) {
+    
+    
+    iter_.skip();
+  } else {
+    returnValue = iter_.read();
+    flags |= BaselineFrame::HAS_RVAL;
+  }
 
   
   JitSpew(JitSpew_BaselineBailouts, "      ReturnValue=%016" PRIx64,
@@ -704,15 +664,24 @@ bool BaselineStackBuilder::buildBaselineFrame() {
   blFrame()->setReturnValue(returnValue);
 
   
+  ArgumentsObject* argsObj = nullptr;
+  if (script_->argumentsHasVarBinding()) {
+    Value maybeArgsObj = iter_.read();
+    MOZ_ASSERT(maybeArgsObj.isObject() || maybeArgsObj.isUndefined() ||
+               maybeArgsObj.isMagic(JS_OPTIMIZED_OUT));
+    if (maybeArgsObj.isObject()) {
+      argsObj = &maybeArgsObj.toObject().as<ArgumentsObject>();
+    }
+  }
+
+  
 
   
   blFrame()->setFlags(flags);
 
   
-  if (JitOptions.warpBuilder) {
-    JitSpew(JitSpew_BaselineBailouts, "      ICScript=%p", icScript_);
-    blFrame()->setICScript(icScript_);
-  }
+  JitSpew(JitSpew_BaselineBailouts, "      ICScript=%p", icScript_);
+  blFrame()->setICScript(icScript_);
 
   
   if (argsObj) {
@@ -2185,11 +2154,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       JSScript::argumentsOptimizationFailed(cx, innerScript);
       break;
 
-    case BailoutKind::ArgumentCheck:
-      
-      
-      MOZ_ASSERT(!JitOptions.warpBuilder);
-      break;
     case BailoutKind::BoundsCheck:
       HandleBoundsCheckFailure(cx, outerScript, innerScript);
       break;

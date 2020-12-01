@@ -1381,11 +1381,7 @@ using MVariadicInstruction = MVariadicT<MInstruction>;
 
 
 class MStart : public MNullaryInstruction {
-  MStart() : MNullaryInstruction(classOpcode) {
-    
-    
-    setBailoutKind(BailoutKind::ArgumentCheck);
-  }
+  MStart() : MNullaryInstruction(classOpcode) {}
 
  public:
   INSTRUCTION_HEADER(Start)

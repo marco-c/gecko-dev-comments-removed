@@ -199,10 +199,6 @@ enum class BailoutKind : uint8_t {
   
 
   
-  
-  ArgumentCheck,
-
-  
   BoundsCheck,
 
   
@@ -363,8 +359,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "DoubleOutput";
 
     
-    case BailoutKind::ArgumentCheck:
-      return "ArgumentCheck";
     case BailoutKind::BoundsCheck:
       return "BoundsCheck";
     case BailoutKind::ShapeGuard:
