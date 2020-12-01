@@ -328,27 +328,6 @@ panel[type="arrow"][animating] {
 
 
 
-grid {
-  display: -moz-grid;
-}
-
-rows,
-columns {
-  display: -moz-grid-group;
-}
-
-row,
-column {
-  display: -moz-grid-line;
-}
-
-rows,
-column {
-  -moz-box-orient: vertical;
-}
-
-
-
 treecolpicker {
   -moz-box-ordinal-group: 2147483646;
 }
