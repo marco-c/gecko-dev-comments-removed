@@ -912,8 +912,8 @@ void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info);
 
 
 
-bool profiler_add_native_allocation_marker(int aMainThreadId, int64_t aSize,
-                                           uintptr_t aMemorySize);
+bool profiler_add_native_allocation_marker(int64_t aSize,
+                                           uintptr_t aMemoryAddress);
 
 
 

@@ -38,25 +38,6 @@ using UserTimingMeasure = mozilla::baseprofiler::markers::UserTimingMeasure;
 using MediaSampleMarker = mozilla::baseprofiler::markers::MediaSampleMarker;
 using ContentBuildMarker = mozilla::baseprofiler::markers::ContentBuildMarker;
 
-
-
-
-struct NativeAllocationMarkerPayload {
-  static constexpr mozilla::Span<const char> MarkerTypeName() {
-    return mozilla::MakeStringSpan("Native allocation");
-  }
-  static void StreamJSONMarkerData(
-      mozilla::baseprofiler::SpliceableJSONWriter& aWriter, int64_t aSize,
-      uintptr_t aMemoryAddress, int aThreadId) {
-    aWriter.IntProperty("size", aSize);
-    aWriter.IntProperty("memoryAddress", static_cast<int64_t>(aMemoryAddress));
-    aWriter.IntProperty("threadId", aThreadId);
-  }
-  static mozilla::MarkerSchema MarkerTypeDisplay() {
-    return mozilla::MarkerSchema::SpecialFrontendLocation{};
-  }
-};
-
 struct IPCMarkerPayload {
   static constexpr mozilla::Span<const char> MarkerTypeName() {
     return mozilla::MakeStringSpan("IPC");
