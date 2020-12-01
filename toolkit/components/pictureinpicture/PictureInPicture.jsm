@@ -271,7 +271,8 @@ var PictureInPicture = {
       reason,
       1
     );
-
+    
+    this.savePosition(window);
     this.clearPipTabIcon();
     delete this._weakPipPlayer;
     delete this.browser;
@@ -365,75 +366,123 @@ var PictureInPicture = {
 
 
 
+
   fitToScreen(windowOrPlayer, videoData) {
     let { videoHeight, videoWidth } = videoData;
+
+    
+    
     let isPlayerWindow = windowOrPlayer == this.getWeakPipPlayer();
+    if (isPlayerWindow) {
+      this.savePosition(windowOrPlayer);
+    }
+
+    
+    let { top, left, width, height } = this.loadPosition();
+
+    
+    if (!isNaN(top) && !isNaN(left) && !isNaN(width) && !isNaN(height)) {
+      
+      let centerX = left + width / 2;
+      let centerY = top + height / 2;
+
+      
+      
+      
+      
+      let PiPScreen = this.getWorkingScreen(centerX, centerY);
+
+      
+      let [
+        PiPScreenLeft,
+        PiPScreenTop,
+        PiPScreenWidth,
+        PiPScreenHeight,
+      ] = this.getAvailScreenSize(PiPScreen);
+
+      
+      
+      if (
+        PiPScreenLeft <= centerX &&
+        centerX <= PiPScreenLeft + PiPScreenWidth &&
+        PiPScreenTop <= centerY &&
+        centerY <= PiPScreenTop + PiPScreenHeight
+      ) {
+        let oldWidth = width;
+
+        
+        
+        width = Math.round((height * videoWidth) / videoHeight);
+
+        
+        if (AppConstants.platform == "win") {
+          width = 136 > width ? 136 : width;
+        }
+
+        
+        
+        const WIGGLE_ROOM = 5;
+        
+        
+        
+        let rightScreen = PiPScreenLeft + PiPScreenWidth;
+        let distFromRight = rightScreen - (left + width);
+        if (
+          0 < distFromRight &&
+          distFromRight <= WIGGLE_ROOM + (oldWidth - width)
+        ) {
+          left += distFromRight;
+        }
+
+        
+        
+        if (left < PiPScreenLeft) {
+          
+          
+          left += PiPScreenLeft - left;
+        }
+        if (top < PiPScreenTop) {
+          
+          
+          top += PiPScreenTop - top;
+        }
+        if (left + width > PiPScreenLeft + PiPScreenWidth) {
+          
+          
+          left += PiPScreenLeft + PiPScreenWidth - left - width;
+        }
+        if (top + height > PiPScreenTop + PiPScreenHeight) {
+          
+          
+          top += PiPScreenTop + PiPScreenHeight - top - height;
+        }
+        return { top, left, width, height };
+      }
+    }
 
     
     
-    let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
-      Ci.nsIScreenManager
-    );
-    let screen = screenManager.screenForRect(
+    let screen = this.getWorkingScreen(
       windowOrPlayer.screenX,
-      windowOrPlayer.screenY,
-      1,
-      1
+      windowOrPlayer.screenY
     );
-
-    
-    
-    let screenLeft = {},
-      screenTop = {},
-      screenWidth = {},
-      screenHeight = {};
-    screen.GetAvailRectDisplayPix(
+    let [
       screenLeft,
       screenTop,
       screenWidth,
-      screenHeight
-    );
-    let fullLeft = {},
-      fullTop = {},
-      fullWidth = {},
-      fullHeight = {};
-    screen.GetRectDisplayPix(fullLeft, fullTop, fullWidth, fullHeight);
+      screenHeight,
+    ] = this.getAvailScreenSize(screen);
 
     
     
-    
-    let scaleFactor = screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
-    screenWidth.value *= scaleFactor;
-    screenHeight.value *= scaleFactor;
-    screenLeft.value =
-      (screenLeft.value - fullLeft.value) * scaleFactor + fullLeft.value;
-    screenTop.value =
-      (screenTop.value - fullTop.value) * scaleFactor + fullTop.value;
+    const MAX_HEIGHT = screenHeight / 4;
+    const MAX_WIDTH = screenWidth / 3;
 
-    
-    
-    
-    
-    
-    
-    let preferredSize;
-    if (isPlayerWindow) {
-      let prevWidth = windowOrPlayer.innerWidth;
-      let prevHeight = windowOrPlayer.innerHeight;
-      preferredSize = prevWidth >= prevHeight ? prevWidth : prevHeight;
-    }
-    const MAX_HEIGHT = preferredSize || screenHeight.value / 4;
-    const MAX_WIDTH = preferredSize || screenWidth.value / 3;
-
-    let width = videoWidth;
-    let height = videoHeight;
+    width = videoWidth;
+    height = videoHeight;
     let aspectRatio = videoWidth / videoHeight;
 
-    if (
-      videoHeight > MAX_HEIGHT ||
-      videoWidth > MAX_WIDTH ||
-      (isPlayerWindow && videoHeight < MAX_HEIGHT && videoWidth < MAX_WIDTH)
-    ) {
+    if (videoHeight > MAX_HEIGHT || videoWidth > MAX_WIDTH) {
       
       
       
@@ -457,43 +506,6 @@ var PictureInPicture = {
     
     
     
-
-    if (isPlayerWindow) {
-      
-      
-      
-      
-      
-      let prevWidth = windowOrPlayer.innerWidth;
-      let prevHeight = windowOrPlayer.innerHeight;
-      let distanceLeft = windowOrPlayer.screenX;
-      let distanceRight =
-        screenWidth.value - windowOrPlayer.screenX - prevWidth;
-      let distanceTop = windowOrPlayer.screenY;
-      let distanceBottom =
-        screenHeight.value - windowOrPlayer.screenY - prevHeight;
-
-      let left = windowOrPlayer.screenX;
-      let top = windowOrPlayer.screenY;
-
-      if (distanceRight < distanceLeft) {
-        
-        
-        left += prevWidth - width;
-      }
-
-      if (distanceBottom < distanceTop) {
-        
-        
-        top += prevHeight - height;
-      }
-
-      return { top, left, width, height };
-    }
-
-    
-    
-    
     
     
     
@@ -506,10 +518,8 @@ var PictureInPicture = {
     
     
     let isRTL = Services.locale.isAppLocaleRTL;
-    let left = isRTL
-      ? screenLeft.value
-      : screenLeft.value + screenWidth.value - width;
-    let top = screenTop.value + screenHeight.value - height;
+    left = isRTL ? screenLeft : screenLeft + screenWidth - width;
+    top = screenTop + screenHeight - height;
 
     return { top, left, width, height };
   },
@@ -557,5 +567,146 @@ var PictureInPicture = {
 
   hideToggle() {
     Services.prefs.setBoolPref(TOGGLE_ENABLED_PREF, false);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getAvailScreenSize(screen) {
+    let screenLeft = {},
+      screenTop = {},
+      screenWidth = {},
+      screenHeight = {};
+    screen.GetAvailRectDisplayPix(
+      screenLeft,
+      screenTop,
+      screenWidth,
+      screenHeight
+    );
+    let fullLeft = {},
+      fullTop = {},
+      fullWidth = {},
+      fullHeight = {};
+    screen.GetRectDisplayPix(fullLeft, fullTop, fullWidth, fullHeight);
+
+    
+    
+    
+    let scaleFactor = screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
+    screenWidth.value *= scaleFactor;
+    screenHeight.value *= scaleFactor;
+    screenLeft.value =
+      (screenLeft.value - fullLeft.value) * scaleFactor + fullLeft.value;
+    screenTop.value =
+      (screenTop.value - fullTop.value) * scaleFactor + fullTop.value;
+
+    return [
+      screenLeft.value,
+      screenTop.value,
+      screenWidth.value,
+      screenHeight.value,
+    ];
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getWorkingScreen(left, top) {
+    
+    let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
+      Ci.nsIScreenManager
+    );
+    
+    
+    
+    let screen = screenManager.screenForRect(left, top, 1, 1);
+
+    return screen;
+  },
+
+  
+
+
+
+  savePosition(win) {
+    let xulStore = Services.xulStore;
+
+    let left = win.screenX;
+    let top = win.screenY;
+    let width = win.innerWidth;
+    let height = win.innerHeight;
+
+    xulStore.setValue(PLAYER_URI, "picture-in-picture", "left", left);
+    xulStore.setValue(PLAYER_URI, "picture-in-picture", "top", top);
+    xulStore.setValue(PLAYER_URI, "picture-in-picture", "width", width);
+    xulStore.setValue(PLAYER_URI, "picture-in-picture", "height", height);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  loadPosition() {
+    let xulStore = Services.xulStore;
+
+    let left = parseInt(
+      xulStore.getValue(PLAYER_URI, "picture-in-picture", "left")
+    );
+    let top = parseInt(
+      xulStore.getValue(PLAYER_URI, "picture-in-picture", "top")
+    );
+    let width = parseInt(
+      xulStore.getValue(PLAYER_URI, "picture-in-picture", "width")
+    );
+    let height = parseInt(
+      xulStore.getValue(PLAYER_URI, "picture-in-picture", "height")
+    );
+
+    return { top, left, width, height };
   },
 };
