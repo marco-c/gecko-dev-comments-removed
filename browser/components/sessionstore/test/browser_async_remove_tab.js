@@ -82,7 +82,7 @@ add_task(async function save_worthy_tabs_remote_final() {
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  let entryReplaced = promiseOnHistoryReplaceEntryInChild(browser);
+  let entryReplaced = promiseOnHistoryReplaceEntry(browser);
   await SpecialPowers.spawn(browser, [], async () => {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     webNavigation.loadURI("https://example.com/", {
@@ -132,7 +132,7 @@ add_task(async function dont_save_empty_tabs_final() {
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  let entryReplaced = promiseOnHistoryReplaceEntryInChild(browser);
+  let entryReplaced = promiseOnHistoryReplaceEntry(browser);
   await SpecialPowers.spawn(browser, [], async () => {
     content.location.replace("about:blank");
   });

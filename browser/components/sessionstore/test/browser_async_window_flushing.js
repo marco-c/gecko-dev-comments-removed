@@ -38,7 +38,7 @@ add_task(async function test_add_interesting_window() {
     content.location = newPage;
   });
 
-  await promiseOnHistoryReplaceEntryInChild(browser);
+  await promiseOnHistoryReplaceEntry(browser);
 
   
   
