@@ -1,0 +1,7 @@
+
+
+
+
+var conf = getBuildConfiguration();
+if (!conf.arm64 || conf.windows)
+    assertEq(wasmCompileMode().indexOf("cranelift"), -1);
