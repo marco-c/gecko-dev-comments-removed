@@ -21,6 +21,7 @@
 
 class nsFrameLoader;
 class nsIContent;
+class nsICookieJarSettings;
 class nsIDocShell;
 class nsIDocShellTreeItem;
 class nsIFrame;
@@ -1013,12 +1014,15 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+
+
   void DetermineDragTargetAndDefaultData(
       nsPIDOMWindowOuter* aWindow, nsIContent* aSelectionTarget,
       dom::DataTransfer* aDataTransfer, bool* aAllowEmptyDataTransfer,
       dom::Selection** aSelection,
       dom::RemoteDragStartData** aRemoteDragStartData, nsIContent** aTargetNode,
-      nsIPrincipal** aPrincipal, nsIContentSecurityPolicy** aCsp);
+      nsIPrincipal** aPrincipal, nsIContentSecurityPolicy** aCsp,
+      nsICookieJarSettings** aCookieJarSettings);
 
   
 
@@ -1035,15 +1039,15 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+
+
   MOZ_CAN_RUN_SCRIPT
-  bool DoDefaultDragStart(nsPresContext* aPresContext,
-                          WidgetDragEvent* aDragEvent,
-                          dom::DataTransfer* aDataTransfer,
-                          bool aAllowEmptyDataTransfer, nsIContent* aDragTarget,
-                          dom::Selection* aSelection,
-                          dom::RemoteDragStartData* aDragStartData,
-                          nsIPrincipal* aPrincipal,
-                          nsIContentSecurityPolicy* aCsp);
+  bool DoDefaultDragStart(
+      nsPresContext* aPresContext, WidgetDragEvent* aDragEvent,
+      dom::DataTransfer* aDataTransfer, bool aAllowEmptyDataTransfer,
+      nsIContent* aDragTarget, dom::Selection* aSelection,
+      dom::RemoteDragStartData* aDragStartData, nsIPrincipal* aPrincipal,
+      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings);
 
   bool IsTrackingDragGesture() const { return mGestureDownContent != nullptr; }
   
