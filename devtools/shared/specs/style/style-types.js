@@ -12,12 +12,6 @@ types.addActorType("domstylerule");
 
 
 
-types.addLifetime("walker", "walker");
-
-
-
-
-
 
 
 

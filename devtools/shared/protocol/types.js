@@ -26,7 +26,6 @@ var types = Object.create(null);
 exports.types = types;
 
 var registeredTypes = (types.registeredTypes = new Map());
-var registeredLifetimes = (types.registeredLifetimes = new Map());
 
 exports.registeredTypes = registeredTypes;
 
@@ -83,10 +82,6 @@ types.getType = function(type) {
       return types.addArrayType(subtype);
     } else if (collection === "nullable") {
       return types.addNullableType(subtype);
-    }
-
-    if (registeredLifetimes.has(collection)) {
-      return types.addLifetimeType(collection, subtype);
     }
 
     throw Error("Unknown collection type: " + collection);
@@ -478,58 +473,6 @@ types.addActorDetail = function(name, actorType, detail) {
     category: "detail",
     read: (v, ctx) => actorType.read(v, ctx, detail),
     write: (v, ctx) => actorType.write(v, ctx, detail),
-  });
-};
-
-
-
-
-
-
-
-
-
-
-types.addLifetime = function(name, prop) {
-  if (registeredLifetimes.has(name)) {
-    throw Error("Lifetime '" + name + "' already registered.");
-  }
-  registeredLifetimes.set(name, prop);
-};
-
-
-
-
-
-types.removeLifetime = function(name) {
-  registeredLifetimes.delete(name);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-types.addLifetimeType = function(lifetime, subtype) {
-  subtype = types.getType(subtype);
-  if (!subtype._actor) {
-    throw Error(
-      `Lifetimes only apply to actor types, tried to apply ` +
-        `lifetime '${lifetime}' to ${subtype.name}`
-    );
-  }
-  const prop = registeredLifetimes.get(lifetime);
-  return types.addType(lifetime + ":" + subtype.name, {
-    category: "lifetime",
-    read: (value, ctx) => subtype.read(value, ctx[prop]),
-    write: (value, ctx) => subtype.write(value, ctx[prop]),
   });
 };
 
