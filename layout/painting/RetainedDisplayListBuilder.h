@@ -12,9 +12,6 @@
 #include "mozilla/TypedEnumBits.h"
 
 class nsWindowSizes;
-namespace mozilla {
-class DisplayListChecker;
-}  
 
 
 
@@ -179,8 +176,7 @@ struct RetainedDisplayListBuilder {
 
   RetainedDisplayListMetrics* Metrics() { return &mMetrics; }
 
-  PartialUpdateResult AttemptPartialUpdate(
-      nscolor aBackstop, mozilla::DisplayListChecker* aChecker);
+  PartialUpdateResult AttemptPartialUpdate(nscolor aBackstop);
 
   
 

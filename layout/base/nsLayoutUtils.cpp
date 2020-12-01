@@ -12,7 +12,6 @@
 #include "ActiveLayerTracker.h"
 #include "ClientLayerManager.h"
 #include "DisplayItemClip.h"
-#include "DisplayListChecker.h"
 #include "FrameLayerBuilder.h"
 #include "GeckoProfiler.h"
 #include "gfx2DGlue.h"
@@ -3304,10 +3303,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
           gfxPlatform::AsyncPanZoomEnabled() &&
           nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell));
 
-      DisplayListChecker beforeMergeChecker;
-      DisplayListChecker toBeMergedChecker;
-      DisplayListChecker afterMergeChecker;
-
       
       
       
@@ -3320,18 +3315,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       
       
       if (shouldAttemptPartialUpdate) {
-        if (StaticPrefs::layout_display_list_retain_verify()) {
-          beforeMergeChecker.Set(list, "BM");
-        }
-
-        updateState = retainedBuilder->AttemptPartialUpdate(
-            aBackstop, beforeMergeChecker ? &toBeMergedChecker : nullptr);
-
-        if ((updateState != PartialUpdateResult::Failed) &&
-            beforeMergeChecker) {
-          afterMergeChecker.Set(list, "AM");
-        }
-
+        updateState = retainedBuilder->AttemptPartialUpdate(aBackstop);
         metrics->EndPartialBuild(updateState);
       } else {
         
@@ -3340,9 +3324,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       }
 
       
-      
-      bool doFullRebuild =
-          updateState == PartialUpdateResult::Failed || afterMergeChecker;
+      bool doFullRebuild = updateState == PartialUpdateResult::Failed;
 
       if (StaticPrefs::layout_display_list_build_twice()) {
         
@@ -3368,28 +3350,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
         metrics->EndFullBuild();
 
         updateState = PartialUpdateResult::Updated;
-
-        if (afterMergeChecker) {
-          DisplayListChecker nonRetainedChecker(list, "NR");
-          std::stringstream ss;
-          ss << "**** Differences between retained-after-merged (AM) and "
-             << "non-retained (NR) display lists:";
-          if (!nonRetainedChecker.CompareList(afterMergeChecker, ss)) {
-            ss << "\n\n*** non-retained display items:";
-            nonRetainedChecker.Dump(ss);
-            ss << "\n\n*** before-merge retained display items:";
-            beforeMergeChecker.Dump(ss);
-            ss << "\n\n*** to-be-merged retained display items:";
-            toBeMergedChecker.Dump(ss);
-            ss << "\n\n*** after-merge retained display items:";
-            afterMergeChecker.Dump(ss);
-            fprintf(stderr, "%s\n\n", ss.str().c_str());
-#ifdef DEBUG_FRAME_DUMP
-            fprintf(stderr, "*** Frame tree:\n");
-            aFrame->DumpFrameTree();
-#endif
-          }
-        }
       }
     }
 
