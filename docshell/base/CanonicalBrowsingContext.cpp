@@ -1330,7 +1330,7 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsACString& aRemoteType,
       embedderWindowGlobal->GetBrowserParent();
   
   if (embedderBrowser &&
-      aRemoteType.Equals(embedderBrowser->Manager()->GetRemoteType())) {
+      aRemoteType == embedderBrowser->Manager()->GetRemoteType()) {
     MOZ_DIAGNOSTIC_ASSERT(
         aPendingSwitchId,
         "We always have a PendingSwitchId, except for print-preview loads, "

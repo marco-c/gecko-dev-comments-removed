@@ -3664,6 +3664,19 @@ mozilla::ipc::IPCResult ContentParent::RecvCloneDocumentTreeInto(
     return IPC_OK();
   }
 
+  if (NS_WARN_IF(cp->GetRemoteType() == GetRemoteType())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(cp == this);
+    return IPC_OK();
+  }
+
   target
       ->ChangeRemoteness(cp->GetRemoteType(),  0,
                           false,  0)
