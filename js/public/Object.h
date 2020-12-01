@@ -20,6 +20,7 @@
 #include "js/Realm.h"               
 #include "js/RootingAPI.h"          
 #include "js/shadow/ObjectGroup.h"  
+#include "js/Value.h"               
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
@@ -67,9 +68,7 @@ static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
 inline void* GetPrivate(JSObject* obj) {
   MOZ_ASSERT(GetClass(obj)->flags & JSCLASS_HAS_PRIVATE);
   const auto* nobj = reinterpret_cast<const shadow::Object*>(obj);
-  void** addr =
-      reinterpret_cast<void**>(&nobj->fixedSlots()[nobj->numFixedSlots()]);
-  return *addr;
+  return nobj->fixedSlots()[nobj->numFixedSlots()].toPrivate();
 }
 
 

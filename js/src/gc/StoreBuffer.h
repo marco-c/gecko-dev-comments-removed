@@ -648,7 +648,7 @@ MOZ_ALWAYS_INLINE void PostWriteBarrierImpl(void* cellp, T* prev, T* next) {
   MOZ_ASSERT(cellp);
 
   
-  js::gc::StoreBuffer* buffer;
+  StoreBuffer* buffer;
   if (next && (buffer = next->storeBuffer())) {
     
     
@@ -673,14 +673,17 @@ MOZ_ALWAYS_INLINE void PostWriteBarrier(T** vp, T* prev, T* next) {
   static_assert(std::is_base_of_v<Cell, T>);
   static_assert(!std::is_same_v<Cell, T> && !std::is_same_v<TenuredCell, T>);
 
-  if constexpr (!std::is_base_of_v<gc::TenuredCell, T>) {
-    using BaseT = typename gc::BaseGCType<T>::type;
-    gc::PostWriteBarrierImpl<BaseT>(vp, prev, next);
+  if constexpr (!std::is_base_of_v<TenuredCell, T>) {
+    using BaseT = typename BaseGCType<T>::type;
+    PostWriteBarrierImpl<BaseT>(vp, prev, next);
     return;
   }
 
   MOZ_ASSERT(!IsInsideNursery(next));
 }
+
+
+void PostWriteBarrierCell(Cell* cell, Cell* prev, Cell* next);
 
 } 
 } 
