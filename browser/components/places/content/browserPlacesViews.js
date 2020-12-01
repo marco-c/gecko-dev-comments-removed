@@ -249,19 +249,6 @@ PlacesViewBase.prototype = {
   buildContextMenu: function PVB_buildContextMenu(aPopup) {
     this._contextMenuShown = aPopup;
     window.updateCommands("places");
-
-    
-    
-    if (gBookmarksToolbar2h2020) {
-      let existingSubmenu = aPopup.querySelector("#toggle_PersonalToolbar");
-      existingSubmenu?.remove();
-      let bookmarksToolbar = document.getElementById("PersonalToolbar");
-      if (bookmarksToolbar?.contains(aPopup.triggerNode)) {
-        let menu = BookmarkingUI.buildBookmarksToolbarSubmenu(bookmarksToolbar);
-        aPopup.appendChild(menu);
-      }
-    }
-
     return this.controller.buildContextMenu(aPopup);
   },
 
