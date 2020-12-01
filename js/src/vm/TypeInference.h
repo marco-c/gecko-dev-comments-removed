@@ -42,30 +42,6 @@ class TempAllocator;
 
 }  
 
-class MOZ_RAII AutoSweepBase {
-  
-  
-  JS::AutoCheckCannotGC nogc;
-};
-
-
-
-class MOZ_RAII AutoSweepJitScript : public AutoSweepBase {
-#ifdef DEBUG
-  Zone* zone_;
-  jit::JitScript* jitScript_;
-#endif
-
- public:
-  inline explicit AutoSweepJitScript(BaseScript* script);
-#ifdef DEBUG
-  inline ~AutoSweepJitScript();
-
-  jit::JitScript* jitScript() const { return jitScript_; }
-  Zone* zone() const { return zone_; }
-#endif
-};
-
 
 inline bool isInlinableCall(jsbytecode* pc);
 
@@ -77,25 +53,12 @@ class TypeZone {
   JS::Zone* const zone_;
 
   
-  static const size_t TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 8 * 1024;
-  ZoneData<LifoAlloc> typeLifoAlloc_;
-
-  
   ZoneData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
 
   TypeZone(const TypeZone&) = delete;
   void operator=(const TypeZone&) = delete;
 
  public:
-  
-  ZoneOrGCTaskOrIonCompileData<uint32_t> generation;
-
-  
-  
-  ZoneData<LifoAlloc> sweepTypeLifoAlloc;
-
-  ZoneData<bool> sweepingTypes;
-
   ZoneData<bool> keepJitScripts;
 
   
@@ -105,22 +68,6 @@ class TypeZone {
   ~TypeZone();
 
   JS::Zone* zone() const { return zone_; }
-
-  LifoAlloc& typeLifoAlloc() {
-#ifdef JS_CRASH_DIAGNOSTICS
-    MOZ_RELEASE_ASSERT(CurrentThreadCanAccessZone(zone_));
-#endif
-    return typeLifoAlloc_.ref();
-  }
-
-  void beginSweep();
-  void endSweep(JSRuntime* rt);
-
-  bool isSweepingTypes() const { return sweepingTypes; }
-  void setSweepingTypes(bool sweeping) {
-    MOZ_RELEASE_ASSERT(sweepingTypes != sweeping);
-    sweepingTypes = sweeping;
-  }
 
   mozilla::Maybe<IonCompilationId> currentCompilationId() const {
     return currentCompilationId_.ref();

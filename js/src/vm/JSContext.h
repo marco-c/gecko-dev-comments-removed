@@ -368,9 +368,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   static size_t offsetOfZone() { return offsetof(JSContext, zone_); }
 
   
-  inline js::LifoAlloc& typeLifoAlloc();
-
-  
   
   inline js::Handle<js::GlobalObject*> global() const;
 
@@ -1300,4 +1297,4 @@ class MOZ_RAII AutoSuppressNurseryCellAlloc {
   MOZ_ASSERT_IF(cx, !cx->isHelperThreadContext() && \
                         js::CurrentThreadCanAccessRuntime(cx->runtime()))
 
-#endif 
+#endif

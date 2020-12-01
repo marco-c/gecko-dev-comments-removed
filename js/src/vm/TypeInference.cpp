@@ -62,56 +62,13 @@ bool js::ClassCanHaveExtraProperties(const JSClass* clasp) {
          clasp->getOpsGetProperty() || IsTypedArrayClass(clasp);
 }
 
-
-
-
-
-static inline void AssertGCStateForSweep(Zone* zone) {
-  MOZ_ASSERT(zone->isGCSweepingOrCompacting());
-
-  
-  
-  MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
-}
-
-
-void JitScript::sweepTypes(const js::AutoSweepJitScript& sweep, Zone* zone) {
-  MOZ_ASSERT(typesGeneration() != zone->types.generation);
-  setTypesGeneration(zone->types.generation);
-
-  AssertGCStateForSweep(zone);
-}
-
 TypeZone::TypeZone(Zone* zone)
     : zone_(zone),
-      typeLifoAlloc_(zone, (size_t)TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
       currentCompilationId_(zone),
-      generation(zone, 0),
-      sweepTypeLifoAlloc(zone, (size_t)TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
-      sweepingTypes(zone, false),
       keepJitScripts(zone, false),
       activeAnalysis(zone, nullptr) {}
 
-TypeZone::~TypeZone() {
-  MOZ_RELEASE_ASSERT(!sweepingTypes);
-  MOZ_ASSERT(!keepJitScripts);
-}
-
-void TypeZone::beginSweep() {
-  MOZ_ASSERT(zone()->isGCSweepingOrCompacting());
-  MOZ_ASSERT(
-      !zone()->runtimeFromMainThread()->gc.storeBuffer().hasTypeSetPointers());
-
-  
-  
-  sweepTypeLifoAlloc.ref().steal(&typeLifoAlloc());
-
-  generation = !generation;
-}
-
-void TypeZone::endSweep(JSRuntime* rt) {
-  rt->gc.queueAllLifoBlocksForFree(&sweepTypeLifoAlloc.ref());
-}
+TypeZone::~TypeZone() { MOZ_ASSERT(!keepJitScripts); }
 
 JS::ubi::Node::Size JS::ubi::Concrete<js::ObjectGroup>::size(
     mozilla::MallocSizeOf mallocSizeOf) const {

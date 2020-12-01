@@ -13,7 +13,7 @@ for (let i = 0; i < count; i++) {
 
 
 assertEq(gcstate(), "NotActive");
-gczeal(20);
+gczeal(21);
 startgc(1);
 
 

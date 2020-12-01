@@ -46,8 +46,6 @@ JitScript::JitScript(JSScript* script, Offset endOffset,
       endOffset_(endOffset),
       icScript_(script->getWarmUpCount(), endOffset - offsetOfICScript(),
                 0) {
-  setTypesGeneration(script->zone()->types.generation);
-
   
   
   if (!script->canBaselineCompile()) {
