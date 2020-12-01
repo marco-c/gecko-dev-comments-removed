@@ -153,9 +153,14 @@ class ComputedStyle {
   bool IsTextCombined() const { return bool(Flags() & Flag::IS_TEXT_COMBINED); }
 
   
+  bool DependsOnSelfFontMetrics() const {
+    return bool(Flags() & Flag::DEPENDS_ON_SELF_FONT_METRICS);
+  }
+
   
-  bool DependsOnFontMetrics() const {
-    return bool(Flags() & Flag::DEPENDS_ON_FONT_METRICS);
+  
+  bool DependsOnInheritedFontMetrics() const {
+    return bool(Flags() & Flag::DEPENDS_ON_INHERITED_FONT_METRICS);
   }
 
   
