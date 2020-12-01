@@ -435,7 +435,7 @@ TestHTTPAnswerRunnable::OnStartRequest(nsIRequest* aRequest) {
     nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal =
         do_QueryInterface(httpsOnlyChannel);
     bool isAuthChannel = false;
-    mozilla::Unused << httpChannelInternal->GetIsAuthChannel(&isAuthChannel);
+    Unused << httpChannelInternal->GetIsAuthChannel(&isAuthChannel);
     if (!topLevelLoadInProgress && !isAuthChannel) {
       
       

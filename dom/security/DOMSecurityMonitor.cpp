@@ -11,7 +11,6 @@
 #include "nsILoadInfo.h"
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
-#include "nsJSUtils.h"
 
 #include "mozilla/StaticPrefs_dom.h"
 
@@ -42,7 +41,7 @@ void DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(
 
   
   
-  if (mozilla::StaticPrefs::dom_security_skip_html_fragment_assertion()) {
+  if (StaticPrefs::dom_security_skip_html_fragment_assertion()) {
     return;
   }
 
