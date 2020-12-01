@@ -941,9 +941,11 @@ struct ReflowInput : public SizeComputationInput {
   }
 
   
-  static void ComputeRelativeOffsets(mozilla::WritingMode aWM, nsIFrame* aFrame,
-                                     const mozilla::LogicalSize& aCBSize,
-                                     nsMargin& aComputedOffsets);
+  
+  
+  static mozilla::LogicalMargin ComputeRelativeOffsets(
+      mozilla::WritingMode aWM, nsIFrame* aFrame,
+      const mozilla::LogicalSize& aCBSize);
 
   
   static void ApplyRelativePositioning(nsIFrame* aFrame,

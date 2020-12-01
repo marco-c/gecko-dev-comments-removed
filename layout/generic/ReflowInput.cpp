@@ -840,23 +840,20 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
 }
 
 
-void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
-                                         const LogicalSize& aCBSize,
-                                         nsMargin& aComputedOffsets) {
+LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
+                                                  nsIFrame* aFrame,
+                                                  const LogicalSize& aCBSize) {
   LogicalMargin offsets(aWM);
-  mozilla::Side inlineStart = aWM.PhysicalSide(eLogicalSideIStart);
-  mozilla::Side inlineEnd = aWM.PhysicalSide(eLogicalSideIEnd);
-  mozilla::Side blockStart = aWM.PhysicalSide(eLogicalSideBStart);
-  mozilla::Side blockEnd = aWM.PhysicalSide(eLogicalSideBEnd);
-
   const nsStylePosition* position = aFrame->StylePosition();
 
   
   
   
   
-  bool inlineStartIsAuto = position->mOffset.Get(inlineStart).IsAuto();
-  bool inlineEndIsAuto = position->mOffset.Get(inlineEnd).IsAuto();
+  const auto& inlineStart = position->mOffset.GetIStart(aWM);
+  const auto& inlineEnd = position->mOffset.GetIEnd(aWM);
+  bool inlineStartIsAuto = inlineStart.IsAuto();
+  bool inlineEndIsAuto = inlineEnd.IsAuto();
 
   
   
@@ -870,8 +867,8 @@ void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
       offsets.IStart(aWM) = offsets.IEnd(aWM) = 0;
     } else {
       
-      offsets.IEnd(aWM) = nsLayoutUtils::ComputeCBDependentValue(
-          aCBSize.ISize(aWM), position->mOffset.Get(inlineEnd));
+      offsets.IEnd(aWM) =
+          nsLayoutUtils::ComputeCBDependentValue(aCBSize.ISize(aWM), inlineEnd);
 
       
       offsets.IStart(aWM) = -offsets.IEnd(aWM);
@@ -881,8 +878,8 @@ void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
     NS_ASSERTION(inlineEndIsAuto, "unexpected specified constraint");
 
     
-    offsets.IStart(aWM) = nsLayoutUtils::ComputeCBDependentValue(
-        aCBSize.ISize(aWM), position->mOffset.Get(inlineStart));
+    offsets.IStart(aWM) =
+        nsLayoutUtils::ComputeCBDependentValue(aCBSize.ISize(aWM), inlineStart);
 
     
     offsets.IEnd(aWM) = -offsets.IStart(aWM);
@@ -892,16 +889,18 @@ void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
   
   
   
-  bool blockStartIsAuto = position->mOffset.Get(blockStart).IsAuto();
-  bool blockEndIsAuto = position->mOffset.Get(blockEnd).IsAuto();
+  const auto& blockStart = position->mOffset.GetBStart(aWM);
+  const auto& blockEnd = position->mOffset.GetBEnd(aWM);
+  bool blockStartIsAuto = blockStart.IsAuto();
+  bool blockEndIsAuto = blockEnd.IsAuto();
 
   
   
   if (NS_UNCONSTRAINEDSIZE == aCBSize.BSize(aWM)) {
-    if (position->OffsetHasPercent(blockStart)) {
+    if (blockStart.HasPercent()) {
       blockStartIsAuto = true;
     }
-    if (position->OffsetHasPercent(blockEnd)) {
+    if (blockEnd.HasPercent()) {
       blockEndIsAuto = true;
     }
   }
@@ -918,7 +917,7 @@ void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
     } else {
       
       offsets.BEnd(aWM) = nsLayoutUtils::ComputeBSizeDependentValue(
-          aCBSize.BSize(aWM), position->mOffset.Get(blockEnd));
+          aCBSize.BSize(aWM), blockEnd);
 
       
       offsets.BStart(aWM) = -offsets.BEnd(aWM);
@@ -929,22 +928,27 @@ void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
 
     
     offsets.BStart(aWM) = nsLayoutUtils::ComputeBSizeDependentValue(
-        aCBSize.BSize(aWM), position->mOffset.Get(blockStart));
+        aCBSize.BSize(aWM), blockStart);
 
     
     offsets.BEnd(aWM) = -offsets.BStart(aWM);
   }
 
   
-  aComputedOffsets = offsets.GetPhysicalMargin(aWM);
-  nsMargin* physicalOffsets =
-      aFrame->GetProperty(nsIFrame::ComputedOffsetProperty());
-  if (physicalOffsets) {
-    *physicalOffsets = aComputedOffsets;
+  const nsMargin physicalOffsets = offsets.GetPhysicalMargin(aWM);
+  if (nsMargin* prop =
+          aFrame->GetProperty(nsIFrame::ComputedOffsetProperty())) {
+    *prop = physicalOffsets;
   } else {
     aFrame->AddProperty(nsIFrame::ComputedOffsetProperty(),
-                        new nsMargin(aComputedOffsets));
+                        new nsMargin(physicalOffsets));
   }
+
+  NS_ASSERTION(offsets.IStart(aWM) == -offsets.IEnd(aWM) &&
+                   offsets.BStart(aWM) == -offsets.BEnd(aWM),
+               "ComputeRelativeOffsets should return valid results!");
+
+  return offsets;
 }
 
 
@@ -2197,8 +2201,9 @@ void ReflowInput::InitConstraints(
     
     if (mStyleDisplay->IsRelativelyPositioned(mFrame) &&
         StylePositionProperty::Relative == mStyleDisplay->mPosition) {
-      ComputeRelativeOffsets(cbwm, mFrame, cbSize.ConvertTo(cbwm, wm),
-                             ComputedPhysicalOffsets());
+      const LogicalMargin offsets =
+          ComputeRelativeOffsets(cbwm, mFrame, cbSize.ConvertTo(cbwm, wm));
+      SetComputedLogicalOffsets(cbwm, offsets);
     } else {
       
       ComputedPhysicalOffsets().SizeTo(0, 0, 0, 0);
