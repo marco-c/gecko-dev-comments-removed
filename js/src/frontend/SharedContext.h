@@ -322,10 +322,6 @@ class FunctionBox : public SharedContext {
 
   
   
-  FunctionBox* traceLink_ = nullptr;
-
-  
-  
   
   
   
@@ -698,8 +694,6 @@ class FunctionBox : public SharedContext {
   }
 
   FunctionIndex index() { return funcDataIndex_; }
-
-  FunctionBox* traceLink() { return traceLink_; }
 
   void finishScriptFlags();
   void copyScriptFields(ScriptStencil& script);
