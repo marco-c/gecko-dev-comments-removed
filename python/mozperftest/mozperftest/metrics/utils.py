@@ -110,7 +110,7 @@ def validate_intermediate_results(results):
 
 def metric_fields(value):
     
-    if "," not in value:
+    if "," not in value and ":" not in value:
         return {"name": value}
 
     def _check(field):
