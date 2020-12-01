@@ -151,7 +151,7 @@ impl Dispatcher {
         let queue_preinit = Arc::new(AtomicBool::new(true));
 
         thread::spawn(move || {
-            if let Err(_) = block_receiver.recv() {
+            if block_receiver.recv().is_err() {
                 
                 
                 log::error!("The task producer was disconnected. Worker thread will exit.");

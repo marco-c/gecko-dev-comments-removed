@@ -38,20 +38,15 @@ pub fn check_for_uploads() {
         return;
     }
     thread::spawn(move || {
-        loop {
-            if let Some(mutex) = UPLOADER.get() {
-                let uploader = &mut *mutex.lock().unwrap();
-                if let Upload(request) = crate::with_glean(|glean| glean.get_upload_task()) {
-                    let response = (*uploader)(&request);
-                    crate::with_glean(|glean| {
-                        glean.process_ping_upload_response(&request.document_id, response)
-                    });
-                } else {
-                    
-                    
-                    break;
-                }
+        while let Some(mutex) = UPLOADER.get() {
+            let uploader = &mut *mutex.lock().unwrap();
+            if let Upload(request) = crate::with_glean(|glean| glean.get_upload_task()) {
+                let response = (*uploader)(&request);
+                crate::with_glean(|glean| {
+                    glean.process_ping_upload_response(&request.document_id, response)
+                });
             } else {
+                
                 
                 break;
             }
