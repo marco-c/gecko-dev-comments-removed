@@ -12,7 +12,6 @@
 
 
 
-
 const validOptions = [
   [undefined, undefined],
   [1, 1],
