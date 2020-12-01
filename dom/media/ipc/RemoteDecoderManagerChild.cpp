@@ -247,6 +247,13 @@ RemoteDecoderManagerChild::CreateVideoDecoder(
   }
 
   MOZ_ASSERT(aLocation != RemoteDecodeIn::Unspecified);
+
+  if (!aParams.mKnowsCompositor && aLocation == RemoteDecodeIn::GpuProcess) {
+    
+    
+    return nullptr;
+  }
+
   RefPtr<RemoteVideoDecoderChild> child;
   MediaResult result(NS_ERROR_DOM_MEDIA_CANCELED);
 
