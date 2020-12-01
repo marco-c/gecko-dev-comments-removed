@@ -30,6 +30,9 @@ var gSearchResultsPane = {
   searchKeywords: new WeakMap(),
   inited: false,
 
+  
+  subItems: new Map(),
+
   init() {
     if (this.inited) {
       return;
@@ -235,9 +238,10 @@ var gSearchResultsPane = {
     let subQuery = this.query && query.includes(this.query);
     this.query = query;
 
-    this.getFindSelection(window).removeAllRanges();
-    this.removeAllSearchTooltips();
-    this.removeAllSearchMenuitemIndicators();
+    
+    
+    
+    this.removeAllSearchIndicators(window, !query.length);
 
     
     if (this.telemetryTimer) {
@@ -312,6 +316,14 @@ var gSearchResultsPane = {
           resultsFound = true;
         } else {
           child.classList.add("visually-hidden");
+        }
+      }
+
+      
+      
+      if (this.subItems.size) {
+        for (let [subItem, matches] of this.subItems) {
+          subItem.classList.toggle("visually-hidden", !matches);
         }
       }
 
@@ -522,17 +534,21 @@ var gSearchResultsPane = {
 
   async searchChildNodeIfVisible(nodeObject, index, searchPhrase) {
     let result = false;
+    let child = nodeObject.childNodes[index];
     if (
-      !nodeObject.childNodes[index].hidden &&
+      !child.hidden &&
       nodeObject.getAttribute("data-hidden-from-search") !== "true"
     ) {
-      result = await this.searchWithinNode(
-        nodeObject.childNodes[index],
-        searchPhrase
-      );
+      result = await this.searchWithinNode(child, searchPhrase);
       
       if (result && nodeObject.tagName === "menulist") {
         this.listSearchTooltips.add(nodeObject);
+      }
+
+      
+      
+      if (child instanceof Element && child.classList.contains("featureGate")) {
+        this.subItems.set(child, result);
       }
     }
     return result;
@@ -646,6 +662,25 @@ var gSearchResultsPane = {
       "left",
       `calc(50% - ${tooltipRect.width / 2}px)`
     );
+  },
+
+  
+
+
+
+  removeAllSearchIndicators(window, showSubItems) {
+    this.getFindSelection(window).removeAllRanges();
+    this.removeAllSearchTooltips();
+    this.removeAllSearchMenuitemIndicators();
+
+    
+    if (showSubItems && this.subItems.size) {
+      for (let subItem of this.subItems.keys()) {
+        subItem.classList.remove("visually-hidden");
+      }
+    }
+
+    this.subItems.clear();
   },
 
   
