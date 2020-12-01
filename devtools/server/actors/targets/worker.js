@@ -96,15 +96,6 @@ exports.WorkerTargetActor = TargetActorMixin(
     },
 
     destroy() {
-      if (this.threadActor) {
-        
-        
-        
-        
-        this.threadActor.exit();
-        this.threadActor = null;
-      }
-
       Actor.prototype.destroy.call(this);
 
       if (this._sources) {
@@ -115,6 +106,7 @@ exports.WorkerTargetActor = TargetActorMixin(
       this.workerGlobal = null;
       this._dbg = null;
       this._consoleActor = null;
+      this.threadActor = null;
     },
   }
 );

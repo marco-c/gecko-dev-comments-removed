@@ -206,20 +206,15 @@ const ContentProcessTargetActor = TargetActorMixin(
       }
       Resources.unwatchAllTargetResources(this);
 
-      if (this.threadActor) {
-        
-        
-        
-        
-        this.threadActor.exit();
-        this.threadActor = null;
-      }
-
       
       
       this.emit("tabDetached");
 
       Actor.prototype.destroy.call(this);
+
+      if (this.threadActor) {
+        this.threadActor = null;
+      }
 
       
       if (this._workerList) {

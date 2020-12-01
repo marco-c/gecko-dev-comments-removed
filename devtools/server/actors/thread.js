@@ -368,24 +368,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._threadLifetimePool.destroy();
     this._threadLifetimePool = null;
     this._dbg = null;
-    
-    
-    
-  },
-
-  
-
-
-  exit: function() {
-    this.destroy();
     this._state = "exited";
-    
-    
-    
-    
-    
-    
-    
+
     Actor.prototype.destroy.call(this);
   },
 

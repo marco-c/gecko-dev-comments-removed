@@ -972,7 +972,7 @@ const browsingContextTargetPrototype = {
 
 
   _destroyThreadActor() {
-    this.threadActor.exit();
+    this.threadActor.destroy();
     this.threadActor = null;
 
     if (this._sources) {
