@@ -264,6 +264,9 @@
 
 - (id _Nullable)moxEditableAncestor;
 
+
+- (NSString* _Nullable)moxMozDebugDescription;
+
 #pragma mark - AttributeSetters
 
 

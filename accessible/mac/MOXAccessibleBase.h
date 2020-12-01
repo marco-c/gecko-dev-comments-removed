@@ -125,6 +125,8 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 
 #pragma mark -
 
+- (NSString*)description;
+
 - (BOOL)isExpired;
 
 

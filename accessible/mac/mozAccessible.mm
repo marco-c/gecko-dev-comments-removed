@@ -798,6 +798,33 @@ struct RoleDescrComparator {
   return nil;
 }
 
+#ifndef RELEASE_OR_BETA
+- (NSString*)moxMozDebugDescription {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+
+  NSMutableString* domInfo = [NSMutableString string];
+  if (NSString* tagName = utils::GetAccAttr(self, "tag")) {
+    [domInfo appendFormat:@" %@", tagName];
+    NSString* domID = [self moxDOMIdentifier];
+    if ([domID length]) {
+      [domInfo appendFormat:@"#%@", domID];
+    }
+    if (NSString* className = utils::GetAccAttr(self, "class")) {
+      [domInfo
+          appendFormat:@".%@",
+                       [className stringByReplacingOccurrencesOfString:@" "
+                                                            withString:@"."]];
+    }
+  }
+
+  return [NSString stringWithFormat:@"<%@: %p %@%@>",
+                                    NSStringFromClass([self class]), self,
+                                    [self moxRole], domInfo];
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+}
+#endif
+
 - (NSArray*)moxUIElementsForSearchPredicate:(NSDictionary*)searchPredicate {
   
   
@@ -882,16 +909,6 @@ struct RoleDescrComparator {
 }
 
 #pragma mark -
-
-
-
-- (NSString*)description {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
-
-  return [NSString stringWithFormat:@"(%p) %@", self, [self moxRole]];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
-}
 
 - (BOOL)disableChild:(mozAccessible*)child {
   return NO;
