@@ -87,7 +87,7 @@ class LocalStorageManager final : public nsIDOMStorageManager,
   
   already_AddRefed<LocalStorageCache> PutCache(
       const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix,
-      nsIPrincipal* aPrincipal);
+      const nsACString& aQuotaKey, nsIPrincipal* aPrincipal);
 
   enum class CreateMode {
     
