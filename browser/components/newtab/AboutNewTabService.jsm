@@ -93,6 +93,19 @@ const AboutHomeStartupCacheChild = {
   CACHE_REQUEST_MESSAGE: "AboutHomeStartupCache:CacheRequest",
   CACHE_RESPONSE_MESSAGE: "AboutHomeStartupCache:CacheResponse",
   CACHE_USAGE_RESULT_MESSAGE: "AboutHomeStartupCache:UsageResult",
+  STATES: {
+    UNAVAILABLE: 0,
+    UNCONSUMED: 1,
+    PAGE_CONSUMED: 2,
+    PAGE_AND_SCRIPT_CONSUMED: 3,
+    FAILED: 4,
+  },
+  REQUEST_TYPE: {
+    PAGE: 0,
+    SCRIPT: 1,
+  },
+  _state: 0,
+  _consumerBCID: null,
 
   
 
@@ -129,6 +142,7 @@ const AboutHomeStartupCacheChild = {
     this._pageInputStream = pageInputStream;
     this._scriptInputStream = scriptInputStream;
     this._initted = true;
+    this.setState(this.STATES.UNCONSUMED);
   },
 
   
@@ -159,9 +173,14 @@ const AboutHomeStartupCacheChild = {
     this._pageInputStream = null;
     this._scriptInputStream = null;
     this._initted = false;
+    this._state = this.STATES.UNAVAILABLE;
+    this._consumerBCID = null;
   },
 
   
+
+
+
 
 
 
@@ -184,7 +203,27 @@ const AboutHomeStartupCacheChild = {
       return null;
     }
 
-    let isScriptRequest = uri.query === "jscache";
+    if (this._state >= this.STATES.PAGE_AND_SCRIPT_CONSUMED) {
+      return null;
+    }
+
+    let requestType =
+      uri.query === "jscache"
+        ? this.REQUEST_TYPE.SCRIPT
+        : this.REQUEST_TYPE.PAGE;
+
+    
+    
+    
+    
+    if (
+      (requestType === this.REQUEST_TYPE.PAGE &&
+        this._state !== this.STATES.UNCONSUMED) ||
+      (requestType === this.REQUEST_TYPE_SCRIPT &&
+        this._state !== this.STATES.PAGE_CONSUMED)
+    ) {
+      return null;
+    }
 
     
     
@@ -194,16 +233,18 @@ const AboutHomeStartupCacheChild = {
     
     
     
-    if (!isScriptRequest) {
+    if (requestType === this.REQUEST_TYPE.PAGE) {
       try {
         if (
           !this._scriptInputStream.available() ||
           !this._pageInputStream.available()
         ) {
+          this.setState(this.STATES.FAILED);
           this.reportUsageResult(false );
           return null;
         }
       } catch (e) {
+        this.setState(this.STATES.FAILED);
         if (e.result === Cr.NS_BASE_STREAM_CLOSED) {
           this.reportUsageResult(false );
           return null;
@@ -212,17 +253,37 @@ const AboutHomeStartupCacheChild = {
       }
     }
 
+    if (
+      requestType === this.REQUEST_TYPE.SCRIPT &&
+      this._consumerBCID !== loadInfo.browsingContextID
+    ) {
+      
+      
+      this.setState(this.STATES.FAILED);
+      return null;
+    }
+
     let channel = Cc[
       "@mozilla.org/network/input-stream-channel;1"
     ].createInstance(Ci.nsIInputStreamChannel);
     channel.QueryInterface(Ci.nsIChannel);
     channel.setURI(uri);
     channel.loadInfo = loadInfo;
-    channel.contentStream = isScriptRequest
-      ? this._scriptInputStream
-      : this._pageInputStream;
+    channel.contentStream =
+      requestType === this.REQUEST_TYPE.PAGE
+        ? this._pageInputStream
+        : this._scriptInputStream;
 
-    this.reportUsageResult(true );
+    if (requestType === this.REQUEST_TYPE.SCRIPT) {
+      this.setState(this.STATES.PAGE_AND_SCRIPT_CONSUMED);
+      this.reportUsageResult(true );
+    } else {
+      this.setState(this.STATES.PAGE_CONSUMED);
+      
+      
+      
+      this._consumerBCID = loadInfo.browsingContextID;
+    }
 
     return channel;
   },
@@ -301,6 +362,25 @@ const AboutHomeStartupCacheChild = {
     if (topic === "memory-pressure" && this._cacheWorker) {
       this._cacheWorker.terminate();
       this._cacheWorker = null;
+    }
+  },
+
+  
+
+
+
+
+
+
+  setState(state) {
+    if (state > this._state) {
+      this._state = state;
+    } else {
+      console.error(
+        "AboutHomeStartupCacheChild could not transition from state " +
+          `${this._state} to ${state}`,
+        new Error().stack
+      );
     }
   },
 };

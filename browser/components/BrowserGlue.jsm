@@ -233,7 +233,11 @@ let JSWINDOWACTORS = {
     },
     
     
-    matches: ["about:home", "about:welcome", "about:newtab*"],
+    
+    
+    
+    
+    matches: ["about:home*", "about:welcome", "about:newtab*"],
     remoteTypes: ["privilegedabout"],
   },
 

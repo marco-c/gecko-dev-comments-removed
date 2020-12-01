@@ -1,0 +1,52 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+add_task(async function test_same_consumer() {
+  await BrowserTestUtils.withNewTab("about:home", async browser => {
+    await simulateRestart(browser);
+
+    
+    
+    
+    
+    
+    
+    
+    await injectIntoCache(
+      `
+      <html>
+        <head>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; object-src 'none'; script-src resource: chrome:; connect-src https:; img-src https: data: blob:; style-src 'unsafe-inline';">
+        </head>
+        <body>
+          <h1>A fake about:home page</h1>
+          <div id="root"></div>
+        </body>
+      </html>`,
+      "window.__CACHE_CONSUMED__ = true;"
+    );
+    await simulateRestart(browser, false );
+
+    
+    
+    await BrowserTestUtils.withNewTab("about:home?jscache", async browser2 => {
+      await SpecialPowers.spawn(browser2, [], async () => {
+        Assert.ok(
+          !Cu.waiveXrays(content).__CACHE_CONSUMED__,
+          "Should not have found __CACHE_CONSUMED__ property"
+        );
+        Assert.ok(
+          content.document.body.classList.contains("activity-stream"),
+          "Should have found activity-stream class on <body> element"
+        );
+      });
+    });
+  });
+});

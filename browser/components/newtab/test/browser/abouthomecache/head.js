@@ -153,9 +153,16 @@ async function simulateRestart(
 
 
 
+
+
+
 async function injectIntoCache(page, script) {
   if (!page || !script) {
     throw new Error("Cannot injectIntoCache with falsey values");
+  }
+
+  if (!page.includes(`id="root"`)) {
+    throw new Error("Page markup must include a root node.");
   }
 
   await AboutHomeStartupCache.ensureCacheEntry();
