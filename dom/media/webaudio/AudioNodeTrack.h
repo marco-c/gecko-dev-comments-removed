@@ -115,7 +115,7 @@ class AudioNodeTrack : public ProcessedMediaTrack {
     mAudioParamTrack = true;
   }
   
-  uint32_t NumberOfChannels() const;
+  uint32_t NumberOfChannels() const override;
 
   
 

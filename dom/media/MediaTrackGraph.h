@@ -421,6 +421,11 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   
   
+  
+  virtual uint32_t NumberOfChannels() const = 0;
+
+  
+  
   virtual DisabledTrackMode CombinedDisabledMode() const {
     return mDisabledMode;
   }
@@ -689,6 +694,8 @@ class SourceMediaTrack : public MediaTrack {
     mMutex.AssertCurrentThreadOwns();
     MediaTrack::ApplyTrackDisabling(aSegment, aRawSegment);
   }
+
+  uint32_t NumberOfChannels() const override;
 
   void RemoveAllDirectListenersImpl() override;
 
