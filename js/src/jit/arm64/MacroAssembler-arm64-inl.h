@@ -1208,14 +1208,18 @@ void MacroAssembler::branchTest32(Condition cond, Register lhs, Register rhs,
                                   L label) {
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
              cond == NotSigned);
-  
-  
   if (lhs == rhs && (cond == Zero || cond == NonZero)) {
-    cmp32(lhs, Imm32(0));
+    
+    
+    if (cond == Zero) {
+      Cbz(ARMRegister(lhs, 32), label);
+    } else {
+      Cbnz(ARMRegister(lhs, 32), label);
+    }
   } else {
     test32(lhs, rhs);
+    B(label, cond);
   }
-  B(label, cond);
 }
 
 template <class L>
