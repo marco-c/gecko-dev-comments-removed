@@ -234,10 +234,10 @@ nscoord nsSplittableFrame::GetEffectiveComputedBSize(
   return std::max(0, bSize);
 }
 
-nsIFrame::LogicalSides nsSplittableFrame::GetLogicalSkipSides(
-    const Maybe<SkipSidesDuringReflow>& aDuringReflow) const {
+LogicalSides nsSplittableFrame::GetBlockLevelLogicalSkipSides(
+    bool aAfterReflow) const {
   LogicalSides skip(mWritingMode);
-  if (IsTrueOverflowContainer()) {
+  if (MOZ_UNLIKELY(IsTrueOverflowContainer())) {
     skip |= eLogicalSideBitsBBoth;
     return skip;
   }
@@ -251,49 +251,18 @@ nsIFrame::LogicalSides nsSplittableFrame::GetLogicalSkipSides(
     skip |= eLogicalSideBitsBStart;
   }
 
-  if (aDuringReflow) {
-    nscoord availBSize = aDuringReflow->mReflowInput.AvailableBSize();
-    
-    
-    
-    
-    if (NS_UNCONSTRAINEDSIZE != availBSize) {
-      nscoord effectiveBSize = GetEffectiveComputedBSize(
-          aDuringReflow->mReflowInput, aDuringReflow->mConsumedBSize);
-      if (effectiveBSize != NS_UNCONSTRAINEDSIZE &&
-          effectiveBSize > availBSize) {
-        
-        
-        skip |= eLogicalSideBitsBEnd;
-      }
-    }
-  } else {
-    nsIFrame* nif = GetNextContinuation();
-    if (nif && !nif->IsTrueOverflowContainer()) {
-      skip |= eLogicalSideBitsBEnd;
-    }
-  }
-
   
   
   if (HasColumnSpanSiblings()) {
     skip |= eLogicalSideBitsBEnd;
   }
 
-  return skip;
-}
+  if (aAfterReflow) {
+    nsIFrame* nif = GetNextContinuation();
+    if (nif && !nif->IsTrueOverflowContainer()) {
+      skip |= eLogicalSideBitsBEnd;
+    }
+  }
 
-LogicalSides nsSplittableFrame::PreReflowBlockLevelLogicalSkipSides() const {
-  LogicalSides skip(mWritingMode);
-  if (MOZ_UNLIKELY(IsTrueOverflowContainer())) {
-    skip |= mozilla::eLogicalSideBitsBBoth;
-    return skip;
-  }
-  if (MOZ_LIKELY(StyleBorder()->mBoxDecorationBreak !=
-                 StyleBoxDecorationBreak::Clone) &&
-      GetPrevInFlow()) {
-    skip |= mozilla::eLogicalSideBitsBStart;
-    return skip;
-  }
   return skip;
 }

@@ -107,8 +107,11 @@ class nsSplittableFrame : public nsIFrame {
   
 
 
-  LogicalSides GetLogicalSkipSides(
-      const Maybe<SkipSidesDuringReflow>& = Nothing()) const override;
+  LogicalSides GetLogicalSkipSides() const override {
+    return GetBlockLevelLogicalSkipSides(true);
+  }
+
+  LogicalSides GetBlockLevelLogicalSkipSides(bool aAfterReflow) const;
 
   
 
@@ -120,7 +123,9 @@ class nsSplittableFrame : public nsIFrame {
 
 
 
-  LogicalSides PreReflowBlockLevelLogicalSkipSides() const;
+  LogicalSides PreReflowBlockLevelLogicalSkipSides() const {
+    return GetBlockLevelLogicalSkipSides(false);
+  };
 
   nsIFrame* mPrevContinuation;
   nsIFrame* mNextContinuation;

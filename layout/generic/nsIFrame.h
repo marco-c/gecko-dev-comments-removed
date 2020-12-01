@@ -3678,19 +3678,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
   Sides GetSkipSides() const;
-
-  struct SkipSidesDuringReflow {
-    const ReflowInput& mReflowInput;
-    const nscoord mConsumedBSize = NS_UNCONSTRAINEDSIZE;
-  };
-
-  virtual LogicalSides GetLogicalSkipSides(
-      const Maybe<SkipSidesDuringReflow>& = Nothing()) const {
+  virtual LogicalSides GetLogicalSkipSides() const {
     return LogicalSides(mWritingMode);
   }
 

@@ -42,9 +42,7 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
       mBorderPadding(
           mReflowInput
               .ComputedLogicalBorderPadding(mReflowInput.GetWritingMode())
-              .ApplySkipSides(aFrame->GetLogicalSkipSides(
-                  Some(nsIFrame::SkipSidesDuringReflow{aReflowInput,
-                                                       aConsumedBSize})))),
+              .ApplySkipSides(aFrame->PreReflowBlockLevelLogicalSkipSides())),
       mPrevBEndMargin(),
       mLineNumber(0),
       mFloatBreakType(StyleClear::None),
@@ -120,8 +118,11 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
     
     
     
-    mContentArea.BSize(wm) = std::max(
-        0, aReflowInput.AvailableBSize() - mBorderPadding.BStartEnd(wm));
+    auto bp = aFrame->StyleBorder()->mBoxDecorationBreak ==
+                      StyleBoxDecorationBreak::Clone
+                  ? mBorderPadding.BStartEnd(wm)
+                  : mBorderPadding.BStart(wm);
+    mContentArea.BSize(wm) = std::max(0, aReflowInput.AvailableBSize() - bp);
   } else {
     
     
