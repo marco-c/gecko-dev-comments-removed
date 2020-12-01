@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Maybe.h"       
 #include "mozilla/Range.h"       
+#include "mozilla/Span.h"        
 
 #include <stdint.h>  
 #include <stdlib.h>  
@@ -446,9 +447,6 @@ using ScriptThingVariant =
                      EmptyGlobalScopeType>;
 
 
-using ScriptThingsVector = Vector<ScriptThingVariant, 0, js::SystemAllocPolicy>;
-
-
 class ScriptStencil {
  public:
   
@@ -463,8 +461,9 @@ class ScriptStencil {
   ImmutableScriptFlags immutableFlags;
 
   
+  
   mozilla::Maybe<MemberInitializers> memberInitializers;
-  ScriptThingsVector gcThings;
+  mozilla::Span<ScriptThingVariant> gcThings;
 
   
   RefPtr<js::SharedImmutableScriptData> sharedData = {};

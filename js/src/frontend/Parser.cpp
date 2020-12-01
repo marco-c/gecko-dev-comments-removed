@@ -48,8 +48,8 @@
 #include "frontend/TokenStream.h"
 #include "irregexp/RegExpAPI.h"
 #include "js/friend/ErrorMessages.h"  
-#include "js/RegExpFlags.h"     
-#include "util/StringBuffer.h"  
+#include "js/RegExpFlags.h"           
+#include "util/StringBuffer.h"        
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/FunctionFlags.h"          
@@ -1977,9 +1977,17 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
     return false;
   }
 
-  ScriptThingsVector& gcthings = script.gcThings;
-  if (!gcthings.reserve(ngcthings.value())) {
-    js::ReportOutOfMemory(cx_);
+  
+  if (ngcthings.value() == 0) {
+    MOZ_ASSERT(script.gcThings.empty());
+    return true;
+  }
+
+  
+  mozilla::Span<ScriptThingVariant> stencilThings =
+      NewScriptThingSpanUninitialized(cx_, compilationInfo_.stencil.alloc,
+                                      ngcthings.value());
+  if (stencilThings.empty()) {
     return false;
   }
 
@@ -1990,19 +1998,23 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   
   
   
+  auto cursor = stencilThings.begin();
   for (const FunctionIndex& index : pc_->innerFunctionIndexesForLazy) {
-    gcthings.infallibleAppend(AsVariant(index));
+    void* raw = &(*cursor++);
+    new (raw) ScriptThingVariant(index);
   }
   for (const ScriptAtom& binding : pc_->closedOverBindingsForLazy()) {
+    void* raw = &(*cursor++);
     if (binding) {
       binding->markUsedByStencil();
-      gcthings.infallibleAppend(AsVariant(binding));
+      new (raw) ScriptThingVariant(binding);
     } else {
-      gcthings.infallibleAppend(AsVariant(NullScriptThing()));
+      new (raw) ScriptThingVariant(NullScriptThing());
     }
   }
+  MOZ_ASSERT(cursor == stencilThings.end());
 
-  MOZ_ASSERT(gcthings.length() == ngcthings.value());
+  script.gcThings = stencilThings;
 
   return true;
 }

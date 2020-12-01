@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Span.h"
 #include "mozilla/Variant.h"
 
 #include "builtin/ModuleObject.h"
@@ -495,6 +496,10 @@ struct CompilationInfoVector {
 
   void trace(JSTracer* trc);
 };
+
+
+mozilla::Span<ScriptThingVariant> NewScriptThingSpanUninitialized(
+    JSContext* cx, LifoAlloc& alloc, uint32_t ngcthings);
 
 }  
 }  
