@@ -2018,10 +2018,14 @@ function setupDbForShutdown(conn, name) {
 
             
             
-            await conn.close();
-            state = "2. Closed Sqlite.jsm connection.";
-
-            resolve();
+            try {
+              await conn.close();
+              state = "2. Closed Sqlite.jsm connection.";
+              resolve();
+            } catch (ex) {
+              state = "2. Failed to closed Sqlite.jsm connection: " + ex;
+              reject(ex);
+            }
           },
           () => state
         );
@@ -2030,13 +2034,13 @@ function setupDbForShutdown(conn, name) {
         conn.close();
         reject(ex);
       }
-    });
+    }).catch(Cu.reportError);
 
     
     
     Sqlite.shutdown.addBlocker(
       `${name} must be closed before Sqlite.jsm`,
-      () => promiseClosed.catch(Cu.reportError),
+      () => promiseClosed,
       () => state
     );
   } catch (ex) {
