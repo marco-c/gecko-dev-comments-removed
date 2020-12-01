@@ -40,9 +40,8 @@ class AudioPacketizer {
       : mPacketSize(aPacketSize),
         mChannels(aChannels),
         mReadIndex(0),
-        mWriteIndex(0)
+        mWriteIndex(0),
         
-        ,
         mStorage(new InputType[aPacketSize * aChannels]),
         mLength(aPacketSize * aChannels) {
     MOZ_ASSERT(aPacketSize > 0 && aChannels > 0,
@@ -131,17 +130,25 @@ class AudioPacketizer {
     mReadIndex += samplesNeeded;
   }
 
+  void Clear() {
+    mReadIndex = 0;
+    mWriteIndex = 0;
+  }
+
   uint32_t PacketsAvailable() const {
     return AvailableSamples() / mChannels / mPacketSize;
   }
+
+  uint32_t FramesAvailable() const { return AvailableSamples() / mChannels; }
 
   bool Empty() const { return mWriteIndex == mReadIndex; }
 
   bool Full() const { return mWriteIndex - mReadIndex == mLength; }
 
-  uint32_t PacketSize() const { return mPacketSize; }
-
-  uint32_t Channels() const { return mChannels; }
+  
+  const uint32_t mPacketSize;
+  
+  const uint32_t mChannels;
 
  private:
   uint32_t ReadIndex() const { return mReadIndex % mLength; }
@@ -152,10 +159,6 @@ class AudioPacketizer {
 
   uint32_t EmptySlots() const { return mLength - AvailableSamples(); }
 
-  
-  uint32_t mPacketSize;
-  
-  uint32_t mChannels;
   
   
   uint64_t mReadIndex;
