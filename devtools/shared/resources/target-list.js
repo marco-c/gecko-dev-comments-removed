@@ -229,6 +229,10 @@ class TargetList extends EventEmitter {
     return this._listenersStarted.has(type);
   }
 
+  hasTargetWatcherSupport(type) {
+    return !!this.watcher?.traits[type];
+  }
+
   
 
 
@@ -245,6 +249,16 @@ class TargetList extends EventEmitter {
 
 
   async startListening({ onlyLegacy = false } = {}) {
+    
+    
+    if (!this.watcher) {
+      
+      const supportsWatcher = this.descriptorFront?.traits?.watcher;
+      if (supportsWatcher) {
+        this.watcher = await this.descriptorFront.getWatcher();
+      }
+    }
+
     let types = [];
     if (this.targetFront.isParentProcess) {
       const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
@@ -283,24 +297,20 @@ class TargetList extends EventEmitter {
       this._setListening(type, true);
 
       
-      const supportsWatcher = this.descriptorFront?.traits?.watcher;
-      if (supportsWatcher) {
-        const watcher = await this.descriptorFront.getWatcher();
-        if (watcher.traits[type]) {
-          
-          
-          
-          if (onlyLegacy) {
-            continue;
-          }
-          if (!this._startedListeningToWatcher) {
-            this._startedListeningToWatcher = true;
-            watcher.on("target-available", this._onTargetAvailable);
-            watcher.on("target-destroyed", this._onTargetDestroyed);
-          }
-          await watcher.watchTargets(type);
+      if (this.hasTargetWatcherSupport(type)) {
+        
+        
+        
+        if (onlyLegacy) {
           continue;
         }
+        if (!this._startedListeningToWatcher) {
+          this._startedListeningToWatcher = true;
+          this.watcher.on("target-available", this._onTargetAvailable);
+          this.watcher.on("target-destroyed", this._onTargetDestroyed);
+        }
+        await this.watcher.watchTargets(type);
+        continue;
       }
       if (this.legacyImplementation[type]) {
         await this.legacyImplementation[type].listen();
@@ -326,18 +336,14 @@ class TargetList extends EventEmitter {
       this._setListening(type, false);
 
       
-      const supportsWatcher = this.descriptorFront?.traits?.watcher;
-      if (supportsWatcher) {
-        const watcher = this.descriptorFront.getCachedWatcher();
-        if (watcher && watcher.traits[type]) {
-          
-          
-          
-          if (!onlyLegacy) {
-            watcher.unwatchTargets(type);
-          }
-          continue;
+      if (this.hasTargetWatcherSupport(type)) {
+        
+        
+        
+        if (!onlyLegacy) {
+          this.watcher.unwatchTargets(type);
         }
+        continue;
       }
       if (this.legacyImplementation[type]) {
         this.legacyImplementation[type].unlisten();

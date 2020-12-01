@@ -22,7 +22,6 @@ class ResourceWatcher {
 
   constructor(targetList) {
     this.targetList = targetList;
-    this.descriptorFront = targetList.descriptorFront;
 
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
@@ -43,6 +42,10 @@ class ResourceWatcher {
 
     this._notifyWatchers = this._notifyWatchers.bind(this);
     this._throttledNotifyWatchers = throttle(this._notifyWatchers, 100);
+  }
+
+  get watcher() {
+    return this.targetList.watcher;
   }
 
   
@@ -104,26 +107,22 @@ class ResourceWatcher {
     }
 
     
-    
-    if (!this.watcher) {
-      const supportsWatcher = this.descriptorFront?.traits?.watcher;
-      if (supportsWatcher) {
-        this.watcher = await this.descriptorFront.getWatcher();
-        
-        
-        this.watcher.on(
-          "resource-available-form",
-          this._onResourceAvailable.bind(this, { watcherFront: this.watcher })
-        );
-        this.watcher.on(
-          "resource-updated-form",
-          this._onResourceUpdated.bind(this, { watcherFront: this.watcher })
-        );
-        this.watcher.on(
-          "resource-destroyed-form",
-          this._onResourceDestroyed.bind(this, { watcherFront: this.watcher })
-        );
-      }
+    if (!this._listenerRegistered && this.watcher) {
+      this._listenerRegistered = true;
+      
+      
+      this.watcher.on(
+        "resource-available-form",
+        this._onResourceAvailable.bind(this, { watcherFront: this.watcher })
+      );
+      this.watcher.on(
+        "resource-updated-form",
+        this._onResourceUpdated.bind(this, { watcherFront: this.watcher })
+      );
+      this.watcher.on(
+        "resource-destroyed-form",
+        this._onResourceDestroyed.bind(this, { watcherFront: this.watcher })
+      );
     }
 
     
