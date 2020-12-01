@@ -16,6 +16,7 @@ var gEditItemOverlay = {
   transactionPromises: null,
   _observersAdded: false,
   _staticFoldersListBuilt: false,
+  _didChangeFolder: false,
 
   _paneInfo: null,
   _setPaneInfo(aInitInfo) {
@@ -151,6 +152,10 @@ var gEditItemOverlay = {
     );
   },
 
+  get didChangeFolder() {
+    return this._didChangeFolder;
+  },
+
   
   
   _firstEditedField: "",
@@ -248,6 +253,7 @@ var gEditItemOverlay = {
       this.uninitPanel(false);
     }
 
+    this._didChangeFolder = false;
     this.transactionPromises = [];
 
     let {
@@ -549,6 +555,7 @@ var gEditItemOverlay = {
 
     this._setPaneInfo(null);
     this._firstEditedField = "";
+    this._didChangeFolder = false;
     this.transactionPromises = [];
   },
 
@@ -886,6 +893,10 @@ var gEditItemOverlay = {
       if (containerGuid == PlacesUtils.bookmarks.toolbarGuid) {
         this._autoshowBookmarksToolbar();
       }
+
+      
+      
+      this._didChangeFolder = true;
     }
 
     

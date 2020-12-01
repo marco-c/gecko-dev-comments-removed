@@ -81,7 +81,7 @@ var StarUI = {
       case "popuphidden": {
         clearTimeout(this._autoCloseTimer);
         if (aEvent.originalTarget == this.panel) {
-          let selectedFolderGuid = gEditItemOverlay.selectedFolderGuid;
+          let { selectedFolderGuid, didChangeFolder } = gEditItemOverlay;
           gEditItemOverlay.uninitPanel(true);
 
           this._anchorElement.removeAttribute("open");
@@ -111,9 +111,10 @@ var StarUI = {
           }
 
           if (!removeBookmarksOnPopupHidden) {
-            this._storeRecentlyUsedFolder(selectedFolderGuid).catch(
-              console.error
-            );
+            this._storeRecentlyUsedFolder(
+              selectedFolderGuid,
+              didChangeFolder
+            ).catch(console.error);
           }
         }
         break;
@@ -382,12 +383,21 @@ var StarUI = {
     this._batching = false;
   },
 
-  async _storeRecentlyUsedFolder(selectedFolderGuid) {
+  async _storeRecentlyUsedFolder(selectedFolderGuid, didChangeFolder) {
+    if (!selectedFolderGuid) {
+      return;
+    }
+
     
-    if (
-      !selectedFolderGuid ||
-      PlacesUtils.bookmarks.userContentRoots.includes(selectedFolderGuid)
-    ) {
+    if (didChangeFolder) {
+      Services.prefs.setCharPref(
+        "browser.bookmarks.defaultLocation",
+        selectedFolderGuid
+      );
+    }
+
+    
+    if (PlacesUtils.bookmarks.userContentRoots.includes(selectedFolderGuid)) {
       return;
     }
 
