@@ -4,9 +4,9 @@
 
 
 
-#include "WorkerRef.h"
+#include "mozilla/dom/WorkerRef.h"
 
-#include "mozilla/Unused.h"
+#include "nsDebug.h"
 #include "WorkerRunnable.h"
 #include "WorkerPrivate.h"
 

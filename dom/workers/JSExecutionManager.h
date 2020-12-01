@@ -7,60 +7,53 @@
 #ifndef mozilla_dom_workers_jsexecutionmanager_h__
 #define mozilla_dom_workers_jsexecutionmanager_h__
 
-#include "mozilla/dom/WorkerCommon.h"
-#include "mozilla/dom/WorkerRef.h"
-#include "mozilla/dom/WorkerStatus.h"
-#include "mozilla/StaticPtr.h"
-
-#include "nsICancelableRunnable.h"
-
-#include "mozilla/Atomics.h"
+#include <stdint.h>
+#include <deque>
+#include "MainThreadUtils.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/Mutex.h"
-#include "nsISupportsImpl.h"
-#include "nsThreadUtils.h" 
+#include "mozilla/RefPtr.h"
+#include "nsISupports.h"
 
-#include <deque>
-
-struct JSContext;
-class nsIEventTarget;
 class nsIGlobalObject;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace mozilla {
 
 class ErrorResult;
 
 namespace dom {
+class WorkerPrivate;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class AutoRequestJSThreadExecution;
 class AutoYieldJSThreadExecution;

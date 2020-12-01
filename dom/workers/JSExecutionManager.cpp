@@ -4,12 +4,12 @@
 
 
 
-#include "JSExecutionManager.h"
+#include "mozilla/dom/JSExecutionManager.h"
+
+#include "WorkerCommon.h"
 #include "WorkerPrivate.h"
 
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
 
