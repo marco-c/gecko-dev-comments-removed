@@ -68,10 +68,6 @@ const TYPES = {
 
 
 const HIGHLIGHTER_EVENTS = {
-  [TYPES.BOXMODEL]: {
-    shown: "box-model-highlighter-shown",
-    hidden: "box-model-highlighter-hidden",
-  },
   [TYPES.GRID]: {
     shown: "grid-highlighter-shown",
     hidden: "grid-highlighter-hidden",
