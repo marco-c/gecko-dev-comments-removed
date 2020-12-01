@@ -15,6 +15,7 @@ DIRS += [
     "aboutcheckerboard",
     "aboutmemory",
     "aboutperformance",
+    "aboutprocesses",
     "alerts",
     "antitracking",
     "apppicker",
@@ -129,7 +130,3 @@ if CONFIG["MOZ_BUILD_APP"] == "browser":
 
 if CONFIG["MOZ_BUILD_APP"] == "browser":
     DIRS += ["corroborator"]
-
-
-if CONFIG["NIGHTLY_BUILD"]:
-    DIRS += ["aboutprocesses"]
