@@ -5,8 +5,12 @@
 
 
 #include "MIDIPlatformService.h"
+#include "MIDIMessageQueue.h"
 #include "TestMIDIPlatformService.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/MIDIManagerParent.h"
+#include "mozilla/dom/MIDIPlatformRunnables.h"
+#include "mozilla/dom/MIDIUtils.h"
 #include "mozilla/dom/PMIDIManagerParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/dom/MIDIPortParent.h"
@@ -22,7 +26,7 @@ MIDIPlatformService::~MIDIPlatformService() = default;
 
 void MIDIPlatformService::CheckAndReceive(const nsAString& aPortId,
                                           const nsTArray<MIDIMessage>& aMsgs) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   for (auto& port : mPorts) {
     
     if (port->MIDIPortInterface::Id() != aPortId ||
@@ -46,14 +50,14 @@ void MIDIPlatformService::CheckAndReceive(const nsAString& aPortId,
 
 void MIDIPlatformService::AddPort(MIDIPortParent* aPort) {
   MOZ_ASSERT(aPort);
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   mPorts.AppendElement(aPort);
 }
 
 void MIDIPlatformService::RemovePort(MIDIPortParent* aPort) {
   
   
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   MOZ_ASSERT(aPort);
   mPorts.RemoveElement(aPort);
   MaybeStop();
@@ -61,7 +65,7 @@ void MIDIPlatformService::RemovePort(MIDIPortParent* aPort) {
 
 void MIDIPlatformService::BroadcastState(const MIDIPortInfo& aPortInfo,
                                          const MIDIPortDeviceState& aState) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   for (auto& p : mPorts) {
     if (p->MIDIPortInterface::Id() == aPortInfo.id() &&
         p->DeviceState() != aState) {
@@ -72,7 +76,7 @@ void MIDIPlatformService::BroadcastState(const MIDIPortInfo& aPortInfo,
 
 void MIDIPlatformService::QueueMessages(const nsAString& aId,
                                         nsTArray<MIDIMessage>& aMsgs) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   {
     MutexAutoLock lock(mMessageQueueMutex);
     MIDIMessageQueue* msgQueue = mMessageQueues.LookupOrAdd(aId);
@@ -82,7 +86,7 @@ void MIDIPlatformService::QueueMessages(const nsAString& aId,
 }
 
 void MIDIPlatformService::SendPortList() {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   mHasSentPortList = true;
   MIDIPortList l;
   for (auto& el : mPortInfo) {
@@ -94,7 +98,7 @@ void MIDIPlatformService::SendPortList() {
 }
 
 void MIDIPlatformService::Clear(MIDIPortParent* aPort) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   MOZ_ASSERT(aPort);
   {
     MutexAutoLock lock(mMessageQueueMutex);
@@ -107,7 +111,7 @@ void MIDIPlatformService::Clear(MIDIPortParent* aPort) {
 }
 
 void MIDIPlatformService::AddPortInfo(MIDIPortInfo& aPortInfo) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   MOZ_ASSERT(XRE_IsParentProcess());
 
   mPortInfo.AppendElement(aPortInfo);
@@ -135,7 +139,7 @@ void MIDIPlatformService::AddPortInfo(MIDIPortInfo& aPortInfo) {
 }
 
 void MIDIPlatformService::RemovePortInfo(MIDIPortInfo& aPortInfo) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   mPortInfo.RemoveElement(aPortInfo);
   BroadcastState(aPortInfo, MIDIPortDeviceState::Disconnected);
   if (mHasSentPortList) {
@@ -151,7 +155,7 @@ bool MIDIPlatformService::IsRunning() {
 }
 
 void MIDIPlatformService::Close(mozilla::dom::MIDIPortParent* aPort) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   {
     MutexAutoLock lock(mMessageQueueMutex);
     MIDIMessageQueue* msgQueue =
@@ -170,7 +174,7 @@ void MIDIPlatformService::Close(mozilla::dom::MIDIPortParent* aPort) {
 MIDIPlatformService* MIDIPlatformService::Get() {
   
   MOZ_ASSERT(XRE_IsParentProcess());
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   if (!IsRunning()) {
     ErrorResult rv;
     
@@ -185,7 +189,7 @@ MIDIPlatformService* MIDIPlatformService::Get() {
 }
 
 void MIDIPlatformService::MaybeStop() {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   if (!IsRunning()) {
     
     return;
@@ -199,7 +203,7 @@ void MIDIPlatformService::MaybeStop() {
 }
 
 void MIDIPlatformService::AddManager(MIDIManagerParent* aManager) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   mManagers.AppendElement(aManager);
   
   
@@ -211,7 +215,7 @@ void MIDIPlatformService::AddManager(MIDIManagerParent* aManager) {
 }
 
 void MIDIPlatformService::RemoveManager(MIDIManagerParent* aManager) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   mManagers.RemoveElement(aManager);
   MaybeStop();
 }
@@ -219,7 +223,7 @@ void MIDIPlatformService::RemoveManager(MIDIManagerParent* aManager) {
 void MIDIPlatformService::UpdateStatus(
     const nsAString& aPortId, const MIDIPortDeviceState& aDeviceState,
     const MIDIPortConnectionState& aConnectionState) {
-  AssertIsOnBackgroundThread();
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
   for (auto port : mPorts) {
     if (port->MIDIPortInterface::Id() == aPortId) {
       port->SendUpdateStatus(aDeviceState, aConnectionState);

@@ -5,6 +5,7 @@
 
 
 #include "MIDIMessageQueue.h"
+#include "mozilla/dom/MIDITypes.h"
 
 namespace mozilla {
 namespace dom {
