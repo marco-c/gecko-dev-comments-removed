@@ -24,14 +24,9 @@ constexpr auto AllOverflowTypes() {
   return mozilla::MakeInclusiveEnumeratedRange(OverflowType::Ink,
                                                OverflowType::Scrollable);
 }
-}  
 
-struct nsOverflowAreas {
+struct OverflowAreas {
  public:
-  
-  
-  using OverflowType = mozilla::OverflowType;
-
   nsRect& InkOverflow() { return mInk; }
   const nsRect& InkOverflow() const { return mInk; }
 
@@ -45,29 +40,29 @@ struct nsOverflowAreas {
     return aType == OverflowType::Ink ? InkOverflow() : ScrollableOverflow();
   }
 
-  nsOverflowAreas() = default;
+  OverflowAreas() = default;
 
-  nsOverflowAreas(const nsRect& aInkOverflow, const nsRect& aScrollableOverflow)
+  OverflowAreas(const nsRect& aInkOverflow, const nsRect& aScrollableOverflow)
       : mInk(aInkOverflow), mScrollable(aScrollableOverflow) {}
 
-  bool operator==(const nsOverflowAreas& aOther) const {
+  bool operator==(const OverflowAreas& aOther) const {
     
     
     return InkOverflow().IsEqualInterior(aOther.InkOverflow()) &&
            ScrollableOverflow().IsEqualEdges(aOther.ScrollableOverflow());
   }
 
-  bool operator!=(const nsOverflowAreas& aOther) const {
+  bool operator!=(const OverflowAreas& aOther) const {
     return !(*this == aOther);
   }
 
-  nsOverflowAreas operator+(const nsPoint& aPoint) const {
-    nsOverflowAreas result(*this);
+  OverflowAreas operator+(const nsPoint& aPoint) const {
+    OverflowAreas result(*this);
     result += aPoint;
     return result;
   }
 
-  nsOverflowAreas& operator+=(const nsPoint& aPoint) {
+  OverflowAreas& operator+=(const nsPoint& aPoint) {
     mInk += aPoint;
     mScrollable += aPoint;
     return *this;
@@ -76,7 +71,7 @@ struct nsOverflowAreas {
   void Clear() { SetAllTo(nsRect()); }
 
   
-  void UnionWith(const nsOverflowAreas& aOther);
+  void UnionWith(const OverflowAreas& aOther);
 
   
   void UnionAllWith(const nsRect& aRect);
@@ -88,6 +83,8 @@ struct nsOverflowAreas {
   nsRect mInk;
   nsRect mScrollable;
 };
+
+}  
 
 
 
@@ -227,7 +224,7 @@ class ReflowOutput {
   
   
   
-  nsOverflowAreas mOverflowAreas;
+  OverflowAreas mOverflowAreas;
 
   nsRect& InkOverflow() { return mOverflowAreas.InkOverflow(); }
   const nsRect& InkOverflow() const { return mOverflowAreas.InkOverflow(); }

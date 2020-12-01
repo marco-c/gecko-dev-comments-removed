@@ -329,7 +329,7 @@ class BlockReflowInput {
   mozilla::LogicalMargin mBorderPadding;
 
   
-  nsOverflowAreas mFloatOverflowAreas;
+  mozilla::OverflowAreas mFloatOverflowAreas;
 
   nsFloatCacheFreeList mFloatCacheFreeList;
 

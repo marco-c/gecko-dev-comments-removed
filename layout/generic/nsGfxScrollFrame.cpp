@@ -311,7 +311,7 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   nsMargin mComputedBorder;
 
   
-  nsOverflowAreas mContentsOverflowAreas;
+  OverflowAreas mContentsOverflowAreas;
   MOZ_INIT_OUTSIDE_CTOR
   bool mReflowedContentsWithHScrollbar;
   MOZ_INIT_OUTSIDE_CTOR
@@ -783,7 +783,7 @@ void nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowInput* aState,
   if (MOZ_UNLIKELY(
           disp->mOverflowClipBoxBlock == StyleOverflowClipBox::ContentBox ||
           disp->mOverflowClipBoxInline == StyleOverflowClipBox::ContentBox)) {
-    nsOverflowAreas childOverflow;
+    OverflowAreas childOverflow;
     nsLayoutUtils::UnionChildOverflow(mHelper.mScrolledFrame, childOverflow);
     nsRect childScrollableOverflow = childOverflow.ScrollableOverflow();
     if (disp->mOverflowClipBoxBlock == StyleOverflowClipBox::PaddingBox) {
@@ -992,7 +992,7 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
   
   
   
-  nsOverflowAreas overflow(scrolledArea, scrolledArea);
+  OverflowAreas overflow(scrolledArea, scrolledArea);
   scrolledFrame->FinishAndStoreOverflow(overflow, scrolledFrame->GetSize());
 
   
@@ -6154,7 +6154,7 @@ nsresult nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState) {
     nsRect clippedRect = origRect;
     clippedRect.MoveBy(mHelper.mScrollPort.TopLeft());
     clippedRect.IntersectRect(clippedRect, mHelper.mScrollPort);
-    nsOverflowAreas overflow = f->GetOverflowAreas();
+    OverflowAreas overflow = f->GetOverflowAreas();
     f->FinishAndStoreOverflow(overflow, clippedRect.Size());
     clippedRect.MoveTo(origRect.TopLeft());
     f->SetRect(clippedRect);
@@ -6490,7 +6490,7 @@ void ScrollFrameHelper::ReflowCallbackCanceled() {
   mPostedReflowCallback = false;
 }
 
-bool ScrollFrameHelper::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
+bool ScrollFrameHelper::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
   nsIScrollableFrame* sf = do_QueryFrame(mOuter);
   ScrollStyles ss = sf->GetScrollStyles();
 

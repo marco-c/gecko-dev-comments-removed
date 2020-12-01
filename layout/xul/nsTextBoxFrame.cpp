@@ -945,7 +945,7 @@ nsTextBoxFrame::DoXULLayout(nsBoxLayoutState& aBoxLayoutState) {
   
   nsRect visualBounds;
   visualBounds.UnionRect(scrollBounds, textRect);
-  nsOverflowAreas overflow(visualBounds, scrollBounds);
+  OverflowAreas overflow(visualBounds, scrollBounds);
 
   if (textStyle->HasTextShadow()) {
     

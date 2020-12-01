@@ -9,7 +9,9 @@
 #include "mozilla/ReflowOutput.h"
 #include "mozilla/ReflowInput.h"
 
-void nsOverflowAreas::UnionWith(const nsOverflowAreas& aOther) {
+namespace mozilla {
+
+void OverflowAreas::UnionWith(const OverflowAreas& aOther) {
   
   
   InkOverflow().UnionRect(InkOverflow(), aOther.InkOverflow());
@@ -17,19 +19,17 @@ void nsOverflowAreas::UnionWith(const nsOverflowAreas& aOther) {
                                  aOther.ScrollableOverflow());
 }
 
-void nsOverflowAreas::UnionAllWith(const nsRect& aRect) {
+void OverflowAreas::UnionAllWith(const nsRect& aRect) {
   
   
   InkOverflow().UnionRect(InkOverflow(), aRect);
   ScrollableOverflow().UnionRect(ScrollableOverflow(), aRect);
 }
 
-void nsOverflowAreas::SetAllTo(const nsRect& aRect) {
+void OverflowAreas::SetAllTo(const nsRect& aRect) {
   InkOverflow() = aRect;
   ScrollableOverflow() = aRect;
 }
-
-namespace mozilla {
 
 ReflowOutput::ReflowOutput(const ReflowInput& aReflowInput)
     : ReflowOutput(aReflowInput.GetWritingMode()) {}

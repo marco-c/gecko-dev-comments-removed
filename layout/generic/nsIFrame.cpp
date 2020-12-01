@@ -7510,27 +7510,27 @@ nsRect nsIFrame::GetOverflowRect(OverflowType aType) const {
   return nsRect(nsPoint(0, 0), GetSize());
 }
 
-nsOverflowAreas nsIFrame::GetOverflowAreas() const {
+OverflowAreas nsIFrame::GetOverflowAreas() const {
   if (mOverflow.mType == NS_FRAME_OVERFLOW_LARGE) {
     
     
     return *GetOverflowAreasProperty();
   }
 
-  return nsOverflowAreas(InkOverflowFromDeltas(),
-                         nsRect(nsPoint(0, 0), GetSize()));
+  return OverflowAreas(InkOverflowFromDeltas(),
+                       nsRect(nsPoint(0, 0), GetSize()));
 }
 
-nsOverflowAreas nsIFrame::GetOverflowAreasRelativeToSelf() const {
+OverflowAreas nsIFrame::GetOverflowAreasRelativeToSelf() const {
   if (IsTransformed()) {
-    nsOverflowAreas* preTransformOverflows =
+    OverflowAreas* preTransformOverflows =
         GetProperty(PreTransformOverflowAreasProperty());
     if (preTransformOverflows) {
-      return nsOverflowAreas(preTransformOverflows->InkOverflow(),
-                             preTransformOverflows->ScrollableOverflow());
+      return OverflowAreas(preTransformOverflows->InkOverflow(),
+                           preTransformOverflows->ScrollableOverflow());
     }
   }
-  return nsOverflowAreas(InkOverflowRect(), ScrollableOverflowRect());
+  return OverflowAreas(InkOverflowRect(), ScrollableOverflowRect());
 }
 
 nsRect nsIFrame::ScrollableOverflowRectRelativeToParent() const {
@@ -7543,7 +7543,7 @@ nsRect nsIFrame::InkOverflowRectRelativeToParent() const {
 
 nsRect nsIFrame::ScrollableOverflowRectRelativeToSelf() const {
   if (IsTransformed()) {
-    nsOverflowAreas* preTransformOverflows =
+    OverflowAreas* preTransformOverflows =
         GetProperty(PreTransformOverflowAreasProperty());
     if (preTransformOverflows)
       return preTransformOverflows->ScrollableOverflow();
@@ -7553,7 +7553,7 @@ nsRect nsIFrame::ScrollableOverflowRectRelativeToSelf() const {
 
 nsRect nsIFrame::InkOverflowRectRelativeToSelf() const {
   if (IsTransformed()) {
-    nsOverflowAreas* preTransformOverflows =
+    OverflowAreas* preTransformOverflows =
         GetProperty(PreTransformOverflowAreasProperty());
     if (preTransformOverflows) return preTransformOverflows->InkOverflow();
   }
@@ -7570,7 +7570,7 @@ bool nsIFrame::UpdateOverflow() {
              "Non-display SVG do not maintain ink overflow rects");
 
   nsRect rect(nsPoint(0, 0), GetSize());
-  nsOverflowAreas overflowAreas(rect, rect);
+  OverflowAreas overflowAreas(rect, rect);
 
   if (!ComputeCustomOverflow(overflowAreas)) {
     
@@ -7604,12 +7604,12 @@ bool nsIFrame::UpdateOverflow() {
 }
 
 
-bool nsIFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
+bool nsIFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
   return true;
 }
 
 
-void nsIFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas) {
+void nsIFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
   if (!DoesClipChildrenInBothAxes() &&
       !(IsXULCollapsed() && (IsXULBoxFrame() || ::IsXULBoxWrapped(this)))) {
     nsLayoutUtils::UnionChildOverflow(this, aOverflowAreas);
@@ -9162,9 +9162,9 @@ bool nsIFrame::ClearOverflowRects() {
 
 
 
-bool nsIFrame::SetOverflowAreas(const nsOverflowAreas& aOverflowAreas) {
+bool nsIFrame::SetOverflowAreas(const OverflowAreas& aOverflowAreas) {
   if (mOverflow.mType == NS_FRAME_OVERFLOW_LARGE) {
-    nsOverflowAreas* overflow = GetOverflowAreasProperty();
+    OverflowAreas* overflow = GetOverflowAreasProperty();
     bool changed = *overflow != aOverflowAreas;
     *overflow = aOverflowAreas;
 
@@ -9210,7 +9210,7 @@ bool nsIFrame::SetOverflowAreas(const nsOverflowAreas& aOverflowAreas) {
 
     
     mOverflow.mType = NS_FRAME_OVERFLOW_LARGE;
-    AddProperty(OverflowAreasProperty(), new nsOverflowAreas(aOverflowAreas));
+    AddProperty(OverflowAreasProperty(), new OverflowAreas(aOverflowAreas));
     return changed;
   }
 }
@@ -9223,7 +9223,7 @@ bool nsIFrame::SetOverflowAreas(const nsOverflowAreas& aOverflowAreas) {
 static nsRect UnionBorderBoxes(
     nsIFrame* aFrame, bool aApplyTransform, bool& aOutValid,
     const nsSize* aSizeOverride = nullptr,
-    const nsOverflowAreas* aOverflowOverride = nullptr) {
+    const OverflowAreas* aOverflowOverride = nullptr) {
   const nsRect bounds(nsPoint(0, 0),
                       aSizeOverride ? *aSizeOverride : aFrame->GetSize());
 
@@ -9353,7 +9353,7 @@ static nsRect UnionBorderBoxes(
 }
 
 static void ComputeAndIncludeOutlineArea(nsIFrame* aFrame,
-                                         nsOverflowAreas& aOverflowAreas,
+                                         OverflowAreas& aOverflowAreas,
                                          const nsSize& aNewSize) {
   const nsStyleOutline* outline = aFrame->StyleOutline();
   if (!outline->ShouldPaintOutline()) {
@@ -9439,7 +9439,7 @@ static void ComputeAndIncludeOutlineArea(nsIFrame* aFrame,
   vo.UnionRectEdges(vo, innerRect.Union(outerRect));
 }
 
-bool nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
+bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
                                       nsSize aNewSize, nsSize* aOldSize,
                                       const nsStyleDisplay* aStyleDisplay) {
   MOZ_ASSERT(FrameMaintainsOverflow(),
@@ -9454,11 +9454,10 @@ bool nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   if (hasTransform || Combines3DTransformWithAncestors(disp)) {
     if (!aOverflowAreas.InkOverflow().IsEqualEdges(bounds) ||
         !aOverflowAreas.ScrollableOverflow().IsEqualEdges(bounds)) {
-      nsOverflowAreas* initial =
-          GetProperty(nsIFrame::InitialOverflowProperty());
+      OverflowAreas* initial = GetProperty(nsIFrame::InitialOverflowProperty());
       if (!initial) {
         AddProperty(nsIFrame::InitialOverflowProperty(),
-                    new nsOverflowAreas(aOverflowAreas));
+                    new OverflowAreas(aOverflowAreas));
       } else if (initial != &aOverflowAreas) {
         *initial = aOverflowAreas;
       }
@@ -9598,7 +9597,7 @@ bool nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 
   if (hasTransform) {
     SetProperty(nsIFrame::PreTransformOverflowAreasProperty(),
-                new nsOverflowAreas(aOverflowAreas));
+                new OverflowAreas(aOverflowAreas));
 
     if (Combines3DTransformWithAncestors(disp)) {
       
@@ -9633,7 +9632,7 @@ bool nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   SetSize(oldSize, false);
 
   bool anyOverflowChanged;
-  if (aOverflowAreas != nsOverflowAreas(bounds, bounds)) {
+  if (aOverflowAreas != OverflowAreas(bounds, bounds)) {
     anyOverflowChanged = SetOverflowAreas(aOverflowAreas);
   } else {
     anyOverflowChanged = ClearOverflowRects();
@@ -9660,14 +9659,14 @@ void nsIFrame::RecomputePerspectiveChildrenOverflow(
         continue;  
       }
       if (child->HasPerspective()) {
-        nsOverflowAreas* overflow =
+        OverflowAreas* overflow =
             child->GetProperty(nsIFrame::InitialOverflowProperty());
         nsRect bounds(nsPoint(0, 0), child->GetSize());
         if (overflow) {
-          nsOverflowAreas overflowCopy = *overflow;
+          OverflowAreas overflowCopy = *overflow;
           child->FinishAndStoreOverflow(overflowCopy, bounds.Size());
         } else {
-          nsOverflowAreas boundsOverflow;
+          OverflowAreas boundsOverflow;
           boundsOverflow.SetAllTo(bounds);
           child->FinishAndStoreOverflow(boundsOverflow, bounds.Size());
         }
@@ -9685,7 +9684,7 @@ void nsIFrame::RecomputePerspectiveChildrenOverflow(
 }
 
 void nsIFrame::ComputePreserve3DChildrenOverflow(
-    nsOverflowAreas& aOverflowAreas) {
+    OverflowAreas& aOverflowAreas) {
   
   
   
@@ -9701,7 +9700,7 @@ void nsIFrame::ComputePreserve3DChildrenOverflow(
       
       const nsStyleDisplay* childDisp = child->StyleDisplay();
       if (child->Combines3DTransformWithAncestors(childDisp)) {
-        nsOverflowAreas childOverflow = child->GetOverflowAreasRelativeToSelf();
+        OverflowAreas childOverflow = child->GetOverflowAreasRelativeToSelf();
         TransformReferenceBox refBox(child);
         for (const auto otype : AllOverflowTypes()) {
           nsRect& o = childOverflow.Overflow(otype);

@@ -749,7 +749,7 @@ void nsMathMLContainerFrame::GatherAndStoreOverflow(ReflowOutput* aMetrics) {
 }
 
 bool nsMathMLContainerFrame::ComputeCustomOverflow(
-    nsOverflowAreas& aOverflowAreas) {
+    OverflowAreas& aOverflowAreas) {
   
   
   nsRect boundingBox(

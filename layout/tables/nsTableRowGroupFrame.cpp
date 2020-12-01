@@ -877,7 +877,7 @@ nscoord nsTableRowGroupFrame::CollapseRowGroupIfNecessary(nscoord aBTotalOffset,
     tableFrame->SetNeedToCollapse(true);
   }
 
-  nsOverflowAreas overflow;
+  OverflowAreas overflow;
 
   nsTableRowFrame* rowFrame = GetFirstRow();
   bool didCollapse = false;
@@ -1441,7 +1441,7 @@ void nsTableRowGroupFrame::Reflow(nsPresContext* aPresContext,
 }
 
 bool nsTableRowGroupFrame::ComputeCustomOverflow(
-    nsOverflowAreas& aOverflowAreas) {
+    OverflowAreas& aOverflowAreas) {
   
   
   ClearRowCursor();

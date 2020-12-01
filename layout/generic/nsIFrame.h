@@ -1162,7 +1162,7 @@ class nsIFrame : public nsQueryFrame {
     }
     if (mOverflow.mType != NS_FRAME_OVERFLOW_LARGE &&
         mOverflow.mType != NS_FRAME_OVERFLOW_NONE) {
-      nsOverflowAreas overflow = GetOverflowAreas();
+      mozilla::OverflowAreas overflow = GetOverflowAreas();
       mRect = aRect;
       SetOverflowAreas(overflow);
     } else {
@@ -1343,17 +1343,19 @@ class nsIFrame : public nsQueryFrame {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(OutlineInnerRectProperty, nsRect)
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(PreEffectsBBoxProperty, nsRect)
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(PreTransformOverflowAreasProperty,
-                                      nsOverflowAreas)
+                                      mozilla::OverflowAreas)
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(CachedBorderImageDataProperty,
                                       CachedBorderImageData)
 
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(OverflowAreasProperty, nsOverflowAreas)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(OverflowAreasProperty,
+                                      mozilla::OverflowAreas)
 
   
   
   
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(InitialOverflowProperty, nsOverflowAreas)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(InitialOverflowProperty,
+                                      mozilla::OverflowAreas)
 
 #ifdef DEBUG
   
@@ -2078,7 +2080,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  void ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas);
+  void ComputePreserve3DChildrenOverflow(
+      mozilla::OverflowAreas& aOverflowAreas);
 
   void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame);
 
@@ -2942,13 +2945,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas);
+  virtual bool ComputeCustomOverflow(mozilla::OverflowAreas& aOverflowAreas);
 
   
 
 
 
-  virtual void UnionChildOverflow(nsOverflowAreas& aOverflowAreas);
+  virtual void UnionChildOverflow(mozilla::OverflowAreas& aOverflowAreas);
 
   
   enum class PhysicalAxes : uint8_t {
@@ -3567,7 +3570,7 @@ class nsIFrame : public nsQueryFrame {
 
   nsRect GetOverflowRect(mozilla::OverflowType aType) const;
 
-  nsOverflowAreas GetOverflowAreas() const;
+  mozilla::OverflowAreas GetOverflowAreas() const;
 
   
 
@@ -3576,7 +3579,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsOverflowAreas GetOverflowAreasRelativeToSelf() const;
+  mozilla::OverflowAreas GetOverflowAreasRelativeToSelf() const;
 
   
 
@@ -3627,8 +3630,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas, nsSize aNewSize,
-                              nsSize* aOldSize = nullptr,
+  bool FinishAndStoreOverflow(mozilla::OverflowAreas& aOverflowAreas,
+                              nsSize aNewSize, nsSize* aOldSize = nullptr,
                               const nsStyleDisplay* aStyleDisplay = nullptr);
 
   bool FinishAndStoreOverflow(ReflowOutput* aMetrics,
@@ -5249,9 +5252,9 @@ class nsIFrame : public nsQueryFrame {
 
  private:
   
-  nsOverflowAreas* GetOverflowAreasProperty() const {
+  mozilla::OverflowAreas* GetOverflowAreasProperty() const {
     MOZ_ASSERT(mOverflow.mType == NS_FRAME_OVERFLOW_LARGE);
-    nsOverflowAreas* overflow = GetProperty(OverflowAreasProperty());
+    mozilla::OverflowAreas* overflow = GetProperty(OverflowAreasProperty());
     MOZ_ASSERT(overflow);
     return overflow;
   }
@@ -5273,7 +5276,7 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  bool SetOverflowAreas(const nsOverflowAreas& aOverflowAreas);
+  bool SetOverflowAreas(const mozilla::OverflowAreas& aOverflowAreas);
 
   bool HasOpacityInternal(float aThreshold, const nsStyleDisplay* aStyleDisplay,
                           const nsStyleEffects* aStyleEffects,

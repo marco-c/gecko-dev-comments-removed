@@ -475,7 +475,7 @@ class nsBlockFrame : public nsContainerFrame {
   void ComputeOverflowAreas(const nsRect& aBounds,
                             const nsStyleDisplay* aDisplay,
                             nscoord aBEndEdgeOfChildren,
-                            nsOverflowAreas& aOverflowAreas);
+                            mozilla::OverflowAreas& aOverflowAreas);
 
   
 
@@ -535,9 +535,11 @@ class nsBlockFrame : public nsContainerFrame {
   void ReparentFloats(nsIFrame* aFirstFrame, nsBlockFrame* aOldParent,
                       bool aReparentSiblings);
 
-  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
+  virtual bool ComputeCustomOverflow(
+      mozilla::OverflowAreas& aOverflowAreas) override;
 
-  virtual void UnionChildOverflow(nsOverflowAreas& aOverflowAreas) override;
+  virtual void UnionChildOverflow(
+      mozilla::OverflowAreas& aOverflowAreas) override;
 
   
 
@@ -644,7 +646,7 @@ class nsBlockFrame : public nsContainerFrame {
   
 
   void ReflowPushedFloats(BlockReflowInput& aState,
-                          nsOverflowAreas& aOverflowAreas,
+                          mozilla::OverflowAreas& aOverflowAreas,
                           nsReflowStatus& aStatus);
 
   

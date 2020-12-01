@@ -518,7 +518,7 @@ void SVGOuterSVGFrame::DidReflow(nsPresContext* aPresContext,
 }
 
 
-void SVGOuterSVGFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas) {
+void SVGOuterSVGFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
   
 
   

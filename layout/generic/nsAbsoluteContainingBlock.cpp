@@ -155,7 +155,7 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                        nsReflowStatus& aReflowStatus,
                                        const nsRect& aContainingBlock,
                                        AbsPosReflowFlags aFlags,
-                                       nsOverflowAreas* aOverflowAreas) {
+                                       OverflowAreas* aOverflowAreas) {
   
   
   
@@ -666,7 +666,7 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
     nsIFrame* aDelegatingFrame, nsPresContext* aPresContext,
     const ReflowInput& aReflowInput, const nsRect& aContainingBlock,
     AbsPosReflowFlags aFlags, nsIFrame* aKidFrame, nsReflowStatus& aStatus,
-    nsOverflowAreas* aOverflowAreas) {
+    OverflowAreas* aOverflowAreas) {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
 #ifdef DEBUG

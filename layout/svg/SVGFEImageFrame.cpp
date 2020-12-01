@@ -66,7 +66,7 @@ class SVGFEImageFrame final : public nsIFrame {
       Visibility aNewVisibility,
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing()) override;
 
-  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override {
+  virtual bool ComputeCustomOverflow(OverflowAreas& aOverflowAreas) override {
     
     return false;
   }

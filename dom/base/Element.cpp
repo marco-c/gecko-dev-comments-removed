@@ -817,7 +817,7 @@ static nsSize GetScrollRectSizeForOverflowVisibleFrame(nsIFrame* aFrame) {
   }
 
   nsRect paddingRect = aFrame->GetPaddingRectRelativeToSelf();
-  nsOverflowAreas overflowAreas(paddingRect, paddingRect);
+  OverflowAreas overflowAreas(paddingRect, paddingRect);
   
   
   

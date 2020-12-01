@@ -3219,8 +3219,8 @@ void nsLineLayout::ApplyRelativePositioning(PerFrameData* aPFD) {
 }
 
 
-void nsLineLayout::RelativePositionAnnotations(
-    PerSpanData* aRubyPSD, nsOverflowAreas& aOverflowAreas) {
+void nsLineLayout::RelativePositionAnnotations(PerSpanData* aRubyPSD,
+                                               OverflowAreas& aOverflowAreas) {
   MOZ_ASSERT(aRubyPSD->mFrame->mFrame->IsRubyFrame());
   for (PerFrameData* pfd = aRubyPSD->mFirstFrame; pfd; pfd = pfd->mNext) {
     MOZ_ASSERT(pfd->mFrame->IsRubyBaseContainerFrame());
@@ -3229,7 +3229,7 @@ void nsLineLayout::RelativePositionAnnotations(
       nsIFrame* rtcFrame = rtc->mFrame;
       MOZ_ASSERT(rtcFrame->IsRubyTextContainerFrame());
       ApplyRelativePositioning(rtc);
-      nsOverflowAreas rtcOverflowAreas;
+      OverflowAreas rtcOverflowAreas;
       RelativePositionFrames(rtc->mSpan, rtcOverflowAreas);
       aOverflowAreas.UnionWith(rtcOverflowAreas + rtcFrame->GetPosition());
     }
@@ -3237,8 +3237,8 @@ void nsLineLayout::RelativePositionAnnotations(
 }
 
 void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
-                                          nsOverflowAreas& aOverflowAreas) {
-  nsOverflowAreas overflowAreas;
+                                          OverflowAreas& aOverflowAreas) {
+  OverflowAreas overflowAreas;
   WritingMode wm = psd->mWritingMode;
   if (psd != mRootSpan) {
     
@@ -3287,7 +3287,7 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
     
     
     
-    nsOverflowAreas r;
+    OverflowAreas r;
     if (pfd->mSpan) {
       
       
