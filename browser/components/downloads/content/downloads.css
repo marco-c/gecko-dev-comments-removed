@@ -46,27 +46,27 @@
 .download-state:not([state="6"],
                     [state="8"],
                     [state="9"] )
-                                        .downloadBlockedBadge,
+                                           .downloadBlockedBadge,
 
 .download-state:not([state="-1"],
                     [state="5"], 
                     [state="0"], 
                     [state="4"], 
                     [state="7"]  )
-                                            .downloadProgress,
+                                           .downloadProgress,
 
-.download-state:not(    [state="0"]  )
-                                            .downloadPauseMenuItem,
+.download-state:not([state="0"]  )
+                                           .downloadPauseMenuItem,
 
-.download-state:not(    [state="4"]  )
+.download-state:not([state="4"]  )
                                            .downloadResumeMenuItem,
 
 
 
-.download-state:not(    [state="8"]  )
+.download-state:not([state="8"]  )
                                            .downloadUnblockMenuItem,
-.download-state[state="8"]:not(.temporary-block)
-                                           .downloadUnblockMenuItem,
+
+.download-state[state="8"]:not(.temporary-block) .downloadUnblockMenuItem,
 
 .download-state:not([state="1"], 
                     [state="2"], 
@@ -74,28 +74,28 @@
                     [state="6"], 
                     [state="8"], 
                     [state="9"]  )
-                           .downloadRemoveFromHistoryMenuItem,
+                                           .downloadRemoveFromHistoryMenuItem,
 
 .download-state:not([state="-1"],
                     [state="0"], 
                     [state="1"], 
                     [state="4"], 
                     [state="5"]  )
-                                         .downloadShowMenuItem,
-.download-state[state="1"]:not([exists])
                                            .downloadShowMenuItem,
+
+.download-state[state="1"]:not([exists])   .downloadShowMenuItem,
 
 .download-state:not([state="-1"],
                     [state="0"], 
                     [state="1"], 
                     [state="4"], 
                     [state="5"], 
-                    [state="8"] )
-                                        .downloadCommandsSeparator,
-.download-state[state="1"]:not([exists])
+                    [state="8"]  )
                                            .downloadCommandsSeparator,
-.download-state[state="8"]:not(.temporary-block)
-                                           .downloadCommandsSeparator,
+
+.download-state[state="1"]:not([exists])   .downloadCommandsSeparator,
+
+.download-state[state="8"]:not(.temporary-block) .downloadCommandsSeparator,
 
 
 
@@ -118,7 +118,7 @@
                     [state="3"]  )
                                            .downloadRetry,
 
-.download-state:not(    [state="1"]  )
+.download-state:not([state="1"]  )
                                            .downloadShow {
   display: none;
 }
