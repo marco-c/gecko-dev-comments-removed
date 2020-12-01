@@ -171,11 +171,12 @@ nssSlot_IsTokenPresent(
 
     nssSlot_EnterMonitor(slot);
     ckrv = CKAPI(epv)->C_GetSlotInfo(slot->slotID, &slotInfo);
-    nssSlot_ExitMonitor(slot);
     if (ckrv != CKR_OK) {
-        slot->token->base.name[0] = 0; 
+        if (slot->token) {
+            slot->token->base.name[0] = 0; 
+        }
         isPresent = PR_FALSE;
-        goto done;
+        goto done; 
     }
     slot->ckFlags = slotInfo.flags;
     
@@ -183,7 +184,7 @@ nssSlot_IsTokenPresent(
         if (!slot->token) {
             
             isPresent = PR_FALSE;
-            goto done;
+            goto done; 
         }
         session = nssToken_GetDefaultSession(slot->token);
         if (session) {
@@ -206,8 +207,16 @@ nssSlot_IsTokenPresent(
         
         nssToken_Remove(slot->token);
         isPresent = PR_FALSE;
-        goto done;
+        goto done; 
     }
+    if (!slot->token) {
+        
+
+        PORT_Assert(0);
+        isPresent = PR_FALSE;
+        goto done; 
+    }
+
     
 
 
@@ -230,7 +239,7 @@ nssSlot_IsTokenPresent(
         
         if (!tokenRemoved) {
             isPresent = PR_TRUE;
-            goto done;
+            goto done; 
         }
     }
     
@@ -248,6 +257,7 @@ nssSlot_IsTokenPresent(
         isPresent = PR_FALSE;
     }
 done:
+    nssSlot_ExitMonitor(slot);
     
 
 

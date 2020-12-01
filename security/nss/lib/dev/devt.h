@@ -96,6 +96,9 @@ struct NSSSlotStr {
 };
 
 struct nssSessionStr {
+    
+
+
     PZLock *lock;
     CK_SESSION_HANDLE handle;
     NSSSlot *slot;
