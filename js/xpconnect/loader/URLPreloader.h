@@ -6,6 +6,7 @@
 #ifndef URLPreloader_h
 #define URLPreloader_h
 
+#include "mozilla/DataMutex.h"
 #include "mozilla/FileLocation.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/LinkedList.h"
@@ -300,7 +301,8 @@ class URLPreloader final : public nsIObserver, public nsIMemoryReporter {
   
   
   
-  RefPtr<nsIThread> mReaderThread;
+  
+  DataMutex<RefPtr<nsIThread>> mReaderThread{"ReaderThread"};
 
   
   
