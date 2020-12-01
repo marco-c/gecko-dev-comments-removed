@@ -464,7 +464,9 @@ var PictureInPicture = {
     
     let screen = this.getWorkingScreen(
       windowOrPlayer.screenX,
-      windowOrPlayer.screenY
+      windowOrPlayer.screenY,
+      windowOrPlayer.innerWidth,
+      windowOrPlayer.innerHeight
     );
     let [
       screenLeft,
@@ -639,7 +641,7 @@ var PictureInPicture = {
 
 
 
-  getWorkingScreen(left, top) {
+  getWorkingScreen(left, top, width = 1, height = 1) {
     
     let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
       Ci.nsIScreenManager
@@ -647,7 +649,7 @@ var PictureInPicture = {
     
     
     
-    let screen = screenManager.screenForRect(left, top, 1, 1);
+    let screen = screenManager.screenForRect(left, top, width, height);
 
     return screen;
   },
