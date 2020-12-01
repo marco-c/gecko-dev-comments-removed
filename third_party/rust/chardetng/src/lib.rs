@@ -982,6 +982,11 @@ impl GbkCandidate {
                         score += CJK_LATIN_ADJACENCY_PENALTY;
                     }
                     self.prev = LatinCj::AsciiLetter;
+                } else if u == 0x20AC {
+                    
+                    self.pending_score = None; 
+                    
+                    self.prev = LatinCj::Other;
                 } else if u >= 0x4E00 && u <= 0x9FA5 {
                     if let Some(pending) = self.pending_score {
                         score += pending;
@@ -1243,6 +1248,13 @@ impl ShiftJisCandidate {
                         }
                         0..=0x7F => {
                             self.pending_score = None; 
+                        }
+                        0x80 => {
+                            
+                            
+                            
+                            self.pending_score = None; 
+                            score += IMPLAUSIBILITY_PENALTY;
                         }
                         _ => {
                             if let Some(pending) = self.pending_score {
@@ -3221,4 +3233,10 @@ mod tests {
     fn test_numero() {
         check("Nº", WINDOWS_1252);
     }
+
+    #[test]
+    fn test_euro() {
+        check(" €9", WINDOWS_1252);
+    }
+
 }
