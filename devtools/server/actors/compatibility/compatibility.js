@@ -48,12 +48,7 @@ const CompatibilityActor = protocol.ActorClassWithSpec(compatibilitySpec, {
 
   getTraits() {
     return {
-      traits: {
-        
-        
-        
-        declarationBlockIssueComputationEnabled: true,
-      },
+      traits: {},
     };
   },
 

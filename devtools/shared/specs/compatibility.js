@@ -37,6 +37,9 @@ const compatibilitySpec = generateActorSpec({
   typeName: "compatibility",
 
   methods: {
+    
+    
+    
     getTraits: {
       request: {},
       response: { traits: RetVal("json") },
