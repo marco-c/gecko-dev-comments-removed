@@ -693,6 +693,13 @@ interface nsILoadInfo : nsISupports
 
 
 
+  [infallible] attribute boolean browserDidUpgradeInsecureRequests;
+
+  
+
+
+
+
 
   [infallible] readonly attribute boolean browserWouldUpgradeInsecureRequests;
 
