@@ -968,53 +968,53 @@ void URLParams::ConvertString(const nsACString& aInput, nsAString& aOutput) {
 
 
 void URLParams::DecodeString(const nsACString& aInput, nsAString& aOutput) {
-  nsACString::const_iterator start, end;
-  aInput.BeginReading(start);
-  aInput.EndReading(end);
+  const char* const end = aInput.EndReading();
 
-  nsCString unescaped;
+  nsAutoCString unescaped;
 
-  while (start != end) {
+  for (const char* iter = aInput.BeginReading(); iter != end;) {
     
-    if (*start == '+') {
+    if (*iter == '+') {
       unescaped.Append(' ');
-      ++start;
+      ++iter;
       continue;
     }
 
     
-    if (*start == '%') {
-      nsACString::const_iterator first(start);
-      ++first;
+    if (*iter == '%') {
+      const char* const first = iter + 1;
+      const char* const second = first + 1;
 
-      nsACString::const_iterator second(first);
-      ++second;
+      const auto asciiHexDigit = [](char x) {
+        return (x >= 0x41 && x <= 0x46) || (x >= 0x61 && x <= 0x66) ||
+               (x >= 0x30 && x <= 0x39);
+      };
 
-#define ASCII_HEX_DIGIT(x)                                         \
-  (((x) >= 0x41 && (x) <= 0x46) || ((x) >= 0x61 && (x) <= 0x66) || \
-   ((x) >= 0x30 && (x) <= 0x39))
+      const auto hexDigit = [](char x) {
+        return x >= 0x30 && x <= 0x39
+                   ? x - 0x30
+                   : (x >= 0x41 && x <= 0x46 ? x - 0x37 : x - 0x57);
+      };
 
-#define HEX_DIGIT(x)            \
-  (*(x) >= 0x30 && *(x) <= 0x39 \
-       ? *(x)-0x30              \
-       : (*(x) >= 0x41 && *(x) <= 0x46 ? *(x)-0x37 : *(x)-0x57))
-
-      if (first != end && second != end && ASCII_HEX_DIGIT(*first) &&
-          ASCII_HEX_DIGIT(*second)) {
-        unescaped.Append(HEX_DIGIT(first) * 16 + HEX_DIGIT(second));
-        start = ++second;
+      if (first != end && second != end && asciiHexDigit(*first) &&
+          asciiHexDigit(*second)) {
+        unescaped.Append(hexDigit(*first) * 16 + hexDigit(*second));
+        iter = second + 1;
       } else {
         unescaped.Append('%');
-        ++start;
+        ++iter;
       }
 
       continue;
     }
 
-    unescaped.Append(*start);
-    ++start;
+    unescaped.Append(*iter);
+    ++iter;
   }
 
+  
+  
+  
   ConvertString(unescaped, aOutput);
 }
 
