@@ -18,13 +18,43 @@ const transformTests = {
     ['translateX(50%)', 'translateX(calc(25% - 2em))', 'translateX(-4em)']
   ],
   rotate: [
-    ['rotate(0deg)', 'rotate(45deg)', 'rotate(90deg)'],
-    ['rotateX(0deg)', 'rotateX(45deg)', 'rotateX(90deg)'],
-    ['rotateY(0deg)', 'rotateY(45deg)', 'rotateY(90deg)'],
-    ['rotate(0deg)', 'rotate(180deg)', 'rotate(360deg)'],
-    ['rotate3d(7, 8, 9, 0deg)', 'rotate3d(7, 8, 9, 45deg)', 'rotate3d(7, 8, 9, 90deg)'],
     
-    ['rotateX(360deg)', 'rotateZ(45deg)', 'rotateZ(90deg)']
+    ['rotate(30deg)', 'rotate(60deg)', 'rotate(90deg)'],
+    ['rotateX(30deg)', 'rotateX(60deg)', 'rotateX(90deg)'],
+    ['rotateY(30deg)', 'rotateY(60deg)', 'rotateY(90deg)'],
+    ['rotate(30deg)', 'rotate(60deg)', 'rotateZ(90deg)'],
+    ['rotate(0deg)', 'rotate(180deg)', 'rotate(360deg)'],
+    
+    ['rotate3d(7, 8, 9, 0deg)', 'rotate3d(7, 8, 9, 45deg)', 'rotate3d(7, 8, 9, 90deg)'],
+    ['rotate3d(1, 2, 3, 0deg)', 'rotate3d(3, 6, 9, 45deg)', 'rotate3d(2, 4, 6, 90deg)'],
+    
+    
+    ['rotateX(0deg)', 'rotate(45deg)', 'rotate(90deg)'],
+    ['rotateX(90deg)', 'rotateX(45deg)', 'rotate(0deg)']
+  ],
+  rotateSlerp: [
+    
+    ['rotateX(360deg)', 'rotateZ(45deg)', 'rotateZ(90deg)'],
+    
+    
+    ['rotate(45deg)', 'rotate(0deg)', 'rotate3d(0, 0, -1, 45deg)'],
+    ['rotate(45deg)', 'rotate(0deg)', 'rotate(-45deg)'],
+    
+    
+    ['rotateX(90deg)', 'rotate3d(1, 1, 0, 70.5288deg)', 'rotateY(90deg)'],
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ['rotate3d(1, 1, 0, 90deg)',
+     'rotate3d(0.3365568, 0.8125199, 0.4759632, 129.094547486deg)',
+     'rotate3d(0, 1, 1, 180deg)'],
   ],
   scale: [
     ['scaleX(0.5)', 'scaleX(0.75)', 'scaleX(1)'],
