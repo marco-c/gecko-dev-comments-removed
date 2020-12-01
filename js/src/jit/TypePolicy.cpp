@@ -314,65 +314,6 @@ bool SameValuePolicy::adjustInputs(TempAllocator& alloc,
   return BoxInputsPolicy::staticAdjustInputs(alloc, def);
 }
 
-bool TypeBarrierPolicy::adjustInputs(TempAllocator& alloc,
-                                     MInstruction* def) const {
-  MTypeBarrier* ins = def->toTypeBarrier();
-  MIRType inputType = ins->getOperand(0)->type();
-  MIRType outputType = ins->type();
-
-  
-  if (inputType == outputType) {
-    return true;
-  }
-
-  
-  if (outputType == MIRType::Value) {
-    
-    
-    MOZ_ASSERT(inputType != MIRType::Value);
-    ins->replaceOperand(0, BoxAt(alloc, ins, ins->getOperand(0)));
-    return true;
-  }
-
-  
-  if (inputType != MIRType::Value) {
-    MOZ_ASSERT(ins->alwaysBails());
-    ins->replaceOperand(0, BoxAt(alloc, ins, ins->getOperand(0)));
-  }
-
-  
-  
-  
-  
-  if (IsNullOrUndefined(outputType) ||
-      outputType == MIRType::MagicOptimizedArguments) {
-    MOZ_ASSERT(!ins->hasDefUses());
-    ins->setResultType(MIRType::Value);
-    return true;
-  }
-
-  
-  MUnbox::Mode mode = MUnbox::TypeBarrier;
-  MInstruction* replace =
-      MUnbox::New(alloc, ins->getOperand(0), ins->type(), mode);
-  if (!ins->isMovable()) {
-    replace->setNotMovable();
-  }
-
-  ins->block()->insertBefore(ins, replace);
-  ins->replaceOperand(0, replace);
-  if (!replace->typePolicy()->adjustInputs(alloc, replace)) {
-    return false;
-  }
-
-  
-  
-  
-  ins->block()->flagOperandsOfPrunedBranches(replace);
-
-  return true;
-}
-
 bool TestPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {
   MDefinition* op = ins->getOperand(0);
   switch (op->type()) {
@@ -1120,88 +1061,6 @@ bool ClampPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {
   return true;
 }
 
-bool FilterTypeSetPolicy::adjustInputs(TempAllocator& alloc,
-                                       MInstruction* ins) const {
-  MOZ_ASSERT(ins->numOperands() == 1);
-  MIRType inputType = ins->getOperand(0)->type();
-  MIRType outputType = ins->type();
-
-  
-  if (outputType == MIRType::Float32 && inputType != MIRType::Float32) {
-    
-    
-    MInstruction* replace = MToFloat32::New(alloc, ins);
-    ins->justReplaceAllUsesWithExcept(replace);
-    ins->block()->insertAfter(ins, replace);
-
-    
-    
-    
-    
-    
-    ins->setResultType(ins->resultTypeSet()->getKnownMIRType());
-    outputType = ins->type();
-
-    
-    if (!replace->typePolicy()->adjustInputs(alloc, replace)) {
-      return false;
-    }
-
-    
-    
-  }
-
-  
-  if (inputType == outputType) {
-    return true;
-  }
-
-  
-  if (outputType == MIRType::Value) {
-    MOZ_ASSERT(inputType != MIRType::Value);
-    ins->replaceOperand(0, BoxAt(alloc, ins, ins->getOperand(0)));
-    return true;
-  }
-
-  
-  
-  
-  if (inputType != MIRType::Value) {
-    MBail* bail = MBail::New(alloc);
-    ins->block()->insertBefore(ins, bail);
-    bail->setDependency(ins->dependency());
-    ins->setDependency(bail);
-    ins->replaceOperand(0, BoxAt(alloc, ins, ins->getOperand(0)));
-  }
-
-  
-  
-  
-  
-  if (IsNullOrUndefined(outputType) ||
-      outputType == MIRType::MagicOptimizedArguments) {
-    MOZ_ASSERT(!ins->hasDefUses());
-    ins->setResultType(MIRType::Value);
-    return true;
-  }
-
-  
-  MUnbox::Mode mode = MUnbox::Infallible;
-  MInstruction* replace =
-      MUnbox::New(alloc, ins->getOperand(0), ins->type(), mode);
-
-  ins->block()->insertBefore(ins, replace);
-  ins->replaceOperand(0, replace);
-  if (!replace->typePolicy()->adjustInputs(alloc, replace)) {
-    return false;
-  }
-
-  
-  replace->setDependency(ins->dependency());
-
-  return true;
-}
-
 bool TypedArrayIndexPolicy::adjustInputs(TempAllocator& alloc,
                                          MInstruction* ins) const {
   MOZ_ASSERT(ins->isTypedArrayIndexToInt32());
@@ -1227,7 +1086,6 @@ bool TypedArrayIndexPolicy::adjustInputs(TempAllocator& alloc,
   _(CallSetElementPolicy)       \
   _(ClampPolicy)                \
   _(ComparePolicy)              \
-  _(FilterTypeSetPolicy)        \
   _(PowPolicy)                  \
   _(SameValuePolicy)            \
   _(SignPolicy)                 \
@@ -1240,7 +1098,6 @@ bool TypedArrayIndexPolicy::adjustInputs(TempAllocator& alloc,
   _(ToBigIntPolicy)             \
   _(ToStringPolicy)             \
   _(ToInt64Policy)              \
-  _(TypeBarrierPolicy)          \
   _(TypedArrayIndexPolicy)
 
 #define TEMPLATE_TYPE_POLICY_LIST(_)                                          \

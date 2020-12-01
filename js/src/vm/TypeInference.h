@@ -247,17 +247,6 @@ class RecompileInfo {
 
 typedef Vector<RecompileInfo, 1, SystemAllocPolicy> RecompileInfoVector;
 
-
-
-bool FinishCompilation(JSContext* cx, HandleScript script,
-                       CompilerConstraintList* constraints,
-                       IonCompilationId compilationId, bool* isValidOut);
-
-
-
-void FinishDefinitePropertiesAnalysis(JSContext* cx,
-                                      CompilerConstraintList* constraints);
-
 struct AutoEnterAnalysis;
 
 class TypeZone {

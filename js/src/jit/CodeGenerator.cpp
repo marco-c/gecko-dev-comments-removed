@@ -1406,7 +1406,8 @@ void CodeGenerator::testValueTruthyKernel(
                  int(mightBeString) + int(mightBeSymbol) + int(mightBeDouble) +
                  int(mightBeBigInt);
 
-  MOZ_ASSERT_IF(!valueMIR->emptyResultTypeSet(), tagCount > 0);
+  
+  MOZ_ASSERT(tagCount > 0);
 
   
   
@@ -5110,51 +5111,6 @@ void CodeGenerator::visitInt64ToBigInt(LInt64ToBigInt* lir) {
   emitCreateBigInt(lir, Scalar::BigInt64, input, output, temp);
 }
 
-void CodeGenerator::visitTypeBarrierV(LTypeBarrierV* lir) {
-  ValueOperand operand = ToValue(lir, LTypeBarrierV::Input);
-  Register unboxScratch = ToTempRegisterOrInvalid(lir->unboxTemp());
-  Register objScratch = ToTempRegisterOrInvalid(lir->objTemp());
-
-  
-  
-  Register spectreRegToZero = operand.payloadOrValueReg();
-
-  Label miss;
-  masm.guardTypeSet(operand, lir->mir()->resultTypeSet(),
-                    lir->mir()->barrierKind(), unboxScratch, objScratch,
-                    spectreRegToZero, &miss);
-  bailoutFrom(&miss, lir->snapshot());
-}
-
-void CodeGenerator::visitTypeBarrierO(LTypeBarrierO* lir) {
-  Register obj = ToRegister(lir->object());
-  Register scratch = ToTempRegisterOrInvalid(lir->temp());
-  Label miss, ok;
-
-  if (lir->mir()->type() == MIRType::ObjectOrNull) {
-    masm.comment("Object or Null");
-    Label* nullTarget =
-        lir->mir()->resultTypeSet()->mightBeMIRType(MIRType::Null) ? &ok
-                                                                   : &miss;
-    masm.branchTestPtr(Assembler::Zero, obj, obj, nullTarget);
-  } else {
-    MOZ_ASSERT(lir->mir()->type() == MIRType::Object);
-    MOZ_ASSERT(lir->mir()->barrierKind() != BarrierKind::TypeTagOnly);
-  }
-
-  if (lir->mir()->barrierKind() != BarrierKind::TypeTagOnly) {
-    masm.comment("Type tag only");
-    
-    
-    Register spectreRegToZero = obj;
-    masm.guardObjectType(obj, lir->mir()->resultTypeSet(), scratch,
-                         spectreRegToZero, &miss);
-  }
-
-  bailoutFrom(&miss, lir->snapshot());
-  masm.bind(&ok);
-}
-
 void CodeGenerator::visitGuardValue(LGuardValue* lir) {
   ValueOperand input = ToValue(lir, LGuardValue::Input);
   Value expected = lir->mir()->expected();
@@ -6647,89 +6603,6 @@ void CodeGenerator::visitCallDirectEval(LCallDirectEval* lir) {
   callVM<Fn, DirectEvalStringFromIon>(lir);
 }
 
-void CodeGenerator::generateArgumentsChecks(bool assert) {
-  
-  
-  
-  
-
-  if (!IsTypeInferenceEnabled()) {
-    return;
-  }
-
-  MIRGraph& mir = gen->graph();
-  MResumePoint* rp = mir.entryResumePoint();
-
-  
-  AllocatableGeneralRegisterSet temps(GeneralRegisterSet::All());
-  Register temp1 = temps.takeAny();
-  Register temp2 = temps.takeAny();
-
-  masm.debugAssertContextRealm(gen->realm->realmPtr(), temp1);
-
-  const CompileInfo& info = gen->outerInfo();
-
-  Label miss;
-  for (uint32_t i = info.startArgSlot(); i < info.endArgSlot(); i++) {
-    
-    MParameter* param = rp->getOperand(i)->toParameter();
-    const TypeSet* types = param->resultTypeSet();
-    if (!types || types->unknown()) {
-      continue;
-    }
-
-    
-    
-    
-    
-    int32_t offset =
-        ArgToStackOffset((i - info.startArgSlot()) * sizeof(Value));
-    Address argAddr(masm.getStackPointer(), offset);
-
-    
-    
-    Register spectreRegToZero = AsRegister(masm.getStackPointer());
-    masm.guardTypeSet(argAddr, types, BarrierKind::TypeSet, temp1, temp2,
-                      spectreRegToZero, &miss);
-  }
-
-  if (miss.used()) {
-    if (assert) {
-#ifdef DEBUG
-      Label success;
-      masm.jump(&success);
-      masm.bind(&miss);
-
-      
-      
-      for (uint32_t i = info.startArgSlot(); i < info.endArgSlot(); i++) {
-        MParameter* param = rp->getOperand(i)->toParameter();
-        const TemporaryTypeSet* types = param->resultTypeSet();
-        if (!types || types->unknown()) {
-          continue;
-        }
-
-        Label skip;
-        Address addr(
-            masm.getStackPointer(),
-            ArgToStackOffset((i - info.startArgSlot()) * sizeof(Value)));
-        masm.branchTestObject(Assembler::NotEqual, addr, &skip);
-        Register obj = masm.extractObject(addr, temp1);
-        masm.guardTypeSetMightBeIncomplete(types, obj, temp1, &success);
-        masm.bind(&skip);
-      }
-
-      masm.assumeUnreachable("Argument check fail.");
-      masm.bind(&success);
-#else
-      MOZ_CRASH("Shouldn't get here in opt builds");
-#endif
-    } else {
-      bailoutFrom(&miss, graph.entrySnapshot());
-    }
-  }
-}
-
 
 class CheckOverRecursedFailure : public OutOfLineCodeBase<CodeGenerator> {
   LInstruction* lir_;
@@ -6970,37 +6843,6 @@ void CodeGenerator::emitAssertGCThingResult(Register input,
   Label done;
   branchIfInvalidated(temp, &done);
 
-  const TemporaryTypeSet* typeset = mir->resultTypeSet();
-  if ((type == MIRType::Object || type == MIRType::ObjectOrNull) && typeset &&
-      !typeset->unknownObject()) {
-    
-    Label miss, ok;
-    if (type == MIRType::ObjectOrNull) {
-      masm.branchPtr(Assembler::Equal, input, ImmWord(0), &ok);
-    }
-    if (typeset->getObjectCount() > 0) {
-      masm.guardObjectType(input, typeset, temp, input, &miss);
-    } else {
-      masm.jump(&miss);
-    }
-    masm.jump(&ok);
-
-    masm.bind(&miss);
-    masm.guardTypeSetMightBeIncomplete(typeset, input, temp, &ok);
-
-    switch (mir->op()) {
-#  define MIR_OP(op)                                                \
-    case MDefinition::Opcode::op:                                   \
-      masm.assumeUnreachable(                                       \
-          #op " instruction returned object with unexpected type"); \
-      break;
-      MIR_OPCODE_LIST(MIR_OP)
-#  undef MIR_OP
-    }
-
-    masm.bind(&ok);
-  }
-
 #  ifndef JS_SIMULATOR
   
   
@@ -7066,37 +6908,6 @@ void CodeGenerator::emitAssertResultV(const ValueOperand input,
   
   Label done;
   branchIfInvalidated(temp1, &done);
-
-  const TemporaryTypeSet* typeset = mir->resultTypeSet();
-  if (typeset && !typeset->unknown()) {
-    
-    Label miss, ok;
-    masm.guardTypeSet(input, typeset, BarrierKind::TypeSet, temp1, temp2,
-                      input.payloadOrValueReg(), &miss);
-    masm.jump(&ok);
-
-    masm.bind(&miss);
-
-    
-    
-    Label realMiss;
-    masm.branchTestObject(Assembler::NotEqual, input, &realMiss);
-    Register payload = masm.extractObject(input, temp1);
-    masm.guardTypeSetMightBeIncomplete(typeset, payload, temp1, &ok);
-    masm.bind(&realMiss);
-
-    switch (mir->op()) {
-#  define MIR_OP(op)                                               \
-    case MDefinition::Opcode::op:                                  \
-      masm.assumeUnreachable(                                      \
-          #op " instruction returned value with unexpected type"); \
-      break;
-      MIR_OPCODE_LIST(MIR_OP)
-#  undef MIR_OP
-    }
-
-    masm.bind(&ok);
-  }
 
   
   if (JitOptions.fullDebugChecks) {
@@ -11516,11 +11327,6 @@ bool CodeGenerator::generate() {
     return false;
   }
 
-  
-  
-  
-  generateArgumentsChecks();
-
   if (frameClass_ != FrameSizeClass::None()) {
     deoptTable_.emplace(gen->jitRuntime()->getBailoutTable(frameClass_));
   }
@@ -11541,11 +11347,6 @@ bool CodeGenerator::generate() {
 
     masm.bind(&skipPrologue);
   }
-
-#ifdef DEBUG
-  
-  generateArgumentsChecks( true);
-#endif
 
   
   if (!addNativeToBytecodeEntry(startSite)) {
@@ -11672,16 +11473,10 @@ bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints,
   
   bool isValid = false;
 
-  if (JitOptions.warpBuilder) {
-    
-    
-    if (!AddInlinedCompilations(script, compilationId, snapshot, &isValid)) {
-      return false;
-    }
-  } else {
-    if (!FinishCompilation(cx, script, constraints, compilationId, &isValid)) {
-      return false;
-    }
+  
+  
+  if (!AddInlinedCompilations(script, compilationId, snapshot, &isValid)) {
+    return false;
   }
   if (!isValid) {
     return true;
@@ -12316,38 +12111,8 @@ ConstantOrRegister CodeGenerator::toConstantOrRegister(LInstruction* lir,
 
 static GetPropertyResultFlags IonGetPropertyICFlags(
     const MGetPropertyCache* mir) {
-  GetPropertyResultFlags flags = GetPropertyResultFlags::None;
-  if (mir->monitoredResult()) {
-    flags |= GetPropertyResultFlags::Monitored;
-  }
-
-  if (mir->type() == MIRType::Value) {
-    if (TemporaryTypeSet* types = mir->resultTypeSet()) {
-      if (types->hasType(TypeSet::UndefinedType())) {
-        flags |= GetPropertyResultFlags::AllowUndefined;
-      }
-      if (types->hasType(TypeSet::Int32Type())) {
-        flags |= GetPropertyResultFlags::AllowInt32;
-      }
-      if (types->hasType(TypeSet::DoubleType())) {
-        flags |= GetPropertyResultFlags::AllowDouble;
-      }
-    } else {
-      flags |= GetPropertyResultFlags::AllowUndefined |
-               GetPropertyResultFlags::AllowInt32 |
-               GetPropertyResultFlags::AllowDouble;
-    }
-  } else if (mir->type() == MIRType::Int32) {
-    flags |= GetPropertyResultFlags::AllowInt32;
-  } else if (mir->type() == MIRType::Double) {
-    flags |= GetPropertyResultFlags::AllowInt32 |
-             GetPropertyResultFlags::AllowDouble;
-  }
-
   
-  MOZ_ASSERT_IF(JitOptions.warpBuilder, flags == GetPropertyResultFlags::All);
-
-  return flags;
+  return GetPropertyResultFlags::All;
 }
 
 void CodeGenerator::visitGetPropertyCacheV(LGetPropertyCacheV* ins) {
@@ -12546,7 +12311,8 @@ void CodeGenerator::visitTypeOfV(LTypeOfV* lir) {
                       unsigned(testNull) + unsigned(testString) +
                       unsigned(testSymbol) + unsigned(testBigInt);
 
-  MOZ_ASSERT_IF(!input->emptyResultTypeSet(), numTests > 0);
+  
+  MOZ_ASSERT(numTests > 0);
 
   OutOfLineTypeOfV* ool = nullptr;
   if (testObject) {

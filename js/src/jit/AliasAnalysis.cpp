@@ -236,16 +236,8 @@ MDefinition::AliasType AliasAnalysis::genericMightAlias(
     return MDefinition::AliasType::MayAlias;
   }
 
-  if (!loadObject->resultTypeSet() || !storeObject->resultTypeSet()) {
-    return MDefinition::AliasType::MayAlias;
-  }
-
-  if (loadObject->resultTypeSet()->objectsIntersect(
-          storeObject->resultTypeSet())) {
-    return MDefinition::AliasType::MayAlias;
-  }
-
-  return MDefinition::AliasType::NoAlias;
+  
+  return MDefinition::AliasType::MayAlias;
 }
 
 

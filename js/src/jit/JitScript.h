@@ -529,16 +529,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   static inline void MonitorArgType(JSContext* cx, JSScript* script,
                                     unsigned arg, const js::Value& value);
 
-  
-
-
-
-
-  static bool FreezeTypeSets(CompilerConstraintList* constraints,
-                             JSScript* script, TemporaryTypeSet** pThisTypes,
-                             TemporaryTypeSet** pArgTypes,
-                             TemporaryTypeSet** pBytecodeTypes);
-
   static void Destroy(Zone* zone, JitScript* script);
 
   static constexpr Offset offsetOfICEntries() { return sizeof(JitScript); }

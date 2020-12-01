@@ -616,6 +616,7 @@ bool BaselineStackBuilder::buildBaselineFrame() {
     
     
     
+    
     JitSpew(JitSpew_BaselineBailouts,
             "      BailoutKind::ArgumentCheck! Using function's environment");
     envChain = fun_->environment();

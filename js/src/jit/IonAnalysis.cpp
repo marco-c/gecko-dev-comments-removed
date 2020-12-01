@@ -722,55 +722,13 @@ static bool BlockComputesConstant(MBasicBlock* block, MDefinition* value,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 static bool IsPhiRedudantFilter(MPhi* phi) {
   
   if (phi->operandIfRedundant()) {
     return true;
   }
 
-  
-  bool onlyFilters = false;
-  MDefinition* a = phi->getOperand(0);
-  if (a->isFilterTypeSet()) {
-    a = a->toFilterTypeSet()->input();
-    onlyFilters = true;
-  }
-
-  for (size_t i = 1; i < phi->numOperands(); i++) {
-    MDefinition* operand = phi->getOperand(i);
-    if (operand == a) {
-      onlyFilters = false;
-      continue;
-    }
-    if (operand->isFilterTypeSet() &&
-        operand->toFilterTypeSet()->input() == a) {
-      continue;
-    }
-    return false;
-  }
-  if (!onlyFilters) {
-    return true;
-  }
-
-  
-  MOZ_ASSERT(onlyFilters);
-  return EqualTypes(a->type(), a->resultTypeSet(), phi->type(),
-                    phi->resultTypeSet());
+  return false;
 }
 
 
@@ -1000,9 +958,6 @@ static bool MaybeFoldConditionBlock(MIRGraph& graph,
 
     if (!redundant) {
       redundant = (*iter)->getOperand(0);
-      if (redundant->isFilterTypeSet()) {
-        redundant = redundant->toFilterTypeSet()->input();
-      }
     }
 
     (*iter)->replaceAllUsesWith(redundant);
@@ -1200,8 +1155,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
       
       
       
-      if (ins->isUnbox() || ins->isParameter() || ins->isTypeBarrier() ||
-          ins->isBoxNonStrictThis() || ins->isFilterTypeSet()) {
+      if (ins->isUnbox() || ins->isParameter() || ins->isBoxNonStrictThis()) {
         continue;
       }
 
@@ -1704,11 +1658,6 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi,
     }
 
     
-    
-    if (in->resultTypeSet() && in->resultTypeSet()->empty()) {
-      *hasInputsWithEmptyTypes = true;
-      continue;
-    }
 
     
     
@@ -3539,111 +3488,6 @@ static bool TryEliminateBoundsCheck(BoundsCheckMap& checks, size_t blockIndex,
   return true;
 }
 
-static void TryEliminateTypeBarrierFromTest(MTypeBarrier* barrier,
-                                            bool filtersNull,
-                                            bool filtersUndefined, MTest* test,
-                                            BranchDirection direction,
-                                            bool* eliminated) {
-  MOZ_ASSERT(filtersNull || filtersUndefined);
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-  MDefinition* input = barrier->input();
-  MUnbox* inputUnbox = nullptr;
-  if (input->isUnbox() && input->toUnbox()->mode() != MUnbox::Fallible) {
-    inputUnbox = input->toUnbox();
-    input = inputUnbox->input();
-  }
-
-  MDefinition* subject = nullptr;
-  bool removeUndefined;
-  bool removeNull;
-  test->filtersUndefinedOrNull(direction == TRUE_BRANCH, &subject,
-                               &removeUndefined, &removeNull);
-
-  
-  if (!subject) {
-    return;
-  }
-
-  
-  if (subject != input) {
-    return;
-  }
-
-  
-  
-  if (!removeUndefined && filtersUndefined) {
-    return;
-  }
-
-  
-  
-  if (!removeNull && filtersNull) {
-    return;
-  }
-
-  
-  
-  *eliminated = true;
-  if (inputUnbox) {
-    inputUnbox->makeInfallible();
-  }
-  barrier->replaceAllUsesWith(barrier->input());
-}
-
-static bool TryEliminateTypeBarrier(MTypeBarrier* barrier, bool* eliminated) {
-  MOZ_ASSERT(!*eliminated);
-
-  const TemporaryTypeSet* barrierTypes = barrier->resultTypeSet();
-  const TemporaryTypeSet* inputTypes = barrier->input()->resultTypeSet();
-
-  
-  if (barrier->input()->isUnbox() &&
-      barrier->input()->toUnbox()->mode() != MUnbox::Fallible) {
-    inputTypes = barrier->input()->toUnbox()->input()->resultTypeSet();
-  }
-
-  if (!barrierTypes || !inputTypes) {
-    return true;
-  }
-
-  bool filtersNull = barrierTypes->filtersType(inputTypes, TypeSet::NullType());
-  bool filtersUndefined =
-      barrierTypes->filtersType(inputTypes, TypeSet::UndefinedType());
-
-  if (!filtersNull && !filtersUndefined) {
-    return true;
-  }
-
-  MBasicBlock* block = barrier->block();
-  while (true) {
-    BranchDirection direction;
-    MTest* test = block->immediateDominatorBranch(&direction);
-
-    if (test) {
-      TryEliminateTypeBarrierFromTest(barrier, filtersNull, filtersUndefined,
-                                      test, direction, eliminated);
-    }
-
-    MBasicBlock* previous = block->immediateDominator();
-    if (previous == block) {
-      break;
-    }
-    block = previous;
-  }
-
-  return true;
-}
-
 static bool TryOptimizeLoadObjectOrNull(MDefinition* def,
                                         MDefinitionVector* peliminateList) {
   if (def->type() != MIRType::Value) {
@@ -3651,90 +3495,6 @@ static bool TryOptimizeLoadObjectOrNull(MDefinition* def,
   }
 
   
-  TemporaryTypeSet* types = def->resultTypeSet();
-  if (!types) {
-    return true;
-  }
-  if (types->baseFlags() & ~(TYPE_FLAG_NULL | TYPE_FLAG_ANYOBJECT)) {
-    return true;
-  }
-
-  MDefinitionVector eliminateList(def->block()->graph().alloc());
-
-  for (MUseDefIterator iter(def); iter; ++iter) {
-    MDefinition* ndef = iter.def();
-    switch (ndef->op()) {
-      case MDefinition::Opcode::Compare:
-        if (ndef->toCompare()->compareType() != MCompare::Compare_Null) {
-          return true;
-        }
-        break;
-      case MDefinition::Opcode::Test:
-        break;
-      case MDefinition::Opcode::PostWriteBarrier:
-        break;
-      case MDefinition::Opcode::StoreFixedSlot:
-        break;
-      case MDefinition::Opcode::StoreDynamicSlot:
-        break;
-      case MDefinition::Opcode::ToObjectOrNull:
-        if (!eliminateList.append(ndef->toToObjectOrNull())) {
-          return false;
-        }
-        break;
-      case MDefinition::Opcode::Unbox:
-        if (ndef->type() != MIRType::Object) {
-          return true;
-        }
-        break;
-      case MDefinition::Opcode::TypeBarrier:
-        
-        
-        if (ndef->hasUses() ||
-            ndef->resultTypeSet()->getKnownMIRType() != MIRType::Null) {
-          return true;
-        }
-        break;
-      default:
-        return true;
-    }
-  }
-
-  
-  
-#ifdef JS_PUNBOX64
-  bool foundUse = false;
-  for (MUseDefIterator iter(def); iter; ++iter) {
-    MDefinition* ndef = iter.def();
-    if (!ndef->isStoreFixedSlot() && !ndef->isStoreDynamicSlot()) {
-      foundUse = true;
-      break;
-    }
-  }
-  if (!foundUse) {
-    return true;
-  }
-#endif  
-
-  def->setResultType(MIRType::ObjectOrNull);
-
-  
-  for (MUseDefIterator iter(def); iter; ++iter) {
-    MDefinition* ndef = iter.def();
-    if (ndef->isTypeBarrier()) {
-      ndef->setResultType(MIRType::ObjectOrNull);
-    }
-  }
-
-  
-  for (size_t i = 0; i < eliminateList.length(); i++) {
-    MDefinition* ndef = eliminateList[i];
-    ndef->replaceAllUsesWith(def);
-    if (!peliminateList->append(ndef)) {
-      return false;
-    }
-  }
-
   return true;
 }
 
@@ -3802,11 +3562,6 @@ bool jit::EliminateRedundantChecks(MIRGraph& graph) {
         case MDefinition::Opcode::BoundsCheck:
           if (!TryEliminateBoundsCheck(checks, index, def->toBoundsCheck(),
                                        &eliminated)) {
-            return false;
-          }
-          break;
-        case MDefinition::Opcode::TypeBarrier:
-          if (!TryEliminateTypeBarrier(def->toTypeBarrier(), &eliminated)) {
             return false;
           }
           break;
