@@ -73,8 +73,12 @@ bool UnscaledFontGDI::GetFontInstanceData(FontInstanceDataOutput aCb,
 
 bool UnscaledFontGDI::GetFontDescriptor(FontDescriptorOutput aCb,
                                         void* aBaton) {
-  aCb(reinterpret_cast<uint8_t*>(&mLogFont), sizeof(mLogFont), 0, aBaton);
-  return true;
+  
+  
+  
+  
+  
+  return false;
 }
 
 already_AddRefed<UnscaledFont> UnscaledFontGDI::CreateFromFontDescriptor(
