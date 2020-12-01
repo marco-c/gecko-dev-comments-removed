@@ -603,12 +603,12 @@ MOZ_ALWAYS_INLINE bool NativeObject::updateSlotsForSpan(JSContext* cx,
     if (newSpan == oldSpan + 1) {
       initSlotUnchecked(oldSpan, UndefinedValue());
     } else {
-      initializeSlotRange(oldSpan, newSpan - oldSpan);
+      initializeSlotRange(oldSpan, newSpan);
     }
   } else {
     
     prepareSlotRangeForOverwrite(newSpan, oldSpan);
-    invalidateSlotRange(newSpan, oldSpan - newSpan);
+    invalidateSlotRange(newSpan, oldSpan);
 
     if (oldCapacity > newCapacity) {
       shrinkSlots(cx, oldCapacity, newCapacity);
