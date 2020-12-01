@@ -580,9 +580,6 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       isUnblocked |= gpu.Find("Adreno (TM) 5",  true) >= 0;
 
       
-      isUnblocked |= gpu.Find("Mali-G",  true) >= 0;
-
-      
       isUnblocked |= gpu.Find("Mali-T",  true) >= 0;
 #endif
       
@@ -593,6 +590,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 
       
       isUnblocked |= gpu.Find("Adreno (TM) 6",  true) >= 0;
+
+      
+      isUnblocked |= gpu.Find("Mali-G",  true) >= 0;
 
       if (!isUnblocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
