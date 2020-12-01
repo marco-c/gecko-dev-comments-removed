@@ -1331,15 +1331,22 @@ already_AddRefed<mozilla::layers::Layer> nsDisplayRemote::BuildLayer(
 }
 
 void nsDisplayRemote::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
+  nsPresContext* pc = mFrame->PresContext();
+  nsFrameLoader* fl = GetFrameLoader();
+  if (pc->GetPrintSettings() && fl->IsRemoteFrame()) {
+    
+    fl->UpdatePositionAndSize(static_cast<nsSubDocumentFrame*>(mFrame));
+  }
+
   DrawTarget* target = aCtx->GetDrawTarget();
   if (!target->IsRecording() || mTabId == 0) {
     NS_WARNING("Remote iframe not rendered");
     return;
   }
 
-  int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-  Rect destRect = mozilla::NSRectToSnappedRect(GetContentRect(),
-                                               appUnitsPerDevPixel, *target);
+  int32_t appUnitsPerDevPixel = pc->AppUnitsPerDevPixel();
+  Rect destRect =
+      NSRectToSnappedRect(GetContentRect(), appUnitsPerDevPixel, *target);
   target->DrawDependentSurface(mTabId, destRect);
 }
 
@@ -1353,8 +1360,21 @@ bool nsDisplayRemote::CreateWebRenderCommands(
     return true;
   }
 
-  if (RefPtr<RemoteBrowser> remoteBrowser =
-          GetFrameLoader()->GetRemoteBrowser()) {
+  nsPresContext* pc = mFrame->PresContext();
+  nsFrameLoader* fl = GetFrameLoader();
+  if (RefPtr<RemoteBrowser> remoteBrowser = fl->GetRemoteBrowser()) {
+    if (pc->GetPrintSettings()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      fl->UpdatePositionAndSize(static_cast<nsSubDocumentFrame*>(mFrame));
+    }
+
     
     
     nsRect visibleRect = GetBuildingRect() - ToReferenceFrame();
@@ -1376,7 +1396,7 @@ bool nsDisplayRemote::CreateWebRenderCommands(
     userData->SetRemoteBrowser(remoteBrowser);
   }
 
-  nscoord auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+  nscoord auPerDevPixel = pc->AppUnitsPerDevPixel();
   nsPoint layerOffset = GetContentRectLayerOffset(mFrame, aDisplayListBuilder);
   mOffset = LayoutDevicePoint::FromAppUnits(layerOffset, auPerDevPixel);
 
