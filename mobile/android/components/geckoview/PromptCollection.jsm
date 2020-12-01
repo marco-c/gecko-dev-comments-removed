@@ -38,6 +38,11 @@ class PromptCollection {
       prompter.asyncShowPrompt(msg, resolve);
     }).then(result => !!result?.allow);
   }
+
+  confirmFolderUpload() {
+    
+    return false;
+  }
 }
 
 PromptCollection.prototype.QueryInterface = ChromeUtils.generateQI([
