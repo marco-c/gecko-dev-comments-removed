@@ -236,6 +236,10 @@ enum DriverVendor : uint8_t {
   MesaUnknown,
   
   NonMesaAll,
+  
+  HardwareMesaAll,
+  
+  SoftwareMesaAll,
 
   Max
 };
