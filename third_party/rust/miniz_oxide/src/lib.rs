@@ -21,9 +21,18 @@
 
 
 
+#![allow(warnings)]
 #![forbid(unsafe_code)]
+#![cfg_attr(any(has_alloc, feature = "rustc-dep-of-std"), no_std)]
 
-extern crate adler32;
+
+#[cfg(any(has_alloc, feature = "rustc-dep-of-std"))]
+extern crate alloc;
+#[cfg(all(not(has_alloc), not(feature = "rustc-dep-of-std")))]
+use std as alloc;
+
+#[cfg(test)]
+extern crate std;
 
 pub mod deflate;
 pub mod inflate;
@@ -145,13 +154,13 @@ impl StreamResult {
     }
 }
 
-impl std::convert::From<StreamResult> for MZResult {
+impl core::convert::From<StreamResult> for MZResult {
     fn from(res: StreamResult) -> Self {
         res.status
     }
 }
 
-impl std::convert::From<&StreamResult> for MZResult {
+impl core::convert::From<&StreamResult> for MZResult {
     fn from(res: &StreamResult) -> Self {
         res.status
     }

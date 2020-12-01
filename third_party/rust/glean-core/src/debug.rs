@@ -21,25 +21,48 @@
 
 
 
+
+
+
+
 use std::env;
 
 const GLEAN_LOG_PINGS: &str = "GLEAN_LOG_PINGS";
 const GLEAN_DEBUG_VIEW_TAG: &str = "GLEAN_DEBUG_VIEW_TAG";
+const GLEAN_SOURCE_TAGS: &str = "GLEAN_SOURCE_TAGS";
+const GLEAN_MAX_SOURCE_TAGS: usize = 5;
 
 
-#[derive(Debug)]
 pub struct DebugOptions {
     
     pub log_pings: DebugOption<bool>,
     
     pub debug_view_tag: DebugOption<String>,
+    
+    
+    pub source_tags: DebugOption<Vec<String>>,
+}
+
+impl std::fmt::Debug for DebugOptions {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.debug_struct("DebugOptions")
+            .field("log_pings", &self.log_pings.get())
+            .field("debug_view_tag", &self.debug_view_tag.get())
+            .field("source_tags", &self.source_tags.get())
+            .finish()
+    }
 }
 
 impl DebugOptions {
     pub fn new() -> Self {
         Self {
-            log_pings: DebugOption::new(GLEAN_LOG_PINGS, None),
-            debug_view_tag: DebugOption::new(GLEAN_DEBUG_VIEW_TAG, Some(validate_debug_view_tag)),
+            log_pings: DebugOption::new(GLEAN_LOG_PINGS, get_bool_from_str, None),
+            debug_view_tag: DebugOption::new(GLEAN_DEBUG_VIEW_TAG, Some, Some(validate_tag)),
+            source_tags: DebugOption::new(
+                GLEAN_SOURCE_TAGS,
+                tokenize_string,
+                Some(validate_source_tags),
+            ),
         }
     }
 }
@@ -47,27 +70,33 @@ impl DebugOptions {
 
 
 #[derive(Debug)]
-pub struct DebugOption<T, F = fn(T) -> Option<T>> {
+pub struct DebugOption<T, E = fn(String) -> Option<T>, V = fn(&T) -> bool> {
     
     env: String,
     
     value: Option<T>,
     
     
-    validation: Option<F>,
+    extraction: E,
+    
+    
+    validation: Option<V>,
 }
 
-impl<T, F> DebugOption<T, F>
+impl<T, E, V> DebugOption<T, E, V>
 where
-    T: std::str::FromStr,
-    F: Fn(T) -> Option<T>,
+    T: Clone,
+    E: Fn(String) -> Option<T>,
+    V: Fn(&T) -> bool,
 {
     
     
-    pub fn new(env: &str, validation: Option<F>) -> Self {
+    
+    pub fn new(env: &str, extraction: E, validation: Option<V>) -> Self {
         let mut option = Self {
             env: env.into(),
             value: None,
+            extraction,
             validation,
         };
 
@@ -75,21 +104,22 @@ where
         option
     }
 
-    fn validate(&self, value: T) -> Option<T> {
+    fn validate(&self, value: &T) -> bool {
         if let Some(f) = self.validation.as_ref() {
             f(value)
         } else {
-            Some(value)
+            true
         }
     }
 
     fn set_from_env(&mut self) {
+        let extract = &self.extraction;
         match env::var(&self.env) {
-            Ok(env_value) => match T::from_str(&env_value) {
-                Ok(v) => {
+            Ok(env_value) => match extract(env_value.clone()) {
+                Some(v) => {
                     self.set(v);
                 }
-                Err(_) => {
+                None => {
                     log::error!(
                         "Unable to parse debug option {}={} into {}. Ignoring.",
                         self.env,
@@ -111,11 +141,14 @@ where
     
     
     
+    
+    
+    
     pub fn set(&mut self, value: T) -> bool {
-        let validated = self.validate(value);
-        if validated.is_some() {
+        let validated = self.validate(&value);
+        if validated {
             log::info!("Setting the debug option {}.", self.env);
-            self.value = validated;
+            self.value = Some(value);
             return true;
         }
         log::info!("Invalid value for debug option {}.", self.env);
@@ -128,17 +161,31 @@ where
     }
 }
 
+fn get_bool_from_str(value: String) -> Option<bool> {
+    std::str::FromStr::from_str(&value).ok()
+}
 
-
-
-
-
-
-
-pub fn validate_debug_view_tag(value: String) -> Option<String> {
-    if value.is_empty() {
-        log::error!("Debug view tag must have at least one character.");
+fn tokenize_string(value: String) -> Option<Vec<String>> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
         return None;
+    }
+
+    Some(trimmed.split(',').map(|s| s.trim().to_string()).collect())
+}
+
+
+
+
+
+
+
+
+#[allow(clippy::ptr_arg)]
+fn validate_tag(value: &String) -> bool {
+    if value.is_empty() {
+        log::error!("A tag must have at least one character.");
+        return false;
     }
 
     let mut iter = value.chars();
@@ -147,21 +194,48 @@ pub fn validate_debug_view_tag(value: String) -> Option<String> {
     loop {
         match iter.next() {
             
-            None => return Some(value),
+            None => return true,
             
             Some('-') | Some('a'..='z') | Some('A'..='Z') | Some('0'..='9') => (),
             
             Some(c) => {
-                log::error!("Invalid character '{}' in debug view tag.", c);
-                return None;
+                log::error!("Invalid character '{}' in the tag.", c);
+                return false;
             }
         }
         count += 1;
         if count == 20 {
-            log::error!("Debug view tag cannot exceed 20 characters");
-            return None;
+            log::error!("A tag cannot exceed 20 characters.");
+            return false;
         }
     }
+}
+
+
+
+
+
+#[allow(clippy::ptr_arg)]
+fn validate_source_tags(tags: &Vec<String>) -> bool {
+    if tags.is_empty() {
+        return false;
+    }
+
+    if tags.len() > GLEAN_MAX_SOURCE_TAGS {
+        log::error!(
+            "A list of tags cannot contain more than {} elements.",
+            GLEAN_MAX_SOURCE_TAGS
+        );
+        return false;
+    }
+
+    
+    if tags.iter().any(|s| s.starts_with("glean")) {
+        log::error!("Tags starting with `glean` are reserved and must not be used.");
+        return false;
+    }
+
+    tags.iter().all(|x| validate_tag(&x))
 }
 
 #[cfg(test)]
@@ -172,23 +246,21 @@ mod test {
     #[test]
     fn debug_option_is_correctly_loaded_from_env() {
         env::set_var("GLEAN_TEST_1", "test");
-        let option: DebugOption<String> = DebugOption::new("GLEAN_TEST_1", None);
+        let option: DebugOption<String> = DebugOption::new("GLEAN_TEST_1", Some, None);
         assert_eq!(option.get().unwrap(), "test");
     }
 
     #[test]
     fn debug_option_is_correctly_validated_when_necessary() {
-        fn validate(value: String) -> Option<String> {
-            if value == "test" {
-                Some(value)
-            } else {
-                None
-            }
+        #[allow(clippy::ptr_arg)]
+        fn validate(value: &String) -> bool {
+            value == "test"
         }
 
         
         env::set_var("GLEAN_TEST_2", "invalid");
-        let mut option: DebugOption<String> = DebugOption::new("GLEAN_TEST_2", Some(validate));
+        let mut option: DebugOption<String> =
+            DebugOption::new("GLEAN_TEST_2", Some, Some(validate));
         assert!(option.get().is_none());
 
         
@@ -201,15 +273,49 @@ mod test {
     }
 
     #[test]
-    fn validates_debug_view_tag_correctly() {
-        assert!(validate_debug_view_tag("valid-value".to_string()).is_some());
-        assert!(validate_debug_view_tag("-also-valid-value".to_string()).is_some());
-        assert!(validate_debug_view_tag("invalid_value".to_string()).is_none());
-        assert!(validate_debug_view_tag("invalid value".to_string()).is_none());
-        assert!(validate_debug_view_tag("!nv@lid-val*e".to_string()).is_none());
-        assert!(
-            validate_debug_view_tag("invalid-value-because-way-too-long".to_string()).is_none()
+    fn tokenize_string_splits_correctly() {
+        
+        assert_eq!(
+            Some(vec!["test1".to_string(), "test2".to_string()]),
+            tokenize_string("    test1,        test2  ".to_string())
         );
-        assert!(validate_debug_view_tag("".to_string()).is_none());
+
+        
+        assert_eq!(None, tokenize_string("".to_string()));
+    }
+
+    #[test]
+    fn validates_tag_correctly() {
+        assert!(validate_tag(&"valid-value".to_string()));
+        assert!(validate_tag(&"-also-valid-value".to_string()));
+        assert!(!validate_tag(&"invalid_value".to_string()));
+        assert!(!validate_tag(&"invalid value".to_string()));
+        assert!(!validate_tag(&"!nv@lid-val*e".to_string()));
+        assert!(!validate_tag(
+            &"invalid-value-because-way-too-long".to_string()
+        ));
+        assert!(!validate_tag(&"".to_string()));
+    }
+
+    #[test]
+    fn validates_source_tags_correctly() {
+        
+        assert!(!validate_source_tags(&vec!["".to_string()]));
+        
+        assert!(!validate_source_tags(&vec![
+            "1".to_string(),
+            "2".to_string(),
+            "3".to_string(),
+            "4".to_string(),
+            "5".to_string(),
+            "6".to_string()
+        ]));
+        
+        assert!(!validate_source_tags(&vec!["!nv@lid-val*e".to_string()]));
+        
+        assert!(!validate_source_tags(&vec![
+            "glean-test1".to_string(),
+            "test2".to_string()
+        ]));
     }
 }

@@ -38,6 +38,7 @@ pub mod metrics;
 pub mod ping;
 pub mod storage;
 mod system;
+pub mod traits;
 pub mod upload;
 mod util;
 
@@ -47,7 +48,7 @@ use crate::debug::DebugOptions;
 pub use crate::error::{Error, ErrorKind, Result};
 pub use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
 use crate::event_database::EventDatabase;
-use crate::internal_metrics::CoreMetrics;
+use crate::internal_metrics::{CoreMetrics, DatabaseMetrics};
 use crate::internal_pings::InternalPings;
 use crate::metrics::{Metric, MetricType, PingType};
 use crate::ping::PingMaker;
@@ -170,6 +171,7 @@ pub struct Glean {
     data_store: Option<Database>,
     event_data_store: EventDatabase,
     core_metrics: CoreMetrics,
+    database_metrics: DatabaseMetrics,
     internal_pings: InternalPings,
     data_path: PathBuf,
     application_id: String,
@@ -185,7 +187,8 @@ impl Glean {
     
     
     
-    pub fn new_for_subprocess(cfg: &Configuration) -> Result<Self> {
+    
+    pub fn new_for_subprocess(cfg: &Configuration, scan_directories: bool) -> Result<Self> {
         log::info!("Creating new Glean v{}", GLEAN_VERSION);
 
         let application_id = sanitize_application_id(&cfg.application_id);
@@ -199,17 +202,23 @@ impl Glean {
         let event_data_store = EventDatabase::new(&cfg.data_path)?;
 
         
-        let mut upload_manager =
-            PingUploadManager::new(&cfg.data_path, &cfg.language_binding_name, false);
+        let mut upload_manager = PingUploadManager::new(&cfg.data_path, &cfg.language_binding_name);
         upload_manager.set_rate_limiter(
-             60,  10,
+             60,  15,
         );
+
+        
+        
+        if scan_directories {
+            let _scanning_thread = upload_manager.scan_pending_pings_directories();
+        }
 
         Ok(Self {
             upload_enabled: cfg.upload_enabled,
             data_store,
             event_data_store,
             core_metrics: CoreMetrics::new(),
+            database_metrics: DatabaseMetrics::new(),
             internal_pings: InternalPings::new(),
             upload_manager,
             data_path: PathBuf::from(&cfg.data_path),
@@ -227,7 +236,7 @@ impl Glean {
     
     
     pub fn new(cfg: Configuration) -> Result<Self> {
-        let mut glean = Self::new_for_subprocess(&cfg)?;
+        let mut glean = Self::new_for_subprocess(&cfg, false)?;
 
         
         
@@ -260,6 +269,12 @@ impl Glean {
             }
         }
 
+        
+        
+        
+        
+        let _scanning_thread = glean.upload_manager.scan_pending_pings_directories();
+
         Ok(glean)
     }
 
@@ -269,7 +284,7 @@ impl Glean {
         data_path: &str,
         application_id: &str,
         upload_enabled: bool,
-    ) -> Result<Self> {
+    ) -> Self {
         let cfg = Configuration {
             data_path: data_path.into(),
             application_id: application_id.into(),
@@ -279,9 +294,15 @@ impl Glean {
             delay_ping_lifetime_io: false,
         };
 
-        Self::new(cfg)
+        let mut glean = Self::new(cfg).unwrap();
+
+        
+        glean.upload_manager = PingUploadManager::no_policy(data_path);
+
+        glean
     }
 
+    
     
     
     pub fn destroy_db(&mut self) {
@@ -318,6 +339,21 @@ impl Glean {
         self.set_application_lifetime_core_metrics();
     }
 
+    
+    fn initialize_database_metrics(&mut self) {
+        log::trace!("Initializing database metrics");
+
+        if let Some(size) = self
+            .data_store
+            .as_ref()
+            .and_then(|database| database.file_size())
+        {
+            log::trace!("Database file size: {}", size.get());
+            self.database_metrics.size.accumulate(self, size.get())
+        }
+    }
+
+    
     
     
     
@@ -380,6 +416,7 @@ impl Glean {
     fn on_upload_enabled(&mut self) {
         self.upload_enabled = true;
         self.initialize_core_metrics();
+        self.initialize_database_metrics();
     }
 
     
@@ -495,12 +532,8 @@ impl Glean {
     
     
     
-    
-    
-    
-    
     pub fn get_upload_task(&self) -> PingUploadTask {
-        self.upload_manager.get_upload_task(self.log_pings())
+        self.upload_manager.get_upload_task(self, self.log_pings())
     }
 
     
@@ -510,16 +543,10 @@ impl Glean {
     
     
     pub fn process_ping_upload_response(&self, uuid: &str, status: UploadResult) {
-        if let Some(label) = status.get_label() {
-            let metric = self.core_metrics.ping_upload_failure.get(label);
-            metric.add(self, 1);
-        }
-
         self.upload_manager
-            .process_ping_upload_response(uuid, status);
+            .process_ping_upload_response(self, uuid, status);
     }
 
-    
     
     
     
@@ -560,9 +587,15 @@ impl Glean {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn submit_ping(&self, ping: &PingType, reason: Option<&str>) -> Result<bool> {
         if !self.is_upload_enabled() {
-            log::error!("Glean disabled: not submitting any pings.");
+            log::info!("Glean disabled: not submitting any pings.");
             return Ok(false);
         }
 
@@ -590,7 +623,7 @@ impl Glean {
                     return Err(e.into());
                 }
 
-                self.upload_manager.enqueue_ping_from_file(&doc_id);
+                self.upload_manager.enqueue_ping_from_file(self, &doc_id);
 
                 log::info!(
                     "The ping '{}' was submitted and will be sent as soon as possible",
@@ -601,6 +634,12 @@ impl Glean {
         }
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -631,6 +670,7 @@ impl Glean {
     
     
     
+    
     pub fn get_ping_by_name(&self, ping_name: &str) -> Option<&PingType> {
         self.ping_registry.get(ping_name)
     }
@@ -638,7 +678,7 @@ impl Glean {
     
     pub fn register_ping_type(&mut self, ping: &PingType) {
         if self.ping_registry.contains_key(&ping.name) {
-            log::error!("Duplicate ping named '{}'", ping.name)
+            log::debug!("Duplicate ping named '{}'", ping.name)
         }
 
         self.ping_registry.insert(ping.name.clone(), ping.clone());
@@ -649,6 +689,7 @@ impl Glean {
         self.start_time
     }
 
+    
     
     
     
@@ -745,6 +786,27 @@ impl Glean {
     
     
     
+    pub fn set_source_tags(&mut self, value: Vec<String>) -> bool {
+        self.debug.source_tags.set(value)
+    }
+
+    
+    
+    
+    
+    pub(crate) fn source_tags(&self) -> Option<&Vec<String>> {
+        self.debug.source_tags.get()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn set_log_pings(&mut self, value: bool) -> bool {
         self.debug.log_pings.set(value)
@@ -769,6 +831,7 @@ impl Glean {
         })
     }
 
+    
     
     
     
@@ -836,6 +899,7 @@ impl Glean {
         metric.test_get_value_as_json_string(&self)
     }
 
+    
     
     
     

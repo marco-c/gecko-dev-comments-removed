@@ -26,7 +26,7 @@ use crate::Lifetime;
 
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ErrorType {
     
     InvalidValue,
@@ -58,7 +58,7 @@ impl TryFrom<i32> for ErrorType {
             0 => Ok(ErrorType::InvalidValue),
             1 => Ok(ErrorType::InvalidLabel),
             2 => Ok(ErrorType::InvalidState),
-            4 => Ok(ErrorType::InvalidOverflow),
+            3 => Ok(ErrorType::InvalidOverflow),
             e => Err(ErrorKind::Lifetime(e).into()),
         }
     }
@@ -154,6 +154,18 @@ mod test {
     use super::*;
     use crate::metrics::*;
     use crate::tests::new_glean;
+
+    #[test]
+    fn error_type_i32_mapping() {
+        let error: ErrorType = std::convert::TryFrom::try_from(0).unwrap();
+        assert_eq!(error, ErrorType::InvalidValue);
+        let error: ErrorType = std::convert::TryFrom::try_from(1).unwrap();
+        assert_eq!(error, ErrorType::InvalidLabel);
+        let error: ErrorType = std::convert::TryFrom::try_from(2).unwrap();
+        assert_eq!(error, ErrorType::InvalidState);
+        let error: ErrorType = std::convert::TryFrom::try_from(3).unwrap();
+        assert_eq!(error, ErrorType::InvalidOverflow);
+    }
 
     #[test]
     fn recording_of_all_error_types() {
