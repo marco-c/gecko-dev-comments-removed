@@ -184,7 +184,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
    public:
     bool Equals(const PendingTransactionInfo* aPendingTrans,
                 const nsAHttpTransaction* aTrans) const {
-      return aPendingTrans->mTransaction.get() == aTrans;
+      return aPendingTrans->Transaction() == aTrans;
     }
   };
 
@@ -260,12 +260,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
       PendingTransactionInfo* pendingTransInfo);
   void StartedConnect();
   void RecvdConnect();
-
-  
-  
-  
-  void ReleaseClaimedSockets(ConnectionEntry* ent,
-                             PendingTransactionInfo* pendingTransInfo);
 
   ConnectionEntry* GetOrCreateConnectionEntry(nsHttpConnectionInfo*,
                                               bool allowWildCard,

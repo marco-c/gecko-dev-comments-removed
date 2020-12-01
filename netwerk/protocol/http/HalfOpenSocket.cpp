@@ -516,8 +516,7 @@ HalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
     if (trans && trans->QueryHttpTransaction()) {
       RefPtr<PendingTransactionInfo> pendingTransInfo =
           new PendingTransactionInfo(trans->QueryHttpTransaction());
-      pendingTransInfo->mHalfOpen =
-          do_GetWeakReference(static_cast<nsISupportsWeakReference*>(this));
+      pendingTransInfo->AddHalfOpen(this);
       mEnt->InsertTransaction(pendingTransInfo, true);
     }
     if (mEnt->mUseFastOpen) {
@@ -745,8 +744,7 @@ void HalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry) {
     if (trans && trans->QueryHttpTransaction()) {
       RefPtr<PendingTransactionInfo> pendingTransInfo =
           new PendingTransactionInfo(trans->QueryHttpTransaction());
-      pendingTransInfo->mHalfOpen =
-          do_GetWeakReference(static_cast<nsISupportsWeakReference*>(this));
+      pendingTransInfo->AddHalfOpen(this);
       mEnt->InsertTransaction(pendingTransInfo, true);
     }
     
@@ -1000,10 +998,10 @@ nsresult HalfOpenSocket::SetupConn(nsIAsyncOutputStream* out, bool aFastOpen) {
       
       
       RefPtr<ConnectionHandle> handle = new ConnectionHandle(conn);
-      pendingTransInfo->mTransaction->SetConnection(handle);
+      pendingTransInfo->Transaction()->SetConnection(handle);
     }
     rv = gHttpHandler->ConnMgr()->DispatchTransaction(
-        mEnt, pendingTransInfo->mTransaction, conn);
+        mEnt, pendingTransInfo->Transaction(), conn);
   } else {
     
     
