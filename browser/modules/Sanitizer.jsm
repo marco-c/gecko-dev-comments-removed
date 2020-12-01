@@ -380,9 +380,24 @@ var Sanitizer = {
           range,
           Ci.nsIClearDataService.CLEAR_HISTORY |
             Ci.nsIClearDataService.CLEAR_SESSION_HISTORY |
-            Ci.nsIClearDataService.CLEAR_STORAGE_ACCESS |
             Ci.nsIClearDataService.CLEAR_CONTENT_BLOCKING_RECORDS
         );
+
+        
+        
+        
+        
+        
+        
+        let principalsCollector = new PrincipalsCollector();
+        let principals = await principalsCollector.getAllPrincipals();
+        await new Promise(resolve => {
+          Services.clearData.deleteUserInteractionForClearingHistory(
+            principals,
+            range ? range[0] : 0,
+            resolve
+          );
+        });
         TelemetryStopwatch.finish("FX_SANITIZE_HISTORY", refObj);
       },
     },
