@@ -2670,8 +2670,9 @@ bool CacheIRCompiler::emitInt32DivResult(Int32OperandId lhsId,
   
   masm.branch32(Assembler::Equal, lhs, Imm32(INT32_MIN), failure->label());
 
+  
   Label notZero;
-  masm.branch32(Assembler::NotEqual, lhs, Imm32(0), &notZero);
+  masm.branchTest32(Assembler::NonZero, lhs, lhs, &notZero);
   masm.branchTest32(Assembler::Signed, rhs, rhs, failure->label());
   masm.bind(&notZero);
 
@@ -2700,21 +2701,21 @@ bool CacheIRCompiler::emitInt32ModResult(Int32OperandId lhsId,
   }
 
   
-  
-  masm.branchTest32(Assembler::Signed, lhs, lhs, failure->label());
-
-  
-  masm.branchTest32(Assembler::Signed, rhs, rhs, failure->label());
-
-  
   masm.branchTest32(Assembler::Zero, rhs, rhs, failure->label());
 
   
   masm.branch32(Assembler::Equal, lhs, Imm32(INT32_MIN), failure->label());
+
   masm.mov(lhs, scratch);
   LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
                                liveVolatileFloatRegs());
   masm.flexibleRemainder32(rhs, scratch, false, volatileRegs);
+
+  
+  Label notZero;
+  masm.branchTest32(Assembler::NonZero, scratch, scratch, &notZero);
+  masm.branchTest32(Assembler::Signed, lhs, lhs, failure->label());
+  masm.bind(&notZero);
 
   EmitStoreResult(masm, scratch, JSVAL_TYPE_INT32, output);
 
