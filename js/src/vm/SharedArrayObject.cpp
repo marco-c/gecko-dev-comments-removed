@@ -108,6 +108,7 @@ void SharedArrayRawBuffer::tryGrowMaxSizeInPlace(uint64_t deltaMaxSize) {
 
 bool SharedArrayRawBuffer::wasmGrowToSizeInPlace(const Lock&,
                                                  uint32_t newLength) {
+  
   if (newLength > ArrayBufferObject::MaxBufferByteLength) {
     return false;
   }

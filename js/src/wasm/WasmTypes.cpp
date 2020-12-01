@@ -45,10 +45,6 @@ using mozilla::MakeEnumeratedRange;
 #  endif
 #endif
 
-static_assert(MaxMemoryPages ==
-                  ArrayBufferObject::MaxBufferByteLength / PageSize,
-              "invariant");
-
 
 
 
