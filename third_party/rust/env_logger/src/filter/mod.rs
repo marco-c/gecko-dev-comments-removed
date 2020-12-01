@@ -58,7 +58,6 @@
 
 
 
-
 use log::{Level, LevelFilter, Metadata, Record};
 use std::env;
 use std::fmt;
@@ -107,12 +106,6 @@ pub struct Filter {
 
 
 
-
-
-
-
-
-
 pub struct Builder {
     directives: Vec<Directive>,
     filter: Option<inner::Filter>,
@@ -126,11 +119,6 @@ struct Directive {
 }
 
 impl Filter {
-    
-    
-    
-    
-    
     
     
     
@@ -310,9 +298,9 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         );
         return (dirs, None);
     }
-    mods.map(|m| {
+    if let Some(m) = mods {
         for s in m.split(',') {
-            if s.len() == 0 {
+            if s.is_empty() {
                 continue;
             }
             let mut parts = s.split('=');
@@ -352,9 +340,9 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
                 level: log_level,
             });
         }
-    });
+    }
 
-    let filter = filter.map_or(None, |filter| match inner::Filter::new(filter) {
+    let filter = filter.and_then(|filter| match inner::Filter::new(filter) {
         Ok(re) => Some(re),
         Err(e) => {
             eprintln!("warning: invalid regex filter - {}", e);
@@ -362,7 +350,7 @@ fn parse_spec(spec: &str) -> (Vec<Directive>, Option<inner::Filter>) {
         }
     });
 
-    return (dirs, filter);
+    (dirs, filter)
 }
 
 

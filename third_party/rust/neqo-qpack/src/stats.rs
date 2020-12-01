@@ -6,11 +6,12 @@
 
 
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 
 pub struct Stats {
     pub dynamic_table_inserts: usize,
     
     pub dynamic_table_references: usize,
     pub stream_cancelled_recv: usize,
+    pub header_acks_recv: usize,
 }
