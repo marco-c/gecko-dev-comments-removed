@@ -42,24 +42,6 @@ class TempAllocator;
 
 }  
 
-
-
-
-
-
-
-class AutoClearTypeInferenceStateOnOOM {
-  Zone* zone;
-
-  AutoClearTypeInferenceStateOnOOM(const AutoClearTypeInferenceStateOnOOM&) =
-      delete;
-  void operator=(const AutoClearTypeInferenceStateOnOOM&) = delete;
-
- public:
-  explicit AutoClearTypeInferenceStateOnOOM(Zone* zone);
-  ~AutoClearTypeInferenceStateOnOOM();
-};
-
 class MOZ_RAII AutoSweepBase {
   
   
@@ -136,7 +118,6 @@ class TypeZone {
   ZoneData<LifoAlloc> sweepTypeLifoAlloc;
 
   ZoneData<bool> sweepingTypes;
-  ZoneData<bool> oomSweepingTypes;
 
   ZoneData<bool> keepJitScripts;
 
@@ -167,17 +148,7 @@ class TypeZone {
   bool isSweepingTypes() const { return sweepingTypes; }
   void setSweepingTypes(bool sweeping) {
     MOZ_RELEASE_ASSERT(sweepingTypes != sweeping);
-    MOZ_ASSERT_IF(sweeping, !oomSweepingTypes);
     sweepingTypes = sweeping;
-    oomSweepingTypes = false;
-  }
-  void setOOMSweepingTypes() {
-    MOZ_ASSERT(sweepingTypes);
-    oomSweepingTypes = true;
-  }
-  bool hadOOMSweepingTypes() {
-    MOZ_ASSERT(sweepingTypes);
-    return oomSweepingTypes;
   }
 
   mozilla::Maybe<IonCompilationId> currentCompilationId() const {

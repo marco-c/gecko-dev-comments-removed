@@ -52,7 +52,6 @@ class TempAllocator;
 
 }  
 
-class AutoClearTypeInferenceStateOnOOM;
 class AutoSweepBase;
 class LifoAlloc;
 class ObjectGroup;

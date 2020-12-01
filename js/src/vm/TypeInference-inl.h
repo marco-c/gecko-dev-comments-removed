@@ -112,10 +112,6 @@ struct MOZ_RAII AutoEnterAnalysis {
   gc::AutoSuppressGC suppressGC;
 
   
-  
-  mozilla::Maybe<AutoClearTypeInferenceStateOnOOM> oom;
-
-  
   RecompileInfoVector pendingRecompiles;
 
   
@@ -155,7 +151,6 @@ struct MOZ_RAII AutoEnterAnalysis {
     this->zone = zone;
 
     if (!zone->types.activeAnalysis) {
-      oom.emplace(zone);
       zone->types.activeAnalysis = this;
     }
   }
