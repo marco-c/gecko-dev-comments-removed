@@ -26,10 +26,13 @@
 
 namespace js {
 
+class ArrayBufferObject;
 class ArrayBufferObjectMaybeShared;
 class JSStringBuilder;
+class SharedArrayRawBuffer;
 class StructTypeDescr;
 class TypedArrayObject;
+class WasmArrayRawBuffer;
 class WasmFunctionScope;
 class WasmInstanceScope;
 class SharedArrayRawBuffer;
@@ -183,6 +186,17 @@ bool IsSharedWasmMemoryObject(JSObject* obj);
 MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType targetType, HandleValue v,
                                MutableHandleFunction fnval,
                                MutableHandleAnyRef refval);
+
+
+
+
+
+
+uint32_t ByteLength32(Handle<ArrayBufferObjectMaybeShared*> buffer);
+uint32_t ByteLength32(const ArrayBufferObjectMaybeShared& buffer);
+uint32_t ByteLength32(const WasmArrayRawBuffer* buffer);
+uint32_t ByteLength32(const ArrayBufferObject& buffer);
+uint32_t VolatileByteLength32(const SharedArrayRawBuffer* buffer);
 
 }  
 
@@ -407,12 +421,12 @@ class WasmMemoryObject : public NativeObject {
   
   
   
-  uint32_t volatileMemoryLength() const;
+  uint32_t volatileMemoryLength32() const;
 
   bool isShared() const;
   bool isHuge() const;
   bool movingGrowable() const;
-  uint32_t boundsCheckLimit() const;
+  uint32_t boundsCheckLimit32() const;
 
   
   SharedArrayRawBuffer* sharedArrayRawBuffer() const;

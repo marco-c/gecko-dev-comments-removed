@@ -891,8 +891,15 @@ static const unsigned MaxParams = 1000;
 
 static const unsigned MaxResults = 1000;
 static const unsigned MaxStructFields = 1000;
-static const unsigned MaxMemoryLimitField = 65536;
-static const unsigned MaxMemoryPages = INT32_MAX / PageSize;
+static const unsigned MaxMemory32LimitField = 65536;
+#ifdef JS_64BIT
+
+
+
+static const unsigned MaxMemory32Pages = INT32_MAX / PageSize;
+#else
+static const unsigned MaxMemory32Pages = INT32_MAX / PageSize;
+#endif
 static const unsigned MaxStringBytes = 100000;
 static const unsigned MaxModuleBytes = 1024 * 1024 * 1024;
 static const unsigned MaxFunctionBytes = 7654321;

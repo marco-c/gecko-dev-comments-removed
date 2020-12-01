@@ -329,7 +329,7 @@ CraneliftFuncCompileInput::CraneliftFuncCompileInput(
       index(func.index),
       offset_in_module(func.lineOrBytecode) {}
 
-static_assert(offsetof(TlsData, boundsCheckLimit) == sizeof(size_t),
+static_assert(offsetof(TlsData, boundsCheckLimit32) == sizeof(void*),
               "fix make_heap() in wasm2clif.rs");
 
 CraneliftStaticEnvironment::CraneliftStaticEnvironment()

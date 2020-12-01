@@ -2863,7 +2863,8 @@ struct TlsData {
   uint8_t* memoryBase;
 
   
-  uint32_t boundsCheckLimit;
+  
+  uint32_t boundsCheckLimit32;
 
   
   Instance* instance;
@@ -3100,6 +3101,11 @@ class CalleeDesc {
     return u.builtin_;
   }
 };
+
+
+
+
+enum class MemoryKind { Memory32, Memory64 };
 
 
 
