@@ -3153,7 +3153,19 @@ nsEventStatus AsyncPanZoomController::StartPanning(
 
 void AsyncPanZoomController::UpdateWithTouchAtDevicePoint(
     const MultiTouchInput& aEvent) {
-  ParentLayerPoint point = GetFirstTouchPoint(aEvent);
+  const SingleTouchData& touchData = aEvent.mTouches[0];
+  
+  
+  
+  
+  for (const auto& historicalData : touchData.mHistoricalData) {
+    ParentLayerPoint historicalPoint = historicalData.mLocalScreenPoint;
+    mX.UpdateWithTouchAtDevicePoint(historicalPoint.x,
+                                    historicalData.mTimeStamp);
+    mY.UpdateWithTouchAtDevicePoint(historicalPoint.y,
+                                    historicalData.mTimeStamp);
+  }
+  ParentLayerPoint point = touchData.mLocalScreenPoint;
   mX.UpdateWithTouchAtDevicePoint(point.x, aEvent.mTimeStamp);
   mY.UpdateWithTouchAtDevicePoint(point.y, aEvent.mTimeStamp);
 }
