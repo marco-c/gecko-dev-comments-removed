@@ -2785,9 +2785,9 @@ class Document : public nsINode,
 
 
   bool AllowXULXBL() {
-    return mAllowXULXBL == eTriTrue
-               ? true
-               : mAllowXULXBL == eTriFalse ? false : InternalAllowXULXBL();
+    return mAllowXULXBL == eTriTrue    ? true
+           : mAllowXULXBL == eTriFalse ? false
+                                       : InternalAllowXULXBL();
   }
 
   

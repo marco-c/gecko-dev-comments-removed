@@ -761,7 +761,7 @@ bool BackgroundParentImpl::DeallocPCamerasParent(
 }
 
 auto BackgroundParentImpl::AllocPUDPSocketParent(
-    const Maybe<PrincipalInfo>& , const nsCString & )
+    const Maybe<PrincipalInfo>& , const nsCString& )
     -> PUDPSocketParent* {
   RefPtr<UDPSocketParent> p = new UDPSocketParent(this);
 

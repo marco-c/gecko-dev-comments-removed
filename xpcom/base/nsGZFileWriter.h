@@ -24,13 +24,12 @@ class nsGZFileWriter final : public nsIGZFileWriter {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIGZFILEWRITER
 
-      
+  
 
 
 
 
-      [[nodiscard]] nsresult
-      Write(const char* aStr) {
+  [[nodiscard]] nsresult Write(const char* aStr) {
     return nsIGZFileWriter::Write(aStr);
   }
 

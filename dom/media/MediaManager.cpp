@@ -1946,10 +1946,9 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateRawDevices(
     
     
     const char16_t* const type =
-        (aVideoInputType != MediaSourceEnum::Camera)
-            ? u"audio"
-            : (aAudioInputType != MediaSourceEnum::Microphone) ? u"video"
-                                                               : u"all";
+        (aVideoInputType != MediaSourceEnum::Camera)       ? u"audio"
+        : (aAudioInputType != MediaSourceEnum::Microphone) ? u"video"
+                                                           : u"all";
     nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
     obs->NotifyObservers(static_cast<nsIRunnable*>(task),
                          "getUserMedia:ask-device-permission", type);

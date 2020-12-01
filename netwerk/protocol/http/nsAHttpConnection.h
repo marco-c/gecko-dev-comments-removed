@@ -49,9 +49,10 @@ class nsAHttpConnection : public nsISupports {
   
   
   
-  [[nodiscard]] virtual nsresult
-      OnHeadersAvailable(nsAHttpTransaction*, nsHttpRequestHead*,
-                         nsHttpResponseHead*, bool* reset) = 0;
+  [[nodiscard]] virtual nsresult OnHeadersAvailable(nsAHttpTransaction*,
+                                                    nsHttpRequestHead*,
+                                                    nsHttpResponseHead*,
+                                                    bool* reset) = 0;
 
   
   

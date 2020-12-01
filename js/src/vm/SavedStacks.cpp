@@ -1534,11 +1534,10 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
       
       
       Maybe<size_t> maxFrames =
-          !capture.is<JS::MaxFrames>()
+          !capture.is<JS::MaxFrames>() ? Nothing()
+          : capture.as<JS::MaxFrames>().maxFrames == 0
               ? Nothing()
-              : capture.as<JS::MaxFrames>().maxFrames == 0
-                    ? Nothing()
-                    : Some(capture.as<JS::MaxFrames>().maxFrames);
+              : Some(capture.as<JS::MaxFrames>().maxFrames);
 
       
       

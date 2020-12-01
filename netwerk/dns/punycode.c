@@ -51,8 +51,10 @@ enum {
 
 
 static punycode_uint decode_digit(punycode_uint cp) {
-  return cp - 48 < 10 ? cp - 22
-                      : cp - 65 < 26 ? cp - 65 : cp - 97 < 26 ? cp - 97 : base;
+  return cp - 48 < 10   ? cp - 22
+         : cp - 65 < 26 ? cp - 65
+         : cp - 97 < 26 ? cp - 97
+                        : base;
 }
 
 
@@ -186,7 +188,8 @@ enum punycode_status punycode_encode(punycode_uint input_length,
             return punycode_big_output;
           }
           t = k <= bias  ? tmin : 
-                  k >= bias + tmax ? tmax : k - bias;
+                  k >= bias + tmax ? tmax
+                                   : k - bias;
           if (q < t) {
             break;
           }
@@ -277,7 +280,8 @@ enum punycode_status punycode_decode(punycode_uint input_length,
       }
       i += digit * w;
       t = k <= bias  ? tmin : 
-              k >= bias + tmax ? tmax : k - bias;
+              k >= bias + tmax ? tmax
+                               : k - bias;
       if (digit < t) {
         break;
       }

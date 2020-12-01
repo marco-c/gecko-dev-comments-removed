@@ -839,48 +839,27 @@ SECStatus CanFalseStartCallback(PRFileDesc* fd, void* client_data,
 
 static void AccumulateNonECCKeySize(Telemetry::HistogramID probe,
                                     uint32_t bits) {
-  unsigned int value =
-      bits < 512
-          ? 1
-          : bits == 512
-                ? 2
-                : bits < 768
-                      ? 3
-                      : bits == 768
-                            ? 4
-                            : bits < 1024
-                                  ? 5
-                                  : bits == 1024
-                                        ? 6
-                                        : bits < 1280
-                                              ? 7
-                                              : bits == 1280
-                                                    ? 8
-                                                    : bits < 1536
-                                                          ? 9
-                                                          : bits == 1536
-                                                                ? 10
-                                                                : bits < 2048
-                                                                      ? 11
-                                                                      : bits == 2048
-                                                                            ? 12
-                                                                            : bits < 3072
-                                                                                  ? 13
-                                                                                  : bits == 3072
-                                                                                        ? 14
-                                                                                        : bits < 4096
-                                                                                              ? 15
-                                                                                              : bits == 4096
-                                                                                                    ? 16
-                                                                                                    : bits < 8192
-                                                                                                          ? 17
-                                                                                                          : bits == 8192
-                                                                                                                ? 18
-                                                                                                                : bits < 16384
-                                                                                                                      ? 19
-                                                                                                                      : bits == 16384
-                                                                                                                            ? 20
-                                                                                                                            : 0;
+  unsigned int value = bits < 512      ? 1
+                       : bits == 512   ? 2
+                       : bits < 768    ? 3
+                       : bits == 768   ? 4
+                       : bits < 1024   ? 5
+                       : bits == 1024  ? 6
+                       : bits < 1280   ? 7
+                       : bits == 1280  ? 8
+                       : bits < 1536   ? 9
+                       : bits == 1536  ? 10
+                       : bits < 2048   ? 11
+                       : bits == 2048  ? 12
+                       : bits < 3072   ? 13
+                       : bits == 3072  ? 14
+                       : bits < 4096   ? 15
+                       : bits == 4096  ? 16
+                       : bits < 8192   ? 17
+                       : bits == 8192  ? 18
+                       : bits < 16384  ? 19
+                       : bits == 16384 ? 20
+                                       : 0;
   Telemetry::Accumulate(probe, value);
 }
 
@@ -891,12 +870,11 @@ static void AccumulateNonECCKeySize(Telemetry::HistogramID probe,
 
 
 static void AccumulateECCCurve(Telemetry::HistogramID probe, uint32_t bits) {
-  unsigned int value =
-      bits == 255 ? 29                                            
-                  : bits == 256 ? 23                              
-                                : bits == 384 ? 24                
-                                              : bits == 521 ? 25  
-                                                            : 0;  
+  unsigned int value = bits == 255   ? 29  
+                       : bits == 256 ? 23  
+                       : bits == 384 ? 24  
+                       : bits == 521 ? 25  
+                                     : 0;  
   Telemetry::Accumulate(probe, value);
 }
 

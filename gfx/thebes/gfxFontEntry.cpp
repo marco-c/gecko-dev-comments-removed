@@ -1367,11 +1367,10 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
   } else if (SlantStyle().Min().IsOblique()) {
     
     
-    float angle = aStyle.style.IsNormal()
-                      ? 0.0f
-                      : aStyle.style.IsItalic()
-                            ? FontSlantStyle::Oblique().ObliqueAngle()
-                            : aStyle.style.ObliqueAngle();
+    float angle = aStyle.style.IsNormal() ? 0.0f
+                  : aStyle.style.IsItalic()
+                      ? FontSlantStyle::Oblique().ObliqueAngle()
+                      : aStyle.style.ObliqueAngle();
     
     
     if (!(IsUserFont() && (mRangeFlags & RangeFlags::eAutoSlantStyle))) {

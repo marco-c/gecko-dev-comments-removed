@@ -566,14 +566,14 @@ int nsMacUtilsImpl::PreTranslateBinary(nsCString aBinaryPath) {
   
   MOZ_ASSERT(XRE_IsParentProcess());
   if (!XRE_IsParentProcess()) {
-      return -1;
+    return -1;
   }
 
   
   
   MOZ_ASSERT(!NS_IsMainThread());
   if (NS_IsMainThread()) {
-      return -1;
+    return -1;
   }
 
   
