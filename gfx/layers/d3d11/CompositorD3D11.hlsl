@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "BlendingHelpers.hlslh"
 #include "BlendShaderConstants.h"
@@ -19,10 +19,10 @@ float4x4 mBackdropTransform : register(vs, c15);
 float4 fLayerColor : register(ps, c0);
 float fLayerOpacity : register(ps, c1);
 
-// x = layer type
-// y = mask type
-// z = blend op
-// w = is premultiplied
+
+
+
+
 uint4 iBlendConfig : register(ps, c2);
 
 float fCoefficient : register(ps, c3);
@@ -31,8 +31,8 @@ row_major float3x3 mYuvColorMatrix : register(ps, c4);
 
 sampler sSampler : register(ps, s0);
 
-// The mix-blend mega shader uses all variables, so we have to make sure they
-// are assigned fixed slots.
+
+
 Texture2D tRGB : register(ps, t0);
 Texture2D tY : register(ps, t1);
 Texture2D tCb : register(ps, t2);
@@ -61,7 +61,7 @@ struct VS_MASK_OUTPUT {
   float3 vMaskCoords : TEXCOORD1;
 };
 
-// Combined struct for the mix-blend compatible vertex shaders.
+
 struct VS_BLEND_OUTPUT {
   float4 vPosition : SV_Position;
   float2 vTexCoords : TEXCOORD0;
@@ -93,16 +93,16 @@ SamplerState LayerTextureSamplerLinear
 
 float4 TransformedPosition(float2 aInPosition)
 {
-  // the current vertex's position on the quad
-  // [x,y,0,1] is mandated by the CSS Transforms spec as the point value to transform
+  
+  
   float4 position = float4(0, 0, 0, 1);
 
-  // We use 4 component floats to uniquely describe a rectangle, by the structure
-  // of x, y, width, height. This allows us to easily generate the 4 corners
-  // of any rectangle from the 4 corners of the 0,0-1,1 quad that we use as the
-  // stream source for our LayerQuad vertex shader. We do this by doing:
-  // Xout = x + Xin * width
-  // Yout = y + Yin * height
+  
+  
+  
+  
+  
+  
   float2 size = vLayerQuad.zw;
   position.x = vLayerQuad.x + aInPosition.x * size.x;
   position.y = vLayerQuad.y + aInPosition.y * size.y;
@@ -127,7 +127,7 @@ float4 VertexPosition(float4 aTransformedPosition)
 
 float2 BackdropPosition(float4 aPosition)
 {
-  // Move the position from clip space (-1,1) into 0..1 space.
+  
   float2 pos;
   pos.x = (aPosition.x + 1.0) / 2.0;
   pos.y = 1.0 - (aPosition.y + 1.0) / 2.0;
@@ -148,14 +148,14 @@ VS_OUTPUT LayerQuadVS(const VS_INPUT aVertex)
 
 float3 MaskCoords(float4 aPosition)
 {
-  // We use the w coord to do non-perspective correct interpolation:
-  // the quad might be transformed in 3D, in which case it will have some
-  // perspective. The graphics card will do perspective-correct interpolation
-  // of the texture, but our mask is already transformed and so we require
-  // linear interpolation. Therefore, we must correct the interpolation
-  // ourselves, we do this by multiplying all coords by w here, and dividing by
-  // w in the pixel shader (post-interpolation), we pass w in outp.vMaskCoords.z.
-  // See http://en.wikipedia.org/wiki/Texture_mapping#Perspective_correctness
+  
+  
+  
+  
+  
+  
+  
+  
   return float3(mul(mMaskTransform, (aPosition / aPosition.w)).xy, 1.0) * aPosition.w;
 }
 
@@ -191,7 +191,7 @@ VS_MASK_OUTPUT LayerDynamicMaskVS(const VS_TEX_INPUT aVertex)
   position = mul(mLayerTransform, position);
   outp.vPosition = VertexPosition(position);
 
-  // calculate the position on the mask texture
+  
   outp.vMaskCoords = MaskCoords(position);
   outp.vTexCoords = aVertex.vTexCoords;
   return outp;
@@ -215,26 +215,26 @@ float4 RGBShaderMask(const VS_MASK_OUTPUT aVertex) : SV_Target
   return result * mask;
 }
 
-/* From Rec601:
-[R]   [1.1643835616438356,  0.0,                 1.5960267857142858]      [ Y -  16]
-[G] = [1.1643835616438358, -0.3917622900949137, -0.8129676472377708]    x [Cb - 128]
-[B]   [1.1643835616438356,  2.017232142857143,   8.862867620416422e-17]   [Cr - 128]
 
-For [0,1] instead of [0,255], and to 5 places:
-[R]   [1.16438,  0.00000,  1.59603]   [ Y - 0.06275]
-[G] = [1.16438, -0.39176, -0.81297] x [Cb - 0.50196]
-[B]   [1.16438,  2.01723,  0.00000]   [Cr - 0.50196]
 
-From Rec709:
-[R]   [1.1643835616438356,  4.2781193979771426e-17, 1.7927410714285714]     [ Y -  16]
-[G] = [1.1643835616438358, -0.21324861427372963,   -0.532909328559444]    x [Cb - 128]
-[B]   [1.1643835616438356,  2.1124017857142854,     0.0]                    [Cr - 128]
 
-For [0,1] instead of [0,255], and to 5 places:
-[R]   [1.16438,  0.00000,  1.79274]   [ Y - 0.06275]
-[G] = [1.16438, -0.21325, -0.53291] x [Cb - 0.50196]
-[B]   [1.16438,  2.11240,  0.00000]   [Cr - 0.50196]
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 float4 CalculateYCbCrColor(const float2 aTexCoords)
 {
   float3 yuv = float3(
@@ -296,10 +296,10 @@ float4 SolidColorShaderMask(const VS_MASK_OUTPUT aVertex) : SV_Target
   return fLayerColor * mask;
 }
 
-/*
- *  Un-masked versions
- *************************************************************
- */
+
+
+
+
 float4 RGBAShader(const VS_OUTPUT aVertex) : SV_Target
 {
   return tRGB.Sample(sSampler, aVertex.vTexCoords) * fLayerOpacity;
@@ -340,7 +340,7 @@ float4 SolidColorShader(const VS_OUTPUT aVertex) : SV_Target
   return fLayerColor;
 }
 
-// Mix-blend compatible vertex shaders.
+
 VS_BLEND_OUTPUT LayerQuadBlendVS(const VS_INPUT aVertex)
 {
   VS_OUTPUT v = LayerQuadVS(aVertex);
@@ -389,10 +389,10 @@ VS_BLEND_OUTPUT LayerDynamicBlendMaskVS(const VS_TEX_INPUT aVertex)
   return o;
 }
 
-// The layer type and mask type are specified as constants. We use these to
-// call the correct pixel shader to determine the source color for blending.
-// Unfortunately this also requires some boilerplate to convert VS_BLEND_OUTPUT
-// to a compatible pixel shader input.
+
+
+
+
 float4 ComputeBlendSourceColor(const VS_BLEND_OUTPUT aVertex)
 {
   if (iBlendConfig.y == PS_MASK_NONE) {
@@ -407,8 +407,9 @@ float4 ComputeBlendSourceColor(const VS_BLEND_OUTPUT aVertex)
       return YCbCrShader(tmp);
     } else if (iBlendConfig.x == PS_LAYER_NV12) {
       return NV12Shader(tmp);
+    } else {
+      return SolidColorShader(tmp);
     }
-    return SolidColorShader(tmp);
   } else if (iBlendConfig.y == PS_MASK) {
     VS_MASK_OUTPUT tmp;
     tmp.vPosition = aVertex.vPosition;
@@ -423,11 +424,12 @@ float4 ComputeBlendSourceColor(const VS_BLEND_OUTPUT aVertex)
       return YCbCrShaderMask(tmp);
     } else if (iBlendConfig.x == PS_LAYER_NV12) {
       return NV12ShaderMask(tmp);
+    } else {
+      return SolidColorShaderMask(tmp);
     }
-    return SolidColorShaderMask(tmp);
+  } else {
+    return float4(0.0, 0.0, 0.0, 1.0);
   }
-
-  return float4(0.0, 0.0, 0.0, 1.0);
 }
 
 float3 ChooseBlendFunc(float3 dest, float3 src)
@@ -473,8 +475,8 @@ float4 BlendShader(const VS_BLEND_OUTPUT aVertex) : SV_Target
   float4 backdrop = tBackdrop.Sample(sSampler, aVertex.vBackdropCoords.xy);
   float4 source = ComputeBlendSourceColor(aVertex);
 
-  // Shortcut when the backdrop or source alpha is 0, otherwise we may leak
-  // infinity into the blend function and return incorrect results.
+  
+  
   if (backdrop.a == 0.0) {
     return source;
   }
@@ -482,9 +484,9 @@ float4 BlendShader(const VS_BLEND_OUTPUT aVertex) : SV_Target
     return float4(0, 0, 0, 0);
   }
 
-  // The spec assumes there is no premultiplied alpha. The backdrop is always
-  // premultiplied, so undo the premultiply. If the source is premultiplied we
-  // must fix that as well.
+  
+  
+  
   backdrop.rgb /= backdrop.a;
   if (iBlendConfig.w) {
     source.rgb /= source.a;
@@ -494,7 +496,7 @@ float4 BlendShader(const VS_BLEND_OUTPUT aVertex) : SV_Target
   result.rgb = ChooseBlendFunc(backdrop.rgb, source.rgb);
   result.a = source.a;
 
-  // Factor backdrop alpha, then premultiply for the final OP_OVER.
+  
   result.rgb = (1.0 - backdrop.a) * source.rgb + backdrop.a * result.rgb;
   result.rgb *= result.a;
   return result;
