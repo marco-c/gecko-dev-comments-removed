@@ -360,15 +360,9 @@ class PlatformDecoderModule {
   
   
   
-  
-  
-  
   virtual already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
       const CreateDecoderParams& aParams) = 0;
 
-  
-  
-  
   
   
   
@@ -387,9 +381,6 @@ class PlatformDecoderModule {
 };
 
 DDLoggedTypeDeclName(MediaDataDecoder);
-
-
-
 
 
 
