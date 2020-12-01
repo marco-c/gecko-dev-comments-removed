@@ -2,14 +2,19 @@
 
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AddonTestUtils: "resource://testing-common/AddonTestUtils.jsm",
   CustomizableUITestUtils:
     "resource://testing-common/CustomizableUITestUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  SearchTestUtils: "resource://testing-common/SearchTestUtils.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
 });
 
 let gCUITestUtils = new CustomizableUITestUtils(window);
+
+AddonTestUtils.initMochitest(this);
+SearchTestUtils.init(this);
 
 
 

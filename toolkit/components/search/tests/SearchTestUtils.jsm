@@ -24,14 +24,15 @@ Cu.importGlobalProperties(["fetch"]);
 
 var EXPORTED_SYMBOLS = ["SearchTestUtils"];
 
-var gTestGlobals;
+var gTestScope;
 
 var SearchTestUtils = Object.freeze({
-  init(Assert, registerCleanupFunction) {
-    gTestGlobals = {
-      Assert,
-      registerCleanupFunction,
-    };
+  init(testScope) {
+    gTestScope = testScope;
+    
+    if (!("ExtensionTestUtils" in gTestScope)) {
+      gTestScope.ExtensionTestUtils = ExtensionTestUtils;
+    }
   },
 
   
@@ -46,7 +47,7 @@ var SearchTestUtils = Object.freeze({
 
   async promiseNewSearchEngine(url) {
     let engine = await Services.search.addOpenSearchEngine(url, "");
-    gTestGlobals.registerCleanupFunction(async () =>
+    gTestScope.registerCleanupFunction(async () =>
       Services.search.removeEngine(engine)
     );
     return engine;
@@ -122,7 +123,7 @@ var SearchTestUtils = Object.freeze({
       "search-extensions",
       Services.io.newURI("file://" + testDir.path)
     );
-    gTestGlobals.registerCleanupFunction(() => {
+    gTestScope.registerCleanupFunction(() => {
       resProt.setSubstitution("search-extensions", originalSubstitution);
     });
   },
@@ -159,12 +160,14 @@ var SearchTestUtils = Object.freeze({
       "extensions.webextensions.background-delayed-startup",
       false
     );
-    ExtensionTestUtils.init(scope);
+    gTestScope.ExtensionTestUtils.init(scope);
     AddonTestUtils.usePrivilegedSignatures = usePrivilegedSignatures;
     AddonTestUtils.overrideCertDB();
   },
 
   
+
+
 
 
 
@@ -178,13 +181,15 @@ var SearchTestUtils = Object.freeze({
       manifest: this.createEngineManifest(options),
     };
 
-    let extension = ExtensionTestUtils.loadExtension(extensionInfo);
+    let extension = gTestScope.ExtensionTestUtils.loadExtension(extensionInfo);
     await extension.startup();
     await AddonTestUtils.waitForSearchProviderStartup(extension);
     return extension;
   },
 
   
+
+
 
 
 
@@ -201,7 +206,7 @@ var SearchTestUtils = Object.freeze({
         browser.test.sendMessage("started");
       },
     });
-    let wrapper = ExtensionTestUtils.expectExtension(options.id);
+    let wrapper = gTestScope.ExtensionTestUtils.expectExtension(options.id);
 
     const install = await AddonManager.getInstallForURL(`file://${xpi.path}`, {
       useSystemLocation: true,
@@ -230,6 +235,14 @@ var SearchTestUtils = Object.freeze({
 
 
 
+
+
+
+
+
+
+
+
   createEngineManifest(options = {}) {
     options.id = options.id ?? "example@tests.mozilla.org";
     options.name = options.name ?? "Example";
@@ -244,14 +257,23 @@ var SearchTestUtils = Object.freeze({
       chrome_settings_overrides: {
         search_provider: {
           name: options.name,
-          search_url: "https://example.com/",
-          search_url_get_params: "?q={searchTerms}",
+          search_url: options.search_url ?? "https://example.com/",
+          search_url_get_params:
+            options.search_url_get_params ?? "?q={searchTerms}",
         },
       },
     };
     if (options.keyword) {
       manifest.chrome_settings_overrides.search_provider.keyword =
         options.keyword;
+    }
+    if (options.suggest_url) {
+      manifest.chrome_settings_overrides.search_provider.suggest_url =
+        options.suggest_url;
+    }
+    if (options.suggest_url) {
+      manifest.chrome_settings_overrides.search_provider.suggest_url_get_params =
+        options.suggest_url_get_params;
     }
     return manifest;
   },
@@ -295,7 +317,7 @@ var SearchTestUtils = Object.freeze({
       "@mozilla.org/widget/useridleservice;1",
       SearchTestUtils.idleService
     );
-    gTestGlobals.registerCleanupFunction(() => {
+    gTestScope.registerCleanupFunction(() => {
       MockRegistrar.unregister(fakeIdleService);
     });
   },

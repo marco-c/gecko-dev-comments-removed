@@ -1,8 +1,5 @@
 
 
-const { SearchTestUtils } = ChromeUtils.import(
-  "resource://testing-common/SearchTestUtils.jsm"
-);
 const searchPopup = document.getElementById("PopupSearchAutoComplete");
 const oneOffsContainer = searchPopup.searchOneOffsContainer;
 
