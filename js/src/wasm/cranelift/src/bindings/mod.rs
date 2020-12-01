@@ -461,9 +461,9 @@ impl StaticEnvironment {
     
     pub fn call_conv(&self) -> isa::CallConv {
         if self.platform_is_windows {
-            isa::CallConv::BaldrdashWindows
+            unimplemented!("No FastCall variant of Baldrdash2020")
         } else {
-            isa::CallConv::BaldrdashSystemV
+            isa::CallConv::Baldrdash2020
         }
     }
 }
