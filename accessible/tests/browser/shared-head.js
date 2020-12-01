@@ -431,7 +431,11 @@ function accessibleTask(doc, task, options = {}) {
     gIsRemoteIframe = options.remoteIframe;
     gIsIframe = options.iframe || gIsRemoteIframe;
     let url;
-    if (doc.endsWith("html") && !gIsIframe) {
+    if (options.chrome && doc.endsWith("html")) {
+      
+      
+      url = `${CURRENT_DIR}${doc}`;
+    } else if (doc.endsWith("html") && !gIsIframe) {
       url = `${CURRENT_CONTENT_DIR}${doc}`;
     } else {
       url = snippetToURL(doc, options);
@@ -445,10 +449,13 @@ function accessibleTask(doc, task, options = {}) {
       }
     });
 
-    const onContentDocLoad = waitForEvent(
-      EVENT_DOCUMENT_LOAD_COMPLETE,
-      DEFAULT_CONTENT_DOC_BODY_ID
-    );
+    let onContentDocLoad;
+    if (!options.chrome) {
+      onContentDocLoad = waitForEvent(
+        EVENT_DOCUMENT_LOAD_COMPLETE,
+        DEFAULT_CONTENT_DOC_BODY_ID
+      );
+    }
 
     let onIframeDocLoad;
     if (options.remoteIframe && !options.skipFissionDocLoad) {
@@ -476,11 +483,29 @@ function accessibleTask(doc, task, options = {}) {
         await SimpleTest.promiseFocus(browser);
         await loadContentScripts(browser, "Common.jsm");
 
-        if (Services.appinfo.browserTabsRemoteAutostart) {
+        if (options.chrome) {
+          ok(!browser.isRemoteBrowser, "Not remote browser");
+        } else if (Services.appinfo.browserTabsRemoteAutostart) {
           ok(browser.isRemoteBrowser, "Actually remote browser");
         }
 
-        const { accessible: docAccessible } = await onContentDocLoad;
+        let docAccessible;
+        if (options.chrome) {
+          
+          
+          
+          await BrowserTestUtils.waitForCondition(() => {
+            docAccessible = getAccessible(browser.contentWindow.document);
+            if (!docAccessible) {
+              return false;
+            }
+            const state = {};
+            docAccessible.getState(state, {});
+            return !(state.value & STATE_BUSY);
+          });
+        } else {
+          ({ accessible: docAccessible } = await onContentDocLoad);
+        }
         let iframeDocAccessible;
         if (gIsIframe) {
           if (!options.skipFissionDocLoad) {
@@ -532,12 +557,35 @@ function accessibleTask(doc, task, options = {}) {
 
 
 
+
+
+
+
+
+
 function addAccessibleTask(doc, task, options = {}) {
-  const { topLevel = true, iframe = false, remoteIframe = false } = options;
+  const {
+    topLevel = true,
+    chrome = false,
+    iframe = false,
+    remoteIframe = false,
+  } = options;
   if (topLevel) {
     add_task(
       accessibleTask(doc, task, {
         ...options,
+        chrome: false,
+        iframe: false,
+        remoteIframe: false,
+      })
+    );
+  }
+
+  if (chrome) {
+    add_task(
+      accessibleTask(doc, task, {
+        ...options,
+        topLevel: false,
         iframe: false,
         remoteIframe: false,
       })
@@ -549,6 +597,7 @@ function addAccessibleTask(doc, task, options = {}) {
       accessibleTask(doc, task, {
         ...options,
         topLevel: false,
+        chrome: false,
         remoteIframe: false,
       })
     );
@@ -559,6 +608,7 @@ function addAccessibleTask(doc, task, options = {}) {
       accessibleTask(doc, task, {
         ...options,
         topLevel: false,
+        chrome: false,
         iframe: false,
       })
     );
