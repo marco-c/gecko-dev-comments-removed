@@ -84,6 +84,7 @@ function openPopup(document) {
   
   
   const cmdEvent = document.createEvent("xulcommandevent");
+  
   cmdEvent.initCommandEvent("command", true, true, button.ownerGlobal);
   button.dispatchEvent(cmdEvent);
 }
@@ -299,6 +300,7 @@ function initialize(toggleProfilerKeyShortcuts) {
       });
     },
 
+    
     handleEvent: event => {
       function startOrCapture() {
         if (Services.profiler.IsPaused()) {
