@@ -390,7 +390,7 @@ var StarUI = {
     }
 
     
-    if (didChangeFolder) {
+    if (didChangeFolder && gBookmarksToolbar2h2020) {
       Services.prefs.setCharPref(
         "browser.bookmarks.defaultLocation",
         selectedFolderGuid
@@ -1721,9 +1721,7 @@ var BookmarkingUI = {
       this._uninitView();
       this._isCustomizing = true;
 
-      if (
-        !Services.prefs.getBoolPref("browser.toolbars.bookmarks.2h2020", false)
-      ) {
+      if (!gBookmarksToolbar2h2020) {
         return;
       }
 
@@ -2294,12 +2292,7 @@ var BookmarkingUI = {
 
   async maybeShowOtherBookmarksFolder() {
     
-    let featureEnabled = Services.prefs.getBoolPref(
-      "browser.toolbars.bookmarks.2h2020",
-      false
-    );
-
-    if (!featureEnabled) {
+    if (!gBookmarksToolbar2h2020) {
       return;
     }
 
