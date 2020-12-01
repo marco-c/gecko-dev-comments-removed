@@ -157,7 +157,7 @@ class LookAndFeel {
 
 
 
-    MacYosemiteTheme,
+    MacBigSurTheme,
 
     
 
