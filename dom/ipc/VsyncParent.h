@@ -4,53 +4,51 @@
 
 
 
-#ifndef mozilla_layout_ipc_VsyncParent_h
-#define mozilla_layout_ipc_VsyncParent_h
+#ifndef mozilla_dom_ipc_VsyncParent_h
+#define mozilla_dom_ipc_VsyncParent_h
 
-#include "mozilla/layout/PVsyncParent.h"
+#include "mozilla/dom/PVsyncParent.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "nsCOMPtr.h"
 #include "mozilla/RefPtr.h"
+#include "VsyncSource.h"
 
 class nsIThread;
 
-namespace mozilla {
-
-namespace ipc {
-class BackgroundParentImpl;
-}  
-
-namespace layout {
+namespace mozilla::dom {
 
 
 
 
 class VsyncParent final : public PVsyncParent, public VsyncObserver {
-  friend class mozilla::ipc::BackgroundParentImpl;
   friend class PVsyncParent;
 
- private:
-  static already_AddRefed<VsyncParent> Create();
-
+ public:
   VsyncParent();
-  virtual ~VsyncParent();
+  void UpdateVsyncSource(const RefPtr<gfx::VsyncSource>& aVsyncSource);
+
+ private:
+  virtual ~VsyncParent() = default;
 
   virtual bool NotifyVsync(const VsyncEvent& aVsync) override;
-  mozilla::ipc::IPCResult RecvRequestVsyncRate();
+  virtual void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
 
   mozilla::ipc::IPCResult RecvObserve();
   mozilla::ipc::IPCResult RecvUnobserve();
-  virtual void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
 
   void DispatchVsyncEvent(const VsyncEvent& aVsync);
+  void UpdateVsyncRate();
+
+  bool IsOnInitialThread();
+  void AssertIsOnInitialThread();
 
   bool mObservingVsync;
   bool mDestroyed;
-  nsCOMPtr<nsIThread> mBackgroundThread;
+  nsCOMPtr<nsIThread> mInitialThread;
+  RefPtr<gfx::VsyncSource> mVsyncSource;
   RefPtr<RefreshTimerVsyncDispatcher> mVsyncDispatcher;
 };
 
-}  
 }  
 
 #endif  
