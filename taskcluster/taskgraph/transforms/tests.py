@@ -822,14 +822,11 @@ def set_treeherder_machine_platform(config, tasks):
     translation = {
         
         
-        "linux64-pgo/opt": "linux64/pgo",
         "macosx1014-64/debug": "osx-10-14/debug",
         "macosx1014-64/opt": "osx-10-14/opt",
         "macosx1014-64-shippable/opt": "osx-10-14-shippable/opt",
         "win64-asan/opt": "windows10-64/asan",
         "win64-aarch64/opt": "windows10-aarch64/opt",
-        "win32-pgo/opt": "windows7-32/pgo",
-        "win64-pgo/opt": "windows10-64/pgo",
     }
     for task in tasks:
         
@@ -892,13 +889,11 @@ def set_tier(config, tasks):
             if task["test-platform"] in [
                 "linux64/opt",
                 "linux64/debug",
-                "linux64-pgo/opt",
                 "linux64-shippable/opt",
                 "linux64-devedition/opt",
                 "linux64-asan/opt",
                 "linux64-qr/opt",
                 "linux64-qr/debug",
-                "linux64-pgo-qr/opt",
                 "linux64-shippable-qr/opt",
                 "linux1804-64/opt",
                 "linux1804-64/debug",
@@ -911,19 +906,16 @@ def set_tier(config, tasks):
                 "linux1804-64-tsan/opt",
                 "windows7-32/debug",
                 "windows7-32/opt",
-                "windows7-32-pgo/opt",
                 "windows7-32-devedition/opt",
                 "windows7-32-shippable/opt",
                 "windows10-aarch64/opt",
                 "windows10-64/debug",
                 "windows10-64/opt",
-                "windows10-64-pgo/opt",
                 "windows10-64-shippable/opt",
                 "windows10-64-devedition/opt",
                 "windows10-64-asan/opt",
                 "windows10-64-qr/opt",
                 "windows10-64-qr/debug",
-                "windows10-64-pgo-qr/opt",
                 "windows10-64-shippable-qr/opt",
                 "macosx1014-64/opt",
                 "macosx1014-64/debug",
