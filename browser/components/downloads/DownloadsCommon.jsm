@@ -1380,6 +1380,7 @@ DownloadsIndicatorDataCtor.prototype = {
       switch (download.error.reputationCheckVerdict) {
         case Downloads.Error.BLOCK_VERDICT_UNCOMMON: 
         case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
+        case Downloads.Error.BLOCK_VERDICT_INSECURE:
           
           if (this._attention != DownloadsCommon.ATTENTION_SEVERE) {
             this.attention = DownloadsCommon.ATTENTION_WARNING;
