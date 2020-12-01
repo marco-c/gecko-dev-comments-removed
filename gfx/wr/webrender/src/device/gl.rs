@@ -1501,8 +1501,7 @@ impl Device {
         
         
         
-        
-        let supports_copy_image_sub_data = if renderer_name.starts_with("Mali-T") {
+        let supports_copy_image_sub_data = if renderer_name.starts_with("Mali") {
             false
         } else {
             supports_extension(&extensions, "GL_EXT_copy_image") ||
@@ -2385,7 +2384,9 @@ impl Device {
     }
 
     
-    pub fn blit_renderable_texture(
+    
+    
+    pub fn copy_entire_texture(
         &mut self,
         dst: &mut Texture,
         src: &Texture,
@@ -2395,32 +2396,77 @@ impl Device {
         debug_assert!(dst.size.height >= src.size.height);
         debug_assert!(dst.layer_count >= src.layer_count);
 
+        self.copy_texture_sub_region(
+            src,
+            0,
+            0,
+            0,
+            dst,
+            0,
+            0,
+            0,
+            src.size.width as _,
+            src.size.height as _,
+            src.layer_count as _,
+        );
+    }
+
+    
+    pub fn copy_texture_sub_region(
+        &mut self,
+        src_texture: &Texture,
+        src_x: usize,
+        src_y: usize,
+        src_z: LayerIndex,
+        dest_texture: &Texture,
+        dest_x: usize,
+        dest_y: usize,
+        dest_z: LayerIndex,
+        width: usize,
+        height: usize,
+        depth: LayerIndex,
+    ) {
         if self.capabilities.supports_copy_image_sub_data {
-            assert_ne!(src.id, dst.id,
-                    "glCopyImageSubData's behaviour is undefined if src and dst images are identical and the rectangles overlap.");
-            unsafe {
-                self.gl.copy_image_sub_data(src.id, src.target, 0,
-                                            0, 0, 0,
-                                            dst.id, dst.target, 0,
-                                            0, 0, 0,
-                                            src.size.width as _, src.size.height as _, src.layer_count);
-            }
-        } else {
-            let rect = FramebufferIntRect::new(
-                FramebufferIntPoint::zero(),
-                device_size_as_framebuffer_size(src.get_dimensions()),
+            assert_ne!(
+                src_texture.id, dest_texture.id,
+                "glCopyImageSubData's behaviour is undefined if src and dst images are identical and the rectangles overlap."
             );
-            for layer in 0..src.layer_count.min(dst.layer_count) as LayerIndex {
-                self.blit_render_target(
-                    ReadTarget::from_texture(src, layer),
-                    rect,
-                    DrawTarget::from_texture(dst, layer, false),
-                    rect,
-                    TextureFilter::Linear
+            unsafe {
+                self.gl.copy_image_sub_data(
+                    src_texture.id,
+                    src_texture.target,
+                    0,
+                    src_x as _,
+                    src_y as _,
+                    src_z as _,
+                    dest_texture.id,
+                    dest_texture.target,
+                    0,
+                    dest_x as _,
+                    dest_y as _,
+                    dest_z as _,
+                    width as _,
+                    height as _,
+                    depth as _,
                 );
             }
-            self.reset_draw_target();
-            self.reset_read_target();
+        } else {
+            for i in 0..depth as LayerIndex {
+                let src_offset = FramebufferIntPoint::new(src_x as i32, src_y as i32);
+                let dest_offset = FramebufferIntPoint::new(dest_x as i32, dest_y as i32);
+                let size = FramebufferIntSize::new(width as i32, height as i32);
+
+                self.blit_render_target(
+                    ReadTarget::from_texture(src_texture, src_z + i),
+                    FramebufferIntRect::new(src_offset, size),
+                    DrawTarget::from_texture(dest_texture, dest_z + i, false),
+                    FramebufferIntRect::new(dest_offset, size),
+                    
+                    
+                    
+                    TextureFilter::Nearest,
+                );
+            }
         }
     }
 
