@@ -802,14 +802,6 @@ void nsFlatpakPrintPortal::FinishPrintDialog(GVariant* parameters) {
     g_variant_lookup(options, "token", "u", &mToken);
 
     
-    
-    int fd = g_file_open_tmp("gtkprintXXXXXX", &filename, NULL);
-    uri = g_filename_to_uri(filename, NULL, NULL);
-    gtk_print_settings_set(printSettings, GTK_PRINT_SETTINGS_OUTPUT_URI, uri);
-    g_free(uri);
-    close(fd);
-
-    
     mPrintAndPageSettings->SetGtkPrintSettings(printSettings);
     mPrintAndPageSettings->SetGtkPageSetup(pageSetup);
 
