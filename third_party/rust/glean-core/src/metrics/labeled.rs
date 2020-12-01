@@ -200,7 +200,6 @@ pub fn strip_label(identifier: &str) -> &str {
 
 
 
-
 pub fn dynamic_label(
     glean: &Glean,
     meta: &CommonMetricData,

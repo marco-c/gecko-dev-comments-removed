@@ -186,6 +186,16 @@ mod unsync {
         });
         eprintln!("use after free: {:?}", dangling_ref.get().unwrap());
     }
+
+    #[test]
+    
+    fn arrrrrrrrrrrrrrrrrrrrrr() {
+        let cell = OnceCell::new();
+        {
+            let s = String::new();
+            cell.set(&s).unwrap();
+        }
+    }
 }
 
 #[cfg(feature = "std")]
@@ -571,5 +581,15 @@ mod sync {
         })
         .unwrap();
         assert_eq!(cell.get(), Some(&"hello".to_string()));
+    }
+
+    #[test]
+    
+    fn arrrrrrrrrrrrrrrrrrrrrr() {
+        let cell = OnceCell::new();
+        {
+            let s = String::new();
+            cell.set(&s).unwrap();
+        }
     }
 }
