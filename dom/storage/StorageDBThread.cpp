@@ -997,7 +997,20 @@ nsresult StorageDBThread::DBOperation::Perform(StorageDBThread* aThread) {
 
       mozStorageStatementScoper scope(stmt);
 
-      rv = stmt->BindUTF8StringByName("usageOrigin"_ns, mUsage->OriginScope());
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      rv = stmt->BindUTF8StringByName("usageOrigin"_ns,
+                                      mUsage->OriginScope() + "%"_ns);
       NS_ENSURE_SUCCESS(rv, rv);
 
       bool exists;
