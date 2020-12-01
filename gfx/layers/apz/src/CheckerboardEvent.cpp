@@ -84,8 +84,6 @@ void CheckerboardEvent::LogInfo(RendertraceProperty aProperty,
   
   
   
-  
-  
   mRendertraceInfo << "RENDERTRACE "
                    << (aTimestamp - mOriginTime).ToMilliseconds() << " rect "
                    << sColors[aProperty] << " " << aRect.X() << " " << aRect.Y()
