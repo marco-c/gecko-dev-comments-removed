@@ -5,6 +5,7 @@
 
 
 #include "UDPSocketParent.h"
+#include "UDPSocket.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIUDPSocket.h"
 #include "nsINetAddr.h"

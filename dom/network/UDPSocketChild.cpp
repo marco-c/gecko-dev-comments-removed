@@ -5,6 +5,7 @@
 
 
 #include "UDPSocketChild.h"
+#include "UDPSocket.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/NeckoChild.h"
