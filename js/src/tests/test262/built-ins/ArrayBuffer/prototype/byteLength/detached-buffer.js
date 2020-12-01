@@ -12,13 +12,10 @@
 
 
 
-
 var ab = new ArrayBuffer(1);
 
 $DETACHBUFFER(ab);
 
-assert.throws(TypeError, function() {
-  ab.byteLength;
-});
+assert.sameValue(ab.byteLength, 0, 'The value of ab.byteLength is 0');
 
 reportCompare(0, 0);

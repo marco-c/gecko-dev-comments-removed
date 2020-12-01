@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Object.defineProperties),
+  false,
+  'isConstructor(Object.defineProperties) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Object.defineProperties({}, {});
+}, '`new Object.defineProperties({}, {})` throws TypeError');
+
+
+reportCompare(0, 0);

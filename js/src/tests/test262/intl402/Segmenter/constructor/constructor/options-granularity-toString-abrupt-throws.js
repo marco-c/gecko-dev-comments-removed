@@ -17,7 +17,6 @@
 
 
 
-
 const options = {
   granularity: {
     toString() {

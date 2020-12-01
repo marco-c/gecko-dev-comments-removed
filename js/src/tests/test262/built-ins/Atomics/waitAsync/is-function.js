@@ -8,6 +8,6 @@
 
 
 
-assert.sameValue(typeof Atomics.waitAsync, 'function');
+assert.sameValue(typeof Atomics.waitAsync, 'function', 'The value of `typeof Atomics.waitAsync` is "function"');
 
 reportCompare(0, 0);

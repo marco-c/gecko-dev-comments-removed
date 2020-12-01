@@ -34,11 +34,11 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(42);
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    for (var key in sample) {
-      throw new Test262Error();
-    }
-  });
+  let counter = 0;
+  for (var key in sample) {
+    counter++;
+  }
+  assert.sameValue(counter, 0, 'The value of `counter` is 0');
 });
 
 reportCompare(0, 0);

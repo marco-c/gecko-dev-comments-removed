@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(SyntaxError), true, 'isConstructor(SyntaxError) must return true');
+new SyntaxError();
+  
+
+reportCompare(0, 0);

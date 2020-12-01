@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Array), true, 'isConstructor(Array) must return true');
+new Array();
+  
+
+reportCompare(0, 0);

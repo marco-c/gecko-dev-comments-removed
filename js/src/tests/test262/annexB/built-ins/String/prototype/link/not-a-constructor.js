@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.link),
+  false,
+  'isConstructor(String.prototype.link) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.link();
+}, '`new String.prototype.link()` throws TypeError');
+
+
+reportCompare(0, 0);

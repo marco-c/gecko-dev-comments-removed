@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Int8Array), true, 'isConstructor(Int8Array) must return true');
+new Int8Array();
+  
+
+reportCompare(0, 0);

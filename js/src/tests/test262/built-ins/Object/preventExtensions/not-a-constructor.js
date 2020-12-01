@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Object.preventExtensions),
+  false,
+  'isConstructor(Object.preventExtensions) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Object.preventExtensions({});
+}, '`new Object.preventExtensions({})` throws TypeError');
+
+
+reportCompare(0, 0);

@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function * g() {
+
+
+let o = {
+  [yield 9]: 9
+};
+
+assert.sameValue(
+  o[yield 9],
+  9
+);
+assert.sameValue(
+  o[String(yield 9)],
+  9
+);
+
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(ReferenceError), true, 'isConstructor(ReferenceError) must return true');
+new ReferenceError();
+  
+
+reportCompare(0, 0);

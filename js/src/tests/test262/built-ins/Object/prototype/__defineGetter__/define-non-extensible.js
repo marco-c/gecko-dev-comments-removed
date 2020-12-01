@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+var noop = function() {};
+var subject = Object.preventExtensions({ existing: null });
+
+subject.__defineGetter__('existing', noop);
+
+assert.throws(TypeError, function() {
+  subject.__defineGetter__('brand new', noop);
+});
+
+reportCompare(0, 0);

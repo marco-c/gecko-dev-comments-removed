@@ -23,38 +23,39 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([42n]);
 
-  var obj = {
-    valueOf: function() {
+testWithBigIntTypedArrayConstructors(function(TA) {
+  let sample = new TA([42n]);
+
+  let obj = {
+    valueOf() {
       throw new Test262Error();
     }
   };
 
   assert.throws(Test262Error, function() {
-    sample["0"] = obj;
-  }, "ToNumber check with a valid index");
+    sample['0'] = obj;
+  }, '`sample["0"] = obj` throws Test262Error');
 
   assert.throws(Test262Error, function() {
-    sample["1.1"] = obj;
-  }, "ToNumber runs before ToInteger(index)");
+    sample['1.1'] = obj;
+  }, '`sample["1.1"] = obj` throws Test262Error');
 
   assert.throws(Test262Error, function() {
-    sample["-0"] = obj;
-  }, "ToNumber runs before -0 check");
+    sample['-0'] = obj;
+  }, '`sample["-0"] = obj` throws Test262Error');
 
   assert.throws(Test262Error, function() {
-    sample["-1"] = obj;
-  }, "ToNumber runs before < 0 check");
+    sample['-1'] = obj;
+  }, '`sample["-1"] = obj` throws Test262Error');
 
   assert.throws(Test262Error, function() {
-    sample["1"] = obj;
-  }, "ToNumber runs before index == length check");
+    sample['1'] = obj;
+  }, '`sample["1"] = obj` throws Test262Error');
 
   assert.throws(Test262Error, function() {
-    sample["2"] = obj;
-  }, "ToNumber runs before index > length check");
+    sample['2'] = obj;
+  }, '`sample["2"] = obj` throws Test262Error');
 });
 
 reportCompare(0, 0);

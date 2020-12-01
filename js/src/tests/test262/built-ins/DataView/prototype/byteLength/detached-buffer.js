@@ -13,13 +13,13 @@
 
 
 
-var buffer = new ArrayBuffer(1);
-var sample = new DataView(buffer, 0);
+let buffer = new ArrayBuffer(1);
+let dv = new DataView(buffer, 0);
 
 $DETACHBUFFER(buffer);
 
-assert.throws(TypeError, function() {
-  sample.byteLength;
+assert.throws(TypeError, () => {
+  dv.byteLength;
 });
 
 reportCompare(0, 0);

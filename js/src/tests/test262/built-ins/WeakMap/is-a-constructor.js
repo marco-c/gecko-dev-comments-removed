@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(WeakMap), true, 'isConstructor(WeakMap) must return true');
+new WeakMap();
+  
+
+reportCompare(0, 0);

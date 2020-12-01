@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f() {}
+
+
+let o = {
+  [f()]: 1
+};
+
+assert.sameValue(
+  o[f()],
+  1
+);
+assert.sameValue(
+  o[String(f())],
+  1
+);
+
+reportCompare(0, 0);

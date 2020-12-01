@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let o = {
+  [false ? 1 : 2]: 1
+};
+
+assert.sameValue(
+  o[false ? 1 : 2],
+  1
+);
+assert.sameValue(
+  o[String(false ? 1 : 2)],
+  1
+);
+
+reportCompare(0, 0);

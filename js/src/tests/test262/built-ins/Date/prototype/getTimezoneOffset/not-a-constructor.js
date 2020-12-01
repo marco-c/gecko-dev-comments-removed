@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Date.prototype.getTimezoneOffset),
+  false,
+  'isConstructor(Date.prototype.getTimezoneOffset) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let date = new Date(Date.now()); new date.getTimezoneOffset();
+}, '`let date = new Date(Date.now()); new date.getTimezoneOffset()` throws TypeError');
+
+
+reportCompare(0, 0);

@@ -32,11 +32,23 @@ var expected = [
 
 var then = Promise.prototype.then;
 Promise.prototype.then = function(resolve) {
-  assert(!isConstructor(resolve));
-  assert.sameValue(resolve.length, expected[calls].length);
-  assert.sameValue(resolve.name, expected[calls].name);
+  assert.sameValue(isConstructor(resolve), false, 'isConstructor(resolve) must return false');
+  assert.throws(TypeError, () => {
+    new resolve();
+  }, '`new resolve()` throws TypeError');
+
+  assert.sameValue(
+    resolve.length,
+    expected[calls].length,
+    'The value of resolve.length is expected to equal the value of expected[calls].length'
+  );
+  assert.sameValue(
+    resolve.name,
+    expected[calls].name,
+    'The value of resolve.name is expected to equal the value of expected[calls].name'
+  );
   if (calls === 0) {
-    assert.sameValue(resolve(), value);
+    assert.sameValue(resolve(), value, 'resolve() must return the value of value');
   }
   calls += 1;
   return then.call(this, resolve);

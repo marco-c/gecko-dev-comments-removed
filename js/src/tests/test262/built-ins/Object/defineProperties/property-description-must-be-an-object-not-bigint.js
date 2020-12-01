@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  Object.defineProperties({}, {
+    a: 0n
+  });
+});
+
+reportCompare(0, 0);

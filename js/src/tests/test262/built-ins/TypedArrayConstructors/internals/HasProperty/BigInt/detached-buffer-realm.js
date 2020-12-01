@@ -27,9 +27,7 @@ testWithBigIntTypedArrayConstructors(function(TA) {
 
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    Reflect.has(sample, '0');
-  }, '0');
+  assert.sameValue(Reflect.has(sample, '0'), false, 'Reflect.has(sample, "0") must return false');
 });
 
 reportCompare(0, 0);

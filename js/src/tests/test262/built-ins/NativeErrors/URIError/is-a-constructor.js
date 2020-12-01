@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(URIError), true, 'isConstructor(URIError) must return true');
+new URIError();
+  
+
+reportCompare(0, 0);

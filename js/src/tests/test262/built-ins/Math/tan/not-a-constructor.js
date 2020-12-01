@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Math.tan), false, 'isConstructor(Math.tan) must return false');
+
+assert.throws(TypeError, () => {
+  new Math.tan();
+}, '`new Math.tan()` throws TypeError');
+
+
+reportCompare(0, 0);

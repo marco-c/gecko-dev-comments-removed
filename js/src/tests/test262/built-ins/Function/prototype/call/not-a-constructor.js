@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Function.prototype.call),
+  false,
+  'isConstructor(Function.prototype.call) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Function.prototype.call();
+}, '`new Function.prototype.call()` throws TypeError');
+
+
+reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.pop.call(true), undefined, 'Array.prototype.pop.call(true) must return undefined');
+assert.sameValue(Array.prototype.pop.call(false), undefined, 'Array.prototype.pop.call(false) must return undefined');
+
+reportCompare(0, 0);

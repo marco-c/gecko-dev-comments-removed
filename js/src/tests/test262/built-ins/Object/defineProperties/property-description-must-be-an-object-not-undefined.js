@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  Object.defineProperties({}, {
+    a: undefined
+  });
+});
+
+reportCompare(0, 0);

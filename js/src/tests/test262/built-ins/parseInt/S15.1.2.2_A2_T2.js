@@ -1,5 +1,9 @@
 
 
+assert.sameValue(parseInt("\u00201"), parseInt("1"), 'parseInt("\\u00201") must return the same value returned by parseInt("1")');
+assert.sameValue(parseInt("\u0020\u0020-1"), parseInt("-1"), 'parseInt("\\u0020\\u0020-1") must return the same value returned by parseInt("-1")');
+assert.sameValue(parseInt(" 1"), parseInt("1"), 'parseInt(" 1") must return the same value returned by parseInt("1")');
+assert.sameValue(parseInt("       1"), parseInt("1"), 'parseInt(" 1") must return the same value returned by parseInt("1")');
 
 
 
@@ -7,32 +11,13 @@
 
 
 
-
-if (parseInt("\u00201") !== parseInt("1")) {
-  $ERROR('#1: parseInt("\\u00201") === parseInt("1"). Actual: ' + (parseInt("\u00201")));
-}
-
-
-if (parseInt("\u0020\u0020-1") !== parseInt("-1")) {
-  $ERROR('#2: parseInt("\\u0020\\u0020-1") === parseInt("-1"). Actual: ' + (parseInt("\u0020\u0020-1")));
-}
+assert.sameValue(
+  parseInt("       \u0020       \u0020-1"),
+  parseInt("-1"),
+  'parseInt(" \\u0020 \\u0020-1") must return the same value returned by parseInt("-1")'
+);
 
 
-if (parseInt(" 1") !== parseInt("1")) {
-  $ERROR('#3: parseInt(" 1") === parseInt("1"). Actual: ' + (parseInt(" 1")));
-}
-
-
-if (parseInt("       1") !== parseInt("1")) {
-  $ERROR('#4: parseInt("       1") === parseInt("1"). Actual: ' + (parseInt("       1")));
-}
-
-
-if (parseInt("       \u0020       \u0020-1") !== parseInt("-1")) {
-  $ERROR('#5: parseInt("       \\u0020       \\u0020-1") === parseInt("-1"). Actual: ' + (parseInt("       \u0020       \u0020-1")));
-}
-
-
-assert.sameValue(parseInt("\u0020"), NaN);
+assert.sameValue(parseInt("\u0020"), NaN, 'parseInt("\\u0020") must return NaN');
 
 reportCompare(0, 0);

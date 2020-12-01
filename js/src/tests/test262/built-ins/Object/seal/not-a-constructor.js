@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Object.seal), false, 'isConstructor(Object.seal) must return false');
+
+assert.throws(TypeError, () => {
+  new Object.seal();
+}, '`new Object.seal()` throws TypeError');
+
+
+reportCompare(0, 0);

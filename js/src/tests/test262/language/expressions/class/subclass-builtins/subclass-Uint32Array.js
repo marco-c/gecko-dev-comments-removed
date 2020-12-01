@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Uint32Array {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Uint32Array);
+
+reportCompare(0, 0);

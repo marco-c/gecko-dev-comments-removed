@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Object.seal, "function", 'typeof(f)');
+
+reportCompare(0, 0);

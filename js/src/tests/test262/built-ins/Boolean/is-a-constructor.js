@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Boolean), true, 'isConstructor(Boolean) must return true');
+new Boolean();
+  
+
+reportCompare(0, 0);

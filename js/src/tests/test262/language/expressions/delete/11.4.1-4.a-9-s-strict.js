@@ -13,9 +13,8 @@
 
 
 
-
 assert.throws(TypeError, function() {
-    delete Math.LN2;
+  delete Math.LN2;
 });
 
 reportCompare(0, 0);

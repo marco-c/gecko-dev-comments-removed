@@ -26,11 +26,11 @@
 
 
 
-
 var other = $262.createRealm().global;
+
 var desc = {
   value: 0n,
-  configurable: false,
+  configurable: true,
   enumerable: true,
   writable: true
 };
@@ -38,12 +38,13 @@ var desc = {
 testWithBigIntTypedArrayConstructors(function(TA) {
   var OtherTA = other[TA.name];
   var sample = new OtherTA(1);
-
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    Reflect.defineProperty(sample, '0', desc);
-  });
+  assert.sameValue(
+    Reflect.defineProperty(sample, '0', desc),
+    false,
+    'Reflect.defineProperty(sample, "0", {value: 0n, configurable: true, enumerable: true, writable: true} ) must return false'
+  );
 });
 
 reportCompare(0, 0);

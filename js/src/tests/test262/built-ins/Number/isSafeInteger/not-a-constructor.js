@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Number.isSafeInteger), false, 'isConstructor(Number.isSafeInteger) must return false');
+
+assert.throws(TypeError, () => {
+  new Number.isSafeInteger();
+}, '`new Number.isSafeInteger()` throws TypeError');
+
+
+reportCompare(0, 0);

@@ -12,9 +12,7 @@
 
 
 for (var i = 2; i <= 36; i++) {
-  if (parseInt("10$1", i) !== i) {
-    $ERROR('#' + i + ': i = ' + i + 'parseInt("10$1", i) === i. Actual: ' + (parseInt("10$1", i)));
-  }
+  assert.sameValue(parseInt("10$1", i), i, 'parseInt("10$1", i) must return the value of i');
 }
 
 reportCompare(0, 0);

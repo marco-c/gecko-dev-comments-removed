@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+class Subclass extends BigInt64Array {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof BigInt64Array);
+
+reportCompare(0, 0);

@@ -13,13 +13,15 @@
 
 
 
-  var o = {};
-  var desc = { value : 1 }; 
-  Object.defineProperty(o, "foo", desc);
-  
-  
+var o = {};
+var desc = {
+  value: 1,
+}; 
+Object.defineProperty(o, 'foo', desc);
+
+
 assert.throws(TypeError, function() {
-    delete o.foo;
+  delete o.foo;
 });
 
 reportCompare(0, 0);

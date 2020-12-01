@@ -8,14 +8,16 @@
 
 
 
+assert.sameValue(
+  parseInt("11", new String("2")),
+  parseInt("11", 2),
+  'parseInt("11", new String("2")) must return the same value returned by parseInt("11", 2)'
+);
 
-if (parseInt("11", new String("2")) !== parseInt("11", 2)) {
-  $ERROR('#1: parseInt("11", new String("2")) === parseInt("11", 2). Actual: ' + (parseInt("11", new String("2"))));
-}
-
-
-if (parseInt("11", new String("Infinity")) !== parseInt("11", Infinity)) {
-  $ERROR('#2: parseInt("11", new String("Infinity")) === parseInt("11", Infinity). Actual: ' + (parseInt("11", new String("Infinity"))));
-}
+assert.sameValue(
+  parseInt("11", new String("Infinity")),
+  parseInt("11", Infinity),
+  'parseInt("11", new String("Infinity")) must return the same value returned by parseInt("11", Infinity)'
+);
 
 reportCompare(0, 0);

@@ -24,7 +24,7 @@
 
 
 
-assert.sameValue(typeof Atomics.waitAsync, 'function');
+assert.sameValue(typeof Atomics.waitAsync, 'function', 'The value of `typeof Atomics.waitAsync` is "function"');
 const i32a = new Int32Array(
   new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
 );
@@ -45,6 +45,6 @@ Promise.all([
     Atomics.store(i32a, 0, 42),
     Atomics.waitAsync(i32a, 0, 0).value,
   ]).then(outcomes => {
-    assert.sameValue(outcomes[0], 42);
-    assert.sameValue(outcomes[1], 'not-equal');
+    assert.sameValue(outcomes[0], 42, 'The value of outcomes[0] is 42');
+    assert.sameValue(outcomes[1], 'not-equal', 'The value of outcomes[1] is "not-equal"');
   }).then($DONE, $DONE);

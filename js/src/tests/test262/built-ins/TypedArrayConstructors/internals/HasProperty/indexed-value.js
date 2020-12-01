@@ -20,15 +20,11 @@
 
 
 
-
-
-
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([42, 43]);
 
-  assert.sameValue(Reflect.has(sample, 0), true);
-  assert.sameValue(Reflect.has(sample, 1), true);
+  assert.sameValue(Reflect.has(sample, 0), true, 'Reflect.has("new TA([42, 43])", 0) must return true');
+  assert.sameValue(Reflect.has(sample, 1), true, 'Reflect.has("new TA([42, 43])", 1) must return true');
 });
 
 reportCompare(0, 0);

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+const Subclass = class extends URIError {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof URIError);
+
+reportCompare(0, 0);

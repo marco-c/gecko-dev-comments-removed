@@ -8,11 +8,7 @@
 
 
 
-
-var x = parseInt.length;
+assert.sameValue(parseInt.length, 2, 'The value of parseInt.length is 2');
 verifyNotWritable(parseInt, "length", null, Infinity);
-if (parseInt.length !== x) {
-  $ERROR('#1: x = parseInt.length; parseInt.length = Infinity; parseInt.length === x. Actual: ' + (parseInt.length));
-}
 
 reportCompare(0, 0);

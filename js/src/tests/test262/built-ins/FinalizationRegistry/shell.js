@@ -56,3 +56,22 @@ function resolveAsyncGC(err) {
 
   $DONE(err);
 }
+
+
+
+
+
+
+
+
+
+
+
+function isConstructor(f) {
+    try {
+        Reflect.construct(function(){}, [], f);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}

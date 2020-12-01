@@ -9,9 +9,9 @@
 
 
 
-  var a = [1,2,3]
-  a.x = 10;
-  var d = delete a.x;
+var a = [1, 2, 3];
+a.x = 10;
+var d = delete a.x;
 
 assert.sameValue(d, true, 'd');
 assert.sameValue(a.x, undefined, 'a.x');

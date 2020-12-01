@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Error {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Error);
+
+reportCompare(0, 0);

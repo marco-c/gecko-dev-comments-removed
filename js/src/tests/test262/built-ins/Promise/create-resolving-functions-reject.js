@@ -21,9 +21,13 @@ Promise.resolve(1).then(function() {
 
 var then = Promise.prototype.then;
 Promise.prototype.then = function(resolve, reject) {
-  assert(!isConstructor(reject));
-  assert.sameValue(reject.length, 1);
-  assert.sameValue(reject.name, '');
+  assert.sameValue(isConstructor(reject), false, 'isConstructor(reject) must return false');
+  assert.throws(TypeError, () => {
+    new reject();
+  }, '`new reject()` throws TypeError');
+
+  assert.sameValue(reject.length, 1, 'The value of reject.length is 1');
+  assert.sameValue(reject.name, '', 'The value of reject.name is ""');
 
   return then.call(this, resolve, reject);
 };

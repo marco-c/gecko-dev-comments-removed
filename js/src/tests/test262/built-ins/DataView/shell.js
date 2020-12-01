@@ -464,3 +464,22 @@ function $DETACHBUFFER(buffer) {
   }
   $262.detachArrayBuffer(buffer);
 }
+
+
+
+
+
+
+
+
+
+
+
+function isConstructor(f) {
+    try {
+        Reflect.construct(function(){}, [], f);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}

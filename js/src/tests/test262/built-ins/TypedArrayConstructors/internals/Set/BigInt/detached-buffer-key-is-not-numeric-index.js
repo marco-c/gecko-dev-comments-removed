@@ -16,13 +16,17 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([42n, 43n]);
+  var sample = new TA(2);
   $DETACHBUFFER(sample.buffer);
 
-  assert.sameValue(Reflect.set(sample, "foo", "test262"), true);
-  assert.sameValue(sample.foo, "test262");
+  assert.sameValue(
+    Reflect.set(sample, 'foo', 'test262'),
+    true,
+    'Reflect.set(sample, "foo", "test262") must return true'
+  );
+
+  assert.sameValue(sample.foo, 'test262', 'The value of sample.foo is "test262"');
 });
 
 reportCompare(0, 0);

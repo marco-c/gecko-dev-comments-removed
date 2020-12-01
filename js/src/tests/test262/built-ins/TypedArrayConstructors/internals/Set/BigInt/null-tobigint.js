@@ -56,7 +56,7 @@ testWithBigIntTypedArrayConstructors(function(TA) {
 
   assert.throws(TypeError, function() {
     typedArray[0] = null;
-  }, "abrupt completion from Null");
+  }, '`typedArray[0] = null` throws TypeError');
 
 });
 

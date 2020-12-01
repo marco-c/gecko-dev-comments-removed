@@ -7,7 +7,7 @@
 
 
 
-assert.sameValue(parseInt(new Boolean(true)), NaN, "new Boolean(true)");
-assert.sameValue(parseInt(new Boolean(false)), NaN, "new Boolean(false)");
+assert.sameValue(parseInt(new Boolean(true)), NaN, 'parseInt(new Boolean(true)) must return NaN');
+assert.sameValue(parseInt(new Boolean(false)), NaN, 'parseInt(new Boolean(false)) must return NaN');
 
 reportCompare(0, 0);

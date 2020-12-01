@@ -27,31 +27,25 @@
 
 
 
-
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var ta = new TA([17n]);
 
-  var desc =
-    {
-      value: {
-        valueOf: function() {
-          $DETACHBUFFER(ta.buffer);
-          return 42n;
-        }
+  var desc = {
+    value: {
+      valueOf() {
+        $DETACHBUFFER(ta.buffer);
+        return 42n;
       }
-    };
+    }
+  };
 
-  assert.throws(TypeError, function() {
-    Reflect.defineProperty(ta, 0, desc);
-  },
-  "detaching a ArrayBuffer during defining an element of a typed array " +
-  "viewing it should throw");
+  assert.sameValue(
+    Reflect.defineProperty(ta, 0, desc),
+    false,
+    'Reflect.defineProperty(ta, 0, {value: {valueOf() {$DETACHBUFFER(ta.buffer); return 42n;}}}) must return false'
+  );
 
-  assert.throws(TypeError, function() {
-    ta[0];
-  });
+  assert.sameValue(ta[0], undefined, 'The value of ta[0] is expected to equal `undefined`');
 });
-
 
 reportCompare(0, 0);

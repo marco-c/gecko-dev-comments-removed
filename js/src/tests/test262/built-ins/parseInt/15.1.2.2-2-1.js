@@ -8,6 +8,6 @@
 
 
 
-assert.sameValue(parseInt(""), NaN, 'parseInt("")');
+assert.sameValue(parseInt(""), NaN, 'parseInt("") must return NaN');
 
 reportCompare(0, 0);

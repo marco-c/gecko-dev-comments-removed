@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends Function {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Function);
+
+reportCompare(0, 0);

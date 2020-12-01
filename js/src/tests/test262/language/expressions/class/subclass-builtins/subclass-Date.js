@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Date {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Date);
+
+reportCompare(0, 0);

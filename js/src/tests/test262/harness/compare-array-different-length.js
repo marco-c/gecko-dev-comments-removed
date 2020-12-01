@@ -8,11 +8,11 @@
 
 
 if (compareArray([], [undefined]) !== false) {
-  $ERROR('Arrays of differing lengths are not equivalent.');
+  throw new Error('Arrays of differing lengths are not equivalent.');
 }
 
 if (compareArray([undefined], []) !== false) {
-  $ERROR('Arrays of differing lengths are not equivalent.');
+  throw new Error('Arrays of differing lengths are not equivalent.');
 }
 
 reportCompare(0, 0);

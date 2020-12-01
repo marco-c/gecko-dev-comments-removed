@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Uint16Array), true, 'isConstructor(Uint16Array) must return true');
+new Uint16Array();
+  
+
+reportCompare(0, 0);

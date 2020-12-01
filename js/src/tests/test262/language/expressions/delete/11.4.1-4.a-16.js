@@ -10,10 +10,9 @@
 
 
 
-function testcase() {
+(function() {
   assert.sameValue(delete arguments, false, 'delete arguments');
   assert.notSameValue(arguments, undefined, 'arguments');
- }
-testcase();
+})();
 
 reportCompare(0, 0);

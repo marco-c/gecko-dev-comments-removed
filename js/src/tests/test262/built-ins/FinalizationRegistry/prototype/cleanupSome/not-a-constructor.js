@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(FinalizationRegistry.prototype.cleanupSome),
+  false,
+  'isConstructor(FinalizationRegistry.prototype.cleanupSome) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let fr = new FinalizationRegistry(() => {}); new fr.cleanupSome(() => {});
+}, '`let fr = new FinalizationRegistry(() => {}); new fr.cleanupSome(() => {})` throws TypeError');
+
+
+reportCompare(0, 0);

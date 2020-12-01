@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Object.prototype.toString),
+  false,
+  'isConstructor(Object.prototype.toString) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Object.prototype.toString();
+}, '`new Object.prototype.toString()` throws TypeError');
+
+
+reportCompare(0, 0);

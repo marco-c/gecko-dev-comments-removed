@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Object.getOwnPropertySymbols),
+  false,
+  'isConstructor(Object.getOwnPropertySymbols) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Object.getOwnPropertySymbols({});
+}, '`new Object.getOwnPropertySymbols({})` throws TypeError');
+
+
+reportCompare(0, 0);

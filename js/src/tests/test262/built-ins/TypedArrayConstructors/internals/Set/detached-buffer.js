@@ -25,43 +25,32 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA([42]);
+  let sample = new TA([42]);
   $DETACHBUFFER(sample.buffer);
+  sample[0] = 1;
+  assert.sameValue(sample[0], undefined, '`sample[0] = 1` is undefined');
+  sample['1.1'] = 1;
+  assert.sameValue(sample['1.1'], undefined, '`sample[\'1.1\'] = 1` is undefined');
+  sample['-0'] = 1;
+  assert.sameValue(sample['-0'], undefined, '`sample[\'-0\'] = 1` is undefined');
+  sample['-1'] = 1;
+  assert.sameValue(sample['-1'], undefined, '`sample[\'-1\'] = 1` is undefined');
+  sample['1'] = 1;
+  assert.sameValue(sample['1'], undefined, '`sample[\'1\'] = 1` is undefined');
+  sample['2'] = 1;
+  assert.sameValue(sample['2'], undefined, '`sample[\'2\'] = 1` is undefined');
 
-  assert.throws(TypeError, function() {
-    sample[0] = 1;
-  }, "valid numeric index");
-
-  assert.throws(TypeError, function() {
-    sample["1.1"] = 1;
-  }, "detach buffer runs before checking for 1.1");
-
-  assert.throws(TypeError, function() {
-    sample["-0"] = 1;
-  }, "detach buffer runs before checking for -0");
-
-  assert.throws(TypeError, function() {
-    sample["-1"] = 1;
-  }, "detach buffer runs before checking for -1");
-
-  assert.throws(TypeError, function() {
-    sample["1"] = 1;
-  }, "detach buffer runs before checking for key == length");
-
-  assert.throws(TypeError, function() {
-    sample["2"] = 1;
-  }, "detach buffer runs before checking for key > length");
-
-  var obj = {
-    valueOf: function() {
+  let obj = {
+    valueOf() {
       throw new Test262Error();
     }
   };
 
   assert.throws(Test262Error, function() {
-    sample["0"] = obj;
-  }, "ToNumber(value) is called before detached buffer check");
+    sample['0'] = obj;
+  }, '`sample[\'0\'] = obj` throws Test262Error');
 });
 
 reportCompare(0, 0);

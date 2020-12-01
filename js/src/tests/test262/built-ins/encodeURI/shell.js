@@ -26,3 +26,22 @@ function decimalToPercentHexString(n) {
   var hex = "0123456789ABCDEF";
   return "%" + hex[(n >> 4) & 0xf] + hex[n & 0xf];
 }
+
+
+
+
+
+
+
+
+
+
+
+function isConstructor(f) {
+    try {
+        Reflect.construct(function(){}, [], f);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}

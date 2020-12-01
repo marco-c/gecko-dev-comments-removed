@@ -18,6 +18,10 @@
 
 
 
+
+
+
+
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(2);
 
@@ -28,10 +32,10 @@ testWithBigIntTypedArrayConstructors(function(TA) {
       enumerable: true,
       writable: true
     }),
-    false,
+    true,
     "defineProperty's result"
   );
-  assert.sameValue(sample[0], 0n, "side effect check");
+  assert.sameValue(sample[0], 42n, "side effect check");
 });
 
 reportCompare(0, 0);

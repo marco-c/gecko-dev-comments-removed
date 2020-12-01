@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(TypeError), true, 'isConstructor(TypeError) must return true');
+new TypeError();
+  
+
+reportCompare(0, 0);

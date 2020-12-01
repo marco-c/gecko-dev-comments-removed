@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Date.prototype.setUTCMonth),
+  false,
+  'isConstructor(Date.prototype.setUTCMonth) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let date = new Date(Date.now()); new date.setUTCMonth();
+}, '`let date = new Date(Date.now()); new date.setUTCMonth()` throws TypeError');
+
+
+reportCompare(0, 0);

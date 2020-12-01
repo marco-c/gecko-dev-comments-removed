@@ -15,21 +15,22 @@
 
 
 
-
-
-
-
 testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA(1);
+  let counter = 0;
+  let sample = new TA(1);
 
   Object.defineProperty(sample, "constructor", {
-    get: function() {
+    get() {
+      counter++;
       $DETACHBUFFER(sample.buffer);
     }
   });
   assert.throws(TypeError, function() {
+    counter++;
     sample.slice();
-  });
+  }, '`sample.slice()` throws TypeError');
+
+  assert.sameValue(counter, 2, 'The value of `counter` is 2');
 });
 
 reportCompare(0, 0);

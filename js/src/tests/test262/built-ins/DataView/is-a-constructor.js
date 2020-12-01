@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(DataView), true, 'isConstructor(DataView) must return true');
+new DataView(new ArrayBuffer(16));
+  
+
+reportCompare(0, 0);

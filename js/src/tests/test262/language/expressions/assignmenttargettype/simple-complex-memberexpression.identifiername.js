@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+let v = 'v';
+let o = { [v]: 1, f() {} };
+let f = () => o;
+
+o.v = 1;
+
+reportCompare(0, 0);

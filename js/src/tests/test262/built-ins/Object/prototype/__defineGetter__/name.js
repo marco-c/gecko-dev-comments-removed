@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Object.prototype.__defineGetter__, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "__defineGetter__"
+});
+
+reportCompare(0, 0);

@@ -7,12 +7,13 @@
 
 
 
+assert.sameValue(
+  parseInt("11", new Boolean(false)),
+  parseInt("11", false),
+  'parseInt("11", new Boolean(false)) must return the same value returned by parseInt("11", false)'
+);
 
-if (parseInt("11", new Boolean(false)) !== parseInt("11", false)) {
-  $ERROR('#1: parseInt("11", new Boolean(false)) === parseInt("11", false). Actual: ' + (parseInt("11", new Boolean(false))));
-}
 
-
-assert.sameValue(parseInt("11", new Boolean(true)), NaN);
+assert.sameValue(parseInt("11", new Boolean(true)), NaN, 'parseInt("11", new Boolean(true)) must return NaN');
 
 reportCompare(0, 0);

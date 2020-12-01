@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Array.prototype.filter),
+  false,
+  'isConstructor(Array.prototype.filter) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Array.prototype.filter(() => {});
+}, '`new Array.prototype.filter(() => {})` throws TypeError');
+
+
+reportCompare(0, 0);

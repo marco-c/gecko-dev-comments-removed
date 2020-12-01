@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(FinalizationRegistry), true, 'isConstructor(FinalizationRegistry) must return true');
+new FinalizationRegistry(() => {});
+  
+
+reportCompare(0, 0);

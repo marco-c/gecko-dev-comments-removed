@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Boolean {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Boolean);
+
+reportCompare(0, 0);

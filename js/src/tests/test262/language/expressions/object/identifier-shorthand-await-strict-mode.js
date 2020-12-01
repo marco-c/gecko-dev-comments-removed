@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var await = 1;
+(function() {
+  "use strict";
+  ({
+    await
+  });
+});
+
+reportCompare(0, 0);

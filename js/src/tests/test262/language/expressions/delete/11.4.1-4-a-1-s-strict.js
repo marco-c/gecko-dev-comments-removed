@@ -10,14 +10,14 @@
 
 
 
-        var obj = {};
-        Object.defineProperty(obj, "prop", {
-            value: "abc",
-            configurable: false
-        });
-assert.throws(TypeError, function() {
-            delete obj.prop;
+var obj = {};
+Object.defineProperty(obj, 'prop', {
+  value: 'abc',
+  configurable: false,
 });
-assert.sameValue(obj.prop, "abc", 'obj.prop');
+assert.throws(TypeError, function() {
+  delete obj.prop;
+});
+assert.sameValue(obj.prop, 'abc', 'obj.prop');
 
 reportCompare(0, 0);

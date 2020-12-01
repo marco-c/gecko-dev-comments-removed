@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Map), true, 'isConstructor(Map) must return true');
+new Map();
+  
+
+reportCompare(0, 0);

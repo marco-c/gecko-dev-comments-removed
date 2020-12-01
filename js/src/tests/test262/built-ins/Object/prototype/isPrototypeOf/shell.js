@@ -9,25 +9,6 @@
 
 
 
-function isConstructor(f) {
-    try {
-        Reflect.construct(function(){}, [], f);
-    } catch (e) {
-        return false;
-    }
-    return true;
-}
-
-
-
-
-
-
-
-
-
-
-
 function allowProxyTraps(overrides) {
   function throwTest262Error(msg) {
     return function () { throw new Test262Error(msg); };

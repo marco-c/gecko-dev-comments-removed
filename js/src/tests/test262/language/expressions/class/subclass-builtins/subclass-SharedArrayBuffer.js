@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+const Subclass = class extends SharedArrayBuffer {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof SharedArrayBuffer);
+
+reportCompare(0, 0);

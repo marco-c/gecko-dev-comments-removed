@@ -18,17 +18,21 @@
 
 
 
-var other = $262.createRealm().global;
+
+
+
+
+
+
+let other = $262.createRealm().global;
 
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var OtherTA = other[TA.name];
-  var sample = new OtherTA(1);
+  let OtherTA = other[TA.name];
+  let sample = new OtherTA(1);
 
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    sample[0];
-  });
+  assert.sameValue(sample[0], undefined, 'The value of sample[0] is expected to equal `undefined`');
 });
 
 reportCompare(0, 0);

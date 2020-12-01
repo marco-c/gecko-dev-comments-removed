@@ -30,7 +30,7 @@
 var other = $262.createRealm().global;
 var desc = {
   value: 0,
-  configurable: false,
+  configurable: true,
   enumerable: true,
   writable: true
 };
@@ -41,9 +41,11 @@ testWithTypedArrayConstructors(function(TA) {
 
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    Reflect.defineProperty(sample, '0', desc);
-  });
+  assert.sameValue(
+    Reflect.defineProperty(sample, '0', desc),
+    false,
+    'Reflect.defineProperty(sample, "0", {value: 0, configurable: true, enumerable: true, writable: true}) must return false'
+  );
 });
 
 reportCompare(0, 0);

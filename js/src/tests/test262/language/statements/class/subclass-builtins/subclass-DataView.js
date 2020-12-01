@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+class Subclass extends DataView {}
+
+const sub = new Subclass(new ArrayBuffer(1));
+assert(sub instanceof Subclass);
+assert(sub instanceof DataView);
+
+reportCompare(0, 0);

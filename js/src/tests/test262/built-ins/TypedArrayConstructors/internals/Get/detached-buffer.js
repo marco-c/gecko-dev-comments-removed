@@ -17,33 +17,22 @@
 
 
 
+
+
+
+
+
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([42]);
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    sample[0];
-  }, "valid numeric index");
-
-  assert.throws(TypeError, function() {
-    sample["1.1"];
-  }, "detach buffer runs before checking for 1.1");
-
-  assert.throws(TypeError, function() {
-    sample["-0"];
-  }, "detach buffer runs before checking for -0");
-
-  assert.throws(TypeError, function() {
-    sample["-1"];
-  }, "detach buffer runs before checking for -1");
-
-  assert.throws(TypeError, function() {
-    sample["1"];
-  }, "detach buffer runs before checking for key == length");
-
-  assert.throws(TypeError, function() {
-    sample["2"];
-  }, "detach buffer runs before checking for key > length");
+  assert.sameValue(sample[0], undefined, 'The value of sample[0] is expected to equal `undefined`');
+  assert.sameValue(sample["1.1"], undefined, 'The value of sample["1.1"] is expected to equal `undefined`');
+  assert.sameValue(sample["-0"], undefined, 'The value of sample["-0"] is expected to equal `undefined`');
+  assert.sameValue(sample["-1"], undefined, 'The value of sample["-1"] is expected to equal `undefined`');
+  assert.sameValue(sample["1"], undefined, 'The value of sample["1"] is expected to equal `undefined`');
+  assert.sameValue(sample["2"], undefined, 'The value of sample["2"] is expected to equal `undefined`');
 });
 
 reportCompare(0, 0);

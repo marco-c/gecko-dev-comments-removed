@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Error.prototype.name, 'Error');
+
+
+reportCompare(0, 0);

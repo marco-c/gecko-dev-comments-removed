@@ -12,14 +12,17 @@
 
 
 
-  var o = {};
-  var desc = { value : 1, configurable: false }; 
-  Object.defineProperty(o, "foo", desc);
-  
-  
-  var d = delete o.foo;
+var o = {};
+var desc = {
+  value: 1,
+  configurable: false,
+}; 
+Object.defineProperty(o, 'foo', desc);
+
+
+var d = delete o.foo;
 
 assert.sameValue(d, false, 'd');
-assert.sameValue(o.hasOwnProperty("foo"), true, 'o.hasOwnProperty("foo")');
+assert.sameValue(o.hasOwnProperty('foo'), true, 'o.hasOwnProperty("foo")');
 
 reportCompare(0, 0);

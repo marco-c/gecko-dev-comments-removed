@@ -18,13 +18,18 @@
 
 
 
+
+
+
+
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([42, 42]);
 
   assert.sameValue(
     Reflect.defineProperty(sample, "0", {
       value: 8,
-      configurable: false,
+      configurable: true,
       enumerable: true,
       writable: true
     }),

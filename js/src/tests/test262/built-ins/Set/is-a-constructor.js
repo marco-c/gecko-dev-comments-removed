@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Set), true, 'isConstructor(Set) must return true');
+new Set();
+  
+
+reportCompare(0, 0);

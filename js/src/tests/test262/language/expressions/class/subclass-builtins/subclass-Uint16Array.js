@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Uint16Array {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Uint16Array);
+
+reportCompare(0, 0);

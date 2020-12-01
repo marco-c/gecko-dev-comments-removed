@@ -1,0 +1,24 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+function _() {
+  (eval) = 1;
+}
+

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Function.prototype.bind),
+  false,
+  'isConstructor(Function.prototype.bind) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Function.prototype.bind();
+}, '`new Function.prototype.bind()` throws TypeError');
+
+
+reportCompare(0, 0);

@@ -9,14 +9,13 @@
 
 
 
-  function foo(a,b) {
+function foo(a, b) {
   
-    
-    
-    var d = delete a;
-    return (d === false && a === 1);
-  }
+  
+  var d = delete a;
+  return d === false && a === 1;
+}
 
-assert(foo(1,2), 'foo(1,2) !== true');
+assert(foo(1, 2), 'foo(1,2) !== true');
 
 reportCompare(0, 0);

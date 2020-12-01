@@ -30,6 +30,6 @@
 $DONOTEVALUATE();
 
 
-async() => {
+async () => {
   var await;
-};
+}

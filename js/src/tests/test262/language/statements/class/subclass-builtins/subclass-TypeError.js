@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends TypeError {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof TypeError);
+
+reportCompare(0, 0);

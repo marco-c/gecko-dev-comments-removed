@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(SharedArrayBuffer.prototype.slice),
+  false,
+  'isConstructor(SharedArrayBuffer.prototype.slice) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let sab = new SharedArrayBuffer(1); new sab.slice();
+}, '`let sab = new SharedArrayBuffer(1); new sab.slice()` throws TypeError');
+
+
+reportCompare(0, 0);

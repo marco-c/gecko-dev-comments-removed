@@ -50,6 +50,6 @@ emptyCells().then(function() {
   finalizationRegistry.cleanupSome(function cb(holding) {
     called += 1;
   });
-  
+
   assert.sameValue(called, 0, 'callback was not called');
 }).then($DONE, resolveAsyncGC);

@@ -8,10 +8,12 @@
 
 
 
-function MyFunction(){}
+function MyFunction() {}
 var MyObject = new MyFunction();
 if (delete MyObject.prop !== true) {
-  $ERROR('#1: function MyFunction(){}; var MyObject = new MyFunction(); delete MyObject.prop === true');
+  $ERROR(
+    '#1: function MyFunction(){}; var MyObject = new MyFunction(); delete MyObject.prop === true'
+  );
 }
 
 

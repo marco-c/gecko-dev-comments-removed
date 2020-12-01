@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(RegExp.prototype[Symbol.search]),
+  false,
+  'isConstructor(RegExp.prototype[Symbol.search]) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let re = new RegExp(''); new re[Symbol.search]();
+}, '`let re = new RegExp(\'\'); new re[Symbol.search]()` throws TypeError');
+
+
+reportCompare(0, 0);

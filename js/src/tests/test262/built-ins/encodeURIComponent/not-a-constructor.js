@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(encodeURIComponent), false, 'isConstructor(encodeURIComponent) must return false');
+
+assert.throws(TypeError, () => {
+  new encodeURIComponent('');
+}, '`new encodeURIComponent(\'\')` throws TypeError');
+
+
+reportCompare(0, 0);

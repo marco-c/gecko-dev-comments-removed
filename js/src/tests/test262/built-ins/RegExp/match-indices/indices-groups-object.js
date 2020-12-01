@@ -17,7 +17,6 @@
 
 
 
-
 let counter = 0;
 Object.defineProperty(Array.prototype, "groups", {
   set() { counter++; }
@@ -33,5 +32,11 @@ verifyProperty(indices, 'groups', {
     enumerable: true,
     configurable: true
 });
+
+
+
+let {groups} = /(?<__proto__>.)/.exec("a").indices;
+assert.compareArray([0, 1], groups.__proto__);
+assert.sameValue(null, Object.getPrototypeOf(groups));
 
 reportCompare(0, 0);

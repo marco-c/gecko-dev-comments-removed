@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+const Subclass = class extends AggregateError {}
+
+const sub = new Subclass([]);
+assert(sub instanceof Subclass);
+assert(sub instanceof AggregateError);
+
+reportCompare(0, 0);

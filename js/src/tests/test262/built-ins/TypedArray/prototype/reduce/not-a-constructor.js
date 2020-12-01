@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(TypedArray.prototype.reduce),
+  false,
+  'isConstructor(TypedArray.prototype.reduce) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let u8 = new Uint8Array(1); new u8.reduce(() => {}, []);
+}, '`let u8 = new Uint8Array(1); new u8.reduce(() => {}, [])` throws TypeError');
+
+
+reportCompare(0, 0);

@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let o = {
+  [1.e1]: 2
+};
+
+assert.sameValue(
+  o[1.e1],
+  2
+);
+assert.sameValue(
+  o[String(1.e1)],
+  2
+);
+
+reportCompare(0, 0);

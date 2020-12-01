@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(RegExp), true, 'isConstructor(RegExp) must return true');
+new RegExp('');
+  
+
+reportCompare(0, 0);

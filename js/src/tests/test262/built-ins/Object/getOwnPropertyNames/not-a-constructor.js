@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Object.getOwnPropertyNames),
+  false,
+  'isConstructor(Object.getOwnPropertyNames) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Object.getOwnPropertyNames({});
+}, '`new Object.getOwnPropertyNames({})` throws TypeError');
+
+
+reportCompare(0, 0);

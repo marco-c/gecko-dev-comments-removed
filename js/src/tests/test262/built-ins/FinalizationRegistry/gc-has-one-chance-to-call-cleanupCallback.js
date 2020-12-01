@@ -31,30 +31,27 @@
 
 
 
-var cleanupCallback = 0;
-var called = 0;
-
+let cleanupCallback = 0;
+let holdings = [];
 function cb(holding) {
-  assert.sameValue(holding, 'a');
-  called += 1;
+  holdings.push(holding);
 }
 
-var finalizationRegistry = new FinalizationRegistry(function() {
+let finalizationRegistry = new FinalizationRegistry(function() {
   cleanupCallback += 1;
 });
 
 function emptyCells() {
-  var target = {};
+  let target = {};
   finalizationRegistry.register(target, 'a');
 
-  var prom = asyncGC(target);
+  let prom = asyncGC(target);
   target = null;
 
   return prom;
 }
 
-emptyCells()
-  .then(async function() {
+emptyCells().then(async function() {
   await Promise.resolve(1);
 
   finalizationRegistry.cleanupSome(cb);
@@ -63,7 +60,7 @@ emptyCells()
   
   let expectedCalled = cleanupCallback === 1 ? 0 : 1;
   
-  assert.sameValue(called, expectedCalled, 'cleanupSome callback for the first time');
+  assert.sameValue(holdings.length, expectedCalled, 'cleanupSome callback for the first time');
 
   
   
@@ -82,7 +79,7 @@ emptyCells()
 
   finalizationRegistry.cleanupSome(cb);
 
-  assert.sameValue(called, expectedCalled, 'cleanupSome callback is not called anymore, no empty cells');
+  assert.sameValue(holdings.length, expectedCalled, 'cleanupSome callback is not called anymore, no empty cells');
   assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #1');
 
   await $262.gc();
@@ -90,9 +87,12 @@ emptyCells()
 
   finalizationRegistry.cleanupSome(cb);
 
-  assert.sameValue(called, expectedCalled, 'cleanupSome callback is not called again #2');
+  assert.sameValue(holdings.length, expectedCalled, 'cleanupSome callback is not called again #2');
   assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #2');
 
+  if (holdings.length) {
+    assert.compareArray(holdings, ['a']);
+  }
+
   await $262.gc();
-  })
-  .then($DONE, resolveAsyncGC);
+}).then($DONE, resolveAsyncGC);

@@ -19,18 +19,35 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA(1);
+  let counter = 0;
+  let sample = new TA(1);
 
   sample.constructor = {};
   sample.constructor[Symbol.species] = function(count) {
+    counter++;
     $DETACHBUFFER(sample.buffer);
     return new TA(count);
   };
 
   assert.throws(TypeError, function() {
+    counter++;
     sample.slice();
-  }, "step 15.b, IsDetachedBuffer(srcBuffer) is true");
+  }, '`sample.slice()` throws TypeError');
+
+  assert.sameValue(counter, 2, 'The value of `counter` is 2');
 });
 
 reportCompare(0, 0);

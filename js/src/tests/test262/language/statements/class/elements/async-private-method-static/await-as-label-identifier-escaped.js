@@ -32,6 +32,10 @@
 $DONOTEVALUATE();
 
 
-class C { static async #method() {
+class C {
+  static async #method() {
     \u0061wait: ;
-}}
+  }
+}
+
+

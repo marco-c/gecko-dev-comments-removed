@@ -7,17 +7,10 @@
 
 
 
-
-if (parseInt("\u000B1") !== parseInt("1")) {
-  $ERROR('#1: parseInt("\\u000B1") === parseInt("1"). Actual: ' + (parseInt("\u000B1")));
-}
+assert.sameValue(parseInt("\u000B1"), parseInt("1"), 'parseInt("\\u000B1") must return the same value returned by parseInt("1")');
+assert.sameValue(parseInt("\u000B\u000B-1"), parseInt("-1"), 'parseInt("\\u000B\\u000B-1") must return the same value returned by parseInt("-1")');
 
 
-if (parseInt("\u000B\u000B-1") !== parseInt("-1")) {
-  $ERROR('#2: parseInt("\\u000B\\u000B-1") === parseInt("-1"). Actual: ' + (parseInt("\u000B\u000B-1")));
-}
-
-
-assert.sameValue(parseInt("\u000B"), NaN);
+assert.sameValue(parseInt("\u000B"), NaN, 'parseInt("\\u000B") must return NaN');
 
 reportCompare(0, 0);

@@ -17,6 +17,7 @@
 
 
 
+
 {
   
   
@@ -55,6 +56,8 @@
       }
     })(this);
   }
+
+  $262.agent.setTimeout = setTimeout;
 
   $262.agent.getReportAsync = function() {
     return new Promise(function(resolve) {
@@ -338,6 +341,25 @@ function $DETACHBUFFER(buffer) {
     throw new Test262Error("No method available to detach an ArrayBuffer");
   }
   $262.detachArrayBuffer(buffer);
+}
+
+
+
+
+
+
+
+
+
+
+
+function isConstructor(f) {
+    try {
+        Reflect.construct(function(){}, [], f);
+    } catch (e) {
+        return false;
+    }
+    return true;
 }
 
 

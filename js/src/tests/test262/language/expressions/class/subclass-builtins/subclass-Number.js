@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Number {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Number);
+
+reportCompare(0, 0);

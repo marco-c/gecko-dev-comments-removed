@@ -16,32 +16,36 @@
 
 
 
-
-
-
-
-
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample, result;
-  var ctor = {};
+  let counter = 0;
+  let sample, result, other;
+  let ctor = {};
   ctor[Symbol.species] = function(count) {
+    counter++;
     $DETACHBUFFER(sample.buffer);
-    return new TA(count);
+    other = new TA(count);
+    return other;
   };
 
   sample = new TA(0);
   sample.constructor = ctor;
   result = sample.slice();
-  assert.sameValue(result.length, 0, "#1: result.length");
-  assert.notSameValue(result.buffer, sample.buffer, "#1: creates a new buffer");
-  assert.sameValue(result.constructor, TA, "#1: ctor");
+  assert.sameValue(result.length, 0, 'The value of result.length is 0');
+  assert.notSameValue(result.buffer, sample.buffer, 'The value of result.buffer is expected to not equal the value of `sample.buffer`');
+  assert.sameValue(result, other, 'The value of `result` is expected to equal the value of other');
+  assert.sameValue(counter, 1, 'The value of `counter` is 1');
 
   sample = new TA(4);
   sample.constructor = ctor;
-  result = sample.slice(1, 1);
-  assert.sameValue(result.length, 0, "#2: result.length");
-  assert.notSameValue(result.buffer, sample.buffer, "#2: creates a new buffer");
-  assert.sameValue(result.constructor, TA, "#2: ctor");
+  result = sample.slice(1, 1); 
+  assert.sameValue(result.length, 0, 'The value of result.length is 0');
+  assert.notSameValue(
+    result.buffer,
+    sample.buffer,
+    'The value of result.buffer is expected to not equal the value of `sample.buffer`'
+  );
+  assert.sameValue(result.constructor, TA, 'The value of result.constructor is expected to equal the value of TA');
+  assert.sameValue(counter, 2, 'The value of `counter` is 2');
 });
 
 reportCompare(0, 0);

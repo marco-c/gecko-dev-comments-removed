@@ -7,7 +7,9 @@
 
 
 class X {
-  method() { return this; }
+  method() {
+    return this;
+  }
 }
 
 class Y extends X {

@@ -18,8 +18,7 @@
 
 
 
-
-assert.sameValue(typeof Atomics.waitAsync, 'function');
+assert.sameValue(typeof Atomics.waitAsync, 'function', 'The value of `typeof Atomics.waitAsync` is "function"');
 const i64a = new BigInt64Array(new SharedArrayBuffer(BigInt64Array.BYTES_PER_ELEMENT * 4));
 
 const valueOf = {
@@ -37,27 +36,19 @@ const toPrimitive = {
 assert.sameValue(
   Atomics.waitAsync(i64a, 0, 0n, null).value,
   'timed-out',
-  'Atomics.waitAsync(i64a, 0, 0n, null).value resolves to "timed-out"'
+  'The value of Atomics.waitAsync(i64a, 0, 0n, null).value is "timed-out"'
 );
 
 assert.sameValue(
   Atomics.waitAsync(i64a, 0, 0n, valueOf).value,
   'timed-out',
-  'Atomics.waitAsync(i64a, 0, 0n, valueOf).value resolves to "timed-out"'
+  'The value of Atomics.waitAsync(i64a, 0, 0n, valueOf).value is "timed-out"'
 );
 
 assert.sameValue(
   Atomics.waitAsync(i64a, 0, 0n, toPrimitive).value,
   'timed-out',
-  'Atomics.waitAsync(i64a, 0, 0n, toPrimitive).value resolves to "timed-out"'
+  'The value of Atomics.waitAsync(i64a, 0, 0n, toPrimitive).value is "timed-out"'
 );
 
-Promise.all([
-  Atomics.waitAsync(i64a, 0, 0n, null).value,
-  Atomics.waitAsync(i64a, 0, 0n, valueOf).value,
-  Atomics.waitAsync(i64a, 0, 0n, toPrimitive).value
-]).then(outcomes => {
-  assert.sameValue(outcomes[0], 'timed-out');
-  assert.sameValue(outcomes[1], 'timed-out');
-  assert.sameValue(outcomes[2], 'timed-out');
-}).then($DONE, $DONE);
+reportCompare(0, 0);

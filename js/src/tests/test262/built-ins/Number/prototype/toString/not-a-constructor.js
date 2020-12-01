@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Number.prototype.toString),
+  false,
+  'isConstructor(Number.prototype.toString) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Number.prototype.toString();
+}, '`new Number.prototype.toString()` throws TypeError');
+
+
+reportCompare(0, 0);

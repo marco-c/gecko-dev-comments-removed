@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import * as Scouts from "./export-expname-from-string-string.js";
+export { "☿" as "Ami" } from "./export-expname_FIXTURE.js";
+
+assert.sameValue(Scouts["☿"], undefined);
+assert.sameValue(Scouts.Ami, globalThis.Mercury);
+
+reportCompare(0, 0);

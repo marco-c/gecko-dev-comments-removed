@@ -9,15 +9,12 @@
 
 
 
-function testcase() {
-  var x = 1;
+var x = 1;
 
-  
-  var d = delete x;
 
-  assert.sameValue(d, false, 'd');
-  assert.sameValue(x, 1, 'x');
- }
-testcase();
+var d = delete x;
+
+assert.sameValue(d, false, 'd');
+assert.sameValue(x, 1, 'x');
 
 reportCompare(0, 0);

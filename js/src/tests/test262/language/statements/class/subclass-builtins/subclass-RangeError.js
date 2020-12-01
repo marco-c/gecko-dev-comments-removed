@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends RangeError {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof RangeError);
+
+reportCompare(0, 0);

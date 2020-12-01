@@ -7,29 +7,20 @@
 
 
 
+assert.sameValue(parseInt("11", 2.1), parseInt("11", 2), 'parseInt("11", 2.1) must return the same value returned by parseInt("11", 2)');
+assert.sameValue(parseInt("11", 2.5), parseInt("11", 2), 'parseInt("11", 2.5) must return the same value returned by parseInt("11", 2)');
+assert.sameValue(parseInt("11", 2.9), parseInt("11", 2), 'parseInt("11", 2.9) must return the same value returned by parseInt("11", 2)');
 
-if (parseInt("11", 2.1) !== parseInt("11", 2)) {
-  $ERROR('#1: parseInt("11", 2.1) === parseInt("11", 2). Actual: ' + (parseInt("11", 2.1)));
-}
+assert.sameValue(
+  parseInt("11", 2.000000000001),
+  parseInt("11", 2),
+  'parseInt("11", 2.000000000001) must return the same value returned by parseInt("11", 2)'
+);
 
-
-if (parseInt("11", 2.5) !== parseInt("11", 2)) {
-  $ERROR('#2: parseInt("11", 2.5) === parseInt("11", 2). Actual: ' + (parseInt("11", 2.5)));
-}
-
-
-if (parseInt("11", 2.9) !== parseInt("11", 2)) {
-  $ERROR('#3: parseInt("11", 2.9) === parseInt("11", 2). Actual: ' + (parseInt("11", 2.9)));
-}
-
-
-if (parseInt("11", 2.000000000001) !== parseInt("11", 2)) {
-  $ERROR('#4: parseInt("11", 2.000000000001) === parseInt("11", 2). Actual: ' + (parseInt("11", 2.000000000001)));
-}
-
-
-if (parseInt("11", 2.999999999999) !== parseInt("11", 2)) {
-  $ERROR('#5: parseInt("11", 2.999999999999) === parseInt("11", 2). Actual: ' + (parseInt("11", 2.999999999999)));
-}
+assert.sameValue(
+  parseInt("11", 2.999999999999),
+  parseInt("11", 2),
+  'parseInt("11", 2.999999999999) must return the same value returned by parseInt("11", 2)'
+);
 
 reportCompare(0, 0);

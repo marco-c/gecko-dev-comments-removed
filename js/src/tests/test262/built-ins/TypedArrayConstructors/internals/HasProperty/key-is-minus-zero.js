@@ -24,7 +24,7 @@ TypedArray.prototype["-0"] = "test262";
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA(1);
 
-  assert.sameValue(Reflect.has(sample, "-0"), false, "-0");
+  assert.sameValue(Reflect.has(sample, "-0"), false, 'Reflect.has(sample, "-0") must return false');
 });
 
 reportCompare(0, 0);

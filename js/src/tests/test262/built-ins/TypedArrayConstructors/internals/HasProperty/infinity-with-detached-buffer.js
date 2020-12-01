@@ -27,12 +27,26 @@
 
 
 testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA(0);
-  $DETACHBUFFER(sample.buffer);
+  let counter = 0;
+  let n = {
+    valueOf() {
+      counter++;
+      return 9;
+    }
+  };
 
-  assert.throws(TypeError, function() {
-    with (sample) Infinity;
-  });
+  assert.sameValue(counter, 0, 'The value of `counter` is 0');
+
+  let ta = new TA([n]);
+
+  assert.sameValue(counter, 1, 'The value of `counter` is 1');
+
+  $DETACHBUFFER(ta.buffer);
+
+  with (ta) {
+    Infinity;
+    assert.sameValue(counter, 1, 'The value of `counter` is 1');
+  }
 });
 
 reportCompare(0, 0);

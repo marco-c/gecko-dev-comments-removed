@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Array.prototype.copyWithin),
+  false,
+  'isConstructor(Array.prototype.copyWithin) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Array.prototype.copyWithin();
+}, '`new Array.prototype.copyWithin()` throws TypeError');
+
+
+reportCompare(0, 0);

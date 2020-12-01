@@ -9,11 +9,21 @@
 
 
 
-
-assert(Object.isExtensible(JSON.stringify));
-assert.sameValue(Object.prototype.toString.call(JSON.stringify), '[object Function]');
-assert.sameValue(Object.getPrototypeOf(JSON.stringify), Function.prototype);
-assert.sameValue(JSON.stringify.hasOwnProperty('prototype'), false);
-assert.sameValue(isConstructor(JSON.stringify), false);
+assert(Object.isExtensible(JSON.stringify), 'Object.isExtensible(JSON.stringify) must return true');
+assert.sameValue(
+  Object.prototype.toString.call(JSON.stringify),
+  '[object Function]',
+  'Object.prototype.toString.call(JSON.stringify) must return "[object Function]"'
+);
+assert.sameValue(
+  Object.getPrototypeOf(JSON.stringify),
+  Function.prototype,
+  'Object.getPrototypeOf(JSON.stringify) must return the value of Function.prototype'
+);
+assert.sameValue(
+  JSON.stringify.hasOwnProperty('prototype'),
+  false,
+  'JSON.stringify.hasOwnProperty("prototype") must return false'
+);
 
 reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+class Subclass extends Promise {}
+
+const sub = new Subclass(() => {});
+assert(sub instanceof Subclass);
+assert(sub instanceof Promise);
+
+reportCompare(0, 0);

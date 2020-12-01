@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.slice),
+  false,
+  'isConstructor(String.prototype.slice) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.slice();
+}, '`new String.prototype.slice()` throws TypeError');
+
+
+reportCompare(0, 0);

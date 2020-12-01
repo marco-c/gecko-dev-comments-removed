@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { "☿" as Ami } from "./export-expname_FIXTURE.js";
+
+assert.sameValue(Ami, globalThis.Mercury);
+
+reportCompare(0, 0);

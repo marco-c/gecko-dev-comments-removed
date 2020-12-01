@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Array {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Array);
+
+reportCompare(0, 0);

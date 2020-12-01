@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Array.prototype.findIndex),
+  false,
+  'isConstructor(Array.prototype.findIndex) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Array.prototype.findIndex(() => {});
+}, '`new Array.prototype.findIndex(() => {})` throws TypeError');
+
+
+reportCompare(0, 0);

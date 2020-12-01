@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.match),
+  false,
+  'isConstructor(String.prototype.match) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.match();
+}, '`new String.prototype.match()` throws TypeError');
+
+
+reportCompare(0, 0);

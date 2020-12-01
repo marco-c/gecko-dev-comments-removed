@@ -42,23 +42,23 @@ testWithBigIntTypedArrayConstructors(function(TA) {
 
   assert.sameValue(
     Reflect.has(sample, 0), true,
-    "OrdinaryHasProperty does not affect numericIndex properties [0]"
+    'Reflect.has(sample, 0) must return true'
   );
   assert.sameValue(
     Reflect.has(sample, 1), false,
-    "OrdinaryHasProperty does not affect numericIndex properties [1]"
+    'Reflect.has(sample, 1) must return false'
   );
 
   assert.throws(Test262Error, function() {
     Reflect.has(sample, "foo");
-  }, "Return abrupt from parent's [[HasProperty]] 'foo'");
+  }, '`Reflect.has(sample, "foo")` throws Test262Error');
 
   Object.defineProperty(sample, "foo", { value: 42 });
 
   assert.sameValue(
     Reflect.has(sample, "foo"),
     true,
-    "trap is not triggered if [[GetOwnProperty]] returns a defined value"
+    'Reflect.has(sample, "foo") must return true'
   );
 });
 

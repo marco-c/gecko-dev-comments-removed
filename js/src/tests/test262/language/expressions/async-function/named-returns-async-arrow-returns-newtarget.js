@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let count = 0;
+
+
+var asyncFn = async function asyncFn(x) {
+  return async () => new.target;
+};
+
+asyncFn().then(retFn => {
+  count++;
+  return retFn();
+}).then(result => {
+  assert.sameValue(result, undefined);
+  assert.sameValue(count, 1);
+}).then($DONE, $DONE);

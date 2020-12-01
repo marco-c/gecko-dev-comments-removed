@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var callCount = 0;
+function* f() {
+  assert.sameValue(f.hasOwnProperty("arguments"), false);
+  callCount++;
+}
+
+f().next();
+assert.sameValue(callCount, 1, 'generator function body evaluated');
+
+
+reportCompare(0, 0);

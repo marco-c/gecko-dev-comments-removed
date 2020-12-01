@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+class Subclass extends Map {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Map);
+
+reportCompare(0, 0);

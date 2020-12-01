@@ -18,13 +18,12 @@
 
 
 
-
 TypedArray.prototype[1] = "test262";
 
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(1);
 
-  assert.sameValue(Reflect.has(sample, "1"), false, "1");
+  assert.sameValue(Reflect.has(sample, "1"), false, 'Reflect.has(sample, "1") must return false');
 });
 
 reportCompare(0, 0);

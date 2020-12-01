@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+class Subclass extends Uint8ClampedArray {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Uint8ClampedArray);
+
+reportCompare(0, 0);

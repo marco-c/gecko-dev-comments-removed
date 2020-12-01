@@ -32,4 +32,10 @@ verifyProperty(match, "groups", {
   configurable: true,
 });
 
+
+
+let {groups} = /(?<__proto__>.)/.exec("a");
+assert.sameValue("a", groups.__proto__);
+assert.sameValue(null, Object.getPrototypeOf(groups));
+
 reportCompare(0, 0);

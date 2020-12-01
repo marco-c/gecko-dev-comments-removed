@@ -23,16 +23,16 @@ testWithTypedArrayConstructors(function(TA) {
   assert.sameValue(
     Reflect.set(sample, "test262", "ecma262"),
     true,
-    "Return true setting a new property"
+    'Reflect.set(sample, "test262", "ecma262") must return true'
   );
-  assert.sameValue(sample.test262, "ecma262");
+  assert.sameValue(sample.test262, "ecma262", 'The value of sample.test262 is "ecma262"');
 
   assert.sameValue(
     Reflect.set(sample, "test262", "es3000"),
     true,
-    "Return true setting a value to a writable property"
+    'Reflect.set(sample, "test262", "es3000") must return true'
   );
-  assert.sameValue(sample.test262, "es3000");
+  assert.sameValue(sample.test262, "es3000", 'The value of sample.test262 is "es3000"');
 
   Object.defineProperty(sample, "foo", {
     writable: false,
@@ -41,9 +41,9 @@ testWithTypedArrayConstructors(function(TA) {
   assert.sameValue(
     Reflect.set(sample, "foo", 42),
     false,
-    "Return false setting a value to a non-writable property"
+    'Reflect.set(sample, "foo", 42) must return false'
   );
-  assert.sameValue(sample.foo, undefined);
+  assert.sameValue(sample.foo, undefined, 'The value of sample.foo is expected to equal `undefined`');
 });
 
 reportCompare(0, 0);

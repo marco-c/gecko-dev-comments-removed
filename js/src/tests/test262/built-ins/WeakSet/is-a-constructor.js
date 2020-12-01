@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(WeakSet), true, 'isConstructor(WeakSet) must return true');
+new WeakSet();
+  
+
+reportCompare(0, 0);

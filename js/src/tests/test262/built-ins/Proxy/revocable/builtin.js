@@ -8,13 +8,23 @@
 
 
 
+assert(Object.isExtensible(Proxy.revocable), 'Object.isExtensible(Proxy.revocable) must return true');
+assert.sameValue(typeof Proxy.revocable, 'function', 'The value of `typeof Proxy.revocable` is "function"');
+assert.sameValue(
+  Object.prototype.toString.call(Proxy.revocable),
+  '[object Function]',
+  'Object.prototype.toString.call(Proxy.revocable) must return "[object Function]"'
+);
+assert.sameValue(
+  Object.getPrototypeOf(Proxy.revocable),
+  Function.prototype,
+  'Object.getPrototypeOf(Proxy.revocable) must return the value of Function.prototype'
+);
 
-assert(Object.isExtensible(Proxy.revocable));
-assert.sameValue(typeof Proxy.revocable, 'function');
-assert.sameValue(Object.prototype.toString.call(Proxy.revocable), '[object Function]');
-assert.sameValue(Object.getPrototypeOf(Proxy.revocable), Function.prototype);
-
-assert.sameValue(Proxy.revocable.hasOwnProperty('prototype'), false);
-assert.sameValue(isConstructor(Proxy.revocable), false);
+assert.sameValue(
+  Proxy.revocable.hasOwnProperty('prototype'),
+  false,
+  'Proxy.revocable.hasOwnProperty(\'prototype\') must return false'
+);
 
 reportCompare(0, 0);

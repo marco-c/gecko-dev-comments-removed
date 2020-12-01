@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Promise), true, 'isConstructor(Promise) must return true');
+new Promise(() => {});
+  
+
+reportCompare(0, 0);

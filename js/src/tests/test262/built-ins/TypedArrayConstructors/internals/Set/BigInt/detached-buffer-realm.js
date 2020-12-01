@@ -26,17 +26,15 @@
 
 
 
-var other = $262.createRealm().global;
 
+
+let other = $262.createRealm().global;
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var OtherTA = other[TA.name];
-  var sample = new OtherTA(1);
-
+  let OtherTA = other[TA.name];
+  let sample = new OtherTA(1);
   $DETACHBUFFER(sample.buffer);
-
-  assert.throws(TypeError, function() {
-    sample[0] = 0n;
-  });
+  sample[0] = 1n;
+  assert.sameValue(sample[0], undefined, '`sample[0]` is undefined');
 });
 
 reportCompare(0, 0);

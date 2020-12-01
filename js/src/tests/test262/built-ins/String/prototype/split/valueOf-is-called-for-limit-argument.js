@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let limit = {
+  toString() {},
+  valueOf() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(Test262Error, () => {
+  "".split("", limit);
+});
+
+reportCompare(0, 0);

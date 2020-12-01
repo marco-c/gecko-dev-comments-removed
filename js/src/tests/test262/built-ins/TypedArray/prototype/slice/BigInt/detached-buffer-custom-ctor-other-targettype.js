@@ -22,19 +22,33 @@
 
 
 
+
+
+
+
+
+
+
+
+
 testWithBigIntTypedArrayConstructors(function(TA) {
+  let counter = 0;
   var sample = new TA(1);
 
   sample.constructor = {};
   sample.constructor[Symbol.species] = function(count) {
     var other = TA === BigInt64Array ? BigUint64Array : BigInt64Array;
+    counter++;
     $DETACHBUFFER(sample.buffer);
     return new other(count);
   };
 
   assert.throws(TypeError, function() {
+    counter++;
     sample.slice();
-  }, "step 14.b.ii - ? Get(O, Pk), O has a detached buffer");
+  }, '`sample.slice()` throws TypeError');
+
+  assert.sameValue(counter, 2, 'The value of `counter` is 2');
 });
 
 reportCompare(0, 0);

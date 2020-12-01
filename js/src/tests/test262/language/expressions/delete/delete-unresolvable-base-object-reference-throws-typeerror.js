@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  delete Object[0][0];
+});
+
+reportCompare(0, 0);

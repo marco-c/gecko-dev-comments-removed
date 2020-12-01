@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue((new Intl.NumberFormat('en', {
     style: 'currency',
     currency: 'USD',
@@ -18,6 +19,6 @@ assert.sameValue((new Intl.NumberFormat('en', {
     style: 'currency',
     currency: 'CLF',
     maximumFractionDigits: 3
-})).resolvedOptions().maximumSignificantDigits, 3);
+})).resolvedOptions().maximumFractionDigits, 3);
 
 reportCompare(0, 0);

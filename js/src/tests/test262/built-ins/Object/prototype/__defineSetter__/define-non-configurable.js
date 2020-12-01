@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var noop = function() {};
+var subject = Object.defineProperty(
+  {}, 'attr', { value: 1, configurable: false }
+);
+
+assert.sameValue(typeof Object.prototype.__defineSetter__, 'function');
+
+assert.throws(TypeError, function() {
+  subject.__defineSetter__('attr', noop);
+});
+
+reportCompare(0, 0);

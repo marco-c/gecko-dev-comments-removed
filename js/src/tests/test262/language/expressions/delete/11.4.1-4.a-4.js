@@ -12,8 +12,8 @@
 
 
 
-  
-  var d = delete NaN;
+
+var d = delete NaN;
 
 assert.sameValue(d, false, 'd');
 

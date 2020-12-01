@@ -26,19 +26,23 @@
 
 
 
-assert.sameValue(typeof Atomics.waitAsync, 'function');
+assert.sameValue(typeof Atomics.waitAsync, 'function', 'The value of `typeof Atomics.waitAsync` is "function"');
 
 const i32a = new Int32Array(
   new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 8)
 );
 
 let {async, value} = Atomics.waitAsync(i32a, 0, 0, 1000);
-assert.sameValue(async, true);
-assert(value instanceof Promise);
-assert.sameValue(Object.getPrototypeOf(value), Promise.prototype);
+assert.sameValue(async, true, 'The value of `async` is true');
+assert(value instanceof Promise, 'The result of evaluating `(value instanceof Promise)` is true');
+assert.sameValue(
+  Object.getPrototypeOf(value),
+  Promise.prototype,
+  'Object.getPrototypeOf(value) must return the value of Promise.prototype'
+);
 
 value.then(outcome => {
-  assert.sameValue(outcome, "ok");
+  assert.sameValue(outcome, "ok", 'The value of `outcome` is "ok"');
 }).then(() => $DONE(), $DONE);
 
 Atomics.add(i32a, 0, 1);

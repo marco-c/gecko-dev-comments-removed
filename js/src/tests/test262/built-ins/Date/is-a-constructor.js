@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Date), true, 'isConstructor(Date) must return true');
+new Date();
+  
+
+reportCompare(0, 0);

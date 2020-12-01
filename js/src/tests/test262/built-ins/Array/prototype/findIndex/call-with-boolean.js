@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Array.prototype.findIndex.call(true, () => {}),
+  -1,
+  'Array.prototype.findIndex.call(true, () => {}) must return -1'
+);
+assert.sameValue(
+  Array.prototype.findIndex.call(false, () => {}),
+  -1,
+  'Array.prototype.findIndex.call(false, () => {}) must return -1'
+);
+
+reportCompare(0, 0);

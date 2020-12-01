@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Int8Array {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Int8Array);
+
+reportCompare(0, 0);

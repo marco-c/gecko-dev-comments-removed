@@ -26,23 +26,20 @@
 
 
 
+
+
+
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var ta = new TA([17n]);
-
-  assert.throws(TypeError, function() {
-    Reflect.set(ta, 0, {
-      valueOf: function() {
-        $DETACHBUFFER(ta.buffer);
-        return 42n;
-      }
-    });
-  },
-  "detaching a ArrayBuffer during setting an element of a typed array " +
-  "viewing it should throw");
-
-  assert.throws(TypeError, function() {
-    ta[0];
+  let ta = new TA(1);
+  let result = Reflect.set(ta, 0, {
+    valueOf() {
+      $DETACHBUFFER(ta.buffer);
+      return 42n;
+    }
   });
+
+  assert.sameValue(result, false);
+  assert.sameValue(ta[0], undefined);
 });
 
 reportCompare(0, 0);

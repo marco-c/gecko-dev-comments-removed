@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Math.asin), false, 'isConstructor(Math.asin) must return false');
+
+assert.throws(TypeError, () => {
+  new Math.asin();
+}, '`new Math.asin()` throws TypeError');
+
+
+reportCompare(0, 0);

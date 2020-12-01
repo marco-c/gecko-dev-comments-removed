@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Date.prototype.toLocaleString),
+  false,
+  'isConstructor(Date.prototype.toLocaleString) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let date = new Date(Date.now()); new date.toLocaleString();
+}, '`let date = new Date(Date.now()); new date.toLocaleString()` throws TypeError');
+
+
+reportCompare(0, 0);

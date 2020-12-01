@@ -6,8 +6,26 @@
 
 
 
-assert.throws(TypeError, function() {
-  new Array.of();
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Array.of), false, 'isConstructor(Array.of) must return false');
+
+assert.throws(TypeError, () => {
+  new Array.of(1);
+}, '`new Array.of(1)` throws TypeError');
+
 
 reportCompare(0, 0);

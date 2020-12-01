@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+var noop = function() {};
+var subject = {};
+var key = {
+  toString: function() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(Test262Error, function() {
+  subject.__defineSetter__(key, noop);
+});
+
+reportCompare(0, 0);

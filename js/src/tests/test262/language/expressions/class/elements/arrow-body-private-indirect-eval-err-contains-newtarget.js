@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  #x = (0, eval)('() => new.target;');
+}
+
+assert.throws(SyntaxError, function() {
+  new C().x();
+});
+
+
+reportCompare(0, 0);

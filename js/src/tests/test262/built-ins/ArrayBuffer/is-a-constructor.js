@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(ArrayBuffer), true, 'isConstructor(ArrayBuffer) must return true');
+new ArrayBuffer();
+  
+
+reportCompare(0, 0);

@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let o = {
+  [() => { }]: 1
+};
+
+assert.sameValue(
+  o[() => { }],
+  1
+);
+assert.sameValue(
+  o[String(() => { })],
+  1
+);
+
+reportCompare(0, 0);

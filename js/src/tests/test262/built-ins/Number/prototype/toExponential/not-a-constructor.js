@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Number.prototype.toExponential),
+  false,
+  'isConstructor(Number.prototype.toExponential) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Number.prototype.toExponential();
+}, '`new Number.prototype.toExponential()` throws TypeError');
+
+
+reportCompare(0, 0);

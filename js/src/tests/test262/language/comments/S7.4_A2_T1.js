@@ -14,22 +14,16 @@
 
 var x = 0;
 
-if (x !== 0) {
-  $ERROR('#2: var x = 0; /* x = 1;*/ x === 0. Actual: ' + (x));
-}
+assert.sameValue(x, 0, 'The value of `x` is 0');
 
 
-var  
+var 
 y;
-if (y !== undefined) {
-  $ERROR('#3: var /* y = 1; */ \\n y; y === undefined. Actual: ' + (y));
-}  
+assert.sameValue(y, undefined, 'The value of `y` is expected to equal `undefined`');
 
 
 var  y;
-if (y !== undefined) {
-  $ERROR('#4: var /* y = 1; */ y; y === undefined. Actual: ' + (y));
-}  
+assert.sameValue(y, undefined, 'The value of `y` is expected to equal `undefined`');
 
 
 
@@ -39,23 +33,17 @@ if (y !== undefined) {
 
 
 
- 
+
 this.y++;
-if (isNaN(y) !== true) {
-  $ERROR('#6: /*var this.y = 1;*/ \\n this.y++; y === Not-a-Number. Actual: ' + (y));
-}
+assert.sameValue(isNaN(y), true, 'isNaN(y) returns true');
 
 
 var string = "/*var y = 0*/"  
-if (string !== "/*var y = 0*/") {
-$ERROR('#7: var string = "/*var y = 0*/" /* y = 1;*/ string === "//var y = 0"');
-}
+assert.sameValue(string, "/*var y = 0*/", 'The value of `string` is "/*var y = 0*/"');
 
 
 var string = "/*var y = 0"  
-if (string !== "/*var y = 0") {
-$ERROR('#8: var string = "/*var y = 0" /* y = 1;*/ string === "//var y = 0"');
-}
+assert.sameValue(string, "/*var y = 0", 'The value of `string` is "/*var y = 0"');
 
 
 

@@ -21,17 +21,9 @@ testWithTypedArrayConstructors(function(TA) {
   var sample = new TA(1);
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    Reflect.has(sample, "0");
-  }, "0");
-
-  assert.throws(TypeError, function() {
-    Reflect.has(sample, "-0");
-  }, "-0");
-
-  assert.throws(TypeError, function() {
-    Reflect.has(sample, "1.1");
-  }, "1.1");
+  assert.sameValue(Reflect.has(sample, "0"), false, 'Reflect.has(sample, "0") must return false');
+  assert.sameValue(Reflect.has(sample, "-0"), false, 'Reflect.has(sample, "-0") must return false');
+  assert.sameValue(Reflect.has(sample, "1.1"), false, 'Reflect.has(sample, "1.1") must return false');
 });
 
 reportCompare(0, 0);

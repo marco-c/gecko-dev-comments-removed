@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var callCount = 0;
+var C = class {
+  static async *method() {
+    assert.sameValue(this.method.hasOwnProperty("caller"), false);
+    callCount++;
+  }
+};
+
+C.method().next()
+  .then(() => {
+    assert.sameValue(callCount, 1, 'function body evaluated');
+  }, $DONE).then($DONE, $DONE);

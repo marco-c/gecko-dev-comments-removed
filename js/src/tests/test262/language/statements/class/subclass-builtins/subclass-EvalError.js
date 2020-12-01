@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends EvalError {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof EvalError);
+
+reportCompare(0, 0);

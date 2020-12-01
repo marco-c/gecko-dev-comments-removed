@@ -13,12 +13,23 @@
 
 
 
-assert.throws(TypeError, function() {
-  new Array.prototype.concat();
-});
 
-assert.throws(TypeError, function() {
-  new [].concat();
-});
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Array.prototype.concat),
+  false,
+  'isConstructor(Array.prototype.concat) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Array.prototype.concat([]);
+}, '`new Array.prototype.concat([])` throws TypeError');
+
 
 reportCompare(0, 0);

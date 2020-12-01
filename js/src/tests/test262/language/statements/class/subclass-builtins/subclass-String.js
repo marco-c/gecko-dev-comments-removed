@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends String {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof String);
+
+reportCompare(0, 0);

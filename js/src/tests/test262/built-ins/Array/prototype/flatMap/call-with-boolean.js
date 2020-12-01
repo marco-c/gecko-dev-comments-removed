@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+assert.compareArray(
+  Array.prototype.flatMap.call(true, () => {}),
+  [],
+  'Array.prototype.flatMap.call(true, () => {}) must return []'
+);
+assert.compareArray(
+  Array.prototype.flatMap.call(false, () => {}),
+  [],
+  'Array.prototype.flatMap.call(false, () => {}) must return []'
+);
+
+reportCompare(0, 0);

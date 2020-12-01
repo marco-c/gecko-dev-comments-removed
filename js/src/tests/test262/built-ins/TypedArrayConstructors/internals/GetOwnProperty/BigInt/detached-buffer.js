@@ -23,13 +23,16 @@
 
 
 
+
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(1);
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    Object.getOwnPropertyDescriptor(sample, 0);
-  });
+  assert.sameValue(
+    Object.getOwnPropertyDescriptor(sample, 0),
+    undefined,
+    'Object.getOwnPropertyDescriptor(sample, 0) must return undefined'
+  );
 });
 
 reportCompare(0, 0);

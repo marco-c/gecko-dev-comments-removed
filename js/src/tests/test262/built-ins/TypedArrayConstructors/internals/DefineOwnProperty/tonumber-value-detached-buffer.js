@@ -35,22 +35,19 @@ testWithTypedArrayConstructors(function(TA) {
   var desc =
     {
       value: {
-        valueOf: function() {
+        valueOf() {
           $DETACHBUFFER(ta.buffer);
           return 42;
         }
       }
     };
 
-  assert.throws(TypeError, function() {
-    Reflect.defineProperty(ta, 0, desc);
-  },
-  "detaching a ArrayBuffer during defining an element of a typed array " +
-  "viewing it should throw");
-
-  assert.throws(TypeError, function() {
-    ta[0];
-  });
+  assert.sameValue(
+    Reflect.defineProperty(ta, 0, desc),
+    false,
+    'Reflect.defineProperty(ta, 0, {value: {valueOf() {$DETACHBUFFER(ta.buffer); return 42;}}} ) must return false'
+  );
+  assert.sameValue(ta[0], undefined, 'The value of ta[0] is expected to equal `undefined`');
 });
 
 

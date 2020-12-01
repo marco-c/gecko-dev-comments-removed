@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(AsyncArrowFunction), true, 'isConstructor(AsyncArrowFunction) must return true');
+new AsyncArrowFunction();
+  
+
+reportCompare(0, 0);

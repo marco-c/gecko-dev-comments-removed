@@ -30,13 +30,12 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA(0);
+  let sample = new TA(0);
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    sample.Infinity;
-  });
+  assert.sameValue(sample.Infinity, undefined, 'The value of sample.Infinity is expected to equal `undefined`');
 });
 
 reportCompare(0, 0);

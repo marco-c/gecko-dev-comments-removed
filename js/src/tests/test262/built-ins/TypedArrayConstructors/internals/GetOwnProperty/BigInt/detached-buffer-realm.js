@@ -33,9 +33,11 @@ testWithBigIntTypedArrayConstructors(function(TA) {
 
   $DETACHBUFFER(sample.buffer);
 
-  assert.throws(TypeError, function() {
-    Object.getOwnPropertyDescriptor(sample, 0);
-  });
+  assert.sameValue(
+    Object.getOwnPropertyDescriptor(sample, 0),
+    undefined,
+    'Object.getOwnPropertyDescriptor("new OtherTA(1)", 0) must return undefined'
+  );
 });
 
 reportCompare(0, 0);

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Date.prototype.setFullYear),
+  false,
+  'isConstructor(Date.prototype.setFullYear) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let date = new Date(Date.now()); new date.setFullYear();
+}, '`let date = new Date(Date.now()); new date.setFullYear()` throws TypeError');
+
+
+reportCompare(0, 0);

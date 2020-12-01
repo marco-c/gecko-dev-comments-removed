@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Array.prototype.splice),
+  false,
+  'isConstructor(Array.prototype.splice) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Array.prototype.splice();
+}, '`new Array.prototype.splice()` throws TypeError');
+
+
+reportCompare(0, 0);

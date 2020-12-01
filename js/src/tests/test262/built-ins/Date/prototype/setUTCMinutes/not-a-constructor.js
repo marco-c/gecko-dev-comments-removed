@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Date.prototype.setUTCMinutes),
+  false,
+  'isConstructor(Date.prototype.setUTCMinutes) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let date = new Date(Date.now()); new date.setUTCMinutes();
+}, '`let date = new Date(Date.now()); new date.setUTCMinutes()` throws TypeError');
+
+
+reportCompare(0, 0);

@@ -9,15 +9,12 @@
 
 
 
-function testcase() {
-  var foo = function(){};
+var foo = function() {};
 
-  
-  var d = delete foo;
 
-  assert.sameValue(d, false, 'd');
-  assert.sameValue(typeof foo, 'function', 'typeof foo');
- }
-testcase();
+var d = delete foo;
+
+assert.sameValue(d, false, 'd');
+assert.sameValue(typeof foo, 'function', 'typeof foo');
 
 reportCompare(0, 0);

@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arguments = 1;
+class C {
+  #x = (0, eval)('arguments;');
+  x() {
+    return this.#x;
+  }
+}
+
+assert.sameValue(new C().x(), arguments);
+
+reportCompare(0, 0);

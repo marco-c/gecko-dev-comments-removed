@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+assert.compareArray(Array.prototype.slice.call(true), [], 'Array.prototype.slice.call(true) must return []');
+assert.compareArray(Array.prototype.slice.call(false), [], 'Array.prototype.slice.call(false) must return []');
+
+reportCompare(0, 0);

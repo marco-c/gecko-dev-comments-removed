@@ -7,19 +7,14 @@
 
 
 
+assert.sameValue(parseInt(new Number(-1)), parseInt("-1"), 'parseInt(new Number(-1)) must return the same value returned by parseInt("-1")');
 
-if (parseInt(new Number(-1)) !== parseInt("-1")) {
-  $ERROR('#1: parseInt(new Number(-1)) === parseInt("-1"). Actual: ' + (parseInt(new Number(-1))));
-}
+assert.sameValue(
+  String(parseInt(new Number(Infinity))),
+  "NaN",
+  'String(parseInt(new Number(Infinity))) must return "NaN"'
+);
 
-
-if (String(parseInt(new Number(Infinity))) !== "NaN") {
-  $ERROR('#2: String(parseInt(new Number(Infinity))) === "NaN". Actual: ' + (String(parseInt(new Number(Infinity)))));
-}
-
-
-if (String(parseInt(new Number(NaN))) !== "NaN") {
-  $ERROR('#3: String(parseInt(new Number(NaN))) === "NaN". Actual: ' + (String(parseInt(new Number(NaN)))));
-}
+assert.sameValue(String(parseInt(new Number(NaN))), "NaN", 'String(parseInt(new Number(NaN))) must return "NaN"');
 
 reportCompare(0, 0);

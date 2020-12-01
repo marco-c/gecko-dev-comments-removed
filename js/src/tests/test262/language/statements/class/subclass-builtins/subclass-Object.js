@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends Object {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Object);
+
+reportCompare(0, 0);

@@ -18,6 +18,10 @@
 
 
 
+
+
+
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA(2);
 
@@ -28,7 +32,7 @@ testWithTypedArrayConstructors(function(TA) {
       enumerable: true,
       writable: true
     }),
-    false,
+    true,
     "defineProperty's result"
   );
   assert.sameValue(sample[0], 0, "side effect check");

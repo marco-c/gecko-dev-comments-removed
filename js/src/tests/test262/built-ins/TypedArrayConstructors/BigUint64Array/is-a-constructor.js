@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(BigUint64Array), true, 'isConstructor(BigUint64Array) must return true');
+new BigUint64Array();
+  
+
+reportCompare(0, 0);

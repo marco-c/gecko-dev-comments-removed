@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends ReferenceError {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof ReferenceError);
+
+reportCompare(0, 0);

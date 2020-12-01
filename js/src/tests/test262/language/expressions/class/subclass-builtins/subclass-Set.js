@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+const Subclass = class extends Set {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof Set);
+
+reportCompare(0, 0);

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+class Subclass extends SyntaxError {}
+
+const sub = new Subclass();
+assert(sub instanceof Subclass);
+assert(sub instanceof SyntaxError);
+
+reportCompare(0, 0);

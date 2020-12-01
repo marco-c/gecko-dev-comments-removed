@@ -10,11 +10,16 @@
 
 
 
-        var a = {x:0, get y() { return 0;}};
-        delete a.x;
-        Object.preventExtensions(a);
+var a = {
+  x: 0,
+  get y() {
+    return 0;
+  },
+};
+delete a.x;
+Object.preventExtensions(a);
 assert.throws(TypeError, function() {
-            a.x = 1;
+  a.x = 1;
 });
 
 reportCompare(0, 0);

@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var callCount = 0;
+async function f() {
+  assert.sameValue(f.hasOwnProperty("caller"), false);
+  callCount++;
+}
+
+f()
+  .then(() => {
+    assert.sameValue(callCount, 1, 'function body evaluated');
+  }, $DONE).then($DONE, $DONE);

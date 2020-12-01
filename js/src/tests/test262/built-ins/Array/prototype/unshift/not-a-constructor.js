@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Array.prototype.unshift),
+  false,
+  'isConstructor(Array.prototype.unshift) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Array.prototype.unshift();
+}, '`new Array.prototype.unshift()` throws TypeError');
+
+
+reportCompare(0, 0);

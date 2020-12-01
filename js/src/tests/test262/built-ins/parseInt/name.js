@@ -19,7 +19,7 @@
 
 
 
-assert.sameValue(parseInt.name, "parseInt");
+assert.sameValue(parseInt.name, "parseInt", 'The value of parseInt.name is "parseInt"');
 
 verifyNotEnumerable(parseInt, "name");
 verifyNotWritable(parseInt, "name");

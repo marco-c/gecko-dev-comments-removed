@@ -7,16 +7,20 @@
 
 
 
-        var obj = {};
-        Object.defineProperty(obj, "prop", {
-            get: function () {
-                return "abc"; 
-            },
-            configurable: true
-        });
+var obj = {};
+Object.defineProperty(obj, 'prop', {
+  get: function() {
+    return 'abc';
+  },
+  configurable: true,
+});
 
-        delete obj.prop;
+delete obj.prop;
 
-assert.sameValue(obj.hasOwnProperty("prop"), false, 'obj.hasOwnProperty("prop")');
+assert.sameValue(
+  obj.hasOwnProperty('prop'),
+  false,
+  'obj.hasOwnProperty("prop")'
+);
 
 reportCompare(0, 0);
