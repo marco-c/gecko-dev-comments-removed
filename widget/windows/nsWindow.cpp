@@ -602,7 +602,7 @@ nsWindow::nsWindow(bool aIsChildWindow)
   mMouseInDraggableArea = false;
   mDestroyCalled = false;
   mIsEarlyBlankWindow = false;
-  mWasPreXulSkeletonUI = false;
+  mIsShowingPreXULSkeletonUI = false;
   mResizable = false;
   mHasTaskbarIconBeenCreated = false;
   mMouseTransparent = false;
@@ -896,9 +896,34 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   if (aInitData->mWindowType == eWindowType_toplevel && !aParent) {
     mWnd = ConsumePreXULSkeletonUIHandle();
     if (mWnd) {
-      mWasPreXulSkeletonUI = true;
-      ::SetWindowLongPtrW(mWnd, GWL_STYLE, style);
-      ::SetWindowLongPtrW(mWnd, GWL_EXSTYLE, extendedStyle);
+      MOZ_ASSERT(style == kPreXULSkeletonUIWindowStyle,
+                 "The skeleton UI window style should match the expected "
+                 "style for the first window created");
+      MOZ_ASSERT(extendedStyle == kPreXULSkeletonUIWindowStyleEx,
+                 "The skeleton UI window extended style should match the "
+                 "expected extended style for the first window created");
+      mIsShowingPreXULSkeletonUI = true;
+
+      
+      
+      mIsVisible = true;
+      mSizeMode = WasPreXULSkeletonUIMaximized() ? nsSizeMode_Maximized
+                                                 : nsSizeMode_Normal;
+
+      
+      
+      
+      LayoutDeviceIntMargin margins(0, 2, 2, 2);
+      SetNonClientMargins(margins);
+
+      
+      
+      ::SetWindowLongPtrW(mWnd, GWLP_WNDPROC,
+                          reinterpret_cast<LONG_PTR>(
+                              WinUtils::NonClientDpiScalingDefWindowProcW));
+      ::SetClassLongPtrW(mWnd, GCLP_WNDPROC,
+                         reinterpret_cast<LONG_PTR>(
+                             WinUtils::NonClientDpiScalingDefWindowProcW));
     }
   }
 
@@ -1569,6 +1594,13 @@ already_AddRefed<SourceSurface> nsWindow::GetFallbackScrollSnapshot(
 
 
 void nsWindow::Show(bool bState) {
+  if (bState) {
+    
+    
+    
+    mIsShowingPreXULSkeletonUI = false;
+  }
+
   if (mWindowType == eWindowType_popup) {
     
     
@@ -1917,24 +1949,56 @@ void nsWindow::Move(double aX, double aY) {
       }
     }
 #endif
-    ClearThemeRegion();
 
-    UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE;
     
     
     
-    if (IsPlugin() && !mLayerManager && mClipRects &&
-        (mClipRectCount != 1 ||
-         !mClipRects[0].IsEqualInterior(
-             LayoutDeviceIntRect(0, 0, mBounds.Width(), mBounds.Height())))) {
-      flags |= SWP_NOCOPYBITS;
-    }
-    double oldScale = mDefaultScale;
-    mResizeState = IN_SIZEMOVE;
-    VERIFY(::SetWindowPos(mWnd, nullptr, x, y, 0, 0, flags));
-    mResizeState = NOT_RESIZING;
-    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
-      ChangedDPI();
+    
+    
+    
+    
+    
+    
+    if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+      WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
+      VERIFY(::GetWindowPlacement(mWnd, &pl));
+
+      HMONITOR monitor = ::MonitorFromWindow(mWnd, MONITOR_DEFAULTTONULL);
+      if (NS_WARN_IF(!monitor)) {
+        return;
+      }
+      MONITORINFO mi = {sizeof(MONITORINFO)};
+      VERIFY(::GetMonitorInfo(monitor, &mi));
+
+      int32_t deltaX =
+          x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
+      int32_t deltaY =
+          y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
+      pl.rcNormalPosition.left += deltaX;
+      pl.rcNormalPosition.right += deltaX;
+      pl.rcNormalPosition.top += deltaY;
+      pl.rcNormalPosition.bottom += deltaY;
+      VERIFY(::SetWindowPlacement(mWnd, &pl));
+    } else {
+      ClearThemeRegion();
+
+      UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE;
+      
+      
+      
+      if (IsPlugin() && !mLayerManager && mClipRects &&
+          (mClipRectCount != 1 ||
+           !mClipRects[0].IsEqualInterior(
+               LayoutDeviceIntRect(0, 0, mBounds.Width(), mBounds.Height())))) {
+        flags |= SWP_NOCOPYBITS;
+      }
+      double oldScale = mDefaultScale;
+      mResizeState = IN_SIZEMOVE;
+      VERIFY(::SetWindowPos(mWnd, nullptr, x, y, 0, 0, flags));
+      mResizeState = NOT_RESIZING;
+      if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+        ChangedDPI();
+      }
     }
 
     SetThemeRegion();
@@ -1970,24 +2034,36 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
   mBounds.SizeTo(width, height);
 
   if (mWnd) {
-    UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE;
+    
+    if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+      WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
+      VERIFY(::GetWindowPlacement(mWnd, &pl));
+      pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
+      pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + GetHeight(height);
+      mResizeState = RESIZING;
+      VERIFY(::SetWindowPlacement(mWnd, &pl));
+      mResizeState = NOT_RESIZING;
+    } else {
+      UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE;
 
-    if (!aRepaint) {
-      flags |= SWP_NOREDRAW;
+      if (!aRepaint) {
+        flags |= SWP_NOREDRAW;
+      }
+
+      ClearThemeRegion();
+      double oldScale = mDefaultScale;
+      mResizeState = RESIZING;
+      VERIFY(
+          ::SetWindowPos(mWnd, nullptr, 0, 0, width, GetHeight(height), flags));
+
+      mResizeState = NOT_RESIZING;
+      if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+        ChangedDPI();
+      }
+      SetThemeRegion();
+
+      ResizeDirectManipulationViewport();
     }
-
-    ClearThemeRegion();
-    double oldScale = mDefaultScale;
-    mResizeState = RESIZING;
-    VERIFY(
-        ::SetWindowPos(mWnd, nullptr, 0, 0, width, GetHeight(height), flags));
-    mResizeState = NOT_RESIZING;
-    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
-      ChangedDPI();
-    }
-    SetThemeRegion();
-
-    ResizeDirectManipulationViewport();
   }
 
   if (aRepaint) Invalidate();
@@ -2024,30 +2100,55 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
   mBounds.SetRect(x, y, width, height);
 
   if (mWnd) {
-    UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
-    if (!aRepaint) {
-      flags |= SWP_NOREDRAW;
-    }
+    
+    if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+      WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
+      VERIFY(::GetWindowPlacement(mWnd, &pl));
 
-    ClearThemeRegion();
-    double oldScale = mDefaultScale;
-    mResizeState = RESIZING;
-    VERIFY(
-        ::SetWindowPos(mWnd, nullptr, x, y, width, GetHeight(height), flags));
-    mResizeState = NOT_RESIZING;
-    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
-      ChangedDPI();
-    }
-    if (mTransitionWnd) {
-      
-      
-      
-      ::SetWindowPos(mTransitionWnd, HWND_TOPMOST, 0, 0, 0, 0,
-                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    }
-    SetThemeRegion();
+      HMONITOR monitor = ::MonitorFromWindow(mWnd, MONITOR_DEFAULTTONULL);
+      if (NS_WARN_IF(!monitor)) {
+        return;
+      }
+      MONITORINFO mi = {sizeof(MONITORINFO)};
+      VERIFY(::GetMonitorInfo(monitor, &mi));
 
-    ResizeDirectManipulationViewport();
+      int32_t deltaX =
+          x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
+      int32_t deltaY =
+          y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
+      pl.rcNormalPosition.left += deltaX;
+      pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
+      pl.rcNormalPosition.top += deltaY;
+      pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + GetHeight(height);
+      VERIFY(::SetWindowPlacement(mWnd, &pl));
+    } else {
+      UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
+      if (!aRepaint) {
+        flags |= SWP_NOREDRAW;
+      }
+
+      ClearThemeRegion();
+
+      double oldScale = mDefaultScale;
+      mResizeState = RESIZING;
+      VERIFY(
+          ::SetWindowPos(mWnd, nullptr, x, y, width, GetHeight(height), flags));
+      mResizeState = NOT_RESIZING;
+      if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+        ChangedDPI();
+      }
+
+      if (mTransitionWnd) {
+        
+        
+        
+        ::SetWindowPos(mTransitionWnd, HWND_TOPMOST, 0, 0, 0, 0,
+                       SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+      }
+      SetThemeRegion();
+
+      ResizeDirectManipulationViewport();
+    }
   }
 
   if (aRepaint) Invalidate();
@@ -2166,6 +2267,14 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   
   
   if (aMode == mSizeMode) return;
+
+  
+  
+  
+  
+  if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+    return;
+  }
 
   
   mLastSizeMode = mSizeMode;
@@ -5318,6 +5427,8 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     } break;
 
     case WM_NCCALCSIZE: {
+      
+      
       if (mCustomNonClient) {
         
         
@@ -8692,7 +8803,7 @@ bool nsWindow::SynchronouslyRepaintOnResize() {
 }
 
 void nsWindow::MaybeDispatchInitialFocusEvent() {
-  if (mWasPreXulSkeletonUI && ::GetActiveWindow() == mWnd) {
+  if (mIsShowingPreXULSkeletonUI && ::GetActiveWindow() == mWnd) {
     DispatchFocusToTopLevelWindow(true);
   }
 }
