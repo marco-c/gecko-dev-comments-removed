@@ -251,6 +251,8 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   void DidSet(FieldIndex<IDX_HasReportedShadowDOMUsage>, bool aOldValue);
 
+  void DidSet(FieldIndex<IDX_SHEntryHasUserInteraction>, bool aOldValue);
+
   
   
   

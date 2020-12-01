@@ -71,7 +71,8 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
                CallerType aCallerType, ErrorResult& aRv);
 
   
-  void GotoIndex(int32_t aIndex, int32_t aOffset, ErrorResult& aRv);
+  void GotoIndex(int32_t aIndex, int32_t aOffset, bool aRequireUserInteraction,
+                 ErrorResult& aRv);
 
   void RemovePendingHistoryNavigations();
 
