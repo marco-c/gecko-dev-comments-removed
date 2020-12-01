@@ -115,9 +115,19 @@ function initPage() {
     document.getElementById("report_detection").remove();
   }
 
-  document.l10n.setAttributes(innerDesc, innerDescL10nID, {
-    sitename: getHostString(),
-  });
+  
+  
+  
+  let descriptionMapping = {
+    malware: innerDescL10nID + "-sumo",
+  };
+  document.l10n.setAttributes(
+    innerDesc,
+    descriptionMapping[error] || innerDescL10nID,
+    {
+      sitename: getHostString(),
+    }
+  );
 
   
   
