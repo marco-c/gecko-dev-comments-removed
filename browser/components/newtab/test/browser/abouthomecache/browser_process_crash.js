@@ -24,11 +24,20 @@ add_task(async function test_process_crash() {
     );
   });
 
-  let latestProcManager = AboutHomeStartupCache._procManager;
-
   await BrowserTestUtils.withNewTab("about:home", async browser => {
-    await ensureCachedAboutHome(browser);
+    
+    
+    await ensureDynamicAboutHome(
+      browser,
+      AboutHomeStartupCache.CACHE_RESULT_SCALARS.VALID_AND_USED
+    );
+
+    
+    
+    await simulateRestart(browser);
   });
+
+  let latestProcManager = AboutHomeStartupCache._procManager;
 
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     await BrowserTestUtils.crashFrame(browser);
