@@ -40,12 +40,6 @@ class nsStackLayout : public nsBoxLayout {
   virtual nscoord GetAscent(nsIFrame* aBox,
                             nsBoxLayoutState& aBoxLayoutState) override;
 
-  
-  
-  
-  
-  static uint8_t GetOffset(nsIFrame* aChild, nsMargin& aMargin);
-
  private:
   static nsBoxLayout* gInstance;
 
