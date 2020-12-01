@@ -195,7 +195,7 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
     } else {
       
       
-      displayPortMargins = DisplayPortMargins::WithAdjustment(
+      displayPortMargins = DisplayPortMargins::FromAPZ(
           aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset,
           aRequest.DisplayportPixelsPerCSSPixel());
     }
@@ -208,7 +208,7 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
     
     
     
-    displayPortMargins = DisplayPortMargins::WithAdjustment(
+    displayPortMargins = DisplayPortMargins::FromAPZ(
         aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset,
         aRequest.DisplayportPixelsPerCSSPixel());
   } else {

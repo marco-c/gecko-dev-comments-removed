@@ -92,10 +92,12 @@ struct DisplayPortMargins {
   
   CSSToScreenScale2D mScale;
 
-  static DisplayPortMargins WithAdjustment(const ScreenMargin& aMargins,
-                                           const CSSPoint& aVisualOffset,
-                                           const CSSPoint& aLayoutOffset,
-                                           const CSSToScreenScale2D& aScale);
+  
+  
+  static DisplayPortMargins FromAPZ(const ScreenMargin& aMargins,
+                                    const CSSPoint& aVisualOffset,
+                                    const CSSPoint& aLayoutOffset,
+                                    const CSSToScreenScale2D& aScale);
 
   
   
