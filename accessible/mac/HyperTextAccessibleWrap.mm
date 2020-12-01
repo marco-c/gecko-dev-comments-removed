@@ -70,6 +70,14 @@ bool HyperTextIterator::NormalizeForward() {
       
       return false;
     }
+    if (!mCurrentContainer->Parent() ||
+        !mCurrentContainer->Parent()->IsHyperText()) {
+      
+      
+      
+      
+      return false;
+    }
     uint32_t endOffset = mCurrentContainer->EndOffset();
     if (endOffset != 0) {
       mCurrentContainer = mCurrentContainer->Parent()->AsHyperText();
@@ -109,6 +117,14 @@ bool HyperTextIterator::NormalizeBackward() {
     
     
     if (!mCurrentContainer->IsLink()) {
+      
+      return false;
+    }
+    if (!mCurrentContainer->Parent() ||
+        !mCurrentContainer->Parent()->IsHyperText()) {
+      
+      
+      
       
       return false;
     }
