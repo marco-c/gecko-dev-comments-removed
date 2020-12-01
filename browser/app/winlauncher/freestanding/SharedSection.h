@@ -25,12 +25,6 @@ class MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
     Resolved,
   } mState;
 
-  struct FunctionOffsets {
-    uint32_t mFlushInstructionCache;
-    uint32_t mGetSystemInfo;
-    uint32_t mVirtualProtect;
-  } mOffsets;
-
   static ULONG NTAPI ResolveOnce(PRTL_RUN_ONCE aRunOnce, PVOID aParameter,
                                  PVOID*);
   void ResolveInternal();
@@ -48,11 +42,38 @@ class MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
 
   void Init();
   void Resolve(RTL_RUN_ONCE& aRunOnce);
-  LauncherVoidResult Transfer(nt::CrossExecTransferManager& aTransferMgr,
-                              Kernel32ExportsSolver* aTargetAddress) const;
 };
 
-extern Kernel32ExportsSolver gK32;
+
+
+
+class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
+  
+  
+  
+  
+  
+  
+  static HANDLE sSectionHandle;
+  static void* sWriteCopyView;
+
+ public:
+  struct Layout final {
+    Kernel32ExportsSolver mK32Exports;
+
+    Layout() = delete;  
+  };
+
+  static void Reset(HANDLE aNewSecionObject);
+  static LauncherVoidResult Init(const nt::PEHeaders& aPEHeaders);
+
+  static LauncherResult<Layout*> GetView();
+  static LauncherVoidResult TransferHandle(
+      nt::CrossExecTransferManager& aTransferMgr,
+      HANDLE* aDestinationAddress = &sSectionHandle);
+};
+
+extern SharedSection gSharedSection;
 
 }  
 }  
