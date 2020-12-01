@@ -9,6 +9,7 @@ UNIFIED_SOURCES += [
     "TestLinkedList.cpp",
     "TestReverseIterator.cpp",
     "TestSpan.cpp",
+    "TestTainting.cpp",
 ]
 
 SOURCES += [

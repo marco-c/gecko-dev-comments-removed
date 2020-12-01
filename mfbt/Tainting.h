@@ -287,6 +287,45 @@ class Tainted {
 
 
 
+
+
+
+
+
+
+
+
+#define MOZ_FIND_AND_VALIDATE(tainted_value, condition, validation_list) \
+  [&]() {                                                                \
+    auto& tmp = tainted_value.Coerce();                                  \
+    auto& tainted_value = tmp;                                           \
+    const auto macro_find_it =                                           \
+        std::find_if(validation_list.cbegin(), validation_list.cend(),   \
+                     [&](const auto& list_item) { return condition; });  \
+    return macro_find_it != validation_list.cend() ? &*macro_find_it     \
+                                                   : nullptr;            \
+  }()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define MOZ_NO_VALIDATE(tainted_value, justification)      \
   [&tainted_value] {                                       \
     static_assert(sizeof(justification) > 3,               \
