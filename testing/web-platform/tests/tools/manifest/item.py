@@ -147,6 +147,14 @@ class URLManifestItem(ManifestItem):
         flags = set(urlparse(self.url).path.rsplit("/", 1)[1].split(".")[1:-1])
         return "h2" in flags
 
+    @property
+    def subdomain(self):
+        
+        flags = set(urlparse(self.url).path.rsplit("/", 1)[1].split(".")[1:-1])
+        
+        
+        return "www" in flags
+
     def to_json(self):
         
         rel_url = None if self._url == self.path.replace(os.path.sep, u"/") else self._url
