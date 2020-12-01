@@ -139,6 +139,10 @@ class SheetLoadData final : public PreloaderBase,
 
   
   
+  const bool mIsChildSheet : 1;
+
+  
+  
   
   
   bool mIsLoading : 1;
