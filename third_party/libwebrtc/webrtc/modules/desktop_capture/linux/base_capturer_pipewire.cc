@@ -898,17 +898,23 @@ void BaseCapturerPipeWire::CaptureFrame() {
   callback_->OnCaptureResult(Result::SUCCESS, std::move(result));
 }
 
+
+
+
+
+
+
+#define PIPEWIRE_ID   0xaffffff
+#define PIPEWIRE_NAME "####_PIPEWIRE_PORTAL_####"
+
 bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
-  RTC_DCHECK(sources->size() == 0);
-  
-  
-  sources->push_back({0});
+  sources->push_back({PIPEWIRE_ID, 0, PIPEWIRE_NAME});
   return true;
 }
 
 bool BaseCapturerPipeWire::SelectSource(SourceId id) {
   
-  return true;
+  return id == PIPEWIRE_ID;
 }
 
 

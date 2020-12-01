@@ -45,6 +45,14 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIOSPermissionRequest"
 );
 
+
+
+
+
+
+const PIPEWIRE_PORTAL_NAME = "####_PIPEWIRE_PORTAL_####";
+const PIPEWIRE_ID = 0xaffffff;
+
 class WebRTCParent extends JSWindowActorParent {
   didDestroy() {
     webrtcUI.forgetStreamsFromBrowserContext(this.browsingContext);
@@ -774,6 +782,23 @@ function prompt(aActor, aBrowser, aRequest) {
             }
           } else {
             name = device.name;
+            
+            
+            
+            
+            
+            if (name == PIPEWIRE_PORTAL_NAME && device.id == PIPEWIRE_ID) {
+              let sawcStringId = "getUserMedia.sharePipeWirePortal.label";
+              let item = addDeviceToList(
+                menupopup,
+                stringBundle.getString(sawcStringId),
+                i,
+                type
+              );
+              item.deviceId = device.id;
+              item.mediaSource = type;
+              break;
+            }
             if (type == "application") {
               
               
