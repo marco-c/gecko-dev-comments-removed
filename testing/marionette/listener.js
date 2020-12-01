@@ -1048,6 +1048,18 @@ const eventDispatcher = {
       return;
     }
 
+    
+    if (
+      (type === "DOMContentLoaded" && target.readyState != "interactive") ||
+      (type === "pageshow" && target.readyState != "complete")
+    ) {
+      logger.warn(
+        `Ignoring event '${type}' because document has an invalid ` +
+          `readyState of '${target.readyState}'.`
+      );
+      return;
+    }
+
     if (type === "pagehide") {
       
       
