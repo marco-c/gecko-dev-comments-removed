@@ -46,7 +46,7 @@ class UrlbarValueFormatter {
     return this.urlbarInput.querySelector("#urlbar-scheme");
   }
 
-  async update() {
+  async update(forceURLFormat = false) {
     
     
     
@@ -81,7 +81,14 @@ class UrlbarValueFormatter {
     
     
     
-    this._formattingApplied = this._formatURL() || this._formatSearchAlias();
+    if (
+      forceURLFormat ||
+      this.urlbarInput.getAttribute("pageproxystate") === "valid"
+    ) {
+      this._formattingApplied = this._formatURL(forceURLFormat);
+    } else {
+      this._formattingApplied = this._formatSearchAlias();
+    }
   }
 
   _ensureFormattedHostVisible(urlMetaData) {
@@ -122,8 +129,8 @@ class UrlbarValueFormatter {
     });
   }
 
-  _getUrlMetaData() {
-    if (this.urlbarInput.focused) {
+  _getUrlMetaData(forceURLFormat = false) {
+    if (!forceURLFormat && this.urlbarInput.focused) {
       return null;
     }
 
@@ -241,8 +248,12 @@ class UrlbarValueFormatter {
 
 
 
-  _formatURL() {
-    let urlMetaData = this._getUrlMetaData();
+
+
+
+
+  _formatURL(forceURLFormat = false) {
+    let urlMetaData = this._getUrlMetaData(forceURLFormat);
     if (!urlMetaData) {
       return false;
     }

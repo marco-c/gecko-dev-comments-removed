@@ -266,10 +266,19 @@ class UrlbarInput {
   
 
 
-  formatValue() {
+
+
+
+
+  formatValue(forceURLFormat = false) {
+    
+    if (!forceURLFormat && this.window.gBrowser.selectedBrowser._isURLLoading) {
+      return;
+    }
+
     
     if (this.editor) {
-      this.valueFormatter.update();
+      this.valueFormatter.update(forceURLFormat);
     }
   }
 
@@ -313,6 +322,8 @@ class UrlbarInput {
 
 
   setURI(uri = null, dueToTabSwitch = false) {
+    this.window.gBrowser.selectedBrowser._isURLLoading = false;
+
     let value = this.window.gBrowser.userTypedValue;
     let valid = false;
 
@@ -355,6 +366,10 @@ class UrlbarInput {
       valid = true;
     }
 
+    
+    
+    this.setPageProxyState(valid ? "valid" : "invalid", dueToTabSwitch);
+
     let isDifferentValidValue = valid && value != this.untrimmedValue;
     this.value = value;
     this.valueIsTyped = !valid;
@@ -364,10 +379,6 @@ class UrlbarInput {
       
       this.selectionStart = this.selectionEnd = 0;
     }
-
-    
-    
-    this.setPageProxyState(valid ? "valid" : "invalid", dueToTabSwitch);
 
     
     
@@ -1881,7 +1892,7 @@ class UrlbarInput {
     });
   }
 
-  _setValue(val, allowTrim) {
+  _setValue(val, allowTrim, forceURLFormat = false) {
     
     let originalUrl = ReaderMode.getOriginalUrlObjectForDisplay(val);
     if (originalUrl) {
@@ -1896,7 +1907,7 @@ class UrlbarInput {
     this.valueIsTyped = false;
     this._resultForCurrentValue = null;
     this.inputField.value = val;
-    this.formatValue();
+    this.formatValue(forceURLFormat);
     this.removeAttribute("actiontype");
 
     
@@ -2322,7 +2333,8 @@ class UrlbarInput {
   ) {
     
     if (openUILinkWhere == "current") {
-      this.value = url;
+      browser._isURLLoading = true;
+      this._setValue(url, true, true);
       browser.userTypedValue = url;
     }
 
