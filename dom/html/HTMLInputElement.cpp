@@ -3010,7 +3010,8 @@ void HTMLInputElement::Select() {
     return;
   }
 
-  if (DispatchSelectEvent(presContext) && fm) {
+  DispatchSelectEvent(presContext);
+  if (fm) {
     fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
 
     
@@ -3021,22 +3022,16 @@ void HTMLInputElement::Select() {
   }
 }
 
-bool HTMLInputElement::DispatchSelectEvent(nsPresContext* aPresContext) {
-  nsEventStatus status = nsEventStatus_eIgnore;
-
+void HTMLInputElement::DispatchSelectEvent(nsPresContext* aPresContext) {
   
   if (!mHandlingSelectEvent) {
     WidgetEvent event(true, eFormSelect);
 
     mHandlingSelectEvent = true;
     EventDispatcher::Dispatch(static_cast<nsIContent*>(this), aPresContext,
-                              &event, nullptr, &status);
+                              &event);
     mHandlingSelectEvent = false;
   }
-
-  
-  
-  return (status == nsEventStatus_eIgnore);
 }
 
 void HTMLInputElement::SelectAll(nsPresContext* aPresContext) {
@@ -3735,9 +3730,8 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                                      nsIFocusManager::FLAG_BYMOVEFOCUS)) {
                 RefPtr<nsPresContext> presContext =
                     GetPresContext(eForComposedDoc);
-                if (DispatchSelectEvent(presContext)) {
-                  SelectAll(presContext);
-                }
+                DispatchSelectEvent(presContext);
+                SelectAll(presContext);
               }
             }
           }

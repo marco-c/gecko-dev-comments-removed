@@ -149,23 +149,18 @@ void HTMLTextAreaElement::Select() {
     return;
   }
 
-  nsEventStatus status = nsEventStatus_eIgnore;
   WidgetGUIEvent event(true, eFormSelect, nullptr);
   
-  EventDispatcher::Dispatch(static_cast<nsIContent*>(this), presContext, &event,
-                            nullptr, &status);
+  EventDispatcher::Dispatch(static_cast<nsIContent*>(this), presContext,
+                            &event);
 
-  
-  
-  if (status == nsEventStatus_eIgnore) {
-    if (fm) {
-      fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
+  if (fm) {
+    fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
 
+    
+    if (this == fm->GetFocusedElement()) {
       
-      if (this == fm->GetFocusedElement()) {
-        
-        SelectAll(presContext);
-      }
+      SelectAll(presContext);
     }
   }
 }

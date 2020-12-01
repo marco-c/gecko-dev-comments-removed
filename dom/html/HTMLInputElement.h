@@ -967,7 +967,7 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
-  bool DispatchSelectEvent(nsPresContext* aPresContext);
+  void DispatchSelectEvent(nsPresContext* aPresContext);
 
   void SelectAll(nsPresContext* aPresContext);
   bool IsImage() const {
