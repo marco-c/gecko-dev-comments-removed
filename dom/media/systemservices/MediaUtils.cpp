@@ -5,6 +5,7 @@
 
 
 #include "MediaUtils.h"
+#include "mozilla/Services.h"
 
 namespace mozilla {
 namespace media {
