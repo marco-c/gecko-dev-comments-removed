@@ -14,8 +14,6 @@
 
 namespace mozilla {
 
-class DecoderDoctorDiagnostics;
-
 DDLoggedTypeDeclNameAndBase(MediaChangeMonitor, MediaDataDecoder);
 
 
@@ -83,7 +81,7 @@ class MediaChangeMonitor : public MediaDataDecoder,
   
   
   
-  MediaResult CreateDecoder(DecoderDoctorDiagnostics* aDiagnostics);
+  MediaResult CreateDecoder();
   MediaResult CreateDecoderAndInit(MediaRawData* aSample);
   MediaResult CheckForChange(MediaRawData* aSample);
 
