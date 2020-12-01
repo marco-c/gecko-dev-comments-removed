@@ -307,3 +307,27 @@ uint16_t RotorHeadingLevelRule::Match(const AccessibleOrProxy& aAccOrProxy) {
 
   return result;
 }
+
+
+
+OutlineRule::OutlineRule() : RotorRule(){};
+
+uint16_t OutlineRule::Match(const AccessibleOrProxy& aAccOrProxy) {
+  uint16_t result = RotorRule::Match(aAccOrProxy);
+
+  
+  
+  if (result & nsIAccessibleTraversalRule::FILTER_MATCH) {
+    if (aAccOrProxy.Role() == roles::OUTLINE) {
+      
+      
+      result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
+      result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    } else if (aAccOrProxy.Role() != roles::OUTLINEITEM) {
+      
+      result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+  }
+
+  return result;
+}

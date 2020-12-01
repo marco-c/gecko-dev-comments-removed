@@ -214,6 +214,23 @@
 
 
 
+- (NSNumber* _Nullable)moxDisclosing;
+
+
+- (id _Nullable)moxDisclosedByRow;
+
+
+- (NSNumber* _Nullable)moxDisclosureLevel;
+
+
+- (NSArray* _Nullable)moxDisclosedRows;
+
+
+- (NSArray* _Nullable)moxSelectedRows;
+
+
+
+
 - (id _Nullable)moxMathRootRadicand;
 
 

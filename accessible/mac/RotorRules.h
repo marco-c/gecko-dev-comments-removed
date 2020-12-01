@@ -112,3 +112,14 @@ class RotorHeadingLevelRule : public RotorRoleRule {
  private:
   int32_t mLevel;
 };
+
+
+
+
+
+
+class OutlineRule : public RotorRule {
+ public:
+  explicit OutlineRule();
+  uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override;
+};

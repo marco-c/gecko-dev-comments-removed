@@ -167,7 +167,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   
   return mRole == roles::GROUPING || mRole == roles::RADIO_GROUP ||
          mRole == roles::FIGURE || mRole == roles::GRAPHIC ||
-         mRole == roles::DOCUMENT;
+         mRole == roles::DOCUMENT || mRole == roles::OUTLINE;
 }
 
 - (mozilla::a11y::AccessibleOrProxy)geckoAccessible {
