@@ -234,6 +234,7 @@ var gViewController = {
   currentViewId: "",
   currentViewObj: null,
   currentViewRequest: 0,
+  isLoading: true,
   
   
   
@@ -302,12 +303,6 @@ var gViewController = {
     var matchRegex = /^addons:\/\/([^\/]+)\/(.*)$/;
     var [, viewType, viewParam] = aViewId.match(matchRegex) || [];
     return { type: viewType, param: decodeURIComponent(viewParam) };
-  },
-
-  get isLoading() {
-    return (
-      !this.currentViewObj || this.currentViewObj.node.hasAttribute("loading")
-    );
   },
 
   loadView(aViewId) {
@@ -402,7 +397,7 @@ var gViewController = {
         if (canHide === false) {
           return;
         }
-        this.displayedView.removeAttribute("loading");
+        this.isLoading = false;
       } catch (e) {
         
         Cu.reportError(e);
@@ -413,7 +408,7 @@ var gViewController = {
     this.currentViewObj = viewObj;
 
     this.displayedView = this.currentViewObj;
-    this.currentViewObj.node.setAttribute("loading", "true");
+    this.isLoading = true;
 
     recordViewTelemetry(view.param);
 
@@ -437,7 +432,7 @@ var gViewController = {
   },
 
   notifyViewChanged() {
-    this.displayedView.removeAttribute("loading");
+    this.isLoading = false;
 
     if (this.viewChangeCallback) {
       this.viewChangeCallback();
