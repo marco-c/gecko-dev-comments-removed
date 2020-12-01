@@ -326,6 +326,12 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   uint64_t mCrossGroupOpenerId = 0;
 
   
+  
+  
+  
+  void ResetSHEntryHasUserInteractionCache();
+
+  
   RefPtr<PendingRemotenessChange> mPendingRemotenessChange;
 
   RefPtr<nsSHistory> mSessionHistory;

@@ -376,10 +376,5 @@ add_task(async function test_iframe_pushState() {
 
 
 add_task(async function test_iframe_followLink() {
-  
-  if (gFissionBrowser) {
-    return;
-  }
-
   await runIframeTest(followLink);
 });

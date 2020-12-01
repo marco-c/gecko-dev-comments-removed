@@ -535,6 +535,8 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
         }
       }
 
+      ResetSHEntryHasUserInteractionCache();
+
       HistoryCommitIndexAndLength(aChangeID, caller);
 
       return;
@@ -650,6 +652,9 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
           UseRemoteSubframes());
     }
   }
+
+  ResetSHEntryHasUserInteractionCache();
+
   
   HistoryCommitIndexAndLength(aChangeID, caller);
 }
@@ -667,6 +672,9 @@ void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
     shistory->NotifyOnHistoryReplaceEntry();
     shistory->UpdateRootBrowsingContextState();
   }
+
+  ResetSHEntryHasUserInteractionCache();
+
   
 }
 
@@ -1555,6 +1563,13 @@ void CanonicalBrowsingContext::EndDocumentLoad(bool aForProcessSwitch) {
     
     
     Unused << SetCurrentLoadIdentifier(Nothing());
+  }
+}
+
+void CanonicalBrowsingContext::ResetSHEntryHasUserInteractionCache() {
+  WindowContext* topWc = GetTopWindowContext();
+  if (topWc && !topWc->IsDiscarded()) {
+    MOZ_ALWAYS_SUCCEEDS(topWc->SetSHEntryHasUserInteraction(false));
   }
 }
 
