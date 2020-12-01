@@ -855,7 +855,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsIScrollableFrame* GetScrollTargetFrame() { return nullptr; }
+  virtual nsIScrollableFrame* GetScrollTargetFrame() const { return nullptr; }
 
   
 
