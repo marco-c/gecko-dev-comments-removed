@@ -10,7 +10,10 @@ const { TestUtils } = ChromeUtils.import(
   "resource://testing-common/TestUtils.jsm"
 );
 
-const REGION_PREF = "browser.region.network.url";
+XPCOMUtils.defineLazyModuleGetters(this, {
+  RegionTestUtils: "resource://testing-common/RegionTestUtils.jsm",
+});
+
 const INTERVAL_PREF = "browser.region.update.interval";
 
 const RESPONSE_DELAY = 500;
@@ -21,52 +24,43 @@ const histogram = Services.telemetry.getHistogramById(
 );
 
 
-function waitForNotificationSubject(topic) {
-  return new Promise((resolve, reject) => {
-    Services.obs.addObserver(function observe(aSubject, aTopic, aData) {
-      
-      let subject = aSubject.QueryInterface(Ci.nsISupportsString);
-      Services.obs.removeObserver(observe, topic);
-      resolve(subject);
-    }, topic);
-  });
-}
-
-
 
 
 add_task(async function test_startup() {
-  setNetworkRegion("UK");
+  RegionTestUtils.setNetworkRegion("UK");
   await checkTelemetry(Region.TELEMETRY.SUCCESS);
+  await cleanup();
 });
 
 add_task(async function test_basic() {
-  Region._home = null;
-  let srv = useHttpServer(REGION_PREF);
+  let srv = useHttpServer(RegionTestUtils.REGION_URL_PREF);
   srv.registerPathHandler("/", (req, res) => {
     res.setStatusLine("1.1", 200, "OK");
     send(res, { country_code: "UK" });
   });
   
-  let notificationSubjectPromise = waitForNotificationSubject("browser-region");
+  let updateRegion = TestUtils.topicObserved("browser-region");
   await Region._fetchRegion();
-  let notificationSub = await notificationSubjectPromise;
+  let [subject] = await updateRegion;
 
   Assert.ok(true, "Region fetch should succeed");
   Assert.equal(Region.home, "UK", "Region fetch should return correct result");
   Assert.equal(
-    notificationSub,
+    subject,
     Region.home,
     "Notification should be sent with the correct region"
   );
 
-  await new Promise(r => srv.stop(r));
+  await cleanup(srv);
 });
 
 add_task(async function test_invalid_url() {
   histogram.clear();
   Services.prefs.setIntPref("browser.region.retry-timeout", 0);
-  Services.prefs.setCharPref(REGION_PREF, "http://localhost:0");
+  Services.prefs.setCharPref(
+    RegionTestUtils.REGION_URL_PREF,
+    "http://localhost:0"
+  );
   let result = await Region._fetchRegion();
   Assert.ok(!result, "Should return no result");
   await checkTelemetry(Region.TELEMETRY.NO_RESULT);
@@ -75,7 +69,7 @@ add_task(async function test_invalid_url() {
 add_task(async function test_invalid_json() {
   histogram.clear();
   Services.prefs.setCharPref(
-    REGION_PREF,
+    RegionTestUtils.REGION_URL_PREF,
     'data:application/json,{"country_code"'
   );
   let result = await Region._fetchRegion();
@@ -87,7 +81,7 @@ add_task(async function test_timeout() {
   histogram.clear();
   Services.prefs.setIntPref("browser.region.retry-timeout", 0);
   Services.prefs.setIntPref("browser.region.timeout", RESPONSE_TIMEOUT);
-  let srv = useHttpServer(REGION_PREF);
+  let srv = useHttpServer(RegionTestUtils.REGION_URL_PREF);
   srv.registerPathHandler("/", (req, res) => {
     res.processAsync();
     do_timeout(RESPONSE_DELAY, () => {
@@ -100,7 +94,7 @@ add_task(async function test_timeout() {
   Assert.equal(result, null, "Region fetch should return null");
 
   await checkTelemetry(Region.TELEMETRY.TIMEOUT);
-  await new Promise(r => srv.stop(r));
+  await cleanup(srv);
 });
 
 add_task(async function test_mismatched_probe() {
@@ -113,7 +107,7 @@ add_task(async function test_mismatched_probe() {
   histogram.clear();
   Region._home = null;
 
-  setNetworkRegion("AU");
+  RegionTestUtils.setNetworkRegion("AU");
   await Region._fetchRegion();
   Assert.equal(Region.home, "AU", "Should have correct region");
   await checkTelemetry(Region.TELEMETRY.SUCCESS);
@@ -126,6 +120,8 @@ add_task(async function test_mismatched_probe() {
   }
   let snapshot = probeHistogram.snapshot();
   deepEqual(snapshot.values, probeDetails.expectedResult);
+
+  await cleanup();
 });
 
 add_task(async function test_location() {
@@ -140,15 +136,15 @@ add_task(async function test_location() {
   Assert.ok(true, "Region fetch should succeed");
   Assert.deepEqual(result, location, "Location is returned");
 
-  await new Promise(r => srv.stop(r));
+  await cleanup(srv);
 });
 
 add_task(async function test_update() {
   Region._home = null;
-  setNetworkRegion("FR");
+  RegionTestUtils.setNetworkRegion("FR");
   await Region._fetchRegion();
   Assert.equal(Region.home, "FR", "Should have correct region");
-  setNetworkRegion("DE");
+  RegionTestUtils.setNetworkRegion("DE");
   await Region._fetchRegion();
   Assert.equal(Region.home, "FR", "Shouldnt have changed yet");
   
@@ -161,6 +157,8 @@ add_task(async function test_update() {
   await new Promise(resolve => setTimeout(resolve, 1100));
   await Region._fetchRegion();
   Assert.equal(Region.home, "DE", "Should have updated now");
+
+  await cleanup();
 });
 
 add_task(async function test_max_retry() {
@@ -168,7 +166,7 @@ add_task(async function test_max_retry() {
   let requestsSeen = 0;
   Services.prefs.setIntPref("browser.region.retry-timeout", RESPONSE_TIMEOUT);
   Services.prefs.setIntPref("browser.region.timeout", RESPONSE_TIMEOUT);
-  let srv = useHttpServer(REGION_PREF);
+  let srv = useHttpServer(RegionTestUtils.REGION_URL_PREF);
   srv.registerPathHandler("/", (req, res) => {
     requestsSeen++;
     res.setStatusLine("1.1", 200, "OK");
@@ -185,7 +183,7 @@ add_task(async function test_max_retry() {
   Assert.equal(requestsSeen, 3, "Retried 4 times");
 
   Region._retryCount = 0;
-  await new Promise(r => srv.stop(r));
+  await cleanup(srv);
 });
 
 add_task(async function test_retry() {
@@ -193,7 +191,7 @@ add_task(async function test_retry() {
   let requestsSeen = 0;
   Services.prefs.setIntPref("browser.region.retry-timeout", RESPONSE_TIMEOUT);
   Services.prefs.setIntPref("browser.region.timeout", RESPONSE_TIMEOUT);
-  let srv = useHttpServer(REGION_PREF);
+  let srv = useHttpServer(RegionTestUtils.REGION_URL_PREF);
   srv.registerPathHandler("/", (req, res) => {
     res.setStatusLine("1.1", 200, "OK");
     if (++requestsSeen == 2) {
@@ -213,16 +211,35 @@ add_task(async function test_retry() {
   Assert.equal(Region.home, "UK", "failed to fetch region");
   Assert.equal(requestsSeen, 2, "Retried 2 times");
 
-  Region._retryCount = 0;
-  await new Promise(r => srv.stop(r));
+  await cleanup(srv);
 });
 
-function setNetworkRegion(region) {
-  Services.prefs.setCharPref(
-    REGION_PREF,
-    `data:application/json,{"country_code": "${region}"}`
-  );
-}
+add_task(async function test_timerManager() {
+  RegionTestUtils.setNetworkRegion("FR");
+
+  
+  
+  Services.prefs.setIntPref("browser.region.update.interval", 0);
+  Services.prefs.setIntPref("browser.region.update.debounce", 1);
+
+  let region = Region.newInstance();
+  await region.init();
+  Assert.equal(region.home, "FR", "Should have correct initial region");
+
+  
+  RegionTestUtils.setNetworkRegion("DE");
+  await region._updateTimer();
+  await region._updateTimer();
+  Assert.equal(region.home, "FR", "Ignored updates to region");
+
+  
+  Services.prefs.setIntPref("browser.region.update.debounce", 0);
+  RegionTestUtils.setNetworkRegion("AU");
+  await region._updateTimer();
+  await region._updateTimer();
+  Assert.equal(region.home, "AU", "region has been updated");
+  await cleanup();
+});
 
 function useHttpServer(pref) {
   let server = new HttpServer();
@@ -238,6 +255,13 @@ function send(res, json) {
   res.setStatusLine("1.1", 200, "OK");
   res.setHeader("content-type", "application/json", true);
   res.write(JSON.stringify(json));
+}
+
+async function cleanup(srv = null) {
+  Services.prefs.clearUserPref("browser.search.region");
+  if (srv) {
+    await new Promise(r => srv.stop(r));
+  }
 }
 
 async function checkTelemetry(aExpectedValue) {
