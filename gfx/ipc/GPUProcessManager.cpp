@@ -484,6 +484,14 @@ void GPUProcessManager::DisableWebRender(wr::WebRenderError aError,
   if (aError != wr::WebRenderError::INITIALIZE) {
     NotifyDisablingWebRender();
   }
+#elif defined(MOZ_WIDGET_GTK)
+  
+  
+  
+  
+  gfxConfig::SetFailed(Feature::HW_COMPOSITING, FeatureStatus::Blocked,
+                       "Acceleration blocked by platform",
+                       "FEATURE_FAILURE_LOST_WEBRENDER"_ns);
 #endif
 
   if (mProcess) {
