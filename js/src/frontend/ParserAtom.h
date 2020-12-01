@@ -439,6 +439,9 @@ class WellKnownParserAtoms_ROM {
   }
 };
 
+using ParserAtomIndex = TypedIndex<ParserAtom>;
+using ParserAtomVector = Vector<ParserAtomEntry*, 0, js::SystemAllocPolicy>;
+
 
 
 
@@ -509,9 +512,10 @@ class ParserAtomsTable {
   LifoAlloc* alloc_;
 
   
-  using EntrySet =
-      HashSet<ParserAtomEntry*, ParserAtomLookupHasher, js::SystemAllocPolicy>;
-  EntrySet entrySet_;
+  using EntryMap = HashMap<ParserAtomEntry*, ParserAtomIndex,
+                           ParserAtomLookupHasher, js::SystemAllocPolicy>;
+  EntryMap entryMap_;
+  ParserAtomVector entries_;
 
  public:
   explicit ParserAtomsTable(JSRuntime* rt, LifoAlloc& alloc);
@@ -523,11 +527,11 @@ class ParserAtomsTable {
   
   
   JS::Result<const ParserAtom*, OOM> addEntry(JSContext* cx,
-                                              EntrySet::AddPtr& addPtr,
+                                              EntryMap::AddPtr& addPtr,
                                               ParserAtomEntry* entry);
   template <typename AtomCharT, typename SeqCharT>
   JS::Result<const ParserAtom*, OOM> internChar16Seq(
-      JSContext* cx, EntrySet::AddPtr& addPtr, HashNumber hash,
+      JSContext* cx, EntryMap::AddPtr& addPtr, HashNumber hash,
       InflatedChar16Sequence<SeqCharT> seq, uint32_t length);
   template <typename AtomCharT, typename SeqCharT>
   JS::Result<const ParserAtom*, OOM> internChar16Seq(
@@ -535,7 +539,7 @@ class ParserAtomsTable {
       uint32_t length);
 
  public:
-  bool empty() const { return entrySet_.empty(); }
+  bool empty() const { return entryMap_.empty(); }
 
   
   
