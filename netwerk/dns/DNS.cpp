@@ -207,19 +207,25 @@ bool NetAddr::IsIPAddrV4Mapped() const {
   return false;
 }
 
+static bool isLocalIPv4(uint32_t networkEndianIP) {
+  uint32_t addr32 = ntohl(networkEndianIP);
+  if (addr32 >> 24 == 0x0A ||    
+      addr32 >> 20 == 0xAC1 ||   
+      addr32 >> 16 == 0xC0A8 ||  
+      addr32 >> 16 == 0xA9FE) {  
+    return true;
+  }
+  return false;
+}
+
 bool NetAddr::IsIPAddrLocal() const {
   const NetAddr* addr = this;
 
   
   if (addr->raw.family == AF_INET) {
-    uint32_t addr32 = ntohl(addr->inet.ip);
-    if (addr32 >> 24 == 0x0A ||    
-        addr32 >> 20 == 0xAC1 ||   
-        addr32 >> 16 == 0xC0A8 ||  
-        addr32 >> 16 == 0xA9FE) {  
-      return true;
-    }
+    return isLocalIPv4(addr->inet.ip);
   }
+  
   
   if (addr->raw.family == AF_INET6) {
     uint16_t addr16 = ntohs(addr->inet6.ip.u16[0]);
@@ -227,7 +233,11 @@ bool NetAddr::IsIPAddrLocal() const {
         addr16 >> 6 == 0xfe80 >> 6) {  
       return true;
     }
+    if (IPv6ADDR_IS_V4MAPPED(&addr->inet6.ip)) {
+      return isLocalIPv4(IPv6ADDR_V4MAPPED_TO_IPADDR(&addr->inet6.ip));
+    }
   }
+
   
   return false;
 }
