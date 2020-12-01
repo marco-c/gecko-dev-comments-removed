@@ -1081,3 +1081,30 @@ async function scroll() {
   table.scrollTop += cellHeight * 50;
   await onStoresUpdate;
 }
+
+
+
+
+
+
+
+function checkTree(doc, storage, host) {
+  const treeId = JSON.stringify([storage, host]);
+  ok(
+    doc.querySelector(`[data-id='${treeId}']`),
+    `${storage} > ${host} is in the tree`
+  );
+}
+
+
+
+
+
+
+function checkStorageData(name, value) {
+  is(
+    gUI.table.items.get(name)?.value,
+    value,
+    `Table row has an entry for: ${name} with value: ${value}`
+  );
+}
