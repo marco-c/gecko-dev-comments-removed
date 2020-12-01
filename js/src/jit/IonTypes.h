@@ -72,6 +72,11 @@ enum class BailoutKind : uint8_t {
 
   
   
+  
+  TypePolicy,
+
+  
+  
 
   
   Inevitable,
@@ -274,6 +279,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "TranspiledCacheIR";
     case BailoutKind::SpeculativePhi:
       return "SpeculativePhi";
+    case BailoutKind::TypePolicy:
+      return "TypePolicy";
 
     
     case BailoutKind::Inevitable:
