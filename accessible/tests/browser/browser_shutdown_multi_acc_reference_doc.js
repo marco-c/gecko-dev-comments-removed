@@ -53,7 +53,7 @@ add_task(async function() {
   
   forceGC();
   
-  await new Promise(resolve => executeSoon(resolve));
+  await TestUtils.waitForTick();
 
   
   acc = null;
@@ -62,7 +62,7 @@ add_task(async function() {
   
   forceGC();
   
-  await new Promise(resolve => executeSoon(resolve));
+  await TestUtils.waitForTick();
 
   
   canShutdown = true;

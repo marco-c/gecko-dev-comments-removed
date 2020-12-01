@@ -78,7 +78,7 @@ add_task(async function() {
       });
 
       
-      await new Promise(resolve => executeSoon(resolve));
+      await TestUtils.waitForTick();
 
       info("Removing a service in parent");
       
