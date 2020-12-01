@@ -16,7 +16,10 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundParent.h"
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#  include "mozilla/dom/DOMException.h"
+#  include "mozilla/CycleCollectedJSContext.h"
 #  include "mozilla/Sprintf.h"  
+#  include "nsIXPConnect.h"     
 #endif
 #include "mozilla/StaticPrefs_extensions.h"
 #include "nsCOMPtr.h"
@@ -180,15 +183,54 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
       processRemoteType = RemoteTypePrefix(contentChild->GetRemoteType());
     }
 
+    
+    nsAutoCString errorName;
+    GetErrorName(rv, errorName);
+
+    
+    nsAutoCString errorFilename("(unknown)"_ns);
+    uint32_t jsmErrorLineNumber = 0;
+
+    if (auto* context = CycleCollectedJSContext::Get()) {
+      if (RefPtr<Exception> exn = context->GetPendingException()) {
+        nsAutoString filename(u"(unknown)"_ns);
+
+        if (rv == NS_ERROR_XPC_JAVASCRIPT_ERROR_WITH_DETAILS) {
+          
+          
+          
+          
+          nsCOMPtr<nsIScriptError> scriptError =
+              do_QueryInterface(exn->GetData());
+          if (scriptError) {
+            scriptError->GetLineNumber(&jsmErrorLineNumber);
+            scriptError->GetSourceName(filename);
+          }
+        } else {
+          nsCOMPtr<nsIXPConnectWrappedJS> wrapped =
+              do_QueryInterface(e10sUtils);
+          dom::AutoJSAPI jsapi;
+          if (jsapi.Init(wrapped->GetJSObjectGlobal())) {
+            auto* cx = jsapi.cx();
+            jsmErrorLineNumber = exn->LineNumber(cx);
+            exn->GetFilename(cx, filename);
+          }
+        }
+
+        errorFilename = NS_ConvertUTF16toUTF8(filename);
+      }
+    }
+
     char buf[1024];
     SprintfLiteral(
         buf,
         "workerType=%s, principal=%s, preferredRemoteType=%s, "
-        "processRemoteType=%s",
+        "processRemoteType=%s, errorName=%s, errorLocation=%s:%d",
         aWorkerType == WorkerType::WorkerTypeService ? "service" : "shared",
         principalTypeOrScheme.get(),
         PromiseFlatCString(RemoteTypePrefix(preferredRemoteType)).get(),
-        processRemoteType.get());
+        processRemoteType.get(), errorName.get(), errorFilename.get(),
+        jsmErrorLineNumber);
     MOZ_CRASH_UNSAFE_PRINTF(
         "E10SUtils.getRemoteTypeForWorkerPrincipal did throw: %s", buf);
 #endif
