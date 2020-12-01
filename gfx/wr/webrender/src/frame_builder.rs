@@ -800,7 +800,12 @@ pub fn build_render_pass(
 
             
             
-            task.write_gpu_blocks(gpu_cache);
+            let (target_rect, target_index) = task.get_target_rect();
+            task.kind.write_gpu_blocks(
+                target_rect,
+                target_index,
+                gpu_cache,
+            );
 
             (target_kind, texture_target, layer)
         };
