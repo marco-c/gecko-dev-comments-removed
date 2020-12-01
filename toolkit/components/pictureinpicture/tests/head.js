@@ -815,3 +815,16 @@ async function ensureMessageAndClosePiP(browser, videoID, pipWin, isIframe) {
     await uaWidgetUpdate;
   }
 }
+
+
+
+
+
+
+
+
+async function isVideoPaused(browser, videoID) {
+  return SpecialPowers.spawn(browser, [videoID], async videoID => {
+    return content.document.getElementById(videoID).paused;
+  });
+}

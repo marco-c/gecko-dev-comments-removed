@@ -1250,6 +1250,17 @@ class PictureInPictureChild extends JSWindowActorChild {
         break;
       }
       case "PictureInPicture:Pause": {
+        if (message.data && message.data.reason == "pip-closed") {
+          let video = this.getWeakVideo();
+
+          
+          
+          
+          
+          if (video && video.srcObject instanceof MediaStream) {
+            break;
+          }
+        }
         this.pause();
         break;
       }
