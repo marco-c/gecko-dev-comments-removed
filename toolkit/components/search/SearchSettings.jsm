@@ -69,6 +69,12 @@ class SearchSettings {
 
   _searchService = null;
 
+  
+
+
+
+  _currentSettings = null;
+
   addObservers() {
     Services.obs.addObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.addObserver(this, SearchUtils.TOPIC_SEARCH_SERVICE);
@@ -124,6 +130,7 @@ class SearchSettings {
       Services.prefs.clearUserPref(prefName);
     }
 
+    this._currentSettings = json;
     return json;
   }
 
@@ -195,6 +202,21 @@ class SearchSettings {
     settings.version = SearchUtils.SETTINGS_VERSION;
     settings.engines = [...this._searchService._engines.values()];
     settings.metaData = this._metaData;
+
+    
+    
+    
+    if (this._currentSettings?.engines) {
+      for (let engine of this._currentSettings.engines) {
+        let included = settings.engines.some(e => e._name == engine._name);
+        if (engine._isAppProvided && !included) {
+          settings.engines.push(engine);
+        }
+      }
+    }
+
+    
+    this._currentSettings = settings;
 
     try {
       if (!settings.engines.length) {
