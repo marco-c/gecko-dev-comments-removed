@@ -8,9 +8,7 @@ but `mozperftest </testing/perfdocs/mozperftest.html>`_ aims to provide this in 
 
 For more detailed information about each test suite, see each projects' documentation:
 
-  * :doc:`Talos`
-  * :doc:`mozperftest`
-  * :doc:`raptor`
+{test_documentation}
 
 For more information about the performance testing team,
 `visit the wiki page <https://wiki.mozilla.org/TestEngineering/Performance>`_.
