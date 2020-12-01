@@ -2469,20 +2469,24 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
           ? EditorRawDOMPoint::AtEndOf(*mLeafContentInOtherBlock)
           : EditorRawDOMPoint(mLeafContentInOtherBlock, 0);
   
-  nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
-  if (!aHTMLEditor.SelectionRefPtr()->RangeCount()) {
-    NS_WARNING("Failed to put caret to new position");
-    return NS_ERROR_FAILURE;
+  
+  if (aRangesToDelete.IsCollapsed() &&
+      aRangesToDelete.FocusRef() == newCaretPoint.ToRawRangeBoundary()) {
+    return NS_OK;
   }
+  
+  nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::CollapseSelectionTo() failed, but ignored");
-  aRangesToDelete.Initialize(*aHTMLEditor.SelectionRefPtr());
-  AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandlerConst);
-  rv = anotherHandler.ComputeRangesToDelete(aHTMLEditor, aDirectionAndAmount,
-                                            aRangesToDelete);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() failed");
+                       "HTMLEditor::CollapseSelectionTo() failed");
+  if (NS_SUCCEEDED(rv)) {
+    aRangesToDelete.Initialize(*aHTMLEditor.SelectionRefPtr());
+    AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandlerConst);
+    rv = anotherHandler.ComputeRangesToDelete(aHTMLEditor, aDirectionAndAmount,
+                                              aRangesToDelete);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() failed");
+  }
   
   nsresult rvCollapsingSelectionTo =
       aHTMLEditor.CollapseSelectionTo(aCaretPoint);
@@ -2583,17 +2587,17 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
           aDirectionAndAmount == nsIEditor::ePrevious
               ? EditorRawDOMPoint::AtEndOf(*mLeafContentInOtherBlock)
               : EditorRawDOMPoint(mLeafContentInOtherBlock, 0);
+      
+      
+      if (aRangesToDelete.IsCollapsed() &&
+          aRangesToDelete.FocusRef() == newCaretPoint.ToRawRangeBoundary()) {
+        return EditActionCanceled();
+      }
       nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::CollapseSelectionTo() failed");
+        return result.SetResult(rv);
       }
-      if (!aHTMLEditor.SelectionRefPtr()->RangeCount()) {
-        NS_WARNING("Failed to put caret to new position");
-        return EditActionHandled(rv);
-      }
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "HTMLEditor::CollapseSelectionTo() failed, but ignored");
       AutoRangeArray rangesToDelete(*aHTMLEditor.SelectionRefPtr());
       AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandler);
       result = anotherHandler.Run(aHTMLEditor, aDirectionAndAmount,

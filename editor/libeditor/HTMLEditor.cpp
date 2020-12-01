@@ -568,6 +568,16 @@ void HTMLEditor::InitializeSelectionAncestorLimit(
         "HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(true) failed, "
         "but ignored");
   }
+
+  
+  
+  
+  
+  
+  
+  if (aAncestorLimit.HasIndependentSelection()) {
+    SelectionRefPtr()->SetAncestorLimiter(nullptr);
+  }
 }
 
 nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
