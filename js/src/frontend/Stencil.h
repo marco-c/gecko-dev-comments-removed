@@ -85,29 +85,25 @@ FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
                                    bool hasUnclonedName = false);
 
 
-
 class RegExpStencil {
   friend class StencilXDR;
 
-  UniqueTwoByteChars buf_;
-  size_t length_ = 0;
+  const ParserAtom* atom_;
   JS::RegExpFlags flags_;
 
  public:
   RegExpStencil() = default;
 
-  MOZ_MUST_USE bool init(JSContext* cx, mozilla::Range<const char16_t> range,
-                         JS::RegExpFlags flags) {
-    length_ = range.length();
-    buf_ = js::DuplicateString(cx, range.begin().get(), range.length());
-    if (!buf_) {
-      return false;
-    }
-    flags_ = flags;
-    return true;
-  }
+  RegExpStencil(const ParserAtom* atom, JS::RegExpFlags flags)
+      : atom_(atom), flags_(flags) {}
 
-  RegExpObject* createRegExp(JSContext* cx) const;
+  RegExpObject* createRegExp(JSContext* cx,
+                             CompilationAtomCache& atomCache) const;
+
+  
+  
+  RegExpObject* createRegExpAndEnsureAtom(
+      JSContext* cx, CompilationAtomCache& atomCache) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();

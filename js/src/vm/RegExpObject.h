@@ -78,10 +78,6 @@ class RegExpObject : public NativeObject {
 
   
   
-  static RegExpObject* createSyntaxChecked(JSContext* cx, const char16_t* chars,
-                                           size_t length, JS::RegExpFlags flags,
-                                           NewObjectKind newKind);
-
   static RegExpObject* createSyntaxChecked(JSContext* cx, HandleAtom source,
                                            JS::RegExpFlags flags,
                                            NewObjectKind newKind);
