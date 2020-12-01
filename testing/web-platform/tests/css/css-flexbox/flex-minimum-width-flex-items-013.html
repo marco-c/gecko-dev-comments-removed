@@ -2,8 +2,9 @@
 <title>Flex transferred minimum width</title>
 <link rel="author" title="dgrogan@chromium.org" href="mailto:dgrogan@chromium.org" />
 <link rel="help" href="https://drafts.csswg.org/css-flexbox/#min-size-auto" />
+<link rel="help" href="https://github.com/w3c/csswg-drafts/issues/5663" />
 <link rel="match" href="../reference/ref-filled-green-100px-square.xht" />
-<meta name="assert" content="min-width: auto ignores transferred size suggestion when item has a definite main size">
+<meta name="assert" content="min-width: auto ignores transferred size suggestion when item has a definite specified main size">
 
 <style>
 #reference-overlapped-red {
@@ -19,7 +20,7 @@
 
 <div id="reference-overlapped-red"></div>
 <div style="width:100px; height: 75px; background: green;"></div>
-<div style="display: flex; width: 0px">
+<div style="display: flex; width: 0px; height: 25px;">
   
 
 
@@ -35,5 +36,8 @@
 
 
 
-  <img src="support/300x150-green.png" style="height: 25px; width: 100px;">
+
+
+
+  <img src="support/300x150-green.png" style="width: 100px;">
 </div>
