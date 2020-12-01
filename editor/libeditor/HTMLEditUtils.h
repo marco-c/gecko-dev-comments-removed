@@ -47,6 +47,14 @@ class HTMLEditUtils final {
 
 
 
+  static bool IsRemovableNode(const nsIContent& aContent) {
+    return aContent.GetParentNode() && aContent.GetParentNode()->IsEditable();
+  }
+
+  
+
+
+
   static bool IsRemovableFromParentNode(const nsIContent& aContent) {
     return aContent.IsEditable() && aContent.GetParentNode() &&
            aContent.GetParentNode()->IsEditable();

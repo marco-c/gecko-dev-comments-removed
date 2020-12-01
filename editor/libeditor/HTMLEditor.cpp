@@ -3152,7 +3152,7 @@ nsresult HTMLEditor::DeleteNodeWithTransaction(nsIContent& aContent) {
   
   
   
-  if (NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(aContent) &&
+  if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(aContent) &&
                  !EditorUtils::IsPaddingBRElementForEmptyEditor(aContent))) {
     return NS_ERROR_FAILURE;
   }
