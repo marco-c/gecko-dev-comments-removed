@@ -3,9 +3,13 @@
 
 
 #include "js/SliceBudget.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/MainThreadIdlePeriod.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "nsCycleCollector.h"
+
+using mozilla::TimeDuration;
 
 static const mozilla::TimeDuration kOneMinute =
     mozilla::TimeDuration::FromSeconds(60.0f);
@@ -81,12 +85,10 @@ class CCGCScheduler {
 
   
 
-  Maybe<TimeDuration> GetCCBlockedTime(TimeStamp now) const {
-    MOZ_ASSERT_IF(mCCBlockStart.IsNull(), !mInIncrementalGC);
-    if (mCCBlockStart.IsNull()) {
-      return {};
-    }
-    return Some(now - mCCBlockStart);
+  TimeDuration GetCCBlockedTime(TimeStamp aNow) const {
+    MOZ_ASSERT(mInIncrementalGC);
+    MOZ_ASSERT(!mCCBlockStart.IsNull());
+    return aNow - mCCBlockStart;
   }
 
   bool InIncrementalGC() const { return mInIncrementalGC; }
@@ -97,9 +99,19 @@ class CCGCScheduler {
     return mCleanupsSinceLastGC < aN;
   }
 
+  bool NeedsFullGC() const { return mNeedsFullGC; }
+
   
 
-  void SetNeedsFullCC() { mNeedsFullCC = true; }
+  void SetNeedsFullGC(bool aNeedGC = true) { mNeedsFullGC = aNeedGC; }
+
+  
+  
+  void EnsureCCThenGC() {
+    MOZ_ASSERT(mCCRunnerState != CCRunnerState::Inactive);
+    mNeedsFullCC = true;
+    mNeedsGCAfterCC = true;
+  }
 
   void NoteGCBegin() {
     
@@ -108,24 +120,24 @@ class CCGCScheduler {
   }
 
   void NoteGCEnd() {
-    mCCBlockStart = TimeStamp();
-    mCleanupsSinceLastGC = 0;
     mInIncrementalGC = false;
+    mCCBlockStart = TimeStamp();
+    mNeedsFullCC = true;
+    mHasRunGC = true;
+
+    mCleanupsSinceLastGC = 0;
+    mCCollectedWaitingForGC = 0;
+    mCCollectedZonesWaitingForGC = 0;
+    mLikelyShortLivingObjectsNeedingGC = 0;
   }
 
   
   
   
-  enum IsStartingCCLockout { StartingLockout = true, AlreadyLockedOut = false };
-  IsStartingCCLockout EnsureCCIsBlocked(TimeStamp aNow) {
+  void BlockCC(TimeStamp aNow) {
     MOZ_ASSERT(mInIncrementalGC);
-
-    if (mCCBlockStart) {
-      return AlreadyLockedOut;
-    }
-
+    MOZ_ASSERT(mCCBlockStart.IsNull());
     mCCBlockStart = aNow;
-    return StartingLockout;
   }
 
   void UnblockCC() { mCCBlockStart = TimeStamp(); }
@@ -140,9 +152,23 @@ class CCGCScheduler {
     return aSuspectedBeforeForgetSkippable - suspected;
   }
 
+  
+  
+  void NoteCycleCollected(const CycleCollectorResults& aResults) {
+    mCCollectedWaitingForGC += aResults.mFreedGCed;
+    mCCollectedZonesWaitingForGC += aResults.mFreedJSZones;
+  }
+
+  
+  
+  
+  
   void NoteCCEnd(TimeStamp aWhen) {
     mLastCCEndTime = aWhen;
     mNeedsFullCC = false;
+
+    
+    mNeedsGCAfterCC = false;
   }
 
   
@@ -150,6 +176,8 @@ class CCGCScheduler {
   void NoteForgetSkippableOnlyCycle() {
     mLastForgetSkippableCycleEndTime = TimeStamp::Now();
   }
+
+  void Shutdown() { mDidShutdown = true; }
 
   
 
@@ -238,6 +266,10 @@ class CCGCScheduler {
   }
 
   bool ShouldScheduleCC() const {
+    if (!mHasRunGC) {
+      return false;
+    }
+
     TimeStamp now = TimeStamp::Now();
 
     
@@ -260,7 +292,14 @@ class CCGCScheduler {
     return IsCCNeeded(nsCycleCollector_suspectedCount(), now);
   }
 
-  bool IsLastEarlyCCTimer(int32_t aCurrentFireCount) {
+  
+  
+  bool NeedsGCAfterCC() const {
+    return mCCollectedWaitingForGC > 250 || mCCollectedZonesWaitingForGC > 0 ||
+           mLikelyShortLivingObjectsNeedingGC > 2500 || mNeedsGCAfterCC;
+  }
+
+  bool IsLastEarlyCCTimer(int32_t aCurrentFireCount) const {
     int32_t numEarlyTimerFires =
         std::max(int32_t(mCCDelay / kCCSkippableDelay) - 2, 1);
 
@@ -282,7 +321,8 @@ class CCGCScheduler {
     CleanupChildless,
     CleanupContentUnbinder,
     CleanupDeferred,
-    CycleCollect
+    StartCycleCollection,
+    CycleCollecting
   };
 
   enum CCRunnerYield { Continue, Yield };
@@ -306,16 +346,26 @@ class CCGCScheduler {
     CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
   };
 
-  void ActivateCCRunner() {
+  void InitCCRunnerStateMachine(CCRunnerState initialState) {
     MOZ_ASSERT(mCCRunnerState == CCRunnerState::Inactive);
-    mCCRunnerState = CCRunnerState::ReducePurple;
-    mCCDelay = kCCDelay;
-    mCCRunnerEarlyFireCount = 0;
+    mCCRunnerState = initialState;
+    if (initialState == CCRunnerState::ReducePurple) {
+      mCCDelay = kCCDelay;
+      mCCRunnerEarlyFireCount = 0;
+    } else if (initialState == CCRunnerState::CycleCollecting) {
+      
+    } else {
+      MOZ_CRASH("Invalid initial state");
+    }
   }
 
   void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
 
   CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline, uint32_t aSuspected) {
+    if (mDidShutdown) {
+      return {CCRunnerAction::StopRunning, Yield};
+    }
+
     if (mCCRunnerState == CCRunnerState::Inactive) {
       
       return {CCRunnerAction::StopRunning, Yield};
@@ -324,18 +374,29 @@ class CCGCScheduler {
     TimeStamp now = TimeStamp::Now();
 
     if (InIncrementalGC()) {
-      if (EnsureCCIsBlocked(now) == StartingLockout) {
+      if (mCCBlockStart.IsNull()) {
+        BlockCC(now);
+
         
         
         
         
-        mCCRunnerState = CCRunnerState::ReducePurple;
-        mCCRunnerEarlyFireCount = 0;
-        mCCDelay = kCCDelay / int64_t(3);
+        
+        
+        
+        
+        
+        
+
+        if (mCCRunnerState != CCRunnerState::CycleCollecting) {
+          mCCRunnerState = CCRunnerState::ReducePurple;
+          mCCRunnerEarlyFireCount = 0;
+          mCCDelay = kCCDelay / int64_t(3);
+        }
         return {CCRunnerAction::None, Yield};
       }
 
-      if (GetCCBlockedTime(now).value() < kMaxCCLockedoutTime) {
+      if (GetCCBlockedTime(now) < kMaxCCLockedoutTime) {
         return {CCRunnerAction::None, Yield};
       }
 
@@ -349,6 +410,8 @@ class CCGCScheduler {
     switch (mCCRunnerState) {
       case CCRunnerState::ReducePurple:
       case CCRunnerState::CleanupDeferred:
+      case CCRunnerState::StartCycleCollection:
+      case CCRunnerState::CycleCollecting:
         break;
 
       default:
@@ -413,7 +476,7 @@ class CCGCScheduler {
         if (aDeadline.IsNull()) {
           
           
-          mCCRunnerState = CCRunnerState::CycleCollect;
+          mCCRunnerState = CCRunnerState::StartCycleCollection;
           return {CCRunnerAction::None, Yield};
         }
 
@@ -421,7 +484,7 @@ class CCGCScheduler {
 
         
         if (now >= aDeadline) {
-          mCCRunnerState = CCRunnerState::CycleCollect;
+          mCCRunnerState = CCRunnerState::StartCycleCollection;
           return {CCRunnerAction::None, Yield};
         }
 
@@ -435,7 +498,7 @@ class CCGCScheduler {
 
         
         
-        mCCRunnerState = CCRunnerState::CycleCollect;
+        mCCRunnerState = CCRunnerState::StartCycleCollection;
         if (now >= aDeadline) {
           
           return {CCRunnerAction::None, Yield};
@@ -444,13 +507,16 @@ class CCGCScheduler {
         return {CCRunnerAction::CleanupDeferred, Yield};
 
       
+      case CCRunnerState::StartCycleCollection:
+        
+        
+        
+        
+        mCCRunnerState = CCRunnerState::CycleCollecting;
+        [[fallthrough]];
+
       
-      case CCRunnerState::CycleCollect:
-        
-        
-        
-        
-        mCCRunnerState = CCRunnerState::Inactive;
+      case CCRunnerState::CycleCollecting:
         return {CCRunnerAction::CycleCollect, Yield};
 
       default:
@@ -481,8 +547,8 @@ class CCGCScheduler {
           (endPoint - mForgetSkippableFrequencyStartTime).ToSeconds() / 60;
       uint32_t frequencyPerMinute =
           uint32_t(mForgetSkippableCounter / duration);
-      Telemetry::Accumulate(Telemetry::FORGET_SKIPPABLE_FREQUENCY,
-                            frequencyPerMinute);
+      mozilla::Telemetry::Accumulate(
+          mozilla::Telemetry::FORGET_SKIPPABLE_FREQUENCY, frequencyPerMinute);
       mForgetSkippableCounter = 0;
       mForgetSkippableFrequencyStartTime = aStartTimeStamp;
     }
@@ -493,6 +559,7 @@ class CCGCScheduler {
     return BudgetFromDuration(budgetTime);
   }
 
+ private:
   
 
   
@@ -502,6 +569,9 @@ class CCGCScheduler {
   
   
   TimeStamp mCCBlockStart;
+
+  bool mDidShutdown = false;
+
   TimeStamp mLastForgetSkippableEndTime;
   uint32_t mForgetSkippableCounter = 0;
   TimeStamp mForgetSkippableFrequencyStartTime;
@@ -511,10 +581,22 @@ class CCGCScheduler {
   CCRunnerState mCCRunnerState = CCRunnerState::Inactive;
   int32_t mCCRunnerEarlyFireCount = 0;
   TimeDuration mCCDelay = kCCDelay;
+
+  
+  
+  bool mHasRunGC = false;
+
   bool mNeedsFullCC = false;
+  bool mNeedsFullGC = true;
+  bool mNeedsGCAfterCC = false;
   uint32_t mPreviousSuspectedCount = 0;
 
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
+
+ public:
+  uint32_t mCCollectedWaitingForGC = 0;
+  uint32_t mCCollectedZonesWaitingForGC = 0;
+  uint32_t mLikelyShortLivingObjectsNeedingGC = 0;
 
   
 
