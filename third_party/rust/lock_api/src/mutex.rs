@@ -45,7 +45,30 @@ pub unsafe trait RawMutex {
     fn try_lock(&self) -> bool;
 
     
-    fn unlock(&self);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn unlock(&self);
+
+    
+    #[inline]
+    fn is_locked(&self) -> bool {
+        let acquired_lock = self.try_lock();
+        if acquired_lock {
+            
+            unsafe {
+                self.unlock();
+            }
+        }
+        !acquired_lock
+    }
 }
 
 
@@ -56,14 +79,28 @@ pub unsafe trait RawMutex {
 
 pub unsafe trait RawMutexFair: RawMutex {
     
-    fn unlock_fair(&self);
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn unlock_fair(&self);
 
     
     
     
     
     
-    fn bump(&self) {
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn bump(&self) {
         self.unlock_fair();
         self.lock();
     }
@@ -199,6 +236,12 @@ impl<R: RawMutex, T: ?Sized> Mutex<R, T> {
     }
 
     
+    #[inline]
+    pub fn is_locked(&self) -> bool {
+        self.raw.is_locked()
+    }
+
+    
     
     
     
@@ -226,6 +269,22 @@ impl<R: RawMutex, T: ?Sized> Mutex<R, T> {
     #[inline]
     pub unsafe fn raw(&self) -> &R {
         &self.raw
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn data_ptr(&self) -> *mut T {
+        self.data.get()
     }
 }
 
@@ -420,7 +479,10 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
     where
         F: FnOnce() -> U,
     {
-        s.mutex.raw.unlock();
+        
+        unsafe {
+            s.mutex.raw.unlock();
+        }
         defer!(s.mutex.raw.lock());
         f()
     }
@@ -441,7 +503,10 @@ impl<'a, R: RawMutexFair + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.mutex.raw.unlock_fair();
+        
+        unsafe {
+            s.mutex.raw.unlock_fair();
+        }
         mem::forget(s);
     }
 
@@ -456,7 +521,10 @@ impl<'a, R: RawMutexFair + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
     where
         F: FnOnce() -> U,
     {
-        s.mutex.raw.unlock_fair();
+        
+        unsafe {
+            s.mutex.raw.unlock_fair();
+        }
         defer!(s.mutex.raw.lock());
         f()
     }
@@ -468,7 +536,10 @@ impl<'a, R: RawMutexFair + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
     
     #[inline]
     pub fn bump(s: &mut Self) {
-        s.mutex.raw.bump();
+        
+        unsafe {
+            s.mutex.raw.bump();
+        }
     }
 }
 
@@ -490,7 +561,10 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> DerefMut for MutexGuard<'a, R, T> {
 impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> Drop for MutexGuard<'a, R, T> {
     #[inline]
     fn drop(&mut self) {
-        self.mutex.raw.unlock();
+        
+        unsafe {
+            self.mutex.raw.unlock();
+        }
     }
 }
 
@@ -599,7 +673,10 @@ impl<'a, R: RawMutexFair + 'a, T: ?Sized + 'a> MappedMutexGuard<'a, R, T> {
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.raw.unlock_fair();
+        
+        unsafe {
+            s.raw.unlock_fair();
+        }
         mem::forget(s);
     }
 }
@@ -622,7 +699,10 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> DerefMut for MappedMutexGuard<'a, R, 
 impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> Drop for MappedMutexGuard<'a, R, T> {
     #[inline]
     fn drop(&mut self) {
-        self.raw.unlock();
+        
+        unsafe {
+            self.raw.unlock();
+        }
     }
 }
 

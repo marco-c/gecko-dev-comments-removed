@@ -47,14 +47,36 @@ pub unsafe trait GetThreadId {
     fn nonzero_thread_id(&self) -> NonZeroUsize;
 }
 
-struct RawReentrantMutex<R, G> {
+
+
+
+
+
+
+
+
+
+
+pub struct RawReentrantMutex<R, G> {
     owner: AtomicUsize,
     lock_count: Cell<usize>,
     mutex: R,
     get_thread_id: G,
 }
 
+unsafe impl<R: RawMutex + Send, G: GetThreadId + Send> Send for RawReentrantMutex<R, G> {}
+unsafe impl<R: RawMutex + Sync, G: GetThreadId + Sync> Sync for RawReentrantMutex<R, G> {}
+
 impl<R: RawMutex, G: GetThreadId> RawReentrantMutex<R, G> {
+    
+    #[allow(clippy::declare_interior_mutable_const)]
+    pub const INIT: Self = RawReentrantMutex {
+        owner: AtomicUsize::new(0),
+        lock_count: Cell::new(0),
+        mutex: R::INIT,
+        get_thread_id: G::INIT,
+    };
+
     #[inline]
     fn lock_internal<F: FnOnce() -> bool>(&self, try_lock: F) -> bool {
         let id = self.get_thread_id.nonzero_thread_id().get();
@@ -76,21 +98,30 @@ impl<R: RawMutex, G: GetThreadId> RawReentrantMutex<R, G> {
         true
     }
 
+    
     #[inline]
-    fn lock(&self) {
+    pub fn lock(&self) {
         self.lock_internal(|| {
             self.mutex.lock();
             true
         });
     }
 
+    
+    
     #[inline]
-    fn try_lock(&self) -> bool {
+    pub fn try_lock(&self) -> bool {
         self.lock_internal(|| self.mutex.try_lock())
     }
 
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn unlock(&self) {
+    pub unsafe fn unlock(&self) {
         let lock_count = self.lock_count.get() - 1;
         self.lock_count.set(lock_count);
         if lock_count == 0 {
@@ -98,11 +129,24 @@ impl<R: RawMutex, G: GetThreadId> RawReentrantMutex<R, G> {
             self.mutex.unlock();
         }
     }
+
+    
+    #[inline]
+    pub fn is_locked(&self) -> bool {
+        self.mutex.is_locked()
+    }
 }
 
 impl<R: RawMutexFair, G: GetThreadId> RawReentrantMutex<R, G> {
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn unlock_fair(&self) {
+    pub unsafe fn unlock_fair(&self) {
         let lock_count = self.lock_count.get() - 1;
         self.lock_count.set(lock_count);
         if lock_count == 0 {
@@ -111,8 +155,17 @@ impl<R: RawMutexFair, G: GetThreadId> RawReentrantMutex<R, G> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn bump(&self) {
+    pub unsafe fn bump(&self) {
         if self.lock_count.get() == 1 {
             let id = self.owner.load(Ordering::Relaxed);
             self.owner.store(0, Ordering::Relaxed);
@@ -123,13 +176,15 @@ impl<R: RawMutexFair, G: GetThreadId> RawReentrantMutex<R, G> {
 }
 
 impl<R: RawMutexTimed, G: GetThreadId> RawReentrantMutex<R, G> {
+    
     #[inline]
-    fn try_lock_until(&self, timeout: R::Instant) -> bool {
+    pub fn try_lock_until(&self, timeout: R::Instant) -> bool {
         self.lock_internal(|| self.mutex.try_lock_until(timeout))
     }
 
+    
     #[inline]
-    fn try_lock_for(&self, timeout: R::Duration) -> bool {
+    pub fn try_lock_for(&self, timeout: R::Duration) -> bool {
         self.lock_internal(|| self.mutex.try_lock_for(timeout))
     }
 }
@@ -273,6 +328,12 @@ impl<R: RawMutex, G: GetThreadId, T: ?Sized> ReentrantMutex<R, G, T> {
     }
 
     
+    #[inline]
+    pub fn is_locked(&self) -> bool {
+        self.raw.is_locked()
+    }
+
+    
     
     
     
@@ -300,6 +361,23 @@ impl<R: RawMutex, G: GetThreadId, T: ?Sized> ReentrantMutex<R, G, T> {
     #[inline]
     pub unsafe fn raw(&self) -> &R {
         &self.raw.mutex
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn data_ptr(&self) -> *mut T {
+        self.data.get()
     }
 }
 
@@ -505,7 +583,10 @@ impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a> ReentrantMutexGu
     where
         F: FnOnce() -> U,
     {
-        s.remutex.raw.unlock();
+        
+        unsafe {
+            s.remutex.raw.unlock();
+        }
         defer!(s.remutex.raw.lock());
         f()
     }
@@ -528,7 +609,10 @@ impl<'a, R: RawMutexFair + 'a, G: GetThreadId + 'a, T: ?Sized + 'a>
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.remutex.raw.unlock_fair();
+        
+        unsafe {
+            s.remutex.raw.unlock_fair();
+        }
         mem::forget(s);
     }
 
@@ -543,7 +627,10 @@ impl<'a, R: RawMutexFair + 'a, G: GetThreadId + 'a, T: ?Sized + 'a>
     where
         F: FnOnce() -> U,
     {
-        s.remutex.raw.unlock_fair();
+        
+        unsafe {
+            s.remutex.raw.unlock_fair();
+        }
         defer!(s.remutex.raw.lock());
         f()
     }
@@ -555,7 +642,10 @@ impl<'a, R: RawMutexFair + 'a, G: GetThreadId + 'a, T: ?Sized + 'a>
     
     #[inline]
     pub fn bump(s: &mut Self) {
-        s.remutex.raw.bump();
+        
+        unsafe {
+            s.remutex.raw.bump();
+        }
     }
 }
 
@@ -574,7 +664,10 @@ impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a> Drop
 {
     #[inline]
     fn drop(&mut self) {
-        self.remutex.raw.unlock();
+        
+        unsafe {
+            self.remutex.raw.unlock();
+        }
     }
 }
 
@@ -693,7 +786,10 @@ impl<'a, R: RawMutexFair + 'a, G: GetThreadId + 'a, T: ?Sized + 'a>
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.raw.unlock_fair();
+        
+        unsafe {
+            s.raw.unlock_fair();
+        }
         mem::forget(s);
     }
 }
@@ -713,7 +809,10 @@ impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a> Drop
 {
     #[inline]
     fn drop(&mut self) {
-        self.raw.unlock();
+        
+        unsafe {
+            self.raw.unlock();
+        }
     }
 }
 

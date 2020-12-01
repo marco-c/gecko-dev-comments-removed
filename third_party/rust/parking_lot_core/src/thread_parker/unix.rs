@@ -11,11 +11,9 @@ use core::{
     cell::{Cell, UnsafeCell},
     mem::MaybeUninit,
 };
+use instant::Instant;
 use libc;
-use std::{
-    thread,
-    time::{Duration, Instant},
-};
+use std::{thread, time::Duration};
 
 
 

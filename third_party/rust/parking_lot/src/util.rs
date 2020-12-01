@@ -5,7 +5,8 @@
 
 
 
-use std::time::{Duration, Instant};
+use instant::Instant;
+use std::time::Duration;
 
 
 pub trait UncheckedOptionExt<T> {

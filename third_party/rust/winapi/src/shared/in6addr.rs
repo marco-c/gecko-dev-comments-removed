@@ -3,6 +3,7 @@
 
 
 
+
 use shared::minwindef::{UCHAR, USHORT};
 UNION!{union in6_addr_u {
     [u16; 8],

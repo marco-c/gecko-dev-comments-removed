@@ -46,7 +46,11 @@ pub unsafe trait RawRwLock {
     fn try_lock_shared(&self) -> bool;
 
     
-    fn unlock_shared(&self);
+    
+    
+    
+    
+    unsafe fn unlock_shared(&self);
 
     
     fn lock_exclusive(&self);
@@ -55,7 +59,24 @@ pub unsafe trait RawRwLock {
     fn try_lock_exclusive(&self) -> bool;
 
     
-    fn unlock_exclusive(&self);
+    
+    
+    
+    
+    unsafe fn unlock_exclusive(&self);
+
+    
+    #[inline]
+    fn is_locked(&self) -> bool {
+        let acquired_lock = self.try_lock_exclusive();
+        if acquired_lock {
+            
+            unsafe {
+                self.unlock_exclusive();
+            }
+        }
+        !acquired_lock
+    }
 }
 
 
@@ -66,17 +87,29 @@ pub unsafe trait RawRwLock {
 
 pub unsafe trait RawRwLockFair: RawRwLock {
     
-    fn unlock_shared_fair(&self);
+    
+    
+    
+    
+    unsafe fn unlock_shared_fair(&self);
 
     
-    fn unlock_exclusive_fair(&self);
+    
+    
+    
+    
+    unsafe fn unlock_exclusive_fair(&self);
 
     
     
     
     
     
-    fn bump_shared(&self) {
+    
+    
+    
+    
+    unsafe fn bump_shared(&self) {
         self.unlock_shared_fair();
         self.lock_shared();
     }
@@ -86,7 +119,11 @@ pub unsafe trait RawRwLockFair: RawRwLock {
     
     
     
-    fn bump_exclusive(&self) {
+    
+    
+    
+    
+    unsafe fn bump_exclusive(&self) {
         self.unlock_exclusive_fair();
         self.lock_exclusive();
     }
@@ -97,7 +134,11 @@ pub unsafe trait RawRwLockFair: RawRwLock {
 pub unsafe trait RawRwLockDowngrade: RawRwLock {
     
     
-    fn downgrade(&self);
+    
+    
+    
+    
+    unsafe fn downgrade(&self);
 }
 
 
@@ -164,28 +205,48 @@ pub unsafe trait RawRwLockUpgrade: RawRwLock {
     fn try_lock_upgradable(&self) -> bool;
 
     
-    fn unlock_upgradable(&self);
+    
+    
+    
+    
+    unsafe fn unlock_upgradable(&self);
 
     
-    fn upgrade(&self);
+    
+    
+    
+    
+    unsafe fn upgrade(&self);
 
     
     
-    fn try_upgrade(&self) -> bool;
+    
+    
+    
+    
+    unsafe fn try_upgrade(&self) -> bool;
 }
 
 
 
 pub unsafe trait RawRwLockUpgradeFair: RawRwLockUpgrade + RawRwLockFair {
     
-    fn unlock_upgradable_fair(&self);
+    
+    
+    
+    
+    unsafe fn unlock_upgradable_fair(&self);
 
     
     
     
     
     
-    fn bump_upgradable(&self) {
+    
+    
+    
+    
+    unsafe fn bump_upgradable(&self) {
         self.unlock_upgradable_fair();
         self.lock_upgradable();
     }
@@ -195,10 +256,18 @@ pub unsafe trait RawRwLockUpgradeFair: RawRwLockUpgrade + RawRwLockFair {
 
 pub unsafe trait RawRwLockUpgradeDowngrade: RawRwLockUpgrade + RawRwLockDowngrade {
     
-    fn downgrade_upgradable(&self);
+    
+    
+    
+    
+    unsafe fn downgrade_upgradable(&self);
 
     
-    fn downgrade_to_upgradable(&self);
+    
+    
+    
+    
+    unsafe fn downgrade_to_upgradable(&self);
 }
 
 
@@ -212,11 +281,19 @@ pub unsafe trait RawRwLockUpgradeTimed: RawRwLockUpgrade + RawRwLockTimed {
 
     
     
-    fn try_upgrade_for(&self, timeout: Self::Duration) -> bool;
+    
+    
+    
+    
+    unsafe fn try_upgrade_for(&self, timeout: Self::Duration) -> bool;
 
     
     
-    fn try_upgrade_until(&self, timeout: Self::Instant) -> bool;
+    
+    
+    
+    
+    unsafe fn try_upgrade_until(&self, timeout: Self::Instant) -> bool;
 }
 
 
@@ -413,6 +490,12 @@ impl<R: RawRwLock, T: ?Sized> RwLock<R, T> {
     }
 
     
+    #[inline]
+    pub fn is_locked(&self) -> bool {
+        self.raw.is_locked()
+    }
+
+    
     
     
     
@@ -456,6 +539,23 @@ impl<R: RawRwLock, T: ?Sized> RwLock<R, T> {
     
     pub unsafe fn raw(&self) -> &R {
         &self.raw
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn data_ptr(&self) -> *mut T {
+        self.data.get()
     }
 }
 
@@ -844,7 +944,10 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> RwLockReadGuard<'a, R, T> {
     where
         F: FnOnce() -> U,
     {
-        s.rwlock.raw.unlock_shared();
+        
+        unsafe {
+            s.rwlock.raw.unlock_shared();
+        }
         defer!(s.rwlock.raw.lock_shared());
         f()
     }
@@ -865,7 +968,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> RwLockReadGuard<'a, R, T> {
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.rwlock.raw.unlock_shared_fair();
+        
+        unsafe {
+            s.rwlock.raw.unlock_shared_fair();
+        }
         mem::forget(s);
     }
 
@@ -880,7 +986,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> RwLockReadGuard<'a, R, T> {
     where
         F: FnOnce() -> U,
     {
-        s.rwlock.raw.unlock_shared_fair();
+        
+        unsafe {
+            s.rwlock.raw.unlock_shared_fair();
+        }
         defer!(s.rwlock.raw.lock_shared());
         f()
     }
@@ -892,7 +1001,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> RwLockReadGuard<'a, R, T> {
     
     #[inline]
     pub fn bump(s: &mut Self) {
-        s.rwlock.raw.bump_shared();
+        
+        unsafe {
+            s.rwlock.raw.bump_shared();
+        }
     }
 }
 
@@ -907,7 +1019,10 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> Deref for RwLockReadGuard<'a, R, T> 
 impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> Drop for RwLockReadGuard<'a, R, T> {
     #[inline]
     fn drop(&mut self) {
-        self.rwlock.raw.unlock_shared();
+        
+        unsafe {
+            self.rwlock.raw.unlock_shared();
+        }
     }
 }
 
@@ -1003,7 +1118,10 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> RwLockWriteGuard<'a, R, T> {
     where
         F: FnOnce() -> U,
     {
-        s.rwlock.raw.unlock_exclusive();
+        
+        unsafe {
+            s.rwlock.raw.unlock_exclusive();
+        }
         defer!(s.rwlock.raw.lock_exclusive());
         f()
     }
@@ -1017,7 +1135,10 @@ impl<'a, R: RawRwLockDowngrade + 'a, T: ?Sized + 'a> RwLockWriteGuard<'a, R, T> 
     
     
     pub fn downgrade(s: Self) -> RwLockReadGuard<'a, R, T> {
-        s.rwlock.raw.downgrade();
+        
+        unsafe {
+            s.rwlock.raw.downgrade();
+        }
         let rwlock = s.rwlock;
         mem::forget(s);
         RwLockReadGuard {
@@ -1035,7 +1156,10 @@ impl<'a, R: RawRwLockUpgradeDowngrade + 'a, T: ?Sized + 'a> RwLockWriteGuard<'a,
     
     
     pub fn downgrade_to_upgradable(s: Self) -> RwLockUpgradableReadGuard<'a, R, T> {
-        s.rwlock.raw.downgrade_to_upgradable();
+        
+        unsafe {
+            s.rwlock.raw.downgrade_to_upgradable();
+        }
         let rwlock = s.rwlock;
         mem::forget(s);
         RwLockUpgradableReadGuard {
@@ -1060,7 +1184,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> RwLockWriteGuard<'a, R, T> {
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.rwlock.raw.unlock_exclusive_fair();
+        
+        unsafe {
+            s.rwlock.raw.unlock_exclusive_fair();
+        }
         mem::forget(s);
     }
 
@@ -1075,7 +1202,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> RwLockWriteGuard<'a, R, T> {
     where
         F: FnOnce() -> U,
     {
-        s.rwlock.raw.unlock_exclusive_fair();
+        
+        unsafe {
+            s.rwlock.raw.unlock_exclusive_fair();
+        }
         defer!(s.rwlock.raw.lock_exclusive());
         f()
     }
@@ -1087,7 +1217,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> RwLockWriteGuard<'a, R, T> {
     
     #[inline]
     pub fn bump(s: &mut Self) {
-        s.rwlock.raw.bump_exclusive();
+        
+        unsafe {
+            s.rwlock.raw.bump_exclusive();
+        }
     }
 }
 
@@ -1109,7 +1242,10 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> DerefMut for RwLockWriteGuard<'a, R,
 impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> Drop for RwLockWriteGuard<'a, R, T> {
     #[inline]
     fn drop(&mut self) {
-        self.rwlock.raw.unlock_exclusive();
+        
+        unsafe {
+            self.rwlock.raw.unlock_exclusive();
+        }
     }
 }
 
@@ -1158,7 +1294,10 @@ impl<'a, R: RawRwLockUpgrade + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuard<'a,
     where
         F: FnOnce() -> U,
     {
-        s.rwlock.raw.unlock_upgradable();
+        
+        unsafe {
+            s.rwlock.raw.unlock_upgradable();
+        }
         defer!(s.rwlock.raw.lock_upgradable());
         f()
     }
@@ -1166,7 +1305,10 @@ impl<'a, R: RawRwLockUpgrade + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuard<'a,
     
     
     pub fn upgrade(s: Self) -> RwLockWriteGuard<'a, R, T> {
-        s.rwlock.raw.upgrade();
+        
+        unsafe {
+            s.rwlock.raw.upgrade();
+        }
         let rwlock = s.rwlock;
         mem::forget(s);
         RwLockWriteGuard {
@@ -1179,7 +1321,8 @@ impl<'a, R: RawRwLockUpgrade + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuard<'a,
     
     
     pub fn try_upgrade(s: Self) -> Result<RwLockWriteGuard<'a, R, T>, Self> {
-        if s.rwlock.raw.try_upgrade() {
+        
+        if unsafe { s.rwlock.raw.try_upgrade() } {
             let rwlock = s.rwlock;
             mem::forget(s);
             Ok(RwLockWriteGuard {
@@ -1207,7 +1350,10 @@ impl<'a, R: RawRwLockUpgradeFair + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuard
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.rwlock.raw.unlock_upgradable_fair();
+        
+        unsafe {
+            s.rwlock.raw.unlock_upgradable_fair();
+        }
         mem::forget(s);
     }
 
@@ -1222,7 +1368,10 @@ impl<'a, R: RawRwLockUpgradeFair + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuard
     where
         F: FnOnce() -> U,
     {
-        s.rwlock.raw.unlock_upgradable_fair();
+        
+        unsafe {
+            s.rwlock.raw.unlock_upgradable_fair();
+        }
         defer!(s.rwlock.raw.lock_upgradable());
         f()
     }
@@ -1234,7 +1383,10 @@ impl<'a, R: RawRwLockUpgradeFair + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuard
     
     #[inline]
     pub fn bump(s: &mut Self) {
-        s.rwlock.raw.bump_upgradable();
+        
+        unsafe {
+            s.rwlock.raw.bump_upgradable();
+        }
     }
 }
 
@@ -1247,7 +1399,10 @@ impl<'a, R: RawRwLockUpgradeDowngrade + 'a, T: ?Sized + 'a> RwLockUpgradableRead
     
     
     pub fn downgrade(s: Self) -> RwLockReadGuard<'a, R, T> {
-        s.rwlock.raw.downgrade_upgradable();
+        
+        unsafe {
+            s.rwlock.raw.downgrade_upgradable();
+        }
         let rwlock = s.rwlock;
         mem::forget(s);
         RwLockReadGuard {
@@ -1267,7 +1422,8 @@ impl<'a, R: RawRwLockUpgradeTimed + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuar
         s: Self,
         timeout: R::Duration,
     ) -> Result<RwLockWriteGuard<'a, R, T>, Self> {
-        if s.rwlock.raw.try_upgrade_for(timeout) {
+        
+        if unsafe { s.rwlock.raw.try_upgrade_for(timeout) } {
             let rwlock = s.rwlock;
             mem::forget(s);
             Ok(RwLockWriteGuard {
@@ -1289,7 +1445,8 @@ impl<'a, R: RawRwLockUpgradeTimed + 'a, T: ?Sized + 'a> RwLockUpgradableReadGuar
         s: Self,
         timeout: R::Instant,
     ) -> Result<RwLockWriteGuard<'a, R, T>, Self> {
-        if s.rwlock.raw.try_upgrade_until(timeout) {
+        
+        if unsafe { s.rwlock.raw.try_upgrade_until(timeout) } {
             let rwlock = s.rwlock;
             mem::forget(s);
             Ok(RwLockWriteGuard {
@@ -1313,7 +1470,10 @@ impl<'a, R: RawRwLockUpgrade + 'a, T: ?Sized + 'a> Deref for RwLockUpgradableRea
 impl<'a, R: RawRwLockUpgrade + 'a, T: ?Sized + 'a> Drop for RwLockUpgradableReadGuard<'a, R, T> {
     #[inline]
     fn drop(&mut self) {
-        self.rwlock.raw.unlock_upgradable();
+        
+        unsafe {
+            self.rwlock.raw.unlock_upgradable();
+        }
     }
 }
 
@@ -1426,7 +1586,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> MappedRwLockReadGuard<'a, R, T> 
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.raw.unlock_shared_fair();
+        
+        unsafe {
+            s.raw.unlock_shared_fair();
+        }
         mem::forget(s);
     }
 }
@@ -1442,7 +1605,10 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> Deref for MappedRwLockReadGuard<'a, 
 impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> Drop for MappedRwLockReadGuard<'a, R, T> {
     #[inline]
     fn drop(&mut self) {
-        self.raw.unlock_shared();
+        
+        unsafe {
+            self.raw.unlock_shared();
+        }
     }
 }
 
@@ -1543,30 +1709,6 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> MappedRwLockWriteGuard<'a, R, T> {
     }
 }
 
-impl<'a, R: RawRwLockDowngrade + 'a, T: ?Sized + 'a> MappedRwLockWriteGuard<'a, R, T> {
-    
-    
-    
-    
-    
-    
-    #[deprecated(
-        since = "0.3.3",
-        note = "This function is unsound and will be removed in the future, see issue #198"
-    )]
-    pub fn downgrade(s: Self) -> MappedRwLockReadGuard<'a, R, T> {
-        s.raw.downgrade();
-        let raw = s.raw;
-        let data = s.data;
-        mem::forget(s);
-        MappedRwLockReadGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
-    }
-}
-
 impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> MappedRwLockWriteGuard<'a, R, T> {
     
     
@@ -1582,7 +1724,10 @@ impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> MappedRwLockWriteGuard<'a, R, T>
     
     #[inline]
     pub fn unlock_fair(s: Self) {
-        s.raw.unlock_exclusive_fair();
+        
+        unsafe {
+            s.raw.unlock_exclusive_fair();
+        }
         mem::forget(s);
     }
 }
@@ -1605,7 +1750,10 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> DerefMut for MappedRwLockWriteGuard<
 impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> Drop for MappedRwLockWriteGuard<'a, R, T> {
     #[inline]
     fn drop(&mut self) {
-        self.raw.unlock_exclusive();
+        
+        unsafe {
+            self.raw.unlock_exclusive();
+        }
     }
 }
 

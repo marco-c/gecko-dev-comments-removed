@@ -8,7 +8,8 @@
 
 
 
-use std::{thread, time::Instant};
+use instant::Instant;
+use std::thread;
 
 pub struct ThreadParker(());
 

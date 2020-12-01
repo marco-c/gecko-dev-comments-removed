@@ -9,7 +9,8 @@ use core::{
     arch::wasm32,
     sync::atomic::{AtomicI32, Ordering},
 };
-use std::{convert::TryFrom, thread, time::Instant};
+use instant::Instant;
+use std::{convert::TryFrom, thread};
 
 
 pub struct ThreadParker {

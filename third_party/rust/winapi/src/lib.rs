@@ -6,7 +6,7 @@
 #![cfg(windows)]
 #![deny(unused, unused_qualifications)]
 #![warn(unused_attributes)]
-#![allow(bad_style, overflowing_literals, unused_macros)]
+#![allow(bad_style, overflowing_literals, unused_macros, deprecated, unused_crate_dependencies)]
 #![recursion_limit = "2563"]
 #![no_std]
 
@@ -25,6 +25,7 @@ pub extern crate core as _core;
 mod macros;
 pub mod km;
 pub mod shared;
+pub mod ucrt;
 pub mod um;
 pub mod vc;
 pub mod winrt;

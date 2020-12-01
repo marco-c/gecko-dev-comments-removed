@@ -247,14 +247,12 @@ impl Strategy for OnSuccess {
 
 
 
-
 #[macro_export]
 macro_rules! defer {
-    ($e:expr) => {
-        let _guard = $crate::guard((), |()| $e);
-    }
+    ($($t:tt)*) => {
+        let _guard = $crate::guard((), |()| { $($t)* });
+    };
 }
-
 
 
 
@@ -265,11 +263,10 @@ macro_rules! defer {
 #[cfg(feature = "use_std")]
 #[macro_export]
 macro_rules! defer_on_success {
-    ($e:expr) => {
-        let _guard = $crate::guard_on_success((), |()| $e);
-    }
+    ($($t:tt)*) => {
+        let _guard = $crate::guard_on_success((), |()| { $($t)* });
+    };
 }
-
 
 
 
@@ -280,9 +277,9 @@ macro_rules! defer_on_success {
 #[cfg(feature = "use_std")]
 #[macro_export]
 macro_rules! defer_on_unwind {
-    ($e:expr) => {
-        let _guard = $crate::guard_on_unwind((), |()| $e);
-    }
+    ($($t:tt)*) => {
+        let _guard = $crate::guard_on_unwind((), |()| { $($t)* });
+    };
 }
 
 
@@ -304,6 +301,7 @@ pub struct ScopeGuard<T, F, S = Always>
 {
     value: ManuallyDrop<T>,
     dropfn: ManuallyDrop<F>,
+    
     strategy: PhantomData<fn(S) -> S>,
 }
 
@@ -324,6 +322,7 @@ impl<T, F, S> ScopeGuard<T, F, S>
         }
     }
 
+    
     
     
     
@@ -424,13 +423,14 @@ unsafe impl<T, F, S> Sync for ScopeGuard<T, F, S>
     where T: Sync,
           F: FnOnce(T),
           S: Strategy
-{ }
+{}
 
 impl<T, F, S> Deref for ScopeGuard<T, F, S>
     where F: FnOnce(T),
           S: Strategy
 {
     type Target = T;
+
     fn deref(&self) -> &T {
         &*self.value
     }
@@ -441,7 +441,7 @@ impl<T, F, S> DerefMut for ScopeGuard<T, F, S>
           S: Strategy
 {
     fn deref_mut(&mut self) -> &mut T {
-        &mut*self.value
+        &mut *self.value
     }
 }
 

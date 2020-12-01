@@ -1692,7 +1692,7 @@ impl d::Device<B> for Device {
                             });
                             parameters
                                 .push(native::RootParameter::cbv_descriptor(visibility, binding));
-                            root_offset += 2;
+                            root_offset += 2; 
                         } else {
                             
                             unimplemented!()

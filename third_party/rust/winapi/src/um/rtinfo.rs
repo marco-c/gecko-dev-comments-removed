@@ -1,0 +1,7 @@
+
+
+
+
+
+use shared::basetsd::DWORD_PTR;
+pub const ALIGN_SIZE: DWORD_PTR = 0x00000008;

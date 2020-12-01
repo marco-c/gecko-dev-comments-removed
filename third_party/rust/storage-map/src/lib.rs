@@ -1,12 +1,5 @@
 use lock_api::RawRwLock;
-use std::{
-    cell::UnsafeCell,
-    collections::hash_map::HashMap,
-    fmt,
-    hash,
-    ops,
-};
-
+use std::{cell::UnsafeCell, collections::hash_map::HashMap, fmt, hash, ops};
 
 
 
@@ -34,7 +27,6 @@ impl<L, M: fmt::Debug> fmt::Debug for StorageMap<L, M> {
 }
 
 
-
 pub struct StorageMapGuard<'a, L: 'a + RawRwLock, V: 'a> {
     lock: &'a L,
     value: &'a V,
@@ -50,10 +42,12 @@ impl<'a, L: RawRwLock, V> ops::Deref for StorageMapGuard<'a, L, V> {
 
 impl<'a, L: RawRwLock, V> Drop for StorageMapGuard<'a, L, V> {
     fn drop(&mut self) {
-        if self.exclusive {
-            self.lock.unlock_exclusive();
-        } else {
-            self.lock.unlock_shared();
+        unsafe {
+            if self.exclusive {
+                self.lock.unlock_exclusive();
+            } else {
+                self.lock.unlock_shared();
+            }
         }
     }
 }
@@ -78,10 +72,11 @@ impl<'a, L: RawRwLock, M> ops::DerefMut for WholeMapWriteGuard<'a, L, M> {
 
 impl<'a, L: RawRwLock, V> Drop for WholeMapWriteGuard<'a, L, V> {
     fn drop(&mut self) {
-        self.lock.unlock_exclusive();
+        unsafe {
+            self.lock.unlock_exclusive();
+        }
     }
 }
-
 
 
 pub enum PrepareResult {
@@ -111,7 +106,9 @@ where
     
     
     pub fn get_or_create_with<'a, F: FnOnce() -> V>(
-        &'a self, key: &K, create_fn: F
+        &'a self,
+        key: &K,
+        create_fn: F,
     ) -> StorageMapGuard<'a, L, V> {
         self.lock.lock_shared();
         
@@ -123,7 +120,9 @@ where
                 exclusive: false,
             };
         }
-        self.lock.unlock_shared();
+        unsafe {
+            self.lock.unlock_shared();
+        }
         
         let value = create_fn();
         self.lock.lock_exclusive();
@@ -137,14 +136,14 @@ where
 
     
     
-    pub fn prepare_maybe<F: FnOnce() -> Option<V>>(
-        &self, key: &K, create_fn: F
-    ) -> PrepareResult {
+    pub fn prepare_maybe<F: FnOnce() -> Option<V>>(&self, key: &K, create_fn: F) -> PrepareResult {
         self.lock.lock_shared();
         
         let map = unsafe { &*self.map.get() };
         let has = map.contains_key(key);
-        self.lock.unlock_shared();
+        unsafe {
+            self.lock.unlock_shared();
+        }
         if has {
             return PrepareResult::AlreadyExists;
         }
@@ -157,7 +156,9 @@ where
         self.lock.lock_exclusive();
         let map = unsafe { &mut *self.map.get() };
         map.insert(key.clone(), value);
-        self.lock.unlock_exclusive();
+        unsafe {
+            self.lock.unlock_exclusive();
+        }
         PrepareResult::Created
     }
 

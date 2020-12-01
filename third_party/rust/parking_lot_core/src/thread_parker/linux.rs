@@ -9,8 +9,9 @@ use core::{
     ptr,
     sync::atomic::{AtomicI32, Ordering},
 };
+use instant::Instant;
 use libc;
-use std::{thread, time::Instant};
+use std::thread;
 
 
 
