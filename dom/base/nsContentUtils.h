@@ -2809,7 +2809,9 @@ class nsContentUtils {
 
 
   static nsresult GetHostOrIPv6WithBrackets(nsIURI* aURI, nsAString& aHost);
-  static nsresult GetHostOrIPv6WithBrackets(nsIURI* aURI, nsCString& aHost);
+  static nsresult GetHostOrIPv6WithBrackets(nsIURI* aURI, nsACString& aHost);
+  static nsresult GetHostOrIPv6WithBrackets(nsIPrincipal* aPrincipal,
+                                            nsACString& aHost);
 
   
 

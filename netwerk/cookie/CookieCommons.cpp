@@ -91,7 +91,7 @@ nsresult CookieCommons::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
     
     
     
-    rv = aHostURI->GetAsciiHost(aBaseDomain);
+    rv = nsContentUtils::GetHostOrIPv6WithBrackets(aHostURI, aBaseDomain);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -114,7 +114,7 @@ nsresult CookieCommons::GetBaseDomain(nsIPrincipal* aPrincipal,
 
   
   if (aPrincipal->SchemeIs("file")) {
-    return aPrincipal->GetAsciiHost(aBaseDomain);
+    return nsContentUtils::GetHostOrIPv6WithBrackets(aPrincipal, aBaseDomain);
   }
 
   return aPrincipal->GetBaseDomain(aBaseDomain);
