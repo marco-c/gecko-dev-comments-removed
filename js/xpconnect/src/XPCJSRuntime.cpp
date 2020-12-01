@@ -3005,8 +3005,8 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
       return domObj->Aborted();
     };
 
-    JS::InitAbortSignalHandling(dom::AbortSignal_Binding::GetJSClass(),
-                                isAborted, cx);
+    JS::InitPipeToHandling(dom::AbortSignal_Binding::GetJSClass(), isAborted,
+                           cx);
   }
 
   JS::SetXrayJitInfo(&gXrayJitInfo);

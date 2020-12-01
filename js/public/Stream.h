@@ -508,6 +508,8 @@ class JS_PUBLIC_API WritableStreamUnderlyingSink {
 
 
 
+
+
 using AbortSignalIsAborted = bool (*)(JSObject* signal);
 
 
@@ -530,8 +532,10 @@ using AbortSignalIsAborted = bool (*)(JSObject* signal);
 
 
 
-extern JS_PUBLIC_API void InitAbortSignalHandling(
-    const JSClass* clasp, AbortSignalIsAborted isAborted, JSContext* cx);
+
+extern JS_PUBLIC_API void InitPipeToHandling(const JSClass* abortSignalClass,
+                                             AbortSignalIsAborted isAborted,
+                                             JSContext* cx);
 
 }  
 
