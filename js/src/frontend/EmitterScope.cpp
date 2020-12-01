@@ -775,30 +775,6 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
   return checkEnvironmentChainLength(bce);
 }
 
-class DynamicBindingIter : public ParserBindingIter {
- public:
-  explicit DynamicBindingIter(GlobalSharedContext* sc)
-      : ParserBindingIter(*sc->bindings) {}
-
-  explicit DynamicBindingIter(EvalSharedContext* sc)
-      : ParserBindingIter(*sc->bindings,  false) {
-    MOZ_ASSERT(!sc->strict());
-  }
-
-  JSOp bindingOp() const {
-    switch (kind()) {
-      case BindingKind::Var:
-        return JSOp::DefVar;
-      case BindingKind::Let:
-        return JSOp::DefLet;
-      case BindingKind::Const:
-        return JSOp::DefConst;
-      default:
-        MOZ_CRASH("Bad BindingKind");
-    }
-  }
-};
-
 bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
                                GlobalSharedContext* globalsc) {
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
@@ -844,27 +820,14 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
              "Global scope must be index 0");
 
   
+  
+  
+  
   if (globalsc->bindings) {
-    
-    if (!bce->emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation,
-                            GCThingIndex())) {
-      return false;
-    }
-
-    for (DynamicBindingIter bi(globalsc); bi; bi++) {
+    for (ParserBindingIter bi(*globalsc->bindings); bi; bi++) {
       NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
       const ParserAtom* name = bi.name();
       if (!putNameInCache(bce, name, loc)) {
-        return false;
-      }
-
-      
-      
-      if (bi.isTopLevelFunction()) {
-        continue;
-      }
-
-      if (!bce->emitAtomOp(bi.bindingOp(), name)) {
         return false;
       }
     }
@@ -917,29 +880,6 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
     
     
     
-    
-    
-    
-    
-    if (!hasEnvironment() && evalsc->bindings) {
-      
-      if (!bce->emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation,
-                              GCThingIndex())) {
-        return false;
-      }
-
-      for (DynamicBindingIter bi(evalsc); bi; bi++) {
-        MOZ_ASSERT(bi.bindingOp() == JSOp::DefVar);
-
-        if (bi.isTopLevelFunction()) {
-          continue;
-        }
-
-        if (!bce->emitAtomOp(JSOp::DefVar, bi.name())) {
-          return false;
-        }
-      }
-    }
 
     
     

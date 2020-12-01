@@ -355,6 +355,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
       ParseNode* pn, OptionalEmitter& oe,
       ValueUsage valueUsage = ValueUsage::WantValue);
 
+  MOZ_MUST_USE bool emitDeclarationInstantiation(ParseNode* body);
+
   
   
   MOZ_MUST_USE bool emitScript(ParseNode* body);

@@ -2384,6 +2384,109 @@ bool BytecodeEmitter::defineHoistedTopLevelFunctions(ParseNode* body) {
   return emitHoistedFunctionsInList(&body->as<ListNode>());
 }
 
+class DynamicBindingIter : public ParserBindingIter {
+ public:
+  explicit DynamicBindingIter(GlobalSharedContext* sc)
+      : ParserBindingIter(*sc->bindings) {}
+
+  explicit DynamicBindingIter(EvalSharedContext* sc)
+      : ParserBindingIter(*sc->bindings,  false) {
+    MOZ_ASSERT(!sc->strict());
+  }
+
+  JSOp bindingOp() const {
+    switch (kind()) {
+      case BindingKind::Var:
+        return JSOp::DefVar;
+      case BindingKind::Let:
+        return JSOp::DefLet;
+      case BindingKind::Const:
+        return JSOp::DefConst;
+      default:
+        MOZ_CRASH("Bad BindingKind");
+    }
+  }
+};
+
+
+
+
+
+
+
+
+bool BytecodeEmitter::emitDeclarationInstantiation(ParseNode* body) {
+  if (sc->isModuleContext()) {
+    
+    
+    
+    return true;
+  }
+
+  if (sc->isEvalContext() && sc->strict()) {
+    
+    
+    
+    return true;
+  }
+
+  
+  if (sc->isGlobalContext()) {
+    if (!sc->asGlobalContext()->bindings) {
+      return true;
+    }
+  } else {
+    MOZ_ASSERT(sc->isEvalContext());
+
+    if (!sc->asEvalContext()->bindings) {
+      return true;
+    }
+  }
+
+  
+  if (!emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation, GCThingIndex())) {
+    return false;
+  }
+
+  
+  if (sc->isGlobalContext()) {
+    for (DynamicBindingIter bi(sc->asGlobalContext()); bi; bi++) {
+      const ParserAtom* name = bi.name();
+
+      
+      
+      if (bi.isTopLevelFunction()) {
+        continue;
+      }
+
+      if (!emitAtomOp(bi.bindingOp(), name)) {
+        return false;
+      }
+    }
+  } else {
+    MOZ_ASSERT(sc->isEvalContext());
+
+    for (DynamicBindingIter bi(sc->asEvalContext()); bi; bi++) {
+      MOZ_ASSERT(bi.bindingOp() == JSOp::DefVar);
+
+      if (bi.isTopLevelFunction()) {
+        continue;
+      }
+
+      if (!emitAtomOp(JSOp::DefVar, bi.name())) {
+        return false;
+      }
+    }
+  }
+
+  
+  if (!defineHoistedTopLevelFunctions(body)) {
+    return false;
+  }
+
+  return true;
+}
+
 bool BytecodeEmitter::emitScript(ParseNode* body) {
   AutoFrontendTraceLog traceLog(cx, TraceLogger_BytecodeEmission,
                                 parser->errorReporter(), body);
@@ -2426,7 +2529,7 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
       return false;
     }
 
-    if (!defineHoistedTopLevelFunctions(scope->scopeBody())) {
+    if (!emitDeclarationInstantiation(scope->scopeBody())) {
       return false;
     }
 
@@ -2447,10 +2550,8 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
       return false;
     }
   } else {
-    if (sc->isGlobalContext() || isSloppyEval) {
-      if (!defineHoistedTopLevelFunctions(body)) {
-        return false;
-      }
+    if (!emitDeclarationInstantiation(body)) {
+      return false;
     }
 
     if (!switchToMain()) {
