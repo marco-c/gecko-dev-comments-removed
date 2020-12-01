@@ -102,6 +102,10 @@ bool DirectoryPaddingFileExists(nsIFile* aBaseDir,
 
 
 
+
+Result<int64_t, nsresult> LockedDirectoryPaddingGet(nsIFile& aBaseDir);
+
+
 nsresult LockedDirectoryPaddingGet(nsIFile* aBaseDir, int64_t* aPaddingSizeOut);
 
 nsresult LockedDirectoryPaddingInit(nsIFile* aBaseDir);
