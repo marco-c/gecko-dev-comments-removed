@@ -8606,7 +8606,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   MOZ_ASSERT(!lir->safepoint()->isWasmTrap());
 
   if (reloadRegs) {
-    masm.loadWasmTlsRegFromFrame();
+    masm.loadPtr(Address(masm.getStackPointer(), WasmCallerTLSOffsetBeforeCall),
+                 WasmTlsReg);
     masm.loadWasmPinnedRegsFromTls();
     if (switchRealm) {
       masm.switchToWasmTlsRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
@@ -9008,6 +9009,62 @@ void CodeGenerator::visitModD(LModD* ins) {
   masm.passABIArg(lhs, MoveOp::DOUBLE);
   masm.passABIArg(rhs, MoveOp::DOUBLE);
   masm.callWithABI<Fn, NumberMod>(MoveOp::DOUBLE);
+}
+
+void CodeGenerator::visitModPowTwoD(LModPowTwoD* ins) {
+  FloatRegister lhs = ToFloatRegister(ins->lhs());
+  uint32_t divisor = ins->divisor();
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(divisor));
+
+  FloatRegister output = ToFloatRegister(ins->output());
+
+  
+  
+  
+  
+  
+
+  Label done;
+  {
+    ScratchDoubleScope scratch(masm);
+
+    
+    
+    
+    Label notSubnormal;
+    masm.loadConstantDouble(1.0, scratch);
+    masm.loadConstantDouble(-1.0, output);
+    masm.branchDouble(Assembler::DoubleGreaterThanOrEqual, lhs, scratch,
+                      &notSubnormal);
+    masm.branchDouble(Assembler::DoubleLessThanOrEqual, lhs, output,
+                      &notSubnormal);
+
+    masm.moveDouble(lhs, output);
+    masm.jump(&done);
+
+    masm.bind(&notSubnormal);
+
+    if (divisor == 1) {
+      
+      
+      masm.moveDouble(lhs, output);
+      masm.nearbyIntDouble(RoundingMode::TowardsZero, output, scratch);
+      masm.subDouble(scratch, output);
+    } else {
+      masm.loadConstantDouble(1.0 / double(divisor), scratch);
+      masm.loadConstantDouble(double(divisor), output);
+
+      masm.mulDouble(lhs, scratch);
+      masm.nearbyIntDouble(RoundingMode::TowardsZero, scratch, scratch);
+      masm.mulDouble(output, scratch);
+
+      masm.moveDouble(lhs, output);
+      masm.subDouble(scratch, output);
+    }
+  }
+
+  masm.copySignDouble(output, lhs, output);
+  masm.bind(&done);
 }
 
 void CodeGenerator::visitWasmBuiltinModD(LWasmBuiltinModD* ins) {
@@ -15323,7 +15380,7 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
   const wasm::FuncExport& funcExport = lir->mir()->funcExport();
   const wasm::FuncType& sig = funcExport.funcType();
 
-  ABIArgGenerator abi;
+  WasmABIArgGenerator abi;
   for (size_t i = 0; i < lir->numOperands(); i++) {
     MIRType argMir;
     switch (sig.args()[i].kind()) {
