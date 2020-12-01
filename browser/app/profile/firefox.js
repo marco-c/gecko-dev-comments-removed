@@ -1362,13 +1362,6 @@ pref("prompts.tabChromePromptSubDialog", true);
 pref("browser.newtab.preload", true);
 
 
-pref("browser.newtabpage.activity-stream.newNewtabExperience.enabled", false);
-
-
-
-pref("browser.newtabpage.activity-stream.customizationMenu.enabled", false);
-
-
 #ifndef RELEASE_OR_BETA
   pref("browser.newtabpage.activity-stream.debug", false);
 #endif
