@@ -64,15 +64,15 @@ class MachCommands(MachCommandBase):
 
     @property
     def tools_dir(self):
-        return os.path.join(self.state_dir, "hazard-tools")
+        if os.environ.get("MOZ_FETCHES_DIR"):
+            
+            return os.path.join(os.environ["HOME"], os.environ["MOZ_FETCHES_DIR"])
 
-    def ensure_tools_dir(self):
-        dir = self.tools_dir
-        try:
-            os.mkdir(dir)
-        except OSError:
-            pass
-        return dir
+        
+        
+        
+        
+        return os.path.join(self.state_dir, "hazard-tools")
 
     @property
     def sixgill_dir(self):
@@ -86,13 +86,24 @@ class MachCommands(MachCommandBase):
     def script_dir(self):
         return os.path.join(self.topsrcdir, "js/src/devtools/rootAnalysis")
 
-    def work_dir(self, application):
+    def work_dir(self, application, given):
+        if given is not None:
+            return given
         return os.path.join(self.topsrcdir, "haz-" + application)
 
-    def ensure_work_dir(self, application):
-        dir = self.work_dir(application)
+    def ensure_dir_exists(self, dir):
         os.makedirs(dir, exist_ok=True)
         return dir
+
+    
+    def setup_env_for_tools(self, env):
+        gccbin = os.path.join(self.gcc_dir, "bin")
+        env["CC"] = os.path.join(gccbin, "gcc")
+        env["CXX"] = os.path.join(gccbin, "g++")
+        env["PATH"] = "{sixgill_dir}/usr/bin:{gccbin}:{PATH}".format(
+            sixgill_dir=self.sixgill_dir, gccbin=gccbin, PATH=env["PATH"]
+        )
+        env["LD_LIBRARY_PATH"] = "{}/lib64".format(self.gcc_dir)
 
     @Command(
         "hazards",
@@ -112,7 +123,7 @@ class MachCommands(MachCommandBase):
     )
     def bootstrap(self, **kwargs):
         orig_dir = os.getcwd()
-        os.chdir(self.ensure_tools_dir())
+        os.chdir(self.ensure_dir_exists(self.tools_dir))
         try:
             kwargs["from_build"] = ("linux64-gcc-sixgill", "linux64-gcc-8")
             self._mach_context.commands.dispatch(
@@ -156,6 +167,8 @@ class MachCommands(MachCommandBase):
 
         
         os.environ["MOZCONFIG"] = mozconfig_path
+
+        self.setup_env_for_tools(os.environ)
 
         
         os.environ.setdefault(
@@ -229,10 +242,11 @@ class MachCommands(MachCommandBase):
         shell_path = self.ensure_shell(shell_objdir)
         objdir = os.path.join(self.topsrcdir, "obj-analyzed-" + application)
         self.check_application(application, objdir)
-        work_dir = self.ensure_work_dir(application)
         with open(os.path.join(work_dir, "app.json"), "wt") as fh:
             json.dump({"application": application}, fh)
 
+        work_dir = self.work_dir(application, kwargs["work_dir"])
+        self.ensure_dir_exists(work_dir)
         with open(os.path.join(work_dir, "defaults.py"), "wt") as fh:
             data = textwrap.dedent(
                 """\
@@ -319,14 +333,7 @@ class MachCommands(MachCommandBase):
         
         env["MOZBUILD_STATE_PATH"] = self.state_dir
 
-        
-        gccbin = os.path.join(self.gcc_dir, "bin")
-        env["CC"] = os.path.join(gccbin, "gcc")
-        env["CXX"] = os.path.join(gccbin, "g++")
-        env["PATH"] = "{sixgill_dir}/usr/bin:{gccbin}:{PATH}".format(
-            sixgill_dir=self.sixgill_dir, gccbin=gccbin, PATH=env["PATH"]
-        )
-        env["LD_LIBRARY_PATH"] = "{}/lib64".format(self.gcc_dir)
+        self.setup_env_for_tools(env)
 
         if "haz_objdir" in kwargs:
             env["MOZ_OBJDIR"] = kwargs.pop("haz_objdir")
