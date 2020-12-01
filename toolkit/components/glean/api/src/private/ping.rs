@@ -2,11 +2,20 @@
 
 
 
+use std::sync::Arc;
+
+use crate::{dispatcher, ipc::need_ipc};
+
 
 
 
 #[derive(Clone, Debug)]
-pub struct Ping(glean_core::metrics::PingType);
+pub enum Ping {
+    Parent(Arc<PingImpl>),
+    Child,
+}
+#[derive(Debug)]
+pub struct PingImpl(glean_core::metrics::PingType);
 
 impl Ping {
     
@@ -18,6 +27,61 @@ impl Ping {
     
     
     
+    pub fn new<S: Into<String>>(
+        name: S,
+        include_client_id: bool,
+        send_if_empty: bool,
+        reason_codes: Vec<String>,
+    ) -> Self {
+        if need_ipc() {
+            Ping::Child
+        } else {
+            Ping::Parent(Arc::new(PingImpl::new(
+                name,
+                include_client_id,
+                send_if_empty,
+                reason_codes,
+            )))
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn submit(&self, reason: Option<&str>) {
+        match self {
+            Ping::Parent(p) => {
+                let ping = Arc::clone(&p);
+                let reason = reason.map(|x| x.to_owned());
+                dispatcher::launch(move || ping.submit(reason.as_deref()));
+            }
+            Ping::Child => {
+                log::error!(
+                    "Unable to submit ping {:?} in non-main process. Ignoring.",
+                    self
+                );
+                
+            }
+        };
+    }
+}
+
+impl PingImpl {
     pub fn new<S: Into<String>>(
         name: S,
         include_client_id: bool,
@@ -38,34 +102,11 @@ impl Ping {
         Self(ping)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn submit(&self, reason: Option<&str>) -> bool {
+    pub fn submit(&self, reason: Option<&str>) {
         let res = crate::with_glean(|glean| self.0.submit(glean, reason).unwrap_or(false));
         if res {
             crate::ping_upload::check_for_uploads();
         }
-        res
     }
 }
 
@@ -82,12 +123,9 @@ mod test {
     #[test]
     fn smoke_test_custom_ping() {
         let _lock = lock_test();
-        
-        
-        crate::dispatcher::block_on_queue();
 
         
         
-        assert_eq!(true, PROTOTYPE_PING.submit(None));
+        PROTOTYPE_PING.submit(None);
     }
 }
