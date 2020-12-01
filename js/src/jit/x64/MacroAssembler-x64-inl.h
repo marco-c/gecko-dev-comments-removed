@@ -390,8 +390,10 @@ void MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest) {
 
 
 void MacroAssembler::clz64(Register64 src, Register dest) {
-  
-  
+  if (AssemblerX86Shared::HasLZCNT()) {
+    lzcntq(src.reg, dest);
+    return;
+  }
 
   Label nonzero;
   bsrq(src.reg, dest);
