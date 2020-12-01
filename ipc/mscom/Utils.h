@@ -24,9 +24,6 @@ bool IsCOMInitializedOnCurrentThread();
 bool IsCurrentThreadMTA();
 bool IsCurrentThreadExplicitMTA();
 bool IsCurrentThreadImplicitMTA();
-#if defined(MOZILLA_INTERNAL_API)
-bool IsCurrentThreadNonMainMTA();
-#endif  
 bool IsProxy(IUnknown* aUnknown);
 bool IsValidGUID(REFGUID aCheckGuid);
 uintptr_t GetContainingModuleHandle();
@@ -41,8 +38,8 @@ uintptr_t GetContainingModuleHandle();
 
 
 
-long CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
-                  IStream** aOutStream);
+uint32_t CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
+                      IStream** aOutStream);
 
 
 
@@ -51,7 +48,7 @@ long CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
 
 
 
-long CopySerializedProxy(IStream* aInStream, IStream** aOutStream);
+uint32_t CopySerializedProxy(IStream* aInStream, IStream** aOutStream);
 
 #if defined(MOZILLA_INTERNAL_API)
 
