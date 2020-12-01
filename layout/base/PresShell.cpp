@@ -1195,11 +1195,10 @@ void PresShell::Destroy() {
   
   
   
-  if (!mIsFirstPaint && mPresContext->IsRootContentDocumentCrossProcess()) {
-    Telemetry::HistogramID histogram = InRDMPane()
-                                           ? Telemetry::APZ_ZOOM_ACTIVITY_RDM
-                                           : Telemetry::APZ_ZOOM_ACTIVITY;
-    Telemetry::Accumulate(histogram, IsResolutionUpdatedByApz());
+  if (!mIsFirstPaint && mPresContext->IsRootContentDocumentCrossProcess() &&
+      !InRDMPane()) {
+    Telemetry::Accumulate(Telemetry::APZ_ZOOM_ACTIVITY,
+                          IsResolutionUpdatedByApz());
   }
 
   
