@@ -27,15 +27,12 @@ using namespace mozilla;
 
 static bool GetFlatpakPortalEnv() {
   bool shouldUsePortal;
-  char* path;
-  path = g_build_filename(g_get_user_runtime_dir(), "flatpak-info", nullptr);
-  if (g_file_test(path, G_FILE_TEST_EXISTS)) {
+  if (g_file_test("/.flatpak-info", G_FILE_TEST_EXISTS)) {
     shouldUsePortal = true;
   } else {
     const char* portalEnvString = g_getenv("GTK_USE_PORTAL");
     shouldUsePortal = portalEnvString != nullptr && atoi(portalEnvString) != 0;
   }
-  g_free(path);
   return shouldUsePortal;
 }
 
