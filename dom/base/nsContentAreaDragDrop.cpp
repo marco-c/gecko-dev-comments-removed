@@ -148,9 +148,12 @@ nsresult nsContentAreaDragDropDataProvider::SaveURIToFile(
       nsIWebBrowserPersist::PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION);
 
   
-  return persist->SavePrivacyAwareURI(inSourceURI, inTriggeringPrincipal, 0,
-                                      nullptr, nullptr, nullptr, inDestFile,
-                                      inContentPolicyType, isPrivate);
+  
+  
+  
+  return persist->SavePrivacyAwareURI(
+      inSourceURI, inTriggeringPrincipal, 0, nullptr, nullptr, nullptr, nullptr,
+      inDestFile, inContentPolicyType, isPrivate);
 }
 
 

@@ -321,6 +321,7 @@ function promiseNewDownload(aSourceUrl) {
 
 
 
+
 function promiseStartLegacyDownload(aSourceUrl, aOptions) {
   let sourceURI = NetUtil.newURI(aSourceUrl || httpUrl("source.txt"));
   let targetFile =
@@ -397,6 +398,7 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
 
         let isPrivate = aOptions && aOptions.isPrivate;
         let referrerInfo = aOptions ? aOptions.referrerInfo : null;
+        let cookieJarSettings = aOptions ? aOptions.cookieJarSettings : null;
         
         
         transfer.init(
@@ -418,6 +420,7 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
           Services.scriptSecurityManager.getSystemPrincipal(),
           0,
           referrerInfo,
+          cookieJarSettings,
           null,
           null,
           targetFile,
