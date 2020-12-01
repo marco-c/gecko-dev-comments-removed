@@ -3460,10 +3460,22 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
           
           
           
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
           uint32_t v = gfxHarfBuzzShaper::GetVerticalPresentationForm(ch);
+          const uint32_t kVert = HB_TAG('v', 'e', 'r', 't');
           orient = (!font || (v && font->HasCharacter(v)) ||
-                    font->FeatureWillHandleChar(aRunScript,
-                                                HB_TAG('v', 'e', 'r', 't'), ch))
+                    font->FeatureWillHandleChar(aRunScript, kVert, ch) ||
+                    (aRunScript == Script::BOPOMOFO &&
+                     font->FeatureWillHandleChar(Script::HAN, kVert, ch)))
                        ? ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT
                        : ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
           break;
