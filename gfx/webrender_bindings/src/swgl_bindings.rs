@@ -1020,6 +1020,7 @@ impl SwCompositor {
     
     fn init_overlaps(
         &self,
+        overlap_id: &NativeSurfaceId,
         overlap_surface: &SwSurface,
         overlap_tile: &SwTile,
         overlap_transform: &CompositorSurfaceTransform,
@@ -1033,6 +1034,11 @@ impl SwCompositor {
         
         let mut overlaps = if overlap_tile.invalid.get() { 1 } else { 0 };
         for &(ref id, ref transform, ref clip_rect, _) in &self.frame_surfaces {
+            
+            
+            if id == overlap_id {
+                break;
+            }
             
             
             if !overlap_rect.intersects(clip_rect) {
@@ -1593,13 +1599,6 @@ impl Compositor for SwCompositor {
                 self.late_surfaces.push((id, transform, clip_rect, filter));
                 return;
             }
-
-            
-            if let Some(surface) = self.surfaces.get(&id) {
-                for tile in &surface.tiles {
-                    self.init_overlaps(surface, tile, &transform, &clip_rect);
-                }
-            }
         }
 
         self.frame_surfaces.push((id, transform, clip_rect, filter));
@@ -1610,8 +1609,26 @@ impl Compositor for SwCompositor {
     
     
     
-    fn start_compositing(&mut self, _dirty_rects: &[DeviceIntRect]) {
+    fn start_compositing(&mut self, dirty_rects: &[DeviceIntRect]) {
+        if dirty_rects.len() == 1 {
+            
+            
+            for &mut (ref _id, ref _transform, ref mut clip_rect, _filter) in &mut self.frame_surfaces {
+                *clip_rect = clip_rect.intersection(&dirty_rects[0]).unwrap_or_default();
+            }
+            self.frame_surfaces.retain(|&(_, _, clip_rect, _)| !clip_rect.is_empty());
+        }
+
         if let Some(ref composite_thread) = self.composite_thread {
+            
+            for &(ref id, ref transform, ref clip_rect, _filter) in &self.frame_surfaces {
+                if let Some(surface) = self.surfaces.get(id) {
+                    for tile in &surface.tiles {
+                        self.init_overlaps(id, surface, tile, transform, clip_rect);
+                    }
+                }
+            }
+
             composite_thread.start_compositing();
             
             let mut lock = composite_thread.lock();
