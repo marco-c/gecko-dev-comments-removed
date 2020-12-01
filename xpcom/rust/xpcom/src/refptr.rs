@@ -299,17 +299,7 @@ impl AtomicRefcnt {
         let result = self.0.fetch_sub(1, Ordering::Release) as nsrefcnt - 1;
         if result == 0 {
             
-            
-            
-            
-            if cfg!(feature = "thread_sanitizer") {
-                
-                
-                
-                self.0.load(Ordering::Acquire);
-            } else {
-                atomic::fence(Ordering::Acquire);
-            }
+            atomic::fence(Ordering::Acquire);
         }
         result
     }
