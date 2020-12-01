@@ -1359,7 +1359,7 @@ function passSearchFilters(message, filters) {
     
     isTextInFrame(matchStr, message.frame) ||
     
-    isTextInNetEvent(matchStr, message.request) ||
+    isTextInNetEvent(matchStr, message) ||
     
     isTextInStackTrace(matchStr, message.stacktrace) ||
     
@@ -1445,12 +1445,10 @@ function isTextInParameter(matchStr, parameter) {
 
 
 
-function isTextInNetEvent(matchStr, request) {
-  if (!request) {
+function isTextInNetEvent(matchStr, { method, url } = {}) {
+  if (!method && !url) {
     return false;
   }
-
-  const { method, url } = request;
   return matchStr(method) || matchStr(url);
 }
 

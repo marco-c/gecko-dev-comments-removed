@@ -588,23 +588,22 @@ async function getMessagePayload(payload, getLongString) {
 
 
 
+
+
+
+
+
 function processNetworkUpdates(update) {
-  const result = {};
+  const newRequest = {};
   for (const [key, value] of Object.entries(update)) {
     if (UPDATE_PROPS.includes(key)) {
-      result[key] = value;
-
-      switch (key) {
-        case "totalTime":
-          result.totalTime = update.totalTime;
-          break;
-        case "requestPostData":
-          result.requestHeadersFromUploadStream = value.uploadHeaders;
-          break;
+      newRequest[key] = value;
+      if (key == "requestPostData") {
+        newRequest.requestHeadersFromUploadStream = value.uploadHeaders;
       }
     }
   }
-  return result;
+  return newRequest;
 }
 
 
