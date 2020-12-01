@@ -276,7 +276,7 @@ class IOUtils final {
 
 
 
-  static Result<Ok, IOError> RemoveSync(const nsAString& aPath,
+  static Result<Ok, IOError> RemoveSync(already_AddRefed<nsIFile> aFile,
                                         bool aIgnoreAbsent, bool aRecursive);
 
   
