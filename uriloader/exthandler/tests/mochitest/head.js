@@ -122,16 +122,7 @@ async function openHelperAppDialog(launcher) {
   return dlg;
 }
 
-
-
-
-
-
-
-
-async function waitForProtocolAskDialog(browser, state) {
-  const CONTENT_HANDLING_URL = "chrome://mozapps/content/handling/dialog.xhtml";
-
+async function waitForSubDialog(browser, url, state) {
   let eventStr = state ? "dialogopen" : "dialogclose";
 
   let tabDialogBox = gBrowser.getTabDialogBox(browser);
@@ -140,8 +131,7 @@ async function waitForProtocolAskDialog(browser, state) {
   let checkFn;
 
   if (state) {
-    checkFn = dialogEvent =>
-      dialogEvent.detail.dialog?._openedURL == CONTENT_HANDLING_URL;
+    checkFn = dialogEvent => dialogEvent.detail.dialog?._openedURL == url;
   }
 
   let event = await BrowserTestUtils.waitForEvent(
@@ -159,6 +149,36 @@ async function waitForProtocolAskDialog(browser, state) {
   }
 
   return event.detail.dialog;
+}
+
+
+
+
+
+
+
+
+async function waitForProtocolPermissionDialog(browser, state) {
+  return waitForSubDialog(
+    browser,
+    "chrome://mozapps/content/handling/permissionDialog.xhtml",
+    state
+  );
+}
+
+
+
+
+
+
+
+
+async function waitForProtocolAppChooserDialog(browser, state) {
+  return waitForSubDialog(
+    browser,
+    "chrome://mozapps/content/handling/appChooser.xhtml",
+    state
+  );
 }
 
 async function promiseDownloadFinished(list) {
