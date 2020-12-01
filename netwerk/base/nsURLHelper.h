@@ -233,10 +233,6 @@ namespace mozilla {
 
 class URLParams final {
  public:
-  URLParams() = default;
-
-  ~URLParams() { DeleteAll(); }
-
   
 
 
