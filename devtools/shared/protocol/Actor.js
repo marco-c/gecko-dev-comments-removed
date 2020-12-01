@@ -176,6 +176,12 @@ var generateRequestHandlers = function(actorSpec, actorProto) {
             
             return;
           }
+          
+          
+          
+          if (spec.name == "attach" && actorProto.typeName == "thread") {
+            return;
+          }
           if (this.isDestroyed()) {
             console.error(
               `Tried to send a '${spec.name}' method reply on an already destroyed actor` +
