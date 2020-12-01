@@ -34,14 +34,13 @@ exports.isTypeRegistered = isTypeRegistered;
 
 
 
-const register = (typeName, modulePath) => {
+const registerHighlighter = (typeName, modulePath) => {
   if (highlighterTypes.has(typeName)) {
     throw Error(`${typeName} is already registered.`);
   }
 
   highlighterTypes.set(typeName, modulePath);
 };
-exports.register = register;
 
 
 
@@ -350,38 +349,45 @@ HighlighterEnvironment.prototype = {
   },
 };
 
-register(
-  "AccessibleHighlighter",
-  "devtools/server/actors/highlighters/accessible"
-);
-register(
-  "BoxModelHighlighter",
-  "devtools/server/actors/highlighters/box-model"
-);
-register("CssGridHighlighter", "devtools/server/actors/highlighters/css-grid");
-register(
-  "CssTransformHighlighter",
-  "devtools/server/actors/highlighters/css-transform"
-);
-register("EyeDropper", "devtools/server/actors/highlighters/eye-dropper");
-register("FlexboxHighlighter", "devtools/server/actors/highlighters/flexbox");
-register("FontsHighlighter", "devtools/server/actors/highlighters/fonts");
-register(
-  "GeometryEditorHighlighter",
-  "devtools/server/actors/highlighters/geometry-editor"
-);
-register(
-  "MeasuringToolHighlighter",
-  "devtools/server/actors/highlighters/measuring-tool"
-);
-register(
-  "PausedDebuggerOverlay",
-  "devtools/server/actors/highlighters/paused-debugger"
-);
-register("RulersHighlighter", "devtools/server/actors/highlighters/rulers");
-register("SelectorHighlighter", "devtools/server/actors/highlighters/selector");
-register("ShapesHighlighter", "devtools/server/actors/highlighters/shapes");
-register(
-  "TabbingOrderHighlighter",
-  "devtools/server/actors/highlighters/tabbing-order"
-);
+
+
+
+const HIGHLIGHTERS = {
+  accessible: "devtools/server/actors/highlighters/accessible",
+  boxModel: "devtools/server/actors/highlighters/box-model",
+  cssGrid: "devtools/server/actors/highlighters/css-grid",
+  cssTransform: "devtools/server/actors/highlighters/css-transform",
+  eyeDropper: "devtools/server/actors/highlighters/eye-dropper",
+  flexbox: "devtools/server/actors/highlighters/flexbox",
+  fonts: "devtools/server/actors/highlighters/fonts",
+  geometryEditor: "devtools/server/actors/highlighters/geometry-editor",
+  measuringTool: "devtools/server/actors/highlighters/measuring-tool",
+  pausedDebugger: "devtools/server/actors/highlighters/paused-debugger",
+  rulers: "devtools/server/actors/highlighters/rulers",
+  selector: "devtools/server/actors/highlighters/selector",
+  shapes: "devtools/server/actors/highlighters/shapes",
+  tabbingOrder: "devtools/server/actors/highlighters/tabbing-order",
+};
+
+
+const registerCalls = [
+  ["AccessibleHighlighter", HIGHLIGHTERS.accessible],
+  ["BoxModelHighlighter", HIGHLIGHTERS.boxModel],
+  ["CssGridHighlighter", HIGHLIGHTERS.cssGrid],
+  ["CssTransformHighlighter", HIGHLIGHTERS.cssTransform],
+  ["EyeDropper", HIGHLIGHTERS.eyeDropper],
+  ["FlexboxHighlighter", HIGHLIGHTERS.flexbox],
+  ["FontsHighlighter", HIGHLIGHTERS.fonts],
+  ["GeometryEditorHighlighter", HIGHLIGHTERS.geometryEditor],
+  ["MeasuringToolHighlighter", HIGHLIGHTERS.measuringTool],
+  ["PausedDebuggerOverlay", HIGHLIGHTERS.pausedDebugger],
+  ["RulersHighlighter", HIGHLIGHTERS.rulers],
+  ["SelectorHighlighter", HIGHLIGHTERS.selector],
+  ["ShapesHighlighter", HIGHLIGHTERS.shapes],
+  ["TabbingOrderHighlighter", HIGHLIGHTERS.tabbingOrder],
+];
+
+
+registerCalls.forEach(arr => {
+  registerHighlighter(arr[0], arr[1]);
+});
