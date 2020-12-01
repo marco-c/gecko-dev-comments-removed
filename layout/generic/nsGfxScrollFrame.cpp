@@ -7752,12 +7752,7 @@ void ScrollFrameHelper::AsyncScrollbarDragRejected() {
 
 void ScrollFrameHelper::ApzSmoothScrollTo(const nsPoint& aDestination,
                                           ScrollOrigin aOrigin) {
-  if (mApzSmoothScrollDestination == Some(aDestination) &&
-      mScrollGeneration == sScrollGenerationCounter) {
-    
-    
-    
-    
+  if (mApzSmoothScrollDestination == Some(aDestination)) {
     
     
     
