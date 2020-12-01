@@ -111,7 +111,7 @@
 use super::abi::*;
 use crate::binemit::StackMap;
 use crate::ir::types::*;
-use crate::ir::{ArgumentExtension, SourceLoc, StackSlot};
+use crate::ir::{ArgumentExtension, StackSlot};
 use crate::machinst::*;
 use crate::settings;
 use crate::CodegenResult;
@@ -215,6 +215,9 @@ pub trait ABIMachineSpec {
             _ => unreachable!(),
         }
     }
+
+    
+    fn stack_align(call_conv: isa::CallConv) -> u32;
 
     
     
@@ -326,6 +329,7 @@ pub trait ABIMachineSpec {
         flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
         fixed_frame_storage_size: u32,
+        outgoing_args_size: u32,
     ) -> (u64, SmallVec<[Self::I; 16]>);
 
     
@@ -336,6 +340,8 @@ pub trait ABIMachineSpec {
         call_conv: isa::CallConv,
         flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
+        fixed_frame_storage_size: u32,
+        outgoing_args_size: u32,
     ) -> SmallVec<[Self::I; 16]>;
 
     
@@ -344,9 +350,10 @@ pub trait ABIMachineSpec {
         dest: &CallDest,
         uses: Vec<Reg>,
         defs: Vec<Writable<Reg>>,
-        loc: SourceLoc,
         opcode: ir::Opcode,
         tmp: Writable<Reg>,
+        callee_conv: isa::CallConv,
+        callee_conv: isa::CallConv,
     ) -> SmallVec<[(InstIsSafepoint, Self::I); 2]>;
 
     
@@ -360,7 +367,8 @@ pub trait ABIMachineSpec {
     fn get_nominal_sp_to_fp(s: &<Self::I as MachInstEmit>::State) -> i64;
 
     
-    fn get_caller_saves(call_conv: isa::CallConv) -> Vec<Writable<Reg>>;
+    
+    fn get_regs_clobbered_by_call(call_conv_of_callee: isa::CallConv) -> Vec<Writable<Reg>>;
 }
 
 
@@ -429,9 +437,15 @@ pub struct ABICalleeImpl<M: ABIMachineSpec> {
     
     stackslots_size: u32,
     
+    outgoing_args_size: u32,
+    
     clobbered: Set<Writable<RealReg>>,
     
     spillslots: Option<usize>,
+    
+    
+    
+    fixed_frame_storage_size: u32,
     
     
     
@@ -516,8 +530,10 @@ impl<M: ABIMachineSpec> ABICalleeImpl<M> {
             sig,
             stackslots,
             stackslots_size: stack_offset,
+            outgoing_args_size: 0,
             clobbered: Set::empty(),
             spillslots: None,
+            fixed_frame_storage_size: 0,
             total_frame_size: None,
             ret_area_ptr: None,
             call_conv,
@@ -678,8 +694,18 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         }
     }
 
+    fn accumulate_outgoing_args_size(&mut self, size: u32) {
+        if size > self.outgoing_args_size {
+            self.outgoing_args_size = size;
+        }
+    }
+
     fn flags(&self) -> &settings::Flags {
         &self.flags
+    }
+
+    fn call_conv(&self) -> isa::CallConv {
+        self.sig.call_conv
     }
 
     fn liveins(&self) -> Set<RealReg> {
@@ -929,10 +955,8 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
             );
             total_stacksize += self.flags.baldrdash_prologue_words() as u32 * bytes;
         }
-        let mask = 2 * bytes - 1;
+        let mask = M::stack_align(self.call_conv) - 1;
         let total_stacksize = (total_stacksize + mask) & !mask; 
-
-        let mut fixed_frame_storage_size = 0;
 
         if !self.call_conv.extends_baldrdash() {
             
@@ -944,7 +968,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
                 }
             }
             if total_stacksize > 0 {
-                fixed_frame_storage_size += total_stacksize;
+                self.fixed_frame_storage_size += total_stacksize;
             }
         }
 
@@ -963,12 +987,14 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
             self.call_conv,
             &self.flags,
             &self.clobbered,
-            fixed_frame_storage_size,
+            self.fixed_frame_storage_size,
+            self.outgoing_args_size,
         );
         insts.extend(clobber_insts);
 
-        if clobber_size > 0 {
-            insts.push(M::gen_nominal_sp_adj(clobber_size as i32));
+        let sp_adj = self.outgoing_args_size as i32 + clobber_size as i32;
+        if sp_adj > 0 {
+            insts.push(M::gen_nominal_sp_adj(sp_adj));
         }
 
         self.total_frame_size = Some(total_stacksize);
@@ -983,6 +1009,8 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
             self.call_conv,
             &self.flags,
             &self.clobbered,
+            self.fixed_frame_storage_size,
+            self.outgoing_args_size,
         ));
 
         
@@ -1027,6 +1055,18 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         let ty = ty_from_ty_hint_or_reg_class::<M>(to_reg.to_reg().to_reg(), ty);
         self.load_spillslot(from_slot, ty, to_reg.map(|r| r.to_reg()))
     }
+
+    fn unwind_info_kind(&self) -> UnwindInfoKind {
+        match self.sig.call_conv {
+            #[cfg(feature = "unwind")]
+            isa::CallConv::Fast | isa::CallConv::Cold | isa::CallConv::SystemV => {
+                UnwindInfoKind::SystemV
+            }
+            #[cfg(feature = "unwind")]
+            isa::CallConv::WindowsFastcall => UnwindInfoKind::Windows,
+            _ => UnwindInfoKind::None,
+        }
+    }
 }
 
 fn abisig_to_uses_and_defs<M: ABIMachineSpec>(sig: &ABISig) -> (Vec<Reg>, Vec<Writable<Reg>>) {
@@ -1040,7 +1080,7 @@ fn abisig_to_uses_and_defs<M: ABIMachineSpec>(sig: &ABISig) -> (Vec<Reg>, Vec<Wr
     }
 
     
-    let mut defs = M::get_caller_saves(sig.call_conv);
+    let mut defs = M::get_regs_clobbered_by_call(sig.call_conv);
     for ret in &sig.rets {
         match ret {
             &ABIArg::Reg(reg, ..) => defs.push(Writable::from_reg(reg.to_reg())),
@@ -1062,9 +1102,9 @@ pub struct ABICallerImpl<M: ABIMachineSpec> {
     
     dest: CallDest,
     
-    loc: ir::SourceLoc,
-    
     opcode: ir::Opcode,
+    
+    caller_conv: isa::CallConv,
 
     _mach: PhantomData<M>,
 }
@@ -1084,7 +1124,7 @@ impl<M: ABIMachineSpec> ABICallerImpl<M> {
         sig: &ir::Signature,
         extname: &ir::ExternalName,
         dist: RelocDistance,
-        loc: ir::SourceLoc,
+        caller_conv: isa::CallConv,
     ) -> CodegenResult<ABICallerImpl<M>> {
         let sig = ABISig::from_func_sig::<M>(sig)?;
         let (uses, defs) = abisig_to_uses_and_defs::<M>(&sig);
@@ -1093,8 +1133,8 @@ impl<M: ABIMachineSpec> ABICallerImpl<M> {
             uses,
             defs,
             dest: CallDest::ExtName(extname.clone(), dist),
-            loc,
             opcode: ir::Opcode::Call,
+            caller_conv,
             _mach: PhantomData,
         })
     }
@@ -1104,8 +1144,8 @@ impl<M: ABIMachineSpec> ABICallerImpl<M> {
     pub fn from_ptr(
         sig: &ir::Signature,
         ptr: Reg,
-        loc: ir::SourceLoc,
         opcode: ir::Opcode,
+        caller_conv: isa::CallConv,
     ) -> CodegenResult<ABICallerImpl<M>> {
         let sig = ABISig::from_func_sig::<M>(sig)?;
         let (uses, defs) = abisig_to_uses_and_defs::<M>(&sig);
@@ -1114,8 +1154,8 @@ impl<M: ABIMachineSpec> ABICallerImpl<M> {
             uses,
             defs,
             dest: CallDest::Reg(ptr),
-            loc,
             opcode,
+            caller_conv,
             _mach: PhantomData,
         })
     }
@@ -1145,6 +1185,11 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
         } else {
             self.sig.args.len()
         }
+    }
+
+    fn accumulate_outgoing_args_size<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C) {
+        let off = self.sig.stack_arg_space + self.sig.stack_ret_space;
+        ctx.abi().accumulate_outgoing_args_size(off as u32);
     }
 
     fn emit_stack_pre_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C) {
@@ -1255,8 +1300,16 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
             self.emit_copy_reg_to_arg(ctx, i, rd.to_reg());
         }
         let tmp = ctx.alloc_tmp(word_rc, word_type);
-        for (is_safepoint, inst) in
-            M::gen_call(&self.dest, uses, defs, self.loc, self.opcode, tmp).into_iter()
+        for (is_safepoint, inst) in M::gen_call(
+            &self.dest,
+            uses,
+            defs,
+            self.opcode,
+            tmp,
+            self.sig.call_conv,
+            self.caller_conv,
+        )
+        .into_iter()
         {
             match is_safepoint {
                 InstIsSafepoint::Yes => ctx.emit_safepoint(inst),

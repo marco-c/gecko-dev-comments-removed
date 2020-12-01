@@ -1,14 +1,9 @@
 
 
-use crate::ir::{Function, InstructionData, Opcode, ValueLoc};
-use crate::isa::x86::registers::{FPR, GPR, RU};
-use crate::isa::{
-    unwind::winx64::{UnwindCode, UnwindInfo},
-    CallConv, RegUnit, TargetIsa,
-};
-use crate::result::{CodegenError, CodegenResult};
-use alloc::vec::Vec;
-use log::warn;
+use crate::ir::Function;
+use crate::isa::x86::registers::{FPR, GPR};
+use crate::isa::{unwind::winx64::UnwindInfo, CallConv, RegUnit, TargetIsa};
+use crate::result::CodegenResult;
 
 pub(crate) fn create_unwind_info(
     func: &Function,
@@ -19,115 +14,29 @@ pub(crate) fn create_unwind_info(
         return Ok(None);
     }
 
-    let prologue_end = func.prologue_end.unwrap();
-    let entry_block = func.layout.entry_block().expect("missing entry block");
-
-    
-    let mut stack_size = None;
-    let mut prologue_size = 0;
-    let mut unwind_codes = Vec::new();
-    let mut found_end = false;
-
-    for (offset, inst, size) in func.inst_offsets(entry_block, &isa.encoding_info()) {
-        
-        if (offset + size) > 255 {
-            warn!("function prologues cannot exceed 255 bytes in size for Windows x64");
-            return Err(CodegenError::CodeTooLarge);
+    let unwind = match super::create_unwind_info(func, isa)? {
+        Some(u) => u,
+        None => {
+            return Ok(None);
         }
+    };
 
-        prologue_size += size;
+    Ok(Some(UnwindInfo::build::<RegisterMapper>(unwind)?))
+}
 
-        let unwind_offset = (offset + size) as u8;
+struct RegisterMapper;
 
-        match func.dfg[inst] {
-            InstructionData::Unary { opcode, arg } => {
-                match opcode {
-                    Opcode::X86Push => {
-                        unwind_codes.push(UnwindCode::PushRegister {
-                            offset: unwind_offset,
-                            reg: GPR.index_of(func.locations[arg].unwrap_reg()) as u8,
-                        });
-                    }
-                    Opcode::AdjustSpDown => {
-                        let stack_size =
-                            stack_size.expect("expected a previous stack size instruction");
-
-                        
-                        
-                        unwind_codes.push(UnwindCode::StackAlloc {
-                            offset: unwind_offset,
-                            size: stack_size,
-                        });
-                    }
-                    _ => {}
-                }
-            }
-            InstructionData::UnaryImm { opcode, imm } => {
-                match opcode {
-                    Opcode::Iconst => {
-                        let imm: i64 = imm.into();
-                        assert!(imm <= core::u32::MAX as i64);
-                        assert!(stack_size.is_none());
-
-                        
-                        
-                        
-                        
-                        stack_size = Some(imm as u32);
-                    }
-                    Opcode::AdjustSpDownImm => {
-                        let imm: i64 = imm.into();
-                        assert!(imm <= core::u32::MAX as i64);
-
-                        stack_size = Some(imm as u32);
-
-                        unwind_codes.push(UnwindCode::StackAlloc {
-                            offset: unwind_offset,
-                            size: imm as u32,
-                        });
-                    }
-                    _ => {}
-                }
-            }
-            InstructionData::Store {
-                opcode: Opcode::Store,
-                args: [arg1, arg2],
-                offset,
-                ..
-            } => {
-                if let (ValueLoc::Reg(src), ValueLoc::Reg(dst)) =
-                    (func.locations[arg1], func.locations[arg2])
-                {
-                    
-                    
-                    if dst == (RU::rsp as RegUnit) && FPR.contains(src) {
-                        let offset: i32 = offset.into();
-                        unwind_codes.push(UnwindCode::SaveXmm {
-                            offset: unwind_offset,
-                            reg: src as u8,
-                            stack_offset: offset as u32,
-                        });
-                    }
-                }
-            }
-            _ => {}
-        };
-
-        if inst == prologue_end {
-            found_end = true;
-            break;
+impl crate::isa::unwind::winx64::RegisterMapper for RegisterMapper {
+    fn map(reg: RegUnit) -> crate::isa::unwind::winx64::MappedRegister {
+        use crate::isa::unwind::winx64::MappedRegister;
+        if GPR.contains(reg) {
+            MappedRegister::Int(GPR.index_of(reg) as u8)
+        } else if FPR.contains(reg) {
+            MappedRegister::Xmm(reg as u8)
+        } else {
+            panic!()
         }
     }
-
-    assert!(found_end);
-
-    Ok(Some(UnwindInfo {
-        flags: 0, 
-        prologue_size: prologue_size as u8,
-        frame_register: None,
-        frame_register_offset: 0,
-        unwind_codes,
-    }))
 }
 
 #[cfg(test)]
@@ -135,6 +44,8 @@ mod tests {
     use super::*;
     use crate::cursor::{Cursor, FuncCursor};
     use crate::ir::{ExternalName, InstBuilder, Signature, StackSlotData, StackSlotKind};
+    use crate::isa::unwind::winx64::UnwindCode;
+    use crate::isa::x86::registers::RU;
     use crate::isa::{lookup, CallConv};
     use crate::settings::{builder, Flags};
     use crate::Context;

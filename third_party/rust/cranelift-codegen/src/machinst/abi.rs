@@ -2,6 +2,7 @@
 
 use crate::binemit::StackMap;
 use crate::ir::StackSlot;
+use crate::isa::CallConv;
 use crate::machinst::*;
 use crate::settings;
 
@@ -23,7 +24,16 @@ pub trait ABICallee {
     fn init(&mut self, maybe_tmp: Option<Writable<Reg>>);
 
     
+    
+    
+    
+    fn accumulate_outgoing_args_size(&mut self, size: u32);
+
+    
     fn flags(&self) -> &settings::Flags;
+
+    
+    fn call_conv(&self) -> CallConv;
 
     
     fn liveins(&self) -> Set<RealReg>;
@@ -151,6 +161,9 @@ pub trait ABICallee {
         from_slot: SpillSlot,
         ty: Option<Type>,
     ) -> Self::I;
+
+    
+    fn unwind_info_kind(&self) -> UnwindInfoKind;
 }
 
 
@@ -195,6 +208,13 @@ pub trait ABICaller {
 
     
     fn emit_stack_post_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
+
+    
+    
+    
+    
+    
+    fn accumulate_outgoing_args_size<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
 
     
     

@@ -12,9 +12,6 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum TrapCode {
     
-    
-    
-    
     StackOverflow,
 
     

@@ -8,7 +8,7 @@ use crate::ir::Type;
 use crate::isa::aarch64::inst::*;
 use crate::machinst::{ty_bits, MachLabel};
 
-use regalloc::{RealRegUniverse, Reg, Writable};
+use regalloc::{PrettyPrint, RealRegUniverse, Reg, Writable};
 
 use core::convert::Into;
 use std::string::String;
@@ -348,19 +348,19 @@ impl BranchTarget {
     }
 }
 
-impl ShowWithRRU for ShiftOpAndAmt {
+impl PrettyPrint for ShiftOpAndAmt {
     fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
         format!("{:?} {}", self.op(), self.amt().value())
     }
 }
 
-impl ShowWithRRU for ExtendOp {
+impl PrettyPrint for ExtendOp {
     fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
         format!("{:?}", self)
     }
 }
 
-impl ShowWithRRU for MemLabel {
+impl PrettyPrint for MemLabel {
     fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
         match self {
             &MemLabel::PCRel(off) => format!("pc+{}", off),
@@ -379,7 +379,7 @@ fn shift_for_type(ty: Type) -> usize {
     }
 }
 
-impl ShowWithRRU for AMode {
+impl PrettyPrint for AMode {
     fn show_rru(&self, mb_rru: Option<&RealRegUniverse>) -> String {
         match self {
             &AMode::Unscaled(reg, simm9) => {
@@ -458,7 +458,7 @@ impl ShowWithRRU for AMode {
     }
 }
 
-impl ShowWithRRU for PairAMode {
+impl PrettyPrint for PairAMode {
     fn show_rru(&self, mb_rru: Option<&RealRegUniverse>) -> String {
         match self {
             &PairAMode::SignedOffset(reg, simm7) => {
@@ -482,7 +482,7 @@ impl ShowWithRRU for PairAMode {
     }
 }
 
-impl ShowWithRRU for Cond {
+impl PrettyPrint for Cond {
     fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
         let mut s = format!("{:?}", self);
         s.make_ascii_lowercase();
@@ -490,7 +490,7 @@ impl ShowWithRRU for Cond {
     }
 }
 
-impl ShowWithRRU for BranchTarget {
+impl PrettyPrint for BranchTarget {
     fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
         match self {
             &BranchTarget::Label(label) => format!("label{:?}", label.get()),
@@ -580,6 +580,15 @@ impl ScalarSize {
     }
 
     
+    pub fn operand_size(&self) -> OperandSize {
+        match self {
+            ScalarSize::Size32 => OperandSize::Size32,
+            ScalarSize::Size64 => OperandSize::Size64,
+            _ => panic!("Unexpected operand_size request for: {:?}", self),
+        }
+    }
+
+    
     pub fn from_ty(ty: Type) -> ScalarSize {
         Self::from_bits(ty_bits(ty))
     }
@@ -610,9 +619,26 @@ pub enum VectorSize {
 
 impl VectorSize {
     
+    pub fn from_lane_size(size: ScalarSize, is_128bit: bool) -> VectorSize {
+        match (size, is_128bit) {
+            (ScalarSize::Size8, false) => VectorSize::Size8x8,
+            (ScalarSize::Size8, true) => VectorSize::Size8x16,
+            (ScalarSize::Size16, false) => VectorSize::Size16x4,
+            (ScalarSize::Size16, true) => VectorSize::Size16x8,
+            (ScalarSize::Size32, false) => VectorSize::Size32x2,
+            (ScalarSize::Size32, true) => VectorSize::Size32x4,
+            (ScalarSize::Size64, true) => VectorSize::Size64x2,
+            _ => panic!("Unexpected scalar FP operand size: {:?}", size),
+        }
+    }
+
+    
     pub fn from_ty(ty: Type) -> VectorSize {
         match ty {
+            B8X16 => VectorSize::Size8x16,
+            B16X8 => VectorSize::Size16x8,
             B32X4 => VectorSize::Size32x4,
+            B64X2 => VectorSize::Size64x2,
             F32X2 => VectorSize::Size32x2,
             F32X4 => VectorSize::Size32x4,
             F64X2 => VectorSize::Size64x2,
@@ -660,6 +686,9 @@ impl VectorSize {
         }
     }
 
+    
+    
+    
     pub fn widen(&self) -> VectorSize {
         match self {
             VectorSize::Size8x8 => VectorSize::Size16x8,
@@ -672,6 +701,7 @@ impl VectorSize {
         }
     }
 
+    
     pub fn halve(&self) -> VectorSize {
         match self {
             VectorSize::Size8x16 => VectorSize::Size8x8,
@@ -679,5 +709,20 @@ impl VectorSize {
             VectorSize::Size32x4 => VectorSize::Size32x2,
             _ => *self,
         }
+    }
+
+    
+    
+    pub fn enc_size(&self) -> (u32, u32) {
+        let q = self.is_128bits() as u32;
+        let size = match self.lane_size() {
+            ScalarSize::Size8 => 0b00,
+            ScalarSize::Size16 => 0b01,
+            ScalarSize::Size32 => 0b10,
+            ScalarSize::Size64 => 0b11,
+            _ => unreachable!(),
+        };
+
+        (q, size)
     }
 }

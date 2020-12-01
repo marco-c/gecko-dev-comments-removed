@@ -10,9 +10,11 @@
 
 
 
-use crate::{machinst::pretty_print::ShowWithRRU, settings};
+use crate::settings;
 use alloc::vec::Vec;
-use regalloc::{RealReg, RealRegUniverse, Reg, RegClass, RegClassInfo, NUM_REG_CLASSES};
+use regalloc::{
+    PrettyPrint, RealReg, RealRegUniverse, Reg, RegClass, RegClassInfo, NUM_REG_CLASSES,
+};
 use std::string::String;
 
 

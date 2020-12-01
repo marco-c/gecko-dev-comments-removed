@@ -1,16 +1,16 @@
 
 
+use self::inst::EmitInfo;
+
 use super::TargetIsa;
 use crate::ir::{condcodes::IntCC, Function};
 use crate::isa::x64::{inst::regs::create_reg_universe_systemv, settings as x64_settings};
 use crate::isa::Builder as IsaBuilder;
-use crate::machinst::{
-    compile, pretty_print::ShowWithRRU, MachBackend, MachCompileResult, TargetIsaAdapter, VCode,
-};
+use crate::machinst::{compile, MachBackend, MachCompileResult, TargetIsaAdapter, VCode};
 use crate::result::CodegenResult;
 use crate::settings::{self as shared_settings, Flags};
 use alloc::boxed::Box;
-use regalloc::RealRegUniverse;
+use regalloc::{PrettyPrint, RealRegUniverse};
 use target_lexicon::Triple;
 
 mod abi;
@@ -22,7 +22,7 @@ mod settings;
 pub(crate) struct X64Backend {
     triple: Triple,
     flags: Flags,
-    _x64_flags: x64_settings::Flags,
+    x64_flags: x64_settings::Flags,
     reg_universe: RealRegUniverse,
 }
 
@@ -33,7 +33,7 @@ impl X64Backend {
         Self {
             triple,
             flags,
-            _x64_flags: x64_flags,
+            x64_flags,
             reg_universe,
         }
     }
@@ -41,8 +41,9 @@ impl X64Backend {
     fn compile_vcode(&self, func: &Function, flags: Flags) -> CodegenResult<VCode<inst::Inst>> {
         
         
+        let emit_info = EmitInfo::new(flags.clone(), self.x64_flags.clone());
         let abi = Box::new(abi::X64ABICallee::new(&func, flags)?);
-        compile::compile::<Self>(&func, self, abi)
+        compile::compile::<Self>(&func, self, abi, emit_info)
     }
 }
 
@@ -54,9 +55,11 @@ impl MachBackend for X64Backend {
     ) -> CodegenResult<MachCompileResult> {
         let flags = self.flags();
         let vcode = self.compile_vcode(func, flags.clone())?;
+
         let buffer = vcode.emit();
         let buffer = buffer.finish();
         let frame_size = vcode.frame_size();
+        let unwind_info = vcode.unwind_info()?;
 
         let disasm = if want_disasm {
             Some(vcode.show_rru(Some(&create_reg_universe_systemv(flags))))
@@ -68,6 +71,7 @@ impl MachBackend for X64Backend {
             buffer,
             frame_size,
             disasm,
+            unwind_info,
         })
     }
 
@@ -97,6 +101,31 @@ impl MachBackend for X64Backend {
         
         
         IntCC::UnsignedGreaterThanOrEqual
+    }
+
+    #[cfg(feature = "unwind")]
+    fn emit_unwind_info(
+        &self,
+        result: &MachCompileResult,
+        kind: crate::machinst::UnwindInfoKind,
+    ) -> CodegenResult<Option<crate::isa::unwind::UnwindInfo>> {
+        use crate::isa::unwind::UnwindInfo;
+        use crate::machinst::UnwindInfoKind;
+        Ok(match (result.unwind_info.as_ref(), kind) {
+            (Some(info), UnwindInfoKind::SystemV) => {
+                inst::unwind::systemv::create_unwind_info(info.clone())?.map(UnwindInfo::SystemV)
+            }
+            (Some(_info), UnwindInfoKind::Windows) => {
+                
+                None
+            }
+            _ => None,
+        })
+    }
+
+    #[cfg(feature = "unwind")]
+    fn create_systemv_cie(&self) -> Option<gimli::write::CommonInformationEntry> {
+        Some(inst::unwind::systemv::create_cie())
     }
 }
 

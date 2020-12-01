@@ -75,9 +75,6 @@ impl<'a> MemoryCodeSink<'a> {
 
 pub trait RelocSink {
     
-    fn reloc_block(&mut self, _: CodeOffset, _: Reloc, _: CodeOffset);
-
-    
     fn reloc_external(
         &mut self,
         _: CodeOffset,
@@ -136,11 +133,6 @@ impl<'a> CodeSink for MemoryCodeSink<'a> {
 
     fn put8(&mut self, x: u64) {
         self.write(x);
-    }
-
-    fn reloc_block(&mut self, rel: Reloc, block_offset: CodeOffset) {
-        let ofs = self.offset();
-        self.relocs.reloc_block(ofs, rel, block_offset);
     }
 
     fn reloc_external(
@@ -204,7 +196,6 @@ impl<'a> CodeSink for MemoryCodeSink<'a> {
 pub struct NullRelocSink {}
 
 impl RelocSink for NullRelocSink {
-    fn reloc_block(&mut self, _: CodeOffset, _: Reloc, _: CodeOffset) {}
     fn reloc_external(
         &mut self,
         _: CodeOffset,

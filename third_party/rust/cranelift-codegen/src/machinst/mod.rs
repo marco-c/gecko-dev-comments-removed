@@ -98,13 +98,15 @@
 
 use crate::binemit::{CodeInfo, CodeOffset, StackMap};
 use crate::ir::condcodes::IntCC;
-use crate::ir::{Function, Type};
+use crate::ir::{Function, SourceLoc, Type};
+use crate::isa::unwind::input as unwind_input;
 use crate::result::CodegenResult;
 use crate::settings::Flags;
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt::Debug;
+use core::ops::Range;
 use regalloc::RegUsageCollector;
 use regalloc::{
     RealReg, RealRegUniverse, Reg, RegClass, RegUsageMapper, SpillSlot, VirtualReg, Writable,
@@ -125,8 +127,6 @@ pub mod abi;
 pub use abi::*;
 pub mod abi_impl;
 pub use abi_impl::*;
-pub mod pretty_print;
-pub use pretty_print::*;
 pub mod buffer;
 pub use buffer::*;
 pub mod adapter;
@@ -155,6 +155,11 @@ pub trait MachInst: Clone + Debug {
 
     
     fn is_epilogue_placeholder(&self) -> bool;
+
+    
+    fn is_included_in_clobbers(&self) -> bool {
+        true
+    }
 
     
     fn gen_move(to_reg: Writable<Reg>, from_reg: Reg, ty: Type) -> Self;
@@ -273,9 +278,20 @@ pub trait MachInstEmit: MachInst {
     
     type State: MachInstEmitState<Self>;
     
-    fn emit(&self, code: &mut MachBuffer<Self>, flags: &Flags, state: &mut Self::State);
+    type Info: MachInstEmitInfo;
+    
+    type UnwindInfo: UnwindInfoGenerator<Self>;
+    
+    fn emit(&self, code: &mut MachBuffer<Self>, info: &Self::Info, state: &mut Self::State);
     
     fn pretty_print(&self, mb_rru: Option<&RealRegUniverse>, state: &mut Self::State) -> String;
+}
+
+
+pub trait MachInstEmitInfo {
+    
+    
+    fn flags(&self) -> &Flags;
 }
 
 
@@ -286,6 +302,9 @@ pub trait MachInstEmitState<I: MachInst>: Default + Clone + Debug {
     
     
     fn pre_safepoint(&mut self, _stack_map: StackMap) {}
+    
+    
+    fn pre_sourceloc(&mut self, _srcloc: SourceLoc) {}
 }
 
 
@@ -297,6 +316,8 @@ pub struct MachCompileResult {
     pub frame_size: u32,
     
     pub disasm: Option<String>,
+    
+    pub unwind_info: Option<unwind_input::UnwindInfo<Reg>>,
 }
 
 impl MachCompileResult {
@@ -341,4 +362,60 @@ pub trait MachBackend {
     
     
     fn unsigned_sub_overflow_condition(&self) -> IntCC;
+
+    
+    #[cfg(feature = "unwind")]
+    fn emit_unwind_info(
+        &self,
+        _result: &MachCompileResult,
+        _kind: UnwindInfoKind,
+    ) -> CodegenResult<Option<crate::isa::unwind::UnwindInfo>> {
+        
+        Ok(None)
+    }
+
+    
+    
+    #[cfg(feature = "unwind")]
+    fn create_systemv_cie(&self) -> Option<gimli::write::CommonInformationEntry> {
+        
+        None
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum UnwindInfoKind {
+    
+    None,
+    
+    #[cfg(feature = "unwind")]
+    SystemV,
+    
+    #[cfg(feature = "unwind")]
+    Windows,
+}
+
+
+pub struct UnwindInfoContext<'a, Inst: MachInstEmit> {
+    
+    pub insts: &'a [Inst],
+    
+    pub insts_layout: &'a [CodeOffset],
+    
+    pub len: CodeOffset,
+    
+    pub prologue: Range<u32>,
+    
+    pub epilogues: &'a [Range<u32>],
+}
+
+
+pub trait UnwindInfoGenerator<I: MachInstEmit> {
+    
+    
+    fn create_unwind_info(
+        context: UnwindInfoContext<I>,
+    ) -> CodegenResult<Option<unwind_input::UnwindInfo<Reg>>>;
 }

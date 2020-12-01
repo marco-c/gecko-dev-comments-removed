@@ -8,8 +8,8 @@
 
 use crate::state::FuncTranslationState;
 use crate::translation_utils::{
-    DataIndex, ElemIndex, FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex,
-    Table, TableIndex,
+    DataIndex, ElemIndex, EntityType, FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, Table,
+    TableIndex, TypeIndex,
 };
 use core::convert::From;
 use core::convert::TryFrom;
@@ -293,7 +293,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn make_indirect_sig(
         &mut self,
         func: &mut ir::Function,
-        index: SignatureIndex,
+        index: TypeIndex,
     ) -> WasmResult<ir::SigRef>;
 
     
@@ -328,7 +328,7 @@ pub trait FuncEnvironment: TargetEnvironment {
         pos: FuncCursor,
         table_index: TableIndex,
         table: ir::Table,
-        sig_index: SignatureIndex,
+        sig_index: TypeIndex,
         sig_ref: ir::SigRef,
         callee: ir::Value,
         call_args: &[ir::Value],
@@ -387,8 +387,10 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn translate_memory_copy(
         &mut self,
         pos: FuncCursor,
-        index: MemoryIndex,
-        heap: ir::Heap,
+        src_index: MemoryIndex,
+        src_heap: ir::Heap,
+        dst_index: MemoryIndex,
+        dst_heap: ir::Heap,
         dst: ir::Value,
         src: ir::Value,
         len: ir::Value,
@@ -630,16 +632,32 @@ pub trait FuncEnvironment: TargetEnvironment {
 pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     
-    fn reserve_signatures(&mut self, _num: u32) -> WasmResult<()> {
+    fn reserve_types(&mut self, _num: u32) -> WasmResult<()> {
         Ok(())
     }
 
     
-    fn declare_signature(
+    fn declare_type_func(
         &mut self,
         wasm_func_type: WasmFuncType,
         sig: ir::Signature,
     ) -> WasmResult<()>;
+
+    
+    fn declare_type_module(
+        &mut self,
+        imports: &[(&'data str, Option<&'data str>, EntityType)],
+        exports: &[(&'data str, EntityType)],
+    ) -> WasmResult<()> {
+        drop((imports, exports));
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
+
+    
+    fn declare_type_instance(&mut self, exports: &[(&'data str, EntityType)]) -> WasmResult<()> {
+        drop(exports);
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
 
     
     
@@ -650,7 +668,7 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     fn declare_func_import(
         &mut self,
-        sig_index: SignatureIndex,
+        index: TypeIndex,
         module: &'data str,
         field: &'data str,
     ) -> WasmResult<()>;
@@ -680,6 +698,28 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     ) -> WasmResult<()>;
 
     
+    fn declare_module_import(
+        &mut self,
+        ty_index: TypeIndex,
+        module: &'data str,
+        field: &'data str,
+    ) -> WasmResult<()> {
+        drop((ty_index, module, field));
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
+
+    
+    fn declare_instance_import(
+        &mut self,
+        ty_index: TypeIndex,
+        module: &'data str,
+        field: &'data str,
+    ) -> WasmResult<()> {
+        drop((ty_index, module, field));
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
+
+    
     fn finish_imports(&mut self) -> WasmResult<()> {
         Ok(())
     }
@@ -691,7 +731,7 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     }
 
     
-    fn declare_func_type(&mut self, sig_index: SignatureIndex) -> WasmResult<()>;
+    fn declare_func_type(&mut self, index: TypeIndex) -> WasmResult<()>;
 
     
     
@@ -844,5 +884,32 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     fn wasm_features(&self) -> WasmFeatures {
         WasmFeatures::default()
+    }
+
+    
+    
+    
+    
+    fn reserve_modules(&mut self, amount: u32) {
+        drop(amount);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn module_start(&mut self, index: usize) {
+        drop(index);
+    }
+
+    
+    
+    
+    fn module_end(&mut self, index: usize) {
+        drop(index);
     }
 }

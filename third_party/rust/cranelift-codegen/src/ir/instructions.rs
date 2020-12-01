@@ -17,6 +17,7 @@ use crate::ir::{self, trapcode::TrapCode, types, Block, FuncRef, JumpTable, SigR
 use crate::isa;
 
 use crate::bitset::BitSet;
+use crate::data_value::DataValue;
 use crate::entity;
 use ir::condcodes::{FloatCC, IntCC};
 
@@ -281,6 +282,41 @@ impl InstructionData {
                 debug_assert!(!self.opcode().is_branch());
                 None
             }
+        }
+    }
+
+    
+    
+    pub fn imm_value(&self) -> Option<DataValue> {
+        match self {
+            &InstructionData::UnaryBool { imm, .. } => Some(DataValue::from(imm)),
+            
+            &InstructionData::BinaryImm8 { imm, .. }
+            | &InstructionData::BranchTableEntry { imm, .. } => Some(DataValue::from(imm as i8)), 
+            
+            &InstructionData::UnaryIeee32 { imm, .. } => Some(DataValue::from(imm)),
+            &InstructionData::HeapAddr { imm, .. } => {
+                let imm: u32 = imm.into();
+                Some(DataValue::from(imm as i32)) 
+            }
+            &InstructionData::Load { offset, .. }
+            | &InstructionData::LoadComplex { offset, .. }
+            | &InstructionData::Store { offset, .. }
+            | &InstructionData::StoreComplex { offset, .. }
+            | &InstructionData::StackLoad { offset, .. }
+            | &InstructionData::StackStore { offset, .. }
+            | &InstructionData::TableAddr { offset, .. } => Some(DataValue::from(offset)),
+            
+            &InstructionData::UnaryImm { imm, .. }
+            | &InstructionData::BinaryImm64 { imm, .. }
+            | &InstructionData::IntCompareImm { imm, .. } => Some(DataValue::from(imm.bits())),
+            &InstructionData::UnaryIeee64 { imm, .. } => Some(DataValue::from(imm)),
+            
+            
+            
+            
+            &InstructionData::Shuffle { mask: _, .. } => None,
+            _ => None,
         }
     }
 

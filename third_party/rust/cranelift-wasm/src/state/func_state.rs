@@ -7,7 +7,7 @@
 
 
 use crate::environ::{FuncEnvironment, GlobalVariable, WasmResult};
-use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex};
+use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, TableIndex, TypeIndex};
 use crate::{HashMap, Occupied, Vacant};
 use cranelift_codegen::ir::{self, Block, Inst, Value};
 use std::vec::Vec;
@@ -236,7 +236,7 @@ pub struct FuncTranslationState {
     
     
     
-    signatures: HashMap<SignatureIndex, (ir::SigRef, usize)>,
+    signatures: HashMap<TypeIndex, (ir::SigRef, usize)>,
 
     
     
@@ -498,7 +498,7 @@ impl FuncTranslationState {
         index: u32,
         environ: &mut FE,
     ) -> WasmResult<(ir::SigRef, usize)> {
-        let index = SignatureIndex::from_u32(index);
+        let index = TypeIndex::from_u32(index);
         match self.signatures.entry(index) {
             Occupied(entry) => Ok(*entry.get()),
             Vacant(entry) => {

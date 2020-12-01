@@ -64,6 +64,11 @@ impl ConstantData {
     }
 
     
+    pub fn as_slice(&self) -> &[u8] {
+        self.0.as_slice()
+    }
+
+    
     pub fn into_vec(self) -> Vec<u8> {
         self.0
     }

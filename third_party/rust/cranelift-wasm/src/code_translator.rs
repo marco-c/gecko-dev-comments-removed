@@ -22,13 +22,62 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use super::{hash_map, HashMap};
 use crate::environ::{FuncEnvironment, GlobalVariable, ReturnMode, WasmResult};
 use crate::state::{ControlStackFrame, ElseData, FuncTranslationState};
 use crate::translation_utils::{
     block_with_params, blocktype_params_results, f32_translation, f64_translation,
 };
-use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex};
+use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, TableIndex, TypeIndex};
 use crate::wasm_unsupported;
 use core::convert::TryInto;
 use core::{i32, u32};
@@ -40,6 +89,7 @@ use cranelift_codegen::ir::{
 };
 use cranelift_codegen::packed_option::ReservedValue;
 use cranelift_frontend::{FunctionBuilder, Variable};
+use smallvec::SmallVec;
 use std::cmp;
 use std::convert::TryFrom;
 use std::vec::Vec;
@@ -188,7 +238,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let (params, results) = blocktype_params_results(validator, *ty)?;
             let loop_body = block_with_params(builder, params.clone(), environ)?;
             let next = block_with_params(builder, results.clone(), environ)?;
-            builder.ins().jump(loop_body, state.peekn(params.len()));
+            canonicalise_then_jump(builder, loop_body, state.peekn(params.len()));
             state.push_loop(loop_body, next, params.len(), results.len());
 
             
@@ -213,24 +263,21 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 
                 
                 let destination = block_with_params(builder, results.clone(), environ)?;
-                let branch_inst = builder
-                    .ins()
-                    .brz(val, destination, state.peekn(params.len()));
+                let branch_inst =
+                    canonicalise_then_brz(builder, val, destination, state.peekn(params.len()));
                 (destination, ElseData::NoElse { branch_inst })
             } else {
                 
                 
                 let destination = block_with_params(builder, results.clone(), environ)?;
                 let else_block = block_with_params(builder, params.clone(), environ)?;
-                builder
-                    .ins()
-                    .brz(val, else_block, state.peekn(params.len()));
+                canonicalise_then_brz(builder, val, else_block, state.peekn(params.len()));
                 builder.seal_block(else_block);
                 (destination, ElseData::WithElse { else_block })
             };
 
             let next_block = builder.create_block();
-            builder.ins().jump(next_block, &[]);
+            canonicalise_then_jump(builder, next_block, &[]);
             builder.seal_block(next_block); 
             builder.switch_to_block(next_block);
 
@@ -272,7 +319,11 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                                 debug_assert_eq!(params.len(), num_return_values);
                                 let else_block =
                                     block_with_params(builder, params.clone(), environ)?;
-                                builder.ins().jump(destination, state.peekn(params.len()));
+                                canonicalise_then_jump(
+                                    builder,
+                                    destination,
+                                    state.peekn(params.len()),
+                                );
                                 state.popn(params.len());
 
                                 builder.change_jump_destination(branch_inst, else_block);
@@ -280,9 +331,11 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                                 else_block
                             }
                             ElseData::WithElse { else_block } => {
-                                builder
-                                    .ins()
-                                    .jump(destination, state.peekn(num_return_values));
+                                canonicalise_then_jump(
+                                    builder,
+                                    destination,
+                                    state.peekn(num_return_values),
+                                );
                                 state.popn(num_return_values);
                                 else_block
                             }
@@ -314,9 +367,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             if !builder.is_unreachable() || !builder.is_pristine() {
                 let return_count = frame.num_return_values();
                 let return_args = state.peekn_mut(return_count);
-                let next_block_types = builder.func.dfg.block_param_types(next_block);
-                bitcast_arguments(return_args, &next_block_types, builder);
-                builder.ins().jump(frame.following_code(), return_args);
+                canonicalise_then_jump(builder, frame.following_code(), return_args);
                 
                 
                 
@@ -372,17 +423,8 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 };
                 (return_count, frame.br_destination())
             };
-
-            
             let destination_args = state.peekn_mut(return_count);
-            let destination_types = builder.func.dfg.block_param_types(br_destination);
-            bitcast_arguments(
-                destination_args,
-                &destination_types[..return_count],
-                builder,
-            );
-
-            builder.ins().jump(br_destination, destination_args);
+            canonicalise_then_jump(builder, br_destination, destination_args);
             state.popn(return_count);
             state.reachable = false;
         }
@@ -462,17 +504,8 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                         frame.set_branched_to_exit();
                         frame.br_destination()
                     };
-
-                    
                     let destination_args = state.peekn_mut(return_count);
-                    let destination_types = builder.func.dfg.block_param_types(real_dest_block);
-                    bitcast_arguments(
-                        destination_args,
-                        &destination_types[..return_count],
-                        builder,
-                    );
-
-                    builder.ins().jump(real_dest_block, destination_args);
+                    canonicalise_then_jump(builder, real_dest_block, destination_args);
                 }
                 state.popn(return_count);
             }
@@ -494,7 +527,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 match environ.return_mode() {
                     ReturnMode::NormalReturns => builder.ins().return_(return_args),
                     ReturnMode::FallthroughReturn => {
-                        builder.ins().jump(br_destination, return_args)
+                        canonicalise_then_jump(builder, br_destination, return_args)
                     }
                 };
             }
@@ -554,7 +587,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 builder.cursor(),
                 TableIndex::from_u32(*table_index),
                 table,
-                SignatureIndex::from_u32(*index),
+                TypeIndex::from_u32(*index),
                 sigref,
                 callee,
                 state.peekn(num_args),
@@ -992,7 +1025,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let index = FuncIndex::from_u32(*function_index);
             state.push1(environ.translate_ref_func(builder.cursor(), index)?);
         }
-        Operator::MemoryAtomicWait32 { .. } | Operator::MemoryAtomicWait64 { .. } => {
+        Operator::MemoryAtomicWait32 { memarg } | Operator::MemoryAtomicWait64 { memarg } => {
             
             
             
@@ -1001,8 +1034,8 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 Operator::MemoryAtomicWait32 { .. } => I32,
                 _ => unreachable!(),
             };
-            let heap_index = MemoryIndex::from_u32(0);
-            let heap = state.get_heap(builder.func, 0, environ)?;
+            let heap_index = MemoryIndex::from_u32(memarg.memory);
+            let heap = state.get_heap(builder.func, memarg.memory, environ)?;
             let timeout = state.pop1(); 
             let expected = state.pop1(); 
             let addr = state.pop1(); 
@@ -1019,12 +1052,9 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             )?;
             state.push1(res);
         }
-        Operator::MemoryAtomicNotify { .. } => {
-            
-            
-            
-            let heap_index = MemoryIndex::from_u32(0);
-            let heap = state.get_heap(builder.func, 0, environ)?;
+        Operator::MemoryAtomicNotify { memarg } => {
+            let heap_index = MemoryIndex::from_u32(memarg.memory);
+            let heap = state.get_heap(builder.func, memarg.memory, environ)?;
             let count = state.pop1(); 
             let addr = state.pop1(); 
             let res =
@@ -1233,16 +1263,23 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             builder.ins().fence();
         }
         Operator::MemoryCopy { src, dst } => {
-            
-            
-            
-            assert_eq!(src, dst, "unimplemented between-memories copy");
-            let heap_index = MemoryIndex::from_u32(*src);
-            let heap = state.get_heap(builder.func, *src, environ)?;
+            let src_index = MemoryIndex::from_u32(*src);
+            let dst_index = MemoryIndex::from_u32(*dst);
+            let src_heap = state.get_heap(builder.func, *src, environ)?;
+            let dst_heap = state.get_heap(builder.func, *dst, environ)?;
             let len = state.pop1();
-            let src = state.pop1();
-            let dest = state.pop1();
-            environ.translate_memory_copy(builder.cursor(), heap_index, heap, dest, src, len)?;
+            let src_pos = state.pop1();
+            let dst_pos = state.pop1();
+            environ.translate_memory_copy(
+                builder.cursor(),
+                src_index,
+                src_heap,
+                dst_index,
+                dst_heap,
+                dst_pos,
+                src_pos,
+                len,
+            )?;
         }
         Operator::MemoryFill { mem } => {
             let heap_index = MemoryIndex::from_u32(*mem);
@@ -1358,6 +1395,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let handle = builder.func.dfg.constants.insert(data);
             let value = builder.ins().vconst(I8X16, handle);
             
+            
             state.push1(value)
         }
         Operator::I8x16Splat | Operator::I16x8Splat => {
@@ -1376,9 +1414,19 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
         | Operator::V128Load16Splat { memarg }
         | Operator::V128Load32Splat { memarg }
         | Operator::V128Load64Splat { memarg } => {
-            
-            
-            
+            let opcode = ir::Opcode::LoadSplat;
+            let result_ty = type_of(op);
+            let (flags, base, offset) = prepare_load(
+                memarg,
+                mem_op_size(opcode, result_ty.lane_type()),
+                builder,
+                state,
+                environ,
+            )?;
+            let (load, dfg) = builder.ins().Load(opcode, result_ty, flags, offset, base);
+            state.push1(dfg.first_result(load))
+        }
+        Operator::V128Load32Zero { memarg } | Operator::V128Load64Zero { memarg } => {
             translate_load(
                 memarg,
                 ir::Opcode::Load,
@@ -1387,8 +1435,8 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 state,
                 environ,
             )?;
-            let splatted = builder.ins().splat(type_of(op), state.pop1());
-            state.push1(splatted)
+            let as_vector = builder.ins().scalar_to_vector(type_of(op), state.pop1());
+            state.push1(as_vector)
         }
         Operator::I8x16ExtractLaneS { lane } | Operator::I16x8ExtractLaneS { lane } => {
             let vector = pop1_with_bitcast(state, type_of(op), builder);
@@ -1562,6 +1610,10 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let bool_result = builder.ins().vall_true(a);
             state.push1(builder.ins().bint(I32, bool_result))
         }
+        Operator::I8x16Bitmask | Operator::I16x8Bitmask | Operator::I32x4Bitmask => {
+            let a = pop1_with_bitcast(state, type_of(op), builder);
+            state.push1(builder.ins().vhigh_bits(I32, a));
+        }
         Operator::I8x16Eq | Operator::I16x8Eq | Operator::I32x4Eq => {
             translate_vector_icmp(IntCC::Equal, type_of(op), builder, state)
         }
@@ -1636,6 +1688,14 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
         Operator::F32x4Min | Operator::F64x2Min => {
             let (a, b) = pop2_with_bitcast(state, type_of(op), builder);
             state.push1(builder.ins().fmin(a, b))
+        }
+        Operator::F32x4PMax | Operator::F64x2PMax => {
+            let (a, b) = pop2_with_bitcast(state, type_of(op), builder);
+            state.push1(builder.ins().fmax_pseudo(a, b))
+        }
+        Operator::F32x4PMin | Operator::F64x2PMin => {
+            let (a, b) = pop2_with_bitcast(state, type_of(op), builder);
+            state.push1(builder.ins().fmin_pseudo(a, b))
         }
         Operator::F32x4Sqrt | Operator::F64x2Sqrt => {
             let a = pop1_with_bitcast(state, type_of(op), builder);
@@ -1714,22 +1774,29 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             state.push1(builder.ins().uwiden_high(a))
         }
 
-        Operator::F32x4Ceil
-        | Operator::F32x4Floor
-        | Operator::F32x4Trunc
-        | Operator::F32x4Nearest
-        | Operator::F32x4PMin
-        | Operator::F32x4PMax
-        | Operator::F64x2Ceil
-        | Operator::F64x2Floor
-        | Operator::F64x2Trunc
-        | Operator::F64x2PMin
-        | Operator::F64x2PMax
-        | Operator::F64x2Nearest
-        | Operator::I8x16Bitmask
-        | Operator::I16x8Bitmask
-        | Operator::I32x4Bitmask => {
-            return Err(wasm_unsupported!("proposed SIMD operator {:?}", op));
+        Operator::F32x4Ceil | Operator::F64x2Ceil => {
+            
+            
+            
+            let arg = pop1_with_bitcast(state, type_of(op), builder);
+            state.push1(builder.ins().ceil(arg));
+        }
+        Operator::F32x4Floor | Operator::F64x2Floor => {
+            let arg = pop1_with_bitcast(state, type_of(op), builder);
+            state.push1(builder.ins().floor(arg));
+        }
+        Operator::F32x4Trunc | Operator::F64x2Trunc => {
+            let arg = pop1_with_bitcast(state, type_of(op), builder);
+            state.push1(builder.ins().trunc(arg));
+        }
+        Operator::F32x4Nearest | Operator::F64x2Nearest => {
+            let arg = pop1_with_bitcast(state, type_of(op), builder);
+            state.push1(builder.ins().nearest(arg));
+        }
+
+        Operator::I32x4DotI16x8S => {
+            let (a, b) = pop2_with_bitcast(state, I16X8, builder);
+            state.push1(builder.ins().widening_pairwise_dot_product_s(a, b));
         }
 
         Operator::ReturnCall { .. } | Operator::ReturnCallIndirect { .. } => {
@@ -2036,7 +2103,7 @@ fn mem_op_size(opcode: ir::Opcode, ty: Type) -> u32 {
         ir::Opcode::Istore8 | ir::Opcode::Sload8 | ir::Opcode::Uload8 => 1,
         ir::Opcode::Istore16 | ir::Opcode::Sload16 | ir::Opcode::Uload16 => 2,
         ir::Opcode::Istore32 | ir::Opcode::Sload32 | ir::Opcode::Uload32 => 4,
-        ir::Opcode::Store | ir::Opcode::Load => ty.bytes(),
+        ir::Opcode::Store | ir::Opcode::Load | ir::Opcode::LoadSplat => ty.bytes(),
         _ => panic!("unknown size of mem op for {:?}", opcode),
     }
 }
@@ -2313,15 +2380,10 @@ fn translate_br_if(
 ) {
     let val = state.pop1();
     let (br_destination, inputs) = translate_br_if_args(relative_depth, state);
-
-    
-    let destination_types = builder.func.dfg.block_param_types(br_destination);
-    bitcast_arguments(inputs, &destination_types[..inputs.len()], builder);
-
-    builder.ins().brnz(val, br_destination, inputs);
+    canonicalise_then_brnz(builder, val, br_destination, inputs);
 
     let next_block = builder.create_block();
-    builder.ins().jump(next_block, &[]);
+    canonicalise_then_jump(builder, next_block, &[]);
     builder.seal_block(next_block); 
     builder.switch_to_block(next_block);
 }
@@ -2462,7 +2524,8 @@ fn type_of(operator: &Operator) -> Type {
         | Operator::I32x4MaxU
         | Operator::F32x4ConvertI32x4S
         | Operator::F32x4ConvertI32x4U
-        | Operator::I32x4Bitmask => I32X4,
+        | Operator::I32x4Bitmask
+        | Operator::V128Load32Zero { .. } => I32X4,
 
         Operator::I64x2Splat
         | Operator::V128Load64Splat { .. }
@@ -2474,7 +2537,8 @@ fn type_of(operator: &Operator) -> Type {
         | Operator::I64x2ShrU
         | Operator::I64x2Add
         | Operator::I64x2Sub
-        | Operator::I64x2Mul => I64X2,
+        | Operator::I64x2Mul
+        | Operator::V128Load64Zero { .. } => I64X2,
 
         Operator::F32x4Splat
         | Operator::F32x4ExtractLane { .. }
@@ -2494,8 +2558,14 @@ fn type_of(operator: &Operator) -> Type {
         | Operator::F32x4Div
         | Operator::F32x4Min
         | Operator::F32x4Max
+        | Operator::F32x4PMin
+        | Operator::F32x4PMax
         | Operator::I32x4TruncSatF32x4S
-        | Operator::I32x4TruncSatF32x4U => F32X4,
+        | Operator::I32x4TruncSatF32x4U
+        | Operator::F32x4Ceil
+        | Operator::F32x4Floor
+        | Operator::F32x4Trunc
+        | Operator::F32x4Nearest => F32X4,
 
         Operator::F64x2Splat
         | Operator::F64x2ExtractLane { .. }
@@ -2514,7 +2584,13 @@ fn type_of(operator: &Operator) -> Type {
         | Operator::F64x2Mul
         | Operator::F64x2Div
         | Operator::F64x2Min
-        | Operator::F64x2Max => F64X2,
+        | Operator::F64x2Max
+        | Operator::F64x2PMin
+        | Operator::F64x2PMax
+        | Operator::F64x2Ceil
+        | Operator::F64x2Floor
+        | Operator::F64x2Trunc
+        | Operator::F64x2Nearest => F64X2,
 
         _ => unimplemented!(
             "Currently only SIMD instructions are mapped to their return type; the \
@@ -2526,7 +2602,7 @@ fn type_of(operator: &Operator) -> Type {
 
 
 
-pub fn optionally_bitcast_vector(
+fn optionally_bitcast_vector(
     value: Value,
     needed_type: Type,
     builder: &mut FunctionBuilder,
@@ -2536,6 +2612,80 @@ pub fn optionally_bitcast_vector(
     } else {
         value
     }
+}
+
+#[inline(always)]
+fn is_non_canonical_v128(ty: ir::Type) -> bool {
+    match ty {
+        B8X16 | B16X8 | B32X4 | B64X2 | I64X2 | I32X4 | I16X8 | F32X4 | F64X2 => true,
+        _ => false,
+    }
+}
+
+
+
+
+
+fn canonicalise_v128_values<'a>(
+    tmp_canonicalised: &'a mut SmallVec<[ir::Value; 16]>,
+    builder: &mut FunctionBuilder,
+    values: &'a [ir::Value],
+) -> &'a [ir::Value] {
+    debug_assert!(tmp_canonicalised.is_empty());
+    
+    let any_non_canonical = values
+        .iter()
+        .any(|v| is_non_canonical_v128(builder.func.dfg.value_type(*v)));
+    
+    if !any_non_canonical {
+        return values;
+    }
+    
+    for v in values {
+        tmp_canonicalised.push(if is_non_canonical_v128(builder.func.dfg.value_type(*v)) {
+            builder.ins().raw_bitcast(I8X16, *v)
+        } else {
+            *v
+        });
+    }
+    tmp_canonicalised.as_slice()
+}
+
+
+
+
+fn canonicalise_then_jump(
+    builder: &mut FunctionBuilder,
+    destination: ir::Block,
+    params: &[ir::Value],
+) -> ir::Inst {
+    let mut tmp_canonicalised = SmallVec::<[ir::Value; 16]>::new();
+    let canonicalised = canonicalise_v128_values(&mut tmp_canonicalised, builder, params);
+    builder.ins().jump(destination, canonicalised)
+}
+
+
+fn canonicalise_then_brz(
+    builder: &mut FunctionBuilder,
+    cond: ir::Value,
+    destination: ir::Block,
+    params: &[Value],
+) -> ir::Inst {
+    let mut tmp_canonicalised = SmallVec::<[ir::Value; 16]>::new();
+    let canonicalised = canonicalise_v128_values(&mut tmp_canonicalised, builder, params);
+    builder.ins().brz(cond, destination, canonicalised)
+}
+
+
+fn canonicalise_then_brnz(
+    builder: &mut FunctionBuilder,
+    cond: ir::Value,
+    destination: ir::Block,
+    params: &[Value],
+) -> ir::Inst {
+    let mut tmp_canonicalised = SmallVec::<[ir::Value; 16]>::new();
+    let canonicalised = canonicalise_v128_values(&mut tmp_canonicalised, builder, params);
+    builder.ins().brnz(cond, destination, canonicalised)
 }
 
 

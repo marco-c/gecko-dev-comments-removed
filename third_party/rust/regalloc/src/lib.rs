@@ -26,6 +26,7 @@ mod checker;
 mod data_structures;
 mod inst_stream;
 mod linear_scan;
+mod pretty_print;
 mod reg_maps;
 mod snapshot;
 mod sparse_set;
@@ -36,6 +37,9 @@ use std::default;
 use std::{borrow::Cow, fmt};
 
 
+
+
+pub use crate::pretty_print::*;
 
 
 
@@ -219,6 +223,25 @@ pub trait Function {
 
     
     fn is_ret(&self, insn: InstIx) -> bool;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn is_included_in_clobbers(&self, _insn: &Self::Inst) -> bool {
+        
+        true
+    }
 
     
     

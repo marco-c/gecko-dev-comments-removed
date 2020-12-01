@@ -6,7 +6,7 @@ use crate::settings;
 use crate::timing;
 
 use log::debug;
-use regalloc::{allocate_registers_with_opts, Algorithm, Options};
+use regalloc::{allocate_registers_with_opts, Algorithm, Options, PrettyPrint};
 
 
 
@@ -14,14 +14,15 @@ pub fn compile<B: LowerBackend + MachBackend>(
     f: &Function,
     b: &B,
     abi: Box<dyn ABICallee<I = B::MInst>>,
+    emit_info: <B::MInst as MachInstEmit>::Info,
 ) -> CodegenResult<VCode<B::MInst>>
 where
-    B::MInst: ShowWithRRU,
+    B::MInst: PrettyPrint,
 {
     
     let block_order = BlockLoweringOrder::new(f);
     
-    let lower = Lower::new(f, abi, block_order)?;
+    let lower = Lower::new(f, abi, emit_info, block_order)?;
     
     let (mut vcode, stack_map_request_info) = {
         let _tt = timing::vcode_lower();

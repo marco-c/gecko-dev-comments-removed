@@ -17,7 +17,7 @@
 
 
 
-use crate::ir::{self, types, SourceLoc};
+use crate::ir::{self, types, Constant, ConstantData, SourceLoc};
 use crate::machinst::*;
 use crate::settings;
 use crate::timing;
@@ -25,12 +25,15 @@ use crate::timing;
 use regalloc::Function as RegallocFunction;
 use regalloc::Set as RegallocSet;
 use regalloc::{
-    BlockIx, InstIx, Range, RegAllocResult, RegClass, RegUsageCollector, RegUsageMapper, SpillSlot,
-    StackmapRequestInfo,
+    BlockIx, InstIx, PrettyPrint, Range, RegAllocResult, RegClass, RegUsageCollector,
+    RegUsageMapper, SpillSlot, StackmapRequestInfo,
 };
 
 use alloc::boxed::Box;
 use alloc::{borrow::Cow, vec::Vec};
+use cranelift_entity::{entity_impl, Keys, PrimaryMap};
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
 use std::iter;
 use std::string::String;
@@ -39,6 +42,8 @@ use std::string::String;
 pub type InsnIndex = u32;
 
 pub type BlockIndex = u32;
+
+pub type InsnRange = core::ops::Range<InsnIndex>;
 
 
 
@@ -90,6 +95,10 @@ pub struct VCode<I: VCodeInst> {
 
     
     
+    emit_info: I::Info,
+
+    
+    
     
     safepoint_insns: Vec<InsnIndex>,
 
@@ -97,6 +106,15 @@ pub struct VCode<I: VCodeInst> {
     
     
     safepoint_slots: Vec<Vec<SpillSlot>>,
+
+    
+    prologue_epilogue_ranges: Option<(InsnRange, Box<[InsnRange]>)>,
+
+    
+    insts_layout: RefCell<(Vec<u32>, u32)>,
+
+    
+    constants: VCodeConstants,
 }
 
 
@@ -132,9 +150,14 @@ pub struct VCodeBuilder<I: VCodeInst> {
 
 impl<I: VCodeInst> VCodeBuilder<I> {
     
-    pub fn new(abi: Box<dyn ABICallee<I = I>>, block_order: BlockLoweringOrder) -> VCodeBuilder<I> {
+    pub fn new(
+        abi: Box<dyn ABICallee<I = I>>,
+        emit_info: I::Info,
+        block_order: BlockLoweringOrder,
+        constants: VCodeConstants,
+    ) -> VCodeBuilder<I> {
         let reftype_class = I::ref_type_regclass(abi.flags());
-        let vcode = VCode::new(abi, block_order);
+        let vcode = VCode::new(abi, emit_info, block_order, constants);
         let stack_map_info = StackmapRequestInfo {
             reftype_class,
             reftyped_vregs: vec![],
@@ -239,6 +262,11 @@ impl<I: VCodeInst> VCodeBuilder<I> {
     }
 
     
+    pub fn constants(&mut self) -> &mut VCodeConstants {
+        &mut self.vcode.constants
+    }
+
+    
     
     pub fn build(self) -> (VCode<I>, StackmapRequestInfo) {
         
@@ -263,7 +291,12 @@ fn is_reftype(ty: Type) -> bool {
 
 impl<I: VCodeInst> VCode<I> {
     
-    fn new(abi: Box<dyn ABICallee<I = I>>, block_order: BlockLoweringOrder) -> VCode<I> {
+    fn new(
+        abi: Box<dyn ABICallee<I = I>>,
+        emit_info: I::Info,
+        block_order: BlockLoweringOrder,
+        constants: VCodeConstants,
+    ) -> VCode<I> {
         VCode {
             liveins: abi.liveins(),
             liveouts: abi.liveouts(),
@@ -277,8 +310,12 @@ impl<I: VCodeInst> VCode<I> {
             block_succs: vec![],
             block_order,
             abi,
+            emit_info,
             safepoint_insns: vec![],
             safepoint_slots: vec![],
+            prologue_epilogue_ranges: None,
+            insts_layout: RefCell::new((vec![], 0)),
+            constants,
         }
     }
 
@@ -340,6 +377,10 @@ impl<I: VCodeInst> VCode<I> {
         let mut final_safepoint_insns = vec![];
         let mut safept_idx = 0;
 
+        let mut prologue_start = None;
+        let mut prologue_end = None;
+        let mut epilogue_islands = vec![];
+
         assert!(result.target_map.elems().len() == self.num_blocks());
         for block in 0..self.num_blocks() {
             let start = result.target_map.elems()[block].get() as usize;
@@ -352,11 +393,13 @@ impl<I: VCodeInst> VCode<I> {
             let final_start = final_insns.len() as InsnIndex;
 
             if block == self.entry {
+                prologue_start = Some(final_insns.len() as InsnIndex);
                 
                 let prologue = self.abi.gen_prologue();
                 let len = prologue.len();
                 final_insns.extend(prologue.into_iter());
                 final_srclocs.extend(iter::repeat(SourceLoc::default()).take(len));
+                prologue_end = Some(final_insns.len() as InsnIndex);
             }
 
             for i in start..end {
@@ -382,10 +425,12 @@ impl<I: VCodeInst> VCode<I> {
                 
                 let is_ret = insn.is_term() == MachTerminator::Ret;
                 if is_ret {
+                    let epilogue_start = final_insns.len() as InsnIndex;
                     let epilogue = self.abi.gen_epilogue();
                     let len = epilogue.len();
                     final_insns.extend(epilogue.into_iter());
                     final_srclocs.extend(iter::repeat(srcloc).take(len));
+                    epilogue_islands.push(epilogue_start..final_insns.len() as InsnIndex);
                 } else {
                     final_insns.push(insn.clone());
                     final_srclocs.push(srcloc);
@@ -417,6 +462,11 @@ impl<I: VCodeInst> VCode<I> {
         
         
         self.safepoint_slots = result.stackmaps;
+
+        self.prologue_epilogue_ranges = Some((
+            prologue_start.unwrap()..prologue_end.unwrap(),
+            epilogue_islands.into_boxed_slice(),
+        ));
     }
 
     
@@ -429,9 +479,13 @@ impl<I: VCodeInst> VCode<I> {
         let mut buffer = MachBuffer::new();
         let mut state = I::State::new(&*self.abi);
 
-        buffer.reserve_labels_for_blocks(self.num_blocks() as BlockIndex); 
+        
+        
+        buffer.reserve_labels_for_blocks(self.num_blocks() as BlockIndex);
+        buffer.reserve_labels_for_constants(&self.constants);
 
-        let flags = self.abi.flags();
+        let mut insts_layout = vec![0; self.insts.len()];
+
         let mut safepoint_idx = 0;
         let mut cur_srcloc = None;
         for block in 0..self.num_blocks() {
@@ -440,7 +494,7 @@ impl<I: VCodeInst> VCode<I> {
             while new_offset > buffer.cur_offset() {
                 
                 let nop = I::gen_nop((new_offset - buffer.cur_offset()) as usize);
-                nop.emit(&mut buffer, flags, &mut Default::default());
+                nop.emit(&mut buffer, &self.emit_info, &mut Default::default());
             }
             assert_eq!(buffer.cur_offset(), new_offset);
 
@@ -455,6 +509,7 @@ impl<I: VCodeInst> VCode<I> {
                     buffer.start_srcloc(srcloc);
                     cur_srcloc = Some(srcloc);
                 }
+                state.pre_sourceloc(cur_srcloc.unwrap_or(SourceLoc::default()));
 
                 if safepoint_idx < self.safepoint_insns.len()
                     && self.safepoint_insns[safepoint_idx] == iix
@@ -469,7 +524,9 @@ impl<I: VCodeInst> VCode<I> {
                     safepoint_idx += 1;
                 }
 
-                self.insts[iix as usize].emit(&mut buffer, flags, &mut state);
+                self.insts[iix as usize].emit(&mut buffer, &self.emit_info, &mut state);
+
+                insts_layout[iix as usize] = buffer.cur_offset();
             }
 
             if cur_srcloc.is_some() {
@@ -490,7 +547,31 @@ impl<I: VCodeInst> VCode<I> {
             }
         }
 
+        
+        for (constant, data) in self.constants.iter() {
+            let label = buffer.get_label_for_constant(constant);
+            buffer.defer_constant(label, data.alignment(), data.as_slice(), u32::max_value());
+        }
+
+        *self.insts_layout.borrow_mut() = (insts_layout, buffer.cur_offset());
+
         buffer
+    }
+
+    
+    pub fn unwind_info(
+        &self,
+    ) -> crate::result::CodegenResult<Option<crate::isa::unwind::input::UnwindInfo<Reg>>> {
+        let layout = &self.insts_layout.borrow();
+        let (prologue, epilogues) = self.prologue_epilogue_ranges.as_ref().unwrap();
+        let context = UnwindInfoContext {
+            insts: &self.insts,
+            insts_layout: &layout.0,
+            len: layout.1,
+            prologue: prologue.clone(),
+            epilogues,
+        };
+        I::UnwindInfo::create_unwind_info(context)
     }
 
     
@@ -541,6 +622,10 @@ impl<I: VCodeInst> RegallocFunction for VCode<I> {
             MachTerminator::Ret => true,
             _ => false,
         }
+    }
+
+    fn is_included_in_clobbers(&self, insn: &I) -> bool {
+        insn.is_included_in_clobbers()
     }
 
     fn get_regs(insn: &I, collector: &mut RegUsageCollector) {
@@ -624,7 +709,7 @@ impl<I: VCodeInst> fmt::Debug for VCode<I> {
 }
 
 
-impl<I: VCodeInst> ShowWithRRU for VCode<I> {
+impl<I: VCodeInst> PrettyPrint for VCode<I> {
     fn show_rru(&self, mb_rru: Option<&RealRegUniverse>) -> String {
         use std::fmt::Write;
 
@@ -671,5 +756,140 @@ impl<I: VCodeInst> ShowWithRRU for VCode<I> {
         write!(&mut s, "}}}}\n").unwrap();
 
         s
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Default)]
+pub struct VCodeConstants {
+    constants: PrimaryMap<VCodeConstant, VCodeConstantData>,
+    pool_uses: HashMap<Constant, VCodeConstant>,
+    well_known_uses: HashMap<*const [u8], VCodeConstant>,
+}
+impl VCodeConstants {
+    
+    pub fn with_capacity(expected_num_constants: usize) -> Self {
+        Self {
+            constants: PrimaryMap::with_capacity(expected_num_constants),
+            pool_uses: HashMap::with_capacity(expected_num_constants),
+            well_known_uses: HashMap::new(),
+        }
+    }
+
+    
+    
+    
+    
+    pub fn insert(&mut self, data: VCodeConstantData) -> VCodeConstant {
+        match data {
+            VCodeConstantData::Generated(_) => self.constants.push(data),
+            VCodeConstantData::Pool(constant, _) => match self.pool_uses.get(&constant) {
+                None => {
+                    let vcode_constant = self.constants.push(data);
+                    self.pool_uses.insert(constant, vcode_constant);
+                    vcode_constant
+                }
+                Some(&vcode_constant) => vcode_constant,
+            },
+            VCodeConstantData::WellKnown(data_ref) => {
+                match self.well_known_uses.get(&(data_ref as *const [u8])) {
+                    None => {
+                        let vcode_constant = self.constants.push(data);
+                        self.well_known_uses
+                            .insert(data_ref as *const [u8], vcode_constant);
+                        vcode_constant
+                    }
+                    Some(&vcode_constant) => vcode_constant,
+                }
+            }
+        }
+    }
+
+    
+    pub fn get(&self, constant: VCodeConstant) -> Option<&[u8]> {
+        self.constants.get(constant).map(|d| d.as_slice())
+    }
+
+    
+    pub fn len(&self) -> usize {
+        self.constants.len()
+    }
+
+    
+    pub fn keys(&self) -> Keys<VCodeConstant> {
+        self.constants.keys()
+    }
+
+    
+    
+    pub fn iter(&self) -> impl Iterator<Item = (VCodeConstant, &VCodeConstantData)> {
+        self.constants.iter()
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct VCodeConstant(u32);
+entity_impl!(VCodeConstant);
+
+
+
+pub enum VCodeConstantData {
+    
+    
+    Pool(Constant, ConstantData),
+    
+    WellKnown(&'static [u8]),
+    
+    
+    Generated(ConstantData),
+}
+impl VCodeConstantData {
+    
+    pub fn as_slice(&self) -> &[u8] {
+        match self {
+            VCodeConstantData::Pool(_, d) | VCodeConstantData::Generated(d) => d.as_slice(),
+            VCodeConstantData::WellKnown(d) => d,
+        }
+    }
+
+    
+    pub fn alignment(&self) -> u32 {
+        if self.as_slice().len() <= 8 {
+            8
+        } else {
+            16
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::mem::size_of;
+
+    #[test]
+    fn size_of_constant_structs() {
+        assert_eq!(size_of::<Constant>(), 4);
+        assert_eq!(size_of::<VCodeConstant>(), 4);
+        assert_eq!(size_of::<ConstantData>(), 24);
+        assert_eq!(size_of::<VCodeConstantData>(), 32);
+        assert_eq!(
+            size_of::<PrimaryMap<VCodeConstant, VCodeConstantData>>(),
+            24
+        );
+        
+        
+        
     }
 }

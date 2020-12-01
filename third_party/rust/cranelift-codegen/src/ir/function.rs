@@ -94,7 +94,7 @@ pub struct Function {
     
     
     
-    pub epilogues_start: Vec<Inst>,
+    pub epilogues_start: Vec<(Inst, Block)>,
 
     
     

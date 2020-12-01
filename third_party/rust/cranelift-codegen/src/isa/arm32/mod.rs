@@ -3,14 +3,12 @@
 use crate::ir::condcodes::IntCC;
 use crate::ir::Function;
 use crate::isa::Builder as IsaBuilder;
-use crate::machinst::{
-    compile, MachBackend, MachCompileResult, ShowWithRRU, TargetIsaAdapter, VCode,
-};
+use crate::machinst::{compile, MachBackend, MachCompileResult, TargetIsaAdapter, VCode};
 use crate::result::CodegenResult;
 use crate::settings;
 
 use alloc::boxed::Box;
-use regalloc::RealRegUniverse;
+use regalloc::{PrettyPrint, RealRegUniverse};
 use target_lexicon::{Architecture, ArmArchitecture, Triple};
 
 
@@ -19,7 +17,7 @@ mod inst;
 mod lower;
 mod lower_inst;
 
-use inst::create_reg_universe;
+use inst::{create_reg_universe, EmitInfo};
 
 
 pub struct Arm32Backend {
@@ -46,8 +44,9 @@ impl Arm32Backend {
     ) -> CodegenResult<VCode<inst::Inst>> {
         
         
+        let emit_info = EmitInfo::new(flags.clone());
         let abi = Box::new(abi::Arm32ABICallee::new(func, flags)?);
-        compile::compile::<Arm32Backend>(func, self, abi)
+        compile::compile::<Arm32Backend>(func, self, abi, emit_info)
     }
 }
 
@@ -74,6 +73,7 @@ impl MachBackend for Arm32Backend {
             buffer,
             frame_size,
             disasm,
+            unwind_info: None,
         })
     }
 

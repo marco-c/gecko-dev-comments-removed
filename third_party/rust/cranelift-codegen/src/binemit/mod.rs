@@ -141,9 +141,6 @@ pub trait CodeSink {
     fn put8(&mut self, _: u64);
 
     
-    fn reloc_block(&mut self, _: Reloc, _: CodeOffset);
-
-    
     fn reloc_external(&mut self, _: SourceLoc, _: Reloc, _: &ExternalName, _: Addend);
 
     
