@@ -30,8 +30,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   element: "chrome://marionette/content/element.js",
   error: "chrome://marionette/content/error.js",
   evaluate: "chrome://marionette/content/evaluate.js",
-  getMarionetteFrameActorProxy:
-    "chrome://marionette/content/actors/MarionetteFrameParent.jsm",
+  getMarionetteCommandsActorProxy:
+    "chrome://marionette/content/actors/MarionetteCommandsParent.jsm",
   IdlePromise: "chrome://marionette/content/sync.js",
   interaction: "chrome://marionette/content/interaction.js",
   l10n: "chrome://marionette/content/l10n.js",
@@ -380,7 +380,9 @@ GeckoDriver.prototype.sendAsync = function(name, data, commandID) {
 
 
 GeckoDriver.prototype.getActor = function(options = {}) {
-  return getMarionetteFrameActorProxy(() => this.getBrowsingContext(options));
+  return getMarionetteCommandsActorProxy(
+    () => this.getBrowsingContext(options)
+  );
 };
 
 
@@ -862,15 +864,15 @@ GeckoDriver.prototype.newSession = async function(cmd) {
 
   if (MarionettePrefs.useActors) {
     
-    ChromeUtils.registerWindowActor("MarionetteFrame", {
+    ChromeUtils.registerWindowActor("MarionetteCommands", {
       kind: "JSWindowActor",
       parent: {
         moduleURI:
-          "chrome://marionette/content/actors/MarionetteFrameParent.jsm",
+          "chrome://marionette/content/actors/MarionetteCommandsParent.jsm",
       },
       child: {
         moduleURI:
-          "chrome://marionette/content/actors/MarionetteFrameChild.jsm",
+          "chrome://marionette/content/actors/MarionetteCommandsChild.jsm",
         events: {
           beforeunload: { capture: true },
           DOMContentLoaded: { mozSystemGroup: true },
@@ -3028,7 +3030,7 @@ GeckoDriver.prototype.deleteSession = function() {
         }
       }
     }
-    ChromeUtils.unregisterWindowActor("MarionetteFrame");
+    ChromeUtils.unregisterWindowActor("MarionetteCommands");
   }
 
   
