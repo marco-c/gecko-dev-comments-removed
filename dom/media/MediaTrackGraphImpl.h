@@ -131,7 +131,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool InDriverIteration(GraphDriver* aDriver) override;
+  bool InDriverIteration(const GraphDriver* aDriver) const override;
 #endif
 
   
