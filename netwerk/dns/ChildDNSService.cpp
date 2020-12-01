@@ -39,27 +39,11 @@ already_AddRefed<ChildDNSService> ChildDNSService::GetSingleton() {
                 XRE_IsContentProcess() || XRE_IsSocketProcess());
 
   if (!gChildDNSService) {
-    auto initTask = []() {
-      gChildDNSService = new ChildDNSService();
-      ClearOnShutdown(&gChildDNSService);
-    };
-
-    
-    
-    
     if (!NS_IsMainThread()) {
-      
-      RefPtr<nsIThread> mainThread = do_GetMainThread();
-      if (!mainThread) {
-        return nullptr;
-      }
-
-      SyncRunnable::DispatchToThread(
-          mainThread, new SyncRunnable(NS_NewRunnableFunction(
-                          "ChildDNSService::GetSingleton", initTask)));
-    } else {
-      initTask();
+      return nullptr;
     }
+    gChildDNSService = new ChildDNSService();
+    ClearOnShutdown(&gChildDNSService);
   }
 
   return do_AddRef(gChildDNSService);
