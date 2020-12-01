@@ -9905,11 +9905,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       if (maxWidth == nsViewportInfo::Auto && !mValidScaleFloat) {
         BrowsingContext* bc = GetBrowsingContext();
-        nsIDocShell* docShell = GetDocShell();
-        if (docShell &&
-            docShell->GetTouchEventsOverride() ==
-                nsIDocShell::TOUCHEVENTS_OVERRIDE_ENABLED &&
-            bc && bc->InRDMPane()) {
+        if (bc && bc->TouchEventsOverride() == TouchEventsOverride::Enabled &&
+            bc->InRDMPane()) {
           
           
           

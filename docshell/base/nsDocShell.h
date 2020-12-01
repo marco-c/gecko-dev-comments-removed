@@ -1241,10 +1241,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  TouchEventsOverride mTouchEventsOverride;
-
-  
-  
   MetaViewportOverride mMetaViewportOverride;
 
   
