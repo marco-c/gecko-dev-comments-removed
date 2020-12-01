@@ -15,6 +15,7 @@ from distutils.version import LooseVersion
 from mozboot import rust
 from mozboot.util import (
     get_mach_virtualenv_binary,
+    locate_java_bin_path,
     MINIMUM_RUST_VERSION,
 )
 from mozfile import which
@@ -884,119 +885,20 @@ class BaseBootstrapper(object):
     def ensure_java(self, mozconfig_builder):
         """Verify the presence of java.
 
-        Note that we currently require a JDK (not just a JRE) because we
-        use `jarsigner` in local builds.
-
-        Soon we won't require Java 1.8 to build (after Bug 1515248 and
-        we use Android-Gradle plugin 3.2.1), but the Android
-        `sdkmanager` tool still requires exactly 1.8.  Sigh.  Note that
-        we no longer require javac explicitly; it's fetched by
-        Gradle.
+        Finds a valid Java (throwing an error if not possible) and encodes it to the mozconfig.
         """
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        jdk_bin_dir = None
-        if "JAVA_HOME" in os.environ:
-            
-            possible_jarsigner_path = os.path.join(os.environ["JAVA_HOME"], "bin")
-            if which("jarsigner", path=possible_jarsigner_path):
-                jdk_bin_dir = os.path.realpath(possible_jarsigner_path)
-        else:
-            
-            jarsigner = which("jarsigner")
-            java = which("java")
-
-            if jarsigner and java:
-                jdk_bin_dir = os.path.dirname(os.path.realpath(jarsigner))
-                jdk_bin_java = which("java", path=jdk_bin_dir)
-
-                
-                
-                
-                
-                
-                path_java_version = _resolve_java_version(java)[0]
-                jdk_bin_version = _resolve_java_version(jdk_bin_java)[0]
-                if path_java_version != jdk_bin_version:
-                    
-                    
-                    raise Exception(
-                        'The "java" (JDK {}) and "jarsigner" (JDK {}) binaries on the '
-                        "PATH are currently coming from two different JDKs. Please "
-                        "resolve this, or explicitly set JAVA_HOME.".format(
-                            path_java_version, jdk_bin_version
-                        )
-                    )
-
-        if not jdk_bin_dir:
-            raise Exception(
-                "You need to have Java Development Kit version 1.8 installed. "
-                "Please install it from https://adoptopenjdk.net/?variant=openjdk8"
+        bin_dir = locate_java_bin_path()
+        mozconfig_builder.append(
+            """
+        # Use the same Java binary that was specified in bootstrap. This way, if the default system
+        # Java is different than what Firefox needs, users should just need to override it (with
+        # $JAVA_HOME) when running bootstrap, rather than when interacting with the build.
+        ac_add_options --with-java-bin-path={}
+        """.format(
+                bin_dir
             )
+        )
 
-        java = which("java", path=jdk_bin_dir)
-        try:
-            version, output = _resolve_java_version(java)
-
-            if not version or version not in ["1.8", "8"]:
-                raise Exception(
-                    "You need to have Java Development Kit version "
-                    "1.8 installed (found {} but could not parse "
-                    'version "{}"). Check the JAVA_HOME environment '
-                    "variable. Please install JDK 1.8 from "
-                    "https://adoptopenjdk.net/?variant=openjdk8.".format(java, output)
-                )
-
-            mozconfig_builder.append(
-                """
-            # Use the same Java binary that was used in bootstrap in case the global
-            # system default version is changed.
-            ac_add_options --with-java-bin-path={}
-            """.format(
-                    jdk_bin_dir
-                )
-            )
-        except subprocess.CalledProcessError as e:
-            raise Exception(
-                "Failed to get java version from {}: {}".format(java, e.output)
-            )
-
-        print("Your version of Java ({}) is at least 1.8 ({}).".format(java, version))
-
-
-def _resolve_java_version(java_path):
-    output = subprocess.check_output(
-        [java_path, "-XshowSettings:properties", "-version"],
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    ).rstrip()
-
-    
-    
-    
-    
-    
-    version = [
-        line for line in output.splitlines() if "java.specification.version" in line
-    ]
-
-    if len(version) != 1:
-        return None, output
-
-    version = version[0].split(" = ")[-1]
-    return version, output
+        print("Your version of Java ({}) is 1.8.".format(bin_dir))
+        return bin_dir
