@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "NullHttpTransaction.h"
+#include "mozilla/ChaosMode.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
@@ -39,7 +40,6 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsQueryObject.h"
-#include "ConnectionHandle.h"
 #include "HttpConnectionUDP.h"
 #include "SpeculativeTransaction.h"
 #include "TCPFastOpenLayer.h"
@@ -50,6 +50,68 @@ namespace net {
 
 
 NS_IMPL_ISUPPORTS(nsHttpConnectionMgr, nsIObserver)
+
+
+
+
+static bool TransactionComparator(nsHttpTransaction* t1,
+                                  nsHttpTransaction* t2) {
+  bool t1Blocking =
+      t1->Caps() & (NS_HTTP_LOAD_AS_BLOCKING | NS_HTTP_LOAD_UNBLOCKED);
+  bool t2Blocking =
+      t2->Caps() & (NS_HTTP_LOAD_AS_BLOCKING | NS_HTTP_LOAD_UNBLOCKED);
+
+  if (t1Blocking > t2Blocking) {
+    return false;
+  }
+
+  if (t2Blocking > t1Blocking) {
+    return true;
+  }
+
+  return t1->Priority() >= t2->Priority();
+}
+
+void nsHttpConnectionMgr::InsertTransactionSorted(
+    nsTArray<RefPtr<nsHttpConnectionMgr::PendingTransactionInfo>>& pendingQ,
+    nsHttpConnectionMgr::PendingTransactionInfo* pendingTransInfo,
+    bool aInsertAsFirstForTheSamePriority ) {
+  
+  
+  
+  
+  
+  
+  
+
+  nsHttpTransaction* trans = pendingTransInfo->mTransaction;
+
+  for (int32_t i = pendingQ.Length() - 1; i >= 0; --i) {
+    nsHttpTransaction* t = pendingQ[i]->mTransaction;
+    if (TransactionComparator(trans, t)) {
+      if (ChaosMode::isActive(ChaosFeature::NetworkScheduling) ||
+          aInsertAsFirstForTheSamePriority) {
+        int32_t samePriorityCount;
+        for (samePriorityCount = 0; i - samePriorityCount >= 0;
+             ++samePriorityCount) {
+          if (pendingQ[i - samePriorityCount]->mTransaction->Priority() !=
+              trans->Priority()) {
+            break;
+          }
+        }
+        if (aInsertAsFirstForTheSamePriority) {
+          i -= samePriorityCount;
+        } else {
+          
+          i -= ChaosMode::randomUint32LessThan(samePriorityCount + 1);
+        }
+      }
+      pendingQ.InsertElementAt(i + 1, pendingTransInfo);
+      return;
+    }
+  }
+  pendingQ.InsertElementAt(0, pendingTransInfo);
+}
 
 
 
@@ -591,11 +653,11 @@ void nsHttpConnectionMgr::OnMsgClearConnectionHistory(int32_t,
   LOG(("nsHttpConnectionMgr::OnMsgClearConnectionHistory"));
 
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-    RefPtr<ConnectionEntry> ent = iter.Data();
-    if (ent->IdleConnectionsLength() == 0 && ent->ActiveConnsLength() == 0 &&
-        ent->HalfOpensLength() == 0 && ent->UrgentStartQueueLength() == 0 &&
-        ent->PendingQueueLength() == 0 &&
-        ent->HalfOpenFastOpenBackupsLength() == 0 && !ent->mDoNotDestroy) {
+    RefPtr<nsConnectionEntry> ent = iter.Data();
+    if (ent->mIdleConns.Length() == 0 && ent->mActiveConns.Length() == 0 &&
+        ent->mHalfOpens.Length() == 0 && ent->mUrgentStartQ.Length() == 0 &&
+        ent->PendingQLength() == 0 &&
+        ent->mHalfOpenFastOpenBackups.Length() == 0 && !ent->mDoNotDestroy) {
       iter.Remove();
     }
   }
@@ -609,12 +671,14 @@ nsresult nsHttpConnectionMgr::CloseIdleConnection(nsHttpConnection* conn) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  ConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
 
-  if (!ent || NS_FAILED(ent->CloseIdleConnection(conn))) {
-    return NS_ERROR_UNEXPECTED;
-  }
+  RefPtr<nsHttpConnection> deleteProtector(conn);
+  if (!ent || !ent->mIdleConns.RemoveElement(conn)) return NS_ERROR_UNEXPECTED;
 
+  conn->Close(NS_ERROR_ABORT);
+  mNumIdleConns--;
+  ConditionallyStopPruneDeadConnectionsTimer();
   return NS_OK;
 }
 
@@ -627,17 +691,19 @@ nsresult nsHttpConnectionMgr::RemoveIdleConnection(nsHttpConnection* conn) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  ConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
 
-  if (!ent || NS_FAILED(ent->RemoveIdleConnection(conn))) {
+  if (!ent || !ent->mIdleConns.RemoveElement(conn)) {
     return NS_ERROR_UNEXPECTED;
   }
 
+  mNumIdleConns--;
+  ConditionallyStopPruneDeadConnectionsTimer();
   return NS_OK;
 }
 
 HttpConnectionBase* nsHttpConnectionMgr::FindCoalescableConnectionByHashKey(
-    ConnectionEntry* ent, const nsCString& key, bool justKidding,
+    nsConnectionEntry* ent, const nsCString& key, bool justKidding,
     bool aNoHttp3) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(ent->mConnInfo);
@@ -722,7 +788,7 @@ static void BuildOriginFrameHashKey(nsACString& newKey,
 }
 
 HttpConnectionBase* nsHttpConnectionMgr::FindCoalescableConnection(
-    ConnectionEntry* ent, bool justKidding, bool aNoHttp3) {
+    nsConnectionEntry* ent, bool justKidding, bool aNoHttp3) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(ent->mConnInfo);
   nsHttpConnectionInfo* ci = ent->mConnInfo;
@@ -757,7 +823,7 @@ HttpConnectionBase* nsHttpConnectionMgr::FindCoalescableConnection(
 }
 
 void nsHttpConnectionMgr::UpdateCoalescingForNewConn(
-    HttpConnectionBase* newConn, ConnectionEntry* ent) {
+    HttpConnectionBase* newConn, nsConnectionEntry* ent) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(newConn);
   MOZ_ASSERT(newConn->ConnectionInfo());
@@ -810,11 +876,43 @@ void nsHttpConnectionMgr::UpdateCoalescingForNewConn(
 
   
   
-  
-  
-  
-  
-  ent->MakeAllDontReuseExcept(newConn);
+  for (int32_t index = ent->mHalfOpens.Length() - 1; index >= 0; --index) {
+    RefPtr<nsHalfOpenSocket> half = ent->mHalfOpens[index];
+    LOG(("UpdateCoalescingForNewConn() forcing halfopen abandon %p\n",
+         half.get()));
+    ent->mHalfOpens[index]->Abandon();
+  }
+
+  if (ent->mActiveConns.Length() > 1) {
+    
+    
+    
+    
+    
+    
+    for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
+      HttpConnectionBase* otherConn = ent->mActiveConns[index];
+      if (otherConn != newConn) {
+        LOG(
+            ("UpdateCoalescingForNewConn() shutting down old connection (%p) "
+             "because new "
+             "spdy connection (%p) takes precedence\n",
+             otherConn, newConn));
+        otherConn->DontReuse();
+      }
+    }
+  }
+
+  for (int32_t index = ent->mHalfOpenFastOpenBackups.Length() - 1; index >= 0;
+       --index) {
+    LOG(
+        ("UpdateCoalescingForNewConn() shutting down connection in fast "
+         "open state (%p) because new spdy connection (%p) takes "
+         "precedence\n",
+         ent->mHalfOpenFastOpenBackups[index].get(), newConn));
+    RefPtr<nsHalfOpenSocket> half = ent->mHalfOpenFastOpenBackups[index];
+    half->CancelFastOpenConnection();
+  }
 }
 
 
@@ -830,7 +928,7 @@ void nsHttpConnectionMgr::ReportSpdyConnection(nsHttpConnection* conn,
   if (!conn->ConnectionInfo()) {
     return;
   }
-  ConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
   if (!ent || !usingSpdy) {
     return;
   }
@@ -868,7 +966,7 @@ void nsHttpConnectionMgr::ReportHttp3Connection(HttpConnectionBase* conn) {
   if (!conn->ConnectionInfo()) {
     return;
   }
-  ConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
   if (!ent) {
     return;
   }
@@ -894,8 +992,8 @@ void nsHttpConnectionMgr::ReportHttp3Connection(HttpConnectionBase* conn) {
 
 
 bool nsHttpConnectionMgr::DispatchPendingQ(
-    nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ, ConnectionEntry* ent,
-    bool considerAll) {
+    nsTArray<RefPtr<nsHttpConnectionMgr::PendingTransactionInfo>>& pendingQ,
+    nsConnectionEntry* ent, bool considerAll) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   PendingTransactionInfo* pendingTransInfo = nullptr;
@@ -907,14 +1005,62 @@ bool nsHttpConnectionMgr::DispatchPendingQ(
   
   for (uint32_t i = 0; i < pendingQ.Length();) {
     pendingTransInfo = pendingQ[i];
+    LOG((
+        "nsHttpConnectionMgr::DispatchPendingQ "
+        "[trans=%p, halfOpen=%p, activeConn=%p]\n",
+        pendingTransInfo->mTransaction.get(), pendingTransInfo->mHalfOpen.get(),
+        pendingTransInfo->mActiveConn.get()));
 
-    bool alreadyHalfOpenOrWaitingForTLS =
-        pendingTransInfo->IsAlreadyClaimedInitializingConn();
+    
+    
+    
+    
+    
+    bool alreadyHalfOpenOrWaitingForTLS = false;
+    if (pendingTransInfo->mHalfOpen) {
+      MOZ_ASSERT(!pendingTransInfo->mActiveConn);
+      RefPtr<nsHalfOpenSocket> halfOpen =
+          do_QueryReferent(pendingTransInfo->mHalfOpen);
+      LOG(
+          ("nsHttpConnectionMgr::DispatchPendingQ "
+           "[trans=%p, halfOpen=%p]\n",
+           pendingTransInfo->mTransaction.get(), halfOpen.get()));
+      if (halfOpen) {
+        alreadyHalfOpenOrWaitingForTLS = true;
+      } else {
+        
+        pendingTransInfo->mHalfOpen = nullptr;
+      }
+    } else if (pendingTransInfo->mActiveConn) {
+      MOZ_ASSERT(!pendingTransInfo->mHalfOpen);
+      RefPtr<HttpConnectionBase> activeConn =
+          do_QueryReferent(pendingTransInfo->mActiveConn);
+      LOG(
+          ("nsHttpConnectionMgr::DispatchPendingQ "
+           "[trans=%p, activeConn=%p]\n",
+           pendingTransInfo->mTransaction.get(), activeConn.get()));
+      
+      
+      
+      
+      
+      
+      
+      if (activeConn &&
+          ((activeConn->Transaction() &&
+            activeConn->Transaction()->IsNullTransaction()) ||
+           (!activeConn->Transaction() && activeConn->CanReuse()))) {
+        alreadyHalfOpenOrWaitingForTLS = true;
+      } else {
+        
+        pendingTransInfo->mActiveConn = nullptr;
+      }
+    }
 
     rv = TryDispatchTransaction(
         ent,
         alreadyHalfOpenOrWaitingForTLS ||
-            !!pendingTransInfo->Transaction()->TunnelProvider(),
+            !!pendingTransInfo->mTransaction->TunnelProvider(),
         pendingTransInfo);
     if (NS_SUCCEEDED(rv) || (rv != NS_ERROR_NOT_AVAILABLE)) {
       if (NS_SUCCEEDED(rv)) {
@@ -925,6 +1071,7 @@ bool nsHttpConnectionMgr::DispatchPendingQ(
              "TryDispatchTransaction returning hard error %" PRIx32 "\n",
              static_cast<uint32_t>(rv)));
       }
+      ReleaseClaimedSockets(ent, pendingTransInfo);
       if (pendingQ.RemoveElement(pendingTransInfo)) {
         
         dispatchedSuccessfully = true;
@@ -941,8 +1088,18 @@ bool nsHttpConnectionMgr::DispatchPendingQ(
   return dispatchedSuccessfully;
 }
 
+uint32_t nsHttpConnectionMgr::TotalActiveConnections(
+    nsConnectionEntry* ent) const {
+  
+  
+  
+  
+  
+  return ent->mActiveConns.Length() + ent->UnconnectedHalfOpens();
+}
+
 uint32_t nsHttpConnectionMgr::MaxPersistConnections(
-    ConnectionEntry* ent) const {
+    nsConnectionEntry* ent) const {
   if (ent->mConnInfo->UsingHttpProxy() && !ent->mConnInfo->UsingConnect()) {
     return static_cast<uint32_t>(mMaxPersistConnsPerProxy);
   }
@@ -951,13 +1108,13 @@ uint32_t nsHttpConnectionMgr::MaxPersistConnections(
 }
 
 void nsHttpConnectionMgr::PreparePendingQForDispatching(
-    ConnectionEntry* ent, nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
+    nsConnectionEntry* ent, nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
     bool considerAll) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   pendingQ.Clear();
 
-  uint32_t totalCount = ent->TotalActiveConnections();
+  uint32_t totalCount = TotalActiveConnections(ent);
   uint32_t maxPersistConns = MaxPersistConnections(ent);
   uint32_t availableConnections =
       maxPersistConns > totalCount ? maxPersistConns - totalCount : 0;
@@ -1034,7 +1191,7 @@ void nsHttpConnectionMgr::PreparePendingQForDispatching(
   pendingQ.AppendElements(std::move(remainingPendingQ));
 }
 
-bool nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* ent,
+bool nsHttpConnectionMgr::ProcessPendingQForEntry(nsConnectionEntry* ent,
                                                   bool considerAll) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
@@ -1042,29 +1199,71 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* ent,
       ("nsHttpConnectionMgr::ProcessPendingQForEntry "
        "[ci=%s ent=%p active=%zu idle=%zu urgent-start-queue=%zu"
        " queued=%zu]\n",
-       ent->mConnInfo->HashKey().get(), ent, ent->ActiveConnsLength(),
-       ent->IdleConnectionsLength(), ent->UrgentStartQueueLength(),
-       ent->PendingQueueLength()));
+       ent->mConnInfo->HashKey().get(), ent, ent->mActiveConns.Length(),
+       ent->mIdleConns.Length(), ent->mUrgentStartQ.Length(),
+       ent->PendingQLength()));
 
   if (LOG_ENABLED()) {
-    ent->PrintPendingQ();
-    ent->LogConnections();
+    LOG(("urgent queue ["));
+    for (const auto& info : ent->mUrgentStartQ) {
+      LOG(("  %p", info->mTransaction.get()));
+    }
+    for (auto it = ent->mPendingTransactionTable.Iter(); !it.Done();
+         it.Next()) {
+      LOG(("] window id = %" PRIx64 " queue [", it.Key()));
+      for (const auto& info : *it.UserData()) {
+        LOG(("  %p", info->mTransaction.get()));
+      }
+    }
+    if (!ent->mConnInfo->IsHttp3()) {
+      LOG(("] active urgent conns ["));
+      for (HttpConnectionBase* conn : ent->mActiveConns) {
+        RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+        MOZ_ASSERT(connTCP);
+        if (connTCP->IsUrgentStartPreferred()) {
+          LOG(("  %p", conn));
+        }
+      }
+      LOG(("] active regular conns ["));
+      for (HttpConnectionBase* conn : ent->mActiveConns) {
+        RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+        MOZ_ASSERT(connTCP);
+        if (!connTCP->IsUrgentStartPreferred()) {
+          LOG(("  %p", conn));
+        }
+      }
+
+      LOG(("] idle urgent conns ["));
+      for (nsHttpConnection* conn : ent->mIdleConns) {
+        if (conn->IsUrgentStartPreferred()) {
+          LOG(("  %p", conn));
+        }
+      }
+      LOG(("] idle regular conns ["));
+      for (nsHttpConnection* conn : ent->mIdleConns) {
+        if (!conn->IsUrgentStartPreferred()) {
+          LOG(("  %p", conn));
+        }
+      }
+    } else {
+      for (HttpConnectionBase* conn : ent->mActiveConns) {
+        LOG(("  %p", conn));
+      }
+      MOZ_ASSERT(ent->mIdleConns.Length() == 0);
+    }
+    LOG(("]"));
   }
 
-  if (!ent->PendingQueueLength() && !ent->UrgentStartQueueLength()) {
+  if (!ent->mUrgentStartQ.Length() && !ent->PendingQLength()) {
     return false;
   }
   ProcessSpdyPendingQ(ent);
 
   bool dispatchedSuccessfully = false;
 
-  if (ent->UrgentStartQueueLength()) {
-    nsTArray<RefPtr<PendingTransactionInfo>> pendingQ;
-    ent->AppendPendingUrgentStartQ(pendingQ);
-    dispatchedSuccessfully = DispatchPendingQ(pendingQ, ent, considerAll);
-    for (const auto& transactionInfo : Reversed(pendingQ)) {
-      ent->InsertTransaction(transactionInfo);
-    }
+  if (!ent->mUrgentStartQ.IsEmpty()) {
+    dispatchedSuccessfully =
+        DispatchPendingQ(ent->mUrgentStartQ, ent, considerAll);
   }
 
   if (dispatchedSuccessfully && !considerAll) {
@@ -1099,7 +1298,7 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* ent,
 bool nsHttpConnectionMgr::ProcessPendingQForEntry(nsHttpConnectionInfo* ci) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  ConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
   if (ent) return ProcessPendingQForEntry(ent, false);
   return false;
 }
@@ -1109,10 +1308,10 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(nsHttpConnectionInfo* ci) {
 
 
 
-bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
+bool nsHttpConnectionMgr::AtActiveConnectionLimit(nsConnectionEntry* ent,
                                                   uint32_t caps) {
   nsHttpConnectionInfo* ci = ent->mConnInfo;
-  uint32_t totalCount = ent->TotalActiveConnections();
+  uint32_t totalCount = TotalActiveConnections(ent);
 
   if (ci->IsHttp3()) {
     return totalCount > 0;
@@ -1158,27 +1357,139 @@ bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
   return result;
 }
 
+void nsHttpConnectionMgr::ClosePersistentConnections(nsConnectionEntry* ent) {
+  LOG(("nsHttpConnectionMgr::ClosePersistentConnections [ci=%s]\n",
+       ent->mConnInfo->HashKey().get()));
+  while (ent->mIdleConns.Length()) {
+    RefPtr<nsHttpConnection> conn(ent->mIdleConns[0]);
+    ent->mIdleConns.RemoveElementAt(0);
+    mNumIdleConns--;
+    conn->Close(NS_ERROR_ABORT);
+  }
+
+  int32_t activeCount = ent->mActiveConns.Length();
+  for (int32_t i = 0; i < activeCount; i++) ent->mActiveConns[i]->DontReuse();
+  for (int32_t index = ent->mHalfOpenFastOpenBackups.Length() - 1; index >= 0;
+       --index) {
+    RefPtr<nsHalfOpenSocket> half = ent->mHalfOpenFastOpenBackups[index];
+    half->CancelFastOpenConnection();
+  }
+}
+
+bool nsHttpConnectionMgr::RestrictConnections(nsConnectionEntry* ent) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  if (ent->AvailableForDispatchNow()) {
+    
+    
+    
+    LOG(
+        ("nsHttpConnectionMgr::RestrictConnections %p %s restricted due to "
+         "active >=h2\n",
+         ent, ent->mConnInfo->HashKey().get()));
+    return true;
+  }
+
+  
+  
+  
+
+  bool doRestrict = ent->mConnInfo->FirstHopSSL() &&
+                    gHttpHandler->IsSpdyEnabled() && ent->mUsingSpdy &&
+                    (ent->mHalfOpens.Length() || ent->mActiveConns.Length());
+
+  
+  if (!doRestrict) return false;
+
+  
+  
+  if (ent->UnconnectedHalfOpens()) {
+    return true;
+  }
+
+  
+  
+  
+  if (ent->mUsingSpdy && ent->mActiveConns.Length()) {
+    bool confirmedRestrict = false;
+    for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
+      HttpConnectionBase* conn = ent->mActiveConns[index];
+      RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+      if ((connTCP && !connTCP->ReportedNPN()) || conn->CanDirectlyActivate()) {
+        confirmedRestrict = true;
+        break;
+      }
+    }
+    doRestrict = confirmedRestrict;
+    if (!confirmedRestrict) {
+      LOG(
+          ("nsHttpConnectionMgr spdy connection restriction to "
+           "%s bypassed.\n",
+           ent->mConnInfo->Origin()));
+    }
+  }
+  return doRestrict;
+}
+
 
 
 
 
 nsresult nsHttpConnectionMgr::MakeNewConnection(
-    ConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo) {
+    nsConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo) {
+  nsHttpTransaction* trans = pendingTransInfo->mTransaction;
+
   LOG(("nsHttpConnectionMgr::MakeNewConnection %p ent=%p trans=%p", this, ent,
-       pendingTransInfo->Transaction()));
+       trans));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  if (ent->FindConnToClaim(pendingTransInfo)) {
-    return NS_OK;
+  uint32_t halfOpenLength = ent->mHalfOpens.Length();
+  for (uint32_t i = 0; i < halfOpenLength; i++) {
+    auto halfOpen = ent->mHalfOpens[i];
+    if (halfOpen->AcceptsTransaction(trans) && halfOpen->Claim()) {
+      
+      
+      
+      
+      
+      LOG(
+          ("nsHttpConnectionMgr::MakeNewConnection [ci = %s]\n"
+           "Found a speculative or a free-to-use half open connection\n",
+           ent->mConnInfo->HashKey().get()));
+      pendingTransInfo->mHalfOpen = do_GetWeakReference(
+          static_cast<nsISupportsWeakReference*>(ent->mHalfOpens[i]));
+      
+      
+      return NS_OK;
+    }
   }
 
-  nsHttpTransaction* trans = pendingTransInfo->Transaction();
+  
+  
+  
+  if (trans->Caps() & NS_HTTP_ALLOW_KEEPALIVE) {
+    uint32_t activeLength = ent->mActiveConns.Length();
+    for (uint32_t i = 0; i < activeLength; i++) {
+      nsAHttpTransaction* activeTrans = ent->mActiveConns[i]->Transaction();
+      NullHttpTransaction* nullTrans =
+          activeTrans ? activeTrans->QueryNullTransaction() : nullptr;
+      if (nullTrans && nullTrans->Claim()) {
+        LOG(
+            ("nsHttpConnectionMgr::MakeNewConnection [ci = %s] "
+             "Claiming a null transaction for later use\n",
+             ent->mConnInfo->HashKey().get()));
+        pendingTransInfo->mActiveConn = do_GetWeakReference(
+            static_cast<nsISupportsWeakReference*>(ent->mActiveConns[i]));
+        return NS_OK;
+      }
+    }
+  }
 
   
   
   
   if (!(trans->Caps() & NS_HTTP_DISALLOW_SPDY) &&
-      (trans->Caps() & NS_HTTP_ALLOW_KEEPALIVE) && ent->RestrictConnections()) {
+      (trans->Caps() & NS_HTTP_ALLOW_KEEPALIVE) && RestrictConnections(ent)) {
     LOG(
         ("nsHttpConnectionMgr::MakeNewConnection [ci = %s] "
          "Not Available Due to RestrictConnections()\n",
@@ -1198,10 +1509,16 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
     
     auto iter = mCT.Iter();
     while (mNumIdleConns + mNumActiveConns + 1 >= mMaxConns && !iter.Done()) {
-      RefPtr<ConnectionEntry> entry = iter.Data();
-      entry->CloseIdleConnections((mNumIdleConns + mNumActiveConns + 1) -
-                                  mMaxConns);
-      iter.Next();
+      RefPtr<nsConnectionEntry> entry = iter.Data();
+      if (!entry->mIdleConns.Length()) {
+        iter.Next();
+        continue;
+      }
+      RefPtr<nsHttpConnection> conn(entry->mIdleConns[0]);
+      entry->mIdleConns.RemoveElementAt(0);
+      conn->Close(NS_ERROR_ABORT);
+      mNumIdleConns--;
+      ConditionallyStopPruneDeadConnectionsTimer();
     }
   }
 
@@ -1211,12 +1528,20 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
     
     
     for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-      RefPtr<ConnectionEntry> entry = iter.Data();
-      while (entry->MakeFirstActiveSpdyConnDontReuse()) {
-        
-        
-        if (mNumIdleConns + mNumActiveConns + 1 <= mMaxConns) {
-          goto outerLoopEnd;
+      RefPtr<nsConnectionEntry> entry = iter.Data();
+      if (!entry->mUsingSpdy) {
+        continue;
+      }
+
+      for (uint32_t index = 0; index < entry->mActiveConns.Length(); ++index) {
+        HttpConnectionBase* conn = entry->mActiveConns[index];
+        if (conn->UsingSpdy() && conn->CanReuse()) {
+          conn->DontReuse();
+          
+          
+          if (mNumIdleConns + mNumActiveConns + 1 <= mMaxConns) {
+            goto outerLoopEnd;
+          }
         }
       }
     }
@@ -1251,19 +1576,21 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
 
 
 nsresult nsHttpConnectionMgr::TryDispatchTransaction(
-    ConnectionEntry* ent, bool onlyReusedConnection,
+    nsConnectionEntry* ent, bool onlyReusedConnection,
     PendingTransactionInfo* pendingTransInfo) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  nsHttpTransaction* trans = pendingTransInfo->Transaction();
+  nsHttpTransaction* trans = pendingTransInfo->mTransaction;
 
   LOG(
       ("nsHttpConnectionMgr::TryDispatchTransaction without conn "
-       "[trans=%p ci=%p ci=%s caps=%x tunnelprovider=%p "
+       "[trans=%p halfOpen=%p conn=%p ci=%p ci=%s caps=%x tunnelprovider=%p "
        "onlyreused=%d active=%zu idle=%zu]\n",
-       trans, ent->mConnInfo.get(), ent->mConnInfo->HashKey().get(),
-       uint32_t(trans->Caps()), trans->TunnelProvider(), onlyReusedConnection,
-       ent->ActiveConnsLength(), ent->IdleConnectionsLength()));
+       trans, pendingTransInfo->mHalfOpen.get(),
+       pendingTransInfo->mActiveConn.get(), ent->mConnInfo.get(),
+       ent->mConnInfo->HashKey().get(), uint32_t(trans->Caps()),
+       trans->TunnelProvider(), onlyReusedConnection,
+       ent->mActiveConns.Length(), ent->mIdleConns.Length()));
 
   uint32_t caps = trans->Caps();
 
@@ -1412,7 +1739,7 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
     
     if (!(trans->ClassOfService() & nsIClassOfService::UrgentStart) &&
         idleConnsAllUrgent &&
-        ent->ActiveConnsLength() < MaxPersistConnections(ent)) {
+        ent->mActiveConns.Length() < MaxPersistConnections(ent)) {
       rv = TryDispatchTransactionOnIdleConn(ent, pendingTransInfo, false);
       if (NS_SUCCEEDED(rv)) {
         LOG(("   dispatched step 2a (idle, reuse urgent) trans=%p\n", trans));
@@ -1443,11 +1770,11 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
 }
 
 nsresult nsHttpConnectionMgr::TryDispatchTransactionOnIdleConn(
-    ConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo,
+    nsConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo,
     bool respectUrgency, bool* allUrgent) {
-  bool onlyUrgent = !!ent->IdleConnectionsLength();
+  bool onlyUrgent = !!ent->mIdleConns.Length();
 
-  nsHttpTransaction* trans = pendingTransInfo->Transaction();
+  nsHttpTransaction* trans = pendingTransInfo->mTransaction;
   bool urgentTrans = trans->ClassOfService() & nsIClassOfService::UrgentStart;
 
   LOG(
@@ -1455,8 +1782,40 @@ nsresult nsHttpConnectionMgr::TryDispatchTransactionOnIdleConn(
        "trans=%p, urgent=%d",
        ent, trans, urgentTrans));
 
-  RefPtr<nsHttpConnection> conn =
-      ent->GetIdleConnection(respectUrgency, urgentTrans, &onlyUrgent);
+  RefPtr<nsHttpConnection> conn;
+  size_t index = 0;
+  while (!conn && (ent->mIdleConns.Length() > index)) {
+    conn = ent->mIdleConns[index];
+
+    
+    
+    if (respectUrgency && conn->IsUrgentStartPreferred() && !urgentTrans) {
+      LOG(("  skipping urgent: [conn=%p]", conn.get()));
+      conn = nullptr;
+      ++index;
+      continue;
+    }
+
+    onlyUrgent = false;
+
+    ent->mIdleConns.RemoveElementAt(index);
+    mNumIdleConns--;
+
+    
+    
+    if (!conn->CanReuse()) {
+      LOG(("   dropping stale connection: [conn=%p]\n", conn.get()));
+      conn->Close(NS_ERROR_ABORT);
+      conn = nullptr;
+    } else {
+      LOG(("   reusing connection: [conn=%p]\n", conn.get()));
+      conn->EndIdleMonitoring();
+    }
+
+    
+    
+    ConditionallyStopPruneDeadConnectionsTimer();
+  }
 
   if (allUrgent) {
     *allUrgent = onlyUrgent;
@@ -1465,7 +1824,7 @@ nsresult nsHttpConnectionMgr::TryDispatchTransactionOnIdleConn(
   if (conn) {
     
     
-    ent->InsertIntoActiveConns(conn);
+    AddActiveConn(conn, ent);
     nsresult rv = DispatchTransaction(ent, trans, conn);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1475,7 +1834,7 @@ nsresult nsHttpConnectionMgr::TryDispatchTransactionOnIdleConn(
   return NS_ERROR_NOT_AVAILABLE;
 }
 
-nsresult nsHttpConnectionMgr::DispatchTransaction(ConnectionEntry* ent,
+nsresult nsHttpConnectionMgr::DispatchTransaction(nsConnectionEntry* ent,
                                                   nsHttpTransaction* trans,
                                                   HttpConnectionBase* conn) {
   uint32_t caps = trans->Caps();
@@ -1527,17 +1886,53 @@ nsresult nsHttpConnectionMgr::DispatchTransaction(ConnectionEntry* ent,
   return rv;
 }
 
+
+
+
+
+
+
+
+
+
+
+class ConnectionHandle : public nsAHttpConnection {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSAHTTPCONNECTION(mConn)
+
+  explicit ConnectionHandle(HttpConnectionBase* conn) : mConn(conn) {}
+  void Reset() { mConn = nullptr; }
+
+ private:
+  virtual ~ConnectionHandle();
+  RefPtr<HttpConnectionBase> mConn;
+};
+
 nsAHttpConnection* nsHttpConnectionMgr::MakeConnectionHandle(
     HttpConnectionBase* aWrapped) {
   return new ConnectionHandle(aWrapped);
 }
+
+ConnectionHandle::~ConnectionHandle() {
+  if (mConn) {
+    nsresult rv = gHttpHandler->ReclaimConnection(mConn);
+    if (NS_FAILED(rv)) {
+      LOG(
+          ("ConnectionHandle::~ConnectionHandle\n"
+           "    failed to reclaim connection\n"));
+    }
+  }
+}
+
+NS_IMPL_ISUPPORTS0(ConnectionHandle)
 
 
 
 
 
 nsresult nsHttpConnectionMgr::DispatchAbstractTransaction(
-    ConnectionEntry* ent, nsAHttpTransaction* aTrans, uint32_t caps,
+    nsConnectionEntry* ent, nsAHttpTransaction* aTrans, uint32_t caps,
     HttpConnectionBase* conn, int32_t priority) {
   MOZ_ASSERT(ent);
 
@@ -1559,8 +1954,9 @@ nsresult nsHttpConnectionMgr::DispatchAbstractTransaction(
   if (NS_FAILED(rv)) {
     LOG(("  conn->Activate failed [rv=%" PRIx32 "]\n",
          static_cast<uint32_t>(rv)));
-    DebugOnly<nsresult> rv_remove = ent->RemoveActiveConnection(conn);
-    MOZ_ASSERT(NS_SUCCEEDED(rv_remove));
+    ent->mActiveConns.RemoveElement(conn);
+    DecrementActiveConnCount(conn);
+    ConditionallyStopTimeoutTick();
 
     
     
@@ -1571,7 +1967,7 @@ nsresult nsHttpConnectionMgr::DispatchAbstractTransaction(
   return rv;
 }
 
-void nsHttpConnectionMgr::ReportProxyTelemetry(ConnectionEntry* ent) {
+void nsHttpConnectionMgr::ReportProxyTelemetry(nsConnectionEntry* ent) {
   enum { PROXY_NONE = 1, PROXY_HTTP = 2, PROXY_SOCKS = 3, PROXY_HTTPS = 4 };
 
   if (!ent->mConnInfo->UsingProxy())
@@ -1616,7 +2012,7 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
   nsHttpConnectionInfo* ci = trans->ConnectionInfo();
   MOZ_ASSERT(ci);
 
-  ConnectionEntry* ent = GetOrCreateConnectionEntry(
+  nsConnectionEntry* ent = GetOrCreateConnectionEntry(
       ci, !!trans->TunnelProvider(), trans->Caps() & NS_HTTP_DISALLOW_HTTP3);
   MOZ_ASSERT(ent);
 
@@ -1638,7 +2034,7 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
          "sticky connection=%p\n",
          trans, conn.get()));
 
-    if (!ent->IsInActiveConns(conn)) {
+    if (static_cast<int32_t>(ent->mActiveConns.IndexOf(conn)) == -1) {
       LOG(
           ("nsHttpConnectionMgr::ProcessNewTransaction trans=%p "
            "sticky connection=%p needs to go on the active list\n",
@@ -1646,11 +2042,10 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
 
       
       
-      RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
-      MOZ_ASSERT(!connTCP || !ent->IsInIdleConnections(connTCP));
+      MOZ_ASSERT(static_cast<int32_t>(ent->mIdleConns.IndexOf(conn)) == -1);
       MOZ_ASSERT(!conn->IsExperienced());
 
-      ent->InsertIntoActiveConns(conn);  
+      AddActiveConn(conn, ent);  
     }
 
     trans->SetConnection(nullptr);
@@ -1673,8 +2068,21 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
     if (!pendingTransInfo) {
       pendingTransInfo = new PendingTransactionInfo(trans);
     }
-
-    ent->InsertTransaction(pendingTransInfo);
+    if (trans->Caps() & NS_HTTP_URGENT_START) {
+      LOG(
+          ("  adding transaction to pending queue "
+           "[trans=%p urgent-start-count=%zu]\n",
+           trans, ent->mUrgentStartQ.Length() + 1));
+      
+      InsertTransactionSorted(ent->mUrgentStartQ, pendingTransInfo);
+    } else {
+      LOG(
+          ("  adding transaction to pending queue "
+           "[trans=%p pending-count=%zu]\n",
+           trans, ent->PendingQLength() + 1));
+      
+      ent->InsertTransaction(pendingTransInfo);
+    }
     return NS_OK;
   }
 
@@ -1683,7 +2091,9 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
   return rv;
 }
 
-void nsHttpConnectionMgr::IncrementActiveConnCount() {
+void nsHttpConnectionMgr::AddActiveConn(HttpConnectionBase* conn,
+                                        nsConnectionEntry* ent) {
+  ent->mActiveConns.AppendElement(conn);
   mNumActiveConns++;
   ActivateTimeoutTick();
 }
@@ -1693,7 +2103,6 @@ void nsHttpConnectionMgr::DecrementActiveConnCount(HttpConnectionBase* conn) {
 
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
   if (!connTCP || connTCP->EverUsedSpdy()) mNumSpdyHttp3ActiveConns--;
-  ConditionallyStopTimeoutTick();
 }
 
 void nsHttpConnectionMgr::StartedConnect() {
@@ -1706,15 +2115,42 @@ void nsHttpConnectionMgr::RecvdConnect() {
   ConditionallyStopTimeoutTick();
 }
 
+void nsHttpConnectionMgr::ReleaseClaimedSockets(
+    nsConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo) {
+  if (pendingTransInfo->mHalfOpen) {
+    RefPtr<nsHalfOpenSocket> halfOpen =
+        do_QueryReferent(pendingTransInfo->mHalfOpen);
+    LOG(
+        ("nsHttpConnectionMgr::ReleaseClaimedSockets "
+         "[trans=%p halfOpen=%p]",
+         pendingTransInfo->mTransaction.get(), halfOpen.get()));
+    if (halfOpen) {
+      halfOpen->Unclaim();
+    }
+    pendingTransInfo->mHalfOpen = nullptr;
+  } else if (pendingTransInfo->mActiveConn) {
+    RefPtr<HttpConnectionBase> activeConn =
+        do_QueryReferent(pendingTransInfo->mActiveConn);
+    if (activeConn && activeConn->Transaction() &&
+        activeConn->Transaction()->IsNullTransaction()) {
+      NullHttpTransaction* nullTrans =
+          activeConn->Transaction()->QueryNullTransaction();
+      nullTrans->Unclaim();
+      LOG(("nsHttpConnectionMgr::ReleaseClaimedSockets - mark %p unclaimed.",
+           activeConn.get()));
+    }
+  }
+}
+
 nsresult nsHttpConnectionMgr::CreateTransport(
-    ConnectionEntry* ent, nsAHttpTransaction* trans, uint32_t caps,
+    nsConnectionEntry* ent, nsAHttpTransaction* trans, uint32_t caps,
     bool speculative, bool isFromPredictor, bool urgentStart, bool allow1918,
     PendingTransactionInfo* pendingTransInfo) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT((speculative && !pendingTransInfo) ||
              (!speculative && pendingTransInfo));
 
-  RefPtr<HalfOpenSocket> sock = new HalfOpenSocket(
+  RefPtr<nsHalfOpenSocket> sock = new nsHalfOpenSocket(
       ent, trans, caps, speculative, isFromPredictor, urgentStart);
 
   if (speculative) {
@@ -1727,16 +2163,19 @@ nsresult nsHttpConnectionMgr::CreateTransport(
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (pendingTransInfo) {
-    DebugOnly<bool> claimed = pendingTransInfo->TryClaimingHalfOpen(sock);
+    pendingTransInfo->mHalfOpen =
+        do_GetWeakReference(static_cast<nsISupportsWeakReference*>(sock));
+    DebugOnly<bool> claimed = sock->Claim();
     MOZ_ASSERT(claimed);
   }
 
-  ent->InsertIntoHalfOpens(sock);
+  ent->mHalfOpens.AppendElement(sock);
+  mNumHalfOpenConns++;
   return NS_OK;
 }
 
 void nsHttpConnectionMgr::DispatchSpdyPendingQ(
-    nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ, ConnectionEntry* ent,
+    nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ, nsConnectionEntry* ent,
     HttpConnectionBase* conn) {
   if (pendingQ.Length() == 0) {
     return;
@@ -1749,22 +2188,23 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
        ++index) {
     PendingTransactionInfo* pendingTransInfo = pendingQ[index];
 
-    if (!(pendingTransInfo->Transaction()->Caps() & NS_HTTP_ALLOW_KEEPALIVE) ||
-        pendingTransInfo->Transaction()->Caps() & NS_HTTP_DISALLOW_SPDY) {
+    if (!(pendingTransInfo->mTransaction->Caps() & NS_HTTP_ALLOW_KEEPALIVE) ||
+        pendingTransInfo->mTransaction->Caps() & NS_HTTP_DISALLOW_SPDY) {
       leftovers.AppendElement(pendingTransInfo);
       continue;
     }
 
     nsresult rv =
-        DispatchTransaction(ent, pendingTransInfo->Transaction(), conn);
+        DispatchTransaction(ent, pendingTransInfo->mTransaction, conn);
     if (NS_FAILED(rv)) {
       
       
       MOZ_ASSERT(false, "Dispatch SPDY Transaction");
       LOG(("ProcessSpdyPendingQ Dispatch Transaction failed trans=%p\n",
-           pendingTransInfo->Transaction()));
-      pendingTransInfo->Transaction()->Close(rv);
+           pendingTransInfo->mTransaction.get()));
+      pendingTransInfo->mTransaction->Close(rv);
     }
+    ReleaseClaimedSockets(ent, pendingTransInfo);
   }
 
   
@@ -1783,18 +2223,13 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
 
 
 
-void nsHttpConnectionMgr::ProcessSpdyPendingQ(ConnectionEntry* ent) {
+void nsHttpConnectionMgr::ProcessSpdyPendingQ(nsConnectionEntry* ent) {
   HttpConnectionBase* conn = GetH2orH3ActiveConn(ent, false);
   if (!conn || !conn->CanDirectlyActivate()) {
     return;
   }
 
-  nsTArray<RefPtr<PendingTransactionInfo>> urgentQ;
-  ent->AppendPendingUrgentStartQ(urgentQ);
-  DispatchSpdyPendingQ(urgentQ, ent, conn);
-  for (const auto& transactionInfo : Reversed(urgentQ)) {
-    ent->InsertTransaction(transactionInfo);
-  }
+  DispatchSpdyPendingQ(ent->mUrgentStartQ, ent, conn);
   if (!conn->CanDirectlyActivate()) {
     return;
   }
@@ -1821,16 +2256,65 @@ void nsHttpConnectionMgr::OnMsgProcessAllSpdyPendingQ(int32_t, ARefBase*) {
 
 
 HttpConnectionBase* nsHttpConnectionMgr::GetH2orH3ActiveConn(
-    ConnectionEntry* ent, bool aNoHttp3) {
+    nsConnectionEntry* ent, bool aNoHttp3) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(ent);
 
-  HttpConnectionBase* conn = ent->GetH2orH3ActiveConn(aNoHttp3);
-  if (conn) {
-    return conn;
+  HttpConnectionBase* experienced = nullptr;
+  HttpConnectionBase* noExperience = nullptr;
+  uint32_t activeLen = ent->mActiveConns.Length();
+  nsHttpConnectionInfo* ci = ent->mConnInfo;
+  uint32_t index;
+
+  
+  
+  for (index = 0; index < activeLen; ++index) {
+    HttpConnectionBase* tmp = ent->mActiveConns[index];
+    if (tmp->CanDirectlyActivate()) {
+      if (tmp->IsExperienced()) {
+        experienced = tmp;
+        break;
+      }
+      noExperience = tmp;  
+    }
   }
 
-  nsHttpConnectionInfo* ci = ent->mConnInfo;
+  
+  if (experienced) {
+    for (index = 0; index < activeLen; ++index) {
+      HttpConnectionBase* tmp = ent->mActiveConns[index];
+      
+      if (tmp != experienced) {
+        tmp->DontReuse();
+      }
+    }
+    for (int32_t index = ent->mHalfOpenFastOpenBackups.Length() - 1; index >= 0;
+         --index) {
+      LOG(
+          ("GetH2orH3ActiveConn() shutting down connection in fast "
+           "open state (%p) because we have an experienced spdy "
+           "connection (%p).\n",
+           ent->mHalfOpenFastOpenBackups[index].get(), experienced));
+      RefPtr<nsHalfOpenSocket> half = ent->mHalfOpenFastOpenBackups[index];
+      half->CancelFastOpenConnection();
+    }
+
+    LOG(
+        ("GetH2orH3ActiveConn() request for ent %p %s "
+         "found an active experienced connection %p in native connection "
+         "entry\n",
+         ent, ci->HashKey().get(), experienced));
+    return experienced;
+  }
+
+  if (noExperience) {
+    LOG(
+        ("GetH2orH3ActiveConn() request for ent %p %s "
+         "found an active but inexperienced connection %p in native connection "
+         "entry\n",
+         ent, ci->HashKey().get(), noExperience));
+    return noExperience;
+  }
 
   
   
@@ -1862,21 +2346,57 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("nsHttpConnectionMgr::AbortAndCloseAllConnections\n"));
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-    RefPtr<ConnectionEntry> ent = iter.Data();
+    RefPtr<nsConnectionEntry> ent = iter.Data();
 
     
-    ent->CloseActiveConnections();
+    while (ent->mActiveConns.Length()) {
+      RefPtr<HttpConnectionBase> conn(ent->mActiveConns[0]);
+      ent->mActiveConns.RemoveElementAt(0);
+      DecrementActiveConnCount(conn);
+      
+      
+      
+      conn->CloseTransaction(conn->Transaction(), NS_ERROR_ABORT, true);
+    }
 
     
-    ent->CloseIdleConnections();
+    while (ent->mIdleConns.Length()) {
+      RefPtr<nsHttpConnection> conn(ent->mIdleConns[0]);
+
+      ent->mIdleConns.RemoveElementAt(0);
+      mNumIdleConns--;
+
+      conn->Close(NS_ERROR_ABORT);
+    }
 
     
-    ent->CancelAllTransactions(NS_ERROR_ABORT);
+    
+    ConditionallyStopPruneDeadConnectionsTimer();
 
     
-    ent->CloseAllHalfOpens();
+    while (ent->mUrgentStartQ.Length()) {
+      PendingTransactionInfo* pendingTransInfo = ent->mUrgentStartQ[0];
+      pendingTransInfo->mTransaction->Close(NS_ERROR_ABORT);
+      ent->mUrgentStartQ.RemoveElementAt(0);
+    }
 
-    MOZ_ASSERT(ent->HalfOpenFastOpenBackupsLength() == 0 &&
+    
+    for (auto it = ent->mPendingTransactionTable.Iter(); !it.Done();
+         it.Next()) {
+      while (it.UserData()->Length()) {
+        PendingTransactionInfo* pendingTransInfo = (*it.UserData())[0];
+        pendingTransInfo->mTransaction->Close(NS_ERROR_ABORT);
+        it.UserData()->RemoveElementAt(0);
+      }
+    }
+    ent->mPendingTransactionTable.Clear();
+
+    
+    for (int32_t i = int32_t(ent->mHalfOpens.Length()) - 1; i >= 0; i--) {
+      ent->mHalfOpens[i]->Abandon();
+    }
+
+    MOZ_ASSERT(ent->mHalfOpenFastOpenBackups.Length() == 0 &&
                !ent->mDoNotDestroy);
     iter.Remove();
   }
@@ -1970,6 +2490,25 @@ void nsHttpConnectionMgr::OnMsgNewTransactionWithStickyConn(int32_t priority,
   }
 }
 
+static uint64_t TabIdForQueuing(nsAHttpTransaction* transaction) {
+  return gHttpHandler->ActiveTabPriority()
+             ? transaction->TopLevelOuterContentWindowId()
+             : 0;
+}
+
+nsTArray<RefPtr<nsHttpConnectionMgr::PendingTransactionInfo>>*
+nsHttpConnectionMgr::GetTransactionPendingQHelper(nsConnectionEntry* ent,
+                                                  nsAHttpTransaction* trans) {
+  nsTArray<RefPtr<PendingTransactionInfo>>* pendingQ = nullptr;
+  int32_t caps = trans->Caps();
+  if (caps & NS_HTTP_URGENT_START) {
+    pendingQ = &(ent->mUrgentStartQ);
+  } else {
+    pendingQ = ent->mPendingTransactionTable.Get(TabIdForQueuing(trans));
+  }
+  return pendingQ;
+}
+
 void nsHttpConnectionMgr::OnMsgReschedTransaction(int32_t priority,
                                                   ARefBase* param) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -1981,10 +2520,19 @@ void nsHttpConnectionMgr::OnMsgReschedTransaction(int32_t priority,
   if (!trans->ConnectionInfo()) {
     return;
   }
-  ConnectionEntry* ent = mCT.GetWeak(trans->ConnectionInfo()->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(trans->ConnectionInfo()->HashKey());
 
   if (ent) {
-    ent->ReschedTransaction(trans);
+    nsTArray<RefPtr<PendingTransactionInfo>>* pendingQ =
+        GetTransactionPendingQHelper(ent, trans);
+
+    int32_t index =
+        pendingQ ? pendingQ->IndexOf(trans, 0, PendingComparator()) : -1;
+    if (index >= 0) {
+      RefPtr<PendingTransactionInfo> pendingTransInfo = (*pendingQ)[index];
+      pendingQ->RemoveElementAt(index);
+      InsertTransactionSorted(*pendingQ, pendingTransInfo);
+    }
   }
 }
 
@@ -2026,7 +2574,7 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
   if (conn && !trans->IsDone()) {
     conn->CloseTransaction(trans, closeCode);
   } else {
-    ConnectionEntry* ent = nullptr;
+    nsConnectionEntry* ent = nullptr;
     if (trans->ConnectionInfo()) {
       ent = mCT.GetWeak(trans->ConnectionInfo()->HashKey());
     }
@@ -2035,7 +2583,7 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
       
       
       nsTArray<RefPtr<PendingTransactionInfo>>* infoArray =
-          ent->GetTransactionPendingQHelper(trans);
+          GetTransactionPendingQHelper(ent, trans);
 
       RefPtr<PendingTransactionInfo> pendingTransInfo;
       transIndex =
@@ -2046,12 +2594,19 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
              " found in urgentStart queue\n",
              trans));
         pendingTransInfo = (*infoArray)[transIndex];
+        
+        
         infoArray->RemoveElementAt(transIndex);
       }
 
       
       if (pendingTransInfo) {
-        pendingTransInfo->AbandonHalfOpenAndForgetActiveConn();
+        RefPtr<nsHalfOpenSocket> half =
+            do_QueryReferent(pendingTransInfo->mHalfOpen);
+        if (half) {
+          half->Abandon();
+        }
+        pendingTransInfo->mHalfOpen = nullptr;
       }
     }
 
@@ -2063,8 +2618,17 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
     
     
     
-    if (ent) {
-      ent->CloseAllActiveConnsWithNullTransactcion(closeCode);
+    for (uint32_t index = 0; ent && (index < ent->mActiveConns.Length());
+         ++index) {
+      HttpConnectionBase* activeConn = ent->mActiveConns[index];
+      nsAHttpTransaction* liveTransaction = activeConn->Transaction();
+      if (liveTransaction && liveTransaction->IsNullTransaction()) {
+        LOG(
+            ("nsHttpConnectionMgr::OnMsgCancelTransaction [trans=%p] "
+             "also canceling Null Transaction %p on conn %p\n",
+             trans, liveTransaction, activeConn));
+        activeConn->CloseTransaction(liveTransaction, closeCode);
+      }
     }
   }
 }
@@ -2086,7 +2650,7 @@ void nsHttpConnectionMgr::OnMsgProcessPendingQ(int32_t, ARefBase* param) {
        ci->HashKey().get()));
 
   
-  ConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
   if (!(ent && ProcessPendingQForEntry(ent, false))) {
     
     
@@ -2107,16 +2671,35 @@ nsresult nsHttpConnectionMgr::CancelTransactions(nsHttpConnectionInfo* ci,
                    ci);
 }
 
+void nsHttpConnectionMgr::CancelTransactionsHelper(
+    nsTArray<RefPtr<nsHttpConnectionMgr::PendingTransactionInfo>>& pendingQ,
+    const nsHttpConnectionInfo* ci,
+    const nsHttpConnectionMgr::nsConnectionEntry* ent, nsresult reason) {
+  for (const auto& pendingTransInfo : pendingQ) {
+    LOG(("nsHttpConnectionMgr::OnMsgCancelTransactions %s %p %p\n",
+         ci->HashKey().get(), ent, pendingTransInfo->mTransaction.get()));
+    pendingTransInfo->mTransaction->Close(reason);
+  }
+  pendingQ.Clear();
+}
+
 void nsHttpConnectionMgr::OnMsgCancelTransactions(int32_t code,
                                                   ARefBase* param) {
   nsresult reason = static_cast<nsresult>(code);
   nsHttpConnectionInfo* ci = static_cast<nsHttpConnectionInfo*>(param);
-  ConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
   LOG(("nsHttpConnectionMgr::OnMsgCancelTransactions %s %p\n",
        ci->HashKey().get(), ent));
-  if (ent) {
-    ent->CancelAllTransactions(reason);
+  if (!ent) {
+    return;
   }
+
+  CancelTransactionsHelper(ent->mUrgentStartQ, ci, ent, reason);
+
+  for (auto it = ent->mPendingTransactionTable.Iter(); !it.Done(); it.Next()) {
+    CancelTransactionsHelper(*it.UserData(), ci, ent, reason);
+  }
+  ent->mPendingTransactionTable.Clear();
 }
 
 void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
@@ -2130,13 +2713,44 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
   
   if (mNumIdleConns || (mNumActiveConns && gHttpHandler->IsSpdyEnabled())) {
     for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-      RefPtr<ConnectionEntry> ent = iter.Data();
+      RefPtr<nsConnectionEntry> ent = iter.Data();
 
       LOG(("  pruning [ci=%s]\n", ent->mConnInfo->HashKey().get()));
 
       
       
-      uint32_t timeToNextExpire = ent->PruneDeadConnections();
+      uint32_t timeToNextExpire = UINT32_MAX;
+      int32_t count = ent->mIdleConns.Length();
+      if (count > 0) {
+        for (int32_t i = count - 1; i >= 0; --i) {
+          RefPtr<nsHttpConnection> conn(ent->mIdleConns[i]);
+          if (!conn->CanReuse()) {
+            ent->mIdleConns.RemoveElementAt(i);
+            conn->Close(NS_ERROR_ABORT);
+            mNumIdleConns--;
+          } else {
+            timeToNextExpire = std::min(timeToNextExpire, conn->TimeToLive());
+          }
+        }
+      }
+
+      if (ent->mUsingSpdy) {
+        for (uint32_t i = 0; i < ent->mActiveConns.Length(); ++i) {
+          RefPtr<nsHttpConnection> connTCP =
+              do_QueryObject(ent->mActiveConns[i]);
+          
+          if (connTCP && connTCP->UsingSpdy()) {
+            if (!connTCP->CanReuse()) {
+              
+              
+              connTCP->DontReuse();
+            } else {
+              timeToNextExpire =
+                  std::min(timeToNextExpire, connTCP->TimeToLive());
+            }
+          }
+        }
+      }
 
       
       
@@ -2158,11 +2772,10 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
 
       
       
-      if (mCT.Count() > 125 && ent->IdleConnectionsLength() == 0 &&
-          ent->ActiveConnsLength() == 0 && ent->HalfOpensLength() == 0 &&
-          ent->PendingQueueLength() == 0 &&
-          ent->UrgentStartQueueLength() == 0 &&
-          ent->HalfOpenFastOpenBackupsLength() == 0 && !ent->mDoNotDestroy &&
+      if (mCT.Count() > 125 && ent->mIdleConns.Length() == 0 &&
+          ent->mActiveConns.Length() == 0 && ent->mHalfOpens.Length() == 0 &&
+          ent->PendingQLength() == 0 && ent->mUrgentStartQ.Length() == 0 &&
+          ent->mHalfOpenFastOpenBackups.Length() == 0 && !ent->mDoNotDestroy &&
           (!ent->mUsingSpdy || mCT.Count() > 300)) {
         LOG(("    removing empty connection entry\n"));
         iter.Remove();
@@ -2170,7 +2783,14 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
       }
 
       
-      ent->Compact();
+      ent->mIdleConns.Compact();
+      ent->mActiveConns.Compact();
+      ent->mUrgentStartQ.Compact();
+
+      for (auto it = ent->mPendingTransactionTable.Iter(); !it.Done();
+           it.Next()) {
+        it.UserData()->Compact();
+      }
     }
   }
 }
@@ -2182,8 +2802,29 @@ void nsHttpConnectionMgr::OnMsgPruneNoTraffic(int32_t, ARefBase*) {
   
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
     
-    RefPtr<ConnectionEntry> ent = iter.Data();
-    ent->PruneNoTraffic();
+    RefPtr<nsConnectionEntry> ent = iter.Data();
+
+    LOG(("  pruning no traffic [ci=%s]\n", ent->mConnInfo->HashKey().get()));
+
+    if (!ent->mConnInfo->IsHttp3()) {
+      uint32_t numConns = ent->mActiveConns.Length();
+      if (numConns) {
+        
+        for (int index = numConns - 1; index >= 0; index--) {
+          RefPtr<nsHttpConnection> conn =
+              do_QueryObject(ent->mActiveConns[index]);
+          if (conn && conn->NoTraffic()) {
+            ent->mActiveConns.RemoveElementAt(index);
+            DecrementActiveConnCount(conn);
+            conn->Close(NS_ERROR_ABORT);
+            LOG(
+                ("  closed active connection due to no traffic "
+                 "[conn=%p]\n",
+                 conn.get()));
+          }
+        }
+      }
+    }
   }
 
   mPruningNoTraffic = false;  
@@ -2201,7 +2842,24 @@ void nsHttpConnectionMgr::OnMsgVerifyTraffic(int32_t, ARefBase*) {
 
   
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-    iter.Data()->VerifyTraffic();
+    RefPtr<nsConnectionEntry> ent = iter.Data();
+    if (!ent->mConnInfo->IsHttp3()) {
+      
+      for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
+        RefPtr<nsHttpConnection> conn =
+            do_QueryObject(ent->mActiveConns[index]);
+        if (conn) {
+          conn->CheckForTraffic(true);
+        }
+      }
+      
+      for (uint32_t index = 0; index < ent->mIdleConns.Length(); ++index) {
+        RefPtr<nsHttpConnection> conn = do_QueryObject(ent->mIdleConns[index]);
+        if (conn) {
+          conn->CheckForTraffic(false);
+        }
+      }
+    }
   }
 
   
@@ -2229,7 +2887,7 @@ void nsHttpConnectionMgr::OnMsgDoShiftReloadConnectionCleanup(int32_t,
   nsHttpConnectionInfo* ci = static_cast<nsHttpConnectionInfo*>(param);
 
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-    iter.Data()->ClosePersistentConnections();
+    ClosePersistentConnections(iter.Data());
   }
 
   if (ci) ResetIPFamilyPreference(ci);
@@ -2245,9 +2903,9 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
   
 
   MOZ_ASSERT(conn);
-  ConnectionEntry* ent = conn->ConnectionInfo()
-                             ? mCT.GetWeak(conn->ConnectionInfo()->HashKey())
-                             : nullptr;
+  nsConnectionEntry* ent = conn->ConnectionInfo()
+                               ? mCT.GetWeak(conn->ConnectionInfo()->HashKey())
+                               : nullptr;
 
   if (!ent) {
     
@@ -2289,7 +2947,9 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
     conn->DontReuse();
   }
 
-  if (NS_SUCCEEDED(ent->RemoveActiveConnection(conn))) {
+  if (ent->mActiveConns.RemoveElement(conn)) {
+    DecrementActiveConnCount(conn);
+    ConditionallyStopTimeoutTick();
   } else if (!connTCP || connTCP->EverUsedSpdy()) {
     LOG(("HttpConnectionBase %p not found in its connection entry, try ^anon",
          conn));
@@ -2298,9 +2958,11 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
     RefPtr<nsHttpConnectionInfo> anonInvertedCI(ci->Clone());
     anonInvertedCI->SetAnonymous(!ci->GetAnonymous());
 
-    ConnectionEntry* ent = mCT.GetWeak(anonInvertedCI->HashKey());
+    nsConnectionEntry* ent = mCT.GetWeak(anonInvertedCI->HashKey());
     if (ent) {
-      if (NS_SUCCEEDED(ent->RemoveActiveConnection(conn))) {
+      if (ent->mActiveConns.RemoveElement(conn)) {
+        DecrementActiveConnCount(conn);
+        ConditionallyStopTimeoutTick();
       } else {
         LOG(
             ("HttpConnectionBase %p could not be removed from its entry's "
@@ -2319,7 +2981,22 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
     
     
 
-    ent->InsertIntoIdleConnections(connTCP);
+    uint32_t idx;
+    for (idx = 0; idx < ent->mIdleConns.Length(); idx++) {
+      nsHttpConnection* idleConn = ent->mIdleConns[idx];
+      if (idleConn->MaxBytesRead() < connTCP->MaxBytesRead()) break;
+    }
+
+    ent->mIdleConns.InsertElementAt(idx, connTCP);
+    mNumIdleConns++;
+    connTCP->BeginIdleMonitoring();
+
+    
+    
+    
+    uint32_t timeToLive = connTCP->TimeToLive();
+    if (!mTimer || NowInSeconds() + timeToLive < mTimeOfNextWakeUp)
+      PruneDeadConnectionsAfter(timeToLive);
   } else {
     LOG(("  connection cannot be reused; closing connection\n"));
     conn->Close(NS_ERROR_ABORT);
@@ -2446,6 +3123,21 @@ void nsHttpConnectionMgr::OnMsgUpdateParam(int32_t inParam, ARefBase*) {
     default:
       MOZ_ASSERT_UNREACHABLE("unexpected parameter name");
   }
+}
+
+
+nsHttpConnectionMgr::nsConnectionEntry::~nsConnectionEntry() {
+  LOG(("nsConnectionEntry::~nsConnectionEntry this=%p", this));
+
+  MOZ_ASSERT(!mIdleConns.Length());
+  MOZ_ASSERT(!mActiveConns.Length());
+  MOZ_ASSERT(!mHalfOpens.Length());
+  MOZ_ASSERT(!mUrgentStartQ.Length());
+  MOZ_ASSERT(!PendingQLength());
+  MOZ_ASSERT(!mHalfOpenFastOpenBackups.Length());
+  MOZ_ASSERT(!mDoNotDestroy);
+
+  MOZ_COUNT_DTOR(nsConnectionEntry);
 }
 
 
@@ -2831,14 +3523,16 @@ bool nsHttpConnectionMgr::ShouldThrottle(nsHttpTransaction* aTrans) {
 
 bool nsHttpConnectionMgr::IsConnEntryUnderPressure(
     nsHttpConnectionInfo* connInfo) {
-  ConnectionEntry* ent = mCT.GetWeak(connInfo->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(connInfo->HashKey());
   if (!ent) {
     
     return false;
   }
 
-  return ent->PendingQueueLengthForWindow(
-             mCurrentTopLevelOuterContentWindowId) > 0;
+  nsTArray<RefPtr<PendingTransactionInfo>>* transactions =
+      ent->mPendingTransactionTable.Get(mCurrentTopLevelOuterContentWindowId);
+
+  return transactions && !transactions->IsEmpty();
 }
 
 bool nsHttpConnectionMgr::IsThrottleTickerNeeded() {
@@ -3168,10 +3862,65 @@ void nsHttpConnectionMgr::TimeoutTick() {
   mTimeoutTickNext = 3600;  
 
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-    RefPtr<ConnectionEntry> ent = iter.Data();
+    RefPtr<nsConnectionEntry> ent = iter.Data();
 
-    uint32_t timeoutTickNext = ent->TimeoutTick();
-    mTimeoutTickNext = std::min(mTimeoutTickNext, timeoutTickNext);
+    if (!ent->mConnInfo->IsHttp3()) {
+      LOG(
+          ("nsHttpConnectionMgr::TimeoutTick() this=%p host=%s "
+           "idle=%zu active=%zu"
+           " half-len=%zu pending=%zu"
+           " urgentStart pending=%zu\n",
+           this, ent->mConnInfo->Origin(), ent->mIdleConns.Length(),
+           ent->mActiveConns.Length(), ent->mHalfOpens.Length(),
+           ent->PendingQLength(), ent->mUrgentStartQ.Length()));
+
+      
+      PRIntervalTime tickTime = PR_IntervalNow();
+      for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
+        RefPtr<nsHttpConnection> conn =
+            do_QueryObject(ent->mActiveConns[index]);
+        if (conn) {
+          uint32_t connNextTimeout = conn->ReadTimeoutTick(tickTime);
+          mTimeoutTickNext = std::min(mTimeoutTickNext, connNextTimeout);
+        }
+      }
+
+      
+      if (ent->mHalfOpens.Length()) {
+        TimeStamp currentTime = TimeStamp::Now();
+        double maxConnectTime_ms = gHttpHandler->ConnectTimeout();
+
+        for (uint32_t index = ent->mHalfOpens.Length(); index > 0;) {
+          index--;
+
+          nsHalfOpenSocket* half = ent->mHalfOpens[index];
+          double delta = half->Duration(currentTime);
+          
+          
+          if (delta > maxConnectTime_ms) {
+            LOG(("Force timeout of half open to %s after %.2fms.\n",
+                 ent->mConnInfo->HashKey().get(), delta));
+            if (half->SocketTransport()) {
+              half->SocketTransport()->Close(NS_ERROR_NET_TIMEOUT);
+            }
+            if (half->BackupTransport()) {
+              half->BackupTransport()->Close(NS_ERROR_NET_TIMEOUT);
+            }
+          }
+
+          
+          
+          if (delta > maxConnectTime_ms + 5000) {
+            LOG(("Abandon half open to %s after %.2fms.\n",
+                 ent->mConnInfo->HashKey().get(), delta));
+            half->Abandon();
+          }
+        }
+      }
+      if (ent->mHalfOpens.Length()) {
+        mTimeoutTickNext = 1;
+      }
+    }
   }
 
   if (mTimeoutTick) {
@@ -3186,10 +3935,11 @@ void nsHttpConnectionMgr::TimeoutTick() {
 
 
 
-ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
+nsHttpConnectionMgr::nsConnectionEntry*
+nsHttpConnectionMgr::GetOrCreateConnectionEntry(
     nsHttpConnectionInfo* specificCI, bool prohibitWildCard, bool aNoHttp3) {
   
-  ConnectionEntry* specificEnt = mCT.GetWeak(specificCI->HashKey());
+  nsConnectionEntry* specificEnt = mCT.GetWeak(specificCI->HashKey());
   if (specificEnt && specificEnt->AvailableForDispatchNow()) {
     return specificEnt;
   }
@@ -3199,7 +3949,7 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   
   RefPtr<nsHttpConnectionInfo> anonInvertedCI(specificCI->Clone());
   anonInvertedCI->SetAnonymous(!specificCI->GetAnonymous());
-  ConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedCI->HashKey());
+  nsConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedCI->HashKey());
   if (invertedEnt) {
     HttpConnectionBase* h2orh3conn = GetH2orH3ActiveConn(invertedEnt, aNoHttp3);
     if (h2orh3conn && h2orh3conn->IsExperienced() &&
@@ -3223,7 +3973,7 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
     DebugOnly<nsresult> rv =
         specificCI->CreateWildCard(getter_AddRefs(wildCardProxyCI));
     MOZ_ASSERT(NS_SUCCEEDED(rv));
-    ConnectionEntry* wildCardEnt = mCT.GetWeak(wildCardProxyCI->HashKey());
+    nsConnectionEntry* wildCardEnt = mCT.GetWeak(wildCardProxyCI->HashKey());
     if (wildCardEnt && wildCardEnt->AvailableForDispatchNow()) {
       return wildCardEnt;
     }
@@ -3232,10 +3982,28 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   
   if (!specificEnt) {
     RefPtr<nsHttpConnectionInfo> clone(specificCI->Clone());
-    specificEnt = new ConnectionEntry(clone);
+    specificEnt = new nsConnectionEntry(clone);
     mCT.Put(clone->HashKey(), RefPtr{specificEnt});
   }
   return specificEnt;
+}
+
+nsresult ConnectionHandle::OnHeadersAvailable(nsAHttpTransaction* trans,
+                                              nsHttpRequestHead* req,
+                                              nsHttpResponseHead* resp,
+                                              bool* reset) {
+  return mConn->OnHeadersAvailable(trans, req, resp, reset);
+}
+
+void ConnectionHandle::CloseTransaction(nsAHttpTransaction* trans,
+                                        nsresult reason) {
+  mConn->CloseTransaction(trans, reason);
+}
+
+nsresult ConnectionHandle::TakeTransport(nsISocketTransport** aTransport,
+                                         nsIAsyncInputStream** aInputStream,
+                                         nsIAsyncOutputStream** aOutputStream) {
+  return mConn->TakeTransport(aTransport, aInputStream, aOutputStream);
 }
 
 void nsHttpConnectionMgr::DoSpeculativeConnection(
@@ -3243,7 +4011,7 @@ void nsHttpConnectionMgr::DoSpeculativeConnection(
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(aTrans);
 
-  ConnectionEntry* ent = GetOrCreateConnectionEntry(
+  nsConnectionEntry* ent = GetOrCreateConnectionEntry(
       aTrans->ConnectionInfo(), false, aTrans->Caps() & NS_HTTP_DISALLOW_HTTP3);
 
   uint32_t parallelSpeculativeConnectLimit =
@@ -3258,9 +4026,9 @@ void nsHttpConnectionMgr::DoSpeculativeConnection(
   bool keepAlive = aTrans->Caps() & NS_HTTP_ALLOW_KEEPALIVE;
   if (mNumHalfOpenConns < parallelSpeculativeConnectLimit &&
       ((ignoreIdle &&
-        (ent->IdleConnectionsLength() < parallelSpeculativeConnectLimit)) ||
-       !ent->IdleConnectionsLength()) &&
-      !(keepAlive && ent->RestrictConnections()) &&
+        (ent->mIdleConns.Length() < parallelSpeculativeConnectLimit)) ||
+       !ent->mIdleConns.Length()) &&
+      !(keepAlive && RestrictConnections(ent)) &&
       !AtActiveConnectionLimit(ent, aTrans->Caps())) {
     if (aFetchHTTPSRR) {
       Unused << aTrans->FetchHTTPSRR();
@@ -3288,6 +4056,95 @@ void nsHttpConnectionMgr::OnMsgSpeculativeConnect(int32_t, ARefBase* param) {
   DoSpeculativeConnection(args->mTrans, args->mFetchHTTPSRR);
 }
 
+bool ConnectionHandle::IsPersistent() {
+  MOZ_ASSERT(OnSocketThread());
+  return mConn->IsPersistent();
+}
+
+bool ConnectionHandle::IsReused() {
+  MOZ_ASSERT(OnSocketThread());
+  return mConn->IsReused();
+}
+
+void ConnectionHandle::DontReuse() {
+  MOZ_ASSERT(OnSocketThread());
+  mConn->DontReuse();
+}
+
+nsresult ConnectionHandle::PushBack(const char* buf, uint32_t bufLen) {
+  return mConn->PushBack(buf, bufLen);
+}
+
+
+NS_IMPL_ADDREF(nsHttpConnectionMgr::nsHalfOpenSocket)
+NS_IMPL_RELEASE(nsHttpConnectionMgr::nsHalfOpenSocket)
+
+NS_INTERFACE_MAP_BEGIN(nsHttpConnectionMgr::nsHalfOpenSocket)
+  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
+  NS_INTERFACE_MAP_ENTRY(nsIOutputStreamCallback)
+  NS_INTERFACE_MAP_ENTRY(nsITransportEventSink)
+  NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
+  NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
+  NS_INTERFACE_MAP_ENTRY(nsINamed)
+  
+  if (aIID.Equals(NS_GET_IID(nsHttpConnectionMgr::nsHalfOpenSocket))) {
+    AddRef();
+    *aInstancePtr = this;
+    return NS_OK;
+  } else
+NS_INTERFACE_MAP_END
+
+nsHttpConnectionMgr::nsHalfOpenSocket::nsHalfOpenSocket(
+    nsConnectionEntry* ent, nsAHttpTransaction* trans, uint32_t caps,
+    bool speculative, bool isFromPredictor, bool urgentStart)
+    : mTransaction(trans),
+      mDispatchedMTransaction(false),
+      mCaps(caps),
+      mSpeculative(speculative),
+      mUrgentStart(urgentStart),
+      mIsFromPredictor(isFromPredictor),
+      mAllow1918(true),
+      mHasConnected(false),
+      mPrimaryConnectedOK(false),
+      mBackupConnectedOK(false),
+      mBackupConnStatsSet(false),
+      mFreeToUse(true),
+      mPrimaryStreamStatus(NS_OK),
+      mFastOpenInProgress(false),
+      mEnt(ent) {
+  MOZ_ASSERT(ent && trans, "constructor with null arguments");
+  LOG(("Creating nsHalfOpenSocket [this=%p trans=%p ent=%s key=%s]\n", this,
+       trans, ent->mConnInfo->Origin(), ent->mConnInfo->HashKey().get()));
+
+  mIsHttp3 = mEnt->mConnInfo->IsHttp3();
+  if (speculative) {
+    Telemetry::AutoCounter<Telemetry::HTTPCONNMGR_TOTAL_SPECULATIVE_CONN>
+        totalSpeculativeConn;
+    ++totalSpeculativeConn;
+
+    if (isFromPredictor) {
+      Telemetry::AutoCounter<Telemetry::PREDICTOR_TOTAL_PRECONNECTS_CREATED>
+          totalPreconnectsCreated;
+      ++totalPreconnectsCreated;
+    }
+  }
+
+  if (mEnt->mConnInfo->FirstHopSSL()) {
+    mFastOpenStatus = TFO_UNKNOWN;
+  } else {
+    mFastOpenStatus = TFO_HTTP;
+  }
+  MOZ_ASSERT(mEnt);
+}
+
+nsHttpConnectionMgr::nsHalfOpenSocket::~nsHalfOpenSocket() {
+  MOZ_ASSERT(!mStreamOut);
+  MOZ_ASSERT(!mBackupStreamOut);
+  LOG(("Destroying nsHalfOpenSocket [this=%p]\n", this));
+
+  if (mEnt) mEnt->RemoveHalfOpen(this);
+}
+
 bool nsHttpConnectionMgr::BeConservativeIfProxied(nsIProxyInfo* proxy) {
   if (mBeConservativeForProxy) {
     
@@ -3304,6 +4161,1067 @@ bool nsHttpConnectionMgr::BeConservativeIfProxied(nsIProxyInfo* proxy) {
   nsAutoCString proxyHost;
   proxy->GetHost(proxyHost);
   return proxyHost.IsEmpty();
+}
+
+nsresult nsHttpConnectionMgr::nsHalfOpenSocket::SetupStreams(
+    nsISocketTransport** transport, nsIAsyncInputStream** instream,
+    nsIAsyncOutputStream** outstream, bool isBackup) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  MOZ_ASSERT(mEnt);
+  nsresult rv;
+  nsTArray<nsCString> socketTypes;
+  const nsHttpConnectionInfo* ci = mEnt->mConnInfo;
+  if (mIsHttp3) {
+    socketTypes.AppendElement("quic"_ns);
+  } else {
+    if (ci->FirstHopSSL()) {
+      socketTypes.AppendElement("ssl"_ns);
+    } else {
+      const nsCString& defaultType = gHttpHandler->DefaultSocketType();
+      if (!defaultType.IsVoid()) {
+        socketTypes.AppendElement(defaultType);
+      }
+    }
+  }
+
+  nsCOMPtr<nsISocketTransport> socketTransport;
+  nsCOMPtr<nsISocketTransportService> sts;
+
+  sts = services::GetSocketTransportService();
+  if (!sts) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  LOG(
+      ("nsHalfOpenSocket::SetupStreams [this=%p ent=%s] "
+       "setup routed transport to origin %s:%d via %s:%d\n",
+       this, ci->HashKey().get(), ci->Origin(), ci->OriginPort(),
+       ci->RoutedHost(), ci->RoutedPort()));
+
+  nsCOMPtr<nsIRoutedSocketTransportService> routedSTS(do_QueryInterface(sts));
+  if (routedSTS) {
+    rv = routedSTS->CreateRoutedTransport(
+        socketTypes, ci->GetOrigin(), ci->OriginPort(), ci->GetRoutedHost(),
+        ci->RoutedPort(), ci->ProxyInfo(), getter_AddRefs(socketTransport));
+  } else {
+    if (!ci->GetRoutedHost().IsEmpty()) {
+      
+      
+      
+      
+      LOG(
+          ("nsHalfOpenSocket this=%p using legacy nsISocketTransportService "
+           "means explicit route %s:%d will be ignored.\n",
+           this, ci->RoutedHost(), ci->RoutedPort()));
+    }
+
+    rv = sts->CreateTransport(socketTypes, ci->GetOrigin(), ci->OriginPort(),
+                              ci->ProxyInfo(), getter_AddRefs(socketTransport));
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  uint32_t tmpFlags = 0;
+  if (mCaps & NS_HTTP_REFRESH_DNS) tmpFlags = nsISocketTransport::BYPASS_CACHE;
+
+  tmpFlags |= nsISocketTransport::GetFlagsFromTRRMode(
+      NS_HTTP_TRR_MODE_FROM_FLAGS(mCaps));
+
+  if (mCaps & NS_HTTP_LOAD_ANONYMOUS)
+    tmpFlags |= nsISocketTransport::ANONYMOUS_CONNECT;
+
+  if (ci->GetPrivate() || ci->GetIsolated()) {
+    tmpFlags |= nsISocketTransport::NO_PERMANENT_STORAGE;
+  }
+
+  if (ci->GetLessThanTls13()) {
+    tmpFlags |= nsISocketTransport::DONT_TRY_ESNI_OR_ECH;
+  }
+
+  if (((mCaps & NS_HTTP_BE_CONSERVATIVE) || ci->GetBeConservative()) &&
+      gHttpHandler->ConnMgr()->BeConservativeIfProxied(ci->ProxyInfo())) {
+    LOG(("Setting Socket to BE_CONSERVATIVE"));
+    tmpFlags |= nsISocketTransport::BE_CONSERVATIVE;
+  }
+
+  if (ci->HasIPHintAddress()) {
+    nsCOMPtr<nsIDNSService> dns =
+        do_GetService("@mozilla.org/network/dns-service;1", &rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    
+    
+    nsCOMPtr<nsIDNSRecord> record;
+    rv = dns->ResolveNative(ci->GetRoutedHost(), nsIDNSService::RESOLVE_OFFLINE,
+                            mEnt->mConnInfo->GetOriginAttributes(),
+                            getter_AddRefs(record));
+    if (NS_FAILED(rv) || !record) {
+      LOG(("Setting Socket to use IP hint address"));
+      tmpFlags |= nsISocketTransport::USE_IP_HINT_ADDRESS;
+    }
+  }
+
+  if (mCaps & NS_HTTP_DISABLE_IPV4) {
+    tmpFlags |= nsISocketTransport::DISABLE_IPV4;
+  } else if (mCaps & NS_HTTP_DISABLE_IPV6) {
+    tmpFlags |= nsISocketTransport::DISABLE_IPV6;
+  } else if (mEnt->PreferenceKnown()) {
+    if (mEnt->mPreferIPv6) {
+      tmpFlags |= nsISocketTransport::DISABLE_IPV4;
+    } else if (mEnt->mPreferIPv4) {
+      tmpFlags |= nsISocketTransport::DISABLE_IPV6;
+    }
+
+    
+    
+    tmpFlags |= nsISocketTransport::RETRY_WITH_DIFFERENT_IP_FAMILY;
+
+    
+    
+    uint16_t fallbackTimeout =
+        isBackup ? gHttpHandler->GetFallbackSynTimeout() : 0;
+    if (fallbackTimeout) {
+      socketTransport->SetTimeout(nsISocketTransport::TIMEOUT_CONNECT,
+                                  fallbackTimeout);
+    }
+  } else if (isBackup && gHttpHandler->FastFallbackToIPv4()) {
+    
+    
+    
+    
+    
+    tmpFlags |= nsISocketTransport::DISABLE_IPV6;
+  }
+
+  if (!Allow1918()) {
+    tmpFlags |= nsISocketTransport::DISABLE_RFC1918;
+  }
+
+  if ((mFastOpenStatus != TFO_HTTP) && !isBackup) {
+    if (mEnt->mUseFastOpen) {
+      socketTransport->SetFastOpenCallback(this);
+    } else {
+      mFastOpenStatus = TFO_DISABLED;
+    }
+  }
+
+  MOZ_ASSERT(!(tmpFlags & nsISocketTransport::DISABLE_IPV4) ||
+                 !(tmpFlags & nsISocketTransport::DISABLE_IPV6),
+             "Both types should not be disabled at the same time.");
+  socketTransport->SetConnectionFlags(tmpFlags);
+  socketTransport->SetTlsFlags(ci->GetTlsFlags());
+
+  const OriginAttributes& originAttributes =
+      mEnt->mConnInfo->GetOriginAttributes();
+  if (originAttributes != OriginAttributes()) {
+    socketTransport->SetOriginAttributes(originAttributes);
+  }
+
+  socketTransport->SetQoSBits(gHttpHandler->GetQoSBits());
+
+  rv = socketTransport->SetEventSink(this, nullptr);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = socketTransport->SetSecurityCallbacks(this);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (gHttpHandler->EchConfigEnabled()) {
+    rv = socketTransport->SetEchConfig(ci->GetEchConfig());
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  Telemetry::Accumulate(Telemetry::HTTP_CONNECTION_ENTRY_CACHE_HIT_1,
+                        mEnt->mUsedForConnection);
+  mEnt->mUsedForConnection = true;
+
+  nsCOMPtr<nsIOutputStream> sout;
+  rv = socketTransport->OpenOutputStream(nsITransport::OPEN_UNBUFFERED, 0, 0,
+                                         getter_AddRefs(sout));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIInputStream> sin;
+  rv = socketTransport->OpenInputStream(nsITransport::OPEN_UNBUFFERED, 0, 0,
+                                        getter_AddRefs(sin));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  socketTransport.forget(transport);
+  CallQueryInterface(sin, instream);
+  CallQueryInterface(sout, outstream);
+
+  rv = (*outstream)->AsyncWait(this, 0, 0, nullptr);
+  if (NS_SUCCEEDED(rv)) gHttpHandler->ConnMgr()->StartedConnect();
+
+  return rv;
+}
+
+nsresult nsHttpConnectionMgr::nsHalfOpenSocket::SetupPrimaryStreams() {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  nsresult rv;
+
+  mPrimarySynStarted = TimeStamp::Now();
+  rv = SetupStreams(getter_AddRefs(mSocketTransport), getter_AddRefs(mStreamIn),
+                    getter_AddRefs(mStreamOut), false);
+
+  LOG(("nsHalfOpenSocket::SetupPrimaryStream [this=%p ent=%s rv=%" PRIx32 "]",
+       this, mEnt->mConnInfo->Origin(), static_cast<uint32_t>(rv)));
+  if (NS_FAILED(rv)) {
+    if (mStreamOut) mStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
+    if (mSocketTransport) {
+      mSocketTransport->SetFastOpenCallback(nullptr);
+    }
+    mStreamOut = nullptr;
+    mStreamIn = nullptr;
+    mSocketTransport = nullptr;
+  }
+  return rv;
+}
+
+nsresult nsHttpConnectionMgr::nsHalfOpenSocket::SetupBackupStreams() {
+  MOZ_ASSERT(mTransaction);
+
+  mBackupSynStarted = TimeStamp::Now();
+  nsresult rv = SetupStreams(getter_AddRefs(mBackupTransport),
+                             getter_AddRefs(mBackupStreamIn),
+                             getter_AddRefs(mBackupStreamOut), true);
+
+  LOG(("nsHalfOpenSocket::SetupBackupStream [this=%p ent=%s rv=%" PRIx32 "]",
+       this, mEnt->mConnInfo->Origin(), static_cast<uint32_t>(rv)));
+  if (NS_FAILED(rv)) {
+    if (mBackupStreamOut) mBackupStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
+    mBackupStreamOut = nullptr;
+    mBackupStreamIn = nullptr;
+    mBackupTransport = nullptr;
+  }
+  return rv;
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::SetupBackupTimer() {
+  MOZ_ASSERT(mEnt);
+  uint16_t timeout = gHttpHandler->GetIdleSynTimeout();
+  MOZ_ASSERT(!mSynTimer, "timer already initd");
+  if (!timeout && mFastOpenInProgress) {
+    timeout = 250;
+  }
+  
+  
+  if (mFastOpenInProgress || (timeout && !mSpeculative)) {
+    
+    
+    
+    
+    
+    
+    
+    NS_NewTimerWithCallback(getter_AddRefs(mSynTimer), this, timeout,
+                            nsITimer::TYPE_ONE_SHOT);
+    LOG(("nsHalfOpenSocket::SetupBackupTimer() [this=%p]", this));
+  } else if (timeout) {
+    LOG(("nsHalfOpenSocket::SetupBackupTimer() [this=%p], did not arm\n",
+         this));
+  }
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::CancelBackupTimer() {
+  
+  
+  if (!mSynTimer) return;
+
+  LOG(("nsHalfOpenSocket::CancelBackupTimer()"));
+  mSynTimer->Cancel();
+
+  
+  
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::Abandon() {
+  LOG(("nsHalfOpenSocket::Abandon [this=%p ent=%s] %p %p %p %p", this,
+       mEnt->mConnInfo->Origin(), mSocketTransport.get(),
+       mBackupTransport.get(), mStreamOut.get(), mBackupStreamOut.get()));
+
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  RefPtr<nsHalfOpenSocket> deleteProtector(this);
+
+  
+  if (mSocketTransport) {
+    mSocketTransport->SetEventSink(nullptr, nullptr);
+    mSocketTransport->SetSecurityCallbacks(nullptr);
+    mSocketTransport->SetFastOpenCallback(nullptr);
+    mSocketTransport = nullptr;
+  }
+  if (mBackupTransport) {
+    mBackupTransport->SetEventSink(nullptr, nullptr);
+    mBackupTransport->SetSecurityCallbacks(nullptr);
+    mBackupTransport = nullptr;
+  }
+
+  
+  if (mStreamOut) {
+    if (!mFastOpenInProgress) {
+      
+      
+      gHttpHandler->ConnMgr()->RecvdConnect();
+    }
+    mStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
+    mStreamOut = nullptr;
+  }
+  if (mBackupStreamOut) {
+    gHttpHandler->ConnMgr()->RecvdConnect();
+    mBackupStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
+    mBackupStreamOut = nullptr;
+  }
+
+  
+  if (mStreamIn) {
+    mStreamIn->AsyncWait(nullptr, 0, 0, nullptr);
+    mStreamIn = nullptr;
+  }
+  if (mBackupStreamIn) {
+    mBackupStreamIn->AsyncWait(nullptr, 0, 0, nullptr);
+    mBackupStreamIn = nullptr;
+  }
+
+  
+  CancelBackupTimer();
+
+  
+  if (mEnt) {
+    mEnt->mDoNotDestroy = false;
+    mEnt->RemoveHalfOpen(this);
+  }
+  mEnt = nullptr;
+}
+
+double nsHttpConnectionMgr::nsHalfOpenSocket::Duration(TimeStamp epoch) {
+  if (mPrimarySynStarted.IsNull()) return 0;
+
+  return (epoch - mPrimarySynStarted).ToMilliseconds();
+}
+
+NS_IMETHODIMP  
+nsHttpConnectionMgr::nsHalfOpenSocket::Notify(nsITimer* timer) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(timer == mSynTimer, "wrong timer");
+
+  MOZ_ASSERT(!mBackupTransport);
+  MOZ_ASSERT(mSynTimer);
+  MOZ_ASSERT(mEnt);
+
+  DebugOnly<nsresult> rv = SetupBackupStreams();
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  
+  
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP  
+nsHttpConnectionMgr::nsHalfOpenSocket::GetName(nsACString& aName) {
+  aName.AssignLiteral("nsHttpConnectionMgr::nsHalfOpenSocket");
+  return NS_OK;
+}
+
+already_AddRefed<nsHttpConnectionMgr::PendingTransactionInfo>
+nsHttpConnectionMgr::nsHalfOpenSocket::FindTransactionHelper(
+    bool removeWhenFound) {
+  nsTArray<RefPtr<PendingTransactionInfo>>* pendingQ =
+      gHttpHandler->ConnMgr()->GetTransactionPendingQHelper(mEnt, mTransaction);
+
+  int32_t index =
+      pendingQ ? pendingQ->IndexOf(mTransaction, 0, PendingComparator()) : -1;
+
+  RefPtr<PendingTransactionInfo> info;
+  if (index != -1) {
+    info = (*pendingQ)[index];
+    if (removeWhenFound) {
+      pendingQ->RemoveElementAt(index);
+    }
+  }
+  return info.forget();
+}
+
+
+NS_IMETHODIMP
+nsHttpConnectionMgr::nsHalfOpenSocket::OnOutputStreamReady(
+    nsIAsyncOutputStream* out) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(mStreamOut || mBackupStreamOut);
+  MOZ_ASSERT(out == mStreamOut || out == mBackupStreamOut, "stream mismatch");
+  MOZ_ASSERT(mEnt);
+
+  LOG(("nsHalfOpenSocket::OnOutputStreamReady [this=%p ent=%s %s]\n", this,
+       mEnt->mConnInfo->Origin(), out == mStreamOut ? "primary" : "backup"));
+
+  mEnt->mDoNotDestroy = true;
+  gHttpHandler->ConnMgr()->RecvdConnect();
+
+  CancelBackupTimer();
+
+  if (mFastOpenInProgress) {
+    LOG(
+        ("nsHalfOpenSocket::OnOutputStreamReady backup stream is ready, "
+         "close the fast open socket %p [this=%p ent=%s]\n",
+         mSocketTransport.get(), this, mEnt->mConnInfo->Origin()));
+    
+    
+    
+    
+    MOZ_ASSERT((out == mBackupStreamOut) && mConnectionNegotiatingFastOpen);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mSocketTransport->SetFastOpenCallback(nullptr);
+    mConnectionNegotiatingFastOpen->SetFastOpen(false);
+    mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
+    RefPtr<nsAHttpTransaction> trans =
+        mConnectionNegotiatingFastOpen
+            ->CloseConnectionFastOpenTakesTooLongOrError(true);
+    mSocketTransport = nullptr;
+    mStreamOut = nullptr;
+    mStreamIn = nullptr;
+
+    if (trans && trans->QueryHttpTransaction()) {
+      RefPtr<PendingTransactionInfo> pendingTransInfo =
+          new PendingTransactionInfo(trans->QueryHttpTransaction());
+      pendingTransInfo->mHalfOpen =
+          do_GetWeakReference(static_cast<nsISupportsWeakReference*>(this));
+      if (trans->Caps() & NS_HTTP_URGENT_START) {
+        gHttpHandler->ConnMgr()->InsertTransactionSorted(
+            mEnt->mUrgentStartQ, pendingTransInfo, true);
+      } else {
+        mEnt->InsertTransaction(pendingTransInfo, true);
+      }
+    }
+    if (mEnt->mUseFastOpen) {
+      gHttpHandler->IncrementFastOpenConsecutiveFailureCounter();
+      mEnt->mUseFastOpen = false;
+    }
+
+    mFastOpenInProgress = false;
+    mConnectionNegotiatingFastOpen = nullptr;
+    if (mFastOpenStatus == TFO_NOT_TRIED) {
+      mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_TFO_NOT_TRIED;
+    } else if (mFastOpenStatus == TFO_TRIED) {
+      mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_TFO_TRIED;
+    } else if (mFastOpenStatus == TFO_DATA_SENT) {
+      mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_TFO_DATA_SENT;
+    } else {
+      
+      
+      
+      mFastOpenStatus =
+          TFO_FAILED_BACKUP_CONNECTION_TFO_DATA_COOKIE_NOT_ACCEPTED;
+    }
+  }
+
+  if (((mFastOpenStatus == TFO_DISABLED) || (mFastOpenStatus == TFO_HTTP)) &&
+      !mBackupConnStatsSet) {
+    
+    
+    
+    mBackupConnStatsSet = true;
+    Telemetry::Accumulate(Telemetry::NETWORK_HTTP_BACKUP_CONN_WON_1,
+                          (out == mBackupStreamOut));
+  }
+
+  if (mFastOpenStatus == TFO_UNKNOWN) {
+    MOZ_ASSERT(out == mStreamOut);
+    if (mPrimaryStreamStatus == NS_NET_STATUS_RESOLVING_HOST) {
+      mFastOpenStatus = TFO_UNKNOWN_RESOLVING;
+    } else if (mPrimaryStreamStatus == NS_NET_STATUS_RESOLVED_HOST) {
+      mFastOpenStatus = TFO_UNKNOWN_RESOLVED;
+    } else if (mPrimaryStreamStatus == NS_NET_STATUS_CONNECTING_TO) {
+      mFastOpenStatus = TFO_UNKNOWN_CONNECTING;
+    } else if (mPrimaryStreamStatus == NS_NET_STATUS_CONNECTED_TO) {
+      mFastOpenStatus = TFO_UNKNOWN_CONNECTED;
+    }
+  }
+  nsresult rv = SetupConn(out, false);
+  if (mEnt) {
+    mEnt->mDoNotDestroy = false;
+  }
+  return rv;
+}
+
+bool nsHttpConnectionMgr::nsHalfOpenSocket::FastOpenEnabled() {
+  LOG(("nsHalfOpenSocket::FastOpenEnabled [this=%p]\n", this));
+
+  MOZ_ASSERT(mEnt);
+
+  if (!mEnt) {
+    return false;
+  }
+
+  MOZ_ASSERT(mEnt->mConnInfo->FirstHopSSL());
+
+  
+  
+  if (!mEnt->mHalfOpens.Contains(this)) {
+    return false;
+  }
+
+  if (!gHttpHandler->UseFastOpen()) {
+    
+    LOG(("nsHalfOpenSocket::FastEnabled - fast open was turned off.\n"));
+    mEnt->mUseFastOpen = false;
+    mFastOpenStatus = TFO_DISABLED;
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  if (mEnt->mConnInfo->UsingConnect()) {
+    LOG(("nsHalfOpenSocket::FastOpenEnabled - It is using Connect."));
+    mFastOpenStatus = TFO_DISABLED_CONNECT;
+    return false;
+  }
+  return true;
+}
+
+nsresult nsHttpConnectionMgr::nsHalfOpenSocket::StartFastOpen() {
+  MOZ_ASSERT(mStreamOut);
+  MOZ_ASSERT(!mBackupTransport);
+  MOZ_ASSERT(mEnt);
+  MOZ_ASSERT(mFastOpenStatus == TFO_UNKNOWN);
+
+  LOG(("nsHalfOpenSocket::StartFastOpen [this=%p]\n", this));
+
+  RefPtr<nsHalfOpenSocket> deleteProtector(this);
+
+  mFastOpenInProgress = true;
+  mEnt->mDoNotDestroy = true;
+  
+  
+  if (!mEnt->mHalfOpens.RemoveElement(this)) {
+    MOZ_ASSERT(false, "HalfOpen is not in mHalfOpens!");
+    mSocketTransport->SetFastOpenCallback(nullptr);
+    CancelBackupTimer();
+    mFastOpenInProgress = false;
+    Abandon();
+    mFastOpenStatus = TFO_INIT_FAILED;
+    return NS_ERROR_ABORT;
+  }
+
+  MOZ_ASSERT(gHttpHandler->ConnMgr()->mNumHalfOpenConns);
+  if (gHttpHandler->ConnMgr()->mNumHalfOpenConns) {  
+    gHttpHandler->ConnMgr()->mNumHalfOpenConns--;
+  }
+
+  
+  gHttpHandler->ConnMgr()->RecvdConnect();
+
+  
+  mSocketTransport->SetEventSink(nullptr, nullptr);
+  mSocketTransport->SetSecurityCallbacks(nullptr);
+  mStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
+
+  nsresult rv = SetupConn(mStreamOut, true);
+  if (!mConnectionNegotiatingFastOpen) {
+    LOG(
+        ("nsHalfOpenSocket::StartFastOpen SetupConn failed "
+         "[this=%p rv=%x]\n",
+         this, static_cast<uint32_t>(rv)));
+    if (NS_SUCCEEDED(rv)) {
+      rv = NS_ERROR_ABORT;
+    }
+    
+    
+    
+    mSocketTransport->SetFastOpenCallback(nullptr);
+    CancelBackupTimer();
+    mFastOpenInProgress = false;
+
+    
+    
+    Abandon();
+    mFastOpenStatus = TFO_INIT_FAILED;
+  } else {
+    LOG(("nsHalfOpenSocket::StartFastOpen [this=%p conn=%p]\n", this,
+         mConnectionNegotiatingFastOpen.get()));
+
+    mEnt->mHalfOpenFastOpenBackups.AppendElement(this);
+    
+    
+    
+    if (!mSynTimer) {
+      
+      
+      
+      SetupBackupTimer();
+    }
+  }
+  if (mEnt) {
+    mEnt->mDoNotDestroy = false;
+  }
+  return rv;
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::SetFastOpenConnected(
+    nsresult aError, bool aWillRetry) {
+  MOZ_ASSERT(mFastOpenInProgress);
+  MOZ_ASSERT(mEnt);
+
+  LOG(("nsHalfOpenSocket::SetFastOpenConnected [this=%p conn=%p error=%x]\n",
+       this, mConnectionNegotiatingFastOpen.get(),
+       static_cast<uint32_t>(aError)));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mConnectionNegotiatingFastOpen) {
+    return;
+  }
+
+  MOZ_ASSERT((mFastOpenStatus == TFO_NOT_TRIED) ||
+             (mFastOpenStatus == TFO_DATA_SENT) ||
+             (mFastOpenStatus == TFO_TRIED) ||
+             (mFastOpenStatus == TFO_DATA_COOKIE_NOT_ACCEPTED) ||
+             (mFastOpenStatus == TFO_DISABLED));
+
+  RefPtr<nsHalfOpenSocket> deleteProtector(this);
+
+  mEnt->mDoNotDestroy = true;
+
+  
+  mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
+  mSocketTransport->SetFastOpenCallback(nullptr);
+
+  mConnectionNegotiatingFastOpen->SetFastOpen(false);
+
+  
+  if (aWillRetry && ((aError == NS_ERROR_CONNECTION_REFUSED) ||
+#if defined(_WIN64) && defined(WIN95)
+                     
+                     
+                     
+                     (aError == NS_ERROR_FAILURE) ||
+#endif
+                     (aError == NS_ERROR_PROXY_CONNECTION_REFUSED) ||
+                     (aError == NS_ERROR_NET_TIMEOUT))) {
+    if (mEnt->mUseFastOpen) {
+      gHttpHandler->IncrementFastOpenConsecutiveFailureCounter();
+      mEnt->mUseFastOpen = false;
+    }
+    
+    
+
+    RefPtr<nsAHttpTransaction> trans =
+        mConnectionNegotiatingFastOpen
+            ->CloseConnectionFastOpenTakesTooLongOrError(false);
+    if (trans && trans->QueryHttpTransaction()) {
+      RefPtr<PendingTransactionInfo> pendingTransInfo =
+          new PendingTransactionInfo(trans->QueryHttpTransaction());
+      pendingTransInfo->mHalfOpen =
+          do_GetWeakReference(static_cast<nsISupportsWeakReference*>(this));
+      if (trans->Caps() & NS_HTTP_URGENT_START) {
+        gHttpHandler->ConnMgr()->InsertTransactionSorted(
+            mEnt->mUrgentStartQ, pendingTransInfo, true);
+      } else {
+        mEnt->InsertTransaction(pendingTransInfo, true);
+      }
+    }
+    
+    
+    
+    
+    
+    
+    mEnt->mHalfOpens.AppendElement(this);
+    gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+    gHttpHandler->ConnMgr()->StartedConnect();
+
+    
+    mStreamOut->AsyncWait(this, 0, 0, nullptr);
+    mSocketTransport->SetEventSink(this, nullptr);
+    mSocketTransport->SetSecurityCallbacks(this);
+    mStreamIn->AsyncWait(nullptr, 0, 0, nullptr);
+
+    if ((aError == NS_ERROR_CONNECTION_REFUSED) ||
+        (aError == NS_ERROR_PROXY_CONNECTION_REFUSED)) {
+      mFastOpenStatus = TFO_FAILED_CONNECTION_REFUSED;
+    } else if (aError == NS_ERROR_NET_TIMEOUT) {
+      mFastOpenStatus = TFO_FAILED_NET_TIMEOUT;
+    } else {
+      mFastOpenStatus = TFO_FAILED_UNKNOW_ERROR;
+    }
+
+  } else {
+    
+    
+    CancelBackupTimer();
+    if (NS_SUCCEEDED(aError)) {
+      NetAddr peeraddr;
+      if (NS_SUCCEEDED(mSocketTransport->GetPeerAddr(&peeraddr))) {
+        mEnt->RecordIPFamilyPreference(peeraddr.raw.family);
+      }
+      gHttpHandler->ResetFastOpenConsecutiveFailureCounter();
+    }
+    mSocketTransport = nullptr;
+    mStreamOut = nullptr;
+    mStreamIn = nullptr;
+
+    
+    
+    if (mBackupTransport) {
+      mFastOpenStatus = TFO_BACKUP_CONN;
+      mEnt->mHalfOpens.AppendElement(this);
+      gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+    }
+  }
+
+  mFastOpenInProgress = false;
+  mConnectionNegotiatingFastOpen = nullptr;
+  if (mEnt) {
+    mEnt->mDoNotDestroy = false;
+  } else {
+    MOZ_ASSERT(!mBackupTransport);
+    MOZ_ASSERT(!mBackupStreamOut);
+  }
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::SetFastOpenStatus(
+    uint8_t tfoStatus) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(mFastOpenInProgress);
+
+  mFastOpenStatus = tfoStatus;
+  mConnectionNegotiatingFastOpen->SetFastOpenStatus(tfoStatus);
+  if (mConnectionNegotiatingFastOpen->Transaction()) {
+    
+    
+    mConnectionNegotiatingFastOpen->Transaction()->SetFastOpenStatus(tfoStatus);
+  }
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::CancelFastOpenConnection() {
+  MOZ_ASSERT(mFastOpenInProgress);
+
+  LOG(("nsHalfOpenSocket::CancelFastOpenConnection [this=%p conn=%p]\n", this,
+       mConnectionNegotiatingFastOpen.get()));
+
+  RefPtr<nsHalfOpenSocket> deleteProtector(this);
+  mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
+  mSocketTransport->SetFastOpenCallback(nullptr);
+  mConnectionNegotiatingFastOpen->SetFastOpen(false);
+  RefPtr<nsAHttpTransaction> trans =
+      mConnectionNegotiatingFastOpen
+          ->CloseConnectionFastOpenTakesTooLongOrError(true);
+  mSocketTransport = nullptr;
+  mStreamOut = nullptr;
+  mStreamIn = nullptr;
+
+  if (trans && trans->QueryHttpTransaction()) {
+    RefPtr<PendingTransactionInfo> pendingTransInfo =
+        new PendingTransactionInfo(trans->QueryHttpTransaction());
+
+    if (trans->Caps() & NS_HTTP_URGENT_START) {
+      gHttpHandler->ConnMgr()->InsertTransactionSorted(mEnt->mUrgentStartQ,
+                                                       pendingTransInfo, true);
+    } else {
+      mEnt->InsertTransaction(pendingTransInfo, true);
+    }
+  }
+
+  mFastOpenInProgress = false;
+  mConnectionNegotiatingFastOpen = nullptr;
+  Abandon();
+
+  MOZ_ASSERT(!mBackupTransport);
+  MOZ_ASSERT(!mBackupStreamOut);
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::FastOpenNotSupported() {
+  MOZ_ASSERT(mFastOpenInProgress);
+  gHttpHandler->SetFastOpenNotSupported();
+}
+
+nsresult nsHttpConnectionMgr::nsHalfOpenSocket::SetupConn(
+    nsIAsyncOutputStream* out, bool aFastOpen) {
+  MOZ_ASSERT(!aFastOpen || (out == mStreamOut));
+  
+  MOZ_ASSERT(!(mIsHttp3 && aFastOpen));
+  
+  RefPtr<HttpConnectionBase> conn;
+  if (!mIsHttp3) {
+    conn = new nsHttpConnection();
+  } else {
+    conn = new HttpConnectionUDP();
+  }
+
+  LOG(
+      ("nsHalfOpenSocket::SetupConn "
+       "Created new nshttpconnection %p %s\n",
+       conn.get(), mIsHttp3 ? "using http3" : ""));
+
+  NullHttpTransaction* nullTrans = mTransaction->QueryNullTransaction();
+  if (nullTrans) {
+    conn->BootstrapTimings(nullTrans->Timings());
+  }
+
+  
+  
+  conn->SetTransactionCaps(mTransaction->Caps());
+
+  NetAddr peeraddr;
+  nsCOMPtr<nsIInterfaceRequestor> callbacks;
+  mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
+  nsresult rv;
+  if (out == mStreamOut) {
+    TimeDuration rtt = TimeStamp::Now() - mPrimarySynStarted;
+    rv = conn->Init(
+        mEnt->mConnInfo, gHttpHandler->ConnMgr()->mMaxRequestDelay,
+        mSocketTransport, mStreamIn, mStreamOut,
+        mPrimaryConnectedOK || aFastOpen, callbacks,
+        PR_MillisecondsToInterval(static_cast<uint32_t>(rtt.ToMilliseconds())));
+
+    bool resetPreference = false;
+    mSocketTransport->GetResetIPFamilyPreference(&resetPreference);
+    if (resetPreference) {
+      mEnt->ResetIPFamilyPreference();
+    }
+
+    if (!aFastOpen && NS_SUCCEEDED(mSocketTransport->GetPeerAddr(&peeraddr))) {
+      mEnt->RecordIPFamilyPreference(peeraddr.raw.family);
+    }
+
+    
+    if (!aFastOpen) {
+      mStreamOut = nullptr;
+      mStreamIn = nullptr;
+      mSocketTransport = nullptr;
+    } else {
+      RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+      MOZ_ASSERT(connTCP);
+      if (connTCP) {
+        connTCP->SetFastOpen(true);
+      }
+    }
+  } else if (out == mBackupStreamOut) {
+    TimeDuration rtt = TimeStamp::Now() - mBackupSynStarted;
+    rv = conn->Init(
+        mEnt->mConnInfo, gHttpHandler->ConnMgr()->mMaxRequestDelay,
+        mBackupTransport, mBackupStreamIn, mBackupStreamOut, mBackupConnectedOK,
+        callbacks,
+        PR_MillisecondsToInterval(static_cast<uint32_t>(rtt.ToMilliseconds())));
+
+    bool resetPreference = false;
+    mBackupTransport->GetResetIPFamilyPreference(&resetPreference);
+    if (resetPreference) {
+      mEnt->ResetIPFamilyPreference();
+    }
+
+    if (NS_SUCCEEDED(mBackupTransport->GetPeerAddr(&peeraddr))) {
+      mEnt->RecordIPFamilyPreference(peeraddr.raw.family);
+    }
+
+    
+    mBackupStreamOut = nullptr;
+    mBackupStreamIn = nullptr;
+    mBackupTransport = nullptr;
+  } else {
+    MOZ_ASSERT(false, "unexpected stream");
+    rv = NS_ERROR_UNEXPECTED;
+  }
+
+  if (NS_FAILED(rv)) {
+    LOG(
+        ("nsHalfOpenSocket::SetupConn "
+         "conn->init (%p) failed %" PRIx32 "\n",
+         conn.get(), static_cast<uint32_t>(rv)));
+
+    RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+    if (connTCP) {
+      
+      if ((mFastOpenStatus == TFO_HTTP) || (mFastOpenStatus == TFO_DISABLED) ||
+          (mFastOpenStatus == TFO_DISABLED_CONNECT)) {
+        connTCP->SetFastOpenStatus(mFastOpenStatus);
+      } else {
+        connTCP->SetFastOpenStatus(TFO_INIT_FAILED);
+      }
+    }
+
+    if (nullTrans) {
+      nullTrans->Close(rv);
+    } else if (nsHttpTransaction* trans =
+                   mTransaction->QueryHttpTransaction()) {
+      if (mIsHttp3) {
+        trans->DisableHttp3();
+        gHttpHandler->ExcludeHttp3(mEnt->mConnInfo);
+      }
+      Unused << gHttpHandler->ConnMgr()->CancelTransaction(trans, rv);
+    }
+
+    return rv;
+  }
+
+  
+  
+  if (!aFastOpen) {
+    mHasConnected = true;
+  }
+
+  
+  RefPtr<PendingTransactionInfo> pendingTransInfo = FindTransactionHelper(true);
+  if (pendingTransInfo) {
+    MOZ_ASSERT(!mSpeculative, "Speculative Half Open found mTransaction");
+
+    gHttpHandler->ConnMgr()->AddActiveConn(conn, mEnt);
+    if (mIsHttp3) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      RefPtr<ConnectionHandle> handle = new ConnectionHandle(conn);
+      pendingTransInfo->mTransaction->SetConnection(handle);
+    }
+    rv = gHttpHandler->ConnMgr()->DispatchTransaction(
+        mEnt, pendingTransInfo->mTransaction, conn);
+  } else {
+    
+    
+
+    
+    
+    
+    RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+    if (connTCP) {
+      connTCP->SetIsReusedAfter(950);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (!connTCP ||
+        (mEnt->mConnInfo->FirstHopSSL() && !mEnt->mUrgentStartQ.Length() &&
+         !mEnt->PendingQLength() && !mEnt->mConnInfo->UsingConnect())) {
+      LOG(
+          ("nsHalfOpenSocket::SetupConn null transaction will "
+           "be used to finish SSL handshake on conn %p\n",
+           conn.get()));
+      RefPtr<nsAHttpTransaction> trans;
+      if (mTransaction->IsNullTransaction() && !mDispatchedMTransaction) {
+        
+        
+        mDispatchedMTransaction = true;
+        trans = mTransaction;
+      } else {
+        trans = new NullHttpTransaction(mEnt->mConnInfo, callbacks, mCaps);
+      }
+
+      gHttpHandler->ConnMgr()->AddActiveConn(conn, mEnt);
+      rv = gHttpHandler->ConnMgr()->DispatchAbstractTransaction(mEnt, trans,
+                                                                mCaps, conn, 0);
+    } else {
+      
+      LOG(
+          ("nsHalfOpenSocket::SetupConn no transaction match "
+           "returning conn %p to pool\n",
+           conn.get()));
+      gHttpHandler->ConnMgr()->OnMsgReclaimConnection(conn);
+
+      
+      
+      
+      
+      
+      
+      
+
+      
+      if (mEnt && mEnt->mConnInfo->FirstHopSSL() &&
+          !mEnt->mConnInfo->UsingConnect()) {
+        int32_t idx = mEnt->mIdleConns.IndexOf(conn);
+        if (idx != -1) {
+          RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+          MOZ_ASSERT(connTCP);
+          if (connTCP) {
+            DebugOnly<nsresult> rvDeb =
+                gHttpHandler->ConnMgr()->RemoveIdleConnection(connTCP);
+            MOZ_ASSERT(NS_SUCCEEDED(rvDeb));
+            connTCP->EndIdleMonitoring();
+          }
+          RefPtr<nsAHttpTransaction> trans;
+          if (mTransaction->IsNullTransaction() && !mDispatchedMTransaction) {
+            mDispatchedMTransaction = true;
+            trans = mTransaction;
+          } else {
+            trans = new NullHttpTransaction(mEnt->mConnInfo, callbacks, mCaps);
+          }
+          gHttpHandler->ConnMgr()->AddActiveConn(conn, mEnt);
+          rv = gHttpHandler->ConnMgr()->DispatchAbstractTransaction(
+              mEnt, trans, mCaps, conn, 0);
+        }
+      }
+    }
+  }
+
+  
+  
+  RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+  if (connTCP) {
+    if (aFastOpen) {
+      MOZ_ASSERT(mEnt);
+      MOZ_ASSERT(static_cast<int32_t>(mEnt->mIdleConns.IndexOf(connTCP)) == -1);
+      int32_t idx = mEnt->mActiveConns.IndexOf(conn);
+      if (NS_SUCCEEDED(rv) && (idx != -1)) {
+        mConnectionNegotiatingFastOpen = connTCP;
+      } else {
+        connTCP->SetFastOpen(false);
+        connTCP->SetFastOpenStatus(TFO_INIT_FAILED);
+      }
+    } else {
+      connTCP->SetFastOpenStatus(mFastOpenStatus);
+      if ((mFastOpenStatus != TFO_HTTP) && (mFastOpenStatus != TFO_DISABLED) &&
+          (mFastOpenStatus != TFO_DISABLED_CONNECT)) {
+        mFastOpenStatus = TFO_BACKUP_CONN;  
+                                            
+                                            
+                                            
+      }
+    }
+  }
+
+  
+  
+  if (conn->Transaction() && !conn->Transaction()->IsNullTransaction()) {
+    Claim();
+  }
+
+  return rv;
 }
 
 
@@ -3333,14 +5251,277 @@ void nsHttpConnectionMgr::RegisterOriginCoalescingKey(HttpConnectionBase* conn,
        newKey.get(), conn, ci->HashKey().get()));
 }
 
+
+NS_IMETHODIMP
+nsHttpConnectionMgr::nsHalfOpenSocket::OnTransportStatus(nsITransport* trans,
+                                                         nsresult status,
+                                                         int64_t progress,
+                                                         int64_t progressMax) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  MOZ_ASSERT((trans == mSocketTransport) || (trans == mBackupTransport));
+  MOZ_ASSERT(mEnt);
+  if (mTransaction) {
+    if ((trans == mSocketTransport) ||
+        ((trans == mBackupTransport) &&
+         (status == NS_NET_STATUS_CONNECTED_TO) && mSocketTransport)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      mTransaction->OnTransportStatus(trans, status, progress);
+    }
+  }
+
+  MOZ_ASSERT(trans == mSocketTransport || trans == mBackupTransport);
+  if (status == NS_NET_STATUS_CONNECTED_TO) {
+    if (trans == mSocketTransport) {
+      mPrimaryConnectedOK = true;
+    } else {
+      mBackupConnectedOK = true;
+    }
+  }
+
+  
+  if (trans != mSocketTransport) {
+    return NS_OK;
+  }
+
+  mPrimaryStreamStatus = status;
+
+  
+  
+  
+  
+
+  if (status == NS_NET_STATUS_CONNECTING_TO && gHttpHandler->IsSpdyEnabled() &&
+      gHttpHandler->CoalesceSpdy() && mEnt && mEnt->mConnInfo &&
+      mEnt->mConnInfo->EndToEndSSL() && mEnt->AllowHttp2() &&
+      !mEnt->mConnInfo->UsingProxy() && mEnt->mCoalescingKeys.IsEmpty()) {
+    nsCOMPtr<nsIDNSAddrRecord> dnsRecord(do_GetInterface(mSocketTransport));
+    nsTArray<NetAddr> addressSet;
+    nsresult rv = NS_ERROR_NOT_AVAILABLE;
+    if (dnsRecord) {
+      rv = dnsRecord->GetAddresses(addressSet);
+    }
+
+    if (NS_SUCCEEDED(rv) && !addressSet.IsEmpty()) {
+      for (uint32_t i = 0; i < addressSet.Length(); ++i) {
+        nsCString* newKey = mEnt->mCoalescingKeys.AppendElement(nsCString());
+        newKey->SetLength(kIPv6CStrBufSize + 26);
+        addressSet[i].ToStringBuffer(newKey->BeginWriting(), kIPv6CStrBufSize);
+        newKey->SetLength(strlen(newKey->BeginReading()));
+        if (mEnt->mConnInfo->GetAnonymous()) {
+          newKey->AppendLiteral("~A:");
+        } else {
+          newKey->AppendLiteral("~.:");
+        }
+        newKey->AppendInt(mEnt->mConnInfo->OriginPort());
+        newKey->AppendLiteral("/[");
+        nsAutoCString suffix;
+        mEnt->mConnInfo->GetOriginAttributes().CreateSuffix(suffix);
+        newKey->Append(suffix);
+        newKey->AppendLiteral("]viaDNS");
+        LOG((
+            "nsHttpConnectionMgr::nsHalfOpenSocket::OnTransportStatus "
+            "STATUS_CONNECTING_TO Established New Coalescing Key # %d for host "
+            "%s [%s]",
+            i, mEnt->mConnInfo->Origin(), newKey->get()));
+      }
+      gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(mEnt);
+    }
+  }
+
+  switch (status) {
+    case NS_NET_STATUS_CONNECTING_TO:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mEnt && !mBackupTransport && !mSynTimer && !mIsHttp3) {
+        SetupBackupTimer();
+      }
+      break;
+
+    case NS_NET_STATUS_CONNECTED_TO:
+      
+      
+      CancelBackupTimer();
+      break;
+
+    default:
+      break;
+  }
+
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP
+nsHttpConnectionMgr::nsHalfOpenSocket::GetInterface(const nsIID& iid,
+                                                    void** result) {
+  if (mTransaction) {
+    nsCOMPtr<nsIInterfaceRequestor> callbacks;
+    mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
+    if (callbacks) return callbacks->GetInterface(iid, result);
+  }
+  return NS_ERROR_NO_INTERFACE;
+}
+
+bool nsHttpConnectionMgr::nsHalfOpenSocket::AcceptsTransaction(
+    nsHttpTransaction* trans) {
+  
+  
+  return !mUrgentStart || (trans->Caps() & nsIClassOfService::UrgentStart);
+}
+
+bool nsHttpConnectionMgr::nsHalfOpenSocket::Claim() {
+  if (mSpeculative) {
+    mSpeculative = false;
+    uint32_t flags;
+    if (mSocketTransport &&
+        NS_SUCCEEDED(mSocketTransport->GetConnectionFlags(&flags))) {
+      flags &= ~nsISocketTransport::DISABLE_RFC1918;
+      mSocketTransport->SetConnectionFlags(flags);
+    }
+
+    Telemetry::AutoCounter<Telemetry::HTTPCONNMGR_USED_SPECULATIVE_CONN>
+        usedSpeculativeConn;
+    ++usedSpeculativeConn;
+
+    if (mIsFromPredictor) {
+      Telemetry::AutoCounter<Telemetry::PREDICTOR_TOTAL_PRECONNECTS_USED>
+          totalPreconnectsUsed;
+      ++totalPreconnectsUsed;
+    }
+
+    
+    
+    if ((mPrimaryStreamStatus == NS_NET_STATUS_CONNECTING_TO) && mEnt &&
+        !mBackupTransport && !mSynTimer && !mIsHttp3) {
+      SetupBackupTimer();
+    }
+  }
+
+  if (mFreeToUse) {
+    mFreeToUse = false;
+    return true;
+  }
+  return false;
+}
+
+void nsHttpConnectionMgr::nsHalfOpenSocket::Unclaim() {
+  MOZ_ASSERT(!mSpeculative && !mFreeToUse);
+  
+  
+  
+  mFreeToUse = true;
+}
+
+already_AddRefed<HttpConnectionBase> ConnectionHandle::TakeHttpConnection() {
+  
+  
+  MOZ_ASSERT(mConn);
+  return mConn.forget();
+}
+
+already_AddRefed<HttpConnectionBase> ConnectionHandle::HttpConnection() {
+  RefPtr<HttpConnectionBase> rv(mConn);
+  return rv.forget();
+}
+
+void ConnectionHandle::TopLevelOuterContentWindowIdChanged(uint64_t windowId) {
+  
+}
+
+
+
+nsHttpConnectionMgr::nsConnectionEntry::nsConnectionEntry(
+    nsHttpConnectionInfo* ci)
+    : mConnInfo(ci),
+      mUsingSpdy(false),
+      mCanUseSpdy(true),
+      mPreferIPv4(false),
+      mPreferIPv6(false),
+      mUsedForConnection(false),
+      mDoNotDestroy(false) {
+  MOZ_COUNT_CTOR(nsConnectionEntry);
+
+  if (mConnInfo->FirstHopSSL() && !mConnInfo->IsHttp3()) {
+    mUseFastOpen = gHttpHandler->UseFastOpen();
+  } else {
+    
+    mUseFastOpen = false;
+  }
+
+  LOG(("nsConnectionEntry::nsConnectionEntry this=%p key=%s", this,
+       ci->HashKey().get()));
+}
+
+bool nsHttpConnectionMgr::nsConnectionEntry::AvailableForDispatchNow() {
+  if (mIdleConns.Length() && mIdleConns[0]->CanReuse()) {
+    return true;
+  }
+
+  return gHttpHandler->ConnMgr()->GetH2orH3ActiveConn(this, false) ? true
+                                                                   : false;
+}
+
 bool nsHttpConnectionMgr::GetConnectionData(nsTArray<HttpRetParams>* aArg) {
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-    RefPtr<ConnectionEntry> ent = iter.Data();
+    RefPtr<nsConnectionEntry> ent = iter.Data();
 
     if (ent->mConnInfo->GetPrivate()) {
       continue;
     }
-    aArg->AppendElement(ent->GetConnectionData());
+
+    HttpRetParams data;
+    data.host = ent->mConnInfo->Origin();
+    data.port = ent->mConnInfo->OriginPort();
+    for (uint32_t i = 0; i < ent->mActiveConns.Length(); i++) {
+      HttpConnInfo info;
+      RefPtr<nsHttpConnection> connTCP = do_QueryObject(ent->mActiveConns[i]);
+      if (connTCP) {
+        info.ttl = connTCP->TimeToLive();
+      } else {
+        info.ttl = 0;
+      }
+      info.rtt = ent->mActiveConns[i]->Rtt();
+      info.SetHTTPProtocolVersion(ent->mActiveConns[i]->Version());
+      data.active.AppendElement(info);
+    }
+    for (uint32_t i = 0; i < ent->mIdleConns.Length(); i++) {
+      HttpConnInfo info;
+      info.ttl = ent->mIdleConns[i]->TimeToLive();
+      info.rtt = ent->mIdleConns[i]->Rtt();
+      info.SetHTTPProtocolVersion(ent->mIdleConns[i]->Version());
+      data.idle.AppendElement(info);
+    }
+    for (uint32_t i = 0; i < ent->mHalfOpens.Length(); i++) {
+      HalfOpenSockets hSocket;
+      hSocket.speculative = ent->mHalfOpens[i]->IsSpeculative();
+      data.halfOpens.AppendElement(hSocket);
+    }
+    if (ent->mConnInfo->IsHttp3()) {
+      data.httpVersion = "HTTP/3"_ns;
+    } else if (ent->mUsingSpdy) {
+      data.httpVersion = "HTTP/2"_ns;
+    } else {
+      data.httpVersion = "HTTP <= 1.1"_ns;
+    }
+    data.ssl = ent->mConnInfo->EndToEndSSL();
+    aArg->AppendElement(data);
   }
 
   return true;
@@ -3348,16 +5529,62 @@ bool nsHttpConnectionMgr::GetConnectionData(nsTArray<HttpRetParams>* aArg) {
 
 void nsHttpConnectionMgr::ResetIPFamilyPreference(nsHttpConnectionInfo* ci) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  ConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
   if (ent) {
     ent->ResetIPFamilyPreference();
+  }
+}
+
+uint32_t nsHttpConnectionMgr::nsConnectionEntry::UnconnectedHalfOpens() {
+  uint32_t unconnectedHalfOpens = 0;
+  for (uint32_t i = 0; i < mHalfOpens.Length(); ++i) {
+    if (!mHalfOpens[i]->HasConnected()) ++unconnectedHalfOpens;
+  }
+  return unconnectedHalfOpens;
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::RemoveHalfOpen(
+    nsHalfOpenSocket* halfOpen) {
+  
+  
+  if (mHalfOpens.RemoveElement(halfOpen)) {
+    if (halfOpen->IsSpeculative()) {
+      Telemetry::AutoCounter<Telemetry::HTTPCONNMGR_UNUSED_SPECULATIVE_CONN>
+          unusedSpeculativeConn;
+      ++unusedSpeculativeConn;
+
+      if (halfOpen->IsFromPredictor()) {
+        Telemetry::AutoCounter<Telemetry::PREDICTOR_TOTAL_PRECONNECTS_UNUSED>
+            totalPreconnectsUnused;
+        ++totalPreconnectsUnused;
+      }
+    }
+
+    MOZ_ASSERT(gHttpHandler->ConnMgr()->mNumHalfOpenConns);
+    if (gHttpHandler->ConnMgr()->mNumHalfOpenConns) {  
+      gHttpHandler->ConnMgr()->mNumHalfOpenConns--;
+    }
+  } else {
+    mHalfOpenFastOpenBackups.RemoveElement(halfOpen);
+  }
+
+  if (!UnconnectedHalfOpens()) {
+    
+    
+    
+    nsresult rv = gHttpHandler->ConnMgr()->ProcessPendingQ(mConnInfo);
+    if (NS_FAILED(rv)) {
+      LOG(
+          ("nsHttpConnectionMgr::nsConnectionEntry::RemoveHalfOpen\n"
+           "    failed to process pending queue\n"));
+    }
   }
 }
 
 void nsHttpConnectionMgr::ExcludeHttp2(const nsHttpConnectionInfo* ci) {
   LOG(("nsHttpConnectionMgr::ExcludeHttp2 excluding ci %s",
        ci->HashKey().BeginReading()));
-  ConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
   if (!ent) {
     LOG(("nsHttpConnectionMgr::ExcludeHttp2 no entry found?!"));
     return;
@@ -3369,13 +5596,177 @@ void nsHttpConnectionMgr::ExcludeHttp2(const nsHttpConnectionInfo* ci) {
 void nsHttpConnectionMgr::ExcludeHttp3(const nsHttpConnectionInfo* ci) {
   LOG(("nsHttpConnectionMgr::ExcludeHttp3 exclude ci %s",
        ci->HashKey().BeginReading()));
-  ConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(ci->HashKey());
   if (!ent) {
     LOG(("nsHttpConnectionMgr::ExcludeHttp3 no entry found?!"));
     return;
   }
 
   ent->DontReuseHttp3Conn();
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::DisallowHttp2() {
+  mCanUseSpdy = false;
+
+  
+  
+  for (uint32_t i = 0; i < mActiveConns.Length(); ++i) {
+    if (mActiveConns[i]->UsingSpdy()) {
+      mActiveConns[i]->DontReuse();
+    }
+  }
+  for (uint32_t i = 0; i < mIdleConns.Length(); ++i) {
+    if (mIdleConns[i]->UsingSpdy()) {
+      mIdleConns[i]->DontReuse();
+    }
+  }
+
+  
+  mCoalescingKeys.Clear();
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::DontReuseHttp3Conn() {
+  MOZ_ASSERT(mConnInfo->IsHttp3());
+
+  
+  
+  for (uint32_t i = 0; i < mActiveConns.Length(); ++i) {
+    mActiveConns[i]->DontReuse();
+  }
+
+  
+  mCoalescingKeys.Clear();
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::RecordIPFamilyPreference(
+    uint16_t family) {
+  LOG(("nsConnectionEntry::RecordIPFamilyPreference %p, af=%u", this, family));
+
+  if (family == PR_AF_INET && !mPreferIPv6) {
+    mPreferIPv4 = true;
+  }
+
+  if (family == PR_AF_INET6 && !mPreferIPv4) {
+    mPreferIPv6 = true;
+  }
+
+  LOG(("  %p prefer ipv4=%d, ipv6=%d", this, (bool)mPreferIPv4,
+       (bool)mPreferIPv6));
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::ResetIPFamilyPreference() {
+  LOG(("nsConnectionEntry::ResetIPFamilyPreference %p", this));
+
+  mPreferIPv4 = false;
+  mPreferIPv6 = false;
+}
+
+bool net::nsHttpConnectionMgr::nsConnectionEntry::PreferenceKnown() const {
+  return (bool)mPreferIPv4 || (bool)mPreferIPv6;
+}
+
+size_t nsHttpConnectionMgr::nsConnectionEntry::PendingQLength() const {
+  size_t length = 0;
+  for (auto it = mPendingTransactionTable.ConstIter(); !it.Done(); it.Next()) {
+    length += it.UserData()->Length();
+  }
+
+  return length;
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::InsertTransaction(
+    PendingTransactionInfo* info,
+    bool aInsertAsFirstForTheSamePriority ) {
+  LOG(
+      ("nsHttpConnectionMgr::nsConnectionEntry::InsertTransaction"
+       " trans=%p, windowId=%" PRIu64 "\n",
+       info->mTransaction.get(),
+       info->mTransaction->TopLevelOuterContentWindowId()));
+
+  uint64_t windowId = TabIdForQueuing(info->mTransaction);
+  nsTArray<RefPtr<PendingTransactionInfo>>* infoArray;
+  if (!mPendingTransactionTable.Get(windowId, &infoArray)) {
+    infoArray = new nsTArray<RefPtr<PendingTransactionInfo>>();
+    mPendingTransactionTable.Put(windowId, infoArray);
+  }
+
+  gHttpHandler->ConnMgr()->InsertTransactionSorted(
+      *infoArray, info, aInsertAsFirstForTheSamePriority);
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::AppendPendingQForFocusedWindow(
+    uint64_t windowId, nsTArray<RefPtr<PendingTransactionInfo>>& result,
+    uint32_t maxCount) {
+  nsTArray<RefPtr<PendingTransactionInfo>>* infoArray = nullptr;
+  if (!mPendingTransactionTable.Get(windowId, &infoArray)) {
+    result.Clear();
+    return;
+  }
+
+  uint32_t countToAppend = maxCount;
+  countToAppend = countToAppend > infoArray->Length() || countToAppend == 0
+                      ? infoArray->Length()
+                      : countToAppend;
+
+  result.InsertElementsAt(result.Length(), infoArray->Elements(),
+                          countToAppend);
+  infoArray->RemoveElementsAt(0, countToAppend);
+
+  LOG(
+      ("nsConnectionEntry::AppendPendingQForFocusedWindow [ci=%s], "
+       "pendingQ count=%zu window.count=%zu for focused window (id=%" PRIu64
+       ")\n",
+       mConnInfo->HashKey().get(), result.Length(), infoArray->Length(),
+       windowId));
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::AppendPendingQForNonFocusedWindows(
+    uint64_t windowId, nsTArray<RefPtr<PendingTransactionInfo>>& result,
+    uint32_t maxCount) {
+  
+  uint32_t totalCount = 0;
+  for (auto it = mPendingTransactionTable.Iter(); !it.Done(); it.Next()) {
+    if (windowId && it.Key() == windowId) {
+      continue;
+    }
+
+    uint32_t count = 0;
+    for (; count < it.UserData()->Length(); ++count) {
+      if (maxCount && totalCount == maxCount) {
+        break;
+      }
+
+      
+      
+      gHttpHandler->ConnMgr()->InsertTransactionSorted(
+          result, it.UserData()->ElementAt(count));
+      ++totalCount;
+    }
+    it.UserData()->RemoveElementsAt(0, count);
+
+    if (maxCount && totalCount == maxCount) {
+      if (it.UserData()->Length()) {
+        
+        
+        
+        nsHttp::NotifyActiveTabLoadOptimization();
+      }
+      break;
+    }
+  }
+
+  LOG(
+      ("nsConnectionEntry::AppendPendingQForNonFocusedWindows [ci=%s], "
+       "pendingQ count=%zu for non focused window\n",
+       mConnInfo->HashKey().get(), result.Length()));
+}
+
+void nsHttpConnectionMgr::nsConnectionEntry::RemoveEmptyPendingQ() {
+  for (auto it = mPendingTransactionTable.Iter(); !it.Done(); it.Next()) {
+    if (it.UserData()->IsEmpty()) {
+      it.Remove();
+    }
+  }
 }
 
 void nsHttpConnectionMgr::MoveToWildCardConnEntry(
@@ -3389,7 +5780,7 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
        "change CI from %s to %s\n",
        proxyConn, specificCI->HashKey().get(), wildCardCI->HashKey().get()));
 
-  ConnectionEntry* ent = mCT.GetWeak(specificCI->HashKey());
+  nsConnectionEntry* ent = mCT.GetWeak(specificCI->HashKey());
   LOG(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard conn %p using ent %p (spdy "
        "%d)\n",
@@ -3399,7 +5790,8 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
     return;
   }
 
-  ConnectionEntry* wcEnt = GetOrCreateConnectionEntry(wildCardCI, true, false);
+  nsConnectionEntry* wcEnt =
+      GetOrCreateConnectionEntry(wildCardCI, true, false);
   if (wcEnt == ent) {
     
     return;
@@ -3409,16 +5801,36 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
   LOG(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard ent %p "
        "idle=%zu active=%zu half=%zu pending=%zu\n",
-       ent, ent->IdleConnectionsLength(), ent->ActiveConnsLength(),
-       ent->HalfOpensLength(), ent->PendingQueueLength()));
+       ent, ent->mIdleConns.Length(), ent->mActiveConns.Length(),
+       ent->mHalfOpens.Length(), ent->PendingQLength()));
 
   LOG(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard wc-ent %p "
        "idle=%zu active=%zu half=%zu pending=%zu\n",
-       wcEnt, wcEnt->IdleConnectionsLength(), wcEnt->ActiveConnsLength(),
-       wcEnt->HalfOpensLength(), wcEnt->PendingQueueLength()));
+       wcEnt, wcEnt->mIdleConns.Length(), wcEnt->mActiveConns.Length(),
+       wcEnt->mHalfOpens.Length(), wcEnt->PendingQLength()));
 
-  ent->MoveConnection(proxyConn, wcEnt);
+  int32_t count = ent->mActiveConns.Length();
+  RefPtr<HttpConnectionBase> deleteProtector(proxyConn);
+  for (int32_t i = 0; i < count; ++i) {
+    if (ent->mActiveConns[i] == proxyConn) {
+      ent->mActiveConns.RemoveElementAt(i);
+      wcEnt->mActiveConns.InsertElementAt(0, proxyConn);
+      return;
+    }
+  }
+
+  RefPtr<nsHttpConnection> proxyConnTCP = do_QueryObject(proxyConn);
+  if (proxyConnTCP) {
+    count = ent->mIdleConns.Length();
+    for (int32_t i = 0; i < count; ++i) {
+      if (ent->mIdleConns[i] == proxyConnTCP) {
+        ent->mIdleConns.RemoveElementAt(i);
+        wcEnt->mIdleConns.InsertElementAt(0, proxyConnTCP);
+        return;
+      }
+    }
+  }
 }
 
 bool nsHttpConnectionMgr::MoveTransToHTTPSSVCConnEntry(
@@ -3431,10 +5843,10 @@ bool nsHttpConnectionMgr::MoveTransToHTTPSSVCConnEntry(
   bool prohibitWildCard = !!aTrans->TunnelProvider();
   bool noHttp3 = aTrans->Caps() & NS_HTTP_DISALLOW_HTTP3;
   
-  ConnectionEntry* oldEntry = GetOrCreateConnectionEntry(
+  nsConnectionEntry* oldEntry = GetOrCreateConnectionEntry(
       aTrans->ConnectionInfo(), prohibitWildCard, noHttp3);
 
-  ConnectionEntry* newEntry =
+  nsConnectionEntry* newEntry =
       GetOrCreateConnectionEntry(aNewCI, prohibitWildCard, noHttp3);
 
   if (oldEntry == newEntry) {
@@ -3446,7 +5858,7 @@ bool nsHttpConnectionMgr::MoveTransToHTTPSSVCConnEntry(
   
   
   nsTArray<RefPtr<PendingTransactionInfo>>* infoArray =
-      oldEntry->GetTransactionPendingQHelper(aTrans);
+      GetTransactionPendingQHelper(oldEntry, aTrans);
 
   RefPtr<PendingTransactionInfo> pendingTransInfo;
   transIndex =
@@ -3461,10 +5873,15 @@ bool nsHttpConnectionMgr::MoveTransToHTTPSSVCConnEntry(
     return false;
   }
 
-  MOZ_ASSERT(pendingTransInfo->Transaction() == aTrans);
+  MOZ_ASSERT(pendingTransInfo->mTransaction == aTrans);
 
   
-  pendingTransInfo->AbandonHalfOpenAndForgetActiveConn();
+  RefPtr<nsHalfOpenSocket> half = do_QueryReferent(pendingTransInfo->mHalfOpen);
+  if (half) {
+    half->Abandon();
+  }
+  pendingTransInfo->mHalfOpen = nullptr;
+  pendingTransInfo->mActiveConn = nullptr;
 
   
   aTrans->UpdateConnectionInfo(aNewCI);
@@ -3472,55 +5889,10 @@ bool nsHttpConnectionMgr::MoveTransToHTTPSSVCConnEntry(
   return true;
 }
 
-void nsHttpConnectionMgr::IncreaseNumHalfOpenConns() { mNumHalfOpenConns++; }
-
-void nsHttpConnectionMgr::DecreaseNumHalfOpenConns() {
-  MOZ_ASSERT(mNumHalfOpenConns);
-  if (mNumHalfOpenConns) {  
-    mNumHalfOpenConns--;
-  }
-}
-
-already_AddRefed<PendingTransactionInfo>
-nsHttpConnectionMgr::FindTransactionHelper(bool removeWhenFound,
-                                           ConnectionEntry* aEnt,
-                                           nsAHttpTransaction* aTrans) {
-  nsTArray<RefPtr<PendingTransactionInfo>>* pendingQ =
-      aEnt->GetTransactionPendingQHelper(aTrans);
-
-  int32_t index =
-      pendingQ ? pendingQ->IndexOf(aTrans, 0, PendingComparator()) : -1;
-
-  RefPtr<PendingTransactionInfo> info;
-  if (index != -1) {
-    info = (*pendingQ)[index];
-    if (removeWhenFound) {
-      pendingQ->RemoveElementAt(index);
-    }
-  }
-  return info.forget();
-}
-
 nsHttpConnectionMgr* nsHttpConnectionMgr::AsHttpConnectionMgr() { return this; }
 
 HttpConnectionMgrParent* nsHttpConnectionMgr::AsHttpConnectionMgrParent() {
   return nullptr;
-}
-
-void nsHttpConnectionMgr::NewIdleConnectionAdded(uint32_t timeToLive) {
-  mNumIdleConns++;
-
-  
-  
-  
-  if (!mTimer || NowInSeconds() + timeToLive < mTimeOfNextWakeUp)
-    PruneDeadConnectionsAfter(timeToLive);
-}
-
-void nsHttpConnectionMgr::DecrementNumIdleConns() {
-  MOZ_ASSERT(mNumIdleConns);
-  mNumIdleConns--;
-  ConditionallyStopPruneDeadConnectionsTimer();
 }
 
 }  
