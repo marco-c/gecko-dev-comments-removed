@@ -2,6 +2,8 @@
 
 
 
+use crate::ErrorType;
+
 
 
 
@@ -32,4 +34,23 @@ pub trait String {
         &self,
         ping_name: S,
     ) -> Option<std::string::String>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: ErrorType,
+        ping_name: S,
+    ) -> i32;
 }
