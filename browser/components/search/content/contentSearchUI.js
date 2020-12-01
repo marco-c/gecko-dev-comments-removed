@@ -8,8 +8,6 @@ this.ContentSearchUIController = (function() {
   const MAX_DISPLAYED_SUGGESTIONS = 6;
   const SUGGESTION_ID_PREFIX = "searchSuggestion";
   const ONE_OFF_ID_PREFIX = "oneOff";
-  const DEFAULT_INPUT_ICON = "chrome://browser/skin/search-glass.svg";
-
   const HTML_NS = "http://www.w3.org/1999/xhtml";
 
   
@@ -693,7 +691,8 @@ this.ContentSearchUIController = (function() {
       
       let icon = this.defaultEngine.isAppProvided
         ? this.defaultEngine.icon
-        : DEFAULT_INPUT_ICON;
+        : "chrome://browser/skin/search-glass.svg";
+
       document.body.style.setProperty(
         "--newtab-search-icon",
         "url(" + icon + ")"
