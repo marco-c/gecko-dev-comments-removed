@@ -8,11 +8,15 @@
 #define mozilla_dom_WebAuthnManagerBase_h
 
 #include "nsIDOMEventListener.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsCOMPtr.h"
 
 
 
 
 
+
+class nsPIDOMWindowInner;
 
 namespace mozilla {
 namespace dom {
