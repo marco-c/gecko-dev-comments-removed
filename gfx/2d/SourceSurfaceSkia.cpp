@@ -31,8 +31,23 @@ IntSize SourceSurfaceSkia::GetSize() const { return mSize; }
 
 SurfaceFormat SourceSurfaceSkia::GetFormat() const { return mFormat; }
 
-sk_sp<SkImage> SourceSurfaceSkia::GetImage() {
-  MutexAutoLock lock(mChangeMutex);
+sk_sp<SkImage> SourceSurfaceSkia::GetImage(Maybe<MutexAutoLock>* aLock) {
+  
+  
+  
+  
+  if (aLock) {
+    MOZ_ASSERT(aLock->isNothing());
+    aLock->emplace(mChangeMutex);
+
+    
+    
+    if (!mDrawTarget) {
+      aLock->reset();
+    }
+  } else {
+    DrawTargetWillChange();
+  }
   sk_sp<SkImage> image = mImage;
   return image;
 }
