@@ -2418,15 +2418,26 @@ function synthesizeSelectionSet(aOffset, aLength, aReverse, aWindow) {
 
 
 
-function synthesizeQueryTextRect(aOffset, aLength, aWindow) {
+
+
+function synthesizeQueryTextRect(aOffset, aLength, aIsRelative, aWindow) {
+  if (aIsRelative !== undefined && typeof aIsRelative !== "boolean") {
+    throw new Error(
+      "Maybe, you set Window object to the 3rd argument, but it should be a boolean value"
+    );
+  }
   var utils = _getDOMWindowUtils(aWindow);
+  let flags = QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK;
+  if (aIsRelative === true) {
+    flags |= QUERY_CONTENT_FLAG_OFFSET_RELATIVE_TO_INSERTION_POINT;
+  }
   return utils.sendQueryContentEvent(
     utils.QUERY_TEXT_RECT,
     aOffset,
     aLength,
     0,
     0,
-    QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK
+    flags
   );
 }
 
