@@ -217,6 +217,10 @@ struct MOZ_RAII CompilationState {
 struct CompilationStencil {
   
   
+  LifoAlloc alloc;
+
+  
+  
   Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
   Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
   Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
@@ -248,7 +252,28 @@ struct CompilationStencil {
   
   ParserAtomsTable parserAtoms;
 
-  explicit CompilationStencil(JSRuntime* rt) : parserAtoms(rt) {}
+  
+  static constexpr size_t LifoAllocChunkSize = 512;
+
+  explicit CompilationStencil(JSRuntime* rt)
+      : alloc(LifoAllocChunkSize), parserAtoms(rt) {}
+
+  
+  
+  CompilationStencil(CompilationStencil&& other) noexcept
+      : alloc(LifoAllocChunkSize),
+        regExpData(std::move(other.regExpData)),
+        bigIntData(std::move(other.bigIntData)),
+        objLiteralData(std::move(other.objLiteralData)),
+        scriptData(std::move(other.scriptData)),
+        scopeData(std::move(other.scopeData)),
+        moduleMetadata(std::move(other.moduleMetadata)),
+        asmJS(std::move(other.asmJS)),
+        parserAtoms(std::move(other.parserAtoms)) {
+    
+    
+    alloc.steal(&other.alloc);
+  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
