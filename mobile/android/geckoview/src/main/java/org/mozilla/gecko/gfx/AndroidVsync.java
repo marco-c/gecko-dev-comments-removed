@@ -15,34 +15,36 @@ import android.view.Choreographer;
 import android.view.Display;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.mozglue.JNIObject;
 
 
 
 
- final class VsyncSource implements Choreographer.FrameCallback {
-    private static final String LOGTAG = "GeckoVsyncSource";
+@WrapForJNI
+ final class AndroidVsync extends JNIObject implements Choreographer.FrameCallback {
+    @WrapForJNI @Override 
+    protected native void disposeNative();
 
-    @WrapForJNI
-    private static final VsyncSource INSTANCE = new VsyncSource();
+    private static final String LOGTAG = "AndroidVsync";
 
      Choreographer mChoreographer;
     private volatile boolean mObservingVsync;
 
-    private VsyncSource() {
+    public AndroidVsync() {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
                 mChoreographer = Choreographer.getInstance();
                 if (mObservingVsync) {
-                    mChoreographer.postFrameCallback(VsyncSource.this);
+                    mChoreographer.postFrameCallback(AndroidVsync.this);
                 }
             }
         });
     }
 
     @WrapForJNI(stubName = "NotifyVsync")
-    private static native void nativeNotifyVsync(final long frameTimeNanos);
+    private native void nativeNotifyVsync(final long frameTimeNanos);
 
     
     public void doFrame(final long frameTimeNanos) {
