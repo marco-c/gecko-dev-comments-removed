@@ -843,7 +843,6 @@ already_AddRefed<ContentParent> ContentParent::MinTabSelect(
   for (uint32_t i = 0; i < maxSelectable; i++) {
     ContentParent* p = aContentParents[i];
     MOZ_DIAGNOSTIC_ASSERT(!p->IsDead());
-    MOZ_DIAGNOSTIC_ASSERT(!p->mShutdownPending);
 
     uint32_t tabCount = cpm->GetBrowserParentCountByProcessId(p->ChildID());
     if (tabCount < min) {
@@ -1600,13 +1599,16 @@ void ContentParent::MaybeAsyncSendShutDownMessage() {
 void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   
   
+  MarkAsDead();
+
+  
+  
   
   if (aMethod == SEND_SHUTDOWN_MESSAGE) {
     if (mIPCOpen && !mShutdownPending) {
       
       SetInputPriorityEventEnabled(false);
       if (SendShutdown()) {
-        RemoveFromList();
         mShutdownPending = true;
         
         StartForceKillTimer();
@@ -1641,10 +1643,6 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
             iter.Get()->GetKey());
     ocuParent->StopSendingMessagesToChild();
   }
-
-  
-  
-  MarkAsDead();
 
   
   
@@ -1712,10 +1710,7 @@ void ContentParent::AssertNotInPool() {
   }
 }
 
-void ContentParent::AssertAlive() {
-  MOZ_DIAGNOSTIC_ASSERT(!IsDead());
-  MOZ_DIAGNOSTIC_ASSERT(!mShutdownPending);
-}
+void ContentParent::AssertAlive() { MOZ_DIAGNOSTIC_ASSERT(!IsDead()); }
 
 void ContentParent::RemoveFromList() {
   if (IsForJSPlugin()) {
@@ -1770,9 +1765,7 @@ void ContentParent::MarkAsDead() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("Marking ContentProcess %p as dead", this));
   MOZ_DIAGNOSTIC_ASSERT(!sInProcessSelector);
-  if (!mShutdownPending) {
-    RemoveFromList();
-  }
+  RemoveFromList();
 
   PreallocatedProcessManager::Erase(this);
 
@@ -2017,7 +2010,7 @@ bool ContentParent::TryToRecycle() {
       ("TryToRecycle ContentProcess %p (%u) with lifespan %f seconds", this,
        (unsigned int)ChildID(), (TimeStamp::Now() - mActivateTS).ToSeconds()));
 
-  if (mShutdownPending || mCalledKillHard || !IsAlive() ||
+  if (mCalledKillHard || !IsAlive() ||
       (TimeStamp::Now() - mActivateTS).ToSeconds() > kMaxLifeSpan) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("TryToRecycle did not recycle %p", this));
