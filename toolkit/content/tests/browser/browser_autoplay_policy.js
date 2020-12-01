@@ -3,7 +3,8 @@
 
 
 
-const PAGE = GetTestWebBasedURL("file_empty.html");
+const PAGE =
+  "https://example.com/browser/toolkit/content/tests/browser/file_empty.html";
 
 function setupTestPreferences(isAllowedAutoplay, isAllowedMuted) {
   let autoplayDefault = SpecialPowers.Ci.nsIAutoplay.ALLOWED;

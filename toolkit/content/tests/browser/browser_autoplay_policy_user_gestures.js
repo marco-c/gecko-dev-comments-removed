@@ -1,6 +1,7 @@
 
 
-const VIDEO_PAGE = GetTestWebBasedURL("file_video.html");
+const VIDEO_PAGE =
+  "https://example.com/browser/toolkit/content/tests/browser/file_video.html";
 
 const UserGestures = {
   MOUSE_CLICK: "mouse-click",
