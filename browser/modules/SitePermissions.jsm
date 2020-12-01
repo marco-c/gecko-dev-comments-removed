@@ -784,6 +784,10 @@ var SitePermissions = {
       
       return null;
     }
+    if (id == "3rdPartyStorage") {
+      
+      return key;
+    }
     let labelID = gPermissions.get(id).labelID || id;
     return gStringBundle.formatStringFromName(`permission.${labelID}.label`, [
       key,
@@ -1094,6 +1098,12 @@ let gPermissions = {
         return SitePermissions.UNKNOWN;
       },
     },
+
+    "3rdPartyStorage": {
+      get disabled() {
+        return !SitePermissions.statePartitioningPermissionsEnabled;
+      },
+    },
   },
 };
 
@@ -1119,5 +1129,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "openProtoPermissionEnabled",
   "security.external_protocol_requires_permission",
   true,
+  SitePermissions.invalidatePermissionList.bind(SitePermissions)
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SitePermissions,
+  "statePartitioningPermissionsEnabled",
+  "browser.contentblocking.state-partitioning.mvp.ui.enabled",
+  false,
   SitePermissions.invalidatePermissionList.bind(SitePermissions)
 );
