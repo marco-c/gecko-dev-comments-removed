@@ -119,7 +119,8 @@ class AudioDataListenerInterface {
 
 
 
-  virtual void NotifyStarted(MediaTrackGraphImpl* aGraph) = 0;
+
+  virtual void NotifyInputStopped(MediaTrackGraphImpl* aGraph) = 0;
   
 
 

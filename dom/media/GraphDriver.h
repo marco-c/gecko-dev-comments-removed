@@ -181,7 +181,7 @@ struct GraphInterface : public nsISupports {
                                 TrackRate aRate, uint32_t aChannels) = 0;
   
 
-  virtual void NotifyStarted() = 0;
+  virtual void NotifyInputStopped() = 0;
   
 
   virtual void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
@@ -767,9 +767,6 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   DataMutex<RefPtr<FallbackWrapper>> mFallback;
-  
-
-  bool mRanFirstIteration = false;
   
 
   TimeDuration mNextReInitBackoffStep;
