@@ -33,6 +33,13 @@ loader.lazyRequireGetter(
   "devtools/server/actors/watcher/target-helpers/worker-helper"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "NetworkActor",
+  "devtools/server/actors/network-monitor/network",
+  true
+);
+
 exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
 
@@ -409,5 +416,15 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     
     WatcherRegistry.maybeUnregisteringJSWindowActor();
+  },
+
+  
+
+
+
+
+
+  getNetworkActor() {
+    return new NetworkActor(this);
   },
 });

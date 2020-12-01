@@ -44,6 +44,28 @@ class NetworkEventWatcher {
     this.listener.init();
   }
 
+  
+
+
+
+
+
+
+  setBlockedUrls(urls) {
+    this.listener.setBlockedUrls(urls);
+  }
+
+  
+
+
+
+
+
+
+  getBlockedUrls() {
+    return this.listener.getBlockedUrls();
+  }
+
   onNetworkEvent(event) {
     const { channelId } = event;
     if (this.networkEvents.get(channelId)) {
