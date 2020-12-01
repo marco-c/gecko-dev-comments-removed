@@ -1,0 +1,13 @@
+
+
+
+
+
+
+"""
+Run unit tests. This is invoked by:
+$ python -m psutil.tests
+"""
+
+from .runner import main
+main()
