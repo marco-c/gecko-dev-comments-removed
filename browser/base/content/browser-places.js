@@ -2288,18 +2288,20 @@ var BookmarkingUI = {
 
   async maybeShowOtherBookmarksFolder() {
     
-    if (!gBookmarksToolbar2h2020) {
+    let otherBookmarks = document.getElementById("OtherBookmarks");
+
+    
+    if (!gBookmarksToolbar2h2020 || !otherBookmarks) {
       return;
     }
 
     let unfiledGuid = PlacesUtils.bookmarks.unfiledGuid;
     let numberOfBookmarks = PlacesUtils.getChildCountForFolder(unfiledGuid);
-    let otherBookmarks = document.getElementById("OtherBookmarks");
     let placement = CustomizableUI.getPlacementOfWidget("personal-bookmarks");
 
     if (
       numberOfBookmarks > 0 &&
-      placement.area == CustomizableUI.AREA_BOOKMARKS
+      placement?.area == CustomizableUI.AREA_BOOKMARKS
     ) {
       let otherBookmarksPopup = document.getElementById("OtherBookmarksPopup");
       let result = PlacesUtils.getFolderContents(unfiledGuid);
