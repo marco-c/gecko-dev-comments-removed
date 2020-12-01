@@ -326,10 +326,6 @@ StorageActors.defaults = function(typeName, observationTopics) {
         
         
         
-        hasSupportsTraits: true,
-        
-        
-        
         supportsAddItem: typeof this.addItem === "function",
         
         
