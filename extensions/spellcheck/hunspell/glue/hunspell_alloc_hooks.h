@@ -44,6 +44,12 @@
 
 
 
+
+
+#if defined(MALLOC_H) && !defined(XP_DARWIN)
+#  undef MALLOC_H
+#endif
+
 #include "mozilla/mozalloc.h"
 #include "mozHunspellAllocator.h"
 
