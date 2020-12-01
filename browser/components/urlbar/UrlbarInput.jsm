@@ -383,7 +383,7 @@ class UrlbarInput {
     
     
     
-    if (dueToTabSwitch) {
+    if (dueToTabSwitch && !valid) {
       this.restoreSearchModeState();
     } else if (valid) {
       this.searchMode = null;
@@ -1510,11 +1510,17 @@ class UrlbarInput {
     
     if (browser == this.window.gBrowser.selectedBrowser) {
       this._updateSearchModeUI(searchMode);
-      if (searchMode && !searchMode.isPreview && !areSearchModesSame) {
-        try {
-          BrowserUsageTelemetry.recordSearchMode(searchMode);
-        } catch (ex) {
-          Cu.reportError(ex);
+      if (searchMode) {
+        
+        
+        this.window.gBrowser.userTypedValue = this.untrimmedValue;
+        this.valueIsTyped = true;
+        if (!searchMode.isPreview && !areSearchModesSame) {
+          try {
+            BrowserUsageTelemetry.recordSearchMode(searchMode);
+          } catch (ex) {
+            Cu.reportError(ex);
+          }
         }
       }
     }
@@ -1768,12 +1774,8 @@ class UrlbarInput {
 
     this.searchMode = searchMode;
 
-    
-    
     let value = result.payload.query?.trimStart() || "";
     this._setValue(value, false);
-    this.window.gBrowser.userTypedValue = value;
-    this.valueIsTyped = true;
 
     if (startQuery) {
       this.startQuery({ allowAutofill: false });
