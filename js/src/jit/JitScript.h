@@ -24,16 +24,6 @@ namespace jit {
 
 
 
-struct DependentWasmImport {
-  wasm::Instance* instance;
-  size_t importIndex;
-
-  DependentWasmImport(wasm::Instance& instance, size_t importIndex)
-      : instance(&instance), importIndex(importIndex) {}
-};
-
-
-
 struct IonBytecodeInfo {
   bool usesEnvironmentChain = false;
   bool modifiesArguments = false;
@@ -245,11 +235,8 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   
   
+  
   uint8_t* jitCodeSkipArgCheck_ = nullptr;
-
-  
-  
-  js::UniquePtr<Vector<DependentWasmImport>> dependentWasmImports_;
 
   
   const char* profileString_ = nullptr;
@@ -488,12 +475,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry) {
     return icScript_.icEntryFromPCOffset(pcOffset, prevLookedUpEntry);
   }
-
-  MOZ_MUST_USE bool addDependentWasmImport(JSContext* cx,
-                                           wasm::Instance& instance,
-                                           uint32_t idx);
-  void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
-  void unlinkDependentWasmImports();
 
   size_t allocBytes() const { return endOffset(); }
 

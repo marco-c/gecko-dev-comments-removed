@@ -146,14 +146,6 @@ class Instance {
   void ensureProfilingLabels(bool profilingEnabled) const;
 
   
-  
-  
-  
-  
-
-  void deoptimizeImportExit(uint32_t funcImportIndex);
-
-  
 
   void onMovingGrowMemory();
   void onMovingGrowTable(const Table* theTable);
