@@ -114,8 +114,20 @@ class Service : public mozIStorageService,
 
   Mutex mMutex;
 
-  sqlite3_vfs* mSqliteExclVFS;
-  sqlite3_vfs* mSqliteVFS;
+  struct AutoVFSRegistration {
+    int Init(UniquePtr<sqlite3_vfs> aVFS);
+    ~AutoVFSRegistration();
+
+   private:
+    UniquePtr<sqlite3_vfs> mVFS;
+  };
+
+  
+  
+  
+  AutoVFSRegistration mTelemetrySqliteVFS;
+  AutoVFSRegistration mTelemetryExclSqliteVFS;
+  AutoVFSRegistration mObfuscatingSqliteVFS;
 
   
 

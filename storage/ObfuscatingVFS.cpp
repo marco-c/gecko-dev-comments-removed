@@ -69,40 +69,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef SQLITE_OBFSVFS_STATIC
-#  include "sqlite3.h"
-#else
-#  include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
-#endif
+#include "sqlite3.h"
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
@@ -192,31 +159,6 @@ static int obfsCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 static int obfsSetSystemCall(sqlite3_vfs*, const char*, sqlite3_syscall_ptr);
 static sqlite3_syscall_ptr obfsGetSystemCall(sqlite3_vfs*, const char* z);
 static const char* obfsNextSystemCall(sqlite3_vfs*, const char* zName);
-
-static sqlite3_vfs obfs_vfs = {
-    3,                    
-    0,                    
-    1024,                 
-    0,                    
-    "obfsvfs",            
-    0,                    
-    obfsOpen,             
-    obfsDelete,           
-    obfsAccess,           
-    obfsFullPathname,     
-    obfsDlOpen,           
-    obfsDlError,          
-    obfsDlSym,            
-    obfsDlClose,          
-    obfsRandomness,       
-    obfsSleep,            
-    obfsCurrentTime,      
-    obfsGetLastError,     
-    obfsCurrentTimeInt64, 
-    obfsSetSystemCall,    
-    obfsGetSystemCall,    
-    obfsNextSystemCall    
-};
 
 static const sqlite3_io_methods obfs_io_methods = {
     3,                         
@@ -677,49 +619,55 @@ static const char* obfsNextSystemCall(sqlite3_vfs* pVfs, const char* zName) {
   return ORIGVFS(pVfs)->xNextSystemCall(ORIGVFS(pVfs), zName);
 }
 
+namespace mozilla {
+namespace storage {
 
+UniquePtr<sqlite3_vfs> ConstructObfuscatingVFS(const char* aBaseVFSName) {
+  MOZ_ASSERT(aBaseVFSName);
 
+  if (sqlite3_vfs_find("obfs") != nullptr) {
+    return nullptr;
+  }
+  sqlite3_vfs* const pOrig = sqlite3_vfs_find(aBaseVFSName);
+  if (pOrig == nullptr) {
+    return nullptr;
+  }
 
-static int obfsRegisterVfs(void) {
-  int rc = SQLITE_OK;
-  sqlite3_vfs* pOrig;
-  if (sqlite3_vfs_find("obfs") != 0) return SQLITE_OK;
-  pOrig = sqlite3_vfs_find(0);
-  obfs_vfs.iVersion = pOrig->iVersion;
-  obfs_vfs.pAppData = pOrig;
-  obfs_vfs.szOsFile = pOrig->szOsFile + sizeof(ObfsFile);
-  rc = sqlite3_vfs_register(&obfs_vfs, 1);
-  return rc;
+#ifdef DEBUG
+  
+  
+  
+  static constexpr int kLastKnownVfsVersion = 3;
+  MOZ_ASSERT(pOrig->iVersion <= kLastKnownVfsVersion);
+#endif
+
+  const sqlite3_vfs obfs_vfs = {
+      pOrig->iVersion,                                      
+      static_cast<int>(pOrig->szOsFile + sizeof(ObfsFile)), 
+      1024,                                                 
+      nullptr,                                              
+      "obfsvfs",                                            
+      pOrig,                                                
+      obfsOpen,                                             
+      obfsDelete,                                           
+      obfsAccess,                                           
+      obfsFullPathname,                                     
+      obfsDlOpen,                                           
+      obfsDlError,                                          
+      obfsDlSym,                                            
+      obfsDlClose,                                          
+      obfsRandomness,                                       
+      obfsSleep,                                            
+      obfsCurrentTime,                                      
+      obfsGetLastError,                                     
+      obfsCurrentTimeInt64, 
+      obfsSetSystemCall,    
+      obfsGetSystemCall,    
+      obfsNextSystemCall    
+  };
+
+  return MakeUnique<sqlite3_vfs>(obfs_vfs);
 }
 
-#if defined(SQLITE_OBFSVFS_STATIC)
-
-
-
-int sqlite3_register_obfsvfs(const char* NotUsed) {
-  (void)NotUsed;
-  return obfsRegisterVfs();
-}
-#endif 
-
-#if !defined(SQLITE_OBFSVFS_STATIC)
-
-
-
-#  ifdef _WIN32
-__declspec(dllexport)
-#  endif
-    
-
-
-
-    int sqlite3_obfsvfs_init(sqlite3* db, char** pzErrMsg,
-                             const sqlite3_api_routines* pApi) {
-  int rc;
-  SQLITE_EXTENSION_INIT2(pApi);
-  (void)pzErrMsg; 
-  rc = obfsRegisterVfs();
-  if (rc == SQLITE_OK) rc = SQLITE_OK_LOAD_PERMANENTLY;
-  return rc;
-}
-#endif 
+}  
+}  

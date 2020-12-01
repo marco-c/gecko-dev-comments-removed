@@ -76,7 +76,7 @@ using mozilla::Telemetry::AccumulateCategoricalKeyed;
 using mozilla::Telemetry::LABELS_SQLITE_STORE_OPEN;
 using mozilla::Telemetry::LABELS_SQLITE_STORE_QUERY;
 
-const char* GetVFSName(bool);
+const char* GetTelemetryVFSName(bool);
 
 namespace {
 
@@ -665,7 +665,8 @@ nsresult Connection::initialize() {
   mTelemetryFilename.AssignLiteral(":memory:");
 
   
-  int srv = ::sqlite3_open_v2(":memory:", &mDBConn, mFlags, GetVFSName(true));
+  int srv = ::sqlite3_open_v2(":memory:", &mDBConn, mFlags,
+                              GetTelemetryVFSName(true));
   if (srv != SQLITE_OK) {
     mDBConn = nullptr;
     nsresult rv = convertResultCode(srv);
@@ -719,12 +720,12 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
                             sIgnoreLockingVFS);
   } else {
     srv = ::sqlite3_open_v2(NS_ConvertUTF16toUTF8(path).get(), &mDBConn, mFlags,
-                            GetVFSName(exclusive));
+                            GetTelemetryVFSName(exclusive));
     if (exclusive && (srv == SQLITE_LOCKED || srv == SQLITE_BUSY)) {
       
       exclusive = false;
       srv = ::sqlite3_open_v2(NS_ConvertUTF16toUTF8(path).get(), &mDBConn,
-                              mFlags, GetVFSName(false));
+                              mFlags, GetTelemetryVFSName(false));
     }
   }
   if (srv != SQLITE_OK) {
@@ -742,7 +743,7 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
     
     
     srv = ::sqlite3_open_v2(NS_ConvertUTF16toUTF8(path).get(), &mDBConn, mFlags,
-                            GetVFSName(false));
+                            GetTelemetryVFSName(false));
     if (srv == SQLITE_OK) {
       rv = initializeInternal();
     }
@@ -780,8 +781,8 @@ nsresult Connection::initialize(nsIFileURL* aFileURL,
   NS_ENSURE_SUCCESS(rv, rv);
 
   bool exclusive = StaticPrefs::storage_sqlite_exclusiveLock_enabled();
-  int srv =
-      ::sqlite3_open_v2(spec.get(), &mDBConn, mFlags, GetVFSName(exclusive));
+  int srv = ::sqlite3_open_v2(spec.get(), &mDBConn, mFlags,
+                              GetTelemetryVFSName(exclusive));
   if (srv != SQLITE_OK) {
     mDBConn = nullptr;
     rv = convertResultCode(srv);
