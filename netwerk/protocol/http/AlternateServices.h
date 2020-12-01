@@ -30,7 +30,7 @@
 #include "nsIStreamListener.h"
 #include "nsISpeculativeConnect.h"
 #include "mozilla/BasePrincipal.h"
-#include "NullHttpTransaction.h"
+#include "SpeculativeTransaction.h"
 
 class nsILoadInfo;
 
@@ -241,12 +241,16 @@ class AltSvcMappingValidator final {
 
 
 template <class Validator>
-class AltSvcTransaction final : public NullHttpTransaction {
+class AltSvcTransaction final : public SpeculativeTransaction {
  public:
   AltSvcTransaction(nsHttpConnectionInfo* ci, nsIInterfaceRequestor* callbacks,
                     uint32_t caps, Validator* aValidator, bool aIsHttp3);
 
   ~AltSvcTransaction() override;
+
+  
+  
+  virtual nsresult FetchHTTPSRR() override { return NS_ERROR_NOT_IMPLEMENTED; }
 
  private:
   
