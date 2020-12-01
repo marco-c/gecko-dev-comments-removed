@@ -72,8 +72,6 @@ parent:
   
   async ScheduleComposite();
   
-  async ForceComposite();
-  
   async Capture();
   
   async ToggleCaptureSequence();

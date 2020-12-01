@@ -3072,7 +3072,7 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     
     
     
-    GetLayerManager()->ForceComposite();
+    GetLayerManager()->FlushRendering();
     return FALSE;
   }
 
