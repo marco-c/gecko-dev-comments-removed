@@ -74,14 +74,11 @@ const proto = {
 
 
 
-
-
   initialize(
     obj,
     {
       thread,
       createValueGrip: createValueGripHook,
-      getSourcesManager,
       createEnvironmentActor,
       getGripDepth,
       incrementGripDepth,
@@ -100,7 +97,6 @@ const proto = {
     this.thread = thread;
     this.hooks = {
       createValueGrip: createValueGripHook,
-      getSourcesManager,
       createEnvironmentActor,
       getGripDepth,
       incrementGripDepth,
@@ -272,34 +268,6 @@ const proto = {
     }
 
     return promiseState;
-  },
-
-  
-
-
-
-  definitionSite: function() {
-    if (this.obj.class != "Function") {
-      return this.throwError(
-        "objectNotFunction",
-        this.actorID + " is not a function."
-      );
-    }
-
-    if (!this.obj.script) {
-      return this.throwError(
-        "noScript",
-        this.actorID + " has no Debugger.Script"
-      );
-    }
-
-    return {
-      source: this.hooks
-        .getSourcesManager()
-        .createSourceActor(this.obj.script.source),
-      line: this.obj.script.startLine,
-      column: 0, 
-    };
   },
 
   
