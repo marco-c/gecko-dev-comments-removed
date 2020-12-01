@@ -9,7 +9,6 @@ import json
 import math
 import os
 import platform
-import shutil
 import subprocess
 import sys
 import uuid
@@ -197,13 +196,6 @@ def bootstrap(topsrcdir, mozilla_dir=None):
         print("Python 2.7 or Python 3.5+ is required to run mach.")
         print("You are running Python", platform.python_version())
         sys.exit(1)
-
-    
-    
-    
-    deleted_dir = os.path.join(topsrcdir, "third_party", "python", "psutil")
-    if os.path.exists(deleted_dir):
-        shutil.rmtree(deleted_dir)
 
     
     
@@ -511,7 +503,6 @@ def _finalize_telemetry_glean(telemetry, is_bootstrap, success):
 
     has_psutil, logical_cores, physical_cores, memory_total = get_psutil_stats()
     if has_psutil:
-        
         
         system_metrics.logical_cores.add(logical_cores)
         system_metrics.physical_cores.add(physical_cores)

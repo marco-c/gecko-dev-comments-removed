@@ -1,0 +1,10 @@
+
+
+
+
+
+
+
+
+PyObject *psutil_proc_connections(PyObject *, PyObject *);
+PyObject *psutil_net_connections(PyObject *, PyObject *);
