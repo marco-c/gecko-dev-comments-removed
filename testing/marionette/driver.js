@@ -1191,7 +1191,11 @@ GeckoDriver.prototype.navigateTo = async function(cmd) {
   }
 
   
-  await this.listener.switchToFrame();
+  if (MarionettePrefs.useActors) {
+    this.contentBrowsingContext = browsingContext;
+  } else {
+    await this.listener.switchToFrame();
+  }
 
   const currentURL = await this._getCurrentURL();
   const loadEventExpected = navigate.isLoadEventExpected(currentURL, validURL);
@@ -1366,7 +1370,11 @@ GeckoDriver.prototype.refresh = async function() {
   await this._handleUserPrompts();
 
   
-  await this.listener.switchToFrame();
+  if (MarionettePrefs.useActors) {
+    this.contentBrowsingContext = browsingContext;
+  } else {
+    await this.listener.switchToFrame();
+  }
 
   await navigate.waitForNavigationCompleted(this, () => {
     navigate.refresh(browsingContext);
