@@ -8,8 +8,7 @@ test_newtab({
   before: setDefaultTopSites,
   
   test: async function defaultTopSites_menuOptions() {
-    const siteSelector =
-      ".top-site-outer:not(.search-shortcut):not(.placeholder)";
+    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(siteSelector),
       "Topsite tippytop icon not found"
@@ -48,8 +47,7 @@ test_newtab({
   before: setDefaultTopSites,
   
   test: async function defaultTopSites_dismiss() {
-    const siteSelector =
-      ".top-site-outer:not(.search-shortcut):not(.placeholder)";
+    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(siteSelector),
       "Topsite tippytop icon not found"
