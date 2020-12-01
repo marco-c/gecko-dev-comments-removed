@@ -326,7 +326,7 @@ where
             Component::NonTSPseudoClass(..) => {
                 specificity.class_like_selectors += 1;
             },
-            Component::Is(ref list) => {
+            Component::Negation(ref list) | Component::Is(ref list) => {
                 
                 
                 
@@ -345,11 +345,6 @@ where
             Component::DefaultNamespace(..) |
             Component::Namespace(..) => {
                 
-            },
-            Component::Negation(ref negated) => {
-                for ss in negated.iter() {
-                    simple_selector_specificity(&ss, specificity);
-                }
             },
         }
     }
