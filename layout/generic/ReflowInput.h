@@ -421,7 +421,6 @@ struct ReflowInput : public SizeComputationInput {
   
   
   const nsMargin& ComputedPhysicalOffsets() const { return mComputedOffsets; }
-  nsMargin& ComputedPhysicalOffsets() { return mComputedOffsets; }
 
   LogicalMargin ComputedLogicalOffsets(mozilla::WritingMode aWM) const {
     return LogicalMargin(aWM, mComputedOffsets);

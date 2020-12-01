@@ -860,25 +860,25 @@ static bool RecomputePosition(nsIFrame* aFrame) {
     
     
     
-    if (NS_AUTOOFFSET == reflowInput.ComputedPhysicalOffsets().left) {
-      reflowInput.ComputedPhysicalOffsets().left =
-          cbSize.width - reflowInput.ComputedPhysicalOffsets().right -
-          reflowInput.ComputedPhysicalMargin().right - size.width -
-          reflowInput.ComputedPhysicalMargin().left;
+    
+    const nsMargin offset = reflowInput.ComputedPhysicalOffsets();
+    const nsMargin margin = reflowInput.ComputedPhysicalMargin();
+
+    nscoord left = offset.left;
+    if (left == NS_AUTOOFFSET) {
+      left =
+          cbSize.width - offset.right - margin.right - size.width - margin.left;
     }
 
-    if (NS_AUTOOFFSET == reflowInput.ComputedPhysicalOffsets().top) {
-      reflowInput.ComputedPhysicalOffsets().top =
-          cbSize.height - reflowInput.ComputedPhysicalOffsets().bottom -
-          reflowInput.ComputedPhysicalMargin().bottom - size.height -
-          reflowInput.ComputedPhysicalMargin().top;
+    nscoord top = offset.top;
+    if (top == NS_AUTOOFFSET) {
+      top = cbSize.height - offset.bottom - margin.bottom - size.height -
+            margin.top;
     }
 
     
-    nsPoint pos(parentBorder.left + reflowInput.ComputedPhysicalOffsets().left +
-                    reflowInput.ComputedPhysicalMargin().left,
-                parentBorder.top + reflowInput.ComputedPhysicalOffsets().top +
-                    reflowInput.ComputedPhysicalMargin().top);
+    nsPoint pos(parentBorder.left + left + margin.left,
+                parentBorder.top + top + margin.top);
     aFrame->SetPosition(pos);
 
     if (aFrame->IsInScrollAnchorChain()) {

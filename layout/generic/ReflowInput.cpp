@@ -2093,7 +2093,7 @@ void ReflowInput::InitConstraints(
     
     
     SetComputedLogicalMargin(wm, LogicalMargin(wm));
-    ComputedPhysicalOffsets().SizeTo(0, 0, 0, 0);
+    SetComputedLogicalOffsets(wm, LogicalMargin(wm));
 
     const auto borderPadding = ComputedLogicalBorderPadding(wm);
     ComputedISize() = AvailableISize() - borderPadding.IStartEnd(wm);
@@ -2206,7 +2206,7 @@ void ReflowInput::InitConstraints(
       SetComputedLogicalOffsets(cbwm, offsets);
     } else {
       
-      ComputedPhysicalOffsets().SizeTo(0, 0, 0, 0);
+      SetComputedLogicalOffsets(wm, LogicalMargin(wm));
     }
 
     
