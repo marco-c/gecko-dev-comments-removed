@@ -5,7 +5,7 @@
 "use strict";
 
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
-const { networkSpec } = require("devtools/shared/specs/network");
+const { networkParentSpec } = require("devtools/shared/specs/network-parent");
 
 const {
   TYPES: { NETWORK_EVENT },
@@ -19,7 +19,7 @@ const {
 
 
 
-const NetworkActor = ActorClassWithSpec(networkSpec, {
+const NetworkParentActor = ActorClassWithSpec(networkParentSpec, {
   initialize(watcherActor) {
     this.watcherActor = watcherActor;
     Actor.prototype.initialize.call(this, this.watcherActor.conn);
@@ -58,4 +58,4 @@ const NetworkActor = ActorClassWithSpec(networkSpec, {
   },
 });
 
-exports.NetworkActor = NetworkActor;
+exports.NetworkParentActor = NetworkParentActor;

@@ -5,7 +5,7 @@
 "use strict";
 
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
-const { stackTracesSpec } = require("devtools/shared/specs/stacktraces");
+const { networkContentSpec } = require("devtools/shared/specs/network-content");
 
 loader.lazyRequireGetter(
   this,
@@ -25,7 +25,8 @@ const {
 
 
 
-const StackTracesActor = ActorClassWithSpec(stackTracesSpec, {
+
+const NetworkContentActor = ActorClassWithSpec(networkContentSpec, {
   initialize(conn, targetActor) {
     Actor.prototype.initialize.call(this, conn);
     this.targetActor = targetActor;
@@ -56,4 +57,4 @@ const StackTracesActor = ActorClassWithSpec(stackTracesSpec, {
   },
 });
 
-exports.StackTracesActor = StackTracesActor;
+exports.NetworkContentActor = NetworkContentActor;

@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+const { networkParentSpec } = require("devtools/shared/specs/network-parent");
+
+
+
+
+
+class NetworkParentFront extends FrontClassWithSpec(networkParentSpec) {
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
+    
+    this.formAttributeName = "networkParentActor";
+  }
+}
+
+registerFront(NetworkParentFront);
