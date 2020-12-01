@@ -15,6 +15,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
   UrlbarView: "resource:///modules/UrlbarView.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
@@ -288,6 +289,11 @@ class ProviderTabToSearch extends UrlbarProvider {
     if (showedOnboarding) {
       this.onboardingResultCountThisSession++;
       UrlbarPrefs.set("tipShownCount.tabToSearch", ++onboardingShownCount);
+      Services.telemetry.keyedScalarAdd(
+        "urlbar.tips",
+        "tabtosearch_onboard-shown",
+        1
+      );
     }
   }
 }
