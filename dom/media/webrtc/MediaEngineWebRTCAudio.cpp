@@ -1155,6 +1155,9 @@ void AudioInputProcessing::NotifyInputStopped(MediaTrackGraphImpl* aGraph) {
   
   mLiveFramesAppended = false;
   mSegment.Clear();
+  if (mPacketizerInput) {
+    mPacketizerInput->Clear();
+  }
 }
 
 
