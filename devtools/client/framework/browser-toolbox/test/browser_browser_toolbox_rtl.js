@@ -13,7 +13,7 @@ requestLongerTimeout(4);
 
 
 add_task(async function() {
-  await pushPref("intl.uidirection", 1);
+  await pushPref("intl.l10n.pseudo", "bidi");
 
   const ToolboxTask = await initBrowserToolboxTask();
   await ToolboxTask.importFunctions({});

@@ -161,14 +161,14 @@ async function test_i18n_css(options = {}) {
 
   
   if (false) {
-    const DIR = "intl.uidirection";
+    const DIR = "intl.l10n.pseudo";
 
     
     
     
     const origReqLocales = Services.locale.requestedLocales;
     Services.locale.requestedLocales = ["he"];
-    Preferences.set(DIR, 1);
+    Preferences.set(DIR, "bidi");
 
     css = await fetch(baseURL + "locale.css");
     equal(

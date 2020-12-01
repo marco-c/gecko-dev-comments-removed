@@ -235,6 +235,10 @@ void LocaleService::LocalesChanged() {
 }
 
 bool LocaleService::IsLocaleRTL(const nsACString& aLocale) {
+  return unic_langid_is_rtl(&aLocale);
+}
+
+bool LocaleService::IsAppLocaleRTL() {
   
   
   int pref = Preferences::GetInt("intl.uidirection", -1);
@@ -242,10 +246,6 @@ bool LocaleService::IsLocaleRTL(const nsACString& aLocale) {
     return (pref > 0);
   }
 
-  return unic_langid_is_rtl(&aLocale);
-}
-
-bool LocaleService::IsAppLocaleRTL() {
   
   nsAutoCString pseudoLocale;
   if (NS_SUCCEEDED(Preferences::GetCString("intl.l10n.pseudo", pseudoLocale))) {

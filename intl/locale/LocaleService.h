@@ -158,8 +158,6 @@ class LocaleService final : public mozILocaleService,
   
 
 
-
-
   static bool IsLocaleRTL(const nsACString& aLocale);
 
   

@@ -8,7 +8,7 @@ add_task(async function() {
     CHROME_URL_ROOT + "keyframes-graph_keyframe-marker_head.js",
     this
   );
-  await pushPref("intl.uidirection", 1);
+  await pushPref("intl.l10n.pseudo", "bidi");
   
   await testKeyframesGraphKeyframesMarker();
 });

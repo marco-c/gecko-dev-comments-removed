@@ -283,7 +283,7 @@ add_task(async function testArrowsInPanelMultiView() {
 
 
 add_task(async function testArrowsRtl() {
-  await SpecialPowers.pushPrefEnv({ set: [["intl.uidirection", 1]] });
+  await SpecialPowers.pushPrefEnv({ set: [["intl.l10n.pseudo", "bidi"]] });
   
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
