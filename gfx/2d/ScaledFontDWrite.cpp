@@ -377,7 +377,7 @@ static bool GetFontFileName(RefPtr<IDWriteFontFace> aFontFace,
     gfxDebug() << "Invalid file \"" << aFileName.data() << "\" for WR font";
     return false;
   }
-  aFileName.pop_back();
+  
   return true;
 }
 
