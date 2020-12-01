@@ -50,7 +50,7 @@ add_task(async function testSilentAudioContext() {
   
   
   await new Promise(r => setTimeout(r, 1000));
-  await waitForTabPlayingEvent(tab, false);
+  await waitForTabSoundIndicatorDisappears(tab);
 
   info(`- remove tab -`);
   await BrowserTestUtils.removeTab(tab);
