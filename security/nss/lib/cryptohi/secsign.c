@@ -31,6 +31,7 @@ sgn_NewContext(SECOidTag alg, SECItem *params, SECKEYPrivateKey *key)
     SGNContext *cx;
     SECOidTag hashalg, signalg;
     KeyType keyType;
+    PRUint32 policyFlags;
     SECStatus rv;
 
     
@@ -44,7 +45,7 @@ sgn_NewContext(SECOidTag alg, SECItem *params, SECKEYPrivateKey *key)
     rv = sec_DecodeSigAlg(NULL, alg, params, &signalg, &hashalg);
     if (rv != SECSuccess) {
         PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-        return 0;
+        return NULL;
     }
     keyType = seckey_GetKeyType(signalg);
 
@@ -53,7 +54,19 @@ sgn_NewContext(SECOidTag alg, SECItem *params, SECKEYPrivateKey *key)
         !((key->keyType == dsaKey) && (keyType == fortezzaKey)) &&
         !((key->keyType == rsaKey) && (keyType == rsaPssKey))) {
         PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-        return 0;
+        return NULL;
+    }
+    
+    if ((NSS_GetAlgorithmPolicy(hashalg, &policyFlags) == SECFailure) ||
+        !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
+        PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
+        return NULL;
+    }
+    
+    if ((NSS_GetAlgorithmPolicy(signalg, &policyFlags) == SECFailure) ||
+        !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
+        PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
+        return NULL;
     }
 
     cx = (SGNContext *)PORT_ZAlloc(sizeof(SGNContext));
@@ -452,8 +465,26 @@ SGN_Digest(SECKEYPrivateKey *privKey,
     SECItem digder;
     PLArenaPool *arena = 0;
     SGNDigestInfo *di = 0;
+    SECOidTag enctag;
+    PRUint32 policyFlags;
 
     result->data = 0;
+
+    
+    if ((NSS_GetAlgorithmPolicy(algtag, &policyFlags) == SECFailure) ||
+        !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
+        PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
+        return SECFailure;
+    }
+    
+    enctag = sec_GetEncAlgFromSigAlg(
+        SEC_GetSignatureAlgorithmOidTag(privKey->keyType, algtag));
+    if ((enctag == SEC_OID_UNKNOWN) ||
+        (NSS_GetAlgorithmPolicy(enctag, &policyFlags) == SECFailure) ||
+        !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
+        PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
+        return SECFailure;
+    }
 
     if (privKey->keyType == rsaKey) {
 

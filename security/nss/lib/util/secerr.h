@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef __SEC_ERR_H_
 #define __SEC_ERR_H_
@@ -65,7 +65,7 @@ typedef enum {
     SEC_ERROR_PKCS7_BAD_SIGNATURE = (SEC_ERROR_BASE + 47),
     SEC_ERROR_UNSUPPORTED_KEYALG = (SEC_ERROR_BASE + 48),
     SEC_ERROR_DECRYPTION_DISALLOWED = (SEC_ERROR_BASE + 49),
-    
+    /* Fortezza Alerts */
     XP_SEC_FORTEZZA_BAD_CARD = (SEC_ERROR_BASE + 50),
     XP_SEC_FORTEZZA_NO_CARD = (SEC_ERROR_BASE + 51),
     XP_SEC_FORTEZZA_NONE_SELECTED = (SEC_ERROR_BASE + 52),
@@ -149,7 +149,7 @@ typedef enum {
     SEC_ERROR_OCSP_UNAUTHORIZED_RESPONSE = (SEC_ERROR_BASE + 130),
     SEC_ERROR_OCSP_FUTURE_RESPONSE = (SEC_ERROR_BASE + 131),
     SEC_ERROR_OCSP_OLD_RESPONSE = (SEC_ERROR_BASE + 132),
-    
+    /* smime stuff */
     SEC_ERROR_DIGEST_NOT_FOUND = (SEC_ERROR_BASE + 133),
     SEC_ERROR_UNSUPPORTED_MESSAGE_TYPE = (SEC_ERROR_BASE + 134),
     SEC_ERROR_MODULE_STUCK = (SEC_ERROR_BASE + 135),
@@ -158,12 +158,12 @@ typedef enum {
     SEC_ERROR_REUSED_ISSUER_AND_SERIAL = (SEC_ERROR_BASE + 138),
     SEC_ERROR_BUSY = (SEC_ERROR_BASE + 139),
     SEC_ERROR_EXTRA_INPUT = (SEC_ERROR_BASE + 140),
-    
+    /* error codes used by elliptic curve code */
     SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE = (SEC_ERROR_BASE + 141),
     SEC_ERROR_UNSUPPORTED_EC_POINT_FORM = (SEC_ERROR_BASE + 142),
     SEC_ERROR_UNRECOGNIZED_OID = (SEC_ERROR_BASE + 143),
     SEC_ERROR_OCSP_INVALID_SIGNING_CERT = (SEC_ERROR_BASE + 144),
-    
+    /* new revocation errors */
     SEC_ERROR_REVOKED_CERTIFICATE_CRL = (SEC_ERROR_BASE + 145),
     SEC_ERROR_REVOKED_CERTIFICATE_OCSP = (SEC_ERROR_BASE + 146),
     SEC_ERROR_CRL_INVALID_VERSION = (SEC_ERROR_BASE + 147),
@@ -181,7 +181,7 @@ typedef enum {
     SEC_ERROR_OUT_OF_SEARCH_LIMITS = (SEC_ERROR_BASE + 158),
     SEC_ERROR_INVALID_POLICY_MAPPING = (SEC_ERROR_BASE + 159),
     SEC_ERROR_POLICY_VALIDATION_FAILED = (SEC_ERROR_BASE + 160),
-    
+    /* No longer used.  Unknown AIA location types are now silently ignored. */
     SEC_ERROR_UNKNOWN_AIA_LOCATION_TYPE = (SEC_ERROR_BASE + 161),
     SEC_ERROR_BAD_HTTP_RESPONSE = (SEC_ERROR_BASE + 162),
     SEC_ERROR_BAD_LDAP_RESPONSE = (SEC_ERROR_BASE + 163),
@@ -212,9 +212,12 @@ typedef enum {
 
     SEC_ERROR_INVALID_STATE = (SEC_ERROR_BASE + 179),
 
-    
+    SEC_ERROR_POLICY_LOCKED = (SEC_ERROR_BASE + 180),
+    SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED = (SEC_ERROR_BASE + 181),
+
+    /* Add new error codes above here. */
     SEC_ERROR_END_OF_LIST
 } SECErrorCodes;
-#endif 
+#endif /* NO_SECURITY_ERROR_ENUM */
 
-#endif 
+#endif /* __SEC_ERR_H_ */

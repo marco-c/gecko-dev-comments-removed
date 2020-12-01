@@ -6645,11 +6645,7 @@ ssl_CheckServerSessionIdCorrectness(sslSocket *ss, SECItem *sidBytes)
 
     
     if (!IS_DTLS(ss) && (sentRealSid || sentFakeSid)) {
-        if (sidMatch) {
-            ss->ssl3.hs.allowCcs = PR_TRUE;
-            return PR_TRUE;
-        }
-        return PR_FALSE;
+        return sidMatch;
     }
 
     
@@ -8696,7 +8692,6 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
                 errCode = PORT_GetError();
                 goto alert_loser;
             }
-            ss->ssl3.hs.allowCcs = PR_TRUE;
         }
 
         
@@ -13066,15 +13061,14 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
             ss->ssl3.hs.ws != idle_handshake &&
             cText->buf->len == 1 &&
             cText->buf->buf[0] == change_cipher_spec_choice) {
-            if (ss->ssl3.hs.allowCcs) {
+            if (!ss->ssl3.hs.rejectCcs) {
                 
-                ss->ssl3.hs.allowCcs = PR_FALSE;
+                ss->ssl3.hs.rejectCcs = PR_TRUE;
                 return SECSuccess;
+            } else {
+                alert = unexpected_message;
+                PORT_SetError(SSL_ERROR_RX_MALFORMED_CHANGE_CIPHER);
             }
-
-            
-            alert = unexpected_message;
-            PORT_SetError(SSL_ERROR_RX_MALFORMED_CHANGE_CIPHER);
         }
 
         if ((IS_DTLS(ss) && !dtls13_AeadLimitReached(spec)) ||
@@ -13596,6 +13590,61 @@ ssl3_DestroySSL3Info(sslSocket *ss)
     tls13_DestroyPskList(&ss->ssl3.hs.psks);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PRBool
+ssl_HandlePolicy(int cipher_suite, SECOidTag policyOid,
+                 PRUint32 requiredPolicy, PRBool *isDisabled)
+{
+    PRUint32 policy;
+    SECStatus rv;
+
+    
+    rv = NSS_GetAlgorithmPolicy(policyOid, &policy);
+    if (rv != SECSuccess) {
+        return PR_FALSE; 
+    }
+    
+    if (!(policy & requiredPolicy)) {
+        ssl_CipherPrefSetDefault(cipher_suite, PR_FALSE);
+        ssl_CipherPolicySet(cipher_suite, SSL_NOT_ALLOWED);
+        return PR_TRUE;
+    }
+    
+
+    if (*isDisabled || (policy & NSS_USE_DEFAULT_NOT_VALID)) {
+        return PR_FALSE;
+    }
+    
+
+
+
+
+
+
+    if (policy & NSS_USE_DEFAULT_SSL_ENABLE) {
+        ssl_CipherPrefSetDefault(cipher_suite, PR_TRUE);
+    } else {
+        *isDisabled = PR_TRUE;
+        ssl_CipherPrefSetDefault(cipher_suite, PR_FALSE);
+    }
+    return PR_FALSE;
+}
+
 #define MAP_NULL(x) (((x) != 0) ? (x) : SEC_OID_NULL_CIPHER)
 
 SECStatus
@@ -13614,30 +13663,30 @@ ssl3_ApplyNSSPolicy(void)
     for (i = 1; i < PR_ARRAY_SIZE(cipher_suite_defs); ++i) {
         const ssl3CipherSuiteDef *suite = &cipher_suite_defs[i];
         SECOidTag policyOid;
+        PRBool isDisabled = PR_FALSE;
+
+        
+        ssl_CipherPolicySet(suite->cipher_suite, SSL_ALLOWED);
+
+        
+
 
         policyOid = MAP_NULL(kea_defs[suite->key_exchange_alg].oid);
-        rv = NSS_GetAlgorithmPolicy(policyOid, &policy);
-        if (rv == SECSuccess && !(policy & NSS_USE_ALG_IN_SSL_KX)) {
-            ssl_CipherPrefSetDefault(suite->cipher_suite, PR_FALSE);
-            ssl_CipherPolicySet(suite->cipher_suite, SSL_NOT_ALLOWED);
+        if (ssl_HandlePolicy(suite->cipher_suite, policyOid,
+                             NSS_USE_ALG_IN_SSL_KX, &isDisabled)) {
             continue;
         }
 
         policyOid = MAP_NULL(ssl_GetBulkCipherDef(suite)->oid);
-        rv = NSS_GetAlgorithmPolicy(policyOid, &policy);
-        if (rv == SECSuccess && !(policy & NSS_USE_ALG_IN_SSL)) {
-            ssl_CipherPrefSetDefault(suite->cipher_suite, PR_FALSE);
-            ssl_CipherPolicySet(suite->cipher_suite, SSL_NOT_ALLOWED);
+        if (ssl_HandlePolicy(suite->cipher_suite, policyOid,
+                             NSS_USE_ALG_IN_SSL, &isDisabled)) {
             continue;
         }
 
         if (ssl_GetBulkCipherDef(suite)->type != type_aead) {
             policyOid = MAP_NULL(ssl_GetMacDefByAlg(suite->mac_alg)->oid);
-            rv = NSS_GetAlgorithmPolicy(policyOid, &policy);
-            if (rv == SECSuccess && !(policy & NSS_USE_ALG_IN_SSL)) {
-                ssl_CipherPrefSetDefault(suite->cipher_suite, PR_FALSE);
-                ssl_CipherPolicySet(suite->cipher_suite,
-                                    SSL_NOT_ALLOWED);
+            if (ssl_HandlePolicy(suite->cipher_suite, policyOid,
+                                 NSS_USE_ALG_IN_SSL, &isDisabled)) {
                 continue;
             }
         }

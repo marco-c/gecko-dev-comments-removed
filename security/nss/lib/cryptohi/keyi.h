@@ -18,6 +18,9 @@ SECStatus sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
                            const SECItem *param, SECOidTag *encalg, SECOidTag *hashalg);
 
 
+SECOidTag sec_GetEncAlgFromSigAlg(SECOidTag sigAlg);
+
+
 
 
 

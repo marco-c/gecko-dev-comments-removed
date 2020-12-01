@@ -710,10 +710,7 @@ typedef struct SSL3HandshakeStateStr {
 
     PRBool receivedCcs;                   
 
-    PRBool allowCcs;                      
-
-
-
+    PRBool rejectCcs;                     
     PRBool clientCertRequested;           
     PRBool endOfFlight;                   
     ssl3KEADef kea_def_mutable;           

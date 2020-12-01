@@ -299,6 +299,8 @@ SECStatus NSS_UnregisterShutdown(NSS_ShutdownFunc sFunc, void *appData);
 
 
 #define __NSS_PKCS12_DECODE_FORCE_UNICODE 0x00c
+#define NSS_DEFAULT_LOCKS 0x00d /* lock default values */
+#define NSS_DEFAULT_SSL_LOCK 1  /* lock the ssl default values */
 
 
 

@@ -358,9 +358,8 @@ TEST_F(TlsConnectStreamTls13, ChangeCipherSpecAfterClientHelloEmptySid) {
   client_->Handshake();  
   client_->SendDirect(DataBuffer(kCannedCcs, sizeof(kCannedCcs)));  
 
-  server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
-  server_->Handshake();  
-  server_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_CHANGE_CIPHER);
+  Handshake();
+  CheckConnected();
 }
 
 
@@ -398,9 +397,10 @@ TEST_F(TlsConnectStreamTls13, ChangeCipherSpecAfterServerHelloEmptySid) {
                          
   
   server_->SendDirect(DataBuffer(kCannedCcs, sizeof(kCannedCcs)));
-  client_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
-  client_->Handshake();  
-  client_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_CHANGE_CIPHER);
+
+  
+  
+  client_->Handshake();
 }
 
 

@@ -219,6 +219,56 @@ const SEC_ASN1Template hashParameterTemplate[] =
 
 
 
+SECOidTag
+sec_GetEncAlgFromSigAlg(SECOidTag sigAlg)
+{
+    
+    switch (sigAlg) {
+        case SEC_OID_PKCS1_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_MD2_WITH_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_MD5_WITH_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_SHA1_WITH_RSA_ENCRYPTION:
+        case SEC_OID_ISO_SHA_WITH_RSA_SIGNATURE:
+        case SEC_OID_ISO_SHA1_WITH_RSA_SIGNATURE:
+        case SEC_OID_PKCS1_SHA224_WITH_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_SHA384_WITH_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_SHA512_WITH_RSA_ENCRYPTION:
+            return SEC_OID_PKCS1_RSA_ENCRYPTION;
+        case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
+            return SEC_OID_PKCS1_RSA_PSS_SIGNATURE;
+
+        
+        case SEC_OID_ANSIX9_DSA_SIGNATURE_WITH_SHA1_DIGEST:
+        case SEC_OID_BOGUS_DSA_SIGNATURE_WITH_SHA1_DIGEST:
+        case SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA224_DIGEST:
+        case SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA256_DIGEST:
+            return SEC_OID_ANSIX9_DSA_SIGNATURE;
+        case SEC_OID_MISSI_DSS:
+        case SEC_OID_MISSI_KEA_DSS:
+        case SEC_OID_MISSI_KEA_DSS_OLD:
+        case SEC_OID_MISSI_DSS_OLD:
+            return SEC_OID_MISSI_DSS;
+        case SEC_OID_ANSIX962_ECDSA_SHA1_SIGNATURE:
+        case SEC_OID_ANSIX962_ECDSA_SHA224_SIGNATURE:
+        case SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE:
+        case SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE:
+        case SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE:
+        case SEC_OID_ANSIX962_ECDSA_SIGNATURE_RECOMMENDED_DIGEST:
+        case SEC_OID_ANSIX962_ECDSA_SIGNATURE_SPECIFIED_DIGEST:
+            return SEC_OID_ANSIX962_EC_PUBLIC_KEY;
+        
+        case SEC_OID_PKCS1_MD4_WITH_RSA_ENCRYPTION:
+        default:
+            PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+            break;
+    }
+    return SEC_OID_UNKNOWN;
+}
+
+
+
+
 
 
 
@@ -229,15 +279,16 @@ const SEC_ASN1Template hashParameterTemplate[] =
 
 SECStatus
 sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
-                 const SECItem *param, SECOidTag *encalg, SECOidTag *hashalg)
+                 const SECItem *param, SECOidTag *encalgp, SECOidTag *hashalg)
 {
     int len;
     PLArenaPool *arena;
     SECStatus rv;
     SECItem oid;
+    SECOidTag encalg;
 
     PR_ASSERT(hashalg != NULL);
-    PR_ASSERT(encalg != NULL);
+    PR_ASSERT(encalgp != NULL);
 
     switch (sigAlg) {
         
@@ -354,52 +405,13 @@ sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
             PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
             return SECFailure;
     }
-    
-    switch (sigAlg) {
-        case SEC_OID_PKCS1_RSA_ENCRYPTION:
-        case SEC_OID_PKCS1_MD2_WITH_RSA_ENCRYPTION:
-        case SEC_OID_PKCS1_MD5_WITH_RSA_ENCRYPTION:
-        case SEC_OID_PKCS1_SHA1_WITH_RSA_ENCRYPTION:
-        case SEC_OID_ISO_SHA_WITH_RSA_SIGNATURE:
-        case SEC_OID_ISO_SHA1_WITH_RSA_SIGNATURE:
-        case SEC_OID_PKCS1_SHA224_WITH_RSA_ENCRYPTION:
-        case SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION:
-        case SEC_OID_PKCS1_SHA384_WITH_RSA_ENCRYPTION:
-        case SEC_OID_PKCS1_SHA512_WITH_RSA_ENCRYPTION:
-            *encalg = SEC_OID_PKCS1_RSA_ENCRYPTION;
-            break;
-        case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
-            *encalg = SEC_OID_PKCS1_RSA_PSS_SIGNATURE;
-            break;
 
-        
-        case SEC_OID_ANSIX9_DSA_SIGNATURE_WITH_SHA1_DIGEST:
-        case SEC_OID_BOGUS_DSA_SIGNATURE_WITH_SHA1_DIGEST:
-        case SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA224_DIGEST:
-        case SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA256_DIGEST:
-            *encalg = SEC_OID_ANSIX9_DSA_SIGNATURE;
-            break;
-        case SEC_OID_MISSI_DSS:
-        case SEC_OID_MISSI_KEA_DSS:
-        case SEC_OID_MISSI_KEA_DSS_OLD:
-        case SEC_OID_MISSI_DSS_OLD:
-            *encalg = SEC_OID_MISSI_DSS;
-            break;
-        case SEC_OID_ANSIX962_ECDSA_SHA1_SIGNATURE:
-        case SEC_OID_ANSIX962_ECDSA_SHA224_SIGNATURE:
-        case SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE:
-        case SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE:
-        case SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE:
-        case SEC_OID_ANSIX962_ECDSA_SIGNATURE_RECOMMENDED_DIGEST:
-        case SEC_OID_ANSIX962_ECDSA_SIGNATURE_SPECIFIED_DIGEST:
-            *encalg = SEC_OID_ANSIX962_EC_PUBLIC_KEY;
-            break;
-        
-        case SEC_OID_PKCS1_MD4_WITH_RSA_ENCRYPTION:
-        default:
-            PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-            return SECFailure;
+    encalg = sec_GetEncAlgFromSigAlg(sigAlg);
+    if (encalg == SEC_OID_UNKNOWN) {
+        return SECFailure;
     }
+    *encalgp = encalg;
+
     return SECSuccess;
 }
 
@@ -423,6 +435,7 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     SECStatus rv;
     unsigned int sigLen;
     KeyType type;
+    PRUint32 policyFlags;
 
     
     
@@ -430,6 +443,13 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     if ((key->keyType != type) &&
         ((key->keyType != rsaKey) || (type != rsaPssKey))) {
         PORT_SetError(SEC_ERROR_PKCS7_KEYALG_MISMATCH);
+        return NULL;
+    }
+
+    
+    if ((NSS_GetAlgorithmPolicy(encAlg, &policyFlags) == SECFailure) ||
+        !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
+        PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
         return NULL;
     }
 
@@ -491,6 +511,14 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     
     if (HASH_GetHashTypeByOidTag(cx->hashAlg) == HASH_AlgNULL) {
         
+        goto loser;
+    }
+    
+
+
+    if ((NSS_GetAlgorithmPolicy(cx->hashAlg, &policyFlags) == SECFailure) ||
+        !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
+        PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
         goto loser;
     }
 

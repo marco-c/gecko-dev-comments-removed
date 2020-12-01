@@ -1147,13 +1147,13 @@ PacketFilter::Action SelectedCipherSuiteReplacer::FilterHandshake(
   *output = input;
   uint32_t temp = 0;
   EXPECT_TRUE(input.Read(0, 2, &temp));
+  EXPECT_EQ(header.version(), NormalizeTlsVersion(temp));
+  
   
   size_t pos = 34;
-  if (temp < SSL_LIBRARY_VERSION_TLS_1_3) {
-    
-    EXPECT_TRUE(input.Read(pos, 1, &temp));
-    pos += 1 + temp;
-  }
+  EXPECT_TRUE(input.Read(pos, 1, &temp));
+  pos += 1 + temp;
+
   output->Write(pos, static_cast<uint32_t>(cipher_suite_), 2);
   return CHANGE;
 }
