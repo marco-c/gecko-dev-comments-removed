@@ -4814,6 +4814,15 @@ void Datastore::NoteFinishedPrepareDatastoreOp(
 
   mPrepareDatastoreOps.RemoveEntry(aPrepareDatastoreOp);
 
+  
+  
+  if (mConnection) {
+    mConnection->GetQuotaClient()->MaybeRecordShutdownStep(
+        "PrepareDatastoreOp finished"_ns);
+  } else {
+    NS_WARNING("Cannot record shutdown step, mConnection is nullptr");
+  }
+
   MaybeClose();
 }
 
@@ -4833,6 +4842,15 @@ void Datastore::NoteFinishedPrivateDatastore() {
   MOZ_ASSERT(!mClosed);
 
   mHasLivePrivateDatastore = false;
+
+  
+  
+  if (mConnection) {
+    mConnection->GetQuotaClient()->MaybeRecordShutdownStep(
+        "PrivateDatastore finished"_ns);
+  } else {
+    NS_WARNING("Cannot record shutdown step, mConnection is nullptr");
+  }
 
   MaybeClose();
 }
@@ -4858,6 +4876,15 @@ void Datastore::NoteFinishedPreparedDatastore(
 
   mPreparedDatastores.RemoveEntry(aPreparedDatastore);
 
+  
+  
+  if (mConnection) {
+    mConnection->GetQuotaClient()->MaybeRecordShutdownStep(
+        "PreparedDatastore finished"_ns);
+  } else {
+    NS_WARNING("Cannot record shutdown step, mConnection is nullptr");
+  }
+
   MaybeClose();
 }
 
@@ -4880,6 +4907,15 @@ void Datastore::NoteFinishedDatabase(Database* aDatabase) {
   MOZ_ASSERT(!mClosed);
 
   mDatabases.RemoveEntry(aDatabase);
+
+  
+  
+  if (mConnection) {
+    mConnection->GetQuotaClient()->MaybeRecordShutdownStep(
+        "Database finished"_ns);
+  } else {
+    NS_WARNING("Cannot record shutdown step, mConnection is nullptr");
+  }
 
   MaybeClose();
 }
@@ -5540,6 +5576,15 @@ void Datastore::CleanupMetadata() {
   MOZ_ASSERT(gDatastores->Get(mGroupAndOrigin.mOrigin));
   gDatastores->Remove(mGroupAndOrigin.mOrigin);
 
+  
+  
+  if (mConnection) {
+    mConnection->GetQuotaClient()->MaybeRecordShutdownStep(
+        "Datastore removed"_ns);
+  } else {
+    NS_WARNING("Cannot record shutdown step, mConnection is nullptr");
+  }
+
   if (!gDatastores->Count()) {
     gDatastores = nullptr;
   }
@@ -5736,6 +5781,9 @@ void Database::AllowToClose() {
 
   MOZ_ASSERT(gLiveDatabases);
   gLiveDatabases->RemoveElement(this);
+
+  
+  
 
   if (gLiveDatabases->IsEmpty()) {
     gLiveDatabases = nullptr;
@@ -7981,6 +8029,15 @@ void PrepareDatastoreOp::CleanupMetadata() {
 
   MOZ_ASSERT(gPrepareDatastoreOps);
   gPrepareDatastoreOps->RemoveElement(this);
+
+  
+  
+  if (mConnection) {
+    mConnection->GetQuotaClient()->MaybeRecordShutdownStep(
+        "PrepareDatastoreOp completed"_ns);
+  } else {
+    NS_WARNING("Cannot record shutdown step, mConnection is nullptr");
+  }
 
   if (gPrepareDatastoreOps->IsEmpty()) {
     gPrepareDatastoreOps = nullptr;
