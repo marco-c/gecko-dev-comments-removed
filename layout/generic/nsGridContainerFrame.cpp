@@ -5244,7 +5244,7 @@ static nscoord ContentContribution(
 
       
       
-      size += childRI.ComputedLogicalMargin().BStartEnd(childWM);
+      size += childRI.ComputedLogicalMargin(childWM).BStartEnd(childWM);
     } else {
       size = ::MeasuringReflow(child, aState.mReflowInput, aRC, availableSize,
                                cbSize, iMinSizeClamp, bMinSizeClamp);

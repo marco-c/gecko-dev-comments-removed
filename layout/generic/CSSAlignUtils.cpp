@@ -56,8 +56,8 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
   
 
   
-  const LogicalMargin margin = aRI.ComputedLogicalMargin();
   WritingMode wm = aRI.GetWritingMode();
+  const LogicalMargin margin = aRI.ComputedLogicalMargin(wm);
   nscoord marginStart, marginEnd;
   if (aAxis == eLogicalAxisBlock) {
     if (MOZ_LIKELY(isSameSide)) {

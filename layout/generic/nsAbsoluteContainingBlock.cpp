@@ -720,8 +720,7 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
   WritingMode outerWM = aReflowInput.GetWritingMode();
   const LogicalMargin border(outerWM, aDelegatingFrame->GetUsedBorder());
 
-  LogicalMargin margin =
-      kidReflowInput.ComputedLogicalMargin().ConvertTo(outerWM, wm);
+  LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(outerWM);
 
   
   
@@ -756,7 +755,7 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
     kidReflowInput.AvailableBSize() =
         aReflowInput.AvailableBSize() -
         border.ConvertTo(wm, outerWM).BStart(wm) -
-        kidReflowInput.ComputedLogicalMargin().BStart(wm);
+        kidReflowInput.ComputedLogicalMargin(wm).BStart(wm);
     if (NS_AUTOOFFSET != kidReflowInput.ComputedLogicalOffsets().BStart(wm)) {
       kidReflowInput.AvailableBSize() -=
           kidReflowInput.ComputedLogicalOffsets().BStart(wm);

@@ -50,8 +50,7 @@ bool nsBlockReflowContext::ComputeCollapsedBStartMargin(
   WritingMode parentWM = mMetrics.GetWritingMode();
 
   
-  aMargin->Include(
-      aRI.ComputedLogicalMargin().ConvertTo(parentWM, wm).BStart(parentWM));
+  aMargin->Include(aRI.ComputedLogicalMargin(parentWM).BStart(parentWM));
 
   
   
@@ -59,7 +58,7 @@ bool nsBlockReflowContext::ComputeCollapsedBStartMargin(
 
 #ifdef NOISY_BLOCK_DIR_MARGINS
   aRI.mFrame->ListTag(stdout);
-  printf(": %d => %d\n", aRI.ComputedLogicalMargin().BStart(wm),
+  printf(": %d => %d\n", aRI.ComputedLogicalMargin(wm).BStart(wm),
          aMargin->get());
 #endif
 
@@ -170,10 +169,8 @@ bool nsBlockReflowContext::ComputeCollapsedBStartMargin(
               dirtiedLine = true;
             }
             if (isEmpty) {
-              WritingMode innerWM = innerReflowInput.GetWritingMode();
               LogicalMargin innerMargin =
-                  innerReflowInput.ComputedLogicalMargin().ConvertTo(parentWM,
-                                                                     innerWM);
+                  innerReflowInput.ComputedLogicalMargin(parentWM);
               aMargin->Include(innerMargin.BEnd(parentWM));
             }
           }
@@ -265,10 +262,7 @@ void nsBlockReflowContext::ReflowBlock(
     
     
     
-
-    WritingMode frameWM = aFrameRI.GetWritingMode();
-    LogicalMargin usedMargin =
-        aFrameRI.ComputedLogicalMargin().ConvertTo(mWritingMode, frameWM);
+    LogicalMargin usedMargin = aFrameRI.ComputedLogicalMargin(mWritingMode);
     mICoord = mSpace.IStart(mWritingMode) + usedMargin.IStart(mWritingMode);
     mBCoord = mSpace.BStart(mWritingMode) + mBStartMargin.get() + aClearance;
 
@@ -348,16 +342,14 @@ bool nsBlockReflowContext::PlaceBlock(const ReflowInput& aReflowInput,
                                       nsOverflowAreas& aOverflowAreas,
                                       const nsReflowStatus& aReflowStatus) {
   
-  WritingMode wm = aReflowInput.GetWritingMode();
   WritingMode parentWM = mMetrics.GetWritingMode();
 
   
   
   if (aReflowStatus.IsComplete() && !mFrame->HasColumnSpanSiblings()) {
     aBEndMarginResult = mMetrics.mCarriedOutBEndMargin;
-    aBEndMarginResult.Include(aReflowInput.ComputedLogicalMargin()
-                                  .ConvertTo(parentWM, wm)
-                                  .BEnd(parentWM));
+    aBEndMarginResult.Include(
+        aReflowInput.ComputedLogicalMargin(parentWM).BEnd(parentWM));
   } else {
     
     aBEndMarginResult.Zero();

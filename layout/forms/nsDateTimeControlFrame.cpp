@@ -128,8 +128,7 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
                                  availSize);
 
     
-    LogicalMargin childMargin =
-        childReflowOuput.ComputedLogicalMargin().ConvertTo(myWM, wm);
+    LogicalMargin childMargin = childReflowOuput.ComputedLogicalMargin(myWM);
 
     
     LogicalPoint childOffset(
