@@ -5,6 +5,8 @@
 
 
 #include "mozilla/dom/TestingDeprecatedInterface.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/ReportingBinding.h"
 
 namespace mozilla {
 namespace dom {
