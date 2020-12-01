@@ -29,9 +29,9 @@
 
 static unsigned int simd_support = ~0;
 
-#if defined(__linux__)
+#if !(defined(__mips_dsp) && (__mips_dsp_rev >= 2)) && defined(__linux__)
 
-LOCAL(int)
+LOCAL(void)
 parse_proc_cpuinfo(const char *search_string)
 {
   const char *file_name = "/proc/cpuinfo";
@@ -45,13 +45,12 @@ parse_proc_cpuinfo(const char *search_string)
       if (strstr(cpuinfo_line, search_string) != NULL) {
         fclose(f);
         simd_support |= JSIMD_DSPR2;
-        return 1;
+        return;
       }
     }
     fclose(f);
   }
   
-  return 0;
 }
 
 #endif
@@ -73,14 +72,13 @@ init_simd(void)
 
   simd_support = 0;
 
-#if defined(__MIPSEL__) && defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
   simd_support |= JSIMD_DSPR2;
 #elif defined(__linux__)
   
 
 
-  if (!parse_proc_cpuinfo("MIPS 74K"))
-    return;
+  parse_proc_cpuinfo("MIPS 74K");
 #endif
 
 #ifndef NO_GETENV
@@ -340,8 +338,13 @@ jsimd_can_h2v2_downsample(void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+  
+
+
+#if 0
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -376,8 +379,13 @@ jsimd_can_h2v1_downsample(void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+  
+
+
+#if 0
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -441,8 +449,10 @@ jsimd_can_h2v1_upsample(void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -503,8 +513,10 @@ jsimd_can_h2v2_fancy_upsample(void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -520,8 +532,10 @@ jsimd_can_h2v1_fancy_upsample(void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -669,8 +683,10 @@ jsimd_can_convsamp(void)
   if (sizeof(DCTELEM) != 2)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -727,8 +743,10 @@ jsimd_can_fdct_islow(void)
   if (sizeof(DCTELEM) != 2)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -744,8 +762,10 @@ jsimd_can_fdct_ifast(void)
   if (sizeof(DCTELEM) != 2)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -872,8 +892,10 @@ jsimd_can_idct_4x4(void)
   if (sizeof(ISLOW_MULT_TYPE) != 2)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }
@@ -1017,8 +1039,10 @@ jsimd_can_idct_ifast(void)
   if (IFAST_SCALE_BITS != 2)
     return 0;
 
+#if defined(__MIPSEL__)
   if (simd_support & JSIMD_DSPR2)
     return 1;
+#endif
 
   return 0;
 }

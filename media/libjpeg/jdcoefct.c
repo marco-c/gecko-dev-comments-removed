@@ -495,11 +495,13 @@ decompress_smooth_data(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
       if (first_row && block_row == 0)
         prev_block_row = buffer_ptr;
       else
-        prev_block_row = buffer[block_row - 1];
+        prev_block_row = buffer[block_row - 1] +
+                         cinfo->master->first_MCU_col[ci];
       if (last_row && block_row == block_rows - 1)
         next_block_row = buffer_ptr;
       else
-        next_block_row = buffer[block_row + 1];
+        next_block_row = buffer[block_row + 1] +
+                         cinfo->master->first_MCU_col[ci];
       
 
 

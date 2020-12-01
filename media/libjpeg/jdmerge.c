@@ -40,40 +40,12 @@
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#include "jdmerge.h"
 #include "jsimd.h"
 #include "jconfigint.h"
 
 #ifdef UPSAMPLE_MERGING_SUPPORTED
 
-
-
-
-typedef struct {
-  struct jpeg_upsampler pub;    
-
-  
-  void (*upmethod) (j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
-                    JDIMENSION in_row_group_ctr, JSAMPARRAY output_buf);
-
-  
-  int *Cr_r_tab;                
-  int *Cb_b_tab;                
-  JLONG *Cr_g_tab;              
-  JLONG *Cb_g_tab;              
-
-  
-
-
-
-
-  JSAMPROW spare_row;
-  boolean spare_full;           
-
-  JDIMENSION out_row_width;     
-  JDIMENSION rows_to_go;        
-} my_upsampler;
-
-typedef my_upsampler *my_upsample_ptr;
 
 #define SCALEBITS       16      /* speediest right-shift on some machines */
 #define ONE_HALF        ((JLONG)1 << (SCALEBITS - 1))
@@ -189,7 +161,7 @@ typedef my_upsampler *my_upsample_ptr;
 LOCAL(void)
 build_ycc_rgb_table(j_decompress_ptr cinfo)
 {
-  my_upsample_ptr upsample = (my_upsample_ptr)cinfo->upsample;
+  my_merged_upsample_ptr upsample = (my_merged_upsample_ptr)cinfo->upsample;
   int i;
   JLONG x;
   SHIFT_TEMPS
@@ -232,7 +204,7 @@ build_ycc_rgb_table(j_decompress_ptr cinfo)
 METHODDEF(void)
 start_pass_merged_upsample(j_decompress_ptr cinfo)
 {
-  my_upsample_ptr upsample = (my_upsample_ptr)cinfo->upsample;
+  my_merged_upsample_ptr upsample = (my_merged_upsample_ptr)cinfo->upsample;
 
   
   upsample->spare_full = FALSE;
@@ -254,7 +226,7 @@ merged_2v_upsample(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
                    JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 
 {
-  my_upsample_ptr upsample = (my_upsample_ptr)cinfo->upsample;
+  my_merged_upsample_ptr upsample = (my_merged_upsample_ptr)cinfo->upsample;
   JSAMPROW work_ptrs[2];
   JDIMENSION num_rows;          
 
@@ -305,7 +277,7 @@ merged_1v_upsample(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
                    JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 
 {
-  my_upsample_ptr upsample = (my_upsample_ptr)cinfo->upsample;
+  my_merged_upsample_ptr upsample = (my_merged_upsample_ptr)cinfo->upsample;
 
   
   (*upsample->upmethod) (cinfo, input_buf, *in_row_group_ctr,
@@ -420,11 +392,10 @@ h2v2_merged_upsample(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 
 
 
-#define PACK_SHORT_565_LE(r, g, b)  ((((r) << 8) & 0xF800) | \
-                                     (((g) << 3) & 0x7E0) | ((b) >> 3))
-#define PACK_SHORT_565_BE(r, g, b)  (((r) & 0xF8) | ((g) >> 5) | \
-                                     (((g) << 11) & 0xE000) | \
-                                     (((b) << 5) & 0x1F00))
+#define PACK_SHORT_565_LE(r, g, b) \
+  ((((r) << 8) & 0xF800) | (((g) << 3) & 0x7E0) | ((b) >> 3))
+#define PACK_SHORT_565_BE(r, g, b) \
+  (((r) & 0xF8) | ((g) >> 5) | (((g) << 11) & 0xE000) | (((b) << 5) & 0x1F00))
 
 #define PACK_TWO_PIXELS_LE(l, r)    ((r << 16) | l)
 #define PACK_TWO_PIXELS_BE(l, r)    ((l << 16) | r)
@@ -566,11 +537,11 @@ h2v2_merged_upsample_565D(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 GLOBAL(void)
 jinit_merged_upsampler(j_decompress_ptr cinfo)
 {
-  my_upsample_ptr upsample;
+  my_merged_upsample_ptr upsample;
 
-  upsample = (my_upsample_ptr)
+  upsample = (my_merged_upsample_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
-                                sizeof(my_upsampler));
+                                sizeof(my_merged_upsampler));
   cinfo->upsample = (struct jpeg_upsampler *)upsample;
   upsample->pub.start_pass = start_pass_merged_upsample;
   upsample->pub.need_context_rows = FALSE;
