@@ -41,7 +41,10 @@ add_task(async function switch_print_preview_browsers() {
 
   
   let defaultPPBrowser = PrintPreviewListener.getPrintPreviewBrowser();
-  let defaultPPEntered = PrintHelper.waitForOldPrintPreview(defaultPPBrowser);
+  let defaultPPEntered = BrowserTestUtils.waitForMessage(
+    defaultPPBrowser.messageManager,
+    "Printing:Preview:Entered"
+  );
   document.getElementById("cmd_printPreview").doCommand();
   await defaultPPEntered;
 
@@ -56,8 +59,9 @@ add_task(async function switch_print_preview_browsers() {
 
   
   let simplifiedPPBrowser = PrintPreviewListener.getSimplifiedPrintPreviewBrowser();
-  let simplifiedPPEntered = PrintHelper.waitForOldPrintPreview(
-    simplifiedPPBrowser
+  let simplifiedPPEntered = BrowserTestUtils.waitForMessage(
+    simplifiedPPBrowser.messageManager,
+    "Printing:Preview:Entered"
   );
   let printPreviewToolbar = document.getElementById("print-preview-toolbar");
 

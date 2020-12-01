@@ -35,6 +35,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "PRINT_TAB_MODAL",
@@ -55,18 +78,14 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/SharedPromptUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrintingParent",
-  "resource://gre/actors/PrintingParent.jsm"
-);
-
 var gFocusedElement = null;
-
-var gPendingPrintPreviews = new Map();
 
 var PrintUtils = {
   SAVE_TO_PDF_PRINTER: "Mozilla Save to PDF",
+
+  init() {
+    window.messageManager.addMessageListener("Printing:Error", this);
+  },
 
   get _bundle() {
     delete this._bundle;
@@ -405,11 +424,6 @@ var PrintUtils = {
 
 
 
-
-
-
-
-
   printPreview(aTrigger, aListenerObj) {
     if (aTrigger) {
       Services.telemetry.keyedScalarAdd("printing.trigger", aTrigger, 1);
@@ -579,6 +593,61 @@ var PrintUtils = {
     );
   },
 
+  receiveMessage(aMessage) {
+    if (aMessage.name == "Printing:Error") {
+      this._displayPrintingError(
+        aMessage.data.nsresult,
+        aMessage.data.isPrinting
+      );
+      return undefined;
+    }
+
+    
+    
+    if (!this._webProgressPP.value) {
+      
+      
+      return undefined;
+    }
+
+    let listener = this._webProgressPP.value;
+    let mm = aMessage.target.messageManager;
+    let data = aMessage.data;
+
+    switch (aMessage.name) {
+      case "Printing:Preview:ProgressChange": {
+        return listener.onProgressChange(
+          null,
+          null,
+          data.curSelfProgress,
+          data.maxSelfProgress,
+          data.curTotalProgress,
+          data.maxTotalProgress
+        );
+      }
+
+      case "Printing:Preview:StateChange": {
+        if (data.stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
+          
+          
+          
+          
+          
+          
+          mm.removeMessageListener("Printing:Preview:StateChange", this);
+          mm.removeMessageListener("Printing:Preview:ProgressChange", this);
+
+          
+          let printPreviewTB = document.getElementById("print-preview-toolbar");
+          printPreviewTB.disableUpdateTriggers(false);
+        }
+
+        return listener.onStateChange(null, null, data.stateFlags, data.status);
+      }
+    }
+    return undefined;
+  },
+
   _setPrinterDefaultsForSelectedPrinter(
     aPSSVC,
     aPrintSettings,
@@ -702,180 +771,8 @@ var PrintUtils = {
       oldPPBrowser = this._currentPPBrowser;
     }
     this._currentPPBrowser = ppBrowser;
+    let mm = ppBrowser.messageManager;
 
-    let waitForPrintProgressToEnableToolbar = false;
-    if (this._webProgressPP.value) {
-      waitForPrintProgressToEnableToolbar = true;
-    }
-
-    gPendingPrintPreviews.set(ppBrowser, waitForPrintProgressToEnableToolbar);
-
-    
-    
-    
-    
-    
-    if (this._shouldSimplify) {
-      let simplifiedBrowser = this._listener.getSimplifiedSourceBrowser();
-      if (!simplifiedBrowser) {
-        simplifiedBrowser = this._listener.createSimplifiedBrowser();
-
-        
-        
-        
-        simplifiedBrowser.sendMessageToActor(
-          "Printing:Preview:ParseDocument",
-          {
-            URL: this._originalURL,
-            windowID: oldPPBrowser.outerWindowID,
-          },
-          "Printing"
-        );
-
-        
-        this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_OPENED_COUNT");
-
-        return;
-      }
-    }
-
-    this.sendEnterPrintPreviewToChild(
-      ppBrowser,
-      this._sourceBrowser,
-      this._shouldSimplify,
-      changingPrintPreviewBrowsers
-    );
-  },
-
-  sendEnterPrintPreviewToChild(
-    ppBrowser,
-    sourceBrowser,
-    simplifiedMode,
-    changingBrowsers
-  ) {
-    ppBrowser.sendMessageToActor(
-      "Printing:Preview:Enter",
-      {
-        browsingContextId: sourceBrowser.browsingContext.id,
-        simplifiedMode,
-        changingBrowsers,
-        lastUsedPrinterName: this.getLastUsedPrinterName(),
-      },
-      "Printing"
-    );
-  },
-
-  printPreviewEntered(ppBrowser, previewResult) {
-    let waitForPrintProgressToEnableToolbar = gPendingPrintPreviews.get(
-      ppBrowser
-    );
-    gPendingPrintPreviews.delete(ppBrowser);
-
-    for (let { resolve, reject } of this._onEntered) {
-      if (previewResult.failed) {
-        reject();
-      } else {
-        resolve();
-      }
-    }
-
-    this._onEntered = [];
-    if (previewResult.failed) {
-      
-      
-      this._ppBrowsers.clear();
-      this._listener.onEnter();
-      this._listener.onExit();
-      return;
-    }
-
-    
-    
-    gFocusedElement = document.commandDispatcher.focusedElement;
-
-    let printPreviewTB = document.getElementById("print-preview-toolbar");
-    if (printPreviewTB) {
-      if (previewResult.changingBrowsers) {
-        printPreviewTB.destroy();
-        printPreviewTB.initialize(ppBrowser);
-      } else {
-        
-        printPreviewTB.updateToolbar();
-      }
-
-      
-      if (!waitForPrintProgressToEnableToolbar) {
-        printPreviewTB.disableUpdateTriggers(false);
-      }
-
-      ppBrowser.collapsed = false;
-      ppBrowser.focus();
-      return;
-    }
-
-    
-    
-    if (this._listener.activateBrowser) {
-      this._listener.activateBrowser(this._sourceBrowser);
-    } else {
-      this._sourceBrowser.docShellIsActive = true;
-    }
-
-    
-    
-    printPreviewTB = document.createXULElement("toolbar", {
-      is: "printpreview-toolbar",
-    });
-    printPreviewTB.setAttribute("fullscreentoolbar", true);
-    printPreviewTB.setAttribute("flex", "1");
-    printPreviewTB.id = "print-preview-toolbar";
-
-    let navToolbox = this._listener.getNavToolbox();
-    navToolbox.parentNode.insertBefore(printPreviewTB, navToolbox);
-    printPreviewTB.initialize(ppBrowser);
-
-    
-    
-    
-    if (waitForPrintProgressToEnableToolbar) {
-      printPreviewTB.disableUpdateTriggers(true);
-    }
-
-    
-    if (this._sourceBrowser.isArticle) {
-      printPreviewTB.enableSimplifyPage();
-    } else {
-      this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_UNAVAILABLE_COUNT");
-      printPreviewTB.disableSimplifyPage();
-    }
-
-    
-    if (window.onclose) {
-      this._closeHandlerPP = window.onclose;
-    } else {
-      this._closeHandlerPP = null;
-    }
-    window.onclose = function() {
-      PrintUtils.exitPrintPreview();
-      return false;
-    };
-
-    
-    window.addEventListener("keydown", this.onKeyDownPP, true);
-    window.addEventListener("keypress", this.onKeyPressPP, true);
-
-    ppBrowser.collapsed = false;
-    ppBrowser.focus();
-    
-    this._listener.onEnter();
-  },
-
-  readerModeReady(sourceBrowser) {
-    let ppBrowser = this._listener.getSimplifiedPrintPreviewBrowser();
-    this.sendEnterPrintPreviewToChild(ppBrowser, sourceBrowser, true, true);
-  },
-
-  getLastUsedPrinterName() {
     let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
       Ci.nsIPrintSettingsService
     );
@@ -904,12 +801,171 @@ var PrintUtils = {
       }
     }
 
-    return lastUsedPrinterName;
+    let sendEnterPreviewMessage = function(browser, simplified) {
+      mm.sendAsyncMessage("Printing:Preview:Enter", {
+        browsingContextId: browser.browsingContext.id,
+        simplifiedMode: simplified,
+        changingBrowsers: changingPrintPreviewBrowsers,
+        lastUsedPrinterName,
+      });
+    };
+
+    
+    
+    
+    
+    
+    if (this._shouldSimplify) {
+      let simplifiedBrowser = this._listener.getSimplifiedSourceBrowser();
+      if (simplifiedBrowser) {
+        sendEnterPreviewMessage(simplifiedBrowser, true);
+      } else {
+        simplifiedBrowser = this._listener.createSimplifiedBrowser();
+
+        
+        
+        
+        let spMM = simplifiedBrowser.messageManager;
+        spMM.addMessageListener(
+          "Printing:Preview:ReaderModeReady",
+          function onReaderReady() {
+            spMM.removeMessageListener(
+              "Printing:Preview:ReaderModeReady",
+              onReaderReady
+            );
+            sendEnterPreviewMessage(simplifiedBrowser, true);
+          }
+        );
+
+        
+        
+        
+        spMM.sendAsyncMessage("Printing:Preview:ParseDocument", {
+          URL: this._originalURL,
+          windowID: oldPPBrowser.outerWindowID,
+        });
+
+        
+        this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_OPENED_COUNT");
+      }
+    } else {
+      sendEnterPreviewMessage(this._sourceBrowser, false);
+    }
+
+    let waitForPrintProgressToEnableToolbar = false;
+    if (this._webProgressPP.value) {
+      mm.addMessageListener("Printing:Preview:StateChange", this);
+      mm.addMessageListener("Printing:Preview:ProgressChange", this);
+      waitForPrintProgressToEnableToolbar = true;
+    }
+
+    let onEntered = message => {
+      mm.removeMessageListener("Printing:Preview:Entered", onEntered);
+      for (let { resolve, reject } of this._onEntered) {
+        if (message.data.failed) {
+          reject();
+        } else {
+          resolve();
+        }
+      }
+      this._onEntered = [];
+      if (message.data.failed) {
+        
+        
+        this._ppBrowsers.clear();
+        this._listener.onEnter();
+        this._listener.onExit();
+        return;
+      }
+
+      
+      
+      gFocusedElement = document.commandDispatcher.focusedElement;
+
+      let printPreviewTB = document.getElementById("print-preview-toolbar");
+      if (printPreviewTB) {
+        if (message.data.changingBrowsers) {
+          printPreviewTB.destroy();
+          printPreviewTB.initialize(ppBrowser);
+        } else {
+          
+          printPreviewTB.updateToolbar();
+        }
+
+        
+        if (!waitForPrintProgressToEnableToolbar) {
+          printPreviewTB.disableUpdateTriggers(false);
+        }
+
+        ppBrowser.collapsed = false;
+        ppBrowser.focus();
+        return;
+      }
+
+      
+      
+      if (this._listener.activateBrowser) {
+        this._listener.activateBrowser(this._sourceBrowser);
+      } else {
+        this._sourceBrowser.docShellIsActive = true;
+      }
+
+      
+      
+      printPreviewTB = document.createXULElement("toolbar", {
+        is: "printpreview-toolbar",
+      });
+      printPreviewTB.setAttribute("fullscreentoolbar", true);
+      printPreviewTB.setAttribute("flex", "1");
+      printPreviewTB.id = "print-preview-toolbar";
+
+      let navToolbox = this._listener.getNavToolbox();
+      navToolbox.parentNode.insertBefore(printPreviewTB, navToolbox);
+      printPreviewTB.initialize(ppBrowser);
+
+      
+      
+      
+      if (waitForPrintProgressToEnableToolbar) {
+        printPreviewTB.disableUpdateTriggers(true);
+      }
+
+      
+      if (this._sourceBrowser.isArticle) {
+        printPreviewTB.enableSimplifyPage();
+      } else {
+        this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_UNAVAILABLE_COUNT");
+        printPreviewTB.disableSimplifyPage();
+      }
+
+      
+      if (window.onclose) {
+        this._closeHandlerPP = window.onclose;
+      } else {
+        this._closeHandlerPP = null;
+      }
+      window.onclose = function() {
+        PrintUtils.exitPrintPreview();
+        return false;
+      };
+
+      
+      window.addEventListener("keydown", this.onKeyDownPP, true);
+      window.addEventListener("keypress", this.onKeyPressPP, true);
+
+      ppBrowser.collapsed = false;
+      ppBrowser.focus();
+      
+      this._listener.onEnter();
+    };
+
+    mm.addMessageListener("Printing:Preview:Entered", onEntered);
   },
 
   exitPrintPreview() {
     for (let browser of this._ppBrowsers) {
-      browser.sendMessageToActor("Printing:Preview:Exit", {}, "Printing");
+      let browserMM = browser.messageManager;
+      browserMM.sendAsyncMessage("Printing:Preview:Exit");
     }
     this._ppBrowsers.clear();
     this._currentPPBrowser = null;
@@ -1009,3 +1065,5 @@ var PrintUtils = {
     }
   },
 };
+
+PrintUtils.init();
