@@ -40,8 +40,11 @@ class WMFDecoderModule : public PlatformDecoderModule {
   
   
   
-  static bool HasAAC();
   static bool HasH264();
+  static bool HasVP8();
+  static bool HasVP9();
+  static bool HasAAC();
+  static bool HasMP3();
 
  private:
   virtual ~WMFDecoderModule();

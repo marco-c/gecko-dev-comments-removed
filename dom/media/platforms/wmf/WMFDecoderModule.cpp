@@ -14,6 +14,7 @@
 #include "MFTDecoder.h"
 #include "MP4Decoder.h"
 #include "MediaInfo.h"
+#include "PDMFactory.h"
 #include "VPXDecoder.h"
 #include "WMF.h"
 #include "WMFAudioMFTManager.h"
@@ -28,6 +29,7 @@
 #include "mozilla/mscom/EnsureMTA.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIXULRuntime.h"
+#include "nsIXULRuntime.h"  
 #include "nsServiceManagerUtils.h"
 #include "nsWindowsHelpers.h"
 #include "prsystem.h"
@@ -94,26 +96,21 @@ static bool CanCreateMFTDecoder(const GUID& aGuid) {
 
 void WMFDecoderModule::Init() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-  bool testForVPx;
   if (XRE_IsContentProcess()) {
     
     
     
     sDXVAEnabled = !StaticPrefs::media_gpu_process_decoder();
-    
-    
-    
-    testForVPx = true;
   } else if (XRE_IsGPUProcess() || XRE_IsRDDProcess()) {
     
-    testForVPx = sDXVAEnabled = true;
+    sDXVAEnabled = true;
   } else {
     
-    testForVPx = sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
+    sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
   }
 
   sDXVAEnabled = sDXVAEnabled && gfx::gfxVars::CanUseHardwareVideoDecoding();
-  testForVPx = testForVPx && gfx::gfxVars::CanUseHardwareVideoDecoding();
+  bool testForVPx = gfx::gfxVars::CanUseHardwareVideoDecoding();
   if (testForVPx && StaticPrefs::media_wmf_vp9_enabled_AtStartup()) {
     gfx::WMFVPXVideoCrashGuard guard;
     if (!guard.Crashed()) {
@@ -214,12 +211,42 @@ static bool CanCreateWMFDecoder() {
 
 
 bool WMFDecoderModule::HasH264() {
+  if (XRE_IsContentProcess()) {
+    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::H264);
+  }
   return CanCreateWMFDecoder<CLSID_CMSH264DecoderMFT>();
 }
 
 
+bool WMFDecoderModule::HasVP8() {
+  if (XRE_IsContentProcess()) {
+    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::VP8);
+  }
+  return sUsableVPXMFT && CanCreateWMFDecoder<CLSID_WebmMfVpxDec>();
+}
+
+
+bool WMFDecoderModule::HasVP9() {
+  if (XRE_IsContentProcess()) {
+    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::VP9);
+  }
+  return sUsableVPXMFT && CanCreateWMFDecoder<CLSID_WebmMfVpxDec>();
+}
+
+
 bool WMFDecoderModule::HasAAC() {
+  if (XRE_IsContentProcess()) {
+    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::AAC);
+  }
   return CanCreateWMFDecoder<CLSID_CMSAACDecMFT>();
+}
+
+
+bool WMFDecoderModule::HasMP3() {
+  if (XRE_IsContentProcess()) {
+    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::MP3);
+  }
+  return CanCreateWMFDecoder<CLSID_CMP3DecMediaObject>();
 }
 
 bool WMFDecoderModule::SupportsMimeType(
@@ -269,17 +296,16 @@ bool WMFDecoderModule::Supports(const SupportDecoderParams& aParams,
     return true;
   }
   if (trackInfo.mMimeType.EqualsLiteral("audio/mpeg") &&
-      !StaticPrefs::media_ffvpx_mp3_enabled() &&
-      CanCreateWMFDecoder<CLSID_CMP3DecMediaObject>()) {
+      !StaticPrefs::media_ffvpx_mp3_enabled() && WMFDecoderModule::HasMP3()) {
     return true;
   }
-  if (sUsableVPXMFT) {
-    static const uint32_t VP8_USABLE_BUILD = 16287;
-    if ((VPXDecoder::IsVP8(trackInfo.mMimeType) &&
-         IsWindowsBuildOrLater(VP8_USABLE_BUILD)) ||
-        VPXDecoder::IsVP9(trackInfo.mMimeType)) {
-      return CanCreateWMFDecoder<CLSID_WebmMfVpxDec>();
-    }
+  static const uint32_t VP8_USABLE_BUILD = 16287;
+  if (VPXDecoder::IsVP8(trackInfo.mMimeType) &&
+      IsWindowsBuildOrLater(VP8_USABLE_BUILD) && WMFDecoderModule::HasVP8()) {
+    return true;
+  }
+  if (VPXDecoder::IsVP9(trackInfo.mMimeType) && WMFDecoderModule::HasVP9()) {
+    return true;
   }
 
   

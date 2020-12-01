@@ -38,6 +38,7 @@
 #include "Geolocation.h"
 #include "GfxInfoBase.h"
 #include "MMPrinter.h"
+#include "PDMFactory.h"
 #include "PreallocatedProcessManager.h"
 #include "ProcessPriorityManager.h"
 #include "SandboxHal.h"
@@ -2760,6 +2761,10 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   
   TelemetryIPC::GetDynamicScalarDefinitions(xpcomInit.dynamicScalarDefs());
+
+  
+  
+  xpcomInit.codecsSupported() = PDMFactory::Supported();
 
   
   ScreenManager& screenManager = ScreenManager::GetSingleton();
