@@ -145,6 +145,7 @@ var retryCounter = 0;
 var loadWithoutClearingMappings = false;
 var disallowH3 = false;
 var disallowH2 = false;
+var testKeepAliveNotSet = false;
 var nextTest;
 var expectPass = true;
 var waitFor = 0;
@@ -220,6 +221,10 @@ function doTest() {
   var listener = new Listener();
   if (xaltsvc != "NA") {
     chan.setRequestHeader("x-altsvc", xaltsvc, false);
+  }
+  if (testKeepAliveNotSet) {
+    chan.setRequestHeader("Connection", "close", false);
+    testKeepAliveNotSet = false;
   }
   if (loadWithoutClearingMappings) {
     chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
@@ -447,6 +452,22 @@ function doTest14() {
 
 function doTest15() {
   dump("doTest15()\n");
+  origin = httpFooOrigin;
+  xaltsvc = "NA";
+  testKeepAliveNotSet = true;
+  originAttributes = {
+    userContextId: 1,
+    firstPartyDomain: "a.com",
+  };
+  loadWithoutClearingMappings = true;
+  nextTest = doTest16;
+  do_test_pending();
+  doTest();
+}
+
+
+function doTest16() {
+  dump("doTest16()\n");
   origin = httpFooOrigin;
   nextTest = testsDone;
   otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
