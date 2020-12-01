@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "Units.h"
 
 namespace mozilla {
 
@@ -53,9 +54,7 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   virtual void UnbindFromTree(bool aNullParent = true) override;
 
-  
-  
-  nsresult GetVideoSize(nsIntSize* size);
+  mozilla::Maybe<mozilla::CSSIntSize> GetVideoSize() const;
 
   virtual void UpdateMediaSize(const nsIntSize& aSize) override;
 
