@@ -139,13 +139,12 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
                                aReflowInput.AvailableHeight());
     const nscoord pageBSize = GetLogicalRect(containerSize).BSize(wm);
     const nscoord overflowBSize =
-        LogicalRect(wm, InkOverflowRect(), GetSize()).BEnd(wm);
+        LogicalRect(wm, ScrollableOverflowRect(), GetSize()).BEnd(wm);
     const nscoord currentPageOverflow = overflowBSize - pageBSize;
     nscoord remainingOverflow =
         std::max(currentPageOverflow, previousPageOverflow - pageBSize);
 
     if (aStatus.IsFullyComplete() && remainingOverflow > 0) {
-      
       
       
       

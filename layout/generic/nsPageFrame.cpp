@@ -575,17 +575,22 @@ static void BuildPreviousPageOverflow(nsDisplayListBuilder* aBuilder,
   for (const PageAndOffset& pair : Reversed(previousPagesAndOffsets)) {
     auto* prevPageCF = pair.first;
     const nscoord offsetToCurrentPageBStart = pair.second;
-    const LogicalRect inkOverflow(
-        wm, prevPageCF->InkOverflowRectRelativeToSelf(), prevPageCF->GetSize());
+    
+    const LogicalRect scrollableOverflow(
+        wm, prevPageCF->ScrollableOverflowRectRelativeToSelf(),
+        prevPageCF->GetSize());
     const auto remainingOverflow =
-        inkOverflow.BEnd(wm) - offsetToCurrentPageBStart;
+        scrollableOverflow.BEnd(wm) - offsetToCurrentPageBStart;
     if (remainingOverflow <= 0) {
       continue;
     }
 
     
     
-    LogicalRect overflowRect(inkOverflow);
+    
+    LogicalRect overflowRect(
+        wm, prevPageCF->InkOverflowRectRelativeToSelf(),
+        prevPageCF->GetSize());
     overflowRect.BStart(wm) = offsetToCurrentPageBStart;
     overflowRect.BSize(wm) = std::min(remainingOverflow, prevPageCF->BSize(wm));
 
@@ -667,7 +672,8 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
     
     
-    const nsRect childOverflowRect = child->InkOverflowRectRelativeToSelf();
+    const nsRect childOverflowRect =
+        child->ScrollableOverflowRectRelativeToSelf();
     const nsRect visibleRect = childOverflowRect + child->GetOffsetTo(this);
 
     nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
