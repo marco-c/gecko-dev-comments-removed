@@ -49,6 +49,9 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         self.prefs = {
             self.caret_tested_pref: True,
             self.hide_carets_for_mouse: False,
+            
+            
+            "layout.accessiblecaret.transition-duration": "0.0",
         }
         self.marionette.set_prefs(self.prefs)
         self.actions = CaretActions(self.marionette)

@@ -56,6 +56,9 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         self.prefs = {
             "layout.word_select.eat_space_to_next_word": False,
             self.carets_tested_pref: True,
+            
+            
+            "layout.accessiblecaret.transition-duration": "0.0",
         }
         self.marionette.set_prefs(self.prefs)
         self.actions = CaretActions(self.marionette)
