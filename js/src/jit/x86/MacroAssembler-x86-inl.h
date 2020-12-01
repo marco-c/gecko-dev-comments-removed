@@ -547,6 +547,27 @@ void MacroAssembler::rotateRight64(Imm32 count, Register64 src, Register64 dest,
 
 
 void MacroAssembler::clz64(Register64 src, Register dest) {
+  if (AssemblerX86Shared::HasLZCNT()) {
+    Label nonzero, zero;
+
+    testl(src.high, src.high);
+    j(Assembler::Zero, &zero);
+
+    lzcntl(src.high, dest);
+    jump(&nonzero);
+
+    bind(&zero);
+    lzcntl(src.low, dest);
+    addl(Imm32(32), dest);
+
+    bind(&nonzero);
+    return;
+  }
+
+  
+  
+  
+
   Label nonzero, zero;
 
   bsrl(src.high, dest);
