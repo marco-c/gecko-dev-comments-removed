@@ -30,6 +30,7 @@ void gfxConfigManager::Init() {
   EmplaceUserPref("gfx.webrender.compositor", mWrCompositorEnabled);
   mWrForceEnabled = gfxPlatform::WebRenderPrefEnabled();
   mWrForceDisabled = StaticPrefs::gfx_webrender_force_disabled_AtStartup();
+  mWrSoftwareForceEnabled = StaticPrefs::gfx_webrender_software_AtStartup();
   mWrCompositorForceEnabled =
       StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup();
   mGPUProcessAllowSoftware =
@@ -65,6 +66,7 @@ void gfxConfigManager::Init() {
   mIsNightly = true;
 #endif
   mSafeMode = gfxPlatform::InSafeMode();
+  mIsHeadless = gfxPlatform::IsHeadless();
 
   mGfxInfo = services::GetGfxInfo();
 
@@ -113,8 +115,21 @@ void gfxConfigManager::ConfigureWebRenderSoftware() {
 
   mFeatureWrSoftware->EnableByDefault();
 
-  if (StaticPrefs::gfx_webrender_software_AtStartup()) {
+  
+  
+  
+  
+  if (mWrSoftwareForceEnabled) {
     mFeatureWrSoftware->UserForceEnable("Force enabled by pref");
+  } else if (mWrEnvForceEnabled) {
+    mFeatureWrSoftware->UserDisable(
+        "User force-enabled full WR",
+        "FEATURE_FAILURE_USER_FORCE_ENABLED_FULL_WR"_ns);
+  } else if (mWrForceDisabled || mWrEnvForceDisabled) {
+    
+    
+    mFeatureWrSoftware->UserDisable("User force-disabled WR",
+                                    "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
   }
 
   nsCString failureId;
@@ -130,6 +145,10 @@ void gfxConfigManager::ConfigureWebRenderSoftware() {
   switch (status) {
     case nsIGfxInfo::FEATURE_ALLOW_ALWAYS:
     case nsIGfxInfo::FEATURE_ALLOW_QUALIFIED:
+      if (mIsHeadless) {
+        mFeatureWrSoftware->Disable(FeatureStatus::Blocked,
+                                    "Headless not yet supported", failureId);
+      }
       break;
     case nsIGfxInfo::FEATURE_DENIED:
       mFeatureWrSoftware->Disable(FeatureStatus::Denied, "Not on allowlist",
