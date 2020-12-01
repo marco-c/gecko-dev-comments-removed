@@ -70,17 +70,16 @@ already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
                                 nullptr, nullptr,  nullptr, FontDataDeallocate,
                                 nullptr};
   CFAllocatorRef allocator = CFAllocatorCreate(kCFAllocatorDefault, &context);
+
+  
+  
+  
+  
   CFDataRef data = CFDataCreateWithBytesNoCopy(kCFAllocatorDefault, fontData,
                                                aDataLength, allocator);
 
-  {
-    auto set = sWeakFontDataSet.Lock();
-    set->insert(fontData);
-  }
-
   CTFontDescriptorRef ctFontDesc =
       CTFontManagerCreateFontDescriptorFromData(data);
-  CFRelease(data);
 
   
   
@@ -93,8 +92,18 @@ already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
   CFRelease(ctFont);
 
   if (!fontRef) {
+    
+    CFRelease(data);
+    CFRelease(ctFontDesc);
     return nullptr;
   }
+
+  {
+    auto set = sWeakFontDataSet.Lock();
+    set->insert(fontData);
+  }
+  
+  CFRelease(data);
 
   
   RefPtr<NativeFontResourceMac> fontResource =
