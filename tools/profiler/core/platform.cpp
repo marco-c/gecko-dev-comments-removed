@@ -37,7 +37,6 @@
 #include "ProfilerChild.h"
 #include "ProfilerCodeAddressService.h"
 #include "ProfilerIOInterposeObserver.h"
-#include "ProfilerMarkerPayload.h"
 #include "ProfilerParent.h"
 #include "RegisteredThread.h"
 #include "shared-libraries.h"
@@ -1631,44 +1630,6 @@ void ProfilingStackOwner::DumpStackAndCrash() const {
 
 
 static const char* const kMainThreadName = "GeckoMain";
-
-
-
-
-
-MarkerTiming get_marker_timing_from_payload(
-    const ProfilerMarkerPayload& aPayload) {
-  const TimeStamp& start = aPayload.GetStartTime();
-  const TimeStamp& end = aPayload.GetEndTime();
-  if (start.IsNull()) {
-    if (end.IsNull()) {
-      
-      return MarkerTiming::InstantAt(TimeStamp::NowUnfuzzed());
-    }
-    return MarkerTiming::IntervalEnd(end);
-  }
-  if (end.IsNull()) {
-    return MarkerTiming::IntervalStart(start);
-  }
-  if (start == end) {
-    return MarkerTiming::InstantAt(start);
-  }
-  return MarkerTiming::Interval(start, end);
-}
-
-
-
-static void StoreMarker(ProfileChunkedBuffer& aChunkedBuffer, int aThreadId,
-                        const char* aMarkerName,
-                        const MarkerTiming& aMarkerTiming,
-                        JS::ProfilingCategoryPair aCategoryPair,
-                        const ProfilerMarkerPayload* aPayload) {
-  aChunkedBuffer.PutObjects(
-      ProfileBufferEntry::Kind::MarkerData, aThreadId,
-      WrapProfileBufferUnownedCString(aMarkerName),
-      aMarkerTiming.GetStartTime(), aMarkerTiming.GetEndTime(),
-      aMarkerTiming.GetPhase(), static_cast<uint32_t>(aCategoryPair), aPayload);
-}
 
 
 
@@ -5068,11 +5029,6 @@ void profiler_remove_sampled_counter(BaseProfilerCount* aCounter) {
   CorePS::RemoveCounter(lock, aCounter);
 }
 
-static void maybelocked_profiler_add_marker_for_thread(
-    int aThreadId, JS::ProfilingCategoryPair aCategoryPair,
-    const char* aMarkerName, const ProfilerMarkerPayload& aPayload,
-    const PSAutoLock* aLockOrNull);
-
 ProfilingStack* profiler_register_thread(const char* aName,
                                          void* aGuessStackTop) {
   DEBUG_LOG("profiler_register_thread(%s)", aName);
@@ -5413,40 +5369,6 @@ void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
   delete aBacktrace;
 }
 
-static void racy_profiler_add_marker(const char* aMarkerName,
-                                     JS::ProfilingCategoryPair aCategoryPair,
-                                     const ProfilerMarkerPayload* aPayload) {
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  
-  if (!profiler_can_accept_markers()) {
-    return;
-  }
-
-  
-  
-  
-
-  RacyRegisteredThread* racyRegisteredThread =
-      TLSRegisteredThread::RacyRegisteredThread();
-  if (!racyRegisteredThread || !racyRegisteredThread->IsBeingProfiled()) {
-    return;
-  }
-
-  const MarkerTiming markerTiming =
-      aPayload ? get_marker_timing_from_payload(*aPayload)
-               : MarkerTiming::InstantNow();
-
-  StoreMarker(CorePS::CoreBuffer(), racyRegisteredThread->ThreadId(),
-              aMarkerName, markerTiming, aCategoryPair, aPayload);
-}
-
-void profiler_add_marker(const char* aMarkerName,
-                         JS::ProfilingCategoryPair aCategoryPair,
-                         const ProfilerMarkerPayload& aPayload) {
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, &aPayload);
-}
-
 
 
 void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText) {
@@ -5661,64 +5583,6 @@ void profiler_add_network_marker(
       aTimings ? *aTimings : scEmptyNetTimingStruct, redirect_spec,
       aContentType ? ProfilerString8View(*aContentType)
                    : ProfilerString8View());
-}
-
-static void maybelocked_profiler_add_marker_for_thread(
-    int aThreadId, JS::ProfilingCategoryPair aCategoryPair,
-    const char* aMarkerName, const ProfilerMarkerPayload& aPayload,
-    const PSAutoLock* aLockOrNull) {
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  if (!profiler_can_accept_markers()) {
-    return;
-  }
-
-#ifdef DEBUG
-  auto checkThreadId = [](int aThreadId, const PSAutoLock& aLock) {
-    if (!ActivePS::Exists(aLock)) {
-      return;
-    }
-
-    
-    bool realThread = false;
-    const Vector<UniquePtr<RegisteredThread>>& registeredThreads =
-        CorePS::RegisteredThreads(aLock);
-    for (auto& thread : registeredThreads) {
-      RefPtr<ThreadInfo> info = thread->Info();
-      if (info->ThreadId() == aThreadId) {
-        realThread = true;
-        break;
-      }
-    }
-    MOZ_ASSERT(realThread, "Invalid thread id");
-  };
-
-  if (aLockOrNull) {
-    checkThreadId(aThreadId, *aLockOrNull);
-  } else {
-    PSAutoLock lock(gPSMutex);
-    checkThreadId(aThreadId, lock);
-  }
-#endif
-
-  StoreMarker(CorePS::CoreBuffer(), aThreadId, aMarkerName,
-              get_marker_timing_from_payload(aPayload), aCategoryPair,
-              &aPayload);
-}
-
-void profiler_add_marker_for_thread(int aThreadId,
-                                    JS::ProfilingCategoryPair aCategoryPair,
-                                    const char* aMarkerName,
-                                    const ProfilerMarkerPayload& aPayload) {
-  return maybelocked_profiler_add_marker_for_thread(
-      aThreadId, aCategoryPair, aMarkerName, aPayload, nullptr);
-}
-
-void profiler_add_marker_for_mainthread(JS::ProfilingCategoryPair aCategoryPair,
-                                        const char* aMarkerName,
-                                        const ProfilerMarkerPayload& aPayload) {
-  profiler_add_marker_for_thread(profiler_main_thread_id(), aCategoryPair,
-                                 aMarkerName, aPayload);
 }
 
 bool profiler_add_native_allocation_marker(int64_t aSize,

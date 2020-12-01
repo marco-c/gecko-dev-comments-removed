@@ -62,9 +62,6 @@
 #  define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, categoryPair, \
                                            ctx, flags)
 
-#  define PROFILER_ADD_MARKER_WITH_PAYLOAD(markerName, categoryPair, \
-                                           PayloadType, payloadArgs)
-
 
 
 
@@ -112,7 +109,6 @@ profiler_capture_backtrace() {
 
 class ProfilerBacktrace;
 class ProfilerCodeAddressService;
-class ProfilerMarkerPayload;
 namespace mozilla {
 class ProfileBufferControlledChunkManager;
 class ProfileChunkedBuffer;
@@ -882,23 +878,6 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
         ctx, label, dynamicString, JS::ProfilingCategoryPair::categoryPair,    \
         flags)
 
-
-
-
-
-#  define PROFILER_ADD_MARKER_WITH_PAYLOAD(                            \
-      markerName, categoryPair, PayloadType, parenthesizedPayloadArgs) \
-    do {                                                               \
-      AUTO_PROFILER_STATS(add_marker_with_##PayloadType);              \
-      ::profiler_add_marker(markerName,                                \
-                            ::JS::ProfilingCategoryPair::categoryPair, \
-                            PayloadType parenthesizedPayloadArgs);     \
-    } while (false)
-
-void profiler_add_marker(const char* aMarkerName,
-                         JS::ProfilingCategoryPair aCategoryPair,
-                         const ProfilerMarkerPayload& aPayload);
-
 void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText);
 void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info);
 
@@ -911,19 +890,6 @@ bool profiler_add_native_allocation_marker(int64_t aSize,
 
 
 bool profiler_is_locked_on_current_thread();
-
-
-void profiler_add_marker_for_thread(int aThreadId,
-                                    JS::ProfilingCategoryPair aCategoryPair,
-                                    const char* aMarkerName,
-                                    const ProfilerMarkerPayload& aPayload);
-
-
-
-
-void profiler_add_marker_for_mainthread(JS::ProfilingCategoryPair aCategoryPair,
-                                        const char* aMarkerName,
-                                        const ProfilerMarkerPayload& aPayload);
 
 enum class NetworkLoadType { LOAD_START, LOAD_STOP, LOAD_REDIRECT };
 
