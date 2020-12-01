@@ -12,7 +12,6 @@
 #include "nsITransferable.h"
 #include "nsIContentSecurityPolicy.h"
 
-class nsICookieJarSettings;
 class nsPIDOMWindowOuter;
 class nsITransferable;
 class nsIContent;
@@ -52,8 +51,6 @@ class nsContentAreaDragDrop {
 
 
 
-
-
   static nsresult GetDragData(nsPIDOMWindowOuter* aWindow, nsIContent* aTarget,
                               nsIContent* aSelectionTargetNode,
                               bool aIsAltKeyPressed,
@@ -61,8 +58,7 @@ class nsContentAreaDragDrop {
                               bool* aCanDrag,
                               mozilla::dom::Selection** aSelection,
                               nsIContent** aDragNode, nsIPrincipal** aPrincipal,
-                              nsIContentSecurityPolicy** aCsp,
-                              nsICookieJarSettings** aCookieJarSettings);
+                              nsIContentSecurityPolicy** aCsp);
 };
 
 
@@ -77,7 +73,6 @@ class nsContentAreaDragDropDataProvider : public nsIFlavorDataProvider {
 
   nsresult SaveURIToFile(nsIURI* inSourceURI,
                          nsIPrincipal* inTriggeringPrincipal,
-                         nsICookieJarSettings* inCookieJarSettings,
                          nsIFile* inDestFile, nsContentPolicyType inPolicyType,
                          bool isPrivate);
 };

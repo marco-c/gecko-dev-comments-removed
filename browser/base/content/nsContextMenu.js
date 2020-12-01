@@ -60,9 +60,6 @@ function openContextMenu(aMessage, aBrowser, aActor) {
     parentAllowsMixedContent: data.parentAllowsMixedContent,
     userContextId: data.userContextId,
     webExtContextData: data.webExtContextData,
-    cookieJarSettings: E10SUtils.deserializeCookieJarSettings(
-      data.cookieJarSettings
-    ),
   };
 
   let popup = browser.ownerDocument.getElementById("contentAreaContextMenu");
@@ -1315,7 +1312,6 @@ class nsContextMenu {
 
     
     let referrerInfo = this.contentData.referrerInfo;
-    let cookieJarSettings = this.contentData.cookieJarSettings;
 
     this.actor.saveVideoFrameAsImage(this.targetIdentifier).then(dataURL => {
       
@@ -1329,7 +1325,6 @@ class nsContextMenu {
         "SaveImageTitle",
         null, 
         referrerInfo,
-        cookieJarSettings,
         null, 
         false, 
         null, 
@@ -1628,7 +1623,6 @@ class nsContextMenu {
     let doc = this.ownerDoc;
     let isContentWindowPrivate = this.ownerDoc.isPrivate;
     let referrerInfo = this.contentData.referrerInfo;
-    let cookieJarSettings = this.contentData.cookieJarSettings;
     let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(this.browser);
     if (this.onCanvas) {
       
@@ -1643,7 +1637,6 @@ class nsContextMenu {
           "SaveImageTitle",
           null, 
           referrerInfo,
-          cookieJarSettings,
           null, 
           false, 
           null, 
@@ -1663,7 +1656,6 @@ class nsContextMenu {
         "SaveImageTitle",
         null, 
         referrerInfo,
-        cookieJarSettings,
         null, 
         false, 
         null, 
@@ -1679,7 +1671,6 @@ class nsContextMenu {
         false,
         doc,
         referrerInfo,
-        cookieJarSettings,
         this.frameOuterWindowID,
         "",
         isContentWindowPrivate

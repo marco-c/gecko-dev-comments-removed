@@ -99,7 +99,6 @@ struct nsWebBrowserPersist::URIData {
   nsCOMPtr<nsIURI> mDataPath;
   nsCOMPtr<nsIURI> mRelativeDocumentURI;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
   nsContentPolicyType mContentPolicyType;
   nsCString mRelativePathToData;
   nsCString mCharset;
@@ -414,19 +413,19 @@ NS_IMETHODIMP nsWebBrowserPersist::SetProgressListener(
 
 NS_IMETHODIMP nsWebBrowserPersist::SaveURI(
     nsIURI* aURI, nsIPrincipal* aPrincipal, uint32_t aCacheKey,
-    nsIReferrerInfo* aReferrerInfo, nsICookieJarSettings* aCookieJarSettings,
-    nsIInputStream* aPostData, const char* aExtraHeaders, nsISupports* aFile,
+    nsIReferrerInfo* aReferrerInfo, nsIInputStream* aPostData,
+    const char* aExtraHeaders, nsISupports* aFile,
     nsContentPolicyType aContentPolicyType, nsILoadContext* aPrivacyContext) {
   bool isPrivate = aPrivacyContext && aPrivacyContext->UsePrivateBrowsing();
   return SavePrivacyAwareURI(aURI, aPrincipal, aCacheKey, aReferrerInfo,
-                             aCookieJarSettings, aPostData, aExtraHeaders,
-                             aFile, aContentPolicyType, isPrivate);
+                             aPostData, aExtraHeaders, aFile,
+                             aContentPolicyType, isPrivate);
 }
 
 NS_IMETHODIMP nsWebBrowserPersist::SavePrivacyAwareURI(
     nsIURI* aURI, nsIPrincipal* aPrincipal, uint32_t aCacheKey,
-    nsIReferrerInfo* aReferrerInfo, nsICookieJarSettings* aCookieJarSettings,
-    nsIInputStream* aPostData, const char* aExtraHeaders, nsISupports* aFile,
+    nsIReferrerInfo* aReferrerInfo, nsIInputStream* aPostData,
+    const char* aExtraHeaders, nsISupports* aFile,
     nsContentPolicyType aContentPolicy, bool aIsPrivate) {
   NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
   mFirstAndOnlyUse = false;  
@@ -439,8 +438,8 @@ NS_IMETHODIMP nsWebBrowserPersist::SavePrivacyAwareURI(
   
   mPersistFlags |= PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS;
   rv = SaveURIInternal(aURI, aPrincipal, aContentPolicy, aCacheKey,
-                       aReferrerInfo, aCookieJarSettings, aPostData,
-                       aExtraHeaders, fileAsURI, false, aIsPrivate);
+                       aReferrerInfo, aPostData, aExtraHeaders, fileAsURI,
+                       false, aIsPrivate);
   return NS_FAILED(rv) ? rv : NS_OK;
 }
 
@@ -623,9 +622,8 @@ void nsWebBrowserPersist::SerializeNextFile() {
       }
 
       rv = SaveURIInternal(uri, data->mTriggeringPrincipal,
-                           data->mContentPolicyType, 0, nullptr,
-                           data->mCookieJarSettings, nullptr, nullptr,
-                           fileAsURI, true, mIsPrivate);
+                           data->mContentPolicyType, 0, nullptr, nullptr,
+                           nullptr, fileAsURI, true, mIsPrivate);
       
       
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1337,9 +1335,9 @@ nsresult nsWebBrowserPersist::AppendPathToURI(nsIURI* aURI,
 nsresult nsWebBrowserPersist::SaveURIInternal(
     nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
     nsContentPolicyType aContentPolicyType, uint32_t aCacheKey,
-    nsIReferrerInfo* aReferrerInfo, nsICookieJarSettings* aCookieJarSettings,
-    nsIInputStream* aPostData, const char* aExtraHeaders, nsIURI* aFile,
-    bool aCalcFileExt, bool aIsPrivate) {
+    nsIReferrerInfo* aReferrerInfo, nsIInputStream* aPostData,
+    const char* aExtraHeaders, nsIURI* aFile, bool aCalcFileExt,
+    bool aIsPrivate) {
   NS_ENSURE_ARG_POINTER(aURI);
   NS_ENSURE_ARG_POINTER(aFile);
   NS_ENSURE_ARG_POINTER(aTriggeringPrincipal);
@@ -1357,11 +1355,8 @@ nsresult nsWebBrowserPersist::SaveURIInternal(
 
   
   
-  
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings = aCookieJarSettings;
-  if (!cookieJarSettings) {
-    cookieJarSettings = mozilla::net::CookieJarSettings::Create();
-  }
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
+      mozilla::net::CookieJarSettings::Create();
 
   
   nsCOMPtr<nsIChannel> inputChannel;
@@ -2734,7 +2729,6 @@ nsresult nsWebBrowserPersist::MakeAndStoreLocalFilenameInURIMap(
   data->mCharset = mCurrentCharset;
 
   aDoc->GetPrincipal(getter_AddRefs(data->mTriggeringPrincipal));
-  aDoc->GetCookieJarSettings(getter_AddRefs(data->mCookieJarSettings));
 
   if (aNeedsPersisting) mCurrentThingsToPersist++;
 

@@ -74,7 +74,6 @@ function saveURL(
     aFilePickerTitleKey,
     null,
     aReferrerInfo,
-    null,
     aSourceDocument,
     aSkipPrompt,
     null,
@@ -113,7 +112,6 @@ function saveBrowser(aBrowser, aSkipPrompt, aBrowsingContext = null) {
         null, 
         null, 
         document.referrerInfo,
-        document.cookieJarSettings,
         document,
         aSkipPrompt,
         document.cacheKey
@@ -234,9 +232,6 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 
 
 
-
-
-
 function internalSave(
   aURL,
   aDocument,
@@ -247,7 +242,6 @@ function internalSave(
   aFilePickerTitleKey,
   aChosenData,
   aReferrerInfo,
-  aCookieJarSettings,
   aInitiatingDocument,
   aSkipPrompt,
   aCacheKey,
@@ -362,7 +356,6 @@ function internalSave(
       sourcePostData: aDocument ? getPostData(aDocument) : null,
       bypassCache: aShouldBypassCache,
       contentPolicyType,
-      cookieJarSettings: aCookieJarSettings,
       isPrivate,
     };
 
@@ -370,8 +363,6 @@ function internalSave(
     internalPersist(persistArgs);
   }
 }
-
-
 
 
 
@@ -479,7 +470,6 @@ function internalPersist(persistArgs) {
       persistArgs.sourcePrincipal,
       persistArgs.sourceCacheKey,
       persistArgs.sourceReferrerInfo,
-      persistArgs.cookieJarSettings,
       persistArgs.sourcePostData,
       null,
       targetFileURL,

@@ -564,7 +564,6 @@ class ContextMenuChild extends JSWindowActorChild {
       mozDocumentURIIfNotForErrorPages: docLocation,
       characterSet: charSet,
       baseURI,
-      cookieJarSettings,
     } = doc;
     docLocation = docLocation && docLocation.spec;
     let frameID = WebNavigationFrames.getFrameId(doc.defaultView);
@@ -713,10 +712,6 @@ class ContextMenuChild extends JSWindowActorChild {
     data.context.principal = context.principal;
     data.storagePrincipal = doc.effectiveStoragePrincipal;
     data.context.storagePrincipal = context.storagePrincipal;
-
-    data.cookieJarSettings = E10SUtils.serializeCookieJarSettings(
-      cookieJarSettings
-    );
 
     
     
