@@ -13,10 +13,6 @@ const { ContentProcessDomain } = ChromeUtils.import(
 class Emulation extends ContentProcessDomain {
   
 
-  setDeviceMetricsOverride() {}
-
-  setTouchEmulationEnabled() {}
-
   
 
 

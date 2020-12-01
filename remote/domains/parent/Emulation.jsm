@@ -102,6 +102,32 @@ class Emulation extends Domain {
 
 
 
+  async setTouchEmulationEnabled(options = {}) {
+    const { enabled } = options;
+
+    if (typeof enabled != "boolean") {
+      throw new TypeError(
+        "Invalid parameters (enabled: boolean value expected)"
+      );
+    }
+
+    const { browsingContext } = this.session.target;
+    if (enabled) {
+      browsingContext.touchEventsOverride = "enabled";
+    } else {
+      browsingContext.touchEventsOverride = "none";
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
 
 
   async setUserAgentOverride(options = {}) {
