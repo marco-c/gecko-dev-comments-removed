@@ -107,7 +107,7 @@ bool ArrayBufferViewObject::init(JSContext* cx,
 
     
     
-    MOZ_ASSERT_IF(buffer->byteLength() > 0, !cx->nursery().isInside(ptr));
+    MOZ_ASSERT_IF(buffer->byteLength().get() > 0, !cx->nursery().isInside(ptr));
   } else {
     MOZ_ASSERT(is<TypedArrayObject>());
     MOZ_ASSERT(length * bytesPerElement <=
@@ -127,7 +127,7 @@ bool ArrayBufferViewObject::init(JSContext* cx,
   if (buffer) {
     uint32_t viewByteLength = length * bytesPerElement;
     uint32_t viewByteOffset = byteOffset;
-    uint32_t bufferByteLength = buffer->byteLength();
+    uint32_t bufferByteLength = buffer->byteLength().deprecatedGetUint32();
     
     MOZ_ASSERT_IF(IsArrayBuffer(buffer),
                   buffer->dataPointerEither().unwrap() <=

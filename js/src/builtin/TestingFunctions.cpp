@@ -5033,7 +5033,7 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   }
 
   
-  JS::TranscodeRange xdrRange(src->dataPointer(), src->byteLength());
+  JS::TranscodeRange xdrRange(src->dataPointer(), src->byteLength().get());
   bool succeeded = false;
   if (!compilationInfos.get().deserializeStencils(cx, xdrRange, &succeeded)) {
     return false;

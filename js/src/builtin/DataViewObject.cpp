@@ -97,7 +97,7 @@ bool DataViewObject::getAndCheckConstructorArgs(JSContext* cx,
   }
 
   
-  uint32_t bufferByteLength = buffer->byteLength();
+  uint32_t bufferByteLength = buffer->byteLength().deprecatedGetUint32();
 
   
   if (offset > bufferByteLength) {
