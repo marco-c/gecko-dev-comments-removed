@@ -24,12 +24,46 @@ module.exports = {
 
 
 
-  highlightNode(nodeFront) {
+
+  highlightSelectedNode(options = {}) {
     return async thunkOptions => {
       const { inspector } = thunkOptions;
+      if (!inspector || inspector._destroyed) {
+        return;
+      }
+
+      const { nodeFront } = inspector.selection;
+      if (!nodeFront) {
+        return;
+      }
+
       await inspector.highlighters.showHighlighterTypeForNode(
         inspector.highlighters.TYPES.BOXMODEL,
-        nodeFront
+        nodeFront,
+        options
+      );
+    };
+  },
+
+  
+
+
+
+
+
+
+
+  highlightNode(nodeFront, options = {}) {
+    return async thunkOptions => {
+      const { inspector } = thunkOptions;
+      if (!inspector || inspector._destroyed) {
+        return;
+      }
+
+      await inspector.highlighters.showHighlighterTypeForNode(
+        inspector.highlighters.TYPES.BOXMODEL,
+        nodeFront,
+        options
       );
     };
   },
@@ -40,6 +74,10 @@ module.exports = {
   unhighlightNode() {
     return async thunkOptions => {
       const { inspector } = thunkOptions;
+      if (!inspector || inspector._destroyed) {
+        return;
+      }
+
       await inspector.highlighters.hideHighlighterType(
         inspector.highlighters.TYPES.BOXMODEL
       );
