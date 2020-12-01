@@ -384,22 +384,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 class ObjectGroupRealm {
  private:
   class NewTable;
-
-  struct ArrayObjectKey;
-  using ArrayObjectTable =
-      js::GCRekeyableHashMap<ArrayObjectKey, WeakHeapPtrObjectGroup,
-                             ArrayObjectKey, SystemAllocPolicy>;
-
-  struct PlainObjectKey;
-  struct PlainObjectEntry;
-  struct PlainObjectTableSweepPolicy {
-    static bool traceWeak(JSTracer* trc, PlainObjectKey* key,
-                          PlainObjectEntry* entry);
-  };
-  using PlainObjectTable =
-      JS::GCHashMap<PlainObjectKey, PlainObjectEntry, PlainObjectKey,
-                    SystemAllocPolicy, PlainObjectTableSweepPolicy>;
-
   class AllocationSiteTable;
 
  private:
@@ -425,18 +409,6 @@ class ObjectGroupRealm {
                                           TaggedProto proto,
                                           JSObject* associated);
   } defaultNewGroupCache = {};
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ArrayObjectTable* arrayObjectTable = nullptr;
-  PlainObjectTable* plainObjectTable = nullptr;
 
   
   AllocationSiteTable* allocationSiteTable = nullptr;

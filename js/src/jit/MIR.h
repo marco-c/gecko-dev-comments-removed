@@ -2025,8 +2025,6 @@ class MThrow : public MUnaryInstruction, public BoxInputsPolicy::Data {
   bool possiblyCalls() const override { return true; }
 };
 
-bool TypeSetIncludes(TypeSet* types, MIRType input, TypeSet* inputTypes);
-
 class MNewArray : public MUnaryInstruction, public NoTypePolicy::Data {
  private:
   

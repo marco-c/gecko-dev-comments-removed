@@ -214,7 +214,6 @@ struct ExpandoAndGeneration;
 namespace js {
 
 class TypedArrayObject;
-class TypeSet;
 
 namespace wasm {
 class CalleeDesc;
@@ -3556,22 +3555,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
  public:
   
   
-  template <typename Source>
-  void guardTypeSet(const Source& address, const TypeSet* types,
-                    BarrierKind kind, Register unboxScratch,
-                    Register objScratch, Register spectreRegToZero,
-                    Label* miss);
-
-  void guardObjectType(Register obj, const TypeSet* types, Register scratch,
-                       Register spectreRegToZero, Label* miss);
-
-#ifdef DEBUG
-  void guardTypeSetMightBeIncomplete(const TypeSet* types, Register obj,
-                                     Register scratch, Label* label);
-#endif
-
-  
-  
   void loadObjGroupUnsafe(Register obj, Register dest) {
     loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
   }
@@ -4339,20 +4322,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void assertStackAlignment(uint32_t alignment, int32_t offset = 0);
 
-  void performPendingReadBarriers();
-
   void touchFrameValues(Register numStackValues, Register scratch1,
                         Register scratch2);
-
- private:
-  
-  
-  
-  JSObject* getSingletonAndDelayBarrier(const TypeSet* types, size_t i);
-  ObjectGroup* getGroupAndDelayBarrier(const TypeSet* types, size_t i);
-
-  Vector<JSObject*, 0, SystemAllocPolicy> pendingObjectReadBarriers_;
-  Vector<ObjectGroup*, 0, SystemAllocPolicy> pendingObjectGroupReadBarriers_;
 };
 
 

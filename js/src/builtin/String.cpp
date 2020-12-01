@@ -3307,15 +3307,6 @@ static ArrayObject* NewFullyAllocatedStringArray(JSContext* cx,
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(length > 0);
-  AddTypePropertyId(cx, array, JSID_VOID, TypeSet::StringType());
-
   return array;
 }
 
