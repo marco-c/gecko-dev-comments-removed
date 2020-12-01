@@ -20,6 +20,7 @@
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/widget/IMEData.h"
 
 #include <msctf.h>
 #include <textstor.h>
@@ -453,27 +454,18 @@ class TSFTextStore final : public ITextStoreACP,
 
   void DispatchKeyboardEventAsProcessedByIME(const MSG& aMsg);
 
-  class Composition final {
+  
+  
+  
+  
+  
+  
+  class Composition final : public OffsetAndData<LONG> {
    public:
-    
-    RefPtr<ITfCompositionView> mView;
-
-    
-    
-    
-    
-    
-    
-    nsString mString;
-
-    
-    LONG mStart;
+    Composition() : OffsetAndData<LONG>(0, EmptyString()) {}
 
     bool IsComposing() const { return (mView != nullptr); }
-
-    LONG EndOffset() const {
-      return mStart + static_cast<LONG>(mString.Length());
-    }
+    ITfCompositionView* GetView() const { return mView; }
 
     
     
@@ -482,6 +474,19 @@ class TSFTextStore final : public ITextStoreACP,
                LONG aCompositionStartOffset,
                const nsAString& aCompositionString);
     void End();
+
+    friend std::ostream& operator<<(std::ostream& aStream,
+                                    const Composition& aComposition) {
+      aStream << "{ mView=0x" << aComposition.mView.get() << ", IsComposing()="
+              << (aComposition.IsComposing() ? "true" : "false")
+              << ", OffsetAndData<LONG>="
+              << static_cast<const OffsetAndData<LONG>&>(aComposition) << " }";
+      return aStream;
+    }
+
+   private:
+    
+    RefPtr<ITfCompositionView> mView;
   };
   
   
@@ -815,8 +820,8 @@ class TSFTextStore final : public ITextStoreACP,
     void Init(const nsAString& aText) {
       mText = aText;
       if (mComposition.IsComposing()) {
-        mLastCompositionString = mComposition.mString;
-        mLastCompositionStart = mComposition.mStart;
+        mLastCompositionString = mComposition.DataRef();
+        mLastCompositionStart = mComposition.StartOffset();
       } else {
         mLastCompositionString.Truncate();
         mLastCompositionStart = -1;
@@ -836,8 +841,8 @@ class TSFTextStore final : public ITextStoreACP,
         return;
       }
       if (mComposition.IsComposing()) {
-        mLastCompositionString = mComposition.mString;
-        mLastCompositionStart = mComposition.mStart;
+        mLastCompositionString = mComposition.DataRef();
+        mLastCompositionStart = mComposition.StartOffset();
       } else {
         mLastCompositionString.Truncate();
         mLastCompositionStart = -1;

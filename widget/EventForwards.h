@@ -460,6 +460,11 @@ enum MouseButtonsFlag {
 
 enum class TextRangeType : RawTextRangeType;
 
+
+
+template <typename IntType>
+class OffsetAndData;
+
 }  
 
 #endif  
