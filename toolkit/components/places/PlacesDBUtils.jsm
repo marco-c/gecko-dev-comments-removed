@@ -104,7 +104,10 @@ var PlacesDBUtils = {
 
   async _refreshUI() {
     
-    let observers = PlacesUtils.history.getObservers();
+    let observers = [
+      ...PlacesUtils.history.getObservers(),
+      ...PlacesUtils.bookmarks.getObservers(),
+    ];
     for (let observer of observers) {
       observer.onBeginUpdateBatch();
       observer.onEndUpdateBatch();
