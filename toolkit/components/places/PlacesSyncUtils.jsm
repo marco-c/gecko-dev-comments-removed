@@ -58,6 +58,25 @@ XPCOMUtils.defineLazyGetter(this, "ROOTS", () =>
   Object.keys(ROOT_RECORD_ID_TO_GUID)
 );
 
+
+
+
+XPCOMUtils.defineLazyGetter(this, "IGNORED_TRANSITIONS_AS_SQL_LIST", () =>
+  
+  
+  
+  
+  
+  
+  
+  
+  [
+    0,
+    PlacesUtils.history.TRANSITION_FRAMED_LINK,
+    PlacesUtils.history.TRANSITION_DOWNLOAD,
+  ].toString()
+);
+
 const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
   SYNC_ID_META_KEY: "sync/history/syncId",
   LAST_SYNC_META_KEY: "sync/history/lastSync",
@@ -232,9 +251,6 @@ const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
 
   async determineNonSyncableGuids(guids) {
     
-    
-    
-    
     let db = await PlacesUtils.promiseDBConnection();
     let nonSyncableGuids = [];
     for (let chunk of PlacesUtils.chunkArray(guids, db.variableLimit)) {
@@ -243,8 +259,7 @@ const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
         SELECT DISTINCT p.guid FROM moz_places p
         JOIN moz_historyvisits v ON p.id = v.place_id
         WHERE p.guid IN (${new Array(chunk.length).fill("?").join(",")}) AND
-            (p.hidden = 1 OR v.visit_type IN (0,
-              ${PlacesUtils.history.TRANSITION_FRAMED_LINK}))
+            (p.hidden = 1 OR v.visit_type IN (${IGNORED_TRANSITIONS_AS_SQL_LIST}))
       `,
         chunk
       );
@@ -357,6 +372,9 @@ const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
 
 
 
+
+
+
   async getAllURLs(options) {
     
     if (!Number.isFinite(options.limit)) {
@@ -380,8 +398,7 @@ const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
       JOIN moz_historyvisits v ON p.id = v.place_id
       WHERE p.last_visit_date > :cutoff_date AND
             p.hidden = 0 AND
-            v.visit_type NOT IN (0,
-              ${PlacesUtils.history.TRANSITION_FRAMED_LINK})
+            v.visit_type NOT IN (${IGNORED_TRANSITIONS_AS_SQL_LIST})
       ORDER BY frecency DESC
       LIMIT :max_results`,
       { cutoff_date: sinceInMicroseconds, max_results: options.limit }

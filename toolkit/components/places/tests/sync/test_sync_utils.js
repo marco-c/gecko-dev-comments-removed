@@ -193,6 +193,7 @@ add_task(async function test_determineNonSyncableGuids() {
     { uri: "https://www.mozilla.org/en-US/", transition: TRANSITION_TYPED },
     { uri: "http://getfirefox.com/", transition: TRANSITION_LINK },
     { uri: "http://getthunderbird.com/", transition: TRANSITION_FRAMED_LINK },
+    { uri: "http://downloads.com/", transition: TRANSITION_DOWNLOAD },
   ];
   for (let visit of arrayOfVisits) {
     await PlacesTestUtils.addVisits(visit);
@@ -212,9 +213,10 @@ add_task(async function test_determineNonSyncableGuids() {
     guids
   );
 
+  let filtered = [TRANSITION_FRAMED_LINK, TRANSITION_DOWNLOAD];
   
   for (let visit of arrayOfVisits) {
-    if (visit.transition === TRANSITION_FRAMED_LINK) {
+    if (filtered.includes(visit.transition)) {
       ok(
         filteredGuids.includes(dictURLGuid[visit.uri]),
         "This url should be one of the filtered guids."
@@ -441,6 +443,32 @@ add_task(async function test_getAllURLs() {
       "The urls retrieved should match the ones used in this test."
     );
   }
+
+  
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function test_getAllURLs_skips_downloads() {
+  
+  let arrayOfURLsToVisit = [
+    "https://www.mozilla.org/en-US/",
+    { uri: "http://downloads.com/", transition: TRANSITION_DOWNLOAD },
+  ];
+  for (let url of arrayOfURLsToVisit) {
+    await PlacesTestUtils.addVisits(url);
+  }
+
+  
+  let allURLs = await PlacesSyncUtils.history.getAllURLs({
+    since: new Date(Date.now() - 2592000000),
+    limit: 5000,
+  });
+
+  
+  equal(allURLs.length, 1, "Should only get one URL back.");
+
+  
+  equal(allURLs[0], arrayOfURLsToVisit[0], "Should get back our non-download.");
 
   
   await PlacesUtils.history.clear();
