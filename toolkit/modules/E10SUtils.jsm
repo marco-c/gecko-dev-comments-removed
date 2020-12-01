@@ -453,7 +453,8 @@ var E10SUtils = {
               
               
               
-              aURI.filePath == "welcome")
+              aURI.filePath == "welcome" ||
+              aURI.filePath == "home")
           ) {
             return PRIVILEGEDABOUT_REMOTE_TYPE;
           }
