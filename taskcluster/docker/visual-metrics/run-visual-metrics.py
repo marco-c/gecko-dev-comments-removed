@@ -356,25 +356,8 @@ def main(log, args):
     
     
     
-    try:
-        from similarity import calculate_similarity
-
-        for name, value in calculate_similarity(
-            jobs_json, fetch_dir, OUTPUT_DIR
-        ).items():
-            if value is None:
-                continue
-            suites[0]["subtests"].append(
-                {
-                    "name": name,
-                    "value": value,
-                    "replicates": [value],
-                    "lowerIsBetter": False,
-                    "unit": "a.u.",
-                }
-            )
-    except Exception:
-        log.info("Failed to calculate similarity score", exc_info=True)
+    
+    
 
     
     
