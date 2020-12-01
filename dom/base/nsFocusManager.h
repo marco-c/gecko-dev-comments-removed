@@ -299,6 +299,14 @@ class nsFocusManager final : public nsIFocusManager,
 
   static void MarkUncollectableForCCGeneration(uint32_t aGeneration);
 
+  struct BlurredElementInfo {
+    const mozilla::OwningNonNull<mozilla::dom::Element> mElement;
+    const bool mHadRing;
+
+    explicit BlurredElementInfo(mozilla::dom::Element&);
+    ~BlurredElementInfo();
+  };
+
  protected:
   nsFocusManager();
   ~nsFocusManager();
@@ -415,7 +423,7 @@ class nsFocusManager final : public nsIFocusManager,
   bool Blur(mozilla::dom::BrowsingContext* aBrowsingContextToClear,
             mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
             bool aIsLeavingDocument, bool aAdjustWidget,
-            nsIContent* aContentToFocus = nullptr);
+            mozilla::dom::Element* aElementToFocus = nullptr);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void BlurFromOtherProcess(
       mozilla::dom::BrowsingContext* aFocusedBrowsingContext,
@@ -426,7 +434,7 @@ class nsFocusManager final : public nsIFocusManager,
   bool BlurImpl(mozilla::dom::BrowsingContext* aBrowsingContextToClear,
                 mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
                 bool aIsLeavingDocument, bool aAdjustWidget,
-                nsIContent* aContentToFocus);
+                mozilla::dom::Element* aElementToFocus);
 
   
 
@@ -459,7 +467,7 @@ class nsFocusManager final : public nsIFocusManager,
              uint32_t aFlags, bool aIsNewDocument, bool aFocusChanged,
              bool aWindowRaised, bool aAdjustWidget,
              bool aFocusInOtherContentProcess,
-             nsIContent* aContentLostFocus = nullptr);
+             const mozilla::Maybe<BlurredElementInfo>& = mozilla::Nothing());
 
   
 
@@ -740,11 +748,10 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
-  
-  static void NotifyFocusStateChange(nsIContent* aContent,
-                                     nsIContent* aContentToFocus,
-                                     bool aWindowShouldShowFocusRing,
-                                     int32_t aFlags, bool aGettingFocus);
+  static void NotifyFocusStateChange(
+      mozilla::dom::Element* aElement, mozilla::dom::Element* aElementToFocus,
+      bool aWindowShouldShowFocusRing, int32_t aFlags, bool aGettingFocus,
+      const mozilla::Maybe<BlurredElementInfo>& = mozilla::Nothing());
 
   void SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow);
 

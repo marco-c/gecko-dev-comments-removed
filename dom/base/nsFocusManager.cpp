@@ -861,7 +861,7 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   
   
   
-  nsIContent* content = window->GetFocusedElement();
+  Element* content = window->GetFocusedElement();
   if (content &&
       nsContentUtils::ContentIsHostIncludingDescendantOf(content, aContent)) {
     bool shouldShowFocusRing = window->ShouldShowFocusRing();
@@ -1177,16 +1177,55 @@ void nsFocusManager::ParentActivated(mozIDOMWindowProxy* aWindow,
   ActivateOrDeactivate(window, aActive);
 }
 
-static bool ShouldMatchFocusVisible(const Element& aElement,
-                                    int32_t aFocusFlags) {
-  switch (nsFocusManager::GetFocusMoveActionCause(aFocusFlags)) {
-    case InputContextAction::CAUSE_UNKNOWN:
-    case InputContextAction::CAUSE_KEY:
+nsFocusManager::BlurredElementInfo::BlurredElementInfo(Element& aElement)
+    : mElement(aElement),
+      mHadRing(aElement.State().HasState(NS_EVENT_STATE_FOCUSRING)) {}
+
+nsFocusManager::BlurredElementInfo::~BlurredElementInfo() = default;
+
+
+static bool ShouldMatchFocusVisible(
+    const Element& aElement, int32_t aFocusFlags,
+    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo) {
+  
+  
+  
+  
+  {
+    if (aElement.IsHTMLElement(nsGkAtoms::textarea) || aElement.IsEditable()) {
       return true;
+    }
+
+    if (auto* input = HTMLInputElement::FromNode(aElement)) {
+      if (input->IsSingleLineTextControl()) {
+        return true;
+      }
+    }
+  }
+
+  switch (nsFocusManager::GetFocusMoveActionCause(aFocusFlags)) {
+    case InputContextAction::CAUSE_KEY:
+      
+      
+      
+      
+      return true;
+    case InputContextAction::CAUSE_UNKNOWN:
+      
+      
+      
+      
+      
+      
+      
+      return !aBlurredElementInfo || aBlurredElementInfo->mHadRing;
     case InputContextAction::CAUSE_MOUSE:
     case InputContextAction::CAUSE_TOUCH:
     case InputContextAction::CAUSE_LONGPRESS:
-      break;
+      
+      
+      
+      return false;
     case InputContextAction::CAUSE_UNKNOWN_CHROME:
     case InputContextAction::CAUSE_UNKNOWN_DURING_KEYBOARD_INPUT:
     case InputContextAction::CAUSE_UNKNOWN_DURING_NON_KEYBOARD_INPUT:
@@ -1201,60 +1240,57 @@ static bool ShouldMatchFocusVisible(const Element& aElement,
   return false;
 }
 
-
-
-static bool ShouldShowFocusRingForElement(Element& aElement, int32_t aFlags) {
+static bool ShouldFocusRingBeVisible(
+    Element& aElement, int32_t aFlags,
+    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo) {
   if (aFlags & nsIFocusManager::FLAG_SHOWRING) {
     return true;
   }
+
+  const bool focusVisibleEnabled =
+      StaticPrefs::layout_css_focus_visible_enabled();
+
 #if defined(XP_MACOSX) || defined(ANDROID)
-  if (aFlags & nsIFocusManager::FLAG_BYMOUSE) {
-    return !nsContentUtils::ContentIsLink(&aElement) &&
-           !aElement.IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio);
+  if (!focusVisibleEnabled) {
+    
+    
+    if (aFlags & nsIFocusManager::FLAG_BYMOUSE) {
+      return !nsContentUtils::ContentIsLink(&aElement) &&
+             !aElement.IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio);
+    }
+    return true;
   }
-  return true;
-#else
-  return false;
 #endif
+  return focusVisibleEnabled &&
+         ShouldMatchFocusVisible(aElement, aFlags, aBlurredElementInfo);
 }
 
 
-void nsFocusManager::NotifyFocusStateChange(nsIContent* aContent,
-                                            nsIContent* aContentToFocus,
-                                            bool aWindowShouldShowFocusRing,
-                                            int32_t aFlags,
-                                            bool aGettingFocus) {
-  MOZ_ASSERT_IF(aContentToFocus, !aGettingFocus);
-  auto* element = Element::FromNode(aContent);
-  if (!element) {
-    return;
-  }
-
+void nsFocusManager::NotifyFocusStateChange(
+    Element* aElement, Element* aElementToFocus,
+    bool aWindowShouldShowFocusRing, int32_t aFlags, bool aGettingFocus,
+    const Maybe<BlurredElementInfo>& aBlurredElementInfo) {
+  MOZ_ASSERT_IF(aElementToFocus, !aGettingFocus);
   nsIContent* commonAncestor = nullptr;
-  if (aContentToFocus && aContentToFocus->IsElement()) {
+  if (aElementToFocus) {
     commonAncestor = nsContentUtils::GetCommonFlattenedTreeAncestor(
-        aContent, aContentToFocus);
+        aElement, aElementToFocus);
   }
 
   if (aGettingFocus) {
     EventStates eventStateToAdd = NS_EVENT_STATE_FOCUS;
     if (aWindowShouldShowFocusRing ||
-        ShouldShowFocusRingForElement(*element, aFlags)) {
+        ShouldFocusRingBeVisible(*aElement, aFlags, aBlurredElementInfo)) {
       eventStateToAdd |= NS_EVENT_STATE_FOCUSRING;
     }
-    if (aWindowShouldShowFocusRing ||
-        ShouldMatchFocusVisible(*element, aFlags)) {
-      eventStateToAdd |= NS_EVENT_STATE_FOCUS_VISIBLE;
-    }
-    element->AddStates(eventStateToAdd);
+    aElement->AddStates(eventStateToAdd);
   } else {
-    EventStates eventStateToRemove = NS_EVENT_STATE_FOCUS |
-                                     NS_EVENT_STATE_FOCUSRING |
-                                     NS_EVENT_STATE_FOCUS_VISIBLE;
-    element->RemoveStates(eventStateToRemove);
+    EventStates eventStateToRemove =
+        NS_EVENT_STATE_FOCUS | NS_EVENT_STATE_FOCUSRING;
+    aElement->RemoveStates(eventStateToRemove);
   }
 
-  for (nsIContent* content = aContent; content && content != commonAncestor;
+  for (nsIContent* content = aElement; content && content != commonAncestor;
        content = content->GetFlattenedTreeParent()) {
     Element* element = Element::FromNode(content);
     if (!element) {
@@ -1622,7 +1658,10 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
             isElementInActiveWindow, isElementInFocusedWindow, sendFocusEvent));
 
   if (sendFocusEvent) {
-    RefPtr<Element> oldFocusedElement = mFocusedElement;
+    Maybe<BlurredElementInfo> blurredInfo;
+    if (mFocusedElement) {
+      blurredInfo.emplace(*mFocusedElement);
+    }
     
     if (focusedBrowsingContext) {
       
@@ -1659,7 +1698,7 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
 
     Focus(newWindow, elementToFocus, aFlags, !isElementInFocusedWindow,
           aFocusChanged, false, aAdjustWidget, focusInOtherContentProcess,
-          oldFocusedElement);
+          blurredInfo);
   } else {
     
     
@@ -2016,10 +2055,10 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
 bool nsFocusManager::Blur(BrowsingContext* aBrowsingContextToClear,
                           BrowsingContext* aAncestorBrowsingContextToFocus,
                           bool aIsLeavingDocument, bool aAdjustWidget,
-                          nsIContent* aContentToFocus) {
+                          Element* aElementToFocus) {
   if (XRE_IsParentProcess()) {
     return BlurImpl(aBrowsingContextToClear, aAncestorBrowsingContextToFocus,
-                    aIsLeavingDocument, aAdjustWidget, aContentToFocus);
+                    aIsLeavingDocument, aAdjustWidget, aElementToFocus);
   }
   mozilla::dom::ContentChild* contentChild =
       mozilla::dom::ContentChild::GetSingleton();
@@ -2062,7 +2101,7 @@ bool nsFocusManager::Blur(BrowsingContext* aBrowsingContextToClear,
                                           true);
     }
     return BlurImpl(aBrowsingContextToClear, aAncestorBrowsingContextToFocus,
-                    aIsLeavingDocument, aAdjustWidget, aContentToFocus);
+                    aIsLeavingDocument, aAdjustWidget, aElementToFocus);
   }
   if (aBrowsingContextToClear && aBrowsingContextToClear->IsInProcess()) {
     nsPIDOMWindowOuter* windowToClear = aBrowsingContextToClear->GetDOMWindow();
@@ -2104,7 +2143,7 @@ void nsFocusManager::BlurFromOtherProcess(
 bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
                               BrowsingContext* aAncestorBrowsingContextToFocus,
                               bool aIsLeavingDocument, bool aAdjustWidget,
-                              nsIContent* aContentToFocus) {
+                              Element* aElementToFocus) {
   LOGFOCUS(("<<Blur begin>>"));
 
   
@@ -2181,7 +2220,7 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
   if (element) {
     if (sendBlurEvent) {
-      NotifyFocusStateChange(element, aContentToFocus, shouldShowFocusRing, 0,
+      NotifyFocusStateChange(element, aElementToFocus, shouldShowFocusRing, 0,
                              false);
     }
 
@@ -2257,7 +2296,7 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
     }
 
     SendFocusOrBlurEvent(eBlur, presShell, element->GetComposedDoc(), element,
-                         1, false, false, aContentToFocus);
+                         1, false, false, aElementToFocus);
   }
 
   
@@ -2337,11 +2376,11 @@ void nsFocusManager::ActivateRemoteFrameIfNeeded(Element& aElement) {
   }
 }
 
-void nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow, Element* aElement,
-                           uint32_t aFlags, bool aIsNewDocument,
-                           bool aFocusChanged, bool aWindowRaised,
-                           bool aAdjustWidget, bool aFocusInOtherContentProcess,
-                           nsIContent* aContentLostFocus) {
+void nsFocusManager::Focus(
+    nsPIDOMWindowOuter* aWindow, Element* aElement, uint32_t aFlags,
+    bool aIsNewDocument, bool aFocusChanged, bool aWindowRaised,
+    bool aAdjustWidget, bool aFocusInOtherContentProcess,
+    const Maybe<BlurredElementInfo>& aBlurredElementInfo) {
   LOGFOCUS(("<<Focus begin>>"));
 
   if (!aWindow) {
@@ -2484,7 +2523,8 @@ void nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow, Element* aElement,
     nsPresContext* presContext = presShell->GetPresContext();
     if (sendFocusEvent) {
       NotifyFocusStateChange(aElement, nullptr, aWindow->ShouldShowFocusRing(),
-                             aFlags,  true);
+                             aFlags,  true,
+                             aBlurredElementInfo);
 
       
       
@@ -2513,9 +2553,11 @@ void nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow, Element* aElement,
       }
 
       if (!aFocusInOtherContentProcess) {
-        SendFocusOrBlurEvent(eFocus, presShell, aElement->GetComposedDoc(),
-                             aElement, aFlags & FOCUSMETHOD_MASK, aWindowRaised,
-                             isRefocus, aContentLostFocus);
+        SendFocusOrBlurEvent(
+            eFocus, presShell, aElement->GetComposedDoc(), aElement,
+            aFlags & FOCUSMETHOD_MASK, aWindowRaised, isRefocus,
+            aBlurredElementInfo ? aBlurredElementInfo->mElement.get()
+                                : nullptr);
       }
     } else {
       IMEStateManager::OnChangeFocus(presContext, nullptr,
