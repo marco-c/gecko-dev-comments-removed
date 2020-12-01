@@ -293,11 +293,15 @@ class StorageDBThread final {
 
   class ShutdownRunnable : public Runnable {
     
+    const uint32_t mPrivateBrowsingId;
+    
     bool& mDone;
 
    public:
-    explicit ShutdownRunnable(bool& aDone)
-        : Runnable("dom::StorageDBThread::ShutdownRunnable"), mDone(aDone) {
+    explicit ShutdownRunnable(const uint32_t aPrivateBrowsingId, bool& aDone)
+        : Runnable("dom::StorageDBThread::ShutdownRunnable"),
+          mPrivateBrowsingId(aPrivateBrowsingId),
+          mDone(aDone) {
       MOZ_ASSERT(NS_IsMainThread());
     }
 
@@ -308,12 +312,13 @@ class StorageDBThread final {
   };
 
  public:
-  StorageDBThread();
+  explicit StorageDBThread(uint32_t aPrivateBrowsingId);
   virtual ~StorageDBThread() = default;
 
-  static StorageDBThread* Get();
+  static StorageDBThread* Get(uint32_t aPrivateBrowsingId);
 
-  static StorageDBThread* GetOrCreate(const nsString& aProfilePath);
+  static StorageDBThread* GetOrCreate(const nsString& aProfilePath,
+                                      uint32_t aPrivateBrowsingId);
 
   static nsresult GetProfilePath(nsString& aProfilePath);
 
@@ -430,6 +435,9 @@ class StorageDBThread final {
   PendingOperations mPendingTasks;
 
   
+  const uint32_t mPrivateBrowsingId;
+
+  
   int32_t mPriorityCounter;
 
   
@@ -481,4 +489,4 @@ class StorageDBThread final {
 }  
 }  
 
-#endif  
+#endif

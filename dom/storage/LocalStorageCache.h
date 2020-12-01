@@ -257,6 +257,9 @@ class LocalStorageCache : public LocalStorageCacheBridge {
   nsresult mLoadResult;
 
   
+  uint32_t mPrivateBrowsingId;
+
+  
   bool mInitialized : 1;
 
   
