@@ -2,66 +2,18 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "pluginHost",
-  "@mozilla.org/plugin/host;1",
-  "nsIPluginHost"
-);
-
-
-function getTestPlugin() {
-  let tags = pluginHost.getPluginTags();
-  let plugin = tags.find(tag => tag.name == "Test Plug-in");
-  if (!plugin) {
-    ok(false, "Unable to find plugin");
-  }
-  return plugin;
-}
-
 const TEST_ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",
   "http://127.0.0.1:8888/"
 );
 const TEST_URL = TEST_ROOT + "file_clearplugindata.html";
 const REFERENCE_DATE = Date.now();
-const PLUGIN_TAG = getTestPlugin();
-
-
-
-
-
-
-function promiseUpdatePluginBindings(browser) {
-  return SpecialPowers.spawn(browser, [], async function() {
-    let doc = content.document;
-    let elems = doc.getElementsByTagName("embed");
-    if (elems && elems.length) {
-      elems[0].clientTop; 
-    }
-  });
-}
-
-function stored(needles) {
-  let something = pluginHost.siteHasData(PLUGIN_TAG, null);
-  if (!needles) {
-    return something;
-  }
-
-  if (!something) {
-    return false;
-  }
-
-  if (needles.every(value => pluginHost.siteHasData(PLUGIN_TAG, value))) {
-    return true;
-  }
-
-  return false;
-}
 
 add_task(async function testPluginData() {
   function background() {
     browser.test.onMessage.addListener(async (msg, options) => {
+      
+      
       if (msg == "removePluginData") {
         await browser.browsingData.removePluginData(options);
       } else {
@@ -80,104 +32,66 @@ add_task(async function testPluginData() {
 
   async function testRemovalMethod(method) {
     
+    
+
+    
 
     
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-    await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
-
-    ok(
-      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
-      "Data stored for sites"
-    );
 
     extension.sendMessage(method, {});
     await extension.awaitMessage("pluginDataRemoved");
 
-    ok(!stored(null), "All data cleared");
     BrowserTestUtils.removeTab(tab);
 
     
 
     
     tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-    await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
-
-    ok(
-      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
-      "Data stored for sites"
-    );
 
     extension.sendMessage(method, { since: REFERENCE_DATE - 20000 });
     await extension.awaitMessage("pluginDataRemoved");
 
-    ok(stored(["bar.com", "qux.com"]), "Data stored for sites");
-    ok(!stored(["foo.com"]), "Data cleared for foo.com");
-    ok(!stored(["baz.com"]), "Data cleared for baz.com");
     BrowserTestUtils.removeTab(tab);
 
     
 
     
     tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-    await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
-
-    ok(
-      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
-      "Data stored for sites"
-    );
 
     extension.sendMessage(method, { since: REFERENCE_DATE - 1000000 });
     await extension.awaitMessage("pluginDataRemoved");
 
-    ok(!stored(null), "All data cleared");
     BrowserTestUtils.removeTab(tab);
 
     
 
     
     tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-    await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
-
-    ok(
-      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
-      "Data stored for sites"
-    );
 
     extension.sendMessage(method, { hostnames: ["bar.com", "baz.com"] });
     await extension.awaitMessage("pluginDataRemoved");
 
-    ok(stored(["foo.com", "qux.com"]), "Data stored for sites");
-    ok(!stored(["bar.com"]), "Data cleared for bar.com");
-    ok(!stored(["baz.com"]), "Data cleared for baz.com");
     BrowserTestUtils.removeTab(tab);
 
     
 
     
     tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-    await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
-
-    ok(
-      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
-      "Data stored for sites"
-    );
 
     extension.sendMessage(method, { hostnames: [] });
     await extension.awaitMessage("pluginDataRemoved");
 
-    ok(
-      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
-      "Data stored for sites"
-    );
     BrowserTestUtils.removeTab(tab);
   }
 
-  PLUGIN_TAG.enabledState = Ci.nsIPluginTag.STATE_ENABLED;
-
+  waitForExplicitFinish();
   await extension.startup();
 
   await testRemovalMethod("removePluginData");
   await testRemovalMethod("remove");
 
   await extension.unload();
+  ok(true, "should get to the end without throwing an exception");
+  finish();
 });
