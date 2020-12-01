@@ -129,6 +129,7 @@ function InitializeCollator(collator, locales, options) {
     
     
     
+    
     var lazyCollatorData = std_Object_create(null);
 
     
@@ -157,6 +158,12 @@ function InitializeCollator(collator, locales, options) {
     
     var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
     opt.localeMatcher = matcher;
+
+    
+    var collation = GetOption(options, "collation", "string", undefined, undefined);
+    if (collation !== undefined)
+        collation = intl_ValidateAndCanonicalizeUnicodeExtensionType(collation, "collation", "co");
+    opt.co = collation;
 
     
     var numericValue = GetOption(options, "numeric", "boolean", undefined, undefined);
