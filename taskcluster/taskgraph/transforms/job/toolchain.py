@@ -17,7 +17,10 @@ from taskgraph.transforms.job import (
     configure_taskdesc_for_run,
     run_job_using,
 )
-from taskgraph.transforms.job.common import docker_worker_add_artifacts
+from taskgraph.transforms.job.common import (
+    docker_worker_add_artifacts,
+    generic_worker_add_artifacts,
+)
 from taskgraph.util.hash import hash_paths
 from taskgraph.util.attributes import RELEASE_PROJECTS
 from taskgraph import GECKO
@@ -168,28 +171,25 @@ def docker_worker_toolchain(config, job, taskdesc):
     schema=toolchain_run_schema,
     defaults=toolchain_defaults,
 )
-def windows_toolchain(config, job, taskdesc):
+def generic_worker_toolchain(config, job, taskdesc):
     run = job["run"]
 
     worker = taskdesc["worker"] = job["worker"]
 
     
-    worker.setdefault(
-        "artifacts",
-        [
-            {
-                "path": r"public\build",
-                "type": "directory",
-            }
-        ],
-    )
+    
+    artifacts = worker.setdefault("artifacts", [])
+    if not artifacts:
+        generic_worker_add_artifacts(config, job, taskdesc)
 
-    worker["chain-of-trust"] = True
+    if job["worker"]["os"] == "windows":
+        
+        worker["chain-of-trust"] = True
 
-    
-    
-    
-    run["use-caches"] = False
+        
+        
+        
+        run["use-caches"] = False
 
     env = worker.setdefault("env", {})
     env.update(
@@ -201,11 +201,9 @@ def windows_toolchain(config, job, taskdesc):
 
     
     if run["script"].endswith(".py"):
-        raise NotImplementedError("Python scripts don't work on Windows")
-
-    args = run.get("arguments", "")
-    if args:
-        args = " " + shell_quote(*args)
+        raise NotImplementedError(
+            "Python toolchain scripts aren't supported on generic-worker"
+        )
 
     attributes = taskdesc.setdefault("attributes", {})
     attributes["toolchain-artifact"] = run.pop("toolchain-artifact")
@@ -220,14 +218,19 @@ def windows_toolchain(config, job, taskdesc):
             "digest-data": get_digest_data(config, run, taskdesc),
         }
 
-    bash = r"c:\mozilla-build\msys\bin\bash"
-
     run["using"] = "run-task"
-    run["command"] = [
-        
-        r"{} build/src/taskcluster/scripts/misc/{}{}".format(
-            bash, run.pop("script"), args
-        )
-    ]
-    run.pop("arguments", None)
+
+    args = run.pop("arguments", None)
+    if args:
+        args = " " + shell_quote(*args)
+
+    if job["worker"]["os"] == "windows":
+        gecko_path = "%GECKO_PATH%"
+    else:
+        gecko_path = "$GECKO_PATH"
+
+    run["command"] = "{}/taskcluster/scripts/misc/{}{}".format(
+        gecko_path, run.pop("script"), args
+    )
+
     configure_taskdesc_for_run(config, job, taskdesc, worker["implementation"])
