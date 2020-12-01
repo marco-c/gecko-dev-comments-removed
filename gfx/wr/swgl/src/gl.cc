@@ -907,7 +907,11 @@ static inline void init_depth(S* s, Texture& t) {
 
 template <typename S>
 static inline void init_filter(S* s, Texture& t) {
-  s->filter = gl_filter_to_texture_filter(t.mag_filter);
+  
+  
+  
+  s->filter = t.width >= 2 ? gl_filter_to_texture_filter(t.mag_filter)
+                           : TextureFilter::NEAREST;
 }
 
 template <typename S>
