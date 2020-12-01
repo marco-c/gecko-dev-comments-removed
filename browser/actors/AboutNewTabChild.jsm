@@ -48,6 +48,17 @@ class AboutNewTabChild extends JSWindowActorChild {
         return;
       }
 
+      
+      
+      
+      
+      
+      
+      
+      if (ChromeUtils.waiveXrays(this.contentWindow).__FROM_STARTUP_CACHE__) {
+        return;
+      }
+
       const debug = !AppConstants.RELEASE_OR_BETA && ACTIVITY_STREAM_DEBUG;
       const debugString = debug ? "-dev" : "";
 
