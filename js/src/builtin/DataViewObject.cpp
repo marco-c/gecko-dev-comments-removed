@@ -927,7 +927,7 @@ bool DataViewObject::byteOffsetGetterImpl(JSContext* cx, const CallArgs& args) {
   }
 
   
-  args.rval().set(DataViewObject::byteOffsetValue(thisView));
+  args.rval().set(thisView->byteOffsetValue());
   return true;
 }
 
