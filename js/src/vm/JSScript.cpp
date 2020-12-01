@@ -1250,25 +1250,6 @@ template XDRResult js::XDRLazyScript(XDRState<XDR_DECODE>*, HandleScope,
                                      HandleScriptSourceObject, HandleFunction,
                                      MutableHandle<BaseScript*>);
 
-void JSScript::setDefaultClassConstructorSpan(uint32_t start, uint32_t end,
-                                              unsigned line, unsigned column) {
-  extent_.toStringStart = start;
-  extent_.toStringEnd = end;
-  extent_.sourceStart = start;
-  extent_.sourceEnd = end;
-  extent_.lineno = line;
-  extent_.column = column;
-
-  
-  
-  clearFlag(ImmutableFlags::SelfHosted);
-
-  
-  
-  
-  clearAllowRelazify();
-}
-
 bool JSScript::initScriptCounts(JSContext* cx) {
   MOZ_ASSERT(!hasScriptCounts());
 
@@ -3694,7 +3675,7 @@ void PrivateScriptData::trace(JSTracer* trc) {
 
 JSScript* JSScript::Create(JSContext* cx, js::HandleObject functionOrGlobal,
                            js::HandleScriptSourceObject sourceObject,
-                           SourceExtent extent,
+                           const SourceExtent& extent,
                            js::ImmutableScriptFlags flags) {
   return static_cast<JSScript*>(
       BaseScript::New(cx, functionOrGlobal, sourceObject, extent, flags));
@@ -3748,7 +3729,6 @@ bool JSScript::fullyInitFromStencil(
     JSContext* cx, frontend::CompilationInfo& compilationInfo,
     frontend::CompilationGCOutput& gcOutput, HandleScript script,
     const frontend::ScriptStencil& scriptStencil, HandleFunction fun) {
-  ImmutableScriptFlags lazyFlags;
   MutableScriptFlags lazyMutableFlags;
   RootedScope lazyEnclosingScope(cx);
 
@@ -3773,7 +3753,6 @@ bool JSScript::fullyInitFromStencil(
   
   
   if (script->isReadyForDelazification()) {
-    lazyFlags = script->immutableFlags_;
     lazyMutableFlags = script->mutableFlags_;
     lazyEnclosingScope = script->releaseEnclosingScope();
     script->swapData(lazyData.get());
@@ -3784,7 +3763,6 @@ bool JSScript::fullyInitFromStencil(
   
   auto rollbackGuard = mozilla::MakeScopeExit([&] {
     if (lazyEnclosingScope) {
-      script->immutableFlags_ = lazyFlags;
       script->mutableFlags_ = lazyMutableFlags;
       script->warmUpData_.initEnclosingScope(lazyEnclosingScope);
       script->swapData(lazyData.get());
@@ -4368,7 +4346,8 @@ bool PrivateScriptData::Clone(JSContext* cx, HandleScript src, HandleScript dst,
 static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
                                 HandleObject functionOrGlobal,
                                 HandleScriptSourceObject sourceObject,
-                                MutableHandle<GCVector<Scope*>> scopes) {
+                                MutableHandle<GCVector<Scope*>> scopes,
+                                SourceExtent* maybeClassExtent = nullptr) {
   if (src->treatAsRunOnce()) {
     MOZ_ASSERT(!src->isFunction());
     JS_ReportErrorASCII(cx, "No cloning toplevel run-once scripts");
@@ -4380,13 +4359,30 @@ static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
   
   JS::AssertObjectIsNotGray(sourceObject);
 
+  
+  
+  const SourceExtent& extent =
+      maybeClassExtent ? *maybeClassExtent : src->extent();
+
   ImmutableScriptFlags flags = src->immutableFlags();
   flags.setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
                 scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
 
   
-  RootedScript dst(cx, JSScript::Create(cx, functionOrGlobal, sourceObject,
-                                        src->extent(), flags));
+  
+  
+  if (maybeClassExtent) {
+    flags.clearFlag(JSScript::ImmutableFlags::SelfHosted);
+  }
+
+  
+  MOZ_ASSERT_IF(functionOrGlobal->is<JSFunction>(),
+                functionOrGlobal->as<JSFunction>().isSelfHostedBuiltin() ==
+                    flags.hasFlag(JSScript::ImmutableFlags::SelfHosted));
+
+  
+  RootedScript dst(
+      cx, JSScript::Create(cx, functionOrGlobal, sourceObject, extent, flags));
   if (!dst) {
     return nullptr;
   }
@@ -4443,9 +4439,10 @@ JSScript* js::CloneGlobalScript(JSContext* cx, ScopeKind scopeKind,
   return dst;
 }
 
-JSScript* js::CloneScriptIntoFunction(
-    JSContext* cx, HandleScope enclosingScope, HandleFunction fun,
-    HandleScript src, Handle<ScriptSourceObject*> sourceObject) {
+JSScript* js::CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope,
+                                      HandleFunction fun, HandleScript src,
+                                      Handle<ScriptSourceObject*> sourceObject,
+                                      SourceExtent* maybeClassExtent) {
   
   
   MOZ_ASSERT(fun->isIncomplete() || fun->hasSelfHostedLazyScript());
@@ -4479,7 +4476,8 @@ JSScript* js::CloneScriptIntoFunction(
 
   
   const FunctionFlags preservedFlags = fun->flags();
-  RootedScript dst(cx, CopyScriptImpl(cx, src, fun, sourceObject, &scopes));
+  RootedScript dst(cx, CopyScriptImpl(cx, src, fun, sourceObject, &scopes,
+                                      maybeClassExtent));
   if (!dst) {
     fun->setFlags(preservedFlags);
     return nullptr;

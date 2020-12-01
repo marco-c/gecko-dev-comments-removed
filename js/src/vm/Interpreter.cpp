@@ -317,11 +317,17 @@ JSFunction* js::MakeDefaultConstructor(JSContext* cx, HandleScript script,
   
   
   
+  unsigned column;
+  unsigned line = PCToLineNumber(script, pc, &column);
+  SourceExtent classExtent = SourceExtent::makeClassExtent(
+      classStartOffset, classEndOffset, line, column);
+
+  
   MOZ_ASSERT(sourceFun->enclosingScope()->is<GlobalScope>());
   RootedScope enclosingScope(cx, &cx->global()->emptyGlobalScope());
   Rooted<ScriptSourceObject*> sourceObject(cx, script->sourceObject());
   if (!CloneScriptIntoFunction(cx, enclosingScope, ctor, sourceScript,
-                               sourceObject)) {
+                               sourceObject, &classExtent)) {
     return nullptr;
   }
   RootedScript ctorScript(cx, ctor->nonLazyScript());
@@ -329,10 +335,7 @@ JSFunction* js::MakeDefaultConstructor(JSContext* cx, HandleScript script,
   
   
   
-  unsigned column;
-  unsigned line = PCToLineNumber(script, pc, &column);
-  ctorScript->setDefaultClassConstructorSpan(classStartOffset, classEndOffset,
-                                             line, column);
+  ctorScript->clearAllowRelazify();
 
   MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
 

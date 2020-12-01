@@ -1541,13 +1541,12 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
 
   
   
-  SourceExtent extent_ = {};
+  const SourceExtent extent_ = {};
 
   
   
   
-  
-  ImmutableScriptFlags immutableFlags_ = {};
+  const ImmutableScriptFlags immutableFlags_ = {};
 
   
   
@@ -1569,7 +1568,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
 
   BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
-             ScriptSourceObject* sourceObject, SourceExtent extent,
+             ScriptSourceObject* sourceObject, const SourceExtent& extent,
              uint32_t immutableFlags)
       : TenuredCellWithNonGCPointer(stubEntry),
         functionOrGlobal_(functionOrGlobal),
@@ -1633,7 +1632,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   }
   uint32_t toStringStart() const { return extent_.toStringStart; }
   uint32_t toStringEnd() const { return extent_.toStringEnd; }
-  SourceExtent extent() const { return extent_; }
+  const SourceExtent& extent() const { return extent_; }
 
   MOZ_MUST_USE bool appendSourceDataForToString(JSContext* cx,
                                                 js::StringBuffer& buf);
@@ -1648,7 +1647,6 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
     return immutableFlags_.hasFlag(flag);
   }
-  void clearFlag(ImmutableFlags flag) { immutableFlags_.clearFlag(flag); }
 
   
   MOZ_MUST_USE bool hasFlag(MutableFlags flag) const {
@@ -1943,7 +1941,7 @@ class JSScript : public js::BaseScript {
  public:
   static JSScript* Create(JSContext* cx, js::HandleObject functionOrGlobal,
                           js::HandleScriptSourceObject sourceObject,
-                          js::SourceExtent extent,
+                          const js::SourceExtent& extent,
                           js::ImmutableScriptFlags flags);
 
   
@@ -2178,9 +2176,6 @@ class JSScript : public js::BaseScript {
   bool mayReadFrameArgsDirectly();
 
   static JSLinearString* sourceData(JSContext* cx, JS::HandleScript script);
-
-  void setDefaultClassConstructorSpan(uint32_t start, uint32_t end,
-                                      unsigned line, unsigned column);
 
 #ifdef MOZ_VTUNE
   
@@ -2569,7 +2564,8 @@ extern void DescribeScriptedCallerForDirectEval(
 
 JSScript* CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope,
                                   HandleFunction fun, HandleScript src,
-                                  Handle<ScriptSourceObject*> sourceObject);
+                                  Handle<ScriptSourceObject*> sourceObject,
+                                  SourceExtent* maybeClassExtent = nullptr);
 
 JSScript* CloneGlobalScript(JSContext* cx, ScopeKind scopeKind,
                             HandleScript src);
