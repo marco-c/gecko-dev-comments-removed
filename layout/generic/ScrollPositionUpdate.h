@@ -68,30 +68,26 @@ class ScrollPositionUpdate {
 
   
   
-  static ScrollPositionUpdate NewScrollframe(
-      const ScrollGeneration& aGeneration, nsPoint aInitialPosition);
+  static ScrollPositionUpdate NewScrollframe(nsPoint aInitialPosition);
   
   
-  static ScrollPositionUpdate NewScroll(const ScrollGeneration& aGeneration,
-                                        ScrollOrigin aOrigin,
+  static ScrollPositionUpdate NewScroll(ScrollOrigin aOrigin,
                                         nsPoint aDestination);
   
   
-  static ScrollPositionUpdate NewRelativeScroll(
-      const ScrollGeneration& aGeneration, nsPoint aSource,
-      nsPoint aDestination);
+  static ScrollPositionUpdate NewRelativeScroll(nsPoint aSource,
+                                                nsPoint aDestination);
   
   
   
-  static ScrollPositionUpdate NewSmoothScroll(
-      const ScrollGeneration& aGeneration, ScrollOrigin aOrigin,
-      nsPoint aDestination);
+  static ScrollPositionUpdate NewSmoothScroll(ScrollOrigin aOrigin,
+                                              nsPoint aDestination);
   
   
   
-  static ScrollPositionUpdate NewPureRelativeScroll(
-      const ScrollGeneration& aGeneration, ScrollOrigin aOrigin,
-      ScrollMode aMode, const nsPoint& aDelta);
+  static ScrollPositionUpdate NewPureRelativeScroll(ScrollOrigin aOrigin,
+                                                    ScrollMode aMode,
+                                                    const nsPoint& aDelta);
 
   bool operator==(const ScrollPositionUpdate& aOther) const;
 
