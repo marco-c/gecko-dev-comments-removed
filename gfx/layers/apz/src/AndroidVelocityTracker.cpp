@@ -69,8 +69,12 @@ Maybe<float> AndroidVelocityTracker::AddPosition(ParentLayerCoord aPos,
 
   auto start = mHistory[mHistory.Length() - 2];
   auto end = mHistory[mHistory.Length() - 1];
-  return Some((end.second - start.second) /
-              (end.first - start.first).ToMilliseconds());
+  auto velocity =
+      (end.second - start.second) / (end.first - start.first).ToMilliseconds();
+  
+  
+  
+  return Some(-velocity);
 }
 
 static float VectorDot(const float* a, const float* b, uint32_t m) {
