@@ -307,6 +307,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:ScriptPreloader::Trace\n"
          "race:ScriptPreloader::WriteCache\n"
 
+         
+         "race:VRShMem::PullSystemState\n"
+         "race:VRShMem::PushSystemState\n"
+
       
       ;  
 }
