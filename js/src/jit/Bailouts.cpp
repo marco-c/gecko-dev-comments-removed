@@ -288,8 +288,8 @@ void jit::CheckFrequentBailouts(JSContext* cx, JSScript* script,
       
       
       if (bailoutKind != BailoutKind::FirstExecution &&
-          !script->hadFrequentBailouts()) {
-        script->setHadFrequentBailouts();
+          !script->hadLICMBailout()) {
+        script->setHadLICMBailout();
       }
 
       JitSpew(JitSpew_IonInvalidate, "Invalidating due to too many bailouts");

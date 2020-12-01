@@ -2132,6 +2132,13 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       
       break;
 
+    case BailoutKind::LICM:
+      
+      MOZ_ASSERT(!outerScript->hadLICMBailout());
+      outerScript->setHadLICMBailout();
+      InvalidateAfterBailout(cx, outerScript, "LICM failure");
+      break;
+
     case BailoutKind::Inevitable:
     case BailoutKind::DuringVMCall:
     case BailoutKind::TooManyArguments:

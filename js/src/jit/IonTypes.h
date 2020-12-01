@@ -77,6 +77,11 @@ enum class BailoutKind : uint8_t {
 
   
   
+  
+  LICM,
+
+  
+  
 
   
   Inevitable,
@@ -281,6 +286,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "SpeculativePhi";
     case BailoutKind::TypePolicy:
       return "TypePolicy";
+    case BailoutKind::LICM:
+      return "LICM";
 
     
     case BailoutKind::Inevitable:

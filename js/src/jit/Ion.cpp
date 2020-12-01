@@ -1130,7 +1130,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     
     
     
-    if (!mir->outerInfo().hadFrequentBailouts()) {
+    if (!mir->outerInfo().hadLICMBailout()) {
       if (!LICM(mir, graph)) {
         return false;
       }
