@@ -382,14 +382,8 @@ class MachCommands(MachCommandBase):
             kwargs["subsuite"] = None
 
         suites = defaultdict(list)
-        is_webrtc_tag_present = False
         unsupported = set()
         for test in tests:
-            
-            
-            if "webrtc" in test.get("tags", ""):
-                is_webrtc_tag_present = True
-
             
             if test["flavor"] not in ALL_FLAVORS:
                 continue
@@ -410,8 +404,7 @@ class MachCommands(MachCommandBase):
 
             suites[key].append(test)
 
-        
-        if ("mochitest", "media") in suites and is_webrtc_tag_present:
+        if ("mochitest", "media") in suites:
             req = os.path.join(
                 "testing",
                 "tools",
