@@ -262,8 +262,7 @@ bool StripHandlerFromOBJREF(NotNull<IStream*> aStream, const uint64_t aStartPos,
 
   
   
-  CLSID zeroClsid = {0};
-  hr = aStream->Write(&zeroClsid, sizeof(CLSID), &bytesWritten);
+  hr = aStream->Write(&CLSID_NULL, sizeof(CLSID), &bytesWritten);
   if (FAILED(hr) || bytesWritten != sizeof(CLSID)) {
     return false;
   }
