@@ -1,7 +1,5 @@
 
 
-
-
 var document = {getElementById: () => null};
 
 (function() {

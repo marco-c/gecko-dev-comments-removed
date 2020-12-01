@@ -2,7 +2,6 @@
 
 
 
-
 var max = 40;
 setJitCompilerOption("ion.warmup.trigger", max - 10);
 setJitCompilerOption("ion.full.warmup.trigger", max - 10);

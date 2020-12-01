@@ -5,7 +5,7 @@ setJitCompilerOption("ion.warmup.trigger", 20);
 setJitCompilerOption("ion.full.warmup.trigger", 20);
 var i;
 
-var warp = getJitCompilerOptions()["warp.enable"];
+var warp = true;
 
 
 gczeal(0);

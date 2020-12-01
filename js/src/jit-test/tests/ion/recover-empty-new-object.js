@@ -5,7 +5,6 @@
 
 
 
-
 if (getJitCompilerOptions()["ion.warmup.trigger"] <= 20)
     setJitCompilerOption("ion.warmup.trigger", 20);
 
