@@ -46,14 +46,14 @@ class GraphRunner final : public Runnable {
   
 
 
-  bool OnThread();
+  bool OnThread() const;
 
 #ifdef DEBUG
   
 
 
 
-  bool InDriverIteration(GraphDriver* aDriver);
+  bool InDriverIteration(const GraphDriver* aDriver) const;
 #endif
 
  private:
