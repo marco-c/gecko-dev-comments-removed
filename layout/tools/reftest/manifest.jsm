@@ -577,8 +577,7 @@ function BuildConditionSandbox(aURL) {
     sandbox.OSX = osxmatch ? parseInt(osxmatch[1]) * 100 + parseInt(osxmatch[2]) : undefined;
 
     
-    
-    sandbox.haveTestPlugin = !sandbox.Android && !!getTestPlugin("Test Plug-in");
+    sandbox.haveTestPlugin = false;
 
     
     sandbox.windowsDefaultTheme = g.containingWindow.matchMedia("(-moz-windows-default-theme)").matches;
