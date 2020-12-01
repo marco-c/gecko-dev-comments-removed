@@ -48,6 +48,11 @@ function URLFetcher(url, timeout) {
   
   
   
+  xhr.channel.QueryInterface(Ci.nsIHttpChannel).allowSTS = false;
+
+  
+  
+  
   xhr.setRequestHeader("Cache-Control", "no-cache");
   
   
