@@ -555,6 +555,36 @@ add_task(async function nonPrefixedKeyword() {
   await Services.search.removeEngine(engine);
 });
 
+
+
+add_task(async function multipleMatchingEngines() {
+  let testEngineFoo = await Services.search.addEngineWithDetails("TestFoo", {
+    alias: `${ALIAS}foo`,
+    template: "http://example-2.com/?search={searchTerms}",
+  });
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "@te",
+    fireInputEvent: true,
+  });
+
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(window),
+    1,
+    "Two results is shown."
+  );
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(result.searchParams.keyword, ALIAS);
+  Assert.equal(
+    UrlbarTestUtils.getSelectedRowIndex(window),
+    0,
+    "The first result is selected."
+  );
+
+  await Services.search.removeEngine(testEngineFoo);
+});
+
 async function assertAlias(aliasPresent, expectedAlias = ALIAS) {
   await assertFirstResultIsAlias(aliasPresent, expectedAlias);
   assertHighlighted(aliasPresent, expectedAlias);

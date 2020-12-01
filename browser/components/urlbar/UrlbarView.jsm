@@ -282,6 +282,25 @@ class UrlbarView {
 
 
 
+  getResultAtIndex(index) {
+    if (
+      !this.isOpen ||
+      !this._rows.children.length ||
+      index >= this._rows.children.length
+    ) {
+      return null;
+    }
+
+    return this._rows.children[index].result;
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -299,6 +318,18 @@ class UrlbarView {
       closest = element.closest(SELECTABLE_ELEMENT_SELECTOR);
     }
     return this._isElementVisible(closest) ? closest : null;
+  }
+
+  
+
+
+
+  resultIsSelected(result) {
+    if (this.selectedRowIndex < 0) {
+      return false;
+    }
+
+    return result.rowIndex == this.selectedRowIndex;
   }
 
   
@@ -602,18 +633,26 @@ class UrlbarView {
       );
     }
 
-    if (
-      firstResult.heuristic &&
-      !this.selectedElement &&
-      !this.oneOffSearchButtons.selectedButton
-    ) {
-      
-      
-      
-      this._selectElement(this._getFirstSelectableElement(), {
-        updateInput: false,
-        setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
-      });
+    if (!this.selectedElement && !this.oneOffSearchButtons.selectedButton) {
+      if (firstResult.heuristic) {
+        
+        
+        
+        this._selectElement(this._getFirstSelectableElement(), {
+          updateInput: false,
+          setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
+        });
+      } else if (
+        UrlbarPrefs.get("update2") &&
+        firstResult.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW &&
+        queryContext.trimmedSearchString != "@"
+      ) {
+        
+        
+        
+        
+        this.input.setResultForCurrentValue(firstResult);
+      }
     }
 
     

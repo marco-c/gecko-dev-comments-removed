@@ -489,6 +489,16 @@ class UrlbarInput {
       return;
     }
 
+    
+    
+    if (!result && this.value.startsWith("@")) {
+      let tokenAliasResult = this.view.getResultAtIndex(0);
+      if (tokenAliasResult?.autofill && tokenAliasResult?.payload.keyword) {
+        this.pickResult(tokenAliasResult, event);
+        return;
+      }
+    }
+
     let url;
     let selType = this.controller.engagementEvent.typeFromElement(element);
     let typedValue = this.value;
@@ -990,8 +1000,6 @@ class UrlbarInput {
 
 
   setValueFromResult(result = null, event = null) {
-    let canonizedUrl;
-
     
     
     
@@ -1013,58 +1021,18 @@ class UrlbarInput {
       
       
       
+      
+      
       this.value = this._lastSearchString || this._valueOnLastSearch;
-    } else {
-      
-      
-      canonizedUrl = this._maybeCanonizeURL(
-        event,
-        result.autofill ? this._lastSearchString : this.value
-      );
-      if (canonizedUrl) {
-        this.value = canonizedUrl;
-      } else if (result.autofill) {
-        let { value, selectionStart, selectionEnd } = result.autofill;
-        this._autofillValue(value, selectionStart, selectionEnd);
-      } else if (
-        result.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW
-      ) {
-        
-        
-        let enteredSearchMode = this.maybePromoteResultToSearchMode({
-          result,
-          checkValue: false,
-          startQuery: false,
-        });
-        if (!enteredSearchMode) {
-          this._setValue(this._getValueFromResult(result), true);
-          this.searchMode = null;
-        }
-      } else {
-        
-        
-        
-        let allowTrim = true;
-        if (
-          result.type == UrlbarUtils.RESULT_TYPE.URL &&
-          UrlbarPrefs.get("trimURLs") &&
-          result.payload.url.startsWith(BrowserUtils.trimURLProtocol)
-        ) {
-          let fixupInfo = this._getURIFixupInfo(
-            BrowserUtils.trimURL(result.payload.url)
-          );
-          if (fixupInfo?.keywordAsSent) {
-            allowTrim = false;
-          }
-        }
-        this._setValue(this._getValueFromResult(result), allowTrim);
-      }
+      this.setResultForCurrentValue(result);
+      return false;
     }
-    this.setResultForCurrentValue(result);
 
     
     
-    if (result) {
+    const setValueAndRestoreActionType = (value, allowTrim) => {
+      this._setValue(value, allowTrim);
+
       switch (result.type) {
         case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
           this.setAttribute("actiontype", "switchtab");
@@ -1073,9 +1041,66 @@ class UrlbarInput {
           this.setAttribute("actiontype", "extension");
           break;
       }
+    };
+
+    
+    
+    let canonizedUrl = this._maybeCanonizeURL(
+      event,
+      result.autofill ? this._lastSearchString : this.value
+    );
+    if (canonizedUrl) {
+      setValueAndRestoreActionType(canonizedUrl, true);
+      this.setResultForCurrentValue(result);
+      return true;
     }
 
-    return !!canonizedUrl;
+    if (result.autofill) {
+      let { value, selectionStart, selectionEnd } = result.autofill;
+      this._autofillValue(value, selectionStart, selectionEnd);
+    }
+
+    if (result.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW) {
+      let enteredSearchMode;
+      
+      if (this.view.resultIsSelected(result)) {
+        
+        enteredSearchMode = this.maybePromoteResultToSearchMode({
+          result,
+          checkValue: false,
+          startQuery: false,
+        });
+      }
+      if (!enteredSearchMode) {
+        setValueAndRestoreActionType(this._getValueFromResult(result), true);
+        this.searchMode = null;
+      }
+      this.setResultForCurrentValue(result);
+      return false;
+    }
+
+    
+    
+    
+    let allowTrim = true;
+    if (
+      result.type == UrlbarUtils.RESULT_TYPE.URL &&
+      UrlbarPrefs.get("trimURLs") &&
+      result.payload.url.startsWith(BrowserUtils.trimURLProtocol)
+    ) {
+      let fixupInfo = this._getURIFixupInfo(
+        BrowserUtils.trimURL(result.payload.url)
+      );
+      if (fixupInfo?.keywordAsSent) {
+        allowTrim = false;
+      }
+    }
+
+    if (!result.autofill) {
+      setValueAndRestoreActionType(this._getValueFromResult(result), allowTrim);
+    }
+    this.setResultForCurrentValue(result);
+    return false;
   }
 
   
@@ -1890,8 +1915,7 @@ class UrlbarInput {
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
         let value = "";
         if (result.payload.keyword) {
-          value +=
-            result.payload.keyword + (UrlbarPrefs.get("update2") ? "" : " ");
+          value += result.payload.keyword + " ";
         }
         value += result.payload.suggestion || result.payload.query;
         return value;

@@ -113,8 +113,23 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
       return;
     }
 
-    if (queryContext.trimmedSearchString == "@") {
-      for (let { engine, tokenAliases } of this._engines) {
+    if (
+      this._autofillData &&
+      this._autofillData.instance == this.queryInstance
+    ) {
+      addCallback(this, this._autofillData.result);
+      if (!UrlbarPrefs.get("update2")) {
+        return;
+      }
+    }
+
+    for (let { engine, tokenAliases } of this._engines) {
+      if (
+        (!UrlbarPrefs.get("update2") &&
+          queryContext.trimmedSearchString == "@") ||
+        (tokenAliases[0].startsWith(queryContext.trimmedSearchString) &&
+          engine.name != this._autofillData?.result.payload.engine)
+      ) {
         let result = new UrlbarResult(
           UrlbarUtils.RESULT_TYPE.SEARCH,
           UrlbarUtils.RESULT_SOURCE.SEARCH,
@@ -128,13 +143,9 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
         );
         addCallback(this, result);
       }
-    } else if (
-      this._autofillData &&
-      this._autofillData.instance == this.queryInstance
-    ) {
-      addCallback(this, this._autofillData.result);
-      this._autofillData = null;
     }
+
+    this._autofillData = null;
   }
 
   
@@ -192,10 +203,22 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
               keyword: [aliasPreservingUserCase, UrlbarUtils.HIGHLIGHT.TYPED],
               query: ["", UrlbarUtils.HIGHLIGHT.TYPED],
               icon: engine.iconURI?.spec,
-              keywordOffer: UrlbarUtils.KEYWORD_OFFER.HIDE,
+              
+              
+              keywordOffer: UrlbarPrefs.get("update2")
+                ? UrlbarUtils.KEYWORD_OFFER.SHOW
+                : UrlbarUtils.KEYWORD_OFFER.HIDE,
             })
           );
-          result.heuristic = true;
+          if (UrlbarPrefs.get("update2")) {
+            
+            
+            
+            
+            result.suggestedIndex = 0;
+          } else {
+            result.heuristic = true;
+          }
           result.autofill = {
             value,
             selectionStart: queryContext.searchString.length,

@@ -445,8 +445,13 @@ class UrlbarValueFormatter {
     
     
     
+    
+    
     this._selectedResult =
-      this.urlbarInput.view.selectedResult || this._selectedResult;
+      this.urlbarInput.view.selectedResult ||
+      this.urlbarInput.view.getResultAtIndex(0) ||
+      this._selectedResult;
+
     if (
       this._selectedResult &&
       this._selectedResult.type == UrlbarUtils.RESULT_TYPE.SEARCH
