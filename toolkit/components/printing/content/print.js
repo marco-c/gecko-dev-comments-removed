@@ -641,12 +641,12 @@ var PrintEventHandler = {
         .add(elapsed);
     }
 
-    
-    
-    let totalPageCount, hasSelection;
+    let totalPageCount, sheetCount, hasSelection;
     try {
+      
       ({
         totalPageCount,
+        sheetCount,
         hasSelection,
       } = await previewBrowser.frameLoader.printPreview(settings, sourceWinId));
     } catch (e) {
@@ -655,17 +655,11 @@ var PrintEventHandler = {
     }
 
     
-    let numPages = totalPageCount;
-    
-    if (settings.printRange == Ci.nsIPrintSettings.kRangeSpecifiedPageRange) {
-      numPages = settings.endPageRange - settings.startPageRange + 1;
-    }
-    
     settings.isPrintSelectionRBEnabled = hasSelection;
 
     document.dispatchEvent(
       new CustomEvent("page-count", {
-        detail: { numPages, totalPages: totalPageCount },
+        detail: { numPages: sheetCount, totalPages: totalPageCount },
       })
     );
 
