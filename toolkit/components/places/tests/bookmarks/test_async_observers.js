@@ -55,26 +55,14 @@ add_task(async function test_add_icon() {
   let guids = new Set(gBookmarkGuids);
   Assert.equal(guids.size, 2);
   let promiseNotifications = PlacesTestUtils.waitForNotification(
-    "onItemChanged",
-    (
-      id,
-      property,
-      isAnno,
-      newValue,
-      lastModified,
-      itemType,
-      parentId,
-      guid
-    ) => {
-      info(`Got a changed notification for ${guid}.`);
-      Assert.equal(property, "favicon");
-      Assert.ok(!isAnno);
-      Assert.equal(newValue, SMALLPNG_DATA_URI.spec);
-      Assert.equal(lastModified, 0);
-      Assert.equal(itemType, PlacesUtils.bookmarks.TYPE_BOOKMARK);
-      guids.delete(guid);
-      return guids.size == 0;
-    }
+    "favicon-changed",
+    events =>
+      events.some(
+        event =>
+          event.url == "http://book.ma.rk/" &&
+          event.faviconUrl.startsWith("data:image/png;base64")
+      ),
+    "places"
   );
 
   PlacesUtils.favicons.setAndFetchFaviconForPage(
@@ -117,32 +105,4 @@ add_task(async function test_remove_page() {
 
   await PlacesUtils.history.remove("http://book.ma.rk/");
   await promiseNotifications;
-});
-
-add_task(async function shutdown() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  let shutdownClient = PlacesUtils.history.shutdownClient.jsclient;
-  shutdownClient.addBlocker("Places Expiration: shutdown", function() {
-    Services.tm.mainThread.dispatch(() => {
-      
-      PlacesUtils.bookmarks
-        .QueryInterface(Ci.nsINavHistoryObserver)
-        .onPageChanged(
-          NetUtil.newURI("http://book.ma.rk/"),
-          Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON,
-          "test",
-          "test"
-        );
-    }, Ci.nsIThread.DISPATCH_NORMAL);
-  });
 });

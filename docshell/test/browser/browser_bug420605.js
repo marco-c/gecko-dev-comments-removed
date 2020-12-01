@@ -2,29 +2,26 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
+const { PlacesTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PlacesTestUtils.jsm"
+);
 
+add_task(async function test() {
   var pageurl =
     "http://mochi.test:8888/browser/docshell/test/browser/file_bug420605.html";
   var fragmenturl =
     "http://mochi.test:8888/browser/docshell/test/browser/file_bug420605.html#firefox";
 
-  var historyService = Cc[
-    "@mozilla.org/browser/nav-history-service;1"
-  ].getService(Ci.nsINavHistoryService);
-
   
 
   function getNavHistoryEntry(aURI) {
-    var options = historyService.getNewQueryOptions();
+    var options = PlacesUtils.history.getNewQueryOptions();
     options.queryType = Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY;
     options.maxResults = 1;
 
-    var query = historyService.getNewQuery();
+    var query = PlacesUtils.history.getNewQuery();
     query.uri = aURI;
-
-    var result = historyService.executeQuery(query, options);
+    var result = PlacesUtils.history.executeQuery(query, options);
     result.root.containerOpen = true;
 
     if (!result.root.childCount) {
@@ -57,53 +54,6 @@ function test() {
     }
   }
 
-  
-  var historyObserver = {
-    onBeginUpdateBatch() {},
-    onEndUpdateBatch() {},
-    onTitleChanged(aURI, aPageTitle) {},
-    onDeleteURI(aURI) {},
-    onClearHistory() {},
-    onPageChanged(aURI, aWhat, aValue) {
-      if (aWhat != Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON) {
-        return;
-      }
-      aURI = aURI.spec;
-      switch (aURI) {
-        case pageurl:
-          ok(aValue, "Favicon value is not null for page without fragment.");
-          originalFavicon = aValue;
-
-          
-          
-          clickLinkIfReady();
-
-          return;
-        case fragmenturl:
-          
-          
-
-          is(
-            aValue,
-            originalFavicon,
-            "New favicon should be same as original favicon."
-          );
-
-          
-          
-          let info = getNavHistoryEntry(makeURI(aURI));
-          ok(info, "There must be a history entry for the fragment.");
-          ok(info.icon, "The history entry must have an associated favicon.");
-          historyService.removeObserver(historyObserver, false);
-          gBrowser.removeCurrentTab();
-          finish();
-      }
-    },
-    onPageExpired(aURI, aVisitTime, aWholeEntry) {},
-    QueryInterface: ChromeUtils.generateQI(["nsINavHistoryObserver"]),
-  };
-  historyService.addObserver(historyObserver);
-
   function onPageLoad() {
     clickLinkIfReady();
   }
@@ -114,6 +64,54 @@ function test() {
   info = getNavHistoryEntry(makeURI(fragmenturl));
   ok(!info, "The fragment test page must not have been visited already.");
 
+  let promiseIcon1 = PlacesTestUtils.waitForNotification(
+    "favicon-changed",
+    events =>
+      events.some(e => {
+        if (e.url == pageurl) {
+          ok(
+            e.faviconUrl,
+            "Favicon value is not null for page without fragment."
+          );
+          originalFavicon = e.faviconUrl;
+
+          
+          
+          clickLinkIfReady();
+          return true;
+        }
+        return false;
+      }),
+    "places"
+  );
+  let promiseIcon2 = PlacesTestUtils.waitForNotification(
+    "favicon-changed",
+    events =>
+      events.some(e => {
+        if (e.url == fragmenturl) {
+          
+          
+          is(
+            e.faviconUrl,
+            originalFavicon,
+            "New favicon should be same as original favicon."
+          );
+          ok(
+            e.faviconUrl,
+            "Favicon value is not null for page without fragment."
+          );
+          originalFavicon = e.faviconUrl;
+
+          
+          
+          clickLinkIfReady();
+          return true;
+        }
+        return false;
+      }),
+    "places"
+  );
+
   
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   BrowserTestUtils.waitForContentEvent(
@@ -122,4 +120,14 @@ function test() {
     true
   ).then(onPageLoad);
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, pageurl);
-}
+
+  await promiseIcon1;
+  await promiseIcon2;
+
+  
+  
+  info = getNavHistoryEntry(makeURI(fragmenturl));
+  ok(info, "There must be a history entry for the fragment.");
+  ok(info.icon, "The history entry must have an associated favicon.");
+  gBrowser.removeCurrentTab();
+});

@@ -920,11 +920,6 @@ BookmarksTracker.prototype = {
       return;
     }
 
-    
-    if (property == "favicon") {
-      return;
-    }
-
     this._log.trace(
       "onItemChanged: " +
         itemId +

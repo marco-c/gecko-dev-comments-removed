@@ -8,53 +8,57 @@
 
 
 
-function test() {
+const { PlacesTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PlacesTestUtils.jsm"
+);
+
+add_task(async function test() {
   const testDir = "http://mochi.test:8888/browser/docshell/test/browser/";
   const origURL = testDir + "file_bug655270.html";
   const newURL = origURL + "?new_page";
 
   const faviconURL = testDir + "favicon_bug655270.ico";
 
-  waitForExplicitFinish();
+  let icon1;
+  let promiseIcon1 = PlacesTestUtils.waitForNotification(
+    "favicon-changed",
+    events =>
+      events.some(e => {
+        if (e.url == origURL) {
+          icon1 = e.faviconUrl;
+          return true;
+        }
+        return false;
+      }),
+    "places"
+  );
+  let icon2;
+  let promiseIcon2 = PlacesTestUtils.waitForNotification(
+    "favicon-changed",
+    events =>
+      events.some(e => {
+        if (e.url == newURL) {
+          icon2 = e.faviconUrl;
+          return true;
+        }
+        return false;
+      }),
+    "places"
+  );
 
+  
+  
+  
+  
   let tab = BrowserTestUtils.addTab(gBrowser, origURL);
-
+  await promiseIcon1;
+  is(icon1, faviconURL, "FaviconURL for original URI");
   
   
-  
-  
-
-  let observer = {
-    onPageChanged(aURI, aWhat, aValue) {
-      if (aWhat != Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON) {
-        return;
-      }
-
-      if (aURI.spec == origURL) {
-        is(aValue, faviconURL, "FaviconURL for original URI");
-        
-        
-        SpecialPowers.spawn(tab.linkedBrowser, [], function() {
-          content.history.pushState("", "", "?new_page");
-        });
-      }
-
-      if (aURI.spec == newURL) {
-        is(aValue, faviconURL, "FaviconURL for new URI");
-        gBrowser.removeTab(tab);
-        PlacesUtils.history.removeObserver(this);
-        finish();
-      }
-    },
-
-    onBeginUpdateBatch() {},
-    onEndUpdateBatch() {},
-    onTitleChanged() {},
-    onDeleteURI() {},
-    onClearHistory() {},
-    onDeleteVisits() {},
-    QueryInterface: ChromeUtils.generateQI(["nsINavHistoryObserver"]),
-  };
-
-  PlacesUtils.history.addObserver(observer);
-}
+  SpecialPowers.spawn(tab.linkedBrowser, [], function() {
+    content.history.pushState("", "", "?new_page");
+  });
+  await promiseIcon2;
+  is(icon2, faviconURL, "FaviconURL for new URI");
+  gBrowser.removeTab(tab);
+});

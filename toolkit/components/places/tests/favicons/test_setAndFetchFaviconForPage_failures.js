@@ -21,15 +21,12 @@ add_task(async function() {
   
   let lastPageURI = Services.io.newURI("http://example.com/verification");
   let promiseIconChanged = PlacesTestUtils.waitForNotification(
-    "onPageChanged",
-    (uri, prop, value) => {
-      return (
-        prop == Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON &&
-        uri.equals(lastPageURI) &&
-        value == SMALLPNG_DATA_URI.spec
-      );
-    },
-    "history"
+    "favicon-changed",
+    events =>
+      events.some(
+        e => e.url == lastPageURI.spec && e.faviconUrl == SMALLPNG_DATA_URI.spec
+      ),
+    "places"
   );
 
   info("Test null page uri");
