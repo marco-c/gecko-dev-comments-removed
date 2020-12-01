@@ -1137,29 +1137,20 @@ RefPtr<ContentParent::LaunchPromise> ContentParent::WaitForLaunchAsync(
   
   
   
+  
   return mSubprocess->WhenProcessHandleReady()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      
-      [self = RefPtr{this}, aPriority]() {
-        if (self->IsLaunching()) {
-          if (!self->LaunchSubprocessResolve( false,
-                                             aPriority)) {
-            self->LaunchSubprocessReject();
-            return LaunchPromise::CreateAndReject(LaunchError(), __func__);
-          }
+      [self = RefPtr{this}, aPriority] {
+        if (self->LaunchSubprocessResolve( false, aPriority)) {
           self->mActivateTS = TimeStamp::Now();
-        } else if (self->IsDead()) {
-          
-          
-          return LaunchPromise::CreateAndReject(LaunchError(), __func__);
+          return LaunchPromise::CreateAndResolve(self, __func__);
         }
-        return LaunchPromise::CreateAndResolve(self, __func__);
+
+        self->LaunchSubprocessReject();
+        return LaunchPromise::CreateAndReject(LaunchError(), __func__);
       },
-      
-      [self = RefPtr{this}]() {
-        if (self->IsLaunching()) {
-          self->LaunchSubprocessReject();
-        }
+      [self = RefPtr{this}] {
+        self->LaunchSubprocessReject();
         return LaunchPromise::CreateAndReject(LaunchError(), __func__);
       });
 }
@@ -2402,6 +2393,18 @@ void ContentParent::LaunchSubprocessReject() {
 bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
                                             ProcessPriority aPriority) {
   AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess::resolve", OTHER);
+
+  
+  
+  UniquePtr<IPC::Channel> channel = mSubprocess->TakeChannel();
+  if (!channel) {
+    
+    MOZ_ASSERT(sCreatedFirstContentProcess);
+    MOZ_ASSERT(!mPrefSerializer);
+    MOZ_ASSERT(mLifecycleState != LifecycleState::LAUNCHING);
+    return true;
+  }
+
   
   
   mPrefSerializer = nullptr;
@@ -2426,7 +2429,7 @@ bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
 
   base::ProcessId procId =
       base::GetProcId(mSubprocess->GetChildProcessHandle());
-  Open(mSubprocess->TakeChannel(), procId);
+  Open(std::move(channel), procId);
 
   ContentProcessManager::GetSingleton()->AddContentProcess(this);
 
@@ -2435,7 +2438,16 @@ bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
       CodeCoverageHandler::Get()->GetMutexHandle(procId));
 #endif
 
+  
+  
+  
+  if (IsDead()) {
+    ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
+    return false;
+  }
+  MOZ_ASSERT(mLifecycleState == LifecycleState::LAUNCHING);
   mLifecycleState = LifecycleState::ALIVE;
+
   if (!InitInternal(aPriority)) {
     NS_WARNING("failed to initialize child in the parent");
     
