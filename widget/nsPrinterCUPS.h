@@ -67,6 +67,8 @@ class nsPrinterCUPS final : public nsPrinterBase {
   using PrinterInfoMutex =
       mozilla::DataMutexBase<CUPSPrinterInfo, mozilla::RecursiveMutex>;
 
+  using PrinterInfoLock = PrinterInfoMutex::AutoLock;
+
   ~nsPrinterCUPS();
 
   
@@ -107,8 +109,7 @@ class nsPrinterCUPS final : public nsPrinterBase {
 
 
 
-  void TryEnsurePrinterInfo(
-      CUPSPrinterInfo& aInOutPrinterInfo,
+  PrinterInfoLock TryEnsurePrinterInfo(
       http_t* const aConnection = CUPS_HTTP_DEFAULT) const;
 
   const nsCUPSShim& mShim;
