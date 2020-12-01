@@ -56,7 +56,6 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
 #ifdef MOZ_WAYLAND
   
   bool IsVAAPIAvailable();
-  void LinkVAAPILibs();
 #endif
 
   
