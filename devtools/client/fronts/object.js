@@ -242,6 +242,43 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
   
 
 
+  async getPromiseState() {
+    if (this._grip.class !== "Promise") {
+      console.error("getPromiseState is only valid for promise grips.");
+      return null;
+    }
+
+    let response, promiseState;
+    try {
+      response = await super.promiseState();
+      promiseState = response.promiseState;
+    } catch (error) {
+      
+      
+      if (error.message.includes("unrecognizedPacketType")) {
+        promiseState = this._grip.promiseState;
+        response = { promiseState };
+      } else {
+        throw error;
+      }
+    }
+
+    const { value, reason } = promiseState;
+
+    if (value) {
+      promiseState.value = getAdHocFrontOrPrimitiveGrip(value, this);
+    }
+
+    if (reason) {
+      promiseState.reason = getAdHocFrontOrPrimitiveGrip(reason, this);
+    }
+
+    return response;
+  }
+
+  
+
+
   async getProxySlots() {
     if (this._grip.class !== "Proxy") {
       console.error("getProxySlots is only valid for proxy grips.");
@@ -356,24 +393,6 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
 
 
 function createChildFronts(objectFront, packet) {
-  
-  if (packet.class == "Promise" && packet.promiseState) {
-    if (packet.promiseState.state == "fulfilled" && packet.promiseState.value) {
-      packet.promiseState.value = getAdHocFrontOrPrimitiveGrip(
-        packet.promiseState.value,
-        objectFront
-      );
-    } else if (
-      packet.promiseState.state == "rejected" &&
-      packet.promiseState.reason
-    ) {
-      packet.promiseState.reason = getAdHocFrontOrPrimitiveGrip(
-        packet.promiseState.reason,
-        objectFront
-      );
-    }
-  }
-
   if (packet.preview) {
     const { message, entries } = packet.preview;
 

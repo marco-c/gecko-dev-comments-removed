@@ -165,8 +165,9 @@ const proto = {
 
     this.hooks.incrementGripDepth();
 
-    if (g.class == "Promise") {
-      g.promiseState = this._createPromiseState();
+    
+    if (g.class == "Promise" && this.hooks.getGripDepth() < 3) {
+      g.promiseState = this.promiseState().promiseState;
     }
 
     if (g.class == "Function") {
@@ -250,7 +251,7 @@ const proto = {
   
 
 
-  _createPromiseState: function() {
+  promiseState: function() {
     const { state, value, reason } = getPromiseState(this.obj);
     const promiseState = { state };
 
@@ -267,7 +268,7 @@ const proto = {
       promiseState.timeToSettle = this.obj.promiseTimeToResolution;
     }
 
-    return promiseState;
+    return { promiseState };
   },
 
   
