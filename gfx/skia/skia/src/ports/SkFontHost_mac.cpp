@@ -996,9 +996,6 @@ private:
 
 
 
-#ifdef MOZ_SKIA
-extern "C" bool Gecko_OnSierraOrLater();
-#endif
 static SkUniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGFloat textSize,
                                                          const CGAffineTransform* transform)
 {
@@ -1057,13 +1054,11 @@ static SkUniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGF
         
         
 
-        if (Gecko_OnSierraOrLater())
-        {
-          
-          CFDictionaryRef variations = CGFontCopyVariations(baseCGFont.get());
-          if (variations) {
+        
+        CFDictionaryRef variations = CGFontCopyVariations(baseCGFont.get());
+        if (variations) {
             SkUniqueCFRef<CFDictionaryRef>
-              varAttr(CFDictionaryCreate(nullptr,
+            varAttr(CFDictionaryCreate(nullptr,
                                          (const void**)&kCTFontVariationAttribute,
                                          (const void**)&variations,
                                          1,
@@ -1076,9 +1071,8 @@ static SkUniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGF
 
             return SkUniqueCFRef<CTFontRef>(
                                             CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, transform, varDesc.get()));
-          }
-      }
-      return SkUniqueCFRef<CTFontRef>(
+        }
+        return SkUniqueCFRef<CTFontRef>(
                                       CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, transform, nullptr));
     } else {
         return SkUniqueCFRef<CTFontRef>(CTFontCreateCopyWithAttributes(baseFont, textSize, transform, nullptr));

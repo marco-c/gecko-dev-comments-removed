@@ -1026,9 +1026,7 @@ void nsCocoaWindow::AdjustWindowShadow() {
       [mWindow windowNumber] == -1)
     return;
 
-  const ShadowParams& params = nsCocoaFeatures::OnYosemiteOrLater()
-                                   ? kWindowShadowParametersPostYosemite[uint8_t(mShadowStyle)]
-                                   : kWindowShadowParametersPreYosemite[uint8_t(mShadowStyle)];
+  const ShadowParams& params = kWindowShadowParametersPostYosemite[uint8_t(mShadowStyle)];
   CGSConnection cid = _CGSDefaultConnection();
   CGSSetWindowShadowAndRimParameters(cid, [mWindow windowNumber], params.standardDeviation,
                                      params.density, params.offsetX, params.offsetY, params.flags);
@@ -1316,10 +1314,6 @@ int32_t nsCocoaWindow::GetWorkspaceID() {
   
   CGSSpaceID sid = 0;
 
-  if (!nsCocoaFeatures::OnElCapitanOrLater()) {
-    return sid;
-  }
-
   CGSCopySpacesForWindowsFunc CopySpacesForWindows = GetCGSCopySpacesForWindowsFunc();
   if (!CopySpacesForWindows) {
     return sid;
@@ -1349,10 +1343,6 @@ int32_t nsCocoaWindow::GetWorkspaceID() {
 
 void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  if (!nsCocoaFeatures::OnElCapitanOrLater()) {
-    return;
-  }
 
   if ([NSScreen screensHaveSeparateSpaces] && [[NSScreen screens] count] > 1) {
     
@@ -3567,15 +3557,12 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   
   NSRect frameRect = [NSWindow frameRectForContentRect:aChildViewRect styleMask:aStyle];
 
-  if (nsCocoaFeatures::OnYosemiteOrLater()) {
-    
-    
-    
-    
-    
-    
-    aStyle |= NSFullSizeContentViewWindowMask;
-  }
+  
+  
+  
+  
+  
+  aStyle |= NSFullSizeContentViewWindowMask;
 
   
   

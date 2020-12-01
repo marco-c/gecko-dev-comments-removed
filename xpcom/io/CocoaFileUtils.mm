@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-// vim:set ts=2 sts=2 sw=2 et cin:
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "CocoaFileUtils.h"
 #include "nsCocoaFeatures.h"
@@ -13,7 +13,7 @@
 #include "nsString.h"
 #include "mozilla/MacStringHelpers.h"
 
-// Need to cope with us using old versions of the SDK and needing this on 10.10+
+
 #if !defined(MAC_OS_X_VERSION_10_10) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_10)
 const CFStringRef kCFURLQuarantinePropertiesKey = CFSTR("NSURLQuarantinePropertiesKey");
 #endif
@@ -142,7 +142,7 @@ nsresult SetFileTypeCode(CFURLRef url, OSType typeCode) {
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
-// Can be called off of the main thread.
+
 void AddOriginMetadataToFile(const CFStringRef filePath, const CFURLRef sourceURL,
                              const CFURLRef referrerURL) {
   typedef OSStatus (*MDItemSetAttribute_type)(MDItemRef, CFStringRef, CFTypeRef);
@@ -175,12 +175,12 @@ void AddOriginMetadataToFile(const CFStringRef filePath, const CFURLRef sourceUR
     return;
   }
 
-  // The first item in the list is the source URL of the downloaded file.
+  
   if (sourceURL) {
     ::CFArrayAppendValue(list, ::CFURLGetString(sourceURL));
   }
 
-  // If the referrer is known, store that in the second position.
+  
   if (referrerURL) {
     ::CFArrayAppendValue(list, ::CFURLGetString(referrerURL));
   }
@@ -191,18 +191,13 @@ void AddOriginMetadataToFile(const CFStringRef filePath, const CFURLRef sourceUR
   ::CFRelease(mdItem);
 }
 
-// Can be called off of the main thread.
-static CFStringRef GetQuarantinePropKey() {
-  if (nsCocoaFeatures::OnYosemiteOrLater()) {
-    return kCFURLQuarantinePropertiesKey;
-  }
-  return kLSItemQuarantineProperties;
-}
 
-// Can be called off of the main thread.
+static CFStringRef GetQuarantinePropKey() { return kCFURLQuarantinePropertiesKey; }
+
+
 static CFMutableDictionaryRef CreateQuarantineDictionary(const CFURLRef aFileURL,
                                                          const bool aCreateProps) {
-  // The properties key changed in 10.10:
+  
   CFDictionaryRef quarantineProps = NULL;
   if (aCreateProps) {
     quarantineProps = ::CFDictionaryCreate(NULL, NULL, NULL, 0, &kCFTypeDictionaryKeyCallBacks,
@@ -210,20 +205,20 @@ static CFMutableDictionaryRef CreateQuarantineDictionary(const CFURLRef aFileURL
   } else {
     Boolean success =
         ::CFURLCopyResourcePropertyForKey(aFileURL, GetQuarantinePropKey(), &quarantineProps, NULL);
-    // If there aren't any quarantine properties then the user probably
-    // set up an exclusion and we don't need to add metadata.
+    
+    
     if (!success || !quarantineProps) {
       return NULL;
     }
   }
 
-  // We don't know what to do if the props aren't a dictionary.
+  
   if (::CFGetTypeID(quarantineProps) != ::CFDictionaryGetTypeID()) {
     ::CFRelease(quarantineProps);
     return NULL;
   }
 
-  // Make a mutable copy of the properties.
+  
   CFMutableDictionaryRef mutQuarantineProps =
       ::CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, (CFDictionaryRef)quarantineProps);
   ::CFRelease(quarantineProps);
@@ -231,10 +226,10 @@ static CFMutableDictionaryRef CreateQuarantineDictionary(const CFURLRef aFileURL
   return mutQuarantineProps;
 }
 
-// Can be called off of the main thread.
+
 void AddQuarantineMetadataToFile(const CFStringRef filePath, const CFURLRef sourceURL,
                                  const CFURLRef referrerURL, const bool isFromWeb,
-                                 const bool createProps /* = false */) {
+                                 const bool createProps ) {
   CFURLRef fileURL =
       ::CFURLCreateWithFileSystemPath(kCFAllocatorDefault, filePath, kCFURLPOSIXPathStyle, false);
 
@@ -244,7 +239,7 @@ void AddQuarantineMetadataToFile(const CFStringRef filePath, const CFURLRef sour
     return;
   }
 
-  // Add metadata that the OS couldn't infer.
+  
 
   if (!::CFDictionaryGetValue(mutQuarantineProps, kLSQuarantineTypeKey)) {
     CFStringRef type = isFromWeb ? kLSQuarantineTypeWebDownload : kLSQuarantineTypeOtherDownload;
@@ -259,14 +254,14 @@ void AddQuarantineMetadataToFile(const CFStringRef filePath, const CFURLRef sour
     ::CFDictionarySetValue(mutQuarantineProps, kLSQuarantineDataURLKey, sourceURL);
   }
 
-  // Set quarantine properties on file.
+  
   ::CFURLSetResourcePropertyForKey(fileURL, GetQuarantinePropKey(), mutQuarantineProps, NULL);
 
   ::CFRelease(fileURL);
   ::CFRelease(mutQuarantineProps);
 }
 
-// Can be called off of the main thread.
+
 void CopyQuarantineReferrerUrl(const CFStringRef aFilePath, nsAString& aReferrer) {
   CFURLRef fileURL =
       ::CFURLCreateWithFileSystemPath(kCFAllocatorDefault, aFilePath, kCFURLPOSIXPathStyle, false);
@@ -279,7 +274,7 @@ void CopyQuarantineReferrerUrl(const CFStringRef aFilePath, nsAString& aReferrer
 
   CFTypeRef referrerRef = ::CFDictionaryGetValue(mutQuarantineProps, kLSQuarantineOriginURLKey);
   if (referrerRef && ::CFGetTypeID(referrerRef) == ::CFURLGetTypeID()) {
-    // URL string must be copied prior to releasing the dictionary.
+    
     mozilla::CopyCocoaStringToXPCOMString(
         (NSString*)::CFURLGetString(static_cast<CFURLRef>(referrerRef)), aReferrer);
   }
@@ -292,4 +287,4 @@ CFURLRef GetTemporaryFolderCFURLRef() {
   return tempDir == nil ? NULL : (CFURLRef)[NSURL fileURLWithPath:tempDir isDirectory:YES];
 }
 
-}  // namespace CocoaFileUtils
+}  

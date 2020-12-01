@@ -1107,25 +1107,14 @@ bool nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick() {
   if ([NSWindow respondsToSelector:@selector(_shouldZoomOnDoubleClick)]) {
     return [NSWindow _shouldZoomOnDoubleClick];
   }
-  if (nsCocoaFeatures::OnElCapitanOrLater()) {
-    return [ActionOnDoubleClickSystemPref() isEqualToString:@"Maximize"];
-  }
-  return false;
+  return [ActionOnDoubleClickSystemPref() isEqualToString:@"Maximize"];
 }
 
 bool nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick() {
   
   
   
-  if (nsCocoaFeatures::OnElCapitanOrLater()) {
-    return [ActionOnDoubleClickSystemPref() isEqualToString:@"Minimize"];
-  }
-
-  
-  NSUserDefaults* userDefaults = [NSUserDefaults standardUserDefaults];
-  NSString* kAppleMiniaturizeOnDoubleClickKey = @"AppleMiniaturizeOnDoubleClick";
-  id value1 = [userDefaults objectForKey:kAppleMiniaturizeOnDoubleClickKey];
-  return [value1 isKindOfClass:[NSValue class]] && [value1 boolValue];
+  return [ActionOnDoubleClickSystemPref() isEqualToString:@"Minimize"];
 }
 
 

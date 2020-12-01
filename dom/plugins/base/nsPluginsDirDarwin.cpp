@@ -412,23 +412,20 @@ nsresult nsPluginFile::GetPluginInfo(nsPluginInfo& info,
   
   
   
-  if (nsCocoaFeatures::OnYosemiteOrLater()) {
-    if (fileName.EqualsLiteral("fbplugin") ||
-        StringBeginsWith(fileName, "fbplugin_"_ns)) {
-      nsAutoCString msg;
-      msg.AppendPrintf("Preventing load of %s (see bug 1086977)",
-                       fileName.get());
-      NS_WARNING(msg.get());
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    
-    
-    CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::Bug_1086977,
-                                       fileName);
+  if (fileName.EqualsLiteral("fbplugin") ||
+      StringBeginsWith(fileName, "fbplugin_"_ns)) {
+    nsAutoCString msg;
+    msg.AppendPrintf("Preventing load of %s (see bug 1086977)", fileName.get());
+    NS_WARNING(msg.get());
+    return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::Bug_1086977,
+                                     fileName);
 
   
   
@@ -438,12 +435,10 @@ nsresult nsPluginFile::GetPluginInfo(nsPluginInfo& info,
   
   rv = LoadPlugin(outLibrary);
 
-  if (nsCocoaFeatures::OnYosemiteOrLater()) {
-    
-    
-    CrashReporter::RemoveCrashReportAnnotation(
-        CrashReporter::Annotation::Bug_1086977);
-  }
+  
+  
+  CrashReporter::RemoveCrashReportAnnotation(
+      CrashReporter::Annotation::Bug_1086977);
 
   if (NS_FAILED(rv)) return rv;
 

@@ -171,15 +171,13 @@ bool PluginProcessChild::Init(int aArgc, char* aArgv[]) {
                                       IOThreadChild::message_loop(),
                                       IOThreadChild::TakeChannel());
 #if defined(XP_MACOSX)
-  if (nsCocoaFeatures::OnYosemiteOrLater()) {
-    
-    
-    
-    
-    
-    
-    CGSSetDebugOptions(0x80000007);
-  }
+  
+  
+  
+  
+  
+  
+  CGSSetDebugOptions(0x80000007);
 #endif
   return retval;
 }

@@ -1143,10 +1143,7 @@ static NSString* GetRealFamilyName(NSFont* aFont) {
 const CGFloat kTextDisplayCrossover = 20.0;  
 
 void gfxMacPlatformFontList::InitSystemFontNames() {
-  
-  if (nsCocoaFeatures::OnElCapitanOrLater()) {
-    mUseSizeSensitiveSystemFont = true;
-  }
+  mUseSizeSensitiveSystemFont = true;
 
   
   NSFont* sys = [NSFont systemFontOfSize:0.0];

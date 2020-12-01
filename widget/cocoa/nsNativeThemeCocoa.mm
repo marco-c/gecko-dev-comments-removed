@@ -153,13 +153,6 @@ static bool FocusIsDrawnByDrawWithFrame(NSCell* aCell) {
   
   return false;
 #else
-  if (!nsCocoaFeatures::OnYosemiteOrLater()) {
-    
-    
-    
-    return true;
-  }
-
   
   
   
@@ -360,7 +353,7 @@ static void InflateControlRect(NSRect* rect, NSControlSize cocoaControlSize,
                                const float marginSet[][3][4]) {
   if (!marginSet) return;
 
-  static int osIndex = nsCocoaFeatures::OnYosemiteOrLater() ? yosemiteOSorlater : leopardOSorlater;
+  static int osIndex = yosemiteOSorlater;
   size_t controlSize = EnumSizeForCocoaSize(cocoaControlSize);
   const float* buttonMargins = marginSet[osIndex][controlSize];
   rect->origin.x -= buttonMargins[leftMargin];
@@ -438,7 +431,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsNativeThemeCocoa, nsNativeTheme, nsITheme)
 nsNativeThemeCocoa::nsNativeThemeCocoa() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  kMaxFocusRingWidth = nsCocoaFeatures::OnYosemiteOrLater() ? 7 : 4;
+  kMaxFocusRingWidth = 7;
 
   
   
@@ -807,13 +800,10 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIR
 @end
 
 static id GetAquaAppearance() {
-  
-  if (nsCocoaFeatures::OnYosemiteOrLater()) {
-    Class NSAppearanceClass = NSClassFromString(@"NSAppearance");
-    if (NSAppearanceClass && [NSAppearanceClass respondsToSelector:@selector(appearanceNamed:)]) {
-      return [NSAppearanceClass performSelector:@selector(appearanceNamed:)
-                                     withObject:@"NSAppearanceNameAqua"];
-    }
+  Class NSAppearanceClass = NSClassFromString(@"NSAppearance");
+  if (NSAppearanceClass && [NSAppearanceClass respondsToSelector:@selector(appearanceNamed:)]) {
+    return [NSAppearanceClass performSelector:@selector(appearanceNamed:)
+                                   withObject:@"NSAppearanceNameAqua"];
   }
   return nil;
 }
@@ -1104,10 +1094,6 @@ void nsNativeThemeCocoa::DrawMenuIcon(CGContextRef cgContext, const CGRect& aRec
       aParams.disabled ? @"disabled" : (aParams.insideActiveMenuItem ? @"pressed" : @"normal");
 
   NSString* imageName = GetMenuIconName(aParams);
-  if (!nsCocoaFeatures::OnElCapitanOrLater()) {
-    
-    imageName = [@"image." stringByAppendingString:imageName];
-  }
 
   RenderWithCoreUI(
       drawRect, cgContext,
@@ -2403,19 +2389,6 @@ void nsNativeThemeCocoa::DrawMultilineTextField(CGContextRef cgContext, const CG
 
 void nsNativeThemeCocoa::DrawSourceListSelection(CGContextRef aContext, const CGRect& aRect,
                                                  bool aWindowIsActive, bool aSelectionIsActive) {
-  if (!nsCocoaFeatures::OnYosemiteOrLater()) {
-    
-    RenderWithCoreUI(
-        aRect, aContext,
-        [NSDictionary
-            dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:aSelectionIsActive], @"focus",
-                                         [NSNumber numberWithBool:YES], @"is.flipped",
-                                         @"kCUIVariantGradientSideBarSelection", @"kCUIVariantKey",
-                                         (aWindowIsActive ? @"normal" : @"inactive"), @"state",
-                                         @"gradient", @"widget", nil]);
-    return;
-  }
-
   NSColor* fillColor;
   if (aSelectionIsActive) {
     
@@ -3291,18 +3264,6 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aCont
     case StyleAppearance::ScrollbartrackVertical: {
       bool isHorizontal = (aAppearance == StyleAppearance::ScrollbartrackHorizontal);
       if (nsLookAndFeel::UseOverlayScrollbars()) {
-        if (!nsCocoaFeatures::OnYosemiteOrLater()) {
-          
-          
-          
-          if (isHorizontal) {
-            result.top = 2;
-            result.bottom = 1;
-          } else {
-            result.left = 2;
-            result.right = 1;
-          }
-        }
         
         if (isHorizontal) {
           result.left = 1;
@@ -3512,12 +3473,6 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
     }
 
     case StyleAppearance::MozMacFullscreenButton: {
-      if ([NativeWindowForFrame(aFrame) respondsToSelector:@selector(toggleFullScreen:)] &&
-          !nsCocoaFeatures::OnYosemiteOrLater()) {
-        
-        
-        aResult->SizeTo(16, 17);
-      }
       *aIsOverridable = false;
       break;
     }
