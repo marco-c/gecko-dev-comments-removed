@@ -24,6 +24,9 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
+#if defined(__aarch64__)
+#  include <dlfcn.h>
+#endif
 #include <sys/sysctl.h>
 
 NS_IMPL_ISUPPORTS(nsMacUtilsImpl, nsIMacUtils)
@@ -37,6 +40,10 @@ StaticMutex nsMacUtilsImpl::sCachedAppPathMutex;
 #endif
 
 std::atomic<uint32_t> nsMacUtilsImpl::sBundleArchMaskAtomic = 0;
+
+#if defined(__aarch64__)
+std::atomic<bool> nsMacUtilsImpl::sIsXULTranslated = false;
+#endif
 
 
 #define MAC_DEV_REPO_KEY "MozillaDeveloperRepoPath"
@@ -521,3 +528,90 @@ nsresult nsMacUtilsImpl::GetArchitecturesForBinary(const char* aPath,
 
   return NS_OK;
 }
+
+#if defined(__aarch64__)
+
+
+
+
+
+int nsMacUtilsImpl::PreTranslateXUL() {
+  bool expected = false;
+  if (!sIsXULTranslated.compare_exchange_strong(expected, true)) {
+    
+    return 1;
+  }
+
+  
+  
+  nsCString xulPath;
+  if (!GetAppPath(xulPath)) {
+    return -1;
+  }
+  xulPath.Append("/Contents/MacOS/XUL");
+
+  return PreTranslateBinary(xulPath);
+}
+
+
+
+
+
+
+
+
+int nsMacUtilsImpl::PreTranslateBinary(nsCString aBinaryPath) {
+  
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!XRE_IsParentProcess()) {
+      return -1;
+  }
+
+  
+  
+  MOZ_ASSERT(!NS_IsMainThread());
+  if (NS_IsMainThread()) {
+      return -1;
+  }
+
+  
+  
+  
+  
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunguarded-availability-new"
+  
+  if (!CFBundleIsArchitectureLoadable(CPU_TYPE_X86_64)) {
+    return -1;
+  }
+#  pragma clang diagnostic pop
+
+  if (aBinaryPath.IsEmpty()) {
+    return -1;
+  }
+
+  
+  using rosetta_translate_binaries_t = int (*)(const char*[], int);
+
+  static auto rosetta_translate_binaries = []() {
+    void* libRosetta =
+        dlopen("/usr/lib/libRosetta.dylib", RTLD_LAZY | RTLD_LOCAL);
+    if (!libRosetta) {
+      return static_cast<rosetta_translate_binaries_t>(nullptr);
+    }
+
+    return reinterpret_cast<rosetta_translate_binaries_t>(
+        dlsym(libRosetta, "rosetta_translate_binaries"));
+  }();
+
+  if (!rosetta_translate_binaries) {
+    return -1;
+  }
+
+  const char* pathPtr = aBinaryPath.get();
+  return rosetta_translate_binaries(&pathPtr, 1);
+}
+
+#endif

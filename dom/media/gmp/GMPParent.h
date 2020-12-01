@@ -175,6 +175,18 @@ class GMPParent final
   void ResolveGetContentParentPromises();
   void RejectGetContentParentPromises();
 
+#if defined(XP_MACOSX) && defined(__aarch64__)
+  
+  
+  
+  
+  
+  
+  
+  void PreTranslateBins();
+  void PreTranslateBinsWorker();
+#endif
+
 #if defined(XP_MACOSX)
   nsresult GetPluginFileArch(nsIFile* aPluginDir, nsAutoString& aLeafName,
                              uint32_t& aArchSet);
@@ -222,6 +234,7 @@ class GMPParent final
 #if defined(XP_MACOSX) && defined(__aarch64__)
   
   uint32_t mChildLaunchArch;
+  nsCString mPluginFilePath;
 #endif
 
   const nsCOMPtr<nsISerialEventTarget> mMainThread;

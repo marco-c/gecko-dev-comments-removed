@@ -47,6 +47,15 @@ class nsMacUtilsImpl final : public nsIMacUtils {
   static nsresult GetArchitecturesForBinary(const char* aPath,
                                             uint32_t* aArchMask);
 
+#if defined(__aarch64__)
+  
+  
+  
+  
+  static int PreTranslateXUL();
+  static int PreTranslateBinary(nsCString aBinaryPath);
+#endif
+
  private:
   ~nsMacUtilsImpl() {}
 
@@ -68,6 +77,11 @@ class nsMacUtilsImpl final : public nsIMacUtils {
   
   
   static std::atomic<uint32_t> sBundleArchMaskAtomic;
+
+#if defined(__aarch64__)
+  
+  static std::atomic<bool> sIsXULTranslated;
+#endif
 
   enum TCSMStatus { TCSM_Unknown = 0, TCSM_Available, TCSM_Unavailable };
   static mozilla::Atomic<nsMacUtilsImpl::TCSMStatus> sTCSMStatus;
