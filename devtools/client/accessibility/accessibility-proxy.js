@@ -77,6 +77,7 @@ class AccessibilityProxy {
       this
     );
     this.unhighlightBeforeCalling = this.unhighlightBeforeCalling.bind(this);
+    this.toggleDisplayTabbingOrder = this.toggleDisplayTabbingOrder.bind(this);
   }
 
   get enabled() {
@@ -140,6 +141,24 @@ class AccessibilityProxy {
     return combinedAudit;
   }
 
+  async toggleDisplayTabbingOrder(displayTabbingOrder) {
+    if (displayTabbingOrder) {
+      const { walker: domWalkerFront } = await this.currentTarget.getFront(
+        "inspector"
+      );
+      await this.accessibilityFront.accessibleWalkerFront.showTabbingOrder(
+        await domWalkerFront.getRootNode(),
+        0
+      );
+    } else {
+      await this.withAllAccessibilityWalkerFronts(
+        async accessibleWalkerFront => {
+          await accessibleWalkerFront.hideTabbingOrder();
+        }
+      );
+    }
+  }
+
   startListeningForTargetUpdated(onTargetUpdated) {
     this._updateTargetListeners.on("target-updated", onTargetUpdated);
   }
@@ -196,13 +215,9 @@ class AccessibilityProxy {
 
 
   withAllAccessibilityWalkerFronts(taskFn) {
-    return this.withAllAccessibilityFronts(async accessibilityFront => {
-      if (!accessibilityFront.accessibleWalkerFront) {
-        await accessibilityFront.bootstrap();
-      }
-
-      return taskFn(accessibilityFront.accessibleWalkerFront);
-    });
+    return this.withAllAccessibilityFronts(async accessibilityFront =>
+      taskFn(accessibilityFront.accessibleWalkerFront)
+    );
   }
 
   
@@ -511,11 +526,8 @@ class AccessibilityProxy {
     );
     
     
-    
-    
-    
-    
-    
+    this.supports = { ...this.accessibilityFront.traits };
+
     this.simulatorFront = this.accessibilityFront.simulatorFront;
     if (this.simulatorFront) {
       this.simulate = types => this.simulatorFront.simulate({ types });

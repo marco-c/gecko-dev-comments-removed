@@ -43,6 +43,16 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
     this.targetActor = targetActor;
   },
 
+  getTraits: function() {
+    
+    
+    return {
+      
+      
+      tabbingOrder: true,
+    };
+  },
+
   bootstrap() {
     return {
       enabled: this.enabled,
