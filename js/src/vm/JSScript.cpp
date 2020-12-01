@@ -3802,7 +3802,6 @@ bool JSScript::fullyInitFromStencil(
   
   
   MOZ_ASSERT(script->immutableFlags() == scriptStencil.immutableFlags);
-  script->resetImmutableFlags(scriptStencil.immutableFlags);
 
   
   script->resetArgsUsageAnalysis();
