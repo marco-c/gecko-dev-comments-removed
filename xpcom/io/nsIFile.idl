@@ -195,6 +195,18 @@ interface nsIFile : nsISupports
 
 
 
+
+    void moveToFollowingLinks(in nsIFile newParentDir, in AString newName);
+    [noscript] void moveToFollowingLinksNative(in nsIFile newParentDir, in ACString newName);
+
+    
+
+
+
+
+
+
+
     void renameTo(in nsIFile newParentDir, in AString newName);
     [noscript] void renameToNative(in nsIFile newParentDir, in ACString newName);
 
