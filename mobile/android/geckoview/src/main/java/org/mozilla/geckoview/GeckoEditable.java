@@ -1569,10 +1569,6 @@ import android.view.inputmethod.EditorInfo;
                     Log.d(LOGTAG, "restartInput(" + reason + ", " + toggleSoftInput + ')');
                 }
 
-                if (toggleSoftInput) {
-                    mSoftInputReentrancyGuard.incrementAndGet();
-                }
-
                 final GeckoSession session = mSession.get();
                 if (session != null) {
                     session.getTextInput().getDelegate().restartInput(session, reason);
@@ -1723,55 +1719,53 @@ import android.view.inputmethod.EditorInfo;
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                final int reentrancyGuard = mSoftInputReentrancyGuard.decrementAndGet();
-                final boolean isReentrant;
-                if (reentrancyGuard < 0) {
-                    mSoftInputReentrancyGuard.incrementAndGet();
-                    isReentrant = false;
-                } else {
-                    isReentrant = reentrancyGuard > 0;
-                }
+                try {
+                    final int reentrancyGuard = mSoftInputReentrancyGuard.incrementAndGet();
+                    final boolean isReentrant =  reentrancyGuard > 1;
 
-                
-                
-                
-                
-                final GeckoSession session = mSession.get();
+                    
+                    
+                    
+                    
+                    final GeckoSession session = mSession.get();
 
-                if (session == null) {
-                    return;
-                }
-
-                final View view = session.getTextInput().getView();
-                final boolean isFocused = (view == null) || view.hasFocus();
-
-                final boolean isUserAction = ((flags &
-                        SessionTextInput.EditableListener.IME_FLAG_USER_ACTION) != 0);
-
-                if (!force && (isReentrant || !isFocused || !isUserAction)) {
-                    if (DEBUG) {
-                        Log.d(LOGTAG, "toggleSoftInput: no-op, reentrant=" + isReentrant +
-                                ", focused=" + isFocused + ", user=" + isUserAction);
+                    if (session == null) {
+                        return;
                     }
-                    return;
+
+                    final View view = session.getTextInput().getView();
+                    final boolean isFocused = (view == null) || view.hasFocus();
+
+                    final boolean isUserAction = ((flags &
+                            SessionTextInput.EditableListener.IME_FLAG_USER_ACTION) != 0);
+
+                    if (!force && (isReentrant || !isFocused || !isUserAction)) {
+                        if (DEBUG) {
+                            Log.d(LOGTAG, "toggleSoftInput: no-op, reentrant=" + isReentrant +
+                                    ", focused=" + isFocused + ", user=" + isUserAction);
+                        }
+                        return;
+                    }
+                    if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+                        session.getTextInput().getDelegate().hideSoftInput(session);
+                        return;
+                    }
+                    {
+                        final GeckoBundle bundle = new GeckoBundle();
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        bundle.putBoolean("force", !force);
+                        session.getEventDispatcher().dispatch("GeckoView:ZoomToInput", bundle);
+                    }
+                    session.getTextInput().getDelegate().showSoftInput(session);
+                } finally {
+                    mSoftInputReentrancyGuard.decrementAndGet();
                 }
-                if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-                    session.getTextInput().getDelegate().hideSoftInput(session);
-                    return;
-                }
-                {
-                    final GeckoBundle bundle = new GeckoBundle();
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    bundle.putBoolean("force", !force);
-                    session.getEventDispatcher().dispatch("GeckoView:ZoomToInput", bundle);
-                }
-                session.getTextInput().getDelegate().showSoftInput(session);
             }
         });
     }
