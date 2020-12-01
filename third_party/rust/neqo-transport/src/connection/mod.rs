@@ -717,11 +717,17 @@ impl Connection {
     }
 
     
+    
+    
+    
+    
+    
     pub fn authenticated(&mut self, status: AuthenticationStatus, now: Instant) {
         qinfo!([self], "Authenticated {:?}", status);
         self.crypto.tls.authenticated(status);
         let res = self.handshake(now, PNSpace::Handshake, None);
         self.absorb_error(now, res);
+        self.process_saved(now);
     }
 
     
@@ -832,10 +838,10 @@ impl Connection {
     }
 
     
-    
     pub fn process_input(&mut self, d: Datagram, now: Instant) {
         let res = self.input(d, now);
         self.absorb_error(now, res);
+        self.process_saved(now);
         self.cleanup_streams();
     }
 
@@ -928,6 +934,7 @@ impl Connection {
         if let Some(d) = dgram {
             let res = self.input(d, now);
             self.absorb_error(now, res);
+            self.process_saved(now);
         }
         self.process_output(now)
     }
@@ -1034,11 +1041,14 @@ impl Connection {
     }
 
     
-    fn process_saved(&mut self, cspace: CryptoSpace) {
-        if self.crypto.states.rx_hp(cspace).is_some() {
-            for saved in self.saved_datagrams.take_saved(cspace) {
-                qtrace!([self], "process saved @{:?}: {:?}", saved.t, saved.d);
-                self.process_input(saved.d, saved.t);
+    fn process_saved(&mut self, now: Instant) {
+        while let Some(cspace) = self.saved_datagrams.available() {
+            qdebug!([self], "process saved for space {:?}", cspace);
+            debug_assert!(self.crypto.states.rx_hp(cspace).is_some());
+            for saved in self.saved_datagrams.take_saved() {
+                qtrace!([self], "input saved @{:?}: {:?}", saved.t, saved.d);
+                let res = self.input(saved.d, saved.t);
+                self.absorb_error(now, res);
             }
         }
     }
@@ -1342,10 +1352,11 @@ impl Connection {
     }
 
     fn start_handshake(&mut self, packet: &PublicPacket, d: &Datagram) -> Res<()> {
+        qtrace!([self], "starting handshake");
+        debug_assert_eq!(packet.packet_type(), PacketType::Initial);
         self.remote_initial_source_cid = Some(ConnectionId::from(packet.scid()));
-        if self.role == Role::Server {
-            assert_eq!(packet.packet_type(), PacketType::Initial);
 
+        if self.role == Role::Server {
             
             self.valid_cids.push(ConnectionId::from(packet.dcid()));
             self.original_destination_cid = Some(ConnectionId::from(packet.dcid()));
@@ -1368,6 +1379,7 @@ impl Connection {
                 .expect("should have a path for sending Initial");
             p.set_remote_cid(packet.scid());
         }
+
         self.set_state(State::Handshaking);
         Ok(())
     }
@@ -1415,7 +1427,7 @@ impl Connection {
         address_validation: &AddressValidationInfo,
         quic_version: QuicVersion,
         grease_quic_bit: bool,
-    ) -> (PacketType, PacketNumber, PacketBuilder) {
+    ) -> (PacketType, PacketBuilder) {
         let pt = PacketType::from(cspace);
         let mut builder = if pt == PacketType::Short {
             qdebug!("Building Short dcid {}", path.remote_cid());
@@ -1440,10 +1452,30 @@ impl Connection {
         if pt == PacketType::Initial {
             builder.initial_token(address_validation.token());
         }
+
+        (pt, builder)
+    }
+
+    fn add_packet_number(
+        builder: &mut PacketBuilder,
+        tx: &CryptoDxState,
+        largest_acknowledged: Option<PacketNumber>,
+    ) -> PacketNumber {
         
         let pn = tx.next_pn();
-        builder.pn(pn, 3);
-        (pt, pn, builder)
+        let unacked_range = if let Some(la) = largest_acknowledged {
+            
+            (pn - la) << 1
+        } else {
+            pn + 1
+        };
+        
+        let pn_len = mem::size_of::<PacketNumber>()
+            - usize::try_from(unacked_range.leading_zeros() / 8).unwrap();
+        
+        
+        builder.pn(pn, pn_len);
+        pn
     }
 
     fn can_grease_quic_bit(&self) -> bool {
@@ -1467,7 +1499,7 @@ impl Connection {
                 continue;
             };
 
-            let (_, _, mut builder) = Self::build_packet_header(
+            let (_, mut builder) = Self::build_packet_header(
                 path,
                 cspace,
                 encoder,
@@ -1475,6 +1507,11 @@ impl Connection {
                 &AddressValidationInfo::None,
                 self.quic_version,
                 grease_quic_bit,
+            );
+            let _ = Self::add_packet_number(
+                &mut builder,
+                tx,
+                self.loss_recovery.largest_acknowledged_pn(*space),
             );
 
             
@@ -1507,13 +1544,15 @@ impl Connection {
 
     
     
+    
     fn write_frames(
         &mut self,
         space: PNSpace,
         profile: &SendProfile,
         builder: &mut PacketBuilder,
+        mut pad: bool,
         now: Instant,
-    ) -> (Vec<RecoveryToken>, bool) {
+    ) -> (Vec<RecoveryToken>, bool, bool) {
         let mut tokens = Vec::new();
         let stats = &mut self.stats.borrow_mut().frame_tx;
 
@@ -1524,7 +1563,7 @@ impl Connection {
             if let Some(t) = ack_token {
                 tokens.push(t);
             }
-            return (tokens, false);
+            return (tokens, false, false);
         }
 
         if space == PNSpace::ApplicationData && self.role == Role::Server {
@@ -1561,11 +1600,21 @@ impl Connection {
                 false
             };
 
+        
+        
+        
+        pad &= ack_eliciting && space == PNSpace::ApplicationData;
+        if pad {
+            builder.pad();
+            stats.padding += 1;
+            stats.all += 1;
+        }
+
         if let Some(t) = ack_token {
             tokens.push(t);
         }
         stats.all += tokens.len();
-        (tokens, ack_eliciting)
+        (tokens, ack_eliciting, pad)
     }
 
     
@@ -1591,7 +1640,7 @@ impl Connection {
             };
 
             let header_start = encoder.len();
-            let (pt, pn, mut builder) = Self::build_packet_header(
+            let (pt, mut builder) = Self::build_packet_header(
                 path,
                 cspace,
                 encoder,
@@ -1599,6 +1648,11 @@ impl Connection {
                 &self.address_validation,
                 self.quic_version,
                 grease_quic_bit,
+            );
+            let pn = Self::add_packet_number(
+                &mut builder,
+                tx,
+                self.loss_recovery.largest_acknowledged_pn(*space),
             );
             let payload_start = builder.len();
 
@@ -1613,7 +1667,8 @@ impl Connection {
             
             let limit = profile.limit() - aead_expansion;
             builder.set_limit(limit);
-            let (tokens, ack_eliciting) = self.write_frames(*space, &profile, &mut builder, now);
+            let (tokens, ack_eliciting, padded) =
+                self.write_frames(*space, &profile, &mut builder, needs_padding, now);
             if builder.packet_empty() {
                 
                 encoder = builder.abort();
@@ -1645,13 +1700,16 @@ impl Connection {
                 Rc::new(tokens),
                 encoder.len() - header_start,
             );
-            if pt == PacketType::Initial && (self.role == Role::Client || ack_eliciting) {
+            if padded {
+                needs_padding = false;
+                self.loss_recovery.on_packet_sent(sent);
+            } else if pt == PacketType::Initial && (self.role == Role::Client || ack_eliciting) {
                 
                 
                 initial_sent = Some(sent);
                 needs_padding = true;
             } else {
-                if pt != PacketType::ZeroRtt && self.role == Role::Client {
+                if pt == PacketType::Handshake && self.role == Role::Client {
                     needs_padding = false;
                 }
                 self.loss_recovery.on_packet_sent(sent);
@@ -1890,7 +1948,7 @@ impl Connection {
                 self.set_initial_limits();
             }
             if self.crypto.install_keys(self.role)? {
-                self.process_saved(CryptoSpace::Handshake);
+                self.saved_datagrams.make_available(CryptoSpace::Handshake);
             }
         }
 
@@ -1917,7 +1975,7 @@ impl Connection {
 
     fn input_frame(&mut self, ptype: PacketType, frame: Frame, now: Instant) -> Res<()> {
         if !frame.is_allowed(ptype) {
-            qerror!("frame not allowed: {:?} {:?}", frame, ptype);
+            qinfo!("frame not allowed: {:?} {:?}", frame, ptype);
             return Err(Error::ProtocolViolation);
         }
         self.stats.borrow_mut().frame_rx.all += 1;
@@ -2286,7 +2344,8 @@ impl Connection {
         self.process_tps()?;
         self.set_state(State::Connected);
         self.create_resumption_token(now);
-        self.process_saved(CryptoSpace::ApplicationData);
+        self.saved_datagrams
+            .make_available(CryptoSpace::ApplicationData);
         self.stats.borrow_mut().resumed = self.crypto.tls.info().unwrap().resumed();
         if self.role == Role::Server {
             self.state_signaling.handshake_done();

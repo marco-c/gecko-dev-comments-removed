@@ -13,8 +13,11 @@
 #[macro_use]
 extern crate log;
 
-use env_logger::filter::Filter;
+use env_logger::filter::{Builder, Filter};
+
 use log::{Log, Metadata, Record, SetLoggerError};
+
+const FILTER_ENV: &'static str = "MY_LOG_LEVEL";
 
 struct MyLogger {
     inner: Filter,
@@ -22,8 +25,7 @@ struct MyLogger {
 
 impl MyLogger {
     fn new() -> MyLogger {
-        use env_logger::filter::Builder;
-        let mut builder = Builder::from_env("MY_LOG_LEVEL");
+        let mut builder = Builder::from_env(FILTER_ENV);
 
         MyLogger {
             inner: builder.build(),

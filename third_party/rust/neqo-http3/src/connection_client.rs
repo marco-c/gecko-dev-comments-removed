@@ -18,10 +18,11 @@ use neqo_common::{
     Datagram, Decoder, Encoder, Role,
 };
 use neqo_crypto::{agent::CertificateInfo, AuthenticationStatus, ResumptionToken, SecretAgentInfo};
-use neqo_qpack::{stats::Stats, QpackSettings};
+use neqo_qpack::{QpackSettings, Stats as QpackStats};
 use neqo_transport::{
     AppError, CongestionControlAlgorithm, Connection, ConnectionEvent, ConnectionId,
-    ConnectionIdManager, Output, QuicVersion, StreamId, StreamType, ZeroRttState,
+    ConnectionIdManager, Output, QuicVersion, Stats as TransportStats, StreamId, StreamType,
+    ZeroRttState,
 };
 use std::cell::RefCell;
 use std::fmt::Display;
@@ -62,6 +63,8 @@ fn alpn_from_quic_version(version: QuicVersion) -> &'static str {
         QuicVersion::Draft28 => "h3-28",
         QuicVersion::Draft29 => "h3-29",
         QuicVersion::Draft30 => "h3-30",
+        QuicVersion::Draft31 => "h3-31",
+        QuicVersion::Draft32 => "h3-32",
     }
 }
 
@@ -687,13 +690,18 @@ impl Http3Client {
     }
 
     #[must_use]
-    pub fn qpack_decoder_stats(&self) -> &Stats {
+    pub fn qpack_decoder_stats(&self) -> QpackStats {
         self.base_handler.qpack_decoder.stats()
     }
 
     #[must_use]
-    pub fn qpack_encoder_stats(&self) -> &Stats {
+    pub fn qpack_encoder_stats(&self) -> QpackStats {
         self.base_handler.qpack_encoder.stats()
+    }
+
+    #[must_use]
+    pub fn transport_stats(&self) -> TransportStats {
+        self.conn.stats()
     }
 
     fn reset_stream_on_error(&mut self, stream_id: u64, app_error: AppError) {
@@ -732,16 +740,21 @@ mod tests {
     };
     use crate::hframe::{HFrame, H3_FRAME_TYPE_SETTINGS, H3_RESERVED_FRAME_TYPES};
     use crate::settings::{HSetting, HSettingType, H3_RESERVED_SETTINGS};
+    use crate::Http3Server;
     use neqo_common::{event::Provider, Datagram, Decoder, Encoder};
     use neqo_crypto::{AllowZeroRtt, AntiReplay, ResumptionToken};
     use neqo_qpack::encoder::QPackEncoder;
+    use neqo_transport::tparams::{self, TransportParameter};
     use neqo_transport::{
-        CloseError, CongestionControlAlgorithm, ConnectionEvent, FixedConnectionIdManager,
+        CloseError, CongestionControlAlgorithm, ConnectionEvent, FixedConnectionIdManager, Output,
         QuicVersion, State, RECV_BUFFER_SIZE, SEND_BUFFER_SIZE,
     };
     use std::convert::TryFrom;
     use std::time::Duration;
-    use test_fixture::{default_server_h3, fixture_init, loopback, now, DEFAULT_SERVER_NAME};
+    use test_fixture::{
+        anti_replay, default_server_h3, fixture_init, loopback, now, DEFAULT_ALPN_H3, DEFAULT_KEYS,
+        DEFAULT_SERVER_NAME,
+    };
 
     fn assert_closed(client: &Http3Client, expected: &Error) {
         match client.state() {
@@ -754,6 +767,10 @@ mod tests {
 
     
     pub fn default_http3_client() -> Http3Client {
+        default_http3_client_param(100)
+    }
+
+    pub fn default_http3_client_param(max_table_size: u64) -> Http3Client {
         fixture_init();
         Http3Client::new(
             DEFAULT_SERVER_NAME,
@@ -764,8 +781,8 @@ mod tests {
             QuicVersion::default(),
             &Http3Parameters {
                 qpack_settings: QpackSettings {
-                    max_table_size_encoder: 100,
-                    max_table_size_decoder: 100,
+                    max_table_size_encoder: max_table_size,
+                    max_table_size_decoder: max_table_size,
                     max_blocked_streams: 100,
                 },
                 max_concurrent_push_streams: 5,
@@ -1036,10 +1053,18 @@ mod tests {
             };
             hframe.encode(encoder);
         }
+
+        pub fn set_max_uni_stream(&mut self, max_stream: u64) {
+            self.conn
+                .set_local_tparam(
+                    tparams::INITIAL_MAX_STREAMS_UNI,
+                    TransportParameter::Integer(max_stream),
+                )
+                .unwrap();
+        }
     }
 
-    
-    fn connect_only_transport_with(client: &mut Http3Client, server: &mut TestServer) {
+    fn handshake_only(client: &mut Http3Client, server: &mut TestServer) -> Output {
         assert_eq!(client.state(), Http3State::Initializing);
         let out = client.process(None, now());
         assert_eq!(client.state(), Http3State::Initializing);
@@ -1055,6 +1080,12 @@ mod tests {
         let authentication_needed = |e| matches!(e, Http3ClientEvent::AuthenticationNeeded);
         assert!(client.events().any(authentication_needed));
         client.authenticated(AuthenticationStatus::Ok, now());
+        out
+    }
+
+    
+    fn connect_only_transport_with(client: &mut Http3Client, server: &mut TestServer) {
+        let out = handshake_only(client, server);
 
         let out = client.process(out.dgram(), now());
         let connected = |e| matches!(e, Http3ClientEvent::StateChange(Http3State::Connected));
@@ -5778,7 +5809,7 @@ mod tests {
             e,
             Http3ClientEvent::Reset {
                 stream_id: request_stream_id,
-                error: Error::HttpGeneralProtocolStream.code(),
+                error: Error::InvalidHeader.code(),
                 local: true,
             }
         );
@@ -5791,7 +5822,7 @@ mod tests {
             matches!(e, ConnectionEvent::SendStreamStopSending {
             stream_id,
             app_error
-        } if stream_id == request_stream_id && app_error == Error::HttpGeneralProtocolStream.code())
+        } if stream_id == request_stream_id && app_error == Error::InvalidHeader.code())
         };
         assert!(server.conn.events().any(stop_sending_event));
 
@@ -5911,7 +5942,7 @@ mod tests {
             matches!(e, Http3ClientEvent::PushReset {
             push_id,
             error,
-        } if push_id == FIRST_PUSH_ID && error == Error::HttpGeneralProtocol.code())
+        } if push_id == FIRST_PUSH_ID && error == Error::InvalidHeader.code())
         };
 
         assert!(client.events().any(push_reset_event));
@@ -5924,8 +5955,216 @@ mod tests {
             matches!(e, ConnectionEvent::SendStreamStopSending {
             stream_id,
             app_error
-        } if stream_id == push_stream_id && app_error == Error::HttpGeneralProtocolStream.code())
+        } if stream_id == push_stream_id && app_error == Error::InvalidHeader.code())
         };
         assert!(server.conn.events().any(stop_sending_event));
+    }
+
+    fn handshake_client_error(client: &mut Http3Client, server: &mut TestServer, error: &Error) {
+        let out = handshake_only(client, server);
+        client.process(out.dgram(), now());
+        assert_closed(&client, error);
+    }
+
+    
+    #[test]
+    fn client_control_stream_create_failed() {
+        let mut client = default_http3_client();
+        let mut server = TestServer::new();
+        server.set_max_uni_stream(0);
+        handshake_client_error(&mut client, &mut server, &Error::StreamLimitError);
+    }
+
+    
+    #[test]
+    fn client_qpack_stream_create_failed() {
+        let mut client = default_http3_client();
+        let mut server = TestServer::new();
+        server.set_max_uni_stream(2);
+        handshake_client_error(&mut client, &mut server, &Error::StreamLimitError);
+    }
+
+    fn do_malformed_response_test(headers: &[Header]) {
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        setup_server_side_encoder(&mut client, &mut server);
+
+        let mut d = Encoder::default();
+        server.encode_headers(request_stream_id, &headers, &mut d);
+
+        
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            &d,
+            false,
+        );
+
+        
+        let e = client.events().next().unwrap();
+        assert_eq!(
+            e,
+            Http3ClientEvent::Reset {
+                stream_id: request_stream_id,
+                error: Error::InvalidHeader.code(),
+                local: true,
+            }
+        );
+    }
+
+    #[test]
+    fn malformed_response_pseudo_header_after_regular_header() {
+        do_malformed_response_test(&[
+            (String::from("content-type"), String::from("text/plain")),
+            (String::from(":status"), String::from("100")),
+        ]);
+    }
+
+    #[test]
+    fn malformed_response_undefined_pseudo_header() {
+        do_malformed_response_test(&[
+            (String::from(":status"), String::from("200")),
+            (String::from(":cheese"), String::from("200")),
+        ]);
+    }
+
+    #[test]
+    fn malformed_response_duplicate_pseudo_header() {
+        do_malformed_response_test(&[
+            (String::from(":status"), String::from("200")),
+            (String::from(":status"), String::from("100")),
+            (String::from("content-type"), String::from("text/plain")),
+        ]);
+    }
+
+    #[test]
+    fn malformed_response_uppercase_header() {
+        do_malformed_response_test(&[
+            (String::from(":status"), String::from("200")),
+            (String::from("content-Type"), String::from("text/plain")),
+        ]);
+    }
+
+    #[test]
+    fn malformed_response_excluded_header() {
+        do_malformed_response_test(&[
+            (String::from(":status"), String::from("200")),
+            (String::from("content-type"), String::from("text/plain")),
+            (String::from("connection"), String::from("close")),
+        ]);
+    }
+
+    #[test]
+    fn malformed_response_excluded_byte_in_header() {
+        do_malformed_response_test(&[
+            (String::from(":status"), String::from("200")),
+            (String::from("content:type"), String::from("text/plain")),
+        ]);
+    }
+
+    #[test]
+    fn malformed_response_request_header_in_response() {
+        do_malformed_response_test(&[
+            (String::from(":status"), String::from("200")),
+            (String::from(":method"), String::from("GET")),
+            (String::from("content-type"), String::from("text/plain")),
+        ]);
+    }
+
+    fn maybe_authenticate(conn: &mut Http3Client) {
+        let authentication_needed = |e| matches!(e, Http3ClientEvent::AuthenticationNeeded);
+        if conn.events().any(authentication_needed) {
+            conn.authenticated(AuthenticationStatus::Ok, now());
+        }
+    }
+
+    const MAX_TABLE_SIZE: u64 = 65536;
+    const MAX_BLOCKED_STREAMS: u16 = 5;
+
+    fn get_resumption_token(server: &mut Http3Server) -> ResumptionToken {
+        let mut client = default_http3_client_param(MAX_TABLE_SIZE);
+
+        let mut datagram = None;
+        let is_done = |c: &Http3Client| matches!(c.state(), Http3State::Connected);
+        while !is_done(&mut client) {
+            maybe_authenticate(&mut client);
+            datagram = client.process(datagram, now()).dgram();
+            datagram = server.process(datagram, now()).dgram();
+        }
+
+        
+        datagram = client.process(datagram, now()).dgram();
+        datagram = server.process(datagram, now()).dgram();
+        let _ = client.process(datagram, now()).dgram();
+
+        client
+            .events()
+            .find_map(|e| {
+                if let Http3ClientEvent::ResumptionToken(token) = e {
+                    Some(token)
+                } else {
+                    None
+                }
+            })
+            .unwrap()
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn zerortt_request_use_dynamic_table() {
+        let mut server = Http3Server::new(
+            now(),
+            DEFAULT_KEYS,
+            DEFAULT_ALPN_H3,
+            anti_replay(),
+            Rc::new(RefCell::new(FixedConnectionIdManager::new(5))),
+            QpackSettings {
+                max_table_size_encoder: MAX_TABLE_SIZE,
+                max_table_size_decoder: MAX_TABLE_SIZE,
+                max_blocked_streams: MAX_BLOCKED_STREAMS,
+            },
+        )
+        .unwrap();
+
+        let token = get_resumption_token(&mut server);
+        
+        let mut client = default_http3_client_param(MAX_TABLE_SIZE);
+        assert_eq!(client.state(), Http3State::Initializing);
+        client
+            .enable_resumption(now(), &token)
+            .expect("Set resumption token.");
+
+        assert_eq!(client.state(), Http3State::ZeroRtt);
+        let zerortt_event = |e| matches!(e, Http3ClientEvent::StateChange(Http3State::ZeroRtt));
+        assert!(client.events().any(zerortt_event));
+
+        
+        let _ = make_request(
+            &mut client,
+            true,
+            &[(String::from("myheaders"), String::from("myvalue"))],
+        );
+        
+        assert_eq!(client.qpack_encoder_stats().dynamic_table_references, 1);
+
+        
+        
+        
+        let out = client.process(None, now()).dgram();
+        let out = server.process(out, now()).dgram();
+        let out = client.process(out, now()).dgram();
+        let out = server.process(out, now()).dgram();
+        let out = client.process(out, now()).dgram();
+        let out = server.process(out, now()).dgram();
+        let out = client.process(out, now()).dgram();
+        let out = server.process(out, now()).dgram();
+        let _ = client.process(out, now());
+
+        
+        assert_eq!(client.qpack_encoder_stats().header_acks_recv, 1);
     }
 }

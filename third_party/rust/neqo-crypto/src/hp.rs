@@ -79,16 +79,24 @@ impl HpKey {
     }
 
     
-    
-    
-    
-    
     #[allow(clippy::cast_sign_loss)]
-    pub fn mask(&self, sample: &[u8]) -> Res<Vec<u8>> {
+    #[must_use]
+    pub fn sample_size(&self) -> usize {
         let k: *mut PK11SymKey = *self.0;
         let mech = unsafe { PK11_GetMechanism(k) };
         
-        let block_size = unsafe { PK11_GetBlockSize(mech, null_mut()) } as usize;
+        (unsafe { PK11_GetBlockSize(mech, null_mut()) }) as usize
+    }
+
+    
+    
+    
+    
+    
+    pub fn mask(&self, sample: &[u8]) -> Res<Vec<u8>> {
+        let k: *mut PK11SymKey = *self.0;
+        let mech = unsafe { PK11_GetMechanism(k) };
+        let block_size = self.sample_size();
 
         let mut output = vec![0_u8; block_size];
         let output_slice = &mut output[..];
