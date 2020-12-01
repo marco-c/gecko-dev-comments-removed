@@ -157,13 +157,9 @@ add_task(async function save_worthy_tabs_nonremote_final() {
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  await BrowserTestUtils.loadURI(browser, "about:robots");
+  BrowserTestUtils.loadURI(browser, "about:robots");
+  await BrowserTestUtils.browserLoaded(browser);
   ok(!browser.isRemoteBrowser, "browser is not remote anymore");
-
-  
-  
-  
-  await promiseTabRestored(tab);
 
   
   let promise = promiseRemoveTabAndSessionState(tab);

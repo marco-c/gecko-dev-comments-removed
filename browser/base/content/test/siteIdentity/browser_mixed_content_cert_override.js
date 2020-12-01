@@ -52,7 +52,7 @@ add_task(async function() {
   checkIdentityPopup("connection-mixed-active-loaded.svg");
 
   
-  await BrowserTestUtils.loadURI(
+  BrowserTestUtils.loadURI(
     gBrowser.selectedBrowser,
     "https://self-signed.example.com"
   );

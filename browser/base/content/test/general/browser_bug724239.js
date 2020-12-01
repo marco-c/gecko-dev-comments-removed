@@ -22,11 +22,11 @@ add_task(async function test_newtab() {
     async function(browser) {
       
       let stopped = BrowserTestUtils.browserStopped(browser, "about:newtab");
-      await BrowserTestUtils.loadURI(browser, "about:newtab");
+      BrowserTestUtils.loadURI(browser, "about:newtab");
       await stopped;
 
       stopped = BrowserTestUtils.browserStopped(browser, "http://example.com/");
-      await BrowserTestUtils.loadURI(browser, "http://example.com/");
+      BrowserTestUtils.loadURI(browser, "http://example.com/");
       await stopped;
 
       

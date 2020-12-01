@@ -87,7 +87,7 @@ add_task(async function() {
   });
   Services.console.registerListener(on_new_message);
   
-  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, kTestURISuccess);
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, kTestURISuccess);
   
   let xhr = new XMLHttpRequest();
   xhr.open("GET", kTestURIExempt, true);

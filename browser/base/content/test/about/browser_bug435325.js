@@ -21,7 +21,7 @@ add_task(async function checkSwitchPageToOnlineMode() {
   await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
     let netErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
 
-    await BrowserTestUtils.loadURI(browser, "http://example.com/");
+    BrowserTestUtils.loadURI(browser, "http://example.com/");
     await netErrorLoaded;
 
     

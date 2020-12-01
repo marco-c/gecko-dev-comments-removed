@@ -31,7 +31,7 @@ add_task(async function bookmarks_toolbar_shown_on_newtab() {
     );
 
     
-    await BrowserTestUtils.loadURI(newtab.linkedBrowser, "https://example.com");
+    BrowserTestUtils.loadURI(newtab.linkedBrowser, "https://example.com");
     await BrowserTestUtils.browserLoaded(newtab.linkedBrowser);
     if (featureEnabled) {
       await waitForBookmarksToolbarVisibility({
@@ -46,7 +46,7 @@ add_task(async function bookmarks_toolbar_shown_on_newtab() {
     );
 
     
-    await BrowserTestUtils.loadURI(newtab.linkedBrowser, "about:newtab");
+    BrowserTestUtils.loadURI(newtab.linkedBrowser, "about:newtab");
     await BrowserTestUtils.browserLoaded(newtab.linkedBrowser);
     if (featureEnabled) {
       await waitForBookmarksToolbarVisibility({
@@ -92,7 +92,7 @@ add_task(async function bookmarks_toolbar_shown_on_newtab() {
     });
 
     
-    await BrowserTestUtils.loadURI(example.linkedBrowser, "about:newtab");
+    BrowserTestUtils.loadURI(example.linkedBrowser, "about:newtab");
     await BrowserTestUtils.browserLoaded(example.linkedBrowser);
     if (featureEnabled) {
       await waitForBookmarksToolbarVisibility({
@@ -126,10 +126,7 @@ add_task(async function bookmarks_toolbar_shown_on_newtab() {
     await BrowserTestUtils.switchTab(gBrowser, newtab);
     await waitForBookmarksToolbarVisibility({ visible: false });
     ok(!isBookmarksToolbarVisible(), "Toolbar should hide with custom newtab");
-    await BrowserTestUtils.loadURI(
-      example.linkedBrowser,
-      AboutNewTab.newTabURL
-    );
+    BrowserTestUtils.loadURI(example.linkedBrowser, AboutNewTab.newTabURL);
     await BrowserTestUtils.browserLoaded(example.linkedBrowser);
     await BrowserTestUtils.switchTab(gBrowser, example);
     if (featureEnabled) {
