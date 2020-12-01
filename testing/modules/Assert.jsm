@@ -434,6 +434,20 @@ function expectedException(actual, expected) {
 proto.throws = function(block, expected, message) {
   checkExpectedArgument(this, "throws", expected);
 
+  
+  
+  
+  let cleanupRecentJSDevError = false;
+  if ("recentJSDevError" in ChromeUtils) {
+    
+    
+    if (ChromeUtils.recentJSDevError === undefined) {
+      
+      
+      cleanupRecentJSDevError = true;
+    }
+  }
+
   let actual;
 
   try {
@@ -455,6 +469,18 @@ proto.throws = function(block, expected, message) {
   }
 
   this.report(false, expected, expected, message);
+
+  
+  
+  
+  if (cleanupRecentJSDevError) {
+    let recentJSDevError = ChromeUtils.recentJSDevError;
+    if (recentJSDevError) {
+      if (expectedException(recentJSDevError)) {
+        ChromeUtils.clearRecentJSDevError();
+      }
+    }
+  }
 };
 
 
