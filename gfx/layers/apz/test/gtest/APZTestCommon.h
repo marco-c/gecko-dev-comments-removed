@@ -573,7 +573,7 @@ void APZCTesterBase::Pan(const RefPtr<InputReceiver>& aTarget,
   }
 
   const TimeDuration TIME_BETWEEN_TOUCH_EVENT =
-      TimeDuration::FromMilliseconds(50);
+      TimeDuration::FromMilliseconds(20);
 
   
   

@@ -493,7 +493,6 @@ TEST_F(APZScrollHandoffTester, PartialFlingHandoff) {
 }
 #endif
 
-#ifndef MOZ_WIDGET_ANDROID  
 
 
 TEST_F(APZScrollHandoffTester, SimultaneousFlings) {
@@ -528,7 +527,6 @@ TEST_F(APZScrollHandoffTester, SimultaneousFlings) {
   child2->AssertStateIsReset();
   parent2->AssertStateIsFling();
 }
-#endif
 
 #ifndef MOZ_WIDGET_ANDROID  
 TEST_F(APZScrollHandoffTester, Scrollgrab) {
@@ -549,7 +547,6 @@ TEST_F(APZScrollHandoffTester, Scrollgrab) {
 }
 #endif
 
-#ifndef MOZ_WIDGET_ANDROID  
 TEST_F(APZScrollHandoffTester, ScrollgrabFling) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
@@ -566,9 +563,7 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFling) {
   rootApzc->AssertStateIsFling();
   childApzc->AssertStateIsReset();
 }
-#endif
 
-#ifndef MOZ_WIDGET_ANDROID  
 TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration1) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
@@ -576,9 +571,9 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration1) {
   CreateScrollgrabLayerTree(true );
   TestFlingAcceleration();
 }
-#endif
 
 #ifndef MOZ_WIDGET_ANDROID  
+#  if 0  
 TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration2) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
@@ -586,6 +581,7 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration2) {
   CreateScrollgrabLayerTree(false );
   TestFlingAcceleration();
 }
+#  endif
 #endif
 
 TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Pan) {
@@ -613,7 +609,6 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Pan) {
   EXPECT_EQ(10, parentApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 }
 
-#ifndef MOZ_WIDGET_ANDROID  
 TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", false);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
@@ -650,7 +645,6 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
   
   EXPECT_GT(parentApzc->GetFrameMetrics().GetVisualScrollOffset().y, 10);
 }
-#endif
 
 TEST_F(APZScrollHandoffTester, CrossApzcAxisLock_NoTouchAction) {
   SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", false);
