@@ -3317,7 +3317,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 101;
+    const UI_VERSION = 103;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3943,9 +3943,21 @@ BrowserGlue.prototype = {
       Services.prefs.clearUserPref("security.tls.version.enable-deprecated");
     }
 
+    if (currentUIVersion < 102) {
+      
+      
+      
+      const { CustomizableUI } = ChromeUtils.import(
+        "resource:///modules/CustomizableUI.jsm"
+      );
+      CustomizableUI.removeWidgetFromArea("managed-bookmarks");
+    }
+
     
     
-    if (currentUIVersion < 100) {
+    if (currentUIVersion < 103) {
+      
+      
       let bookmarksToolbarWasVisible =
         Services.xulStore.getValue(
           BROWSER_DOCURL,
@@ -3965,9 +3977,7 @@ BrowserGlue.prototype = {
         "PersonalToolbar",
         "collapsed"
       );
-    }
 
-    if (currentUIVersion < 101) {
       Services.prefs.clearUserPref(
         "browser.livebookmarks.migrationAttemptsLeft"
       );
