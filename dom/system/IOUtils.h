@@ -331,7 +331,7 @@ class IOUtils final {
 
 
   static Result<nsTArray<nsString>, IOError> GetChildrenSync(
-      const nsAString& aPath);
+      already_AddRefed<nsIFile> aFile);
 };
 
 
