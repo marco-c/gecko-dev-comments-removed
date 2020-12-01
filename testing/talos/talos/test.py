@@ -476,6 +476,9 @@ class tabswitch(PageloaderTest):
         "addon.test.tabswitch.urlfile": os.path.join("${talos}", "tests", "tp5o.html"),
         "addon.test.tabswitch.webserver": "${webserver}",
         "addon.test.tabswitch.maxurls": -1,
+        
+        
+        "browser.toolbars.bookmarks.visibility": "never",
     }
     unit = "ms"
 
