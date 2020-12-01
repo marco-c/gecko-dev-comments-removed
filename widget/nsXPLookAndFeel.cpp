@@ -950,26 +950,6 @@ nsresult nsXPLookAndFeel::GetColorImpl(ColorID aID,
 nsresult nsXPLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
   if (!sInitialized) Init();
 
-  
-  
-  switch (aID) {
-    case IntID::ScrollButtonLeftMouseButtonAction:
-      aResult = 0;
-      return NS_OK;
-    case IntID::ScrollButtonMiddleMouseButtonAction:
-      aResult = 3;
-      return NS_OK;
-    case IntID::ScrollButtonRightMouseButtonAction:
-      aResult = 3;
-      return NS_OK;
-    default:
-      
-
-
-
-      break;
-  }
-
   for (unsigned int i = 0; i < ArrayLength(sIntPrefs); ++i) {
     if (sIntPrefs[i].isSet && (sIntPrefs[i].id == aID)) {
       aResult = sIntPrefs[i].intVar;
