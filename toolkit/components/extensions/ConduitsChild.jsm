@@ -129,6 +129,16 @@ class PointConduit extends BaseConduit {
         } catch (ex) {}
       }
     }
+    this.closeCallback?.();
+    this.closeCallback = null;
+  }
+
+  
+
+
+
+  setCloseCallback(callback) {
+    this.closeCallback = callback;
   }
 }
 
