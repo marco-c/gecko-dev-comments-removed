@@ -286,21 +286,21 @@ var SitePermissions = {
 
 
   getAllByPrincipal(principal) {
-    let result = [];
     if (!principal) {
       throw new Error("principal argument cannot be null.");
     }
     if (!this.isSupportedPrincipal(principal)) {
-      return result;
+      return [];
     }
 
-    let permissions = Services.perms.getAllForPrincipal(principal);
-    for (let permission of permissions) {
-      
-      if (gPermissionObject[permission.type]) {
-        
-        if (permission.type == "canvas" && !this.resistFingerprinting) {
-          continue;
+    
+    
+    let permissions = Services.perms
+      .getAllForPrincipal(principal)
+      .filter(permission => {
+        let entry = gPermissionObject[permission.type];
+        if (!entry || entry.disabled) {
+          return false;
         }
 
         
@@ -312,25 +312,26 @@ var SitePermissions = {
             "WebExtensions-unlimitedStorage"
           ).state == SitePermissions.ALLOW
         ) {
-          continue;
+          return false;
         }
 
-        let scope = this.SCOPE_PERSISTENT;
-        if (permission.expireType == Services.perms.EXPIRE_SESSION) {
-          scope = this.SCOPE_SESSION;
-        } else if (permission.expireType == Services.perms.EXPIRE_POLICY) {
-          scope = this.SCOPE_POLICY;
-        }
+        return true;
+      });
 
-        result.push({
-          id: permission.type,
-          scope,
-          state: permission.capability,
-        });
+    return permissions.map(permission => {
+      let scope = this.SCOPE_PERSISTENT;
+      if (permission.expireType == Services.perms.EXPIRE_SESSION) {
+        scope = this.SCOPE_SESSION;
+      } else if (permission.expireType == Services.perms.EXPIRE_POLICY) {
+        scope = this.SCOPE_POLICY;
       }
-    }
 
-    return result;
+      return {
+        id: permission.type,
+        scope,
+        state: permission.capability,
+      };
+    });
   },
 
   
@@ -422,15 +423,10 @@ var SitePermissions = {
 
   listPermissions() {
     if (this._permissionsArray === null) {
-      let permissions = Object.keys(gPermissionObject);
-
-      
-      if (!this.resistFingerprinting) {
-        permissions = permissions.filter(permission => permission !== "canvas");
-      }
-      this._permissionsArray = permissions;
+      this._permissionsArray = Object.keys(gPermissionObject).filter(
+        id => !gPermissionObject[id].disabled
+      );
     }
-
     return this._permissionsArray;
   },
 
@@ -1021,14 +1017,24 @@ var gPermissionObject = {
     states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
   },
 
-  canvas: {},
+  canvas: {
+    get disabled() {
+      return !SitePermissions.resistFingerprinting;
+    },
+  },
 
   midi: {
     exactHostMatch: true,
+    get disabled() {
+      return !SitePermissions.midiPermissionEnabled;
+    },
   },
 
   "midi-sysex": {
     exactHostMatch: true,
+    get disabled() {
+      return !SitePermissions.midiPermissionEnabled;
+    },
   },
 
   "storage-access": {
@@ -1039,13 +1045,9 @@ var gPermissionObject = {
   },
 };
 
-if (!Services.prefs.getBoolPref("dom.webmidi.enabled")) {
-  
-  
-  
-  delete gPermissionObject["midi"];
-  delete gPermissionObject["midi-sysex"];
-}
+SitePermissions.midiPermissionEnabled = Services.prefs.getBoolPref(
+  "dom.webmidi.enabled"
+);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   SitePermissions,
