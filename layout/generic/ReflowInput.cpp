@@ -1468,6 +1468,25 @@ void ReflowInput::CalculateHypotheticalPosition(
   }
 }
 
+LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
+    nscoord aAutoBSize, const LogicalSize& aTentativeComputedSize) const {
+  MOZ_ASSERT(aAutoBSize != NS_UNCONSTRAINEDSIZE,
+             "Shouldn't give an unresolved block size");
+  MOZ_ASSERT(!mFrame->IsFrameOfType(nsIFrame::eReplaced),
+             "Replaced element shouldn't have the unconstrained block size");
+
+  LogicalSize resultSize = aTentativeComputedSize;
+  WritingMode wm = GetWritingMode();
+
+  
+  
+  resultSize.BSize(wm) = ApplyMinMaxBSize(aAutoBSize);
+
+  
+
+  return resultSize;
+}
+
 void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
                                           const ReflowInput* aCBReflowInput,
                                           const LogicalSize& aCBSize,
@@ -1697,17 +1716,11 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
       if (computedSize.ISize(cbwm) == NS_UNCONSTRAINEDSIZE) {
         
         
-        computedSize.ISize(cbwm) = autoISize;
-
-        
-        LogicalSize maxSize = ComputedMaxSize(cbwm);
-        LogicalSize minSize = ComputedMinSize(cbwm);
-        if (computedSize.ISize(cbwm) > maxSize.ISize(cbwm)) {
-          computedSize.ISize(cbwm) = maxSize.ISize(cbwm);
-        }
-        if (computedSize.ISize(cbwm) < minSize.ISize(cbwm)) {
-          computedSize.ISize(cbwm) = minSize.ISize(cbwm);
-        }
+        nscoord autoBSizeInWM = autoISize;
+        LogicalSize computedSizeInWM =
+            CalculateAbsoluteSizeWithResolvedAutoBlockSize(
+                autoBSizeInWM, computedSize.ConvertTo(wm, cbwm));
+        computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
       }
     }
 
@@ -1790,17 +1803,10 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     if (computedSize.BSize(cbwm) == NS_UNCONSTRAINEDSIZE) {
       
       
-      computedSize.BSize(cbwm) = autoBSize;
-
-      
-      LogicalSize maxSize = ComputedMaxSize(cbwm);
-      LogicalSize minSize = ComputedMinSize(cbwm);
-      if (computedSize.BSize(cbwm) > maxSize.BSize(cbwm)) {
-        computedSize.BSize(cbwm) = maxSize.BSize(cbwm);
-      }
-      if (computedSize.BSize(cbwm) < minSize.BSize(cbwm)) {
-        computedSize.BSize(cbwm) = minSize.BSize(cbwm);
-      }
+      LogicalSize computedSizeInWM =
+          CalculateAbsoluteSizeWithResolvedAutoBlockSize(
+              autoBSize, computedSize.ConvertTo(wm, cbwm));
+      computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
     }
 
     
