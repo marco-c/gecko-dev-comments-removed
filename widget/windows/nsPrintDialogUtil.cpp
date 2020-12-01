@@ -312,8 +312,6 @@ static nsresult ShowNativePrintDialog(HWND aHWnd,
     if (prntdlg.Flags & PD_PAGENUMS) {
       pageRanges.AppendElement(prntdlg.nFromPage);
       pageRanges.AppendElement(prntdlg.nToPage);
-    } else {
-      
     }
     aPrintSettings->SetPageRanges(pageRanges);
 
