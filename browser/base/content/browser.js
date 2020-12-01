@@ -6621,6 +6621,9 @@ function setToolbarVisibility(
           currentURI: gBrowser.currentURI,
           isNullPrincipal: gBrowser.contentPrincipal.isNullPrincipal,
         });
+        
+        
+        isVisible &&= BookmarkingUI.bookmarksToolbarHasVisibleChildren();
         break;
     }
   }

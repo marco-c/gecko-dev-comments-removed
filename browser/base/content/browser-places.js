@@ -1610,6 +1610,26 @@ var BookmarkingUI = {
     return menu;
   },
 
+  bookmarksToolbarHasVisibleChildren() {
+    let bookmarksToolbarWidgets = CustomizableUI.getWidgetsInArea(
+      CustomizableUI.AREA_BOOKMARKS
+    );
+
+    const BOOKMARKS_TOOLBAR_ITEMS_ID = "personal-bookmarks";
+    if (
+      bookmarksToolbarWidgets.find(w => w.id == BOOKMARKS_TOOLBAR_ITEMS_ID) &&
+      PlacesUtils.getChildCountForFolder(PlacesUtils.bookmarks.toolbarGuid)
+    ) {
+      return true;
+    }
+
+    
+    
+    return bookmarksToolbarWidgets.some(
+      w => w.id != BOOKMARKS_TOOLBAR_ITEMS_ID
+    );
+  },
+
   attachPlacesView(event, node) {
     
     if (node.parentNode._placesView) {
