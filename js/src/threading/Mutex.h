@@ -75,7 +75,8 @@ class Mutex {
 
 #ifdef DEBUG
  public:
-  bool isHeld() const;
+  
+  
   bool ownedByCurrentThread() const;
 
  private:
