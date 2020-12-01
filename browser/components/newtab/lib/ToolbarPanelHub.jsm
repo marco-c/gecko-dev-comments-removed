@@ -91,14 +91,18 @@ class _ToolbarPanelHub {
   }
 
   toggleWhatsNewPref(event) {
-    Preferences.set(WHATSNEW_ENABLED_PREF, event.target.checked);
+    
+    
+    let newValue = !event.target.checked;
+    Preferences.set(WHATSNEW_ENABLED_PREF, newValue);
+
     this.sendUserEventTelemetry(
       event.target.ownerGlobal,
       "WNP_PREF_TOGGLE",
       
       
       { id: "n/a" },
-      { value: { prefValue: event.target.checked } }
+      { value: { prefValue: newValue } }
     );
   }
 
