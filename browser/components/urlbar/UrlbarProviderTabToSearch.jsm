@@ -101,8 +101,6 @@ function initializeDynamicResult() {
 class ProviderTabToSearch extends UrlbarProvider {
   constructor() {
     super();
-    
-    this.onboardingResultCountThisSession = 0;
   }
 
   
@@ -209,6 +207,44 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
 
+
+
+
+
+
+  onSelection(result, element) {
+    
+    
+    
+    
+    
+    
+    if (
+      result.payload.dynamicType &&
+      (!this.onboardingInteractionAtTime ||
+        this.onboardingInteractionAtTime < Date.now() - 1000 * 60 * 5)
+    ) {
+      let interactionsLeft = UrlbarPrefs.get(
+        "tabToSearch.onboard.interactionsLeft"
+      );
+
+      if (interactionsLeft > 0) {
+        UrlbarPrefs.set(
+          "tabToSearch.onboard.interactionsLeft",
+          --interactionsLeft
+        );
+      }
+
+      this.onboardingInteractionAtTime = Date.now();
+    }
+  }
+
+  
+
+
+
+
+
   get deferUserSelection() {
     return true;
   }
@@ -238,7 +274,10 @@ class ProviderTabToSearch extends UrlbarProvider {
     let engines = await UrlbarSearchUtils.enginesForDomainPrefix(searchStr, {
       matchAllDomainLevels: true,
     });
-    let onboardingShownCount = UrlbarPrefs.get("tipShownCount.tabToSearch");
+
+    const onboardingInteractionsLeft = UrlbarPrefs.get(
+      "tabToSearch.onboard.interactionsLeft"
+    );
     let showedOnboarding = false;
     for (let engine of engines) {
       
@@ -246,12 +285,7 @@ class ProviderTabToSearch extends UrlbarProvider {
       let url = engine.getResultDomain();
       url = url.substr(0, url.length - engine.searchUrlPublicSuffix.length);
       let result;
-      if (
-        onboardingShownCount <
-          UrlbarPrefs.get("tabToSearch.onboard.maxShown") &&
-        this.onboardingResultCountThisSession <
-          UrlbarPrefs.get("tabToSearch.onboard.maxShownPerSession")
-      ) {
+      if (onboardingInteractionsLeft > 0) {
         result = new UrlbarResult(
           UrlbarUtils.RESULT_TYPE.DYNAMIC,
           UrlbarUtils.RESULT_SOURCE.SEARCH,
@@ -287,8 +321,6 @@ class ProviderTabToSearch extends UrlbarProvider {
     
     
     if (showedOnboarding) {
-      this.onboardingResultCountThisSession++;
-      UrlbarPrefs.set("tipShownCount.tabToSearch", ++onboardingShownCount);
       Services.telemetry.keyedScalarAdd(
         "urlbar.tips",
         "tabtosearch_onboard-shown",

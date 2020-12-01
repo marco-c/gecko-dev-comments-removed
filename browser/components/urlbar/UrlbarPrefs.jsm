@@ -156,27 +156,13 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["tabToSearch.onboard.oneInteraction", true],
-
-  
-  
-  
-  ["tabToSearch.onboard.maxShown", 60],
-
-  
-  
-  
-  ["tabToSearch.onboard.maxShownPerSession", 20],
+  ["tabToSearch.onboard.interactionsLeft", 3],
 
   
   ["tipShownCount.searchTip_onboard", 0],
 
   
   ["tipShownCount.searchTip_redirect", 0],
-
-  
-  
-  ["tipShownCount.tabToSearch", 0],
 
   
   ["trimURLs", true],
