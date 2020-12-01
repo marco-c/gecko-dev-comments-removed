@@ -40,13 +40,10 @@ option(
     host,
     target,
     "MOZ_PGO",
-    lto.enabled,
     enable_fuzzing,
     ubsan,
 )
-def new_pass_manager_flags(
-    enabled, compiler, host, target, pgo, lto, enable_fuzzing, ubsan
-):
+def new_pass_manager_flags(enabled, compiler, host, target, pgo, enable_fuzzing, ubsan):
     if host.os == "OSX":
         
         
@@ -54,10 +51,6 @@ def new_pass_manager_flags(
     if target.os == "OSX" and not pgo:
         
         
-        
-        
-        return None
-    if target.os == "WINNT" and target.cpu == "aarch64" and not lto:
         
         
         return None
