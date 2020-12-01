@@ -22,6 +22,10 @@
 #include "vm/JSObject.h"
 #include "vm/StringType.h"
 
+namespace JS {
+struct CTypesCallbacks;
+}  
+
 namespace js {
 namespace ctypes {
 

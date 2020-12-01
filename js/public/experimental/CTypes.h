@@ -9,11 +9,27 @@
 
 #include "mozilla/Attributes.h"  
 
+#include <stddef.h>  
+
 #include "jstypes.h"  
 
+#include "js/RootingAPI.h"  
+
 struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSObject;
 
 namespace JS {
+
+#ifdef JS_HAS_CTYPES
+
+
+
+
+
+extern JS_PUBLIC_API bool InitCTypesClass(JSContext* cx,
+                                          Handle<JSObject*> global);
+
+#endif  
 
 
 
@@ -57,6 +73,35 @@ class MOZ_RAII JS_FRIEND_API AutoCTypesActivityCallback {
     }
   }
 };
+
+#ifdef JS_HAS_CTYPES
+
+
+
+
+
+
+using CTypesUnicodeToNativeFun = char* (*)(JSContext*, const char16_t*, size_t);
+
+
+
+
+
+
+struct CTypesCallbacks {
+  CTypesUnicodeToNativeFun unicodeToNative;
+};
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void SetCTypesCallbacks(JSObject* ctypesObj,
+                                             const CTypesCallbacks* callbacks);
+
+#endif  
 
 }  
 

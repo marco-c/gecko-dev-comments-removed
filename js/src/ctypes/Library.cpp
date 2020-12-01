@@ -11,6 +11,7 @@
 
 #include "ctypes/CTypes.h"
 #include "js/CharacterEncoding.h"
+#include "js/experimental/CTypes.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"  
 #include "js/PropertySpec.h"

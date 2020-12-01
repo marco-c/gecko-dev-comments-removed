@@ -21,6 +21,7 @@
 #include "gc/WeakMap.h"
 #include "js/CharacterEncoding.h"
 #include "js/experimental/CodeCoverage.h"
+#include "js/experimental/CTypes.h"  
 #include "js/experimental/Intl.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
