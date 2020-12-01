@@ -297,10 +297,13 @@ class JSONSchemaWriter {
 class UniqueJSONStrings {
  public:
   
-  MFBT_API UniqueJSONStrings();
+  MFBT_API explicit UniqueJSONStrings(
+      JSONWriter::CollectionStyle aStyle = JSONWriter::MultiLineStyle);
 
   
-  MFBT_API explicit UniqueJSONStrings(const UniqueJSONStrings& aOther);
+  MFBT_API explicit UniqueJSONStrings(
+      const UniqueJSONStrings& aOther,
+      JSONWriter::CollectionStyle aStyle = JSONWriter::MultiLineStyle);
 
   MFBT_API ~UniqueJSONStrings();
 
