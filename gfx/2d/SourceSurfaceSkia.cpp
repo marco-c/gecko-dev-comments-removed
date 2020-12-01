@@ -168,7 +168,7 @@ void SourceSurfaceSkia::Unmap() {
 
 void SourceSurfaceSkia::DrawTargetWillChange() {
   MutexAutoLock lock(mChangeMutex);
-  if (mDrawTarget) {
+  if (mDrawTarget.exchange(nullptr)) {
     
     
     
@@ -181,7 +181,6 @@ void SourceSurfaceSkia::DrawTargetWillChange() {
         gfxCriticalError() << "Failed copying Skia raster snapshot";
       }
     }
-    mDrawTarget = nullptr;
   }
 }
 
