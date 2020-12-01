@@ -1740,6 +1740,12 @@ DebuggerProgressListener.prototype = {
     }
 
     const window = evt.target.defaultView;
+    if (!window) {
+      
+      
+      return;
+    }
+
     const innerID = getWindowID(window);
 
     
@@ -1780,6 +1786,12 @@ DebuggerProgressListener.prototype = {
     }
 
     const window = evt.target.defaultView;
+    if (!window) {
+      
+      
+      return;
+    }
+
     this._targetActor._windowDestroyed(window, null, true);
     this._knownWindowIDs.delete(getWindowID(window));
   }, "DebuggerProgressListener.prototype.onWindowHidden"),
