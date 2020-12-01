@@ -387,11 +387,12 @@ option(
 )
 
 
-@depends("--with-toolchain-prefix", target, cross_compiling)
-def toolchain_prefix(value, target, cross_compiling):
+@depends("--with-toolchain-prefix", host, target, cross_compiling)
+def toolchain_prefix(value, host, target, cross_compiling):
     if value:
         return tuple(value)
-    if cross_compiling:
+    
+    if cross_compiling and not (target.os == "OSX" and host.os == "OSX"):
         return ("%s-" % target.toolchain, "%s-" % target.alias)
 
 
