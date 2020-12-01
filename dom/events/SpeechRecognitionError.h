@@ -29,18 +29,19 @@ class SpeechRecognitionError : public Event {
                                                               aGivenProto);
   }
 
-  void GetMessage(nsAString& aString) { aString = mMessage; }
+  void GetMessage(nsAString& aString);
 
   SpeechRecognitionErrorCode Error() { return mError; }
-
+  
+  
   void InitSpeechRecognitionError(const nsAString& aType, bool aCanBubble,
                                   bool aCancelable,
                                   SpeechRecognitionErrorCode aError,
-                                  const nsAString& aMessage);
+                                  const nsACString& aMessage);
 
  protected:
   SpeechRecognitionErrorCode mError;
-  nsString mMessage;
+  nsCString mMessage;
 };
 
 }  
