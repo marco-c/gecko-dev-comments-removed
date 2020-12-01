@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, DebugFlags, DocumentLayer, FontRenderMode, PremultipliedColorF};
+use api::{ColorF, DebugFlags, FontRenderMode, PremultipliedColorF};
 use api::units::*;
 use crate::batch::{BatchBuilder, AlphaBatchBuilder, AlphaBatchContainer};
 use crate::clip::{ClipStore, ClipChainStack};
@@ -483,7 +483,6 @@ impl FrameBuilder {
         gpu_cache: &mut GpuCache,
         stamp: FrameStamp,
         global_device_pixel_scale: DevicePixelScale,
-        layer: DocumentLayer,
         device_origin: DeviceIntPoint,
         pan: WorldPoint,
         scene_properties: &SceneProperties,
@@ -629,12 +628,10 @@ impl FrameBuilder {
         self.composite_state_prealloc.record(&composite_state);
 
         Frame {
-            content_origin: scene.output_rect.origin,
             device_rect: DeviceIntRect::new(
                 device_origin,
                 scene.output_rect.size,
             ),
-            layer,
             passes,
             transform_palette: transform_palette.finish(),
             render_tasks,
@@ -989,10 +986,7 @@ pub fn build_render_pass(
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Frame {
     
-    pub content_origin: DeviceIntPoint,
-    
     pub device_rect: DeviceIntRect,
-    pub layer: DocumentLayer,
     pub passes: Vec<RenderPass>,
 
     pub transform_palette: Vec<TransformData>,

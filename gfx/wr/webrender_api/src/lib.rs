@@ -68,9 +68,6 @@ use peek_poke::PeekPoke;
 pub type TileSize = u16;
 
 
-pub type DocumentLayer = i8;
-
-
 
 #[derive(Copy, Clone, Deserialize, Serialize)]
 pub struct QualitySettings {
