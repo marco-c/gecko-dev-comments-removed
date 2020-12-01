@@ -52,7 +52,7 @@ EXPORTS.mozilla.net += [
 ]
 
 SOURCES += [
-    "GetAddrInfo.cpp", 
+    "GetAddrInfo.cpp",  
     "nsEffectiveTLDService.cpp",  
     "nsHostResolver.cpp",  
 ]
