@@ -555,7 +555,11 @@ using namespace mozilla::a11y;
     mGeckoAccessible.AsProxy()->Name(title);
   }
   
-  return nsCocoaUtils::ToNSString(Substring(title, 1, title.Length()));
+  
+  
+  
+
+  return nsCocoaUtils::ToNSString(title);
 }
 
 @end
