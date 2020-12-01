@@ -735,79 +735,113 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
     nsIFrame* kidFrame = mFrames.FirstChild();
     bool kidDirty = kidFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY);
 
-    ReflowInput kidReflowInput(
-        aPresContext, aReflowInput, kidFrame,
-        aReflowInput.AvailableSize(kidFrame->GetWritingMode()));
-
-    if (aReflowInput.IsBResizeForWM(kidReflowInput.GetWritingMode()) &&
-        kidFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
-      
-      
-      kidReflowInput.SetBResize(true);
-    }
-
+    WritingMode kidWM = kidFrame->GetWritingMode();
+    auto availableSize = aReflowInput.AvailableSize(kidWM);
+    nscoord bOffset = 0;
+    nscoord canvasBSizeSum = 0;
     WritingMode wm = aReflowInput.GetWritingMode();
-    WritingMode kidWM = kidReflowInput.GetWritingMode();
-    nsSize containerSize = aReflowInput.ComputedPhysicalSize();
-
-    LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(kidWM);
-    LogicalPoint kidPt(kidWM, margin.IStart(kidWM), margin.BStart(kidWM));
-
-    
-    ReflowChild(kidFrame, aPresContext, kidDesiredSize, kidReflowInput, kidWM,
-                kidPt, containerSize, ReflowChildFlags::Default, aStatus);
-
-    
-    FinishReflowChild(kidFrame, aPresContext, kidDesiredSize, &kidReflowInput,
-                      kidWM, kidPt, containerSize,
-                      ReflowChildFlags::ApplyRelativePositioning);
-
-    if (!aStatus.IsFullyComplete()) {
-      nsIFrame* nextFrame = kidFrame->GetNextInFlow();
-      NS_ASSERTION(
-          nextFrame || aStatus.NextInFlowNeedsReflow(),
-          "If it's incomplete and has no nif yet, it must flag a nif reflow.");
-      if (!nextFrame) {
-        nextFrame = aPresContext->PresShell()
-                        ->FrameConstructor()
-                        ->CreateContinuingFrame(kidFrame, this);
-        SetOverflowFrames(nsFrameList(nextFrame, nextFrame));
-        
-        
-        
-        
+    if (prevCanvasFrame && availableSize.BSize(kidWM) != NS_UNCONSTRAINEDSIZE &&
+        StaticPrefs::layout_display_list_improve_fragmentation()) {
+      for (auto* pif = prevCanvasFrame; pif;
+           pif = static_cast<nsCanvasFrame*>(pif->GetPrevInFlow())) {
+        canvasBSizeSum += pif->BSize(kidWM);
+        auto* pifChild = pif->PrincipalChildList().FirstChild();
+        if (pifChild) {
+          nscoord layoutOverflow = pifChild->BSize(kidWM) - canvasBSizeSum;
+          
+          
+          
+          
+          
+          
+          
+          
+          if (layoutOverflow < 0) {
+            LogicalRect so(kidWM, pifChild->ScrollableOverflowRect(),
+                           aReflowInput.ComputedSizeAsContainerIfConstrained());
+            layoutOverflow = so.BEnd(kidWM) - canvasBSizeSum;
+          }
+          bOffset = std::max(bOffset, layoutOverflow);
+        }
       }
-      if (aStatus.IsOverflowIncomplete()) {
-        nextFrame->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-      }
+      availableSize.BSize(kidWM) -= bOffset;
     }
 
-    
-    
-    if (kidDirty) {
-      
-      
-      
-      
-      
-      
-      
-      
-      nsIFrame* viewport = PresContext()->GetPresShell()->GetRootFrame();
-      viewport->InvalidateFrame();
-    }
+    LogicalSize finalSize = aReflowInput.ComputedSize();
+    if (MOZ_LIKELY(availableSize.BSize(kidWM) > 0)) {
+      ReflowInput kidReflowInput(aPresContext, aReflowInput, kidFrame,
+                                 availableSize);
 
-    
-    
-    
-    LogicalSize finalSize(wm);
-    finalSize.ISize(wm) = aReflowInput.ComputedISize();
-    if (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
-      finalSize.BSize(wm) =
-          kidFrame->GetLogicalSize(wm).BSize(wm) +
-          kidReflowInput.ComputedLogicalMargin(wm).BStartEnd(wm);
+      if (aReflowInput.IsBResizeForWM(kidReflowInput.GetWritingMode()) &&
+          kidFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+        
+        
+        kidReflowInput.SetBResize(true);
+      }
+
+      nsSize containerSize = aReflowInput.ComputedPhysicalSize();
+      LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(kidWM);
+      LogicalPoint kidPt(kidWM, margin.IStart(kidWM), margin.BStart(kidWM));
+      (kidWM.IsOrthogonalTo(wm) ? kidPt.I(kidWM) : kidPt.B(kidWM)) += bOffset;
+
+      
+      ReflowChild(kidFrame, aPresContext, kidDesiredSize, kidReflowInput, kidWM,
+                  kidPt, containerSize, ReflowChildFlags::Default, aStatus);
+
+      
+      FinishReflowChild(kidFrame, aPresContext, kidDesiredSize, &kidReflowInput,
+                        kidWM, kidPt, containerSize,
+                        ReflowChildFlags::ApplyRelativePositioning);
+
+      if (!aStatus.IsFullyComplete()) {
+        nsIFrame* nextFrame = kidFrame->GetNextInFlow();
+        NS_ASSERTION(nextFrame || aStatus.NextInFlowNeedsReflow(),
+                     "If it's incomplete and has no nif yet, it must flag a "
+                     "nif reflow.");
+        if (!nextFrame) {
+          nextFrame = aPresContext->PresShell()
+                          ->FrameConstructor()
+                          ->CreateContinuingFrame(kidFrame, this);
+          SetOverflowFrames(nsFrameList(nextFrame, nextFrame));
+          
+          
+          
+          
+        }
+        if (aStatus.IsOverflowIncomplete()) {
+          nextFrame->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
+        }
+      }
+
+      
+      
+      if (kidDirty) {
+        
+        
+        
+        
+        
+        
+        
+        
+        nsIFrame* viewport = PresContext()->GetPresShell()->GetRootFrame();
+        viewport->InvalidateFrame();
+      }
+
+      
+      
+      
+      if (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
+        finalSize.BSize(wm) =
+            kidFrame->GetLogicalSize(wm).BSize(wm) +
+            kidReflowInput.ComputedLogicalMargin(wm).BStartEnd(wm);
+      }
     } else {
-      finalSize.BSize(wm) = aReflowInput.ComputedBSize();
+      
+      
+      
+      SetOverflowFrames(std::move(mFrames));
+      aStatus.SetIncomplete();
     }
 
     aDesiredSize.SetSize(wm, finalSize);
