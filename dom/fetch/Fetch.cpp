@@ -109,6 +109,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(AbortSignalMainThread)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(AbortSignalMainThread)
 
 
+
 class AbortSignalProxy final : public AbortFollower {
   
   RefPtr<AbortSignalImpl> mSignalImplMainThread;
@@ -116,6 +117,8 @@ class AbortSignalProxy final : public AbortFollower {
   
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 
+  
+  
   
   
   const bool mAborted;
@@ -157,7 +160,7 @@ class AbortSignalProxy final : public AbortFollower {
     MOZ_ASSERT(!NS_IsMainThread());
     RefPtr<AbortSignalProxyRunnable> runnable =
         new AbortSignalProxyRunnable(this);
-    mMainThreadEventTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+    MainThreadEventTarget()->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
   }
 
   AbortSignalImpl* GetOrCreateSignalImplForMainThread() {
@@ -172,6 +175,8 @@ class AbortSignalProxy final : public AbortFollower {
     MOZ_ASSERT(!NS_IsMainThread());
     return Signal();
   }
+
+  nsIEventTarget* MainThreadEventTarget() { return mMainThreadEventTarget; }
 
   void Shutdown() {
     MOZ_ASSERT(!NS_IsMainThread());
