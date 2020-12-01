@@ -722,13 +722,13 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
     int rescaleBits = (colorDepth - 1) - 8;
     for (; span >= 4; span -= 4) {
       auto yPx =
-          textureLinearPackedR16(&sampler[0], ivec2(yU >> STEP_BITS, yV)) >>
+          textureLinearUnpackedR16(&sampler[0], ivec2(yU >> STEP_BITS, yV)) >>
           rescaleBits;
       auto uPx =
-          textureLinearPackedR16(&sampler[1], ivec2(cU >> STEP_BITS, cV)) >>
+          textureLinearUnpackedR16(&sampler[1], ivec2(cU >> STEP_BITS, cV)) >>
           rescaleBits;
       auto vPx =
-          textureLinearPackedR16(&sampler[2], ivec2(cU >> STEP_BITS, cV)) >>
+          textureLinearUnpackedR16(&sampler[2], ivec2(cU >> STEP_BITS, cV)) >>
           rescaleBits;
       unaligned_store(dest, YUVConverter<COLOR_SPACE>::convert(zip(yPx, yPx),
                                                                zip(uPx, vPx)));
@@ -739,13 +739,13 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
     if (span > 0) {
       
       auto yPx =
-          textureLinearPackedR16(&sampler[0], ivec2(yU >> STEP_BITS, yV)) >>
+          textureLinearUnpackedR16(&sampler[0], ivec2(yU >> STEP_BITS, yV)) >>
           rescaleBits;
       auto uPx =
-          textureLinearPackedR16(&sampler[1], ivec2(cU >> STEP_BITS, cV)) >>
+          textureLinearUnpackedR16(&sampler[1], ivec2(cU >> STEP_BITS, cV)) >>
           rescaleBits;
       auto vPx =
-          textureLinearPackedR16(&sampler[2], ivec2(cU >> STEP_BITS, cV)) >>
+          textureLinearUnpackedR16(&sampler[2], ivec2(cU >> STEP_BITS, cV)) >>
           rescaleBits;
       partial_store_span(
           dest,
