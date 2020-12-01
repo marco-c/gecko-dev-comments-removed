@@ -11,6 +11,8 @@
 namespace mozilla {
 
 class ContainerWriter;
+class EncodedFrame;
+class TrackMetadataBase;
 
 
 
