@@ -15,6 +15,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/ipc/IPCCore.h"
+#include "mozilla/ipc/SerializedStructuredCloneBuffer.h"
 #include "mozilla/BitSet.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
@@ -44,7 +45,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
-#include "js/StructuredClone.h"
 #include "nsCSSPropertyID.h"
 
 #ifdef _MSC_VER
@@ -70,33 +70,6 @@ namespace detail {
 template <typename...>
 struct VariantTag;
 }
-}  
-
-namespace mozilla {
-
-struct SerializedStructuredCloneBuffer final {
-  SerializedStructuredCloneBuffer() = default;
-
-  SerializedStructuredCloneBuffer(SerializedStructuredCloneBuffer&&) = default;
-  SerializedStructuredCloneBuffer& operator=(
-      SerializedStructuredCloneBuffer&&) = default;
-
-  SerializedStructuredCloneBuffer(const SerializedStructuredCloneBuffer&) =
-      delete;
-  SerializedStructuredCloneBuffer& operator=(
-      const SerializedStructuredCloneBuffer& aOther) = delete;
-
-  bool operator==(const SerializedStructuredCloneBuffer& aOther) const {
-    
-    
-    
-    
-    return false;
-  }
-
-  JSStructuredCloneData data{JS::StructuredCloneScope::Unassigned};
-};
-
 }  
 
 namespace IPC {
