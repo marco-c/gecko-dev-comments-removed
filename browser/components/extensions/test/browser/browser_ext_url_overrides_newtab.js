@@ -34,7 +34,7 @@ function clickKeepChanges(notification) {
   notification.button.click();
 }
 
-function clickRestoreSettings(notification) {
+function clickManage(notification) {
   notification.secondaryButton.click();
 }
 
@@ -378,38 +378,27 @@ add_task(async function test_new_tab_restore_settings() {
   );
 
   
-  let addonDisabled = waitForAddonDisabled(addon);
-  let popupHidden = promisePopupHidden(panel);
-  let locationChanged = BrowserTestUtils.waitForLocationChange(
-    gBrowser,
-    "about:newtab"
+  let preferencesShown = TestUtils.waitForCondition(
+    () => gBrowser.currentURI.spec == "about:preferences#home",
+    "Should open about:preferences."
   );
-  clickRestoreSettings(notification);
+  
+  let popupHidden = promisePopupHidden(panel);
+  clickManage(notification);
   await popupHidden;
-  await addonDisabled;
-  await locationChanged;
+  await preferencesShown;
 
   
   ok(
     panel.getAttribute("panelopen") != "true",
     "The notification panel is closed after click"
   );
+
   is(
     getNotificationSetting(extensionId),
     null,
-    "The New Tab notification is not set after restoring the settings"
+    "The New Tab notification is not set after clicking manage"
   );
-  is(addon.userDisabled, true, "The extension is now disabled");
-  is(
-    gBrowser.currentURI.spec,
-    "about:newtab",
-    "The user has been redirected to about:newtab"
-  );
-
-  
-  
-  
-  await TestUtils.waitForTick();
 
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -422,22 +411,7 @@ add_task(async function test_new_tab_restore_settings() {
     "The notification panel is not opened after keeping the changes"
   );
 
-  
-  
-  let addonEnabled = new Promise(resolve => {
-    let listener = {
-      onEnabled(enabledAddon) {
-        if (enabledAddon.id == addon.id) {
-          AddonManager.removeAddonListener(listener);
-          resolve();
-        }
-      },
-    };
-    AddonManager.addAddonListener(listener);
-  });
-  await addon.enable();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await addonEnabled;
   await extension.unload();
 });
 
@@ -456,9 +430,6 @@ add_task(async function test_new_tab_restore_settings_multiple() {
         <h1 id="extension-new-tab">New Tab!</h1>
         <script src="newtab.js"></script>
       `,
-      "newtab.js": function() {
-        browser.test.sendMessage("from-newtab-page", window.location.href);
-      },
     },
     useAddonManager: "temporary",
   });
@@ -510,22 +481,35 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   );
 
   
-  let addonDisabled = waitForAddonDisabled(addonTwo);
   let popupHidden = promisePopupHidden(panel);
-  let newTabUrlPromise = extensionOne.awaitMessage("from-newtab-page");
-  clickRestoreSettings(notification);
+  let preferencesShown = TestUtils.waitForCondition(
+    () => gBrowser.currentURI.spec == "about:preferences#home",
+    "Should open about:preferences."
+  );
+  clickManage(notification);
   await popupHidden;
-  await addonDisabled;
-  await promisePopupShown(panel);
-  let newTabUrl = await newTabUrlPromise;
+  await preferencesShown;
 
   
+  let addonDisabled = waitForAddonDisabled(addonTwo);
+  addonTwo.disable();
+  await addonDisabled;
+
+  
+  popupShown = promisePopupShown(panel);
+  let newtabShown = TestUtils.waitForCondition(
+    () => gBrowser.currentURI.spec == AboutNewTab.newTabURL,
+    "Should open correct new tab url."
+  );
+  BrowserOpenTab();
+  await newtabShown;
+  await popupShown;
+
   is(
     getNotificationSetting(extensionTwoId),
     null,
     "The New Tab notification is not set after restoring the settings"
   );
-  is(addonTwo.userDisabled, true, "The extension is now disabled");
   let addonOne = await AddonManager.getAddonByID(extensionOneId);
   is(
     addonOne.userDisabled,
@@ -544,20 +528,27 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   );
   is(
     gBrowser.currentURI.spec,
-    newTabUrl,
+    AboutNewTab.newTabURL,
     "The user is now on the next extension's New Tab page"
   );
 
-  addonDisabled = waitForAddonDisabled(addonOne);
-  popupHidden = promisePopupHidden(panel);
-  let locationChanged = BrowserTestUtils.waitForLocationChange(
-    gBrowser,
-    "about:newtab"
+  preferencesShown = TestUtils.waitForCondition(
+    () => gBrowser.currentURI.spec == "about:preferences#home",
+    "Should open about:preferences."
   );
-  clickRestoreSettings(notification);
+  popupHidden = promisePopupHidden(panel);
+  clickManage(notification);
   await popupHidden;
+  await preferencesShown;
+  
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  addonDisabled = waitForAddonDisabled(addonOne);
+  addonOne.disable();
   await addonDisabled;
-  await locationChanged;
+  let newTabOpened = waitForNewTab();
+  BrowserOpenTab();
+  await newTabOpened;
 
   ok(
     panel.getAttribute("panelopen") != "true",
@@ -568,7 +559,6 @@ add_task(async function test_new_tab_restore_settings_multiple() {
     null,
     "The New Tab notification is not set after restoring the settings"
   );
-  is(addonOne.userDisabled, true, "The extension is now disabled");
   is(
     gBrowser.currentURI.spec,
     "about:newtab",
@@ -576,13 +566,8 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   );
 
   
-  
-  
-  await TestUtils.waitForTick();
-
-  
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  let newTabOpened = waitForNewTab();
+  newTabOpened = waitForNewTab();
   BrowserOpenTab();
   await newTabOpened;
 
@@ -590,8 +575,6 @@ add_task(async function test_new_tab_restore_settings_multiple() {
     panel.getAttribute("panelopen") != "true",
     "The notification panel is not opened after keeping the changes"
   );
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   
   
@@ -602,6 +585,9 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   await addonOne.enable();
   await addonTwo.enable();
   await addonsEnabled;
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
   await extensionOne.unload();
   await extensionTwo.unload();
 });
