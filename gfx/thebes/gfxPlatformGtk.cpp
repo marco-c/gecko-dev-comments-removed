@@ -32,6 +32,7 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_layers.h"
+#include "nsIGfxInfo.h"
 #include "nsMathUtils.h"
 #include "nsUnicharUtils.h"
 #include "nsUnicodeProperties.h"
@@ -702,8 +703,13 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
   
   if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
     bool useGlxVsync = false;
+
+    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+    nsString adapterDriverVendor;
+    gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
+
     
-    if (!gfxVars::UseEGL()) {
+    if (!gfxVars::UseEGL() || (adapterDriverVendor.Find("mesa") != -1)) {
       useGlxVsync = gl::sGLXLibrary.SupportsVideoSync();
     }
     if (useGlxVsync) {
