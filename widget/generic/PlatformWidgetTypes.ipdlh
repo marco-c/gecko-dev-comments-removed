@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+include HeadlessWidgetTypes;
+
+namespace mozilla {
+namespace widget {
+
+union CompositorWidgetInitData
+{
+  HeadlessCompositorWidgetInitData;
+};
+
+} 
+} 
