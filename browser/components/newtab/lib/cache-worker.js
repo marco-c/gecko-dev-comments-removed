@@ -109,7 +109,41 @@ let Agent = {
 
 
 
+
   construct(state) {
+    
+    
+    
+    
+    
+    
+    
+    
+    try {
+      return this._construct(state);
+    } catch (e) {
+      console.error("about:home startup cache construction failed:", e);
+      return { page: null, script: null };
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _construct(state) {
     state.App.isForStartupCache = true;
 
     
