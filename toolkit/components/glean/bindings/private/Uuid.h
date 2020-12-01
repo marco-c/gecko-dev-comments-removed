@@ -10,28 +10,27 @@
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace glean {
+namespace mozilla::glean {
 
 namespace impl {
 extern "C" {
-void fog_uuid_set(uint32_t id, const nsACString& uuid);
-void fog_uuid_generate_and_set(uint32_t id);
-uint32_t fog_uuid_test_has_value(uint32_t id, const char* storageName);
-void fog_uuid_test_get_value(uint32_t id, const char* storageName,
-                             nsACString& value);
+void fog_uuid_set(uint32_t aId, const nsACString& aUuid);
+void fog_uuid_generate_and_set(uint32_t aId);
+uint32_t fog_uuid_test_has_value(uint32_t aId, const char* aStorageName);
+void fog_uuid_test_get_value(uint32_t aId, const char* aStorageName,
+                             nsACString& aValue);
 }
 
 class UuidMetric {
  public:
-  constexpr explicit UuidMetric(uint32_t id) : mId(id) {}
+  constexpr explicit UuidMetric(uint32_t aId) : mId(aId) {}
 
   
 
 
 
 
-  void Set(const nsACString& value) const { fog_uuid_set(mId, value); }
+  void Set(const nsACString& aValue) const { fog_uuid_set(mId, aValue); }
 
   
 
@@ -72,7 +71,7 @@ class GleanUuid final : public nsIGleanUuid {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIGLEANUUID
 
-  explicit GleanUuid(uint32_t id) : mUuid(id){};
+  explicit GleanUuid(uint32_t aId) : mUuid(aId){};
 
  private:
   virtual ~GleanUuid() = default;
@@ -80,7 +79,6 @@ class GleanUuid final : public nsIGleanUuid {
   const impl::UuidMetric mUuid;
 };
 
-}  
 }  
 
 #endif 

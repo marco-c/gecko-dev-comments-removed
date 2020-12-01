@@ -10,20 +10,19 @@
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace glean {
+namespace mozilla::glean {
 
 namespace impl {
 extern "C" {
-void fog_string_set(uint32_t id, const nsACString& value);
-uint32_t fog_string_test_has_value(uint32_t id, const char* storageName);
-void fog_string_test_get_value(uint32_t id, const char* storageName,
-                               nsACString& value);
+void fog_string_set(uint32_t aId, const nsACString& aValue);
+uint32_t fog_string_test_has_value(uint32_t aId, const char* aStorageName);
+void fog_string_test_get_value(uint32_t aId, const char* aStorageName,
+                               nsACString& aValue);
 }
 
 class StringMetric {
  public:
-  constexpr explicit StringMetric(uint32_t id) : mId(id) {}
+  constexpr explicit StringMetric(uint32_t aId) : mId(aId) {}
 
   
 
@@ -33,7 +32,7 @@ class StringMetric {
 
 
 
-  void Set(const nsACString& value) const { fog_string_set(mId, value); }
+  void Set(const nsACString& aValue) const { fog_string_set(mId, aValue); }
 
   
 
@@ -68,7 +67,7 @@ class GleanString final : public nsIGleanString {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIGLEANSTRING
 
-  explicit GleanString(uint32_t id) : mString(id){};
+  explicit GleanString(uint32_t aId) : mString(aId){};
 
  private:
   virtual ~GleanString() = default;
@@ -76,7 +75,6 @@ class GleanString final : public nsIGleanString {
   const impl::StringMetric mString;
 };
 
-}  
 }  
 
 #endif 

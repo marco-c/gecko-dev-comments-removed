@@ -14,7 +14,7 @@ interface nsIGleanDatetime : nsISupports
 
 
   [optional_argc]
-  void set([optional] in PRTime value);
+  void set([optional] in PRTime aValue);
 
   
 
@@ -42,7 +42,6 @@ interface nsIGleanCounter : nsISupports
 
 
 
-  [implicit_jscontext]
   void add(in uint32_t amount);
 
   
@@ -70,7 +69,6 @@ interface nsIGleanString : nsISupports
 
 
 
-  [implicit_jscontext]
   void set(in ACString value);
 
   
@@ -101,7 +99,6 @@ interface nsIGleanTimespan : nsISupports
 
 
 
-  [implicit_jscontext]
   void start();
 
   
@@ -112,7 +109,6 @@ interface nsIGleanTimespan : nsISupports
 
 
 
-  [implicit_jscontext]
   void stop();
 
   
@@ -140,13 +136,11 @@ interface nsIGleanUuid : nsISupports
 
 
 
-  [implicit_jscontext]
   void set(in ACString aValue);
 
   
 
 
-  [implicit_jscontext]
   void generateAndSet();
 
   
