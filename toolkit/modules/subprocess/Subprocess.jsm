@@ -118,6 +118,7 @@ var Subprocess = {
 
 
 
+
   call(options) {
     options = Object.assign({}, options);
 
@@ -134,9 +135,9 @@ var Subprocess = {
       Object.assign(environment, options.environment);
     }
 
-    options.environment = Object.entries(environment).map(([key, val]) =>
-      encodeEnvVar(key, val)
-    );
+    options.environment = Object.entries(environment)
+      .map(([key, val]) => (val !== null ? encodeEnvVar(key, val) : null))
+      .filter(s => s);
 
     options.arguments = Array.from(options.arguments || []);
 
