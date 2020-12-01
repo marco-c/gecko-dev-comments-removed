@@ -151,31 +151,6 @@ class IOUtils final {
 
 
 
-  static UniquePtr<PRFileDesc, PR_CloseDelete> OpenExistingSync(
-      const nsAString& aPath, int32_t aFlags);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static UniquePtr<PRFileDesc, PR_CloseDelete> CreateFileSync(
-      const nsAString& aPath, int32_t aFlags, int32_t aMode = 0666);
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -210,12 +185,8 @@ class IOUtils final {
 
 
   static Result<uint32_t, IOError> WriteAtomicSync(
-      const nsAString& aDestPath, const Span<const uint8_t>& aByteArray,
-      const InternalWriteAtomicOpts& aOptions);
-
-  static Result<uint32_t, IOError> WriteAtomicUTF8Sync(
-      const nsAString& aDestPath, const nsCString& aUTF8String,
-      const InternalWriteAtomicOpts& aOptions);
+      already_AddRefed<nsIFile> aFile, const Span<const uint8_t>& aByteArray,
+      InternalWriteAtomicOpts aOptions);
 
   
 
@@ -227,8 +198,24 @@ class IOUtils final {
 
 
 
-  static Result<uint32_t, IOError> WriteSync(PRFileDesc* aFd,
-                                             const nsACString& aPath,
+
+
+  static Result<uint32_t, IOError> WriteAtomicUTF8Sync(
+      already_AddRefed<nsIFile> aFile, const nsCString& aUTF8String,
+      InternalWriteAtomicOpts aOptions);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static Result<uint32_t, IOError> WriteSync(PRFileDesc* aFd, nsIFile* aFile,
                                              const Span<const uint8_t>& aBytes);
 
   
@@ -417,26 +404,14 @@ struct IOUtils::InternalFileInfo {
 
 
 struct IOUtils::InternalWriteAtomicOpts {
-  Maybe<nsString> mBackupFile;
+  RefPtr<nsIFile> mBackupFile;
   bool mFlush;
   bool mNoOverwrite;
-  Maybe<nsString> mTmpPath;
+  RefPtr<nsIFile> mTmpFile;
   bool mCompress;
 
-  static inline InternalWriteAtomicOpts FromBinding(
-      const WriteAtomicOptions& aOptions) {
-    InternalWriteAtomicOpts opts;
-    opts.mFlush = aOptions.mFlush;
-    opts.mNoOverwrite = aOptions.mNoOverwrite;
-    if (aOptions.mBackupFile.WasPassed()) {
-      opts.mBackupFile.emplace(aOptions.mBackupFile.Value());
-    }
-    if (aOptions.mTmpPath.WasPassed()) {
-      opts.mTmpPath.emplace(aOptions.mTmpPath.Value());
-    }
-    opts.mCompress = aOptions.mCompress;
-    return opts;
-  }
+  static Result<InternalWriteAtomicOpts, IOUtils::IOError> FromBinding(
+      const WriteAtomicOptions& aOptions);
 };
 
 
