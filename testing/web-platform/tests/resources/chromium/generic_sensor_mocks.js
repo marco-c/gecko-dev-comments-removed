@@ -45,6 +45,11 @@ var GenericSensorTest = (() => {
       this.sensorReadingTimerId_ = null;
       this.readingData_ = null;
       this.requestedFrequencies_ = [];
+      
+      
+      
+      
+      this.timestamp_ = window.performance.timeOrigin;
       let rv = handle.mapBuffer(offset, size);
       if (rv.result != Mojo.RESULT_OK) {
         throw new Error("MockSensor(): Failed to map shared buffer");
@@ -132,7 +137,7 @@ var GenericSensorTest = (() => {
 
       const reading = this.readingData_.value();
       this.buffer_.set(reading, 2);
-      this.buffer_[1] = window.performance.now() * 0.001;
+      this.buffer_[1] = this.timestamp_++;
     }
 
     
@@ -159,7 +164,8 @@ var GenericSensorTest = (() => {
         }
         
         
-        this.buffer_[1] = window.performance.now() * 0.001;
+        this.buffer_[1] = this.timestamp_++;
+
         if (this.reportingMode_ === device.mojom.ReportingMode.ON_CHANGE &&
             this.notifyOnReadingChange_) {
           this.client_.sensorReadingChanged();
