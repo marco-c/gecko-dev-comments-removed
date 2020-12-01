@@ -54,6 +54,15 @@ enum class ComputeSizeFlag : uint8_t {
 
 
 
+
+  UseAutoISize,
+
+  
+
+
+
+
+
   UseAutoBSize,
 
   
