@@ -27,8 +27,6 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 this.browser = {};
 
-const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-
 
 
 
@@ -261,10 +259,7 @@ browser.Context = class {
 
     
     
-    let modalElements = br.parentNode.getElementsByTagNameNS(
-      XUL_NS,
-      "tabmodalprompt"
-    );
+    let modalElements = br.parentNode.getElementsByTagName("tabmodalprompt");
 
     return br.tabModalPromptBox.getPrompt(modalElements[0]);
   }
