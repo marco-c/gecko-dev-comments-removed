@@ -6,6 +6,12 @@
 
 SPHINX_TREES["/toolkit/components/glean"] = "docs"
 
+
+
+PYTHON_UNITTEST_MANIFESTS += [
+    "pytest/python.ini",
+]
+
 if CONFIG["MOZ_GLEAN"]:
     
     include("/ipc/chromium/chromium-config.mozbuild")
@@ -43,10 +49,6 @@ if CONFIG["MOZ_GLEAN"]:
     ]
 
     XPCSHELL_TESTS_MANIFESTS += ["xpcshell/xpcshell.ini"]
-
-    PYTHON_UNITTEST_MANIFESTS += [
-        "pytest/python.ini",
-    ]
 
     
     include("metrics_index.py")
