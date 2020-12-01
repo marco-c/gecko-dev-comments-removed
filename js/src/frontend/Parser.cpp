@@ -2158,7 +2158,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   }
 
   
-  funbox->setIsStandalone(true);
+  MOZ_ASSERT(funbox->index() == CompilationInfo::TopLevelIndex);
 
   funbox->initStandalone(this->compilationState_.scopeContext, flags,
                          syntaxKind);

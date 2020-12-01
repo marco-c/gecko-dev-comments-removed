@@ -352,8 +352,10 @@ static bool SetNameForExposedFunctions(JSContext* cx,
 
     
     
-    if (!scriptStencil.wasFunctionEmitted &&
-        !scriptStencil.isStandaloneFunction) {
+    
+    
+    
+    if (!scriptStencil.wasFunctionEmitted) {
       continue;
     }
 
@@ -1579,8 +1581,8 @@ void ScriptStencil::dumpFields(js::JSONPrinter& json,
       json.property("lazyFunctionEnclosingScopeIndex", "Nothing");
     }
 
-    json.boolProperty("isStandaloneFunction", isStandaloneFunction);
     json.boolProperty("wasFunctionEmitted", wasFunctionEmitted);
+    json.boolProperty("allowRelazify", allowRelazify);
   }
 }
 

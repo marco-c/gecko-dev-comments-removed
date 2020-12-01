@@ -377,10 +377,6 @@ class FunctionBox : public SharedContext {
 
   
   
-  bool isStandalone_ : 1;
-
-  
-  
   
   bool wasEmitted_ : 1;
 
@@ -445,12 +441,6 @@ class FunctionBox : public SharedContext {
                                      FunctionSyntaxKind kind);
 
   void setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex);
-
-  bool isStandalone() const { return isStandalone_; }
-  void setIsStandalone(bool isStandalone) {
-    MOZ_ASSERT(!isFunctionFieldCopiedToStencil);
-    isStandalone_ = isStandalone;
-  }
 
   bool wasEmitted() const { return wasEmitted_; }
   void setWasEmitted(bool wasEmitted) {

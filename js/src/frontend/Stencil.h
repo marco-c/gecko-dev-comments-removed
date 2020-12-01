@@ -596,10 +596,6 @@ class ScriptStencil {
 
   
   
-  bool isStandaloneFunction : 1;
-
-  
-  
   bool wasFunctionEmitted : 1;
 
   
@@ -610,10 +606,7 @@ class ScriptStencil {
 
   
 
-  ScriptStencil()
-      : isStandaloneFunction(false),
-        wasFunctionEmitted(false),
-        allowRelazify(false) {}
+  ScriptStencil() : wasFunctionEmitted(false), allowRelazify(false) {}
 
   bool isFunction() const {
     bool result = functionFlags.toRaw() != 0x0000;
