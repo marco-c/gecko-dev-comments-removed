@@ -368,8 +368,11 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
 nsINode* FocusManager::FocusedDOMNode() const {
   nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager();
   nsIContent* focusedElm = DOMFocusManager->GetFocusedElement();
-
-  if (focusedElm) {
+  nsIFrame* focusedFrame = focusedElm ? focusedElm->GetPrimaryFrame() : nullptr;
+  
+  
+  
+  if (focusedFrame && focusedFrame->StyleVisibility()->IsVisible()) {
     
     
     
