@@ -954,12 +954,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     
     
 
-    if (nelements > UINT32_MAX) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_ARRAY_LENGTH);
-      return nullptr;
-    }
-
     Rooted<ArrayBufferObject*> buffer(cx);
     if (!maybeCreateArrayBuffer(cx, nelements, nullptr, &buffer)) {
       return nullptr;
