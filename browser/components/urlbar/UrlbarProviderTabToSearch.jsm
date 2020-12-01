@@ -19,8 +19,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarView: "resource:///modules/UrlbarView.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
+  UrlbarProviderAutofill: "resource:///modules/UrlbarProviderAutofill.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
+  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
@@ -260,7 +262,6 @@ class ProviderTabToSearch extends UrlbarProvider {
     
     
     
-    
     let [searchStr] = UrlbarUtils.stripPrefixAndTrim(
       queryContext.searchString,
       {
@@ -268,53 +269,94 @@ class ProviderTabToSearch extends UrlbarProvider {
         trimSlash: true,
       }
     );
+    
+    if (
+      !UrlbarTokenizer.looksLikeOrigin(searchStr, {
+        ignoreKnownDomains: true,
+        noIp: true,
+      })
+    ) {
+      return;
+    }
 
     
+    if (searchStr.includes(".")) {
+      searchStr = UrlbarUtils.stripPublicSuffixFromHost(searchStr);
+    }
+
     
     let engines = await UrlbarSearchUtils.enginesForDomainPrefix(searchStr, {
       matchAllDomainLevels: true,
     });
+    if (!engines.length) {
+      return;
+    }
 
     const onboardingInteractionsLeft = UrlbarPrefs.get(
       "tabToSearch.onboard.interactionsLeft"
     );
     let showedOnboarding = false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let partialMatchEnginesByHost = new Map();
+
     for (let engine of engines) {
       
       
-      let url = engine.getResultDomain();
-      url = url.substr(0, url.length - engine.searchUrlPublicSuffix.length);
-      let result;
-      if (onboardingInteractionsLeft > 0) {
-        result = new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.DYNAMIC,
-          UrlbarUtils.RESULT_SOURCE.SEARCH,
-          {
-            engine: engine.name,
-            url,
-            keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
-            icon: UrlbarUtils.ICON.SEARCH_GLASS_INVERTED,
-            dynamicType: DYNAMIC_RESULT_TYPE,
-          }
-        );
-        result.resultSpan = 2;
-        showedOnboarding = true;
-      } else {
-        result = new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.SEARCH,
-          UrlbarUtils.RESULT_SOURCE.SEARCH,
-          ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-            engine: engine.name,
-            url,
-            keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
-            icon: UrlbarUtils.ICON.SEARCH_GLASS_INVERTED,
-            query: "",
-          })
-        );
+      let [host] = UrlbarUtils.stripPrefixAndTrim(engine.getResultDomain(), {
+        stripWww: true,
+      });
+      
+      if (host.startsWith(searchStr.toLocaleLowerCase())) {
+        if (onboardingInteractionsLeft > 0) {
+          addCallback(this, makeOnboardingResult(engine));
+          showedOnboarding = true;
+        } else {
+          addCallback(this, makeResult(queryContext, engine));
+        }
+        continue;
       }
 
-      result.suggestedIndex = 1;
-      addCallback(this, result);
+      
+      if (host.includes("." + searchStr.toLocaleLowerCase())) {
+        partialMatchEnginesByHost.set(engine.getResultDomain(), engine);
+        
+      }
+      
+      
+      
+      let searchFormHost;
+      try {
+        searchFormHost = new URL(engine.searchForm).host;
+      } catch (ex) {
+        
+      }
+      if (searchFormHost?.includes("." + searchStr)) {
+        partialMatchEnginesByHost.set(searchFormHost, engine);
+      }
+    }
+    if (partialMatchEnginesByHost.size) {
+      let host = await UrlbarProviderAutofill.getTopHostOverThreshold(
+        queryContext,
+        Array.from(partialMatchEnginesByHost.keys())
+      );
+      if (host) {
+        let engine = partialMatchEnginesByHost.get(host);
+        if (onboardingInteractionsLeft > 0) {
+          showedOnboarding = true;
+          addCallback(this, makeOnboardingResult(engine, true));
+        } else {
+          addCallback(this, makeResult(queryContext, engine, true));
+        }
+      }
     }
 
     
@@ -328,6 +370,49 @@ class ProviderTabToSearch extends UrlbarProvider {
       );
     }
   }
+}
+
+function makeOnboardingResult(engine, satisfiesAutofillThreshold = false) {
+  let [url] = UrlbarUtils.stripPrefixAndTrim(engine.getResultDomain(), {
+    stripWww: true,
+  });
+  url = url.substr(0, url.length - engine.searchUrlPublicSuffix.length);
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    UrlbarUtils.RESULT_SOURCE.SEARCH,
+    {
+      engine: engine.name,
+      url,
+      keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
+      icon: UrlbarUtils.ICON.SEARCH_GLASS_INVERTED,
+      dynamicType: DYNAMIC_RESULT_TYPE,
+      satisfiesAutofillThreshold,
+    }
+  );
+  result.resultSpan = 2;
+  result.suggestedIndex = 1;
+  return result;
+}
+
+function makeResult(context, engine, satisfiesAutofillThreshold = false) {
+  let [url] = UrlbarUtils.stripPrefixAndTrim(engine.getResultDomain(), {
+    stripWww: true,
+  });
+  url = url.substr(0, url.length - engine.searchUrlPublicSuffix.length);
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarUtils.RESULT_SOURCE.SEARCH,
+    ...UrlbarResult.payloadAndSimpleHighlights(context.tokens, {
+      engine: engine.name,
+      url,
+      keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
+      icon: UrlbarUtils.ICON.SEARCH_GLASS_INVERTED,
+      query: "",
+      satisfiesAutofillThreshold,
+    })
+  );
+  result.suggestedIndex = 1;
+  return result;
 }
 
 var UrlbarProviderTabToSearch = new ProviderTabToSearch();

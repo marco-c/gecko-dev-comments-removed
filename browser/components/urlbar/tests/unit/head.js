@@ -596,6 +596,7 @@ function makeSearchResult(
     heuristic = false,
     type = UrlbarUtils.RESULT_TYPE.SEARCH,
     source = UrlbarUtils.RESULT_SOURCE.SEARCH,
+    satisfiesAutofillThreshold = false,
   }
 ) {
   
@@ -635,6 +636,12 @@ function makeSearchResult(
   
   if (uri) {
     payload.url = uri;
+  }
+  if (providerName == "TabToSearch") {
+    payload.satisfiesAutofillThreshold = satisfiesAutofillThreshold;
+    if (payload.url.startsWith("www.")) {
+      payload.url = payload.url.substring(4);
+    }
   }
 
   let result = new UrlbarResult(

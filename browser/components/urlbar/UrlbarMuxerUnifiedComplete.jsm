@@ -304,35 +304,47 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     if (result.providerName == "TabToSearch") {
       
-      
-      if (
-        state.context.heuristicResult.type != UrlbarUtils.RESULT_TYPE.URL ||
-        !state.context.heuristicResult.autofill ||
-        !state.canAddTabToSearch
-      ) {
+      if (!state.canAddTabToSearch) {
         return false;
       }
 
-      let autofillHostname = new URL(state.context.heuristicResult.payload.url)
-        .hostname;
-      let [autofillDomain] = UrlbarUtils.stripPrefixAndTrim(autofillHostname, {
-        stripWww: true,
-      });
-      
-      
-      autofillDomain = UrlbarUtils.stripPublicSuffixFromHost(autofillDomain);
-      if (!autofillDomain) {
-        return false;
-      }
+      if (!result.payload.satisfiesAutofillThreshold) {
+        
+        if (
+          state.context.heuristicResult.type != UrlbarUtils.RESULT_TYPE.URL ||
+          !state.context.heuristicResult.autofill
+        ) {
+          return false;
+        }
 
-      
-      
-      let [engineDomain] = UrlbarUtils.stripPrefixAndTrim(result.payload.url, {
-        stripWww: true,
-      });
-      
-      if (!engineDomain.endsWith(autofillDomain)) {
-        return false;
+        let autofillHostname = new URL(
+          state.context.heuristicResult.payload.url
+        ).hostname;
+        let [autofillDomain] = UrlbarUtils.stripPrefixAndTrim(
+          autofillHostname,
+          {
+            stripWww: true,
+          }
+        );
+        
+        
+        autofillDomain = UrlbarUtils.stripPublicSuffixFromHost(autofillDomain);
+        if (!autofillDomain) {
+          return false;
+        }
+
+        
+        
+        let [engineDomain] = UrlbarUtils.stripPrefixAndTrim(
+          result.payload.url,
+          {
+            stripWww: true,
+          }
+        );
+        
+        if (!engineDomain.endsWith(autofillDomain)) {
+          return false;
+        }
       }
     }
 
