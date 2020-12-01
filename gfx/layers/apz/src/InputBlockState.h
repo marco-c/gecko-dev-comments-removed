@@ -155,20 +155,6 @@ class CancelableBlockState : public InputBlockState {
 
 
 
-
-  void StartContentResponseTimer();
-
-  
-
-
-
-
-  void RecordContentResponseTime();
-
-  
-
-
-
   bool TimeoutContentResponse();
 
   
@@ -201,7 +187,6 @@ class CancelableBlockState : public InputBlockState {
   bool ShouldDropEvents() const override;
 
  private:
-  TimeStamp mContentResponseTimer;
   bool mPreventDefault;
   bool mContentResponded;
   bool mContentResponseTimerExpired;

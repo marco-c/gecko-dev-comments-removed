@@ -199,11 +199,6 @@ bool CancelableBlockState::SetContentResponse(bool aPreventDefault) {
   return true;
 }
 
-void CancelableBlockState::StartContentResponseTimer() {
-  MOZ_ASSERT(mContentResponseTimer.IsNull());
-  mContentResponseTimer = TimeStamp::Now();
-}
-
 bool CancelableBlockState::TimeoutContentResponse() {
   if (mContentResponseTimerExpired) {
     return false;
@@ -239,25 +234,6 @@ bool CancelableBlockState::IsReadyForHandling() const {
 
 bool CancelableBlockState::ShouldDropEvents() const {
   return InputBlockState::ShouldDropEvents() || IsDefaultPrevented();
-}
-
-void CancelableBlockState::RecordContentResponseTime() {
-  if (!mContentResponseTimer) {
-    
-    
-    
-    
-    
-    return;
-  }
-  if (!HasReceivedAllContentNotifications()) {
-    
-    return;
-  }
-  mozilla::Telemetry::Accumulate(
-      mozilla::Telemetry::CONTENT_RESPONSE_DURATION,
-      (uint32_t)(TimeStamp::Now() - mContentResponseTimer).ToMilliseconds());
-  mContentResponseTimer = TimeStamp();
 }
 
 DragBlockState::DragBlockState(
