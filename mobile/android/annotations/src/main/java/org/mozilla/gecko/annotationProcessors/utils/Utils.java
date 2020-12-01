@@ -294,6 +294,16 @@ public class Utils {
 
 
 
+    public static boolean isPublic(final Member member) {
+        return Modifier.isPublic(member.getModifiers());
+    }
+
+    
+
+
+
+
+
 
     public static <T extends Enum<T>> T getEnumValue(Class<T> type, String name) {
         try {

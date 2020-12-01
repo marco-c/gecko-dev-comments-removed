@@ -11,6 +11,7 @@ import org.mozilla.gecko.annotationProcessors.classloader.ClassWithOptions;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -30,6 +31,7 @@ public class GeneratableElementIterator implements Iterator<AnnotatableEntity> {
     private AnnotationInfo mClassInfo;
 
     private boolean mIterateEveryEntry;
+    private boolean mIterateEnumValues;
     private boolean mSkipCurrentEntry;
 
     public GeneratableElementIterator(ClassWithOptions annotatedClass) {
@@ -59,7 +61,13 @@ public class GeneratableElementIterator implements Iterator<AnnotatableEntity> {
         for (Annotation annotation : aClass.getDeclaredAnnotations()) {
             mClassInfo = buildAnnotationInfo(aClass, annotation);
             if (mClassInfo != null) {
-                mIterateEveryEntry = true;
+                if (aClass.isEnum()) {
+                    
+                    
+                    mIterateEnumValues = true;
+                } else {
+                    mIterateEveryEntry = true;
+                }
                 break;
             }
         }
@@ -217,7 +225,7 @@ public class GeneratableElementIterator implements Iterator<AnnotatableEntity> {
 
             
             
-            if (mIterateEveryEntry) {
+            if (mIterateEveryEntry || isAnnotatedEnumField(candidateElement)) {
                 AnnotationInfo annotationInfo = new AnnotationInfo(
                     Utils.getNativeName(candidateElement),
                     mClassInfo.exceptionMode,
@@ -229,6 +237,34 @@ public class GeneratableElementIterator implements Iterator<AnnotatableEntity> {
             }
         }
         mNextReturnValue = null;
+    }
+
+    
+
+
+
+
+
+
+
+
+    private boolean isAnnotatedEnumField(final Member member)
+    {
+        if (!mIterateEnumValues) {
+            return false;
+        }
+
+        if (!Utils.isPublic(member) || !Utils.isStatic(member) || !Utils.isFinal(member) ||
+            !(member instanceof Field)) {
+            return false;
+        }
+
+        final Class<?> enumClass = mClass.wrappedClass;
+
+        final Field field = (Field) member;
+        final Class<?> fieldClass = field.getType();
+
+        return enumClass.equals(fieldClass);
     }
 
     @Override
