@@ -794,25 +794,6 @@ nsresult nsTextControlFrame::SetSelectionInternal(
     nsINode* aStartNode, uint32_t aStartOffset, nsINode* aEndNode,
     uint32_t aEndOffset, nsITextControlFrame::SelectionDirection aDirection) {
   
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  ErrorResult error;
-  RefPtr<nsRange> range =
-      nsRange::Create(aStartNode, aStartOffset, aEndNode, aEndOffset, error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-  MOZ_ASSERT(range);
-
-  
   TextControlElement* textControlElement =
       TextControlElement::FromNode(GetContent());
   MOZ_ASSERT(textControlElement);
@@ -831,16 +812,10 @@ nsresult nsTextControlFrame::SetSelectionInternal(
     direction = (aDirection == eBackward) ? eDirPrevious : eDirNext;
   }
 
-  selection->RemoveAllRanges(error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-
-  selection->AddRangeAndSelectFramesAndNotifyListeners(
-      *range, error);  
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
+  ErrorResult error;
+  selection->SetStartAndEndInLimiter(*aStartNode, aStartOffset, *aEndNode,
+                                     aEndOffset, error);
+  MOZ_TRY(error.StealNSResult());
 
   selection->SetDirection(direction);
   return NS_OK;
