@@ -2425,7 +2425,7 @@ bool ServiceWorkerManager::IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI,
 
     
     
-    registration->MaybeScheduleTimeCheckAndUpdate();
+    registration->MaybeScheduleUpdate();
     return false;
   }
   
