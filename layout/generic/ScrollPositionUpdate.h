@@ -29,6 +29,30 @@ enum class ScrollUpdateType {
   PureRelative,
 };
 
+struct ScrollGeneration {
+ private:
+  
+  explicit ScrollGeneration(uint64_t aValue);
+
+ public:
+  
+  ScrollGeneration();
+
+  
+  static ScrollGeneration New();
+
+  bool operator<(const ScrollGeneration& aOther) const;
+  bool operator==(const ScrollGeneration& aOther) const;
+  bool operator!=(const ScrollGeneration& aOther) const;
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const ScrollGeneration& aGen);
+
+ private:
+  static uint64_t sCounter;
+  uint64_t mValue;
+};
+
 
 
 
