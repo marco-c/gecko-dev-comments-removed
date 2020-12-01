@@ -116,12 +116,6 @@ nsAppShell::~nsAppShell() {
 }
 
 nsresult nsAppShell::Init() {
-  
-  
-  
-  
-  g_type_init();
-
   mozilla::hal::Init();
 
 #ifdef MOZ_ENABLE_DBUS
