@@ -271,6 +271,8 @@ TEST(TestAudioTrackGraph, AudioInputTrack)
 {
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+  auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
+  Unused << unforcer;
 
   
   
@@ -603,6 +605,8 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
 
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+  auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
+  Unused << unforcer;
 
   cubeb->SetStreamStartFreezeEnabled(true);
 
