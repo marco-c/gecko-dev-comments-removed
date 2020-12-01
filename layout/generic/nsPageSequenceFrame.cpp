@@ -296,14 +296,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   mPageData->mEdgePaperMargin = nsPresContext::CSSTwipsToAppUnits(edgeTwips);
 
   
-  mPageData->mPrintSettings->GetStartPageRange(&mPageData->mFromPageNum);
-  mPageData->mPrintSettings->GetEndPageRange(&mPageData->mToPageNum);
   mPageData->mPrintSettings->GetPageRanges(mPageData->mPageRanges);
-
-  int16_t printType;
-  mPageData->mPrintSettings->GetPrintRange(&printType);
-  mPageData->mDoingPageRange =
-      nsIPrintSettings::kRangeSpecifiedPageRange == printType;
 
   
   
@@ -451,14 +444,6 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
   }
   if (!aDocURL.IsEmpty()) {
     mPageData->mDocURL = aDocURL;
-  }
-
-  
-  
-  if (mPageData->mDoingPageRange) {
-    if (mPageData->mFromPageNum > mPageData->mRawNumPages) {
-      return NS_ERROR_INVALID_ARG;
-    }
   }
 
   

@@ -109,9 +109,7 @@ add_task(async function testSheetCountPageRange() {
     
     await helper.waitForPreview(() =>
       helper.dispatchSettingsChange({
-        printRange: helper.settings.kRangeSpecifiedPageRange,
-        startPageRange: 2,
-        endPageRange: 3,
+        pageRanges: [2, 3],
       })
     );
 

@@ -96,42 +96,7 @@ void PrintedSheetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 static bool TagIfSkippedByCustomRange(nsPageFrame* aPageFrame, int32_t aPageNum,
                                       nsSharedPageData* aPD) {
-  if (!aPD->mDoingPageRange) {
-    MOZ_ASSERT(!aPageFrame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE),
-               "page frames shouldn't be tagged as skipped if we're not "
-               "printing with a custom page range");
-    return false;
-  }
-
-  bool isPageSkipped = false;
-
-  
-  
-  
-  
-  if (aPageNum < aPD->mFromPageNum || aPageNum > aPD->mToPageNum) {
-    
-    isPageSkipped = true;
-  } else {
-    
-    const auto& ranges = aPD->mPageRanges;
-    int32_t length = ranges.Length();
-
-    
-    if (length && (length % 2 == 0)) {
-      isPageSkipped = true;
-      for (int32_t i = 0; i < length; i += 2) {
-        if (ranges[i] <= aPageNum && aPageNum <= ranges[i + 1]) {
-          
-          
-          isPageSkipped = false;
-          break;
-        }
-      }
-    }
-  }
-
-  if (!isPageSkipped) {
+  if (!nsIPrintSettings::IsPageSkipped(aPageNum, aPD->mPageRanges)) {
     MOZ_ASSERT(!aPageFrame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE),
                "page frames NS_PAGE_SKIPPED_BY_CUSTOM_RANGE state should "
                "only be set if we actually want to skip the page");

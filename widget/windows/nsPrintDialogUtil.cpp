@@ -219,19 +219,24 @@ static nsresult ShowNativePrintDialog(HWND aHWnd,
     prntdlg.Flags |= PD_NOSELECTION;
   }
 
-  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-  aPrintSettings->GetPrintRange(&printRangeType);
+  nsTArray<int32_t> pageRanges;
+  aPrintSettings->GetPageRanges(pageRanges);
+
   
-  if (printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange) {
+  if (!pageRanges.IsEmpty()) {
     prntdlg.Flags |= PD_PAGENUMS;
   }
 
-  int32_t pg = 1;
-  aPrintSettings->GetStartPageRange(&pg);
-  prntdlg.nFromPage = pg;
+  
+  int32_t start = 1;
+  int32_t end = 1;
+  for (size_t i = 0; i < pageRanges.Length(); i += 2) {
+    start = std::min(start, pageRanges[i]);
+    end = std::max(end, pageRanges[i + 1]);
+  }
 
-  aPrintSettings->GetEndPageRange(&pg);
-  prntdlg.nToPage = pg;
+  prntdlg.nFromPage = start;
+  prntdlg.nToPage = end;
 
   prntdlg.nMinPage = 1;
   prntdlg.nMaxPage = 0xFFFF;
@@ -303,13 +308,14 @@ static nsresult ShowNativePrintDialog(HWND aHWnd,
     aPrintSettings->SetPrinterName(nsDependentString(device));
     aPrintSettings->SetPrintSelectionOnly(prntdlg.Flags & PD_SELECTION);
 
+    nsTArray<int32_t> pageRanges;
     if (prntdlg.Flags & PD_PAGENUMS) {
-      aPrintSettings->SetPrintRange(nsIPrintSettings::kRangeSpecifiedPageRange);
-      aPrintSettings->SetStartPageRange(prntdlg.nFromPage);
-      aPrintSettings->SetEndPageRange(prntdlg.nToPage);
-    } else {  
-      aPrintSettings->SetPrintRange(nsIPrintSettings::kRangeAllPages);
+      pageRanges.AppendElement(prntdlg.nFromPage);
+      pageRanges.AppendElement(prntdlg.nToPage);
+    } else {
+      
     }
+    aPrintSettings->SetPageRanges(pageRanges);
 
     
     ::GlobalUnlock(prntdlg.hDevNames);

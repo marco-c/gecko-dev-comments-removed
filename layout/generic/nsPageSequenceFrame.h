@@ -64,16 +64,6 @@ class nsSharedPageData {
   int32_t mRawNumPages = 0;
 
   
-  int32_t mFromPageNum = 0;
-
-  
-  int32_t mToPageNum = 0;
-
-  
-  
-  
-  
-  
   
   
   nsTArray<int32_t> mPageRanges;
@@ -89,9 +79,6 @@ class nsSharedPageData {
   
   
   float mShrinkToFitRatio = 1.0f;
-
-  
-  bool mDoingPageRange = false;
 
   
   

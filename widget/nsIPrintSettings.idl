@@ -16,7 +16,6 @@
 
 native nsNativeIntMargin(nsIntMargin);
 [ref] native nsNativeIntMarginRef(nsIntMargin);
-[ref] native IntegerArray(nsTArray<int32_t>);
 
 interface nsIPrintSession;
 
@@ -61,10 +60,6 @@ interface nsIPrintSettings : nsISupports
   const unsigned long kInitSaveScaling        = 0x10000000;
 
   const unsigned long kInitSaveAll            = 0xFFFFFFFF;
-
-  
-  const long kRangeAllPages           = 0;
-  const long kRangeSpecifiedPageRange = 1;
 
   
   const long kJustLeft   = 0;
@@ -118,9 +113,6 @@ interface nsIPrintSettings : nsISupports
 
   [noscript] attribute nsIPrintSession printSession; 
 
-  attribute long    startPageRange;
-  attribute long    endPageRange;
-
   
 
 
@@ -166,8 +158,6 @@ interface nsIPrintSettings : nsISupports
 
   
   [infallible] attribute boolean printSelectionOnly;
-
-  attribute short   printRange;
 
   attribute AString title;
   attribute AString docURL;
@@ -272,7 +262,11 @@ interface nsIPrintSettings : nsISupports
 
 
 
-  [noscript] void GetPageRanges(in IntegerArray aPages);
+  attribute Array<long> pageRanges;
+
+%{C++
+  static bool IsPageSkipped(int32_t aPageNum, const nsTArray<int32_t>& aRanges);
+%}
 };
 
 %{ C++

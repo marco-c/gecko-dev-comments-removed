@@ -784,7 +784,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     
     
-    printData->mPrintSettings->SetPrintRange(nsIPrintSettings::kRangeAllPages);
+    printData->mPrintSettings->SetPageRanges({});
   }
 
   MOZ_TRY(EnablePOsForPrinting());
@@ -1380,14 +1380,12 @@ nsresult nsPrintJob::SetupToPrintContent() {
   int32_t startPage = 1;
   int32_t endPage = printData->mNumPrintablePages;
 
-  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-  printData->mPrintSettings->GetPrintRange(&printRangeType);
-  if (printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange) {
-    printData->mPrintSettings->GetStartPageRange(&startPage);
-    printData->mPrintSettings->GetEndPageRange(&endPage);
-    if (endPage > printData->mNumPrintablePages) {
-      endPage = printData->mNumPrintablePages;
-    }
+  nsTArray<int32_t> ranges;
+  printData->mPrintSettings->GetPageRanges(ranges);
+  for (size_t i = 0; i < ranges.Length(); i += 2) {
+    startPage = std::max(1, std::min(startPage, ranges[i]));
+    endPage = std::min(printData->mNumPrintablePages,
+                       std::max(endPage, ranges[i + 1]));
   }
 
   nsresult rv = NS_OK;
