@@ -73,8 +73,5 @@ void nsBackdropFrame::Reflow(nsPresContext* aPresContext,
 
   
   WritingMode wm = aReflowInput.GetWritingMode();
-  LogicalMargin borderPadding = aReflowInput.ComputedLogicalBorderPadding();
-  nscoord isize = aReflowInput.ComputedISize() + borderPadding.IStartEnd(wm);
-  nscoord bsize = aReflowInput.ComputedBSize() + borderPadding.BStartEnd(wm);
-  aDesiredSize.SetSize(wm, LogicalSize(wm, isize, bsize));
+  aDesiredSize.SetSize(wm, aReflowInput.ComputedSizeWithBorderPadding(wm));
 }

@@ -363,15 +363,10 @@ nscoord nsTableWrapperFrame::ChildShrinkWrapISize(
     nscoord* aMarginResult) const {
   AutoMaybeDisableFontInflation an(aChildFrame);
 
-  
-  WritingMode childWM = aChildFrame->GetWritingMode();
-
   SizeComputationInput offsets(aChildFrame, aRenderingContext, aWM,
                                aCBSize.ISize(aWM));
   LogicalSize marginSize = offsets.ComputedLogicalMargin(aWM).Size(aWM);
-  LogicalSize bpSize =
-      offsets.ComputedLogicalBorderPadding().Size(childWM).ConvertTo(aWM,
-                                                                     childWM);
+  LogicalSize bpSize = offsets.ComputedLogicalBorderPadding(aWM).Size(aWM);
 
   
   ComputeSizeFlags flags(ComputeSizeFlag::ShrinkWrap);

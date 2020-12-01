@@ -1303,7 +1303,8 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     flexShrink = stylePos->mFlexShrink;
   }
 
-  WritingMode childWM = childRI.GetWritingMode();
+  const auto childWM = childRI.GetWritingMode();
+  const auto flexWM = aAxisTracker.GetWritingMode();
 
   
   
@@ -1352,9 +1353,8 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
 
     
     
-    const LogicalMargin bpInChildWM = childRI.ComputedLogicalBorderPadding();
     const LogicalMargin bpInFlexWM =
-        bpInChildWM.ConvertTo(aAxisTracker.GetWritingMode(), childWM);
+        childRI.ComputedLogicalBorderPadding(flexWM);
     widgetMainMinSize -= aAxisTracker.MarginSizeInMainAxis(bpInFlexWM);
     widgetCrossMinSize -= aAxisTracker.MarginSizeInCrossAxis(bpInFlexWM);
     
@@ -1402,8 +1402,8 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     
     
     nscoord containerCrossSize = GET_CROSS_COMPONENT_LOGICAL(
-        aAxisTracker, aAxisTracker.GetWritingMode(),
-        aParentReflowInput.ComputedISize(), aParentReflowInput.ComputedBSize());
+        aAxisTracker, flexWM, aParentReflowInput.ComputedISize(),
+        aParentReflowInput.ComputedBSize());
     
     
     
@@ -1626,7 +1626,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
             aItemReflowInput.mRenderingContext, itemWM,
             aItemReflowInput.mContainingBlockSize, availISize,
             aItemReflowInput.ComputedLogicalMargin(itemWM).Size(itemWM),
-            aItemReflowInput.ComputedLogicalBorderPadding().Size(itemWM),
+            aItemReflowInput.ComputedLogicalBorderPadding(itemWM).Size(itemWM),
             {ComputeSizeFlag::UseAutoISize, ComputeSizeFlag::ShrinkWrap});
 
         contentSizeSuggestion = aAxisTracker.MainComponent(
@@ -1766,8 +1766,9 @@ class nsFlexContainerFrame::CachedBAxisMeasurement {
     
     WritingMode itemWM = aReflowInput.GetWritingMode();
     nscoord borderBoxBSize = aReflowOutput.BSize(itemWM);
-    mBSize = borderBoxBSize -
-             aReflowInput.ComputedLogicalBorderPadding().BStartEnd(itemWM);
+    mBSize =
+        borderBoxBSize -
+        aReflowInput.ComputedLogicalBorderPadding(itemWM).BStartEnd(itemWM);
     mBSize = std::max(0, mBSize);
   }
 
@@ -1828,7 +1829,7 @@ class nsFlexContainerFrame::CachedFlexItemData {
     mFinalReflowSize.reset();
     mFinalReflowSize.emplace(
         aReflowOutput.Size(wm) -
-        aReflowInput.ComputedLogicalBorderPadding().Size(wm));
+        aReflowInput.ComputedLogicalBorderPadding(wm).Size(wm));
     
     
     
@@ -2005,9 +2006,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mWM(aFlexItemReflowInput.GetWritingMode()),
       mCBWM(aAxisTracker.GetWritingMode()),
       mMainAxis(aAxisTracker.MainAxis()),
-      mBorderPadding(
-          aFlexItemReflowInput.ComputedLogicalBorderPadding().ConvertTo(mCBWM,
-                                                                        mWM)),
+      mBorderPadding(aFlexItemReflowInput.ComputedLogicalBorderPadding(mCBWM)),
       mMargin(aFlexItemReflowInput.ComputedLogicalMargin(mCBWM)),
       mMainMinSize(aMainMinSize),
       mMainMaxSize(aMainMaxSize),
@@ -4396,7 +4395,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   LogicalMargin borderPadding =
-      aReflowInput.ComputedLogicalBorderPadding().ApplySkipSides(
+      aReflowInput.ComputedLogicalBorderPadding(wm).ApplySkipSides(
           PreReflowBlockLevelLogicalSkipSides());
 
   const LogicalSize availableSizeForItems =
@@ -5268,7 +5267,7 @@ void nsFlexContainerFrame::PopulateReflowOutput(
         if (aReflowInput.mStyleBorder->mBoxDecorationBreak ==
             StyleBoxDecorationBreak::Slice) {
           blockEndContainerBP =
-              aReflowInput.ComputedLogicalBorderPadding().BEnd(flexWM);
+              aReflowInput.ComputedLogicalBorderPadding(flexWM).BEnd(flexWM);
         }
       }
     }

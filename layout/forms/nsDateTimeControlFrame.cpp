@@ -99,23 +99,20 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
 
   
   
+  const auto borderPadding = aReflowInput.ComputedLogicalBorderPadding(myWM);
   const nscoord borderBoxISize =
-      contentBoxISize +
-      aReflowInput.ComputedLogicalBorderPadding().IStartEnd(myWM);
+      contentBoxISize + borderPadding.IStartEnd(myWM);
 
   nscoord borderBoxBSize;
   if (contentBoxBSize != NS_UNCONSTRAINEDSIZE) {
-    borderBoxBSize =
-        contentBoxBSize +
-        aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
+    borderBoxBSize = contentBoxBSize + borderPadding.BStartEnd(myWM);
   }  
 
   nsIFrame* inputAreaFrame = mFrames.FirstChild();
   if (!inputAreaFrame) {  
     if (contentBoxBSize == NS_UNCONSTRAINEDSIZE) {
       contentBoxBSize = 0;
-      borderBoxBSize =
-          aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
+      borderBoxBSize = borderPadding.BStartEnd(myWM);
     }
   } else {
     ReflowOutput childDesiredSize(aReflowInput);
@@ -132,11 +129,8 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
 
     
     LogicalPoint childOffset(
-        myWM,
-        aReflowInput.ComputedLogicalBorderPadding().IStart(myWM) +
-            childMargin.IStart(myWM),
-        aReflowInput.ComputedLogicalBorderPadding().BStart(myWM) +
-            childMargin.BStart(myWM));
+        myWM, borderPadding.IStart(myWM) + childMargin.IStart(myWM),
+        borderPadding.BStart(myWM) + childMargin.BStart(myWM));
 
     nsReflowStatus childStatus;
     
@@ -166,9 +160,7 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
           NS_CSS_MINMAX(contentBoxBSize, aReflowInput.ComputedMinBSize(),
                         aReflowInput.ComputedMaxBSize());
 
-      borderBoxBSize =
-          contentBoxBSize +
-          aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
+      borderBoxBSize = contentBoxBSize + borderPadding.BStartEnd(myWM);
     }
 
     

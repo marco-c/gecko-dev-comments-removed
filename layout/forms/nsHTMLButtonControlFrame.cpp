@@ -208,7 +208,8 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
 
   
-  const LogicalMargin& clbp = aButtonReflowInput.ComputedLogicalBorderPadding();
+  const LogicalMargin& clbp =
+      aButtonReflowInput.ComputedLogicalBorderPadding(wm);
 
   LogicalPoint childPos(wm);
   childPos.I(wm) = clbp.IStart(wm);
