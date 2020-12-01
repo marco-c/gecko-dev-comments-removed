@@ -1,8 +1,8 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-
-
+// Check that Ctrl-W closes the Browser Console and that Ctrl-W closes the
+// current tab when using the Web Console - bug 871156.
 
 "use strict";
 
@@ -13,49 +13,36 @@ add_task(async function() {
 
   let hud = await openNewTabAndConsole(TEST_URI);
 
-  const tabClosed = defer();
-  const toolboxDestroyed = defer();
-  const tabSelected = defer();
-
   const target = await TargetFactory.forTab(gBrowser.selectedTab);
   const toolbox = gDevTools.getToolbox(target);
 
-  gBrowser.tabContainer.addEventListener(
-    "TabClose",
-    function() {
-      info("tab closed");
-      tabClosed.resolve(null);
-    },
-    { once: true }
-  );
+  const tabClosed = once(gBrowser.tabContainer, "TabClose");
+  tabClosed.then(() => info("tab closed"));
 
-  gBrowser.tabContainer.addEventListener(
-    "TabSelect",
-    function() {
-      if (gBrowser.selectedTab == firstTab) {
-        info("tab selected");
-        tabSelected.resolve(null);
-      }
-    },
-    { once: true }
-  );
-
-  toolbox.once("destroyed", () => {
-    info("toolbox destroyed");
-    toolboxDestroyed.resolve(null);
+  const tabSelected = new Promise(resolve => {
+    gBrowser.tabContainer.addEventListener(
+      "TabSelect",
+      function() {
+        if (gBrowser.selectedTab == firstTab) {
+          info("tab selected");
+          resolve(null);
+        }
+      },
+      { once: true }
+    );
   });
 
-  
+  const toolboxDestroyed = toolbox.once("destroyed", () => {
+    info("toolbox destroyed");
+  });
+
+  // Get out of the web console initialization.
   executeSoon(() => {
     EventUtils.synthesizeKey("w", { accelKey: true });
   });
 
-  await promise.all([
-    tabClosed.promise,
-    toolboxDestroyed.promise,
-    tabSelected.promise,
-  ]);
-  info("promise.all resolved. start testing the Browser Console");
+  await Promise.all([tabClosed, toolboxDestroyed, tabSelected]);
+  info("Promise.all resolved. start testing the Browser Console");
 
   hud = await BrowserConsoleManager.toggleBrowserConsole();
   ok(hud, "Browser Console opened");
