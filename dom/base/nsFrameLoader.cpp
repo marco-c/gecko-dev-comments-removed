@@ -1855,7 +1855,7 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
     if (aForProcessSwitch) {
       
       
-      browserParent->SuspendProgressEventsUntilAfterNextLoadStarts();
+      browserParent->SuspendProgressEvents();
     }
   }
 

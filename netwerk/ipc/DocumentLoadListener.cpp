@@ -1709,7 +1709,7 @@ void DocumentLoadListener::TriggerProcessSwitch(
       
       
       
-      browserParent->SuspendProgressEventsUntilAfterNextLoadStarts();
+      browserParent->SuspendProgressEvents();
     }
   }
   DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED, true);
@@ -2158,7 +2158,7 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
 
       
       
-      browserParent->SuspendProgressEventsUntilAfterNextLoadStarts();
+      
 
       
       

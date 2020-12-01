@@ -5697,18 +5697,6 @@
             Ci.nsIWebProgress.NOTIFY_ALL
           );
 
-          
-          let securityUI = browser.securityUI;
-          let state = securityUI
-            ? securityUI.state
-            : Ci.nsIWebProgressListener.STATE_IS_INSECURE;
-          this._callProgressListeners(
-            browser,
-            "onSecurityChange",
-            [browser.webProgress, null, state],
-            true,
-            false
-          );
           let cbEvent = browser.getContentBlockingEvents();
           
           

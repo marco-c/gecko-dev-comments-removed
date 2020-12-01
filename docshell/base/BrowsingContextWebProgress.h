@@ -49,6 +49,17 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
 
   using ListenerArray = nsAutoTObserverArray<ListenerInfo, 4>;
   ListenerArray mListenerInfoList;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mSuspendOnStateStartChangeEvents = false;
 };
 
 }  

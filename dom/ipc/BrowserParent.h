@@ -721,11 +721,7 @@ class BrowserParent final : public PBrowserParent,
 
   
   
-  
-  
-  void SuspendProgressEventsUntilAfterNextLoadStarts() {
-    mSuspendedProgressEvents = true;
-  }
+  void SuspendProgressEvents() { mSuspendedProgressEvents = true; }
 
   bool CanCancelContentJS(nsIRemoteTab::NavigationType aNavigationType,
                           int32_t aNavigationIndex,
@@ -1008,7 +1004,6 @@ class BrowserParent final : public PBrowserParent,
   
   bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
 
-  
   
   
   
