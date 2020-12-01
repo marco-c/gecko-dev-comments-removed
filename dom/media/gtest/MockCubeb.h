@@ -269,6 +269,31 @@ class MockCubeb {
   
   void SetStreamStartFreezeEnabled(bool aEnabled);
 
+  
+  class AudioThreadAutoUnforcer {
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioThreadAutoUnforcer)
+
+   public:
+    explicit AudioThreadAutoUnforcer(MockCubeb* aContext)
+        : mContext(aContext) {}
+
+   protected:
+    virtual ~AudioThreadAutoUnforcer() { mContext->UnforceAudioThread(); }
+    MockCubeb* mContext;
+  };
+
+  
+  
+  
+  
+  
+  using ForcedAudioThreadPromise =
+      MozPromise<RefPtr<AudioThreadAutoUnforcer>, nsresult, false>;
+  RefPtr<ForcedAudioThreadPromise> ForceAudioThread();
+
+  
+  void UnforceAudioThread();
+
   int StreamInit(cubeb* aContext, cubeb_stream** aStream,
                  cubeb_devid aInputDevice,
                  cubeb_stream_params* aInputStreamParams,
@@ -318,6 +343,10 @@ class MockCubeb {
   bool mSupportsDeviceCollectionChangedCallback = true;
   
   Atomic<bool> mStreamStartFreezeEnabled{false};
+  
+  
+  Atomic<bool> mForcedAudioThread{false};
+  MozPromiseHolder<ForcedAudioThreadPromise> mForcedAudioThreadPromise;
   
   nsTArray<cubeb_device_info> mInputDevices;
   nsTArray<cubeb_device_info> mOutputDevices;
