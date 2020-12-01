@@ -11,7 +11,6 @@ const {
 module.exports = async function({
   targetList,
   targetFront,
-  isFissionEnabledOnContentToolbox,
   onAvailable,
   onUpdated,
 }) {
@@ -20,8 +19,7 @@ module.exports = async function({
   
   
   
-  const isContentToolbox = targetList.targetFront.isLocalTab;
-  const listenForFrames = isContentToolbox && isFissionEnabledOnContentToolbox;
+  const listenForFrames = targetList.targetFront.isLocalTab;
   const isAllowed =
     targetFront.isTopLevel ||
     targetFront.targetType === targetList.TYPES.PROCESS ||

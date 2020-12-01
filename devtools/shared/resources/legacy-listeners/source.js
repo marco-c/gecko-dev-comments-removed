@@ -25,12 +25,7 @@ const {
 
 
 
-module.exports = async function({
-  targetList,
-  targetFront,
-  isFissionEnabledOnContentToolbox,
-  onAvailable,
-}) {
+module.exports = async function({ targetList, targetFront, onAvailable }) {
   const isBrowserToolbox = targetList.targetFront.isParentProcess;
   const isNonTopLevelFrameTarget =
     !targetFront.isTopLevel &&

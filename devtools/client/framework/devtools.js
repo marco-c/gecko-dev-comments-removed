@@ -834,14 +834,6 @@ DevTools.prototype = {
   getToolboxes() {
     return Array.from(this._toolboxes.values());
   },
-
-  
-
-
-
-  isFissionContentToolboxEnabled() {
-    return true;
-  },
 };
 
 const gDevTools = (exports.gDevTools = new DevTools());

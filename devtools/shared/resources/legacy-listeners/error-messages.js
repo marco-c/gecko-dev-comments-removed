@@ -9,19 +9,13 @@ const {
 } = require("devtools/shared/resources/resource-watcher");
 const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
 
-module.exports = async function({
-  targetList,
-  targetFront,
-  isFissionEnabledOnContentToolbox,
-  onAvailable,
-}) {
+module.exports = async function({ targetList, targetFront, onAvailable }) {
   
   
   
   
   
-  const isContentToolbox = targetList.targetFront.isLocalTab;
-  const listenForFrames = isContentToolbox && isFissionEnabledOnContentToolbox;
+  const listenForFrames = targetList.targetFront.isLocalTab;
   const isAllowed =
     targetFront.isTopLevel ||
     targetFront.targetType === targetList.TYPES.PROCESS ||

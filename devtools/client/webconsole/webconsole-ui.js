@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { gDevTools } = require("devtools/client/framework/devtools");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
 const {
@@ -494,9 +493,7 @@ class WebConsoleUI {
     
     
     
-    const isContentToolbox = this.hud.targetList.targetFront.isLocalTab;
-    const listenForFrames =
-      isContentToolbox && gDevTools.isFissionContentToolboxEnabled();
+    const listenForFrames = this.hud.targetList.targetFront.isLocalTab;
     if (
       targetFront.targetType != this.hud.targetList.TYPES.PROCESS &&
       (targetFront.targetType != this.hud.targetList.TYPES.FRAME ||

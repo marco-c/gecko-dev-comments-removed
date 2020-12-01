@@ -8,19 +8,13 @@ const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
 
-module.exports = async function({
-  targetList,
-  targetFront,
-  isFissionEnabledOnContentToolbox,
-  onAvailable,
-}) {
+module.exports = async function({ targetList, targetFront, onAvailable }) {
   
   
   
   
   
-  const isContentToolbox = targetList.targetFront.isLocalTab;
-  const listenForFrames = isContentToolbox && isFissionEnabledOnContentToolbox;
+  const listenForFrames = targetList.targetFront.isLocalTab;
   const isAllowed =
     targetFront.isTopLevel ||
     targetFront.targetType === targetList.TYPES.PROCESS ||
