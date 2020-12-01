@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #define SI ALWAYS_INLINE static
 
@@ -14,7 +14,7 @@ enum TextureFilter { NEAREST, LINEAR };
 
 struct samplerCommon {
   uint32_t* buf = nullptr;
-  uint32_t stride = 0;  // in units of BPP if < 4, or dwords if BPP >= 4
+  uint32_t stride = 0;  
   uint32_t height = 0;
   uint32_t width = 0;
   TextureFormat format = TextureFormat::RGBA8;
@@ -22,7 +22,7 @@ struct samplerCommon {
 
 struct samplerDepth {
   int depth = 0;
-  uint32_t height_stride = 0;  // in units of BPP if < 4, or dwords if BPP >= 4
+  uint32_t height_stride = 0;  
 };
 
 struct samplerFilter {
@@ -226,13 +226,13 @@ SI Float step(Float edge, Float x) {
   return if_then_else(x < edge, Float(0), Float(1));
 }
 
-/*
-enum RGBA {
-        R,
-        G,
-        B,
-        A
-};*/
+
+
+
+
+
+
+
 
 enum XYZW {
   X = 0,
@@ -596,7 +596,7 @@ Float ceil(Float v) {
   return roundtrip + if_then_else(roundtrip < v, Float(1), Float(0));
 }
 
-// Round to nearest even
+
 SI int32_t roundeven(float v, float scale) {
 #if USE_SSE2
   return _mm_cvtss_si32(_mm_set_ss(v * scale));
@@ -609,18 +609,18 @@ SI I32 roundeven(Float v, Float scale) {
 #if USE_SSE2
   return _mm_cvtps_epi32(v * scale);
 #else
-  // Magic number implementation of round-to-nearest-even
-  // see http://stereopsis.com/sree/fpu2006.html
+  
+  
   return bit_cast<I32>(v * scale + Float(0xC00000)) - 0x4B400000;
 #endif
 }
 
-// Round towards zero
+
 SI int32_t roundzero(float v, float scale) { return int32_t(v * scale); }
 
 SI I32 roundzero(Float v, Float scale) { return cast(v * scale); }
 
-// Round whichever direction is fastest for positive numbers
+
 SI I32 roundfast(Float v, Float scale) {
 #if USE_SSE2
   return _mm_cvtps_epi32(v * scale);
@@ -641,24 +641,24 @@ Float round(Float v) { return floor(v + 0.5f); }
 
 Float fract(Float v) { return v - floor(v); }
 
-// X derivatives can be approximated by dFdx(x) = x[1] - x[0].
-// Y derivatives are not easily available since we operate in terms of X spans
-// only. To work around, assume dFdy(p.x) = dFdx(p.y), which only holds for
-// uniform scaling, and thus abs(dFdx(p.x)) + abs(dFdy(p.x)) = abs(dFdx(p.x)) +
-// abs(dFdx(p.y)) which mirrors abs(dFdx(p.y)) + abs(dFdy(p.y)) = abs(dFdx(p.y))
-// + abs(dFdx(p.x)).
+
+
+
+
+
+
 vec2 fwidth(vec2 p) {
   Float d = abs(SHUFFLE(p.x, p.y, 1, 1, 5, 5) - SHUFFLE(p.x, p.y, 0, 0, 4, 4));
   return vec2(d.xyxy + d.zwzw);
 }
 
-// See
-// http://www.machinedlearnings.com/2011/06/fast-approximate-logarithm-exponential.html.
+
+
 Float approx_log2(Float x) {
-  // e - 127 is a fair approximation of log2(x) in its own right...
+  
   Float e = cast(bit_cast<U32>(x)) * (1.0f / (1 << 23));
 
-  // ... but using the mantissa to refine its error is _much_ better.
+  
   Float m = bit_cast<Float>((bit_cast<U32>(x) & 0x007fffff) | 0x3f000000);
   return e - 124.225514990f - 1.498030302f * m -
          1.725879990f / (0.3520887068f + m);
@@ -1532,6 +1532,14 @@ struct vec4_scalar {
     w /= a.w;
     return *this;
   }
+
+  friend bool operator==(const vec4_scalar& l, const vec4_scalar& r) {
+    return l.x == r.x && l.y == r.y && l.z == r.z && l.w == r.w;
+  }
+
+  friend bool operator!=(const vec4_scalar& l, const vec4_scalar& r) {
+    return l.x != r.x || l.y != r.y || l.z != r.z || l.w != r.w;
+  }
 };
 
 vec4_scalar vec2_scalar::sel(XYZW c1, XYZW c2, XYZW c3, XYZW c4) {
@@ -1597,8 +1605,8 @@ struct vec4 {
     }
   }
 
-  // glsl supports non-const indexing of vecs.
-  // hlsl doesn't. The code it generates is probably not wonderful.
+  
+  
   Float operator[](I32 index) {
     float sel_x = 0;
     switch (index.x) {
@@ -2083,7 +2091,7 @@ struct mat4_scalar {
 
   static mat4_scalar load_from_ptr(const float* f) {
     mat4_scalar m;
-    // XXX: hopefully this is in the right order
+    
     m.data[0] = vec4_scalar{f[0], f[1], f[2], f[3]};
     m.data[1] = vec4_scalar{f[4], f[5], f[6], f[7]};
     m.data[2] = vec4_scalar{f[8], f[9], f[10], f[11]};
@@ -2437,9 +2445,9 @@ void put_nth(vec4& dst, int n, vec4_scalar src) {
   dst.w[n] = src.w;
 }
 
-// Use an ElementType type constructor
-// so that we can implement element_type for
-// Int and Float
+
+
+
 template <typename V>
 struct ElementType {
   typedef typename V::element_type ty;
@@ -2593,4 +2601,4 @@ Array<vec2, SIZE> if_then_else(I32 c, Array<vec2, SIZE> t,
   return r;
 }
 
-}  // namespace glsl
+}  
