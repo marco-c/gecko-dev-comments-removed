@@ -90,8 +90,7 @@ class ChromeConnector {
 
 
 
-
-  sendHTTPRequest(data, callback) {
+  sendHTTPRequest(data) {
     
   }
 

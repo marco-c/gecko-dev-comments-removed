@@ -386,9 +386,8 @@ class FirefoxConnector {
 
 
 
-
-  sendHTTPRequest(data, callback) {
-    this.webConsoleFront.sendHTTPRequest(data).then(callback);
+  sendHTTPRequest(data) {
+    return this.webConsoleFront.sendHTTPRequest(data);
   }
 
   
