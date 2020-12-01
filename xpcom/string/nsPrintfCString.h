@@ -20,18 +20,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class nsPrintfCString : public nsAutoCStringN<16> {
   typedef nsCString string_type;
 
@@ -42,11 +30,6 @@ class nsPrintfCString : public nsAutoCStringN<16> {
     va_start(ap, aFormat);
     AppendPrintf(aFormat, ap);
     va_end(ap);
-  }
-
-  nsPrintfCString(const char_type* aFormat, va_list aArgs)
-      MOZ_FORMAT_PRINTF(2, 0) {
-    AppendPrintf(aFormat, aArgs);
   }
 };
 
