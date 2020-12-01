@@ -32,56 +32,6 @@ function restoreClosedTabWithValue(rval) {
   return ss.undoCloseTab(window, index);
 }
 
-function promiseNewLocationAndHistoryEntryReplaced(tab, snippet) {
-  let browser = tab.linkedBrowser;
-
-  if (SpecialPowers.Services.appinfo.sessionHistoryInParent) {
-    SpecialPowers.spawn(browser, [snippet], async function(codeSnippet) {
-      
-      
-      let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
-      
-      
-      eval(codeSnippet);
-    });
-    return promiseOnHistoryReplaceEntry(tab);
-  }
-
-  return SpecialPowers.spawn(browser, [snippet], async function(codeSnippet) {
-    let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
-    let shistory = webNavigation.sessionHistory.legacySHistory;
-
-    
-    
-    eval(codeSnippet);
-
-    return new Promise(resolve => {
-      let listener = {
-        OnHistoryReplaceEntry() {
-          shistory.removeSHistoryListener(this);
-          resolve();
-        },
-
-        QueryInterface: ChromeUtils.generateQI([
-          "nsISHistoryListener",
-          "nsISupportsWeakReference",
-        ]),
-      };
-
-      shistory.addSHistoryListener(listener);
-
-      
-      docShell.chromeEventHandler.addEventListener("unload", function() {
-        try {
-          shistory.removeSHistoryListener(listener);
-        } catch (e) {
-          
-        }
-      });
-    });
-  });
-}
-
 add_task(async function dont_save_empty_tabs() {
   let { tab, r } = await createTabWithRandomValue("about:blank");
 
@@ -132,10 +82,14 @@ add_task(async function save_worthy_tabs_remote_final() {
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  let snippet =
-    'webNavigation.loadURI("https://example.com/",\
-    {triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()})';
-  await promiseNewLocationAndHistoryEntryReplaced(tab, snippet);
+  let entryReplaced = promiseOnHistoryReplaceEntryInChild(browser);
+  await SpecialPowers.spawn(browser, [], async () => {
+    let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
+    webNavigation.loadURI("https://example.com/", {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
+  });
+  await entryReplaced;
 
   
   ok(browser.isRemoteBrowser, "browser is still remote");
@@ -174,10 +128,15 @@ add_task(async function save_worthy_tabs_nonremote_final() {
 
 add_task(async function dont_save_empty_tabs_final() {
   let { tab, r } = await createTabWithRandomValue("https://example.com/");
+  let browser = tab.linkedBrowser;
+  ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  let snippet = 'content.location.replace("about:blank")';
-  await promiseNewLocationAndHistoryEntryReplaced(tab, snippet);
+  let entryReplaced = promiseOnHistoryReplaceEntryInChild(browser);
+  await SpecialPowers.spawn(browser, [], async () => {
+    content.location.replace("about:blank");
+  });
+  await entryReplaced;
 
   
   let promise = promiseRemoveTabAndSessionState(tab);
