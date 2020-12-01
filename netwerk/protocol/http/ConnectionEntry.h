@@ -7,6 +7,7 @@
 #define ConnectionEntry_h__
 
 #include "PendingTransactionInfo.h"
+#include "PendingTransactionQueue.h"
 #include "HalfOpenSocket.h"
 
 namespace mozilla {
@@ -22,18 +23,29 @@ class ConnectionEntry {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ConnectionEntry)
   explicit ConnectionEntry(nsHttpConnectionInfo* ci);
 
-  RefPtr<nsHttpConnectionInfo> mConnInfo;
-  nsTArray<RefPtr<PendingTransactionInfo>>
-      mUrgentStartQ;  
+  void ReschedTransaction(nsHttpTransaction* aTrans);
 
-  
-  
-  
-  
-  
-  
-  nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<PendingTransactionInfo>>>
-      mPendingTransactionTable;
+  nsTArray<RefPtr<PendingTransactionInfo>>* GetTransactionPendingQHelper(
+      nsAHttpTransaction* trans);
+
+  void InsertTransactionSorted(
+      nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
+      PendingTransactionInfo* pendingTransInfo,
+      bool aInsertAsFirstForTheSamePriority = false);
+
+  void InsertTransaction(PendingTransactionInfo* aPendingTransInfo,
+                         bool aInsertAsFirstForTheSamePriority = false);
+
+  size_t UrgentStartQueueLength();
+
+  void PrintPendingQ();
+
+  void Compact();
+
+  void CancelAllTransactions(nsresult reason);
+
+  RefPtr<nsHttpConnectionInfo> mConnInfo;
+
   nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
   nsTArray<RefPtr<nsHttpConnection>> mIdleConns;  
   nsTArray<HalfOpenSocket*> mHalfOpens;           
@@ -45,7 +57,7 @@ class ConnectionEntry {
 
   
   
-  uint32_t UnconnectedHalfOpens();
+  uint32_t UnconnectedHalfOpens() const;
 
   
   void RemoveHalfOpen(HalfOpenSocket*);
@@ -98,13 +110,11 @@ class ConnectionEntry {
   bool PreferenceKnown() const;
 
   
-  size_t PendingQLength() const;
+  size_t PendingQueueLength() const;
+  size_t PendingQueueLengthForWindow(uint64_t windowId) const;
 
-  
-  
-  
-  void InsertTransaction(PendingTransactionInfo* info,
-                         bool aInsertAsFirstForTheSamePriority = false);
+  void AppendPendingUrgentStartQ(
+      nsTArray<RefPtr<PendingTransactionInfo>>& result);
 
   
   
@@ -123,7 +133,16 @@ class ConnectionEntry {
   
   void RemoveEmptyPendingQ();
 
+  void PrintDiagnostics(nsCString& log, uint32_t aMaxPersistConns);
+
+  bool RestrictConnections();
+
+  
+  
+  uint32_t TotalActiveConnections() const;
+
  private:
+  PendingTransactionQueue mPendingQ;
   ~ConnectionEntry();
 };
 
