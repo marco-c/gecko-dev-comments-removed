@@ -268,6 +268,7 @@ BrowserToolboxLauncher.prototype = {
       
       MOZ_DISABLE_SAFE_MODE_KEY: "1",
       MOZ_BROWSER_TOOLBOX_PORT: String(this.port),
+      MOZ_HEADLESS: null,
     };
 
     
@@ -303,7 +304,7 @@ BrowserToolboxLauncher.prototype = {
         const dumpPipe = async pipe => {
           let data = await pipe.readString();
           while (data) {
-            dump(data);
+            dump("> " + data);
             data = await pipe.readString();
           }
         };
