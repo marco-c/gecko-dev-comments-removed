@@ -174,14 +174,6 @@ SearchService.prototype = {
 
 
 
-
-  _searchOrder: [],
-
-  
-
-
-
-
   _startupExtensions: new Set(),
 
   
@@ -573,46 +565,6 @@ SearchService.prototype = {
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
     this._setDefaultAndOrdersFromSelector(engines, privateDefault);
 
-    let enginesCorrupted = false;
-
-    
-    
-    let majorChange =
-      !settings.engines ||
-      settings.version != SearchUtils.SETTINGS_VERSION ||
-      settings.locale != Services.locale.requestedLocale ||
-      settings.buildID != Services.appinfo.platformBuildID;
-
-    if (!majorChange) {
-      const engineInSettingsList = engine => {
-        return settings.builtInEngineList.find(details => {
-          return (
-            engine.webExtension.id == details.id &&
-            engine.webExtension.locale == details.locale
-          );
-        });
-      };
-
-      if (
-        
-        
-        settings.builtInEngineList &&
-        settings.builtInEngineList.length == engines.length &&
-        engines.every(engineInSettingsList) &&
-        
-        settings.engines.filter(e => e._isAppProvided).length !=
-          settings.builtInEngineList.length
-      ) {
-        
-        enginesCorrupted = true;
-      }
-    }
-
-    Services.telemetry.scalarSet(
-      "browser.searchinit.engines_cache_corrupted",
-      enginesCorrupted
-    );
-
     let newEngines = await this._loadEnginesFromConfig(engines, isReload);
     for (let engine of newEngines) {
       this._addEngineToStore(engine);
@@ -956,7 +908,6 @@ SearchService.prototype = {
     this._currentPrivateEngine = null;
     this._searchDefault = null;
     this._searchPrivateDefault = null;
-    this._searchOrder = [];
     this._maybeReloadDebounce = false;
   },
 
@@ -1135,12 +1086,6 @@ SearchService.prototype = {
       id: defaultEngine.webExtension.id,
       locale: defaultEngine.webExtension.locale,
     };
-    this._searchOrder = engines.map(e => {
-      return {
-        id: e.webExtension.id,
-        locale: e.webExtension.locale,
-      };
-    });
     if (privateDefault) {
       this._searchPrivateDefault = {
         id: privateDefault.webExtension.id,
@@ -1666,12 +1611,19 @@ SearchService.prototype = {
     }
 
     if (extension.isAppProvided) {
-      let inConfig = this._searchOrder.filter(el => el.id == extension.id);
-      if (this._initialized && inConfig.length) {
-        return this._installExtensionEngine(
-          extension,
-          inConfig.map(el => el.locale)
-        );
+      
+      
+      
+      
+      if (this._initialized && !this._reloadingEngines) {
+        let { engines } = await this._fetchEngineSelectorEngines();
+        let inConfig = engines.filter(el => el.webExtension.id == extension.id);
+        if (inConfig.length) {
+          return this._installExtensionEngine(
+            extension,
+            inConfig.map(el => el.webExtension.locale)
+          );
+        }
       }
       logConsole.debug("addEnginesFromExtension: Ignoring builtIn engine.");
       return [];
