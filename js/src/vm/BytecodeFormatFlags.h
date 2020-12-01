@@ -51,8 +51,7 @@ enum {
   JOF_CONSTRUCT = 1 << 13,   
   JOF_SPREAD = 1 << 14,      
   JOF_GNAME = 1 << 15,       
-  JOF_TYPESET = 1 << 16,     
-  JOF_IC = 1 << 17,          
+  JOF_IC = 1 << 16,          
 };
 
 #endif 

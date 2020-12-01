@@ -1748,13 +1748,6 @@ static bool CanIonCompileOrInlineScript(JSScript* script, const char** reason) {
     return false;
   }
 
-  if (script->numBytecodeTypeSets() >= JSScript::MaxBytecodeTypeSets) {
-    
-    
-    *reason = "too many typesets";
-    return false;
-  }
-
   return true;
 }
 
