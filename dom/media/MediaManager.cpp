@@ -4464,8 +4464,8 @@ void SourceListener::SetMutedFor(LocalTrackSource* aTrackSource, bool aMute) {
   } else {
     aTrackSource->Unmute();
   }
-  if (state.mOffWhileDisabled && !state.mDeviceEnabled &&
-      state.mDevice->mKind == dom::MediaDeviceKind::Videoinput) {
+  if (!state.mOffWhileDisabled || !state.mDeviceEnabled) {
+    
     
     return;
   }
