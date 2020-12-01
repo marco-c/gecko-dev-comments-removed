@@ -97,9 +97,23 @@ struct DisplayPortMargins {
                                            const CSSPoint& aLayoutOffset,
                                            const CSSToScreenScale2D& aScale);
 
-  static DisplayPortMargins WithNoAdjustment(const ScreenMargin& aMargins);
+  
+  
+  
+  
+  
+  static DisplayPortMargins ForScrollFrame(
+      nsIScrollableFrame* aScrollFrame, const ScreenMargin& aMargins,
+      const Maybe<CSSToScreenScale2D>& aScale = Nothing());
 
-  static DisplayPortMargins Empty() { return WithNoAdjustment(ScreenMargin()); }
+  
+  static DisplayPortMargins ForContent(nsIContent* aContent,
+                                       const ScreenMargin& aMargins);
+
+  
+  static DisplayPortMargins Empty(nsIContent* aContent) {
+    return ForContent(aContent, ScreenMargin());
+  }
 
   
   

@@ -47,13 +47,55 @@ DisplayPortMargins DisplayPortMargins::WithAdjustment(
   return DisplayPortMargins{aMargins, aVisualOffset, aLayoutOffset, aScale};
 }
 
+CSSToScreenScale2D ComputeDisplayportScale(nsIScrollableFrame* aScrollFrame) {
+  
+  
+  
+  if (!aScrollFrame) {
+    return CSSToScreenScale2D(1.0, 1.0);
+  }
+  nsIFrame* frame = do_QueryFrame(aScrollFrame);
+  MOZ_ASSERT(frame);
+  nsPresContext* presContext = frame->PresContext();
+  PresShell* presShell = presContext->PresShell();
+  return presContext->CSSToDevPixelScale() *
+         LayoutDeviceToLayerScale2D(
+             presShell->GetCumulativeResolution() *
+             nsLayoutUtils::GetTransformToAncestorScale(frame)) *
+         LayerToScreenScale2D(1.0, 1.0);
+}
 
-DisplayPortMargins DisplayPortMargins::WithNoAdjustment(
-    const ScreenMargin& aMargins) {
-  
-  
-  return WithAdjustment(aMargins, CSSPoint(), CSSPoint(),
-                        CSSToScreenScale2D(1.0, 1.0));
+
+DisplayPortMargins DisplayPortMargins::ForScrollFrame(
+    nsIScrollableFrame* aScrollFrame, const ScreenMargin& aMargins,
+    const Maybe<CSSToScreenScale2D>& aScale) {
+  CSSPoint visualOffset;
+  CSSPoint layoutOffset;
+  if (aScrollFrame) {
+    nsIFrame* scrollFrame = do_QueryFrame(aScrollFrame);
+    PresShell* presShell = scrollFrame->PresShell();
+    layoutOffset = CSSPoint::FromAppUnits(aScrollFrame->GetScrollPosition());
+    if (aScrollFrame->IsRootScrollFrameOfDocument() &&
+        presShell->IsVisualViewportOffsetSet()) {
+      visualOffset =
+          CSSPoint::FromAppUnits(presShell->GetVisualViewportOffset());
+
+    } else {
+      visualOffset = layoutOffset;
+    }
+  }
+  return DisplayPortMargins{aMargins, visualOffset, layoutOffset,
+                            aScale.valueOrFrom([&] {
+                              return ComputeDisplayportScale(aScrollFrame);
+                            })};
+}
+
+
+DisplayPortMargins DisplayPortMargins::ForContent(
+    nsIContent* aContent, const ScreenMargin& aMargins) {
+  return ForScrollFrame(
+      aContent ? nsLayoutUtils::FindScrollableFrameFor(aContent) : nullptr,
+      aMargins, Nothing());
 }
 
 ScreenMargin DisplayPortMargins::GetRelativeToLayoutViewport(
@@ -507,8 +549,9 @@ static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
     result = GetDisplayPortFromRectData(aContent, rectData, aMultiplier);
   } else if (isDisplayportSuppressed ||
              nsLayoutUtils::ShouldDisableApzForElement(aContent)) {
-    DisplayPortMarginsPropertyData noMargins(DisplayPortMargins::Empty(), 1,
-                                             false);
+    DisplayPortMarginsPropertyData noMargins(
+        DisplayPortMargins::Empty(aContent), 1,
+        false);
     result = GetDisplayPortFromMarginsData(aContent, &noMargins, aMultiplier,
                                            aOptions);
   } else {
@@ -859,24 +902,9 @@ bool DisplayPortUtils::CalculateAndSetDisplayPortMargins(
       metrics, ParentLayerPoint(0.0f, 0.0f));
   PresShell* presShell = frame->PresContext()->GetPresShell();
 
-  DisplayPortMargins margins;
-  if (metrics.IsRootContent()) {
-    
-    
-    
-    margins = DisplayPortMargins::WithAdjustment(
-        displayportMargins, metrics.GetVisualScrollOffset(),
-        metrics.GetLayoutScrollOffset(),
-        metrics.DisplayportPixelsPerCSSPixel());
-  } else {
-    
-    
-    
-    
-    MOZ_ASSERT(metrics.GetVisualScrollOffset() ==
-               metrics.GetLayoutScrollOffset());
-    margins = DisplayPortMargins::WithNoAdjustment(displayportMargins);
-  }
+  DisplayPortMargins margins = DisplayPortMargins::ForScrollFrame(
+      aScrollFrame, displayportMargins,
+      Some(metrics.DisplayportPixelsPerCSSPixel()));
 
   return SetDisplayPortMargins(content, presShell, margins, 0, aRepaintMode);
 }
@@ -945,7 +973,7 @@ void DisplayPortUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
     if (nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
         !HasDisplayPort(frame->GetContent())) {
       SetDisplayPortMargins(frame->GetContent(), frame->PresShell(),
-                            DisplayPortMargins::Empty(), 0,
+                            DisplayPortMargins::Empty(frame->GetContent()), 0,
                             RepaintMode::Repaint);
     }
   }
