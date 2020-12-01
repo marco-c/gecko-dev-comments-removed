@@ -454,6 +454,21 @@ MARKUPMAP(
           aElement->GetPrimaryFrame()->AccessibleType() != eHTMLTableType) {
         return new ARIAGridAccessibleWrap(aElement, aContext->Document());
       }
+
+      
+      for (nsIContent* child = aElement->GetFirstChild(); child;
+           child = child->GetNextSibling()) {
+        if (child->IsAnyOfHTMLElements(nsGkAtoms::thead, nsGkAtoms::tfoot,
+                                       nsGkAtoms::tbody, nsGkAtoms::tr)) {
+          
+          
+          nsIFrame* childFrame = child->GetPrimaryFrame();
+          if (childFrame && (!childFrame->IsTableRowGroupFrame() &&
+                             !childFrame->IsTableRowFrame())) {
+            return new ARIAGridAccessibleWrap(aElement, aContext->Document());
+          }
+        }
+      }
       return nullptr;
     },
     0)

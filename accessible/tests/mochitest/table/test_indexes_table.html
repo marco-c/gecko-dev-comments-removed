@@ -157,6 +157,13 @@
       ];
       testTableIndexes("tablewithdisplayblock", idxes);
 
+      // ////////////////////////////////////////////////////////////////////////
+      // tbody that has display: block; style
+      idxes = [
+        [0, 1],
+      ];
+      testTableIndexes("tbodywithdisplayblock", idxes);
+
       SimpleTest.finish();
     }
 
@@ -461,5 +468,14 @@
   <table id="tablewithdisplayblock" style="display: block;">
     <tr><th>a</th><td>b</td></tr>
   </table>  
+
+  <table id="tbodywithdisplayblock">
+    <tbody style="display: block;">
+      <tr>
+        <th>a</th>
+        <td>b</td>
+      </tr>
+    </tbody>
+  </table>
 </body>
 </html>
