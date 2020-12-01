@@ -429,6 +429,7 @@ interface nsIMemoryReporterManager : nsISupports
 
 
 
+
   [must_use] void minimizeMemoryUsage(in nsIRunnable callback);
 
   
