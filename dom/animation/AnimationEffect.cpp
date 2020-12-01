@@ -41,6 +41,10 @@ AnimationEffect::AnimationEffect(Document* aDocument, TimingParams&& aTiming)
 
 AnimationEffect::~AnimationEffect() = default;
 
+nsISupports* AnimationEffect::GetParentObject() const {
+  return ToSupports(mDocument);
+}
+
 
 bool AnimationEffect::IsCurrent() const {
   if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {

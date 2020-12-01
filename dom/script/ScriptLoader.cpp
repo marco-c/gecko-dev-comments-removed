@@ -4153,6 +4153,41 @@ bool ScriptLoader::MaybeRemovedDeferRequests() {
   return false;
 }
 
+DocGroup* ScriptLoader::GetDocGroup() const { return mDocument->GetDocGroup(); }
+
+void ScriptLoader::BeginDeferringScripts() {
+  mDeferEnabled = true;
+  if (mDeferCheckpointReached) {
+    
+    
+    
+    
+    
+    
+    
+    
+    mDeferCheckpointReached = false;
+  } else {
+    if (mDocument) {
+      mDocument->BlockOnload();
+    }
+  }
+}
+
+nsAutoScriptLoaderDisabler::nsAutoScriptLoaderDisabler(Document* aDoc) {
+  mLoader = aDoc->ScriptLoader();
+  mWasEnabled = mLoader->GetEnabled();
+  if (mWasEnabled) {
+    mLoader->SetEnabled(false);
+  }
+}
+
+nsAutoScriptLoaderDisabler::~nsAutoScriptLoaderDisabler() {
+  if (mWasEnabled) {
+    mLoader->SetEnabled(true);
+  }
+}
+
 #undef TRACE_FOR_TEST
 #undef TRACE_FOR_TEST_BOOL
 #undef TRACE_FOR_TEST_NONE

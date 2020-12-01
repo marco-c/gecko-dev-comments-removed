@@ -32,7 +32,6 @@
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
 #include "nsCharsetSource.h"
-#include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsDocLoader.h"
 #include "nsIAuthPromptProvider.h"
@@ -873,38 +872,6 @@ class nsDocShell final : public nsDocLoader,
   
   bool CanSavePresentation(uint32_t aLoadType, nsIRequest* aNewRequest,
                            mozilla::dom::Document* aNewDocument);
-
-  
-  
-  
-  
-  
-  enum BFCacheStatusCombo : uint16_t {
-    BFCACHE_SUCCESS,
-    SUCCESS_NOT_ONLY_TOPLEVEL =
-        mozilla::dom::BFCacheStatus::NOT_ONLY_TOPLEVEL_IN_BCG,
-    UNLOAD = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER,
-    UNLOAD_REQUEST = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-                     mozilla::dom::BFCacheStatus::REQUEST,
-    REQUEST = mozilla::dom::BFCacheStatus::REQUEST,
-    UNLOAD_REQUEST_PEER = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-                          mozilla::dom::BFCacheStatus::REQUEST |
-                          mozilla::dom::BFCacheStatus::ACTIVE_PEER_CONNECTION,
-    UNLOAD_REQUEST_PEER_MSE =
-        mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-        mozilla::dom::BFCacheStatus::REQUEST |
-        mozilla::dom::BFCacheStatus::ACTIVE_PEER_CONNECTION |
-        mozilla::dom::BFCacheStatus::CONTAINS_MSE_CONTENT,
-    UNLOAD_REQUEST_MSE = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-                         mozilla::dom::BFCacheStatus::REQUEST |
-                         mozilla::dom::BFCacheStatus::CONTAINS_MSE_CONTENT,
-    SUSPENDED_UNLOAD_REQUEST_PEER =
-        mozilla::dom::BFCacheStatus::SUSPENDED |
-        mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-        mozilla::dom::BFCacheStatus::REQUEST |
-        mozilla::dom::BFCacheStatus::ACTIVE_PEER_CONNECTION,
-    REMOTE_SUBFRAMES = mozilla::dom::BFCacheStatus::CONTAINS_REMOTE_SUBFRAMES
-  };
 
   void ReportBFCacheComboTelemetry(uint16_t aCombo);
 

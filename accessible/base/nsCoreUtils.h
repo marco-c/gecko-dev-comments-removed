@@ -10,7 +10,6 @@
 #include "mozilla/dom/Element.h"
 #include "nsIAccessibleEvent.h"
 #include "nsIContent.h"
-#include "mozilla/dom/Document.h"  
 #include "mozilla/FlushType.h"
 #include "mozilla/PresShellForwards.h"
 
@@ -26,8 +25,9 @@ class nsIWidget;
 namespace mozilla {
 class PresShell;
 namespace dom {
+class Document;
 class XULTreeElement;
-}
+}  
 }  
 
 
@@ -219,9 +219,7 @@ class nsCoreUtils {
   
 
 
-  static PresShell* GetPresShellFor(nsINode* aNode) {
-    return aNode->OwnerDoc()->GetPresShell();
-  }
+  static PresShell* GetPresShellFor(nsINode* aNode);
 
   
 

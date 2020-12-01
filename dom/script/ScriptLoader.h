@@ -14,7 +14,6 @@
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
-#include "mozilla/dom/Document.h"
 #include "nsIIncrementalStreamLoader.h"
 #include "nsINode.h"
 #include "nsIObserver.h"
@@ -43,6 +42,7 @@ namespace mozilla {
 namespace dom {
 
 class AutoJSAPI;
+class Document;
 class LoadedScript;
 class ModuleLoadRequest;
 class ModuleScript;
@@ -302,24 +302,7 @@ class ScriptLoader final : public nsISupports {
 
 
 
-  void BeginDeferringScripts() {
-    mDeferEnabled = true;
-    if (mDeferCheckpointReached) {
-      
-      
-      
-      
-      
-      
-      
-      
-      mDeferCheckpointReached = false;
-    } else {
-      if (mDocument) {
-        mDocument->BlockOnload();
-      }
-    }
-  }
+  void BeginDeferringScripts();
 
   
 
@@ -380,9 +363,7 @@ class ScriptLoader final : public nsISupports {
     return true;
   }
 
-  mozilla::dom::DocGroup* GetDocGroup() const {
-    return mDocument->GetDocGroup();
-  }
+  mozilla::dom::DocGroup* GetDocGroup() const;
 
   
 
@@ -718,19 +699,9 @@ class ScriptLoader final : public nsISupports {
 
 class nsAutoScriptLoaderDisabler {
  public:
-  explicit nsAutoScriptLoaderDisabler(Document* aDoc) {
-    mLoader = aDoc->ScriptLoader();
-    mWasEnabled = mLoader->GetEnabled();
-    if (mWasEnabled) {
-      mLoader->SetEnabled(false);
-    }
-  }
+  explicit nsAutoScriptLoaderDisabler(Document* aDoc);
 
-  ~nsAutoScriptLoaderDisabler() {
-    if (mWasEnabled) {
-      mLoader->SetEnabled(true);
-    }
-  }
+  ~nsAutoScriptLoaderDisabler();
 
   bool mWasEnabled;
   RefPtr<ScriptLoader> mLoader;

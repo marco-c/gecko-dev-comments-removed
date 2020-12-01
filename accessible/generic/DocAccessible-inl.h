@@ -41,6 +41,16 @@ inline nsIAccessiblePivot* DocAccessible::VirtualCursor() {
   return mVirtualCursor;
 }
 
+inline bool DocAccessible::IsContentLoaded() const {
+  
+  
+  
+  return mDocumentNode && mDocumentNode->IsVisible() &&
+         (mDocumentNode->IsShowing() || HasLoadState(eDOMLoaded));
+}
+
+inline bool DocAccessible::IsHidden() const { return mDocumentNode->Hidden(); }
+
 inline void DocAccessible::FireDelayedEvent(AccEvent* aEvent) {
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eDocLoad)) logging::DocLoadEventFired(aEvent);

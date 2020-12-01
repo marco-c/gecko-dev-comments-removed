@@ -403,9 +403,7 @@ class Element : public FragmentOrElement {
 
 
   virtual UniquePtr<SMILAttr> GetAnimatedAttr(int32_t aNamespaceID,
-                                              nsAtom* aName) {
-    return nullptr;
-  }
+                                              nsAtom* aName);
 
   
 

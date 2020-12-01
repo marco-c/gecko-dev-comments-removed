@@ -27,7 +27,6 @@
 #include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
-#include "mozilla/dom/Document.h"
 #include "nsIContentInlines.h"       
 #include "nsIEditor.h"               
 #include "nsIFrame.h"                
@@ -106,6 +105,7 @@ typedef CreateNodeResultBase<dom::Element> CreateElementResult;
 namespace dom {
 class AbstractRange;
 class DataTransfer;
+class Document;
 class DragEvent;
 class Element;
 class EventTarget;
@@ -197,12 +197,8 @@ class EditorBase : public nsIEditor,
   bool Destroyed() const { return mDidPreDestroy; }
 
   Document* GetDocument() const { return mDocument; }
-  nsPIDOMWindowOuter* GetWindow() const {
-    return mDocument ? mDocument->GetWindow() : nullptr;
-  }
-  nsPIDOMWindowInner* GetInnerWindow() const {
-    return mDocument ? mDocument->GetInnerWindow() : nullptr;
-  }
+  nsPIDOMWindowOuter* GetWindow() const;
+  nsPIDOMWindowInner* GetInnerWindow() const;
 
   
 
@@ -263,9 +259,7 @@ class EditorBase : public nsIEditor,
     return false;
   }
 
-  PresShell* GetPresShell() const {
-    return mDocument ? mDocument->GetPresShell() : nullptr;
-  }
+  PresShell* GetPresShell() const;
   nsPresContext* GetPresContext() const {
     PresShell* presShell = GetPresShell();
     return presShell ? presShell->GetPresContext() : nullptr;
@@ -280,15 +274,7 @@ class EditorBase : public nsIEditor,
 
   already_AddRefed<nsIWidget> GetWidget();
 
-  nsISelectionController* GetSelectionController() const {
-    if (mSelectionController) {
-      return mSelectionController;
-    }
-    if (!mDocument) {
-      return nullptr;
-    }
-    return mDocument->GetPresShell();
-  }
+  nsISelectionController* GetSelectionController() const;
 
   nsresult GetSelection(SelectionType aSelectionType,
                         Selection** aSelection) const;

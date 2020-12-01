@@ -4,6 +4,8 @@
 
 
 
+#include "StorageAccess.h"
+
 #include "mozilla/dom/Document.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/ContentBlocking.h"
@@ -329,6 +331,16 @@ bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
         aRejectedReason);
   }
   return disabled;
+}
+
+bool StorageDisabledByAntiTracking(dom::Document* aDocument, nsIURI* aURI) {
+  uint32_t rejectedReason = 0;
+  
+  
+  
+  return StorageDisabledByAntiTracking(
+      aDocument->GetInnerWindow(), aDocument->GetChannel(),
+      aDocument->NodePrincipal(), aURI, rejectedReason);
 }
 
 bool ShouldPartitionStorage(StorageAccess aAccess) {

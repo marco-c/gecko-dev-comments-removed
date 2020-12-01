@@ -7,7 +7,7 @@
 #ifndef mozilla_StorageAccess_h
 #define mozilla_StorageAccess_h
 
-#include "mozilla/dom/Document.h"
+#include <cstdint>
 
 class nsIChannel;
 class nsICookieJarSettings;
@@ -16,6 +16,9 @@ class nsIURI;
 class nsPIDOMWindowInner;
 
 namespace mozilla {
+namespace dom {
+class Document;
+}
 
 
 
@@ -99,16 +102,7 @@ bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
 
 
 
-inline bool StorageDisabledByAntiTracking(dom::Document* aDocument,
-                                          nsIURI* aURI) {
-  uint32_t rejectedReason = 0;
-  
-  
-  
-  return StorageDisabledByAntiTracking(
-      aDocument->GetInnerWindow(), aDocument->GetChannel(),
-      aDocument->NodePrincipal(), aURI, rejectedReason);
-}
+bool StorageDisabledByAntiTracking(dom::Document* aDocument, nsIURI* aURI);
 
 bool ShouldPartitionStorage(StorageAccess aAccess);
 

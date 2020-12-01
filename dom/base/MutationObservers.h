@@ -9,14 +9,16 @@
 
 #include "nsIContent.h"  
 #include "nsIMutationObserver.h"  
-#include "mozilla/dom/Document.h"
-#include "js/TypeDecls.h"
-#include "nsContentUtils.h"
+#include "nsINode.h"
+#include "nsTObserverArray.h"
 
-struct CharacterDataChangeInfo;
+class nsAtom;
+class nsAttrValue;
+
 namespace mozilla {
 namespace dom {
 class Animation;
+class Element;
 
 class MutationObservers {
  public:

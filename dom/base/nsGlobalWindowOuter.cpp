@@ -7441,6 +7441,10 @@ nsIDOMWindowUtils* nsGlobalWindowOuter::WindowUtils() {
   return mWindowUtils;
 }
 
+bool nsGlobalWindowOuter::IsInSyncOperation() {
+  return GetExtantDoc() && GetExtantDoc()->IsInSyncOperation();
+}
+
 
 
 void nsGlobalWindowOuter::SetCursorOuter(const nsACString& aCursor,

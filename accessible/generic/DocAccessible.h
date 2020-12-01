@@ -13,7 +13,6 @@
 
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIDocumentObserver.h"
 #include "nsIObserver.h"
@@ -66,7 +65,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
   virtual void Init();
   virtual void Shutdown() override;
   virtual nsIFrame* GetFrame() const override;
-  virtual nsINode* GetNode() const override { return mDocumentNode; }
+  virtual nsINode* GetNode() const override;
   Document* DocumentNode() const { return mDocumentNode; }
 
   virtual mozilla::a11y::ENameValueFlag Name(nsString& aName) const override;
@@ -100,15 +99,12 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  void Title(nsString& aTitle) const { mDocumentNode->GetTitle(aTitle); }
+  void Title(nsString& aTitle) const;
 
   
 
 
-  void MimeType(nsAString& aType) const {
-    mDocumentNode->GetContentType(aType);
-  }
-
+  void MimeType(nsAString& aType) const;
   
 
 
@@ -140,15 +136,9 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  bool IsContentLoaded() const {
-    
-    
-    
-    return mDocumentNode && mDocumentNode->IsVisible() &&
-           (mDocumentNode->IsShowing() || HasLoadState(eDOMLoaded));
-  }
+  bool IsContentLoaded() const;
 
-  bool IsHidden() const { return mDocumentNode->Hidden(); }
+  bool IsHidden() const;
 
   
 
@@ -240,10 +230,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  Accessible* GetAccessible(nsINode* aNode) const {
-    return aNode == mDocumentNode ? const_cast<DocAccessible*>(this)
-                                  : mNodeToAccessibleMap.Get(aNode);
-  }
+  Accessible* GetAccessible(nsINode* aNode) const;
 
   
 

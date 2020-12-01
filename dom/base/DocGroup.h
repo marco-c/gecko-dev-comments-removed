@@ -14,7 +14,6 @@
 #include "nsString.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
-#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/PerformanceCounter.h"
 #include "mozilla/PerformanceTypes.h"
@@ -22,6 +21,9 @@
 namespace mozilla {
 class AbstractThread;
 namespace dom {
+
+class CustomElementReactionsStack;
+class JSExecutionManager;
 
 
 
@@ -68,14 +70,7 @@ class DocGroup final {
 
   mozilla::dom::DOMArena* ArenaAllocator() { return mArena; }
 
-  mozilla::dom::CustomElementReactionsStack* CustomElementReactionsStack() {
-    MOZ_ASSERT(NS_IsMainThread());
-    if (!mReactionsStack) {
-      mReactionsStack = new mozilla::dom::CustomElementReactionsStack();
-    }
-
-    return mReactionsStack;
-  }
+  mozilla::dom::CustomElementReactionsStack* CustomElementReactionsStack();
 
   
   
