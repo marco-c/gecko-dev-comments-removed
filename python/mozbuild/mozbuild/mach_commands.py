@@ -2097,6 +2097,16 @@ class CreateMachEnvironment(MachCommandBase):
 
         manager.install_pip_package("zstandard>=0.9.0,<=0.13.0")
 
+        try:
+            
+            
+            manager.install_pip_package("psutil==5.7.0")
+        except subprocess.CalledProcessError:
+            print(
+                "Could not install psutil, so telemetry will be missing some "
+                "data. Continuing."
+            )
+
         if not PY2:
             
             
