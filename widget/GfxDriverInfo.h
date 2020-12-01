@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef __mozilla_widget_GfxDriverInfo_h__
 #define __mozilla_widget_GfxDriverInfo_h__
@@ -9,10 +9,10 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
-// Macros for adding a blocklist item to the static list. _EXT variants
-// allow one to specify all available parameters, including those available
-// only on specific platforms (e.g. desktop environment and driver vendor
-// for Linux.)
+
+
+
+
 
 #define APPEND_TO_DRIVER_BLOCKLIST_EXT(                                     \
     os, screen, battery, desktopEnv, windowProtocol, driverVendor, devices, \
@@ -149,17 +149,17 @@ enum class OperatingSystem : uint8_t {
 };
 
 enum VersionComparisonOp {
-  DRIVER_LESS_THAN,                    // driver <  version
-  DRIVER_BUILD_ID_LESS_THAN,           // driver build id <  version
-  DRIVER_LESS_THAN_OR_EQUAL,           // driver <= version
-  DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL,  // driver build id <= version
-  DRIVER_GREATER_THAN,                 // driver >  version
-  DRIVER_GREATER_THAN_OR_EQUAL,        // driver >= version
-  DRIVER_EQUAL,                        // driver == version
-  DRIVER_NOT_EQUAL,                    // driver != version
-  DRIVER_BETWEEN_EXCLUSIVE,        // driver > version && driver < versionMax
-  DRIVER_BETWEEN_INCLUSIVE,        // driver >= version && driver <= versionMax
-  DRIVER_BETWEEN_INCLUSIVE_START,  // driver >= version && driver < versionMax
+  DRIVER_LESS_THAN,                    
+  DRIVER_BUILD_ID_LESS_THAN,           
+  DRIVER_LESS_THAN_OR_EQUAL,           
+  DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL,  
+  DRIVER_GREATER_THAN,                 
+  DRIVER_GREATER_THAN_OR_EQUAL,        
+  DRIVER_EQUAL,                        
+  DRIVER_NOT_EQUAL,                    
+  DRIVER_BETWEEN_EXCLUSIVE,        
+  DRIVER_BETWEEN_INCLUSIVE,        
+  DRIVER_BETWEEN_INCLUSIVE_START,  
   DRIVER_COMPARISON_IGNORED
 };
 
@@ -194,6 +194,7 @@ enum class DeviceFamily : uint8_t {
   Bug1155608,
   Bug1207665,
   Bug1447141,
+  AmdR600,
   NvidiaBlockWebRender,
   NvidiaRolloutWebRender,
   IntelRolloutWebRender,
@@ -204,7 +205,7 @@ enum class DeviceFamily : uint8_t {
 };
 
 enum class DeviceVendor : uint8_t {
-  All,  // There is an assumption that this is the first enum
+  All,  
   Intel,
   NVIDIA,
   ATI,
@@ -220,27 +221,27 @@ enum class DeviceVendor : uint8_t {
 };
 
 enum DriverVendor : uint8_t {
-  All,  // There is an assumption that this is the first enum
-  // Wildcard for all Mesa drivers.
+  All,  
+  
   MesaAll,
-  // Note that the following list of Mesa drivers is not comprehensive; we pull
-  // the DRI driver at runtime. These drivers are provided for convenience when
-  // populating the local blocklist.
+  
+  
+  
   MesaLLVMPipe,
   MesaSoftPipe,
   MesaSWRast,
-  // Nouveau: Open-source nvidia
+  
   MesaNouveau,
-  // A generic ID to be provided when we can't determine the DRI driver on Mesa.
+  
   MesaUnknown,
-  // Wildcard for all non-Mesa drivers.
+  
   NonMesaAll,
 
   Max
 };
 
 enum class DesktopEnvironment : uint8_t {
-  All,  // There is an assumption that this is the first enum
+  All,  
   GNOME,
   KDE,
   XFCE,
@@ -261,14 +262,14 @@ enum class DesktopEnvironment : uint8_t {
 };
 
 enum class WindowProtocol : uint8_t {
-  All,  // There is an assumption that this is the first enum
+  All,  
   X11,
   XWayland,
   Wayland,
   WaylandDRM,
-  // Wildcard for all Wayland variants, excluding XWayland.
+  
   WaylandAll,
-  // Wildcard for all X11 variants, including XWayland.
+  
   X11All,
   Max
 };
@@ -277,14 +278,14 @@ enum class BatteryStatus : uint8_t { All, Present, None };
 
 enum class ScreenSizeStatus : uint8_t {
   All,
-  Small,           // <= 1900x1200
-  SmallAndMedium,  // <= 3440x1440
-  Medium,          // <= 3440x1440 && > 1900x1200
-  MediumAndLarge,  // >1900x1200
-  Large            // > 3440x1440
+  Small,           
+  SmallAndMedium,  
+  Medium,          
+  MediumAndLarge,  
+  Large            
 };
 
-/* Array of devices to match, or an empty array for all devices */
+
 class GfxDeviceFamily final {
  public:
   GfxDeviceFamily() = default;
@@ -307,8 +308,8 @@ class GfxDeviceFamily final {
 };
 
 struct GfxDriverInfo {
-  // If |ownDevices| is true, you are transferring ownership of the devices
-  // array, and it will be deleted when this GfxDriverInfo is destroyed.
+  
+  
   GfxDriverInfo(OperatingSystem os, ScreenSizeStatus aScreen,
                 BatteryStatus aBattery, const nsAString& desktopEnv,
                 const nsAString& windowProtocol, const nsAString& vendor,
@@ -334,20 +335,20 @@ struct GfxDriverInfo {
 
   const GfxDeviceFamily* mDevices;
 
-  // Whether the mDevices array should be deleted when this structure is
-  // deallocated. False by default.
+  
+  
   bool mDeleteDevices;
 
-  /* A feature from nsIGfxInfo, or all features */
+  
   int32_t mFeature;
   static int32_t allFeatures;
 
-  /* A feature status from nsIGfxInfo */
+  
   int32_t mFeatureStatus;
 
   VersionComparisonOp mComparisonOp;
 
-  /* versions are assumed to be A.B.C.D packed as 0xAAAABBBBCCCCDDDD */
+  
   uint64_t mDriverVersion;
   uint64_t mDriverVersionMax;
   static uint64_t allDriverVersions;
@@ -383,9 +384,9 @@ struct GfxDriverInfo {
    uint64_t(d))
 
 inline uint64_t V(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
-  // We make sure every driver number is padded by 0s, this will allow us the
-  // easiest 'compare as if decimals' approach. See ParseDriverVersion for a
-  // more extensive explanation of this approach.
+  
+  
+  
   while (b > 0 && b < 1000) {
     b *= 10;
   }
@@ -398,20 +399,20 @@ inline uint64_t V(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
   return GFX_DRIVER_VERSION(a, b, c, d);
 }
 
-// All destination string storage needs to have at least 5 bytes available.
+
 inline bool SplitDriverVersion(const char* aSource, char* aAStr, char* aBStr,
                                char* aCStr, char* aDStr) {
-  // sscanf doesn't do what we want here to we parse this manually.
+  
   int len = strlen(aSource);
 
-  // This "4" is hardcoded in a few places, including once as a 3.
+  
   char* dest[4] = {aAStr, aBStr, aCStr, aDStr};
   unsigned destIdx = 0;
   unsigned destPos = 0;
 
   for (int i = 0; i < len; i++) {
     if (destIdx >= 4) {
-      // Invalid format found. Ensure we don't access dest beyond bounds.
+      
       return false;
     }
 
@@ -423,8 +424,8 @@ inline bool SplitDriverVersion(const char* aSource, char* aAStr, char* aBStr,
     }
 
     if (destPos > 3) {
-      // Ignore more than 4 chars. Ensure we never access dest[destIdx]
-      // beyond its bounds.
+      
+      
       continue;
     }
 
@@ -432,12 +433,12 @@ inline bool SplitDriverVersion(const char* aSource, char* aAStr, char* aBStr,
     dest[destIdx][destPos++] = aSource[i];
   }
 
-  // Take care of the trailing period
+  
   if (destIdx >= 4) {
     return false;
   }
 
-  // Add last terminator.
+  
   MOZ_ASSERT(destIdx < 4 && destPos <= 4);
   dest[destIdx][destPos] = 0;
 
@@ -447,11 +448,11 @@ inline bool SplitDriverVersion(const char* aSource, char* aAStr, char* aBStr,
   return true;
 }
 
-// This allows us to pad driver version 'substrings' with 0s, this
-// effectively allows us to treat the version numbers as 'decimals'. This is
-// a little strange but this method seems to do the right thing for all
-// different vendor's driver strings. i.e. .98 will become 9800, which is
-// larger than .978 which would become 9780.
+
+
+
+
+
 inline void PadDriverDecimal(char* aString) {
   for (int i = 0; i < 4; i++) {
     if (!aString[i]) {
@@ -471,7 +472,7 @@ inline bool ParseDriverVersion(const nsAString& aVersion,
 #if defined(XP_WIN) || defined(MOZ_X11)
   int a, b, c, d;
   char aStr[8], bStr[8], cStr[8], dStr[8];
-  /* honestly, why do I even bother */
+  
   if (!SplitDriverVersion(NS_LossyConvertUTF16toASCII(aVersion).get(), aStr,
                           bStr, cStr, dStr))
     return false;
@@ -494,8 +495,8 @@ inline bool ParseDriverVersion(const nsAString& aVersion,
   MOZ_ASSERT(*aNumericVersion != GfxDriverInfo::allDriverVersions);
   return true;
 #elif defined(ANDROID)
-  // Can't use aVersion.ToInteger() because that's not compiled into our code
-  // unless we have XPCOM_GLUE_AVOID_NSPR disabled.
+  
+  
   *aNumericVersion = atoi(NS_LossyConvertUTF16toASCII(aVersion).get());
   MOZ_ASSERT(*aNumericVersion != GfxDriverInfo::allDriverVersions);
   return true;
@@ -504,7 +505,7 @@ inline bool ParseDriverVersion(const nsAString& aVersion,
 #endif
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
 
-#endif /*__mozilla_widget_GfxDriverInfo_h__ */
+#endif 
