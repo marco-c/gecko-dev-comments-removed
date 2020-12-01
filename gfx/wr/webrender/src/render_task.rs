@@ -59,10 +59,6 @@ pub enum RenderTaskLocation {
     
     
     
-    Fixed(DeviceIntRect),
-    
-    
-    
     
     
     
@@ -101,7 +97,6 @@ impl RenderTaskLocation {
 
     pub fn size(&self) -> DeviceIntSize {
         match self {
-            RenderTaskLocation::Fixed(rect) => rect.size,
             RenderTaskLocation::Dynamic(_, size) => *size,
             RenderTaskLocation::TextureCache { rect, .. } => rect.size,
             RenderTaskLocation::PictureCache { size, .. } => *size,
@@ -110,7 +105,6 @@ impl RenderTaskLocation {
 
     pub fn to_source_rect(&self) -> (DeviceIntRect, LayerIndex) {
         match *self {
-            RenderTaskLocation::Fixed(rect) => (rect, 0),
             RenderTaskLocation::Dynamic(None, _) => panic!("Expected position to be set for the task!"),
             RenderTaskLocation::Dynamic(Some((origin, layer)), size) => (DeviceIntRect::new(origin, size), layer.0 as LayerIndex),
             RenderTaskLocation::TextureCache { rect, layer, .. } => (rect, layer),
@@ -397,7 +391,6 @@ impl RenderTask {
     ) -> Self {
         let size = match location {
             RenderTaskLocation::Dynamic(_, size) => size,
-            RenderTaskLocation::Fixed(rect) => rect.size,
             RenderTaskLocation::TextureCache { rect, .. } => rect.size,
             RenderTaskLocation::PictureCache { size, .. } => size,
         };
@@ -1235,13 +1228,7 @@ impl RenderTask {
             }
         };
 
-        let (mut target_rect, target_index) = self.get_target_rect();
-        
-        
-        
-        if let RenderTaskLocation::Fixed(_) = self.location {
-            target_rect.origin = DeviceIntPoint::origin();
-        }
+        let (target_rect, target_index) = self.get_target_rect();
 
         RenderTaskData {
             data: [
@@ -1288,7 +1275,6 @@ impl RenderTask {
 
     pub fn get_dynamic_size(&self) -> DeviceIntSize {
         match self.location {
-            RenderTaskLocation::Fixed(..) => DeviceIntSize::zero(),
             RenderTaskLocation::Dynamic(_, size) => size,
             RenderTaskLocation::TextureCache { rect, .. } => rect.size,
             RenderTaskLocation::PictureCache { size, .. } => size,
@@ -1297,9 +1283,6 @@ impl RenderTask {
 
     pub fn get_target_rect(&self) -> (DeviceIntRect, RenderTargetIndex) {
         match self.location {
-            RenderTaskLocation::Fixed(rect) => {
-                (rect, RenderTargetIndex(0))
-            }
             
             
             
@@ -1521,7 +1504,6 @@ impl RenderTask {
     #[inline]
     pub fn mark_for_saving(&mut self) {
         match self.location {
-            RenderTaskLocation::Fixed(..) |
             RenderTaskLocation::Dynamic(..) => {
                 self.saved_index = Some(SavedTargetIndex::PENDING);
             }
