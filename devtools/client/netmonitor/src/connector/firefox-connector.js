@@ -52,16 +52,6 @@ class FirefoxConnector {
     return this.toolbox.targetList.targetFront;
   }
 
-  get hasWatcherSupport() {
-    return this.toolbox.resourceWatcher.hasWatcherSupport(
-      this.toolbox.resourceWatcher.TYPES.NETWORK_EVENT
-    );
-  }
-
-  get currentWatcher() {
-    return this.toolbox.resourceWatcher.watcher;
-  }
-
   
 
 
@@ -412,11 +402,7 @@ class FirefoxConnector {
   
 
 
-  async getBlockedUrls() {
-    if (this.hasWatcherSupport && this.currentWatcher) {
-      const network = await this.currentWatcher.getNetworkActor();
-      return network.getBlockedUrls();
-    }
+  getBlockedUrls() {
     if (!this.webConsoleFront.traits.blockedUrls) {
       return [];
     }
@@ -428,11 +414,7 @@ class FirefoxConnector {
 
 
 
-  async setBlockedUrls(urls) {
-    if (this.hasWatcherSupport && this.currentWatcher) {
-      const network = await this.currentWatcher.getNetworkActor();
-      return network.setBlockedUrls(urls);
-    }
+  setBlockedUrls(urls) {
     return this.webConsoleFront.setBlockedUrls(urls);
   }
 

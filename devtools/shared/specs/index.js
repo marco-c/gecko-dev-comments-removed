@@ -143,11 +143,6 @@ const Types = (exports.__TypesForTests = [
     spec: "devtools/shared/specs/network-event",
     front: null,
   },
-  {
-    types: ["network"],
-    spec: "devtools/shared/specs/network",
-    front: "devtools/client/fronts/network",
-  },
   
   {
     types: ["imageData", "disconnectedNode", "disconnectedNodeArray"],
