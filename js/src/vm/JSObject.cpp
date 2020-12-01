@@ -1960,18 +1960,7 @@ static bool SetProto(JSContext* cx, HandleObject obj,
   RootedObjectGroup oldGroup(cx, obj->group());
 
   ObjectGroup* newGroup;
-  if (oldGroup->maybeInterpretedFunction()) {
-    
-    
-    
-    MOZ_ASSERT(obj->is<JSFunction>());
-    newGroup = ObjectGroupRealm::makeGroup(cx, oldGroup->realm(),
-                                           &JSFunction::class_, proto);
-    if (!newGroup) {
-      return false;
-    }
-    newGroup->setInterpretedFunction(oldGroup->maybeInterpretedFunction());
-  } else {
+  {
     AutoRealm ar(cx, oldGroup);
     newGroup = ObjectGroup::defaultNewGroup(cx, obj->getClass(), proto);
     if (!newGroup) {

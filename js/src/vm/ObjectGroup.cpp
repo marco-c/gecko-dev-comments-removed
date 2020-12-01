@@ -180,12 +180,6 @@ ObjectGroup* JSObject::makeLazyGroup(JSContext* cx, HandleObject obj) {
 
   AutoEnterAnalysis enter(cx);
 
-  
-
-  if (obj->is<JSFunction>() && obj->as<JSFunction>().isInterpreted()) {
-    group->setInterpretedFunction(&obj->as<JSFunction>());
-  }
-
   obj->setGroupRaw(group);
 
   return group;

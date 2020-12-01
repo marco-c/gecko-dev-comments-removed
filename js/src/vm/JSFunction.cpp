@@ -2202,16 +2202,7 @@ JSFunction* js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
   MOZ_ASSERT(!fun->isBoundFunction());
   MOZ_ASSERT(CanReuseScriptForClone(cx->realm(), fun, enclosingEnv));
 
-  
-  
-  
-  
-  bool setTypeForFunction = proto && fun->staticPrototype() != proto &&
-                            fun->group()->maybeInterpretedFunction();
-
-  
-  NewObjectKind newKind = setTypeForFunction ? TenuredObject : GenericObject;
-
+  NewObjectKind newKind = GenericObject;
   RootedFunction clone(cx,
                        NewFunctionClone(cx, fun, newKind, allocKind, proto));
   if (!clone) {
@@ -2229,15 +2220,6 @@ JSFunction* js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
     clone->initEnvironment(enclosingEnv);
   }
 
-  MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
-
-  
-
-
-
-  if (fun->staticPrototype() == clone->staticPrototype()) {
-    clone->setGroup(fun->group());
-  }
   return clone;
 }
 

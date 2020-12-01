@@ -164,10 +164,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
     Addendum_None,
 
     
-    
-    Addendum_InterpretedFunction,
-
-    
     Addendum_TypeDescr
   };
 
@@ -202,20 +198,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   void setTypeDescr(TypeDescr* descr) {
     setAddendum(Addendum_TypeDescr, descr);
-  }
-
-  JSFunction* maybeInterpretedFunction() {
-    
-    
-    if (addendumKind() == Addendum_InterpretedFunction) {
-      return reinterpret_cast<JSFunction*>(addendum_);
-    }
-    return nullptr;
-  }
-
-  void setInterpretedFunction(JSFunction* fun) {
-    MOZ_ASSERT(!gc::IsInsideNursery(reinterpret_cast<gc::Cell*>(fun)));
-    setAddendum(Addendum_InterpretedFunction, fun);
   }
 
  public:
