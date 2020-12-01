@@ -1,3 +1,5 @@
+#include "RenderCompositorNative.h"
+#include "RenderCompositorNative.h"
 
 
 
@@ -119,6 +121,14 @@ RenderedFrameId RenderCompositorNative::EndFrame(
 void RenderCompositorNative::Pause() {}
 
 bool RenderCompositorNative::Resume() { return true; }
+
+inline layers::WebRenderCompositor RenderCompositorNative::CompositorType()
+    const {
+  if (gfx::gfxVars::UseWebRenderCompositor()) {
+    return layers::WebRenderCompositor::CORE_ANIMATION;
+  }
+  return layers::WebRenderCompositor::DRAW;
+}
 
 LayoutDeviceIntSize RenderCompositorNative::GetBufferSize() {
   return mWidget->GetClientSize();
