@@ -269,12 +269,6 @@ const startupPhases = {
     },
     {
       
-      path: "ProfD:extensions",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
       path: "UAppData:",
       ignoreIfUnused: true, 
       
