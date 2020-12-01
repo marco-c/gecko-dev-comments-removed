@@ -822,9 +822,13 @@ nsresult Http3Session::SendRequestBody(uint64_t aStreamId, const char* buf,
   } else if (NS_FAILED(rv)) {
     
     
-    rv = NS_OK;
+    
+    
+    *countRead = 0;
+    rv = NS_BASE_STREAM_WOULD_BLOCK;
   }
 
+  MOZ_ASSERT((*countRead != 0) || NS_FAILED(rv));
   return rv;
 }
 
@@ -1371,8 +1375,12 @@ nsresult Http3Session::ReadResponseData(uint64_t aStreamId, char* aBuf,
           static_cast<uint32_t>(rv), this));
     
     
+    *aCountWritten = 0;
+    *aFin = false;
     rv = NS_BASE_STREAM_WOULD_BLOCK;
   }
+
+  MOZ_ASSERT((*aCountWritten != 0) || aFin || NS_FAILED(rv));
   return rv;
 }
 
