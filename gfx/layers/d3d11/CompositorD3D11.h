@@ -258,6 +258,10 @@ class CompositorD3D11 : public Compositor {
 
   LayoutDeviceIntSize mSize;
 
+  
+  
+  LayoutDeviceIntSize mBufferSize;
+
   HWND mHwnd;
 
   D3D_FEATURE_LEVEL mFeatureLevel;
