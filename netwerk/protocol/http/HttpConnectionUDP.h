@@ -96,7 +96,7 @@ class HttpConnectionUDP final : public HttpConnectionBase,
 
   PRIntervalTime mLastReadTime;
   PRIntervalTime mLastWriteTime;
-  int64_t mTotalBytesRead;       
+  int64_t mTotalBytesRead;  
 
   RefPtr<nsIAsyncInputStream> mInputOverflow;
 

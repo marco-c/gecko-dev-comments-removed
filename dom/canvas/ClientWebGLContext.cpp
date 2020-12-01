@@ -3887,9 +3887,12 @@ void webgl::TexUnpackBlobDesc::Shrink(const webgl::PackingInfo& pi) {
     const auto bytesPerRowStride =
         RoundUpToMultipleOf(bytesPerRowUnaligned, unpacking.mUnpackAlignment);
 
-    const auto bytesPerImageStride = bytesPerRowStride * unpacking.mUnpackImageHeight;
+    const auto bytesPerImageStride =
+        bytesPerRowStride * unpacking.mUnpackImageHeight;
     
-    const auto images = CheckedInt<size_t>(unpacking.mUnpackSkipImages) + size.z;
+    
+    const auto images =
+        CheckedInt<size_t>(unpacking.mUnpackSkipImages) + size.z;
     const auto bytesUpperBound = bytesPerImageStride * images;
 
     if (bytesUpperBound.isValid()) {
