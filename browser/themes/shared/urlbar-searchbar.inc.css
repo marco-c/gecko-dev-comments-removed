@@ -279,31 +279,29 @@
 
 #urlbar-search-mode-indicator {
   display: none;
-  background-color: #d6ebff;
-  outline: 1px solid #0060df; 
   -moz-outline-radius: 2px;
   margin-inline-end: 8px;
   min-width: 16px; 
   align-items: center;
+
+  background-color: #d6ebff;
+  outline: 1px solid #0060df; 
+  color: #0060df; 
 }
 
 #urlbar[searchmode][breakout-extend] > #urlbar-input-container > #urlbar-search-mode-indicator {
   display: inline-flex;
 }
 
-#urlbar-search-mode-indicator-title {
-  color: #0060df; 
-  padding-inline: 5px;
-}
-
 
 :root[lwt-toolbar-field-brighttext] #urlbar-search-mode-indicator {
   background-color: #0060df;
   outline-color: #d6ebff;
+  color: #d6ebff;
 }
 
-:root[lwt-toolbar-field-brighttext] #urlbar-search-mode-indicator-title {
-  color: #d6ebff;
+#urlbar-search-mode-indicator-title {
+  padding-inline: 5px;
 }
 
 #urlbar-search-mode-indicator-close {
@@ -318,7 +316,7 @@
   stroke-opacity: 0.6;
   
 
-  fill: currentColor;
+  fill: FieldText;
   background-color: Field;
 }
 
@@ -329,8 +327,8 @@
   background-color: var(--lwt-toolbar-field-focus);
 }
 
-#urlbar-search-mode-indicator:hover  > #urlbar-search-mode-indicator-close {
-  display: inline;
+#urlbar-search-mode-indicator:hover > #urlbar-search-mode-indicator-close {
+  display: block;
 }
 
 @supports -moz-bool-pref("browser.urlbar.experimental.searchModeIndicatorHover") {
