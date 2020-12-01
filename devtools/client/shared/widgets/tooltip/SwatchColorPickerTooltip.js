@@ -139,18 +139,8 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     
     const name = this.activeSwatch.dataset.propertyName;
 
-    if (this.isContrastCompatible === undefined) {
-      const target = this.inspector.currentTarget;
-      this.isContrastCompatible = await target.actorHasMethod(
-        "domnode",
-        "getBackgroundColor"
-      );
-    }
-
     
-    
-    this.spectrum.contrastEnabled =
-      name === "color" && this.isContrastCompatible;
+    this.spectrum.contrastEnabled = name === "color";
     if (this.spectrum.contrastEnabled) {
       const { nodeFront } = this.inspector.selection;
       const { pageStyle } = nodeFront.inspectorFront;
