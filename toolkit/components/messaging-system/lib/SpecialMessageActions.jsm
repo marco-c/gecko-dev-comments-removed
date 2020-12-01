@@ -84,6 +84,15 @@ const SpecialMessageActions = {
 
 
 
+  setDefaultBrowser(window) {
+    window.getShellService().setAsDefault();
+  },
+
+  
+
+
+
+
 
 
 
@@ -218,6 +227,9 @@ const SpecialMessageActions = {
           action.data.url,
           action.data.telemetrySource
         );
+        break;
+      case "SET_DEFAULT_BROWSER":
+        this.setDefaultBrowser(window);
         break;
       case "PIN_CURRENT_TAB":
         let tab = window.gBrowser.selectedTab;
