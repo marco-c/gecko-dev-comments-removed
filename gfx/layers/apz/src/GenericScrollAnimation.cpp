@@ -59,6 +59,9 @@ bool GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
                                       const TimeDuration& aDelta) {
   TimeStamp now = mApzc.GetFrameTime().Time();
   CSSToParentLayerScale2D zoom = aFrameMetrics.GetZoom();
+  if (zoom == CSSToParentLayerScale2D(0, 0)) {
+    return false;
+  }
 
   
   
@@ -80,7 +83,6 @@ bool GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
     mApzc.mX.SetVelocity(velocityPL.x / 1000.0);
     mApzc.mY.SetVelocity(velocityPL.y / 1000.0);
   }
-
   
   ParentLayerPoint adjustedOffset, overscroll;
   mApzc.mX.AdjustDisplacement(
@@ -89,7 +91,6 @@ bool GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   mApzc.mY.AdjustDisplacement(
       displacement.y, adjustedOffset.y, overscroll.y,
       mDirectionForcedToOverscroll == Some(ScrollDirection::eVertical));
-
   
   
   
@@ -98,7 +99,6 @@ bool GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
     
     return false;
   }
-
   mApzc.ScrollBy(adjustedOffset / zoom);
   return !finished;
 }

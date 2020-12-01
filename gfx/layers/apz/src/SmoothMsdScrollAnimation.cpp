@@ -3,7 +3,6 @@
 
 
 
-
 #include "SmoothMsdScrollAnimation.h"
 #include "AsyncPanZoomController.h"
 
@@ -22,6 +21,10 @@ SmoothMsdScrollAnimation::SmoothMsdScrollAnimation(
 
 bool SmoothMsdScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
                                         const TimeDuration& aDelta) {
+  CSSToParentLayerScale2D zoom = aFrameMetrics.GetZoom();
+  if (zoom == CSSToParentLayerScale2D(0, 0)) {
+    return false;
+  }
   CSSPoint oneParentLayerPixel =
       ParentLayerPoint(1, 1) / aFrameMetrics.GetZoom();
   if (mXAxisModel.IsFinished(oneParentLayerPixel.x) &&
@@ -61,7 +64,6 @@ bool SmoothMsdScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   }
   
   
-  CSSToParentLayerScale2D zoom = aFrameMetrics.GetZoom();
   ParentLayerPoint displacement =
       (position - aFrameMetrics.GetVisualScrollOffset()) * zoom;
 
@@ -69,9 +71,7 @@ bool SmoothMsdScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   ParentLayerPoint adjustedOffset;
   mApzc.mX.AdjustDisplacement(displacement.x, adjustedOffset.x, overscroll.x);
   mApzc.mY.AdjustDisplacement(displacement.y, adjustedOffset.y, overscroll.y);
-
   mApzc.ScrollBy(adjustedOffset / zoom);
-
   
   
   
