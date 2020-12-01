@@ -304,10 +304,19 @@
   height: 100%;
   margin-inline-start: -16px;
   -moz-context-properties: fill, fill-opacity, stroke-opacity;
-  fill: currentColor;
   fill-opacity: 0;
   stroke-opacity: 0.6;
-  background-color: var(--lwt-toolbar-field-background-color, white);
+  
+
+  fill: currentColor;
+  background-color: Field;
+}
+
+#urlbar-search-mode-indicator-close:-moz-lwtheme {
+  
+
+  fill: var(--lwt-toolbar-field-focus-color);
+  background-color: var(--lwt-toolbar-field-focus);
 }
 
 #urlbar-search-mode-indicator:hover  > #urlbar-search-mode-indicator-close {
