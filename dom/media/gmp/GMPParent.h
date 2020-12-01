@@ -175,6 +175,11 @@ class GMPParent final
   void ResolveGetContentParentPromises();
   void RejectGetContentParentPromises();
 
+#if defined(XP_MACOSX)
+  nsresult GetPluginFileArch(nsIFile* aPluginDir, nsAutoString& aLeafName,
+                             uint32_t& aArchSet);
+#endif
+
   GMPState mState;
   nsCOMPtr<nsIFile> mDirectory;  
   nsString mName;  
@@ -213,6 +218,11 @@ class GMPParent final
   
   
   bool mHoldingSelfRef;
+
+#if defined(XP_MACOSX) && defined(__aarch64__)
+  
+  uint32_t mChildLaunchArch;
+#endif
 
   const nsCOMPtr<nsISerialEventTarget> mMainThread;
 };

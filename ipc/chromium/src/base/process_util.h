@@ -52,6 +52,16 @@ struct kinfo_proc;
 
 namespace base {
 
+enum ProcessArchitecture {
+  PROCESS_ARCH_INVALID = 0x0,
+  PROCESS_ARCH_I386 = 0x1,
+  PROCESS_ARCH_X86_64 = 0x2,
+  PROCESS_ARCH_PPC = 0x4,
+  PROCESS_ARCH_PPC_64 = 0x8,
+  PROCESS_ARCH_ARM = 0x10,
+  PROCESS_ARCH_ARM_64 = 0x20
+};
+
 
 
 
@@ -131,6 +141,13 @@ struct LaunchOptions {
   
   
   mozilla::UniquePtr<ForkDelegate> fork_delegate = nullptr;
+#endif
+
+#if defined(OS_MACOSX) && defined(__aarch64__)
+  
+  
+  
+  uint32_t arch = PROCESS_ARCH_INVALID;
 #endif
 };
 

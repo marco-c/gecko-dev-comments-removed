@@ -1597,6 +1597,20 @@ pref("media.gmp.trial-create.enabled", true);
 pref("media.gmp-gmpopenh264.visible", true);
 pref("media.gmp-gmpopenh264.enabled", true);
 
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("media.gmp-widevinecdm.allow-x64-plugin-on-arm64", true);
+  
+  pref("media.gmp-gmpopenh264.allow-x64-plugin-on-arm64", false);
+#endif
+
 
 pref("media.autoplay.default", 1); 
 
