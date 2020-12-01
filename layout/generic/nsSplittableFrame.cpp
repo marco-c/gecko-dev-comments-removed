@@ -224,7 +224,7 @@ nscoord nsSplittableFrame::GetEffectiveComputedBSize(
 }
 
 nsIFrame::LogicalSides nsSplittableFrame::GetLogicalSkipSides(
-    const ReflowInput* aReflowInput) const {
+    const Maybe<SkipSidesDuringReflow>& aDuringReflow) const {
   LogicalSides skip(mWritingMode);
   if (IsTrueOverflowContainer()) {
     skip |= eLogicalSideBitsBBoth;
@@ -240,15 +240,17 @@ nsIFrame::LogicalSides nsSplittableFrame::GetLogicalSkipSides(
     skip |= eLogicalSideBitsBStart;
   }
 
-  if (aReflowInput) {
+  if (aDuringReflow) {
+    nscoord availBSize = aDuringReflow->mReflowInput.AvailableBSize();
     
     
     
     
-    if (NS_UNCONSTRAINEDSIZE != aReflowInput->AvailableBSize()) {
-      nscoord effectiveBSize = GetEffectiveComputedBSize(*aReflowInput);
+    if (NS_UNCONSTRAINEDSIZE != availBSize) {
+      nscoord effectiveBSize = GetEffectiveComputedBSize(
+          aDuringReflow->mReflowInput, aDuringReflow->mConsumedBSize);
       if (effectiveBSize != NS_UNCONSTRAINEDSIZE &&
-          effectiveBSize > aReflowInput->AvailableBSize()) {
+          effectiveBSize > availBSize) {
         
         
         skip |= eLogicalSideBitsBEnd;
