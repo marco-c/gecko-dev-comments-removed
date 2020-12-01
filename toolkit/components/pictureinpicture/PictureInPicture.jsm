@@ -16,6 +16,10 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
 const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
 var PLAYER_FEATURES =
   "chrome,titlebar=yes,alwaysontop,lockaspectratio,resizable";
@@ -25,6 +29,8 @@ if (!AppConstants.MOZ_WIDGET_GTK) {
 }
 const WINDOW_TYPE = "Toolkit:PictureInPicture";
 const PIP_ENABLED_PREF = "media.videocontrols.picture-in-picture.enabled";
+const MULTI_PIP_ENABLED_PREF =
+  "media.videocontrols.picture-in-picture.allow-multiple";
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
 
@@ -78,7 +84,7 @@ class PictureInPictureParent extends JSWindowActorParent {
     switch (aMessage.name) {
       case "PictureInPicture:Resize": {
         let videoData = aMessage.data;
-        PictureInPicture.resizePictureInPictureWindow(videoData);
+        PictureInPicture.resizePictureInPictureWindow(videoData, this);
         break;
       }
       case "PictureInPicture:Close": {
@@ -86,32 +92,37 @@ class PictureInPictureParent extends JSWindowActorParent {
 
 
         let reason = aMessage.data.reason;
-        PictureInPicture.closePipWindow({ reason });
+
+        if (PictureInPicture.isMultiPipEnabled) {
+          PictureInPicture.closeSinglePipWindow({ reason, actorRef: this });
+        } else {
+          PictureInPicture.closeAllPipWindows({ reason });
+        }
         break;
       }
       case "PictureInPicture:Playing": {
-        let player = PictureInPicture.getWeakPipPlayer();
+        let player = PictureInPicture.getWeakPipPlayer(this);
         if (player) {
           player.setIsPlayingState(true);
         }
         break;
       }
       case "PictureInPicture:Paused": {
-        let player = PictureInPicture.getWeakPipPlayer();
+        let player = PictureInPicture.getWeakPipPlayer(this);
         if (player) {
           player.setIsPlayingState(false);
         }
         break;
       }
       case "PictureInPicture:Muting": {
-        let player = PictureInPicture.getWeakPipPlayer();
+        let player = PictureInPicture.getWeakPipPlayer(this);
         if (player) {
           player.setIsMutedState(true);
         }
         break;
       }
       case "PictureInPicture:Unmuting": {
-        let player = PictureInPicture.getWeakPipPlayer();
+        let player = PictureInPicture.getWeakPipPlayer(this);
         if (player) {
           player.setIsMutedState(false);
         }
@@ -128,31 +139,26 @@ class PictureInPictureParent extends JSWindowActorParent {
 
 var PictureInPicture = {
   
+  weakPipToWin: new WeakMap(),
+
+  
+  weakWinToBrowser: new WeakMap(),
+
+  
 
 
 
 
 
-  getWeakPipPlayer() {
-    let weakRef = this._weakPipPlayer;
-    if (weakRef) {
-      let playerWin;
 
-      
-      
-      try {
-        playerWin = weakRef.get();
-      } catch (e) {
-        return null;
-      }
 
-      if (!playerWin || playerWin.closed) {
-        return null;
-      }
 
-      return playerWin;
+  getWeakPipPlayer(pipActorRef) {
+    let playerWin = this.weakPipToWin.get(pipActorRef);
+    if (!playerWin || playerWin.closed) {
+      return null;
     }
-    return null;
+    return playerWin;
   },
 
   
@@ -172,19 +178,45 @@ var PictureInPicture = {
     actor.sendAsyncMessage("PictureInPicture:KeyToggle");
   },
 
-  async focusTabAndClosePip() {
-    let gBrowser = this.browser.ownerGlobal.gBrowser;
-    let tab = gBrowser.getTabForBrowser(this.browser);
+  async focusTabAndClosePip(window, pipActor) {
+    let browser = this.weakWinToBrowser.get(window);
+    if (!browser) {
+      return;
+    }
+
+    let gBrowser = browser.ownerGlobal.gBrowser;
+    let tab = gBrowser.getTabForBrowser(browser);
+
     gBrowser.selectedTab = tab;
-    await this.closePipWindow({ reason: "unpip" });
+    await this.closeSinglePipWindow({ reason: "unpip", actorRef: pipActor });
   },
 
   
 
 
-  clearPipTabIcon() {
-    let win = this.browser.ownerGlobal;
-    let tab = win.gBrowser.getTabForBrowser(this.browser);
+
+
+
+
+  clearPipTabIcon(window) {
+    const browser = this.weakWinToBrowser.get(window);
+    if (!browser) {
+      return;
+    }
+
+    
+    for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
+      if (
+        win !== window &&
+        this.weakWinToBrowser.has(win) &&
+        this.weakWinToBrowser.get(win) === browser
+      ) {
+        return;
+      }
+    }
+
+    let gBrowser = browser.ownerGlobal.gBrowser;
+    let tab = gBrowser.getTabForBrowser(browser);
     if (tab) {
       tab.removeAttribute("pictureinpicture");
     }
@@ -193,7 +225,55 @@ var PictureInPicture = {
   
 
 
-  async closePipWindow({ reason }) {
+
+
+
+  async closePipWindow(pipWin) {
+    if (pipWin.closed) {
+      return;
+    }
+    let closedPromise = new Promise(resolve => {
+      pipWin.addEventListener("unload", resolve, { once: true });
+    });
+    pipWin.close();
+    await closedPromise;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  async closeSinglePipWindow(closeData) {
+    const { reason, actorRef } = closeData;
+    const win = this.getWeakPipPlayer(actorRef);
+    if (!win) {
+      return;
+    }
+
+    await this.closePipWindow(win);
+    gCloseReasons.set(win, reason);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async closeAllPipWindows(closeData) {
+    const { reason } = closeData;
+
     
     
     for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
@@ -231,14 +311,20 @@ var PictureInPicture = {
 
 
   async handlePictureInPictureRequest(wgp, videoData) {
-    
-    await this.closePipWindow({ reason: "new-pip" });
+    if (!this.isMultiPipEnabled) {
+      
+      
+      await this.closeAllPipWindows({ reason: "new-pip" });
+    }
 
     let browser = wgp.browsingContext.top.embedderElement;
     let parentWin = browser.ownerGlobal;
-    this.browser = browser;
-    let win = await this.openPipWindow(parentWin, videoData);
-    this._weakPipPlayer = Cu.getWeakReference(win);
+
+    let actorRef = browser.browsingContext.currentWindowGlobal.getActor(
+      "PictureInPicture"
+    );
+
+    let win = await this.openPipWindow(parentWin, videoData, actorRef);
     win.setIsPlayingState(videoData.playing);
     win.setIsMutedState(videoData.isMuted);
 
@@ -248,6 +334,8 @@ var PictureInPicture = {
 
     win.setupPlayer(gNextWindowID.toString(), wgp, videoData.videoRef);
     gNextWindowID++;
+
+    this.weakWinToBrowser.set(win, browser);
 
     Services.prefs.setBoolPref(
       "media.videocontrols.picture-in-picture.video-toggle.has-used",
@@ -273,9 +361,7 @@ var PictureInPicture = {
     );
     
     this.savePosition(window);
-    this.clearPipTabIcon();
-    delete this._weakPipPlayer;
-    delete this.browser;
+    this.clearPipTabIcon(window);
   },
 
   
@@ -298,8 +384,15 @@ var PictureInPicture = {
 
 
 
-  async openPipWindow(parentWin, videoData) {
-    let { top, left, width, height } = this.fitToScreen(parentWin, videoData);
+
+
+
+  async openPipWindow(parentWin, videoData, actorReference) {
+    let { top, left, width, height } = this.fitToScreen(
+      parentWin,
+      videoData,
+      actorReference
+    );
 
     let features =
       `${PLAYER_FEATURES},top=${top},left=${left},` +
@@ -367,12 +460,16 @@ var PictureInPicture = {
 
 
 
-  fitToScreen(windowOrPlayer, videoData) {
+
+
+
+  fitToScreen(windowOrPlayer, videoData, actorReference) {
     let { videoHeight, videoWidth } = videoData;
 
     
     
-    let isPlayerWindow = windowOrPlayer == this.getWeakPipPlayer();
+    let isPlayerWindow =
+      windowOrPlayer == this.getWeakPipPlayer(actorReference);
     if (isPlayerWindow) {
       this.savePosition(windowOrPlayer);
     }
@@ -526,14 +623,18 @@ var PictureInPicture = {
     return { top, left, width, height };
   },
 
-  resizePictureInPictureWindow(videoData) {
-    let win = this.getWeakPipPlayer();
+  resizePictureInPictureWindow(videoData, actorRef) {
+    let win = this.getWeakPipPlayer(actorRef);
 
     if (!win) {
       return;
     }
 
-    let { top, left, width, height } = this.fitToScreen(win, videoData);
+    let { top, left, width, height } = this.fitToScreen(
+      win,
+      videoData,
+      actorRef
+    );
     win.resizeTo(width, height);
     win.moveTo(left, top);
   },
@@ -712,3 +813,10 @@ var PictureInPicture = {
     return { top, left, width, height };
   },
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  PictureInPicture,
+  "isMultiPipEnabled",
+  MULTI_PIP_ENABLED_PREF,
+  false
+);

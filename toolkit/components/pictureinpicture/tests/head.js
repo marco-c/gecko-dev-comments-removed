@@ -151,6 +151,27 @@ async function assertShowingMessage(browser, videoID, expected) {
 
 
 
+
+
+
+function assertVideoIsBeingCloned(browser, videoId) {
+  return SpecialPowers.spawn(browser, [videoId], async videoID => {
+    let video = content.document.getElementById(videoID);
+    await ContentTaskUtils.waitForCondition(() => {
+      return video.isCloningElementVisually;
+    }, "Video is being cloned visually.");
+  });
+}
+
+
+
+
+
+
+
+
+
+
 async function ensureVideosReady(browser) {
   
   
@@ -660,12 +681,7 @@ async function testToggleHelper(
     let win = await domWindowOpened;
     ok(win, "A Picture-in-Picture window opened.");
 
-    await SpecialPowers.spawn(browser, [videoID], async videoID => {
-      let video = content.document.getElementById(videoID);
-      await ContentTaskUtils.waitForCondition(() => {
-        return video.isCloningElementVisually;
-      }, "Video is being cloned visually.");
-    });
+    await assertVideoIsBeingCloned(browser, videoID);
 
     await BrowserTestUtils.closeWindow(win);
 
