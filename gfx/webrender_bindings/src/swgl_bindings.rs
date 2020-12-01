@@ -5,16 +5,16 @@
 use bindings::{GeckoProfilerThreadListener, WrCompositor};
 use gleam::{gl, gl::GLenum, gl::Gl};
 use std::cell::{Cell, RefCell};
-use std::collections::hash_map::HashMap;
+use std::collections::{hash_map::HashMap, VecDeque};
 use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicIsize, AtomicU32, AtomicU8, Ordering};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use webrender::{
-    api::channel, api::units::*, api::ColorDepth, api::ExternalImageId, api::ImageRendering, api::YuvColorSpace,
-    Compositor, CompositorCapabilities, CompositorSurfaceTransform, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
+    api::units::*, api::ColorDepth, api::ExternalImageId, api::ImageRendering, api::YuvColorSpace, Compositor,
+    CompositorCapabilities, CompositorSurfaceTransform, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
     ThreadListener,
 };
 
@@ -514,7 +514,9 @@ struct SwCompositeGraphNode {
     
     job: RefCell<Option<SwCompositeJob>>,
     
-    num_bands: AtomicU8,
+    max_bands: Cell<u8>,
+    
+    remaining_bands: AtomicU8,
     
     band_index: AtomicU8,
     
@@ -529,7 +531,8 @@ impl SwCompositeGraphNode {
     fn new() -> Arc<SwCompositeGraphNode> {
         Arc::new(SwCompositeGraphNode {
             job: RefCell::new(None),
-            num_bands: AtomicU8::new(0),
+            max_bands: Cell::new(0),
+            remaining_bands: AtomicU8::new(0),
             band_index: AtomicU8::new(0),
             parents: AtomicU32::new(0),
             children: RefCell::new(Vec::new()),
@@ -539,7 +542,8 @@ impl SwCompositeGraphNode {
     
     fn reset(&self) {
         self.job.replace(None);
-        self.num_bands.store(0, Ordering::SeqCst);
+        self.max_bands.set(0);
+        self.remaining_bands.store(0, Ordering::SeqCst);
         self.band_index.store(0, Ordering::SeqCst);
         
         
@@ -557,19 +561,24 @@ impl SwCompositeGraphNode {
     
     fn set_job(&self, job: SwCompositeJob, num_bands: u8) -> bool {
         self.job.replace(Some(job));
-        self.num_bands.store(num_bands, Ordering::SeqCst);
+        self.max_bands.set(num_bands);
+        self.remaining_bands.store(num_bands, Ordering::SeqCst);
         
         
         self.parents.fetch_sub(1, Ordering::SeqCst) <= 1
     }
 
+    fn take_band(&self) -> (u8, bool) {
+        let band_index = self.band_index.fetch_add(1, Ordering::SeqCst);
+        (band_index, band_index + 1 >= self.max_bands.get())
+    }
+
     
-    fn process_job(&self) {
+    fn process_job(&self, band_index: u8) {
         unsafe {
             
             
             if let Ok(Some(ref job)) = self.job.try_borrow_unguarded() {
-                let band_index = self.band_index.fetch_add(1, Ordering::SeqCst);
                 job.process(band_index);
             }
         }
@@ -577,20 +586,21 @@ impl SwCompositeGraphNode {
 
     
     
-    fn unblock_children(&self, sender: &channel::crossbeam::Sender<Arc<SwCompositeGraphNode>>) {
-        if self.num_bands.fetch_sub(1, Ordering::SeqCst) > 1 {
+    fn unblock_children(&self, thread: &SwCompositeThread) {
+        if self.remaining_bands.fetch_sub(1, Ordering::SeqCst) > 1 {
             return;
         }
         
         self.job.replace(None);
+        let mut lock = None;
         for child in self.children.borrow().iter() {
             
             
             if child.parents.fetch_sub(1, Ordering::SeqCst) <= 1 {
-                let num_bands = child.num_bands.load(Ordering::SeqCst);
-                for _ in 0..num_bands {
-                    sender.send(child.clone()).expect("Failed sending SwComposite job");
+                if lock.is_none() {
+                    lock = Some(thread.lock());
                 }
+                thread.send_job(lock.as_mut().unwrap(), child.clone(), false);
             }
         }
     }
@@ -601,29 +611,31 @@ impl SwCompositeGraphNode {
 
 struct SwCompositeThread {
     
-    job_sender: channel::crossbeam::Sender<Arc<SwCompositeGraphNode>>,
-    job_receiver: channel::crossbeam::Receiver<Arc<SwCompositeGraphNode>>,
+    jobs: Mutex<VecDeque<Arc<SwCompositeGraphNode>>>,
     
-    job_count: AtomicUsize,
+    job_count: AtomicIsize,
     
-    jobs_completed: channel::crossbeam::Receiver<()>,
+    jobs_available: Condvar,
+    
+    jobs_completed: Condvar,
 }
 
 
 
 unsafe impl Sync for SwCompositeThread {}
 
+type SwCompositeJobQueue = VecDeque<Arc<SwCompositeGraphNode>>;
+type SwCompositeThreadLock<'a> = MutexGuard<'a, SwCompositeJobQueue>;
+
 impl SwCompositeThread {
     
     
     fn new() -> Arc<SwCompositeThread> {
-        let (job_sender, job_receiver) = channel::crossbeam::unbounded();
-        let (notify_completed, jobs_completed) = channel::crossbeam::bounded(1);
         let info = Arc::new(SwCompositeThread {
-            job_sender,
-            job_receiver,
-            job_count: AtomicUsize::new(0),
-            jobs_completed,
+            jobs: Mutex::new(VecDeque::new()),
+            job_count: AtomicIsize::new(0),
+            jobs_available: Condvar::new(),
+            jobs_completed: Condvar::new(),
         });
         let result = info.clone();
         let thread_name = "SwComposite";
@@ -635,11 +647,8 @@ impl SwCompositeThread {
                 
                 
                 
-                while let Ok(graph_node) = info.job_receiver.recv() {
-                    if info.process_job(graph_node) {
-                        
-                        let _ = notify_completed.try_send(());
-                    }
+                while let Some((job, band)) = info.take_job(true) {
+                    info.process_job(job, band);
                 }
                 thread_listener.thread_stopped(thread_name);
             })
@@ -647,17 +656,23 @@ impl SwCompositeThread {
         result
     }
 
-    
-    
-    
-    
-    fn process_job(&self, graph_node: Arc<SwCompositeGraphNode>) -> bool {
+    fn deinit(&self) {
         
-        graph_node.process_job();
+        self.job_count.store(isize::MIN / 2, Ordering::SeqCst);
         
-        graph_node.unblock_children(&self.job_sender);
+        self.jobs_available.notify_all();
+    }
+
+    
+    
+    
+    fn process_job(&self, graph_node: Arc<SwCompositeGraphNode>, band: u8) {
         
-        self.job_count.fetch_sub(1, Ordering::SeqCst) <= 1
+        graph_node.process_job(band);
+        
+        graph_node.unblock_children(self);
+        
+        self.job_count.fetch_sub(1, Ordering::SeqCst);
     }
 
     
@@ -671,6 +686,7 @@ impl SwCompositeThread {
         flip_y: bool,
         filter: ImageRendering,
         graph_node: &Arc<SwCompositeGraphNode>,
+        job_queue: &mut SwCompositeJobQueue,
     ) {
         
         
@@ -689,13 +705,9 @@ impl SwCompositeThread {
             filter,
             num_bands,
         };
-        self.job_count.fetch_add(num_bands as usize, Ordering::SeqCst);
+        self.job_count.fetch_add(num_bands as isize, Ordering::SeqCst);
         if graph_node.set_job(job, num_bands) {
-            for _ in 0..num_bands {
-                self.job_sender
-                    .send(graph_node.clone())
-                    .expect("Failed sending SwComposite job");
-            }
+            self.send_job(job_queue, graph_node.clone(), true);
         }
     }
 
@@ -704,8 +716,55 @@ impl SwCompositeThread {
         
         
         self.job_count.store(1, Ordering::SeqCst);
+    }
+
+    
+    fn lock(&self) -> SwCompositeThreadLock {
+        self.jobs.lock().unwrap()
+    }
+
+    
+    
+    
+    fn send_job(&self, queue: &mut SwCompositeJobQueue, job: Arc<SwCompositeGraphNode>, signal: bool) {
+        if signal && queue.is_empty() {
+            self.jobs_available.notify_all();
+        }
+        queue.push_back(job);
+    }
+
+    
+    
+    fn take_job(&self, wait: bool) -> Option<(Arc<SwCompositeGraphNode>, u8)> {
         
-        while self.jobs_completed.try_recv().is_ok() {}
+        
+        
+        let mut jobs = self.lock();
+        if wait {
+            while jobs.is_empty() {
+                match self.job_count.load(Ordering::SeqCst) {
+                    
+                    
+                    0 => self.jobs_completed.notify_all(),
+                    
+                    job_count if job_count < 0 => return None,
+                    _ => {}
+                }
+                
+                
+                jobs = self.jobs_available.wait(jobs).unwrap();
+            }
+        }
+        
+        
+        
+        if let Some(job) = jobs.front() {
+            let (band, done) = job.take_band();
+            let job = if done { jobs.pop_front().unwrap() } else { job.clone() };
+            Some((job, band))
+        } else {
+            None
+        }
     }
 
     
@@ -722,30 +781,25 @@ impl SwCompositeThread {
     fn wait_for_composites(&self, sync: bool) {
         
         
+        self.job_count.fetch_sub(1, Ordering::SeqCst);
         
         
-        if self.job_count.fetch_sub(1, Ordering::SeqCst) <= 1 {
-            return;
-        }
-        if sync {
-            
-            
-            let _ = self.jobs_completed.recv();
-            return;
-        }
-        
-        loop {
-            channel::crossbeam::select! {
-                // Steal jobs from the SwComposite thread if it is busy.
-                recv(self.job_receiver) -> graph_node => if let Ok(graph_node) = graph_node {
-                    if self.process_job(graph_node) {
-                        // If this was the final job, then just exit.
-                        break;
-                    }
-                },
-                // If all jobs have been completed, it is safe to exit.
-                recv(self.jobs_completed) -> _ => break,
+        if !sync {
+            while let Some((job, band)) = self.take_job(false) {
+                self.process_job(job, band);
             }
+            
+            
+        }
+        
+        
+        let mut jobs = self.lock();
+        
+        
+        self.jobs_available.notify_all();
+        
+        while self.job_count.load(Ordering::SeqCst) > 0 {
+            jobs = self.jobs_completed.wait(jobs).unwrap();
         }
     }
 
@@ -920,6 +974,7 @@ impl SwCompositor {
         clip_rect: &DeviceIntRect,
         filter: ImageRendering,
         tile: &SwTile,
+        job_queue: &mut SwCompositeJobQueue,
     ) {
         if let Some(ref composite_thread) = self.composite_thread {
             if let Some((src_rect, dst_rect, flip_y)) = tile.composite_rects(surface, transform, clip_rect) {
@@ -965,6 +1020,7 @@ impl SwCompositor {
                     flip_y,
                     filter,
                     &tile.graph_node,
+                    job_queue,
                 );
             }
         }
@@ -1014,16 +1070,17 @@ impl SwCompositor {
     
     
     fn flush_composites(&self, tile_id: &NativeTileId, surface: &SwSurface, tile: &SwTile) {
-        if self.composite_thread.is_none() {
-            return;
-        }
+        let composite_thread = match &self.composite_thread {
+            Some(composite_thread) => composite_thread,
+            None => return,
+        };
 
         
         let mut frame_surfaces = self
             .frame_surfaces
             .iter()
             .skip_while(|&(ref id, _, _, _)| *id != tile_id.surface_id);
-        let overlap_rect = match frame_surfaces.next() {
+        let (overlap_rect, mut lock) = match frame_surfaces.next() {
             Some(&(_, ref transform, ref clip_rect, filter)) => {
                 
                 if tile.invalid.get() {
@@ -1034,10 +1091,11 @@ impl SwCompositor {
                     return;
                 }
                 
-                self.queue_composite(surface, transform, clip_rect, filter, tile);
+                let mut lock = composite_thread.lock();
+                self.queue_composite(surface, transform, clip_rect, filter, tile, &mut lock);
                 
                 match tile.overlap_rect(surface, transform, clip_rect) {
-                    Some(overlap_rect) => overlap_rect,
+                    Some(overlap_rect) => (overlap_rect, lock),
                     None => return,
                 }
             }
@@ -1083,7 +1141,7 @@ impl SwCompositor {
                         
                         tile.overlaps.set(overlaps);
                         if overlaps == 0 {
-                            self.queue_composite(surface, transform, clip_rect, filter, tile);
+                            self.queue_composite(surface, transform, clip_rect, filter, tile, &mut lock);
                             
                             flushed_bounds = flushed_bounds.union(&overlap_rect);
                             flushed_rects.push(overlap_rect);
@@ -1131,6 +1189,10 @@ impl Compositor for SwCompositor {
     }
 
     fn deinit(&mut self) {
+        if let Some(ref composite_thread) = self.composite_thread {
+            composite_thread.deinit();
+        }
+
         for surface in self.surfaces.values() {
             self.deinit_surface(surface);
         }
@@ -1459,12 +1521,13 @@ impl Compositor for SwCompositor {
         if let Some(ref composite_thread) = self.composite_thread {
             composite_thread.start_compositing();
             
+            let mut lock = composite_thread.lock();
             for &(ref id, ref transform, ref clip_rect, filter) in &self.frame_surfaces {
                 if let Some(surface) = self.surfaces.get(id) {
                     for tile in &surface.tiles {
                         if tile.overlaps.get() == 0 {
                             
-                            self.queue_composite(surface, transform, clip_rect, filter, tile);
+                            self.queue_composite(surface, transform, clip_rect, filter, tile, &mut lock);
                         }
                     }
                 }
@@ -1524,10 +1587,13 @@ impl Compositor for SwCompositor {
                 
                 
                 composite_thread.start_compositing();
-                for &(ref id, ref transform, ref clip_rect, filter) in &self.late_surfaces {
-                    if let Some(surface) = self.surfaces.get(id) {
-                        for tile in &surface.tiles {
-                            self.queue_composite(surface, transform, clip_rect, filter, tile);
+                {
+                    let mut lock = composite_thread.lock();
+                    for &(ref id, ref transform, ref clip_rect, filter) in &self.late_surfaces {
+                        if let Some(surface) = self.surfaces.get(id) {
+                            for tile in &surface.tiles {
+                                self.queue_composite(surface, transform, clip_rect, filter, tile, &mut lock);
+                            }
                         }
                     }
                 }
