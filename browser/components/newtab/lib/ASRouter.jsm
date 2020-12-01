@@ -1788,11 +1788,6 @@ class _ASRouter {
   async sendTriggerMessage({ tabId, browser, ...trigger }) {
     await this.loadMessagesFromAllProviders();
 
-    if (trigger.id === "firstRun") {
-      
-      await this.setTrailHeadMessageSeen();
-    }
-
     const telemetryObject = { tabId };
     TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
     
