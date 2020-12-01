@@ -230,7 +230,7 @@ class TargetList extends EventEmitter {
   }
 
   hasTargetWatcherSupport(type) {
-    return !!this.watcher?.traits[type];
+    return !!this.watcherFront?.traits[type];
   }
 
   
@@ -251,11 +251,11 @@ class TargetList extends EventEmitter {
   async startListening({ onlyLegacy = false } = {}) {
     
     
-    if (!this.watcher) {
+    if (!this.watcherFront) {
       
       const supportsWatcher = this.descriptorFront?.traits?.watcher;
       if (supportsWatcher) {
-        this.watcher = await this.descriptorFront.getWatcher();
+        this.watcherFront = await this.descriptorFront.getWatcher();
       }
     }
 
@@ -306,10 +306,10 @@ class TargetList extends EventEmitter {
         }
         if (!this._startedListeningToWatcher) {
           this._startedListeningToWatcher = true;
-          this.watcher.on("target-available", this._onTargetAvailable);
-          this.watcher.on("target-destroyed", this._onTargetDestroyed);
+          this.watcherFront.on("target-available", this._onTargetAvailable);
+          this.watcherFront.on("target-destroyed", this._onTargetDestroyed);
         }
-        await this.watcher.watchTargets(type);
+        await this.watcherFront.watchTargets(type);
         continue;
       }
       if (this.legacyImplementation[type]) {
@@ -341,7 +341,7 @@ class TargetList extends EventEmitter {
         
         
         if (!onlyLegacy) {
-          this.watcher.unwatchTargets(type);
+          this.watcherFront.unwatchTargets(type);
         }
         continue;
       }
