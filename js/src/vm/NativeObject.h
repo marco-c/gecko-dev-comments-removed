@@ -1779,9 +1779,6 @@ inline NativeObject* MaybeNativeObject(JSObject* obj) {
 
 bool IsPackedArray(JSObject* obj);
 
-extern void AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj,
-                                             ObjectGroup* oldGroup);
-
 
 
 

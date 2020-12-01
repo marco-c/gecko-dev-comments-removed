@@ -3277,14 +3277,6 @@ void MacroAssembler::branchIfPretenuredGroup(const ObjectGroup* group,
 
 void MacroAssembler::branchIfPretenuredGroup(Register group, Label* label) {
   
-  
-  
-  Label unknownProperties;
-  branchTest32(Assembler::NonZero, Address(group, ObjectGroup::offsetOfFlags()),
-               Imm32(OBJECT_FLAG_UNKNOWN_PROPERTIES), &unknownProperties);
-  branchTest32(Assembler::NonZero, Address(group, ObjectGroup::offsetOfFlags()),
-               Imm32(OBJECT_FLAG_PRE_TENURE), label);
-  bind(&unknownProperties);
 }
 
 void MacroAssembler::branchIfNonNativeObj(Register obj, Register scratch,

@@ -484,15 +484,6 @@ void ArrayBufferObject::detach(JSContext* cx,
   MOZ_ASSERT(!buffer->isPreparedForAsmJS());
   MOZ_ASSERT(!buffer->hasTypedObjectViews());
 
-  auto NoteViewBufferWasDetached = [&cx](ArrayBufferViewObject* view) {
-    MOZ_ASSERT(!view->isSharedMemory());
-
-    view->notifyBufferDetached();
-
-    
-    MarkObjectStateChange(cx, view);
-  };
-
   
   
   
@@ -503,12 +494,12 @@ void ArrayBufferObject::detach(JSContext* cx,
           innerViews.maybeViewsUnbarriered(buffer)) {
     for (size_t i = 0; i < views->length(); i++) {
       JSObject* view = (*views)[i];
-      NoteViewBufferWasDetached(&view->as<ArrayBufferViewObject>());
+      view->as<ArrayBufferViewObject>().notifyBufferDetached();
     }
     innerViews.removeViews(buffer);
   }
   if (JSObject* view = buffer->firstView()) {
-    NoteViewBufferWasDetached(&view->as<ArrayBufferViewObject>());
+    view->as<ArrayBufferViewObject>().notifyBufferDetached();
     buffer->setFirstView(nullptr);
   }
 

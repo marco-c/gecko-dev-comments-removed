@@ -1758,11 +1758,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
   }
 
   
-  
-  MarkObjectGroupUnknownProperties(cx, a->group());
-  MarkObjectGroupUnknownProperties(cx, b->group());
-
-  
 
 
 
@@ -1947,14 +1942,7 @@ static bool SetProto(JSContext* cx, HandleObject obj,
 
   if (obj->isSingleton()) {
     
-
-
-
-    if (!JSObject::splicePrototype(cx, obj, proto)) {
-      return false;
-    }
-    MarkObjectGroupUnknownProperties(cx, obj->group());
-    return true;
+    return JSObject::splicePrototype(cx, obj, proto);
   }
 
   RootedObjectGroup oldGroup(cx, obj->group());
@@ -1969,22 +1957,6 @@ static bool SetProto(JSContext* cx, HandleObject obj,
   }
 
   obj->setGroup(newGroup);
-
-  
-  AutoSweepObjectGroup sweep(newGroup);
-  if (!newGroup->unknownProperties(sweep)) {
-    if (obj->isNative()) {
-      AddPropertyTypesAfterProtoChange(cx, &obj->as<NativeObject>(), oldGroup);
-    } else {
-      MarkObjectGroupUnknownProperties(cx, newGroup);
-    }
-  }
-
-  
-  
-  
-  MarkObjectGroupUnknownProperties(cx, oldGroup);
-
   return true;
 }
 
@@ -2028,19 +2000,7 @@ bool js::SetPrototypeForClonedFunction(JSContext* cx, HandleFunction fun,
 
 
 bool JSObject::changeToSingleton(JSContext* cx, HandleObject obj) {
-  MOZ_ASSERT(IsTypeInferenceEnabled());
-  MOZ_ASSERT(!obj->isSingleton());
-
-  MarkObjectGroupUnknownProperties(cx, obj->group());
-
-  ObjectGroup* group = ObjectGroup::lazySingletonGroup(
-      cx, obj->group(), obj->getClass(), obj->taggedProto());
-  if (!group) {
-    return false;
-  }
-
-  obj->setGroupRaw(group);
-  return true;
+  MOZ_CRASH("TODO(no-TI): remove");
 }
 
 
@@ -4135,13 +4095,6 @@ void JSObject::debugCheckNewObject(ObjectGroup* group, Shape* shape,
                 heap == gc::TenuredHeap ||
                     CanNurseryAllocateFinalizedClass(clasp) ||
                     clasp->isProxy());
-
-  
-  
-  MOZ_ASSERT_IF(group->shouldPreTenureDontCheckGeneration() &&
-                    clasp != &CallObject::class_ &&
-                    clasp != &LexicalEnvironmentObject::class_,
-                heap == gc::TenuredHeap);
 
   MOZ_ASSERT(!group->realm()->hasObjectPendingMetadata());
 

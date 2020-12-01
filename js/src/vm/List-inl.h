@@ -26,15 +26,7 @@
 #include "vm/TypeInference-inl.h"  
 
 inline  js::ListObject* js::ListObject::create(JSContext* cx) {
-  js::ListObject* obj = NewObjectWithGivenProto<ListObject>(cx, nullptr);
-  if (!obj) {
-    return nullptr;
-  }
-
-  
-  
-  MarkObjectGroupUnknownProperties(cx, obj->group());
-  return obj;
+  return NewObjectWithGivenProto<ListObject>(cx, nullptr);
 }
 
 inline bool js::ListObject::append(JSContext* cx, JS::Handle<JS::Value> value) {

@@ -11015,13 +11015,6 @@ AttachDecision NewObjectIRGenerator::tryAttachStub() {
   }
 
   
-  
-  AutoSweepObjectGroup sweep(templateObject_->group());
-  if (templateObject_->group()->shouldPreTenure(sweep)) {
-    trackAttached(IRGenerator::NotAttached);
-    return AttachDecision::NoAction;
-  }
-  
   if (cx_->realm()->hasAllocationMetadataBuilder()) {
     trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
