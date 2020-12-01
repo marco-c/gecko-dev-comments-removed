@@ -32,14 +32,6 @@ add_task(function test_fog_counter_works() {
   Assert.equal(31, Glean.test_only.bad_code.testGetValue("test-ping"));
 });
 
-add_task(async function test_fog_string_works() {
-  const value = "a cheesy string!";
-  Glean.test_only.cheesy_string.set(value);
-
-  Assert.ok(Glean.test_only.cheesy_string.testHasValue("test-ping"));
-  Assert.equal(value, Glean.test_only.cheesy_string.testGetValue("test-ping"));
-});
-
 add_task(async function test_fog_timespan_works() {
   
   
@@ -49,19 +41,4 @@ add_task(async function test_fog_timespan_works() {
 
   Assert.ok(Glean.test_only.can_we_time_it.testHasValue("test-ping"));
   Assert.ok(Glean.test_only.can_we_time_it.testGetValue("test-ping") > 0);
-});
-
-add_task(async function test_fog_uuid_works() {
-  const kTestUuid = "decafdec-afde-cafd-ecaf-decafdecafde";
-  Glean.test_only.what_id_it.set(kTestUuid);
-  Assert.ok(Glean.test_only.what_id_it.testHasValue("test-ping"));
-  Assert.equal(kTestUuid, Glean.test_only.what_id_it.testGetValue("test-ping"));
-
-  Glean.test_only.what_id_it.generateAndSet();
-  
-  
-  Assert.notEqual(
-    kTestUuid,
-    Glean.test_only.what_id_it.testGetValue("test-ping")
-  );
 });
