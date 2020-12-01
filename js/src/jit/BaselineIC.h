@@ -744,6 +744,8 @@ class ICFallbackStub : public ICStub {
     state_.setTrialInliningState(state);
   }
 
+  void trackNotAttached(JSContext* cx, JSScript* script);
+
   
   
   void maybeInvalidateWarp(JSContext* cx, JSScript* script);
