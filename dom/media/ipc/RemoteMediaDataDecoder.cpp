@@ -14,8 +14,21 @@ RemoteMediaDataDecoder::RemoteMediaDataDecoder(RemoteDecoderChild* aChild)
     : mChild(aChild) {}
 
 RemoteMediaDataDecoder::~RemoteMediaDataDecoder() {
-  
-  MOZ_ASSERT(!mChild);
+  if (mChild) {
+    
+    
+    nsCOMPtr<nsISerialEventTarget> thread =
+        RemoteDecoderManagerChild::GetManagerThread();
+    MOZ_ASSERT(thread);
+    thread->Dispatch(NS_NewRunnableFunction(
+        "RemoteMediaDataDecoderShutdown", [child = std::move(mChild), thread] {
+          child->Shutdown()->Then(
+              thread, __func__,
+              [child](const ShutdownPromise::ResolveOrRejectValue& aValue) {
+                child->DestroyIPDL();
+              });
+        }));
+  }
 }
 
 RefPtr<MediaDataDecoder::InitPromise> RemoteMediaDataDecoder::Init() {

@@ -51,6 +51,7 @@ bool RemoteDecoderModule::SupportsMimeType(
 bool RemoteDecoderModule::Supports(
     const SupportDecoderParams& aParams,
     DecoderDoctorDiagnostics* aDiagnostics) const {
+
   bool supports =
       RemoteDecoderManagerChild::Supports(mLocation, aParams, aDiagnostics);
   MOZ_LOG(sPDMLog, LogLevel::Debug,
@@ -60,27 +61,23 @@ bool RemoteDecoderModule::Supports(
   return supports;
 }
 
-already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
+RefPtr<RemoteDecoderModule::CreateDecoderPromise>
+RemoteDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
   RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded(mLocation);
 
-  
-  
-  
-  
-  if (OpusDataDecoder::IsOpus(aParams.mConfig.mMimeType) &&
-      IsDefaultPlaybackDeviceMono()) {
-    CreateDecoderParams params = aParams;
-    params.mOptions += CreateDecoderParams::Option::DefaultPlaybackDeviceMono;
-    return RemoteDecoderManagerChild::CreateAudioDecoder(params);
+  if (aParams.mConfig.IsAudio()) {
+    
+    
+    
+    
+    if (OpusDataDecoder::IsOpus(aParams.mConfig.mMimeType) &&
+        IsDefaultPlaybackDeviceMono()) {
+      CreateDecoderParams params = aParams;
+      params.mOptions += CreateDecoderParams::Option::DefaultPlaybackDeviceMono;
+      return RemoteDecoderManagerChild::CreateAudioDecoder(params);
+    }
+    return RemoteDecoderManagerChild::CreateAudioDecoder(aParams);
   }
-
-  return RemoteDecoderManagerChild::CreateAudioDecoder(aParams);
-}
-
-already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
-    const CreateDecoderParams& aParams) {
-  RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded(mLocation);
   return RemoteDecoderManagerChild::CreateVideoDecoder(aParams, mLocation);
 }
 

@@ -27,9 +27,8 @@ DDLoggedTypeDeclNameAndBase(MediaChangeMonitor, MediaDataDecoder);
 class MediaChangeMonitor : public MediaDataDecoder,
                            public DecoderDoctorLifeLogger<MediaChangeMonitor> {
  public:
-  MediaChangeMonitor(PlatformDecoderModule* aPDM,
-                     const CreateDecoderParams& aParams);
-  virtual ~MediaChangeMonitor();
+  static RefPtr<PlatformDecoderModule::CreateDecoderPromise> Create(
+      PlatformDecoderModule* aPDM, const CreateDecoderParams& aParams);
 
   RefPtr<InitPromise> Init() override;
   RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
@@ -58,7 +57,6 @@ class MediaChangeMonitor : public MediaDataDecoder,
     
     return ConversionRequired::kNeedNone;
   }
-  MediaResult GetLastError() const { return mLastError; }
 
   class CodecChangeMonitor {
    public:
@@ -72,16 +70,25 @@ class MediaChangeMonitor : public MediaDataDecoder,
   };
 
  private:
-  UniquePtr<CodecChangeMonitor> mChangeMonitor;
+  MediaChangeMonitor(PlatformDecoderModule* aPDM,
+                     UniquePtr<CodecChangeMonitor>&& aCodecChangeMonitor,
+                     MediaDataDecoder* aDecoder,
+                     const CreateDecoderParams& aParams);
+  virtual ~MediaChangeMonitor();
 
-  void AssertOnThread() const { MOZ_ASSERT(mThread->IsOnCurrentThread()); }
+  void AssertOnThread() const {
+    
+    MOZ_ASSERT(!mThread || mThread->IsOnCurrentThread());
+  }
 
   bool CanRecycleDecoder() const;
 
+  typedef MozPromise<bool, MediaResult, true >
+      CreateDecoderPromise;
   
   
   
-  MediaResult CreateDecoder();
+  RefPtr<CreateDecoderPromise> CreateDecoder();
   MediaResult CreateDecoderAndInit(MediaRawData* aSample);
   MediaResult CheckForChange(MediaRawData* aSample);
 
@@ -90,10 +97,12 @@ class MediaChangeMonitor : public MediaDataDecoder,
   void FlushThenShutdownDecoder(MediaRawData* aPendingSample);
   RefPtr<ShutdownPromise> ShutdownDecoder();
 
+  UniquePtr<CodecChangeMonitor> mChangeMonitor;
   RefPtr<PlatformDecoderModule> mPDM;
   VideoInfo mCurrentConfig;
   nsCOMPtr<nsISerialEventTarget> mThread;
   RefPtr<MediaDataDecoder> mDecoder;
+  MozPromiseRequestHolder<CreateDecoderPromise> mDecoderRequest;
   MozPromiseRequestHolder<InitPromise> mInitPromiseRequest;
   MozPromiseHolder<InitPromise> mInitPromise;
   MozPromiseRequestHolder<DecodePromise> mDecodePromiseRequest;
@@ -105,12 +114,9 @@ class MediaChangeMonitor : public MediaDataDecoder,
   RefPtr<ShutdownPromise> mShutdownPromise;
   MozPromiseHolder<FlushPromise> mFlushPromise;
 
-  MediaResult mLastError;
   bool mNeedKeyframe = true;
   Maybe<bool> mCanRecycleDecoder;
   Maybe<MediaDataDecoder::ConversionRequired> mConversionRequired;
-  
-  Atomic<bool> mInConstructor;
   bool mDecoderInitialized = false;
   const CreateDecoderParamsForAsync mParams;
 };

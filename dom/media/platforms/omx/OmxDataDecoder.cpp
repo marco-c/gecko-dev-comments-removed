@@ -195,7 +195,8 @@ RefPtr<MediaDataDecoder::DecodePromise> OmxDataDecoder::Drain() {
 
 RefPtr<ShutdownPromise> OmxDataDecoder::Shutdown() {
   LOG("");
-  MOZ_ASSERT(mThread->IsOnCurrentThread());
+  
+  MOZ_ASSERT(!mThread || mThread->IsOnCurrentThread());
 
   mShuttingDown = true;
 
