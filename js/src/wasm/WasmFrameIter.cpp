@@ -42,14 +42,12 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
       codeRange_(nullptr),
       lineOrBytecode_(0),
       fp_(fp ? fp : activation->wasmExitFP()),
-      tls_(nullptr),
       unwoundIonCallerFP_(nullptr),
       unwoundIonFrameType_(jit::FrameType(-1)),
       unwind_(Unwind::False),
       unwoundAddressOfReturnAddress_(nullptr),
       resumePCinCurrentFrame_(nullptr) {
   MOZ_ASSERT(fp_);
-  tls_ = GetNearestEffectiveTls(fp_);
 
   
   
@@ -61,7 +59,7 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     const TrapData& trapData = activation->wasmTrapData();
     void* unwoundPC = trapData.unwoundPC;
 
-    code_ = &tls_->instance->code();
+    code_ = &fp_->instance()->code();
     MOZ_ASSERT(code_ == LookupCode(unwoundPC));
 
     codeRange_ = code_->lookupFuncRange(unwoundPC);
@@ -198,16 +196,12 @@ void WasmFrameIter::popFrame() {
     return;
   }
 
+  MOZ_ASSERT(code_ == &fp_->instance()->code());
   MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
 
   const CallSite* callsite = code_->lookupCallSite(returnAddress);
   MOZ_ASSERT(callsite);
 
-  if (callsite->mightBeCrossInstance()) {
-    tls_ = ExtractCallerTlsFromFrameWithTls(prevFP);
-  }
-
-  MOZ_ASSERT(code_ == &tls()->instance->code());
   lineOrBytecode_ = callsite->lineOrBytecode();
 
   MOZ_ASSERT(!done());
@@ -280,7 +274,7 @@ unsigned WasmFrameIter::computeLine(uint32_t* column) const {
 
 Instance* WasmFrameIter::instance() const {
   MOZ_ASSERT(!done());
-  return tls_->instance;
+  return fp_->instance();
 }
 
 void** WasmFrameIter::unwoundAddressOfReturnAddress() const {
@@ -331,20 +325,26 @@ uint8_t* WasmFrameIter::resumePCinCurrentFrame() const {
 
 #if defined(JS_CODEGEN_X64)
 static const unsigned PushedRetAddr = 0;
-static const unsigned PushedFP = 1;
-static const unsigned SetFP = 4;
-static const unsigned PoppedFP = 0;
+static const unsigned PushedTLS = 2;
+static const unsigned PushedFP = 3;
+static const unsigned SetFP = 6;
+static const unsigned PoppedFP = 2;
+static const unsigned PoppedTLSReg = 0;
 #elif defined(JS_CODEGEN_X86)
 static const unsigned PushedRetAddr = 0;
-static const unsigned PushedFP = 1;
-static const unsigned SetFP = 3;
-static const unsigned PoppedFP = 0;
+static const unsigned PushedTLS = 1;
+static const unsigned PushedFP = 2;
+static const unsigned SetFP = 4;
+static const unsigned PoppedFP = 1;
+static const unsigned PoppedTLSReg = 0;
 #elif defined(JS_CODEGEN_ARM)
 static const unsigned BeforePushRetAddr = 0;
 static const unsigned PushedRetAddr = 4;
-static const unsigned PushedFP = 8;
-static const unsigned SetFP = 12;
-static const unsigned PoppedFP = 0;
+static const unsigned PushedTLS = 8;
+static const unsigned PushedFP = 12;
+static const unsigned SetFP = 16;
+static const unsigned PoppedFP = 4;
+static const unsigned PoppedTLSReg = 0;
 #elif defined(JS_CODEGEN_ARM64)
 
 
@@ -352,22 +352,30 @@ static const unsigned PoppedFP = 0;
 
 static const unsigned BeforePushRetAddr = 0;
 static const unsigned PushedRetAddr = 8;
-static const unsigned PushedFP = 12;
-static const unsigned SetFP = 16;
-static const unsigned PoppedFP = 4;
+static const unsigned PushedTLS = 12;
+static const unsigned PushedFP = 16;
+static const unsigned SetFP = 20;
+static const unsigned PoppedFP = 8;
+static const unsigned PoppedTLSReg = 4;
 static_assert(BeforePushRetAddr == 0, "Required by StartUnwinding");
 static_assert(PushedFP > PushedRetAddr, "Required by StartUnwinding");
+static_assert(PushedFP > PushedTLS, "Required by StartUnwinding");
+static_assert(PoppedFP > PoppedTLSReg, "Required by StartUnwinding");
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
 static const unsigned PushedRetAddr = 8;
-static const unsigned PushedFP = 12;
-static const unsigned SetFP = 16;
-static const unsigned PoppedFP = 4;
+static const unsigned PushedTLS = 12;
+static const unsigned PushedFP = 16;
+static const unsigned SetFP = 20;
+static const unsigned PoppedFP = 8;
+static const unsigned PoppedTLSReg = 4;
 #elif defined(JS_CODEGEN_NONE)
 
 static const unsigned PushedRetAddr = 0;
-static const unsigned PushedFP = 1;
-static const unsigned SetFP = 2;
-static const unsigned PoppedFP = 3;
+static const unsigned PushedTLS = 1;
+static const unsigned PushedFP = 2;
+static const unsigned SetFP = 3;
+static const unsigned PoppedFP = 4;
+static const unsigned PoppedTLSReg = 5;
 #else
 #  error "Unknown architecture!"
 #endif
@@ -419,6 +427,8 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
     masm.subFromStackPtr(Imm32(sizeof(Frame)));
     masm.storePtr(ra, Address(StackPointer, Frame::returnAddressOffset()));
     MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+    masm.storePtr(WasmTlsReg, Address(StackPointer, Frame::tlsOffset()));
+    MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
     masm.storePtr(FramePointer, Address(StackPointer, Frame::callerFPOffset()));
     MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
     masm.moveStackPtrTo(FramePointer);
@@ -430,13 +440,15 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
     MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
 
     AutoForbidPoolsAndNops afp(&masm,
-                                4);
+                                5);
 
     *entry = masm.currentOffset();
 
     masm.Sub(sp, sp, sizeof(Frame));
     masm.Str(ARMRegister(lr, 64), MemOperand(sp, Frame::returnAddressOffset()));
     MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+    masm.Str(ARMRegister(WasmTlsReg, 64), MemOperand(sp, Frame::tlsOffset()));
+    MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
     masm.Str(ARMRegister(FramePointer, 64),
              MemOperand(sp, Frame::callerFPOffset()));
     MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
@@ -447,7 +459,7 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   {
 #  if defined(JS_CODEGEN_ARM)
     AutoForbidPoolsAndNops afp(&masm,
-                                6);
+                                7);
 
     *entry = masm.currentOffset();
 
@@ -459,6 +471,8 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
 #  endif
 
     MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+    masm.push(WasmTlsReg);
+    MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
     masm.push(FramePointer);
     MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
     masm.moveStackPtrTo(FramePointer);
@@ -478,11 +492,14 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   }
 
   DebugOnly<uint32_t> poppedFP;
+  DebugOnly<uint32_t> poppedTlsReg;
 
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
 
   masm.loadPtr(Address(StackPointer, Frame::callerFPOffset()), FramePointer);
   poppedFP = masm.currentOffset();
+  masm.loadPtr(Address(StackPointer, Frame::tlsOffset()), WasmTlsReg);
+  poppedTlsReg = masm.currentOffset();
   masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
 
   *ret = masm.currentOffset();
@@ -494,11 +511,14 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   
   MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
 
-  AutoForbidPoolsAndNops afp(&masm,  4);
+  AutoForbidPoolsAndNops afp(&masm,  5);
 
   masm.Ldr(ARMRegister(FramePointer, 64),
            MemOperand(sp, Frame::callerFPOffset()));
   poppedFP = masm.currentOffset();
+
+  masm.Ldr(ARMRegister(WasmTlsReg, 64), MemOperand(sp, Frame::tlsOffset()));
+  poppedTlsReg = masm.currentOffset();
 
   masm.Ldr(ARMRegister(lr, 64), MemOperand(sp, Frame::returnAddressOffset()));
   *ret = masm.currentOffset();
@@ -509,7 +529,7 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
 #else
   
 #  if defined(JS_CODEGEN_ARM)
-  AutoForbidPoolsAndNops afp(&masm,  6);
+  AutoForbidPoolsAndNops afp(&masm,  7);
 #  endif
 
   
@@ -522,12 +542,16 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   masm.pop(FramePointer);
   poppedFP = masm.currentOffset();
 
+  masm.pop(WasmTlsReg);
+  poppedTlsReg = masm.currentOffset();
+
   *ret = masm.currentOffset();
   masm.ret();
 
 #endif
 
   MOZ_ASSERT_IF(!masm.oom(), PoppedFP == *ret - poppedFP);
+  MOZ_ASSERT_IF(!masm.oom(), PoppedTLSReg == *ret - poppedTlsReg);
 }
 
 static void EnsureOffset(MacroAssembler& masm, uint32_t base,
@@ -896,39 +920,6 @@ static bool isSignatureCheckFail(uint32_t offsetInCode,
          (offsetInCode - codeRange->funcCheckedCallEntry()) > SetFP;
 }
 
-const TlsData* js::wasm::GetNearestEffectiveTls(const Frame* fp) {
-  while (true) {
-    if (fp->callerIsExitOrJitEntryFP()) {
-      
-      MOZ_ASSERT(!LookupCode(fp->returnAddress()));
-      return ExtractCalleeTlsFromFrameWithTls(fp);
-    }
-
-    uint8_t* returnAddress = fp->returnAddress();
-    const CodeRange* codeRange = nullptr;
-    const Code* code = LookupCode(returnAddress, &codeRange);
-    MOZ_ASSERT(codeRange);
-
-    if (codeRange->isEntry()) {
-      return ExtractCalleeTlsFromFrameWithTls(fp);
-    }
-
-    MOZ_ASSERT(codeRange->kind() == CodeRange::Function);
-    MOZ_ASSERT(code);
-    const CallSite* callsite = code->lookupCallSite(returnAddress);
-    if (callsite->mightBeCrossInstance()) {
-      return ExtractCalleeTlsFromFrameWithTls(fp);
-    }
-
-    fp = fp->wasmCaller();
-  }
-}
-
-TlsData* js::wasm::GetNearestEffectiveTls(Frame* fp) {
-  return const_cast<TlsData*>(
-      GetNearestEffectiveTls(const_cast<const Frame*>(fp)));
-}
-
 bool js::wasm::StartUnwinding(const RegisterState& registers,
                               UnwindState* unwindState, bool* unwoundCaller) {
   
@@ -1047,6 +1038,12 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
         fixedPC = sp[0];
         fixedFP = fp;
         AssertMatchesCallSite(fixedPC, fixedFP);
+      } else if (offsetFromEntry >= PushedTLS && offsetFromEntry < PushedFP) {
+        
+        
+        fixedPC = sp[1];
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
       } else if (offsetFromEntry == PushedFP) {
         
         const auto* frame = Frame::fromUntaggedWasmExitFP(sp);
@@ -1060,6 +1057,7 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
       } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
                  offsetInCode <= codeRange->ret()) {
+        (void)PoppedTLSReg;
         
         
         
@@ -1077,7 +1075,7 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
         AssertMatchesCallSite(fixedPC, fixedFP);
 #else
       } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
-                 offsetInCode < codeRange->ret()) {
+                 offsetInCode < codeRange->ret() - PoppedTLSReg) {
         
         fixedPC = sp[1];
         fixedFP = fp;
@@ -1293,8 +1291,7 @@ void ProfilingFrameIterator::operator++() {
   }
 
   MOZ_ASSERT(code_ ==
-             &GetNearestEffectiveTls(Frame::fromUntaggedWasmExitFP(callerFP_))
-                  ->instance->code());
+             &Frame::fromUntaggedWasmExitFP(callerFP_)->instance()->code());
 
   switch (codeRange_->kind()) {
     case CodeRange::Function:
