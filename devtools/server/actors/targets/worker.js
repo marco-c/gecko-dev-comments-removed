@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
+const { Actor } = require("devtools/shared/protocol");
 const { workerTargetSpec } = require("devtools/shared/specs/targets/worker");
 
 const { ThreadActor } = require("devtools/server/actors/thread");
@@ -14,147 +14,107 @@ const Targets = require("devtools/server/actors/targets/index");
 const makeDebuggerUtil = require("devtools/server/actors/utils/make-debugger");
 const { TabSources } = require("devtools/server/actors/utils/TabSources");
 
-const Resources = require("devtools/server/actors/resources/index");
+const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mixin");
 
-exports.WorkerTargetActor = ActorClassWithSpec(workerTargetSpec, {
-  targetType: Targets.TYPES.WORKER,
-
-  
-
-
-
-
-
-
-
-
-
-  initialize: function(connection, workerGlobal, workerDebuggerData) {
-    Actor.prototype.initialize.call(this, connection);
-
+exports.WorkerTargetActor = TargetActorMixin(
+  Targets.TYPES.WORKER,
+  workerTargetSpec,
+  {
     
-    this.workerGlobal = workerGlobal;
-
-    this._workerDebuggerData = workerDebuggerData;
-    this._sources = null;
-
-    this.makeDebugger = makeDebuggerUtil.bind(null, {
-      findDebuggees: () => {
-        return [workerGlobal];
-      },
-      shouldAddNewGlobalAsDebuggee: () => true,
-    });
-
-    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
-  },
-
-  form() {
-    return {
-      actor: this.actorID,
-      threadActor: this.threadActor?.actorID,
-      consoleActor: this._consoleActor?.actorID,
-      id: this._workerDebuggerData.id,
-      type: this._workerDebuggerData.type,
-      url: this._workerDebuggerData.url,
-      traits: {},
-    };
-  },
-
-  attach() {
-    if (this.threadActor) {
-      return;
-    }
-
-    
-    this.threadActor = new ThreadActor(this, this.workerGlobal);
-
-    
-    this._consoleActor = new WebConsoleActor(this.conn, this);
-
-    this.manage(this.threadActor);
-    this.manage(this._consoleActor);
-  },
-
-  get dbg() {
-    if (!this._dbg) {
-      this._dbg = this.makeDebugger();
-    }
-    return this._dbg;
-  },
-
-  get sources() {
-    if (this._sources === null) {
-      this._sources = new TabSources(this.threadActor);
-    }
-
-    return this._sources;
-  },
-
-  
-  onThreadAttached() {
-    
-    this.emit("worker-thread-attached");
-  },
-
-  addWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      return this._watchTargetResources(entries);
-    }
-
-    return Promise.resolve();
-  },
-
-  removeWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      return this._unwatchTargetResources(entries);
-    }
-
-    return Promise.resolve();
-  },
-
-  
-
-
-
-
-  _watchTargetResources(resourceTypes) {
-    return Resources.watchResources(this, resourceTypes);
-  },
-
-  _unwatchTargetResources(resourceTypes) {
-    return Resources.unwatchResources(this, resourceTypes);
-  },
-
-  
 
 
 
 
 
 
-  notifyResourceAvailable(resources) {
-    this.emit("resource-available-form", resources);
-  },
 
-  destroy() {
-    if (this.threadActor) {
+
+
+    initialize: function(connection, workerGlobal, workerDebuggerData) {
+      Actor.prototype.initialize.call(this, connection);
+
       
-      
-      
-      
-      this.threadActor.exit();
-      this.threadActor = null;
-    }
+      this.workerGlobal = workerGlobal;
 
-    Actor.prototype.destroy.call(this);
-
-    if (this._sources) {
-      this._sources.destroy();
+      this._workerDebuggerData = workerDebuggerData;
       this._sources = null;
-    }
 
-    this.workerGlobal = null;
-    this._dbg = null;
-    this._consoleActor = null;
-  },
-});
+      this.makeDebugger = makeDebuggerUtil.bind(null, {
+        findDebuggees: () => {
+          return [workerGlobal];
+        },
+        shouldAddNewGlobalAsDebuggee: () => true,
+      });
+    },
+
+    form() {
+      return {
+        actor: this.actorID,
+        threadActor: this.threadActor?.actorID,
+        consoleActor: this._consoleActor?.actorID,
+        id: this._workerDebuggerData.id,
+        type: this._workerDebuggerData.type,
+        url: this._workerDebuggerData.url,
+        traits: {},
+      };
+    },
+
+    attach() {
+      if (this.threadActor) {
+        return;
+      }
+
+      
+      this.threadActor = new ThreadActor(this, this.workerGlobal);
+
+      
+      this._consoleActor = new WebConsoleActor(this.conn, this);
+
+      this.manage(this.threadActor);
+      this.manage(this._consoleActor);
+    },
+
+    get dbg() {
+      if (!this._dbg) {
+        this._dbg = this.makeDebugger();
+      }
+      return this._dbg;
+    },
+
+    get sources() {
+      if (this._sources === null) {
+        this._sources = new TabSources(this.threadActor);
+      }
+
+      return this._sources;
+    },
+
+    
+    onThreadAttached() {
+      
+      this.emit("worker-thread-attached");
+    },
+
+    destroy() {
+      if (this.threadActor) {
+        
+        
+        
+        
+        this.threadActor.exit();
+        this.threadActor = null;
+      }
+
+      Actor.prototype.destroy.call(this);
+
+      if (this._sources) {
+        this._sources.destroy();
+        this._sources = null;
+      }
+
+      this.workerGlobal = null;
+      this._dbg = null;
+      this._consoleActor = null;
+    },
+  }
+);

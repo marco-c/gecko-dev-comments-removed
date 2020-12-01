@@ -20,12 +20,13 @@ const makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const { Pool } = require("devtools/shared/protocol");
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { TabSources } = require("devtools/server/actors/utils/TabSources");
-const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
+const { Actor } = require("devtools/shared/protocol");
 const {
   contentProcessTargetSpec,
 } = require("devtools/shared/specs/targets/content-process");
 const Targets = require("devtools/server/actors/targets/index");
 const Resources = require("devtools/server/actors/resources/index");
+const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mixin");
 
 loader.lazyRequireGetter(
   this,
@@ -40,246 +41,205 @@ loader.lazyRequireGetter(
   true
 );
 
-const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
-  initialize: function(connection) {
-    Actor.prototype.initialize.call(this, connection);
-    this.conn = connection;
-    this.threadActor = null;
-
-    
-    this.makeDebugger = makeDebugger.bind(null, {
-      findDebuggees: dbg => dbg.findAllGlobals(),
-      shouldAddNewGlobalAsDebuggee: global => true,
-    });
-
-    const sandboxPrototype = {
-      get tabs() {
-        return Array.from(
-          Services.ww.getWindowEnumerator(),
-          win => win.docShell.messageManager
-        );
-      },
-    };
-
-    
-    
-    const systemPrincipal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
-      Ci.nsIPrincipal
-    );
-    const sandbox = Cu.Sandbox(systemPrincipal, {
-      sandboxPrototype,
-      wantGlobalProperties: ["ChromeUtils"],
-    });
-    this._consoleScope = sandbox;
-
-    this._workerList = null;
-    this._workerDescriptorActorPool = null;
-    this._onWorkerListChanged = this._onWorkerListChanged.bind(this);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    this.destroyObserver = this.destroy.bind(this);
-    Services.obs.addObserver(this.destroyObserver, "xpcom-shutdown");
-
-    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
-  },
-
-  targetType: Targets.TYPES.FRAME,
-
-  get isRootActor() {
-    return true;
-  },
-
-  get exited() {
-    return !this._contextPool;
-  },
-
-  get url() {
-    return undefined;
-  },
-
-  get window() {
-    return this._consoleScope;
-  },
-
-  get sources() {
-    if (!this._sources) {
-      assert(
-        this.threadActor,
-        "threadActor should exist when creating sources."
-      );
-      this._sources = new TabSources(this.threadActor);
-    }
-    return this._sources;
-  },
-
-  
-
-
-  get dbg() {
-    if (!this._dbg) {
-      this._dbg = this.makeDebugger();
-    }
-    return this._dbg;
-  },
-
-  form: function() {
-    if (!this._consoleActor) {
-      this._consoleActor = new WebConsoleActor(this.conn, this);
-      this.manage(this._consoleActor);
-    }
-
-    if (!this.threadActor) {
-      this.threadActor = new ThreadActor(this, null);
-      this.manage(this.threadActor);
-    }
-    if (!this.memoryActor) {
-      this.memoryActor = new MemoryActor(this.conn, this);
-      this.manage(this.memoryActor);
-    }
-
-    return {
-      actor: this.actorID,
-      consoleActor: this._consoleActor.actorID,
-      threadActor: this.threadActor.actorID,
-      memoryActor: this.memoryActor.actorID,
-      processID: Services.appinfo.processID,
-
-      traits: {
-        networkMonitor: false,
-      },
-    };
-  },
-
-  ensureWorkerList() {
-    if (!this._workerList) {
-      this._workerList = new WorkerDescriptorActorList(this.conn, {});
-    }
-    return this._workerList;
-  },
-
-  listWorkers: function() {
-    return this.ensureWorkerList()
-      .getList()
-      .then(actors => {
-        const pool = new Pool(this.conn, "workers");
-        for (const actor of actors) {
-          pool.manage(actor);
-        }
-
-        
-        
-        if (this._workerDescriptorActorPool) {
-          this._workerDescriptorActorPool.destroy();
-        }
-
-        this._workerDescriptorActorPool = pool;
-        this._workerList.onListChanged = this._onWorkerListChanged;
-
-        return {
-          from: this.actorID,
-          workers: actors,
-        };
-      });
-  },
-
-  _onWorkerListChanged: function() {
-    this.conn.send({ from: this.actorID, type: "workerListChanged" });
-    this._workerList.onListChanged = null;
-  },
-
-  pauseMatchingServiceWorkers(request) {
-    this.ensureWorkerList().workerPauser.setPauseServiceWorkers(request.origin);
-  },
-
-  
-
-
-
-
-
-
-
-  _watchTargetResources(resourceTypes) {
-    return Resources.watchResources(this, resourceTypes);
-  },
-
-  _unwatchTargetResources(resourceTypes) {
-    return Resources.unwatchResources(this, resourceTypes);
-  },
-
-  addWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      this._watchTargetResources(entries);
-    }
-  },
-
-  removeWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      this._unwatchTargetResources(entries);
-    }
-  },
-
-  
-
-
-
-
-
-
-  notifyResourceAvailable(resources) {
-    if (this.isDestroyed()) {
-      
-      return;
-    }
-    this.emit("resource-available-form", resources);
-  },
-
-  destroy: function() {
-    if (this.isDestroyed()) {
-      return;
-    }
-    Resources.unwatchAllTargetResources(this);
-
-    if (this.threadActor) {
-      
-      
-      
-      
-      this.threadActor.exit();
+const ContentProcessTargetActor = TargetActorMixin(
+  Targets.TYPES.PROCESS,
+  contentProcessTargetSpec,
+  {
+    initialize: function(connection) {
+      Actor.prototype.initialize.call(this, connection);
+      this.conn = connection;
       this.threadActor = null;
-    }
 
-    
-    
-    this.emit("tabDetached");
+      
+      this.makeDebugger = makeDebugger.bind(null, {
+        findDebuggees: dbg => dbg.findAllGlobals(),
+        shouldAddNewGlobalAsDebuggee: global => true,
+      });
 
-    Actor.prototype.destroy.call(this);
+      const sandboxPrototype = {
+        get tabs() {
+          return Array.from(
+            Services.ww.getWindowEnumerator(),
+            win => win.docShell.messageManager
+          );
+        },
+      };
 
-    
-    if (this._workerList) {
-      this._workerList.destroy();
+      
+      
+      const systemPrincipal = Cc[
+        "@mozilla.org/systemprincipal;1"
+      ].createInstance(Ci.nsIPrincipal);
+      const sandbox = Cu.Sandbox(systemPrincipal, {
+        sandboxPrototype,
+        wantGlobalProperties: ["ChromeUtils"],
+      });
+      this._consoleScope = sandbox;
+
       this._workerList = null;
-    }
+      this._workerDescriptorActorPool = null;
+      this._onWorkerListChanged = this._onWorkerListChanged.bind(this);
 
-    if (this._sources) {
-      this._sources.destroy();
-      this._sources = null;
-    }
+      
+      
+      
+      
+      
+      
+      
+      
+      this.destroyObserver = this.destroy.bind(this);
+      Services.obs.addObserver(this.destroyObserver, "xpcom-shutdown");
+    },
 
-    if (this._dbg) {
-      this._dbg.disable();
-      this._dbg = null;
-    }
+    get isRootActor() {
+      return true;
+    },
 
-    Services.obs.removeObserver(this.destroyObserver, "xpcom-shutdown");
-  },
-});
+    get exited() {
+      return !this._contextPool;
+    },
+
+    get url() {
+      return undefined;
+    },
+
+    get window() {
+      return this._consoleScope;
+    },
+
+    get sources() {
+      if (!this._sources) {
+        assert(
+          this.threadActor,
+          "threadActor should exist when creating sources."
+        );
+        this._sources = new TabSources(this.threadActor);
+      }
+      return this._sources;
+    },
+
+    
+
+
+    get dbg() {
+      if (!this._dbg) {
+        this._dbg = this.makeDebugger();
+      }
+      return this._dbg;
+    },
+
+    form: function() {
+      if (!this._consoleActor) {
+        this._consoleActor = new WebConsoleActor(this.conn, this);
+        this.manage(this._consoleActor);
+      }
+
+      if (!this.threadActor) {
+        this.threadActor = new ThreadActor(this, null);
+        this.manage(this.threadActor);
+      }
+      if (!this.memoryActor) {
+        this.memoryActor = new MemoryActor(this.conn, this);
+        this.manage(this.memoryActor);
+      }
+
+      return {
+        actor: this.actorID,
+        consoleActor: this._consoleActor.actorID,
+        threadActor: this.threadActor.actorID,
+        memoryActor: this.memoryActor.actorID,
+        processID: Services.appinfo.processID,
+
+        traits: {
+          networkMonitor: false,
+        },
+      };
+    },
+
+    ensureWorkerList() {
+      if (!this._workerList) {
+        this._workerList = new WorkerDescriptorActorList(this.conn, {});
+      }
+      return this._workerList;
+    },
+
+    listWorkers: function() {
+      return this.ensureWorkerList()
+        .getList()
+        .then(actors => {
+          const pool = new Pool(this.conn, "workers");
+          for (const actor of actors) {
+            pool.manage(actor);
+          }
+
+          
+          
+          if (this._workerDescriptorActorPool) {
+            this._workerDescriptorActorPool.destroy();
+          }
+
+          this._workerDescriptorActorPool = pool;
+          this._workerList.onListChanged = this._onWorkerListChanged;
+
+          return {
+            from: this.actorID,
+            workers: actors,
+          };
+        });
+    },
+
+    _onWorkerListChanged: function() {
+      this.conn.send({ from: this.actorID, type: "workerListChanged" });
+      this._workerList.onListChanged = null;
+    },
+
+    pauseMatchingServiceWorkers(request) {
+      this.ensureWorkerList().workerPauser.setPauseServiceWorkers(
+        request.origin
+      );
+    },
+
+    destroy: function() {
+      if (this.isDestroyed()) {
+        return;
+      }
+      Resources.unwatchAllTargetResources(this);
+
+      if (this.threadActor) {
+        
+        
+        
+        
+        this.threadActor.exit();
+        this.threadActor = null;
+      }
+
+      
+      
+      this.emit("tabDetached");
+
+      Actor.prototype.destroy.call(this);
+
+      
+      if (this._workerList) {
+        this._workerList.destroy();
+        this._workerList = null;
+      }
+
+      if (this._sources) {
+        this._sources.destroy();
+        this._sources = null;
+      }
+
+      if (this._dbg) {
+        this._dbg.disable();
+        this._dbg = null;
+      }
+
+      Services.obs.removeObserver(this.destroyObserver, "xpcom-shutdown");
+    },
+  }
+);
 
 exports.ContentProcessTargetActor = ContentProcessTargetActor;

@@ -40,7 +40,7 @@ const { TargetActorRegistry } = ChromeUtils.import(
 
 const EXTENSION_CONTENT_JSM = "resource://gre/modules/ExtensionContent.jsm";
 
-const { ActorClassWithSpec, Actor, Pool } = require("devtools/shared/protocol");
+const { Actor, Pool } = require("devtools/shared/protocol");
 const {
   LazyPool,
   createExtraActors,
@@ -49,6 +49,7 @@ const {
   browsingContextTargetSpec,
 } = require("devtools/shared/specs/targets/browsing-context");
 const Resources = require("devtools/server/actors/resources/index");
+const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mixin");
 
 loader.lazyRequireGetter(
   this,
@@ -299,70 +300,8 @@ const browsingContextTargetPrototype = {
     this._onWorkerDescriptorActorListChanged = this._onWorkerDescriptorActorListChanged.bind(
       this
     );
-    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
-    this.notifyResourceDestroyed = this.notifyResourceDestroyed.bind(this);
-    this.notifyResourceUpdated = this.notifyResourceUpdated.bind(this);
 
     TargetActorRegistry.registerTargetActor(this);
-  },
-
-  addWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      this._watchTargetResources(entries);
-    }
-  },
-
-  removeWatcherDataEntry(type, entries) {
-    if (type == "resources") {
-      this._unwatchTargetResources(entries);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  _watchTargetResources(resourceTypes) {
-    return Resources.watchResources(this, resourceTypes);
-  },
-
-  _unwatchTargetResources(resourceTypes) {
-    return Resources.unwatchResources(this, resourceTypes);
-  },
-
-  
-
-
-
-
-
-
-  notifyResourceAvailable(resources) {
-    this._emitResourcesForm("resource-available-form", resources);
-  },
-
-  notifyResourceDestroyed(resources) {
-    this._emitResourcesForm("resource-destroyed-form", resources);
-  },
-
-  notifyResourceUpdated(resources) {
-    this._emitResourcesForm("resource-updated-form", resources);
-  },
-
-  
-
-
-  _emitResourcesForm(name, resources) {
-    if (resources.length === 0 || this.isDestroyed()) {
-      
-      
-      return;
-    }
-    this.emit(name, resources);
   },
 
   traits: null,
@@ -407,8 +346,6 @@ const browsingContextTargetPrototype = {
   },
 
   _targetScopedActorPool: null,
-
-  targetType: Targets.TYPES.FRAME,
 
   
 
@@ -1660,7 +1597,8 @@ const browsingContextTargetPrototype = {
 };
 
 exports.browsingContextTargetPrototype = browsingContextTargetPrototype;
-exports.BrowsingContextTargetActor = ActorClassWithSpec(
+exports.BrowsingContextTargetActor = TargetActorMixin(
+  Targets.TYPES.FRAME,
   browsingContextTargetSpec,
   browsingContextTargetPrototype
 );
