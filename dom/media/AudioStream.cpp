@@ -368,17 +368,24 @@ AudioStream::Start() {
   MonitorAutoLock mon(mMonitor);
   MOZ_ASSERT(mState == INITIALIZED);
   mState = STARTED;
+
+  
+  
+  
+  RefPtr<MediaSink::EndedPromise> promise = mEndedPromise.Ensure(__func__);
+  mPlaybackComplete = false;
+
   if (InvokeCubeb(cubeb_stream_start) != CUBEB_OK) {
     mState = ERRORED;
   }
+
   LOG("started, state %s", mState == STARTED
                                ? "STARTED"
                                : mState == DRAINED ? "DRAINED" : "ERRORED");
-  if (mState != STARTED && mState != DRAINED) {
-    return Err(NS_ERROR_FAILURE);
+  if (mState == STARTED || mState == DRAINED) {
+    return promise.forget();
   }
-  mPlaybackComplete = false;
-  return mEndedPromise.Ensure(__func__);
+  return Err(NS_ERROR_FAILURE);
 }
 
 void AudioStream::Pause() {
