@@ -10,8 +10,7 @@
 
 class nsPresContext;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 MutationEvent::MutationEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                              InternalMutationEvent* aEvent)
@@ -63,7 +62,6 @@ void MutationEvent::InitMutationEvent(const nsAString& aType, bool aCanBubble,
   mutation->mAttrChange = aAttrChange;
 }
 
-}  
 }  
 
 using namespace mozilla;

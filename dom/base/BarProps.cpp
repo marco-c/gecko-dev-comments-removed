@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/BarProps.h"
 #include "mozilla/dom/BarPropBinding.h"
@@ -11,12 +11,11 @@
 #include "nsGlobalWindow.h"
 #include "nsIWebBrowserChrome.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
-//
-//  Basic (virtual) BarProp class implementation
-//
+
+
+
 BarProp::BarProp(nsGlobalWindowInner* aWindow) : mDOMWindow(aWindow) {}
 
 BarProp::~BarProp() = default;
@@ -84,9 +83,9 @@ already_AddRefed<nsIWebBrowserChrome> BarProp::GetBrowserChrome() {
   return mDOMWindow->GetWebBrowserChrome();
 }
 
-//
-// MenubarProp class implementation
-//
+
+
+
 
 MenubarProp::MenubarProp(nsGlobalWindowInner* aWindow) : BarProp(aWindow) {}
 
@@ -102,9 +101,9 @@ void MenubarProp::SetVisible(bool aVisible, CallerType aCallerType,
                             aCallerType, aRv);
 }
 
-//
-// ToolbarProp class implementation
-//
+
+
+
 
 ToolbarProp::ToolbarProp(nsGlobalWindowInner* aWindow) : BarProp(aWindow) {}
 
@@ -120,9 +119,9 @@ void ToolbarProp::SetVisible(bool aVisible, CallerType aCallerType,
                             aCallerType, aRv);
 }
 
-//
-// LocationbarProp class implementation
-//
+
+
+
 
 LocationbarProp::LocationbarProp(nsGlobalWindowInner* aWindow)
     : BarProp(aWindow) {}
@@ -140,9 +139,9 @@ void LocationbarProp::SetVisible(bool aVisible, CallerType aCallerType,
                             aCallerType, aRv);
 }
 
-//
-// PersonalbarProp class implementation
-//
+
+
+
 
 PersonalbarProp::PersonalbarProp(nsGlobalWindowInner* aWindow)
     : BarProp(aWindow) {}
@@ -160,9 +159,9 @@ void PersonalbarProp::SetVisible(bool aVisible, CallerType aCallerType,
       aVisible, nsIWebBrowserChrome::CHROME_PERSONAL_TOOLBAR, aCallerType, aRv);
 }
 
-//
-// StatusbarProp class implementation
-//
+
+
+
 
 StatusbarProp::StatusbarProp(nsGlobalWindowInner* aWindow) : BarProp(aWindow) {}
 
@@ -178,9 +177,9 @@ void StatusbarProp::SetVisible(bool aVisible, CallerType aCallerType,
       aVisible, nsIWebBrowserChrome::CHROME_STATUSBAR, aCallerType, aRv);
 }
 
-//
-// ScrollbarsProp class implementation
-//
+
+
+
 
 ScrollbarsProp::ScrollbarsProp(nsGlobalWindowInner* aWindow)
     : BarProp(aWindow) {}
@@ -202,8 +201,7 @@ bool ScrollbarsProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
 }
 
 void ScrollbarsProp::SetVisible(bool aVisible, CallerType, ErrorResult&) {
-  /* Do nothing */
+  
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  

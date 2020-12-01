@@ -23,8 +23,7 @@
 
 #include "ActorsChild.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using namespace mozilla::dom::indexedDB;
 
@@ -636,5 +635,4 @@ JSObject* IDBIndex::WrapObject(JSContext* aCx,
   return IDBIndex_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  
 }  

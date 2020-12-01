@@ -6,8 +6,7 @@
 
 #include "mozilla/dom/IterableIterator.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -31,5 +30,4 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IterableIteratorBase)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-}  
 }  

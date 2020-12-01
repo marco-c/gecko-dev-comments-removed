@@ -18,8 +18,7 @@
 #include "nsIFile.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -244,5 +243,4 @@ nsresult GetFilesTaskParent::GetTargetPath(nsAString& aPath) const {
   return mTargetPath->GetPath(aPath);
 }
 
-}  
 }  

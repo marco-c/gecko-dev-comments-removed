@@ -10,9 +10,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 
-namespace mozilla {
-namespace dom {
-namespace cache {
+namespace mozilla::dom::cache {
 
 namespace {
 
@@ -151,6 +149,4 @@ CacheWorkerRef::~CacheWorkerRef() {
   MOZ_DIAGNOSTIC_ASSERT(mActorList.IsEmpty());
 }
 
-}  
-}  
 }  

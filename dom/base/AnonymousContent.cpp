@@ -16,8 +16,7 @@
 #include "nsStyledElement.h"
 #include "HTMLCanvasElement.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(AnonymousContent, AddRef)
@@ -219,5 +218,4 @@ void AnonymousContent::SetStyle(const nsACString& aProperty,
   declaration->SetProperty(aProperty, aValue, u""_ns, IgnoreErrors());
 }
 
-}  
 }  

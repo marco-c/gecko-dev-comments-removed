@@ -27,8 +27,7 @@ extern mozilla::LazyLogModule gMediaControlLog;
   MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
           ("MediaStatusManager=%p, " msg, this, ##__VA_ARGS__))
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 static bool IsMetadataEmpty(const Maybe<MediaMetadataBase>& aMetadata) {
   
@@ -474,5 +473,4 @@ void MediaStatusManager::NotifyPageTitleChanged() {
   mMetadataChangedEvent.Notify(GetCurrentMediaMetadata());
 }
 
-}  
 }  

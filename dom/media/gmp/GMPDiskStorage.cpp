@@ -16,8 +16,7 @@
 #include "nsContentCID.h"
 #include "nsServiceManagerUtils.h"
 
-namespace mozilla {
-namespace gmp {
+namespace mozilla::gmp {
 
 
 
@@ -444,5 +443,4 @@ already_AddRefed<GMPStorage> CreateGMPDiskStorage(const nsCString& aNodeId,
   return storage.forget();
 }
 
-}  
 }  

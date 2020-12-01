@@ -8,8 +8,7 @@
 #include "File.h"
 #include "mozilla/CheckedInt.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -95,5 +94,4 @@ nsresult BlobImpl::GetSendInfo(nsIInputStream** aBody, uint64_t* aContentLength,
 
 NS_IMPL_ISUPPORTS(BlobImpl, BlobImpl)
 
-}  
 }  

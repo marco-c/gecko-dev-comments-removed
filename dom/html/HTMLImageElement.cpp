@@ -67,8 +67,7 @@ static bool IsPreviousSibling(nsINode* aSubject, nsINode* aNode) {
 }
 #endif
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -1289,5 +1288,4 @@ void HTMLImageElement::StopLazyLoadingAndStartLoadIfNeeded() {
   StartLoadingIfNeeded();
 }
 
-}  
 }  

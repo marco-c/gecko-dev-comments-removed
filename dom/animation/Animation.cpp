@@ -28,8 +28,7 @@
 #include "nsTransitionManager.h"      
 #include "PendingAnimationTracker.h"  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 uint64_t Animation::sNextAnimationIndex = 0;
@@ -1857,5 +1856,4 @@ bool Animation::IsRunningOnCompositor() const {
          mEffect->AsKeyframeEffect()->IsRunningOnCompositor();
 }
 
-}  
 }  

@@ -47,8 +47,7 @@ nsGenericHTMLElement* NS_NewHTMLTrackElement(
   return new (nim) mozilla::dom::HTMLTrackElement(nodeInfo.forget());
 }
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 static constexpr nsAttrValue::EnumTable kKindTable[] = {
@@ -511,5 +510,4 @@ void HTMLTrackElement::DispatchTestEvent(const nsAString& aName) {
   DispatchTrustedEvent(aName);
 }
 
-}  
 }  

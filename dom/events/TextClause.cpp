@@ -8,8 +8,7 @@
 #include "mozilla/dom/TextClauseBinding.h"
 #include "mozilla/TextEvents.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(TextClause)
@@ -43,5 +42,4 @@ JSObject* TextClause::WrapObject(JSContext* aCx,
 
 TextClause::~TextClause() = default;
 
-}  
 }  

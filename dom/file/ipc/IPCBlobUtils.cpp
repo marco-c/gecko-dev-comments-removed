@@ -25,8 +25,7 @@ namespace mozilla {
 
 using namespace ipc;
 
-namespace dom {
-namespace IPCBlobUtils {
+namespace dom::IPCBlobUtils {
 
 already_AddRefed<BlobImpl> Deserialize(const IPCBlob& aIPCBlob) {
   nsCOMPtr<nsIInputStream> inputStream;
@@ -192,7 +191,6 @@ nsresult SerializeUntyped(BlobImpl* aBlobImpl, IProtocol* aActor,
   }
 }
 
-}  
 }  
 
 namespace ipc {

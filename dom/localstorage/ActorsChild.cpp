@@ -19,8 +19,7 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "nsCOMPtr.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -323,5 +322,4 @@ mozilla::ipc::IPCResult LSSnapshotChild::RecvMarkDirty() {
   return IPC_OK();
 }
 
-}  
 }  

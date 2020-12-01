@@ -12,8 +12,7 @@
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(TableCol)
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -101,5 +100,4 @@ nsMapRuleToAttributesFunc HTMLTableColElement::GetAttributeMappingFunction()
   return &MapAttributesIntoRule;
 }
 
-}  
 }  

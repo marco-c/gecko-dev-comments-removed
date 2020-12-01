@@ -14,8 +14,7 @@
 #include "mozilla/dom/GamepadRemapping.h"
 #include "mozilla/dom/GamepadPlatformService.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -2118,5 +2117,4 @@ already_AddRefed<GamepadRemapper> GetGamepadRemapper(const uint16_t aVendorId,
   return do_AddRef(defaultRemapper.get());
 }
 
-}  
 }  

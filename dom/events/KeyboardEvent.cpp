@@ -9,8 +9,7 @@
 #include "nsContentUtils.h"
 #include "prtime.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 KeyboardEvent::KeyboardEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                              WidgetKeyboardEvent* aEvent)
@@ -378,7 +377,6 @@ bool KeyboardEvent::GetSpoofedModifierStates(const Modifiers aModifierKey,
   return aRawModifierState;
 }
 
-}  
 }  
 
 using namespace mozilla;

@@ -140,8 +140,7 @@ using namespace mozilla::image;
 using namespace mozilla::ipc;
 using namespace mozilla::layers;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 const Float SIGMA_MAX = 100;
@@ -5730,5 +5729,4 @@ size_t BindingJSObjectMallocBytes(CanvasRenderingContext2D* aContext) {
   return bytes.value();
 }
 
-}  
 }  

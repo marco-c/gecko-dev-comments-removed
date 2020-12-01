@@ -8,8 +8,7 @@
 #include "mozilla/dom/HTMLElementBinding.h"
 #include "nsContentUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class HTMLElement final : public nsGenericHTMLElement {
  public:
@@ -39,7 +38,6 @@ JSObject* HTMLElement::WrapNode(JSContext* aCx,
   return dom::HTMLElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  
 }  
 
 

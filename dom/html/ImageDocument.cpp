@@ -48,8 +48,7 @@ static bool IsSiteSpecific() {
          mozilla::Preferences::GetBool("browser.zoom.siteSpecific", false);
 }
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ImageListener : public MediaDocumentStreamListener {
  public:
@@ -699,7 +698,6 @@ float ImageDocument::GetResolution() {
   return mOriginalResolution;
 }
 
-}  
 }  
 
 nsresult NS_NewImageDocument(mozilla::dom::Document** aResult) {

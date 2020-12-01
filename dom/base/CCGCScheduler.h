@@ -7,47 +7,52 @@
 #include "mozilla/MainThreadIdlePeriod.h"
 #include "nsCycleCollector.h"
 
-static const TimeDuration kOneMinute = TimeDuration::FromSeconds(60.0f);
+static const mozilla::TimeDuration kOneMinute =
+    mozilla::TimeDuration::FromSeconds(60.0f);
 
 
 
-static const TimeDuration kCCDelay = TimeDuration::FromSeconds(6);
+static const mozilla::TimeDuration kCCDelay =
+    mozilla::TimeDuration::FromSeconds(6);
 
-static const TimeDuration kCCSkippableDelay =
-    TimeDuration::FromMilliseconds(250);
-
-
-
-
-static const TimeDuration kTimeBetweenForgetSkippableCycles =
-    TimeDuration::FromSeconds(2);
+static const mozilla::TimeDuration kCCSkippableDelay =
+    mozilla::TimeDuration::FromMilliseconds(250);
 
 
 
 
-static const TimeDuration kForgetSkippableSliceDuration =
-    TimeDuration::FromMilliseconds(2);
-
-
-static const TimeDuration kICCIntersliceDelay =
-    TimeDuration::FromMilliseconds(64);
-
-
-static const TimeDuration kICCSliceBudget = TimeDuration::FromMilliseconds(3);
-
-static const TimeDuration kIdleICCSliceBudget =
-    TimeDuration::FromMilliseconds(2);
-
-
-static const TimeDuration kMaxICCDuration = TimeDuration::FromSeconds(2);
+static const mozilla::TimeDuration kTimeBetweenForgetSkippableCycles =
+    mozilla::TimeDuration::FromSeconds(2);
 
 
 
-static const TimeDuration kCCForced = kOneMinute * 2;
+
+static const mozilla::TimeDuration kForgetSkippableSliceDuration =
+    mozilla::TimeDuration::FromMilliseconds(2);
+
+
+static const mozilla::TimeDuration kICCIntersliceDelay =
+    mozilla::TimeDuration::FromMilliseconds(64);
+
+
+static const mozilla::TimeDuration kICCSliceBudget =
+    mozilla::TimeDuration::FromMilliseconds(3);
+
+static const mozilla::TimeDuration kIdleICCSliceBudget =
+    mozilla::TimeDuration::FromMilliseconds(2);
+
+
+static const mozilla::TimeDuration kMaxICCDuration =
+    mozilla::TimeDuration::FromSeconds(2);
+
+
+
+static const mozilla::TimeDuration kCCForced = kOneMinute * 2;
 static const uint32_t kCCForcedPurpleLimit = 10;
 
 
-static const TimeDuration kMaxCCLockedoutTime = TimeDuration::FromSeconds(30);
+static const mozilla::TimeDuration kMaxCCLockedoutTime =
+    mozilla::TimeDuration::FromSeconds(30);
 
 
 static const uint32_t kCCPurpleLimit = 200;
@@ -225,7 +230,8 @@ class CCGCScheduler {
   
   
   
-  bool IsCCNeeded(uint32_t aSuspected, TimeStamp aNow = TimeStamp::Now()) const {
+  bool IsCCNeeded(uint32_t aSuspected,
+                  TimeStamp aNow = TimeStamp::Now()) const {
     return mNeedsFullCC || aSuspected > kCCPurpleLimit ||
            (aSuspected > kCCForcedPurpleLimit && mLastCCEndTime &&
             aNow - mLastCCEndTime > kCCForced);

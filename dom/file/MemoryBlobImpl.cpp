@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "MemoryBlobImpl.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -13,8 +13,7 @@
 #include "nsStringStream.h"
 #include "prtime.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 NS_IMPL_ADDREF(MemoryBlobImpl::DataOwnerAdapter)
 NS_IMPL_RELEASE(MemoryBlobImpl::DataOwnerAdapter)
@@ -29,7 +28,7 @@ NS_INTERFACE_MAP_BEGIN(MemoryBlobImpl::DataOwnerAdapter)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInputStream)
 NS_INTERFACE_MAP_END
 
-// static
+
 already_AddRefed<MemoryBlobImpl> MemoryBlobImpl::CreateWithCustomLastModified(
     void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
     const nsAString& aContentType, int64_t aLastModifiedDate) {
@@ -38,13 +37,13 @@ already_AddRefed<MemoryBlobImpl> MemoryBlobImpl::CreateWithCustomLastModified(
   return blobImpl.forget();
 }
 
-// static
+
 already_AddRefed<MemoryBlobImpl> MemoryBlobImpl::CreateWithLastModifiedNow(
     void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
     const nsAString& aContentType, bool aCrossOriginIsolated) {
   int64_t lastModificationDate = nsRFPService::ReduceTimePrecisionAsUSecs(
       PR_Now(), 0,
-      /* aIsSystemPrincipal */ false, aCrossOriginIsolated);
+       false, aCrossOriginIsolated);
   return CreateWithCustomLastModified(aMemoryBuffer, aLength, aName,
                                       aContentType, lastModificationDate);
 }
@@ -89,13 +88,13 @@ void MemoryBlobImpl::CreateInputStream(nsIInputStream** aStream,
                                                  aStream);
 }
 
-/* static */
+
 StaticMutex MemoryBlobImpl::DataOwner::sDataOwnerMutex;
 
-/* static */ StaticAutoPtr<LinkedList<MemoryBlobImpl::DataOwner>>
+ StaticAutoPtr<LinkedList<MemoryBlobImpl::DataOwner>>
     MemoryBlobImpl::DataOwner::sDataOwners;
 
-/* static */
+
 bool MemoryBlobImpl::DataOwner::sMemoryReporterRegistered = false;
 
 MOZ_DEFINE_MALLOC_SIZE_OF(MemoryFileDataOwnerMallocSizeOf)
@@ -128,7 +127,7 @@ class MemoryBlobImplDataOwnerMemoryReporter final : public nsIMemoryReporter {
       } else {
         SHA1Sum sha1;
         sha1.update(owner->mData, owner->mLength);
-        uint8_t digest[SHA1Sum::kHashSize];  // SHA1 digests are 20 bytes long.
+        uint8_t digest[SHA1Sum::kHashSize];  
         sha1.finish(digest);
 
         nsAutoCString digestString;
@@ -137,7 +136,7 @@ class MemoryBlobImplDataOwnerMemoryReporter final : public nsIMemoryReporter {
         }
 
         aHandleReport->Callback(
-            /* process */ ""_ns,
+             ""_ns,
             nsPrintfCString(
                 "explicit/dom/memory-file-data/large/file(length=%" PRIu64
                 ", sha1=%s)",
@@ -160,7 +159,7 @@ class MemoryBlobImplDataOwnerMemoryReporter final : public nsIMemoryReporter {
 
     if (smallObjectsTotal > 0) {
       aHandleReport->Callback(
-          /* process */ ""_ns, "explicit/dom/memory-file-data/small"_ns,
+           ""_ns, "explicit/dom/memory-file-data/small"_ns,
           KIND_HEAP, UNITS_BYTES, smallObjectsTotal,
           nsPrintfCString(
               "Memory used to back small memory files (i.e. those taking up "
@@ -179,7 +178,7 @@ class MemoryBlobImplDataOwnerMemoryReporter final : public nsIMemoryReporter {
 
 NS_IMPL_ISUPPORTS(MemoryBlobImplDataOwnerMemoryReporter, nsIMemoryReporter)
 
-/* static */
+
 void MemoryBlobImpl::DataOwner::EnsureMemoryReporterRegistered() {
   sDataOwnerMutex.AssertCurrentThreadOwns();
   if (sMemoryReporterRegistered) {
@@ -191,5 +190,4 @@ void MemoryBlobImpl::DataOwner::EnsureMemoryReporterRegistered() {
   sMemoryReporterRegistered = true;
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
