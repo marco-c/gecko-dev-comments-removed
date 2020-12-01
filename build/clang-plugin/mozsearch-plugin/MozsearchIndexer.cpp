@@ -65,6 +65,35 @@ std::string Objdir;
 
 std::string Outdir;
 
+enum class FileType {
+  
+  
+  Unknown,
+  
+  Source,
+  
+  Generated,
+};
+
+
+
+
+FileType relativizePath(std::string& path) {
+  if (path.compare(0, Objdir.length(), Objdir) == 0) {
+    path.replace(0, Objdir.length(), GENERATED);
+    return FileType::Generated;
+  }
+  
+  
+  
+  if (path.length() > Srcdir.length() && path.compare(0, Srcdir.length(), Srcdir) == 0) {
+    
+    path.erase(0, Srcdir.length() + 1);
+    return FileType::Source;
+  }
+  return FileType::Unknown;
+}
+
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/time.h>
 
@@ -109,25 +138,19 @@ class IndexConsumer;
 
 struct FileInfo {
   FileInfo(std::string &Rname) : Realname(Rname) {
-    if (Rname.compare(0, Objdir.length(), Objdir) == 0) {
-      
-      
-      
-      Interesting = true;
-      Generated = true;
-      Realname.replace(0, Objdir.length(), GENERATED);
-      return;
-    }
-
-    
-    
-    
-    Interesting = (Rname.length() > Srcdir.length()) &&
-                  (Rname.compare(0, Srcdir.length(), Srcdir) == 0);
-    Generated = false;
-    if (Interesting) {
-      
-      Realname.erase(0, Srcdir.length() + 1);
+    switch (relativizePath(Realname)) {
+      case FileType::Generated:
+        Interesting = true;
+        Generated = true;
+        break;
+      case FileType::Source:
+        Interesting = true;
+        Generated = false;
+        break;
+      case FileType::Unknown:
+        Interesting = false;
+        Generated = false;
+        break;
     }
   }
   std::string Realname;
