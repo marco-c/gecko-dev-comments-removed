@@ -8,6 +8,8 @@
 #ifndef __MOZ_WAYLAND_DISPLAY_H__
 #define __MOZ_WAYLAND_DISPLAY_H__
 
+#include "DMABufLibWrapper.h"
+
 #include "base/message_loop.h"  
 #include "base/task.h"          
 #include "mozilla/StaticMutex.h"
