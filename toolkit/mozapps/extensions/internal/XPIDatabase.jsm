@@ -2847,6 +2847,12 @@ this.XPIDatabaseReconcile = {
         );
       } else if (unsigned && !isNewInstall) {
         logger.warn("Not uninstalling existing unsigned add-on");
+      } else if (aLocation.name == KEY_APP_BUILTINS) {
+        
+        
+        
+        XPIDatabase.removeAddonMetadata(aAddonState);
+        aLocation.removeAddon(aId);
       } else {
         aLocation.installer.uninstallAddon(aId);
       }
@@ -2859,7 +2865,8 @@ this.XPIDatabaseReconcile = {
 
     
     
-    aNewAddon.foreignInstall = isDetectedInstall && !aLocation.isSystem;
+    aNewAddon.foreignInstall =
+      isDetectedInstall && !aLocation.isSystem && !aLocation.isBuiltin;
 
     
     aNewAddon.appDisabled = !XPIDatabase.isUsableAddon(aNewAddon);
