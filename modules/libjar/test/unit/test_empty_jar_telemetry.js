@@ -21,6 +21,13 @@ const nsIBinaryInputStream = Components.Constructor(
   "setInputStream"
 );
 
+
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
 const fileBase = "test_empty_file.zip";
 const file = do_get_file("data/" + fileBase);
 const jarBase = "jar:" + Services.io.newFileURI(file).spec + "!";
