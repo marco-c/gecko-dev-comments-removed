@@ -11993,6 +11993,24 @@ using MStoresToRecoverList = InlineSpaghettiStack<MStoreToRecover>;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MResumePoint final : public MNode
 #ifdef DEBUG
     ,

@@ -9,6 +9,7 @@
 
 #include <initializer_list>
 
+#include "ds/InlineTable.h"
 #include "jit/JitContext.h"
 #include "jit/MIR.h"
 #include "jit/MIRBuilderShared.h"
@@ -74,6 +75,118 @@ class MIRGraph;
 class WarpSnapshot;
 
 enum class CacheKind : uint8_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PendingEdge {
+ public:
+  enum class Kind : uint8_t {
+    
+    TestTrue,
+
+    
+    TestFalse,
+
+    
+    Goto,
+  };
+
+ private:
+  MBasicBlock* block_;
+  Kind kind_;
+  JSOp testOp_ = JSOp::Undefined;
+
+  PendingEdge(MBasicBlock* block, Kind kind, JSOp testOp = JSOp::Undefined)
+      : block_(block), kind_(kind), testOp_(testOp) {}
+
+ public:
+  static PendingEdge NewTestTrue(MBasicBlock* block, JSOp op) {
+    return PendingEdge(block, Kind::TestTrue, op);
+  }
+  static PendingEdge NewTestFalse(MBasicBlock* block, JSOp op) {
+    return PendingEdge(block, Kind::TestFalse, op);
+  }
+  static PendingEdge NewGoto(MBasicBlock* block) {
+    return PendingEdge(block, Kind::Goto);
+  }
+
+  MBasicBlock* block() const { return block_; }
+  Kind kind() const { return kind_; }
+
+  JSOp testOp() const {
+    MOZ_ASSERT(kind_ == Kind::TestTrue || kind_ == Kind::TestFalse);
+    return testOp_;
+  }
+};
+
+
+
+
+
+using PendingEdges = Vector<PendingEdge, 2, SystemAllocPolicy>;
+using PendingEdgesMap =
+    InlineMap<jsbytecode*, PendingEdges, 8, PointerHasher<jsbytecode*>,
+              SystemAllocPolicy>;
+
+
+class LoopState {
+  MBasicBlock* header_ = nullptr;
+
+ public:
+  explicit LoopState(MBasicBlock* header) : header_(header) {}
+
+  MBasicBlock* header() const { return header_; }
+};
+using LoopStateStack = Vector<LoopState, 4, JitAllocPolicy>;
 
 
 class MOZ_STACK_CLASS WarpCompilation {
