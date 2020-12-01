@@ -103,6 +103,11 @@ function PromiseSet() {
 
 
   this._indirections = new Map();
+  
+  
+  
+  
+  this._done = false;
 }
 PromiseSet.prototype = {
   
@@ -119,6 +124,7 @@ PromiseSet.prototype = {
     let entry = this._indirections.entries().next();
     if (entry.done) {
       
+      this._done = true;
       return Promise.resolve();
     }
 
@@ -138,21 +144,34 @@ PromiseSet.prototype = {
 
 
   add(key) {
+    if (this._done) {
+      throw new Error("Wait is complete, cannot add further promises.");
+    }
     this._ensurePromise(key);
     let indirection = PromiseUtils.defer();
-    key.then(
-      x => {
-        
-        
-        
+    key
+      .then(
+        x => {
+          
+          
+          
+          this._indirections.delete(key);
+          indirection.resolve(x);
+        },
+        err => {
+          this._indirections.delete(key);
+          indirection.reject(err);
+        }
+      )
+      .finally(() => {
         this._indirections.delete(key);
-        indirection.resolve(x);
-      },
-      err => {
-        this._indirections.delete(key);
-        indirection.reject(err);
-      }
-    );
+        
+        
+        
+        indirection.reject(
+          new Error("Promise not fulfilled, did it lost its global?")
+        );
+      });
     this._indirections.set(key, indirection);
   },
 
