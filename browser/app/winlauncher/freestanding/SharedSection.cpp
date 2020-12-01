@@ -4,7 +4,7 @@
 
 
 
-#include "FunctionTableResolver.h"
+#include "SharedSection.h"
 
 namespace mozilla {
 namespace freestanding {

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_freestanding_FunctionTableResolver_h
-#define mozilla_freestanding_FunctionTableResolver_h
+#ifndef mozilla_freestanding_SharedSection_h
+#define mozilla_freestanding_SharedSection_h
 
 #include "mozilla/NativeNt.h"
 #include "mozilla/interceptor/MMPolicies.h"
