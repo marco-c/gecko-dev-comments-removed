@@ -44,10 +44,8 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     this._state = "paused";
     this._beforePaused = this._beforePaused.bind(this);
     this._beforeResumed = this._beforeResumed.bind(this);
-    this._beforeDetached = this._beforeDetached.bind(this);
     this.before("paused", this._beforePaused);
     this.before("resumed", this._beforeResumed);
-    this.before("detached", this._beforeDetached);
     this.targetFront.on("will-navigate", this._onWillNavigate.bind(this));
     
     this.formAttributeName = "threadActor";
@@ -205,16 +203,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
   
 
 
-  async detach() {
-    const onDetached = this.once("detached");
-    await super.detach();
-    await onDetached;
-    await this.destroy();
-  }
-
-  
-
-
 
 
 
@@ -254,14 +242,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     this._clearObjectFronts("_pauseGrips");
   }
 
-  
-
-
-
-  _clearThreadGrips() {
-    this._clearObjectFronts("_threadGrips");
-  }
-
   _beforePaused(packet) {
     this._state = "paused";
     this._onThreadState(packet);
@@ -270,13 +250,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
   _beforeResumed() {
     this._state = "attached";
     this._onThreadState(null);
-    this.unmanageChildren(FrameFront);
-  }
-
-  _beforeDetached(packet) {
-    this._state = "detached";
-    this._onThreadState(packet);
-    this._clearThreadGrips();
     this.unmanageChildren(FrameFront);
   }
 
