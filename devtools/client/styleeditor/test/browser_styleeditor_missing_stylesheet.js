@@ -14,7 +14,8 @@ add_task(async function() {
   
   
   
-  ok(ui.editors.length, "The UI contains style sheets.");
+  await waitUntil(() => ui.editors.length);
+  ok(true, "The UI contains style sheets.");
 
   const rootEl = panel.panelWindow.document.getElementById(
     "style-editor-chrome"

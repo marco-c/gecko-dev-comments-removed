@@ -33,6 +33,12 @@ loader.lazyRequireGetter(
   "devtools/shared/layout/utils",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  ["UPDATE_GENERAL", "UPDATE_PRESERVING_RULES"],
+  "devtools/server/actors/stylesheets",
+  true
+);
 
 const TRANSITION_PSEUDO_CLASS = ":-moz-styleeditor-transitioning";
 const TRANSITION_DURATION_MS = 500;
@@ -49,11 +55,16 @@ const TRANSITION_SHEET =
   }
 `);
 
+
+
+
+
+
+const modifiedStyleSheets = new WeakMap();
+
 class StyleSheetWatcher {
   constructor() {
     this._resourceCount = 0;
-    
-    
     
     
     
@@ -97,11 +108,7 @@ class StyleSheetWatcher {
       styleSheets.push(...(await this._getStyleSheets(window)));
     }
 
-    this._onAvailable(
-      await Promise.all(
-        styleSheets.map(styleSheet => this._toResource(styleSheet))
-      )
-    );
+    await this._notifyResourcesAvailable(styleSheets);
   }
 
   
@@ -129,11 +136,45 @@ class StyleSheetWatcher {
     
     parent.appendChild(style);
 
+    
+    let resolve = null;
+    const promise = new Promise(r => {
+      resolve = r;
+    });
+
     if (!this._stylesheetCreationData) {
       this._stylesheetCreationData = new WeakMap();
     }
-    
-    this._stylesheetCreationData.set(style.sheet, { fileName });
+    this._stylesheetCreationData.set(style.sheet, {
+      isCreatedByDevTools: true,
+      fileName,
+      resolve,
+    });
+
+    await promise;
+
+    return style.sheet;
+  }
+
+  async ensureResourceAvailable(styleSheet) {
+    if (this.getResourceId(styleSheet)) {
+      return;
+    }
+
+    await this._notifyResourcesAvailable([styleSheet]);
+  }
+
+  
+
+
+  getResourceId(styleSheet) {
+    for (const [resourceId, value] of this._styleSheetMap.entries()) {
+      if (styleSheet === value.styleSheet) {
+        return resourceId;
+      }
+    }
+
+    return null;
   }
 
   
@@ -147,8 +188,26 @@ class StyleSheetWatcher {
   
 
 
+  getStyleSheet(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    return styleSheet;
+  }
+
+  
+
+
+  getStyleSheetIndex(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    return this._getStyleSheetIndex(styleSheet);
+  }
+
+  
+
+
   async getText(resourceId) {
-    const { styleSheet, modifiedText } = this._styleSheetMap.get(resourceId);
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+
+    const modifiedText = modifiedStyleSheets.get(styleSheet);
 
     
     
@@ -185,23 +244,29 @@ class StyleSheetWatcher {
 
 
 
-  async update(resourceId, text, transition) {
+
+
+
+
+  async update(resourceId, text, transition, kind = UPDATE_GENERAL) {
     const { styleSheet } = this._styleSheetMap.get(resourceId);
-
     InspectorUtils.parseStyleSheet(styleSheet, text);
+    modifiedStyleSheets.set(styleSheet, text);
 
-    this._styleSheetMap.set(resourceId, { styleSheet, modifiedText: text });
-
-    this._notifyPropertyChanged(
-      resourceId,
-      "ruleCount",
-      styleSheet.cssRules.length
-    );
+    if (kind !== UPDATE_PRESERVING_RULES) {
+      this._notifyPropertyChanged(
+        resourceId,
+        "ruleCount",
+        styleSheet.cssRules.length
+      );
+    }
 
     if (transition) {
-      this._startTransition(resourceId);
+      this._startTransition(resourceId, kind);
     } else {
-      this._updateResource(resourceId, "style-applied");
+      this._notifyResourceUpdated(resourceId, "style-applied", {
+        event: { kind },
+      });
     }
 
     
@@ -210,10 +275,12 @@ class StyleSheetWatcher {
     }
 
     const mediaRules = await this._getMediaRules(resourceId, styleSheet);
-    this._updateResource(resourceId, "media-rules-changed", { mediaRules });
+    this._notifyResourceUpdated(resourceId, "media-rules-changed", {
+      resourceUpdates: { mediaRules },
+    });
   }
 
-  _startTransition(resourceId) {
+  _startTransition(resourceId, kind) {
     const { styleSheet } = this._styleSheetMap.get(resourceId);
     const document = styleSheet.ownerNode.ownerDocument;
     const window = styleSheet.ownerNode.ownerGlobal;
@@ -232,18 +299,20 @@ class StyleSheetWatcher {
     
     window.clearTimeout(this._transitionTimeout);
     this._transitionTimeout = window.setTimeout(
-      this._onTransitionEnd.bind(this, resourceId),
+      this._onTransitionEnd.bind(this, resourceId, kind),
       TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS
     );
   }
 
-  _onTransitionEnd(resourceId) {
+  _onTransitionEnd(resourceId, kind) {
     const { styleSheet } = this._styleSheetMap.get(resourceId);
     const document = styleSheet.ownerNode.ownerDocument;
 
     this._transitionTimeout = null;
     removePseudoClassLock(document.documentElement, TRANSITION_PSEUDO_CLASS);
-    this._updateResource(resourceId, "style-applied");
+    this._notifyResourceUpdated(resourceId, "style-applied", {
+      event: { kind },
+    });
   }
 
   async _fetchStylesheet(styleSheet) {
@@ -395,19 +464,14 @@ class StyleSheetWatcher {
   }
 
   _onMatchesChange(resourceId, index, mql) {
-    this._onUpdated([
-      {
-        resourceType: STYLESHEET,
-        resourceId,
-        updateType: "matches-change",
-        nestedResourceUpdates: [
-          {
-            path: ["mediaRules", index, "matches"],
-            value: mql.matches,
-          },
-        ],
-      },
-    ]);
+    this._notifyResourceUpdated(resourceId, "matches-change", {
+      nestedResourceUpdates: [
+        {
+          path: ["mediaRules", index, "matches"],
+          value: mql.matches,
+        },
+      ],
+    });
   }
 
   _getNodeHref(styleSheet) {
@@ -495,8 +559,8 @@ class StyleSheetWatcher {
   }
 
   _notifyPropertyChanged(resourceId, property, value) {
-    this._updateResource(resourceId, "property-change", {
-      [property]: value,
+    this._notifyResourceUpdated(resourceId, "property-change", {
+      resourceUpdates: { [property]: value },
     });
   }
 
@@ -519,7 +583,7 @@ class StyleSheetWatcher {
 
   async _onApplicableStateChanged({ applicable, stylesheet: styleSheet }) {
     for (const existing of this._styleSheetMap.values()) {
-      if (styleSheet === existing.styleSheet) {
+      if (existing.styleSheet === styleSheet) {
         return;
       }
     }
@@ -532,14 +596,7 @@ class StyleSheetWatcher {
       this._shouldListSheet(styleSheet) &&
       !this._haveAncestorWithSameURL(styleSheet)
     ) {
-      const creationData = this._stylesheetCreationData?.get(styleSheet);
-      this._onAvailable([
-        await this._toResource(styleSheet, {
-          isCreatedByDevTools: !!creationData,
-          fileName: creationData?.fileName,
-        }),
-      ]);
-      this._stylesheetCreationData?.delete(styleSheet);
+      await this._notifyResourcesAvailable([styleSheet]);
     }
   }
 
@@ -559,6 +616,7 @@ class StyleSheetWatcher {
     { isCreatedByDevTools = false, fileName = null } = {}
   ) {
     const resourceId = `stylesheet:${this._resourceCount++}`;
+
     const resource = {
       resourceId,
       resourceType: STYLESHEET,
@@ -576,18 +634,46 @@ class StyleSheetWatcher {
       title: styleSheet.title,
     };
 
-    this._styleSheetMap.set(resource.resourceId, { styleSheet });
-
     return resource;
   }
 
-  _updateResource(resourceId, updateType, resourceUpdates) {
+  async _notifyResourcesAvailable(styleSheets) {
+    const resources = await Promise.all(
+      styleSheets.map(async styleSheet => {
+        const creationData = this._stylesheetCreationData?.get(styleSheet);
+
+        const resource = await this._toResource(styleSheet, {
+          isCreatedByDevTools: creationData?.isCreatedByDevTools,
+          fileName: creationData?.fileName,
+        });
+
+        this._styleSheetMap.set(resource.resourceId, { styleSheet });
+        return resource;
+      })
+    );
+
+    await this._onAvailable(resources);
+
+    for (const styleSheet of styleSheets) {
+      const creationData = this._stylesheetCreationData?.get(styleSheet);
+      creationData?.resolve();
+      this._stylesheetCreationData?.delete(styleSheet);
+    }
+  }
+
+  _notifyResourceUpdated(
+    resourceId,
+    updateType,
+    { resourceUpdates, nestedResourceUpdates, event }
+  ) {
     this._onUpdated([
       {
         resourceType: STYLESHEET,
         resourceId,
         updateType,
         resourceUpdates,
+        nestedResourceUpdates,
+        event,
       },
     ]);
   }

@@ -64,6 +64,19 @@ class ResourceWatcher {
 
 
 
+  getResourceById(resourceType, resourceId) {
+    return this._cache.find(
+      r => r.resourceType === resourceType && r.resourceId === resourceId
+    );
+  }
+
+  
+
+
+
+
+
+
 
 
 
