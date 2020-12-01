@@ -296,16 +296,7 @@ nsresult TRRService::ReadPrefs(const char* name) {
 
   if (!name || !strcmp(name, TRR_PREF("mode")) ||
       !strcmp(name, kRolloutModePref)) {
-    uint32_t prevMode = Mode();
-
     OnTRRModeChange();
-
-    
-    
-    
-    if (TRR_DISABLED(Mode()) && !TRR_DISABLED(prevMode)) {
-      ClearEntireCache();
-    }
   }
   if (!name || !strcmp(name, TRR_PREF("uri")) ||
       !strcmp(name, kRolloutURIPref)) {
