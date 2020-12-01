@@ -1026,4 +1026,16 @@ struct ParamTraits<mozilla::ipc::ManagedEndpoint<PFooSide>> {
 
 }  
 
+namespace mozilla::ipc {
+template <>
+struct IPDLParamTraits<FileDescriptor> {
+  typedef FileDescriptor paramType;
+
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    const paramType& aParam);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, paramType* aResult);
+};
+}  
+
 #endif  
