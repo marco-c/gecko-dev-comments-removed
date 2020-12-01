@@ -686,12 +686,12 @@ static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
 #  endif
   return false;
 }
-#else   
+#else
 static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
                                 Instance* instance) {
   return false;
 }
-#endif  
+#endif
 
 static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
                                     bool isUnalignedSignal = false,
@@ -717,7 +717,9 @@ static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
   
   
   
-  Instance* instance = ((Frame*)ContextToFP(context))->instance();
+
+  auto* frame = reinterpret_cast<Frame*>(ContextToFP(context));
+  Instance* instance = GetNearestEffectiveTls(frame)->instance;
   MOZ_RELEASE_ASSERT(&instance->code() == &segment.code() ||
                      trap == Trap::IndirectCallBadSig);
 
