@@ -41,6 +41,7 @@ function shouldNotifyWindowGlobal(windowGlobal, watchedBrowserId) {
   const window = Services.wm.getCurrentInnerWindowWithId(
     windowGlobal.innerWindowId
   );
+
   
   
   
@@ -49,7 +50,14 @@ function shouldNotifyWindowGlobal(windowGlobal, watchedBrowserId) {
   
   
   
-  if (!window.docShell.hasLoadedNonBlankURI && !browsingContext.opener) {
+  
+  
+  
+  
+  if (
+    !window.docShell.hasLoadedNonBlankURI &&
+    window.document?.documentURI === "about:blank"
+  ) {
     return false;
   }
 
