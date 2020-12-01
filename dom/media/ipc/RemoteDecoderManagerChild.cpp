@@ -6,7 +6,6 @@
 #include "RemoteDecoderManagerChild.h"
 
 #include "RemoteAudioDecoder.h"
-#include "RemoteDecoderChild.h"
 #include "RemoteMediaDataDecoder.h"
 #include "RemoteVideoDecoder.h"
 #include "VideoUtils.h"

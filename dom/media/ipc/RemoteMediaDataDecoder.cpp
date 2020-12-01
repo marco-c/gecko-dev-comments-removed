@@ -5,14 +5,12 @@
 
 #include "RemoteMediaDataDecoder.h"
 
-#include "base/thread.h"
-
-#include "IRemoteDecoderChild.h"
+#include "RemoteDecoderChild.h"
 #include "RemoteDecoderManagerChild.h"
 
 namespace mozilla {
 
-RemoteMediaDataDecoder::RemoteMediaDataDecoder(IRemoteDecoderChild* aChild)
+RemoteMediaDataDecoder::RemoteMediaDataDecoder(RemoteDecoderChild* aChild)
     : mChild(aChild) {}
 
 RemoteMediaDataDecoder::~RemoteMediaDataDecoder() {
