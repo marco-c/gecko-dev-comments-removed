@@ -1218,7 +1218,7 @@ var SessionStoreInternal = {
             : listener._lastKnownBody;
           let userContextId = aBrowser.contentPrincipal
             ? aBrowser.contentPrincipal.originAttributes.userContextId
-              : listener._lastKnownUserContextId;
+            : listener._lastKnownUserContextId;
           
           
           
