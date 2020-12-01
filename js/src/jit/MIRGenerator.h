@@ -81,7 +81,7 @@ class MIRGenerator final {
 
   
   
-  void setOffThreadStatus(AbortReasonOr<Ok> result) {
+  void setOffThreadStatus(AbortReasonOr<Ok>&& result) {
     MOZ_ASSERT(offThreadStatus_.isOk());
     offThreadStatus_ = std::move(result);
   }

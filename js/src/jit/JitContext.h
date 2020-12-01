@@ -30,14 +30,35 @@ enum MethodStatus {
   Method_Compiled
 };
 
+
+
+
 enum class AbortReason : uint8_t {
-  Alloc,
-  Inlining,
-  PreliminaryObjects,
-  Disable,
-  Error,
-  NoAbort
+  NoAbort,
+  Alloc = 2,
+  Inlining = 4,
+  PreliminaryObjects = 6,
+  Disable = 8,
+  Error = 10,
 };
+}  
+}  
+
+namespace mozilla::detail {
+
+template <>
+struct UnusedZero<js::jit::AbortReason> : UnusedZeroEnum<js::jit::AbortReason> {
+};
+
+template <>
+struct HasFreeLSB<js::jit::AbortReason> {
+  static const bool value = true;
+};
+
+}  
+
+namespace js {
+namespace jit {
 
 template <typename V>
 using AbortReasonOr = mozilla::Result<V, AbortReason>;
@@ -46,8 +67,12 @@ using mozilla::Ok;
 
 static_assert(sizeof(AbortReasonOr<Ok>) <= sizeof(uintptr_t),
               "Unexpected size of AbortReasonOr<Ok>");
+static_assert(mozilla::detail::SelectResultImpl<bool, AbortReason>::value ==
+              mozilla::detail::PackingStrategy::NullIsOk);
 static_assert(sizeof(AbortReasonOr<bool>) <= sizeof(uintptr_t),
               "Unexpected size of AbortReasonOr<bool>");
+static_assert(sizeof(AbortReasonOr<uint16_t*>) == sizeof(uintptr_t),
+              "Unexpected size of AbortReasonOr<uint16_t*>");
 
 
 
