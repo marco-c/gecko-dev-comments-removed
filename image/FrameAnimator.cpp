@@ -341,6 +341,10 @@ void FrameAnimator::ResetAnimation(AnimationState& aState) {
   }
 
   result.Surface().Reset();
+
+  
+  
+  aState.UpdateStateInternal(result, mSize);
 }
 
 RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
