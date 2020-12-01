@@ -5,6 +5,7 @@
 ("use strict");
 
 const EXPORTED_SYMBOLS = [
+  "clearElementIdCache",
   "getMarionetteCommandsActorProxy",
   "MarionetteCommandsParent",
 ];
@@ -79,10 +80,6 @@ class MarionetteCommandsParent extends JSWindowActorParent {
     } else {
       return evaluate.fromJSON(result.data, elementIdCache);
     }
-  }
-
-  cleanUp() {
-    elementIdCache.clear();
   }
 
   
@@ -284,6 +281,13 @@ class MarionetteCommandsParent extends JSWindowActorParent {
         throw new TypeError(`Invalid capture format: ${format}`);
     }
   }
+}
+
+
+
+
+function clearElementIdCache() {
+  elementIdCache.clear();
 }
 
 
