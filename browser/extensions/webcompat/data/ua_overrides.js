@@ -677,6 +677,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1673937",
+    platform: "all",
+    domain: "goal.com",
+    bug: "1673937",
+    config: {
+      matches: ["*://goal.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Chrome/86.0.4240.110";
+      },
+    },
+  },
 ];
 
 const UAHelpers = {
