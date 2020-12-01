@@ -4,14 +4,14 @@
  
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("devtools/shared/flags"));
+		module.exports = factory();
 	else if(typeof define === 'function' && define.amd)
-		define(["devtools/shared/flags"], factory);
+		define([], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("devtools/shared/flags")) : factory(root["devtools/shared/flags"]);
+		var a = factory();
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_103__) {
+})(typeof self !== 'undefined' ? self : this, function() {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -78,13 +78,6 @@ return  (function(modules) {
  })
 
  ({
-
- 103:
- (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_103__;
-
- }),
 
  560:
  (function(module, exports, __webpack_require__) {
@@ -886,8 +879,6 @@ module.exports = arrayMap;
 (function(process) {
 
 
-const flag = __webpack_require__(103);
-
 function isNode() {
   return process && process.release && process.release.name == "node";
 }
@@ -896,14 +887,9 @@ function isNodeTest() {
   return isNode() && "production" != "production";
 }
 
-function isTesting() {
-  return flag.testing;
-}
-
 module.exports = {
   isNode,
-  isNodeTest,
-  isTesting
+  isNodeTest
 };
 }.call(exports, __webpack_require__(607)))
 

@@ -2,8 +2,6 @@
 
 
 
-const flag = require("./test-flag");
-
 function isNode() {
   return process && process.release && process.release.name == "node";
 }
@@ -12,12 +10,7 @@ function isNodeTest() {
   return isNode() && process.env.NODE_ENV != "production";
 }
 
-function isTesting() {
-  return flag.testing;
-}
-
 module.exports = {
   isNode,
   isNodeTest,
-  isTesting,
 };
