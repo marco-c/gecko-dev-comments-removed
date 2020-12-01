@@ -264,9 +264,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsJARChannel::Resume\n"
 
          
-         "race:TemporaryIPCBlobParent::CreateAndShareFile\n"
-
-         
          "race:makeOwnBaseShape\n"
          "race:numDynamicSlots\n"
 
