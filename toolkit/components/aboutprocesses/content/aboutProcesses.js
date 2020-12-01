@@ -19,8 +19,12 @@ const BUFFER_DURATION_MS = 10000;
 
 const UPDATE_INTERVAL_MS = 2000;
 
-const MS_PER_NS = 1000000;
+const NS_PER_US = 1000;
+const NS_PER_MS = 1000000;
 const NS_PER_S = 1000000000;
+const NS_PER_MIN = NS_PER_S * 60;
+const NS_PER_HOUR = NS_PER_MIN * 60;
+const NS_PER_DAY = NS_PER_HOUR * 24;
 
 const ONE_GIGA = 1024 * 1024 * 1024;
 const ONE_MEGA = 1024 * 1024;
@@ -313,7 +317,7 @@ var State = {
     if (prev.pid != cur.pid) {
       throw new Error("Assertion failed: A process cannot change pid.");
     }
-    let deltaT = (cur.date - prev.date) * MS_PER_NS;
+    let deltaT = (cur.date - prev.date) * NS_PER_MS;
     let threads = null;
     if (SHOW_THREADS) {
       let prevThreads = new Map();
@@ -541,14 +545,32 @@ var View = {
 
     
     {
-      let slope = this._formatPercentage(data.slopeCpu);
-      let content = `${slope} (${(
-        data.totalCpu / MS_PER_NS
-      ).toLocaleString(undefined, { maximumFractionDigits: 0 })}ms)`;
-      this._addCell(row, {
-        content,
-        classes: ["cpu"],
-      });
+      let { duration, unit } = this._getDuration(data.totalCpu);
+      if (data.slopeCpu == null) {
+        this._addCell(row, {
+          fluentName: "about-processes-cpu-user-and-kernel-not-ready",
+          classes: ["cpu"],
+        });
+      } else if (data.slopeCpu == 0) {
+        this._addCell(row, {
+          fluentName: "about-processes-cpu-user-and-kernel-idle",
+          fluentArgs: {
+            total: duration,
+            unit,
+          },
+          classes: ["cpu"],
+        });
+      } else {
+        this._addCell(row, {
+          fluentName: "about-processes-cpu-user-and-kernel",
+          fluentArgs: {
+            percent: data.slopeCpu * 100,
+            total: duration,
+            unit,
+          },
+          classes: ["cpu"],
+        });
+      }
     }
 
     
@@ -750,14 +772,32 @@ var View = {
 
     
     {
-      let slope = this._formatPercentage(data.slopeCpu);
-      let text = `${slope} (${(
-        data.totalCpu / MS_PER_NS
-      ).toLocaleString(undefined, { maximumFractionDigits: 0 })} ms)`;
-      this._addCell(row, {
-        content: text,
-        classes: ["cpu"],
-      });
+      let { duration, unit } = this._getDuration(data.totalCpu);
+      if (data.slopeCpu == null) {
+        this._addCell(row, {
+          fluentName: "about-processes-cpu-user-and-kernel-not-ready",
+          classes: ["cpu"],
+        });
+      } else if (data.slopeCpu == 0) {
+        this._addCell(row, {
+          fluentName: "about-processes-cpu-user-and-kernel-idle",
+          fluentArgs: {
+            total: duration,
+            unit,
+          },
+          classes: ["cpu"],
+        });
+      } else {
+        this._addCell(row, {
+          fluentName: "about-processes-cpu-user-and-kernel",
+          fluentArgs: {
+            percent: data.slopeCpu * 100,
+            total: duration,
+            unit,
+          },
+          classes: ["cpu"],
+        });
+      }
     }
 
     
@@ -785,43 +825,26 @@ var View = {
     return elt;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-  _formatPercentage(value) {
-    if (value == null) {
-      return "?";
+  _getDuration(rawDurationNS) {
+    if (rawDurationNS <= NS_PER_US) {
+      return { duration: rawDurationNS, unit: "ns" };
     }
-    if (value < 0 || typeof value != "number") {
-      throw new Error(`Invalid percentage value ${value}`);
+    if (rawDurationNS <= NS_PER_MS) {
+      return { duration: rawDurationNS / NS_PER_US, unit: "µs" };
     }
-    if (value == 0) {
-      
-      
-      return "idle";
+    if (rawDurationNS <= NS_PER_S) {
+      return { duration: rawDurationNS / NS_PER_MS, unit: "ms" };
     }
-    
-    let percentage = value * 100;
-    if (percentage < 0.01) {
-      
-      return "~0%";
+    if (rawDurationNS <= NS_PER_MIN) {
+      return { duration: rawDurationNS / NS_PER_S, unit: "s" };
     }
-    if (percentage < 1) {
-      
-      return `${percentage.toLocaleString(undefined, {
-        maximumFractionDigits: 2,
-      })}%`;
+    if (rawDurationNS <= NS_PER_HOUR) {
+      return { duration: rawDurationNS / NS_PER_MIN, unit: "m" };
     }
-    
-    return `${Math.round(percentage)}%`;
+    if (rawDurationNS <= NS_PER_DAY) {
+      return { duration: rawDurationNS / NS_PER_HOUR, unit: "h" };
+    }
+    return { duration: rawDurationNS / NS_PER_DAY, unit: "d" };
   },
 
   
