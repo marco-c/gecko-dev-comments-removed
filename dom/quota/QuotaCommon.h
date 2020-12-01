@@ -800,7 +800,7 @@ Result<R, nsresult> ToResultGet(const Func& aFunc, Args&&... aArgs) {
 
 
 template <typename Step, typename Body>
-auto CollectEach(const Step& aStep, const Body& aBody)
+auto CollectEach(Step aStep, const Body& aBody)
     -> Result<mozilla::Ok, typename std::result_of_t<Step()>::err_type> {
   using StepResultType = typename std::result_of_t<Step()>::ok_type;
 
@@ -819,6 +819,30 @@ auto CollectEach(const Step& aStep, const Body& aBody)
   }
 
   return mozilla::Ok{};
+}
+
+
+
+
+
+template <typename InputGenerator, typename T, typename BinaryOp>
+auto ReduceEach(InputGenerator aInputGenerator, T aInit,
+                const BinaryOp& aBinaryOp)
+    -> Result<T, typename std::invoke_result_t<InputGenerator>::err_type> {
+  T res = std::move(aInit);
+
+  
+  MOZ_TRY(CollectEach(
+      std::move(aInputGenerator),
+      [&res, &aBinaryOp](const auto& element)
+          -> Result<Ok,
+                    typename std::invoke_result_t<InputGenerator>::err_type> {
+        MOZ_TRY_VAR(res, aBinaryOp(std::move(res), element));
+
+        return Ok{};
+      }));
+
+  return std::move(res);
 }
 
 template <typename Range, typename Body>

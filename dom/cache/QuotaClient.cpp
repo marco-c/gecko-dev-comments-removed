@@ -40,14 +40,11 @@ Result<UsageInfo, nsresult> ReduceUsageInfo(nsIFile& aDir,
                                             const StepFunc& aStepFunc) {
   
   
-  
   CACHE_TRY_INSPECT(const auto& entries,
                     MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<nsIDirectoryEnumerator>,
                                                aDir, GetDirectoryEntries));
 
-  UsageInfo usageInfo;
-
-  CACHE_TRY(CollectEach(
+  CACHE_TRY_RETURN(ReduceEach(
       [&entries, &aCanceled]() -> Result<nsCOMPtr<nsIFile>, nsresult> {
         if (aCanceled) {
           return nsCOMPtr<nsIFile>{};
@@ -56,18 +53,15 @@ Result<UsageInfo, nsresult> ReduceUsageInfo(nsIFile& aDir,
         CACHE_TRY_RETURN(MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<nsIFile>, entries,
                                                     GetNextFile));
       },
-      [&usageInfo,
-       &aStepFunc](const nsCOMPtr<nsIFile>& bodyDir) -> Result<Ok, nsresult> {
+      UsageInfo{},
+      [&aStepFunc](UsageInfo usageInfo, const nsCOMPtr<nsIFile>& bodyDir)
+          -> Result<UsageInfo, nsresult> {
         CACHE_TRY(OkIf(!QuotaManager::IsShuttingDown()), Err(NS_ERROR_ABORT));
 
         CACHE_TRY_INSPECT(const auto& stepUsageInfo, aStepFunc(bodyDir));
 
-        usageInfo += stepUsageInfo;
-
-        return Ok{};
+        return usageInfo + stepUsageInfo;
       }));
-
-  return usageInfo;
 }
 
 Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
