@@ -86,7 +86,7 @@ pub enum Http3ServerEvent {
     
     Headers {
         request: ClientRequestStream,
-        headers: Option<Vec<Header>>,
+        headers: Vec<Header>,
         fin: bool,
     },
     
@@ -128,12 +128,7 @@ impl Http3ServerEvents {
     }
 
     
-    pub(crate) fn headers(
-        &self,
-        request: ClientRequestStream,
-        headers: Option<Vec<Header>>,
-        fin: bool,
-    ) {
+    pub(crate) fn headers(&self, request: ClientRequestStream, headers: Vec<Header>, fin: bool) {
         self.insert(Http3ServerEvent::Headers {
             request,
             headers,

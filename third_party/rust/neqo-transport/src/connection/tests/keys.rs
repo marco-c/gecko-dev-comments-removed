@@ -63,7 +63,7 @@ fn discarded_initial_keys() {
     
     
     
-    check_discarded(&mut client, init_pkt_s.unwrap(), 1, 1);
+    check_discarded(&mut client, init_pkt_s.unwrap(), 2, 1);
 
     assert!(maybe_authenticate(&mut client));
 

@@ -27,7 +27,13 @@ fn truncate_long_packet() {
 
     
     let dupe = dgram.as_ref().unwrap().clone();
-    let truncated = Datagram::new(dupe.source(), dupe.destination(), &dupe[..(dupe.len() - 1)]);
+    
+    let tail = dupe.iter().rev().take_while(|b| **b == 0).count() + 1;
+    let truncated = Datagram::new(
+        dupe.source(),
+        dupe.destination(),
+        &dupe[..(dupe.len() - tail)],
+    );
     let dupe_ack = client.process(Some(truncated), now()).dgram();
     assert!(dupe_ack.is_some());
 
