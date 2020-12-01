@@ -92,6 +92,7 @@ class MediaSession final : public nsIDocumentActivity, public nsWrapperCache {
   
   
   void NotifyMediaSessionDocStatus(SessionDocStatus aState);
+  void NotifyPlaybackStateUpdated();
   void NotifyMetadataUpdated();
   void NotifyEnableSupportedAction(MediaSessionAction aAction);
   void NotifyDisableSupportedAction(MediaSessionAction aAction);
