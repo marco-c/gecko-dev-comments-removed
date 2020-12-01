@@ -259,10 +259,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:CERT_DestroyCertificate\n"
 
          
-         "race:makeOwnBaseShape\n"
-         "race:numDynamicSlots\n"
-
-         
          "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
 
          
