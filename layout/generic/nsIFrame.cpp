@@ -6036,6 +6036,51 @@ static bool ShouldApplyAutomaticMinimumOnInlineAxis(
   return !aDisplay->IsScrollableOverflow() && aPosition->MinISize(aWM).IsAuto();
 }
 
+struct MinMaxSize {
+  nscoord mMinSize = 0;
+  nscoord mMaxSize = NS_UNCONSTRAINEDSIZE;
+
+  nscoord ClampSizeToMinAndMax(nscoord aSize) const {
+    return NS_CSS_MINMAX(aSize, mMinSize, mMaxSize);
+  }
+};
+static MinMaxSize ComputeTransferredMinMaxInlineSize(
+    WritingMode aWM, const StyleAspectRatio& aAspectRatio,
+    const MinMaxSize& aMinMaxBSize, const LogicalSize& aBoxSizingAdjustment) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MinMaxSize transferredISize;
+
+  if (aMinMaxBSize.mMinSize > 0) {
+    transferredISize.mMinSize = ComputeInlineSizeFromAspectRatio(
+        aWM, aAspectRatio, aMinMaxBSize.mMinSize, aBoxSizingAdjustment);
+  }
+
+  if (aMinMaxBSize.mMaxSize != NS_UNCONSTRAINEDSIZE) {
+    transferredISize.mMaxSize = ComputeInlineSizeFromAspectRatio(
+        aWM, aAspectRatio, aMinMaxBSize.mMaxSize, aBoxSizingAdjustment);
+  }
+
+  
+  transferredISize.mMaxSize =
+      std::max(transferredISize.mMinSize, transferredISize.mMaxSize);
+  return transferredISize;
+}
+
 
 nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
@@ -6191,10 +6236,45 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   
+  
+  
+  
+  
+  
+  
+  const bool isDefiniteISize =
+      inlineStyleCoord->IsLengthPercentage() ||
+      aspectRatioUsage == AspectRatioUsage::ToComputeISize;
+  const bool isFlexItemInlineAxisMainAxis =
+      isFlexItem && flexMainAxis == eLogicalAxisInline;
+  if (stylePos->mAspectRatio.HasFiniteRatio() && !isDefiniteISize &&
+      !isFlexItemInlineAxisMainAxis) {
+    const auto& minBSizeCoord = stylePos->MinBSize(aWM);
+    const auto& maxBSizeCoord = stylePos->MaxBSize(aWM);
+    const MinMaxSize minMaxBSize{
+        nsLayoutUtils::IsAutoBSize(minBSizeCoord, aCBSize.BSize(aWM))
+            ? 0
+            : nsLayoutUtils::ComputeBSizeValue(
+                  aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+                  minBSizeCoord.AsLengthPercentage()),
+        nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM))
+            ? NS_UNCONSTRAINEDSIZE
+            : nsLayoutUtils::ComputeBSizeValue(
+                  aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+                  maxBSizeCoord.AsLengthPercentage())};
+    MinMaxSize transferredMinMaxISize = ComputeTransferredMinMaxInlineSize(
+        aWM, stylePos->mAspectRatio, minMaxBSize, boxSizingAdjust);
+
+    result.ISize(aWM) =
+        transferredMinMaxISize.ClampSizeToMinAndMax(result.ISize(aWM));
+  }
+
+  
+  
+  
   const auto& maxISizeCoord = stylePos->MaxISize(aWM);
   nscoord maxISize = NS_UNCONSTRAINEDSIZE;
-  if (!maxISizeCoord.IsNone() &&
-      !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
+  if (!maxISizeCoord.IsNone() && !isFlexItemInlineAxisMainAxis) {
     maxISize = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
         boxSizingToMarginEdgeISize, maxISizeCoord, aFlags);
@@ -6203,8 +6283,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
 
   const auto& minISizeCoord = stylePos->MinISize(aWM);
   nscoord minISize;
-  if (!minISizeCoord.IsAuto() &&
-      !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
+  if (!minISizeCoord.IsAuto() && !isFlexItemInlineAxisMainAxis) {
     minISize = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
         boxSizingToMarginEdgeISize, minISizeCoord, aFlags);
