@@ -121,6 +121,14 @@ void CharacterData::SetNodeValueInternal(const nsAString& aNodeValue,
 
 
 
+void CharacterData::SetTextContentInternal(const nsAString& aTextContent,
+                                           nsIPrincipal* aSubjectPrincipal,
+                                           ErrorResult& aError) {
+  
+  mozAutoSubtreeModified subtree(OwnerDoc(), nullptr);
+  return SetNodeValue(aTextContent, aError);
+}
+
 void CharacterData::GetData(nsAString& aData) const {
   if (mText.Is2b()) {
     aData.Truncate();
