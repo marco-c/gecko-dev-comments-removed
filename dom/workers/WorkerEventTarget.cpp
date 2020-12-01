@@ -5,6 +5,8 @@
 
 
 #include "WorkerEventTarget.h"
+#include "WorkerPrivate.h"
+#include "WorkerRunnable.h"
 
 namespace mozilla {
 namespace dom {
