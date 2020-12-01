@@ -1444,7 +1444,7 @@ var PanelView = class extends AssociatedToNode {
       
       
       
-      let isMultiline = ":not(:is([hidden],[value],:empty))";
+      let isMultiline = ":not([hidden],[value],:empty)";
       let selector = [
         "description" + isMultiline,
         "label" + isMultiline,
