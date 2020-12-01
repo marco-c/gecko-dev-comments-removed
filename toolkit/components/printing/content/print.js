@@ -226,6 +226,12 @@ var PrintEventHandler = {
       
       
 
+      if (document.body.getAttribute("rendering")) {
+        
+        this.printForm.disable();
+        await window._initialized;
+      }
+
       
       
       
