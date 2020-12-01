@@ -2399,6 +2399,8 @@ class UrlbarInput {
     
     if (!params.avoidBrowserFocus) {
       browser.focus();
+      
+      this.selectionStart = this.selectionEnd = 0;
     }
 
     if (openUILinkWhere != "current") {
@@ -2417,9 +2419,6 @@ class UrlbarInput {
         this.handleRevert();
       }
     }
-
-    
-    this.selectionStart = this.selectionEnd = 0;
 
     this.view.close();
   }
@@ -3125,6 +3124,8 @@ class UrlbarInput {
         
         if (this.window.gBrowser.selectedBrowser === loadingBrowser) {
           loadingBrowser.focus();
+          
+          this.selectionStart = this.selectionEnd = 0;
         }
       } catch (ex) {
         

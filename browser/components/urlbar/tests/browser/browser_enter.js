@@ -182,6 +182,18 @@ add_task(async function searchOnEnterSoon() {
   );
 
   
+  Assert.equal(
+    gURLBar.selectionStart,
+    gURLBar.value.length,
+    "The selectionStart indicates at ending of the value"
+  );
+  Assert.equal(
+    gURLBar.selectionEnd,
+    gURLBar.value.length,
+    "The selectionEnd indicates at ending of the value"
+  );
+
+  
   EventUtils.synthesizeKey("x", { type: "keyup" });
   EventUtils.synthesizeKey("KEY_Enter", { type: "keyup" });
 
@@ -194,6 +206,18 @@ add_task(async function searchOnEnterSoon() {
   
   const result = await onResult;
   is(result, "unload", "Keyup event is not captured.");
+
+  
+  Assert.equal(
+    gURLBar.selectionStart,
+    0,
+    "The selectionStart indicates at beginning of the value"
+  );
+  Assert.equal(
+    gURLBar.selectionEnd,
+    0,
+    "The selectionEnd indicates at beginning of the value"
+  );
 
   
   await onLoad;
