@@ -469,6 +469,12 @@ nsresult nsStringBundleBase::ParseProperties(nsIPersistentProperties** aProps) {
 }
 
 nsresult nsStringBundle::LoadProperties() {
+  
+  
+  if (PastShutdownPhase(ShutdownPhase::Shutdown)) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
+
   if (mProps) {
     return NS_OK;
   }
