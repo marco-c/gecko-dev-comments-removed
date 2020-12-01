@@ -17,6 +17,7 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -43,8 +44,8 @@ class AudioSink : private AudioStream::DataSource {
 
   
   
-  nsresult Init(const PlaybackParams& aParams,
-                RefPtr<MediaSink::EndedPromise>& aEndedPromise);
+  Result<already_AddRefed<MediaSink::EndedPromise>, nsresult> Start(
+      const PlaybackParams& aParams);
 
   
 
@@ -79,8 +80,6 @@ class AudioSink : private AudioStream::DataSource {
   
   UniquePtr<AudioStream::Chunk> PopFrames(uint32_t aFrames) override;
   bool Ended() const override;
-  void Drained() override;
-  void Errored() override;
 
   void CheckIsAudible(const AudioData* aData);
 
@@ -106,8 +105,6 @@ class AudioSink : private AudioStream::DataSource {
   
   bool mPlaying;
 
-  MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise;
-
   
 
 
@@ -128,9 +125,6 @@ class AudioSink : private AudioStream::DataSource {
 
   
   Atomic<bool> mErrored;
-
-  
-  Atomic<bool> mPlaybackComplete;
 
   const RefPtr<AbstractThread> mOwnerThread;
 

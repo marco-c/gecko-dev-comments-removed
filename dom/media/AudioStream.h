@@ -9,8 +9,12 @@
 #  include "AudioSampleFormat.h"
 #  include "CubebUtils.h"
 #  include "MediaInfo.h"
+#  include "MediaSink.h"
+#  include "mozilla/Atomics.h"
 #  include "mozilla/Monitor.h"
+#  include "mozilla/MozPromise.h"
 #  include "mozilla/RefPtr.h"
+#  include "mozilla/Result.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"
 #  include "nsCOMPtr.h"
@@ -201,10 +205,6 @@ class AudioStream final
     virtual UniquePtr<Chunk> PopFrames(uint32_t aFrames) = 0;
     
     virtual bool Ended() const = 0;
-    
-    virtual void Drained() = 0;
-    
-    virtual void Errored() = 0;
 
    protected:
     virtual ~DataSource() = default;
@@ -230,7 +230,8 @@ class AudioStream final
   void SetVolume(double aVolume);
 
   
-  nsresult Start();
+  
+  Result<already_AddRefed<MediaSink::EndedPromise>, nsresult> Start();
 
   
   void Pause();
@@ -265,6 +266,8 @@ class AudioStream final
   nsresult SetPreservesPitch(bool aPreservesPitch);
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+
+  bool IsPlaybackCompleted() const;
 
  protected:
   friend class AudioClock;
@@ -341,6 +344,9 @@ class AudioStream final
   
   std::atomic<int> mAudioThreadId;
   const bool mSandboxed = false;
+
+  MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise;
+  Atomic<bool> mPlaybackComplete;
 };
 
 }  
