@@ -83,6 +83,19 @@ static nsDOMCSSValueList* GetROCSSValueList(bool aCommaDelimited) {
   return new nsDOMCSSValueList(aCommaDelimited);
 }
 
+static Element* GetRenderedElement(Element* aElement, nsAtom* aPseudo) {
+  if (aPseudo == nsCSSPseudoElements::before()) {
+    return nsLayoutUtils::GetBeforePseudo(aElement);
+  }
+  if (aPseudo == nsCSSPseudoElements::after()) {
+    return nsLayoutUtils::GetAfterPseudo(aElement);
+  }
+  if (aPseudo == nsCSSPseudoElements::marker()) {
+    return nsLayoutUtils::GetMarkerPseudo(aElement);
+  }
+  return aElement;
+}
+
 
 static bool ElementNeedsRestyle(Element* aElement, nsAtom* aPseudo,
                                 bool aMayNeedToFlushLayout) {
@@ -153,10 +166,10 @@ static bool ElementNeedsRestyle(Element* aElement, nsAtom* aPseudo,
 
   
   
+  Element* styledElement = GetRenderedElement(aElement, aPseudo);
   
-  
-  
-  return Servo_HasPendingRestyleAncestor(aElement, aMayNeedToFlushLayout);
+  return Servo_HasPendingRestyleAncestor(
+      styledElement ? styledElement : aElement, aMayNeedToFlushLayout);
 }
 
 
@@ -516,18 +529,7 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
   
   if (inDocWithShell && aStyleType == eAll &&
       !aElement->IsHTMLElement(nsGkAtoms::area)) {
-    Element* element = nullptr;
-    if (aPseudo == nsCSSPseudoElements::before()) {
-      element = nsLayoutUtils::GetBeforePseudo(aElement);
-    } else if (aPseudo == nsCSSPseudoElements::after()) {
-      element = nsLayoutUtils::GetAfterPseudo(aElement);
-    } else if (aPseudo == nsCSSPseudoElements::marker()) {
-      element = nsLayoutUtils::GetMarkerPseudo(aElement);
-    } else if (!aPseudo) {
-      element = aElement;
-    }
-
-    if (element) {
+    if (Element* element = GetRenderedElement(aElement, aPseudo)) {
       if (nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(element)) {
         ComputedStyle* result = styleFrame->Style();
         
