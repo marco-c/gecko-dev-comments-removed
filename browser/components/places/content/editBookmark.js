@@ -268,6 +268,14 @@ var gEditItemOverlay = {
       onPanelReady,
     } = this._setPaneInfo(aInfo);
 
+    
+    if (
+      aInfo.isNewBookmark &&
+      parentGuid == PlacesUtils.bookmarks.toolbarGuid
+    ) {
+      this._autoshowBookmarksToolbar();
+    }
+
     let showOrCollapse = (
       rowId,
       isAppropriateForInput,
