@@ -99,12 +99,7 @@ class nsFaviconService final : public nsIFaviconService,
 
 
 
-
-
-
-
-  void SendFaviconNotifications(nsIURI* aPageURI, nsIURI* aFaviconURI,
-                                const nsACString& aGUID);
+  void ClearImageCache(nsIURI* aImageURI);
 
   static mozilla::Atomic<int64_t> sLastInsertedIconId;
   static void StoreLastInsertedId(const nsACString& aTable,

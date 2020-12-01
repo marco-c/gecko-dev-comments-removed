@@ -235,12 +235,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
                            nsNavHistoryResultNode** aResult);
 
   
-  
-  void SendPageChangedNotification(nsIURI* aURI, uint32_t aChangedAttribute,
-                                   const nsAString& aValue,
-                                   const nsACString& aGUID);
-
-  
 
 
   int32_t GetDaysOfHistory();
