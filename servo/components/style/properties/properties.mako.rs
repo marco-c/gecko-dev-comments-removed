@@ -792,13 +792,43 @@ static ${name}: LonghandIdSet = LonghandIdSet {
 
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[repr(u8)]
 pub enum LogicalGroup {
-    % for group in sorted(logical_groups.keys()):
+    % for i, group in enumerate(logical_groups.keys()):
     
-    ${to_camel_case(group)},
+    ${to_camel_case(group)} = ${i},
     % endfor
 }
 
+
+
+#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq)]
+pub struct LogicalGroupSet {
+    storage: [u32; (${len(logical_groups)} - 1 + 32) / 32]
+}
+
+impl LogicalGroupSet {
+    
+    pub fn new() -> Self {
+        Self {
+            storage: Default::default(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn contains(&self, g: LogicalGroup) -> bool {
+        let bit = g as usize;
+        (self.storage[bit / 32] & (1 << (bit % 32))) != 0
+    }
+
+    
+    #[inline]
+    pub fn insert(&mut self, g: LogicalGroup) {
+        let bit = g as usize;
+        self.storage[bit / 32] |= 1 << (bit % 32);
+    }
+}
 
 
 #[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq)]

@@ -930,7 +930,7 @@ impl PropertyDeclarationBlock {
         let mut already_serialized = NonCustomPropertyIdSet::new();
 
         
-        for (declaration, importance) in self.declaration_importance_iter() {
+        'declaration_loop: for (declaration, importance) in self.declaration_importance_iter() {
             
             let property = declaration.id();
             let longhand_id = match property {
@@ -957,10 +957,6 @@ impl PropertyDeclarationBlock {
             }
 
             
-            
-            
-
-            
             for shorthand in longhand_id.shorthands() {
                 
                 if already_serialized.contains(shorthand.into()) {
@@ -973,71 +969,102 @@ impl PropertyDeclarationBlock {
                 }
 
                 
-                let mut current_longhands = SmallVec::<[_; 10]>::new();
-                let mut important_count = 0;
-                let mut found_system = None;
-
-                let is_system_font = shorthand == ShorthandId::Font &&
-                    self.declarations.iter().any(|l| match l.id() {
-                        PropertyDeclarationId::Longhand(id) => {
-                            if already_serialized.contains(id.into()) {
-                                return false;
-                            }
-
-                            l.get_system().is_some()
-                        },
-                        PropertyDeclarationId::Custom(..) => {
-                            debug_assert!(l.get_system().is_none());
-                            false
-                        },
-                    });
-
-                if is_system_font {
-                    for (longhand, importance) in self.declaration_importance_iter() {
-                        if longhand.get_system().is_some() || longhand.is_default_line_height() {
-                            current_longhands.push(longhand);
-                            if found_system.is_none() {
-                                found_system = longhand.get_system();
-                            }
-                            if importance.important() {
-                                important_count += 1;
-                            }
-                        }
-                    }
-                } else {
-                    let mut contains_all_longhands = true;
-                    for longhand in shorthand.longhands() {
-                        match self.get(PropertyDeclarationId::Longhand(longhand)) {
-                            Some((declaration, importance)) => {
-                                current_longhands.push(declaration);
-                                if importance.important() {
-                                    important_count += 1;
-                                }
-                            },
-                            None => {
-                                contains_all_longhands = false;
-                                break;
-                            },
-                        }
-                    }
-
+                
+                
+                
+                
+                
+                let longhands = {
                     
-                    if !contains_all_longhands {
-                        continue;
+                    
+                    let mut ids = LonghandIdSet::new();
+                    for longhand in shorthand.longhands() {
+                        ids.insert(longhand);
+                    }
+                    ids
+                };
+
+                
+                
+                
+                
+                if !self.longhands.contains_all(&longhands) {
+                    continue;
+                }
+
+                
+                
+                let mut current_longhands = SmallVec::<[_; 10]>::new();
+                let mut logical_groups = LogicalGroupSet::new();
+                let mut saw_one = false;
+                let mut logical_mismatch = false;
+                let mut seen = LonghandIdSet::new();
+                let mut important_count = 0;
+
+                
+                
+                
+                for (declaration, importance) in self.declaration_importance_iter() {
+                    let longhand = match declaration.id() {
+                        PropertyDeclarationId::Longhand(id) => id,
+                        PropertyDeclarationId::Custom(..) => continue,
+                    };
+
+                    if longhands.contains(longhand) {
+                        saw_one = true;
+                        if importance.important() {
+                            important_count += 1;
+                        }
+                        current_longhands.push(declaration);
+                        if shorthand != ShorthandId::All {
+                            
+                            
+                            if let Some(g) = longhand.logical_group() {
+                                logical_groups.insert(g);
+                            }
+                            seen.insert(longhand);
+                            if seen == longhands {
+                                break;
+                            }
+                        }
+                    } else if saw_one {
+                        if let Some(g) = longhand.logical_group() {
+                            if logical_groups.contains(g) {
+                                logical_mismatch = true;
+                                break;
+                            }
+                        }
                     }
                 }
 
+                
+                
+                
+                
                 
                 let is_important = important_count > 0;
                 if is_important && important_count != current_longhands.len() {
                     continue;
                 }
+
+                
+                
+                
+                
+                
+                
+                
+                if logical_mismatch {
+                    continue;
+                }
+
                 let importance = if is_important {
                     Importance::Important
                 } else {
                     Importance::Normal
                 };
 
+                
                 
                 
                 let appendable_value = match shorthand
@@ -1050,31 +1077,16 @@ impl PropertyDeclarationBlock {
                 
                 
                 let mut v = CssString::new();
-                let value = match (appendable_value, found_system) {
-                    (
-                        AppendableValue::Css {
-                            css,
-                            with_variables,
-                        },
-                        _,
-                    ) => {
+                let value = match appendable_value {
+                    AppendableValue::Css { css, with_variables } => {
                         debug_assert!(!css.is_empty());
-                        AppendableValue::Css {
-                            css: css,
-                            with_variables: with_variables,
-                        }
+                        AppendableValue::Css { css, with_variables }
                     },
-                    #[cfg(feature = "gecko")]
-                    (_, Some(sys)) => {
-                        sys.to_css(&mut CssWriter::new(&mut v))?;
-                        AppendableValue::Css {
-                            css: CssStringBorrow::from(&v),
-                            with_variables: false,
-                        }
-                    },
-                    (other, _) => {
+                    other => {
                         append_declaration_value(&mut v, other)?;
 
+                        
+                        
                         
                         if v.is_empty() {
                             continue;
@@ -1088,6 +1100,14 @@ impl PropertyDeclarationBlock {
                 };
 
                 
+                
+                
+                
+                
+                
+                
+                
+                
                 append_serialization::<Cloned<slice::Iter<_>>, _>(
                     dest,
                     &shorthand,
@@ -1096,6 +1116,9 @@ impl PropertyDeclarationBlock {
                     &mut is_first_serialization,
                 )?;
 
+                
+                
+                
                 for current_longhand in &current_longhands {
                     let longhand_id = match current_longhand.id() {
                         PropertyDeclarationId::Longhand(id) => id,
@@ -1108,17 +1131,14 @@ impl PropertyDeclarationBlock {
 
                 
                 
-                
-                
-                
-                break;
+                continue 'declaration_loop;
             }
 
             
-            if already_serialized.contains(longhand_id.into()) {
-                continue;
-            }
-
+            
+            
+            
+            
             
             
             
@@ -1132,6 +1152,7 @@ impl PropertyDeclarationBlock {
                 &mut is_first_serialization,
             )?;
 
+            
             
             already_serialized.insert(longhand_id.into());
         }
