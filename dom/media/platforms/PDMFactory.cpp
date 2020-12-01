@@ -301,15 +301,9 @@ already_AddRefed<MediaDataDecoder> PDMFactory::CreateDecoder(
     if (isEncrypted) {
       decoder = CreateDecoderWithPDM(mEMEPDM, aParams);
     } else {
-      DecoderDoctorDiagnostics* diagnostics = aParams.mDiagnostics;
-      if (diagnostics) {
-        
-        
-        diagnostics->SetFailureFlags(mFailureFlags);
-      }
-
       for (auto& current : mCurrentPDMs) {
-        if (!current->Supports(SupportDecoderParams(aParams), diagnostics)) {
+        if (!current->Supports(SupportDecoderParams(aParams),
+                               nullptr )) {
           continue;
         }
         decoder = CreateDecoderWithPDM(current, aParams);
@@ -338,20 +332,13 @@ already_AddRefed<MediaDataDecoder> PDMFactory::CreateDecoderWithPDM(
 
   auto checkResult = supportChecker.Check();
   if (checkResult.mReason != SupportChecker::Reason::kSupported) {
-    DecoderDoctorDiagnostics* diagnostics = aParams.mDiagnostics;
     if (checkResult.mReason ==
         SupportChecker::Reason::kVideoFormatNotSupported) {
-      if (diagnostics) {
-        diagnostics->SetVideoNotSupported();
-      }
       if (result) {
         *result = checkResult.mMediaResult;
       }
     } else if (checkResult.mReason ==
                SupportChecker::Reason::kAudioFormatNotSupported) {
-      if (diagnostics) {
-        diagnostics->SetAudioNotSupported();
-      }
       if (result) {
         *result = checkResult.mMediaResult;
       }
