@@ -219,6 +219,31 @@ var UrlbarUtils = {
   ]),
 
   
+  
+  get LOCAL_SEARCH_MODES() {
+    return [
+      {
+        source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+        restrict: UrlbarTokenizer.RESTRICT.BOOKMARK,
+        icon: "chrome://browser/skin/bookmark.svg",
+        pref: "shortcuts.bookmarks",
+      },
+      {
+        source: UrlbarUtils.RESULT_SOURCE.TABS,
+        restrict: UrlbarTokenizer.RESTRICT.OPENPAGE,
+        icon: "chrome://browser/skin/tab.svg",
+        pref: "shortcuts.tabs",
+      },
+      {
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        restrict: UrlbarTokenizer.RESTRICT.HISTORY,
+        icon: "chrome://browser/skin/history.svg",
+        pref: "shortcuts.history",
+      },
+    ];
+  },
+
+  
 
 
 
@@ -563,20 +588,19 @@ var UrlbarUtils = {
       return null;
     }
 
-    switch (token) {
-      case UrlbarTokenizer.RESTRICT.BOOKMARK:
-        return { source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS };
-      case UrlbarTokenizer.RESTRICT.HISTORY:
-        return { source: UrlbarUtils.RESULT_SOURCE.HISTORY };
-      case UrlbarTokenizer.RESTRICT.OPENPAGE:
-        return { source: UrlbarUtils.RESULT_SOURCE.TABS };
-      case UrlbarTokenizer.RESTRICT.SEARCH:
-        return {
-          engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
-        };
+    if (token == UrlbarTokenizer.RESTRICT.SEARCH) {
+      return {
+        engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
+      };
     }
 
-    return null;
+    let mode = UrlbarUtils.LOCAL_SEARCH_MODES.find(m => m.restrict == token);
+    if (!mode) {
+      return null;
+    }
+
+    
+    return { ...mode };
   },
 
   

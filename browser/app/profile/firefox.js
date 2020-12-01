@@ -368,7 +368,9 @@ pref("browser.urlbar.update2.emptySearchBehavior", 0);
 
 
 
-pref("browser.urlbar.update2.localOneOffs", true);
+pref("browser.urlbar.shortcuts.bookmarks", true);
+pref("browser.urlbar.shortcuts.tabs", true);
+pref("browser.urlbar.shortcuts.history", true);
 
 
 

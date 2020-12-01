@@ -15,6 +15,16 @@ ChromeUtils.defineModuleGetter(
   "ExtensionSettingsStore",
   "resource://gre/modules/ExtensionSettingsStore.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "UrlbarPrefs",
+  "resource:///modules/UrlbarPrefs.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "UrlbarUtils",
+  "resource:///modules/UrlbarUtils.jsm"
+);
 
 Preferences.addAll([
   { id: "browser.search.suggest.enabled", type: "bool" },
@@ -465,7 +475,10 @@ var gSearchPane = {
 
     if (aEvent.charCode == KeyEvent.DOM_VK_SPACE) {
       
-      let newValue = !gEngineView._engineStore.engines[index].shown;
+      let newValue = !gEngineView.getCellValue(
+        index,
+        tree.columns.getNamedColumn("engineShown")
+      );
       gEngineView.setCellValue(
         index,
         tree.columns.getFirstColumn(),
@@ -494,6 +507,11 @@ var gSearchPane = {
   },
 
   startEditingAlias(index) {
+    
+    if (gEngineView._getLocalShortcut(index)) {
+      return;
+    }
+
     let tree = document.getElementById("engineList");
     let engine = gEngineView._engineStore.engines[index];
     tree.startEditing(index, tree.columns.getLastColumn());
@@ -602,6 +620,13 @@ var gSearchPane = {
 
 function onDragEngineStart(event) {
   var selectedIndex = gEngineView.selectedIndex;
+
+  
+  if (gEngineView._getLocalShortcut(selectedIndex)) {
+    event.preventDefault();
+    return;
+  }
+
   var tree = document.getElementById("engineList");
   let cell = tree.getCellAt(event.clientX, event.clientY);
   if (selectedIndex >= 0 && !gEngineView.isCheckBox(cell.row, cell.col)) {
@@ -760,7 +785,30 @@ EngineStore.prototype = {
 
 function EngineView(aEngineStore) {
   this._engineStore = aEngineStore;
+
+  UrlbarPrefs.addObserver(this);
+
+  
+  
+  
+  this._localShortcutL10nNames = new Map();
+  document.l10n
+    .formatValues(
+      UrlbarUtils.LOCAL_SEARCH_MODES.map(mode => {
+        let name = UrlbarUtils.getResultSourceName(mode.source);
+        return { id: `urlbar-search-mode-${name}` };
+      })
+    )
+    .then(names => {
+      for (let { source } of UrlbarUtils.LOCAL_SEARCH_MODES) {
+        this._localShortcutL10nNames.set(source, names.shift());
+      }
+      
+      
+      this.invalidate();
+    });
 }
+
 EngineView.prototype = {
   _engineStore: null,
   tree: null,
@@ -789,7 +837,7 @@ EngineView.prototype = {
   },
 
   invalidate() {
-    this.tree.invalidate();
+    this.tree?.invalidate();
   },
 
   ensureRowIsVisible(index) {
@@ -805,16 +853,59 @@ EngineView.prototype = {
   },
 
   isEngineSelectedAndRemovable() {
-    return this.selectedIndex != -1 && this.lastIndex != 0;
+    return (
+      this.selectedIndex != -1 &&
+      this.lastIndex != 0 &&
+      !this._getLocalShortcut(this.selectedIndex)
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+  _getLocalShortcut(index) {
+    let engineCount = this._engineStore.engines.length;
+    if (index < engineCount) {
+      return null;
+    }
+    return UrlbarUtils.LOCAL_SEARCH_MODES[index - engineCount];
+  },
+
+  
+
+
+
+
+
+  onPrefChanged(pref) {
+    
+    
+    let parts = pref.split(".");
+    if (parts[0] == "shortcuts" && parts[1] && parts.length == 2) {
+      this.invalidate();
+    }
   },
 
   
   get rowCount() {
-    return this._engineStore.engines.length;
+    return (
+      this._engineStore.engines.length + UrlbarUtils.LOCAL_SEARCH_MODES.length
+    );
   },
 
   getImageSrc(index, column) {
     if (column.id == "engineName") {
+      let shortcut = this._getLocalShortcut(index);
+      if (shortcut) {
+        return shortcut.icon;
+      }
+
       if (this._engineStore.engines[index].iconURI) {
         return this._engineStore.engines[index].iconURI.spec;
       }
@@ -830,8 +921,16 @@ EngineView.prototype = {
 
   getCellText(index, column) {
     if (column.id == "engineName") {
+      let shortcut = this._getLocalShortcut(index);
+      if (shortcut) {
+        return this._localShortcutL10nNames.get(shortcut.source) || "";
+      }
       return this._engineStore.engines[index].name;
     } else if (column.id == "engineKeyword") {
+      let shortcut = this._getLocalShortcut(index);
+      if (shortcut) {
+        return "";
+      }
       return this._engineStore.engines[index].originalEngine.aliases.join(", ");
     }
     return "";
@@ -846,11 +945,19 @@ EngineView.prototype = {
     return (
       sourceIndex != -1 &&
       sourceIndex != targetIndex &&
-      sourceIndex != targetIndex + orientation
+      sourceIndex != targetIndex + orientation &&
+      
+      targetIndex < this._engineStore.engines.length
     );
   },
 
   async drop(dropIndex, orientation, dataTransfer) {
+    
+    
+    if (this._engineStore.engines.length <= dropIndex) {
+      return;
+    }
+
     var sourceIndex = this.getSourceIndexFromDrag(dataTransfer);
     var sourceEngine = this._engineStore.engines[sourceIndex];
 
@@ -877,6 +984,14 @@ EngineView.prototype = {
     return "";
   },
   getCellProperties(index, column) {
+    if (column.id == "engineName") {
+      
+      
+      let shortcut = this._getLocalShortcut(index);
+      if (shortcut) {
+        return UrlbarUtils.getResultSourceName(shortcut.source);
+      }
+    }
     return "";
   },
   getColumnProperties(column) {
@@ -908,6 +1023,10 @@ EngineView.prototype = {
   },
   getCellValue(index, column) {
     if (column.id == "engineShown") {
+      let shortcut = this._getLocalShortcut(index);
+      if (shortcut) {
+        return UrlbarPrefs.get(shortcut.pref);
+      }
       return this._engineStore.engines[index].shown;
     }
     return undefined;
@@ -917,10 +1036,19 @@ EngineView.prototype = {
   selectionChanged() {},
   cycleCell(row, column) {},
   isEditable(index, column) {
-    return column.id != "engineName";
+    return (
+      column.id != "engineName" &&
+      (column.id == "engineShown" || !this._getLocalShortcut(index))
+    );
   },
   setCellValue(index, column, value) {
     if (column.id == "engineShown") {
+      let shortcut = this._getLocalShortcut(index);
+      if (shortcut) {
+        UrlbarPrefs.set(shortcut.pref, value == "true");
+        this.invalidate();
+        return;
+      }
       this._engineStore.engines[index].shown = value == "true";
       gEngineView.invalidate();
       gSearchPane.saveOneClickEnginesList();

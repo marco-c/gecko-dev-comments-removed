@@ -13,31 +13,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SearchOneOffs: "resource:///modules/SearchOneOffs.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
-
-
-const LOCAL_MODES = new Map([
-  [
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-    {
-      restrict: UrlbarTokenizer.RESTRICT.BOOKMARK,
-    },
-  ],
-  [
-    UrlbarUtils.RESULT_SOURCE.TABS,
-    {
-      restrict: UrlbarTokenizer.RESTRICT.OPENPAGE,
-    },
-  ],
-  [
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
-    {
-      restrict: UrlbarTokenizer.RESTRICT.HISTORY,
-    },
-  ],
-]);
 
 
 
@@ -311,13 +288,32 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
+  async willHide() {
+    
+    
+    let superWillHide = await super.willHide();
+    if (UrlbarUtils.LOCAL_SEARCH_MODES.some(m => UrlbarPrefs.get(m.pref))) {
+      return false;
+    }
+    return superWillHide;
+  }
+
+  
+
+
+
+
+
+
   onPrefChanged(changedPref) {
     
     
     if (
-      ["update2", "update2.localOneOffs", "update2.oneOffsRefresh"].includes(
-        changedPref
-      )
+      [
+        "update2",
+        "update2.oneOffsRefresh",
+        ...UrlbarUtils.LOCAL_SEARCH_MODES.map(m => m.pref),
+      ].includes(changedPref)
     ) {
       this.invalidateCache();
     }
@@ -342,11 +338,14 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
   _rebuildEngineList(engines) {
     super._rebuildEngineList(engines);
 
-    if (!this.view.oneOffsRefresh || !UrlbarPrefs.get("update2.localOneOffs")) {
+    if (!this.view.oneOffsRefresh) {
       return;
     }
 
-    for (let [source, { restrict }] of LOCAL_MODES) {
+    for (let { source, pref, restrict } of UrlbarUtils.LOCAL_SEARCH_MODES) {
+      if (!UrlbarPrefs.get(pref)) {
+        continue;
+      }
       let name = UrlbarUtils.getResultSourceName(source);
       let button = this.document.createXULElement("button");
       button.id = `urlbar-engine-one-off-item-${name}`;

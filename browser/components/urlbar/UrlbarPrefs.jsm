@@ -132,6 +132,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["searchTips.test.ignoreShowLimits", false],
 
   
+  ["shortcuts.bookmarks", true],
+  ["shortcuts.tabs", true],
+  ["shortcuts.history", true],
+
+  
   ["speculativeConnect.enabled", true],
 
   
@@ -187,10 +192,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["update2.emptySearchBehavior", 0],
-
-  
-  
-  ["update2.localOneOffs", true],
 
   
   
