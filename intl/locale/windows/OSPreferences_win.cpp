@@ -204,7 +204,7 @@ static LCTYPE ToTimeLCType(OSPreferences::DateTimeFormatStyle aFormatStyle) {
 bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
                                         DateTimeFormatStyle aTimeStyle,
                                         const nsACString& aLocale,
-                                        nsAString& aRetVal) {
+                                        nsACString& aRetVal) {
   nsAutoString localeName;
   CopyASCIItoUTF16(aLocale, localeName);
 
@@ -215,20 +215,13 @@ bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 
   
   
-  
-  
-  
-  nsAutoString tmpStr;
-  nsAString* str;
+  nsAutoString str;
   if (isDate && isTime) {
     if (!GetDateTimeConnectorPattern(aLocale, aRetVal)) {
       NS_WARNING("failed to get date/time connector");
-      aRetVal.AssignLiteral(u"{1} {0}");
+      aRetVal.AssignLiteral("{1} {0}");
     }
-    str = &tmpStr;
-  } else if (isDate || isTime) {
-    str = &aRetVal;
-  } else {
+  } else if (!isDate && !isTime) {
     aRetVal.Truncate(0);
     return true;
   }
@@ -244,10 +237,10 @@ bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 
     
     
-    str->SetLength(len);
+    str.SetLength(len);
     GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()),
-                    lcType, (WCHAR*)str->BeginWriting(), len);
-    str->SetLength(len - 1);  
+                    lcType, (WCHAR*)str.BeginWriting(), len);
+    str.SetLength(len - 1);  
 
     
     
@@ -256,38 +249,40 @@ bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
     
     
     nsAString::const_iterator start, pos, end;
-    start = str->BeginReading(pos);
-    str->EndReading(end);
+    start = str.BeginReading(pos);
+    str.EndReading(end);
     if (FindInReadable(u"dddd"_ns, pos, end)) {
-      str->ReplaceLiteral(pos - start, 4, u"EEEE");
+      str.ReplaceLiteral(pos - start, 4, u"EEEE");
     } else {
       pos = start;
       if (FindInReadable(u"ddd"_ns, pos, end)) {
-        str->ReplaceLiteral(pos - start, 3, u"EEE");
+        str.ReplaceLiteral(pos - start, 3, u"EEE");
       }
     }
 
     
     
-    int32_t index = str->FindChar('g');
+    int32_t index = str.FindChar('g');
     if (index >= 0) {
-      str->Replace(index, 1, 'G');
+      str.Replace(index, 1, 'G');
       
       index++;
-      if (str->CharAt(index) == 'g') {
-        str->Cut(index, 1);
+      if (str.CharAt(index) == 'g') {
+        str.Cut(index, 1);
       }
     }
 
     
     
     if (isTime) {
-      nsAString::const_iterator start, pos, end;
+      nsACString::const_iterator start, pos, end;
       start = aRetVal.BeginReading(pos);
       aRetVal.EndReading(end);
-      if (FindInReadable(u"{1}"_ns, pos, end)) {
-        aRetVal.Replace(pos - start, 3, tmpStr);
+      if (FindInReadable("{1}"_ns, pos, end)) {
+        aRetVal.Replace(pos - start, 3, NS_ConvertUTF16toUTF8(str));
       }
+    } else {
+      aRetVal = NS_ConvertUTF16toUTF8(str);
     }
   }
 
@@ -302,32 +297,34 @@ bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 
     
     
-    str->SetLength(len);
+    str.SetLength(len);
     GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()),
-                    lcType, (WCHAR*)str->BeginWriting(), len);
-    str->SetLength(len - 1);
+                    lcType, (WCHAR*)str.BeginWriting(), len);
+    str.SetLength(len - 1);
 
     
     
     
     
     
-    int32_t index = str->FindChar('t');
+    int32_t index = str.FindChar('t');
     if (index >= 0) {
-      str->Replace(index, 1, 'a');
+      str.Replace(index, 1, 'a');
       index++;
-      if (str->CharAt(index) == 't') {
-        str->Cut(index, 1);
+      if (str.CharAt(index) == 't') {
+        str.Cut(index, 1);
       }
     }
 
     if (isDate) {
-      nsAString::const_iterator start, pos, end;
+      nsACString::const_iterator start, pos, end;
       start = aRetVal.BeginReading(pos);
       aRetVal.EndReading(end);
-      if (FindInReadable(u"{0}"_ns, pos, end)) {
-        aRetVal.Replace(pos - start, 3, tmpStr);
+      if (FindInReadable("{0}"_ns, pos, end)) {
+        aRetVal.Replace(pos - start, 3, NS_ConvertUTF16toUTF8(str));
       }
+    } else {
+      aRetVal = NS_ConvertUTF16toUTF8(str);
     }
   }
 
