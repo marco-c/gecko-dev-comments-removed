@@ -26,6 +26,7 @@ enum class FeatureStatus {
   UnavailableNoHwCompositing,
   UnavailableNotBuilt,
   UnavailableNoAngle,
+  UnavailableNoWebRender,
 
   
   
