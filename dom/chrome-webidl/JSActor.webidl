@@ -42,15 +42,8 @@ callback MozJSActorCallback = void();
 
 
 
-
-
-
-
-
-
 [GenerateInit]
 dictionary MozJSActorCallbacks {
-  [ChromeOnly] MozJSActorCallback willDestroy;
   [ChromeOnly] MozJSActorCallback didDestroy;
   [ChromeOnly] MozJSActorCallback actorCreated;
 };

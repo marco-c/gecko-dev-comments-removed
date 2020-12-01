@@ -46,6 +46,11 @@ class JSActorManager : public nsISupports {
 
 
   void JSActorWillDestroy();
+
+  
+
+
+
   void JSActorDidDestroy();
 
   

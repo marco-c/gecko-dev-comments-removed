@@ -328,22 +328,15 @@ void WindowGlobalChild::BeforeUnloadRemoved() {
 }
 
 void WindowGlobalChild::Destroy() {
-  
-  
-  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-      "WindowGlobalChild::Destroy", [self = RefPtr<WindowGlobalChild>(this)]() {
-        
-        
-        self->JSActorWillDestroy();
+  JSActorWillDestroy();
 
-        
-        
-        
-        RefPtr<BrowserChild> browserChild = self->GetBrowserChild();
-        if (!browserChild || !browserChild->IsDestroyed()) {
-          self->SendDestroy();
-        }
-      }));
+  
+  
+  
+  RefPtr<BrowserChild> browserChild = GetBrowserChild();
+  if (!browserChild || !browserChild->IsDestroyed()) {
+    SendDestroy();
+  }
 }
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(

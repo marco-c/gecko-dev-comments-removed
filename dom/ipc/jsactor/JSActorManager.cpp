@@ -192,20 +192,8 @@ void JSActorManager::ReceiveRawMessage(
 }
 
 void JSActorManager::JSActorWillDestroy() {
-  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
-  CrashReporter::AutoAnnotateCrashReport autoMessageName(
-      CrashReporter::Annotation::JSActorMessage, "<WillDestroy>"_ns);
-
-  
-  
-  nsTArray<RefPtr<JSActor>> actors(mJSActors.Count());
   for (auto& entry : mJSActors) {
-    actors.AppendElement(entry.GetData());
-  }
-  for (auto& actor : actors) {
-    CrashReporter::AutoAnnotateCrashReport autoActorName(
-        CrashReporter::Annotation::JSActorName, actor->Name());
-    actor->StartDestroy();
+    entry.GetData()->StartDestroy();
   }
 }
 
