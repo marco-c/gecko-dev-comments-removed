@@ -479,14 +479,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
   
   void ScheduleRenderOnCompositorThread() override;
-  void SchedulePauseOnCompositorThread();
-  void InvalidateOnCompositorThread();
-  
-
-
-
-  bool ScheduleResumeOnCompositorThread();
-  bool ScheduleResumeOnCompositorThread(int x, int y, int width, int height);
 
   void ScheduleComposition();
 
