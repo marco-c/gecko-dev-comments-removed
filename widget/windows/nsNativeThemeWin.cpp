@@ -4042,12 +4042,11 @@ bool nsNativeThemeWin::MayDrawCustomScrollbarPart(gfxContext* aContext,
 
   gfxContextAutoSaveRestore autoSave(aContext);
   RefPtr<gfxContext> ctx = aContext;
+  DrawTarget* dt = ctx->GetDrawTarget();
   gfxFloat p2a = gfxFloat(aFrame->PresContext()->AppUnitsPerDevPixel());
-  gfxRect clipRect = ThebesRect(
-      LayoutDevicePixel::FromAppUnits(aClipRect, p2a).ToUnknownRect());
+  gfxRect rect = ThebesRect(NSRectToSnappedRect(aRect, p2a, *dt));
+  gfxRect clipRect = ThebesRect(NSRectToSnappedRect(aClipRect, p2a, *dt));
   ctx->Clip(clipRect);
-  gfxRect rect =
-      ThebesRect(LayoutDevicePixel::FromAppUnits(aRect, p2a).ToUnknownRect());
 
   const nsStyleUI* ui = style->StyleUI();
   auto* customColors =
