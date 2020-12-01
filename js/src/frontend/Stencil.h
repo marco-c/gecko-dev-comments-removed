@@ -18,6 +18,7 @@
 #include "frontend/AbstractScopePtr.h"    
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ObjLiteral.h"          
+#include "frontend/ParserAtom.h"          
 #include "frontend/TypedIndex.h"          
 #include "js/RegExpFlags.h"               
 #include "js/RootingAPI.h"                
@@ -474,7 +475,7 @@ class ScriptStencil {
 
   
   
-  const ParserAtom* functionAtom = nullptr;
+  TaggedParserAtomIndex functionAtom;
 
   
   FunctionFlags functionFlags = {};
@@ -532,8 +533,8 @@ class ScriptStencil {
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
-  void dump(JSONPrinter& json);
-  void dumpFields(JSONPrinter& json);
+  void dump(JSONPrinter& json, CompilationStencil* compilationStencil);
+  void dumpFields(JSONPrinter& json, CompilationStencil* compilationStencil);
 #endif
 };
 
