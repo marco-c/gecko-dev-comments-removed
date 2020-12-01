@@ -20,29 +20,32 @@ AbortSignalImpl::AbortSignalImpl(bool aAborted) : mAborted(aAborted) {}
 
 bool AbortSignalImpl::Aborted() const { return mAborted; }
 
+
 void AbortSignalImpl::SignalAbort() {
+  
   if (mAborted) {
     return;
   }
 
+  
   mAborted = true;
 
   
+  
+  
+  
+  
   for (RefPtr<AbortFollower> follower : mFollowers.ForwardRange()) {
+    MOZ_ASSERT(follower->mFollowingSignal == this);
     follower->RunAbortAlgorithm();
   }
-}
 
-void AbortSignalImpl::AddFollower(AbortFollower* aFollower) {
-  MOZ_DIAGNOSTIC_ASSERT(aFollower);
-  if (!mFollowers.Contains(aFollower)) {
-    mFollowers.AppendElement(aFollower);
+  
+  
+  for (AbortFollower* follower : mFollowers.ForwardRange()) {
+    follower->mFollowingSignal = nullptr;
   }
-}
-
-void AbortSignalImpl::RemoveFollower(AbortFollower* aFollower) {
-  MOZ_DIAGNOSTIC_ASSERT(aFollower);
-  mFollowers.RemoveElement(aFollower);
+  mFollowers.Clear();
 }
 
  void AbortSignalImpl::Traverse(
@@ -81,9 +84,12 @@ JSObject* AbortSignal::WrapObject(JSContext* aCx,
   return AbortSignal_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+
 void AbortSignal::SignalAbort() {
+  
   AbortSignalImpl::SignalAbort();
 
+  
   EventInit init;
   init.mBubbles = false;
   init.mCancelable = false;
@@ -99,18 +105,30 @@ void AbortSignal::SignalAbort() {
 
 AbortFollower::~AbortFollower() { Unfollow(); }
 
+
 void AbortFollower::Follow(AbortSignalImpl* aSignal) {
+  
+  if (aSignal->mAborted) {
+    return;
+  }
+
   MOZ_DIAGNOSTIC_ASSERT(aSignal);
 
   Unfollow();
 
+  
   mFollowingSignal = aSignal;
-  aSignal->AddFollower(this);
+  MOZ_ASSERT(!aSignal->mFollowers.Contains(this));
+  aSignal->mFollowers.AppendElement(this);
 }
+
 
 void AbortFollower::Unfollow() {
   if (mFollowingSignal) {
-    mFollowingSignal->RemoveFollower(this);
+    
+    
+    
+    mFollowingSignal->mFollowers.RemoveElement(this);
     mFollowingSignal = nullptr;
   }
 }

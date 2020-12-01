@@ -41,6 +41,8 @@ class AbortFollower : public nsISupports {
 
   virtual ~AbortFollower();
 
+  friend class AbortSignalImpl;
+
   RefPtr<AbortSignalImpl> mFollowingSignal;
 };
 
@@ -51,10 +53,6 @@ class AbortSignalImpl : public nsISupports {
   bool Aborted() const;
 
   virtual void SignalAbort();
-
-  void AddFollower(AbortFollower* aFollower);
-
-  void RemoveFollower(AbortFollower* aFollower);
 
  protected:
   
@@ -69,6 +67,11 @@ class AbortSignalImpl : public nsISupports {
   virtual ~AbortSignalImpl() = default;
 
  private:
+  friend class AbortFollower;
+
+  
+  
+  
   
   nsTObserverArray<AbortFollower*> mFollowers;
 
