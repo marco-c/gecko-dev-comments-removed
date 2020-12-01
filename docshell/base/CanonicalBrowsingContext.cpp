@@ -1562,15 +1562,6 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
   });
 }
 
-void CanonicalBrowsingContext::ResetScalingZoom() {
-  
-  
-  
-  if (WindowGlobalParent* topWindow = GetTopWindowContext()) {
-    Unused << topWindow->SendResetScalingZoom();
-  }
-}
-
 void CanonicalBrowsingContext::SetCrossGroupOpenerId(uint64_t aOpenerId) {
   MOZ_DIAGNOSTIC_ASSERT(IsTopContent());
   MOZ_DIAGNOSTIC_ASSERT(mCrossGroupOpenerId == 0,
