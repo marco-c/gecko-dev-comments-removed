@@ -118,7 +118,7 @@ var DateTimePickerPanel = class {
     
     locale = locale.replace(/^pt-PT/i, "pt");
 
-    const dir = Services.intl.getLocaleInfo(locale).direction;
+    const dir = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
 
     switch (this.type) {
       case "time": {
