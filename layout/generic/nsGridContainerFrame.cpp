@@ -8532,7 +8532,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       }
     }
   } else {
-    consumedBSize = ConsumedBSize(wm);
+    consumedBSize = CalcAndCacheConsumedBSize(wm);
     gridReflowInput.InitializeForContinuation(this, consumedBSize);
     
     
