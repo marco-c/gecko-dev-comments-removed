@@ -718,15 +718,18 @@ class ExpectedUpdate(PropertyUpdate):
             
             if count > 0 or not self.remove_intermittent:
                 expected.append(status)
+
+        
+        
+        
+        if current and set(expected).issubset(set(current)):
+            return current
+
         if self.update_intermittent:
             if len(expected) == 1:
                 return expected[0]
             return expected
 
-        
-        
-        if set(expected).issubset(set(current)):
-            return current
         
         return expected[0]
 
