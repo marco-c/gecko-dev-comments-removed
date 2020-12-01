@@ -37,6 +37,7 @@ this.ContentSearchUIController = (function() {
 
 
 
+
   function ContentSearchUIController(
     inputElement,
     tableParent,
