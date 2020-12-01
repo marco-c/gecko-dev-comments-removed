@@ -1412,7 +1412,10 @@ class UrlbarView {
         UrlbarUtils.ICON.HISTORY) ||
       iconUrlOverride ||
       result.payload.icon ||
-      UrlbarUtils.ICON.SEARCH_GLASS
+      ((result.type == UrlbarUtils.RESULT_TYPE.SEARCH ||
+        result.type == UrlbarUtils.RESULT_TYPE.KEYWORD) &&
+        UrlbarUtils.ICON.SEARCH_GLASS) ||
+      UrlbarUtils.ICON.DEFAULT
     );
   }
 
@@ -2046,7 +2049,11 @@ class UrlbarView {
 
       
       let iconOverride = source?.icon || engine?.iconURI?.spec;
-      if (!iconOverride && result.type == UrlbarUtils.RESULT_TYPE.URL) {
+      if (
+        !iconOverride &&
+        (source || engine) &&
+        result.type == UrlbarUtils.RESULT_TYPE.URL
+      ) {
         
         
         iconOverride = UrlbarUtils.ICON.SEARCH_GLASS;
