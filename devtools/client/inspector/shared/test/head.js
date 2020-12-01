@@ -84,7 +84,6 @@ registerCleanupFunction(() => {
 
 
 
-
 function waitForSuccess(validatorFn, name = "untitled") {
   return new Promise(resolve => {
     function wait(validator) {
