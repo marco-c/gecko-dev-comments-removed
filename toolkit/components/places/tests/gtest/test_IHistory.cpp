@@ -265,105 +265,6 @@ void test_RegisterVisitedCallback_returns_before_notifying() {
   run_next_test();
 }
 
-namespace test_observer_topic_dispatched_helpers {
-#define URI_VISITED u"visited"
-#define URI_NOT_VISITED u"not visited"
-#define URI_VISITED_RESOLUTION_TOPIC "visited-status-resolution"
-class statusObserver final : public nsIObserver {
-  ~statusObserver() = default;
-
- public:
-  NS_DECL_ISUPPORTS
-
-  statusObserver(nsIURI* aURI, const bool aExpectVisit, bool& _notified)
-      : mURI(aURI), mExpectVisit(aExpectVisit), mNotified(_notified) {
-    nsCOMPtr<nsIObserverService> observerService =
-        do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
-    do_check_true(observerService);
-    (void)observerService->AddObserver(this, URI_VISITED_RESOLUTION_TOPIC,
-                                       false);
-  }
-
-  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
-                     const char16_t* aData) override {
-    
-    do_check_false(strcmp(aTopic, URI_VISITED_RESOLUTION_TOPIC));
-
-    
-    nsCOMPtr<nsIURI> notifiedURI = do_QueryInterface(aSubject);
-    do_check_true(notifiedURI);
-
-    bool isOurURI;
-    nsresult rv = notifiedURI->Equals(mURI, &isOurURI);
-    do_check_success(rv);
-    if (!isOurURI) {
-      return NS_OK;
-    }
-
-    
-    bool visited = !!nsLiteralString(URI_VISITED).Equals(aData);
-    bool notVisited = !!nsLiteralString(URI_NOT_VISITED).Equals(aData);
-    do_check_true(visited || notVisited);
-
-    
-    do_check_eq(visited, mExpectVisit);
-
-    
-    mNotified = true;
-
-    
-    nsCOMPtr<nsIObserverService> observerService =
-        do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
-    (void)observerService->RemoveObserver(this, URI_VISITED_RESOLUTION_TOPIC);
-    return NS_OK;
-  }
-
- private:
-  nsCOMPtr<nsIURI> mURI;
-  const bool mExpectVisit;
-  bool& mNotified;
-};
-NS_IMPL_ISUPPORTS(statusObserver, nsIObserver)
-}  
-void test_observer_topic_dispatched() {
-  using namespace test_observer_topic_dispatched_helpers;
-
-  
-  nsCOMPtr<nsIURI> visitedURI = new_test_uri();
-  nsCOMPtr<nsIURI> notVisitedURI = new_test_uri();
-  bool urisEqual;
-  nsresult rv = visitedURI->Equals(notVisitedURI, &urisEqual);
-  do_check_success(rv);
-  do_check_false(urisEqual);
-  addURI(visitedURI);
-
-  
-  RefPtr<Link> visitedLink = new mock_Link(expect_visit, false);
-  RefPtr<Link> notVisitedLink = new mock_Link(expect_no_visit, false);
-  RefPtr<Link> visitedLinkCopy = visitedLink;
-
-  
-  bool visitedNotified = false;
-  nsCOMPtr<nsIObserver> visitedObs =
-      new statusObserver(visitedURI, true, visitedNotified);
-  bool notVisitedNotified = false;
-  nsCOMPtr<nsIObserver> unvisitedObs =
-      new statusObserver(notVisitedURI, false, notVisitedNotified);
-
-  
-  nsCOMPtr<IHistory> history = do_get_IHistory();
-  history->RegisterVisitedCallback(visitedURI, visitedLink);
-  history->RegisterVisitedCallback(notVisitedURI, notVisitedLink);
-
-  
-  SpinEventLoopUntil([&]() { return visitedNotified && notVisitedNotified; });
-
-  
-  history->UnregisterVisitedCallback(notVisitedURI, notVisitedLink);
-
-  run_next_test();
-}
-
 void test_visituri_inserts() {
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
@@ -547,7 +448,6 @@ Test gTests[] = {
     PTEST(test_unregistered_visited_does_not_notify),  
     PTEST(test_new_visit_notifies_waiting_Link),
     PTEST(test_RegisterVisitedCallback_returns_before_notifying),
-    PTEST(test_observer_topic_dispatched),
     PTEST(test_visituri_inserts),
     PTEST(test_visituri_updates),
     PTEST(test_visituri_preserves_shown_and_typed),
