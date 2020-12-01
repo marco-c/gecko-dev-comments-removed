@@ -539,77 +539,33 @@ class UrlbarController {
     
     
     
-    let telemetryType;
-    switch (result.type) {
-      case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
-        telemetryType = "switchtab";
-        break;
-      case UrlbarUtils.RESULT_TYPE.SEARCH:
-        if (result.source == UrlbarUtils.RESULT_SOURCE.HISTORY) {
-          telemetryType = "formhistory";
-        } else if (result.providerName == "TabToSearch") {
-          telemetryType = "tabtosearch";
-        } else {
-          telemetryType = result.payload.suggestion
-            ? "searchsuggestion"
-            : "searchengine";
-        }
-        break;
-      case UrlbarUtils.RESULT_TYPE.URL:
-        if (result.autofill) {
-          telemetryType = "autofill";
-        } else if (
-          result.source == UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL &&
-          result.heuristic
-        ) {
-          telemetryType = "visiturl";
-        } else {
-          telemetryType =
-            result.source == UrlbarUtils.RESULT_SOURCE.BOOKMARKS
-              ? "bookmark"
-              : "history";
-        }
-        break;
-      case UrlbarUtils.RESULT_TYPE.KEYWORD:
-        telemetryType = "keyword";
-        break;
-      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
-        telemetryType = "extension";
-        break;
-      case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
-        telemetryType = "remotetab";
-        break;
-      case UrlbarUtils.RESULT_TYPE.TIP:
-        telemetryType = "tip";
-        break;
-      case UrlbarUtils.RESULT_TYPE.DYNAMIC:
-        telemetryType = "dynamic";
-        break;
-      default:
-        Cu.reportError(`Unknown Result Type ${result.type}`);
-        return;
-    }
     
     
-    if (result.providerName == "UrlbarProviderTopSites") {
-      telemetryType = "topsite";
-    }
+    let telemetryType =
+      result.providerName == "UrlbarProviderTopSites"
+        ? "topsite"
+        : UrlbarUtils.telemetryTypeFromResult(result);
+    Services.telemetry.keyedScalarAdd(
+      `urlbar.picked.${telemetryType}`,
+      resultIndex,
+      1
+    );
 
+    
+    
+    if (!(telemetryType in UrlbarUtils.SELECTED_RESULT_TYPES)) {
+      Cu.reportError(`Unsupported telemetry type ${telemetryType}`);
+      return;
+    }
     Services.telemetry
       .getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX")
       .add(resultIndex);
-    if (telemetryType in UrlbarUtils.SELECTED_RESULT_TYPES) {
-      Services.telemetry
-        .getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE_2")
-        .add(UrlbarUtils.SELECTED_RESULT_TYPES[telemetryType]);
-      Services.telemetry
-        .getKeyedHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX_BY_TYPE_2")
-        .add(telemetryType, resultIndex);
-    } else {
-      Cu.reportError(
-        "Unknown FX_URLBAR_SELECTED_RESULT_TYPE_2 type: " + telemetryType
-      );
-    }
+    Services.telemetry
+      .getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE_2")
+      .add(UrlbarUtils.SELECTED_RESULT_TYPES[telemetryType]);
+    Services.telemetry
+      .getKeyedHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX_BY_TYPE_2")
+      .add(telemetryType, resultIndex);
   }
 
   
@@ -920,43 +876,16 @@ class TelemetryEvent {
       return "none";
     }
     let row = element.closest(".urlbarView-row");
-    if (row.result) {
-      switch (row.result.type) {
-        case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
-          return "switchtab";
-        case UrlbarUtils.RESULT_TYPE.SEARCH:
-          if (row.result.source == UrlbarUtils.RESULT_SOURCE.HISTORY) {
-            return "formhistory";
-          }
-          if (row.result.providerName == "TabToSearch") {
-            return "tabtosearch";
-          }
-          return row.result.payload.suggestion ? "searchsuggestion" : "search";
-        case UrlbarUtils.RESULT_TYPE.URL:
-          if (row.result.autofill) {
-            return "autofill";
-          }
-          if (row.result.heuristic) {
-            return "visit";
-          }
-          return row.result.source == UrlbarUtils.RESULT_SOURCE.BOOKMARKS
-            ? "bookmark"
-            : "history";
-        case UrlbarUtils.RESULT_TYPE.KEYWORD:
-          return "keyword";
-        case UrlbarUtils.RESULT_TYPE.OMNIBOX:
-          return "extension";
-        case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
-          return "remotetab";
-        case UrlbarUtils.RESULT_TYPE.TIP:
-          if (element.classList.contains("urlbarView-tip-help")) {
-            return "tiphelp";
-          }
-          return "tip";
-        case UrlbarUtils.RESULT_TYPE.DYNAMIC:
-          return "dynamic";
+    if (row.result && row.result.providerName != "UrlbarProviderTopSites") {
+      
+      if (
+        row.result.type == UrlbarUtils.RESULT_TYPE.TIP &&
+        element.classList.contains("urlbarView-tip-help")
+      ) {
+        return "tiphelp";
       }
     }
-    return "none";
+    
+    return UrlbarUtils.telemetryTypeFromResult(row.result);
   }
 }
