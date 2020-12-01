@@ -11,6 +11,7 @@
 
 #include "mozilla/EnumSet.h"
 #include "nsSize.h"  
+#include "Units.h"
 
 
 
@@ -28,12 +29,6 @@
 #define NS_AUTOMARGIN (NS_UNCONSTRAINEDSIZE + 1)
 
 #define NS_INTRINSIC_ISIZE_UNKNOWN nscoord_MIN
-
-
-
-
-#define REPLACED_ELEM_FALLBACK_PX_WIDTH 300
-#define REPLACED_ELEM_FALLBACK_PX_HEIGHT 150
 
 namespace mozilla {
 
@@ -83,6 +78,17 @@ enum class ComputeSizeFlag : uint8_t {
   IApplyAutoMinSize,  
 };
 using ComputeSizeFlags = mozilla::EnumSet<ComputeSizeFlag>;
+
+
+
+
+
+
+
+inline constexpr CSSIntCoord kFallbackIntrinsicWidthInPixels(300);
+inline constexpr CSSIntCoord kFallbackIntrinsicHeightInPixels(150);
+inline constexpr CSSIntSize kFallbackIntrinsicSizeInPixels(
+    kFallbackIntrinsicWidthInPixels, kFallbackIntrinsicHeightInPixels);
 
 
 
