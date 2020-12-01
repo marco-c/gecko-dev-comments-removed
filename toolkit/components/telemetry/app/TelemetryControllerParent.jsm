@@ -273,6 +273,17 @@ var TelemetryController = Object.freeze({
 
 
 
+
+
+  registerSyncPingShutdown(afnShutdown) {
+    Impl.registerSyncPingShutdown(afnShutdown);
+  },
+
+  
+
+
+
+
   promiseInitialized() {
     return Impl.promiseInitialized();
   },
@@ -312,6 +323,9 @@ var Impl = {
   _probeRegistrationPromise: null,
   
   _deletionRequestPingSubmittedPromise: null,
+  
+  
+  _fnSyncPingShutdown: null,
 
   get _log() {
     return TelemetryControllerBase.log;
@@ -617,6 +631,12 @@ var Impl = {
       );
       histogram.add(1);
       return Promise.reject(new Error("Invalid payload type submitted."));
+    }
+
+    
+    
+    if (aType == "sync" && aPayload.why == "shutdown") {
+      Telemetry.scalarSet("telemetry.sync_shutdown_ping_sent", true);
     }
 
     let promise = this._submitPingLogic(aType, aPayload, aOptions);
@@ -937,6 +957,12 @@ var Impl = {
       await TelemetryPrioPing.shutdown();
 
       
+      
+      if (this._fnSyncPingShutdown) {
+        this._fnSyncPingShutdown();
+      }
+
+      
       TelemetryReportingPolicy.shutdown();
       TelemetryEnvironment.shutdown();
 
@@ -1023,6 +1049,16 @@ var Impl = {
         }
     }
     return undefined;
+  },
+
+  
+
+
+  registerSyncPingShutdown(fnShutdown) {
+    if (this._fnSyncPingShutdown) {
+      throw new Error("The sync ping shutdown handler is already registered.");
+    }
+    this._fnSyncPingShutdown = fnShutdown;
   },
 
   
@@ -1186,6 +1222,7 @@ var Impl = {
 
   async reset() {
     this._clientID = null;
+    this._fnSyncPingShutdown = null;
     this._detachObservers();
 
     let sessionReset = TelemetrySession.testReset();
