@@ -20,7 +20,6 @@ add_task(async function() {
 
   let hud, node;
   if (isFissionEnabled()) {
-    await pushPref("devtools.contenttoolbox.fission", true);
     
     
     hud = await openNewTabAndConsole(TEST_URI);

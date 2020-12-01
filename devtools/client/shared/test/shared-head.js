@@ -323,9 +323,6 @@ registerCleanupFunction(async function cleanup() {
       conn.close();
     }
   }
-
-  
-  gDevTools.clearIsFissionContentToolboxEnabledReferenceForTest();
 });
 
 async function safeCloseBrowserConsole({ clearOutput = false } = {}) {

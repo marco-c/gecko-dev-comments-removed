@@ -2095,13 +2095,6 @@ pref("devtools.browsertoolbox.fission", false);
 
 
 
-pref("devtools.contenttoolbox.fission", true);
-
-
-
-
-
-
 
 pref("devtools.target-switching.enabled", true);
 
