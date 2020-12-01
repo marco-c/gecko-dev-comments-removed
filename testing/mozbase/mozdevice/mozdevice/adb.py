@@ -1048,9 +1048,7 @@ class ADBDevice(ADBCommand):
                     "attached and no device specified"
                 )
             if len(devices) == 0:
-                
-                
-                return None
+                raise ADBError("No connected devices found.")
             device = devices[0]
 
         
