@@ -21,6 +21,13 @@ void AddIPCProfilerMarker(const Message& aMessage, int32_t aOtherPid,
       return;
     }
 
+    if (profiler_is_locked_on_current_thread()) {
+      
+      
+      
+      return;
+    }
+
     
     const mozilla::TimeStamp now = mozilla::TimeStamp::NowUnfuzzed();
     PROFILER_MARKER("IPC", IPC, mozilla::MarkerTiming::InstantAt(now),
