@@ -1,0 +1,15 @@
+
+
+
+
+export function isNode() {
+  try {
+    return process.release.name == "node";
+  } catch (e) {
+    return false;
+  }
+}
+
+export function isNodeTest() {
+  return isNode() && process.env.NODE_ENV != "production";
+}

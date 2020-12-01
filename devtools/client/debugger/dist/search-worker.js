@@ -873,28 +873,6 @@ module.exports = arrayMap;
 
  }),
 
- 642:
- (function(module, exports, __webpack_require__) {
-
-(function(process) {
-
-
-function isNode() {
-  return process && process.release && process.release.name == "node";
-}
-
-function isNodeTest() {
-  return isNode() && "production" != "production";
-}
-
-module.exports = {
-  isNode,
-  isNodeTest
-};
-}.call(exports, __webpack_require__(607)))
-
- }),
-
  701:
  (function(module, exports, __webpack_require__) {
 
@@ -1001,13 +979,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = assert;
 
-var _devtoolsEnvironment = __webpack_require__(642);
+var _environment = __webpack_require__(968);
 
 
 
 
 function assert(condition, message) {
-  if ((0, _devtoolsEnvironment.isNodeTest)() && !condition) {
+  if ((0, _environment.isNodeTest)() && !condition) {
     throw new Error(`Assertion failure: ${message}`);
   }
 }
@@ -1226,6 +1204,32 @@ function truncateLine(text, column) {
     value
   };
 }
+
+ }),
+
+ 968:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+(function(process) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isNode = isNode;
+exports.isNodeTest = isNodeTest;
+
+
+
+
+function isNode() {
+  return process && process.release && process.release.name == "node";
+}
+
+function isNodeTest() {
+  return isNode() && "production" != "production";
+}
+}.call(exports, __webpack_require__(607)))
 
  })
 

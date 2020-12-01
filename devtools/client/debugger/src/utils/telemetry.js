@@ -47,7 +47,7 @@
 
 const Telemetry = require("devtools/client/shared/telemetry");
 
-import { isNode } from "devtools-environment";
+import { isNode } from "./environment";
 
 const telemetry = new Telemetry();
 

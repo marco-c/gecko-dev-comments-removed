@@ -17,7 +17,6 @@
 
 
 
-import * as devtoolsEnvironment from "devtools-environment";
 import * as devtoolsUtils from "devtools-utils";
 import * as fuzzaldrinPlus from "fuzzaldrin-plus";
 import * as transition from "react-transition-group/Transition";
@@ -34,7 +33,6 @@ import move from "lodash-move";
 
 export const vendored = {
   classnames,
-  "devtools-environment": devtoolsEnvironment,
   "devtools-splitter": devtoolsSplitter,
   "devtools-utils": devtoolsUtils,
   "fuzzaldrin-plus": fuzzaldrinPlus,

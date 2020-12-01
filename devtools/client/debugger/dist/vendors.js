@@ -837,28 +837,6 @@ process.umask = function() { return 0; };
 
  }),
 
- 642:
- (function(module, exports, __webpack_require__) {
-
-(function(process) {
-
-
-function isNode() {
-  return process && process.release && process.release.name == "node";
-}
-
-function isNodeTest() {
-  return isNode() && "production" != "production";
-}
-
-module.exports = {
-  isNode,
-  isNodeTest
-};
-}.call(exports, __webpack_require__(607)))
-
- }),
-
  647:
  (function(module, exports, __webpack_require__) {
 
@@ -1291,8 +1269,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.vendored = void 0;
 
-var devtoolsEnvironment = _interopRequireWildcard(__webpack_require__(642));
-
 var devtoolsUtils = _interopRequireWildcard(__webpack_require__(560));
 
 var fuzzaldrinPlus = _interopRequireWildcard(__webpack_require__(931));
@@ -1336,7 +1312,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 const vendored = {
   classnames: _classnames.default,
-  "devtools-environment": devtoolsEnvironment,
   "devtools-splitter": _devtoolsSplitter.default,
   "devtools-utils": devtoolsUtils,
   "fuzzaldrin-plus": fuzzaldrinPlus,

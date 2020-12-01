@@ -3,7 +3,7 @@
 
 
 
-import { isNodeTest } from "devtools-environment";
+import { isNodeTest } from "./environment";
 
 export default function assert(condition: boolean, message: string): void {
   if (isNodeTest() && !condition) {
