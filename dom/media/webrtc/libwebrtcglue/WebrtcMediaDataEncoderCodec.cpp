@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebrtcMediaDataEncoderCodec.h"
 
@@ -9,7 +9,7 @@
 #include "MediaData.h"
 #include "PEMFactory.h"
 #include "VideoUtils.h"
-#include "mozilla/Result.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/media/MediaUtils.h"
@@ -32,7 +32,7 @@ extern LazyLogModule sPEMLog;
 
 using namespace media;
 using namespace layers;
-using MimeTypeResult = Result<nsCString, bool>;
+using MimeTypeResult = Maybe<nsLiteralCString>;
 
 static const char* GetModeName(webrtc::H264PacketizationMode aMode) {
   if (aMode == webrtc::H264PacketizationMode::SingleNalUnit) {
@@ -48,15 +48,15 @@ static MimeTypeResult ConvertWebrtcCodecTypeToMimeType(
     const webrtc::VideoCodecType& aType) {
   switch (aType) {
     case webrtc::VideoCodecType::kVideoCodecVP8:
-      return nsCString("video/vp8");
+      return Some("video/vp8"_ns);
     case webrtc::VideoCodecType::kVideoCodecVP9:
-      return nsCString("video/vp9");
+      return Some("video/vp9"_ns);
     case webrtc::VideoCodecType::kVideoCodecH264:
-      return nsCString("video/avc");
+      return Some("video/avc"_ns);
     default:
       break;
   }
-  return MimeTypeResult(false);
+  return Nothing();
 }
 
 static MediaDataEncoder::H264Specific::ProfileLevel ConvertProfileLevel(
@@ -81,15 +81,15 @@ WebrtcMediaDataEncoder::WebrtcMediaDataEncoder()
       mTaskQueue(new TaskQueue(do_AddRef(mThreadPool),
                                "WebrtcMediaDataEncoder::mTaskQueue")),
       mFactory(new PEMFactory()),
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Use the same lower and upper bound as h264_video_toolbox_encoder which
+      // is an encoder from webrtc's upstream codebase.
+      // 0.5 is set as a mininum to prevent overcompensating for large temporary
+      // overshoots. We don't want to degrade video quality too badly.
+      // 0.95 is set to prevent oscillations. When a lower bitrate is set on the
+      // encoder than previously set, its output seems to have a brief period of
+      // drastically reduced bitrate, so we want to avoid that. In steady state
+      // conditions, 0.95 seems to give us better overall bitrate over long
+      // periods of time.
       mBitrateAdjuster(webrtc::Clock::GetRealTimeClock(), 0.5, 0.95) {}
 
 int32_t WebrtcMediaDataEncoder::InitEncode(
@@ -110,18 +110,18 @@ bool WebrtcMediaDataEncoder::SetupConfig(
     const webrtc::VideoCodec* aCodecSettings) {
   MimeTypeResult mimeType =
       ConvertWebrtcCodecTypeToMimeType(aCodecSettings->codecType);
-  if (mimeType.isErr()) {
+  if (!mimeType) {
     LOG("Get incorrect mime type");
     return false;
   }
   mInfo = VideoInfo(aCodecSettings->width, aCodecSettings->height);
-  mInfo.mMimeType = mimeType.unwrap();
+  mInfo.mMimeType = mimeType.extract();
   mMode = aCodecSettings->H264().packetizationMode == 1
               ? webrtc::H264PacketizationMode::NonInterleaved
               : webrtc::H264PacketizationMode::SingleNalUnit;
   mMaxFrameRate = aCodecSettings->maxFramerate;
-  
-  
+  // Those bitrates in codec setting are all kbps, so we have to covert them to
+  // bps.
   mMaxBitrateBps = aCodecSettings->maxBitrate * 1000;
   mMinBitrateBps = aCodecSettings->minBitrate * 1000;
   mBitrateAdjuster.SetTargetBitrateBps(aCodecSettings->startBitrate * 1000);
@@ -256,14 +256,14 @@ void WebrtcMediaDataEncoder::ProcessEncode(
       ->Then(
           OwnerThread(), __func__,
           [display, self = RefPtr<WebrtcMediaDataEncoder>(this),
-           
+           // capture this for printing address in LOG.
            this](const MediaDataEncoder::EncodedData& aData) {
             MutexAutoLock lock(mCallbackMutex);
-            
+            // Callback has been unregistered.
             if (!mCallback) {
               return;
             }
-            
+            // The encoder haven't finished encoding yet.
             if (aData.IsEmpty()) {
               return;
             }
@@ -348,7 +348,7 @@ int32_t WebrtcMediaDataEncoder::SetRates(uint32_t aNewBitrateKbps,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  
+  // We have already been in this bitrate.
   if (mBitrateAdjuster.GetAdjustedBitrateBps() == newBitrateBps) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -360,4 +360,4 @@ int32_t WebrtcMediaDataEncoder::SetRates(uint32_t aNewBitrateKbps,
   return rv.IsResolve() ? WEBRTC_VIDEO_CODEC_OK : WEBRTC_VIDEO_CODEC_ERROR;
 }
 
-}  
+}  // namespace mozilla
