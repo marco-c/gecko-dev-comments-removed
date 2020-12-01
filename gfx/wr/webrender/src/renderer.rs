@@ -5144,9 +5144,7 @@ impl Renderer {
         draw_target: DrawTarget,
         projection: &default::Transform3D<f32>,
         results: &mut RenderResults,
-        buffer_age: usize,
-        max_partial_present_rects: usize,
-        draw_previous_partial_present_regions: bool,
+        partial_present_mode: Option<PartialPresentMode>,
     ) {
         let _gm = self.gpu_profiler.start_marker("framebuffer");
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
@@ -5154,83 +5152,6 @@ impl Renderer {
         self.device.bind_draw_target(draw_target);
         self.device.enable_depth(DepthFunction::LessEqual);
         self.device.enable_depth_write();
-
-        
-        
-        let mut partial_present_mode = None;
-
-        if max_partial_present_rects > 0 {
-            let prev_frames_damage_rect = if let Some(..) = self.compositor_config.partial_present() {
-                self.buffer_damage_tracker
-                    .get_damage_rect(buffer_age)
-                    .or_else(|| Some(DeviceRect::from_size(draw_target.dimensions().to_f32())))
-            } else {
-                None
-            };
-
-            let can_use_partial_present =
-                composite_state.dirty_rects_are_valid &&
-                !self.force_redraw &&
-                !(prev_frames_damage_rect.is_none() && draw_previous_partial_present_regions) &&
-                !self.debug_overlay_state.is_enabled;
-
-            if can_use_partial_present {
-                let mut combined_dirty_rect = DeviceRect::zero();
-
-                
-                
-                for tile in composite_state.opaque_tiles.iter().chain(composite_state.alpha_tiles.iter()) {
-                    let tile_dirty_rect = tile.dirty_rect.translate(tile.rect.origin.to_vector());
-                    combined_dirty_rect = combined_dirty_rect.union(&tile_dirty_rect);
-                }
-
-                let combined_dirty_rect = combined_dirty_rect.round();
-                let combined_dirty_rect_i32 = combined_dirty_rect.to_i32();
-                
-                
-                if !combined_dirty_rect.is_empty() {
-                    results.dirty_rects.push(combined_dirty_rect_i32);
-                }
-
-                
-                if draw_previous_partial_present_regions {
-                    self.buffer_damage_tracker.push_dirty_rect(&combined_dirty_rect);
-                }
-
-                
-                
-                
-                
-                
-                let total_dirty_rect = if draw_previous_partial_present_regions {
-                    combined_dirty_rect.union(&prev_frames_damage_rect.unwrap())
-                } else {
-                    combined_dirty_rect
-                };
-
-                partial_present_mode = Some(PartialPresentMode::Single {
-                    dirty_rect: total_dirty_rect,
-                });
-
-                if let Some(partial_present) = self.compositor_config.partial_present() {
-                    partial_present.set_buffer_damage_region(&[total_dirty_rect.to_i32()]);
-                }
-            } else {
-                
-                
-                let fb_rect = DeviceIntRect::new(
-                    DeviceIntPoint::zero(),
-                    draw_target.dimensions(),
-                );
-                results.dirty_rects.push(fb_rect);
-
-                if draw_previous_partial_present_regions {
-                    self.buffer_damage_tracker.push_dirty_rect(&fb_rect.to_f32());
-                }
-            }
-
-            self.force_redraw = false;
-        }
 
         
         let clear_color = self.clear_color.map(|color| color.to_array());
@@ -5944,6 +5865,107 @@ impl Renderer {
     
     
     
+    fn calculate_dirty_rects(
+        &mut self,
+        buffer_age: usize,
+        composite_state: &CompositeState,
+        draw_target_dimensions: DeviceIntSize,
+        results: &mut RenderResults,
+    ) -> Option<PartialPresentMode> {
+        let mut partial_present_mode = None;
+
+        let (max_partial_present_rects, draw_previous_partial_present_regions) = match self.current_compositor_kind {
+            CompositorKind::Native { .. } => {
+                
+                
+                
+                
+                (1, false)
+            }
+            CompositorKind::Draw { draw_previous_partial_present_regions, max_partial_present_rects } => {
+                (max_partial_present_rects, draw_previous_partial_present_regions)
+            }
+        };
+
+        if max_partial_present_rects > 0 {
+            let prev_frames_damage_rect = if let Some(..) = self.compositor_config.partial_present() {
+                self.buffer_damage_tracker
+                    .get_damage_rect(buffer_age)
+                    .or_else(|| Some(DeviceRect::from_size(draw_target_dimensions.to_f32())))
+            } else {
+                None
+            };
+
+            let can_use_partial_present =
+                composite_state.dirty_rects_are_valid &&
+                !self.force_redraw &&
+                !(prev_frames_damage_rect.is_none() && draw_previous_partial_present_regions) &&
+                !self.debug_overlay_state.is_enabled;
+
+            if can_use_partial_present {
+                let mut combined_dirty_rect = DeviceRect::zero();
+
+                
+                
+                for tile in composite_state.opaque_tiles.iter().chain(composite_state.alpha_tiles.iter()) {
+                    let tile_dirty_rect = tile.dirty_rect.translate(tile.rect.origin.to_vector());
+                    combined_dirty_rect = combined_dirty_rect.union(&tile_dirty_rect);
+                }
+
+                let combined_dirty_rect = combined_dirty_rect.round();
+                let combined_dirty_rect_i32 = combined_dirty_rect.to_i32();
+                
+                
+                if !combined_dirty_rect.is_empty() {
+                    results.dirty_rects.push(combined_dirty_rect_i32);
+                }
+
+                
+                if draw_previous_partial_present_regions {
+                    self.buffer_damage_tracker.push_dirty_rect(&combined_dirty_rect);
+                }
+
+                
+                
+                
+                
+                
+                let total_dirty_rect = if draw_previous_partial_present_regions {
+                    combined_dirty_rect.union(&prev_frames_damage_rect.unwrap())
+                } else {
+                    combined_dirty_rect
+                };
+
+                partial_present_mode = Some(PartialPresentMode::Single {
+                    dirty_rect: total_dirty_rect,
+                });
+
+                if let Some(partial_present) = self.compositor_config.partial_present() {
+                    partial_present.set_buffer_damage_region(&[total_dirty_rect.to_i32()]);
+                }
+            } else {
+                
+                
+                let fb_rect = DeviceIntRect::new(
+                    DeviceIntPoint::zero(),
+                    draw_target_dimensions,
+                );
+                results.dirty_rects.push(fb_rect);
+
+                if draw_previous_partial_present_regions {
+                    self.buffer_damage_tracker.push_dirty_rect(&fb_rect.to_f32());
+                }
+            }
+
+            self.force_redraw = false;
+        }
+
+        partial_present_mode
+    }
+
+    
+    
+    
     
     
     
@@ -6115,6 +6137,20 @@ impl Renderer {
         
         
         
+        let present_mode = device_size.and_then(|device_size| {
+            self.calculate_dirty_rects(
+                buffer_age,
+                &frame.composite_state,
+                device_size,
+                results,
+            )
+        });
+
+        
+        
+        
+        
+        
         
         
         
@@ -6144,7 +6180,10 @@ impl Renderer {
             
             
             
-            frame.composite_state.composite_native(&mut **compositor);
+            frame.composite_state.composite_native(
+                &results.dirty_rects,
+                &mut **compositor,
+            );
         }
 
         for (_pass_index, pass) in frame.passes.iter_mut().enumerate() {
@@ -6215,15 +6254,13 @@ impl Renderer {
                                     results,
                                 );
                             }
-                            CompositorKind::Draw { max_partial_present_rects, draw_previous_partial_present_regions, .. } => {
+                            CompositorKind::Draw { .. } => {
                                 self.composite_simple(
                                     &frame.composite_state,
                                     draw_target,
                                     &projection,
                                     results,
-                                    buffer_age,
-                                    max_partial_present_rects,
-                                    draw_previous_partial_present_regions,
+                                    present_mode,
                                 );
                             }
                         }
@@ -7831,6 +7868,7 @@ impl CompositeState {
     
     fn composite_native(
         &self,
+        dirty_rects: &[DeviceIntRect],
         compositor: &mut dyn Compositor,
     ) {
         
@@ -7844,7 +7882,7 @@ impl CompositeState {
                 surface.image_rendering,
             );
         }
-        compositor.start_compositing();
+        compositor.start_compositing(dirty_rects);
     }
 }
 

@@ -1455,7 +1455,7 @@ impl Compositor for SwCompositor {
     
     
     
-    fn start_compositing(&mut self) {
+    fn start_compositing(&mut self, _dirty_rects: &[DeviceIntRect]) {
         if let Some(ref composite_thread) = self.composite_thread {
             composite_thread.start_compositing();
             
