@@ -457,6 +457,11 @@ class Capabilities extends Map {
       ["moz:accessibilityChecks", false],
       ["moz:buildID", Services.appinfo.appBuildID],
       [
+        "moz:debuggerAddress",
+        Cc["@mozilla.org/remote/agent;1"].createInstance(Ci.nsIRemoteAgent)
+          .debuggerAddress || null,
+      ],
+      [
         "moz:headless",
         Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo).isHeadless,
       ],
@@ -587,6 +592,11 @@ class Capabilities extends Map {
         case "moz:webdriverClick":
           assert.boolean(v, pprint`Expected ${k} to be boolean, got ${v}`);
           break;
+
+        
+        
+        case "moz:debuggerAddress":
+          continue;
       }
 
       matched.set(k, v);
