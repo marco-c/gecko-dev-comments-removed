@@ -379,7 +379,8 @@ nscoord nsFirstLetterFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
   return mBaseline;
 }
 
-LogicalSides nsFirstLetterFrame::GetLogicalSkipSides() const {
+nsIFrame::LogicalSides nsFirstLetterFrame::GetLogicalSkipSides(
+    const Maybe<SkipSidesDuringReflow>&) const {
   if (GetPrevContinuation()) {
     
     

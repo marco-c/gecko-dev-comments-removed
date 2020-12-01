@@ -3769,10 +3769,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       
       
       if (frame->IsColumnSetFrame()) {
-        if (availSize.BSize(wm) != NS_UNCONSTRAINEDSIZE &&
-            StyleBorder()->mBoxDecorationBreak ==
-                StyleBoxDecorationBreak::Clone) {
-          
+        if (availSize.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
           
           
           availSize.BSize(wm) -= aState.BorderPadding().BEnd(wm);
@@ -7668,12 +7665,13 @@ nscoord nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
   NS_ASSERTION(!(IsTrueOverflowContainer() && computedBSizeLeftOver),
                "overflow container must not have computedBSizeLeftOver");
 
+  const nsReflowStatus statusFromChildren = aStatus;
   const nscoord availBSize = aReflowInput.AvailableBSize();
   nscoord finalBSize = NSCoordSaturatingAdd(
       NSCoordSaturatingAdd(aBorderPadding.BStart(wm), computedBSizeLeftOver),
       aBorderPadding.BEnd(wm));
 
-  if (aStatus.IsIncomplete() && finalBSize <= availBSize) {
+  if (statusFromChildren.IsIncomplete() && finalBSize <= availBSize) {
     
     
     
@@ -7696,7 +7694,7 @@ nscoord nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
     return std::min(finalBSize, aBEndEdgeOfChildren);
   }
 
-  if (aStatus.IsComplete()) {
+  if (statusFromChildren.IsComplete()) {
     if (computedBSizeLeftOver > 0 && NS_UNCONSTRAINEDSIZE != availBSize &&
         finalBSize > availBSize) {
       if (ShouldAvoidBreakInside(aReflowInput)) {
