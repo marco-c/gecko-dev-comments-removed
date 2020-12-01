@@ -53,29 +53,13 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
   }
 
   
-  
-
-  
   WritingMode wm = aRI.GetWritingMode();
   const LogicalMargin margin = aRI.ComputedLogicalMargin(wm);
-  nscoord marginStart, marginEnd;
-  if (aAxis == eLogicalAxisBlock) {
-    if (MOZ_LIKELY(isSameSide)) {
-      marginStart = margin.BStart(wm);
-      marginEnd = margin.BEnd(wm);
-    } else {
-      marginStart = margin.BEnd(wm);
-      marginEnd = margin.BStart(wm);
-    }
-  } else {
-    if (MOZ_LIKELY(isSameSide)) {
-      marginStart = margin.IStart(wm);
-      marginEnd = margin.IEnd(wm);
-    } else {
-      marginStart = margin.IEnd(wm);
-      marginEnd = margin.IStart(wm);
-    }
-  }
+  const auto startSide = MakeLogicalSide(
+      aAxis, MOZ_LIKELY(isSameSide) ? eLogicalEdgeStart : eLogicalEdgeEnd);
+  const nscoord marginStart = margin.Side(startSide, wm);
+  const auto endSide = GetOppositeSide(startSide);
+  const nscoord marginEnd = margin.Side(endSide, wm);
 
   const auto& styleMargin = aRI.mStyleMargin->mMargin;
   bool hasAutoMarginStart;
