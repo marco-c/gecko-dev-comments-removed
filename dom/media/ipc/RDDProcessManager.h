@@ -94,6 +94,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   const RefPtr<Observer> mObserver;
   ipc::TaskFactory<RDDProcessManager> mTaskFactory;
   uint32_t mNumProcessAttempts = 0;
+  uint32_t mNumUnexpectedCrashes = 0;
 
   
   RDDProcessHost* mProcess = nullptr;

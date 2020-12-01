@@ -107,9 +107,13 @@ void WMFDecoderModule::Init() {
     
     
     sDXVAEnabled = !StaticPrefs::media_gpu_process_decoder();
-  } else if (XRE_IsGPUProcess() || XRE_IsRDDProcess()) {
+  } else if (XRE_IsGPUProcess()) {
     
     sDXVAEnabled = true;
+  } else if (XRE_IsRDDProcess()) {
+    
+    
+    sDXVAEnabled = !!DeviceManagerDx::Get()->GetImageDevice();
   } else {
     
     sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
