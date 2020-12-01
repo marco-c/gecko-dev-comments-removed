@@ -1052,6 +1052,8 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 
 #ifdef MOZ_GECKO_PROFILER
   char aLocal;
+  
+  mozilla::baseprofiler::profiler_init(&aLocal);
   profiler_init(&aLocal);
 #endif
 
@@ -1392,6 +1394,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
   
   
   profiler_shutdown();
+  mozilla::baseprofiler::profiler_shutdown();
 #endif
 
   NS_LogTerm();

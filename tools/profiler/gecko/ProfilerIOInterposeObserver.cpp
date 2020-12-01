@@ -151,7 +151,7 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
                       : MarkerStack::NoStack(),
             
             
-            MarkerThreadId(profiler_main_thread_id())),
+            MarkerThreadId::MainThread()),
         FileIOMarker,
         
         ProfilerString8View::WrapNullTerminatedString(
@@ -185,7 +185,7 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
             MarkerTiming::Interval(aObservation.Start(), aObservation.End()),
             doCaptureStack ? MarkerStack::Capture() : MarkerStack::NoStack(),
             
-            MarkerThreadId(profiler_main_thread_id())),
+            MarkerThreadId::MainThread()),
         FileIOMarker,
         
         ProfilerString8View::WrapNullTerminatedString(
