@@ -4868,7 +4868,9 @@ AttachDecision TypeOfIRGenerator::tryAttachPrimitive(ValOperandId valId) {
     return AttachDecision::NoAction;
   }
 
-  if (val_.isNumber()) {
+  
+  
+  if (val_.isDouble()) {
     writer.guardIsNumber(valId);
   } else {
     writer.guardNonDoubleType(valId, val_.type());
