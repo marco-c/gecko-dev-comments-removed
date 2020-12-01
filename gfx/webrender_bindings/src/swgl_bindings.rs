@@ -4,8 +4,9 @@
 
 use bindings::{GeckoProfilerThreadListener, WrCompositor};
 use gleam::{gl, gl::GLenum, gl::Gl};
-use std::cell::{Cell, RefCell};
+use std::cell::{Cell, UnsafeCell};
 use std::collections::{hash_map::HashMap, VecDeque};
+use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
@@ -132,7 +133,7 @@ pub struct SwTile {
     
     invalid: Cell<bool>,
     
-    graph_node: Arc<SwCompositeGraphNode>,
+    graph_node: SwCompositeGraphNodeRef,
 }
 
 impl SwTile {
@@ -510,58 +511,104 @@ impl SwCompositeJob {
 
 
 
+
+
+
+
+#[derive(Clone)]
+struct SwCompositeGraphNodeRef(Arc<UnsafeCell<SwCompositeGraphNode>>);
+
+impl SwCompositeGraphNodeRef {
+    fn new(graph_node: SwCompositeGraphNode) -> Self {
+        SwCompositeGraphNodeRef(Arc::new(UnsafeCell::new(graph_node)))
+    }
+
+    fn get(&self) -> &SwCompositeGraphNode {
+        unsafe { &*self.0.get() }
+    }
+
+    fn get_mut(&self) -> &mut SwCompositeGraphNode {
+        unsafe { &mut *self.0.get() }
+    }
+}
+
+unsafe impl Send for SwCompositeGraphNodeRef {}
+
+impl Deref for SwCompositeGraphNodeRef {
+    type Target = SwCompositeGraphNode;
+
+    fn deref(&self) -> &Self::Target {
+        self.get()
+    }
+}
+
+impl DerefMut for SwCompositeGraphNodeRef {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.get_mut()
+    }
+}
+
+
+
+
 struct SwCompositeGraphNode {
     
-    job: RefCell<Option<SwCompositeJob>>,
+    job: Option<SwCompositeJob>,
     
-    max_bands: Cell<u8>,
+    max_bands: u8,
+    
+    
+    
+    
     
     remaining_bands: AtomicU8,
     
     band_index: AtomicU8,
     
+    
+    
     parents: AtomicU32,
     
-    children: RefCell<Vec<Arc<SwCompositeGraphNode>>>,
+    children: Vec<SwCompositeGraphNodeRef>,
 }
 
 unsafe impl Sync for SwCompositeGraphNode {}
 
 impl SwCompositeGraphNode {
-    fn new() -> Arc<SwCompositeGraphNode> {
-        Arc::new(SwCompositeGraphNode {
-            job: RefCell::new(None),
-            max_bands: Cell::new(0),
+    fn new() -> SwCompositeGraphNodeRef {
+        SwCompositeGraphNodeRef::new(SwCompositeGraphNode {
+            job: None,
+            max_bands: 0,
             remaining_bands: AtomicU8::new(0),
             band_index: AtomicU8::new(0),
             parents: AtomicU32::new(0),
-            children: RefCell::new(Vec::new()),
+            children: Vec::new(),
         })
     }
 
     
-    fn reset(&self) {
-        self.job.replace(None);
-        self.max_bands.set(0);
+    fn reset(&mut self) {
+        self.job = None;
+        self.max_bands = 0;
         self.remaining_bands.store(0, Ordering::SeqCst);
         self.band_index.store(0, Ordering::SeqCst);
         
         
         self.parents.store(1, Ordering::SeqCst);
-        self.children.borrow_mut().clear();
+        self.children.clear();
     }
 
     
-    fn add_child(&self, child: Arc<SwCompositeGraphNode>) {
+    fn add_child(&mut self, child: SwCompositeGraphNodeRef) {
         child.parents.fetch_add(1, Ordering::SeqCst);
-        self.children.borrow_mut().push(child);
+        self.children.push(child);
     }
 
     
     
-    fn set_job(&self, job: SwCompositeJob, num_bands: u8) -> bool {
-        self.job.replace(Some(job));
-        self.max_bands.set(num_bands);
+    fn set_job(&mut self, job: SwCompositeJob, num_bands: u8) -> bool {
+        self.job = Some(job);
+        self.max_bands = num_bands;
         self.remaining_bands.store(num_bands, Ordering::SeqCst);
         
         
@@ -570,37 +617,33 @@ impl SwCompositeGraphNode {
 
     fn take_band(&self) -> (u8, bool) {
         let band_index = self.band_index.fetch_add(1, Ordering::SeqCst);
-        (band_index, band_index + 1 >= self.max_bands.get())
+        (band_index, band_index + 1 >= self.max_bands)
     }
 
     
     fn process_job(&self, band_index: u8) {
-        unsafe {
-            
-            
-            if let Ok(Some(ref job)) = self.job.try_borrow_unguarded() {
-                job.process(band_index);
-            }
+        if let Some(ref job) = self.job {
+            job.process(band_index);
         }
     }
 
     
     
-    fn unblock_children(&self, thread: &SwCompositeThread) {
+    fn unblock_children(&mut self, thread: &SwCompositeThread) {
         if self.remaining_bands.fetch_sub(1, Ordering::SeqCst) > 1 {
             return;
         }
         
-        self.job.replace(None);
+        self.job = None;
         let mut lock = None;
-        for child in self.children.borrow().iter() {
+        for child in self.children.drain(..) {
             
             
             if child.parents.fetch_sub(1, Ordering::SeqCst) <= 1 {
                 if lock.is_none() {
                     lock = Some(thread.lock());
                 }
-                thread.send_job(lock.as_mut().unwrap(), child.clone(), false);
+                thread.send_job(lock.as_mut().unwrap(), child, false);
             }
         }
     }
@@ -611,7 +654,7 @@ impl SwCompositeGraphNode {
 
 struct SwCompositeThread {
     
-    jobs: Mutex<VecDeque<Arc<SwCompositeGraphNode>>>,
+    jobs: Mutex<SwCompositeJobQueue>,
     
     job_count: AtomicIsize,
     
@@ -624,7 +667,10 @@ struct SwCompositeThread {
 
 unsafe impl Sync for SwCompositeThread {}
 
-type SwCompositeJobQueue = VecDeque<Arc<SwCompositeGraphNode>>;
+
+type SwCompositeJobQueue = VecDeque<SwCompositeGraphNodeRef>;
+
+
 type SwCompositeThreadLock<'a> = MutexGuard<'a, SwCompositeJobQueue>;
 
 impl SwCompositeThread {
@@ -632,7 +678,7 @@ impl SwCompositeThread {
     
     fn new() -> Arc<SwCompositeThread> {
         let info = Arc::new(SwCompositeThread {
-            jobs: Mutex::new(VecDeque::new()),
+            jobs: Mutex::new(SwCompositeJobQueue::new()),
             job_count: AtomicIsize::new(0),
             jobs_available: Condvar::new(),
             jobs_completed: Condvar::new(),
@@ -666,7 +712,7 @@ impl SwCompositeThread {
     
     
     
-    fn process_job(&self, graph_node: Arc<SwCompositeGraphNode>, band: u8) {
+    fn process_job(&self, mut graph_node: SwCompositeGraphNodeRef, band: u8) {
         
         graph_node.process_job(band);
         
@@ -685,7 +731,7 @@ impl SwCompositeThread {
         opaque: bool,
         flip_y: bool,
         filter: ImageRendering,
-        graph_node: &Arc<SwCompositeGraphNode>,
+        mut graph_node: SwCompositeGraphNodeRef,
         job_queue: &mut SwCompositeJobQueue,
     ) {
         
@@ -707,7 +753,7 @@ impl SwCompositeThread {
         };
         self.job_count.fetch_add(num_bands as isize, Ordering::SeqCst);
         if graph_node.set_job(job, num_bands) {
-            self.send_job(job_queue, graph_node.clone(), true);
+            self.send_job(job_queue, graph_node, true);
         }
     }
 
@@ -726,7 +772,7 @@ impl SwCompositeThread {
     
     
     
-    fn send_job(&self, queue: &mut SwCompositeJobQueue, job: Arc<SwCompositeGraphNode>, signal: bool) {
+    fn send_job(&self, queue: &mut SwCompositeJobQueue, job: SwCompositeGraphNodeRef, signal: bool) {
         if signal && queue.is_empty() {
             self.jobs_available.notify_all();
         }
@@ -735,7 +781,7 @@ impl SwCompositeThread {
 
     
     
-    fn take_job(&self, wait: bool) -> Option<(Arc<SwCompositeGraphNode>, u8)> {
+    fn take_job(&self, wait: bool) -> Option<(SwCompositeGraphNodeRef, u8)> {
         
         
         
@@ -955,7 +1001,7 @@ impl SwCompositor {
                         }
                         
                         
-                        tile.graph_node.add_child(overlap_tile.graph_node.clone());
+                        tile.graph_node.get_mut().add_child(overlap_tile.graph_node.clone());
                     }
                 }
             }
@@ -1019,7 +1065,7 @@ impl SwCompositor {
                     surface.is_opaque,
                     flip_y,
                     filter,
-                    &tile.graph_node,
+                    tile.graph_node.clone(),
                     job_queue,
                 );
             }
