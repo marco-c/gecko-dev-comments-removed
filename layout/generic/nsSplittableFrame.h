@@ -94,9 +94,7 @@ class nsSplittableFrame : public nsIFrame {
 
 
 
-
-
-  nscoord CalcAndCacheConsumedBSize(mozilla::WritingMode aWM);
+  nscoord CalcAndCacheConsumedBSize();
 
   
 
