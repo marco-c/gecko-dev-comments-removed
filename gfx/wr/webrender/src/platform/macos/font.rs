@@ -346,11 +346,25 @@ impl FontContext {
         
         
         
-        let name = native_font_handle.0.postscript_name();
-        let font = core_text::font_descriptor::new_from_postscript_name(&name);
+        
+        
+        
+        let font = core_text::font::new_from_CGFont(&native_font_handle.0, 0.);
+        
+        fn copy_descriptor(font: CTFont) -> CTFontDescriptor {
+            use core_text::font_descriptor::CTFontDescriptorRef;
+            extern {
+                fn CTFontCopyFontDescriptor(font: CTFontRef) -> CTFontDescriptorRef;
+            }
+            unsafe {
+                let desc = CTFontCopyFontDescriptor(font.as_concrete_TypeRef());
+                CTFontDescriptor::wrap_under_create_rule(desc)
+            }
+        }
+        let desc = copy_descriptor(font);
 
         self.ct_font_descs
-            .insert(*font_key, font);
+            .insert(*font_key, desc);
     }
 
     pub fn delete_font(&mut self, font_key: &FontKey) {
