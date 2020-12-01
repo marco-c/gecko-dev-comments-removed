@@ -30,14 +30,15 @@ static float Accelerate(float aBase, float aSupplemental) {
 }
 
 ParentLayerPoint FlingAccelerator::GetFlingStartingVelocity(
-    const SampleTime& aNow, const ParentLayerPoint& aVelocity) {
+    const SampleTime& aNow, const ParentLayerPoint& aVelocity,
+    const FlingHandoffState& aHandoffState) {
   
   
   
   
   
   ParentLayerPoint velocity = aVelocity;
-  if (ShouldAccelerate(aNow, aVelocity)) {
+  if (ShouldAccelerate(aNow, aVelocity, aHandoffState)) {
     if (velocity.x != 0 &&
         SameDirection(velocity.x, mPreviousFlingStartingVelocity.x)) {
       velocity.x = Accelerate(velocity.x, mPreviousFlingStartingVelocity.x);
@@ -63,20 +64,30 @@ ParentLayerPoint FlingAccelerator::GetFlingStartingVelocity(
 }
 
 bool FlingAccelerator::ShouldAccelerate(
-    const SampleTime& aNow, const ParentLayerPoint& aVelocity) const {
+    const SampleTime& aNow, const ParentLayerPoint& aVelocity,
+    const FlingHandoffState& aHandoffState) const {
   if (!IsTracking() || mPreviousFlingStartTime.IsNull()) {
     FLING_LOG("%p Fling accelerator was reset, not accelerating.\n", this);
     return false;
   }
 
-  if ((aNow - mPreviousFlingStartTime).ToMilliseconds() >=
-      StaticPrefs::apz_fling_accel_interval_ms()) {
-    FLING_LOG(
-        "%p Too much time (%fms) elapsed since previous fling, not "
-        "accelerating.\n",
-        this, float((aNow - mPreviousFlingStartTime).ToMilliseconds()));
+  if (!aHandoffState.mTouchStartRestingTime) {
+    FLING_LOG("%p Don't have a touch start resting time, not accelerating.\n",
+              this);
     return false;
   }
+
+  double msSincePreviousFling =
+      (aNow - mPreviousFlingStartTime).ToMilliseconds();
+  double msBetweenTouchStartAndPanStart =
+      aHandoffState.mTouchStartRestingTime->ToMilliseconds();
+  FLING_LOG(
+      "%p ShouldAccelerate with pan velocity %f pixels/ms, previous fling "
+      "cancel velocity %f pixels/ms, time elapsed since starting previous "
+      "fling %fms, time between touch start and pan start %fms.\n",
+      this, float(aVelocity.Length()),
+      float(mPreviousFlingCancelVelocity.Length()), float(msSincePreviousFling),
+      float(msBetweenTouchStartAndPanStart));
 
   if (aVelocity.Length() < StaticPrefs::apz_fling_accel_min_velocity()) {
     FLING_LOG("%p Fling velocity too low (%f), not accelerating.\n", this,
@@ -90,6 +101,23 @@ bool FlingAccelerator::ShouldAccelerate(
         "%p The previous fling animation had slowed down too much when it was "
         "interrupted (%f), not accelerating.\n",
         this, float(mPreviousFlingCancelVelocity.Length()));
+    return false;
+  }
+
+  if (msSincePreviousFling >= StaticPrefs::apz_fling_accel_interval_ms()) {
+    FLING_LOG(
+        "%p Too much time (%fms) elapsed since previous fling, not "
+        "accelerating.\n",
+        this, msSincePreviousFling);
+    return false;
+  }
+
+  if (msBetweenTouchStartAndPanStart >=
+      StaticPrefs::apz_fling_accel_max_pause_interval_ms()) {
+    FLING_LOG(
+        "%p Too much time (%fms) elapsed between touch start and pan start, "
+        "not accelerating.\n",
+        this, msBetweenTouchStartAndPanStart);
     return false;
   }
 

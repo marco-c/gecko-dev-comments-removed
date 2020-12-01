@@ -158,6 +158,12 @@ struct FlingHandoffState {
 
   
   
+  
+  
+  Maybe<TimeDuration> mTouchStartRestingTime;
+
+  
+  
   bool mIsHandoff;
 
   

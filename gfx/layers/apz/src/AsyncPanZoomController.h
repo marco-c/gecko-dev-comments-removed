@@ -818,7 +818,8 @@ class AsyncPanZoomController {
 
 
 
-  nsEventStatus StartPanning(const ExternalPoint& aStartPoint);
+  nsEventStatus StartPanning(const ExternalPoint& aStartPoint,
+                             const TimeStamp& aEventTime);
 
   
 
@@ -1676,6 +1677,13 @@ class AsyncPanZoomController {
   }
 
  private:
+  
+  TimeStamp mTouchStartTime;
+  
+  
+  
+  
+  TimeDuration mTouchStartRestingTimeBeforePan;
   
   CSSPoint mTestAsyncScrollOffset;
   

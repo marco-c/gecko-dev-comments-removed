@@ -13,6 +13,8 @@
 namespace mozilla {
 namespace layers {
 
+struct FlingHandoffState;
+
 
 
 
@@ -29,8 +31,9 @@ class FlingAccelerator final {
 
   
   
-  ParentLayerPoint GetFlingStartingVelocity(const SampleTime& aNow,
-                                            const ParentLayerPoint& aVelocity);
+  ParentLayerPoint GetFlingStartingVelocity(
+      const SampleTime& aNow, const ParentLayerPoint& aVelocity,
+      const FlingHandoffState& aHandoffState);
 
   void ObserveFlingCanceled(const ParentLayerPoint& aVelocity) {
     mPreviousFlingCancelVelocity = aVelocity;
@@ -38,7 +41,8 @@ class FlingAccelerator final {
 
  protected:
   bool ShouldAccelerate(const SampleTime& aNow,
-                        const ParentLayerPoint& aVelocity) const;
+                        const ParentLayerPoint& aVelocity,
+                        const FlingHandoffState& aHandoffState) const;
 
   
   ParentLayerPoint mPreviousFlingStartingVelocity;
