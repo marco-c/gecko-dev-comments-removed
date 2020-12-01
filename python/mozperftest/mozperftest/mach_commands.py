@@ -254,6 +254,12 @@ class PerftestTests(MachCommandBase):
 
             tests = " ".join([_get_test(test) for test in tests])
 
+        
+        
+        
+        if sys.platform == "darwin" and ON_TRY:
+            run_coverage_check = False
+
         import pytest
 
         options = "-xs"
