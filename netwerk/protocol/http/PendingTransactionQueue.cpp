@@ -25,14 +25,6 @@ static uint64_t TabIdForQueuing(nsAHttpTransaction* transaction) {
              : 0;
 }
 
-class PendingComparator {
- public:
-  bool Equals(const PendingTransactionInfo* aPendingTrans,
-              const nsAHttpTransaction* aTrans) const {
-    return aPendingTrans->Transaction() == aTrans;
-  }
-};
-
 
 
 

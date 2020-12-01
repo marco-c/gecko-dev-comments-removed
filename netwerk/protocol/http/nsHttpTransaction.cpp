@@ -147,7 +147,8 @@ nsHttpTransaction::nsHttpTransaction()
       mProxyConnectResponseCode(0),
       m421Received(false),
       mDontRetryWithDirectRoute(false),
-      mFastFallbackTriggered(false) {
+      mFastFallbackTriggered(false),
+      mAllRecordsInH3ExcludedListBefore(false) {
   this->mSelfAddr.inet = {};
   this->mPeerAddr.inet = {};
   LOG(("Creating nsHttpTransaction @%p\n", this));
@@ -1138,7 +1139,7 @@ bool nsHttpTransaction::PrepareSVCBRecordsForRetry(
   nsTArray<RefPtr<nsISVCBRecord>> records;
   Unused << mHTTPSSVCRecord->GetAllRecordsWithEchConfig(
       mCaps & NS_HTTP_DISALLOW_SPDY, noHttp3, &aAllRecordsHaveEchConfig,
-      records);
+      &mAllRecordsInH3ExcludedListBefore, records);
 
   
   
@@ -1248,8 +1249,12 @@ void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
           return;
         }
       } else {
-        LOG((" No available records to retry"));
-        if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed()) {
+        LOG(
+            (" No available records to retry, "
+             "mAllRecordsInH3ExcludedListBefore=%d",
+             mAllRecordsInH3ExcludedListBefore));
+        if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed() &&
+            !mAllRecordsInH3ExcludedListBefore) {
           mOrigConnInfo.swap(mConnInfo);
         }
         return;
@@ -1483,6 +1488,14 @@ void nsHttpTransaction::Close(nsresult reason) {
           }
         }
         return;
+      }
+      
+      
+      
+      
+      if (!mConnInfo) {
+        mConnInfo.swap(mOrigConnInfo);
+        MOZ_ASSERT(mConnInfo);
       }
     }
   }
@@ -2426,12 +2439,19 @@ void nsHttpTransaction::DisableSpdy() {
 void nsHttpTransaction::DisableHttp3() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
+  
+  
+  
+  
+  if (mOrigConnInfo) {
+    LOG(("nsHttpTransaction::DisableHttp3 this=%p mOrigConnInfo=%s", this,
+         mOrigConnInfo->HashKey().get()));
+    return;
+  }
+
   mCaps |= NS_HTTP_DISALLOW_HTTP3;
-  
-  
-  
-  
-  if (mConnInfo && !mOrigConnInfo) {
+  MOZ_ASSERT(mConnInfo);
+  if (mConnInfo) {
     
     RefPtr<nsHttpConnectionInfo> connInfo;
     mConnInfo->CloneAsDirectRoute(getter_AddRefs(connInfo));

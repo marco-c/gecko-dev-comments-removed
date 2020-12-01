@@ -912,5 +912,28 @@ void ConnectionEntry::LogConnections() {
   LOG(("]"));
 }
 
+bool ConnectionEntry::RemoveTransFromPendingQ(nsHttpTransaction* aTrans) {
+  
+  
+  nsTArray<RefPtr<PendingTransactionInfo>>* infoArray =
+      GetTransactionPendingQHelper(aTrans);
+
+  RefPtr<PendingTransactionInfo> pendingTransInfo;
+  int32_t transIndex =
+      infoArray ? infoArray->IndexOf(aTrans, 0, PendingComparator()) : -1;
+  if (transIndex >= 0) {
+    pendingTransInfo = (*infoArray)[transIndex];
+    infoArray->RemoveElementAt(transIndex);
+  }
+
+  if (!pendingTransInfo) {
+    return false;
+  }
+
+  
+  pendingTransInfo->AbandonHalfOpenAndForgetActiveConn();
+  return true;
+}
+
 }  
 }  

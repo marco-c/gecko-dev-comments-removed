@@ -187,14 +187,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   friend class HalfOpenSocket;
   friend class PendingTransactionInfo;
 
-  class PendingComparator {
-   public:
-    bool Equals(const PendingTransactionInfo* aPendingTrans,
-                const nsAHttpTransaction* aTrans) const {
-      return aPendingTrans->Transaction() == aTrans;
-    }
-  };
-
   
   
   

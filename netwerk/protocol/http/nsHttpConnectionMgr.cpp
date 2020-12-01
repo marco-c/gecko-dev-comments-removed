@@ -2065,29 +2065,11 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
     if (trans->ConnectionInfo()) {
       ent = mCT.GetWeak(trans->ConnectionInfo()->HashKey());
     }
-    if (ent) {
-      int32_t transIndex;
-      
-      
-      nsTArray<RefPtr<PendingTransactionInfo>>* infoArray =
-          ent->GetTransactionPendingQHelper(trans);
-
-      RefPtr<PendingTransactionInfo> pendingTransInfo;
-      transIndex =
-          infoArray ? infoArray->IndexOf(trans, 0, PendingComparator()) : -1;
-      if (transIndex >= 0) {
-        LOG(
-            ("nsHttpConnectionMgr::OnMsgCancelTransaction [trans=%p]"
-             " found in urgentStart queue\n",
-             trans));
-        pendingTransInfo = (*infoArray)[transIndex];
-        infoArray->RemoveElementAt(transIndex);
-      }
-
-      
-      if (pendingTransInfo) {
-        pendingTransInfo->AbandonHalfOpenAndForgetActiveConn();
-      }
+    if (ent && ent->RemoveTransFromPendingQ(trans)) {
+      LOG(
+          ("nsHttpConnectionMgr::OnMsgCancelTransaction [trans=%p]"
+           " removed from pending queue\n",
+           trans));
     }
 
     trans->Close(closeCode);
