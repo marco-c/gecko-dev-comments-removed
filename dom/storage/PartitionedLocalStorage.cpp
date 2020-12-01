@@ -6,6 +6,7 @@
 
 #include "PartitionedLocalStorage.h"
 #include "SessionStorageCache.h"
+#include "nsContentUtils.h"
 
 #include "mozilla/dom/StorageBinding.h"
 
@@ -25,7 +26,7 @@ PartitionedLocalStorage::PartitionedLocalStorage(
     nsIPrincipal* aStoragePrincipal, SessionStorageCache* aCache)
     : Storage(aWindow, aPrincipal, aStoragePrincipal), mCache(aCache) {}
 
-PartitionedLocalStorage::~PartitionedLocalStorage() {}
+PartitionedLocalStorage::~PartitionedLocalStorage() = default;
 
 int64_t PartitionedLocalStorage::GetOriginQuotaUsage() const {
   return mCache->GetOriginQuotaUsage(SessionStorageCache::eSessionSetType);

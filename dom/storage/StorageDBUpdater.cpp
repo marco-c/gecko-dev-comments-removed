@@ -13,6 +13,8 @@
 #include "mozilla/BasePrincipal.h"
 #include "nsVariant.h"
 #include "mozilla/Tokenizer.h"
+#include "mozIStorageConnection.h"
+#include "mozStorageHelper.h"
 
 
 #define CURRENT_SCHEMA_VERSION 2
