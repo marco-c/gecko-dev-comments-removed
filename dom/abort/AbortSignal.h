@@ -32,10 +32,15 @@ class AbortFollower : public nsISupports {
   AbortSignalImpl* Signal() const { return mFollowingSignal; }
 
  protected:
+  
+  
+  static void Traverse(AbortFollower* aFollower,
+                       nsCycleCollectionTraversalCallback& cb);
+
+  static void Unlink(AbortFollower* aFollower) { aFollower->Unfollow(); }
+
   virtual ~AbortFollower();
 
-  
-  
   RefPtr<AbortSignalImpl> mFollowingSignal;
 };
 
@@ -52,6 +57,15 @@ class AbortSignalImpl : public nsISupports {
   void RemoveFollower(AbortFollower* aFollower);
 
  protected:
+  
+  
+  static void Traverse(AbortSignalImpl* aSignal,
+                       nsCycleCollectionTraversalCallback& cb);
+
+  static void Unlink(AbortSignalImpl* aSignal) {
+    
+  }
+
   virtual ~AbortSignalImpl() = default;
 
  private:
