@@ -129,6 +129,8 @@ class Manager final : public SafeRefCounted<Manager> {
 
   static bool IsShutdownAllComplete();
 
+  static nsCString GetShutdownStatus();
+
   
   static void Abort(const nsACString& aOrigin);
 

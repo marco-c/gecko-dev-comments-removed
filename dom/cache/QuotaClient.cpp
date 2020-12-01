@@ -263,8 +263,9 @@ void CacheQuotaClient::ForceKillActors() {
 }
 
 nsCString CacheQuotaClient::GetShutdownStatus() const {
-  
-  return "To be implemented"_ns;
+  AssertIsOnBackgroundThread();
+
+  return Manager::GetShutdownStatus();
 }
 
 void CacheQuotaClient::FinalizeShutdown() {
