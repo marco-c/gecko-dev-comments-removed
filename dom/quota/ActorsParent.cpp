@@ -6796,7 +6796,7 @@ QuotaManager::EnsureStorageAndOriginIsInitializedInternal(
 Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
 QuotaManager::EnsurePersistentOriginIsInitialized(const QuotaInfo& aQuotaInfo) {
   AssertIsOnIOThread();
-  MOZ_ASSERT(mStorageConnection);
+  MOZ_DIAGNOSTIC_ASSERT(mStorageConnection);
 
   auto res = [&aQuotaInfo, this]()
       -> mozilla::Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult> {
@@ -6851,8 +6851,8 @@ QuotaManager::EnsureTemporaryOriginIsInitialized(
     PersistenceType aPersistenceType, const QuotaInfo& aQuotaInfo) {
   AssertIsOnIOThread();
   MOZ_ASSERT(aPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
-  MOZ_ASSERT(mStorageConnection);
-  MOZ_ASSERT(mTemporaryStorageInitialized);
+  MOZ_DIAGNOSTIC_ASSERT(mStorageConnection);
+  MOZ_DIAGNOSTIC_ASSERT(mTemporaryStorageInitialized);
 
   auto res = [&aPersistenceType, &aQuotaInfo, this]()
       -> mozilla::Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult> {
@@ -6872,6 +6872,15 @@ QuotaManager::EnsureTemporaryOriginIsInitialized(
                                        false, aQuotaInfo));
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+
     return std::pair(std::move(directory), created);
   }();
 
@@ -6889,7 +6898,7 @@ QuotaManager::EnsureTemporaryOriginIsInitialized(
 
 nsresult QuotaManager::EnsureTemporaryStorageIsInitialized() {
   AssertIsOnIOThread();
-  MOZ_ASSERT(mStorageConnection);
+  MOZ_DIAGNOSTIC_ASSERT(mStorageConnection);
 
   if (mTemporaryStorageInitialized) {
     mInitializationInfo.AssertInitializationAttempted(

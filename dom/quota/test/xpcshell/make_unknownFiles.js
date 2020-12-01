@@ -59,7 +59,13 @@ async function testSteps() {
 
   
   {
-    const request = initStorageAndOrigin(principal, "default");
+    let request = init();
+    await requestFinished(request);
+
+    request = initTemporaryStorage();
+    await requestFinished(request);
+
+    request = initTemporaryOrigin("default", principal);
     await requestFinished(request);
 
     ok(request.result === true, "The origin directory was created");

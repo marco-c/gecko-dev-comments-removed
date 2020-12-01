@@ -79,17 +79,6 @@ async function testSteps() {
   
   
 
-  info("Testing initStorageAndOrigin functionality");
-
-  await testFunctionality(async function() {
-    info("Initializing origin");
-
-    request = initStorageAndOrigin(principal, "default");
-    await requestFinished(request);
-
-    ok(request.result === false, "The origin directory was not created");
-  });
-
   info("Testing getUsageForPrincipal functionality");
 
   await testFunctionality(async function() {
