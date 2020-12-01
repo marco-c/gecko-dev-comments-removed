@@ -418,17 +418,17 @@ struct ReflowInput : public SizeComputationInput {
     return nsSize(ComputedWidth(), ComputedHeight());
   }
 
-  
-  
-  const nsMargin& ComputedPhysicalOffsets() const { return mComputedOffsets; }
+  nsMargin ComputedPhysicalOffsets() const {
+    return mComputedOffsets.GetPhysicalMargin(mWritingMode);
+  }
 
   LogicalMargin ComputedLogicalOffsets(mozilla::WritingMode aWM) const {
-    return LogicalMargin(aWM, mComputedOffsets);
+    return mComputedOffsets.ConvertTo(aWM, mWritingMode);
   }
 
   void SetComputedLogicalOffsets(mozilla::WritingMode aWM,
                                  const LogicalMargin& aOffsets) {
-    mComputedOffsets = aOffsets.GetPhysicalMargin(aWM);
+    mComputedOffsets = aOffsets.ConvertTo(mWritingMode, aWM);
   }
 
   
@@ -494,7 +494,7 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
-  nsMargin mComputedOffsets;
+  mozilla::LogicalMargin mComputedOffsets{mWritingMode};
 
   
   
@@ -507,7 +507,7 @@ struct ReflowInput : public SizeComputationInput {
 
  public:
   
-  LogicalSize mContainingBlockSize = LogicalSize(mWritingMode);
+  LogicalSize mContainingBlockSize{mWritingMode};
 
   
   const nsStyleDisplay* mStyleDisplay = nullptr;
