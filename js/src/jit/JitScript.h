@@ -257,18 +257,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     const HeapPtr<EnvironmentObject*> templateEnv = nullptr;
 
     
-    
-    
-    uint16_t inlinedBytecodeLength = 0;
-
-    
-    
-    
-    
-    
-    uint8_t maxInliningDepth = UINT8_MAX;
-
-    
     IonBytecodeInfo bytecodeInfo = {};
 
     CachedIonData(EnvironmentObject* templateEnv, IonBytecodeInfo bytecodeInfo);
@@ -299,14 +287,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     
     
     bool typesGeneration : 1;
-
-    
-    bool hasFreezeConstraints : 1;
-
-    
-    
-    
-    bool ionCompiledOrInlined : 1;
 
     
     bool hadIonOSR : 1;
@@ -357,21 +337,8 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   MOZ_MUST_USE bool ensureHasCachedIonData(JSContext* cx, HandleScript script);
 
-  bool hasFreezeConstraints(const js::AutoSweepJitScript& sweep) const {
-    MOZ_ASSERT(sweep.jitScript() == this);
-    return flags_.hasFreezeConstraints;
-  }
-  void setHasFreezeConstraints(const js::AutoSweepJitScript& sweep) {
-    MOZ_ASSERT(sweep.jitScript() == this);
-    flags_.hasFreezeConstraints = true;
-  }
-
   inline bool typesNeedsSweep(Zone* zone) const;
   void sweepTypes(const js::AutoSweepJitScript& sweep, Zone* zone);
-
-  void setIonCompiledOrInlined() { flags_.ionCompiledOrInlined = true; }
-  void clearIonCompiledOrInlined() { flags_.ionCompiledOrInlined = false; }
-  bool ionCompiledOrInlined() const { return flags_.ionCompiledOrInlined; }
 
   void setHadIonOSR() { flags_.hadIonOSR = true; }
   bool hadIonOSR() const { return flags_.hadIonOSR; }
@@ -490,26 +457,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   }
   bool hasTryFinally() const {
     return cachedIonData().bytecodeInfo.hasTryFinally;
-  }
-
-  uint8_t maxInliningDepth() const {
-    return hasCachedIonData() ? cachedIonData().maxInliningDepth : UINT8_MAX;
-  }
-  void resetMaxInliningDepth() { cachedIonData().maxInliningDepth = UINT8_MAX; }
-
-  void setMaxInliningDepth(uint32_t depth) {
-    MOZ_ASSERT(depth <= UINT8_MAX);
-    cachedIonData().maxInliningDepth = depth;
-  }
-
-  uint16_t inlinedBytecodeLength() const {
-    return hasCachedIonData() ? cachedIonData().inlinedBytecodeLength : 0;
-  }
-  void setInlinedBytecodeLength(uint32_t len) {
-    if (len > UINT16_MAX) {
-      len = UINT16_MAX;
-    }
-    cachedIonData().inlinedBytecodeLength = len;
   }
 
  private:

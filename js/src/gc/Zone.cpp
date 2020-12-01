@@ -479,10 +479,6 @@ void Zone::discardJitCode(JSFreeOp* fop,
     
     if (discardBaselineCode) {
       jitScript->purgeOptimizedStubs(script);
-
-      
-      
-      jitScript->clearIonCompiledOrInlined();
     }
 
     
