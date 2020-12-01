@@ -64,6 +64,9 @@ class KnowsCompositor {
   
   RefPtr<SyncObjectClient> GetSyncObject() {
     auto lock = mData.Lock();
+    if (lock.ref().mSyncObject) {
+      lock.ref().mSyncObject->EnsureInitialized();
+    }
     return lock.ref().mSyncObject;
   }
 
