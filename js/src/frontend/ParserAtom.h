@@ -106,13 +106,7 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   
   enum class AtomIndexKind : uint8_t {
     
-    NotInstantiatedAndNotMarked,
-    
-    
-    
-    
-    
-    NotInstantiatedAndMarked,
+    NotInstantiated,
     
     AtomIndex,
     
@@ -123,10 +117,13 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
     Static2,
   };
   uint32_t atomIndex_ = 0;
-  AtomIndexKind atomIndexKind_ = AtomIndexKind::NotInstantiatedAndNotMarked;
+  AtomIndexKind atomIndexKind_ = AtomIndexKind::NotInstantiated;
 
   
   bool hasTwoByteChars_ = false;
+
+  
+  bool usedByStencil_ = false;
 
   
 
@@ -203,19 +200,16 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   HashNumber hash() const { return hash_; }
   uint32_t length() const { return length_; }
 
-  bool isNotInstantiatedAndNotMarked() const {
-    return atomIndexKind_ == AtomIndexKind::NotInstantiatedAndNotMarked;
-  }
-  bool isNotInstantiatedAndMarked() const {
-    return atomIndexKind_ == AtomIndexKind::NotInstantiatedAndMarked;
+  bool isNotInstantiated() const {
+    return atomIndexKind_ == AtomIndexKind::NotInstantiated;
   }
 
+  bool isUsedByStencil() const { return usedByStencil_; }
   void markUsedByStencil() const {
-    if (isNotInstantiatedAndNotMarked()) {
+    if ((isNotInstantiated() || isAtomIndex())) {
       
       
-      const_cast<ParserAtomEntry*>(this)->atomIndexKind_ =
-          AtomIndexKind::NotInstantiatedAndMarked;
+      const_cast<ParserAtomEntry*>(this)->usedByStencil_ = true;
     }
   }
 
