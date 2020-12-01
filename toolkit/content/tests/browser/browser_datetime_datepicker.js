@@ -266,8 +266,6 @@ add_task(async function test_datepicker_keyboard_open() {
     "waiting for open"
   );
 
-  let valueSet = helper.promisePickerValueSet();
-
   
   
   
@@ -275,13 +273,14 @@ add_task(async function test_datepicker_keyboard_open() {
   
   BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
 
-  await valueSet;
-
-  is(
-    helper.getElement(MONTH_YEAR).textContent,
-    DATE_FORMAT(new Date(prevMonth)),
-    "Should update date when updating months"
-  );
+  
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return (
+      helper.getElement(MONTH_YEAR).textContent ==
+      DATE_FORMAT(new Date(prevMonth))
+    );
+  }, "Should update date when updating months");
 
   await helper.tearDown();
 });
