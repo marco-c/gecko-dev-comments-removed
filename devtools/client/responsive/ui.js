@@ -670,17 +670,10 @@ class ResponsiveUI {
   }
 
   async onScreenshot() {
-    const captureScreenshotSupported = await this.currentTarget.actorHasMethod(
-      "responsive",
-      "captureScreenshot"
-    );
+    const data = await this.responsiveFront.captureScreenshot();
+    await saveScreenshot(this.browserWindow, {}, data);
 
-    if (captureScreenshotSupported) {
-      const data = await this.responsiveFront.captureScreenshot();
-      await saveScreenshot(this.browserWindow, {}, data);
-
-      message.post(this.rdmFrame.contentWindow, "screenshot-captured");
-    }
+    message.post(this.rdmFrame.contentWindow, "screenshot-captured");
   }
 
   onToggleLeftAlignment(event) {
@@ -896,19 +889,11 @@ class ResponsiveUI {
 
 
   async updateScreenOrientation(type, angle, isViewportRotated = false) {
-    const simulateOrientationChangeSupported = await this.currentTarget.actorHasMethod(
-      "responsive",
-      "simulateScreenOrientationChange"
+    await this.responsiveFront.simulateScreenOrientationChange(
+      type,
+      angle,
+      isViewportRotated
     );
-
-    
-    if (simulateOrientationChangeSupported) {
-      await this.responsiveFront.simulateScreenOrientationChange(
-        type,
-        angle,
-        isViewportRotated
-      );
-    }
 
     
     if (!isViewportRotated) {
@@ -923,14 +908,7 @@ class ResponsiveUI {
 
 
   async updateMaxTouchPointsEnabled(touchSimulationEnabled) {
-    const setMaxTouchPointsSupported = await this.currentTarget.actorHasMethod(
-      "responsive",
-      "setMaxTouchPoints"
-    );
-
-    if (setMaxTouchPointsSupported) {
-      await this.responsiveFront.setMaxTouchPoints(touchSimulationEnabled);
-    }
+    return this.responsiveFront.setMaxTouchPoints(touchSimulationEnabled);
   }
 
   
