@@ -609,14 +609,22 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
+  cubeb->SetStreamStartFreezeEnabled(true);
+
   
   MediaTrackGraph* primary =
-      MediaTrackGraph::GetInstance(MediaTrackGraph::AUDIO_THREAD_DRIVER,
+      MediaTrackGraph::GetInstance(MediaTrackGraph::SYSTEM_THREAD_DRIVER,
                                     nullptr, aInputRate, nullptr);
+
+  
+  MediaTrackGraph* partner = MediaTrackGraph::GetInstance(
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr, aOutputRate,
+       reinterpret_cast<cubeb_devid>(1));
 
   RefPtr<AudioInputTrack> inputTrack;
   RefPtr<AudioInputProcessing> listener;
-  DispatchFunction([&] {
+  auto primaryStarted = Invoke([&] {
+    
     inputTrack = AudioInputTrack::Create(primary);
     listener = new AudioInputProcessing(2, PRINCIPAL_HANDLE_NONE);
     inputTrack->GraphImpl()->AppendMessage(
@@ -624,18 +632,17 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
     inputTrack->SetInputProcessing(listener);
     inputTrack->GraphImpl()->AppendMessage(
         MakeUnique<StartInputProcessing>(inputTrack, listener));
+    inputTrack->OpenAudioInput((void*)1, listener);
+    return primary->NotifyWhenDeviceStarted(inputTrack);
   });
-  WaitFor(cubeb->StreamInitEvent());
 
-  
-  MediaTrackGraph* partner = MediaTrackGraph::GetInstance(
-      MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr, aOutputRate,
-       reinterpret_cast<cubeb_devid>(1));
+  RefPtr<SmartMockCubebStream> inputStream = WaitFor(cubeb->StreamInitEvent());
 
-  RefPtr<CrossGraphReceiver> receiver;
   RefPtr<CrossGraphTransmitter> transmitter;
   RefPtr<MediaInputPort> port;
-  DispatchFunction([&] {
+  RefPtr<CrossGraphReceiver> receiver;
+  auto partnerStarted = Invoke([&] {
+    
     receiver = partner->CreateCrossGraphReceiver(primary->GraphRate());
 
     
@@ -645,31 +652,34 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
 
     port = transmitter->AllocateInputPort(inputTrack);
     receiver->AddAudioOutput((void*)1);
-
-    
-    
-    inputTrack->OpenAudioInput((void*)1, listener);
+    return partner->NotifyWhenDeviceStarted(receiver);
   });
 
-  MockCubebStream* inputStream = nullptr;
-  MockCubebStream* partnerStream = nullptr;
-  
-  WaitUntil(cubeb->StreamInitEvent(),
-            [&](const RefPtr<SmartMockCubebStream>& aStream) {
-              if (aStream->mHasInput) {
-                inputStream = aStream;
-              } else {
-                partnerStream = aStream;
-              }
-              return inputStream && partnerStream;
-            });
-
+  RefPtr<SmartMockCubebStream> partnerStream =
+      WaitFor(cubeb->StreamInitEvent());
   partnerStream->SetDriftFactor(aDriftFactor);
 
+  cubeb->SetStreamStartFreezeEnabled(false);
+
   
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  inputStream->Thaw();
+  partnerStream->Thaw();
+
+  Unused << WaitFor(primaryStarted);
+  Unused << WaitFor(partnerStarted);
+
   
   DispatchFunction([&] {
     inputTrack->GraphImpl()->AppendMessage(MakeUnique<GoFaster>(cubeb));
@@ -709,7 +719,9 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
       static_cast<uint32_t>(partnerRate * aDriftFactor / 1000 * aBufferMs);
   uint32_t margin = partnerRate / 20 ;
   EXPECT_NEAR(preSilenceSamples, expectedPreSilence, margin);
-  EXPECT_LE(nrDiscontinuities, 2U);
+  
+  
+  EXPECT_LE(nrDiscontinuities, 1U);
 }
 
 TEST(TestAudioTrackGraph, CrossGraphPort)
