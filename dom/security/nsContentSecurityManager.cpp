@@ -768,8 +768,13 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
       csp->GetPolicyCount(&count);
       for (uint32_t i = 0; i < count; ++i) {
         csp->GetPolicyString(i, parsedPolicyStr);
-        MOZ_LOG(sCSMLog, LogLevel::Debug,
-                ("    - %s\n", NS_ConvertUTF16toUTF8(parsedPolicyStr).get()));
+        
+        
+        
+        
+        MOZ_LOG(
+            sCSMLog, LogLevel::Debug,
+            ("    - \"%s\"\n", NS_ConvertUTF16toUTF8(parsedPolicyStr).get()));
       }
     }
 
