@@ -10,7 +10,6 @@
 #include <windows.h>
 
 #include "nsIFile.h"
-#include "nsITimer.h"
 #include "nsISimpleEnumerator.h"
 #include "nsCOMArray.h"
 #include "nsBaseFilePicker.h"
@@ -39,8 +38,8 @@ class nsBaseWinFilePicker : public nsBaseFilePicker {
 
 
 
-class nsFilePicker : public IFileDialogEvents, public nsBaseWinFilePicker {
-  virtual ~nsFilePicker();
+class nsFilePicker : public nsBaseWinFilePicker {
+  virtual ~nsFilePicker() = default;
 
  public:
   nsFilePicker();
@@ -51,9 +50,6 @@ class nsFilePicker : public IFileDialogEvents, public nsBaseWinFilePicker {
   NS_DECL_ISUPPORTS
 
   
-  STDMETHODIMP QueryInterface(REFIID refiid, void** ppvResult);
-
-  
   NS_IMETHOD GetFilterIndex(int32_t* aFilterIndex) override;
   NS_IMETHOD SetFilterIndex(int32_t aFilterIndex) override;
   NS_IMETHOD GetFile(nsIFile** aFile) override;
@@ -61,19 +57,6 @@ class nsFilePicker : public IFileDialogEvents, public nsBaseWinFilePicker {
   NS_IMETHOD GetFiles(nsISimpleEnumerator** aFiles) override;
   NS_IMETHOD AppendFilter(const nsAString& aTitle,
                           const nsAString& aFilter) override;
-
-  
-  HRESULT STDMETHODCALLTYPE OnFileOk(IFileDialog* pfd);
-  HRESULT STDMETHODCALLTYPE OnFolderChanging(IFileDialog* pfd,
-                                             IShellItem* psiFolder);
-  HRESULT STDMETHODCALLTYPE OnFolderChange(IFileDialog* pfd);
-  HRESULT STDMETHODCALLTYPE OnSelectionChange(IFileDialog* pfd);
-  HRESULT STDMETHODCALLTYPE
-  OnShareViolation(IFileDialog* pfd, IShellItem* psi,
-                   FDE_SHAREVIOLATION_RESPONSE* pResponse);
-  HRESULT STDMETHODCALLTYPE OnTypeChange(IFileDialog* pfd);
-  HRESULT STDMETHODCALLTYPE OnOverwrite(IFileDialog* pfd, IShellItem* psi,
-                                        FDE_OVERWRITE_RESPONSE* pResponse);
 
  protected:
   
@@ -87,9 +70,6 @@ class nsFilePicker : public IFileDialogEvents, public nsBaseWinFilePicker {
   bool IsPrivacyModeEnabled();
   bool IsDefaultPathLink();
   bool IsDefaultPathHtml();
-  void SetDialogHandle(HWND aWnd);
-  bool ClosePickerIfNeeded();
-  static void PickerCallbackTimerFunc(nsITimer* aTimer, void* aPicker);
 
   nsCOMPtr<nsILoadContext> mLoadContext;
   nsCOMPtr<nsIWidget> mParentWidget;
@@ -99,8 +79,11 @@ class nsFilePicker : public IFileDialogEvents, public nsBaseWinFilePicker {
   int16_t mSelectedType;
   nsCOMArray<nsIFile> mFiles;
   nsString mUnicodeFile;
-  static char16_t* mLastUsedUnicodeDirectory;
-  HWND mDlgWnd;
+
+  struct FreeDeleter {
+    void operator()(void* aPtr) { ::free(aPtr); }
+  };
+  static mozilla::UniquePtr<char16_t[], FreeDeleter> sLastUsedUnicodeDirectory;
 
   class ComDlgFilterSpec {
    public:
@@ -121,7 +104,6 @@ class nsFilePicker : public IFileDialogEvents, public nsBaseWinFilePicker {
   };
 
   ComDlgFilterSpec mComFilterList;
-  DWORD mFDECookie;
 };
 
 #endif  
