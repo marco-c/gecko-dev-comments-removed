@@ -12,6 +12,7 @@
 
 
 #include "mozilla/dom/GamepadRemapping.h"
+#include "mozilla/dom/GamepadPlatformService.h"
 
 namespace mozilla {
 namespace dom {

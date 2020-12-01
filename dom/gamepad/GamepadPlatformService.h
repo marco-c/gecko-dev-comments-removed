@@ -17,8 +17,12 @@
 namespace mozilla {
 namespace dom {
 
+class GamepadAdded;
 class GamepadEventChannelParent;
+enum class GamepadLightIndicatorType : uint8_t;
+struct GamepadPoseState;
 class GamepadTestChannelParent;
+struct GamepadTouchState;
 
 
 
