@@ -600,6 +600,10 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     WSScanResult forwardScanFromPointToPutCaretResult =
         WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(*this,
                                                          pointToPutCaret);
+    if (forwardScanFromPointToPutCaretResult.Failed()) {
+      NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary failed");
+      return NS_ERROR_FAILURE;
+    }
     
     
     

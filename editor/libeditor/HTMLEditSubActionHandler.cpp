@@ -1463,12 +1463,22 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
   } else {
     EditorDOMPoint pointToBreak(aPointToBreak);
     WSRunScanner wsRunScanner(*this, pointToBreak);
-    brElementIsAfterBlock =
-        wsRunScanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToBreak)
-            .ReachedBlockBoundary();
-    brElementIsBeforeBlock =
-        wsRunScanner.ScanNextVisibleNodeOrBlockBoundaryFrom(pointToBreak)
-            .ReachedBlockBoundary();
+    WSScanResult backwardScanResult =
+        wsRunScanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToBreak);
+    if (backwardScanResult.Failed()) {
+      NS_WARNING(
+          "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom() failed");
+      return NS_ERROR_FAILURE;
+    }
+    brElementIsAfterBlock = backwardScanResult.ReachedBlockBoundary();
+    WSScanResult forwardScanResult =
+        wsRunScanner.ScanNextVisibleNodeOrBlockBoundaryFrom(pointToBreak);
+    if (forwardScanResult.Failed()) {
+      NS_WARNING(
+          "WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
+      return NS_ERROR_FAILURE;
+    }
+    brElementIsBeforeBlock = forwardScanResult.ReachedBlockBoundary();
     
     
     RefPtr<Element> linkNode =
@@ -1527,6 +1537,10 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
                        "Failed to advance offset after the new <br> element");
   WSScanResult forwardScanFromAfterBRElementResult =
       WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(*this, afterBRElement);
+  if (forwardScanFromAfterBRElementResult.Failed()) {
+    NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
+    return NS_ERROR_FAILURE;
+  }
   if (forwardScanFromAfterBRElementResult.ReachedBRElement()) {
     
     
@@ -1595,6 +1609,9 @@ EditActionResult HTMLEditor::SplitMailCiteElements(
   
   WSScanResult forwardScanFromPointToSplitResult =
       WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(*this, pointToSplit);
+  if (forwardScanFromPointToSplitResult.Failed()) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
   
   
   if (forwardScanFromPointToSplitResult.ReachedBRElement() &&
@@ -1693,6 +1710,11 @@ EditActionResult HTMLEditor::SplitMailCiteElements(
     WSScanResult backwardScanFromPointToCreateNewBRElementResult =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
             *this, pointToCreateNewBRElement);
+    if (backwardScanFromPointToCreateNewBRElementResult.Failed()) {
+      NS_WARNING(
+          "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() failed");
+      return EditActionResult(NS_ERROR_FAILURE);
+    }
     if (backwardScanFromPointToCreateNewBRElementResult
             .InNormalWhiteSpacesOrText() ||
         backwardScanFromPointToCreateNewBRElementResult
@@ -1704,6 +1726,10 @@ EditActionResult HTMLEditor::SplitMailCiteElements(
       WSScanResult forwardScanFromPointAfterNewBRElementResult =
           WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
               *this, pointAfterNewBRElement);
+      if (forwardScanFromPointAfterNewBRElementResult.Failed()) {
+        NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
+        return EditActionResult(NS_ERROR_FAILURE);
+      }
       if (forwardScanFromPointAfterNewBRElementResult
               .InNormalWhiteSpacesOrText() ||
           forwardScanFromPointAfterNewBRElementResult.ReachedSpecialContent() ||
@@ -5298,8 +5324,14 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
   
   
   WSRunScanner wsScannerAtEnd(*this, endPoint);
-  if (wsScannerAtEnd.ScanPreviousVisibleNodeOrBlockBoundaryFrom(endPoint)
-          .ReachedSomething()) {
+  WSScanResult scanResultAtEnd =
+      wsScannerAtEnd.ScanPreviousVisibleNodeOrBlockBoundaryFrom(endPoint);
+  if (scanResultAtEnd.Failed()) {
+    NS_WARNING(
+        "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom() failed");
+    return NS_ERROR_FAILURE;
+  }
+  if (scanResultAtEnd.ReachedSomething()) {
     
     
     if (wsScannerAtEnd.StartsFromOtherBlockElement()) {
@@ -5327,8 +5359,13 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
   
   
   WSRunScanner wsScannerAtStart(*this, startPoint);
-  if (wsScannerAtStart.ScanNextVisibleNodeOrBlockBoundaryFrom(startPoint)
-          .ReachedSomething()) {
+  WSScanResult scanResultAtStart =
+      wsScannerAtStart.ScanNextVisibleNodeOrBlockBoundaryFrom(startPoint);
+  if (scanResultAtStart.Failed()) {
+    NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
+    return NS_ERROR_FAILURE;
+  }
+  if (scanResultAtStart.ReachedSomething()) {
     
     
     if (wsScannerAtStart.EndsByOtherBlockElement()) {
@@ -6947,6 +6984,11 @@ nsresult HTMLEditor::HandleInsertParagraphInListItemElement(Element& aListItem,
         WSScanResult forwardScanFromStartOfListItemResult =
             WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
                 *this, EditorRawDOMPoint(&aListItem, 0));
+        if (forwardScanFromStartOfListItemResult.Failed()) {
+          NS_WARNING(
+              "WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
+          return NS_ERROR_FAILURE;
+        }
         if (forwardScanFromStartOfListItemResult.ReachedSpecialContent() ||
             forwardScanFromStartOfListItemResult.ReachedBRElement() ||
             forwardScanFromStartOfListItemResult.ReachedHRElement()) {

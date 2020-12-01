@@ -1222,6 +1222,10 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPointBase<PT, CT>& aPoint) const {
   MOZ_ASSERT(aPoint.IsSet());
 
+  if (!TextFragmentDataAtStartRef().IsInitialized()) {
+    return WSScanResult(nullptr, WSType::UnexpectedError);
+  }
+
   
   
   const VisibleWhiteSpacesData& visibleWhiteSpaces =
@@ -1255,6 +1259,10 @@ template <typename PT, typename CT>
 WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPointBase<PT, CT>& aPoint) const {
   MOZ_ASSERT(aPoint.IsSet());
+
+  if (!TextFragmentDataAtStartRef().IsInitialized()) {
+    return WSScanResult(nullptr, WSType::UnexpectedError);
+  }
 
   
   
