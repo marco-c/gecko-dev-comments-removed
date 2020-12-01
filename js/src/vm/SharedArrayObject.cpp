@@ -47,7 +47,7 @@ static size_t SharedArrayMappedSize(size_t length) {
 SharedArrayRawBuffer* SharedArrayRawBuffer::Allocate(
     BufferSize length, const Maybe<uint64_t>& maxSize,
     const Maybe<size_t>& mappedSize) {
-  MOZ_RELEASE_ASSERT(length.get() <= ArrayBufferObject::MaxBufferByteLength);
+  MOZ_RELEASE_ASSERT(length.get() <= ArrayBufferObject::maxBufferByteLength());
 
   size_t accessibleSize = SharedArrayAccessibleSize(length.get());
   if (accessibleSize < length.get()) {
@@ -110,7 +110,7 @@ void SharedArrayRawBuffer::tryGrowMaxSizeInPlace(uint64_t deltaMaxSize) {
 bool SharedArrayRawBuffer::wasmGrowToSizeInPlace(const Lock&,
                                                  BufferSize newLength) {
   
-  if (newLength.get() > ArrayBufferObject::MaxBufferByteLength) {
+  if (newLength.get() > ArrayBufferObject::maxBufferByteLength()) {
     return false;
   }
 
@@ -214,7 +214,7 @@ bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
 
   
   
-  if (byteLength > ArrayBufferObject::MaxBufferByteLength) {
+  if (byteLength > ArrayBufferObject::maxBufferByteLength()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_SHARED_ARRAY_BAD_LENGTH);
     return false;

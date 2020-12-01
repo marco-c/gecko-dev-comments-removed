@@ -184,7 +184,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   
   
-  static constexpr size_t MaxBufferByteLength = INT32_MAX;
+  static size_t maxBufferByteLength() { return INT32_MAX; }
 
   
   static constexpr size_t MaxInlineBytes =
