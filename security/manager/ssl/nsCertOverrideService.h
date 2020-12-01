@@ -153,7 +153,7 @@ class nsCertOverrideService final : public nsICertOverrideService,
                           const nsACString& dbKey,
                           const mozilla::MutexAutoLock& aProofOfLock);
 
-  RefPtr<TaskQueue> mWriterTaskQueue;
+  RefPtr<mozilla::TaskQueue> mWriterTaskQueue;
 
   
   uint64_t mPendingWriteCount;

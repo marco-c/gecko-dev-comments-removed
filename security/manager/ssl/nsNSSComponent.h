@@ -83,8 +83,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   
   
   
-  static void ClearSSLExternalAndInternalSessionCacheNative();
-  
   static void DoClearSSLExternalAndInternalSessionCache();
 
  protected:
@@ -96,6 +94,13 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
 
   void setValidationOptions(bool isInitialSetting,
                             const mozilla::MutexAutoLock& proofOfLock);
+  void GetRevocationBehaviorFromPrefs(
+       mozilla::psm::CertVerifier::OcspDownloadConfig* odc,
+       mozilla::psm::CertVerifier::OcspStrictConfig* osc,
+       uint32_t* certShortLifetimeInDays,
+       TimeDuration& softTimeout,
+       TimeDuration& hardTimeout,
+      const mozilla::MutexAutoLock& proofOfLock);
   void UpdateCertVerifierWithEnterpriseRoots();
   nsresult RegisterObservers();
 

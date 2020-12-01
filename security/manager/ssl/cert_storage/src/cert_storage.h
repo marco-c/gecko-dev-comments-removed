@@ -8,7 +8,6 @@
 #define _cert_storage_h_
 
 #include "nsISupportsUtils.h"  
-#include "mozilla/SyncRunnable.h"
 
 
 #define NS_CERT_STORAGE_CID                          \
@@ -22,8 +21,5 @@ extern "C" {
 nsresult cert_storage_constructor(nsISupports* outer, REFNSIID iid,
                                   void** result);
 };
-
-nsresult construct_cert_storage(nsISupports* outer, REFNSIID iid,
-                                void** result);
 
 #endif  
