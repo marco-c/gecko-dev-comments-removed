@@ -316,3 +316,11 @@ void safevals() {
     consume(std::move(unsafe10));
   }
 }
+
+
+class Subcell : public Cell {
+  int method() {
+    GC();
+    return f; 
+  }
+};

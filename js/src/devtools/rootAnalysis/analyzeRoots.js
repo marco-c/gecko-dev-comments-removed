@@ -631,7 +631,7 @@ function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
                 
                 worklist.push({body: body, ppoint: body.Index[1],
                                gcInfo: gcInfo, why: entry});
-            } else if (variable.Kind == "Arg" && gcInfo) {
+            } else if ((variable.Kind == "Arg" || variable.Kind == "This") && gcInfo) {
                 
                 
                 return entry;
