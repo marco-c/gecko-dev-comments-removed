@@ -47,6 +47,7 @@
 
 #include "gfxUtils.h"
 #include "mozilla/ComputedStyle.h"
+#include "mozilla/CSSOrderAwareFrameIterator.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
@@ -133,7 +134,6 @@ void nsBoxFrame::SetInitialChildList(ChildListID aListID,
   if (aListID == kPrincipalList) {
     
     nsBoxLayoutState state(PresContext());
-    CheckBoxOrder();
     if (mLayoutManager)
       mLayoutManager->ChildrenSet(this, state, mFrames.FirstChild());
   }
@@ -783,12 +783,6 @@ void nsBoxFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
   if (mLayoutManager)
     mLayoutManager->ChildrenInserted(this, state, aPrevFrame, newFrames);
 
-  
-  
-  
-  
-  CheckBoxOrder();
-
   PresShell()->FrameNeedsReflow(this, IntrinsicDirty::TreeChange,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
 }
@@ -803,12 +797,6 @@ void nsBoxFrame::AppendFrames(ChildListID aListID, nsFrameList& aFrameList) {
 
   
   if (mLayoutManager) mLayoutManager->ChildrenAppended(this, state, newFrames);
-
-  
-  
-  
-  
-  CheckBoxOrder();
 
   
   if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
@@ -970,14 +958,17 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 void nsBoxFrame::BuildDisplayListForChildren(nsDisplayListBuilder* aBuilder,
                                              const nsDisplayListSet& aLists) {
-  nsIFrame* kid = mFrames.FirstChild();
+  
+  auto iter = CSSOrderAwareFrameIterator(
+      this, mozilla::layout::kPrincipalList,
+      CSSOrderAwareFrameIterator::ChildFilter::IncludeAll,
+      CSSOrderAwareFrameIterator::OrderState::Unknown,
+      CSSOrderAwareFrameIterator::OrderingProperty::BoxOrdinalGroup);
   
   
   nsDisplayListSet set(aLists, aLists.BlockBorderBackgrounds());
-  
-  while (kid) {
-    BuildDisplayListForChild(aBuilder, kid, set);
-    kid = kid->GetNextSibling();
+  for (; !iter.AtEnd(); iter.Next()) {
+    BuildDisplayListForChild(aBuilder, iter.get(), set);
   }
 }
 
@@ -1019,22 +1010,6 @@ void nsBoxFrame::RegUnregAccessKey(bool aDoReg) {
 void nsBoxFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) {
   if (HasAnyStateBits(NS_STATE_BOX_WRAPS_KIDS_IN_BLOCK)) {
     aResult.AppendElement(OwnedAnonBox(PrincipalChildList().FirstChild()));
-  }
-}
-
-
-
-static bool IsBoxOrdinalLEQ(nsIFrame* aFrame1, nsIFrame* aFrame2) {
-  
-  nsIFrame* aRealFrame1 = nsPlaceholderFrame::GetRealFrameFor(aFrame1);
-  nsIFrame* aRealFrame2 = nsPlaceholderFrame::GetRealFrameFor(aFrame2);
-  return aRealFrame1->StyleXUL()->mBoxOrdinal <=
-         aRealFrame2->StyleXUL()->mBoxOrdinal;
-}
-
-void nsBoxFrame::CheckBoxOrder() {
-  if (!nsIFrame::IsFrameListSorted<IsBoxOrdinalLEQ>(mFrames)) {
-    nsIFrame::SortFrameList<IsBoxOrdinalLEQ>(mFrames);
   }
 }
 

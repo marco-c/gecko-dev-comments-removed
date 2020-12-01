@@ -4561,23 +4561,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
-  static void SortFrameList(nsFrameList& aFrameList);
-
-  
-
-
-
-  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
-  static bool IsFrameListSorted(nsFrameList& aFrameList);
-
-  
-
-
-
   bool FrameIsNonFirstInIBSplit() const {
     return HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT) &&
            FirstContinuation()->GetProperty(nsIFrame::IBSplitPrevSibling());
@@ -5287,13 +5270,6 @@ class nsIFrame : public nsQueryFrame {
 
   bool SetOverflowAreas(const nsOverflowAreas& aOverflowAreas);
 
-  
-  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
-  static nsIFrame* SortedMerge(nsIFrame* aLeft, nsIFrame* aRight);
-
-  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
-  static nsIFrame* MergeSort(nsIFrame* aSource);
-
   bool HasOpacityInternal(float aThreshold, const nsStyleDisplay* aStyleDisplay,
                           const nsStyleEffects* aStyleEffects,
                           mozilla::EffectSet* aEffectSet = nullptr) const;
@@ -5653,119 +5629,6 @@ inline nsFrameList::Iterator& nsFrameList::Iterator::operator--() {
     mCurrent = mCurrent->GetPrevSibling();
   }
   return *this;
-}
-
-
-
-
-template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- nsIFrame* nsIFrame::SortedMerge(nsIFrame* aLeft,
-                                             nsIFrame* aRight) {
-  MOZ_ASSERT(aLeft && aRight, "SortedMerge must have non-empty lists");
-
-  nsIFrame* result;
-  
-  if (IsLessThanOrEqual(aLeft, aRight)) {
-    result = aLeft;
-    aLeft = aLeft->GetNextSibling();
-    if (!aLeft) {
-      result->SetNextSibling(aRight);
-      return result;
-    }
-  } else {
-    result = aRight;
-    aRight = aRight->GetNextSibling();
-    if (!aRight) {
-      result->SetNextSibling(aLeft);
-      return result;
-    }
-  }
-
-  nsIFrame* last = result;
-  for (;;) {
-    if (IsLessThanOrEqual(aLeft, aRight)) {
-      last->SetNextSibling(aLeft);
-      last = aLeft;
-      aLeft = aLeft->GetNextSibling();
-      if (!aLeft) {
-        last->SetNextSibling(aRight);
-        return result;
-      }
-    } else {
-      last->SetNextSibling(aRight);
-      last = aRight;
-      aRight = aRight->GetNextSibling();
-      if (!aRight) {
-        last->SetNextSibling(aLeft);
-        return result;
-      }
-    }
-  }
-}
-
-template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- nsIFrame* nsIFrame::MergeSort(nsIFrame* aSource) {
-  MOZ_ASSERT(aSource, "MergeSort null arg");
-
-  nsIFrame* sorted[32] = {nullptr};
-  nsIFrame** fill = &sorted[0];
-  nsIFrame** left;
-  nsIFrame* rest = aSource;
-
-  do {
-    nsIFrame* current = rest;
-    rest = rest->GetNextSibling();
-    current->SetNextSibling(nullptr);
-
-    
-    
-    
-    for (left = &sorted[0]; left != fill && *left; ++left) {
-      current = SortedMerge<IsLessThanOrEqual>(*left, current);
-      *left = nullptr;
-    }
-
-    
-    *left = current;
-
-    if (left == fill) ++fill;
-  } while (rest);
-
-  
-  nsIFrame* result = nullptr;
-  for (left = &sorted[0]; left != fill; ++left) {
-    if (*left) {
-      result = result ? SortedMerge<IsLessThanOrEqual>(*left, result) : *left;
-    }
-  }
-  return result;
-}
-
-template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- bool nsIFrame::IsFrameListSorted(nsFrameList& aFrameList) {
-  if (aFrameList.IsEmpty()) {
-    
-    return true;
-  }
-
-  
-  
-  nsFrameList::Enumerator trailingIter(aFrameList);
-  nsFrameList::Enumerator iter(aFrameList);
-  iter.Next();  
-
-  
-  while (!iter.AtEnd()) {
-    MOZ_ASSERT(!trailingIter.AtEnd(), "trailing iter shouldn't finish first");
-    if (!IsLessThanOrEqual(trailingIter.get(), iter.get())) {
-      return false;
-    }
-    trailingIter.Next();
-    iter.Next();
-  }
-
-  
-  return true;
 }
 
 #endif
