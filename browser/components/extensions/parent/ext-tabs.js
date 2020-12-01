@@ -48,7 +48,7 @@ XPCOMUtils.defineLazyGetter(this, "strBundle", function() {
   );
 });
 
-var { DefaultMap, ExtensionError } = ExtensionUtils;
+var { ExtensionError } = ExtensionUtils;
 
 const TABHIDE_PREFNAME = "extensions.webextensions.tabhide.enabled";
 
@@ -803,25 +803,8 @@ this.tabs = class extends ExtensionAPI {
         },
 
         async remove(tabIds) {
-          let nativeTabs = getNativeTabsFromIDArray(tabIds);
-
-          if (nativeTabs.length === 1) {
-            nativeTabs[0].ownerGlobal.gBrowser.removeTab(nativeTabs[0]);
-            return;
-          }
-
-          
-          let windowTabMap = new DefaultMap(() => []);
-          for (let nativeTab of nativeTabs) {
-            windowTabMap.get(nativeTab.ownerGlobal).push(nativeTab);
-          }
-
-          
-          
-          
-          
-          for (let [eachWindow, tabsToClose] of windowTabMap.entries()) {
-            eachWindow.gBrowser.removeTabs(tabsToClose, { animate: false });
+          for (let nativeTab of getNativeTabsFromIDArray(tabIds)) {
+            nativeTab.ownerGlobal.gBrowser.removeTab(nativeTab);
           }
         },
 
