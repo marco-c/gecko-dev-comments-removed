@@ -159,29 +159,42 @@ function setRevocations(certStorage, revocations) {
 
 
 
+
+
+
+
+
+function hasPriorData(dataType) {
+  let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
+    Ci.nsICertStorage
+  );
+  return new Promise(resolve => {
+    certStorage.hasPriorData(dataType, (rv, hasPriorData) => {
+      if (rv == Cr.NS_OK) {
+        resolve(hasPriorData);
+      } else {
+        
+        
+        resolve(false);
+      }
+    });
+  });
+}
+
+
+
+
+
+
 const updateCertBlocklist = AppConstants.MOZ_NEW_CERT_STORAGE
   ? async function({ data: { current, created, updated, deleted } }) {
-      const certList = Cc["@mozilla.org/security/certstorage;1"].getService(
-        Ci.nsICertStorage
-      );
       let items = [];
 
       
       
-      let hasPriorRevocationData = await new Promise(resolve => {
-        certList.hasPriorData(
-          Ci.nsICertStorage.DATA_TYPE_REVOCATION,
-          (rv, hasPriorData) => {
-            if (rv == Cr.NS_OK) {
-              resolve(hasPriorData);
-            } else {
-              
-              
-              resolve(false);
-            }
-          }
-        );
-      });
+      let hasPriorRevocationData = await hasPriorData(
+        Ci.nsICertStorage.DATA_TYPE_REVOCATION
+      );
 
       
       if (!hasPriorRevocationData) {
@@ -233,6 +246,9 @@ const updateCertBlocklist = AppConstants.MOZ_NEW_CERT_STORAGE
       }
 
       try {
+        const certList = Cc["@mozilla.org/security/certstorage;1"].getService(
+          Ci.nsICertStorage
+        );
         await setRevocations(certList, items);
       } catch (e) {
         Cu.reportError(e);
@@ -396,23 +412,9 @@ class IntermediatePreloads {
 
     
     
-    const certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
-      Ci.nsICertStorage
+    let hasPriorCertData = await hasPriorData(
+      Ci.nsICertStorage.DATA_TYPE_CERTIFICATE
     );
-    let hasPriorCertData = await new Promise(resolve => {
-      certStorage.hasPriorData(
-        Ci.nsICertStorage.DATA_TYPE_CERTIFICATE,
-        (rv, hasPriorData) => {
-          if (rv == Cr.NS_OK) {
-            resolve(hasPriorData);
-          } else {
-            
-            
-            resolve(false);
-          }
-        }
-      );
-    });
     
     if (!hasPriorCertData) {
       let current;
@@ -486,6 +488,9 @@ class IntermediatePreloads {
         recordsToUpdate.push(record);
       }
     }
+    const certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
+      Ci.nsICertStorage
+    );
     let result = await new Promise(resolve => {
       certStorage.addCerts(certInfos, resolve);
     }).catch(err => err);
@@ -568,21 +573,9 @@ class IntermediatePreloads {
 
     log.debug(`Removing ${deleted.length} Intermediate certificates`);
     await this.removeCerts(deleted);
-    let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
-      Ci.nsICertStorage
+    let hasPriorCRLiteData = await hasPriorData(
+      Ci.nsICertStorage.DATA_TYPE_CRLITE
     );
-    let hasPriorCRLiteData = await new Promise(resolve => {
-      certStorage.hasPriorData(
-        Ci.nsICertStorage.DATA_TYPE_CRLITE,
-        (rv, hasPriorData) => {
-          if (rv == Cr.NS_OK) {
-            resolve(hasPriorData);
-          } else {
-            resolve(false);
-          }
-        }
-      );
-    });
     if (!hasPriorCRLiteData) {
       deleted = [];
       updated = [];
@@ -610,6 +603,9 @@ class IntermediatePreloads {
         )
       );
     }
+    let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
+      Ci.nsICertStorage
+    );
     await new Promise(resolve => certStorage.setCRLiteState(entries, resolve));
   }
 
@@ -715,6 +711,7 @@ class CRLiteFilters {
         bucketNamePref: CRLITE_FILTERS_BUCKET_PREF,
         lastCheckTimePref: CRLITE_FILTERS_CHECKED_SECONDS_PREF,
         signerName: Services.prefs.getCharPref(CRLITE_FILTERS_SIGNER_PREF),
+        localFields: ["loaded_into_cert_storage"],
       }
     );
 
@@ -734,6 +731,36 @@ class CRLiteFilters {
       );
       return;
     }
+
+    let hasPriorFilter = await hasPriorData(
+      Ci.nsICertStorage.DATA_TYPE_CRLITE_FILTER_FULL
+    );
+    if (!hasPriorFilter) {
+      let current = await this.client.db.list();
+      let toReset = current.filter(
+        record => !record.incremental && record.loaded_into_cert_storage
+      );
+      await this.client.db.importChanges(
+        undefined, 
+        undefined, 
+        toReset.map(r => ({ ...r, loaded_into_cert_storage: false }))
+      );
+    }
+    let hasPriorStash = await hasPriorData(
+      Ci.nsICertStorage.DATA_TYPE_CRLITE_FILTER_INCREMENTAL
+    );
+    if (!hasPriorStash) {
+      let current = await this.client.db.list();
+      let toReset = current.filter(
+        record => record.incremental && record.loaded_into_cert_storage
+      );
+      await this.client.db.importChanges(
+        undefined, 
+        undefined, 
+        toReset.map(r => ({ ...r, loaded_into_cert_storage: false }))
+      );
+    }
+
     let current = await this.client.db.list();
     let fullFilters = current.filter(filter => !filter.incremental);
     if (fullFilters.length < 1) {
@@ -746,7 +773,7 @@ class CRLiteFilters {
       return;
     }
     fullFilters.sort(compareFilters);
-    log.debug(fullFilters);
+    log.debug("fullFilters:", fullFilters);
     let fullFilter = fullFilters.pop(); 
     let incrementalFilters = current.filter(
       filter =>
@@ -774,6 +801,10 @@ class CRLiteFilters {
     const certList = Cc["@mozilla.org/security/certstorage;1"].getService(
       Ci.nsICertStorage
     );
+    filtersToDownload = filtersToDownload.filter(
+      filter => !filter.loaded_into_cert_storage
+    );
+    log.debug("filtersToDownload:", filtersToDownload);
     for (let filter of filtersToDownload) {
       try {
         
@@ -781,7 +812,7 @@ class CRLiteFilters {
         let buffer = await (await fetch(localURI)).arrayBuffer();
         let bytes = new Uint8Array(buffer);
         log.debug(`Downloaded ${filter.details.name}: ${bytes.length} bytes`);
-        filtersDownloaded.push(filter.details.name);
+        filtersDownloaded.push(filter);
         if (!filter.incremental) {
           let timestamp = Math.floor(filter.effectiveTimestamp / 1000);
           log.debug(`setting CRLite filter timestamp to ${timestamp}`);
@@ -805,10 +836,19 @@ class CRLiteFilters {
         Cu.reportError("failed to download CRLite filter", e);
       }
     }
+
+    await this.client.db.importChanges(
+      undefined, 
+      undefined, 
+      filtersDownloaded.map(r => ({ ...r, loaded_into_cert_storage: true }))
+    );
+
     Services.obs.notifyObservers(
       null,
       "remote-security-settings:crlite-filters-downloaded",
-      `finished;${filtersDownloaded.join(",")}`
+      `finished;${filtersDownloaded
+        .map(filter => filter.details.name)
+        .join(",")}`
     );
   }
 }
