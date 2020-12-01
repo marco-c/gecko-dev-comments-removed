@@ -6,6 +6,7 @@
 #ifndef nsHttpConnectionMgr_h__
 #define nsHttpConnectionMgr_h__
 
+#include "HalfOpenSocket.h"
 #include "HttpConnectionBase.h"
 #include "HttpConnectionMgrShell.h"
 #include "nsHttpConnection.h"
@@ -19,6 +20,7 @@
 #include "mozilla/Attributes.h"
 #include "ARefBase.h"
 #include "nsWeakReference.h"
+#include "ConnectionEntry.h"
 #include "TCPFastOpen.h"
 
 #include "nsINamed.h"
@@ -32,14 +34,6 @@ namespace net {
 class EventTokenBucket;
 class NullHttpTransaction;
 struct HttpRetParams;
-
-
-#define NS_HALFOPENSOCKET_IID                        \
-  {                                                  \
-    0x8d411b53, 0x54bc, 0x4a99, {                    \
-      0x8b, 0x78, 0xff, 0x12, 0x5e, 0xab, 0x15, 0x64 \
-    }                                                \
-  }
 
 
 
@@ -156,128 +150,20 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void DoSpeculativeConnection(SpeculativeTransaction* aTrans,
                                bool aFetchHTTPSRR);
 
+  HttpConnectionBase* GetH2orH3ActiveConn(ConnectionEntry* ent, bool aNoHttp3);
+
+  void DecreaseNumHalfOpenConns();
+
+  void InsertTransactionSorted(
+      nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
+      PendingTransactionInfo* pendingTransInfo,
+      bool aInsertAsFirstForTheSamePriority = false);
+
+  already_AddRefed<PendingTransactionInfo> FindTransactionHelper(
+      bool removeWhenFound, ConnectionEntry* aEnt, nsAHttpTransaction* aTrans);
+
  private:
   virtual ~nsHttpConnectionMgr();
-
-  class nsHalfOpenSocket;
-  class PendingTransactionInfo;
-
-  
-  
-  
-  
-  
-  
-  class nsConnectionEntry {
-   public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsConnectionEntry)
-    explicit nsConnectionEntry(nsHttpConnectionInfo* ci);
-
-    RefPtr<nsHttpConnectionInfo> mConnInfo;
-    nsTArray<RefPtr<PendingTransactionInfo>>
-        mUrgentStartQ;  
-
-    
-    
-    
-    
-    
-    
-    nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<PendingTransactionInfo>>>
-        mPendingTransactionTable;
-    nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
-    nsTArray<RefPtr<nsHttpConnection>>
-        mIdleConns;                          
-    nsTArray<nsHalfOpenSocket*> mHalfOpens;  
-    nsTArray<RefPtr<nsHalfOpenSocket>>
-        mHalfOpenFastOpenBackups;  
-                                   
-
-    bool AvailableForDispatchNow();
-
-    
-    
-    uint32_t UnconnectedHalfOpens();
-
-    
-    void RemoveHalfOpen(nsHalfOpenSocket*);
-
-    
-    
-    
-    
-    
-    nsTArray<nsCString> mCoalescingKeys;
-
-    
-    
-    
-    bool mUsingSpdy : 1;
-
-    
-    
-    
-    
-    
-    bool mCanUseSpdy : 1;
-
-    
-    
-    
-    
-    bool mPreferIPv4 : 1;
-    
-    
-    bool mPreferIPv6 : 1;
-
-    
-    bool mUsedForConnection : 1;
-
-    
-    bool mUseFastOpen : 1;
-
-    bool mDoNotDestroy : 1;
-
-    bool AllowHttp2() const { return mCanUseSpdy; }
-    void DisallowHttp2();
-    void DontReuseHttp3Conn();
-
-    
-    void RecordIPFamilyPreference(uint16_t family);
-    
-    void ResetIPFamilyPreference();
-    
-    bool PreferenceKnown() const;
-
-    
-    size_t PendingQLength() const;
-
-    
-    
-    
-    void InsertTransaction(PendingTransactionInfo* info,
-                           bool aInsertAsFirstForTheSamePriority = false);
-
-    
-    
-    
-    void AppendPendingQForFocusedWindow(
-        uint64_t windowId, nsTArray<RefPtr<PendingTransactionInfo>>& result,
-        uint32_t maxCount = 0);
-
-    
-    
-    
-    void AppendPendingQForNonFocusedWindows(
-        uint64_t windowId, nsTArray<RefPtr<PendingTransactionInfo>>& result,
-        uint32_t maxCount = 0);
-
-    
-    void RemoveEmptyPendingQ();
-
-   private:
-    ~nsConnectionEntry();
-  };
 
  public:
   static nsAHttpConnection* MakeConnectionHandle(HttpConnectionBase* aWrapped);
@@ -285,155 +171,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
                                    int32_t port);
 
  private:
-  
-  
-
-  class nsHalfOpenSocket final : public nsIOutputStreamCallback,
-                                 public nsITransportEventSink,
-                                 public nsIInterfaceRequestor,
-                                 public nsITimerCallback,
-                                 public nsINamed,
-                                 public nsSupportsWeakReference,
-                                 public TCPFastOpen {
-    ~nsHalfOpenSocket();
-
-   public:
-    NS_DECLARE_STATIC_IID_ACCESSOR(NS_HALFOPENSOCKET_IID)
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIOUTPUTSTREAMCALLBACK
-    NS_DECL_NSITRANSPORTEVENTSINK
-    NS_DECL_NSIINTERFACEREQUESTOR
-    NS_DECL_NSITIMERCALLBACK
-    NS_DECL_NSINAMED
-
-    nsHalfOpenSocket(nsConnectionEntry* ent, nsAHttpTransaction* trans,
-                     uint32_t caps, bool speculative, bool isFromPredictor,
-                     bool urgentStart);
-
-    [[nodiscard]] nsresult SetupStreams(nsISocketTransport**,
-                                        nsIAsyncInputStream**,
-                                        nsIAsyncOutputStream**, bool isBackup);
-    [[nodiscard]] nsresult SetupPrimaryStreams();
-    [[nodiscard]] nsresult SetupBackupStreams();
-    void SetupBackupTimer();
-    void CancelBackupTimer();
-    void Abandon();
-    double Duration(TimeStamp epoch);
-    nsISocketTransport* SocketTransport() { return mSocketTransport; }
-    nsISocketTransport* BackupTransport() { return mBackupTransport; }
-
-    nsAHttpTransaction* Transaction() { return mTransaction; }
-
-    bool IsSpeculative() { return mSpeculative; }
-
-    bool IsFromPredictor() { return mIsFromPredictor; }
-
-    bool Allow1918() { return mAllow1918; }
-    void SetAllow1918(bool val) { mAllow1918 = val; }
-
-    bool HasConnected() { return mHasConnected; }
-
-    void PrintDiagnostics(nsCString& log);
-
-    
-    
-    
-    bool AcceptsTransaction(nsHttpTransaction* trans);
-    bool Claim();
-    void Unclaim();
-
-    bool FastOpenEnabled() override;
-    nsresult StartFastOpen() override;
-    void SetFastOpenConnected(nsresult, bool aWillRetry) override;
-    void FastOpenNotSupported() override;
-    void SetFastOpenStatus(uint8_t tfoStatus) override;
-    void CancelFastOpenConnection();
-
-   private:
-    nsresult SetupConn(nsIAsyncOutputStream* out, bool aFastOpen);
-
-    
-    
-    
-    already_AddRefed<PendingTransactionInfo> FindTransactionHelper(
-        bool removeWhenFound);
-
-    RefPtr<nsAHttpTransaction> mTransaction;
-    bool mDispatchedMTransaction;
-    nsCOMPtr<nsISocketTransport> mSocketTransport;
-    nsCOMPtr<nsIAsyncOutputStream> mStreamOut;
-    nsCOMPtr<nsIAsyncInputStream> mStreamIn;
-    uint32_t mCaps;
-
-    
-    
-    
-    
-    
-    
-    
-    bool mSpeculative;
-
-    
-    
-    bool mUrgentStart;
-
-    
-    
-    
-    bool mIsFromPredictor;
-
-    bool mAllow1918;
-
-    TimeStamp mPrimarySynStarted;
-    TimeStamp mBackupSynStarted;
-
-    
-    
-    bool mHasConnected;
-
-    bool mPrimaryConnectedOK;
-    bool mBackupConnectedOK;
-    bool mBackupConnStatsSet;
-
-    
-    
-    
-    
-    bool mFreeToUse;
-    nsresult mPrimaryStreamStatus;
-
-    bool mFastOpenInProgress;
-    RefPtr<nsHttpConnection> mConnectionNegotiatingFastOpen;
-    uint8_t mFastOpenStatus;
-
-    RefPtr<nsConnectionEntry> mEnt;
-    nsCOMPtr<nsITimer> mSynTimer;
-    nsCOMPtr<nsISocketTransport> mBackupTransport;
-    nsCOMPtr<nsIAsyncOutputStream> mBackupStreamOut;
-    nsCOMPtr<nsIAsyncInputStream> mBackupStreamIn;
-
-    bool mIsHttp3;
-  };
-  friend class nsHalfOpenSocket;
-
-  class PendingTransactionInfo final : public ARefBase {
-   public:
-    explicit PendingTransactionInfo(nsHttpTransaction* trans)
-        : mTransaction(trans) {}
-
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PendingTransactionInfo, override)
-
-    void PrintDiagnostics(nsCString& log);
-
-   public:  
-    RefPtr<nsHttpTransaction> mTransaction;
-    nsWeakPtr mHalfOpen;
-    nsWeakPtr mActiveConn;
-
-   private:
-    virtual ~PendingTransactionInfo() = default;
-  };
+  friend class HalfOpenSocket;
   friend class PendingTransactionInfo;
 
   class PendingComparator {
@@ -472,10 +210,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
 
-  [[nodiscard]] bool ProcessPendingQForEntry(nsConnectionEntry*,
+  [[nodiscard]] bool ProcessPendingQForEntry(ConnectionEntry*,
                                              bool considerAll);
   bool DispatchPendingQ(nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
-                        nsConnectionEntry* ent, bool considerAll);
+                        ConnectionEntry* ent, bool considerAll);
 
   
   
@@ -486,41 +224,41 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   void PreparePendingQForDispatching(
-      nsConnectionEntry* ent,
-      nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ, bool considerAll);
+      ConnectionEntry* ent, nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
+      bool considerAll);
 
   
   
-  uint32_t TotalActiveConnections(nsConnectionEntry* ent) const;
+  uint32_t TotalActiveConnections(ConnectionEntry* ent) const;
 
   
   
-  uint32_t MaxPersistConnections(nsConnectionEntry* ent) const;
+  uint32_t MaxPersistConnections(ConnectionEntry* ent) const;
 
-  bool AtActiveConnectionLimit(nsConnectionEntry*, uint32_t caps);
+  bool AtActiveConnectionLimit(ConnectionEntry*, uint32_t caps);
   [[nodiscard]] nsresult TryDispatchTransaction(
-      nsConnectionEntry* ent, bool onlyReusedConnection,
+      ConnectionEntry* ent, bool onlyReusedConnection,
       PendingTransactionInfo* pendingTransInfo);
   [[nodiscard]] nsresult TryDispatchTransactionOnIdleConn(
-      nsConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo,
+      ConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo,
       bool respectUrgency, bool* allUrgent = nullptr);
-  [[nodiscard]] nsresult DispatchTransaction(nsConnectionEntry*,
+  [[nodiscard]] nsresult DispatchTransaction(ConnectionEntry*,
                                              nsHttpTransaction*,
                                              HttpConnectionBase*);
-  [[nodiscard]] nsresult DispatchAbstractTransaction(nsConnectionEntry*,
+  [[nodiscard]] nsresult DispatchAbstractTransaction(ConnectionEntry*,
                                                      nsAHttpTransaction*,
                                                      uint32_t,
                                                      HttpConnectionBase*,
                                                      int32_t);
-  bool RestrictConnections(nsConnectionEntry*);
+  bool RestrictConnections(ConnectionEntry*);
   [[nodiscard]] nsresult ProcessNewTransaction(nsHttpTransaction*);
   [[nodiscard]] nsresult EnsureSocketThreadTarget();
-  void ClosePersistentConnections(nsConnectionEntry* ent);
-  void ReportProxyTelemetry(nsConnectionEntry* ent);
+  void ClosePersistentConnections(ConnectionEntry* ent);
+  void ReportProxyTelemetry(ConnectionEntry* ent);
   [[nodiscard]] nsresult CreateTransport(
-      nsConnectionEntry*, nsAHttpTransaction*, uint32_t, bool, bool, bool, bool,
+      ConnectionEntry*, nsAHttpTransaction*, uint32_t, bool, bool, bool, bool,
       PendingTransactionInfo* pendingTransInfo);
-  void AddActiveConn(HttpConnectionBase*, nsConnectionEntry*);
+  void AddActiveConn(HttpConnectionBase*, ConnectionEntry*);
   void DecrementActiveConnCount(HttpConnectionBase*);
   void StartedConnect();
   void RecvdConnect();
@@ -528,40 +266,33 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   
-  void ReleaseClaimedSockets(nsConnectionEntry* ent,
+  void ReleaseClaimedSockets(ConnectionEntry* ent,
                              PendingTransactionInfo* pendingTransInfo);
 
-  void InsertTransactionSorted(
-      nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
-      PendingTransactionInfo* pendingTransInfo,
-      bool aInsertAsFirstForTheSamePriority = false);
-
-  nsConnectionEntry* GetOrCreateConnectionEntry(nsHttpConnectionInfo*,
-                                                bool allowWildCard,
-                                                bool aNoHttp3);
+  ConnectionEntry* GetOrCreateConnectionEntry(nsHttpConnectionInfo*,
+                                              bool allowWildCard,
+                                              bool aNoHttp3);
 
   [[nodiscard]] nsresult MakeNewConnection(
-      nsConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo);
+      ConnectionEntry* ent, PendingTransactionInfo* pendingTransInfo);
 
   
   
   nsClassHashtable<nsCStringHashKey, nsTArray<nsWeakPtr>> mCoalescingHash;
 
-  HttpConnectionBase* FindCoalescableConnection(nsConnectionEntry* ent,
+  HttpConnectionBase* FindCoalescableConnection(ConnectionEntry* ent,
                                                 bool justKidding,
                                                 bool aNoHttp3);
-  HttpConnectionBase* FindCoalescableConnectionByHashKey(nsConnectionEntry* ent,
+  HttpConnectionBase* FindCoalescableConnectionByHashKey(ConnectionEntry* ent,
                                                          const nsCString& key,
                                                          bool justKidding,
                                                          bool aNoHttp3);
   void UpdateCoalescingForNewConn(HttpConnectionBase* conn,
-                                  nsConnectionEntry* ent);
-  HttpConnectionBase* GetH2orH3ActiveConn(nsConnectionEntry* ent,
-                                          bool aNoHttp3);
+                                  ConnectionEntry* ent);
 
-  void ProcessSpdyPendingQ(nsConnectionEntry* ent);
+  void ProcessSpdyPendingQ(ConnectionEntry* ent);
   void DispatchSpdyPendingQ(nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
-                            nsConnectionEntry* ent, HttpConnectionBase* conn);
+                            ConnectionEntry* ent, HttpConnectionBase* conn);
   
   [[nodiscard]] nsresult PostEvent(nsConnEventHandler handler,
                                    int32_t iparam = 0,
@@ -571,7 +302,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   void CancelTransactionsHelper(
       nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
-      const nsHttpConnectionInfo* ci, const nsConnectionEntry* ent,
+      const nsHttpConnectionInfo* ci, const ConnectionEntry* ent,
       nsresult reason);
 
   void OnMsgReclaimConnection(HttpConnectionBase*);
@@ -634,7 +365,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   
-  nsRefPtrHashtable<nsCStringHashKey, nsConnectionEntry> mCT;
+  nsRefPtrHashtable<nsCStringHashKey, ConnectionEntry> mCT;
 
   
   void TimeoutTick();
@@ -719,7 +450,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void LogActiveTransactions(char);
 
   nsTArray<RefPtr<PendingTransactionInfo>>* GetTransactionPendingQHelper(
-      nsConnectionEntry* ent, nsAHttpTransaction* trans);
+      ConnectionEntry* ent, nsAHttpTransaction* trans);
 
   
   
@@ -732,9 +463,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   bool BeConservativeIfProxied(nsIProxyInfo* proxy);
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnectionMgr::nsHalfOpenSocket,
-                              NS_HALFOPENSOCKET_IID)
 
 }  
 }  
