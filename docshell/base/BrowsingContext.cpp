@@ -2405,19 +2405,6 @@ mozilla::dom::TouchEventsOverride BrowsingContext::TouchEventsOverride() const {
 
 void BrowsingContext::SetTouchEventsOverride(
     const enum TouchEventsOverride aTouchEventsOverride, ErrorResult& aRv) {
-  
-  for (BrowsingContext* child : Children()) {
-    child->PreOrderWalk([](BrowsingContext* aContext) {
-      if (aContext->GetTouchEventsOverrideInternal() !=
-          mozilla::dom::TouchEventsOverride::None) {
-        
-        
-        Unused << aContext->SetTouchEventsOverrideInternal(
-            mozilla::dom::TouchEventsOverride::None);
-      }
-    });
-  }
-
   SetTouchEventsOverrideInternal(aTouchEventsOverride, aRv);
 }
 
