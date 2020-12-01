@@ -899,8 +899,8 @@ struct IPCMarker {
     using namespace mozilla::ipc;
     
     
-    mozilla::baseprofiler::WritePropertyTime(aWriter, "startTime", aStart);
-    mozilla::baseprofiler::WritePropertyTime(aWriter, "endTime", aEnd);
+    aWriter.TimeProperty("startTime", aStart);
+    aWriter.TimeProperty("endTime", aEnd);
 
     aWriter.IntProperty("otherPid", aOtherPid);
     aWriter.IntProperty("messageSeqno", aMessageSeqno);

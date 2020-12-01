@@ -106,17 +106,6 @@ inline ProfileBufferBlockIndex AddMarker(const ProfilerString8View& aName,
   return AddMarker(aName, aCategory, std::move(aOptions), markers::NoPayload{});
 }
 
-
-
-inline void WritePropertyTime(JSONWriter& aWriter,
-                              const Span<const char>& aName,
-                              const TimeStamp& aTime) {
-  if (!aTime.IsNull()) {
-    aWriter.DoubleProperty(
-        aName, (aTime - TimeStamp::ProcessCreation()).ToMilliseconds());
-  }
-}
-
 }  
 
 
