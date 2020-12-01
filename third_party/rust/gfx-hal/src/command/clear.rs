@@ -31,6 +31,9 @@ pub struct ClearDepthStencil {
 }
 
 
+
+
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub union ClearValue {

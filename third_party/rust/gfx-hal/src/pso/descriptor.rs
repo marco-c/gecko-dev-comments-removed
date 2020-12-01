@@ -18,7 +18,9 @@
 
 use std::{borrow::Borrow, fmt, iter};
 
-use crate::{buffer::SubRange, image::Layout, pso::ShaderStageFlags, Backend, PseudoVec};
+use crate::{
+    buffer::SubRange, device::OutOfMemory, image::Layout, pso::ShaderStageFlags, Backend, PseudoVec,
+};
 
 
 pub type DescriptorSetIndex = u16;
@@ -139,10 +141,8 @@ pub struct DescriptorRangeDesc {
 pub enum AllocationError {
     
     
-    Host,
     
-    
-    Device,
+    OutOfMemory(OutOfMemory),
     
     
     OutOfPoolMemory,
@@ -155,10 +155,10 @@ pub enum AllocationError {
 impl std::fmt::Display for AllocationError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AllocationError::Host => {
+            AllocationError::OutOfMemory(OutOfMemory::Host) => {
                 write!(fmt, "Failed to allocate descriptor set: Out of host memory")
             }
-            AllocationError::Device => write!(
+            AllocationError::OutOfMemory(OutOfMemory::Device) => write!(
                 fmt,
                 "Failed to allocate descriptor set: Out of device memory"
             ),
@@ -226,7 +226,7 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
     }
 
     
-    unsafe fn free_sets<I>(&mut self, descriptor_sets: I)
+    unsafe fn free<I>(&mut self, descriptor_sets: I)
     where
         I: IntoIterator<Item = B::DescriptorSet>;
 
@@ -239,20 +239,25 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
 
 
 
-#[allow(missing_docs)]
+
 #[derive(Debug)]
 pub struct DescriptorSetWrite<'a, B: Backend, WI>
 where
     WI: IntoIterator,
     WI::Item: Borrow<Descriptor<'a, B>>,
 {
+    
     pub set: &'a B::DescriptorSet,
     
     
     
     
+    
+    
     pub binding: DescriptorBinding,
+    
     pub array_offset: DescriptorArrayIndex,
+    
     pub descriptors: WI,
 }
 
@@ -272,15 +277,32 @@ pub enum Descriptor<'a, B: Backend> {
 
 
 
-#[allow(missing_docs)]
+
 #[derive(Clone, Copy, Debug)]
 pub struct DescriptorSetCopy<'a, B: Backend> {
+    
     pub src_set: &'a B::DescriptorSet,
+    
+    
+    
+    
+    
+    
     pub src_binding: DescriptorBinding,
+    
     pub src_array_offset: DescriptorArrayIndex,
+    
     pub dst_set: &'a B::DescriptorSet,
+    
+    
+    
+    
+    
+    
     pub dst_binding: DescriptorBinding,
+    
     pub dst_array_offset: DescriptorArrayIndex,
+    
     pub count: usize,
 }
 

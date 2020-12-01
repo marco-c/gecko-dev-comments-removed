@@ -306,6 +306,8 @@ void CompilerCPP::emit_resources()
 
 string CompilerCPP::compile()
 {
+	ir.fixup_reserved_names();
+
 	
 	options.es = false;
 	options.version = 450;

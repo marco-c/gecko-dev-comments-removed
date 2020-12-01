@@ -11,7 +11,7 @@ pub mod family;
 use crate::{
     device::OutOfMemory,
     pso,
-    window::{PresentError, PresentationSurface, Suboptimal, SwapImageIndex},
+    window::{PresentError, PresentationSurface, Suboptimal},
     Backend,
 };
 use std::{any::Any, borrow::Borrow, fmt, iter};
@@ -58,6 +58,8 @@ impl QueueType {
 pub type QueuePriority = f32;
 
 
+
+
 #[derive(Debug)]
 pub struct Submission<Ic, Iw, Is> {
     
@@ -70,7 +72,20 @@ pub struct Submission<Ic, Iw, Is> {
 
 
 
+
+
+
+
+
 pub trait CommandQueue<B: Backend>: fmt::Debug + Any + Send + Sync {
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -111,33 +126,8 @@ pub trait CommandQueue<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
-    unsafe fn present<'a, W, Is, S, Iw>(
-        &mut self,
-        swapchains: Is,
-        wait_semaphores: Iw,
-    ) -> Result<Option<Suboptimal>, PresentError>
-    where
-        Self: Sized,
-        W: 'a + Borrow<B::Swapchain>,
-        Is: IntoIterator<Item = (&'a W, SwapImageIndex)>,
-        S: 'a + Borrow<B::Semaphore>,
-        Iw: IntoIterator<Item = &'a S>;
-
     
-    unsafe fn present_without_semaphores<'a, W, Is>(
-        &mut self,
-        swapchains: Is,
-    ) -> Result<Option<Suboptimal>, PresentError>
-    where
-        Self: Sized,
-        W: 'a + Borrow<B::Swapchain>,
-        Is: IntoIterator<Item = (&'a W, SwapImageIndex)>,
-    {
-        self.present::<_, _, B::Semaphore, _>(swapchains, iter::empty())
-    }
-
-    
-    unsafe fn present_surface(
+    unsafe fn present(
         &mut self,
         surface: &mut B::Surface,
         image: <B::Surface as PresentationSurface<B>>::SwapchainImage,

@@ -74,6 +74,8 @@ ParsedIR &ParsedIR::operator=(ParsedIR &&other) SPIRV_CROSS_NOEXCEPT
 		source = other.source;
 		loop_iteration_depth_hard = other.loop_iteration_depth_hard;
 		loop_iteration_depth_soft = other.loop_iteration_depth_soft;
+
+		meta_needing_name_fixup = std::move(other.meta_needing_name_fixup);
 	}
 	return *this;
 }
@@ -106,6 +108,8 @@ ParsedIR &ParsedIR::operator=(const ParsedIR &other)
 		addressing_model = other.addressing_model;
 		memory_model = other.memory_model;
 
+		meta_needing_name_fixup = other.meta_needing_name_fixup;
+
 		
 		
 		ids.clear();
@@ -134,42 +138,146 @@ static bool is_alpha(char c)
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-static bool is_alphanumeric(char c)
+static bool is_numeric(char c)
 {
-	return is_alpha(c) || (c >= '0' && c <= '9');
+	return c >= '0' && c <= '9';
 }
 
-static string ensure_valid_identifier(const string &name, bool member)
+static bool is_alphanumeric(char c)
+{
+	return is_alpha(c) || is_numeric(c);
+}
+
+static bool is_valid_identifier(const string &name)
+{
+	if (name.empty())
+		return true;
+
+	if (is_numeric(name[0]))
+		return false;
+
+	for (auto c : name)
+		if (!is_alphanumeric(c) && c != '_')
+			return false;
+
+	bool saw_underscore = false;
+	
+	
+	for (auto c : name)
+	{
+		bool is_underscore = c == '_';
+		if (is_underscore && saw_underscore)
+			return false;
+		saw_underscore = is_underscore;
+	}
+
+	return true;
+}
+
+static bool is_reserved_prefix(const string &name)
+{
+	
+	return name.compare(0, 3, "gl_", 3) == 0 ||
+	       
+	       
+	       name.compare(0, 3, "spv", 3) == 0;
+}
+
+static bool is_reserved_identifier(const string &name, bool member, bool allow_reserved_prefixes)
+{
+	if (!allow_reserved_prefixes && is_reserved_prefix(name))
+		return true;
+
+	if (member)
+	{
+		
+		
+		if (name.size() < 3)
+			return false;
+
+		if (name.compare(0, 2, "_m", 2) != 0)
+			return false;
+
+		size_t index = 2;
+		while (index < name.size() && is_numeric(name[index]))
+			index++;
+
+		return index == name.size();
+	}
+	else
+	{
+		
+		
+		
+		if (name.size() < 2)
+			return false;
+
+		if (name[0] != '_' || !is_numeric(name[1]))
+			return false;
+
+		size_t index = 2;
+		while (index < name.size() && is_numeric(name[index]))
+			index++;
+
+		return index == name.size() || (index < name.size() && name[index] == '_');
+	}
+}
+
+bool ParsedIR::is_globally_reserved_identifier(std::string &str, bool allow_reserved_prefixes)
+{
+	return is_reserved_identifier(str, false, allow_reserved_prefixes);
+}
+
+static string make_unreserved_identifier(const string &name)
+{
+	if (is_reserved_prefix(name))
+		return "_RESERVED_IDENTIFIER_FIXUP_" + name;
+	else
+		return "_RESERVED_IDENTIFIER_FIXUP" + name;
+}
+
+void ParsedIR::sanitize_underscores(std::string &str)
+{
+	
+	auto dst = str.begin();
+	auto src = dst;
+	bool saw_underscore = false;
+	while (src != str.end())
+	{
+		bool is_underscore = *src == '_';
+		if (saw_underscore && is_underscore)
+		{
+			src++;
+		}
+		else
+		{
+			if (dst != src)
+				*dst = *src;
+			dst++;
+			src++;
+			saw_underscore = is_underscore;
+		}
+	}
+	str.erase(dst, str.end());
+}
+
+static string ensure_valid_identifier(const string &name)
 {
 	
 	
 	auto str = name.substr(0, name.find('('));
 
-	for (uint32_t i = 0; i < str.size(); i++)
-	{
-		auto &c = str[i];
+	if (str.empty())
+		return str;
 
-		if (member)
-		{
-			
-			
-			if (i == 0)
-				c = is_alpha(c) ? c : '_';
-			else if (i == 2 && str[0] == '_' && str[1] == 'm')
-				c = is_alpha(c) ? c : '_';
-			else
-				c = is_alphanumeric(c) ? c : '_';
-		}
-		else
-		{
-			
-			
-			if (i == 0 || (str[0] == '_' && i == 1))
-				c = is_alpha(c) ? c : '_';
-			else
-				c = is_alphanumeric(c) ? c : '_';
-		}
-	}
+	if (is_numeric(str[0]))
+		str[0] = '_';
+
+	for (auto &c : str)
+		if (!is_alphanumeric(c) && c != '_')
+			c = '_';
+
+	ParsedIR::sanitize_underscores(str);
 	return str;
 }
 
@@ -195,35 +303,41 @@ const string &ParsedIR::get_member_name(TypeID id, uint32_t index) const
 		return empty_string;
 }
 
+void ParsedIR::sanitize_identifier(std::string &name, bool member, bool allow_reserved_prefixes)
+{
+	if (!is_valid_identifier(name))
+		name = ensure_valid_identifier(name);
+	if (is_reserved_identifier(name, member, allow_reserved_prefixes))
+		name = make_unreserved_identifier(name);
+}
+
+void ParsedIR::fixup_reserved_names()
+{
+	for (uint32_t id : meta_needing_name_fixup)
+	{
+		auto &m = meta[id];
+		sanitize_identifier(m.decoration.alias, false, false);
+		for (auto &memb : m.members)
+			sanitize_identifier(memb.alias, true, false);
+	}
+	meta_needing_name_fixup.clear();
+}
+
 void ParsedIR::set_name(ID id, const string &name)
 {
-	auto &str = meta[id].decoration.alias;
-	str.clear();
-
-	if (name.empty())
-		return;
-
-	
-	if (name[0] == '_' && name.size() >= 2 && isdigit(name[1]))
-		return;
-
-	str = ensure_valid_identifier(name, false);
+	auto &m = meta[id];
+	m.decoration.alias = name;
+	if (!is_valid_identifier(name) || is_reserved_identifier(name, false, false))
+		meta_needing_name_fixup.insert(id);
 }
 
 void ParsedIR::set_member_name(TypeID id, uint32_t index, const string &name)
 {
-	meta[id].members.resize(max(meta[id].members.size(), size_t(index) + 1));
-
-	auto &str = meta[id].members[index].alias;
-	str.clear();
-	if (name.empty())
-		return;
-
-	
-	if (name[0] == '_' && name.size() >= 3 && name[1] == 'm' && isdigit(name[2]))
-		return;
-
-	str = ensure_valid_identifier(name, true);
+	auto &m = meta[id];
+	m.members.resize(max(meta[id].members.size(), size_t(index) + 1));
+	m.members[index].alias = name;
+	if (!is_valid_identifier(name) || is_reserved_identifier(name, true, false))
+		meta_needing_name_fixup.insert(id);
 }
 
 void ParsedIR::set_decoration_string(ID id, Decoration decoration, const string &argument)

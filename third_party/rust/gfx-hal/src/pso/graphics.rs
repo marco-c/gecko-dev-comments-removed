@@ -1,15 +1,11 @@
 
 
 use crate::{
-    image,
-    pass,
+    image, pass,
     pso::{
-        input_assembler::{AttributeDesc, InputAssemblerDesc, Primitive, VertexBufferDesc},
+        input_assembler::{AttributeDesc, InputAssemblerDesc, VertexBufferDesc},
         output_merger::{ColorBlendDesc, DepthStencilDesc, Face},
-        BasePipeline,
-        EntryPoint,
-        PipelineCreationFlags,
-        State,
+        BasePipeline, EntryPoint, PipelineCreationFlags, State,
     },
     Backend,
 };
@@ -57,38 +53,6 @@ pub type DepthValue = f32;
 
 pub type StencilValue = u32;
 
-
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Debug)]
-pub struct GraphicsShaderSet<'a, B: Backend> {
-    
-    pub vertex: EntryPoint<'a, B>,
-    
-    
-    
-    
-    pub hull: Option<EntryPoint<'a, B>>,
-    
-    
-    pub domain: Option<EntryPoint<'a, B>>,
-    
-    
-    pub geometry: Option<EntryPoint<'a, B>>,
-    
-    
-    
-    pub fragment: Option<EntryPoint<'a, B>>,
-}
-
-
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BakedStates {
@@ -101,22 +65,63 @@ pub struct BakedStates {
     
     pub depth_bounds: Option<Range<f32>>,
 }
+#[derive(Debug)]
 
+pub enum PrimitiveAssemblerDesc<'a, B: Backend> {
+    
+    Vertex {
+        
+        buffers: &'a [VertexBufferDesc],
+        
+        attributes: &'a [AttributeDesc],
+        
+        
+        input_assembler: InputAssemblerDesc,
+        
+        vertex: EntryPoint<'a, B>,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        tessellation: Option<(EntryPoint<'a, B>, EntryPoint<'a, B>)>,
+        
+        
+        geometry: Option<EntryPoint<'a, B>>,
+    },
+    
+    Mesh {
+        
+        
+        task: Option<EntryPoint<'a, B>>,
+        
+        
+        
+        mesh: EntryPoint<'a, B>,
+    },
+}
 
 
 #[derive(Debug)]
 pub struct GraphicsPipelineDesc<'a, B: Backend> {
     
-    pub shaders: GraphicsShaderSet<'a, B>,
+    pub primitive_assembler: PrimitiveAssemblerDesc<'a, B>,
     
     pub rasterizer: Rasterizer,
     
-    pub vertex_buffers: Vec<VertexBufferDesc>,
-    
-    pub attributes: Vec<AttributeDesc>,
     
     
-    pub input_assembler: InputAssemblerDesc,
+    
+    
+    
+    
+    
+    
+    pub fragment: Option<EntryPoint<'a, B>>,
     
     pub blender: BlendDesc,
     
@@ -139,18 +144,16 @@ pub struct GraphicsPipelineDesc<'a, B: Backend> {
 impl<'a, B: Backend> GraphicsPipelineDesc<'a, B> {
     
     pub fn new(
-        shaders: GraphicsShaderSet<'a, B>,
-        primitive: Primitive,
+        primitive_assembler: PrimitiveAssemblerDesc<'a, B>,
         rasterizer: Rasterizer,
+        fragment: Option<EntryPoint<'a, B>>,
         layout: &'a B::PipelineLayout,
         subpass: pass::Subpass<'a, B>,
     ) -> Self {
         GraphicsPipelineDesc {
-            shaders,
+            primitive_assembler,
             rasterizer,
-            vertex_buffers: Vec::new(),
-            attributes: Vec::new(),
-            input_assembler: InputAssemblerDesc::new(primitive),
+            fragment,
             blender: BlendDesc::default(),
             depth_stencil: DepthStencilDesc::default(),
             multisampling: None,

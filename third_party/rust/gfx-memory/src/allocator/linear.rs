@@ -8,11 +8,13 @@ use crate::{
 use hal::{device::Device as _, Backend};
 use std::{collections::VecDeque, ops::Range, ptr::NonNull, sync::Arc};
 
+type LineCount = u32;
+
 
 #[derive(Debug)]
 pub struct LinearBlock<B: Backend> {
     memory: Arc<Memory<B>>,
-    linear_index: Size,
+    line_index: LineCount,
     ptr: Option<NonNull<u8>>,
     range: Range<Size>,
 }
@@ -71,12 +73,15 @@ impl<B: Backend> Block<B> for LinearBlock<B> {
 }
 
 
+
 #[derive(Clone, Copy, Debug)]
 pub struct LinearConfig {
     
     
-    pub linear_size: Size,
+    pub line_size: Size,
 }
+
+
 
 
 
@@ -91,18 +96,44 @@ pub struct LinearConfig {
 pub struct LinearAllocator<B: Backend> {
     memory_type: hal::MemoryTypeId,
     memory_properties: hal::memory::Properties,
-    linear_size: Size,
-    offset: Size,
+    line_size: Size,
+    finished_lines_count: LineCount,
     lines: VecDeque<Line<B>>,
     non_coherent_atom_size: Option<AtomSize>,
+    
+    unused_lines: Vec<Line<B>>,
 }
+
 
 #[derive(Debug)]
 struct Line<B: Backend> {
-    used: Size,
-    free: Size,
+    
+    allocated: Size,
+    
+    freed: Size,
     memory: Arc<Memory<B>>,
     ptr: Option<NonNull<u8>>,
+}
+
+impl<B: Backend> Line<B> {
+    unsafe fn free_memory(self, device: &B::Device) -> Size {
+        match Arc::try_unwrap(self.memory) {
+            Ok(memory) => {
+                log::trace!("Freed `Line` of size {}", memory.size());
+                if memory.is_mappable() {
+                    device.unmap_memory(memory.raw());
+                }
+
+                let freed = memory.size();
+                device.free_memory(memory.into_raw());
+                freed
+            }
+            Err(_) => {
+                log::error!("Allocated `Line` was freed, but memory is still shared.");
+                0
+            }
+        }
+    }
 }
 
 unsafe impl<B: Backend> Send for Line<B> {}
@@ -115,7 +146,7 @@ impl<B: Backend> LinearAllocator<B> {
     pub fn new(
         memory_type: hal::MemoryTypeId,
         memory_properties: hal::memory::Properties,
-        config: &LinearConfig,
+        config: LinearConfig,
         non_coherent_atom_size: Size,
     ) -> Self {
         log::trace!(
@@ -124,65 +155,65 @@ impl<B: Backend> LinearAllocator<B> {
             memory_properties,
             config
         );
-        let (linear_size, non_coherent_atom_size) =
+        let (line_size, non_coherent_atom_size) =
             if crate::is_non_coherent_visible(memory_properties) {
                 let atom = AtomSize::new(non_coherent_atom_size);
-                (crate::align_size(config.linear_size, atom.unwrap()), atom)
+                (crate::align_size(config.line_size, atom.unwrap()), atom)
             } else {
-                (config.linear_size, None)
+                (config.line_size, None)
             };
 
         LinearAllocator {
             memory_type,
             memory_properties,
-            linear_size,
-            offset: 0,
+            line_size,
+            finished_lines_count: 0,
             lines: VecDeque::new(),
+            unused_lines: Vec::new(),
             non_coherent_atom_size,
         }
     }
 
     
     pub fn max_allocation(&self) -> Size {
-        self.linear_size / 2
+        self.line_size / 2
     }
 
-    fn cleanup(&mut self, device: &B::Device, off: usize) -> Size {
+    fn cleanup(&mut self, device: &B::Device, free_memory: bool) -> Size {
         let mut freed = 0;
-        while self.lines.len() > off {
-            if self.lines[0].used > self.lines[0].free {
+        while !self.lines.is_empty() {
+            if self.lines[0].allocated > self.lines[0].freed {
                 break;
             }
 
             let line = self.lines.pop_front().unwrap();
-            self.offset += 1;
+            self.finished_lines_count += 1;
 
-            match Arc::try_unwrap(line.memory) {
-                Ok(mem) => unsafe {
-                    log::trace!("Freed 'Line' of size of {}", mem.size());
-                    if mem.is_mappable() {
-                        device.unmap_memory(mem.raw());
-                    }
-                    freed += mem.size();
-                    device.free_memory(mem.into_raw());
-                },
-                Err(_) => {
-                    log::error!("Allocated `Line` was freed, but memory is still shared and never will be destroyed.");
+            if free_memory {
+                unsafe {
+                    freed += line.free_memory(device);
                 }
+            } else if Arc::strong_count(&line.memory) == 1 {
+                self.unused_lines.push(line);
+            } else {
+                log::error!("Allocated `Line` was freed, but memory is still shared.");
             }
         }
         freed
     }
 
     
-    pub fn clear(&mut self, device: &B::Device) {
-        let _ = self.cleanup(device, 0);
-        if !self.lines.is_empty() {
-            log::error!(
-                "Lines are not empty during allocator disposal. Lines: {:#?}",
-                self.lines
-            );
+    pub fn clear(&mut self, device: &B::Device) -> Size {
+        let mut freed = self.cleanup(device, true);
+
+        for line in self.unused_lines.drain(..) {
+            freed += self.line_size;
+            unsafe {
+                line.free_memory(device);
+            }
         }
+
+        freed
     }
 }
 
@@ -205,21 +236,21 @@ impl<B: Backend> Allocator<B> for LinearAllocator<B> {
             None => (size, align),
         };
 
-        if size > self.linear_size || align > self.linear_size {
+        if size > self.line_size || align > self.line_size {
             
             return Err(hal::device::AllocationError::TooManyObjects);
         }
 
-        let count = self.lines.len() as Size;
+        let lines_count = self.lines.len() as LineCount;
         if let Some(line) = self.lines.back_mut() {
             let aligned_offset =
-                crate::align_offset(line.used, unsafe { AtomSize::new_unchecked(align) });
-            if aligned_offset + size <= self.linear_size {
-                line.free += aligned_offset - line.used;
-                line.used = aligned_offset + size;
+                crate::align_offset(line.allocated, unsafe { AtomSize::new_unchecked(align) });
+            if aligned_offset + size <= self.line_size {
+                line.freed += aligned_offset - line.allocated;
+                line.allocated = aligned_offset + size;
 
                 let block = LinearBlock {
-                    linear_index: self.offset + count - 1,
+                    line_index: self.finished_lines_count + lines_count - 1,
                     memory: Arc::clone(&line.memory),
                     ptr: line.ptr.map(|ptr| unsafe {
                         NonNull::new_unchecked(ptr.as_ptr().offset(aligned_offset as isize))
@@ -231,47 +262,59 @@ impl<B: Backend> Allocator<B> for LinearAllocator<B> {
             }
         }
 
-        log::trace!("Allocated 'Line' of size of {}", self.linear_size);
-        let (memory, ptr) = unsafe {
-            super::allocate_memory_helper(
-                device,
-                self.memory_type,
-                self.linear_size,
-                self.memory_properties,
-                self.non_coherent_atom_size,
-            )?
-        };
+        let (line, new_allocation_size) = match self.unused_lines.pop() {
+            Some(mut line) => {
+                line.allocated = size;
+                line.freed = 0;
+                (line, 0)
+            }
+            None => {
+                log::trace!("Allocated `Line` of size {}", self.line_size);
+                let (memory, ptr) = unsafe {
+                    super::allocate_memory_helper(
+                        device,
+                        self.memory_type,
+                        self.line_size,
+                        self.memory_properties,
+                        self.non_coherent_atom_size,
+                    )?
+                };
 
-        let line = Line {
-            used: size,
-            free: 0,
-            ptr,
-            memory: Arc::new(memory),
+                (
+                    Line {
+                        allocated: size,
+                        freed: 0,
+                        ptr,
+                        memory: Arc::new(memory),
+                    },
+                    self.line_size,
+                )
+            }
         };
 
         let block = LinearBlock {
-            linear_index: self.offset + count,
+            line_index: self.finished_lines_count + lines_count,
             memory: Arc::clone(&line.memory),
-            ptr,
+            ptr: line.ptr,
             range: 0..size,
         };
 
         self.lines.push_back(line);
-        Ok((block, self.linear_size))
+        Ok((block, new_allocation_size))
     }
 
     fn free(&mut self, device: &B::Device, block: Self::Block) -> Size {
-        let index = (block.linear_index - self.offset) as usize;
-        self.lines[index].free += block.size();
+        let index = (block.line_index - self.finished_lines_count) as usize;
+        self.lines[index].freed += block.size();
         drop(block);
-        self.cleanup(device, 1)
+        self.cleanup(device, false)
     }
 }
 
 impl<B: Backend> Drop for LinearAllocator<B> {
     fn drop(&mut self) {
         if !self.lines.is_empty() {
-            log::error!("Not all allocation from LinearAllocator was freed");
+            log::error!("Not all allocations from LinearAllocator were freed");
         }
     }
 }

@@ -17,9 +17,7 @@ use std::ops::Range;
 use std::{fmt, iter};
 
 use crate::{
-    buffer,
-    format,
-    image,
+    buffer, format, image,
     memory::{Requirements, Segment},
     pass,
     pool::CommandPoolCreateFlags,
@@ -27,9 +25,7 @@ use crate::{
     pso::DescriptorPoolCreateFlags,
     query,
     queue::QueueFamilyId,
-    window::{self, SwapchainConfig},
-    Backend,
-    MemoryTypeId,
+    Backend, MemoryTypeId,
 };
 
 
@@ -237,6 +233,8 @@ pub enum MapError {
     OutOfBounds,
     
     MappingFailed,
+    
+    Access,
 }
 
 impl From<OutOfMemory> for MapError {
@@ -250,7 +248,11 @@ impl std::fmt::Display for MapError {
         match self {
             MapError::OutOfMemory(err) => write!(fmt, "Failed to map memory: {}", err),
             MapError::OutOfBounds => write!(fmt, "Failed to map memory: Requested range is outside the resource"),
-            MapError::MappingFailed => write!(fmt, "Failed to map memory: Unable to allocate an appropriately sized contiguous virtual address range"),
+            MapError::MappingFailed => write!(
+                fmt,
+                "Failed to map memory: Unable to allocate an appropriately sized contiguous virtual address range"
+            ),
+            MapError::Access => write!(fmt, "Failed to map memory: Memory is not CPU visible"),
         }
     }
 }
@@ -327,7 +329,7 @@ pub enum ShaderError {
     
     InterfaceMismatch(String),
     
-    UnsupportedStage(pso::Stage),
+    UnsupportedStage(pso::ShaderStageFlags),
     
     OutOfMemory(OutOfMemory),
 }
@@ -386,7 +388,6 @@ impl std::error::Error for ShaderError {
 
 
 
-
 pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
@@ -408,6 +409,7 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
+    
     unsafe fn create_command_pool(
         &self,
         family: QueueFamilyId,
@@ -422,6 +424,13 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     unsafe fn create_render_pass<'a, IA, IS, ID>(
         &self,
         attachments: IA,
@@ -431,10 +440,13 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     where
         IA: IntoIterator,
         IA::Item: Borrow<pass::Attachment>,
+        IA::IntoIter: ExactSizeIterator,
         IS: IntoIterator,
         IS::Item: Borrow<pass::SubpassDesc<'a>>,
+        IS::IntoIter: ExactSizeIterator,
         ID: IntoIterator,
-        ID::Item: Borrow<pass::SubpassDependency>;
+        ID::Item: Borrow<pass::SubpassDependency>,
+        ID::IntoIter: ExactSizeIterator;
 
     
     unsafe fn destroy_render_pass(&self, rp: B::RenderPass);
@@ -463,8 +475,10 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     where
         IS: IntoIterator,
         IS::Item: Borrow<B::DescriptorSetLayout>,
+        IS::IntoIter: ExactSizeIterator,
         IR: IntoIterator,
-        IR::Item: Borrow<(pso::ShaderStageFlags, Range<u32>)>;
+        IR::Item: Borrow<(pso::ShaderStageFlags, Range<u32>)>,
+        IR::IntoIter: ExactSizeIterator;
 
     
     unsafe fn destroy_pipeline_layout(&self, layout: B::PipelineLayout);
@@ -489,11 +503,20 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     ) -> Result<(), OutOfMemory>
     where
         I: IntoIterator,
-        I::Item: Borrow<B::PipelineCache>;
+        I::Item: Borrow<B::PipelineCache>,
+        I::IntoIter: ExactSizeIterator;
 
     
     unsafe fn destroy_pipeline_cache(&self, cache: B::PipelineCache);
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     unsafe fn create_graphics_pipeline<'a>(
         &self,
@@ -572,6 +595,8 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     unsafe fn destroy_framebuffer(&self, buf: B::Framebuffer);
 
+    
+    
     
     
     
@@ -695,7 +720,8 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     ) -> Result<B::DescriptorPool, OutOfMemory>
     where
         I: IntoIterator,
-        I::Item: Borrow<pso::DescriptorRangeDesc>;
+        I::Item: Borrow<pso::DescriptorRangeDesc>,
+        I::IntoIter: ExactSizeIterator;
 
     
     
@@ -719,7 +745,8 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
         I: IntoIterator,
         I::Item: Borrow<pso::DescriptorSetLayoutBinding>,
         J: IntoIterator,
-        J::Item: Borrow<B::Sampler>;
+        J::Item: Borrow<B::Sampler>,
+        J::IntoIter: ExactSizeIterator;
 
     
     unsafe fn destroy_descriptor_set_layout(&self, layout: B::DescriptorSetLayout);
@@ -735,7 +762,8 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     unsafe fn copy_descriptor_sets<'a, I>(&self, copy_iter: I)
     where
         I: IntoIterator,
-        I::Item: Borrow<pso::DescriptorSetCopy<'a, B>>;
+        I::Item: Borrow<pso::DescriptorSetCopy<'a, B>>,
+        I::IntoIter: ExactSizeIterator;
 
     
     
@@ -770,6 +798,20 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn create_fence(&self, signaled: bool) -> Result<B::Fence, OutOfMemory>;
 
     
@@ -782,6 +824,7 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     where
         I: IntoIterator,
         I::Item: Borrow<B::Fence>,
+        I::IntoIter: ExactSizeIterator,
     {
         for fence in fences {
             self.reset_fence(fence.borrow())?;
@@ -810,6 +853,7 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     where
         I: IntoIterator,
         I::Item: Borrow<B::Fence>,
+        I::IntoIter: ExactSizeIterator,
     {
         use std::{thread, time};
         fn to_ns(duration: time::Duration) -> u64 {
@@ -899,43 +943,6 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn create_swapchain(
-        &self,
-        surface: &mut B::Surface,
-        config: SwapchainConfig,
-        old_swapchain: Option<B::Swapchain>,
-    ) -> Result<(B::Swapchain, Vec<B::Image>), window::CreationError>;
-
-    
-    unsafe fn destroy_swapchain(&self, swapchain: B::Swapchain);
-
-    
-    
-    
     fn wait_idle(&self) -> Result<(), OutOfMemory>;
 
     
@@ -968,6 +975,23 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     unsafe fn set_descriptor_set_layout_name(
         &self,
         descriptor_set_layout: &mut B::DescriptorSetLayout,
+        name: &str,
+    );
+    
+    
+    unsafe fn set_pipeline_layout_name(&self, pipeline_layout: &mut B::PipelineLayout, name: &str);
+    
+    
+    unsafe fn set_compute_pipeline_name(
+        &self,
+        compute_pipeline: &mut B::ComputePipeline,
+        name: &str,
+    );
+    
+    
+    unsafe fn set_graphics_pipeline_name(
+        &self,
+        graphics_pipeline: &mut B::GraphicsPipeline,
         name: &str,
     );
 }
