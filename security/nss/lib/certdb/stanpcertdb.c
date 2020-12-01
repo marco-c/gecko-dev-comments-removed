@@ -32,6 +32,9 @@
 #include "dev.h"
 #include "secmodi.h"
 
+extern void CERT_MaybeLockCertTempPerm(const CERTCertificate *cert);
+extern void CERT_MaybeUnlockCertTempPerm(const CERTCertificate *cert);
+
 PRBool
 SEC_CertNicknameConflict(const char *nickname, const SECItem *derSubject,
                          CERTCertDBHandle *handle)
@@ -311,7 +314,9 @@ __CERT_AddTempCertToPerm(CERTCertificate *cert, char *nickname,
     nssPKIObject_AddInstance(&c->object, permInstance);
     nssTrustDomain_AddCertsToCache(STAN_GetDefaultTrustDomain(), &c, 1);
     
+    CERT_LockCertTempPerm(cert);
     cert->nssCertificate = NULL;
+    CERT_UnlockCertTempPerm(cert);
     cert = STAN_GetCERTCertificateOrRelease(c); 
     if (!cert) {
         CERT_MapStanError();
@@ -810,7 +815,15 @@ CERT_DestroyCertificate(CERTCertificate *cert)
 
 
 
+
+
+
+
+
+
+        CERT_MaybeLockCertTempPerm(cert);
         NSSCertificate *tmp = cert->nssCertificate;
+        CERT_MaybeUnlockCertTempPerm(cert);
         if (tmp) {
             
             NSSCertificate_Destroy(tmp);

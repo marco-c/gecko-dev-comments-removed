@@ -2908,7 +2908,7 @@ CERT_LockCertTrust(const CERTCertificate *cert)
     PZ_Lock(certTrustLock);
 }
 
-static PZLock *certTempPermLock = NULL;
+static PZLock *certTempPermCertLock = NULL;
 
 
 
@@ -2916,8 +2916,19 @@ static PZLock *certTempPermLock = NULL;
 void
 CERT_LockCertTempPerm(const CERTCertificate *cert)
 {
-    PORT_Assert(certTempPermLock != NULL);
-    PZ_Lock(certTempPermLock);
+    PORT_Assert(certTempPermCertLock != NULL);
+    PZ_Lock(certTempPermCertLock);
+}
+
+
+
+
+void
+CERT_MaybeLockCertTempPerm(const CERTCertificate *cert)
+{
+    if (certTempPermCertLock) {
+        PZ_Lock(certTempPermCertLock);
+    }
 }
 
 SECStatus
@@ -2941,10 +2952,10 @@ cert_InitLocks(void)
         }
     }
 
-    if (certTempPermLock == NULL) {
-        certTempPermLock = PZ_NewLock(nssILockCertDB);
-        PORT_Assert(certTempPermLock != NULL);
-        if (!certTempPermLock) {
+    if (certTempPermCertLock == NULL) {
+        certTempPermCertLock = PZ_NewLock(nssILockCertDB);
+        PORT_Assert(certTempPermCertLock != NULL);
+        if (!certTempPermCertLock) {
             PZ_DestroyLock(certTrustLock);
             PZ_DestroyLock(certRefCountLock);
             certRefCountLock = NULL;
@@ -2977,10 +2988,10 @@ cert_DestroyLocks(void)
         rv = SECFailure;
     }
 
-    PORT_Assert(certTempPermLock != NULL);
-    if (certTempPermLock) {
-        PZ_DestroyLock(certTempPermLock);
-        certTempPermLock = NULL;
+    PORT_Assert(certTempPermCertLock != NULL);
+    if (certTempPermCertLock) {
+        PZ_DestroyLock(certTempPermCertLock);
+        certTempPermCertLock = NULL;
     } else {
         rv = SECFailure;
     }
@@ -3004,9 +3015,17 @@ CERT_UnlockCertTrust(const CERTCertificate *cert)
 void
 CERT_UnlockCertTempPerm(const CERTCertificate *cert)
 {
-    PORT_Assert(certTempPermLock != NULL);
-    PRStatus prstat = PZ_Unlock(certTempPermLock);
+    PORT_Assert(certTempPermCertLock != NULL);
+    PRStatus prstat = PZ_Unlock(certTempPermCertLock);
     PORT_AssertArg(prstat == PR_SUCCESS);
+}
+
+void
+CERT_MaybeUnlockCertTempPerm(const CERTCertificate *cert)
+{
+    if (certTempPermCertLock) {
+        PZ_Unlock(certTempPermCertLock);
+    }
 }
 
 
