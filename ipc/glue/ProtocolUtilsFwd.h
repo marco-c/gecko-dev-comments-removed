@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef mozilla_ipc_ProtocolUtilsFwd_h
+#define mozilla_ipc_ProtocolUtilsFwd_h 1
+
+namespace mozilla::ipc {
+
+class IProtocol;
+
+}  
+
+#endif  
