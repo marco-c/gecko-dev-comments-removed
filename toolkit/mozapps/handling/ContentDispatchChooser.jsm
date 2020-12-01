@@ -148,7 +148,7 @@ class nsContentDispatchChooser {
       resetHandlerChoice = outArgs.getProperty("resetHandlerChoice");
 
       
-      if (!resetHandlerChoice) {
+      if (!resetHandlerChoice && aPrincipal) {
         let remember = outArgs.getProperty("remember");
         this._updatePermission(aPrincipal, aHandler.type, remember);
       }
