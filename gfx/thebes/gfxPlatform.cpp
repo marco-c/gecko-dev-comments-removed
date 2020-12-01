@@ -3291,6 +3291,11 @@ bool gfxPlatform::AsyncPanZoomEnabled() {
 #ifdef MOZ_WIDGET_ANDROID
   return true;
 #else
+  
+  
+  if (FissionAutostart()) {
+    return true;
+  }
   return StaticPrefs::
       layers_async_pan_zoom_enabled_AtStartup_DoNotUseDirectly();
 #endif
