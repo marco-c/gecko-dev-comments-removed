@@ -49,7 +49,7 @@ async function navigateBetweenProcesses(enableTargetSwitching) {
     
     
     const onBrowserLoaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-    await BrowserTestUtils.loadURI(tab.linkedBrowser, URL_2);
+    BrowserTestUtils.loadURI(tab.linkedBrowser, URL_2);
     await onBrowserLoaded;
   }
 

@@ -17,7 +17,7 @@ add_task(async function() {
   
   const browser = tab.linkedBrowser;
   const onBrowserLoaded = BrowserTestUtils.browserLoaded(browser);
-  await BrowserTestUtils.loadURI(browser, TEST_URL);
+  BrowserTestUtils.loadURI(browser, TEST_URL);
   await onBrowserLoaded;
 
   

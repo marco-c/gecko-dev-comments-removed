@@ -36,7 +36,7 @@ add_task(async function test_non_popup_from_popup() {
       const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, OPEN_PAGE);
 
       
-      await BrowserTestUtils.loadURI(gBrowser, POPUP_OPENER);
+      BrowserTestUtils.loadURI(gBrowser, POPUP_OPENER);
 
       let win = await newPopupPromise;
       Assert.ok(true, "popup is opened");

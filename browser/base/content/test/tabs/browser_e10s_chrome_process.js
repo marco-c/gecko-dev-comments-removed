@@ -121,7 +121,7 @@ var TRANSITIONS = [
   
   async function loadURI(browser, uri) {
     info("Calling browser.loadURI");
-    await BrowserTestUtils.loadURI(browser, uri);
+    BrowserTestUtils.loadURI(browser, uri);
     return true;
   },
 

@@ -88,7 +88,7 @@ add_task(async function test_history_no_search_terms() {
         
         
         
-        await BrowserTestUtils.loadURI(selectedBrowser, "http://example.org/");
+        BrowserTestUtils.loadURI(selectedBrowser, "http://example.org/");
         await BrowserTestUtils.browserLoaded(selectedBrowser);
         gURLBar.blur();
         EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {});
