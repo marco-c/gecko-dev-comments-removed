@@ -231,7 +231,6 @@ class BaselineCodeGen {
   MOZ_MUST_USE bool emitSetPropSuper(bool strict);
 
   MOZ_MUST_USE bool emitBindName(JSOp op);
-  MOZ_MUST_USE bool emitDefLexical(JSOp op);
 
   
   

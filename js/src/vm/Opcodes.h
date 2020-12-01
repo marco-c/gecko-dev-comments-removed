@@ -3346,72 +3346,6 @@
 
 
 
-
-
-
- \
-    MACRO(DefVar, def_var, NULL, 5, 0, 0, JOF_ATOM) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(DefFun, def_fun, NULL, 1, 1, 0, JOF_BYTE) \
-    
-
-
-
-
-
-
-
-
-
- \
-    MACRO(DefLet, def_let, NULL, 5, 0, 0, JOF_ATOM) \
-    
-
-
-
-
-
-
- \
-    MACRO(DefConst, def_const, NULL, 5, 0, 0, JOF_ATOM) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  \
     MACRO(GlobalOrEvalDeclInstantiation, global_or_eval_decl_instantiation, NULL, 5, 0, 0, JOF_GCTHING) \
     
@@ -3685,6 +3619,10 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(235)                                   \
+  MACRO(236)                                   \
+  MACRO(237)                                   \
+  MACRO(238)                                   \
   MACRO(239)                                   \
   MACRO(240)                                   \
   MACRO(241)                                   \
