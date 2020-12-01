@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
  
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -12,107 +12,107 @@
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
 })(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_6__, __WEBPACK_EXTERNAL_MODULE_103__, __WEBPACK_EXTERNAL_MODULE_112__) {
-return /******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__webpack_require__.m = modules;
-/******/
-/******/ 	// expose the module cache
-/******/ 	__webpack_require__.c = installedModules;
-/******/
-/******/ 	// define getter function for harmony exports
-/******/ 	__webpack_require__.d = function(exports, name, getter) {
-/******/ 		if(!__webpack_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, {
-/******/ 				configurable: false,
-/******/ 				enumerable: true,
-/******/ 				get: getter
-/******/ 			});
-/******/ 		}
-/******/ 	};
-/******/
-/******/ 	// getDefaultExport function for compatibility with non-harmony modules
-/******/ 	__webpack_require__.n = function(module) {
-/******/ 		var getter = module && module.__esModule ?
-/******/ 			function getDefault() { return module['default']; } :
-/******/ 			function getModuleExports() { return module; };
-/******/ 		__webpack_require__.d(getter, 'a', getter);
-/******/ 		return getter;
-/******/ 	};
-/******/
-/******/ 	// Object.prototype.hasOwnProperty.call
-/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-/******/
-/******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/assets/build";
-/******/
-/******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 929);
-/******/ })
-/************************************************************************/
-/******/ ({
+return  (function(modules) { 
+ 	
+ 	var installedModules = {};
 
-/***/ 0:
-/***/ (function(module, exports) {
+ 	
+ 	function __webpack_require__(moduleId) {
+
+ 		
+ 		if(installedModules[moduleId]) {
+ 			return installedModules[moduleId].exports;
+ 		}
+ 		
+ 		var module = installedModules[moduleId] = {
+ 			i: moduleId,
+ 			l: false,
+ 			exports: {}
+ 		};
+
+ 		
+ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+ 		
+ 		module.l = true;
+
+ 		
+ 		return module.exports;
+ 	}
+
+
+ 	
+ 	__webpack_require__.m = modules;
+
+ 	
+ 	__webpack_require__.c = installedModules;
+
+ 	
+ 	__webpack_require__.d = function(exports, name, getter) {
+ 		if(!__webpack_require__.o(exports, name)) {
+ 			Object.defineProperty(exports, name, {
+ 				configurable: false,
+ 				enumerable: true,
+ 				get: getter
+ 			});
+ 		}
+ 	};
+
+ 	
+ 	__webpack_require__.n = function(module) {
+ 		var getter = module && module.__esModule ?
+ 			function getDefault() { return module['default']; } :
+ 			function getModuleExports() { return module; };
+ 		__webpack_require__.d(getter, 'a', getter);
+ 		return getter;
+ 	};
+
+ 	
+ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+
+ 	
+ 	__webpack_require__.p = "/assets/build";
+
+ 	
+ 	return __webpack_require__(__webpack_require__.s = 929);
+ })
+
+ ({
+
+ 0:
+ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
 
-/***/ }),
+ }),
 
-/***/ 1:
-/***/ (function(module, exports) {
+ 1:
+ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
-/***/ }),
+ }),
 
-/***/ 103:
-/***/ (function(module, exports) {
+ 103:
+ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_103__;
 
-/***/ }),
+ }),
 
-/***/ 112:
-/***/ (function(module, exports) {
+ 112:
+ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_112__;
 
-/***/ }),
+ }),
 
-/***/ 560:
-/***/ (function(module, exports, __webpack_require__) {
+ 560:
+ (function(module, exports, __webpack_require__) {
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 const networkRequest = __webpack_require__(567);
 
 const workerUtils = __webpack_require__(568);
@@ -122,14 +122,14 @@ module.exports = {
   workerUtils
 };
 
-/***/ }),
+ }),
 
-/***/ 567:
-/***/ (function(module, exports) {
+ 567:
+ (function(module, exports) {
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 function networkRequest(url, opts) {
   return fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache"
@@ -153,14 +153,14 @@ function networkRequest(url, opts) {
 
 module.exports = networkRequest;
 
-/***/ }),
+ }),
 
-/***/ 568:
-/***/ (function(module, exports) {
+ 568:
+ (function(module, exports) {
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;
@@ -289,8 +289,8 @@ function workerHandler(publicInterface) {
 
 function asErrorMessage(error) {
   if (typeof error === "object" && error && "message" in error) {
-    // Error can't be sent via postMessage, so be sure to convert to
-    // string.
+    
+    
     return {
       error: true,
       message: error.message,
@@ -310,25 +310,25 @@ module.exports = {
   workerHandler
 };
 
-/***/ }),
+ }),
 
-/***/ 6:
-/***/ (function(module, exports) {
+ 6:
+ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 
-/***/ }),
+ }),
 
-/***/ 607:
-/***/ (function(module, exports) {
+ 607:
+ (function(module, exports) {
 
-// shim for using process in browser
+
 var process = module.exports = {};
 
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
+
+
+
+
 
 var cachedSetTimeout;
 var cachedClearTimeout;
@@ -361,23 +361,23 @@ function defaultClearTimeout () {
 } ())
 function runTimeout(fun) {
     if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
+        
         return setTimeout(fun, 0);
     }
-    // if setTimeout wasn't available but was latter defined
+    
     if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
         cachedSetTimeout = setTimeout;
         return setTimeout(fun, 0);
     }
     try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
+        
         return cachedSetTimeout(fun, 0);
     } catch(e){
         try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            
             return cachedSetTimeout.call(null, fun, 0);
         } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            
             return cachedSetTimeout.call(this, fun, 0);
         }
     }
@@ -386,24 +386,24 @@ function runTimeout(fun) {
 }
 function runClearTimeout(marker) {
     if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
+        
         return clearTimeout(marker);
     }
-    // if clearTimeout wasn't available but was latter defined
+    
     if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
         cachedClearTimeout = clearTimeout;
         return clearTimeout(marker);
     }
     try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
+        
         return cachedClearTimeout(marker);
     } catch (e){
         try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            
             return cachedClearTimeout.call(null, marker);
         } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            
+            
             return cachedClearTimeout.call(this, marker);
         }
     }
@@ -468,7 +468,7 @@ process.nextTick = function (fun) {
     }
 };
 
-// v8 likes predictible objects
+
 function Item(fun, array) {
     this.fun = fun;
     this.array = array;
@@ -480,7 +480,7 @@ process.title = 'browser';
 process.browser = true;
 process.env = {};
 process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
+process.version = ''; 
 process.versions = {};
 
 function noop() {}
@@ -508,10 +508,10 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 
-/***/ }),
+ }),
 
-/***/ 611:
-/***/ (function(module, exports) {
+ 611:
+ (function(module, exports) {
 
 (function() {
   var AcronymResult, computeScore, emptyAcronymResult, isAcronymFullWord, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_size, wm;
@@ -842,57 +842,39 @@ process.umask = function() { return 0; };
 }).call(this);
 
 
-/***/ }),
+ }),
 
-/***/ 642:
-/***/ (function(module, exports, __webpack_require__) {
+ 642:
+ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(process) {/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+(function(process) {
+
+
 const flag = __webpack_require__(103);
 
-function isBrowser() {
-  return typeof window == "object";
-}
-
 function isNode() {
-  return process && process.release && process.release.name == 'node';
+  return process && process.release && process.release.name == "node";
 }
 
-function isDevelopment() {
-  if (!isNode() && isBrowser()) {
-    const href = window.location ? window.location.href : "";
-    return href.match(/^file:/) || href.match(/localhost:/);
-  }
-
-  return "production" != "production";
+function isNodeTest() {
+  return isNode() && "production" != "production";
 }
 
 function isTesting() {
   return flag.testing;
 }
 
-function isFirefoxPanel() {
-  return !isDevelopment();
-}
-
-function isFirefox() {
-  return /firefox/i.test(navigator.userAgent);
-}
-
 module.exports = {
-  isDevelopment,
-  isTesting,
-  isFirefoxPanel,
-  isFirefox
+  isNode,
+  isNodeTest,
+  isTesting
 };
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(607)))
+}.call(exports, __webpack_require__(607)))
 
-/***/ }),
+ }),
 
-/***/ 647:
-/***/ (function(module, exports, __webpack_require__) {
+ 647:
+ (function(module, exports, __webpack_require__) {
 
 (function() {
   var computeScore, countDir, file_coeff, getExtension, getExtensionScore, isMatch, scorePath, scoreSize, tau_depth, _ref;
@@ -1006,10 +988,10 @@ module.exports = {
 }).call(this);
 
 
-/***/ }),
+ }),
 
-/***/ 709:
-/***/ (function(module, exports, __webpack_require__) {
+ 709:
+ (function(module, exports, __webpack_require__) {
 
 (function() {
   var Query, coreChars, countDir, getCharCodes, getExtension, opt_char_re, truncatedUpperCase, _ref;
@@ -1070,10 +1052,10 @@ module.exports = {
 }).call(this);
 
 
-/***/ }),
+ }),
 
-/***/ 710:
-/***/ (function(module, exports, __webpack_require__) {
+ 710:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1100,7 +1082,7 @@ class TabList extends _react.default.Component {
     const childrenCount = _react.default.Children.count(props.children);
 
     this.handleKeyPress = this.handleKeyPress.bind(this);
-    this.tabRefs = new Array(childrenCount).fill(0).map(() => /*#__PURE__*/_react.default.createRef());
+    this.tabRefs = new Array(childrenCount).fill(0).map(() => _react.default.createRef());
     this.handlers = this.getHandlers(props.vertical);
   }
 
@@ -1156,7 +1138,7 @@ class TabList extends _react.default.Component {
       className,
       onActivateTab
     } = this.props;
-    return /*#__PURE__*/_react.default.createElement("ul", {
+    return _react.default.createElement("ul", {
       className: className,
       onKeyUp: this.handleKeyPress,
       role: "tablist"
@@ -1167,7 +1149,7 @@ class TabList extends _react.default.Component {
 
       const active = index === activeIndex;
       const tabRef = this.tabRefs[index];
-      return /*#__PURE__*/_react.default.cloneElement(child, {
+      return _react.default.cloneElement(child, {
         accessibleId: active ? accessibleId : undefined,
         active,
         tabRef,
@@ -1196,10 +1178,10 @@ TabList.defaultProps = {
   vertical: false
 };
 
-/***/ }),
+ }),
 
-/***/ 711:
-/***/ (function(module, exports, __webpack_require__) {
+ 711:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1227,7 +1209,7 @@ function Tab({
   onActivate,
   tabRef
 }) {
-  return /*#__PURE__*/_react.default.createElement("li", {
+  return _react.default.createElement("li", {
     "aria-selected": active,
     className: className,
     id: accessibleId,
@@ -1255,10 +1237,10 @@ Tab.defaultProps = {
   tabRef: undefined
 };
 
-/***/ }),
+ }),
 
-/***/ 712:
-/***/ (function(module, exports, __webpack_require__) {
+ 712:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1281,7 +1263,7 @@ function TabPanels({
   className,
   hasFocusableContent
 }) {
-  return /*#__PURE__*/_react.default.createElement("div", {
+  return _react.default.createElement("div", {
     "aria-labelledby": accessibleId,
     role: "tabpanel",
     className: className,
@@ -1302,18 +1284,18 @@ TabPanels.defaultProps = {
   className: null
 };
 
-/***/ }),
+ }),
 
-/***/ 929:
-/***/ (function(module, exports, __webpack_require__) {
+ 929:
+ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(930);
 
 
-/***/ }),
+ }),
 
-/***/ 930:
-/***/ (function(module, exports, __webpack_require__) {
+ 930:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1345,27 +1327,27 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-/**
- * Vendors.js is a file used to bundle and expose all dependencies needed to run
- * the transpiled debugger modules when running in Firefox.
- *
- * To make transpilation easier, a vendored module should always be imported in
- * same way:
- * - always with destructuring (import { a } from "modA";)
- * - always without destructuring (import modB from "modB")
- *
- * Both are fine, but cannot be mixed for the same module.
- */
-// $FlowIgnore
-// Modules imported without destructuring
-// We cannot directly export literals containing special characters
-// (eg. "my-module/Test") which is why they are nested in "vendored".
-// The keys of the vendored object should match the module names
-// !!! Should remain synchronized with .babel/transform-mc.js !!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const vendored = {
   classnames: _classnames.default,
   "devtools-environment": devtoolsEnvironment,
@@ -1378,12 +1360,12 @@ const vendored = {
 };
 exports.vendored = vendored;
 
-/***/ }),
+ }),
 
-/***/ 931:
-/***/ (function(module, exports, __webpack_require__) {
+ 931:
+ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(process) {(function() {
+(function(process) {(function() {
   var Query, defaultPathSeparator, filter, matcher, parseOptions, pathScorer, preparedQueryCache, scorer;
 
   filter = __webpack_require__(932);
@@ -1495,12 +1477,12 @@ exports.vendored = vendored;
 
 }).call(this);
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(607)))
+}.call(exports, __webpack_require__(607)))
 
-/***/ }),
+ }),
 
-/***/ 932:
-/***/ (function(module, exports, __webpack_require__) {
+ 932:
+ (function(module, exports, __webpack_require__) {
 
 (function() {
   var Query, pathScorer, pluckCandidates, scorer, sortCandidates;
@@ -1554,10 +1536,10 @@ exports.vendored = vendored;
 }).call(this);
 
 
-/***/ }),
+ }),
 
-/***/ 933:
-/***/ (function(module, exports, __webpack_require__) {
+ 933:
+ (function(module, exports, __webpack_require__) {
 
 (function() {
   var basenameMatch, computeMatch, isMatch, isWordStart, match, mergeMatches, scoreAcronyms, scoreCharacter, scoreConsecutives, _ref;
@@ -1776,10 +1758,10 @@ exports.vendored = vendored;
 }).call(this);
 
 
-/***/ }),
+ }),
 
-/***/ 934:
-/***/ (function(module, exports, __webpack_require__) {
+ 934:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1814,100 +1796,100 @@ exports.ENTERING = ENTERING;
 var ENTERED = 'entered';
 exports.ENTERED = ENTERED;
 var EXITING = 'exiting';
-/**
- * The Transition component lets you describe a transition from one component
- * state to another _over time_ with a simple declarative API. Most commonly
- * it's used to animate the mounting and unmounting of a component, but can also
- * be used to describe in-place transition states as well.
- *
- * ---
- *
- * **Note**: `Transition` is a platform-agnostic base component. If you're using
- * transitions in CSS, you'll probably want to use
- * [`CSSTransition`](https://reactcommunity.org/react-transition-group/css-transition)
- * instead. It inherits all the features of `Transition`, but contains
- * additional features necessary to play nice with CSS transitions (hence the
- * name of the component).
- *
- * ---
- *
- * By default the `Transition` component does not alter the behavior of the
- * component it renders, it only tracks "enter" and "exit" states for the
- * components. It's up to you to give meaning and effect to those states. For
- * example we can add styles to a component when it enters or exits:
- *
- * ```jsx
- * import { Transition } from 'react-transition-group';
- *
- * const duration = 300;
- *
- * const defaultStyle = {
- *   transition: `opacity ${duration}ms ease-in-out`,
- *   opacity: 0,
- * }
- *
- * const transitionStyles = {
- *   entering: { opacity: 0 },
- *   entered:  { opacity: 1 },
- * };
- *
- * const Fade = ({ in: inProp }) => (
- *   <Transition in={inProp} timeout={duration}>
- *     {state => (
- *       <div style={{
- *         ...defaultStyle,
- *         ...transitionStyles[state]
- *       }}>
- *         I'm a fade Transition!
- *       </div>
- *     )}
- *   </Transition>
- * );
- * ```
- *
- * There are 4 main states a Transition can be in:
- *  - `'entering'`
- *  - `'entered'`
- *  - `'exiting'`
- *  - `'exited'`
- *
- * Transition state is toggled via the `in` prop. When `true` the component
- * begins the "Enter" stage. During this stage, the component will shift from
- * its current transition state, to `'entering'` for the duration of the
- * transition and then to the `'entered'` stage once it's complete. Let's take
- * the following example (we'll use the
- * [useState](https://reactjs.org/docs/hooks-reference.html#usestate) hook):
- *
- * ```jsx
- * function App() {
- *   const [inProp, setInProp] = useState(false);
- *   return (
- *     <div>
- *       <Transition in={inProp} timeout={500}>
- *         {state => (
- *           // ...
- *         )}
- *       </Transition>
- *       <button onClick={() => setInProp(true)}>
- *         Click to Enter
- *       </button>
- *     </div>
- *   );
- * }
- * ```
- *
- * When the button is clicked the component will shift to the `'entering'` state
- * and stay there for 500ms (the value of `timeout`) before it finally switches
- * to `'entered'`.
- *
- * When `in` is `false` the same thing happens except the state moves from
- * `'exiting'` to `'exited'`.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 exports.EXITING = EXITING;
 
 var Transition =
-/*#__PURE__*/
+
 function (_React$Component) {
   _inheritsLoose(Transition, _React$Component);
 
@@ -1915,7 +1897,7 @@ function (_React$Component) {
     var _this;
 
     _this = _React$Component.call(this, props, context) || this;
-    var parentGroup = context.transitionGroup; // In the context of a TransitionGroup all enters are really appears
+    var parentGroup = context.transitionGroup; 
 
     var appear = parentGroup && !parentGroup.isMounting ? props.enter : props.appear;
     var initialStatus;
@@ -1947,7 +1929,7 @@ function (_React$Component) {
 
   _proto.getChildContext = function getChildContext() {
     return {
-      transitionGroup: null // allows for nested Transitions
+      transitionGroup: null 
 
     };
   };
@@ -1962,22 +1944,22 @@ function (_React$Component) {
     }
 
     return null;
-  }; // getSnapshotBeforeUpdate(prevProps) {
-  //   let nextStatus = null
-  //   if (prevProps !== this.props) {
-  //     const { status } = this.state
-  //     if (this.props.in) {
-  //       if (status !== ENTERING && status !== ENTERED) {
-  //         nextStatus = ENTERING
-  //       }
-  //     } else {
-  //       if (status === ENTERING || status === ENTERED) {
-  //         nextStatus = EXITING
-  //       }
-  //     }
-  //   }
-  //   return { nextStatus }
-  // }
+  }; 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 
   _proto.componentDidMount = function componentDidMount() {
@@ -2015,7 +1997,7 @@ function (_React$Component) {
 
     if (timeout != null && typeof timeout !== 'number') {
       exit = timeout.exit;
-      enter = timeout.enter; // TODO: remove fallback for next major
+      enter = timeout.enter; 
 
       appear = timeout.appear !== undefined ? timeout.appear : enter;
     }
@@ -2033,7 +2015,7 @@ function (_React$Component) {
     }
 
     if (nextStatus !== null) {
-      // nextStatus will always be ENTERING or EXITING.
+      
       this.cancelNextCallback();
 
       var node = _reactDom.default.findDOMNode(this);
@@ -2056,8 +2038,8 @@ function (_React$Component) {
     var enter = this.props.enter;
     var appearing = this.context.transitionGroup ? this.context.transitionGroup.isMounting : mounting;
     var timeouts = this.getTimeouts();
-    var enterTimeout = appearing ? timeouts.appear : timeouts.enter; // no enter animation skip right to ENTERED
-    // if we are mounting and running this it means appear _must_ be set
+    var enterTimeout = appearing ? timeouts.appear : timeouts.enter; 
+    
 
     if (!mounting && !enter) {
       this.safeSetState({
@@ -2088,7 +2070,7 @@ function (_React$Component) {
     var _this3 = this;
 
     var exit = this.props.exit;
-    var timeouts = this.getTimeouts(); // no exit animation skip right to EXITED
+    var timeouts = this.getTimeouts(); 
 
     if (!exit) {
       this.safeSetState({
@@ -2123,9 +2105,9 @@ function (_React$Component) {
   };
 
   _proto.safeSetState = function safeSetState(nextState, callback) {
-    // This shouldn't be necessary, but there are weird race conditions with
-    // setState callbacks and unmounting in testing, so always make sure that
-    // we can cancel any pending setState callbacks after we unmount.
+    
+    
+    
     callback = this.setNextCallback(callback);
     this.setState(nextState, callback);
   };
@@ -2177,7 +2159,7 @@ function (_React$Component) {
 
     var _this$props = this.props,
         children = _this$props.children,
-        childProps = _objectWithoutPropertiesLoose(_this$props, ["children"]); // filter props for Transtition
+        childProps = _objectWithoutPropertiesLoose(_this$props, ["children"]); 
 
 
     delete childProps.in;
@@ -2214,86 +2196,86 @@ Transition.childContextTypes = {
   transitionGroup: function transitionGroup() {}
 };
 Transition.propTypes =  false ? {
-  /**
-   * A `function` child can be used instead of a React element. This function is
-   * called with the current transition status (`'entering'`, `'entered'`,
-   * `'exiting'`, `'exited'`, `'unmounted'`), which can be used to apply context
-   * specific props to a component.
-   *
-   * ```jsx
-   * <Transition in={this.state.in} timeout={150}>
-   *   {state => (
-   *     <MyComponent className={`fade fade-${state}`} />
-   *   )}
-   * </Transition>
-   * ```
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   children: PropTypes.oneOfType([PropTypes.func.isRequired, PropTypes.element.isRequired]).isRequired,
 
-  /**
-   * Show the component; triggers the enter or exit states
-   */
+  
+
+
   in: PropTypes.bool,
 
-  /**
-   * By default the child component is mounted immediately along with
-   * the parent `Transition` component. If you want to "lazy mount" the component on the
-   * first `in={true}` you can set `mountOnEnter`. After the first enter transition the component will stay
-   * mounted, even on "exited", unless you also specify `unmountOnExit`.
-   */
+  
+
+
+
+
+
   mountOnEnter: PropTypes.bool,
 
-  /**
-   * By default the child component stays mounted after it reaches the `'exited'` state.
-   * Set `unmountOnExit` if you'd prefer to unmount the component after it finishes exiting.
-   */
+  
+
+
+
   unmountOnExit: PropTypes.bool,
 
-  /**
-   * Normally a component is not transitioned if it is shown when the `<Transition>` component mounts.
-   * If you want to transition on the first mount set `appear` to `true`, and the
-   * component will transition in as soon as the `<Transition>` mounts.
-   *
-   * > Note: there are no specific "appear" states. `appear` only adds an additional `enter` transition.
-   */
+  
+
+
+
+
+
+
   appear: PropTypes.bool,
 
-  /**
-   * Enable or disable enter transitions.
-   */
+  
+
+
   enter: PropTypes.bool,
 
-  /**
-   * Enable or disable exit transitions.
-   */
+  
+
+
   exit: PropTypes.bool,
 
-  /**
-   * The duration of the transition, in milliseconds.
-   * Required unless `addEndListener` is provided.
-   *
-   * You may specify a single timeout for all transitions:
-   *
-   * ```jsx
-   * timeout={500}
-   * ```
-   *
-   * or individually:
-   *
-   * ```jsx
-   * timeout={{
-   *  appear: 500,
-   *  enter: 300,
-   *  exit: 500,
-   * }}
-   * ```
-   *
-   * - `appear` defaults to the value of `enter`
-   * - `enter` defaults to `0`
-   * - `exit` defaults to `0`
-   *
-   * @type {number | { enter?: number, exit?: number, appear?: number }}
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   timeout: function timeout(props) {
     var pt = _PropTypes.timeoutsShape;
     if (!props.addEndListener) pt = pt.isRequired;
@@ -2305,64 +2287,64 @@ Transition.propTypes =  false ? {
     return pt.apply(void 0, [props].concat(args));
   },
 
-  /**
-   * Add a custom transition end trigger. Called with the transitioning
-   * DOM node and a `done` callback. Allows for more fine grained transition end
-   * logic. **Note:** Timeouts are still used as a fallback if provided.
-   *
-   * ```jsx
-   * addEndListener={(node, done) => {
-   *   // use the css transitionend event to mark the finish of a transition
-   *   node.addEventListener('transitionend', done, false);
-   * }}
-   * ```
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   addEndListener: PropTypes.func,
 
-  /**
-   * Callback fired before the "entering" status is applied. An extra parameter
-   * `isAppearing` is supplied to indicate if the enter stage is occurring on the initial mount
-   *
-   * @type Function(node: HtmlElement, isAppearing: bool) -> void
-   */
+  
+
+
+
+
+
   onEnter: PropTypes.func,
 
-  /**
-   * Callback fired after the "entering" status is applied. An extra parameter
-   * `isAppearing` is supplied to indicate if the enter stage is occurring on the initial mount
-   *
-   * @type Function(node: HtmlElement, isAppearing: bool)
-   */
+  
+
+
+
+
+
   onEntering: PropTypes.func,
 
-  /**
-   * Callback fired after the "entered" status is applied. An extra parameter
-   * `isAppearing` is supplied to indicate if the enter stage is occurring on the initial mount
-   *
-   * @type Function(node: HtmlElement, isAppearing: bool) -> void
-   */
+  
+
+
+
+
+
   onEntered: PropTypes.func,
 
-  /**
-   * Callback fired before the "exiting" status is applied.
-   *
-   * @type Function(node: HtmlElement) -> void
-   */
+  
+
+
+
+
   onExit: PropTypes.func,
 
-  /**
-   * Callback fired after the "exiting" status is applied.
-   *
-   * @type Function(node: HtmlElement) -> void
-   */
+  
+
+
+
+
   onExiting: PropTypes.func,
 
-  /**
-   * Callback fired after the "exited" status is applied.
-   *
-   * @type Function(node: HtmlElement) -> void
-   */
-  onExited: PropTypes.func // Name the function so it is clearer in the documentation
+  
+
+
+
+
+  onExited: PropTypes.func 
 
 } : {};
 
@@ -2392,23 +2374,23 @@ var _default = (0, _reactLifecyclesCompat.polyfill)(Transition);
 
 exports.default = _default;
 
-/***/ }),
+ }),
 
-/***/ 935:
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+ 935:
+ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "polyfill", function() { return polyfill; });
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+ __webpack_require__.d(__webpack_exports__, "polyfill", function() { return polyfill; });
+
+
+
+
+
+
 
 function componentWillMount() {
-  // Call this.constructor.gDSFP to support sub-classes.
+  
   var state = this.constructor.getDerivedStateFromProps(this.props, this.state);
   if (state !== null && state !== undefined) {
     this.setState(state);
@@ -2416,13 +2398,13 @@ function componentWillMount() {
 }
 
 function componentWillReceiveProps(nextProps) {
-  // Call this.constructor.gDSFP to support sub-classes.
-  // Use the setState() updater to ensure state isn't stale in certain edge cases.
+  
+  
   function updater(prevState) {
     var state = this.constructor.getDerivedStateFromProps(nextProps, prevState);
     return state !== null && state !== undefined ? state : null;
   }
-  // Binding "this" is important for shallow renderer support.
+  
   this.setState(updater.bind(this));
 }
 
@@ -2443,8 +2425,8 @@ function componentWillUpdate(nextProps, nextState) {
   }
 }
 
-// React may warn about cWM/cWRP/cWU methods being deprecated.
-// Add a flag to suppress these warnings for this special case.
+
+
 componentWillMount.__suppressDeprecationWarning = true;
 componentWillReceiveProps.__suppressDeprecationWarning = true;
 componentWillUpdate.__suppressDeprecationWarning = true;
@@ -2463,9 +2445,9 @@ function polyfill(Component) {
     return Component;
   }
 
-  // If new component APIs are defined, "unsafe" lifecycles won't be called.
-  // Error if any of these lifecycles are present,
-  // Because they would work differently between older and newer (16.3+) versions of React.
+  
+  
+  
   var foundWillMountName = null;
   var foundWillReceivePropsName = null;
   var foundWillUpdateName = null;
@@ -2511,17 +2493,17 @@ function polyfill(Component) {
     );
   }
 
-  // React <= 16.2 does not support static getDerivedStateFromProps.
-  // As a workaround, use cWM and cWRP to invoke the new static lifecycle.
-  // Newer versions of React will ignore these lifecycles if gDSFP exists.
+  
+  
+  
   if (typeof Component.getDerivedStateFromProps === 'function') {
     prototype.componentWillMount = componentWillMount;
     prototype.componentWillReceiveProps = componentWillReceiveProps;
   }
 
-  // React <= 16.2 does not support getSnapshotBeforeUpdate.
-  // As a workaround, use cWU to invoke the new lifecycle.
-  // Newer versions of React will ignore that lifecycle if gSBU exists.
+  
+  
+  
   if (typeof prototype.getSnapshotBeforeUpdate === 'function') {
     if (typeof prototype.componentDidUpdate !== 'function') {
       throw new Error(
@@ -2538,14 +2520,14 @@ function polyfill(Component) {
       prevState,
       maybeSnapshot
     ) {
-      // 16.3+ will not execute our will-update method;
-      // It will pass a snapshot value to did-update though.
-      // Older versions will require our polyfilled will-update value.
-      // We need to handle both cases, but can't just check for the presence of "maybeSnapshot",
-      // Because for <= 15.x versions this might be a "prevContext" object.
-      // We also can't just check "__reactInternalSnapshot",
-      // Because get-snapshot might return a falsy value.
-      // So check for the explicit __reactInternalSnapshotFlag flag to determine behavior.
+      
+      
+      
+      
+      
+      
+      
+      
       var snapshot = this.__reactInternalSnapshotFlag
         ? this.__reactInternalSnapshot
         : maybeSnapshot;
@@ -2560,10 +2542,10 @@ function polyfill(Component) {
 
 
 
-/***/ }),
+ }),
 
-/***/ 936:
-/***/ (function(module, exports, __webpack_require__) {
+ 936:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2595,10 +2577,10 @@ var classNamesShape =  false ? _propTypes.default.oneOfType([_propTypes.default.
 })]) : null;
 exports.classNamesShape = classNamesShape;
 
-/***/ }),
+ }),
 
-/***/ 937:
-/***/ (function(module, exports, __webpack_require__) {
+ 937:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2641,10 +2623,10 @@ var _tabs = _interopRequireDefault(__webpack_require__(941));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/***/ }),
+ }),
 
-/***/ 938:
-/***/ (function(module, exports, __webpack_require__) {
+ 938:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2661,10 +2643,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var _default = _propTypes.default.object;
 exports.default = _default;
 
-/***/ }),
+ }),
 
-/***/ 941:
-/***/ (function(module, exports, __webpack_require__) {
+ 941:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2700,7 +2682,7 @@ class Tabs extends _react.default.Component {
       onActivateTab
     } = this.props;
     const accessibleId = this.accessibleId;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return _react.default.createElement("div", {
       className: className
     }, _react.default.Children.map(children, child => {
       if (!child) {
@@ -2709,14 +2691,14 @@ class Tabs extends _react.default.Component {
 
       switch (child.type) {
         case _tabList.default:
-          return /*#__PURE__*/_react.default.cloneElement(child, {
+          return _react.default.cloneElement(child, {
             accessibleId,
             activeIndex,
             onActivateTab
           });
 
         case _tabPanels.default:
-          return /*#__PURE__*/_react.default.cloneElement(child, {
+          return _react.default.cloneElement(child, {
             accessibleId,
             activeIndex
           });
@@ -2742,10 +2724,10 @@ Tabs.defaultProps = {
   onActivateTab: () => {}
 };
 
-/***/ }),
+ }),
 
-/***/ 942:
-/***/ (function(module, exports, __webpack_require__) {
+ 942:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2761,17 +2743,17 @@ function uniqueId() {
   return `$rac$${counter}`;
 }
 
-/***/ }),
+ }),
 
-/***/ 943:
-/***/ (function(module, exports, __webpack_require__) {
+ 943:
+ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
-  Copyright (c) 2017 Jed Watson.
-  Licensed under the MIT License (MIT), see
-  http://jedwatson.github.io/classnames
-*/
-/* global define */
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
+
+
+
+
+
 
 (function () {
 	'use strict';
@@ -2810,7 +2792,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 		classNames.default = classNames;
 		module.exports = classNames;
 	} else if (true) {
-		// register as 'classnames', consistent with npm package name
+		
 		!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function () {
 			return classNames;
 		}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
@@ -2821,26 +2803,26 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 }());
 
 
-/***/ }),
+ }),
 
-/***/ 944:
-/***/ (function(module, exports, __webpack_require__) {
+ 944:
+ (function(module, exports, __webpack_require__) {
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 const SplitBox = __webpack_require__(945);
 
 module.exports = SplitBox;
 
-/***/ }),
+ }),
 
-/***/ 945:
-/***/ (function(module, exports, __webpack_require__) {
+ 945:
+ (function(module, exports, __webpack_require__) {
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 const React = __webpack_require__(6);
 
 const ReactDOM = __webpack_require__(112);
@@ -2855,44 +2837,44 @@ const PropTypes = __webpack_require__(0);
 const dom = __webpack_require__(1);
 
 __webpack_require__(959);
-/**
- * This component represents a Splitter. The splitter supports vertical
- * as well as horizontal mode.
- */
+
+
+
+
 
 
 class SplitBox extends Component {
   static get propTypes() {
     return {
-      // Custom class name. You can use more names separated by a space.
+      
       className: PropTypes.string,
-      // Initial size of controlled panel.
+      
       initialSize: PropTypes.any,
-      // Optional initial width of controlled panel.
+      
       initialWidth: PropTypes.number,
-      // Optional initial height of controlled panel.
+      
       initialHeight: PropTypes.number,
-      // Left/top panel
+      
       startPanel: PropTypes.any,
-      // Left/top panel collapse state.
+      
       startPanelCollapsed: PropTypes.bool,
-      // Min panel size.
+      
       minSize: PropTypes.any,
-      // Max panel size.
+      
       maxSize: PropTypes.any,
-      // Right/bottom panel
+      
       endPanel: PropTypes.any,
-      // Right/bottom panel collapse state.
+      
       endPanelCollapsed: PropTypes.bool,
-      // True if the right/bottom panel should be controlled.
+      
       endPanelControl: PropTypes.bool,
-      // Size of the splitter handle bar.
+      
       splitterSize: PropTypes.number,
-      // True if the splitter bar is vertical (default is vertical).
+      
       vert: PropTypes.bool,
-      // Optional style properties passed into the splitbox
+      
       style: PropTypes.object,
-      // Optional callback when splitbox resize stops
+      
       onResizeEnd: PropTypes.func
     };
   }
@@ -2911,7 +2893,7 @@ class SplitBox extends Component {
     super(props);
     this.state = {
       vert: props.vert,
-      // We use integers for these properties
+      
       width: parseInt(props.initialWidth || props.initialSize, 10),
       height: parseInt(props.initialHeight || props.initialSize, 10)
     };
@@ -2934,13 +2916,13 @@ class SplitBox extends Component {
         height: parseInt(nextProps.initialHeight || nextProps.initialSize, 10)
       });
     }
-  } // Dragging Events
+  } 
 
-  /**
-   * Set 'resizing' cursor on entire document during splitter dragging.
-   * This avoids cursor-flickering that happens when the mouse leaves
-   * the splitter bar area (happens frequently).
-   */
+  
+
+
+
+
 
 
   onStartMove() {
@@ -2966,11 +2948,11 @@ class SplitBox extends Component {
       this.props.onResizeEnd(this.state.vert ? this.state.width : this.state.height);
     }
   }
-  /**
-   * Adjust size of the controlled panel. Depending on the current
-   * orientation we either remember the width or height of
-   * the splitter box.
-   */
+  
+
+
+
+
 
 
   onMove({
@@ -2982,8 +2964,8 @@ class SplitBox extends Component {
     let targetWidth;
 
     if (this.props.endPanelControl) {
-      // For the end panel we need to increase the width/height when the
-      // movement is towards the left/top.
+      
+      
       targetWidth = node.clientWidth - clientX;
       movementY = -movementY;
     } else {
@@ -2998,8 +2980,8 @@ class SplitBox extends Component {
       const isRtl = doc.dir === "rtl";
 
       if (isRtl && this.props.endPanelControl) {
-        // In RTL we need to reverse the movement again -- but only for vertical
-        // splitters
+        
+        
         const fullWidth = node.clientWidth + node.offsetLeft;
         targetWidth = fullWidth - targetWidth;
       }
@@ -3031,7 +3013,7 @@ class SplitBox extends Component {
     }
 
     return clientX > maxPossibleWidth ? maxPossibleWidth : clientX;
-  } // Rendering
+  } 
 
 
   preparePanelStyles() {
@@ -3043,7 +3025,7 @@ class SplitBox extends Component {
       endPanelControl,
       endPanelCollapsed
     } = this.props;
-    let leftPanelStyle, rightPanelStyle; // Set proper size for panels depending on the current state.
+    let leftPanelStyle, rightPanelStyle; 
 
     if (vert) {
       const startWidth = endPanelControl ? null : this.state.width,
@@ -3089,7 +3071,7 @@ class SplitBox extends Component {
       splitterSize,
       endPanelCollapsed
     } = this.props;
-    const style = Object.assign({}, this.props.style); // Calculate class names list.
+    const style = Object.assign({}, this.props.style); 
 
     let classNames = ["split-box"];
     classNames.push(vert ? "vert" : "horz");
@@ -3101,7 +3083,7 @@ class SplitBox extends Component {
     const {
       leftPanelStyle,
       rightPanelStyle
-    } = this.preparePanelStyles(); // Calculate splitter size
+    } = this.preparePanelStyles(); 
 
     const splitterStyle = {
       flex: `0 0 ${splitterSize}px`
@@ -3128,14 +3110,14 @@ class SplitBox extends Component {
 
 module.exports = SplitBox;
 
-/***/ }),
+ }),
 
-/***/ 946:
-/***/ (function(module, exports, __webpack_require__) {
+ 946:
+ (function(module, exports, __webpack_require__) {
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 const React = __webpack_require__(6);
 
 const ReactDOM = __webpack_require__(112);
@@ -3175,12 +3157,12 @@ class Draggable extends Component {
   }
 
   onMove(ev) {
-    ev.preventDefault(); // When the target is outside of the document, its tagName is undefined
+    ev.preventDefault(); 
 
     if (!ev.target.tagName) {
       return;
-    } // We pass the whole event because we don't know which properties
-    // the callee needs.
+    } 
+    
 
 
     this.props.onMove(ev);
@@ -3206,10 +3188,10 @@ class Draggable extends Component {
 
 module.exports = Draggable;
 
-/***/ }),
+ }),
 
-/***/ 948:
-/***/ (function(module, exports, __webpack_require__) {
+ 948:
+ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -3222,50 +3204,50 @@ exports.default = move;
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function move(array, moveIndex, toIndex) {
-  /* #move - Moves an array item from one position in an array to another.
-      Note: This is a pure function so a new array will be returned, instead
-     of altering the array argument.
-     Arguments:
-    1. array     (String) : Array in which to move an item.         (required)
-    2. moveIndex (Object) : The index of the item to move.          (required)
-    3. toIndex   (Object) : The index to move item at moveIndex to. (required)
-  */
+  
+
+
+
+
+
+
+
   var item = array[moveIndex];
   var length = array.length;
   var diff = moveIndex - toIndex;
 
   if (diff > 0) {
-    // move left
+    
     return [].concat(_toConsumableArray(array.slice(0, toIndex)), [item], _toConsumableArray(array.slice(toIndex, moveIndex)), _toConsumableArray(array.slice(moveIndex + 1, length)));
   } else if (diff < 0) {
-    // move right
+    
     return [].concat(_toConsumableArray(array.slice(0, moveIndex)), _toConsumableArray(array.slice(moveIndex + 1, toIndex + 1)), [item], _toConsumableArray(array.slice(toIndex + 1, length)));
   }
   return array;
 }
 
-/***/ }),
+ }),
 
-/***/ 957:
-/***/ (function(module, exports) {
+ 957:
+ (function(module, exports) {
 
-// removed by extract-text-webpack-plugin
 
-/***/ }),
 
-/***/ 958:
-/***/ (function(module, exports) {
+ }),
 
-// removed by extract-text-webpack-plugin
+ 958:
+ (function(module, exports) {
 
-/***/ }),
 
-/***/ 959:
-/***/ (function(module, exports) {
 
-// removed by extract-text-webpack-plugin
+ }),
 
-/***/ })
+ 959:
+ (function(module, exports) {
 
-/******/ });
+
+
+ })
+
+ });
 });

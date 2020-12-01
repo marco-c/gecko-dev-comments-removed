@@ -888,40 +888,22 @@ module.exports = arrayMap;
 
 const flag = __webpack_require__(103);
 
-function isBrowser() {
-  return typeof window == "object";
-}
-
 function isNode() {
-  return process && process.release && process.release.name == 'node';
+  return process && process.release && process.release.name == "node";
 }
 
-function isDevelopment() {
-  if (!isNode() && isBrowser()) {
-    const href = window.location ? window.location.href : "";
-    return href.match(/^file:/) || href.match(/localhost:/);
-  }
-
-  return "production" != "production";
+function isNodeTest() {
+  return isNode() && "production" != "production";
 }
 
 function isTesting() {
   return flag.testing;
 }
 
-function isFirefoxPanel() {
-  return !isDevelopment();
-}
-
-function isFirefox() {
-  return /firefox/i.test(navigator.userAgent);
-}
-
 module.exports = {
-  isDevelopment,
-  isTesting,
-  isFirefoxPanel,
-  isFirefox
+  isNode,
+  isNodeTest,
+  isTesting
 };
 }.call(exports, __webpack_require__(607)))
 
@@ -1039,7 +1021,7 @@ var _devtoolsEnvironment = __webpack_require__(642);
 
 
 function assert(condition, message) {
-  if ((0, _devtoolsEnvironment.isDevelopment)() && !condition) {
+  if ((0, _devtoolsEnvironment.isNodeTest)() && !condition) {
     throw new Error(`Assertion failure: ${message}`);
   }
 }

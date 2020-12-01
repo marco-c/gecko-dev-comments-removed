@@ -3,10 +3,10 @@
 
 
 
-import { isDevelopment } from "devtools-environment";
+import { isNodeTest } from "devtools-environment";
 
 export default function assert(condition: boolean, message: string): void {
-  if (isDevelopment() && !condition) {
+  if (isNodeTest() && !condition) {
     throw new Error(`Assertion failure: ${message}`);
   }
 }
