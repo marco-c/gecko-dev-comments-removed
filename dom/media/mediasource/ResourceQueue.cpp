@@ -5,7 +5,6 @@
 
 
 #include "ResourceQueue.h"
-#include "nsDeque.h"
 #include "MediaData.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/IntegerPrintfMacros.h"
