@@ -33,6 +33,7 @@ pub enum TimeUnit {
 
 impl TimeUnit {
     
+    
     pub fn format_pattern(self) -> &'static str {
         use TimeUnit::*;
         match self {
@@ -92,8 +93,6 @@ impl TimeUnit {
         duration.as_nanos() as u64
     }
 }
-
-
 
 
 

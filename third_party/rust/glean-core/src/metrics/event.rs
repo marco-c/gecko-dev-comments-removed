@@ -36,10 +36,6 @@ impl MetricType for EventMetric {
     }
 }
 
-
-
-
-
 impl EventMetric {
     
     pub fn new(meta: CommonMetricData, allowed_extra_keys: Vec<String>) -> Self {

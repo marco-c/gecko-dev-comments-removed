@@ -1,7 +1,3 @@
-
-
-
-
 use std::ffi::OsString;
 use std::fmt::{self, Display};
 use std::io;
@@ -9,7 +5,7 @@ use std::result;
 
 use ffi_support::{handle_map::HandleError, ExternError};
 
-use rkv::StoreError;
+use rkv::error::StoreError;
 
 
 
@@ -27,7 +23,6 @@ pub type Result<T> = result::Result<T, Error>;
 
 
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum ErrorKind {
     
     Lifetime(i32),
@@ -65,8 +60,8 @@ pub enum ErrorKind {
     
     NotInitialized,
 
-    
-    PingBodyOverflow(usize),
+    #[doc(hidden)]
+    __NonExhaustive,
 }
 
 
@@ -93,11 +88,6 @@ impl Error {
             kind: ErrorKind::NotInitialized,
         }
     }
-
-    
-    pub fn kind(&self) -> &ErrorKind {
-        &self.kind
-    }
 }
 
 impl std::error::Error for Error {}
@@ -105,7 +95,7 @@ impl std::error::Error for Error {}
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use ErrorKind::*;
-        match self.kind() {
+        match &self.kind {
             Lifetime(l) => write!(f, "Lifetime conversion from {} failed", l),
             Handle(e) => write!(f, "Invalid handle: {}", e),
             IoError(e) => write!(f, "An I/O error occurred: {}", e),
@@ -118,11 +108,7 @@ impl Display for Error {
             Utf8Error => write!(f, "Invalid UTF-8 byte sequence in string"),
             InvalidConfig => write!(f, "Invalid Glean configuration provided"),
             NotInitialized => write!(f, "Global Glean object missing"),
-            PingBodyOverflow(s) => write!(
-                f,
-                "Ping request body size exceeded maximum size allowed: {}kB.",
-                s / 1024
-            ),
+            __NonExhaustive => write!(f, "Unknown error"),
         }
     }
 }

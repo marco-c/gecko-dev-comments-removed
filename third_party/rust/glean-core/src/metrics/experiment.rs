@@ -39,8 +39,6 @@ impl RecordedExperimentData {
     
     
     
-    
-    
     pub fn as_json(&self) -> JsonValue {
         let mut value = JsonMap::new();
         value.insert("branch".to_string(), json!(self.branch));
@@ -150,7 +148,7 @@ impl ExperimentMetric {
         };
 
         
-        let truncated_extras = extra.map(|extra| {
+        let truncated_extras = extra.and_then(|extra| {
             if extra.len() > MAX_EXPERIMENTS_EXTRAS_SIZE {
                 let msg = format!(
                     "Extra hash map length {} exceeds maximum of {}",
@@ -185,7 +183,7 @@ impl ExperimentMetric {
 
                 temp_map.insert(truncated_key, truncated_value);
             }
-            temp_map
+            Some(temp_map)
         });
 
         let value = Metric::Experiment(RecordedExperimentData {

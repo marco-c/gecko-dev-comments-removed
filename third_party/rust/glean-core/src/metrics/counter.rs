@@ -28,10 +28,6 @@ impl MetricType for CounterMetric {
     }
 }
 
-
-
-
-
 impl CounterMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {

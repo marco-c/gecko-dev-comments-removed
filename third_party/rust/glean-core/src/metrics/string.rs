@@ -30,10 +30,6 @@ impl MetricType for StringMetric {
     }
 }
 
-
-
-
-
 impl StringMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {

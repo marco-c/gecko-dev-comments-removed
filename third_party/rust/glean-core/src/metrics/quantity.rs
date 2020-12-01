@@ -27,10 +27,6 @@ impl MetricType for QuantityMetric {
     }
 }
 
-
-
-
-
 impl QuantityMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {

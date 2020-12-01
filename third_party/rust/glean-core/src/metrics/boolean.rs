@@ -26,10 +26,6 @@ impl MetricType for BooleanMetric {
     }
 }
 
-
-
-
-
 impl BooleanMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
