@@ -48,6 +48,9 @@ add_task(async function testNoSrcOrErrorMediaEntersPIPMode() {
 
     info(`remove tab`);
     await tab.close();
+    
+    
+    await SimpleTest.promiseFocus(window);
   }
 });
 
