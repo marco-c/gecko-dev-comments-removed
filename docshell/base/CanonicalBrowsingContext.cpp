@@ -1568,6 +1568,12 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
 
   
   
+  if (aLoadState->LoadIsFromSessionHistory()) {
+    return false;
+  }
+
+  
+  
   
   return net::DocumentLoadListener::SpeculativeLoadInParent(this, aLoadState);
 }
