@@ -272,34 +272,32 @@ int64_t Simulator::call(uint8_t* entry, int argument_count, ...) {
   
   
   if (argument_count == 8) {
-    
-    set_xreg(0, va_arg(parameters, int64_t));
-    
-    set_xreg(1, va_arg(parameters, unsigned));
-    
-    set_xreg(2, va_arg(parameters, int64_t));
-    
-    set_xreg(3, va_arg(parameters, int64_t));
-    
-    set_xreg(4, va_arg(parameters, int64_t));
-    
-    set_xreg(5, va_arg(parameters, int64_t));
-    
-    set_xreg(6, va_arg(parameters, unsigned));
-    
-    set_xreg(7, va_arg(parameters, int64_t));
+      
+      set_xreg(0, va_arg(parameters, int64_t));
+      
+      set_xreg(1, va_arg(parameters, unsigned));
+      
+      set_xreg(2, va_arg(parameters, int64_t));
+      
+      set_xreg(3, va_arg(parameters, int64_t));
+      
+      set_xreg(4, va_arg(parameters, int64_t));
+      
+      set_xreg(5, va_arg(parameters, int64_t));
+      
+      set_xreg(6, va_arg(parameters, unsigned));
+      
+      set_xreg(7, va_arg(parameters, int64_t));
   } else if (argument_count == 2) {
-    
-    set_xreg(0, va_arg(parameters, int64_t));
-    
-    set_xreg(1, va_arg(parameters, int64_t));
+      
+      set_xreg(0, va_arg(parameters, int64_t));
+      
+      set_xreg(1, va_arg(parameters, int64_t));
   } else if (argument_count == 1) { 
-    
-    set_xreg(0, va_arg(parameters, int64_t));
-  } else if (argument_count == 0) { 
-    
+      
+      set_xreg(0, va_arg(parameters, int64_t));
   } else {
-    MOZ_CRASH("Unknown number of arguments");
+      MOZ_CRASH("Unknown number of arguments");
   }
 
   va_end(parameters);
@@ -314,9 +312,8 @@ int64_t Simulator::call(uint8_t* entry, int argument_count, ...) {
   VIXL_ASSERT(entryStack == exitStack);
 
   int64_t result = xreg(0);
-  if (getenv("USE_DEBUGGER")) {
-    printf("LEAVE\n");
-  }
+  if (getenv("USE_DEBUGGER"))
+      printf("LEAVE\n");
   return result;
 }
 
