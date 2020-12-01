@@ -121,15 +121,6 @@ if (runningInParent && "mozIAsyncHistory" in Ci) {
   _Services.prefs.setBoolPref("places.history.enabled", true);
 }
 
-try {
-  if (runningInParent) {
-    
-    if ("@mozilla.org/windows-registry-key;1" in Cc) {
-      _Services.prefs.setCharPref("network.dns.ipv4OnlyDomains", "localhost");
-    }
-  }
-} catch (e) {}
-
 
 
 
