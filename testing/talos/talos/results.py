@@ -240,12 +240,23 @@ class PageloaderResults(Results):
 
         
         self.results = []
+        prev_line = ""
         for line in lines:
             result = {}
+
+            
+            
+            if prev_line:
+                line = prev_line + line
+                prev_line = ""
+
             r = line.strip("|").split(";")
             r = [i for i in r if i]
+
             if len(r) <= 2:
+                prev_line = line
                 continue
+
             result["index"] = int(r[0])
             result["page"] = r[1]
             result["runs"] = [float(i) for i in r[2:]]
