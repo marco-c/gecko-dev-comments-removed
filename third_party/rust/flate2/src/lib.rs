@@ -192,23 +192,23 @@ impl Compression {
     
     
     
-    pub const fn new(level: u32) -> Compression {
+    pub fn new(level: u32) -> Compression {
         Compression(level)
     }
 
     
     
-    pub const fn none() -> Compression {
+    pub fn none() -> Compression {
         Compression(0)
     }
 
     
-    pub const fn fast() -> Compression {
+    pub fn fast() -> Compression {
         Compression(1)
     }
 
     
-    pub const fn best() -> Compression {
+    pub fn best() -> Compression {
         Compression(9)
     }
 

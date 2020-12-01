@@ -11,7 +11,6 @@ use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use serde_json::{self, Value as JsonValue};
 use std::io::prelude::*;
 
-use crate::error::{ErrorKind, Result};
 use crate::system;
 
 
@@ -61,12 +60,11 @@ pub struct Builder {
     path: Option<String>,
     body: Option<Vec<u8>>,
     headers: HeaderMap,
-    body_max_size: usize,
 }
 
 impl Builder {
     
-    pub fn new(language_binding_name: &str, body_max_size: usize) -> Self {
+    pub fn new(language_binding_name: &str) -> Self {
         let mut headers = HashMap::new();
         headers.insert("Date".to_string(), create_date_header_value(Utc::now()));
         headers.insert(
@@ -88,7 +86,6 @@ impl Builder {
             path: None,
             body: None,
             headers,
-            body_max_size,
         }
     }
 
@@ -158,25 +155,19 @@ impl Builder {
     
     
     
-    pub fn build(self) -> Result<PingRequest> {
-        let body = self
-            .body
-            .expect("body must be set before attempting to build PingRequest");
-
-        if body.len() > self.body_max_size {
-            return Err(ErrorKind::PingBodyOverflow(body.len()).into());
-        }
-
-        Ok(PingRequest {
+    pub fn build(self) -> PingRequest {
+        PingRequest {
             document_id: self
                 .document_id
                 .expect("document_id must be set before attempting to build PingRequest"),
             path: self
                 .path
                 .expect("path must be set before attempting to build PingRequest"),
-            body,
+            body: self
+                .body
+                .expect("body must be set before attempting to build PingRequest"),
             headers: self.headers,
-        })
+        }
     }
 }
 
@@ -203,9 +194,8 @@ impl PingRequest {
     
     
     
-    
-    pub fn builder(language_binding_name: &str, body_max_size: usize) -> Builder {
-        Builder::new(language_binding_name, body_max_size)
+    pub fn builder(language_binding_name: &str) -> Builder {
+        Builder::new(language_binding_name)
     }
 
     
@@ -255,12 +245,11 @@ mod test {
 
     #[test]
     fn correctly_builds_ping_request() {
-        let request = PingRequest::builder( "Rust", 1024 * 1024)
+        let request = PingRequest::builder( "Rust")
             .document_id("woop")
             .path("/random/path/doesnt/matter")
             .body("{}")
-            .build()
-            .unwrap();
+            .build();
 
         assert_eq!(request.document_id, "woop");
         assert_eq!(request.path, "/random/path/doesnt/matter");
@@ -272,20 +261,5 @@ mod test {
         assert!(request.headers.contains_key("X-Client-Type"));
         assert!(request.headers.contains_key("X-Client-Version"));
         assert!(request.headers.contains_key("Content-Length"));
-    }
-
-    #[test]
-    fn errors_when_request_body_exceeds_max_size() {
-        
-        
-        let request = Builder::new(
-             "Rust",  1,
-        )
-        .document_id("woop")
-        .path("/random/path/doesnt/matter")
-        .body("{}")
-        .build();
-
-        assert!(request.is_err());
     }
 }

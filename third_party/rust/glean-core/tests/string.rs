@@ -116,6 +116,6 @@ fn long_string_values_are_truncated() {
     
     assert_eq!(
         Ok(1),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidOverflow, None)
+        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue, None)
     );
 }

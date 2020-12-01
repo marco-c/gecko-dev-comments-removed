@@ -89,13 +89,9 @@ pub fn iso8601_to_chrono(datetime: &iso8601::DateTime) -> chrono::DateTime<chron
 
 
 
-
-
 pub fn get_queued_pings(data_path: &Path) -> Result<Vec<(String, JsonValue, Option<JsonValue>)>> {
     get_pings(&data_path.join("pending_pings"))
 }
-
-
 
 
 

@@ -116,7 +116,6 @@ impl EventDatabase {
     
     
     
-    
     pub fn flush_pending_events_on_startup(&self, glean: &Glean) -> bool {
         match self.load_events_from_disk() {
             Ok(_) => self.send_all_events(glean),
@@ -187,11 +186,6 @@ impl EventDatabase {
         timestamp: u64,
         extra: Option<HashMap<String, String>>,
     ) {
-        
-        if !glean.is_upload_enabled() {
-            return;
-        }
-
         
         
         let event = RecordedEvent {
@@ -362,8 +356,6 @@ impl EventDatabase {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tests::new_glean;
-    use crate::CommonMetricData;
 
     #[test]
     fn handle_truncated_events_on_disk() {
@@ -457,41 +449,5 @@ mod test {
             serde_json::from_str(&event_empty_json).unwrap()
         );
         assert_eq!(event_data, serde_json::from_str(&event_data_json).unwrap());
-    }
-
-    #[test]
-    fn doesnt_record_when_upload_is_disabled() {
-        let (mut glean, dir) = new_glean(None);
-        let db = EventDatabase::new(dir.path().to_str().unwrap()).unwrap();
-
-        let test_storage = "test-storage";
-        let test_category = "category";
-        let test_name = "name";
-        let test_timestamp = 2;
-        let test_meta = CommonMetricData::new(test_category, test_name, test_storage);
-        let event_data = RecordedEvent {
-            timestamp: test_timestamp,
-            category: test_category.to_string(),
-            name: test_name.to_string(),
-            extra: None,
-        };
-
-        
-        
-        db.record(&glean, &test_meta, 2, None);
-        {
-            let event_stores = db.event_stores.read().unwrap();
-            assert_eq!(&event_data, &event_stores.get(test_storage).unwrap()[0]);
-            assert_eq!(event_stores.get(test_storage).unwrap().len(), 1);
-        }
-
-        glean.set_upload_enabled(false);
-
-        
-        db.record(&glean, &test_meta, 2, None);
-        {
-            let event_stores = db.event_stores.read().unwrap();
-            assert_eq!(event_stores.get(test_storage).unwrap().len(), 1);
-        }
     }
 }

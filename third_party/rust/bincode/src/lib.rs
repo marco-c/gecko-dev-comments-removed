@@ -1,5 +1,4 @@
 #![deny(missing_docs)]
-#![allow(unknown_lints, bare_trait_objects, deprecated)]
 
 
 
@@ -24,7 +23,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/bincode/1.3.1")]
+#![doc(html_root_url = "https://docs.rs/bincode/1.2.1")]
 #![crate_name = "bincode"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
@@ -33,32 +32,38 @@ extern crate byteorder;
 #[macro_use]
 extern crate serde;
 
-
-pub mod config;
-
-pub mod de;
-
+mod config;
+mod de;
 mod error;
 mod internal;
 mod ser;
 
-pub use config::{Config, DefaultOptions, Options};
-pub use de::read::BincodeRead;
-pub use de::Deserializer;
+pub use config::Config;
+pub use de::read::{BincodeRead, IoReader, SliceReader};
 pub use error::{Error, ErrorKind, Result};
-pub use ser::Serializer;
 
 
 
 
 
+#[doc(hidden)]
+pub trait DeserializerAcceptor<'a> {
+    
+    type Output;
+    
+    fn accept<T: serde::Deserializer<'a>>(self, T) -> Self::Output;
+}
 
 
 
-#[inline(always)]
-#[deprecated(since = "1.3.0", note = "please use `options()` instead")]
-pub fn config() -> Config {
-    Config::new()
+
+
+#[doc(hidden)]
+pub trait SerializerAcceptor {
+    
+    type Output;
+    
+    fn accept<T: serde::Serializer>(self, T) -> Self::Output;
 }
 
 
@@ -69,8 +74,8 @@ pub fn config() -> Config {
 
 
 #[inline(always)]
-pub fn options() -> DefaultOptions {
-    DefaultOptions::new()
+pub fn config() -> Config {
+    Config::new()
 }
 
 
@@ -82,9 +87,7 @@ where
     W: std::io::Write,
     T: serde::Serialize,
 {
-    DefaultOptions::new()
-        .with_fixint_encoding()
-        .serialize_into(writer, value)
+    config().serialize_into(writer, value)
 }
 
 
@@ -92,10 +95,7 @@ pub fn serialize<T: ?Sized>(value: &T) -> Result<Vec<u8>>
 where
     T: serde::Serialize,
 {
-    DefaultOptions::new()
-        .with_fixint_encoding()
-        .allow_trailing_bytes()
-        .serialize(value)
+    config().serialize(value)
 }
 
 
@@ -106,10 +106,7 @@ where
     R: std::io::Read,
     T: serde::de::DeserializeOwned,
 {
-    DefaultOptions::new()
-        .with_fixint_encoding()
-        .allow_trailing_bytes()
-        .deserialize_from(reader)
+    config().deserialize_from(reader)
 }
 
 
@@ -122,10 +119,7 @@ where
     R: de::read::BincodeRead<'a>,
     T: serde::de::DeserializeOwned,
 {
-    DefaultOptions::new()
-        .with_fixint_encoding()
-        .allow_trailing_bytes()
-        .deserialize_from_custom(reader)
+    config().deserialize_from_custom(reader)
 }
 
 
@@ -137,10 +131,7 @@ where
     T: serde::de::Deserialize<'a>,
     R: BincodeRead<'a>,
 {
-    DefaultOptions::new()
-        .with_fixint_encoding()
-        .allow_trailing_bytes()
-        .deserialize_in_place(reader, place)
+    config().deserialize_in_place(reader, place)
 }
 
 
@@ -148,10 +139,7 @@ pub fn deserialize<'a, T>(bytes: &'a [u8]) -> Result<T>
 where
     T: serde::de::Deserialize<'a>,
 {
-    DefaultOptions::new()
-        .with_fixint_encoding()
-        .allow_trailing_bytes()
-        .deserialize(bytes)
+    config().deserialize(bytes)
 }
 
 
@@ -159,8 +147,27 @@ pub fn serialized_size<T: ?Sized>(value: &T) -> Result<u64>
 where
     T: serde::Serialize,
 {
-    DefaultOptions::new()
-        .with_fixint_encoding()
-        .allow_trailing_bytes()
-        .serialized_size(value)
+    config().serialized_size(value)
+}
+
+
+
+#[doc(hidden)]
+pub fn with_deserializer<'a, A, R>(reader: R, acceptor: A) -> A::Output
+where
+    A: DeserializerAcceptor<'a>,
+    R: BincodeRead<'a>,
+{
+    config().with_deserializer(reader, acceptor)
+}
+
+
+
+#[doc(hidden)]
+pub fn with_serializer<A, W>(writer: W, acceptor: A) -> A::Output
+where
+    A: SerializerAcceptor,
+    W: std::io::Write,
+{
+    config().with_serializer(writer, acceptor)
 }

@@ -21,10 +21,6 @@ pub struct PingType {
     pub reason_codes: Vec<String>,
 }
 
-
-
-
-
 impl PingType {
     
     

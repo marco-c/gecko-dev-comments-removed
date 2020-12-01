@@ -35,8 +35,13 @@ pub trait DeflateBackend: Backend {
 }
 
 
+
+
 cfg_if::cfg_if! {
-    if #[cfg(any(feature = "miniz-sys", feature = "any_zlib"))] {
+    if #[cfg(target_arch = "wasm32")] {
+        mod rust;
+        pub use self::rust::*;
+    } else if #[cfg(any(feature = "miniz-sys", feature = "zlib"))] {
         mod c;
         pub use self::c::*;
     } else {
