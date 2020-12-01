@@ -235,6 +235,8 @@ class nsFontMetrics final {
     return mTextOrientation;
   }
 
+  bool ExplicitLanguage() const { return mExplicitLanguage; }
+
   gfxFontGroup* GetThebesFontGroup() const { return mFontGroup; }
   gfxUserFontSet* GetUserFontSet() const;
 
@@ -256,6 +258,11 @@ class nsFontMetrics final {
   
   
   FontOrientation mOrientation;
+
+  
+  
+  
+  bool mExplicitLanguage;
 
   
   

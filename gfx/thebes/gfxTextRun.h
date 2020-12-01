@@ -932,7 +932,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
   Shutdown();  
 
   gfxFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
-               const gfxFontStyle* aStyle, gfxTextPerfMetrics* aTextPerf,
+               const gfxFontStyle* aStyle, nsAtom* aLanguage,
+               bool aExplicitLanguage, gfxTextPerfMetrics* aTextPerf,
                FontMatchingStats* aFontMatchingStats,
                gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize);
 
@@ -1091,6 +1092,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
       BuildFontList();
     }
   }
+
+  nsAtom* Language() const { return mLanguage.get(); }
 
  protected:
   friend class mozilla::PostTraversalTask;
@@ -1377,6 +1380,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
   RefPtr<gfxFont> mDefaultFont;
   gfxFontStyle mStyle;
 
+  RefPtr<nsAtom> mLanguage;
+
   gfxFloat mUnderlineOffset;
   gfxFloat mHyphenWidth;
   gfxFloat mDevToCssSize;
@@ -1404,6 +1409,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
   bool mSkipDrawing;  
                       
                       
+
+  bool mExplicitLanguage;  
 
   uint32_t mFontListGeneration = 0;  
                                      
