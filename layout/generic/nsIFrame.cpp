@@ -3663,16 +3663,17 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     aBuilder->SetVisibleRect(visibleRectOutsideTransform);
-    
-    
-    nsPoint toOuterReferenceFrame;
-    const nsIFrame* outerReferenceFrame = this;
+
     if (this != aBuilder->RootReferenceFrame()) {
-      outerReferenceFrame =
+      
+      
+      nsPoint toOuterReferenceFrame;
+      const nsIFrame* outerReferenceFrame =
           aBuilder->FindReferenceFrameFor(GetParent(), &toOuterReferenceFrame);
+
+      buildingDisplayList.SetReferenceFrameAndCurrentOffset(
+          outerReferenceFrame, toOuterReferenceFrame);
     }
-    buildingDisplayList.SetReferenceFrameAndCurrentOffset(
-        outerReferenceFrame, GetOffsetToCrossDoc(outerReferenceFrame));
 
     
     
