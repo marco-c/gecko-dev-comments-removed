@@ -78,8 +78,7 @@ struct APZEventResult {
 
 
 
-
-  Maybe<bool> mHandledByRootApzc;
+  Maybe<APZHandledResult> mHandledResult;
   
 
 

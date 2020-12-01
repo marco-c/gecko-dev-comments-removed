@@ -563,7 +563,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     HitTestResult(HitTestResult&&) = default;
     HitTestResult& operator=(HitTestResult&&) = default;
-    Maybe<bool> HandledByRoot() const;
+    Maybe<APZHandledResult> HandledByRoot() const;
   };
 
   

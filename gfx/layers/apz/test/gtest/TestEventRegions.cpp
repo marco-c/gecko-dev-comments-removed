@@ -341,13 +341,13 @@ TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   APZEventResult result =
       TouchDown(manager, ScreenIntPoint(50, 25), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 25), mcc->Time());
-  EXPECT_EQ(result.mHandledByRootApzc, Some(true));
+  EXPECT_EQ(result.mHandledResult, Some(APZHandledResult::HandledByRoot));
 
   
   
   result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
-  EXPECT_EQ(result.mHandledByRootApzc, Nothing());
+  EXPECT_EQ(result.mHandledResult, Nothing());
 
   
   
@@ -373,7 +373,7 @@ TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   
   result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
-  EXPECT_EQ(result.mHandledByRootApzc, Nothing());
+  EXPECT_EQ(result.mHandledResult, Nothing());
   manager->AddInputBlockCallback(result.mInputBlockId,
                                  [&](uint64_t id, APZHandledResult answer) {
                                    EXPECT_EQ(id, result.mInputBlockId);
@@ -395,7 +395,7 @@ TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   
   result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
-  EXPECT_EQ(result.mHandledByRootApzc, Nothing());
+  EXPECT_EQ(result.mHandledResult, Nothing());
   manager->AddInputBlockCallback(result.mInputBlockId,
                                  [&](uint64_t id, APZHandledResult answer) {
                                    EXPECT_EQ(id, result.mInputBlockId);
