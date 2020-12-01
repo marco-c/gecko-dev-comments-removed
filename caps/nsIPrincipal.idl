@@ -420,13 +420,8 @@ interface nsIPrincipal : nsISerializable
 
 
 
+
     readonly attribute ACString siteOrigin;
-
-    
-
-
-
-    readonly attribute ACString siteOriginNoSuffix;
 
     
 

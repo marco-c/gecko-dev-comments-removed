@@ -440,7 +440,7 @@ ContentPrincipal::GetBaseDomain(nsACString& aBaseDomain) {
 }
 
 NS_IMETHODIMP
-ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
+ContentPrincipal::GetSiteOrigin(nsACString& aSiteOrigin) {
   
   nsAutoCString baseDomain;
   bool handled;
@@ -450,7 +450,7 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
   if (handled) {
     
     
-    return GetSiteOriginNoSuffix(aSiteOrigin);
+    return GetOrigin(aSiteOrigin);
   }
 
   
@@ -491,7 +491,15 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
 
   rv = GenerateOriginNoSuffixFromURI(siteUri, aSiteOrigin);
   MOZ_ASSERT(NS_SUCCEEDED(rv), "failed to create siteOriginNoSuffix");
-  return rv;
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString suffix;
+  rv = GetOriginSuffix(suffix);
+  MOZ_ASSERT(NS_SUCCEEDED(rv), "failed to create suffix");
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  aSiteOrigin.Append(suffix);
+  return NS_OK;
 }
 
 nsresult ContentPrincipal::GetSiteIdentifier(SiteIdentifier& aSite) {
