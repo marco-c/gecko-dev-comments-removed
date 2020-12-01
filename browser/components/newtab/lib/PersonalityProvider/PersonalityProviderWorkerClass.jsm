@@ -236,12 +236,26 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
 
 
   calculateItemRelevanceScore(pocketItem) {
-    let scorableItem = this.recipeExecutor.executeRecipe(
-      pocketItem,
-      this.interestConfig.item_to_rank_builder
-    );
-    if (scorableItem === null) {
-      return -1;
+    const { personalization_models } = pocketItem;
+    let scorableItem;
+
+    
+    
+    if (personalization_models && Object.keys(personalization_models).length) {
+      scorableItem = {
+        id: pocketItem.id,
+        item_tags: personalization_models,
+        item_score: pocketItem.item_score,
+        item_sort_id: 1,
+      };
+    } else {
+      scorableItem = this.recipeExecutor.executeRecipe(
+        pocketItem,
+        this.interestConfig.item_to_rank_builder
+      );
+      if (scorableItem === null) {
+        return null;
+      }
     }
 
     
@@ -257,8 +271,9 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     );
 
     if (rankingVector === null) {
-      return -1;
+      return null;
     }
-    return rankingVector.score;
+
+    return { scorableItem, rankingVector };
   }
 };
