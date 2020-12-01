@@ -832,6 +832,9 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.movePtr(ImmWord(0), FramePointer);
   masm.loadWasmPinnedRegsFromTls();
 
+  masm.storePtr(WasmTlsReg,
+                Address(masm.getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
+
   
   
   masm.assertStackAlignment(WasmStackAlignment);
@@ -1290,6 +1293,9 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   masm.loadWasmPinnedRegsFromTls();
 
+  masm.storePtr(WasmTlsReg,
+                Address(masm.getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
+
   
   
   masm.assertStackAlignment(WasmStackAlignment);
@@ -1604,6 +1610,8 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 
   
   masm.movePtr(ImmPtr(inst.tlsData()), WasmTlsReg);
+  masm.storePtr(WasmTlsReg,
+                Address(masm.getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
   masm.loadWasmPinnedRegsFromTls();
 
   

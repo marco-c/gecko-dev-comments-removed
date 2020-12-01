@@ -235,6 +235,10 @@ void GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
 
 
 
+TlsData* GetNearestEffectiveTls(Frame* fp);
+
+
+
 struct UnwindState {
   uint8_t* fp;
   void* pc;
