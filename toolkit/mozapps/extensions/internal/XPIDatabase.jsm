@@ -712,6 +712,7 @@ class AddonInternal {
       if (this.userDisabled || this.softDisabled) {
         permissions |= AddonManager.PERM_CAN_ENABLE;
       } else if (this.type != "theme" || this.id != DEFAULT_THEME_ID) {
+        
         permissions |= AddonManager.PERM_CAN_DISABLE;
       }
     }
@@ -726,9 +727,10 @@ class AddonInternal {
     let changesAllowed = !this.location.locked && !this.pendingUninstall;
     if (changesAllowed) {
       
-      let isSystem = this.location.isSystem;
       
-      if (!this.location.isLinkedAddon(this.id) && !isSystem) {
+      let isSystem = this.location.isSystem || this.location.isBuiltin;
+      
+      if (!isSystem && !this.location.isLinkedAddon(this.id)) {
         permissions |= AddonManager.PERM_CAN_UPGRADE;
       }
     }
@@ -2847,6 +2849,12 @@ this.XPIDatabaseReconcile = {
         );
       } else if (unsigned && !isNewInstall) {
         logger.warn("Not uninstalling existing unsigned add-on");
+      } else if (aLocation.name == KEY_APP_BUILTINS) {
+        
+        
+        
+        XPIDatabase.removeAddonMetadata(aAddonState);
+        aLocation.removeAddon(aId);
       } else {
         aLocation.installer.uninstallAddon(aId);
       }
@@ -2859,7 +2867,8 @@ this.XPIDatabaseReconcile = {
 
     
     
-    aNewAddon.foreignInstall = isDetectedInstall && !aLocation.isSystem;
+    aNewAddon.foreignInstall =
+      isDetectedInstall && !aLocation.isSystem && !aLocation.isBuiltin;
 
     
     aNewAddon.appDisabled = !XPIDatabase.isUsableAddon(aNewAddon);
