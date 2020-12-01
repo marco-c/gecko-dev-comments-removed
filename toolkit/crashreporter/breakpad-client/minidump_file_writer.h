@@ -150,6 +150,15 @@ public:
   template <typename CharType>
   bool WriteStringCore(const CharType *str, unsigned int length,
                        MDLocationDescriptor *location);
+
+
+  
+  
+  static unsigned int CalculateNumOfU16s(const wchar_t *str, unsigned int length);
+
+  
+  
+  static unsigned int CalculateNumOfU16s(const char *str, unsigned int length);
 };
 
 
