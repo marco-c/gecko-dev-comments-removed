@@ -20,26 +20,30 @@ ${lead}movi    v0\\.2d, #0x0
 ${suffix}
 `,
      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+
     ['i8x16 -1 0 -1 0 -1 0 -1 0 -1 0 -1 0 -1 0 -1 0', `
 ${prefix}
 ${lead}movi    v0\\.2d, #0xff00ff00ff00ff
 ${suffix}
 `,
      [-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0]],
-     
-     
+
+    
+    
     ['i32x4 1 1 1 1', `
 ${prefix}
 ${lead}movi    v0\\.4s, #0x1, lsl #0
 ${suffix}
 `,
      [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]],
+
     ['i32x4 0x300 0x300 0x300 0x300', `
 ${prefix}
 ${lead}movi    v0\\.4s, #0x3, lsl #8
 ${suffix}
 `,
-     [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]],
+     [0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0]],
+
     
     
     ['i32x4 1 2 1 2', `
@@ -50,6 +54,7 @@ ${lead}dup     v0\\.2d, x16
 ${suffix}
 `,
      [1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0]],
+
     
     
     ['i32x4 1 2 2 1', `
@@ -63,6 +68,7 @@ ${lead}mov     v0\\.d\\[1\\], x16
 ${suffix}
 `,
      [1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0]],
+
     
     ['i32x4 1 1 2 2', `
 ${prefix}
@@ -81,8 +87,9 @@ ${suffix}
     (func $f (export "f") (result v128)
       (v128.const ${bits})))`);
     let output = wasmDis(ins.exports.f, "baseline", true);
-    if (output.indexOf('No disassembly available') >= 0)
-        continue;
+    print(bits);
+    print(output);
+    print(expected);
     assertEq(output.match(new RegExp(expected)) != null, true);
     let mem = new Int8Array(ins.exports.mem.buffer);
     set(mem, 0, iota(16).map(x => -1-x));
