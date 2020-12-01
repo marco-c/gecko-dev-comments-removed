@@ -687,6 +687,12 @@ impl SwCompositeThread {
         let thread_name = "SwComposite";
         thread::Builder::new()
             .name(thread_name.into())
+            
+            
+            
+            
+            
+            .stack_size(32 * 1024)
             .spawn(move || {
                 let thread_listener = GeckoProfilerThreadListener::new();
                 thread_listener.thread_started(thread_name);
