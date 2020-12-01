@@ -1,25 +1,25 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* vim: set ts=8 sw=8 noexpandtab: */
+//  qcms
+//  Copyright (C) 2009 Mozilla Foundation
+//  Copyright (C) 1998-2007 Marti Maria
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software
+// is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
 use crate::transform_neon::{
@@ -64,11 +64,11 @@ pub const CLAMPMAXVAL: f32 = ((PRECACHE_OUTPUT_SIZE - 1) as f32) / PRECACHE_OUTP
 
 #[repr(C)]
 pub struct precache_output {
-    
-
-
-
-
+    /* We previously used a count of 65536 here but that seems like more
+     * precision than we actually need.  By reducing the size we can
+     * improve startup performance and reduce memory usage. ColorSync on
+     * 10.5 uses 4097 which is perhaps because they use a fixed point
+     * representation where 1. is represented by 0x1000. */
     pub data: [u8; PRECACHE_OUTPUT_SIZE],
 }
 
@@ -80,27 +80,21 @@ impl Default for precache_output {
     }
 }
 
-
-
-
+/* used as a lookup table for the output transformation.
+ * we refcount them so we only need to have one around per output
+ * profile, instead of duplicating them per transform */
 
 #[repr(C)]
 #[repr(align(16))]
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct qcms_transform {
     pub matrix: [[f32; 4]; 3],
     pub input_gamma_table_r: Option<Vec<f32>>,
     pub input_gamma_table_g: Option<Vec<f32>>,
     pub input_gamma_table_b: Option<Vec<f32>>,
-    pub input_clut_table_r: *mut f32,
-    pub input_clut_table_g: *mut f32,
-    pub input_clut_table_b: *mut f32,
     pub input_clut_table_length: u16,
     pub clut: Option<Vec<f32>>,
     pub grid_size: u16,
-    pub output_clut_table_r: *mut f32,
-    pub output_clut_table_g: *mut f32,
-    pub output_clut_table_b: *mut f32,
     pub output_clut_table_length: u16,
     pub input_gamma_table_gray: Option<Vec<f32>>,
     pub out_gamma_r: f32,
@@ -121,44 +115,6 @@ pub struct qcms_transform {
     pub transform_fn: transform_fn_t,
 }
 
-impl Default for qcms_transform {
-    fn default() -> qcms_transform {
-        qcms_transform {
-            matrix: Default::default(),
-            input_gamma_table_r: Default::default(),
-            input_gamma_table_b: Default::default(),
-            input_gamma_table_g: Default::default(),
-            input_clut_table_r: null_mut(),
-            input_clut_table_g: null_mut(),
-            input_clut_table_b: null_mut(),
-            input_clut_table_length: Default::default(),
-            clut: Default::default(),
-            grid_size: Default::default(),
-            output_clut_table_r: null_mut(),
-            output_clut_table_g: null_mut(),
-            output_clut_table_b: null_mut(),
-            output_clut_table_length: Default::default(),
-            input_gamma_table_gray: Default::default(),
-            out_gamma_r: Default::default(),
-            out_gamma_g: Default::default(),
-            out_gamma_b: Default::default(),
-            out_gamma_gray: Default::default(),
-            output_gamma_lut_r: Default::default(),
-            output_gamma_lut_g: Default::default(),
-            output_gamma_lut_b: Default::default(),
-            output_gamma_lut_gray: Default::default(),
-            output_gamma_lut_r_length: Default::default(),
-            output_gamma_lut_g_length: Default::default(),
-            output_gamma_lut_b_length: Default::default(),
-            output_gamma_lut_gray_length: Default::default(),
-            output_table_r: Default::default(),
-            output_table_g: Default::default(),
-            output_table_b: Default::default(),
-            transform_fn: Default::default(),
-        }
-    }
-}
-
 pub type transform_fn_t = Option<
     unsafe extern "C" fn(
         _: *const qcms_transform,
@@ -168,10 +124,10 @@ pub type transform_fn_t = Option<
     ) -> (),
 >;
 
-
-
-
-
+// 16 is the upperbound, actual is 0..num_in_channels.
+// reversed elements (for mBA)
+/* should lut8Type and lut16Type be different types? */
+// used by lut8Type/lut16Type (mft2) only
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -301,18 +257,18 @@ fn clamp_u8(mut v: f32) -> u8 {
     };
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+// Build a White point, primary chromas transfer matrix from RGB to CIE XYZ
+// This is just an approximation, I am not handling all the non-linear
+// aspects of the RGB to XYZ process, and assumming that the gamma correction
+// has transitive property in the tranformation chain.
+//
+// the alghoritm:
+//
+//            - First I build the absolute conversion matrix using
+//              primaries in XYZ. This matrix is next inverted
+//            - Then I eval the source white point across this matrix
+//              obtaining the coeficients of the transformation
+//            - Then, I apply these coeficients to the original matrix
 fn build_RGB_to_XYZ_transfer_matrix(
     mut white: qcms_CIE_xyY,
     mut primrs: qcms_CIE_xyYTRIPLE,
@@ -370,14 +326,14 @@ fn build_RGB_to_XYZ_transfer_matrix(
     result.invalid = primaries_invert.invalid;
     return result;
 }
-
+/* CIE Illuminant D50 */
 const D50_XYZ: CIE_XYZ = CIE_XYZ {
     X: 0.9642f64,
     Y: 1.0000f64,
     Z: 0.8249f64,
 };
-
-
+/* from lcms: xyY2XYZ()
+ * corresponds to argyll: icmYxy2XYZ() */
 fn xyY2XYZ(mut source: qcms_CIE_xyY) -> CIE_XYZ {
     let mut dest: CIE_XYZ = CIE_XYZ {
         X: 0.,
@@ -389,8 +345,8 @@ fn xyY2XYZ(mut source: qcms_CIE_xyY) -> CIE_XYZ {
     dest.Z = (1f64 - source.x - source.y) / source.y * source.Y;
     return dest;
 }
-
-
+/* from lcms: ComputeChromaticAdaption */
+// Compute chromatic adaption matrix using chad as cone matrix
 fn compute_chromatic_adaption(
     mut source_white_point: CIE_XYZ,
     mut dest_white_point: CIE_XYZ,
@@ -429,12 +385,12 @@ fn compute_chromatic_adaption(
     cone.m[2][1] = 0.;
     cone.m[2][2] = cone_dest_rgb.v[2] / cone_source_rgb.v[2];
     cone.invalid = false;
-    
+    // Normalize
     return matrix_multiply(chad_inv, matrix_multiply(cone, chad));
 }
-
-
-
+/* from lcms: cmsAdaptionMatrix */
+// Returns the final chrmatic adaptation from illuminant FromIll to Illuminant ToIll
+// Bradford is assumed
 fn adaption_matrix(mut source_illumination: CIE_XYZ, mut target_illumination: CIE_XYZ) -> matrix {
     let mut lam_rigg: matrix = {
         let mut init = matrix {
@@ -449,7 +405,7 @@ fn adaption_matrix(mut source_illumination: CIE_XYZ, mut target_illumination: CI
     };
     return compute_chromatic_adaption(source_illumination, target_illumination, lam_rigg);
 }
-
+/* from lcms: cmsAdaptMatrixToD50 */
 fn adapt_matrix_to_D50(mut r: matrix, mut source_white_pt: qcms_CIE_xyY) -> matrix {
     if source_white_pt.y == 0.0f64 {
         return matrix_invalid();
@@ -472,7 +428,7 @@ pub fn set_rgb_colorants(
     if colorants.invalid {
         return false;
     }
-    
+    /* note: there's a transpose type of operation going on here */
     (*profile).redColorant.X = double_to_s15Fixed16Number(colorants.m[0][0] as f64);
     (*profile).redColorant.Y = double_to_s15Fixed16Number(colorants.m[1][0] as f64);
     (*profile).redColorant.Z = double_to_s15Fixed16Number(colorants.m[2][0] as f64);
@@ -497,11 +453,11 @@ pub fn get_rgb_colorants(
         0
     } != 0;
 }
-
-
-
-
-
+/* Alpha is not corrected.
+   A rationale for this is found in Alvy Ray's "Should Alpha Be Nonlinear If
+   RGB Is?" Tech Memo 17 (December 14, 1998).
+    See: ftp://ftp.alvyray.com/Acrobat/17_Nonln.pdf
+*/
 unsafe extern "C" fn qcms_transform_data_gray_template_lut<I: GrayFormat, F: Format>(
     mut transform: *const qcms_transform,
     mut src: *const libc::c_uchar,
@@ -620,7 +576,7 @@ unsafe extern "C" fn qcms_transform_data_gray_template_precache<I: GrayFormat, F
         }
 
         let mut linear: f32 = *input_gamma_table_gray.offset(device as isize);
-        
+        /* we could round here... */
         let mut gray: u16 = (linear * PRECACHE_OUTPUT_MAX as f32) as u16;
         *dest.offset(F::kRIndex as isize) = (output_table_r).data[gray as usize];
         *dest.offset(F::kGIndex as isize) = (output_table_g).data[gray as usize];
@@ -713,7 +669,7 @@ unsafe extern "C" fn qcms_transform_data_template_lut_precache<F: Format>(
         out_linear_r = clamp_float(out_linear_r);
         out_linear_g = clamp_float(out_linear_g);
         out_linear_b = clamp_float(out_linear_b);
-        
+        /* we could round here... */
 
         let mut r: u16 = (out_linear_r * PRECACHE_OUTPUT_MAX as f32) as u16;
         let mut g: u16 = (out_linear_g * PRECACHE_OUTPUT_MAX as f32) as u16;
@@ -755,67 +711,67 @@ pub unsafe extern "C" fn qcms_transform_data_bgra_out_lut_precache(
 ) {
     qcms_transform_data_template_lut_precache::<BGRA>(transform, src, dest, length);
 }
+// Not used
+/*
+static void qcms_transform_data_clut(const qcms_transform *transform, const unsigned char *src, unsigned char *dest, size_t length) {
+    unsigned int i;
+    int xy_len = 1;
+    int x_len = transform->grid_size;
+    int len = x_len * x_len;
+    const float* r_table = transform->r_clut;
+    const float* g_table = transform->g_clut;
+    const float* b_table = transform->b_clut;
 
+    for (i = 0; i < length; i++) {
+        unsigned char in_r = *src++;
+        unsigned char in_g = *src++;
+        unsigned char in_b = *src++;
+        float linear_r = in_r/255.0f, linear_g=in_g/255.0f, linear_b = in_b/255.0f;
 
+        int x = floorf(linear_r * (transform->grid_size-1));
+        int y = floorf(linear_g * (transform->grid_size-1));
+        int z = floorf(linear_b * (transform->grid_size-1));
+        int x_n = ceilf(linear_r * (transform->grid_size-1));
+        int y_n = ceilf(linear_g * (transform->grid_size-1));
+        int z_n = ceilf(linear_b * (transform->grid_size-1));
+        float x_d = linear_r * (transform->grid_size-1) - x;
+        float y_d = linear_g * (transform->grid_size-1) - y;
+        float z_d = linear_b * (transform->grid_size-1) - z;
 
+        float r_x1 = lerp(CLU(r_table,x,y,z), CLU(r_table,x_n,y,z), x_d);
+        float r_x2 = lerp(CLU(r_table,x,y_n,z), CLU(r_table,x_n,y_n,z), x_d);
+        float r_y1 = lerp(r_x1, r_x2, y_d);
+        float r_x3 = lerp(CLU(r_table,x,y,z_n), CLU(r_table,x_n,y,z_n), x_d);
+        float r_x4 = lerp(CLU(r_table,x,y_n,z_n), CLU(r_table,x_n,y_n,z_n), x_d);
+        float r_y2 = lerp(r_x3, r_x4, y_d);
+        float clut_r = lerp(r_y1, r_y2, z_d);
 
+        float g_x1 = lerp(CLU(g_table,x,y,z), CLU(g_table,x_n,y,z), x_d);
+        float g_x2 = lerp(CLU(g_table,x,y_n,z), CLU(g_table,x_n,y_n,z), x_d);
+        float g_y1 = lerp(g_x1, g_x2, y_d);
+        float g_x3 = lerp(CLU(g_table,x,y,z_n), CLU(g_table,x_n,y,z_n), x_d);
+        float g_x4 = lerp(CLU(g_table,x,y_n,z_n), CLU(g_table,x_n,y_n,z_n), x_d);
+        float g_y2 = lerp(g_x3, g_x4, y_d);
+        float clut_g = lerp(g_y1, g_y2, z_d);
 
+        float b_x1 = lerp(CLU(b_table,x,y,z), CLU(b_table,x_n,y,z), x_d);
+        float b_x2 = lerp(CLU(b_table,x,y_n,z), CLU(b_table,x_n,y_n,z), x_d);
+        float b_y1 = lerp(b_x1, b_x2, y_d);
+        float b_x3 = lerp(CLU(b_table,x,y,z_n), CLU(b_table,x_n,y,z_n), x_d);
+        float b_x4 = lerp(CLU(b_table,x,y_n,z_n), CLU(b_table,x_n,y_n,z_n), x_d);
+        float b_y2 = lerp(b_x3, b_x4, y_d);
+        float clut_b = lerp(b_y1, b_y2, z_d);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        *dest++ = clamp_u8(clut_r*255.0f);
+        *dest++ = clamp_u8(clut_g*255.0f);
+        *dest++ = clamp_u8(clut_b*255.0f);
+    }
+}
+*/
 fn int_div_ceil(mut value: i32, mut div: i32) -> i32 {
     return (value + div - 1) / div;
 }
-
+// Using lcms' tetra interpolation algorithm.
 unsafe extern "C" fn qcms_transform_data_tetra_clut_template<F: Format>(
     mut transform: *const qcms_transform,
     mut src: *const libc::c_uchar,
@@ -873,8 +829,8 @@ unsafe extern "C" fn qcms_transform_data_tetra_clut_template<F: Format>(
         c0_b = *b_table.offset(((x * len + y * x_len + z * xy_len) * 3) as isize);
         if rx >= ry {
             if ry >= rz {
-                
-                c1_r = *r_table.offset(((x_n * len + y * x_len + z * xy_len) * 3) as isize) - c0_r; 
+                //rx >= ry && ry >= rz
+                c1_r = *r_table.offset(((x_n * len + y * x_len + z * xy_len) * 3) as isize) - c0_r; //rz > rx && rx >= ry
                 c2_r = *r_table.offset(((x_n * len + y_n * x_len + z * xy_len) * 3) as isize)
                     - *r_table.offset(((x_n * len + y * x_len + z * xy_len) * 3) as isize);
                 c3_r = *r_table.offset(((x_n * len + y_n * x_len + z_n * xy_len) * 3) as isize)
@@ -890,7 +846,7 @@ unsafe extern "C" fn qcms_transform_data_tetra_clut_template<F: Format>(
                 c3_b = *b_table.offset(((x_n * len + y_n * x_len + z_n * xy_len) * 3) as isize)
                     - *b_table.offset(((x_n * len + y_n * x_len + z * xy_len) * 3) as isize)
             } else if rx >= rz {
-                
+                //rx >= rz && rz >= ry
                 c1_r = *r_table.offset(((x_n * len + y * x_len + z * xy_len) * 3) as isize) - c0_r;
                 c2_r = *r_table.offset(((x_n * len + y_n * x_len + z_n * xy_len) * 3) as isize)
                     - *r_table.offset(((x_n * len + y * x_len + z_n * xy_len) * 3) as isize);
@@ -924,9 +880,9 @@ unsafe extern "C" fn qcms_transform_data_tetra_clut_template<F: Format>(
                 c3_b = *b_table.offset(((x * len + y * x_len + z_n * xy_len) * 3) as isize) - c0_b
             }
         } else if rx >= rz {
-            
+            //ry > rx && rx >= rz
             c1_r = *r_table.offset(((x_n * len + y_n * x_len + z * xy_len) * 3) as isize)
-                - *r_table.offset(((x * len + y_n * x_len + z * xy_len) * 3) as isize); 
+                - *r_table.offset(((x * len + y_n * x_len + z * xy_len) * 3) as isize); //rz > ry && ry > rx
             c2_r = *r_table.offset(((x * len + y_n * x_len + z * xy_len) * 3) as isize) - c0_r;
             c3_r = *r_table.offset(((x_n * len + y_n * x_len + z_n * xy_len) * 3) as isize)
                 - *r_table.offset(((x_n * len + y_n * x_len + z * xy_len) * 3) as isize);
@@ -941,7 +897,7 @@ unsafe extern "C" fn qcms_transform_data_tetra_clut_template<F: Format>(
             c3_b = *b_table.offset(((x_n * len + y_n * x_len + z_n * xy_len) * 3) as isize)
                 - *b_table.offset(((x_n * len + y_n * x_len + z * xy_len) * 3) as isize)
         } else if ry >= rz {
-            
+            //ry >= rz && rz > rx
             c1_r = *r_table.offset(((x_n * len + y_n * x_len + z_n * xy_len) * 3) as isize)
                 - *r_table.offset(((x * len + y_n * x_len + z_n * xy_len) * 3) as isize);
             c2_r = *r_table.offset(((x * len + y_n * x_len + z * xy_len) * 3) as isize) - c0_r;
@@ -1111,9 +1067,9 @@ pub unsafe extern "C" fn qcms_transform_release(mut t: *mut qcms_transform) {
 }
 
 fn sse_version_available() -> i32 {
-    
-
-
+    /* we know at build time that 64-bit CPUs always have SSE2
+     * this tells the compiler that non-SSE2 branches will never be
+     * taken (i.e. OK to optimze away the SSE1 and non-SIMD code */
     return 2;
 }
 const bradford_matrix: matrix = matrix {
@@ -1134,7 +1090,7 @@ const bradford_matrix_inv: matrix = matrix {
     invalid: false,
 };
 
-
+// See ICCv4 E.3
 fn compute_whitepoint_adaption(mut X: f32, mut Y: f32, mut Z: f32) -> matrix {
     let mut p: f32 = (0.96422 * bradford_matrix.m[0][0]
         + 1.000 * bradford_matrix.m[1][0]
@@ -1159,21 +1115,21 @@ fn compute_whitepoint_adaption(mut X: f32, mut Y: f32, mut Z: f32) -> matrix {
 }
 #[no_mangle]
 pub extern "C" fn qcms_profile_precache_output_transform(mut profile: &mut qcms_profile) {
-    
+    /* we only support precaching on rgb profiles */
     if (*profile).color_space != RGB_SIGNATURE {
         return;
     }
     if qcms_supports_iccv4.load(Ordering::Relaxed) {
-        
+        /* don't precache since we will use the B2A LUT */
         if !(*profile).B2A0.is_none() {
             return;
         }
-        
+        /* don't precache since we will use the mBA LUT */
         if !(*profile).mBA.is_none() {
             return;
         }
     }
-    
+    /* don't precache if we do not have the TRC curves */
     if (*profile).redTRC.is_none() || (*profile).greenTRC.is_none() || (*profile).blueTRC.is_none()
     {
         return;
@@ -1206,7 +1162,7 @@ pub extern "C" fn qcms_profile_precache_output_transform(mut profile: &mut qcms_
         }
     };
 }
-
+/* Replace the current transformation with a LUT transformation using a given number of sample points */
 fn qcms_transform_precacheLUT_float(
     mut transform: Box<qcms_transform>,
     mut in_0: &qcms_profile,
@@ -1214,7 +1170,7 @@ fn qcms_transform_precacheLUT_float(
     mut samples: i32,
     mut in_type: qcms_data_type,
 ) -> *mut qcms_transform {
-    
+    /* The range between which 2 consecutive sample points can be used to interpolate */
     let mut x: u16;
     let mut y: u16;
     let mut z: u16;
@@ -1224,7 +1180,7 @@ fn qcms_transform_precacheLUT_float(
     let mut src = Vec::with_capacity(lutSize as usize);
     let mut dest = vec![0.; lutSize as usize];
     if true && true {
-        
+        /* Prepare a list of points we want to sample */
         for x in 0..samples {
             for y in 0..samples {
                 for z in 0..samples {
@@ -1260,7 +1216,7 @@ pub extern "C" fn qcms_transform_create(
     mut out_type: qcms_data_type,
     mut intent: qcms_intent,
 ) -> *mut qcms_transform {
-    
+    // Ensure the requested input and output types make sense.
     let mut match_0: bool = false;
     if in_type == QCMS_DATA_RGB_8 {
         match_0 = out_type == QCMS_DATA_RGB_8
@@ -1287,7 +1243,7 @@ pub extern "C" fn qcms_transform_create(
     {
         precache = true
     }
-    
+    // This precache assumes RGB_SIGNATURE (fails on GRAY_SIGNATURE, for instance)
     if qcms_supports_iccv4.load(Ordering::Relaxed) as i32 != 0
         && (in_type == QCMS_DATA_RGB_8
             || in_type == QCMS_DATA_RGBA_8
@@ -1297,11 +1253,11 @@ pub extern "C" fn qcms_transform_create(
             || !(*in_0).mAB.is_none()
             || !(*out).mAB.is_none())
     {
-        
-        
-        
-        
-        
+        // Precache the transformation to a CLUT 33x33x33 in size.
+        // 33 is used by many profiles and works well in pratice.
+        // This evenly divides 256 into blocks of 8x8x8.
+        // TODO For transforming small data sets of about 200x200 or less
+        // precaching should be avoided.
         let mut result: *mut qcms_transform =
             qcms_transform_precacheLUT_float(transform, in_0, out, 33, in_type);
         if result.is_null() {
@@ -1388,7 +1344,7 @@ pub extern "C" fn qcms_transform_create(
         } else if in_type == QCMS_DATA_BGRA_8 {
             (*transform).transform_fn = Some(qcms_transform_data_bgra_out_lut)
         }
-        
+        //XXX: avoid duplicating tables if we can
         (*transform).input_gamma_table_r = build_input_gamma_table((*in_0).redTRC.as_deref());
         (*transform).input_gamma_table_g = build_input_gamma_table((*in_0).greenTRC.as_deref());
         (*transform).input_gamma_table_b = build_input_gamma_table((*in_0).blueTRC.as_deref());
@@ -1398,7 +1354,7 @@ pub extern "C" fn qcms_transform_create(
         {
             return 0 as *mut qcms_transform;
         }
-        
+        /* build combined colorant matrix */
 
         let mut in_matrix: matrix = build_colorant_matrix(in_0);
         let mut out_matrix: matrix = build_colorant_matrix(out);
@@ -1407,7 +1363,7 @@ pub extern "C" fn qcms_transform_create(
             return 0 as *mut qcms_transform;
         }
         let mut result_0: matrix = matrix_multiply(out_matrix, in_matrix);
-        
+        /* check for NaN values in the matrix and bail if we find any */
         let mut i: libc::c_uint = 0;
         while i < 3 {
             let mut j: libc::c_uint = 0;
@@ -1419,8 +1375,8 @@ pub extern "C" fn qcms_transform_create(
             }
             i = i + 1
         }
-        
-
+        /* store the results in column major mode
+         * this makes doing the multiplication with sse easier */
         (*transform).matrix[0][0] = result_0.m[0][0];
         (*transform).matrix[1][0] = result_0.m[0][1];
         (*transform).matrix[2][0] = result_0.m[0][2];
