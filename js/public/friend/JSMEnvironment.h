@@ -17,12 +17,8 @@
 
 #include "jstypes.h"  
 
-#include "js/GCVector.h"    
-#include "js/RootingAPI.h"  
-
-struct JS_PUBLIC_API JSContext;
-class JS_PUBLIC_API JSObject;
-class JS_PUBLIC_API JSScript;
+#include "js/GCVector.h"  
+#include "js/TypeDecls.h"
 
 
 

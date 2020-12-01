@@ -17,11 +17,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "js/RootingAPI.h"  
-
-struct JS_PUBLIC_API JSContext;
-class JS_PUBLIC_API JSObject;
-class JS_PUBLIC_API JSScript;
+#include "js/TypeDecls.h"
 
 namespace JS {
 
