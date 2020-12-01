@@ -173,6 +173,12 @@ extern "C" const char* __tsan_default_suppressions() {
          
          
          
+         "race:StrongRuleNode::ensure_child\n"
+         
+         
+         
+         
+         
          "race:crossbeam_deque::Worker$LT$T$GT$::resize\n"
 
 
