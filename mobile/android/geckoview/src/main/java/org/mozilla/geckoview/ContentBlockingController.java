@@ -83,89 +83,6 @@ public class ContentBlockingController {
 
 
 
-    @Deprecated
-    @DeprecationSchedule(version = 85, id = "exception-list")
-    @AnyThread
-    public class ExceptionList {
-        private final @NonNull GeckoBundle mBundle;
-
-         ExceptionList(final @NonNull GeckoBundle bundle) {
-            mBundle = new GeckoBundle(bundle);
-        }
-
-        
-
-
-
-
-        public @NonNull String[] getUris() {
-            return mBundle.getStringArray("uris");
-        }
-
-        
-
-
-
-
-
-        @Override
-        public @Nullable String toString() {
-            String res;
-            try {
-                res = mBundle.toJSONObject().toString();
-            } catch (JSONException e) {
-                Log.e(LOGTAG, "Could not convert session state to string.");
-                res = null;
-            }
-
-            return res;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull JSONObject toJson() throws JSONException {
-            return mBundle.toJSONObject();
-        }
-
-        
-
-
-
-
-
-
-
-        public ExceptionList(final @NonNull String savedList) throws JSONException {
-            mBundle = GeckoBundle.fromJSONObject(new JSONObject(savedList));
-        }
-
-        
-
-
-
-
-
-
-
-        public ExceptionList(final @NonNull JSONObject savedList) throws JSONException {
-            mBundle = GeckoBundle.fromJSONObject(savedList);
-        }
-
-         GeckoBundle getBundle() {
-            return mBundle;
-        }
-    }
-
-    
-
-
-
-
 
 
     @UiThread
@@ -259,18 +176,6 @@ public class ContentBlockingController {
         };
         EventDispatcher.getInstance().dispatch("ContentBlocking:SaveList", null, result);
         return result;
-    }
-
-    
-
-
-
-
-    @Deprecated
-    @DeprecationSchedule(version = 85, id = "exception-list")
-    @UiThread
-    public void restoreExceptionList(final @NonNull ExceptionList list) {
-        EventDispatcher.getInstance().dispatch("ContentBlocking:RestoreList", list.getBundle());
     }
 
     
