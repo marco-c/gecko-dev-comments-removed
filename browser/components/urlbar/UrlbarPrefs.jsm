@@ -160,11 +160,13 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["tabToSearch.onboard.maxShown", 10],
+  
+  ["tabToSearch.onboard.maxShown", 60],
 
   
   
-  ["tabToSearch.onboard.maxShownPerSession", 2],
+  
+  ["tabToSearch.onboard.maxShownPerSession", 20],
 
   
   ["tipShownCount.searchTip_onboard", 0],
