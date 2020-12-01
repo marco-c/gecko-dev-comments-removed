@@ -369,6 +369,11 @@ typedef struct SSLChannelInfoStr {
     SSLPskType pskType;
 
     
+    
+
+    PRBool echAccepted;
+
+    
 
 } SSLChannelInfo;
 
@@ -379,9 +384,10 @@ typedef struct SSLChannelInfoStr {
 
 
 #define ssl_preinfo_peer_auth (1U << 3)
+#define ssl_preinfo_ech (1U << 4)
 
 
-#define ssl_preinfo_all (ssl_preinfo_version | ssl_preinfo_cipher_suite)
+#define ssl_preinfo_all (ssl_preinfo_version | ssl_preinfo_cipher_suite | ssl_preinfo_ech)
 
 typedef struct SSLPreliminaryChannelInfoStr {
     
@@ -428,6 +434,12 @@ typedef struct SSLPreliminaryChannelInfoStr {
     PRBool peerDelegCred;
     PRUint32 authKeyBits;
     SSLSignatureScheme signatureScheme;
+
+    
+    PRBool echAccepted;
+    
+
+    const char* echPublicName;
 
     
 
@@ -533,7 +545,9 @@ typedef enum {
     ssl_next_proto_nego_xtn = 13172, 
     ssl_renegotiation_info_xtn = 0xff01,
     ssl_tls13_short_header_xtn = 0xff03, 
-    ssl_tls13_encrypted_sni_xtn = 0xffce,
+    ssl_tls13_outer_extensions_xtn = 0xfd00,
+    ssl_tls13_encrypted_client_hello_xtn = 0xfe08,
+    ssl_tls13_encrypted_sni_xtn = 0xffce, 
 } SSLExtensionType;
 
 

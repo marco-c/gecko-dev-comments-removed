@@ -505,18 +505,42 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
+#define SSL_EnableTls13GreaseEch(fd, enabled)        \
+    SSL_EXPERIMENTAL_API("SSL_EnableTls13GreaseEch", \
+                         (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))
 
 
 
 
 
-#define SSL_SetESNIKeyPair(fd,                                              \
-                           privKey, record, recordLen)                      \
-    SSL_EXPERIMENTAL_API("SSL_SetESNIKeyPair",                              \
+
+#define SSL_GetEchRetryConfigs(fd, out)            \
+    SSL_EXPERIMENTAL_API("SSL_GetEchRetryConfigs", \
+                         (PRFileDesc * _fd,        \
+                          SECItem * _out),         \
+                         (fd, out))
+
+
+#define SSL_RemoveEchConfigs(fd)                 \
+    SSL_EXPERIMENTAL_API("SSL_RemoveEchConfigs", \
+                         (PRFileDesc * _fd),     \
+                         (fd))
+
+
+
+
+
+
+
+
+#define SSL_SetServerEchConfigs(fd, pubKey,                                 \
+                                privKey, record, recordLen)                 \
+    SSL_EXPERIMENTAL_API("SSL_SetServerEchConfigs",                         \
                          (PRFileDesc * _fd,                                 \
-                          SECKEYPrivateKey * _privKey,                      \
+                          const SECKEYPublicKey *_pubKey,                   \
+                          const SECKEYPrivateKey *_privKey,                 \
                           const PRUint8 *_record, unsigned int _recordLen), \
-                         (fd, privKey,                                      \
+                         (fd, pubKey, privKey,                              \
                           record, recordLen))
 
 
@@ -524,14 +548,12 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
-
-#define SSL_EnableESNI(fd, esniKeys, esniKeysLen, dummySNI) \
-    SSL_EXPERIMENTAL_API("SSL_EnableESNI",                  \
-                         (PRFileDesc * _fd,                 \
-                          const PRUint8 *_esniKeys,         \
-                          unsigned int _esniKeysLen,        \
-                          const char *_dummySNI),           \
-                         (fd, esniKeys, esniKeysLen, dummySNI))
+#define SSL_SetClientEchConfigs(fd, echConfigs, echConfigsLen) \
+    SSL_EXPERIMENTAL_API("SSL_SetClientEchConfigs",            \
+                         (PRFileDesc * _fd,                    \
+                          const PRUint8 *_echConfigs,          \
+                          unsigned int _echConfigsLen),        \
+                         (fd, echConfigs, echConfigsLen))
 
 
 
@@ -544,21 +566,22 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
-#define SSL_EncodeESNIKeys(cipherSuites, cipherSuiteCount,          \
-                           group, pubKey, pad, notBefore, notAfter, \
-                           out, outlen, maxlen)                     \
-    SSL_EXPERIMENTAL_API("SSL_EncodeESNIKeys",                      \
-                         (PRUint16 * _cipherSuites,                 \
-                          unsigned int _cipherSuiteCount,           \
-                          SSLNamedGroup _group,                     \
-                          SECKEYPublicKey *_pubKey,                 \
-                          PRUint16 _pad,                            \
-                          PRUint64 _notBefore, PRUint64 _notAfter,  \
-                          PRUint8 *_out, unsigned int *_outlen,     \
-                          unsigned int _maxlen),                    \
-                         (cipherSuites, cipherSuiteCount,           \
-                          group, pubKey, pad, notBefore, notAfter,  \
-                          out, outlen, maxlen))
+
+#define SSL_EncodeEchConfig(publicName, hpkeSuites, hpkeSuitesCount, \
+                            kemId, pubKey, maxNameLen, out, outlen,  \
+                            maxlen)                                  \
+    SSL_EXPERIMENTAL_API("SSL_EncodeEchConfig",                      \
+                         (const char *_publicName,                   \
+                          const PRUint32 *_hpkeSuites,               \
+                          unsigned int _hpkeSuitesCount,             \
+                          HpkeKemId _kemId,                          \
+                          const SECKEYPublicKey *_pubKey,            \
+                          PRUint16 _maxNameLen,                      \
+                          PRUint8 *_out, unsigned int *_outlen,      \
+                          unsigned int _maxlen),                     \
+                         (publicName, hpkeSuites, hpkeSuitesCount,   \
+                          kemId, pubKey, maxNameLen, out, outlen,    \
+                          maxlen))
 
 
 
@@ -1001,6 +1024,9 @@ typedef struct SSLMaskingContextStr {
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_SetupAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_InitAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
+#define SSL_EnableESNI(a, b, c, d) SSL_DEPRECATED_EXPERIMENTAL_API
+#define SSL_EncodeESNIKeys(a, b, c, d, e, f, g, h, i, j) SSL_DEPRECATED_EXPERIMENTAL_API
+#define SSL_SetESNIKeyPair(a, b, c, d) SSL_DEPRECATED_EXPERIMENTAL_API
 
 SEC_END_PROTOS
 

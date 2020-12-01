@@ -9,9 +9,8 @@
 #ifndef __ssl3ext_h_
 #define __ssl3ext_h_
 
+#include "pk11hpke.h"
 #include "sslencode.h"
-
-#define TLS13_ESNI_NONCE_SIZE 16
 
 typedef enum {
     sni_nametype_hostname
@@ -99,6 +98,7 @@ struct TLSExtensionDataStr {
     PRUint16 dtlsSRTPCipherSuite; 
 
     unsigned int lastXtnOffset; 
+
     PRCList remoteKeyShares;    
 
     
@@ -113,14 +113,6 @@ struct TLSExtensionDataStr {
 
     
     PRUint16 recordSizeLimit;
-
-    
-    SECItem keyShareExtension;
-    ssl3CipherSuite esniSuite;
-    sslEphemeralKeyPair *esniPrivateKey;
-    
-    TLS13KeyShareEntry *peerEsniShare;
-    PRUint8 esniNonce[TLS13_ESNI_NONCE_SIZE];
 
     
 
@@ -138,6 +130,14 @@ struct TLSExtensionDataStr {
     
 
     sslPsk *selectedPsk;
+
+    
+    SECItem innerCh;             
+    SECItem echSenderPubKey;     
+    SECItem echConfigId;         
+    PRUint32 echCipherSuite;     
+    SECItem echRetryConfigs;     
+    PRBool echRetryConfigsValid; 
 };
 
 typedef struct TLSExtensionStr {
@@ -165,6 +165,7 @@ SECStatus ssl3_HandleParsedExtensions(sslSocket *ss,
 TLSExtension *ssl3_FindExtension(sslSocket *ss,
                                  SSLExtensionType extension_type);
 void ssl3_DestroyRemoteExtensions(PRCList *list);
+void ssl3_MoveRemoteExtensions(PRCList *dst, PRCList *src);
 void ssl3_InitExtensionData(TLSExtensionData *xtnData, const sslSocket *ss);
 void ssl3_DestroyExtensionData(TLSExtensionData *xtnData);
 void ssl3_ResetExtensionData(TLSExtensionData *xtnData, const sslSocket *ss);
@@ -180,7 +181,9 @@ SECStatus ssl_ConstructExtensions(sslSocket *ss, sslBuffer *buf,
                                   SSLHandshakeType message);
 SECStatus ssl_SendEmptyExtension(const sslSocket *ss, TLSExtensionData *xtnData,
                                  sslBuffer *buf, PRBool *append);
-SECStatus ssl_InsertPaddingExtension(const sslSocket *ss, unsigned int prefixLen,
+SECStatus ssl3_EmplaceExtension(sslSocket *ss, sslBuffer *buf, PRUint16 exType,
+                                const PRUint8 *data, unsigned int len, PRBool advertise);
+SECStatus ssl_InsertPaddingExtension(sslSocket *ss, unsigned int prefixLen,
                                      sslBuffer *buf);
 
 

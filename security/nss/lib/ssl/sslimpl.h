@@ -37,6 +37,8 @@
 typedef struct sslSocketStr sslSocket;
 typedef struct sslNamedGroupDefStr sslNamedGroupDef;
 typedef struct sslEsniKeysStr sslEsniKeys;
+typedef struct sslEchConfigStr sslEchConfig;
+typedef struct sslEchConfigContentsStr sslEchConfigContents;
 typedef struct sslPskStr sslPsk;
 typedef struct sslDelegatedCredentialStr sslDelegatedCredential;
 typedef struct sslEphemeralKeyPairStr sslEphemeralKeyPair;
@@ -284,6 +286,7 @@ typedef struct sslOptionsStr {
     unsigned int enableDelegatedCredentials : 1;
     unsigned int enableDtls13VersionCompat : 1;
     unsigned int suppressEndOfEarlyData : 1;
+    unsigned int enableTls13GreaseEch : 1;
 } sslOptions;
 
 typedef enum { sslHandshakingUndetermined = 0,
@@ -611,17 +614,26 @@ typedef struct {
 typedef struct SSL3HandshakeStateStr {
     SSL3Random server_random;
     SSL3Random client_random;
-    SSL3WaitState ws; 
+    SSL3Random client_inner_random; 
+    SSL3WaitState ws;               
 
     
     SSL3HandshakeHashType hashType;
-    sslBuffer messages; 
+    sslBuffer messages;         
+    sslBuffer echInnerMessages; 
     
+
+
+
+
+
+
 
 
 
     PK11Context *md5;
     PK11Context *sha;
+    PK11Context *shaEchInner;
     PK11Context *shaPostHandshake;
     SSLSignatureScheme signatureScheme;
     const ssl3KEADef *kea_def;
@@ -662,7 +674,8 @@ typedef struct SSL3HandshakeStateStr {
     PRUint32 preliminaryInfo;
 
     
-    PRCList remoteExtensions; 
+    PRCList remoteExtensions;   
+    PRCList echOuterExtensions; 
 
     
     PRUint16 sendMessageSeq;   
@@ -717,6 +730,7 @@ typedef struct SSL3HandshakeStateStr {
 
     PRUint16 ticketNonce;                 
     SECItem fakeSid;                      
+    PRCList psks;                         
 
     
 
@@ -729,13 +743,19 @@ typedef struct SSL3HandshakeStateStr {
     PRCList dtlsRcvdHandshake; 
 
 
-    PRCList psks; 
+    
+    PRBool echAccepted;        
+    HpkeContext *echHpkeCtx;   
+    const char *echPublicName; 
+
+
 } SSL3HandshakeState;
 
 #define SSL_ASSERT_HASHES_EMPTY(ss)                                  \
     do {                                                             \
         PORT_Assert(ss->ssl3.hs.hashType == handshake_hash_unknown); \
         PORT_Assert(ss->ssl3.hs.messages.len == 0);                  \
+        PORT_Assert(ss->ssl3.hs.echInnerMessages.len == 0);          \
     } while (0)
 
 
@@ -1102,8 +1122,9 @@ struct sslSocketStr {
     SSLProtocolVariant protocolVariant;
 
     
-
-    sslEsniKeys *esniKeys;
+    PRCList echConfigs;           
+    SECKEYPublicKey *echPubKey;   
+    SECKEYPrivateKey *echPrivKey; 
 
     
     SSLAntiReplayContext *antiReplay;
@@ -1262,6 +1283,10 @@ ssl_HashHandshakeMessageInt(sslSocket *ss, SSLHandshakeType type,
                             sslUpdateHandshakeHashes cb);
 SECStatus ssl_HashHandshakeMessage(sslSocket *ss, SSLHandshakeType type,
                                    const PRUint8 *b, PRUint32 length);
+SECStatus ssl_HashHandshakeMessageEchInner(sslSocket *ss, SSLHandshakeType type,
+                                           const PRUint8 *b, PRUint32 length);
+SECStatus ssl_HashHandshakeMessageDefault(sslSocket *ss, SSLHandshakeType type,
+                                          const PRUint8 *b, PRUint32 length);
 SECStatus ssl_HashPostHandshakeMessage(sslSocket *ss, SSLHandshakeType type,
                                        const PRUint8 *b, PRUint32 length);
 
@@ -1438,6 +1463,11 @@ extern SECStatus ssl3_AuthCertificateComplete(sslSocket *ss, PRErrorCode error);
 extern SECStatus ssl3_HandleV2ClientHello(
     sslSocket *ss, unsigned char *buffer, unsigned int length, PRUint8 padding);
 
+SECStatus
+ssl3_CreateClientHelloPreamble(sslSocket *ss, const sslSessionID *sid,
+                               PRBool realSid, PRUint16 version, PRBool isEchInner,
+                               const sslBuffer *extensions, sslBuffer *preamble);
+SECStatus ssl3_InsertChHeaderSize(const sslSocket *ss, sslBuffer *preamble, const sslBuffer *extensions);
 SECStatus ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type);
 
 
@@ -1679,6 +1709,7 @@ SECStatus ssl3_NegotiateCipherSuiteInner(sslSocket *ss, const SECItem *suites,
 SECStatus ssl3_NegotiateCipherSuite(sslSocket *ss, const SECItem *suites,
                                     PRBool initHashes);
 SECStatus ssl3_InitHandshakeHashes(sslSocket *ss);
+void ssl3_CoalesceEchHandshakeHashes(sslSocket *ss);
 SECStatus ssl3_ServerCallSNICallback(sslSocket *ss);
 SECStatus ssl3_FlushHandshake(sslSocket *ss, PRInt32 flags);
 SECStatus ssl3_CompleteHandleCertificate(sslSocket *ss,
@@ -1725,6 +1756,7 @@ SECStatus ssl_CreateECDHEphemeralKeyPair(const sslSocket *ss,
 SECStatus ssl_CreateStaticECDHEKey(sslSocket *ss,
                                    const sslNamedGroupDef *ecGroup);
 SECStatus ssl3_FlushHandshake(sslSocket *ss, PRInt32 flags);
+SECStatus ssl3_GetNewRandom(SSL3Random random);
 PK11SymKey *ssl3_GetWrappingKey(sslSocket *ss,
                                 PK11SlotInfo *masterSecretSlot,
                                 CK_MECHANISM_TYPE masterWrapMech,
@@ -1913,6 +1945,8 @@ SECStatus SSLExp_CreateMask(SSLMaskingContext *ctx, const PRUint8 *sample,
                             unsigned int len);
 
 SECStatus SSLExp_DestroyMaskingContext(SSLMaskingContext *ctx);
+
+SECStatus SSLExp_EnableTls13GreaseEch(PRFileDesc *fd, PRBool enabled);
 
 SEC_END_PROTOS
 

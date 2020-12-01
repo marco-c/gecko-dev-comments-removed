@@ -12,8 +12,14 @@
 #include "sslimpl.h"
 #include "selfencrypt.h"
 #include "tls13con.h"
+#include "tls13ech.h"
 #include "tls13err.h"
 #include "tls13hashstate.h"
+
+
+
+
+
 
 
 
@@ -37,6 +43,10 @@ tls13_MakeHrrCookie(sslSocket *ss, const sslNamedGroupDef *selectedGroup,
     PRUint8 cookie[1024];
     sslBuffer cookieBuf = SSL_BUFFER(cookie);
     static const PRUint8 indicator = 0xff;
+    SECItem hrrNonceInfoItem = { siBuffer, (unsigned char *)kHpkeInfoEchHrr,
+                                 strlen(kHpkeInfoEchHrr) };
+    PK11SymKey *echHrrPsk = NULL;
+    SECItem *rawEchPsk = NULL;
 
     
     rv = sslBuffer_Append(&cookieBuf, &indicator, 1);
@@ -55,6 +65,48 @@ tls13_MakeHrrCookie(sslSocket *ss, const sslNamedGroupDef *selectedGroup,
 
     
     rv = sslBuffer_AppendVariable(&cookieBuf, appToken, appTokenLen, 2);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    
+
+
+
+    if (ss->xtnData.echConfigId.len) {
+        rv = sslBuffer_AppendVariable(&cookieBuf, ss->xtnData.echConfigId.data,
+                                      ss->xtnData.echConfigId.len, 1);
+    } else {
+        PORT_Assert(!ssl3_FindExtension(ss, ssl_tls13_encrypted_client_hello_xtn));
+        rv = sslBuffer_AppendNumber(&cookieBuf, 0, 1);
+    }
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    
+
+    if (ss->ssl3.hs.echAccepted) {
+        rv = PK11_HPKE_ExportSecret(ss->ssl3.hs.echHpkeCtx, &hrrNonceInfoItem, 32, &echHrrPsk);
+        if (rv != SECSuccess) {
+            return SECFailure;
+        }
+        rv = PK11_ExtractKeyValue(echHrrPsk);
+        if (rv != SECSuccess) {
+            PK11_FreeSymKey(echHrrPsk);
+            return SECFailure;
+        }
+        rawEchPsk = PK11_GetKeyData(echHrrPsk);
+        if (!rawEchPsk) {
+            PK11_FreeSymKey(echHrrPsk);
+            return SECFailure;
+        }
+        rv = sslBuffer_AppendVariable(&cookieBuf, rawEchPsk->data, rawEchPsk->len, 1);
+        PK11_FreeSymKey(echHrrPsk);
+    } else {
+        
+        rv = sslBuffer_AppendNumber(&cookieBuf, 0, 1);
+    }
     if (rv != SECSuccess) {
         return SECFailure;
     }
@@ -84,12 +136,15 @@ SECStatus
 tls13_RecoverHashState(sslSocket *ss,
                        unsigned char *cookie, unsigned int cookieLen,
                        ssl3CipherSuite *previousCipherSuite,
-                       const sslNamedGroupDef **previousGroup)
+                       const sslNamedGroupDef **previousGroup,
+                       PRBool *previousEchOffered)
 {
     SECStatus rv;
     unsigned char plaintext[1024];
     unsigned int plaintextLen = 0;
     sslBuffer messageBuf = SSL_BUFFER_EMPTY;
+    sslReadBuffer echPskBuf;
+    sslReadBuffer echConfigIdBuf;
     PRUint64 sentinel;
     PRUint64 cipherSuite;
     PRUint64 group;
@@ -106,7 +161,7 @@ tls13_RecoverHashState(sslSocket *ss,
 
     
     rv = sslRead_ReadNumber(&reader, 1, &sentinel);
-    if ((rv != SECSuccess) || (sentinel != 0xff)) {
+    if ((rv != SECSuccess) || (sentinel != TLS13_COOKIE_SENTINEL)) {
         FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
         return SECFailure;
     }
@@ -148,6 +203,19 @@ tls13_RecoverHashState(sslSocket *ss,
     PORT_Memcpy(ss->xtnData.applicationToken.data, appTokenReader.buf, appTokenLen);
 
     
+    rv = sslRead_ReadVariable(&reader, 1, &echConfigIdBuf);
+    if (rv != SECSuccess) {
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
+        return SECFailure;
+    }
+    
+    rv = sslRead_ReadVariable(&reader, 1, &echPskBuf);
+    if (rv != SECSuccess) {
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
+        return SECFailure;
+    }
+
+    
     unsigned int hashLen = SSL_READER_REMAINING(&reader);
     if (hashLen != tls13_GetHashSize(ss)) {
         FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
@@ -183,5 +251,6 @@ tls13_RecoverHashState(sslSocket *ss,
 
     *previousCipherSuite = cipherSuite;
     *previousGroup = selectedGroup;
+    *previousEchOffered = echConfigIdBuf.len > 0;
     return SECSuccess;
 }
