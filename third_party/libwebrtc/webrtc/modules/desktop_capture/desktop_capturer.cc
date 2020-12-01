@@ -77,19 +77,7 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateTabCapturer(
 }
 
 #if defined(WEBRTC_USE_PIPEWIRE) || defined(USE_X11)
-
-static bool IsWaylandDisplayUsed() {
-  const auto display = gdk_display_get_default();
-  if (display == nullptr) {
-    
-    return false;
-  }
-  return !GDK_IS_X11_DISPLAY(display);
-}
-
-
-
-static bool IsWaylandSessionUsed() {
+bool DesktopCapturer::IsRunningUnderWayland() {
   const char* xdg_session_type = getenv("XDG_SESSION_TYPE");
   if (!xdg_session_type || strncmp(xdg_session_type, "wayland", 7) != 0)
     return false;
@@ -98,10 +86,6 @@ static bool IsWaylandSessionUsed() {
     return false;
 
   return true;
-}
-
-bool DesktopCapturer::IsRunningUnderWayland() {
-  return IsWaylandSessionUsed() ? IsWaylandDisplayUsed() : false;
 }
 #endif  
 
