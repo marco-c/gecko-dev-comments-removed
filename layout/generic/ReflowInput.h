@@ -214,7 +214,7 @@ struct SizeComputationInput {
 
 
 
-  bool ComputeMargin(mozilla::WritingMode aWM, nscoord aPercentBasis);
+  bool ComputeMargin(mozilla::WritingMode aCBWM, nscoord aPercentBasis);
 
   
 
@@ -226,11 +226,11 @@ struct SizeComputationInput {
 
 
 
-  bool ComputePadding(mozilla::WritingMode aWM, nscoord aPercentBasis,
+  bool ComputePadding(mozilla::WritingMode aCBWM, nscoord aPercentBasis,
                       mozilla::LayoutFrameType aFrameType);
 
  protected:
-  void InitOffsets(mozilla::WritingMode aWM, nscoord aPercentBasis,
+  void InitOffsets(mozilla::WritingMode aCBWM, nscoord aPercentBasis,
                    mozilla::LayoutFrameType aFrameType,
                    mozilla::ComputeSizeFlags aFlags = {},
                    const nsMargin* aBorder = nullptr,
