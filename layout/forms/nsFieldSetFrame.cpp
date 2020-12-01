@@ -433,7 +433,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   
   const auto wm = GetWritingMode();
   LogicalMargin border = aReflowInput.ComputedLogicalBorderPadding(wm) -
-                         aReflowInput.ComputedLogicalPadding();
+                         aReflowInput.ComputedLogicalPadding(wm);
   auto skipSides = PreReflowBlockLevelLogicalSkipSides();
   border.ApplySkipSides(skipSides);
   LogicalSize availSize(wm, aReflowInput.ComputedSize().ISize(wm),
@@ -572,9 +572,9 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
                                innerAvailSize, Nothing(),
                                ReflowInput::InitFlag::CallerWillInit);
     
-    kidReflowInput.Init(aPresContext, Nothing(), Nothing(),
-                        Some(aReflowInput.ComputedLogicalPadding().ConvertTo(
-                            inner->GetWritingMode(), wm)));
+    kidReflowInput.Init(
+        aPresContext, Nothing(), Nothing(),
+        Some(aReflowInput.ComputedLogicalPadding(inner->GetWritingMode())));
     if (kidReflowInput.mFlags.mIsTopOfPage) {
       
       kidReflowInput.mFlags.mIsTopOfPage = !legend;
@@ -668,7 +668,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     
     
     LogicalRect innerContentRect = contentRect;
-    innerContentRect.Deflate(wm, aReflowInput.ComputedLogicalPadding());
+    innerContentRect.Deflate(wm, aReflowInput.ComputedLogicalPadding(wm));
     
     
     if (innerContentRect.ISize(wm) > mLegendRect.ISize(wm)) {

@@ -668,8 +668,7 @@ void nsTextControlFrame::ReflowTextControlChild(
   
   
   kidReflowInput.Init(aPresContext, Nothing(), Nothing(),
-                      Some(aReflowInput.ComputedLogicalPadding().ConvertTo(
-                          wm, aReflowInput.GetWritingMode())));
+                      Some(aReflowInput.ComputedLogicalPadding(wm)));
 
   
   kidReflowInput.SetComputedWidth(aReflowInput.ComputedWidth());
