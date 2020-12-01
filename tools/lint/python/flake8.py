@@ -60,11 +60,13 @@ to the lineoffset property of an `Issue`.
 """
 
 
-
-if platform.system() == "Windows":
-    bindir = os.path.join(sys.prefix, "Scripts")
-else:
-    bindir = os.path.join(sys.prefix, "bin")
+def default_bindir():
+    
+    
+    if platform.system() == "Windows":
+        return os.path.join(sys.prefix, "Scripts")
+    else:
+        return os.path.join(sys.prefix, "bin")
 
 
 class NothingToLint(Exception):
@@ -84,11 +86,12 @@ def lint(paths, config, **lintargs):
 
     log = lintargs["log"]
     root = lintargs["root"]
+    virtualenv_bin_path = lintargs.get("virtualenv_bin_path")
     config_path = os.path.join(root, ".flake8")
 
     if lintargs.get("fix"):
         fix_cmd = [
-            os.path.join(bindir, "autopep8"),
+            os.path.join(virtualenv_bin_path or default_bindir(), "autopep8"),
             "--global-config",
             config_path,
             "--in-place",
