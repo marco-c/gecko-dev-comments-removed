@@ -4725,6 +4725,15 @@ void js::SetFrameArgumentsObject(JSContext* cx, AbstractFramePtr frame,
       frame.unaliasedLocal(frameSlot) = ObjectValue(*argsobj);
     }
   }
+
+  
+  
+  for (uint32_t i = 0; i < script->nfixed(); i++) {
+    Value& value = frame.unaliasedLocal(i);
+    if (value.isMagic() && value.whyMagic() == JS_OPTIMIZED_ARGUMENTS) {
+      frame.unaliasedLocal(i) = ObjectValue(*argsobj);
+    }
+  }
 }
 
 
