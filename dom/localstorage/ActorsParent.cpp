@@ -7373,10 +7373,11 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     return rv;
   }
 
-  uint64_t usage;
-  bool hasUsage =
-      quotaManager->GetUsageForClient(PERSISTENCE_TYPE_DEFAULT, mQuotaInfo,
-                                      mozilla::dom::quota::Client::LS, usage);
+  const UsageInfo usageInfo = quotaManager->GetUsageForClient(
+      PERSISTENCE_TYPE_DEFAULT, mQuotaInfo, mozilla::dom::quota::Client::LS);
+
+  const bool hasUsage = usageInfo.DatabaseUsage().isSome();
+  MOZ_ASSERT(usageInfo.FileUsage().isNothing());
 
   if (!gArchivedOrigins) {
     rv = LoadArchivedOrigins();
@@ -7467,7 +7468,9 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   if (alreadyExisted) {
     
     MOZ_ASSERT(hasUsage);
-    mUsage = usage;
+
+    
+    mUsage = usageInfo.DatabaseUsage().value();
   } else {
     
     MOZ_ASSERT(!hasUsage);
@@ -9107,14 +9110,8 @@ Result<UsageInfo, nsresult> QuotaClient::GetUsageForOrigin(
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  UsageInfo res;
-  uint64_t usage;
-  if (quotaManager->GetUsageForClient(PERSISTENCE_TYPE_DEFAULT, aGroupAndOrigin,
-                                      Client::LS, usage)) {
-    res += DatabaseUsageType(Some(usage));
-  }
-
-  return res;
+  return quotaManager->GetUsageForClient(PERSISTENCE_TYPE_DEFAULT,
+                                         aGroupAndOrigin, Client::LS);
 }
 
 nsresult QuotaClient::AboutToClearOrigins(
