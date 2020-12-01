@@ -18,6 +18,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_intl.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
@@ -97,6 +98,9 @@ enum class TextInputProcessorID {
   
   eMicrosoftIMEForKorean,
   eMicrosoftOldHangul,
+
+  
+  eKeymanDesktop,
 };
 
 static const char* GetBoolName(bool aBool) { return aBool ? "true" : "false"; }
@@ -1154,12 +1158,32 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
         break;
       default:
         mActiveTIP = TextInputProcessorID::eUnknown;
+        break;
+    }
+    
+    
+    if (mActiveTIP != TextInputProcessorID::eUnknown) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    static constexpr CLSID kKeymanDesktop_CLSID = {
+        0xFE0420F1,
+        0x38D1,
+        0x4B4C,
+        {0x96, 0xBF, 0xE7, 0xE2, 0x0A, 0x74, 0xCF, 0xB7}};
+    if (mActiveTIPCLSID == kKeymanDesktop_CLSID) {
+      mActiveTIP = TextInputProcessorID::eKeymanDesktop;
     }
   }
 
   TextInputProcessorID ComputeActiveTIPAsJapanese() {
     
-    static const GUID kMicrosoftIMEForJapaneseGUID = {
+    static constexpr GUID kMicrosoftIMEForJapaneseGUID = {
         0xA76C93D9,
         0x5523,
         0x4E90,
@@ -1168,7 +1192,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftIMEForJapanese;
     }
     
-    static const GUID kMicrosoftOfficeIME2010ForJapaneseGUID = {
+    static constexpr GUID kMicrosoftOfficeIME2010ForJapaneseGUID = {
         0x54EDCC94,
         0x1524,
         0x4BB1,
@@ -1177,7 +1201,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese;
     }
     
-    static const GUID kGoogleJapaneseInputGUID = {
+    static constexpr GUID kGoogleJapaneseInputGUID = {
         0x773EB24E,
         0xCA1D,
         0x4B1B,
@@ -1195,7 +1219,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eATOK2011;
     }
     
-    static const GUID kATOK2012GUID = {
+    static constexpr GUID kATOK2012GUID = {
         0x1DE01562,
         0xF445,
         0x401B,
@@ -1204,7 +1228,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eATOK2012;
     }
     
-    static const GUID kATOK2013GUID = {
+    static constexpr GUID kATOK2013GUID = {
         0x3C4DB511,
         0x189A,
         0x4168,
@@ -1213,7 +1237,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eATOK2013;
     }
     
-    static const GUID kATOK2014GUID = {
+    static constexpr GUID kATOK2014GUID = {
         0x4EF33B79,
         0x6AA9,
         0x4271,
@@ -1222,7 +1246,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eATOK2014;
     }
     
-    static const GUID kATOK2015GUID = {
+    static constexpr GUID kATOK2015GUID = {
         0xEAB4DC00,
         0xCE2E,
         0x483D,
@@ -1231,7 +1255,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eATOK2015;
     }
     
-    static const GUID kATOK2016GUID = {
+    static constexpr GUID kATOK2016GUID = {
         0x0B557B4C,
         0x5740,
         0x4110,
@@ -1250,7 +1274,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     }
 
     
-    static const GUID kJapanist10GUID = {
+    static constexpr GUID kJapanist10GUID = {
         0xE6D66705,
         0x1EDA,
         0x4373,
@@ -1264,7 +1288,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
 
   TextInputProcessorID ComputeActiveTIPAsTraditionalChinese() {
     
-    static const GUID kMicrosoftBopomofoGUID = {
+    static constexpr GUID kMicrosoftBopomofoGUID = {
         0xB2F9C502,
         0x1742,
         0x11D4,
@@ -1282,7 +1306,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftChangJie;
     }
     
-    static const GUID kMicrosoftPhoneticGUID = {
+    static constexpr GUID kMicrosoftPhoneticGUID = {
         0x761309DE,
         0x317A,
         0x11D4,
@@ -1291,7 +1315,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftPhonetic;
     }
     
-    static const GUID kMicrosoftQuickGUID = {
+    static constexpr GUID kMicrosoftQuickGUID = {
         0x6024B45F,
         0x5C54,
         0x11D4,
@@ -1300,7 +1324,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftQuick;
     }
     
-    static const GUID kMicrosoftNewChangJieGUID = {
+    static constexpr GUID kMicrosoftNewChangJieGUID = {
         0xF3BA907A,
         0x6C7E,
         0x11D4,
@@ -1309,7 +1333,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftNewChangJie;
     }
     
-    static const GUID kMicrosoftNewPhoneticGUID = {
+    static constexpr GUID kMicrosoftNewPhoneticGUID = {
         0xB2F9C502,
         0x1742,
         0x11D4,
@@ -1318,7 +1342,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftNewPhonetic;
     }
     
-    static const GUID kMicrosoftNewQuickGUID = {
+    static constexpr GUID kMicrosoftNewQuickGUID = {
         0x0B883BA0,
         0xC1C7,
         0x11D4,
@@ -1350,7 +1374,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     
     
     
-    static const GUID kMicrosoftPinyinGUID = {
+    static constexpr GUID kMicrosoftPinyinGUID = {
         0xFA550B04,
         0x5AD7,
         0x411F,
@@ -1360,7 +1384,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     }
 
     
-    static const GUID kMicrosoftPinyinNewExperienceInputStyleGUID = {
+    static constexpr GUID kMicrosoftPinyinNewExperienceInputStyleGUID = {
         0xF3BA9077,
         0x6C7E,
         0x11D4,
@@ -1369,7 +1393,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftPinyinNewExperienceInputStyle;
     }
     
-    static const GUID kMicrosoftWubiGUID = {
+    static constexpr GUID kMicrosoftWubiGUID = {
         0x82590C13,
         0xF4DD,
         0x44F4,
@@ -1391,7 +1415,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
 
   TextInputProcessorID ComputeActiveTIPAsKorean() {
     
-    static const GUID kMicrosoftIMEForKoreanGUID = {
+    static constexpr GUID kMicrosoftIMEForKoreanGUID = {
         0xB5FE1F02,
         0xD5F2,
         0x4445,
@@ -1400,7 +1424,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftIMEForKorean;
     }
     
-    static const GUID kMicrosoftOldHangulGUID = {
+    static constexpr GUID kMicrosoftOldHangulGUID = {
         0xB60AF051,
         0x257A,
         0x46BC,
@@ -1454,6 +1478,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
 
   
   GUID mActiveTIPGUID;
+  CLSID mActiveTIPCLSID;
 
   static StaticRefPtr<TSFStaticSink> sInstance;
 };
@@ -1548,6 +1573,7 @@ TSFStaticSink::OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID rclsid,
     mOnActivatedCalled = true;
     mActiveTIP = TextInputProcessorID::eNotComputed;
     mActiveTIPGUID = guidProfile;
+    mActiveTIPCLSID = rclsid;
     mLangID = langid & 0xFFFF;
     mIsIMM_IME = IsIMM_IME(hkl);
     GetTIPDescription(rclsid, langid, guidProfile,
@@ -2302,6 +2328,11 @@ void TSFTextStore::FlushPendingActions() {
           selectionSet.mOffset = static_cast<uint32_t>(action.mSelectionStart);
           selectionSet.mLength = static_cast<uint32_t>(action.mSelectionLength);
           selectionSet.mReversed = false;
+          selectionSet.mExpandToClusterBoundary =
+              TSFStaticSink::ActiveTIP() !=
+                  TextInputProcessorID::eKeymanDesktop &&
+              StaticPrefs::
+                  intl_tsf_hack_extend_setting_selection_range_to_cluster_boundaries();
           DispatchEvent(selectionSet);
           if (!selectionSet.mSucceeded) {
             MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -2442,6 +2473,11 @@ void TSFTextStore::FlushPendingActions() {
         selectionSet.mOffset = static_cast<uint32_t>(action.mSelectionStart);
         selectionSet.mLength = static_cast<uint32_t>(action.mSelectionLength);
         selectionSet.mReversed = action.mSelectionReversed;
+        selectionSet.mExpandToClusterBoundary =
+            TSFStaticSink::ActiveTIP() !=
+                TextInputProcessorID::eKeymanDesktop &&
+            StaticPrefs::
+                intl_tsf_hack_extend_setting_selection_range_to_cluster_boundaries();
         DispatchEvent(selectionSet);
         if (!selectionSet.mSucceeded) {
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
