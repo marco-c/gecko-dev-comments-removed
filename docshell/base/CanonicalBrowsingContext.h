@@ -246,6 +246,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void HistoryCommitIndexAndLength();
 
+  void ResetScalingZoom();
+
  protected:
   
   void CanonicalDiscard();

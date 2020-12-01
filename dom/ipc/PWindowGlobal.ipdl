@@ -77,6 +77,11 @@ child:
 
   async AddBlockedFrameNodeByClassifier(MaybeDiscardedBrowsingContext aNode);
 
+  
+
+
+  async ResetScalingZoom();
+
 both:
   async RawMessage(JSActorMessageMeta aMetadata, ClonedMessageData? aData,
                    ClonedMessageData? aStack);
