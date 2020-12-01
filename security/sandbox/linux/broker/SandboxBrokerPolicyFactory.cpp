@@ -503,7 +503,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     }
     policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
 
-#if defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
     
     
 #  if defined(MOZ_WAYLAND)
