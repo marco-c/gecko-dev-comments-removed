@@ -19,6 +19,10 @@ const bookmarksInfo = [
 ];
 
 add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    
+    set: [["browser.newtab.preload", false]],
+  });
   
   
   
@@ -70,7 +74,6 @@ add_task(async function bookmarks_toolbar_not_shown_when_empty() {
     let newtab = await BrowserTestUtils.openNewForegroundTab({
       gBrowser,
       opening: "about:newtab",
-      waitForLoad: false,
     });
     let emptyMessage = document.getElementById("personal-toolbar-empty");
 
