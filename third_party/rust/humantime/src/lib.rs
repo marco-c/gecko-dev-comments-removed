@@ -13,21 +13,22 @@
 
 
 
+
+
+#![forbid(unsafe_code)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
-
-#[macro_use] extern crate quick_error;
 
 mod duration;
 mod wrapper;
 mod date;
 
-pub use duration::{parse_duration, Error as DurationError};
-pub use duration::{format_duration, FormattedDuration};
-pub use wrapper::{Duration, Timestamp};
-pub use date::{parse_rfc3339, parse_rfc3339_weak, Error as TimestampError};
-pub use date::{
+pub use self::duration::{parse_duration, Error as DurationError};
+pub use self::duration::{format_duration, FormattedDuration};
+pub use self::wrapper::{Duration, Timestamp};
+pub use self::date::{parse_rfc3339, parse_rfc3339_weak, Error as TimestampError};
+pub use self::date::{
     format_rfc3339, format_rfc3339_micros, format_rfc3339_millis, format_rfc3339_nanos,
     format_rfc3339_seconds,
 };
-pub use date::{Rfc3339Timestamp};
+pub use self::date::{Rfc3339Timestamp};

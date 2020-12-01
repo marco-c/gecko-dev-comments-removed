@@ -116,6 +116,19 @@ impl Value {
     
     
     
+    
+    
+    
+    pub fn into_array(self) -> Option<Vec<Value>> {
+        match self {
+            Value::Array(dict) => Some(dict),
+            _ => None,
+        }
+    }
+
+    
+    
+    
     pub fn as_array(&self) -> Option<&Vec<Value>> {
         match *self {
             Value::Array(ref array) => Some(array),
@@ -129,6 +142,19 @@ impl Value {
     pub fn as_array_mut(&mut self) -> Option<&mut Vec<Value>> {
         match *self {
             Value::Array(ref mut array) => Some(array),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn into_dictionary(self) -> Option<Dictionary> {
+        match self {
+            Value::Dictionary(dict) => Some(dict),
             _ => None,
         }
     }
