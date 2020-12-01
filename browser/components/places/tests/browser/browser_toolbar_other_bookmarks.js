@@ -30,10 +30,7 @@ add_task(async function setup() {
   let toolbar = document.getElementById("PersonalToolbar");
   let wasCollapsed = toolbar.collapsed;
 
-  
-  if (wasCollapsed) {
-    await promiseSetToolbarVisibility(toolbar, true);
-  }
+  await setupBookmarksToolbar();
 
   
   registerCleanupFunction(async () => {
@@ -53,18 +50,18 @@ add_task(async function testShowingOtherBookmarksInToolbar() {
   });
 
   info("Check visibility of an empty Other Bookmarks folder.");
-  testIsOtherBookmarksHidden(true);
+  await testIsOtherBookmarksHidden(true);
 
   info("Ensure folder appears in toolbar when a new bookmark is added.");
   let bookmarks = await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.unfiledGuid,
     children: bookmarksInfo,
   });
-  testIsOtherBookmarksHidden(false);
+  await testIsOtherBookmarksHidden(false);
 
   info("Ensure folder disappears from toolbar when no bookmarks are present.");
   await PlacesUtils.bookmarks.remove(bookmarks);
-  testIsOtherBookmarksHidden(true);
+  await testIsOtherBookmarksHidden(true);
 });
 
 
@@ -79,7 +76,7 @@ add_task(async function testOtherBookmarksVisibilityWhenMovingBookmarks() {
     guid: PlacesUtils.bookmarks.toolbarGuid,
     children: bookmarksInfo,
   });
-  testIsOtherBookmarksHidden(true);
+  await testIsOtherBookmarksHidden(true);
 
   info("Move toolbar bookmarks to Other Bookmarks folder.");
   await PlacesUtils.bookmarks.moveToFolder(
@@ -87,7 +84,7 @@ add_task(async function testOtherBookmarksVisibilityWhenMovingBookmarks() {
     PlacesUtils.bookmarks.unfiledGuid,
     PlacesUtils.bookmarks.DEFAULT_INDEX
   );
-  testIsOtherBookmarksHidden(false);
+  await testIsOtherBookmarksHidden(false);
 
   info("Move bookmarks from Other Bookmarks back to the toolbar.");
   await PlacesUtils.bookmarks.moveToFolder(
@@ -95,7 +92,7 @@ add_task(async function testOtherBookmarksVisibilityWhenMovingBookmarks() {
     PlacesUtils.bookmarks.toolbarGuid,
     PlacesUtils.bookmarks.DEFAULT_INDEX
   );
-  testIsOtherBookmarksHidden(true);
+  await testIsOtherBookmarksHidden(true);
 });
 
 
@@ -110,7 +107,7 @@ add_task(async function testOtherBookmarksMenuPopup() {
     children: bookmarksInfo,
   });
 
-  testIsOtherBookmarksHidden(false);
+  await testIsOtherBookmarksHidden(false);
 
   info("Check the popup menu has correct number of children.");
   await openMenuPopup("#OtherBookmarksPopup", "#OtherBookmarks");
@@ -159,30 +156,22 @@ add_task(async function testFolderPopup() {
 });
 
 add_task(async function testOnlyShowOtherFolderInBookmarksToolbar() {
-  testIsOtherBookmarksHidden(false);
+  await testIsOtherBookmarksHidden(false);
 
   
   
   let widgetId = "personal-bookmarks";
   CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_NAVBAR);
-  testIsOtherBookmarksHidden(true);
+  await testIsOtherBookmarksHidden(true);
 
   CustomizableUI.reset();
-  testIsOtherBookmarksHidden(false);
+  await testIsOtherBookmarksHidden(false);
 });
 
 
 
 add_task(async function testDeletingMenuItems() {
-  let toolbar = document.getElementById("PersonalToolbar");
-  let wasCollapsed = toolbar.collapsed;
-
-  
-  if (wasCollapsed) {
-    await promiseSetToolbarVisibility(toolbar, true);
-  }
-
-  await PlacesUtils.bookmarks.eraseEverything();
+  await setupBookmarksToolbar();
 
   await SpecialPowers.pushPrefEnv({
     set: [[BOOKMARKS_H2_2020_PREF, true]],
@@ -244,13 +233,69 @@ add_task(async function no_errors_when_bookmarks_placed_in_palette() {
 });
 
 
+add_task(async function testShowingOtherBookmarksContextMenuItem() {
+  await setupBookmarksToolbar();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [[BOOKMARKS_H2_2020_PREF, true]],
+  });
+
+  info("Add bookmark to Other Bookmarks.");
+  let bookmark = await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.unfiledGuid,
+    children: [{ title: "firefox", url: "http://example.com" }],
+  });
+
+  info("'Show Other Bookmarks' menu item should be checked by default.");
+  await testOtherBookmarksCheckedState(true);
+
+  info("Toggle off showing the Other Bookmarks folder.");
+  await selectShowOtherBookmarksMenuItem();
+  await testOtherBookmarksCheckedState(false);
+  await testIsOtherBookmarksHidden(true);
+
+  info("Toggle on showing the Other Bookmarks folder.");
+  await selectShowOtherBookmarksMenuItem();
+  await testOtherBookmarksCheckedState(true);
+  await testIsOtherBookmarksHidden(false);
+
+  info(
+    "Ensure 'Show Other Bookmarks' isn't shown when Other Bookmarks is empty."
+  );
+  await PlacesUtils.bookmarks.remove(bookmark);
+  await testIsOtherBookmarksMenuItemShown(false);
+
+  info("Add a bookmark to the empty Other Bookmarks folder.");
+  await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.unfiledGuid,
+    children: [{ title: "firefox", url: "http://example.com" }],
+  });
+  await testIsOtherBookmarksMenuItemShown(true);
+});
+
+
+add_task(async function showOtherBookmarksMenuItemPrefDisabled() {
+  await setupBookmarksToolbar();
+  await SpecialPowers.pushPrefEnv({
+    set: [[BOOKMARKS_H2_2020_PREF, false]],
+  });
+  await testIsOtherBookmarksMenuItemShown(false);
+});
+
+
 
 
 async function testIsOtherBookmarksHidden(expected) {
   info("Test whether or not the 'Other Bookmarks' folder is visible.");
-  let otherBookmarks = document.getElementById("OtherBookmarks");
 
-  await BrowserTestUtils.waitForAttribute("hidden", otherBookmarks, expected);
+  
+  let toolbar = document.getElementById("PersonalToolbar");
+  await promiseSetToolbarVisibility(toolbar, true);
+
+  await TestUtils.waitForCondition(() => {
+    let otherBookmarks = document.getElementById("OtherBookmarks");
+    return otherBookmarks.hidden === expected;
+  }, "Other Bookmarks folder failed to change hidden state.");
 
   ok(true, `Other Bookmarks folder "hidden" state should be ${expected}.`);
 }
@@ -272,6 +317,53 @@ function testNumberOfMenuPopupChildren(selector, expected) {
     expected,
     `Number of menu items for ${selector} should be ${expected}.`
   );
+}
+
+
+
+
+
+
+
+
+async function testOtherBookmarksCheckedState(expectedCheckedState) {
+  info("Check 'Show Other Bookmarks' menu item state");
+  await openToolbarContextMenu();
+
+  let otherBookmarksMenuItem = document.querySelector(
+    "#show-other-bookmarks_PersonalToolbar"
+  );
+
+  is(
+    otherBookmarksMenuItem.getAttribute("checked"),
+    `${expectedCheckedState}`,
+    `Other Bookmarks item's checked state should be ${expectedCheckedState}`
+  );
+
+  await closeToolbarContextMenu();
+}
+
+
+
+
+
+
+
+
+async function testIsOtherBookmarksMenuItemShown(expected) {
+  await openToolbarContextMenu();
+
+  let otherBookmarksMenuItem = document.querySelector(
+    "#show-other-bookmarks_PersonalToolbar"
+  );
+
+  is(
+    !!otherBookmarksMenuItem,
+    expected,
+    "'Show Other Bookmarks' menu item appearance state is correct."
+  );
+
+  await closeToolbarContextMenu();
 }
 
 
@@ -303,4 +395,70 @@ async function closeMenuPopup(popupSelector) {
   info("Closing menu popup.");
   popup.hidePopup();
   await BrowserTestUtils.waitForPopupEvent(popup, "hidden");
+}
+
+
+
+
+async function openToolbarContextMenu() {
+  let contextMenu = document.getElementById("placesContext");
+  let toolbar = document.getElementById("PlacesToolbarItems");
+  let openToolbarContextMenuPromise = BrowserTestUtils.waitForPopupEvent(
+    contextMenu,
+    "shown"
+  );
+
+  EventUtils.synthesizeMouseAtCenter(toolbar, {
+    type: "contextmenu",
+  });
+
+  await openToolbarContextMenuPromise;
+}
+
+
+
+
+async function closeToolbarContextMenu() {
+  let contextMenu = document.getElementById("placesContext");
+  let closeToolbarContextMenuPromise = BrowserTestUtils.waitForPopupEvent(
+    contextMenu,
+    "hidden"
+  );
+  contextMenu.hidePopup();
+  await closeToolbarContextMenuPromise;
+}
+
+
+
+
+
+
+async function setupBookmarksToolbar() {
+  let toolbar = document.getElementById("PersonalToolbar");
+  let wasCollapsed = toolbar.collapsed;
+
+  
+  if (wasCollapsed) {
+    await promiseSetToolbarVisibility(toolbar, true);
+  }
+
+  await PlacesUtils.bookmarks.eraseEverything();
+}
+
+
+
+
+
+async function selectShowOtherBookmarksMenuItem() {
+  info("Select 'Show Other Bookmarks' menu item");
+  await openToolbarContextMenu();
+
+  let otherBookmarksMenuItem = document.querySelector(
+    "#show-other-bookmarks_PersonalToolbar"
+  );
+  let contextMenu = document.getElementById("placesContext");
+
+  EventUtils.synthesizeMouseAtCenter(otherBookmarksMenuItem, {});
+
+  await BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
 }
