@@ -62,6 +62,11 @@ enum class BailoutKind : uint8_t {
 
   
   
+  
+  TranspiledCacheIR,
+
+  
+  
 
   
   Inevitable,
@@ -260,6 +265,9 @@ inline const char* BailoutKindString(BailoutKind kind) {
   switch (kind) {
     case BailoutKind::Unknown:
       return "Unknown";
+    case BailoutKind::TranspiledCacheIR:
+      return "TranspiledCacheIR";
+
     
     case BailoutKind::Inevitable:
       return "Inevitable";

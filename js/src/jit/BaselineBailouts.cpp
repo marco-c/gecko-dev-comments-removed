@@ -2115,6 +2115,11 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
 
   switch (bailoutKind) {
     
+    case BailoutKind::TranspiledCacheIR:
+      
+      
+      break;
+
     case BailoutKind::Inevitable:
     case BailoutKind::DuringVMCall:
     case BailoutKind::TooManyArguments:
