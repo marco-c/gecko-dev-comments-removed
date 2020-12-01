@@ -730,6 +730,32 @@ const PushNotificationsCleaner = {
 };
 
 const StorageAccessCleaner = {
+  
+  deleteExceptPrincipals(aPrincipalsWithStorage, aFrom) {
+    
+    
+    
+    
+    
+    let baseDomainsWithStorage = new Set();
+    for (let principal of aPrincipalsWithStorage) {
+      baseDomainsWithStorage.add(principal.baseDomain);
+    }
+
+    return new Promise(aResolve => {
+      for (let perm of Services.perms.getAllByTypeSince(
+        "storageAccessAPI",
+        aFrom
+      )) {
+        if (!baseDomainsWithStorage.has(perm.principal.baseDomain)) {
+          Services.perms.removePermission(perm);
+        }
+      }
+
+      aResolve();
+    });
+  },
+
   deleteByHost(aHost, aOriginAttributes) {
     return new Promise(aResolve => {
       for (let perm of Services.perms.all) {
@@ -1324,6 +1350,24 @@ ClearDataService.prototype = Object.freeze({
         return Promise.resolve();
       }
     );
+  },
+
+  deleteUserInteractionForClearingHistory(
+    aPrincipalsWithStorage,
+    aFrom,
+    aCallback
+  ) {
+    if (!aCallback) {
+      return Cr.NS_ERROR_INVALID_ARG;
+    }
+
+    StorageAccessCleaner.deleteExceptPrincipals(
+      aPrincipalsWithStorage,
+      aFrom
+    ).then(() => {
+      aCallback.onDataDeleted(0);
+    });
+    return Cr.NS_OK;
   },
 
   
