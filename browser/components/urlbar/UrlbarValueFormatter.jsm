@@ -134,16 +134,15 @@ class UrlbarValueFormatter {
       return null;
     }
 
-    let url = this.inputField.value;
+    const inputValue = this.inputField.value;
     let browser = this.window.gBrowser.selectedBrowser;
 
     
     
     
-    if (browser._urlMetaData && browser._urlMetaData.url == url) {
+    if (browser._urlMetaData && browser._urlMetaData.url == inputValue) {
       return browser._urlMetaData.data;
     }
-    browser._urlMetaData = { url, data: null };
 
     
     let flags =
@@ -154,7 +153,7 @@ class UrlbarValueFormatter {
     }
     let uriInfo;
     try {
-      uriInfo = Services.uriFixup.getFixupURIInfo(url, flags);
+      uriInfo = Services.uriFixup.getFixupURIInfo(inputValue, flags);
     } catch (ex) {}
     
     
@@ -164,56 +163,52 @@ class UrlbarValueFormatter {
       uriInfo.keywordProviderName ||
       !["http", "https", "ftp"].includes(uriInfo.fixedURI.scheme)
     ) {
+      browser._urlMetaData = { url: inputValue, data: null };
       return null;
     }
+
+    const { displayHostPort, displayPrePath, port, scheme } = uriInfo.fixedURI;
+
+    let url = UrlbarUtils.losslessDecodeURI(uriInfo.fixedURI);
+    
+    
+    url = /\/$/.test(inputValue) ? url : url.replace(/\/$/, "");
+
+    const schemeWSlashes = `${scheme}://`;
+
+    
+    const domain =
+      port === -1
+        ? displayHostPort
+        : displayHostPort.substring(
+            0,
+            displayHostPort.length - `:${port}`.length
+          );
+
+    const preDomain = decodeURI(
+      displayPrePath.substring(
+        0,
+        displayPrePath.length - displayHostPort.length
+      )
+    );
 
     
     
     
     
     
+    let replacedValue = url;
     let trimmedLength = 0;
-    if (uriInfo.fixedURI.scheme == "http" && !url.startsWith("http://")) {
-      url = "http://" + url;
+    if (
+      uriInfo.fixedURI.scheme == "http" &&
+      !inputValue.startsWith("http://")
+    ) {
+      replacedValue = replacedValue.replace(/^http:\/\//, "");
       trimmedLength = "http://".length;
     }
 
-    
-    
-    
-    let matchedURL = url.match(
-      /^(([a-z]+:\/\/)(?:[^\/#?]+@)?)(\S+?)(?::\d+)?\s*(?:[\/#?]|$)/
-    );
-    if (!matchedURL) {
-      return null;
-    }
-    let [, preDomain, schemeWSlashes, domain] = matchedURL;
-
-    
-    
-    
-    let replaceUrl = false;
-    try {
-      replaceUrl =
-        Services.io.newURI("http://" + domain).displayHost !=
-        uriInfo.fixedURI.displayHost;
-    } catch (ex) {
-      return null;
-    }
-    if (replaceUrl) {
-      if (this._inGetUrlMetaData) {
-        
-        return null;
-      }
-      try {
-        this._inGetUrlMetaData = true;
-        this.window.gBrowser.userTypedValue = null;
-        this.urlbarInput.setURI(uriInfo.fixedURI);
-        return this._getUrlMetaData();
-      } finally {
-        this._inGetUrlMetaData = false;
-      }
-    }
+    browser._urlMetaData = { url: replacedValue, data: null };
+    this.inputField.value = replacedValue;
 
     return (browser._urlMetaData.data = {
       domain,
@@ -322,6 +317,7 @@ class UrlbarValueFormatter {
     }
 
     let selection = controller.getSelection(controller.SELECTION_URLSECONDARY);
+    selection.removeAllRanges();
 
     let rangeLength = preDomain.length + subDomain.length - trimmedLength;
     if (rangeLength) {
