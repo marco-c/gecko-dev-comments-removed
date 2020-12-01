@@ -52,6 +52,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Timeouts: "chrome://marionette/content/capabilities.js",
   UnhandledPromptBehavior: "chrome://marionette/content/capabilities.js",
   waitForEvent: "chrome://marionette/content/sync.js",
+  waitForLoadEvent: "chrome://marionette/content/sync.js",
   waitForObserverTopic: "chrome://marionette/content/sync.js",
   WebElement: "chrome://marionette/content/element.js",
   WebElementEventTarget: "chrome://marionette/content/dom.js",
@@ -2887,6 +2888,16 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
 
   let contentBrowser;
 
+  let onBrowserContentLoaded;
+  if (MarionettePrefs.useActors) {
+    
+    
+    onBrowserContentLoaded = waitForLoadEvent(
+      "pageshow",
+      () => contentBrowser?.browsingContext
+    );
+  }
+
   switch (type) {
     case "window":
       let win = await this.curBrowser.openBrowserWindow(focus, isPrivate);
@@ -2899,6 +2910,8 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
       let tab = await this.curBrowser.openTab(focus);
       contentBrowser = browser.getBrowserForTab(tab);
   }
+
+  await onBrowserContentLoaded;
 
   
   
