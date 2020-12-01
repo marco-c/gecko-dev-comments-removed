@@ -15,12 +15,6 @@ using namespace mozilla::a11y;
   MOXRootGroup* mRootGroup;
 }
 
-- (NSString*)moxRole;
-
-
-- (NSString*)moxRoleDescription;
-
-
 - (NSURL*)moxURL;
 
 
@@ -34,9 +28,6 @@ using namespace mozilla::a11y;
 
 
 - (NSArray*)moxUnignoredChildren;
-
-
-- (BOOL)moxBlockSelector:(SEL)selector;
 
 
 - (void)handleAccessibleEvent:(uint32_t)eventType;
@@ -71,9 +62,6 @@ using namespace mozilla::a11y;
 
 
 - (NSString*)moxIdentifier;
-
-
-- (NSString*)moxSubrole;
 
 
 - (id)moxHitTest:(NSPoint)point;

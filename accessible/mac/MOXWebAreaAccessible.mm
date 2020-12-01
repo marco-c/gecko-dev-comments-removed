@@ -27,10 +27,6 @@ using namespace mozilla::a11y;
 }
 
 - (NSString*)moxRoleDescription {
-  if ([[self moxSubrole] isEqualToString:@"AXLandmarkApplication"]) {
-    return utils::LocalizedString(u"application"_ns);
-  }
-
   return NSAccessibilityRoleDescription(NSAccessibilityGroupRole, nil);
 }
 
@@ -47,11 +43,6 @@ using namespace mozilla::a11y;
   
   
   return @"root-group";
-}
-
-- (NSString*)moxSubrole {
-  
-  return [mParent moxSubrole];
 }
 
 - (id)moxHitTest:(NSPoint)point {
@@ -98,20 +89,6 @@ using namespace mozilla::a11y;
 @end
 
 @implementation MOXWebAreaAccessible
-
-- (NSString*)moxRole {
-  
-  
-  
-  
-  return @"AXWebArea";
-}
-
-- (NSString*)moxRoleDescription {
-  
-  
-  return utils::LocalizedString(u"htmlContent"_ns);
-}
 
 - (NSURL*)moxURL {
   if ([self isExpired]) {
@@ -217,21 +194,10 @@ using namespace mozilla::a11y;
   return [super moxUnignoredChildren];
 }
 
-- (BOOL)moxBlockSelector:(SEL)selector {
-  if (selector == @selector(moxSubrole)) {
-    
-    return YES;
-  }
-
-  return [super moxBlockSelector:selector];
-}
-
 - (id)rootGroup {
   NSArray* children = [super moxUnignoredChildren];
-  if (mRole != roles::APPLICATION && [children count] == 1 &&
+  if ([children count] == 1 &&
       [[[children firstObject] moxUnignoredChildren] count] != 0) {
-    
-    
     
     
     return nil;
