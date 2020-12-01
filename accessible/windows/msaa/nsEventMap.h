@@ -102,7 +102,5 @@ static const uint32_t gWinEventMap[] = {
   EVENT_OBJECT_VALUECHANGE,                          
   kEVENT_WIN_UNKNOWN,                                
   kEVENT_WIN_UNKNOWN,                                
-  kEVENT_WIN_UNKNOWN,                                
-  kEVENT_WIN_UNKNOWN,                                
     
 };
