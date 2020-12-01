@@ -56,16 +56,33 @@ class ConnectionEntry {
                                                        bool urgentTrans,
                                                        bool* onlyUrgent);
 
+  size_t ActiveConnsLength() const { return mActiveConns.Length(); }
+  void InsertIntoActiveConns(HttpConnectionBase* conn);
+  bool IsInActiveConns(HttpConnectionBase* conn);
+  nsresult RemoveActiveConnection(HttpConnectionBase* conn);
+  void MakeAllDontReuseExcept(HttpConnectionBase* conn);
+  bool FindConnToClaim(PendingTransactionInfo* pendingTransInfo);
+  void CloseActiveConnections();
+  void CloseAllActiveConnsWithNullTransactcion(nsresult aCloseCode);
+
+  HttpConnectionBase* GetH2orH3ActiveConn(bool aNoHttp3);
+  
+  
+  bool MakeFirstActiveSpdyConnDontReuse();
+
+  void ClosePersistentConnections();
+
   uint32_t PruneDeadConnections();
   void VerifyTraffic();
+  void PruneNoTraffic();
+  uint32_t TimeoutTick();
 
   HttpRetParams GetConnectionData();
   void LogConnections();
 
   RefPtr<nsHttpConnectionInfo> mConnInfo;
 
-  nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
-  nsTArray<HalfOpenSocket*> mHalfOpens;               
+  nsTArray<HalfOpenSocket*> mHalfOpens;  
   nsTArray<RefPtr<HalfOpenSocket>>
       mHalfOpenFastOpenBackups;  
                                  
@@ -163,6 +180,7 @@ class ConnectionEntry {
   bool RemoveFromIdleConnections(nsHttpConnection* conn);
 
   nsTArray<RefPtr<nsHttpConnection>> mIdleConns;  
+  nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
 
   PendingTransactionQueue mPendingQ;
   ~ConnectionEntry();
