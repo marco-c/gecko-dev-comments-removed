@@ -91,6 +91,8 @@ class GeckoInstance(object):
         "marionette.prefs.recommended": False,
         
         "media.gmp-manager.updateEnabled": False,
+        
+        "media.sanity-test.disabled": True,
         "media.volume_scale": "0.01",
         
         "network.http.prompt-temp-redirect": False,
