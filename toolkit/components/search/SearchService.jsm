@@ -813,8 +813,6 @@ SearchService.prototype = {
         );
       }
     }
-    let settings = await this._settings.get();
-    this._loadEnginesMetadataFromSettings(settings.engines);
 
     
     this._currentEngine = null;
