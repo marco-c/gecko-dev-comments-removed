@@ -458,7 +458,6 @@ class MediaSessionTest : BaseSessionTest() {
         
         
         
-        
         val completedStep5 = GeckoResult.allOf(
                 onActivatedCalled[1][0],
                 onMetadataCalled[1][0],
@@ -609,7 +608,9 @@ class MediaSessionTest : BaseSessionTest() {
                         equalTo(true))
             }
 
-            @AssertCalled(count = 1)
+            
+            
+            @AssertCalled
             override fun onMetadata(
                     session: GeckoSession,
                     mediaSession: MediaSession,
