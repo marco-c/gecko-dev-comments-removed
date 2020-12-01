@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2014 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "wasm/WasmSignalHandlers.h"
 
@@ -23,13 +23,13 @@
 #include "mozilla/ThreadLocal.h"
 
 #include "threading/Thread.h"
-#include "vm/JitActivation.h"  // js::jit::JitActivation
+#include "vm/JitActivation.h"  
 #include "vm/Realm.h"
 #include "vm/Runtime.h"
 #include "wasm/WasmInstance.h"
 
 #if defined(XP_WIN)
-#  include <winternl.h>  // must include before util/Windows.h's `#undef`s
+#  include <winternl.h>  
 #  include "util/Windows.h"
 #elif defined(XP_DARWIN)
 #  include <mach/exc.h>
@@ -43,22 +43,22 @@ using namespace js::wasm;
 
 using mozilla::DebugOnly;
 
-// =============================================================================
-// This following pile of macros and includes defines the ToRegisterState() and
-// the ContextTo{PC,FP,SP,LR}() functions from the (highly) platform-specific
-// CONTEXT struct which is provided to the signal handler.
-// =============================================================================
+
+
+
+
+
 
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
-#  include <sys/ucontext.h>  // for ucontext_t, mcontext_t
+#  include <sys/ucontext.h>  
 #endif
 
 #if defined(__x86_64__)
 #  if defined(__DragonFly__)
-#    include <machine/npx.h>  // for union savefpu
+#    include <machine/npx.h>  
 #  elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
       defined(__NetBSD__) || defined(__OpenBSD__)
-#    include <machine/fpu.h>  // for struct savefpu/fxsave64
+#    include <machine/fpu.h>  
 #  endif
 #endif
 
@@ -234,19 +234,19 @@ using mozilla::DebugOnly;
 #  error "Don't know how to read/write to the thread state via the mcontext_t."
 #endif
 
-// On ARM Linux, including Android, unaligned FP accesses that were not flagged
-// as unaligned will tend to trap (with SIGBUS) and will need to be emulated.
-//
-// We can only perform this emulation if the system header files provide access
-// to the FP registers.  In particular, <sys/user.h> must have definitions of
-// `struct user_vfp` and `struct user_vfp_exc`, as it does on Android.
-//
-// Those definitions are however not present in the headers of every Linux
-// distro - Raspbian is known to be a problem, for example.  However those
-// distros are tier-3 platforms.
-//
-// If you run into compile problems on a tier-3 platform, you can disable the
-// emulation here.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #if defined(__linux__) && defined(__arm__)
 #  define WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
@@ -257,18 +257,18 @@ using mozilla::DebugOnly;
 #endif
 
 #if defined(ANDROID)
-// Not all versions of the Android NDK define ucontext_t or mcontext_t.
-// Detect this and provide custom but compatible definitions. Note that these
-// follow the GLibc naming convention to access register values from
-// mcontext_t.
-//
-// See: https://chromiumcodereview.appspot.com/10829122/
-// See: http://code.google.com/p/android/issues/detail?id=34784
+
+
+
+
+
+
+
 #  if !defined(__BIONIC_HAVE_UCONTEXT_T)
 #    if defined(__arm__)
 
-// GLibc on ARM defines mcontext_t has a typedef for 'struct sigcontext'.
-// Old versions of the C library <signal.h> didn't define the type.
+
+
 #      if !defined(__BIONIC_HAVE_STRUCT_SIGCONTEXT)
 #        include <asm/sigcontext.h>
 #      endif
@@ -280,7 +280,7 @@ typedef struct ucontext {
   struct ucontext* uc_link;
   stack_t uc_stack;
   mcontext_t uc_mcontext;
-  // Other fields are not used so don't define them here.
+  
 } ucontext_t;
 
 #    elif defined(__mips__)
@@ -311,11 +311,11 @@ typedef struct ucontext {
   struct ucontext* uc_link;
   stack_t uc_stack;
   mcontext_t uc_mcontext;
-  // Other fields are not used so don't define them here.
+  
 } ucontext_t;
 
 #    elif defined(__i386__)
-// x86 version for Android.
+
 typedef struct {
   uint32_t gregs[19];
   void* fpregs;
@@ -323,18 +323,18 @@ typedef struct {
   uint32_t cr2;
 } mcontext_t;
 
-typedef uint32_t kernel_sigset_t[2];  // x86 kernel uses 64-bit signal masks
+typedef uint32_t kernel_sigset_t[2];  
 typedef struct ucontext {
   uint32_t uc_flags;
   struct ucontext* uc_link;
   stack_t uc_stack;
   mcontext_t uc_mcontext;
-  // Other fields are not used by V8, don't define them here.
+  
 } ucontext_t;
 enum { REG_EIP = 14 };
-#    endif  // defined(__i386__)
-#  endif    // !defined(__BIONIC_HAVE_UCONTEXT_T)
-#endif      // defined(ANDROID)
+#    endif  
+#  endif    
+#endif      
 
 #if defined(XP_DARWIN)
 #  if defined(__x86_64__)
@@ -454,23 +454,23 @@ static JS::ProfilingFrameIterator::RegisterState ToRegisterState(
   return state;
 }
 
-// =============================================================================
-// All signals/exceptions funnel down to this one trap-handling function which
-// tests whether the pc is in a wasm module and, if so, whether there is
-// actually a trap expected at this pc. These tests both avoid real bugs being
-// silently converted to wasm traps and provides the trapping wasm bytecode
-// offset we need to report in the error.
-//
-// Crashing inside wasm trap handling (due to a bug in trap handling or exposed
-// during trap handling) must be reported like a normal crash, not cause the
-// crash report to be lost. On Windows and non-Mach Unix, a crash during the
-// handler reenters the handler, possibly repeatedly until exhausting the stack,
-// and so we prevent recursion with the thread-local sAlreadyHandlingTrap. On
-// Mach, the wasm exception handler has its own thread and is installed only on
-// the thread-level debugging ports of JSRuntime threads, so a crash on
-// exception handler thread will not recurse; it will bubble up to the
-// process-level debugging ports (where Breakpad is installed).
-// =============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static MOZ_THREAD_LOCAL(bool) sAlreadyHandlingTrap;
 
@@ -488,7 +488,7 @@ struct AutoHandlingTrap {
 
 #ifdef WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
 
-// Code to handle SIGBUS for unaligned floating point accesses on 32-bit ARM.
+
 
 static uintptr_t ReadGPR(CONTEXT* context, uint32_t rn) {
   switch (rn) {
@@ -529,20 +529,20 @@ static uintptr_t ReadGPR(CONTEXT* context, uint32_t rn) {
   }
 }
 
-// Linux kernel data structures.
-//
-// The vfp_sigframe is a kernel type overlaid on the uc_regspace field of the
-// ucontext_t if the first word of the uc_regspace is VFP_MAGIC.  (user_vfp and
-// user_vfp_exc are defined in sys/user.h and are stable.)
-//
-// VFP_MAGIC appears to have been stable since a commit to Linux on 2010-04-11,
-// when it was changed from being 0x56465001 on ARMv6 and earlier and 0x56465002
-// on ARMv7 and later, to being 0x56465001 on all CPU versions.  This was in
-// Kernel 2.6.34-rc5.
-//
-// My best interpretation of the Android commit history is that Android has had
-// vfp_sigframe and VFP_MAGIC in this form since at least Android 3.4 / 2012;
-// Firefox requires Android 4.0 at least and we're probably safe here.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 struct vfp_sigframe {
   unsigned long magic;
@@ -602,23 +602,23 @@ static bool WriteFPR32(CONTEXT* context, uint32_t vd, float val) {
 
 static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
                                 Instance* instance) {
-  // ARM only, no Thumb.
+  
   MOZ_RELEASE_ASSERT(uintptr_t(pc) % 4 == 0);
 
-  // wasmLoadImpl() and wasmStoreImpl() in MacroAssembler-arm.cpp emit plain,
-  // unconditional VLDR and VSTR instructions that do not use the PC as the base
-  // register.
+  
+  
+  
   uint32_t instr = *(uint32_t*)pc;
   uint32_t masked = instr & 0x0F300E00;
   bool isVLDR = masked == 0x0D100A00;
   bool isVSTR = masked == 0x0D000A00;
 
   if (!isVLDR && !isVSTR) {
-    // Three obvious cases if we don't get our expected instructions:
-    // - masm is generating other FP access instructions than it should
-    // - we're encountering a device that traps on new kinds of accesses,
-    //   perhaps unaligned integer accesses
-    // - general code generation bugs that lead to SIGBUS
+    
+    
+    
+    
+    
 #  ifdef ANDROID
     __android_log_print(ANDROID_LOG_ERROR, "WASM", "Bad SIGBUS instr %08x",
                         instr);
@@ -686,12 +686,12 @@ static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
 #  endif
   return false;
 }
-#else   // WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
+#else
 static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
                                 Instance* instance) {
   return false;
 }
-#endif  // WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
+#endif
 
 static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
                                     bool isUnalignedSignal = false,
@@ -712,11 +712,11 @@ static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
     return false;
   }
 
-  // We have a safe, expected wasm trap, so fp is well-defined to be a Frame*.
-  // For the first sanity check, the Trap::IndirectCallBadSig special case is
-  // due to this trap occurring in the indirect call prologue, while fp points
-  // to the caller's Frame which can be in a different Module. In any case,
-  // though, the containing JSContext is the same.
+  
+  
+  
+  
+  
 
   auto* frame = reinterpret_cast<Frame*>(ContextToFP(context));
   Instance* instance = GetNearestEffectiveTls(frame)->instance;
@@ -736,27 +736,27 @@ static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
       instance->realm()->runtimeFromAnyThread()->mainContextFromAnyThread();
   MOZ_RELEASE_ASSERT(!assertCx || cx == assertCx);
 
-  // JitActivation::startWasmTrap() stores enough register state from the
-  // point of the trap to allow stack unwinding or resumption, both of which
-  // will call finishWasmTrap().
+  
+  
+  
   jit::JitActivation* activation = cx->activation()->asJit();
   activation->startWasmTrap(trap, bytecode.offset(), ToRegisterState(context));
   SetContextPC(context, segment.trapCode());
   return true;
 }
 
-// =============================================================================
-// The following platform-specific handlers funnel all signals/exceptions into
-// the shared HandleTrap() above.
-// =============================================================================
+
+
+
+
 
 #if defined(XP_WIN)
-// Obtained empirically from thread_local codegen on x86/x64/arm64.
-// Compiled in all user binaries, so should be stable over time.
+
+
 static const unsigned sThreadLocalArrayPointerIndex = 11;
 
 static LONG WINAPI WasmTrapHandler(LPEXCEPTION_POINTERS exception) {
-  // Make sure TLS is initialized before reading sAlreadyHandlingTrap.
+  
   if (!NtCurrentTeb()->Reserved1[sThreadLocalArrayPointerIndex]) {
     return EXCEPTION_CONTINUE_SEARCH;
   }
@@ -780,20 +780,20 @@ static LONG WINAPI WasmTrapHandler(LPEXCEPTION_POINTERS exception) {
 }
 
 #elif defined(XP_DARWIN)
-// On OSX we are forced to use the lower-level Mach exception mechanism instead
-// of Unix signals because breakpad uses Mach exceptions and would otherwise
-// report a crash before wasm gets a chance to handle the exception.
 
-// This definition was generated by mig (the Mach Interface Generator) for the
-// routine 'exception_raise' (exc.defs).
+
+
+
+
+
 #  pragma pack(4)
 typedef struct {
   mach_msg_header_t Head;
-  /* start of the kernel processed data */
+  
   mach_msg_body_t msgh_body;
   mach_msg_port_descriptor_t thread;
   mach_msg_port_descriptor_t task;
-  /* end of the kernel processed data */
+  
   NDR_record_t NDR;
   exception_type_t exception;
   mach_msg_type_number_t codeCnt;
@@ -801,17 +801,17 @@ typedef struct {
 } Request__mach_exception_raise_t;
 #  pragma pack()
 
-// The full Mach message also includes a trailer.
+
 struct ExceptionRequest {
   Request__mach_exception_raise_t body;
   mach_msg_trailer_t trailer;
 };
 
 static bool HandleMachException(const ExceptionRequest& request) {
-  // Get the port of the JSContext's thread from the message.
+  
   mach_port_t cxThread = request.body.thread.name;
 
-  // Read out the JSRuntime thread's register state.
+  
   CONTEXT context;
 #  if defined(__x86_64__)
   unsigned int thread_state_count = x86_THREAD_STATE64_COUNT;
@@ -861,7 +861,7 @@ static bool HandleMachException(const ExceptionRequest& request) {
     }
   }
 
-  // Update the thread state with the new pc and register values.
+  
   kret = thread_set_state(cxThread, float_state,
                           (thread_state_t)&context.float_, float_state_count);
   if (kret != KERN_SUCCESS) {
@@ -879,7 +879,7 @@ static bool HandleMachException(const ExceptionRequest& request) {
 static mach_port_t sMachDebugPort = MACH_PORT_NULL;
 
 static void MachExceptionHandlerThread() {
-  // Taken from mach_exc in /usr/include/mach/mach_exc.defs.
+  
   static const unsigned EXCEPTION_MSG_ID = 2405;
 
   while (true) {
@@ -888,8 +888,8 @@ static void MachExceptionHandlerThread() {
         mach_msg(&request.body.Head, MACH_RCV_MSG, 0, sizeof(request),
                  sMachDebugPort, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 
-    // If we fail even receiving the message, we can't even send a reply!
-    // Rather than hanging the faulting thread (hanging the browser), crash.
+    
+    
     if (kret != KERN_SUCCESS) {
       fprintf(stderr, "MachExceptionHandlerThread: mach_msg failed with %d\n",
               (int)kret);
@@ -902,18 +902,18 @@ static void MachExceptionHandlerThread() {
       MOZ_CRASH();
     }
 
-    // Some thread just commited an EXC_BAD_ACCESS and has been suspended by
-    // the kernel. The kernel is waiting for us to reply with instructions.
-    // Our default is the "not handled" reply (by setting the RetCode field
-    // of the reply to KERN_FAILURE) which tells the kernel to continue
-    // searching at the process and system level. If this is an asm.js
-    // expected exception, we handle it and return KERN_SUCCESS.
+    
+    
+    
+    
+    
+    
     bool handled = HandleMachException(request);
     kern_return_t replyCode = handled ? KERN_SUCCESS : KERN_FAILURE;
 
-    // This magic incantation to send a reply back to the kernel was
-    // derived from the exc_server generated by
-    // 'mig -v /usr/include/mach/mach_exc.defs'.
+    
+    
+    
     __Reply__exception_raise_t reply;
     reply.Head.msgh_bits =
         MACH_MSGH_BITS(MACH_MSGH_BITS_REMOTE(request.body.Head.msgh_bits), 0);
@@ -928,7 +928,7 @@ static void MachExceptionHandlerThread() {
   }
 }
 
-#else  // If not Windows or Mac, assume Unix
+#else  
 
 #  ifdef __mips__
 static const uint32_t kWasmTrapSignal = SIGFPE;
@@ -964,18 +964,18 @@ static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
   }
   MOZ_ASSERT(previousSignal);
 
-  // This signal is not for any asm.js code we expect, so we need to forward
-  // the signal to the next handler. If there is no next handler (SIG_IGN or
-  // SIG_DFL), then it's time to crash. To do this, we set the signal back to
-  // its original disposition and return. This will cause the faulting op to
-  // be re-executed which will crash in the normal way. The advantage of
-  // doing this to calling _exit() is that we remove ourselves from the crash
-  // stack which improves crash reports. If there is a next handler, call it.
-  // It will either crash synchronously, fix up the instruction so that
-  // execution can continue and return, or trigger a crash by returning the
-  // signal to it's original disposition and returning.
-  //
-  // Note: the order of these tests matter.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (previousSignal->sa_flags & SA_SIGINFO) {
     previousSignal->sa_sigaction(signum, info, context);
   } else if (previousSignal->sa_handler == SIG_DFL ||
@@ -985,7 +985,7 @@ static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
     previousSignal->sa_handler(signum);
   }
 }
-#endif  // XP_WIN || XP_DARWIN || assume unix
+#endif  
 
 #if defined(ANDROID) && defined(MOZ_LINKER)
 extern "C" MFBT_API bool IsSignalHandlingBroken();
@@ -1010,12 +1010,12 @@ void wasm::EnsureEagerProcessSignalHandlers() {
   MOZ_RELEASE_ASSERT(eagerInstallState->success == false);
 
 #if defined(JS_CODEGEN_NONE)
-  // If there is no JIT, then there should be no Wasm signal handlers.
+  
   return;
 #endif
 
 #if defined(ANDROID) && defined(MOZ_LINKER)
-  // Signal handling is broken on some android systems.
+  
   if (IsSignalHandlingBroken()) {
     return;
   }
@@ -1023,34 +1023,34 @@ void wasm::EnsureEagerProcessSignalHandlers() {
 
   sAlreadyHandlingTrap.infallibleInit();
 
-  // Install whatever exception/signal handler is appropriate for the OS.
+  
 #if defined(XP_WIN)
 
 #  if defined(MOZ_ASAN)
-  // Under ASan we need to let the ASan runtime's ShadowExceptionHandler stay
-  // in the first handler position. This requires some coordination with
-  // MemoryProtectionExceptionHandler::isDisabled().
+  
+  
+  
   const bool firstHandler = false;
 #  else
-  // Otherwise, WasmTrapHandler needs to go first, so that we can recover
-  // from wasm faults and continue execution without triggering handlers
-  // such as MemoryProtectionExceptionHandler that assume we are crashing.
+  
+  
+  
   const bool firstHandler = true;
 #  endif
   if (!AddVectoredExceptionHandler(firstHandler, WasmTrapHandler)) {
-    // Windows has all sorts of random security knobs for disabling things
-    // so make this a dynamic failure that disables wasm, not a MOZ_CRASH().
+    
+    
     return;
   }
 
 #elif defined(XP_DARWIN)
-  // All the Mach setup in EnsureLazyProcessSignalHandlers.
+  
 #else
-  // SA_NODEFER allows us to reenter the signal handler if we crash while
-  // handling the signal, and fall through to the Breakpad handler by testing
-  // handlingSegFault.
+  
+  
+  
 
-  // Allow handling OOB with signals on all architectures
+  
   struct sigaction faultHandler;
   faultHandler.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
   faultHandler.sa_sigaction = WasmTrapHandler;
@@ -1060,7 +1060,7 @@ void wasm::EnsureEagerProcessSignalHandlers() {
   }
 
 #  if defined(JS_CODEGEN_ARM)
-  // On Arm Handle Unaligned Accesses
+  
   struct sigaction busHandler;
   busHandler.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
   busHandler.sa_sigaction = WasmTrapHandler;
@@ -1070,8 +1070,8 @@ void wasm::EnsureEagerProcessSignalHandlers() {
   }
 #  endif
 
-  // Install a handler to handle the instructions that are emitted to implement
-  // wasm traps.
+  
+  
   struct sigaction wasmTrapHandler;
   wasmTrapHandler.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
   wasmTrapHandler.sa_sigaction = WasmTrapHandler;
@@ -1097,7 +1097,7 @@ static bool EnsureLazyProcessSignalHandlers() {
   MOZ_RELEASE_ASSERT(lazyInstallState->success == false);
 
 #ifdef XP_DARWIN
-  // Create the port that all JSContext threads will redirect their traps to.
+  
   kern_return_t kret;
   kret = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
                             &sMachDebugPort);
@@ -1110,9 +1110,9 @@ static bool EnsureLazyProcessSignalHandlers() {
     return false;
   }
 
-  // Create the thread that will wait on and service sMachDebugPort.
-  // It's not useful to destroy this thread on process shutdown so
-  // immediately detach on successful start.
+  
+  
+  
   Thread handlerThread;
   if (!handlerThread.init(MachExceptionHandlerThread)) {
     return false;
@@ -1145,13 +1145,13 @@ bool wasm::EnsureFullSignalHandlers(JSContext* cx) {
   }
 
 #ifdef XP_DARWIN
-  // In addition to the process-wide signal handler setup, OSX needs each
-  // thread configured to send its exceptions to sMachDebugPort. While there
-  // are also task-level (i.e. process-level) exception ports, those are
-  // "claimed" by breakpad and chaining Mach exceptions is dark magic that we
-  // avoid by instead intercepting exceptions at the thread level before they
-  // propagate to the process-level. This works because there are no other
-  // uses of thread-level exception ports.
+  
+  
+  
+  
+  
+  
+  
   MOZ_RELEASE_ASSERT(sMachDebugPort != MACH_PORT_NULL);
   thread_port_t thisThread = mach_thread_self();
   kern_return_t kret = thread_set_exception_ports(
@@ -1184,7 +1184,8 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
     return false;
   }
 
-  Instance& instance = *Frame::fromUntaggedWasmExitFP(regs.fp)->instance();
+  Instance& instance =
+      *GetNearestEffectiveTls(Frame::fromUntaggedWasmExitFP(regs.fp))->instance;
   MOZ_ASSERT(&instance.code() == &segment.code());
 
   if (!instance.memoryAccessInGuardRegion((uint8_t*)addr, numBytes)) {
