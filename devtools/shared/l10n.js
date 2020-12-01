@@ -9,45 +9,6 @@ const { sprintf } = require("devtools/shared/sprintfjs/sprintf");
 const propertiesMap = {};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const reqShared = require.context(
-  "raw!devtools/shared/locales/",
-  true,
-  /^.*\.properties$/
-);
-const reqClient = require.context(
-  "raw!devtools/client/locales/",
-  true,
-  /^.*\.properties$/
-);
-const reqStartup = require.context(
-  "raw!devtools/startup/locales/",
-  true,
-  /^.*\.properties$/
-);
-const reqGlobal = require.context(
-  "raw!toolkit/locales/",
-  true,
-  /^.*\.properties$/
-);
-
-
 const numberFormatters = new Map();
 const getNumberFormatter = function(decimals) {
   let formatter = numberFormatters.get(decimals);
@@ -73,25 +34,35 @@ const getNumberFormatter = function(decimals) {
 
 function getProperties(url) {
   if (!propertiesMap[url]) {
-    
-    
-    
-    
-    
-    const index = url.lastIndexOf("/");
-    
-    const baseName = "." + url.substr(index);
-    let reqFn;
-    if (/^toolkit/.test(url)) {
-      reqFn = reqGlobal;
-    } else if (/^devtools\/shared/.test(url)) {
-      reqFn = reqShared;
-    } else if (/^devtools\/startup/.test(url)) {
-      reqFn = reqStartup;
+    let propertiesFile;
+    let isNodeEnv = false;
+    try {
+      
+      isNodeEnv = process?.release?.name == "node";
+    } catch (e) {}
+
+    if (isNodeEnv) {
+      
+      
+      const lastDelimIndex = url.lastIndexOf("/");
+      const defaultLocaleUrl =
+        url.substring(0, lastDelimIndex) +
+        "/en-US" +
+        url.substring(lastDelimIndex);
+
+      const path = require("path");
+      
+      const rootPath = path.join(__dirname, "../../");
+      const absoluteUrl = path.join(rootPath, defaultLocaleUrl);
+      const { readFileSync } = require("fs");
+      
+      
+      propertiesFile = readFileSync(absoluteUrl, { encoding: "utf8" });
     } else {
-      reqFn = reqClient;
+      propertiesFile = require("raw!" + url);
     }
-    propertiesMap[url] = parsePropertiesFile(reqFn(baseName));
+
+    propertiesMap[url] = parsePropertiesFile(propertiesFile);
   }
 
   return propertiesMap[url];
