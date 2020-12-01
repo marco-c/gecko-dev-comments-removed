@@ -11,8 +11,7 @@
 
 namespace mozilla {
 
-class GpuDecoderModule;
-class IRemoteDecoderChild;
+class RemoteDecoderChild;
 class RemoteDecoderManagerChild;
 class RemoteMediaDataDecoder;
 
@@ -27,7 +26,6 @@ class RemoteMediaDataDecoder
     : public MediaDataDecoder,
       public DecoderDoctorLifeLogger<RemoteMediaDataDecoder> {
  public:
-  friend class GpuDecoderModule;
   friend class RemoteDecoderManagerChild;
 
   
@@ -45,13 +43,13 @@ class RemoteMediaDataDecoder
   ConversionRequired NeedsConversion() const override;
 
  private:
-  explicit RemoteMediaDataDecoder(IRemoteDecoderChild* aChild);
+  explicit RemoteMediaDataDecoder(RemoteDecoderChild* aChild);
   ~RemoteMediaDataDecoder();
 
   
   
   
-  RefPtr<IRemoteDecoderChild> mChild;
+  RefPtr<RemoteDecoderChild> mChild;
   
   
   nsCString mDescription = "RemoteMediaDataDecoder"_ns;
