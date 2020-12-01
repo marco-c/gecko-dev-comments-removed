@@ -2,7 +2,6 @@
 
 
 
-
 #![forbid(unsafe_code)]
 
 extern crate base64;
