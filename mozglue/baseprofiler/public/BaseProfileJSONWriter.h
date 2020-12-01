@@ -306,13 +306,14 @@ class UniqueJSONStrings {
 
   
   
-  void WriteProperty(JSONWriter& aWriter, const char* aName, const char* aStr) {
-    aWriter.IntProperty(MakeStringSpan(aName), GetOrAddIndex(aStr));
+  void WriteProperty(JSONWriter& aWriter, const Span<const char>& aName,
+                     const Span<const char>& aStr) {
+    aWriter.IntProperty(aName, GetOrAddIndex(aStr));
   }
 
   
   
-  void WriteElement(JSONWriter& aWriter, const char* aStr) {
+  void WriteElement(JSONWriter& aWriter, const Span<const char>& aStr) {
     aWriter.IntElement(GetOrAddIndex(aStr));
   }
 
@@ -323,7 +324,7 @@ class UniqueJSONStrings {
  private:
   
   
-  MFBT_API uint32_t GetOrAddIndex(const char* aStr);
+  MFBT_API uint32_t GetOrAddIndex(const Span<const char>& aStr);
 
   SpliceableChunkedJSONWriter mStringTableWriter;
   HashMap<HashNumber, uint32_t> mStringHashToIndexMap;
