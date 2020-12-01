@@ -27,7 +27,7 @@ class FlingAccelerator final {
   void Reset();
 
   
-  bool IsTracking() const { return !mPreviousFlingStartTime.IsNull(); }
+  bool IsTracking() const { return mIsTracking; }
 
   
   
@@ -48,10 +48,9 @@ class FlingAccelerator final {
   ParentLayerPoint mPreviousFlingStartingVelocity;
   
   
-  SampleTime mPreviousFlingStartTime;
-  
-  
   ParentLayerPoint mPreviousFlingCancelVelocity;
+  
+  bool mIsTracking = false;
 };
 
 }  
