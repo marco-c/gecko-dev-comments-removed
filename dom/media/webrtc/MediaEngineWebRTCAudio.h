@@ -140,7 +140,8 @@ class AudioInputProcessing : public AudioDataListener {
                        const PrincipalHandle& aPrincipalHandle);
 
   void Pull(MediaTrackGraphImpl* aGraph, GraphTime aFrom, GraphTime aTo,
-            GraphTime aTrackEnd, AudioSegment* aSegment, bool* aEnded);
+            GraphTime aTrackEnd, AudioSegment* aSegment,
+            bool aLastPullThisIteration, bool* aEnded);
 
   void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
                         size_t aFrames, TrackRate aRate,
@@ -228,17 +229,15 @@ class AudioInputProcessing : public AudioDataListener {
   AlignedFloatBuffer mInputDownmixBuffer;
   
   AudioSegment mSegment;
-#ifdef DEBUG
-  
-  
-  GraphTime mLastCallbackAppendTime;
-#endif
   
   
   bool mLiveFramesAppended;
   
   
-  bool mLiveSilenceAppended;
+  
+  
+  
+  TrackTime mLiveBufferingAppended;
   
   const PrincipalHandle mPrincipal;
   
