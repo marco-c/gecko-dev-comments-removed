@@ -714,6 +714,20 @@ void CodeGenerator::visitModI(LModI* ins) {
   
   masm.ma_mov(lhs, callTemp);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   Label done;
   modICommon(mir, lhs, rhs, output, ins->snapshot(), done);
 
@@ -754,6 +768,11 @@ void CodeGenerator::visitSoftModI(LSoftModI* ins) {
   MOZ_ASSERT(callTemp != rhs);
   masm.ma_mov(lhs, callTemp);
 
+  
+  
+  
+  
+  
   
   
   if (mir->canBeNegativeDividend()) {
