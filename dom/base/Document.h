@@ -920,8 +920,12 @@ class Document : public nsINode,
 
 
 
+
+
+
   void SetPrincipals(nsIPrincipal* aPrincipal,
-                     nsIPrincipal* aPartitionedPrincipal);
+                     nsIPrincipal* aPartitionedPrincipal,
+                     bool aSetContentBlockingAllowListPrincipal = true);
 
   
 

@@ -3697,7 +3697,12 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   if (needNewNullPrincipal) {
     principal = NullPrincipal::CreateWithInheritedAttributes(principal);
-    SetPrincipals(principal, principal);
+    
+    
+    
+    
+    SetPrincipals(principal, principal,
+                   false);
   }
 
   ApplySettingsFromCSP(false);
@@ -3997,7 +4002,8 @@ void Document::RemoveFromIdTable(Element* aElement, nsAtom* aId) {
 }
 
 void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
-                             nsIPrincipal* aNewPartitionedPrincipal) {
+                             nsIPrincipal* aNewPartitionedPrincipal,
+                             bool aSetContentBlockingAllowListPrincipal) {
   MOZ_ASSERT(!!aNewPrincipal == !!aNewPartitionedPrincipal);
   if (aNewPrincipal && mAllowDNSPrefetch &&
       StaticPrefs::network_dns_disablePrefetchFromHTTPS()) {
@@ -4013,8 +4019,10 @@ void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
 
   mCSSLoader->RegisterInSheetCache();
 
-  ContentBlockingAllowList::ComputePrincipal(
-      aNewPrincipal, getter_AddRefs(mContentBlockingAllowListPrincipal));
+  if (aSetContentBlockingAllowListPrincipal) {
+    ContentBlockingAllowList::ComputePrincipal(
+        aNewPrincipal, getter_AddRefs(mContentBlockingAllowListPrincipal));
+  }
 
 #ifdef DEBUG
   
