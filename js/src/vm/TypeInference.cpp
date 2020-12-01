@@ -212,17 +212,6 @@ const char* js::InferSpewColorReset() {
   return "\x1b[0m";
 }
 
-const char* js::InferSpewColor(TypeConstraint* constraint) {
-  
-  static const char* const colors[] = {"\x1b[31m", "\x1b[32m", "\x1b[33m",
-                                       "\x1b[34m", "\x1b[35m", "\x1b[36m",
-                                       "\x1b[37m"};
-  if (!InferSpewColorable()) {
-    return "";
-  }
-  return colors[DefaultHasher<TypeConstraint*>::hash(constraint) % 7];
-}
-
 const char* js::InferSpewColor(TypeSet* types) {
   
   static const char* const colors[] = {"\x1b[1;31m", "\x1b[1;32m", "\x1b[1;33m",
@@ -472,56 +461,11 @@ bool TypeSet::enumerateTypes(TypeList* list) const {
   return true;
 }
 
-inline bool TypeSet::addTypesToConstraint(JSContext* cx,
-                                          TypeConstraint* constraint) {
-  
-
-
-
-  TypeList types;
-  if (!enumerateTypes(&types)) {
-    return false;
-  }
-
-  for (unsigned i = 0; i < types.length(); i++) {
-    constraint->newType(cx, this, types[i]);
-  }
-
-  return true;
-}
-
 #ifdef DEBUG
 static inline bool CompartmentsMatch(Compartment* a, Compartment* b) {
   return !a || !b || a == b;
 }
 #endif
-
-bool ConstraintTypeSet::addConstraint(JSContext* cx, TypeConstraint* constraint,
-                                      bool callExisting) {
-  checkMagic();
-
-  if (!constraint) {
-    
-    return false;
-  }
-
-  MOZ_RELEASE_ASSERT(cx->zone()->types.activeAnalysis);
-  MOZ_ASSERT(
-      CompartmentsMatch(maybeCompartment(), constraint->maybeCompartment()));
-
-  InferSpew(ISpewOps, "addConstraint: %sT%p%s %sC%p%s %s", InferSpewColor(this),
-            this, InferSpewColorReset(), InferSpewColor(constraint), constraint,
-            InferSpewColorReset(), constraint->kind());
-
-  MOZ_ASSERT(constraint->next() == nullptr);
-  constraint->setNext(constraintList_);
-  constraintList_ = constraint;
-
-  if (callExisting) {
-    return addTypesToConstraint(cx, constraint);
-  }
-  return true;
-}
 
 void TypeSet::clearObjects() {
   setBaseObjectCount(0);
@@ -717,19 +661,7 @@ void ConstraintTypeSet::addType(const AutoSweepBase& sweep, JSContext* cx,
 
   postWriteBarrier(cx, type);
 
-  InferSpew(ISpewOps, "addType: %sT%p%s %s", InferSpewColor(this), this,
-            InferSpewColorReset(), TypeString(type).get());
-
-  
-  if (!cx->isHelperThreadContext()) {
-    TypeConstraint* constraint = constraintList(sweep);
-    while (constraint) {
-      constraint->newType(cx, this, type);
-      constraint = constraint->next();
-    }
-  } else {
-    MOZ_ASSERT(!constraintList_);
-  }
+  MOZ_CRASH("TODO(no-TI): remove");
 }
 
 void TypeSet::print(FILE* fp) {
@@ -876,40 +808,6 @@ bool TypeSet::IsTypeAboutToBeFinalized(TypeSet::Type* v) {
   return isAboutToBeFinalized;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class CompilerConstraint {
- public:
-  explicit CompilerConstraint(LifoAlloc* alloc) {}
-
-  
-  
-  virtual bool generateTypeConstraint(JSContext* cx,
-                                      RecompileInfo recompileInfo) = 0;
-};
-
 const JSClass* TypeSet::ObjectKey::clasp() {
   return isGroup() ? group()->clasp() : singleton()->getClass();
 }
@@ -986,26 +884,7 @@ static void ObjectStateChange(const AutoSweepObjectGroup& sweep, JSContext* cx,
     return;
   }
 
-  
-  HeapTypeSet* types = group->maybeGetProperty(sweep, JSID_EMPTY);
-
-  
-  if (markingUnknown) {
-    group->addFlags(sweep,
-                    OBJECT_FLAG_DYNAMIC_MASK | OBJECT_FLAG_UNKNOWN_PROPERTIES);
-  }
-
-  if (types) {
-    if (!cx->isHelperThreadContext()) {
-      TypeConstraint* constraint = types->constraintList(sweep);
-      while (constraint) {
-        constraint->newObjectState(cx, group);
-        constraint = constraint->next();
-      }
-    } else {
-      MOZ_ASSERT(!types->constraintList(sweep));
-    }
-  }
+  MOZ_CRASH("TODO(no-TI): remove");
 }
 
 bool js::ClassCanHaveExtraProperties(const JSClass* clasp) {
@@ -1368,19 +1247,7 @@ void ObjectGroup::markStateChange(const AutoSweepObjectGroup& sweep,
     return;
   }
 
-  AutoEnterAnalysis enter(cx);
-  HeapTypeSet* types = maybeGetProperty(sweep, JSID_EMPTY);
-  if (types) {
-    if (!cx->isHelperThreadContext()) {
-      TypeConstraint* constraint = types->constraintList(sweep);
-      while (constraint) {
-        constraint->newObjectState(cx, this);
-        constraint = constraint->next();
-      }
-    } else {
-      MOZ_ASSERT(!types->constraintList(sweep));
-    }
-  }
+  MOZ_CRASH("TODO(no-TI): remove");
 }
 
 void ObjectGroup::setFlags(const AutoSweepObjectGroup& sweep, JSContext* cx,
@@ -1616,119 +1483,6 @@ void ObjectGroup::print(const AutoSweepObjectGroup& sweep) {
 
 
 
-
-
-
-
-class TypeConstraintClearDefiniteGetterSetter : public TypeConstraint {
- public:
-  ObjectGroup* group;
-
-  explicit TypeConstraintClearDefiniteGetterSetter(ObjectGroup* group)
-      : group(group) {}
-
-  const char* kind() override { return "clearDefiniteGetterSetter"; }
-
-  void newPropertyState(JSContext* cx, TypeSet* source) override {
-    
-
-
-
-
-    if (source->nonDataProperty() || source->nonWritableProperty()) {
-      group->clearNewScript(cx);
-    }
-  }
-
-  void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) override {}
-
-  bool sweep(TypeZone& zone, TypeConstraint** res) override {
-    if (IsAboutToBeFinalizedUnbarriered(&group)) {
-      return false;
-    }
-    *res = zone.typeLifoAlloc().new_<TypeConstraintClearDefiniteGetterSetter>(
-        group);
-    return true;
-  }
-
-  Compartment* maybeCompartment() override { return group->compartment(); }
-};
-
-bool js::AddClearDefiniteGetterSetterForPrototypeChain(
-    JSContext* cx, DPAConstraintInfo& constraintInfo, ObjectGroup* group,
-    HandleId id, bool* added) {
-  
-
-
-
-
-
-  *added = false;
-
-  RootedObject proto(cx, group->proto().toObjectOrNull());
-  while (proto) {
-    if (!proto->hasStaticPrototype()) {
-      return true;
-    }
-    ObjectGroup* protoGroup = JSObject::getGroup(cx, proto);
-    if (!protoGroup) {
-      return false;
-    }
-    AutoSweepObjectGroup sweep(protoGroup);
-    if (protoGroup->unknownProperties(sweep)) {
-      return true;
-    }
-    HeapTypeSet* protoTypes = protoGroup->getProperty(sweep, cx, proto, id);
-    if (!protoTypes) {
-      return false;
-    }
-    if (protoTypes->nonDataProperty() || protoTypes->nonWritableProperty()) {
-      return true;
-    }
-    if (!constraintInfo.addProtoConstraint(proto, id)) {
-      return false;
-    }
-    proto = proto->staticPrototype();
-  }
-
-  *added = true;
-  return true;
-}
-
-
-
-
-
-class TypeConstraintClearDefiniteSingle : public TypeConstraint {
- public:
-  ObjectGroup* group;
-
-  explicit TypeConstraintClearDefiniteSingle(ObjectGroup* group)
-      : group(group) {}
-
-  const char* kind() override { return "clearDefiniteSingle"; }
-
-  void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) override {
-    if (source->baseFlags() || source->getObjectCount() > 1) {
-      group->clearNewScript(cx);
-    }
-  }
-
-  bool sweep(TypeZone& zone, TypeConstraint** res) override {
-    if (IsAboutToBeFinalizedUnbarriered(&group)) {
-      return false;
-    }
-    *res = zone.typeLifoAlloc().new_<TypeConstraintClearDefiniteSingle>(group);
-    return true;
-  }
-
-  Compartment* maybeCompartment() override { return group->compartment(); }
-};
-
-
-
-
-
 void PreliminaryObjectArray::registerNewObject(PlainObject* res) {
   MOZ_ASSERT(IsTypeInferenceEnabled());
 
@@ -1948,309 +1702,9 @@ void TypeNewScript::registerNewObject(PlainObject* res) {
   preliminaryObjects->registerNewObject(res);
 }
 
-static bool ChangeObjectFixedSlotCount(JSContext* cx, PlainObject* obj,
-                                       gc::AllocKind allocKind) {
-  MOZ_ASSERT(OnlyHasDataProperties(obj->lastProperty()));
-
-  Shape* newShape = ReshapeForAllocKind(cx, obj->lastProperty(),
-                                        obj->taggedProto(), allocKind);
-  if (!newShape) {
-    return false;
-  }
-
-  obj->setLastPropertyShrinkFixedSlots(newShape);
-  return true;
-}
-
-bool DPAConstraintInfo::finishConstraints(JSContext* cx, ObjectGroup* group) {
-  for (const ProtoConstraint& constraint : protoConstraints_) {
-    ObjectGroup* protoGroup = constraint.proto->group();
-
-    
-    
-
-    AutoSweepObjectGroup sweep(protoGroup);
-    bool unknownProperties = protoGroup->unknownProperties(sweep);
-    MOZ_RELEASE_ASSERT(!unknownProperties);
-
-    HeapTypeSet* protoTypes =
-        protoGroup->getProperty(sweep, cx, constraint.proto, constraint.id);
-    MOZ_RELEASE_ASSERT(protoTypes);
-
-    MOZ_ASSERT(!protoTypes->nonDataProperty());
-    MOZ_ASSERT(!protoTypes->nonWritableProperty());
-
-    if (!protoTypes->addConstraint(
-            cx,
-            cx->typeLifoAlloc().new_<TypeConstraintClearDefiniteGetterSetter>(
-                group))) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-  }
-
-  return true;
-}
-
 bool TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group,
                                  bool* regenerate, bool force) {
-  
-  
-
-  
-  
-  AutoSweepObjectGroup sweep(group);
-  if (!group->newScript(sweep)) {
-    return true;
-  }
-
-  MOZ_ASSERT(this == group->newScript(sweep));
-  MOZ_ASSERT(cx->realm() == group->realm());
-
-  if (regenerate) {
-    *regenerate = false;
-  }
-
-  if (analyzed()) {
-    
-    return true;
-  }
-
-  
-  
-  if (!force && !preliminaryObjects->full()) {
-    return true;
-  }
-
-  AutoEnterAnalysis enter(cx);
-
-  
-  auto destroyNewScript = mozilla::MakeScopeExit([&] {
-    if (group) {
-      group->clearNewScript(cx);
-    }
-  });
-
-  
-  
-  Shape* prefixShape = nullptr;
-  size_t maxSlotSpan = 0;
-  for (size_t i = 0; i < PreliminaryObjectArray::COUNT; i++) {
-    JSObject* objBase = preliminaryObjects->get(i);
-    if (!objBase) {
-      continue;
-    }
-    PlainObject* obj = &objBase->as<PlainObject>();
-
-    
-    
-    Shape* shape = obj->lastProperty();
-    if (shape->inDictionary() || !OnlyHasDataProperties(shape) ||
-        shape->getObjectFlags() != 0) {
-      return true;
-    }
-
-    maxSlotSpan = std::max<size_t>(maxSlotSpan, obj->slotSpan());
-
-    if (prefixShape) {
-      MOZ_ASSERT(shape->numFixedSlots() == prefixShape->numFixedSlots());
-      prefixShape = CommonPrefix(prefixShape, shape);
-    } else {
-      prefixShape = shape;
-    }
-    if (prefixShape->isEmptyShape()) {
-      
-      return true;
-    }
-  }
-  if (!prefixShape) {
-    return true;
-  }
-
-  gc::AllocKind kind = gc::GetGCObjectKind(maxSlotSpan);
-
-  if (kind != gc::GetGCObjectKind(NativeObject::MAX_FIXED_SLOTS)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    Shape* newPrefixShape = nullptr;
-    for (size_t i = 0; i < PreliminaryObjectArray::COUNT; i++) {
-      JSObject* objBase = preliminaryObjects->get(i);
-      if (!objBase) {
-        continue;
-      }
-      PlainObject* obj = &objBase->as<PlainObject>();
-      if (!ChangeObjectFixedSlotCount(cx, obj, kind)) {
-        return false;
-      }
-      if (newPrefixShape) {
-        MOZ_ASSERT(CommonPrefix(obj->lastProperty(), newPrefixShape) ==
-                   newPrefixShape);
-      } else {
-        newPrefixShape = obj->lastProperty();
-        while (newPrefixShape->slotSpan() > prefixShape->slotSpan()) {
-          newPrefixShape = newPrefixShape->previous();
-        }
-      }
-    }
-    prefixShape = newPrefixShape;
-  }
-
-  RootedObjectGroup groupRoot(cx, group);
-  templateObject_ =
-      NewObjectWithGroup<PlainObject>(cx, groupRoot, kind, TenuredObject);
-  if (!templateObject_) {
-    return false;
-  }
-
-  Vector<TypeNewScriptInitializer> initializerVector(cx);
-
-  DPAConstraintInfo constraintInfo(cx);
-
-  RootedPlainObject templateRoot(cx, templateObject());
-  RootedFunction fun(cx, function());
-  if (!jit::AnalyzeNewScriptDefiniteProperties(
-          cx, constraintInfo, fun, group, templateRoot, &initializerVector)) {
-    return false;
-  }
-
-  if (!group->newScript(sweep)) {
-    return true;
-  }
-
-  MOZ_ASSERT(OnlyHasDataProperties(templateObject()->lastProperty()));
-
-  MOZ_ASSERT(!initializerList);
-  InitializerList* newInitializerList = nullptr;
-  if (templateObject()->slotSpan() != 0) {
-    
-    
-    
-    
-    
-    
-    if (templateObject()->slotSpan() > prefixShape->slotSpan()) {
-      return true;
-    }
-    {
-      Shape* shape = prefixShape;
-      while (shape->slotSpan() != templateObject()->slotSpan()) {
-        shape = shape->previous();
-      }
-      Shape* templateShape = templateObject()->lastProperty();
-      while (!shape->isEmptyShape()) {
-        if (shape->slot() != templateShape->slot()) {
-          return true;
-        }
-        if (shape->propid() != templateShape->propid()) {
-          return true;
-        }
-        shape = shape->previous();
-        templateShape = templateShape->previous();
-      }
-      if (!templateShape->isEmptyShape()) {
-        return true;
-      }
-    }
-
-    size_t nbytes = sizeOfInitializerList(initializerVector.length());
-    newInitializerList = reinterpret_cast<InitializerList*>(
-        group->zone()->pod_calloc<uint8_t>(nbytes));
-    if (!newInitializerList) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-    newInitializerList->length = initializerVector.length();
-    PodCopy(newInitializerList->entries, initializerVector.begin(),
-            initializerVector.length());
-  }
-
-  RemoveCellMemory(group, gcMallocBytes(), MemoryUse::ObjectGroupAddendum);
-
-  initializerList = newInitializerList;
-
-  js_delete(preliminaryObjects);
-  preliminaryObjects = nullptr;
-
-  AddCellMemory(group, gcMallocBytes(), MemoryUse::ObjectGroupAddendum);
-
-  if (prefixShape->slotSpan() == templateObject()->slotSpan()) {
-    
-    
-    
-
-    if (!constraintInfo.finishConstraints(cx, group)) {
-      return false;
-    }
-    if (!group->newScript(sweep)) {
-      return true;
-    }
-
-    group->addDefiniteProperties(cx, templateObject()->lastProperty());
-
-    destroyNewScript.release();
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(prefixShape->slotSpan() > templateObject()->slotSpan());
-
-  ObjectGroupFlags initialFlags =
-      group->flags(sweep) & OBJECT_FLAG_DYNAMIC_MASK;
-
-  Rooted<TaggedProto> protoRoot(cx, group->proto());
-  ObjectGroup* initialGroup = ObjectGroupRealm::makeGroup(
-      cx, group->realm(), group->clasp(), protoRoot, initialFlags);
-  if (!initialGroup) {
-    return false;
-  }
-
-  
-  
-  
-  if (!constraintInfo.finishConstraints(cx, initialGroup)) {
-    return false;
-  }
-  if (!group->newScript(sweep)) {
-    return true;
-  }
-
-  initialGroup->addDefiniteProperties(cx, templateObject()->lastProperty());
-  group->addDefiniteProperties(cx, prefixShape);
-
-  ObjectGroupRealm& realm = ObjectGroupRealm::get(group);
-  realm.replaceDefaultNewGroup(group->clasp(), group->proto(), function(),
-                               initialGroup);
-
-  templateObject()->setGroup(initialGroup);
-
-  
-  
-  group->detachNewScript();
-  initialGroup->setNewScript(this);
-
-  
-  
-  gc::ReadBarrier(prefixShape);
-
-  initializedShape_ = prefixShape;
-  initializedGroup_ = group;
-
-  destroyNewScript.release();
-
-  if (regenerate) {
-    *regenerate = true;
-  }
-  return true;
+  MOZ_CRASH("TODO(no-TI): remove");
 }
 
 bool TypeNewScript::rollbackPartiallyInitializedObjects(JSContext* cx,
@@ -2523,30 +1977,6 @@ void ConstraintTypeSet::sweep(const AutoSweepBase& sweep, Zone* zone) {
       setBaseObjectCount(0);
     }
   }
-
-  
-
-
-
-  TypeConstraint* constraint = constraintList(sweep);
-  constraintList_ = nullptr;
-  while (constraint) {
-    MOZ_ASSERT(zone->types.sweepTypeLifoAlloc.ref().contains(constraint));
-    TypeConstraint* copy;
-    if (constraint->sweep(zone->types, &copy)) {
-      if (copy) {
-        MOZ_ASSERT(zone->types.typeLifoAlloc().contains(copy));
-        copy->setNext(constraintList_);
-        constraintList_ = copy;
-      } else {
-        zone->types.setOOMSweepingTypes();
-      }
-    }
-    TypeConstraint* next = constraint->next();
-    AlwaysPoison(constraint, JS_SWEPT_TI_PATTERN, sizeof(TypeConstraint),
-                 MemCheckKind::MakeUndefined);
-    constraint = next;
-  }
 }
 
 inline void ObjectGroup::clearProperties(const AutoSweepObjectGroup& sweep) {
@@ -2617,8 +2047,7 @@ void ObjectGroup::sweep(const AutoSweepObjectGroup& sweep) {
       if (prop) {
         oldPropertiesFound++;
         prop->types.checkMagic();
-        if (singleton() && !prop->types.constraintList(sweep) &&
-            !zone()->isPreservingCode()) {
+        if (singleton() && !zone()->isPreservingCode()) {
           
 
 
@@ -2655,8 +2084,7 @@ void ObjectGroup::sweep(const AutoSweepObjectGroup& sweep) {
   } else if (propertyCount == 1) {
     Property* prop = (Property*)propertySet;
     prop->types.checkMagic();
-    if (singleton() && !prop->types.constraintList(sweep) &&
-        !zone()->isPreservingCode()) {
+    if (singleton() && !zone()->isPreservingCode()) {
       
       AlwaysPoison(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
                    MemCheckKind::MakeUndefined);

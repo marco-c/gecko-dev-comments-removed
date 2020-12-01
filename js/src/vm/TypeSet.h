@@ -58,7 +58,6 @@ class AutoSweepObjectGroup;
 class LifoAlloc;
 class ObjectGroup;
 class SystemAllocPolicy;
-class TypeConstraint;
 class TypeNewScript;
 class TypeZone;
 
@@ -498,9 +497,6 @@ class TypeSet {
 
   bool objectsIntersect(const TypeSet* other) const;
 
-  
-  bool addTypesToConstraint(JSContext* cx, TypeConstraint* constraint);
-
   JS::Compartment* maybeCompartment();
 
   
@@ -537,8 +533,7 @@ static const uintptr_t BaseTypeInferenceMagic = 0xa1a2b3b4;
 #else
 static const uintptr_t BaseTypeInferenceMagic = 0xa1a2b3b4c5c6d7d8;
 #endif
-static const uintptr_t TypeConstraintMagic = BaseTypeInferenceMagic + 1;
-static const uintptr_t ConstraintTypeSetMagic = BaseTypeInferenceMagic + 2;
+static const uintptr_t ConstraintTypeSetMagic = BaseTypeInferenceMagic + 1;
 
 #ifdef JS_CRASH_DIAGNOSTICS
 extern void ReportMagicWordFailure(uintptr_t actual, uintptr_t expected);
@@ -547,84 +542,11 @@ extern void ReportMagicWordFailure(uintptr_t actual, uintptr_t expected,
 #endif
 
 
-
-
-
-class TypeConstraint {
- private:
-#ifdef JS_CRASH_DIAGNOSTICS
-  uintptr_t magic_ = TypeConstraintMagic;
-#endif
-
-  
-  TypeConstraint* next_ = nullptr;
-
- public:
-  TypeConstraint() = default;
-
-  void checkMagic() const {
-#ifdef JS_CRASH_DIAGNOSTICS
-    if (MOZ_UNLIKELY(magic_ != TypeConstraintMagic)) {
-      ReportMagicWordFailure(magic_, TypeConstraintMagic);
-    }
-#endif
-  }
-
-  TypeConstraint* next() const {
-    checkMagic();
-    if (next_) {
-      next_->checkMagic();
-    }
-    return next_;
-  }
-  void setNext(TypeConstraint* next) {
-    MOZ_ASSERT(!next_);
-    checkMagic();
-    if (next) {
-      next->checkMagic();
-    }
-    next_ = next;
-  }
-
-  
-  virtual const char* kind() = 0;
-
-  
-  virtual void newType(JSContext* cx, TypeSet* source, TypeSet::Type type) = 0;
-
-  
-
-
-
-  virtual void newPropertyState(JSContext* cx, TypeSet* source) {}
-
-  
-
-
-
-
-  virtual void newObjectState(JSContext* cx, ObjectGroup* group) {}
-
-  
-
-
-
-  virtual bool sweep(TypeZone& zone, TypeConstraint** res) = 0;
-
-  
-  virtual JS::Compartment* maybeCompartment() = 0;
-};
-
-
 class ConstraintTypeSet : public TypeSet {
  private:
 #ifdef JS_CRASH_DIAGNOSTICS
   uintptr_t magic_ = ConstraintTypeSetMagic;
 #endif
-
- protected:
-  
-  TypeConstraint* constraintList_ = nullptr;
 
  public:
   ConstraintTypeSet() = default;
@@ -636,16 +558,6 @@ class ConstraintTypeSet : public TypeSet {
                              uintptr_t(objectSet));
     }
 #endif
-  }
-
-  
-  
-  TypeConstraint* constraintList(const AutoSweepBase& sweep) const {
-    checkMagic();
-    if (constraintList_) {
-      constraintList_->checkMagic();
-    }
-    return constraintList_;
   }
 
   
@@ -662,10 +574,6 @@ class ConstraintTypeSet : public TypeSet {
   
   
   void postWriteBarrier(JSContext* cx, Type type);
-
-  
-  bool addConstraint(JSContext* cx, TypeConstraint* constraint,
-                     bool callExisting = true);
 
   inline void sweep(const AutoSweepBase& sweep, JS::Zone* zone);
   inline void trace(JS::Zone* zone, JSTracer* trc);

@@ -55,12 +55,6 @@ enum AnalysisMode {
 
 
 
-  Analysis_DefiniteProperties,
-
-  
-
-
-
   Analysis_ArgumentsUsage
 };
 

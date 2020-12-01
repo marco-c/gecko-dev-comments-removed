@@ -633,12 +633,6 @@ class NativeObject : public JSObject {
   
   
   
-  
-  void setLastPropertyShrinkFixedSlots(Shape* shape);
-
-  
-  
-  
   void setIsSharedMemory() {
     MOZ_ASSERT(elements_ == emptyObjectElements);
     elements_ = emptyObjectElementsShared;
