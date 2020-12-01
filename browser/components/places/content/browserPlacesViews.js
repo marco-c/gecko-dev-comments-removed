@@ -252,6 +252,16 @@ PlacesViewBase.prototype = {
 
     
     
+    
+    
+    
+    let existingOtherBookmarksItem = aPopup.querySelector(
+      "#show-other-bookmarks_PersonalToolbar"
+    );
+    existingOtherBookmarksItem?.remove();
+
+    
+    
     if (gBookmarksToolbar2h2020) {
       let existingSubmenu = aPopup.querySelector("#toggle_PersonalToolbar");
       existingSubmenu?.remove();
@@ -259,6 +269,20 @@ PlacesViewBase.prototype = {
       if (bookmarksToolbar?.contains(aPopup.triggerNode)) {
         let menu = BookmarkingUI.buildBookmarksToolbarSubmenu(bookmarksToolbar);
         aPopup.appendChild(menu);
+
+        if (
+          aPopup.triggerNode.id === "OtherBookmarks" ||
+          aPopup.triggerNode.id === "PlacesToolbarItems"
+        ) {
+          let otherBookmarksMenuItem = BookmarkingUI.buildShowOtherBookmarksMenuItem();
+
+          if (otherBookmarksMenuItem) {
+            aPopup.insertBefore(
+              otherBookmarksMenuItem,
+              menu.nextElementSibling
+            );
+          }
+        }
       }
     }
 
