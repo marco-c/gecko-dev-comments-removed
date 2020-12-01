@@ -1,10 +1,11 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 import contextlib
+import re
 import unittest
 
 import pytest
@@ -155,7 +156,7 @@ class TestTargetTasks(unittest.TestCase):
             "project": "try",
             "message": "",
         }
-        
+        # only runs the task with run_on_projects: try
         self.assertEqual(method(tg, params, {}), [])
 
     def test_try_option_syntax(self):
@@ -180,47 +181,125 @@ class TestTargetTasks(unittest.TestCase):
         self.assertEqual(method(tg, params, {}), ["a"])
 
 
-
+# tests for specific filters
 
 
 @pytest.mark.parametrize(
-    "name,task,params,expected",
+    "name,params,expected",
     (
         pytest.param(
             "filter_tests_without_manifests",
-            Task(kind="test", label="a", attributes={}, task={}),
-            None,
+            {
+                "task": Task(kind="test", label="a", attributes={}, task={}),
+                "parameters": None,
+            },
             True,
             id="filter_tests_without_manifests_not_in_attributes",
         ),
         pytest.param(
             "filter_tests_without_manifests",
-            Task(
-                kind="test", label="a", attributes={"test_manifests": ["foo"]}, task={}
-            ),
-            None,
+            {
+                "task": Task(
+                    kind="test",
+                    label="a",
+                    attributes={"test_manifests": ["foo"]},
+                    task={},
+                ),
+                "parameters": None,
+            },
             True,
             id="filter_tests_without_manifests_has_test_manifests",
         ),
         pytest.param(
             "filter_tests_without_manifests",
-            Task(kind="build", label="a", attributes={"test_manifests": None}, task={}),
-            None,
+            {
+                "task": Task(
+                    kind="build",
+                    label="a",
+                    attributes={"test_manifests": None},
+                    task={},
+                ),
+                "parameters": None,
+            },
             True,
             id="filter_tests_without_manifests_not_a_test",
         ),
         pytest.param(
             "filter_tests_without_manifests",
-            Task(kind="test", label="a", attributes={"test_manifests": None}, task={}),
-            None,
+            {
+                "task": Task(
+                    kind="test", label="a", attributes={"test_manifests": None}, task={}
+                ),
+                "parameters": None,
+            },
             False,
             id="filter_tests_without_manifests_has_no_test_manifests",
         ),
+        pytest.param(
+            "filter_by_regex",
+            {
+                "task_label": "build-linux64-debug",
+                "regexes": [re.compile("build")],
+                "mode": "include",
+            },
+            True,
+            id="filter_regex_simple_include",
+        ),
+        pytest.param(
+            "filter_by_regex",
+            {
+                "task_label": "build-linux64-debug",
+                "regexes": [re.compile("linux(.+)debug")],
+                "mode": "include",
+            },
+            True,
+            id="filter_regex_re_include",
+        ),
+        pytest.param(
+            "filter_by_regex",
+            {
+                "task_label": "build-linux64-debug",
+                "regexes": [re.compile("nothing"), re.compile("linux(.+)debug")],
+                "mode": "include",
+            },
+            True,
+            id="filter_regex_re_include_multiple",
+        ),
+        pytest.param(
+            "filter_by_regex",
+            {
+                "task_label": "build-linux64-debug",
+                "regexes": [re.compile("build")],
+                "mode": "exclude",
+            },
+            False,
+            id="filter_regex_simple_exclude",
+        ),
+        pytest.param(
+            "filter_by_regex",
+            {
+                "task_label": "build-linux64-debug",
+                "regexes": [re.compile("linux(.+)debug")],
+                "mode": "exclude",
+            },
+            False,
+            id="filter_regex_re_exclude",
+        ),
+        pytest.param(
+            "filter_by_regex",
+            {
+                "task_label": "build-linux64-debug",
+                "regexes": [re.compile("linux(.+)debug"), re.compile("nothing")],
+                "mode": "exclude",
+            },
+            False,
+            id="filter_regex_re_exclude_multiple",
+        ),
     ),
 )
-def test_filters(name, task, params, expected):
+def test_filters(name, params, expected):
     func = getattr(target_tasks, name)
-    assert func(task, params) is expected
+    assert func(**params) is expected
 
 
 if __name__ == "__main__":
