@@ -11,7 +11,9 @@
 #include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"  
 
+#include "ModuleLoadRequest.h"
 #include "nsContentUtils.h"
+#include "nsICacheInfoChannel.h"
 #include "nsIClassOfService.h"
 #include "nsISupportsPriority.h"
 #include "ScriptLoadRequest.h"

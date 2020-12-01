@@ -5,6 +5,7 @@
 
 
 #include "ScriptTrace.h"
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/StaticPrefs_dom.h"
 
 namespace mozilla {
