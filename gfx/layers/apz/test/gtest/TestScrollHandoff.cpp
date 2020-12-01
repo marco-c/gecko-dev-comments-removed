@@ -463,7 +463,6 @@ TEST_F(APZScrollHandoffTester, OpposingConstrainedAxes_Bug1201098) {
 }
 #endif
 
-#ifndef MOZ_WIDGET_ANDROID  
 
 
 
@@ -491,7 +490,6 @@ TEST_F(APZScrollHandoffTester, PartialFlingHandoff) {
   child->AssertStateIsFling();
   parent->AssertStateIsFling();
 }
-#endif
 
 
 

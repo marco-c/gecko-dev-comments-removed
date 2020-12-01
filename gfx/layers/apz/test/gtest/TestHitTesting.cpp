@@ -287,7 +287,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   
   
-  EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
+  EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(3);
 
   
   
@@ -319,7 +319,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
             transformToGecko.TransformPoint(ParentLayerPoint(12.5, 75)));
 
   
-  EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
+  EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(3);
   Pan(apzcroot, 100, 50, PanOptions::NoFling);
 
   
