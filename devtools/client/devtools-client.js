@@ -690,7 +690,7 @@ DevToolsClient.prototype = {
         
         
         
-        front.purgeRequestsForDestroy();
+        front.baseFrontClassDestroy();
       }
     }
   },

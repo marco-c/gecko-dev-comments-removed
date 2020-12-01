@@ -62,18 +62,13 @@ class Front extends Pool {
   }
 
   destroy() {
-    super.destroy();
+    
+    
+    this.baseFrontClassDestroy();
+
+    
+    
     this.clearEvents();
-    
-    
-    if (this.actorID) {
-      this.purgeRequestsForDestroy();
-    }
-    this.targetFront = null;
-    this.parentFront = null;
-    this._frontCreationListeners = null;
-    this._frontDestructionListeners = null;
-    this._beforeListeners = null;
   }
 
   
@@ -82,10 +77,13 @@ class Front extends Pool {
   
   
   
-  purgeRequestsForDestroy() {
+  
+  
+  
+  baseFrontClassDestroy() {
     
     
-    while (this._requests && this._requests.length > 0) {
+    while (this._requests.length > 0) {
       const { deferred, to, type, stack } = this._requests.shift();
       
       
@@ -100,7 +98,17 @@ class Front extends Pool {
         stack.formattedStack;
       deferred.reject(new Error(msg));
     }
-    this.actorID = null;
+
+    if (this.actorID) {
+      super.destroy();
+      this.actorID = null;
+    }
+
+    this.targetFront = null;
+    this.parentFront = null;
+    this._frontCreationListeners = null;
+    this._frontDestructionListeners = null;
+    this._beforeListeners = null;
   }
 
   isDestroyed() {
