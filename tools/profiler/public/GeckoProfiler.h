@@ -732,17 +732,17 @@ struct ProfilerBufferInfo {
   
   uint32_t mEntryCount;
   
-  ProfilerStats mIntervalsNs;
+  ProfilerStats mIntervalsUs;
   
-  ProfilerStats mOverheadsNs;
+  ProfilerStats mOverheadsUs;
   
-  ProfilerStats mLockingsNs;
+  ProfilerStats mLockingsUs;
   
-  ProfilerStats mCleaningsNs;
+  ProfilerStats mCleaningsUs;
   
-  ProfilerStats mCountersNs;
+  ProfilerStats mCountersUs;
   
-  ProfilerStats mThreadsNs;
+  ProfilerStats mThreadsUs;
 };
 
 

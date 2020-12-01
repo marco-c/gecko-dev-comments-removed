@@ -133,39 +133,39 @@ void ProfileBuffer::CollectOverheadStats(TimeDuration aSamplingTime,
                                          TimeDuration aCleaning,
                                          TimeDuration aCounters,
                                          TimeDuration aThreads) {
-  double timeNs = aSamplingTime.ToMilliseconds() * 1000.0;
-  if (mFirstSamplingTimeNs == 0.0) {
-    mFirstSamplingTimeNs = timeNs;
+  double timeUs = aSamplingTime.ToMilliseconds() * 1000.0;
+  if (mFirstSamplingTimeUs == 0.0) {
+    mFirstSamplingTimeUs = timeUs;
   } else {
     
     
     
     
-    mIntervalsNs.Count(timeNs - mLastSamplingTimeNs);
+    mIntervalsUs.Count(timeUs - mLastSamplingTimeUs);
   }
-  mLastSamplingTimeNs = timeNs;
+  mLastSamplingTimeUs = timeUs;
   
-  double lockingNs = aLocking.ToMilliseconds() * 1000.0;
+  double lockingUs = aLocking.ToMilliseconds() * 1000.0;
   
-  double cleaningNs = aCleaning.ToMilliseconds() * 1000.0;
+  double cleaningUs = aCleaning.ToMilliseconds() * 1000.0;
   
-  double countersNs = aCounters.ToMilliseconds() * 1000.0;
+  double countersUs = aCounters.ToMilliseconds() * 1000.0;
   
-  double threadsNs = aThreads.ToMilliseconds() * 1000.0;
+  double threadsUs = aThreads.ToMilliseconds() * 1000.0;
 
   
-  mOverheadsNs.Count(lockingNs + cleaningNs + countersNs + threadsNs);
-  mLockingsNs.Count(lockingNs);
-  mCleaningsNs.Count(cleaningNs);
-  mCountersNs.Count(countersNs);
-  mThreadsNs.Count(threadsNs);
+  mOverheadsUs.Count(lockingUs + cleaningUs + countersUs + threadsUs);
+  mLockingsUs.Count(lockingUs);
+  mCleaningsUs.Count(cleaningUs);
+  mCountersUs.Count(countersUs);
+  mThreadsUs.Count(threadsUs);
 
   
-  AddEntry(ProfileBufferEntry::ProfilerOverheadTime(timeNs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(lockingNs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(cleaningNs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(countersNs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(threadsNs));
+  AddEntry(ProfileBufferEntry::ProfilerOverheadTime(timeUs));
+  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(lockingUs));
+  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(cleaningUs));
+  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(countersUs));
+  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(threadsUs));
 }
 
 ProfilerBufferInfo ProfileBuffer::GetProfilerBufferInfo() const {
@@ -173,12 +173,12 @@ ProfilerBufferInfo ProfileBuffer::GetProfilerBufferInfo() const {
           BufferRangeEnd(),
           static_cast<uint32_t>(*mEntries.BufferLength() /
                                 8),  
-          mIntervalsNs,
-          mOverheadsNs,
-          mLockingsNs,
-          mCleaningsNs,
-          mCountersNs,
-          mThreadsNs};
+          mIntervalsUs,
+          mOverheadsUs,
+          mLockingsUs,
+          mCleaningsUs,
+          mCountersUs,
+          mThreadsUs};
 }
 
 
