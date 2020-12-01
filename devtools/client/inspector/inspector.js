@@ -149,7 +149,7 @@ function Inspector(toolbox) {
   this.panelWin = window;
   this.panelWin.inspector = this;
   this.telemetry = toolbox.telemetry;
-  this.store = createStore(this);
+  this.store = createStore();
   this.isReady = false;
 
   
@@ -176,6 +176,9 @@ function Inspector(toolbox) {
   this.onPickerCanceled = this.onPickerCanceled.bind(this);
   this.onPickerHovered = this.onPickerHovered.bind(this);
   this.onPickerPicked = this.onPickerPicked.bind(this);
+  this.onShowBoxModelHighlighterForNode = this.onShowBoxModelHighlighterForNode.bind(
+    this
+  );
   this.onSidebarHidden = this.onSidebarHidden.bind(this);
   this.onSidebarResized = this.onSidebarResized.bind(this);
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
@@ -1923,10 +1926,34 @@ Inspector.prototype = {
   
 
 
+
   getCommonComponentProps() {
     return {
       setSelectedNode: this.selection.setNodeFront,
+      onShowBoxModelHighlighterForNode: this.onShowBoxModelHighlighterForNode,
     };
+  },
+
+  
+
+
+
+
+
+
+
+
+  onShowBoxModelHighlighterForNode(nodeFront, options) {
+    
+    
+    if (this._destroyed) {
+      return;
+    }
+    this.highlighters.showHighlighterTypeForNode(
+      this.highlighters.TYPES.BOXMODEL,
+      nodeFront,
+      options
+    );
   },
 
   onPickerCanceled() {

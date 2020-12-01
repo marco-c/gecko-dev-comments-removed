@@ -20,13 +20,11 @@ function createReducer(laterReducers = {}) {
   });
 }
 
-module.exports = inspector => {
+module.exports = () => {
   const store = createStore(createReducer(), {
     
     shouldLog: true,
-    
-    
-    thunkOptions: { inspector },
+    thunkOptions: {},
   });
 
   
