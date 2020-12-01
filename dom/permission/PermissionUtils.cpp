@@ -5,6 +5,7 @@
 
 
 #include "PermissionUtils.h"
+#include "nsIPermissionManager.h"
 
 namespace mozilla {
 namespace dom {
