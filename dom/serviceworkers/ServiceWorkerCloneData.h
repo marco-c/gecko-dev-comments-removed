@@ -9,8 +9,17 @@
 
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 
+class nsISerialEventTarget;
+
 namespace mozilla {
+namespace ipc {
+    class PBackgroundChild;
+    class PBackgroundParent;
+} 
+
 namespace dom {
+
+class ClonedOrErrorMessageData;
 
 
 

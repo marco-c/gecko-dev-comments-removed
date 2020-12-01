@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerChild.h"
+#include "RemoteServiceWorkerImpl.h"
 #include "mozilla/dom/WorkerRef.h"
 
 namespace mozilla {

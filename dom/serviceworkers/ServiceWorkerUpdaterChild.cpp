@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerUpdaterChild.h"
+#include "ServiceWorkerUtils.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {

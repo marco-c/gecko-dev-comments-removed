@@ -5,8 +5,12 @@
 
 
 #include "ServiceWorkerProxy.h"
+#include "ServiceWorkerCloneData.h"
+#include "ServiceWorkerManager.h"
+#include "ServiceWorkerParent.h"
 
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/dom/ClientState.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "ServiceWorkerInfo.h"
 
