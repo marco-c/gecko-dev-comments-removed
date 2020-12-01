@@ -226,6 +226,15 @@ bool IonGetPropertyIC::update(JSContext* cx, HandleScript outerScript,
     }
 
     
+    
+    MOZ_ASSERT(ic->kind() == CacheKind::GetProp);
+    if (idVal.toString()->asAtom().asPropertyName() == cx->names().prototype) {
+      if (val.isObject() && val.toObject().is<JSFunction>()) {
+        outerScript->disableIon();
+      }
+    }
+
+    
     return true;
   }
 

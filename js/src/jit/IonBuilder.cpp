@@ -5161,29 +5161,16 @@ MDefinition* IonBuilder::createThisScripted(MDefinition* callee,
   
   
   
-  
-  
-  
-  
-  MInstruction* getProto;
-  if (!invalidatedIdempotentCache()) {
-    MConstant* id = constant(StringValue(names().prototype));
-    MGetPropertyCache* getPropCache =
-        MGetPropertyCache::New(alloc(), newTarget, id,
-                                false);
-    getPropCache->setIdempotent();
-    getProto = getPropCache;
-  } else {
-    MCallGetProperty* callGetProp =
-        MCallGetProperty::New(alloc(), newTarget, names().prototype);
-    callGetProp->setIdempotent();
-    getProto = callGetProp;
-  }
-  current->add(getProto);
+  MConstant* id = constant(StringValue(names().prototype));
+  MGetPropertyCache* getPropCache =
+      MGetPropertyCache::New(alloc(), newTarget, id,
+                               false);
+  getPropCache->setIdempotent();
+  current->add(getPropCache);
 
   
   MCreateThisWithProto* createThis =
-      MCreateThisWithProto::New(alloc(), callee, newTarget, getProto);
+      MCreateThisWithProto::New(alloc(), callee, newTarget, getPropCache);
   current->add(createThis);
 
   return createThis;
