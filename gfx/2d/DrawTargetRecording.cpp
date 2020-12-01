@@ -261,23 +261,25 @@ void DrawTargetRecording::FillGlyphs(ScaledFont* aFont,
   } else if (!aFont->GetUserData(userDataKey)) {
     UnscaledFont* unscaledFont = aFont->GetUnscaledFont();
     if (mRecorder->IncrementUnscaledFontRefCount(unscaledFont) == 0) {
-      RecordedFontData fontData(unscaledFont);
-      RecordedFontDetails fontDetails;
-      if (fontData.GetFontDetails(fontDetails)) {
-        
-        
-        if (!mRecorder->HasStoredFontData(fontDetails.fontDataKey)) {
-          mRecorder->RecordEvent(fontData);
-          mRecorder->AddStoredFontData(fontDetails.fontDataKey);
-        }
-        mRecorder->RecordEvent(
-            RecordedUnscaledFontCreation(unscaledFont, fontDetails));
+      
+      
+      
+      
+      RecordedFontDescriptor fontDesc(unscaledFont);
+      if (fontDesc.IsValid()) {
+        mRecorder->RecordEvent(fontDesc);
       } else {
-        
-        
-        RecordedFontDescriptor fontDesc(unscaledFont);
-        if (fontDesc.IsValid()) {
-          mRecorder->RecordEvent(fontDesc);
+        RecordedFontData fontData(unscaledFont);
+        RecordedFontDetails fontDetails;
+        if (fontData.GetFontDetails(fontDetails)) {
+          
+          
+          if (!mRecorder->HasStoredFontData(fontDetails.fontDataKey)) {
+            mRecorder->RecordEvent(fontData);
+            mRecorder->AddStoredFontData(fontDetails.fontDataKey);
+          }
+          mRecorder->RecordEvent(
+              RecordedUnscaledFontCreation(unscaledFont, fontDetails));
         } else {
           gfxWarning() << "DrawTargetRecording::FillGlyphs failed to serialise "
                           "UnscaledFont";
