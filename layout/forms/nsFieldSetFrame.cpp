@@ -571,8 +571,9 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
                                innerAvailSize, Nothing(),
                                ReflowInput::InitFlag::CallerWillInit);
     
-    kidReflowInput.Init(aPresContext, Nothing(), nullptr,
-                        &aReflowInput.ComputedPhysicalPadding());
+    kidReflowInput.Init(aPresContext, Nothing(), Nothing(),
+                        Some(aReflowInput.ComputedLogicalPadding().ConvertTo(
+                            inner->GetWritingMode(), wm)));
     if (kidReflowInput.mFlags.mIsTopOfPage) {
       
       kidReflowInput.mFlags.mIsTopOfPage = !legend;

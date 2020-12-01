@@ -9612,9 +9612,9 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
     
     
     
-    nsMargin currentBorder = target->GetUsedBorder();
-    nsMargin currentPadding = target->GetUsedPadding();
-    reflowInput.Init(mPresContext, Nothing(), &currentBorder, &currentPadding);
+    reflowInput.Init(mPresContext, Nothing(),
+                     Some(target->GetLogicalUsedBorder(wm)),
+                     Some(target->GetLogicalUsedPadding(wm)));
   }
 
   

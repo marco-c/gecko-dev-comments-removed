@@ -227,8 +227,10 @@ struct SizeComputationInput {
   void InitOffsets(mozilla::WritingMode aCBWM, nscoord aPercentBasis,
                    mozilla::LayoutFrameType aFrameType,
                    mozilla::ComputeSizeFlags aFlags = {},
-                   const nsMargin* aBorder = nullptr,
-                   const nsMargin* aPadding = nullptr,
+                   const mozilla::Maybe<mozilla::LogicalMargin>& aBorder =
+                       mozilla::Nothing(),
+                   const mozilla::Maybe<mozilla::LogicalMargin>& aPadding =
+                       mozilla::Nothing(),
                    const nsStyleDisplay* aDisplay = nullptr);
 
   
@@ -802,6 +804,8 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
+
+
   ReflowInput(nsPresContext* aPresContext,
               const ReflowInput& aParentReflowInput, nsIFrame* aFrame,
               const mozilla::LogicalSize& aAvailableSpace,
@@ -811,12 +815,24 @@ struct ReflowInput : public SizeComputationInput {
               mozilla::ComputeSizeFlags aComputeSizeFlags = {});
 
   
-  
+
+
+
+
+
+
+
+
+
+
+
   void Init(nsPresContext* aPresContext,
             const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
                 mozilla::Nothing(),
-            const nsMargin* aBorder = nullptr,
-            const nsMargin* aPadding = nullptr);
+            const mozilla::Maybe<mozilla::LogicalMargin>& aBorder =
+                mozilla::Nothing(),
+            const mozilla::Maybe<mozilla::LogicalMargin>& aPadding =
+                mozilla::Nothing());
 
   
 
@@ -1008,7 +1024,8 @@ struct ReflowInput : public SizeComputationInput {
   void InitConstraints(
       nsPresContext* aPresContext,
       const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize,
-      const nsMargin* aBorder, const nsMargin* aPadding,
+      const mozilla::Maybe<mozilla::LogicalMargin>& aBorder,
+      const mozilla::Maybe<mozilla::LogicalMargin>& aPadding,
       mozilla::LayoutFrameType aFrameType);
 
   
