@@ -191,9 +191,6 @@ BufferTextureData* BufferTextureData::CreateForYCbCr(
                       yOffset, cbOffset, crOffset, aStereoMode, aColorDepth,
                       aYUVColorSpace, aColorRange, hasIntermediateBuffer);
 
-  
-  bufSize += 16;
-
   return CreateInternal(
       aAllocator ? aAllocator->GetTextureForwarder() : nullptr, descriptor,
       gfx::BackendType::NONE, bufSize, aTextureFlags);
