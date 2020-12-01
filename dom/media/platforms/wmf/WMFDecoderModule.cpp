@@ -32,6 +32,8 @@
 #include "nsWindowsHelpers.h"
 #include "prsystem.h"
 
+#define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+
 #ifdef MOZ_GECKO_PROFILER
 #  include "ProfilerMarkerPayload.h"
 #  define WFM_DECODER_MODULE_STATUS_MARKER(tag, text, markerTime)            \
@@ -44,6 +46,18 @@
 extern const GUID CLSID_WebmMfVpxDec;
 
 namespace mozilla {
+
+
+static void WmfDeocderModuleMarkerAndLog(const char* aTag, const char* aFormat,
+                                         ...) MOZ_FORMAT_PRINTF(1, 2) {
+  va_list ap;
+  va_start(ap, aFormat);
+  const nsVprintfCString markerString(aFormat, ap);
+  va_end(ap);
+  WFM_DECODER_MODULE_STATUS_MARKER(aTag, markerString,
+                                   TimeStamp::NowUnfuzzed());
+  LOG(markerString.get());
+}
 
 static Atomic<bool> sDXVAEnabled(false);
 static Atomic<bool> sUsableVPXMFT(false);
@@ -112,14 +126,37 @@ void WMFDecoderModule::Init() {
     testForVPx = sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
   }
 
+  
+  
+  
+  
+  
   sDXVAEnabled = sDXVAEnabled && gfx::gfxVars::CanUseHardwareVideoDecoding();
   testForVPx = testForVPx && gfx::gfxVars::CanUseHardwareVideoDecoding();
   if (testForVPx && StaticPrefs::media_wmf_vp9_enabled_AtStartup()) {
     gfx::WMFVPXVideoCrashGuard guard;
     if (!guard.Crashed()) {
+      WmfDeocderModuleMarkerAndLog("WMFInit VPx Pending",
+                                   "Attempting to create MFT decoder for VPx");
+
       sUsableVPXMFT = CanCreateMFTDecoder(CLSID_WebmMfVpxDec);
+
+      WmfDeocderModuleMarkerAndLog("WMFInit VPx Initialized",
+                                   "CanCreateMFTDecoder returned %s for VPx",
+                                   sUsableVPXMFT ? "true" : "false");
+    } else {
+      WmfDeocderModuleMarkerAndLog(
+          "WMFInit VPx Failure",
+          "Will not use MFT VPx due to crash guard reporting a crash");
     }
   }
+
+  WmfDeocderModuleMarkerAndLog(
+      "WMFInit Result",
+      "WMFDecoderModule::Init finishing with sDXVAEnabled=%s testForVPx=%s "
+      "sUsableVPXMFT=%s",
+      sDXVAEnabled ? "true" : "false", testForVPx ? "true" : "false",
+      sUsableVPXMFT ? "true" : "false");
 }
 
 
@@ -287,3 +324,6 @@ bool WMFDecoderModule::Supports(const SupportDecoderParams& aParams,
 }
 
 }  
+
+#undef LOG
+#undef WFM_DECODER_MODULE_STATUS_MARKER
