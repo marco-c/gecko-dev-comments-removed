@@ -57,10 +57,6 @@ class UrlbarValueFormatter {
     if (!this.window.gBrowserInit.delayedStartupFinished) {
       return;
     }
-    
-    if (!this.window.docShell) {
-      return;
-    }
     if (!Services.search.isInitialized) {
       let instance = (this._updateInstance = {});
       await Services.search.init();
@@ -68,6 +64,11 @@ class UrlbarValueFormatter {
         return;
       }
       delete this._updateInstance;
+    }
+
+    
+    if (!this.window.docShell) {
+      return;
     }
 
     
