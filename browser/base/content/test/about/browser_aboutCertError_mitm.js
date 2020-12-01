@@ -28,23 +28,35 @@ add_task(async function checkMitmPriming() {
     () => {
       gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, UNKNOWN_ISSUER);
       browser = gBrowser.selectedBrowser;
-      certErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
+      
+      
+      certErrorLoaded = new Promise(resolve => {
+        let loaded = 0;
+        let removeEventListener = BrowserTestUtils.addContentEventListener(
+          browser,
+          "AboutNetErrorLoad",
+          () => {
+            if (++loaded == 2) {
+              removeEventListener();
+              resolve();
+            }
+          },
+          { capture: false, wantUntrusted: true }
+        );
+      });
     },
     false
   );
 
   await certErrorLoaded;
 
-  
-  
-  await TestUtils.waitForCondition(function() {
-    return SpecialPowers.spawn(browser, [], () => {
-      return (
-        content.document.body.getAttribute("code") ==
-        "MOZILLA_PKIX_ERROR_MITM_DETECTED"
-      );
-    });
-  }, "Loads the MitM error page.");
+  await SpecialPowers.spawn(browser, [], () => {
+    is(
+      content.document.body.getAttribute("code"),
+      "MOZILLA_PKIX_ERROR_MITM_DETECTED",
+      "MitM error page has loaded."
+    );
+  });
 
   ok(true, "Successfully loaded the MitM error page.");
 
