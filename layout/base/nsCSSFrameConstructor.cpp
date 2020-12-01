@@ -685,6 +685,9 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
   
   
   
+  
+  
+  
   bool mFixedPosIsAbsPos;
 
   
@@ -892,6 +895,8 @@ void nsFrameConstructorState::ProcessFrameInsertionsForAllLists() {
 void nsFrameConstructorState::PushAbsoluteContainingBlock(
     nsContainerFrame* aNewAbsoluteContainingBlock, nsIFrame* aPositionedFrame,
     nsFrameConstructorSaveState& aSaveState) {
+  MOZ_ASSERT(!!aNewAbsoluteContainingBlock == !!aPositionedFrame,
+             "We should have both or none");
   aSaveState.mList = &mAbsoluteList;
   aSaveState.mSavedList = mAbsoluteList;
   aSaveState.mChildListID = nsIFrame::kAbsoluteList;
@@ -910,8 +915,9 @@ void nsFrameConstructorState::PushAbsoluteContainingBlock(
   
 
 
+
   mFixedPosIsAbsPos =
-      aPositionedFrame && aPositionedFrame->IsFixedPosContainingBlock();
+      !aPositionedFrame || aPositionedFrame->IsFixedPosContainingBlock();
 
   if (aNewAbsoluteContainingBlock) {
     aNewAbsoluteContainingBlock->MarkAsAbsoluteContainingBlock();
