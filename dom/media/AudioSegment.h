@@ -265,6 +265,9 @@ struct AudioChunk {
 
 
 class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
+  
+  uint32_t mMemoizedMaxChannelCount = 0;
+
  public:
   typedef mozilla::AudioSampleFormat SampleFormat;
 
@@ -400,16 +403,19 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
   void Mix(AudioMixer& aMixer, uint32_t aChannelCount, uint32_t aSampleRate);
 
   
+  
+  
   uint32_t MaxChannelCount() {
-    
-    
     uint32_t channelCount = 0;
     for (ChunkIterator ci(*this); !ci.IsEnded(); ci.Next()) {
       if (ci->ChannelCount()) {
         channelCount = std::max(channelCount, ci->ChannelCount());
       }
     }
-    return channelCount;
+    if (channelCount == 0) {
+      return mMemoizedMaxChannelCount;
+    }
+    return mMemoizedMaxChannelCount = channelCount;
   }
 
   static Type StaticType() { return AUDIO; }
