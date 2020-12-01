@@ -11,18 +11,18 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Buffer.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/IOUtilsBinding.h"
 #include "mozilla/dom/TypedArray.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/Result.h"
-#include "nsStringFwd.h"
-#include "nsTArray.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISerialEventTarget.h"
 #include "nsLocalFile.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
+#include "nsStringFwd.h"
+#include "nsTArray.h"
 #include "prio.h"
 
 namespace mozilla {
@@ -181,7 +181,7 @@ class IOUtils final {
 
 
   static Result<nsTArray<uint8_t>, IOError> ReadSync(
-      const nsAString& aPath, const Maybe<uint32_t>& aMaxBytes,
+      already_AddRefed<nsIFile> aFile, const Maybe<uint32_t>& aMaxBytes,
       const bool aDecompress);
 
   
@@ -194,7 +194,7 @@ class IOUtils final {
 
 
 
-  static Result<nsString, IOError> ReadUTF8Sync(const nsAString& aPath,
+  static Result<nsString, IOError> ReadUTF8Sync(already_AddRefed<nsIFile> aFile,
                                                 const bool aDecompress);
 
   
