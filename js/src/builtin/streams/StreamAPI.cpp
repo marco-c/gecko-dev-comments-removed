@@ -11,9 +11,9 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"  
+#include "jsapi.h"        
 #include "jsfriendapi.h"  
-#include "jstypes.h"  
+#include "jstypes.h"      
 
 #include "builtin/Stream.h"  
 #include "builtin/streams/ReadableStream.h"  
@@ -25,7 +25,7 @@
 #include "builtin/streams/StreamController.h"  
 #include "gc/Zone.h"                           
 #include "js/experimental/TypedData.h"  
-#include "js/friend/ErrorMessages.h"    
+#include "js/friend/ErrorMessages.h"  
 #include "js/GCAPI.h"       
 #include "js/Object.h"      
 #include "js/RootingAPI.h"  

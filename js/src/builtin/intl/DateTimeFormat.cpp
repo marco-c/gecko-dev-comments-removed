@@ -23,7 +23,7 @@
 #include "gc/FreeOp.h"
 #include "js/CharacterEncoding.h"
 #include "js/Date.h"
-#include "js/experimental/Intl.h"  
+#include "js/experimental/Intl.h"     
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCAPI.h"
 #include "js/PropertySpec.h"
