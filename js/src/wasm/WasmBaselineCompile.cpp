@@ -5235,9 +5235,7 @@ class BaseCompiler final : public BaseCompilerInterface {
   
 
   void insertBreakablePoint(CallSiteDesc::Kind kind) {
-    
-    
-    
+    fr.loadTlsPtr(WasmTlsReg);
     masm.nopPatchableToCall(CallSiteDesc(iter_.lastOpcodeOffset(), kind));
   }
 
@@ -5576,6 +5574,9 @@ class BaseCompiler final : public BaseCompilerInterface {
       restoreRegisterReturnValues(resultType);
     }
 
+    
+    
+    fr.loadTlsPtr(WasmTlsReg);
     GenerateFunctionEpilogue(masm, fr.fixedAllocSize(), &offsets_);
 
 #if defined(JS_ION_PERF)
