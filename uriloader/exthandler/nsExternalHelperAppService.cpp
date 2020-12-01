@@ -1047,12 +1047,30 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
   rv = GetProtocolHandlerInfo(scheme, getter_AddRefs(handler));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsHandlerInfoAction preferredAction;
+  handler->GetPreferredAction(&preferredAction);
+  bool alwaysAsk = true;
+  handler->GetAlwaysAskBeforeHandling(&alwaysAsk);
+
+  
+  
+  if (!alwaysAsk && (preferredAction == nsIHandlerInfo::useHelperApp ||
+                     preferredAction == nsIHandlerInfo::useSystemDefault)) {
+    rv = handler->LaunchWithURI(uri, aBrowsingContext);
+    
+    
+    
+    if (rv != NS_ERROR_FILE_NOT_FOUND) {
+      return rv;
+    }
+  }
+
   nsCOMPtr<nsIContentDispatchChooser> chooser =
       do_CreateInstance("@mozilla.org/content-dispatch-chooser;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return chooser->HandleURI(handler, uri, aTriggeringPrincipal,
-                            aBrowsingContext);
+  return chooser->Ask(handler, uri, aTriggeringPrincipal, aBrowsingContext,
+                      nsIContentDispatchChooser::REASON_CANNOT_HANDLE);
 }
 
 

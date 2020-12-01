@@ -11,16 +11,8 @@ const { SitePermissions } = ChromeUtils.import(
 var gPermPrincipal;
 
 
-const EXCLUDE_PERMS = ["open-protocol-handler"];
-
-
-let gPermissions = SitePermissions.listPermissions()
-  .filter(permissionID => {
-    if (!SitePermissions.getPermissionLabel(permissionID)) {
-      return false;
-    }
-    return !EXCLUDE_PERMS.includes(permissionID);
-  })
+var gPermissions = SitePermissions.listPermissions()
+  .filter(p => SitePermissions.getPermissionLabel(p) != null)
   .sort((a, b) => {
     let firstLabel = SitePermissions.getPermissionLabel(a);
     let secondLabel = SitePermissions.getPermissionLabel(b);
@@ -40,10 +32,6 @@ var permissionObserver = {
     }
   },
 };
-
-function getExcludedPermissions() {
-  return EXCLUDE_PERMS;
-}
 
 function onLoadPermission(uri, principal) {
   var permTab = document.getElementById("permTab");

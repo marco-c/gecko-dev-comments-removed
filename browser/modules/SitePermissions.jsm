@@ -230,7 +230,7 @@ const GloballyBlockedPermissions = {
       for (let id of Object.keys(timeStamps)) {
         permissions.push({
           id,
-          state: gPermissions.get(id).getDefault(),
+          state: gPermissionObject[id].getDefault(),
           scope: SitePermissions.SCOPE_GLOBAL,
         });
       }
@@ -272,10 +272,6 @@ var SitePermissions = {
   SCOPE_POLICY: "{SitePermissions.SCOPE_POLICY}",
   SCOPE_GLOBAL: "{SitePermissions.SCOPE_GLOBAL}",
 
-  
-  
-  PERM_KEY_DELIMITER: "^",
-
   _permissionsArray: null,
   _defaultPrefBranch: Services.prefs.getBranch("permissions.default."),
 
@@ -290,53 +286,51 @@ var SitePermissions = {
 
 
   getAllByPrincipal(principal) {
+    let result = [];
     if (!principal) {
       throw new Error("principal argument cannot be null.");
     }
     if (!this.isSupportedPrincipal(principal)) {
-      return [];
+      return result;
     }
 
-    
-    
-    let permissions = Services.perms
-      .getAllForPrincipal(principal)
-      .filter(permission => {
-        let entry = gPermissions.get(permission.type);
-        if (!entry || entry.disabled) {
-          return false;
+    let permissions = Services.perms.getAllForPrincipal(principal);
+    for (let permission of permissions) {
+      
+      if (gPermissionObject[permission.type]) {
+        
+        if (permission.type == "canvas" && !this.resistFingerprinting) {
+          continue;
         }
-        let type = entry.id;
 
         
 
         if (
-          type == "persistent-storage" &&
+          permission.type == "persistent-storage" &&
           SitePermissions.getForPrincipal(
             principal,
             "WebExtensions-unlimitedStorage"
           ).state == SitePermissions.ALLOW
         ) {
-          return false;
+          continue;
         }
 
-        return true;
-      });
+        let scope = this.SCOPE_PERSISTENT;
+        if (permission.expireType == Services.perms.EXPIRE_SESSION) {
+          scope = this.SCOPE_SESSION;
+        } else if (permission.expireType == Services.perms.EXPIRE_POLICY) {
+          scope = this.SCOPE_POLICY;
+        }
 
-    return permissions.map(permission => {
-      let scope = this.SCOPE_PERSISTENT;
-      if (permission.expireType == Services.perms.EXPIRE_SESSION) {
-        scope = this.SCOPE_SESSION;
-      } else if (permission.expireType == Services.perms.EXPIRE_POLICY) {
-        scope = this.SCOPE_POLICY;
+        result.push({
+          id: permission.type,
+          scope,
+          state: permission.capability,
+        });
       }
+    }
 
-      return {
-        id: permission.type,
-        scope,
-        state: permission.capability,
-      };
-    });
+    return result;
   },
 
   
@@ -428,18 +422,16 @@ var SitePermissions = {
 
   listPermissions() {
     if (this._permissionsArray === null) {
-      this._permissionsArray = gPermissions.getEnabledPermissions();
+      let permissions = Object.keys(gPermissionObject);
+
+      
+      if (!this.resistFingerprinting) {
+        permissions = permissions.filter(permission => permission !== "canvas");
+      }
+      this._permissionsArray = permissions;
     }
+
     return this._permissionsArray;
-  },
-
-  
-
-
-
-
-  isSitePermission(type) {
-    return gPermissions.has(type);
   },
 
   
@@ -469,10 +461,10 @@ var SitePermissions = {
 
   getAvailableStates(permissionID) {
     if (
-      gPermissions.has(permissionID) &&
-      gPermissions.get(permissionID).states
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].states
     ) {
-      return gPermissions.get(permissionID).states;
+      return gPermissionObject[permissionID].states;
     }
 
     
@@ -505,10 +497,10 @@ var SitePermissions = {
     
     
     if (
-      gPermissions.has(permissionID) &&
-      gPermissions.get(permissionID).getDefault
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].getDefault
     ) {
-      return gPermissions.get(permissionID).getDefault();
+      return gPermissionObject[permissionID].getDefault();
     }
 
     
@@ -526,10 +518,10 @@ var SitePermissions = {
 
   setDefault(permissionID, state) {
     if (
-      gPermissions.has(permissionID) &&
-      gPermissions.get(permissionID).setDefault
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].setDefault
     ) {
-      return gPermissions.get(permissionID).setDefault(state);
+      return gPermissionObject[permissionID].setDefault(state);
     }
     let key = "permissions.default." + permissionID;
     return Services.prefs.setIntPref(key, state);
@@ -565,8 +557,8 @@ var SitePermissions = {
     if (this.isSupportedPrincipal(principal)) {
       let permission = null;
       if (
-        gPermissions.has(permissionID) &&
-        gPermissions.get(permissionID).exactHostMatch
+        permissionID in gPermissionObject &&
+        gPermissionObject[permissionID].exactHostMatch
       ) {
         permission = Services.perms.getPermissionObject(
           principal,
@@ -769,25 +761,20 @@ var SitePermissions = {
 
 
 
-
-
   getPermissionLabel(permissionID) {
-    let [id, key] = permissionID.split(this.PERM_KEY_DELIMITER);
-    if (!gPermissions.has(id)) {
+    if (!(permissionID in gPermissionObject)) {
       
       return null;
     }
     if (
-      "labelID" in gPermissions.get(id) &&
-      gPermissions.get(id).labelID === null
+      "labelID" in gPermissionObject[permissionID] &&
+      gPermissionObject[permissionID].labelID === null
     ) {
       
       return null;
     }
-    let labelID = gPermissions.get(id).labelID || id;
-    return gStringBundle.formatStringFromName(`permission.${labelID}.label`, [
-      key,
-    ]);
+    let labelID = gPermissionObject[permissionID].labelID || permissionID;
+    return gStringBundle.GetStringFromName("permission." + labelID + ".label");
   },
 
   
@@ -807,10 +794,10 @@ var SitePermissions = {
     
     
     if (
-      gPermissions.has(permissionID) &&
-      gPermissions.get(permissionID).getMultichoiceStateLabel
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].getMultichoiceStateLabel
     ) {
-      return gPermissions.get(permissionID).getMultichoiceStateLabel(state);
+      return gPermissionObject[permissionID].getMultichoiceStateLabel(state);
     }
 
     switch (state) {
@@ -880,32 +867,7 @@ var SitePermissions = {
   },
 };
 
-let gPermissions = {
-  _getId(type) {
-    
-    let [id] = type.split(SitePermissions.PERM_KEY_DELIMITER);
-    return id;
-  },
-
-  has(type) {
-    return this._getId(type) in this._permissions;
-  },
-
-  get(type) {
-    let id = this._getId(type);
-    let perm = this._permissions[id];
-    if (perm) {
-      perm.id = id;
-    }
-    return perm;
-  },
-
-  getEnabledPermissions() {
-    return Object.keys(this._permissions).filter(
-      id => !this._permissions[id].disabled
-    );
-  },
-
+var gPermissionObject = {
   
 
 
@@ -930,176 +892,160 @@ let gPermissions = {
 
 
 
-  _permissions: {
-    "autoplay-media": {
-      exactHostMatch: true,
-      getDefault() {
-        let pref = Services.prefs.getIntPref(
-          "media.autoplay.default",
-          Ci.nsIAutoplay.BLOCKED
-        );
-        if (pref == Ci.nsIAutoplay.ALLOWED) {
-          return SitePermissions.ALLOW;
-        }
-        if (pref == Ci.nsIAutoplay.BLOCKED_ALL) {
-          return SitePermissions.AUTOPLAY_BLOCKED_ALL;
-        }
-        return SitePermissions.BLOCK;
-      },
-      setDefault(value) {
-        let prefValue = Ci.nsIAutoplay.BLOCKED;
-        if (value == SitePermissions.ALLOW) {
-          prefValue = Ci.nsIAutoplay.ALLOWED;
-        } else if (value == SitePermissions.AUTOPLAY_BLOCKED_ALL) {
-          prefValue = Ci.nsIAutoplay.BLOCKED_ALL;
-        }
-        Services.prefs.setIntPref("media.autoplay.default", prefValue);
-      },
-      labelID: "autoplay",
-      states: [
-        SitePermissions.ALLOW,
-        SitePermissions.BLOCK,
-        SitePermissions.AUTOPLAY_BLOCKED_ALL,
-      ],
-      getMultichoiceStateLabel(state) {
-        switch (state) {
-          case SitePermissions.AUTOPLAY_BLOCKED_ALL:
-            return gStringBundle.GetStringFromName(
-              "state.multichoice.autoplayblockall"
-            );
-          case SitePermissions.BLOCK:
-            return gStringBundle.GetStringFromName(
-              "state.multichoice.autoplayblock"
-            );
-          case SitePermissions.ALLOW:
-            return gStringBundle.GetStringFromName(
-              "state.multichoice.autoplayallow"
-            );
-        }
-        throw new Error(`Unknown state: ${state}`);
-      },
-    },
 
-    cookie: {
-      states: [
-        SitePermissions.ALLOW,
-        SitePermissions.ALLOW_COOKIES_FOR_SESSION,
-        SitePermissions.BLOCK,
-      ],
-      getDefault() {
-        if (
-          Services.cookies.cookieBehavior == Ci.nsICookieService.BEHAVIOR_REJECT
-        ) {
-          return SitePermissions.BLOCK;
-        }
-
-        if (
-          Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
-          Ci.nsICookieService.ACCEPT_SESSION
-        ) {
-          return SitePermissions.ALLOW_COOKIES_FOR_SESSION;
-        }
-
+  "autoplay-media": {
+    exactHostMatch: true,
+    getDefault() {
+      let pref = Services.prefs.getIntPref(
+        "media.autoplay.default",
+        Ci.nsIAutoplay.BLOCKED
+      );
+      if (pref == Ci.nsIAutoplay.ALLOWED) {
         return SitePermissions.ALLOW;
-      },
+      }
+      if (pref == Ci.nsIAutoplay.BLOCKED_ALL) {
+        return SitePermissions.AUTOPLAY_BLOCKED_ALL;
+      }
+      return SitePermissions.BLOCK;
     },
+    setDefault(value) {
+      let prefValue = Ci.nsIAutoplay.BLOCKED;
+      if (value == SitePermissions.ALLOW) {
+        prefValue = Ci.nsIAutoplay.ALLOWED;
+      } else if (value == SitePermissions.AUTOPLAY_BLOCKED_ALL) {
+        prefValue = Ci.nsIAutoplay.BLOCKED_ALL;
+      }
+      Services.prefs.setIntPref("media.autoplay.default", prefValue);
+    },
+    labelID: "autoplay",
+    states: [
+      SitePermissions.ALLOW,
+      SitePermissions.BLOCK,
+      SitePermissions.AUTOPLAY_BLOCKED_ALL,
+    ],
+    getMultichoiceStateLabel(state) {
+      switch (state) {
+        case SitePermissions.AUTOPLAY_BLOCKED_ALL:
+          return gStringBundle.GetStringFromName(
+            "state.multichoice.autoplayblockall"
+          );
+        case SitePermissions.BLOCK:
+          return gStringBundle.GetStringFromName(
+            "state.multichoice.autoplayblock"
+          );
+        case SitePermissions.ALLOW:
+          return gStringBundle.GetStringFromName(
+            "state.multichoice.autoplayallow"
+          );
+      }
+      throw new Error(`Unknown state: ${state}`);
+    },
+  },
 
-    "desktop-notification": {
-      exactHostMatch: true,
-      labelID: "desktop-notification3",
-    },
+  cookie: {
+    states: [
+      SitePermissions.ALLOW,
+      SitePermissions.ALLOW_COOKIES_FOR_SESSION,
+      SitePermissions.BLOCK,
+    ],
+    getDefault() {
+      if (
+        Services.cookies.cookieBehavior == Ci.nsICookieService.BEHAVIOR_REJECT
+      ) {
+        return SitePermissions.BLOCK;
+      }
 
-    camera: {
-      exactHostMatch: true,
-    },
+      if (
+        Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
+        Ci.nsICookieService.ACCEPT_SESSION
+      ) {
+        return SitePermissions.ALLOW_COOKIES_FOR_SESSION;
+      }
 
-    microphone: {
-      exactHostMatch: true,
+      return SitePermissions.ALLOW;
     },
+  },
 
-    screen: {
-      exactHostMatch: true,
-      states: [SitePermissions.UNKNOWN, SitePermissions.BLOCK],
-    },
+  "desktop-notification": {
+    exactHostMatch: true,
+    labelID: "desktop-notification3",
+  },
 
-    popup: {
-      getDefault() {
-        return Services.prefs.getBoolPref("dom.disable_open_during_load")
-          ? SitePermissions.BLOCK
-          : SitePermissions.ALLOW;
-      },
-      states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
-    },
+  camera: {
+    exactHostMatch: true,
+  },
 
-    install: {
-      getDefault() {
-        return Services.prefs.getBoolPref("xpinstall.whitelist.required")
-          ? SitePermissions.UNKNOWN
-          : SitePermissions.ALLOW;
-      },
-    },
+  microphone: {
+    exactHostMatch: true,
+  },
 
-    geo: {
-      exactHostMatch: true,
-    },
+  screen: {
+    exactHostMatch: true,
+    states: [SitePermissions.UNKNOWN, SitePermissions.BLOCK],
+  },
 
-    "open-protocol-handler": {
-      labelID: "open-protocol-handler",
-      exactHostMatch: true,
-      states: [SitePermissions.UNKNOWN, SitePermissions.ALLOW],
-      get disabled() {
-        return !SitePermissions.openProtoPermissionEnabled;
-      },
+  popup: {
+    getDefault() {
+      return Services.prefs.getBoolPref("dom.disable_open_during_load")
+        ? SitePermissions.BLOCK
+        : SitePermissions.ALLOW;
     },
+    states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
+  },
 
-    xr: {
-      exactHostMatch: true,
+  install: {
+    getDefault() {
+      return Services.prefs.getBoolPref("xpinstall.whitelist.required")
+        ? SitePermissions.UNKNOWN
+        : SitePermissions.ALLOW;
     },
+  },
 
-    "focus-tab-by-prompt": {
-      exactHostMatch: true,
-      states: [SitePermissions.UNKNOWN, SitePermissions.ALLOW],
-    },
-    "persistent-storage": {
-      exactHostMatch: true,
-    },
+  geo: {
+    exactHostMatch: true,
+  },
 
-    shortcuts: {
-      states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
-    },
+  xr: {
+    exactHostMatch: true,
+  },
 
-    canvas: {
-      get disabled() {
-        return !SitePermissions.resistFingerprinting;
-      },
-    },
+  "focus-tab-by-prompt": {
+    exactHostMatch: true,
+    states: [SitePermissions.UNKNOWN, SitePermissions.ALLOW],
+  },
+  "persistent-storage": {
+    exactHostMatch: true,
+  },
 
-    midi: {
-      exactHostMatch: true,
-      get disabled() {
-        return !SitePermissions.midiPermissionEnabled;
-      },
-    },
+  shortcuts: {
+    states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
+  },
 
-    "midi-sysex": {
-      exactHostMatch: true,
-      get disabled() {
-        return !SitePermissions.midiPermissionEnabled;
-      },
-    },
+  canvas: {},
 
-    "storage-access": {
-      labelID: null,
-      getDefault() {
-        return SitePermissions.UNKNOWN;
-      },
+  midi: {
+    exactHostMatch: true,
+  },
+
+  "midi-sysex": {
+    exactHostMatch: true,
+  },
+
+  "storage-access": {
+    labelID: null,
+    getDefault() {
+      return SitePermissions.UNKNOWN;
     },
   },
 };
 
-SitePermissions.midiPermissionEnabled = Services.prefs.getBoolPref(
-  "dom.webmidi.enabled"
-);
+if (!Services.prefs.getBoolPref("dom.webmidi.enabled")) {
+  
+  
+  
+  delete gPermissionObject["midi"];
+  delete gPermissionObject["midi-sysex"];
+}
 
 XPCOMUtils.defineLazyPreferenceGetter(
   SitePermissions,
@@ -1112,12 +1058,5 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "resistFingerprinting",
   "privacy.resistFingerprinting",
   false,
-  SitePermissions.invalidatePermissionList.bind(SitePermissions)
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  SitePermissions,
-  "openProtoPermissionEnabled",
-  "security.external_protocol_requires_permission",
-  true,
   SitePermissions.invalidatePermissionList.bind(SitePermissions)
 );
