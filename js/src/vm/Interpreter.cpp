@@ -388,7 +388,16 @@ static bool MaybeCreateThisForConstructor(JSContext* cx, const CallArgs& args) {
   RootedFunction callee(cx, &args.callee().as<JSFunction>());
   RootedObject newTarget(cx, &args.newTarget().toObject());
 
-  return CreateThis(cx, callee, newTarget, GenericObject, args.mutableThisv());
+  MOZ_ASSERT(callee->hasBytecode());
+
+  if (!CreateThis(cx, callee, newTarget, GenericObject, args.mutableThisv())) {
+    return false;
+  }
+
+  
+  
+  
+  return JSFunction::getOrCreateScript(cx, callee);
 }
 
 static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
