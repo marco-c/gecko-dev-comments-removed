@@ -120,31 +120,23 @@ using namespace mozilla::a11y;
       RotorRule rule =
           mImmediateDescendantsOnly ? RotorRule(geckoRootAcc) : RotorRule();
 
-      if (mSearchForward) {
-        if ([mStartElem isKindOfClass:[MOXWebAreaAccessible class]]) {
-          if (id rootGroup =
-                  [static_cast<MOXWebAreaAccessible*>(mStartElem) rootGroup]) {
+      if ([mStartElem isKindOfClass:[MOXWebAreaAccessible class]]) {
+        if (id rootGroup =
+                [static_cast<MOXWebAreaAccessible*>(mStartElem) rootGroup]) {
+          
+          [matches addObject:rootGroup];
+          if (mResultLimit == 1) {
             
-            [matches addObject:rootGroup];
-            if (mResultLimit == 1) {
-              
-              continue;
-            }
+            continue;
           }
-        } else if (mImmediateDescendantsOnly && mStartElem != mRoot &&
-                   [mStartElem isKindOfClass:[MOXRootGroup class]]) {
-          
-          
-          continue;
         }
-      } else if (!mSearchForward &&
-                 [mStartElem isKindOfClass:[MOXRootGroup class]]) {
+      }
+
+      if (mImmediateDescendantsOnly && mStartElem != mRoot &&
+          [mStartElem isKindOfClass:[MOXRootGroup class]]) {
         
-        [matches addObject:[mStartElem moxParent]];
-        if (mResultLimit == 1) {
-          
-          continue;
-        }
+        
+        continue;
       }
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
