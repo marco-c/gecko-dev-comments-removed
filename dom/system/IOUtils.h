@@ -308,7 +308,7 @@ class IOUtils final {
 
 
   static Result<IOUtils::InternalFileInfo, IOError> StatSync(
-      const nsAString& aPath);
+      already_AddRefed<nsIFile> aFile);
 
   
 
