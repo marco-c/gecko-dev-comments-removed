@@ -908,6 +908,7 @@ template bool StringsCompare<ComparisonKind::GreaterThanOrEqual>(
 bool ArrayPopDense(JSContext* cx, HandleObject obj, MutableHandleValue rval) {
   MOZ_ASSERT(obj->is<ArrayObject>());
 
+  
   AutoDetectInvalidation adi(cx, rval);
 
   JS::RootedValueArray<2> argv(cx);
@@ -917,14 +918,7 @@ bool ArrayPopDense(JSContext* cx, HandleObject obj, MutableHandleValue rval) {
     return false;
   }
 
-  
-  
   rval.set(argv[0]);
-  if (rval.isUndefined()) {
-    jsbytecode* pc;
-    JSScript* script = cx->currentScript(&pc);
-    JitScript::MonitorBytecodeType(cx, script, pc, rval);
-  }
   return true;
 }
 
@@ -987,14 +981,7 @@ bool ArrayShiftDense(JSContext* cx, HandleObject obj, MutableHandleValue rval) {
     return false;
   }
 
-  
-  
   rval.set(argv[0]);
-  if (rval.isUndefined()) {
-    jsbytecode* pc;
-    JSScript* script = cx->currentScript(&pc);
-    JitScript::MonitorBytecodeType(cx, script, pc, rval);
-  }
   return true;
 }
 
@@ -1155,22 +1142,7 @@ bool OperatorInI(JSContext* cx, int32_t index, HandleObject obj, bool* out) {
 
 bool GetIntrinsicValue(JSContext* cx, HandlePropertyName name,
                        MutableHandleValue rval) {
-  if (!GlobalObject::getIntrinsicValue(cx, cx->global(), name, rval)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  if (!JitOptions.warpBuilder) {
-    jsbytecode* pc;
-    JSScript* script = cx->currentScript(&pc);
-    JitScript::MonitorBytecodeType(cx, script, pc, rval);
-  }
-
-  return true;
+  return GlobalObject::getIntrinsicValue(cx, cx->global(), name, rval);
 }
 
 bool CreateThisFromIC(JSContext* cx, HandleObject callee,
@@ -2445,9 +2417,6 @@ bool DoConcatStringObject(JSContext* cx, HandleValue lhs, HandleValue rhs,
       return false;
     }
   }
-
-  
-  
 
   res.setString(str);
   return true;

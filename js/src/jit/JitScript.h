@@ -237,22 +237,6 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class alignas(uintptr_t) JitScript final : public TrailingArray {
   friend class ::JSScript;
 
@@ -318,17 +302,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   IonScript* ionScript_ = nullptr;
 
   
-  Offset typeSetOffset_ = 0;
-
-  
-  Offset bytecodeTypeMapOffset_ = 0;
-
-  
   Offset endOffset_ = 0;
-
-  
-  
-  uint32_t bytecodeTypeMapHint_ = 0;
 
   struct Flags {
     
@@ -358,16 +332,9 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   
 
   Offset icEntriesOffset() const { return offsetOfICEntries(); }
-  Offset typeSetOffset() const { return typeSetOffset_; }
-  Offset bytecodeTypeMapOffset() const { return bytecodeTypeMapOffset_; }
   Offset endOffset() const { return endOffset_; }
 
   ICEntry* icEntries() { return icScript_.icEntries(); }
-
-  StackTypeSet* typeArrayDontCheckGeneration() {
-    MOZ_ASSERT(IsTypeInferenceEnabled());
-    return offsetToPointer<StackTypeSet>(typeSetOffset());
-  }
 
   uint32_t typesGeneration() const { return uint32_t(flags_.typesGeneration); }
   void setTypesGeneration(uint32_t generation) {
@@ -387,9 +354,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   }
 
  public:
-  JitScript(JSScript* script, Offset typeSetOffset,
-            Offset bytecodeTypeMapOffset, Offset endOffset,
-            const char* profileString);
+  JitScript(JSScript* script, Offset endOffset, const char* profileString);
 
 #ifdef DEBUG
   ~JitScript() {
@@ -402,8 +367,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     MOZ_ASSERT(!hasIonScript());
   }
 #endif
-
-  void initBytecodeTypeMap(JSScript* script);
 
   MOZ_MUST_USE bool ensureHasCachedIonData(JSContext* cx, HandleScript script);
 
@@ -445,12 +408,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   }
 
   uint32_t numICEntries() const { return icScript_.numICEntries(); }
-  uint32_t numTypeSets() const {
-    MOZ_ASSERT(IsTypeInferenceEnabled());
-    return numElements<StackTypeSet>(typeSetOffset(), bytecodeTypeMapOffset());
-  }
-
-  uint32_t* bytecodeTypeMapHint() { return &bytecodeTypeMapHint_; }
 
   bool active() const { return flags_.active; }
   void setActive() { flags_.active = true; }
@@ -462,72 +419,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     MOZ_ASSERT(profileString_);
     return profileString_;
   }
-
-  
-  StackTypeSet* typeArray(const js::AutoSweepJitScript& sweep) {
-    MOZ_ASSERT(sweep.jitScript() == this);
-    return typeArrayDontCheckGeneration();
-  }
-
-  uint32_t* bytecodeTypeMap() {
-    MOZ_ASSERT(IsTypeInferenceEnabled());
-    return offsetToPointer<uint32_t>(bytecodeTypeMapOffset());
-  }
-
-  inline StackTypeSet* thisTypes(const AutoSweepJitScript& sweep,
-                                 JSScript* script);
-  inline StackTypeSet* argTypes(const AutoSweepJitScript& sweep,
-                                JSScript* script, unsigned i);
-
-  static size_t NumTypeSets(JSScript* script);
-
-  
-  inline StackTypeSet* bytecodeTypes(const AutoSweepJitScript& sweep,
-                                     JSScript* script, jsbytecode* pc);
-
-  template <typename TYPESET>
-  static inline TYPESET* BytecodeTypes(JSScript* script, jsbytecode* pc,
-                                       uint32_t* bytecodeMap, uint32_t* hint,
-                                       TYPESET* typeArray);
-
-  
-
-
-
-
-
-
-  static void MonitorBytecodeType(JSContext* cx, JSScript* script,
-                                  jsbytecode* pc, const js::Value& val);
-  static void MonitorBytecodeType(JSContext* cx, JSScript* script,
-                                  jsbytecode* pc, TypeSet::Type type);
-
-  static inline void MonitorBytecodeType(JSContext* cx, JSScript* script,
-                                         jsbytecode* pc, StackTypeSet* types,
-                                         const js::Value& val);
-
- private:
-  static void MonitorBytecodeTypeSlow(JSContext* cx, JSScript* script,
-                                      jsbytecode* pc, StackTypeSet* types,
-                                      TypeSet::Type type);
-
-  static void MonitorMagicValueBytecodeType(JSContext* cx, JSScript* script,
-                                            jsbytecode* pc,
-                                            const js::Value& rval);
-
- public:
-  
-  static inline void MonitorAssign(JSContext* cx, HandleObject obj, jsid id);
-
-  
-  static inline void MonitorThisType(JSContext* cx, JSScript* script,
-                                     TypeSet::Type type);
-  static inline void MonitorThisType(JSContext* cx, JSScript* script,
-                                     const js::Value& value);
-  static inline void MonitorArgType(JSContext* cx, JSScript* script,
-                                    unsigned arg, TypeSet::Type type);
-  static inline void MonitorArgType(JSContext* cx, JSScript* script,
-                                    unsigned arg, const js::Value& value);
 
   static void Destroy(Zone* zone, JitScript* script);
 
@@ -553,10 +444,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   void incWarmUpCount(uint32_t amount) { icScript_.warmUpCount_ += amount; }
   void resetWarmUpCount(uint32_t count);
 
-#ifdef DEBUG
-  void printTypes(JSContext* cx, HandleScript script);
-#endif
-
   void prepareForDestruction(Zone* zone) {
     
     
@@ -579,13 +466,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   }
 
   ICEntry& icEntry(size_t index) { return icScript_.icEntry(index); }
-
-  
-  
-  void noteAccessedGetter(uint32_t pcOffset);
-  
-  
-  void noteHasDenseAdd(uint32_t pcOffset);
 
   void trace(JSTracer* trc);
   void purgeOptimizedStubs(JSScript* script);

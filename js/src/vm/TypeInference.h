@@ -158,10 +158,6 @@ bool AddClearDefiniteGetterSetterForPrototypeChain(
     JSContext* cx, DPAConstraintInfo& constraintInfo, ObjectGroup* group,
     HandleId id, bool* added);
 
-bool AddClearDefiniteFunctionUsesInScript(JSContext* cx, ObjectGroup* group,
-                                          JSScript* script,
-                                          JSScript* calleeScript);
-
 
 
 

@@ -1170,8 +1170,8 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
       return false;
     }
   } else {
-    if (!SetObjectElement(cx, obj, index, rhs, objv,
-                          JSOp(*pc) == JSOp::StrictSetElem, script, pc)) {
+    if (!SetObjectElementWithReceiver(cx, obj, index, rhs, objv,
+                                      JSOp(*pc) == JSOp::StrictSetElem)) {
       return false;
     }
   }
@@ -1519,12 +1519,6 @@ bool DoGetIntrinsicFallback(JSContext* cx, BaselineFrame* frame,
   if (!GetIntrinsicOperation(cx, script, pc, res)) {
     return false;
   }
-
-  
-  
-  
-
-  JitScript::MonitorBytecodeType(cx, script, pc, res);
 
   TryAttachStub<GetIntrinsicIRGenerator>("GetIntrinsic", cx, frame, stub,
                                          BaselineCacheIRStubKind::Regular, res);
