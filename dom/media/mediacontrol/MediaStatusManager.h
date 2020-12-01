@@ -198,7 +198,6 @@ class MediaStatusManager : public IMediaInfoUpdater {
 
  protected:
   ~MediaStatusManager() = default;
-  virtual void HandleActualPlaybackStateChanged() = 0;
 
   
   
