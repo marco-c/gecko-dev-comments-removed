@@ -3537,7 +3537,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsRect InkOverflowRect() const { return GetOverflowRect(eInkOverflow); }
+  nsRect InkOverflowRect() const {
+    return GetOverflowRect(mozilla::OverflowType::Ink);
+  }
 
   
 
@@ -3560,10 +3562,10 @@ class nsIFrame : public nsQueryFrame {
 
 
   nsRect ScrollableOverflowRect() const {
-    return GetOverflowRect(eScrollableOverflow);
+    return GetOverflowRect(mozilla::OverflowType::Scrollable);
   }
 
-  nsRect GetOverflowRect(nsOverflowType aType) const;
+  nsRect GetOverflowRect(mozilla::OverflowType aType) const;
 
   nsOverflowAreas GetOverflowAreas() const;
 

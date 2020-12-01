@@ -7490,10 +7490,7 @@ nsPoint nsIFrame::GetPositionIgnoringScrolling() const {
                      : GetPosition();
 }
 
-nsRect nsIFrame::GetOverflowRect(nsOverflowType aType) const {
-  MOZ_ASSERT(aType == eInkOverflow || aType == eScrollableOverflow,
-             "unexpected type");
-
+nsRect nsIFrame::GetOverflowRect(OverflowType aType) const {
   
   
   
@@ -7506,7 +7503,7 @@ nsRect nsIFrame::GetOverflowRect(nsOverflowType aType) const {
     return GetOverflowAreasProperty()->Overflow(aType);
   }
 
-  if (aType == eInkOverflow && mOverflow.mType != NS_FRAME_OVERFLOW_NONE) {
+  if (aType == OverflowType::Ink && mOverflow.mType != NS_FRAME_OVERFLOW_NONE) {
     return InkOverflowFromDeltas();
   }
 

@@ -26,33 +26,18 @@ constexpr auto AllOverflowTypes() {
 }
 }  
 
-
-
-
-
-
-
-
-
-enum nsOverflowType { eInkOverflow, eScrollableOverflow, eOverflowType_LENGTH };
-
 struct nsOverflowAreas {
  private:
+  enum nsOverflowType {
+    eInkOverflow,
+    eScrollableOverflow,
+  };
   nsRect mRects[2];
 
  public:
   
   
   using OverflowType = mozilla::OverflowType;
-
-  nsRect& Overflow(size_t aIndex) {
-    NS_ASSERTION(aIndex < 2, "index out of range");
-    return mRects[aIndex];
-  }
-  const nsRect& Overflow(size_t aIndex) const {
-    NS_ASSERTION(aIndex < 2, "index out of range");
-    return mRects[aIndex];
-  }
 
   nsRect& InkOverflow() { return mRects[eInkOverflow]; }
   const nsRect& InkOverflow() const { return mRects[eInkOverflow]; }
