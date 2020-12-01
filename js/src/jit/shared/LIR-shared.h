@@ -1598,45 +1598,6 @@ class LTestVAndBranch : public LControlInstructionHelper<2, BOX_PIECES, 3> {
 
 
 
-class LFunctionDispatch : public LInstructionHelper<0, 1, 0> {
-  
-  
-
- public:
-  LIR_HEADER(FunctionDispatch);
-
-  explicit LFunctionDispatch(const LAllocation& in)
-      : LInstructionHelper(classOpcode) {
-    setOperand(0, in);
-  }
-
-  MFunctionDispatch* mir() const { return mir_->toFunctionDispatch(); }
-};
-
-class LObjectGroupDispatch : public LInstructionHelper<0, 1, 1> {
-  
-  
-
- public:
-  LIR_HEADER(ObjectGroupDispatch);
-
-  const char* extraName() const {
-    return mir()->hasFallback() ? "HasFallback" : "NoFallback";
-  }
-
-  LObjectGroupDispatch(const LAllocation& in, const LDefinition& temp)
-      : LInstructionHelper(classOpcode) {
-    setOperand(0, in);
-    setTemp(0, temp);
-  }
-
-  const LDefinition* temp() { return getTemp(0); }
-
-  MObjectGroupDispatch* mir() const { return mir_->toObjectGroupDispatch(); }
-};
-
-
-
 class LCompare : public LInstructionHelper<1, 2, 0> {
   JSOp jsop_;
 
