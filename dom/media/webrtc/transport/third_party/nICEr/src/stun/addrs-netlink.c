@@ -94,7 +94,7 @@ static int get_siocgifflags(nr_local_addr *addr) {
 }
 
 static int set_sockaddr(nr_local_addr *addr, struct ifaddrmsg* msg, struct rtattr* rta) {
-  assert(rta->rta_type == IFA_ADDRESS);
+  assert(rta->rta_type == IFA_ADDRESS || rta->rta_type == IFA_LOCAL);
   void *data = RTA_DATA(rta);
   size_t len = RTA_PAYLOAD(rta);
   if (msg->ifa_family == AF_INET) {
@@ -235,15 +235,27 @@ stun_getaddrs_filtered(nr_local_addr addrs[], int maxaddrs, int *count)
                 (struct ifaddrmsg*)NLMSG_DATA(header);
             struct rtattr* rta = IFA_RTA(address_msg);
             ssize_t payload_len = IFA_PAYLOAD(header);
+            bool found = false;
             while (RTA_OK(rta, payload_len)) {
-              if (rta->rta_type == IFA_ADDRESS) {
+              
+              
+              
+              
+              
+              
+              
+              if (rta->rta_type == IFA_ADDRESS || rta->rta_type == IFA_LOCAL) {
                 int family = address_msg->ifa_family;
                 if ((family == AF_INET || family == AF_INET6) &&
-                    !stun_ifaddr_is_disallowed_v6(address_msg->ifa_flags)) {
-                  if (stun_convert_netlink(&addrs[*count], address_msg, rta)) {
-                    assert(0);
-                  } else {
-                    ++(*count);
+                    !stun_ifaddr_is_disallowed_v6(address_msg->ifa_flags) &&
+                    !stun_convert_netlink(&addrs[*count], address_msg, rta)) {
+                  found = true;
+                  if (rta->rta_type == IFA_LOCAL) {
+                    
+                    
+                    
+                    
+                    break;
                   }
                 }
               }
@@ -251,6 +263,10 @@ stun_getaddrs_filtered(nr_local_addr addrs[], int maxaddrs, int *count)
 
 
               rta = RTA_NEXT(rta, payload_len);
+            }
+
+            if (found) {
+              ++(*count);
             }
             break;
           }
