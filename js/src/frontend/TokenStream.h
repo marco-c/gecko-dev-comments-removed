@@ -1502,12 +1502,44 @@ inline void SourceUnits<mozilla::Utf8Unit>::ungetLineOrParagraphSeparator() {
   MOZ_ASSERT(last == 0xA8 || last == 0xA9);
 }
 
-class TokenStreamCharsShared {
-  
-  
-  
-  using CharBuffer = Vector<char16_t, 32>;
 
+
+
+
+
+
+
+
+
+
+
+
+using CharBuffer = Vector<char16_t, 32>;
+
+
+
+
+
+extern MOZ_MUST_USE bool AppendCodePointToCharBuffer(CharBuffer& charBuffer,
+                                                     uint32_t codePoint);
+
+
+
+
+
+
+extern MOZ_MUST_USE bool FillCharBufferFromSourceNormalizingAsciiLineBreaks(
+    CharBuffer& charBuffer, const char16_t* cur, const char16_t* end);
+
+
+
+
+
+extern MOZ_MUST_USE bool FillCharBufferFromSourceNormalizingAsciiLineBreaks(
+    CharBuffer& charBuffer, const mozilla::Utf8Unit* cur,
+    const mozilla::Utf8Unit* end);
+
+class TokenStreamCharsShared {
  protected:
   JSContext* cx;
 
@@ -1524,8 +1556,6 @@ class TokenStreamCharsShared {
  protected:
   explicit TokenStreamCharsShared(JSContext* cx, ParserAtomsTable* parserAtoms)
       : cx(cx), charBuffer(cx), parserAtoms(parserAtoms) {}
-
-  MOZ_MUST_USE bool appendCodePointToCharBuffer(uint32_t codePoint);
 
   MOZ_MUST_USE bool copyCharBufferTo(
       JSContext* cx, UniquePtr<char16_t[], JS::FreePolicy>* destination);
@@ -1653,14 +1683,6 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
   
   template <typename T>
   inline void consumeKnownCodeUnit(T) = delete;
-
-  
-
-
-
-
-  MOZ_MUST_USE bool fillCharBufferFromSourceNormalizingAsciiLineBreaks(
-      const Unit* cur, const Unit* end);
 
   
 
@@ -1916,7 +1938,6 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
  protected:
   using CharsBase::addLineOfContext;
-  using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
   using CharsBase::matchCodeUnit;
   using CharsBase::matchLineTerminator;
   using TokenStreamCharsShared::drainCharBufferIntoAtom;
@@ -2144,7 +2165,8 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     
     
     
-    if (!fillCharBufferFromSourceNormalizingAsciiLineBreaks(cur, end)) {
+    if (!FillCharBufferFromSourceNormalizingAsciiLineBreaks(this->charBuffer,
+                                                            cur, end)) {
       return nullptr;
     }
 
@@ -2431,10 +2453,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
  private:
   using CharsBase::atomizeSourceChars;
   using GeneralCharsBase::badToken;
-  using TokenStreamCharsShared::appendCodePointToCharBuffer;
   
   using CharsBase::consumeKnownCodeUnit;
-  using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
   using CharsBase::matchCodeUnit;
   using CharsBase::matchLineTerminator;
   using CharsBase::peekCodeUnit;
