@@ -89,6 +89,17 @@ interface nsIPermissionManager : nsISupports
 
 
 
+
+
+  Array<nsIPermission> getAllByTypeSince(in ACString type, in int64_t since);
+
+  
+
+
+
+
+
+
   void addFromPrincipal(in nsIPrincipal principal, in ACString type,
                         in uint32_t permission,
                         [optional] in uint32_t expireType,
