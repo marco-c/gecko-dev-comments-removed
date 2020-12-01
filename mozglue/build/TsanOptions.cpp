@@ -179,7 +179,7 @@ extern "C" const char* __tsan_default_suppressions() {
          
          
          
-         "race:crossbeam_deque::Worker$LT$T$GT$::resize\n"
+         "race:crossbeam_deque::Worker*::resize\n"
 
 
 
