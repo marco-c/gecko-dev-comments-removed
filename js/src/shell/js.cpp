@@ -10485,9 +10485,6 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
 
   
   
-  if (op.getBoolOption("no-warp")) {
-    jit::JitOptions.setWarpEnabled(false);
-  }
   if (op.getBoolOption("fast-warmup")) {
     jit::JitOptions.setFastWarmUp();
   }
@@ -11258,8 +11255,6 @@ int main(int argc, char** argv, char** envp) {
       !op.addBoolOption('\0', "no-ion", "Disable IonMonkey") ||
       !op.addBoolOption('\0', "no-ion-for-main-context",
                         "Disable IonMonkey for the main context only") ||
-      !op.addBoolOption('\0', "warp", "Enable WarpBuilder (default)") ||
-      !op.addBoolOption('\0', "no-warp", "Disable WarpBuilder") ||
       !op.addIntOption('\0', "inlining-entry-threshold", "COUNT",
                        "The minimum stub entry count before trial-inlining a"
                        " call",

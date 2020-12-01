@@ -47,18 +47,6 @@ JITFLAGS = {
         ["--ion-eager", "--ion-offthread-compile=off", "--more-compartments"],
     ],
     
-    "warp": [["--warp"], ["--warp", "--ion-eager", "--ion-offthread-compile=off"]],
-    "nowarp": [
-        ["--no-warp"],
-        [
-            "--no-warp",
-            "--ion-eager",
-            "--ion-offthread-compile=off",
-            "--more-compartments",
-        ],
-        ["--no-warp", "--baseline-eager"],
-    ],
-    
     "debug": [
         [],  
         [
