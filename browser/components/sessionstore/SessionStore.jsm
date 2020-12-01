@@ -1218,13 +1218,22 @@ var SessionStoreInternal = {
             : listener._lastKnownBody;
           let userContextId = aBrowser.contentPrincipal
             ? aBrowser.contentPrincipal.originAttributes.userContextId
-            : listener._lastKnownUserContextId;
+              : listener._lastKnownUserContextId;
+          
+          
+          
+          
+          
+          
+          
           aData.data.historychange = SessionHistory.collectFromParent(
             uri,
             body,
             aBrowsingContext.sessionHistory,
             userContextId,
-            listener._sHistoryChanges ? listener._fromIdx : -1
+            listener._sHistoryChanges && !aData.sHistoryNeeded
+              ? listener._fromIdx
+              : -1
           );
           listener._sHistoryChanges = false;
           listener._fromIdx = kNoIndex;
