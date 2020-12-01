@@ -86,7 +86,9 @@ HalfOpenSocket::~HalfOpenSocket() {
   LOG(("Destroying HalfOpenSocket [this=%p]\n", this));
 
   if (mEnt) {
-    mEnt->RemoveHalfOpen(this);
+    bool inqueue = mEnt->RemoveHalfOpen(this);
+    LOG(("Destroying HalfOpenSocket was in the HalfOpenList=%d [this=%p]\n",
+         inqueue, this));
   }
 }
 
@@ -503,7 +505,7 @@ HalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
     
     mSocketTransport->SetFastOpenCallback(nullptr);
     mConnectionNegotiatingFastOpen->SetFastOpen(false);
-    mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
+    mEnt->RemoveHalfOpenFastOpenBackups(this);
     RefPtr<nsAHttpTransaction> trans =
         mConnectionNegotiatingFastOpen
             ->CloseConnectionFastOpenTakesTooLongOrError(true);
@@ -582,7 +584,7 @@ bool HalfOpenSocket::FastOpenEnabled() {
 
   
   
-  if (!mEnt->mHalfOpens.Contains(this)) {
+  if (!mEnt->IsInHalfOpens(this)) {
     return false;
   }
 
@@ -621,7 +623,7 @@ nsresult HalfOpenSocket::StartFastOpen() {
   mEnt->mDoNotDestroy = true;
   
   
-  if (!mEnt->mHalfOpens.RemoveElement(this)) {
+  if (!mEnt->RemoveHalfOpen(this)) {
     MOZ_ASSERT(false, "HalfOpen is not in mHalfOpens!");
     mSocketTransport->SetFastOpenCallback(nullptr);
     CancelBackupTimer();
@@ -631,10 +633,7 @@ nsresult HalfOpenSocket::StartFastOpen() {
     return NS_ERROR_ABORT;
   }
 
-  MOZ_ASSERT(gHttpHandler->ConnMgr()->mNumHalfOpenConns);
-  if (gHttpHandler->ConnMgr()->mNumHalfOpenConns) {  
-    gHttpHandler->ConnMgr()->mNumHalfOpenConns--;
-  }
+  gHttpHandler->ConnMgr()->DecreaseNumHalfOpenConns();
 
   
   gHttpHandler->ConnMgr()->RecvdConnect();
@@ -668,7 +667,7 @@ nsresult HalfOpenSocket::StartFastOpen() {
     LOG(("HalfOpenSocket::StartFastOpen [this=%p conn=%p]\n", this,
          mConnectionNegotiatingFastOpen.get()));
 
-    mEnt->mHalfOpenFastOpenBackups.AppendElement(this);
+    mEnt->InsertIntoHalfOpenFastOpenBackups(this);
     
     
     
@@ -718,7 +717,7 @@ void HalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry) {
   mEnt->mDoNotDestroy = true;
 
   
-  mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
+  mEnt->RemoveHalfOpenFastOpenBackups(this);
   mSocketTransport->SetFastOpenCallback(nullptr);
 
   mConnectionNegotiatingFastOpen->SetFastOpen(false);
@@ -756,8 +755,7 @@ void HalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry) {
     
     
     
-    mEnt->mHalfOpens.AppendElement(this);
-    gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+    mEnt->InsertIntoHalfOpens(this);
     gHttpHandler->ConnMgr()->StartedConnect();
 
     
@@ -792,8 +790,7 @@ void HalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry) {
     
     if (mBackupTransport) {
       mFastOpenStatus = TFO_BACKUP_CONN;
-      mEnt->mHalfOpens.AppendElement(this);
-      gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+      mEnt->InsertIntoHalfOpens(this);
     }
   }
 
@@ -827,7 +824,7 @@ void HalfOpenSocket::CancelFastOpenConnection() {
        mConnectionNegotiatingFastOpen.get()));
 
   RefPtr<HalfOpenSocket> deleteProtector(this);
-  mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
+  mEnt->RemoveHalfOpenFastOpenBackups(this);
   mSocketTransport->SetFastOpenCallback(nullptr);
   mConnectionNegotiatingFastOpen->SetFastOpen(false);
   RefPtr<nsAHttpTransaction> trans =
