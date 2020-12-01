@@ -889,6 +889,7 @@ bool profiler_add_native_allocation_marker(int64_t aSize,
 
 
 
+
 bool profiler_is_locked_on_current_thread();
 
 enum class NetworkLoadType { LOAD_START, LOAD_STOP, LOAD_REDIRECT };

@@ -5440,8 +5440,10 @@ bool profiler_is_locked_on_current_thread() {
   
   
   
+  
   return gPSMutex.IsLockedOnCurrentThread() ||
-         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread();
+         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread() ||
+         ProfilerChild::IsLockedOnCurrentThread();
 }
 
 static constexpr net::TimingStruct scEmptyNetTimingStruct;
