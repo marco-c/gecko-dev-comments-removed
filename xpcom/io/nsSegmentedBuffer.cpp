@@ -9,6 +9,7 @@
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
+#include "mozilla/ScopeExit.h"
 
 nsresult nsSegmentedBuffer::Init(uint32_t aSegmentSize, uint32_t aMaxSize) {
   if (mSegmentArrayCount != 0) {
@@ -100,64 +101,38 @@ bool nsSegmentedBuffer::ReallocLastSegment(size_t aNewSize) {
 }
 
 void nsSegmentedBuffer::Empty() {
-  if (mSegmentArray) {
-    for (uint32_t i = 0; i < mSegmentArrayCount; i++) {
-      if (mSegmentArray[i]) {
-        FreeOMT(mSegmentArray[i]);
-      }
-    }
-    FreeOMT(mSegmentArray);
+  auto clearMembers = mozilla::MakeScopeExit([&] {
     mSegmentArray = nullptr;
-  }
-  mSegmentArrayCount = NS_SEGMENTARRAY_INITIAL_COUNT;
-  mFirstSegmentIndex = mLastSegmentIndex = 0;
-}
+    mSegmentArrayCount = NS_SEGMENTARRAY_INITIAL_COUNT;
+    mFirstSegmentIndex = mLastSegmentIndex = 0;
+  });
 
-#if 0
-void
-TestSegmentedBuffer()
-{
-  nsSegmentedBuffer* buf = new nsSegmentedBuffer();
-  NS_ASSERTION(buf, "out of memory");
-  buf->Init(4, 16);
-  char* seg;
-  bool empty;
-  seg = buf->AppendNewSegment();
-  NS_ASSERTION(seg, "AppendNewSegment failed");
-  seg = buf->AppendNewSegment();
-  NS_ASSERTION(seg, "AppendNewSegment failed");
-  seg = buf->AppendNewSegment();
-  NS_ASSERTION(seg, "AppendNewSegment failed");
-  empty = buf->DeleteFirstSegment();
-  NS_ASSERTION(!empty, "DeleteFirstSegment failed");
-  empty = buf->DeleteFirstSegment();
-  NS_ASSERTION(!empty, "DeleteFirstSegment failed");
-  seg = buf->AppendNewSegment();
-  NS_ASSERTION(seg, "AppendNewSegment failed");
-  seg = buf->AppendNewSegment();
-  NS_ASSERTION(seg, "AppendNewSegment failed");
-  seg = buf->AppendNewSegment();
-  NS_ASSERTION(seg, "AppendNewSegment failed");
-  empty = buf->DeleteFirstSegment();
-  NS_ASSERTION(!empty, "DeleteFirstSegment failed");
-  empty = buf->DeleteFirstSegment();
-  NS_ASSERTION(!empty, "DeleteFirstSegment failed");
-  empty = buf->DeleteFirstSegment();
-  NS_ASSERTION(!empty, "DeleteFirstSegment failed");
-  empty = buf->DeleteFirstSegment();
-  NS_ASSERTION(empty, "DeleteFirstSegment failed");
-  delete buf;
-}
-#endif
-
-void nsSegmentedBuffer::FreeOMT(void* aPtr) {
-  if (!NS_IsMainThread()) {
-    free(aPtr);
+  
+  if (!mSegmentArray) {
     return;
   }
 
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction("nsSegmentedBuffer::FreeOMT",
-                                                   [aPtr]() { free(aPtr); });
+  
+  
+  FreeOMT([segmentArray = mSegmentArray, arrayCount = mSegmentArrayCount]() {
+    for (uint32_t i = 0; i < arrayCount; i++) {
+      if (segmentArray[i]) {
+        free(segmentArray[i]);
+      }
+    }
+    free(segmentArray);
+  });
+}
+
+void nsSegmentedBuffer::FreeOMT(void* aPtr) {
+  FreeOMT([aPtr]() { free(aPtr); });
+}
+
+void nsSegmentedBuffer::FreeOMT(std::function<void()>&& aTask) {
+  if (!NS_IsMainThread()) {
+    aTask();
+    return;
+  }
 
   if (!mIOThread) {
     mIOThread = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
@@ -165,8 +140,9 @@ void nsSegmentedBuffer::FreeOMT(void* aPtr) {
 
   
   
-  if (!mIOThread || NS_FAILED(mIOThread->Dispatch(r.forget()))) {
-    free(aPtr);
+  if (!mIOThread || NS_FAILED(mIOThread->Dispatch(NS_NewRunnableFunction(
+                        "nsSegmentedBuffer::FreeOMT", aTask)))) {
+    aTask();
   }
 }
 
