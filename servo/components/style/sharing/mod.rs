@@ -73,7 +73,7 @@ use crate::properties::ComputedValues;
 use crate::rule_tree::StrongRuleNode;
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles};
 use crate::stylist::Stylist;
-use crate::Atom;
+use crate::values::AtomIdent;
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use owning_ref::OwningHandle;
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
@@ -126,13 +126,13 @@ pub struct ValidationData {
     
     
     
-    class_list: Option<SmallVec<[Atom; 5]>>,
+    class_list: Option<SmallVec<[AtomIdent; 5]>>,
 
     
     
     
     
-    part_list: Option<SmallVec<[Atom; 5]>>,
+    part_list: Option<SmallVec<[AtomIdent; 5]>>,
 
     
     pres_hints: Option<SmallVec<[ApplicableDeclarationBlock; 5]>>,
@@ -168,7 +168,7 @@ impl ValidationData {
     }
 
     
-    pub fn part_list<E>(&mut self, element: E) -> &[Atom]
+    pub fn part_list<E>(&mut self, element: E) -> &[AtomIdent]
     where
         E: TElement,
     {
@@ -176,7 +176,7 @@ impl ValidationData {
             return &[];
         }
         self.part_list.get_or_insert_with(|| {
-            let mut list = SmallVec::<[Atom; 5]>::new();
+            let mut list = SmallVec::<[_; 5]>::new();
             element.each_part(|p| list.push(p.clone()));
             
             if !list.spilled() {
@@ -187,12 +187,12 @@ impl ValidationData {
     }
 
     
-    pub fn class_list<E>(&mut self, element: E) -> &[Atom]
+    pub fn class_list<E>(&mut self, element: E) -> &[AtomIdent]
     where
         E: TElement,
     {
         self.class_list.get_or_insert_with(|| {
-            let mut list = SmallVec::<[Atom; 5]>::new();
+            let mut list = SmallVec::<[_; 5]>::new();
             element.each_class(|c| list.push(c.clone()));
             
             
@@ -294,12 +294,12 @@ impl<E: TElement> Deref for StyleSharingCandidate<E> {
 
 impl<E: TElement> StyleSharingCandidate<E> {
     
-    fn class_list(&mut self) -> &[Atom] {
+    fn class_list(&mut self) -> &[AtomIdent] {
         self.validation_data.class_list(self.element)
     }
 
     
-    fn part_list(&mut self) -> &[Atom] {
+    fn part_list(&mut self) -> &[AtomIdent] {
         self.validation_data.part_list(self.element)
     }
 
@@ -361,11 +361,11 @@ impl<E: TElement> StyleSharingTarget<E> {
         }
     }
 
-    fn class_list(&mut self) -> &[Atom] {
+    fn class_list(&mut self) -> &[AtomIdent] {
         self.validation_data.class_list(self.element)
     }
 
-    fn part_list(&mut self) -> &[Atom] {
+    fn part_list(&mut self) -> &[AtomIdent] {
         self.validation_data.part_list(self.element)
     }
 

@@ -42,12 +42,6 @@ pub mod namespace;
 
 pub use self::namespace::{Namespace, WeakNamespace};
 
-macro_rules! local_name {
-    ($s:tt) => {
-        atom!($s)
-    };
-}
-
 
 
 
