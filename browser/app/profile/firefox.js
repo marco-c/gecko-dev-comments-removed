@@ -1340,6 +1340,8 @@ pref("browser.topsites.useRemoteSetting", false);
 
 pref("browser.partnerlink.attributionURL", "https://topsites.services.mozilla.com/cid/amzn_2020_a1");
 
+pref("browser.partnerlink.useAttributionURL", false);
+
 
 
 
