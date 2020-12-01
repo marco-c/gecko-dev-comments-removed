@@ -409,7 +409,7 @@ RefPtr<IDBOpenDBRequest> IDBFactory::Open(JSContext* aCx,
     nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mGlobal);
     if (window && window->GetExtantDoc()) {
       window->GetExtantDoc()->WarnOnceAbout(
-          Document::eIDBOpenDBOptions_StorageType);
+          DeprecatedOperations::eIDBOpenDBOptions_StorageType);
     } else if (!NS_IsMainThread()) {
       
       

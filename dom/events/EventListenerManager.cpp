@@ -278,7 +278,7 @@ void EventListenerManager::AddEventListenerInternal(
       if (doc &&
           !(aFlags.mInSystemGroup &&
             doc->DontWarnAboutMutationEventsAndAllowSlowDOMMutations())) {
-        doc->WarnOnceAbout(Document::eMutationEvent);
+        doc->WarnOnceAbout(DeprecatedOperations::eMutationEvent);
       }
       
       

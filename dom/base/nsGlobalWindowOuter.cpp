@@ -3345,7 +3345,7 @@ already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetContentInternal(
   nsCOMPtr<nsIDocShellTreeItem> primaryContent;
   if (aCallerType != CallerType::System) {
     if (mDoc) {
-      mDoc->WarnOnceAbout(Document::eWindowContentUntrusted);
+      mDoc->WarnOnceAbout(DeprecatedOperations::eWindowContentUntrusted);
     }
     
     
