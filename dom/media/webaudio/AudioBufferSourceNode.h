@@ -101,9 +101,7 @@ class AudioBufferSourceNode final : public AudioScheduledSourceNode,
     
     
     BUFFERSTART,
-    
-    
-    BUFFEREND,
+    DURATION,
     LOOP,
     LOOPSTART,
     LOOPEND,
