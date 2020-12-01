@@ -13938,12 +13938,12 @@ nsresult Maintenance::DirectoryWork() {
             
             
 
-            nsCOMPtr<nsIFile> directory;
-            bool created;
-            IDB_TRY(quotaManager->EnsurePersistentOriginIsInitialized(
-                        quotaInfo, getter_AddRefs(directory), &created),
-                    
-                    Ok{});
+            IDB_TRY_UNWRAP(
+                const DebugOnly<bool> created,
+                quotaManager->EnsurePersistentOriginIsInitialized(quotaInfo)
+                    .map([](const auto& res) { return res.second; }),
+                
+                Ok{});
 
             
             
