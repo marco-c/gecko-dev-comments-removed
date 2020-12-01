@@ -1175,7 +1175,16 @@ class Marionette(object):
         self.client = transport.TcpTransport(self.host, self.port, self.socket_timeout)
         self.protocol, _ = self.client.connect()
 
-        resp = self._send_message("WebDriver:NewSession", capabilities)
+        try:
+            resp = self._send_message("WebDriver:NewSession", capabilities)
+        except errors.UnknownException:
+            
+            
+            exc_type, value, tb = sys.exc_info()
+            if self.instance and self.instance.runner.is_running():
+                self.instance.close()
+            reraise(exc_type, exctype(value.message), tb)
+
         self.session_id = resp["sessionId"]
         self.session = resp["capabilities"]
         
