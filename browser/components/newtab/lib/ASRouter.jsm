@@ -1665,13 +1665,15 @@ class _ASRouter {
     return state;
   }
 
-  addPreviewEndpoint(url) {
-    
+  addPreviewEndpoint(url, browser) {
     const providers = [...this.state.providers];
     if (
       this._validPreviewEndpoint(url) &&
       !providers.find(p => p.url === url)
     ) {
+      
+      
+      browser.sendMessageToActor("EnterSnippetsPreviewMode", {}, "ASRouter");
       providers.push({
         id: "preview",
         type: "remote",
@@ -1735,7 +1737,7 @@ class _ASRouter {
 
     
     if (endpoint) {
-      await this.addPreviewEndpoint(endpoint.url);
+      await this.addPreviewEndpoint(endpoint.url, browser);
     }
 
     
