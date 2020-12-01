@@ -196,7 +196,7 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
   pickResult(result, element) {
-    element.ownerGlobal.gURLBar.maybePromoteResultToSearchMode({
+    element.ownerGlobal.gURLBar.maybeConfirmSearchModeFromResult({
       result,
       checkValue: false,
     });

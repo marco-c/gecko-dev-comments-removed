@@ -124,7 +124,6 @@ class UrlbarInput {
     
     
     
-    
     this._searchModesByBrowser = new WeakMap();
 
     this.QueryInterface = ChromeUtils.generateQI([
@@ -681,14 +680,14 @@ class UrlbarInput {
     
     
     
-    let urlResultWillPromoteSearchMode =
+    let urlResultWillConfirmSearchMode =
       this.searchMode &&
       result.heuristic &&
       result.type == UrlbarUtils.RESULT_TYPE.URL &&
       this.view.oneOffSearchButtons.selectedButton;
 
     let selIndex = result.rowIndex;
-    if (!result.payload.keywordOffer && !urlResultWillPromoteSearchMode) {
+    if (!result.payload.keywordOffer && !urlResultWillConfirmSearchMode) {
       this.view.close( true);
     }
 
@@ -716,8 +715,8 @@ class UrlbarInput {
 
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.URL: {
-        if (urlResultWillPromoteSearchMode) {
-          this.promoteSearchMode();
+        if (urlResultWillConfirmSearchMode) {
+          this.confirmSearchMode();
           this.search(this.value);
           return;
         }
@@ -1065,7 +1064,7 @@ class UrlbarInput {
       
       if (this.view.resultIsSelected(result)) {
         
-        enteredSearchMode = this.maybePromoteResultToSearchMode({
+        enteredSearchMode = this.maybeConfirmSearchModeFromResult({
           result,
           checkValue: false,
           startQuery: false,
@@ -1169,7 +1168,7 @@ class UrlbarInput {
       firstResult.heuristic &&
       firstResult.payload.keyword &&
       !firstResult.payload.keywordOffer &&
-      this.maybePromoteResultToSearchMode({
+      this.maybeConfirmSearchModeFromResult({
         result: firstResult,
         entry: "typed",
         checkValue: false,
@@ -1265,7 +1264,7 @@ class UrlbarInput {
     };
 
     if (this.searchMode) {
-      this.promoteSearchMode();
+      this.confirmSearchMode();
       options.searchMode = this.searchMode;
       if (this.searchMode.source) {
         options.sources = [this.searchMode.source];
@@ -1393,15 +1392,15 @@ class UrlbarInput {
 
 
 
-  getSearchMode(browser, nonPreviewOnly = false) {
+  getSearchMode(browser, confirmedOnly = false) {
     let modes = this._searchModesByBrowser.get(browser);
 
     
-    if (!nonPreviewOnly && modes?.preview) {
+    if (!confirmedOnly && modes?.preview) {
       return { ...modes.preview };
     }
-    if (modes?.nonPreview) {
-      return { ...modes.nonPreview };
+    if (modes?.confirmed) {
+      return { ...modes.confirmed };
     }
     return null;
   }
@@ -1484,7 +1483,7 @@ class UrlbarInput {
       
       if (!searchMode.isPreview) {
         this._searchModesByBrowser.set(browser, {
-          nonPreview: searchMode,
+          confirmed: searchMode,
         });
       } else {
         let modes = this._searchModesByBrowser.get(browser) || {};
@@ -1515,7 +1514,7 @@ class UrlbarInput {
     let modes = this._searchModesByBrowser.get(
       this.window.gBrowser.selectedBrowser
     );
-    this.searchMode = modes?.nonPreview;
+    this.searchMode = modes?.confirmed;
   }
 
   
@@ -1541,7 +1540,7 @@ class UrlbarInput {
   
 
 
-  promoteSearchMode() {
+  confirmSearchMode() {
     let searchMode = this.searchMode;
     if (searchMode?.isPreview) {
       searchMode.isPreview = false;
@@ -1736,7 +1735,7 @@ class UrlbarInput {
 
 
 
-  maybePromoteResultToSearchMode({
+  maybeConfirmSearchModeFromResult({
     entry,
     result = this._resultForCurrentValue,
     checkValue = true,
