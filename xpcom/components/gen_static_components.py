@@ -708,6 +708,11 @@ def gen_substs(manifests):
         list(js_services.values()), PHF_SIZE, key=lambda entry: entry.js_name
     )
 
+    js_services_json = {}
+    for entry in js_services.values():
+        for iface in entry.interfaces:
+            js_services_json[iface] = entry.js_name
+
     substs = {}
 
     gen_categories(substs, categories)
@@ -770,6 +775,8 @@ def gen_substs(manifests):
         key_bytes="aKey.BeginReading()",
         key_length="aKey.Length()",
     )
+
+    substs["js_services_json"] = json.dumps(js_services_json, sort_keys=True, indent=4)
 
     
     
@@ -931,5 +938,8 @@ namespace components {
 """
         % substs
     )
+
+    with open_output("services.json") as fh:
+        fh.write(substs["js_services_json"])
 
     return deps

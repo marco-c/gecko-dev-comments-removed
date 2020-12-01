@@ -2,6 +2,8 @@
 
 
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 function run_test() {
   const PROPERTIES = [
     "name",
@@ -12,7 +14,7 @@ function run_test() {
     "memmapalign",
     "memsize",
   ];
-  let sysInfo = Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2);
+  let sysInfo = Services.sysinfo;
 
   PROPERTIES.forEach(function(aPropertyName) {
     print("Testing property: " + aPropertyName);

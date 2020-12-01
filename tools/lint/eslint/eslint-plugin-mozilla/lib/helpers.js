@@ -78,6 +78,10 @@ module.exports = {
     return gModules;
   },
 
+  get servicesData() {
+    return require("./services.json");
+  },
+
   
 
 
@@ -839,6 +843,16 @@ module.exports = {
 
   getSavedRuleData(rule) {
     return require("./rules/saved-rules-data.json").rulesData[rule];
+  },
+
+  getBuildEnvironment() {
+    var { execFileSync } = require("child_process");
+    var output = execFileSync(
+      path.join(this.rootDir, "mach"),
+      ["environment", "--format=json"],
+      { silent: true }
+    );
+    return JSON.parse(output);
   },
 
   

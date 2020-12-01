@@ -248,10 +248,7 @@ async function test_jumplist() {
 
   
   try {
-    var sysInfo = Cc["@mozilla.org/system-info;1"].getService(
-      Ci.nsIPropertyBag2
-    );
-    var ver = parseFloat(sysInfo.getProperty("version"));
+    var ver = parseFloat(Services.sysinfo.getProperty("version"));
     if (ver < 6.1) {
       Assert.ok(!builder.available);
       return;
