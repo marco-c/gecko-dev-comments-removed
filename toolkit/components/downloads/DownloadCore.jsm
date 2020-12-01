@@ -643,6 +643,23 @@ Download.prototype = {
       );
     }
 
+    if (
+      this.error?.reputationCheckVerdict == DownloadError.BLOCK_VERDICT_INSECURE
+    ) {
+      
+      
+      this.error = null;
+      this.succeeded = false;
+      this.hasBlockedData = false;
+      this.start().catch(e => {
+        this.error = e;
+        this._notifyChange();
+      });
+      this._notifyChange();
+      this._promiseUnblock = DownloadIntegration.downloadDone(this);
+      return this._promiseUnblock;
+    }
+
     if (!this.hasBlockedData) {
       return Promise.reject(
         new Error("unblock may only be called on Downloads with blocked data.")

@@ -389,6 +389,14 @@ DownloadLegacyTransfer.prototype = {
         becauseBlockedByReputationCheck: true,
         reputationCheckVerdict: DownloadError.BLOCK_VERDICT_INSECURE,
       };
+      
+      
+      
+      serialisedDownload.hasBlockedData = true;
+      
+      
+      
+      serialisedDownload.saver = "copy";
     }
 
     Downloads.createDownload(serialisedDownload)
