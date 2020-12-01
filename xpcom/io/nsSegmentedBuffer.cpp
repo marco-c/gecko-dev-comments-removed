@@ -134,6 +134,16 @@ void nsSegmentedBuffer::FreeOMT(std::function<void()>&& aTask) {
     return;
   }
 
+  if (mFreeOMT) {
+    
+    if (mFreeOMT->AddTask(std::move(aTask)) > 1) {
+      return;
+    }
+  } else {
+    mFreeOMT = MakeRefPtr<FreeOMTPointers>();
+    mFreeOMT->AddTask(std::move(aTask));
+  }
+
   if (!mIOThread) {
     mIOThread = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
   }
@@ -141,8 +151,24 @@ void nsSegmentedBuffer::FreeOMT(std::function<void()>&& aTask) {
   
   
   if (!mIOThread || NS_FAILED(mIOThread->Dispatch(NS_NewRunnableFunction(
-                        "nsSegmentedBuffer::FreeOMT", aTask)))) {
-    aTask();
+                        "nsSegmentedBuffer::FreeOMT",
+                        [obj = mFreeOMT]() { obj->FreeAll(); })))) {
+    mFreeOMT->FreeAll();
+  }
+}
+
+void nsSegmentedBuffer::FreeOMTPointers::FreeAll() {
+  
+  
+  
+  nsTArray<std::function<void()>> tasks = [this]() {
+    auto t = mTasks.Lock();
+    return std::move(*t);
+  }();
+
+  
+  for (auto& task : tasks) {
+    task();
   }
 }
 
