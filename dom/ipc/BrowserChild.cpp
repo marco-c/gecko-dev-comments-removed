@@ -2691,7 +2691,12 @@ void BrowserChild::InitRenderingState(
     mLayersId = aLayersId;
   }
 
-  MOZ_ASSERT(!mPuppetWidget->HasLayerManager());
+  
+  
+  
+  MOZ_ASSERT(!mPuppetWidget->HasLayerManager() ||
+             mPuppetWidget->GetLayerManager()->GetBackendType() ==
+                 layers::LayersBackend::LAYERS_BASIC);
   bool success = false;
   if (mLayersConnected == Some(true)) {
     success = CreateRemoteLayerManager(compositorChild);
