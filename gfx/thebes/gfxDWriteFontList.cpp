@@ -965,6 +965,25 @@ gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
   return entry.release();
 }
 
+static void GetPostScriptNameFromNameTable(IDWriteFontFace* aFace,
+                                           nsCString& aName) {
+  const auto kNAME =
+      NativeEndian::swapToBigEndian(TRUETYPE_TAG('n', 'a', 'm', 'e'));
+  const char* data;
+  UINT32 size;
+  void* context;
+  BOOL exists;
+  if (SUCCEEDED(aFace->TryGetFontTable(kNAME, (const void**)&data, &size,
+                                       &context, &exists)) &&
+      exists) {
+    if (NS_FAILED(gfxFontUtils::ReadCanonicalName(
+            data, size, gfxFontUtils::NAME_ID_POSTSCRIPT, aName))) {
+      aName.Truncate(0);
+    }
+    aFace->ReleaseFontTable(context);
+  }
+}
+
 gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
     fontlist::Face* aFace, const fontlist::Family* aFamily) {
   IDWriteFontCollection* collection =
@@ -1009,14 +1028,52 @@ gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
       return nullptr;
     }
   }
+
+  
   RefPtr<IDWriteFont> font;
   if (FAILED(family->GetFont(aFace->mIndex, getter_AddRefs(font))) || !font) {
     return nullptr;
   }
-  nsAutoCString faceName;
-  if (FAILED(GetDirectWriteFontName(font, faceName))) {
+
+  
+  
+  nsAutoCString psName;
+  if (FAILED(GetDirectWriteFaceName(font, PSNAME_ID, psName))) {
+    RefPtr<IDWriteFontFace> dwFontFace;
+    if (SUCCEEDED(font->CreateFontFace(getter_AddRefs(dwFontFace)))) {
+      GetPostScriptNameFromNameTable(dwFontFace, psName);
+    }
+  }
+
+  
+  
+  nsCString faceName = aFace->mDescriptor.AsString(SharedFontList());
+  if (psName != faceName) {
+    gfxWarning() << "Face name mismatch for index " << aFace->mIndex
+                 << " in family " << familyName.get() << ": expected "
+                 << faceName.get() << ", found " << psName.get();
+    for (uint32_t i = 0; i < family->GetFontCount(); ++i) {
+      if (i == aFace->mIndex) {
+        continue;  
+      }
+      if (FAILED(family->GetFont(i, getter_AddRefs(font))) || !font) {
+        return nullptr;  
+      }
+      if (FAILED(GetDirectWriteFaceName(font, PSNAME_ID, psName))) {
+        RefPtr<IDWriteFontFace> dwFontFace;
+        if (SUCCEEDED(font->CreateFontFace(getter_AddRefs(dwFontFace)))) {
+          GetPostScriptNameFromNameTable(dwFontFace, psName);
+        }
+      }
+      if (psName == faceName) {
+        break;
+      }
+    }
+  }
+  if (psName != faceName) {
     return nullptr;
   }
+
   auto fe = new gfxDWriteFontEntry(faceName, font, !aFamily->IsBundled());
   fe->InitializeFrom(aFace, aFamily);
   fe->mForceGDIClassic = aFamily->IsForceClassic();
@@ -1180,6 +1237,7 @@ void gfxDWriteFontList::GetFacesInitDataForFamily(
     StretchRange stretch(FontStretchFromDWriteStretch(dwFont->GetStretch()));
     
     
+    
     MOZ_SEH_TRY {
       nsAutoCString name;
       RefPtr<gfxCharacterMap> charmap;
@@ -1187,23 +1245,15 @@ void gfxDWriteFontList::GetFacesInitDataForFamily(
           aLoadCmaps) {
         RefPtr<IDWriteFontFace> dwFontFace;
         if (SUCCEEDED(dwFont->CreateFontFace(getter_AddRefs(dwFontFace)))) {
-          const auto kNAME =
-              NativeEndian::swapToBigEndian(TRUETYPE_TAG('n', 'a', 'm', 'e'));
+          if (name.IsEmpty()) {
+            GetPostScriptNameFromNameTable(dwFontFace, name);
+          }
           const auto kCMAP =
               NativeEndian::swapToBigEndian(TRUETYPE_TAG('c', 'm', 'a', 'p'));
           const char* data;
           UINT32 size;
           void* context;
           BOOL exists;
-          if (name.IsEmpty()) {
-            if (SUCCEEDED(dwFontFace->TryGetFontTable(
-                    kNAME, (const void**)&data, &size, &context, &exists)) &&
-                exists) {
-              gfxFontUtils::ReadCanonicalName(
-                  data, size, gfxFontUtils::NAME_ID_POSTSCRIPT, name);
-              dwFontFace->ReleaseFontTable(context);
-            }
-          }
           if (aLoadCmaps) {
             if (SUCCEEDED(dwFontFace->TryGetFontTable(
                     kCMAP, (const void**)&data, &size, &context, &exists)) &&
@@ -1216,6 +1266,11 @@ void gfxDWriteFontList::GetFacesInitDataForFamily(
             }
           }
         }
+      }
+      if (name.IsEmpty()) {
+        gfxWarning() << "Failed to get name for face " << i << " in family "
+                     << aFamily->Key().AsString(SharedFontList()).get();
+        continue;
       }
       SlantStyleRange slant(dwstyle == DWRITE_FONT_STYLE_NORMAL
                                 ? FontSlantStyle::Normal()
