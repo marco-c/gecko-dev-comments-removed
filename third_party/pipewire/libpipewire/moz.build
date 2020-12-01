@@ -1,0 +1,15 @@
+
+
+
+
+
+
+SOURCES += [
+    'mozpipewire.cpp',
+]
+
+CXXFLAGS += CONFIG['TK_CFLAGS']
+
+LOCAL_INCLUDES += ['/third_party/pipewire']
+
+FINAL_LIBRARY = 'xul'
