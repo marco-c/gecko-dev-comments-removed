@@ -6048,7 +6048,7 @@ Size FrameLayerBuilder::ChooseScale(nsIFrame* aContainerFrame,
     } else {
       
       
-      scale = aTransform2d.ScaleFactors(true);
+      scale = aTransform2d.ScaleFactors();
       
       
       
@@ -6506,7 +6506,7 @@ gfxSize FrameLayerBuilder::GetPaintedLayerScaleForFrame(nsIFrame* aFrame) {
 
   Matrix transform2d;
   if (transform.CanDraw2D(&transform2d)) {
-    return ThebesMatrix(transform2d).ScaleFactors(true);
+    return ThebesMatrix(transform2d).ScaleFactors();
   }
 
   return gfxSize(1.0, 1.0);

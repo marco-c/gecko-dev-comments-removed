@@ -4865,7 +4865,7 @@ bool nsContextBoxBlur::InsetBoxBlur(
   
   
   
-  gfx::Size scale = aDestinationCtx->CurrentMatrix().ScaleFactors(true);
+  gfx::Size scale = aDestinationCtx->CurrentMatrix().ScaleFactors();
   Matrix transform = aDestinationCtx->CurrentMatrix();
 
   

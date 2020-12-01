@@ -4524,7 +4524,7 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
   
   
   
-  auto scale = mTarget->GetTransform().ScaleFactors(true);
+  auto scale = mTarget->GetTransform().ScaleFactors();
   bool isDownScale =
       aDw * Abs(scale.width) < aSw && aDh * Abs(scale.height) < aSh;
 
@@ -4605,7 +4605,7 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   
   Matrix matrix = tempTarget->GetTransform();
   gfxMatrix contextMatrix = ThebesMatrix(matrix);
-  gfxSize contextScale(contextMatrix.ScaleFactors(true));
+  gfxSize contextScale(contextMatrix.ScaleFactors());
 
   
   aDest.Scale(contextScale.width, contextScale.height);
