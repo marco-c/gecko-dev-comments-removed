@@ -53,6 +53,8 @@
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PopupBlocker.h"
@@ -1193,10 +1195,34 @@ void PresShell::Destroy() {
   
   
   
-  
-  
-  if (!mIsFirstPaint && mPresContext->IsRootContentDocumentCrossProcess() &&
-      !InRDMPane()) {
+  auto isUserZoomablePage = [&]() -> bool {
+    if (mIsFirstPaint) {
+      
+      
+      return false;
+    }
+    if (!mPresContext->IsRootContentDocumentCrossProcess()) {
+      
+      return false;
+    }
+    if (InRDMPane()) {
+      
+      return false;
+    }
+    if (mDocument && mDocument->IsInitialDocument()) {
+      
+      return false;
+    }
+    if (XRE_IsContentProcess() &&
+        IsExtensionRemoteType(ContentChild::GetSingleton()->GetRemoteType())) {
+      
+      
+      return false;
+    }
+    
+    return true;
+  };
+  if (isUserZoomablePage()) {
     Telemetry::Accumulate(Telemetry::APZ_ZOOM_ACTIVITY,
                           IsResolutionUpdatedByApz());
   }
