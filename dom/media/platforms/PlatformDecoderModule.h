@@ -34,6 +34,7 @@ namespace layers {
 class ImageContainer;
 }  
 
+class GpuDecoderModule;
 class MediaDataDecoder;
 class RemoteDecoderModule;
 class CDMProxy;
@@ -79,36 +80,6 @@ struct VideoFrameRate {
 
 }  
 
-struct CreateDecoderParams;
-struct CreateDecoderParamsForAsync {
-  using Option = media::Option;
-  using OptionSet = media::OptionSet;
-  explicit CreateDecoderParamsForAsync(const CreateDecoderParams& aParams);
-  CreateDecoderParamsForAsync(CreateDecoderParamsForAsync&& aParams);
-
-  const VideoInfo& VideoConfig() const {
-    MOZ_ASSERT(mConfig->IsVideo());
-    return *mConfig->GetAsVideoInfo();
-  }
-
-  const AudioInfo& AudioConfig() const {
-    MOZ_ASSERT(mConfig->IsAudio());
-    return *mConfig->GetAsAudioInfo();
-  }
-
-  UniquePtr<TrackInfo> mConfig;
-  const RefPtr<layers::ImageContainer> mImageContainer;
-  const RefPtr<layers::KnowsCompositor> mKnowsCompositor;
-  const RefPtr<GMPCrashHelper> mCrashHelper;
-  const media::UseNullDecoder mUseNullDecoder;
-  const media::NoWrapper mNoWrapper;
-  const TrackInfo::TrackType mType = TrackInfo::kUndefinedTrack;
-  std::function<MediaEventProducer<TrackInfo::TrackType>*()>
-      mOnWaitingForKeyEvent;
-  const OptionSet mOptions = OptionSet(Option::Default);
-  const media::VideoFrameRate mRate;
-};
-
 struct MOZ_STACK_CLASS CreateDecoderParams final {
   using Option = media::Option;
   using OptionSet = media::OptionSet;
@@ -117,19 +88,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   using VideoFrameRate = media::VideoFrameRate;
 
   explicit CreateDecoderParams(const TrackInfo& aConfig) : mConfig(aConfig) {}
-  CreateDecoderParams(const CreateDecoderParams& aParams) = default;
-
-  MOZ_IMPLICIT CreateDecoderParams(const CreateDecoderParamsForAsync& aParams)
-      : mConfig(*aParams.mConfig.get()),
-        mImageContainer(aParams.mImageContainer),
-        mKnowsCompositor(aParams.mKnowsCompositor),
-        mCrashHelper(aParams.mCrashHelper),
-        mUseNullDecoder(aParams.mUseNullDecoder),
-        mNoWrapper(aParams.mNoWrapper),
-        mType(aParams.mType),
-        mOnWaitingForKeyEvent(aParams.mOnWaitingForKeyEvent),
-        mOptions(aParams.mOptions),
-        mRate(aParams.mRate) {}
 
   template <typename T1, typename... Ts>
   CreateDecoderParams(const TrackInfo& aConfig, T1&& a1, Ts&&... args)
@@ -160,23 +118,23 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
     return layers::LayersBackend::LAYERS_NONE;
   }
 
-  
-  
-  
   const TrackInfo& mConfig;
+  DecoderDoctorDiagnostics* mDiagnostics = nullptr;
   layers::ImageContainer* mImageContainer = nullptr;
   MediaResult* mError = nullptr;
-  layers::KnowsCompositor* mKnowsCompositor = nullptr;
-  GMPCrashHelper* mCrashHelper = nullptr;
+  RefPtr<layers::KnowsCompositor> mKnowsCompositor;
+  RefPtr<GMPCrashHelper> mCrashHelper;
   media::UseNullDecoder mUseNullDecoder;
   media::NoWrapper mNoWrapper;
   TrackInfo::TrackType mType = TrackInfo::kUndefinedTrack;
-  std::function<MediaEventProducer<TrackInfo::TrackType>*()>
-      mOnWaitingForKeyEvent;
+  MediaEventProducer<TrackInfo::TrackType>* mOnWaitingForKeyEvent = nullptr;
   OptionSet mOptions = OptionSet(Option::Default);
   media::VideoFrameRate mRate;
 
  private:
+  void Set(DecoderDoctorDiagnostics* aDiagnostics) {
+    mDiagnostics = aDiagnostics;
+  }
   void Set(layers::ImageContainer* aImageContainer) {
     mImageContainer = aImageContainer;
   }
@@ -195,26 +153,8 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
     }
   }
   void Set(TrackInfo::TrackType aType) { mType = aType; }
-  void Set(std::function<MediaEventProducer<TrackInfo::TrackType>*()>&&
-               aOnWaitingForKey) {
-    mOnWaitingForKeyEvent = std::move(aOnWaitingForKey);
-  }
-  void Set(const std::function<MediaEventProducer<TrackInfo::TrackType>*()>&
-               aOnWaitingForKey) {
+  void Set(MediaEventProducer<TrackInfo::TrackType>* aOnWaitingForKey) {
     mOnWaitingForKeyEvent = aOnWaitingForKey;
-  }
-  void Set(const CreateDecoderParams& aParams) {
-    
-    mImageContainer = aParams.mImageContainer;
-    mError = aParams.mError;
-    mKnowsCompositor = aParams.mKnowsCompositor;
-    mCrashHelper = aParams.mCrashHelper;
-    mUseNullDecoder = aParams.mUseNullDecoder;
-    mNoWrapper = aParams.mNoWrapper;
-    mType = aParams.mType;
-    mOnWaitingForKeyEvent = aParams.mOnWaitingForKeyEvent;
-    mOptions = aParams.mOptions;
-    mRate = aParams.mRate;
   }
   template <typename T1, typename T2, typename... Ts>
   void Set(T1&& a1, T2&& a2, Ts&&... args) {
@@ -234,6 +174,7 @@ struct MOZ_STACK_CLASS SupportDecoderParams final {
 
   explicit SupportDecoderParams(const CreateDecoderParams& aParams)
       : mConfig(aParams.mConfig),
+        mDiagnostics(aParams.mDiagnostics),
         mError(aParams.mError),
         mKnowsCompositor(aParams.mKnowsCompositor),
         mUseNullDecoder(aParams.mUseNullDecoder),
@@ -329,16 +270,13 @@ class PlatformDecoderModule {
            SupportsColorDepth(videoInfo->mColorDepth, aDiagnostics);
   }
 
-  typedef MozPromise<RefPtr<MediaDataDecoder>, MediaResult,
-                      true>
-      CreateDecoderPromise;
-
  protected:
   PlatformDecoderModule() = default;
   virtual ~PlatformDecoderModule() = default;
 
   friend class MediaChangeMonitor;
   friend class PDMFactory;
+  friend class GpuDecoderModule;
   friend class EMEDecoderModule;
   friend class RemoteDecoderModule;
 
@@ -350,6 +288,9 @@ class PlatformDecoderModule {
     return aColorDepth == gfx::ColorDepth::COLOR_8;
   }
 
+  
+  
+  
   
   
   
@@ -372,15 +313,17 @@ class PlatformDecoderModule {
   
   
   
+  
+  
+  
   virtual already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams) = 0;
-
-  
-  virtual RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
-      const CreateDecoderParams& aParams);
 };
 
 DDLoggedTypeDeclName(MediaDataDecoder);
+
+
+
 
 
 
@@ -464,9 +407,6 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   
   virtual RefPtr<FlushPromise> Flush() = 0;
 
-  
-  
-  
   
   
   

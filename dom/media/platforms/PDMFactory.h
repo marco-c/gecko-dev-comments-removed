@@ -33,7 +33,10 @@ class PDMFactory final {
 
   
   
-  RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateDecoder(
+  
+  
+  
+  already_AddRefed<MediaDataDecoder> CreateDecoder(
       const CreateDecoderParams& aParams);
 
   bool SupportsMimeType(const nsACString& aMimeType,
@@ -104,11 +107,8 @@ class PDMFactory final {
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const;
 
-  RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateDecoderWithPDM(
+  already_AddRefed<MediaDataDecoder> CreateDecoderWithPDM(
       PlatformDecoderModule* aPDM, const CreateDecoderParams& aParams);
-  RefPtr<PlatformDecoderModule::CreateDecoderPromise>
-  CheckAndMaybeCreateDecoder(CreateDecoderParamsForAsync&& aParams,
-                             uint32_t aIndex);
 
   nsTArray<RefPtr<PlatformDecoderModule>> mCurrentPDMs;
   RefPtr<PlatformDecoderModule> mEMEPDM;

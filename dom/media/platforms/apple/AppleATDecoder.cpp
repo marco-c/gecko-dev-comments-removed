@@ -91,15 +91,13 @@ RefPtr<MediaDataDecoder::DecodePromise> AppleATDecoder::Drain() {
 }
 
 RefPtr<ShutdownPromise> AppleATDecoder::Shutdown() {
-  
-  MOZ_ASSERT(!mThread || mThread->IsOnCurrentThread());
+  MOZ_ASSERT(mThread->IsOnCurrentThread());
   ProcessShutdown();
   return ShutdownPromise::CreateAndResolve(true, __func__);
 }
 
 void AppleATDecoder::ProcessShutdown() {
-  
-  MOZ_ASSERT(!mThread || mThread->IsOnCurrentThread());
+  MOZ_ASSERT(mThread->IsOnCurrentThread());
 
   if (mStream) {
     OSStatus rv = AudioFileStreamClose(mStream);

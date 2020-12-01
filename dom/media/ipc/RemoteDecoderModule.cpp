@@ -5,6 +5,11 @@
 
 #include "RemoteDecoderModule.h"
 
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/SyncRunnable.h"
+#include "mozilla/dom/ContentChild.h"  
+#include "mozilla/layers/SynchronousTask.h"
+
 #ifdef MOZ_AV1
 #  include "AOMDecoder.h"
 #endif
@@ -56,21 +61,27 @@ bool RemoteDecoderModule::Supports(
   return supports;
 }
 
-RefPtr<RemoteDecoderModule::CreateDecoderPromise>
-RemoteDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
-  if (aParams.mConfig.IsAudio()) {
-    
-    
-    
-    
-    if (OpusDataDecoder::IsOpus(aParams.mConfig.mMimeType) &&
-        IsDefaultPlaybackDeviceMono()) {
-      CreateDecoderParams params = aParams;
-      params.mOptions += CreateDecoderParams::Option::DefaultPlaybackDeviceMono;
-      return RemoteDecoderManagerChild::CreateAudioDecoder(params);
-    }
-    return RemoteDecoderManagerChild::CreateAudioDecoder(aParams);
+already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
+    const CreateDecoderParams& aParams) {
+  RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded(mLocation);
+
+  
+  
+  
+  
+  if (OpusDataDecoder::IsOpus(aParams.mConfig.mMimeType) &&
+      IsDefaultPlaybackDeviceMono()) {
+    CreateDecoderParams params = aParams;
+    params.mOptions += CreateDecoderParams::Option::DefaultPlaybackDeviceMono;
+    return RemoteDecoderManagerChild::CreateAudioDecoder(params);
   }
+
+  return RemoteDecoderManagerChild::CreateAudioDecoder(aParams);
+}
+
+already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
+    const CreateDecoderParams& aParams) {
+  RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded(mLocation);
   return RemoteDecoderManagerChild::CreateVideoDecoder(aParams, mLocation);
 }
 

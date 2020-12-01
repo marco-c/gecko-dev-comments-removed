@@ -11,8 +11,6 @@
 
 namespace mozilla {
 
-class RemoteDecoderChild;
-
 enum class RemoteDecodeIn {
   Unspecified,
   RddProcess,
@@ -37,13 +35,14 @@ class RemoteDecoderManagerChild final
   static bool Supports(RemoteDecodeIn aLocation,
                        const SupportDecoderParams& aParams,
                        DecoderDoctorDiagnostics* aDiagnostics);
-  static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateAudioDecoder(
+  static already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams);
-  static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateVideoDecoder(
+  static already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
       const CreateDecoderParams& aParams, RemoteDecodeIn aLocation);
 
   
   static nsISerialEventTarget* GetManagerThread();
+  static void LaunchRDDProcessIfNeeded(RemoteDecodeIn aLocation);
 
   
   
@@ -92,20 +91,18 @@ class RemoteDecoderManagerChild final
   PRemoteDecoderChild* AllocPRemoteDecoderChild(
       const RemoteDecoderInfoIPDL& aRemoteDecoderInfo,
       const CreateDecoderParams::OptionSet& aOptions,
-      const Maybe<layers::TextureFactoryIdentifier>& aIdentifier);
+      const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
+      bool* aSuccess, nsCString* aErrorDescription);
   bool DeallocPRemoteDecoderChild(PRemoteDecoderChild* actor);
 
  private:
   explicit RemoteDecoderManagerChild(RemoteDecodeIn aLocation);
   ~RemoteDecoderManagerChild() = default;
-  static RefPtr<PlatformDecoderModule::CreateDecoderPromise> Construct(
-      RefPtr<RemoteDecoderChild>&& aChild);
 
   static void OpenForRDDProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
   static void OpenForGPUProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
-  static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
 
   RefPtr<RemoteDecoderManagerChild> mIPDLSelfRef;
   

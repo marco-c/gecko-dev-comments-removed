@@ -7,6 +7,7 @@
 #include "MediaChangeMonitor.h"
 
 #include "AnnexB.h"
+#include "DecoderDoctorDiagnostics.h"
 #include "H264.h"
 #include "ImageContainer.h"
 #include "MP4Decoder.h"
@@ -244,54 +245,32 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
 };
 
-MediaChangeMonitor::MediaChangeMonitor(
-    PlatformDecoderModule* aPDM,
-    UniquePtr<CodecChangeMonitor>&& aCodecChangeMonitor,
-    MediaDataDecoder* aDecoder, const CreateDecoderParams& aParams)
-    : mChangeMonitor(std::move(aCodecChangeMonitor)),
-      mPDM(aPDM),
+MediaChangeMonitor::MediaChangeMonitor(PlatformDecoderModule* aPDM,
+                                       const CreateDecoderParams& aParams)
+    : mPDM(aPDM),
       mCurrentConfig(aParams.VideoConfig()),
-      mDecoder(aDecoder),
-      mParams(aParams) {}
-
-
-RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
-    PlatformDecoderModule* aPDM, const CreateDecoderParams& aParams) {
-  UniquePtr<CodecChangeMonitor> changeMonitor;
-  const VideoInfo& currentConfig = aParams.VideoConfig();
-  if (VPXDecoder::IsVPX(currentConfig.mMimeType)) {
-    changeMonitor = MakeUnique<VPXChangeMonitor>(currentConfig);
+      mKnowsCompositor(aParams.mKnowsCompositor),
+      mImageContainer(aParams.mImageContainer),
+      mDecoder(nullptr),
+      mGMPCrashHelper(aParams.mCrashHelper),
+      mLastError(NS_OK),
+      mErrorIfNoInitializationData(aParams.mOptions.contains(
+          CreateDecoderParams::Option::ErrorIfNoInitializationData)),
+      mType(aParams.mType),
+      mOnWaitingForKeyEvent(aParams.mOnWaitingForKeyEvent),
+      mDecoderOptions(aParams.mOptions),
+      mRate(aParams.mRate) {
+  mInConstructor = true;
+  if (VPXDecoder::IsVPX(mCurrentConfig.mMimeType)) {
+    mChangeMonitor = MakeUnique<VPXChangeMonitor>(mCurrentConfig);
   } else {
-    MOZ_ASSERT(MP4Decoder::IsH264(currentConfig.mMimeType));
-    changeMonitor = MakeUnique<H264ChangeMonitor>(
-        currentConfig, aParams.mOptions.contains(
-                           CreateDecoderParams::Option::FullH264Parsing));
+    MOZ_ASSERT(MP4Decoder::IsH264(mCurrentConfig.mMimeType));
+    mChangeMonitor = MakeUnique<H264ChangeMonitor>(
+        mCurrentConfig,
+        mDecoderOptions.contains(CreateDecoderParams::Option::FullH264Parsing));
   }
-
-  if (!changeMonitor->CanBeInstantiated()) {
-    
-    return PlatformDecoderModule::CreateDecoderPromise::CreateAndResolve(
-        new MediaChangeMonitor(aPDM, std::move(changeMonitor), nullptr,
-                               aParams),
-        __func__);
-  }
-
-  RefPtr<PlatformDecoderModule::CreateDecoderPromise> p =
-      aPDM->AsyncCreateDecoder(aParams)->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [params = CreateDecoderParamsForAsync(aParams), pdm = RefPtr{aPDM},
-           changeMonitor = std::move(changeMonitor)](
-              RefPtr<MediaDataDecoder>&& aDecoder) mutable {
-            RefPtr<MediaDataDecoder> decoder = new MediaChangeMonitor(
-                pdm, std::move(changeMonitor), aDecoder, params);
-            return PlatformDecoderModule::CreateDecoderPromise::
-                CreateAndResolve(decoder, __func__);
-          },
-          [](MediaResult aError) {
-            return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-                aError, __func__);
-          });
-  return p;
+  mLastError = CreateDecoder(aParams.mDiagnostics);
+  mInConstructor = false;
 }
 
 MediaChangeMonitor::~MediaChangeMonitor() = default;
@@ -326,8 +305,7 @@ RefPtr<MediaDataDecoder::InitPromise> MediaChangeMonitor::Init() {
 RefPtr<MediaDataDecoder::DecodePromise> MediaChangeMonitor::Decode(
     MediaRawData* aSample) {
   AssertOnThread();
-  MOZ_RELEASE_ASSERT(mFlushPromise.IsEmpty(),
-                     "Flush operation didn't complete");
+  MOZ_RELEASE_ASSERT(mFlushPromise.IsEmpty(), "Flush operatin didn't complete");
 
   MOZ_RELEASE_ASSERT(
       !mDecodePromiseRequest.Exists() && !mInitPromiseRequest.Exists(),
@@ -337,8 +315,7 @@ RefPtr<MediaDataDecoder::DecodePromise> MediaChangeMonitor::Decode(
 
   if (rv == NS_ERROR_NOT_INITIALIZED) {
     
-    if (mParams.mOptions.contains(
-            CreateDecoderParams::Option::ErrorIfNoInitializationData)) {
+    if (mErrorIfNoInitializationData) {
       
       return DecodePromise::CreateAndReject(rv, __func__);
     }
@@ -403,13 +380,8 @@ RefPtr<MediaDataDecoder::FlushPromise> MediaChangeMonitor::Flush() {
 
 
 
-
-
-
-
   if (mDrainRequest.Exists() || mFlushRequest.Exists() ||
-      mShutdownRequest.Exists() || mDecoderRequest.Exists() ||
-      mInitPromiseRequest.Exists()) {
+      mShutdownRequest.Exists() || mInitPromiseRequest.Exists()) {
     
     RefPtr<FlushPromise> p = mFlushPromise.Ensure(__func__);
     return p;
@@ -483,48 +455,49 @@ void MediaChangeMonitor::SetSeekThreshold(const media::TimeUnit& aTime) {
   }
 }
 
-RefPtr<MediaChangeMonitor::CreateDecoderPromise>
-MediaChangeMonitor::CreateDecoder() {
-  MOZ_ASSERT(mThread && mThread->IsOnCurrentThread());
+MediaResult MediaChangeMonitor::CreateDecoder(
+    DecoderDoctorDiagnostics* aDiagnostics) {
+  
+  
+  MOZ_ASSERT(mInConstructor || (mThread && mThread->IsOnCurrentThread()));
 
+  if (!mChangeMonitor->CanBeInstantiated()) {
+    
+    return NS_ERROR_NOT_INITIALIZED;
+  }
   mCurrentConfig = *mChangeMonitor->Config().GetAsVideoInfo();
 
-  RefPtr<CreateDecoderPromise> p =
-      mPDM->AsyncCreateDecoder({mCurrentConfig, mParams})
-          ->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              [self = RefPtr{this}, this](RefPtr<MediaDataDecoder>&& aDecoder) {
-                mDecoder = std::move(aDecoder);
-                DDLINKCHILD("decoder", mDecoder.get());
-                return CreateDecoderPromise::CreateAndResolve(true, __func__);
-              },
-              [self = RefPtr{this}, this](const MediaResult& aError) {
-                
-                
-                RefPtr<PDMFactory> factory = new PDMFactory();
-                RefPtr<CreateDecoderPromise> p =
-                    factory
-                        ->CreateDecoder({mCurrentConfig, mParams,
-                                         CreateDecoderParams::NoWrapper(true)})
-                        ->Then(
-                            GetCurrentSerialEventTarget(), __func__,
-                            [self, this](RefPtr<MediaDataDecoder>&& aDecoder) {
-                              mDecoder = std::move(aDecoder);
-                              DDLINKCHILD("decoder", mDecoder.get());
-                              return CreateDecoderPromise::CreateAndResolve(
-                                  true, __func__);
-                            },
-                            [self](const MediaResult& aError) {
-                              return CreateDecoderPromise::CreateAndReject(
-                                  aError, __func__);
-                            });
-                return p;
-              });
+  MediaResult error = NS_OK;
+  mDecoder = mPDM->CreateVideoDecoder(
+      {mCurrentConfig, aDiagnostics, mImageContainer, mKnowsCompositor,
+       mGMPCrashHelper, mType, mOnWaitingForKeyEvent, mDecoderOptions, mRate,
+       &error});
+
+  if (!mDecoder) {
+    
+    
+    RefPtr<PDMFactory> factory = new PDMFactory();
+    mDecoder = factory->CreateDecoder(
+        {mCurrentConfig, aDiagnostics, mImageContainer, mKnowsCompositor,
+         mGMPCrashHelper, mType, mOnWaitingForKeyEvent, mDecoderOptions, mRate,
+         &error, CreateDecoderParams::NoWrapper(true)});
+
+    if (!mDecoder) {
+      if (NS_FAILED(error)) {
+        
+        return error;
+      }
+      return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                         RESULT_DETAIL("Unable to create decoder"));
+    }
+  }
+
+  DDLINKCHILD("decoder", mDecoder.get());
 
   mDecoderInitialized = false;
   mNeedKeyframe = true;
 
-  return p;
+  return NS_OK;
 }
 
 MediaResult MediaChangeMonitor::CreateDecoderAndInit(MediaRawData* aSample) {
@@ -533,64 +506,47 @@ MediaResult MediaChangeMonitor::CreateDecoderAndInit(MediaRawData* aSample) {
     return rv;
   }
 
-  if (!mChangeMonitor->CanBeInstantiated()) {
-    
-    return NS_ERROR_NOT_INITIALIZED;
+  rv = CreateDecoder( nullptr);
+
+  if (NS_SUCCEEDED(rv)) {
+    RefPtr<MediaChangeMonitor> self = this;
+    RefPtr<MediaRawData> sample = aSample;
+    mDecoder->Init()
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [self, sample, this](const TrackType aTrackType) {
+              mInitPromiseRequest.Complete();
+              mDecoderInitialized = true;
+              mConversionRequired = Some(mDecoder->NeedsConversion());
+              mCanRecycleDecoder = Some(CanRecycleDecoder());
+
+              if (!mFlushPromise.IsEmpty()) {
+                
+                mFlushPromise.Resolve(true, __func__);
+                return;
+              }
+
+              DecodeFirstSample(sample);
+            },
+            [self, this](const MediaResult& aError) {
+              mInitPromiseRequest.Complete();
+
+              if (!mFlushPromise.IsEmpty()) {
+                
+                mFlushPromise.Reject(aError, __func__);
+                return;
+              }
+
+              mDecodePromise.Reject(
+                  MediaResult(
+                      NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                      RESULT_DETAIL("Unable to initialize H264 decoder")),
+                  __func__);
+            })
+        ->Track(mInitPromiseRequest);
+    return NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER;
   }
-
-  CreateDecoder()
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr{this}, this, sample = RefPtr{aSample}] {
-            mDecoderRequest.Complete();
-            mDecoder->Init()
-                ->Then(
-                    GetCurrentSerialEventTarget(), __func__,
-                    [self, sample, this](const TrackType aTrackType) {
-                      mInitPromiseRequest.Complete();
-                      mDecoderInitialized = true;
-                      mConversionRequired = Some(mDecoder->NeedsConversion());
-                      mCanRecycleDecoder = Some(CanRecycleDecoder());
-
-                      if (!mFlushPromise.IsEmpty()) {
-                        
-                        mFlushPromise.Resolve(true, __func__);
-                        return;
-                      }
-
-                      DecodeFirstSample(sample);
-                    },
-                    [self, this](const MediaResult& aError) {
-                      mInitPromiseRequest.Complete();
-
-                      if (!mFlushPromise.IsEmpty()) {
-                        
-                        mFlushPromise.Reject(aError, __func__);
-                        return;
-                      }
-
-                      mDecodePromise.Reject(
-                          MediaResult(
-                              NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                              RESULT_DETAIL("Unable to initialize decoder")),
-                          __func__);
-                    })
-                ->Track(mInitPromiseRequest);
-          },
-          [self = RefPtr{this}, this](const MediaResult& aError) {
-            mDecoderRequest.Complete();
-            if (!mFlushPromise.IsEmpty()) {
-              
-              mFlushPromise.Reject(aError, __func__);
-              return;
-            }
-            mDecodePromise.Reject(
-                MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                            RESULT_DETAIL("Unable to create decoder")),
-                __func__);
-          })
-      ->Track(mDecoderRequest);
-  return NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER;
+  return rv;
 }
 
 bool MediaChangeMonitor::CanRecycleDecoder() const {

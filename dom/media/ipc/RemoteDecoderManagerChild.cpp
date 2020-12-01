@@ -6,6 +6,7 @@
 #include "RemoteDecoderManagerChild.h"
 
 #include "RemoteAudioDecoder.h"
+#include "RemoteDecoderChild.h"
 #include "RemoteMediaDataDecoder.h"
 #include "RemoteVideoDecoder.h"
 #include "VideoUtils.h"
@@ -28,7 +29,6 @@ using namespace gfx;
 
 
 StaticMutex sLaunchMutex;
-static StaticRefPtr<GenericNonExclusivePromise> sLaunchRDDPromise;
 
 
 
@@ -194,131 +194,117 @@ bool RemoteDecoderManagerChild::Supports(
 }
 
 
-RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+already_AddRefed<MediaDataDecoder>
 RemoteDecoderManagerChild::CreateAudioDecoder(
     const CreateDecoderParams& aParams) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
     
-    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-        NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+    return nullptr;
   }
-  return LaunchRDDProcessIfNeeded()->Then(
-      managerThread, __func__,
-      [params = CreateDecoderParamsForAsync(aParams)](bool) {
-        auto child = MakeRefPtr<RemoteAudioDecoderChild>();
-        MediaResult result =
-            child->InitIPDL(params.AudioConfig(), params.mOptions);
+
+  RefPtr<RemoteAudioDecoderChild> child;
+  MediaResult result(NS_ERROR_DOM_MEDIA_CANCELED);
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Runnable> task =
+      NS_NewRunnableFunction("RemoteDecoderModule::CreateAudioDecoder", [&]() {
+        child = new RemoteAudioDecoderChild();
+        result = child->InitIPDL(aParams.AudioConfig(), aParams.mOptions);
         if (NS_FAILED(result)) {
-          return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-              result, __func__);
+          
+          
+          child = nullptr;
         }
-        return Construct(std::move(child));
-      },
-      [](nsresult aResult) {
-        return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-            MediaResult(aResult, "Couldn't start RDD process"), __func__);
       });
+  SyncRunnable::DispatchToThread(managerThread, task);
+
+  if (NS_FAILED(result)) {
+    if (aParams.mError) {
+      *aParams.mError = result;
+    }
+    return nullptr;
+  }
+
+  RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(child);
+
+  return object.forget();
 }
 
 
-RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+already_AddRefed<MediaDataDecoder>
 RemoteDecoderManagerChild::CreateVideoDecoder(
     const CreateDecoderParams& aParams, RemoteDecodeIn aLocation) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
     
-    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-        NS_ERROR_DOM_MEDIA_CANCELED, __func__);
-  }
-
-  if (!aParams.mKnowsCompositor && aLocation == RemoteDecodeIn::GpuProcess) {
-    
-    
-    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-        NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR, __func__);
+    return nullptr;
   }
 
   MOZ_ASSERT(aLocation != RemoteDecodeIn::Unspecified);
+  RefPtr<RemoteVideoDecoderChild> child;
+  MediaResult result(NS_ERROR_DOM_MEDIA_CANCELED);
 
-  RefPtr<GenericNonExclusivePromise> p =
-      aLocation == RemoteDecodeIn::GpuProcess
-          ? GenericNonExclusivePromise::CreateAndResolve(true, __func__)
-          : LaunchRDDProcessIfNeeded();
-
-  return p->Then(
-      managerThread, __func__,
-      [aLocation, params = CreateDecoderParamsForAsync(aParams)](bool) {
-        auto child = MakeRefPtr<RemoteVideoDecoderChild>(aLocation);
-        MediaResult result = child->InitIPDL(
-            params.VideoConfig(), params.mRate.mValue, params.mOptions,
-            params.mKnowsCompositor
-                ? &params.mKnowsCompositor->GetTextureFactoryIdentifier()
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Runnable> task = NS_NewRunnableFunction(
+      "RemoteDecoderManagerChild::CreateVideoDecoder", [&]() {
+        child = new RemoteVideoDecoderChild(aLocation);
+        result = child->InitIPDL(
+            aParams.VideoConfig(), aParams.mRate.mValue, aParams.mOptions,
+            aParams.mKnowsCompositor
+                ? &aParams.mKnowsCompositor->GetTextureFactoryIdentifier()
                 : nullptr);
         if (NS_FAILED(result)) {
-          return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-              result, __func__);
+          
+          
+          child = nullptr;
         }
-        return Construct(std::move(child));
-      },
-      [](nsresult aResult) {
-        return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-            MediaResult(aResult, "Couldn't start RDD process"), __func__);
       });
-}
+  SyncRunnable::DispatchToThread(managerThread, task);
 
-
-RefPtr<PlatformDecoderModule::CreateDecoderPromise>
-RemoteDecoderManagerChild::Construct(RefPtr<RemoteDecoderChild>&& aChild) {
-  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
-  if (!managerThread) {
-    
-    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-        NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+  if (NS_FAILED(result)) {
+    if (aParams.mError) {
+      *aParams.mError = result;
+    }
+    return nullptr;
   }
-  MOZ_ASSERT(managerThread->IsOnCurrentThread());
 
-  RefPtr<PlatformDecoderModule::CreateDecoderPromise> p =
-      aChild->SendConstruct()->Then(
-          managerThread, __func__,
-          [child = std::move(aChild)](MediaResult aResult) {
-            if (NS_FAILED(aResult)) {
-              
-              child->DestroyIPDL();
-              return PlatformDecoderModule::CreateDecoderPromise::
-                  CreateAndReject(aResult, __func__);
-            }
-            return PlatformDecoderModule::CreateDecoderPromise::
-                CreateAndResolve(MakeRefPtr<RemoteMediaDataDecoder>(child),
-                                 __func__);
-          },
-          [](const mozilla::ipc::ResponseRejectReason& aReason) {
-            
-            return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-                NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
-          });
-  return p;
+  RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(child);
+
+  return object.forget();
 }
 
 
-RefPtr<GenericNonExclusivePromise>
-RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
+void RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded(
+    RemoteDecodeIn aLocation) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess(),
                         "Only supported from a content process.");
 
+  if (aLocation != RemoteDecodeIn::RddProcess) {
+    
+    return;
+  }
+
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
     
-    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                       __func__);
+    return;
   }
 
   StaticMutexAutoLock lock(sLaunchMutex);
 
-  if (sLaunchRDDPromise) {
-    return sLaunchRDDPromise;
-  }
-
   
   
   
@@ -333,57 +319,40 @@ RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
   
   
 
-  RefPtr<GenericNonExclusivePromise> p = InvokeAsync(
-      managerThread, __func__, []() -> RefPtr<GenericNonExclusivePromise> {
+  bool needsLaunch = true;
+  RefPtr<Runnable> task = NS_NewRunnableFunction(
+      "RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded-CheckSend", [&]() {
         auto* rps = GetSingleton(RemoteDecodeIn::RddProcess);
-        if (rps && rps->CanSend()) {
-          return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
-        }
-        nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
-        ipc::PBackgroundChild* bgActor =
-            ipc::BackgroundChild::GetForCurrentThread();
-        if (!managerThread || NS_WARN_IF(!bgActor)) {
-          return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                             __func__);
-        }
-
-        return bgActor->SendEnsureRDDProcessAndCreateBridge()->Then(
-            managerThread, __func__,
-            [](ipc::PBackgroundChild::EnsureRDDProcessAndCreateBridgePromise::
-                   ResolveOrRejectValue&& aResult) {
-              nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
-              if (!managerThread || aResult.IsReject()) {
-                
-                return GenericNonExclusivePromise::CreateAndReject(
-                    NS_ERROR_FAILURE, __func__);
-              }
-              nsresult rv = Get<0>(aResult.ResolveValue());
-              if (NS_FAILED(rv)) {
-                return GenericNonExclusivePromise::CreateAndReject(rv,
-                                                                   __func__);
-              }
-              OpenForRDDProcess(Get<1>(std::move(aResult.ResolveValue())));
-              return GenericNonExclusivePromise::CreateAndResolve(true,
-                                                                  __func__);
-            });
+        needsLaunch = rps ? !rps->CanSend() : true;
       });
+  if (NS_FAILED(SyncRunnable::DispatchToThread(managerThread, task))) {
+    return;
+  };
 
-  p = p->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [](const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
-        StaticMutexAutoLock lock(sLaunchMutex);
-        sLaunchRDDPromise = nullptr;
-        return GenericNonExclusivePromise::CreateAndResolveOrReject(aResult,
-                                                                    __func__);
-      });
-  sLaunchRDDPromise = p;
-  return sLaunchRDDPromise;
+  if (needsLaunch) {
+    managerThread->Dispatch(NS_NewRunnableFunction(
+        "RemoteDecoderManagerChild::EnsureRDDProcessAndCreateBridge", [&]() {
+          ipc::PBackgroundChild* bgActor =
+              ipc::BackgroundChild::GetForCurrentThread();
+          if (NS_WARN_IF(!bgActor)) {
+            return;
+          }
+          nsresult rv;
+          Endpoint<PRemoteDecoderManagerChild> endpoint;
+          Unused << bgActor->SendEnsureRDDProcessAndCreateBridge(&rv,
+                                                                 &endpoint);
+          if (NS_SUCCEEDED(rv)) {
+            OpenForRDDProcess(std::move(endpoint));
+          }
+        }));
+  }
 }
 
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
     const RemoteDecoderInfoIPDL& ,
     const CreateDecoderParams::OptionSet& aOptions,
-    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier) {
+    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier, bool* aSuccess,
+    nsCString* ) {
   
   
   MOZ_ASSERT(false,
