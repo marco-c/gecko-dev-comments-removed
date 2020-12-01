@@ -819,6 +819,14 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     let oldOverVideo = this.getWeakOverVideo();
     let shadowRoot = video.openOrClosedShadowRoot;
 
+    if (video != oldOverVideo) {
+      if (video.getTransformToViewport().a == -1) {
+        shadowRoot.firstChild.setAttribute("flipped", true);
+      } else {
+        shadowRoot.firstChild.removeAttribute("flipped");
+      }
+    }
+
     
     
     
@@ -1376,6 +1384,12 @@ class PictureInPictureChild extends JSWindowActorChild {
     doc.body.appendChild(playerVideo);
 
     originatingVideo.cloneElementVisually(playerVideo);
+
+    let shadowRoot = originatingVideo.openOrClosedShadowRoot;
+    if (originatingVideo.getTransformToViewport().a == -1) {
+      shadowRoot.firstChild.setAttribute("flipped", true);
+      playerVideo.style.transform = "scaleX(-1)";
+    }
 
     this.trackOriginatingVideo(originatingVideo);
 
