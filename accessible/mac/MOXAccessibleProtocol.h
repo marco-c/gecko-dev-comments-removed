@@ -57,9 +57,6 @@
 
 - (id<MOXTextMarkerSupport> _Nullable)moxTextMarkerDelegate;
 
-
-- (BOOL)moxIsLiveRegion;
-
 @optional
 
 #pragma mark - AttributeGetters
@@ -266,15 +263,6 @@
 
 
 - (id _Nullable)moxEditableAncestor;
-
-
-- (NSNumber* _Nullable)moxARIAAtomic;
-
-
-- (NSString* _Nullable)moxARIALive;
-
-
-- (NSString* _Nullable)moxARIARelevant;
 
 
 - (NSString* _Nullable)moxMozDebugDescription;
