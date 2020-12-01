@@ -38,19 +38,17 @@ add_task(async function testNoSrcOrErrorMediaEntersPIPMode() {
       tab.linkedBrowser,
       testVideoId
     );
-    await ensureMessageAndClosePiP(
-      tab.linkedBrowser,
-      testVideoId,
-      winPIP,
-      false
-    );
+    await Promise.all([
+      
+      
+      SimpleTest.promiseFocus(window),
+      ensureMessageAndClosePiP(tab.linkedBrowser, testVideoId, winPIP, false),
+    ]);
+
     ok(!controller.isActive, "controller is still inactive");
 
     info(`remove tab`);
     await tab.close();
-    
-    
-    await SimpleTest.promiseFocus(window);
   }
 });
 
