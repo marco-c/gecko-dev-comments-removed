@@ -31,11 +31,11 @@ add_task(async function test_main() {
   
   
   var subtests = [
-    { url: httpURL("helper_fission_basic.html") },
-    { url: httpURL("helper_fission_transforms.html") },
-    { url: httpURL("helper_fission_scroll_oopif.html") },
+    { file: "helper_fission_basic.html" },
+    { file: "helper_fission_transforms.html" },
+    { file: "helper_fission_scroll_oopif.html" },
     {
-      url: httpURL("helper_fission_event_region_override.html"),
+      file: "helper_fission_event_region_override.html",
       setup(win) {
         win.document.addEventListener("wheel", e => e.preventDefault(), {
           once: true,
@@ -43,11 +43,11 @@ add_task(async function test_main() {
         });
       },
     },
-    { url: httpURL("helper_fission_animation_styling_in_oopif.html") },
-    { url: httpURL("helper_fission_force_empty_hit_region.html") },
-    { url: httpURL("helper_fission_touch.html") },
+    { file: "helper_fission_animation_styling_in_oopif.html" },
+    { file: "helper_fission_force_empty_hit_region.html" },
+    { file: "helper_fission_touch.html" },
     {
-      url: httpURL("helper_fission_tap.html"),
+      file: "helper_fission_tap.html",
       prefs: [["apz.max_tap_time", 10000]],
     },
     
@@ -60,9 +60,7 @@ add_task(async function test_main() {
     subtests = subtests.concat([
       
       {
-        url: httpURL(
-          "helper_fission_animation_styling_in_transformed_oopif.html"
-        ),
+        file: "helper_fission_animation_styling_in_transformed_oopif.html",
       },
     ]);
   }
@@ -96,13 +94,30 @@ add_task(async function test_main() {
   });
 
   try {
+    var onlyOneSubtest = SpecialPowers.getCharPref(
+      "apz.subtest",
+       ""
+    );
+
     for (var subtest of subtests) {
-      dump(`Starting test ${subtest.url}\n`);
+      if (onlyOneSubtest && onlyOneSubtest != subtest.file) {
+        SimpleTest.ok(
+          true,
+          "Skipping " +
+            subtest.file +
+            " because only " +
+            onlyOneSubtest +
+            " is being run"
+        );
+        continue;
+      }
+      let url = httpURL(subtest.file);
+      dump(`Starting test ${url}\n`);
 
       
       
       await BrowserTestUtils.withNewTab(
-        { gBrowser: fissionWindow.gBrowser, url: subtest.url },
+        { gBrowser: fissionWindow.gBrowser, url },
         async browser => {
           let tabActor = browser.browsingContext.currentWindowGlobal.getActor(
             "FissionTestHelper"
@@ -116,7 +131,7 @@ add_task(async function test_main() {
         }
       );
 
-      dump(`Finished test ${subtest.url}\n`);
+      dump(`Finished test ${url}\n`);
     }
   } finally {
     
