@@ -108,6 +108,9 @@ SQLITE_EXTENSION_INIT1
 #include <ctype.h>
 #include <stdio.h> 
 
+#include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
+#include "mozilla/ScopeExit.h"
+
 
 
 
@@ -130,21 +133,22 @@ typedef unsigned char u8;
 
 
 
-#define OBFS_KEYSZ 32
-
-
-
-
 #define OBFS_PGSZ 8192
+
+using namespace mozilla;
+using namespace mozilla::dom::quota;
 
 
 struct ObfsFile {
-  sqlite3_file base;   
-  const char* zFName;  
-  char inCkpt;         
-  ObfsFile* pPartner;  
-  void* pTemp;         
-  u8 aKey[OBFS_KEYSZ]; 
+  sqlite3_file base;  
+  const char* zFName; 
+  char inCkpt;        
+  ObfsFile* pPartner; 
+  void* pTemp;        
+  IPCStreamCipherStrategy*
+      encryptCipherStrategy; 
+  IPCStreamCipherStrategy*
+      decryptCipherStrategy; 
 };
 
 
@@ -236,6 +240,13 @@ static const sqlite3_io_methods obfs_io_methods = {
     obfsUnfetch                
 };
 
+static constexpr int kKeyBytes = 32;
+static constexpr int kIvBytes = IPCStreamCipherStrategy::BlockPrefixLength;
+static constexpr int kClearTextPrefixBytesOnFirstPage = 32;
+static constexpr int kReservedBytes = 32;
+static constexpr int kBasicBlockSize = IPCStreamCipherStrategy::BasicBlockSize;
+static_assert(kClearTextPrefixBytesOnFirstPage % kBasicBlockSize == 0);
+static_assert(kReservedBytes % kBasicBlockSize == 0);
 
 
 
@@ -247,17 +258,18 @@ static const sqlite3_io_methods obfs_io_methods = {
 
 
 
-static void* obfsEncode(
-    ObfsFile* p, 
-    u8* a,       
-    int nByte 
+
+static void* obfsEncode(ObfsFile* p, 
+                        u8* a,       
+                        int nByte 
+
 ) {
-  u8 aKey[OBFS_KEYSZ];
+  u8 aIv[kIvBytes];
   u8* pOut;
   int i;
 
-  assert((OBFS_KEYSZ & (OBFS_KEYSZ - 1)) == 0);
-  sqlite3_randomness(OBFS_KEYSZ, aKey);
+  static_assert((kIvBytes & (kIvBytes - 1)) == 0);
+  sqlite3_randomness(kIvBytes, aIv);
   pOut = (u8*)p->pTemp;
   if (pOut == 0) {
     pOut = static_cast<u8*>(sqlite3_malloc64(nByte));
@@ -268,28 +280,30 @@ static void* obfsEncode(
                   p->zFName);
       return 0;
     }
-  }
-  memcpy(pOut + nByte - OBFS_KEYSZ, aKey, OBFS_KEYSZ);
-  for (i = 0; i < OBFS_KEYSZ; i++) {
-    aKey[i] ^= p->aKey[i];
+    p->pTemp = pOut;
   }
   if (memcmp(a, "SQLite format 3", 16) == 0) {
-    i = OBFS_KEYSZ;
-    if (a[20] != OBFS_KEYSZ) {
+    i = kClearTextPrefixBytesOnFirstPage;
+    if (a[20] != kReservedBytes) {
       sqlite3_log(SQLITE_IOERR,
-                  "obfuscated database must have reserve-bytes"
+                  "obfuscated database must have reserved-bytes"
                   " set to %d",
-                  OBFS_KEYSZ);
-      return 0;
+                  kReservedBytes);
+      return nullptr;
     }
-    memcpy(pOut, a, OBFS_KEYSZ);
+    memcpy(pOut, a, kClearTextPrefixBytesOnFirstPage);
   } else {
     i = 0;
   }
-  while (i < nByte - OBFS_KEYSZ) {
-    pOut[i] = aKey[i & (OBFS_KEYSZ - 1)] ^ a[i];
-    i++;
-  }
+  const int payloadLength = nByte - kReservedBytes - i;
+  MOZ_ASSERT(payloadLength > 0);
+  
+  
+  p->encryptCipherStrategy->Cipher(
+      Span{aIv}, Span{a + i, static_cast<unsigned>(payloadLength)},
+      Span{pOut + i, static_cast<unsigned>(payloadLength)});
+  memcpy(pOut + nByte - kReservedBytes, aIv, kIvBytes);
+
   return pOut;
 }
 
@@ -300,28 +314,24 @@ static void* obfsEncode(
 
 
 
+static void obfsDecode(ObfsFile* p, 
+                       u8* a,       
+                       int nByte 
 
-
-static void obfsDecode(
-    ObfsFile* p, 
-    u8* a,       
-    int nByte 
 ) {
-  u8 aKey[OBFS_KEYSZ];
   int i;
 
-  for (i = 0; i < OBFS_KEYSZ; i++) {
-    aKey[i] = p->aKey[i] ^ a[i + nByte - OBFS_KEYSZ];
-  }
   if (memcmp(a, "SQLite format 3", 16) == 0) {
-    i = OBFS_KEYSZ;
+    i = kClearTextPrefixBytesOnFirstPage;
   } else {
     i = 0;
   }
-  while (i < nByte - OBFS_KEYSZ) {
-    a[i] ^= aKey[i & (OBFS_KEYSZ - 1)];
-    i++;
-  }
+  const int payloadLength = nByte - kReservedBytes - i;
+  MOZ_ASSERT(payloadLength > 0);
+  p->decryptCipherStrategy->Cipher(
+      Span{a + nByte - kReservedBytes, kIvBytes},
+      Span{a + i, static_cast<unsigned>(payloadLength)},
+      Span{a + i, static_cast<unsigned>(payloadLength)});
 }
 
 
@@ -335,6 +345,10 @@ static int obfsClose(sqlite3_file* pFile) {
     p->pPartner = 0;
   }
   sqlite3_free(p->pTemp);
+
+  delete p->decryptCipherStrategy;
+  delete p->encryptCipherStrategy;
+
   pFile = ORIGFILE(pFile);
   return pFile->pMethods->xClose(pFile);
 }
@@ -360,9 +374,10 @@ static int obfsRead(sqlite3_file* pFile, void* zBuf, int iAmt,
     }
   } else if (SQLITE_IOERR_SHORT_READ && iOfst == 0 && iAmt >= 100) {
     static const unsigned char aEmptyDb[] = {
-        0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6f, 0x72, 0x6d,
-        0x61, 0x74, 0x20, 0x33, 0x00, 0x20, 0x00, 0x02, 0x02, 0x20, 0x40,
-        0x20, 0x20, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01};
+        0x53, 0x51, 0x4c, 0x69, 0x74,           0x65, 0x20, 0x66,
+        0x6f, 0x72, 0x6d, 0x61, 0x74,           0x20, 0x33, 0x00,
+        0x20, 0x00, 0x02, 0x02, kReservedBytes, 0x40, 0x20, 0x20,
+        0x00, 0x00, 0x00, 0x01, 0x00,           0x00, 0x00, 0x01};
     memcpy(zBuf, aEmptyDb, sizeof(aEmptyDb));
     memset(((u8*)zBuf) + sizeof(aEmptyDb), 0, iAmt - sizeof(aEmptyDb));
     rc = SQLITE_OK;
@@ -546,7 +561,7 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   sqlite3_vfs* pSubVfs;
   int rc, i;
   const char* zKey;
-  u8 aKey[OBFS_KEYSZ];
+  u8 aKey[kKeyBytes];
   pSubVfs = ORIGVFS(pVfs);
   if (flags &
       (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL)) {
@@ -558,22 +573,43 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
     return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
   }
   for (i = 0;
-       i < OBFS_KEYSZ && isxdigit(zKey[i * 2]) && isxdigit(zKey[i * 2 + 1]);
+       i < kKeyBytes && isxdigit(zKey[i * 2]) && isxdigit(zKey[i * 2 + 1]);
        i++) {
-    aKey[i] = (obfsHexToInt(zKey[i * 2]) << 8) | obfsHexToInt(zKey[i * 2 + 1]);
+    aKey[i] = (obfsHexToInt(zKey[i * 2]) << 4) | obfsHexToInt(zKey[i * 2 + 1]);
   }
-  if (i != OBFS_KEYSZ) {
+  if (i != kKeyBytes) {
     sqlite3_log(SQLITE_CANTOPEN, "invalid query parameter on %s: key=%s", zName,
                 zKey);
     return SQLITE_CANTOPEN;
   }
   p = (ObfsFile*)pFile;
   memset(p, 0, sizeof(*p));
-  memcpy(p->aKey, aKey, sizeof(aKey));
+
+  auto encryptCipherStrategy = MakeUnique<IPCStreamCipherStrategy>();
+  auto decryptCipherStrategy = MakeUnique<IPCStreamCipherStrategy>();
+
+  auto resetMethods = MakeScopeExit([pFile] { pFile->pMethods = nullptr; });
+
+  if (NS_WARN_IF(NS_FAILED(encryptCipherStrategy->Init(
+          CipherMode::Encrypt, Span{aKey, sizeof(aKey)},
+          IPCStreamCipherStrategy::MakeBlockPrefix())))) {
+    return SQLITE_ERROR;
+  }
+
+  if (NS_WARN_IF(NS_FAILED(decryptCipherStrategy->Init(
+          CipherMode::Decrypt, Span{aKey, sizeof(aKey)})))) {
+    return SQLITE_ERROR;
+  }
+
   pSubFile = ORIGFILE(pFile);
   p->base.pMethods = &obfs_io_methods;
   rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
-  if (rc) goto obfs_open_done;
+  if (rc) {
+    return rc;
+  }
+
+  resetMethods.release();
+
   if (flags & (SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL)) {
     sqlite3_file* pDb = sqlite3_database_file_object(zName);
     p->pPartner = (ObfsFile*)pDb;
@@ -581,9 +617,11 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
     p->pPartner->pPartner = p;
   }
   p->zFName = zName;
-obfs_open_done:
-  if (rc) pFile->pMethods = 0;
-  return rc;
+
+  p->encryptCipherStrategy = encryptCipherStrategy.release();
+  p->decryptCipherStrategy = decryptCipherStrategy.release();
+
+  return SQLITE_OK;
 }
 
 
