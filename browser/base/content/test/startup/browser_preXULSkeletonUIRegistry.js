@@ -88,7 +88,6 @@ add_task(async function testWritesSizeValuesOnChange() {
     "CssToDevPixelScaling",
     "SpringsCSSSpan",
     "SearchbarCSSSpan",
-    "Theme",
   ];
 
   
