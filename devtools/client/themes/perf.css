@@ -2,12 +2,6 @@
 
 
 
-:root {
-  --highlight-color: var(--blue-55);
-  --slider-thumb-color: var(--grey-50);
-  --slider-track-color: var(--grey-30);
-}
-
 :root.theme-light {
   
 
@@ -15,11 +9,6 @@
 
 
   --theme-highlight-blue: var(--blue-60);
-}
-
-:root.theme-dark {
-  --slider-thumb-color: var(--grey-40);
-  --slider-track-color: var(--grey-60);
 }
 
 .perf {
