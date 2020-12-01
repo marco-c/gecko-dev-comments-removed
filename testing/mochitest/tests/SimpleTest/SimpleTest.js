@@ -1180,6 +1180,27 @@ SimpleTest.waitForFocus = function(callback, targetWindow, expectBlankPage) {
 };
 
 
+SimpleTest.stripLinebreaksAndWhitespaceAfterTags = function(aString) {
+  return aString.replace(/(>\s*(\r\n|\n|\r)*\s*)/gm, ">");
+};
+
+
+
+
+const kPlatformWindows = "Win";
+
+
+
+
+const kTextHtmlPrefixClipboardDataWindows =
+  "<html><body>\n<!--StartFragment-->";
+
+
+
+
+const kTextHtmlSuffixClipboardDataWindows =
+  "<!--EndFragment-->\n</body>\n</html>";
+
 
 
 
@@ -1283,7 +1304,9 @@ SimpleTest.promiseClipboardChange = async function(
       inputValidatorFn = function(aData) {
         return (
           aData.replace(/\r\n?/g, "\n") ===
-          `<html><body>\n<!--StartFragment-->${aExpectedStringOrValidatorFn}<!--EndFragment-->\n</body>\n</html>`
+          kTextHtmlPrefixClipboardDataWindows +
+            aExpectedStringOrValidatorFn +
+            kTextHtmlSuffixClipboardDataWindows
         );
       };
     } else {
