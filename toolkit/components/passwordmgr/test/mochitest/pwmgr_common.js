@@ -811,7 +811,7 @@ SimpleTest.registerCleanupFunction(() => {
     );
 
     
-    Services.logins.removeAllUserFacingLogins();
+    Services.logins.removeAllLogins();
 
     let disabledHosts = Services.logins.getAllDisabledHosts();
     disabledHosts.forEach(host =>

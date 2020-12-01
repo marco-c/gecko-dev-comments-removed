@@ -178,5 +178,5 @@ async function test_save_change({
   );
 
   
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
 }

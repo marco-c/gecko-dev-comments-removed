@@ -362,5 +362,5 @@ async function test_submit_telemetry(tc) {
 
   
   await cleanupDoorhanger(notif);
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
 }

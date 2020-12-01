@@ -211,15 +211,15 @@ add_task(function test_removeLogin_nonexisting() {
 
 
 
-add_task(function test_removeAllUserFacingLogins() {
+add_task(function test_removeAllLogins() {
   for (let loginInfo of TestData.loginList()) {
     Services.logins.addLogin(loginInfo);
   }
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
   LoginTestUtils.checkLogins([]);
 
   
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
 });
 
 
@@ -460,7 +460,7 @@ add_task(function test_addLogin_badDates() {
     !!Services.logins.addLogin(defaultsLogin),
     "Sanity check adding defaults formLogin"
   );
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
 
   
   for (let pname of ["timeCreated", "timeLastUsed", "timePasswordChanged"]) {
@@ -473,7 +473,7 @@ add_task(function test_addLogin_badDates() {
       !!Services.logins.addLogin(loginInfo),
       "Check 0 value for " + pname
     );
-    Services.logins.removeAllUserFacingLogins();
+    Services.logins.removeAllLogins();
   }
 
   
@@ -487,7 +487,7 @@ add_task(function test_addLogin_badDates() {
       !!Services.logins.addLogin(loginInfo),
       "Check -1 value for " + pname
     );
-    Services.logins.removeAllUserFacingLogins();
+    Services.logins.removeAllLogins();
   }
 
   
@@ -544,5 +544,5 @@ add_task(async function test_addLogins_badDates() {
   let savedLogins = Services.logins.getAllLogins();
   Assert.equal(savedLogins.length, 1);
 
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
 });

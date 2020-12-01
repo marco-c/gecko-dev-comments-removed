@@ -83,7 +83,7 @@ const mockGetMonitorData = data => {
 };
 
 registerCleanupFunction(function head_cleanup() {
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
 });
 
 

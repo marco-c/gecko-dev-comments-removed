@@ -1293,7 +1293,7 @@ add_task(async function test_passwordsAvailable() {
   let hashes = []; 
 
   registerCleanupFunction(() => {
-    Services.logins.removeAllUserFacingLogins();
+    Services.logins.removeAllLogins();
     logins = Services.logins.getAllLogins();
     Assert.equal(logins.length, 0, "There are no logins after the cleanup");
     

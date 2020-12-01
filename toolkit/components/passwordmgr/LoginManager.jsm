@@ -438,22 +438,8 @@ LoginManager.prototype = {
   
 
 
-
-
-  removeAllUserFacingLogins() {
-    log.debug("Removing all user facing logins");
-    this._storage.removeAllUserFacingLogins();
-  },
-
-  
-
-
-
-
-
-
   removeAllLogins() {
-    log.debug("Removing all logins from local store, including FxA key");
+    log.debug("Removing all logins");
     this._storage.removeAllLogins();
   },
 

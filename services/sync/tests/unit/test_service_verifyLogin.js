@@ -30,7 +30,7 @@ function run_test() {
 
 add_task(async function test_verifyLogin() {
   
-  Services.logins.removeAllUserFacingLogins();
+  Services.logins.removeAllLogins();
   let johnHelper = track_collections_helper();
   let johnU = johnHelper.with_updated_collection;
 
