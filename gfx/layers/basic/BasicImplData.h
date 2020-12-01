@@ -7,15 +7,24 @@
 #ifndef GFX_BASICIMPLDATA_H
 #define GFX_BASICIMPLDATA_H
 
-#include "Layers.h"           
-#include "gfxContext.h"       
-#include "nsDebug.h"          
-#include "nsISupportsImpl.h"  
-#include "mozilla/gfx/Types.h"
+#include "mozilla/AlreadyAddRefed.h"  
+#include "mozilla/gfx/Point.h"        
+#include "mozilla/gfx/Types.h"  
+#include "mozilla/layers/LayerManager.h"  
+#include "nsDebug.h"      
+#include "nsISupports.h"  
+
+class gfxContext;
 
 namespace mozilla {
+namespace gfx {
+class DrawTarget;
+class SourceSurface;
+}  
+
 namespace layers {
 
+class Layer;
 class ReadbackProcessor;
 
 

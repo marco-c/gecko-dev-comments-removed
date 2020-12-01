@@ -60,6 +60,10 @@
 #include <algorithm>
 #include <unordered_set>
 
+
+
+#include "gfxPlatform.h"
+
 class gfxContext;
 class nsIContent;
 class nsDisplayList;

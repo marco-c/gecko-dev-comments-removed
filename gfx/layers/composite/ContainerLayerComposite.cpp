@@ -27,6 +27,7 @@
 #include "mozilla/layers/Effects.h"          
 #include "mozilla/layers/TextureHost.h"      
 #include "mozilla/layers/APZUtils.h"         
+#include "mozilla/layers/LayerManagerCompositeUtils.h"
 #include "mozilla/layers/LayerMetricsWrapper.h"  
 #include "mozilla/layers/LayersHelpers.h"
 #include "mozilla/mozalloc.h"  

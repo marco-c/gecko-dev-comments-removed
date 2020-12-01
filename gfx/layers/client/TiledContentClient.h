@@ -7,42 +7,36 @@
 #ifndef MOZILLA_GFX_TILEDCONTENTCLIENT_H
 #define MOZILLA_GFX_TILEDCONTENTCLIENT_H
 
-#include <stddef.h>   
-#include <stdint.h>   
-#include <algorithm>  
-#include <limits>
-#include "Layers.h"            
-#include "TiledLayerBuffer.h"  
-#include "Units.h"             
-#include "gfxTypes.h"
-#include "mozilla/Attributes.h"                 
-#include "mozilla/gfx/2D.h"                     
-#include "mozilla/RefPtr.h"                     
-#include "mozilla/ipc/Shmem.h"                  
-#include "mozilla/ipc/SharedMemory.h"           
-#include "mozilla/layers/APZUtils.h"            
+#include <cstdint>               
+#include <iosfwd>                
+#include <utility>               
+#include "ClientLayerManager.h"  
+#include "Units.h"  
+#include "gfxTypes.h"               
+#include "mozilla/Maybe.h"          
+#include "mozilla/RefPtr.h"         
+#include "mozilla/TypedEnumBits.h"  
+#include "mozilla/gfx/2D.h"         
+#include "mozilla/gfx/Rect.h"       
 #include "mozilla/layers/CompositableClient.h"  
-#include "mozilla/layers/CompositorTypes.h"     
-#include "mozilla/layers/LayersMessages.h"      
-#include "mozilla/layers/LayersTypes.h"         
-#include "mozilla/layers/PaintThread.h"         
-#include "mozilla/layers/TextureClient.h"
-#include "mozilla/layers/TextureClientPool.h"
-#include "ClientLayerManager.h"
-#include "mozilla/mozalloc.h"  
-#include "nsISupportsImpl.h"   
-#include "nsPoint.h"           
-#include "nsRect.h"            
-#include "nsRegion.h"          
-#include "nsTArray.h"          
-#include "nsExpirationTracker.h"
-#include "mozilla/layers/ISurfaceAllocator.h"
+#include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/LayerManager.h"  
+#include "mozilla/layers/LayersMessages.h"  
+#include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/ShadowLayers.h"       
+#include "mozilla/layers/TextureClient.h"      
+#include "mozilla/layers/TextureClientPool.h"  
+#include "nsExpirationTracker.h"               
+#include "nsRegion.h"                          
+#include "nsTArray.h"  
 
 namespace mozilla {
 namespace layers {
 
 class ClientTiledPaintedLayer;
-class ClientLayerManager;
+class LayerMetricsWrapper;
+struct AsyncTransform;
+struct FrameMetrics;
 
 enum class TilePaintFlags : uint8_t {
   None = 0x0,

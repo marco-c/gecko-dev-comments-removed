@@ -178,6 +178,37 @@ class OldWindowSize : public LinkedListElement<OldWindowSize> {
   nsSize mSize;
 };
 
+
+
+
+
+
+
+template <class T>
+T* mozilla::FrameLayerBuilder::GetDebugSingleOldLayerForFrame(
+    nsIFrame* aFrame) {
+  SmallPointerArray<DisplayItemData>& array = aFrame->DisplayItemData();
+
+  Layer* layer = nullptr;
+  for (DisplayItemData* data : array) {
+    DisplayItemData::AssertDisplayItemData(data);
+    if (data->mLayer->GetType() != T::Type()) {
+      continue;
+    }
+    if (layer && layer != data->mLayer) {
+      
+      return nullptr;
+    }
+    layer = data->mLayer;
+  }
+
+  if (!layer) {
+    return nullptr;
+  }
+
+  return static_cast<T*>(layer);
+}
+
 namespace {
 
 class NativeInputRunnable final : public PrioritizableRunnable {

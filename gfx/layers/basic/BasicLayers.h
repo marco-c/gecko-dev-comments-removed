@@ -8,12 +8,12 @@
 #define GFX_BASICLAYERS_H
 
 #include <stdint.h>  
-#include "Layers.h"  
 #include "gfxTypes.h"
-#include "gfxContext.h"                  
-#include "mozilla/Attributes.h"          
-#include "mozilla/WidgetUtils.h"         
-#include "mozilla/layers/LayersTypes.h"  
+#include "gfxContext.h"                   
+#include "mozilla/Attributes.h"           
+#include "mozilla/WidgetUtils.h"          
+#include "mozilla/layers/LayerManager.h"  
+#include "mozilla/layers/LayersTypes.h"   
 #include "mozilla/TimeStamp.h"
 #include "nsAString.h"
 #include "nsCOMPtr.h"         
@@ -26,9 +26,14 @@ class nsIWidget;
 namespace mozilla {
 namespace layers {
 
+class CanvasLayer;
+class ColorLayer;
+class ContainerLayer;
 class ImageFactory;
 class ImageLayer;
+class Layer;
 class PaintLayerContext;
+class PaintedLayer;
 class ReadbackLayer;
 
 

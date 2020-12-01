@@ -7,29 +7,37 @@
 #ifndef GFX_WEBRENDERLAYERMANAGER_H
 #define GFX_WEBRENDERLAYERMANAGER_H
 
-#include <unordered_set>
-#include <unordered_map>
-#include <vector>
+#include <cstddef>                    
+#include <cstdint>                    
+#include <string>                     
+#include "Units.h"                    
+#include "mozilla/AlreadyAddRefed.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"               
+#include "mozilla/RefPtr.h"                   
+#include "mozilla/StaticPrefs_apz.h"          
+#include "mozilla/TimeStamp.h"                
+#include "mozilla/gfx/Point.h"                
+#include "mozilla/gfx/Types.h"                
+#include "mozilla/layers/APZTestData.h"       
+#include "mozilla/layers/CompositorTypes.h"   
+#include "mozilla/layers/DisplayItemCache.h"  
+#include "mozilla/layers/FocusTarget.h"       
+#include "mozilla/layers/LayerManager.h"  
+#include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/RenderRootStateManager.h"  
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/layers/WebRenderCommandBuilder.h"  
+#include "mozilla/layers/WebRenderScrollData.h"      
+#include "nsHashKeys.h"                              
+#include "nsRegion.h"                                
+#include "nsStringFwd.h"                             
+#include "nsTArray.h"                                
+#include "nsTHashtable.h"  
 
-#include "Layers.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/StaticPrefs_apz.h"
-#include "mozilla/SVGIntegrationUtils.h"  
-#include "mozilla/layers/APZTestData.h"
-#include "mozilla/layers/FocusTarget.h"
-#include "mozilla/layers/IpcResourceUpdateQueue.h"
-#include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/layers/SharedSurfacesChild.h"
-#include "mozilla/layers/StackingContextHelper.h"
-#include "mozilla/layers/TransactionIdAllocator.h"
-#include "mozilla/layers/WebRenderCommandBuilder.h"
-#include "mozilla/layers/WebRenderScrollData.h"
-#include "mozilla/layers/WebRenderUserData.h"
-#include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/webrender/WebRenderTypes.h"
-#include "nsDisplayList.h"
-
+class gfxContext;
+class nsDisplayList;
+class nsDisplayListBuilder;
 class nsIWidget;
 
 namespace mozilla {
@@ -40,6 +48,7 @@ namespace layers {
 
 class CompositorBridgeChild;
 class KnowsCompositor;
+class Layer;
 class PCompositorBridgeChild;
 class WebRenderBridgeChild;
 class WebRenderParentCommand;

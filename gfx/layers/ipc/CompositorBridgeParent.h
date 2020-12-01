@@ -15,38 +15,25 @@
 
 
 
-#include <stdint.h>                   
-#include "Layers.h"                   
-#include "mozilla/Assertions.h"       
-#include "mozilla/Attributes.h"       
-#include "mozilla/GfxMessageUtils.h"  
+#include <stdint.h>  
+#include <unordered_map>
+#include "mozilla/Assertions.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"    
 #include "mozilla/RefPtr.h"     
 #include "mozilla/TimeStamp.h"  
-#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/SharedMemory.h"
-#include "mozilla/layers/CompositionRecorder.h"
 #include "mozilla/layers/CompositorController.h"
-#include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
-#include "mozilla/layers/LayersMessages.h"     
+#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/MetricsSharingController.h"
-#include "mozilla/layers/PCompositorBridgeTypes.h"
 #include "mozilla/layers/PCompositorBridgeParent.h"
-#include "mozilla/layers/APZTestData.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "mozilla/webrender/RenderThread.h"
-#include "mozilla/widget/CompositorWidget.h"
-#include "nsISupportsImpl.h"
-#include "ThreadSafeRefcountingWithMainThreadDestruction.h"
-#include "mozilla/layers/UiCompositorControllerParent.h"
-#include "mozilla/VsyncDispatcher.h"
 
-class nsIWidget;
+struct DxgiAdapterDesc;
 
 namespace mozilla {
 
@@ -74,11 +61,24 @@ class PWebGPUParent;
 class WebGPUParent;
 }  
 
+namespace widget {
+class CompositorWidget;
+}
+
+namespace wr {
+class WebRenderPipelineInfo;
+struct Epoch;
+struct MemoryReport;
+struct PipelineId;
+struct RendererStats;
+}  
+
 namespace layers {
 
 class APZCTreeManager;
 class APZCTreeManagerParent;
 class APZSampler;
+class APZTestData;
 class APZUpdater;
 class AsyncCompositionManager;
 class AsyncImagePipelineManager;
@@ -87,17 +87,19 @@ class CompositorAnimationStorage;
 class CompositorBridgeParent;
 class CompositorManagerParent;
 class CompositorVsyncScheduler;
+class FrameUniformityData;
 class GeckoContentController;
 class HostLayerManager;
 class IAPZCTreeManager;
+class Layer;
 class LayerTransactionParent;
 class OMTASampler;
-class PAPZParent;
 class ContentCompositorBridgeParent;
 class CompositorThreadHolder;
 class InProcessCompositorSession;
-class TextureData;
+class UiCompositorControllerParent;
 class WebRenderBridgeParent;
+struct CollectedFrames;
 
 struct ScopedLayerTreeRegistration {
   ScopedLayerTreeRegistration(APZCTreeManager* aApzctm, LayersId aLayersId,

@@ -7,38 +7,57 @@
 #ifndef GFX_CLIENTLAYERMANAGER_H
 #define GFX_CLIENTLAYERMANAGER_H
 
-#include <stdint.h>  
-#include "Layers.h"
-#include "gfxContext.h"          
-#include "mozilla/Attributes.h"  
-#include "mozilla/LinkedList.h"  
-#include "mozilla/StaticPrefs_apz.h"
-#include "mozilla/WidgetUtils.h"  
-#include "mozilla/gfx/Rect.h"     
-#include "mozilla/layers/CompositorTypes.h"
-#include "mozilla/layers/FocusTarget.h"   
-#include "mozilla/layers/LayersTypes.h"   
-#include "mozilla/layers/PaintThread.h"   
+#include <cstddef>                    
+#include <cstdint>                    
+#include <new>                        
+#include <string>                     
+#include <utility>                    
+#include "gfxContext.h"               
+#include "mozilla/AlreadyAddRefed.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/TimeStamp.h"               
+#include "mozilla/WidgetUtils.h"             
+#include "mozilla/gfx/Point.h"               
+#include "mozilla/gfx/Types.h"               
+#include "mozilla/layers/APZTestData.h"      
+#include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/LayerManager.h"  
+#include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/MemoryPressureObserver.h"  
+#include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/ShadowLayers.h"  
-#include "mozilla/layers/APZTestData.h"   
-#include "mozilla/layers/MemoryPressureObserver.h"
-#include "nsCOMPtr.h"         
-#include "nsISupportsImpl.h"  
-#include "nsRect.h"           
-#include "nsTArray.h"         
-#include "nscore.h"           
-#include "mozilla/layers/TransactionIdAllocator.h"
-#include "nsIWidget.h"  
+#include "nsISupports.h"                  
+#include "nsIThread.h"                    
+#include "nsIWidget.h"                    
+#include "nsRegion.h"                     
+#include "nsStringFwd.h"                  
+#include "nsTArray.h"                     
 
-class nsDisplayListBuilder;
+
+
+#include "mozilla/StaticPrefs_apz.h"  
 
 namespace mozilla {
 namespace layers {
 
+class CanvasLayer;
+class ColorLayer;
+class ContainerLayer;
 class ClientPaintedLayer;
 class CompositorBridgeChild;
-class ImageLayer;
+class FocusTarget;
 class FrameUniformityData;
+class ImageLayer;
+class Layer;
+class PCompositorBridgeChild;
+class PaintTiming;
+class PaintedLayer;
+class PersistentBufferProvider;
+class ReadbackLayer;
+class ReadbackProcessor;
+class RefLayer;
+class TransactionIdAllocator;
 
 class ClientLayerManager final : public LayerManager,
                                  public MemoryPressureListener {
@@ -356,9 +375,7 @@ class ClientLayer : public ShadowableLayer {
 
   virtual ClientPaintedLayer* AsThebes() { return nullptr; }
 
-  static inline ClientLayer* ToClientLayer(Layer* aLayer) {
-    return static_cast<ClientLayer*>(aLayer->ImplData());
-  }
+  static ClientLayer* ToClientLayer(Layer* aLayer);
 
   template <typename LayerType>
   static inline void RenderMaskLayers(LayerType* aLayer) {

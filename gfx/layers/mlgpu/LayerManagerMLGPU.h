@@ -7,19 +7,28 @@
 #ifndef MOZILLA_GFX_LAYERMANAGERMLGPU_H
 #define MOZILLA_GFX_LAYERMANAGERMLGPU_H
 
-#include "Layers.h"
-#include "mozilla/layers/LayerManagerComposite.h"
-#include "LayerMLGPU.h"
-#include "mozilla/layers/MLGPUScreenshotGrabber.h"
+#include <cstdint>                    
+#include "mozilla/AlreadyAddRefed.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"                   
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/TimeStamp.h"               
+#include "mozilla/UniquePtr.h"               
+#include "mozilla/gfx/Rect.h"                
+#include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/LayerManager.h"  
+#include "mozilla/layers/LayerManagerComposite.h"   
+#include "mozilla/layers/LayersTypes.h"             
+#include "mozilla/layers/MLGPUScreenshotGrabber.h"  
+#include "nsRegion.h"                               
+#include "nsStringFwd.h"                            
 
 namespace mozilla {
 namespace layers {
 
 class FrameBuilder;
-class LayerManagerMLGPU;
 class RenderPassMLGPU;
 class SharedBufferMLGPU;
-class RenderViewMLGPU;
 class TextRenderer;
 class TextureSourceProviderMLGPU;
 class MLGBuffer;

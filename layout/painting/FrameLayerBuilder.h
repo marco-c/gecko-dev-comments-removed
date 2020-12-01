@@ -7,36 +7,57 @@
 #ifndef FRAMELAYERBUILDER_H_
 #define FRAMELAYERBUILDER_H_
 
-#include "nsCSSPropertyIDSet.h"
-#include "nsTHashtable.h"
-#include "nsHashKeys.h"
-#include "nsTArray.h"
-#include "nsRegion.h"
-#include "nsIFrame.h"
-#include "DisplayItemClip.h"
-#include "mozilla/gfx/MatrixFwd.h"
-#include "mozilla/layers/LayersTypes.h"
-#include "mozilla/UniquePtr.h"
-#include "LayerState.h"
-#include "Layers.h"
-#include "LayerUserData.h"
-#include "nsDisplayItemTypes.h"
-#include "TransformClipNode.h"
+#include <cstddef>  
+#include <cstdint>  
+#include <iosfwd>   
+#include <vector>   
+#include "DisplayItemClip.h"  
+#include "LayerState.h"       
+#include "LayerUserData.h"    
+#include "Units.h"            
+#include "gfxPoint.h"         
+#include "mozilla/AlreadyAddRefed.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/FunctionRef.h"          
+#include "mozilla/RefPtr.h"               
+#include "mozilla/UniquePtr.h"            
+#include "mozilla/gfx/Matrix.h"           
+#include "mozilla/gfx/Point.h"            
+#include "mozilla/layers/LayerManager.h"  
+#include "mozilla/layers/LayersTypes.h"   
+#include "nsColor.h"                      
+#include "nsDebug.h"                      
+#include "nsDisplayItemTypes.h"           
+#include "nsISupports.h"  
+#include "nsPoint.h"   
+#include "nsRect.h"    
+#include "nsRegion.h"  
+#include "nsTArray.h"  
+#include "nscore.h"    
 
-class nsDisplayListBuilder;
-class nsDisplayList;
-class nsDisplayItem;
-class nsPaintedDisplayItem;
 class gfxContext;
+class nsDisplayItem;
 class nsDisplayItemGeometry;
+class nsDisplayList;
+class nsDisplayListBuilder;
 class nsDisplayMasksAndClipPaths;
+class nsIFrame;
+class nsPaintedDisplayItem;
+class nsPresContext;
+class nsRootPresContext;
 
 namespace mozilla {
 struct ActiveScrolledRoot;
 struct DisplayItemClipChain;
+class TransformClipNode;
+template <class T>
+class Maybe;
+template <typename T>
+class SmallPointerArray;
+
 namespace layers {
 class ContainerLayer;
-class LayerManager;
+class Layer;
 class BasicLayerManager;
 class PaintedLayer;
 class ImageLayer;
@@ -212,46 +233,7 @@ class RefCountedRegion {
   bool mIsInfinite;
 };
 
-struct InactiveLayerData {
-  RefPtr<layers::BasicLayerManager> mLayerManager;
-  RefPtr<layers::Layer> mLayer;
-  UniquePtr<layers::LayerProperties> mProps;
-
-  ~InactiveLayerData();
-};
-
-struct AssignedDisplayItem {
-  AssignedDisplayItem(nsPaintedDisplayItem* aItem, LayerState aLayerState,
-                      DisplayItemData* aData, const nsRect& aContentRect,
-                      DisplayItemEntryType aType, const bool aHasOpacity,
-                      const RefPtr<TransformClipNode>& aTransform,
-                      const bool aIsMerged);
-  AssignedDisplayItem(AssignedDisplayItem&& aRhs) = default;
-
-  bool HasOpacity() const { return mHasOpacity; }
-
-  bool HasTransform() const { return mTransform; }
-
-  nsPaintedDisplayItem* mItem;
-  DisplayItemData* mDisplayItemData;
-
-  
-
-
-
-
-  UniquePtr<InactiveLayerData> mInactiveLayerData;
-  RefPtr<TransformClipNode> mTransform;
-
-  nsRect mContentRect;
-  LayerState mLayerState;
-  DisplayItemEntryType mType;
-
-  bool mReused;
-  bool mMerged;
-  bool mHasOpacity;
-  bool mHasPaintRect;
-};
+struct AssignedDisplayItem;
 
 struct ContainerLayerParameters {
   ContainerLayerParameters()
@@ -564,36 +546,6 @@ class FrameLayerBuilder : public layers::LayerUserData {
 
 
 
-
-
-  template <class T>
-  static T* GetDebugSingleOldLayerForFrame(nsIFrame* aFrame) {
-    SmallPointerArray<DisplayItemData>& array = aFrame->DisplayItemData();
-
-    Layer* layer = nullptr;
-    for (DisplayItemData* data : array) {
-      DisplayItemData::AssertDisplayItemData(data);
-      if (data->mLayer->GetType() != T::Type()) {
-        continue;
-      }
-      if (layer && layer != data->mLayer) {
-        
-        return nullptr;
-      }
-      layer = data->mLayer;
-    }
-
-    if (!layer) {
-      return nullptr;
-    }
-
-    return static_cast<T*>(layer);
-  }
-
-  
-
-
-
   static void DestroyDisplayItemDataFor(nsIFrame* aFrame);
 
   LayerManager* GetRetainingLayerManager() { return mRetainingManager; }
@@ -724,6 +676,10 @@ class FrameLayerBuilder : public layers::LayerUserData {
   bool CheckInLayerTreeCompressionMode();
 
   void ComputeGeometryChangeForItem(DisplayItemData* aData);
+
+  
+  template <class T>
+  static T* GetDebugSingleOldLayerForFrame(nsIFrame* aFrame);
 
  protected:
   
