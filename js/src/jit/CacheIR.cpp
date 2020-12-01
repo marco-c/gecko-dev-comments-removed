@@ -515,18 +515,16 @@ static NativeGetPropCacheability IsCacheableGetPropCall(JSObject* obj,
 }
 
 static bool CheckHasNoSuchOwnProperty(JSContext* cx, JSObject* obj, jsid id) {
-  if (obj->isNative()) {
-    
-    if (ClassMayResolveId(cx->names(), obj->getClass(), id, obj)) {
-      return false;
-    }
-    if (obj->as<NativeObject>().contains(cx, id)) {
-      return false;
-    }
-  } else {
+  if (!obj->isNative()) {
     return false;
   }
-
+  
+  if (ClassMayResolveId(cx->names(), obj->getClass(), id, obj)) {
+    return false;
+  }
+  if (obj->as<NativeObject>().contains(cx, id)) {
+    return false;
+  }
   return true;
 }
 
@@ -535,13 +533,6 @@ static bool CheckHasNoSuchProperty(JSContext* cx, JSObject* obj, jsid id) {
   do {
     if (!CheckHasNoSuchOwnProperty(cx, curObj, id)) {
       return false;
-    }
-
-    if (!curObj->isNative()) {
-      
-      if (curObj != obj) {
-        return false;
-      }
     }
 
     curObj = curObj->staticPrototype();
