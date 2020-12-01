@@ -38,7 +38,7 @@ class ProcessingInstruction : public CharacterData {
   void GetTarget(nsAString& aTarget) { aTarget = NodeName(); }
   
   
-  StyleSheet* GetSheetForBindings() const;
+  StyleSheet* GetSheet() const;
 
   NS_IMPL_FROMNODE_HELPER(ProcessingInstruction, IsProcessingInstruction())
 

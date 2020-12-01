@@ -69,14 +69,6 @@ LinkStyle::LinkStyle()
 
 LinkStyle::~LinkStyle() { LinkStyle::SetStyleSheet(nullptr); }
 
-StyleSheet* LinkStyle::GetSheetForBindings() const {
-  if (!StaticPrefs::dom_expose_incomplete_stylesheets() && mStyleSheet &&
-      !mStyleSheet->IsComplete()) {
-    return nullptr;
-  }
-  return mStyleSheet;
-}
-
 void LinkStyle::GetTitleAndMediaForElement(const Element& aSelf,
                                            nsString& aTitle, nsString& aMedia) {
   
@@ -214,14 +206,10 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     
     
     
-    
-    if (mStyleSheet->IsComplete() ||
-        StaticPrefs::dom_expose_incomplete_stylesheets()) {
-      if (aOldShadowRoot) {
-        aOldShadowRoot->RemoveStyleSheet(*mStyleSheet);
-      } else {
-        aOldDocument->RemoveStyleSheet(*mStyleSheet);
-      }
+    if (aOldShadowRoot) {
+      aOldShadowRoot->RemoveStyleSheet(*mStyleSheet);
+    } else {
+      aOldDocument->RemoveStyleSheet(*mStyleSheet);
     }
 
     SetStyleSheet(nullptr);
@@ -252,20 +240,17 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
   }
 
   if (mStyleSheet) {
-    if (mStyleSheet->IsComplete() ||
-        StaticPrefs::dom_expose_incomplete_stylesheets()) {
-      if (thisContent.IsInShadowTree()) {
-        ShadowRoot* containingShadow = thisContent.GetContainingShadow();
-        
-        if (MOZ_LIKELY(containingShadow)) {
-          containingShadow->RemoveStyleSheet(*mStyleSheet);
-        }
-      } else {
-        doc->RemoveStyleSheet(*mStyleSheet);
+    if (thisContent.IsInShadowTree()) {
+      ShadowRoot* containingShadow = thisContent.GetContainingShadow();
+      
+      if (MOZ_LIKELY(containingShadow)) {
+        containingShadow->RemoveStyleSheet(*mStyleSheet);
       }
+    } else {
+      doc->RemoveStyleSheet(*mStyleSheet);
     }
 
-    SetStyleSheet(nullptr);
+    LinkStyle::SetStyleSheet(nullptr);
   }
 
   if (!info) {

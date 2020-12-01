@@ -220,9 +220,6 @@ class LinkStyle {
 
   StyleSheet* GetSheet() const { return mStyleSheet; }
 
-  
-  StyleSheet* GetSheetForBindings() const;
-
  protected:
   LinkStyle();
   virtual ~LinkStyle();
