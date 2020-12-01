@@ -50,6 +50,8 @@ void LIRGeneratorX86Shared::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
   
   if (rhs->isConstant()) {
     ins->setOperand(1, useOrConstantAtStart(rhs));
+  } else if (Assembler::HasBMI2() && !mir->isRotate()) {
+    ins->setOperand(1, lhs != rhs ? useRegister(rhs) : useRegisterAtStart(rhs));
   } else {
     ins->setOperand(
         1, lhs != rhs ? useFixed(rhs, ecx) : useFixedAtStart(rhs, ecx));
@@ -78,6 +80,10 @@ void LIRGeneratorX86Shared::lowerForShiftInt64(
   
   if (rhs->isConstant()) {
     ins->setOperand(INT64_PIECES, useOrConstantAtStart(rhs));
+#ifdef JS_CODEGEN_X64
+  } else if (Assembler::HasBMI2() && !mir->isRotate()) {
+    ins->setOperand(INT64_PIECES, useRegister(rhs));
+#endif
   } else {
     
     
@@ -428,12 +434,19 @@ void LIRGeneratorX86Shared::lowerUrshD(MUrsh* mir) {
   MOZ_ASSERT(mir->type() == MIRType::Double);
 
 #ifdef JS_CODEGEN_X64
-  MOZ_ASSERT(ecx == rcx);
+  static_assert(ecx == rcx);
 #endif
 
+  
   LUse lhsUse = useRegisterAtStart(lhs);
-  LAllocation rhsAlloc =
-      rhs->isConstant() ? useOrConstant(rhs) : useFixed(rhs, ecx);
+  LAllocation rhsAlloc;
+  if (rhs->isConstant()) {
+    rhsAlloc = useOrConstant(rhs);
+  } else if (Assembler::HasBMI2()) {
+    rhsAlloc = useRegister(rhs);
+  } else {
+    rhsAlloc = useFixed(rhs, ecx);
+  }
 
   LUrshD* lir = new (alloc()) LUrshD(lhsUse, rhsAlloc, tempCopy(lhs, 0));
   define(lir, mir);
@@ -445,7 +458,9 @@ void LIRGeneratorX86Shared::lowerPowOfTwoI(MPow* mir) {
 
   
   
-  auto* lir = new (alloc()) LPowOfTwoI(base, useFixed(power, ecx));
+  LAllocation powerAlloc =
+      Assembler::HasBMI2() ? useRegister(power) : useFixed(power, ecx);
+  auto* lir = new (alloc()) LPowOfTwoI(base, powerAlloc);
   assignSnapshot(lir, mir->bailoutKind());
   define(lir, mir);
 }

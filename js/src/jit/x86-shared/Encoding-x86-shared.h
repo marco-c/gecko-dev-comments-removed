@@ -52,6 +52,8 @@ static const size_t MaxInstructionSize = 16;
 
 
 
+
+
 enum OneByteOpcodeID {
   OP_NOP_00 = 0x00,
   OP_ADD_EbGb = 0x00,
@@ -365,7 +367,10 @@ enum ThreeByteOpcodeID {
   OP3_PMAXUW_VdqWdq = 0x3E,
   OP3_PMAXUD_VdqWdq = 0x3F,
   OP3_PMULLD_VdqWdq = 0x40,
-  OP3_VBLENDVPS_VdqWdq = 0x4A
+  OP3_VBLENDVPS_VdqWdq = 0x4A,
+  OP3_SHLX_GyEyBy = 0xF7,
+  OP3_SARX_GyEyBy = 0xF7,
+  OP3_SHRX_GyEyBy = 0xF7,
 };
 
 
