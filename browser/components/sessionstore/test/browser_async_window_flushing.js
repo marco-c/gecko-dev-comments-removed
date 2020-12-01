@@ -38,12 +38,8 @@ add_task(async function test_add_interesting_window() {
     content.location = newPage;
   });
 
-  if (SpecialPowers.Services.appinfo.sessionHistoryInParent) {
-    let tab = newWin.gBrowser.selectedTab;
-    await promiseOnHistoryReplaceEntry(tab);
-  } else {
-    await promiseOnHistoryReplaceEntryInChild(browser);
-  }
+  await promiseOnHistoryReplaceEntryInChild(browser);
+
   
   
   browser.userTypedValue = null;
