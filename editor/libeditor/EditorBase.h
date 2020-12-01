@@ -12,7 +12,6 @@
 #include "mozilla/EventForwards.h"       
 #include "mozilla/Maybe.h"               
 #include "mozilla/OwningNonNull.h"       
-#include "mozilla/PresShell.h"           
 #include "mozilla/TypeInState.h"         
 #include "mozilla/RangeBoundary.h"       
 #include "mozilla/SelectionState.h"      
@@ -260,17 +259,8 @@ class EditorBase : public nsIEditor,
   }
 
   PresShell* GetPresShell() const;
-  nsPresContext* GetPresContext() const {
-    PresShell* presShell = GetPresShell();
-    return presShell ? presShell->GetPresContext() : nullptr;
-  }
-  already_AddRefed<nsCaret> GetCaret() const {
-    PresShell* presShell = GetPresShell();
-    if (NS_WARN_IF(!presShell)) {
-      return nullptr;
-    }
-    return presShell->GetCaret();
-  }
+  nsPresContext* GetPresContext() const;
+  already_AddRefed<nsCaret> GetCaret() const;
 
   already_AddRefed<nsIWidget> GetWidget();
 

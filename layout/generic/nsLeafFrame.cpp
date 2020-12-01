@@ -7,11 +7,20 @@
 
 
 #include "nsLeafFrame.h"
+
+#include "mozilla/PresShell.h"
 #include "nsPresContext.h"
 
 using namespace mozilla;
 
 nsLeafFrame::~nsLeafFrame() = default;
+
+
+void nsLeafFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                   const nsDisplayListSet& aLists) {
+  DO_GLOBAL_REFLOW_COUNT_DSP("nsLeafFrame");
+  DisplayBorderBackgroundOutline(aBuilder, aLists);
+}
 
 
 nscoord nsLeafFrame::GetMinISize(gfxContext* aRenderingContext) {

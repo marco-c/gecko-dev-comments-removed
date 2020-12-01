@@ -247,6 +247,19 @@ DisplayItemData::DisplayItemData(LayerManagerData* aParent, uint32_t aKey,
   }
 }
 
+void DisplayItemData::Destroy() {
+  
+  RefPtr<nsPresContext> presContext = mFrameList[0]->PresContext();
+
+  
+  this->~DisplayItemData();
+
+  
+  
+  presContext->PresShell()->FreeByObjectID(eArenaObjectID_DisplayItemData,
+                                           this);
+}
+
 void DisplayItemData::AddFrame(nsIFrame* aFrame) {
   MOZ_RELEASE_ASSERT(mLayer);
   MOZ_RELEASE_ASSERT(!mFrameList.Contains(aFrame));
@@ -442,6 +455,12 @@ DisplayItemData* DisplayItemData::AssertDisplayItemData(
                      sAliveDisplayItemDatas->Contains(aData));
   MOZ_RELEASE_ASSERT(aData->mLayer);
   return aData;
+}
+
+void* DisplayItemData::operator new(size_t sz, nsPresContext* aPresContext) {
+  
+  return aPresContext->PresShell()->AllocateByObjectID(
+      eArenaObjectID_DisplayItemData, sz);
 }
 
 

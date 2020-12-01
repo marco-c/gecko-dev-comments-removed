@@ -98,11 +98,7 @@ class DisplayItemData final {
 
   static DisplayItemData* AssertDisplayItemData(DisplayItemData* aData);
 
-  void* operator new(size_t sz, nsPresContext* aPresContext) {
-    
-    return aPresContext->PresShell()->AllocateByObjectID(
-        eArenaObjectID_DisplayItemData, sz);
-  }
+  void* operator new(size_t sz, nsPresContext* aPresContext);
 
   nsrefcnt AddRef() {
     if (mRefCnt == UINT32_MAX) {
@@ -141,18 +137,7 @@ class DisplayItemData final {
 
   ~DisplayItemData();
 
-  void Destroy() {
-    
-    RefPtr<nsPresContext> presContext = mFrameList[0]->PresContext();
-
-    
-    this->~DisplayItemData();
-
-    
-    
-    presContext->PresShell()->FreeByObjectID(eArenaObjectID_DisplayItemData,
-                                             this);
-  }
+  void Destroy();
 
   
 

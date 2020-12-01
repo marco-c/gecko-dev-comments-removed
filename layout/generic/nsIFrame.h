@@ -59,7 +59,6 @@
 #include "mozilla/RelativeTo.h"
 #include "mozilla/Result.h"
 #include "mozilla/SmallPointerArray.h"
-#include "mozilla/PresShell.h"
 #include "mozilla/ToString.h"
 #include "mozilla/WritingModes.h"
 #include "nsDirection.h"
@@ -4417,34 +4416,18 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  void AddPaintedPresShell(mozilla::PresShell* aPresShell) {
-    PaintedPresShellList()->AppendElement(do_GetWeakReference(aPresShell));
-  }
+  void AddPaintedPresShell(mozilla::PresShell* aPresShell);
 
   
 
 
 
-  void UpdatePaintCountForPaintedPresShells() {
-    for (nsWeakPtr& item : *PaintedPresShellList()) {
-      if (RefPtr<mozilla::PresShell> presShell = do_QueryReferent(item)) {
-        presShell->IncrementPaintCount();
-      }
-    }
-  }
+  void UpdatePaintCountForPaintedPresShells();
 
   
 
 
-  bool DidPaintPresShell(mozilla::PresShell* aPresShell) {
-    for (nsWeakPtr& item : *PaintedPresShellList()) {
-      RefPtr<mozilla::PresShell> presShell = do_QueryReferent(item);
-      if (presShell == aPresShell) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool DidPaintPresShell(mozilla::PresShell* aPresShell);
 
   
 
@@ -5480,13 +5463,7 @@ class MOZ_NONHEAP_CLASS AutoWeakFrame {
 
   operator nsIFrame*() { return mFrame; }
 
-  void Clear(mozilla::PresShell* aPresShell) {
-    if (aPresShell) {
-      aPresShell->RemoveAutoWeakFrame(this);
-    }
-    mFrame = nullptr;
-    mPrev = nullptr;
-  }
+  void Clear(mozilla::PresShell* aPresShell);
 
   bool IsAlive() const { return !!mFrame; }
 
@@ -5496,9 +5473,7 @@ class MOZ_NONHEAP_CLASS AutoWeakFrame {
 
   void SetPreviousWeakFrame(AutoWeakFrame* aPrev) { mPrev = aPrev; }
 
-  ~AutoWeakFrame() {
-    Clear(mFrame ? mFrame->PresContext()->GetPresShell() : nullptr);
-  }
+  ~AutoWeakFrame();
 
  private:
   
@@ -5552,12 +5527,7 @@ class MOZ_HEAP_CLASS WeakFrame {
   nsIFrame* operator->() { return mFrame; }
   operator nsIFrame*() { return mFrame; }
 
-  void Clear(mozilla::PresShell* aPresShell) {
-    if (aPresShell) {
-      aPresShell->RemoveWeakFrame(this);
-    }
-    mFrame = nullptr;
-  }
+  void Clear(mozilla::PresShell* aPresShell);
 
   bool IsAlive() const { return !!mFrame; }
   nsIFrame* GetFrame() const { return mFrame; }

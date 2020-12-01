@@ -131,7 +131,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  nsPresContext* PresContext() const { return mPresShell->GetPresContext(); }
+  nsPresContext* PresContext() const;
 
   
 
