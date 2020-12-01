@@ -51,14 +51,6 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
-  "PingCentre",
-  "resource:///modules/PingCentre.jsm"
-);
-XPCOMUtils.defineLazyGetter(this, "pingCentre", () => {
-  return new PingCentre({ topic: POCKET_TELEMETRY_TOPIC });
-});
-ChromeUtils.defineModuleGetter(
-  this,
   "ReaderMode",
   "resource://gre/modules/ReaderMode.jsm"
 );
@@ -67,23 +59,14 @@ ChromeUtils.defineModuleGetter(
   "pktApi",
   "chrome://pocket/content/pktApi.jsm"
 );
-XPCOMUtils.defineLazyServiceGetters(this, {
-  gUUIDGenerator: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
-});
-XPCOMUtils.defineLazyModuleGetters(this, {
-  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "pktTelemetry",
+  "chrome://pocket/content/pktTelemetry.jsm"
+);
 
-
-
-const STRUCTURED_INGESTION_NAMESPACE_AS = "activity-stream";
-const STRUCTURED_INGESTION_ENDPOINT_PREF =
-  "browser.newtabpage.activity-stream.telemetry.structuredIngestion.endpoint";
-
-const POCKET_TELEMETRY_TOPIC = "pocket";
 const POCKET_ONSAVERECS_PREF = "extensions.pocket.onSaveRecs";
 const POCKET_ONSAVERECS_LOCLES_PREF = "extensions.pocket.onSaveRecs.locales";
-const PREF_IMPRESSION_ID = "browser.newtabpage.activity-stream.impressionId";
 
 var pktUI = (function() {
   
@@ -111,73 +94,6 @@ var pktUI = (function() {
     );
   }
   initPrefs();
-
-  
-
-  const structuredIngestionEndpointBase = Services.prefs.getStringPref(
-    STRUCTURED_INGESTION_ENDPOINT_PREF,
-    ""
-  );
-
-  
-  
-  
-  function getOrCreateImpressionId() {
-    let impressionId = Services.prefs.getStringPref(PREF_IMPRESSION_ID, "");
-
-    if (!impressionId) {
-      impressionId = String(gUUIDGenerator.generateUUID());
-      Services.prefs.setStringPref(PREF_IMPRESSION_ID, impressionId);
-    }
-    return impressionId;
-  }
-
-  const impressionId = getOrCreateImpressionId();
-
-  
-
-
-
-
-
-  function _generateStructuredIngestionEndpoint() {
-    const uuid = gUUIDGenerator.generateUUID().toString();
-    
-    
-    const docID = uuid.slice(1, -1);
-    const extension = `${STRUCTURED_INGESTION_NAMESPACE_AS}/on-save-recs/1/${docID}`;
-    return `${structuredIngestionEndpointBase}/${extension}`;
-  }
-
-  
-
-
-
-
-
-  function createPingPayload(data) {
-    
-    
-    return {
-      ...data,
-      impression_id: impressionId,
-      profile_creation_date:
-        TelemetryEnvironment.currentEnvironment.profile.resetDate ||
-        TelemetryEnvironment.currentEnvironment.profile.creationDate,
-    };
-  }
-
-  
-
-
-
-
-  function sendStructuredIngestionEvent(eventObject) {
-    pingCentre.sendStructuredIngestionPing(
-      eventObject,
-      _generateStructuredIngestionEndpoint()
-    );
-  }
 
   
 
@@ -266,6 +182,19 @@ var pktUI = (function() {
         {
           width: inOverflowMenu ? overflowMenuWidth : 300,
           height: startheight,
+          onShow() {
+            
+            pktTelemetry.sendStructuredIngestionEvent(
+              pktTelemetry.createPingPayload({
+                events: [
+                  {
+                    action: "click",
+                    source: "save_button",
+                  },
+                ],
+              })
+            );
+          },
         }
       );
     });
@@ -358,6 +287,18 @@ var pktUI = (function() {
             }
 
             
+            pktTelemetry.sendStructuredIngestionEvent(
+              pktTelemetry.createPingPayload({
+                events: [
+                  {
+                    action: "click",
+                    source: "save_button",
+                  },
+                ],
+              })
+            );
+
+            
             var options = {
               success(data, request) {
                 var item = data.item;
@@ -386,7 +327,7 @@ var pktUI = (function() {
                       data
                     );
                     if (data?.recommendations?.[0]?.experiment) {
-                      const payload = createPingPayload({
+                      const payload = pktTelemetry.createPingPayload({
                         
                         
                         
@@ -395,10 +336,11 @@ var pktUI = (function() {
                         events: data.recommendations.map((item, index) => ({
                           action: "impression",
                           position: index,
+                          source: "on_save_recs",
                         })),
                       });
                       
-                      sendStructuredIngestionEvent(payload);
+                      pktTelemetry.sendStructuredIngestionEvent(payload);
                     }
                   },
                 });
@@ -546,6 +488,20 @@ var pktUI = (function() {
           return;
         }
 
+        
+        if (data.source) {
+          const payload = pktTelemetry.createPingPayload({
+            events: [
+              {
+                action: "click",
+                source: data.source,
+              },
+            ],
+          });
+          
+          pktTelemetry.sendStructuredIngestionEvent(payload);
+        }
+
         var url = data.url;
         openTabWithUrl(url, contentPrincipal, csp);
         pktUIMessaging.sendResponseMessageToPanel(
@@ -575,17 +531,18 @@ var pktUI = (function() {
         const { url, position, model } = data;
         
         if (model && (position || position === 0)) {
-          const payload = createPingPayload({
+          const payload = pktTelemetry.createPingPayload({
             model,
             events: [
               {
                 action: "click",
                 position,
+                source: "on_save_recs",
               },
             ],
           });
           
-          sendStructuredIngestionEvent(payload);
+          pktTelemetry.sendStructuredIngestionEvent(payload);
         }
 
         openTabWithUrl(url, contentPrincipal, csp);

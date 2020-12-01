@@ -5,6 +5,7 @@
 
 
 
+
 var PKT_SIGNUP_OVERLAY = function(options) {
   var myself = this;
   this.inited = false;
@@ -26,13 +27,45 @@ var PKT_SIGNUP_OVERLAY = function(options) {
   this.loggedOutVariant = "control";
   this.dictJSON = {};
   this.initCloseTabEvents = function() {
-    $(".btn,.pkt_ext_learnmore,.alreadyhave > a").click(function(e) {
+    function clickHelper(e, linkData) {
       e.preventDefault();
       thePKT_SIGNUP.sendMessage("openTabWithUrl", {
-        url: $(this).attr("href"),
+        url: linkData.url,
         activate: true,
+        source: linkData.source || "",
       });
       myself.closePopup();
+    }
+    $(".pkt_ext_learnmore").click(function(e) {
+      clickHelper(e, {
+        source: "learn_more",
+        url: $(this).attr("href"),
+      });
+    });
+    $(".signup-btn-firefox").click(function(e) {
+      clickHelper(e, {
+        source: "sign_up_1",
+        url: $(this).attr("href"),
+      });
+    });
+    $(".signup-btn-email").click(function(e) {
+      clickHelper(e, {
+        source: "sign_up_2",
+        url: $(this).attr("href"),
+      });
+    });
+    $(".pkt_ext_login").click(function(e) {
+      clickHelper(e, {
+        source: "log_in",
+        url: $(this).attr("href"),
+      });
+    });
+    
+    
+    $(".signup-btn-tryitnow").click(function(e) {
+      clickHelper(e, {
+        url: $(this).attr("href"),
+      });
     });
   };
   this.closePopup = function() {
