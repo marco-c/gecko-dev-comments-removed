@@ -10638,11 +10638,10 @@ void CodeGenerator::emitArrayPush(LInstruction* lir, Register obj,
 
   
   
-  if (!IsTypeInferenceEnabled()) {
-    
-    bailoutCmp32(Assembler::AboveOrEqual, length, Imm32(INT32_MAX),
-                 lir->snapshot());
-  }
+
+  
+  bailoutCmp32(Assembler::AboveOrEqual, length, Imm32(INT32_MAX),
+               lir->snapshot());
 
 #ifdef DEBUG
   
@@ -11203,23 +11202,6 @@ bool CodeGenerator::generate() {
 
   if (frameClass_ != FrameSizeClass::None()) {
     deoptTable_.emplace(gen->jitRuntime()->getBailoutTable(frameClass_));
-  }
-
-  if (IsTypeInferenceEnabled()) {
-    
-    Label skipPrologue;
-    masm.jump(&skipPrologue);
-
-    
-    
-    masm.flushBuffer();
-    setSkipArgCheckEntryOffset(masm.size());
-    masm.setFramePushed(0);
-    if (!generatePrologue()) {
-      return false;
-    }
-
-    masm.bind(&skipPrologue);
   }
 
   

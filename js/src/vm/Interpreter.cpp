@@ -337,8 +337,6 @@ JSFunction* js::MakeDefaultConstructor(JSContext* cx, HandleScript script,
   
   ctorScript->clearAllowRelazify();
 
-  MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
-
   DebugAPI::onNewScript(cx, ctorScript);
 
   return ctor;

@@ -1994,11 +1994,6 @@ bool js::SetPrototypeForClonedFunction(JSContext* cx, HandleFunction fun,
 }
 
 
-bool JSObject::changeToSingleton(JSContext* cx, HandleObject obj) {
-  MOZ_CRASH("TODO(no-TI): remove");
-}
-
-
 
 
 

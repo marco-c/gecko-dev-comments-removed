@@ -3514,10 +3514,7 @@ void LIRGenerator::visitArrayPush(MArrayPush* ins) {
       LArrayPushV* lir = new (alloc())
           LArrayPushV(object, useBox(ins->value()), temp(), spectreTemp);
       
-      
-      if (!IsTypeInferenceEnabled()) {
-        assignSnapshot(lir, ins->bailoutKind());
-      }
+      assignSnapshot(lir, ins->bailoutKind());
       define(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -3527,9 +3524,7 @@ void LIRGenerator::visitArrayPush(MArrayPush* ins) {
       const LAllocation value = useRegisterOrNonDoubleConstant(ins->value());
       LArrayPushT* lir =
           new (alloc()) LArrayPushT(object, value, temp(), spectreTemp);
-      if (!IsTypeInferenceEnabled()) {
-        assignSnapshot(lir, ins->bailoutKind());
-      }
+      assignSnapshot(lir, ins->bailoutKind());
       define(lir, ins);
       assignSafepoint(lir, ins);
       break;

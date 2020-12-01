@@ -300,9 +300,6 @@ class JSObject
   
   static inline bool setSingleton(JSContext* cx, js::HandleObject obj);
 
-  
-  static bool changeToSingleton(JSContext* cx, js::HandleObject obj);
-
   static inline js::ObjectGroup* getGroup(JSContext* cx, js::HandleObject obj);
 
 #ifdef DEBUG

@@ -932,17 +932,7 @@ bool ArrayPushDense(JSContext* cx, HandleArrayObject arr, HandleValue v,
     return result == DenseElementResult::Success;
   }
 
-  
-  
-  
-  
-  JSJitFrameIter frame(cx->activation()->asJit());
-  MOZ_ASSERT(frame.type() == FrameType::Exit);
-  ++frame;
-  IonScript* ionScript = frame.ionScript();
-
   JS::RootedValueArray<3> argv(cx);
-  AutoDetectInvalidation adi(cx, argv[0], ionScript);
   argv[0].setUndefined();
   argv[1].setObject(*arr);
   argv[2].set(v);
@@ -950,22 +940,9 @@ bool ArrayPushDense(JSContext* cx, HandleArrayObject arr, HandleValue v,
     return false;
   }
 
-  if (argv[0].isInt32()) {
-    *length = argv[0].toInt32();
-    return true;
-  }
-
   
   
-  MOZ_ASSERT(IsTypeInferenceEnabled());
-
-  
-  
-  
-  
-  MOZ_ASSERT(adi.shouldSetReturnOverride());
-  MOZ_ASSERT(argv[0].toDouble() == double(INT32_MAX) + 1);
-  *length = 0;
+  *length = argv[0].toInt32();
   return true;
 }
 

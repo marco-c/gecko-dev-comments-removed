@@ -1083,29 +1083,6 @@ bool BaselineCacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
   BaseObjectElementIndex element(scratch, index);
   masm.branchTestMagic(Assembler::Equal, element, failure->label());
 
-  if (IsTypeInferenceEnabled()) {
-    
-    
-    Label noSpecialHandling;
-    Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
-    masm.branchTest32(Assembler::Zero, elementsFlags,
-                      Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS |
-                            ObjectElements::COPY_ON_WRITE),
-                      &noSpecialHandling);
-
-    
-    masm.branchTest32(Assembler::NonZero, elementsFlags,
-                      Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
-
-    
-    
-    
-    
-    masm.convertInt32ValueToDouble(val);
-
-    masm.bind(&noSpecialHandling);
-  }
-
   
   
   LiveGeneralRegisterSet saveRegs;
@@ -1184,14 +1161,6 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
   Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
   Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
 
-  if (IsTypeInferenceEnabled()) {
-    
-    
-    
-    masm.branchTest32(Assembler::NonZero, elementsFlags,
-                      Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
-  }
-
   
   
   Register spectreTemp = InvalidReg;
@@ -1241,22 +1210,6 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
   } else {
     
     masm.spectreBoundsCheck32(index, initLength, spectreTemp, failure->label());
-  }
-
-  if (IsTypeInferenceEnabled()) {
-    
-    Label noConversion;
-    masm.branchTest32(Assembler::Zero, elementsFlags,
-                      Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS),
-                      &noConversion);
-
-    
-    
-    
-    
-    masm.convertInt32ValueToDouble(val);
-
-    masm.bind(&noConversion);
   }
 
   
@@ -1331,14 +1284,6 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
   Address elementsLength(scratch, ObjectElements::offsetOfLength());
   Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
 
-  if (IsTypeInferenceEnabled()) {
-    
-    
-    
-    masm.branchTest32(Assembler::NonZero, elementsFlags,
-                      Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
-  }
-
   
   masm.load32(elementsInitLength, scratchLength);
   masm.branch32(Assembler::NotEqual, elementsLength, scratchLength,
@@ -1372,22 +1317,6 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
   masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
 
   masm.bind(&capacityOk);
-
-  if (IsTypeInferenceEnabled()) {
-    
-    Label noConversion;
-    masm.branchTest32(Assembler::Zero, elementsFlags,
-                      Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS),
-                      &noConversion);
-
-    
-    
-    
-    
-    masm.convertInt32ValueToDouble(val);
-
-    masm.bind(&noConversion);
-  }
 
   
   

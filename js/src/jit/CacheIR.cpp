@@ -1088,11 +1088,7 @@ void GetPropIRGenerator::attachMegamorphicNativeSlot(ObjOperandId objId,
   MOZ_ASSERT(mode_ == ICState::Mode::Megamorphic);
 
   
-  
-  
-  if (!IsTypeInferenceEnabled()) {
-    handleMissing = true;
-  }
+  handleMissing = true;
 
   if (cacheKind_ == CacheKind::GetProp ||
       cacheKind_ == CacheKind::GetPropSuper) {
@@ -4456,11 +4452,6 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
 
   ObjOperandId objId = writer.guardToObject(objValId);
   maybeEmitIdGuard(id);
-
-  if (IsTypeInferenceEnabled()) {
-    
-    writer.guardGroup(objId, oldGroup);
-  }
 
   
   

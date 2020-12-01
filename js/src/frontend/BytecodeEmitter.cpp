@@ -128,12 +128,7 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
       perScriptData_(cx, compilationInfo),
       compilationInfo(compilationInfo),
       compilationState(compilationState),
-      emitterMode(emitterMode) {
-  if (IsTypeInferenceEnabled() && sc->isFunctionBox()) {
-    
-    bytecodeSection().setNumICEntries(sc->asFunctionBox()->nargs() + 1);
-  }
-}
+      emitterMode(emitterMode) {}
 
 BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
                                  BCEParserHandle* handle, SharedContext* sc,
@@ -9733,22 +9728,9 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
 
 bool BytecodeEmitter::emitArrayLiteral(ListNode* array) {
   bool isSingleton = checkSingletonContext();
-  if (!array->hasNonConstInitializer() && array->head()) {
-    
-    
-    
-    
-    
-    
-    
-    static const size_t MinElementsForCopyOnWrite = 5;
-    if (IsTypeInferenceEnabled() &&
-        emitterMode != BytecodeEmitter::SelfHosting &&
-        (array->count() >= MinElementsForCopyOnWrite || isSingleton) &&
-        isArrayObjLiteralCompatible(array->head())) {
-      return emitObjLiteralArray(array->head(),  !isSingleton);
-    }
-  }
+
+  
+  
 
   return emitArray(array->head(), array->count(),
                     isSingleton);

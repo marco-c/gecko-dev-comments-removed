@@ -146,9 +146,6 @@ inline bool IsBaselineInterpreterEnabled() {
 }
 
 }  
-
-inline bool IsTypeInferenceEnabled() { return !jit::JitOptions.warpBuilder; }
-
 }  
 
 #endif 
