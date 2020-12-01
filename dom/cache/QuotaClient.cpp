@@ -377,57 +377,58 @@ Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOriginInternal(
     PersistenceType aPersistenceType, const GroupAndOrigin& aGroupAndOrigin,
     const AtomicBool& aCanceled, const bool aInitializing) {
   AssertIsOnIOThread();
-#ifndef NIGHTLY_BUILD
-  Unused << aInitializing;
-#endif
 
-  QuotaManager* qm = QuotaManager::Get();
+  QuotaManager* const qm = QuotaManager::Get();
   MOZ_DIAGNOSTIC_ASSERT(qm);
 
-  CACHE_TRY_UNWRAP(auto dir, qm->GetDirectoryForOrigin(
-                                 aPersistenceType, aGroupAndOrigin.mOrigin));
+  CACHE_TRY_INSPECT(
+      const auto& dir,
+      qm->GetDirectoryForOrigin(aPersistenceType, aGroupAndOrigin.mOrigin));
 
-  nsresult rv =
-      dir->Append(NS_LITERAL_STRING_FROM_CSTRING(DOMCACHE_DIRECTORY_NAME));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaExternalError,
-                                 Cache_Append);
-    return Err(rv);
-  }
+  CACHE_TRY(
+      dir->Append(NS_LITERAL_STRING_FROM_CSTRING(DOMCACHE_DIRECTORY_NAME)));
 
-  bool useCachedValue = false;
+  CACHE_TRY_INSPECT(
+      const auto& maybePaddingSize,
+      ([this, &dir, aInitializing,
+        &aGroupAndOrigin]() -> Result<Maybe<int64_t>, nsresult> {
+        
+        
+        MutexAutoLock lock(mDirPaddingFileMutex);
 
-  int64_t paddingSize = 0;
-  {
-    
-    
-    MutexAutoLock lock(mDirPaddingFileMutex);
+        if (!mozilla::dom::cache::DirectoryPaddingFileExists(
+                dir, DirPaddingFile::TMP_FILE)) {
+          const auto& maybePaddingSize = [&dir]() -> Maybe<int64_t> {
+            CACHE_TRY_RETURN(
+                ToResultInvoke<int64_t>(
+                    mozilla::dom::cache::LockedDirectoryPaddingGet, dir)
+                    .map(Some<int64_t>),
+                Nothing{});
+          }();
 
-    if (mozilla::dom::cache::DirectoryPaddingFileExists(
-            dir, DirPaddingFile::TMP_FILE) ||
-        NS_WARN_IF(NS_FAILED(mozilla::dom::cache::LockedDirectoryPaddingGet(
-            dir, &paddingSize)))) {
-      if (aInitializing) {
-        rv = LockedGetPaddingSizeFromDB(dir, aGroupAndOrigin, &paddingSize);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaInternalError,
-                                       Cache_GetPaddingSize);
-          return Err(rv);
+          if (maybePaddingSize) {
+            return maybePaddingSize;
+          }
         }
-      } else {
+
+        if (aInitializing) {
+          CACHE_TRY_RETURN(ToResultInvoke<int64_t>(LockedGetPaddingSizeFromDB,
+                                                   dir, aGroupAndOrigin)
+                               .map(Some<int64_t>));
+        }
+
+        
         
         
         
         
 
-        useCachedValue = true;
-      }
-    }
-  }
+        return Maybe<int64_t>{};
+      }()));
 
   UsageInfo usageInfo;
 
-  if (useCachedValue) {
+  if (!maybePaddingSize) {
     uint64_t usage;
     if (qm->GetUsageForClient(PERSISTENCE_TYPE_DEFAULT, aGroupAndOrigin,
                               Client::DOMCACHE, usage)) {
@@ -439,90 +440,74 @@ Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOriginInternal(
 
   
   
-  usageInfo += DatabaseUsageType(Some(paddingSize));
+  usageInfo += DatabaseUsageType(maybePaddingSize);
 
-  nsCOMPtr<nsIDirectoryEnumerator> entries;
-  rv = dir->GetDirectoryEntries(getter_AddRefs(entries));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaExternalError,
-                                 Cache_GetDirEntries);
-    return Err(rv);
-  }
+  
+  
+  CACHE_TRY_INSPECT(const auto& entries,
+                    MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<nsIDirectoryEnumerator>,
+                                               dir, GetDirectoryEntries));
 
-  nsCOMPtr<nsIFile> file;
-  while (NS_SUCCEEDED(rv = entries->GetNextFile(getter_AddRefs(file))) &&
-         file && !aCanceled) {
-    if (NS_WARN_IF(QuotaManager::IsShuttingDown())) {
-      return Err(NS_ERROR_ABORT);
-    }
-
-    nsAutoString leafName;
-    rv = file->GetLeafName(leafName);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaExternalError,
-                                   Cache_GetLeafName);
-      return Err(rv);
-    }
-
-    bool isDir;
-    rv = file->IsDirectory(&isDir);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaExternalError,
-                                   Cache_IsDirectory);
-      return Err(rv);
-    }
-
-    if (isDir) {
-      if (leafName.EqualsLiteral("morgue")) {
-        rv = GetBodyUsage(file, aCanceled, &usageInfo, aInitializing);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          if (rv != NS_ERROR_ABORT) {
-            REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaExternalError,
-                                         Cache_GetBodyUsage);
-          }
-          return Err(rv);
+  CACHE_TRY(CollectEach(
+      [&entries, &aCanceled]() -> Result<nsCOMPtr<nsIFile>, nsresult> {
+        if (aCanceled) {
+          return nsCOMPtr<nsIFile>{};
         }
-      } else {
-        NS_WARNING("Unknown Cache directory found!");
-      }
 
-      continue;
-    }
+        CACHE_TRY_RETURN(MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<nsIFile>, entries,
+                                                    GetNextFile));
+      },
+      [&aCanceled, &usageInfo,
+       aInitializing](const nsCOMPtr<nsIFile>& file) -> Result<Ok, nsresult> {
+        CACHE_TRY(OkIf(!QuotaManager::IsShuttingDown()), Err(NS_ERROR_ABORT));
 
-    
-    if (leafName.EqualsLiteral("caches.sqlite-journal") ||
-        leafName.EqualsLiteral("caches.sqlite-shm") ||
-        leafName.Find("caches.sqlite-mj"_ns, false, 0, 0) == 0 ||
-        leafName.EqualsLiteral("context_open.marker")) {
-      continue;
-    }
+        CACHE_TRY_INSPECT(
+            const auto& leafName,
+            MOZ_TO_RESULT_INVOKE_TYPED(nsAutoString, file, GetLeafName));
 
-    if (leafName.Equals(kCachesSQLiteFilename) ||
-        leafName.EqualsLiteral("caches.sqlite-wal")) {
-      int64_t fileSize;
-      rv = file->GetFileSize(&fileSize);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaExternalError,
-                                     Cache_GetFileSize);
-        return Err(rv);
-      }
-      MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
+        CACHE_TRY_INSPECT(const bool& isDir,
+                          MOZ_TO_RESULT_INVOKE(file, IsDirectory));
 
-      usageInfo += DatabaseUsageType(Some(fileSize));
-      continue;
-    }
+        if (isDir) {
+          if (leafName.EqualsLiteral("morgue")) {
+            
+            
+            CACHE_TRY(GetBodyUsage(file, aCanceled, &usageInfo, aInitializing));
+          } else {
+            NS_WARNING("Unknown Cache directory found!");
+          }
 
-    
-    if (leafName.EqualsLiteral(PADDING_FILE_NAME) ||
-        leafName.EqualsLiteral(PADDING_TMP_FILE_NAME)) {
-      continue;
-    }
+          return Ok{};
+        }
 
-    NS_WARNING("Unknown Cache file found!");
-  }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
-  }
+        
+        if (leafName.EqualsLiteral("caches.sqlite-journal") ||
+            leafName.EqualsLiteral("caches.sqlite-shm") ||
+            leafName.Find("caches.sqlite-mj"_ns, false, 0, 0) == 0 ||
+            leafName.EqualsLiteral("context_open.marker")) {
+          return Ok{};
+        }
+
+        if (leafName.Equals(kCachesSQLiteFilename) ||
+            leafName.EqualsLiteral("caches.sqlite-wal")) {
+          CACHE_TRY_INSPECT(const int64_t& fileSize,
+                            MOZ_TO_RESULT_INVOKE(file, GetFileSize));
+          MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
+
+          usageInfo += DatabaseUsageType(Some(fileSize));
+          return Ok{};
+        }
+
+        
+        if (leafName.EqualsLiteral(PADDING_FILE_NAME) ||
+            leafName.EqualsLiteral(PADDING_TMP_FILE_NAME)) {
+          return Ok{};
+        }
+
+        NS_WARNING("Unknown Cache file found!");
+
+        return Ok{};
+      }));
 
   return usageInfo;
 }
