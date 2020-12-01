@@ -992,26 +992,37 @@ public:
   }
 
   enum {
+    
+    
     NoCrossref = 1 << 0,
+    
+    
     OperatorToken = 1 << 1,
+    
+    
+    
+    
+    LocRangeEndValid = 1 << 2
   };
 
   
   
   void visitIdentifier(const char *Kind, const char *SyntaxKind,
-                       llvm::StringRef QualName, SourceLocation Loc,
+                       llvm::StringRef QualName, SourceRange LocRange,
                        const std::vector<std::string> &Symbols,
                        Context TokenContext = Context(), int Flags = 0,
                        SourceRange PeekRange = SourceRange(),
                        SourceRange NestingRange = SourceRange()) {
+    SourceLocation Loc = LocRange.getBegin();
     if (!shouldVisit(Loc)) {
       return;
     }
 
     
     unsigned StartOffset = SM.getFileOffset(Loc);
-    unsigned EndOffset =
-        StartOffset + Lexer::MeasureTokenLength(Loc, SM, CI.getLangOpts());
+    unsigned EndOffset = (Flags & LocRangeEndValid)
+        ? SM.getFileOffset(LocRange.getEnd())
+        : StartOffset + Lexer::MeasureTokenLength(Loc, SM, CI.getLangOpts());
 
     std::string LocStr = locationToString(Loc, EndOffset - StartOffset);
     std::string RangeStr = locationToString(Loc, EndOffset - StartOffset);
@@ -1125,7 +1136,7 @@ public:
                        SourceRange PeekRange = SourceRange(),
                        SourceRange NestingRange = SourceRange()) {
     std::vector<std::string> V = {Symbol};
-    visitIdentifier(Kind, SyntaxKind, QualName, Loc, V, TokenContext, Flags,
+    visitIdentifier(Kind, SyntaxKind, QualName, SourceRange(Loc), V, TokenContext, Flags,
                     PeekRange, NestingRange);
   }
 
@@ -1403,7 +1414,7 @@ public:
       }
     }
 
-    visitIdentifier(Kind, PrettyKind, getQualifiedName(D), Loc, Symbols,
+    visitIdentifier(Kind, PrettyKind, getQualifiedName(D), SourceRange(Loc), Symbols,
                     getContext(D), Flags, PeekRange, NestingRange);
 
     return true;
