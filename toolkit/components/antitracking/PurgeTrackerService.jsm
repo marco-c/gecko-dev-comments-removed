@@ -280,6 +280,40 @@ PurgeTrackerService.prototype = {
       false
     );
 
+    let sanitizeOnShutdownEnabled = Services.prefs.getBoolPref(
+      "privacy.sanitize.sanitizeOnShutdown",
+      false
+    );
+
+    let clearHistoryOnShutdown = Services.prefs.getBoolPref(
+      "privacy.clearOnShutdown.history",
+      false
+    );
+
+    let clearSiteSettingsOnShutdown = Services.prefs.getBoolPref(
+      "privacy.clearOnShutdown.siteSettings",
+      false
+    );
+
+    
+    
+    
+    if (
+      sanitizeOnShutdownEnabled &&
+      (clearHistoryOnShutdown || clearSiteSettingsOnShutdown)
+    ) {
+      logger.log(
+        `
+        Purging canceled because interaction permissions are cleared on shutdown.
+        sanitizeOnShutdownEnabled: ${sanitizeOnShutdownEnabled},
+        clearHistoryOnShutdown: ${clearHistoryOnShutdown},
+        clearSiteSettingsOnShutdown: ${clearSiteSettingsOnShutdown},
+        `
+      );
+      this.resetPurgeList();
+      return;
+    }
+
     
     
     
