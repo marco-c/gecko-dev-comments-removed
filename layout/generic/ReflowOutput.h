@@ -170,79 +170,69 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
 class ReflowOutput {
  public:
   explicit ReflowOutput(mozilla::WritingMode aWritingMode)
-      : mISize(0),
-        mBSize(0),
-        mBlockStartAscent(ASK_FOR_BASELINE),
-        mWritingMode(aWritingMode) {}
+      : mSize(aWritingMode), mWritingMode(aWritingMode) {}
 
+  
   explicit ReflowOutput(const ReflowInput& aReflowInput);
 
-  
-  
-  
-  
   nscoord ISize(mozilla::WritingMode aWritingMode) const {
-    NS_ASSERTION(!aWritingMode.IsOrthogonalTo(mWritingMode),
-                 "mismatched writing mode");
-    return mISize;
+    return mSize.ISize(aWritingMode);
   }
   nscoord BSize(mozilla::WritingMode aWritingMode) const {
-    NS_ASSERTION(!aWritingMode.IsOrthogonalTo(mWritingMode),
-                 "mismatched writing mode");
-    return mBSize;
+    return mSize.BSize(aWritingMode);
   }
   mozilla::LogicalSize Size(mozilla::WritingMode aWritingMode) const {
-    NS_ASSERTION(!aWritingMode.IsOrthogonalTo(mWritingMode),
-                 "mismatched writing mode");
-    return mozilla::LogicalSize(aWritingMode, mISize, mBSize);
+    return mSize.ConvertTo(aWritingMode, mWritingMode);
   }
 
   nscoord& ISize(mozilla::WritingMode aWritingMode) {
-    NS_ASSERTION(!aWritingMode.IsOrthogonalTo(mWritingMode),
-                 "mismatched writing mode");
-    return mISize;
+    return mSize.ISize(aWritingMode);
   }
   nscoord& BSize(mozilla::WritingMode aWritingMode) {
-    NS_ASSERTION(!aWritingMode.IsOrthogonalTo(mWritingMode),
-                 "mismatched writing mode");
-    return mBSize;
+    return mSize.BSize(aWritingMode);
   }
 
   
   
   void SetSize(mozilla::WritingMode aWM, mozilla::LogicalSize aSize) {
-    mozilla::LogicalSize convertedSize = aSize.ConvertTo(mWritingMode, aWM);
-    mBSize = convertedSize.BSize(mWritingMode);
-    mISize = convertedSize.ISize(mWritingMode);
+    mSize = aSize.ConvertTo(mWritingMode, aWM);
   }
 
   
-  void ClearSize() { mISize = mBSize = 0; }
+  void ClearSize() { mSize.SizeTo(mWritingMode, 0, 0); }
 
   
   
   
   
-  nscoord Width() const { return mWritingMode.IsVertical() ? mBSize : mISize; }
-  nscoord Height() const { return mWritingMode.IsVertical() ? mISize : mBSize; }
-
-  
-  
-  nscoord BlockStartAscent() const { return mBlockStartAscent; }
-
-  nscoord& Width() { return mWritingMode.IsVertical() ? mBSize : mISize; }
-  nscoord& Height() { return mWritingMode.IsVertical() ? mISize : mBSize; }
-
-  nsSize PhysicalSize() const {
-    return Size(mWritingMode).GetPhysicalSize(mWritingMode);
+  nscoord Width() const { return mSize.Width(mWritingMode); }
+  nscoord Height() const { return mSize.Height(mWritingMode); }
+  nscoord& Width() {
+    return mWritingMode.IsVertical() ? mSize.BSize(mWritingMode)
+                                     : mSize.ISize(mWritingMode);
+  }
+  nscoord& Height() {
+    return mWritingMode.IsVertical() ? mSize.ISize(mWritingMode)
+                                     : mSize.BSize(mWritingMode);
   }
 
-  void SetBlockStartAscent(nscoord aAscent) { mBlockStartAscent = aAscent; }
+  nsSize PhysicalSize() const { return mSize.GetPhysicalSize(mWritingMode); }
 
+  
+  
   enum { ASK_FOR_BASELINE = nscoord_MAX };
+  nscoord BlockStartAscent() const { return mBlockStartAscent; }
+  void SetBlockStartAscent(nscoord aAscent) { mBlockStartAscent = aAscent; }
 
   
   nsBoundingMetrics mBoundingMetrics;  
@@ -277,9 +267,12 @@ class ReflowOutput {
   mozilla::WritingMode GetWritingMode() const { return mWritingMode; }
 
  private:
-  nscoord mISize, mBSize;     
-  nscoord mBlockStartAscent;  
-                              
+  
+  LogicalSize mSize;
+
+  
+  nscoord mBlockStartAscent = ASK_FOR_BASELINE;
+
   mozilla::WritingMode mWritingMode;
 };
 
