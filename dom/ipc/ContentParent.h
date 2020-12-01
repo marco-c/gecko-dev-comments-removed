@@ -1451,6 +1451,7 @@ class ContentParent final
   bool mIsAPreallocBlocker;  
 
   nsCString mRemoteType;
+  nsCOMPtr<nsIPrincipal> mRemoteTypeIsolationPrincipal;
 
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
