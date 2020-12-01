@@ -272,15 +272,15 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:numDynamicSlots\n"
 
          
+         "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
+
+         
          "race:CacheFileMetadata::SetHash\n"
          "race:CacheFileMetadata::OnDataWritten\n"
 
          
          "race:_dl_deallocate_tls\n"
          "race:__libc_memalign\n"
-
-         
-         "race:ScriptPreloader::OffThreadDecodeCallback\n"
 
          
          "race:setNeedsIncrementalBarrier\n"
