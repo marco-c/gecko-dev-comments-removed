@@ -42,7 +42,7 @@ impl Functional {
         
         let _fpc = FloatingPointContext::new();
 
-        ((sample + 1) as f64).log(self.exponent) as u64
+        ((sample.saturating_add(1)) as f64).log(self.exponent) as u64
     }
 
     

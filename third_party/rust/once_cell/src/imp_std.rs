@@ -18,10 +18,6 @@ pub(crate) struct OnceCell<T> {
     
     state_and_queue: AtomicUsize,
     _marker: PhantomData<*mut Waiter>,
-    
-    
-    
-    
     value: UnsafeCell<Option<T>>,
 }
 
@@ -257,7 +253,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] 
     fn stampede_once() {
         static O: OnceCell<()> = OnceCell::new();
         static mut RUN: bool = false;
@@ -315,7 +310,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] 
     fn wait_for_force_to_finish() {
         static O: OnceCell<()> = OnceCell::new();
 

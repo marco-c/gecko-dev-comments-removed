@@ -231,7 +231,55 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(feature = "unstable")]
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "parking_lot")]
@@ -994,3 +1042,6 @@ pub mod sync {
     
     fn _dummy() {}
 }
+
+#[cfg(feature = "unstable")]
+pub mod race;

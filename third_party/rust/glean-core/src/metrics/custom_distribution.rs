@@ -41,6 +41,10 @@ impl MetricType for CustomDistributionMetric {
     }
 }
 
+
+
+
+
 impl CustomDistributionMetric {
     
     pub fn new(
@@ -75,6 +79,10 @@ impl CustomDistributionMetric {
     
     
     pub fn accumulate_samples_signed(&self, glean: &Glean, samples: Vec<i64>) {
+        if !self.should_record(glean) {
+            return;
+        }
+
         let mut num_negative_samples = 0;
 
         

@@ -40,13 +40,16 @@ impl MetricType for DatetimeMetric {
     }
 }
 
+
+
+
+
 impl DatetimeMetric {
     
     pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
         Self { meta, time_unit }
     }
 
-    
     
     
     
@@ -73,6 +76,10 @@ impl DatetimeMetric {
         nano: u32,
         offset_seconds: i32,
     ) {
+        if !self.should_record(glean) {
+            return;
+        }
+
         let timezone_offset = FixedOffset::east_opt(offset_seconds);
         if timezone_offset.is_none() {
             let msg = format!("Invalid timezone offset {}. Not recording.", offset_seconds);
@@ -98,7 +105,6 @@ impl DatetimeMetric {
         }
     }
 
-    
     
     
     

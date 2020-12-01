@@ -51,6 +51,10 @@ impl MetricType for MemoryDistributionMetric {
     }
 }
 
+
+
+
+
 impl MemoryDistributionMetric {
     
     pub fn new(meta: CommonMetricData, memory_unit: MemoryUnit) -> Self {
@@ -120,6 +124,10 @@ impl MemoryDistributionMetric {
     
     
     pub fn accumulate_samples_signed(&self, glean: &Glean, samples: Vec<i64>) {
+        if !self.should_record(glean) {
+            return;
+        }
+
         let mut num_negative_samples = 0;
         let mut num_too_log_samples = 0;
 

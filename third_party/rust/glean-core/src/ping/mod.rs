@@ -181,11 +181,32 @@ impl PingMaker {
     
     
     fn get_metadata(&self, glean: &Glean) -> Option<JsonValue> {
+        let mut headers_map = json!({});
+
         if let Some(debug_view_tag) = glean.debug_view_tag() {
+            headers_map
+                .as_object_mut()
+                .unwrap() 
+                .insert(
+                    "X-Debug-ID".to_string(),
+                    JsonValue::String(debug_view_tag.to_string()),
+                );
+        }
+
+        if let Some(source_tags) = glean.source_tags() {
+            headers_map
+                .as_object_mut()
+                .unwrap() 
+                .insert(
+                    "X-Source-Tags".to_string(),
+                    JsonValue::String(source_tags.join(",")),
+                );
+        }
+
+        
+        if !headers_map.as_object().unwrap().is_empty() {
             Some(json!({
-                "headers": {
-                    "X-Debug-ID": debug_view_tag,
-                },
+                "headers": headers_map,
             }))
         } else {
             None
@@ -241,7 +262,6 @@ impl PingMaker {
         Some(json)
     }
 
-    
     
     
     
