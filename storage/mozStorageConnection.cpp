@@ -673,9 +673,9 @@ nsresult Connection::initialize(const nsACString& aStorageKey,
 
   
 
-  const nsAutoCString path = mName.IsEmpty()
-                                 ? nsAutoCString(":memory:"_ns)
-                                 : "file:"_ns + mName + "?mode=memory"_ns;
+  const nsAutoCString path =
+      mName.IsEmpty() ? nsAutoCString(":memory:"_ns)
+                      : "file:"_ns + mName + "?mode=memory&cache=shared"_ns;
 
   mTelemetryFilename.AssignLiteral(":memory:");
 
