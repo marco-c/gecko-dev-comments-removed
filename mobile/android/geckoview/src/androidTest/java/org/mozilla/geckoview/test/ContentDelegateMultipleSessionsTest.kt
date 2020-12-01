@@ -119,6 +119,9 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
 
     @IgnoreCrash
     @Test fun crashContentMultipleSessions() {
+        
+        assumeThat(sessionRule.env.isFission, equalTo(false))
+
         val newSession = getSecondGeckoSession()
 
         

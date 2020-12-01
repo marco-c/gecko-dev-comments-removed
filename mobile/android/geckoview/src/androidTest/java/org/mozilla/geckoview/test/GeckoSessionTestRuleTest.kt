@@ -172,6 +172,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun waitUntilCalled_anyInterfaceMethod() {
+        
+        assumeThat(sessionRule.env.isFission, equalTo(false))
         sessionRule.session.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitUntilCalled(GeckoSession.ProgressDelegate::class)
 
@@ -254,6 +256,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun waitUntilCalled_anyObjectMethod() {
+        
+        assumeThat(sessionRule.env.isFission, equalTo(false))
         sessionRule.session.loadTestPath(HELLO_HTML_PATH)
 
         var counter = 0
@@ -400,6 +404,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun forCallbacksDuringWait_anyMethod() {
+        
+        assumeThat(sessionRule.env.isFission, equalTo(false))
         sessionRule.session.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -965,6 +971,9 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun createOpenSession_canInterleaveOtherCalls() {
+        
+        assumeThat(sessionRule.env.isFission, equalTo(false))
+
         sessionRule.session.loadTestPath(HELLO_HTML_PATH)
 
         val newSession = sessionRule.createOpenSession()
@@ -1050,6 +1059,9 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun waitForPageStops_acrossSessionCreation() {
+        
+        assumeThat(sessionRule.env.isFission, equalTo(false))
+
         sessionRule.session.loadTestPath(HELLO_HTML_PATH)
         val session = sessionRule.createOpenSession()
         sessionRule.session.reload()
@@ -1637,6 +1649,9 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
     @IgnoreCrash
     @Test fun contentCrashIgnored() {
+        
+        assumeThat(sessionRule.env.isFission, equalTo(false))
+
         mainSession.loadUri(CONTENT_CRASH_URL)
         mainSession.waitUntilCalled(object : Callbacks.ContentDelegate {
             @AssertCalled(count = 1)
