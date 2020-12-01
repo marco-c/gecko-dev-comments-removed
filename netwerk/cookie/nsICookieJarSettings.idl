@@ -5,6 +5,7 @@
 
 
 #include "nsISupports.idl"
+#include "nsISerializable.idl"
 
 interface nsIPrincipal;
 
@@ -13,7 +14,7 @@ interface nsIPrincipal;
 
 
 [scriptable, builtinclass, uuid(3ec40331-7cf0-4b71-ba2a-2265aab8f6bc)]
-interface nsICookieJarSettings : nsISupports
+interface nsICookieJarSettings : nsISerializable
 {
   
 
