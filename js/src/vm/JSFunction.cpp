@@ -1609,6 +1609,8 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
     }
 
     if (ss->hasEncoder()) {
+      
+      
       bool useStencilXDR = !js::UseOffThreadParseGlobal();
       if (useStencilXDR) {
         if (!ss->xdrEncodeFunctionStencil(cx, compilationInfo.get().stencil)) {

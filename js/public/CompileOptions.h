@@ -134,6 +134,9 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool privateClassMethods = false;
 
   
+  bool useStencilXDR = false;
+
+  
   
   
   bool useOffThreadParseGlobal = true;

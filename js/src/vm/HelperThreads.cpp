@@ -778,8 +778,7 @@ void ScriptDecodeTask::parse(JSContext* cx) {
   RootedScript resultScript(cx);
   Rooted<ScriptSourceObject*> sourceObject(cx);
 
-  bool useStencilXDR = !options.useOffThreadParseGlobal;
-  if (useStencilXDR) {
+  if (options.useStencilXDR) {
     
     Rooted<UniquePtr<frontend::CompilationInfoVector>> compilationInfos(
         cx, js_new<frontend::CompilationInfoVector>(cx, options));
@@ -1218,6 +1217,9 @@ bool js::StartOffThreadDecodeScript(JSContext* cx,
     return false;
   }
 
+  
+  MOZ_RELEASE_ASSERT(options.useStencilXDR || options.useOffThreadParseGlobal);
+
   return StartOffThreadParseTask(cx, std::move(task), options);
 }
 
@@ -1237,6 +1239,7 @@ bool js::StartOffThreadDecodeMultiScripts(JSContext* cx,
   
   
   CompileOptions optionsCopy(cx, options);
+  optionsCopy.useStencilXDR = false;
   optionsCopy.useOffThreadParseGlobal = true;
 
   return StartOffThreadParseTask(cx, std::move(task), optionsCopy);
@@ -2114,8 +2117,7 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
 
   
   if (startEncoding == StartEncoding::Yes) {
-    bool useStencilXDR = !parseTask->options.useOffThreadParseGlobal;
-    if (useStencilXDR) {
+    if (parseTask->options.useStencilXDR) {
       UniquePtr<XDRIncrementalEncoderBase> xdrEncoder;
 
       if (parseTask->compilationInfo_.get()) {
