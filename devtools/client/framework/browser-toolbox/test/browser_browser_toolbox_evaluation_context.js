@@ -17,6 +17,7 @@ requestLongerTimeout(4);
 add_task(async function() {
   
   await pushPref("devtools.browsertoolbox.panel", "webconsole");
+  await pushPref("devtools.webconsole.input.context", true);
 
   
   
