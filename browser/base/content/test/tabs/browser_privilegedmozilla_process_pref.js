@@ -159,9 +159,6 @@ add_task(async function process_switching_through_navigation_features() {
     );
     browser.goBack();
     await promiseLocation;
-    
-    
-    await BrowserTestUtils.waitForEvent(newTab, "SSTabRestored");
     is(
       browser.frameLoader.remoteTab.osPid,
       privilegedPid,
@@ -175,9 +172,6 @@ add_task(async function process_switching_through_navigation_features() {
     );
     browser.goForward();
     await promiseLocation;
-    
-    
-    await BrowserTestUtils.waitForEvent(newTab, "SSTabRestored");
     checkBrowserRemoteType(
       browser,
       E10SUtils.WEB_REMOTE_TYPE,
