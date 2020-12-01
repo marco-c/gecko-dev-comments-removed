@@ -902,25 +902,14 @@ XDRResult XDRParserAtom(XDRState<mode>* xdr, const ParserAtom** atomp) {
       atomIndex = uint32_t((*atomp)->toStaticParserString2());
       tag = ParserAtomTag::Static2;
     } else {
-      
+      MOZ_ASSERT((*atomp)->isNotInstantiated() || (*atomp)->isAtomIndex());
+      MOZ_ASSERT((*atomp)->isUsedByStencil());
 
       
       
-      
-      XDRParserAtomMap::AddPtr p = xdr->parserAtomMap().lookupForAdd(*atomp);
-      if (p) {
-        atomIndex = p->value();
-      } else {
-        xdr->switchToAtomBuf();
-        MOZ_TRY(XDRParserAtomData(xdr, atomp));
-        xdr->switchToMainBuf();
-
-        atomIndex = xdr->natoms();
-        xdr->natoms() += 1;
-        if (!xdr->parserAtomMap().add(p, *atomp, atomIndex)) {
-          return xdr->fail(JS::TranscodeResult_Throw);
-        }
-      }
+      XDRParserAtomMap::Ptr p = xdr->parserAtomMap().lookup(*atomp);
+      MOZ_ASSERT(p);
+      atomIndex = p->value();
       tag = ParserAtomTag::Normal;
     }
     MOZ_TRY(XDRParserAtomTaggedIndex(xdr, &tag, &atomIndex));
