@@ -1,11 +1,10 @@
 use super::Cryptographer;
-use failure::Fail;
 use once_cell::sync::OnceCell;
 
 static CRYPTOGRAPHER: OnceCell<&'static dyn Cryptographer> = OnceCell::new();
 
-#[derive(Debug, Fail)]
-#[fail(display = "Cryptographer already initialized")]
+#[derive(Debug, thiserror::Error)]
+#[error("Cryptographer already initialized")]
 pub struct SetCryptographerError(());
 
 

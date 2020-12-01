@@ -17,8 +17,8 @@ pub struct HeaderName(pub(super) Cow<'static, str>);
 
 
 
-#[derive(failure::Fail, Debug, Clone, PartialEq)]
-#[fail(display = "Invalid header name: {:?}", _0)]
+#[derive(thiserror::Error, Debug, Clone, PartialEq)]
+#[error("Invalid header name: {0:?}")]
 pub struct InvalidHeaderName(Cow<'static, str>);
 
 impl From<&'static str> for HeaderName {

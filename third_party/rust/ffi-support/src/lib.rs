@@ -386,6 +386,34 @@ fn init_panic_handling_once() {}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 pub struct ByteBuffer {
     len: i64,
@@ -410,6 +438,9 @@ impl ByteBuffer {
     
     #[inline]
     pub fn new_with_size(size: usize) -> Self {
+        
+        
+        assert!(size < i64::MAX as usize);
         let mut buf = vec![];
         buf.reserve_exact(size);
         buf.resize(size, 0);
@@ -437,16 +468,86 @@ impl ByteBuffer {
     
     
     #[inline]
-    pub fn into_vec(self) -> Vec<u8> {
+    pub fn as_slice(&self) -> &[u8] {
         if self.data.is_null() {
-            vec![]
+            &[]
         } else {
-            
-            
-            unsafe { Vec::from_raw_parts(self.data, self.len as usize, self.len as usize) }
+            unsafe { std::slice::from_raw_parts(self.data, self.len()) }
         }
     }
 
+    #[inline]
+    fn len(&self) -> usize {
+        use std::convert::TryInto;
+        self.len
+            .try_into()
+            .expect("ByteBuffer length negative or overflowed")
+    }
+
+    
+    
+    #[inline]
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+        if self.data.is_null() {
+            &mut []
+        } else {
+            unsafe { std::slice::from_raw_parts_mut(self.data, self.len()) }
+        }
+    }
+
+    
+    #[inline]
+    #[deprecated = "Name is confusing, please use `destroy_into_vec` instead"]
+    pub fn into_vec(self) -> Vec<u8> {
+        self.destroy_into_vec()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn destroy_into_vec(self) -> Vec<u8> {
+        if self.data.is_null() {
+            vec![]
+        } else {
+            let len = self.len();
+            
+            
+            unsafe { Vec::from_raw_parts(self.data, len, len) }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -463,7 +564,8 @@ impl ByteBuffer {
     
     #[inline]
     pub fn destroy(self) {
-        drop(self.into_vec())
+        
+        drop(self.destroy_into_vec())
     }
 }
 
@@ -474,5 +576,48 @@ impl Default for ByteBuffer {
             len: 0 as i64,
             data: std::ptr::null_mut(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_bb_access() {
+        let mut bb = ByteBuffer::from(vec![1u8, 2, 3]);
+        assert_eq!(bb.as_slice(), &[1u8, 2, 3]);
+        assert_eq!(bb.as_mut_slice(), &mut [1u8, 2, 3]);
+        bb.as_mut_slice()[2] = 4;
+
+        
+        #[allow(deprecated)]
+        {
+            assert_eq!(bb.into_vec(), &[1u8, 2, 4]);
+        }
+    }
+
+    #[test]
+    fn test_bb_empty() {
+        let mut bb = ByteBuffer::default();
+        assert_eq!(bb.as_slice(), &[]);
+        assert_eq!(bb.as_mut_slice(), &[]);
+        assert_eq!(bb.destroy_into_vec(), &[]);
+    }
+
+    #[test]
+    fn test_bb_new() {
+        let bb = ByteBuffer::new_with_size(5);
+        assert_eq!(bb.as_slice(), &[0u8, 0, 0, 0, 0]);
+        bb.destroy();
+
+        let bb = ByteBuffer::new_with_size(0);
+        assert_eq!(bb.as_slice(), &[]);
+        assert!(!bb.data.is_null());
+        bb.destroy();
+
+        let bb = ByteBuffer::from_vec(vec![]);
+        assert_eq!(bb.as_slice(), &[]);
+        assert!(!bb.data.is_null());
+        bb.destroy();
     }
 }

@@ -9,16 +9,24 @@ use crate::{
     commands,
     error::*,
     http_client::{
-        CommandData, DeviceUpdateRequest, DeviceUpdateRequestBuilder, PendingCommand,
-        UpdateDeviceResponse,
+        DeviceUpdateRequest, DeviceUpdateRequestBuilder, PendingCommand, UpdateDeviceResponse,
     },
-    util, CachedResponse, FirefoxAccount, IncomingDeviceCommand,
+    telemetry, util, CachedResponse, FirefoxAccount, IncomingDeviceCommand,
 };
 use serde_derive::*;
 use std::collections::{HashMap, HashSet};
 
 
 const DEVICES_FRESHNESS_THRESHOLD: u64 = 60_000; 
+
+
+#[derive(Clone, Copy)]
+pub enum CommandFetchReason {
+    
+    Poll,
+    
+    Push(u64),
+}
 
 impl FirefoxAccount {
     
@@ -164,17 +172,31 @@ impl FirefoxAccount {
     
     
     
-    pub fn poll_device_commands(&mut self) -> Result<Vec<IncomingDeviceCommand>> {
+    
+    
+    pub fn poll_device_commands(
+        &mut self,
+        reason: CommandFetchReason,
+    ) -> Result<Vec<IncomingDeviceCommand>> {
         let last_command_index = self.state.last_handled_command.unwrap_or(0);
         
-        self.fetch_and_parse_commands(last_command_index + 1, None)
+        self.fetch_and_parse_commands(last_command_index + 1, None, reason)
     }
 
     
     
     
-    pub fn fetch_device_command(&mut self, index: u64) -> Result<IncomingDeviceCommand> {
-        let mut device_commands = self.fetch_and_parse_commands(index, Some(1))?;
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn ios_fetch_device_command(&mut self, index: u64) -> Result<IncomingDeviceCommand> {
+        let mut device_commands =
+            self.fetch_and_parse_commands(index, Some(1), CommandFetchReason::Push(index))?;
         let device_command = device_commands
             .pop()
             .ok_or_else(|| ErrorKind::IllegalState("Index fetch came out empty."))?;
@@ -188,6 +210,7 @@ impl FirefoxAccount {
         &mut self,
         index: u64,
         limit: Option<u64>,
+        reason: CommandFetchReason,
     ) -> Result<Vec<IncomingDeviceCommand>> {
         let refresh_token = self.get_refresh_token()?;
         let pending_commands =
@@ -197,7 +220,7 @@ impl FirefoxAccount {
             return Ok(Vec::new());
         }
         log::info!("Handling {} messages", pending_commands.messages.len());
-        let device_commands = self.parse_commands_messages(pending_commands.messages)?;
+        let device_commands = self.parse_commands_messages(pending_commands.messages, reason)?;
         self.state.last_handled_command = Some(pending_commands.index);
         Ok(device_commands)
     }
@@ -205,11 +228,12 @@ impl FirefoxAccount {
     fn parse_commands_messages(
         &mut self,
         messages: Vec<PendingCommand>,
+        reason: CommandFetchReason,
     ) -> Result<Vec<IncomingDeviceCommand>> {
         let devices = self.get_devices(false)?;
         let parsed_commands = messages
             .into_iter()
-            .filter_map(|msg| match self.parse_command(msg.data, &devices) {
+            .filter_map(|msg| match self.parse_command(msg, &devices, reason) {
                 Ok(device_command) => Some(device_command),
                 Err(e) => {
                     log::error!("Error while processing command: {}", e);
@@ -222,15 +246,24 @@ impl FirefoxAccount {
 
     fn parse_command(
         &mut self,
-        command_data: CommandData,
+        command: PendingCommand,
         devices: &[Device],
+        reason: CommandFetchReason,
     ) -> Result<IncomingDeviceCommand> {
+        let telem_reason = match reason {
+            CommandFetchReason::Poll => telemetry::ReceivedReason::Poll,
+            CommandFetchReason::Push(index) if command.index < index => {
+                telemetry::ReceivedReason::PushMissed
+            }
+            _ => telemetry::ReceivedReason::Push,
+        };
+        let command_data = command.data;
         let sender = command_data
             .sender
             .and_then(|s| devices.iter().find(|i| i.id == s).cloned());
         match command_data.command.as_str() {
             commands::send_tab::COMMAND_NAME => {
-                self.handle_send_tab_command(sender, command_data.payload)
+                self.handle_send_tab_command(sender, command_data.payload, telem_reason)
             }
             _ => Err(ErrorKind::UnknownCommand(command_data.command).into()),
         }

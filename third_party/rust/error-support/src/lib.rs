@@ -2,59 +2,109 @@
 
 
 
+#[cfg(feature = "backtrace")]
+
+
+pub use backtrace;
+
+#[cfg(not(feature = "backtrace"))]
+
+pub mod backtrace {
+    use std::fmt;
+
+    pub struct Backtrace;
+
+    impl fmt::Debug for Backtrace {
+        #[cold]
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Not available")
+        }
+    }
+}
+
 
 
 #[macro_export]
 macro_rules! define_error_wrapper {
     ($Kind:ty) => {
-        /// Re-exported, so that using crate::error::* gives you the .context()
-        /// method, which we don't use much but should *really* use more.
-        pub use failure::ResultExt;
-
         pub type Result<T, E = Error> = std::result::Result<T, E>;
+        struct ErrorData {
+            kind: $Kind,
+            backtrace: Option<std::sync::Mutex<$crate::backtrace::Backtrace>>,
+        }
 
-        #[derive(Debug)]
-        pub struct Error(Box<failure::Context<$Kind>>);
-
-        impl failure::Fail for Error {
-            fn cause(&self) -> Option<&dyn failure::Fail> {
-                self.0.cause()
+        impl ErrorData {
+            #[cold]
+            fn new(kind: $Kind) -> Self {
+                ErrorData {
+                    kind,
+                    #[cfg(feature = "backtrace")]
+                    backtrace: Some(std::sync::Mutex::new(
+                        $crate::backtrace::Backtrace::new_unresolved(),
+                    )),
+                    #[cfg(not(feature = "backtrace"))]
+                    backtrace: None,
+                }
             }
 
-            fn backtrace(&self) -> Option<&failure::Backtrace> {
-                self.0.backtrace()
+            #[cfg(feature = "backtrace")]
+            #[cold]
+            fn get_backtrace(&self) -> Option<&std::sync::Mutex<$crate::backtrace::Backtrace>> {
+                self.backtrace.as_ref().map(|mutex| {
+                    mutex.lock().unwrap().resolve();
+                    mutex
+                })
             }
 
-            fn name(&self) -> Option<&str> {
-                self.0.name()
+            #[cfg(not(feature = "backtrace"))]
+            #[cold]
+            fn get_backtrace(&self) -> Option<&std::sync::Mutex<$crate::backtrace::Backtrace>> {
+                None
+            }
+        }
+
+        impl std::fmt::Debug for ErrorData {
+            #[cfg(feature = "backtrace")]
+            #[cold]
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                let mut bt = self.backtrace.unwrap().lock().unwrap();
+                bt.resolve();
+                write!(f, "{:?}\n\n{}", bt, self.kind)
+            }
+
+            #[cfg(not(feature = "backtrace"))]
+            #[cold]
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{}", self.kind)
+            }
+        }
+
+        #[derive(Debug, thiserror::Error)]
+        pub struct Error(Box<ErrorData>);
+        impl Error {
+            #[cold]
+            pub fn kind(&self) -> &$Kind {
+                &self.0.kind
+            }
+
+            #[cold]
+            pub fn backtrace(&self) -> Option<&std::sync::Mutex<$crate::backtrace::Backtrace>> {
+                self.0.get_backtrace()
             }
         }
 
         impl std::fmt::Display for Error {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                std::fmt::Display::fmt(&*self.0, f)
-            }
-        }
-
-        impl Error {
-            pub fn kind(&self) -> &$Kind {
-                &*self.0.get_context()
-            }
-        }
-
-        impl From<failure::Context<$Kind>> for Error {
-            // Cold to optimize in favor of non-error cases.
             #[cold]
-            fn from(ctx: failure::Context<$Kind>) -> Error {
-                Error(Box::new(ctx))
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                std::fmt::Display::fmt(self.kind(), f)
             }
         }
 
         impl From<$Kind> for Error {
             // Cold to optimize in favor of non-error cases.
             #[cold]
-            fn from(kind: $Kind) -> Self {
-                Error(Box::new(failure::Context::new(kind)))
+            fn from(ctx: $Kind) -> Error {
+                Error(Box::new(ErrorData::new(ctx)))
             }
         }
     };
@@ -66,14 +116,6 @@ macro_rules! define_error_wrapper {
 #[macro_export]
 macro_rules! define_error_conversions {
     ($Kind:ident { $(($variant:ident, $type:ty)),* $(,)? }) => ($(
-        impl From<$type> for $Kind {
-            // Cold to optimize in favor of non-error cases.
-            #[cold]
-            fn from(e: $type) -> $Kind {
-                $Kind::$variant(e)
-            }
-        }
-
         impl From<$type> for Error {
             // Cold to optimize in favor of non-error cases.
             #[cold]

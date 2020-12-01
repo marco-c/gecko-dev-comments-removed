@@ -67,8 +67,6 @@ fn fixup_server_url(mut url: Url) -> Result<Url> {
     
     
     
-    
-    
     if url.as_str().ends_with("1.0/sync/1.5") {
         Ok(url)
     } else if url.as_str().ends_with("1.0/sync/1.5/") {
@@ -79,7 +77,14 @@ fn fixup_server_url(mut url: Url) -> Result<Url> {
         }
         Ok(url)
     } else {
-        Ok(url.join("1.0/sync/1.5")?)
+        
+        
+        
+        if let Ok(mut path) = url.path_segments_mut() {
+            path.pop_if_empty();
+            path.extend(&["1.0", "sync", "1.5"]);
+        }
+        Ok(url)
     }
 }
 
@@ -579,6 +584,34 @@ mod tests {
                 .unwrap()
                 .as_str(),
             "https://token.services.mozilla.com/1.0/sync/1.5"
+        );
+        assert_eq!(
+            fixup_server_url(
+                Url::parse("https://selfhosted.example.com/token/1.0/sync/1.5").unwrap()
+            )
+            .unwrap()
+            .as_str(),
+            "https://selfhosted.example.com/token/1.0/sync/1.5"
+        );
+        assert_eq!(
+            fixup_server_url(
+                Url::parse("https://selfhosted.example.com/token/1.0/sync/1.5/").unwrap()
+            )
+            .unwrap()
+            .as_str(),
+            "https://selfhosted.example.com/token/1.0/sync/1.5"
+        );
+        assert_eq!(
+            fixup_server_url(Url::parse("https://selfhosted.example.com/token/").unwrap())
+                .unwrap()
+                .as_str(),
+            "https://selfhosted.example.com/token/1.0/sync/1.5"
+        );
+        assert_eq!(
+            fixup_server_url(Url::parse("https://selfhosted.example.com/token").unwrap())
+                .unwrap()
+                .as_str(),
+            "https://selfhosted.example.com/token/1.0/sync/1.5"
         );
     }
 }

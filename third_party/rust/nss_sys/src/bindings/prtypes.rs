@@ -2,11 +2,11 @@
 
 
 
-use std::os::raw::{c_int, c_uint, c_ulong};
+use std::os::raw::{c_int, c_uint};
 
 pub type PRIntn = c_int;
 pub type PRBool = PRIntn;
-pub type PRUword = c_ulong;
+pub type PRUword = usize;
 pub type PRInt32 = c_int;
 pub type PRUint32 = c_uint;
 pub const PR_FALSE: PRBool = 0;
