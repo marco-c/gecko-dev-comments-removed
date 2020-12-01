@@ -446,7 +446,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual uint32_t CurrentScrollGeneration() = 0;
+  virtual mozilla::ScrollGeneration CurrentScrollGeneration() = 0;
   
 
 
@@ -469,8 +469,9 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual void ResetScrollInfoIfNeeded(uint32_t aGeneration,
-                                       bool aApzAnimationInProgress) = 0;
+  virtual void ResetScrollInfoIfNeeded(
+      const mozilla::ScrollGeneration& aGeneration,
+      bool aApzAnimationInProgress) = 0;
   
 
 

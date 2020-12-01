@@ -4697,7 +4697,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     
-    uint32_t oldScrollGeneration = Metrics().GetScrollGeneration();
+    ScrollGeneration oldScrollGeneration = Metrics().GetScrollGeneration();
     mScrollMetadata = aScrollMetadata;
     if (!aScrollMetadata.GetScrollUpdates().IsEmpty()) {
       Metrics().SetScrollGeneration(oldScrollGeneration);
@@ -4813,9 +4813,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   for (const auto& scrollUpdate : aScrollMetadata.GetScrollUpdates()) {
     APZC_LOG("%p processing scroll update %s\n", this,
              ToString(scrollUpdate).c_str());
-    if (scrollUpdate.GetGeneration() <= Metrics().GetScrollGeneration()) {
-      
-      
+    if (!(Metrics().GetScrollGeneration() < scrollUpdate.GetGeneration())) {
       
       APZC_LOG("%p scrollupdate generation stale, dropping\n", this);
       continue;

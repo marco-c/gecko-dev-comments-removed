@@ -68,35 +68,34 @@ class ScrollPositionUpdate {
 
   
   
-  static ScrollPositionUpdate NewScrollframe(uint32_t aGeneration,
-                                             nsPoint aInitialPosition);
+  static ScrollPositionUpdate NewScrollframe(
+      const ScrollGeneration& aGeneration, nsPoint aInitialPosition);
   
   
-  static ScrollPositionUpdate NewScroll(uint32_t aGeneration,
+  static ScrollPositionUpdate NewScroll(const ScrollGeneration& aGeneration,
                                         ScrollOrigin aOrigin,
                                         nsPoint aDestination);
   
   
-  static ScrollPositionUpdate NewRelativeScroll(uint32_t aGeneration,
-                                                nsPoint aSource,
-                                                nsPoint aDestination);
+  static ScrollPositionUpdate NewRelativeScroll(
+      const ScrollGeneration& aGeneration, nsPoint aSource,
+      nsPoint aDestination);
   
   
   
-  static ScrollPositionUpdate NewSmoothScroll(uint32_t aGeneration,
-                                              ScrollOrigin aOrigin,
-                                              nsPoint aDestination);
+  static ScrollPositionUpdate NewSmoothScroll(
+      const ScrollGeneration& aGeneration, ScrollOrigin aOrigin,
+      nsPoint aDestination);
   
   
   
-  static ScrollPositionUpdate NewPureRelativeScroll(uint32_t aGeneration,
-                                                    ScrollOrigin aOrigin,
-                                                    ScrollMode aMode,
-                                                    const nsPoint& aDelta);
+  static ScrollPositionUpdate NewPureRelativeScroll(
+      const ScrollGeneration& aGeneration, ScrollOrigin aOrigin,
+      ScrollMode aMode, const nsPoint& aDelta);
 
   bool operator==(const ScrollPositionUpdate& aOther) const;
 
-  uint32_t GetGeneration() const;
+  ScrollGeneration GetGeneration() const;
   ScrollUpdateType GetType() const;
   ScrollMode GetMode() const;
   ScrollOrigin GetOrigin() const;
@@ -112,7 +111,7 @@ class ScrollPositionUpdate {
                                   const ScrollPositionUpdate& aUpdate);
 
  private:
-  uint32_t mScrollGeneration;
+  ScrollGeneration mScrollGeneration;
   
   
   ScrollUpdateType mType;
