@@ -1133,11 +1133,18 @@ void AudioInputProcessing::NotifyInputStopped(MediaTrackGraphImpl* aGraph) {
 void AudioInputProcessing::NotifyInputData(MediaTrackGraphImpl* aGraph,
                                            const AudioDataValue* aBuffer,
                                            size_t aFrames, TrackRate aRate,
-                                           uint32_t aChannels) {
+                                           uint32_t aChannels,
+                                           uint32_t aAlreadyBuffered) {
   MOZ_ASSERT(aGraph->OnGraphThread());
   TRACE();
 
   MOZ_ASSERT(mEnabled);
+
+  if (!mLiveFramesAppended) {
+    
+    
+    mLiveBufferingAppended = aAlreadyBuffered;
+  }
 
   
   

@@ -391,7 +391,8 @@ class AudioCallbackDriver::FallbackWrapper : public GraphInterface {
     MOZ_CRASH("Unexpected NotifyInputStopped from fallback SystemClockDriver");
   }
   void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels) override {
+                       TrackRate aRate, uint32_t aChannels,
+                       uint32_t aAlreadyBuffered) override {
     MOZ_CRASH("Unexpected NotifyInputData from fallback SystemClockDriver");
   }
   void DeviceChanged() override {
@@ -906,7 +907,7 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   mBuffer.SetBuffer(aOutputBuffer, aFrames);
   
   
-  mScratchBuffer.Empty(mBuffer);
+  uint32_t alreadyBuffered = mScratchBuffer.Empty(mBuffer);
 
   
   
@@ -945,7 +946,7 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   if (aInputBuffer && mInputChannelCount > 0) {
     Graph()->NotifyInputData(aInputBuffer, static_cast<size_t>(aFrames),
-                             mSampleRate, mInputChannelCount);
+                             mSampleRate, mInputChannelCount, alreadyBuffered);
   }
 
   bool iterate = mBuffer.Available();
