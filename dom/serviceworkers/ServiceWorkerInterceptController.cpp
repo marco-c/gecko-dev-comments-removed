@@ -77,11 +77,6 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
   }
 
   
-  if (!nsContentUtils::ComputeIsSecureContext(aChannel)) {
-    return NS_OK;
-  }
-
-  
   
   
   
