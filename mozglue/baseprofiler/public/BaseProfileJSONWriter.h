@@ -152,6 +152,8 @@ struct OStreamJSONWriteFunc final : public JSONWriteFunc {
   std::ostream& mStream;
 };
 
+class UniqueJSONStrings;
+
 class SpliceableJSONWriter : public JSONWriter {
  public:
   explicit SpliceableJSONWriter(UniquePtr<JSONWriteFunc> aWriter)
@@ -211,6 +213,30 @@ class SpliceableJSONWriter : public JSONWriter {
     aFunc.mChunkLengths.clear();
     mNeedComma[mDepth] = true;
   }
+
+  
+  void SetUniqueStrings(UniqueJSONStrings& aUniqueStrings) {
+    MOZ_RELEASE_ASSERT(!mUniqueStrings);
+    mUniqueStrings = &aUniqueStrings;
+  }
+
+  
+  void ResetUniqueStrings() {
+    MOZ_RELEASE_ASSERT(mUniqueStrings);
+    mUniqueStrings = nullptr;
+  }
+
+  
+  
+  inline void UniqueStringProperty(const Span<const char>& aName,
+                                   const Span<const char>& aStr);
+
+  
+  
+  inline void UniqueStringElement(const Span<const char>& aStr);
+
+ private:
+  UniqueJSONStrings* mUniqueStrings = nullptr;
 };
 
 class SpliceableChunkedJSONWriter final : public SpliceableJSONWriter {
@@ -332,6 +358,19 @@ class UniqueJSONStrings {
   SpliceableChunkedJSONWriter mStringTableWriter;
   HashMap<HashNumber, uint32_t> mStringHashToIndexMap;
 };
+
+void SpliceableJSONWriter::UniqueStringProperty(const Span<const char>& aName,
+                                                const Span<const char>& aStr) {
+  MOZ_RELEASE_ASSERT(mUniqueStrings);
+  mUniqueStrings->WriteProperty(*this, aName, aStr);
+}
+
+
+
+void SpliceableJSONWriter::UniqueStringElement(const Span<const char>& aStr) {
+  MOZ_RELEASE_ASSERT(mUniqueStrings);
+  mUniqueStrings->WriteElement(*this, aStr);
+}
 
 }  
 }  
