@@ -58,7 +58,7 @@ let dialog = {
   
 
 
-  initialize: function initialize() {
+  initialize() {
     let args = window.arguments[0].wrappedJSObject || window.arguments[0];
     let { handler, outArgs, usePrivateBrowsing, enableButtonDelay } = args;
 
@@ -73,18 +73,8 @@ let dialog = {
     this._itemChoose = document.getElementById("item-choose");
     this._rememberCheck = document.getElementById("remember");
 
-    let rememberLabel = document.getElementById("remember-label");
-    document.l10n.setAttributes(rememberLabel, "chooser-dialog-remember", {
-      scheme: this._handlerInfo.type,
-    });
-
     
     this._rememberCheck.addEventListener("change", () => this.onCheck());
-
-    let description = document.getElementById("description");
-    document.l10n.setAttributes(description, "chooser-dialog-description", {
-      scheme: this._handlerInfo.type,
-    });
 
     document.addEventListener("dialogaccept", () => {
       this.onAccept();
@@ -93,7 +83,7 @@ let dialog = {
     
     this.populateList();
 
-    document.mozSubdialogReady = document.l10n.ready.then(() => {
+    document.mozSubdialogReady = this.initL10n().then(() => {
       window.sizeToContent();
     });
 
@@ -110,6 +100,25 @@ let dialog = {
         focusTarget: window,
       });
     }
+  },
+
+  async initL10n() {
+    document.l10n.pauseObserving();
+
+    let rememberLabel = document.getElementById("remember-label");
+    document.l10n.setAttributes(rememberLabel, "chooser-dialog-remember", {
+      scheme: this._handlerInfo.type,
+    });
+
+    let description = document.getElementById("description");
+    document.l10n.setAttributes(description, "chooser-dialog-description", {
+      scheme: this._handlerInfo.type,
+    });
+
+    document.l10n.resumeObserving();
+
+    await document.l10n.translateElements([rememberLabel, description]);
+    return document.l10n.ready;
   },
 
   
