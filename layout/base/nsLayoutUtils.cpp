@@ -909,6 +909,7 @@ nsIFrame* nsLayoutUtils::GetPageFrame(nsIFrame* aFrame) {
 
 
 nsIFrame* nsLayoutUtils::GetStyleFrame(nsIFrame* aPrimaryFrame) {
+  MOZ_ASSERT(aPrimaryFrame);
   if (aPrimaryFrame->IsTableWrapperFrame()) {
     nsIFrame* inner = aPrimaryFrame->PrincipalChildList().FirstChild();
     
