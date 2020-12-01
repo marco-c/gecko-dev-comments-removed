@@ -168,26 +168,18 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:third_party/sqlite3/*\n"
          "deadlock:third_party/sqlite3/*\n"
-
-
-
-
-
          
          
          
-
          
-         "race:std::sync::mutex::Mutex\n"
          
-         "race:sync..Arc\n"
-         "race:alloc::sync::Arc\n"
+         "race:StrongRuleNode::ensure_child\n"
          
-         "race:third_party/rust/parking_lot_core/*\n"
          
-         "race:/rustc/*.rs\n"
-         "deadlock:/rustc/*.rs\n"
-         "thread:std::sys::unix::thread::Thread::new\n"
+         
+         
+         
+         "race:crossbeam_deque::Worker$LT$T$GT$::resize\n"
 
 
 
@@ -310,6 +302,13 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:VRShMem::PullSystemState\n"
          "race:VRShMem::PushSystemState\n"
+
+         
+         "race:DocumentTimeline::GetCurrentTimeAsDuration\n"
+
+         
+         "race:nsHttpTransaction::ReadSegments\n"
+         "race:nsHttpTransaction::SecurityInfo\n"
 
       
       ;  
