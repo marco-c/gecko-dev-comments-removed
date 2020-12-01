@@ -118,7 +118,10 @@ class Http3Stream final : public nsAHttpSegmentReader,
 
 
 
+
+
   enum RecvStreamState {
+    BEFORE_HEADERS,
     READING_HEADERS,
     READING_DATA,
     RECEIVED_FIN,

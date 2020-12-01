@@ -202,6 +202,8 @@ void Http3Session::Shutdown() {
       stream->Close(NS_ERROR_NET_RESET);
     } else if (stream->RecvdData()) {
       stream->Close(NS_ERROR_NET_PARTIAL_TRANSFER);
+    } else if (mError == NS_ERROR_NET_HTTP3_PROTOCOL_ERROR) {
+      stream->Close(NS_ERROR_NET_HTTP3_PROTOCOL_ERROR);
     } else {
       stream->Close(NS_ERROR_ABORT);
     }
@@ -1365,8 +1367,19 @@ nsresult Http3Session::ReadResponseData(uint64_t aStreamId, char* aBuf,
                                         uint32_t* aCountWritten, bool* aFin) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  return mHttp3Connection->ReadResponseData(aStreamId, (uint8_t*)aBuf, aCount,
-                                            aCountWritten, aFin);
+  nsresult rv = mHttp3Connection->ReadResponseData(aStreamId, (uint8_t*)aBuf, aCount,
+                                                   aCountWritten, aFin);
+
+  
+  MOZ_ASSERT(rv != NS_ERROR_INVALID_ARG);
+  if (NS_FAILED(rv)) {
+    LOG3(("Http3Session::ReadResponseData return an error %" PRIx32 " [this=%p]",
+          static_cast<uint32_t>(rv), this));
+    
+    
+    rv = NS_BASE_STREAM_WOULD_BLOCK;
+  }
+  return rv;
 }
 
 void Http3Session::TransactionHasDataToWrite(nsAHttpTransaction* caller) {
