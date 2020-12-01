@@ -934,7 +934,7 @@ bool StyleSheet::AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
   
   if (!IsComplete()) {
     aRv.ThrowInvalidAccessError(
-        "Can't access rules of still-loading stylsheet");
+        "Can't access rules of still-loading style sheet");
     return false;
   }
   
