@@ -2643,8 +2643,10 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
 nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   APZC_LOG("%p got a pan-end in state %d\n", this, mState);
 
-  
-  OnPan(aEvent, true);
+  if (aEvent.mPanDisplacement != ScreenPoint{}) {
+    
+    OnPan(aEvent, true);
+  }
 
   EndTouch(aEvent.mTimeStamp);
 
