@@ -221,6 +221,7 @@ void ConnectionEntry::InsertTransaction(
     bool aInsertAsFirstForTheSamePriority ) {
   mPendingQ.InsertTransaction(pendingTransInfo,
                               aInsertAsFirstForTheSamePriority);
+  pendingTransInfo->Transaction()->OnPendingQueueInserted();
 }
 
 nsTArray<RefPtr<PendingTransactionInfo>>*
