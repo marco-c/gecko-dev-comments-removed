@@ -10,24 +10,6 @@
 
 
 
-async function createTabAndLoad(url, inputWindow = null) {
-  const browser = inputWindow ? inputWindow.gBrowser : window.gBrowser;
-  let tab = await BrowserTestUtils.openNewForegroundTab(browser, url);
-  return tab;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 async function createLoadedTabWrapper(
