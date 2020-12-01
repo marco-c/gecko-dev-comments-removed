@@ -803,30 +803,13 @@ class TSFTextStore final : public ITextStoreACP,
 
   class Content final {
    public:
-    Content(TSFTextStore::Composition& aComposition,
-            TSFTextStore::Selection& aSelection)
-        : mComposition(aComposition), mSelection(aSelection) {
-      Clear();
-    }
-
-    void Clear() {
-      mText.Truncate();
-      mLastComposition.reset();
-      mInitialized = false;
-    }
-
-    bool IsInitialized() const { return mInitialized; }
-
-    void Init(const nsAString& aText) {
-      mText = aText;
+    Content(TSFTextStore& aTSFTextStore, const nsAString& aText)
+        : mText(aText),
+          mComposition(aTSFTextStore.mComposition),
+          mSelection(aTSFTextStore.mSelectionForTSF) {
       if (mComposition.IsComposing()) {
         mLastComposition = Some(mComposition);
-      } else {
-        mLastComposition.reset();
       }
-      mMinModifiedOffset.reset();
-      mLatestCompositionRange.reset();
-      mInitialized = true;
     }
 
     void OnLayoutChanged() { mMinModifiedOffset.reset(); }
@@ -835,9 +818,6 @@ class TSFTextStore final : public ITextStoreACP,
     
     
     void OnCompositionEventsHandled() {
-      if (!mInitialized) {
-        return;
-      }
       if (mComposition.IsComposing()) {
         mLastComposition = Some(mComposition);
       } else {
@@ -871,20 +851,14 @@ class TSFTextStore final : public ITextStoreACP,
         const PendingAction& aCanceledCompositionEnd);
     void EndComposition(const PendingAction& aCompEnd);
 
-    const nsString& Text() const {
-      MOZ_ASSERT(mInitialized);
-      return mText;
-    }
+    const nsString& TextRef() const { return mText; }
     const Maybe<OffsetAndData<LONG>>& LastComposition() const {
-      MOZ_ASSERT(mInitialized);
       return mLastComposition;
     }
     const Maybe<uint32_t>& MinModifiedOffset() const {
-      MOZ_ASSERT(mInitialized);
       return mMinModifiedOffset;
     }
     const Maybe<StartAndEndOffsets<LONG>>& LatestCompositionRange() const {
-      MOZ_ASSERT(mInitialized);
       return mLatestCompositionRange;
     }
 
@@ -895,9 +869,7 @@ class TSFTextStore final : public ITextStoreACP,
     }
     
     
-    bool IsLayoutChanged() const {
-      return mInitialized && mMinModifiedOffset.isSome();
-    }
+    bool IsLayoutChanged() const { return mMinModifiedOffset.isSome(); }
     bool HasOrHadComposition() const {
       return mLatestCompositionRange.isSome();
     }
@@ -914,8 +886,7 @@ class TSFTextStore final : public ITextStoreACP,
               << ", mLastComposition=" << aContent.mLastComposition
               << ", mLatestCompositionRange="
               << aContent.mLatestCompositionRange
-              << ", mMinModifiedOffset=" << aContent.mMinModifiedOffset
-              << ", mInitialized=" << aContent.mInitialized << " }";
+              << ", mMinModifiedOffset=" << aContent.mMinModifiedOffset << " }";
       return aStream;
     }
 
@@ -935,8 +906,6 @@ class TSFTextStore final : public ITextStoreACP,
 
     
     Maybe<uint32_t> mMinModifiedOffset;
-
-    bool mInitialized;
   };
   
   
@@ -950,9 +919,9 @@ class TSFTextStore final : public ITextStoreACP,
   
   
   
-  Content mContentForTSF;
+  Maybe<Content> mContentForTSF;
 
-  Content& ContentForTSFRef();
+  Maybe<Content>& ContentForTSF();
 
   
   
