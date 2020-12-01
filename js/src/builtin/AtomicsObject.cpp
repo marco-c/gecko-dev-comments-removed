@@ -112,11 +112,11 @@ static bool ValidateIntegerTypedArray(
 
 static bool ValidateAtomicAccess(JSContext* cx,
                                  Handle<TypedArrayObject*> typedArray,
-                                 HandleValue requestIndex, uint32_t* index) {
+                                 HandleValue requestIndex, size_t* index) {
   
 
   MOZ_ASSERT(!typedArray->hasDetachedBuffer());
-  uint32_t length = typedArray->length().deprecatedGetUint32();
+  size_t length = typedArray->length().get();
 
   
   uint64_t accessIndex;
@@ -130,7 +130,7 @@ static bool ValidateAtomicAccess(JSContext* cx,
   }
 
   
-  *index = uint32_t(accessIndex);
+  *index = size_t(accessIndex);
   return true;
 }
 
@@ -251,7 +251,7 @@ bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
   }
 
   
-  uint32_t intIndex;
+  size_t intIndex;
   if (!ValidateAtomicAccess(cx, unwrappedTypedArray, index, &intIndex)) {
     return false;
   }
@@ -286,7 +286,7 @@ bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
 
 template <typename T>
 static SharedMem<T*> TypedArrayData(JSContext* cx, TypedArrayObject* typedArray,
-                                    uint32_t index) {
+                                    size_t index) {
   if (typedArray->hasDetachedBuffer()) {
     ReportDetachedArrayBuffer(cx);
     return {};
@@ -307,7 +307,7 @@ static bool atomics_compareExchange(JSContext* cx, unsigned argc, Value* vp) {
   return AtomicAccess(
       cx, typedArray, index,
       [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
-                  uint32_t index) {
+                  size_t index) {
         using T = typename decltype(ops)::Type;
 
         HandleValue expectedValue = args.get(2);
@@ -344,7 +344,7 @@ static bool atomics_load(JSContext* cx, unsigned argc, Value* vp) {
   return AtomicAccess(
       cx, typedArray, index,
       [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
-                  uint32_t index) {
+                  size_t index) {
         using T = typename decltype(ops)::Type;
 
         SharedMem<T*> addr = TypedArrayData<T>(cx, unwrappedTypedArray, index);
@@ -369,7 +369,7 @@ static bool atomics_store(JSContext* cx, unsigned argc, Value* vp) {
   return AtomicAccess(
       cx, typedArray, index,
       [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
-                  uint32_t index) {
+                  size_t index) {
         using T = typename decltype(ops)::Type;
 
         HandleValue value = args.get(2);
@@ -399,7 +399,7 @@ static bool AtomicReadModifyWrite(JSContext* cx, const CallArgs& args,
   return AtomicAccess(
       cx, typedArray, index,
       [cx, &args, op](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
-                      uint32_t index) {
+                      size_t index) {
         using T = typename decltype(ops)::Type;
 
         HandleValue value = args.get(2);
@@ -524,10 +524,10 @@ namespace js {
 
 class FutexWaiter {
  public:
-  FutexWaiter(uint32_t offset, JSContext* cx)
+  FutexWaiter(size_t offset, JSContext* cx)
       : offset(offset), cx(cx), lower_pri(nullptr), back(nullptr) {}
 
-  uint32_t offset;         
+  size_t offset;           
   JSContext* cx;           
   FutexWaiter* lower_pri;  
                            
@@ -556,7 +556,7 @@ class AutoLockFutexAPI {
 
 template <typename T>
 static FutexThread::WaitResult AtomicsWait(
-    JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset, T value,
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, T value,
     const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
   
   MOZ_ASSERT(sarb, "wait is only applicable to shared memory");
@@ -610,14 +610,14 @@ static FutexThread::WaitResult AtomicsWait(
 }
 
 FutexThread::WaitResult js::atomics_wait_impl(
-    JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset,
-    int32_t value, const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int32_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
   return AtomicsWait(cx, sarb, byteOffset, value, timeout);
 }
 
 FutexThread::WaitResult js::atomics_wait_impl(
-    JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset,
-    int64_t value, const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int64_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout) {
   return AtomicsWait(cx, sarb, byteOffset, value, timeout);
 }
 
@@ -626,7 +626,7 @@ FutexThread::WaitResult js::atomics_wait_impl(
 template <typename T>
 static bool DoAtomicsWait(JSContext* cx,
                           Handle<TypedArrayObject*> unwrappedTypedArray,
-                          uint32_t index, T value, HandleValue timeoutv,
+                          size_t index, T value, HandleValue timeoutv,
                           MutableHandleValue r) {
   mozilla::Maybe<mozilla::TimeDuration> timeout;
   if (!timeoutv.isUndefined()) {
@@ -652,12 +652,12 @@ static bool DoAtomicsWait(JSContext* cx,
       cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset = unwrappedTypedArray->byteOffset().deprecatedGetUint32();
+  size_t offset = unwrappedTypedArray->byteOffset().get();
 
   
   
   
-  uint32_t indexedPosition = index * sizeof(T) + offset;
+  size_t indexedPosition = index * sizeof(T) + offset;
 
   
   switch (atomics_wait_impl(cx, unwrappedSab->rawBufferObject(),
@@ -702,7 +702,7 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  uint32_t intIndex;
+  size_t intIndex;
   if (!ValidateAtomicAccess(cx, unwrappedTypedArray, index, &intIndex)) {
     return false;
   }
@@ -733,7 +733,7 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset,
+int64_t js::atomics_notify_impl(SharedArrayRawBuffer* sarb, size_t byteOffset,
                                 int64_t count) {
   
   MOZ_ASSERT(sarb, "notify is only applicable to shared memory");
@@ -790,7 +790,7 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
              unwrappedTypedArray->type() == Scalar::BigInt64);
 
   
-  uint32_t intIndex;
+  size_t intIndex;
   if (!ValidateAtomicAccess(cx, unwrappedTypedArray, index, &intIndex)) {
     return false;
   }
@@ -821,13 +821,13 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
       cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset = unwrappedTypedArray->byteOffset().deprecatedGetUint32();
+  size_t offset = unwrappedTypedArray->byteOffset().get();
 
   
   
   
-  uint32_t elementSize = Scalar::byteSize(unwrappedTypedArray->type());
-  uint32_t indexedPosition = intIndex * elementSize + offset;
+  size_t elementSize = Scalar::byteSize(unwrappedTypedArray->type());
+  size_t indexedPosition = intIndex * elementSize + offset;
 
   
   r.setNumber(double(atomics_notify_impl(unwrappedSab->rawBufferObject(),

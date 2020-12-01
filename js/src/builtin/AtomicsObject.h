@@ -123,20 +123,20 @@ class FutexThread {
 
 
 MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
-    JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset,
-    int32_t value, const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int32_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
 
 MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
-    JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset,
-    int64_t value, const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+    JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int64_t value,
+    const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
 
 
 
 
 MOZ_MUST_USE int64_t atomics_notify_impl(SharedArrayRawBuffer* sarb,
-                                         uint32_t byteOffset, int64_t count);
+                                         size_t byteOffset, int64_t count);
 
 } 
 
