@@ -269,6 +269,11 @@ void RunPendingSourceCompressions(JSRuntime* runtime);
 
 
 
+
+bool IsOffThreadSourceCompressionEnabled();
+
+
+
 extern bool OffThreadParsingMustWaitForGC(JSRuntime* rt);
 
 }  

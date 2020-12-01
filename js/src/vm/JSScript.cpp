@@ -2282,6 +2282,14 @@ MOZ_MUST_USE bool ScriptSource::setRetrievedSource(JSContext* cx,
                                      SourceRetrievable::Yes);
 }
 
+bool js::IsOffThreadSourceCompressionEnabled() {
+  
+  
+  
+  return HelperThreadState().cpuCount > 1 &&
+         HelperThreadState().threadCount > 1 && CanUseExtraThreads();
+}
+
 bool ScriptSource::tryCompressOffThread(JSContext* cx) {
   
   
@@ -2307,11 +2315,8 @@ bool ScriptSource::tryCompressOffThread(JSContext* cx) {
   
   
 
-  bool canCompressOffThread = HelperThreadState().cpuCount > 1 &&
-                              HelperThreadState().threadCount >= 2 &&
-                              CanUseExtraThreads();
   if (length() < ScriptSource::MinimumCompressibleLength ||
-      !canCompressOffThread) {
+      !IsOffThreadSourceCompressionEnabled()) {
     return true;
   }
 
