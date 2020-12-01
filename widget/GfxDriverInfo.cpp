@@ -656,11 +656,16 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_DEVICE(0x191d);
       APPEND_DEVICE(0x191e);
       APPEND_DEVICE(0x1921);
+
+      
       APPEND_DEVICE(0x1923);
       APPEND_DEVICE(0x1926);
       APPEND_DEVICE(0x1927);
       APPEND_DEVICE(0x192b);
+
+      
       APPEND_DEVICE(0x1932);
+      APPEND_DEVICE(0x193a);
       APPEND_DEVICE(0x193b);
       APPEND_DEVICE(0x193d);
 
