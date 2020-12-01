@@ -463,9 +463,6 @@ void WinUtils::Initialize() {
 LRESULT WINAPI WinUtils::NonClientDpiScalingDefWindowProcW(HWND hWnd, UINT msg,
                                                            WPARAM wParam,
                                                            LPARAM lParam) {
-  
-  
-  
   if (msg == WM_NCCREATE && sEnableNonClientDpiScaling) {
     sEnableNonClientDpiScaling(hWnd);
   }

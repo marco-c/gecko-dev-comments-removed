@@ -12,20 +12,10 @@
 
 namespace mozilla {
 
-
-
-
-
-static const DWORD kPreXULSkeletonUIWindowStyle =
-    WS_CLIPCHILDREN | WS_DLGFRAME | WS_BORDER | WS_MAXIMIZEBOX |
-    WS_MINIMIZEBOX | WS_SIZEBOX | WS_SYSMENU;
-static const DWORD kPreXULSkeletonUIWindowStyleEx = WS_EX_WINDOWEDGE;
-
 MFBT_API void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance);
 MFBT_API HWND ConsumePreXULSkeletonUIHandle();
-MFBT_API bool WasPreXULSkeletonUIMaximized();
 MFBT_API void PersistPreXULSkeletonUIValues(int screenX, int screenY, int width,
-                                            int height, bool maximized,
+                                            int height,
                                             double urlbarHorizontalOffsetCSS,
                                             double urlbarWidthCSS,
                                             double cssToDevPixelScaling);

@@ -8,55 +8,14 @@
 
 #include <algorithm>
 #include <math.h>
-#include <limits.h>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/glue/Debug.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Vector.h"
 #include "mozilla/WindowsDpiAwareness.h"
 #include "mozilla/WindowsVersion.h"
-#include "prthread.h"
 
 namespace mozilla {
-
-struct ColorRect {
-  uint32_t color;
-  uint32_t x;
-  uint32_t y;
-  uint32_t width;
-  uint32_t height;
-};
-
-struct NormalizedRGB {
-  double r;
-  double g;
-  double b;
-};
-
-NormalizedRGB UintToRGB(uint32_t color) {
-  double r = static_cast<double>(color >> 16 & 0xff) / 255.0;
-  double g = static_cast<double>(color >> 8 & 0xff) / 255.0;
-  double b = static_cast<double>(color >> 0 & 0xff) / 255.0;
-  return NormalizedRGB{r, g, b};
-}
-
-uint32_t RGBToUint(const NormalizedRGB& rgb) {
-  return (static_cast<uint32_t>(rgb.r * 255.0) << 16) |
-         (static_cast<uint32_t>(rgb.g * 255.0) << 8) |
-         (static_cast<uint32_t>(rgb.b * 255.0) << 0);
-}
-
-double Lerp(double a, double b, double x) { return a + x * (b - a); }
-
-NormalizedRGB Lerp(const NormalizedRGB& a, const NormalizedRGB& b, double x) {
-  return NormalizedRGB{Lerp(a.r, b.r, x), Lerp(a.g, b.g, x), Lerp(a.b, b.b, x)};
-}
-
-
-double SmoothStep3(double x) { return x * x * (3.0 - 2.0 * x); }
 
 static const wchar_t kPreXULSkeletonUIKeyPath[] =
     L"SOFTWARE"
@@ -66,20 +25,6 @@ static bool sPreXULSkeletonUIEnabled = false;
 static HWND sPreXULSkeletonUIWindow;
 static LPWSTR const gStockApplicationIcon = MAKEINTRESOURCEW(32512);
 static LPWSTR const gIDCWait = MAKEINTRESOURCEW(32514);
-static HANDLE sPreXULSKeletonUIAnimationThread;
-
-static uint32_t* sPixelBuffer = nullptr;
-static StaticAutoPtr<Vector<ColorRect>> sAnimatedRects;
-static int sTotalChromeHeight = 0;
-static volatile LONG sAnimationControlFlag = 0;
-static bool sMaximized = false;
-static int sNonClientVerticalMargins = 0;
-static int sNonClientHorizontalMargins = 0;
-static uint32_t sDpi = 0;
-
-
-static uint32_t sBackgroundColor;
-static uint32_t sToolbarForegroundColor;
 
 typedef BOOL(WINAPI* EnableNonClientDpiScalingProc)(HWND);
 static EnableNonClientDpiScalingProc sEnableNonClientDpiScaling = NULL;
@@ -101,6 +46,8 @@ typedef BOOL(WINAPI* ShowWindowProc)(HWND, int);
 ShowWindowProc sShowWindow = NULL;
 typedef BOOL(WINAPI* SetWindowPosProc)(HWND, HWND, int, int, int, int, UINT);
 SetWindowPosProc sSetWindowPos = NULL;
+typedef BOOL(WINAPI* RedrawWindowProc)(HWND, const RECT*, HRGN, UINT);
+RedrawWindowProc sRedrawWindow = NULL;
 typedef HDC(WINAPI* GetWindowDCProc)(HWND);
 GetWindowDCProc sGetWindowDC = NULL;
 typedef int(WINAPI* FillRectProc)(HDC, const RECT*, HBRUSH);
@@ -109,12 +56,6 @@ typedef BOOL(WINAPI* DeleteObjectProc)(HGDIOBJ);
 DeleteObjectProc sDeleteObject = NULL;
 typedef int(WINAPI* ReleaseDCProc)(HWND, HDC);
 ReleaseDCProc sReleaseDC = NULL;
-typedef HMONITOR(WINAPI* MonitorFromWindowProc)(HWND, DWORD);
-MonitorFromWindowProc sMonitorFromWindow = NULL;
-typedef BOOL(WINAPI* GetMonitorInfoWProc)(HMONITOR, LPMONITORINFO);
-GetMonitorInfoWProc sGetMonitorInfoW = NULL;
-typedef LONG_PTR(WINAPI* SetWindowLongPtrWProc)(HWND, int, LONG_PTR);
-SetWindowLongPtrWProc sSetWindowLongPtrW = NULL;
 typedef int(WINAPI* StretchDIBitsProc)(HDC, int, int, int, int, int, int, int,
                                        int, const VOID*, const BITMAPINFO*,
                                        UINT, DWORD);
@@ -126,8 +67,22 @@ static uint32_t sWindowWidth;
 static uint32_t sWindowHeight;
 static double sCSSToDevPixelScaling;
 
-static const int kAnimationCSSPixelsPerFrame = 21;
-static const int kAnimationCSSExtraWindowSize = 300;
+
+
+
+
+
+
+
+static DWORD sWindowStyle = WS_POPUP;
+
+
+
+
+
+
+
+static DWORD sWindowStyleEx = WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW;
 
 
 
@@ -149,67 +104,72 @@ int CSSToDevPixels(int cssPixels, double scaling) {
   return CSSToDevPixels((double)cssPixels, scaling);
 }
 
+struct ColorRect {
+  uint32_t color;
+  uint32_t x;
+  uint32_t y;
+  uint32_t width;
+  uint32_t height;
+};
+
 void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
                     double urlbarWidthCSS) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  if (!sGetSystemMetricsForDpi || !sGetDpiForWindow) {
+    return;
+  }
 
   
   
   
-  sBackgroundColor = 0xf9f9fa;
   
-  sToolbarForegroundColor = 0xe5e5e5;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
   uint32_t tabBarColor = 0x202340;
   
+  uint32_t backgroundColor = 0xf9f9fa;
+  
   uint32_t chromeContentDividerColor = 0xe2e1e3;
+  
+  uint32_t toolbarForegroundColor = 0xe5e5e5;
   
   uint32_t tabLineColor = 0x0a75d3;
   
   uint32_t urlbarColor = 0xffffff;
 
   int chromeHorMargin = CSSToDevPixels(2, sCSSToDevPixelScaling);
-  int verticalOffset = sMaximized ? sNonClientVerticalMargins : 0;
-  int horizontalOffset =
-      sNonClientHorizontalMargins - (sMaximized ? 0 : chromeHorMargin);
+  int dpi = sGetDpiForWindow(hWnd);
+  int verticalOffset = sGetSystemMetricsForDpi(SM_CYBORDER, dpi);
+  int nonClientHorMargins = sGetSystemMetricsForDpi(SM_CXFRAME, dpi) +
+                            sGetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+  int horizontalOffset = nonClientHorMargins - chromeHorMargin;
 
-  
-  int topBorderHeight =
-      sMaximized ? 0 : CSSToDevPixels(1, sCSSToDevPixelScaling);
   
   int tabBarHeight = CSSToDevPixels(33, sCSSToDevPixelScaling) + verticalOffset;
   
   int titlebarSpacerWidth =
-      (sMaximized ? 0 : CSSToDevPixels(40, sCSSToDevPixelScaling)) +
-      horizontalOffset;
+      CSSToDevPixels(40, sCSSToDevPixelScaling) + horizontalOffset;
   
   int tabLineHeight = CSSToDevPixels(2, sCSSToDevPixelScaling) + verticalOffset;
   int selectedTabWidth = CSSToDevPixels(224, sCSSToDevPixelScaling);
+
   int toolbarHeight = CSSToDevPixels(39, sCSSToDevPixelScaling);
-  
-  int urlbarTopOffset = CSSToDevPixels(5, sCSSToDevPixelScaling);
-  int urlbarHeight = CSSToDevPixels(30, sCSSToDevPixelScaling);
 
   int tabPlaceholderBarMarginTop = CSSToDevPixels(13, sCSSToDevPixelScaling);
   int tabPlaceholderBarMarginLeft = CSSToDevPixels(10, sCSSToDevPixelScaling);
@@ -230,18 +190,11 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
       std::min((int)urlbarWidthCSS - 10, 260), sCSSToDevPixelScaling);
   int urlbarTextPlaceholderHeight = CSSToDevPixels(10, sCSSToDevPixelScaling);
 
-  ColorRect topBorder = {};
-  topBorder.color = 0x00000000;
-  topBorder.x = 0;
-  topBorder.y = 0;
-  topBorder.width = sWindowWidth;
-  topBorder.height = topBorderHeight;
-
   
   ColorRect tabBar = {};
   tabBar.color = tabBarColor;
   tabBar.x = 0;
-  tabBar.y = topBorder.height;
+  tabBar.y = 0;
   tabBar.width = sWindowWidth;
   tabBar.height = tabBarHeight;
 
@@ -249,21 +202,21 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   ColorRect tabLine = {};
   tabLine.color = tabLineColor;
   tabLine.x = titlebarSpacerWidth;
-  tabLine.y = topBorder.height;
+  tabLine.y = 0;
   tabLine.width = selectedTabWidth;
   tabLine.height = tabLineHeight;
 
   
   ColorRect selectedTab = {};
-  selectedTab.color = sBackgroundColor;
+  selectedTab.color = backgroundColor;
   selectedTab.x = titlebarSpacerWidth;
-  selectedTab.y = tabLine.y + tabLineHeight;
+  selectedTab.y = tabLineHeight;
   selectedTab.width = selectedTabWidth;
-  selectedTab.height = tabBar.y + tabBar.height - selectedTab.y;
+  selectedTab.height = tabBarHeight;
 
   
   ColorRect tabTextPlaceholder = {};
-  tabTextPlaceholder.color = sToolbarForegroundColor;
+  tabTextPlaceholder.color = toolbarForegroundColor;
   tabTextPlaceholder.x = selectedTab.x + tabPlaceholderBarMarginLeft;
   tabTextPlaceholder.y = selectedTab.y + tabPlaceholderBarMarginTop;
   tabTextPlaceholder.width = tabPlaceholderBarWidth;
@@ -271,16 +224,16 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
 
   
   ColorRect toolbar = {};
-  toolbar.color = sBackgroundColor;
+  toolbar.color = backgroundColor;
   toolbar.x = 0;
-  toolbar.y = tabBar.y + tabBarHeight;
+  toolbar.y = tabBarHeight;
   toolbar.width = sWindowWidth;
   toolbar.height = toolbarHeight;
 
   
   
   ColorRect leftToolbarPlaceholder = {};
-  leftToolbarPlaceholder.color = sToolbarForegroundColor;
+  leftToolbarPlaceholder.color = toolbarForegroundColor;
   leftToolbarPlaceholder.x =
       toolbar.x + toolbarPlaceholderMarginLeft + horizontalOffset;
   leftToolbarPlaceholder.y = toolbar.y + toolbarPlaceholderMarginTop;
@@ -290,7 +243,7 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   
   
   ColorRect rightToolbarPlaceholder = {};
-  rightToolbarPlaceholder.color = sToolbarForegroundColor;
+  rightToolbarPlaceholder.color = toolbarForegroundColor;
   rightToolbarPlaceholder.x = sWindowWidth - horizontalOffset -
                               toolbarPlaceholderMarginRight -
                               toolbarPlaceholderWidth;
@@ -311,14 +264,14 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   urlbar.color = urlbarColor;
   urlbar.x = CSSToDevPixels(urlbarHorizontalOffsetCSS, sCSSToDevPixelScaling) +
              horizontalOffset;
-  urlbar.y = tabBar.y + tabBarHeight + urlbarTopOffset;
+  urlbar.y = CSSToDevPixels(39, sCSSToDevPixelScaling);
   urlbar.width = CSSToDevPixels(urlbarWidthCSS, sCSSToDevPixelScaling);
-  urlbar.height = urlbarHeight;
+  urlbar.height = CSSToDevPixels(30, sCSSToDevPixelScaling);
 
   
   
   ColorRect urlbarTextPlaceholder = {};
-  urlbarTextPlaceholder.color = sToolbarForegroundColor;
+  urlbarTextPlaceholder.color = toolbarForegroundColor;
   urlbarTextPlaceholder.x = urlbar.x + urlbarTextPlaceholderMarginLeft;
   
   
@@ -327,7 +280,6 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   urlbarTextPlaceholder.height = urlbarTextPlaceholderHeight;
 
   ColorRect rects[] = {
-      topBorder,
       tabBar,
       tabLine,
       selectedTab,
@@ -340,29 +292,17 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
       urlbarTextPlaceholder,
   };
 
-  sTotalChromeHeight = chromeContentDivider.y + chromeContentDivider.height;
-  if (sTotalChromeHeight > sWindowHeight) {
-    printf_stderr("Exiting drawing skeleton UI because window is too small.\n");
-    return;
-  }
+  int totalChromeHeight = chromeContentDivider.y + chromeContentDivider.height;
 
-  if (!sAnimatedRects->append(tabTextPlaceholder) ||
-      !sAnimatedRects->append(leftToolbarPlaceholder) ||
-      !sAnimatedRects->append(rightToolbarPlaceholder) ||
-      !sAnimatedRects->append(urlbarTextPlaceholder)) {
-    sAnimatedRects = nullptr;
-    return;
-  }
-
-  sPixelBuffer =
-      (uint32_t*)calloc(sWindowWidth * sTotalChromeHeight, sizeof(uint32_t));
+  uint32_t* pixelBuffer =
+      (uint32_t*)calloc(sWindowWidth * totalChromeHeight, sizeof(uint32_t));
 
   for (int i = 0; i < sizeof(rects) / sizeof(rects[0]); ++i) {
     ColorRect rect = rects[i];
     for (int y = rect.y; y < rect.y + rect.height; ++y) {
-      uint32_t* lineStart = &sPixelBuffer[y * sWindowWidth];
+      uint32_t* lineStart = &pixelBuffer[y * sWindowWidth];
       uint32_t* dataStart = lineStart + rect.x;
-      std::fill_n(dataStart, rect.width, rect.color);
+      std::fill(dataStart, dataStart + rect.width, rect.color);
     }
   }
 
@@ -371,224 +311,32 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   BITMAPINFO chromeBMI = {};
   chromeBMI.bmiHeader.biSize = sizeof(chromeBMI.bmiHeader);
   chromeBMI.bmiHeader.biWidth = sWindowWidth;
-  chromeBMI.bmiHeader.biHeight = -sTotalChromeHeight;
+  chromeBMI.bmiHeader.biHeight = -totalChromeHeight;
   chromeBMI.bmiHeader.biPlanes = 1;
   chromeBMI.bmiHeader.biBitCount = 32;
   chromeBMI.bmiHeader.biCompression = BI_RGB;
 
   
-  sStretchDIBits(hdc, 0, 0, sWindowWidth, sTotalChromeHeight, 0, 0,
-                 sWindowWidth, sTotalChromeHeight, sPixelBuffer, &chromeBMI,
-                 DIB_RGB_COLORS, SRCCOPY);
+  sStretchDIBits(hdc, 0, 0, sWindowWidth, totalChromeHeight, 0, 0, sWindowWidth,
+                 totalChromeHeight, pixelBuffer, &chromeBMI, DIB_RGB_COLORS,
+                 SRCCOPY);
 
   
-  RECT rect = {0, sTotalChromeHeight, (LONG)sWindowWidth, (LONG)sWindowHeight};
-  HBRUSH brush = sCreateSolidBrush(sBackgroundColor);
+  RECT rect = {0, totalChromeHeight, (LONG)sWindowWidth, (LONG)sWindowHeight};
+  HBRUSH brush = sCreateSolidBrush(backgroundColor);
   sFillRect(hdc, &rect, brush);
 
   sReleaseDC(hWnd, hdc);
+
+  free(pixelBuffer);
+
   sDeleteObject(brush);
-}
-
-DWORD WINAPI AnimateSkeletonUI(void* aUnused) {
-  if (!sPixelBuffer || sAnimatedRects->empty()) {
-    return 0;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  int animationWidth = CSSToDevPixels(80, sCSSToDevPixelScaling);
-  UniquePtr<uint32_t[]> animationLookup =
-      MakeUnique<uint32_t[]>(animationWidth);
-  uint32_t animationColor = sBackgroundColor;
-  NormalizedRGB rgbBlend = UintToRGB(animationColor);
-
-  
-  for (int i = 0; i < animationWidth / 2; ++i) {
-    uint32_t baseColor = sToolbarForegroundColor;
-    double blendAmountLinear =
-        static_cast<double>(i) / (static_cast<double>(animationWidth / 2));
-    double blendAmount = SmoothStep3(blendAmountLinear);
-
-    NormalizedRGB rgbBase = UintToRGB(baseColor);
-    NormalizedRGB rgb = Lerp(rgbBase, rgbBlend, blendAmount);
-    animationLookup[i] = RGBToUint(rgb);
-  }
-
-  
-  for (int i = animationWidth / 2; i < animationWidth; ++i) {
-    int j = animationWidth - 1 - i;
-    if (j == animationWidth / 2) {
-      
-      
-      animationLookup[i] = animationColor;
-    } else {
-      animationLookup[i] = animationLookup[j];
-    }
-  }
-
-  
-  
-  BITMAPINFO chromeBMI = {};
-  chromeBMI.bmiHeader.biSize = sizeof(chromeBMI.bmiHeader);
-  chromeBMI.bmiHeader.biWidth = sWindowWidth;
-  chromeBMI.bmiHeader.biHeight = -sTotalChromeHeight;
-  chromeBMI.bmiHeader.biPlanes = 1;
-  chromeBMI.bmiHeader.biBitCount = 32;
-  chromeBMI.bmiHeader.biCompression = BI_RGB;
-
-  uint32_t animationIteration = 0;
-
-  int devPixelsPerFrame =
-      CSSToDevPixels(kAnimationCSSPixelsPerFrame, sCSSToDevPixelScaling);
-  int devPixelsExtraWindowSize =
-      CSSToDevPixels(kAnimationCSSExtraWindowSize, sCSSToDevPixelScaling);
-
-  if (::InterlockedCompareExchange(&sAnimationControlFlag, 0, 0)) {
-    
-    return 0;
-  }
-
-  while (true) {
-    
-    
-    
-    
-    int animationMin = ((animationIteration * devPixelsPerFrame) %
-                        (sWindowWidth + devPixelsExtraWindowSize)) -
-                       devPixelsExtraWindowSize / 2;
-    int animationMax = animationMin + animationWidth;
-    
-    
-    
-    
-    int priorAnimationMin = animationMin - devPixelsPerFrame;
-    animationMin = std::max(0, animationMin);
-    priorAnimationMin = std::max(0, priorAnimationMin);
-    animationMax = std::min((int)sWindowWidth, animationMax);
-
-    
-    
-    
-    bool updatedAnything = false;
-    for (ColorRect rect : *sAnimatedRects) {
-      int rectMin = rect.x;
-      int rectMax = rect.x + rect.width;
-      bool animationWindowOverlaps =
-          rectMax >= priorAnimationMin && rectMin < animationMax;
-
-      int priorUpdateAreaMin = std::max(rectMin, priorAnimationMin);
-      int currentUpdateAreaMin = std::max(rectMin, animationMin);
-      int priorUpdateAreaMax = std::min(rectMax, animationMin);
-      int currentUpdateAreaMax = std::min(rectMax, animationMax);
-
-      if (animationWindowOverlaps) {
-        updatedAnything = true;
-        for (int y = rect.y; y < rect.y + rect.height; ++y) {
-          uint32_t* lineStart = &sPixelBuffer[y * sWindowWidth];
-          
-          
-          for (int x = priorUpdateAreaMin; x < priorUpdateAreaMax; ++x) {
-            lineStart[x] = rect.color;
-          }
-          
-          for (int x = currentUpdateAreaMin; x < currentUpdateAreaMax; ++x) {
-            lineStart[x] = animationLookup[x - animationMin];
-          }
-        }
-      }
-    }
-
-    if (updatedAnything) {
-      HDC hdc = sGetWindowDC(sPreXULSkeletonUIWindow);
-
-      sStretchDIBits(hdc, priorAnimationMin, 0,
-                     animationMax - priorAnimationMin, sTotalChromeHeight,
-                     priorAnimationMin, 0, animationMax - priorAnimationMin,
-                     sTotalChromeHeight, sPixelBuffer, &chromeBMI,
-                     DIB_RGB_COLORS, SRCCOPY);
-
-      sReleaseDC(sPreXULSkeletonUIWindow, hdc);
-    }
-
-    animationIteration++;
-
-    
-    
-    
-    
-    
-    
-    
-    if (InterlockedIncrement(&sAnimationControlFlag) != 1) {
-      return 0;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    ::Sleep(16);
-
-    
-    
-    
-    if (InterlockedDecrement(&sAnimationControlFlag) != 0) {
-      return 0;
-    }
-  }
-
-  return 0;
 }
 
 LRESULT WINAPI PreXULSkeletonUIProc(HWND hWnd, UINT msg, WPARAM wParam,
                                     LPARAM lParam) {
-  
-  
   if (msg == WM_NCCREATE && sEnableNonClientDpiScaling) {
     sEnableNonClientDpiScaling(hWnd);
-  }
-
-  
-  
-  if (msg == WM_NCCALCSIZE) {
-    RECT* clientRect =
-        wParam ? &(reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam))->rgrc[0]
-               : (reinterpret_cast<RECT*>(lParam));
-
-    
-    
-    
-    int horizontalOffset =
-        sNonClientHorizontalMargins -
-        (sMaximized ? 0 : CSSToDevPixels(2, sCSSToDevPixelScaling));
-    int verticalOffset =
-        sNonClientHorizontalMargins -
-        (sMaximized ? 0 : CSSToDevPixels(2, sCSSToDevPixelScaling));
-    clientRect->top = clientRect->top;
-    clientRect->left += horizontalOffset;
-    clientRect->right -= horizontalOffset;
-    clientRect->bottom -= verticalOffset;
-    return 0;
   }
 
   return ::DefWindowProcW(hWnd, msg, wParam, lParam);
@@ -616,12 +364,31 @@ bool OpenPreXULSkeletonUIRegKey(HKEY& key) {
   return false;
 }
 
-bool LoadGdi32AndUser32Procedures() {
+void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
+  HKEY regKey;
+  if (!IsWin10OrLater() || !OpenPreXULSkeletonUIRegKey(regKey)) {
+    return;
+  }
+  AutoCloseRegKey closeKey(regKey);
+
+  DWORD dataLen = sizeof(uint32_t);
+  uint32_t enabled;
+  LSTATUS result =
+      ::RegGetValueW(regKey, nullptr, L"enabled", RRF_RT_REG_DWORD, nullptr,
+                     reinterpret_cast<PBYTE>(&enabled), &dataLen);
+  if (result != ERROR_SUCCESS || enabled == 0) {
+    return;
+  }
+  sPreXULSkeletonUIEnabled = true;
+
+  
+  
+  
   HMODULE user32Dll = ::LoadLibraryW(L"user32");
   HMODULE gdi32Dll = ::LoadLibraryW(L"gdi32");
 
   if (!user32Dll || !gdi32Dll) {
-    return false;
+    return;
   }
 
   auto getThreadDpiAwarenessContext =
@@ -641,108 +408,25 @@ bool LoadGdi32AndUser32Procedures() {
 
   sGetSystemMetricsForDpi = (GetSystemMetricsForDpiProc)::GetProcAddress(
       user32Dll, "GetSystemMetricsForDpi");
-  if (!sGetSystemMetricsForDpi) {
-    return false;
-  }
   sGetDpiForWindow =
       (GetDpiForWindowProc)::GetProcAddress(user32Dll, "GetDpiForWindow");
-  if (!sGetDpiForWindow) {
-    return false;
-  }
   sRegisterClassW =
       (RegisterClassWProc)::GetProcAddress(user32Dll, "RegisterClassW");
-  if (!sRegisterClassW) {
-    return false;
-  }
   sCreateWindowExW =
       (CreateWindowExWProc)::GetProcAddress(user32Dll, "CreateWindowExW");
-  if (!sCreateWindowExW) {
-    return false;
-  }
   sShowWindow = (ShowWindowProc)::GetProcAddress(user32Dll, "ShowWindow");
-  if (!sShowWindow) {
-    return false;
-  }
   sSetWindowPos = (SetWindowPosProc)::GetProcAddress(user32Dll, "SetWindowPos");
-  if (!sSetWindowPos) {
-    return false;
-  }
+  sRedrawWindow = (RedrawWindowProc)::GetProcAddress(user32Dll, "RedrawWindow");
   sGetWindowDC = (GetWindowDCProc)::GetProcAddress(user32Dll, "GetWindowDC");
-  if (!sGetWindowDC) {
-    return false;
-  }
   sFillRect = (FillRectProc)::GetProcAddress(user32Dll, "FillRect");
-  if (!sFillRect) {
-    return false;
-  }
+  sDeleteObject = (DeleteObjectProc)::GetProcAddress(gdi32Dll, "DeleteObject");
   sReleaseDC = (ReleaseDCProc)::GetProcAddress(user32Dll, "ReleaseDC");
-  if (!sReleaseDC) {
-    return false;
-  }
   sLoadIconW = (LoadIconWProc)::GetProcAddress(user32Dll, "LoadIconW");
-  if (!sLoadIconW) {
-    return false;
-  }
   sLoadCursorW = (LoadCursorWProc)::GetProcAddress(user32Dll, "LoadCursorW");
-  if (!sLoadCursorW) {
-    return false;
-  }
-  sMonitorFromWindow =
-      (MonitorFromWindowProc)::GetProcAddress(user32Dll, "MonitorFromWindow");
-  if (!sMonitorFromWindow) {
-    return false;
-  }
-  sGetMonitorInfoW =
-      (GetMonitorInfoWProc)::GetProcAddress(user32Dll, "GetMonitorInfoW");
-  if (!sGetMonitorInfoW) {
-    return false;
-  }
-  sSetWindowLongPtrW =
-      (SetWindowLongPtrWProc)::GetProcAddress(user32Dll, "SetWindowLongPtrW");
-  if (!sSetWindowLongPtrW) {
-    return false;
-  }
   sStretchDIBits =
       (StretchDIBitsProc)::GetProcAddress(gdi32Dll, "StretchDIBits");
-  if (!sStretchDIBits) {
-    return false;
-  }
   sCreateSolidBrush =
       (CreateSolidBrushProc)::GetProcAddress(gdi32Dll, "CreateSolidBrush");
-  if (!sCreateSolidBrush) {
-    return false;
-  }
-  sDeleteObject = (DeleteObjectProc)::GetProcAddress(gdi32Dll, "DeleteObject");
-  if (!sDeleteObject) {
-    return false;
-  }
-
-  return true;
-}
-
-void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
-  HKEY regKey;
-  if (!IsWin10OrLater() || !OpenPreXULSkeletonUIRegKey(regKey)) {
-    return;
-  }
-  AutoCloseRegKey closeKey(regKey);
-
-  DWORD dataLen = sizeof(uint32_t);
-  uint32_t enabled;
-  LSTATUS result =
-      ::RegGetValueW(regKey, nullptr, L"enabled", RRF_RT_REG_DWORD, nullptr,
-                     reinterpret_cast<PBYTE>(&enabled), &dataLen);
-  if (result != ERROR_SUCCESS || enabled == 0) {
-    return;
-  }
-  sPreXULSkeletonUIEnabled = true;
-
-  MOZ_ASSERT(!sAnimatedRects);
-  sAnimatedRects = new Vector<ColorRect>();
-
-  if (!LoadGdi32AndUser32Procedures()) {
-    return;
-  }
 
   WNDCLASSW wc;
   wc.style = CS_DBLCLKS;
@@ -779,31 +463,19 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
     return;
   }
 
-  uint32_t windowWidth;
   result = ::RegGetValueW(regKey, nullptr, L"width", RRF_RT_REG_DWORD, nullptr,
-                          reinterpret_cast<PBYTE>(&windowWidth), &dataLen);
+                          reinterpret_cast<PBYTE>(&sWindowWidth), &dataLen);
   if (result != ERROR_SUCCESS) {
     printf_stderr("Error reading width %lu\n", GetLastError());
     return;
   }
 
-  uint32_t windowHeight;
   result = ::RegGetValueW(regKey, nullptr, L"height", RRF_RT_REG_DWORD, nullptr,
-                          reinterpret_cast<PBYTE>(&windowHeight), &dataLen);
+                          reinterpret_cast<PBYTE>(&sWindowHeight), &dataLen);
   if (result != ERROR_SUCCESS) {
     printf_stderr("Error reading height %lu\n", GetLastError());
     return;
   }
-
-  uint32_t maximized;
-  result =
-      ::RegGetValueW(regKey, nullptr, L"maximized", RRF_RT_REG_DWORD, nullptr,
-                     reinterpret_cast<PBYTE>(&maximized), &dataLen);
-  if (result != ERROR_SUCCESS) {
-    printf_stderr("Error reading maximized %lu\n", GetLastError());
-    return;
-  }
-  sMaximized = maximized != 0;
 
   dataLen = sizeof(double);
   double urlbarHorizontalOffsetCSS;
@@ -833,92 +505,28 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
     return;
   }
 
-  int showCmd = SW_SHOWNORMAL;
-  DWORD windowStyle = kPreXULSkeletonUIWindowStyle;
-  if (sMaximized) {
-    showCmd = SW_SHOWMAXIMIZED;
-    windowStyle |= WS_MAXIMIZE;
-  }
-
   sPreXULSkeletonUIWindow =
-      sCreateWindowExW(kPreXULSkeletonUIWindowStyleEx, L"MozillaWindowClass",
-                       L"", windowStyle, screenX, screenY, windowWidth,
-                       windowHeight, nullptr, nullptr, hInstance, nullptr);
-  sShowWindow(sPreXULSkeletonUIWindow, showCmd);
+      sCreateWindowExW(sWindowStyleEx, L"MozillaWindowClass", L"", sWindowStyle,
+                       screenX, screenY, sWindowWidth, sWindowHeight, nullptr,
+                       nullptr, hInstance, nullptr);
 
-  sDpi = sGetDpiForWindow(sPreXULSkeletonUIWindow);
-  sNonClientHorizontalMargins =
-      sGetSystemMetricsForDpi(SM_CXFRAME, sDpi) +
-      sGetSystemMetricsForDpi(SM_CXPADDEDBORDER, sDpi);
-  sNonClientVerticalMargins = sGetSystemMetricsForDpi(SM_CYFRAME, sDpi) +
-                              sGetSystemMetricsForDpi(SM_CXPADDEDBORDER, sDpi);
-
-  if (sMaximized) {
-    HMONITOR monitor =
-        sMonitorFromWindow(sPreXULSkeletonUIWindow, MONITOR_DEFAULTTONULL);
-    if (!monitor) {
-      
-      
-      
-      
-      return;
-    }
-    MONITORINFO mi = {sizeof(MONITORINFO)};
-    if (!sGetMonitorInfoW(monitor, &mi)) {
-      return;
-    }
-
-    sWindowWidth =
-        mi.rcWork.right - mi.rcWork.left + sNonClientHorizontalMargins * 2;
-    sWindowHeight =
-        mi.rcWork.bottom - mi.rcWork.top + sNonClientVerticalMargins * 2;
-  } else {
-    sWindowWidth = windowWidth;
-    sWindowHeight = windowHeight;
-  }
-
+  sShowWindow(sPreXULSkeletonUIWindow, SW_SHOWNORMAL);
   sSetWindowPos(sPreXULSkeletonUIWindow, 0, 0, 0, 0, 0,
                 SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOMOVE |
                     SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
   DrawSkeletonUI(sPreXULSkeletonUIWindow, urlbarHorizontalOffsetCSS,
                  urlbarWidthCSS);
-
-  if (sAnimatedRects) {
-    sPreXULSKeletonUIAnimationThread = ::CreateThread(
-        nullptr, 256 * 1024, AnimateSkeletonUI, nullptr, 0, nullptr);
-  }
+  sRedrawWindow(sPreXULSkeletonUIWindow, NULL, NULL, RDW_INVALIDATE);
 }
 
-bool WasPreXULSkeletonUIMaximized() { return sMaximized; }
-
 HWND ConsumePreXULSkeletonUIHandle() {
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  if (InterlockedIncrement(&sAnimationControlFlag) == 1) {
-    ::WaitForSingleObject(sPreXULSKeletonUIAnimationThread, INFINITE);
-  }
-  ::CloseHandle(sPreXULSKeletonUIAnimationThread);
-  sPreXULSKeletonUIAnimationThread = nullptr;
   HWND result = sPreXULSkeletonUIWindow;
   sPreXULSkeletonUIWindow = nullptr;
-  free(sPixelBuffer);
-  sPixelBuffer = nullptr;
-  sAnimatedRects = nullptr;
   return result;
 }
 
 void PersistPreXULSkeletonUIValues(int screenX, int screenY, int width,
-                                   int height, bool maximized,
-                                   double urlbarHorizontalOffsetCSS,
+                                   int height, double urlbarHorizontalOffsetCSS,
                                    double urlbarWidthCSS,
                                    double cssToDevPixelScaling) {
   if (!sPreXULSkeletonUIEnabled) {
@@ -958,14 +566,6 @@ void PersistPreXULSkeletonUIValues(int screenX, int screenY, int width,
   if (result != ERROR_SUCCESS) {
     printf_stderr("Failed persisting height to Windows registry\n");
     return;
-  }
-
-  DWORD maximizedDword = maximized ? 1 : 0;
-  result = ::RegSetValueExW(regKey, L"maximized", 0, REG_DWORD,
-                            reinterpret_cast<PBYTE>(&maximizedDword),
-                            sizeof(maximizedDword));
-  if (result != ERROR_SUCCESS) {
-    printf_stderr("Failed persisting maximized to Windows registry\n");
   }
 
   result = ::RegSetValueExW(regKey, L"urlbarHorizontalOffsetCSS", 0, REG_BINARY,
