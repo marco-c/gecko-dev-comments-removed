@@ -106,7 +106,7 @@ extern JSString* AsmJSModuleToString(JSContext* cx, JS::Handle<JSFunction*> fun,
 
 
 
-extern bool IsValidAsmJSHeapLength(size_t length);
+extern bool IsValidAsmJSHeapLength(uint32_t length);
 
 }  
 
