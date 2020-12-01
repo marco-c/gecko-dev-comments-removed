@@ -13,6 +13,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ClientID: "resource://gre/modules/ClientID.jsm",
   Services: "resource://gre/modules/Services.jsm",
   TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
+  AttributionCode: "resource:///modules/AttributionCode.jsm",
 });
 XPCOMUtils.defineLazyServiceGetters(this, {
   gUUIDGenerator: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
@@ -65,6 +66,26 @@ class AboutWelcomeTelemetry {
     return `${structuredIngestionEndpointBase}/${extension}`;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  _maybeAttachAttribution(ping) {
+    const attribution = AttributionCode.getCachedAttributionData();
+    if (attribution && Object.keys(attribution).length) {
+      ping.attribution = attribution;
+    }
+    return ping;
+  }
+
   async _createPing(event) {
     if (event.event_context && typeof event.event_context === "object") {
       event.event_context = JSON.stringify(event.event_context);
@@ -77,7 +98,7 @@ class AboutWelcomeTelemetry {
       browser_session_id: browserSessionId,
     };
 
-    return ping;
+    return this._maybeAttachAttribution(ping);
   }
 
   async sendTelemetry(event) {
