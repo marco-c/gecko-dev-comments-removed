@@ -243,6 +243,9 @@ const shortcutHandlers = {
 
 
 
+
+
+
 function MarkupView(inspector, frame, controllerWindow) {
   EventEmitter.decorate(this);
 
