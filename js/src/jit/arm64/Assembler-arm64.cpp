@@ -133,8 +133,26 @@ BufferOffset Assembler::emitExtendedJumpTable() {
     
     DebugOnly<size_t> preOffset = size_t(armbuffer_.nextOffset().getOffset());
 
-    ldr(vixl::ip0, ptrdiff_t(8 / vixl::kInstructionSize));
-    br(vixl::ip0);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    ldr(ScratchReg64, ptrdiff_t(8 / vixl::kInstructionSize));
+    br(ScratchReg64);
 
     DebugOnly<size_t> prePointer = size_t(armbuffer_.nextOffset().getOffset());
     MOZ_ASSERT_IF(!oom(),
