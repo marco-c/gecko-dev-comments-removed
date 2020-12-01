@@ -5,6 +5,7 @@
 
 
 #include "gtest/gtest.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "nsIAsyncInputStream.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIInputStream.h"

@@ -2,6 +2,7 @@
 
 
 
+#include "mozilla/SpinEventLoopUntil.h"
 #include "nsIOService.h"
 #include "nsSyncStreamListener.h"
 #include "nsThreadUtils.h"

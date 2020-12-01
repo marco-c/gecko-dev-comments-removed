@@ -25,15 +25,14 @@
 #include "nsIIdleRunnable.h"
 #include "nsINamed.h"
 #include "nsIRunnable.h"
-#include "nsIThread.h"
 #include "nsIThreadManager.h"
 #include "nsITimer.h"
 #include "nsString.h"
 #include "prinrval.h"
 #include "prthread.h"
-#include "xpcpublic.h"
 
 class MessageLoop;
+class nsIThread;
 
 
 
@@ -282,97 +281,6 @@ extern bool NS_HasPendingEvents(nsIThread* aThread = nullptr);
 
 extern bool NS_ProcessNextEvent(nsIThread* aThread = nullptr,
                                 bool aMayWait = true);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace mozilla {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class ProcessFailureBehavior {
-  IgnoreAndContinue,
-  ReportToCaller,
-};
-
-template <
-    ProcessFailureBehavior Behavior = ProcessFailureBehavior::ReportToCaller,
-    typename Pred>
-bool SpinEventLoopUntil(Pred&& aPredicate, nsIThread* aThread = nullptr) {
-  nsIThread* thread = aThread ? aThread : NS_GetCurrentThread();
-
-  
-  
-  
-  mozilla::Maybe<xpc::AutoScriptActivity> asa;
-  if (NS_IsMainThread()) {
-    asa.emplace(false);
-  }
-
-  while (!aPredicate()) {
-    bool didSomething = NS_ProcessNextEvent(thread, true);
-
-    if (Behavior == ProcessFailureBehavior::IgnoreAndContinue) {
-      
-      continue;
-    } else if (!didSomething) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-}  
 
 
 
