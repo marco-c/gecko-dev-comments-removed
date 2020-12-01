@@ -294,6 +294,8 @@ class WeakPtr {
 #endif
   }
 
+  explicit WeakPtr(const RefPtr<T>& aOther) : WeakPtr(aOther.get()) {}
+
   
   WeakPtr() : mRef(new WeakReference(nullptr)) {}
 
