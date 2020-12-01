@@ -1,20 +1,16 @@
 
 
 
+
+
+
 add_task(async function setup() {
-  
-  
-  let version = CURRENT_SCHEMA_VERSION;
-  while (version > 0) {
-    let dbFile = OS.Path.join(do_get_cwd().path, `places_v${version}.sqlite`);
-    if (await OS.File.exists(dbFile)) {
-      info("Using database version " + version);
-      break;
-    }
-    version--;
-  }
-  Assert.greater(version, 0, "Found a valid database version");
-  await setupPlacesDatabase(`places_v${version}.sqlite`);
+  let dbFile = OS.Path.join(
+    do_get_cwd().path,
+    `places_v${CURRENT_SCHEMA_VERSION}.sqlite`
+  );
+  Assert.ok(await OS.File.exists(dbFile));
+  await setupPlacesDatabase(`places_v${CURRENT_SCHEMA_VERSION}.sqlite`);
   
   let path = OS.Path.join(OS.Constants.Path.profileDir, DB_FILENAME);
   let db = await Sqlite.openConnection({ path });

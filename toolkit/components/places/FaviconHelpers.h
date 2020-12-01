@@ -42,9 +42,6 @@ class nsIPrincipal;
 
 #define MAX_FAVICON_EXPIRATION ((PRTime)7 * 24 * 60 * 60 * PR_USEC_PER_SEC)
 
-
-#define PREF_CONVERT_PAYLOADS "places.favicons.convertPayloads"
-
 namespace mozilla {
 namespace places {
 
@@ -296,30 +293,6 @@ class NotifyIconObservers final : public Runnable {
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
-};
-
-
-
-
-
-class FetchAndConvertUnsupportedPayloads final : public Runnable {
- public:
-  NS_DECL_NSIRUNNABLE
-
-  
-
-
-
-
-
-  explicit FetchAndConvertUnsupportedPayloads(mozIStorageConnection* aDBConn);
-
- private:
-  nsresult ConvertPayload(int64_t aId, const nsACString& aMimeType,
-                          nsCString& aPayload, int32_t* aWidth);
-  nsresult StorePayload(int64_t aId, int32_t aWidth, const nsCString& aPayload);
-
-  nsCOMPtr<mozIStorageConnection> mDB;
 };
 
 

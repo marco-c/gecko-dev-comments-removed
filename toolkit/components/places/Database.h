@@ -320,14 +320,6 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
   
 
 
-  nsresult MigrateV36Up();
-  nsresult MigrateV37Up();
-  nsresult MigrateV38Up();
-  nsresult MigrateV39Up();
-  nsresult MigrateV40Up();
-  nsresult MigrateV41Up();
-  nsresult MigrateV42Up();
-  nsresult MigrateV43Up();
   nsresult MigrateV44Up();
   nsresult MigrateV45Up();
   nsresult MigrateV46Up();
@@ -368,12 +360,6 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
   int32_t mDBPageSize;
   uint16_t mDatabaseStatus;
   bool mClosed;
-  
-  
-  bool mShouldConvertIconPayloads;
-  
-  
-  bool mShouldVacuumIcons;
 
   
 

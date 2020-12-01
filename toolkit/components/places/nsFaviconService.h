@@ -75,11 +75,6 @@ class nsFaviconService final : public nsIFaviconService,
   }
 
   
-
-
-  static void ConvertUnsupportedPayloads(mozIStorageConnection* aDBConn);
-
-  
   nsresult GetFaviconLinkForIconString(const nsCString& aIcon,
                                        nsIURI** aOutput);
 
