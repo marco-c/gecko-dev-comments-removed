@@ -84,8 +84,7 @@ class nsSegmentedBuffer {
  private:
   void FreeOMT(void* aPtr);
 
-  
-  nsCOMPtr<nsISerialEventTarget> mFreeMemoryQueue;
+  nsCOMPtr<nsIEventTarget> mIOThread;
 };
 
 
