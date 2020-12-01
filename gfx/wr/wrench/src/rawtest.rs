@@ -1310,7 +1310,7 @@ impl<'a> RawtestHarness<'a> {
 
         
         
-        assert!(self.rx.recv().unwrap() == NotifierEvent::WakeUp);
+        assert!(self.rx.recv().unwrap() == NotifierEvent::WakeUp { composite_needed: true });
     }
 
 

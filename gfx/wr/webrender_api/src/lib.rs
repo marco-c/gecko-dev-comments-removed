@@ -199,7 +199,10 @@ pub trait RenderNotifier: Send {
     fn clone(&self) -> Box<dyn RenderNotifier>;
     
     
-    fn wake_up(&self);
+    fn wake_up(
+        &self,
+        composite_needed: bool,
+    );
     
     fn new_frame_ready(&self, _: DocumentId, scrolled: bool, composite_needed: bool, render_time_ns: Option<u64>);
     

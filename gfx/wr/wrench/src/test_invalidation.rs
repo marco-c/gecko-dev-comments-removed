@@ -17,6 +17,11 @@ pub struct TestHarness<'a> {
     rx: Receiver<NotifierEvent>,
 }
 
+struct RenderResult {
+    pc_debug: PictureCacheDebugInfo,
+    composite_needed: bool,
+}
+
 
 fn pr(x: f32, y: f32, w: f32, h: f32) -> PictureRect {
     PictureRect::new(
@@ -44,6 +49,7 @@ impl<'a> TestHarness<'a> {
     ) {
         
         self.test_basic();
+        self.test_composite_nop();
     }
 
     
@@ -52,7 +58,7 @@ impl<'a> TestHarness<'a> {
     ) {
         
         let results = self.render_yaml("basic");
-        let tile_info = results.slice(0).tile(0, 0).as_dirty();
+        let tile_info = results.pc_debug.slice(0).tile(0, 0).as_dirty();
         assert_eq!(
             tile_info.local_valid_rect,
             pr(100.0, 100.0, 500.0, 100.0),
@@ -64,22 +70,60 @@ impl<'a> TestHarness<'a> {
 
         
         let results = self.render_yaml("basic");
-        assert_eq!(*results.slice(0).tile(0, 0), TileDebugInfo::Valid);
+        assert_eq!(*results.pc_debug.slice(0).tile(0, 0), TileDebugInfo::Valid);
+    }
+
+    
+    fn test_composite_nop(
+        &mut self,
+    ) {
+        
+        let results = self.render_yaml("composite_nop_1");
+        let tile_info = results.pc_debug.slice(0).tile(0, 0).as_dirty();
+        assert_eq!(
+            tile_info.local_valid_rect,
+            pr(100.0, 100.0, 100.0, 100.0),
+        );
+        assert_eq!(
+            tile_info.local_dirty_rect,
+            pr(100.0, 100.0, 100.0, 100.0),
+        );
+
+        
+        let results = self.render_yaml("composite_nop_2");
+        let tile_info = results.pc_debug.slice(0).tile(0, 0).as_dirty();
+        assert_eq!(
+            tile_info.local_valid_rect,
+            pr(100.0, 120.0, 100.0, 100.0),
+        );
+        assert_eq!(
+            tile_info.local_dirty_rect,
+            pr(100.0, 120.0, 100.0, 100.0),
+        );
+
+        
+        assert!(results.composite_needed);
     }
 
     
     fn render_yaml(
         &mut self,
         filename: &str,
-    ) -> PictureCacheDebugInfo {
+    ) -> RenderResult {
         let path = format!("invalidation/{}.yaml", filename);
         let mut reader = YamlFrameReader::new(&PathBuf::from(path));
 
         reader.do_frame(self.wrench);
-        self.rx.recv().unwrap();
+        let composite_needed = match self.rx.recv().unwrap() {
+            NotifierEvent::WakeUp { composite_needed } => composite_needed,
+            NotifierEvent::ShutDown => unreachable!(),
+        };
         let results = self.wrench.render();
         self.window.swap_buffers();
 
-        results.picture_cache_debug
+        RenderResult {
+            pc_debug: results.picture_cache_debug,
+            composite_needed,
+        }
     }
 }

@@ -348,7 +348,6 @@ pub struct CompositeTileDescriptor {
 #[derive(PartialEq, Clone)]
 pub struct CompositeSurfaceDescriptor {
     pub surface_id: Option<NativeSurfaceId>,
-    pub offset: DevicePoint,
     pub clip_rect: DeviceRect,
     pub transform: CompositorSurfaceTransform,
     
@@ -528,7 +527,14 @@ impl CompositeState {
 
             
             
-            surface_device_rect = surface_device_rect.union(&device_rect);
+            
+            
+            
+            
+            
+            
+            
+            surface_device_rect = surface_device_rect.union(&tile.device_valid_rect);
 
             let descriptor = CompositeTileDescriptor {
                 surface_kind: surface.into(),
@@ -596,11 +602,12 @@ impl CompositeState {
             self.descriptor.surfaces.push(
                 CompositeSurfaceDescriptor {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.opaque),
-                    offset: tile_cache.device_position,
                     clip_rect: surface_clip_rect,
-                    transform: CompositorSurfaceTransform::translation(tile_cache.device_position.x,
-                                                                              tile_cache.device_position.y,
-                                                                              0.0),
+                    transform: CompositorSurfaceTransform::translation(
+                        tile_cache.device_position.x,
+                        tile_cache.device_position.y,
+                        0.0,
+                    ),
                     image_dependencies: [ImageDependency::INVALID; 3],
                     image_rendering: ImageRendering::CrispEdges,
                     tile_descriptors: opaque_tile_descriptors,
@@ -749,7 +756,6 @@ impl CompositeState {
             self.descriptor.surfaces.push(
                 CompositeSurfaceDescriptor {
                     surface_id: external_surface.native_surface_id,
-                    offset: tile.rect.origin,
                     clip_rect,
                     transform: external_surface.transform,
                     image_dependencies: image_dependencies,
@@ -766,11 +772,12 @@ impl CompositeState {
             self.descriptor.surfaces.push(
                 CompositeSurfaceDescriptor {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.alpha),
-                    offset: tile_cache.device_position,
                     clip_rect: surface_clip_rect,
-                    transform: CompositorSurfaceTransform::translation(tile_cache.device_position.x,
-                                                                              tile_cache.device_position.y,
-                                                                              0.0),
+                    transform: CompositorSurfaceTransform::translation(
+                        tile_cache.device_position.x,
+                        tile_cache.device_position.y,
+                        0.0,
+                    ),
                     image_dependencies: [ImageDependency::INVALID; 3],
                     image_rendering: ImageRendering::CrispEdges,
                     tile_descriptors: alpha_tile_descriptors,
