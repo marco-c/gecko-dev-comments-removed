@@ -14,7 +14,6 @@ const { FxAccounts } = ChromeUtils.import(
 const { FXA_PWDMGR_HOST, FXA_PWDMGR_REALM } = ChromeUtils.import(
   "resource://gre/modules/FxAccountsCommon.js"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
@@ -93,7 +92,8 @@ add_task(async function test_simple() {
 
   
   
-  let path = OS.Path.join(OS.Constants.Path.profileDir, "signedInUser.json");
+  let profileDir = await PathUtils.getProfileDir();
+  let path = PathUtils.join(profileDir, "signedInUser.json");
   let data = await CommonUtils.readJSON(path);
 
   Assert.strictEqual(
@@ -191,7 +191,8 @@ add_task(async function test_MPLocked() {
 
   
   
-  let path = OS.Path.join(OS.Constants.Path.profileDir, "signedInUser.json");
+  let profileDir = await PathUtils.getProfileDir();
+  let path = PathUtils.join(profileDir, "signedInUser.json");
   let data = await CommonUtils.readJSON(path);
 
   Assert.strictEqual(
