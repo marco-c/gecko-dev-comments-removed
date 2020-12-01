@@ -125,7 +125,7 @@ HarBuilder.prototype = {
     
     entry.time = TIMING_KEYS.reduce((sum, type) => {
       const time = entry.timings[type];
-      return typeof time != "undefined" ? sum + time : sum;
+      return typeof time != "undefined" && time != -1 ? sum + time : sum;
     }, 0);
 
     
