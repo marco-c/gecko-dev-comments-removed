@@ -18,19 +18,17 @@
 
 
 
-
-
-
-
-
-
 var SPACEDEBUG = false;
 
 
-var HEXES = `[0-9a-fA-F]+`;
+var HEX = '[0-9a-fA-F]'
+var HEXES = `${HEX}+`;
 
 
 var RIPR = `0x${HEXES}`;
+
+
+var RIPRADDR = `${HEX}{2} ${HEX}{2} ${HEX}{2} ${HEX}{2}`;
 
 
 var x64_prefix = `48 8b ec                  mov %rsp, %rbp`
@@ -61,6 +59,19 @@ function codegenTestX64_v128xLITERAL_v128(inputs, options = {}) {
         codegenTestX64_adhoc(wrap(options, `
     (func (export "f") (param v128) (result v128)
       (${op} (local.get 0) ${literal}))`),
+                              'f',
+                              expected,
+                              options)
+    }
+}
+
+
+
+function codegenTestX64_LITERALxv128_v128(inputs, options = {}) {
+    for ( let [op, literal, expected] of inputs ) {
+        codegenTestX64_adhoc(wrap(options, `
+    (func (export "f") (param v128) (result v128)
+      (${op} ${literal} (local.get 0)))`),
                               'f',
                               expected,
                               options)
@@ -169,7 +180,7 @@ function fixlines(s) {
     return s.split(/\n+/)
         .map(strip)
         .filter(x => x.length > 0)
-        .map(x => x.charAt(0) == '*' ? x.substring(1) : (HEXES + ' ' + x))
+        .map(x => HEXES + ' ' + x)
         .map(spaces)
         .join('\n');
 }
