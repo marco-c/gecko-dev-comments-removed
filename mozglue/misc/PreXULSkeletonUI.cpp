@@ -8,14 +8,55 @@
 
 #include <algorithm>
 #include <math.h>
+#include <limits.h>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/glue/Debug.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Vector.h"
 #include "mozilla/WindowsDpiAwareness.h"
 #include "mozilla/WindowsVersion.h"
+#include "prthread.h"
 
 namespace mozilla {
+
+struct ColorRect {
+  uint32_t color;
+  uint32_t x;
+  uint32_t y;
+  uint32_t width;
+  uint32_t height;
+};
+
+struct NormalizedRGB {
+  double r;
+  double g;
+  double b;
+};
+
+NormalizedRGB UintToRGB(uint32_t color) {
+  double r = static_cast<double>(color >> 16 & 0xff) / 255.0;
+  double g = static_cast<double>(color >> 8 & 0xff) / 255.0;
+  double b = static_cast<double>(color >> 0 & 0xff) / 255.0;
+  return NormalizedRGB{r, g, b};
+}
+
+uint32_t RGBToUint(const NormalizedRGB& rgb) {
+  return (static_cast<uint32_t>(rgb.r * 255.0) << 16) |
+         (static_cast<uint32_t>(rgb.g * 255.0) << 8) |
+         (static_cast<uint32_t>(rgb.b * 255.0) << 0);
+}
+
+double Lerp(double a, double b, double x) { return a + x * (b - a); }
+
+NormalizedRGB Lerp(const NormalizedRGB& a, const NormalizedRGB& b, double x) {
+  return NormalizedRGB{Lerp(a.r, b.r, x), Lerp(a.g, b.g, x), Lerp(a.b, b.b, x)};
+}
+
+
+double SmoothStep3(double x) { return x * x * (3.0 - 2.0 * x); }
 
 static const wchar_t kPreXULSkeletonUIKeyPath[] =
     L"SOFTWARE"
@@ -25,6 +66,16 @@ static bool sPreXULSkeletonUIEnabled = false;
 static HWND sPreXULSkeletonUIWindow;
 static LPWSTR const gStockApplicationIcon = MAKEINTRESOURCEW(32512);
 static LPWSTR const gIDCWait = MAKEINTRESOURCEW(32514);
+static HANDLE sPreXULSKeletonUIAnimationThread;
+
+static uint32_t* sPixelBuffer = nullptr;
+static StaticAutoPtr<Vector<ColorRect>> sAnimatedRects;
+static int sTotalChromeHeight = 0;
+static volatile LONG sAnimationControlFlag = 0;
+
+
+static uint32_t sBackgroundColor;
+static uint32_t sToolbarForegroundColor;
 
 typedef BOOL(WINAPI* EnableNonClientDpiScalingProc)(HWND);
 static EnableNonClientDpiScalingProc sEnableNonClientDpiScaling = NULL;
@@ -84,6 +135,9 @@ static DWORD sWindowStyle = WS_POPUP;
 
 static DWORD sWindowStyleEx = WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW;
 
+static const int kAnimationCSSPixelsPerFrame = 21;
+static const int kAnimationCSSExtraWindowSize = 300;
+
 
 
 
@@ -104,50 +158,41 @@ int CSSToDevPixels(int cssPixels, double scaling) {
   return CSSToDevPixels((double)cssPixels, scaling);
 }
 
-struct ColorRect {
-  uint32_t color;
-  uint32_t x;
-  uint32_t y;
-  uint32_t width;
-  uint32_t height;
-};
-
 void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
                     double urlbarWidthCSS) {
-  if (!sGetSystemMetricsForDpi || !sGetDpiForWindow) {
-    return;
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
   
+  sBackgroundColor = 0xf9f9fa;
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  sToolbarForegroundColor = 0xe5e5e5;
 
   
   
   uint32_t tabBarColor = 0x202340;
   
-  uint32_t backgroundColor = 0xf9f9fa;
-  
   uint32_t chromeContentDividerColor = 0xe2e1e3;
-  
-  uint32_t toolbarForegroundColor = 0xe5e5e5;
   
   uint32_t tabLineColor = 0x0a75d3;
   
@@ -208,7 +253,7 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
 
   
   ColorRect selectedTab = {};
-  selectedTab.color = backgroundColor;
+  selectedTab.color = sBackgroundColor;
   selectedTab.x = titlebarSpacerWidth;
   selectedTab.y = tabLineHeight;
   selectedTab.width = selectedTabWidth;
@@ -216,7 +261,7 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
 
   
   ColorRect tabTextPlaceholder = {};
-  tabTextPlaceholder.color = toolbarForegroundColor;
+  tabTextPlaceholder.color = sToolbarForegroundColor;
   tabTextPlaceholder.x = selectedTab.x + tabPlaceholderBarMarginLeft;
   tabTextPlaceholder.y = selectedTab.y + tabPlaceholderBarMarginTop;
   tabTextPlaceholder.width = tabPlaceholderBarWidth;
@@ -224,7 +269,7 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
 
   
   ColorRect toolbar = {};
-  toolbar.color = backgroundColor;
+  toolbar.color = sBackgroundColor;
   toolbar.x = 0;
   toolbar.y = tabBarHeight;
   toolbar.width = sWindowWidth;
@@ -233,7 +278,7 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   
   
   ColorRect leftToolbarPlaceholder = {};
-  leftToolbarPlaceholder.color = toolbarForegroundColor;
+  leftToolbarPlaceholder.color = sToolbarForegroundColor;
   leftToolbarPlaceholder.x =
       toolbar.x + toolbarPlaceholderMarginLeft + horizontalOffset;
   leftToolbarPlaceholder.y = toolbar.y + toolbarPlaceholderMarginTop;
@@ -243,7 +288,7 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   
   
   ColorRect rightToolbarPlaceholder = {};
-  rightToolbarPlaceholder.color = toolbarForegroundColor;
+  rightToolbarPlaceholder.color = sToolbarForegroundColor;
   rightToolbarPlaceholder.x = sWindowWidth - horizontalOffset -
                               toolbarPlaceholderMarginRight -
                               toolbarPlaceholderWidth;
@@ -271,7 +316,7 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   
   
   ColorRect urlbarTextPlaceholder = {};
-  urlbarTextPlaceholder.color = toolbarForegroundColor;
+  urlbarTextPlaceholder.color = sToolbarForegroundColor;
   urlbarTextPlaceholder.x = urlbar.x + urlbarTextPlaceholderMarginLeft;
   
   
@@ -292,17 +337,25 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
       urlbarTextPlaceholder,
   };
 
-  int totalChromeHeight = chromeContentDivider.y + chromeContentDivider.height;
+  if (!sAnimatedRects->append(tabTextPlaceholder) ||
+      !sAnimatedRects->append(leftToolbarPlaceholder) ||
+      !sAnimatedRects->append(rightToolbarPlaceholder) ||
+      !sAnimatedRects->append(urlbarTextPlaceholder)) {
+    sAnimatedRects = nullptr;
+    return;
+  }
 
-  uint32_t* pixelBuffer =
-      (uint32_t*)calloc(sWindowWidth * totalChromeHeight, sizeof(uint32_t));
+  sTotalChromeHeight = chromeContentDivider.y + chromeContentDivider.height;
+
+  sPixelBuffer =
+      (uint32_t*)calloc(sWindowWidth * sTotalChromeHeight, sizeof(uint32_t));
 
   for (int i = 0; i < sizeof(rects) / sizeof(rects[0]); ++i) {
     ColorRect rect = rects[i];
     for (int y = rect.y; y < rect.y + rect.height; ++y) {
-      uint32_t* lineStart = &pixelBuffer[y * sWindowWidth];
+      uint32_t* lineStart = &sPixelBuffer[y * sWindowWidth];
       uint32_t* dataStart = lineStart + rect.x;
-      std::fill(dataStart, dataStart + rect.width, rect.color);
+      std::fill_n(dataStart, rect.width, rect.color);
     }
   }
 
@@ -311,26 +364,193 @@ void DrawSkeletonUI(HWND hWnd, double urlbarHorizontalOffsetCSS,
   BITMAPINFO chromeBMI = {};
   chromeBMI.bmiHeader.biSize = sizeof(chromeBMI.bmiHeader);
   chromeBMI.bmiHeader.biWidth = sWindowWidth;
-  chromeBMI.bmiHeader.biHeight = -totalChromeHeight;
+  chromeBMI.bmiHeader.biHeight = -sTotalChromeHeight;
   chromeBMI.bmiHeader.biPlanes = 1;
   chromeBMI.bmiHeader.biBitCount = 32;
   chromeBMI.bmiHeader.biCompression = BI_RGB;
 
   
-  sStretchDIBits(hdc, 0, 0, sWindowWidth, totalChromeHeight, 0, 0, sWindowWidth,
-                 totalChromeHeight, pixelBuffer, &chromeBMI, DIB_RGB_COLORS,
-                 SRCCOPY);
+  sStretchDIBits(hdc, 0, 0, sWindowWidth, sTotalChromeHeight, 0, 0,
+                 sWindowWidth, sTotalChromeHeight, sPixelBuffer, &chromeBMI,
+                 DIB_RGB_COLORS, SRCCOPY);
 
   
-  RECT rect = {0, totalChromeHeight, (LONG)sWindowWidth, (LONG)sWindowHeight};
-  HBRUSH brush = sCreateSolidBrush(backgroundColor);
+  RECT rect = {0, sTotalChromeHeight, (LONG)sWindowWidth, (LONG)sWindowHeight};
+  HBRUSH brush = sCreateSolidBrush(sBackgroundColor);
   sFillRect(hdc, &rect, brush);
 
   sReleaseDC(hWnd, hdc);
-
-  free(pixelBuffer);
-
   sDeleteObject(brush);
+}
+
+DWORD WINAPI AnimateSkeletonUI(void* aUnused) {
+  if (!sPixelBuffer || sAnimatedRects->empty()) {
+    return 0;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int animationWidth = CSSToDevPixels(80, sCSSToDevPixelScaling);
+  UniquePtr<uint32_t[]> animationLookup =
+      MakeUnique<uint32_t[]>(animationWidth);
+  uint32_t animationColor = sBackgroundColor;
+  NormalizedRGB rgbBlend = UintToRGB(animationColor);
+
+  
+  for (int i = 0; i < animationWidth / 2; ++i) {
+    uint32_t baseColor = sToolbarForegroundColor;
+    double blendAmountLinear =
+        static_cast<double>(i) / (static_cast<double>(animationWidth / 2));
+    double blendAmount = SmoothStep3(blendAmountLinear);
+
+    NormalizedRGB rgbBase = UintToRGB(baseColor);
+    NormalizedRGB rgb = Lerp(rgbBase, rgbBlend, blendAmount);
+    animationLookup[i] = RGBToUint(rgb);
+  }
+
+  
+  for (int i = animationWidth / 2; i < animationWidth; ++i) {
+    int j = animationWidth - 1 - i;
+    if (j == animationWidth / 2) {
+      
+      
+      animationLookup[i] = animationColor;
+    } else {
+      animationLookup[i] = animationLookup[j];
+    }
+  }
+
+  
+  
+  BITMAPINFO chromeBMI = {};
+  chromeBMI.bmiHeader.biSize = sizeof(chromeBMI.bmiHeader);
+  chromeBMI.bmiHeader.biWidth = sWindowWidth;
+  chromeBMI.bmiHeader.biHeight = -sTotalChromeHeight;
+  chromeBMI.bmiHeader.biPlanes = 1;
+  chromeBMI.bmiHeader.biBitCount = 32;
+  chromeBMI.bmiHeader.biCompression = BI_RGB;
+
+  uint32_t animationIteration = 0;
+
+  int devPixelsPerFrame =
+      CSSToDevPixels(kAnimationCSSPixelsPerFrame, sCSSToDevPixelScaling);
+  int devPixelsExtraWindowSize =
+      CSSToDevPixels(kAnimationCSSExtraWindowSize, sCSSToDevPixelScaling);
+
+  if (::InterlockedCompareExchange(&sAnimationControlFlag, 0, 0)) {
+    
+    return 0;
+  }
+
+  while (true) {
+    
+    
+    
+    
+    int animationMin = ((animationIteration * devPixelsPerFrame) %
+                        (sWindowWidth + devPixelsExtraWindowSize)) -
+                       devPixelsExtraWindowSize / 2;
+    int animationMax = animationMin + animationWidth;
+    
+    
+    
+    
+    int priorAnimationMin = animationMin - devPixelsPerFrame;
+    animationMin = std::max(0, animationMin);
+    priorAnimationMin = std::max(0, priorAnimationMin);
+    animationMax = std::min((int)sWindowWidth, animationMax);
+
+    
+    
+    
+    bool updatedAnything = false;
+    for (ColorRect rect : *sAnimatedRects) {
+      int rectMin = rect.x;
+      int rectMax = rect.x + rect.width;
+      bool animationWindowOverlaps =
+          rectMax >= priorAnimationMin && rectMin < animationMax;
+
+      int priorUpdateAreaMin = std::max(rectMin, priorAnimationMin);
+      int currentUpdateAreaMin = std::max(rectMin, animationMin);
+      int priorUpdateAreaMax = std::min(rectMax, animationMin);
+      int currentUpdateAreaMax = std::min(rectMax, animationMax);
+
+      if (animationWindowOverlaps) {
+        updatedAnything = true;
+        for (int y = rect.y; y < rect.y + rect.height; ++y) {
+          uint32_t* lineStart = &sPixelBuffer[y * sWindowWidth];
+          
+          
+          for (int x = priorUpdateAreaMin; x < priorUpdateAreaMax; ++x) {
+            lineStart[x] = rect.color;
+          }
+          
+          for (int x = currentUpdateAreaMin; x < currentUpdateAreaMax; ++x) {
+            lineStart[x] = animationLookup[x - animationMin];
+          }
+        }
+      }
+    }
+
+    if (updatedAnything) {
+      HDC hdc = sGetWindowDC(sPreXULSkeletonUIWindow);
+
+      sStretchDIBits(hdc, priorAnimationMin, 0,
+                     animationMax - priorAnimationMin, sTotalChromeHeight,
+                     priorAnimationMin, 0, animationMax - priorAnimationMin,
+                     sTotalChromeHeight, sPixelBuffer, &chromeBMI,
+                     DIB_RGB_COLORS, SRCCOPY);
+
+      sReleaseDC(sPreXULSkeletonUIWindow, hdc);
+    }
+
+    animationIteration++;
+
+    
+    
+    
+    
+    
+    
+    
+    if (InterlockedIncrement(&sAnimationControlFlag) != 1) {
+      return 0;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    ::Sleep(16);
+
+    
+    
+    
+    if (InterlockedDecrement(&sAnimationControlFlag) != 0) {
+      return 0;
+    }
+  }
+
+  return 0;
 }
 
 LRESULT WINAPI PreXULSkeletonUIProc(HWND hWnd, UINT msg, WPARAM wParam,
@@ -364,31 +584,12 @@ bool OpenPreXULSkeletonUIRegKey(HKEY& key) {
   return false;
 }
 
-void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
-  HKEY regKey;
-  if (!IsWin10OrLater() || !OpenPreXULSkeletonUIRegKey(regKey)) {
-    return;
-  }
-  AutoCloseRegKey closeKey(regKey);
-
-  DWORD dataLen = sizeof(uint32_t);
-  uint32_t enabled;
-  LSTATUS result =
-      ::RegGetValueW(regKey, nullptr, L"enabled", RRF_RT_REG_DWORD, nullptr,
-                     reinterpret_cast<PBYTE>(&enabled), &dataLen);
-  if (result != ERROR_SUCCESS || enabled == 0) {
-    return;
-  }
-  sPreXULSkeletonUIEnabled = true;
-
-  
-  
-  
+bool LoadGdi32AndUser32Procedures() {
   HMODULE user32Dll = ::LoadLibraryW(L"user32");
   HMODULE gdi32Dll = ::LoadLibraryW(L"gdi32");
 
   if (!user32Dll || !gdi32Dll) {
-    return;
+    return false;
   }
 
   auto getThreadDpiAwarenessContext =
@@ -408,25 +609,98 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
 
   sGetSystemMetricsForDpi = (GetSystemMetricsForDpiProc)::GetProcAddress(
       user32Dll, "GetSystemMetricsForDpi");
+  if (!sGetSystemMetricsForDpi) {
+    return false;
+  }
   sGetDpiForWindow =
       (GetDpiForWindowProc)::GetProcAddress(user32Dll, "GetDpiForWindow");
+  if (!sGetDpiForWindow) {
+    return false;
+  }
   sRegisterClassW =
       (RegisterClassWProc)::GetProcAddress(user32Dll, "RegisterClassW");
+  if (!sRegisterClassW) {
+    return false;
+  }
   sCreateWindowExW =
       (CreateWindowExWProc)::GetProcAddress(user32Dll, "CreateWindowExW");
+  if (!sCreateWindowExW) {
+    return false;
+  }
   sShowWindow = (ShowWindowProc)::GetProcAddress(user32Dll, "ShowWindow");
+  if (!sShowWindow) {
+    return false;
+  }
   sSetWindowPos = (SetWindowPosProc)::GetProcAddress(user32Dll, "SetWindowPos");
+  if (!sSetWindowPos) {
+    return false;
+  }
   sRedrawWindow = (RedrawWindowProc)::GetProcAddress(user32Dll, "RedrawWindow");
+  if (!sRedrawWindow) {
+    return false;
+  }
   sGetWindowDC = (GetWindowDCProc)::GetProcAddress(user32Dll, "GetWindowDC");
+  if (!sGetWindowDC) {
+    return false;
+  }
   sFillRect = (FillRectProc)::GetProcAddress(user32Dll, "FillRect");
-  sDeleteObject = (DeleteObjectProc)::GetProcAddress(gdi32Dll, "DeleteObject");
+  if (!sFillRect) {
+    return false;
+  }
   sReleaseDC = (ReleaseDCProc)::GetProcAddress(user32Dll, "ReleaseDC");
+  if (!sReleaseDC) {
+    return false;
+  }
   sLoadIconW = (LoadIconWProc)::GetProcAddress(user32Dll, "LoadIconW");
+  if (!sLoadIconW) {
+    return false;
+  }
   sLoadCursorW = (LoadCursorWProc)::GetProcAddress(user32Dll, "LoadCursorW");
+  if (!sLoadCursorW) {
+    return false;
+  }
+
   sStretchDIBits =
       (StretchDIBitsProc)::GetProcAddress(gdi32Dll, "StretchDIBits");
+  if (!sStretchDIBits) {
+    return false;
+  }
   sCreateSolidBrush =
       (CreateSolidBrushProc)::GetProcAddress(gdi32Dll, "CreateSolidBrush");
+  if (!sCreateSolidBrush) {
+    return false;
+  }
+  sDeleteObject = (DeleteObjectProc)::GetProcAddress(gdi32Dll, "DeleteObject");
+  if (!sDeleteObject) {
+    return false;
+  }
+
+  return true;
+}
+
+void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
+  HKEY regKey;
+  if (!IsWin10OrLater() || !OpenPreXULSkeletonUIRegKey(regKey)) {
+    return;
+  }
+  AutoCloseRegKey closeKey(regKey);
+
+  DWORD dataLen = sizeof(uint32_t);
+  uint32_t enabled;
+  LSTATUS result =
+      ::RegGetValueW(regKey, nullptr, L"enabled", RRF_RT_REG_DWORD, nullptr,
+                     reinterpret_cast<PBYTE>(&enabled), &dataLen);
+  if (result != ERROR_SUCCESS || enabled == 0) {
+    return;
+  }
+  sPreXULSkeletonUIEnabled = true;
+
+  MOZ_ASSERT(!sAnimatedRects);
+  sAnimatedRects = new Vector<ColorRect>();
+
+  if (!LoadGdi32AndUser32Procedures()) {
+    return;
+  }
 
   WNDCLASSW wc;
   wc.style = CS_DBLCLKS;
@@ -517,11 +791,35 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
   DrawSkeletonUI(sPreXULSkeletonUIWindow, urlbarHorizontalOffsetCSS,
                  urlbarWidthCSS);
   sRedrawWindow(sPreXULSkeletonUIWindow, NULL, NULL, RDW_INVALIDATE);
+
+  if (sAnimatedRects) {
+    sPreXULSKeletonUIAnimationThread = ::CreateThread(
+        nullptr, 256 * 1024, AnimateSkeletonUI, nullptr, 0, nullptr);
+  }
 }
 
 HWND ConsumePreXULSkeletonUIHandle() {
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  if (InterlockedIncrement(&sAnimationControlFlag) == 1) {
+    ::WaitForSingleObject(sPreXULSKeletonUIAnimationThread, INFINITE);
+  }
+  ::CloseHandle(sPreXULSKeletonUIAnimationThread);
+  sPreXULSKeletonUIAnimationThread = nullptr;
   HWND result = sPreXULSkeletonUIWindow;
   sPreXULSkeletonUIWindow = nullptr;
+  free(sPixelBuffer);
+  sPixelBuffer = nullptr;
+  sAnimatedRects = nullptr;
   return result;
 }
 
