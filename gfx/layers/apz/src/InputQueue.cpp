@@ -178,6 +178,11 @@ nsEventStatus InputQueue::ReceiveTouchInput(
       INPQ_LOG("dropping event due to block %p being in slop\n", block);
       result = nsEventStatus_eConsumeNoDefault;
     } else {
+      
+      
+      
+      
+      
       result = nsEventStatus_eConsumeDoDefault;
     }
   } else if (block->UpdateSlopState(aEvent, false)) {

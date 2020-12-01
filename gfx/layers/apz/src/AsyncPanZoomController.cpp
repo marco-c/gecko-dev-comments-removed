@@ -856,9 +856,14 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
   bool pannableX = aBlock->TouchActionAllowsPanningX() &&
                    aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(
                        this, ScrollDirection::eHorizontal);
-  bool pannableY = aBlock->TouchActionAllowsPanningY() &&
-                   aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(
-                       this, ScrollDirection::eVertical);
+  bool pannableY =
+      (aBlock->TouchActionAllowsPanningY() &&
+       (aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(
+            this, ScrollDirection::eVertical) ||
+        
+        
+        
+        (IsRootContent() && CanScrollDownwardsWithDynamicToolbar())));
 
   bool pannable;
 
