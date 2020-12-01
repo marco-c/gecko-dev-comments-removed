@@ -380,6 +380,7 @@ var Impl = {
 
 
 
+
   assemblePing: function assemblePing(aType, aPayload, aOptions = {}) {
     this._log.trace(
       "assemblePing - Type " + aType + ", aOptions " + JSON.stringify(aOptions)
@@ -457,6 +458,8 @@ var Impl = {
 
 
 
+
+
   async _submitPingLogic(aType, aPayload, aOptions) {
     
     
@@ -505,10 +508,16 @@ var Impl = {
         payload.encryptionKeyId = aOptions.encryptionKeyId;
 
         if (aOptions.addPioneerId === true) {
-          
-          payload.pioneerId = Services.prefs.getStringPref(
-            "toolkit.telemetry.pioneerId"
-          );
+          if (aOptions.overridePioneerId) {
+            
+            
+            payload.pioneerId = aOptions.overridePioneerId;
+          } else {
+            
+            payload.pioneerId = Services.prefs.getStringPref(
+              "toolkit.telemetry.pioneerId"
+            );
+          }
           payload.studyName = aOptions.studyName;
         }
 
@@ -542,6 +551,8 @@ var Impl = {
   },
 
   
+
+
 
 
 
