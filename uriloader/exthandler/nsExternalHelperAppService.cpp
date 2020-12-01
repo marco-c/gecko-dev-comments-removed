@@ -574,38 +574,6 @@ static const nsDefaultMimeTypeEntry nonDecodableExtensions[] = {
 
 
 
-static const char* forcedExtensionMimetypes[] = {
-    
-    "application/vnd.oasis.opendocument.text",
-    "application/vnd.oasis.opendocument.presentation",
-    "application/vnd.oasis.opendocument.spreadsheet",
-    "application/vnd.oasis.opendocument.graphics",
-
-    
-    "application/msword", "application/vnd.ms-powerpoint",
-    "application/vnd.ms-excel",
-
-    
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-
-    APPLICATION_PDF,
-
-    APPLICATION_OGG,
-
-    APPLICATION_ZIP,
-
-    APPLICATION_JSON, APPLICATION_WASM,
-
-    TEXT_CALENDAR, TEXT_CSS, TEXT_VCARD, TEXT_XML};
-
-
-
-
-
-
-
 static const char* descriptionOverwriteExtensions[] = {
     "avif", "pdf", "svg", "webp", "xml",
 };
@@ -1307,68 +1275,25 @@ nsExternalAppHandler::nsExternalAppHandler(
   mSuggestedFileName.CompressWhitespace();
   mTempFileExtension.CompressWhitespace();
 
-  EnsureCorrectExtension(originalFileExt);
-
-  mBufferSize = Preferences::GetUint("network.buffer.cache.size", 4096);
-}
-
-nsExternalAppHandler::~nsExternalAppHandler() {
-  MOZ_ASSERT(!mSaver, "Saver should hold a reference to us until deleted");
-}
-
-bool nsExternalAppHandler::ShouldForceExtension(const nsString& aFileExt) {
-  nsAutoCString MIMEType;
-  if (!mMimeInfo || NS_FAILED(mMimeInfo->GetMIMEType(MIMEType))) {
-    return false;
-  }
-
-  bool canForce = StringBeginsWith(MIMEType, "image/"_ns) ||
-                  StringBeginsWith(MIMEType, "audio/"_ns) ||
-                  StringBeginsWith(MIMEType, "video/"_ns);
-
-  if (!canForce) {
-    for (const char* mime : forcedExtensionMimetypes) {
-      if (MIMEType.Equals(mime)) {
-        canForce = true;
-        break;
-      }
-    }
-    if (!canForce) {
-      return false;
-    }
-  }
   
   
-
+  
+  
+  
   bool knownExtension = false;
   
   
-  return (
-      aFileExt.IsEmpty() || aFileExt.EqualsLiteral(".") ||
-      (NS_SUCCEEDED(mMimeInfo->ExtensionExists(
-           Substring(NS_ConvertUTF16toUTF8(aFileExt), 1), &knownExtension)) &&
-       !knownExtension));
-}
-
-void nsExternalAppHandler::EnsureCorrectExtension(const nsString& aFileExt) {
-  
-  
-  if (mTempFileExtension.Length() <= 1) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  bool replaceExtension =
-      (aFileExt.FindCharInSet(KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS) !=
-       kNotFound) ||
-      ShouldForceExtension(aFileExt);
-
-  if (replaceExtension) {
+  bool haveBogusExtension =
+      mMimeInfo && !originalFileExt.IsEmpty() &&
+      NS_SUCCEEDED(mMimeInfo->ExtensionExists(
+          Substring(NS_ConvertUTF16toUTF8(originalFileExt), 1),
+          &knownExtension)) &&
+      !knownExtension;
+  if (!mTempFileExtension.IsEmpty() &&
+      (originalFileExt.Length() == 0 || originalFileExt.EqualsLiteral(".") ||
+       originalFileExt.FindCharInSet(
+           KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS) != kNotFound ||
+       haveBogusExtension)) {
     int32_t pos = mSuggestedFileName.RFindChar('.');
     if (pos != kNotFound) {
       mSuggestedFileName =
@@ -1376,16 +1301,18 @@ void nsExternalAppHandler::EnsureCorrectExtension(const nsString& aFileExt) {
     } else {
       mSuggestedFileName.Append(mTempFileExtension);
     }
+    originalFileExt = mTempFileExtension;
   }
 
   
+  
+  EnsureTempFileExtension(originalFileExt);
 
+  mBufferSize = Preferences::GetUint("network.buffer.cache.size", 4096);
+}
 
-  if (replaceExtension ||
-      aFileExt.Equals(mTempFileExtension, nsCaseInsensitiveStringComparator)) {
-    
-    mTempFileExtension.Truncate();
-  }
+nsExternalAppHandler::~nsExternalAppHandler() {
+  MOZ_ASSERT(!mSaver, "Saver should hold a reference to us until deleted");
 }
 
 void nsExternalAppHandler::DidDivertRequest(nsIRequest* request) {
@@ -1459,6 +1386,33 @@ void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
   nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel = do_QueryInterface(aChannel);
   if (pbChannel) {
     pbChannel->SetPrivate(isPrivate);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void nsExternalAppHandler::EnsureTempFileExtension(const nsString& aFileExt) {
+  
+  
+  
+  if (mTempFileExtension.Length() > 1) {
+    
+    if (aFileExt.Equals(mTempFileExtension,
+                        nsCaseInsensitiveStringComparator)) {
+      
+      mTempFileExtension.Truncate();
+    }
   }
 }
 
