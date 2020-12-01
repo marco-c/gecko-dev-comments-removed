@@ -228,7 +228,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  UniquePK11Context mDigestContext;
+  Maybe<Digest> mDigest;
 
   
   
@@ -376,7 +376,7 @@ class DigestOutputStream : public nsIOutputStream {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAM
   
-  DigestOutputStream(nsIOutputStream* outputStream, PK11Context* aContext);
+  DigestOutputStream(nsIOutputStream* aStream, Digest& aDigest);
 
  private:
   virtual ~DigestOutputStream() = default;
@@ -384,7 +384,7 @@ class DigestOutputStream : public nsIOutputStream {
   
   nsCOMPtr<nsIOutputStream> mOutputStream;
   
-  PK11Context* mDigestContext;
+  Digest& mDigest;
 
   
   DigestOutputStream(const DigestOutputStream& d) = delete;

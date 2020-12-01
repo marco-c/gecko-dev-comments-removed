@@ -104,38 +104,77 @@ MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11Context, PK11Context,
 
 
 
-
 class Digest {
  public:
-  Digest() : mItemBuf() {
-    mItem.type = siBuffer;
-    mItem.data = mItemBuf;
-    mItem.len = 0;
+  explicit Digest() : mLen(0), mDigestContext(nullptr) {}
+
+  static nsresult DigestBuf(SECOidTag hashAlg, Span<const uint8_t> buf,
+                             nsTArray<uint8_t>& out) {
+    return Digest::DigestBuf(hashAlg, buf.Elements(), buf.Length(), out);
   }
 
-  nsresult DigestBuf(SECOidTag hashAlg, const uint8_t* buf, uint32_t len) {
-    if (len > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
+  static nsresult DigestBuf(SECOidTag hashAlg, const uint8_t* buf, uint32_t len,
+                             nsTArray<uint8_t>& out) {
+    Digest digest;
+
+    nsresult rv = digest.Begin(hashAlg);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    rv = digest.Update(buf, len);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    rv = digest.End(out);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    return rv;
+  }
+
+  nsresult Begin(SECOidTag hashAlg) {
+    if (hashAlg != SEC_OID_SHA1 && hashAlg != SEC_OID_SHA256) {
       return NS_ERROR_INVALID_ARG;
     }
+
+    mDigestContext = UniquePK11Context(PK11_CreateDigestContext(hashAlg));
+    if (!mDigestContext) {
+      return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
+    }
+
     nsresult rv = SetLength(hashAlg);
     NS_ENSURE_SUCCESS(rv, rv);
-    return MapSECStatus(
-        PK11_HashBuf(hashAlg, mItem.data, buf, static_cast<int32_t>(len)));
+    return MapSECStatus(PK11_DigestBegin(mDigestContext.get()));
   }
 
-  nsresult End(SECOidTag hashAlg, UniquePK11Context& context) {
-    nsresult rv = SetLength(hashAlg);
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsresult Update(Span<const uint8_t> in) {
+    return Update(in.Elements(), in.Length());
+  }
+
+  nsresult Update(const unsigned char* buf, const uint32_t len) {
+    if (!mDigestContext) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+    return MapSECStatus(PK11_DigestOp(mDigestContext.get(), buf, len));
+  }
+
+  nsresult End( nsTArray<uint8_t>& out) {
+    if (!mDigestContext) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+    out.SetLength(mLen);
     uint32_t len;
-    rv = MapSECStatus(
-        PK11_DigestFinal(context.get(), mItem.data, &len, mItem.len));
+    nsresult rv = MapSECStatus(
+        PK11_DigestFinal(mDigestContext.get(), out.Elements(), &len, mLen));
     NS_ENSURE_SUCCESS(rv, rv);
-    context = nullptr;
-    NS_ENSURE_TRUE(len == mItem.len, NS_ERROR_UNEXPECTED);
+    mDigestContext = nullptr;
+    NS_ENSURE_TRUE(len == mLen, NS_ERROR_UNEXPECTED);
+
     return NS_OK;
   }
-
-  const SECItem& get() const { return mItem; }
 
  private:
   nsresult SetLength(SECOidTag hashType) {
@@ -147,16 +186,10 @@ class Digest {
 #endif
     switch (hashType) {
       case SEC_OID_SHA1:
-        mItem.len = SHA1_LENGTH;
+        mLen = SHA1_LENGTH;
         break;
       case SEC_OID_SHA256:
-        mItem.len = SHA256_LENGTH;
-        break;
-      case SEC_OID_SHA384:
-        mItem.len = SHA384_LENGTH;
-        break;
-      case SEC_OID_SHA512:
-        mItem.len = SHA512_LENGTH;
+        mLen = SHA256_LENGTH;
         break;
       default:
         return NS_ERROR_INVALID_ARG;
@@ -168,8 +201,8 @@ class Digest {
     return NS_OK;
   }
 
-  uint8_t mItemBuf[HASH_LENGTH_MAX];
-  SECItem mItem;
+  uint8_t mLen;
+  UniquePK11Context mDigestContext;
 };
 
 namespace internal {
