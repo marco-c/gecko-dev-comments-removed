@@ -516,17 +516,18 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
               mActiveEntry = newActiveEntry;
             }
           } else {
-            SessionHistoryEntry* parentEntry = GetParent()->mActiveEntry;
+            SessionHistoryEntry* parentEntry =
+                static_cast<CanonicalBrowsingContext*>(GetParent())
+                    ->mActiveEntry;
             
             
             if (parentEntry) {
               mActiveEntry = newActiveEntry;
               
               
-              parentEntry->AddChild(
-                  mActiveEntry,
-                  CreatedDynamically() ? -1 : GetParent()->IndexOf(this),
-                  IsInProcess());
+              
+              parentEntry->AddChild(mActiveEntry, Children().Length() - 1,
+                                    IsInProcess());
             }
           }
         }
@@ -612,7 +613,8 @@ void CanonicalBrowsingContext::NotifyOnHistoryReload(
 
 void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
-    uint32_t aLoadType, uint32_t aUpdatedCacheKey, const nsID& aChangeID) {
+    uint32_t aLoadType, int32_t aChildOffset, uint32_t aUpdatedCacheKey,
+    const nsID& aChangeID) {
   nsISHistory* shistory = GetSessionHistory();
   if (!shistory) {
     return;
@@ -642,9 +644,8 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
       shistory->AddChildSHEntryHelper(oldActiveEntry, mActiveEntry, Top(),
                                       true);
     } else if (GetParent() && GetParent()->mActiveEntry) {
-      GetParent()->mActiveEntry->AddChild(
-          mActiveEntry, CreatedDynamically() ? -1 : GetParent()->IndexOf(this),
-          UseRemoteSubframes());
+      GetParent()->mActiveEntry->AddChild(mActiveEntry, aChildOffset,
+                                          UseRemoteSubframes());
     }
   }
   

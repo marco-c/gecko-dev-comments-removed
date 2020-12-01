@@ -8950,7 +8950,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
         
         
         mBrowsingContext->SetActiveSessionHistoryEntry(
-            Some(scrollPos), mActiveEntry.get(), mLoadType, cacheKey);
+            Some(scrollPos), mActiveEntry.get(), mLoadType, mChildOffset,
+            cacheKey);
         
       }
     }
@@ -11622,7 +11623,7 @@ void nsDocShell::UpdateActiveEntry(
     
     
     mBrowsingContext->SetActiveSessionHistoryEntry(
-        aPreviousScrollPos, mActiveEntry.get(), mLoadType,
+        aPreviousScrollPos, mActiveEntry.get(), mLoadType, mChildOffset,
          0);
     
   }
