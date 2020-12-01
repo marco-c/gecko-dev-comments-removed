@@ -8140,12 +8140,11 @@ void nsWindow::UpdateMozWindowActive() {
   
   
   
-  if (mozilla::dom::Document* document = GetDocument()) {
-    if (nsPIDOMWindowOuter* window = document->GetWindow()) {
-      if (RefPtr<mozilla::dom::BrowsingContext> bc =
-              window->GetBrowsingContext()) {
-        bc->SetIsActiveBrowserWindow(!mTitlebarBackdropState);
-      }
+  mozilla::dom::Document* document = GetDocument();
+  if (document) {
+    nsPIDOMWindowOuter* window = document->GetWindow();
+    if (window) {
+      window->SetActive(!mTitlebarBackdropState);
     }
   }
 }

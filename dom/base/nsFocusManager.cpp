@@ -743,6 +743,9 @@ void nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow,
     baseWindow->SetVisibility(true);
   }
 
+  
+  
+  
   if (XRE_IsParentProcess()) {
     
     
@@ -827,6 +830,9 @@ void nsFocusManager::WindowLowered(mozIDOMWindowProxy* aWindow,
     }
   }
 
+  
+  
+  
   if (XRE_IsParentProcess()) {
     ActivateOrDeactivate(window, false);
   }
@@ -958,11 +964,10 @@ void nsFocusManager::WindowShown(mozIDOMWindowProxy* aWindow,
     }
   }
 
-  if (XRE_IsParentProcess()) {
-    if (BrowsingContext* bc = window->GetBrowsingContext()) {
-      if (bc->IsTop()) {
-        bc->SetIsActiveBrowserWindow(bc->GetIsActiveBrowserWindow());
-      }
+  if (nsIDocShell* docShell = window->GetDocShell()) {
+    if (nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild()) {
+      bool active = static_cast<BrowserChild*>(child.get())->ParentIsActive();
+      ActivateOrDeactivate(window, active);
     }
   }
 
@@ -1172,6 +1177,16 @@ nsresult nsFocusManager::FocusPlugin(Element* aPlugin) {
   return NS_OK;
 }
 
+void nsFocusManager::ParentActivated(mozIDOMWindowProxy* aWindow,
+                                     bool aActive) {
+  nsCOMPtr<nsPIDOMWindowOuter> window = nsPIDOMWindowOuter::From(aWindow);
+  if (!window) {
+    return;
+  }
+
+  ActivateOrDeactivate(window, aActive);
+}
+
 nsFocusManager::BlurredElementInfo::BlurredElementInfo(Element& aElement)
     : mElement(aElement),
       mHadRing(aElement.State().HasState(NS_EVENT_STATE_FOCUSRING)) {}
@@ -1331,32 +1346,29 @@ void nsFocusManager::EnsureCurrentWidgetFocused(CallerType aCallerType) {
 
 void nsFocusManager::ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow,
                                           bool aActive) {
-  MOZ_ASSERT(XRE_IsParentProcess());
   if (!aWindow) {
     return;
   }
 
-  if (BrowsingContext* bc = aWindow->GetBrowsingContext()) {
-    MOZ_ASSERT(bc->IsTop());
+  
+  
+  aWindow->ActivateOrDeactivate(aActive);
 
-    RefPtr<CanonicalBrowsingContext> chromeTop =
-        bc->Canonical()->TopCrossChromeBoundary();
-    MOZ_ASSERT(bc == chromeTop);
-
-    chromeTop->SetIsActiveBrowserWindow(aActive);
-    chromeTop->CallOnAllTopDescendants(
-        [aActive](CanonicalBrowsingContext* aBrowsingContext) -> CallState {
-          aBrowsingContext->SetIsActiveBrowserWindow(aActive);
-          return CallState::Continue;
-        });
-  }
-
+  
   if (aWindow->GetExtantDoc()) {
     nsContentUtils::DispatchEventOnlyToChrome(
         aWindow->GetExtantDoc(), aWindow->GetCurrentInnerWindow(),
         aActive ? u"activate"_ns : u"deactivate"_ns, CanBubble::eYes,
         Cancelable::eYes, nullptr);
   }
+
+  
+  
+  nsContentUtils::CallOnAllRemoteChildren(
+      aWindow, [&aActive](BrowserParent* aBrowserParent) -> CallState {
+        Unused << aBrowserParent->SendParentActivated(aActive);
+        return CallState::Continue;
+      });
 }
 
 
