@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "WebBrowserPersistRemoteDocument.h"
 #include "WebBrowserPersistDocumentParent.h"
@@ -13,6 +13,7 @@
 
 #include "nsDebug.h"
 #include "nsIPrincipal.h"
+#include "nsISHEntry.h"
 
 namespace mozilla {
 
@@ -33,8 +34,8 @@ WebBrowserPersistRemoteDocument ::WebBrowserPersistRemoteDocument(
 WebBrowserPersistRemoteDocument::~WebBrowserPersistRemoteDocument() {
   if (mActor) {
     Unused << WebBrowserPersistDocumentParent::Send__delete__(mActor);
-    // That will call mActor->ActorDestroy, which calls this->ActorDestroy
-    // (whether or not the IPC send succeeds).
+    
+    
   }
   MOZ_ASSERT(!mActor);
 }
@@ -176,19 +177,19 @@ WebBrowserPersistRemoteDocument::WriteContent(
 
   auto* subActor =
       new WebBrowserPersistSerializeParent(this, aStream, aCompletion);
-  nsCString requestedContentType(aRequestedContentType);  // Sigh.
+  nsCString requestedContentType(aRequestedContentType);  
   return mActor->SendPWebBrowserPersistSerializeConstructor(
              subActor, map, requestedContentType, aEncoderFlags, aWrapColumn)
              ? NS_OK
              : NS_ERROR_FAILURE;
 }
 
-// Forcing WebBrowserPersistRemoteDocument to implement GetHistory is the
-// easiest way to ensure that we can call GetHistory in
-// WebBrowserPersistDocumentChild::Start
+
+
+
 already_AddRefed<nsISHEntry> WebBrowserPersistRemoteDocument::GetHistory() {
   MOZ_CRASH("We should not call GetHistory on WebBrowserPersistRemoteDocument");
   return nullptr;
 }
 
-}  // namespace mozilla
+}  
