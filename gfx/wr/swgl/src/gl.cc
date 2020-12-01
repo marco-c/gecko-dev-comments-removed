@@ -176,19 +176,34 @@ struct Query {
 struct Buffer {
   char* buf = nullptr;
   size_t size = 0;
+  size_t capacity = 0;
 
   bool allocate(size_t new_size) {
-    if (new_size != size) {
-      char* new_buf = (char*)realloc(buf, new_size);
-      assert(new_buf);
-      if (new_buf) {
-        buf = new_buf;
-        size = new_size;
-        return true;
-      }
-      cleanup();
+    
+    if (new_size == size) {
+      return false;
     }
-    return false;
+    
+    
+    if (new_size <= capacity) {
+      size = new_size;
+      return true;
+    }
+    
+    
+    char* new_buf = (char*)realloc(buf, new_size);
+    assert(new_buf);
+    if (!new_buf) {
+      
+      
+      cleanup();
+      return false;
+    }
+    
+    buf = new_buf;
+    size = new_size;
+    capacity = new_size;
+    return true;
   }
 
   void cleanup() {
@@ -196,6 +211,7 @@ struct Buffer {
       free(buf);
       buf = nullptr;
       size = 0;
+      capacity = 0;
     }
   }
 
