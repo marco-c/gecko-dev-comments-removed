@@ -689,10 +689,6 @@ class JSFunction : public js::NativeObject {
   inline const js::Value& getExtendedSlotOffMainThread(size_t which) const;
 
   
-  static bool setTypeForScriptedFunction(JSContext* cx, js::HandleFunction fun,
-                                         bool singleton = false);
-
-  
   js::gc::AllocKind getAllocKind() const {
     static_assert(
         js::gc::AllocKind::FUNCTION != js::gc::AllocKind::FUNCTION_EXTENDED,

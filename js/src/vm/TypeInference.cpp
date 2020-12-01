@@ -1763,44 +1763,6 @@ class TypeConstraintClearDefiniteSingle : public TypeConstraint {
 
 
 
-
-bool JSFunction::setTypeForScriptedFunction(JSContext* cx, HandleFunction fun,
-                                            bool singleton ) {
-  if (!IsTypeInferenceEnabled()) {
-    return true;
-  }
-
-  
-  
-  
-  if (fun->isSingleton() || fun->group()->maybeInterpretedFunction()) {
-    return true;
-  }
-
-  if (singleton) {
-    if (!setSingleton(cx, fun)) {
-      return false;
-    }
-  } else {
-    RootedObject funProto(cx, fun->staticPrototype());
-    Rooted<TaggedProto> taggedProto(cx, TaggedProto(funProto));
-    ObjectGroup* group = ObjectGroupRealm::makeGroup(
-        cx, fun->realm(), &JSFunction::class_, taggedProto);
-    if (!group) {
-      return false;
-    }
-
-    fun->setGroup(group);
-    group->setInterpretedFunction(fun);
-  }
-
-  return true;
-}
-
-
-
-
-
 void PreliminaryObjectArray::registerNewObject(PlainObject* res) {
   MOZ_ASSERT(IsTypeInferenceEnabled());
 

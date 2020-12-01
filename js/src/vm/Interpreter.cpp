@@ -334,10 +334,7 @@ JSFunction* js::MakeDefaultConstructor(JSContext* cx, HandleScript script,
   ctorScript->setDefaultClassConstructorSpan(classStartOffset, classEndOffset,
                                              line, column);
 
-  
-  if (!JSFunction::setTypeForScriptedFunction(cx, ctor)) {
-    return nullptr;
-  }
+  MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
 
   DebugAPI::onNewScript(cx, ctorScript);
 
