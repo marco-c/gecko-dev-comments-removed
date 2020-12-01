@@ -1247,7 +1247,7 @@ mozilla::ipc::IPCResult PluginInstanceChild::AnswerNPP_SetWindow(
 
 #elif defined(ANDROID)
   
-#elif defined(MOZ_WIDGET_UIKIT)
+#elif defined(MOZ_WIDGET_UIKIT) || defined(MOZ_WAYLAND)
   
 #else
 #  error Implement me for your OS

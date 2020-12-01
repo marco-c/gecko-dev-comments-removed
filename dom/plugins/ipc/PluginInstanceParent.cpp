@@ -230,7 +230,7 @@ PluginInstanceParent::AnswerNPN_GetValue_NPNVnetscapeWindow(
   XID id;
 #elif defined(XP_DARWIN)
   intptr_t id;
-#elif defined(ANDROID)
+#elif defined(ANDROID) || defined(MOZ_WAYLAND)
   
   int id;
 #else
