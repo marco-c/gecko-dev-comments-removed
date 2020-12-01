@@ -1329,6 +1329,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  void DispatchBlockEventForVideoControl();
+
+  
+  
   void NotifyMediaControlPlaybackStateChanged();
 
   
