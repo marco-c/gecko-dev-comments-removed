@@ -169,7 +169,8 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   
   if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
     if (fm->GetFocusedElement() == owner) {
-      fm->ActivateRemoteFrameIfNeeded(*owner);
+      fm->ActivateRemoteFrameIfNeeded(*owner,
+                                      nsFocusManager::GenerateFocusActionId());
     }
   }
 

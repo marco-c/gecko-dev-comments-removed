@@ -5134,10 +5134,11 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
       parent = bc->Canonical()->GetParentCrossChromeBoundary();
     }
   }
+  uint64_t actionId = nsFocusManager::GenerateFocusActionId();
   if (parent) {
     if (!parent->IsInProcess()) {
       if (isActive) {
-        fm->WindowRaised(this);
+        fm->WindowRaised(this, actionId);
       }
       ContentChild* contentChild = ContentChild::GetSingleton();
       MOZ_ASSERT(contentChild);
@@ -5159,7 +5160,7 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
     
     
     
-    fm->RaiseWindow(this, aCallerType);
+    fm->RaiseWindow(this, aCallerType, actionId);
   }
 }
 

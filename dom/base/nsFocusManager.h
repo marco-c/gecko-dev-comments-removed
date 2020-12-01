@@ -212,29 +212,30 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   nsresult SetFocusedWindowWithCallerType(mozIDOMWindowProxy* aWindowToFocus,
-                                          mozilla::dom::CallerType aCallerType);
+                                          mozilla::dom::CallerType aCallerType,
+                                          uint64_t aActionId);
 
   
 
 
 
-  void ActivateRemoteFrameIfNeeded(mozilla::dom::Element&);
+  void ActivateRemoteFrameIfNeeded(mozilla::dom::Element&, uint64_t aActionId);
 
   
 
 
   void RaiseWindow(nsPIDOMWindowOuter* aWindow,
-                   mozilla::dom::CallerType aCallerType);
+                   mozilla::dom::CallerType aCallerType, uint64_t aActionId);
 
   
 
 
-  void WindowRaised(mozIDOMWindowProxy* aWindow);
+  void WindowRaised(mozIDOMWindowProxy* aWindow, uint64_t aActionId);
 
   
 
 
-  void WindowLowered(mozIDOMWindowProxy* aWindow);
+  void WindowLowered(mozIDOMWindowProxy* aWindow, uint64_t aActionId);
 
   
 
@@ -248,7 +249,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  void WindowHidden(mozIDOMWindowProxy* aWindow);
+  void WindowHidden(mozIDOMWindowProxy* aWindow, uint64_t aActionId);
 
   
 
@@ -335,7 +336,8 @@ class nsFocusManager final : public nsIFocusManager,
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SetFocusInner(mozilla::dom::Element* aNewContent, int32_t aFlags,
-                     bool aFocusChanged, bool aAdjustWidget);
+                     bool aFocusChanged, bool aAdjustWidget,
+                     uint64_t aActionId);
 
   
 
@@ -422,19 +424,19 @@ class nsFocusManager final : public nsIFocusManager,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   bool Blur(mozilla::dom::BrowsingContext* aBrowsingContextToClear,
             mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
-            bool aIsLeavingDocument, bool aAdjustWidget,
+            bool aIsLeavingDocument, bool aAdjustWidget, uint64_t aActionId,
             mozilla::dom::Element* aElementToFocus = nullptr);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void BlurFromOtherProcess(
       mozilla::dom::BrowsingContext* aFocusedBrowsingContext,
       mozilla::dom::BrowsingContext* aBrowsingContextToClear,
       mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
-      bool aIsLeavingDocument, bool aAdjustWidget);
+      bool aIsLeavingDocument, bool aAdjustWidget, uint64_t aActionId);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   bool BlurImpl(mozilla::dom::BrowsingContext* aBrowsingContextToClear,
                 mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
                 bool aIsLeavingDocument, bool aAdjustWidget,
-                mozilla::dom::Element* aElementToFocus);
+                mozilla::dom::Element* aElementToFocus, uint64_t aActionId);
 
   
 
@@ -466,7 +468,7 @@ class nsFocusManager final : public nsIFocusManager,
   void Focus(nsPIDOMWindowOuter* aWindow, mozilla::dom::Element* aContent,
              uint32_t aFlags, bool aIsNewDocument, bool aFocusChanged,
              bool aWindowRaised, bool aAdjustWidget,
-             bool aFocusInOtherContentProcess,
+             bool aFocusInOtherContentProcess, uint64_t aActionId,
              const mozilla::Maybe<BlurredElementInfo>& = mozilla::Nothing());
 
   
@@ -781,6 +783,11 @@ class nsFocusManager final : public nsIFocusManager,
   void SetFocusedBrowsingContextInChrome(
       mozilla::dom::BrowsingContext* aContext);
 
+  void InsertNewFocusActionId(uint64_t aActionId);
+
+  bool ProcessPendingActiveBrowsingContextActionId(uint64_t aActionId,
+                                                   bool aSettingToNonNull);
+
  public:
   
   
@@ -797,7 +804,7 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   void SetActiveBrowsingContextInContent(
-      mozilla::dom::BrowsingContext* aContext);
+      mozilla::dom::BrowsingContext* aContext, uint64_t aActionId);
 
   
   
@@ -816,8 +823,20 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
-  void SetActiveBrowsingContextInChrome(
-      mozilla::dom::BrowsingContext* aContext);
+  
+  
+  
+  
+  void ReviseActiveBrowsingContext(mozilla::dom::BrowsingContext* aContext,
+                                   uint64_t aActionId);
+
+  
+  
+  
+  
+  
+  bool SetActiveBrowsingContextInChrome(mozilla::dom::BrowsingContext* aContext,
+                                        uint64_t aActionId);
 
  public:
   
@@ -826,7 +845,13 @@ class nsFocusManager final : public nsIFocusManager,
   
   mozilla::dom::BrowsingContext* GetActiveBrowsingContextInChrome();
 
+  static uint64_t GenerateFocusActionId();
+
  private:
+  
+  
+  
+  
   
   
   
@@ -837,7 +862,19 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
+  
+  
+  
+  
   RefPtr<mozilla::dom::BrowsingContext> mActiveBrowsingContextInContent;
+
+  
+  
+  
+  
+  
+  
+  uint64_t mActionIdForActiveBrowsingContextInContent;
 
   
   
@@ -889,9 +926,71 @@ class nsFocusManager final : public nsIFocusManager,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<uint64_t> mPendingActiveBrowsingContextActions;
+
+  
+  
   bool mEventHandlingNeedsFlush;
 
   static bool sTestMode;
+
+  
+  
+  static uint64_t sFocusActionCounter;
 
   
   static mozilla::StaticRefPtr<nsFocusManager> sInstance;
