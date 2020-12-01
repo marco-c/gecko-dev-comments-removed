@@ -216,6 +216,10 @@ def prune_boring(rev):
 
         
         
+        hg_commits[rev].parents = list(dict.fromkeys(hg_commits[rev].parents))
+
+        
+        
         
         if len(hg_commits[rev].parents) == 1:
             rev = hg_commits[rev].parents[0]
