@@ -143,12 +143,13 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
       
       
       bool enableWasmBaseline = ((optByte & 0xF0) == (1 << 7));
-      bool enableWasmIon =
-          IonPlatformSupport() && ((optByte & 0xF0) == (1 << 6));
-      bool enableWasmCranelift = false;
+      bool enableWasmOptimizing = false;
 #ifdef ENABLE_WASM_CRANELIFT
-      enableWasmCranelift =
+      enableWasmOptimizing =
           CraneliftPlatformSupport() && ((optByte & 0xF0) == (1 << 5));
+#else
+      enableWasmOptimizing =
+          IonPlatformSupport() && ((optByte & 0xF0) == (1 << 6));
 #endif
       bool enableWasmAwaitTier2 = (IonPlatformSupport()
 #ifdef ENABLE_WASM_CRANELIFT
@@ -157,13 +158,13 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
                                        ) &&
                                   ((optByte & 0xF) == (1 << 3));
 
-      if (!enableWasmBaseline && !enableWasmIon && !enableWasmCranelift) {
+      if (!enableWasmBaseline && !enableWasmOptimizing) {
         
         
         
         
-        if (IonPlatformSupport()) {
-          enableWasmIon = true;
+        if (IonPlatformSupport() || CraneliftPlatformSupport()) {
+          enableWasmOptimizing = true;
         } else {
           enableWasmBaseline = true;
         }
@@ -173,19 +174,19 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
         
         enableWasmBaseline = true;
 
-        if (!enableWasmIon && !enableWasmCranelift) {
-          enableWasmIon = true;
+        if (!enableWasmOptimizing) {
+          enableWasmOptimizing = true;
         }
       }
 
       JS::ContextOptionsRef(gCx)
           .setWasmBaseline(enableWasmBaseline)
-          .setWasmIon(enableWasmIon)
-          .setTestWasmAwaitTier2(enableWasmAwaitTier2)
 #ifdef ENABLE_WASM_CRANELIFT
-          .setWasmCranelift(enableWasmCranelift)
+          .setWasmCranelift(enableWasmOptimizing)
+#else
+          .setWasmIon(enableWasmOptimizing)
 #endif
-          ;
+          .setTestWasmAwaitTier2(enableWasmAwaitTier2);
     }
 
     
