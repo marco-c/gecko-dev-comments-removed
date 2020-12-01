@@ -8905,6 +8905,27 @@ bool nsDisplayText::CreateWebRenderCommands(
     return true;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr float kWebRenderFontSizeLimit = 320.0;
+  f->EnsureTextRun(nsTextFrame::eInflated);
+  gfxTextRun* textRun = f->GetTextRun(nsTextFrame::eInflated);
+  if (textRun &&
+      textRun->GetFontGroup()->GetStyle()->size > kWebRenderFontSizeLimit) {
+    return false;
+  }
+
   gfx::Point deviceOffset =
       LayoutDevicePoint::FromAppUnits(bounds.TopLeft(), appUnitsPerDevPixel)
           .ToUnknownPoint();
