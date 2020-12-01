@@ -91,10 +91,6 @@ class AntiTrackingUtils final {
 
   
   
-  static bool IsFirstLevelSubContext(dom::BrowsingContext* aBrowsingContext);
-
-  
-  
   static uint32_t GetCookieBehavior(dom::BrowsingContext* aBrowsingContext);
 
   
