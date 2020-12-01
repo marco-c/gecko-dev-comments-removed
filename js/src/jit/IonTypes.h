@@ -87,6 +87,10 @@ enum class BailoutKind : uint8_t {
 
   
   
+  GenericIon,
+
+  
+  
 
   
   Inevitable,
@@ -295,6 +299,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "LICM";
     case BailoutKind::HoistBoundsCheck:
       return "HoistBoundsCheck";
+    case BailoutKind::GenericIon:
+      return "GenericIon";
 
     
     case BailoutKind::Inevitable:

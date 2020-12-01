@@ -2151,6 +2151,11 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       
       break;
 
+    case BailoutKind::GenericIon:
+      
+      MOZ_ASSERT(!JitOptions.warpBuilder);
+      break;
+
     case BailoutKind::Inevitable:
     case BailoutKind::DuringVMCall:
     case BailoutKind::DynamicNameNotFound:
