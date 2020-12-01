@@ -104,15 +104,55 @@ function testAlwaysAsk(scheme, ask) {
 
 
 
-function contentOpenProto(
+
+
+
+
+
+function triggerOpenProto(
   browser,
   scheme,
-  triggeringPrincipal = browser.contentPrincipal
+  {
+    triggeringPrincipal = browser.contentPrincipal,
+    useNullPrincipal = false,
+    omitTriggeringPrincipal = false,
+  } = {}
 ) {
   let uri = `${scheme}://test`;
+
+  if (useNullPrincipal) {
+    
+    
+    ContentTask.spawn(browser, { uri }, args => {
+      let frame = content.document.createElement("iframe");
+      frame.src = `data:text/html,<script>location.href="${args.uri}"</script>`;
+      content.document.body.appendChild(frame);
+    });
+    return;
+  }
+
+  if (omitTriggeringPrincipal) {
+    
+    let contentDispatchChooser = Cc[
+      "@mozilla.org/content-dispatch-chooser;1"
+    ].createInstance(Ci.nsIContentDispatchChooser);
+
+    let handler = HandlerServiceTestUtils.getHandlerInfo(scheme);
+
+    contentDispatchChooser.handleURI(
+      handler,
+      Services.io.newURI(uri),
+      null,
+      browser.browsingContext
+    );
+    return;
+  }
+
   info("Loading uri: " + uri);
-  return browser.loadURI(uri, { triggeringPrincipal });
+  browser.loadURI(uri, { triggeringPrincipal });
 }
+
+
 
 
 
@@ -131,7 +171,7 @@ function contentOpenProto(
 async function testOpenProto(
   browser,
   scheme,
-  { permDialogOptions, chooserDialogOptions, triggeringPrincipal } = {}
+  { permDialogOptions, chooserDialogOptions, loadOptions } = {}
 ) {
   let permDialogOpenPromise;
   let chooserDialogOpenPromise;
@@ -145,7 +185,7 @@ async function testOpenProto(
     info("Should see chooser dialog");
     chooserDialogOpenPromise = waitForProtocolAppChooserDialog(browser, true);
   }
-  contentOpenProto(browser, scheme, triggeringPrincipal);
+  triggerOpenProto(browser, scheme, loadOptions);
   let webHandlerLoadedPromise;
 
   let webHandlerShouldOpen =
@@ -540,7 +580,9 @@ add_task(async function test_permission_system_principal() {
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
     await testOpenProto(browser, scheme, {
       chooserDialogOptions: { hasCheckbox: true, actionConfirm: false },
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadOptions: {
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      },
     });
   });
 });
@@ -611,4 +653,56 @@ add_task(async function test_change_app_checkbox_cancel() {
 
   
   testAlwaysAsk(scheme, true);
+});
+
+
+
+
+
+add_task(async function test_null_principal() {
+  let scheme = TEST_PROTOS[0];
+
+  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    await testOpenProto(browser, scheme, {
+      loadOptions: {
+        useNullPrincipal: true,
+      },
+      permDialogOptions: {
+        hasCheckbox: false,
+        chooserIsNext: true,
+        hasChangeApp: false,
+        actionConfirm: true,
+      },
+      chooserDialogOptions: {
+        hasCheckbox: true,
+        actionConfirm: false, 
+      },
+    });
+  });
+});
+
+
+
+
+
+add_task(async function test_no_principal() {
+  let scheme = TEST_PROTOS[1];
+
+  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    await testOpenProto(browser, scheme, {
+      loadOptions: {
+        omitTriggeringPrincipal: true,
+      },
+      permDialogOptions: {
+        hasCheckbox: false,
+        chooserIsNext: true,
+        hasChangeApp: false,
+        actionConfirm: true,
+      },
+      chooserDialogOptions: {
+        hasCheckbox: true,
+        actionConfirm: false, 
+      },
+    });
+  });
 });
