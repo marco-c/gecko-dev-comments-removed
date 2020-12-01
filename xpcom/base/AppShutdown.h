@@ -23,18 +23,13 @@ class AppShutdown {
   
 
 
-  static int GetExitCode();
-
-  
-
-
 
   static void SaveEnvVarsForPotentialRestart();
 
   
 
 
-  static void Init(AppShutdownMode aMode, int aExitCode);
+  static void Init(AppShutdownMode aMode);
 
   
 
@@ -60,9 +55,7 @@ class AppShutdown {
 
 
 
-
-
-  static void DoImmediateExit(int aExitCode = 0);
+  static void DoImmediateExit();
 
   
 
