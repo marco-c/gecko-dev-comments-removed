@@ -1226,7 +1226,7 @@ void ContentParent::SendAsyncUpdate(nsIWidget* aWidget) {
   NS_ASSERTION(hwnd, "Expected valid hwnd value.");
   ContentParent* cp = reinterpret_cast<ContentParent*>(
       ::GetPropW(hwnd, kPluginWidgetContentParentProperty));
-  if (cp && !cp->IsDestroyed()) {
+  if (cp && cp->CanSend()) {
     Unused << cp->SendUpdateWindow((uintptr_t)hwnd);
   }
 }
@@ -1605,7 +1605,7 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   
   
   if (aMethod == SEND_SHUTDOWN_MESSAGE) {
-    if (mIPCOpen && !mShutdownPending) {
+    if (CanSend() && !mShutdownPending) {
       
       SetInputPriorityEventEnabled(false);
       if (SendShutdown()) {
@@ -1829,8 +1829,6 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
 
   
   
-  mIPCOpen = false;
-
   RemoveShutdownBlockers();
 
   if (mHangMonitorActor) {
@@ -2159,7 +2157,7 @@ void ContentParent::RemoveKeepAlive() {
 }
 
 void ContentParent::StartForceKillTimer() {
-  if (mForceKillTimer || !mIPCOpen) {
+  if (mForceKillTimer || !CanSend()) {
     return;
   }
 
@@ -2545,7 +2543,6 @@ ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
       mCalledKillHard(false),
       mCreatedPairedMinidumps(false),
       mShutdownPending(false),
-      mIPCOpen(true),
       mIsRemoteInputEventQueueEnabled(false),
       mIsInputPriorityEventEnabled(false),
       mIsInPool(false),
@@ -3095,7 +3092,7 @@ bool ContentParent::IsInputEventQueueSupported() {
 }
 
 void ContentParent::OnVarChanged(const GfxVarUpdate& aVar) {
-  if (!mIPCOpen) {
+  if (!CanSend()) {
     return;
   }
   Unused << SendVarUpdate(aVar);
