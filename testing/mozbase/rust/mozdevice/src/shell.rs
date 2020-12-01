@@ -25,7 +25,11 @@ use regex::Regex;
 
 pub fn escape(input: &str) -> String {
     
-    let escape_pattern: Regex = Regex::new(r"([^A-Za-z0-9_\-.,:/@\n])").unwrap();
+    
+    
+    
+    
+    let escape_pattern: Regex = Regex::new(r"([^A-Za-z0-9_\-.,:/@ \n])").unwrap();
     let line_feed: Regex = Regex::new(r"\n").unwrap();
 
     if input.is_empty() {
@@ -48,7 +52,7 @@ mod tests {
 
     #[test]
     fn full_escape() {
-        assert_eq!(escape("foo '\"' bar"), "foo\\ \\'\\\"\\'\\ bar");
+        assert_eq!(escape("foo '\"' bar"), "foo \\'\\\"\\' bar");
     }
 
     #[test]
