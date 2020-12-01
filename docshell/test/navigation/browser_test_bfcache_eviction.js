@@ -31,7 +31,6 @@ add_task(async function() {
                 "History listener got called after a content viewer was evicted"
               );
               legacySHistory.removeSHistoryListener(historyListener);
-              delete content._testListener;
               
               resolve();
             },

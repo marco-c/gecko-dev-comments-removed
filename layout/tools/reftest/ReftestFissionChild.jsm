@@ -138,7 +138,11 @@ class ReftestFissionChild extends JSWindowActorChild {
               }
             }
 
-            flushWindow(this.contentWindow);
+            
+            
+            if (this.contentWindow) {
+              flushWindow(this.contentWindow);
+            }
 
             if (anyPendingPaintsGeneratedInDescendants &&
                 !this.contentWindow.windowUtils.isMozAfterPaintPending) {
