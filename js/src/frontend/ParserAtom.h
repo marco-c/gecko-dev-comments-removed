@@ -503,25 +503,30 @@ class WellKnownParserAtoms {
 
 
 
+size_t RequiredNonStaticAtomCount(const ParserAtomVector& entries);
+
+bool InstantiateMarkedAtoms(JSContext* cx, const ParserAtomVector& entries,
+                            CompilationAtomCache& atomCache);
+
+
+
 
 
 class ParserAtomsTable {
  private:
   const WellKnownParserAtoms& wellKnownTable_;
 
-  LifoAlloc* alloc_;
+  LifoAlloc& alloc_;
 
   
   using EntryMap = HashMap<ParserAtomEntry*, ParserAtomIndex,
                            ParserAtomLookupHasher, js::SystemAllocPolicy>;
   EntryMap entryMap_;
-  ParserAtomVector entries_;
+  ParserAtomVector& entries_;
 
  public:
-  explicit ParserAtomsTable(JSRuntime* rt, LifoAlloc& alloc);
+  ParserAtomsTable(JSRuntime* rt, LifoAlloc& alloc, ParserAtomVector& entries);
   ParserAtomsTable(ParserAtomsTable&&) = default;
-
-  void updateLifoAlloc(LifoAlloc& alloc) { alloc_ = &alloc; }
 
  private:
   
@@ -540,13 +545,6 @@ class ParserAtomsTable {
 
  public:
   bool empty() const { return entryMap_.empty(); }
-
-  
-  
-  size_t requiredNonStaticAtomCount() const;
-
-  bool instantiateMarkedAtoms(JSContext* cx,
-                              CompilationAtomCache& atomCache) const;
 
   JS::Result<const ParserAtom*, OOM> internAscii(JSContext* cx,
                                                  const char* asciiPtr,

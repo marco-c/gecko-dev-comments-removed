@@ -194,6 +194,8 @@ struct CompilationInput {
   void trace(JSTracer* trc);
 } JS_HAZ_GC_POINTER;
 
+struct CompilationStencil;
+
 struct MOZ_RAII CompilationState {
   
   
@@ -204,18 +206,13 @@ struct MOZ_RAII CompilationState {
   UsedNameTracker usedNames;
   LifoAllocScope& allocScope;
 
-  ParserAtomsTable& parserAtoms;
+  
+  ParserAtomsTable parserAtoms;
 
-  CompilationState(JSContext* cx, LifoAllocScope& alloc,
+  CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
                    const JS::ReadOnlyCompileOptions& options,
-                   ParserAtomsTable& parserAtoms,
-                   Scope* enclosingScope = nullptr,
-                   JSObject* enclosingEnv = nullptr)
-      : directives(options.forceStrictMode()),
-        scopeContext(cx, enclosingScope, enclosingEnv),
-        usedNames(cx),
-        allocScope(alloc),
-        parserAtoms(parserAtoms) {}
+                   CompilationStencil& stencil, Scope* enclosingScope = nullptr,
+                   JSObject* enclosingEnv = nullptr);
 };
 
 
@@ -255,13 +252,12 @@ struct CompilationStencil {
       asmJS;
 
   
-  ParserAtomsTable parserAtoms;
+  ParserAtomVector parserAtomData;
 
   
   static constexpr size_t LifoAllocChunkSize = 512;
 
-  explicit CompilationStencil(JSRuntime* rt)
-      : alloc(LifoAllocChunkSize), parserAtoms(rt, alloc) {}
+  CompilationStencil() : alloc(LifoAllocChunkSize) {}
 
   
   
@@ -274,11 +270,9 @@ struct CompilationStencil {
         scopeData(std::move(other.scopeData)),
         moduleMetadata(std::move(other.moduleMetadata)),
         asmJS(std::move(other.asmJS)),
-        parserAtoms(std::move(other.parserAtoms)) {
-    
+        parserAtomData(std::move(other.parserAtomData)) {
     
     alloc.steal(&other.alloc);
-    parserAtoms.updateLifoAlloc(alloc);
   }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -422,7 +416,7 @@ struct CompilationInfo {
 
   
   CompilationInfo(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
-      : input(options), stencil(cx->runtime()) {}
+      : input(options) {}
 
   MOZ_MUST_USE bool prepareInputAndStencilForInstantiate(JSContext* cx);
   MOZ_MUST_USE bool prepareGCOutputForInstantiate(
