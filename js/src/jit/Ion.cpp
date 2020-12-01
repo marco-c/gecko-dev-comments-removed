@@ -1803,6 +1803,7 @@ static bool CanIonCompileOrInlineScript(JSScript* script, const char** reason) {
     
     
     
+    
     *reason = "eval script";
     return false;
   }

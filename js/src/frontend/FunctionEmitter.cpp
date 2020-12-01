@@ -7,6 +7,7 @@
 #include "frontend/FunctionEmitter.h"
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Unused.h"
 
 #include "builtin/ModuleObject.h"          
 #include "frontend/BytecodeEmitter.h"      
@@ -307,14 +308,11 @@ bool FunctionEmitter::emitTopLevelFunction(GCThingIndex index) {
   MOZ_ASSERT(syntaxKind_ == FunctionSyntaxKind::Statement);
   MOZ_ASSERT(bce_->inPrologue());
 
-  if (!bce_->emitGCIndexOp(JSOp::Lambda, index)) {
-    
-    return false;
-  }
-  if (!bce_->emit1(JSOp::DefFun)) {
-    
-    return false;
-  }
+  
+  
+  
+  mozilla::Unused << index;
+
   return true;
 }
 

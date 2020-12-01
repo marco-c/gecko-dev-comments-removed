@@ -2384,30 +2384,6 @@ bool BytecodeEmitter::defineHoistedTopLevelFunctions(ParseNode* body) {
   return emitHoistedFunctionsInList(&body->as<ListNode>());
 }
 
-class DynamicBindingIter : public ParserBindingIter {
- public:
-  explicit DynamicBindingIter(GlobalSharedContext* sc)
-      : ParserBindingIter(*sc->bindings) {}
-
-  explicit DynamicBindingIter(EvalSharedContext* sc)
-      : ParserBindingIter(*sc->bindings,  false) {
-    MOZ_ASSERT(!sc->strict());
-  }
-
-  JSOp bindingOp() const {
-    switch (kind()) {
-      case BindingKind::Var:
-        return JSOp::DefVar;
-      case BindingKind::Let:
-        return JSOp::DefLet;
-      case BindingKind::Const:
-        return JSOp::DefConst;
-      default:
-        MOZ_CRASH("Bad BindingKind");
-    }
-  }
-};
-
 
 
 
@@ -2443,44 +2419,35 @@ bool BytecodeEmitter::emitDeclarationInstantiation(ParseNode* body) {
     }
   }
 
+#if DEBUG
   
-  if (!emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation, GCThingIndex())) {
+  for (const auto& thing : perScriptData().gcThingList().objects()) {
+    MOZ_ASSERT(thing.isEmptyGlobalScope() || thing.isScope());
+  }
+#endif
+
+  
+  
+  if (!defineHoistedTopLevelFunctions(body)) {
     return false;
   }
 
   
-  if (sc->isGlobalContext()) {
-    for (DynamicBindingIter bi(sc->asGlobalContext()); bi; bi++) {
-      const ParserAtom* name = bi.name();
+  
+  
+  MOZ_ASSERT(perScriptData().gcThingList().length() > 0);
+  GCThingIndex lastFun =
+      GCThingIndex(perScriptData().gcThingList().length() - 1);
 
-      
-      
-      if (bi.isTopLevelFunction()) {
-        continue;
-      }
-
-      if (!emitAtomOp(bi.bindingOp(), name)) {
-        return false;
-      }
-    }
-  } else {
-    MOZ_ASSERT(sc->isEvalContext());
-
-    for (DynamicBindingIter bi(sc->asEvalContext()); bi; bi++) {
-      MOZ_ASSERT(bi.bindingOp() == JSOp::DefVar);
-
-      if (bi.isTopLevelFunction()) {
-        continue;
-      }
-
-      if (!emitAtomOp(JSOp::DefVar, bi.name())) {
-        return false;
-      }
-    }
+#if DEBUG
+  for (const auto& thing : perScriptData().gcThingList().objects()) {
+    MOZ_ASSERT(thing.isEmptyGlobalScope() || thing.isScope() ||
+               thing.isFunction());
   }
+#endif
 
   
-  if (!defineHoistedTopLevelFunctions(body)) {
+  if (!emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation, lastFun)) {
     return false;
   }
 
@@ -2517,6 +2484,10 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
   bool isSloppyEval = sc->isEvalContext() && !sc->strict();
   if (isSloppyEval && body->is<LexicalScopeNode>() &&
       !body->as<LexicalScopeNode>().isEmptyScope()) {
+    
+    
+    
+    
     
     
     
