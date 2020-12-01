@@ -107,10 +107,8 @@ class RenderCompositorD3D11SWGL : public RenderCompositor {
     
     
     
-    
-    
     RefPtr<layers::DataTextureSourceD3D11> mTexture;
-    RefPtr<DataSourceSurface> mSurface;
+    RefPtr<ID3D11Texture2D> mStagingTexture;
     gfx::Rect mValidRect;
 
     struct KeyHashFn {
