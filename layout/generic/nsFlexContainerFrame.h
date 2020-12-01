@@ -564,9 +564,11 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
+
   std::tuple<nscoord, bool> ReflowChildren(
       const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
-      const nscoord aContentBoxCrossSize,
+      const nscoord aContentBoxCrossSize, const nsSize& aContainerSize,
       const mozilla::LogicalSize& aAvailableSizeForItems,
       const mozilla::LogicalMargin& aBorderPadding,
       const nscoord aSumOfPrevInFlowsChildrenBlockSize,

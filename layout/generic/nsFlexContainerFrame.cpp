@@ -4483,14 +4483,30 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const LogicalSize tentativeBorderBoxSize(
+      wm, contentBoxSize.ISize(wm) + borderPadding.IStartEnd(wm),
+      std::min(effectiveContentBSize + borderPadding.BStartEnd(wm),
+               aReflowInput.AvailableBSize()));
+  const nsSize containerSize = tentativeBorderBoxSize.GetPhysicalSize(wm);
+
   const auto* prevInFlow = static_cast<nsFlexContainerFrame*>(GetPrevInFlow());
   OverflowAreas ocBounds;
   nsReflowStatus ocStatus;
   nscoord sumOfChildrenBlockSize;
   if (prevInFlow) {
-    ReflowOverflowContainerChildren(aPresContext, aReflowInput, ocBounds,
-                                    ReflowChildFlags::Default, ocStatus,
-                                    MergeSortedFrameListsFor);
+    ReflowOverflowContainerChildren(
+        aPresContext, aReflowInput, ocBounds, ReflowChildFlags::Default,
+        ocStatus, MergeSortedFrameListsFor, Some(containerSize));
     sumOfChildrenBlockSize =
         prevInFlow->GetProperty(SumOfChildrenBlockSizeProperty());
   } else {
@@ -4499,7 +4515,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   const auto [maxBlockEndEdgeOfChildren, areChildrenComplete] =
       ReflowChildren(aReflowInput, contentBoxMainSize, contentBoxCrossSize,
-                     availableSizeForItems, borderPadding,
+                     containerSize, availableSizeForItems, borderPadding,
                      sumOfChildrenBlockSize, flexContainerAscent, lines,
                      placeholders, axisTracker, hasLineClampEllipsis);
 
@@ -5057,7 +5073,7 @@ void nsFlexContainerFrame::DoFlexLayout(
 
 std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
     const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
-    const nscoord aContentBoxCrossSize,
+    const nscoord aContentBoxCrossSize, const nsSize& aContainerSize,
     const LogicalSize& aAvailableSizeForItems,
     const LogicalMargin& aBorderPadding,
     const nscoord aSumOfPrevInFlowsChildrenBlockSize,
@@ -5070,12 +5086,6 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
   WritingMode flexWM = aReflowInput.GetWritingMode();
   const LogicalPoint containerContentBoxOrigin(
       flexWM, aBorderPadding.IStart(flexWM), aBorderPadding.BStart(flexWM));
-
-  
-  LogicalSize logSize = aAxisTracker.LogicalSizeFromFlexRelativeSizes(
-      aContentBoxMainSize, aContentBoxCrossSize);
-  logSize += aBorderPadding.Size(flexWM);
-  nsSize containerSize = logSize.GetPhysicalSize(flexWM);
 
   
   
@@ -5154,9 +5164,9 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
                         availableBSizeForItem)
                 .ConvertTo(itemWM, flexWM);
 
-        const nsReflowStatus childReflowStatus =
-            ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
-                           availableSize, containerSize, aHasLineClampEllipsis);
+        const nsReflowStatus childReflowStatus = ReflowFlexItem(
+            aAxisTracker, aReflowInput, item, framePos, availableSize,
+            aContainerSize, aHasLineClampEllipsis);
 
         if (childReflowStatus.IsIncomplete()) {
           incompleteItems.PutEntry(item.Frame());
@@ -5165,7 +5175,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         }
       } else {
         MoveFlexItemToFinalPosition(aReflowInput, item, framePos,
-                                    containerSize);
+                                    aContainerSize);
         
         
         
@@ -5210,7 +5220,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
 
   if (!aPlaceholders.IsEmpty()) {
     ReflowPlaceholders(aReflowInput, aPlaceholders, containerContentBoxOrigin,
-                       containerSize);
+                       aContainerSize);
   }
 
   const bool anyChildIncomplete = PushIncompleteChildren(
