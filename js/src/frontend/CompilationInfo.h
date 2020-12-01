@@ -256,7 +256,7 @@ struct CompilationStencil {
   static constexpr size_t LifoAllocChunkSize = 512;
 
   explicit CompilationStencil(JSRuntime* rt)
-      : alloc(LifoAllocChunkSize), parserAtoms(rt) {}
+      : alloc(LifoAllocChunkSize), parserAtoms(rt, alloc) {}
 
   
   
@@ -273,6 +273,7 @@ struct CompilationStencil {
     
     
     alloc.steal(&other.alloc);
+    parserAtoms.updateLifoAlloc(alloc);
   }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
