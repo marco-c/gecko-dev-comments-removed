@@ -1024,7 +1024,9 @@ var SessionStoreInternal = {
       },
 
       OnHistoryNewEntry(newURI, oldIndex) {
-        this.notifySHistoryChanges(oldIndex);
+        
+        
+        this.notifySHistoryChanges(oldIndex == -1 ? oldIndex : oldIndex - 1);
       },
 
       OnHistoryGotoIndex() {
