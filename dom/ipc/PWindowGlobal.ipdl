@@ -5,6 +5,7 @@
 
 
 include "mozilla/dom/DocShellMessageUtils.h";
+include "mozilla/dom/PermissionMessageUtils.h";
 include "mozilla/ipc/TransportSecurityInfoUtils.h";
 
 include protocol PBrowser;
