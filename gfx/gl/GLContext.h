@@ -3384,6 +3384,12 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   
 
 
+
+  virtual GLint GetBufferAge() const { return 0; }
+
+  
+
+
   virtual bool BindTexImage() { return false; }
   
 
