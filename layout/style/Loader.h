@@ -515,7 +515,7 @@ class Loader final {
                             IsAlternate, IsExplicitlyEnabled);
 
   
-  void InsertSheetInTree(StyleSheet& aSheet, nsINode* aOwningNode);
+  void InsertSheetInTree(StyleSheet& aSheet, nsIContent* aLinkingContent);
   
   void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 

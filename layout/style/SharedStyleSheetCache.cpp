@@ -337,43 +337,6 @@ void SharedStyleSheetCache::LoadCompletedInternal(
       MOZ_ASSERT(data->mSheet->IsConstructed() ||
                      !data->mSheet->HasForcedUniqueInner(),
                  "should not get a forced unique inner during parsing");
-      
-      
-      const bool needInsertIntoTree = [&] {
-        if (StaticPrefs::dom_expose_incomplete_stylesheets()) {
-          
-          
-          
-          return false;
-        }
-        if (!data->mLoader->GetDocument()) {
-          
-          return false;
-        }
-        if (data->mIsPreload != css::Loader::IsPreload::No) {
-          
-          return false;
-        }
-        if (data->mSheet->IsConstructed()) {
-          
-          return false;
-        }
-        if (data->mIsChildSheet) {
-          
-          
-          return false;
-        }
-        if (data->mOwningNode != data->mSheet->GetOwnerNode()) {
-          
-          
-          return false;
-        }
-        return true;
-      }();
-
-      if (needInsertIntoTree) {
-        data->mLoader->InsertSheetInTree(*data->mSheet, data->mOwningNode);
-      }
       data->mSheet->SetComplete();
       data->ScheduleLoadEventIfNeeded();
     } else if (data->mSheet->IsApplicable()) {
