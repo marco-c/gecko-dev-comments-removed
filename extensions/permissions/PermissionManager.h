@@ -471,10 +471,6 @@ class PermissionManager final : public nsIPermissionManager,
   template <class T>
   nsresult RemovePermissionEntries(T aCondition);
 
-  template <class T>
-  nsresult GetPermissionEntries(T aCondition,
-                                nsTArray<RefPtr<nsIPermission>>& aResult);
-
   
   
   

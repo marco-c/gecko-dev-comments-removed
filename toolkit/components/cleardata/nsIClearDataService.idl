@@ -109,24 +109,6 @@ interface nsIClearDataService : nsISupports
 
 
 
-
-
-
-
-
-
-
-
-
-
-  void deleteUserInteractionForClearingHistory(in Array<nsIPrincipal> aPrincipalsWithStorage,
-                                               [optional] in PRTime aFrom,
-                                               [optional] in nsIClearDataCallback aCallback);
-
-  
-
-
-
   
 
 
