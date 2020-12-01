@@ -5,11 +5,13 @@
 
 
 #include "XRNativeOriginLocalFloor.h"
+#include "VRDisplayClient.h"
 
 namespace mozilla {
 namespace dom {
 
-XRNativeOriginLocalFloor::XRNativeOriginLocalFloor(VRDisplayClient* aDisplay)
+XRNativeOriginLocalFloor::XRNativeOriginLocalFloor(
+    gfx::VRDisplayClient* aDisplay)
     : mDisplay(aDisplay), mInitialPositionValid(false) {
   MOZ_ASSERT(aDisplay);
 

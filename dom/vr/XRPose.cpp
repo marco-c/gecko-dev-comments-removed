@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/XRPose.h"
+#include "mozilla/dom/XRRigidTransform.h"
 
 namespace mozilla {
 namespace dom {

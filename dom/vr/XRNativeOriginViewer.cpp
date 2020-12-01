@@ -5,11 +5,12 @@
 
 
 #include "XRNativeOriginViewer.h"
+#include "VRDisplayClient.h"
 
 namespace mozilla {
 namespace dom {
 
-XRNativeOriginViewer::XRNativeOriginViewer(VRDisplayClient* aDisplay)
+XRNativeOriginViewer::XRNativeOriginViewer(gfx::VRDisplayClient* aDisplay)
     : mDisplay(aDisplay) {
   MOZ_ASSERT(aDisplay);
 }

@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/XRViewerPose.h"
+#include "mozilla/dom/XRView.h"
 
 namespace mozilla {
 namespace dom {
