@@ -5,6 +5,7 @@
 
 
 #include "PaymentActionResponse.h"
+#include "BasicCardPayment.h"
 #include "PaymentRequestUtils.h"
 
 namespace mozilla {

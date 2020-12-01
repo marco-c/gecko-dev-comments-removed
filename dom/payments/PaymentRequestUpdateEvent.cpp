@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PaymentRequestUpdateEvent.h"
+#include "mozilla/dom/PaymentRequest.h"
 #include "mozilla/dom/RootedDictionary.h"
 
 namespace mozilla {

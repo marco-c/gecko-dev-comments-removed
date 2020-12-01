@@ -5,7 +5,9 @@
 
 
 #include "js/JSON.h"
+#include "nsContentUtils.h"
 #include "nsArrayUtils.h"
+#include "nsTString.h"
 #include "PaymentRequestUtils.h"
 
 namespace mozilla {
