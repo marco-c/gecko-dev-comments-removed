@@ -2512,7 +2512,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                 let module = if device.private_features.shader_validation {
                     
                     let spv_iter = spv.into_iter().cloned();
-                    naga::front::spv::Parser::new(spv_iter)
+                    naga::front::spv::Parser::new(spv_iter, &Default::default())
                         .parse()
                         .map_err(|err| {
                             

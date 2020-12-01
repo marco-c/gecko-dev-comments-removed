@@ -3,9 +3,6 @@ use std::{cmp::Ordering, fmt, hash, marker::PhantomData, num::NonZeroU32};
 
 
 
-
-
-
 type Index = NonZeroU32;
 
 
@@ -166,6 +163,10 @@ impl<T> Arena<T> {
         T: PartialEq,
     {
         self.fetch_if_or_append(value, T::eq)
+    }
+
+    pub fn try_get(&self, handle: Handle<T>) -> Option<&T> {
+        self.data.get(handle.index.get() as usize - 1)
     }
 
     

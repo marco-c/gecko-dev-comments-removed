@@ -28,6 +28,7 @@ impl<I: id::TypedId + Clone + std::fmt::Debug> wgc::hub::IdentityHandler<I>
     }
 }
 
+
 #[repr(C)]
 pub struct IdentityRecyclerFactory {
     param: FactoryParam,

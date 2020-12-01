@@ -4,7 +4,11 @@
 
 
 
-#![allow(clippy::new_without_default, clippy::unneeded_field_pattern)]
+#![allow(
+    clippy::new_without_default,
+    clippy::unneeded_field_pattern,
+    clippy::match_like_matches_macro
+)]
 #![deny(clippy::panic)]
 
 mod arena;
@@ -57,7 +61,7 @@ pub struct Header {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct EarlyDepthTest {
@@ -73,7 +77,7 @@ pub struct EarlyDepthTest {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ConservativeDepth {
@@ -88,7 +92,7 @@ pub enum ConservativeDepth {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[allow(missing_docs)] 
@@ -99,23 +103,33 @@ pub enum ShaderStage {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[allow(missing_docs)] 
 pub enum StorageClass {
-    Constant,
+    
     Function,
+    
     Input,
+    
     Output,
+    
     Private,
-    StorageBuffer,
-    Uniform,
+    
     WorkGroup,
+    
+    Uniform,
+    
+    Storage,
+    
+    Handle,
+    
+    PushConstant,
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum BuiltIn {
@@ -144,7 +158,7 @@ pub type Bytes = u8;
 
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Hash, Eq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum VectorSize {
@@ -158,7 +172,7 @@ pub enum VectorSize {
 
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Hash, Eq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ScalarKind {
@@ -174,18 +188,18 @@ pub enum ScalarKind {
 
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ArraySize {
     
-    Static(u32),
+    Constant(Handle<Constant>),
     
     Dynamic,
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum MemberOrigin {
@@ -198,7 +212,7 @@ pub enum MemberOrigin {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Interpolation {
@@ -233,7 +247,7 @@ pub struct StructMember {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ImageDimension {
@@ -260,7 +274,7 @@ bitflags::bitflags! {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum StorageFormat {
@@ -310,7 +324,7 @@ pub enum StorageFormat {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ImageClass {
@@ -392,8 +406,7 @@ pub struct Constant {
 }
 
 
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ConstantInner {
@@ -443,6 +456,8 @@ pub struct GlobalVariable {
     
     pub ty: Handle<Type>,
     
+    pub init: Option<Handle<Constant>>,
+    
     
     
     
@@ -461,11 +476,11 @@ pub struct LocalVariable {
     
     pub ty: Handle<Type>,
     
-    pub init: Option<Handle<Expression>>,
+    pub init: Option<Handle<Constant>>,
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum UnaryOperator {
@@ -474,7 +489,7 @@ pub enum UnaryOperator {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum BinaryOperator {
@@ -494,13 +509,13 @@ pub enum BinaryOperator {
     InclusiveOr,
     LogicalAnd,
     LogicalOr,
-    ShiftLeftLogical,
-    ShiftRightLogical,
-    ShiftRightArithmetic,
+    ShiftLeft,
+    
+    ShiftRight,
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum IntrinsicFunction {
@@ -513,7 +528,7 @@ pub enum IntrinsicFunction {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum DerivativeAxis {
@@ -569,7 +584,7 @@ pub enum Expression {
         components: Vec<Handle<Expression>>,
     },
     
-    FunctionParameter(u32),
+    FunctionArgument(u32),
     
     GlobalVariable(Handle<GlobalVariable>),
     
@@ -603,6 +618,13 @@ pub enum Expression {
         op: BinaryOperator,
         left: Handle<Expression>,
         right: Handle<Expression>,
+    },
+    
+    Select {
+        
+        condition: Handle<Expression>,
+        accept: Handle<Expression>,
+        reject: Handle<Expression>,
     },
     
     Intrinsic {
@@ -691,12 +713,22 @@ pub enum Statement {
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub struct FunctionArgument {
+    
+    pub name: Option<String>,
+    
+    pub ty: Handle<Type>,
+}
+
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct Function {
     
     pub name: Option<String>,
     
-    
-    pub parameter_types: Vec<Handle<Type>>,
+    pub arguments: Vec<FunctionArgument>,
     
     pub return_type: Option<Handle<Type>>,
     
