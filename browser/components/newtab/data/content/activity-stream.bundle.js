@@ -9334,8 +9334,9 @@ class TopSiteLink extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
 
 
 
+
   _allowDrop(e) {
-    return e.dataTransfer.types.includes("text/topsite-index");
+    return !this.props.link.sponsored_position && e.dataTransfer.types.includes("text/topsite-index");
   }
 
   onDragEvent(event) {
@@ -9839,17 +9840,8 @@ class TopSiteList extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
             topSitesPreview: null
           });
         } else {
-          let topSites = this._getTopSites();
-
-          let adjustedIndex = index; 
-          
-
-          while (topSites[adjustedIndex] && topSites[adjustedIndex].sponsored_position) {
-            adjustedIndex++;
-          }
-
           this.setState({
-            topSitesPreview: this._makeTopSitesPreview(adjustedIndex)
+            topSitesPreview: this._makeTopSitesPreview(index)
           });
         }
 
