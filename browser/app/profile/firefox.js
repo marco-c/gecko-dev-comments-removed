@@ -1383,7 +1383,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", "FR");
 
-pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "");
+pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "en-US,en-CA,en-GB");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE,CH,AT,BE");
 
