@@ -58,25 +58,9 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
 
-  
-  
-  void PruneDeadConnectionsAfter(uint32_t time);
-
-  
-  
-  void ConditionallyStopPruneDeadConnectionsTimer();
-
-  
-  
-  void ConditionallyStopTimeoutTick();
-
   [[nodiscard]] nsresult CancelTransactions(nsHttpConnectionInfo*,
                                             nsresult reason);
 
-  
-  [[nodiscard]] nsresult PruneNoTraffic();
-
-  void ReportFailedToProcess(nsIURI* uri);
 
   
   
@@ -93,8 +77,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   bool MoveTransToHTTPSSVCConnEntry(nsHttpTransaction* aTrans,
                                     nsHttpConnectionInfo* aNewCI);
-
-  [[nodiscard]] bool ProcessPendingQForEntry(nsHttpConnectionInfo*);
 
   
   
@@ -114,9 +96,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void ResetIPFamilyPreference(nsHttpConnectionInfo*);
 
   uint16_t MaxRequestDelay() { return mMaxRequestDelay; }
-
-  
-  void ActivateTimeoutTick();
 
   
   void AddActiveTransaction(nsHttpTransaction* aTrans);
@@ -155,8 +134,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void IncreaseNumHalfOpenConns();
   void DecreaseNumHalfOpenConns();
 
-  already_AddRefed<PendingTransactionInfo> FindTransactionHelper(
-      bool removeWhenFound, ConnectionEntry* aEnt, nsAHttpTransaction* aTrans);
 
   
   
@@ -165,6 +142,37 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
  private:
   virtual ~nsHttpConnectionMgr();
+
+  
+  
+  
+
+  
+  
+  void PruneDeadConnectionsAfter(uint32_t time);
+
+  
+  
+  void ConditionallyStopPruneDeadConnectionsTimer();
+
+  
+  
+  void ConditionallyStopTimeoutTick();
+
+  
+  [[nodiscard]] nsresult PruneNoTraffic();
+
+  
+  
+  
+
+  [[nodiscard]] bool ProcessPendingQForEntry(nsHttpConnectionInfo*);
+
+  
+  void ActivateTimeoutTick();
+
+  already_AddRefed<PendingTransactionInfo> FindTransactionHelper(
+      bool removeWhenFound, ConnectionEntry* aEnt, nsAHttpTransaction* aTrans);
 
  public:
   static nsAHttpConnection* MakeConnectionHandle(HttpConnectionBase* aWrapped);
