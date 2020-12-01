@@ -444,8 +444,8 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
     }
 
     if (!parseEasingResult.Failed()) {
-      keyframe->mTimingFunction = TimingParams::ParseEasing(
-          keyframeDict.mEasing, aDocument, parseEasingResult);
+      keyframe->mTimingFunction =
+          TimingParams::ParseEasing(keyframeDict.mEasing, parseEasingResult);
       
       
       
@@ -1099,7 +1099,7 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
   FallibleTArray<Maybe<ComputedTimingFunction>> easings;
   auto parseAndAppendEasing = [&](const nsString& easingString,
                                   ErrorResult& aRv) {
-    auto easing = TimingParams::ParseEasing(easingString, aDocument, aRv);
+    auto easing = TimingParams::ParseEasing(easingString, aRv);
     if (!aRv.Failed() && !easings.AppendElement(std::move(easing), fallible)) {
       aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     }

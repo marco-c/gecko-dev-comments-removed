@@ -23,7 +23,6 @@
 namespace mozilla {
 
 namespace dom {
-class Document;
 class UnrestrictedDoubleOrKeyframeEffectOptions;
 class UnrestrictedDoubleOrKeyframeAnimationOptions;
 }  
@@ -57,16 +56,14 @@ struct TimingParams {
 
   template <class OptionsType>
   static TimingParams FromOptionsType(const OptionsType& aOptions,
-                                      dom::Document* aDocument,
                                       ErrorResult& aRv);
   static TimingParams FromOptionsUnion(
       const dom::UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
-      dom::Document* aDocument, ErrorResult& aRv);
+      ErrorResult& aRv);
   static TimingParams FromOptionsUnion(
       const dom::UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
-      dom::Document* aDocument, ErrorResult& aRv);
+      ErrorResult& aRv);
   static TimingParams FromEffectTiming(const dom::EffectTiming& aEffectTiming,
-                                       dom::Document* aDocument,
                                        ErrorResult& aRv);
   
   
@@ -76,8 +73,7 @@ struct TimingParams {
   
   static TimingParams MergeOptionalEffectTiming(
       const TimingParams& aSource,
-      const dom::OptionalEffectTiming& aEffectTiming, dom::Document* aDocument,
-      ErrorResult& aRv);
+      const dom::OptionalEffectTiming& aEffectTiming, ErrorResult& aRv);
 
   
   
@@ -123,7 +119,6 @@ struct TimingParams {
   }
 
   static Maybe<ComputedTimingFunction> ParseEasing(const nsAString& aEasing,
-                                                   dom::Document* aDocument,
                                                    ErrorResult& aRv);
 
   static StickyTimeDuration CalcActiveDuration(

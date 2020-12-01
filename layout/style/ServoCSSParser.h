@@ -92,9 +92,7 @@ class ServoCSSParser {
 
 
 
-
-  static bool ParseEasing(const nsAString& aValue, URLExtraData* aUrl,
-                          nsTimingFunction& aResult);
+  static bool ParseEasing(const nsAString& aValue, nsTimingFunction& aResult);
 
   
 
