@@ -11279,7 +11279,7 @@ bool BytecodeEmitter::intoScriptStencil(ScriptStencil* script) {
   size_t ngcthings = things.length();
 
   
-  mozilla::Span<ScriptThingVariant> stencilThings =
+  mozilla::Span<TaggedScriptThingIndex> stencilThings =
       NewScriptThingSpanUninitialized(cx, compilationInfo.stencil.alloc,
                                       ngcthings);
   if (stencilThings.empty()) {

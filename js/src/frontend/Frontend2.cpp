@@ -24,7 +24,7 @@
 #include "frontend/ParserAtom.h"        
 #include "frontend/smoosh_generated.h"  
 #include "frontend/SourceNotes.h"       
-#include "frontend/Stencil.h"  
+#include "frontend/Stencil.h"      
 #include "frontend/TokenStream.h"  
 #include "irregexp/RegExpAPI.h"    
 #include "js/CharacterEncoding.h"  
@@ -372,7 +372,7 @@ bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
     return true;
   }
 
-  mozilla::Span<ScriptThingVariant> stencilThings =
+  mozilla::Span<TaggedScriptThingIndex> stencilThings =
       NewScriptThingSpanUninitialized(cx, stencilAlloc, ngcthings);
   if (stencilThings.empty()) {
     return false;
@@ -386,23 +386,23 @@ bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
 
     switch (item.tag) {
       case SmooshGCThing::Tag::Null: {
-        new (raw) ScriptThingVariant(NullScriptThing());
+        new (raw) TaggedScriptThingIndex();
         break;
       }
       case SmooshGCThing::Tag::Atom: {
-        new (raw) ScriptThingVariant(allAtoms[item.AsAtom()]->toIndex());
+        new (raw) TaggedScriptThingIndex(allAtoms[item.AsAtom()]->toIndex());
         break;
       }
       case SmooshGCThing::Tag::Function: {
-        new (raw) ScriptThingVariant(FunctionIndex(item.AsFunction()));
+        new (raw) TaggedScriptThingIndex(FunctionIndex(item.AsFunction()));
         break;
       }
       case SmooshGCThing::Tag::Scope: {
-        new (raw) ScriptThingVariant(ScopeIndex(item.AsScope()));
+        new (raw) TaggedScriptThingIndex(ScopeIndex(item.AsScope()));
         break;
       }
       case SmooshGCThing::Tag::RegExp: {
-        new (raw) ScriptThingVariant(RegExpIndex(item.AsRegExp()));
+        new (raw) TaggedScriptThingIndex(RegExpIndex(item.AsRegExp()));
         break;
       }
     }

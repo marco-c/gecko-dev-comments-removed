@@ -507,7 +507,7 @@ struct CompilationInfoVector {
 };
 
 
-mozilla::Span<ScriptThingVariant> NewScriptThingSpanUninitialized(
+mozilla::Span<TaggedScriptThingIndex> NewScriptThingSpanUninitialized(
     JSContext* cx, LifoAlloc& alloc, uint32_t ngcthings);
 
 }  

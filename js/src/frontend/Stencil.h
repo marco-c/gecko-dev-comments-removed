@@ -306,12 +306,6 @@ class ScopeStencil {
 };
 
 
-
-
-
-class EmptyGlobalScopeType {};
-
-
 using FunctionDeclaration = GCThingIndex;
 using FunctionDeclarationVector =
     Vector<FunctionDeclaration, 0, js::SystemAllocPolicy>;
@@ -422,7 +416,9 @@ class StencilModuleMetadata {
 
 
 
-class NullScriptThing {};
+
+
+class EmptyGlobalScopeType {};
 
 
 
@@ -541,17 +537,12 @@ class TaggedScriptThingIndex {
 
   uint32_t* rawData() { return &data_; }
 
+  Kind tag() const { return Kind((data_ & TagMask) >> TagShift); }
+
   bool operator==(const TaggedScriptThingIndex& rhs) const {
     return data_ == rhs.data_;
   }
 };
-
-
-
-using ScriptThingVariant =
-    mozilla::Variant<TaggedParserAtomIndex, NullScriptThing, BigIntIndex,
-                     ObjLiteralIndex, RegExpIndex, ScopeIndex, FunctionIndex,
-                     EmptyGlobalScopeType>;
 
 
 class ScriptStencil {
@@ -570,7 +561,7 @@ class ScriptStencil {
   
   
   mozilla::Maybe<MemberInitializers> memberInitializers;
-  mozilla::Span<ScriptThingVariant> gcThings;
+  mozilla::Span<TaggedScriptThingIndex> gcThings;
 
   
   RefPtr<js::SharedImmutableScriptData> sharedData = {};
