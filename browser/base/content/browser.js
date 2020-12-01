@@ -6619,10 +6619,8 @@ function setToolbarVisibility(
             } catch (ex) {}
           }
         }
-        isVisible = BookmarkingUI.isOnNewTabPage({
-          currentURI,
-          isNullPrincipal: gBrowser.contentPrincipal.isNullPrincipal,
-        });
+        isVisible = BookmarkingUI.isOnNewTabPage({ currentURI });
+
         
         
         isVisible &&= BookmarkingUI.bookmarksToolbarHasVisibleChildren();

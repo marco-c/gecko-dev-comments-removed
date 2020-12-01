@@ -1556,15 +1556,19 @@ var BookmarkingUI = {
     );
   },
 
-  isOnNewTabPage({ currentURI, isNullPrincipal }) {
-    if (!NEWTAB_ENABLED && currentURI?.spec == "about:blank") {
-      return isNullPrincipal;
-    }
+  isOnNewTabPage({ currentURI }) {
     
     
     let newTabURL = Cu.isModuleLoaded("resource:///modules/AboutNewTab.jsm")
       ? AboutNewTab.newTabURL
       : "about:newtab";
+    
+    
+    
+    
+    if (newTabURL == "about:blank") {
+      newTabURL = "about:newtab";
+    }
     let newTabURLs = [newTabURL, "about:home"];
     if (PrivateBrowsingUtils.isWindowPrivate(window)) {
       newTabURLs.push("about:privatebrowsing");
