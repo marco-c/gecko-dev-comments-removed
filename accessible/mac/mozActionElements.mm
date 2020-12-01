@@ -77,6 +77,23 @@ enum CheckboxValue {
   }
 }
 
+- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent {
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    if (acc->IsContent() &&
+        acc->GetContent()->IsXULElement(nsGkAtoms::menulist)) {
+      
+      
+      
+      
+      
+      
+      return YES;
+    }
+  }
+
+  return [super moxIgnoreWithParent:parent];
+}
+
 @end
 
 @implementation mozRadioButtonAccessible
