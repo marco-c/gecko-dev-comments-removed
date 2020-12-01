@@ -1521,6 +1521,11 @@ pref("network.http.send_window_size", 1024);
 
 
 
+pref("network.http.accept", "");
+
+
+
+
 
 pref("network.ftp.data.qos", 0);
 pref("network.ftp.control.qos", 0);
@@ -3746,6 +3751,7 @@ pref("browser.formfill.prefixWeight",     5);
 
 pref("browser.zoom.full", false);
 pref("toolkit.zoomManager.zoomValues", ".3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2,2.4,3");
+
 
 
 
