@@ -153,6 +153,13 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       perfActorVersion: 1,
       
       watchpoints: true,
+      
+      
+      workerConsoleApiMessagesDispatchedToMainThread: Services.prefs
+        ? Services.prefs.getBoolPref(
+            "dom.worker.console.dispatch_events_to_main_thread"
+          )
+        : true,
     };
   },
 

@@ -1436,9 +1436,19 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   clearMessagesCache: function() {
+    if (isWorker) {
+      
+      
+      
+      
+      
+      return;
+    }
+
     const windowId = !this.parentActor.isRootActor
       ? WebConsoleUtils.getInnerWindowId(this.global)
       : null;
+
     const ConsoleAPIStorage = Cc[
       "@mozilla.org/consoleAPI-storage;1"
     ].getService(Ci.nsIConsoleAPIStorage);

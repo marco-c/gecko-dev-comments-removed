@@ -491,16 +491,29 @@ class WebConsoleUI {
 
     
     
-    
-    
     const listenForFrames = this.hud.targetList.targetFront.isLocalTab;
-    if (
-      targetFront.targetType != this.hud.targetList.TYPES.PROCESS &&
-      (targetFront.targetType != this.hud.targetList.TYPES.FRAME ||
-        !listenForFrames)
-    ) {
+
+    const { TYPES } = this.hud.targetList;
+    const isWorkerTarget =
+      targetFront.targetType == TYPES.WORKER ||
+      targetFront.targetType == TYPES.SHARED_WORKER ||
+      targetFront.targetType == TYPES.SERVICE_WORKER;
+
+    const acceptTarget =
+      
+      
+      targetFront.targetType == TYPES.PROCESS ||
+      (targetFront.targetType == TYPES.FRAME && listenForFrames) ||
+      
+      
+      (isWorkerTarget &&
+        !this.hud.targetList.rootFront.traits
+          .workerConsoleApiMessagesDispatchedToMainThread);
+
+    if (!acceptTarget) {
       return;
     }
+
     const proxy = new WebConsoleConnectionProxy(this, targetFront);
     this.additionalProxies.set(targetFront, proxy);
     await proxy.connect();

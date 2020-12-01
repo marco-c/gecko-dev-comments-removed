@@ -127,7 +127,9 @@ class TargetList extends EventEmitter {
     
     
     
-    this.listenForWorkers = false;
+    this.listenForWorkers =
+      this.rootFront.traits.workerConsoleApiMessagesDispatchedToMainThread ===
+      false;
     this.listenForServiceWorkers = false;
     this.destroyServiceWorkersOnNavigation = false;
   }

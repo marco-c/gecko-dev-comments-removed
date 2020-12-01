@@ -13,14 +13,19 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
   
   
   
-  
   const listenForFrames = targetList.targetFront.isLocalTab;
-  const isAllowed =
+
+  
+  const listenForWorkers = !targetList.rootFront.traits
+    .workerConsoleApiMessagesDispatchedToMainThread;
+
+  const acceptTarget =
     targetFront.isTopLevel ||
     targetFront.targetType === targetList.TYPES.PROCESS ||
-    (targetFront.targetType === targetList.TYPES.FRAME && listenForFrames);
+    (targetFront.targetType === targetList.TYPES.FRAME && listenForFrames) ||
+    (targetFront.targetType === targetList.TYPES.WORKER && listenForWorkers);
 
-  if (!isAllowed) {
+  if (!acceptTarget) {
     return;
   }
 
