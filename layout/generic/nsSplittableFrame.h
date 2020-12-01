@@ -108,7 +108,7 @@ class nsSplittableFrame : public nsIFrame {
 
 
   LogicalSides GetLogicalSkipSides(
-      const ReflowInput* aReflowInput = nullptr) const override;
+      const Maybe<SkipSidesDuringReflow>& = Nothing()) const override;
 
   
 
