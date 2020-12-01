@@ -4,6 +4,8 @@
 "use strict";
 
 
+
+
 const { PureComponent } = require("devtools/client/shared/vendor/react");
 const {
   label,
@@ -17,6 +19,9 @@ const { connect } = require("devtools/client/shared/vendor/react-redux");
 const {
   updateDisplayTabbingOrder,
 } = require("devtools/client/accessibility/actions/ui");
+
+const TELEMETRY_TABBING_ORDER_ACTIVATED =
+  "devtools.accessibility.tabbing_order_activated";
 
 class DisplayTabbingOrder extends PureComponent {
   static get propTypes() {
@@ -39,6 +44,9 @@ class DisplayTabbingOrder extends PureComponent {
 
   async onChange() {
     const { dispatch, tabbingOrderDisplayed } = this.props;
+    if (!tabbingOrderDisplayed) {
+      gTelemetry.scalarAdd(TELEMETRY_TABBING_ORDER_ACTIVATED, 1);
+    }
 
     this.setState({ disabled: true });
     await dispatch(updateDisplayTabbingOrder(!tabbingOrderDisplayed));
