@@ -11,7 +11,6 @@
 
 
 
-
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/OSKeyStore.jsm", this);
@@ -40,12 +39,6 @@ const CREDITCARD_FORM_IFRAME_URL =
 
 const FTU_PREF = "extensions.formautofill.firstTimeUse";
 const CREDITCARDS_USED_STATUS_PREF = "extensions.formautofill.creditCards.used";
-const CREDITCARDS_SAVED_COUNT_PREF =
-  "extensions.formautofill.creditCards.usage.saveCc";
-const CREDITCARDS_CANCEL_SAVE_COUNT_PREF =
-  "extensions.formautofill.creditCards.usage.cancelCcSave";
-const CREDITCARDS_DISMISS_COUNT_PREF =
-  "extensions.formautofill.creditCards.usage.dismissed";
 const ENABLED_AUTOFILL_ADDRESSES_PREF =
   "extensions.formautofill.addresses.enabled";
 const ENABLED_AUTOFILL_ADDRESSES_CAPTURE_PREF =
