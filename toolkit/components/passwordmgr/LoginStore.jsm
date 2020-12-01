@@ -98,6 +98,8 @@ LoginStore.prototype.constructor = LoginStore;
 
 LoginStore.prototype._save = async function() {
   await JSONFile.prototype._save.call(this);
+  
+  Services.obs.notifyObservers(null, "password-storage-updated");
 
   if (this._options.backupTo) {
     await this._backupHandler();
@@ -138,9 +140,6 @@ LoginStore.prototype._backupHandler = async function() {
     await OS.File.remove(this._options.backupTo, {
       ignoreAbsent: true,
     });
-
-    
-    Services.obs.notifyObservers(null, "logins-backup-updated");
   }
 };
 
