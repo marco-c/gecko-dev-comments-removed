@@ -260,9 +260,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsSocketTransport::OnSocketDetached\n"
 
          
-         "race:gXPCOMThreadsShutDown\n"
-
-         
          "race:nsJARChannel::Suspend\n"
          "race:nsJARChannel::Resume\n"
 
