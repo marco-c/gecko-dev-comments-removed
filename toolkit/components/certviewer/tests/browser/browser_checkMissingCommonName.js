@@ -21,6 +21,10 @@ add_task(async function test_check_missing_common_name() {
       Assert.equal(tabs.length, 4, "There should be 4 tabs");
       for (let tab of tabs) {
         Assert.ok(tab.textContent, "Tab should have non-empty label");
+        Assert.notEqual(
+          tab.dataset.l10nId,
+          "certificate-viewer-unknown-group-label"
+        );
         
         
         if (tab.nextElementSibling) {

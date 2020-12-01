@@ -80,7 +80,7 @@ export const adjustCertInformation = cert => {
   let tabName = cert?.subject?.cn || "";
   if (cert && !tabName) {
     
-    tabName = cert.subject.entries?.slice(-1)[1] || "";
+    tabName = cert.subject?.entries?.slice(-1)[0]?.[1] || "";
   }
 
   if (!cert) {
