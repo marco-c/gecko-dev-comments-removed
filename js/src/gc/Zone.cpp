@@ -235,6 +235,25 @@ void Zone::setNeedsIncrementalBarrier(bool needs) {
   needsIncrementalBarrier_ = needs;
 }
 
+void Zone::changeGCState(GCState prev, GCState next) {
+  MOZ_ASSERT(RuntimeHeapIsBusy());
+  MOZ_ASSERT(canCollect());
+  MOZ_ASSERT(gcState() == prev);
+
+  
+  
+  
+  bool barriersDisabled = isGCMarking() && !needsIncrementalBarrier();
+
+  gcState_ = next;
+
+  
+  
+  if (!barriersDisabled) {
+    needsIncrementalBarrier_ = isGCMarking();
+  }
+}
+
 void Zone::beginSweepTypes() { types.beginSweep(); }
 
 template <class Pred>

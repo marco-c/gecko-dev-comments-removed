@@ -3998,7 +3998,7 @@ bool GCRuntime::prepareZonesForCollection(JS::GCReason reason,
     if (shouldCollect) {
       MOZ_ASSERT(zone->canCollect());
       any = true;
-      zone->changeGCState(Zone::NoGC, Zone::MarkBlackOnly);
+      zone->changeGCState(Zone::NoGC, Zone::Prepare);
     } else if (zone->canCollect()) {
       *isFullOut = false;
     }
@@ -4040,14 +4040,14 @@ bool GCRuntime::prepareZonesForCollection(JS::GCReason reason,
 
 
   MOZ_ASSERT_IF(reason == JS::GCReason::DELAYED_ATOMS_GC,
-                atomsZone->isGCMarking());
+                atomsZone->isGCPreparing());
 
   
   return any;
 }
 
 void GCRuntime::discardJITCodeForGC() {
-  js::CancelOffThreadIonCompile(rt, JS::Zone::MarkBlackOnly);
+  js::CancelOffThreadIonCompile(rt, JS::Zone::Prepare);
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_DISCARD_CODE);
     zone->discardJitCode(rt->defaultFreeOp(), Zone::DiscardBaselineCode,
@@ -4224,7 +4224,14 @@ bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
   
 
 
+
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK);
+
+  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
+    
+    zone->changeGCState(Zone::Prepare, Zone::MarkBlackOnly);
+  }
+
   if (rt->isBeingDestroyed()) {
     checkNoRuntimeRoots(session);
   } else {
@@ -4629,7 +4636,6 @@ void GCRuntime::getNextSweepGroup() {
     
     for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
       MOZ_ASSERT(!zone->gcNextGraphComponent);
-      zone->setNeedsIncrementalBarrier(false);
       zone->changeGCState(Zone::MarkBlackOnly, Zone::NoGC);
       zone->arenas.unmarkPreMarkedFreeCells();
       zone->arenas.mergeNewArenasInMarkPhase();
@@ -6228,6 +6234,9 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
   JSFreeOp fop(rt);
 
   
+  AutoDisableBarriers disableBarriers(this);
+
+  
   
   
   
@@ -6574,7 +6583,6 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       }
 
       for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-        zone->setNeedsIncrementalBarrier(false);
         zone->changeGCState(Zone::MarkBlackOnly, Zone::NoGC);
         zone->clearGCSliceThresholds();
         zone->arenas.unmarkPreMarkedFreeCells();
@@ -6629,31 +6637,12 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
   return IncrementalResult::ResetIncremental;
 }
 
-namespace {
+AutoDisableBarriers::AutoDisableBarriers(GCRuntime* gc) : gc(gc) {
+  
 
 
 
-
-
-class AutoUpdateBarriers {
- public:
-  explicit AutoUpdateBarriers(GCRuntime* gc);
-  ~AutoUpdateBarriers();
-
- private:
-  GCRuntime* gc;
-};
-
-} 
-
-AutoUpdateBarriers::AutoUpdateBarriers(GCRuntime* gc) : gc(gc) {
   for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-    
-
-
-
-
-
     if (zone->isGCMarking()) {
       MOZ_ASSERT(zone->needsIncrementalBarrier());
       zone->setNeedsIncrementalBarrier(false);
@@ -6662,9 +6651,8 @@ AutoUpdateBarriers::AutoUpdateBarriers(GCRuntime* gc) : gc(gc) {
   }
 }
 
-AutoUpdateBarriers::~AutoUpdateBarriers() {
-  
-  for (ZonesIter zone(gc, WithAtoms); !zone.done(); zone.next()) {
+AutoDisableBarriers::~AutoDisableBarriers() {
+  for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
     MOZ_ASSERT(!zone->needsIncrementalBarrier());
     if (zone->isGCMarking()) {
       zone->setNeedsIncrementalBarrier(true);
@@ -6687,7 +6675,6 @@ static bool ShouldSweepOnBackgroundThread(JS::GCReason reason) {
 void GCRuntime::incrementalSlice(SliceBudget& budget,
                                  const MaybeInvocationKind& gckind,
                                  JS::GCReason reason, AutoGCSession& session) {
-  AutoUpdateBarriers updateBarriers(this);
   AutoSetThreadIsPerformingGC performingGC;
 
   bool destroyingRuntime = (reason == JS::GCReason::DESTROY_RUNTIME);
@@ -8754,6 +8741,8 @@ const char* StateName(JS::Zone::GCState state) {
   switch (state) {
     case JS::Zone::NoGC:
       return "NoGC";
+    case JS::Zone::Prepare:
+      return "Prepare";
     case JS::Zone::MarkBlackOnly:
       return "MarkBlackOnly";
     case JS::Zone::MarkBlackAndGray:
