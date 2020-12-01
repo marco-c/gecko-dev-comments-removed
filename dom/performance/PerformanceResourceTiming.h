@@ -179,6 +179,9 @@ class PerformanceResourceTiming : public PerformanceEntry {
 
   
   nsCOMPtr<nsIURI> mOriginalURI;
+
+ private:
+  mutable Maybe<DOMHighResTimeStamp> mCachedStartTime;
 };
 
 }  

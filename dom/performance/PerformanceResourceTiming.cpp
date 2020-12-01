@@ -48,16 +48,19 @@ DOMHighResTimeStamp PerformanceResourceTiming::StartTime() const {
   
   
   
-  DOMHighResTimeStamp redirect =
-      mTimingData->RedirectStartHighRes(mPerformance);
-  redirect = redirect ? redirect : DBL_MAX;
+  if (mCachedStartTime.isNothing()) {
+    DOMHighResTimeStamp redirect =
+        mTimingData->RedirectStartHighRes(mPerformance);
+    redirect = redirect ? redirect : DBL_MAX;
 
-  DOMHighResTimeStamp worker = mTimingData->WorkerStartHighRes(mPerformance);
-  worker = worker ? worker : DBL_MAX;
+    DOMHighResTimeStamp worker = mTimingData->WorkerStartHighRes(mPerformance);
+    worker = worker ? worker : DBL_MAX;
 
-  DOMHighResTimeStamp asyncOpen = mTimingData->AsyncOpenHighRes(mPerformance);
+    DOMHighResTimeStamp asyncOpen = mTimingData->AsyncOpenHighRes(mPerformance);
 
-  return std::min(asyncOpen, std::min(redirect, worker));
+    mCachedStartTime.emplace(std::min(asyncOpen, std::min(redirect, worker)));
+  }
+  return mCachedStartTime.value();
 }
 
 JSObject* PerformanceResourceTiming::WrapObject(
