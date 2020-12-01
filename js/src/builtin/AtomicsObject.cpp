@@ -652,7 +652,7 @@ static bool DoAtomicsWait(JSContext* cx,
       cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset = unwrappedTypedArray->byteOffset();
+  uint32_t offset = unwrappedTypedArray->byteOffset().deprecatedGetUint32();
 
   
   
@@ -821,7 +821,7 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
       cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset = unwrappedTypedArray->byteOffset();
+  uint32_t offset = unwrappedTypedArray->byteOffset().deprecatedGetUint32();
 
   
   
