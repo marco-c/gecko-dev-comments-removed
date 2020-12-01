@@ -117,10 +117,13 @@ async function testPopupSize(
     });
 
     win = dims.window;
-    is(win.innerHeight, innerHeight, "Window height should not change");
 
     
     
+    ok(
+      Math.abs(win.innerHeight - innerHeight) <= 1,
+      `Window height should return to approximately its original value (${win.innerHeight} ~= ${innerHeight})`
+    );
     ok(
       Math.abs(win.innerWidth - innerWidth) <= 1,
       `Window width should return to approximately its original value (${win.innerWidth} ~= ${innerWidth})`
