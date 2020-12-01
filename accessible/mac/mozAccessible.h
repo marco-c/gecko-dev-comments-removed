@@ -59,6 +59,8 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
   uint64_t mCachedState;
 
   nsStaticAtom* mARIARole;
+
+  bool mIsLiveRegion;
 }
 
 
@@ -133,6 +135,8 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 - (id<MOXTextMarkerSupport>)moxTextMarkerDelegate;
 
+- (BOOL)moxIsLiveRegion;
+
 
 
 
@@ -182,6 +186,15 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 
 - (NSString*)moxARIACurrent;
+
+
+- (NSNumber*)moxARIAAtomic;
+
+
+- (NSString*)moxARIALive;
+
+
+- (NSString*)moxARIARelevant;
 
 
 - (id)moxTitleUIElement;
