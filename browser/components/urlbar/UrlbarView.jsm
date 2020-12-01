@@ -2046,11 +2046,7 @@ class UrlbarView {
 
       
       let iconOverride = source?.icon || engine?.iconURI?.spec;
-      if (
-        !iconOverride &&
-        (source || engine) &&
-        result.type == UrlbarUtils.RESULT_TYPE.URL
-      ) {
+      if (!iconOverride && result.type == UrlbarUtils.RESULT_TYPE.URL) {
         
         
         iconOverride = UrlbarUtils.ICON.SEARCH_GLASS;
