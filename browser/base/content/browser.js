@@ -6624,10 +6624,6 @@ function setToolbarVisibility(
           }
         }
         isVisible = BookmarkingUI.isOnNewTabPage({ currentURI });
-
-        
-        
-        isVisible &&= BookmarkingUI.bookmarksToolbarHasVisibleChildren();
         break;
     }
   }
