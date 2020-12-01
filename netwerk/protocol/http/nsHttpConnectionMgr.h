@@ -154,11 +154,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   void DecreaseNumHalfOpenConns();
 
-  void InsertTransactionSorted(
-      nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
-      PendingTransactionInfo* pendingTransInfo,
-      bool aInsertAsFirstForTheSamePriority = false);
-
   already_AddRefed<PendingTransactionInfo> FindTransactionHelper(
       bool removeWhenFound, ConnectionEntry* aEnt, nsAHttpTransaction* aTrans);
 
@@ -229,10 +224,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
-  uint32_t TotalActiveConnections(ConnectionEntry* ent) const;
-
-  
-  
   uint32_t MaxPersistConnections(ConnectionEntry* ent) const;
 
   bool AtActiveConnectionLimit(ConnectionEntry*, uint32_t caps);
@@ -250,7 +241,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
                                                      uint32_t,
                                                      HttpConnectionBase*,
                                                      int32_t);
-  bool RestrictConnections(ConnectionEntry*);
   [[nodiscard]] nsresult ProcessNewTransaction(nsHttpTransaction*);
   [[nodiscard]] nsresult EnsureSocketThreadTarget();
   void ClosePersistentConnections(ConnectionEntry* ent);
@@ -297,13 +287,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   [[nodiscard]] nsresult PostEvent(nsConnEventHandler handler,
                                    int32_t iparam = 0,
                                    ARefBase* vparam = nullptr);
-
-  
-  
-  void CancelTransactionsHelper(
-      nsTArray<RefPtr<PendingTransactionInfo>>& pendingQ,
-      const nsHttpConnectionInfo* ci, const ConnectionEntry* ent,
-      nsresult reason);
 
   void OnMsgReclaimConnection(HttpConnectionBase*);
 
@@ -448,9 +431,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   bool mActiveTabUnthrottledTransactionsExist;
 
   void LogActiveTransactions(char);
-
-  nsTArray<RefPtr<PendingTransactionInfo>>* GetTransactionPendingQHelper(
-      ConnectionEntry* ent, nsAHttpTransaction* trans);
 
   
   
