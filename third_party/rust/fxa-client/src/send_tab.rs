@@ -9,7 +9,7 @@ use crate::{
     },
     error::*,
     http_client::GetDeviceResponse,
-    scopes, FirefoxAccount, IncomingDeviceCommand,
+    scopes, telemetry, FirefoxAccount, IncomingDeviceCommand,
 };
 
 impl FirefoxAccount {
@@ -38,22 +38,30 @@ impl FirefoxAccount {
     }
 
     
+    
+    
+    
+    
+    
     pub fn send_tab(&mut self, target_device_id: &str, title: &str, url: &str) -> Result<()> {
         let devices = self.get_devices(false)?;
         let target = devices
             .iter()
             .find(|d| d.id == target_device_id)
             .ok_or_else(|| ErrorKind::UnknownTargetDevice(target_device_id.to_owned()))?;
-        let payload = SendTabPayload::single_tab(title, url);
+        let (payload, sent_telemetry) = SendTabPayload::single_tab(title, url);
         let oldsync_key = self.get_scoped_key(scopes::OLD_SYNC)?;
         let command_payload = send_tab::build_send_command(&oldsync_key, target, &payload)?;
-        self.invoke_command(send_tab::COMMAND_NAME, target, &command_payload)
+        self.invoke_command(send_tab::COMMAND_NAME, target, &command_payload)?;
+        self.telemetry.borrow_mut().record_tab_sent(sent_telemetry);
+        Ok(())
     }
 
     pub(crate) fn handle_send_tab_command(
         &mut self,
         sender: Option<GetDeviceResponse>,
         payload: serde_json::Value,
+        reason: telemetry::ReceivedReason,
     ) -> Result<IncomingDeviceCommand> {
         let send_tab_key: PrivateSendTabKeys =
             match self.state.commands_data.get(send_tab::COMMAND_NAME) {
@@ -67,8 +75,24 @@ impl FirefoxAccount {
             };
         let encrypted_payload: EncryptedSendTabPayload = serde_json::from_value(payload)?;
         match encrypted_payload.decrypt(&send_tab_key) {
-            Ok(payload) => Ok(IncomingDeviceCommand::TabReceived { sender, payload }),
+            Ok(payload) => {
+                
+                let recd_telemetry = telemetry::ReceivedCommand {
+                    flow_id: payload.flow_id.clone(),
+                    stream_id: payload.stream_id.clone(),
+                    reason,
+                };
+                self.telemetry
+                    .borrow_mut()
+                    .record_tab_received(recd_telemetry);
+                
+                Ok(IncomingDeviceCommand::TabReceived { sender, payload })
+            }
             Err(e) => {
+                
+                
+                
+                
                 log::error!("Could not decrypt Send Tab payload. Diagnosing then resetting the Send Tab keys.");
                 match self.diagnose_remote_keys(send_tab_key) {
                     Ok(_) => log::error!("Could not find the cause of the Send Tab keys issue."),

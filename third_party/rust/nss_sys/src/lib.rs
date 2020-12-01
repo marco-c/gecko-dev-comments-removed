@@ -8,3 +8,9 @@
 
 mod bindings;
 pub use bindings::*;
+
+
+
+#[allow(unused_extern_crates)]
+#[cfg(any(not(feature = "gecko"), __appsvc_ci_hack))]
+extern crate libsqlite3_sys;

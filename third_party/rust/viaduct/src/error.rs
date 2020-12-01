@@ -2,31 +2,29 @@
 
 
 
-use failure::Fail;
-
-#[derive(Debug, Fail)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[fail(display = "Illegal characters in request header '{}'", _0)]
+    #[error("[no-sentry] Illegal characters in request header '{0}'")]
     RequestHeaderError(crate::HeaderName),
 
-    #[fail(display = "Backend error: {}", _0)]
+    #[error("[no-sentry] Backend error: {0}")]
     BackendError(String),
 
-    #[fail(display = "Network error: {}", _0)]
+    #[error("[no-sentry] Network error: {0}")]
     NetworkError(String),
 
-    #[fail(display = "The rust-components network backend must be initialized before use!")]
+    #[error("The rust-components network backend must be initialized before use!")]
     BackendNotInitialized,
 
-    #[fail(display = "Backend already initialized.")]
+    #[error("Backend already initialized.")]
     SetBackendError,
 
     
     
-    #[fail(display = "URL Parse Error: {}", _0)]
-    UrlError(#[fail(cause)] url::ParseError),
+    #[error("[no-sentry] URL Parse Error: {0}")]
+    UrlError(#[source] url::ParseError),
 
-    #[fail(display = "Validation error: URL does not use TLS protocol.")]
+    #[error("[no-sentry] Validation error: URL does not use TLS protocol.")]
     NonTlsUrl,
 }
 
@@ -41,8 +39,8 @@ impl From<url::ParseError> for Error {
 
 
 
-#[derive(failure::Fail, Debug, Clone, PartialEq)]
-#[fail(display = "Error: {} {} returned {}", method, url, status)]
+#[derive(thiserror::Error, Debug, Clone, PartialEq)]
+#[error("Error: {method} {url} returned {status}")]
 pub struct UnexpectedStatus {
     pub status: u16,
     pub method: crate::Method,

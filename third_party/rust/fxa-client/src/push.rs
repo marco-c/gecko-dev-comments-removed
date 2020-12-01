@@ -2,6 +2,7 @@
 
 
 
+use crate::device::CommandFetchReason;
 use crate::{error::*, AccountEvent, FirefoxAccount};
 use serde_derive::Deserialize;
 
@@ -15,19 +16,32 @@ impl FirefoxAccount {
     
     
     
+    
+    
     pub fn handle_push_message(&mut self, payload: &str) -> Result<Vec<AccountEvent>> {
-        let payload = serde_json::from_str(payload)?;
+        let payload = serde_json::from_str(payload).or_else(|err| {
+            
+            
+            
+            
+            let v: serde_json::Value = serde_json::from_str(payload)?;
+            match v.get("command") {
+                Some(_) => Ok(PushPayload::Unknown),
+                None => Err(err),
+            }
+        })?;
         match payload {
             PushPayload::CommandReceived(CommandReceivedPushPayload { index, .. }) => {
                 if cfg!(target_os = "ios") {
-                    self.fetch_device_command(index)
+                    self.ios_fetch_device_command(index)
                         .map(|cmd| vec![AccountEvent::IncomingDeviceCommand(Box::new(cmd))])
                 } else {
-                    self.poll_device_commands().map(|cmds| {
-                        cmds.into_iter()
-                            .map(|cmd| AccountEvent::IncomingDeviceCommand(Box::new(cmd)))
-                            .collect()
-                    })
+                    self.poll_device_commands(CommandFetchReason::Push(index))
+                        .map(|cmds| {
+                            cmds.into_iter()
+                                .map(|cmd| AccountEvent::IncomingDeviceCommand(Box::new(cmd)))
+                                .collect()
+                        })
                 }
             }
             PushPayload::ProfileUpdated => {
@@ -66,6 +80,8 @@ impl FirefoxAccount {
             }
             PushPayload::PasswordChanged | PushPayload::PasswordReset => {
                 let status = self.check_authorization_status()?;
+                
+                self.clear_devices_and_attached_clients_cache();
                 Ok(if !status.active {
                     vec![AccountEvent::AccountAuthStateChanged]
                 } else {
@@ -130,6 +146,10 @@ pub struct AccountDestroyedPushPayload {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::http_client::FxAClientMock;
+    use crate::http_client::IntrospectResponse;
+    use crate::CachedResponse;
+    use std::sync::Arc;
 
     #[test]
     fn test_deserialize_send_tab_command() {
@@ -179,6 +199,35 @@ mod tests {
     }
 
     #[test]
+    fn test_push_password_reset() {
+        let mut fxa =
+            FirefoxAccount::with_config(crate::Config::stable_dev("12345678", "https://foo.bar"));
+        let mut client = FxAClientMock::new();
+        client
+            .expect_oauth_introspect_refresh_token(mockiato::Argument::any, |token| {
+                token.partial_eq("refresh_token")
+            })
+            .times(1)
+            .returns_once(Ok(IntrospectResponse { active: true }));
+        fxa.set_client(Arc::new(client));
+        let refresh_token_scopes = std::collections::HashSet::new();
+        fxa.state.refresh_token = Some(crate::oauth::RefreshToken {
+            token: "refresh_token".to_owned(),
+            scopes: refresh_token_scopes,
+        });
+        fxa.state.current_device_id = Some("my_id".to_owned());
+        fxa.devices_cache = Some(CachedResponse {
+            response: vec![],
+            cached_at: 0,
+            etag: "".to_string(),
+        });
+        let json = "{\"version\":1,\"command\":\"fxaccounts:password_reset\"}";
+        assert!(fxa.devices_cache.is_some());
+        fxa.handle_push_message(json).unwrap();
+        assert!(fxa.devices_cache.is_none());
+    }
+
+    #[test]
     fn test_push_device_disconnected_remote() {
         let mut fxa =
             FirefoxAccount::with_config(crate::Config::stable_dev("12345678", "https://foo.bar"));
@@ -198,11 +247,28 @@ mod tests {
     }
 
     #[test]
-    fn test_handle_push_message_unknown_command() {
+    fn test_handle_push_message_ignores_unknown_command() {
         let mut fxa =
             FirefoxAccount::with_config(crate::Config::stable_dev("12345678", "https://foo.bar"));
         let json = "{\"version\":1,\"command\":\"huh\"}";
         let events = fxa.handle_push_message(json).unwrap();
         assert!(events.is_empty());
+    }
+
+    #[test]
+    fn test_handle_push_message_ignores_unknown_command_with_data() {
+        let mut fxa =
+            FirefoxAccount::with_config(crate::Config::stable_dev("12345678", "https://foo.bar"));
+        let json = "{\"version\":1,\"command\":\"huh\",\"data\":{\"value\":42}}";
+        let events = fxa.handle_push_message(json).unwrap();
+        assert!(events.is_empty());
+    }
+
+    #[test]
+    fn test_handle_push_message_errors_on_garbage_data() {
+        let mut fxa =
+            FirefoxAccount::with_config(crate::Config::stable_dev("12345678", "https://foo.bar"));
+        let json = "{\"wtf\":\"bbq\"}";
+        fxa.handle_push_message(json).unwrap_err();
     }
 }

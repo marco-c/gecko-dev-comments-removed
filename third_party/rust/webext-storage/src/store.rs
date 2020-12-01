@@ -60,6 +60,11 @@ impl Store {
     }
 
     
+    pub fn usage(&self) -> Result<Vec<crate::UsageInfo>> {
+        api::usage(&self.db)
+    }
+
+    
     
     
     

@@ -40,6 +40,51 @@ impl Payload {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    pub fn with_auto_field<T: Into<JsonValue>>(mut self, name: &str, v: Option<T>) -> Payload {
+        let old_value: Option<JsonValue> = if let Some(value) = v {
+            self.data.insert(name.into(), value.into())
+        } else {
+            self.data.remove(name)
+        };
+
+        
+        
+        if let Some(old_value) = old_value {
+            log::warn!(
+                "Payload for record {} already contains 'automatic' field \"{}\"? \
+                 Overwriting auto value: {} with 'real' value",
+                self.id,
+                name,
+                old_value,
+            );
+        }
+        self
+    }
+
+    pub fn take_auto_field<V>(&mut self, name: &str) -> Option<V>
+    where
+        for<'a> V: Deserialize<'a>,
+    {
+        let v = self.data.remove(name)?;
+        match serde_json::from_value(v) {
+            Ok(v) => Some(v),
+            Err(e) => {
+                log::error!(
+                    "Automatic field {} exists on payload, but cannot be deserialized: {}",
+                    name,
+                    e
+                );
+                None
+            }
+        }
+    }
+
     #[inline]
     pub fn id(&self) -> &str {
         &self.id[..]
@@ -54,6 +99,24 @@ impl Payload {
         serde_json::from_value(value)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn into_record<T>(self) -> Result<T, serde_json::Error>
     where
         for<'a> T: Deserialize<'a>,

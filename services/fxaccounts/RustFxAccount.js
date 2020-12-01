@@ -76,8 +76,9 @@ class RustFxAccount {
 
 
 
-  async beginOAuthFlow(scopes) {
-    return promisify(this.bridge.beginOAuthFlow, scopes);
+
+  async beginOAuthFlow(scopes, entryPoint = "desktop") {
+    return promisify(this.bridge.beginOAuthFlow, scopes, entryPoint);
   }
   
 
