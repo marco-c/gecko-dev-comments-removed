@@ -67,6 +67,9 @@ class ProfilerParent final : public PProfilerParent {
   
   static ProfileBufferChunkManagerUpdate MakeFinalUpdate();
 
+  
+  static bool IsLockedOnCurrentThread();
+
  private:
   friend class ProfileBufferGlobalController;
   friend class ProfilerParentTracker;
