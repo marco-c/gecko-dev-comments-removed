@@ -102,26 +102,26 @@ pub trait ExternalImageHandler {
 
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub enum TextureTarget {
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Serialize, Deserialize)]
+pub enum ImageBufferKind {
     
-    Default = 0,
-    
-    
-    
-    Array = 1,
+    Texture2D = 0,
     
     
     
     
     
     
-    Rect = 2,
+    TextureRect = 1,
     
     
     
     
-    External = 3,
+    TextureExternal = 2,
+    
+    
+    
+    Texture2DArray = 3,
 }
 
 
@@ -129,7 +129,7 @@ pub enum TextureTarget {
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum ExternalImageType {
     
-    TextureHandle(TextureTarget),
+    TextureHandle(ImageBufferKind),
     
     Buffer,
 }

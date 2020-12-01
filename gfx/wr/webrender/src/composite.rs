@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, YuvColorSpace, YuvFormat, ImageRendering, ExternalImageId};
+use api::{ColorF, YuvColorSpace, YuvFormat, ImageRendering, ExternalImageId, ImageBufferKind};
 use api::units::*;
 use crate::batch::{resolve_image, get_buffer_kind};
 use euclid::Transform3D;
@@ -11,7 +11,6 @@ use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
 use crate::internal_types::TextureSource;
 use crate::picture::{ImageDependency, ResolvedSurfaceTexture, TileCacheInstance, TileId, TileSurface};
 use crate::prim_store::DeferredResolve;
-use crate::renderer::ImageBufferKind;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::util::Preallocator;
 use crate::tile_cache::PictureCacheDebugInfo;
