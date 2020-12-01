@@ -103,7 +103,22 @@ class AudioCallbackBufferWrapper {
 
 
   void BufferFilled() {
-    MOZ_ASSERT(Available() == 0, "Frames should have been written");
+    
+    
+    
+    
+    
+    
+    
+    
+    NS_WARNING_ASSERTION(
+        Available() == 0 || mSampleWriteOffset == 0,
+        "Audio Buffer is not full by the end of the callback.");
+    
+    if (Available()) {
+      PodZero(mBuffer + mSampleWriteOffset,
+              FramesToSamples(mChannels, Available()));
+    }
     MOZ_ASSERT(mSamples, "Buffer not set.");
     mSamples = 0;
     mSampleWriteOffset = 0;

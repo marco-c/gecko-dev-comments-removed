@@ -35,7 +35,7 @@ class GraphRunner final : public Runnable {
 
 
 
-  IterationResult OneIteration(GraphTime aStateTime, GraphTime aIterationEnd,
+  IterationResult OneIteration(GraphTime aStateEnd, GraphTime aIterationEnd,
                                AudioMixer* aMixer);
 
   
@@ -46,14 +46,14 @@ class GraphRunner final : public Runnable {
   
 
 
-  bool OnThread() const;
+  bool OnThread();
 
 #ifdef DEBUG
   
 
 
 
-  bool InDriverIteration(const GraphDriver* aDriver) const;
+  bool InDriverIteration(GraphDriver* aDriver);
 #endif
 
  private:
@@ -62,18 +62,16 @@ class GraphRunner final : public Runnable {
   ~GraphRunner();
 
   class IterationState {
-    GraphTime mStateTime;
+    GraphTime mStateEnd;
     GraphTime mIterationEnd;
     AudioMixer* MOZ_NON_OWNING_REF mMixer;
 
    public:
-    IterationState(GraphTime aStateTime, GraphTime aIterationEnd,
+    IterationState(GraphTime aStateEnd, GraphTime aIterationEnd,
                    AudioMixer* aMixer)
-        : mStateTime(aStateTime),
-          mIterationEnd(aIterationEnd),
-          mMixer(aMixer) {}
+        : mStateEnd(aStateEnd), mIterationEnd(aIterationEnd), mMixer(aMixer) {}
     IterationState& operator=(const IterationState& aOther) = default;
-    GraphTime StateTime() const { return mStateTime; }
+    GraphTime StateEnd() const { return mStateEnd; }
     GraphTime IterationEnd() const { return mIterationEnd; }
     AudioMixer* Mixer() const { return mMixer; }
   };

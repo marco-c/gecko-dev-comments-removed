@@ -200,7 +200,7 @@ struct GraphInterface : public nsISupports {
 #ifdef DEBUG
   
 
-  virtual bool InDriverIteration(const GraphDriver* aDriver) const = 0;
+  virtual bool InDriverIteration(GraphDriver* aDriver) = 0;
 #endif
 };
 
@@ -299,19 +299,10 @@ class GraphDriver {
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
 
   virtual AudioCallbackDriver* AsAudioCallbackDriver() { return nullptr; }
-  virtual const AudioCallbackDriver* AsAudioCallbackDriver() const {
-    return nullptr;
-  }
 
   virtual OfflineClockDriver* AsOfflineClockDriver() { return nullptr; }
-  virtual const OfflineClockDriver* AsOfflineClockDriver() const {
-    return nullptr;
-  }
 
   virtual SystemClockDriver* AsSystemClockDriver() { return nullptr; }
-  virtual const SystemClockDriver* AsSystemClockDriver() const {
-    return nullptr;
-  }
 
   
 
@@ -324,12 +315,12 @@ class GraphDriver {
 
 #ifdef DEBUG
   
-  bool InIteration() const;
+  bool InIteration();
 #endif
   
-  virtual bool OnThread() const = 0;
+  virtual bool OnThread() = 0;
   
-  virtual bool ThreadRunning() const = 0;
+  virtual bool ThreadRunning() = 0;
 
   double MediaTimeToSeconds(GraphTime aTime) const {
     NS_ASSERTION(aTime > -TRACK_TIME_MAX && aTime <= TRACK_TIME_MAX,
@@ -441,13 +432,13 @@ class ThreadedDriver : public GraphDriver {
   friend class MediaTrackGraphInitThreadRunnable;
   uint32_t IterationDuration() override { return MEDIA_GRAPH_TARGET_PERIOD_MS; }
 
-  nsIThread* Thread() const { return mThread; }
+  nsIThread* Thread() { return mThread; }
 
-  bool OnThread() const override {
+  bool OnThread() override {
     return !mThread || mThread->EventTarget()->IsOnCurrentThread();
   }
 
-  bool ThreadRunning() const override { return mThreadRunning; }
+  bool ThreadRunning() override { return mThreadRunning; }
 
  protected:
   
@@ -484,7 +475,6 @@ class SystemClockDriver : public ThreadedDriver {
                     GraphDriver* aPreviousDriver, uint32_t aSampleRate);
   virtual ~SystemClockDriver();
   SystemClockDriver* AsSystemClockDriver() override { return this; }
-  const SystemClockDriver* AsSystemClockDriver() const override { return this; }
 
  protected:
   
@@ -509,9 +499,6 @@ class OfflineClockDriver : public ThreadedDriver {
                      GraphTime aSlice);
   virtual ~OfflineClockDriver();
   OfflineClockDriver* AsOfflineClockDriver() override { return this; }
-  const OfflineClockDriver* AsOfflineClockDriver() const override {
-    return this;
-  }
 
   void RunThread() override;
 
@@ -621,9 +608,6 @@ class AudioCallbackDriver : public GraphDriver,
                      uint32_t aSampleRate) override;
 
   AudioCallbackDriver* AsAudioCallbackDriver() override { return this; }
-  const AudioCallbackDriver* AsAudioCallbackDriver() const override {
-    return this;
-  }
 
   uint32_t OutputChannelCount() { return mOutputChannelCount; }
 
@@ -636,7 +620,7 @@ class AudioCallbackDriver : public GraphDriver,
     return AudioInputType::Unknown;
   }
 
-  std::thread::id ThreadId() const { return mAudioThreadIdInCb.load(); }
+  std::thread::id ThreadId() { return mAudioThreadIdInCb.load(); }
 
   
 
@@ -645,13 +629,13 @@ class AudioCallbackDriver : public GraphDriver,
 
   bool CheckThreadIdChanged();
 
-  bool OnThread() const override {
+  bool OnThread() override {
     return mAudioThreadIdInCb.load() == std::this_thread::get_id();
   }
 
   
 
-  bool ThreadRunning() const override {
+  bool ThreadRunning() override {
     return mAudioStreamState == AudioStreamState::Running;
   }
 
@@ -661,9 +645,6 @@ class AudioCallbackDriver : public GraphDriver,
 
   
   TimeDuration AudioOutputLatency();
-
-  
-  bool OnFallback() const;
 
  private:
   
