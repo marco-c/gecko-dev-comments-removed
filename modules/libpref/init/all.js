@@ -1054,7 +1054,9 @@ pref("privacy.popups.disable_from_plugins", 3);
 
 
 
-pref("privacy.restrict3rdpartystorage.partitionedHosts", "accounts.google.com/o/oauth2/");
+
+
+pref("privacy.restrict3rdpartystorage.partitionedHosts", "accounts.google.com/o/oauth2/,d35nw2lg0ahg0v.cloudfront.net/,datastudio.google.com/embed/reporting/,d3qlaywcwingl6.cloudfront.net/");
 
 
 
