@@ -167,6 +167,7 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   
   
+  RefPtr<DOMException> mInvalidModificationDomException;
   RefPtr<DOMException> mSecurityDomException;
   RefPtr<DOMException> mUnknownDomException;
 
