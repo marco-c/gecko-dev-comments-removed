@@ -123,7 +123,7 @@ add_task(async _ => {
 
   AntiTracking._createTask({
     name:
-      "Test again to check if we cannot use service worker in a nested iframe without hit the assertion.",
+      "Test again to check if we can use service worker in a nested iframe without hit the assertion.",
     cookieBehavior: BEHAVIOR_REJECT_TRACKER,
     allowList: false,
     callback: async _ => {
@@ -131,10 +131,10 @@ add_task(async _ => {
         .register("empty.js")
         .then(
           _ => {
-            ok(false, "ServiceWorker cannot be used in nested iframe!");
+            ok(true, "ServiceWorker can be used in nested iframe!");
           },
           _ => {
-            ok(true, "ServiceWorker cannot be used in nested iframe!");
+            ok(false, "ServiceWorker can be used in nested iframe!");
           }
         )
         .catch(e => ok(false, "Promise rejected: " + e));
@@ -144,15 +144,7 @@ add_task(async _ => {
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.testing.enabled", true],
     ],
-    expectedBlockingNotifications:
-      Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER,
-    
-    
-    
-    
-    
-    
-    dontResetExpectedBlockingNotifications: true,
+    expectedBlockingNotifications: 0,
     runInPrivateWindow: false,
     iframeSandbox: null,
     accessRemoval: null,
