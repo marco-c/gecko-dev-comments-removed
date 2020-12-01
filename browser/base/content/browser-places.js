@@ -1128,11 +1128,40 @@ var PlacesMenuDNDHandler = {
 
 
 var PlacesToolbarHelper = {
+  
+
+
+
+
+
+  _readyToShowCallback() {
+    this._canShowPromise = Promise.resolve();
+  },
+  _readyToShow: false,
+  _canShowPromise: null,
+
   get _viewElt() {
     return document.getElementById("PlacesToolbar");
   },
 
-  init: function PTH_init() {
+  
+
+
+
+
+
+  init() {
+    if (!this._readyToShow) {
+      this._canShowPromise = new Promise(resolve => {
+        this._readyToShowCallback = resolve;
+      });
+      this._canShowPromise.then(() => this._realInit());
+    } else {
+      this._realInit();
+    }
+  },
+
+  _realInit() {
     let viewElt = this._viewElt;
     if (!viewElt || viewElt._placesView) {
       return;
@@ -1163,7 +1192,20 @@ var PlacesToolbarHelper = {
       return;
     }
 
+    if (
+      toolbar.id == "PersonalToolbar" &&
+      !toolbar.hasAttribute("initialized")
+    ) {
+      toolbar.setAttribute("initialized", "true");
+      BookmarkingUI.updateEmptyToolbarMessage();
+    }
+
     new PlacesToolbar(`place:parent=${PlacesUtils.bookmarks.toolbarGuid}`);
+  },
+
+  startShowingToolbar() {
+    this._readyToShow = true;
+    this._readyToShowCallback();
   },
 
   handleEvent(event) {
@@ -1176,12 +1218,16 @@ var PlacesToolbarHelper = {
     }
   },
 
+  
+
+
   uninit: function PTH_uninit() {
     if (this._isObservingToolbars) {
       delete this._isObservingToolbars;
       window.removeEventListener("toolbarvisibilitychange", this);
     }
     CustomizableUI.removeListener(this);
+    this._readyToShowCallback = () => {};
   },
 
   customizeStart: function PTH_customizeStart() {
@@ -1651,41 +1697,47 @@ var BookmarkingUI = {
     return menu;
   },
 
-  updateEmptyToolbarMessage() {
-    let hasVisibleChildren = !!this.toolbar.querySelector(
-      `#PersonalToolbar > toolbarpaletteitem > toolbarbutton:not([hidden]),
-       #PersonalToolbar > toolbarpaletteitem > toolbaritem:not([hidden]):not(#personal-bookmarks),
-       #PersonalToolbar > toolbarbutton:not([hidden]),
-       #PersonalToolbar > toolbaritem:not([hidden]):not(#personal-bookmarks)`
-    );
+  
 
-    let toolbarBookmarkCount = 0;
+
+
+
+
+  updateEmptyToolbarMessage() {
+    let emptyMsg = document.getElementById("personal-toolbar-empty");
+
     
-    if (Cu.isModuleLoaded("resource://gre/modules/PlacesUtils.jsm")) {
-      toolbarBookmarkCount = PlacesUtils.getChildCountForFolder(
-        PlacesUtils.bookmarks.toolbarGuid
-      );
-    } else {
-      const kPlacesInitComplete = "places-init-complete";
-      let observer = {
-        observe() {
-          Services.obs.removeObserver(observer, kPlacesInitComplete);
-          BookmarkingUI.updateEmptyToolbarMessage();
-        },
-      };
-      Services.obs.addObserver(observer, kPlacesInitComplete);
+    
+    
+    if (!this.toolbar.hasAttribute("initialized")) {
+      emptyMsg.hidden = false;
+      return;
     }
 
-    let bookmarksToolbarItemsPlacement = CustomizableUI.getPlacementOfWidget(
-      "personal-bookmarks"
+    
+    let hasVisibleChildren = !!this.toolbar.querySelector(
+      `:scope > toolbarpaletteitem > toolbarbutton:not([hidden]),
+       :scope > toolbarpaletteitem > toolbaritem:not([hidden]):not(#personal-bookmarks),
+       :scope > toolbarbutton:not([hidden]),
+       :scope > toolbaritem:not([hidden]):not(#personal-bookmarks)`
     );
-    hasVisibleChildren ||=
-      bookmarksToolbarItemsPlacement?.area == CustomizableUI.AREA_BOOKMARKS &&
-      (this._isCustomizing || !!toolbarBookmarkCount);
 
-    document.getElementById(
-      "personal-toolbar-empty"
-    ).hidden = hasVisibleChildren;
+    if (!hasVisibleChildren) {
+      
+      let bookmarksToolbarItemsPlacement = CustomizableUI.getPlacementOfWidget(
+        "personal-bookmarks"
+      );
+      let bookmarksItemInToolbar =
+        bookmarksToolbarItemsPlacement?.area == CustomizableUI.AREA_BOOKMARKS;
+
+      hasVisibleChildren =
+        bookmarksItemInToolbar &&
+        (this._isCustomizing ||
+          !!PlacesUtils.getChildCountForFolder(
+            PlacesUtils.bookmarks.toolbarGuid
+          ));
+    }
+    emptyMsg.hidden = hasVisibleChildren;
   },
 
   openLibraryIfLinkClicked(event) {

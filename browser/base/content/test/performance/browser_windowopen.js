@@ -45,6 +45,8 @@ add_task(async function() {
   Services.obs.notifyObservers(null, "startupcache-invalidate");
   Services.obs.notifyObservers(null, "chrome-flush-caches");
 
+  let bookmarksToolbarRect = await getBookmarksToolbarRect();
+
   let win = window.openDialog(
     AppConstants.BROWSER_CHROME_URL,
     "_blank",
@@ -53,8 +55,6 @@ add_task(async function() {
   );
 
   await disableFxaBadge();
-
-  let bookmarksToolbarRect = await getBookmarksToolbarRect();
 
   let alreadyFocused = false;
   let inRange = (val, min, max) => min <= val && val <= max;
@@ -101,12 +101,31 @@ add_task(async function() {
           },
         },
         {
-          name: "bug 1667237 - the bookmarks toolbar shouldn't flicker",
+          name: "Initial bookmark icon appearing after startup",
           condition: r =>
-            r.y1 >= bookmarksToolbarRect.top &&
-            r.y2 <= bookmarksToolbarRect.bottom &&
-            r.x1 >= bookmarksToolbarRect.left &&
-            r.x2 <= bookmarksToolbarRect.right,
+            r.w == 16 &&
+            r.h == 16 && 
+            inRange(
+              r.y1,
+              bookmarksToolbarRect.top,
+              bookmarksToolbarRect.top + bookmarksToolbarRect.height / 2
+            ) && 
+            inRange(r.x1, 11, 13), 
+        },
+        {
+          
+          
+          name:
+            "Initial bookmark text ('Getting Started' or 'Get Involved') appearing after startup",
+          condition: r =>
+            inRange(r.w, 25, 120) && 
+            inRange(r.h, 9, 15) && 
+            inRange(
+              r.y1,
+              bookmarksToolbarRect.top,
+              bookmarksToolbarRect.top + bookmarksToolbarRect.height / 2
+            ) && 
+            inRange(r.x1, 30, 90), 
         },
       ],
     },
