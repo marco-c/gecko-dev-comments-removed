@@ -44,15 +44,15 @@ namespace js {
 namespace jit {
 
 
-IonCacheIRCompiler::IonCacheIRCompiler(
-    JSContext* cx, const CacheIRWriter& writer, IonIC* ic, IonScript* ionScript,
-    const PropertyTypeCheckInfo* typeCheckInfo, uint32_t stubDataOffset)
+IonCacheIRCompiler::IonCacheIRCompiler(JSContext* cx,
+                                       const CacheIRWriter& writer, IonIC* ic,
+                                       IonScript* ionScript,
+                                       uint32_t stubDataOffset)
     : CacheIRCompiler(cx, writer, stubDataOffset, Mode::Ion,
                       StubFieldPolicy::Constant),
       writer_(writer),
       ic_(ic),
       ionScript_(ionScript),
-      typeCheckInfo_(typeCheckInfo),
       savedLiveRegs_(false) {
   MOZ_ASSERT(ic_);
   MOZ_ASSERT(ionScript_);
@@ -1269,14 +1269,6 @@ bool IonCacheIRCompiler::emitCompareStringResult(JSOp op, StringOperandId lhsId,
   return true;
 }
 
-static void EmitCheckPropertyTypes(MacroAssembler& masm,
-                                   const PropertyTypeCheckInfo* typeCheckInfo,
-                                   Register obj, const ConstantOrRegister& val,
-                                   const LiveRegisterSet& liveRegs,
-                                   Label* failures) {
-  
-}
-
 bool IonCacheIRCompiler::emitStoreFixedSlot(ObjOperandId objId,
                                             uint32_t offsetOffset,
                                             ValOperandId rhsId) {
@@ -1288,16 +1280,6 @@ bool IonCacheIRCompiler::emitStoreFixedSlot(ObjOperandId objId,
   Maybe<AutoScratchRegister> scratch;
   if (needsPostBarrier()) {
     scratch.emplace(allocator, masm);
-  }
-
-  if (typeCheckInfo_->isSet()) {
-    FailurePath* failure;
-    if (!addFailurePath(&failure)) {
-      return false;
-    }
-
-    EmitCheckPropertyTypes(masm, typeCheckInfo_, obj, val, *liveRegs_,
-                           failure->label());
   }
 
   Address slot(obj, offset);
@@ -1317,16 +1299,6 @@ bool IonCacheIRCompiler::emitStoreDynamicSlot(ObjOperandId objId,
   int32_t offset = int32StubField(offsetOffset);
   ConstantOrRegister val = allocator.useConstantOrRegister(masm, rhsId);
   AutoScratchRegister scratch(allocator, masm);
-
-  if (typeCheckInfo_->isSet()) {
-    FailurePath* failure;
-    if (!addFailurePath(&failure)) {
-      return false;
-    }
-
-    EmitCheckPropertyTypes(masm, typeCheckInfo_, obj, val, *liveRegs_,
-                           failure->label());
-  }
 
   masm.loadPtr(Address(obj, NativeObject::offsetOfSlots()), scratch);
   Address slot(scratch, offset);
@@ -1357,18 +1329,16 @@ bool IonCacheIRCompiler::emitAddAndStoreSlotShared(
   ObjectGroup* newGroup = groupStubField(newGroupOffset);
   Shape* newShape = shapeStubField(newShapeOffset);
 
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
-
-  EmitCheckPropertyTypes(masm, typeCheckInfo_, obj, val, *liveRegs_,
-                         failure->label());
-
   if (op == CacheOp::AllocateAndStoreDynamicSlot) {
     
     
     
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure)) {
+      return false;
+    }
+
     int32_t numNewSlots = int32StubField(*numNewSlotsOffset);
     MOZ_ASSERT(numNewSlots > 0);
 
@@ -1580,9 +1550,6 @@ bool IonCacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
     return false;
   }
 
-  EmitCheckPropertyTypes(masm, typeCheckInfo_, obj, val, *liveRegs_,
-                         failure->label());
-
   
   masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch1);
 
@@ -1625,9 +1592,6 @@ bool IonCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
   if (!addFailurePath(&failure)) {
     return false;
   }
-
-  EmitCheckPropertyTypes(masm, typeCheckInfo_, obj, val, *liveRegs_,
-                         failure->label());
 
   
   masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch1);
@@ -2153,17 +2117,12 @@ bool IonCacheIRCompiler::emitLoadDOMExpandoValueGuardGeneration(
 
 void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
                               CacheKind kind, IonScript* ionScript,
-                              bool* attached,
-                              const PropertyTypeCheckInfo* typeCheckInfo) {
+                              bool* attached) {
   
   AutoAssertNoPendingException aanpe(cx);
   JS::AutoCheckCannotGC nogc;
 
   MOZ_ASSERT(!*attached);
-
-  
-  MOZ_ASSERT(!!typeCheckInfo ==
-             (kind == CacheKind::SetProp || kind == CacheKind::SetElem));
 
   
   
@@ -2210,13 +2169,6 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     if (!writer.stubDataEquals(stub->stubDataStart())) {
       continue;
     }
-    if (typeCheckInfo && typeCheckInfo->needsTypeBarrier()) {
-      
-      
-      
-      MOZ_ASSERT(IsTypeInferenceEnabled());
-      *attached = true;
-    }
     return;
   }
 
@@ -2238,8 +2190,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   writer.copyStubData(newStub->stubDataStart());
 
   JitContext jctx(cx, nullptr);
-  IonCacheIRCompiler compiler(cx, writer, this, ionScript, typeCheckInfo,
-                              stubDataOffset);
+  IonCacheIRCompiler compiler(cx, writer, this, ionScript, stubDataOffset);
   if (!compiler.init()) {
     return;
   }

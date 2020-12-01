@@ -23,9 +23,7 @@ class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
   friend class AutoCallVM;
 
   IonCacheIRCompiler(JSContext* cx, const CacheIRWriter& writer, IonIC* ic,
-                     IonScript* ionScript,
-                     const PropertyTypeCheckInfo* typeCheckInfo,
-                     uint32_t stubDataOffset);
+                     IonScript* ionScript, uint32_t stubDataOffset);
 
   MOZ_MUST_USE bool init();
   JitCode* compile(IonICStub* stub);
@@ -38,10 +36,6 @@ class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
   const CacheIRWriter& writer_;
   IonIC* ic_;
   IonScript* ionScript_;
-
-  
-  
-  const PropertyTypeCheckInfo* typeCheckInfo_;
 
   Vector<CodeOffset, 4, SystemAllocPolicy> nextCodeOffsets_;
   mozilla::Maybe<LiveRegisterSet> liveRegs_;

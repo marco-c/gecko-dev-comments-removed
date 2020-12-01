@@ -3436,13 +3436,11 @@ SetPropIRGenerator::SetPropIRGenerator(JSContext* cx, HandleScript script,
                                        jsbytecode* pc, CacheKind cacheKind,
                                        ICState::Mode mode, HandleValue lhsVal,
                                        HandleValue idVal, HandleValue rhsVal,
-                                       bool needsTypeBarrier,
                                        bool maybeHasExtraIndexedProps)
     : IRGenerator(cx, script, pc, cacheKind, mode),
       lhsVal_(lhsVal),
       idVal_(idVal),
       rhsVal_(rhsVal),
-      typeCheckInfo_(cx, needsTypeBarrier),
       attachedTypedArrayOOBStub_(false),
       maybeHasExtraIndexedProps_(maybeHasExtraIndexedProps) {}
 
@@ -3592,8 +3590,9 @@ AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
   
   if (mode_ == ICState::Mode::Megamorphic && cacheKind_ == CacheKind::SetProp &&
       IsPropertySetOp(JSOp(*pc_))) {
+    
     writer.megamorphicStoreSlot(objId, JSID_TO_ATOM(id)->asPropertyName(),
-                                rhsId, typeCheckInfo_.needsTypeBarrier());
+                                rhsId,  false);
     writer.returnFromIC();
     trackAttached("MegamorphicNativeSlot");
     return AttachDecision::Attach;
@@ -3601,18 +3600,11 @@ AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
 
   maybeEmitIdGuard(id);
 
-  
-  
-  
   NativeObject* nobj = &obj->as<NativeObject>();
-  if (typeCheckInfo_.needsTypeBarrier()) {
-    writer.guardGroupForTypeBarrier(objId, nobj->group());
-  }
   if (!IsGlobalLexicalSetGName(JSOp(*pc_), nobj, propShape)) {
     TestMatchingNativeReceiver(writer, nobj, objId);
   }
 
-  typeCheckInfo_.set(nobj->group(), id);
   EmitStoreSlotAndReturn(writer, objId, nobj, propShape, rhsId);
 
   trackAttached("NativeSlot");
@@ -3866,16 +3858,10 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
     return AttachDecision::NoAction;
   }
 
-  if (typeCheckInfo_.needsTypeBarrier()) {
-    writer.guardGroupForTypeBarrier(objId, nobj->group());
-  }
   TestMatchingNativeReceiver(writer, nobj, objId);
 
   writer.storeDenseElement(objId, indexId, rhsId);
   writer.returnFromIC();
-
-  
-  typeCheckInfo_.set(nobj->group(), JSID_VOID);
 
   trackAttached("SetDenseElement");
   return AttachDecision::Attach;
@@ -3983,9 +3969,6 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
     return AttachDecision::NoAction;
   }
 
-  if (typeCheckInfo_.needsTypeBarrier()) {
-    writer.guardGroupForTypeBarrier(objId, nobj->group());
-  }
   TestMatchingNativeReceiver(writer, nobj, objId);
 
   
@@ -3996,9 +3979,6 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
 
   writer.storeDenseElementHole(objId, indexId, rhsId, isAdd);
   writer.returnFromIC();
-
-  
-  typeCheckInfo_.set(nobj->group(), JSID_VOID);
 
   trackAttached(isAdd ? "AddDenseElement" : "StoreDenseElementHole");
   return AttachDecision::Attach;
@@ -4266,9 +4246,6 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyExpando(
         guardDOMProxyExpandoObjectAndShape(obj, objId, expandoVal, expandoObj);
 
     NativeObject* nativeExpandoObj = &expandoObj->as<NativeObject>();
-    writer.guardGroupForTypeBarrier(expandoObjId, nativeExpandoObj->group());
-    typeCheckInfo_.set(nativeExpandoObj->group(), id);
-
     EmitStoreSlotAndReturn(writer, expandoObjId, nativeExpandoObj, propShape,
                            rhsId);
     trackAttached("DOMProxyExpandoSlot");
@@ -4403,8 +4380,6 @@ AttachDecision SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
   ObjOperandId windowObjId =
       GuardAndLoadWindowProxyWindow(writer, objId, windowObj);
   writer.guardShape(windowObjId, windowObj->lastProperty());
-  writer.guardGroupForTypeBarrier(windowObjId, windowObj->group());
-  typeCheckInfo_.set(windowObj->group(), id);
 
   EmitStoreSlotAndReturn(writer, windowObjId, windowObj, propShape, rhsId);
 
@@ -4603,7 +4578,6 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   }
   writer.returnFromIC();
 
-  typeCheckInfo_.set(oldGroup, id);
   return AttachDecision::Attach;
 }
 
@@ -5018,8 +4992,7 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       callee_(callee),
       thisval_(thisval),
       newTarget_(newTarget),
-      args_(args),
-      typeCheckInfo_(cx,  true) {}
+      args_(args) {}
 
 void CallIRGenerator::emitNativeCalleeGuard(HandleFunction callee) {
   
@@ -5114,14 +5087,6 @@ AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   ObjOperandId thisObjId = writer.guardToObject(thisValId);
 
   
-  
-  
-  MOZ_ASSERT_IF(IsTypeInferenceEnabled(), typeCheckInfo_.needsTypeBarrier());
-
-  
-  if (typeCheckInfo_.needsTypeBarrier()) {
-    writer.guardGroupForTypeBarrier(thisObjId, thisobj->group());
-  }
   TestMatchingNativeReceiver(writer, thisarray, thisObjId);
 
   
@@ -5132,9 +5097,6 @@ AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   writer.arrayPush(thisObjId, argId);
 
   writer.returnFromIC();
-
-  
-  typeCheckInfo_.set(thisobj->group(), JSID_VOID);
 
   trackAttached("ArrayPush");
   return AttachDecision::Attach;
