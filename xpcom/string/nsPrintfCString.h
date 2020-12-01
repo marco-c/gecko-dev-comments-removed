@@ -33,4 +33,32 @@ class nsPrintfCString : public nsAutoCStringN<16> {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class nsVprintfCString : public nsAutoCStringN<16> {
+  typedef nsCString string_type;
+
+ public:
+  nsVprintfCString(const char_type* aFormat, va_list aArgs)
+      MOZ_FORMAT_PRINTF(2, 0) {
+    AppendVprintf(aFormat, aArgs);
+  }
+};
+
 #endif  
