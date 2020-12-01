@@ -81,8 +81,6 @@ enum NewObjectKind {
 
 class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
-  class Property;
-
   
   const JSClass* clasp() const { return headerPtr(); }
 
@@ -99,49 +97,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   
   
   void* addendum_ = nullptr;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Property** propertySet = nullptr;
 
   
 
@@ -263,24 +218,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
     setAddendum(Addendum_InterpretedFunction, fun);
   }
 
-  class Property {
-   public:
-    
-    
-    
-    const GCPtrId id;
-
-    
-    HeapTypeSet types;
-
-    explicit Property(jsid id) : id(id) {}
-
-    Property(const Property& o) : id(o.id.get()), types(o.types) {}
-
-    static uint32_t keyBits(jsid id) { return uint32_t(JSID_BITS(id)); }
-    static jsid getKey(Property* p) { return p->id; }
-  };
-
  public:
   inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm,
                      ObjectGroupFlags initialFlags);
@@ -317,31 +254,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   
 
-
-
-  inline HeapTypeSet* getProperty(const AutoSweepObjectGroup& sweep,
-                                  JSContext* cx, JSObject* obj, jsid id);
-
-  
-  MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetProperty(
-      const AutoSweepObjectGroup& sweep, jsid id);
-  MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetPropertyDontCheckGeneration(jsid id);
-
-  
-
-
-
-
-  inline unsigned getPropertyCount(const AutoSweepObjectGroup& sweep);
-  inline Property* getProperty(const AutoSweepObjectGroup& sweep, unsigned i);
-
-  
-
-  void updateNewPropertyTypes(const AutoSweepObjectGroup& sweep, JSContext* cx,
-                              JSObject* obj, jsid id, HeapTypeSet* types);
-  void addDefiniteProperties(JSContext* cx, Shape* shape);
-  void markPropertyNonData(JSContext* cx, JSObject* obj, jsid id);
-  void markPropertyNonWritable(JSContext* cx, JSObject* obj, jsid id);
   void markStateChange(const AutoSweepObjectGroup& sweep, JSContext* cx);
   void setFlags(const AutoSweepObjectGroup& sweep, JSContext* cx,
                 ObjectGroupFlags flags);
@@ -349,7 +261,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   void print(const AutoSweepObjectGroup& sweep);
 
-  inline void clearProperties(const AutoSweepObjectGroup& sweep);
   void traceChildren(JSTracer* trc);
 
   inline bool needsSweep();
@@ -378,19 +289,11 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
   const ObjectGroupFlags* addressOfFlags() const { return &flags_; }
 
-  inline uint32_t basePropertyCount(const AutoSweepObjectGroup& sweep);
-  inline uint32_t basePropertyCountDontCheckGeneration();
-
- private:
-  inline void setBasePropertyCount(const AutoSweepObjectGroup& sweep,
-                                   uint32_t count);
-
   static void staticAsserts() {
     static_assert(offsetof(ObjectGroup, proto_) ==
                   offsetof(JS::shadow::ObjectGroup, proto));
   }
 
- public:
   
   static bool useSingletonForClone(JSFunction* fun);
 

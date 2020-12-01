@@ -664,8 +664,6 @@ AtomicsReadWriteModifyFn AtomicsAnd(Scalar::Type elementType);
 AtomicsReadWriteModifyFn AtomicsOr(Scalar::Type elementType);
 AtomicsReadWriteModifyFn AtomicsXor(Scalar::Type elementType);
 
-bool GroupHasPropertyTypes(ObjectGroup* group, jsid* id, Value* v);
-
 
 void AssumeUnreachable(const char* output);
 void Printf0(const char* output);
