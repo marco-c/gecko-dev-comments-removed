@@ -1,0 +1,9 @@
+
+
+
+
+
+
+#include <Python.h>
+
+PyObject* psutil_proc_connections(PyObject* self, PyObject* args);
