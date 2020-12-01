@@ -1122,15 +1122,6 @@ js::Nursery::CollectionResult js::Nursery::doCollection(
   
   
   
-  startProfile(ProfileKey::CancelIonCompilations);
-  if (sb.cancelIonCompilations()) {
-    js::CancelOffThreadIonCompilesUsingNurseryPointers(rt);
-  }
-  endProfile(ProfileKey::CancelIonCompilations);
-
-  
-  
-  
   startProfile(ProfileKey::TraceWholeCells);
   sb.traceWholeCells(mover);
   endProfile(ProfileKey::TraceWholeCells);

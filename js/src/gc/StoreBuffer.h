@@ -464,8 +464,6 @@ class StoreBuffer {
 
   bool aboutToOverflow_;
   bool enabled_;
-  bool cancelIonCompilations_;
-  bool hasTypeSetPointers_;
   bool mayHavePointersToDeadCells_;
 #ifdef DEBUG
   bool mEntered; 
@@ -488,15 +486,6 @@ class StoreBuffer {
 
   
   bool isAboutToOverflow() const { return aboutToOverflow_; }
-
-  bool cancelIonCompilations() const { return cancelIonCompilations_; }
-
-  
-
-
-
-
-  bool hasTypeSetPointers() const { return hasTypeSetPointers_; }
 
   
 
@@ -536,8 +525,6 @@ class StoreBuffer {
     put(bufferGeneric, t);
   }
 
-  void setShouldCancelIonCompilations() { cancelIonCompilations_ = true; }
-  void setHasTypeSetPointers() { hasTypeSetPointers_ = true; }
   void setMayHavePointersToDeadCells() { mayHavePointersToDeadCells_ = true; }
 
   

@@ -205,8 +205,7 @@ class ImmGCPtr {
   explicit ImmGCPtr(const gc::Cell* ptr) : value(ptr) {
     
     
-    MOZ_ASSERT_IF(ptr && !ptr->isTenured(),
-                  !CurrentThreadIsIonCompilingSafeForMinorGC());
+    MOZ_ASSERT_IF(ptr && !ptr->isTenured(), !CurrentThreadIsIonCompiling());
 
     
     MOZ_ASSERT(!IsCompilingWasm());

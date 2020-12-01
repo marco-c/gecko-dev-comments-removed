@@ -999,9 +999,6 @@ class MUseDefIterator {
   MDefinition* def() const { return current_->consumer()->toDefinition(); }
 };
 
-#ifdef DEBUG
-bool IonCompilationCanUseNurseryPointers();
-#endif
 
 
 
@@ -1015,7 +1012,7 @@ class CompilerGCPointer {
 
  public:
   explicit CompilerGCPointer(T ptr) : ptr_(ptr) {
-    MOZ_ASSERT_IF(IsInsideNursery(ptr), IonCompilationCanUseNurseryPointers());
+    MOZ_ASSERT(!IsInsideNursery(ptr));
     MOZ_ASSERT_IF(!CurrentThreadIsIonCompiling(), TlsContext.get()->suppressGC);
   }
 

@@ -65,11 +65,6 @@ class JitContext {
   
   bool inIonBackend_ = false;
 
-  
-  
-  
-  bool inIonBackendSafeForMinorGC_ = false;
-
   bool isCompilingWasm_ = false;
   bool oom_ = false;
 #endif
@@ -113,20 +108,13 @@ class JitContext {
 
   bool inIonBackend() const { return inIonBackend_; }
 
-  bool inIonBackendSafeForMinorGC() const {
-    return inIonBackendSafeForMinorGC_;
-  }
-
-  void enterIonBackend(bool safeForMinorGC) {
+  void enterIonBackend() {
     MOZ_ASSERT(!inIonBackend_);
-    MOZ_ASSERT(!inIonBackendSafeForMinorGC_);
     inIonBackend_ = true;
-    inIonBackendSafeForMinorGC_ = safeForMinorGC;
   }
   void leaveIonBackend() {
     MOZ_ASSERT(inIonBackend_);
     inIonBackend_ = false;
-    inIonBackendSafeForMinorGC_ = false;
   }
 #endif
 };
