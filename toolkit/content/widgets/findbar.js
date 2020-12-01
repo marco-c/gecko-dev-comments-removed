@@ -796,8 +796,6 @@
       }
 
       
-      
-      
       let event = new target.ownerGlobal.KeyboardEvent(
         fakeEvent.type,
         fakeEvent

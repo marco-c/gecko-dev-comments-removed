@@ -24,13 +24,6 @@ MainProcessSingleton.prototype = {
           null
         );
 
-        
-        
-        Services.mm.loadFrameScript(
-          "chrome://global/content/browser-content.js",
-          true,
-          true
-        );
         Services.ppmm.loadProcessScript(
           "chrome://global/content/process-content.js",
           true

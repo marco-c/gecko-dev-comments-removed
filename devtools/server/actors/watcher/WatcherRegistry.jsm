@@ -336,10 +336,6 @@ function registerJSWindowActor() {
   }
   isJSWindowActorRegistered = true;
   ActorManagerParent.addJSWindowActors(JSWindowActorsConfig);
-
-  
-  
-  ActorManagerParent.flush();
 }
 
 function unregisterJSWindowActor() {

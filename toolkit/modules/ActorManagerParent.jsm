@@ -9,23 +9,11 @@
 
 
 
-
-
-
-
-
-
 var EXPORTED_SYMBOLS = ["ActorManagerParent"];
 
-const { ExtensionUtils } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionUtils.jsm"
-);
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-
-const { DefaultMap } = ExtensionUtils;
 
 
 
@@ -479,140 +467,7 @@ let JSWINDOWACTORS = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-let LEGACY_ACTORS = {};
-
-class ActorSet {
-  constructor(group, actorSide) {
-    this.group = group;
-    this.actorSide = actorSide;
-
-    this.actors = new Map();
-    this.events = [];
-    this.messages = new DefaultMap(() => []);
-    this.observers = new DefaultMap(() => []);
-  }
-
-  addActor(actorName, actor) {
-    actorName += this.actorSide;
-    this.actors.set(actorName, { module: actor.module });
-
-    if (actor.events) {
-      for (let [event, options] of Object.entries(actor.events)) {
-        this.events.push({ actor: actorName, event, options });
-      }
-    }
-    for (let msg of actor.messages || []) {
-      this.messages.get(msg).push(actorName);
-    }
-    for (let topic of actor.observers || []) {
-      this.observers.get(topic).push(actorName);
-    }
-  }
-}
-
-const { sharedData } = Services.ppmm;
-
 var ActorManagerParent = {
-  
-  
-  childGroups: new DefaultMap(group => new ActorSet(group, "Child")),
-  
-  
-  parentGroups: new DefaultMap(group => new ActorSet(group, "Parent")),
-
-  
-  
-  
-  singletons: new DefaultMap(() => new ActorSet(null, "Child")),
-
   _addActors(actors, kind) {
     let register, unregister;
     switch (kind) {
@@ -663,46 +518,7 @@ var ActorManagerParent = {
   addJSWindowActors(actors) {
     this._addActors(actors, "JSWindowActor");
   },
-
-  addLegacyActors(actors) {
-    for (let [actorName, actor] of Object.entries(actors)) {
-      let { child } = actor;
-      {
-        let actorSet;
-        if (child.matches || child.allFrames) {
-          actorSet = this.singletons.get({
-            matches: child.matches || ["<all_urls>"],
-            allFrames: child.allFrames,
-            matchAboutBlank: child.matchAboutBlank,
-          });
-        } else {
-          actorSet = this.childGroups.get(child.group || null);
-        }
-
-        actorSet.addActor(actorName, child);
-      }
-
-      if (actor.parent) {
-        let { parent } = actor;
-        this.parentGroups.get(parent.group || null).addActor(actorName, parent);
-      }
-    }
-  },
-
-  
-
-
-
-
-
-  flush() {
-    for (let [name, data] of this.childGroups) {
-      sharedData.set(`ChildActors:${name || ""}`, data);
-    }
-    sharedData.set("ChildSingletonActors", this.singletons);
-  },
 };
 
 ActorManagerParent.addJSProcessActors(JSPROCESSACTORS);
 ActorManagerParent.addJSWindowActors(JSWINDOWACTORS);
-ActorManagerParent.addLegacyActors(LEGACY_ACTORS);

@@ -7,9 +7,10 @@
 
 var EXPORTED_SYMBOLS = ["ExtensionTestUtils"];
 
-const { ActorManagerParent } = ChromeUtils.import(
-  "resource://gre/modules/ActorManagerParent.jsm"
-);
+
+
+ChromeUtils.import("resource://gre/modules/ActorManagerParent.jsm");
+
 const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
 );
@@ -77,14 +78,6 @@ XPCOMUtils.defineLazyGetter(this, "Management", () => {
   return Management;
 });
 
-Services.mm.loadFrameScript(
-  "chrome://global/content/browser-content.js",
-  true,
-  true
-);
-
-ActorManagerParent.flush();
-
 
 
 const { promiseDocumentLoaded, promiseEvent, promiseObserved } = ExtensionUtils;
@@ -112,6 +105,10 @@ function frameScript() {
   const { Services } = ChromeUtils.import(
     "resource://gre/modules/Services.jsm"
   );
+
+  
+  
+  Cc["@mozilla.org/addons/policy-service;1"].getService();
 
   Services.obs.notifyObservers(this, "tab-content-frameloader-created");
 
