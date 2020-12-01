@@ -192,7 +192,12 @@ uint64_t HyperTextAccessible::NativeState() const {
     states |= states::READONLY;
   }
 
-  if (HasChildren()) states |= states::SELECTABLE_TEXT;
+  nsIFrame* frame = GetFrame();
+  if ((states & states::EDITABLE) || (frame && frame->IsSelectable(nullptr))) {
+    
+    
+    states |= states::SELECTABLE_TEXT;
+  }
 
   return states;
 }
