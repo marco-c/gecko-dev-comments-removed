@@ -21,8 +21,8 @@
 #include <string.h>  
 #include <utility>   
 
-#include "jsapi.h"        
-#include "jsnum.h"        
+#include "jsapi.h"  
+#include "jsnum.h"  
 
 #include "builtin/Array.h"      
 #include "debugger/Debugger.h"  

@@ -32,7 +32,7 @@
 #include "js/ErrorReport.h"
 #include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"  
+#include "js/friend/StackLimits.h"    
 #include "js/PropertySpec.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"

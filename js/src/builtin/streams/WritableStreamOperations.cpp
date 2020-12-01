@@ -13,17 +13,17 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"        
+#include "jsapi.h"  
 
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/WritableStreamWriterOperations.h"  
-#include "js/CallArgs.h"    
+#include "js/CallArgs.h"              
 #include "js/friend/ErrorMessages.h"  
-#include "js/Promise.h"     
-#include "js/RootingAPI.h"  
+#include "js/Promise.h"               
+#include "js/RootingAPI.h"            
 #include "js/Value.h"  
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    

@@ -11,7 +11,7 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "jsapi.h"        
+#include "jsapi.h"  
 
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
@@ -20,11 +20,11 @@
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "builtin/streams/WritableStreamOperations.h"  
 #include "js/friend/ErrorMessages.h"  
-#include "js/Promise.h"                                
-#include "js/Value.h"        
-#include "vm/Compartment.h"  
-#include "vm/Interpreter.h"  
-#include "vm/JSContext.h"    
+#include "js/Promise.h"               
+#include "js/Value.h"                 
+#include "vm/Compartment.h"           
+#include "vm/Interpreter.h"           
+#include "vm/JSContext.h"             
 #include "vm/PromiseObject.h"  
 
 #include "builtin/Promise-inl.h"  

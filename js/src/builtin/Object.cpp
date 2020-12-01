@@ -19,7 +19,7 @@
 #include "frontend/BytecodeCompiler.h"
 #include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"  
+#include "js/friend/StackLimits.h"    
 #include "js/PropertySpec.h"
 #include "js/UniquePtr.h"
 #include "util/StringBuffer.h"

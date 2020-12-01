@@ -13,8 +13,8 @@
 #include "jsfriendapi.h"
 
 #include "js/friend/ErrorMessages.h"  
-#include "js/Printf.h"    
-#include "js/Warnings.h"  
+#include "js/Printf.h"                
+#include "js/Warnings.h"              
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
 

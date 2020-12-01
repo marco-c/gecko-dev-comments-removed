@@ -9,7 +9,7 @@
 #include "jsapi.h"
 
 #include "js/friend/ErrorMessages.h"  
-#include "vm/JSFunction.h"  
+#include "vm/JSFunction.h"            
 #include "vm/ProxyObject.h"
 
 using namespace js;

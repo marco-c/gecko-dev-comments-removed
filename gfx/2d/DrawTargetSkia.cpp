@@ -1242,9 +1242,8 @@ bool DrawTargetSkia::FillGlyphsWithCG(ScaledFont* aFont,
                                   macFont->FontSmoothingBackgroundColor());
   SetFontColor(cgContext, mColorSpace, aPattern);
 
-  CTFontDrawGlyphs(macFont->mCTFont, glyphs.begin(),
-                   positions.begin(), aBuffer.mNumGlyphs,
-                   cgContext);
+  CTFontDrawGlyphs(macFont->mCTFont, glyphs.begin(), positions.begin(),
+                   aBuffer.mNumGlyphs, cgContext);
 
   
   auto* bboxes = new CGRect[aBuffer.mNumGlyphs];

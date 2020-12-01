@@ -33,7 +33,7 @@
 #include "jit/InlinableNatives.h"
 #include "js/Conversions.h"
 #include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"  
+#include "js/friend/StackLimits.h"    
 #if !JS_HAS_INTL_API
 #  include "js/LocaleSensitive.h"
 #endif

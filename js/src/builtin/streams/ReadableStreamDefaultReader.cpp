@@ -8,17 +8,17 @@
 
 #include "mozilla/Attributes.h"  
 
-#include "jsapi.h"        
+#include "jsapi.h"  
 
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
-#include "js/CallArgs.h"       
-#include "js/Class.h"          
+#include "js/CallArgs.h"              
+#include "js/Class.h"                 
 #include "js/friend/ErrorMessages.h"  
-#include "js/RootingAPI.h"     
-#include "vm/PromiseObject.h"  
+#include "js/RootingAPI.h"            
+#include "vm/PromiseObject.h"         
 
 #include "vm/Compartment-inl.h"   
 #include "vm/JSObject-inl.h"      

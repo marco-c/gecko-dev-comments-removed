@@ -15,7 +15,7 @@
 
 #include "jsapi.h"
 #include "js/friend/ErrorMessages.h"  
-#include "js/Warnings.h"  
+#include "js/Warnings.h"              
 #include "xpcpublic.h"
 #include "nsIGlobalObject.h"
 #include "nsIDocShell.h"

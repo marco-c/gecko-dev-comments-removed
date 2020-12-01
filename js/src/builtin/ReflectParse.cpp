@@ -22,7 +22,7 @@
 #include "frontend/Parser.h"
 #include "js/CharacterEncoding.h"
 #include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"  
+#include "js/friend/StackLimits.h"    
 #include "js/StableStringChars.h"
 #include "vm/BigIntType.h"
 #include "vm/FunctionFlags.h"  

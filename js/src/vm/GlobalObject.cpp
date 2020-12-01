@@ -45,7 +45,7 @@
 #include "debugger/DebugAPI.h"
 #include "gc/FreeOp.h"
 #include "js/friend/ErrorMessages.h"  
-#include "js/friend/WindowProxy.h"  
+#include "js/friend/WindowProxy.h"    
 #include "js/ProtoKey.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"

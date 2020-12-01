@@ -14,10 +14,10 @@
 
 #include "jstypes.h"
 
-#include "gc/Allocator.h"             
-#include "gc/Cell.h"                  
-#include "js/TraceKind.h"             
-#include "js/UbiNode.h"               
+#include "gc/Allocator.h"  
+#include "gc/Cell.h"       
+#include "js/TraceKind.h"  
+#include "js/UbiNode.h"    
 
 namespace js {
 namespace jit {
