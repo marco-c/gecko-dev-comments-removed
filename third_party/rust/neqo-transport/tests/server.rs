@@ -851,15 +851,7 @@ fn bad_client_initial() {
     
     let response = server.process(Some(bad_dgram), now());
     let close_dgram = response.dgram().unwrap();
-    
-    let (initial_close, rest) = split_datagram(&close_dgram);
-    
-    assert!(initial_close.len() <= 100);
-    let (handshake_close, short_close) = split_datagram(&rest.unwrap());
-    
-    
-    assert_eq!(initial_close.len(), handshake_close.len() + 1);
-    assert!(short_close.unwrap().len() <= 73);
+    assert!(close_dgram.len() < 200); 
 
     
     

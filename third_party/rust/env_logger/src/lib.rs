@@ -229,10 +229,15 @@
 
 
 
+
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
-    html_root_url = "https://docs.rs/env_logger/0.8.1"
+    html_root_url = "https://docs.rs/env_logger/0.7.1"
 )]
 #![cfg_attr(test, deny(warnings))]
 
@@ -252,13 +257,13 @@ pub use self::fmt::glob::*;
 
 use self::filter::Filter;
 use self::fmt::writer::{self, Writer};
-use self::fmt::{FormatFn, Formatter};
+use self::fmt::Formatter;
 
 
-pub const DEFAULT_FILTER_ENV: &str = "RUST_LOG";
+pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
 
 
-pub const DEFAULT_WRITE_STYLE_ENV: &str = "RUST_LOG_STYLE";
+pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 
 
@@ -304,8 +309,12 @@ struct Var<'a> {
 pub struct Logger {
     writer: Writer,
     filter: Filter,
-    format: FormatFn,
+    #[allow(unknown_lints, bare_trait_objects)]
+    format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
 }
+
+
+
 
 
 
@@ -339,6 +348,7 @@ pub struct Builder {
 }
 
 impl Builder {
+    
     
     
     
@@ -402,61 +412,17 @@ impl Builder {
         E: Into<Env<'a>>,
     {
         let mut builder = Builder::new();
-        builder.parse_env(env);
-        builder
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn parse_env<'a, E>(&mut self, env: E) -> &mut Self
-    where
-        E: Into<Env<'a>>,
-    {
         let env = env.into();
 
         if let Some(s) = env.get_filter() {
-            self.parse_filters(&s);
+            builder.parse_filters(&s);
         }
 
         if let Some(s) = env.get_write_style() {
-            self.parse_write_style(&s);
+            builder.parse_write_style(&s);
         }
 
-        self
+        builder
     }
 
     
@@ -479,32 +445,6 @@ impl Builder {
     
     pub fn from_default_env() -> Self {
         Self::from_env(Env::default())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn parse_default_env(&mut self) -> &mut Self {
-        self.parse_env(Env::default())
     }
 
     
@@ -608,6 +548,8 @@ impl Builder {
     
     
     
+    
+    
     pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
         self.filter.filter_module(module, level);
         self
@@ -627,11 +569,15 @@ impl Builder {
     
     
     
+    
+    
     pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
         self.filter.filter_level(level);
         self
     }
 
+    
+    
     
     
     
@@ -1124,6 +1070,7 @@ pub fn init() {
 
 
 
+
 pub fn try_init_from_env<'a, E>(env: E) -> Result<(), SetLoggerError>
 where
     E: Into<Env<'a>>,
@@ -1167,9 +1114,6 @@ where
 
 
 
-
-
-
 pub fn builder() -> Builder {
     Builder::from_default_env()
 }
@@ -1177,10 +1121,6 @@ pub fn builder() -> Builder {
 
 
 
-#[deprecated(
-    since = "0.8.0",
-    note = "Prefer `env_logger::Builder::from_env()` instead."
-)]
 pub fn from_env<'a, E>(env: E) -> Builder
 where
     E: Into<Env<'a>>,
