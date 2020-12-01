@@ -339,52 +339,6 @@ static bool InstantiateScopes(JSContext* cx, CompilationInfo& compilationInfo,
 
 
 
-static bool SetNameForExposedFunctions(JSContext* cx,
-                                       CompilationInfo& compilationInfo,
-                                       CompilationGCOutput& gcOutput) {
-  Rooted<JSFunction*> fun(cx);
-  for (auto item : compilationInfo.functionScriptStencils(gcOutput)) {
-    auto& scriptStencil = item.script;
-    fun = item.function;
-    if (!scriptStencil.functionFlags.hasBaseScript()) {
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    if (!scriptStencil.wasFunctionEmitted) {
-      continue;
-    }
-
-    
-    
-    if (fun->displayAtom() == nullptr) {
-      JSAtom* funcAtom = nullptr;
-      if (scriptStencil.functionFlags.hasInferredName() ||
-          scriptStencil.functionFlags.hasGuessedAtom()) {
-        funcAtom = compilationInfo.input.atomCache.getExistingAtomAt(
-            cx, scriptStencil.functionAtom);
-        MOZ_ASSERT(funcAtom);
-      }
-      if (scriptStencil.functionFlags.hasInferredName()) {
-        fun->setInferredName(funcAtom);
-      }
-
-      if (scriptStencil.functionFlags.hasGuessedAtom()) {
-        fun->setGuessedAtom(funcAtom);
-      }
-    }
-  }
-
-  return true;
-}
-
-
-
-
 static bool InstantiateScriptStencils(JSContext* cx,
                                       CompilationInfo& compilationInfo,
                                       CompilationGCOutput& gcOutput) {
@@ -505,7 +459,8 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInfo& compilationInfo,
 
 
 
-static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo,
+static void UpdateEmittedInnerFunctions(JSContext* cx,
+                                        CompilationInfo& compilationInfo,
                                         CompilationGCOutput& gcOutput) {
   for (auto item : compilationInfo.functionScriptStencils(gcOutput)) {
     auto& scriptStencil = item.script;
@@ -528,6 +483,24 @@ static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo,
 
       if (scriptStencil.memberInitializers) {
         script->setMemberInitializers(*scriptStencil.memberInitializers);
+      }
+
+      
+      
+      if (fun->displayAtom() == nullptr) {
+        JSAtom* funcAtom = nullptr;
+        if (scriptStencil.functionFlags.hasInferredName() ||
+            scriptStencil.functionFlags.hasGuessedAtom()) {
+          funcAtom = compilationInfo.input.atomCache.getExistingAtomAt(
+              cx, scriptStencil.functionAtom);
+          MOZ_ASSERT(funcAtom);
+        }
+        if (scriptStencil.functionFlags.hasInferredName()) {
+          fun->setInferredName(funcAtom);
+        }
+        if (scriptStencil.functionFlags.hasGuessedAtom()) {
+          fun->setGuessedAtom(funcAtom);
+        }
       }
     }
   }
@@ -686,10 +659,6 @@ bool CompilationInfo::instantiateStencilsAfterPreparation(
 
   MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
 
-  if (!SetNameForExposedFunctions(cx, *this, gcOutput)) {
-    return false;
-  }
-
   if (!input.lazy) {
     if (!InstantiateScriptStencils(cx, *this, gcOutput)) {
       return false;
@@ -702,7 +671,7 @@ bool CompilationInfo::instantiateStencilsAfterPreparation(
 
   
 
-  UpdateEmittedInnerFunctions(*this, gcOutput);
+  UpdateEmittedInnerFunctions(cx, *this, gcOutput);
 
   if (!input.lazy) {
     LinkEnclosingLazyScript(*this, gcOutput);
