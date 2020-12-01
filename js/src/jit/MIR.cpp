@@ -5154,6 +5154,31 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
     return MWasmShuffleSimd128::New(alloc, lhs(), zero,
                                     SimdConstant::CreateX16(shuffleMask));
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (lhs()->isWasmFloatConstant() != rhs()->isWasmFloatConstant() &&
+      specializeForConstantRhs()) {
+    if (isCommutative() && lhs()->isWasmFloatConstant() && lhs()->hasOneUse()) {
+      return MWasmBinarySimd128WithConstant::New(
+          alloc, rhs(), lhs()->toWasmFloatConstant()->toSimd128(), simdOp());
+    }
+
+    if (rhs()->isWasmFloatConstant() && rhs()->hasOneUse()) {
+      return MWasmBinarySimd128WithConstant::New(
+          alloc, lhs(), rhs()->toWasmFloatConstant()->toSimd128(), simdOp());
+    }
+  }
+
   return this;
 }
 
