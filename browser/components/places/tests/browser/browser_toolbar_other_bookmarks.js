@@ -113,16 +113,49 @@ add_task(async function testOtherBookmarksMenuPopup() {
   testIsOtherBookmarksHidden(false);
 
   info("Check the popup menu has correct number of children.");
-  await openMenuPopup();
-  testNumberOfMenuPopupChildren(3);
-  await closeMenuPopup();
+  await openMenuPopup("#OtherBookmarksPopup", "#OtherBookmarks");
+  testNumberOfMenuPopupChildren("#OtherBookmarksPopup", 3);
+  await closeMenuPopup("#OtherBookmarksPopup");
 
   info("Remove a bookmark.");
   await PlacesUtils.bookmarks.remove(bookmarks[0]);
 
-  await openMenuPopup();
-  testNumberOfMenuPopupChildren(2);
-  await closeMenuPopup();
+  await openMenuPopup("#OtherBookmarksPopup", "#OtherBookmarks");
+  testNumberOfMenuPopupChildren("#OtherBookmarksPopup", 2);
+  await closeMenuPopup("#OtherBookmarksPopup");
+});
+
+
+add_task(async function testFolderPopup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[BOOKMARKS_H2_2020_PREF, true]],
+  });
+
+  await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.unfiledGuid,
+    children: [
+      {
+        title: "folder",
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        children: [
+          {
+            title: "example",
+            url: "http://example.com/3",
+          },
+        ],
+      },
+    ],
+  });
+
+  info("Check for popup showing event when folder menuitem is selected.");
+  await openMenuPopup("#OtherBookmarksPopup", "#OtherBookmarks");
+  await openMenuPopup(
+    "#OtherBookmarksPopup menu menupopup",
+    "#OtherBookmarksPopup menu"
+  );
+  ok(true, "Folder menu stored in Other Bookmarks expands.");
+  testNumberOfMenuPopupChildren("#OtherBookmarksPopup menu menupopup", 1);
+  await closeMenuPopup("#OtherBookmarksPopup");
 });
 
 add_task(async function testOnlyShowOtherFolderInBookmarksToolbar() {
@@ -153,19 +186,33 @@ async function testIsOtherBookmarksHidden(expected) {
 
 
 
-function testNumberOfMenuPopupChildren(expected) {
-  let popup = document.getElementById("OtherBookmarksPopup");
+
+
+
+
+
+function testNumberOfMenuPopupChildren(selector, expected) {
+  let popup = document.querySelector(selector);
   let items = popup.querySelectorAll("menuitem");
 
-  is(items.length, expected, `Number of menu items should be ${expected}.`);
+  is(
+    items.length,
+    expected,
+    `Number of menu items for ${selector} should be ${expected}.`
+  );
 }
 
 
 
 
-async function openMenuPopup() {
-  let popup = document.getElementById("OtherBookmarksPopup");
-  let target = document.getElementById("OtherBookmarks");
+
+
+
+
+
+async function openMenuPopup(popupSelector, targetSelector) {
+  let popup = document.querySelector(popupSelector);
+  let target = document.querySelector(targetSelector);
 
   EventUtils.synthesizeMouseAtCenter(target, {});
 
@@ -175,8 +222,11 @@ async function openMenuPopup() {
 
 
 
-async function closeMenuPopup() {
-  let popup = document.getElementById("OtherBookmarksPopup");
+
+
+
+async function closeMenuPopup(popupSelector) {
+  let popup = document.querySelector(popupSelector);
 
   info("Closing menu popup.");
   popup.hidePopup();
