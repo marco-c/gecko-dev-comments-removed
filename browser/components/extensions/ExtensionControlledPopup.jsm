@@ -123,12 +123,6 @@ class ExtensionControlledPopup {
 
 
 
-
-
-
-
-
-
   constructor(opts) {
     this.confirmedType = opts.confirmedType;
     this.observerTopic = opts.observerTopic;
@@ -141,8 +135,6 @@ class ExtensionControlledPopup {
     this.getLocalizedDescription = opts.getLocalizedDescription;
     this.learnMoreMessageId = opts.learnMoreMessageId;
     this.learnMoreLink = opts.learnMoreLink;
-    this.preferencesLocation = opts.preferencesLocation;
-    this.preferencesEntrypoint = opts.preferencesEntrypoint;
     this.onObserverAdded = opts.onObserverAdded;
     this.onObserverRemoved = opts.onObserverRemoved;
     this.beforeDisableAddon = opts.beforeDisableAddon;
@@ -288,12 +280,6 @@ class ExtensionControlledPopup {
       if (event.originalTarget == popupnotification.button) {
         
         await this.setConfirmation(extensionId);
-      } else if (this.preferencesLocation) {
-        
-        let options = this.Entrypoint
-          ? { urlParams: { entrypoint: this.Entrypoint } }
-          : {};
-        win.openPreferences(this.preferencesLocation, options);
       } else {
         
         if (this.beforeDisableAddon) {

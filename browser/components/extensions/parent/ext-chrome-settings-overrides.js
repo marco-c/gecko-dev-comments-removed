@@ -57,8 +57,6 @@ XPCOMUtils.defineLazyGetter(this, "homepagePopup", () => {
     descriptionMessageId: "homepageControlled.message",
     learnMoreMessageId: "homepageControlled.learnMore",
     learnMoreLink: "extension-home",
-    preferencesLocation: "home-homeOverride",
-    preferencesEntrypoint: "addon-manage-home-override",
     async beforeDisableAddon(popup, win) {
       
       
