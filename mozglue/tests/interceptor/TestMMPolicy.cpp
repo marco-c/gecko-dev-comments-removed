@@ -89,7 +89,8 @@ bool ValidateFreeRegion(LPVOID aRegion, size_t aDesiredLen) {
 
 bool TestFindRegion() {
   
-  uint8_t* minAddr = reinterpret_cast<uint8_t*>(gPolicy.GetAllocGranularity());
+  uint8_t* minAddr = reinterpret_cast<uint8_t*>(
+      std::max(gPolicy.GetAllocGranularity(), 0x1000000ul));
   
   uint8_t* maxAddr = reinterpret_cast<uint8_t*>(std::min(
       gPolicy.GetMaxUserModeAddress(), static_cast<uintptr_t>(0xffffffff)));
