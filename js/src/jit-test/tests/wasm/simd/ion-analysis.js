@@ -781,6 +781,18 @@ for ( let [ty128,size] of [['i8x16',1], ['i16x8',2], ['i32x4',4]] ) {
 
 
 
+{
+    
+    
+    wasmCompile(`
+(module (func (param v128) (result v128)
+  (i8x16.swizzle (local.get 0) (v128.const i8x16 4 5 6 7 0 1 2 3 12 13 14 15 8 9 10 11))))
+`);
+    assertEq(wasmSimdAnalysis(), "shuffle -> permute 32x4");
+}
+
+
+
 function wasmCompile(text) {
     return new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(text)))
 }
