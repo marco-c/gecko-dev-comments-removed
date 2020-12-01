@@ -5,30 +5,22 @@
 
 
 
-
-const TOPIC_GATHER_TELEMETRY = "gather-places-telemetry";
-
-
 const MAINTENANCE_INTERVAL_SECONDS = 7 * 86400;
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(
-  this,
-  "PlacesUtils",
-  "resource://gre/modules/PlacesUtils.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "PlacesDBUtils",
-  "resource://gre/modules/PlacesDBUtils.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  PlacesDBUtils: "resource://gre/modules/PlacesDBUtils.jsm",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 
 
 
 
 function PlacesCategoriesStarter() {
-  Services.obs.addObserver(this, TOPIC_GATHER_TELEMETRY);
   Services.obs.addObserver(this, PlacesUtils.TOPIC_SHUTDOWN);
 }
 
@@ -37,16 +29,9 @@ PlacesCategoriesStarter.prototype = {
     switch (aTopic) {
       case PlacesUtils.TOPIC_SHUTDOWN:
         Services.obs.removeObserver(this, PlacesUtils.TOPIC_SHUTDOWN);
-        Services.obs.removeObserver(this, TOPIC_GATHER_TELEMETRY);
         if (Cu.isModuleLoaded("resource://gre/modules/PlacesDBUtils.jsm")) {
           PlacesDBUtils.shutdown();
         }
-        break;
-      case TOPIC_GATHER_TELEMETRY:
-        
-        Services.tm.idleDispatchToMainThread(() => {
-          PlacesDBUtils.telemetry();
-        });
         break;
       case "idle-daily":
         
