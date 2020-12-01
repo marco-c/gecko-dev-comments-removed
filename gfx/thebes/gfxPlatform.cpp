@@ -955,7 +955,7 @@ void gfxPlatform::Init() {
   
   
   if (!UseWebRender()
-#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+#if defined(XP_WIN)
       || (UseWebRender() && XRE_IsParentProcess() &&
           !gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
           StaticPrefs::
