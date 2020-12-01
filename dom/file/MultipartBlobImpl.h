@@ -11,11 +11,12 @@
 
 #include "Blob.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/BaseBlobImpl.h"
 
 namespace mozilla {
+class ErrorResult;
+
 namespace dom {
 
 

@@ -7,9 +7,10 @@
 #ifndef mozilla_MemoryInfo_h
 #define mozilla_MemoryInfo_h
 
+#include <cstddef>
+#include <cstdint>
+#include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
-#include "nsTArray.h"
-
 
 
 

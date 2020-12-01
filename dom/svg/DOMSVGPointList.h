@@ -13,7 +13,6 @@
 #include "nsTArray.h"
 #include "SVGPointList.h"  
 #include "mozilla/Attributes.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 
 
@@ -26,6 +25,7 @@
 
 namespace mozilla {
 
+class ErrorResult;
 class SVGAnimatedPointList;
 
 namespace dom {

@@ -12,7 +12,6 @@
 #include "js/Array.h"  
 #include "js/RootingAPI.h"
 #include "jsapi.h"
-#include "mozilla/ErrorResult.h"
 #include "nsString.h"
 
 class mozIStorageStatement;

@@ -7,24 +7,37 @@
 #ifndef mozilla_dom_ToJSValue_h
 #define mozilla_dom_ToJSValue_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/CallbackObject.h"
-#include "mozilla/dom/NonRefcountedDOMObject.h"
-#include "mozilla/dom/TypedArray.h"
-#include "jsapi.h"
-#include "js/Array.h"  
-#include "nsISupports.h"
-#include "nsTArray.h"
-#include "nsWrapperCache.h"
-#include <type_traits>
+#include <cstddef>  
+#include <cstdint>  
+#include <type_traits>  
+#include <utility>          
+#include "ErrorList.h"      
+#include "js/Array.h"       
+#include "js/GCVector.h"    
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
+#include "js/ValueArray.h"  
+#include "jsapi.h"          
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"        
+#include "mozilla/UniquePtr.h"         
+#include "mozilla/Unused.h"            
+#include "mozilla/dom/BindingUtils.h"  
+#include "mozilla/dom/CallbackObject.h"  
+#include "nsID.h"                        
+#include "nsISupports.h"                 
+#include "nsStringFwd.h"                 
+#include "nsTArrayForwardDeclare.h"
+#include "xpcObjectHelper.h"  
 
 namespace mozilla {
 namespace dom {
 
+class CallbackObject;
 class Promise;
 class WindowProxyHolder;
+template <typename TypedArrayType>
+class TypedArrayCreator;
 
 
 

@@ -12,8 +12,6 @@
 #include "nsTArray.h"
 #include "nsCycleCollectionNoteChild.h"
 
-#include <functional>
-
 
 
 

@@ -9,16 +9,15 @@
 
 #include "gfxTypes.h"
 #include <stdint.h>                        
+#include "mozilla/AlreadyAddRefed.h"       
 #include "mozilla/Assertions.h"            
 #include "mozilla/RefPtr.h"                
 #include "mozilla/gfx/2D.h"                
 #include "mozilla/gfx/MatrixFwd.h"         
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/mozalloc.h"              
-#include "nsCOMPtr.h"                      
 #include "nsISupportsImpl.h"               
 #include "nsRegion.h"                      
-#include "LayersTypes.h"
 
 namespace mozilla {
 namespace layers {

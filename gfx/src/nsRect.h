@@ -7,19 +7,15 @@
 #ifndef NSRECT_H
 #define NSRECT_H
 
-#include <stdio.h>           
 #include <stdint.h>          
 #include <algorithm>         
 #include "mozilla/Likely.h"  
+#include "mozilla/gfx/BaseRect.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Logging.h"
-#include "nsCoord.h"          
-#include "nsISupportsImpl.h"  
-#include "nsPoint.h"          
-#include "nsMargin.h"         
-#include "nsSize.h"           
-#include "nscore.h"           
+#include "nsCoord.h"      
+#include "nsISupports.h"  
+#include "nsPoint.h"      
+#include "nsSize.h"       
 #if !defined(ANDROID) && (defined(__SSE2__) || defined(_M_X64) || \
                           (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
 #  if defined(_MSC_VER) && !defined(__clang__)
@@ -28,6 +24,8 @@
 #    include "emmintrin.h"
 #  endif
 #endif
+
+struct nsMargin;
 
 typedef mozilla::gfx::IntRect nsIntRect;
 

@@ -10,24 +10,19 @@
 
 
 
-#include <stdint.h>  
-#include <type_traits>
+#include <stdint.h>
 #include <utility>
-#include "gfxTypes.h"
-#include "FrameMetrics.h"
-#include "LayersTypes.h"
-#include "UnitTransforms.h"
-#include "mozilla/gfx/CompositorHitTestInfo.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/DefineEnum.h"
-#include "mozilla/EnumSet.h"
-#include "mozilla/FloatingPoint.h"
-#include "mozilla/ScrollOrigin.h"
 #include "ScrollAnimationBezierPhysics.h"
+#include "Units.h"
+#include "mozilla/DefineEnum.h"
+#include "mozilla/ScrollOrigin.h"
+#include "mozilla/gfx/Point.h"
 
 namespace mozilla {
 
 namespace layers {
+
+struct FrameMetrics;
 
 
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(APZWheelAction, uint8_t, (

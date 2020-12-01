@@ -10,8 +10,6 @@
 #include "nsClassHashtable.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/dom/MIDIPortBinding.h"
-#include "mozilla/dom/MIDITypes.h"
-#include "mozilla/dom/MIDIPortInterface.h"
 #include "nsHashKeys.h"
 
 
@@ -23,7 +21,9 @@ namespace dom {
 
 class MIDIManagerParent;
 class MIDIPortParent;
+class MIDIMessage;
 class MIDIMessageQueue;
+class MIDIPortInfo;
 
 
 

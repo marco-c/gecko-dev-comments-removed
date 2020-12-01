@@ -7,8 +7,8 @@
 #ifndef NS_TPRIORITY_QUEUE_H_
 #define NS_TPRIORITY_QUEUE_H_
 
+#include "mozilla/Assertions.h"
 #include "nsTArray.h"
-#include "nsDebug.h"
 
 
 

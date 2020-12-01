@@ -9,7 +9,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/Observer.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
@@ -17,6 +16,8 @@
 struct JSContext;
 
 namespace mozilla {
+class ErrorResult;
+
 
 
 struct void_t;

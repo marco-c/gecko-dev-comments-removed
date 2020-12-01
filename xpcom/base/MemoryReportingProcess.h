@@ -15,6 +15,9 @@ namespace ipc {
 class FileDescriptor;
 }  
 
+template <class T>
+class Maybe;
+
 
 
 class MemoryReportingProcess {
@@ -22,7 +25,7 @@ class MemoryReportingProcess {
   NS_IMETHOD_(MozExternalRefCountType) AddRef() = 0;
   NS_IMETHOD_(MozExternalRefCountType) Release() = 0;
 
-  virtual ~MemoryReportingProcess() {}
+  virtual ~MemoryReportingProcess() = default;
 
   
   virtual bool IsAlive() const = 0;

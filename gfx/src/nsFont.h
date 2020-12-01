@@ -7,19 +7,16 @@
 #ifndef nsFont_h___
 #define nsFont_h___
 
-#include <stdint.h>     
-#include <sys/types.h>  
+#include <cstdint>
 #include "gfxFontFamilyList.h"
 #include "gfxFontConstants.h"  
-#include "gfxFontFeatures.h"
 #include "gfxFontVariations.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/RefPtr.h"  
 #include "mozilla/ServoStyleConstsInlines.h"
 #include "mozilla/StyleColorInlines.h"  
-#include "nsCoord.h"                    
 #include "nsTArray.h"                   
 
+struct gfxFontFeature;
 struct gfxFontStyle;
 
 

@@ -9,7 +9,10 @@
 #include "mozilla/dom/MediaKeyStatusMapBinding.h"     
 #include "mozilla/dom/MediaKeyMessageEventBinding.h"  
 #include "mozilla/CDMProxy.h"
-#include "mozilla/ErrorResult.h"
+
+namespace mozilla {
+class ErrorResult;
+}
 
 class DecryptorProxyCallback {
  public:

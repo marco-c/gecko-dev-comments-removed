@@ -7,9 +7,7 @@
 #ifndef nsColor_h___
 #define nsColor_h___
 
-#include <stddef.h>   
 #include <stdint.h>   
-#include "nscore.h"   
 #include "nsCoord.h"  
 #include "nsStringFwd.h"
 

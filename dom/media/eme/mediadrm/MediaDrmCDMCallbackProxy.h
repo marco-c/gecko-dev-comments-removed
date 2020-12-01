@@ -8,11 +8,12 @@
 #define MediaDrmCDMCallbackProxy_h_
 
 #include "mozilla/CDMProxy.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/DecryptorProxyCallback.h"
 
 namespace mozilla {
 class CDMProxy;
+class ErrorResult;
+
 
 
 

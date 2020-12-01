@@ -15,7 +15,8 @@
 #include "nsError.h"             
 #include "nsFont.h"              
 #include "nsISupports.h"         
-#include "nscore.h"              
+#include "nsStyleConsts.h"
+#include "nscore.h"  
 
 class gfxContext;
 class gfxFontGroup;

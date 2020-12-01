@@ -12,7 +12,7 @@
 
 
 #ifndef _XPCOM_CONFIG_H_
-#  include "xpcom-config.h"
+#  include "xpcom-config.h"  
 #endif
 
 
@@ -23,10 +23,10 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "mozilla/HelperMacros.h"
+#include "mozilla/HelperMacros.h"  
 #include "mozilla/RefCountType.h"
 
 
@@ -200,7 +200,7 @@
 
 
 
-#include "nsError.h"
+#include "nsError.h"  
 
 typedef MozRefCountType nsrefcnt;
 

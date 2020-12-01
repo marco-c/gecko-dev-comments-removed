@@ -4,22 +4,18 @@
 
 
 
-#include "nsThreadUtils.h"
 #include "mozilla/PerformanceUtils.h"
-#include "mozilla/ResultExtensions.h"
+
+#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WorkerDebugger.h"
 #include "mozilla/dom/WorkerDebuggerManager.h"
 
 #include "MediaDecoder.h"
-#include "XPCJSMemoryReporter.h"
 #include "jsfriendapi.h"
-#include "js/MemoryMetrics.h"
-#include "nsWindowMemoryReporter.h"
+#include "nsGlobalWindowOuter.h"
 #include "nsWindowSizes.h"
 
 using namespace mozilla;

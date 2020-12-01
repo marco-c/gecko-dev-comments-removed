@@ -10,7 +10,6 @@
 #include <stdint.h>
 
 #include "mozilla/HangAnnotations.h"
-#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/Result.h"
 
 

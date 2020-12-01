@@ -7,10 +7,9 @@
 #ifndef NSPOINT_H
 #define NSPOINT_H
 
+#include <cstdint>
 #include "nsCoord.h"
-#include "mozilla/gfx/BaseSize.h"
 #include "mozilla/gfx/BasePoint.h"
-#include "nsSize.h"
 #include "mozilla/gfx/Point.h"
 
 

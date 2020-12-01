@@ -14,10 +14,9 @@
 #include "mozilla/gfx/Rect.h"    
 #include "mozilla/gfx/Types.h"   
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/TextureHost.h"  
-#include "mozilla/mozalloc.h"            
-#include "nscore.h"                      
+#include "mozilla/layers/TextureHost.h"      
+#include "mozilla/mozalloc.h"                
+#include "nscore.h"                          
 #include "mozilla/EnumeratedArray.h"
 
 namespace mozilla {

@@ -4,18 +4,14 @@
 
 
 #include "Crypto.h"
-#include "jsfriendapi.h"
+#include "js/ScalarType.h"
 #include "js/experimental/TypedData.h"  
 #include "nsCOMPtr.h"
 #include "nsIRandomGenerator.h"
-#include "MainThreadUtils.h"
-#include "nsXULAppAPI.h"
 
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/CryptoBinding.h"
+#include "mozilla/dom/SubtleCrypto.h"
 #include "nsServiceManagerUtils.h"
-
-using mozilla::dom::ContentChild;
 
 namespace mozilla::dom {
 

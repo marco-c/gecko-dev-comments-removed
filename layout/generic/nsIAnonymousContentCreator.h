@@ -13,13 +13,11 @@
 #define nsIAnonymousContentCreator_h___
 
 #include "mozilla/AnonymousContentKey.h"
-#include "mozilla/ComputedStyle.h"
 
 #include "nsQueryFrame.h"
 #include "nsTArrayForwardDeclare.h"
 
 class nsIContent;
-class nsIFrame;
 
 
 

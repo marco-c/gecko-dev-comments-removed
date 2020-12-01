@@ -7,18 +7,15 @@
 #ifndef nsRegion_h__
 #define nsRegion_h__
 
-#include <stddef.h>     
-#include <stdint.h>     
-#include <sys/types.h>  
+#include <stddef.h>  
+#include <stdint.h>  
 
 #include <ostream>  
 #include <utility>  
 
-#include "mozilla/ArrayView.h"  
-#include "mozilla/gfx/Logging.h"
+#include "mozilla/ArrayView.h"      
 #include "mozilla/gfx/MatrixFwd.h"  
 #include "nsCoord.h"                
-#include "nsError.h"                
 #include "nsMargin.h"               
 #include "nsPoint.h"                
 #include "nsRect.h"                 

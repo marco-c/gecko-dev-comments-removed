@@ -6,33 +6,53 @@
 #ifndef GFX_USER_FONT_SET_H
 #define GFX_USER_FONT_SET_H
 
+#include <new>
+#include "PLDHashTable.h"
 #include "gfxFontEntry.h"
-#include "gfxFontFamilyList.h"
-#include "gfxFontSrcPrincipal.h"
-#include "gfxFontSrcURI.h"
-#include "nsProxyRelease.h"
-#include "nsRefPtrHashtable.h"
-#include "nsCOMPtr.h"
-#include "nsIFontLoadCompleteCallback.h"
-#include "nsIMemoryReporter.h"
-#include "nsIRunnable.h"
-#include "nsIScriptError.h"
-#include "nsIReferrerInfo.h"
-#include "nsURIHashKey.h"
+#include "gfxFontUtils.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "gfxFontConstants.h"
-#include "mozilla/LazyIdleThread.h"
-#include "mozilla/StaticPtr.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/RefPtr.h"
+#include "nsCOMPtr.h"
+#include "nsHashKeys.h"
+#include "nsIMemoryReporter.h"
+#include "nsIObserver.h"
+#include "nsIScriptError.h"
+#include "nsISupports.h"
+#include "nsRefPtrHashtable.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nscore.h"
+
+
+#include <utility>                
+#include "MainThreadUtils.h"      
+#include "gfxFontFeatures.h"      
+#include "gfxFontSrcPrincipal.h"  
+#include "gfxFontSrcURI.h"        
+#include "mozilla/Assertions.h"  
+#include "mozilla/HashFunctions.h"      
+#include "mozilla/TimeStamp.h"          
+#include "mozilla/gfx/FontVariation.h"  
+#include "nsDebug.h"                    
+#include "nsIReferrerInfo.h"            
 
 class gfxFont;
+class gfxUserFontSet;
+class nsIFontLoadCompleteCallback;
+class nsIRunnable;
+struct gfxFontStyle;
+struct gfxFontVariationAxis;
+struct gfxFontVariationInstance;
+template <class T>
+class nsMainThreadPtrHandle;
 
 namespace mozilla {
+class LogModule;
 class PostTraversalTask;
 enum class StyleFontDisplay : uint8_t;
-
-namespace gfx {
-struct FontVariation;
-}
 }  
 class nsFontFaceLoader;
 

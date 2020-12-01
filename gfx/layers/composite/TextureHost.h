@@ -7,18 +7,17 @@
 #ifndef MOZILLA_GFX_TEXTUREHOST_H
 #define MOZILLA_GFX_TEXTUREHOST_H
 
-#include <functional>
-#include <stddef.h>  
-#include <stdint.h>  
-#include "gfxTypes.h"
+#include <stddef.h>              
+#include <stdint.h>              
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 #include "mozilla/RefPtr.h"      
-#include "mozilla/gfx/2D.h"      
-#include "mozilla/gfx/Point.h"   
-#include "mozilla/gfx/Types.h"   
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/Matrix.h"
+#include "mozilla/gfx/Point.h"  
+#include "mozilla/gfx/Rect.h"
+#include "mozilla/gfx/Types.h"  
 #include "mozilla/ipc/FileDescriptor.h"
-#include "mozilla/layers/Compositor.h"       
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/LayersSurfaces.h"
@@ -29,14 +28,18 @@
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
-#include "nsRegion.h"         
-#include "nsTraceRefcnt.h"    
-#include "nscore.h"           
+#include "nsRect.h"
+#include "nsRegion.h"       
+#include "nsTraceRefcnt.h"  
+#include "nscore.h"         
 #include "mozilla/layers/AtomicRefCountedWithFinalize.h"
-#include "mozilla/gfx/Rect.h"
 
 class MacIOSurface;
 namespace mozilla {
+namespace gfx {
+class DataSourceSurface;
+}
+
 namespace ipc {
 class Shmem;
 }  
@@ -66,6 +69,7 @@ class TextureReadLock;
 class TextureSourceOGL;
 class TextureSourceD3D11;
 class TextureSourceBasic;
+class TextureSourceProvider;
 class DataTextureSource;
 class PTextureParent;
 class TextureParent;

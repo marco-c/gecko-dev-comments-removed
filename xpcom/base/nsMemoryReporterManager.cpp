@@ -4,13 +4,14 @@
 
 
 
+#include "nsMemoryReporterManager.h"
+
 #include "nsAtomTable.h"
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
 #include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
-#include "nsMemoryReporterManager.h"
 #include "nsITimer.h"
 #include "nsThreadUtils.h"
 #include "nsPIDOMWindow.h"
