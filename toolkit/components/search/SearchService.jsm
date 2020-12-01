@@ -112,7 +112,7 @@ SearchService.prototype = {
   _initRV: Cr.NS_OK,
 
   
-  _initStarted: null,
+  _initStarted: false,
 
   
   
@@ -175,6 +175,13 @@ SearchService.prototype = {
 
 
   _startupExtensions: new Set(),
+
+  
+
+
+
+
+  _startupRemovedExtensions: new Set(),
 
   
   _defaultOverrideAllowlist: null,
@@ -277,6 +284,7 @@ SearchService.prototype = {
       this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
       logConsole.error("_init: failure initializing search:", ex.result);
     }
+
     this._initialized = true;
     if (Components.isSuccessCode(this._initRV)) {
       this._initObservers.resolve(this._initRV);
@@ -900,7 +908,7 @@ SearchService.prototype = {
   reset() {
     this._initialized = false;
     this._initObservers = PromiseUtils.defer();
-    this._initStarted = null;
+    this._initStarted = false;
     this._startupExtensions = new Set();
     this._engines.clear();
     this.__sortedEngines = null;
@@ -1285,6 +1293,26 @@ SearchService.prototype = {
         "SearchService initialization failed",
         this._initRV
       );
+    } else if (this._startupRemovedExtensions.size) {
+      Services.tm.dispatchToMainThread(async () => {
+        
+        
+        
+        
+        
+        
+        logConsole.debug("Removing delayed extension engines");
+        for (let id of this._startupRemovedExtensions) {
+          for (let engine of this._getEnginesByExtensionID(id)) {
+            
+            
+            if (!engine.isAppProvided) {
+              await this.removeEngine(engine);
+            }
+          }
+        }
+        this._startupRemovedExtensions.clear();
+      });
     }
     return this._initRV;
   },
@@ -1376,6 +1404,10 @@ SearchService.prototype = {
 
   async getEnginesByExtensionID(extensionID) {
     await this.init();
+    return this._getEnginesByExtensionID(extensionID);
+  },
+
+  _getEnginesByExtensionID(extensionID) {
     logConsole.debug("getEngines: getting all engines for", extensionID);
     var engines = this._getSortedEngines(true).filter(function(engine) {
       return engine._extensionID == extensionID;
@@ -1811,8 +1843,14 @@ SearchService.prototype = {
   },
 
   async removeWebExtensionEngine(id) {
+    if (!this.isInitialized) {
+      logConsole.debug("Delaying removing extension engine on startup:", id);
+      this._startupRemovedExtensions.add(id);
+      return;
+    }
+
     logConsole.debug("removeWebExtensionEngine:", id);
-    for (let engine of await this.getEnginesByExtensionID(id)) {
+    for (let engine of this._getEnginesByExtensionID(id)) {
       await this.removeEngine(engine);
     }
   },
