@@ -38,8 +38,8 @@ uintptr_t GetContainingModuleHandle();
 
 
 
-uint32_t CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
-                      IStream** aOutStream);
+long CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
+                  IStream** aOutStream);
 
 
 
@@ -48,7 +48,7 @@ uint32_t CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
 
 
 
-uint32_t CopySerializedProxy(IStream* aInStream, IStream** aOutStream);
+long CopySerializedProxy(IStream* aInStream, IStream** aOutStream);
 
 #if defined(MOZILLA_INTERNAL_API)
 
