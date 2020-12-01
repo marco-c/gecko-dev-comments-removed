@@ -750,10 +750,7 @@ class AudioCallbackDriver : public GraphDriver,
     
     Running,
     
-    Stopping,
-    
-
-    Errored,
+    Stopping
   };
   Atomic<AudioStreamState> mAudioStreamState;
   
