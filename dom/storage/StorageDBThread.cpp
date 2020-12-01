@@ -995,7 +995,8 @@ nsresult StorageDBThread::DBOperation::Perform(StorageDBThread* aThread) {
       nsCOMPtr<mozIStorageStatement> stmt =
           aThread->mWorkerStatements.GetCachedStatement(
               "SELECT SUM(LENGTH(key) + LENGTH(value)) FROM webappsstore2 "
-              "WHERE (originAttributes || ':' || originKey) LIKE :usageOrigin");
+              "WHERE (originAttributes || ':' || originKey) LIKE :usageOrigin "
+              "ESCAPE '\\'");
       NS_ENSURE_STATE(stmt);
 
       mozStorageStatementScoper scope(stmt);
@@ -1012,8 +1013,15 @@ nsresult StorageDBThread::DBOperation::Perform(StorageDBThread* aThread) {
       
       
       
+      
+      
+      nsAutoCString originScopeEscaped;
+      rv = stmt->EscapeUTF8StringForLIKE(mUsage->OriginScope(), '\\',
+                                         originScopeEscaped);
+      NS_ENSURE_SUCCESS(rv, rv);
+
       rv = stmt->BindUTF8StringByName("usageOrigin"_ns,
-                                      mUsage->OriginScope() + "%"_ns);
+                                      originScopeEscaped + "%"_ns);
       NS_ENSURE_SUCCESS(rv, rv);
 
       bool exists;
