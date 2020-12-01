@@ -773,9 +773,14 @@ void nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow,
   }
 
   nsCOMPtr<nsIAppWindow> appWin(do_GetInterface(baseWindow));
-  Focus(currentWindow, currentFocus, 0,
-        currentWindow->GetBrowsingContext() != GetFocusedBrowsingContext(),
-        false, appWin != nullptr, true, focusInOtherContentProcess, aActionId);
+  
+  
+  
+  
+  
+  
+  Focus(currentWindow, currentFocus, 0, currentWindow != mFocusedWindow, false,
+        appWin != nullptr, true, focusInOtherContentProcess, aActionId);
 }
 
 void nsFocusManager::WindowLowered(mozIDOMWindowProxy* aWindow,

@@ -5139,10 +5139,13 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
     if (!parent->IsInProcess()) {
       if (isActive) {
         fm->WindowRaised(this, actionId);
+        
+        
+      } else {
+        ContentChild* contentChild = ContentChild::GetSingleton();
+        MOZ_ASSERT(contentChild);
+        contentChild->SendFinalizeFocusOuter(bc, canFocus, aCallerType);
       }
-      ContentChild* contentChild = ContentChild::GetSingleton();
-      MOZ_ASSERT(contentChild);
-      contentChild->SendFinalizeFocusOuter(bc, canFocus, aCallerType);
       return;
     }
     nsCOMPtr<Document> parentdoc = parent->GetDocument();
