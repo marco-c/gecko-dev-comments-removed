@@ -98,6 +98,13 @@ class OverscrollHandoffChain {
       const InputData& aInput,
       ScrollDirections* aOutAllowedScrollDirections) const;
 
+  
+  
+  
+  
+  bool ScrollingDownWillMoveDynamicToolbar(
+      const AsyncPanZoomController* aApzc) const;
+
  private:
   std::vector<RefPtr<AsyncPanZoomController>> mChain;
 
