@@ -287,7 +287,6 @@ nsNavHistoryResultNode::nsNavHistoryResultNode(const nsACString& aURI,
       mTime(aTime),
       mBookmarkIndex(-1),
       mItemId(-1),
-      mFolderId(-1),
       mVisitId(-1),
       mFromVisitId(-1),
       mDateAdded(0),
@@ -1164,7 +1163,7 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_FrecencyGreater(
 
 
 
-nsNavHistoryResultNode* nsNavHistoryContainerResultNode::FindChildURI(
+nsNavHistoryResultNode* nsNavHistoryContainerResultNode::FindChildByURI(
     const nsACString& aSpec, uint32_t* aNodeIndex) {
   for (int32_t i = 0; i < mChildren.Count(); ++i) {
     if (mChildren[i]->IsURI()) {
@@ -1175,6 +1174,20 @@ nsNavHistoryResultNode* nsNavHistoryContainerResultNode::FindChildURI(
     }
   }
   return nullptr;
+}
+
+
+
+
+void nsNavHistoryContainerResultNode::FindChildrenByURI(
+    const nsCString& aSpec, nsCOMArray<nsNavHistoryResultNode>* aMatches) {
+  for (int32_t i = 0; i < mChildren.Count(); ++i) {
+    if (mChildren[i]->IsURI()) {
+      if (aSpec.Equals(mChildren[i]->mURI)) {
+        aMatches->AppendObject(mChildren[i]);
+      }
+    }
+  }
 }
 
 
@@ -1382,7 +1395,7 @@ bool nsNavHistoryContainerResultNode::UpdateURIs(
     RecursiveFindURIs(aOnlyOne, this, aSpec, &matches);
   } else if (aOnlyOne) {
     uint32_t nodeIndex;
-    nsNavHistoryResultNode* node = FindChildURI(aSpec, &nodeIndex);
+    nsNavHistoryResultNode* node = FindChildByURI(aSpec, &nodeIndex);
     if (node) matches.AppendObject(node);
   } else {
     MOZ_ASSERT(
@@ -1822,6 +1835,9 @@ nsresult nsNavHistoryQueryResultNode::FillChildren() {
 
   nsNavHistoryResult* result = GetResult();
   NS_ENSURE_STATE(result);
+
+  
+  
 
   if (mOptions->QueryType() == nsINavHistoryQueryOptions::QUERY_TYPE_HISTORY ||
       mOptions->QueryType() == nsINavHistoryQueryOptions::QUERY_TYPE_UNIFIED) {
@@ -2499,23 +2515,6 @@ nsNavHistoryQueryResultNode::OnItemChanged(
     rv = NotifyIfTagsChanged(uri);
     NS_ENSURE_SUCCESS(rv, rv);
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNavHistoryQueryResultNode::OnItemVisited(int64_t aItemId, int64_t aVisitId,
-                                           PRTime aTime,
-                                           uint32_t aTransitionType,
-                                           nsIURI* aURI, int64_t aParentId,
-                                           const nsACString& aGUID,
-                                           const nsACString& aParentGUID) {
-  
-  
-  if (mLiveUpdate != QUERYUPDATE_COMPLEX_WITH_BOOKMARKS)
-    NS_WARNING_ASSERTION(mResult && mResult->mIsBookmarksObserver,
-                         "history observers should not get OnItemVisited, but "
-                         "should get OnVisit "
-                         "instead");
   return NS_OK;
 }
 
@@ -3261,13 +3260,9 @@ nsNavHistoryFolderResultNode::OnItemChanged(
 
 
 
-NS_IMETHODIMP
-nsNavHistoryFolderResultNode::OnItemVisited(int64_t aItemId, int64_t aVisitId,
-                                            PRTime aTime,
-                                            uint32_t aTransitionType,
-                                            nsIURI* aURI, int64_t aParentId,
-                                            const nsACString& aGUID,
-                                            const nsACString& aParentGUID) {
+nsresult nsNavHistoryFolderResultNode::OnItemVisited(nsIURI* aURI,
+                                                     int64_t aVisitId,
+                                                     PRTime aTime) {
   if (mOptions->ExcludeItems())
     return NS_OK;  
 
@@ -3275,58 +3270,67 @@ nsNavHistoryFolderResultNode::OnItemVisited(int64_t aItemId, int64_t aVisitId,
 
   if (!StartIncrementalUpdate()) return NS_OK;
 
-  uint32_t nodeIndex;
-  nsNavHistoryResultNode* node = FindChildById(aItemId, &nodeIndex);
-  if (!node) return NS_ERROR_FAILURE;
-
-  
-  uint32_t nodeOldAccessCount = node->mAccessCount;
-  PRTime nodeOldTime = node->mTime;
-  node->mTime = aTime;
-  ++node->mAccessCount;
+  nsAutoCString spec;
+  nsresult rv = aURI->GetSpec(spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMArray<nsNavHistoryResultNode> nodes;
+  FindChildrenByURI(spec, &nodes);
+  if (!nodes.Count()) {
+    return NS_OK;
+  }
 
   
   int32_t oldAccessCount = mAccessCount;
   ++mAccessCount;
   if (aTime > mTime) mTime = aTime;
-  nsresult rv = ReverseUpdateStats(mAccessCount - oldAccessCount);
+  rv = ReverseUpdateStats(mAccessCount - oldAccessCount);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  
-  
-  nsNavHistory* history = nsNavHistory::GetHistoryService();
-  NS_ENSURE_TRUE(history, NS_OK);
-  RefPtr<nsNavHistoryResultNode> visitNode;
-  rv = history->VisitIdToResultNode(aVisitId, mOptions,
-                                    getter_AddRefs(visitNode));
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!visitNode) {
-    
-    return NS_OK;
-  }
-  node->mFrecency = visitNode->mFrecency;
+  for (int32_t i = 0; i < nodes.Count(); ++i) {
+    nsNavHistoryResultNode* node = nodes[i];
+    uint32_t nodeOldAccessCount = node->mAccessCount;
+    PRTime nodeOldTime = node->mTime;
+    node->mTime = aTime;
+    ++node->mAccessCount;
 
-  if (AreChildrenVisible()) {
     
-    nsNavHistoryResult* result = GetResult();
-    NOTIFY_RESULT_OBSERVERS(result, NodeHistoryDetailsChanged(
-                                        node, nodeOldTime, nodeOldAccessCount));
-  }
+    
+    
+    nsNavHistory* history = nsNavHistory::GetHistoryService();
+    NS_ENSURE_TRUE(history, NS_OK);
+    RefPtr<nsNavHistoryResultNode> visitNode;
+    rv = history->VisitIdToResultNode(aVisitId, mOptions,
+                                      getter_AddRefs(visitNode));
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (!visitNode) {
+      
+      return NS_OK;
+    }
+    node->mFrecency = visitNode->mFrecency;
 
-  
-  uint32_t sortType = GetSortType();
-  if (sortType == nsINavHistoryQueryOptions::SORT_BY_VISITCOUNT_ASCENDING ||
-      sortType == nsINavHistoryQueryOptions::SORT_BY_VISITCOUNT_DESCENDING ||
-      sortType == nsINavHistoryQueryOptions::SORT_BY_DATE_ASCENDING ||
-      sortType == nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING ||
-      sortType == nsINavHistoryQueryOptions::SORT_BY_FRECENCY_ASCENDING ||
-      sortType == nsINavHistoryQueryOptions::SORT_BY_FRECENCY_DESCENDING) {
-    int32_t childIndex = FindChild(node);
-    NS_ASSERTION(childIndex >= 0,
-                 "Could not find child we just got a reference to");
-    if (childIndex >= 0) {
-      EnsureItemPosition(childIndex);
+    if (AreChildrenVisible()) {
+      
+      nsNavHistoryResult* result = GetResult();
+      NOTIFY_RESULT_OBSERVERS(
+          result,
+          NodeHistoryDetailsChanged(node, nodeOldTime, nodeOldAccessCount));
+    }
+
+    
+    uint32_t sortType = GetSortType();
+    if (sortType == nsINavHistoryQueryOptions::SORT_BY_VISITCOUNT_ASCENDING ||
+        sortType == nsINavHistoryQueryOptions::SORT_BY_VISITCOUNT_DESCENDING ||
+        sortType == nsINavHistoryQueryOptions::SORT_BY_DATE_ASCENDING ||
+        sortType == nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING ||
+        sortType == nsINavHistoryQueryOptions::SORT_BY_FRECENCY_ASCENDING ||
+        sortType == nsINavHistoryQueryOptions::SORT_BY_FRECENCY_DESCENDING) {
+      int32_t childIndex = FindChild(node);
+      NS_ASSERTION(childIndex >= 0,
+                   "Could not find child we just got a reference to");
+      if (childIndex >= 0) {
+        EnsureItemPosition(childIndex);
+      }
     }
   }
 
@@ -3591,9 +3595,14 @@ void nsNavHistoryResult::EnsureIsObservingBookmarks() {
     return;
   }
   bookmarks->AddObserver(this, true);
-  AutoTArray<PlacesEventType, 2> events;
+  AutoTArray<PlacesEventType, 3> events;
   events.AppendElement(PlacesEventType::Bookmark_added);
   events.AppendElement(PlacesEventType::Bookmark_removed);
+  
+  
+  if (!mIsHistoryObserver) {
+    events.AppendElement(PlacesEventType::Page_visited);
+  }
   PlacesObservers::AddListener(events, this);
   mIsBookmarksObserver = true;
 }
@@ -3862,26 +3871,6 @@ nsNavHistoryResult::OnItemChanged(
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsNavHistoryResult::OnItemVisited(int64_t aItemId, int64_t aVisitId,
-                                  PRTime aVisitTime, uint32_t aTransitionType,
-                                  nsIURI* aURI, int64_t aParentId,
-                                  const nsACString& aGUID,
-                                  const nsACString& aParentGUID) {
-  NS_ENSURE_ARG(aURI);
-
-  ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(
-      aParentId, OnItemVisited(aItemId, aVisitId, aVisitTime, aTransitionType,
-                               aURI, aParentId, aGUID, aParentGUID));
-  ENUMERATE_ALL_BOOKMARKS_OBSERVERS(
-      OnItemVisited(aItemId, aVisitId, aVisitTime, aTransitionType, aURI,
-                    aParentId, aGUID, aParentGUID));
-  
-  
-  
-  return NS_OK;
-}
-
 
 
 
@@ -3969,7 +3958,6 @@ nsresult nsNavHistoryResult::OnVisit(nsIURI* aURI, int64_t aVisitId,
   if (!added || todayIsMissing) {
     
     
-    uint32_t resultType = mRootNode->mOptions->ResultType();
     if (resultType == nsINavHistoryQueryOptions::RESULTS_AS_DATE_QUERY ||
         resultType == nsINavHistoryQueryOptions::RESULTS_AS_DATE_SITE_QUERY) {
       
@@ -3993,6 +3981,22 @@ nsresult nsNavHistoryResult::OnVisit(nsIURI* aURI, int64_t aVisitId,
     
     ENUMERATE_QUERY_OBSERVERS(Refresh(), mHistoryObservers,
                               IsContainersQuery());
+
+    
+    
+    if (!mIsHistoryObserver && mRootNode->IsFolder()) {
+      nsAutoCString spec;
+      nsresult rv = aURI->GetSpec(spec);
+      NS_ENSURE_SUCCESS(rv, rv);
+      
+      nsCOMArray<nsNavHistoryResultNode> nodes;
+      mRootNode->RecursiveFindURIs(true, mRootNode, spec, &nodes);
+      for (int32_t i = 0; i < nodes.Count(); ++i) {
+        nsNavHistoryResultNode* node = nodes[i];
+        ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(
+            node->mParent->mItemId, OnItemVisited(aURI, aVisitId, aTime));
+      }
+    }
   }
 
   return NS_OK;

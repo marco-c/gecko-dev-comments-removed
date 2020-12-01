@@ -2849,19 +2849,10 @@ nsresult nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
 
   
   int64_t itemId = aRow->AsInt64(kGetInfoIndex_ItemId);
-  int64_t parentId = -1;
   if (itemId == 0) {
     
     
     itemId = -1;
-  } else {
-    
-    int64_t itemParentId = aRow->AsInt64(kGetInfoIndex_ItemParentId);
-    if (itemParentId > 0) {
-      
-      
-      parentId = itemParentId;
-    }
   }
 
   if (IsQueryURI(url)) {
@@ -2920,7 +2911,6 @@ nsresult nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
 
     if (itemId != -1) {
       resultNode->mItemId = itemId;
-      resultNode->mFolderId = parentId;
       resultNode->mDateAdded = aRow->AsInt64(kGetInfoIndex_ItemDateAdded);
       resultNode->mLastModified = aRow->AsInt64(kGetInfoIndex_ItemLastModified);
 
