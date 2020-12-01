@@ -1,5 +1,6 @@
+
 const PAGE_NON_ELIGIBLE_MEDIA =
-  "https://example.com/browser/dom/media/mediacontrol/tests/browser/file_non_eligible_media.html";
+  "https://example.com/browser/dom/media/mediacontrol/tests/file_non_eligible_media.html";
 
 
 

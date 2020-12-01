@@ -1,5 +1,6 @@
+
 const PAGE_NON_AUTOPLAY =
-  "https://example.com/browser/dom/media/mediacontrol/tests/browser/file_non_autoplay.html";
+  "https://example.com/browser/dom/media/mediacontrol/tests/file_non_autoplay.html";
 
 const testVideoId = "video";
 const sDefaultSupportedKeys = ["focus", "play", "pause", "playpause", "stop"];
