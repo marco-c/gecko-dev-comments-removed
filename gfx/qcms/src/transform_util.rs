@@ -110,7 +110,7 @@ pub unsafe extern "C" fn lut_interp_linear16(
 
 unsafe extern "C" fn lut_interp_linear_precache_output(
     mut input_value: u32,
-    mut table: *mut u16,
+    mut table: *const u16,
     mut length: i32,
 ) -> u8 {
     
@@ -135,7 +135,7 @@ unsafe extern "C" fn lut_interp_linear_precache_output(
 #[no_mangle]
 pub unsafe extern "C" fn lut_interp_linear_float(
     mut value: f32,
-    mut table: *mut f32,
+    mut table: *const f32,
     mut length: i32,
 ) -> f32 {
     value = value * (length - 1) as f32;
