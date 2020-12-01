@@ -295,11 +295,10 @@ class IOUtils final {
 
 
 
-
-  static Result<Ok, IOError> CreateDirectorySync(const nsAString& aPath,
-                                                 bool aCreateAncestors,
-                                                 bool aIgnoreExisting,
-                                                 int32_t aMode = 0777);
+  static Result<Ok, IOError> MakeDirectorySync(already_AddRefed<nsIFile> aFile,
+                                               bool aCreateAncestors,
+                                               bool aIgnoreExisting,
+                                               int32_t aMode = 0777);
 
   
 
