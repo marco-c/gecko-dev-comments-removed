@@ -39,3 +39,34 @@ add_task(async function test_process_crash() {
     );
   });
 });
+
+
+
+
+
+
+add_task(async function test_process_crash_while_requesting_streams() {
+  await BrowserTestUtils.withNewTab("about:home", async browser => {
+    await simulateRestart(browser);
+    let cacheStreamsPromise = AboutHomeStartupCache.requestCache();
+    await BrowserTestUtils.crashFrame(browser);
+    let cacheStreams = await cacheStreamsPromise;
+
+    if (!cacheStreams.pageInputStream && !cacheStreams.scriptInputStream) {
+      Assert.ok(true, "Page and script input streams are null.");
+    } else {
+      
+      
+      
+      info("Received the streams. Checking that they're readable.");
+      Assert.ok(
+        cacheStreams.pageInputStream.available(),
+        "Bytes available for page stream"
+      );
+      Assert.ok(
+        cacheStreams.scriptInputStream.available(),
+        "Bytes available for script stream"
+      );
+    }
+  });
+});

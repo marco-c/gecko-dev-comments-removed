@@ -5316,7 +5316,15 @@ var AboutHomeStartupCache = {
     }
 
     this._cacheProgress = "Writing to cache";
-    await this.populateCache(pageInputStream, scriptInputStream);
+
+    try {
+      await this.populateCache(pageInputStream, scriptInputStream);
+    } catch (e) {
+      this._cacheProgress = "Failed to populate cache";
+      this.log.error("Populating the cache failed: ", e);
+      return;
+    }
+
     this._cacheProgress = "Done";
     this.log.trace("Done writing to cache.");
     this._hasWrittenThisSession = true;
@@ -5697,6 +5705,17 @@ var AboutHomeStartupCache = {
 
   onContentProcessShutdown(childID) {
     if (this._procManagerID == childID) {
+      if (this._cacheDeferred) {
+        this.log.error(
+          "A privileged about content process shut down while cache streams " +
+            "were still en route."
+        );
+        
+        
+        this._cacheDeferred({ pageInputStream: null, scriptInputStream: null });
+        this._cacheDeferred = null;
+      }
+
       this._procManager.removeMessageListener(
         this.CACHE_RESPONSE_MESSAGE,
         this
