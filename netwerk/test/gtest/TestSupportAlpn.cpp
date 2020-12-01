@@ -15,38 +15,44 @@ TEST(TestSupportAlpn, testSvcParamKeyAlpn)
       do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "http");
 
   
-  Tuple<nsCString, bool> result =
-      SelectAlpnFromAlpnList("h3-28,h3-27,h2,http/1.1"_ns, false, false);
+  nsTArray<nsCString> alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns, "http/1.1"_ns};
+  Tuple<nsCString, bool> result = SelectAlpnFromAlpnList(alpn, false, false);
   ASSERT_EQ(Get<0>(result), "h3-28"_ns);
   ASSERT_EQ(Get<1>(result), true);
 
   
-  result = SelectAlpnFromAlpnList("h3-26,h2,http/1.1"_ns, false, false);
+  alpn = {"h3-26"_ns, "h2"_ns, "http/1.1"_ns};
+  result = SelectAlpnFromAlpnList(alpn, false, false);
   ASSERT_EQ(Get<0>(result), "h2"_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  result = SelectAlpnFromAlpnList("h3-28,h3-27,h2,http/1.1"_ns, false, true);
+  alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns, "http/1.1"_ns};
+  result = SelectAlpnFromAlpnList(alpn, false, true);
   ASSERT_EQ(Get<0>(result), "h2"_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  result = SelectAlpnFromAlpnList("h3-28,h3-27,http/1.1"_ns, false, true);
+  alpn = {"h3-28"_ns, "h3-27"_ns, "http/1.1"_ns};
+  result = SelectAlpnFromAlpnList(alpn, false, true);
   ASSERT_EQ(Get<0>(result), "http/1.1"_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  result = SelectAlpnFromAlpnList("h3-28,h3-27,h2,http/1.1"_ns, true, true);
+  alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns, "http/1.1"_ns};
+  result = SelectAlpnFromAlpnList(alpn, true, true);
   ASSERT_EQ(Get<0>(result), "http/1.1"_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  result = SelectAlpnFromAlpnList("h3-28,h3-27,h2"_ns, true, true);
+  alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns};
+  result = SelectAlpnFromAlpnList(alpn, true, true);
   ASSERT_EQ(Get<0>(result), ""_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  result = SelectAlpnFromAlpnList("ftp,h2c"_ns, true, true);
+  alpn = {"ftp"_ns, "h2c"_ns};
+  result = SelectAlpnFromAlpnList(alpn, true, true);
   ASSERT_EQ(Get<0>(result), ""_ns);
   ASSERT_EQ(Get<1>(result), false);
 }

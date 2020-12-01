@@ -379,8 +379,8 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode);
 
 
 
-Tuple<nsCString, bool> SelectAlpnFromAlpnList(const nsACString& aAlpnList,
-                                              bool aNoHttp2, bool aNoHttp3);
+Tuple<nsCString, bool> SelectAlpnFromAlpnList(
+    const nsTArray<nsCString>& aAlpnList, bool aNoHttp2, bool aNoHttp3);
 
 }  
 }  
