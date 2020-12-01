@@ -7,6 +7,7 @@
 #ifndef vm_JSAtom_h
 #define vm_JSAtom_h
 
+#include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"
 
 #include "gc/MaybeRooted.h"
@@ -59,6 +60,11 @@ extern JSAtom* Atomize(
 template <typename CharT>
 extern JSAtom* AtomizeChars(JSContext* cx, const CharT* chars, size_t length,
                             js::PinningBehavior pin = js::DoNotPinAtom);
+
+
+template <typename CharT>
+extern JSAtom* AtomizeChars(JSContext* cx, mozilla::HashNumber hash,
+                            const CharT* chars, size_t length);
 
 
 
