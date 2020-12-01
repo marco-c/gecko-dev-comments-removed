@@ -351,7 +351,7 @@
         
         
         if (!protocolSvc.isExposedProtocol(uri.scheme)) {
-          protocolSvc.loadURI(uri);
+          protocolSvc.loadURI(uri, principal);
           aEvent.preventDefault();
           return;
         }

@@ -1247,11 +1247,12 @@ function openURL(aURL) {
     "@mozilla.org/uriloader/external-protocol-service;1"
   ].getService(Ci.nsIExternalProtocolService);
 
+  let recentWindow = Services.wm.getMostRecentWindow("navigator:browser");
+
   if (!protocolSvc.isExposedProtocol(uri.scheme)) {
     
-    protocolSvc.loadURI(uri);
+    protocolSvc.loadURI(uri, recentWindow?.document.contentPrincipal);
   } else {
-    var recentWindow = Services.wm.getMostRecentWindow("navigator:browser");
     if (recentWindow) {
       recentWindow.openWebLinkIn(uri.spec, "tab", {
         triggeringPrincipal: recentWindow.document.contentPrincipal,

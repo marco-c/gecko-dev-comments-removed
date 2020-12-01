@@ -702,7 +702,10 @@ var DownloadsCommon = {
       
       Cc["@mozilla.org/uriloader/external-protocol-service;1"]
         .getService(Ci.nsIExternalProtocolService)
-        .loadURI(NetUtil.newURI(aDirectory));
+        .loadURI(
+          NetUtil.newURI(aDirectory),
+          Services.scriptSecurityManager.getSystemPrincipal()
+        );
     }
   },
 
