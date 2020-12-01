@@ -176,13 +176,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   }
 
   
-  void shimmySlots(int discardDepth);
-
-  
-  
-  MOZ_MUST_USE bool linkOsrValues(MStart* start);
-
-  
   
   void setLocal(uint32_t local) { setVariable(info_.localSlot(local)); }
   void setArg(uint32_t arg) { setVariable(info_.argSlot(arg)); }
@@ -191,9 +184,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   
   
   void rewriteSlot(uint32_t slot, MDefinition* ins) { setSlot(slot, ins); }
-
-  
-  void rewriteAtDepth(int32_t depth, MDefinition* ins);
 
   
   void push(MDefinition* ins) {
@@ -284,9 +274,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 
   
   
-  
-  MOZ_MUST_USE AbortReason setBackedge(TempAllocator& alloc,
-                                       MBasicBlock* block);
+  MOZ_MUST_USE bool setBackedge(MBasicBlock* block);
   MOZ_MUST_USE bool setBackedgeWasm(MBasicBlock* block, size_t paramCount);
 
   
@@ -302,9 +290,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void inheritPhis(MBasicBlock* header);
 
   
-  MOZ_MUST_USE bool inheritPhisFromBackedge(TempAllocator& alloc,
-                                            MBasicBlock* backedge,
-                                            bool* hadTypeChange);
+  MOZ_MUST_USE bool inheritPhisFromBackedge(MBasicBlock* backedge);
 
   
   MOZ_MUST_USE bool specializePhis(TempAllocator& alloc);

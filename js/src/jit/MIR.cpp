@@ -2007,20 +2007,9 @@ bool MPhi::specializeType(TempAllocator& alloc) {
 
   MOZ_ASSERT(!inputs_.empty());
 
-  size_t start;
-  if (hasBackedgeType_) {
-    
-    
-    
-    start = 0;
-  } else {
-    setResultType(getOperand(0)->type());
-    start = 1;
-  }
+  MIRType resultType = getOperand(0)->type();
 
-  MIRType resultType = this->type();
-
-  for (size_t i = start; i < inputs_.length(); i++) {
+  for (size_t i = 1; i < inputs_.length(); i++) {
     MDefinition* def = getOperand(i);
     MergeTypes(&resultType, def->type());
   }
@@ -3297,23 +3286,6 @@ MResumePoint* MResumePoint::New(TempAllocator& alloc, MBasicBlock* block,
     return nullptr;
   }
   resume->inherit(block);
-  return resume;
-}
-
-MResumePoint* MResumePoint::Copy(TempAllocator& alloc, MResumePoint* src) {
-  MResumePoint* resume =
-      new (alloc) MResumePoint(src->block(), src->pc(), src->mode());
-  
-  
-  if (!resume->operands_.init(alloc, src->numAllocatedOperands())) {
-    src->block()->discardPreAllocatedResumePoint(resume);
-    return nullptr;
-  }
-
-  
-  for (size_t i = 0; i < resume->numOperands(); i++) {
-    resume->initOperand(i, src->getOperand(i));
-  }
   return resume;
 }
 
