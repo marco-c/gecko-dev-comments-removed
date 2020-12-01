@@ -223,8 +223,9 @@ ALL_PROCESSES += [
     DllBlocklistEntry("safemon64.dll", ALL_VERSIONS),
 
     
-    RedirectToNoOpEntryPoint("dgapi.dll", (7, 5, 0, 0xffff)),
-    RedirectToNoOpEntryPoint("dgapi64.dll", (7, 5, 0, 0xffff)),
+    
+    RedirectToNoOpEntryPoint("dgapi.dll", (7, 5, 0xffff, 0xffff)),
+    RedirectToNoOpEntryPoint("dgapi64.dll", (7, 5, 0xffff, 0xffff)),
 
     
     DllBlocklistEntry("IseGuard32.dll", (1, 6, 13835, 184)),
