@@ -1,5 +1,7 @@
 
 
+requestLongerTimeout(4);
+
 AntiTracking.runTestInNormalAndPrivateMode(
   "IndexedDB",
   
