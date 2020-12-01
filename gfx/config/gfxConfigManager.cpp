@@ -267,7 +267,7 @@ void gfxConfigManager::ConfigureWebRender() {
 
   
   if (!mFeatureHwCompositing->IsEnabled() &&
-      !Preferences::GetBool("gfx.webrender.software", false)) {
+      !StaticPrefs::gfx_webrender_software_AtStartup()) {
     mFeatureWr->ForceDisable(FeatureStatus::UnavailableNoHwCompositing,
                              "Hardware compositing is disabled",
                              "FEATURE_FAILURE_WEBRENDER_NEED_HWCOMP"_ns);
