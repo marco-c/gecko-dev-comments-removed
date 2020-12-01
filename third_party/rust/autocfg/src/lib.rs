@@ -34,30 +34,12 @@
 
 
 
-
-
-
-
-
-
-
-
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 #![allow(ellipsis_inclusive_range_patterns)]
-
-
-macro_rules! try {
-    ($result:expr) => {
-        match $result {
-            Ok(value) => value,
-            Err(error) => return Err(error),
-        }
-    };
-}
 
 use std::env;
 use std::ffi::OsString;
@@ -86,7 +68,6 @@ pub struct AutoCfg {
     rustc_version: Version,
     target: Option<OsString>,
     no_std: bool,
-    rustflags: Option<Vec<String>>,
 }
 
 
@@ -157,8 +138,6 @@ impl AutoCfg {
         let rustc: PathBuf = rustc.into();
         let rustc_version = try!(Version::from_rustc(&rustc));
 
-        let target = env::var_os("TARGET");
-
         
         let dir = dir.into();
         let meta = try!(fs::metadata(&dir).map_err(error::from_io));
@@ -166,37 +145,12 @@ impl AutoCfg {
             return Err(error::from_str("output path is not a writable directory"));
         }
 
-        
-        
-        
-        
-        
-        
-        let rustflags = if target != env::var_os("HOST")
-            || dir_contains_target(&target, &dir, env::var_os("CARGO_TARGET_DIR"))
-        {
-            env::var("RUSTFLAGS").ok().map(|rustflags| {
-                
-                
-                
-                rustflags
-                    .split(' ')
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .map(str::to_string)
-                    .collect::<Vec<String>>()
-            })
-        } else {
-            None
-        };
-
         let mut ac = AutoCfg {
             out_dir: dir,
             rustc: rustc,
             rustc_version: rustc_version,
-            target: target,
+            target: env::var_os("TARGET"),
             no_std: false,
-            rustflags: rustflags,
         };
 
         
@@ -239,10 +193,6 @@ impl AutoCfg {
             .arg("--out-dir")
             .arg(&self.out_dir)
             .arg("--emit=llvm-ir");
-
-        if let &Some(ref rustflags) = &self.rustflags {
-            command.args(rustflags);
-        }
 
         if let Some(target) = self.target.as_ref() {
             command.arg("--target").arg(target);
@@ -366,44 +316,6 @@ impl AutoCfg {
             emit(cfg);
         }
     }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn probe_expression(&self, expr: &str) -> bool {
-        self.probe(format!("pub fn probe() {{ let _ = {}; }}", expr))
-            .unwrap_or(false)
-    }
-
-    
-    pub fn emit_expression_cfg(&self, expr: &str, cfg: &str) {
-        if self.probe_expression(expr) {
-            emit(cfg);
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn probe_constant(&self, expr: &str) -> bool {
-        self.probe(format!("pub const PROBE: () = ((), {}).0;", expr))
-            .unwrap_or(false)
-    }
-
-    
-    pub fn emit_constant_cfg(&self, expr: &str, cfg: &str) {
-        if self.probe_constant(expr) {
-            emit(cfg);
-        }
-    }
 }
 
 fn mangle(s: &str) -> String {
@@ -413,26 +325,4 @@ fn mangle(s: &str) -> String {
             _ => '_',
         })
         .collect()
-}
-
-fn dir_contains_target(
-    target: &Option<OsString>,
-    dir: &PathBuf,
-    cargo_target_dir: Option<OsString>,
-) -> bool {
-    target
-        .as_ref()
-        .and_then(|target| {
-            dir.to_str().and_then(|dir| {
-                let mut cargo_target_dir = cargo_target_dir
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|| PathBuf::from("target"));
-                cargo_target_dir.push(target);
-
-                cargo_target_dir
-                    .to_str()
-                    .map(|cargo_target_dir| dir.contains(&cargo_target_dir))
-            })
-        })
-        .unwrap_or(false)
 }

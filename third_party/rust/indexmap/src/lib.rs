@@ -1,8 +1,6 @@
 
 #![deny(unsafe_code)]
-#![warn(rust_2018_idioms)]
 #![doc(html_root_url = "https://docs.rs/indexmap/1/")]
-#![no_std]
 
 
 
@@ -22,162 +20,67 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(not(has_std))]
-extern crate alloc;
-
-#[cfg(has_std)]
-#[macro_use]
-extern crate std;
-
-#[cfg(not(has_std))]
-use alloc::vec::{self, Vec};
-
-#[cfg(has_std)]
-use std::vec::{self, Vec};
 
 #[macro_use]
 mod macros;
-mod equivalent;
-mod mutable_keys;
 #[cfg(feature = "serde-1")]
 mod serde;
 mod util;
+mod equivalent;
+mod mutable_keys;
 
-pub mod map;
 pub mod set;
+pub mod map;
 
 
 
 #[cfg(feature = "rayon")]
 mod rayon;
 
-pub use crate::equivalent::Equivalent;
-pub use crate::map::IndexMap;
-pub use crate::set::IndexSet;
+pub use equivalent::Equivalent;
+pub use map::IndexMap;
+pub use set::IndexSet;
 
 
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Copy, Debug)]
 struct HashValue(usize);
 
 impl HashValue {
     #[inline(always)]
-    fn get(self) -> u64 {
-        self.0 as u64
+    fn get(self) -> usize { self.0 }
+}
+
+impl Clone for HashValue {
+    #[inline]
+    fn clone(&self) -> Self { *self }
+}
+impl PartialEq for HashValue {
+    #[inline]
+    fn eq(&self, rhs: &Self) -> bool {
+        self.0 == rhs.0
     }
 }
 
-#[derive(Copy, Debug)]
+#[derive(Copy, Clone, Debug)]
 struct Bucket<K, V> {
     hash: HashValue,
     key: K,
     value: V,
 }
 
-impl<K, V> Clone for Bucket<K, V>
-where
-    K: Clone,
-    V: Clone,
-{
-    fn clone(&self) -> Self {
-        Bucket {
-            hash: self.hash,
-            key: self.key.clone(),
-            value: self.value.clone(),
-        }
-    }
-
-    fn clone_from(&mut self, other: &Self) {
-        self.hash = other.hash;
-        self.key.clone_from(&other.key);
-        self.value.clone_from(&other.value);
-    }
-}
-
 impl<K, V> Bucket<K, V> {
     
-    fn key_ref(&self) -> &K {
-        &self.key
-    }
-    fn value_ref(&self) -> &V {
-        &self.value
-    }
-    fn value_mut(&mut self) -> &mut V {
-        &mut self.value
-    }
-    fn key(self) -> K {
-        self.key
-    }
-    fn key_value(self) -> (K, V) {
-        (self.key, self.value)
-    }
-    fn refs(&self) -> (&K, &V) {
-        (&self.key, &self.value)
-    }
-    fn ref_mut(&mut self) -> (&K, &mut V) {
-        (&self.key, &mut self.value)
-    }
-    fn muts(&mut self) -> (&mut K, &mut V) {
-        (&mut self.key, &mut self.value)
-    }
+    fn key_ref(&self) -> &K { &self.key }
+    fn value_ref(&self) -> &V { &self.value }
+    fn value_mut(&mut self) -> &mut V { &mut self.value }
+    fn key(self) -> K { self.key }
+    fn key_value(self) -> (K, V) { (self.key, self.value) }
+    fn refs(&self) -> (&K, &V) { (&self.key, &self.value) }
+    fn ref_mut(&mut self) -> (&K, &mut V) { (&self.key, &mut self.value) }
+    fn muts(&mut self) -> (&mut K, &mut V) { (&mut self.key, &mut self.value) }
 }
 
 trait Entries {
@@ -186,6 +89,5 @@ trait Entries {
     fn as_entries(&self) -> &[Self::Entry];
     fn as_entries_mut(&mut self) -> &mut [Self::Entry];
     fn with_entries<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut [Self::Entry]);
+        where F: FnOnce(&mut [Self::Entry]);
 }
