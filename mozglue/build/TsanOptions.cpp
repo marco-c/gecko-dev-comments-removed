@@ -233,10 +233,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:SkSpriteBlitter_Memcpy\n"
 
          
-         "race:ScriptPreloader::MaybeFinishOffThreadDecode\n"
-         "race:ScriptPreloader::DoFinishOffThreadDecode\n"
-
-         
          "race:nsPluginTag::nsPluginTag\n"
          "race:nsFakePluginTag\n"
 
