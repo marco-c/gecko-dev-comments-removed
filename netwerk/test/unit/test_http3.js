@@ -13,7 +13,9 @@ function generateContent(size) {
 
 let post = generateContent(10);
 
-let number_of_parallel_requests = 10;
+
+
+let number_of_parallel_requests = 120;
 let h1Server = null;
 let h3Route;
 let httpsOrigin;
