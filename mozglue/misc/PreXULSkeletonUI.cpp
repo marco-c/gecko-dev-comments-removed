@@ -12,6 +12,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/HelperMacros.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/UniquePtr.h"
@@ -62,6 +63,13 @@ static const wchar_t kPreXULSkeletonUIKeyPath[] =
     L"\\" MOZ_APP_VENDOR L"\\" MOZ_APP_BASENAME L"\\PreXULSkeletonUISettings";
 
 static bool sPreXULSkeletonUIEnabled = false;
+
+
+
+
+
+
+static bool sPreXULSkeletonUIDisallowed = false;
 static HWND sPreXULSkeletonUIWindow;
 static LPWSTR const gStockApplicationIcon = MAKEINTRESOURCEW(32512);
 static LPWSTR const gIDCWait = MAKEINTRESOURCEW(32514);
@@ -762,10 +770,156 @@ bool LoadGdi32AndUser32Procedures() {
   return true;
 }
 
-void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance) {
+
+
+
+const char* NormalizeFlag(const char* arg) {
+  if (strstr(arg, "--") == arg) {
+    return arg + 2;
+  }
+
+  if (arg[0] == '-') {
+    return arg + 1;
+  }
+
+  if (arg[0] == '/') {
+    return arg + 1;
+  }
+
+  return nullptr;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
+  const char* approvedArgumentsList[] = {
+      
+      "new-instance", "no-remote", "browser", "foreground", "setDefaultBrowser",
+      "attach-console", "wait-for-browser", "osint",
+
+      
+      
+      
+      "new-tab", "new-window",
+
+      
+      
+      "preferences", "search", "url",
+
+      
+      
+      
+      
+      
+  };
+
+  
+  
+  
+  const char* releaseChannel = MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL);
+  bool acceptProfileArgument = !strcmp(releaseChannel, "default");
+
+  const int numApproved =
+      sizeof(approvedArgumentsList) / sizeof(approvedArgumentsList[0]);
+  for (int i = 1; i < argc; ++i) {
+    const char* flag = NormalizeFlag(argv[i]);
+    if (!flag) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      continue;
+    }
+
+    
+    
+    if (!strcmp(flag, "marionette")) {
+      return true;
+    }
+
+    if (acceptProfileArgument && !strcmp(flag, "profile")) {
+      continue;
+    }
+
+    bool approved = false;
+    for (int j = 0; j < numApproved; ++j) {
+      const char* approvedArg = approvedArgumentsList[j];
+      
+      
+      
+      
+      
+      
+      
+      if (!_stricmp(flag, approvedArg)) {
+        approved = true;
+        break;
+      }
+    }
+
+    if (!approved) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
+                                    char** argv) {
 #ifdef MOZ_GECKO_PROFILER
   const TimeStamp skeletonStart = TimeStamp::NowUnfuzzed();
 #endif
+
+  if (!AreAllCmdlineArgumentsApproved(argc, argv)) {
+    sPreXULSkeletonUIDisallowed = true;
+    return;
+  }
 
   HKEY regKey;
   if (!IsWin10OrLater() || !OpenPreXULSkeletonUIRegKey(regKey)) {
@@ -1080,7 +1234,21 @@ void PersistPreXULSkeletonUIValues(int screenX, int screenY, int width,
 
 MFBT_API bool GetPreXULSkeletonUIEnabled() { return sPreXULSkeletonUIEnabled; }
 
-MFBT_API void SetPreXULSkeletonUIEnabled(bool value) {
+MFBT_API void SetPreXULSkeletonUIEnabledIfAllowed(bool value) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (sPreXULSkeletonUIDisallowed) {
+    return;
+  }
+
   HKEY regKey;
   if (!OpenPreXULSkeletonUIRegKey(regKey)) {
     return;
