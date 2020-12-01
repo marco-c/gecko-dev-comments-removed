@@ -57,6 +57,7 @@ struct Renderer11DeviceCaps
                                                 
                                                 
                                                 
+    bool allowES3OnFL10_0;
     UINT B5G6R5support;     
     UINT B5G6R5maxSamples;  
     UINT B4G4R4A4support;  
