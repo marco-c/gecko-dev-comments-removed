@@ -585,6 +585,27 @@ void MacroAssembler::clz64(Register64 src, Register dest) {
 }
 
 void MacroAssembler::ctz64(Register64 src, Register dest) {
+  if (AssemblerX86Shared::HasBMI1()) {
+    Label nonzero, zero;
+
+    testl(src.low, src.low);
+    j(Assembler::Zero, &zero);
+
+    tzcntl(src.low, dest);
+    jump(&nonzero);
+
+    bind(&zero);
+    tzcntl(src.high, dest);
+    addl(Imm32(32), dest);
+
+    bind(&nonzero);
+    return;
+  }
+
+  
+  
+  
+
   Label done, nonzero;
 
   bsfl(src.low, dest);
