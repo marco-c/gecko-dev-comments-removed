@@ -55,15 +55,21 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
   
   
   
-  nsresult GetColorImpl(ColorID aID, bool aUseStandinsForNativeColors,
-                        nscolor& aResult);
-  virtual nsresult GetIntImpl(IntID aID, int32_t& aResult);
-  virtual nsresult GetFloatImpl(FloatID aID, float& aResult);
+  nsresult GetColorValue(ColorID aID, bool aUseStandinsForNativeColors,
+                         nscolor& aResult);
+  nsresult GetIntValue(IntID aID, int32_t& aResult);
+  nsresult GetFloatValue(FloatID aID, float& aResult);
+  
+  
+  bool GetFontValue(FontID aID, nsString& aName, gfxFontStyle& aStyle) {
+    return NativeGetFont(aID, aName, aStyle);
+  }
 
-  
-  
-  virtual bool GetFontImpl(FontID aID, nsString& aName,
-                           gfxFontStyle& aStyle) = 0;
+  virtual nsresult NativeGetInt(IntID aID, int32_t& aResult) = 0;
+  virtual nsresult NativeGetFloat(FloatID aID, float& aResult) = 0;
+  virtual nsresult NativeGetColor(ColorID aID, nscolor& aResult) = 0;
+  virtual bool NativeGetFont(FontID aID, nsString& aName,
+                             gfxFontStyle& aStyle) = 0;
 
   virtual void RefreshImpl();
 
@@ -92,7 +98,6 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
   void InitFromPref(nsLookAndFeelIntPref* aPref);
   void InitFromPref(nsLookAndFeelFloatPref* aPref);
   void InitColorFromPref(int32_t aIndex);
-  virtual nsresult NativeGetColor(ColorID aID, nscolor& aResult) = 0;
   bool IsSpecialColor(ColorID aID, nscolor& aColor);
   bool ColorIsNotCSSAccessible(ColorID aID);
   nscolor GetStandinForNativeColor(ColorID aID);
