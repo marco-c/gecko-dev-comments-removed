@@ -35,6 +35,41 @@ const FAVICON_ERRORPAGE_URI = Services.io.newURI(
 
 
 
+
+function waitForFaviconChanged(
+  aExpectedPageURI,
+  aExpectedFaviconURI,
+  aCallback
+) {
+  let historyObserver = {
+    __proto__: NavHistoryObserver.prototype,
+    onPageChanged: function WFFC_onPageChanged(aURI, aWhat, aValue, aGUID) {
+      if (aWhat != Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON) {
+        return;
+      }
+      PlacesUtils.history.removeObserver(this);
+
+      Assert.ok(aURI.equals(aExpectedPageURI));
+      Assert.equal(aValue, aExpectedFaviconURI.spec);
+      do_check_guid_for_uri(aURI, aGUID);
+      aCallback();
+    },
+  };
+  PlacesUtils.history.addObserver(historyObserver);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 function checkFaviconDataForPage(
   aPageURI,
   aExpectedMimeType,
@@ -79,17 +114,7 @@ function promiseFaviconMissingForPage(aPageURI) {
 }
 
 function promiseFaviconChanged(aExpectedPageURI, aExpectedFaviconURI) {
-  return PlacesTestUtils.waitForNotification(
-    "favicon-changed",
-    events =>
-      events.some(e => {
-        if (e.url == aExpectedPageURI.spec) {
-          Assert.equal(e.faviconUrl, aExpectedFaviconURI.spec);
-          do_check_guid_for_uri(aExpectedPageURI, e.pageGuid);
-          return true;
-        }
-        return false;
-      }),
-    "places"
+  return new Promise(resolve =>
+    waitForFaviconChanged(aExpectedPageURI, aExpectedFaviconURI, resolve)
   );
 }
