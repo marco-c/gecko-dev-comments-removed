@@ -6,7 +6,9 @@
 
 #include "AudioWorkletNode.h"
 
+#include "AudioNodeEngine.h"
 #include "AudioParamMap.h"
+#include "AudioWorkletImpl.h"
 #include "js/Array.h"  
 #include "js/Exception.h"
 #include "js/experimental/TypedData.h"  
@@ -14,6 +16,7 @@
 #include "mozilla/dom/AudioParamMapBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ErrorEvent.h"
+#include "mozilla/dom/Worklet.h"
 #include "nsIScriptGlobalObject.h"
 #include "AudioParam.h"
 #include "AudioDestinationNode.h"
