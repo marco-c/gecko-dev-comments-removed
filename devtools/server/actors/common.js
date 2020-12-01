@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { method } = require("devtools/shared/protocol");
-
 
 
 
@@ -110,24 +108,9 @@ exports.expectState = expectState;
 
 
 
-
-
-
-
-function actorBridge(methodName, definition = {}) {
-  return method(function() {
-    return this.bridge[methodName].apply(this.bridge, arguments);
-  }, definition);
-}
-exports.actorBridge = actorBridge;
-
-
-
-
-
 function actorBridgeWithSpec(methodName) {
-  return method(function() {
+  return function() {
     return this.bridge[methodName].apply(this.bridge, arguments);
-  });
+  };
 }
 exports.actorBridgeWithSpec = actorBridgeWithSpec;

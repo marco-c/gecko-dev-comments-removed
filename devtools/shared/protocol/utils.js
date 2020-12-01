@@ -55,25 +55,3 @@ function getPath(obj, path) {
   return obj;
 }
 exports.getPath = getPath;
-
-
-
-
-
-
-
-
-
-
-
-
-exports.method = function(fn, spec = {}) {
-  fn._methodSpec = Object.freeze(spec);
-  if (spec.request) {
-    Object.freeze(spec.request);
-  }
-  if (spec.response) {
-    Object.freeze(spec.response);
-  }
-  return fn;
-};
