@@ -98,6 +98,7 @@ nsLookAndFeelIntPref nsXPLookAndFeel::sIntPrefs[] = {
      6 },
     {"ui.allPointerCapabilities", IntID::AllPointerCapabilities, false,
      6 },
+    {"ui.scrollArrowStyle", IntID::ScrollArrowStyle, false, 0},
 };
 
 nsLookAndFeelFloatPref nsXPLookAndFeel::sFloatPrefs[] = {
