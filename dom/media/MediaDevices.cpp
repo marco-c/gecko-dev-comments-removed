@@ -63,7 +63,7 @@ already_AddRefed<Promise> MediaDevices::GetUserMedia(
             if (!window) {
               return;  
             }
-            p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
+            error->Reject(p);
           });
   return p.forget();
 }
@@ -127,7 +127,7 @@ already_AddRefed<Promise> MediaDevices::EnumerateDevices(CallerType aCallerType,
             if (!window) {
               return;  
             }
-            p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
+            error->Reject(p);
           });
   return p.forget();
 }
@@ -155,7 +155,7 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
             if (!window) {
               return;  
             }
-            p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
+            error->Reject(p);
           });
   return p.forget();
 }
