@@ -276,7 +276,7 @@ struct nsCSSRendering {
   
 
 
-  static bool IsCanvasFrame(nsIFrame* aFrame);
+  static bool IsCanvasFrame(const nsIFrame* aFrame);
 
   
 
@@ -284,9 +284,9 @@ struct nsCSSRendering {
 
 
 
-  static bool FindBackground(nsIFrame* aForFrame,
+  static bool FindBackground(const nsIFrame* aForFrame,
                              mozilla::ComputedStyle** aBackgroundSC);
-  static bool FindBackgroundFrame(nsIFrame* aForFrame,
+  static bool FindBackgroundFrame(const nsIFrame* aForFrame,
                                   nsIFrame** aBackgroundFrame);
 
   
@@ -308,7 +308,7 @@ struct nsCSSRendering {
 
 
 
-  static nsIFrame* FindCanvasBackgroundFrame(nsIFrame* aForFrame,
+  static nsIFrame* FindCanvasBackgroundFrame(const nsIFrame* aForFrame,
                                              nsIFrame* aRootElementFrame) {
     MOZ_ASSERT(IsCanvasFrame(aForFrame), "not a canvas frame");
     if (aRootElementFrame) {
@@ -318,7 +318,7 @@ struct nsCSSRendering {
     
     
     
-    return aForFrame;
+    return const_cast<nsIFrame*>(aForFrame);
   }
 
   static mozilla::ComputedStyle* FindCanvasBackground(
