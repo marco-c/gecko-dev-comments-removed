@@ -30,7 +30,7 @@ add_task(async function testAudioFocusChangesAmongMultipleFrames() {
 
 
 
-  const tab = await createTabAndLoad(mainPageURL);
+  const tab = await createLoadedTabWrapper(mainPageURL);
   await playAndWaitUntilMetadataChanged(tab);
   await isGivenTabUsingDefaultMetadata(tab);
 
@@ -55,7 +55,7 @@ add_task(async function testAudioFocusChangesAmongMultipleFrames() {
   
 
 
-  await BrowserTestUtils.removeTab(tab);
+  await tab.close();
 });
 
 add_task(async function testAudioFocusChangesAfterPausingAudioFocusOwner() {
@@ -65,7 +65,7 @@ add_task(async function testAudioFocusChangesAfterPausingAudioFocusOwner() {
 
 
 
-  const tab = await createTabAndLoad(mainPageURL);
+  const tab = await createLoadedTabWrapper(mainPageURL);
   await playAndWaitUntilMetadataChanged(tab);
   await isGivenTabUsingDefaultMetadata(tab);
 
@@ -88,7 +88,7 @@ add_task(async function testAudioFocusChangesAfterPausingAudioFocusOwner() {
   
 
 
-  await BrowserTestUtils.removeTab(tab);
+  await tab.close();
 });
 
 add_task(async function testAudioFocusUnchangesAfterPausingAudioFocusOwner() {
@@ -98,7 +98,7 @@ add_task(async function testAudioFocusUnchangesAfterPausingAudioFocusOwner() {
 
 
 
-  const tab = await createTabAndLoad(mainPageURL);
+  const tab = await createLoadedTabWrapper(mainPageURL);
   await playAndWaitUntilMetadataChanged(tab);
   await isGivenTabUsingDefaultMetadata(tab);
 
@@ -122,7 +122,7 @@ add_task(async function testAudioFocusUnchangesAfterPausingAudioFocusOwner() {
   
 
 
-  await BrowserTestUtils.removeTab(tab);
+  await tab.close();
 });
 
 add_task(
@@ -133,7 +133,7 @@ add_task(
 
 
 
-    const tab = await createTabAndLoad(mainPageURL);
+    const tab = await createLoadedTabWrapper(mainPageURL);
     await playAndWaitUntilMetadataChanged(tab);
     await isGivenTabUsingDefaultMetadata(tab);
 
@@ -159,7 +159,7 @@ add_task(
     
 
 
-    await BrowserTestUtils.removeTab(tab);
+    await tab.close();
   }
 );
 
@@ -169,7 +169,7 @@ add_task(
 
 
 
-    const tab = await createTabAndLoad(mainPageURL);
+    const tab = await createLoadedTabWrapper(mainPageURL);
     await loadPageForFrame(tab, frame1, frameURL);
     let metadataFrame1 = await setMetadataAndGetReturnResult(tab, frame1);
     await playAndWaitUntilMetadataChanged(tab, frame1);
@@ -197,7 +197,7 @@ add_task(
     
 
 
-    await BrowserTestUtils.removeTab(tab);
+    await tab.close();
   }
 );
 
@@ -208,7 +208,7 @@ add_task(async function testNoAudioFocusAfterRemovingAudioFocusOwner() {
 
 
 
-  const tab = await createTabAndLoad(mainPageURL);
+  const tab = await createLoadedTabWrapper(mainPageURL);
   await playAndWaitUntilMetadataChanged(tab);
   await isGivenTabUsingDefaultMetadata(tab);
 
@@ -236,7 +236,7 @@ add_task(async function testNoAudioFocusAfterRemovingAudioFocusOwner() {
   
 
 
-  await BrowserTestUtils.removeTab(tab);
+  await tab.close();
 });
 
 
