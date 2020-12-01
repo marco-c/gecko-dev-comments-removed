@@ -187,6 +187,21 @@ class TempAllocPolicy : public AllocPolicyBase {
   }
 };
 
+
+
+
+
+
+
+
+
+class MallocAllocPolicy : public AllocPolicyBase {
+ public:
+  void reportAllocOverflow() const {}
+
+  MOZ_MUST_USE bool checkSimulatedOOM() const { return true; }
+};
+
 } 
 
 #endif 

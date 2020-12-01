@@ -674,21 +674,6 @@ extern JS_PUBLIC_API bool IsProfileTimelineRecordingEnabled();
 
 
 
-class JS_PUBLIC_API JSMallocAllocPolicy : public js::AllocPolicyBase {
- public:
-  void reportAllocOverflow() const {}
-
-  MOZ_MUST_USE bool checkSimulatedOOM() const { return true; }
-};
-
-
-
-
-
-
-
-
-
 
 
 

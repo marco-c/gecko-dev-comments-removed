@@ -7,8 +7,9 @@
 #ifndef mozilla_dom_ScriptLoadRequest_h
 #define mozilla_dom_ScriptLoadRequest_h
 
-#include "jsapi.h"
-#include "js/OffThreadScriptCompilation.h"
+#include "js/AllocPolicy.h"
+#include "js/RootingAPI.h"
+#include "js/TypeDecls.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CORSMode.h"
@@ -25,6 +26,10 @@
 #include "ScriptKind.h"
 
 class nsICacheInfoChannel;
+
+namespace JS {
+class OffThreadToken;
+}
 
 namespace mozilla {
 namespace dom {
@@ -174,7 +179,7 @@ class ScriptLoadRequest
   
   
   template <typename Unit>
-  using ScriptTextBuffer = Vector<Unit, 0, JSMallocAllocPolicy>;
+  using ScriptTextBuffer = Vector<Unit, 0, js::MallocAllocPolicy>;
 
   
   

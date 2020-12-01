@@ -25,9 +25,10 @@
 #include "nsIThread.h"
 #include "nsITimer.h"
 
-#include "jsapi.h"
-#include "js/CompileOptions.h"  
-#include "js/GCAnnotations.h"
+#include "js/GCAnnotations.h"  
+#include "js/RootingAPI.h"     
+#include "js/Transcoding.h"  
+#include "js/TypeDecls.h"  
 
 #include <prio.h>
 
