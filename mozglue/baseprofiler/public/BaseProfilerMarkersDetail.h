@@ -20,7 +20,7 @@
 
 
 
-#  include "mozilla/JSONWriter.h"
+#  include "mozilla/BaseProfileJSONWriter.h"
 #  include "mozilla/ProfileBufferEntryKinds.h"
 
 #  include <limits>
@@ -45,7 +45,7 @@ struct Streaming {
   
   
   using MarkerDataDeserializer = void (*)(ProfileBufferEntryReader&,
-                                          JSONWriter&);
+                                          baseprofiler::SpliceableJSONWriter&);
 
   
   
@@ -94,7 +94,7 @@ struct StreamFunctionTypeHelper;
 
 
 template <typename R, typename... As>
-struct StreamFunctionTypeHelper<R(JSONWriter&, As...)> {
+struct StreamFunctionTypeHelper<R(baseprofiler::SpliceableJSONWriter&, As...)> {
   constexpr static size_t scArity = sizeof...(As);
   using TupleType =
       std::tuple<std::remove_cv_t<std::remove_reference_t<As>>...>;
@@ -120,6 +120,7 @@ struct StreamFunctionTypeHelper<R(JSONWriter&, As...)> {
 
 template <typename MarkerType>
 struct MarkerTypeSerialization {
+  
   
   
   using StreamFunctionType =
@@ -170,7 +171,8 @@ struct MarkerTypeSerialization {
   
   template <size_t i = 0, typename... Args>
   static void DeserializeArguments(ProfileBufferEntryReader& aEntryReader,
-                                   JSONWriter& aWriter, const Args&... aArgs) {
+                                   baseprofiler::SpliceableJSONWriter& aWriter,
+                                   const Args&... aArgs) {
     static_assert(sizeof...(Args) == i,
                   "We should have collected `i` arguments so far");
     if constexpr (i < scStreamFunctionParameterCount) {
@@ -189,7 +191,7 @@ struct MarkerTypeSerialization {
 
  public:
   static void Deserialize(ProfileBufferEntryReader& aEntryReader,
-                          JSONWriter& aWriter) {
+                          baseprofiler::SpliceableJSONWriter& aWriter) {
     aWriter.StringProperty("type", MarkerType::MarkerTypeName());
     DeserializeArguments(aEntryReader, aWriter);
   }
@@ -221,7 +223,8 @@ static ProfileBufferBlockIndex AddMarkerWithOptionalStackToBuffer(
         static constexpr Span<const char> MarkerTypeName() {
           return MakeStringSpan("NoPayloadUserData");
         }
-        static void StreamJSONMarkerData(JSONWriter& aWriter) {
+        static void StreamJSONMarkerData(
+            baseprofiler::SpliceableJSONWriter& aWriter) {
           
         }
         static mozilla::MarkerSchema MarkerTypeDisplay() {
@@ -290,9 +293,9 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
 
 template <typename NameCallback, typename StackCallback>
 [[nodiscard]] bool DeserializeAfterKindAndStream(
-    ProfileBufferEntryReader& aEntryReader, JSONWriter& aWriter,
-    int aThreadIdOrZero, NameCallback&& aNameCallback,
-    StackCallback&& aStackCallback) {
+    ProfileBufferEntryReader& aEntryReader,
+    baseprofiler::SpliceableJSONWriter& aWriter, int aThreadIdOrZero,
+    NameCallback&& aNameCallback, StackCallback&& aStackCallback) {
   
   
   
