@@ -74,6 +74,13 @@ function expectCommandUpdate(count, testWindow = window) {
   });
 }
 
+
+
+function deselectURLBarAndSpin() {
+  gURLBar.inputField.setSelectionRange(0, 0);
+  return new Promise(setTimeout);
+}
+
 add_task(async function test_init() {
   
   let clipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
@@ -123,6 +130,7 @@ add_task(async function test_panelui_opened() {
 
   
   
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(isMac ? 1 : 0);
   gURLBar.select();
   await overridePromise;
@@ -158,6 +166,7 @@ add_task(async function test_panelui_customize_to_toolbar() {
   await overridePromise;
   checkState(false, "Update when edit-controls on toolbar and focused");
 
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(1);
   gURLBar.select();
   await overridePromise;
@@ -185,6 +194,7 @@ add_task(async function test_panelui_customize_to_toolbar() {
 
   
   
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(isMac ? 1 : 0);
   gURLBar.select();
   await overridePromise;
@@ -194,6 +204,7 @@ add_task(async function test_panelui_customize_to_toolbar() {
   );
 
   
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(1);
   await navbar.overflowable.show();
   gURLBar.select();
@@ -201,6 +212,7 @@ add_task(async function test_panelui_customize_to_toolbar() {
 
   
   kOverflowPanel.hidePopup();
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(isMac ? 1 : 0);
   gURLBar.select();
   await overridePromise;
@@ -215,11 +227,13 @@ add_task(async function test_panelui_customize_to_toolbar() {
   
   updateEditUIVisibility();
 
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(isMac ? 1 : 0);
   gURLBar.select();
   await overridePromise;
 
   
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(1);
   await navbar.overflowable.show();
   gURLBar.select();
@@ -227,6 +241,7 @@ add_task(async function test_panelui_customize_to_toolbar() {
 
   
   kOverflowPanel.hidePopup();
+  await deselectURLBarAndSpin();
   overridePromise = expectCommandUpdate(isMac ? 1 : 0);
   gURLBar.select();
   await overridePromise;
