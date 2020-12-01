@@ -1462,7 +1462,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
 
     APPEND_TO_DRIVER_BLOCKLIST(
-        OperatingSystem::Windows, DeviceFamily::IntelHD3000,
+        OperatingSystem::Windows, DeviceFamily::IntelSandyBridge,
         GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
         DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL, 2321, "FEATURE_FAILURE_BUG_1018278",
         "X.X.X.2342");
