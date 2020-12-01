@@ -575,6 +575,9 @@ PlacesViewBase.prototype = {
     }
   },
 
+  
+  
+  observeHistoryDetails: false,
   nodeHistoryDetailsChanged() {},
   nodeTagsChanged() {},
   nodeDateAddedChanged() {},
