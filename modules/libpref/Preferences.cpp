@@ -4386,10 +4386,21 @@ struct Internals {
   template <typename T>
   static void UpdateMirror(const char* aPref, void* aMirror) {
     StripAtomic<T> value;
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(GetPrefValue(aPref, &value, PrefValueKind::User));
-    *static_cast<T*>(aMirror) = value;
+
+    nsresult rv = GetPrefValue(aPref, &value, PrefValueKind::User);
+    if (NS_SUCCEEDED(rv)) {
+      *static_cast<T*>(aMirror) = value;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      NS_WARNING(nsPrintfCString("Pref changed failure: %s\n", aPref).get());
+      MOZ_ASSERT(false);
+    }
   }
 
   template <typename T>
