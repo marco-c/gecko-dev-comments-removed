@@ -65,7 +65,6 @@ class WasmFrameIter {
   const CodeRange* codeRange_;
   unsigned lineOrBytecode_;
   Frame* fp_;
-  const TlsData* tls_;
   uint8_t* unwoundIonCallerFP_;
   jit::FrameType unwoundIonFrameType_;
   Unwind unwind_;
@@ -96,7 +95,6 @@ class WasmFrameIter {
   jit::FrameType unwoundIonFrameType() const;
   uint8_t* unwoundIonCallerFP() const { return unwoundIonCallerFP_; }
   Frame* frame() const { return fp_; }
-  const TlsData* tls() const { return tls_; }
 
   
   
@@ -234,11 +232,6 @@ void GenerateFunctionPrologue(jit::MacroAssembler& masm,
                               FuncOffsets* offsets);
 void GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
                               FuncOffsets* offsets);
-
-
-
-const TlsData* GetNearestEffectiveTls(const Frame* fp);
-TlsData* GetNearestEffectiveTls(Frame* fp);
 
 
 
