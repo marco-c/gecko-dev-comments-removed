@@ -25,7 +25,8 @@ use cranelift_codegen::ir::immediates::{Ieee32, Ieee64};
 use cranelift_codegen::ir::{self, InstBuilder, SourceLoc};
 use cranelift_codegen::isa;
 
-use cranelift_wasm::{wasmparser, FuncIndex, GlobalIndex, SignatureIndex, TableIndex, WasmResult};
+use cranelift_wasm::{wasmparser, FuncIndex, GlobalIndex, SignatureIndex, TableIndex, TypeIndex,
+                     WasmResult};
 
 use crate::compile;
 use crate::utils::BasicError;
@@ -284,8 +285,18 @@ impl<'a> ModuleEnvironment<'a> {
     pub fn func_is_import(&self, func_index: FuncIndex) -> bool {
         unsafe { low_level::env_func_is_import(self.env, func_index.index()) }
     }
-    pub fn signature(&self, sig_index: SignatureIndex) -> FuncTypeWithId {
-        FuncTypeWithId::new(unsafe { low_level::env_signature(self.env, sig_index.index()) })
+    pub fn signature(&self, type_index: TypeIndex) -> FuncTypeWithId {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        FuncTypeWithId::new(unsafe { low_level::env_signature(self.env, type_index.index()) })
     }
     pub fn table(&self, table_index: TableIndex) -> TableDesc {
         TableDesc(unsafe { low_level::env_table(self.env, table_index.index()) })

@@ -339,11 +339,6 @@ impl<'a> Relocations<'a> {
 
 impl<'a> RelocSink for Relocations<'a> {
     
-    fn reloc_block(&mut self, _at: CodeOffset, _reloc: Reloc, _block_offset: CodeOffset) {
-        unimplemented!("block relocations NYI");
-    }
-
-    
     fn reloc_external(
         &mut self,
         at: CodeOffset,
