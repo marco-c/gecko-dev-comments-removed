@@ -36,7 +36,6 @@ inline void MajorGCStart() {}
 inline void TenuredFinalize(gc::Cell* thing) {
 }  
 inline void MajorGCEnd() {}
-inline void TypeNewScript(ObjectGroup* group) {}
 
 }  
 }  

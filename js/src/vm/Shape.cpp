@@ -1412,32 +1412,6 @@ void NativeObject::clear(JSContext* cx, HandleNativeObject obj) {
 }
 
 
-bool NativeObject::rollbackProperties(JSContext* cx, HandleNativeObject obj,
-                                      uint32_t slotSpan) {
-  
-
-
-
-
-  MOZ_ASSERT(!obj->inDictionaryMode() && slotSpan <= obj->slotSpan());
-  while (true) {
-    if (obj->lastProperty()->isEmptyShape()) {
-      MOZ_ASSERT(slotSpan == 0);
-      break;
-    }
-    uint32_t slot = obj->lastProperty()->slot();
-    if (slot < slotSpan) {
-      break;
-    }
-    if (!NativeObject::removeProperty(cx, obj, obj->lastProperty()->propid())) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-
 Shape* NativeObject::replaceWithNewEquivalentShape(JSContext* cx,
                                                    HandleNativeObject obj,
                                                    Shape* oldShape,

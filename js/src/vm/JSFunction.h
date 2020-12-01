@@ -294,10 +294,6 @@ class JSFunction : public js::NativeObject {
   void setResolvedLength() { flags_.setResolvedLength(); }
   void setResolvedName() { flags_.setResolvedName(); }
 
-  
-  bool wasNewScriptCleared() const { return flags_.wasNewScriptCleared(); }
-  void setNewScriptCleared() { flags_.setNewScriptCleared(); }
-
   static bool getUnresolvedLength(JSContext* cx, js::HandleFunction fun,
                                   js::MutableHandleValue v);
 

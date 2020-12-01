@@ -58,7 +58,6 @@ class AutoSweepObjectGroup;
 class LifoAlloc;
 class ObjectGroup;
 class SystemAllocPolicy;
-class TypeNewScript;
 class TypeZone;
 
 
@@ -196,9 +195,6 @@ enum : uint32_t {
 
   
   OBJECT_FLAG_COPY_ON_WRITE = 0x01000000,
-
-  
-  OBJECT_FLAG_NEW_SCRIPT_CLEARED = 0x02000000,
 
   
 

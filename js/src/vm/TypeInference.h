@@ -101,63 +101,6 @@ class MOZ_RAII AutoSweepJitScript : public AutoSweepBase {
 };
 
 
-
-
-
-
-class PreliminaryObjectArray {
- public:
-  static const uint32_t COUNT = 20;
-
- private:
-  
-  
-  JSObject* objects[COUNT] = {};  
-
- public:
-  PreliminaryObjectArray() = default;
-
-  void registerNewObject(PlainObject* res);
-
-  JSObject* get(size_t i) const {
-    MOZ_ASSERT(i < COUNT);
-    return objects[i];
-  }
-
-  bool full() const;
-  void sweep();
-};
-
-class PreliminaryObjectArrayWithTemplate : public PreliminaryObjectArray {
-  HeapPtr<Shape*> shape_;
-
- public:
-  explicit PreliminaryObjectArrayWithTemplate(Shape* shape) : shape_(shape) {}
-
-  Shape* shape() { return shape_; }
-
-  void maybeAnalyze(JSContext* cx, ObjectGroup* group, bool force = false);
-
-  void trace(JSTracer* trc);
-
-  static void preWriteBarrier(
-      PreliminaryObjectArrayWithTemplate* preliminaryObjects);
-};
-
-
-
-
-
-class TypeNewScriptInitializer {
- public:
-  enum Kind { SETPROP, SETPROP_FRAME } kind;
-  uint32_t offset;
-
-  TypeNewScriptInitializer(Kind kind, uint32_t offset)
-      : kind(kind), offset(offset) {}
-};
-
-
 inline bool isInlinableCall(jsbytecode* pc);
 
 bool ClassCanHaveExtraProperties(const JSClass* clasp);
@@ -230,7 +173,6 @@ class TypeZone {
 
   void beginSweep();
   void endSweep(JSRuntime* rt);
-  void clearAllNewScriptsOnOOM();
 
   
   void addPendingRecompile(JSContext* cx, const RecompileInfo& info);

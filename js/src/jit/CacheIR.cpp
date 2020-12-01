@@ -230,8 +230,7 @@ GetPropIRGenerator::GetPropIRGenerator(JSContext* cx, HandleScript script,
       val_(val),
       idVal_(idVal),
       receiver_(receiver),
-      resultFlags_(resultFlags),
-      preliminaryObjectAction_(PreliminaryObjectAction::None) {}
+      resultFlags_(resultFlags) {}
 
 static void EmitLoadSlotResult(CacheIRWriter& writer, ObjOperandId holderId,
                                NativeObject* holder, Shape* shape) {
@@ -582,26 +581,6 @@ static bool CheckHasNoSuchProperty(JSContext* cx, JSObject* obj, jsid id) {
   } while (curObj);
 
   return true;
-}
-
-
-
-static bool IsPreliminaryObject(JSObject* obj) {
-  if (obj->isSingleton()) {
-    return false;
-  }
-
-  AutoSweepObjectGroup sweep(obj->group());
-  TypeNewScript* newScript = obj->group()->newScript(sweep);
-  if (newScript && !newScript->analyzed()) {
-    return true;
-  }
-
-  if (obj->group()->maybePreliminaryObjects(sweep)) {
-    return true;
-  }
-
-  return false;
 }
 
 static bool IsCacheableNoProperty(JSContext* cx, JSObject* obj,
@@ -1199,12 +1178,6 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
       maybeEmitIdGuard(id);
       if (holder) {
         EnsureTrackPropertyTypes(cx_, holder, id);
-        
-        if (IsPreliminaryObject(obj)) {
-          preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
-        } else {
-          preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
-        }
       }
       EmitReadSlotResult(writer, obj, holder, shape, objId);
       EmitReadSlotReturn(writer, obj, holder, shape);
@@ -1398,14 +1371,6 @@ AttachDecision GetPropIRGenerator::tryAttachCrossCompartmentWrapper(
       
       
       EnsureTrackPropertyTypes(cx_, holder, id);
-      if (unwrapped == holder) {
-        
-        if (IsPreliminaryObject(unwrapped)) {
-          preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
-        } else {
-          preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
-        }
-      }
     } else {
       
       
@@ -3505,7 +3470,6 @@ SetPropIRGenerator::SetPropIRGenerator(JSContext* cx, HandleScript script,
       idVal_(idVal),
       rhsVal_(rhsVal),
       typeCheckInfo_(cx, needsTypeBarrier),
-      preliminaryObjectAction_(PreliminaryObjectAction::None),
       attachedTypedArrayOOBStub_(false),
       maybeHasExtraIndexedProps_(maybeHasExtraIndexedProps) {}
 
@@ -3694,12 +3658,6 @@ AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
   }
   if (!IsGlobalLexicalSetGName(JSOp(*pc_), nobj, propShape)) {
     TestMatchingNativeReceiver(writer, nobj, objId);
-  }
-
-  if (IsPreliminaryObject(obj)) {
-    preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
-  } else {
-    preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
   }
 
   typeCheckInfo_.set(nobj->group(), id);
@@ -4658,17 +4616,6 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
 
   
   
-  
-  
-  
-  AutoSweepObjectGroup sweep(oldGroup);
-  if (oldGroup->newScript(sweep) && !oldGroup->newScript(sweep)->analyzed()) {
-    writer.guardGroupHasUnanalyzedNewScript(oldGroup);
-    MOZ_ASSERT(IsPreliminaryObject(obj));
-    preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
-  } else {
-    preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
-  }
 
   
   writer.guardShape(objId, oldShape);
@@ -9018,13 +8965,6 @@ ScriptedThisResult CallIRGenerator::getThisForScripted(
     if (!group) {
       cx_->clearPendingException();
       return ScriptedThisResult::NoAction;
-    }
-
-    AutoSweepObjectGroup sweep(group);
-    if (group->newScript(sweep) && !group->newScript(sweep)->analyzed()) {
-      
-      
-      return ScriptedThisResult::TemporarilyUnoptimizable;
     }
   }
 
