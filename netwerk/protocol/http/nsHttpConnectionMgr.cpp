@@ -2458,13 +2458,6 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
     
 
     ent->InsertIntoIdleConnections(connTCP);
-
-    
-    
-    
-    uint32_t timeToLive = connTCP->TimeToLive();
-    if (!mTimer || NowInSeconds() + timeToLive < mTimeOfNextWakeUp)
-      PruneDeadConnectionsAfter(timeToLive);
   } else {
     LOG(("  connection cannot be reused; closing connection\n"));
     conn->Close(NS_ERROR_ABORT);
@@ -3655,7 +3648,15 @@ HttpConnectionMgrParent* nsHttpConnectionMgr::AsHttpConnectionMgrParent() {
   return nullptr;
 }
 
-void nsHttpConnectionMgr::IncrementNumIdleConns() { mNumIdleConns++; }
+void nsHttpConnectionMgr::NewIdleConnectionAdded(uint32_t timeToLive) {
+  mNumIdleConns++;
+
+  
+  
+  
+  if (!mTimer || NowInSeconds() + timeToLive < mTimeOfNextWakeUp)
+    PruneDeadConnectionsAfter(timeToLive);
+}
 
 void nsHttpConnectionMgr::DecrementNumIdleConns() {
   MOZ_ASSERT(mNumIdleConns);
