@@ -53,7 +53,7 @@ export class CertificateTabsSection extends HTMLElement {
       
       
       
-      tab.classList.add("dir-auto");
+      tab.dir = "auto";
     }
     this.tabsElement.appendChild(tab);
 
