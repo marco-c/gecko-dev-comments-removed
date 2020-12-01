@@ -84,7 +84,9 @@ def is_test(f):
         
         return False
     return (
-        "/test" in f
+        "/tests/" in f
+        or "/test/" in f
+        or "/test_" in f
         or "/gtest" in f
         or "/crashtest" in f
         or "/mochitest" in f
