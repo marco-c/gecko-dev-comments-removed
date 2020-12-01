@@ -1018,8 +1018,16 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
+  
+  
+  bool IsInlineSizeComputableByBlockSizeAndAspectRatio(
+      nscoord aBlockSize) const;
+
+  
+  
   LogicalSize CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-      nscoord aAutoBSize, const LogicalSize& aTentativeComputedSize) const;
+      nscoord aAutoBSize, bool aNeedsComputeInlineSizeByAspectRatio,
+      const LogicalSize& aTentativeComputedSize);
 
   void InitAbsoluteConstraints(nsPresContext* aPresContext,
                                const ReflowInput* aCBReflowInput,

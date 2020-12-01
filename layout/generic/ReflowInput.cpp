@@ -1468,8 +1468,49 @@ void ReflowInput::CalculateHypotheticalPosition(
   }
 }
 
+bool ReflowInput::IsInlineSizeComputableByBlockSizeAndAspectRatio(
+    nscoord aBlockSize) const {
+  WritingMode wm = GetWritingMode();
+  MOZ_ASSERT(!mStylePosition->mOffset.GetBStart(wm).IsAuto() &&
+                 !mStylePosition->mOffset.GetBEnd(wm).IsAuto(),
+             "If any of the block-start and block-end are auto, aBlockSize "
+             "doesn't make sense");
+  MOZ_ASSERT(
+      aBlockSize >= 0 && aBlockSize != NS_UNCONSTRAINEDSIZE,
+      "The caller shouldn't give us an unresolved or invalid block size");
+
+  if (!mStylePosition->mAspectRatio.HasFiniteRatio()) {
+    return false;
+  }
+
+  
+  
+  if (mFrame->IsFrameOfType(nsIFrame::eReplaced)) {
+    return false;
+  }
+
+  
+  
+  if (mStylePosition->ISize(wm).IsLengthPercentage()) {
+    return false;
+  }
+
+  
+  
+  if (!mStylePosition->mOffset.GetIStart(wm).IsAuto() &&
+      !mStylePosition->mOffset.GetIEnd(wm).IsAuto()) {
+    return false;
+  }
+
+  
+  
+  
+  return aBlockSize != NS_UNCONSTRAINEDSIZE;
+}
+
 LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-    nscoord aAutoBSize, const LogicalSize& aTentativeComputedSize) const {
+    nscoord aAutoBSize, bool aNeedsComputeInlineSizeByAspectRatio,
+    const LogicalSize& aTentativeComputedSize) {
   MOZ_ASSERT(aAutoBSize != NS_UNCONSTRAINEDSIZE,
              "Shouldn't give an unresolved block size");
   MOZ_ASSERT(!mFrame->IsFrameOfType(nsIFrame::eReplaced),
@@ -1482,7 +1523,25 @@ LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
   
   resultSize.BSize(wm) = ApplyMinMaxBSize(aAutoBSize);
 
+  if (!aNeedsComputeInlineSizeByAspectRatio) {
+    return resultSize;
+  }
+
   
+  
+  const auto boxSizingAdjust =
+      mStylePosition->mBoxSizing == StyleBoxSizing::Border
+          ? ComputedLogicalBorderPadding(wm).Size(wm)
+          : LogicalSize(wm);
+  auto transferredISize =
+      mStylePosition->mAspectRatio.ToLayoutRatio().ComputeRatioDependentSize(
+          LogicalAxis::eLogicalAxisInline, wm, aAutoBSize, boxSizingAdjust);
+  resultSize.ISize(wm) = ApplyMinMaxISize(transferredISize);
+
+  MOZ_ASSERT(mFlags.mBSizeIsSetByAspectRatio,
+             "This flag should have been set because nsIFrame::ComputeSize() "
+             "returns AspectRatioUsage::ToComputeBSize unintentionally");
+  mFlags.mBSizeIsSetByAspectRatio = false;
 
   return resultSize;
 }
@@ -1713,13 +1772,17 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
         autoISize = 0;
       }
 
-      if (computedSize.ISize(cbwm) == NS_UNCONSTRAINEDSIZE) {
-        
-        
-        nscoord autoBSizeInWM = autoISize;
+      
+      
+      nscoord autoBSizeInWM = autoISize;
+      bool needsComputeInlineSizeByAspectRatio =
+          IsInlineSizeComputableByBlockSizeAndAspectRatio(autoBSizeInWM);
+      if (computedSize.ISize(cbwm) == NS_UNCONSTRAINEDSIZE ||
+          needsComputeInlineSizeByAspectRatio) {
         LogicalSize computedSizeInWM =
             CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-                autoBSizeInWM, computedSize.ConvertTo(wm, cbwm));
+                autoBSizeInWM, needsComputeInlineSizeByAspectRatio,
+                computedSize.ConvertTo(wm, cbwm));
         computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
       }
     }
@@ -1800,12 +1863,29 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
       autoBSize = 0;
     }
 
-    if (computedSize.BSize(cbwm) == NS_UNCONSTRAINEDSIZE) {
+    
+    
+    
+    
+    
+    
+    
+    bool needsComputeInlineSizeByAspectRatio =
+        !wm.IsOrthogonalTo(cbwm) &&
+        IsInlineSizeComputableByBlockSizeAndAspectRatio(autoBSize);
+    
+    
+    
+    
+    
+    if (computedSize.BSize(cbwm) == NS_UNCONSTRAINEDSIZE ||
+        needsComputeInlineSizeByAspectRatio) {
       
       
       LogicalSize computedSizeInWM =
           CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-              autoBSize, computedSize.ConvertTo(wm, cbwm));
+              autoBSize, needsComputeInlineSizeByAspectRatio,
+              computedSize.ConvertTo(wm, cbwm));
       computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
     }
 
