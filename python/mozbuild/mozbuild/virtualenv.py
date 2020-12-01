@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -493,9 +494,13 @@ class VirtualenvManager(VirtualenvHelper):
         
 
         try:
+            env = os.environ.copy()
+            env.setdefault("ARCHFLAGS", get_archflags())
+            env = ensure_subprocess_env(env)
             output = subprocess.check_output(
                 program,
                 cwd=directory,
+                env=env,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
             )
@@ -649,6 +654,10 @@ class VirtualenvManager(VirtualenvHelper):
         return self._run_pip(args)
 
     def _run_pip(self, args):
+        env = os.environ.copy()
+        env.setdefault("ARCHFLAGS", get_archflags())
+        env = ensure_subprocess_env(env)
+
         
         
         
@@ -661,8 +670,18 @@ class VirtualenvManager(VirtualenvHelper):
             [pip] + args,
             stderr=subprocess.STDOUT,
             cwd=self.topsrcdir,
+            env=env,
             universal_newlines=PY3,
         )
+
+
+def get_archflags():
+    
+    
+    
+    
+    
+    return "-arch {}".format(platform.machine())
 
 
 def verify_python_version(log_handle):
