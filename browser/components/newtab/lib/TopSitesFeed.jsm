@@ -740,6 +740,8 @@ this.TopSitesFeed = class TopSitesFeed {
       }
     }
 
+    this._linksWithDefaults = withPinned;
+
     return withPinned;
   }
 
@@ -995,7 +997,8 @@ this.TopSitesFeed = class TopSitesFeed {
 
 
   async pin(action) {
-    const { site, index } = action.data;
+    let { site, index } = action.data;
+    index = this._adjustPinIndexForSponsoredLinks(site, index);
     
     if (index >= 0) {
       await this._pinSiteAt(site, index);
@@ -1036,7 +1039,32 @@ this.TopSitesFeed = class TopSitesFeed {
   
 
 
-  _insertPin(site, index, draggedFromIndex) {
+
+
+  _adjustPinIndexForSponsoredLinks(site, index) {
+    if (!this._linksWithDefaults) {
+      return index;
+    }
+    
+    
+    let adjustedIndex = index;
+    for (let i = 0; i < index; i++) {
+      if (
+        this._linksWithDefaults[i]?.sponsored_position &&
+        this._linksWithDefaults[i]?.url !== site.url
+      ) {
+        adjustedIndex--;
+      }
+    }
+    return adjustedIndex;
+  }
+
+  
+
+
+  _insertPin(site, originalIndex, draggedFromIndex) {
+    let index = this._adjustPinIndexForSponsoredLinks(site, originalIndex);
+
     
     
     
