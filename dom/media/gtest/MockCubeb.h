@@ -249,7 +249,7 @@ class MockCubeb {
 
   
   void StartStream(MockCubebStream* aStream);
-  void StopStream(MockCubebStream* aStream);
+  int StopStream(MockCubebStream* aStream);
 
   
   
