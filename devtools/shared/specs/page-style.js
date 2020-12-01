@@ -14,11 +14,6 @@ const {
 
 require("devtools/shared/specs/style/style-types");
 
-
-
-
-require("devtools/shared/specs/style-rule");
-
 const pageStyleSpec = generateActorSpec({
   typeName: "pagestyle",
 
