@@ -7,7 +7,7 @@
 
 
 const Services = require("Services");
-const isFissionEnabled = Services.prefs.getBoolPref("fission.autostart", false);
+const isFissionEnabled = Services.appinfo.fissionAutostart;
 
 
 
@@ -108,6 +108,7 @@ module.exports = [
     description:
       "Measure open/close toolbox on inspector panel against complicated document",
     
+    
     disabled: isFissionEnabled,
   },
   {
@@ -122,6 +123,7 @@ module.exports = [
     description:
       "Measure open/close toolbox on style editor panel against complicated document",
     
+    
     disabled: isFissionEnabled,
   },
   {
@@ -129,6 +131,9 @@ module.exports = [
     path: "netmonitor/complicated.js",
     description:
       "Measure open/close toolbox on network monitor panel against complicated document",
+    
+    
+    disabled: isFissionEnabled,
   },
   
   {
