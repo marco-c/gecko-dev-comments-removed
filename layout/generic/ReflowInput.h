@@ -108,9 +108,6 @@ namespace mozilla {
 
 struct SizeComputationInput {
  public:
-  typedef mozilla::WritingMode WritingMode;
-  typedef mozilla::LogicalMargin LogicalMargin;
-
   
   nsIFrame* mFrame;
 
@@ -127,43 +124,45 @@ struct SizeComputationInput {
     return mComputedPadding.GetPhysicalMargin(mWritingMode);
   }
 
-  LogicalMargin ComputedLogicalMargin(mozilla::WritingMode aWM) const {
+  mozilla::LogicalMargin ComputedLogicalMargin(mozilla::WritingMode aWM) const {
     return mComputedMargin.ConvertTo(aWM, mWritingMode);
   }
-  LogicalMargin ComputedLogicalBorderPadding(mozilla::WritingMode aWM) const {
+  mozilla::LogicalMargin ComputedLogicalBorderPadding(
+      mozilla::WritingMode aWM) const {
     return mComputedBorderPadding.ConvertTo(aWM, mWritingMode);
   }
-  LogicalMargin ComputedLogicalPadding(mozilla::WritingMode aWM) const {
+  mozilla::LogicalMargin ComputedLogicalPadding(
+      mozilla::WritingMode aWM) const {
     return mComputedPadding.ConvertTo(aWM, mWritingMode);
   }
 
   void SetComputedLogicalMargin(mozilla::WritingMode aWM,
-                                const LogicalMargin& aMargin) {
+                                const mozilla::LogicalMargin& aMargin) {
     mComputedMargin = aMargin.ConvertTo(mWritingMode, aWM);
   }
-  void SetComputedLogicalBorderPadding(mozilla::WritingMode aWM,
-                                       const LogicalMargin& aBorderPadding) {
+  void SetComputedLogicalBorderPadding(
+      mozilla::WritingMode aWM, const mozilla::LogicalMargin& aBorderPadding) {
     mComputedBorderPadding = aBorderPadding.ConvertTo(mWritingMode, aWM);
   }
   void SetComputedLogicalPadding(mozilla::WritingMode aWM,
-                                 const LogicalMargin& aPadding) {
+                                 const mozilla::LogicalMargin& aPadding) {
     mComputedPadding = aPadding.ConvertTo(mWritingMode, aWM);
   }
 
-  WritingMode GetWritingMode() const { return mWritingMode; }
+  mozilla::WritingMode GetWritingMode() const { return mWritingMode; }
 
  protected:
   
-  WritingMode mWritingMode;
+  mozilla::WritingMode mWritingMode;
 
   
-  LogicalMargin mComputedMargin;
+  mozilla::LogicalMargin mComputedMargin;
 
   
-  LogicalMargin mComputedBorderPadding;
+  mozilla::LogicalMargin mComputedBorderPadding;
 
   
-  LogicalMargin mComputedPadding;
+  mozilla::LogicalMargin mComputedPadding;
 
  public:
   
@@ -179,7 +178,7 @@ struct SizeComputationInput {
   static void* DisplayInitOffsetsEnter(nsIFrame* aFrame,
                                        SizeComputationInput* aState,
                                        nscoord aPercentBasis,
-                                       WritingMode aCBWritingMode,
+                                       mozilla::WritingMode aCBWritingMode,
                                        const nsMargin* aBorder,
                                        const nsMargin* aPadding);
   static void DisplayInitOffsetsExit(nsIFrame* aFrame,
