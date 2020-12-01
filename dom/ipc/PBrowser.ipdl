@@ -20,6 +20,7 @@ include protocol PRemoteLazyInputStream;
 include protocol PPaymentRequest;
 include protocol PWindowGlobal;
 include protocol PBrowserBridge;
+include protocol PVsync;
 
 include DOMTypes;
 include NeckoChannelParams;
@@ -190,6 +191,7 @@ nested(upto inside_cpow) sync refcounted protocol PBrowser
     manages PPaymentRequest;
     manages PWindowGlobal;
     manages PBrowserBridge;
+    manages PVsync;
 
 both:
     async AsyncMessage(nsString aMessage, ClonedMessageData aData);
@@ -216,6 +218,11 @@ parent:
     sync PPluginWidget();
 
     async PPaymentRequest();
+
+    
+
+
+    async PVsync();
 
     
 
