@@ -612,13 +612,22 @@ this.DateTimeInputBaseImplWidget = class {
       "onBlur originalTarget: " +
         aEvent.originalTarget +
         " target: " +
-        aEvent.target
+        aEvent.target +
+        " rt: " +
+        aEvent.relatedTarget
     );
 
     let target = aEvent.originalTarget;
     target.setAttribute("typeBuffer", "");
     this.setInputValueFromFields();
-    this.mInputElement.setFocusState(false);
+    
+    
+    if (aEvent.relatedTarget != this.mInputElement) {
+      this.mInputElement.setFocusState(false);
+      if (this.mIsPickerOpen) {
+        this.mInputElement.closeDateTimePicker();
+      }
+    }
   }
 
   onKeyPress(aEvent) {

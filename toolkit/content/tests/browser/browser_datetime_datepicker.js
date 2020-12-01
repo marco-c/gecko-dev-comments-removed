@@ -217,6 +217,32 @@ add_task(async function test_datepicker_open() {
 
 
 
+add_task(async function test_datepicker_focus_change() {
+  await helper.openPicker(
+    `data:text/html,<input id=date type=date><input id=other>`
+  );
+  let browser = helper.tab.linkedBrowser;
+  await verifyPickerPosition(browser, "date");
+
+  isnot(helper.panel.hidden, "Panel should be visible");
+
+  await SpecialPowers.spawn(browser, [], () => {
+    content.document.querySelector("#other").focus();
+  });
+
+  
+  
+  
+  await BrowserTestUtils.waitForCondition(
+    () => helper.panel.hidden,
+    "waiting for close"
+  );
+  await helper.tearDown();
+});
+
+
+
+
 
 add_task(async function test_datepicker_prev_month_btn() {
   const inputValue = "2016-12-15";
