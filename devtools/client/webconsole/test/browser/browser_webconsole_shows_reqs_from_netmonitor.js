@@ -28,9 +28,6 @@ registerCleanupFunction(async () => {
 
 add_task(async function task() {
   
-  await pushPref("devtools.netmonitor.filters", '["all"]');
-
-  
   const hud = await openNewTabAndConsole(TEST_URI);
   const currentTab = gBrowser.selectedTab;
   info("Web console is open");
@@ -68,14 +65,11 @@ async function testNetmonitor(toolbox) {
   );
 
   store.dispatch(Actions.batchEnable(false));
-
+  const requestItem = document.querySelector(".request-list-item");
   await waitUntil(() => store.getState().requests.requests.length > 0);
   
   
-  await waitForDOM(
-    document,
-    ".request-list-item:first-child .requests-list-timings-total"
-  );
+  await waitForDOM(requestItem, ".requests-list-timings-total");
 
   is(
     store.getState().requests.requests.length,

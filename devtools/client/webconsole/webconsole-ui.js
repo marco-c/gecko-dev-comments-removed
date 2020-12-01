@@ -423,13 +423,32 @@ class WebConsoleUI {
   }
 
   _onResourceUpdated(updates) {
-    const messageUpdates = updates
-      .filter(
-        ({ resource }) =>
-          resource.resourceType == this.hud.resourceWatcher.TYPES.NETWORK_EVENT
-      )
-      .map(({ resource }) => resource);
-    this.wrapper.dispatchMessagesUpdate(messageUpdates);
+    const messages = [];
+    for (const { resource } of updates) {
+      if (
+        resource.resourceType == this.hud.resourceWatcher.TYPES.NETWORK_EVENT
+      ) {
+        
+        
+        
+        
+        
+        const NUMBER_OF_NETWORK_UPDATE = 8;
+
+        let expectedLength = NUMBER_OF_NETWORK_UPDATE;
+        if (resource.updates.includes("responseCache")) {
+          expectedLength++;
+        }
+        if (resource.updates.includes("requestPostData")) {
+          expectedLength++;
+        }
+
+        if (resource.updates.length === expectedLength) {
+          messages.push(resource);
+        }
+      }
+    }
+    this.wrapper.dispatchMessagesUpdate(messages);
   }
 
   
