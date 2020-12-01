@@ -35,7 +35,7 @@ class AppleATDecoder : public MediaDataDecoder,
   }
 
   
-  const AudioInfo& mConfig;
+  const AudioInfo mConfig;
 
   
   nsTArray<uint8_t> mMagicCookie;
