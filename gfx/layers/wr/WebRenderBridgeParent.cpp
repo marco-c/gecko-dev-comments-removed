@@ -639,8 +639,12 @@ bool WebRenderBridgeParent::UpdateResources(
   }
 
   if (scheduleRelease) {
-    aUpdates.Notify(wr::Checkpoint::FrameTexturesUpdated,
-                    std::move(scheduleRelease));
+    
+    
+    wr::Checkpoint when = gfx::gfxVars::UseSoftwareWebRender()
+                              ? wr::Checkpoint::FrameRendered
+                              : wr::Checkpoint::FrameTexturesUpdated;
+    aUpdates.Notify(when, std::move(scheduleRelease));
   }
   return true;
 }
@@ -810,14 +814,10 @@ bool WebRenderBridgeParent::UpdateSharedExternalImage(
     
     
     
-    if (gfx::gfxVars::UseSoftwareWebRender()) {
-      mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch, it->second);
-    } else {
-      if (!aScheduleRelease) {
-        aScheduleRelease = MakeUnique<ScheduleSharedSurfaceRelease>(this);
-      }
-      aScheduleRelease->Add(aKey, it->second);
+    if (!aScheduleRelease) {
+      aScheduleRelease = MakeUnique<ScheduleSharedSurfaceRelease>(this);
     }
+    aScheduleRelease->Add(aKey, it->second);
     it->second = aExtId;
   }
 
