@@ -11075,14 +11075,6 @@ static int Shell(JSContext* cx, OptionParser* op, char** envp) {
     }
   }
 
-  
-
-
-
-  for (CompartmentsIter c(cx->runtime()); !c.done(); c.next()) {
-    PrintTypes(cx, c, false);
-  }
-
   return result;
 }
 

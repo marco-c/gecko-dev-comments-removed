@@ -2361,10 +2361,6 @@ bool DoInstanceOfFallback(JSContext* cx, BaselineFrame* frame,
     return true;
   }
 
-  
-  
-  EnsureTrackPropertyTypes(cx, obj, NameToId(cx->names().prototype));
-
   TryAttachStub<InstanceOfIRGenerator>("InstanceOf", cx, frame, stub,
                                        BaselineCacheIRStubKind::Regular, lhs,
                                        obj);

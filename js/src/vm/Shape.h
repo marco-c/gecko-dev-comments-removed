@@ -980,12 +980,8 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     LINEAR_SEARCHES_MASK = 0x7,
 
     
-    
-    OVERWRITTEN = 0x08,
-
-    
-    HAS_CACHED_BIG_ENOUGH_FOR_SHAPE_TABLE = 0x10,
-    CACHED_BIG_ENOUGH_FOR_SHAPE_TABLE = 0x20,
+    HAS_CACHED_BIG_ENOUGH_FOR_SHAPE_TABLE = 0x08,
+    CACHED_BIG_ENOUGH_FOR_SHAPE_TABLE = 0x10,
   };
 
   uint32_t immutableFlags; 
@@ -1249,9 +1245,6 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   Value setterOrUndefined() const {
     return hasSetterValue() ? setterValue() : UndefinedValue();
   }
-
-  void setOverwritten() { mutableFlags |= OVERWRITTEN; }
-  bool hadOverwrite() const { return mutableFlags & OVERWRITTEN; }
 
   bool matches(const Shape* other) const {
     return propid_.get() == other->propid_.get() &&
