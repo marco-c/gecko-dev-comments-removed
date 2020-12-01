@@ -30,10 +30,6 @@ class URLSearchParamsObserver : public nsISupports {
   virtual void URLSearchParamsUpdated(URLSearchParams* aFromThis) = 0;
 };
 
-
-
-
-
 class URLParams final {
  public:
   URLParams() = default;
