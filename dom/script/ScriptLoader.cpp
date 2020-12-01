@@ -16,6 +16,7 @@
 #include "jsfriendapi.h"
 #include "js/Array.h"  
 #include "js/CompilationAndEvaluation.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  
 #include "js/OffThreadScriptCompilation.h"

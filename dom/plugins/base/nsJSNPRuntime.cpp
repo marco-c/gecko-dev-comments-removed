@@ -23,6 +23,7 @@
 #include "nsIContent.h"
 #include "nsPluginInstanceOwner.h"
 #include "nsWrapperCacheInlines.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/GCHashTable.h"
 #include "js/Object.h"  
 #include "js/Symbol.h"

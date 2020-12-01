@@ -17,6 +17,7 @@
 #include "builtin/streams/ReadableStream.h"            
 #include "builtin/streams/ReadableStreamController.h"  
 #include "builtin/streams/ReadableStreamInternals.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"                            
 #include "js/Value.h"        
 #include "vm/Interpreter.h"  

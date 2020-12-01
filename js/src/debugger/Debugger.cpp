@@ -26,7 +26,6 @@
 #include <utility>     
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 #include "jstypes.h"      
 
 #include "builtin/Array.h"               
@@ -62,6 +61,7 @@
 #include "jit/RematerializedFrame.h"  
 #include "js/Conversions.h"           
 #include "js/Debug.h"                 
+#include "js/friend/ErrorMessages.h"  
 #include "js/GCAPI.h"                 
 #include "js/HeapAPI.h"               
 #include "js/Promise.h"               

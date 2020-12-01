@@ -22,6 +22,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/experimental/CodeCoverage.h"
 #include "js/experimental/Intl.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  
 #include "js/Object.h"              

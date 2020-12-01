@@ -9,6 +9,7 @@
 #include "js/ArrayBuffer.h"  
 #include "js/Exception.h"
 #include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
 #include "js/MemoryFunctions.h"
 #include "jsapi-tests/tests.h"
 

@@ -13,6 +13,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Exception.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/SourceText.h"
 #include "jsapi-tests/tests.h"
 #include "vm/ErrorReporting.h"

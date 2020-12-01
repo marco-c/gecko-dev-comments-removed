@@ -8,13 +8,13 @@
 #include <stdint.h>
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "js/BigInt.h"  
 #include "js/CharacterEncoding.h"  
 #include "js/Conversions.h"        
 #include "js/ErrorReport.h"        
 #include "js/Exception.h"          
+#include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"         
 #include "js/Value.h"              
 

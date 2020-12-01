@@ -14,6 +14,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 
 #include "jsapi.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/Warnings.h"  
 #include "xpcpublic.h"
 #include "nsIGlobalObject.h"

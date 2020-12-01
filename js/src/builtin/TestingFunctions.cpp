@@ -63,6 +63,7 @@
 #include "js/experimental/CodeCoverage.h"  
 #include "js/experimental/TypedData.h"     
 #include "js/friend/DumpFunctions.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/friend/WindowProxy.h"    
 #include "js/HashTable.h"
 #include "js/LocaleSensitive.h"

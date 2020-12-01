@@ -14,7 +14,6 @@
 #include <stdint.h>  
 
 #include "jsapi.h"             
-#include "jsfriendapi.h"       
 #include "jsnum.h"             
 #include "NamespaceImports.h"  
 
@@ -28,6 +27,7 @@
 #include "gc/Tracer.h"         
 #include "gc/Zone.h"           
 #include "gc/ZoneAllocator.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/HeapAPI.h"        
 #include "js/Wrapper.h"        
 #include "vm/ArrayObject.h"    

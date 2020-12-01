@@ -5,6 +5,7 @@
 
 
 #include "js/ForOfIterator.h"
+#include "js/friend/ErrorMessages.h"  
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"

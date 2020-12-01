@@ -5,8 +5,9 @@
 
 
 #include "builtin/Symbol.h"
-
 #include "js/Symbol.h"
+
+#include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "util/StringBuffer.h"
 #include "vm/PlainObject.h"  

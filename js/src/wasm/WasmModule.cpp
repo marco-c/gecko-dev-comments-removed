@@ -24,6 +24,7 @@
 #include "jit/JitOptions.h"
 #include "js/BuildId.h"                 
 #include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
 #include "threading/LockGuard.h"
 #include "vm/HelperThreadState.h"  
 #include "vm/PlainObject.h"        

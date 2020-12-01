@@ -17,7 +17,6 @@
 #include <utility>      
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "builtin/Array.h"       
 #include "builtin/Promise.h"     
@@ -31,6 +30,7 @@
 #include "gc/Tracer.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Conversions.h"               
+#include "js/friend/ErrorMessages.h"      
 #include "js/friend/WindowProxy.h"  
 #include "js/HeapAPI.h"             
 #include "js/Promise.h"             

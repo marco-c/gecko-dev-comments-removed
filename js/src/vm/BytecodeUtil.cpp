@@ -35,6 +35,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/experimental/CodeCoverage.h"
 #include "js/friend/DumpFunctions.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
 #include "js/Symbol.h"
 #include "util/Memory.h"

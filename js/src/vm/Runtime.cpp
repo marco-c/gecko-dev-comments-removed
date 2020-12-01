@@ -32,6 +32,7 @@
 #include "jit/Simulator.h"
 #include "js/AllocationLogging.h"  
 #include "js/Date.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/MemoryMetrics.h"
 #include "js/SliceBudget.h"
 #include "js/Wrapper.h"

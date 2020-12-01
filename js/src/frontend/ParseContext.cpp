@@ -5,6 +5,9 @@
 
 
 #include "frontend/ParseContext-inl.h"
+
+#include "js/friend/ErrorMessages.h"  
+
 #include "vm/EnvironmentObject-inl.h"
 
 using mozilla::Maybe;

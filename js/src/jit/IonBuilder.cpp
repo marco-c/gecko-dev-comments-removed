@@ -25,6 +25,7 @@
 #include "jit/Lowering.h"
 #include "jit/MIRGraph.h"
 #include "js/experimental/JitInfo.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/Object.h"                
 #include "js/ScalarType.h"            
 #include "util/CheckedArithmetic.h"

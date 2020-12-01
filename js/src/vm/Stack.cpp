@@ -19,6 +19,7 @@
 #include "gc/Tracer.h"  
 #include "jit/JitcodeMap.h"
 #include "jit/JitRuntime.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/Value.h"      
 #include "vm/FrameIter.h"  
 #include "vm/JSContext.h"

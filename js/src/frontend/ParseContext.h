@@ -15,6 +15,7 @@
 #include "frontend/NameCollections.h"
 #include "frontend/SharedContext.h"
 #include "frontend/UsedNameTracker.h"
+#include "js/friend/ErrorMessages.h"  
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/GeneratorObject.h"  
 

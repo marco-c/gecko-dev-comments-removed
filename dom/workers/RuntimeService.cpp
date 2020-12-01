@@ -22,6 +22,7 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "GeckoProfiler.h"
 #include "jsfriendapi.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/ContextOptions.h"
 #include "js/LocaleSensitive.h"
 #include "mozilla/ArrayUtils.h"

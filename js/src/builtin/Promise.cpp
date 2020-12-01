@@ -17,6 +17,7 @@
 #include "js/Debug.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/ForOfIterator.h"         
+#include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "vm/ArrayObject.h"
 #include "vm/AsyncFunction.h"

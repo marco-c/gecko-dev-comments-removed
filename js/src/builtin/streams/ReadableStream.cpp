@@ -11,7 +11,6 @@
 #include "mozilla/Attributes.h"  
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 #include "jspubtd.h"      
 
 #include "builtin/Array.h"                   
@@ -26,6 +25,7 @@
 #include "js/CallArgs.h"                     
 #include "js/Class.h"  
 #include "js/Conversions.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"  
 #include "js/RootingAPI.h"        
 #include "js/Stream.h"            

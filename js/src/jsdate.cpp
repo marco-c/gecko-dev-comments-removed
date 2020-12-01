@@ -35,6 +35,7 @@
 
 #include "js/Conversions.h"
 #include "js/Date.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/LocaleSensitive.h"
 #include "js/Object.h"  
 #include "js/PropertySpec.h"

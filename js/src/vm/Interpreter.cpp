@@ -35,6 +35,7 @@
 #include "jit/JitRuntime.h"
 #include "js/CharacterEncoding.h"
 #include "js/experimental/JitInfo.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/friend/WindowProxy.h"    
 #include "util/CheckedArithmetic.h"

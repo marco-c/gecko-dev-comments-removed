@@ -26,6 +26,7 @@
 #include "builtin/streams/TeeState.h"          
 #include "js/ArrayBuffer.h"                    
 #include "js/Class.h"                          
+#include "js/friend/ErrorMessages.h"           
 #include "js/PropertySpec.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"

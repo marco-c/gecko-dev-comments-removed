@@ -53,6 +53,7 @@
 #include "js/ErrorReport.h"  
 #include "js/Exception.h"
 #include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
 #include "js/Modules.h"                 
 #include "js/PropertySpec.h"
 #include "js/ScalarType.h"  

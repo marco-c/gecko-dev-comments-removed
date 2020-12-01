@@ -17,6 +17,7 @@
 #include "frontend/TokenStream.h"
 #include "gc/HashUtil.h"
 #include "irregexp/RegExpAPI.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"  
 #include "js/Object.h"              
 #include "js/RegExp.h"

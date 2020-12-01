@@ -17,6 +17,7 @@
 #include "builtin/streams/StreamController.h"  
 #include "js/Class.h"         
 #include "js/Conversions.h"   
+#include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"    
 #include "js/Value.h"         
 #include "vm/Compartment.h"   

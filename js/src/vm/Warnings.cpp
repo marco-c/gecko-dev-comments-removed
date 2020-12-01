@@ -10,9 +10,9 @@
 #include <stdarg.h>  
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 #include "jstypes.h"      
 
+#include "js/friend/ErrorMessages.h"  
 #include "vm/ErrorReporting.h"  
 #include "vm/JSContext.h"  
 

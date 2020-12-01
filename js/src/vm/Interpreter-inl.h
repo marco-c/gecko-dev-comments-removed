@@ -12,6 +12,7 @@
 #include "jsnum.h"
 
 #include "jit/Ion.h"
+#include "js/friend/ErrorMessages.h"  
 #include "vm/ArgumentsObject.h"
 #include "vm/BytecodeUtil.h"  
 #include "vm/Realm.h"

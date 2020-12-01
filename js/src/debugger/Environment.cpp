@@ -14,7 +14,6 @@
 #include <utility>   
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "debugger/Debugger.h"          
 #include "debugger/Object.h"            
@@ -22,6 +21,7 @@
 #include "frontend/BytecodeCompiler.h"  
 #include "gc/Rooting.h"                 
 #include "gc/Tracer.h"        
+#include "js/friend/ErrorMessages.h"  
 #include "js/HeapAPI.h"       
 #include "vm/Compartment.h"   
 #include "vm/JSAtom.h"        

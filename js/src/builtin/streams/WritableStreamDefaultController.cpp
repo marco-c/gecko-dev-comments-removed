@@ -13,6 +13,7 @@
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
 #include "js/CallArgs.h"      
 #include "js/Class.h"         
+#include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"  
 #include "js/Value.h"         
 

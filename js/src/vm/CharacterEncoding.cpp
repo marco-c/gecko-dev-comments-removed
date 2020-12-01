@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "js/friend/ErrorMessages.h"  
 #include "util/StringBuffer.h"
 #include "util/Unicode.h"  
 #include "vm/JSContext.h"

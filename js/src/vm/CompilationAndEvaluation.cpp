@@ -14,7 +14,6 @@
 
 #include <utility>  
 
-#include "jsfriendapi.h"  
 #include "jstypes.h"      
 
 #include "frontend/BytecodeCompilation.h"  
@@ -23,6 +22,7 @@
 #include "frontend/ParseContext.h"      
 #include "frontend/Parser.h"            
 #include "js/CharacterEncoding.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"         
 #include "js/SourceText.h"         
 #include "js/TypeDecls.h"          

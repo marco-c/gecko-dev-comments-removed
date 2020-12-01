@@ -10,6 +10,7 @@
 
 #include "js/Array.h"  
 #include "js/Exception.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/JSON.h"
 #include "js/MemoryFunctions.h"
 #include "js/Printf.h"

@@ -14,7 +14,6 @@
 #include <stdint.h>  
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
@@ -22,6 +21,7 @@
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/WritableStreamWriterOperations.h"  
 #include "js/CallArgs.h"    
+#include "js/friend/ErrorMessages.h"  
 #include "js/Promise.h"     
 #include "js/RootingAPI.h"  
 #include "js/Value.h"  

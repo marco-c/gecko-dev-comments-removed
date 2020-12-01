@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "mozilla/Attributes.h"  
+
+#include "jsapi.h"        
+
+#include "builtin/streams/ReadableStream.h"  
+#include "builtin/streams/ReadableStreamReader.h"  
+#include "js/friend/ErrorMessages.h"  
+
+using JS::Handle;
+
+
+
+
+
+
+
+MOZ_MUST_USE JSObject* js::CreateReadableStreamBYOBReader(
+    JSContext* cx, Handle<ReadableStream*> unwrappedStream,
+    ForAuthorCodeBool forAuthorCode, Handle<JSObject*> proto ) {
+  
+  
+  
+  
+  
+  
+  
+  JS_ReportErrorNumberASCII(
+      cx, GetErrorMessage, nullptr,
+      JSMSG_READABLESTREAM_BYOB_READER_FOR_NON_BYTE_STREAM);
+
+  
+  
+  
+  
+  
+  return nullptr;
+}

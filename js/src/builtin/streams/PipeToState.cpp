@@ -13,7 +13,6 @@
 #include "mozilla/Maybe.h"  
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "builtin/Promise.h"  
 #include "builtin/streams/ReadableStream.h"        
@@ -24,6 +23,7 @@
 #include "builtin/streams/WritableStreamWriterOperations.h"  
 #include "js/CallArgs.h"    
 #include "js/Class.h"       
+#include "js/friend/ErrorMessages.h"  
 #include "js/Promise.h"     
 #include "js/RootingAPI.h"  
 #include "js/Value.h"  

@@ -17,7 +17,6 @@
 #include "js/Class.h"
 #include "js/ErrorReport.h"
 #include "js/Exception.h"
-#include "js/friend/ErrorMessages.h"
 #include "js/HeapAPI.h"
 #include "js/Object.h"              
 #include "js/shadow/Function.h"     

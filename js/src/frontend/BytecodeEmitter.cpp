@@ -58,6 +58,7 @@
 #include "frontend/TryEmitter.h"     
 #include "frontend/WhileEmitter.h"   
 #include "js/CompileOptions.h"       
+#include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"   
 #include "util/StringBuffer.h"       
 #include "vm/AsyncFunctionResolveKind.h"  

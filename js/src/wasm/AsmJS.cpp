@@ -40,6 +40,7 @@
 #include "frontend/SharedContext.h"  
 #include "gc/Policy.h"
 #include "js/BuildId.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/MemoryMetrics.h"
 #include "js/Printf.h"
 #include "js/ScalarType.h"  

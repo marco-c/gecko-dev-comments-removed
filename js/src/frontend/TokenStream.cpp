@@ -36,6 +36,7 @@
 #include "frontend/ParserAtom.h"
 #include "frontend/ReservedWords.h"
 #include "js/CharacterEncoding.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"       
 #include "js/RegExpFlags.h"  
 #include "js/UniquePtr.h"

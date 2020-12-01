@@ -25,6 +25,7 @@
 #include "builtin/streams/StreamController.h"  
 #include "gc/Zone.h"                           
 #include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
 #include "js/GCAPI.h"       
 #include "js/Object.h"      
 #include "js/RootingAPI.h"  

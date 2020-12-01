@@ -30,6 +30,7 @@
 #include "jit/MacroAssembler.h"
 #include "jit/Simulator.h"
 #include "js/experimental/JitInfo.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "threading/Mutex.h"
 #include "util/Memory.h"

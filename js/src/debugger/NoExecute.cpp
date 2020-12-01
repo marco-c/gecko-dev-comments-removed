@@ -11,10 +11,10 @@
 #include <stdio.h>  
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "debugger/Debugger.h"        
 #include "js/friend/DumpFunctions.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/Promise.h"               
 #include "vm/JSContext.h"             
 #include "vm/JSScript.h"              

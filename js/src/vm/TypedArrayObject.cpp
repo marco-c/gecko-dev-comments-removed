@@ -32,6 +32,7 @@
 #include "jit/InlinableNatives.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
 #include "js/PropertySpec.h"
 #include "js/ScalarType.h"  
 #include "js/UniquePtr.h"

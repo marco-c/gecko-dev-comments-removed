@@ -11,7 +11,8 @@
 #include <sys/stat.h>  
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
+
+#include "js/friend/ErrorMessages.h"  
 
 bool js::ReadCompleteFile(JSContext* cx, FILE* fp, FileContents& buffer) {
   

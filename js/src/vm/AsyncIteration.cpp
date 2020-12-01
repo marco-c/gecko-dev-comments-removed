@@ -9,6 +9,7 @@
 #include "builtin/Array.h"
 
 #include "builtin/Promise.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GeneratorObject.h"

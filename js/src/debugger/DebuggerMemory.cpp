@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "debugger/DebuggerMemory.h"
 
@@ -17,6 +17,7 @@
 #include "gc/Marking.h"
 #include "js/AllocPolicy.h"
 #include "js/Debug.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "js/TracingAPI.h"
 #include "js/UbiNode.h"
@@ -24,7 +25,7 @@
 #include "js/Utility.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
-#include "vm/PlainObject.h"  // js::PlainObject
+#include "vm/PlainObject.h"  
 #include "vm/Realm.h"
 #include "vm/SavedStacks.h"
 
@@ -36,7 +37,7 @@ using namespace js;
 using mozilla::Maybe;
 using mozilla::Nothing;
 
-/* static */
+
 DebuggerMemory* DebuggerMemory::create(JSContext* cx, Debugger* dbg) {
   Value memoryProtoValue =
       dbg->object->getReservedSlot(Debugger::JSSLOT_DEBUG_MEMORY_PROTO);
@@ -59,17 +60,17 @@ Debugger* DebuggerMemory::getDebugger() {
   return Debugger::fromJSObject(&dbgVal.toObject());
 }
 
-/* static */
+
 bool DebuggerMemory::construct(JSContext* cx, unsigned argc, Value* vp) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NO_CONSTRUCTOR,
                             "Debugger.Source");
   return false;
 }
 
-/* static */ const JSClass DebuggerMemory::class_ = {
+ const JSClass DebuggerMemory::class_ = {
     "Memory", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(JSSLOT_COUNT)};
 
-/* static */
+
 DebuggerMemory* DebuggerMemory::checkThis(JSContext* cx, CallArgs& args) {
   const Value& thisValue = args.thisv();
 
@@ -88,10 +89,10 @@ DebuggerMemory* DebuggerMemory::checkThis(JSContext* cx, CallArgs& args) {
     return nullptr;
   }
 
-  // Check for Debugger.Memory.prototype, which has the same class as
-  // Debugger.Memory instances, however doesn't actually represent an instance
-  // of Debugger.Memory. It is the only object that is<DebuggerMemory>() but
-  // doesn't have a Debugger instance.
+  
+  
+  
+  
   if (thisObject.as<DebuggerMemory>()
           .getReservedSlot(JSSLOT_DEBUGGER)
           .isUndefined()) {
@@ -113,7 +114,7 @@ struct MOZ_STACK_CLASS DebuggerMemory::CallData {
   CallData(JSContext* cx, const CallArgs& args, Handle<DebuggerMemory*> memory)
       : cx(cx), args(args), memory(memory) {}
 
-  // Accessor properties of Debugger.Memory.prototype.
+  
 
   bool setTrackingAllocationSites();
   bool getTrackingAllocationSites();
@@ -125,7 +126,7 @@ struct MOZ_STACK_CLASS DebuggerMemory::CallData {
   bool getOnGarbageCollection();
   bool setOnGarbageCollection();
 
-  // Function properties of Debugger.Memory.prototype.
+  
 
   bool takeCensus();
   bool drainAllocationsLog();
@@ -137,7 +138,7 @@ struct MOZ_STACK_CLASS DebuggerMemory::CallData {
 };
 
 template <DebuggerMemory::CallData::Method MyMethod>
-/* static */
+
 bool DebuggerMemory::CallData::ToNative(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -211,10 +212,10 @@ bool DebuggerMemory::CallData::drainAllocationsLog() {
       return false;
     }
 
-    // Don't pop the AllocationsLogEntry yet. The queue's links are followed
-    // by the GC to find the AllocationsLogEntry, but are not barriered, so
-    // we must edit them with great care. Use the queue entry in place, and
-    // then pop and delete together.
+    
+    
+    
+    
     Debugger::AllocationsLogEntry& entry = dbg->allocationsLog.front();
 
     RootedValue frame(cx, ObjectOrNullValue(entry.frame));
@@ -251,9 +252,9 @@ bool DebuggerMemory::CallData::drainAllocationsLog() {
 
     result->setDenseElement(i, ObjectValue(*obj));
 
-    // Pop the front queue entry, and delete it immediately, so that the GC
-    // sees the AllocationsLogEntry's HeapPtr barriers run atomically with
-    // the change to the graph (the queue link).
+    
+    
+    
     dbg->allocationsLog.popFront();
   }
 
@@ -310,7 +311,7 @@ bool DebuggerMemory::CallData::setAllocationSamplingProbability() {
     return false;
   }
 
-  // Careful!  This must also reject NaN.
+  
   if (!(0.0 <= probability && probability <= 1.0)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_UNEXPECTED_TYPE,
@@ -323,8 +324,8 @@ bool DebuggerMemory::CallData::setAllocationSamplingProbability() {
   if (dbg->allocationSamplingProbability != probability) {
     dbg->allocationSamplingProbability = probability;
 
-    // If this is a change any debuggees would observe, have all debuggee
-    // realms recompute their sampling probabilities.
+    
+    
     if (dbg->trackingAllocationSites) {
       for (auto r = dbg->debuggees.all(); !r.empty(); r.popFront()) {
         r.front()->realm()->chooseAllocationSamplingProbability();
@@ -349,7 +350,7 @@ bool DebuggerMemory::CallData::setOnGarbageCollection() {
   return Debugger::setGarbageCollectionHook(cx, args, *memory->getDebugger());
 }
 
-/* Debugger.Memory.prototype.takeCensus */
+
 
 JS_PUBLIC_API void JS::dbg::SetDebuggerMallocSizeOf(
     JSContext* cx, mozilla::MallocSizeOf mallocSizeOf) {
@@ -365,17 +366,17 @@ using JS::ubi::Census;
 using JS::ubi::CountBasePtr;
 using JS::ubi::CountTypePtr;
 
-// The takeCensus function works in three phases:
-//
-// 1) We examine the 'breakdown' property of our 'options' argument, and
-//    use that to build a CountType tree.
-//
-// 2) We create a count node for the root of our CountType tree, and then walk
-//    the heap, counting each node we find, expanding our tree of counts as we
-//    go.
-//
-// 3) We walk the tree of counts and produce JavaScript objects reporting the
-//    accumulated results.
+
+
+
+
+
+
+
+
+
+
+
 bool DebuggerMemory::CallData::takeCensus() {
   Census census(cx);
   CountTypePtr rootType;
@@ -399,7 +400,7 @@ bool DebuggerMemory::CallData::takeCensus() {
   Debugger* dbg = memory->getDebugger();
   RootedObject dbgObj(cx, dbg->object);
 
-  // Populate our target set of debuggee zones.
+  
   for (WeakGlobalObjectSet::Range r = dbg->allDebuggees(); !r.empty();
        r.popFront()) {
     if (!census.targetZones.put(r.front()->zone())) {
@@ -428,9 +429,9 @@ bool DebuggerMemory::CallData::takeCensus() {
   return handler.report(cx, args.rval());
 }
 
-/* Debugger.Memory property and method tables. */
 
-/* static */ const JSPropertySpec DebuggerMemory::properties[] = {
+
+ const JSPropertySpec DebuggerMemory::properties[] = {
     JS_DEBUG_PSGS("trackingAllocationSites", getTrackingAllocationSites,
                   setTrackingAllocationSites),
     JS_DEBUG_PSGS("maxAllocationsLogLength", getMaxAllocationsLogLength,
@@ -443,6 +444,6 @@ bool DebuggerMemory::CallData::takeCensus() {
                   setOnGarbageCollection),
     JS_PS_END};
 
-/* static */ const JSFunctionSpec DebuggerMemory::methods[] = {
+ const JSFunctionSpec DebuggerMemory::methods[] = {
     JS_DEBUG_FN("drainAllocationsLog", drainAllocationsLog, 0),
     JS_DEBUG_FN("takeCensus", takeCensus, 0), JS_FS_END};

@@ -4,6 +4,7 @@
 
 
 
+#include "js/friend/ErrorMessages.h"  
 #include "js/Wrapper.h"
 
 #include "vm/JSObject-inl.h"

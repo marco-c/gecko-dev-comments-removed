@@ -187,6 +187,7 @@
 #include "frontend/SharedContext.h"
 #include "frontend/SyntaxParseHandler.h"
 #include "frontend/TokenStream.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/Vector.h"
 #include "vm/ErrorReporting.h"
 #include "vm/GeneratorAndAsyncKind.h"  

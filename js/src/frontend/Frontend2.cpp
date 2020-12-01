@@ -28,6 +28,7 @@
 #include "frontend/TokenStream.h"  
 #include "irregexp/RegExpAPI.h"    
 #include "js/CharacterEncoding.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/GCAPI.h"              
 #include "js/HeapAPI.h"            
 #include "js/RegExpFlags.h"        

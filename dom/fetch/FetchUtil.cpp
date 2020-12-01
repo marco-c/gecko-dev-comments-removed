@@ -6,6 +6,7 @@
 
 #include "FetchUtil.h"
 
+#include "js/friend/ErrorMessages.h"  
 #include "nsCRT.h"
 #include "nsError.h"
 #include "nsIAsyncInputStream.h"

@@ -14,11 +14,10 @@
 
 #include <algorithm>
 
-#include "jsfriendapi.h"  
-
 #include "gc/GCEnum.h"
 #include "gc/Zone.h"
 #include "gc/ZoneAllocator.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/Value.h"
 #include "unicode/uformattedvalue.h"
 #include "vm/JSContext.h"

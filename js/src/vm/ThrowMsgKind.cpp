@@ -8,7 +8,7 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jsfriendapi.h"  
+#include "js/friend/ErrorMessages.h"  
 
 JSErrNum js::ThrowMsgKindToErrNum(ThrowMsgKind kind) {
   switch (kind) {

@@ -208,6 +208,7 @@
 #include "frontend/Token.h"
 #include "frontend/TokenKind.h"
 #include "js/CompileOptions.h"
+#include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"    
 #include "js/RegExpFlags.h"  
 #include "js/UniquePtr.h"

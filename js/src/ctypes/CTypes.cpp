@@ -43,6 +43,7 @@
 #include "js/ArrayBuffer.h"  
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
 #include "js/Object.h"  
 #include "js/PropertySpec.h"
 #include "js/SharedArrayBuffer.h"  

@@ -15,6 +15,7 @@
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/SharedContext.h"    
+#include "js/friend/ErrorMessages.h"   
 #include "js/TypeDecls.h"              
 #include "util/BitArray.h"
 #include "vm/BytecodeUtil.h"  

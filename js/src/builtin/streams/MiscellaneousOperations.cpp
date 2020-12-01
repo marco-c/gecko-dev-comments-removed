@@ -13,9 +13,9 @@
 #include "mozilla/FloatingPoint.h"  
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "js/Conversions.h"       
+#include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"        
 #include "vm/Interpreter.h"       
 #include "vm/JSContext.h"         

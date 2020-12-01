@@ -9,6 +9,7 @@
 
 #include "builtin/WeakMapObject.h"
 
+#include "js/friend/ErrorMessages.h"  
 #include "vm/ProxyObject.h"
 
 #include "gc/WeakMap-inl.h"
