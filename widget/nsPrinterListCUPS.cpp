@@ -10,7 +10,13 @@
 #include "nsString.h"
 #include "prenv.h"
 
-static nsCUPSShim sCupsShim;
+
+
+static nsCUPSShim& CupsShim() {
+  static nsCUPSShim sCupsShim;
+  return sCupsShim;
+}
+
 using PrinterInfo = nsPrinterListBase::PrinterInfo;
 
 
@@ -23,8 +29,8 @@ static void GetDisplayNameForPrinter(const cups_dest_t& aDest,
 
 
 #ifdef XP_MACOSX
-  const char* displayName =
-      sCupsShim.cupsGetOption("printer-info", aDest.num_options, aDest.options);
+  const char* displayName = CupsShim().cupsGetOption(
+      "printer-info", aDest.num_options, aDest.options);
   if (displayName) {
     CopyUTF8toUTF16(MakeStringSpan(displayName), aName);
   }
@@ -67,7 +73,7 @@ static int CupsDestCallback(void* user_data, unsigned aFlags,
 
   cups_dest_t* ownedDest = nullptr;
   mozilla::DebugOnly<const int> numCopied =
-      sCupsShim.cupsCopyDest(aDest, 0, &ownedDest);
+      CupsShim().cupsCopyDest(aDest, 0, &ownedDest);
   MOZ_ASSERT(numCopied == 1);
 
   nsString name;
@@ -79,12 +85,12 @@ static int CupsDestCallback(void* user_data, unsigned aFlags,
 }
 
 nsTArray<PrinterInfo> nsPrinterListCUPS::Printers() const {
-  if (!sCupsShim.EnsureInitialized()) {
+  if (!CupsShim().InitOkay()) {
     return {};
   }
 
   nsTArray<PrinterInfo> printerInfoList;
-  if (!sCupsShim.cupsEnumDests(
+  if (!CupsShim().cupsEnumDests(
           CUPS_DEST_FLAGS_NONE,
           0 
 
@@ -100,14 +106,14 @@ nsTArray<PrinterInfo> nsPrinterListCUPS::Printers() const {
 
 RefPtr<nsIPrinter> nsPrinterListCUPS::CreatePrinter(PrinterInfo aInfo) const {
   return mozilla::MakeRefPtr<nsPrinterCUPS>(
-      mCommonPaperInfo, sCupsShim, std::move(aInfo.mName),
+      mCommonPaperInfo, CupsShim(), std::move(aInfo.mName),
       static_cast<cups_dest_t*>(aInfo.mCupsHandle));
 }
 
 Maybe<PrinterInfo> nsPrinterListCUPS::PrinterByName(
     nsString aPrinterName) const {
   Maybe<PrinterInfo> rv;
-  if (!sCupsShim.EnsureInitialized()) {
+  if (!CupsShim().InitOkay()) {
     return rv;
   }
 
@@ -123,26 +129,26 @@ Maybe<PrinterInfo> nsPrinterListCUPS::PrinterByName(
     nsAutoCString printerName;
     CopyUTF16toUTF8(aPrinterName, printerName);
     cups_dest_t* printers = nullptr;
-    const auto numPrinters = sCupsShim.cupsGetDests(&printers);
+    const auto numPrinters = CupsShim().cupsGetDests(&printers);
     for (auto i : mozilla::IntegerRange(0, numPrinters)) {
-      const char* const displayName = sCupsShim.cupsGetOption(
+      const char* const displayName = CupsShim().cupsGetOption(
           "printer-info", printers[i].num_options, printers[i].options);
       if (printerName == displayName) {
         
         
-        sCupsShim.cupsCopyDest(printers + i, 0, &printer);
+        CupsShim().cupsCopyDest(printers + i, 0, &printer);
         break;
       }
     }
-    sCupsShim.cupsFreeDests(numPrinters, printers);
+    CupsShim().cupsFreeDests(numPrinters, printers);
   }
 #else
   
   
   {
     const auto printerName = NS_ConvertUTF16toUTF8(aPrinterName);
-    printer = sCupsShim.cupsGetNamedDest(CUPS_HTTP_DEFAULT, printerName.get(),
-                                         nullptr);
+    printer = CupsShim().cupsGetNamedDest(CUPS_HTTP_DEFAULT, printerName.get(),
+                                          nullptr);
   }
 #endif
 
@@ -157,12 +163,12 @@ Maybe<PrinterInfo> nsPrinterListCUPS::PrinterByName(
 Maybe<PrinterInfo> nsPrinterListCUPS::PrinterBySystemName(
     nsString aPrinterName) const {
   Maybe<PrinterInfo> rv;
-  if (!sCupsShim.EnsureInitialized()) {
+  if (!CupsShim().InitOkay()) {
     return rv;
   }
 
   const auto printerName = NS_ConvertUTF16toUTF8(aPrinterName);
-  if (cups_dest_t* const printer = sCupsShim.cupsGetNamedDest(
+  if (cups_dest_t* const printer = CupsShim().cupsGetNamedDest(
           CUPS_HTTP_DEFAULT, printerName.get(), nullptr)) {
     rv.emplace(PrinterInfo{std::move(aPrinterName), printer});
   }
@@ -172,14 +178,14 @@ Maybe<PrinterInfo> nsPrinterListCUPS::PrinterBySystemName(
 nsresult nsPrinterListCUPS::SystemDefaultPrinterName(nsAString& aName) const {
   aName.Truncate();
 
-  if (!sCupsShim.EnsureInitialized()) {
+  if (!CupsShim().InitOkay()) {
     return NS_ERROR_FAILURE;
   }
 
   
   cups_dest_t* dest =
-      sCupsShim.cupsGetNamedDest(CUPS_HTTP_DEFAULT,  nullptr,
-                                  nullptr);
+      CupsShim().cupsGetNamedDest(CUPS_HTTP_DEFAULT,  nullptr,
+                                   nullptr);
   if (!dest) {
     return NS_OK;
   }
@@ -189,6 +195,6 @@ nsresult nsPrinterListCUPS::SystemDefaultPrinterName(nsAString& aName) const {
     CopyUTF8toUTF16(mozilla::MakeStringSpan(dest->name), aName);
   }
 
-  sCupsShim.cupsFreeDests(1, dest);
+  CupsShim().cupsFreeDests(1, dest);
   return NS_OK;
 }
