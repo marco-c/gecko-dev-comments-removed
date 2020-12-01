@@ -16,7 +16,7 @@ class Element {
 
     
     this.isConnected = true;
-    this.ownerDocument = {};
+    this.ownerDocument = { documentElement: {} };
     this.ownerGlobal = { document: this.ownerDocument };
 
     for (let attr in attrs) {

@@ -140,7 +140,7 @@ element.Store = class {
     const isDOMElement = element.isDOMElement(el);
     const isDOMWindow = element.isDOMWindow(el);
     const isXULElement = element.isXULElement(el);
-    const context = isXULElement ? "chrome" : "content";
+    const context = element.isInXULDocument(el) ? "chrome" : "content";
 
     if (!(isDOMElement || isDOMWindow || isXULElement)) {
       throw new TypeError(
@@ -1445,6 +1445,25 @@ element.isXULElement = function(node) {
 
 
 
+
+element.isInXULDocument = function(node) {
+  return (
+    typeof node == "object" &&
+    node !== null &&
+    "ownerDocument" in node &&
+    node.ownerDocument.documentElement.namespaceURI === XUL_NS
+  );
+};
+
+
+
+
+
+
+
+
+
+
 element.isDOMWindow = function(node) {
   
   
@@ -1570,15 +1589,17 @@ class WebElement {
   static from(node) {
     const uuid = WebElement.generateUUID();
 
-    if (element.isDOMElement(node)) {
+    if (element.isElement(node)) {
+      if (element.isInXULDocument(node)) {
+        
+        return new ChromeWebElement(uuid);
+      }
       return new ContentWebElement(uuid);
     } else if (element.isDOMWindow(node)) {
       if (node.parent === node) {
         return new ContentWebWindow(uuid);
       }
       return new ContentWebFrame(uuid);
-    } else if (element.isXULElement(node)) {
-      return new ChromeWebElement(uuid);
     }
 
     throw new error.InvalidArgumentError(
