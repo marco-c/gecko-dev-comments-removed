@@ -214,23 +214,20 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     if (type == TrackInfo::kAudioTrack) {
       
       
-      RefPtr<PDMFactory> pdm = new PDMFactory();
-      SupportDecoderParams params{*config};
-      if (!pdm->Supports(params, nullptr )) {
-        auto info = MakeUnique<MediaCapabilitiesInfo>(
-            false , false ,
-            false );
-        LOG("%s -> %s", MediaDecodingConfigurationToStr(aConfiguration).get(),
-            MediaCapabilitiesInfoToStr(info.get()).get());
-        promise->MaybeResolve(std::move(info));
-        return promise.forget();
-      }
       
-      
-      promises.AppendElement(CapabilitiesPromise::CreateAndResolve(
-          MediaCapabilitiesInfo(true , true ,
-                                true ),
-          __func__));
+      promises.AppendElement(
+          InvokeAsync(taskQueue, __func__, [config = std::move(config)]() {
+            RefPtr<PDMFactory> pdm = new PDMFactory();
+            SupportDecoderParams params{*config};
+            if (!pdm->Supports(params, nullptr )) {
+              return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                          __func__);
+            }
+            return CapabilitiesPromise::CreateAndResolve(
+                MediaCapabilitiesInfo(true , true ,
+                                      true ),
+                __func__);
+          }));
       continue;
     }
 
