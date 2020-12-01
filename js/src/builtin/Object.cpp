@@ -2045,17 +2045,6 @@ static JSObject* CreateObjectPrototype(JSContext* cx, JSProtoKey key) {
              "should have been able to make a fresh Object.prototype's "
              "[[Prototype]] immutable");
 
-  
-
-
-
-
-  ObjectGroupRealm& realm = ObjectGroupRealm::getForNewObject(cx);
-  if (!JSObject::setNewGroupUnknown(cx, realm, &PlainObject::class_,
-                                    objectProto)) {
-    return nullptr;
-  }
-
   return objectProto;
 }
 

@@ -369,14 +369,6 @@ class JSObject
   inline void setGroup(js::ObjectGroup* group);
 
   
-
-
-
-  inline bool isNewGroupUnknown() const;
-  static bool setNewGroupUnknown(JSContext* cx, js::ObjectGroupRealm& realm,
-                                 const JSClass* clasp, JS::HandleObject obj);
-
-  
   static bool splicePrototype(JSContext* cx, js::HandleObject obj,
                               js::Handle<js::TaggedProto> proto);
 

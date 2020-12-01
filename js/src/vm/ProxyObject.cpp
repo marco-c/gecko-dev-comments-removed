@@ -86,21 +86,6 @@ ProxyObject* ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler,
   }
 #endif
 
-  
-
-
-
-
-
-
-  if (proto.isObject() && !clasp->isDOMClass()) {
-    ObjectGroupRealm& realm = ObjectGroupRealm::getForNewObject(cx);
-    RootedObject protoObj(cx, proto.toObject());
-    if (!JSObject::setNewGroupUnknown(cx, realm, clasp, protoObj)) {
-      return nullptr;
-    }
-  }
-
   gc::AllocKind allocKind = GetProxyGCObjectKind(clasp, handler, priv);
 
   Realm* realm = cx->realm();
