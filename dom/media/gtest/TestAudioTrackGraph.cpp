@@ -214,14 +214,18 @@ TEST(TestAudioTrackGraph, ErrorCallback)
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
-      MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
   
   
+  
+  
+  
+  
   RefPtr<AudioInputTrack> inputTrack;
   RefPtr<AudioInputProcessing> listener;
-  Unused << WaitFor(Invoke([&] {
+  auto started = Invoke([&] {
     inputTrack = AudioInputTrack::Create(graph);
     listener = new AudioInputProcessing(2, PRINCIPAL_HANDLE_NONE);
     inputTrack->GraphImpl()->AppendMessage(
@@ -229,13 +233,6 @@ TEST(TestAudioTrackGraph, ErrorCallback)
     inputTrack->SetInputProcessing(listener);
     inputTrack->GraphImpl()->AppendMessage(
         MakeUnique<StartInputProcessing>(inputTrack, listener));
-    return graph->NotifyWhenDeviceStarted(inputTrack);
-  }));
-
-  
-  
-  
-  auto started = Invoke([&] {
     inputTrack->OpenAudioInput((void*)1, listener);
     return graph->NotifyWhenDeviceStarted(inputTrack);
   });
@@ -275,15 +272,18 @@ TEST(TestAudioTrackGraph, AudioInputTrack)
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
+  
+  
+  
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
-      MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
   RefPtr<AudioInputTrack> inputTrack;
   RefPtr<ProcessedMediaTrack> outputTrack;
   RefPtr<MediaInputPort> port;
   RefPtr<AudioInputProcessing> listener;
-  Unused << WaitFor(Invoke([&] {
+  auto p = Invoke([&] {
     inputTrack = AudioInputTrack::Create(graph);
     outputTrack = graph->CreateForwardedInputTrack(MediaSegment::AUDIO);
     outputTrack->QueueSetAutoend(false);
@@ -296,15 +296,11 @@ TEST(TestAudioTrackGraph, AudioInputTrack)
     inputTrack->SetInputProcessing(listener);
     inputTrack->GraphImpl()->AppendMessage(
         MakeUnique<StartInputProcessing>(inputTrack, listener));
-    return graph->NotifyWhenDeviceStarted(inputTrack);
-  }));
-
-  DispatchFunction([&] {
     
     inputTrack->OpenAudioInput((void*)1, listener);
+    return graph->NotifyWhenDeviceStarted(inputTrack);
   });
 
-  auto p = Invoke([&] { return graph->NotifyWhenDeviceStarted(inputTrack); });
   RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
   EXPECT_TRUE(stream->mHasInput);
   Unused << WaitFor(p);
@@ -356,8 +352,7 @@ TEST(TestAudioTrackGraph, AudioInputTrack)
   EXPECT_LE(preSilenceSamples, 128U + 2 * inputRate / 100 );
   
   
-  EXPECT_GE(nrDiscontinuities, 0U);
-  EXPECT_LE(nrDiscontinuities, 2U);
+  EXPECT_LE(nrDiscontinuities, 1U);
 }
 
 TEST(TestAudioTrackGraph, ReOpenAudioInput)
