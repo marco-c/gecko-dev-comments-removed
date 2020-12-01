@@ -708,9 +708,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
 
     
     
-    LogicalMargin offsets =
-        legendReflowInput->ComputedLogicalOffsets().ConvertTo(
-            wm, legendReflowInput->GetWritingMode());
+    LogicalMargin offsets = legendReflowInput->ComputedLogicalOffsets(wm);
     ReflowInput::ApplyRelativePositioning(legend, wm, offsets, &actualLegendPos,
                                           containerSize);
 
