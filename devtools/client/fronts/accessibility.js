@@ -427,6 +427,87 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
 
     return audit;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async _showTabbingOrder(startElm, startIndex) {
+    const { contentDOMReference, index } = await super.showTabbingOrder(
+      startElm,
+      startIndex
+    );
+    let elm;
+    if (contentDOMReference) {
+      const inspectorFront = await this.targetFront.getFront("inspector");
+      elm = await inspectorFront.getNodeActorFromContentDomReference(
+        contentDOMReference
+      );
+    }
+
+    return { elm, index };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async showTabbingOrder(startElm, startIndex) {
+    let { elm: currentElm, index: currentIndex } = await this._showTabbingOrder(
+      startElm,
+      startIndex
+    );
+
+    
+    while (currentElm) {
+      
+      if (currentElm.remoteFrame) {
+        const {
+          walker: domWalkerFront,
+        } = await currentElm.targetFront.getFront("inspector");
+        const {
+          nodes: [childDocumentNodeFront],
+        } = await domWalkerFront.children(currentElm);
+        const {
+          accessibleWalkerFront,
+        } = await childDocumentNodeFront.targetFront.getFront("accessibility");
+        
+        
+        ({ index: currentIndex } = await accessibleWalkerFront.showTabbingOrder(
+          childDocumentNodeFront,
+          currentIndex
+        ));
+      }
+
+      
+      
+      ({ elm: currentElm, index: currentIndex } = await this._showTabbingOrder(
+        currentElm,
+        currentIndex
+      ));
+    }
+
+    return { elm: currentElm, index: currentIndex };
+  }
 }
 
 class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {

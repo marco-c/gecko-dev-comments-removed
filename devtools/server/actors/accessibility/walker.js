@@ -20,7 +20,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  ["CustomHighlighterActor", "isTypeRegistered", "register"],
+  ["CustomHighlighterActor"],
   "devtools/server/actors/highlighters",
   true
 );
@@ -250,14 +250,13 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     this.onHovered = this.onHovered.bind(this);
     this._preventContentEvent = this._preventContentEvent.bind(this);
     this.onKey = this.onKey.bind(this);
+    this.onFocusIn = this.onFocusIn.bind(this);
+    this.onFocusOut = this.onFocusOut.bind(this);
     this.onHighlighterEvent = this.onHighlighterEvent.bind(this);
   },
 
   get highlighter() {
     if (!this._highlighter) {
-      if (!isTypeRegistered("AccessibleHighlighter")) {
-        register("AccessibleHighlighter", "accessible");
-      }
       this._highlighter = CustomHighlighterActor(this, "AccessibleHighlighter");
 
       this.manage(this._highlighter);
@@ -265,6 +264,19 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return this._highlighter;
+  },
+
+  get tabbingOrderHighlighter() {
+    if (!this._tabbingOrderHighlighter) {
+      this._tabbingOrderHighlighter = CustomHighlighterActor(
+        this,
+        "TabbingOrderHighlighter"
+      );
+
+      this.manage(this._tabbingOrderHighlighter);
+    }
+
+    return this._tabbingOrderHighlighter;
   },
 
   setA11yServiceGetter() {
@@ -339,6 +351,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     if (this._highlighter) {
       this._highlighter.off("highlighter-event", this.onHighlighterEvent);
       this._highlighter = null;
+    }
+
+    if (this._tabbingOrderHighlighter) {
+      this._tabbingOrderHighlighter = null;
     }
 
     this.targetActor = null;
@@ -1174,6 +1190,122 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       this._unsetPickerEnvironment();
       this._isPicking = false;
       this._currentAccessible = null;
+    }
+  },
+
+  
+
+
+
+  _isTrackingTabbingOrderFocus: false,
+
+  
+
+
+  _currentFocusedTabbingOrder: null,
+
+  
+
+
+
+
+
+  async onFocusIn(event) {
+    if (!this._isTrackingTabbingOrderFocus) {
+      return;
+    }
+
+    const target = event.originalTarget || event.target;
+    if (target === this._currentFocusedTabbingOrder) {
+      return;
+    }
+
+    this._currentFocusedTabbingOrder = target;
+    this.tabbingOrderHighlighter._highlighter.updateFocus({
+      node: target,
+      focused: true,
+    });
+  },
+
+  
+
+
+
+
+
+  async onFocusOut(event) {
+    if (
+      !this._isTrackingTabbingOrderFocus ||
+      !this._currentFocusedTabbingOrder
+    ) {
+      return;
+    }
+
+    const target = event.originalTarget || event.target;
+    
+    if (target !== this._currentFocusedTabbingOrder) {
+      console.warn(
+        `focusout target: ${target} does not match current focused element in tabbing order: ${this._currentFocusedTabbingOrder}`
+      );
+    }
+
+    this.tabbingOrderHighlighter._highlighter.updateFocus({
+      node: this._currentFocusedTabbingOrder,
+      focused: false,
+    });
+    this._currentFocusedTabbingOrder = null;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  showTabbingOrder(elm, index) {
+    
+    
+    
+    if (!this._isTrackingTabbingOrderFocus) {
+      this._isTrackingTabbingOrderFocus = true;
+      const target = this.targetActor.chromeEventHandler;
+      target.addEventListener("focusin", this.onFocusIn, true);
+      target.addEventListener("focusout", this.onFocusOut, true);
+    }
+
+    return this.tabbingOrderHighlighter.show(elm, { index });
+  },
+
+  
+
+
+  hideTabbingOrder() {
+    if (!this._tabbingOrderHighlighter) {
+      return;
+    }
+
+    this.tabbingOrderHighlighter.hide();
+    if (!this._isTrackingTabbingOrderFocus) {
+      return;
+    }
+
+    this._isTrackingTabbingOrderFocus = false;
+    this._currentFocusedTabbingOrder = null;
+    const target = this.targetActor.chromeEventHandler;
+    if (target) {
+      target.removeEventListener("focusin", this.onFocusIn, true);
+      target.removeEventListener("focusout", this.onFocusOut, true);
     }
   },
 });
