@@ -34,110 +34,6 @@ already_AddRefed<nsPrinterWin> nsPrinterWin::Create(
   return do_AddRef(new nsPrinterWin(aArray, aName));
 }
 
-nsTArray<uint8_t> nsPrinterWin::CopyDefaultDevmodeW() const {
-  nsTArray<uint8_t> devmodeStorageW;
-
-  auto devmodeStorageWLock = mDefaultDevmodeWStorage.Lock();
-  if (devmodeStorageWLock->IsEmpty()) {
-    nsHPRINTER hPrinter = nullptr;
-    
-    
-    if (NS_WARN_IF(!::OpenPrinterW(mName.get(), &hPrinter, nullptr))) {
-      return devmodeStorageW;
-    }
-    nsAutoPrinter autoPrinter(hPrinter);
-    
-    LONG bytesNeeded = ::DocumentPropertiesW(nullptr, autoPrinter.get(),
-                                             mName.get(), nullptr, nullptr, 0);
-    
-    
-    MOZ_ASSERT(bytesNeeded >= LONG(sizeof(DEVMODEW)),
-               "DocumentPropertiesW failed to get valid size");
-    if (bytesNeeded < LONG(sizeof(DEVMODEW))) {
-      return devmodeStorageW;
-    }
-
-    
-    
-    
-    devmodeStorageWLock->SetLength(bytesNeeded * 2);
-    auto* devmode =
-        reinterpret_cast<DEVMODEW*>(devmodeStorageWLock->Elements());
-    LONG ret = ::DocumentPropertiesW(nullptr, autoPrinter.get(), mName.get(),
-                                     devmode, nullptr, DM_OUT_BUFFER);
-    MOZ_ASSERT(ret == IDOK, "DocumentPropertiesW failed");
-    if (ret != IDOK) {
-      return devmodeStorageW;
-    }
-  }
-
-  devmodeStorageW.Assign(devmodeStorageWLock.ref());
-  return devmodeStorageW;
-}
-
-PrintSettingsInitializer nsPrinterWin::DefaultSettings() const {
-  
-  
-  nsString paperIdString(u"1");  
-  bool color = true;
-
-  nsTArray<uint8_t> devmodeWStorage = CopyDefaultDevmodeW();
-  if (devmodeWStorage.IsEmpty()) {
-    return {};
-  }
-
-  const auto* devmode =
-      reinterpret_cast<const DEVMODEW*>(devmodeWStorage.Elements());
-
-  
-  
-  if (devmode->dmFields & DM_PAPERSIZE) {
-    paperIdString.Truncate(0);
-    paperIdString.AppendInt(devmode->dmPaperSize);
-  }
-
-  if (devmode->dmFields & DM_COLOR) {
-    
-    color = devmode->dmColor != DMCOLOR_MONOCHROME;
-  }
-
-  nsAutoHDC printerDc(::CreateICW(nullptr, mName.get(), nullptr, devmode));
-  MOZ_ASSERT(printerDc, "CreateICW failed");
-  if (!printerDc) {
-    return {};
-  }
-
-  int pixelsPerInchY = ::GetDeviceCaps(printerDc, LOGPIXELSY);
-  int physicalHeight = ::GetDeviceCaps(printerDc, PHYSICALHEIGHT);
-  double heightInInches = double(physicalHeight) / pixelsPerInchY;
-  int pixelsPerInchX = ::GetDeviceCaps(printerDc, LOGPIXELSX);
-  int physicalWidth = ::GetDeviceCaps(printerDc, PHYSICALWIDTH);
-  double widthInches = double(physicalWidth) / pixelsPerInchX;
-  if (devmode->dmFields & DM_ORIENTATION &&
-      devmode->dmOrientation == DMORIENT_LANDSCAPE) {
-    std::swap(widthInches, heightInInches);
-  }
-  SizeDouble paperSize(widthInches * kPointsPerInch,
-                       heightInInches * kPointsPerInch);
-
-  gfx::MarginDouble margin =
-      WinUtils::GetUnwriteableMarginsForDeviceInInches(printerDc);
-  margin.top *= kPointsPerInch;
-  margin.right *= kPointsPerInch;
-  margin.bottom *= kPointsPerInch;
-  margin.left *= kPointsPerInch;
-
-  
-  int resolution = pixelsPerInchY;
-
-  
-  
-  nsString paperName;
-  return PrintSettingsInitializer{
-      mName, PaperInfo(paperIdString, paperName, paperSize, Some(margin)),
-      color, resolution, std::move(devmodeWStorage)};
-}
-
 template <class T>
 static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
                                             WORD aCapabilityID, int& aCount) {
@@ -248,6 +144,78 @@ bool nsPrinterWin::SupportsCollation() const {
   return ::DeviceCapabilitiesW(mName.get(), nullptr, DC_COLLATE, nullptr,
                                nullptr) == 1;
 }
+ 
+nsPrinterBase::PrinterInfo nsPrinterWin::CreatePrinterInfo() const {
+  return PrinterInfo{PaperList(), DefaultSettings()};
+}
+
+mozilla::gfx::MarginDouble nsPrinterWin::GetMarginsForPaper(
+    nsString aPaperId) const {
+  gfx::MarginDouble margin;
+
+  nsTArray<uint8_t> devmodeWStorage = CopyDefaultDevmodeW();
+  if (devmodeWStorage.IsEmpty()) {
+    return margin;
+  }
+
+  auto* devmode = reinterpret_cast<DEVMODEW*>(devmodeWStorage.Elements());
+
+  devmode->dmFields = DM_PAPERSIZE;
+  devmode->dmPaperSize = _wtoi((const wchar_t*)aPaperId.BeginReading());
+  nsAutoHDC printerDc(::CreateICW(nullptr, mName.get(), nullptr, devmode));
+  MOZ_ASSERT(printerDc, "CreateICW failed");
+  if (!printerDc) {
+    return margin;
+  }
+  margin = WinUtils::GetUnwriteableMarginsForDeviceInInches(printerDc);
+  margin.top *= kPointsPerInch;
+  margin.right *= kPointsPerInch;
+  margin.bottom *= kPointsPerInch;
+  margin.left *= kPointsPerInch;
+
+  return margin;
+}
+
+nsTArray<uint8_t> nsPrinterWin::CopyDefaultDevmodeW() const {
+  nsTArray<uint8_t> devmodeStorageW;
+
+  auto devmodeStorageWLock = mDefaultDevmodeWStorage.Lock();
+  if (devmodeStorageWLock->IsEmpty()) {
+    nsHPRINTER hPrinter = nullptr;
+    
+    
+    if (NS_WARN_IF(!::OpenPrinterW(mName.get(), &hPrinter, nullptr))) {
+      return devmodeStorageW;
+    }
+    nsAutoPrinter autoPrinter(hPrinter);
+    
+    LONG bytesNeeded = ::DocumentPropertiesW(nullptr, autoPrinter.get(),
+                                             mName.get(), nullptr, nullptr, 0);
+    
+    
+    MOZ_ASSERT(bytesNeeded >= LONG(sizeof(DEVMODEW)),
+               "DocumentPropertiesW failed to get valid size");
+    if (bytesNeeded < LONG(sizeof(DEVMODEW))) {
+      return devmodeStorageW;
+    }
+
+    
+    
+    
+    devmodeStorageWLock->SetLength(bytesNeeded * 2);
+    auto* devmode =
+        reinterpret_cast<DEVMODEW*>(devmodeStorageWLock->Elements());
+    LONG ret = ::DocumentPropertiesW(nullptr, autoPrinter.get(), mName.get(),
+                                     devmode, nullptr, DM_OUT_BUFFER);
+    MOZ_ASSERT(ret == IDOK, "DocumentPropertiesW failed");
+    if (ret != IDOK) {
+      return devmodeStorageW;
+    }
+  }
+
+  devmodeStorageW.Assign(devmodeStorageWLock.ref());
+  return devmodeStorageW;
+}
 
 nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
   
@@ -305,29 +273,65 @@ nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
   return paperList;
 }
 
-mozilla::gfx::MarginDouble nsPrinterWin::GetMarginsForPaper(
-    nsString aPaperId) const {
-  gfx::MarginDouble margin;
+PrintSettingsInitializer nsPrinterWin::DefaultSettings() const {
+  
+  
+  nsString paperIdString(u"1");  
+  bool color = true;
 
   nsTArray<uint8_t> devmodeWStorage = CopyDefaultDevmodeW();
   if (devmodeWStorage.IsEmpty()) {
-    return margin;
+    return {};
   }
 
-  auto* devmode = reinterpret_cast<DEVMODEW*>(devmodeWStorage.Elements());
+  const auto* devmode =
+      reinterpret_cast<const DEVMODEW*>(devmodeWStorage.Elements());
 
-  devmode->dmFields = DM_PAPERSIZE;
-  devmode->dmPaperSize = _wtoi((const wchar_t*)aPaperId.BeginReading());
+  
+  
+  if (devmode->dmFields & DM_PAPERSIZE) {
+    paperIdString.Truncate(0);
+    paperIdString.AppendInt(devmode->dmPaperSize);
+  }
+
+  if (devmode->dmFields & DM_COLOR) {
+    
+    color = devmode->dmColor != DMCOLOR_MONOCHROME;
+  }
+
   nsAutoHDC printerDc(::CreateICW(nullptr, mName.get(), nullptr, devmode));
   MOZ_ASSERT(printerDc, "CreateICW failed");
   if (!printerDc) {
-    return margin;
+    return {};
   }
-  margin = WinUtils::GetUnwriteableMarginsForDeviceInInches(printerDc);
+
+  int pixelsPerInchY = ::GetDeviceCaps(printerDc, LOGPIXELSY);
+  int physicalHeight = ::GetDeviceCaps(printerDc, PHYSICALHEIGHT);
+  double heightInInches = double(physicalHeight) / pixelsPerInchY;
+  int pixelsPerInchX = ::GetDeviceCaps(printerDc, LOGPIXELSX);
+  int physicalWidth = ::GetDeviceCaps(printerDc, PHYSICALWIDTH);
+  double widthInches = double(physicalWidth) / pixelsPerInchX;
+  if (devmode->dmFields & DM_ORIENTATION &&
+      devmode->dmOrientation == DMORIENT_LANDSCAPE) {
+    std::swap(widthInches, heightInInches);
+  }
+  SizeDouble paperSize(widthInches * kPointsPerInch,
+                       heightInInches * kPointsPerInch);
+
+  gfx::MarginDouble margin =
+      WinUtils::GetUnwriteableMarginsForDeviceInInches(printerDc);
   margin.top *= kPointsPerInch;
   margin.right *= kPointsPerInch;
   margin.bottom *= kPointsPerInch;
   margin.left *= kPointsPerInch;
 
-  return margin;
+  
+  int resolution = pixelsPerInchY;
+
+  
+  
+  nsString paperName;
+  return PrintSettingsInitializer{
+      mName, PaperInfo(paperIdString, paperName, paperSize, Some(margin)),
+      color, resolution, std::move(devmodeWStorage)};
 }

@@ -90,14 +90,12 @@ class nsPrinterBase : public nsIPrinter {
 
   
   
-  virtual PrintSettingsInitializer DefaultSettings() const = 0;
   virtual bool SupportsDuplex() const = 0;
   virtual bool SupportsColor() const = 0;
   virtual bool SupportsMonochrome() const = 0;
   virtual bool SupportsCollation() const = 0;
-  virtual nsTArray<mozilla::PaperInfo> PaperList() const = 0;
   virtual MarginDouble GetMarginsForPaper(nsString aPaperId) const = 0;
-  virtual PrinterInfo CreatePrinterInfo() const;
+  virtual PrinterInfo CreatePrinterInfo() const = 0;
   
   
   const mozilla::PaperInfo* FindCommonPaperSize(
