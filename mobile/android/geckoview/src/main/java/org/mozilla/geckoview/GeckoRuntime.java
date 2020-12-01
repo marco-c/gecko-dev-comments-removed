@@ -46,6 +46,7 @@ import org.mozilla.gecko.util.DebugConfig;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -345,27 +346,24 @@ public final class GeckoRuntime implements Parcelable {
         info.prefs = prefMap;
         
 
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            String configFilePath = settings.getConfigFilePath();
-            if (configFilePath == null) {
-                
-                
-                
-                if (isApplicationDebuggable(context) || isApplicationCurrentDebugApp(context)) {
-                    configFilePath = String.format(CONFIG_FILE_PATH_TEMPLATE, context.getApplicationInfo().packageName);
-                }
+        String configFilePath = settings.getConfigFilePath();
+        if (configFilePath == null) {
+            
+            
+            
+            if (isApplicationDebuggable(context) || isApplicationCurrentDebugApp(context)) {
+                configFilePath = String.format(CONFIG_FILE_PATH_TEMPLATE, context.getApplicationInfo().packageName);
             }
+        }
 
-            if (configFilePath != null && !configFilePath.isEmpty()) {
-                try {
-                    final DebugConfig debugConfig = DebugConfig.fromFile(new File(configFilePath));
-                    Log.i(LOGTAG, "Adding debug configuration from: " + configFilePath);
-                    debugConfig.mergeIntoInitInfo(info);
-                } catch (DebugConfig.ConfigException e) {
-                    Log.w(LOGTAG, "Failed to add debug configuration from: " + configFilePath, e);
-                } catch (FileNotFoundException e) {
-                }
+        if (configFilePath != null && !configFilePath.isEmpty()) {
+            try {
+                final DebugConfig debugConfig = DebugConfig.fromFile(new File(configFilePath));
+                Log.i(LOGTAG, "Adding debug configuration from: " + configFilePath);
+                debugConfig.mergeIntoInitInfo(info);
+            } catch (YAMLException e) {
+                Log.w(LOGTAG, "Failed to add debug configuration from: " + configFilePath, e);
+            } catch (FileNotFoundException e) {
             }
         }
 
