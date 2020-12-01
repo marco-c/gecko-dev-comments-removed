@@ -64,8 +64,6 @@ add_task(async function testShowingOtherBookmarksInToolbar() {
 
   info("Ensure folder disappears from toolbar when no bookmarks are present.");
   await PlacesUtils.bookmarks.remove(bookmarks);
-
-  info("Add bookmarks to the Bookmarks Toolbar folder.");
   testIsOtherBookmarksHidden(true);
 });
 
@@ -125,6 +123,19 @@ add_task(async function testOtherBookmarksMenuPopup() {
   await openMenuPopup();
   testNumberOfMenuPopupChildren(2);
   await closeMenuPopup();
+});
+
+add_task(async function testOnlyShowOtherFolderInBookmarksToolbar() {
+  testIsOtherBookmarksHidden(false);
+
+  
+  
+  let widgetId = "personal-bookmarks";
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_NAVBAR);
+  testIsOtherBookmarksHidden(true);
+
+  CustomizableUI.reset();
+  testIsOtherBookmarksHidden(false);
 });
 
 
