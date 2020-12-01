@@ -286,7 +286,11 @@ void gfxDWriteFontFamily::LocalizedName(nsACString& aLocalizedName) {
   nsAutoCString locale;
   
   
-  OSPreferences::GetInstance()->GetSystemLocale(locale);
+  RefPtr<OSPreferences> osprefs = OSPreferences::GetInstanceAddRefed();
+  if (!osprefs) {
+    return;
+  }
+  osprefs->GetSystemLocale(locale);
 
   RefPtr<IDWriteLocalizedStrings> names;
 
