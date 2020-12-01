@@ -237,26 +237,10 @@ class TeardownRunnable final : public Runnable {
   RefPtr<ServiceWorkerManagerChild> mActor;
 };
 
-bool ServiceWorkersAreCrossProcess() {
-  return ServiceWorkerParentInterceptEnabled() && XRE_IsE10sParentProcess();
-}
-
-const char* GetStartShutdownTopic() {
-  if (ServiceWorkersAreCrossProcess()) {
-    return "profile-change-teardown";
-  }
-
-  return NS_XPCOM_SHUTDOWN_OBSERVER_ID;
-}
-
 constexpr char kFinishShutdownTopic[] = "profile-before-change-qm";
 
 already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() {
   AssertIsOnMainThread();
-
-  if (!ServiceWorkersAreCrossProcess()) {
-    return nullptr;
-  }
 
   nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdownService();
   MOZ_ASSERT(svc);
@@ -431,10 +415,6 @@ ServiceWorkerManager::~ServiceWorkerManager() {
   
   mRegistrationInfos.Clear();
 
-  if (!ServiceWorkersAreCrossProcess()) {
-    MOZ_ASSERT(!mActor);
-  }
-
   
   
   
@@ -450,11 +430,6 @@ void ServiceWorkerManager::BlockShutdownOn(GenericNonExclusivePromise* aPromise,
                                            uint32_t aShutdownStateId) {
   AssertIsOnMainThread();
 
-  
-  if (!ServiceWorkersAreCrossProcess()) {
-    return;
-  }
-
   MOZ_ASSERT(mShutdownBlocker);
   MOZ_ASSERT(aPromise);
 
@@ -462,28 +437,32 @@ void ServiceWorkerManager::BlockShutdownOn(GenericNonExclusivePromise* aPromise,
 }
 
 void ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
   nsCOMPtr<nsIAsyncShutdownClient> shutdownBarrier = GetAsyncShutdownBarrier();
 
   if (shutdownBarrier) {
-    mShutdownBlocker =
-        ServiceWorkerShutdownBlocker::CreateAndRegisterOn(shutdownBarrier);
+    mShutdownBlocker = ServiceWorkerShutdownBlocker::CreateAndRegisterOn(
+        *shutdownBarrier, *this);
     MOZ_ASSERT(mShutdownBlocker);
   }
 
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    DebugOnly<nsresult> rv;
-    rv = obs->AddObserver(this, GetStartShutdownTopic(), false );
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
+  MOZ_DIAGNOSTIC_ASSERT(aRegistrar);
 
-  if (XRE_IsParentProcess()) {
-    MOZ_DIAGNOSTIC_ASSERT(aRegistrar);
-
-    nsTArray<ServiceWorkerRegistrationData> data;
-    aRegistrar->GetRegistrations(data);
-    LoadRegistrations(data);
-  }
+  nsTArray<ServiceWorkerRegistrationData> data;
+  aRegistrar->GetRegistrations(data);
+  LoadRegistrations(data);
 
   PBackgroundChild* actorChild = BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actorChild)) {
@@ -643,12 +622,8 @@ void ServiceWorkerManager::MaybeStartShutdown() {
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
-    obs->RemoveObserver(this, GetStartShutdownTopic());
-
-    if (ServiceWorkersAreCrossProcess()) {
-      obs->AddObserver(this, kFinishShutdownTopic, false);
-      return;
-    }
+    obs->AddObserver(this, kFinishShutdownTopic, false);
+    return;
   }
 
   MaybeFinishShutdown();
@@ -3168,11 +3143,6 @@ ServiceWorkerManager::RemoveListener(
 NS_IMETHODIMP
 ServiceWorkerManager::Observe(nsISupports* aSubject, const char* aTopic,
                               const char16_t* aData) {
-  if (strcmp(aTopic, GetStartShutdownTopic()) == 0) {
-    MaybeStartShutdown();
-    return NS_OK;
-  }
-
   if (strcmp(aTopic, kFinishShutdownTopic) == 0) {
     MaybeFinishShutdown();
     return NS_OK;
