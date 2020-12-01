@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#include "CompositableForwarder.h"
+
+#include "mozilla/layers/CompositableClient.h"
+#include "mozilla/layers/TextureClient.h"
+
+namespace mozilla::layers {
+CompositableForwarder::CompositableForwarder() = default;
+CompositableForwarder::~CompositableForwarder() = default;
+}  

@@ -8,29 +8,24 @@
 #define MOZILLA_LAYERS_COMPOSITABLEFORWARDER
 
 #include <stdint.h>  
-#include "gfxTypes.h"
-#include "mozilla/Attributes.h"  
-#include "mozilla/UniquePtr.h"
-#include "mozilla/layers/CompositableClient.h"  
-#include "mozilla/layers/CompositorTypes.h"
-#include "mozilla/layers/ISurfaceAllocator.h"  
-#include "mozilla/layers/LayersTypes.h"        
-#include "mozilla/layers/TextureClient.h"      
-#include "mozilla/layers/TextureForwarder.h"   
-#include "nsRegion.h"                          
-#include "mozilla/gfx/Rect.h"
-#include "nsHashKeys.h"
-#include "nsTHashtable.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/TimeStamp.h"               
+#include "mozilla/layers/KnowsCompositor.h"  
+#include "nsRect.h"                          
+#include "nsRegion.h"                        
+#include "nsTArray.h"                        
 
 namespace mozilla {
 namespace layers {
-
 class CompositableClient;
+class CompositableHandle;
 class ImageContainer;
-class SurfaceDescriptor;
-class SurfaceDescriptorTiles;
-class ThebesBufferData;
 class PTextureChild;
+class ShadowLayerForwarder;
+class SurfaceDescriptorTiles;
+class TextureClient;
+class ThebesBufferData;
 
 
 
@@ -48,6 +43,9 @@ class PTextureChild;
 
 class CompositableForwarder : public KnowsCompositor {
  public:
+  CompositableForwarder();
+  ~CompositableForwarder();
+
   
 
 
