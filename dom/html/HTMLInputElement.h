@@ -1397,15 +1397,6 @@ class HTMLInputElement final : public TextControlElement,
   nsresult InitFilePicker(FilePickerType aType);
   nsresult InitColorPicker();
 
-  
-
-
-
-
-
-
-  bool IsPopupBlocked() const;
-
   GetFilesHelper* GetOrCreateGetFilesHelper(bool aRecursiveFlag,
                                             ErrorResult& aRv);
 
