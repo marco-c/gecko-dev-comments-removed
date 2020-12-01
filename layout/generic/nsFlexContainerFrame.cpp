@@ -4394,6 +4394,16 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   ComputedFlexContainerInfo* containerInfo = CreateOrClearFlexContainerInfo();
 
+  
+  
+  
+  LogicalMargin borderPadding =
+      aReflowInput.ComputedLogicalBorderPadding(wm).ApplySkipSides(
+          PreReflowBlockLevelLogicalSkipSides());
+
+  const LogicalSize availableSizeForItems =
+      ComputeAvailableSizeForItems(aReflowInput, borderPadding);
+
   const nscoord consumedBSize = CalcAndCacheConsumedBSize();
   nscoord contentBoxMainSize =
       GetMainSizeFromReflowInput(aReflowInput, axisTracker, consumedBSize);
@@ -4456,16 +4466,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     contentBoxCrossSize = data->mContentBoxCrossSize;
   }
 
-  
-  
-  
-  LogicalMargin borderPadding =
-      aReflowInput.ComputedLogicalBorderPadding(wm).ApplySkipSides(
-          PreReflowBlockLevelLogicalSkipSides());
-
-  const LogicalSize availableSizeForItems =
-      ComputeAvailableSizeForItems(aReflowInput, borderPadding);
-
   const LogicalSize contentBoxSize =
       axisTracker.LogicalSizeFromFlexRelativeSizes(contentBoxMainSize,
                                                    contentBoxCrossSize);
@@ -4483,30 +4483,14 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const LogicalSize tentativeBorderBoxSize(
-      wm, contentBoxSize.ISize(wm) + borderPadding.IStartEnd(wm),
-      std::min(effectiveContentBSize + borderPadding.BStartEnd(wm),
-               aReflowInput.AvailableBSize()));
-  const nsSize containerSize = tentativeBorderBoxSize.GetPhysicalSize(wm);
-
   const auto* prevInFlow = static_cast<nsFlexContainerFrame*>(GetPrevInFlow());
   OverflowAreas ocBounds;
   nsReflowStatus ocStatus;
   nscoord sumOfChildrenBlockSize;
   if (prevInFlow) {
-    ReflowOverflowContainerChildren(
-        aPresContext, aReflowInput, ocBounds, ReflowChildFlags::Default,
-        ocStatus, MergeSortedFrameListsFor, Some(containerSize));
+    ReflowOverflowContainerChildren(aPresContext, aReflowInput, ocBounds,
+                                    ReflowChildFlags::Default, ocStatus,
+                                    MergeSortedFrameListsFor);
     sumOfChildrenBlockSize =
         prevInFlow->GetProperty(SumOfChildrenBlockSizeProperty());
   } else {
@@ -4515,7 +4499,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   const auto [maxBlockEndEdgeOfChildren, areChildrenComplete] =
       ReflowChildren(aReflowInput, contentBoxMainSize, contentBoxCrossSize,
-                     containerSize, availableSizeForItems, borderPadding,
+                     availableSizeForItems, borderPadding,
                      sumOfChildrenBlockSize, flexContainerAscent, lines,
                      placeholders, axisTracker, hasLineClampEllipsis);
 
@@ -4532,27 +4516,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                        borderPadding, consumedBSize, mayNeedNextInFlow,
                        maxBlockEndEdgeOfChildren, areChildrenComplete,
                        flexContainerAscent, lines, axisTracker);
-
-  if (wm.IsVerticalRL()) {
-    
-    
-    const nscoord deltaBCoord =
-        tentativeBorderBoxSize.BSize(wm) - aReflowOutput.Size(wm).BSize(wm);
-    if (deltaBCoord != 0) {
-      const LogicalPoint delta(wm, 0, deltaBCoord);
-      for (const FlexLine& line : lines) {
-        for (const FlexItem& item : line.Items()) {
-          item.Frame()->MovePositionBy(wm, delta);
-        }
-      }
-    }
-  }
-
-  
-  aReflowOutput.SetOverflowAreasToDesiredBounds();
-  for (nsIFrame* childFrame : mFrames) {
-    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, childFrame);
-  }
 
   
   aReflowOutput.mOverflowAreas.UnionWith(ocBounds);
@@ -5094,7 +5057,7 @@ void nsFlexContainerFrame::DoFlexLayout(
 
 std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
     const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
-    const nscoord aContentBoxCrossSize, const nsSize& aContainerSize,
+    const nscoord aContentBoxCrossSize,
     const LogicalSize& aAvailableSizeForItems,
     const LogicalMargin& aBorderPadding,
     const nscoord aSumOfPrevInFlowsChildrenBlockSize,
@@ -5107,6 +5070,12 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
   WritingMode flexWM = aReflowInput.GetWritingMode();
   const LogicalPoint containerContentBoxOrigin(
       flexWM, aBorderPadding.IStart(flexWM), aBorderPadding.BStart(flexWM));
+
+  
+  LogicalSize logSize = aAxisTracker.LogicalSizeFromFlexRelativeSizes(
+      aContentBoxMainSize, aContentBoxCrossSize);
+  logSize += aBorderPadding.Size(flexWM);
+  nsSize containerSize = logSize.GetPhysicalSize(flexWM);
 
   
   
@@ -5185,9 +5154,9 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
                         availableBSizeForItem)
                 .ConvertTo(itemWM, flexWM);
 
-        const nsReflowStatus childReflowStatus = ReflowFlexItem(
-            aAxisTracker, aReflowInput, item, framePos, availableSize,
-            aContainerSize, aHasLineClampEllipsis);
+        const nsReflowStatus childReflowStatus =
+            ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
+                           availableSize, containerSize, aHasLineClampEllipsis);
 
         if (childReflowStatus.IsIncomplete()) {
           incompleteItems.PutEntry(item.Frame());
@@ -5196,7 +5165,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         }
       } else {
         MoveFlexItemToFinalPosition(aReflowInput, item, framePos,
-                                    aContainerSize);
+                                    containerSize);
         
         
         
@@ -5241,7 +5210,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
 
   if (!aPlaceholders.IsEmpty()) {
     ReflowPlaceholders(aReflowInput, aPlaceholders, containerContentBoxOrigin,
-                       aContainerSize);
+                       containerSize);
   }
 
   const bool anyChildIncomplete = PushIncompleteChildren(
@@ -5392,6 +5361,12 @@ void nsFlexContainerFrame::PopulateReflowOutput(
 
   
   aReflowOutput.SetSize(flexWM, desiredSizeInFlexWM);
+
+  
+  aReflowOutput.SetOverflowAreasToDesiredBounds();
+  for (nsIFrame* childFrame : mFrames) {
+    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, childFrame);
+  }
 }
 
 void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
