@@ -16,7 +16,6 @@ config = {
     ],
     "replacements": [
         
-        ("build/defines.sh", "EARLY_BETA_OR_EARLIER=1", "EARLY_BETA_OR_EARLIER="),
     ],
     "vcs_share_base": os.path.join(ABS_WORK_DIR, "hg-shared"),
     
