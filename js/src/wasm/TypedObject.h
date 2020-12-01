@@ -479,10 +479,7 @@ class OutlineTypedObject : public TypedObject {
 
  private:
   
-  void attach(ArrayBufferObject& buffer, uint32_t offset);
-
-  
-  void attach(JSContext* cx, TypedObject& typedObj, uint32_t offset);
+  void attach(ArrayBufferObject& buffer);
 
  public:
   static void obj_trace(JSTracer* trace, JSObject* object);
