@@ -3,6 +3,9 @@
 
 
 
+#ifndef WebAuthnTokenManager_h
+#define WebAuthnTokenManager_h
+
 #include "mozilla/dom/AndroidWebAuthnTokenManager.h"
 
 #include "mozilla/java/WebAuthnTokenManagerNatives.h"
@@ -72,3 +75,5 @@ class WebAuthnTokenManager final
   }
 };
 }  
+
+#endif
