@@ -27,8 +27,6 @@ loader.lazyGetter(
   () => Cu.getGlobalForObject(ExtensionProcessScript).WebExtensionPolicy
 );
 
-const CHROME_ENABLED_PREF = "devtools.chrome.enabled";
-const REMOTE_ENABLED_PREF = "devtools.debugger.remote-enabled";
 const EXTENSION_STORAGE_ENABLED_PREF =
   "devtools.storage.extensionStorage.enabled";
 
@@ -2416,7 +2414,12 @@ StorageActors.createActor(
       
       
       
-      this._internalHosts = await this.getInternalHosts();
+      
+      const isBrowserToolbox = this.storageActor.parentActor.isRootActor;
+
+      this._internalHosts = isBrowserToolbox
+        ? await this.getInternalHosts()
+        : [];
 
       return this.hosts;
     },
@@ -2812,14 +2815,6 @@ var indexedDBHelpers = {
 
 
   async getInternalHosts() {
-    
-    if (
-      !Services.prefs.getBoolPref(CHROME_ENABLED_PREF) ||
-      !Services.prefs.getBoolPref(REMOTE_ENABLED_PREF)
-    ) {
-      return this.backToChild("getInternalHosts", []);
-    }
-
     const profileDir = OS.Constants.Path.profileDir;
     const storagePath = OS.Path.join(profileDir, "storage", "permanent");
     const iterator = new OS.File.DirectoryIterator(storagePath);
