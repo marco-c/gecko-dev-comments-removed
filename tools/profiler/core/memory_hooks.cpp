@@ -265,10 +265,6 @@ class ThreadIntercept {
   
   static mozilla::Atomic<bool, mozilla::Relaxed> sAllocationsFeatureEnabled;
 
-  
-  
-  static mozilla::Atomic<int, mozilla::Relaxed> sMainThreadId;
-
   ThreadIntercept() = default;
 
   
@@ -315,22 +311,15 @@ class ThreadIntercept {
 
   bool IsBlocked() const { return ThreadIntercept::IsBlocked_(); }
 
-  static void EnableAllocationFeature(int aMainThreadId) {
-    sAllocationsFeatureEnabled = true;
-    sMainThreadId = aMainThreadId;
-  }
+  static void EnableAllocationFeature() { sAllocationsFeatureEnabled = true; }
 
   static void DisableAllocationFeature() { sAllocationsFeatureEnabled = false; }
-
-  static int MainThreadId() { return sMainThreadId; }
 };
 
 PROFILER_THREAD_LOCAL(bool) ThreadIntercept::tlsIsBlocked;
 
 mozilla::Atomic<bool, mozilla::Relaxed>
     ThreadIntercept::sAllocationsFeatureEnabled(false);
-
-mozilla::Atomic<int, mozilla::Relaxed> ThreadIntercept::sMainThreadId(0);
 
 
 
@@ -389,7 +378,7 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
       gBernoulli->trial(actualSize) &&
       
       profiler_add_native_allocation_marker(
-          ThreadIntercept::MainThreadId(), static_cast<int64_t>(actualSize),
+          static_cast<int64_t>(actualSize),
           reinterpret_cast<uintptr_t>(aPtr))) {
     MOZ_ASSERT(gAllocationTracker,
                "gAllocationTracker must be properly installed for the memory "
@@ -432,8 +421,7 @@ static void FreeCallback(void* aPtr) {
       "gAllocationTracker must be properly installed for the memory hooks.");
   if (gAllocationTracker->RemoveMemoryAddressIfFound(aPtr)) {
     
-    profiler_add_native_allocation_marker(ThreadIntercept::MainThreadId(),
-                                          signedSize,
+    profiler_add_native_allocation_marker(signedSize,
                                           reinterpret_cast<uintptr_t>(aPtr));
   }
 }
@@ -567,7 +555,7 @@ void install_memory_hooks() {
 
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
-void enable_native_allocations(int aMainThreadId) {
+void enable_native_allocations() {
   
   
   
@@ -596,7 +584,7 @@ void enable_native_allocations(int aMainThreadId) {
 
   EnsureBernoulliIsInstalled();
   EnsureAllocationTrackerIsInstalled();
-  ThreadIntercept::EnableAllocationFeature(aMainThreadId);
+  ThreadIntercept::EnableAllocationFeature();
 }
 
 
