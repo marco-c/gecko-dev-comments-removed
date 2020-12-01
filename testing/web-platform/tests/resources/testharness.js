@@ -1384,10 +1384,16 @@
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
 
-        assert(Math.abs(actual - expected) <= epsilon,
-               "assert_approx_equals", description,
-               "expected ${expected} +/- ${epsilon} but got ${actual}",
-               {expected:expected, actual:actual, epsilon:epsilon});
+        
+        
+        if (isFinite(actual) || isFinite(expected)) {
+            assert(Math.abs(actual - expected) <= epsilon,
+                   "assert_approx_equals", description,
+                   "expected ${expected} +/- ${epsilon} but got ${actual}",
+                   {expected:expected, actual:actual, epsilon:epsilon});
+        } else {
+            assert_equals(actual, expected);
+        }
     }
     expose(assert_approx_equals, "assert_approx_equals");
 
