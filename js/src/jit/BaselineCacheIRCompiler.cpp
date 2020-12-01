@@ -2321,9 +2321,6 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
     return false;
   }
 
-  
-  allowDoubleResult_.emplace(true);
-
   size_t numInputs = writer_.numInputOperands();
   MOZ_ASSERT(numInputs == NumInputsForCacheKind(kind));
 

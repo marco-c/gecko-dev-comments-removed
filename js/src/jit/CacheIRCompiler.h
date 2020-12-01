@@ -727,9 +727,6 @@ class MOZ_RAII CacheIRCompiler {
   Mode mode_;
 
   
-  mozilla::Maybe<bool> allowDoubleResult_;
-
-  
   
   uint32_t stubDataOffset_;
 

@@ -1238,45 +1238,10 @@ class MOZ_RAII IRGenerator {
 };
 
 
-enum class GetPropertyResultFlags {
-  None = 0,
-
-  
-  
-  
-  Monitored = 1 << 0,
-
-  
-  AllowUndefined = 1 << 1,
-  AllowInt32 = 1 << 2,
-  AllowDouble = 1 << 3,
-
-  All = Monitored | AllowUndefined | AllowInt32 | AllowDouble
-};
-
-static inline bool operator&(GetPropertyResultFlags a,
-                             GetPropertyResultFlags b) {
-  return static_cast<int>(a) & static_cast<int>(b);
-}
-
-static inline GetPropertyResultFlags operator|(GetPropertyResultFlags a,
-                                               GetPropertyResultFlags b) {
-  return static_cast<GetPropertyResultFlags>(static_cast<int>(a) |
-                                             static_cast<int>(b));
-}
-
-static inline GetPropertyResultFlags& operator|=(GetPropertyResultFlags& lhs,
-                                                 GetPropertyResultFlags b) {
-  lhs = lhs | b;
-  return lhs;
-}
-
-
 class MOZ_RAII GetPropIRGenerator : public IRGenerator {
   HandleValue val_;
   HandleValue idVal_;
   HandleValue receiver_;
-  GetPropertyResultFlags resultFlags_;
 
   AttachDecision tryAttachNative(HandleObject obj, ObjOperandId objId,
                                  HandleId id, ValOperandId receiverId);
@@ -1372,10 +1337,6 @@ class MOZ_RAII GetPropIRGenerator : public IRGenerator {
 
   
   
-  bool idempotent() const { return pc_ == nullptr; }
-
-  
-  
   void maybeEmitIdGuard(jsid id);
 
   void trackAttached(const char* name);
@@ -1383,11 +1344,9 @@ class MOZ_RAII GetPropIRGenerator : public IRGenerator {
  public:
   GetPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                      ICState::Mode mode, CacheKind cacheKind, HandleValue val,
-                     HandleValue idVal, HandleValue receiver,
-                     GetPropertyResultFlags resultFlags);
+                     HandleValue idVal, HandleValue receiver);
 
   AttachDecision tryAttachStub();
-  AttachDecision tryAttachIdempotentStub();
 };
 
 
@@ -1432,8 +1391,6 @@ class MOZ_RAII SetPropIRGenerator : public IRGenerator {
   HandleValue lhsVal_;
   HandleValue idVal_;
   HandleValue rhsVal_;
-  bool attachedTypedArrayOOBStub_;
-  bool maybeHasExtraIndexedProps_;
 
  public:
   enum class DeferType { None, AddSlot };
@@ -1520,15 +1477,12 @@ class MOZ_RAII SetPropIRGenerator : public IRGenerator {
  public:
   SetPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                      CacheKind cacheKind, ICState::Mode mode,
-                     HandleValue lhsVal, HandleValue idVal, HandleValue rhsVal,
-                     bool maybeHasExtraIndexedProps = true);
+                     HandleValue lhsVal, HandleValue idVal, HandleValue rhsVal);
 
   AttachDecision tryAttachStub();
   AttachDecision tryAttachAddSlotStub(HandleObjectGroup oldGroup,
                                       HandleShape oldShape);
   void trackAttached(const char* name);
-
-  bool attachedTypedArrayOOBStub() const { return attachedTypedArrayOOBStub_; }
 
   DeferType deferType() const { return deferType_; }
 };
