@@ -270,6 +270,10 @@ class PlatformDecoderModule {
            SupportsColorDepth(videoInfo->mColorDepth, aDiagnostics);
   }
 
+  typedef MozPromise<RefPtr<MediaDataDecoder>, MediaResult,
+                      true>
+      CreateDecoderPromise;
+
  protected:
   PlatformDecoderModule() = default;
   virtual ~PlatformDecoderModule() = default;
@@ -318,6 +322,10 @@ class PlatformDecoderModule {
   
   virtual already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams) = 0;
+
+  
+  virtual RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
+      const CreateDecoderParams& aParams);
 };
 
 DDLoggedTypeDeclName(MediaDataDecoder);
