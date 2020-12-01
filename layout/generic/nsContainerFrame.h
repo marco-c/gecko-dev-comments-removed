@@ -30,8 +30,8 @@ class PresShell;
 
 
 
-#  define CRAZY_COORD (10000000 * 60)
-#  define CRAZY_SIZE(_x) (((_x) < -CRAZY_COORD) || ((_x) > CRAZY_COORD))
+#  define ABSURD_COORD (10000000 * 60)
+#  define ABSURD_SIZE(_x) (((_x) < -ABSURD_COORD) || ((_x) > ABSURD_COORD))
 #endif
 
 
@@ -484,7 +484,7 @@ class nsContainerFrame : public nsSplittableFrame {
 #ifdef DEBUG
   
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(DebugReflowingWithInfiniteISize, bool)
-  bool IsCrazySizeAssertSuppressed() const {
+  bool IsAbsurdSizeAssertSuppressed() const {
     return GetProperty(DebugReflowingWithInfiniteISize());
   }
 #endif
