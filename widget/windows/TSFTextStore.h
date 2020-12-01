@@ -495,7 +495,19 @@ class TSFTextStore final : public ITextStoreACP,
 
 
 
-  bool IsHandlingComposition() const {
+
+
+
+
+  bool IsHandlingCompositionInParent() const {
+    return mDispatcher && mDispatcher->IsComposing();
+  }
+
+  
+
+
+
+  bool IsHandlingCompositionInContent() const {
     return mDispatcher && mDispatcher->IsHandlingComposition();
   }
 

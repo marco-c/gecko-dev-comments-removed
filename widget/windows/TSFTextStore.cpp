@@ -2336,11 +2336,11 @@ void TSFTextStore::FlushPendingActions() {
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
                   ("0x%p   TSFTextStore::FlushPendingActions() "
                    "FAILED to dispatch compositionstart event, "
-                   "IsHandlingComposition()=%s",
-                   this, GetBoolName(IsHandlingComposition())));
+                   "IsHandlingCompositionInContent()=%s",
+                   this, GetBoolName(IsHandlingCompositionInContent())));
           
           
-          mDeferClearingContentForTSF = !IsHandlingComposition();
+          mDeferClearingContentForTSF = !IsHandlingCompositionInContent();
         }
         if (!widget || widget->Destroyed()) {
           break;
@@ -2367,11 +2367,11 @@ void TSFTextStore::FlushPendingActions() {
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
                   ("0x%p   TSFTextStore::FlushPendingActions() "
                    "FAILED to setting pending composition... "
-                   "IsHandlingComposition()=%s",
-                   this, GetBoolName(IsHandlingComposition())));
+                   "IsHandlingCompositionInContent()=%s",
+                   this, GetBoolName(IsHandlingCompositionInContent())));
           
           
-          mDeferClearingContentForTSF = !IsHandlingComposition();
+          mDeferClearingContentForTSF = !IsHandlingCompositionInContent();
         } else {
           MOZ_LOG(sTextStoreLog, LogLevel::Debug,
                   ("0x%p   TSFTextStore::FlushPendingActions() "
@@ -2384,11 +2384,11 @@ void TSFTextStore::FlushPendingActions() {
             MOZ_LOG(sTextStoreLog, LogLevel::Error,
                     ("0x%p   TSFTextStore::FlushPendingActions() "
                      "FAILED to dispatch compositionchange event, "
-                     "IsHandlingComposition()=%s",
-                     this, GetBoolName(IsHandlingComposition())));
+                     "IsHandlingCompositionInContent()=%s",
+                     this, GetBoolName(IsHandlingCompositionInContent())));
             
             
-            mDeferClearingContentForTSF = !IsHandlingComposition();
+            mDeferClearingContentForTSF = !IsHandlingCompositionInContent();
           }
           
         }
@@ -2420,11 +2420,11 @@ void TSFTextStore::FlushPendingActions() {
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
                   ("0x%p   TSFTextStore::FlushPendingActions() "
                    "FAILED to dispatch compositioncommit event, "
-                   "IsHandlingComposition()=%s",
-                   this, GetBoolName(IsHandlingComposition())));
+                   "IsHandlingCompositionInContent()=%s",
+                   this, GetBoolName(IsHandlingCompositionInContent())));
           
           
-          mDeferClearingContentForTSF = !IsHandlingComposition();
+          mDeferClearingContentForTSF = !IsHandlingCompositionInContent();
         }
         break;
       }
@@ -4358,14 +4358,18 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
       sTextStoreLog, LogLevel::Info,
       ("0x%p TSFTextStore::GetTextExt(vcView=%ld, "
        "acpStart=%ld, acpEnd=%ld, prc=0x%p, pfClipped=0x%p), "
-       "IsHandlingComposition()=%s, "
+       "IsHandlingCompositionInParent()=%s, "
+       "IsHandlingCompositionInContent()=%s, "
        "mContentForTSF={ MinOffsetOfLayoutChanged()=%u, "
-       "LatestCompositionStartOffset()=%d, LatestCompositionEndOffset()=%d }, "
-       "mComposition= { IsComposing()=%s, mStart=%d, EndOffset()=%d }, "
+       "LatestCompositionStartOffset()=%d, LatestCompositionEndOffset()=%d, "
+       "mSelection={ acpStart=%ld, acpEnd=%ld, style.ase=%s, "
+       "style.fInterimChar=%s } "
+       "}, mComposition={ IsComposing()=%s, mStart=%d, EndOffset()=%d }, "
        "mDeferNotifyingTSF=%s, mWaitingQueryLayout=%s, "
        "IMEHandler::IsA11yHandlingNativeCaret()=%s",
        this, vcView, acpStart, acpEnd, prc, pfClipped,
-       GetBoolName(IsHandlingComposition()),
+       GetBoolName(IsHandlingCompositionInParent()),
+       GetBoolName(IsHandlingCompositionInContent()),
        mContentForTSF.MinOffsetOfLayoutChanged(),
        mContentForTSF.HasOrHadComposition()
            ? mContentForTSF.LatestCompositionStartOffset()
@@ -4373,6 +4377,10 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
        mContentForTSF.HasOrHadComposition()
            ? mContentForTSF.LatestCompositionEndOffset()
            : -1,
+       mContentForTSF.Selection().StartOffset(),
+       mContentForTSF.Selection().EndOffset(),
+       GetActiveSelEndName(mContentForTSF.Selection().ActiveSelEnd()),
+       GetBoolName(mContentForTSF.Selection().IsInterimChar()),
        GetBoolName(mComposition.IsComposing()), mComposition.mStart,
        mComposition.EndOffset(), GetBoolName(mDeferNotifyingTSF),
        GetBoolName(mWaitingQueryLayout),
@@ -4422,7 +4430,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
 
   mWaitingQueryLayout = false;
 
-  if (IsHandlingComposition() && mContentForTSF.HasOrHadComposition() &&
+  if (IsHandlingCompositionInContent() &&
+      mContentForTSF.HasOrHadComposition() &&
       mContentForTSF.IsLayoutChanged() &&
       mContentForTSF.MinOffsetOfLayoutChanged() > LONG_MAX) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -4470,7 +4479,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
     
     options.mRelativeToInsertionPoint = true;
     startOffset -= mComposition.mStart;
-  } else if (IsHandlingComposition() && mContentForTSF.HasOrHadComposition()) {
+  } else if (IsHandlingCompositionInParent() &&
+             mContentForTSF.HasOrHadComposition()) {
     
     
     
@@ -4584,7 +4594,8 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
   
   
 
-  if (!IsHandlingComposition() || !mContentForTSF.HasOrHadComposition() ||
+  if (!IsHandlingCompositionInContent() ||
+      !mContentForTSF.HasOrHadComposition() ||
       !mContentForTSF.IsLayoutChangedAt(aACPEnd)) {
     return false;
   }
@@ -6014,7 +6025,8 @@ nsresult TSFTextStore::OnSelectionChangeInternal(
   
   
   
-  if (!IsHandlingComposition() && IMEHandler::NeedsToCreateNativeCaret()) {
+  if (!IsHandlingCompositionInContent() &&
+      IMEHandler::NeedsToCreateNativeCaret()) {
     CreateNativeCaret();
   }
 
@@ -6257,7 +6269,7 @@ nsresult TSFTextStore::OnUpdateCompositionInternal() {
   
   
   
-  if (!mComposition.IsComposing() && !IsHandlingComposition()) {
+  if (!mComposition.IsComposing() && !IsHandlingCompositionInContent()) {
     mDeferClearingContentForTSF = false;
   }
   mDeferNotifyingTSF = false;
