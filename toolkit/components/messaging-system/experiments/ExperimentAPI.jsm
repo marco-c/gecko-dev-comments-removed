@@ -85,8 +85,28 @@ const ExperimentAPI = {
 
 
 
-  on(eventName, callback) {
-    this._store.on(eventName, callback);
+
+
+  on(eventName, options, callback) {
+    if (!options) {
+      throw new Error("Please include an experiment slug or featureId");
+    }
+    let fullEventName = `${eventName}:${options.slug || options.featureId}`;
+
+    
+    
+    this._store.ready().then(() => {
+      let experiment = this.getExperiment(options);
+      
+      if (experiment) {
+        
+        
+        
+        callback(fullEventName, experiment);
+      }
+    });
+
+    this._store.on(fullEventName, callback);
   },
 
   
