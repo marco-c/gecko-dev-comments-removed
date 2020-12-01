@@ -93,12 +93,20 @@ struct ScopeContext {
 };
 
 struct CompilationAtomCache {
+ private:
   
   
   
   
   
-  JS::GCVector<JSAtom*, 0, js::SystemAllocPolicy> atoms;
+  JS::GCVector<JSAtom*, 0, js::SystemAllocPolicy> atoms_;
+
+ public:
+  JSAtom* getExistingAtomAt(ParserAtomIndex index) const;
+  JSAtom* getAtomAt(ParserAtomIndex index) const;
+  bool hasAtomAt(ParserAtomIndex index) const;
+  bool setAtomAt(JSContext* cx, ParserAtomIndex index, JSAtom* atom);
+  bool allocate(JSContext* cx, size_t length);
 
   void trace(JSTracer* trc);
 } JS_HAZ_GC_POINTER;
@@ -251,6 +259,8 @@ struct CompilationStencil {
           mozilla::DefaultHasher<FunctionIndex>, js::SystemAllocPolicy>
       asmJS;
 
+  
+  
   
   ParserAtomVector parserAtomData;
 
