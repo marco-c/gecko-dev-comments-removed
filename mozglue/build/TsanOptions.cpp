@@ -222,15 +222,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:BeginBackgroundRead\n"
 
          
-         "race:setFlagBit\n"
-         "race:isFatInline\n"
-         "race:AtomizeAndCopyCharsFromLookup\n"
-         "race:inlinedMarkAtomInternal\n"
-         "race:XDRInnerObject<js::XDR_DECODE>\n"
-         "race:ScriptStencil::finishGCThings\n"
-         "race:XDRScriptGCThing<js::XDR_DECODE>\n"
-
-         
          "race:currentNameHasEscapes\n"
 
          
