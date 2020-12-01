@@ -5,7 +5,7 @@
 
 
 #include <string.h>
-#include "mozilla/Result.h"
+#include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
 
 using mozilla::Err;
