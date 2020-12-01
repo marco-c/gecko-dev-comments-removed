@@ -290,7 +290,7 @@ class ResourceWatcher {
         
         
         
-        if (this.hasWatcherSupport(resourceType)) {
+        if (this.hasResourceWatcherSupport(resourceType)) {
           continue;
         }
         await this._watchResourcesForTarget(targetFront, resourceType);
@@ -611,7 +611,7 @@ class ResourceWatcher {
     );
   }
 
-  hasWatcherSupport(resourceType) {
+  hasResourceWatcherSupport(resourceType) {
     return this.watcher?.traits?.resources?.[resourceType];
   }
 
@@ -642,7 +642,7 @@ class ResourceWatcher {
 
     
     
-    if (this.hasWatcherSupport(resourceType)) {
+    if (this.hasResourceWatcherSupport(resourceType)) {
       await this.watcher.watchResources([resourceType]);
       return;
     }
@@ -721,7 +721,7 @@ class ResourceWatcher {
 
     
     
-    if (this.hasWatcherSupport(resourceType)) {
+    if (this.hasResourceWatcherSupport(resourceType)) {
       this.watcher.unwatchResources([resourceType]);
       return;
     }

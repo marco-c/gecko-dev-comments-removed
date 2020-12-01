@@ -206,7 +206,7 @@ Inspector.prototype = {
     
     
     if (
-      this.toolbox.resourceWatcher.hasWatcherSupport(
+      this.toolbox.resourceWatcher.hasResourceWatcherSupport(
         this.toolbox.resourceWatcher.TYPES.STYLESHEET
       )
     ) {
