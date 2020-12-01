@@ -1457,6 +1457,11 @@ var PlacesUIUtils = {
     Services.obs.addObserver(obs, "Migration:ItemAfterMigrate");
     Services.obs.addObserver(obs, "Migration:ItemError");
   },
+
+  get _nonPrefDefaultParentGuid() {
+    let { unfiledGuid, toolbarGuid } = PlacesUtils.bookmarks;
+    return this._2020h2bookmarks ? toolbarGuid : unfiledGuid;
+  },
 };
 
 
@@ -1504,6 +1509,36 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "maxRecentFolders",
   "browser.bookmarks.editDialog.maxRecentFolders",
   7
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  PlacesUIUtils,
+  "_2020h2bookmarks",
+  "browser.toolbars.bookmarks.2h2020",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  PlacesUIUtils,
+  "defaultParentGuid",
+  "browser.bookmarks.defaultLocation",
+  "", 
+  null,
+  prefValue => {
+    if (!PlacesUIUtils._2020h2bookmarks) {
+      return PlacesUtils.bookmarks.unfiledGuid;
+    }
+    if (!prefValue) {
+      return PlacesUIUtils._nonPrefDefaultParentGuid;
+    }
+    if (["toolbar", "menu", "unfiled"].includes(prefValue)) {
+      return PlacesUtils.bookmarks[prefValue + "Guid"];
+    }
+    return PlacesUtils.bookmarks
+      .fetch({ guid: prefValue })
+      .then(bm => bm.guid)
+      .catch(() => PlacesUIUtils._nonPrefDefaultParentGuid);
+  }
 );
 
 
