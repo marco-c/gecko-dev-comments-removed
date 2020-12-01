@@ -223,11 +223,32 @@ bool net_IsValidIPv4Addr(const nsACString& aAddr);
 bool net_IsValidIPv6Addr(const nsACString& aAddr);
 
 namespace mozilla {
+
+
+
+
+
+
+
+
 class URLParams final {
  public:
   URLParams() = default;
 
   ~URLParams() { DeleteAll(); }
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
   template <typename ParamHandler>
   static bool Parse(const nsACString& aInput, ParamHandler aParamHandler) {
@@ -249,10 +270,31 @@ class URLParams final {
     return true;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   static bool Extract(const nsACString& aInput, const nsAString& aName,
                       nsAString& aValue);
 
+  
+
+
+
+
   void ParseInput(const nsACString& aInput);
+
+  
+
 
   void Serialize(nsAString& aValue) const;
 
@@ -260,11 +302,21 @@ class URLParams final {
 
   void GetAll(const nsAString& aName, nsTArray<nsString>& aRetval);
 
+  
+
+
+
+
+
+
   void Set(const nsAString& aName, const nsAString& aValue);
 
   void Append(const nsAString& aName, const nsAString& aValue);
 
   bool Has(const nsAString& aName);
+
+  
+
 
   void Delete(const nsAString& aName);
 
@@ -281,6 +333,10 @@ class URLParams final {
     MOZ_ASSERT(aIndex < mParams.Length());
     return mParams[aIndex].mValue;
   }
+
+  
+
+
 
   void Sort();
 

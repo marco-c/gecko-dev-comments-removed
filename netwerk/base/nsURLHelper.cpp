@@ -1058,13 +1058,6 @@ bool URLParams::ParseNextInternal(const char*& aStart, const char* const aEnd,
 }
 
 
-
-
-
-
-
-
-
 bool URLParams::Extract(const nsACString& aInput, const nsAString& aName,
                         nsAString& aValue) {
   aValue.SetIsVoid(true);
