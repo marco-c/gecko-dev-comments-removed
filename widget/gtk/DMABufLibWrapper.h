@@ -9,6 +9,10 @@
 #define __MOZ_DMABUF_LIB_WRAPPER_H__
 
 #include "mozilla/widget/gbm.h"
+#include "mozilla/widget/gtk-primary-selection-client-protocol.h"
+#include "mozilla/widget/idle-inhibit-unstable-v1-client-protocol.h"
+#include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
+#include "mozilla/widget/primary-selection-unstable-v1-client-protocol.h"
 
 #ifdef MOZ_LOGGING
 #  include "mozilla/Logging.h"
@@ -130,17 +134,16 @@ class nsDMABufDevice {
   nsDMABufDevice();
   ~nsDMABufDevice();
 
-  void Init();
-
   gbm_device* GetGbmDevice();
   
   int GetGbmDeviceFd();
 
-  bool IsDMABufEnabled();
+  
   bool IsDMABufTexturesEnabled();
-  bool IsDMABufVideoTexturesEnabled();
+  
+  bool IsDMABufVAAPIEnabled();
+  
   bool IsDMABufWebGLEnabled();
-  bool IsDRMVAAPIDisplayEnabled();
 
   GbmFormat* GetGbmFormat(bool aHasAlpha);
   GbmFormat* GetExactGbmFormat(int aFormat);
@@ -149,6 +152,7 @@ class nsDMABufDevice {
                          uint32_t mModifierLo);
 
  private:
+  bool IsDMABufEnabled();
   bool Configure();
 
   wl_registry* mRegistry;
@@ -158,9 +162,6 @@ class nsDMABufDevice {
 
   gbm_device* mGbmDevice;
   int mGbmFd;
-  bool mGdmConfigured;
-  bool mIsDMABufEnabled;
-  bool mIsDMABufConfigured;
 };
 
 nsDMABufDevice* GetDMABufDevice();
