@@ -162,16 +162,6 @@ let Player = {
       });
     }, RESIZE_DEBOUNCE_RATE_MS);
 
-    this.lastScreenX = window.screenX;
-    this.lastScreenY = window.screenY;
-
-    this.recordEvent("create", {
-      width: window.outerWidth.toString(),
-      height: window.outerHeight.toString(),
-      screenX: window.screenX.toString(),
-      screenY: window.screenY.toString(),
-    });
-
     this.computeAndSetMinimumSize(window.outerWidth, window.outerHeight);
 
     
@@ -179,6 +169,17 @@ let Player = {
     
     window.requestAnimationFrame(() => {
       window.focus();
+      
+      
+      this.recordEvent("create", {
+        width: window.outerWidth.toString(),
+        height: window.outerHeight.toString(),
+        screenX: window.screenX.toString(),
+        screenY: window.screenY.toString(),
+      });
+
+      this.lastScreenX = window.screenX;
+      this.lastScreenY = window.screenY;
     });
   },
 
