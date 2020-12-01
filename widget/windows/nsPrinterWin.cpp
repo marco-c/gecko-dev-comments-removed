@@ -36,7 +36,9 @@ already_AddRefed<nsPrinterWin> nsPrinterWin::Create(
 
 template <class T>
 static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
-                                            WORD aCapabilityID, int& aCount) {
+                                            WORD aCapabilityID,
+                                            const DEVMODEW* aDevmodeW,
+                                            int& aCount) {
   MOZ_ASSERT(aCount >= 0, "Possibly passed aCount from previous error case.");
 
   nsTArray<T> caps;
@@ -58,7 +60,7 @@ static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
     
     
     aCount = ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID,
-                                   nullptr, nullptr);
+                                   nullptr, aDevmodeW);
     if (aCount <= 0) {
       return caps;
     }
@@ -67,9 +69,9 @@ static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
   
   
   caps.SetLength(aCount * 2);
-  int count =
-      ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID,
-                            reinterpret_cast<LPWSTR>(caps.Elements()), nullptr);
+  int count = ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID,
+                                    reinterpret_cast<LPWSTR>(caps.Elements()),
+                                    aDevmodeW);
   if (count <= 0) {
     caps.Clear();
     return caps;
@@ -98,13 +100,29 @@ nsPrinterWin::GetSystemName(nsAString& aName) {
 }
 
 bool nsPrinterWin::SupportsDuplex() const {
+  
+  
+  nsTArray<uint8_t> devmodeWStorage = CopyDefaultDevmodeW();
+  if (devmodeWStorage.IsEmpty()) {
+    return false;
+  }
+  auto* devmode = reinterpret_cast<DEVMODEW*>(devmodeWStorage.Elements());
+
   return ::DeviceCapabilitiesW(mName.get(), nullptr, DC_DUPLEX, nullptr,
-                               nullptr) == 1;
+                               devmode) == 1;
 }
 
 bool nsPrinterWin::SupportsColor() const {
+  
+  
+  nsTArray<uint8_t> devmodeWStorage = CopyDefaultDevmodeW();
+  if (devmodeWStorage.IsEmpty()) {
+    return false;
+  }
+  auto* devmode = reinterpret_cast<DEVMODEW*>(devmodeWStorage.Elements());
+
   return ::DeviceCapabilitiesW(mName.get(), nullptr, DC_COLORDEVICE, nullptr,
-                               nullptr) == 1;
+                               devmode) == 1;
 }
 
 bool nsPrinterWin::SupportsMonochrome() const {
@@ -141,8 +159,16 @@ bool nsPrinterWin::SupportsMonochrome() const {
 }
 
 bool nsPrinterWin::SupportsCollation() const {
+  
+  
+  nsTArray<uint8_t> devmodeWStorage = CopyDefaultDevmodeW();
+  if (devmodeWStorage.IsEmpty()) {
+    return false;
+  }
+  auto* devmode = reinterpret_cast<DEVMODEW*>(devmodeWStorage.Elements());
+
   return ::DeviceCapabilitiesW(mName.get(), nullptr, DC_COLLATE, nullptr,
-                               nullptr) == 1;
+                               devmode) == 1;
 }
 
 nsPrinterBase::PrinterInfo nsPrinterWin::CreatePrinterInfo() const {
@@ -219,16 +245,24 @@ nsTArray<uint8_t> nsPrinterWin::CopyDefaultDevmodeW() const {
 
 nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
   
+  
+  nsTArray<uint8_t> devmodeWStorage = CopyDefaultDevmodeW();
+  if (devmodeWStorage.IsEmpty()) {
+    return {};
+  }
+  auto* devmode = reinterpret_cast<DEVMODEW*>(devmodeWStorage.Elements());
+
+  
   int requiredArrayCount = 0;
   auto paperIds = GetDeviceCapabilityArray<WORD>(mName.get(), DC_PAPERS,
-                                                 requiredArrayCount);
+                                                 devmode, requiredArrayCount);
   if (!paperIds.Length()) {
     return {};
   }
 
   
   auto paperNames = GetDeviceCapabilityArray<Array<wchar_t, 64>>(
-      mName.get(), DC_PAPERNAMES, requiredArrayCount);
+      mName.get(), DC_PAPERNAMES, devmode, requiredArrayCount);
   
   if (paperNames.Length() != paperIds.Length()) {
     return {};
@@ -236,8 +270,8 @@ nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
 
   
   
-  auto paperSizes = GetDeviceCapabilityArray<POINT>(mName.get(), DC_PAPERSIZE,
-                                                    requiredArrayCount);
+  auto paperSizes = GetDeviceCapabilityArray<POINT>(
+      mName.get(), DC_PAPERSIZE, devmode, requiredArrayCount);
   
   if (paperSizes.Length() != paperIds.Length()) {
     return {};
