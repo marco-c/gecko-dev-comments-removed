@@ -1,4 +1,8 @@
 
+
+
+
+
 """verbose_script.py
 
 Contrast to silent_script.py.

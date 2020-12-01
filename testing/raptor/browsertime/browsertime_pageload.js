@@ -1,5 +1,9 @@
 
 
+
+
+
+
 module.exports = async function(context, commands) {
   context.log.info("Starting a browsertime pageload");
   let url = context.options.browsertime.url;

@@ -7,6 +7,10 @@
 
 
 
+
+
+
+
 user_pref("dom.w3c_touch_events.enabled", 1);
 
 user_pref("layout.css.grid-template-subgrid-value.enabled", true);

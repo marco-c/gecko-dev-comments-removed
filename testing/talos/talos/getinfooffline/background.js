@@ -3,4 +3,8 @@
 
 
 
+
+
+
+
 browser.management.uninstallSelf({});

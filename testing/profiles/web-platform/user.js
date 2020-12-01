@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 user_pref("browser.newtabpage.enabled", false);
 
 user_pref("browser.sessionstore.resume_from_crash", false);

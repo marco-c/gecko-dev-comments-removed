@@ -1,3 +1,7 @@
+
+
+
+
 config = {
     "platform": "win32-mingwclang",
     "stage_platform": "win32-mingwclang",

@@ -1,5 +1,9 @@
 
 
+
+
+
+
 user_pref("app.update.checkInstallTime", false);
 user_pref("app.update.disabledForTesting", true);
 user_pref("browser.chrome.guess_favicon", false);

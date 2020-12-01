@@ -1,5 +1,9 @@
 
 
+
+
+
+
 module.exports = async function(context, commands) {
   context.log.info("Starting a browsertime scenario test");
   let page_cycles = context.options.browsertime.page_cycles;
