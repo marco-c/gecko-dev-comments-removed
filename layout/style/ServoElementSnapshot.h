@@ -11,7 +11,6 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
-#include "mozilla/dom/Element.h"
 #include "nsAttrName.h"
 #include "nsAttrValue.h"
 #include "nsChangeHint.h"
@@ -19,6 +18,9 @@
 #include "nsAtom.h"
 
 namespace mozilla {
+namespace dom {
+class Element;
+}
 
 
 
@@ -80,8 +82,7 @@ class ServoElementSnapshot {
 
 
 
-  inline void AddAttrs(const Element&, int32_t aNameSpaceID,
-                       nsAtom* aAttribute);
+  void AddAttrs(const Element&, int32_t aNameSpaceID, nsAtom* aAttribute);
 
   
 
@@ -166,53 +167,6 @@ class ServoElementSnapshot {
   bool mClassAttributeChanged : 1;
   bool mIdAttributeChanged : 1;
 };
-
-inline void ServoElementSnapshot::AddAttrs(const Element& aElement,
-                                           int32_t aNameSpaceID,
-                                           nsAtom* aAttribute) {
-  if (aNameSpaceID == kNameSpaceID_None) {
-    if (aAttribute == nsGkAtoms::_class) {
-      if (mClassAttributeChanged) {
-        return;
-      }
-      mClassAttributeChanged = true;
-    } else if (aAttribute == nsGkAtoms::id) {
-      if (mIdAttributeChanged) {
-        return;
-      }
-      mIdAttributeChanged = true;
-    }
-  }
-
-  if (!mChangedAttrNames.Contains(aAttribute)) {
-    mChangedAttrNames.AppendElement(aAttribute);
-  }
-
-  if (HasAttrs()) {
-    return;
-  }
-
-  uint32_t attrCount = aElement.GetAttrCount();
-  mAttrs.SetCapacity(attrCount);
-  for (uint32_t i = 0; i < attrCount; ++i) {
-    const BorrowedAttrInfo info = aElement.GetAttrInfoAt(i);
-    MOZ_ASSERT(info);
-    mAttrs.AppendElement(AttrArray::InternalAttr{*info.mName, *info.mValue});
-  }
-
-  mContains |= Flags::Attributes;
-  if (aElement.HasID()) {
-    mContains |= Flags::Id;
-  }
-
-  if (const nsAttrValue* classValue = aElement.GetClasses()) {
-    
-    
-    
-    mClass = *classValue;
-    mContains |= Flags::MaybeClass;
-  }
-}
 
 }  
 

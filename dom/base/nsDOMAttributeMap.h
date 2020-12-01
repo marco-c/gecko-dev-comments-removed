@@ -172,9 +172,4 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
   Attr* GetAttribute(mozilla::dom::NodeInfo* aNodeInfo);
 };
 
-
-
-
-#include "mozilla/dom/Element.h"
-
 #endif 

@@ -8,7 +8,7 @@
 #define mozilla_dom_IDTracker_h_
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/Element.h"
+#include "nsIObserver.h"
 #include "nsThreadUtils.h"
 
 class nsAtom;
@@ -21,6 +21,8 @@ namespace mozilla {
 namespace dom {
 
 class Document;
+class DocumentOrShadowRoot;
+class Element;
 
 
 
@@ -94,7 +96,7 @@ class IDTracker {
 
 
 
-  virtual void ElementChanged(Element* aFrom, Element* aTo) { mElement = aTo; }
+  virtual void ElementChanged(Element* aFrom, Element* aTo);
 
   
 
@@ -127,11 +129,7 @@ class IDTracker {
 
   class ChangeNotification : public mozilla::Runnable, public Notification {
    public:
-    ChangeNotification(IDTracker* aTarget, Element* aFrom, Element* aTo)
-        : mozilla::Runnable("IDTracker::ChangeNotification"),
-          Notification(aTarget),
-          mFrom(aFrom),
-          mTo(aTo) {}
+    ChangeNotification(IDTracker* aTarget, Element* aFrom, Element* aTo);
 
     
     
@@ -143,15 +141,11 @@ class IDTracker {
       }
       return NS_OK;
     }
-    virtual void SetTo(Element* aTo) override { mTo = aTo; }
-    virtual void Clear() override {
-      Notification::Clear();
-      mFrom = nullptr;
-      mTo = nullptr;
-    }
+    void SetTo(Element* aTo) override;
+    void Clear() override;
 
    protected:
-    virtual ~ChangeNotification() = default;
+    virtual ~ChangeNotification();
 
     RefPtr<Element> mFrom;
     RefPtr<Element> mTo;
