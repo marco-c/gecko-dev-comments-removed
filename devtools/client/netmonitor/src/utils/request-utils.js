@@ -588,19 +588,13 @@ async function getMessagePayload(payload, getLongString) {
 
 
 
-function processNetworkUpdates(update, request) {
+function processNetworkUpdates(update) {
   const result = {};
   for (const [key, value] of Object.entries(update)) {
     if (UPDATE_PROPS.includes(key)) {
       result[key] = value;
 
       switch (key) {
-        case "securityInfo":
-          result.securityState = value.state;
-          break;
-        case "securityState":
-          result.securityState = update.securityState || request.securityState;
-          break;
         case "totalTime":
           result.totalTime = update.totalTime;
           break;
