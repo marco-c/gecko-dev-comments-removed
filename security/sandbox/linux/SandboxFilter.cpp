@@ -306,6 +306,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 #endif
     }
 
+    if (!broker) {
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+
     if (fd != AT_FDCWD && path[0] != '/') {
       SANDBOX_LOG_ERROR("unsupported fd-relative fstatat(%d, \"%s\", %p, 0x%x)",
                         fd, path, buf, flags);
@@ -551,7 +555,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     
     
     
-    if (mBroker != nullptr) {
+    if (mBroker) {
       switch (sysno) {
 #ifdef __NR_open
         case __NR_open:
@@ -603,6 +607,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
           return Trap(UnlinkAtTrap, mBroker);
         case __NR_readlinkat:
           return Trap(ReadlinkAtTrap, mBroker);
+      }
+    } else {
+      
+      
+      switch (sysno) {
+      CASES_FOR_fstatat:
+        return Trap(StatAtTrap, nullptr);
       }
     }
 
