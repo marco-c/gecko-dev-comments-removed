@@ -13,7 +13,6 @@ import java.util.Locale;
 
 import android.app.Service;
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.LocaleList;
 import android.os.Parcel;
@@ -28,6 +27,8 @@ import android.util.Log;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.util.GeckoBundle;
+
+import static android.os.Build.VERSION;
 
 @AnyThread
 public final class GeckoRuntimeSettings extends RuntimeSettings {
@@ -74,6 +75,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         }
 
         
+
+
+
+
 
 
 
@@ -585,6 +590,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
     public @Nullable String getConfigFilePath() {
         return mConfigFilePath;
     }
@@ -756,7 +763,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     private static String[] getDefaultLocales() {
-        if (Build.VERSION.SDK_INT >= 24) {
+        if (VERSION.SDK_INT >= 24) {
             final LocaleList localeList = LocaleList.getDefault();
             String[] locales = new String[localeList.size()];
             for (int i = 0; i < localeList.size(); i++) {
@@ -766,7 +773,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         }
         String[] locales = new String[1];
         final Locale locale = Locale.getDefault();
-        if (Build.VERSION.SDK_INT >= 21) {
+        if (VERSION.SDK_INT >= 21) {
             locales[0] = locale.toLanguageTag();
             return locales;
         }
