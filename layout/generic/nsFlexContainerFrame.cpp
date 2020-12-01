@@ -1551,21 +1551,22 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   
-  nscoord transferredSizeSuggestion = nscoord_MAX;
   if (aFlexItem.HasIntrinsicRatio() &&
       aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
     
-    transferredSizeSuggestion = MainSizeFromAspectRatio(
+    nscoord transferredSizeSuggestion = MainSizeFromAspectRatio(
         aFlexItem.CrossSize(), aFlexItem.IntrinsicRatio(), aAxisTracker);
 
     
     
     transferredSizeSuggestion = ClampMainSizeViaCrossAxisConstraints(
         transferredSizeSuggestion, aFlexItem, aAxisTracker);
+
+    FLEX_LOGV(" Transferred size suggestion: %d", transferredSizeSuggestion);
+    return transferredSizeSuggestion;
   }
 
-  FLEX_LOGV(" Transferred size suggestion: %d", transferredSizeSuggestion);
-  return transferredSizeSuggestion;
+  return nscoord_MAX;
 }
 
 
