@@ -16,9 +16,9 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PostRestyleMode.h"
+#include "mozilla/StickyTimeDuration.h"
 #include "mozilla/TimeStamp.h"             
 #include "mozilla/dom/AnimationBinding.h"  
-#include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/AnimationTimeline.h"
 
 struct JSContext;
@@ -33,6 +33,7 @@ class MicroTaskRunnable;
 
 namespace dom {
 
+class AnimationEffect;
 class AsyncFinishNotification;
 class CSSAnimation;
 class CSSTransition;
@@ -313,10 +314,8 @@ class Animation : public DOMEventTargetHelper,
     return PlayState() == AnimationPlayState::Paused;
   }
 
-  bool HasCurrentEffect() const {
-    return GetEffect() && GetEffect()->IsCurrent();
-  }
-  bool IsInEffect() const { return GetEffect() && GetEffect()->IsInEffect(); }
+  bool HasCurrentEffect() const;
+  bool IsInEffect() const;
 
   bool IsPlaying() const {
     return mPlaybackRate != 0.0 && mTimeline &&
@@ -537,15 +536,7 @@ class Animation : public DOMEventTargetHelper,
   
   
   StickyTimeDuration IntervalStartTime(
-      const StickyTimeDuration& aActiveDuration) const {
-    MOZ_ASSERT(AsCSSTransition() || AsCSSAnimation(),
-               "Should be called for CSS animations or transitions");
-    static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
-    return std::max(
-        std::min(StickyTimeDuration(-mEffect->SpecifiedTiming().Delay()),
-                 aActiveDuration),
-        zeroDuration);
-  }
+      const StickyTimeDuration& aActiveDuration) const;
 
   
   
@@ -553,15 +544,7 @@ class Animation : public DOMEventTargetHelper,
   
   
   StickyTimeDuration IntervalEndTime(
-      const StickyTimeDuration& aActiveDuration) const {
-    MOZ_ASSERT(AsCSSTransition() || AsCSSAnimation(),
-               "Should be called for CSS animations or transitions");
-
-    static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
-    return std::max(std::min((EffectEnd() - mEffect->SpecifiedTiming().Delay()),
-                             aActiveDuration),
-                    zeroDuration);
-  }
+      const StickyTimeDuration& aActiveDuration) const;
 
   TimeStamp GetTimelineCurrentTimeAsTimeStamp() const {
     return mTimeline ? mTimeline->GetCurrentTimeAsTimeStamp() : TimeStamp();
