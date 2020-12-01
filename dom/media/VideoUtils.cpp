@@ -188,9 +188,7 @@ uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& aInfo) {
 
   if (resampling) {
     rate = 48000;
-  } else if (aInfo.mRate == 44100 || aInfo.mRate == 48000) {
-    
-    
+  } else if (aInfo.mRate >= 44100) {
     
     
     rate = aInfo.mRate;
