@@ -13,7 +13,6 @@
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/RangedPtr.h"
-#include "mozilla/ServoStyleConsts.h"
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
@@ -31,6 +30,7 @@ class SVGAnimatedTransformList;
 class SVGAnimatedPreserveAspectRatio;
 class SVGContextPaint;
 class SVGPreserveAspectRatio;
+union StyleLengthPercentageUnion;
 namespace dom {
 class Document;
 class Element;
@@ -308,10 +308,17 @@ class SVGContentUtils {
   static bool ParseInteger(const nsAString& aString, int32_t& aValue);
 
   
+  
+  
+  
+  
+  
+  
 
 
 
-  static float CoordToFloat(dom::SVGElement* aContent, const LengthPercentage&,
+  static float CoordToFloat(dom::SVGElement* aContent,
+                            const StyleLengthPercentageUnion&,
                             uint8_t aCtxType = SVGContentUtils::XY);
   
 
