@@ -343,15 +343,13 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
   Result<nsCOMPtr<nsIFile>, nsresult> EnsureStorageAndOriginIsInitialized(
-      PersistenceType aPersistenceType, const QuotaInfo& aQuotaInfo,
-      Client::Type aClientType);
+      PersistenceType aPersistenceType, const QuotaInfo& aQuotaInfo);
 
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
-  EnsureStorageAndOriginIsInitializedInternal(
-      PersistenceType aPersistenceType, const QuotaInfo& aQuotaInfo,
-      const Nullable<Client::Type>& aClientType);
+  EnsureStorageAndOriginIsInitializedInternal(PersistenceType aPersistenceType,
+                                              const QuotaInfo& aQuotaInfo);
 
   nsresult EnsurePersistentOriginIsInitialized(const QuotaInfo& aQuotaInfo,
                                                nsIFile** aDirectory,

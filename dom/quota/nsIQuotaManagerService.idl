@@ -76,13 +76,9 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
-
-
-
   [must_use] nsIQuotaRequest
   initStorageAndOrigin(in nsIPrincipal aPrincipal,
-                       in ACString aPersistenceType,
-                       [optional] in AString aClientType);
+                       in ACString aPersistenceType);
 
   
 
