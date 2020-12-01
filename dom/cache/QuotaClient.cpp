@@ -34,85 +34,82 @@ using mozilla::ipc::AssertIsOnBackgroundThread;
 
 namespace {
 
-nsresult GetBodyUsage(nsIFile* aMorgueDir, const Atomic<bool>& aCanceled,
-                      UsageInfo* aUsageInfo, const bool aInitializing) {
+Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
+                                         const Atomic<bool>& aCanceled,
+                                         const bool aInitializing) {
   AssertIsOnIOThread();
 
-  nsCOMPtr<nsIDirectoryEnumerator> entries;
-  nsresult rv = aMorgueDir->GetDirectoryEntries(getter_AddRefs(entries));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  UsageInfo usageInfo;
 
-  nsCOMPtr<nsIFile> bodyDir;
-  while (NS_SUCCEEDED(rv = entries->GetNextFile(getter_AddRefs(bodyDir))) &&
-         bodyDir && !aCanceled) {
-    if (NS_WARN_IF(QuotaManager::IsShuttingDown())) {
-      return NS_ERROR_ABORT;
-    }
-    bool isDir;
-    rv = bodyDir->IsDirectory(&isDir);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  
+  
+  
+  CACHE_TRY_INSPECT(const auto& entries, MOZ_TO_RESULT_INVOKE_TYPED(
+                                             nsCOMPtr<nsIDirectoryEnumerator>,
+                                             aMorgueDir, GetDirectoryEntries));
 
-    if (!isDir) {
-      QuotaInfo dummy;
-      DebugOnly<nsresult> result =
-          RemoveNsIFile(dummy, bodyDir,  false);
-      
-      
-      MOZ_ASSERT(NS_SUCCEEDED(result));
-      continue;
-    }
+  CACHE_TRY(CollectEach(
+      [&entries, &aCanceled]() -> Result<nsCOMPtr<nsIFile>, nsresult> {
+        if (aCanceled) {
+          return nsCOMPtr<nsIFile>{};
+        }
 
-    const QuotaInfo dummy;
-    const auto getUsage = [&aUsageInfo](nsIFile* bodyFile,
-                                        const nsACString& leafName,
-                                        bool& fileDeleted) {
-      MOZ_DIAGNOSTIC_ASSERT(bodyFile);
-      Unused << leafName;
+        CACHE_TRY_RETURN(MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<nsIFile>, entries,
+                                                    GetNextFile));
+      },
+      [&usageInfo, aInitializing](
+          const nsCOMPtr<nsIFile>& bodyDir) -> Result<Ok, nsresult> {
+        CACHE_TRY(OkIf(!QuotaManager::IsShuttingDown()), Err(NS_ERROR_ABORT));
 
-      int64_t fileSize;
-      nsresult rv = bodyFile->GetFileSize(&fileSize);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      *aUsageInfo += DatabaseUsageType(Some(fileSize));
+        CACHE_TRY_INSPECT(const bool& isDir,
+                          MOZ_TO_RESULT_INVOKE(bodyDir, IsDirectory));
 
-      fileDeleted = false;
+        if (!isDir) {
+          const DebugOnly<nsresult> result =
+              RemoveNsIFile(QuotaInfo{}, bodyDir,  false);
+          
+          
+          MOZ_ASSERT(NS_SUCCEEDED(result));
+          return Ok{};
+        }
 
-      return NS_OK;
-    };
-    rv = BodyTraverseFiles(dummy, bodyDir, getUsage,
-                           
-                           aInitializing,
-                            false);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+        const auto getUsage = [&usageInfo](nsIFile* bodyFile,
+                                           const nsACString& leafName,
+                                           bool& fileDeleted) -> nsresult {
+          MOZ_DIAGNOSTIC_ASSERT(bodyFile);
+          Unused << leafName;
 
-  return NS_OK;
+          CACHE_TRY_INSPECT(const int64_t& fileSize,
+                            MOZ_TO_RESULT_INVOKE(bodyFile, GetFileSize));
+          MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          usageInfo += DatabaseUsageType(Some(fileSize));
+
+          fileDeleted = false;
+
+          return NS_OK;
+        };
+        CACHE_TRY(BodyTraverseFiles(QuotaInfo{}, bodyDir, getUsage,
+                                    
+                                    aInitializing,
+                                     false));
+        return Ok{};
+      }));
+
+  return usageInfo;
 }
 
 Result<int64_t, nsresult> LockedGetPaddingSizeFromDB(
@@ -399,6 +396,7 @@ Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOriginInternal(
 
   
   
+  
   CACHE_TRY_INSPECT(const auto& entries,
                     MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<nsIDirectoryEnumerator>,
                                                dir, GetDirectoryEntries));
@@ -427,7 +425,9 @@ Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOriginInternal(
           if (leafName.EqualsLiteral("morgue")) {
             
             
-            CACHE_TRY(GetBodyUsage(file, aCanceled, &usageInfo, aInitializing));
+            CACHE_TRY_INSPECT(const auto& bodyUsageInfo,
+                              GetBodyUsage(*file, aCanceled, aInitializing));
+            usageInfo += bodyUsageInfo;
           } else {
             NS_WARNING("Unknown Cache directory found!");
           }
