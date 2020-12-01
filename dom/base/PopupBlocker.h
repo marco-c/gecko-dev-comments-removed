@@ -44,10 +44,6 @@ class PopupBlocker final {
   static void PopupStatePusherCreated();
   static void PopupStatePusherDestroyed();
 
-  
-  
-  static bool CanShowPopupByPermission(nsIPrincipal* aPrincipal);
-
   static uint32_t GetPopupPermission(nsIPrincipal* aPrincipal);
 
   
