@@ -52,11 +52,6 @@ var gExceptionPaths = [
   
   "resource://gre/modules/services-automation/",
   "resource://services-automation/ServicesAutomation.jsm",
-
-  
-  
-  "chrome://browser/content/aboutlogins/third-party/app-store/",
-  "chrome://browser/content/aboutlogins/third-party/play-store/",
 ];
 
 
