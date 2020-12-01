@@ -6,6 +6,10 @@
 
 
 #include "nsWaylandDisplay.h"
+
+#include "base/message_loop.h"  
+#include "base/task.h"          
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_widget.h"
 
 namespace mozilla {
