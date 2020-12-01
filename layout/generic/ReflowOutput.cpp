@@ -12,16 +12,12 @@
 namespace mozilla {
 
 void OverflowAreas::UnionWith(const OverflowAreas& aOther) {
-  
-  
   InkOverflow().UnionRect(InkOverflow(), aOther.InkOverflow());
   ScrollableOverflow().UnionRect(ScrollableOverflow(),
                                  aOther.ScrollableOverflow());
 }
 
 void OverflowAreas::UnionAllWith(const nsRect& aRect) {
-  
-  
   InkOverflow().UnionRect(InkOverflow(), aRect);
   ScrollableOverflow().UnionRect(ScrollableOverflow(), aRect);
 }
