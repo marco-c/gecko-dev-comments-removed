@@ -8,7 +8,6 @@
 
 
 
-
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
@@ -30,11 +29,6 @@ Object.defineProperty(this, "gIsInitializing", {
 });
 
 function initialize(event) {
-  
-  
-  if (event.target instanceof ProcessingInstruction) {
-    return;
-  }
   document.removeEventListener("load", initialize, true);
 
   if (!isDiscoverEnabled()) {
