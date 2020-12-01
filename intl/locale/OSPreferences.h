@@ -125,6 +125,10 @@ class OSPreferences : public mozIOSPreferences {
                                    const nsACString& aLocale,
                                    nsACString& aRetVal);
 
+  bool OverrideDateTimePattern(DateTimeFormatStyle aDateStyle,
+                               DateTimeFormatStyle aTimeStyle,
+                               const nsACString& aLocale, nsACString& aRetVal);
+
   
 
 
@@ -154,6 +158,18 @@ class OSPreferences : public mozIOSPreferences {
   bool ReadDateTimePattern(DateTimeFormatStyle aDateFormatStyle,
                            DateTimeFormatStyle aTimeFormatStyle,
                            const nsACString& aLocale, nsACString& aRetVal);
+
+  
+
+
+
+  void RemoveObservers();
+
+  
+
+
+
+  static void PreferenceChanged(const char* aPrefName, void* );
 };
 
 }  
