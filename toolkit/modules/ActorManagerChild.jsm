@@ -51,6 +51,16 @@ class Dispatcher {
   constructor(mm, data) {
     this.mm = mm;
 
+    
+    if (!data) {
+      data = {
+        actors: new Map(),
+        events: new Map(),
+        messages: new Map(),
+        observers: new Map(),
+      };
+    }
+
     this.actors = data.actors;
     this.events = data.events;
     this.messages = data.messages;

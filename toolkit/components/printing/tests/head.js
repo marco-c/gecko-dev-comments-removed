@@ -55,6 +55,23 @@ class PrintHelper {
     );
   }
 
+  
+  
+  static waitForOldPrintPreview(expectedBrowser) {
+    const { PrintingParent } = ChromeUtils.import(
+      "resource://gre/actors/PrintingParent.jsm"
+    );
+
+    return new Promise(resolve => {
+      PrintingParent.setTestListener(browser => {
+        if (browser == expectedBrowser) {
+          PrintingParent.setTestListener(null);
+          resolve();
+        }
+      });
+    });
+  }
+
   constructor(sourceBrowser) {
     this.sourceBrowser = sourceBrowser;
   }

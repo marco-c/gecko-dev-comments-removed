@@ -6,9 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["PrintingChild"];
 
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
-);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
@@ -23,7 +20,20 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ReaderMode.jsm"
 );
 
-class PrintingChild extends ActorChild {
+let gPrintPreviewInitializingInfo = null;
+
+let gPendingPreviewsMap = new Map();
+
+class PrintingChild extends JSWindowActorChild {
+  actorCreated() {
+    
+    
+    let listener = gPendingPreviewsMap.get(this.browsingContext.id);
+    if (listener) {
+      listener.actor = this;
+    }
+  }
+
   
   
   
@@ -41,7 +51,7 @@ class PrintingChild extends ActorChild {
         let win = event.target.defaultView;
         let wbp = win.getInterface(Ci.nsIWebBrowserPrint);
         let nsresult = event.detail;
-        this.mm.sendAsyncMessage("Printing:Error", {
+        this.sendAsyncMessage("Printing:Error", {
           isPrinting: wbp.doingPrint,
           nsresult,
         });
@@ -49,7 +59,7 @@ class PrintingChild extends ActorChild {
       }
 
       case "printPreviewUpdate": {
-        let info = this.printPreviewInitializingInfo;
+        let info = gPrintPreviewInitializingInfo;
         if (!info) {
           
           
@@ -59,8 +69,10 @@ class PrintingChild extends ActorChild {
         
         
         if (!info.entered) {
+          gPendingPreviewsMap.delete(this.browsingContext.id);
+
           info.entered = true;
-          this.mm.sendAsyncMessage("Printing:Preview:Entered", {
+          this.sendAsyncMessage("Printing:Preview:Entered", {
             failed: false,
             changingBrowsers: info.changingBrowsers,
           });
@@ -72,7 +84,7 @@ class PrintingChild extends ActorChild {
         }
 
         
-        this.updatePageCount(this.mm);
+        this.updatePageCount();
         break;
       }
     }
@@ -106,13 +118,14 @@ class PrintingChild extends ActorChild {
       }
 
       case "Printing:Preview:ParseDocument": {
-        this.parseDocument(
+        return this.parseDocument(
           data.URL,
           Services.wm.getOuterWindowWithId(data.windowID)
         );
-        break;
       }
     }
+
+    return undefined;
   }
 
   getPrintSettings(lastUsedPrinterName) {
@@ -145,169 +158,174 @@ class PrintingChild extends ActorChild {
     return null;
   }
 
-  parseDocument(URL, contentWindow) {
+  async parseDocument(URL, contentWindow) {
     
     
-    let articlePromise = ReaderMode.parseDocument(contentWindow.document).catch(
-      Cu.reportError
-    );
-    articlePromise.then(article => {
-      
-      
-      
-      let { mm } = this;
-      let webProgressListener = {
-        onStateChange(webProgress, req, flags, status) {
-          if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
-            webProgress.removeProgressListener(webProgressListener);
-            let domUtils = contentWindow.windowUtils;
+    let thisWindow = this.contentWindow;
+
+    
+    
+    let article;
+    try {
+      article = await ReaderMode.parseDocument(contentWindow.document);
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+
+    
+    
+    
+    let actor = thisWindow.windowGlobalChild.getActor("Printing");
+    let webProgressListener = {
+      onStateChange(webProgress, req, flags, status) {
+        if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
+          webProgress.removeProgressListener(webProgressListener);
+          let domUtils = contentWindow.windowUtils;
+          
+          
+          if (domUtils.isMozAfterPaintPending) {
+            let onPaint = function() {
+              contentWindow.removeEventListener("MozAfterPaint", onPaint);
+              actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+            };
+            contentWindow.addEventListener("MozAfterPaint", onPaint);
             
-            
-            if (domUtils.isMozAfterPaintPending) {
-              let onPaint = function() {
-                mm.removeEventListener("MozAfterPaint", onPaint);
-                mm.sendAsyncMessage("Printing:Preview:ReaderModeReady");
-              };
-              contentWindow.addEventListener("MozAfterPaint", onPaint);
-              
-              setTimeout(() => {
-                mm.removeEventListener("MozAfterPaint", onPaint);
-                mm.sendAsyncMessage("Printing:Preview:ReaderModeReady");
-              }, 100);
-            } else {
-              mm.sendAsyncMessage("Printing:Preview:ReaderModeReady");
-            }
+            setTimeout(() => {
+              contentWindow.removeEventListener("MozAfterPaint", onPaint);
+              actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+            }, 100);
+          } else {
+            actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
           }
-        },
+        }
+      },
 
-        QueryInterface: ChromeUtils.generateQI([
-          "nsIWebProgressListener",
-          "nsISupportsWeakReference",
-          "nsIObserver",
-        ]),
-      };
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIWebProgressListener",
+        "nsISupportsWeakReference",
+        "nsIObserver",
+      ]),
+    };
 
-      const { content, docShell } = this.mm;
+    
+    let webProgress = thisWindow.docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebProgress);
+    webProgress.addProgressListener(
+      webProgressListener,
+      Ci.nsIWebProgress.NOTIFY_STATE_REQUEST
+    );
+
+    let document = thisWindow.document;
+    document.head.innerHTML = "";
+
+    
+    
+    
+    let headBaseElement = document.createElement("base");
+    headBaseElement.setAttribute("href", URL);
+    document.head.appendChild(headBaseElement);
+
+    
+    let headStyleElement = document.createElement("link");
+    headStyleElement.setAttribute("rel", "stylesheet");
+    headStyleElement.setAttribute(
+      "href",
+      "chrome://global/skin/aboutReader.css"
+    );
+    headStyleElement.setAttribute("type", "text/css");
+    document.head.appendChild(headStyleElement);
+
+    
+    headStyleElement = document.createElement("link");
+    headStyleElement.setAttribute("rel", "stylesheet");
+    headStyleElement.setAttribute(
+      "href",
+      "chrome://global/content/simplifyMode.css"
+    );
+    headStyleElement.setAttribute("type", "text/css");
+    document.head.appendChild(headStyleElement);
+
+    document.body.innerHTML = "";
+
+    
+    let containerElement = document.createElement("div");
+    containerElement.setAttribute("id", "container");
+    document.body.appendChild(containerElement);
+
+    
+    
+    if (article) {
+      
+      document.title = article.title;
 
       
-      let webProgress = docShell
-        .QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIWebProgress);
-      webProgress.addProgressListener(
-        webProgressListener,
-        Ci.nsIWebProgress.NOTIFY_STATE_REQUEST
+      let headerElement = document.createElement("div");
+      headerElement.setAttribute("id", "reader-header");
+      headerElement.setAttribute("class", "header");
+      containerElement.appendChild(headerElement);
+
+      
+      let titleElement = document.createElement("h1");
+      titleElement.setAttribute("id", "reader-title");
+      titleElement.textContent = article.title;
+      headerElement.appendChild(titleElement);
+
+      let bylineElement = document.createElement("div");
+      bylineElement.setAttribute("id", "reader-credits");
+      bylineElement.setAttribute("class", "credits");
+      bylineElement.textContent = article.byline;
+      headerElement.appendChild(bylineElement);
+
+      
+      headerElement.style.display = "block";
+
+      
+      let contentElement = document.createElement("div");
+      contentElement.setAttribute("class", "content");
+      containerElement.appendChild(contentElement);
+
+      
+      let readerContent = document.createElement("div");
+      readerContent.setAttribute("id", "moz-reader-content");
+      contentElement.appendChild(readerContent);
+
+      let articleUri = Services.io.newURI(article.url);
+      let parserUtils = Cc["@mozilla.org/parserutils;1"].getService(
+        Ci.nsIParserUtils
+      );
+      let contentFragment = parserUtils.parseFragment(
+        article.content,
+        Ci.nsIParserUtils.SanitizerDropForms |
+          Ci.nsIParserUtils.SanitizerAllowStyle,
+        false,
+        articleUri,
+        readerContent
       );
 
-      content.document.head.innerHTML = "";
+      readerContent.appendChild(contentFragment);
 
       
-      
-      
-      let headBaseElement = content.document.createElement("base");
-      headBaseElement.setAttribute("href", URL);
-      content.document.head.appendChild(headBaseElement);
-
-      
-      let headStyleElement = content.document.createElement("link");
-      headStyleElement.setAttribute("rel", "stylesheet");
-      headStyleElement.setAttribute(
-        "href",
-        "chrome://global/skin/aboutReader.css"
+      readerContent.style.display = "block";
+    } else {
+      let aboutReaderStrings = Services.strings.createBundle(
+        "chrome://global/locale/aboutReader.properties"
       );
-      headStyleElement.setAttribute("type", "text/css");
-      content.document.head.appendChild(headStyleElement);
-
-      
-      headStyleElement = content.document.createElement("link");
-      headStyleElement.setAttribute("rel", "stylesheet");
-      headStyleElement.setAttribute(
-        "href",
-        "chrome://global/content/simplifyMode.css"
+      let errorMessage = aboutReaderStrings.GetStringFromName(
+        "aboutReader.loadError"
       );
-      headStyleElement.setAttribute("type", "text/css");
-      content.document.head.appendChild(headStyleElement);
 
-      content.document.body.innerHTML = "";
+      document.title = errorMessage;
 
       
-      let containerElement = content.document.createElement("div");
-      containerElement.setAttribute("id", "container");
-      content.document.body.appendChild(containerElement);
+      let readerMessageElement = document.createElement("div");
+      readerMessageElement.setAttribute("class", "reader-message");
+      readerMessageElement.textContent = errorMessage;
+      containerElement.appendChild(readerMessageElement);
 
       
-      
-      if (article) {
-        
-        content.document.title = article.title;
-
-        
-        let headerElement = content.document.createElement("div");
-        headerElement.setAttribute("id", "reader-header");
-        headerElement.setAttribute("class", "header");
-        containerElement.appendChild(headerElement);
-
-        
-        let titleElement = content.document.createElement("h1");
-        titleElement.setAttribute("id", "reader-title");
-        titleElement.textContent = article.title;
-        headerElement.appendChild(titleElement);
-
-        let bylineElement = content.document.createElement("div");
-        bylineElement.setAttribute("id", "reader-credits");
-        bylineElement.setAttribute("class", "credits");
-        bylineElement.textContent = article.byline;
-        headerElement.appendChild(bylineElement);
-
-        
-        headerElement.style.display = "block";
-
-        
-        let contentElement = content.document.createElement("div");
-        contentElement.setAttribute("class", "content");
-        containerElement.appendChild(contentElement);
-
-        
-        let readerContent = content.document.createElement("div");
-        readerContent.setAttribute("id", "moz-reader-content");
-        contentElement.appendChild(readerContent);
-
-        let articleUri = Services.io.newURI(article.url);
-        let parserUtils = Cc["@mozilla.org/parserutils;1"].getService(
-          Ci.nsIParserUtils
-        );
-        let contentFragment = parserUtils.parseFragment(
-          article.content,
-          Ci.nsIParserUtils.SanitizerDropForms |
-            Ci.nsIParserUtils.SanitizerAllowStyle,
-          false,
-          articleUri,
-          readerContent
-        );
-
-        readerContent.appendChild(contentFragment);
-
-        
-        readerContent.style.display = "block";
-      } else {
-        let aboutReaderStrings = Services.strings.createBundle(
-          "chrome://global/locale/aboutReader.properties"
-        );
-        let errorMessage = aboutReaderStrings.GetStringFromName(
-          "aboutReader.loadError"
-        );
-
-        content.document.title = errorMessage;
-
-        
-        let readerMessageElement = content.document.createElement("div");
-        readerMessageElement.setAttribute("class", "reader-message");
-        readerMessageElement.textContent = errorMessage;
-        containerElement.appendChild(readerMessageElement);
-
-        
-        readerMessageElement.style.display = "block";
-      }
-    });
+      readerMessageElement.style.display = "block";
+    }
   }
 
   enterPrintPreview(
@@ -350,6 +368,9 @@ class PrintingChild extends ActorChild {
       }
 
       
+      let browserContextId = this.browsingContext.id;
+
+      
       
       
       let printPreviewInitialize = () => {
@@ -357,23 +378,25 @@ class PrintingChild extends ActorChild {
         
         
         if (docShell.isBeingDestroyed()) {
-          this.mm.sendAsyncMessage("Printing:Preview:Entered", {
+          this.sendAsyncMessage("Printing:Preview:Entered", {
             failed: true,
           });
           return;
         }
 
         try {
-          let listener = new PrintingListener(this.mm);
+          let listener = new PrintingListener(this);
+          gPendingPreviewsMap.set(browserContextId, listener);
 
-          this.printPreviewInitializingInfo = { changingBrowsers };
+          gPrintPreviewInitializingInfo = { changingBrowsers };
+
           contentWindow.printPreview(printSettings, listener, docShell);
         } catch (error) {
           
           
           Cu.reportError(error);
-          this.printPreviewInitializingInfo = null;
-          this.mm.sendAsyncMessage("Printing:Preview:Entered", {
+          gPrintPreviewInitializingInfo = null;
+          this.sendAsyncMessage("Printing:Preview:Entered", {
             failed: true,
           });
         }
@@ -384,10 +407,10 @@ class PrintingChild extends ActorChild {
       
       
       if (
-        this.printPreviewInitializingInfo &&
-        !this.printPreviewInitializingInfo.entered
+        gPrintPreviewInitializingInfo &&
+        !gPrintPreviewInitializingInfo.entered
       ) {
-        this.printPreviewInitializingInfo.nextRequest = printPreviewInitialize;
+        gPrintPreviewInitializingInfo.nextRequest = printPreviewInitialize;
       } else {
         Services.tm.dispatchToMainThread(printPreviewInitialize);
       }
@@ -395,19 +418,21 @@ class PrintingChild extends ActorChild {
       
       
       Cu.reportError(error);
-      this.mm.sendAsyncMessage("Printing:Preview:Entered", { failed: true });
+      this.sendAsyncMessage("Printing:Preview:Entered", {
+        failed: true,
+      });
     }
   }
 
-  exitPrintPreview(glo) {
-    this.printPreviewInitializingInfo = null;
+  exitPrintPreview() {
+    gPrintPreviewInitializingInfo = null;
     this.docShell.exitPrintPreview();
   }
 
   updatePageCount() {
     let cv = this.docShell.contentViewer;
     cv.QueryInterface(Ci.nsIWebBrowserPrint);
-    this.mm.sendAsyncMessage("Printing:Preview:UpdatePageCount", {
+    this.sendAsyncMessage("Printing:Preview:UpdatePageCount", {
       numPages: cv.printPreviewNumPages,
       totalPages: cv.rawNumPages,
     });
@@ -424,14 +449,14 @@ PrintingChild.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsIPrintingPromptService",
 ]);
 
-function PrintingListener(global) {
-  this.global = global;
+function PrintingListener(actor) {
+  this.actor = actor;
 }
 PrintingListener.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIWebProgressListener"]),
 
   onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
-    this.global.sendAsyncMessage("Printing:Preview:StateChange", {
+    this.actor.sendAsyncMessage("Printing:Preview:StateChange", {
       stateFlags: aStateFlags,
       status: aStatus,
     });
@@ -445,7 +470,7 @@ PrintingListener.prototype = {
     aCurTotalProgress,
     aMaxTotalProgress
   ) {
-    this.global.sendAsyncMessage("Printing:Preview:ProgressChange", {
+    this.actor.sendAsyncMessage("Printing:Preview:ProgressChange", {
       curSelfProgress: aCurSelfProgress,
       maxSelfProgress: aMaxSelfProgress,
       curTotalProgress: aCurTotalProgress,
