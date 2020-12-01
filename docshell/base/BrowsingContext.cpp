@@ -542,6 +542,23 @@ void BrowsingContext::CleanUpDanglingRemoteOuterWindowProxies(
   js::RemapRemoteWindowProxies(aCx, &cb, aOuter);
 }
 
+bool BrowsingContext::GetIsActiveBrowserWindow() {
+  if (!XRE_IsParentProcess()) {
+    return Top()->GetIsActiveBrowserWindowInternal();
+  }
+
+  
+  
+  
+  RefPtr<CanonicalBrowsingContext> chromeTop =
+      Canonical()->TopCrossChromeBoundary();
+  return chromeTop->GetIsActiveBrowserWindowInternal();
+}
+
+void BrowsingContext::SetIsActiveBrowserWindow(bool aActive) {
+  Unused << SetIsActiveBrowserWindowInternal(aActive);
+}
+
 bool BrowsingContext::FullscreenAllowed() const {
   for (auto* current = this; current; current = current->GetParent()) {
     if (!current->GetFullscreenAllowedByOwner()) {
@@ -2309,6 +2326,36 @@ bool BrowsingContext::CheckOnlyOwningProcessCanSet(ContentParent* aSource) {
   }
 
   return true;
+}
+
+bool BrowsingContext::CanSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>,
+                             const bool& aValue, ContentParent* aSource) {
+  
+  return XRE_IsParentProcess() && !aSource && IsTop();
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>,
+                             bool aOldValue) {
+  bool isActivateEvent = GetIsActiveBrowserWindowInternal();
+  
+  
+  
+  PreOrderWalk([isActivateEvent](BrowsingContext* aContext) {
+    if (RefPtr<Document> doc = aContext->GetExtantDocument()) {
+      doc->UpdateDocumentStates(NS_DOCUMENT_STATE_WINDOW_INACTIVE, true);
+
+      if (XRE_IsContentProcess() &&
+          (!aContext->GetParent() || !aContext->GetParent()->IsInProcess())) {
+        
+        
+        
+        nsContentUtils::DispatchEventOnlyToChrome(
+            doc, doc->GetWindow()->GetCurrentInnerWindow(),
+            isActivateEvent ? u"activate"_ns : u"deactivate"_ns,
+            CanBubble::eYes, Cancelable::eYes, nullptr);
+      }
+    }
+  });
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_AllowContentRetargeting>,

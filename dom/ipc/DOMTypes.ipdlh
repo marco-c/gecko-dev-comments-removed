@@ -384,7 +384,6 @@ struct OwnerShowInfo {
 
   
   
-  bool parentWindowIsActive;
   nsSizeMode sizeMode;
 };
 

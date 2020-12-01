@@ -102,6 +102,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   already_AddRefed<CanonicalBrowsingContext> GetParentCrossChromeBoundary();
 
+  already_AddRefed<CanonicalBrowsingContext> TopCrossChromeBoundary();
   Nullable<WindowProxyHolder> GetTopChromeWindow();
 
   nsISHistory* GetSessionHistory();
@@ -112,6 +113,13 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   UniquePtr<LoadingSessionHistoryInfo> ReplaceLoadingSessionHistoryEntryForLoad(
       LoadingSessionHistoryInfo* aInfo, nsIChannel* aChannel);
+
+  
+  
+  
+  void CallOnAllTopDescendants(
+      const std::function<mozilla::CallState(CanonicalBrowsingContext*)>&
+          aCallback);
 
   void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID,
                             uint32_t aLoadType);
