@@ -99,7 +99,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
         MOZ_ASSERT(!mStart, "Another START?");
         mStart = aParam * mDestination->mSampleRate;
         
-        mBeginProcessing = mStart + 0.5;
+        mBeginProcessing = llround(mStart);
         break;
       case AudioBufferSourceNode::DURATION:
         MOZ_ASSERT(aParam >= 0);
@@ -152,7 +152,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
       speex_resampler_destroy(mResampler);
       mResampler = nullptr;
       mRemainingResamplerTail = 0;
-      mBeginProcessing = mStart + 0.5;
+      mBeginProcessing = llround(mStart);
     }
 
     if (aChannels == 0 || (aOutRate == mBufferSampleRate && !mResampler)) {
@@ -186,7 +186,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
       speex_resampler_get_ratio(mResampler, &ratioNum, &ratioDen);
       
       
-      int64_t subsample = mStart * ratioNum + 0.5;
+      int64_t subsample = llround(mStart * ratioNum);
       
       
       
@@ -262,7 +262,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
         if (leadTicks > 0.0) {
           
           
-          int64_t leadSubsamples = leadTicks * ratioNum + 0.5;
+          int64_t leadSubsamples = llround(leadTicks * ratioNum);
           MOZ_ASSERT(leadSubsamples <= skipFracNum,
                      "mBeginProcessing is wrong?");
           skipFracNum -= leadSubsamples;
