@@ -2513,6 +2513,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
 
   const bool isOrthogonal = aWM.IsOrthogonalTo(parentFrame->GetWritingMode());
   const bool isVertical = aWM.IsVertical();
+  const LogicalSize fallbackIntrinsicSize(aWM, kFallbackIntrinsicSize);
   const auto& isizeCoord =
       isVertical ? aIntrinsicSize.height : aIntrinsicSize.width;
   const bool hasIntrinsicISize = isizeCoord.isSome();
@@ -2660,7 +2661,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
           tentISize = 0;
         }
       } else {
-        tentISize = nsPresContext::CSSPixelsToAppUnits(300);
+        tentISize = fallbackIntrinsicSize.ISize(aWM);
       }
 
       
@@ -2676,7 +2677,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
       } else if (logicalRatio) {
         tentBSize = logicalRatio.Inverted().ApplyTo(tentISize);
       } else {
-        tentBSize = nsPresContext::CSSPixelsToAppUnits(150);
+        tentBSize = fallbackIntrinsicSize.BSize(aWM);
       }
 
       
@@ -2742,7 +2743,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
             iSize = intrinsicISize;
           }  
         } else {
-          iSize = nsPresContext::CSSPixelsToAppUnits(300);
+          iSize = fallbackIntrinsicSize.ISize(aWM);
         }
       }  
       iSize = NS_CSS_MINMAX(iSize, minISize, maxISize);
@@ -2760,7 +2761,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
             bSize = intrinsicBSize;
           }  
         } else {
-          bSize = nsPresContext::CSSPixelsToAppUnits(150);
+          bSize = fallbackIntrinsicSize.BSize(aWM);
         }
       }  
       bSize = NS_CSS_MINMAX(bSize, minBSize, maxBSize);
