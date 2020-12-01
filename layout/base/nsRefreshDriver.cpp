@@ -1413,6 +1413,11 @@ void nsRefreshDriver::NotifyDOMContentLoaded() {
   }
 }
 
+void nsRefreshDriver::RegisterCompositionPayload(
+    const mozilla::layers::CompositionPayload& aPayload) {
+  mCompositionPayloads.AppendElement(aPayload);
+}
+
 void nsRefreshDriver::RunDelayedEventsSoon() {
   
   
@@ -2056,6 +2061,9 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   if (tickReasons == TickReasons::eNone) {
     
     
+    mCompositionPayloads.Clear();
+
+    
     
     
     
@@ -2351,6 +2359,14 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
         MarkerStack::TakeBacktrace(std::move(mViewManagerFlushCause)),
         transactionId);
 
+    
+    nsIWidget* widget = mPresContext->GetRootWidget();
+    layers::LayerManager* lm = widget ? widget->GetLayerManager() : nullptr;
+    if (lm) {
+      lm->RegisterPayloads(mCompositionPayloads);
+    }
+    mCompositionPayloads.Clear();
+
     RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
 
     nsTArray<nsDocShell*> profilingDocShells;
@@ -2397,6 +2413,9 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
 
     dispatchRunnablesAfterTick = true;
     mHasScheduleFlush = false;
+  } else {
+    
+    mCompositionPayloads.Clear();
   }
 
   double totalMs = (TimeStamp::Now() - mTickStart).ToMilliseconds();
