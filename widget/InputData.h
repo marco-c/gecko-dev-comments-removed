@@ -152,6 +152,28 @@ class SingleTouchData {
   
   
   
+  
+  
+  
+  
+
+  struct HistoricalTouchData {
+    
+    
+    TimeStamp mTimeStamp;
+
+    
+    ScreenIntPoint mScreenPoint;
+    ParentLayerPoint mLocalScreenPoint;
+    ScreenSize mRadius;
+    float mRotationAngle = 0.0f;
+    float mForce = 0.0f;
+  };
+  CopyableTArray<HistoricalTouchData> mHistoricalData;
+
+  
+  
+  
   int32_t mIdentifier;
 
   
