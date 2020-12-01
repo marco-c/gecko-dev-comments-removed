@@ -23,20 +23,8 @@ pub trait CommandPool<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     unsafe fn reset(&mut self, release_resources: bool);
 
-    
-    
-    
-    
     
     unsafe fn allocate_one(&mut self, level: Level) -> B::CommandBuffer {
         let mut result = PseudoVec(None);
@@ -45,17 +33,11 @@ pub trait CommandPool<B: Backend>: fmt::Debug + Any + Send + Sync {
     }
 
     
-    
-    
-    
-    
-    
-    
     unsafe fn allocate<E>(&mut self, num: usize, level: Level, list: &mut E)
     where
         E: Extend<B::CommandBuffer>,
     {
-        list.extend((0..num).map(|_| self.allocate_one(level)));
+        list.extend((0 .. num).map(|_| self.allocate_one(level)));
     }
 
     

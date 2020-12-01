@@ -99,7 +99,7 @@ pub struct Requirements {
     
     pub alignment: u64,
     
-    pub type_mask: u32,
+    pub type_mask: u64,
 }
 
 

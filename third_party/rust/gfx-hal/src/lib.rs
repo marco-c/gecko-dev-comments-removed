@@ -1,40 +1,4 @@
-#![warn(
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_extern_crates,
-    unused_import_braces,
-    unused_qualifications
-)]
-#![deny(
-    intra_doc_link_resolution_failure,
-    missing_debug_implementations,
-    missing_docs,
-    unused
-)]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#![deny(missing_debug_implementations, missing_docs, unused)]
 
 
 
@@ -67,14 +31,14 @@ pub mod window;
 
 pub mod prelude {
     pub use crate::{
-        adapter::PhysicalDevice,
-        command::CommandBuffer,
-        device::Device,
-        pool::CommandPool,
-        pso::DescriptorPool,
-        queue::{CommandQueue, QueueFamily},
-        window::{PresentationSurface, Surface},
-        Instance,
+        adapter::PhysicalDevice as _,
+        command::CommandBuffer as _,
+        device::Device as _,
+        pool::CommandPool as _,
+        pso::DescriptorPool as _,
+        queue::{CommandQueue as _, QueueFamily as _},
+        window::{PresentationSurface as _, Surface as _, Swapchain as _},
+        Instance as _,
     };
 }
 
@@ -91,17 +55,11 @@ pub type DrawCount = u32;
 
 pub type WorkGroupCount = [u32; 3];
 
-pub type TaskCount = u32;
-
 bitflags! {
     //TODO: add a feature for non-normalized samplers
     //TODO: add a feature for mutable comparison samplers
     /// Features that the device supports.
-    ///
     /// These only include features of the core interface and not API extensions.
-    ///
-    /// Can be obtained from a [physical device][adapter::PhysicalDevice] by calling
-    /// [`features`][adapter::PhysicalDevice::features].
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct Features: u128 {
         /// Bit mask of Vulkan Core/Extension features.
@@ -110,8 +68,6 @@ bitflags! {
         const PORTABILITY_MASK  = 0x0000_FFFF_0000_0000_0000_0000;
         /// Bit mask for extra WebGPU features.
         const WEBGPU_MASK = 0xFFFF_0000_0000_0000_0000_0000;
-        /// Bit mask for all extensions.
-        const EXTENSIONS_MASK = 0xFFFF_FFFF_0000_0000_0000_0000_0000_0000;
 
         /// Support for robust buffer access.
         /// Buffer access by SPIR-V shaders is checked against the buffer/image boundaries.
@@ -254,11 +210,6 @@ bitflags! {
 
         /// Make the NDC coordinate system pointing Y up, to match D3D and Metal.
         const NDC_Y_UP = 0x0001 << 80;
-
-        /// Supports task shader stage.
-        const TASK_SHADER = 0x0001 << 96;
-        /// Supports mesh shader stage.
-        const MESH_SHADER = 0x0002 << 96;
     }
 }
 
@@ -421,45 +372,6 @@ pub struct Limits {
 
     
     pub min_vertex_input_binding_stride_alignment: buffer::Offset,
-
-    
-    pub max_draw_mesh_tasks_count: u32,
-    
-    
-    
-    pub max_task_work_group_invocations: u32,
-    
-    
-    
-    
-    pub max_task_work_group_size: [u32; 3],
-    
-    pub max_task_total_memory_size: u32,
-    
-    pub max_task_output_count: u32,
-    
-    
-    
-    pub max_mesh_work_group_invocations: u32,
-    
-    
-    
-    
-    pub max_mesh_work_group_size: [u32; 3],
-    
-    pub max_mesh_total_memory_size: u32,
-    
-    pub max_mesh_output_vertices: u32,
-    
-    pub max_mesh_output_primitives: u32,
-    
-    pub max_mesh_multiview_view_count: u32,
-    
-    
-    pub mesh_output_per_vertex_granularity: u32,
-    
-    
-    pub mesh_output_per_primitive_granularity: u32,
 }
 
 
@@ -474,7 +386,7 @@ pub enum IndexType {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct UnsupportedBackend;
 
 
@@ -502,37 +414,14 @@ pub struct UnsupportedBackend;
 
 pub trait Instance<B: Backend>: Any + Send + Sync + Sized {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn create(name: &str, version: u32) -> Result<Self, UnsupportedBackend>;
-
     
     fn enumerate_adapters(&self) -> Vec<adapter::Adapter<B>>;
-
-    
-    
-    
-    
-    
-    
-    
     
     unsafe fn create_surface(
         &self,
-        raw_window_handle: &impl raw_window_handle::HasRawWindowHandle,
+        _: &impl raw_window_handle::HasRawWindowHandle,
     ) -> Result<B::Surface, window::InitError>;
-
-    
     
     
     
@@ -553,7 +442,7 @@ impl From<usize> for MemoryTypeId {
 
 struct PseudoVec<T>(Option<T>);
 
-impl<T> Extend<T> for PseudoVec<T> {
+impl<T> std::iter::Extend<T> for PseudoVec<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let mut iter = iter.into_iter();
         self.0 = iter.next();
@@ -564,68 +453,42 @@ impl<T> Extend<T> for PseudoVec<T> {
 
 
 
-
+#[allow(missing_docs)]
 pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send + Sync {
-    
     type Instance: Instance<Self>;
-    
     type PhysicalDevice: adapter::PhysicalDevice<Self>;
-    
     type Device: device::Device<Self>;
-    
-    type Surface: window::PresentationSurface<Self>;
 
-    
+    type Surface: window::PresentationSurface<Self>;
+    type Swapchain: window::Swapchain<Self>;
+
     type QueueFamily: queue::QueueFamily;
-    
     type CommandQueue: queue::CommandQueue<Self>;
-    
     type CommandBuffer: command::CommandBuffer<Self>;
 
-    
     type ShaderModule: fmt::Debug + Any + Send + Sync;
-    
     type RenderPass: fmt::Debug + Any + Send + Sync;
-    
     type Framebuffer: fmt::Debug + Any + Send + Sync;
 
-    
     type Memory: fmt::Debug + Any + Send + Sync;
-    
     type CommandPool: pool::CommandPool<Self>;
 
-    
     type Buffer: fmt::Debug + Any + Send + Sync;
-    
     type BufferView: fmt::Debug + Any + Send + Sync;
-    
     type Image: fmt::Debug + Any + Send + Sync;
-    
     type ImageView: fmt::Debug + Any + Send + Sync;
-    
     type Sampler: fmt::Debug + Any + Send + Sync;
 
-    
     type ComputePipeline: fmt::Debug + Any + Send + Sync;
-    
     type GraphicsPipeline: fmt::Debug + Any + Send + Sync;
-    
     type PipelineCache: fmt::Debug + Any + Send + Sync;
-    
     type PipelineLayout: fmt::Debug + Any + Send + Sync;
-    
     type DescriptorPool: pso::DescriptorPool<Self>;
-    
     type DescriptorSet: fmt::Debug + Any + Send + Sync;
-    
     type DescriptorSetLayout: fmt::Debug + Any + Send + Sync;
 
-    
     type Fence: fmt::Debug + Any + Send + Sync;
-    
     type Semaphore: fmt::Debug + Any + Send + Sync;
-    
     type Event: fmt::Debug + Any + Send + Sync;
-    
     type QueryPool: fmt::Debug + Any + Send + Sync;
 }

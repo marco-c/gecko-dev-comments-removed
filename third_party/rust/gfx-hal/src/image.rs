@@ -4,7 +4,8 @@
 
 use crate::{
     buffer::Offset as RawOffset,
-    device, format,
+    device,
+    format,
     pso::{Comparison, Rect},
 };
 use std::{f32, hash, ops::Range};
@@ -86,7 +87,7 @@ impl Offset {
             y: self.y + extent.height as i32,
             z: self.z + extent.depth as i32,
         };
-        self..end
+        self .. end
     }
 }
 
@@ -204,7 +205,7 @@ pub enum LayerError {
     
     NotExpected(Kind),
     
-    OutOfBounds,
+    OutOfBounds(Range<Layer>),
 }
 
 impl std::fmt::Display for LayerError {
@@ -213,7 +214,11 @@ impl std::fmt::Display for LayerError {
             LayerError::NotExpected(kind) => {
                 write!(fmt, "Kind {{{:?}}} does not support arrays", kind)
             }
-            LayerError::OutOfBounds => write!(fmt, "Out of bounds layers"),
+            LayerError::OutOfBounds(layers) => write!(
+                fmt,
+                "Out of bounds layers {} .. {}",
+                layers.start, layers.end
+            ),
         }
     }
 }
@@ -320,7 +325,7 @@ impl Kind {
     }
 
     
-    pub fn compute_num_levels(&self) -> Level {
+    pub fn num_levels(&self) -> Level {
         use std::cmp::max;
         match *self {
             Kind::D2(_, _, _, s) if s > 1 => {
@@ -330,7 +335,7 @@ impl Kind {
             _ => {
                 let extent = self.extent();
                 let dominant = max(max(extent.width, extent.height), extent.depth);
-                (1..).find(|level| dominant >> level == 0).unwrap()
+                (1 ..).find(|level| dominant >> level == 0).unwrap()
             }
         }
     }
@@ -457,7 +462,7 @@ pub struct Lod(pub f32);
 
 impl Lod {
     
-    pub const RANGE: Range<Self> = Lod(f32::MIN)..Lod(f32::MAX);
+    pub const RANGE: Range<Self> = Lod(f32::MIN) .. Lod(f32::MAX);
 }
 
 impl Eq for Lod {}
@@ -649,49 +654,15 @@ pub struct SubresourceLayers {
 }
 
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SubresourceRange {
     
     pub aspects: format::Aspects,
     
-    pub level_start: Level,
+    pub levels: Range<Level>,
     
-    
-    
-    
-    pub level_count: Option<Level>,
-    
-    pub layer_start: Layer,
-    
-    
-    
-    
-    pub layer_count: Option<Layer>,
-}
-
-impl From<SubresourceLayers> for SubresourceRange {
-    fn from(sub: SubresourceLayers) -> Self {
-        SubresourceRange {
-            aspects: sub.aspects,
-            level_start: sub.level,
-            level_count: Some(1),
-            layer_start: sub.layers.start,
-            layer_count: Some(sub.layers.end - sub.layers.start),
-        }
-    }
-}
-
-impl SubresourceRange {
-    
-    pub fn resolve_level_count(&self, total: Level) -> Level {
-        self.level_count.unwrap_or(total - self.level_start)
-    }
-
-    
-    pub fn resolve_layer_count(&self, total: Layer) -> Layer {
-        self.layer_count.unwrap_or(total - self.layer_start)
-    }
+    pub layers: Range<Layer>,
 }
 
 

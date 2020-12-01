@@ -1,13 +1,5 @@
 
 
-
-
-
-
-
-
-
-
 use crate::{format::Format, image, memory::Dependencies, pso::PipelineStage, Backend};
 use std::ops::Range;
 
@@ -82,7 +74,6 @@ impl AttachmentOps {
 
 
 
-
 #[derive(Clone, Debug, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Attachment {
@@ -92,9 +83,6 @@ pub struct Attachment {
     
     
     pub format: Option<Format>,
-    
-    
-    
     
     pub samples: image::NumSamples,
     
@@ -107,7 +95,6 @@ pub struct Attachment {
 }
 
 impl Attachment {
-    
     
     
     pub fn has_clears(&self) -> bool {
@@ -124,7 +111,6 @@ pub const ATTACHMENT_UNUSED: AttachmentId = !0;
 
 
 pub type SubpassId = u8;
-
 
 
 
@@ -160,9 +146,6 @@ pub struct SubpassDesc<'a> {
     
     
     
-    
-    
-    
     pub resolves: &'a [AttachmentRef],
     
     
@@ -189,7 +172,7 @@ impl<'a, B: Backend> Clone for Subpass<'a, B> {
 
 impl<'a, B: Backend> PartialEq for Subpass<'a, B> {
     fn eq(&self, other: &Self) -> bool {
-        self.index == other.index && std::ptr::eq(self.main_pass, other.main_pass)
+        self.index == other.index && self.main_pass as *const _ == other.main_pass as *const _
     }
 }
 

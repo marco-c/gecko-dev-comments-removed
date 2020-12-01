@@ -26,10 +26,7 @@ impl<T, B: Backend> Writer<'_, '_, T, B> {
     
     
     pub fn forget(mut self) -> (*mut T, Option<hal::memory::Segment>) {
-        (
-            self.slice.as_mut_ptr(),
-            self.flush.take().map(|f| f.segment),
-        )
+        (self.slice.as_mut_ptr(), self.flush.take().map(|f| f.segment))
     }
 }
 

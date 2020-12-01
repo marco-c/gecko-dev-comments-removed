@@ -3,6 +3,15 @@
 use std::{borrow::Cow, ops::Range, slice};
 
 
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Clone, Hash, PartialEq)]
 pub struct SpecializationConstant {
     
@@ -10,16 +19,6 @@ pub struct SpecializationConstant {
     
     pub range: Range<u16>,
 }
-
-
-
-
-
-
-
-
-
-
 
 
 #[derive(Debug, Clone)]
@@ -96,12 +95,11 @@ where
         let offset = storage.data.len() as u16;
         storage.data.extend_from_slice(unsafe {
             
-            let head_ptr: *const H = &self.head.1;
-            slice::from_raw_parts(head_ptr as *const u8, size)
+            slice::from_raw_parts(&self.head.1 as *const H as *const u8, size)
         });
         storage.constants.push(SpecializationConstant {
             id: self.head.0,
-            range: offset..offset + size as u16,
+            range: offset .. offset + size as u16,
         });
         self.tail.fold(storage)
     }

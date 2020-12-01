@@ -49,21 +49,19 @@
 
 
 
+use crate::device;
+use crate::format::Format;
+use crate::image;
+use crate::queue::CommandQueue;
+use crate::Backend;
 
+use std::any::Any;
+use std::borrow::Borrow;
+use std::cmp::{max, min};
+use std::fmt;
+use std::iter;
+use std::ops::RangeInclusive;
 
-
-
-
-
-use crate::{device, format::Format, image, Backend};
-
-use std::{
-    any::Any,
-    borrow::Borrow,
-    cmp::{max, min},
-    fmt,
-    ops::RangeInclusive,
-};
 
 
 pub const DEFAULT_USAGE: image::Usage = image::Usage::COLOR_ATTACHMENT;
@@ -228,6 +226,12 @@ impl SurfaceCapabilities {
 
 pub trait Surface<B: Backend>: fmt::Debug + Any + Send + Sync {
     
+    
+    
+    
+    
+    
+    
     fn supports_queue_family(&self, family: &B::QueueFamily) -> bool;
 
     
@@ -266,6 +270,12 @@ pub trait PresentationSurface<B: Backend>: Surface<B> {
     
     unsafe fn unconfigure_swapchain(&mut self, device: &B::Device);
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -370,6 +380,12 @@ pub struct SwapchainConfig {
 }
 
 impl SwapchainConfig {
+    
+    
+    
+    
+    
+    
     
     pub fn new(width: u32, height: u32, format: Format, image_count: SwapImageIndex) -> Self {
         SwapchainConfig {
@@ -539,6 +555,70 @@ impl std::error::Error for PresentError {
             PresentError::DeviceLost(err) => Some(err),
             _ => None,
         }
+    }
+}
+
+
+
+pub trait Swapchain<B: Backend>: fmt::Debug + Any + Send + Sync {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn acquire_image(
+        &mut self,
+        timeout_ns: u64,
+        semaphore: Option<&B::Semaphore>,
+        fence: Option<&B::Fence>,
+    ) -> Result<(SwapImageIndex, Option<Suboptimal>), AcquireError>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn present<'a, S, Iw>(
+        &'a self,
+        present_queue: &mut B::CommandQueue,
+        image_index: SwapImageIndex,
+        wait_semaphores: Iw,
+    ) -> Result<Option<Suboptimal>, PresentError>
+    where
+        Self: 'a + Sized + Borrow<B::Swapchain>,
+        S: 'a + Borrow<B::Semaphore>,
+        Iw: IntoIterator<Item = &'a S>,
+    {
+        present_queue.present(iter::once((self, image_index)), wait_semaphores)
+    }
+
+    
+    unsafe fn present_without_semaphores<'a>(
+        &'a self,
+        present_queue: &mut B::CommandQueue,
+        image_index: SwapImageIndex,
+    ) -> Result<Option<Suboptimal>, PresentError>
+    where
+        Self: 'a + Sized + Borrow<B::Swapchain>,
+    {
+        self.present::<B::Semaphore, _>(present_queue, image_index, iter::empty())
     }
 }
 

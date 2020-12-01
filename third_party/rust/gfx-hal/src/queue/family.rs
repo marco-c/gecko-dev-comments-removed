@@ -9,9 +9,6 @@ use std::fmt::Debug;
 
 
 
-
-
-
 pub trait QueueFamily: Debug + Any + Send + Sync {
     
     fn queue_type(&self) -> QueueType;

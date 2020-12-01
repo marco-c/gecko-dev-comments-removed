@@ -3,8 +3,6 @@
 
 
 
-
-
 use crate::device::OutOfMemory;
 use crate::Backend;
 
