@@ -12,6 +12,7 @@
 #include "WrapperFactory.h"
 
 #include "jsapi.h"
+#include "jsfriendapi.h"
 #include "js/friend/XrayJitInfo.h"  
 #include "js/Object.h"              
 #include "js/Proxy.h"

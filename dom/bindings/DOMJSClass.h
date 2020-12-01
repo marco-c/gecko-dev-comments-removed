@@ -10,7 +10,6 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/Object.h"  
-#include "js/PropertySpec.h"
 #include "js/Wrapper.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -19,10 +18,10 @@
 #include "mozilla/dom/PrototypeList.h"  
 #include "mozilla/dom/WebIDLPrefs.h"    
 
-#include "mozilla/dom/JSSlots.h"
-
 class nsCycleCollectionParticipant;
 class nsWrapperCache;
+struct JSFunctionSpec;
+struct JSPropertySpec;
 struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
 class nsIGlobalObject;
