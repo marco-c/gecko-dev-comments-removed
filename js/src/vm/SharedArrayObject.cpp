@@ -214,7 +214,7 @@ bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
 
   
   
-  if (byteLength > INT32_MAX) {
+  if (byteLength > ArrayBufferObject::MaxBufferByteLength) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_SHARED_ARRAY_BAD_LENGTH);
     return false;
