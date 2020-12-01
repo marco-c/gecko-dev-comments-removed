@@ -226,6 +226,8 @@ function getTargetOrigin(aTarget) {
 
 
 
+
+
 function coordinatesRelativeToScreen(aX, aY, aTarget) {
   
   
@@ -762,11 +764,16 @@ function promiseMoveMouseAndScrollWheelOver(
 
 
 
+
+
+
+
 function* dragVerticalScrollbar(
   target,
   testDriver,
   distance = 20,
-  increment = 5
+  increment = 5,
+  scaleFactor = 1
 ) {
   var targetElement = elementForTarget(target);
   var w = {},
@@ -780,6 +787,8 @@ function* dragVerticalScrollbar(
   var upArrowHeight = verticalScrollbarWidth; 
   var mouseX = targetElement.clientWidth + verticalScrollbarWidth / 2;
   var mouseY = upArrowHeight + 5; 
+  mouseX *= scaleFactor;
+  mouseY *= scaleFactor;
 
   dump(
     "Starting drag at " +
