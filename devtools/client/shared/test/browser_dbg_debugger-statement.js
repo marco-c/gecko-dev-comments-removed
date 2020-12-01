@@ -48,8 +48,8 @@ add_task(async () => {
     
     
     
-    const watcherFront = await target.getWatcherFront();
-    await watcherFront.watchTargets("frame");
+    const watcher = await target.getWatcher();
+    await watcher.watchTargets("frame");
     const iframeTarget = await target.getBrowsingContextTarget(
       iframeBrowsingContext.id
     );

@@ -22,6 +22,7 @@ class ResourceWatcher {
 
   constructor(targetList) {
     this.targetList = targetList;
+    this.descriptorFront = targetList.descriptorFront;
 
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
@@ -42,10 +43,6 @@ class ResourceWatcher {
 
     this._notifyWatchers = this._notifyWatchers.bind(this);
     this._throttledNotifyWatchers = throttle(this._notifyWatchers, 100);
-  }
-
-  get watcherFront() {
-    return this.targetList.watcherFront;
   }
 
   
@@ -107,26 +104,26 @@ class ResourceWatcher {
     }
 
     
-    if (!this._listenerRegistered && this.watcherFront) {
-      this._listenerRegistered = true;
-      
-      
-      this.watcherFront.on(
-        "resource-available-form",
-        this._onResourceAvailable.bind(this, {
-          watcherFront: this.watcherFront,
-        })
-      );
-      this.watcherFront.on(
-        "resource-updated-form",
-        this._onResourceUpdated.bind(this, { watcherFront: this.watcherFront })
-      );
-      this.watcherFront.on(
-        "resource-destroyed-form",
-        this._onResourceDestroyed.bind(this, {
-          watcherFront: this.watcherFront,
-        })
-      );
+    
+    if (!this.watcher) {
+      const supportsWatcher = this.descriptorFront?.traits?.watcher;
+      if (supportsWatcher) {
+        this.watcher = await this.descriptorFront.getWatcher();
+        
+        
+        this.watcher.on(
+          "resource-available-form",
+          this._onResourceAvailable.bind(this, { watcherFront: this.watcher })
+        );
+        this.watcher.on(
+          "resource-updated-form",
+          this._onResourceUpdated.bind(this, { watcherFront: this.watcher })
+        );
+        this.watcher.on(
+          "resource-destroyed-form",
+          this._onResourceDestroyed.bind(this, { watcherFront: this.watcher })
+        );
+      }
     }
 
     
@@ -294,7 +291,7 @@ class ResourceWatcher {
         
         
         
-        if (this.hasResourceWatcherSupport(resourceType)) {
+        if (this.hasWatcherSupport(resourceType)) {
           continue;
         }
         await this._watchResourcesForTarget(targetFront, resourceType);
@@ -373,7 +370,7 @@ class ResourceWatcher {
           resource,
           targetList: this.targetList,
           targetFront,
-          watcherFront: this.watcherFront,
+          watcher: this.watcher,
         });
       }
 
@@ -601,7 +598,7 @@ class ResourceWatcher {
       );
       return null;
     }
-    return this.watcherFront.getBrowsingContextTarget(browsingContextID);
+    return this.watcher.getBrowsingContextTarget(browsingContextID);
   }
 
   _onWillNavigate(targetFront) {
@@ -615,8 +612,8 @@ class ResourceWatcher {
     );
   }
 
-  hasResourceWatcherSupport(resourceType) {
-    return this.watcherFront?.traits?.resources?.[resourceType];
+  hasWatcherSupport(resourceType) {
+    return this.watcher?.traits?.resources?.[resourceType];
   }
 
   
@@ -646,8 +643,8 @@ class ResourceWatcher {
 
     
     
-    if (this.hasResourceWatcherSupport(resourceType)) {
-      await this.watcherFront.watchResources([resourceType]);
+    if (this.hasWatcherSupport(resourceType)) {
+      await this.watcher.watchResources([resourceType]);
       return;
     }
     
@@ -725,8 +722,8 @@ class ResourceWatcher {
 
     
     
-    if (this.hasResourceWatcherSupport(resourceType)) {
-      this.watcherFront.unwatchResources([resourceType]);
+    if (this.hasWatcherSupport(resourceType)) {
+      this.watcher.unwatchResources([resourceType]);
       return;
     }
     

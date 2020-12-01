@@ -134,7 +134,7 @@ function TargetMixin(parentClass) {
 
 
 
-    getWatcherFront() {
+    getWatcher() {
       
       if (this.parentFront.typeName == "watcher") {
         return this.parentFront;
@@ -161,15 +161,13 @@ function TargetMixin(parentClass) {
 
     async getParentTarget() {
       
-      const watcherFront = await this.getWatcherFront();
-      if (watcherFront) {
+      const watcher = await this.getWatcher();
+      if (watcher) {
         
-        if (watcherFront.traits.frame) {
+        if (watcher.traits.frame) {
           
           
-          return watcherFront.getParentBrowsingContextTarget(
-            this.browsingContextID
-          );
+          return watcher.getParentBrowsingContextTarget(this.browsingContextID);
         }
         return null;
       }
@@ -195,11 +193,11 @@ function TargetMixin(parentClass) {
     async getBrowsingContextTarget(browsingContextID) {
       
       
-      const watcherFront = await this.getWatcherFront();
-      if (watcherFront) {
+      const watcher = await this.getWatcher();
+      if (watcher) {
         
-        if (watcherFront.traits.frame) {
-          return watcherFront.getBrowsingContextTarget(browsingContextID);
+        if (watcher.traits.frame) {
+          return watcher.getBrowsingContextTarget(browsingContextID);
         }
         return null;
       }

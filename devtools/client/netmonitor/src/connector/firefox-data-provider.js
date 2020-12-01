@@ -520,7 +520,7 @@ class FirefoxDataProvider {
       
       if (
         clientMethodName == "getStackTrace" &&
-        this.resourceWatcher.hasResourceWatcherSupport(
+        this.resourceWatcher.hasWatcherSupport(
           this.resourceWatcher.TYPES.NETWORK_EVENT_STACKTRACE
         )
       ) {
