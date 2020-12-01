@@ -96,6 +96,7 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_plugins.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "nsChannelClassifier.h"
 #include "nsFocusManager.h"
@@ -1292,6 +1293,8 @@ EventStates nsObjectLoadingContent::ObjectState() const {
           return NS_EVENT_STATE_VULNERABLE_UPDATABLE;
         case eFallbackVulnerableNoUpdate:
           return NS_EVENT_STATE_VULNERABLE_NO_UPDATE;
+        case eFallbackBlockAllPlugins:
+          return NS_EVENT_STATE_HANDLER_NOPLUGINS;
       }
   }
   MOZ_ASSERT_UNREACHABLE("unknown type?");
@@ -2081,11 +2084,11 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   
   
-  FallbackType clickToPlayReason;
-  if (!mActivated && IsPluginType(mType) && !ShouldPlay(clickToPlayReason)) {
-    LOG(("OBJLC [%p]: Marking plugin as click-to-play", this));
+  FallbackType noPlayReason;
+  if (!mActivated && IsPluginType(mType) && !ShouldPlay(noPlayReason)) {
+    LOG(("OBJLC [%p]: Marking plugin as do-not-play", this));
     mType = eType_Null;
-    fallbackType = clickToPlayReason;
+    fallbackType = noPlayReason;
   }
 
   if (!mActivated && IsPluginType(mType)) {
@@ -2233,6 +2236,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     NS_ASSERTION(!mFrameLoader && !mInstanceOwner,
                  "switched to type null but also loaded something");
 
+    
     
     
     if (fallbackType != eFallbackClickToPlay &&
@@ -2604,11 +2608,11 @@ void nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
     }
 
     
-    const EventStates pluginProblemState = NS_EVENT_STATE_HANDLER_BLOCKED |
-                                           NS_EVENT_STATE_HANDLER_CRASHED |
-                                           NS_EVENT_STATE_TYPE_CLICK_TO_PLAY |
-                                           NS_EVENT_STATE_VULNERABLE_UPDATABLE |
-                                           NS_EVENT_STATE_VULNERABLE_NO_UPDATE;
+    const EventStates pluginProblemState =
+        NS_EVENT_STATE_HANDLER_BLOCKED | NS_EVENT_STATE_HANDLER_CRASHED |
+        NS_EVENT_STATE_TYPE_CLICK_TO_PLAY |
+        NS_EVENT_STATE_VULNERABLE_UPDATABLE |
+        NS_EVENT_STATE_VULNERABLE_NO_UPDATE | NS_EVENT_STATE_HANDLER_NOPLUGINS;
 
     bool hadProblemState = !(aOldState & pluginProblemState).IsEmpty();
     bool hasProblemState = !(newState & pluginProblemState).IsEmpty();
@@ -2769,7 +2773,8 @@ nsNPAPIPluginInstance* nsObjectLoadingContent::ScriptRequestPluginInstance(
   
   
   if (callerIsContentJS && !mScriptRequested && InActiveDocument(thisContent) &&
-      mType == eType_Null && mFallbackType >= eFallbackClickToPlay) {
+      mType == eType_Null && mFallbackType >= eFallbackClickToPlay &&
+      mFallbackType <= eFallbackClickToPlayQuiet) {
     nsCOMPtr<nsIRunnable> ev =
         new nsSimplePluginEvent(thisContent, u"PluginScripted"_ns);
     nsresult rv = NS_DispatchToCurrentThread(ev);
@@ -2875,7 +2880,8 @@ void nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   nsTArray<nsINodeList*> childNodes;
   if (thisContent->IsHTMLElement(nsGkAtoms::object) &&
       (aType == eFallbackUnsupported || aType == eFallbackDisabled ||
-       aType == eFallbackBlocklisted || aType == eFallbackAlternate)) {
+       aType == eFallbackBlocklisted || aType == eFallbackAlternate ||
+       aType == eFallbackBlockAllPlugins)) {
     for (nsIContent* child = thisContent->GetFirstChild(); child;) {
       
       
@@ -3024,7 +3030,8 @@ void nsObjectLoadingContent::PlayPlugin(SystemCallerGuarantee,
   
   
   
-  if (mType == eType_Null && mFallbackType >= eFallbackClickToPlay) {
+  if (mType == eType_Null && mFallbackType >= eFallbackClickToPlay &&
+      mFallbackType <= eFallbackClickToPlayQuiet) {
     aRv = LoadObject(true, true);
   }
 }
@@ -3131,162 +3138,11 @@ bool nsObjectLoadingContent::ShouldBlockContent() {
 }
 
 bool nsObjectLoadingContent::ShouldPlay(FallbackType& aReason) {
-  nsresult rv;
-
-  if (BrowserTabsRemoteAutostart() && XRE_IsParentProcess()) {
-    
-    aReason = eFallbackDisabled;
-    return false;
-  }
-
-  RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
+  MOZ_ASSERT(!BrowserTabsRemoteAutostart() || !XRE_IsParentProcess());
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  aReason = eFallbackClickToPlay;
-
-  uint32_t enabledState = nsIPluginTag::STATE_DISABLED;
-  pluginHost->GetStateForType(mContentType, nsPluginHost::eExcludeNone,
-                              &enabledState);
-  if (nsIPluginTag::STATE_DISABLED == enabledState) {
-    aReason = eFallbackDisabled;
-    return false;
-  }
-
-  
-  
-  
-  uint32_t blocklistState = nsIBlocklistService::STATE_BLOCKED;
-  pluginHost->GetBlocklistStateForType(mContentType, nsPluginHost::eExcludeNone,
-                                       &blocklistState);
-  if (blocklistState == nsIBlocklistService::STATE_BLOCKED) {
-    
-    aReason = eFallbackBlocklisted;
-    return false;
-  }
-
-  if (blocklistState ==
-      nsIBlocklistService::STATE_VULNERABLE_UPDATE_AVAILABLE) {
-    aReason = eFallbackVulnerableUpdatable;
-  } else if (blocklistState ==
-             nsIBlocklistService::STATE_VULNERABLE_NO_UPDATE) {
-    aReason = eFallbackVulnerableNoUpdate;
-  }
-
-  
-  nsCOMPtr<nsIContent> thisContent =
-      do_QueryInterface(static_cast<nsIObjectLoadingContent*>(this));
-  MOZ_ASSERT(thisContent);
-  Document* ownerDoc = thisContent->OwnerDoc();
-
-  nsCOMPtr<nsPIDOMWindowOuter> window = ownerDoc->GetWindow();
-  if (!window) {
-    return false;
-  }
-  nsCOMPtr<nsPIDOMWindowOuter> topWindow = window->GetInProcessTop();
-  NS_ENSURE_TRUE(topWindow, false);
-  nsCOMPtr<Document> topDoc = topWindow->GetDoc();
-  NS_ENSURE_TRUE(topDoc, false);
-
-  
-  FlashClassification documentClassification = FlashClassification::Unknown;
-  if (IsFlashMIME(mContentType)) {
-    documentClassification = ownerDoc->DocumentFlashClassification();
-  }
-  if (documentClassification == FlashClassification::Denied) {
-    aReason = eFallbackDisabled;
-    return false;
-  }
-
-  
-  
-  nsCOMPtr<nsIPermissionManager> permissionManager =
-      services::GetPermissionManager();
-  NS_ENSURE_TRUE(permissionManager, false);
-
-  
-  
-  
-  
-  
-  if (!topDoc->NodePrincipal()->IsSystemPrincipal()) {
-    nsAutoCString permissionString;
-    rv = pluginHost->GetPermissionStringForType(
-        mContentType, nsPluginHost::eExcludeNone, permissionString);
-    NS_ENSURE_SUCCESS(rv, false);
-    uint32_t permission;
-    rv = permissionManager->TestPermissionFromPrincipal(
-        topDoc->NodePrincipal(), permissionString, &permission);
-    NS_ENSURE_SUCCESS(rv, false);
-    switch (permission) {
-      case nsIPermissionManager::ALLOW_ACTION:
-        if (PreferFallback(false )) {
-          aReason = eFallbackAlternate;
-          return false;
-        }
-
-        return true;
-      case nsIPermissionManager::DENY_ACTION:
-        aReason = eFallbackDisabled;
-        return false;
-      case PLUGIN_PERMISSION_PROMPT_ACTION_QUIET:
-        if (PreferFallback(true )) {
-          aReason = eFallbackAlternate;
-        } else {
-          aReason = eFallbackClickToPlayQuiet;
-        }
-
-        return false;
-      case nsIPermissionManager::PROMPT_ACTION:
-        if (PreferFallback(true )) {
-          
-          
-          aReason = eFallbackAlternate;
-        }
-
-        return false;
-      case nsIPermissionManager::UNKNOWN_ACTION:
-        break;
-      default:
-        MOZ_ASSERT(false);
-        return false;
-    }
-  }
-
-  
-  if (blocklistState ==
-          nsIBlocklistService::STATE_VULNERABLE_UPDATE_AVAILABLE ||
-      blocklistState == nsIBlocklistService::STATE_VULNERABLE_NO_UPDATE) {
-    return false;
-  }
-
-  if (PreferFallback(enabledState == nsIPluginTag::STATE_CLICKTOPLAY)) {
-    aReason = eFallbackAlternate;
-    return false;
-  }
-
-  
-  
-  
-  switch (enabledState) {
-    case nsIPluginTag::STATE_ENABLED:
-      return true;
-    case nsIPluginTag::STATE_CLICKTOPLAY:
-      if (documentClassification == FlashClassification::Allowed) {
-        return true;
-      }
-      return false;
-  }
-  MOZ_CRASH("Unexpected enabledState");
+  aReason = eFallbackBlockAllPlugins;
+  return false;
 }
 
 bool nsObjectLoadingContent::FavorFallbackMode(bool aIsPluginClickToPlay) {
