@@ -93,6 +93,23 @@ var PromiseTestUtils = {
 
 
 
+
+  collectJSDevErrors() {
+    let recentJSDevError = ChromeUtils.recentJSDevError;
+    if (!recentJSDevError) {
+      
+      return;
+    }
+    ChromeUtils.clearRecentJSDevError();
+    Promise.reject(
+      `${recentJSDevError.message}\n${recentJSDevError.stack}\ndetected at\n`
+    );
+  },
+
+  
+
+
+
   ensureDOMPromiseRejectionsProcessed() {
     let observed = false;
     let observer = {
