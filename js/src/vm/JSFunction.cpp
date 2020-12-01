@@ -550,7 +550,6 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
     IsGenerator = 1 << 1,
     IsAsync = 1 << 2,
     IsLazy = 1 << 3,
-    HasSingletonType = 1 << 4,
   };
 
   
@@ -571,10 +570,6 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
     fun = objp;
     if (!fun->isInterpreted() || fun->isBoundFunction()) {
       return xdr->fail(JS::TranscodeResult_Failure_NotInterpretedFun);
-    }
-
-    if (fun->isSingleton()) {
-      xdrFlags |= HasSingletonType;
     }
 
     if (fun->isGenerator()) {
@@ -656,14 +651,7 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
     }
     objp.set(fun);
 
-    
-    
-    
-    
-    
-    if (enclosingScope) {
-      MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
-    }
+    MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
   }
 
   if (xdrFlags & IsLazy) {
@@ -2241,14 +2229,14 @@ JSFunction* js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
     clone->initEnvironment(enclosingEnv);
   }
 
+  MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
+
   
 
 
 
   if (fun->staticPrototype() == clone->staticPrototype()) {
     clone->setGroup(fun->group());
-  } else if (setTypeForFunction) {
-    MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
   }
   return clone;
 }

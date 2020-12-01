@@ -1549,12 +1549,9 @@ bool BytecodeEmitter::isInLoop() {
   return findInnermostNestableControl<LoopControl>();
 }
 
-bool BytecodeEmitter::checkRunOnceContext() {
-  return sc->treatAsRunOnce() && !isInLoop();
-}
-
 bool BytecodeEmitter::checkSingletonContext() {
-  return sc->isTopLevelContext() && checkRunOnceContext();
+  MOZ_ASSERT_IF(sc->treatAsRunOnce(), sc->isTopLevelContext());
+  return sc->treatAsRunOnce() && !isInLoop();
 }
 
 bool BytecodeEmitter::needsImplicitThis() {
@@ -5741,33 +5738,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
       }
       funbox->setMemberInitializers(*memberInitializers);
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool isRunOnceLambda =
-        emittingRunOnceLambda && !funbox->shouldSuppressRunOnce();
-    funbox->setTreatAsRunOnce(isRunOnceLambda);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    funbox->setIsSingleton(checkRunOnceContext());
 
     if (!funbox->emitBytecode) {
       return fe.emitLazy();

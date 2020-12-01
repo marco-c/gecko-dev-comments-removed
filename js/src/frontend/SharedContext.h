@@ -385,10 +385,6 @@ class FunctionBox : public SharedContext {
   bool wasEmitted_ : 1;
 
   
-  
-  bool isSingleton_ : 1;
-
-  
   bool isAnnexB : 1;
 
   
@@ -461,14 +457,6 @@ class FunctionBox : public SharedContext {
     wasEmitted_ = wasEmitted;
     if (isFunctionFieldCopiedToStencil) {
       copyUpdatedWasEmitted();
-    }
-  }
-
-  bool isSingleton() const { return isSingleton_; }
-  void setIsSingleton(bool isSingleton) {
-    isSingleton_ = isSingleton;
-    if (isFunctionFieldCopiedToStencil) {
-      copyUpdatedIsSingleton();
     }
   }
 
@@ -606,28 +594,12 @@ class FunctionBox : public SharedContext {
     setFlag(ImmutableFlags::IsFieldInitializer);
   }
 
-  void setTreatAsRunOnce(bool treatAsRunOnce) {
-    immutableFlags_.setFlag(ImmutableFlags::TreatAsRunOnce, treatAsRunOnce);
-    if (isScriptFieldCopiedToStencil) {
-      copyUpdatedImmutableFlags();
-    }
-  }
-
   bool hasSimpleParameterList() const {
     return !hasRest() && !hasParameterExprs && !hasDestructuringArgs;
   }
 
   bool hasMappedArgsObj() const {
     return !strict() && hasSimpleParameterList();
-  }
-
-  bool shouldSuppressRunOnce() const {
-    
-    
-    
-    
-    return explicitName() || argumentsHasVarBinding() || isGenerator() ||
-           isAsync();
   }
 
   
@@ -697,8 +669,6 @@ class FunctionBox : public SharedContext {
 
   
   
-  
-  
   void copyUpdatedImmutableFlags();
 
   
@@ -722,10 +692,6 @@ class FunctionBox : public SharedContext {
   
   
   void copyUpdatedWasEmitted();
-
-  
-  
-  void copyUpdatedIsSingleton();
 };
 
 #undef FLAG_GETTER_SETTER

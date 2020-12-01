@@ -17,16 +17,6 @@ using namespace js::frontend;
 
 using mozilla::Maybe;
 
-AutoEmittingRunOnceLambda::AutoEmittingRunOnceLambda(BytecodeEmitter* bce)
-    : bce_(bce) {
-  MOZ_ASSERT(!bce_->emittingRunOnceLambda);
-  bce_->emittingRunOnceLambda = true;
-}
-
-AutoEmittingRunOnceLambda::~AutoEmittingRunOnceLambda() {
-  bce_->emittingRunOnceLambda = false;
-}
-
 CallOrNewEmitter::CallOrNewEmitter(BytecodeEmitter* bce, JSOp op,
                                    ArgumentsKind argumentsKind,
                                    ValueUsage valueUsage)
@@ -82,18 +72,6 @@ MOZ_MUST_USE ElemOpEmitter& CallOrNewEmitter::prepareForElemCallee(
 
 bool CallOrNewEmitter::prepareForFunctionCallee() {
   MOZ_ASSERT(state_ == State::Start);
-
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!bce_->emittingRunOnceLambda);
-  if (bce_->checkRunOnceContext()) {
-    autoEmittingRunOnceLambda_.emplace(bce_);
-  }
 
   state_ = State::FunctionCallee;
   return true;
@@ -151,7 +129,6 @@ bool CallOrNewEmitter::emitThis() {
       }
       break;
     case State::FunctionCallee:
-      autoEmittingRunOnceLambda_.reset();
       needsThis = true;
       break;
     case State::SuperCallee:

@@ -135,9 +135,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   bool hasTryFinally = false;
 
-  
-  bool emittingRunOnceLambda = false;
-
   enum EmitterMode {
     Normal,
 
@@ -272,10 +269,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   bool isInLoop();
   MOZ_MUST_USE bool checkSingletonContext();
-
-  
-  
-  MOZ_MUST_USE bool checkRunOnceContext();
 
   bool needsImplicitThis();
 

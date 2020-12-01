@@ -604,10 +604,6 @@ class ScriptStencil {
 
   
   
-  bool isSingletonFunction : 1;
-
-  
-  
   
   
   bool allowRelazify : 1;
@@ -617,7 +613,6 @@ class ScriptStencil {
   ScriptStencil()
       : isStandaloneFunction(false),
         wasFunctionEmitted(false),
-        isSingletonFunction(false),
         allowRelazify(false) {}
 
   bool isFunction() const {

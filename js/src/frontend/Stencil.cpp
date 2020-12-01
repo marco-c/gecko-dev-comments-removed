@@ -339,14 +339,9 @@ static bool InstantiateScopes(JSContext* cx, CompilationInfo& compilationInfo,
 
 
 
-
-
-
-
-
-static bool SetTypeAndNameForExposedFunctions(JSContext* cx,
-                                              CompilationInfo& compilationInfo,
-                                              CompilationGCOutput& gcOutput) {
+static bool SetNameForExposedFunctions(JSContext* cx,
+                                       CompilationInfo& compilationInfo,
+                                       CompilationGCOutput& gcOutput) {
   Rooted<JSFunction*> fun(cx);
   for (auto item : compilationInfo.functionScriptStencils(gcOutput)) {
     auto& scriptStencil = item.script;
@@ -361,8 +356,6 @@ static bool SetTypeAndNameForExposedFunctions(JSContext* cx,
         !scriptStencil.isStandaloneFunction) {
       continue;
     }
-
-    MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
 
     
     
@@ -530,8 +523,6 @@ static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo,
       ScopeIndex index = *scriptStencil.lazyFunctionEnclosingScopeIndex_;
       Scope* scope = gcOutput.scopes[index];
       script->setEnclosingScope(scope);
-      script->initTreatAsRunOnce(scriptStencil.immutableFlags.hasFlag(
-          ImmutableScriptFlagsEnum::TreatAsRunOnce));
 
       if (scriptStencil.memberInitializers) {
         script->setMemberInitializers(*scriptStencil.memberInitializers);
@@ -578,13 +569,7 @@ static void AssertDelazificationFieldsMatch(CompilationInfo& compilationInfo,
 
     BaseScript* script = fun->baseScript();
 
-    
-    uint32_t acceptableDifferenceForScript =
-        uint32_t(ImmutableScriptFlagsEnum::TreatAsRunOnce);
-    MOZ_ASSERT(
-        (uint32_t(script->immutableFlags()) | acceptableDifferenceForScript) ==
-        (uint32_t(scriptStencil.immutableFlags) |
-         acceptableDifferenceForScript));
+    MOZ_ASSERT(script->immutableFlags() == scriptStencil.immutableFlags);
 
     MOZ_ASSERT(script->extent().sourceStart ==
                scriptStencil.extent.sourceStart);
@@ -697,7 +682,9 @@ bool CompilationInfo::instantiateStencilsAfterPreparation(
     return false;
   }
 
-  if (!SetTypeAndNameForExposedFunctions(cx, *this, gcOutput)) {
+  MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
+
+  if (!SetNameForExposedFunctions(cx, *this, gcOutput)) {
     return false;
   }
 
@@ -1594,7 +1581,6 @@ void ScriptStencil::dumpFields(js::JSONPrinter& json,
 
     json.boolProperty("isStandaloneFunction", isStandaloneFunction);
     json.boolProperty("wasFunctionEmitted", wasFunctionEmitted);
-    json.boolProperty("isSingletonFunction", isSingletonFunction);
   }
 }
 
