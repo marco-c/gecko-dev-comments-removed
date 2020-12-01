@@ -5385,6 +5385,11 @@ nsresult PresShell::SetResolutionAndScaleTo(float aResolution,
     MOZ_ASSERT(mResolution.isSome());
     return NS_OK;
   }
+
+  
+  
+  bool resolutionUpdated = (aResolution != GetResolution());
+
   RenderingState state(this);
   state.mResolution = Some(aResolution);
   SetRenderingState(state);
@@ -5393,7 +5398,7 @@ nsresult PresShell::SetResolutionAndScaleTo(float aResolution,
   }
   if (aOrigin == ResolutionChangeOrigin::Apz) {
     mResolutionUpdatedByApz = true;
-  } else {
+  } else if (resolutionUpdated) {
     mResolutionUpdated = true;
   }
 
