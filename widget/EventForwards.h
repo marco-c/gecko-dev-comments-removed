@@ -463,6 +463,8 @@ enum class TextRangeType : RawTextRangeType;
 
 
 template <typename IntType>
+class StartAndEndOffsets;
+template <typename IntType>
 class OffsetAndData;
 
 }  
