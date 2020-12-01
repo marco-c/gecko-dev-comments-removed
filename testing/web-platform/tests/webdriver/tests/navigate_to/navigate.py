@@ -1,3 +1,7 @@
+import time
+
+import pytest
+
 from tests.support import platform_name
 from webdriver.transport import Response
 
@@ -52,3 +56,23 @@ def test_file_protocol(session, server_config):
     if session.url.endswith('/'):
         url += '/'
     assert session.url == url
+
+
+@pytest.mark.capabilities({"pageLoadStrategy": "eager"})
+def test_utf8_meta_tag_after_1024_bytes(session, url):
+    page = url("/webdriver/tests/support/html/meta-utf8-after-1024-bytes.html")
+
+    
+    
+    
+    response = navigate_to(session, page)
+    assert_success(response)
+
+    
+    
+    session.execute_script("window.foo = 'bar'")
+
+    
+    time.sleep(1)
+
+    assert session.execute_script("return window.foo") == "bar"
