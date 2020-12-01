@@ -996,53 +996,12 @@ private:
 
 
 
-
-
-
 #ifdef MOZ_SKIA
-extern "C" bool Gecko_OnSierraExactly();
-extern "C" bool Gecko_OnHighSierraOrLater();
+extern "C" bool Gecko_OnSierraOrLater();
 #endif
 static SkUniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGFloat textSize,
                                                          const CGAffineTransform* transform)
 {
-    SkUniqueCFRef<CGFontRef> baseCGFont(CTFontCopyGraphicsFont(baseFont, nullptr));
-
-    
-    
-    
-    
-
-    
-    
-    
-
-#ifdef MOZ_SKIA
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     
     
     
@@ -1059,32 +1018,71 @@ static SkUniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGF
         return result;
     };
 
-    if (Gecko_OnSierraExactly() ||
-        (Gecko_OnHighSierraOrLater() && IsInstalledFont(baseFont)))
-#endif
-    {
+    
+    
+    if (IsInstalledFont(baseFont)) {
+        SkUniqueCFRef<CGFontRef> baseCGFont(CTFontCopyGraphicsFont(baseFont, nullptr));
+
         
-        CFDictionaryRef variations = CGFontCopyVariations(baseCGFont.get());
-        if (variations) {
+        
+        
+        
+
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        if (Gecko_OnSierraOrLater())
+        {
+          
+          CFDictionaryRef variations = CGFontCopyVariations(baseCGFont.get());
+          if (variations) {
             SkUniqueCFRef<CFDictionaryRef>
-                varAttr(CFDictionaryCreate(nullptr,
-                                           (const void**)&kCTFontVariationAttribute,
-                                           (const void**)&variations,
-                                           1,
-                                           &kCFTypeDictionaryKeyCallBacks,
-                                           &kCFTypeDictionaryValueCallBacks));
+              varAttr(CFDictionaryCreate(nullptr,
+                                         (const void**)&kCTFontVariationAttribute,
+                                         (const void**)&variations,
+                                         1,
+                                         &kCFTypeDictionaryKeyCallBacks,
+                                         &kCFTypeDictionaryValueCallBacks));
             CFRelease(variations);
 
             SkUniqueCFRef<CTFontDescriptorRef>
-                varDesc(CTFontDescriptorCreateWithAttributes(varAttr.get()));
+              varDesc(CTFontDescriptorCreateWithAttributes(varAttr.get()));
 
             return SkUniqueCFRef<CTFontRef>(
-                    CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, transform, varDesc.get()));
-        }
+                                            CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, transform, varDesc.get()));
+          }
+      }
+      return SkUniqueCFRef<CTFontRef>(
+                                      CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, transform, nullptr));
+    } else {
+        return SkUniqueCFRef<CTFontRef>(CTFontCreateCopyWithAttributes(baseFont, textSize, transform, nullptr));
     }
-
-    return SkUniqueCFRef<CTFontRef>(
-            CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, transform, nullptr));
 }
 
 SkScalerContext_Mac::SkScalerContext_Mac(sk_sp<SkTypeface_Mac> typeface,

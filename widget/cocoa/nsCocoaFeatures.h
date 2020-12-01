@@ -53,7 +53,7 @@ class nsCocoaFeatures {
 
 extern "C" {
 bool Gecko_OnSierraExactly();
-bool Gecko_OnHighSierraOrLater();
+bool Gecko_OnSierraOrLater();
 }
 
 #endif  
