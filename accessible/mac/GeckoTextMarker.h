@@ -59,8 +59,6 @@ class GeckoTextMarker final {
   }
 
  private:
-  uint32_t CharacterCount(const AccessibleOrProxy& aContainer);
-
   bool IsEditableRoot();
 };
 
@@ -69,6 +67,8 @@ class GeckoTextMarkerRange final {
   GeckoTextMarkerRange(const GeckoTextMarker& aStart,
                        const GeckoTextMarker& aEnd)
       : mStart(aStart), mEnd(aEnd) {}
+
+  GeckoTextMarkerRange() {}
 
   GeckoTextMarkerRange(AccessibleOrProxy aDoc,
                        AXTextMarkerRangeRef aTextMarkerRange);
@@ -100,6 +100,13 @@ class GeckoTextMarkerRange final {
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Select() const;
+
+  
+
+
+
+
+  bool Crop(const AccessibleOrProxy& aContainer);
 
   GeckoTextMarker mStart;
   GeckoTextMarker mEnd;
