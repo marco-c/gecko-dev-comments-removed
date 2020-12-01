@@ -99,6 +99,7 @@ struct FrameMetrics {
         mPaintRequestTime(),
         mVisualDestination(0, 0),
         mVisualScrollUpdateType(eNone),
+        mCompositionSizeWithoutDynamicToolbar(),
         mIsRootContent(false),
         mIsScrollInfoLayer(false) {}
 
@@ -126,7 +127,9 @@ struct FrameMetrics {
            mVisualScrollUpdateType == aOther.mVisualScrollUpdateType &&
            mIsRootContent == aOther.mIsRootContent &&
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer &&
-           mFixedLayerMargins == aOther.mFixedLayerMargins;
+           mFixedLayerMargins == aOther.mFixedLayerMargins &&
+           mCompositionSizeWithoutDynamicToolbar ==
+               aOther.mCompositionSizeWithoutDynamicToolbar;
   }
 
   bool operator!=(const FrameMetrics& aOther) const {
@@ -435,6 +438,15 @@ struct FrameMetrics {
     return mFixedLayerMargins;
   }
 
+  void SetCompositionSizeWithoutDynamicToolbar(const ParentLayerSize& aSize) {
+    MOZ_ASSERT(mIsRootContent);
+    mCompositionSizeWithoutDynamicToolbar = aSize;
+  }
+  const ParentLayerSize& GetCompositionSizeWithoutDynamicToolbar() const {
+    MOZ_ASSERT(mIsRootContent);
+    return mCompositionSizeWithoutDynamicToolbar;
+  }
+
   
   
   
@@ -593,6 +605,12 @@ struct FrameMetrics {
   
   
   ScreenMargin mFixedLayerMargins;
+
+  
+  
+  
+  
+  ParentLayerSize mCompositionSizeWithoutDynamicToolbar;
 
   
   bool mIsRootContent : 1;
