@@ -46,6 +46,25 @@ class ModuleScript;
 class ScriptLoadHandler;
 class ScriptRequestProcessor;
 
+class AsyncCompileShutdownObserver final : public nsIObserver {
+  ~AsyncCompileShutdownObserver() { Unregister(); }
+
+ public:
+  explicit AsyncCompileShutdownObserver(ScriptLoader* aLoader)
+      : mScriptLoader(aLoader) {}
+
+  void OnShutdown();
+  void Unregister();
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+ private:
+  
+  
+  ScriptLoader* mScriptLoader;
+};
+
 
 
 
@@ -373,7 +392,7 @@ class ScriptLoader final : public nsISupports {
 
 
 
-  void Destroy() { GiveUpBytecodeEncoding(); }
+  void Destroy();
 
   
 
@@ -404,6 +423,11 @@ class ScriptLoader final : public nsISupports {
   static LoadedScript* GetActiveScript(JSContext* aCx);
 
   Document* GetDocument() const { return mDocument; }
+
+  
+
+
+  void Shutdown();
 
  private:
   virtual ~ScriptLoader();
@@ -612,6 +636,12 @@ class ScriptLoader final : public nsISupports {
 
   void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
 
+  
+
+
+
+  void CancelScriptLoadRequests();
+
   Document* mDocument;  
   nsCOMArray<nsIScriptLoaderObserver> mObservers;
   ScriptLoadRequestList mNonAsyncExternalScriptInsertedRequests;
@@ -672,6 +702,9 @@ class ScriptLoader final : public nsISupports {
   nsRefPtrHashtable<nsURIHashKey, ModuleScript> mFetchedModules;
 
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
+
+  
+  RefPtr<AsyncCompileShutdownObserver> mShutdownObserver;
 
   
  public:
