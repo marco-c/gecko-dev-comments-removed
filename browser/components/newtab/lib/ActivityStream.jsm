@@ -512,6 +512,13 @@ const PREFS_CONFIG = new Map([
       getValue: ({ geo }) => {
         const preffedRegionsString =
           Services.prefs.getStringPref(REGION_BASIC_CONFIG) || "";
+        
+        
+        
+        
+        if (!preffedRegionsString) {
+          return false;
+        }
         const preffedRegions = preffedRegionsString
           .split(",")
           .map(s => s.trim());
@@ -592,6 +599,11 @@ const FEEDS_DATA = [
       "System pref that fetches content recommendations from a configurable content provider",
     
     getValue: ({ geo, locale }) => {
+      
+      
+      if (!geo) {
+        return false;
+      }
       const preffedRegionsBlockString =
         Services.prefs.getStringPref(REGION_STORIES_BLOCK) || "";
       const preffedRegionsString =
