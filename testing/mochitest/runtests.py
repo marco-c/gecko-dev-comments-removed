@@ -382,7 +382,18 @@ def call(*args, **kwargs):
     """front-end function to mozprocess.ProcessHandler"""
     
     
-    process = mozprocess.ProcessHandler(*args, **kwargs)
+    log = get_proxy_logger("mochitest")
+
+    def on_output(line):
+        log.process_output(
+            process=process.pid,
+            data=line.decode("utf8", "replace"),
+            command=process.commandline,
+        )
+
+    process = mozprocess.ProcessHandlerMixin(
+        *args, processOutputLine=on_output, **kwargs
+    )
     process.run()
     return process.wait()
 
