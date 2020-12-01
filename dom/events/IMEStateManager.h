@@ -8,6 +8,7 @@
 #define mozilla_IMEStateManager_h_
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "nsIWidget.h"
@@ -390,6 +391,50 @@ class IMEStateManager {
   
   
   static bool sCleaningUpForStoppingIMEStateManagement;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool sIsActive;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct PendingFocusedBrowserSwitchingData final {
+    RefPtr<BrowserParent> mBrowserParentBlurred;
+    RefPtr<BrowserParent> mBrowserParentFocused;
+
+    PendingFocusedBrowserSwitchingData() = delete;
+    explicit PendingFocusedBrowserSwitchingData(BrowserParent* aBlur,
+                                                BrowserParent* aFocus)
+        : mBrowserParentBlurred(aBlur), mBrowserParentFocused(aFocus) {}
+  };
+  static Maybe<PendingFocusedBrowserSwitchingData>
+      sPendingFocusedBrowserSwitchingData;
 
   class MOZ_STACK_CLASS GettingNewIMEStateBlocker final {
    public:

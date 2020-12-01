@@ -79,6 +79,9 @@ InputContext IMEStateManager::sActiveChildInputContext;
 bool IMEStateManager::sInstalledMenuKeyboardListener = false;
 bool IMEStateManager::sIsGettingNewIMEState = false;
 bool IMEStateManager::sCleaningUpForStoppingIMEStateManagement = false;
+bool IMEStateManager::sIsActive = false;
+Maybe<IMEStateManager::PendingFocusedBrowserSwitchingData>
+    IMEStateManager::sPendingFocusedBrowserSwitchingData;
 
 
 void IMEStateManager::Init() {
@@ -91,9 +94,12 @@ void IMEStateManager::Init() {
 void IMEStateManager::Shutdown() {
   MOZ_LOG(
       sISMLog, LogLevel::Info,
-      ("Shutdown(), sTextCompositions=0x%p, sTextCompositions->Length()=%zu",
-       sTextCompositions, sTextCompositions ? sTextCompositions->Length() : 0));
+      ("Shutdown(), sTextCompositions=0x%p, sTextCompositions->Length()=%zu, "
+       "sPendingFocusedBrowserSwitchingData.isSome()=%s",
+       sTextCompositions, sTextCompositions ? sTextCompositions->Length() : 0,
+       GetBoolName(sPendingFocusedBrowserSwitchingData.isSome())));
 
+  sPendingFocusedBrowserSwitchingData.reset();
   MOZ_ASSERT(!sTextCompositions || !sTextCompositions->Length());
   delete sTextCompositions;
   sTextCompositions = nullptr;
@@ -107,6 +113,43 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
                                                   BrowserParent* aFocus) {
   MOZ_ASSERT(aBlur != aFocus);
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (sPendingFocusedBrowserSwitchingData.isSome()) {
+    MOZ_ASSERT(aBlur ==
+               sPendingFocusedBrowserSwitchingData.ref().mBrowserParentFocused);
+    
+    
+    if (sPendingFocusedBrowserSwitchingData.ref().mBrowserParentBlurred ==
+        aFocus) {
+      sPendingFocusedBrowserSwitchingData.reset();
+      MOZ_LOG(sISMLog, LogLevel::Info,
+              ("  OnFocusMovedBetweenBrowsers(), canceled all pending focus "
+               "moves between browsers"));
+      return;
+    }
+    aBlur = sPendingFocusedBrowserSwitchingData.ref().mBrowserParentBlurred;
+    sPendingFocusedBrowserSwitchingData.ref().mBrowserParentFocused = aFocus;
+    MOZ_ASSERT(aBlur != aFocus);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (aBlur && !aFocus && !sIsActive && sWidget && sTextCompositions &&
+      sTextCompositions->GetCompositionFor(sWidget)) {
+    if (sPendingFocusedBrowserSwitchingData.isNothing()) {
+      sPendingFocusedBrowserSwitchingData.emplace(aBlur, aFocus);
+    }
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  OnFocusMovedBetweenBrowsers(), put off to handle it until "
+             "next OnFocusChangeInternal() call"));
+    return;
+  }
+  sPendingFocusedBrowserSwitchingData.reset();
 
   nsCOMPtr<nsIWidget> oldWidget = sWidget;
   nsCOMPtr<nsIWidget> newWidget =
@@ -221,6 +264,7 @@ void IMEStateManager::StopIMEStateManagement() {
   sActiveInputContextWidget = nullptr;
   sPresContext = nullptr;
   sContent = nullptr;
+  sIsActive = false;
   DestroyIMEContentObserver();
 }
 
@@ -388,6 +432,15 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
                                                 nsIContent* aContent,
                                                 InputContextAction aAction) {
   bool remoteHasFocus = EventStateManager::IsRemoteTarget(aContent);
+  
+  
+  
+  
+  const bool restoringContextForRemoteContent =
+      XRE_IsParentProcess() && remoteHasFocus && !sIsActive && aPresContext &&
+      sPresContext && sContent && sPresContext.get() == aPresContext &&
+      sContent.get() == aContent &&
+      aAction.mFocusChange != InputContextAction::MENU_GOT_PSEUDO_FOCUS;
 
   MOZ_LOG(sISMLog, LogLevel::Info,
           ("OnChangeFocusInternal(aPresContext=0x%p (available: %s), "
@@ -395,14 +448,40 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
            "mFocusChange=%s }), "
            "sPresContext=0x%p (available: %s), sContent=0x%p, "
            "sWidget=0x%p (available: %s), BrowserParent::GetFocused()=0x%p, "
-           "sActiveIMEContentObserver=0x%p, sInstalledMenuKeyboardListener=%s",
+           "sActiveIMEContentObserver=0x%p, sInstalledMenuKeyboardListener=%s, "
+           "sIsActive=%s, restoringContextForRemoteContent=%s",
            aPresContext, GetBoolName(CanHandleWith(aPresContext)), aContent,
            GetBoolName(remoteHasFocus), ToString(aAction.mCause).c_str(),
            ToString(aAction.mFocusChange).c_str(), sPresContext.get(),
            GetBoolName(CanHandleWith(sPresContext)), sContent.get(), sWidget,
            GetBoolName(sWidget && !sWidget->Destroyed()),
            BrowserParent::GetFocused(), sActiveIMEContentObserver.get(),
-           GetBoolName(sInstalledMenuKeyboardListener)));
+           GetBoolName(sInstalledMenuKeyboardListener), GetBoolName(sIsActive),
+           GetBoolName(restoringContextForRemoteContent)));
+
+  sIsActive = !!aPresContext;
+  if (sPendingFocusedBrowserSwitchingData.isSome()) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    nsCOMPtr<nsIContent> currentContent = sContent.get();
+    RefPtr<nsPresContext> currentPresContext = sPresContext.get();
+    RefPtr<BrowserParent> browserParentBlurred =
+        sPendingFocusedBrowserSwitchingData.ref().mBrowserParentBlurred;
+    RefPtr<BrowserParent> browserParentFocused =
+        sPendingFocusedBrowserSwitchingData.ref().mBrowserParentFocused;
+    OnFocusMovedBetweenBrowsers(browserParentBlurred, browserParentFocused);
+    
+    
+    
+    if (currentContent != sContent.get() ||
+        currentPresContext != sPresContext.get()) {
+      MOZ_LOG(sISMLog, LogLevel::Debug,
+              ("  OnChangeFocusInternal(aPresContext=0x%p, aContent=0x%p) "
+               "stoped handling it because the focused content was changed to "
+               "sPresContext=0x%p, sContent=0x%p by another call",
+               aPresContext, aContent, sPresContext.get(), sContent.get()));
+      return NS_OK;
+    }
+  }
 
   
   
@@ -420,7 +499,7 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
   bool focusActuallyChanging =
       (sContent != aContent || sPresContext != aPresContext ||
        oldWidget != newWidget ||
-       (remoteHasFocus &&
+       (remoteHasFocus && !restoringContextForRemoteContent &&
         (aAction.mFocusChange != InputContextAction::MENU_GOT_PSEUDO_FOCUS)));
 
   
@@ -467,15 +546,14 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
 
   if (!aPresContext) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
-            ("  OnChangeFocusInternal(), "
-             "no nsPresContext is being activated"));
+            ("  OnChangeFocusInternal(), no nsPresContext is being activated"));
     return NS_OK;
   }
 
   if (NS_WARN_IF(!newWidget)) {
     MOZ_LOG(sISMLog, LogLevel::Error,
-            ("  OnChangeFocusInternal(), FAILED due to "
-             "no widget to manage its IME state"));
+            ("  OnChangeFocusInternal(), FAILED due to no widget to manage its "
+             "IME state"));
     return NS_OK;
   }
 
@@ -512,18 +590,17 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
           context.mOrigin == InputContext::ORIGIN_CONTENT) {
         setIMEState = false;
         MOZ_LOG(sISMLog, LogLevel::Debug,
-                ("  OnChangeFocusInternal(), doesn't set IME "
-                 "state because focused element (or document) is in a child "
-                 "process "
-                 "and the IME state is already disabled by a remote process"));
+                ("  OnChangeFocusInternal(), doesn't set IME state because "
+                 "focused element (or document) is in a child process and the "
+                 "IME state is already disabled by a remote process"));
       } else {
         
         
         ResetActiveChildInputContext();
         MOZ_LOG(sISMLog, LogLevel::Debug,
-                ("  OnChangeFocusInternal(), will disable IME "
-                 "until new focused element (or document) in the child process "
-                 "will get focus actually"));
+                ("  OnChangeFocusInternal(), will disable IME until new "
+                 "focused element (or document) in the child process will get "
+                 "focus actually"));
       }
     } else if (newWidget->GetInputContext().mOrigin !=
                InputContext::ORIGIN_MAIN) {
@@ -533,11 +610,10 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       
       
       setIMEState = false;
-      MOZ_LOG(sISMLog, LogLevel::Debug,
-              ("  OnChangeFocusInternal(), doesn't set IME "
-               "state because focused element (or document) is already in the "
-               "child "
-               "process"));
+      MOZ_LOG(
+          sISMLog, LogLevel::Debug,
+          ("  OnChangeFocusInternal(), doesn't set IME state because focused "
+           "element (or document) is already in the child process"));
     }
   } else {
     
@@ -552,8 +628,8 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       InputContext context = newWidget->GetInputContext();
       if (context.mIMEState.mEnabled == newState.mEnabled) {
         MOZ_LOG(sISMLog, LogLevel::Debug,
-                ("  OnChangeFocusInternal(), "
-                 "neither focus nor IME state is changing"));
+                ("  OnChangeFocusInternal(), neither focus nor IME state is "
+                 "changing"));
         return NS_OK;
       }
       aAction.mFocusChange = InputContextAction::FOCUS_NOT_CHANGED;
@@ -594,11 +670,10 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
   if (newState.mEnabled == IMEState::PLUGIN) {
     CreateIMEContentObserver(nullptr);
     if (sActiveIMEContentObserver) {
-      MOZ_LOG(
-          sISMLog, LogLevel::Debug,
-          ("  OnChangeFocusInternal(), an "
-           "IMEContentObserver instance is created for plugin and trying to "
-           "flush its pending notifications..."));
+      MOZ_LOG(sISMLog, LogLevel::Debug,
+              ("  OnChangeFocusInternal(), an IMEContentObserver instance is "
+               "created for plugin and trying to flush its pending "
+               "notifications..."));
       sActiveIMEContentObserver->TryToFlushPendingNotifications(false);
     }
   }
