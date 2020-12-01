@@ -35,9 +35,7 @@ mod error;
 mod hawk_crypto;
 pub mod hkdf;
 pub mod hmac;
-pub mod pbkdf2;
 pub mod rand;
-pub mod signature;
 
 
 
@@ -50,6 +48,12 @@ pub use hawk;
 pub use ece;
 
 pub use crate::error::{Error, ErrorKind, Result};
+
+
+
+#[allow(unused_extern_crates)]
+#[cfg(not(feature = "gecko"))]
+extern crate libsqlite3_sys;
 
 
 

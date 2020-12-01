@@ -8,7 +8,6 @@ mod engine;
 mod record;
 mod ser;
 
-use anyhow::Result;
 pub use engine::Engine;
 pub use sync15_traits::client::{ClientData, DeviceType, RemoteClient};
 
@@ -32,7 +31,7 @@ pub trait CommandProcessor {
 
     
     
-    fn fetch_outgoing_commands(&self) -> Result<HashSet<Command>>;
+    fn fetch_outgoing_commands(&self) -> Result<HashSet<Command>, failure::Error>;
 
     
     
@@ -42,7 +41,7 @@ pub trait CommandProcessor {
     
     
     
-    fn apply_incoming_command(&self, command: Command) -> Result<CommandStatus>;
+    fn apply_incoming_command(&self, command: Command) -> Result<CommandStatus, failure::Error>;
 }
 
 

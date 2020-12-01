@@ -14,6 +14,7 @@ use crate::state::{EngineChangesNeeded, GlobalState, PersistedGlobalState, Setup
 use crate::status::{ServiceStatus, SyncResult};
 use crate::sync::{self, Store};
 use crate::telemetry;
+use failure::Fail;
 use interrupt_support::Interruptee;
 use std::collections::HashMap;
 use std::mem;
@@ -373,7 +374,10 @@ impl<'info, 'res, 'pgs, 'mcs> SyncMultipleDriver<'info, 'res, 'pgs, 'mcs> {
         let changes = state_machine.changes_needed.take();
         
         
-        *self.persisted_global_state = Some(serde_json::to_string(&pgs)?);
+        mem::replace(
+            self.persisted_global_state,
+            Some(serde_json::to_string(&pgs)?),
+        );
 
         
         
@@ -456,14 +460,13 @@ impl<'info, 'res, 'pgs, 'mcs> SyncMultipleDriver<'info, 'res, 'pgs, 'mcs> {
     }
 
     fn prepare_persisted_state(&mut self) -> PersistedGlobalState {
-        
-        
-        
         match self.persisted_global_state {
-            Some(persisted_string) if !persisted_string.is_empty() => {
+            Some(persisted_string) => {
                 match serde_json::from_str::<PersistedGlobalState>(&persisted_string) {
                     Ok(state) => {
                         log::trace!("Read persisted state: {:?}", state);
+                        
+                        
                         
                         
                         
@@ -475,17 +478,15 @@ impl<'info, 'res, 'pgs, 'mcs> SyncMultipleDriver<'info, 'res, 'pgs, 'mcs> {
                         log::error!(
                             "Failed to parse PersistedGlobalState from JSON! Falling back to default"
                         );
-                        *self.mem_cached_state = MemoryCachedState::default();
                         PersistedGlobalState::default()
                     }
                 }
             }
-            _ => {
+            None => {
                 log::info!(
                     "The application didn't give us persisted state - \
                      this is only expected on the very first run for a given user."
                 );
-                *self.mem_cached_state = MemoryCachedState::default();
                 PersistedGlobalState::default()
             }
         }

@@ -6,7 +6,7 @@ use crate::{
     client::ClientData, telemetry, CollectionRequest, Guid, IncomingChangeset, OutgoingChangeset,
     ServerTimestamp,
 };
-use anyhow::Result;
+use failure::Error;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CollSyncIds {
@@ -44,7 +44,7 @@ pub trait Store {
     
     
     
-    fn prepare_for_sync(&self, _get_client_data: &dyn Fn() -> ClientData) -> Result<()> {
+    fn prepare_for_sync(&self, _get_client_data: &dyn Fn() -> ClientData) -> Result<(), Error> {
         Ok(())
     }
 
@@ -58,13 +58,13 @@ pub trait Store {
         &self,
         inbound: Vec<IncomingChangeset>,
         telem: &mut telemetry::Engine,
-    ) -> Result<OutgoingChangeset>;
+    ) -> Result<OutgoingChangeset, Error>;
 
     fn sync_finished(
         &self,
         new_timestamp: ServerTimestamp,
         records_synced: Vec<Guid>,
-    ) -> Result<()>;
+    ) -> Result<(), Error>;
 
     
     
@@ -83,15 +83,15 @@ pub trait Store {
     fn get_collection_requests(
         &self,
         server_timestamp: ServerTimestamp,
-    ) -> Result<Vec<CollectionRequest>>;
+    ) -> Result<Vec<CollectionRequest>, Error>;
 
     
     
-    fn get_sync_assoc(&self) -> Result<StoreSyncAssociation>;
+    fn get_sync_assoc(&self) -> Result<StoreSyncAssociation, Error>;
 
     
     
-    fn reset(&self, assoc: &StoreSyncAssociation) -> Result<()>;
+    fn reset(&self, assoc: &StoreSyncAssociation) -> Result<(), Error>;
 
-    fn wipe(&self) -> Result<()>;
+    fn wipe(&self) -> Result<(), Error>;
 }
