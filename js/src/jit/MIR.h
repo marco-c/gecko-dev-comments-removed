@@ -471,7 +471,6 @@ class MDefinition : public MNode {
   Opcode op_;              
   uint16_t flags_;         
   Range* range_;           
-  MIRType resultType_;     
   TemporaryTypeSet* resultTypeSet_;  
   union {
     MDefinition*
@@ -485,6 +484,15 @@ class MDefinition : public MNode {
   
   
   const BytecodeSite* trackedSite_;
+
+  
+  
+  
+  
+  
+  BailoutKind bailoutKind_;
+
+  MIRType resultType_;  
 
  private:
   enum Flag {
@@ -519,10 +527,11 @@ class MDefinition : public MNode {
         op_(op),
         flags_(0),
         range_(nullptr),
-        resultType_(MIRType::None),
         resultTypeSet_(nullptr),
         loadDependency_(nullptr),
-        trackedSite_(nullptr) {}
+        trackedSite_(nullptr),
+        bailoutKind_(BailoutKind::Unknown),
+        resultType_(MIRType::None) {}
 
   
   explicit MDefinition(const MDefinition& other)
@@ -531,10 +540,11 @@ class MDefinition : public MNode {
         op_(other.op_),
         flags_(other.flags_),
         range_(other.range_),
-        resultType_(other.resultType_),
         resultTypeSet_(other.resultTypeSet_),
         loadDependency_(other.loadDependency_),
-        trackedSite_(other.trackedSite_) {}
+        trackedSite_(other.trackedSite_),
+        bailoutKind_(other.bailoutKind_),
+        resultType_(other.resultType_) {}
 
   Opcode op() const { return op_; }
 
@@ -571,6 +581,9 @@ class MDefinition : public MNode {
   InlineScriptTree* trackedTree() const {
     return trackedSite_ ? trackedSite_->tree() : nullptr;
   }
+
+  BailoutKind bailoutKind() const { return bailoutKind_; }
+  void setBailoutKind(BailoutKind kind) { bailoutKind_ = kind; }
 
   JSScript* profilerLeaveScript() const {
     return trackedTree()->outermostCaller()->script();
