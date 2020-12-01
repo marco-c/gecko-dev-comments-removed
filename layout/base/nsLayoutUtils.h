@@ -861,7 +861,7 @@ class nsLayoutUtils {
 
 
 
-  static gfxSize GetTransformToAncestorScale(nsIFrame* aFrame);
+  static gfxSize GetTransformToAncestorScale(const nsIFrame* aFrame);
 
   
 
@@ -2485,12 +2485,12 @@ class nsLayoutUtils {
 
   enum class SubtractDynamicToolbar { No, Yes };
   static bool GetContentViewerSize(
-      nsPresContext* aPresContext, LayoutDeviceIntSize& aOutSize,
+      const nsPresContext* aPresContext, LayoutDeviceIntSize& aOutSize,
       SubtractDynamicToolbar = SubtractDynamicToolbar::Yes);
 
  private:
   static bool UpdateCompositionBoundsForRCDRSF(
-      mozilla::ParentLayerRect& aCompBounds, nsPresContext* aPresContext);
+      mozilla::ParentLayerRect& aCompBounds, const nsPresContext* aPresContext);
 
  public:
   
@@ -2518,7 +2518,7 @@ class nsLayoutUtils {
 
 
   static CSSSize CalculateRootCompositionSize(
-      nsIFrame* aFrame, bool aIsRootContentDocRootScrollFrame,
+      const nsIFrame* aFrame, bool aIsRootContentDocRootScrollFrame,
       const FrameMetrics& aMetrics);
 
   
@@ -2528,7 +2528,7 @@ class nsLayoutUtils {
 
 
   static nsRect CalculateScrollableRectForFrame(
-      nsIScrollableFrame* aScrollableFrame, nsIFrame* aRootFrame);
+      const nsIScrollableFrame* aScrollableFrame, const nsIFrame* aRootFrame);
 
   
 
@@ -2674,7 +2674,7 @@ class nsLayoutUtils {
 
 
   static nsMargin ScrollbarAreaToExcludeFromCompositionBoundsFor(
-      nsIFrame* aScrollFrame);
+      const nsIFrame* aScrollFrame);
 
   
 
@@ -2875,9 +2875,9 @@ class nsLayoutUtils {
   static nsSize ExpandHeightForViewportUnits(nsPresContext* aPresContext,
                                              const nsSize& aSize);
 
-  static CSSSize ExpandHeightForDynamicToolbar(nsPresContext* aPresContext,
-                                               const CSSSize& aSize);
-  static nsSize ExpandHeightForDynamicToolbar(nsPresContext* aPresContext,
+  static CSSSize ExpandHeightForDynamicToolbar(
+      const nsPresContext* aPresContext, const CSSSize& aSize);
+  static nsSize ExpandHeightForDynamicToolbar(const nsPresContext* aPresContext,
                                               const nsSize& aSize);
 
   
