@@ -36,6 +36,10 @@
   --disabled-fill-color: ButtonShadow;
 
   --disabled-opacity: 0.2;
+
+  
+
+  scrollbar-width: none;
 }
 
 html {
