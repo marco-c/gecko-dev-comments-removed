@@ -103,6 +103,7 @@ function initializeDynamicResult() {
 class ProviderTabToSearch extends UrlbarProvider {
   constructor() {
     super();
+    this.onboardingEnginesShown = new Set();
   }
 
   
@@ -247,6 +248,32 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
 
+
+
+
+
+
+
+
+  onEngagement(isPrivate, state) {
+    if (!this.onboardingEnginesShown.size) {
+      return;
+    }
+
+    Services.telemetry.keyedScalarAdd(
+      "urlbar.tips",
+      "tabtosearch_onboard-shown",
+      this.onboardingEnginesShown.size
+    );
+    this.onboardingEnginesShown.clear();
+  }
+
+  
+
+
+
+
+
   get deferUserSelection() {
     return true;
   }
@@ -295,7 +322,6 @@ class ProviderTabToSearch extends UrlbarProvider {
     const onboardingInteractionsLeft = UrlbarPrefs.get(
       "tabToSearch.onboard.interactionsLeft"
     );
-    let showedOnboarding = false;
 
     
     
@@ -318,7 +344,6 @@ class ProviderTabToSearch extends UrlbarProvider {
       if (host.startsWith(searchStr.toLocaleLowerCase())) {
         if (onboardingInteractionsLeft > 0) {
           addCallback(this, makeOnboardingResult(engine));
-          showedOnboarding = true;
         } else {
           addCallback(this, makeResult(queryContext, engine));
         }
@@ -351,23 +376,11 @@ class ProviderTabToSearch extends UrlbarProvider {
       if (host) {
         let engine = partialMatchEnginesByHost.get(host);
         if (onboardingInteractionsLeft > 0) {
-          showedOnboarding = true;
           addCallback(this, makeOnboardingResult(engine, true));
         } else {
           addCallback(this, makeResult(queryContext, engine, true));
         }
       }
-    }
-
-    
-    
-    
-    if (showedOnboarding) {
-      Services.telemetry.keyedScalarAdd(
-        "urlbar.tips",
-        "tabtosearch_onboard-shown",
-        1
-      );
     }
   }
 }

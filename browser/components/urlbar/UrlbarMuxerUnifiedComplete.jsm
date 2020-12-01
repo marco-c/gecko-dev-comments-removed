@@ -16,6 +16,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarProviderTabToSearch:
+    "resource:///modules/UrlbarProviderTabToSearch.jsm",
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
@@ -548,6 +550,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     if (result.providerName == "TabToSearch") {
       state.canAddTabToSearch = false;
+      
+      
+      
+      if (result.payload.dynamicType) {
+        UrlbarProviderTabToSearch.onboardingEnginesShown.add(
+          result.payload.engine
+        );
+      }
     }
   }
 }
