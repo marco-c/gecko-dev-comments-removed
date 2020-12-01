@@ -319,7 +319,7 @@ class IOUtils final {
 
 
 
-  static Result<int64_t, IOError> TouchSync(const nsAString& aPath,
+  static Result<int64_t, IOError> TouchSync(already_AddRefed<nsIFile> aFile,
                                             const Maybe<int64_t>& aNewModTime);
 
   
