@@ -1,0 +1,15 @@
+
+
+
+
+use crate::HashMap;
+use serde::Deserialize;
+
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct RecordedExperimentData {
+    
+    pub branch: String,
+    
+    pub extra: Option<HashMap<String, String>>,
+}
