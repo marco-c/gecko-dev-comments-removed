@@ -26,12 +26,6 @@
 #  endif
 #endif
 
-extern "C" {
-uintptr_t gMozillaPoisonValue;
-uintptr_t gMozillaPoisonBase;
-uintptr_t gMozillaPoisonSize;
-}
-
 
 
 
@@ -169,12 +163,23 @@ static uintptr_t ReservePoisonArea(uintptr_t rgnsize) {
   MOZ_CRASH("no usable poison region identified");
 }
 
-void mozPoisonValueInit() {
-  gMozillaPoisonSize = GetDesiredRegionSize();
-  gMozillaPoisonBase = ReservePoisonArea(gMozillaPoisonSize);
-
-  if (gMozillaPoisonSize == 0) {  
-    return;
+static uintptr_t GetPoisonValue(uintptr_t aBase, uintptr_t aSize) {
+  if (aSize == 0) {  
+    return 0;
   }
-  gMozillaPoisonValue = gMozillaPoisonBase + gMozillaPoisonSize / 2 - 1;
+  return aBase + aSize / 2 - 1;
+}
+
+
+
+
+
+
+
+
+extern "C" {
+uintptr_t gMozillaPoisonSize = GetDesiredRegionSize();
+uintptr_t gMozillaPoisonBase = ReservePoisonArea(gMozillaPoisonSize);
+uintptr_t gMozillaPoisonValue =
+    GetPoisonValue(gMozillaPoisonBase, gMozillaPoisonSize);
 }

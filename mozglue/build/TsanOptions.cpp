@@ -222,9 +222,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:BeginBackgroundRead\n"
 
          
-         "race:gMozillaPoisonValue\n"
-
-         
          "race:setFlagBit\n"
          "race:isFatInline\n"
          "race:AtomizeAndCopyCharsFromLookup\n"

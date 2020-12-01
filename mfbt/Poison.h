@@ -32,7 +32,6 @@ inline uintptr_t mozPoisonValue() { return gMozillaPoisonValue; }
 
 
 
-
 inline void mozWritePoison(void* aPtr, size_t aSize) {
   const uintptr_t POISON = mozPoisonValue();
   char* p = (char*)aPtr;
@@ -42,12 +41,6 @@ inline void mozWritePoison(void* aPtr, size_t aSize) {
     memcpy(p, &POISON, sizeof(POISON));
   }
 }
-
-
-
-
-
-extern MFBT_API void mozPoisonValueInit();
 
 
 extern MFBT_DATA uintptr_t gMozillaPoisonBase;
