@@ -126,6 +126,20 @@ impl<T, M> LRUCache<T, M> {
     
     
     
+    pub fn peek_oldest(&self) -> Option<&T> {
+        self.lru
+            .peek_front()
+            .map(|handle| {
+                let entry = self.entries.get(handle);
+                
+                debug_assert!(entry.lru_index.is_some());
+                &entry.value
+            })
+    }
+
+    
+    
+    
     pub fn pop_oldest(
         &mut self,
     ) -> Option<T> {
@@ -383,6 +397,11 @@ impl<H> LRUTracker<H> where H: std::fmt::Debug {
     }
 
     
+    fn peek_front(&self) -> Option<&H> {
+        self.head.map(|head| self.items[head.as_usize()].handle.as_ref().unwrap())
+    }
+
+    
     
     fn pop_front(
         &mut self,
@@ -524,6 +543,32 @@ impl<H> LRUTracker<H> where H: std::fmt::Debug {
             assert_eq!(i0, i1);
         }
     }
+}
+
+#[test]
+fn test_lru_tracker_push_peek() {
+    
+    
+    
+    
+    struct CacheMarker;
+    const NUM_ELEMENTS: usize = 50;
+
+    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new();
+    cache.validate();
+
+    assert_eq!(cache.peek_oldest(), None);
+
+    for i in 0 .. NUM_ELEMENTS {
+        cache.push_new(i);
+    }
+    cache.validate();
+
+    assert_eq!(cache.peek_oldest(), Some(&0));
+    assert_eq!(cache.peek_oldest(), Some(&0));
+
+    cache.pop_oldest();
+    assert_eq!(cache.peek_oldest(), Some(&1));
 }
 
 #[test]
