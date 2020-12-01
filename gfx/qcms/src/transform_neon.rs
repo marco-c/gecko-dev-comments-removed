@@ -30,9 +30,9 @@ unsafe extern "C" fn qcms_transform_data_template_lut_neon<F: Format>(
 
     let mut output: *const u32 = input as *mut u32;
     
-    let mut igtbl_r: *const f32 = (*transform).input_gamma_table_r;
-    let mut igtbl_g: *const f32 = (*transform).input_gamma_table_g;
-    let mut igtbl_b: *const f32 = (*transform).input_gamma_table_b;
+    let mut igtbl_r: *const f32 = (*transform).input_gamma_table_r.as_ref().unwrap().as_ptr();
+    let mut igtbl_g: *const f32 = (*transform).input_gamma_table_g.as_ref().unwrap().as_ptr();
+    let mut igtbl_b: *const f32 = (*transform).input_gamma_table_b.as_ref().unwrap().as_ptr();
     
     let mut otdata_r: *const u8 = (*transform)
         .output_table_r
