@@ -47,6 +47,30 @@ class MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
   
   
@@ -60,6 +84,8 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
  public:
   struct Layout final {
     Kernel32ExportsSolver mK32Exports;
+    uint32_t mModulePathArrayLength;
+    uint32_t mModulePathArray[1];
 
     Layout() = delete;  
   };
