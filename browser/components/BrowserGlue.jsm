@@ -821,7 +821,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   LoginBreaches: "resource:///modules/LoginBreaches.jsm",
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
   Normandy: "resource://normandy/Normandy.jsm",
-  ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   OsEnvironment: "resource://gre/modules/OsEnvironment.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
@@ -1134,14 +1133,6 @@ BrowserGlue.prototype = {
           if (this._placesBrowserInitComplete) {
             Services.obs.notifyObservers(null, "places-browser-init-complete");
           }
-        } else if (data == "migrateMatchBucketsPrefForUI66") {
-          this._migrateMatchBucketsPrefForUI66().then(() => {
-            Services.obs.notifyObservers(
-              null,
-              "browser-glue-test",
-              "migrateMatchBucketsPrefForUI66-done"
-            );
-          });
         } else if (data == "add-breaches-sync-handler") {
           this._addBreachesSyncHandler();
         }
@@ -1230,9 +1221,6 @@ BrowserGlue.prototype = {
         DownloadsViewableInternally.register();
 
         break;
-      case "shield-init-complete":
-        this._shieldInitComplete = true;
-        break;
     }
   },
 
@@ -1269,7 +1257,6 @@ BrowserGlue.prototype = {
     os.addObserver(this, "xpi-signature-changed");
     os.addObserver(this, "sync-ui-state:update");
     os.addObserver(this, "handlersvc-store-initialized");
-    os.addObserver(this, "shield-init-complete");
 
     ActorManagerParent.addJSProcessActors(JSPROCESSACTORS);
     ActorManagerParent.addJSWindowActors(JSWINDOWACTORS);
@@ -1343,7 +1330,6 @@ BrowserGlue.prototype = {
     os.removeObserver(this, "flash-plugin-hang");
     os.removeObserver(this, "xpi-signature-changed");
     os.removeObserver(this, "sync-ui-state:update");
-    os.removeObserver(this, "shield-init-complete");
 
     Services.prefs.removeObserver(
       "privacy.trackingprotection",
@@ -3346,132 +3332,6 @@ BrowserGlue.prototype = {
 
     let xulStore = Services.xulStore;
 
-    if (currentUIVersion < 52) {
-      
-      
-      if (Services.prefs.getBoolPref("devtools.webconsole.persistlog", false)) {
-        Services.prefs.setBoolPref("devtools.netmonitor.persistlog", true);
-      }
-    }
-
-    
-    
-    if (currentUIVersion < 53) {
-      const MALWARE_PREF = "urlclassifier.malwareTable";
-      if (Services.prefs.prefHasUserValue(MALWARE_PREF)) {
-        let malwareList = Services.prefs.getCharPref(MALWARE_PREF);
-        if (malwareList.includes("goog-malware-shavar")) {
-          malwareList.replace("goog-malware-shavar", "goog-malware-proto");
-          Services.prefs.setCharPref(MALWARE_PREF, malwareList);
-        }
-      }
-    }
-
-    if (currentUIVersion < 55) {
-      Services.prefs.clearUserPref("browser.customizemode.tip0.shown");
-    }
-
-    if (currentUIVersion < 56) {
-      
-      
-      
-      
-      
-      if (xulStore.getValue(BROWSER_DOCURL, "sidebar-box", "sidebarcommand")) {
-        xulStore.setValue(BROWSER_DOCURL, "sidebar-box", "checked", "true");
-      }
-    }
-
-    if (currentUIVersion < 58) {
-      
-      Services.prefs.clearUserPref("browser.search.countryCode");
-      Services.prefs.clearUserPref("browser.search.region");
-      Services.prefs.clearUserPref("browser.search.isUS");
-    }
-
-    if (currentUIVersion < 59) {
-      let searchInitializedPromise = new Promise(resolve => {
-        if (Services.search.isInitialized) {
-          resolve();
-        }
-        const SEARCH_SERVICE_TOPIC = "browser-search-service";
-        Services.obs.addObserver(function observer(subject, topic, data) {
-          if (data != "init-complete") {
-            return;
-          }
-          Services.obs.removeObserver(observer, SEARCH_SERVICE_TOPIC);
-          resolve();
-        }, SEARCH_SERVICE_TOPIC);
-      });
-      searchInitializedPromise.then(() => {
-        let currentEngine = Services.search.defaultEngine.wrappedJSObject;
-        
-        
-        
-        
-        
-        if (
-          currentEngine._extensionID ||
-          currentEngine.isAppProvided ||
-          !Services.search.originalDefaultEngine.isAppProvided
-        ) {
-          return;
-        }
-
-        if (!currentEngine._loadPath.startsWith("[https]")) {
-          Services.search.resetToOriginalDefaultEngine();
-        }
-      });
-
-      
-      const SELECTED_LOCALE_PREF = "general.useragent.locale";
-      const MATCHOS_LOCALE_PREF = "intl.locale.matchOS";
-
-      if (
-        Services.prefs.prefHasUserValue(MATCHOS_LOCALE_PREF) ||
-        Services.prefs.prefHasUserValue(SELECTED_LOCALE_PREF)
-      ) {
-        if (Services.prefs.getBoolPref(MATCHOS_LOCALE_PREF, false)) {
-          Services.locale.requestedLocales = [];
-        } else {
-          let locale = Services.prefs.getComplexValue(
-            SELECTED_LOCALE_PREF,
-            Ci.nsIPrefLocalizedString
-          );
-          if (locale) {
-            try {
-              Services.locale.requestedLocales = [locale.data];
-            } catch (e) {
-              
-            }
-          }
-        }
-        Services.prefs.clearUserPref(SELECTED_LOCALE_PREF);
-        Services.prefs.clearUserPref(MATCHOS_LOCALE_PREF);
-      }
-    }
-
-    if (currentUIVersion < 61) {
-      
-      xulStore.removeValue(BROWSER_DOCURL, "navigator-toolbox", "toolbarset");
-    }
-
-    if (currentUIVersion < 62) {
-      
-      let toolbars = [
-        "navigator-toolbox",
-        "nav-bar",
-        "PersonalToolbar",
-        "TabsToolbar",
-        "toolbar-menubar",
-      ];
-      for (let resourceName of ["mode", "iconsize"]) {
-        for (let toolbarId of toolbars) {
-          xulStore.removeValue(BROWSER_DOCURL, toolbarId, resourceName);
-        }
-      }
-    }
-
     if (currentUIVersion < 64) {
       OS.File.remove(
         OS.Path.join(OS.Constants.Path.profileDir, "directoryLinks.json"),
@@ -3510,12 +3370,6 @@ BrowserGlue.prototype = {
           }
         }
       });
-    }
-
-    if (currentUIVersion < 66) {
-      
-      
-      this._migrateMatchBucketsPrefForUI66();
     }
 
     if (currentUIVersion < 67) {
@@ -4021,93 +3875,6 @@ BrowserGlue.prototype = {
         }
       }
     );
-  },
-
-  async _migrateMatchBucketsPrefForUI66() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    await new Promise(resolve => {
-      if (this._shieldInitComplete) {
-        resolve();
-        return;
-      }
-      let topic = "shield-init-complete";
-      Services.obs.addObserver(function obs() {
-        Services.obs.removeObserver(obs, topic);
-        resolve();
-      }, topic);
-    });
-
-    
-    
-    
-    let prefName = "browser.urlbar.matchBuckets";
-    let prefValue = Services.prefs.getCharPref(prefName, "");
-
-    
-    let experiment = null;
-    let experimentName = "pref-flip-search-composition-57-release-1413565";
-    let { PreferenceExperiments } = ChromeUtils.import(
-      "resource://normandy/lib/PreferenceExperiments.jsm"
-    );
-    try {
-      experiment = await PreferenceExperiments.get(experimentName);
-    } catch (e) {}
-
-    
-    if (experiment && !experiment.expired) {
-      await PreferenceExperiments.stop(experimentName, {
-        resetValue: true,
-        reason: "external:search-ui-migration",
-      });
-    }
-
-    
-    
-    
-    if (Services.prefs.getCharPref(prefName, "")) {
-      return;
-    }
-
-    
-    
-    
-    
-    if (prefValue) {
-      let buckets = PlacesUtils.convertMatchBucketsStringToArray(prefValue);
-      if (
-        ObjectUtils.deepEqual(buckets, [
-          ["suggestion", 4],
-          ["general", 5],
-        ])
-      ) {
-        return;
-      }
-    }
-
-    
-    
-    
-    prefValue = prefValue || "general:5,suggestion:Infinity";
-    Services.prefs.setCharPref(prefName, prefValue);
   },
 
   
