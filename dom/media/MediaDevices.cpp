@@ -54,6 +54,20 @@ already_AddRefed<Promise> MediaDevices::GetUserMedia(
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
+  
+
+  if (!MediaManager::IsOn(aConstraints.mVideo) &&
+      !MediaManager::IsOn(aConstraints.mAudio)) {
+    p->MaybeRejectWithTypeError("audio and/or video is required");
+    return p.forget();
+  }
+  
+
+
+  if (!owner->IsFullyActive()) {
+    p->MaybeRejectWithInvalidStateError("The document is not fully active.");
+    return p.forget();
+  }
   RefPtr<MediaDevices> self(this);
   MediaManager::Get()
       ->GetUserMedia(owner, aConstraints, aCallerType)
@@ -147,9 +161,112 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
     return nullptr;
   }
   nsCOMPtr<nsPIDOMWindowInner> owner = do_QueryInterface(global);
+  
+
+
+  Document* doc = owner->GetExtantDoc();
+  if (NS_WARN_IF(!doc)) {
+    p->MaybeRejectWithSecurityError("No document.");
+    return p.forget();
+  }
+  if (!doc->HasBeenUserGestureActivated()) {
+    p->MaybeRejectWithInvalidStateError(
+        "getDisplayMedia must be called from a user gesture handler.");
+    return p.forget();
+  }
+  
+
+  if (!MediaManager::IsOn(aConstraints.mVideo)) {
+    p->MaybeRejectWithTypeError("video is required");
+    return p.forget();
+  }
+  MediaStreamConstraints c;
+  auto& vc = c.mVideo.SetAsMediaTrackConstraints();
+
+  if (aConstraints.mVideo.IsMediaTrackConstraints()) {
+    vc = aConstraints.mVideo.GetAsMediaTrackConstraints();
+    
+
+    if (vc.mAdvanced.WasPassed()) {
+      p->MaybeRejectWithTypeError("advanced not allowed");
+      return p.forget();
+    }
+    auto getCLR = [](const auto& aCon) -> const ConstrainLongRange& {
+      static ConstrainLongRange empty;
+      return (aCon.WasPassed() && !aCon.Value().IsLong())
+                 ? aCon.Value().GetAsConstrainLongRange()
+                 : empty;
+    };
+    auto getCDR = [](auto&& aCon) -> const ConstrainDoubleRange& {
+      static ConstrainDoubleRange empty;
+      return (aCon.WasPassed() && !aCon.Value().IsDouble())
+                 ? aCon.Value().GetAsConstrainDoubleRange()
+                 : empty;
+    };
+    const auto& w = getCLR(vc.mWidth);
+    const auto& h = getCLR(vc.mHeight);
+    const auto& f = getCDR(vc.mFrameRate);
+    
+
+
+
+    if (w.mMin.WasPassed() || h.mMin.WasPassed() || f.mMin.WasPassed()) {
+      p->MaybeRejectWithTypeError("min not allowed");
+      return p.forget();
+    }
+    if (w.mExact.WasPassed() || h.mExact.WasPassed() || f.mExact.WasPassed()) {
+      p->MaybeRejectWithTypeError("exact not allowed");
+      return p.forget();
+    }
+    
+
+
+
+
+
+
+
+    
+    
+    const char* badConstraint = nullptr;
+    if (w.mMax.WasPassed() && w.mMax.Value() < 1) {
+      badConstraint = "width";
+    }
+    if (h.mMax.WasPassed() && h.mMax.Value() < 1) {
+      badConstraint = "height";
+    }
+    if (f.mMax.WasPassed() && f.mMax.Value() < 1) {
+      badConstraint = "frameRate";
+    }
+    if (badConstraint) {
+      p->MaybeReject(MakeRefPtr<dom::MediaStreamError>(
+          owner, *MakeRefPtr<MediaMgrError>(
+                     MediaMgrError::Name::OverconstrainedError, "",
+                     NS_ConvertASCIItoUTF16(badConstraint))));
+      return p.forget();
+    }
+  }
+  
+
+
+  if (!owner->IsFullyActive()) {
+    p->MaybeRejectWithInvalidStateError("The document is not fully active.");
+    return p.forget();
+  }
+  
+  
+  
+  
+  
+  
+  
+  vc.mMediaSource.Reset();
+  vc.mMediaSource.Construct().AssignASCII(
+      dom::MediaSourceEnumValues::GetString(MediaSourceEnum::Screen));
+
   RefPtr<MediaDevices> self(this);
   MediaManager::Get()
-      ->GetDisplayMedia(owner, aConstraints, aCallerType)
+      ->GetUserMedia(owner, c, aCallerType)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [this, self, p](RefPtr<DOMMediaStream>&& aStream) {
