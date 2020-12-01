@@ -75,7 +75,9 @@ def generic_worker_add_artifacts(config, job, taskdesc):
     
     
     
-    add_artifacts(config, job, taskdesc, path=get_artifact_prefix(taskdesc))
+    path = get_artifact_prefix(taskdesc)
+    taskdesc["worker"].setdefault("env", {})["UPLOAD_DIR"] = path
+    add_artifacts(config, job, taskdesc, path=path)
 
 
 def support_vcs_checkout(config, job, taskdesc, sparse=False):
