@@ -1161,6 +1161,12 @@ static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
   }
 }
 
+MOZ_ALWAYS_INLINE
+static TimeDuration TimeBetween(TimeStamp aStart, TimeStamp aEnd) {
+  MOZ_ASSERT(aEnd >= aStart);
+  return aEnd - aStart;
+}
+
 static TimeDuration TimeUntilNow(TimeStamp start) {
   if (start.IsNull()) {
     return TimeDuration();
@@ -1614,10 +1620,6 @@ void ShrinkingGCTimerFired(nsITimer* aTimer, void* aClosure) {
 static bool CCRunnerFired(TimeStamp aDeadline) {
   bool didDoWork = false;
 
-  using CCRunnerAction = CCGCScheduler::CCRunnerAction;
-  using CCRunnerStep = CCGCScheduler::CCRunnerStep;
-
-  
   
   
   
@@ -1663,7 +1665,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
     if (step.mAction != CCRunnerAction::None) {
       didDoWork = true;
     }
-  } while (step.mYield == CCGCScheduler::CCRunnerYield::Continue);
+  } while (step.mYield == CCRunnerYield::Continue);
 
   return didDoWork;
 }
