@@ -6,6 +6,7 @@
 #include "nsPageContentFrame.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_layout.h"
 
 #include "nsCSSFrameConstructor.h"
 #include "nsPresContext.h"
@@ -113,6 +114,29 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     aReflowOutput.BSize(wm) = aReflowInput.ComputedBSize();
   }
   FinishAndStoreOverflow(&aReflowOutput);
+
+  if (StaticPrefs::layout_display_list_improve_fragmentation() &&
+      mFrames.NotEmpty()) {
+    auto* previous = static_cast<nsPageContentFrame*>(GetPrevContinuation());
+    const nscoord previousPageOverflow =
+        previous ? previous->mRemainingOverflow : 0;
+
+    const nscoord overflowHeight = InkOverflowRect().YMost();
+    const nscoord pageHeight = GetRect().Height();
+    const nscoord currentPageOverflow = overflowHeight - pageHeight;
+
+    nscoord remainingOverflow =
+        std::max(currentPageOverflow, previousPageOverflow - pageHeight);
+    if (aStatus.IsFullyComplete() && remainingOverflow > 0) {
+      
+      
+      
+      
+      aStatus.SetOverflowIncomplete();
+    }
+
+    mRemainingOverflow = std::max(remainingOverflow, 0);
+  }
 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aReflowOutput);
 }

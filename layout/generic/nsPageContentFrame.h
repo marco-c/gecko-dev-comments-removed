@@ -57,6 +57,10 @@ class nsPageContentFrame final : public mozilla::ViewportFrame {
   
   
   nsSharedPageData* mPD = nullptr;
+
+  
+  
+  nscoord mRemainingOverflow = 0;
 };
 
 #endif 
