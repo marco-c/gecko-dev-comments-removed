@@ -28,7 +28,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/VisualViewport.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
-#include "LayersTypes.h"
 
 class nsPresContext;
 
@@ -394,8 +393,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     EnsureTimerStarted();
   }
 
-  bool HasPendingTick() const { return mActiveTimer; }
-
   void EnsureIntersectionObservationsUpdateHappens() {
     
     
@@ -410,13 +407,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     EnsureTimerStarted();
     mNeedToUpdateIntersectionObservations = true;
   }
-
-  
-  
-  
-  
-  void RegisterCompositionPayload(
-      const mozilla::layers::CompositionPayload& aPayload);
 
   enum class TickReasons : uint32_t {
     eNone = 0,
@@ -585,7 +575,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   
   nsTObserverArray<nsATimerAdjustmentObserver*> mTimerAdjustmentObservers;
-  nsTArray<mozilla::layers::CompositionPayload> mCompositionPayloads;
   RequestTable mRequests;
   ImageStartTable mStartTable;
   AutoTArray<nsCOMPtr<nsIRunnable>, 16> mEarlyRunners;

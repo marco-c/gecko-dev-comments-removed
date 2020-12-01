@@ -2891,14 +2891,8 @@ static void locked_profiler_stream_json_for_this_process(
 
       
       
-      
-      
-      
-      
-      
-      
       RefPtr<ThreadInfo> threadInfo = new ThreadInfo(
-          "AndroidUI (JVM)", 0, false, CorePS::ProcessStartTime());
+          "Java Main Thread", 0, false, CorePS::ProcessStartTime());
       ProfiledThreadData profiledThreadData(threadInfo, nullptr);
       profiledThreadData.StreamJSON(
           javaBuffer, nullptr, aWriter, CorePS::ProcessName(aLock),
