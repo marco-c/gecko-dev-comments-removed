@@ -2066,9 +2066,8 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     
     
     if (ShouldKeepTimerRunningWhileWaitingForFirstContentfulPaint()) {
-      PROFILER_TRACING_MARKER(
-          "Paint", "RefreshDriver waiting for first contentful paint", GRAPHICS,
-          TRACING_EVENT);
+      PROFILER_MARKER("RefreshDriver waiting for first contentful paint",
+                      GRAPHICS, {}, Tracing, "Paint");
     } else {
       StopTimer();
     }
