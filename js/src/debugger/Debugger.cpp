@@ -5136,6 +5136,13 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     while (!partialMatchVector.empty()) {
       script = partialMatchVector.popCopy();
 
+      
+      
+      
+      if (script->extent().sourceEnd <= sourceOffsetLowerBound) {
+        continue;
+      }
+
       MOZ_ASSERT(script->isFunction());
       MOZ_ASSERT(script->isReadyForDelazification());
 
@@ -5148,9 +5155,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       }
 
       
-      MOZ_ASSERT(line >= compiledScript->lineno());
-      if (compiledScript->lineno() + GetScriptLineExtent(compiledScript) <=
-          line) {
+      if (!scriptIsLineMatch(compiledScript)) {
         continue;
       }
 
@@ -5177,8 +5182,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
         }
         BaseScript* inner = thing.as<JSObject>().as<JSFunction>().baseScript();
 
-        
-        if (line < inner->lineno()) {
+        if (!scriptIsPartialLineMatch(inner)) {
           continue;
         }
 
@@ -5280,6 +5284,18 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   uint32_t line = 0;
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable uint32_t sourceOffsetLowerBound = 0;
+
+  
   bool innermost = false;
 
   
@@ -5319,6 +5335,51 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     }
 
     return true;
+  }
+
+  void updateSourceOffsetLowerBound(const SourceExtent& extent) {
+    
+    
+    MOZ_ASSERT(extent.lineno <= line);
+    if (extent.lineno == line) {
+      return;
+    }
+
+    
+    
+    
+    if (extent.sourceStart > sourceOffsetLowerBound) {
+      sourceOffsetLowerBound = extent.sourceStart;
+    }
+  }
+
+  
+  
+  
+  bool scriptIsPartialLineMatch(BaseScript* script) {
+    const SourceExtent& extent = script->extent();
+
+    
+    if (extent.lineno > line) {
+      return false;
+    }
+
+    
+    
+    
+    updateSourceOffsetLowerBound(script->extent());
+
+    
+    
+    return extent.sourceEnd > sourceOffsetLowerBound;
+  }
+
+  
+  bool scriptIsLineMatch(JSScript* script) {
+    MOZ_ASSERT(scriptIsPartialLineMatch(script));
+
+    uint32_t lineCount = GetScriptLineExtent(script);
+    return (script->lineno() + lineCount > line);
   }
 
   static void considerScript(JSRuntime* rt, void* data, BaseScript* script,
@@ -5385,11 +5446,13 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     bool partial = false;
 
     if (hasLine) {
+      if (!scriptIsPartialLineMatch(script)) {
+        return;
+      }
+
       if (script->hasBytecode()) {
         
-        if (line < script->lineno() ||
-            script->lineno() + GetScriptLineExtent(script->asJSScript()) <=
-                line) {
+        if (!scriptIsLineMatch(script->asJSScript())) {
           return;
         }
       } else {
@@ -5398,9 +5461,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
         
         
         if (!script->isReadyForDelazification()) {
-          return;
-        }
-        if (line < script->lineno()) {
           return;
         }
         partial = true;

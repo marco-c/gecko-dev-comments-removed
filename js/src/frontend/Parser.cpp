@@ -2391,6 +2391,8 @@ void GeneralParser<ParseHandler, Unit>::setFunctionStartAtPosition(
   uint32_t startLine, startColumn;
   tokenStream.computeLineAndColumn(pos.begin, &startLine, &startColumn);
 
+  
+  
   funbox->setStart(pos.begin, startLine, startColumn);
 }
 
