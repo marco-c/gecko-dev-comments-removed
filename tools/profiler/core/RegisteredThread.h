@@ -7,16 +7,17 @@
 #ifndef RegisteredThread_h
 #define RegisteredThread_h
 
-#include "GeckoProfiler.h"
 #include "platform.h"
 #include "ThreadInfo.h"
 
-#include "js/TraceLoggerAPI.h"
-#include "jsapi.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "nsIEventTarget.h"
 #include "nsIThread.h"
+
+namespace mozilla {
+class ProfilingStackOwner;
+}
 
 
 
@@ -25,14 +26,7 @@
 
 class RacyRegisteredThread final {
  public:
-  explicit RacyRegisteredThread(int aThreadId)
-      : mProfilingStackOwner(
-            mozilla::MakeNotNull<RefPtr<mozilla::ProfilingStackOwner>>()),
-        mThreadId(aThreadId),
-        mSleep(AWAKE),
-        mIsBeingProfiled(false) {
-    MOZ_COUNT_CTOR(RacyRegisteredThread);
-  }
+  explicit RacyRegisteredThread(int aThreadId);
 
   MOZ_COUNTED_DTOR(RacyRegisteredThread)
 
@@ -177,18 +171,7 @@ class RegisteredThread final {
 
   
   
-  void SetJSContext(JSContext* aContext) {
-    
-
-    MOZ_ASSERT(aContext && !mContext);
-
-    mContext = aContext;
-
-    
-    
-    js::SetContextProfilingStack(aContext,
-                                 &RacyRegisteredThread().ProfilingStack());
-  }
+  void SetJSContext(JSContext* aContext);
 
   void ClearJSContext() {
     
@@ -224,46 +207,7 @@ class RegisteredThread final {
   }
 
   
-  void PollJSSampling() {
-    
-
-    
-    if (mContext) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (mJSSampling == ACTIVE_REQUESTED) {
-        mJSSampling = ACTIVE;
-        js::EnableContextProfilingStack(mContext, true);
-        if (JSTracerEnabled()) {
-          JS::StartTraceLogger(mContext);
-        }
-        if (JSAllocationsEnabled()) {
-          
-          JS::EnableRecordingAllocations(
-              mContext, profiler_add_js_allocation_marker, 0.01);
-        }
-        js::RegisterContextProfilingEventMarker(mContext,
-                                                profiler_add_js_marker);
-
-      } else if (mJSSampling == INACTIVE_REQUESTED) {
-        mJSSampling = INACTIVE;
-        js::EnableContextProfilingStack(mContext, false);
-        if (JSTracerEnabled()) {
-          JS::StopTraceLogger(mContext);
-        }
-        if (JSAllocationsEnabled()) {
-          JS::DisableRecordingAllocations(mContext);
-        }
-      }
-    }
-  }
+  void PollJSSampling();
 
  private:
   class RacyRegisteredThread mRacyRegisteredThread;

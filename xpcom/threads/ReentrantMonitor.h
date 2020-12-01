@@ -9,7 +9,7 @@
 
 #include "prmon.h"
 
-#ifdef MOZILLA_INTERNAL_API
+#if defined(MOZILLA_INTERNAL_API) && !defined(DEBUG)
 #  include "GeckoProfiler.h"
 #endif  
 

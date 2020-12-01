@@ -35,9 +35,6 @@
 #include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/ProfilerMarkersDetail.h"
 
-
-#include "GeckoProfiler.h"
-
 #ifndef MOZ_GECKO_PROFILER
 
 #  define PROFILER_MARKER_UNTYPED(markerName, categoryName, ...)
@@ -49,6 +46,14 @@
                                                 categoryPair, docShell)
 
 #else  
+
+namespace mozilla {
+class ProfileChunkedBuffer;
+}
+
+bool profiler_can_accept_markers();
+bool profiler_capture_backtrace_into(
+    mozilla::ProfileChunkedBuffer& aChunkedBuffer);
 
 
 

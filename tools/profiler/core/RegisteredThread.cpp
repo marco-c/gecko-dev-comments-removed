@@ -6,6 +6,19 @@
 
 #include "RegisteredThread.h"
 
+#include "js/AllocationRecording.h"
+#include "js/ProfilingStack.h"
+#include "js/TraceLoggerAPI.h"
+
+RacyRegisteredThread::RacyRegisteredThread(int aThreadId)
+    : mProfilingStackOwner(
+          mozilla::MakeNotNull<RefPtr<mozilla::ProfilingStackOwner>>()),
+      mThreadId(aThreadId),
+      mSleep(AWAKE),
+      mIsBeingProfiled(false) {
+  MOZ_COUNT_CTOR(RacyRegisteredThread);
+}
+
 RegisteredThread::RegisteredThread(ThreadInfo* aInfo, nsIThread* aThread,
                                    void* aStackTop)
     : mRacyRegisteredThread(aInfo->ThreadId()),
@@ -60,4 +73,57 @@ void RegisteredThread::GetRunningEventDelay(const mozilla::TimeStamp& aNow,
   }
   aDelay = mozilla::TimeDuration();
   aRunning = mozilla::TimeDuration();
+}
+
+void RegisteredThread::SetJSContext(JSContext* aContext) {
+  
+
+  MOZ_ASSERT(aContext && !mContext);
+
+  mContext = aContext;
+
+  
+  
+  js::SetContextProfilingStack(aContext,
+                               &RacyRegisteredThread().ProfilingStack());
+}
+
+void RegisteredThread::PollJSSampling() {
+  
+
+  
+  if (mContext) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mJSSampling == ACTIVE_REQUESTED) {
+      mJSSampling = ACTIVE;
+      js::EnableContextProfilingStack(mContext, true);
+      if (JSTracerEnabled()) {
+        JS::StartTraceLogger(mContext);
+      }
+      if (JSAllocationsEnabled()) {
+        
+        JS::EnableRecordingAllocations(mContext,
+                                       profiler_add_js_allocation_marker, 0.01);
+      }
+      js::RegisterContextProfilingEventMarker(mContext, profiler_add_js_marker);
+
+    } else if (mJSSampling == INACTIVE_REQUESTED) {
+      mJSSampling = INACTIVE;
+      js::EnableContextProfilingStack(mContext, false);
+      if (JSTracerEnabled()) {
+        JS::StopTraceLogger(mContext);
+      }
+      if (JSAllocationsEnabled()) {
+        JS::DisableRecordingAllocations(mContext);
+      }
+    }
+  }
 }
