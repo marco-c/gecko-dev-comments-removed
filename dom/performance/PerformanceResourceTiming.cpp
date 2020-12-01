@@ -29,8 +29,7 @@ PerformanceResourceTiming::PerformanceResourceTiming(
     Performance* aPerformance, const nsAString& aName)
     : PerformanceEntry(aPerformance->GetParentObject(), aName, u"resource"_ns),
       mTimingData(std::move(aPerformanceTiming)),
-      mPerformance(aPerformance),
-      mStartTime(CalculateStartTime()) {
+      mPerformance(aPerformance) {
   MOZ_ASSERT(aPerformance, "Parent performance object should be provided");
   if (NS_IsMainThread()) {
     
@@ -41,7 +40,7 @@ PerformanceResourceTiming::PerformanceResourceTiming(
 
 PerformanceResourceTiming::~PerformanceResourceTiming() = default;
 
-DOMHighResTimeStamp PerformanceResourceTiming::CalculateStartTime() const {
+DOMHighResTimeStamp PerformanceResourceTiming::StartTime() const {
   
   
   

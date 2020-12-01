@@ -33,7 +33,7 @@ class PerformanceResourceTiming : public PerformanceEntry {
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  virtual DOMHighResTimeStamp StartTime() const override { return mStartTime; }
+  virtual DOMHighResTimeStamp StartTime() const override;
 
   virtual DOMHighResTimeStamp Duration() const override {
     return ResponseEnd() - StartTime();
@@ -179,10 +179,6 @@ class PerformanceResourceTiming : public PerformanceEntry {
 
   
   nsCOMPtr<nsIURI> mOriginalURI;
-
- private:
-  const DOMHighResTimeStamp mStartTime;
-  DOMHighResTimeStamp CalculateStartTime() const;
 };
 
 }  
