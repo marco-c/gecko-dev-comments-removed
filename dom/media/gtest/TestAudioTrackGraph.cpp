@@ -253,7 +253,7 @@ TEST(TestAudioTrackGraph, NotifyDeviceStarted)
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST(TestAudioTrackGraph, ErrorCallback)
+TEST(TestAudioTrackGraph, ErrorStateCrash)
 {
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
@@ -262,29 +262,12 @@ TEST(TestAudioTrackGraph, ErrorCallback)
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  
-  
-  RefPtr<SourceMediaTrack> sourceTrack;
-  Unused << WaitFor(Invoke([&] {
-    sourceTrack = graph->CreateSourceTrack(MediaSegment::AUDIO);
-    return graph->NotifyWhenDeviceStarted(sourceTrack);
-  }));
-
-  
-  
-  
-  RefPtr<AudioInputProcessing> listener;
-  RefPtr<AudioInputProcessingPullListener> pullListener;
+  RefPtr<SourceMediaTrack> dummySource;
   auto started = Invoke([&] {
-    listener = new AudioInputProcessing(2, sourceTrack, PRINCIPAL_HANDLE_NONE);
-    listener->SetPassThrough(true);
-    pullListener = new AudioInputProcessingPullListener(listener);
-    sourceTrack->AddListener(pullListener);
-    sourceTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StartInputProcessing>(listener));
-    sourceTrack->SetPullingEnabled(true);
-    sourceTrack->OpenAudioInput((void*)1, listener);
-    return graph->NotifyWhenDeviceStarted(sourceTrack);
+    
+    
+    dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    return graph->NotifyWhenDeviceStarted(dummySource);
   });
 
   MockCubebStream* stream = WaitFor(cubeb->StreamInitEvent());
@@ -293,29 +276,10 @@ TEST(TestAudioTrackGraph, ErrorCallback)
 
   
   DispatchFunction([&] { stream->ForceError(); });
+  WaitFor(stream->ErrorForcedEvent());
 
   
-  bool errored = false, init = false;
-  MediaEventListener errorListener = stream->ErrorForcedEvent().Connect(
-      AbstractThread::GetCurrent(), [&] { errored = true; });
-  MediaEventListener initListener = cubeb->StreamInitEvent().Connect(
-      AbstractThread::GetCurrent(), [&] { init = true; });
-  SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-      [&] { return errored && init; });
-  errorListener.Disconnect();
-  initListener.Disconnect();
-
-  
-  DispatchFunction([&] {
-    sourceTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StopInputProcessing>(listener));
-    sourceTrack->RemoveListener(pullListener);
-    sourceTrack->SetPullingEnabled(false);
-    Maybe<CubebUtils::AudioDeviceID> id =
-        Some(reinterpret_cast<CubebUtils::AudioDeviceID>(1));
-    sourceTrack->CloseAudioInput(id);
-    sourceTrack->Destroy();
-  });
+  DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
