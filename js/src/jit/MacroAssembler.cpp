@@ -1048,7 +1048,7 @@ void MacroAssembler::initTypedArraySlots(Register obj, Register temp,
       "typed array inline buffer is limited by the maximum object byte size");
 
   
-  int32_t length = templateObj->length();
+  int32_t length = templateObj->length().deprecatedGetUint32();
   size_t nbytes = length * templateObj->bytesPerElement();
 
   if (lengthKind == TypedArrayLength::Fixed &&

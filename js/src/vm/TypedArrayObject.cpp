@@ -151,7 +151,7 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
 
 #ifdef DEBUG
 void TypedArrayObject::assertZeroLengthArrayData() const {
-  if (length() == 0 && !hasBuffer()) {
+  if (length().get() == 0 && !hasBuffer()) {
     uint8_t* end = fixedData(TypedArrayObject::FIXED_DATA_START);
     MOZ_ASSERT(end[0] == ZeroLengthArrayData);
   }
@@ -987,13 +987,13 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
                                       HandleObjectGroup group);
 
   static const NativeType getIndex(TypedArrayObject* tarray, size_t index) {
-    MOZ_ASSERT(index < tarray->length());
+    MOZ_ASSERT(index < tarray->length().get());
     return jit::AtomicOperations::loadSafeWhenRacy(
         tarray->dataPointerEither().cast<NativeType*>() + index);
   }
 
   static void setIndex(TypedArrayObject& tarray, size_t index, NativeType val) {
-    MOZ_ASSERT(index < tarray.length());
+    MOZ_ASSERT(index < tarray.length().get());
     jit::AtomicOperations::storeSafeWhenRacy(
         tarray.dataPointerEither().cast<NativeType*>() + index, val);
   }
@@ -1079,7 +1079,7 @@ template <typename NativeType>
   
 
   
-  uint32_t length = obj->length();
+  size_t length = obj->length().get();
 
   
   if (index >= length) {
@@ -1340,7 +1340,7 @@ template <typename T>
   
 
   
-  uint32_t elementLength = srcArray->length();
+  uint32_t elementLength = srcArray->length().deprecatedGetUint32();
 
   
 
@@ -1798,7 +1798,7 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
     }
 
     
-    uint32_t targetLength = target->length();
+    uint32_t targetLength = target->length().deprecatedGetUint32();
 
     
     if (targetOffset > targetLength) {
@@ -1808,7 +1808,7 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
 
     
     uint32_t offset = uint32_t(targetOffset);
-    if (srcTypedArray->length() > targetLength - offset) {
+    if (srcTypedArray->length().deprecatedGetUint32() > targetLength - offset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_SOURCE_ARRAY_TOO_LONG);
       return false;
@@ -1839,7 +1839,7 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
     
     
     
-    uint32_t targetLength = target->length();
+    uint32_t targetLength = target->length().deprecatedGetUint32();
 
     
     uint32_t srcLength;
@@ -2148,7 +2148,7 @@ bool TypedArrayObject::getElementPure(size_t index, Value* vp) {
 bool TypedArrayObject::getElements(JSContext* cx,
                                    Handle<TypedArrayObject*> tarray,
                                    Value* vp) {
-  uint32_t length = tarray->length();
+  uint32_t length = tarray->length().deprecatedGetUint32();
   MOZ_ASSERT_IF(length > 0, !tarray->hasDetachedBuffer());
 
   switch (tarray->type()) {
@@ -2543,8 +2543,7 @@ bool js::DefineTypedArrayElement(JSContext* cx, HandleObject obj,
 
   
   
-  uint32_t length = obj->as<TypedArrayObject>().length();
-  if (index >= length) {
+  if (index >= obj->as<TypedArrayObject>().length().get()) {
     if (obj->as<TypedArrayObject>().hasDetachedBuffer()) {
       return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
     }
@@ -2652,7 +2651,7 @@ struct ExternalTypeOf<uint8_clamped> {
       return nullptr;                                                        \
     }                                                                        \
     TypedArrayObject* tarr = &obj->as<TypedArrayObject>();                   \
-    *length = tarr->length();                                                \
+    *length = tarr->length().deprecatedGetUint32();                          \
     *isShared = tarr->isSharedMemory();                                      \
     *data = static_cast<ExternalTypeOf<NativeType>::Type*>(                  \
         tarr->dataPointerEither().unwrap(                                    \
@@ -2684,7 +2683,7 @@ JS_FRIEND_API uint32_t JS_GetTypedArrayLength(JSObject* obj) {
   if (!tarr) {
     return 0;
   }
-  return tarr->length();
+  return tarr->length().deprecatedGetUint32();
 }
 
 JS_FRIEND_API uint32_t JS_GetTypedArrayByteOffset(JSObject* obj) {
