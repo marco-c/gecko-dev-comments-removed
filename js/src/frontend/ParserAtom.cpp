@@ -342,6 +342,24 @@ JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internChar16Seq(
   return addEntry(cx, addPtr, std::move(entry));
 }
 
+template <typename AtomCharT, typename SeqCharT>
+JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internChar16Seq(
+    JSContext* cx, HashNumber hash, InflatedChar16Sequence<SeqCharT> seq,
+    uint32_t length) {
+  UniquePtr<ParserAtomEntry> entry;
+  MOZ_TRY_VAR(entry,
+              ParserAtomEntry::allocate<AtomCharT>(cx, seq, length, hash));
+  ParserAtom* atom = entry->asAtom();
+
+  
+  
+  SpecificParserAtomLookup<SeqCharT> lookup(seq, hash);
+  if (!entrySet_.putNew(lookup, std::move(entry))) {
+    return RaiseParserAtomsOOMError(cx);
+  }
+  return atom;
+}
+
 static const uint16_t MAX_LATIN1_CHAR = 0xff;
 
 JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internAscii(
@@ -381,53 +399,22 @@ JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internLatin1ForXDR(
   InflatedChar16Sequence<Latin1Char> seq(latin1Ptr, length);
   SpecificParserAtomLookup<Latin1Char> lookup(seq);
 
-  auto addPtr = entrySet_.lookupForAdd(lookup);
-
   MOZ_ASSERT(wellKnownTable_.lookupTiny(latin1Ptr, length) == nullptr);
   MOZ_ASSERT(wellKnownTable_.lookupChar16Seq(lookup) == nullptr);
-  MOZ_ASSERT(!addPtr);
 
-  return internChar16Seq<Latin1Char>(cx, addPtr, lookup.hash(), seq, length);
+  return internChar16Seq<Latin1Char>(cx, lookup.hash(), seq, length);
 }
 
 
-JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internChar16LE(
+JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internChar16ForXDR(
     JSContext* cx, LittleEndianChars twoByteLE, uint32_t length) {
-  
-  if (const ParserAtom* tiny = wellKnownTable_.lookupTiny(twoByteLE, length)) {
-    return tiny;
-  }
-
   InflatedChar16Sequence<LittleEndianChars> seq(twoByteLE, length);
-
-  
   SpecificParserAtomLookup<LittleEndianChars> lookup(seq);
-  if (const ParserAtom* wk = wellKnownTable_.lookupChar16Seq(lookup)) {
-    return wk;
-  }
 
-  
-  
-  EntrySet::AddPtr addPtr = entrySet_.lookupForAdd(lookup);
-  MOZ_ASSERT(!addPtr);
+  MOZ_ASSERT(wellKnownTable_.lookupTiny(twoByteLE, length) == nullptr);
+  MOZ_ASSERT(wellKnownTable_.lookupChar16Seq(lookup) == nullptr);
 
-  
-  
-  bool wide = false;
-  InflatedChar16Sequence<LittleEndianChars> seqCopy = seq;
-  while (seqCopy.hasMore()) {
-    char16_t ch = seqCopy.next();
-    if (ch > MAX_LATIN1_CHAR) {
-      wide = true;
-      break;
-    }
-  }
-
-  
-  return wide
-             ? internChar16Seq<char16_t>(cx, addPtr, lookup.hash(), seq, length)
-             : internChar16Seq<Latin1Char>(cx, addPtr, lookup.hash(), seq,
-                                           length);
+  return internChar16Seq<char16_t>(cx, lookup.hash(), seq, length);
 }
 
 JS::Result<const ParserAtom*, OOM> ParserAtomsTable::internUtf8(
@@ -868,7 +855,7 @@ XDRResult XDRParserAtomData(XDRState<mode>* xdr, const ParserAtom** atomp) {
       MOZ_TRY(xdr->peekData(&twoByteCharsLE, length * sizeof(char16_t)));
     }
     LittleEndianChars leTwoByte(twoByteCharsLE);
-    mbAtom = xdr->frontendAtoms().internChar16LE(cx, leTwoByte, length);
+    mbAtom = xdr->frontendAtoms().internChar16ForXDR(cx, leTwoByte, length);
   }
 
   const ParserAtom* atom = mbAtom.unwrapOr(nullptr);
