@@ -7,6 +7,8 @@
 #ifndef jit_ABIFunctions_h
 #define jit_ABIFunctions_h
 
+#include "jstypes.h" 
+
 namespace js {
 namespace jit {
 
