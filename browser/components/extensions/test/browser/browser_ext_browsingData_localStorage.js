@@ -2,32 +2,35 @@
 
 "use strict";
 
-add_task(async function setup() {
-  
-  return SpecialPowers.pushPrefEnv({
-    set: [["privacy.userContext.enabled", true]],
-  });
-});
-
 add_task(async function testLocalStorage() {
   async function background() {
-    function waitForTabs() {
-      return new Promise(resolve => {
-        let tabs = [];
+    function openTabs() {
+      let promise = new Promise(resolve => {
+        
+        
+        const manifest = browser.runtime.getManifest();
+        const tabURLs = manifest.content_scripts[0].matches;
+        browser.test.log(`Opening tabs on ${JSON.stringify(tabURLs)}`);
 
-        let listener = async (msg, { tab }) => {
-          if (msg !== "content-script-ready") {
+        let tabs;
+        let waitingCount = tabURLs.length;
+
+        let listener = async msg => {
+          if (msg !== "content-script-ready" || --waitingCount) {
             return;
           }
-
-          tabs.push(tab);
-          if (tabs.length == 3) {
-            browser.runtime.onMessage.removeListener(listener);
-            resolve(tabs);
-          }
+          browser.runtime.onMessage.removeListener(listener);
+          resolve(Promise.all(tabs));
         };
+
         browser.runtime.onMessage.addListener(listener);
+
+        tabs = tabURLs.map(url => {
+          return browser.tabs.create({ url: url });
+        });
       });
+
+      return promise;
     }
 
     function sendMessageToTabs(tabs, message) {
@@ -38,7 +41,7 @@ add_task(async function testLocalStorage() {
       );
     }
 
-    let tabs = await waitForTabs();
+    let tabs = await openTabs();
 
     browser.test.assertRejects(
       browser.browsingData.removeLocalStorage({ since: Date.now() }),
@@ -75,45 +78,9 @@ add_task(async function testLocalStorage() {
     await sendMessageToTabs(tabs, "checkLocalStorageCleared");
 
     
-    if (SpecialPowers.Services.domStorageManager.nextGenLocalStorageEnabled) {
-      await sendMessageToTabs(tabs, "resetLocalStorage");
-      await sendMessageToTabs(tabs, "checkLocalStorageSet");
-      await browser.browsingData.removeLocalStorage({
-        cookieStoreId: "firefox-container-1",
-      });
-      await browser.tabs.sendMessage(tabs[0].id, "checkLocalStorageSet");
-      await browser.tabs.sendMessage(tabs[1].id, "checkLocalStorageSet");
-      await browser.tabs.sendMessage(tabs[2].id, "checkLocalStorageCleared");
-
-      await sendMessageToTabs(tabs, "resetLocalStorage");
-      await sendMessageToTabs(tabs, "checkLocalStorageSet");
-      
-      await browser.browsingData.removeLocalStorage({
-        cookieStoreId: "firefox-container-1",
-        hostnames: ["example.net"],
-      });
-      await sendMessageToTabs(tabs, "checkLocalStorageSet");
-
-      await sendMessageToTabs(tabs, "resetLocalStorage");
-      await sendMessageToTabs(tabs, "checkLocalStorageSet");
-      
-      await browser.browsingData.removeLocalStorage({
-        cookieStoreId: "firefox-private",
-      });
-      await sendMessageToTabs(tabs, "checkLocalStorageSet");
-    } else {
-      await browser.test.assertRejects(
-        browser.browsingData.removeLocalStorage({
-          cookieStoreId: "firefox-container-1",
-        }),
-        "removeLocalStorage with cookieStoreId requires LSNG"
-      );
-    }
-
-    
     await browser.browsingData.removeLocalStorage({});
 
-    await browser.tabs.remove(tabs.map(tab => tab.id));
+    browser.tabs.remove(tabs.map(tab => tab.id));
 
     browser.test.notifyPass("done");
   }
@@ -124,17 +91,9 @@ add_task(async function testLocalStorage() {
         localStorage.clear();
         localStorage.setItem("test", "test");
       } else if (msg === "checkLocalStorageSet") {
-        browser.test.assertEq(
-          "test",
-          localStorage.getItem("test"),
-          `checkLocalStorageSet: ${location.href}`
-        );
+        browser.test.assertEq("test", localStorage.getItem("test"));
       } else if (msg === "checkLocalStorageCleared") {
-        browser.test.assertEq(
-          null,
-          localStorage.getItem("test"),
-          `checkLocalStorageCleared: ${location.href}`
-        );
+        browser.test.assertEq(null, localStorage.getItem("test"));
       }
     });
     browser.runtime.sendMessage("content-script-ready");
@@ -143,7 +102,6 @@ add_task(async function testLocalStorage() {
   let extension = ExtensionTestUtils.loadExtension({
     background,
     manifest: {
-      name: "Test Extension",
       permissions: ["browsingData"],
       content_scripts: [
         {
@@ -163,24 +121,6 @@ add_task(async function testLocalStorage() {
   });
 
   await extension.startup();
-
-  const TABS = [
-    { url: "http://example.com" },
-    { url: "http://example.net" },
-    {
-      url: "http://test1.example.com",
-      options: {
-        userContextId: 1,
-      },
-    },
-  ];
-
-  for (let info of TABS) {
-    let tab = await BrowserTestUtils.addTab(gBrowser, info.url, info.options);
-    let browser = gBrowser.getBrowserForTab(tab);
-    await BrowserTestUtils.browserLoaded(browser);
-  }
-
   await extension.awaitFinish("done");
   await extension.unload();
 });
