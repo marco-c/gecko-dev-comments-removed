@@ -98,7 +98,7 @@ async function waitForPreloaded(browser) {
 
 async function waitForUrlLoad(url) {
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURI(browser, url);
+  await BrowserTestUtils.loadURI(browser, url);
   await BrowserTestUtils.browserLoaded(browser, false, url);
 }
 

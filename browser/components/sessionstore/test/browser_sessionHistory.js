@@ -18,7 +18,7 @@ add_task(async function test_load_start() {
 
   
   let historyReplacePromise = promiseOnHistoryReplaceEntryInChild(browser);
-  BrowserTestUtils.loadURI(browser, PAGE);
+  await BrowserTestUtils.loadURI(browser, PAGE);
 
   
   await historyReplacePromise;

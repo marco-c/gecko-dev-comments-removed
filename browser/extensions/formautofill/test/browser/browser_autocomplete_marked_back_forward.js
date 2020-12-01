@@ -38,7 +38,7 @@ add_task(async function test_back_forward() {
 
     
     let loadPromise = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.loadURI(browser, `${URL}?load=2`);
+    await BrowserTestUtils.loadURI(browser, `${URL}?load=2`);
     info("expecting browser loaded");
     await loadPromise;
 

@@ -19,19 +19,21 @@ add_task(async function test() {
     });
   }
 
-  async function promiseTestReady(aIsZoomedWindow, aWindow) {
+  function promiseTestReady(aIsZoomedWindow, aWindow) {
     
     
     
     
 
     let browser = aWindow.gBrowser.selectedBrowser;
-    BrowserTestUtils.loadURI(browser, "about:blank");
-    await Promise.all([
-      BrowserTestUtils.browserLoaded(browser),
-      promiseLocationChange(),
-    ]);
-    doTest(aIsZoomedWindow, aWindow);
+    return BrowserTestUtils.loadURI(browser, "about:blank")
+      .then(() => {
+        return Promise.all([
+          BrowserTestUtils.browserLoaded(browser),
+          promiseLocationChange(),
+        ]);
+      })
+      .then(() => doTest(aIsZoomedWindow, aWindow));
   }
 
   function doTest(aIsZoomedWindow, aWindow) {

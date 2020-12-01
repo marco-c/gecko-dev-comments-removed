@@ -573,6 +573,8 @@ class DesktopInstance(GeckoInstance):
         
         "browser.startup.page": 0,
         
+        "browser.tabs.remote.separatePrivilegedContentProcess": False,
+        
         "browser.tabs.unloadOnLowMemory": False,
         
         "browser.tabs.warnOnClose": False,

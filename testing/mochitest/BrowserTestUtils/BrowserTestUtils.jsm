@@ -34,6 +34,7 @@ const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   ContentTask: "resource://testing-common/ContentTask.jsm",
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetters(this, {
@@ -838,8 +839,21 @@ var BrowserTestUtils = {
           );
 
           if (url) {
+            let browser = win.gBrowser.selectedBrowser;
+
+            if (
+              win.gMultiProcessBrowser &&
+              !E10SUtils.canLoadURIInRemoteType(
+                url,
+                win.gFissionBrowser,
+                browser.remoteType
+              )
+            ) {
+              await this.waitForEvent(browser, "XULFrameLoaderCreated");
+            }
+
             let loadPromise = this.browserLoaded(
-              win.gBrowser.selectedBrowser,
+              browser,
               false,
               url,
               maybeErrorPage
@@ -874,10 +888,34 @@ var BrowserTestUtils = {
 
 
 
-  loadURI(browser, uri) {
+
+
+
+
+
+  async loadURI(browser, uri) {
+    
     browser.loadURI(uri, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
+
+    
+    if (!browser.ownerGlobal.gMultiProcessBrowser) {
+      return;
+    }
+
+    
+    
+    
+    if (
+      !E10SUtils.canLoadURIInRemoteType(
+        uri,
+        browser.ownerGlobal.gFissionBrowser,
+        browser.remoteType
+      )
+    ) {
+      await this.waitForEvent(browser, "XULFrameLoaderCreated");
+    }
   },
 
   
@@ -1382,14 +1420,31 @@ var BrowserTestUtils = {
 
 
 
+
+
+
   waitForErrorPage(browser) {
-    return this.waitForContentEvent(
-      browser,
-      "AboutNetErrorLoad",
-      false,
-      null,
-      true
-    );
+    let waitForLoad = () =>
+      this.waitForContentEvent(browser, "AboutNetErrorLoad", false, null, true);
+
+    let win = browser.ownerGlobal;
+    let tab = win.gBrowser.getTabForBrowser(browser);
+    if (!tab || browser.isRemoteBrowser || !win.gMultiProcessBrowser) {
+      return waitForLoad();
+    }
+
+    
+    
+    
+    return new Promise((resolve, reject) => {
+      tab.addEventListener(
+        "TabRemotenessChange",
+        function() {
+          waitForLoad().then(resolve, reject);
+        },
+        { once: true }
+      );
+    });
   },
 
   
@@ -1408,61 +1463,83 @@ var BrowserTestUtils = {
   waitForDocLoadAndStopIt(expectedURL, browser, checkFn) {
     let isHttp = url => /^https?:/.test(url);
 
-    return new Promise(resolve => {
-      
-      
-      
-      
-      
-      
-      let proxyFilter;
-      if (!isHttp(expectedURL)) {
-        proxyFilter = {
-          proxyInfo: ProtocolProxyService.newProxyInfo(
-            "http",
-            "mochi.test",
-            8888,
-            "",
-            "",
-            0,
-            4096,
-            null
-          ),
-
-          applyFilter(channel, defaultProxyInfo, callback) {
-            callback.onProxyFilterResult(
-              isHttp(channel.URI.spec) ? defaultProxyInfo : this.proxyInfo
-            );
-          },
-        };
-
-        ProtocolProxyService.registerChannelFilter(proxyFilter, 0);
-      }
-
-      function observer(chan) {
-        chan.QueryInterface(Ci.nsIHttpChannel);
-        if (!chan.originalURI || chan.originalURI.spec !== expectedURL) {
-          return;
-        }
-        if (checkFn && !checkFn(chan)) {
-          return;
-        }
-
+    let stoppedDocLoadPromise = () => {
+      return new Promise(resolve => {
         
         
+        
+        
+        
+        
+        let proxyFilter;
+        if (!isHttp(expectedURL)) {
+          proxyFilter = {
+            proxyInfo: ProtocolProxyService.newProxyInfo(
+              "http",
+              "mochi.test",
+              8888,
+              "",
+              "",
+              0,
+              4096,
+              null
+            ),
 
-        try {
-          chan.cancel(Cr.NS_BINDING_ABORTED);
-        } finally {
-          if (proxyFilter) {
-            ProtocolProxyService.unregisterChannelFilter(proxyFilter);
+            applyFilter(channel, defaultProxyInfo, callback) {
+              callback.onProxyFilterResult(
+                isHttp(channel.URI.spec) ? defaultProxyInfo : this.proxyInfo
+              );
+            },
+          };
+
+          ProtocolProxyService.registerChannelFilter(proxyFilter, 0);
+        }
+
+        function observer(chan) {
+          chan.QueryInterface(Ci.nsIHttpChannel);
+          if (!chan.originalURI || chan.originalURI.spec !== expectedURL) {
+            return;
           }
-          Services.obs.removeObserver(observer, "http-on-before-connect");
-          resolve();
-        }
-      }
+          if (checkFn && !checkFn(chan)) {
+            return;
+          }
 
-      Services.obs.addObserver(observer, "http-on-before-connect");
+          
+          
+
+          try {
+            chan.cancel(Cr.NS_BINDING_ABORTED);
+          } finally {
+            if (proxyFilter) {
+              ProtocolProxyService.unregisterChannelFilter(proxyFilter);
+            }
+            Services.obs.removeObserver(observer, "http-on-before-connect");
+            resolve();
+          }
+        }
+
+        Services.obs.addObserver(observer, "http-on-before-connect");
+      });
+    };
+
+    let win = browser.ownerGlobal;
+    let tab = win.gBrowser.getTabForBrowser(browser);
+    let { mustChangeProcess } = E10SUtils.shouldLoadURIInBrowser(
+      browser,
+      expectedURL
+    );
+    if (!tab || !win.gMultiProcessBrowser || !mustChangeProcess) {
+      return stoppedDocLoadPromise();
+    }
+
+    return new Promise((resolve, reject) => {
+      tab.addEventListener(
+        "TabRemotenessChange",
+        function() {
+          stoppedDocLoadPromise().then(resolve, reject);
+        },
+        { once: true }
+      );
     });
   },
 

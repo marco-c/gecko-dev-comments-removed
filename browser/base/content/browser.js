@@ -1537,31 +1537,32 @@ function _loadURI(browser, uri, params = {}) {
     throw new Error("Cannot load with mismatched userContextId");
   }
 
-  
-  try {
-    let fixupFlags = Ci.nsIURIFixup.FIXUP_FLAG_NONE;
-    if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
-      fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
-    }
-    if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
-      fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
-    }
-    if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
-      fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
-    }
-
-    let uriObject = Services.uriFixup.getFixupURIInfo(uri, fixupFlags)
-      .preferredURI;
-    if (uriObject && handleUriInChrome(browser, uriObject)) {
-      
-      return;
-    }
-  } catch (e) {
+  let {
+    uriObject,
+    requiredRemoteType,
+    mustChangeProcess,
+    newFrameloader,
+  } = E10SUtils.shouldLoadURIInBrowser(
+    browser,
+    uri,
+    gMultiProcessBrowser,
+    gFissionBrowser,
+    loadFlags
+  );
+  if (uriObject && handleUriInChrome(browser, uriObject)) {
     
+    return;
+  }
+  if (newFrameloader) {
+    
+    
+    browser.removeAttribute("preloadedState");
   }
 
   
-  browser.isNavigating = true;
+  if (!requiredRemoteType) {
+    browser.isNavigating = true;
+  }
   let loadURIOptions = {
     triggeringPrincipal,
     csp,
@@ -1571,9 +1572,96 @@ function _loadURI(browser, uri, params = {}) {
     hasValidUserGestureActivation,
   };
   try {
-    browser.webNavigation.loadURI(uri, loadURIOptions);
+    if (!mustChangeProcess) {
+      browser.webNavigation.loadURI(uri, loadURIOptions);
+    } else {
+      
+      let { permitUnload } = browser.permitUnload();
+      if (!permitUnload) {
+        return;
+      }
+
+      if (postData) {
+        postData = serializeInputStream(postData);
+      }
+
+      let loadParams = {
+        uri,
+        triggeringPrincipal: triggeringPrincipal
+          ? E10SUtils.serializePrincipal(triggeringPrincipal)
+          : null,
+        flags: loadFlags,
+        referrerInfo: E10SUtils.serializeReferrerInfo(referrerInfo),
+        remoteType: requiredRemoteType,
+        postData,
+        newFrameloader,
+        csp: csp ? gSerializationHelper.serializeToString(csp) : null,
+      };
+
+      if (userContextId) {
+        loadParams.userContextId = userContextId;
+      }
+
+      if (browser.webNavigation.maybeCancelContentJSExecution) {
+        let cancelContentJSEpoch = browser.webNavigation.maybeCancelContentJSExecution(
+          Ci.nsIRemoteTab.NAVIGATE_URL,
+          { uri: uriObject }
+        );
+        loadParams.cancelContentJSEpoch = cancelContentJSEpoch;
+      }
+      LoadInOtherProcess(browser, loadParams);
+    }
+  } catch (e) {
+    
+    
+    
+    
+    
+    if (mustChangeProcess) {
+      Cu.reportError(e);
+      gBrowser.updateBrowserRemotenessByURL(browser, uri);
+
+      browser.webNavigation.loadURI(uri, loadURIOptions);
+    } else {
+      throw e;
+    }
   } finally {
-    browser.isNavigating = false;
+    if (!requiredRemoteType) {
+      browser.isNavigating = false;
+    }
+  }
+}
+
+
+
+function LoadInOtherProcess(browser, loadOptions, historyIndex = -1) {
+  let tab = gBrowser.getTabForBrowser(browser);
+  SessionStore.navigateAndRestore(tab, loadOptions, historyIndex);
+}
+
+
+
+function RedirectLoad(browser, data) {
+  if (browser.getAttribute("preloadedState") === "consumed") {
+    browser.removeAttribute("preloadedState");
+    data.loadOptions.newFrameloader = true;
+  }
+
+  
+  
+  if (gBrowserInit.delayedStartupFinished) {
+    LoadInOtherProcess(browser, data.loadOptions, data.historyIndex);
+  } else {
+    let delayedStartupFinished = (subject, topic) => {
+      if (topic == "browser-delayed-startup-finished" && subject == window) {
+        Services.obs.removeObserver(delayedStartupFinished, topic);
+        LoadInOtherProcess(browser, data.loadOptions, data.historyIndex);
+      }
+    };
+    Services.obs.addObserver(
+      delayedStartupFinished,
+      "browser-delayed-startup-finished"
+    );
   }
 }
 
@@ -5099,6 +5187,50 @@ var XULBrowserWindow = {
       linkNode,
       isAppTab
     );
+  },
+
+  
+  shouldLoadURI(
+    aDocShell,
+    aURI,
+    aReferrerInfo,
+    aHasPostData,
+    aTriggeringPrincipal,
+    aCsp
+  ) {
+    if (!gMultiProcessBrowser) {
+      return true;
+    }
+
+    let browser = aDocShell
+      .QueryInterface(Ci.nsIDocShellTreeItem)
+      .sameTypeRootTreeItem.QueryInterface(Ci.nsIDocShell).chromeEventHandler;
+
+    
+    if (
+      browser.localName != "browser" ||
+      !browser.getTabBrowser ||
+      browser.getTabBrowser() != gBrowser
+    ) {
+      return true;
+    }
+
+    if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aHasPostData)) {
+      
+      
+      
+      E10SUtils.redirectLoad(
+        aDocShell,
+        aURI,
+        aReferrerInfo,
+        aTriggeringPrincipal,
+        null,
+        aCsp
+      );
+      return false;
+    }
+
+    return true;
   },
 
   onProgressChange(

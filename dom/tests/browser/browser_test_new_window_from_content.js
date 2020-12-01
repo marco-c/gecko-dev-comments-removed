@@ -116,7 +116,7 @@ function prepareForResult(aBrowser, aExpectation) {
         await BrowserTestUtils.browserLoaded(aBrowser);
         is(aBrowser.currentURI.spec, expectedSpec, "Should be at dummy.html");
         
-        BrowserTestUtils.loadURI(aBrowser, kContentDoc);
+        await BrowserTestUtils.loadURI(aBrowser, kContentDoc);
         await BrowserTestUtils.browserLoaded(aBrowser);
       })();
     case kNewWin:

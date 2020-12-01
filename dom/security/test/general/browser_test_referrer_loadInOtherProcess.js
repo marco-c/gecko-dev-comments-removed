@@ -131,6 +131,11 @@ var waitForLoad = async function(uri) {
 
 
 
+
+
+
+
+
 add_task(async function test_navigation() {
   
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");

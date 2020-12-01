@@ -38,7 +38,7 @@ add_task(async function() {
     
     
     url = HTTPS_TEST_ROOT_1 + "file_mixedContentFromOnunload_test1.html";
-    BrowserTestUtils.loadURI(browser, url);
+    await BrowserTestUtils.loadURI(browser, url);
     await BrowserTestUtils.browserLoaded(browser);
     
     
@@ -51,10 +51,10 @@ add_task(async function() {
     
     
     url = HTTP_TEST_ROOT_2 + "file_mixedContentFromOnunload.html";
-    BrowserTestUtils.loadURI(browser, url);
+    await BrowserTestUtils.loadURI(browser, url);
     await BrowserTestUtils.browserLoaded(browser);
     url = HTTPS_TEST_ROOT_2 + "file_mixedContentFromOnunload_test2.html";
-    BrowserTestUtils.loadURI(browser, url);
+    await BrowserTestUtils.loadURI(browser, url);
     await BrowserTestUtils.browserLoaded(browser);
     isSecurityState(browser, "broken");
     await assertMixedContentBlockingState(browser, {

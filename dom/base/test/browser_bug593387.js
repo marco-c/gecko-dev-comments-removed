@@ -50,7 +50,7 @@ add_task(async function test() {
       
       
 
-      BrowserTestUtils.loadURI(newBrowser, "http://example.com/");
+      await BrowserTestUtils.loadURI(newBrowser, "http://example.com/");
       await BrowserTestUtils.browserLoaded(newBrowser);
 
       let observerData = await SpecialPowers.spawn(
