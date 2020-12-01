@@ -292,6 +292,16 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       return false;
     }
 
+    
+    
+    if (
+      !result.heuristic &&
+      result.providerName == "HeuristicFallback" &&
+      state.context.heuristicResult?.providerName != "HeuristicFallback"
+    ) {
+      return false;
+    }
+
     if (result.providerName == "TabToSearch") {
       
       

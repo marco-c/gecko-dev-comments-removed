@@ -70,34 +70,47 @@ class SearchUtils {
   async enginesForDomainPrefix(prefix, { matchAllDomainLevels = false } = {}) {
     await this.init();
     prefix = prefix.toLowerCase();
-    let engines = [];
+
+    
     let partialMatchEngines = [];
+    function matchPrefix(engine, engineHost) {
+      let parts = engineHost.split(".");
+      for (let i = 1; i < parts.length - 1; ++i) {
+        if (
+          parts
+            .slice(i)
+            .join(".")
+            .startsWith(prefix)
+        ) {
+          partialMatchEngines.push(engine);
+        }
+      }
+    }
+
+    
+    let engines = [];
     for (let engine of await Services.search.getVisibleEngines()) {
       let domain = engine.getResultDomain();
       if (domain.startsWith(prefix) || domain.startsWith("www." + prefix)) {
         engines.push(engine);
       }
+
       if (matchAllDomainLevels) {
         
-        domain = domain.substr(
-          0,
-          domain.length - engine.searchUrlPublicSuffix.length
-        );
-        let parts = domain.split(".");
-        for (let i = 1; i < parts.length - 1; ++i) {
-          if (
-            parts
-              .slice(i)
-              .join(".")
-              .startsWith(prefix)
-          ) {
-            partialMatchEngines.push(engine);
-          }
+        
+        
+        if (prefix.includes(".")) {
+          matchPrefix(engine, domain);
         }
+        matchPrefix(
+          engine,
+          domain.substr(0, domain.length - engine.searchUrlPublicSuffix.length)
+        );
       }
     }
+
     
-    return engines.concat(partialMatchEngines);
+    return [...engines, ...partialMatchEngines];
   }
 
   
