@@ -81,7 +81,7 @@ var StarUI = {
       case "popuphidden": {
         clearTimeout(this._autoCloseTimer);
         if (aEvent.originalTarget == this.panel) {
-          let { selectedFolderGuid, didChangeFolder } = gEditItemOverlay;
+          let selectedFolderGuid = gEditItemOverlay.selectedFolderGuid;
           gEditItemOverlay.uninitPanel(true);
 
           this._anchorElement.removeAttribute("open");
@@ -111,10 +111,9 @@ var StarUI = {
           }
 
           if (!removeBookmarksOnPopupHidden) {
-            this._storeRecentlyUsedFolder(
-              selectedFolderGuid,
-              didChangeFolder
-            ).catch(console.error);
+            this._storeRecentlyUsedFolder(selectedFolderGuid).catch(
+              console.error
+            );
           }
         }
         break;
@@ -383,21 +382,12 @@ var StarUI = {
     this._batching = false;
   },
 
-  async _storeRecentlyUsedFolder(selectedFolderGuid, didChangeFolder) {
-    if (!selectedFolderGuid) {
-      return;
-    }
-
+  async _storeRecentlyUsedFolder(selectedFolderGuid) {
     
-    if (didChangeFolder) {
-      Services.prefs.setCharPref(
-        "browser.bookmarks.defaultLocation",
-        selectedFolderGuid
-      );
-    }
-
-    
-    if (PlacesUtils.bookmarks.userContentRoots.includes(selectedFolderGuid)) {
+    if (
+      !selectedFolderGuid ||
+      PlacesUtils.bookmarks.userContentRoots.includes(selectedFolderGuid)
+    ) {
       return;
     }
 
@@ -478,9 +468,7 @@ var PlacesCommandHook = {
     let isNewBookmark = !info;
     let showEditUI = !isNewBookmark || StarUI.showForNewBookmarks;
     if (isNewBookmark) {
-      
-      
-      let parentGuid = await PlacesUIUtils.defaultParentGuid;
+      let parentGuid = PlacesUtils.bookmarks.unfiledGuid;
       info = { url, parentGuid };
       
       let charset = null;
@@ -552,11 +540,9 @@ var PlacesCommandHook = {
       return;
     }
 
-    let parentGuid = await PlacesUIUtils.defaultParentGuid;
-    let parentId = await PlacesUtils.promiseItemId(parentGuid);
     let defaultInsertionPoint = new PlacesInsertionPoint({
-      parentId,
-      parentGuid,
+      parentId: PlacesUtils.bookmarksMenuFolderId,
+      parentGuid: PlacesUtils.bookmarks.menuGuid,
     });
     PlacesUIUtils.showBookmarkDialog(
       {

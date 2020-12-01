@@ -3317,7 +3317,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 104;
+    const UI_VERSION = 103;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3980,15 +3980,6 @@ BrowserGlue.prototype = {
 
       Services.prefs.clearUserPref(
         "browser.livebookmarks.migrationAttemptsLeft"
-      );
-    }
-
-    
-    
-    if (currentUIVersion < 104) {
-      Services.prefs.setCharPref(
-        "browser.bookmarks.defaultLocation",
-        "unfiled"
       );
     }
 

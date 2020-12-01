@@ -602,18 +602,6 @@ pref("browser.bookmarks.max_backups",             15);
 pref("browser.bookmarks.openInTabClosesMenu", true);
 
 
-
-
-
-
-
-
-
-
-
-pref("browser.bookmarks.defaultLocation", "toolbar");
-
-
 pref("dom.disable_open_during_load",              true);
 pref("javascript.options.showInConsole",          true);
 
