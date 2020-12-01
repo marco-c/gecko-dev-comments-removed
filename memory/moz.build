@@ -11,8 +11,12 @@ DIRS += [
     "build",
 ]
 
-
-if CONFIG["MOZ_BUILD_APP"] != "memory":
+if CONFIG["MOZ_BUILD_APP"] == "memory":
+    DIRS += [
+        "mozjemalloc_info",
+    ]
+else:
+    
     DIRS += [
         "mozalloc",
     ]
