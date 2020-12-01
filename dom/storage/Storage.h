@@ -47,6 +47,10 @@ class Storage : public nsISupports, public nsWrapperCache {
 
   nsIPrincipal* StoragePrincipal() const { return mStoragePrincipal; }
 
+  bool IsPrivateBrowsing() const { return mPrivateBrowsing; }
+
+  bool IsSessionScopedOrLess() const { return mSessionScopedOrLess; }
+
   
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -91,7 +95,10 @@ class Storage : public nsISupports, public nsWrapperCache {
 
   virtual void Clear(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) = 0;
 
-  bool IsSessionOnly() const { return mIsSessionOnly; }
+  
+  
+  
+  bool IsSessionOnly() const { return IsSessionScopedOrLess(); }
 
   
   
@@ -151,10 +158,12 @@ class Storage : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPrincipal> mStoragePrincipal;
 
+  bool mPrivateBrowsing : 1;
+
   
   
   
-  bool mIsSessionOnly : 1;
+  bool mSessionScopedOrLess : 1;
 };
 
 }  

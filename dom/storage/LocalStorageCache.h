@@ -62,7 +62,7 @@ class LocalStorageCacheBridge {
   virtual void LoadWait() = 0;
 
  protected:
-  virtual ~LocalStorageCacheBridge() {}
+  virtual ~LocalStorageCacheBridge() = default;
 
   ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
@@ -164,7 +164,7 @@ class LocalStorageCache : public LocalStorageCacheBridge {
 
  public:
   
-  static const uint32_t kDataSetCount = 3;
+  static const uint32_t kDataSetCount = 2;
 
  private:
   
@@ -172,10 +172,8 @@ class LocalStorageCache : public LocalStorageCacheBridge {
   friend class LocalStorageManager;
 
   static const uint32_t kUnloadDefault = 1 << 0;
-  static const uint32_t kUnloadPrivate = 1 << 1;
-  static const uint32_t kUnloadSession = 1 << 2;
-  static const uint32_t kUnloadComplete =
-      kUnloadDefault | kUnloadPrivate | kUnloadSession;
+  static const uint32_t kUnloadSession = 1 << 1;
+  static const uint32_t kUnloadComplete = kUnloadDefault | kUnloadSession;
 
 #ifdef DOM_STORAGE_TESTS
   static const uint32_t kTestReload = 1 << 15;
@@ -282,7 +280,7 @@ class StorageUsageBridge {
 
  protected:
   
-  virtual ~StorageUsageBridge() {}
+  virtual ~StorageUsageBridge() = default;
 };
 
 class StorageUsage : public StorageUsageBridge {
@@ -304,4 +302,4 @@ class StorageUsage : public StorageUsageBridge {
 }  
 }  
 
-#endif  
+#endif
