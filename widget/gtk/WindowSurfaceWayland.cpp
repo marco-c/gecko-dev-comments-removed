@@ -37,9 +37,6 @@ extern mozilla::LazyLogModule gWidgetWaylandLog;
 
 #define COMPOSITING_TIMEOUT 200
 
-
-#define FRAME_CALLBACK_TIMEOUT 20
-
 namespace mozilla {
 namespace widget {
 
@@ -1003,11 +1000,7 @@ void WindowSurfaceWayland::CommitWaylandBuffer() {
       LOGWAYLAND(("    [%p] wait for frame callback.\n", (void*)this));
       
       
-      
-      if (mLastCommitTime && (g_get_monotonic_time() / 1000) - mLastCommitTime <
-                                 FRAME_CALLBACK_TIMEOUT) {
-        return;
-      }
+      return;
     }
     
     
