@@ -158,7 +158,7 @@ class GlobalHelperThreadState {
   
   HelperThreadTaskVector helperTasks_;
 
-  ParseTask* removeFinishedParseTask(ParseTaskKind kind,
+  ParseTask* removeFinishedParseTask(JSContext* cx, ParseTaskKind kind,
                                      JS::OffThreadToken* token);
 
  public:
