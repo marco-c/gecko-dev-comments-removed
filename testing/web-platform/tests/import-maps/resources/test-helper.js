@@ -11,9 +11,6 @@ function expect_log(test, expected_log) {
 
 const Result = {
   
-  BUILTIN: "builtin",
-
-  
   
   FETCH_ERROR: "fetch_error",
 
@@ -79,9 +76,7 @@ function getHandlers(t, specifier, expected) {
     });
   } else {
     let expected_log;
-    if (expected === Result.BUILTIN) {
-      expected_log = [];
-    } else if (expected === Result.URL) {
+    if (expected === Result.URL) {
       const match_data_url = specifier.match(/data:.*log\.push\('(.*)'\)/);
       const match_log_js = specifier.match(/name=(.*)/);
       if (match_data_url) {
