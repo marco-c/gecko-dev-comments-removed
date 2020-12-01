@@ -276,6 +276,11 @@ class PluginChild extends JSWindowActorChild {
       overlay.removeAttribute("notext");
     }
 
+    if (fallbackType == Ci.nsIObjectLoadingContent.PLUGIN_BLOCK_ALL) {
+      overlay.setAttribute("blockall", "blockall");
+      return OVERLAY_DISPLAY.HIDDEN;
+    }
+
     
     
     
@@ -384,6 +389,8 @@ class PluginChild extends JSWindowActorChild {
         return "PluginVulnerableUpdatable";
       case Ci.nsIObjectLoadingContent.PLUGIN_VULNERABLE_NO_UPDATE:
         return "PluginVulnerableNoUpdate";
+      case Ci.nsIObjectLoadingContent.PLUGIN_BLOCK_ALL:
+        return "PluginBlockAll";
       default:
         
         return null;
@@ -475,6 +482,7 @@ class PluginChild extends JSWindowActorChild {
         this.onPluginCrashed(pluginElement, event);
         break;
 
+      case "PluginBlockAll":
       case "PluginNotFound": {
         
         break;
@@ -717,6 +725,7 @@ class PluginChild extends JSWindowActorChild {
       event.originalTarget.getAttribute("anonid") != "closeIcon" &&
       event.originalTarget.id != "closeIcon" &&
       !overlay.hasAttribute("dismissed") &&
+      !overlay.hasAttribute("blockall") &&
       event.button == 0 &&
       event.isTrusted
     ) {
