@@ -5,7 +5,9 @@
 
 
 
-var { ELEMENT_STYLE } = require("devtools/shared/specs/style-rule");
+var {
+  style: { ELEMENT_STYLE },
+} = require("devtools/shared/constants");
 
 const TEST_URI = `
   <div id="test2" style="color: red">

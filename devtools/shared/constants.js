@@ -110,6 +110,15 @@ const COMPATIBILITY_ISSUE_TYPE = {
 
 
 
+
+
+
+
+
+const ELEMENT_STYLE = 100;
+
+
+
 const MESSAGE_CATEGORY = {
   CSS_PARSER: "CSS Parser",
 };
@@ -123,4 +132,7 @@ module.exports = {
   },
   COMPATIBILITY_ISSUE_TYPE,
   MESSAGE_CATEGORY,
+  style: {
+    ELEMENT_STYLE,
+  },
 };

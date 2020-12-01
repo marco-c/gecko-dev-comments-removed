@@ -52,9 +52,3 @@ const styleRuleSpec = generateActorSpec({
 });
 
 exports.styleRuleSpec = styleRuleSpec;
-
-
-
-
-const ELEMENT_STYLE = 100;
-exports.ELEMENT_STYLE = ELEMENT_STYLE;
