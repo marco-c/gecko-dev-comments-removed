@@ -33,10 +33,10 @@ class WheelEvent : public MouseEvent {
   
   
   
-  double DeltaX();
-  double DeltaY();
-  double DeltaZ();
-  uint32_t DeltaMode();
+  double DeltaX(CallerType);
+  double DeltaY(CallerType);
+  double DeltaZ(CallerType);
+  uint32_t DeltaMode(CallerType);
 
   void InitWheelEvent(const nsAString& aType, bool aCanBubble, bool aCancelable,
                       nsGlobalWindowInner* aView, int32_t aDetail,
@@ -49,8 +49,26 @@ class WheelEvent : public MouseEvent {
  protected:
   ~WheelEvent() = default;
 
+  double ToWebExposedDelta(const WidgetWheelEvent&, double aDelta, CallerType);
+
  private:
   int32_t mAppUnitsPerDevPixel;
+  enum class DeltaModeCheckingState : uint8_t {
+    
+    Unknown,
+    
+    Unchecked,
+    
+    Checked,
+  };
+
+  
+  
+  
+  
+  
+  DeltaModeCheckingState mDeltaModeCheckingState =
+      DeltaModeCheckingState::Unknown;
 };
 
 }  
