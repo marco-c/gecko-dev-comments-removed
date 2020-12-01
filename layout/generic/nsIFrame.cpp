@@ -11196,7 +11196,10 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     } else {
       
       
-      result += CompositorHitTestFlags::eTouchActionPinchZoomDisabled;
+      if (!(touchAction & StyleTouchAction::PINCH_ZOOM)) {
+        result += CompositorHitTestFlags::eTouchActionPinchZoomDisabled;
+      }
+
       result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
 
       if (!(touchAction & StyleTouchAction::PAN_X)) {
