@@ -302,11 +302,12 @@ NS_IMETHODIMP
 nsSHEntry::GetHasUserInteraction(bool* aFlag) {
   
   
-  
-  MOZ_ASSERT(!mParent || !mHasUserInteraction,
-             "User interaction can only be set on root entries");
-
-  *aFlag = mHasUserInteraction;
+  if (!mParent) {
+    *aFlag = mHasUserInteraction;
+  } else {
+    nsCOMPtr<nsISHEntry> root = nsSHistory::GetRootSHEntry(this);
+    root->GetHasUserInteraction(aFlag);
+  }
   return NS_OK;
 }
 
