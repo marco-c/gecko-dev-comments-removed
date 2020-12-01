@@ -11,6 +11,8 @@
 #include "gtest/gtest-printers.h"
 #include "gtest/gtest.h"
 
+using namespace mozilla;
+
 
 
 
