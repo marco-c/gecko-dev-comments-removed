@@ -931,7 +931,7 @@ class PresShell final : public nsStubDocumentObserver,
   }
 
   float GetResolution() const { return mResolution.valueOr(1.0); }
-  float GetCumulativeResolution();
+  float GetCumulativeResolution() const;
 
   
 

@@ -446,7 +446,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual mozilla::ScrollGeneration CurrentScrollGeneration() = 0;
+  virtual mozilla::ScrollGeneration CurrentScrollGeneration() const = 0;
   
 
 
