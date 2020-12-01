@@ -10,9 +10,11 @@
 #include "mozilla/RangeBoundary.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIContent.h"
 #include "nsRange.h"
 #include "nsTArray.h"
+
+class nsIContent;
+class nsINode;
 
 namespace mozilla {
 
@@ -27,7 +29,7 @@ class ContentIteratorBase {
   ContentIteratorBase() = delete;
   ContentIteratorBase(const ContentIteratorBase&) = delete;
   ContentIteratorBase& operator=(const ContentIteratorBase&) = delete;
-  virtual ~ContentIteratorBase() = default;
+  virtual ~ContentIteratorBase();
 
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ContentIteratorBase)
 
@@ -109,27 +111,6 @@ class ContentIteratorBase {
                                           uint32_t);
   friend void ImplCycleCollectionUnlink(ContentIteratorBase&);
 };
-
-
-
-
-
-inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& aCallback, ContentIteratorBase& aField,
-    const char* aName, uint32_t aFlags = 0) {
-  ImplCycleCollectionTraverse(aCallback, aField.mCurNode, aName, aFlags);
-  ImplCycleCollectionTraverse(aCallback, aField.mFirst, aName, aFlags);
-  ImplCycleCollectionTraverse(aCallback, aField.mLast, aName, aFlags);
-  ImplCycleCollectionTraverse(aCallback, aField.mClosestCommonInclusiveAncestor,
-                              aName, aFlags);
-}
-
-inline void ImplCycleCollectionUnlink(ContentIteratorBase& aField) {
-  ImplCycleCollectionUnlink(aField.mCurNode);
-  ImplCycleCollectionUnlink(aField.mFirst);
-  ImplCycleCollectionUnlink(aField.mLast);
-  ImplCycleCollectionUnlink(aField.mClosestCommonInclusiveAncestor);
-}
 
 
 
