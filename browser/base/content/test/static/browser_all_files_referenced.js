@@ -223,8 +223,7 @@ if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
   whitelist.push({ file: "chrome://fxr/content/fxrui.html" });
 }
 
-if (!AppConstants.NIGHTLY_BUILD || AppConstants.platform == "android") {
-  
+if (AppConstants.platform == "android") {
   
   
   whitelist.push({
