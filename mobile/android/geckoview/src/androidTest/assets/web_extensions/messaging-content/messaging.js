@@ -1,5 +1,7 @@
-
-browser.runtime.sendNativeMessage("badNativeApi", "errorerrorerror");
+browser.runtime
+  .sendNativeMessage("badNativeApi", "errorerrorerror")
+  
+  .catch(runTest);
 
 async function runTest() {
   const response = await browser.runtime.sendNativeMessage(
@@ -25,5 +27,3 @@ async function runTest() {
 
   port.postMessage("testContentPortMessage");
 }
-
-runTest();
