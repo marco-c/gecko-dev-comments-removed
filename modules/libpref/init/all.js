@@ -830,6 +830,9 @@ pref("toolkit.dump.emit", false);
 pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com");
 
 
+pref("devtools.performance.recording.child.timeout_s", 0);
+
+
 
 
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)

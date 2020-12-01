@@ -20,6 +20,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TypedArray.h"
+#include "mozilla/Preferences.h"
 #include "nsIFileStreams.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
@@ -908,12 +909,31 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
 
     
     
+    const uint32_t parentTimeMs = static_cast<uint32_t>(
+        (TimeStamp::NowUnfuzzed() - streamingStart).ToMilliseconds());
+    
+    
+    
+    
+    
+    
+    const uint32_t parentToChildrenFactor = mPendingProfiles * 2;
+    
+    
+    
+    uint32_t childTimeoutS = Preferences::GetUint(
+        "devtools.performance.recording.child.timeout_s", 0u);
+    if (childTimeoutS == 0) {
+      
+      childTimeoutS = 1;
+    }
+    
+    
+    
+    
     
     const uint32_t streamingTimeoutMs =
-        static_cast<uint32_t>(
-            (TimeStamp::NowUnfuzzed() - streamingStart).ToMilliseconds()) *
-            2 +
-        1000;
+        parentTimeMs * parentToChildrenFactor + childTimeoutS * 1000;
     Unused << NS_NewTimerWithFuncCallback(
         getter_AddRefs(mGatheringTimer), GatheringTimerCallback, this,
         streamingTimeoutMs, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "",
