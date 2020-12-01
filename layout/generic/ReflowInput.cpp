@@ -2086,7 +2086,7 @@ void ReflowInput::InitConstraints(
                 aPadding, mStyleDisplay);
     
     
-    ComputedPhysicalMargin().SizeTo(0, 0, 0, 0);
+    SetComputedLogicalMargin(wm, LogicalMargin(wm));
     ComputedPhysicalOffsets().SizeTo(0, 0, 0, 0);
 
     ComputedISize() =
@@ -2406,6 +2406,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
   ::UpdateProp(mFrame, nsIFrame::UsedMarginProperty(), needMarginProp,
                ComputedPhysicalMargin());
 
+  const WritingMode wm = GetWritingMode();
   const nsStyleDisplay* disp = mFrame->StyleDisplayWithOptionalParam(aDisplay);
   bool isThemed = mFrame->IsThemed(disp);
   bool needPaddingProp;
@@ -2430,13 +2431,12 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
 
   
   typedef const FramePropertyDescriptor<SmallValueHolder<nscoord>>* Prop;
-  auto ApplyBaselinePadding = [this, &needPaddingProp](LogicalAxis aAxis,
-                                                       Prop aProp) {
+  auto ApplyBaselinePadding = [this, wm, &needPaddingProp](LogicalAxis aAxis,
+                                                           Prop aProp) {
     bool found;
     nscoord val = mFrame->GetProperty(aProp, &found);
     if (found) {
       NS_ASSERTION(val != nscoord(0), "zero in this property is useless");
-      WritingMode wm = GetWritingMode();
       LogicalSide side;
       if (val > 0) {
         side = MakeLogicalSide(aAxis, eLogicalEdgeStart);
@@ -2490,7 +2490,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
 
     
     
-    ComputedPhysicalMargin().SizeTo(0, 0, 0, 0);
+    SetComputedLogicalMargin(wm, LogicalMargin(wm));
   } else if (aFrameType == LayoutFrameType::Scrollbar) {
     
     
@@ -2749,7 +2749,8 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
   
   const nsStyleMargin* styleMargin = mFrame->StyleMargin();
 
-  bool isCBDependent = !styleMargin->GetMargin(ComputedPhysicalMargin());
+  nsMargin margin;
+  const bool isCBDependent = !styleMargin->GetMargin(margin);
   if (isCBDependent) {
     
     
@@ -2769,6 +2770,8 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
         aPercentBasis, styleMargin->mMargin.GetBEnd(aCBWM));
 
     SetComputedLogicalMargin(aCBWM, m);
+  } else {
+    SetComputedLogicalMargin(mWritingMode, LogicalMargin(mWritingMode, margin));
   }
 
   
