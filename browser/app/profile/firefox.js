@@ -1401,7 +1401,11 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", "FR");
 
-pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "en-US,en-CA,en-GB");
+#ifdef NIGHTLY_BUILD
+  pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "en-US,en-CA,en-GB");
+#else
+  pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "");
+#endif
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE,CH,AT,BE,IN");
 
