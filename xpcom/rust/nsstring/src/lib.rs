@@ -113,6 +113,9 @@
 
 
 #![allow(non_camel_case_types)]
+#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::result_unit_err)]
 
 use bitflags::bitflags;
 use std::borrow;
@@ -1254,6 +1257,7 @@ impl nsAString {
     
     
     
+    #[allow(clippy::inherent_to_string_shadow_display)]
     pub fn to_string(&self) -> String {
         String::from_utf16_lossy(&self[..])
     }
