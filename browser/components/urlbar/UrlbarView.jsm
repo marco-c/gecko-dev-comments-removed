@@ -356,13 +356,19 @@ class UrlbarView {
     
     
     
-    function isSkippableTabToSearchAnnounce(selectedElt) {
-      return (
+    const isSkippableTabToSearchAnnounce = selectedElt => {
+      let skipAnnouncement =
         selectedElt?.result?.providerName == "TabToSearch" &&
+        !this._announceTabToSearchOnSelection &&
         userPressedTab &&
-        UrlbarPrefs.get("accessibility.tabToSearch.announceResults")
-      );
-    }
+        UrlbarPrefs.get("accessibility.tabToSearch.announceResults");
+      if (skipAnnouncement) {
+        
+        
+        this._announceTabToSearchOnSelection = true;
+      }
+      return skipAnnouncement;
+    };
 
     
     
@@ -672,6 +678,9 @@ class UrlbarView {
         args: { engine },
       });
       this._previousTabToSearchEngine = engine;
+      
+      
+      this._announceTabToSearchOnSelection = false;
     }
 
     
