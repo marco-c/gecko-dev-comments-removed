@@ -14,7 +14,7 @@ function checkScroll() {
   });
 }
 
-window.addEventListener('load', () => {
+window.addEventListener('pageshow', () => {
   if (location.hash == "#history") {
     
     
