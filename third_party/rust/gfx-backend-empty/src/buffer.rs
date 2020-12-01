@@ -1,0 +1,11 @@
+#[derive(Debug)]
+pub struct Buffer {
+    
+    pub(crate) size: u64,
+}
+
+impl Buffer {
+    pub fn new(size: u64) -> Self {
+        Buffer { size }
+    }
+}

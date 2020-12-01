@@ -6,18 +6,14 @@
 
 
 
+
+
 use std::{any::Any, fmt};
 
 use crate::{
-    device,
-    format,
-    image,
-    memory,
+    device, format, image, memory,
     queue::{QueueGroup, QueuePriority},
-    Backend,
-    Features,
-    Hints,
-    Limits,
+    Backend, Features, Hints, Limits,
 };
 
 
@@ -56,6 +52,15 @@ pub struct Gpu<B: Backend> {
 
 
 pub trait PhysicalDevice<B: Backend>: fmt::Debug + Any + Send + Sync {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -145,6 +150,7 @@ pub struct AdapterInfo {
     
     pub device_type: DeviceType,
 }
+
 
 
 

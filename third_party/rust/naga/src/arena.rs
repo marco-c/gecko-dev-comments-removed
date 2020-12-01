@@ -1,4 +1,4 @@
-use std::{fmt, hash, marker::PhantomData, num::NonZeroU32};
+use std::{cmp::Ordering, fmt, hash, marker::PhantomData, num::NonZeroU32};
 
 
 
@@ -9,8 +9,15 @@ use std::{fmt, hash, marker::PhantomData, num::NonZeroU32};
 type Index = NonZeroU32;
 
 
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(
+    any(feature = "serialize", feature = "deserialize"),
+    serde(transparent)
+)]
 pub struct Handle<T> {
     index: Index,
+    #[cfg_attr(any(feature = "serialize", feature = "deserialize"), serde(skip))]
     marker: PhantomData<T>,
 }
 
@@ -29,6 +36,16 @@ impl<T> PartialEq for Handle<T> {
     }
 }
 impl<T> Eq for Handle<T> {}
+impl<T> PartialOrd for Handle<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.index.partial_cmp(&other.index)
+    }
+}
+impl<T> Ord for Handle<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.index.cmp(&other.index)
+    }
+}
 impl<T> fmt::Debug for Handle<T> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(formatter, "Handle({})", self.index)
@@ -63,7 +80,18 @@ impl<T> Handle<T> {
 
 
 
+
+
+
+
 #[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(
+    any(feature = "serialize", feature = "deserialize"),
+    serde(transparent)
+)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Arena<T> {
     
     data: Vec<T>,
@@ -76,14 +104,23 @@ impl<T> Default for Arena<T> {
 }
 
 impl<T> Arena<T> {
+    
     pub fn new() -> Self {
         Arena { data: Vec::new() }
     }
 
+    
     pub fn len(&self) -> usize {
         self.data.len()
     }
 
+    
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
+    
+    
     pub fn iter(&self) -> impl Iterator<Item = (Handle<T>, &T)> {
         self.data.iter().enumerate().map(|(i, v)| {
             let position = i + 1;
@@ -103,18 +140,37 @@ impl<T> Arena<T> {
     }
 
     
+    pub fn fetch_if<F: Fn(&T) -> bool>(&self, fun: F) -> Option<Handle<T>> {
+        self.data
+            .iter()
+            .position(fun)
+            .map(|index| Handle::new(unsafe { Index::new_unchecked((index + 1) as u32) }))
+    }
+
     
     
-    pub fn fetch_or_append(&mut self, value: T) -> Handle<T>
-    where
-        T: PartialEq,
-    {
-        if let Some(index) = self.data.iter().position(|d| d == &value) {
+    
+    
+    pub fn fetch_if_or_append<F: Fn(&T, &T) -> bool>(&mut self, value: T, fun: F) -> Handle<T> {
+        if let Some(index) = self.data.iter().position(|d| fun(d, &value)) {
             let index = unsafe { Index::new_unchecked((index + 1) as u32) };
             Handle::new(index)
         } else {
             self.append(value)
         }
+    }
+
+    
+    pub fn fetch_or_append(&mut self, value: T) -> Handle<T>
+    where
+        T: PartialEq,
+    {
+        self.fetch_if_or_append(value, T::eq)
+    }
+
+    
+    pub fn get_mut(&mut self, handle: Handle<T>) -> &mut T {
+        self.data.get_mut(handle.index.get() as usize - 1).unwrap()
     }
 }
 

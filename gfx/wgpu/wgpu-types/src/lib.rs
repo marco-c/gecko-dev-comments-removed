@@ -2,13 +2,25 @@
 
 
 
-#[cfg(feature = "peek-poke")]
-use peek_poke::PeekPoke;
-#[cfg(feature = "replay")]
-use serde::Deserialize;
-#[cfg(feature = "trace")]
-use serde::Serialize;
-use std::{io, ptr, slice};
+
+
+
+
+#![allow(broken_intra_doc_links)]
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+use std::{num::NonZeroU32, ops::Range};
+
+
+pub type BufferAddress = u64;
+
+pub type BufferSize = std::num::NonZeroU64;
+
+pub type ShaderLocation = u32;
+
+pub type DynamicOffset = u32;
+
 
 
 
@@ -16,34 +28,14 @@ use std::{io, ptr, slice};
 
 pub const COPY_BYTES_PER_ROW_ALIGNMENT: u32 = 256;
 
-pub const BIND_BUFFER_ALIGNMENT: u64 = 256;
+pub const BIND_BUFFER_ALIGNMENT: BufferAddress = 256;
 
-pub const COPY_BUFFER_ALIGNMENT: u64 = 4;
+pub const COPY_BUFFER_ALIGNMENT: BufferAddress = 4;
 
-#[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "peek-poke", derive(PeekPoke))]
-#[cfg_attr(
-    feature = "trace",
-    derive(serde::Serialize),
-    serde(into = "SerBufferSize")
-)]
-#[cfg_attr(
-    feature = "replay",
-    derive(serde::Deserialize),
-    serde(from = "SerBufferSize")
-)]
-pub struct BufferSize(pub u64);
+pub const VERTEX_STRIDE_ALIGNMENT: BufferAddress = 4;
 
-impl BufferSize {
-    pub const WHOLE: BufferSize = BufferSize(!0);
-}
+pub const PUSH_CONSTANT_ALIGNMENT: u32 = 4;
 
-impl Default for BufferSize {
-    fn default() -> Self {
-        BufferSize::WHOLE
-    }
-}
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -59,38 +51,52 @@ pub enum Backend {
     BrowserWebGpu = 6,
 }
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum PowerPreference {
-    Default = 0,
-    LowPower = 1,
-    HighPerformance = 2,
+    
+    LowPower = 0,
+    
+    HighPerformance = 1,
 }
 
 impl Default for PowerPreference {
-    fn default() -> PowerPreference {
-        PowerPreference::Default
+    fn default() -> Self {
+        Self::LowPower
     }
 }
 
 bitflags::bitflags! {
+    /// Represents the backends that wgpu will use.
     #[repr(transparent)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
     #[cfg_attr(feature = "replay", derive(Deserialize))]
     pub struct BackendBit: u32 {
+        /// Supported on Windows, Linux/Android, and macOS/iOS via Vulkan Portability (with the Vulkan feature enabled)
         const VULKAN = 1 << Backend::Vulkan as u32;
+        /// Currently unsupported
         const GL = 1 << Backend::Gl as u32;
+        /// Supported on macOS/iOS
         const METAL = 1 << Backend::Metal as u32;
+        /// Supported on Windows 10
         const DX12 = 1 << Backend::Dx12 as u32;
+        /// Supported on Windows 7+
         const DX11 = 1 << Backend::Dx11 as u32;
+        /// Supported when targeting the web through webassembly
         const BROWSER_WEBGPU = 1 << Backend::BrowserWebGpu as u32;
+        /// All the apis that wgpu offers first tier of support for.
+        ///
         /// Vulkan + Metal + DX12 + Browser WebGPU
         const PRIMARY = Self::VULKAN.bits
             | Self::METAL.bits
             | Self::DX12.bits
             | Self::BROWSER_WEBGPU.bits;
+        /// All the apis that wgpu offers second tier of support for. These may
+        /// be unsupported/still experimental.
+        ///
         /// OpenGL + DX11
         const SECONDARY = Self::GL.bits | Self::DX11.bits;
     }
@@ -98,53 +104,69 @@ bitflags::bitflags! {
 
 impl From<Backend> for BackendBit {
     fn from(backend: Backend) -> Self {
-        BackendBit::from_bits(1 << backend as u32).unwrap()
+        Self::from_bits(1 << backend as u32).unwrap()
     }
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-#[doc(hidden)]
-#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash)]
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct NonExhaustive(());
+pub struct RequestAdapterOptions<S> {
+    
+    pub power_preference: PowerPreference,
+    
+    
+    pub compatible_surface: Option<S>,
+}
 
-impl NonExhaustive {
-    pub unsafe fn new() -> Self {
-        Self(())
+impl<S> Default for RequestAdapterOptions<S> {
+    fn default() -> Self {
+        Self {
+            power_preference: PowerPreference::default(),
+            compatible_surface: None,
+        }
     }
 }
 
 bitflags::bitflags! {
+    /// Features that are not guaranteed to be supported.
+    ///
+    /// These are either part of the webgpu standard, or are extension features supported by
+    /// wgpu when targeting native.
+    ///
+    /// If you want to use a feature, you need to first verify that the adapter supports
+    /// the feature. If the adapter does not support the feature, requesting a device with it enabled
+    /// will panic.
     #[repr(transparent)]
     #[derive(Default)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
     #[cfg_attr(feature = "replay", derive(Deserialize))]
-    pub struct Extensions: u64 {
-        /// Allow anisotropic filtering in samplers.
+    pub struct Features: u64 {
+        /// By default, polygon depth is clipped to 0-1 range. Anything outside of that range
+        /// is rejected, and respective fragments are not touched.
+        ///
+        /// With this extension, we can force clamping of the polygon depth to 0-1. That allows
+        /// shadow map occluders to be rendered into a tighter depth range.
         ///
         /// Supported platforms:
-        /// - OpenGL 4.6+ (or 1.2+ with widespread GL_EXT_texture_filter_anisotropic)
-        /// - DX11/12
-        /// - Metal
-        /// - Vulkan
+        /// - desktops
+        /// - some mobile chips
         ///
-        /// This is a native only extension. Support is planned to be added to webgpu,
-        /// but it is not yet implemented.
+        /// This is a web and native feature.
+        const DEPTH_CLAMPING = 0x0000_0000_0000_0001;
+        /// Enables BCn family of compressed textures. All BCn textures use 4x4 pixel blocks
+        /// with 8 or 16 bytes per block.
         ///
-        /// https://github.com/gpuweb/gpuweb/issues/696
-        const ANISOTROPIC_FILTERING = 0x0000_0000_0001_0000;
+        /// Compressed textures sacrifice some quality in exchange for signifigantly reduced
+        /// bandwidth usage.
+        ///
+        /// Supported Platforms:
+        /// - desktops
+        ///
+        /// This is a web and native feature.
+        const TEXTURE_COMPRESSION_BC = 0x0000_0000_0000_0002;
         /// Webgpu only allows the MAP_READ and MAP_WRITE buffer usage to be matched with
         /// COPY_DST and COPY_SRC respectively. This removes this requirement.
         ///
@@ -155,13 +177,13 @@ bitflags::bitflags! {
         /// Supported platforms:
         /// - All
         ///
-        /// This is a native only extension.
-        const MAPPABLE_PRIMARY_BUFFERS = 0x0000_0000_0002_0000;
-        /// Allows the user to create uniform arrays of textures in shaders:
+        /// This is a native only feature.
+        const MAPPABLE_PRIMARY_BUFFERS = 0x0000_0000_0001_0000;
+        /// Allows the user to create uniform arrays of sampled textures in shaders:
         ///
         /// eg. `uniform texture2D textures[10]`.
         ///
-        /// This extension only allows them to exist and to be indexed by compile time constant
+        /// This capability allows them to exist and to be indexed by compile time constant
         /// values.
         ///
         /// Supported platforms:
@@ -169,133 +191,262 @@ bitflags::bitflags! {
         /// - Metal (with MSL 2.0+ on macOS 10.13+)
         /// - Vulkan
         ///
-        /// This is a native only extension.
-        const TEXTURE_BINDING_ARRAY = 0x0000_0000_0004_0000;
-        /// Extensions which are part of the upstream webgpu standard
+        /// This is a native only feature.
+        const SAMPLED_TEXTURE_BINDING_ARRAY = 0x0000_0000_0002_0000;
+        /// Allows shaders to index sampled texture arrays with dynamically uniform values:
+        ///
+        /// eg. `texture_array[uniform_value]`
+        ///
+        /// This capability means the hardware will also support SAMPLED_TEXTURE_BINDING_ARRAY.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Metal (with MSL 2.0+ on macOS 10.13+)
+        /// - Vulkan's shaderSampledImageArrayDynamicIndexing feature
+        ///
+        /// This is a native only feature.
+        const SAMPLED_TEXTURE_ARRAY_DYNAMIC_INDEXING = 0x0000_0000_0004_0000;
+        /// Allows shaders to index sampled texture arrays with dynamically non-uniform values:
+        ///
+        /// eg. `texture_array[vertex_data]`
+        ///
+        /// In order to use this capability, the corresponding GLSL extension must be enabled like so:
+        ///
+        /// `#extension GL_EXT_nonuniform_qualifier : require`
+        ///
+        /// and then used either as `nonuniformEXT` qualifier in variable declaration:
+        ///
+        /// eg. `layout(location = 0) nonuniformEXT flat in int vertex_data;`
+        ///
+        /// or as `nonuniformEXT` constructor:
+        ///
+        /// eg. `texture_array[nonuniformEXT(vertex_data)]`
+        ///
+        /// HLSL does not need any extension.
+        ///
+        /// This capability means the hardware will also support SAMPLED_TEXTURE_ARRAY_DYNAMIC_INDEXING
+        /// and SAMPLED_TEXTURE_BINDING_ARRAY.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Metal (with MSL 2.0+ on macOS 10.13+)
+        /// - Vulkan 1.2+ (or VK_EXT_descriptor_indexing)'s shaderSampledImageArrayNonUniformIndexing feature)
+        ///
+        /// This is a native only feature.
+        const SAMPLED_TEXTURE_ARRAY_NON_UNIFORM_INDEXING = 0x0000_0000_0008_0000;
+        /// Allows the user to create unsized uniform arrays of bindings:
+        ///
+        /// eg. `uniform texture2D textures[]`.
+        ///
+        /// If this capability is supported, SAMPLED_TEXTURE_ARRAY_NON_UNIFORM_INDEXING is very likely
+        /// to also be supported
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan 1.2+ (or VK_EXT_descriptor_indexing)'s runtimeDescriptorArray feature
+        ///
+        /// This is a native only feature.
+        const UNSIZED_BINDING_ARRAY = 0x0000_0000_0010_0000;
+        /// Allows the user to call [`RenderPass::multi_draw_indirect`] and [`RenderPass::multi_draw_indexed_indirect`].
+        ///
+        /// Allows multiple indirect calls to be dispatched from a single buffer.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Metal
+        /// - Vulkan
+        ///
+        /// This is a native only feature.
+        const MULTI_DRAW_INDIRECT = 0x0000_0000_0020_0000;
+        /// Allows the user to call [`RenderPass::multi_draw_indirect_count`] and [`RenderPass::multi_draw_indexed_indirect_count`].
+        ///
+        /// This allows the use of a buffer containing the actual number of draw calls.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan 1.2+ (or VK_KHR_draw_indirect_count)
+        ///
+        /// This is a native only feature.
+        const MULTI_DRAW_INDIRECT_COUNT = 0x0000_0000_0040_0000;
+        /// Allows the use of push constants: small, fast bits of memory that can be updated
+        /// inside a [`RenderPass`].
+        ///
+        /// Allows the user to call [`RenderPass::set_push_constants`], provide a non-empty array
+        /// to [`PipelineLayoutDescriptor`], and provide a non-zero limit to [`Limits::max_push_constant_size`].
+        ///
+        /// A block of push constants can be declared with `layout(push_constant) uniform Name {..}` in shaders.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan
+        /// - Metal
+        /// - DX11 (emulated with uniforms)
+        /// - OpenGL (emulated with uniforms)
+        ///
+        /// This is a native only feature.
+        const PUSH_CONSTANTS = 0x0000_0000_0080_0000;
+        /// Allows the use of [`AddressMode::ClampToBorder`].
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan
+        /// - Metal (macOS 10.12+ only)
+        /// - DX11
+        /// - OpenGL
+        ///
+        /// This is a web and native feature.
+        const ADDRESS_MODE_CLAMP_TO_BORDER = 0x0000_0000_0100_0000;
+        /// Allows the user to set a non-fill polygon mode in [`RasterizationStateDescriptor::polygon_mode`]
+        ///
+        /// This allows drawing polygons/triangles as lines (wireframe) or points instead of filled
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan
+        ///
+        /// This is a native only feature.
+        const NON_FILL_POLYGON_MODE = 0x0000_0000_0200_0000;
+        /// Features which are part of the upstream WebGPU standard.
         const ALL_WEBGPU = 0x0000_0000_0000_FFFF;
-        /// Extensions that require activating the unsafe extension flag
-        const ALL_UNSAFE = 0xFFFF_0000_0000_0000;
-        /// Extensions that are only available when targeting native (not web)
+        /// Features that are only available when targeting native (not web).
         const ALL_NATIVE = 0xFFFF_FFFF_FFFF_0000;
     }
 }
 
-#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct UnsafeExtensions {
-    allow_unsafe: bool,
-}
-impl UnsafeExtensions {
-    pub unsafe fn allow() -> Self {
-        Self { allow_unsafe: true }
-    }
-    pub fn disallow() -> Self {
-        Self {
-            allow_unsafe: false,
-        }
-    }
-    pub fn allowed(self) -> bool {
-        self.allow_unsafe
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Limits {
+    
     pub max_bind_groups: u32,
-    pub _non_exhaustive: NonExhaustive,
+    
+    pub max_dynamic_uniform_buffers_per_pipeline_layout: u32,
+    
+    pub max_dynamic_storage_buffers_per_pipeline_layout: u32,
+    
+    pub max_sampled_textures_per_shader_stage: u32,
+    
+    pub max_samplers_per_shader_stage: u32,
+    
+    pub max_storage_buffers_per_shader_stage: u32,
+    
+    pub max_storage_textures_per_shader_stage: u32,
+    
+    pub max_uniform_buffers_per_shader_stage: u32,
+    
+    pub max_uniform_buffer_binding_size: u32,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub max_push_constant_size: u32,
 }
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits {
+        Self {
             max_bind_groups: 4,
-            _non_exhaustive: unsafe { NonExhaustive::new() },
+            max_dynamic_uniform_buffers_per_pipeline_layout: 8,
+            max_dynamic_storage_buffers_per_pipeline_layout: 4,
+            max_sampled_textures_per_shader_stage: 16,
+            max_samplers_per_shader_stage: 16,
+            max_storage_buffers_per_shader_stage: 4,
+            max_storage_textures_per_shader_stage: 4,
+            max_uniform_buffers_per_shader_stage: 12,
+            max_uniform_buffer_binding_size: 16384,
+            max_push_constant_size: 0,
         }
     }
 }
+
 
 #[repr(C)]
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DeviceDescriptor {
-    pub extensions: Extensions,
+    
+    
+    pub features: Features,
+    
+    
     pub limits: Limits,
     
     
     pub shader_validation: bool,
 }
 
-
-
-pub fn read_spirv<R: io::Read + io::Seek>(mut x: R) -> io::Result<Vec<u32>> {
-    let size = x.seek(io::SeekFrom::End(0))?;
-    if size % 4 != 0 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "input length not divisible by 4",
-        ));
-    }
-    if size > usize::max_value() as u64 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "input too long"));
-    }
-    let words = (size / 4) as usize;
-    let mut result = Vec::<u32>::with_capacity(words);
-    x.seek(io::SeekFrom::Start(0))?;
-    unsafe {
-        
-        
-        x.read_exact(slice::from_raw_parts_mut(
-            result.as_mut_ptr() as *mut u8,
-            words * 4,
-        ))?;
-        result.set_len(words);
-    }
-    const MAGIC_NUMBER: u32 = 0x0723_0203;
-    if !result.is_empty() && result[0] == MAGIC_NUMBER.swap_bytes() {
-        for word in &mut result {
-            *word = word.swap_bytes();
-        }
-    }
-    if result.is_empty() || result[0] != MAGIC_NUMBER {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "input missing SPIR-V magic number",
-        ));
-    }
-    Ok(result)
-}
-
 bitflags::bitflags! {
+    /// Describes the shader stages that a binding will be visible from.
+    ///
+    /// These can be combined so something that is visible from both vertex and fragment shaders can be defined as:
+    ///
+    /// `ShaderStage::VERTEX | ShaderStage::FRAGMENT`
     #[repr(transparent)]
-    #[cfg_attr(feature = "trace", derive(Serialize))]
-    #[cfg_attr(feature = "replay", derive(Deserialize))]
+    #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
     pub struct ShaderStage: u32 {
+        /// Binding is not visible from any shader stage.
         const NONE = 0;
+        /// Binding is visible from the vertex shader of a render pipeline.
         const VERTEX = 1;
+        /// Binding is visible from the fragment shader of a render pipeline.
         const FRAGMENT = 2;
+        /// Binding is visible from the compute shader of a compute pipeline.
         const COMPUTE = 4;
     }
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum TextureViewDimension {
+    
     D1,
+    
     D2,
+    
     D2Array,
+    
     Cube,
+    
     CubeArray,
+    
     D3,
 }
 
-pub type BufferAddress = u64;
+impl TextureViewDimension {
+    
+    pub fn compatible_texture_dimension(self) -> TextureDimension {
+        match self {
+            Self::D1 => TextureDimension::D1,
+            Self::D2 | Self::D2Array | Self::Cube | Self::CubeArray => TextureDimension::D2,
+            Self::D3 => TextureDimension::D3,
+        }
+    }
+}
+
+
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
@@ -317,6 +468,9 @@ pub enum BlendFactor {
     OneMinusBlendColor = 12,
 }
 
+
+
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -331,9 +485,12 @@ pub enum BlendOperation {
 
 impl Default for BlendOperation {
     fn default() -> Self {
-        BlendOperation::Add
+        Self::Add
     }
 }
+
+
+
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -365,63 +522,126 @@ impl BlendDescriptor {
 
 impl Default for BlendDescriptor {
     fn default() -> Self {
-        BlendDescriptor::REPLACE
+        Self::REPLACE
     }
 }
+
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ColorStateDescriptor {
+    
+    
     pub format: TextureFormat,
+    
     pub alpha_blend: BlendDescriptor,
+    
     pub color_blend: BlendDescriptor,
+    
     pub write_mask: ColorWrite,
 }
+
+impl From<TextureFormat> for ColorStateDescriptor {
+    fn from(format: TextureFormat) -> Self {
+        Self {
+            format,
+            alpha_blend: BlendDescriptor::REPLACE,
+            color_blend: BlendDescriptor::REPLACE,
+            write_mask: ColorWrite::ALL,
+        }
+    }
+}
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum PrimitiveTopology {
+    
     PointList = 0,
+    
+    
+    
     LineList = 1,
+    
+    
+    
     LineStrip = 2,
+    
+    
+    
     TriangleList = 3,
+    
+    
+    
     TriangleStrip = 4,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum FrontFace {
+    
+    
+    
     Ccw = 0,
+    
+    
+    
     Cw = 1,
 }
 
 impl Default for FrontFace {
     fn default() -> Self {
-        FrontFace::Ccw
+        Self::Ccw
     }
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum CullMode {
+    
     None = 0,
+    
     Front = 1,
+    
     Back = 2,
 }
 
 impl Default for CullMode {
     fn default() -> Self {
-        CullMode::None
+        Self::None
     }
 }
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum PolygonMode {
+    
+    Fill = 0,
+    
+    Line = 1,
+    
+    Point = 2,
+}
+
+impl Default for PolygonMode {
+    fn default() -> Self {
+        Self::Fill
+    }
+}
+
 
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -430,150 +650,360 @@ impl Default for CullMode {
 pub struct RasterizationStateDescriptor {
     pub front_face: FrontFace,
     pub cull_mode: CullMode,
+    
+    
+    
+    pub polygon_mode: PolygonMode,
+    
+    
+    
+    pub clamp_depth: bool,
     pub depth_bias: i32,
     pub depth_bias_slope_scale: f32,
     pub depth_bias_clamp: f32,
 }
 
+
+
+
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum TextureFormat {
     
+    
     R8Unorm = 0,
+    
     R8Snorm = 1,
+    
     R8Uint = 2,
+    
     R8Sint = 3,
 
     
+    
     R16Uint = 4,
+    
     R16Sint = 5,
+    
     R16Float = 6,
+    
     Rg8Unorm = 7,
+    
     Rg8Snorm = 8,
+    
     Rg8Uint = 9,
+    
     Rg8Sint = 10,
 
     
+    
     R32Uint = 11,
+    
     R32Sint = 12,
+    
     R32Float = 13,
+    
     Rg16Uint = 14,
+    
     Rg16Sint = 15,
+    
     Rg16Float = 16,
+    
     Rgba8Unorm = 17,
+    
     Rgba8UnormSrgb = 18,
+    
     Rgba8Snorm = 19,
+    
     Rgba8Uint = 20,
+    
     Rgba8Sint = 21,
+    
     Bgra8Unorm = 22,
+    
     Bgra8UnormSrgb = 23,
 
     
+    
     Rgb10a2Unorm = 24,
+    
     Rg11b10Float = 25,
 
     
+    
     Rg32Uint = 26,
+    
     Rg32Sint = 27,
+    
     Rg32Float = 28,
+    
     Rgba16Uint = 29,
+    
     Rgba16Sint = 30,
+    
     Rgba16Float = 31,
 
     
+    
     Rgba32Uint = 32,
+    
     Rgba32Sint = 33,
+    
     Rgba32Float = 34,
 
     
+    
     Depth32Float = 35,
+    
     Depth24Plus = 36,
+    
     Depth24PlusStencil8 = 37,
+
+    
+    
+    
+    
+    
+    
+    
+    Bc1RgbaUnorm = 38,
+    
+    
+    
+    
+    
+    
+    Bc1RgbaUnormSrgb = 39,
+    
+    
+    
+    
+    
+    
+    Bc2RgbaUnorm = 40,
+    
+    
+    
+    
+    
+    
+    Bc2RgbaUnormSrgb = 41,
+    
+    
+    
+    
+    
+    
+    Bc3RgbaUnorm = 42,
+    
+    
+    
+    
+    
+    
+    Bc3RgbaUnormSrgb = 43,
+    
+    
+    
+    
+    
+    
+    Bc4RUnorm = 44,
+    
+    
+    
+    
+    
+    
+    Bc4RSnorm = 45,
+    
+    
+    
+    
+    
+    
+    Bc5RgUnorm = 46,
+    
+    
+    
+    
+    
+    
+    Bc5RgSnorm = 47,
+    
+    
+    
+    
+    
+    Bc6hRgbUfloat = 48,
+    
+    
+    
+    
+    
+    Bc6hRgbSfloat = 49,
+    
+    
+    
+    
+    
+    
+    Bc7RgbaUnorm = 50,
+    
+    
+    
+    
+    
+    
+    Bc7RgbaUnormSrgb = 51,
 }
 
 bitflags::bitflags! {
+    /// Color write mask. Disabled color channels will not be written to.
     #[repr(transparent)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
     #[cfg_attr(feature = "replay", derive(Deserialize))]
     pub struct ColorWrite: u32 {
+        /// Enable red channel writes
         const RED = 1;
+        /// Enable green channel writes
         const GREEN = 2;
+        /// Enable blue channel writes
         const BLUE = 4;
+        /// Enable alpha channel writes
         const ALPHA = 8;
+        /// Enable red, green, and blue channel writes
         const COLOR = 7;
+        /// Enable writes to all channels.
         const ALL = 15;
     }
 }
 
 impl Default for ColorWrite {
     fn default() -> Self {
-        ColorWrite::ALL
+        Self::ALL
     }
 }
+
+#[repr(C)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct StencilStateDescriptor {
+    
+    pub front: StencilStateFaceDescriptor,
+    
+    pub back: StencilStateFaceDescriptor,
+    
+    pub read_mask: u32,
+    
+    pub write_mask: u32,
+}
+
+impl StencilStateDescriptor {
+    pub fn is_enabled(&self) -> bool {
+        (self.front != StencilStateFaceDescriptor::IGNORE
+            || self.back != StencilStateFaceDescriptor::IGNORE)
+            && (self.read_mask != 0 || self.write_mask != 0)
+    }
+    pub fn is_read_only(&self) -> bool {
+        self.write_mask == 0
+    }
+    pub fn needs_ref_value(&self) -> bool {
+        self.front.compare.needs_ref_value() || self.back.compare.needs_ref_value()
+    }
+}
+
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DepthStencilStateDescriptor {
+    
+    
     pub format: TextureFormat,
+    
     pub depth_write_enabled: bool,
+    
     pub depth_compare: CompareFunction,
-    pub stencil_front: StencilStateFaceDescriptor,
-    pub stencil_back: StencilStateFaceDescriptor,
-    pub stencil_read_mask: u32,
-    pub stencil_write_mask: u32,
+    pub stencil: StencilStateDescriptor,
 }
 
 impl DepthStencilStateDescriptor {
-    pub fn needs_stencil_reference(&self) -> bool {
-        !self.stencil_front.compare.is_trivial() || !self.stencil_back.compare.is_trivial()
+    pub fn is_depth_enabled(&self) -> bool {
+        self.depth_compare != CompareFunction::Always || self.depth_write_enabled
     }
     pub fn is_read_only(&self) -> bool {
-        !self.depth_write_enabled && self.stencil_write_mask == 0
+        !self.depth_write_enabled && self.stencil.is_read_only()
     }
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum IndexFormat {
+    
     Uint16 = 0,
+    
     Uint32 = 1,
 }
+
+impl Default for IndexFormat {
+    fn default() -> Self {
+        Self::Uint32
+    }
+}
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum StencilOperation {
+    
     Keep = 0,
+    
     Zero = 1,
+    
     Replace = 2,
+    
     Invert = 3,
+    
     IncrementClamp = 4,
+    
     DecrementClamp = 5,
+    
     IncrementWrap = 6,
+    
     DecrementWrap = 7,
 }
 
 impl Default for StencilOperation {
     fn default() -> Self {
-        StencilOperation::Keep
+        Self::Keep
     }
 }
+
+
+
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct StencilStateFaceDescriptor {
+    
     pub compare: CompareFunction,
+    
     pub fail_op: StencilOperation,
+    
     pub depth_fail_op: StencilOperation,
+    
     pub pass_op: StencilOperation,
 }
 
@@ -588,118 +1018,224 @@ impl StencilStateFaceDescriptor {
 
 impl Default for StencilStateFaceDescriptor {
     fn default() -> Self {
-        StencilStateFaceDescriptor::IGNORE
+        Self::IGNORE
     }
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum CompareFunction {
-    Undefined = 0,
+    
     Never = 1,
+    
     Less = 2,
+    
     Equal = 3,
+    
     LessEqual = 4,
+    
     Greater = 5,
+    
     NotEqual = 6,
+    
     GreaterEqual = 7,
+    
     Always = 8,
 }
 
 impl CompareFunction {
-    pub fn is_trivial(self) -> bool {
+    pub fn needs_ref_value(self) -> bool {
         match self {
-            CompareFunction::Never | CompareFunction::Always => true,
-            _ => false,
+            Self::Never | Self::Always => false,
+            _ => true,
         }
     }
 }
 
-pub type ShaderLocation = u32;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum InputStepMode {
+    
     Vertex = 0,
+    
     Instance = 1,
 }
+
+
+
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct VertexAttributeDescriptor {
+    
     pub offset: BufferAddress,
+    
     pub format: VertexFormat,
+    
     pub shader_location: ShaderLocation,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum VertexFormat {
+    
     Uchar2 = 0,
+    
     Uchar4 = 1,
+    
     Char2 = 2,
+    
     Char4 = 3,
+    
     Uchar2Norm = 4,
+    
     Uchar4Norm = 5,
+    
     Char2Norm = 6,
+    
     Char4Norm = 7,
+    
     Ushort2 = 8,
+    
     Ushort4 = 9,
+    
     Short2 = 10,
+    
     Short4 = 11,
+    
     Ushort2Norm = 12,
+    
     Ushort4Norm = 13,
+    
     Short2Norm = 14,
+    
     Short4Norm = 15,
+    
     Half2 = 16,
+    
     Half4 = 17,
+    
     Float = 18,
+    
     Float2 = 19,
+    
     Float3 = 20,
+    
     Float4 = 21,
+    
     Uint = 22,
+    
     Uint2 = 23,
+    
     Uint3 = 24,
+    
     Uint4 = 25,
+    
     Int = 26,
+    
     Int2 = 27,
+    
     Int3 = 28,
+    
     Int4 = 29,
 }
 
+impl VertexFormat {
+    pub fn size(&self) -> u64 {
+        match self {
+            Self::Uchar2 | Self::Char2 | Self::Uchar2Norm | Self::Char2Norm => 2,
+            Self::Uchar4
+            | Self::Char4
+            | Self::Uchar4Norm
+            | Self::Char4Norm
+            | Self::Ushort2
+            | Self::Short2
+            | Self::Ushort2Norm
+            | Self::Short2Norm
+            | Self::Half2
+            | Self::Float
+            | Self::Uint
+            | Self::Int => 4,
+            Self::Ushort4
+            | Self::Short4
+            | Self::Ushort4Norm
+            | Self::Short4Norm
+            | Self::Half4
+            | Self::Float2
+            | Self::Uint2
+            | Self::Int2 => 8,
+            Self::Float3 | Self::Uint3 | Self::Int3 => 12,
+            Self::Float4 | Self::Uint4 | Self::Int4 => 16,
+        }
+    }
+}
+
 bitflags::bitflags! {
+    /// Different ways that you can use a buffer.
+    ///
+    /// The usages determine what kind of memory the buffer is allocated from and what
+    /// actions the buffer can partake in.
     #[repr(transparent)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
     #[cfg_attr(feature = "replay", derive(Deserialize))]
     pub struct BufferUsage: u32 {
+        /// Allow a buffer to be mapped for reading using [`Buffer::map_async`] + [`Buffer::get_mapped_range`].
+        /// This does not include creating a buffer with [`BufferDescriptor::mapped_at_creation`] set.
+        ///
+        /// If [`Features::MAPPABLE_PRIMARY_BUFFERS`] isn't enabled, the only other usage a buffer
+        /// may have is COPY_DST.
         const MAP_READ = 1;
+        /// Allow a buffer to be mapped for writing using [`Buffer::map_async`] + [`Buffer::get_mapped_range_mut`].
+        /// This does not include creating a buffer with `mapped_at_creation` set.
+        ///
+        /// If [`Features::MAPPABLE_PRIMARY_BUFFERS`] feature isn't enabled, the only other usage a buffer
+        /// may have is COPY_SRC.
         const MAP_WRITE = 2;
+        /// Allow a buffer to be the source buffer for a [`CommandEncoder::copy_buffer_to_buffer`] or [`CommandEncoder::copy_buffer_to_texture`]
+        /// operation.
         const COPY_SRC = 4;
+        /// Allow a buffer to be the destination buffer for a [`CommandEncoder::copy_buffer_to_buffer`], [`CommandEncoder::copy_texture_to_buffer`],
+        /// or [`Queue::write_buffer`] operation.
         const COPY_DST = 8;
+        /// Allow a buffer to be the index buffer in a draw operation.
         const INDEX = 16;
+        /// Allow a buffer to be the vertex buffer in a draw operation.
         const VERTEX = 32;
+        /// Allow a buffer to be a [`BindingType::UniformBuffer`] inside a bind group.
         const UNIFORM = 64;
+        /// Allow a buffer to be a [`BindingType::StorageBuffer`] inside a bind group.
         const STORAGE = 128;
+        /// Allow a buffer to be the indirect buffer in an indirect draw call.
         const INDIRECT = 256;
     }
 }
+
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct BufferDescriptor<L> {
+    
     pub label: L,
+    
     pub size: BufferAddress,
+    
+    
     pub usage: BufferUsage,
+    
+    
     pub mapped_at_creation: bool,
 }
 
@@ -714,22 +1250,30 @@ impl<L> BufferDescriptor<L> {
     }
 }
 
+
 #[repr(C)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct CommandEncoderDescriptor {
+pub struct CommandEncoderDescriptor<L> {
     
-    
-    
-    pub label: *const std::os::raw::c_char,
+    pub label: L,
 }
 
-impl Default for CommandEncoderDescriptor {
-    fn default() -> CommandEncoderDescriptor {
-        CommandEncoderDescriptor { label: ptr::null() }
+impl<L> CommandEncoderDescriptor<L> {
+    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CommandEncoderDescriptor<K> {
+        CommandEncoderDescriptor {
+            label: fun(&self.label),
+        }
     }
 }
 
-pub type DynamicOffset = u32;
+impl<T> Default for CommandEncoderDescriptor<Option<T>> {
+    fn default() -> Self {
+        Self { label: None }
+    }
+}
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -753,29 +1297,49 @@ pub enum PresentMode {
 }
 
 bitflags::bitflags! {
+    /// Different ways that you can use a texture.
+    ///
+    /// The usages determine what kind of memory the texture is allocated from and what
+    /// actions the texture can partake in.
     #[repr(transparent)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
+    #[cfg_attr(feature = "replay", derive(Deserialize))]
     pub struct TextureUsage: u32 {
+        /// Allows a texture to be the source in a [`CommandEncoder::copy_texture_to_buffer`] or
+        /// [`CommandEncoder::copy_texture_to_texture`] operation.
         const COPY_SRC = 1;
+        /// Allows a texture to be the destination in a  [`CommandEncoder::copy_texture_to_buffer`],
+        /// [`CommandEncoder::copy_texture_to_texture`], or [`Queue::write_texture`] operation.
         const COPY_DST = 2;
+        /// Allows a texture to be a [`BindingType::SampledTexture`] in a bind group.
         const SAMPLED = 4;
+        /// Allows a texture to be a [`BindingType::StorageTexture`] in a bind group.
         const STORAGE = 8;
+        /// Allows a texture to be a output attachment of a renderpass.
         const OUTPUT_ATTACHMENT = 16;
     }
 }
+
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SwapChainDescriptor {
+    
     pub usage: TextureUsage,
+    
+    
     pub format: TextureFormat,
+    
     pub width: u32,
+    
     pub height: u32,
+    
+    
     pub present_mode: PresentMode,
 }
+
 
 #[repr(C)]
 #[derive(Debug)]
@@ -785,64 +1349,14 @@ pub enum SwapChainStatus {
     Timeout,
     Outdated,
     Lost,
-    OutOfMemory,
 }
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[cfg_attr(feature = "peek-poke", derive(PeekPoke))]
-pub enum LoadOp {
-    Clear = 0,
-    Load = 1,
-}
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[cfg_attr(feature = "peek-poke", derive(PeekPoke))]
-pub enum StoreOp {
-    Clear = 0,
-    Store = 1,
-}
 
-#[repr(C)]
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[cfg_attr(feature = "peek-poke", derive(PeekPoke))]
-pub struct RenderPassColorAttachmentDescriptorBase<T> {
-    pub attachment: T,
-    pub resolve_target: Option<T>,
-    pub load_op: LoadOp,
-    pub store_op: StoreOp,
-    pub clear_color: Color,
-}
-
-#[repr(C)]
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[cfg_attr(feature = "peek-poke", derive(PeekPoke))]
-pub struct RenderPassDepthStencilAttachmentDescriptorBase<T> {
-    pub attachment: T,
-    pub depth_load_op: LoadOp,
-    pub depth_store_op: StoreOp,
-    pub clear_depth: f32,
-    pub depth_read_only: bool,
-    pub stencil_load_op: LoadOp,
-    pub stencil_store_op: StoreOp,
-    pub clear_stencil: u32,
-    pub stencil_read_only: bool,
-}
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[cfg_attr(feature = "peek-poke", derive(PeekPoke))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Color {
     pub r: f64,
     pub g: f64,
@@ -851,37 +1365,37 @@ pub struct Color {
 }
 
 impl Color {
-    pub const TRANSPARENT: Self = Color {
+    pub const TRANSPARENT: Self = Self {
         r: 0.0,
         g: 0.0,
         b: 0.0,
         a: 0.0,
     };
-    pub const BLACK: Self = Color {
+    pub const BLACK: Self = Self {
         r: 0.0,
         g: 0.0,
         b: 0.0,
         a: 1.0,
     };
-    pub const WHITE: Self = Color {
+    pub const WHITE: Self = Self {
         r: 1.0,
         g: 1.0,
         b: 1.0,
         a: 1.0,
     };
-    pub const RED: Self = Color {
+    pub const RED: Self = Self {
         r: 1.0,
         g: 0.0,
         b: 0.0,
         a: 1.0,
     };
-    pub const GREEN: Self = Color {
+    pub const GREEN: Self = Self {
         r: 0.0,
         g: 1.0,
         b: 0.0,
         a: 1.0,
     };
-    pub const BLUE: Self = Color {
+    pub const BLUE: Self = Self {
         r: 0.0,
         g: 0.0,
         b: 1.0,
@@ -889,15 +1403,20 @@ impl Color {
     };
 }
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum TextureDimension {
+    
     D1,
+    
     D2,
+    
     D3,
 }
+
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -910,14 +1429,15 @@ pub struct Origin3d {
 }
 
 impl Origin3d {
-    pub const ZERO: Self = Origin3d { x: 0, y: 0, z: 0 };
+    pub const ZERO: Self = Self { x: 0, y: 0, z: 0 };
 }
 
 impl Default for Origin3d {
     fn default() -> Self {
-        Origin3d::ZERO
+        Self::ZERO
     }
 }
+
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -929,17 +1449,36 @@ pub struct Extent3d {
     pub depth: u32,
 }
 
+impl Default for Extent3d {
+    fn default() -> Self {
+        Self {
+            width: 1,
+            height: 1,
+            depth: 1,
+        }
+    }
+}
+
+
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TextureDescriptor<L> {
+    
     pub label: L,
+    
+    
     pub size: Extent3d,
+    
     pub mip_level_count: u32,
+    
     pub sample_count: u32,
+    
     pub dimension: TextureDimension,
+    
     pub format: TextureFormat,
+    
     pub usage: TextureUsage,
 }
 
@@ -957,140 +1496,153 @@ impl<L> TextureDescriptor<L> {
     }
 }
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum TextureAspect {
+    
     All,
+    
     StencilOnly,
+    
     DepthOnly,
 }
 
 impl Default for TextureAspect {
     fn default() -> Self {
-        TextureAspect::All
+        Self::All
     }
 }
 
-#[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TextureViewDescriptor<L> {
-    pub label: L,
-    pub format: TextureFormat,
-    pub dimension: TextureViewDimension,
-    pub aspect: TextureAspect,
-    pub base_mip_level: u32,
-    pub level_count: u32,
-    pub base_array_layer: u32,
-    pub array_layer_count: u32,
-}
-
-impl<L> TextureViewDescriptor<L> {
-    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> TextureViewDescriptor<K> {
-        TextureViewDescriptor {
-            label: fun(&self.label),
-            format: self.format,
-            dimension: self.dimension,
-            aspect: self.aspect,
-            base_mip_level: self.base_mip_level,
-            level_count: self.level_count,
-            base_array_layer: self.base_array_layer,
-            array_layer_count: self.array_layer_count,
-        }
-    }
-}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum AddressMode {
+    
+    
+    
+    
     ClampToEdge = 0,
+    
+    
+    
+    
     Repeat = 1,
+    
+    
+    
+    
     MirrorRepeat = 2,
+    
+    
+    
+    
+    
+    ClampToBorder = 3,
 }
 
 impl Default for AddressMode {
     fn default() -> Self {
-        AddressMode::ClampToEdge
+        Self::ClampToEdge
     }
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum FilterMode {
+    
+    
+    
     Nearest = 0,
+    
+    
+    
     Linear = 1,
 }
 
 impl Default for FilterMode {
     fn default() -> Self {
-        FilterMode::Nearest
+        Self::Nearest
     }
 }
 
-#[derive(Default, Clone, Debug, PartialEq)]
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct SamplerDescriptor<L> {
-    pub label: L,
-    pub address_mode_u: AddressMode,
-    pub address_mode_v: AddressMode,
-    pub address_mode_w: AddressMode,
-    pub mag_filter: FilterMode,
-    pub min_filter: FilterMode,
-    pub mipmap_filter: FilterMode,
-    pub lod_min_clamp: f32,
-    pub lod_max_clamp: f32,
-    pub compare: Option<CompareFunction>,
+pub struct PushConstantRange {
     
     
+    pub stages: ShaderStage,
     
     
-    pub anisotropy_clamp: Option<u8>,
-    pub _non_exhaustive: NonExhaustive,
+    pub range: Range<u32>,
 }
 
-impl<L> SamplerDescriptor<L> {
-    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> SamplerDescriptor<K> {
-        SamplerDescriptor {
-            label: fun(&self.label),
-            address_mode_u: self.address_mode_u,
-            address_mode_v: self.address_mode_v,
-            address_mode_w: self.address_mode_w,
-            mag_filter: self.mag_filter,
-            min_filter: self.min_filter,
-            mipmap_filter: self.mipmap_filter,
-            lod_min_clamp: self.lod_min_clamp,
-            lod_max_clamp: self.lod_max_clamp,
-            compare: self.compare,
-            anisotropy_clamp: self.anisotropy_clamp,
-            _non_exhaustive: self._non_exhaustive,
-        }
-    }
-}
 
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct CommandBufferDescriptor {
-    pub todo: u32,
+pub struct CommandBufferDescriptor<L> {
+    pub label: L,
 }
+
+impl<L> CommandBufferDescriptor<L> {
+    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CommandBufferDescriptor<K> {
+        CommandBufferDescriptor {
+            label: fun(&self.label),
+        }
+    }
+}
+
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct RenderBundleDescriptor<L> {
+    
+    pub label: L,
+}
+
+impl<L> RenderBundleDescriptor<L> {
+    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> RenderBundleDescriptor<K> {
+        RenderBundleDescriptor {
+            label: fun(&self.label),
+        }
+    }
+}
+
+impl<T> Default for RenderBundleDescriptor<Option<T>> {
+    fn default() -> Self {
+        Self { label: None }
+    }
+}
+
+
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum TextureComponentType {
+    
     Float,
+    
     Sint,
+    
     Uint,
+    
+    DepthComparison,
 }
 
 impl From<TextureFormat> for TextureComponentType {
@@ -1135,25 +1687,53 @@ impl From<TextureFormat> for TextureComponentType {
             | TextureFormat::Rgb10a2Unorm
             | TextureFormat::Depth32Float
             | TextureFormat::Depth24Plus
-            | TextureFormat::Depth24PlusStencil8 => Self::Float,
+            | TextureFormat::Depth24PlusStencil8
+            | TextureFormat::Bc1RgbaUnorm
+            | TextureFormat::Bc1RgbaUnormSrgb
+            | TextureFormat::Bc2RgbaUnorm
+            | TextureFormat::Bc2RgbaUnormSrgb
+            | TextureFormat::Bc3RgbaUnorm
+            | TextureFormat::Bc3RgbaUnormSrgb
+            | TextureFormat::Bc4RUnorm
+            | TextureFormat::Bc4RSnorm
+            | TextureFormat::Bc5RgUnorm
+            | TextureFormat::Bc5RgSnorm
+            | TextureFormat::Bc6hRgbSfloat
+            | TextureFormat::Bc6hRgbUfloat
+            | TextureFormat::Bc7RgbaUnorm
+            | TextureFormat::Bc7RgbaUnormSrgb => Self::Float,
         }
     }
 }
 
+
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
 pub struct TextureDataLayout {
+    
+    
     pub offset: BufferAddress,
+    
+    
+    
+    
+    
+    
+    
     pub bytes_per_row: u32,
+    
+    
+    
+    
     pub rows_per_image: u32,
 }
 
 
 
-#[non_exhaustive]
-#[derive(Clone, Debug, Eq, PartialEq)]
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BindingType {
@@ -1171,6 +1751,11 @@ pub enum BindingType {
         
         
         dynamic: bool,
+        
+        
+        
+        
+        min_binding_size: Option<BufferSize>,
     },
     
     
@@ -1184,6 +1769,11 @@ pub enum BindingType {
         
         
         dynamic: bool,
+        
+        
+        
+        
+        min_binding_size: Option<BufferSize>,
         
         
         
@@ -1220,6 +1810,8 @@ pub enum BindingType {
         
         component_type: TextureComponentType,
         
+        
+        
         multisampled: bool,
     },
     
@@ -1234,9 +1826,6 @@ pub enum BindingType {
         
         dimension: TextureViewDimension,
         
-        
-        component_type: TextureComponentType,
-        
         format: TextureFormat,
         
         
@@ -1248,83 +1837,69 @@ pub enum BindingType {
     },
 }
 
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct BindGroupLayoutEntry {
-    pub binding: u32,
-    pub visibility: ShaderStage,
-    pub ty: BindingType,
-    
-    
-    
-    
-    
-    pub count: Option<u32>,
-    
-    
-    pub _non_exhaustive: NonExhaustive,
-}
-
-impl Default for BindGroupLayoutEntry {
-    fn default() -> Self {
-        Self {
-            binding: 0,
-            visibility: ShaderStage::NONE,
-            ty: BindingType::UniformBuffer { dynamic: false },
-            count: None,
-            _non_exhaustive: unsafe { NonExhaustive::new() },
-        }
-    }
-}
-
-impl BindGroupLayoutEntry {
+impl BindingType {
     pub fn has_dynamic_offset(&self) -> bool {
-        match self.ty {
-            BindingType::UniformBuffer { dynamic, .. }
-            | BindingType::StorageBuffer { dynamic, .. } => dynamic,
+        match *self {
+            Self::UniformBuffer { dynamic, .. } | Self::StorageBuffer { dynamic, .. } => dynamic,
             _ => false,
         }
     }
 }
 
 
-#[derive(Clone, Debug)]
-pub struct BindGroupLayoutDescriptor<'a> {
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct BindGroupLayoutEntry {
     
     
-    pub label: Option<&'a str>,
-
-    pub bindings: &'a [BindGroupLayoutEntry],
+    pub binding: u32,
+    
+    pub visibility: ShaderStage,
+    
+    pub ty: BindingType,
+    
+    
+    
+    
+    
+    pub count: Option<NonZeroU32>,
 }
 
 
-#[allow(dead_code)]
+#[repr(C)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
-enum SerBufferSize {
-    Size(u64),
-    Whole,
+pub struct BufferCopyView<B> {
+    
+    pub buffer: B,
+    
+    pub layout: TextureDataLayout,
 }
 
-#[cfg(feature = "trace")]
-impl From<BufferSize> for SerBufferSize {
-    fn from(buffer_size: BufferSize) -> Self {
-        if buffer_size == BufferSize::WHOLE {
-            Self::Whole
-        } else {
-            Self::Size(buffer_size.0)
-        }
-    }
+
+#[repr(C)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub struct TextureCopyView<T> {
+    
+    pub texture: T,
+    
+    pub mip_level: u32,
+    
+    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    pub origin: Origin3d,
 }
 
-#[cfg(feature = "replay")]
-impl From<SerBufferSize> for BufferSize {
-    fn from(ser_buffer_size: SerBufferSize) -> Self {
-        match ser_buffer_size {
-            SerBufferSize::Size(size) => BufferSize(size),
-            SerBufferSize::Whole => BufferSize::WHOLE,
-        }
-    }
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub enum SamplerBorderColor {
+    TransparentBlack,
+    OpaqueBlack,
+    OpaqueWhite,
 }

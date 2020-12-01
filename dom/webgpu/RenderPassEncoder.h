@@ -37,7 +37,7 @@ class RenderPassEncoder final : public ObjectBase,
   virtual ~RenderPassEncoder();
   void Cleanup() {}
 
-  ffi::WGPURawPass mRaw;
+  ffi::WGPURenderPass* const mRaw;
   
   nsTArray<RefPtr<const BindGroup>> mUsedBindGroups;
   nsTArray<RefPtr<const Buffer>> mUsedBuffers;
