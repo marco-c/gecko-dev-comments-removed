@@ -24,6 +24,7 @@
 #include "mozilla/Maybe.h"
 #include "nsTArrayForwardDeclare.h"
 
+class nsDisplayListBuilder;
 class nsDisplayItem;
 
 namespace mozilla {
@@ -211,9 +212,12 @@ class WebRenderLayerScrollData final {
 class WebRenderScrollData final {
  public:
   WebRenderScrollData();
-  explicit WebRenderScrollData(WebRenderLayerManager* aManager);
+  explicit WebRenderScrollData(WebRenderLayerManager* aManager,
+                               nsDisplayListBuilder* aBuilder);
 
   WebRenderLayerManager* GetManager() const;
+
+  nsDisplayListBuilder* GetBuilder() const;
 
   
   
@@ -258,6 +262,11 @@ class WebRenderScrollData final {
   
   
   WebRenderLayerManager* MOZ_NON_OWNING_REF mManager;
+
+  
+  
+  
+  nsDisplayListBuilder* MOZ_NON_OWNING_REF mBuilder;
 
   
   
