@@ -1014,6 +1014,10 @@ pub trait PartialPresentCompositor {
     
     
     
+    fn get_buffer_age(&self) -> usize;
+    
+    
+    
     
     fn set_buffer_damage_region(&mut self, rects: &[DeviceIntRect]);
 }
