@@ -1060,10 +1060,8 @@ static JSObject* CreateGlobalForOffThreadParse(JSContext* cx,
 static bool QueueOffThreadParseTask(JSContext* cx, UniquePtr<ParseTask> task) {
   AutoLockHelperThreadState lock;
 
-  bool needsParseGlobal = task->options.useOffThreadParseGlobal ||
-                          (task->kind == ParseTaskKind::MultiScriptsDecode);
-  bool mustWait =
-      needsParseGlobal && OffThreadParsingMustWaitForGC(cx->runtime());
+  bool mustWait = task->options.useOffThreadParseGlobal &&
+                  OffThreadParsingMustWaitForGC(cx->runtime());
   bool result;
   if (mustWait) {
     result = HelperThreadState().parseWaitingOnGC(lock).append(std::move(task));
@@ -1099,11 +1097,8 @@ static bool StartOffThreadParseTask(JSContext* cx, UniquePtr<ParseTask> task,
   gc::AutoSuppressNurseryCellAlloc noNurseryAlloc(cx);
   AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
 
-  
-  bool forceParseGlobal = (task->kind == ParseTaskKind::MultiScriptsDecode);
-
   JSObject* global = nullptr;
-  if (options.useOffThreadParseGlobal || forceParseGlobal) {
+  if (options.useOffThreadParseGlobal) {
     global = CreateGlobalForOffThreadParse(cx, nogc);
     if (!global) {
       return false;
@@ -1118,9 +1113,6 @@ static bool StartOffThreadParseTask(JSContext* cx, UniquePtr<ParseTask> task,
 
   if (!task->init(cx, options, global)) {
     return false;
-  }
-  if (forceParseGlobal) {
-    task->options.useOffThreadParseGlobal = true;
   }
 
   if (!QueueOffThreadParseTask(cx, std::move(task))) {
@@ -1235,7 +1227,14 @@ bool js::StartOffThreadDecodeMultiScripts(JSContext* cx,
     return false;
   }
 
-  return StartOffThreadParseTask(cx, std::move(task), options);
+  
+  
+  
+  
+  CompileOptions optionsCopy(cx, options);
+  optionsCopy.useOffThreadParseGlobal = true;
+
+  return StartOffThreadParseTask(cx, std::move(task), optionsCopy);
 }
 
 void js::EnqueuePendingParseTasksAfterGC(JSRuntime* rt) {

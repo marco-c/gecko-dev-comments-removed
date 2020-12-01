@@ -51,8 +51,9 @@ static bool CanDoOffThread(JSContext* cx, const ReadOnlyCompileOptions& options,
     
     
     
-    bool needsParseGlobal = options.useOffThreadParseGlobal;
-    if (needsParseGlobal && OffThreadParsingMustWaitForGC(cx->runtime())) {
+    bool mustWait = options.useOffThreadParseGlobal &&
+                    OffThreadParsingMustWaitForGC(cx->runtime());
+    if (mustWait) {
       if (what == OffThread::Compile && length < HUGE_SRC_LENGTH) {
         return false;
       }
