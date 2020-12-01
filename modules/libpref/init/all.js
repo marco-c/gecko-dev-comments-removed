@@ -183,7 +183,11 @@ pref("security.pki.distrust_ca_policy", 2);
 
 
 
+#if defined(NIGHTLY_BUILD)
+pref("security.pki.crlite_mode", 2);
+#else
 pref("security.pki.crlite_mode", 1);
+#endif
 
 
 
