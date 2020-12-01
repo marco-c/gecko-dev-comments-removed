@@ -224,6 +224,7 @@ EXPORTS.js += [
 
 EXPORTS.js.experimental += [
     "../public/experimental/CodeCoverage.h",
+    "../public/experimental/CTypes.h",
     "../public/experimental/Intl.h",
     "../public/experimental/JitInfo.h",
     "../public/experimental/SourceHook.h",

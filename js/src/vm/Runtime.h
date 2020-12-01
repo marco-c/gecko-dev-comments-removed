@@ -34,6 +34,7 @@
 #include "js/AllocationRecording.h"
 #include "js/BuildId.h"  
 #include "js/Debug.h"
+#include "js/experimental/CTypes.h"      
 #include "js/experimental/SourceHook.h"  
 #include "js/friend/StackLimits.h"       
 #include "js/friend/UsageStatistics.h"   

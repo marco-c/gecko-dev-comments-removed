@@ -643,57 +643,6 @@ extern JS_FRIEND_API void PrepareScriptEnvironmentAndInvoke(
 JS_FRIEND_API void SetScriptEnvironmentPreparer(
     JSContext* cx, ScriptEnvironmentPreparer* preparer);
 
-}  
-
-namespace JS {
-
-
-
-
-enum class CTypesActivityType {
-  BeginCall,
-  EndCall,
-  BeginCallback,
-  EndCallback,
-};
-
-
-
-
-
-using CTypesActivityCallback = void (*)(JSContext*, CTypesActivityType);
-
-
-
-
-
-extern JS_FRIEND_API void SetCTypesActivityCallback(JSContext* cx,
-                                                    CTypesActivityCallback cb);
-
-class MOZ_RAII JS_FRIEND_API AutoCTypesActivityCallback {
- private:
-  JSContext* cx;
-  CTypesActivityCallback callback;
-  CTypesActivityType endType;
-
- public:
-  AutoCTypesActivityCallback(JSContext* cx, CTypesActivityType beginType,
-                             CTypesActivityType endType);
-
-  ~AutoCTypesActivityCallback() { DoEndCallback(); }
-
-  void DoEndCallback() {
-    if (callback) {
-      callback(cx, endType);
-      callback = nullptr;
-    }
-  }
-};
-
-}  
-
-namespace js {
-
 
 
 struct AllocationMetadataBuilder {

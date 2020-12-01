@@ -5,6 +5,7 @@
 
 
 #include "ctypes/CTypes.h"
+#include "js/experimental/CTypes.h"  
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"

@@ -21,6 +21,7 @@
 #include <algorithm>
 #include "mozilla/ipc/BackgroundChild.h"
 #include "GeckoProfiler.h"
+#include "js/experimental/CTypes.h"  
 #include "jsfriendapi.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/ContextOptions.h"
