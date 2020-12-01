@@ -1242,11 +1242,8 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
       
       if (accum.length() > 1) {
         
-        const ParserAtom* combination =
-            info.parserAtoms
-                .concatAtoms(info.cx,
-                             mozilla::Range(accum.begin(), accum.length()))
-                .unwrapOr(nullptr);
+        const ParserAtom* combination = info.parserAtoms.concatAtoms(
+            info.cx, mozilla::Range(accum.begin(), accum.length()));
         if (!combination) {
           return false;
         }
