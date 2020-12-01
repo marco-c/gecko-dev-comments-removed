@@ -2164,6 +2164,8 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.new-rulesview.enabled", false);
 
+pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", false);
+
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 pref("devtools.inspector.compatibility.enabled", true);
 #else
@@ -2171,12 +2173,6 @@ pref("devtools.inspector.compatibility.enabled", false);
 #endif
 
 pref("devtools.inspector.color-scheme-simulation.enabled", false);
-
-#if defined(NIGHTLY_BUILD)
-  pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", true);
-#else
-  pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", false);
-#endif
 
 pref("devtools.overflow.debugging.enabled", true);
 
