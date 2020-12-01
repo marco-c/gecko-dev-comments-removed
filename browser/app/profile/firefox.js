@@ -1998,11 +1998,7 @@ pref("doh-rollout.provider-steering.enabled", false);
 pref("doh-rollout.provider-steering.provider-list", "[{ \"name\": \"comcast\", \"canonicalName\": \"doh-discovery.xfinity.com\", \"uri\": \"https://doh.xfinity.com/dns-query\" }]");
 
 
-#ifdef NIGHTLY_BUILD
-  pref("doh-rollout.clearModeOnShutdown", false);
-#else
-  pref("doh-rollout.clearModeOnShutdown", true);
-#endif
+pref("doh-rollout.clearModeOnShutdown", false);
 
 
 pref("browser.chrome.errorReporter.infoURL",
