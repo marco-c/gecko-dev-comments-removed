@@ -1333,7 +1333,8 @@ bool MinidumpGenerator::WriteModuleStream(unsigned int index,
     }
 
     if (!WriteCVRecord(module, image->GetCPUType(), image->GetCPUSubtype(),
-        name.c_str(), false)) {
+        name.c_str(),  false,  true,
+        image->GetInDyldSharedCache())) {
       return false;
     }
   } else {
@@ -1357,6 +1358,7 @@ bool MinidumpGenerator::WriteModuleStream(unsigned int index,
 
     int cpu_type = header->cputype;
     int cpu_subtype = (header->cpusubtype & ~CPU_SUBTYPE_MASK);
+    bool in_dyld_shared_cache = ((header->flags & MH_SHAREDCACHE) != 0);
     unsigned long slide = _dyld_get_image_vmaddr_slide(index);
     const char* name = _dyld_get_image_name(index);
     const struct load_command *cmd =
@@ -1384,8 +1386,10 @@ bool MinidumpGenerator::WriteModuleStream(unsigned int index,
 #if TARGET_OS_IPHONE
           in_memory = true;
 #endif
-          if (!WriteCVRecord(module, cpu_type, cpu_subtype, name, in_memory))
+          if (!WriteCVRecord(module, cpu_type, cpu_subtype, name, in_memory,
+                              false, in_dyld_shared_cache)) {
             return false;
+          }
 
           return true;
         }
@@ -1422,7 +1426,8 @@ int MinidumpGenerator::FindExecutableModule() {
 }
 
 bool MinidumpGenerator::WriteCVRecord(MDRawModule *module, int cpu_type, int cpu_subtype,
-                                      const char *module_path, bool in_memory) {
+                                      const char *module_path, bool in_memory,
+                                      bool out_of_process, bool in_dyld_shared_cache) {
   TypedMDRVA<MDCVInfoPDB70> cv(&writer_);
 
   
@@ -1472,9 +1477,11 @@ bool MinidumpGenerator::WriteCVRecord(MDRawModule *module, int cpu_type, int cpu
   
   
   
-  
   while (true) {
     if (in_memory) {
+      if (out_of_process && !in_dyld_shared_cache) {
+        break;
+      }
       MacFileUtilities::MachoID macho(module_path,
           reinterpret_cast<void *>(module->base_of_image),
           static_cast<size_t>(module->size_of_image));

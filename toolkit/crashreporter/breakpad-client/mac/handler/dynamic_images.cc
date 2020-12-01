@@ -217,13 +217,6 @@ kern_return_t ReadTaskMemory(task_port_t target_task,
 
 
 
-
-
-#define MH_SHAREDCACHE 0x80000000
-
-
-
-
 struct MachO32 {
   typedef mach_header mach_header_type;
   typedef segment_command mach_segment_command_type;

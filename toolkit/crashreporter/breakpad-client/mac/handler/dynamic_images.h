@@ -103,6 +103,13 @@ typedef segment_command breakpad_mach_segment_command;
 #endif
 
 
+
+
+
+
+#define MH_SHAREDCACHE 0x80000000
+
+
 class DynamicImage;
 template<typename MachBits>
 bool FindTextSection(DynamicImage& image);
@@ -152,6 +159,9 @@ class DynamicImage {
 
   
   mach_vm_address_t GetVMAddr() const {return vmaddr_;}
+
+  bool GetInDyldSharedCache()
+    {return (shared_cache_slide_ && (slide_ == shared_cache_slide_));}
 
   
   ptrdiff_t GetVMAddrSlide() const {return slide_;}
