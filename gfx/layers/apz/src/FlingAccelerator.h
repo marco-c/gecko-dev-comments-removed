@@ -32,6 +32,10 @@ class FlingAccelerator final {
   ParentLayerPoint GetFlingStartingVelocity(const SampleTime& aNow,
                                             const ParentLayerPoint& aVelocity);
 
+  void ObserveFlingCanceled(const ParentLayerPoint& aVelocity) {
+    mPreviousFlingCancelVelocity = aVelocity;
+  }
+
  protected:
   bool ShouldAccelerate(const SampleTime& aNow,
                         const ParentLayerPoint& aVelocity) const;
@@ -41,6 +45,9 @@ class FlingAccelerator final {
   
   
   SampleTime mPreviousFlingStartTime;
+  
+  
+  ParentLayerPoint mPreviousFlingCancelVelocity;
 };
 
 }  

@@ -567,6 +567,12 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration1) {
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
   SCOPED_GFX_VAR(UseWebRender, bool, false);
   CreateScrollgrabLayerTree(true );
+
+  
+  
+  
+  
+  
   TestFlingAcceleration();
 }
 
