@@ -557,9 +557,8 @@ struct YUVConverter {};
 
 
 
-static constexpr double YUVMatrix601[4] = {
-    1.5960267857142858, -0.3917622900949137, -0.8129676472377708,
-    2.017232142857143};
+constexpr double YUVMatrix601[4] = {1.5960267857142858, -0.3917622900949137,
+                                    -0.8129676472377708, 2.017232142857143};
 template <>
 struct YUVConverter<REC_601> : YUVConverterImpl<YUVMatrix601> {};
 

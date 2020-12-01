@@ -480,8 +480,9 @@ SI T linearQuantize(T P, float scale, S sampler) {
 }
 
 
-template <typename S>
-SI I32 computeRow(S sampler, ivec2 i, int32_t zoffset, size_t margin = 1) {
+template <typename S, typename I>
+SI auto computeRow(S sampler, I i, int32_t zoffset, size_t margin = 1)
+    -> decltype(i.x) {
   return clampCoord(i.x, sampler->width - margin) +
          clampCoord(i.y, sampler->height) * sampler->stride + zoffset;
 }
@@ -1067,6 +1068,154 @@ static PackedRG8 textureLinearPackedRG8(S sampler, ivec2 i, int zoffset = 0) {
   abcdl += ((abcdh - abcdl) * fracx.xxyyzzww) >> 7;
 
   return pack(WideRG8(abcdl));
+}
+
+template <int N>
+static ALWAYS_INLINE VectorType<uint16_t, N> addsat(VectorType<uint16_t, N> x,
+                                                    VectorType<uint16_t, N> y) {
+  auto r = x + y;
+  return r | (r < x);
+}
+
+template <typename P, typename S>
+static VectorType<uint8_t, 4 * sizeof(P)> gaussianBlurHorizontal(
+    S sampler, const ivec2_scalar& i, int minX, int maxX, int radius,
+    float coeff, float coeffStep, int zoffset = 0) {
+  
+  typedef VectorType<uint8_t, 4 * sizeof(P)> packed_type;
+  typedef VectorType<uint16_t, 4 * sizeof(P)> unpacked_type;
+
+  
+  
+  
+  coeff *= 1 << 8;
+  float coeffStep2 = coeffStep * coeffStep;
+
+  int row = computeRow(sampler, i, zoffset);
+  P* buf = (P*)sampler->buf;
+  auto pixelsRight = unaligned_load<V4<P>>(&buf[row]);
+  auto pixelsLeft = pixelsRight;
+  auto sum = CONVERT(bit_cast<packed_type>(pixelsRight), unpacked_type) *
+             uint16_t(coeff + 0.5f);
+
+  
+  
+  
+  
+  
+  
+  int offset = 1;
+  int leftBound = i.x - max(minX, 0);
+  int rightBound = min(maxX, sampler->width) - (i.x + 4);
+  int validRadius = min(radius, min(leftBound, rightBound));
+  for (; offset <= validRadius; offset++) {
+    
+    
+    pixelsRight.x = unaligned_load<P>(&buf[row + offset + 4 - 1]);
+    pixelsRight = pixelsRight.yzwx;
+    pixelsLeft = pixelsLeft.wxyz;
+    pixelsLeft.x = unaligned_load<P>(&buf[row - offset]);
+
+    
+    coeff *= coeffStep;
+    coeffStep *= coeffStep2;
+
+    
+    sum = addsat(sum,
+                 (CONVERT(bit_cast<packed_type>(pixelsRight), unpacked_type) +
+                  CONVERT(bit_cast<packed_type>(pixelsLeft), unpacked_type)) *
+                     uint16_t(coeff + 0.5f));
+  }
+
+  for (; offset <= radius; offset++) {
+    pixelsRight.x =
+        unaligned_load<P>(&buf[row + min(offset + 4 - 1, rightBound)]);
+    pixelsRight = pixelsRight.yzwx;
+    pixelsLeft = pixelsLeft.wxyz;
+    pixelsLeft.x = unaligned_load<P>(&buf[row - min(offset, leftBound)]);
+
+    coeff *= coeffStep;
+    coeffStep *= coeffStep2;
+
+    sum = addsat(sum,
+                 (CONVERT(bit_cast<packed_type>(pixelsRight), unpacked_type) +
+                  CONVERT(bit_cast<packed_type>(pixelsLeft), unpacked_type)) *
+                     uint16_t(coeff + 0.5f));
+  }
+
+  
+  return pack(sum >> 8);
+}
+
+template <typename P, typename S>
+static VectorType<uint8_t, 4 * sizeof(P)> gaussianBlurVertical(
+    S sampler, const ivec2_scalar& i, int minY, int maxY, int radius,
+    float coeff, float coeffStep, int zoffset = 0) {
+  
+  typedef VectorType<uint8_t, 4 * sizeof(P)> packed_type;
+  typedef VectorType<uint16_t, 4 * sizeof(P)> unpacked_type;
+
+  
+  
+  
+  coeff *= 1 << 8;
+  float coeffStep2 = coeffStep * coeffStep;
+
+  int rowAbove = computeRow(sampler, i, zoffset);
+  int rowBelow = rowAbove;
+  P* buf = (P*)sampler->buf;
+  auto pixels = unaligned_load<V4<P>>(&buf[rowAbove]);
+  auto sum = CONVERT(bit_cast<packed_type>(pixels), unpacked_type) *
+             uint16_t(coeff + 0.5f);
+
+  
+  
+  
+  
+  
+  
+  int offset = 1;
+  int belowBound = i.y - max(minY, 0);
+  int aboveBound = min(maxY, sampler->height) - (i.y + 1);
+  int validRadius = min(radius, min(belowBound, aboveBound));
+  for (; offset <= validRadius; offset++) {
+    rowAbove += sampler->stride;
+    rowBelow -= sampler->stride;
+    auto pixelsAbove = unaligned_load<V4<P>>(&buf[rowAbove]);
+    auto pixelsBelow = unaligned_load<V4<P>>(&buf[rowBelow]);
+
+    
+    coeff *= coeffStep;
+    coeffStep *= coeffStep2;
+
+    
+    sum = addsat(sum,
+                 (CONVERT(bit_cast<packed_type>(pixelsAbove), unpacked_type) +
+                  CONVERT(bit_cast<packed_type>(pixelsBelow), unpacked_type)) *
+                     uint16_t(coeff + 0.5f));
+  }
+
+  for (; offset <= radius; offset++) {
+    if (offset <= aboveBound) {
+      rowAbove += sampler->stride;
+    }
+    if (offset <= belowBound) {
+      rowBelow -= sampler->stride;
+    }
+    auto pixelsAbove = unaligned_load<V4<P>>(&buf[rowAbove]);
+    auto pixelsBelow = unaligned_load<V4<P>>(&buf[rowBelow]);
+
+    coeff *= coeffStep;
+    coeffStep *= coeffStep2;
+
+    sum = addsat(sum,
+                 (CONVERT(bit_cast<packed_type>(pixelsAbove), unpacked_type) +
+                  CONVERT(bit_cast<packed_type>(pixelsBelow), unpacked_type)) *
+                     uint16_t(coeff + 0.5f));
+  }
+
+  
+  return pack(sum >> 8);
 }
 
 }  
