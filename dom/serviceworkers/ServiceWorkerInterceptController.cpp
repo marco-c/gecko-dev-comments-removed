@@ -78,6 +78,13 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
 
   
   
+  if (!nsContentUtils::ComputeIsSecureContext(aChannel) &&
+      !StaticPrefs::dom_serviceWorkers_testing_enabled()) {
+    return NS_OK;
+  }
+
+  
+  
   
   
   if (StorageAllowedForChannel(aChannel) != StorageAccess::eAllow) {
