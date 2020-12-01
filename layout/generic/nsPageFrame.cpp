@@ -8,6 +8,7 @@
 
 #include "mozilla/AppUnits.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/gfx/2D.h"
 #include "gfxContext.h"
 #include "nsDeviceContext.h"
@@ -530,6 +531,86 @@ static void PaintMarginGuides(nsIFrame* aFrame, DrawTarget* aDrawTarget,
 }
 
 
+using PageAndOffset = std::pair<nsPageContentFrame*, nscoord>;
+
+
+
+
+
+static nsTArray<PageAndOffset> GetPreviousPagesWithOverflow(
+    nsPageContentFrame* aPage) {
+  nsTArray<PageAndOffset> pages(8);
+
+  auto GetPreviousPageContentFrame = [](nsPageContentFrame* aPageCF) {
+    nsIFrame* prevCont = aPageCF->GetPrevContinuation();
+    MOZ_ASSERT(!prevCont || prevCont->IsPageContentFrame(),
+               "Expected nsPageContentFrame or nullptr");
+
+    return static_cast<nsPageContentFrame*>(prevCont);
+  };
+
+  nsPageContentFrame* pageCF = aPage;
+  
+  nscoord offsetToCurrentPageTop = 0;
+  while ((pageCF = GetPreviousPageContentFrame(pageCF))) {
+    offsetToCurrentPageTop += pageCF->GetSize().Height();
+
+    if (pageCF->HasOverflowAreas()) {
+      pages.EmplaceBack(pageCF, offsetToCurrentPageTop);
+    }
+  }
+
+  return pages;
+}
+
+static void BuildPreviousPageOverflow(nsDisplayListBuilder* aBuilder,
+                                      nsPageFrame* aPageFrame,
+                                      nsPageContentFrame* aCurrentPageCF,
+                                      const nsDisplayListSet& aLists) {
+  const auto previousPagesAndOffsets =
+      GetPreviousPagesWithOverflow(aCurrentPageCF);
+
+  for (const PageAndOffset& pair : Reversed(previousPagesAndOffsets)) {
+    auto* prevPageCF = pair.first;
+    const nscoord offsetToCurrentPageTop = pair.second;
+    const auto inkOverflow = prevPageCF->InkOverflowRectRelativeToSelf();
+    const auto remainingOverflow = inkOverflow.YMost() - offsetToCurrentPageTop;
+
+    if (remainingOverflow <= 0) {
+      continue;
+    }
+
+    
+    
+    nsRect overflowRect = inkOverflow;
+    overflowRect.y = offsetToCurrentPageTop;
+    overflowRect.height =
+        std::min(remainingOverflow, prevPageCF->GetSize().Height());
+
+    {
+      
+      
+      const nsRect visibleRect =
+          overflowRect + prevPageCF->GetOffsetTo(aPageFrame);
+      nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
+          aBuilder, aPageFrame, visibleRect, visibleRect);
+
+      
+      
+      
+      
+      
+      
+      const nsPoint pageOffset = aCurrentPageCF->GetOffsetTo(prevPageCF);
+      const nsPoint additionalOffset(pageOffset.X(),
+                                     pageOffset.Y() - offsetToCurrentPageTop);
+      buildingForChild.SetAdditionalOffset(additionalOffset);
+
+      aPageFrame->BuildDisplayListForChild(aBuilder, prevPageCF, aLists);
+    }
+  }
+}
+
 void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                    const nsDisplayListSet& aLists) {
   nsDisplayListCollection set(aBuilder);
@@ -568,12 +649,27 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     clipState.Clear();
-    clipState.ClipContainingBlockDescendants(clipRect, nullptr);
+    clipState.ClipContainingBlockDescendants(clipRect);
 
-    nsRect visibleRect = child->InkOverflowRectRelativeToSelf();
+    MOZ_ASSERT(child->IsPageContentFrame(), "unexpected child frame type");
+    auto* currentPageCF = static_cast<nsPageContentFrame*>(child);
+
+    if (StaticPrefs::layout_display_list_improve_fragmentation() &&
+        mPageNum <= 255) {
+      nsDisplayListBuilder::AutoPageNumberSetter p(aBuilder, mPageNum);
+      BuildPreviousPageOverflow(aBuilder, this, currentPageCF, set);
+    }
+
+    
+    
+    const nsRect childOverflowRect = child->InkOverflowRectRelativeToSelf();
+    const nsRect visibleRect = childOverflowRect + child->GetOffsetTo(this);
+
     nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-        aBuilder, child, visibleRect, visibleRect);
-    child->BuildDisplayListForStackingContext(aBuilder, &content);
+        aBuilder, this, visibleRect, visibleRect);
+    BuildDisplayListForChild(aBuilder, child, set);
+
+    set.SerializeWithCorrectZOrder(&content, child->GetContent());
 
     
     
@@ -590,31 +686,26 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     NS_ASSERTION(mPageNum <= 255, "Too many pages to handle OOFs");
     if (mPageNum <= 255) {
-      uint8_t oldPageNum = aBuilder->GetBuildingExtraPagesForPageNum();
-      aBuilder->SetBuildingExtraPagesForPageNum(mPageNum);
-
+      nsDisplayListBuilder::AutoPageNumberSetter p(aBuilder, mPageNum);
       
       
       
-      MOZ_ASSERT(child->IsPageContentFrame(), "unexpected child frame type");
-      auto* pageCF = static_cast<nsPageContentFrame*>(child);
+      auto* pageCF = currentPageCF;
       while ((pageCF = static_cast<nsPageContentFrame*>(
                   pageCF->GetNextContinuation()))) {
-        nsRect childVisible = visibleRect + child->GetOffsetTo(pageCF);
+        nsRect childVisible = childOverflowRect + child->GetOffsetTo(pageCF);
 
         nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
             aBuilder, pageCF, childVisible, childVisible);
         BuildDisplayListForExtraPage(aBuilder, this, pageCF, &content);
       }
-
-      aBuilder->SetBuildingExtraPagesForPageNum(oldPageNum);
     }
 
     
     
     
     nsDisplayListBuilder::AutoBuildingDisplayList building(
-        aBuilder, child, visibleRect, visibleRect);
+        aBuilder, child, childOverflowRect, childOverflowRect);
 
     
     
@@ -630,21 +721,19 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                              content.GetBuildingRect(),
                                              ::ComputePageTransform);
 
-  set.Content()->AppendToTop(&content);
-
   if (pc->IsRootPaginatedDocument()) {
-    set.Content()->AppendNewToTop<nsDisplayHeaderFooter>(aBuilder, this);
+    content.AppendNewToTop<nsDisplayHeaderFooter>(aBuilder, this);
 
     
     if (pc->Type() == nsPresContext::eContext_PrintPreview &&
         mPD->mPrintSettings->GetShowMarginGuides()) {
-      set.Content()->AppendNewToTop<nsDisplayGeneric>(
+      content.AppendNewToTop<nsDisplayGeneric>(
           aBuilder, this, PaintMarginGuides, "MarginGuides",
           DisplayItemType::TYPE_MARGIN_GUIDES);
     }
   }
 
-  set.MoveTo(aLists);
+  aLists.Content()->AppendToTop(&content);
 }
 
 
