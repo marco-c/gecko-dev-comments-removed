@@ -94,6 +94,7 @@ add_task(async function test() {
     set: [
       
       ["network.proxy.allow_hijacking_localhost", true],
+      ["security.mixed_content.upgrade_display_content", false],
     ],
   });
 

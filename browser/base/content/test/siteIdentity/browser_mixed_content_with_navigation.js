@@ -40,6 +40,9 @@ add_task(async function() {
 });
 
 async function run_testcase(testcase) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.mixed_content.upgrade_display_content", false]],
+  });
   
   
   
