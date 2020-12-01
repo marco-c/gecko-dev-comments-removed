@@ -60,6 +60,9 @@ if (AppConstants.platform == "macosx") {
 
 var whitelist = [
   
+  { file: "chrome://pocket/content/panels/img/glyph.svg" },
+
+  
   { file: "chrome://pdf.js/locale/chrome.properties" },
   { file: "chrome://pdf.js/locale/viewer.properties" },
 
