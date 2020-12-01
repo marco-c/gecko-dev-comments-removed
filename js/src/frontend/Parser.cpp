@@ -6634,7 +6634,6 @@ GeneralParser<ParseHandler, Unit>::returnStatement(
   uint32_t begin = pos().begin;
 
   MOZ_ASSERT(pc_->isFunctionBox());
-  pc_->functionBox()->usesReturn = true;
 
   
   
@@ -7895,7 +7894,6 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
   handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
   setFunctionStartAtCurrentToken(funbox);
   funbox->setArgCount(0);
-  funbox->usesThis = true;
 
   
   
@@ -8032,7 +8030,6 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
   handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
   funbox->setArgCount(0);
 
-  funbox->usesThis = true;
   NameNodeType thisName = newThisName();
   if (!thisName) {
     return null();
@@ -9993,9 +9990,6 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::memberCall(
     
     if (prop == cx_->parserNames().apply) {
       op = JSOp::FunApply;
-      if (pc_->isFunctionBox()) {
-        pc_->functionBox()->usesApply = true;
-      }
     } else if (prop == cx_->parserNames().call) {
       op = JSOp::FunCall;
     }
@@ -11424,9 +11418,6 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::primaryExpr(
     case TokenKind::False:
       return handler_.newBooleanLiteral(false, pos());
     case TokenKind::This: {
-      if (pc_->isFunctionBox()) {
-        pc_->functionBox()->usesThis = true;
-      }
       NameNodeType thisName = null();
       if (pc_->sc()->hasFunctionThisBinding()) {
         thisName = newThisName();

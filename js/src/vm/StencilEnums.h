@@ -243,10 +243,6 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   HasMappedArgsObj = 1 << 27,
-
-  
-  
-  IsLikelyConstructorWrapper = 1 << 28,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {

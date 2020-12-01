@@ -140,53 +140,8 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
 
 
 bool ObjectGroup::useSingletonForClone(JSFunction* fun) {
-  if (!IsTypeInferenceEnabled()) {
-    return false;
-  }
-
-  if (!fun->isInterpreted()) {
-    return false;
-  }
-
-  if (fun->isArrow()) {
-    return false;
-  }
-
-  if (fun->isSingleton()) {
-    return false;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (!fun->baseScript()->isLikelyConstructorWrapper()) {
-    return false;
-  }
-  uint32_t begin = fun->baseScript()->sourceStart();
-  uint32_t end = fun->baseScript()->sourceEnd();
-
-  return end - begin <= 100;
+  MOZ_RELEASE_ASSERT(!IsTypeInferenceEnabled());
+  return false;
 }
 
 

@@ -396,11 +396,6 @@ class FunctionBox : public SharedContext {
   bool hasExprBody_ : 1;
 
   
-  bool usesApply : 1;   
-  bool usesThis : 1;    
-  bool usesReturn : 1;  
-
-  
   
   
   bool isFunctionFieldCopiedToStencil : 1;
@@ -472,7 +467,6 @@ class FunctionBox : public SharedContext {
   IMMUTABLE_FLAG_GETTER_SETTER(argumentsHasVarBinding, ArgumentsHasVarBinding)
   
   
-  
 
   bool needsCallObjectRegardlessOfBindings() const {
     
@@ -486,10 +480,6 @@ class FunctionBox : public SharedContext {
   bool needsExtraBodyVarEnvironmentRegardlessOfBindings() const {
     MOZ_ASSERT(hasParameterExprs);
     return funHasExtensibleScope();
-  }
-
-  bool isLikelyConstructorWrapper() const {
-    return argumentsHasVarBinding() && usesApply && usesThis && !usesReturn;
   }
 
   GeneratorKind generatorKind() const {
