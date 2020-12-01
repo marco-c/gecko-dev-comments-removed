@@ -10,51 +10,49 @@
 #include "BackgroundParentImpl.h"
 #include "gfxPlatform.h"
 #include "mozilla/Unused.h"
+#include "nsIThread.h"
 #include "nsThreadUtils.h"
 #include "VsyncSource.h"
 
-namespace mozilla {
-
-using namespace ipc;
-
-namespace layout {
-
-
-already_AddRefed<VsyncParent> VsyncParent::Create() {
-  AssertIsOnBackgroundThread();
-  RefPtr<gfx::VsyncSource> vsyncSource =
-      gfxPlatform::GetPlatform()->GetHardwareVsync();
-  RefPtr<VsyncParent> vsyncParent = new VsyncParent();
-  vsyncParent->mVsyncDispatcher = vsyncSource->GetRefreshTimerVsyncDispatcher();
-  return vsyncParent.forget();
-}
+namespace mozilla::dom {
 
 VsyncParent::VsyncParent()
     : mObservingVsync(false),
       mDestroyed(false),
-      mBackgroundThread(NS_GetCurrentThread()) {
-  MOZ_ASSERT(mBackgroundThread);
-  AssertIsOnBackgroundThread();
-}
+      mInitialThread(NS_GetCurrentThread()) {}
 
-VsyncParent::~VsyncParent() {
-  
-  
+void VsyncParent::UpdateVsyncSource(
+    const RefPtr<gfx::VsyncSource>& aVsyncSource) {
+  mVsyncSource = aVsyncSource;
+  if (!mVsyncSource) {
+    mVsyncSource = gfxPlatform::GetPlatform()->GetHardwareVsync();
+  }
+
+  if (mObservingVsync) {
+    mVsyncDispatcher->RemoveChildRefreshTimer(this);
+  }
+  mVsyncDispatcher = mVsyncSource->GetRefreshTimerVsyncDispatcher();
+  if (mObservingVsync) {
+    mVsyncDispatcher->AddChildRefreshTimer(this);
+  }
 }
 
 bool VsyncParent::NotifyVsync(const VsyncEvent& aVsync) {
+  if (IsOnInitialThread()) {
+    DispatchVsyncEvent(aVsync);
+    return true;
+  }
+
   
-  MOZ_ASSERT(!IsOnBackgroundThread());
   nsCOMPtr<nsIRunnable> vsyncEvent = NewRunnableMethod<VsyncEvent>(
-      "layout::VsyncParent::DispatchVsyncEvent", this,
+      "dom::VsyncParent::DispatchVsyncEvent", this,
       &VsyncParent::DispatchVsyncEvent, aVsync);
-  MOZ_ALWAYS_SUCCEEDS(
-      mBackgroundThread->Dispatch(vsyncEvent, NS_DISPATCH_NORMAL));
+  MOZ_ALWAYS_SUCCEEDS(mInitialThread->Dispatch(vsyncEvent, NS_DISPATCH_NORMAL));
   return true;
 }
 
 void VsyncParent::DispatchVsyncEvent(const VsyncEvent& aVsync) {
-  AssertIsOnBackgroundThread();
+  AssertIsOnInitialThread();
 
   
   
@@ -67,17 +65,14 @@ void VsyncParent::DispatchVsyncEvent(const VsyncEvent& aVsync) {
 }
 
 mozilla::ipc::IPCResult VsyncParent::RecvRequestVsyncRate() {
-  AssertIsOnBackgroundThread();
-  TimeDuration vsyncRate = gfxPlatform::GetPlatform()
-                               ->GetHardwareVsync()
-                               ->GetGlobalDisplay()
-                               .GetVsyncRate();
+  AssertIsOnInitialThread();
+  TimeDuration vsyncRate = mVsyncSource->GetGlobalDisplay().GetVsyncRate();
   Unused << SendVsyncRate(vsyncRate.ToMilliseconds());
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult VsyncParent::RecvObserve() {
-  AssertIsOnBackgroundThread();
+  AssertIsOnInitialThread();
   if (!mObservingVsync) {
     mVsyncDispatcher->AddChildRefreshTimer(this);
     mObservingVsync = true;
@@ -87,7 +82,7 @@ mozilla::ipc::IPCResult VsyncParent::RecvObserve() {
 }
 
 mozilla::ipc::IPCResult VsyncParent::RecvUnobserve() {
-  AssertIsOnBackgroundThread();
+  AssertIsOnInitialThread();
   if (mObservingVsync) {
     mVsyncDispatcher->RemoveChildRefreshTimer(this);
     mObservingVsync = false;
@@ -96,9 +91,9 @@ mozilla::ipc::IPCResult VsyncParent::RecvUnobserve() {
   return IPC_FAIL_NO_REASON(this);
 }
 
-void VsyncParent::ActorDestroy(ActorDestroyReason aReason) {
+void VsyncParent::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
   MOZ_ASSERT(!mDestroyed);
-  AssertIsOnBackgroundThread();
+  AssertIsOnInitialThread();
   if (mObservingVsync) {
     mVsyncDispatcher->RemoveChildRefreshTimer(this);
   }
@@ -106,5 +101,10 @@ void VsyncParent::ActorDestroy(ActorDestroyReason aReason) {
   mDestroyed = true;
 }
 
-}  
+bool VsyncParent::IsOnInitialThread() {
+  return NS_GetCurrentThread() == mInitialThread;
+}
+
+void VsyncParent::AssertIsOnInitialThread() { MOZ_ASSERT(IsOnInitialThread()); }
+
 }  

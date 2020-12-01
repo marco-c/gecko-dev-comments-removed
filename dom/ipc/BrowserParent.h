@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_BrowserParent_h
 #define mozilla_dom_BrowserParent_h
@@ -18,6 +18,7 @@
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/PBrowserParent.h"
 #include "mozilla/dom/TabContext.h"
+#include "mozilla/dom/VsyncParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layout/RemoteLayerTreeOwner.h"
 #include "nsCOMPtr.h"
@@ -54,11 +55,11 @@ class DocAccessibleParent;
 
 namespace widget {
 struct IMENotification;
-}  // namespace widget
+}  
 
 namespace gfx {
 class SourceSurface;
-}  // namespace gfx
+}  
 
 namespace dom {
 
@@ -72,12 +73,12 @@ class BrowserBridgeParent;
 
 namespace ipc {
 class StructuredCloneData;
-}  // namespace ipc
+}  
 
-/**
- * BrowserParent implements the parent actor part of the PBrowser protocol. See
- * PBrowser for more information.
- */
+
+
+
+
 class BrowserParent final : public PBrowserParent,
                             public nsIDOMEventListener,
                             public nsIAuthPromptProvider,
@@ -93,12 +94,12 @@ class BrowserParent final : public PBrowserParent,
   virtual ~BrowserParent();
 
  public:
-  // Helper class for ContentParent::RecvCreateWindow.
+  
   struct AutoUseNewTab;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIAUTHPROMPTPROVIDER
-  // nsIDOMEventListener interfaces
+  
   NS_DECL_NSIDOMEVENTLISTENER
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(BrowserParent, nsIDOMEventListener)
@@ -108,10 +109,10 @@ class BrowserParent final : public PBrowserParent,
                 CanonicalBrowsingContext* aBrowsingContext,
                 uint32_t aChromeFlags);
 
-  /**
-   * Returns the focused BrowserParent or nullptr if chrome or another app
-   * is focused.
-   */
+  
+
+
+
   static BrowserParent* GetFocused();
 
   static BrowserParent* GetLastMouseRemoteTarget();
@@ -145,16 +146,16 @@ class BrowserParent final : public PBrowserParent,
 
   already_AddRefed<nsIWidget> GetTopLevelWidget();
 
-  // Returns the closest widget for our frameloader's content.
+  
   already_AddRefed<nsIWidget> GetWidget() const;
 
-  // Returns the top-level widget for our frameloader's document.
+  
   already_AddRefed<nsIWidget> GetDocWidget() const;
 
-  /**
-   * Returns the widget which may have native focus and handles text input
-   * like keyboard input, IME, etc.
-   */
+  
+
+
+
   already_AddRefed<nsIWidget> GetTextInputHandlingWidget() const;
 
   nsIXULBrowserWindow* GetXULBrowserWindow();
@@ -162,58 +163,58 @@ class BrowserParent final : public PBrowserParent,
   static uint32_t GetMaxTouchPoints(Element* aElement);
   uint32_t GetMaxTouchPoints() { return GetMaxTouchPoints(mFrameElement); }
 
-  /**
-   * Return the top level DocAccessibleParent for this BrowserParent.
-   * Note that in the case of an out-of-process iframe, the returned actor
-   * might not be at the top level of the DocAccessibleParent tree; i.e. it
-   * might have a parent. However, it will be at the top level in its content
-   * process. That is, doc->IsTopLevelInContentProcess() will always be true,
-   * but doc->IsTopLevel() might not.
-   */
+  
+
+
+
+
+
+
+
   a11y::DocAccessibleParent* GetTopLevelDocAccessible() const;
 
   LayersId GetLayersId() const;
 
-  // Returns the BrowserBridgeParent if this BrowserParent is for an
-  // out-of-process iframe and nullptr otherwise.
+  
+  
   BrowserBridgeParent* GetBrowserBridgeParent() const;
 
-  // Returns the BrowserHost if this BrowserParent is for a top-level browser
-  // and nullptr otherwise.
+  
+  
   BrowserHost* GetBrowserHost() const;
 
   ParentShowInfo GetShowInfo();
 
-  // Get the content principal from the owner element.
+  
   already_AddRefed<nsIPrincipal> GetContentPrincipal() const;
 
-  /**
-   * Let managees query if Destroy() is already called so they don't send out
-   * messages when the PBrowser actor is being destroyed.
-   */
+  
+
+
+
   bool IsDestroyed() const { return mIsDestroyed; }
 
-  /**
-   * Returns whether we're in the process of creating a new window (from
-   * window.open). If so, LoadURL calls are being skipped until everything is
-   * set up. For further details, see `mCreatingWindow` below.
-   */
+  
+
+
+
+
   bool CreatingWindow() const { return mCreatingWindow; }
 
-  /*
-   * Visit each BrowserParent in the tree formed by PBrowser and
-   * PBrowserBridge, including `this`.
-   */
+  
+
+
+
   template <typename Callback>
   void VisitAll(Callback aCallback) {
     aCallback(this);
     VisitAllDescendants(aCallback);
   }
 
-  /*
-   * Visit each BrowserParent in the tree formed by PBrowser and
-   * PBrowserBridge, excluding `this`.
-   */
+  
+
+
+
   template <typename Callback>
   void VisitAllDescendants(Callback aCallback) {
     const auto& browserBridges = ManagedPBrowserBridgeParent();
@@ -227,9 +228,9 @@ class BrowserParent final : public PBrowserParent,
     }
   }
 
-  /*
-   * Visit each BrowserBridgeParent that is a child of this BrowserParent.
-   */
+  
+
+
   template <typename Callback>
   void VisitChildren(Callback aCallback) {
     const auto& browserBridges = ManagedPBrowserBridgeParent();
@@ -397,7 +398,7 @@ class BrowserParent final : public PBrowserParent,
       const widget::InputContext& aContext,
       const widget::InputContextAction& aAction);
 
-  // See nsIKeyEventInPluginCallback
+  
   virtual void HandledWindowedPluginKeyEvent(
       const NativeEventData& aKeyEventData, bool aIsConsumed) override;
 
@@ -459,6 +460,10 @@ class BrowserParent final : public PBrowserParent,
                                               const nsString& aInitialColor);
 
   bool DeallocPColorPickerParent(PColorPickerParent* aColorPicker);
+
+  PVsyncParent* AllocPVsyncParent();
+
+  bool DeallocPVsyncParent(PVsyncParent* aActor);
 
 #ifdef ACCESSIBILITY
   PDocAccessibleParent* AllocPDocAccessibleParent(PDocAccessibleParent*,
@@ -560,11 +565,11 @@ class BrowserParent final : public PBrowserParent,
   void SendMouseEvent(const nsAString& aType, float aX, float aY,
                       int32_t aButton, int32_t aClickCount, int32_t aModifiers);
 
-  /**
-   * The following Send*Event() marks aEvent as posted to remote process if
-   * it succeeded.  So, you can check the result with
-   * aEvent.HasBeenPostedToRemoteProcess().
-   */
+  
+
+
+
+
   void SendRealMouseEvent(WidgetMouseEvent& aEvent);
 
   void SendRealDragEvent(WidgetDragEvent& aEvent, uint32_t aDragAction,
@@ -579,13 +584,13 @@ class BrowserParent final : public PBrowserParent,
 
   void SendPluginEvent(WidgetPluginEvent& aEvent);
 
-  /**
-   * Different from above Send*Event(), these methods return true if the
-   * event has been posted to the remote process or failed to do that but
-   * shouldn't be handled by following event listeners.
-   * If you need to check if it's actually posted to the remote process,
-   * you can refer aEvent.HasBeenPostedToRemoteProcess().
-   */
+  
+
+
+
+
+
+
   bool SendCompositionEvent(mozilla::WidgetCompositionEvent& aEvent);
 
   bool SendSelectionEvent(mozilla::WidgetSelectionEvent& aEvent);
@@ -615,7 +620,7 @@ class BrowserParent final : public PBrowserParent,
                              nsIPrincipal* aRequestingPrincipal,
                              const uint32_t& aContentPolicyType);
 
-  // Helper for transforming a point
+  
   LayoutDeviceIntPoint TransformPoint(
       const LayoutDeviceIntPoint& aPoint,
       const LayoutDeviceToLayoutDeviceMatrix4x4& aMatrix);
@@ -623,46 +628,46 @@ class BrowserParent final : public PBrowserParent,
       const LayoutDevicePoint& aPoint,
       const LayoutDeviceToLayoutDeviceMatrix4x4& aMatrix);
 
-  // Transform a coordinate from the parent process coordinate space to the
-  // child process coordinate space.
+  
+  
   LayoutDeviceIntPoint TransformParentToChild(
       const LayoutDeviceIntPoint& aPoint);
   LayoutDevicePoint TransformParentToChild(const LayoutDevicePoint& aPoint);
 
-  // Transform a coordinate from the child process coordinate space to the
-  // parent process coordinate space.
+  
+  
   LayoutDeviceIntPoint TransformChildToParent(
       const LayoutDeviceIntPoint& aPoint);
   LayoutDevicePoint TransformChildToParent(const LayoutDevicePoint& aPoint);
   LayoutDeviceIntRect TransformChildToParent(const LayoutDeviceIntRect& aRect);
 
-  // Returns the matrix that transforms event coordinates from the coordinate
-  // space of the child process to the coordinate space of the parent process.
+  
+  
   LayoutDeviceToLayoutDeviceMatrix4x4 GetChildToParentConversionMatrix();
 
   void SetChildToParentConversionMatrix(
       const Maybe<LayoutDeviceToLayoutDeviceMatrix4x4>& aMatrix,
       const ScreenRect& aRemoteDocumentRect);
 
-  // Returns the offset from the origin of our frameloader's nearest widget to
-  // the origin of its layout frame. This offset is used to translate event
-  // coordinates relative to the PuppetWidget origin in the child process.
-  //
-  // GOING AWAY. PLEASE AVOID ADDING CALLERS. Use the above tranformation
-  // methods instead.
+  
+  
+  
+  
+  
+  
   LayoutDeviceIntPoint GetChildProcessOffset();
 
-  // Returns the offset from the on-screen origin of our top-level window's
-  // widget (including window decorations) to the origin of our frameloader's
-  // nearest widget. This offset is used to translate coordinates from the
-  // PuppetWidget's origin to absolute screen coordinates in the child.
+  
+  
+  
+  
   LayoutDeviceIntPoint GetClientOffset();
 
   void StopIMEStateManagement();
 
-  /**
-   * Native widget remoting protocol for use with windowed plugins with e10s.
-   */
+  
+
+
   PPluginWidgetParent* AllocPPluginWidgetParent();
 
   bool DeallocPPluginWidgetParent(PPluginWidgetParent* aActor);
@@ -692,7 +697,7 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvEnsureLayersConnected(
       CompositorOptions* aCompositorOptions);
 
-  // LiveResizeListener implementation
+  
   void LiveResizeStarted() override;
   void LiveResizeStopped() override;
 
@@ -717,8 +722,8 @@ class BrowserParent final : public PBrowserParent,
                           uint32_t aPresShellId);
   void StopApzAutoscroll(nsViewID aScrollId, uint32_t aPresShellId);
 
-  // Suspend nsIWebProgressListener events. This is used to block any further
-  // progress events from the old process when process switching away.
+  
+  
   void SuspendProgressEvents() { mSuspendedProgressEvents = true; }
 
   bool CanCancelContentJS(nsIRemoteTab::NavigationType aNavigationType,
@@ -793,26 +798,26 @@ class BrowserParent final : public PBrowserParent,
 
   bool AsyncPanZoomEnabled() const;
 
-  // Update state prior to routing an APZ-aware event to the child process.
-  // |aOutTargetGuid| will contain the identifier
-  // of the APZC instance that handled the event. aOutTargetGuid may be null.
-  // |aOutInputBlockId| will contain the identifier of the input block
-  // that this event was added to, if there was one. aOutInputBlockId may be
-  // null. |aOutApzResponse| will contain the response that the APZ gave when
-  // processing the input block; this is used for generating appropriate
-  // pointercancel events.
+  
+  
+  
+  
+  
+  
+  
+  
   void ApzAwareEventRoutingToChild(ScrollableLayerGuid* aOutTargetGuid,
                                    uint64_t* aOutInputBlockId,
                                    nsEventStatus* aOutApzResponse);
 
-  // When dropping links we perform a roundtrip from
-  // Parent (SendRealDragEvent) -> Child -> Parent (RecvDropLinks)
-  // and have to ensure that the child did not modify links to be loaded.
+  
+  
+  
   bool QueryDropLinksForVerification();
 
  private:
-  // This is used when APZ needs to find the BrowserParent associated with a
-  // layer to dispatch events.
+  
+  
   typedef nsDataHashtable<nsUint64HashKey, BrowserParent*>
       LayerToBrowserParentTable;
   static LayerToBrowserParentTable* sLayerToBrowserParentTable;
@@ -822,39 +827,39 @@ class BrowserParent final : public PBrowserParent,
 
   static void RemoveBrowserParentFromTable(layers::LayersId aLayersId);
 
-  // Keeps track of which BrowserParent has keyboard focus.
-  // If nullptr, the parent process has focus.
-  // Use UpdateFocus() to manage.
+  
+  
+  
   static BrowserParent* sFocus;
 
-  // Keeps track of which top-level BrowserParent the keyboard focus is under.
-  // If nullptr, the parent process has focus.
-  // Use SetTopLevelWebFocus and UnsetTopLevelWebFocus to manage.
+  
+  
+  
   static BrowserParent* sTopLevelWebFocus;
 
-  // Setter for sTopLevelWebFocus
+  
   static void SetTopLevelWebFocus(BrowserParent* aBrowserParent);
 
-  // Unsetter for sTopLevelWebFocus; only unsets if argument matches
-  // current sTopLevelWebFocus. Use UnsetTopLevelWebFocusAll() to
-  // unset regardless of current value.
+  
+  
+  
   static void UnsetTopLevelWebFocus(BrowserParent* aBrowserParent);
 
-  // Recomputes sFocus and returns it.
+  
   static BrowserParent* UpdateFocus();
 
-  // Keeps track of which BrowserParent the real mouse event is sent to.
+  
   static BrowserParent* sLastMouseRemoteTarget;
 
-  // Unsetter for LastMouseRemoteTarget; only unsets if argument matches
-  // current sLastMouseRemoteTarget.
+  
+  
   static void UnsetLastMouseRemoteTarget(BrowserParent* aBrowserParent);
 
-  // Keeps track of which BrowserParent requested pointer lock.
+  
   static BrowserParent* sPointerLockedRemoteTarget;
 
-  // Unsetter for sPointerLockedRemoteTarget; only unsets if argument matches
-  // current sPointerLockedRemoteTarget.
+  
+  
   static void UnsetPointerLockedRemoteTarget(BrowserParent* aBrowserParent);
 
   struct APZData {
@@ -872,37 +877,39 @@ class BrowserParent final : public PBrowserParent,
   void SendRealTouchMoveEvent(WidgetTouchEvent& aEvent, APZData& aAPZData,
                               uint32_t aConsecutiveTouchMoveCount);
 
+  void UpdateVsyncParentVsyncSource();
+
  public:
-  // Unsets sTopLevelWebFocus regardless of its current value.
+  
   static void UnsetTopLevelWebFocusAll();
 
-  // Recomputes focus when the BrowsingContext tree changes in a
-  // way that potentially invalidates the sFocus.
+  
+  
   static void UpdateFocusFromBrowsingContext();
 
  private:
   TabId mTabId;
 
   RefPtr<ContentParent> mManager;
-  // The root browsing context loaded in this BrowserParent.
+  
   RefPtr<CanonicalBrowsingContext> mBrowsingContext;
   nsCOMPtr<nsILoadContext> mLoadContext;
   RefPtr<Element> mFrameElement;
   nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
-  // We keep a strong reference to the frameloader after we've sent the
-  // Destroy message and before we've received __delete__. This allows us to
-  // dispatch message manager messages during this time.
+  
+  
+  
   RefPtr<nsFrameLoader> mFrameLoader;
   uint32_t mChromeFlags;
 
-  // Pointer back to BrowserBridgeParent if there is one associated with
-  // this BrowserParent. This is non-owning to avoid cycles and is managed
-  // by the BrowserBridgeParent instance, which has the strong reference
-  // to this BrowserParent.
+  
+  
+  
+  
   BrowserBridgeParent* mBrowserBridgeParent;
-  // Pointer to the BrowserHost that owns us, if any. This is mutually
-  // exclusive with mBrowserBridgeParent, and one is guaranteed to be
-  // non-null.
+  
+  
+  
   BrowserHost* mBrowserHost;
 
   ContentCacheInParent mContentCache;
@@ -923,88 +930,90 @@ class BrowserParent final : public PBrowserParent,
   LayoutDeviceIntPoint mClientOffset;
   LayoutDeviceIntPoint mChromeOffset;
 
-  // When loading a new tab or window via window.open, the child is
-  // responsible for loading the URL it wants into the new BrowserChild. When
-  // the parent receives the CreateWindow message, though, it sends a LoadURL
-  // message, usually for about:blank. It's important for the about:blank load
-  // to get processed because the Firefox frontend expects every new window to
-  // immediately start loading something (see bug 1123090). However, we want
-  // the child to process the LoadURL message before it returns from
-  // ProvideWindow so that the URL sent from the parent doesn't override the
-  // child's URL. This is not possible using our IPC mechanisms. To solve the
-  // problem, we skip sending the LoadURL message in the parent and instead
-  // return the URL as a result from CreateWindow. The child simulates
-  // receiving a LoadURL message before returning from ProvideWindow.
-  //
-  // The mCreatingWindow flag is set while dispatching CreateWindow. During
-  // that time, any LoadURL calls are skipped.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool mCreatingWindow;
 
-  // When loading a new tab or window via window.open, we want to ensure that
-  // frame scripts for that tab are loaded before any scripts start to run in
-  // the window. We can't load the frame scripts the normal way, using
-  // separate IPC messages, since they won't be processed by the child until
-  // returning to the event loop, which is too late. Instead, we queue up
-  // frame scripts that we intend to load and send them as part of the
-  // CreateWindow response. Then BrowserChild loads them immediately.
+  
+  
+  
+  
+  
+  
+  
   nsTArray<FrameScriptInfo> mDelayedFrameScripts;
 
-  // Cached cursor setting from BrowserChild.  When the cursor is over the tab,
-  // it should take this appearance.
+  
+  
   nsCursor mCursor;
   nsCOMPtr<imgIContainer> mCustomCursor;
   uint32_t mCustomCursorHotspotX, mCustomCursorHotspotY;
 
   nsTArray<nsString> mVerifyDropLinks;
 
+  RefPtr<VsyncParent> mVsyncParent;
+
 #ifdef DEBUG
   int32_t mActiveSupressDisplayportCount = 0;
 #endif
 
-  // Cached value indicating the docshell active state of the remote browser.
+  
   bool mDocShellIsActive : 1;
 
-  // When true, we've initiated normal shutdown and notified our managing
-  // PContent.
+  
+  
   bool mMarkedDestroying : 1;
-  // When true, the BrowserParent is invalid and we should not send IPC messages
-  // anymore.
+  
+  
   bool mIsDestroyed : 1;
-  // True if the cursor changes from the BrowserChild should change the widget
-  // cursor.  This happens whenever the cursor is in the remote target's region.
+  
+  
   bool mRemoteTargetSetsCursor : 1;
 
-  // If this flag is set, then the tab's layers will be preserved even when
-  // the tab's docshell is inactive.
+  
+  
   bool mPreserveLayers : 1;
 
-  // Holds the most recent value passed to the RenderLayers function. This
-  // does not necessarily mean that the layers have finished rendering
-  // and have uploaded - for that, use mHasLayers.
+  
+  
+  
   bool mRenderLayers : 1;
 
-  // Whether this is active for the ProcessPriorityManager or not.
+  
   bool mActiveInPriorityManager : 1;
 
-  // True if the compositor has reported that the BrowserChild has uploaded
-  // layers.
+  
+  
   bool mHasLayers : 1;
 
-  // True if this BrowserParent has had its layer tree sent to the compositor
-  // at least once.
+  
+  
   bool mHasPresented : 1;
 
-  // True when the remote browser is created and ready to handle input events.
+  
   bool mIsReadyToHandleInputEvents : 1;
 
-  // True if we suppress the eMouseEnterIntoWidget event due to the BrowserChild
-  // was not ready to handle it. We will resend it when the next time we fire a
-  // mouse event and the BrowserChild is ready.
+  
+  
+  
   bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
 
-  // Set to true if we're currently suspending nsIWebProgress events.
-  // We do this when we are process switching and want to suspend events
-  // from the old BrowserParent after it sent STATE_START event.
+  
+  
+  
   bool mSuspendedProgressEvents : 1;
 };
 
@@ -1021,7 +1030,7 @@ struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {
   RefPtr<BrowserParent> mNewTab;
 };
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_dom_BrowserParent_h
+#endif  

@@ -4,22 +4,19 @@
 
 
 
-#ifndef mozilla_layout_ipc_VsyncChild_h
-#define mozilla_layout_ipc_VsyncChild_h
+#ifndef mozilla_dom_ipc_VsyncChild_h
+#define mozilla_dom_ipc_VsyncChild_h
 
-#include "mozilla/layout/PVsyncChild.h"
-#include "nsISupportsImpl.h"
+#include "mozilla/dom/PVsyncChild.h"
 #include "mozilla/RefPtr.h"
+#include "nsISupportsImpl.h"
+#include "nsTObserverArray.h"
 
 namespace mozilla {
 
 class VsyncObserver;
 
-namespace ipc {
-class BackgroundChildImpl;
-}  
-
-namespace layout {
+namespace dom {
 
 
 
@@ -28,41 +25,27 @@ namespace layout {
 class VsyncChild final : public PVsyncChild {
   NS_INLINE_DECL_REFCOUNTING(VsyncChild)
 
-  friend class mozilla::ipc::BackgroundChildImpl;
   friend class PVsyncChild;
 
  public:
-  
-  
-  bool SendObserve();
-  bool SendUnobserve();
+  VsyncChild();
 
-  
-  void SetVsyncObserver(VsyncObserver* aVsyncObserver);
-  
-  
-  
+  void AddChildRefreshTimer(VsyncObserver* aVsyncObserver);
+  void RemoveChildRefreshTimer(VsyncObserver* aVsyncObserver);
+
   TimeDuration GetVsyncRate();
-  
-  
-  
-  
-  TimeDuration VsyncRate();
 
  private:
-  VsyncChild();
   virtual ~VsyncChild();
 
   mozilla::ipc::IPCResult RecvNotify(const VsyncEvent& aVsync);
   mozilla::ipc::IPCResult RecvVsyncRate(const float& aVsyncRate);
   virtual void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
 
-  bool mObservingVsync;
   bool mIsShutdown;
-
-  
-  RefPtr<VsyncObserver> mObserver;
   TimeDuration mVsyncRate;
+  TimeStamp lastVsyncRateTime;
+  nsTObserverArray<VsyncObserver*> mObservers;
 };
 
 }  
