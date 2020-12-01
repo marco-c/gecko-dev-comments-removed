@@ -943,6 +943,14 @@ pref("print.print_footerright", "&D");
 
 
 
+
+
+
+pref("print.cups.monochrome.extra_settings", "");
+
+
+
+
 pref("print.save_print_settings", true);
 
 

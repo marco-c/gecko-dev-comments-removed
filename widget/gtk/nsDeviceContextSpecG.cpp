@@ -46,8 +46,6 @@ using mozilla::gfx::PrintTarget;
 using mozilla::gfx::PrintTargetPDF;
 using mozilla::gfx::PrintTargetPS;
 
-static LazyLogModule sDeviceContextSpecGTKLog("DeviceContextSpecGTK");
-
 nsDeviceContextSpecGTK::nsDeviceContextSpecGTK()
     : mGtkPrintSettings(nullptr), mGtkPageSetup(nullptr) {}
 
@@ -178,6 +176,14 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
     for (const auto& setting : kKnownMonochromeSettings) {
       gtk_print_settings_set(mGtkPrintSettings, setting.mKey, setting.mValue);
     }
+    auto applySetting = [&](const nsACString& aKey, const nsACString& aVal) {
+      nsAutoCString extra;
+      extra.AppendASCII("cups-");
+      extra.Append(aKey);
+      gtk_print_settings_set(mGtkPrintSettings, extra.get(),
+                             nsAutoCString(aVal).get());
+    };
+    nsPrinterCUPS::ForEachExtraMonochromeSetting(applySetting);
   }
 
   GtkPaperSize* properPaperSize;
