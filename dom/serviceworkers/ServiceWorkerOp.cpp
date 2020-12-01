@@ -131,6 +131,7 @@ class ExtendableEventKeepAliveHandler final
 
     if (mCallback) {
       mCallback->FinishedWithResult(mRejected ? Rejected : Resolved);
+      mCallback = nullptr;
     }
 
     Cleanup();
@@ -166,6 +167,10 @@ class ExtendableEventKeepAliveHandler final
 
   void Cleanup() {
     MOZ_ASSERT(IsCurrentThreadRunningWorker());
+
+    if (mCallback) {
+      mCallback->FinishedWithResult(Rejected);
+    }
 
     mSelfRef = nullptr;
     mWorkerRef = nullptr;
@@ -1059,6 +1064,7 @@ class MOZ_STACK_CLASS FetchEventOp::AutoCancel {
       }
 
       MOZ_ASSERT(!mOwner->mRespondWithPromiseHolder.IsEmpty());
+      mOwner->mHandled->MaybeRejectWithNetworkError("AutoCancel"_ns);
       mOwner->mRespondWithPromiseHolder.Reject(NS_ERROR_INTERCEPTION_FAILED,
                                                __func__);
     }
@@ -1232,7 +1238,8 @@ void FetchEventOp::MaybeFinished() {
   if (mResult) {
     
     
-    MOZ_DIAGNOSTIC_ASSERT(mRespondWithPromiseHolder.IsEmpty());
+
+    mHandled = nullptr;
 
     ServiceWorkerFetchEventOpResult result(
         mResult.value() == Resolved ? NS_OK : NS_ERROR_FAILURE);
@@ -1468,6 +1475,14 @@ void FetchEventOp::ResolvedCallback(JSContext* aCx,
 
   autoCancel.Reset();
 
+  
+  
+  
+  
+  
+  
+  
+  mHandled->MaybeResolveWithUndefined();
   mRespondWithPromiseHolder.Resolve(
       FetchEventRespondWithResult(
           SynthesizeResponseArgs(ir, mRespondWithClosure.ref())),
@@ -1497,6 +1512,11 @@ void FetchEventOp::RejectedCallback(JSContext* aCx,
   AsyncLog(sourceSpec, line, column, "InterceptionRejectedResponseWithURL"_ns,
            {std::move(requestURL), valueString});
 
+  
+  
+  
+  mHandled->MaybeRejectWithNetworkError(
+      "FetchEvent.respondWith() Promise rejected"_ns);
   mRespondWithPromiseHolder.Resolve(
       FetchEventRespondWithResult(
           CancelInterceptionArgs(NS_ERROR_INTERCEPTION_FAILED)),
@@ -1581,6 +1601,7 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
       FetchEvent::Constructor(globalObject, u"fetch"_ns, fetchEventInit);
   fetchEvent->SetTrusted(true);
   fetchEvent->PostInit(args.workerScriptSpec(), this);
+  mHandled = fetchEvent->Handled();
 
   
 
@@ -1590,6 +1611,7 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
   bool dispatchFailed = NS_FAILED(rv) && rv != NS_ERROR_XPC_JS_THREW_EXCEPTION;
 
   if (NS_WARN_IF(dispatchFailed)) {
+    mHandled = nullptr;
     return rv;
   }
 
@@ -1629,11 +1651,19 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
                "We don't support system-principal serviceworkers");
 
     if (fetchEvent->DefaultPrevented(CallerType::NonSystem)) {
+      
+      
+      
+      mHandled->MaybeRejectWithNetworkError(
+          "FetchEvent.preventDefault() called"_ns);
       mRespondWithPromiseHolder.Resolve(
           FetchEventRespondWithResult(
               CancelInterceptionArgs(NS_ERROR_INTERCEPTION_FAILED)),
           __func__);
     } else {
+      
+      
+      mHandled->MaybeResolveWithUndefined();
       mRespondWithPromiseHolder.Resolve(
           FetchEventRespondWithResult(ResetInterceptionArgs()), __func__);
     }

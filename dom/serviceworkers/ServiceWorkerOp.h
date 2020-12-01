@@ -168,6 +168,10 @@ class FetchEventOp final : public ExtendableEventOp,
 
   
   Maybe<FetchEventRespondWithClosure> mRespondWithClosure;
+
+  
+  
+  RefPtr<Promise> mHandled;
 };
 
 }  
