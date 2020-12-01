@@ -7,13 +7,13 @@
 #include "mozilla/gfx/gfxConfigManager.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "gfxConfig.h"
 #include "gfxPlatform.h"
 #include "nsIGfxInfo.h"
 #include "nsXULAppAPI.h"
-#include "WebRenderRollout.h"
 
 #ifdef XP_WIN
 #  include "mozilla/WindowsVersion.h"
@@ -26,10 +26,6 @@ namespace gfx {
 
 void gfxConfigManager::Init() {
   MOZ_ASSERT(XRE_IsParentProcess());
-
-  WebRenderRollout::Init();
-  mWrQualifiedOverride = WebRenderRollout::CalculateQualifiedOverride();
-  mWrQualified = WebRenderRollout::CalculateQualified();
 
   EmplaceUserPref("gfx.webrender.compositor", mWrCompositorEnabled);
   mWrForceEnabled = gfxPlatform::WebRenderPrefEnabled();
@@ -151,21 +147,11 @@ void gfxConfigManager::ConfigureWebRenderSoftware() {
   }
 }
 
-bool gfxConfigManager::ConfigureWebRenderQualified() {
+void gfxConfigManager::ConfigureWebRenderQualified() {
   MOZ_ASSERT(mFeatureWrQualified);
   MOZ_ASSERT(mFeatureWrCompositor);
 
-  bool guarded = true;
   mFeatureWrQualified->EnableByDefault();
-
-  if (mWrQualifiedOverride) {
-    if (!*mWrQualifiedOverride) {
-      mFeatureWrQualified->Disable(
-          FeatureStatus::BlockedOverride, "HW qualification pref override",
-          "FEATURE_FAILURE_WR_QUALIFICATION_OVERRIDE"_ns);
-    }
-    return guarded;
-  }
 
   nsCString failureId;
   int32_t status;
@@ -174,16 +160,11 @@ bool gfxConfigManager::ConfigureWebRenderQualified() {
     mFeatureWrQualified->Disable(FeatureStatus::BlockedNoGfxInfo,
                                  "gfxInfo is broken",
                                  "FEATURE_FAILURE_WR_NO_GFX_INFO"_ns);
-    return guarded;
+    return;
   }
 
   switch (status) {
     case nsIGfxInfo::FEATURE_ALLOW_ALWAYS:
-      
-      
-      
-      guarded = mIsNightly;
-      break;
     case nsIGfxInfo::FEATURE_ALLOW_QUALIFIED:
       break;
     case nsIGfxInfo::FEATURE_DENIED:
@@ -223,8 +204,6 @@ bool gfxConfigManager::ConfigureWebRenderQualified() {
       }
     }
   }
-
-  return guarded;
 }
 
 void gfxConfigManager::ConfigureWebRender() {
@@ -264,8 +243,7 @@ void gfxConfigManager::ConfigureWebRender() {
   }
 
   ConfigureWebRenderSoftware();
-
-  bool guardedByQualifiedPref = ConfigureWebRenderQualified();
+  ConfigureWebRenderQualified();
 
   mFeatureWr->EnableByDefault();
 
@@ -277,8 +255,7 @@ void gfxConfigManager::ConfigureWebRender() {
     mFeatureWr->UserForceEnable("Force enabled by envvar");
   } else if (mWrForceEnabled) {
     mFeatureWr->UserForceEnable("Force enabled by pref");
-  } else if (mWrForceDisabled ||
-             (mWrEnvForceDisabled && mWrQualifiedOverride.isNothing())) {
+  } else if (mWrForceDisabled || mWrEnvForceDisabled) {
     
     
     
@@ -294,12 +271,6 @@ void gfxConfigManager::ConfigureWebRender() {
       mFeatureWr->Disable(FeatureStatus::Disabled, "Not qualified",
                           "FEATURE_FAILURE_NOT_QUALIFIED"_ns);
     }
-  } else if (guardedByQualifiedPref && !mWrQualified) {
-    
-    
-    
-    mFeatureWr->Disable(FeatureStatus::Disabled, "Control group for experiment",
-                        "FEATURE_FAILURE_IN_EXPERIMENT"_ns);
   } else {
     
     
