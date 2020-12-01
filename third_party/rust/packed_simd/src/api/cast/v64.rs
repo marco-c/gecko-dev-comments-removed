@@ -1,5 +1,5 @@
 
-#![rustfmt::skip]
+#[rustfmt::skip]
 
 use crate::*;
 

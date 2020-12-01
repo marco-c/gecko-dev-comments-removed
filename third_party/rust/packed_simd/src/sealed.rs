@@ -1,8 +1,11 @@
 
 
 
-#[doc(hidden)]
-pub trait SimdArray {
+
+pub trait Seal<T = ()> {}
+
+
+pub trait SimdArray: Seal {
     
     type Tuple: Copy + Clone;
     
@@ -16,7 +19,7 @@ pub trait SimdArray {
 
 
 #[doc(hidden)]
-pub trait Shuffle<Lanes> {
+pub trait Shuffle<Lanes>: Seal<Lanes> {
     
 
     
@@ -24,8 +27,7 @@ pub trait Shuffle<Lanes> {
 }
 
 
-#[doc(hidden)]
-pub trait Simd {
+pub trait Simd: Seal {
     
     type Element;
     
@@ -35,7 +37,6 @@ pub trait Simd {
 }
 
 
-#[doc(hidden)]
-pub trait Mask {
+pub trait Mask: Seal {
     fn test(&self) -> bool;
 }

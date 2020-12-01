@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+#![allow(clippy::neg_cmp_op_on_partial_ord)]
+
 use crate::{cmp::PartialOrd, fmt::Debug, LexicographicallyOrdered};
 
 
@@ -20,13 +22,18 @@ pub fn test_lt<T>(
     assert!(b >= a, "{:?}, {:?}", a, b);
 
     
-    assert!(!(a < a), "{:?}, {:?}", a, b);
-    assert!(!(b < b), "{:?}, {:?}", a, b);
-    assert!(!(a > a), "{:?}, {:?}", a, b);
-    assert!(!(b > b), "{:?}, {:?}", a, b);
+    
+    #[allow(clippy::eq_op)]
+    {
+        
+        assert!(!(a < a), "{:?}, {:?}", a, b);
+        assert!(!(b < b), "{:?}, {:?}", a, b);
+        assert!(!(a > a), "{:?}, {:?}", a, b);
+        assert!(!(b > b), "{:?}, {:?}", a, b);
 
-    assert!(a <= a, "{:?}, {:?}", a, b);
-    assert!(b <= b, "{:?}, {:?}", a, b);
+        assert!(a <= a, "{:?}, {:?}", a, b);
+        assert!(b <= b, "{:?}, {:?}", a, b);
+    }
 }
 
 
@@ -38,8 +45,8 @@ pub fn test_le<T>(
     assert!(a <= b, "{:?}, {:?}", a, b);
     assert!(b >= a, "{:?}, {:?}", a, b);
 
-    assert!(a == b || a < b, "{:?}, {:?}", a, b);
-    assert!(a == b || b > a, "{:?}, {:?}", a, b);
+    assert!(a <= b, "{:?}, {:?}", a, b);
+    assert!(b >= a, "{:?}, {:?}", a, b);
 
     if a == b {
         assert!(!(a < b), "{:?}, {:?}", a, b);
