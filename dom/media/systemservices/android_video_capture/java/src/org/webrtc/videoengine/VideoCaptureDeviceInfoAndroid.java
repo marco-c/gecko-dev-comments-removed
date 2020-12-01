@@ -47,6 +47,7 @@ public class VideoCaptureDeviceInfoAndroid {
   private static CaptureCapabilityAndroid[] createDeviceList(CameraEnumerator enumerator) {
 
       ArrayList<CaptureCapabilityAndroid> allDevices = new ArrayList<CaptureCapabilityAndroid>();
+      ArrayList<CaptureCapabilityAndroid> IRDevices = new ArrayList<CaptureCapabilityAndroid>();
 
       for (String camera: enumerator.getDeviceNames()) {
           List<CaptureFormat> formats = enumerator.getSupportedFormats(camera);
@@ -66,6 +67,13 @@ public class VideoCaptureDeviceInfoAndroid {
           
           
           device.name = "Facing " + (enumerator.isFrontFacing(camera) ? "front" : "back") + ":" + camera;
+
+
+          boolean ir = enumerator.isInfrared(camera);
+          device.infrared = ir;
+          if (ir) {
+            device.name += "(infrared)";
+          }
 
           
           
@@ -88,12 +96,25 @@ public class VideoCaptureDeviceInfoAndroid {
               i++;
           }
           device.frontFacing = enumerator.isFrontFacing(camera);
-          if (device.frontFacing) {
-            allDevices.add(0, device);
+          
+          
+          
+          if (!device.infrared) {
+            if (device.frontFacing) {
+              allDevices.add(0, device);
+            } else {
+              allDevices.add(device);
+            }
           } else {
-            allDevices.add(device);
+            if (device.frontFacing) {
+              IRDevices.add(0, device);
+            } else {
+              IRDevices.add(device);
+            }
           }
       }
+
+      allDevices.addAll(IRDevices);
 
       return allDevices.toArray(new CaptureCapabilityAndroid[0]);
   }
