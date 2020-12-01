@@ -39,3 +39,10 @@
 - (NSNumber*)moxExpanded;
 
 @end
+
+@interface MOXListItemAccessible : mozAccessible
+
+
+- (NSString*)moxTitle;
+
+@end
