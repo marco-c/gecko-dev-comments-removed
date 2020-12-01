@@ -2049,8 +2049,9 @@ static void ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
   
   if (aWritingMode.IsVertical()) {
     if (aWritingMode.IsVerticalLR()) {
-      NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-        if (!(aDisplay->IsContainLayout() && otype == eScrollableOverflow)) {
+      for (const auto otype : AllOverflowTypes()) {
+        if (!(aDisplay->IsContainLayout() &&
+              otype == OverflowType::Scrollable)) {
           
           
           
@@ -2060,8 +2061,9 @@ static void ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
         }
       }
     } else {
-      NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-        if (!(aDisplay->IsContainLayout() && otype == eScrollableOverflow)) {
+      for (const auto otype : AllOverflowTypes()) {
+        if (!(aDisplay->IsContainLayout() &&
+              otype == OverflowType::Scrollable)) {
           nsRect& o = aOverflowAreas.Overflow(otype);
           nscoord xmost = o.XMost();
           o.x = std::min(o.x, xmost - aBEndEdgeOfChildren);
@@ -2070,8 +2072,8 @@ static void ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
       }
     }
   } else {
-    NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-      if (!(aDisplay->IsContainLayout() && otype == eScrollableOverflow)) {
+    for (const auto otype : AllOverflowTypes()) {
+      if (!(aDisplay->IsContainLayout() && otype == OverflowType::Scrollable)) {
         nsRect& o = aOverflowAreas.Overflow(otype);
         o.height = std::max(o.YMost(), aBEndEdgeOfChildren) - o.y;
       }
@@ -2118,14 +2120,10 @@ void nsBlockFrame::ComputeOverflowAreas(const nsRect& aBounds,
                                    aDisplay);
   }
 
-#ifdef NOISY_COMBINED_AREA
-  ListTag(stdout);
-  const nsRect& vis = areas.InkOverflow();
-  printf(": InkOverflowArea CA=%d,%d,%d,%d\n", vis.x, vis.y, vis.width,
-         vis.height);
-  const nsRect& scr = areas.ScrollableOverflow();
-  printf(": ScrollableOverflowArea CA=%d,%d,%d,%d\n", scr.x, scr.y, scr.width,
-         scr.height);
+#ifdef NOISY_OVERFLOW_AREAS
+  printf("%s: InkOverflowArea=%s, ScrollableOverflowArea=%s\n", ListTag().get(),
+         ToString(areas.InkOverflow()).c_str(),
+         ToString(areas.ScrollableOverflow()).c_str());
 #endif
 
   aOverflowAreas = areas;
@@ -5034,30 +5032,19 @@ bool nsBlockFrame::PlaceLine(BlockReflowInput& aState,
   }
 
   
-  
   if (aLine->HasFloats()) {
     
     
-    nsOverflowAreas lineOverflowAreas;
-    NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-      nsRect& o = lineOverflowAreas.Overflow(otype);
-      o = aLine->GetOverflowArea(otype);
-#ifdef NOISY_COMBINED_AREA
-      ListTag(stdout);
-      printf(": overflow %d lineCA=%d,%d,%d,%d floatCA=%d,%d,%d,%d\n", otype,
-             o.x, o.y, o.width, o.height,
-             aState.mFloatOverflowAreas.Overflow(otype).x,
-             aState.mFloatOverflowAreas.Overflow(otype).y,
-             aState.mFloatOverflowAreas.Overflow(otype).width,
-             aState.mFloatOverflowAreas.Overflow(otype).height);
-#endif
-      o.UnionRect(aState.mFloatOverflowAreas.Overflow(otype), o);
-
-#ifdef NOISY_COMBINED_AREA
-      printf("  ==> final lineCA=%d,%d,%d,%d\n", o.x, o.y, o.width, o.height);
-#endif
-    }
+    nsOverflowAreas lineOverflowAreas = aState.mFloatOverflowAreas;
+    lineOverflowAreas.UnionWith(aLine->GetOverflowAreas());
     aLine->SetOverflowAreas(lineOverflowAreas);
+
+#ifdef NOISY_OVERFLOW_AREAS
+    printf("%s: Line %p, InkOverflowRect=%s, ScrollableOverflowRect=%s\n",
+           ListTag().get(), aLine.get(),
+           ToString(aLine->InkOverflowRect()).c_str(),
+           ToString(aLine->ScrollableOverflowRect()).c_str());
+#endif
   }
 
   
