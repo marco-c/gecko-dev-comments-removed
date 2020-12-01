@@ -393,6 +393,69 @@ static void AddCachedDirRule(sandbox::TargetPolicy* aPolicy,
 }
 
 
+
+
+
+
+
+
+
+static const Maybe<Span<uint32_t>>& GetPrespawnCigExceptionModules() {
+  
+  
+  
+  static Maybe<Span<uint32_t>> sDependentModules =
+      []() -> Maybe<Span<uint32_t>> {
+    using GetDependentModulePathsFn = uint32_t (*)(uint32_t**);
+    GetDependentModulePathsFn getDependentModulePaths =
+        reinterpret_cast<GetDependentModulePathsFn>(::GetProcAddress(
+            ::GetModuleHandleW(nullptr), "GetDependentModulePaths"));
+    if (!getDependentModulePaths) {
+      return Nothing();
+    }
+
+    uint32_t* modulePathArray = nullptr;
+    uint32_t modulePathArrayLen = getDependentModulePaths(&modulePathArray);
+    return modulePathArray ? Some(Span(modulePathArray, modulePathArrayLen))
+                           : Nothing();
+  }();
+
+  return sDependentModules;
+}
+
+static sandbox::ResultCode InitSignedPolicyRulesToBypassCig(
+    sandbox::TargetPolicy* aPolicy, const Span<uint32_t>& aExceptionModules) {
+  
+  
+  nsAutoString rulePath(*sBinDir);
+  rulePath.Append(u"\\*");
+  auto result = aPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_SIGNED_BINARY,
+                                 sandbox::TargetPolicy::SIGNED_ALLOW_LOAD,
+                                 rulePath.get());
+  if (result != sandbox::SBOX_ALL_OK) {
+    return result;
+  }
+
+  if (aExceptionModules.IsEmpty()) {
+    return sandbox::SBOX_ALL_OK;
+  }
+
+  const uint8_t* arrayBase =
+      reinterpret_cast<const uint8_t*>(aExceptionModules.data());
+  for (uint32_t offset : aExceptionModules) {
+    result =
+        aPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_SIGNED_BINARY,
+                         sandbox::TargetPolicy::SIGNED_ALLOW_LOAD,
+                         reinterpret_cast<const wchar_t*>(arrayBase + offset));
+    if (result != sandbox::SBOX_ALL_OK) {
+      return result;
+    }
+  }
+
+  return sandbox::SBOX_ALL_OK;
+}
+
+
 static bool CanUseJob() {
   
   if (IsWin8OrLater()) {
@@ -898,8 +961,21 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
 
+  const Maybe<Span<uint32_t>>& exceptionModules =
+      GetPrespawnCigExceptionModules();
+  if (exceptionModules.isSome()) {
+    mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
+  }
+
   result = mPolicy->SetProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
+
+  if (exceptionModules.isSome()) {
+    
+    
+    result = InitSignedPolicyRulesToBypassCig(mPolicy, exceptionModules.ref());
+    SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
+  }
 
   if (StaticPrefs::security_sandbox_rdd_win32k_disable()) {
     result = AddWin32kLockdownPolicy(mPolicy, false);
@@ -907,8 +983,11 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
   }
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
-                sandbox::MITIGATION_DLL_SEARCH_ORDER |
-                sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
+                sandbox::MITIGATION_DLL_SEARCH_ORDER;
+
+  if (exceptionModules.isNothing()) {
+    mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
+  }
 
   result = mPolicy->SetDelayedProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result,
