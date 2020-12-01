@@ -2,12 +2,7 @@
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
-var h2Port;
-var prefs;
-var spdypref;
-var http2pref;
-var altsvcpref1;
-var altsvcpref2;
+var h3Port;
 
 
 
@@ -16,9 +11,9 @@ var h1Bar;
 
 var otherServer; 
 
-var h2FooRoute; 
-var h2BarRoute; 
-var h2Route; 
+var h3FooRoute; 
+var h3BarRoute; 
+var h3Route; 
 var httpFooOrigin; 
 var httpsFooOrigin; 
 var httpBarOrigin; 
@@ -28,24 +23,17 @@ function run_test() {
   var env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
   );
-  h2Port = env.get("MOZHTTP2_PORT");
-  Assert.notEqual(h2Port, null);
-  Assert.notEqual(h2Port, "");
+  h3Port = env.get("MOZHTTP3_PORT");
+  Assert.notEqual(h3Port, null);
+  Assert.notEqual(h3Port, "");
 
   
   do_get_profile();
-  prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
 
-  spdypref = prefs.getBoolPref("network.http.spdy.enabled");
-  http2pref = prefs.getBoolPref("network.http.spdy.enabled.http2");
-  altsvcpref1 = prefs.getBoolPref("network.http.altsvc.enabled");
-  altsvcpref2 = prefs.getBoolPref("network.http.altsvc.oe", true);
-
-  prefs.setBoolPref("network.http.spdy.enabled", true);
-  prefs.setBoolPref("network.http.spdy.enabled.http2", true);
-  prefs.setBoolPref("network.http.altsvc.enabled", true);
-  prefs.setBoolPref("network.http.altsvc.oe", true);
-  prefs.setCharPref(
+  Services.prefs.setBoolPref("network.http.http3.enabled", true);
+  Services.prefs.setBoolPref("network.http.altsvc.enabled", true);
+  Services.prefs.setBoolPref("network.http.altsvc.oe", true);
+  Services.prefs.setCharPref(
     "network.dns.localDomains",
     "foo.example.com, bar.example.com"
   );
@@ -78,14 +66,14 @@ function run_test() {
     h1Bar.identity.primaryPort
   );
 
-  h2FooRoute = "foo.example.com:" + h2Port;
-  h2BarRoute = "bar.example.com:" + h2Port;
-  h2Route = ":" + h2Port;
+  h3FooRoute = "foo.example.com:" + h3Port;
+  h3BarRoute = "bar.example.com:" + h3Port;
+  h3Route = ":" + h3Port;
 
   httpFooOrigin = "http://foo.example.com:" + h1Foo.identity.primaryPort + "/";
-  httpsFooOrigin = "https://" + h2FooRoute + "/";
+  httpsFooOrigin = "https://" + h3FooRoute + "/";
   httpBarOrigin = "http://bar.example.com:" + h1Bar.identity.primaryPort + "/";
-  httpsBarOrigin = "https://" + h2BarRoute + "/";
+  httpsBarOrigin = "https://" + h3BarRoute + "/";
   dump(
     "http foo - " +
       httpFooOrigin +
@@ -114,7 +102,7 @@ function h1Server(metadata, response) {
   response.setHeader("Access-Control-Allow-Headers", "x-altsvc", false);
 
   try {
-    var hval = "h2=" + metadata.getHeader("x-altsvc");
+    var hval = "h3-27=" + metadata.getHeader("x-altsvc");
     response.setHeader("Alt-Svc", hval, false);
   } catch (e) {}
 
@@ -136,12 +124,12 @@ function h1ServerWK(metadata, response) {
 }
 
 function resetPrefs() {
-  prefs.setBoolPref("network.http.spdy.enabled", spdypref);
-  prefs.setBoolPref("network.http.spdy.enabled.http2", http2pref);
-  prefs.setBoolPref("network.http.altsvc.enabled", altsvcpref1);
-  prefs.setBoolPref("network.http.altsvc.oe", altsvcpref2);
-  prefs.clearUserPref("network.dns.localDomains");
-  prefs.clearUserPref("network.security.ports.banned");
+  Services.prefs.clearUserPref("network.http.http3.enabled");
+  Services.prefs.clearUserPref("network.dns.localDomains");
+  Services.prefs.clearUserPref("network.http.altsvc.enabled");
+  Services.prefs.clearUserPref("network.http.altsvc.oe");
+  Services.prefs.clearUserPref("network.dns.localDomains");
+  Services.prefs.clearUserPref("network.security.ports.banned");
 }
 
 function makeChan(origin) {
@@ -267,18 +255,18 @@ function doTest() {
 function doTest1() {
   dump("doTest1()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2Route;
+  xaltsvc = h3Route;
   nextTest = doTest2;
   do_test_pending();
   doTest();
-  xaltsvc = h2FooRoute;
+  xaltsvc = h3FooRoute;
 }
 
 
 function doTest2() {
   dump("doTest2()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2FooRoute;
+  xaltsvc = h3FooRoute;
   nextTest = doTest3;
   do_test_pending();
   doTest();
@@ -289,7 +277,7 @@ function doTest2() {
 function doTest3() {
   dump("doTest3()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2BarRoute;
+  xaltsvc = h3BarRoute;
   nextTest = doTest4;
   do_test_pending();
   doTest();
@@ -307,11 +295,15 @@ function doTest4() {
 }
 
 
+
+
+
 function doTest5() {
   dump("doTest5()\n");
-  origin = httpsFooOrigin;
-  xaltsvc = "NA";
+  origin = httpBarOrigin;
+  xaltsvc = h3BarRoute;
   expectPass = true;
+  waitFor = 500;
   nextTest = doTest6;
   do_test_pending();
   doTest();
@@ -320,11 +312,14 @@ function doTest5() {
 
 function doTest6() {
   dump("doTest6()\n");
-  origin = httpsFooOrigin;
-  xaltsvc = h2BarRoute;
+  origin = httpBarOrigin;
+  xaltsvc = h3Route;
+  expectPass = true;
+  waitFor = 500;
   nextTest = doTest7;
   do_test_pending();
   doTest();
+  xaltsvc = h3BarRoute;
 }
 
 
@@ -341,11 +336,10 @@ function doTest7() {
 
 
 
-
 function doTest8() {
   dump("doTest8()\n");
   origin = httpBarOrigin;
-  xaltsvc = h2BarRoute;
+  xaltsvc = h3FooRoute;
   expectPass = true;
   waitFor = 500;
   nextTest = doTest9;
@@ -354,57 +348,66 @@ function doTest8() {
 }
 
 
+
 function doTest9() {
   dump("doTest9()\n");
-  origin = httpBarOrigin;
-  xaltsvc = h2Route;
-  expectPass = true;
-  waitFor = 500;
+  origin = httpFooOrigin;
+  xaltsvc = h3Route;
+  originAttributes = {
+    userContextId: 1,
+    firstPartyDomain: "a.com",
+  };
   nextTest = doTest10;
   do_test_pending();
   doTest();
-  xaltsvc = h2BarRoute;
+  xaltsvc = h3FooRoute;
 }
 
 
 function doTest10() {
   dump("doTest10()\n");
-  origin = httpsBarOrigin;
-  xaltsvc = "";
-  expectPass = false;
+  origin = httpFooOrigin;
+  xaltsvc = "NA";
+  originAttributes = {
+    userContextId: 2,
+    firstPartyDomain: "a.com",
+  };
+  loadWithoutClearingMappings = true;
   nextTest = doTest11;
   do_test_pending();
   doTest();
 }
 
 
-
-
 function doTest11() {
   dump("doTest11()\n");
-  origin = httpBarOrigin;
-  xaltsvc = h2FooRoute;
-  expectPass = true;
-  waitFor = 500;
+  origin = httpFooOrigin;
+  xaltsvc = "NA";
+  originAttributes = {
+    userContextId: 1,
+    firstPartyDomain: "b.com",
+  };
+  loadWithoutClearingMappings = true;
   nextTest = doTest12;
   do_test_pending();
   doTest();
 }
 
 
-
 function doTest12() {
   dump("doTest12()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2Route;
+  xaltsvc = "NA";
   originAttributes = {
     userContextId: 1,
     firstPartyDomain: "a.com",
   };
+  loadWithoutClearingMappings = true;
   nextTest = doTest13;
   do_test_pending();
   doTest();
-  xaltsvc = h2FooRoute;
+  
+  xaltsvc = h3FooRoute;
 }
 
 
@@ -412,8 +415,9 @@ function doTest13() {
   dump("doTest13()\n");
   origin = httpFooOrigin;
   xaltsvc = "NA";
+  disallowH3 = true;
   originAttributes = {
-    userContextId: 2,
+    userContextId: 1,
     firstPartyDomain: "a.com",
   };
   loadWithoutClearingMappings = true;
@@ -427,70 +431,22 @@ function doTest14() {
   dump("doTest14()\n");
   origin = httpFooOrigin;
   xaltsvc = "NA";
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "b.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest15;
-  do_test_pending();
-  doTest();
-}
-
-
-function doTest15() {
-  dump("doTest15()\n");
-  origin = httpFooOrigin;
-  xaltsvc = "NA";
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "a.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest16;
-  do_test_pending();
-  doTest();
-  
-  xaltsvc = h2FooRoute;
-}
-
-
-function doTest16() {
-  dump("doTest16()\n");
-  origin = httpFooOrigin;
-  xaltsvc = "NA";
   disallowH2 = true;
   originAttributes = {
     userContextId: 1,
     firstPartyDomain: "a.com",
   };
   loadWithoutClearingMappings = true;
-  nextTest = doTest17;
-  do_test_pending();
-  doTest();
-}
-
-
-function doTest17() {
-  dump("doTest17()\n");
-  origin = httpFooOrigin;
-  xaltsvc = h2Route;
-  disallowH3 = true;
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "a.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest18;
+  nextTest = doTest15;
   do_test_pending();
   doTest();
   
-  xaltsvc = h2FooRoute;
+  xaltsvc = h3FooRoute;
 }
 
 
-function doTest18() {
-  dump("doTest18()\n");
+function doTest15() {
+  dump("doTest15()\n");
   origin = httpFooOrigin;
   nextTest = testsDone;
   otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
