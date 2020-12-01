@@ -44,7 +44,7 @@ static XDRResult XDRScriptThingVariant(XDRState<mode>* xdr,
   uint32_t index = UINT32_MAX;
 
   struct KindMatcher {
-    ScriptThingKind operator()(ScriptAtom& atom) {
+    ScriptThingKind operator()(TaggedParserAtomIndex& index) {
       return ScriptThingKind::ScriptAtom;
     }
     ScriptThingKind operator()(NullScriptThing&) {
@@ -77,13 +77,13 @@ static XDRResult XDRScriptThingVariant(XDRState<mode>* xdr,
 
   MOZ_TRY(xdr->codeEnum32(&kind));
 
-  const ParserAtom* atom = nullptr;
+  TaggedParserAtomIndex atom;
   if (kind == ScriptThingKind::ScriptAtom) {
     MOZ_ASSERT(index == UINT32_MAX);
     if (mode == XDR_ENCODE) {
-      atom = thing.as<ScriptAtom>();
+      atom = thing.as<TaggedParserAtomIndex>();
     }
-    MOZ_TRY(XDRParserAtom(xdr, &atom));
+    MOZ_TRY(XDRTaggedParserAtomIndex(xdr, &atom));
   } else if (kind == ScriptThingKind::BigIntIndex ||
              kind == ScriptThingKind::ObjLiteralIndex ||
              kind == ScriptThingKind::RegExpIndex ||
@@ -99,8 +99,8 @@ static XDRResult XDRScriptThingVariant(XDRState<mode>* xdr,
     switch (kind) {
       case ScriptThingKind::ScriptAtom:
         
-        MOZ_ASSERT(atom != nullptr);
-        thing.emplace<ScriptAtom>(atom);
+        MOZ_ASSERT(atom);
+        thing.emplace<TaggedParserAtomIndex>(atom);
         break;
       case ScriptThingKind::NullScriptThing:
         thing.emplace<NullScriptThing>();

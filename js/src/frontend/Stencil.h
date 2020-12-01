@@ -424,13 +424,11 @@ class StencilModuleMetadata {
 
 class NullScriptThing {};
 
-using ScriptAtom = const ParserAtom*;
-
 
 
 using ScriptThingVariant =
-    mozilla::Variant<ScriptAtom, NullScriptThing, BigIntIndex, ObjLiteralIndex,
-                     RegExpIndex, ScopeIndex, FunctionIndex,
+    mozilla::Variant<TaggedParserAtomIndex, NullScriptThing, BigIntIndex,
+                     ObjLiteralIndex, RegExpIndex, ScopeIndex, FunctionIndex,
                      EmptyGlobalScopeType>;
 
 
