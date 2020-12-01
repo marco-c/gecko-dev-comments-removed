@@ -971,7 +971,8 @@ nsresult NS_GetSourceForMediaSourceURI(nsIURI* aURI,
   return NS_OK;
 }
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 bool IsType(nsIURI* aUri, mozilla::dom::DataInfo::ObjectType aType) {
   
@@ -997,4 +998,5 @@ bool IsMediaSourceURI(nsIURI* aUri) {
   return IsType(aUri, mozilla::dom::DataInfo::eMediaSource);
 }
 
+}  
 }  

@@ -14,7 +14,8 @@
 
 static const int32_t kSendDataChunk = 0xffff;
 
-namespace mozilla::plugins {
+namespace mozilla {
+namespace plugins {
 
 BrowserStreamParent::BrowserStreamParent(PluginInstanceParent* npp,
                                          NPStream* stream)
@@ -82,4 +83,5 @@ int32_t BrowserStreamParent::Write(int32_t offset, int32_t len, void* buffer) {
              : -1;
 }
 
+}  
 }  

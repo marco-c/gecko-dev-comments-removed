@@ -31,7 +31,9 @@
 #include "nsPrintfCString.h"
 #include "ChromiumCDMProxy.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+
+namespace dom {
 
 
 
@@ -674,4 +676,5 @@ void MediaKeys::ResolvePromiseWithKeyStatus(PromiseId aId,
   promise->MaybeResolve(aMediaKeyStatus);
 }
 
+}  
 }  

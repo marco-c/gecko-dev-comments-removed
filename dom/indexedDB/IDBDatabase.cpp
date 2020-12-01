@@ -54,7 +54,8 @@
 
 #include "ActorsChild.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 using namespace mozilla::dom::indexedDB;
 using namespace mozilla::dom::quota;
@@ -1210,4 +1211,5 @@ void IDBDatabase::MaybeDecreaseActiveDatabaseCount() {
   }
 }
 
+}  
 }  

@@ -10,7 +10,8 @@
 #include "mozilla/dom/ScrollAreaEvent.h"
 #include "mozilla/ContentEvents.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 ScrollAreaEvent::ScrollAreaEvent(EventTarget* aOwner,
                                  nsPresContext* aPresContext,
@@ -66,6 +67,7 @@ bool ScrollAreaEvent::Deserialize(const IPC::Message* aMsg,
   return true;
 }
 
+}  
 }  
 
 using namespace mozilla;

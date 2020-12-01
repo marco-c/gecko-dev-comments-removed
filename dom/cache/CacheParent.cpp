@@ -9,7 +9,9 @@
 #include "mozilla/dom/cache/CacheOpParent.h"
 #include "nsCOMPtr.h"
 
-namespace mozilla::dom::cache {
+namespace mozilla {
+namespace dom {
+namespace cache {
 
 
 void DeallocPCacheParent(PCacheParent* aActor) { delete aActor; }
@@ -64,4 +66,6 @@ mozilla::ipc::IPCResult CacheParent::RecvTeardown() {
   return IPC_OK();
 }
 
+}  
+}  
 }  

@@ -14,7 +14,8 @@
 
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(MenuItem)
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 #define NS_CHECKED_IS_TOGGLED (1 << 2)
@@ -426,6 +427,7 @@ JSObject* HTMLMenuItemElement::WrapNode(JSContext* aCx,
   return HTMLMenuItemElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+}  
 }  
 
 #undef NS_ORIGINAL_CHECKED_VALUE

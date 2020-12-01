@@ -17,7 +17,8 @@
 #include "mozilla/PodOperations.h"
 #include <deque>
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 
@@ -535,4 +536,5 @@ void ScriptProcessorNode::UpdateConnectedStatus() {
   engine->GetSharedBuffers()->NotifyNodeIsConnected(isConnected);
 }
 
+}  
 }  

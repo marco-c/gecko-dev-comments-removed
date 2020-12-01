@@ -67,7 +67,8 @@ ThreadLocal* GetIndexedDBThreadLocal() {
 }
 }  
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 using namespace mozilla::dom::indexedDB;
 using namespace mozilla::ipc;
@@ -1030,4 +1031,5 @@ void IDBTransaction::CommitIfNotStarted() {
   }
 }
 
+}  
 }  

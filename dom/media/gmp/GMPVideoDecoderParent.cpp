@@ -17,7 +17,9 @@
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
 
-namespace mozilla::gmp {
+namespace mozilla {
+
+namespace gmp {
 
 
 
@@ -487,4 +489,5 @@ void GMPVideoDecoderParent::UnblockResetAndDrain() {
   CancelResetCompleteTimeout();
 }
 
+}  
 }  

@@ -14,7 +14,8 @@
 #include "mozilla/dom/cache/CacheStreamControlChild.h"
 #include "mozilla/dom/cache/CacheWorkerRef.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 template <typename T>
 MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const SafeRefPtr<T>& aArgument,
@@ -229,5 +230,6 @@ void CacheOpChild::HandleRequestList(
   mPromise->MaybeResolve(requests);
 }
 
+}  
 }  
 }  

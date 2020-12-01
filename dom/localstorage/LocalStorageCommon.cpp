@@ -27,7 +27,8 @@
 #include "nsStringFlags.h"
 #include "nsXULAppAPI.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 using namespace mozilla::net;
 
@@ -154,5 +155,7 @@ nsresult GenerateOriginKey2(const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
 }
 
 LogModule* GetLocalStorageLogger() { return gLogger; }
+
+}  
 
 }  

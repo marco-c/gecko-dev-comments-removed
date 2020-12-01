@@ -9,7 +9,8 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ClearOnShutdown.h"
 
-namespace mozilla::gmp {
+namespace mozilla {
+namespace gmp {
 
 
 
@@ -89,4 +90,5 @@ uint32_t GMPSharedMemManager::NumInUse(GMPSharedMem::GMPMemoryClasses aClass) {
   return mData->mGmpAllocated[aClass] - GetGmpFreelist(aClass).Length();
 }
 
+}  
 }  

@@ -45,7 +45,8 @@
 #  include "nsContentUtils.h"  
 #endif
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 using namespace mozilla::dom::indexedDB;
 using namespace mozilla::dom::quota;
@@ -801,4 +802,5 @@ JSObject* IDBFactory::WrapObject(JSContext* aCx,
   return IDBFactory_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+}  
 }  

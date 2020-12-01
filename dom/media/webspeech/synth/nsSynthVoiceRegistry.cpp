@@ -65,7 +65,8 @@ void GetAllSpeechSynthActors(
 
 }  
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 
@@ -762,4 +763,5 @@ void nsSynthVoiceRegistry::SpeakImpl(VoiceData* aVoice, nsSpeechTask* aTask,
   }
 }
 
+}  
 }  

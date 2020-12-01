@@ -8,7 +8,8 @@
 #include "mozilla/TextEvents.h"
 #include "prtime.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 InputEvent::InputEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                        InternalEditorInputEvent* aEvent)
@@ -105,6 +106,7 @@ already_AddRefed<InputEvent> InputEvent::Constructor(
   return e.forget();
 }
 
+}  
 }  
 
 using namespace mozilla;

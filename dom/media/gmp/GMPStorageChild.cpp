@@ -27,7 +27,8 @@ static nsTArray<uint8_t> ToArray(const uint8_t* aData, uint32_t aDataSize) {
   return data;
 }
 
-namespace mozilla::gmp {
+namespace mozilla {
+namespace gmp {
 
 GMPRecordImpl::GMPRecordImpl(GMPStorageChild* aOwner, const nsCString& aName,
                              GMPRecordClient* aClient)
@@ -237,6 +238,7 @@ mozilla::ipc::IPCResult GMPStorageChild::RecvShutdown() {
   return IPC_OK();
 }
 
+}  
 }  
 
 

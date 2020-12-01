@@ -16,7 +16,8 @@
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(OptGroup)
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 
@@ -113,4 +114,5 @@ JSObject* HTMLOptGroupElement::WrapNode(JSContext* aCx,
   return HTMLOptGroupElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+}  
 }  

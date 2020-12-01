@@ -14,7 +14,8 @@
 #include "PermissionObserver.h"
 #include "PermissionUtils.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 already_AddRefed<PermissionStatus> PermissionStatus::Create(
@@ -131,4 +132,5 @@ void PermissionStatus::DisconnectFromOwner() {
   DOMEventTargetHelper::DisconnectFromOwner();
 }
 
+}  
 }  

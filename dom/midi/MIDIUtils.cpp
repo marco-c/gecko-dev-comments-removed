@@ -22,7 +22,9 @@ static const uint8_t kCommandLengths[] = {3, 3, 3, 3, 2, 2, 3};
 
 static const uint8_t kSystemLengths[] = {0, 2, 3, 2, 1, 1, 1, 1};
 
-namespace mozilla::dom::MIDIUtils {
+namespace mozilla {
+namespace dom {
+namespace MIDIUtils {
 
 
 
@@ -121,4 +123,6 @@ bool IsSysexMessage(const MIDIMessage& aMsg) {
   }
   return false;
 }
+}  
+}  
 }  

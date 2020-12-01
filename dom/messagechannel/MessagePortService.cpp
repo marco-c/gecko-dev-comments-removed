@@ -16,7 +16,8 @@
 
 using mozilla::ipc::AssertIsOnBackgroundThread;
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 namespace {
 
@@ -35,6 +36,7 @@ struct MessagePortService::NextParent {
 };
 
 }  
+}  
 
 
 
@@ -42,7 +44,8 @@ struct MessagePortService::NextParent {
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::MessagePortService::NextParent);
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 class MessagePortService::MessagePortServiceData final {
  public:
@@ -407,4 +410,5 @@ bool MessagePortService::ForceClose(const nsID& aUUID,
   return true;
 }
 
+}  
 }  

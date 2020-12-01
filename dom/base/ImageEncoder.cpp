@@ -23,7 +23,8 @@
 
 using namespace mozilla::gfx;
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 
@@ -443,4 +444,5 @@ already_AddRefed<imgIEncoder> ImageEncoder::GetImageEncoder(nsAString& aType) {
   return encoder.forget();
 }
 
+}  
 }  

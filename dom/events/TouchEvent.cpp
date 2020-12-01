@@ -16,7 +16,9 @@
 #include "nsIDocShell.h"
 #include "mozilla/WidgetUtils.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+
+namespace dom {
 
 
 
@@ -331,6 +333,7 @@ bool TouchEvent::CtrlKey() { return mEvent->AsTouchEvent()->IsControl(); }
 
 bool TouchEvent::ShiftKey() { return mEvent->AsTouchEvent()->IsShift(); }
 
+}  
 }  
 
 using namespace mozilla;

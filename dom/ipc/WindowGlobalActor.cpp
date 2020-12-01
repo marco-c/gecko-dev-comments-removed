@@ -22,7 +22,8 @@
 
 #include "nsGlobalWindowInner.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 static nsILoadInfo::CrossOriginEmbedderPolicy InheritedPolicy(
@@ -164,4 +165,5 @@ already_AddRefed<JSActorProtocol> WindowGlobalActor::MatchingJSActorProtocol(
   return proto.forget();
 }
 
+}  
 }  

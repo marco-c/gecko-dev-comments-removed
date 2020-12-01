@@ -12,7 +12,8 @@
 #include "mozilla/GfxMessageUtils.h"
 #include "nsContentUtils.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 NotifyPaintEvent::NotifyPaintEvent(
     EventTarget* aOwner, nsPresContext* aPresContext, WidgetEvent* aEvent,
@@ -118,6 +119,7 @@ DOMHighResTimeStamp NotifyPaintEvent::PaintTimeStamp(SystemCallerGuarantee) {
   return mTimeStamp;
 }
 
+}  
 }  
 
 using namespace mozilla;

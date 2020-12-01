@@ -23,7 +23,8 @@
 
 #define NS_DispatchToMainThread(...) CompileError_UseAbstractMainThreadInstead
 
-namespace mozilla::gmp {
+namespace mozilla {
+namespace gmp {
 
 using namespace eme;
 
@@ -1154,6 +1155,7 @@ void ChromiumCDMParent::Shutdown() {
   }
 }
 
+}  
 }  
 
 #undef NS_DispatchToMainThread

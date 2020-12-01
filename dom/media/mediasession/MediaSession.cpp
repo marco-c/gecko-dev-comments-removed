@@ -17,7 +17,8 @@
   MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
           ("MediaSession=%p, " msg, this, ##__VA_ARGS__))
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 
@@ -293,4 +294,5 @@ void MediaSession::NotifyPositionStateChanged() {
   }
 }
 
+}  
 }  

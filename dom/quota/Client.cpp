@@ -9,7 +9,9 @@
 
 #include "mozilla/Assertions.h"
 
-namespace mozilla::dom::quota {
+namespace mozilla {
+namespace dom {
+namespace quota {
 
 namespace {
 
@@ -231,4 +233,6 @@ bool Client::TypeFromPrefix(char aPrefix, Type& aType, const fallible_t&) {
   return true;
 }
 
+}  
+}  
 }  

@@ -23,7 +23,8 @@ namespace mozilla {
 
 using namespace ipc;
 
-namespace dom::ipc {
+namespace dom {
+namespace ipc {
 
 
 
@@ -458,5 +459,6 @@ NS_INTERFACE_MAP_END_INHERITING(SharedMap)
 NS_IMPL_ADDREF_INHERITED(WritableSharedMap, SharedMap)
 NS_IMPL_RELEASE_INHERITED(WritableSharedMap, SharedMap)
 
+}  
 }  
 }  

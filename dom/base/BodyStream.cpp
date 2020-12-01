@@ -18,7 +18,8 @@
 
 static NS_DEFINE_CID(kStreamTransportServiceCID, NS_STREAMTRANSPORTSERVICE_CID);
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 
@@ -572,4 +573,5 @@ BodyStream::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
+}  
 }  

@@ -12,7 +12,9 @@
 #include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/dom/cache/CacheWorkerRef.h"
 
-namespace mozilla::dom::cache {
+namespace mozilla {
+namespace dom {
+namespace cache {
 
 
 void DeallocPCacheStorageChild(PCacheStorageChild* aActor) { delete aActor; }
@@ -122,4 +124,6 @@ void CacheStorageChild::NoteDeletedActor() {
   }
 }
 
+}  
+}  
 }  

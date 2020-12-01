@@ -33,7 +33,10 @@
 #include "nsPrintfCString.h"
 #include "nsTArray.h"
 
-namespace mozilla::dom::cache::db {
+namespace mozilla {
+namespace dom {
+namespace cache {
+namespace db {
 const int32_t kFirstShippedSchemaVersion = 15;
 namespace {
 
@@ -3534,5 +3537,8 @@ nsresult MigrateFrom26To27(mozIStorageConnection& aConn, bool& aRewriteSchema) {
   return rv;
 }
 
+}  
+}  
+}  
 }  
 }  

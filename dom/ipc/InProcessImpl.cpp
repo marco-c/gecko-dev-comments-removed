@@ -15,7 +15,8 @@ using namespace mozilla::ipc;
 
 
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 StaticRefPtr<InProcessParent> InProcessParent::sSingleton;
 StaticRefPtr<InProcessChild> InProcessChild::sSingleton;
@@ -301,4 +302,5 @@ IProtocol* InProcessChild::ParentActorFor(IProtocol* aActor) {
 NS_IMPL_ISUPPORTS(InProcessParent, nsIDOMProcessParent, nsIObserver)
 NS_IMPL_ISUPPORTS(InProcessChild, nsIDOMProcessChild)
 
+}  
 }  

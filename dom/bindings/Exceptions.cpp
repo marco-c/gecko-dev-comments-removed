@@ -22,7 +22,8 @@
 #include "WorkerPrivate.h"
 #include "nsContentUtils.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 
 
@@ -752,5 +753,6 @@ already_AddRefed<nsIStackFrame> CreateStack(JSContext* aCx,
   return nullptr;
 }
 
+}  
 }  
 }  

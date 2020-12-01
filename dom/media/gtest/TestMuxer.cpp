@@ -66,7 +66,8 @@ static RefPtr<EncodedFrame> CreateFrame(EncodedFrame::FrameType aType,
       aType, std::move(data));
 }
 
-namespace testing::internal {
+namespace testing {
+namespace internal {
 
 
 template <typename Element>
@@ -83,6 +84,7 @@ class StlContainerView<nsTArray<Element>> {
     return type(aContainer.begin(), aContainer.end());
   }
 };
+}  
 }  
 
 class MockContainerWriter : public ContainerWriter {

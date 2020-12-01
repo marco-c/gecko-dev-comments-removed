@@ -14,7 +14,8 @@
 #include "nsStringBuffer.h"
 #include "xpcpublic.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 
 bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
                JS::MutableHandle<JS::Value> aValue) {
@@ -114,5 +115,6 @@ class MultiScriptableInterface : public nsIObserver, public nsIRunnable {};
 static_assert(std::is_same_v<ScriptableInterfaceType<MultiScriptableInterface>,
                              nsISupports>,
               "Concrete type with multiple scriptable interfaces falls back");
+}  
 }  
 }  
