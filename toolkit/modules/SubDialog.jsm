@@ -377,7 +377,8 @@ SubDialog.prototype = {
     
     
     
-    this._overlay.style.visibility = "visible";
+    
+    this._overlay.style.visibility = "inherit";
     this._overlay.style.opacity = "0.01";
 
     
@@ -450,7 +451,7 @@ SubDialog.prototype = {
         detail: { dialog: this },
       })
     );
-    this._overlay.style.visibility = "visible";
+    this._overlay.style.visibility = "inherit";
     this._overlay.style.opacity = ""; 
 
     if (this._box.getAttribute("resizable") == "true") {
@@ -885,6 +886,7 @@ class SubDialogManager {
     if (!this._dialogs.length) {
       
       this._dialogStack.hidden = false;
+      this._dialogStack.classList.remove("temporarilyHidden");
       this._topLevelPrevActiveElement = doc.activeElement;
 
       
@@ -927,9 +929,11 @@ class SubDialogManager {
 
 
 
+
+
   hideDialog(aBrowser) {
     aBrowser.removeAttribute("tabDialogShowing");
-    this._dialogStack.hidden = true;
+    this._dialogStack.classList.add("temporarilyHidden");
   }
 
   
@@ -1004,6 +1008,7 @@ class SubDialogManager {
       this._topDialog._overlay.setAttribute("topmost", true);
       this._topDialog._addDialogEventListeners(false);
       this._dialogStack.hidden = false;
+      this._dialogStack.classList.remove("temporarilyHidden");
     } else {
       
       this._topLevelPrevActiveElement.focus();
