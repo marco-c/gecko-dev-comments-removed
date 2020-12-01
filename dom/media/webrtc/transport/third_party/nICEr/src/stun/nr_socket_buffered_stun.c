@@ -604,6 +604,12 @@ abort:
   if (_status && _status != R_WOULDBLOCK) {
     r_log(LOG_GENERIC, LOG_ERR, "Failure in writable_cb: %d", _status);
     nr_socket_buffered_stun_failed(sock);
+    
+
+
+    if (sock->readable_cb) {
+      sock->readable_cb(s, NR_ASYNC_WAIT_READ, sock->readable_cb_arg);
+    }
   } else if (sock->pending) {
     nr_socket_buffered_stun_arm_writable_cb(sock);
   }
