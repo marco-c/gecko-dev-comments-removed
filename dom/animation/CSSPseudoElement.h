@@ -47,7 +47,7 @@ class CSSPseudoElement final : public nsWrapperCache {
     aRetVal.Append(
         nsDependentAtomString(nsCSSPseudoElements::GetPseudoAtom(mPseudoType)));
   }
-  already_AddRefed<dom::Element> Element() const;
+  dom::Element* Element() const { return mOriginatingElement.get(); }
 
   
   
