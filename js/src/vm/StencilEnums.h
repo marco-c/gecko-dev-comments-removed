@@ -323,6 +323,9 @@ enum class MutableScriptFlagsEnum : uint32_t {
 
   
   FailedLexicalCheck = 1 << 24,
+
+  
+  HadSpeculativePhiBailout = 1 << 25,
 };
 
 }  

@@ -2120,6 +2120,13 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       
       break;
 
+    case BailoutKind::SpeculativePhi:
+      
+      MOZ_ASSERT(!outerScript->hadSpeculativePhiBailout());
+      outerScript->setHadSpeculativePhiBailout();
+      InvalidateAfterBailout(cx, outerScript, "phi specialization failure");
+      break;
+
     case BailoutKind::Inevitable:
     case BailoutKind::DuringVMCall:
     case BailoutKind::TooManyArguments:

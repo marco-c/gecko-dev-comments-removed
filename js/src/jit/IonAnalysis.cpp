@@ -1594,6 +1594,9 @@ class TypeAnalyzer {
   bool specializeValidFloatOps();
   bool tryEmitFloatOperations();
 
+  bool shouldSpecializeOsrPhis() const;
+  MIRType guessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) const;
+
  public:
   TypeAnalyzer(MIRGenerator* mir, MIRGraph& graph) : mir(mir), graph(graph) {}
 
@@ -1602,7 +1605,7 @@ class TypeAnalyzer {
 
 } 
 
-static bool ShouldSpecializeOsrPhis() {
+bool TypeAnalyzer::shouldSpecializeOsrPhis() const {
   
   
   
@@ -1657,11 +1660,12 @@ static bool ShouldSpecializeOsrPhis() {
   
   
   
-  return JitOptions.warpBuilder;
+  return JitOptions.warpBuilder && !mir->outerInfo().hadSpeculativePhiBailout();
 }
 
 
-static MIRType GuessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) {
+MIRType TypeAnalyzer::guessPhiType(MPhi* phi,
+                                   bool* hasInputsWithEmptyTypes) const {
 #ifdef DEBUG
   
   
@@ -1701,6 +1705,7 @@ static MIRType GuessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) {
     }
 
     
+    
     if (in->resultTypeSet() && in->resultTypeSet()->empty()) {
       *hasInputsWithEmptyTypes = true;
       continue;
@@ -1708,7 +1713,7 @@ static MIRType GuessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) {
 
     
     
-    if (ShouldSpecializeOsrPhis() && in->isOsrValue()) {
+    if (shouldSpecializeOsrPhis() && in->isOsrValue()) {
       
       
       
@@ -1846,7 +1851,7 @@ bool TypeAnalyzer::specializePhis() {
       }
 
       bool hasInputsWithEmptyTypes;
-      MIRType type = GuessPhiType(*phi, &hasInputsWithEmptyTypes);
+      MIRType type = guessPhiType(*phi, &hasInputsWithEmptyTypes);
       phi->specialize(type);
       if (type == MIRType::None) {
         
@@ -1892,7 +1897,7 @@ bool TypeAnalyzer::specializePhis() {
     }
   } while (!phiWorklist_.empty());
 
-  if (ShouldSpecializeOsrPhis() && graph.osrBlock()) {
+  if (shouldSpecializeOsrPhis() && graph.osrBlock()) {
     
     
     MBasicBlock* preHeader = graph.osrPreHeaderBlock();
@@ -1972,6 +1977,7 @@ bool TypeAnalyzer::adjustPhiInputs(MPhi* phi) {
 
             MUnbox* unbox =
                 MUnbox::New(alloc(), in, MIRType::Double, MUnbox::Fallible);
+            unbox->setBailoutKind(BailoutKind::SpeculativePhi);
             in->block()->insertBefore(in->block()->lastIns(), unbox);
             replacement = MToFloat32::New(alloc(), in);
           }
@@ -1990,6 +1996,7 @@ bool TypeAnalyzer::adjustPhiInputs(MPhi* phi) {
           replacement = MUnbox::New(alloc(), in, phiType, MUnbox::Fallible);
         }
 
+        replacement->setBailoutKind(BailoutKind::SpeculativePhi);
         in->block()->insertBefore(in->block()->lastIns(), replacement);
         phi->replaceOperand(i, replacement);
       }
@@ -2074,7 +2081,7 @@ void TypeAnalyzer::replaceRedundantPhi(MPhi* phi) {
   block->insertBefore(*(block->begin()), c);
   phi->justReplaceAllUsesWith(c);
 
-  if (ShouldSpecializeOsrPhis() && block == graph.osrPreHeaderBlock()) {
+  if (shouldSpecializeOsrPhis() && block == graph.osrPreHeaderBlock()) {
     
     
     MBasicBlock* osrBlock = graph.osrBlock();
@@ -2082,6 +2089,7 @@ void TypeAnalyzer::replaceRedundantPhi(MPhi* phi) {
     MDefinition* def = phi->getOperand(1);
     if (def->isOsrValue()) {
       MGuardValue* guard = MGuardValue::New(alloc(), def, v);
+      guard->setBailoutKind(BailoutKind::SpeculativePhi);
       osrBlock->insertBefore(osrBlock->lastIns(), guard);
     } else {
       MOZ_ASSERT(def->isConstant());
