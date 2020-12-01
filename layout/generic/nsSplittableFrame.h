@@ -93,10 +93,7 @@ class nsSplittableFrame : public nsIFrame {
 
 
 
-
-
-
-  nscoord CalcAndCacheConsumedBSize(mozilla::WritingMode aWM);
+  nscoord ConsumedBSize(mozilla::WritingMode aWM) const;
 
   
 
@@ -104,13 +101,14 @@ class nsSplittableFrame : public nsIFrame {
 
 
   nscoord GetEffectiveComputedBSize(
-      const ReflowInput& aReflowInput, nscoord aConsumed) const;
+      const ReflowInput& aReflowInput,
+      nscoord aConsumed = NS_UNCONSTRAINEDSIZE) const;
 
   
 
 
   LogicalSides GetLogicalSkipSides(
-      const Maybe<SkipSidesDuringReflow>& = Nothing()) const override;
+      const ReflowInput* aReflowInput = nullptr) const override;
 
   
 

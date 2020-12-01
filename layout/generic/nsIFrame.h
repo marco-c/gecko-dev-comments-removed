@@ -471,7 +471,7 @@ struct IntrinsicSize {
   explicit IntrinsicSize(const nsSize& aSize)
       : IntrinsicSize(aSize.Width(), aSize.Height()) {}
 
-  Maybe<nsSize> ToSize() const {
+  mozilla::Maybe<nsSize> ToSize() const {
     return width && height ? Some(nsSize(*width, *height)) : Nothing();
   }
 
@@ -2298,7 +2298,7 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  virtual Maybe<Cursor> GetCursor(const nsPoint&);
+  virtual mozilla::Maybe<Cursor> GetCursor(const nsPoint&);
 
   
 
@@ -3669,18 +3669,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-  Sides GetSkipSides() const;
-
-  struct SkipSidesDuringReflow {
-    const ReflowInput& mReflowInput;
-    const nscoord mConsumedBSize = NS_UNCONSTRAINEDSIZE;
-  };
-
+  Sides GetSkipSides(const ReflowInput* aReflowInput = nullptr) const;
   virtual LogicalSides GetLogicalSkipSides(
-      const Maybe<SkipSidesDuringReflow>& = Nothing()) const {
+      const ReflowInput* aReflowInput = nullptr) const {
     return LogicalSides(mWritingMode);
   }
 
