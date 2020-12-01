@@ -2,35 +2,32 @@
 
 "use strict";
 
+add_task(async function setup() {
+  
+  return SpecialPowers.pushPrefEnv({
+    set: [["privacy.userContext.enabled", true]],
+  });
+});
+
 add_task(async function testLocalStorage() {
   async function background() {
-    function openTabs() {
-      let promise = new Promise(resolve => {
-        
-        
-        const manifest = browser.runtime.getManifest();
-        const tabURLs = manifest.content_scripts[0].matches;
-        browser.test.log(`Opening tabs on ${JSON.stringify(tabURLs)}`);
+    function waitForTabs() {
+      return new Promise(resolve => {
+        let tabs = [];
 
-        let tabs;
-        let waitingCount = tabURLs.length;
-
-        let listener = async msg => {
-          if (msg !== "content-script-ready" || --waitingCount) {
+        let listener = async (msg, { tab }) => {
+          if (msg !== "content-script-ready") {
             return;
           }
-          browser.runtime.onMessage.removeListener(listener);
-          resolve(Promise.all(tabs));
+
+          tabs.push(tab);
+          if (tabs.length == 3) {
+            browser.runtime.onMessage.removeListener(listener);
+            resolve(tabs);
+          }
         };
-
         browser.runtime.onMessage.addListener(listener);
-
-        tabs = tabURLs.map(url => {
-          return browser.tabs.create({ url: url });
-        });
       });
-
-      return promise;
     }
 
     function sendMessageToTabs(tabs, message) {
@@ -41,7 +38,7 @@ add_task(async function testLocalStorage() {
       );
     }
 
-    let tabs = await openTabs();
+    let tabs = await waitForTabs();
 
     browser.test.assertRejects(
       browser.browsingData.removeLocalStorage({ since: Date.now() }),
@@ -78,6 +75,42 @@ add_task(async function testLocalStorage() {
     await sendMessageToTabs(tabs, "checkLocalStorageCleared");
 
     
+    if (SpecialPowers.Services.domStorageManager.nextGenLocalStorageEnabled) {
+      await sendMessageToTabs(tabs, "resetLocalStorage");
+      await sendMessageToTabs(tabs, "checkLocalStorageSet");
+      await browser.browsingData.removeLocalStorage({
+        cookieStoreId: "firefox-container-1",
+      });
+      await browser.tabs.sendMessage(tabs[0].id, "checkLocalStorageSet");
+      await browser.tabs.sendMessage(tabs[1].id, "checkLocalStorageSet");
+      await browser.tabs.sendMessage(tabs[2].id, "checkLocalStorageCleared");
+
+      await sendMessageToTabs(tabs, "resetLocalStorage");
+      await sendMessageToTabs(tabs, "checkLocalStorageSet");
+      
+      await browser.browsingData.removeLocalStorage({
+        cookieStoreId: "firefox-container-1",
+        hostnames: ["example.net"],
+      });
+      await sendMessageToTabs(tabs, "checkLocalStorageSet");
+
+      await sendMessageToTabs(tabs, "resetLocalStorage");
+      await sendMessageToTabs(tabs, "checkLocalStorageSet");
+      
+      await browser.browsingData.removeLocalStorage({
+        cookieStoreId: "firefox-private",
+      });
+      await sendMessageToTabs(tabs, "checkLocalStorageSet");
+    } else {
+      await browser.test.assertRejects(
+        browser.browsingData.removeLocalStorage({
+          cookieStoreId: "firefox-container-1",
+        }),
+        "removeLocalStorage with cookieStoreId requires LSNG"
+      );
+    }
+
+    
     await browser.browsingData.removeLocalStorage({});
 
     browser.tabs.remove(tabs.map(tab => tab.id));
@@ -102,6 +135,7 @@ add_task(async function testLocalStorage() {
   let extension = ExtensionTestUtils.loadExtension({
     background,
     manifest: {
+      name: "Test Extension",
       permissions: ["browsingData"],
       content_scripts: [
         {
@@ -121,6 +155,15 @@ add_task(async function testLocalStorage() {
   });
 
   await extension.startup();
+
+  
+  await BrowserTestUtils.addTab(gBrowser, "http://example.com/");
+  await BrowserTestUtils.addTab(gBrowser, "http://example.net/");
+  
+  await BrowserTestUtils.addTab(gBrowser, "http://test1.example.com/", {
+    userContextId: 1,
+  });
+
   await extension.awaitFinish("done");
   await extension.unload();
 });
