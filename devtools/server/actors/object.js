@@ -165,11 +165,6 @@ const proto = {
 
     this.hooks.incrementGripDepth();
 
-    
-    if (g.class == "Promise" && this.hooks.getGripDepth() < 3) {
-      g.promiseState = this.promiseState().promiseState;
-    }
-
     if (g.class == "Function") {
       g.isClassConstructor = this.obj.isClassConstructor;
     }

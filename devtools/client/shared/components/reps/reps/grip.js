@@ -202,7 +202,7 @@ define(function(require, exports, module) {
     
     
     
-    const suppressQuotes = object.class === "Proxy";
+    const suppressQuotes = ["Proxy", "Promise"].includes(object.class);
     const propsArray = getProps(props, properties, indexes, suppressQuotes);
 
     
