@@ -164,67 +164,62 @@ void nsMenuBarListener::ToggleMenuActiveState() {
 
 
 nsresult nsMenuBarListener::KeyUp(Event* aKeyEvent) {
-  WidgetKeyboardEvent* nativeKeyEvent =
-      aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
-  if (!nativeKeyEvent) {
+  RefPtr<KeyboardEvent> keyEvent = aKeyEvent->AsKeyboardEvent();
+  if (!keyEvent) {
     return NS_OK;
   }
 
   InitAccessKey();
 
   
-  if (!nativeKeyEvent->IsTrusted()) {
+  if (!keyEvent->IsTrusted()) {
     return NS_OK;
   }
 
-  if (!mAccessKey || !StaticPrefs::ui_key_menuAccessKeyFocuses()) {
-    return NS_OK;
-  }
+  if (mAccessKey && StaticPrefs::ui_key_menuAccessKeyFocuses()) {
+    bool defaultPrevented = keyEvent->DefaultPrevented();
 
-  
-  
-  if (!nativeKeyEvent->DefaultPrevented() && mAccessKeyDown &&
-      !mAccessKeyDownCanceled &&
-      static_cast<int32_t>(nativeKeyEvent->mKeyCode) == mAccessKey) {
     
     
-    bool toggleMenuActiveState = true;
-    if (!mMenuBarFrame->IsActive()) {
+    
+    uint32_t theChar = keyEvent->KeyCode();
+
+    if (!defaultPrevented && mAccessKeyDown && !mAccessKeyDownCanceled &&
+        (int32_t)theChar == mAccessKey) {
       
       
-      if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
-        nativeKeyEvent->StopImmediatePropagation();
-        nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
-        return NS_OK;
-      }
-      
-      
-      
-      nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-      if (pm) {
-        pm->Rollup(0, false, nullptr, nullptr);
-      }
-      
-      
-      toggleMenuActiveState = !Destroyed() && !mMenuBarFrame->IsActive();
-    }
-    if (toggleMenuActiveState) {
+      bool toggleMenuActiveState = true;
       if (!mMenuBarFrame->IsActive()) {
-        mMenuBarFrame->SetActiveByKeyboard();
+        
+        
+        
+        nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+        if (pm) {
+          pm->Rollup(0, false, nullptr, nullptr);
+        }
+        
+        
+        toggleMenuActiveState = !Destroyed() && !mMenuBarFrame->IsActive();
       }
-      ToggleMenuActiveState();
+      if (toggleMenuActiveState) {
+        if (!mMenuBarFrame->IsActive()) {
+          mMenuBarFrame->SetActiveByKeyboard();
+        }
+        ToggleMenuActiveState();
+      }
+    }
+    mAccessKeyDown = false;
+    mAccessKeyDownCanceled = false;
+
+    bool active = !Destroyed() && mMenuBarFrame->IsActive();
+    if (active) {
+      keyEvent->StopPropagation();
+      keyEvent->PreventDefault();
+      return NS_OK;  
     }
   }
 
-  mAccessKeyDown = false;
-  mAccessKeyDownCanceled = false;
-
-  if (!Destroyed() && mMenuBarFrame->IsActive()) {
-    nativeKeyEvent->StopPropagation();
-    nativeKeyEvent->PreventDefault();
-  }
-
-  return NS_OK;
+  return NS_OK;  
 }
 
 
