@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
 
 from __future__ import absolute_import
 
@@ -23,9 +23,9 @@ from results import BrowsertimeResultsHandler
 LOG = RaptorLogger(component="raptor-browsertime")
 
 DEFAULT_CHROMEVERSION = "77"
-BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT = 120  # 2 minutes
+BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT = 120  
 BROWSERTIME_BENCHMARK_OUTPUT_TIMEOUT = (
-    None  # Disable output timeout for benchmark tests
+    None  
 )
 
 
@@ -59,10 +59,10 @@ class Browsertime(Perftest):
         LOG.info("cwd: '{}'".format(os.getcwd()))
         self.config["browsertime"] = True
 
-        # Setup browsertime-specific settings for result parsing
+        
         self.results_handler.browsertime_visualmetrics = self.browsertime_visualmetrics
 
-        # For debugging.
+        
         for k in (
             "browsertime_node",
             "browsertime_browsertimejs",
@@ -83,11 +83,11 @@ class Browsertime(Perftest):
         self.remove_mozprofile_delimiters_from_profile()
 
     def remove_mozprofile_delimiters_from_profile(self):
-        # Perftest.build_browser_profile uses mozprofile to create the profile and merge in prefs;
-        # while merging, mozprofile adds in special delimiters; these delimiters (along with blank
-        # lines) are not recognized by selenium-webdriver ultimately causing Firefox launch to
-        # fail. So we must remove these delimiters from the browser profile before passing into
-        # btime via firefox.profileTemplate.
+        
+        
+        
+        
+        
 
         LOG.info("Removing mozprofile delimiters from browser profile")
         userjspath = os.path.join(self.profile.profile, "user.js")
@@ -105,7 +105,7 @@ class Browsertime(Perftest):
             LOG.critical("Exception {} while removing mozprofile delimiters".format(e))
 
     def set_browser_test_prefs(self, raw_prefs):
-        # add test specific preferences
+        
         LOG.info("setting test-specific Firefox preferences")
         self.profile.set_preferences(json.loads(raw_prefs))
         self.remove_mozprofile_delimiters_from_profile()
@@ -114,7 +114,7 @@ class Browsertime(Perftest):
         super(Browsertime, self).run_test_setup(test)
 
         if test.get("type") == "benchmark":
-            # benchmark-type tests require the benchmark test to be served out
+            
             self.benchmark = Benchmark(self.config, test)
             test["test_url"] = test["test_url"].replace("<host>", self.benchmark.host)
             test["test_url"] = test["test_url"].replace("<port>", self.benchmark.port)
@@ -122,7 +122,7 @@ class Browsertime(Perftest):
         if test.get("playback") is not None and self.playback is None:
             self.start_playback(test)
 
-        # TODO: geckodriver/chromedriver from tasks.
+        
         self.driver_paths = []
         if self.browsertime_geckodriver:
             self.driver_paths.extend(
@@ -162,7 +162,7 @@ class Browsertime(Perftest):
     def run_test_teardown(self, test):
         super(Browsertime, self).run_test_teardown(test)
 
-        # if we were using a playback tool, stop it
+        
         if self.playback is not None:
             self.playback.stop()
             self.playback = None
@@ -205,17 +205,17 @@ class Browsertime(Perftest):
 
         browsertime_script.extend(btime_args)
 
-        # pass a few extra options to the browsertime script
-        # XXX maybe these should be in the browsertime_args() func
+        
+        
         browsertime_script.extend(
             ["--browsertime.page_cycles", str(test.get("page_cycles", 1))]
         )
         browsertime_script.extend(["--browsertime.url", test["test_url"]])
 
-        # Raptor's `pageCycleDelay` delay (ms) between pageload cycles
+        
         browsertime_script.extend(["--browsertime.page_cycle_delay", "1000"])
 
-        # Raptor's `post startup delay` is settle time after the browser has started
+        
         browsertime_script.extend(
             ["--browsertime.post_startup_delay", str(self.post_startup_delay)]
         )
@@ -226,16 +226,18 @@ class Browsertime(Perftest):
             "--skipHar",
             "--pageLoadStrategy",
             "none",
+            "--webdriverPageload",
+            "true",
             "--firefox.disableBrowsertimeExtension",
             "true",
             "--pageCompleteCheckStartWait",
             "5000",
             "--pageCompleteCheckPollTimeout",
             "1000",
-            # url load timeout (milliseconds)
+            
             "--timeouts.pageLoad",
             str(timeout),
-            # running browser scripts timeout (milliseconds)
+            
             "--timeouts.script",
             str(timeout * int(test.get("page_cycles", 1))),
             "--resultDir",
@@ -267,6 +269,8 @@ class Browsertime(Perftest):
                     [
                         "--firefox.windowRecorder",
                         "false",
+                        "--xvfbParams.display",
+                        "0",
                     ]
                 )
                 LOG.info(
@@ -283,7 +287,7 @@ class Browsertime(Perftest):
         else:
             browsertime_options.extend(["--video", "false", "--visualMetrics", "false"])
 
-        # have browsertime use our newly-created conditioned-profile path
+        
         if self.using_condprof:
             self.profile.profile = self.conditioned_profile_dir
 
@@ -309,31 +313,31 @@ class Browsertime(Perftest):
             + self.driver_paths
             + browsertime_script
             +
-            # -n option for the browsertime to restart the browser
+            
             browsertime_options
             + ["-n", str(test.get("browser_cycles", 1))]
         )
 
     def _compute_process_timeout(self, test, timeout):
-        # bt_timeout will be the overall browsertime cmd/session timeout (seconds)
-        # browsertime deals with page cycles internally, so we need to give it a timeout
-        # value that includes all page cycles
+        
+        
+        
         bt_timeout = int(timeout / 1000) * int(test.get("page_cycles", 1))
 
-        # the post-startup-delay is a delay after the browser has started, to let it settle
-        # it's handled within browsertime itself by loading a 'preUrl' (about:blank) and having a
-        # delay after that ('preURLDelay') as the post-startup-delay, so we must add that in sec
+        
+        
+        
         bt_timeout += int(self.post_startup_delay / 1000)
 
-        # add some time for browser startup, time for the browsertime measurement code
-        # to be injected/invoked, and for exceptions to bubble up; be generous
+        
+        
         bt_timeout += 20
 
-        # browsertime also handles restarting the browser/running all of the browser cycles;
-        # so we need to multiply our bt_timeout by the number of browser cycles
+        
+        
         bt_timeout = bt_timeout * int(test.get("browser_cycles", 1))
 
-        # if geckoProfile enabled, give browser more time for profiling
+        
         if self.config["gecko_profile"] is True:
             bt_timeout += 5 * 60
         return bt_timeout
@@ -342,8 +346,8 @@ class Browsertime(Perftest):
         global BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT
 
         self.run_test_setup(test)
-        # timeout is a single page-load timeout value (ms) from the test INI
-        # this will be used for btime --timeouts.pageLoad
+        
+        
         cmd = self._compose_cmd(test, timeout)
 
         if test.get("type", "") == "benchmark":
@@ -361,8 +365,8 @@ class Browsertime(Perftest):
             )
 
         if test.get("type", "") == "scenario":
-            # Change the timeout for scenarios since they
-            # don't output much for a long period of time
+            
+            
             BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT = timeout
 
         LOG.info("timeout (s): {}".format(timeout))
@@ -371,15 +375,15 @@ class Browsertime(Perftest):
         if self.browsertime_video:
             LOG.info("browsertime_ffmpeg: {}".format(self.browsertime_ffmpeg))
 
-        # browsertime requires ffmpeg on the PATH for `--video=true`.
-        # It's easier to configure the PATH here than at the TC level.
+        
+        
         env = dict(os.environ)
         if self.browsertime_video and self.browsertime_ffmpeg:
             ffmpeg_dir = os.path.dirname(os.path.abspath(self.browsertime_ffmpeg))
             old_path = env.setdefault("PATH", "")
             new_path = os.pathsep.join([ffmpeg_dir, old_path])
             if isinstance(new_path, six.text_type):
-                # Python 2 doesn't like unicode in the environment.
+                
                 new_path = new_path.encode("utf-8", "strict")
             env["PATH"] = new_path
 
@@ -408,7 +412,7 @@ class Browsertime(Perftest):
                 level = level.lower()
                 if "error" in level:
                     self.browsertime_failure = msg
-                    # Raising this kills mozprocess
+                    
                     raise Exception("Browsertime failed to run")
                 elif "warning" in level:
                     LOG.warning(msg)
@@ -416,7 +420,7 @@ class Browsertime(Perftest):
                     LOG.info(msg)
 
             if self.browsertime_visualmetrics and self.run_local:
-                # Check if visual metrics is installed correctly before running the test
+                
                 self.vismet_failed = False
 
                 def _vismet_line_handler(line):
