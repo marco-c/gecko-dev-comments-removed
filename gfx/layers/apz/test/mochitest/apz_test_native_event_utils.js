@@ -33,7 +33,14 @@ function nativeVerticalWheelEventMsg() {
     case "windows":
       return 0x020a; 
     case "mac":
-      return 0; 
+      var useWheelCodepath = SpecialPowers.getBoolPref(
+        "apz.test.mac.synth_wheel_input",
+        false
+      );
+      
+      
+      
+      return useWheelCodepath ? 0 : 1;
     case "linux":
       return 4; 
   }

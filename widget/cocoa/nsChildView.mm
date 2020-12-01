@@ -947,6 +947,10 @@ nsresult nsChildView::SynthesizeNativeMouseScrollEvent(
     return NS_ERROR_FAILURE;
   }
 
+  if (aNativeMessage) {
+    CGEventSetIntegerValueField(cgEvent, kCGScrollWheelEventScrollPhase, aNativeMessage);
+  }
+
   
   
   
