@@ -505,8 +505,6 @@ nsWindow::nsWindow() {
 
   mWindowScaleFactorChanged = true;
   mWindowScaleFactor = 1;
-
-  mIsAccelerated = false;
 }
 
 nsWindow::~nsWindow() {
@@ -4178,7 +4176,10 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
   return TRUE;
 }
 
-bool nsWindow::IsMainWindowTransparent() {
+
+
+
+bool nsWindow::IsToplevelWindowTransparent() {
   static bool transparencyConfigured = false;
 
   if (!transparencyConfigured) {
@@ -4194,6 +4195,8 @@ bool nsWindow::IsMainWindowTransparent() {
         sTransparentMainWindow =
             Preferences::GetBool("mozilla.widget.use-argb-visuals");
       } else {
+        
+        
         sTransparentMainWindow = GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE;
       }
     }
@@ -4219,6 +4222,58 @@ static GdkWindow* CreateGdkWindow(GdkWindow* parent, GtkWidget* widget) {
   gdk_window_set_user_data(window, widget);
 
   return window;
+}
+
+
+
+bool nsWindow::ConfigureX11GLVisual(bool aUseAlpha) {
+  if (!mIsX11Display) {
+    return false;
+  }
+
+  
+  
+  
+  bool useWebRender = gfx::gfxVars::UseWebRender();
+  auto* screen = gtk_widget_get_screen(mShell);
+  int visualId = 0;
+  bool haveVisual;
+
+  
+  
+  
+  
+  if ((true )) {
+    auto* display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
+    int screenNumber = GDK_SCREEN_XNUMBER(screen);
+    haveVisual = GLContextGLX::FindVisual(display, screenNumber, useWebRender,
+                                          aUseAlpha || useWebRender, &visualId);
+  } else {
+    haveVisual = GLContextEGL::FindVisual(useWebRender,
+                                          aUseAlpha || useWebRender, &visualId);
+  }
+
+  GdkVisual* gdkVisual = nullptr;
+  if (haveVisual) {
+    
+    
+    gdkVisual = gdk_x11_screen_lookup_visual(screen, visualId);
+  }
+  if (!gdkVisual) {
+    NS_WARNING("We're missing X11 Visual!");
+    if (aUseAlpha || useWebRender) {
+      
+      GdkScreen* screen = gtk_widget_get_screen(mShell);
+      gdkVisual = gdk_screen_get_rgba_visual(screen);
+    }
+  }
+  if (gdkVisual) {
+    
+    gtk_widget_set_visual(mShell, gdkVisual);
+    mHasAlphaVisual = aUseAlpha;
+  }
+
+  return true;
 }
 
 nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
@@ -4271,8 +4326,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   ConstrainSize(&mBounds.width, &mBounds.height);
 
   GtkWidget* eventWidget = nullptr;
-  bool needsAlphaVisual = (mWindowType == eWindowType_popup &&
-                           (aInitData && aInitData->mSupportTranslucency));
+  bool popupNeedsAlphaVisual = (mWindowType == eWindowType_popup &&
+                                (aInitData && aInitData->mSupportTranslucency));
 
   
   GtkWidget* parentMozContainer = nullptr;
@@ -4342,9 +4397,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       Unused << gfxPlatform::GetPlatform();
 
-      mIsAccelerated = ComputeShouldAccelerate();
-      bool useWebRender = gfx::gfxVars::UseWebRender() && mIsAccelerated;
-
       if (mWindowType == eWindowType_toplevel ||
           mWindowType == eWindowType_dialog) {
         bool isPopup = mIsPIPWindow || mWindowType == eWindowType_dialog;
@@ -4352,56 +4404,24 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       }
 
       
+      bool toplevelNeedsAlphaVisual = false;
       if (mWindowType == eWindowType_toplevel && !mIsPIPWindow) {
-        needsAlphaVisual = IsMainWindowTransparent();
-        if (!needsAlphaVisual && mCSDSupportLevel != CSD_SUPPORT_NONE) {
-          mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
-        }
+        toplevelNeedsAlphaVisual = IsToplevelWindowTransparent() ||
+                                   mCSDSupportLevel != CSD_SUPPORT_NONE;
       }
 
-      bool isSetVisual = false;
-      
-      
-      
-
-      
-      
-      if (mIsX11Display && mIsAccelerated) {
-        if (useWebRender) {
-          
-          
-          needsAlphaVisual = true;
-        }
-        auto screen = gtk_widget_get_screen(mShell);
-        int visualId = 0;
-        bool haveVisual;
-
-        
-        
-        
-        
-        if ((true )) {
-          auto display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
-          int screenNumber = GDK_SCREEN_XNUMBER(screen);
-          haveVisual = GLContextGLX::FindVisual(
-              display, screenNumber, useWebRender, needsAlphaVisual, &visualId);
-        } else {
-          haveVisual = GLContextEGL::FindVisual(useWebRender, needsAlphaVisual,
-                                                &visualId);
-        }
-        if (haveVisual) {
-          
-          
-          gtk_widget_set_visual(mShell,
-                                gdk_x11_screen_lookup_visual(screen, visualId));
-          mHasAlphaVisual = needsAlphaVisual;
-          isSetVisual = true;
-        } else {
-          NS_WARNING("We're missing X11 Visual!");
-        }
+      bool isGLVisualSet = false;
+      bool isAccelerated = ComputeShouldAccelerate();
+#ifdef MOZ_X11
+      if (isAccelerated) {
+        isGLVisualSet = ConfigureX11GLVisual(popupNeedsAlphaVisual ||
+                                             toplevelNeedsAlphaVisual);
       }
-
-      if (!isSetVisual && needsAlphaVisual) {
+#endif
+      if (!isGLVisualSet &&
+          (popupNeedsAlphaVisual || toplevelNeedsAlphaVisual)) {
+        
+        
         GdkScreen* screen = gtk_widget_get_screen(mShell);
         if (gdk_screen_is_composited(screen)) {
           GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
@@ -4409,6 +4429,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
             gtk_widget_set_visual(mShell, visual);
             mHasAlphaVisual = true;
           }
+        } else if (toplevelNeedsAlphaVisual) {
+          MOZ_ASSERT(mIsX11Display, "Wayland without compositing?");
+          mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
+        } else  {
+          
+          
         }
       }
 
@@ -4528,7 +4554,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       GtkWidget* container = moz_container_new();
       mContainer = MOZ_CONTAINER(container);
 #ifdef MOZ_WAYLAND
-      if (!mIsX11Display && mIsAccelerated) {
+      if (!mIsX11Display && isAccelerated) {
         mCompositorInitiallyPaused = true;
         RefPtr<nsWindow> self(this);
         moz_container_wayland_add_initial_draw_callback(
@@ -4812,7 +4838,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     GdkVisual* gdkVisual = gdk_window_get_visual(mGdkWindow);
     mXVisual = gdk_x11_visual_get_xvisual(gdkVisual);
     mXDepth = gdk_visual_get_depth(gdkVisual);
-    bool shaped = needsAlphaVisual && !mHasAlphaVisual;
+    bool shaped = popupNeedsAlphaVisual && !mHasAlphaVisual;
 
     mSurfaceProvider.Initialize(mXDisplay, mXWindow, mXVisual, mXDepth, shaped);
 
