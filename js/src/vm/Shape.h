@@ -695,7 +695,7 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
     HAS_INTERESTING_SYMBOL = 0x40,
     HAD_ELEMENTS_ACCESS = 0x80,
     FROZEN_ELEMENTS = 0x100,  
-    ITERATED_SINGLETON = 0x200,
+    
     NEW_GROUP_UNKNOWN = 0x400,
     UNCACHEABLE_PROTO = 0x800,
     IMMUTABLE_PROTOTYPE = 0x1000,

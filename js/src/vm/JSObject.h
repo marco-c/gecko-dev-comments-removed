@@ -372,16 +372,6 @@ class JSObject
 
 
 
-
-  inline bool isIteratedSingleton() const;
-  static bool setIteratedSingleton(JSContext* cx, JS::HandleObject obj) {
-    return setFlags(cx, obj, js::BaseShape::ITERATED_SINGLETON);
-  }
-
-  
-
-
-
   inline bool isNewGroupUnknown() const;
   static bool setNewGroupUnknown(JSContext* cx, js::ObjectGroupRealm& realm,
                                  const JSClass* clasp, JS::HandleObject obj);

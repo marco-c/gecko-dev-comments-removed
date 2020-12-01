@@ -119,22 +119,16 @@ inline void NativeObject::setDenseElementHole(JSContext* cx, uint32_t index) {
 inline void NativeObject::removeDenseElementForSparseIndex(JSContext* cx,
                                                            uint32_t index) {
   MOZ_ASSERT(containsPure(INT_TO_JSID(index)));
-  if (IsTypeInferenceEnabled()) {
-    MarkObjectGroupFlags(cx, this, OBJECT_FLAG_SPARSE_INDEXES);
-  }
   if (containsDenseElement(index)) {
     setDenseElementHole(cx, index);
   }
 }
 
+
 inline void NativeObject::markDenseElementsNotPacked(JSContext* cx) {
   MOZ_ASSERT(isNative());
 
   getElementsHeader()->markNonPacked();
-
-  if (IsTypeInferenceEnabled()) {
-    MarkObjectGroupFlags(cx, this, OBJECT_FLAG_NON_PACKED);
-  }
 }
 
 inline void NativeObject::elementsRangePostWriteBarrier(uint32_t start,
@@ -928,10 +922,6 @@ inline bool IsPackedArray(JSObject* obj) {
   }
 
   if (!arr->denseElementsArePacked()) {
-    
-    MOZ_ASSERT_IF(
-        !arr->hasLazyGroup(),
-        arr->group()->hasAllFlagsDontCheckGeneration(OBJECT_FLAG_NON_PACKED));
     return false;
   }
 
