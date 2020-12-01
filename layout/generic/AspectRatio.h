@@ -15,8 +15,15 @@
 #include <algorithm>
 #include <limits>
 
+namespace IPC {
+template <typename T>
+struct ParamTraits;
+}  
+
 namespace mozilla {
 
+enum LogicalAxis : uint8_t;
+class LogicalSize;
 class WritingMode;
 
 struct AspectRatio {
@@ -63,6 +70,38 @@ struct AspectRatio {
 
   [[nodiscard]] inline AspectRatio ConvertToWritingMode(
       const WritingMode& aWM) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] nscoord ComputeRatioDependentSize(
+      LogicalAxis aRatioDependentAxis, const WritingMode& aWM,
+      nscoord aRatioDeterminingSize,
+      const LogicalSize& aContentBoxSizeToBoxSizingAdjust) const;
 
   bool operator==(const AspectRatio& aOther) const {
     return mRatio == aOther.mRatio;
