@@ -1,9 +1,12 @@
+use rayon::prelude::*;
 
-extern crate rayon;
+#[cfg(not(has_std))]
+use alloc::collections::LinkedList;
 
-use self::rayon::prelude::*;
-
+#[cfg(has_std)]
 use std::collections::LinkedList;
+
+use crate::vec::Vec;
 
 
 
@@ -11,9 +14,11 @@ macro_rules! parallel_iterator_methods {
     
     ($map_elt:expr) => {
         fn drive_unindexed<C>(self, consumer: C) -> C::Result
-            where C: UnindexedConsumer<Self::Item>
+        where
+            C: UnindexedConsumer<Self::Item>,
         {
-            self.entries.into_par_iter()
+            self.entries
+                .into_par_iter()
                 .map($map_elt)
                 .drive_unindexed(consumer)
         }
@@ -24,7 +29,7 @@ macro_rules! parallel_iterator_methods {
         fn opt_len(&self) -> Option<usize> {
             Some(self.entries.len())
         }
-    }
+    };
 }
 
 
@@ -33,11 +38,10 @@ macro_rules! indexed_parallel_iterator_methods {
     
     ($map_elt:expr) => {
         fn drive<C>(self, consumer: C) -> C::Result
-            where C: Consumer<Self::Item>
+        where
+            C: Consumer<Self::Item>,
         {
-            self.entries.into_par_iter()
-                .map($map_elt)
-                .drive(consumer)
+            self.entries.into_par_iter().map($map_elt).drive(consumer)
         }
 
         fn len(&self) -> usize {
@@ -45,19 +49,19 @@ macro_rules! indexed_parallel_iterator_methods {
         }
 
         fn with_producer<CB>(self, callback: CB) -> CB::Output
-            where CB: ProducerCallback<Self::Item>
+        where
+            CB: ProducerCallback<Self::Item>,
         {
-            self.entries.into_par_iter()
+            self.entries
+                .into_par_iter()
                 .map($map_elt)
                 .with_producer(callback)
         }
-    }
+    };
 }
-
 
 pub mod map;
 pub mod set;
-
 
 
 

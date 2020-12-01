@@ -1,7 +1,5 @@
-
+#[cfg(has_std)]
 #[macro_export]
-
-
 
 
 
@@ -22,12 +20,12 @@
 
 macro_rules! indexmap {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexmap!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$($crate::indexmap!(@single $rest)),*]));
 
-    ($($key:expr => $value:expr,)+) => { indexmap!($($key => $value),+) };
+    ($($key:expr => $value:expr,)+) => { $crate::indexmap!($($key => $value),+) };
     ($($key:expr => $value:expr),*) => {
         {
-            let _cap = indexmap!(@count $($key),*);
+            let _cap = $crate::indexmap!(@count $($key),*);
             let mut _map = $crate::IndexMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
@@ -37,9 +35,8 @@ macro_rules! indexmap {
     };
 }
 
+#[cfg(has_std)]
 #[macro_export]
-
-
 
 
 
@@ -60,12 +57,12 @@ macro_rules! indexmap {
 
 macro_rules! indexset {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexset!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$($crate::indexset!(@single $rest)),*]));
 
-    ($($value:expr,)+) => { indexset!($($value),+) };
+    ($($value:expr,)+) => { $crate::indexset!($($value),+) };
     ($($value:expr),*) => {
         {
-            let _cap = indexset!(@count $($value),*);
+            let _cap = $crate::indexset!(@count $($value),*);
             let mut _set = $crate::IndexSet::with_capacity(_cap);
             $(
                 _set.insert($value);
@@ -102,13 +99,14 @@ macro_rules! iterator_methods {
         }
 
         fn collect<C>(self) -> C
-            where C: FromIterator<Self::Item>
+        where
+            C: FromIterator<Self::Item>,
         {
             // NB: forwarding this directly to standard iterators will
             // allow it to leverage unstable traits like `TrustedLen`.
             self.iter.map($map_elt).collect()
         }
-    }
+    };
 }
 
 macro_rules! double_ended_iterator_methods {
@@ -118,5 +116,5 @@ macro_rules! double_ended_iterator_methods {
         fn next_back(&mut self) -> Option<Self::Item> {
             self.iter.next_back().map($map_elt)
         }
-    }
+    };
 }
