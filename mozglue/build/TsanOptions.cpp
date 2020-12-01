@@ -244,10 +244,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsJARChannel::Resume\n"
 
          
-         "race:fill_CERTCertificateFields\n"
-         "race:CERT_DestroyCertificate\n"
-
-         
          "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
 
          
