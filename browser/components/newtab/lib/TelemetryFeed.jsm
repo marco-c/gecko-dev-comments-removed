@@ -320,17 +320,18 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
+
+
   get isInCFRCohort() {
     try {
-      const experimentData = ExperimentAPI.getExperiment({
+      const experimentData = ExperimentAPI.getExperimentMetaData({
         featureId: "cfr",
       });
       if (experimentData && experimentData.slug) {
         return true;
       }
-    } catch (e) {
-      return false;
-    }
+    } catch (e) {}
+
     return false;
   }
 

@@ -41,10 +41,22 @@ class ExperimentStore extends SharedDataMap {
 
 
 
-  getFeature(featureId) {
-    for (let { branch } of this.getAllActive()) {
-      if (branch.feature?.featureId === featureId) {
-        return branch.feature;
+  activateBranch({ slug, featureId, sendExposurePing = true }) {
+    for (let experiment of this.getAllActive()) {
+      if (
+        experiment?.branch.feature.featureId === featureId ||
+        experiment.slug === slug
+      ) {
+        if (sendExposurePing) {
+          this._emitExperimentExposure({
+            experimentSlug: experiment.slug,
+            branchSlug: experiment.branch.slug,
+            featureId,
+          });
+        }
+        
+        
+        return experiment?.branch || null;
       }
     }
 
@@ -62,10 +74,8 @@ class ExperimentStore extends SharedDataMap {
     if (!featureId) {
       return false;
     }
-    for (const { branch } of this.getAllActive()) {
-      if (branch.feature?.featureId === featureId) {
-        return true;
-      }
+    if (this.activateBranch({ featureId })?.feature.featureId === featureId) {
+      return true;
     }
     return false;
   }
@@ -91,6 +101,13 @@ class ExperimentStore extends SharedDataMap {
   _emitExperimentUpdates(experiment) {
     this.emit(`update:${experiment.slug}`, experiment);
     this.emit(`update:${experiment.branch.feature.featureId}`, experiment);
+  }
+
+  
+
+
+  _emitExperimentExposure(experimentData) {
+    this.emit("exposure", experimentData);
   }
 
   

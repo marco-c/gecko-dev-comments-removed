@@ -44,13 +44,58 @@ const ExperimentAPI = {
 
 
 
-  getExperiment({ slug, featureId } = {}) {
-    if (slug) {
-      return this._store.get(slug);
-    } else if (featureId) {
-      return this._store.getExperimentForFeature(featureId);
+
+  getExperiment({ slug, featureId, sendExposurePing } = {}) {
+    if (!slug && !featureId) {
+      throw new Error(
+        "getExperiment(options) must include a slug or a feature."
+      );
     }
-    throw new Error("getExperiment(options) must include a slug or a feature.");
+    let experimentData;
+    if (slug) {
+      experimentData = this._store.get(slug);
+    } else if (featureId) {
+      experimentData = this._store.getExperimentForFeature(featureId);
+    }
+    if (experimentData) {
+      return {
+        slug: experimentData.slug,
+        active: experimentData.active,
+        exposurePingSent: experimentData.exposurePingSent,
+        branch: this.getFeatureBranch({ featureId, sendExposurePing }),
+      };
+    }
+
+    return null;
+  },
+
+  
+
+
+
+  getExperimentMetaData({ slug, featureId }) {
+    if (!slug && !featureId) {
+      throw new Error(
+        "getExperiment(options) must include a slug or a feature."
+      );
+    }
+
+    let experimentData;
+    if (slug) {
+      experimentData = this._store.get(slug);
+    } else if (featureId) {
+      experimentData = this._store.getExperimentForFeature(featureId);
+    }
+    if (experimentData) {
+      return {
+        slug: experimentData.slug,
+        active: experimentData.active,
+        exposurePingSent: experimentData.exposurePingSent,
+        branch: { slug: experimentData.branch.slug },
+      };
+    }
+
+    return null;
   },
 
   
@@ -59,10 +104,11 @@ const ExperimentAPI = {
 
 
 
+
   isFeatureEnabled(featureId, defaultValue) {
-    const featureConfig = this._store.getFeature(featureId);
-    if (featureConfig && featureConfig.enabled !== undefined) {
-      return featureConfig.enabled;
+    const branch = this.getFeatureBranch({ featureId });
+    if (branch?.feature.enabled !== undefined) {
+      return branch.feature.enabled;
     }
     return defaultValue;
   },
@@ -72,8 +118,19 @@ const ExperimentAPI = {
 
 
 
-  getFeatureValue(featureId) {
-    return this._store.getFeature(featureId)?.value;
+
+  getFeatureValue(options) {
+    return this._store.activateBranch(options)?.feature.value;
+  },
+
+  
+
+
+
+
+
+  getFeatureBranch(options) {
+    return this._store.activateBranch(options);
   },
 
   
@@ -171,6 +228,25 @@ const ExperimentAPI = {
 
     const recipe = await this.getRecipe(slug);
     return recipe?.branches;
+  },
+
+  recordExposureEvent(name, { sent, experimentSlug, branchSlug }) {
+    if (!IS_MAIN_PROCESS) {
+      Cu.reportError("Need to call from Parent process");
+      return false;
+    }
+    if (sent) {
+      return false;
+    }
+
+    
+    this._store._emitExperimentExposure({
+      featureId: name,
+      experimentSlug,
+      branchSlug,
+    });
+
+    return true;
   },
 };
 

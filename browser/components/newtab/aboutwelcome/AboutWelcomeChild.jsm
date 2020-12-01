@@ -307,6 +307,8 @@ class AboutWelcomeChild extends JSWindowActorChild {
       
       experimentData = ExperimentAPI.getExperiment({
         featureId: "aboutwelcome",
+        
+        sendExposurePing: false,
       });
     } catch (e) {
       Cu.reportError(e);
