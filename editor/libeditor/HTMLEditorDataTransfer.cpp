@@ -2284,8 +2284,13 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  if (aDispatchPasteEvent && !FireClipboardEvent(ePaste, aClipboardType)) {
-    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+  if (aDispatchPasteEvent) {
+    if (!FireClipboardEvent(ePaste, aClipboardType)) {
+      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+    }
+  } else {
+    
+    editActionData.NotifyOfDispatchingClipboardEvent();
   }
 
   nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();

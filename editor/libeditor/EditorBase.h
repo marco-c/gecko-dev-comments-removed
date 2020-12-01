@@ -923,10 +923,16 @@ class EditorBase : public nsIEditor,
 
 
 
-    bool NeedsToDispatchBeforeInputEvent() const {
+
+    bool ShouldAlreadyHaveHandledBeforeInputEventDispatching() const {
       return !HasTriedToDispatchBeforeInputEvent() &&
              NeedsBeforeInputEventHandling(mEditAction) &&
-             IsBeforeInputEventEnabled();
+             IsBeforeInputEventEnabled() 
+
+
+
+
+          ;
     }
 
     
@@ -1012,6 +1018,16 @@ class EditorBase : public nsIEditor,
 
     void MakeBeforeInputEventNonCancelable() {
       mMakeBeforeInputEventNonCancelable = true;
+    }
+
+    
+
+
+
+    void NotifyOfDispatchingClipboardEvent() {
+      MOZ_ASSERT(NeedsToDispatchClipboardEvent());
+      MOZ_ASSERT(!mHasTriedToDispatchClipboardEvent);
+      mHasTriedToDispatchClipboardEvent = true;
     }
 
     void Abort() { mAborted = true; }
@@ -1171,6 +1187,21 @@ class EditorBase : public nsIEditor,
       }
     }
 
+    bool NeedsToDispatchClipboardEvent() const {
+      if (mHasTriedToDispatchClipboardEvent) {
+        return false;
+      }
+      switch (mEditAction) {
+        case EditAction::ePaste:
+        case EditAction::ePasteAsQuotation:
+        case EditAction::eCut:
+        case EditAction::eCopy:
+          return true;
+        default:
+          return false;
+      }
+    }
+
     EditorBase& mEditorBase;
     RefPtr<Selection> mSelection;
     nsCOMPtr<nsIPrincipal> mPrincipal;
@@ -1228,6 +1259,9 @@ class EditorBase : public nsIEditor,
     
     
     bool mMakeBeforeInputEventNonCancelable;
+    
+    
+    bool mHasTriedToDispatchClipboardEvent;
 
 #ifdef DEBUG
     mutable bool mHasCanHandleChecked = false;
@@ -1239,6 +1273,11 @@ class EditorBase : public nsIEditor,
 
   void UpdateEditActionData(const nsAString& aData) {
     mEditActionData->SetData(aData);
+  }
+
+  void NotifyOfDispatchingClipboardEvent() {
+    MOZ_ASSERT(mEditActionData);
+    mEditActionData->NotifyOfDispatchingClipboardEvent();
   }
 
  protected:  
@@ -1254,9 +1293,10 @@ class EditorBase : public nsIEditor,
     return mEditActionData->IsCanceled();
   }
 
-  bool NeedsToDispatchBeforeInputEvent() const {
+  bool ShouldAlreadyHaveHandledBeforeInputEventDispatching() const {
     MOZ_ASSERT(mEditActionData);
-    return mEditActionData->NeedsToDispatchBeforeInputEvent();
+    return mEditActionData
+        ->ShouldAlreadyHaveHandledBeforeInputEventDispatching();
   }
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MaybeDispatchBeforeInputEvent() {
