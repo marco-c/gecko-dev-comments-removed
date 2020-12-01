@@ -93,7 +93,10 @@ class nsSplittableFrame : public nsIFrame {
 
 
 
-  nscoord ConsumedBSize(mozilla::WritingMode aWM) const;
+
+
+
+  nscoord CalcAndCacheConsumedBSize(mozilla::WritingMode aWM);
 
   
 
@@ -101,8 +104,7 @@ class nsSplittableFrame : public nsIFrame {
 
 
   nscoord GetEffectiveComputedBSize(
-      const ReflowInput& aReflowInput,
-      nscoord aConsumed = NS_UNCONSTRAINEDSIZE) const;
+      const ReflowInput& aReflowInput, nscoord aConsumed) const;
 
   
 
