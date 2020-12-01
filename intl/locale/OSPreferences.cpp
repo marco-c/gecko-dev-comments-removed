@@ -23,15 +23,30 @@ NS_IMPL_ISUPPORTS(OSPreferences, mozIOSPreferences)
 
 mozilla::StaticRefPtr<OSPreferences> OSPreferences::sInstance;
 
-OSPreferences* OSPreferences::GetInstance() {
-  if (!sInstance) {
+
+already_AddRefed<OSPreferences> OSPreferences::GetInstanceAddRefed() {
+  RefPtr<OSPreferences> result = sInstance;
+  if (!result) {
     sInstance = new OSPreferences();
+    result = sInstance;
 
     DebugOnly<nsresult> rv = Preferences::RegisterPrefixCallback(
         PreferenceChanged, "intl.date_time.pattern_override");
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Adding observers failed.");
 
     ClearOnShutdown(&sInstance);
+  }
+  return result.forget();
+}
+
+
+
+OSPreferences* OSPreferences::GetInstance() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!sInstance) {
+    
+    
+    RefPtr<OSPreferences> result = GetInstanceAddRefed();
   }
   return sInstance;
 }

@@ -67,15 +67,16 @@ class OSPreferences : public mozIOSPreferences {
 
 
 
+
+
+
   static OSPreferences* GetInstance();
 
   
 
 
 
-  static already_AddRefed<OSPreferences> GetInstanceAddRefed() {
-    return RefPtr<OSPreferences>(GetInstance()).forget();
-  }
+  static already_AddRefed<OSPreferences> GetInstanceAddRefed();
 
   static bool GetPatternForSkeleton(const nsACString& aSkeleton,
                                     const nsACString& aLocale,
