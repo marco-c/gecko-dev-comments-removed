@@ -3719,9 +3719,6 @@ void TestUniqueJSONStrings() {
         "2, 3, 2", R"("external0", "external1", "string0", "string1")", &ujs);
   }
 
-
-
-#  if 0
   
   {
     UJS ujs(mozilla::JSONWriter::SingleLineStyle);
@@ -3740,7 +3737,6 @@ void TestUniqueJSONStrings() {
         },
         "2, 3, 2", R"("external0", "external1", "string0", "string1")", &ujs);
   }
-#  endif
 
   printf("TestUniqueJSONStrings done\n");
 }
