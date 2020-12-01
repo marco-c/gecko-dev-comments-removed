@@ -513,10 +513,14 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   void StopIdleMaintenance() override;
 
-  void ShutdownWorkThreads() override;
-
  private:
   ~QuotaClient() override;
+
+  void InitiateShutdown() override;
+  bool IsShutdownCompleted() const override;
+  void ForceKillActors() override;
+  void ShutdownTimedOut() override;
+  void FinalizeShutdown() override;
 };
 
 
@@ -1792,7 +1796,7 @@ void QuotaClient::StartIdleMaintenance() { AssertIsOnBackgroundThread(); }
 
 void QuotaClient::StopIdleMaintenance() { AssertIsOnBackgroundThread(); }
 
-void QuotaClient::ShutdownWorkThreads() {
+void QuotaClient::InitiateShutdown() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mShutdownRequested);
 
@@ -1802,9 +1806,22 @@ void QuotaClient::ShutdownWorkThreads() {
     for (Connection* connection : *gOpenConnections) {
       connection->AllowToClose();
     }
-
-    MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return !gOpenConnections; }));
   }
+}
+
+bool QuotaClient::IsShutdownCompleted() const { return !gOpenConnections; }
+
+void QuotaClient::ForceKillActors() {
+  
+}
+
+void QuotaClient::ShutdownTimedOut() {
+  
+  
+}
+
+void QuotaClient::FinalizeShutdown() {
+  
 }
 
 }  

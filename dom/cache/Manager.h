@@ -125,8 +125,9 @@ class Manager final : public SafeRefCounted<Manager> {
   static Result<SafeRefPtr<Manager>, nsresult> AcquireCreateIfNonExistent(
       const SafeRefPtr<ManagerId>& aManagerId);
 
-  
-  static void ShutdownAll();
+  static void InitiateShutdown();
+
+  static bool IsShutdownAllComplete();
 
   
   static void Abort(const nsACString& aOrigin);

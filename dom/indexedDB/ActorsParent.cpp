@@ -381,20 +381,6 @@ constexpr auto kIdbDeletionMarkerFilePrefix = u"idb-deleting-"_ns;
 
 const uint32_t kDeleteTimeoutMs = 1000;
 
-
-
-
-
-
-
-
-
-
-
-
-
-#define SHUTDOWN_TIMEOUT_MS 50000
-
 #ifdef DEBUG
 
 const int32_t kDEBUGThreadPriority = nsISupportsPriority::PRIORITY_NORMAL;
@@ -5141,12 +5127,14 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   void StopIdleMaintenance() override;
 
-  void ShutdownWorkThreads() override;
-
  private:
   ~QuotaClient() override;
 
-  void ShutdownTimedOut();
+  void InitiateShutdown() override;
+  bool IsShutdownCompleted() const override;
+  void ForceKillActors() override;
+  void ShutdownTimedOut() override;
+  void FinalizeShutdown() override;
 
   static void DeleteTimerCallback(nsITimer* aTimer, void* aClosure);
 
@@ -13253,66 +13241,26 @@ void QuotaClient::StopIdleMaintenance() {
   }
 }
 
-void QuotaClient::ShutdownWorkThreads() {
+void QuotaClient::InitiateShutdown() {
   AssertIsOnBackgroundThread();
 
   mShutdownRequested.Flip();
 
   AbortOperations(VoidCString());
+}
 
-  nsCOMPtr<nsITimer> timer = NS_NewTimer();
+bool QuotaClient::IsShutdownCompleted() const {
+  return (!gFactoryOps || gFactoryOps->IsEmpty()) &&
+         (!gLiveDatabaseHashtable || !gLiveDatabaseHashtable->Count()) &&
+         !mCurrentMaintenance;
+}
 
-  MOZ_ALWAYS_SUCCEEDS(timer->InitWithNamedFuncCallback(
-      [](nsITimer* aTimer, void* aClosure) {
-        auto quotaClient = static_cast<QuotaClient*>(aClosure);
-
-        quotaClient->ShutdownTimedOut();
-      },
-      this, SHUTDOWN_TIMEOUT_MS, nsITimer::TYPE_ONE_SHOT,
-      "indexeddb::QuotaClient::ShutdownWorkThreads::SpinEventLoopTimer"));
-
+void QuotaClient::ForceKillActors() {
   
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() {
-    return (!gFactoryOps || gFactoryOps->IsEmpty()) &&
-           (!gLiveDatabaseHashtable || !gLiveDatabaseHashtable->Count()) &&
-           !mCurrentMaintenance;
-  }));
-
-  MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
-
-  
-  RefPtr<ConnectionPool> connectionPool = gConnectionPool.get();
-  if (connectionPool) {
-    connectionPool->Shutdown();
-
-    gConnectionPool = nullptr;
-  }
-
-  RefPtr<FileHandleThreadPool> fileHandleThreadPool =
-      gFileHandleThreadPool.get();
-  if (fileHandleThreadPool) {
-    fileHandleThreadPool->Shutdown();
-
-    gFileHandleThreadPool = nullptr;
-  }
-
-  if (mMaintenanceThreadPool) {
-    mMaintenanceThreadPool->Shutdown();
-    mMaintenanceThreadPool = nullptr;
-  }
-
-  if (mDeleteTimer) {
-    MOZ_ALWAYS_SUCCEEDS(mDeleteTimer->Cancel());
-    mDeleteTimer = nullptr;
-  }
 }
 
 void QuotaClient::ShutdownTimedOut() {
   AssertIsOnBackgroundThread();
-  MOZ_DIAGNOSTIC_ASSERT(
-      (gFactoryOps && !gFactoryOps->IsEmpty()) ||
-      (gLiveDatabaseHashtable && gLiveDatabaseHashtable->Count()) ||
-      mCurrentMaintenance);
 
   nsCString data;
 
@@ -13374,6 +13322,33 @@ void QuotaClient::ShutdownTimedOut() {
       CrashReporter::Annotation::IndexedDBShutdownTimeout, data);
 
   MOZ_CRASH("IndexedDB shutdown timed out");
+}
+
+void QuotaClient::FinalizeShutdown() {
+  RefPtr<ConnectionPool> connectionPool = gConnectionPool.get();
+  if (connectionPool) {
+    connectionPool->Shutdown();
+
+    gConnectionPool = nullptr;
+  }
+
+  RefPtr<FileHandleThreadPool> fileHandleThreadPool =
+      gFileHandleThreadPool.get();
+  if (fileHandleThreadPool) {
+    fileHandleThreadPool->Shutdown();
+
+    gFileHandleThreadPool = nullptr;
+  }
+
+  if (mMaintenanceThreadPool) {
+    mMaintenanceThreadPool->Shutdown();
+    mMaintenanceThreadPool = nullptr;
+  }
+
+  if (mDeleteTimer) {
+    MOZ_ALWAYS_SUCCEEDS(mDeleteTimer->Cancel());
+    mDeleteTimer = nullptr;
+  }
 }
 
 void QuotaClient::DeleteTimerCallback(nsITimer* aTimer, void* aClosure) {

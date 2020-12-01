@@ -1552,15 +1552,17 @@ Result<SafeRefPtr<Manager>, nsresult> Manager::AcquireCreateIfNonExistent(
 }
 
 
-void Manager::ShutdownAll() {
+void Manager::InitiateShutdown() {
   mozilla::ipc::AssertIsOnBackgroundThread();
 
   Factory::ShutdownAll();
+}
 
-  if (!mozilla::SpinEventLoopUntil(
-          []() { return Factory::IsShutdownAllComplete(); })) {
-    NS_WARNING("Something bad happened!");
-  }
+
+bool Manager::IsShutdownAllComplete() {
+  mozilla::ipc::AssertIsOnBackgroundThread();
+
+  return Factory::IsShutdownAllComplete();
 }
 
 

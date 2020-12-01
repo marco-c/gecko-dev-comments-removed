@@ -246,11 +246,29 @@ void CacheQuotaClient::StartIdleMaintenance() {}
 
 void CacheQuotaClient::StopIdleMaintenance() {}
 
-void CacheQuotaClient::ShutdownWorkThreads() {
+void CacheQuotaClient::InitiateShutdown() {
   AssertIsOnBackgroundThread();
 
+  Manager::InitiateShutdown();
+}
+
+bool CacheQuotaClient::IsShutdownCompleted() const {
+  AssertIsOnBackgroundThread();
+
+  return Manager::IsShutdownAllComplete();
+}
+
+void CacheQuotaClient::ForceKillActors() {
   
-  Manager::ShutdownAll();
+}
+
+void CacheQuotaClient::ShutdownTimedOut() {
+  
+  
+}
+
+void CacheQuotaClient::FinalizeShutdown() {
+  
 }
 
 nsresult CacheQuotaClient::UpgradeStorageFrom2_0To2_1(nsIFile* aDirectory) {
