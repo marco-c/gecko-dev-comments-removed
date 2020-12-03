@@ -166,7 +166,7 @@ class TraceLoggerEvent {
 };
 
 #ifdef DEBUG
-bool CurrentThreadOwnsTraceLoggerThreadStateLock();
+void AssertCurrentThreadOwnsTraceLoggerThreadStateLock();
 #endif
 
 
@@ -210,7 +210,11 @@ class TraceLoggerEventPayload {
   
   
   void use() {
-    MOZ_ASSERT_IF(!uses_, CurrentThreadOwnsTraceLoggerThreadStateLock());
+#ifdef DEBUG
+    if (!uses_) {
+      AssertCurrentThreadOwnsTraceLoggerThreadStateLock();
+    }
+#endif
     uses_++;
   }
   void release() { uses_--; }

@@ -58,19 +58,14 @@ void js::Mutex::preUnlockChecks() {
   owningThread_ = ThreadId();
 }
 
-bool js::Mutex::ownedByCurrentThread() const {
-  bool owned = ThreadId::ThisThreadId() == owningThread_;
+void js::Mutex::assertOwnedByCurrentThread() const {
+  
+  MOZ_ASSERT(ThreadId::ThisThreadId() == owningThread_);
 
   
-  
-
-  if (!owned) {
-    return false;
-  }
-
   for (Mutex* mutex = HeldMutexStack.get(); mutex; mutex = mutex->prev_) {
     if (mutex == this) {
-      return true;
+      return;
     }
   }
 

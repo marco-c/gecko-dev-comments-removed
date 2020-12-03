@@ -609,17 +609,17 @@ class SimulatorProcess {
     
     
     
-    MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+    singleton_->cacheLock_.assertOwnedByCurrentThread();
     return singleton_->icache_;
   }
 
   static Redirection* redirection() {
-    MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+    singleton_->cacheLock_.assertOwnedByCurrentThread();
     return singleton_->redirection_;
   }
 
   static void setRedirection(js::jit::Redirection* redirection) {
-    MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+    singleton_->cacheLock_.assertOwnedByCurrentThread();
     singleton_->redirection_ = redirection;
   }
 };
