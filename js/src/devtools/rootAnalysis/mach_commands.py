@@ -318,6 +318,9 @@ no shell found in %s -- must build the JS shell with `mach hazards build-shell` 
         
         env["MOZBUILD_STATE_PATH"] = self.state_dir
 
+        
+        env["XGILL_NO_SOURCE"] = "1"
+
         self.setup_env_for_tools(env)
 
         if "haz_objdir" in kwargs:
