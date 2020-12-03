@@ -156,7 +156,6 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
-    #[ignore] 
     fn sets_string_list_value() {
         let _lock = lock_test();
 
@@ -172,7 +171,6 @@ mod test {
     }
 
     #[test]
-    #[ignore] 
     fn string_list_ipc() {
         
         let _lock = lock_test();

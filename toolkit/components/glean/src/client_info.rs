@@ -1,0 +1,18 @@
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct ClientInfo {
+    
+    pub app_build: String,
+    
+    pub app_display_version: String,
+    
+    pub channel: Option<String>,
+    
+    pub os_version: String,
+    
+    pub architecture: String,
+}

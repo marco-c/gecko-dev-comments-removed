@@ -2,44 +2,91 @@
 
 
 
-use inherent::inherent;
+use std::sync::RwLock;
+
+use glean_core::metrics::MetricType;
 
 use super::{BooleanMetric, CommonMetricData, CounterMetric, ErrorType, MetricId, StringMetric};
+use crate::dispatcher;
 use crate::ipc::need_ipc;
 
 
 
 
 mod private {
-    use super::{BooleanMetric, CounterMetric, StringMetric};
+    use super::{BooleanMetric, CommonMetricData, CounterMetric, MetricId, StringMetric};
+    use crate::ipc::need_ipc;
+    use std::sync::Arc;
 
     
     
     
     
     pub trait Sealed {
-        type GleanMetric: glean::private::AllowLabeled + Clone;
+        type Inner: glean_core::metrics::MetricType + Clone;
+
+        
+        fn from_inner(id: MetricId, metric: Self::Inner) -> Self;
+
+        
+        fn new_inner(meta: CommonMetricData) -> Self::Inner;
     }
 
     
     
     
     impl Sealed for BooleanMetric {
-        type GleanMetric = glean::private::BooleanMetric;
+        type Inner = glean_core::metrics::BooleanMetric;
+
+        fn from_inner(_id: MetricId, metric: Self::Inner) -> Self {
+            assert!(
+                !need_ipc(),
+                "Labeled Boolean metrics are not supported in non-main processes"
+            );
+            BooleanMetric::Parent(Arc::new(crate::private::boolean::BooleanMetricImpl(metric)))
+        }
+
+        fn new_inner(meta: CommonMetricData) -> Self::Inner {
+            glean_core::metrics::BooleanMetric::new(meta)
+        }
     }
 
     
     
     
     impl Sealed for StringMetric {
-        type GleanMetric = glean::private::StringMetric;
+        type Inner = glean_core::metrics::StringMetric;
+
+        fn from_inner(_id: MetricId, metric: Self::Inner) -> Self {
+            assert!(
+                !need_ipc(),
+                "Labeled String metrics are not supported in non-main processes"
+            );
+            StringMetric::Parent(crate::private::string::StringMetricImpl(metric))
+        }
+
+        fn new_inner(meta: CommonMetricData) -> Self::Inner {
+            glean_core::metrics::StringMetric::new(meta)
+        }
     }
 
     
     
     
     impl Sealed for CounterMetric {
-        type GleanMetric = glean::private::CounterMetric;
+        type Inner = glean_core::metrics::CounterMetric;
+
+        fn from_inner(id: MetricId, metric: Self::Inner) -> Self {
+            assert!(!need_ipc());
+            CounterMetric::Parent {
+                id,
+                inner: Arc::new(crate::private::counter::CounterMetricImpl(metric)),
+            }
+        }
+
+        fn new_inner(meta: CommonMetricData) -> Self::Inner {
+            glean_core::metrics::CounterMetric::new(meta)
+        }
     }
 }
 
@@ -80,18 +127,17 @@ impl<T> AllowLabeled for T where T: private::Sealed {}
 
 
 
-
+#[derive(Debug)]
 pub struct LabeledMetric<T: AllowLabeled> {
     
-    
-    
-    
-    _id: MetricId,
+    id: MetricId,
 
     
     
     
-    core: glean::private::LabeledMetric<T::GleanMetric>,
+    
+    
+    core: RwLock<glean_core::metrics::LabeledMetric<T::Inner>>,
 }
 
 impl<T> LabeledMetric<T>
@@ -106,32 +152,12 @@ where
         meta: CommonMetricData,
         labels: Option<Vec<String>>,
     ) -> LabeledMetric<T> {
-        let core = glean::private::LabeledMetric::new(meta, labels);
-        LabeledMetric { _id: id, core }
-    }
-}
+        let submetric = T::new_inner(meta);
+        let core = glean_core::metrics::LabeledMetric::new(submetric, labels);
 
-#[inherent(pub)]
-impl<U> glean_core::traits::Labeled<U::GleanMetric> for LabeledMetric<U>
-where
-    U: AllowLabeled + Clone,
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn get(&self, label: &str) -> U::GleanMetric {
-        if need_ipc() {
-            panic!("Use of labeled metrics in IPC land not yet implemented!");
-        } else {
-            self.core.get(label)
+        LabeledMetric {
+            id,
+            core: RwLock::new(core),
         }
     }
 
@@ -148,16 +174,50 @@ where
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn get(&self, label: &str) -> T {
+        if need_ipc() {
+            panic!("Use of labeled metrics in IPC land not yet implemented!");
+        } else {
+            let core = self
+                .core
+                .write()
+                .expect("lock of wrapped metric was poisoned");
+            let inner = core.get(label);
+            T::from_inner(self.id, inner)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(
         &self,
-        error: ErrorType,
-        ping_name: S,
-    ) -> i32 {
-        if need_ipc() {
-            panic!("Use of labeled metrics in IPC land not yet implemented!");
-        } else {
-            self.core.test_get_num_recorded_errors(error, ping_name)
-        }
+        error_type: ErrorType,
+        storage_name: Option<&str>,
+    ) -> Result<i32, String> {
+        dispatcher::block_on_queue();
+        crate::with_glean(move |glean| {
+            let core = self
+                .core
+                .read()
+                .expect("lock of wrapped metric was poisoned");
+            glean_core::test_get_num_recorded_errors(
+                &glean,
+                &core.get_submetric().meta(),
+                error_type,
+                storage_name,
+            )
+        })
     }
 }
 
@@ -288,7 +348,7 @@ mod test {
             .set(true);
 
         assert_eq!(
-            1,
+            Ok(1),
             metric.test_get_num_recorded_errors(ErrorType::InvalidLabel, None)
         );
     }
@@ -325,9 +385,8 @@ mod test {
             metric.get("__other__").test_get_value("store1").unwrap()
         );
 
-        assert_eq!(
-            0,
-            metric.test_get_num_recorded_errors(ErrorType::InvalidLabel, None)
-        );
+        assert!(metric
+            .test_get_num_recorded_errors(ErrorType::InvalidLabel, None)
+            .is_err());
     }
 }

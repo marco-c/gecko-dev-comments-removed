@@ -2,12 +2,11 @@
 
 
 
-use inherent::inherent;
-
-use glean_core::traits::Counter;
+use std::sync::Arc;
 
 use super::CommonMetricData;
 
+use crate::dispatcher;
 use crate::ipc::{need_ipc, with_ipc_payload};
 use crate::private::MetricId;
 
@@ -15,18 +14,20 @@ use crate::private::MetricId;
 
 
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub enum CounterMetric {
     Parent {
         
         
         
         id: MetricId,
-        inner: glean::private::CounterMetric,
+        inner: Arc<CounterMetricImpl>,
     },
     Child(CounterMetricIpc),
 }
 #[derive(Clone, Debug)]
+pub struct CounterMetricImpl(pub(crate) glean_core::metrics::CounterMetric);
+#[derive(Debug)]
 pub struct CounterMetricIpc(MetricId);
 
 impl CounterMetric {
@@ -35,7 +36,7 @@ impl CounterMetric {
         if need_ipc() {
             CounterMetric::Child(CounterMetricIpc(id))
         } else {
-            let inner = glean::private::CounterMetric::new(meta);
+            let inner = Arc::new(CounterMetricImpl::new(meta));
             CounterMetric::Parent { id, inner }
         }
     }
@@ -55,10 +56,7 @@ impl CounterMetric {
             CounterMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
         }
     }
-}
 
-#[inherent(pub)]
-impl Counter for CounterMetric {
     
     
     
@@ -68,10 +66,11 @@ impl Counter for CounterMetric {
     
     
     
-    fn add(&self, amount: i32) {
+    pub fn add(&self, amount: i32) {
         match self {
             CounterMetric::Parent { inner, .. } => {
-                Counter::add(&*inner, amount);
+                let metric = Arc::clone(&inner);
+                dispatcher::launch(move || metric.add(amount));
             }
             CounterMetric::Child(c) => {
                 with_ipc_payload(move |payload| {
@@ -97,42 +96,31 @@ impl Counter for CounterMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32> {
-        match self {
-            CounterMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            CounterMetric::Child(c) => {
-                panic!("Cannot get test value for {:?} in non-parent process!", c.0)
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
-        &self,
-        error: glean::ErrorType,
-        ping_name: S,
-    ) -> i32 {
+    pub fn test_get_value(&self, storage_name: &str) -> Option<i32> {
         match self {
             CounterMetric::Parent { inner, .. } => {
-                inner.test_get_num_recorded_errors(error, ping_name)
+                dispatcher::block_on_queue();
+                inner.test_get_value(storage_name)
             }
-            CounterMetric::Child(c) => panic!(
-                "Cannot get the number of recorded errors for {:?} in non-parent process!",
-                c.0
+            CounterMetric::Child(_c) => panic!(
+                "Cannot get test value for {:?} in non-parent process!",
+                self
             ),
         }
+    }
+}
+
+impl CounterMetricImpl {
+    pub fn new(meta: CommonMetricData) -> Self {
+        Self(glean_core::metrics::CounterMetric::new(meta))
+    }
+
+    pub fn add(&self, amount: i32) {
+        crate::with_glean(move |glean| self.0.add(glean, amount))
+    }
+
+    pub fn test_get_value(&self, storage_name: &str) -> Option<i32> {
+        crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
     }
 }
 

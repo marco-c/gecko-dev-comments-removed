@@ -291,7 +291,6 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
-    #[ignore] 
     fn smoke_test_timing_distribution() {
         let _lock = lock_test();
 
@@ -308,7 +307,6 @@ mod test {
     }
 
     #[test]
-    #[ignore] 
     fn timing_distribution_child() {
         let _lock = lock_test();
 

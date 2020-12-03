@@ -193,7 +193,6 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
-    #[ignore] 
     fn sets_datetime_value() {
         let _lock = lock_test();
 
@@ -211,7 +210,6 @@ mod test {
     }
 
     #[test]
-    #[ignore] 
     fn sets_datetime_value_with_details() {
         let _lock = lock_test();
 
@@ -226,7 +224,6 @@ mod test {
     }
 
     #[test]
-    #[ignore] 
     fn datetime_ipc() {
         
         let _lock = lock_test();

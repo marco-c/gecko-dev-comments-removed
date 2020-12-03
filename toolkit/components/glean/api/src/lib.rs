@@ -5,11 +5,18 @@
 
 
 
+
+
+
+
+
+
 pub extern crate chrono;
 pub extern crate once_cell;
 pub extern crate uuid;
 
 pub mod metrics;
+pub mod ping_upload;
 pub mod pings;
 pub mod private;
 
@@ -30,4 +37,21 @@ where
         .lock()
         .unwrap();
     f(&mut lock)
+}
+
+
+
+
+pub fn is_upload_enabled() -> bool {
+    with_glean(|glean| glean.is_upload_enabled())
+}
+
+pub fn flush_init() -> Result<(), dispatcher::DispatchError> {
+    dispatcher::flush_init()
+}
+
+pub fn shutdown() {
+    if let Err(e) = dispatcher::try_shutdown() {
+        log::error!("Can't shutdown dispatcher thread: {:?}", e);
+    }
 }

@@ -160,7 +160,6 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
-    #[ignore] 
     fn smoke_test_timespan() {
         let _lock = lock_test();
 
@@ -186,7 +185,6 @@ mod test {
     }
 
     #[test]
-    #[ignore] 
     fn timespan_ipc() {
         let _lock = lock_test();
         let _raii = ipc::test_set_need_ipc(true);
