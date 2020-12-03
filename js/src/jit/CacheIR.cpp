@@ -600,7 +600,7 @@ static void GuardGroupProto(CacheIRWriter& writer, JSObject* obj,
   
   
 
-  ObjectGroup* group = obj->groupRaw();
+  ObjectGroup* group = obj->group();
 
   if (group->hasUncacheableProto()) {
     if (JSObject* proto = obj->staticPrototype()) {
@@ -4933,10 +4933,6 @@ AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   
   JSObject* thisobj = &thisval_.toObject();
   if (!thisobj->is<ArrayObject>()) {
-    return AttachDecision::NoAction;
-  }
-
-  if (thisobj->hasLazyGroup()) {
     return AttachDecision::NoAction;
   }
 

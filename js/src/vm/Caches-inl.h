@@ -48,10 +48,7 @@ inline NativeObject* NewObjectCache::newObjectFromHit(JSContext* cx,
   NativeObject* templateObj =
       reinterpret_cast<NativeObject*>(&entry->templateObject);
 
-  
-  
-  
-  ObjectGroup* group = templateObj->groupRaw();
+  ObjectGroup* group = templateObj->group();
 
   
   

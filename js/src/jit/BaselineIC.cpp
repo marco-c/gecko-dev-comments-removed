@@ -1061,10 +1061,9 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
   }
 
   RootedShape oldShape(cx, obj->shape());
-  RootedObjectGroup oldGroup(cx, JSObject::getGroup(cx, obj));
-  if (!oldGroup) {
-    return false;
-  }
+
+  
+  RootedObjectGroup oldGroup(cx, obj->group());
 
   
   
@@ -1672,10 +1671,9 @@ bool DoSetPropFallback(JSContext* cx, BaselineFrame* frame,
     return false;
   }
   RootedShape oldShape(cx, obj->shape());
-  RootedObjectGroup oldGroup(cx, JSObject::getGroup(cx, obj));
-  if (!oldGroup) {
-    return false;
-  }
+
+  
+  RootedObjectGroup oldGroup(cx, obj->group());
 
   DeferType deferType = DeferType::None;
   bool attached = false;

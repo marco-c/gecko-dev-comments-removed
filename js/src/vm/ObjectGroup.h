@@ -59,36 +59,8 @@ enum NewObjectKind {
 enum : uint32_t {
   
   OBJECT_FLAG_SINGLETON = 0x2,
-
-  
-
-
-
-  OBJECT_FLAG_LAZY_SINGLETON = 0x4,
 };
 using ObjectGroupFlags = uint32_t;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
@@ -150,12 +122,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   bool singleton() const { return flags() & OBJECT_FLAG_SINGLETON; }
 
-  bool lazy() const {
-    bool res = flags() & OBJECT_FLAG_LAZY_SINGLETON;
-    MOZ_ASSERT_IF(res, singleton());
-    return res;
-  }
-
   JS::Compartment* compartment() const {
     return JS::GetCompartmentForRealm(realm_);
   }
@@ -203,19 +169,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   static ObjectGroup* defaultNewGroup(JSContext* cx, const JSClass* clasp,
                                       TaggedProto proto,
                                       JSObject* associated = nullptr);
-
-  
-  
-  static ObjectGroup* lazySingletonGroup(JSContext* cx, ObjectGroupRealm& realm,
-                                         JS::Realm* objectRealm,
-                                         const JSClass* clasp,
-                                         TaggedProto proto);
-
-  
-  static inline ObjectGroup* lazySingletonGroup(JSContext* cx,
-                                                ObjectGroup* oldGroup,
-                                                const JSClass* clasp,
-                                                TaggedProto proto);
 };
 
 
@@ -226,7 +179,6 @@ class ObjectGroupRealm {
  private:
   
   NewTable* defaultNewTable = nullptr;
-  NewTable* lazyTable = nullptr;
 
   
   class DefaultNewGroupCache {
@@ -293,13 +245,11 @@ class ObjectGroupRealm {
 #ifdef JSGC_HASH_TABLE_CHECKS
   void checkTablesAfterMovingGC() {
     checkNewTableAfterMovingGC(defaultNewTable);
-    checkNewTableAfterMovingGC(lazyTable);
   }
 #endif
 
   void fixupTablesAfterMovingGC() {
     fixupNewTableAfterMovingGC(defaultNewTable);
-    fixupNewTableAfterMovingGC(lazyTable);
   }
 
  private:
