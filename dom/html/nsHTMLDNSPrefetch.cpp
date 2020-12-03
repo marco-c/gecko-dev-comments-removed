@@ -162,6 +162,16 @@ nsresult nsHTMLDNSPrefetch::Prefetch(
   }
 
   
+  if (isHttps && StaticPrefs::network_security_esni_enabled()) {
+    nsAutoCString esniHost;
+    esniHost.Append("_esni.");
+    esniHost.Append(NS_ConvertUTF16toUTF8(hostname));
+    Unused << sDNSService->AsyncResolveNative(
+        esniHost, nsIDNSService::RESOLVE_TYPE_TXT,
+        flags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
+        nullptr, aPartitionedPrincipalOriginAttributes,
+        getter_AddRefs(tmpOutstanding));
+  }
 
   return NS_OK;
 }
@@ -246,8 +256,16 @@ nsresult nsHTMLDNSPrefetch::CancelPrefetch(
       flags | nsIDNSService::RESOLVE_SPECULATE,
       nullptr,  
       sDNSListener, aReason, aPartitionedPrincipalOriginAttributes);
-
   
+  if (StaticPrefs::network_security_esni_enabled() && isHttps) {
+    nsAutoCString esniHost;
+    esniHost.Append("_esni.");
+    esniHost.Append(NS_ConvertUTF16toUTF8(hostname));
+    sDNSService->CancelAsyncResolveNative(
+        esniHost, nsIDNSService::RESOLVE_TYPE_TXT,
+        flags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
+        aReason, aPartitionedPrincipalOriginAttributes);
+  }
   return rv;
 }
 
@@ -393,7 +411,17 @@ void nsHTMLDNSPrefetch::nsDeferrals::SubmitQueue() {
                 nullptr, sDNSListener, nullptr, oa,
                 getter_AddRefs(tmpOutstanding));
             
-
+            if (NS_SUCCEEDED(rv) &&
+                StaticPrefs::network_security_esni_enabled() && isHttps) {
+              nsAutoCString esniHost;
+              esniHost.Append("_esni.");
+              esniHost.Append(hostName);
+              sDNSService->AsyncResolveNative(
+                  esniHost, nsIDNSService::RESOLVE_TYPE_TXT,
+                  mEntries[mTail].mFlags | nsIDNSService::RESOLVE_SPECULATE,
+                  nullptr, sDNSListener, nullptr, oa,
+                  getter_AddRefs(tmpOutstanding));
+            }
             
             if (NS_SUCCEEDED(rv)) link->OnDNSPrefetchRequested();
           }

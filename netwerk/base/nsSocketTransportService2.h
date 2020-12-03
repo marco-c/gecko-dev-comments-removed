@@ -122,6 +122,10 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   bool IsTelemetryEnabledAndNotSleepPhase();
   PRIntervalTime MaxTimeForPrClosePref() { return mMaxTimeForPrClosePref; }
 
+  bool IsEsniEnabled() {
+    return mEsniEnabled && !mTrustedMitmDetected && !mNotTrustedMitmDetected;
+  }
+
   void SetNotTrustedMitmDetected() { mNotTrustedMitmDetected = true; }
 
   
@@ -339,6 +343,8 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   void TryRepairPollableEvent();
 
+  bool mEsniEnabled;
+  bool mTrustedMitmDetected;
   bool mNotTrustedMitmDetected;
 
   CopyableTArray<nsCOMPtr<nsISTSShutdownObserver>> mShutdownObservers;

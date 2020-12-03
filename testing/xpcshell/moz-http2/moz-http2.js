@@ -1037,7 +1037,7 @@ function handleRequest(req, res) {
     return;
   }
   
-  else if (u.pathname === "/txt-dns-push") {
+  else if (u.pathname === "/esni-dns-push") {
     
     let rContent = Buffer.from(
       "0000010000010001000000000A5F65736E695F70757368076578616D706C6503636F6D0000010001C00C000100010000003700047F000001",
