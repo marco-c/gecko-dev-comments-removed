@@ -823,8 +823,7 @@ static inline bool IsOptimizableArrayInstruction(MInstruction* ins) {
 
 static bool IsArrayEscaped(MInstruction* ins, MInstruction* newArray) {
   MOZ_ASSERT(ins->type() == MIRType::Object);
-  MOZ_ASSERT(IsOptimizableArrayInstruction(ins) ||
-             ins->isMaybeCopyElementsForWrite());
+  MOZ_ASSERT(IsOptimizableArrayInstruction(ins));
   MOZ_ASSERT(IsOptimizableArrayInstruction(newArray));
 
   JitSpewDef(JitSpew_Escape, "Check array\n", ins);
@@ -871,16 +870,6 @@ static bool IsArrayEscaped(MInstruction* ins, MInstruction* newArray) {
           return true;
         }
 
-        break;
-      }
-
-      case MDefinition::Opcode::MaybeCopyElementsForWrite: {
-        MMaybeCopyElementsForWrite* copied = def->toMaybeCopyElementsForWrite();
-        MOZ_ASSERT(copied->object() == ins);
-        if (IsArrayEscaped(copied, ins)) {
-          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", copied);
-          return true;
-        }
         break;
       }
 
@@ -953,7 +942,6 @@ class ArrayMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitSetInitializedLength(MSetInitializedLength* ins);
   void visitInitializedLength(MInitializedLength* ins);
   void visitArrayLength(MArrayLength* ins);
-  void visitMaybeCopyElementsForWrite(MMaybeCopyElementsForWrite* ins);
 };
 
 const char* ArrayMemoryView::phaseName = "Scalar Replacement of Array";
@@ -1226,26 +1214,6 @@ void ArrayMemoryView::visitArrayLength(MArrayLength* ins) {
 
   
   discardInstruction(ins, elements);
-}
-
-void ArrayMemoryView::visitMaybeCopyElementsForWrite(
-    MMaybeCopyElementsForWrite* ins) {
-  MOZ_ASSERT(ins->numOperands() == 1);
-  MOZ_ASSERT(ins->type() == MIRType::Object);
-
-  
-  if (ins->object() != arr_) {
-    return;
-  }
-
-  
-  
-
-  
-  ins->replaceAllUsesWith(arr_);
-
-  
-  ins->block()->discard(ins);
 }
 
 bool ScalarReplacement(MIRGenerator* mir, MIRGraph& graph) {

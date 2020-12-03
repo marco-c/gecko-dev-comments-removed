@@ -5015,10 +5015,9 @@ AttachDecision CallIRGenerator::tryAttachArrayPopShift(HandleFunction callee,
   
   
   
-  
   ArrayObject* arr = &thisval_.toObject().as<ArrayObject>();
-  if (!arr->lengthIsWritable() || arr->denseElementsAreCopyOnWrite() ||
-      !arr->isExtensible() || arr->denseElementsHaveMaybeInIterationFlag()) {
+  if (!arr->lengthIsWritable() || !arr->isExtensible() ||
+      arr->denseElementsHaveMaybeInIterationFlag()) {
     return AttachDecision::NoAction;
   }
 

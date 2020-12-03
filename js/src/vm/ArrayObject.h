@@ -49,12 +49,6 @@ class ArrayObject : public NativeObject {
                                          uint32_t length,
                                          AutoSetNewObjectMetadata& metadata);
 
-  
-  
-  static inline ArrayObject* createCopyOnWriteArray(
-      JSContext* cx, gc::InitialHeap heap,
-      HandleArrayObject sharedElementsOwner);
-
  private:
   
   static inline ArrayObject* createArrayInternal(

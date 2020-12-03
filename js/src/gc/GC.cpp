@@ -1944,18 +1944,6 @@ static void RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind,
             srcNative->getElementsHeader()->numShiftedElements();
         dstNative->setFixedElements(numShifted);
       }
-
-      
-      
-      
-      
-      if (srcNative->denseElementsAreCopyOnWrite()) {
-        GCPtrNativeObject& owner =
-            dstNative->getElementsHeader()->ownerObject();
-        if (owner == srcNative) {
-          owner = dstNative;
-        }
-      }
     } else if (srcObj->is<ProxyObject>()) {
       if (srcObj->as<ProxyObject>().usingInlineValueArray()) {
         dstObj->as<ProxyObject>().setInlineValueArray();

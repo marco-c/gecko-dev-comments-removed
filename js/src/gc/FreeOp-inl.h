@@ -19,27 +19,6 @@ inline void JSFreeOp::free_(Cell* cell, void* p, size_t nbytes, MemoryUse use) {
   }
 }
 
-inline void JSFreeOp::freeLater(Cell* cell, void* p, size_t nbytes,
-                                MemoryUse use) {
-  if (p) {
-    removeCellMemory(cell, nbytes, use);
-    queueForFreeLater(p);
-  }
-}
-
-inline void JSFreeOp::queueForFreeLater(void* p) {
-  
-  
-  MOZ_ASSERT(!isDefaultFreeOp());
-
-  
-  
-  js::AutoEnterOOMUnsafeRegion oomUnsafe;
-  if (!freeLaterList.append(p)) {
-    oomUnsafe.crash("JSFreeOp::freeLater");
-  }
-}
-
 template <class T>
 inline void JSFreeOp::release(Cell* cell, T* p, size_t nbytes, MemoryUse use) {
   if (p) {

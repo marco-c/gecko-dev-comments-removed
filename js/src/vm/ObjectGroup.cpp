@@ -394,20 +394,8 @@ ObjectGroup* ObjectGroup::lazySingletonGroup(JSContext* cx,
 
 
 ArrayObject* ObjectGroup::newArrayObject(JSContext* cx, const Value* vp,
-                                         size_t length, NewObjectKind newKind,
-                                         NewArrayKind arrayKind) {
+                                         size_t length, NewObjectKind newKind) {
   MOZ_ASSERT(newKind != SingletonObject);
-
-  
-  
-  
-  if (arrayKind == NewArrayKind::CopyOnWrite) {
-    ArrayObject* obj = NewDenseCopiedArray(cx, length, vp, nullptr, newKind);
-    if (!obj || !ObjectElements::MakeElementsCopyOnWrite(cx, obj)) {
-      return nullptr;
-    }
-    return obj;
-  }
 
   return NewDenseCopiedArray(cx, length, vp, nullptr, newKind);
 }
@@ -439,27 +427,6 @@ PlainObject* js::NewPlainObjectWithProperties(JSContext* cx,
   if (!obj || !AddPlainObjectProperties(cx, obj, properties, nproperties)) {
     return nullptr;
   }
-  return obj;
-}
-
-
-ArrayObject* ObjectGroup::getOrFixupCopyOnWriteObject(JSContext* cx,
-                                                      HandleScript script,
-                                                      jsbytecode* pc) {
-  MOZ_CRASH("TODO(no-TI): remove");
-}
-
-
-ArrayObject* ObjectGroup::getCopyOnWriteObject(JSScript* script,
-                                               jsbytecode* pc) {
-  
-  
-  
-  
-  
-  ArrayObject* obj = &script->getObject(pc)->as<ArrayObject>();
-  MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
-
   return obj;
 }
 

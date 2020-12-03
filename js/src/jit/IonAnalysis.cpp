@@ -3497,13 +3497,6 @@ static bool TryOptimizeLoadObjectOrNull(MDefinition* def,
   return true;
 }
 
-static inline MDefinition* PassthroughOperand(MDefinition* def) {
-  if (def->isMaybeCopyElementsForWrite()) {
-    return def->toMaybeCopyElementsForWrite()->object();
-  }
-  return nullptr;
-}
-
 
 
 
@@ -3568,12 +3561,6 @@ bool jit::EliminateRedundantChecks(MIRGraph& graph) {
           }
           break;
         default:
-          
-          
-          
-          if (MDefinition* passthrough = PassthroughOperand(def)) {
-            def->replaceAllUsesWith(passthrough);
-          }
           break;
       }
 

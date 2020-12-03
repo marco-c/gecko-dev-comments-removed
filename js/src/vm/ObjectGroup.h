@@ -220,24 +220,10 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   
   
 
-  enum class NewArrayKind {
-    Normal,       
-    CopyOnWrite,  
-    UnknownIndex  
-  };
-
   
   
-  static ArrayObject* newArrayObject(
-      JSContext* cx, const Value* vp, size_t length, NewObjectKind newKind,
-      NewArrayKind arrayKind = NewArrayKind::Normal);
-
-  
-
-  static ArrayObject* getOrFixupCopyOnWriteObject(JSContext* cx,
-                                                  HandleScript script,
-                                                  jsbytecode* pc);
-  static ArrayObject* getCopyOnWriteObject(JSScript* script, jsbytecode* pc);
+  static ArrayObject* newArrayObject(JSContext* cx, const Value* vp,
+                                     size_t length, NewObjectKind newKind);
 };
 
 

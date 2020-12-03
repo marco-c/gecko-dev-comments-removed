@@ -38,11 +38,6 @@ class JSFreeOp {
 
   JSRuntime* runtime_;
 
-  
-  
-  
-  js::Vector<void*, 0, js::SystemAllocPolicy> freeLaterList;
-
   js::jit::JitPoisonRangeVector jitPoisonRanges;
 
   const bool isDefault;
@@ -80,22 +75,6 @@ class JSFreeOp {
   
   
   void free_(Cell* cell, void* p, size_t nbytes, MemoryUse use);
-
-  
-  
-  
-  void freeUntrackedLater(void* p) { queueForFreeLater(p); }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void freeLater(Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
   bool appendJitPoisonRange(const js::jit::JitPoisonRange& range) {
     
@@ -169,9 +148,6 @@ class JSFreeOp {
   
   
   void removeCellMemory(Cell* cell, size_t nbytes, MemoryUse use);
-
- private:
-  void queueForFreeLater(void* p);
 };
 
 #endif  
