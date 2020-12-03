@@ -3020,17 +3020,11 @@ void HTMLInputElement::Select() {
     return;
   }
 
-  
-  
+  TextControlState* state = GetEditorState();
+  MOZ_ASSERT(state, "Single line text controls are expected to have a state");
 
-  FocusTristate state = FocusState();
-  if (state == eUnfocusable) {
-    return;
-  }
-
-  TextControlState* tes = GetEditorState();
-  if (tes) {
-    RefPtr<nsFrameSelection> fs = tes->GetConstFrameSelection();
+  if (FocusState() != eUnfocusable) {
+    RefPtr<nsFrameSelection> fs = state->GetConstFrameSelection();
     if (fs && fs->MouseDownRecorded()) {
       
       
@@ -3039,27 +3033,24 @@ void HTMLInputElement::Select() {
       
       fs->SetDelayedCaretData(nullptr);
     }
-  }
 
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+    if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
+      fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
 
-  RefPtr<nsPresContext> presContext = GetPresContext(eForComposedDoc);
-  if (state == eInactiveWindow) {
-    if (fm) fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
-    SelectAll(presContext);
-    return;
-  }
-
-  DispatchSelectEvent(presContext);
-  if (fm) {
-    fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
-
-    
-    if (this == fm->GetFocusedElement()) {
       
-      SelectAll(presContext);
+      
+      state = GetEditorState();
+      if (!state) {
+        return;
+      }
     }
   }
+
+  
+  
+  state->SetSelectionRange(0, UINT32_MAX,
+                           nsITextControlFrame::SelectionDirection::eNone,
+                           IgnoredErrorResult());
 }
 
 void HTMLInputElement::DispatchSelectEvent(nsPresContext* aPresContext) {
