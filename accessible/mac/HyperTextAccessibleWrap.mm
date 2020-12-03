@@ -79,6 +79,12 @@ bool HyperTextIterator::NormalizeForward() {
       mCurrentContainer = mCurrentContainer->Parent()->AsHyperText();
       mCurrentStartOffset = endOffset;
 
+      if (mCurrentContainer == mEndContainer &&
+          mCurrentStartOffset >= mEndOffset) {
+        
+        return false;
+      }
+
       
       
       NormalizeForward();
@@ -96,6 +102,12 @@ bool HyperTextIterator::NormalizeForward() {
         mCurrentStartOffset = bullet ? nsAccUtils::TextLength(bullet) : 0;
       } else {
         mCurrentStartOffset = 0;
+      }
+
+      if (mCurrentContainer == mEndContainer &&
+          mCurrentStartOffset >= mEndOffset) {
+        
+        return false;
       }
 
       
