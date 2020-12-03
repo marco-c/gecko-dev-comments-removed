@@ -92,6 +92,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["experimental.searchModeIndicatorHover", false],
 
   
+  
+  ["extension.timeout", 200],
+
+  
   ["filter.javascript", true],
 
   

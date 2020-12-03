@@ -7,7 +7,6 @@ const { AddonTestUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
-  UrlbarProviderExtension: "resource:///modules/UrlbarProviderExtension.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarQueryContext: "resource:///modules/UrlbarUtils.jsm",
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.jsm",
@@ -47,9 +46,6 @@ function getPayload(result) {
   return payload;
 }
 
-const ORIGINAL_NOTIFICATION_TIMEOUT =
-  UrlbarProviderExtension.notificationTimeout;
-
 add_task(async function startup() {
   Services.prefs.setCharPref("browser.search.region", "US");
   Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
@@ -57,6 +53,14 @@ add_task(async function startup() {
     "browser.search.separatePrivateDefault.ui.enabled",
     false
   );
+  
+  
+  Services.prefs.setIntPref("browser.urlbar.extension.timeout", 5000);
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("browser.urlbar.extension.timeout");
+  });
+
   await AddonTestUtils.promiseStartupManager();
   await UrlbarTestUtils.initXPCShellDependencies();
 
@@ -68,10 +72,6 @@ add_task(async function startup() {
     alias: "@testengine",
   });
   Services.search.defaultEngine = engine;
-
-  
-  
-  UrlbarProviderExtension.notificationTimeout = 5000;
 });
 
 
@@ -1090,10 +1090,9 @@ add_task(async function test_onBehaviorRequestedTimeout() {
   });
   let controller = UrlbarTestUtils.newMockController();
 
-  let currentTimeout = UrlbarProviderExtension.notificationTimeout;
-  UrlbarProviderExtension.notificationTimeout = 0;
+  Services.prefs.setIntPref("browser.urlbar.extension.timeout", 0);
   await controller.startQuery(context);
-  UrlbarProviderExtension.notificationTimeout = currentTimeout;
+  Services.prefs.clearUserPref("browser.urlbar.extension.timeout");
 
   
   Assert.ok(!provider.isActive(context));
@@ -1150,15 +1149,7 @@ add_task(async function test_onResultsRequestedTimeout() {
   });
   let controller = UrlbarTestUtils.newMockController();
 
-  
-  
-  
-  
-  
-  let currentTimeout = UrlbarProviderExtension.notificationTimeout;
-  UrlbarProviderExtension.notificationTimeout = ORIGINAL_NOTIFICATION_TIMEOUT;
   await controller.startQuery(context);
-  UrlbarProviderExtension.notificationTimeout = currentTimeout;
 
   
   Assert.ok(provider.isActive(context));
