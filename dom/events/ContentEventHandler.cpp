@@ -417,11 +417,15 @@ nsresult ContentEventHandler::Init(WidgetQueryContentEvent* aEvent) {
     }
   }
 
-  aEvent->mSucceeded = false;
+  
+  
+  
+  
+  aEvent->EmplaceReply();
 
-  aEvent->mReply.mContentsRoot = mRootContent.get();
+  aEvent->mReply->mContentsRoot = mRootContent.get();
 
-  aEvent->mReply.mHasSelection = !mSelection->IsCollapsed();
+  aEvent->mReply->mHasSelection = !mSelection->IsCollapsed();
 
   nsRect r;
   nsIFrame* frame = nsCaret::GetGeometry(mSelection, &r);
@@ -431,7 +435,7 @@ nsresult ContentEventHandler::Init(WidgetQueryContentEvent* aEvent) {
       return NS_ERROR_FAILURE;
     }
   }
-  aEvent->mReply.mFocusedWidget = frame->GetNearestWidget();
+  aEvent->mReply->mFocusedWidget = frame->GetNearestWidget();
 
   return NS_OK;
 }
@@ -482,12 +486,11 @@ nsresult ContentEventHandler::QueryContentRect(
     resultRect.UnionRect(resultRect, frameRect);
   }
 
-  aEvent->mReply.mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
+  aEvent->mReply->mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
       resultRect, presContext->AppUnitsPerDevPixel());
   
   
-  EnsureNonEmptyRect(aEvent->mReply.mRect);
-  aEvent->mSucceeded = true;
+  EnsureNonEmptyRect(aEvent->mReply->mRect);
 
   return NS_OK;
 }
@@ -1264,30 +1267,47 @@ LineBreakType ContentEventHandler::GetLineBreakType(bool aUseNativeLineBreak) {
 
 nsresult ContentEventHandler::HandleQueryContentEvent(
     WidgetQueryContentEvent* aEvent) {
+  nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
   switch (aEvent->mMessage) {
     case eQuerySelectedText:
-      return OnQuerySelectedText(aEvent);
+      rv = OnQuerySelectedText(aEvent);
+      break;
     case eQueryTextContent:
-      return OnQueryTextContent(aEvent);
+      rv = OnQueryTextContent(aEvent);
+      break;
     case eQueryCaretRect:
-      return OnQueryCaretRect(aEvent);
+      rv = OnQueryCaretRect(aEvent);
+      break;
     case eQueryTextRect:
-      return OnQueryTextRect(aEvent);
+      rv = OnQueryTextRect(aEvent);
+      break;
     case eQueryTextRectArray:
-      return OnQueryTextRectArray(aEvent);
+      rv = OnQueryTextRectArray(aEvent);
+      break;
     case eQueryEditorRect:
-      return OnQueryEditorRect(aEvent);
+      rv = OnQueryEditorRect(aEvent);
+      break;
     case eQueryContentState:
-      return OnQueryContentState(aEvent);
+      rv = OnQueryContentState(aEvent);
+      break;
     case eQuerySelectionAsTransferable:
-      return OnQuerySelectionAsTransferable(aEvent);
+      rv = OnQuerySelectionAsTransferable(aEvent);
+      break;
     case eQueryCharacterAtPoint:
-      return OnQueryCharacterAtPoint(aEvent);
+      rv = OnQueryCharacterAtPoint(aEvent);
+      break;
     case eQueryDOMWidgetHittest:
-      return OnQueryDOMWidgetHittest(aEvent);
+      rv = OnQueryDOMWidgetHittest(aEvent);
+      break;
     default:
-      return NS_ERROR_NOT_IMPLEMENTED;
+      break;
   }
+  if (NS_FAILED(rv)) {
+    aEvent->mReply.reset();  
+    return rv;
+  }
+
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -1310,12 +1330,15 @@ nsresult ContentEventHandler::OnQuerySelectedText(
     return rv;
   }
 
+  MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
+
   if (!mFirstSelectedRawRange.IsPositioned()) {
     MOZ_ASSERT(aEvent->mInput.mSelectionType != SelectionType::eNormal);
-    MOZ_ASSERT(aEvent->mReply.mOffset == WidgetQueryContentEvent::NOT_FOUND);
-    MOZ_ASSERT(aEvent->mReply.mString.IsEmpty());
-    MOZ_ASSERT(!aEvent->mReply.mHasSelection);
-    aEvent->mSucceeded = true;
+    MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
+    MOZ_ASSERT(!aEvent->mReply->mHasSelection);
+    
+    
+    
     return NS_OK;
   }
 
@@ -1328,82 +1351,74 @@ nsresult ContentEventHandler::OnQuerySelectedText(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  NS_ASSERTION(aEvent->mReply.mString.IsEmpty(),
-               "The reply string must be empty");
-
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
-  rv = GetStartOffset(mFirstSelectedRawRange, &aEvent->mReply.mOffset,
-                      lineBreakType);
-  NS_ENSURE_SUCCESS(rv, rv);
+  uint32_t startOffset = 0;
+  if (NS_WARN_IF(NS_FAILED(GetStartOffset(mFirstSelectedRawRange, &startOffset,
+                                          lineBreakType)))) {
+    return NS_ERROR_FAILURE;
+  }
 
-  nsCOMPtr<nsINode> anchorNode, focusNode;
-  int32_t anchorOffset = 0, focusOffset = 0;
+  const RangeBoundary& anchorRef = mSelection->RangeCount() > 0
+                                       ? mSelection->AnchorRef()
+                                       : mFirstSelectedRawRange.Start();
+  const RangeBoundary& focusRef = mSelection->RangeCount() > 0
+                                      ? mSelection->FocusRef()
+                                      : mFirstSelectedRawRange.End();
+  if (NS_WARN_IF(!anchorRef.IsSet()) || NS_WARN_IF(!focusRef.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+
   if (mSelection->RangeCount()) {
     
     
     
     if (mSelection->RangeCount() == 1) {
-      anchorNode = mSelection->GetAnchorNode();
-      focusNode = mSelection->GetFocusNode();
-      if (NS_WARN_IF(!anchorNode) || NS_WARN_IF(!focusNode)) {
-        return NS_ERROR_FAILURE;
-      }
-      anchorOffset = static_cast<int32_t>(mSelection->AnchorOffset());
-      focusOffset = static_cast<int32_t>(mSelection->FocusOffset());
-      if (NS_WARN_IF(anchorOffset < 0) || NS_WARN_IF(focusOffset < 0)) {
+      
+      
+      Maybe<int32_t> compare =
+          nsContentUtils::ComparePoints(anchorRef, focusRef);
+      if (compare.isNothing()) {
         return NS_ERROR_FAILURE;
       }
 
-      
-      
-      int16_t compare = *nsContentUtils::ComparePoints(anchorNode, anchorOffset,
-                                                       focusNode, focusOffset);
-
-      aEvent->mReply.mReversed = compare > 0;
+      aEvent->mReply->mReversed = compare.value() > 0;
     }
     
     
     else {
-      aEvent->mReply.mReversed = false;
+      aEvent->mReply->mReversed = false;
     }
 
-    if (!mFirstSelectedRawRange.Collapsed()) {
-      rv = GenerateFlatTextContent(mFirstSelectedRawRange,
-                                   aEvent->mReply.mString, lineBreakType);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    } else {
-      aEvent->mReply.mString.Truncate();
+    nsString selectedString;
+    if (!mFirstSelectedRawRange.Collapsed() &&
+        NS_WARN_IF(NS_FAILED(GenerateFlatTextContent(
+            mFirstSelectedRawRange, selectedString, lineBreakType)))) {
+      return NS_ERROR_FAILURE;
     }
+    aEvent->mReply->mOffsetAndData.emplace(startOffset, selectedString,
+                                           OffsetAndDataFor::SelectedString);
   } else {
-    NS_ASSERTION(mFirstSelectedRawRange.Collapsed(),
+    NS_ASSERTION(anchorRef == focusRef,
                  "When mSelection doesn't have selection, "
-                 "mFirstSelectedRawRange must be "
-                 "collapsed");
-    anchorNode = focusNode = mFirstSelectedRawRange.GetStartContainer();
-    if (NS_WARN_IF(!anchorNode)) {
-      return NS_ERROR_FAILURE;
-    }
-    anchorOffset = focusOffset =
-        static_cast<int32_t>(mFirstSelectedRawRange.StartOffset());
-    if (NS_WARN_IF(anchorOffset < 0)) {
-      return NS_ERROR_FAILURE;
-    }
+                 "mFirstSelectedRawRange must be collapsed");
 
-    aEvent->mReply.mReversed = false;
-    aEvent->mReply.mString.Truncate();
+    aEvent->mReply->mReversed = false;
+    aEvent->mReply->mOffsetAndData.emplace(startOffset, EmptyString(),
+                                           OffsetAndDataFor::SelectedString);
   }
 
   nsIFrame* frame = nullptr;
-  rv = GetFrameForTextRect(focusNode, focusOffset, true, &frame);
+  rv = GetFrameForTextRect(
+      focusRef.Container(),
+      focusRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets).valueOr(0),
+      true, &frame);
   if (NS_SUCCEEDED(rv) && frame) {
-    aEvent->mReply.mWritingMode = frame->GetWritingMode();
+    aEvent->mReply->mWritingMode = frame->GetWritingMode();
   } else {
-    aEvent->mReply.mWritingMode = WritingMode();
+    aEvent->mReply->mWritingMode = WritingMode();
   }
 
-  aEvent->mSucceeded = true;
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -1414,34 +1429,40 @@ nsresult ContentEventHandler::OnQueryTextContent(
     return rv;
   }
 
-  NS_ASSERTION(aEvent->mReply.mString.IsEmpty(),
-               "The reply string must be empty");
+  MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
 
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
 
   RawRange rawRange;
-  rv = SetRawRangeFromFlatTextOffset(&rawRange, aEvent->mInput.mOffset,
-                                     aEvent->mInput.mLength, lineBreakType,
-                                     false, &aEvent->mReply.mOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
+  uint32_t startOffset = 0;
+  if (NS_WARN_IF(NS_FAILED(SetRawRangeFromFlatTextOffset(
+          &rawRange, aEvent->mInput.mOffset, aEvent->mInput.mLength,
+          lineBreakType, false, &startOffset)))) {
+    return NS_ERROR_FAILURE;
+  }
 
-  rv = GenerateFlatTextContent(rawRange, aEvent->mReply.mString, lineBreakType);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsString textInRange;
+  if (NS_WARN_IF(NS_FAILED(
+          GenerateFlatTextContent(rawRange, textInRange, lineBreakType)))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  aEvent->mReply->mOffsetAndData.emplace(startOffset, textInRange,
+                                         OffsetAndDataFor::EditorString);
 
   if (aEvent->mWithFontRanges) {
     uint32_t fontRangeLength;
-    rv = GenerateFlatFontRanges(rawRange, aEvent->mReply.mFontRanges,
-                                fontRangeLength, lineBreakType);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (NS_WARN_IF(NS_FAILED(
+            GenerateFlatFontRanges(rawRange, aEvent->mReply->mFontRanges,
+                                   fontRangeLength, lineBreakType)))) {
+      return NS_ERROR_FAILURE;
     }
 
-    MOZ_ASSERT(fontRangeLength == aEvent->mReply.mString.Length(),
+    MOZ_ASSERT(fontRangeLength == aEvent->mReply->DataLength(),
                "Font ranges doesn't match the string");
   }
 
-  aEvent->mSucceeded = true;
-
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -1803,6 +1824,8 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
     return rv;
   }
 
+  MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
+
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
   const uint32_t kBRLength = GetBRLength(lineBreakType);
 
@@ -2037,7 +2060,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       
       EnsureNonEmptyRect(rect);
 
-      aEvent->mReply.mRectArray.AppendElement(rect);
+      aEvent->mReply->mRectArray.AppendElement(rect);
       offset++;
 
       
@@ -2066,7 +2089,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       
       
       
-      aEvent->mReply.mRectArray.AppendElement(rect);
+      aEvent->mReply->mRectArray.AppendElement(rect);
       offset++;
     }
   }
@@ -2077,12 +2100,12 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
   
   
   
-  if (offset < kEndOffset || aEvent->mReply.mRectArray.IsEmpty()) {
+  if (offset < kEndOffset || aEvent->mReply->mRectArray.IsEmpty()) {
     
     
     
-    if (!aEvent->mReply.mRectArray.IsEmpty() && !wasLineBreaker) {
-      rect = aEvent->mReply.mRectArray.LastElement();
+    if (!aEvent->mReply->mRectArray.IsEmpty() && !wasLineBreaker) {
+      rect = aEvent->mReply->mRectArray.LastElement();
       if (isVertical) {
         rect.y = rect.YMost() + 1;
         rect.height = 1;
@@ -2092,57 +2115,64 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
         rect.width = 1;
         MOZ_ASSERT(rect.height);
       }
-      aEvent->mReply.mRectArray.AppendElement(rect);
+      aEvent->mReply->mRectArray.AppendElement(rect);
     } else {
       
       
       
       
-      WidgetQueryContentEvent queryTextRect(eQueryTextRect, *aEvent);
+      WidgetQueryContentEvent queryTextRectEvent(eQueryTextRect, *aEvent);
       WidgetQueryContentEvent::Options options(*aEvent);
-      queryTextRect.InitForQueryTextRect(offset, 1, options);
-      rv = OnQueryTextRect(&queryTextRect);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      if (NS_WARN_IF(!queryTextRect.mSucceeded)) {
+      queryTextRectEvent.InitForQueryTextRect(offset, 1, options);
+      if (NS_WARN_IF(NS_FAILED(OnQueryTextRect(&queryTextRectEvent))) ||
+          NS_WARN_IF(queryTextRectEvent.Failed())) {
         return NS_ERROR_FAILURE;
       }
-      MOZ_ASSERT(!queryTextRect.mReply.mRect.IsEmpty());
-      if (queryTextRect.mReply.mWritingMode.IsVertical()) {
-        queryTextRect.mReply.mRect.height = 1;
+      if (queryTextRectEvent.mReply->mWritingMode.IsVertical()) {
+        queryTextRectEvent.mReply->mRect.height = 1;
       } else {
-        queryTextRect.mReply.mRect.width = 1;
+        queryTextRectEvent.mReply->mRect.width = 1;
       }
-      aEvent->mReply.mRectArray.AppendElement(queryTextRect.mReply.mRect);
+      aEvent->mReply->mRectArray.AppendElement(
+          queryTextRectEvent.mReply->mRect);
     }
   }
 
-  aEvent->mSucceeded = true;
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
 nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
-  nsresult rv = Init(aEvent);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   
   
   if (!aEvent->mInput.mLength) {
     return OnQueryCaretRect(aEvent);
   }
 
+  nsresult rv = Init(aEvent);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
+
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
   RawRange rawRange;
   nsCOMPtr<nsIContent> lastTextContent;
-  rv = SetRawRangeFromFlatTextOffset(
-      &rawRange, aEvent->mInput.mOffset, aEvent->mInput.mLength, lineBreakType,
-      true, &aEvent->mReply.mOffset, getter_AddRefs(lastTextContent));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = GenerateFlatTextContent(rawRange, aEvent->mReply.mString, lineBreakType);
-  NS_ENSURE_SUCCESS(rv, rv);
+  uint32_t startOffset = 0;
+  if (NS_WARN_IF(NS_FAILED(SetRawRangeFromFlatTextOffset(
+          &rawRange, aEvent->mInput.mOffset, aEvent->mInput.mLength,
+          lineBreakType, true, &startOffset,
+          getter_AddRefs(lastTextContent))))) {
+    return NS_ERROR_FAILURE;
+  }
+  nsString string;
+  if (NS_WARN_IF(NS_FAILED(
+          GenerateFlatTextContent(rawRange, string, lineBreakType)))) {
+    return NS_ERROR_FAILURE;
+  }
+  aEvent->mReply->mOffsetAndData.emplace(startOffset, string,
+                                         OffsetAndDataFor::EditorString);
 
   
   PostContentIterator postOrderIter;
@@ -2209,7 +2239,7 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      aEvent->mReply.mWritingMode = lastFrame->GetWritingMode();
+      aEvent->mReply->mWritingMode = lastFrame->GetWritingMode();
     }
     
     
@@ -2228,19 +2258,19 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      aEvent->mReply.mWritingMode = rootContentFrame->GetWritingMode();
+      aEvent->mReply->mWritingMode = rootContentFrame->GetWritingMode();
     }
-    aEvent->mReply.mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
+    aEvent->mReply->mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
         rect, presContext->AppUnitsPerDevPixel());
     if (nsPresContext* rootContext =
             presContext->GetInProcessRootContentDocumentPresContext()) {
-      aEvent->mReply.mRect =
+      aEvent->mReply->mRect =
           RoundedOut(ViewportUtils::DocumentRelativeLayoutToVisual(
-              aEvent->mReply.mRect, rootContext->PresShell()));
+              aEvent->mReply->mRect, rootContext->PresShell()));
     }
+    EnsureNonEmptyRect(aEvent->mReply->mRect);
 
-    EnsureNonEmptyRect(aEvent->mReply.mRect);
-    aEvent->mSucceeded = true;
+    MOZ_ASSERT(aEvent->Succeeded());
     return NS_OK;
   }
 
@@ -2420,19 +2450,20 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
   }
 
   nsPresContext* presContext = lastFrame->PresContext();
-  aEvent->mReply.mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
+  aEvent->mReply->mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
       rect, presContext->AppUnitsPerDevPixel());
   if (nsPresContext* rootContext =
           presContext->GetInProcessRootContentDocumentPresContext()) {
-    aEvent->mReply.mRect =
+    aEvent->mReply->mRect =
         RoundedOut(ViewportUtils::DocumentRelativeLayoutToVisual(
-            aEvent->mReply.mRect, rootContext->PresShell()));
+            aEvent->mReply->mRect, rootContext->PresShell()));
   }
   
   
-  EnsureNonEmptyRect(aEvent->mReply.mRect);
-  aEvent->mReply.mWritingMode = lastFrame->GetWritingMode();
-  aEvent->mSucceeded = true;
+  EnsureNonEmptyRect(aEvent->mReply->mRect);
+  aEvent->mReply->mWritingMode = lastFrame->GetWritingMode();
+
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -2444,9 +2475,13 @@ nsresult ContentEventHandler::OnQueryEditorRect(
   }
 
   nsIContent* focusedContent = GetFocusedContent();
-  rv = QueryContentRect(
-      IsPlugin(focusedContent) ? focusedContent : mRootContent.get(), aEvent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(QueryContentRect(
+          IsPlugin(focusedContent) ? focusedContent : mRootContent.get(),
+          aEvent)))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -2471,20 +2506,23 @@ nsresult ContentEventHandler::OnQueryCaretRect(
         rv = ConvertToRootRelativeOffset(caretFrame, caretRect);
         NS_ENSURE_SUCCESS(rv, rv);
         nsPresContext* presContext = caretFrame->PresContext();
-        aEvent->mReply.mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
+        aEvent->mReply->mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
             caretRect, presContext->AppUnitsPerDevPixel());
         if (nsPresContext* rootContext =
                 presContext->GetInProcessRootContentDocumentPresContext()) {
-          aEvent->mReply.mRect =
+          aEvent->mReply->mRect =
               RoundedOut(ViewportUtils::DocumentRelativeLayoutToVisual(
-                  aEvent->mReply.mRect, rootContext->PresShell()));
+                  aEvent->mReply->mRect, rootContext->PresShell()));
         }
         
         
-        EnsureNonEmptyRect(aEvent->mReply.mRect);
-        aEvent->mReply.mWritingMode = caretFrame->GetWritingMode();
-        aEvent->mReply.mOffset = aEvent->mInput.mOffset;
-        aEvent->mSucceeded = true;
+        EnsureNonEmptyRect(aEvent->mReply->mRect);
+        aEvent->mReply->mWritingMode = caretFrame->GetWritingMode();
+        aEvent->mReply->mOffsetAndData.emplace(
+            aEvent->mInput.mOffset, EmptyString(),
+            OffsetAndDataFor::SelectedString);
+
+        MOZ_ASSERT(aEvent->Succeeded());
         return NS_OK;
       }
     }
@@ -2494,30 +2532,33 @@ nsresult ContentEventHandler::OnQueryCaretRect(
   WidgetQueryContentEvent queryTextRectEvent(eQueryTextRect, *aEvent);
   WidgetQueryContentEvent::Options options(*aEvent);
   queryTextRectEvent.InitForQueryTextRect(aEvent->mInput.mOffset, 1, options);
-  rv = OnQueryTextRect(&queryTextRectEvent);
-  if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!queryTextRectEvent.mSucceeded)) {
+  if (NS_WARN_IF(NS_FAILED(OnQueryTextRect(&queryTextRectEvent))) ||
+      NS_WARN_IF(queryTextRectEvent.Failed())) {
     return NS_ERROR_FAILURE;
   }
-  queryTextRectEvent.mReply.mString.Truncate();
-  aEvent->mReply = queryTextRectEvent.mReply;
-  if (aEvent->GetWritingMode().IsVertical()) {
-    aEvent->mReply.mRect.height = 1;
+  queryTextRectEvent.mReply->TruncateData();
+  aEvent->mReply->mOffsetAndData =
+      std::move(queryTextRectEvent.mReply->mOffsetAndData);
+  aEvent->mReply->mRect = std::move(queryTextRectEvent.mReply->mRect);
+  aEvent->mReply->mWritingMode =
+      std::move(queryTextRectEvent.mReply->mWritingMode);
+  if (aEvent->mReply->WritingModeRef().IsVertical()) {
+    aEvent->mReply->mRect.height = 1;
   } else {
-    aEvent->mReply.mRect.width = 1;
+    aEvent->mReply->mRect.width = 1;
   }
-  
-  
-  aEvent->mSucceeded = true;
+
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
 nsresult ContentEventHandler::OnQueryContentState(
     WidgetQueryContentEvent* aEvent) {
-  nsresult rv = Init(aEvent);
-  if (NS_FAILED(rv)) {
-    return rv;
+  if (NS_FAILED(Init(aEvent))) {
+    return NS_ERROR_FAILURE;
   }
-  aEvent->mSucceeded = true;
+  MOZ_ASSERT(aEvent->mReply.isSome());
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -2528,17 +2569,20 @@ nsresult ContentEventHandler::OnQuerySelectionAsTransferable(
     return rv;
   }
 
-  if (!aEvent->mReply.mHasSelection) {
-    aEvent->mSucceeded = true;
-    aEvent->mReply.mTransferable = nullptr;
+  MOZ_ASSERT(aEvent->mReply.isSome());
+
+  if (!aEvent->mReply->mHasSelection) {
+    MOZ_ASSERT(!aEvent->mReply->mTransferable);
     return NS_OK;
   }
 
-  rv = nsCopySupport::GetTransferableForSelection(
-      mSelection, mDocument, getter_AddRefs(aEvent->mReply.mTransferable));
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(nsCopySupport::GetTransferableForSelection(
+          mSelection, mDocument,
+          getter_AddRefs(aEvent->mReply->mTransferable))))) {
+    return NS_ERROR_FAILURE;
+  }
 
-  aEvent->mSucceeded = true;
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -2549,8 +2593,8 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
     return rv;
   }
 
-  aEvent->mReply.mOffset = aEvent->mReply.mTentativeCaretOffset =
-      WidgetQueryContentEvent::NOT_FOUND;
+  MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
+  MOZ_ASSERT(aEvent->mReply->mTentativeCaretOffset.isNothing());
 
   PresShell* presShell = mDocument->GetPresShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
@@ -2571,22 +2615,25 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
     NS_ENSURE_TRUE(rootWidget, NS_ERROR_FAILURE);
   }
 
-  WidgetQueryContentEvent eventOnRoot(true, eQueryCharacterAtPoint, rootWidget);
-  eventOnRoot.mUseNativeLineBreak = aEvent->mUseNativeLineBreak;
-  eventOnRoot.mRefPoint = aEvent->mRefPoint;
+  WidgetQueryContentEvent queryCharAtPointOnRootWidgetEvent(
+      true, eQueryCharacterAtPoint, rootWidget);
+  queryCharAtPointOnRootWidgetEvent.mUseNativeLineBreak =
+      aEvent->mUseNativeLineBreak;
+  queryCharAtPointOnRootWidgetEvent.mRefPoint = aEvent->mRefPoint;
   if (rootWidget != aEvent->mWidget) {
-    eventOnRoot.mRefPoint += aEvent->mWidget->WidgetToScreenOffset() -
-                             rootWidget->WidgetToScreenOffset();
+    queryCharAtPointOnRootWidgetEvent.mRefPoint +=
+        aEvent->mWidget->WidgetToScreenOffset() -
+        rootWidget->WidgetToScreenOffset();
   }
   nsPoint ptInRoot = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-      &eventOnRoot, RelativeTo{rootFrame});
+      &queryCharAtPointOnRootWidgetEvent, RelativeTo{rootFrame});
 
   nsIFrame* targetFrame =
       nsLayoutUtils::GetFrameForPoint(RelativeTo{rootFrame}, ptInRoot);
   if (!targetFrame || !targetFrame->GetContent() ||
       !targetFrame->GetContent()->IsInclusiveDescendantOf(mRootContent)) {
     
-    aEvent->mSucceeded = true;
+    MOZ_ASSERT(aEvent->Succeeded());
     return NS_OK;
   }
   nsPoint ptInTarget = ptInRoot + rootFrame->GetOffsetToCrossDoc(targetFrame);
@@ -2599,53 +2646,49 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
   if (!tentativeCaretOffsets.content ||
       !tentativeCaretOffsets.content->IsInclusiveDescendantOf(mRootContent)) {
     
-    aEvent->mSucceeded = true;
+    MOZ_ASSERT(aEvent->Succeeded());
     return NS_OK;
   }
 
-  rv = GetFlatTextLengthInRange(
-      NodePosition(mRootContent, 0), NodePosition(tentativeCaretOffsets),
-      mRootContent, &aEvent->mReply.mTentativeCaretOffset,
-      GetLineBreakType(aEvent));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  uint32_t tentativeCaretOffset = 0;
+  if (NS_WARN_IF(NS_FAILED(GetFlatTextLengthInRange(
+          NodePosition(mRootContent, 0), NodePosition(tentativeCaretOffsets),
+          mRootContent, &tentativeCaretOffset, GetLineBreakType(aEvent))))) {
+    return NS_ERROR_FAILURE;
   }
 
+  aEvent->mReply->mTentativeCaretOffset.emplace(tentativeCaretOffset);
   if (!targetFrame->IsTextFrame()) {
     
-    aEvent->mSucceeded = true;
+    MOZ_ASSERT(aEvent->Succeeded());
     return NS_OK;
   }
-
-  MOZ_ASSERT(aEvent->mReply.mTentativeCaretOffset !=
-                 WidgetQueryContentEvent::NOT_FOUND,
-             "The point is inside a character bounding box.  Why tentative "
-             "caret point "
-             "hasn't been found?");
 
   nsTextFrame* textframe = static_cast<nsTextFrame*>(targetFrame);
   nsIFrame::ContentOffsets contentOffsets =
       textframe->GetCharacterOffsetAtFramePoint(ptInTarget);
   NS_ENSURE_TRUE(contentOffsets.content, NS_ERROR_FAILURE);
-  uint32_t offset;
-  rv = GetFlatTextLengthInRange(NodePosition(mRootContent, 0),
-                                NodePosition(contentOffsets), mRootContent,
-                                &offset, GetLineBreakType(aEvent));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  uint32_t offset = 0;
+  if (NS_WARN_IF(NS_FAILED(GetFlatTextLengthInRange(
+          NodePosition(mRootContent, 0), NodePosition(contentOffsets),
+          mRootContent, &offset, GetLineBreakType(aEvent))))) {
+    return NS_ERROR_FAILURE;
   }
 
-  WidgetQueryContentEvent textRect(true, eQueryTextRect, aEvent->mWidget);
+  WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect,
+                                             aEvent->mWidget);
   WidgetQueryContentEvent::Options options(*aEvent);
-  textRect.InitForQueryTextRect(offset, 1, options);
-  rv = OnQueryTextRect(&textRect);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(textRect.mSucceeded, NS_ERROR_FAILURE);
+  queryTextRectEvent.InitForQueryTextRect(offset, 1, options);
+  if (NS_WARN_IF(NS_FAILED(OnQueryTextRect(&queryTextRectEvent))) ||
+      NS_WARN_IF(queryTextRectEvent.Failed())) {
+    return NS_ERROR_FAILURE;
+  }
 
-  
-  aEvent->mReply.mOffset = offset;
-  aEvent->mReply.mRect = textRect.mReply.mRect;
-  aEvent->mSucceeded = true;
+  aEvent->mReply->mOffsetAndData =
+      std::move(queryTextRectEvent.mReply->mOffsetAndData);
+  aEvent->mReply->mRect = queryTextRectEvent.mReply->mRect;
+
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 
@@ -2658,8 +2701,7 @@ nsresult ContentEventHandler::OnQueryDOMWidgetHittest(
     return rv;
   }
 
-  aEvent->mSucceeded = false;
-  aEvent->mReply.mWidgetIsHit = false;
+  aEvent->mReply->mWidgetIsHit = false;
 
   NS_ENSURE_TRUE(aEvent->mWidget, NS_ERROR_FAILURE);
 
@@ -2689,11 +2731,11 @@ nsresult ContentEventHandler::OnQueryDOMWidgetHittest(
       targetWidget = targetFrame->GetNearestWidget();
     }
     if (aEvent->mWidget == targetWidget) {
-      aEvent->mReply.mWidgetIsHit = true;
+      aEvent->mReply->mWidgetIsHit = true;
     }
   }
 
-  aEvent->mSucceeded = true;
+  MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
 }
 

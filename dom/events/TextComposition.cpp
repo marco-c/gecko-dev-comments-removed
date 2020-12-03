@@ -448,18 +448,19 @@ void TextComposition::HandleSelectionEvent(
 
 uint32_t TextComposition::GetSelectionStartOffset() {
   nsCOMPtr<nsIWidget> widget = mPresContext->GetRootWidget();
-  WidgetQueryContentEvent selectedTextEvent(true, eQuerySelectedText, widget);
+  WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
+                                                 widget);
   
   
   
   if (!mLastData.IsEmpty() && mRanges && mRanges->HasClauses()) {
-    selectedTextEvent.InitForQuerySelectedText(
+    querySelectedTextEvent.InitForQuerySelectedText(
         ToSelectionType(mRanges->GetFirstClause()->mRangeType));
   } else {
     NS_WARNING_ASSERTION(
         !mLastData.IsEmpty() || !mRanges || !mRanges->HasClauses(),
         "Shouldn't have empty clause info when composition string is empty");
-    selectedTextEvent.InitForQuerySelectedText(SelectionType::eNormal);
+    querySelectedTextEvent.InitForQuerySelectedText(SelectionType::eNormal);
   }
 
   
@@ -470,7 +471,7 @@ uint32_t TextComposition::GetSelectionStartOffset() {
   if (contentObserver) {
     if (contentObserver->IsManaging(this)) {
       doQuerySelection = false;
-      contentObserver->HandleQueryContentEvent(&selectedTextEvent);
+      contentObserver->HandleQueryContentEvent(&querySelectedTextEvent);
     }
     
     
@@ -483,13 +484,13 @@ uint32_t TextComposition::GetSelectionStartOffset() {
   
   if (doQuerySelection) {
     ContentEventHandler handler(mPresContext);
-    handler.HandleQueryContentEvent(&selectedTextEvent);
+    handler.HandleQueryContentEvent(&querySelectedTextEvent);
   }
 
-  if (NS_WARN_IF(!selectedTextEvent.mSucceeded)) {
+  if (NS_WARN_IF(querySelectedTextEvent.DidNotFindSelection())) {
     return 0;  
   }
-  return selectedTextEvent.mReply.mOffset;
+  return querySelectedTextEvent.mReply->SelectionStartOffset();
 }
 
 void TextComposition::OnCompositionEventDispatched(
@@ -825,11 +826,15 @@ TextComposition::CompositionEventDispatcher::Run() {
     case eCompositionStart: {
       WidgetCompositionEvent compStart(true, eCompositionStart, widget);
       compStart.mNativeIMEContext = mTextComposition->mNativeContext;
-      WidgetQueryContentEvent selectedText(true, eQuerySelectedText, widget);
+      WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
+                                                     widget);
       ContentEventHandler handler(presContext);
-      handler.OnQuerySelectedText(&selectedText);
-      NS_ASSERTION(selectedText.mSucceeded, "Failed to get selected text");
-      compStart.mData = selectedText.mReply.mString;
+      handler.OnQuerySelectedText(&querySelectedTextEvent);
+      NS_ASSERTION(querySelectedTextEvent.Succeeded(),
+                   "Failed to get selected text");
+      if (querySelectedTextEvent.FoundSelection()) {
+        compStart.mData = querySelectedTextEvent.mReply->DataRef();
+      }
       compStart.mFlags.mIsSynthesizedForTests =
           mTextComposition->IsSynthesizedForTests();
       IMEStateManager::DispatchCompositionEvent(
