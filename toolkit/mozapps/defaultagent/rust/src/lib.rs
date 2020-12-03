@@ -108,7 +108,6 @@ fn is_agent_remote_disabled<S: AsRef<str>>(url: S) -> Result<bool, Error> {
 
 
 extern "C" {
-    #[no_mangle]
     static gWinEventLogSourceName: *const u16;
 }
 
