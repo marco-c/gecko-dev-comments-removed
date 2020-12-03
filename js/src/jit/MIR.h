@@ -12605,6 +12605,29 @@ class MGuardIndexIsValidUpdateOrAdd
 
 
 
+class MCallAddOrUpdateSparseElement
+    : public MTernaryInstruction,
+      public MixPolicy<ObjectPolicy<0>, UnboxedInt32Policy<1>,
+                       BoxPolicy<2>>::Data {
+  bool strict_;
+
+  MCallAddOrUpdateSparseElement(MDefinition* obj, MDefinition* index,
+                                MDefinition* value, bool strict)
+      : MTernaryInstruction(classOpcode, obj, index, value), strict_(strict) {}
+
+ public:
+  INSTRUCTION_HEADER(CallAddOrUpdateSparseElement)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, object), (1, index), (2, value))
+
+  bool strict() const { return strict_; }
+
+  bool possiblyCalls() const override { return true; }
+};
+
+
+
+
 class MWasmNeg : public MUnaryInstruction, public NoTypePolicy::Data {
   MWasmNeg(MDefinition* op, MIRType type) : MUnaryInstruction(classOpcode, op) {
     setResultType(type);
