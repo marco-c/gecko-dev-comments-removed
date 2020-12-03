@@ -47,7 +47,6 @@
 #include "js/friend/StackLimits.h"    
 #include "js/Printf.h"
 #include "util/DiagnosticAssertions.h"
-#include "util/DifferentialTesting.h"
 #include "util/DoubleToString.h"
 #include "util/NativeStack.h"
 #include "util/Windows.h"
@@ -247,14 +246,14 @@ bool AutoResolving::alreadyStartedSlow() const {
 
 
 JS_FRIEND_API void js::ReportOutOfMemory(JSContext* cx) {
+#ifdef JS_MORE_DETERMINISTIC
   
 
 
 
 
-  if (js::SupportDifferentialTesting()) {
-    fprintf(stderr, "ReportOutOfMemory called\n");
-  }
+  fprintf(stderr, "ReportOutOfMemory called\n");
+#endif
 
   if (cx->isHelperThreadContext()) {
     return cx->addPendingOutOfMemory();
@@ -284,6 +283,7 @@ mozilla::GenericErrorResult<OOM> js::ReportOutOfMemoryResult(JSContext* cx) {
 }
 
 void js::ReportOverRecursed(JSContext* maybecx, unsigned errorNumber) {
+#ifdef JS_MORE_DETERMINISTIC
   
 
 
@@ -292,10 +292,8 @@ void js::ReportOverRecursed(JSContext* maybecx, unsigned errorNumber) {
 
 
 
-  if (js::SupportDifferentialTesting()) {
-    fprintf(stderr, "ReportOverRecursed called\n");
-  }
-
+  fprintf(stderr, "ReportOverRecursed called\n");
+#endif
   if (maybecx) {
     if (!maybecx->isHelperThreadContext()) {
       JS_ReportErrorNumberASCII(maybecx, GetErrorMessage, nullptr, errorNumber);

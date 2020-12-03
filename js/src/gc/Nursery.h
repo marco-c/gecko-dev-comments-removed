@@ -518,8 +518,10 @@ class Nursery {
   };
   PreviousGC previousGC;
 
+#ifndef JS_MORE_DETERMINISTIC
   mozilla::TimeStamp lastResizeTime;
   double smoothedGrowthFactor;
+#endif
 
   
   

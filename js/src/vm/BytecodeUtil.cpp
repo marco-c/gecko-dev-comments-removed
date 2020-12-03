@@ -38,7 +38,6 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
 #include "js/Symbol.h"
-#include "util/DifferentialTesting.h"
 #include "util/Memory.h"
 #include "util/StringBuffer.h"
 #include "util/Text.h"
@@ -2364,14 +2363,14 @@ static bool DecompileExpressionFromStack(JSContext* cx, int spindex,
 
   *res = nullptr;
 
+#ifdef JS_MORE_DETERMINISTIC
   
 
 
 
 
-  if (js::SupportDifferentialTesting()) {
-    return true;
-  }
+  return true;
+#endif
 
   if (spindex == JSDVG_IGNORE_STACK) {
     return true;
@@ -2462,10 +2461,10 @@ static bool DecompileArgumentFromStack(JSContext* cx, int formalIndex,
 
   *res = nullptr;
 
+#ifdef JS_MORE_DETERMINISTIC
   
-  if (js::SupportDifferentialTesting()) {
-    return true;
-  }
+  return true;
+#endif
 
   
 

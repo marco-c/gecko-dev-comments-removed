@@ -29,7 +29,6 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "js/Proxy.h"
-#include "util/DifferentialTesting.h"
 #include "util/Poison.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/GlobalObject.h"
@@ -376,12 +375,12 @@ static bool EnumerateProxyProperties(JSContext* cx, HandleObject pobj,
   return true;
 }
 
-#ifdef DEBUG
+#ifdef JS_MORE_DETERMINISTIC
 
 struct SortComparatorIds {
   JSContext* const cx;
 
-  explicit SortComparatorIds(JSContext* cx) : cx(cx) {}
+  SortComparatorIds(JSContext* cx) : cx(cx) {}
 
   bool operator()(jsid a, jsid b, bool* lessOrEqualp) {
     
@@ -515,9 +514,9 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
     }
   } while (pobj != nullptr);
 
-#ifdef DEBUG
-  if (js::SupportDifferentialTesting()) {
-    
+#ifdef JS_MORE_DETERMINISTIC
+
+  
 
 
 
@@ -532,20 +531,20 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
 
 
 
-    jsid* ids = props.begin();
-    size_t n = props.length();
+  jsid* ids = props.begin();
+  size_t n = props.length();
 
-    RootedIdVector tmp(cx);
-    if (!tmp.resize(n)) {
-      return false;
-    }
-    PodCopy(tmp.begin(), ids, n);
-
-    if (!MergeSort(ids, n, tmp.begin(), SortComparatorIds(cx))) {
-      return false;
-    }
+  RootedIdVector tmp(cx);
+  if (!tmp.resize(n)) {
+    return false;
   }
-#endif
+  PodCopy(tmp.begin(), ids, n);
+
+  if (!MergeSort(ids, n, tmp.begin(), SortComparatorIds(cx))) {
+    return false;
+  }
+
+#endif 
 
   return true;
 }
