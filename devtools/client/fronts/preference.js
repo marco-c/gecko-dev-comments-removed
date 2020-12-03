@@ -27,7 +27,6 @@ class PreferenceFront extends FrontClassWithSpec(preferenceSpec) {
       this._traits = await this.getTraits();
     } catch (e) {
       
-      
       this._traits = {};
     }
     return this._traits;

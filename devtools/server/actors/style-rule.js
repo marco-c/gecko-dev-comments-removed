@@ -310,7 +310,6 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         canSetRuleText: this.canSetRuleText,
         
-        
         emitsRuleUpdatedEvent: true,
       },
     };

@@ -290,6 +290,7 @@ OptionsPanel.prototype = {
       checkboxLabel.appendChild(checkboxSpanLabel);
 
       
+      
       if (tool.deprecated) {
         const deprecationURL = this.panelDoc.createElement("a");
         deprecationURL.title = deprecationURL.href = tool.deprecationURL;

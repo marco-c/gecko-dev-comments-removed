@@ -332,7 +332,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
       } else if (change.type === "frameLoad") {
         
         
-        
 
         
         
@@ -347,7 +346,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
           }
         }
       } else if (change.type === "documentUnload") {
-        
         
         
 

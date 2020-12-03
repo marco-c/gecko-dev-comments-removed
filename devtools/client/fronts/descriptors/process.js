@@ -52,7 +52,6 @@ class ProcessDescriptorFront extends FrontClassWithSpec(processDescriptorSpec) {
     front.form(form);
 
     
-    
     if (!front.processID) {
       front.processID = this.id;
     }

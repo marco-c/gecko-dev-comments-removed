@@ -532,7 +532,6 @@ class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {
       this._traits = await this.getTraits();
     } catch (e) {
       
-      
       this._traits = {};
     }
   }

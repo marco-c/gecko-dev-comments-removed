@@ -48,7 +48,6 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
     
     return {
       
-      
       tabbingOrder: true,
     };
   },

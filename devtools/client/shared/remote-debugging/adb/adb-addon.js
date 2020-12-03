@@ -12,6 +12,7 @@ const PREF_ADB_EXTENSION_URL = "devtools.remote.adb.extensionURL";
 const PREF_ADB_EXTENSION_ID = "devtools.remote.adb.extensionID";
 
 
+
 const ADB_HELPER_ADDON_ID = "adbhelper@mozilla.org";
 
 const VALENCE_ADDON_ID = "fxdevtools-adapters@mozilla.org";

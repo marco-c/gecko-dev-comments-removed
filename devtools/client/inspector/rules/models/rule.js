@@ -104,6 +104,7 @@ class Rule {
     }
 
     
+    
     if (this.domRule.traits.emitsRuleUpdatedEvent) {
       this.domRule.off("rule-updated", this.onStyleRuleFrontUpdated);
     } else {

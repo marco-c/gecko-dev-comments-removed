@@ -297,6 +297,7 @@ class TargetList extends EventEmitter {
       this._setListening(type, true);
 
       
+      
       if (this.hasTargetWatcherSupport(type)) {
         
         
@@ -335,6 +336,7 @@ class TargetList extends EventEmitter {
       }
       this._setListening(type, false);
 
+      
       
       if (this.hasTargetWatcherSupport(type)) {
         

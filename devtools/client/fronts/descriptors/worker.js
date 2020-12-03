@@ -32,8 +32,6 @@ class WorkerDescriptorFront extends TargetMixin(
   form(json) {
     this.actorID = json.actor;
     
-    
-    
     this.id = json.id || this.actorID;
 
     
@@ -96,7 +94,6 @@ class WorkerDescriptorFront extends TargetMixin(
       if (this.actorID.includes("workerDescriptor")) {
         connectResponse = await super.getTarget();
       } else {
-        
         
         connectResponse = await this.connect({});
       }

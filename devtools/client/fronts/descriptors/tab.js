@@ -153,6 +153,7 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
 
 
 
+
   async retrieveAsyncFormData() {
     try {
       if (!this.traits.hasTabInfo) {

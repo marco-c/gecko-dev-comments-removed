@@ -17,7 +17,6 @@ exports.CSS_ANGLEUNIT = {
 
 
 
-
 exports.CSS_TYPES = {
   color: 2,
   gradient: 4,

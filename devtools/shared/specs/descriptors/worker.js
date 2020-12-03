@@ -18,7 +18,6 @@ const workerDescriptorSpec = generateActorSpec({
       response: RetVal("json"),
     },
     
-    
     connect: {
       request: {
         options: Arg(0, "json"),

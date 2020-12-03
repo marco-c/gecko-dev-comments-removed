@@ -33,14 +33,12 @@ exports.PREFERENCE_TYPES = PREFERENCE_TYPES;
 
 const DEFAULT_PREFERENCES = [
   
-  
   {
     prefName: "devtools.inspector.compatibility.target-browsers",
     defaultValue: "",
     trait: "targetBrowsersPref",
     type: PREFERENCE_TYPES.CHAR,
   },
-  
   
   {
     prefName: "devtools.overflow.debugging.enabled",

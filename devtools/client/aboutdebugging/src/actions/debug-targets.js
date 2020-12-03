@@ -56,7 +56,6 @@ function isCachedActorNeeded(runtime, type, id) {
   
   
   
-  
   return (
     type === DEBUG_TARGETS.WORKER &&
     runtime.runtimeDetails.clientWrapper.client.getFrontByID(id)
@@ -195,7 +194,6 @@ function requestTabs() {
       const tabs = isSupported
         ? await clientWrapper.listTabs({
             
-            
             favicons: true,
           })
         : [];
@@ -228,7 +226,6 @@ function requestExtensions() {
 
       
       if (!getState().ui.showHiddenAddons) {
-        
         
         
         extensions = extensions.filter(e => !e.isSystem && !e.hidden);
@@ -296,7 +293,6 @@ function requestWorkers() {
           const subscription = await registrationFront.getPushSubscription();
           serviceWorker.subscription = subscription;
         } catch (e) {
-          
           
           
           

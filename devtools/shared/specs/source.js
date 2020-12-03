@@ -74,8 +74,6 @@ const sourceSpec = generateActorSpec({
       },
     },
     source: {
-      
-      
       request: {},
       response: RetVal("source.onsource"),
     },

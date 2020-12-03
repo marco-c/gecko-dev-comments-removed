@@ -1413,7 +1413,6 @@ MarkupView.prototype = {
       if (mutation.type === "documentUnload") {
         
         
-        
 
         
         
