@@ -668,6 +668,22 @@ class UrlbarInput {
     element = null,
     browser = this.window.gBrowser.selectedBrowser
   ) {
+    
+    
+    
+    
+    
+    
+    if (
+      result.heuristic &&
+      this.searchMode?.isPreview &&
+      this.view.oneOffSearchButtons.selectedButton
+    ) {
+      this.confirmSearchMode();
+      this.search(this.value);
+      return;
+    }
+
     let originalUntrimmedValue = this.untrimmedValue;
     let isCanonized = this.setValueFromResult(result, event);
     let where = this._whereToOpen(event);
@@ -675,19 +691,8 @@ class UrlbarInput {
       allowInheritPrincipal: false,
     };
 
-    
-    
-    
-    
-    
-    let urlResultWillConfirmSearchMode =
-      this.searchMode &&
-      result.heuristic &&
-      result.type == UrlbarUtils.RESULT_TYPE.URL &&
-      this.view.oneOffSearchButtons.selectedButton;
-
     let selIndex = result.rowIndex;
-    if (!result.payload.keywordOffer && !urlResultWillConfirmSearchMode) {
+    if (!result.payload.keywordOffer) {
       this.view.close( true);
     }
 
@@ -709,11 +714,6 @@ class UrlbarInput {
 
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.URL: {
-        if (urlResultWillConfirmSearchMode) {
-          this.confirmSearchMode();
-          this.search(this.value);
-          return;
-        }
         
         
         

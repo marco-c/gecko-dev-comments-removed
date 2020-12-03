@@ -1998,15 +1998,11 @@ class UrlbarView {
       
       
       
-      if (
-        this.oneOffsRefresh &&
-        result.heuristic &&
-        result.type == UrlbarUtils.RESULT_TYPE.URL
-      ) {
+      if (this.oneOffsRefresh && result.heuristic) {
         title.textContent =
           localSearchMode || engine
             ? this._queryContext.searchString
-            : result.payload.title;
+            : result.title;
       }
 
       
@@ -2043,11 +2039,7 @@ class UrlbarView {
 
       
       let iconOverride = localSearchMode?.icon || engine?.iconURI?.spec;
-      if (
-        !iconOverride &&
-        (localSearchMode || engine) &&
-        result.type == UrlbarUtils.RESULT_TYPE.URL
-      ) {
+      if (!iconOverride && (localSearchMode || engine)) {
         
         
         iconOverride = UrlbarUtils.ICON.SEARCH_GLASS;
