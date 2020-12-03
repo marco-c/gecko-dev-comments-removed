@@ -942,10 +942,6 @@ pub struct Capabilities {
     
     pub supports_blit_to_texture_array: bool,
     
-    
-    
-    pub supports_pixel_local_storage: bool,
-    
     pub supports_advanced_blend_equation: bool,
     
     pub supports_dual_source_blending: bool,
@@ -1317,7 +1313,6 @@ impl Device {
         use_optimized_shaders: bool,
         upload_method: UploadMethod,
         cached_programs: Option<Rc<ProgramCache>>,
-        allow_pixel_local_storage_support: bool,
         allow_texture_storage_support: bool,
         allow_texture_swizzling: bool,
         dump_shader_source: Option<String>,
@@ -1515,17 +1510,6 @@ impl Device {
         
         let supports_blit_to_texture_array = !renderer_name.starts_with("Adreno");
 
-        
-        
-        
-        
-        let ext_pixel_local_storage = supports_extension(&extensions, "GL_EXT_shader_pixel_local_storage");
-        let ext_framebuffer_fetch = supports_extension(&extensions, "GL_ARM_shader_framebuffer_fetch");
-        let supports_pixel_local_storage =
-            allow_pixel_local_storage_support &&
-            ext_framebuffer_fetch &&
-            ext_pixel_local_storage;
-
         let is_adreno = renderer_name.starts_with("Adreno");
 
         
@@ -1606,7 +1590,6 @@ impl Device {
                 supports_copy_image_sub_data,
                 supports_buffer_storage,
                 supports_blit_to_texture_array,
-                supports_pixel_local_storage,
                 supports_advanced_blend_equation,
                 supports_dual_source_blending,
                 supports_khr_debug,
@@ -3689,18 +3672,6 @@ impl Device {
 
     pub fn supports_extension(&self, extension: &str) -> bool {
         supports_extension(&self.extensions, extension)
-    }
-
-    
-    
-    pub fn enable_pixel_local_storage(&mut self, enable: bool) {
-        debug_assert!(self.capabilities.supports_pixel_local_storage);
-
-        if enable {
-            self.gl.enable(gl::SHADER_PIXEL_LOCAL_STORAGE_EXT);
-        } else {
-            self.gl.disable(gl::SHADER_PIXEL_LOCAL_STORAGE_EXT);
-        }
     }
 
     pub fn echo_driver_messages(&self) {
