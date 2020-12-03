@@ -2,6 +2,8 @@
 
 
 
+use crate::ErrorType;
+
 
 
 
@@ -27,5 +29,24 @@ pub trait Uuid {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<String>;
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<uuid::Uuid>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: ErrorType,
+        ping_name: S,
+    ) -> i32;
 }
