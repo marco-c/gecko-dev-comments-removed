@@ -353,16 +353,26 @@ GeckoTextMarkerRange::GeckoTextMarkerRange(
 
 GeckoTextMarkerRange::GeckoTextMarkerRange(
     const AccessibleOrProxy& aAccessible) {
-  mStart = GeckoTextMarker(aAccessible.Parent(), 0);
-  mEnd = GeckoTextMarker(aAccessible.Parent(), 0);
-  if (mStart.mContainer.IsProxy()) {
-    DocAccessibleParent* ipcDoc = mStart.mContainer.AsProxy()->Document();
-    Unused << ipcDoc->GetPlatformExtension()->SendRangeOfChild(
-        mStart.mContainer.AsProxy()->ID(), aAccessible.AsProxy()->ID(),
-        &mStart.mOffset, &mEnd.mOffset);
-  } else if (auto htWrap = mStart.ContainerAsHyperTextWrap()) {
-    htWrap->RangeOfChild(aAccessible.AsAccessible(), &mStart.mOffset,
-                         &mEnd.mOffset);
+  if ((aAccessible.IsAccessible() &&
+       aAccessible.AsAccessible()->IsHyperText()) ||
+      (aAccessible.IsProxy() && aAccessible.AsProxy()->mIsHyperText)) {
+    
+    mStart = GeckoTextMarker(aAccessible, 0);
+    mEnd = GeckoTextMarker(aAccessible, (CharacterCount(aAccessible)));
+  } else {
+    
+    
+    mStart = GeckoTextMarker(aAccessible.Parent(), 0);
+    mEnd = GeckoTextMarker(aAccessible.Parent(), 0);
+    if (mStart.mContainer.IsProxy()) {
+      DocAccessibleParent* ipcDoc = mStart.mContainer.AsProxy()->Document();
+      Unused << ipcDoc->GetPlatformExtension()->SendRangeOfChild(
+          mStart.mContainer.AsProxy()->ID(), aAccessible.AsProxy()->ID(),
+          &mStart.mOffset, &mEnd.mOffset);
+    } else if (auto htWrap = mStart.ContainerAsHyperTextWrap()) {
+      htWrap->RangeOfChild(aAccessible.AsAccessible(), &mStart.mOffset,
+                           &mEnd.mOffset);
+    }
   }
 }
 
