@@ -608,9 +608,7 @@ class MediaSessionTest : BaseSessionTest() {
                         equalTo(true))
             }
 
-            
-            
-            @AssertCalled
+            @AssertCalled(count = 1)
             override fun onMetadata(
                     session: GeckoSession,
                     mediaSession: MediaSession,
