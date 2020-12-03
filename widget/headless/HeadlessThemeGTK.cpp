@@ -22,9 +22,10 @@ HeadlessThemeGTK::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
   return NS_OK;
 }
 
-LayoutDeviceIntMargin HeadlessThemeGTK::GetWidgetBorder(
+LayoutDeviceMargin HeadlessThemeGTK::GetWidgetBorder(
     nsDeviceContext* aContext, nsIFrame* aFrame, StyleAppearance aAppearance) {
-  LayoutDeviceIntMargin result;
+  LayoutDeviceMargin result;
+  
   
   switch (aAppearance) {
     case StyleAppearance::Button:
@@ -110,7 +111,7 @@ LayoutDeviceIntMargin HeadlessThemeGTK::GetWidgetBorder(
 bool HeadlessThemeGTK::GetWidgetPadding(nsDeviceContext* aContext,
                                         nsIFrame* aFrame,
                                         StyleAppearance aAppearance,
-                                        LayoutDeviceIntMargin* aResult) {
+                                        LayoutDeviceMargin* aResult) {
   
   switch (aAppearance) {
     case StyleAppearance::Radio:
@@ -153,7 +154,7 @@ NS_IMETHODIMP
 HeadlessThemeGTK::GetMinimumWidgetSize(nsPresContext* aPresContext,
                                        nsIFrame* aFrame,
                                        StyleAppearance aAppearance,
-                                       LayoutDeviceIntSize* aResult,
+                                       LayoutDeviceSize* aResult,
                                        bool* aIsOverridable) {
   aResult->width = aResult->height = 0;
   *aIsOverridable = true;
