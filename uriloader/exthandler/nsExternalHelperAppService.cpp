@@ -247,13 +247,12 @@ static bool GetFilenameAndExtensionFromChannel(nsIChannel* aChannel,
     
     
     bool canGetExtensionFromFilename =
-      !gotFileNameFromURI ||
-      aAllowURLExtension;
+        !gotFileNameFromURI || aAllowURLExtension;
     
     if (!canGetExtensionFromFilename) {
       nsAutoCString contentType;
       if (NS_SUCCEEDED(aChannel->GetContentType(contentType))) {
-          canGetExtensionFromFilename =
+        canGetExtensionFromFilename =
             contentType.EqualsIgnoreCase(APPLICATION_OCTET_STREAM) ||
             contentType.EqualsIgnoreCase("binary/octet-stream") ||
             contentType.EqualsIgnoreCase("application/x-msdownload");
