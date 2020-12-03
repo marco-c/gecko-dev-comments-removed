@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var EXPORTED_SYMBOLS = ["PageStyleChild"];
 
 class PageStyleChild extends JSWindowActorChild {
@@ -22,9 +20,8 @@ class PageStyleChild extends JSWindowActorChild {
         if (!window || window.closed) {
           return;
         }
-        let styleSheets = Array.from(this.document.styleSheets);
-        let filteredStyleSheets = this._filterStyleSheets(styleSheets, window);
 
+        let filteredStyleSheets = this._collectStyleSheets(window);
         this.sendAsyncMessage("PageStyle:Add", {
           filteredStyleSheets,
           authorStyleDisabled: this.docShell.contentViewer.authorStyleDisabled,
@@ -89,47 +86,25 @@ class PageStyleChild extends JSWindowActorChild {
 
 
 
-  _filterStyleSheets(styleSheets, content) {
+
+  _collectStyleSheets(content) {
     let result = [];
 
     
-    for (let currentStyleSheet of styleSheets) {
-      if (!currentStyleSheet.title) {
+    for (let sheet of content.document.styleSheets) {
+      if (!sheet.title) {
         continue;
       }
 
       
-      if (currentStyleSheet.media.length) {
-        let mediaQueryList = currentStyleSheet.media.mediaText;
-        if (!content.matchMedia(mediaQueryList).matches) {
-          continue;
-        }
-      }
-
-      let URI;
-      try {
-        if (
-          !currentStyleSheet.ownerNode ||
-          
-          currentStyleSheet.ownerNode.nodeName.toLowerCase() != "style"
-        ) {
-          URI = Services.io.newURI(currentStyleSheet.href);
-        }
-      } catch (e) {
-        if (e.result != Cr.NS_ERROR_MALFORMED_URI) {
-          throw e;
-        }
+      let media = sheet.media.mediaText;
+      if (media && !content.matchMedia(media).matches) {
         continue;
       }
-
-      
-      
-      let sentURI = !URI || URI.scheme == "data" ? null : URI.spec;
 
       result.push({
-        title: currentStyleSheet.title,
-        disabled: currentStyleSheet.disabled,
-        href: sentURI,
+        title: sheet.title,
+        disabled: sheet.disabled,
       });
     }
 

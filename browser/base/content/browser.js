@@ -7326,31 +7326,6 @@ var gPageStyleMenu = {
       sheetData.preferredStyleSheetSet || styleSheets.preferredStyleSheetSet;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getBrowserStyleSheets(browser) {
-    if (!browser) {
-      browser = gBrowser.selectedBrowser;
-    }
-
-    let data = this._pageStyleSheets.get(browser.permanentKey);
-    if (!data) {
-      return [];
-    }
-    return data.filteredStyleSheets;
-  },
-
   clearBrowserStyleSheets(permanentKey) {
     this._pageStyleSheets.delete(permanentKey);
   },
