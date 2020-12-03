@@ -294,9 +294,6 @@ class ResourceWatcher {
         
         
         
-        if (this.hasResourceWatcherSupport(resourceType)) {
-          continue;
-        }
         await this._watchResourcesForTarget(targetFront, resourceType);
       }
     }
@@ -615,8 +612,31 @@ class ResourceWatcher {
     );
   }
 
+  
+
+
+
+
+
   hasResourceWatcherSupport(resourceType) {
     return this.watcherFront?.traits?.resources?.[resourceType];
+  }
+
+  
+
+
+
+
+
+
+  _hasResourceWatcherSupportForTarget(resourceType, targetFront) {
+    
+    
+    if (!this.targetList.hasTargetWatcherSupport(targetFront.targetType)) {
+      return false;
+    }
+
+    return this.hasResourceWatcherSupport(resourceType);
   }
 
   
@@ -648,7 +668,19 @@ class ResourceWatcher {
     
     if (this.hasResourceWatcherSupport(resourceType)) {
       await this.watcherFront.watchResources([resourceType]);
-      return;
+
+      
+      
+      
+      
+      
+      
+      
+      const shouldRunLegacyListeners =
+        resourceType == ResourceWatcher.TYPES.SOURCE;
+      if (!shouldRunLegacyListeners) {
+        return;
+      }
     }
     
 
@@ -677,6 +709,12 @@ class ResourceWatcher {
 
 
   _watchResourcesForTarget(targetFront, resourceType) {
+    if (this._hasResourceWatcherSupportForTarget(resourceType, targetFront)) {
+      
+      
+      return Promise.resolve();
+    }
+
     if (targetFront.isDestroyed()) {
       return Promise.resolve();
     }
@@ -727,7 +765,13 @@ class ResourceWatcher {
     
     if (this.hasResourceWatcherSupport(resourceType)) {
       this.watcherFront.unwatchResources([resourceType]);
-      return;
+
+      
+      const shouldRunLegacyListeners =
+        resourceType == ResourceWatcher.TYPES.SOURCE;
+      if (!shouldRunLegacyListeners) {
+        return;
+      }
     }
     
 
@@ -743,6 +787,10 @@ class ResourceWatcher {
 
 
   _unwatchResourcesForTarget(targetFront, resourceType) {
+    if (this._hasResourceWatcherSupportForTarget(resourceType, targetFront)) {
+      
+      
+    }
     
     
     
