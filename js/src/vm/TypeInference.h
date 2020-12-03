@@ -41,16 +41,11 @@ class TempAllocator;
 
 }  
 
-
-inline bool isInlinableCall(jsbytecode* pc);
-
 bool ClassCanHaveExtraProperties(const JSClass* clasp);
 
 struct AutoEnterAnalysis;
 
 class TypeZone {
-  JS::Zone* const zone_;
-
   
   ZoneData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
 
@@ -60,13 +55,8 @@ class TypeZone {
  public:
   ZoneData<bool> keepJitScripts;
 
-  
-  ZoneData<AutoEnterAnalysis*> activeAnalysis;
-
   explicit TypeZone(JS::Zone* zone);
   ~TypeZone();
-
-  JS::Zone* zone() const { return zone_; }
 
   mozilla::Maybe<IonCompilationId> currentCompilationId() const {
     return currentCompilationId_.ref();

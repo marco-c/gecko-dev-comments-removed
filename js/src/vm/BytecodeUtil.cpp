@@ -1488,14 +1488,6 @@ static unsigned Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
     }
 
     case JOF_OBJECT: {
-      
-      if (script->zone()->types.activeAnalysis) {
-        if (!sp->jsprintf(" object")) {
-          return 0;
-        }
-        break;
-      }
-
       JSObject* obj = script->getObject(pc);
       {
         RootedValue v(cx, ObjectValue(*obj));
