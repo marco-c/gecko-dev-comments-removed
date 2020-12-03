@@ -293,7 +293,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
   FailedShapeGuard = 1 << 19,
 
   
-  HadLICMBailout = 1 << 20,
+  HadLICMInvalidation = 1 << 20,
 
   
   

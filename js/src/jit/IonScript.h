@@ -100,6 +100,11 @@ class alignas(8) IonScript final : public TrailingArray {
   uint32_t numBailouts_ = 0;
 
   
+  
+  
+  bool hadLICMBailout_ = false;
+
+  
   bool hasProfilingInstrumentation_ = false;
 
   
@@ -347,6 +352,10 @@ class alignas(8) IonScript final : public TrailingArray {
   bool bailoutExpected() const {
     return numBailouts_ >= JitOptions.frequentBailoutThreshold;
   }
+
+  void setHadLICMBailout() { hadLICMBailout_ = true; }
+  bool hadLICMBailout() const { return hadLICMBailout_; }
+
   void setHasProfilingInstrumentation() { hasProfilingInstrumentation_ = true; }
   void clearHasProfilingInstrumentation() {
     hasProfilingInstrumentation_ = false;

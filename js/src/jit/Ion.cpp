@@ -1216,7 +1216,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     
     
     
-    if (!mir->outerInfo().hadLICMBailout()) {
+    if (!mir->outerInfo().hadLICMInvalidation()) {
       if (!LICM(mir, graph)) {
         return false;
       }

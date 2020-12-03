@@ -2055,9 +2055,19 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
 
     case BailoutKind::LICM:
       
-      MOZ_ASSERT(!outerScript->hadLICMBailout());
-      outerScript->setHadLICMBailout();
-      InvalidateAfterBailout(cx, outerScript, "LICM failure");
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(!outerScript->hadLICMInvalidation());
+      if (outerScript->ionScript()->hadLICMBailout()) {
+        outerScript->setHadLICMInvalidation();
+        InvalidateAfterBailout(cx, outerScript, "LICM failure");
+      } else {
+        outerScript->ionScript()->setHadLICMBailout();
+      }
       break;
 
     case BailoutKind::HoistBoundsCheck:
