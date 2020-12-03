@@ -65,8 +65,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     
     this.rootNode = types.getType("domnode").read(json.root, this);
 
-    
-    this.traits = json.traits || {};
+    this.traits = json.traits;
   }
 
   
