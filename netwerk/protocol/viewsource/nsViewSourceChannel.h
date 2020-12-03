@@ -54,7 +54,10 @@ class nsViewSourceChannel final : public nsIViewSourceChannel,
 
   
   nsViewSourceChannel()
-      : mIsDocument(false), mOpened(false), mIsSrcdocChannel(false) {}
+      : mIsDocument(false),
+        mOpened(false),
+        mIsSrcdocChannel(false),
+        mReplaceRequest(true) {}
 
   [[nodiscard]] nsresult Init(nsIURI* uri, nsILoadInfo* aLoadInfo);
 
@@ -95,6 +98,7 @@ class nsViewSourceChannel final : public nsIViewSourceChannel,
   bool mIsDocument;  
   bool mOpened;
   bool mIsSrcdocChannel;
+  bool mReplaceRequest;
 };
 
 #endif 

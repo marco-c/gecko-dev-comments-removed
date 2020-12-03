@@ -37,7 +37,10 @@ interface nsIViewSourceChannel : nsIChannel
     
 
 
-    [notxpcom, nostdcall] nsIChannel getInnerChannel();
+
+
+
+    attribute boolean replaceRequest;
 };
 
 
