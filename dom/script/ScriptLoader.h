@@ -411,9 +411,40 @@ class ScriptLoader final : public nsISupports {
                                     JS::MutableHandle<JSObject*> aModuleOut);
 
   void StartDynamicImport(ModuleLoadRequest* aRequest);
-  void FinishDynamicImport(ModuleLoadRequest* aRequest, nsresult aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
+                                    nsresult aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
-                           nsresult aResult);
+                           nsresult aResult,
+                           JS::Handle<JSObject*> aEvaluationPromise);
 
   
 

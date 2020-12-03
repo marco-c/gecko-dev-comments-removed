@@ -16,6 +16,7 @@
 #include "jsfriendapi.h"
 #include "js/Array.h"  
 #include "js/CompilationAndEvaluation.h"
+#include "js/ContextOptions.h"        
 #include "js/friend/ErrorMessages.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  
@@ -219,7 +220,7 @@ ScriptLoader::~ScriptLoader() {
 
   for (ScriptLoadRequest* req = mDynamicImportRequests.getFirst(); req;
        req = req->getNext()) {
-    FinishDynamicImport(req->AsModuleRequest(), NS_ERROR_ABORT);
+    FinishDynamicImportAndReject(req->AsModuleRequest(), NS_ERROR_ABORT);
   }
 
   for (ScriptLoadRequest* req =
@@ -1052,30 +1053,30 @@ void ScriptLoader::StartDynamicImport(ModuleLoadRequest* aRequest) {
 
   nsresult rv = StartLoad(aRequest);
   if (NS_FAILED(rv)) {
-    FinishDynamicImport(aRequest, rv);
+    FinishDynamicImportAndReject(aRequest, rv);
   }
 }
 
-void ScriptLoader::FinishDynamicImport(ModuleLoadRequest* aRequest,
-                                       nsresult aResult) {
+void ScriptLoader::FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
+                                                nsresult aResult) {
   AutoJSAPI jsapi;
+  MOZ_ASSERT(NS_FAILED(aResult));
   MOZ_ALWAYS_TRUE(jsapi.Init(aRequest->mDynamicPromise));
-  FinishDynamicImport(jsapi.cx(), aRequest, aResult);
+  FinishDynamicImport(jsapi.cx(), aRequest, aResult, nullptr);
 }
 
-void ScriptLoader::FinishDynamicImport(JSContext* aCx,
-                                       ModuleLoadRequest* aRequest,
-                                       nsresult aResult) {
+void ScriptLoader::FinishDynamicImport(
+    JSContext* aCx, ModuleLoadRequest* aRequest, nsresult aResult,
+    JS::Handle<JSObject*> aEvaluationPromise) {
+  
+  
+  
+  MOZ_ASSERT_IF(NS_FAILED(aResult), !aEvaluationPromise);
   LOG(("ScriptLoadRequest (%p): Finish dynamic import %x %d", aRequest,
        unsigned(aResult), JS_IsExceptionPending(aCx)));
 
   
   
-
-  JS::DynamicImportStatus status =
-      (NS_FAILED(aResult) || JS_IsExceptionPending(aCx))
-          ? JS::DynamicImportStatus::Failed
-          : JS::DynamicImportStatus::Ok;
 
   if (NS_FAILED(aResult) &&
       aResult != NS_SUCCESS_DOM_SCRIPT_EVALUATION_THREW_UNCATCHABLE) {
@@ -1089,8 +1090,8 @@ void ScriptLoader::FinishDynamicImport(JSContext* aCx,
   JS::Rooted<JSString*> specifier(aCx, aRequest->mDynamicSpecifier);
   JS::Rooted<JSObject*> promise(aCx, aRequest->mDynamicPromise);
 
-  JS::FinishDynamicModuleImport(aCx, status, referencingScript, specifier,
-                                promise);
+  JS::FinishDynamicModuleImport(aCx, aEvaluationPromise, referencingScript,
+                                specifier, promise);
 
   
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
@@ -2642,7 +2643,7 @@ void ScriptLoader::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
   }
 
   if (NS_FAILED(rv)) {
-    FinishDynamicImport(aRequest, rv);
+    FinishDynamicImportAndReject(aRequest, rv);
   }
 }
 
@@ -2941,7 +2942,7 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
         
         
         if (request->IsDynamicImport()) {
-          FinishDynamicImport(cx, request, NS_OK);
+          FinishDynamicImport(cx, request, NS_OK, nullptr);
         }
         return NS_OK;
       }
@@ -2954,18 +2955,20 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
 
       TRACE_FOR_TEST(aRequest->GetScriptElement(),
                      "scriptloader_evaluate_module");
-      rv = nsJSUtils::ModuleEvaluate(cx, module);
-      MOZ_ASSERT(NS_FAILED(rv) == aes.HasException());
-
-      if (NS_FAILED(rv)) {
-        LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
-        
-        
-        rv = NS_OK;
-      }
+      JS::Rooted<JSObject*> aEvaluationPromise(
+          cx, nsJSUtils::ModuleEvaluate(cx, module));
 
       if (request->IsDynamicImport()) {
-        FinishDynamicImport(cx, request, rv);
+        FinishDynamicImport(cx, request, rv, aEvaluationPromise);
+      } else {
+        
+        
+        if (!JS::ThrowOnModuleEvaluationFailure(cx, aEvaluationPromise)) {
+          LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
+          
+          
+          rv = NS_OK;
+        }
       }
 
       TRACE_FOR_TEST_NONE(aRequest->GetScriptElement(),
@@ -3780,7 +3783,7 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
         
         
         
-        FinishDynamicImport(modReq, aResult);
+        FinishDynamicImportAndReject(modReq, aResult);
       }
     } else {
       MOZ_ASSERT(!modReq->IsTopLevel());
@@ -4028,7 +4031,7 @@ void ScriptLoader::ParsingComplete(bool aTerminated) {
     
     
     
-    FinishDynamicImport(req->AsModuleRequest(), NS_ERROR_ABORT);
+    FinishDynamicImportAndReject(req->AsModuleRequest(), NS_ERROR_ABORT);
   }
   mDynamicImportRequests.Clear();
 
