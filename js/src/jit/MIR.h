@@ -12578,6 +12578,32 @@ class MGuardIndexGreaterThanDenseInitLength
 
 
 
+class MGuardIndexIsValidUpdateOrAdd
+    : public MBinaryInstruction,
+      public MixPolicy<ObjectPolicy<0>, UnboxedInt32Policy<1>>::Data {
+  MGuardIndexIsValidUpdateOrAdd(MDefinition* obj, MDefinition* index)
+      : MBinaryInstruction(classOpcode, obj, index) {
+    setResultType(MIRType::Int32);
+    setMovable();
+    setGuard();
+  }
+
+ public:
+  INSTRUCTION_HEADER(GuardIndexIsValidUpdateOrAdd)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, object), (1, index))
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::ObjectFields);
+  }
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+};
+
+
+
 
 class MWasmNeg : public MUnaryInstruction, public NoTypePolicy::Data {
   MWasmNeg(MDefinition* op, MIRType type) : MUnaryInstruction(classOpcode, op) {
