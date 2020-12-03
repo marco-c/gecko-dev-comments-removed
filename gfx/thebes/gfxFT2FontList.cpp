@@ -420,7 +420,83 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   return rv;
 }
 
+hb_face_t* FT2FontEntry::CreateHBFace() const {
+  hb_face_t* result = nullptr;
+
+  if (mFilename[0] == '/') {
+    
+    
+    hb_blob_t* fileBlob = hb_blob_create_from_file(mFilename.get());
+    if (hb_blob_get_length(fileBlob) > 0) {
+      result = hb_face_create(fileBlob, mFTFontIndex);
+    }
+    hb_blob_destroy(fileBlob);
+  } else {
+    
+    
+    RefPtr<nsZipArchive> reader = Omnijar::GetReader(Omnijar::Type::GRE);
+    nsZipItem* item = reader->GetItem(mFilename.get());
+    MOZ_ASSERT(item, "failed to find zip entry");
+    if (item) {
+      
+      
+      
+      
+      uint32_t length = item->RealSize();
+      uint8_t* buffer = static_cast<uint8_t*>(malloc(length));
+      if (buffer) {
+        nsZipCursor cursor(item, reader, buffer, length);
+        cursor.Copy(&length);
+        MOZ_ASSERT(length == item->RealSize(), "error reading font");
+        if (length == item->RealSize()) {
+          hb_blob_t* blob =
+              hb_blob_create((const char*)buffer, length,
+                             HB_MEMORY_MODE_READONLY, buffer, free);
+          result = hb_face_create(blob, mFTFontIndex);
+          hb_blob_destroy(blob);
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 bool FT2FontEntry::HasFontTable(uint32_t aTableTag) {
+  if (mAvailableTables.Count() > 0) {
+    return mAvailableTables.GetEntry(aTableTag);
+  }
+
+  
+  
+  if (!mFTFace && !mFilename.IsEmpty()) {
+    hb_face_t* face = CreateHBFace();
+    if (face) {
+      
+      
+      const unsigned TAG_BUF_LENGTH = 32;
+      hb_tag_t tags[TAG_BUF_LENGTH];
+      unsigned int startOffset = 0;
+      unsigned int totalTables = 0;
+      do {
+        unsigned int count = TAG_BUF_LENGTH;
+        
+        totalTables = hb_face_get_table_tags(face, startOffset, &count, tags);
+        startOffset += count;
+        while (count-- > 0) {
+          mAvailableTables.PutEntry(tags[count]);
+        }
+      } while (startOffset < totalTables);
+      hb_face_destroy(face);
+    } else {
+      
+      
+      
+      mAvailableTables.PutEntry(uint32_t(-1));
+    }
+    return mAvailableTables.GetEntry(aTableTag);
+  }
+
   RefPtr<SharedFTFace> face = GetFTFace();
   return gfxFT2FontEntryBase::FaceHasTable(face, aTableTag);
 }
@@ -444,47 +520,10 @@ hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
   
   
   if (!mFTFace && !mFilename.IsEmpty()) {
-    hb_blob_t* result = nullptr;
-    if (mFilename[0] == '/') {
-      
-      
-      hb_blob_t* fileBlob = hb_blob_create_from_file(mFilename.get());
-      if (hb_blob_get_length(fileBlob) > 0) {
-        hb_face_t* face = hb_face_create(fileBlob, mFTFontIndex);
-        result = hb_face_reference_table(face, aTableTag);
-        hb_face_destroy(face);
-      }
-      hb_blob_destroy(fileBlob);
-    } else {
-      
-      
-      RefPtr<nsZipArchive> reader = Omnijar::GetReader(Omnijar::Type::GRE);
-      nsZipItem* item = reader->GetItem(mFilename.get());
-      MOZ_ASSERT(item, "failed to find zip entry");
-      if (item) {
-        
-        
-        
-        
-        uint32_t length = item->RealSize();
-        uint8_t* buffer = static_cast<uint8_t*>(malloc(length));
-        if (buffer) {
-          nsZipCursor cursor(item, reader, buffer, length);
-          cursor.Copy(&length);
-          MOZ_ASSERT(length == item->RealSize(), "error reading font");
-          if (length == item->RealSize()) {
-            hb_blob_t* blob =
-                hb_blob_create((const char*)buffer, length,
-                               HB_MEMORY_MODE_READONLY, buffer, free);
-            hb_face_t* face = hb_face_create(blob, mFTFontIndex);
-            result = hb_face_reference_table(face, aTableTag);
-            hb_face_destroy(face);
-            hb_blob_destroy(blob);
-          }
-        }
-      }
-    }
-    if (result) {
+    hb_face_t* face = CreateHBFace();
+    if (face) {
+      hb_blob_t* result = hb_face_reference_table(face, aTableTag);
+      hb_face_destroy(face);
       return result;
     }
   }

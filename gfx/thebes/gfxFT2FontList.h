@@ -81,6 +81,12 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   FT_MM_Var* GetMMVar() override;
 
   
+  
+  
+  
+  hb_face_t* CreateHBFace() const;
+
+  
 
 
 
@@ -104,6 +110,8 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   uint8_t mFTFontIndex;
 
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont;
+
+  nsTHashtable<nsUint32HashKey> mAvailableTables;
 
   bool mHasVariations = false;
   bool mHasVariationsInitialized = false;
