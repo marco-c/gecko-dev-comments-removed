@@ -129,6 +129,7 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
+    #[ignore] 
     fn smoke_test_memory_distribution() {
         let _lock = lock_test();
 
@@ -153,6 +154,7 @@ mod test {
     }
 
     #[test]
+    #[ignore] 
     fn memory_distribution_child() {
         let _lock = lock_test();
 
