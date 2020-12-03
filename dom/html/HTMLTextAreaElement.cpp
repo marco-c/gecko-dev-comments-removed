@@ -132,14 +132,37 @@ nsresult HTMLTextAreaElement::Clone(dom::NodeInfo* aNodeInfo,
 
 
 void HTMLTextAreaElement::Select() {
-  if (FocusState() != eUnfocusable) {
-    if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-      fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
-    }
+  
+  
+
+  FocusTristate state = FocusState();
+  if (state == eUnfocusable) {
+    return;
   }
 
-  SetSelectionRange(0, UINT32_MAX, mozilla::dom::Optional<nsAString>(),
-                    IgnoredErrorResult());
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+
+  RefPtr<nsPresContext> presContext = GetPresContext(eForComposedDoc);
+  if (state == eInactiveWindow) {
+    if (fm) fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
+    SelectAll(presContext);
+    return;
+  }
+
+  WidgetGUIEvent event(true, eFormSelect, nullptr);
+  
+  EventDispatcher::Dispatch(static_cast<nsIContent*>(this), presContext,
+                            &event);
+
+  if (fm) {
+    fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
+
+    
+    if (this == fm->GetFocusedElement()) {
+      
+      SelectAll(presContext);
+    }
+  }
 }
 
 NS_IMETHODIMP
