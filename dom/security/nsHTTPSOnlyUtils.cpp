@@ -92,7 +92,12 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   
   nsCOMPtr<nsIURI> channelURI;
   channel->GetURI(getter_AddRefs(channelURI));
-  if (channelURI->SchemeIs("https")) {
+  if (!channelURI->SchemeIs("http")) {
+    return;
+  }
+
+  
+  if (OnionException(channelURI) || LoopbackOrLocalException(channelURI)) {
     return;
   }
 
