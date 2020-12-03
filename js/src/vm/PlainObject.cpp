@@ -20,11 +20,9 @@
 #include "vm/JSFunction.h"  
 #include "vm/JSObject.h"    
 #include "vm/ObjectGroup.h"  
-#include "vm/TaggedProto.h"    
-#include "vm/TypeInference.h"  
+#include "vm/TaggedProto.h"  
 
 #include "vm/JSObject-inl.h"  
-#include "vm/TypeInference-inl.h"  
 
 using JS::Handle;
 using JS::Rooted;

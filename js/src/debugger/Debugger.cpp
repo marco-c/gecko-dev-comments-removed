@@ -101,7 +101,6 @@
 #include "vm/Scope.h"                 
 #include "vm/StringType.h"            
 #include "vm/TraceLogging.h"          
-#include "vm/TypeInference.h"         
 #include "vm/WrapperObject.h"         
 #include "wasm/WasmDebug.h"           
 #include "wasm/WasmInstance.h"        
@@ -127,7 +126,6 @@
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
 #include "vm/Stack-inl.h"             
-#include "vm/TypeInference-inl.h"     
 
 namespace js {
 

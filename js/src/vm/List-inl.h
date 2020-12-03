@@ -19,11 +19,10 @@
 #include "vm/JSContext.h"     
 #include "vm/NativeObject.h"  
 
-#include "vm/Compartment-inl.h"    
-#include "vm/JSObject-inl.h"       
-#include "vm/NativeObject-inl.h"   
-#include "vm/Realm-inl.h"          
-#include "vm/TypeInference-inl.h"  
+#include "vm/Compartment-inl.h"   
+#include "vm/JSObject-inl.h"      
+#include "vm/NativeObject-inl.h"  
+#include "vm/Realm-inl.h"         
 
 inline  js::ListObject* js::ListObject::create(JSContext* cx) {
   return NewObjectWithGivenProto<ListObject>(cx, nullptr);

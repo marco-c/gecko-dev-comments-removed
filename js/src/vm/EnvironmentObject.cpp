@@ -33,7 +33,6 @@
 #include "vm/NativeObject-inl.h"
 #include "vm/ObjectGroup-inl.h"  
 #include "vm/Stack-inl.h"
-#include "vm/TypeInference-inl.h"
 
 #ifdef DEBUG
 #  include "vm/BytecodeIterator-inl.h"
