@@ -2790,12 +2790,21 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   void AbortOperationsForProcess(ContentParentId aContentParentId) override;
 
+  void AbortAllOperations() override;
+
   void StartIdleMaintenance() override;
 
   void StopIdleMaintenance() override;
 
  private:
   ~QuotaClient() override;
+
+  template <typename Condition>
+  static void InvalidatePrepareDatastoreOpsMatching(
+      const Condition& aCondition);
+
+  template <typename Condition>
+  static void InvalidatePreparedDatastoresMatching(const Condition& aCondition);
 
   void InitiateShutdown() override;
   bool IsShutdownCompleted() const override;
@@ -9114,6 +9123,7 @@ void QuotaClient::ReleaseIOThreadObjects() {
 
 void QuotaClient::AbortOperations(const nsACString& aOrigin) {
   AssertIsOnBackgroundThread();
+  MOZ_ASSERT(!aOrigin.IsEmpty());
 
   
   
@@ -9128,54 +9138,37 @@ void QuotaClient::AbortOperations(const nsACString& aOrigin) {
   
   
 
-  if (gPrepareDatastoreOps) {
-    for (PrepareDatastoreOp* prepareDatastoreOp : *gPrepareDatastoreOps) {
-      MOZ_ASSERT(prepareDatastoreOp);
+  InvalidatePrepareDatastoreOpsMatching(
+      [&aOrigin](const auto& prepareDatastoreOp) {
+        
+        
+        
+        
+        
+        
+        
+        if (!prepareDatastoreOp->RequestedDirectoryLock()) {
+          return false;
+        }
 
-      
-      
-      
-      
-      
-      
-      
-      if (!prepareDatastoreOp->RequestedDirectoryLock()) {
-        continue;
-      }
+        MOZ_ASSERT(prepareDatastoreOp->OriginIsKnown());
 
-      MOZ_ASSERT(prepareDatastoreOp->OriginIsKnown());
+        return prepareDatastoreOp->Origin() == aOrigin;
+      });
 
-      if (aOrigin.IsVoid() || prepareDatastoreOp->Origin() == aOrigin) {
-        prepareDatastoreOp->Invalidate();
-      }
-    }
-  }
-
-  if (gPrivateDatastores &&
-      (aOrigin.IsVoid() ||
-       (gPrivateDatastores->Remove(aOrigin) && !gPrivateDatastores->Count()))) {
+  if (gPrivateDatastores && gPrivateDatastores->Remove(aOrigin) &&
+      !gPrivateDatastores->Count()) {
     gPrivateDatastores = nullptr;
   }
 
-  if (gPreparedDatastores) {
-    for (auto iter = gPreparedDatastores->ConstIter(); !iter.Done();
-         iter.Next()) {
-      const auto& preparedDatastore = iter.Data();
-      MOZ_ASSERT(preparedDatastore);
+  InvalidatePreparedDatastoresMatching(
+      [&aOrigin](const auto& preparedDatastore) {
+        return preparedDatastore->Origin() == aOrigin;
+      });
 
-      if (aOrigin.IsVoid() || preparedDatastore->Origin() == aOrigin) {
-        preparedDatastore->Invalidate();
-      }
-    }
-  }
-
-  if (aOrigin.IsVoid()) {
-    RequestAllowToCloseIf([](const Database* const) { return true; });
-  } else {
-    RequestAllowToCloseIf([&aOrigin](const Database* const aDatabase) {
-      return aDatabase->Origin() == aOrigin;
-    });
-  }
+  RequestAllowToCloseIf([&aOrigin](const Database* const aDatabase) {
+    return aDatabase->Origin() == aOrigin;
+  });
 }
 
 void QuotaClient::AbortOperationsForProcess(ContentParentId aContentParentId) {
@@ -9186,9 +9179,59 @@ void QuotaClient::AbortOperationsForProcess(ContentParentId aContentParentId) {
   });
 }
 
+void QuotaClient::AbortAllOperations() {
+  AssertIsOnBackgroundThread();
+
+  InvalidatePrepareDatastoreOpsMatching([](const auto& prepareDatastoreOp) {
+    return prepareDatastoreOp->RequestedDirectoryLock();
+  });
+
+  if (gPrivateDatastores) {
+    gPrivateDatastores = nullptr;
+  }
+
+  InvalidatePreparedDatastoresMatching([](const auto&) { return true; });
+
+  RequestAllowToCloseIf([](const auto&) { return true; });
+}
+
 void QuotaClient::StartIdleMaintenance() { AssertIsOnBackgroundThread(); }
 
 void QuotaClient::StopIdleMaintenance() { AssertIsOnBackgroundThread(); }
+
+template <typename Condition>
+void QuotaClient::InvalidatePrepareDatastoreOpsMatching(
+    const Condition& aCondition) {
+  if (!gPrepareDatastoreOps) {
+    return;
+  }
+
+  for (PrepareDatastoreOp* prepareDatastoreOp : *gPrepareDatastoreOps) {
+    MOZ_ASSERT(prepareDatastoreOp);
+
+    if (aCondition(prepareDatastoreOp)) {
+      prepareDatastoreOp->Invalidate();
+    }
+  }
+}
+
+template <typename Condition>
+void QuotaClient::InvalidatePreparedDatastoresMatching(
+    const Condition& aCondition) {
+  if (!gPreparedDatastores) {
+    return;
+  }
+
+  for (auto iter = gPreparedDatastores->ConstIter(); !iter.Done();
+       iter.Next()) {
+    const auto& preparedDatastore = iter.Data();
+    MOZ_ASSERT(preparedDatastore);
+
+    if (aCondition(preparedDatastore)) {
+      preparedDatastore->Invalidate();
+    }
+  }
+}
 
 void QuotaClient::InitiateShutdown() {
   MOZ_ASSERT(!mShutdownRequested);

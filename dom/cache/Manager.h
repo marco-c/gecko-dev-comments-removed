@@ -135,6 +135,9 @@ class Manager final : public SafeRefCounted<Manager> {
   static void Abort(const nsACString& aOrigin);
 
   
+  static void AbortAll();
+
+  
   void RemoveListener(Listener* aListener);
 
   

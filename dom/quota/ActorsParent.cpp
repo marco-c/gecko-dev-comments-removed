@@ -7657,7 +7657,7 @@ void QuotaManager::ShutdownTimerCallback(nsITimer* aTimer, void* aClosure) {
 
   
   for (RefPtr<Client>& client : quotaManager->mClients) {
-    client->AbortOperations(VoidCString());
+    client->AbortAllOperations();
   }
 }
 
