@@ -151,8 +151,6 @@ static JitExecStatus EnterBaseline(JSContext* cx, EnterJitData& data) {
     data.osrFrame->clearRunningInJit();
   }
 
-  MOZ_ASSERT(!cx->hasIonReturnOverride());
-
   
   
   if (!data.result.isMagic() && data.constructing &&

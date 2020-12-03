@@ -42,7 +42,6 @@ static_assert(!(FAKE_EXITFP_FOR_BAILOUT_ADDR & wasm::ExitOrJitEntryFPTag),
 bool jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo) {
   JSContext* cx = TlsContext.get();
   MOZ_ASSERT(bailoutInfo);
-  MOZ_ASSERT(!cx->hasIonReturnOverride());
 
   
   MOZ_ASSERT(IsInRange(FAKE_EXITFP_FOR_BAILOUT, 0, 0x1000) &&

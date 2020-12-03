@@ -888,34 +888,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::FutexThread fx;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  js::ContextData<js::Value> ionReturnOverride_;
-
-  bool hasIonReturnOverride() const {
-    return !ionReturnOverride_.ref().isMagic(JS_ARG_POISON);
-  }
-  js::Value takeIonReturnOverride() {
-    js::Value v = ionReturnOverride_;
-    ionReturnOverride_ = js::MagicValue(JS_ARG_POISON);
-    return v;
-  }
-  void setIonReturnOverride(const js::Value& v) {
-    MOZ_ASSERT(!hasIonReturnOverride());
-    MOZ_ASSERT(!v.isMagic());
-    ionReturnOverride_ = v;
-  }
-
   mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit;
 
   

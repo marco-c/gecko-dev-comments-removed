@@ -881,17 +881,7 @@ bool BaselineStackBuilder::buildExpressionStack() {
           exprStackSlots());
   for (uint32_t i = 0; i < exprStackSlots(); i++) {
     Value v;
-
-    if (!iter_.moreFrames() && i == exprStackSlots() - 1 &&
-        cx_->hasIonReturnOverride()) {
-      
-      
-      
-      
-      iter_.skip();
-      JitSpew(JitSpew_BaselineBailouts, "      [Return Override]");
-      v = cx_->takeIonReturnOverride();
-    } else if (propagatingIonExceptionForDebugMode()) {
+    if (propagatingIonExceptionForDebugMode()) {
       
       
       

@@ -596,14 +596,6 @@ void HandleException(ResumeFromException* rfe) {
 
   JitSpew(JitSpew_IonInvalidate, "handling exception");
 
-  
-  
-  
-  
-  if (cx->hasIonReturnOverride()) {
-    cx->takeIonReturnOverride();
-  }
-
   JitActivation* activation = cx->activation()->asJit();
 
 #ifdef CHECK_OSIPOINT_REGISTERS
