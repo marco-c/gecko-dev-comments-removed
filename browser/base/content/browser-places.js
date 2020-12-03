@@ -1720,6 +1720,7 @@ var BookmarkingUI = {
     
     if (!this.toolbar.hasAttribute("initialized")) {
       emptyMsg.hidden = false;
+      emptyMsg.setAttribute("nowidth", "");
       return;
     }
 
@@ -1747,6 +1748,7 @@ var BookmarkingUI = {
           ));
     }
     emptyMsg.hidden = hasVisibleChildren;
+    emptyMsg.toggleAttribute("nowidth", !hasVisibleChildren);
   },
 
   openLibraryIfLinkClicked(event) {
