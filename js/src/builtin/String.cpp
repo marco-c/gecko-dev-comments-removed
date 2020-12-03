@@ -3399,8 +3399,7 @@ static ArrayObject* SplitHelper(JSContext* cx, HandleLinearString str,
 
     
     if (splits.length() == limit) {
-      return NewCopiedArrayTryUseGroup(cx, group, splits.begin(),
-                                       splits.length());
+      return NewDenseCopiedArray(cx, splits.length(), splits.begin());
     }
 
     
@@ -3420,7 +3419,7 @@ static ArrayObject* SplitHelper(JSContext* cx, HandleLinearString str,
   }
 
   
-  return NewCopiedArrayTryUseGroup(cx, group, splits.begin(), splits.length());
+  return NewDenseCopiedArray(cx, splits.length(), splits.begin());
 }
 
 
