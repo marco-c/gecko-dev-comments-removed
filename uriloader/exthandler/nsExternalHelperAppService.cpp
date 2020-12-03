@@ -244,8 +244,23 @@ static bool GetFilenameAndExtensionFromChannel(nsIChannel* aChannel,
     
     
     aFileName.Trim(".", false);
+    
+    
+    bool canGetExtensionFromFilename =
+      !gotFileNameFromURI ||
+      aAllowURLExtension;
+    
+    if (!canGetExtensionFromFilename) {
+      nsAutoCString contentType;
+      if (NS_SUCCEEDED(aChannel->GetContentType(contentType))) {
+          canGetExtensionFromFilename =
+            contentType.EqualsIgnoreCase(APPLICATION_OCTET_STREAM) ||
+            contentType.EqualsIgnoreCase("binary/octet-stream") ||
+            contentType.EqualsIgnoreCase("application/x-msdownload");
+      }
+    }
 
-    if (!gotFileNameFromURI || aAllowURLExtension) {
+    if (canGetExtensionFromFilename) {
       
       nsAutoString fileNameStr(aFileName);
       int32_t idx = fileNameStr.RFindChar(char16_t('.'));
