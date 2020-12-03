@@ -32,8 +32,7 @@
 #include "vm/StringType.h"    
 #include "vm/SymbolType.h"    
 
-#include "vm/JSAtom-inl.h"         
-#include "vm/TypeInference-inl.h"  
+#include "vm/JSAtom-inl.h"  
 
 namespace js {
 
