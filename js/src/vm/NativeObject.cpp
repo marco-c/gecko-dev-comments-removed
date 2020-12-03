@@ -113,33 +113,6 @@ bool NativeObject::canHaveNonEmptyElements() {
 #endif  
 
 
-void ObjectElements::ConvertElementsToDoubles(JSContext* cx,
-                                              uintptr_t elementsPtr) {
-  
-
-
-
-
-  HeapSlot* elementsHeapPtr = (HeapSlot*)elementsPtr;
-  MOZ_ASSERT(elementsHeapPtr != emptyObjectElements &&
-             elementsHeapPtr != emptyObjectElementsShared);
-
-  ObjectElements* header = ObjectElements::fromElements(elementsHeapPtr);
-  MOZ_ASSERT(!header->shouldConvertDoubleElements());
-
-  
-  
-  Value* vp = (Value*)elementsPtr;
-  for (size_t i = 0; i < header->initializedLength; i++) {
-    if (vp[i].isInt32()) {
-      vp[i].setDouble(vp[i].toInt32());
-    }
-  }
-
-  header->setShouldConvertDoubleElements();
-}
-
-
 bool ObjectElements::MakeElementsCopyOnWrite(JSContext* cx, NativeObject* obj) {
   static_assert(sizeof(HeapSlot) >= sizeof(GCPtrObject),
                 "there must be enough room for the owner object pointer at "

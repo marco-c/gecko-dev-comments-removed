@@ -2025,9 +2025,6 @@ class MNewArray : public MUnaryInstruction, public NoTypePolicy::Data {
   
   gc::InitialHeap initialHeap_;
 
-  
-  bool convertDoubleElements_;
-
   jsbytecode* pc_;
 
   bool vmCall_;
@@ -2057,8 +2054,6 @@ class MNewArray : public MUnaryInstruction, public NoTypePolicy::Data {
   jsbytecode* pc() const { return pc_; }
 
   bool isVMCall() const { return vmCall_; }
-
-  bool convertDoubleElements() const { return convertDoubleElements_; }
 
   
   
@@ -7306,60 +7301,6 @@ class MConstantElements : public MNullaryInstruction {
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
   ALLOW_CLONE(MConstantElements)
-};
-
-
-class MConvertElementsToDoubles : public MUnaryInstruction,
-                                  public NoTypePolicy::Data {
-  explicit MConvertElementsToDoubles(MDefinition* elements)
-      : MUnaryInstruction(classOpcode, elements) {
-    setGuard();
-    setMovable();
-    setResultType(MIRType::Elements);
-  }
-
- public:
-  INSTRUCTION_HEADER(ConvertElementsToDoubles)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, elements))
-
-  bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins);
-  }
-  AliasSet getAliasSet() const override {
-    
-    
-    
-    
-    
-    
-    
-    return AliasSet::None();
-  }
-};
-
-
-
-class MMaybeToDoubleElement : public MBinaryInstruction,
-                              public UnboxedInt32Policy<1>::Data {
-  MMaybeToDoubleElement(MDefinition* elements, MDefinition* value)
-      : MBinaryInstruction(classOpcode, elements, value) {
-    MOZ_ASSERT(elements->type() == MIRType::Elements);
-    setMovable();
-    setResultType(MIRType::Value);
-  }
-
- public:
-  INSTRUCTION_HEADER(MaybeToDoubleElement)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, elements), (1, value))
-
-  bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins);
-  }
-  AliasSet getAliasSet() const override {
-    return AliasSet::Load(AliasSet::ObjectFields);
-  }
 };
 
 

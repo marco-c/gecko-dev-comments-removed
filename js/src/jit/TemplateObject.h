@@ -21,15 +21,11 @@ class TemplateObject {
  protected:
   JSObject* obj_;
   bool denseElementsAreCopyOnWrite_;
-  bool convertDoubleElements_;
 
  public:
   explicit TemplateObject(JSObject* obj)
-      : obj_(obj),
-        denseElementsAreCopyOnWrite_(false),
-        convertDoubleElements_(false) {}
+      : obj_(obj), denseElementsAreCopyOnWrite_(false) {}
   void setDenseElementsAreCopyOnWrite() { denseElementsAreCopyOnWrite_ = true; }
-  void setConvertDoubleElements() { convertDoubleElements_ = true; }
 
   inline gc::AllocKind getAllocKind() const;
 
@@ -66,11 +62,9 @@ class NativeTemplateObject : public TemplateObject {
 
   
   
-  
   bool denseElementsAreCopyOnWrite() const {
     return denseElementsAreCopyOnWrite_;
   }
-  bool convertDoubleElements() const { return convertDoubleElements_; }
 #ifdef DEBUG
   inline bool isSharedMemory() const;
 #endif

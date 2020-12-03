@@ -182,15 +182,11 @@ class ObjectElements {
  public:
   enum Flags : uint16_t {
     
-    CONVERT_DOUBLE_ELEMENTS = 0x1,
 
     
     
     NONWRITABLE_ARRAY_LENGTH = 0x2,
 
-    
-    
-    
     
     
     
@@ -272,17 +268,6 @@ class ObjectElements {
   
   uint32_t length;
 
-  bool shouldConvertDoubleElements() const {
-    return flags & CONVERT_DOUBLE_ELEMENTS;
-  }
-  void setShouldConvertDoubleElements() {
-    
-    flags |= CONVERT_DOUBLE_ELEMENTS;
-  }
-  void clearShouldConvertDoubleElements() {
-    MOZ_ASSERT(!isCopyOnWrite());
-    flags &= ~CONVERT_DOUBLE_ELEMENTS;
-  }
   bool hasNonwritableArrayLength() const {
     return flags & NONWRITABLE_ARRAY_LENGTH;
   }
@@ -402,7 +387,6 @@ class ObjectElements {
     return int(offsetof(ObjectElements, length)) - int(sizeof(ObjectElements));
   }
 
-  static void ConvertElementsToDoubles(JSContext* cx, uintptr_t elements);
   static bool MakeElementsCopyOnWrite(JSContext* cx, NativeObject* obj);
 
   static MOZ_MUST_USE bool PrepareForPreventExtensions(JSContext* cx,
@@ -1417,13 +1401,6 @@ class NativeObject : public JSObject {
                                                      uint32_t start,
                                                      const Value* vp,
                                                      uint32_t count);
-
-  bool shouldConvertDoubleElements() {
-    return getElementsHeader()->shouldConvertDoubleElements();
-  }
-
-  inline void setShouldConvertDoubleElements();
-  inline void clearShouldConvertDoubleElements();
 
   bool denseElementsAreCopyOnWrite() const {
     return getElementsHeader()->isCopyOnWrite();
