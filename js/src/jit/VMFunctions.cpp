@@ -907,8 +907,8 @@ template bool StringsCompare<ComparisonKind::GreaterThanOrEqual>(
 bool ArrayPushDense(JSContext* cx, HandleArrayObject arr, HandleValue v,
                     uint32_t* length) {
   *length = arr->length();
-  DenseElementResult result = arr->setOrExtendDenseElements(
-      cx, *length, v.address(), 1, ShouldUpdateTypes::DontUpdate);
+  DenseElementResult result =
+      arr->setOrExtendDenseElements(cx, *length, v.address(), 1);
   if (result != DenseElementResult::Incomplete) {
     (*length)++;
     return result == DenseElementResult::Success;
@@ -1668,10 +1668,9 @@ bool SetDenseElement(JSContext* cx, HandleNativeObject obj, int32_t index,
                      HandleValue value, bool strict) {
   
   
-  
 
-  DenseElementResult result = obj->setOrExtendDenseElements(
-      cx, index, value.address(), 1, ShouldUpdateTypes::DontUpdate);
+  DenseElementResult result =
+      obj->setOrExtendDenseElements(cx, index, value.address(), 1);
   if (result != DenseElementResult::Incomplete) {
     return result == DenseElementResult::Success;
   }

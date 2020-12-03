@@ -522,8 +522,6 @@ class NewObjectCache;
 
 enum class DenseElementResult { Failure, Success, Incomplete };
 
-enum class ShouldUpdateTypes { Update, DontUpdate };
-
 
 
 
@@ -1415,9 +1413,10 @@ class NativeObject : public JSObject {
                                 uint32_t count);
   inline void reverseDenseElementsNoPreBarrier(uint32_t length);
 
-  inline DenseElementResult setOrExtendDenseElements(
-      JSContext* cx, uint32_t start, const Value* vp, uint32_t count,
-      ShouldUpdateTypes updateTypes = ShouldUpdateTypes::Update);
+  inline DenseElementResult setOrExtendDenseElements(JSContext* cx,
+                                                     uint32_t start,
+                                                     const Value* vp,
+                                                     uint32_t count);
 
   bool shouldConvertDoubleElements() {
     return getElementsHeader()->shouldConvertDoubleElements();
