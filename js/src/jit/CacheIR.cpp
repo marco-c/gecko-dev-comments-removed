@@ -7972,8 +7972,8 @@ AttachDecision CallIRGenerator::tryAttachArrayConstructor(
   JSObject* templateObj;
   {
     AutoRealm ar(cx_, callee);
-    templateObj = NewFullyAllocatedArrayForCallingAllocationSite(cx_, length,
-                                                                 TenuredObject);
+    templateObj = NewDenseFullyAllocatedArray(
+        cx_, length,  nullptr, TenuredObject);
     if (!templateObj) {
       cx_->recoverFromOutOfMemory();
       return AttachDecision::NoAction;
@@ -8900,29 +8900,8 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
 
   
   
+  
   switch (calleeFunc->jitInfo()->inlinableNative) {
-    case InlinableNative::Array: {
-      
-      
-      
-
-      if (args_.length() <= 1) {
-        
-        return true;
-      }
-
-      size_t count = args_.length();
-      if (count > ArrayObject::EagerAllocationMaxLength) {
-        return true;
-      }
-
-      
-      
-      res.set(NewFullyAllocatedArrayForCallingAllocationSite(cx_, count,
-                                                             TenuredObject));
-      return !!res;
-    }
-
     case InlinableNative::String: {
       if (!isConstructing) {
         return true;
