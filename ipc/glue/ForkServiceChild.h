@@ -58,16 +58,21 @@ class ForkServiceChild {
   
 
 
-  static ForkServiceChild* Get() { return sForkServiceChild.get(); }
+  static ForkServiceChild* Get() {
+    auto child = sForkServiceChild.get();
+    return child == nullptr || child->mFailed ? nullptr : child;
+  }
 
  private:
   
   void OnMessageReceived(IPC::Message&& message);
+  void OnError();
 
   UniquePtr<MiniTransceiver> mTcver;
   static UniquePtr<ForkServiceChild> sForkServiceChild;
   pid_t mRecvPid;
   bool mWaitForHello;
+  bool mFailed;  
   GeckoChildProcessHost* mProcess;
 };
 
@@ -83,7 +88,10 @@ class ForkServerLauncher : public nsIObserver {
   static already_AddRefed<ForkServerLauncher> Create();
 
  private:
+  friend class ForkServiceChild;
   virtual ~ForkServerLauncher();
+
+  static void RestartForkServer();
 
   static bool mHaveStartedClient;
   static StaticRefPtr<ForkServerLauncher> mSingleton;
