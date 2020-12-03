@@ -203,14 +203,14 @@ function requestExtensions() {
       const addons = await clientWrapper.listAddons({
         iconDataURL: isIconDataURLRequired,
       });
-      let extensions = addons.filter(a => a.debuggable);
+
+      const showHiddenAddons = getState().ui.showHiddenAddons;
 
       
-      if (!getState().ui.showHiddenAddons) {
-        
-        
-        extensions = extensions.filter(e => !e.isSystem && !e.hidden);
-      }
+      
+      const extensions = addons.filter(
+        a => a.debuggable && (!a.hidden || showHiddenAddons)
+      );
 
       const installedExtensions = extensions.filter(
         e => !e.temporarilyInstalled
