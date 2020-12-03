@@ -605,20 +605,7 @@ class PackageFrontend(MachCommandBase):
                     "sha256": h.hexdigest(),
                 }
             if record.unpack and not no_unpack:
-                
-                
-                
-                try:
-                    unpack_file(local)
-                except ImportError as e:
-                    
-                    
-                    if six.PY3 and e.name != "zstandard":
-                        raise
-                    elif six.PY2 and e.message != "No module named zstandard":
-                        raise
-                    self._ensure_zstd()
-                    unpack_file(local)
+                unpack_file(local)
                 os.unlink(local)
 
         if not downloaded:
