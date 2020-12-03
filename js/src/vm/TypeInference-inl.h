@@ -43,28 +43,4 @@
 #include "vm/JSScript-inl.h"
 #include "vm/ObjectGroup-inl.h"
 
-namespace js {
-
-
-
-
-
-
-
-
-
-
-struct MOZ_RAII AutoEnterAnalysis {
-  
-  gc::AutoSuppressGC suppressGC;
-
-  
-  js::AutoSuppressAllocationMetadataBuilder suppressMetadata;
-
-  explicit AutoEnterAnalysis(JSContext* cx)
-      : suppressGC(cx), suppressMetadata(cx) {}
-};
-
-}  
-
 #endif 

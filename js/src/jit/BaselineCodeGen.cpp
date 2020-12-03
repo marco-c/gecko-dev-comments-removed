@@ -223,7 +223,7 @@ MethodStatus BaselineCompiler::compile() {
   }
 
   
-  AutoEnterAnalysis autoEnterAnalysis(cx);
+  gc::AutoSuppressGC suppressGC(cx);
 
   MOZ_ASSERT(!script->hasBaselineScript());
 

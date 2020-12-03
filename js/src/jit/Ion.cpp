@@ -374,7 +374,7 @@ void jit::LinkIonScript(JSContext* cx, HandleScript calleeScript) {
   }
 
   {
-    AutoEnterAnalysis enterTypes(cx);
+    gc::AutoSuppressGC suppressGC(cx);
     if (!LinkBackgroundCodeGen(cx, task)) {
       
       
@@ -1618,7 +1618,6 @@ static AbortReasonOr<WarpSnapshot*> CreateWarpSnapshot(JSContext* cx,
                                                        MIRGenerator* mirGen,
                                                        HandleScript script) {
   
-  
   gc::AutoSuppressGC suppressGC(cx);
 
   SpewBeginFunction(mirGen, script);
@@ -1755,7 +1754,7 @@ static AbortReason IonCompile(JSContext* cx, HandleScript script,
 
   bool succeeded = false;
   {
-    AutoEnterAnalysis enter(cx);
+    gc::AutoSuppressGC suppressGC(cx);
     UniquePtr<CodeGenerator> codegen(CompileBackEnd(mirGen, snapshot));
     if (!codegen) {
       JitSpew(JitSpew_IonAbort, "Failed during back-end compilation.");

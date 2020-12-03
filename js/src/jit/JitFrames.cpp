@@ -1906,7 +1906,8 @@ bool SnapshotIterator::computeInstructionResults(
 
     
     
-    AutoEnterAnalysis enter(cx);
+    gc::AutoSuppressGC suppressGC(cx);
+    js::AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
 
     
     SnapshotIterator s(*this);
