@@ -74,7 +74,12 @@ enum EActionRule {
 
 
 
-enum ELiveAttrRule { eNoLiveAttr, eOffLiveAttr, ePoliteLiveAttr };
+enum ELiveAttrRule {
+  eNoLiveAttr,
+  eOffLiveAttr,
+  ePoliteLiveAttr,
+  eAssertiveLiveAttr
+};
 
 
 

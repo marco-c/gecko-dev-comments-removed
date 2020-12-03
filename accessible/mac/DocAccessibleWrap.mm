@@ -61,7 +61,8 @@ void DocAccessibleWrap::AttributeChanged(dom::Element* aElement,
         
         if (const nsRoleMapEntry* roleMap = accessible->ARIARoleMap()) {
           
-          if (roleMap->liveAttRule == ePoliteLiveAttr) {
+          if (roleMap->liveAttRule == ePoliteLiveAttr ||
+              roleMap->liveAttRule == eAssertiveLiveAttr) {
             FireDelayedEvent(nsIAccessibleEvent::EVENT_LIVE_REGION_REMOVED,
                              accessible);
           }
