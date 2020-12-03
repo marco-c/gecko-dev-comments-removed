@@ -1468,12 +1468,10 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
     }
   }
 
-  
-  bool isElementInFocusedWindow =
-      (focusedBrowsingContext == newBrowsingContext);
+  bool focusMovesToDifferentBC =
+      (focusedBrowsingContext != browsingContextToFocus);
 
-  if (focusedBrowsingContext &&
-      focusedBrowsingContext != browsingContextToFocus &&
+  if (focusedBrowsingContext && focusMovesToDifferentBC &&
       nsContentUtils::IsHandlingKeyBoardEvent() &&
       !nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
     MOZ_ASSERT(browsingContextToFocus,
@@ -1616,8 +1614,10 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   LOGFOCUS((" Flags: %x Current Window: %p New Window: %p Current Element: %p",
             aFlags, mFocusedWindow.get(), newWindow.get(),
             mFocusedElement.get()));
-  LOGFOCUS((" In Active Window: %d In Focused Window: %d SendFocus: %d",
-            isElementInActiveWindow, isElementInFocusedWindow, sendFocusEvent));
+  LOGFOCUS(
+      (" In Active Window: %d Moves to different BrowsingContext: %d "
+       "SendFocus: %d",
+       isElementInActiveWindow, focusMovesToDifferentBC, sendFocusEvent));
 
   if (sendFocusEvent) {
     Maybe<BlurredElementInfo> blurredInfo;
@@ -1646,20 +1646,20 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
       
       
       RefPtr<BrowsingContext> commonAncestor;
-      if (!isElementInFocusedWindow) {
+      if (focusMovesToDifferentBC) {
         commonAncestor = GetCommonAncestor(newWindow, focusedBrowsingContext);
       }
 
       if (!Blur(
               currentIsSameOrAncestor ? focusedBrowsingContext.get() : nullptr,
               commonAncestor ? commonAncestor.get() : nullptr,
-              !isElementInFocusedWindow, aAdjustWidget, aActionId,
+              focusMovesToDifferentBC, aAdjustWidget, aActionId,
               elementToFocus)) {
         return;
       }
     }
 
-    Focus(newWindow, elementToFocus, aFlags, !isElementInFocusedWindow,
+    Focus(newWindow, elementToFocus, aFlags, focusMovesToDifferentBC,
           aFocusChanged, false, aAdjustWidget, aActionId, blurredInfo);
   } else {
     
