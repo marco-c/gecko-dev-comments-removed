@@ -26,6 +26,7 @@
 #include "js/Conversions.h"
 #include "js/ScalarType.h"  
 #include "js/Value.h"
+#include "util/DifferentialTesting.h"
 #include "util/Memory.h"
 #include "vm/BigIntType.h"
 #include "vm/JSContext.h"
@@ -719,14 +720,14 @@ class ElementSpecific {
 
   static T doubleToNative(double d) {
     if (TypeIsFloatingPoint<T>()) {
-#ifdef JS_MORE_DETERMINISTIC
       
       
       
       
       
-      d = JS::CanonicalizeNaN(d);
-#endif
+      if (js::SupportDifferentialTesting()) {
+        d = JS::CanonicalizeNaN(d);
+      }
       return T(d);
     }
     if (MOZ_UNLIKELY(mozilla::IsNaN(d))) {

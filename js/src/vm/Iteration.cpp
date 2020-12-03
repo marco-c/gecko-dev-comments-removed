@@ -29,6 +29,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "js/Proxy.h"
+#include "util/DifferentialTesting.h"
 #include "util/Poison.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/GlobalObject.h"
@@ -375,14 +376,17 @@ static bool EnumerateProxyProperties(JSContext* cx, HandleObject pobj,
   return true;
 }
 
-#ifdef JS_MORE_DETERMINISTIC
+#ifdef DEBUG
 
 struct SortComparatorIds {
   JSContext* const cx;
 
-  SortComparatorIds(JSContext* cx) : cx(cx) {}
+  explicit SortComparatorIds(JSContext* cx) : cx(cx) {}
 
-  bool operator()(jsid a, jsid b, bool* lessOrEqualp) {
+  bool operator()(jsid aArg, jsid bArg, bool* lessOrEqualp) {
+    RootedId a(cx, aArg);
+    RootedId b(cx, bArg);
+
     
     
     if (a == b) {
@@ -390,8 +394,8 @@ struct SortComparatorIds {
       return true;
     }
 
-    size_t ta = JSID_BITS(a) & JSID_TYPE_MASK;
-    size_t tb = JSID_BITS(b) & JSID_TYPE_MASK;
+    size_t ta = JSID_BITS(a.get()) & JSID_TYPE_MASK;
+    size_t tb = JSID_BITS(b.get()) & JSID_TYPE_MASK;
     if (ta != tb) {
       *lessOrEqualp = (ta <= tb);
       return true;
@@ -514,11 +518,9 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
     }
   } while (pobj != nullptr);
 
-#ifdef JS_MORE_DETERMINISTIC
-
-  
-
-
+#ifdef DEBUG
+  if (js::SupportDifferentialTesting()) {
+    
 
 
 
@@ -531,20 +533,22 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
 
 
 
-  jsid* ids = props.begin();
-  size_t n = props.length();
 
-  RootedIdVector tmp(cx);
-  if (!tmp.resize(n)) {
-    return false;
+
+    jsid* ids = props.begin();
+    size_t n = props.length();
+
+    RootedIdVector tmp(cx);
+    if (!tmp.resize(n)) {
+      return false;
+    }
+    PodCopy(tmp.begin(), ids, n);
+
+    if (!MergeSort(ids, n, tmp.begin(), SortComparatorIds(cx))) {
+      return false;
+    }
   }
-  PodCopy(tmp.begin(), ids, n);
-
-  if (!MergeSort(ids, n, tmp.begin(), SortComparatorIds(cx))) {
-    return false;
-  }
-
-#endif 
+#endif
 
   return true;
 }

@@ -26,6 +26,7 @@
 #include "js/friend/ErrorMessages.h"    
 #include "js/PropertySpec.h"
 #include "js/Wrapper.h"
+#include "util/DifferentialTesting.h"
 #include "util/Windows.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/GlobalObject.h"
@@ -455,12 +456,10 @@ bool DataViewObject::write(JSContext* cx, Handle<DataViewObject*> obj,
     return false;
   }
 
-#ifdef JS_MORE_DETERMINISTIC
   
-  if (TypeIsFloatingPoint<NativeType>()) {
+  if (js::SupportDifferentialTesting() && TypeIsFloatingPoint<NativeType>()) {
     value = JS::CanonicalizeNaN(value);
   }
-#endif
 
   
   bool isLittleEndian = args.length() >= 3 && ToBoolean(args[2]);
