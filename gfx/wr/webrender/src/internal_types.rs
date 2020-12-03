@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, DocumentId, ExternalImageData, ExternalImageId, ExternalImageType, PrimitiveFlags};
+use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags};
 use api::{ImageFormat, NotificationRequest, Shadow, FilterOp, ImageBufferKind};
 use api::units::*;
 use api;
@@ -233,7 +233,7 @@ pub struct SwizzleSettings {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct CacheTextureId(pub u64);
+pub struct CacheTextureId(pub u32);
 
 
 
@@ -257,11 +257,16 @@ pub type LayerIndex = usize;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct SavedTargetIndex(pub usize);
+pub struct SavedTargetIndex(pub u32);
 
 impl SavedTargetIndex {
     pub const PENDING: Self = SavedTargetIndex(!0);
 }
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct DeferredResolveIndex(pub u32);
 
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -273,7 +278,7 @@ pub enum TextureSource {
     
     TextureCache(CacheTextureId, Swizzle),
     
-    External(ExternalImageData),
+    External(DeferredResolveIndex, ImageBufferKind),
     
     PrevPassAlpha,
     
@@ -292,13 +297,7 @@ impl TextureSource {
         match *self {
             TextureSource::TextureCache(..) => ImageBufferKind::Texture2D,
 
-            TextureSource::External(external_image) => {
-                match external_image.image_type {
-                    ExternalImageType::TextureHandle(kind) => kind,
-                    
-                    ExternalImageType::Buffer => ImageBufferKind::Texture2D,
-                }
-            },
+            TextureSource::External(_, image_buffer_kind) => image_buffer_kind,
 
             
             TextureSource::PrevPassAlpha
