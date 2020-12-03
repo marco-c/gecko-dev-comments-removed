@@ -405,12 +405,8 @@ void ExecutionRunnable::RunOnWorkletThread() {
   
   
   
-  JS::Rooted<JSObject*> evaluationPromise(cx, JS::ModuleEvaluate(cx, module));
-
-  if (!JS::ThrowOnModuleEvaluationFailure(cx, evaluationPromise)) {
-    mResult = NS_ERROR_DOM_UNKNOWN_ERR;
-    return;
-  }
+  JS::Rooted<JS::Value> ignored(cx);
+  JS::ModuleEvaluate(cx, module, &ignored);
 
   
   mResult = NS_OK;
