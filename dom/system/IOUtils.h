@@ -99,6 +99,10 @@ class IOUtils final {
   static already_AddRefed<Promise> GetChildren(GlobalObject& aGlobal,
                                                const nsAString& aPath);
 
+  static already_AddRefed<Promise> SetPermissions(GlobalObject& aGlobal,
+                                                  const nsAString& aPath,
+                                                  const uint32_t aPermissions);
+
   static bool IsAbsolutePath(const nsAString& aPath);
 
  private:
@@ -326,6 +330,22 @@ class IOUtils final {
 
 
   static Result<nsTArray<nsString>, IOError> GetChildrenSync(nsIFile* aFile);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static Result<Ok, IOError> SetPermissionsSync(nsIFile* aFile,
+                                                const uint32_t aPermissions);
 };
 
 
@@ -382,6 +402,7 @@ struct IOUtils::InternalFileInfo {
   uint64_t mSize;
   uint64_t mLastModified;
   Maybe<uint64_t> mCreationTime;
+  uint32_t mPermissions;
 };
 
 
