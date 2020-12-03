@@ -18,6 +18,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/GCHashTable.h"
 #include "js/TypeDecls.h"
+#include "js/UbiNode.h"
 #include "vm/TaggedProto.h"
 
 namespace js {
@@ -355,6 +356,31 @@ PlainObject* NewPlainObjectWithProperties(JSContext* cx,
                                           size_t nproperties,
                                           NewObjectKind newKind);
 
+}  
+
+
+
+namespace JS {
+namespace ubi {
+
+template <>
+class Concrete<js::ObjectGroup> : TracerConcrete<js::ObjectGroup> {
+ protected:
+  explicit Concrete(js::ObjectGroup* ptr)
+      : TracerConcrete<js::ObjectGroup>(ptr) {}
+
+ public:
+  static void construct(void* storage, js::ObjectGroup* ptr) {
+    new (storage) Concrete(ptr);
+  }
+
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
+};
+
+}  
 }  
 
 #endif 
