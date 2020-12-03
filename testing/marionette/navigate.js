@@ -108,10 +108,31 @@ function checkReadyState(pageLoadStrategy, eventData = {}) {
 
 
 
-navigate.isLoadEventExpected = function(current, future = undefined) {
-  
+
+
+
+
+
+navigate.isLoadEventExpected = function(current, options = {}) {
+  const { browsingContext, future, target } = options;
+
   if (typeof current == "undefined") {
     throw new TypeError("Expected at least one URL");
+  }
+
+  if (["_parent", "_top"].includes(target) && !browsingContext) {
+    throw new TypeError(
+      "Expected browsingContext when target is _parent or _top"
+    );
+  }
+
+  
+  if (
+    target === "_blank" ||
+    (target === "_parent" && browsingContext.parent) ||
+    (target === "_top" && browsingContext.top != browsingContext)
+  ) {
+    return false;
   }
 
   
