@@ -46,13 +46,6 @@ class PopupBlocker final {
 
   static uint32_t GetPopupPermission(nsIPrincipal* aPrincipal);
 
-  
-  
-  
-  
-  
-  static bool TryUsePopupOpeningToken(nsIPrincipal* aPrincipal);
-
   static PopupBlocker::PopupControlState GetEventPopupControlState(
       WidgetEvent* aEvent, Event* aDOMEvent = nullptr);
 
