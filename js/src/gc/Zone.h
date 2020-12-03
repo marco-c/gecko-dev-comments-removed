@@ -194,8 +194,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
  public:
   js::gc::ArenaLists arenas;
 
-  js::TypeZone types;
-
   
   js::ZoneData<void*> data;
 
