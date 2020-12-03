@@ -484,9 +484,15 @@ class TransportTestPeer : public sigslot::has_slots<> {
   }
 
   void DisconnectDestroyFlow() {
-    loopback_->Disconnect();
-    disconnect_all();  
-    flow_ = nullptr;
+    test_utils_->sts_target()->Dispatch(
+        NS_NewRunnableFunction(
+            __func__,
+            [this] {
+              loopback_->Disconnect();
+              disconnect_all();  
+              flow_ = nullptr;
+            }),
+        NS_DISPATCH_SYNC);
   }
 
   void SetDtlsAllowAll() {
