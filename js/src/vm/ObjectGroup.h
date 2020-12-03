@@ -216,14 +216,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
                                                 ObjectGroup* oldGroup,
                                                 const JSClass* clasp,
                                                 TaggedProto proto);
-
-  
-  
-
-  
-  
-  static ArrayObject* newArrayObject(JSContext* cx, const Value* vp,
-                                     size_t length, NewObjectKind newKind);
 };
 
 
