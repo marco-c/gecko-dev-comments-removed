@@ -3436,8 +3436,23 @@ this.XPIDatabaseReconcile = {
           id
         );
 
+        
+        
+        
+        
+        
+        
+        
+        let restart =
+          isActive && XPIInternal.BootstrapScope.get(currentAddon).started;
+        if (restart) {
+          logger.warn(
+            `Updating and restart addon ${previousAddon.id} that changed on disk after being already started.`
+          );
+        }
         promise = XPIInternal.BootstrapScope.get(previousAddon).update(
-          currentAddon
+          currentAddon,
+          restart
         );
       }
 

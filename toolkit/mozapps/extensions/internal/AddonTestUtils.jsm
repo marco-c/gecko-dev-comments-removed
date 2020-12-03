@@ -1008,6 +1008,9 @@ var AddonTestUtils = {
       null
     );
 
+    
+    Services.obs.notifyObservers(null, "test-load-xpi-database");
+
     Services.obs.notifyObservers(null, "quit-application-granted");
     await MockAsyncShutdown.quitApplicationGranted.trigger();
 
