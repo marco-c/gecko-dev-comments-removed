@@ -194,10 +194,10 @@ class TextControlState final : public SupportsWeakPtr {
     
     
     eSetValue_MoveCursorToEndIfValueChanged = 1 << 4,
-
     
-    eSetValue_PreserveHistory = 1 << 5,
-
+    
+    
+    eSetValue_ForXUL = 1 << 5,
     
     
     
