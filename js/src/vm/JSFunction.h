@@ -731,7 +731,7 @@ extern JSFunction* NewFunctionWithProto(
 inline JSFunction* NewNativeFunction(
     JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-    NewObjectKind newKind = SingletonObject,
+    NewObjectKind newKind = TenuredObject,
     FunctionFlags flags = FunctionFlags::NATIVE_FUN) {
   MOZ_ASSERT(native);
   return NewFunctionWithProto(cx, native, nargs, flags, nullptr, atom, nullptr,
@@ -743,7 +743,7 @@ inline JSFunction* NewNativeFunction(
 inline JSFunction* NewNativeConstructor(
     JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-    NewObjectKind newKind = SingletonObject,
+    NewObjectKind newKind = TenuredObject,
     FunctionFlags flags = FunctionFlags::NATIVE_CTOR) {
   MOZ_ASSERT(native);
   MOZ_ASSERT(flags.isNativeConstructor());
@@ -855,7 +855,6 @@ extern JSFunction* CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
                                             HandleObject enclosingEnv,
                                             gc::AllocKind kind,
                                             HandleObject proto);
-
 
 extern JSFunction* CloneFunctionAndScript(
     JSContext* cx, HandleFunction fun, HandleObject enclosingEnv,

@@ -150,13 +150,6 @@ class TypedArrayObject : public ArrayBufferViewObject {
     return ArrayBufferObject::maxBufferByteLength();
   }
 
-  
-
-
-
-
-  static constexpr uint32_t SINGLETON_BYTE_LENGTH = 1024 * 1024 * 10;
-
   static bool isOriginalLengthGetter(Native native);
 
   static bool isOriginalByteOffsetGetter(Native native);

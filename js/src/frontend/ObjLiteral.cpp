@@ -61,8 +61,6 @@ static JSObject* InterpretObjLiteralObj(
     JSContext* cx, frontend::CompilationAtomCache& atomCache,
     const ObjLiteralAtomVector& atoms,
     const mozilla::Span<const uint8_t> literalInsns, ObjLiteralFlags flags) {
-  bool specificGroup = flags.contains(ObjLiteralFlag::SpecificGroup);
-  bool singleton = flags.contains(ObjLiteralFlag::Singleton);
   bool noValues = flags.contains(ObjLiteralFlag::NoValues);
 
   ObjLiteralReader reader(literalInsns);
@@ -95,12 +93,6 @@ static JSObject* InterpretObjLiteralObj(
   }
 
   
-  if (specificGroup) {
-    return NewPlainObjectWithProperties(
-        cx, properties.begin(), properties.length(),
-        singleton ? SingletonObject : TenuredObject);
-  }
-
   return NewPlainObjectWithProperties(cx, properties.begin(),
                                       properties.length(), TenuredObject);
 }
