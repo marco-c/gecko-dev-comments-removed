@@ -290,6 +290,15 @@ class GCMarker : public JSTracer {
     traverseEdge(source, target);
   }
 
+  template <typename S, typename T>
+  void checkTraversedEdge(S source, T* target);
+
+#ifdef DEBUG
+  
+  
+  void setCheckAtomMarking(bool check);
+#endif
+
   
 
 
@@ -500,6 +509,12 @@ class GCMarker : public JSTracer {
 
   
   MainThreadOrGCTaskData<bool> started;
+
+  
+
+
+
+  MainThreadOrGCTaskData<bool> checkAtomMarking;
 
   
   mozilla::Maybe<js::gc::MarkColor> queueMarkColor;

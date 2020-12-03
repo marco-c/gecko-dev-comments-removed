@@ -1085,8 +1085,13 @@ void GCMarker::traverse(AccessorShape* thing) {
 }
 }  
 
+void GCMarker::setCheckAtomMarking(bool check) {
+  MOZ_ASSERT(check != checkAtomMarking);
+  checkAtomMarking = check;
+}
+
 template <typename S, typename T>
-static inline void CheckTraversedEdge(S source, T* target) {
+inline void GCMarker::checkTraversedEdge(S source, T* target) {
 #ifdef DEBUG
   
   
@@ -1111,12 +1116,10 @@ static inline void CheckTraversedEdge(S source, T* target) {
 
   
   
-  if (!sourceZone->isAtomsZone() && targetZone->isAtomsZone()) {
-    
-    if (!gHelperThreadLock.ownedByCurrentThread()) {
-      MOZ_ASSERT(target->runtimeFromAnyThread()->gc.atomMarking.atomIsMarked(
-          sourceZone, reinterpret_cast<TenuredCell*>(target)));
-    }
+  if (checkAtomMarking && !sourceZone->isAtomsZone() &&
+      targetZone->isAtomsZone()) {
+    MOZ_ASSERT(target->runtimeFromAnyThread()->gc.atomMarking.atomIsMarked(
+        sourceZone, reinterpret_cast<TenuredCell*>(target)));
   }
 
   
@@ -1128,7 +1131,7 @@ static inline void CheckTraversedEdge(S source, T* target) {
 
 template <typename S, typename T>
 void js::GCMarker::traverseEdge(S source, T* target) {
-  CheckTraversedEdge(source, target);
+  checkTraversedEdge(source, target);
   traverse(target);
 }
 
@@ -1243,7 +1246,7 @@ inline void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
     
     
     BaseShape* base = shape->base();
-    CheckTraversedEdge(shape, base);
+    checkTraversedEdge(shape, base);
     if (mark(base)) {
       MOZ_ASSERT(base->canSkipMarkingShapeCache(shape));
       base->traceChildrenSkipShapeCache(this);
@@ -2399,6 +2402,7 @@ GCMarker::GCMarker(JSRuntime* rt)
 #ifdef DEBUG
       ,
       markLaterArenas(0),
+      checkAtomMarking(true),
       strictCompartmentChecking(false),
       markQueue(rt),
       queuePos(0)
