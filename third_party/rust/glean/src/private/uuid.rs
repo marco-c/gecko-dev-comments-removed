@@ -21,30 +21,33 @@ use crate::dispatcher;
 
 
 #[derive(Clone)]
-pub struct StringMetric(pub(crate) Arc<glean_core::metrics::StringMetric>);
+pub struct UuidMetric(pub(crate) Arc<glean_core::metrics::UuidMetric>);
 
-impl StringMetric {
+impl UuidMetric {
     
     pub fn new(meta: glean_core::CommonMetricData) -> Self {
-        Self(Arc::new(glean_core::metrics::StringMetric::new(meta)))
+        Self(Arc::new(glean_core::metrics::UuidMetric::new(meta)))
     }
 }
 
 #[inherent(pub)]
-impl glean_core::traits::String for StringMetric {
+impl glean_core::traits::Uuid for UuidMetric {
     
     
     
     
     
-    
-    
-    
-    
-    fn set<S: Into<std::string::String>>(&self, value: S) {
+    fn set(&self, value: uuid::Uuid) {
         let metric = Arc::clone(&self.0);
-        let new_value = value.into();
-        dispatcher::launch(move || crate::with_glean(|glean| metric.set(glean, new_value)));
+        dispatcher::launch(move || crate::with_glean(|glean| metric.set(glean, value)));
+    }
+
+    
+    fn generate_and_set(&self) -> uuid::Uuid {
+        
+        let uuid = uuid::Uuid::new_v4();
+        self.set(uuid);
+        uuid
     }
 
     
@@ -57,10 +60,7 @@ impl glean_core::traits::String for StringMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<std::string::String> {
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<uuid::Uuid> {
         dispatcher::block_on_queue();
 
         let queried_ping_name = ping_name
@@ -88,8 +88,6 @@ impl glean_core::traits::String for StringMetric {
         error: ErrorType,
         ping_name: S,
     ) -> i32 {
-        dispatcher::block_on_queue();
-
         crate::with_glean_mut(|glean| {
             glean_core::test_get_num_recorded_errors(&glean, self.0.meta(), error, ping_name.into())
                 .unwrap_or(0)

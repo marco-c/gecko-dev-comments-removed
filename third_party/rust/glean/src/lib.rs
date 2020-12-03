@@ -45,7 +45,9 @@ use std::sync::Mutex;
 pub use configuration::Configuration;
 use configuration::DEFAULT_GLEAN_ENDPOINT;
 pub use core_metrics::ClientInfoMetrics;
-pub use glean_core::{global_glean, setup_glean, CommonMetricData, Error, Glean, Lifetime, Result};
+pub use glean_core::{
+    global_glean, setup_glean, CommonMetricData, Error, ErrorType, Glean, Lifetime, Result,
+};
 use private::RecordedExperimentData;
 
 mod configuration;
@@ -55,6 +57,9 @@ mod glean_metrics;
 pub mod net;
 pub mod private;
 mod system;
+
+#[cfg(test)]
+mod common_test;
 
 const LANGUAGE_BINDING_NAME: &str = "Rust";
 
@@ -75,6 +80,11 @@ struct RustBindingsState {
 
 
 static INITIALIZE_CALLED: AtomicBool = AtomicBool::new(false);
+
+
+static PRE_INIT_DEBUG_VIEW_TAG: OnceCell<Mutex<String>> = OnceCell::new();
+static PRE_INIT_LOG_PINGS: AtomicBool = AtomicBool::new(false);
+static PRE_INIT_SOURCE_TAGS: OnceCell<Mutex<Vec<String>>> = OnceCell::new();
 
 
 
@@ -220,6 +230,29 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
 
             
             
+            if let Some(tag) = PRE_INIT_DEBUG_VIEW_TAG.get() {
+                let lock = tag.try_lock();
+                if let Ok(ref debug_tag) = lock {
+                    glean.set_debug_view_tag(debug_tag);
+                }
+            }
+            
+            
+            let log_pigs = PRE_INIT_LOG_PINGS.load(Ordering::SeqCst);
+            if log_pigs {
+                glean.set_log_pings(log_pigs);
+            }
+            
+            
+            if let Some(tags) = PRE_INIT_SOURCE_TAGS.get() {
+                let lock = tags.try_lock();
+                if let Ok(ref source_tags) = lock {
+                    glean.set_source_tags(source_tags.to_vec());
+                }
+            }
+
+            
+            
             
             
             
@@ -287,6 +320,16 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
     
     
     INITIALIZE_CALLED.store(true, Ordering::SeqCst);
+}
+
+
+
+
+
+pub fn shutdown() {
+    if let Err(e) = dispatcher::try_shutdown() {
+        log::error!("Can't shutdown dispatcher thread: {:?}", e);
+    }
 }
 
 
@@ -387,9 +430,12 @@ pub fn register_ping_type(ping: &private::PingType) {
 
 
 
-pub fn submit_ping(ping: &private::PingType, reason: Option<&str>) {
+pub(crate) fn submit_ping(ping: &private::PingType, reason: Option<&str>) {
     submit_ping_by_name(&ping.name, reason)
 }
+
+
+
 
 
 
@@ -496,7 +542,6 @@ pub(crate) fn test_get_experiment_data(experiment_id: String) -> RecordedExperim
 }
 
 
-#[cfg(test)]
 pub(crate) fn destroy_glean(clear_stores: bool) {
     
     if was_initialize_called() {
@@ -520,14 +565,84 @@ pub(crate) fn destroy_glean(clear_stores: bool) {
 }
 
 
-#[cfg(test)]
-#[allow(dead_code)]
-pub(crate) fn reset_glean(cfg: Configuration, client_info: ClientInfoMetrics, clear_stores: bool) {
+
+pub fn test_reset_glean(cfg: Configuration, client_info: ClientInfoMetrics, clear_stores: bool) {
     destroy_glean(clear_stores);
 
     
     
     initialize(cfg, client_info);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn set_debug_view_tag(tag: &str) -> bool {
+    if was_initialize_called() {
+        with_glean_mut(|glean| glean.set_debug_view_tag(tag))
+    } else {
+        
+        let m = PRE_INIT_DEBUG_VIEW_TAG.get_or_init(Default::default);
+        let mut lock = m.lock().unwrap();
+        *lock = tag.to_string();
+        
+        
+        true
+    }
+}
+
+
+
+
+
+
+
+
+
+pub fn set_log_pings(value: bool) {
+    if was_initialize_called() {
+        with_glean_mut(|glean| glean.set_log_pings(value));
+    } else {
+        PRE_INIT_LOG_PINGS.store(value, Ordering::SeqCst);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn set_source_tags(tags: Vec<String>) -> bool {
+    if was_initialize_called() {
+        with_glean_mut(|glean| glean.set_source_tags(tags))
+    } else {
+        
+        let m = PRE_INIT_SOURCE_TAGS.get_or_init(Default::default);
+        let mut lock = m.lock().unwrap();
+        *lock = tags;
+        
+        
+        true
+    }
 }
 
 #[cfg(test)]

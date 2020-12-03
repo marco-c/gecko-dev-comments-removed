@@ -2,7 +2,7 @@
 
 
 
-use crate::metrics::MetricType;
+use crate::ErrorType;
 
 
 
@@ -10,7 +10,7 @@ use crate::metrics::MetricType;
 
 pub trait Labeled<T>
 where
-    T: MetricType + Clone,
+    T: Clone,
 {
     
     
@@ -29,5 +29,18 @@ where
     
     
     
-    fn get_submetric(&self) -> &T;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: ErrorType,
+        ping_name: S,
+    ) -> i32;
 }
