@@ -203,7 +203,7 @@ def bootstrap(topsrcdir, mozilla_dir=None):
     
     deleted_dir = os.path.join(topsrcdir, "third_party", "python", "psutil")
     if os.path.exists(deleted_dir):
-        shutil.rmtree(deleted_dir)
+        shutil.rmtree(deleted_dir, ignore_errors=True)
 
     
     
