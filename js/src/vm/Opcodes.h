@@ -1580,8 +1580,6 @@
 
 
 
-
-
  \
     MACRO(Lambda, lambda, NULL, 5, 0, 1, JOF_OBJECT) \
     

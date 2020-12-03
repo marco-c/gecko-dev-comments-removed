@@ -28,42 +28,9 @@ inline const char* GetFunctionNameBytes(JSContext* cx, JSFunction* fun,
   return js_anonymous_str;
 }
 
-inline bool CanReuseFunctionForClone(JSContext* cx, HandleFunction fun) {
-  if (!fun->isSingleton()) {
-    return false;
-  }
-
-  if (fun->baseScript()->hasBeenCloned()) {
-    return false;
-  }
-  fun->baseScript()->setHasBeenCloned();
-
-  return true;
-}
-
-inline JSFunction* CloneFunctionObjectIfNotSingleton(
-    JSContext* cx, HandleFunction fun, HandleObject enclosingEnv,
-    HandleObject proto = nullptr) {
-  
-
-
-
-
-
-
-
-
-
-
-
-  if (CanReuseFunctionForClone(cx, fun)) {
-    if (proto && !SetPrototypeForClonedFunction(cx, fun, proto)) {
-      return nullptr;
-    }
-    fun->setEnvironment(enclosingEnv);
-    return fun;
-  }
-
+inline JSFunction* CloneFunctionObject(JSContext* cx, HandleFunction fun,
+                                       HandleObject enclosingEnv,
+                                       HandleObject proto = nullptr) {
   
   
   gc::AllocKind finalizeKind = gc::AllocKind::FUNCTION;

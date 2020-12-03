@@ -600,12 +600,6 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
     flags = FunctionFlags::clearMutableflags(fun->flags()).toRaw();
 
     atom = fun->displayAtom();
-
-    
-    
-    
-    MOZ_ASSERT_IF(fun->isSingleton() && !fun->baseScript()->hasBeenCloned(),
-                  fun->environment() == nullptr);
   }
 
   
@@ -2110,7 +2104,7 @@ bool js::CanReuseScriptForClone(JS::Realm* realm, HandleFunction fun,
                                 HandleObject newEnclosingEnv) {
   MOZ_ASSERT(fun->isInterpreted());
 
-  if (realm != fun->realm() || fun->isSingleton()) {
+  if (realm != fun->realm()) {
     return false;
   }
 
@@ -2154,12 +2148,6 @@ static inline JSFunction* NewFunctionClone(JSContext* cx, HandleFunction fun,
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
   constexpr uint16_t NonCloneableFlags = FunctionFlags::EXTENDED |
                                          FunctionFlags::RESOLVED_LENGTH |
                                          FunctionFlags::RESOLVED_NAME;
@@ -2427,12 +2415,7 @@ bool js::SetFunctionName(JSContext* cx, HandleFunction fun, HandleValue name,
 
   
   
-  
-  
-  if (fun->hasInferredName()) {
-    MOZ_ASSERT(fun->isSingleton());
-    fun->clearInferredName();
-  }
+  MOZ_ASSERT(!fun->hasInferredName());
 
   
   

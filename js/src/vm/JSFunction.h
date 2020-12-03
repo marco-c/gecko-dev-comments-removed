@@ -126,9 +126,6 @@ class JSFunction : public js::NativeObject {
   
   
   
-  
-  
-  
   js::GCPtrAtom atom_;
 
  public:
@@ -331,12 +328,6 @@ class JSFunction : public js::NativeObject {
     MOZ_ASSERT(!hasGuessedAtom());
     setAtom(atom);
     flags_.setInferredName();
-  }
-  void clearInferredName() {
-    MOZ_ASSERT(hasInferredName());
-    MOZ_ASSERT(atom_);
-    setAtom(nullptr);
-    flags_.clearInferredName();
   }
   JSAtom* inferredName() const {
     MOZ_ASSERT(hasInferredName());
@@ -864,9 +855,6 @@ extern JSFunction* CloneFunctionAndScript(
 extern JSFunction* CloneAsmJSModuleFunction(JSContext* cx, HandleFunction fun);
 
 extern JSFunction* CloneSelfHostingIntrinsic(JSContext* cx, HandleFunction fun);
-
-extern bool SetPrototypeForClonedFunction(JSContext* cx, HandleFunction fun,
-                                          HandleObject proto);
 
 }  
 
