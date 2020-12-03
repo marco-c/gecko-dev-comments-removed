@@ -108,12 +108,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     return {
       actor: this.actorID,
+      
+      
       traits: {
-        
         [Targets.TYPES.FRAME]: true,
-        
         [Targets.TYPES.PROCESS]: true,
-        
         [Targets.TYPES.WORKER]: hasBrowserElement,
         resources: {
           
