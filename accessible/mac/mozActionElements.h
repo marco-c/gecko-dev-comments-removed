@@ -41,6 +41,9 @@
 
 - (id)moxValue;
 
+
+- (void)stateChanged:(uint64_t)state isEnabled:(BOOL)enabled;
+
 @end
 
 
