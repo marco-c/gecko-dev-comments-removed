@@ -550,31 +550,57 @@ function validateAuthenticatorAssertionResponse(assert) {
     
 }
 
+function defaultAuthenticatorArgs() {
+  return {
+    protocol: 'ctap1/u2f',
+    transport: 'usb',
+    hasResidentKey: false,
+    hasUserVerification: false,
+    isUserVerified: false,
+  };
+}
+
 function standardSetup(cb, options = {}) {
-    
-    let authenticatorArgs = {
-        protocol: "ctap1/u2f",
-        transport: "usb",
-        hasResidentKey: false,
-        hasUserVerification: false,
-        isUserVerified: false,
-    };
-    extendObject(authenticatorArgs, options);
-    window.test_driver.add_virtual_authenticator(authenticatorArgs).then(authenticator => {
+  
+  let authenticatorArgs = Object.assign(defaultAuthenticatorArgs(), options);
+  window.test_driver.add_virtual_authenticator(authenticatorArgs)
+      .then(authenticator => {
         cb();
         
         
-        promise_test(() => window.test_driver.remove_virtual_authenticator(authenticator),
-                     "Clean up the test environment");
-    }).catch(error => {
-        if (error !== "error: Action add_virtual_authenticator not implemented") {
-            throw error;
+        promise_test(
+            () =>
+                window.test_driver.remove_virtual_authenticator(authenticator),
+            'Clean up the test environment');
+      })
+      .catch(error => {
+        if (error !==
+            'error: Action add_virtual_authenticator not implemented') {
+          throw error;
         }
         
         cb();
-    });
+      });
 }
 
 
 
 
+
+function virtualAuthenticatorPromiseTest(
+    testCb, options = {}, name = 'Virtual Authenticator Test') {
+  let authenticatorArgs = Object.assign(defaultAuthenticatorArgs(), options);
+  promise_test(async t => {
+    try {
+      let authenticator =
+          await window.test_driver.add_virtual_authenticator(authenticatorArgs);
+      t.add_cleanup(
+          () => window.test_driver.remove_virtual_authenticator(authenticator));
+    } catch (error) {
+      if (error !== 'error: Action add_virtual_authenticator not implemented') {
+        throw error;
+      }
+    }
+    return testCb(t);
+  }, name);
+}
