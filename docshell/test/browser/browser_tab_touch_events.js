@@ -48,9 +48,19 @@ async function test_body() {
     "Newly created frames should use the new touchEventsOverride flag"
   );
 
-  newFrameWin.location.reload();
-  await ContentTaskUtils.waitForEvent(newFrameWin, "load");
+  
+  await ContentTaskUtils.waitForEvent(newFrame, "load");
+  newFrameWin = newFrame.contentWindow;
+  bc = newFrameWin.browsingContext;
+  is(
+    bc.touchEventsOverride,
+    "disabled",
+    "Newly created frames should use the new touchEventsOverride flag"
+  );
 
+  newFrameWin.location.reload();
+  await ContentTaskUtils.waitForEvent(newFrame, "load");
+  newFrameWin = newFrame.contentWindow;
   bc = newFrameWin.browsingContext;
   is(
     bc.touchEventsOverride,
