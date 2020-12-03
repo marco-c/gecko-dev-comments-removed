@@ -12,9 +12,10 @@ def get_response(raw_headers, filter_value, filter_name):
     
     
     if PY3:
-        header_list = [
-            isomorphic_encode(s + u'\r\n') for s in raw_headers.as_string().splitlines() if s
-        ]
+        header_list = []
+        for field in raw_headers.raw_items():
+            header = b"%s: %s\r\n" % (isomorphic_encode(field[0]), isomorphic_encode(field[1]))
+            header_list.append(header)
     else:
         header_list = raw_headers.headers
     for line in header_list:
