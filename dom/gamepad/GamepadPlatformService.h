@@ -8,6 +8,7 @@
 #define mozilla_dom_GamepadPlatformService_h_
 
 #include "mozilla/dom/GamepadBinding.h"
+#include "mozilla/dom/GamepadHandle.h"
 
 #include <map>
 #include "mozilla/Mutex.h"
@@ -71,42 +72,43 @@ class GamepadPlatformService final {
   static already_AddRefed<GamepadPlatformService> GetParentService();
 
   
-  uint32_t AddGamepad(const char* aID, GamepadMappingType aMapping,
-                      GamepadHand aHand, uint32_t aNumButtons,
-                      uint32_t aNumAxes, uint32_t aNumHaptics,
-                      uint32_t aNumLightIndicator, uint32_t aNumTouchEvents);
+  GamepadHandle AddGamepad(const char* aID, GamepadMappingType aMapping,
+                           GamepadHand aHand, uint32_t aNumButtons,
+                           uint32_t aNumAxes, uint32_t aNumHaptics,
+                           uint32_t aNumLightIndicator,
+                           uint32_t aNumTouchEvents);
   
-  void RemoveGamepad(uint32_t aServiceId);
+  void RemoveGamepad(GamepadHandle aHandle);
 
   
   
   
   
   
-  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed,
+  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
                       bool aTouched, double aValue);
   
-  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed);
+  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed);
   
-  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed,
+  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
                       bool aTouched);
   
-  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed,
+  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
                       double aValue);
   
   
   
-  void NewAxisMoveEvent(uint32_t aServiceId, uint32_t aAxis, double aValue);
+  void NewAxisMoveEvent(GamepadHandle aHandle, uint32_t aAxis, double aValue);
   
   
-  void NewPoseEvent(uint32_t aServiceId, const GamepadPoseState& aState);
+  void NewPoseEvent(GamepadHandle aHandle, const GamepadPoseState& aState);
   
   
-  void NewLightIndicatorTypeEvent(uint32_t aServiceId, uint32_t aLight,
+  void NewLightIndicatorTypeEvent(GamepadHandle aHandle, uint32_t aLight,
                                   GamepadLightIndicatorType aType);
   
   
-  void NewMultiTouchEvent(uint32_t aServiceId, uint32_t aTouchArrayIndex,
+  void NewMultiTouchEvent(GamepadHandle aHandle, uint32_t aTouchArrayIndex,
                           const GamepadTouchState& aState);
 
   
@@ -125,11 +127,11 @@ class GamepadPlatformService final {
   bool RemoveChannelParentInternal(GamepadEventChannelParent* aParent);
 
   template <class T>
-  void NotifyGamepadChange(uint32_t aServiceId, const T& aInfo,
+  void NotifyGamepadChange(GamepadHandle aHandle, const T& aInfo,
                            const MutexAutoLock& aProofOfLock);
 
   
-  uint32_t mNextGamepadServiceId;
+  uint32_t mNextGamepadHandleValue;
 
   
   
@@ -138,8 +140,10 @@ class GamepadPlatformService final {
   
   
   
+  
+  
   nsTArray<RefPtr<GamepadEventChannelParent>> mChannelParents;
-  std::map<uint32_t, GamepadAdded> mGamepadAdded;
+  std::map<GamepadHandle, GamepadAdded> mGamepadAdded;
 };
 
 }  

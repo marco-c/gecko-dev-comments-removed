@@ -12,6 +12,7 @@
 #include "nsIGlobalObject.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
+#include "mozilla/dom/GamepadHandle.h"
 #include "mozilla/dom/GamepadManager.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/XRSession.h"
@@ -34,6 +35,9 @@
 
 using namespace mozilla;
 using namespace mozilla::gfx;
+
+using mozilla::dom::GamepadHandle;
+using mozilla::dom::GamepadHandleKind;
 
 VRDisplayClient::VRDisplayClient(const VRDisplayInfo& aDisplayInfo)
     : mDisplayInfo(aDisplayInfo),
@@ -449,8 +453,11 @@ void VRDisplayClient::FireGamepadEvents() {
     GamepadMappingForWebVR(state);
     GamepadMappingForWebVR(lastState);
 
-    uint32_t gamepadId =
+    uint32_t gamepadHandleValue =
         mDisplayInfo.mDisplayID * kVRControllerMaxCount + stateIndex;
+
+    GamepadHandle gamepadHandle{gamepadHandleValue, GamepadHandleKind::VR};
+
     bool bIsNew = false;
 
     
@@ -460,8 +467,7 @@ void VRDisplayClient::FireGamepadEvents() {
         
         dom::GamepadRemoved info;
         dom::GamepadChangeEventBody body(info);
-        dom::GamepadChangeEvent event(gamepadId, dom::GamepadServiceType::VR,
-                                      body);
+        dom::GamepadChangeEvent event(gamepadHandle, body);
         gamepadManager->Update(event);
       }
       
@@ -469,8 +475,7 @@ void VRDisplayClient::FireGamepadEvents() {
     }
 
     
-    RefPtr<dom::Gamepad> existing =
-        gamepadManager->GetGamepad(gamepadId, dom::GamepadServiceType::VR);
+    RefPtr<dom::Gamepad> existing = gamepadManager->GetGamepad(gamepadHandle);
     
     
     if ((lastState.controllerName[0] == '\0' || !existing) &&
@@ -480,8 +485,7 @@ void VRDisplayClient::FireGamepadEvents() {
                              mDisplayInfo.mDisplayID, state.numButtons,
                              state.numAxes, state.numHaptics, 0, 0);
       dom::GamepadChangeEventBody body(info);
-      dom::GamepadChangeEvent event(gamepadId, dom::GamepadServiceType::VR,
-                                    body);
+      dom::GamepadChangeEvent event(gamepadHandle, body);
       gamepadManager->Update(event);
       bIsNew = true;
     }
@@ -490,8 +494,7 @@ void VRDisplayClient::FireGamepadEvents() {
     if (state.hand != lastState.hand) {
       dom::GamepadHandInformation info(state.hand);
       dom::GamepadChangeEventBody body(info);
-      dom::GamepadChangeEvent event(gamepadId, dom::GamepadServiceType::VR,
-                                    body);
+      dom::GamepadChangeEvent event(gamepadHandle, body);
       gamepadManager->Update(event);
     }
 
@@ -500,8 +503,7 @@ void VRDisplayClient::FireGamepadEvents() {
       if (state.axisValue[axisIndex] != lastState.axisValue[axisIndex]) {
         dom::GamepadAxisInformation info(axisIndex, state.axisValue[axisIndex]);
         dom::GamepadChangeEventBody body(info);
-        dom::GamepadChangeEvent event(gamepadId, dom::GamepadServiceType::VR,
-                                      body);
+        dom::GamepadChangeEvent event(gamepadHandle, body);
         gamepadManager->Update(event);
       }
     }
@@ -525,8 +527,7 @@ void VRDisplayClient::FireGamepadEvents() {
           dom::GamepadButtonInformation info(
               buttonIndex, state.triggerValue[buttonIndex], bPressed, bTouched);
           dom::GamepadChangeEventBody body(info);
-          dom::GamepadChangeEvent event(gamepadId, dom::GamepadServiceType::VR,
-                                        body);
+          dom::GamepadChangeEvent event(gamepadHandle, body);
           gamepadManager->Update(event);
         }
       }
@@ -571,8 +572,7 @@ void VRDisplayClient::FireGamepadEvents() {
       
       dom::GamepadPoseInformation info(poseState);
       dom::GamepadChangeEventBody body(info);
-      dom::GamepadChangeEvent event(gamepadId, dom::GamepadServiceType::VR,
-                                    body);
+      dom::GamepadChangeEvent event(gamepadHandle, body);
       gamepadManager->Update(event);
     }
   }

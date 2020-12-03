@@ -11,7 +11,8 @@
 #include "nsRefPtrHashtable.h"
 
 #include "mozilla/dom/GamepadBinding.h"
-#include "mozilla/dom/GamepadServiceType.h"
+#include "mozilla/dom/GamepadHandle.h"
+#include <utility>
 
 class nsGlobalWindowInner;
 class nsIGlobalObject;
@@ -37,11 +38,6 @@ class GamepadManager final : public nsIObserver {
   
   static already_AddRefed<GamepadManager> GetService();
 
-  
-  
-  static uint32_t GetGamepadIndexWithServiceType(
-      uint32_t aIndex, GamepadServiceType aServiceType);
-
   void BeginShutdown();
   void StopMonitoring();
 
@@ -51,31 +47,27 @@ class GamepadManager final : public nsIObserver {
   void RemoveListener(nsGlobalWindowInner* aWindow);
 
   
-  void AddGamepad(uint32_t aIndex, const nsAString& aID,
+  void AddGamepad(GamepadHandle aHandle, const nsAString& aID,
                   GamepadMappingType aMapping, GamepadHand aHand,
-                  GamepadServiceType aServiceType, uint32_t aDisplayID,
-                  uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics,
-                  uint32_t aNumLightIndicator, uint32_t aNumTouchEvents);
+                  uint32_t aDisplayID, uint32_t aNumButtons, uint32_t aNumAxes,
+                  uint32_t aNumHaptics, uint32_t aNumLightIndicator,
+                  uint32_t aNumTouchEvents);
 
   
-  void RemoveGamepad(uint32_t aIndex, GamepadServiceType aServiceType);
+  void RemoveGamepad(GamepadHandle aHandle);
 
   
-  void SyncGamepadState(uint32_t aIndex, nsGlobalWindowInner* aWindow,
+  void SyncGamepadState(GamepadHandle aHandle, nsGlobalWindowInner* aWindow,
                         Gamepad* aGamepad);
 
   
-  already_AddRefed<Gamepad> GetGamepad(uint32_t aIndex) const;
-
-  
-  already_AddRefed<Gamepad> GetGamepad(uint32_t aGamepadId,
-                                       GamepadServiceType aServiceType) const;
+  already_AddRefed<Gamepad> GetGamepad(GamepadHandle aHandle) const;
 
   
   void Update(const GamepadChangeEvent& aGamepadEvent);
 
   
-  already_AddRefed<Promise> VibrateHaptic(uint32_t aControllerIdx,
+  already_AddRefed<Promise> VibrateHaptic(GamepadHandle aHandle,
                                           uint32_t aHapticIndex,
                                           double aIntensity, double aDuration,
                                           nsIGlobalObject* aGlobal,
@@ -84,7 +76,7 @@ class GamepadManager final : public nsIObserver {
   void StopHaptics();
 
   
-  already_AddRefed<Promise> SetLightIndicatorColor(uint32_t aControllerIdx,
+  already_AddRefed<Promise> SetLightIndicatorColor(GamepadHandle aHandle,
                                                    uint32_t aLightColorIndex,
                                                    uint8_t aRed, uint8_t aGreen,
                                                    uint8_t aBlue,
@@ -98,7 +90,7 @@ class GamepadManager final : public nsIObserver {
   
   
   
-  void NewConnectionEvent(uint32_t aIndex, bool aConnected);
+  void NewConnectionEvent(GamepadHandle aHandle, bool aConnected);
 
   
   void FireAxisMoveEvent(EventTarget* aTarget, Gamepad* aGamepad, uint32_t axis,
@@ -134,22 +126,24 @@ class GamepadManager final : public nsIObserver {
   
   
   
-  bool AxisMoveIsFirstIntent(nsGlobalWindowInner* aWindow, uint32_t aIndex,
+  bool AxisMoveIsFirstIntent(nsGlobalWindowInner* aWindow,
+                             GamepadHandle aHandle,
                              const GamepadChangeEvent& aEvent);
-  bool MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex);
+  bool MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
+                                 GamepadHandle aHandle);
   
   
   
   
   bool WindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
-                            uint32_t aIndex) const;
+                            GamepadHandle aHandle) const;
   
-  void SetWindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex,
-                               bool aHasSeen = true);
+  void SetWindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
+                               GamepadHandle aHandle, bool aHasSeen = true);
 
   
   
-  nsRefPtrHashtable<nsUint32HashKey, Gamepad> mGamepads;
+  nsRefPtrHashtable<nsGenericHashKey<GamepadHandle>, Gamepad> mGamepads;
   
   
   nsTArray<RefPtr<nsGlobalWindowInner>> mListeners;
