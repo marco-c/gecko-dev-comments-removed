@@ -757,7 +757,7 @@ class FinalizationRegistryCleanup::CleanupRunnable : public CancelableRunnable {
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHODIMP Run() {
+  NS_IMETHOD Run() override {
     mCleanupWork->DoCleanup();
     return NS_OK;
   }
