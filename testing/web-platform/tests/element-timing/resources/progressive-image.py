@@ -19,7 +19,6 @@ def main(request, response):
     
     first = body[:numInitial]
     response.writer.write_content(first)
-    response.writer.flush()
 
     time.sleep(sleepTime)
 
