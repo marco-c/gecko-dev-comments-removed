@@ -3,6 +3,8 @@
 
 'use strict';
 
+assert_true(self.crossOriginIsolated);
+
 promise_test(async testCase => {
   const {iframes, windows} = await build([
     {
@@ -38,21 +40,28 @@ promise_test(async testCase => {
     },
   ]);
   const keep = sameOriginContexts(frames).concat(sameOriginContexts(windows));
-  try {
-    const result = await performance.measureMemory();
-    checkMeasureMemory(result, {
-      allowed: [
-        window.location.href,
-        iframes['cross-origin-1'].src,
-      ],
-      required: [
-        window.location.href,
-      ],
-    });
-  } catch (error) {
-    if (!(error instanceof DOMException)) {
-      throw error;
-    }
-    assert_equals(error.name, 'SecurityError');
-  }
+  const result = await performance.measureMemory();
+  checkMeasureMemory(result, [
+    {
+      url: window.location.href,
+      scope: 'Window',
+      container: null,
+    },
+    {
+      url: 'cross-origin-url',
+      scope: 'cross-origin-aggregated',
+      container: {
+        id: 'cross-origin-1',
+        src: frames['cross-origin-1'].src,
+      },
+    },
+    {
+      url: windows['same-origin-2'].location.href,
+      scope: 'Window',
+      container: {
+        id: 'cross-origin-1',
+        src: iframes['cross-origin-1'].src,
+      },
+    },
+  ]);
 }, 'performance.measureMemory does not leak client redirected URL.');
