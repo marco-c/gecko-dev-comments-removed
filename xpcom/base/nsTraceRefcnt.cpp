@@ -296,7 +296,7 @@ class BloatEntry {
   nsTraceRefcntStats mStats;
 };
 
-static void CheckAndCreateBloatView() {
+static void EnsureBloatView() {
   if (!gBloatView) {
     gBloatView = new BloatHash(256);
   }
@@ -304,7 +304,7 @@ static void CheckAndCreateBloatView() {
 
 static BloatEntry* GetBloatEntry(const char* aTypeName,
                                  uint32_t aInstanceSize) {
-  CheckAndCreateBloatView();
+  EnsureBloatView();
   BloatEntry* entry = gBloatView->Get(aTypeName);
   if (!entry && aInstanceSize > 0) {
     entry = new BloatEntry(aTypeName, aInstanceSize);
@@ -576,13 +576,7 @@ static void DoInitTraceLog(const char* aProcType) {
   if (defined || gLogLeaksOnly) {
     
     
-    CheckAndCreateBloatView();
-
-    if (!gBloatView) {
-      NS_WARNING("out of memory");
-      maybeUnregisterAndCloseFile(gBloatLog);
-      gLogLeaksOnly = false;
-    }
+    EnsureBloatView();
   } else if (gBloatView) {
     nsTraceRefcnt::ResetStatistics();
   }
