@@ -256,8 +256,6 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
-enum class IsSingletonEnv { Yes, No };
-
 class EnvironmentObject : public NativeObject {
  protected:
   
@@ -519,9 +517,10 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   static constexpr uint32_t BASESHAPE_FLAGS = BaseShape::NOT_EXTENSIBLE;
 
  private:
-  static LexicalEnvironmentObject* createTemplateObject(
-      JSContext* cx, HandleShape shape, HandleObject enclosing,
-      gc::InitialHeap heap, IsSingletonEnv isSingleton);
+  static LexicalEnvironmentObject* createTemplateObject(JSContext* cx,
+                                                        HandleShape shape,
+                                                        HandleObject enclosing,
+                                                        gc::InitialHeap heap);
 
   void initThisObject(JSObject* obj) {
     MOZ_ASSERT(isGlobal() || !isSyntactic());
