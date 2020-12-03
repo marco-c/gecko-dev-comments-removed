@@ -47,9 +47,6 @@ extern JS_FRIEND_API bool JS_SplicePrototype(JSContext* cx,
                                              JS::HandleObject obj,
                                              JS::HandleObject proto);
 
-extern JS_FRIEND_API JSObject* JS_NewObjectWithUniqueType(
-    JSContext* cx, const JSClass* clasp, JS::HandleObject proto);
-
 
 
 
