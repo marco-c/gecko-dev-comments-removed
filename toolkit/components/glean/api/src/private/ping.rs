@@ -2,20 +2,18 @@
 
 
 
-use std::sync::Arc;
+use inherent::inherent;
 
-use crate::{dispatcher, ipc::need_ipc};
+use crate::ipc::need_ipc;
 
 
 
 
 #[derive(Clone, Debug)]
 pub enum Ping {
-    Parent(Arc<PingImpl>),
+    Parent(glean::private::PingType),
     Child,
 }
-#[derive(Debug)]
-pub struct PingImpl(glean_core::metrics::PingType);
 
 impl Ping {
     
@@ -36,39 +34,28 @@ impl Ping {
         if need_ipc() {
             Ping::Child
         } else {
-            Ping::Parent(Arc::new(PingImpl::new(
+            Ping::Parent(glean::private::PingType::new(
                 name,
                 include_client_id,
                 send_if_empty,
                 reason_codes,
-            )))
+            ))
         }
     }
+}
 
+#[inherent(pub)]
+impl glean_core::traits::Ping for Ping {
     
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn submit(&self, reason: Option<&str>) {
+    fn submit(&self, reason: Option<&str>) {
         match self {
             Ping::Parent(p) => {
-                let ping = Arc::clone(&p);
-                let reason = reason.map(|x| x.to_owned());
-                dispatcher::launch(move || ping.submit(reason.as_deref()));
+                glean_core::traits::Ping::submit(p, reason);
             }
             Ping::Child => {
                 log::error!(
@@ -78,35 +65,6 @@ impl Ping {
                 
             }
         };
-    }
-}
-
-impl PingImpl {
-    pub fn new<S: Into<String>>(
-        name: S,
-        include_client_id: bool,
-        send_if_empty: bool,
-        reason_codes: Vec<String>,
-    ) -> Self {
-        let ping = glean_core::metrics::PingType::new(
-            name,
-            include_client_id,
-            send_if_empty,
-            reason_codes,
-        );
-
-        crate::with_glean(|glean| {
-            glean.register_ping_type(&ping);
-        });
-
-        Self(ping)
-    }
-
-    pub fn submit(&self, reason: Option<&str>) {
-        let res = crate::with_glean(|glean| self.0.submit(glean, reason).unwrap_or(false));
-        if res {
-            crate::ping_upload::check_for_uploads();
-        }
     }
 }
 
