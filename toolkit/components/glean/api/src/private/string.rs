@@ -2,6 +2,8 @@
 
 
 
+use inherent::inherent;
+
 use super::{CommonMetricData, MetricId};
 
 use crate::ipc::need_ipc;
@@ -35,15 +37,12 @@ use crate::ipc::need_ipc;
 
 
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub enum StringMetric {
-    Parent(StringMetricImpl),
+    Parent(glean::private::StringMetric),
     Child(StringMetricIpc),
 }
-
 #[derive(Clone, Debug)]
-pub struct StringMetricImpl(pub(crate) glean_core::metrics::StringMetric);
-#[derive(Debug)]
 pub struct StringMetricIpc;
 
 impl StringMetric {
@@ -52,7 +51,7 @@ impl StringMetric {
         if need_ipc() {
             StringMetric::Child(StringMetricIpc)
         } else {
-            StringMetric::Parent(StringMetricImpl::new(meta))
+            StringMetric::Parent(glean::private::StringMetric::new(meta))
         }
     }
 
@@ -63,7 +62,10 @@ impl StringMetric {
             StringMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
         }
     }
+}
 
+#[inherent(pub)]
+impl glean_core::traits::String for StringMetric {
     
     
     
@@ -73,16 +75,13 @@ impl StringMetric {
     
     
     
-    
-    pub fn set<S: Into<String>>(&self, value: S) {
+    fn set<S: Into<std::string::String>>(&self, value: S) {
         match self {
-            StringMetric::Parent(p) => p.set(value),
-            
+            StringMetric::Parent(p) => {
+                glean_core::traits::String::set(&*p, value);
+            }
             StringMetric::Child(_) => {
-                log::error!(
-                    "Unable to set string metric {:?} in non-main process. Ignoring.",
-                    self
-                );
+                log::error!("Unable to set string metric in non-main process. Ignoring.");
                 
             }
         };
@@ -98,30 +97,42 @@ impl StringMetric {
     
     
     
-    
-    
-    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<std::string::String> {
         match self {
-            StringMetric::Parent(p) => p.test_get_value(storage_name),
-            StringMetric::Child(_) => panic!(
-                "Cannot get test value for {:?} in non-parent process!",
-                self
-            ),
+            StringMetric::Parent(p) => p.test_get_value(ping_name),
+            StringMetric::Child(_) => {
+                panic!("Cannot get test value for string metric in non-parent process!")
+            }
         }
     }
-}
 
-impl StringMetricImpl {
-    fn new(meta: CommonMetricData) -> Self {
-        Self(glean_core::metrics::StringMetric::new(meta))
-    }
-
-    fn set<S: Into<String>>(&self, value: S) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
-    }
-
-    fn test_get_value(&self, storage_name: &str) -> Option<String> {
-        crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: glean::ErrorType,
+        ping_name: S,
+    ) -> i32 {
+        match self {
+            StringMetric::Parent(p) => p.test_get_num_recorded_errors(error, ping_name),
+            StringMetric::Child(_) => panic!(
+                "Cannot get the number of recorded errors for string metric in non-parent process!"
+            ),
+        }
     }
 }
 
