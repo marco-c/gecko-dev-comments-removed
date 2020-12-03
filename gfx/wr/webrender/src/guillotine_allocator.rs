@@ -59,13 +59,13 @@ pub struct FreeRect {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ArrayAllocationTracker {
+pub struct GuillotineAllocator {
     bins: [Vec<FreeRect>; NUM_BINS],
 }
 
-impl ArrayAllocationTracker {
+impl GuillotineAllocator {
     pub fn new(initial_size: Option<DeviceIntSize>) -> Self {
-        let mut allocator = ArrayAllocationTracker {
+        let mut allocator = GuillotineAllocator {
             bins: [
                 Vec::new(),
                 Vec::new(),
@@ -222,7 +222,7 @@ fn random_fill(count: usize, texture_size: i32) -> f32 {
         DeviceIntSize::new(texture_size, texture_size),
     );
     let mut rng = thread_rng();
-    let mut allocator = ArrayAllocationTracker::new(None);
+    let mut allocator = GuillotineAllocator::new(None);
 
     
     assert_eq!(
