@@ -121,12 +121,6 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
 
 
   get direction() {
-    
-    
-    if (!this._form.direction) {
-      return "ltr";
-    }
-
     return this._form.direction;
   }
 
@@ -148,12 +142,6 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
 
 
   get writingMode() {
-    
-    
-    if (!this._form.writingMode) {
-      return "horizontal-tb";
-    }
-
     return this._form.writingMode;
   }
 }
