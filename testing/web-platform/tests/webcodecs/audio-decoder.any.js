@@ -1,10 +1,5 @@
-<!DOCTYPE html>
-<html>
-<title>Test the AudioDecoder API.</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/webcodecs/utils.js"></script>
-<script>
+
+
 
 const defaultConfig = {
   codec: "opus",
@@ -21,10 +16,10 @@ function getFakeChunk() {
 }
 
 promise_test(t => {
-  // AudioDecoderInit lacks required fields.
+  
   assert_throws_js(TypeError, () => { new AudioDecoder({}); });
 
-  // AudioDecoderInit has required fields.
+  
   let decoder = new AudioDecoder(getDefaultCodecInit(t));
 
   assert_equals(decoder.state, "unconfigured");
@@ -37,10 +32,10 @@ promise_test(t => {
   let decoder = new AudioDecoder(getDefaultCodecInit(t));
 
   let badCodecsList = [
-    '',                         // Empty codec
-    'bogus',                    // Non exsitent codec
-    'vp8',                      // Video codec
-    'audio/webm; codecs="opus"' // Codec with mime type
+    '',                         
+    'bogus',                    
+    'vp8',                      
+    'audio/webm; codecs="opus"' 
   ]
 
   testConfigurations(decoder, defaultConfig, badCodecsList);
@@ -59,7 +54,3 @@ promise_test(t => {
 
   return testUnconfiguredCodec(t, decoder, getFakeChunk());
 }, 'Verify unconfigured AudioDecoder operations');
-
-
-</script>
-</html>

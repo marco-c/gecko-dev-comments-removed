@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html>
-<title>Test the VideoDecoder API.</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/webcodecs/utils.js"></script>
-<script>
-'use strict';
 
-// TODO(sandersd): Move metadata into a helper library.
-// TODO(sandersd): Add H.264 idecode test once there is an API to query for
-// supported codecs.
+
+
+
+
+
 let h264 = {
   async buffer() { return (await fetch('h264.mp4')).arrayBuffer(); },
   codec: "avc1.64000c",
@@ -28,7 +22,7 @@ let h264 = {
 
 let vp9 = {
   async buffer() { return (await fetch('vp9.mp4')).arrayBuffer(); },
-  // TODO(sandersd): Verify that the file is actually level 1.
+  
   codec: "vp09.00.10.08",
   frames: [{offset: 44, size: 3315},
            {offset: 3359, size: 203},
@@ -55,10 +49,10 @@ function getFakeChunk() {
 }
 
 promise_test(t => {
-  // VideoDecoderInit lacks required fields.
+  
   assert_throws_js(TypeError, () => { new VideoDecoder({}); });
 
-  // VideoDecoderInit has required fields.
+  
   let decoder = new VideoDecoder(getDefaultCodecInit(t));
 
   assert_equals(decoder.state, "unconfigured");
@@ -72,11 +66,11 @@ promise_test(t => {
   let decoder = new VideoDecoder(getDefaultCodecInit(t));
 
   let badCodecsList = [
-    '',                         // Empty codec
-    'bogus',                    // Non exsitent codec
-    'vorbis',                   // Audio codec
-    'vp9',                      // Ambiguous codec
-    'video/webm; codecs="vp9"'  // Codec with mime type
+    '',                         
+    'bogus',                    
+    'vorbis',                   
+    'vp9',                      
+    'video/webm; codecs="vp9"'  
   ]
 
   testConfigurations(decoder, { codec: vp9.codec }, badCodecsList);
@@ -207,15 +201,13 @@ promise_test(t => {
   let fakeChunk = getFakeChunk();
   decoder.decode(fakeChunk);
 
-  // Create the flush promise before closing, as it is invalid to do so later.
+  
   let flushPromise = decoder.flush();
 
-  // This should synchronously reject the flush() promise.
+  
   decoder.close();
 
-  // TODO(sandersd): Wait for a bit in case there is a lingering output
-  // or error coming.
+  
+  
   return promise_rejects_exactly(t, undefined, flushPromise);
 }, 'Close while decoding corrupt VP9 frame');
-</script>
-</html>
