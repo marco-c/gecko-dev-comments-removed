@@ -695,8 +695,10 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-  async applySnippetsPolicy(ping) {
-    ping.client_id = await this.telemetryClientId;
+  applySnippetsPolicy(ping) {
+    
+    
+    ping.client_id = this._impressionId;
     delete ping.action;
     return { ping, pingType: "snippets" };
   }
