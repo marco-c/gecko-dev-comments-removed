@@ -27,7 +27,6 @@ const {
 } = require("devtools/client/aboutdebugging/src/modules/runtimes-state-helper");
 
 const {
-  DEBUG_TARGETS,
   DEBUG_TARGET_PANE,
   REQUEST_EXTENSIONS_FAILURE,
   REQUEST_EXTENSIONS_START,
@@ -52,16 +51,6 @@ const {
 
 const Actions = require("devtools/client/aboutdebugging/src/actions/index");
 
-function isCachedActorNeeded(runtime, type, id) {
-  
-  
-  
-  return (
-    type === DEBUG_TARGETS.WORKER &&
-    runtime.runtimeDetails.clientWrapper.client.getFrontByID(id)
-  );
-}
-
 function getTabForUrl(url) {
   for (const navigator of Services.wm.getEnumerator("navigator:browser")) {
     for (const browser of navigator.gBrowser.browsers) {
@@ -80,30 +69,22 @@ function getTabForUrl(url) {
 function inspectDebugTarget(type, id) {
   return async ({ dispatch, getState }) => {
     const runtime = getCurrentRuntime(getState().runtimes);
-    id = encodeURIComponent(id);
 
-    let url;
-    if (
-      runtime.id === RUNTIMES.THIS_FIREFOX &&
-      !isCachedActorNeeded(runtime, type, id)
-    ) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      url = `about:devtools-toolbox?type=${type}&id=${id}`;
-    } else {
-      const remoteId = remoteClientManager.getRemoteId(
+    const urlParams = {
+      id,
+      type,
+    };
+
+    if (runtime.id !== RUNTIMES.THIS_FIREFOX) {
+      urlParams.remoteId = remoteClientManager.getRemoteId(
         runtime.id,
         runtime.type
       );
-      url = `about:devtools-toolbox?type=${type}&id=${id}&remoteId=${remoteId}`;
     }
+
+    const url = `about:devtools-toolbox?${new window.URLSearchParams(
+      urlParams
+    )}`;
 
     const existingTab = getTabForUrl(url);
     if (existingTab) {

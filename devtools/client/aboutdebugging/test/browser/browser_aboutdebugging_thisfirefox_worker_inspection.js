@@ -20,9 +20,6 @@ add_task(async function() {
     serviceWorkers: [],
     sharedWorkers: [],
   });
-  
-  
-  thisFirefoxClient.client.getFrontByID = id => null;
   thisFirefoxClient.client.mainRoot = {
     getWorker: id => {
       return id === testWorker.id ? testWorker : null;

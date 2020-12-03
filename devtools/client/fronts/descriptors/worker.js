@@ -31,8 +31,7 @@ class WorkerDescriptorFront extends TargetMixin(
 
   form(json) {
     this.actorID = json.actor;
-    
-    this.id = json.id || this.actorID;
+    this.id = json.id;
 
     
     
