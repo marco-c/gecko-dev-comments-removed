@@ -36,10 +36,6 @@ namespace gc {
 class RelocationOverlay;
 }  
 
-namespace jit {
-class CacheIRCompiler;
-}
-
 
 
 class GlobalObject;
@@ -552,7 +548,6 @@ class JSObject
   
   
   friend class js::jit::MacroAssembler;
-  friend class js::jit::CacheIRCompiler;
 
   static constexpr size_t offsetOfGroup() { return offsetOfHeaderPtr(); }
   static constexpr size_t offsetOfShape() { return offsetof(JSObject, shape_); }
