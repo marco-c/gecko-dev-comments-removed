@@ -1052,16 +1052,6 @@ PlainObject* Realm::createIterResultTemplateObject(
   }
 
   
-  Rooted<TaggedProto> proto(cx, templateObject->taggedProto());
-  RootedObjectGroup group(
-      cx, ObjectGroupRealm::makeGroup(cx, templateObject->realm(),
-                                      templateObject->getClass(), proto));
-  if (!group) {
-    return nullptr;
-  }
-  templateObject->setGroup(group);
-
-  
   if (!NativeDefineDataProperty(cx, templateObject, cx->names().value,
                                 UndefinedHandleValue, JSPROP_ENUMERATE)) {
     return nullptr;

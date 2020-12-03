@@ -5147,6 +5147,8 @@ JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
   return NewBuiltinClassInstanceWithKind<PlainObject>(cx, newKind);
 }
 
+
+
 JSObject* js::NewObjectOperationWithTemplate(JSContext* cx,
                                              HandleObject templateObject) {
   
@@ -5186,21 +5188,14 @@ ArrayObject* js::NewArrayOperation(
   return NewDenseFullyAllocatedArray(cx, length, nullptr, newKind);
 }
 
+
 ArrayObject* js::NewArrayOperationWithTemplate(JSContext* cx,
                                                HandleObject templateObject) {
   MOZ_ASSERT(!templateObject->isSingleton());
 
   NewObjectKind newKind = GenericObject;
-  ArrayObject* obj = NewDenseFullyAllocatedArray(
+  return NewDenseFullyAllocatedArray(
       cx, templateObject->as<ArrayObject>().length(), nullptr, newKind);
-  if (!obj) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(obj->lastProperty() ==
-             templateObject->as<ArrayObject>().lastProperty());
-  obj->setGroup(templateObject->group());
-  return obj;
 }
 
 ArrayObject* js::NewArrayCopyOnWriteOperation(JSContext* cx,
