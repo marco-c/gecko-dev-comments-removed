@@ -74,6 +74,8 @@ class nsViewSourceChannel final : public nsIViewSourceChannel,
 
  protected:
   ~nsViewSourceChannel() = default;
+  void ReleaseListeners();
+
   nsTArray<mozilla::net::PreferredAlternativeDataTypeParams> mEmptyArray;
 
   
