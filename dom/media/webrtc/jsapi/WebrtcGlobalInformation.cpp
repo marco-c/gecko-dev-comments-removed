@@ -7,27 +7,19 @@
 #include "WebrtcGlobalChild.h"
 #include "WebrtcGlobalParent.h"
 
-#include <deque>
-#include <string>
 #include <algorithm>
 #include <vector>
-#include <map>
-#include <queue>
 #include <type_traits>
 
-#include "common/browser_logging/CSFLog.h"
-#include "common/browser_logging/WebRtcLog.h"
 #include "mozilla/dom/WebrtcGlobalInformationBinding.h"
 #include "mozilla/dom/ContentChild.h"
 
 #include "nsNetCID.h"               
 #include "nsServiceManagerUtils.h"  
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Vector.h"
-#include "nsProxyRelease.h"
+#include "nsProxyRelease.h"  
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/RefPtr.h"
 
 #include "transport/runnable_utils.h"
@@ -35,140 +27,12 @@
 #include "PeerConnectionCtx.h"
 #include "PeerConnectionImpl.h"
 
-static const char* wgiLogTag = "WebrtcGlobalInformation";
-#ifdef LOGTAG
-#  undef LOGTAG
-#endif
-#define LOGTAG wgiLogTag
-
 namespace mozilla::dom {
-
-typedef nsTArray<RTCStatsReportInternal> Stats;
-
-template <class Request, typename Callback, typename Result,
-          typename QueryParam>
-class RequestManager {
- public:
-  static Request* Create(Callback& aCallback, QueryParam& aParam) {
-    mozilla::StaticMutexAutoLock lock(sMutex);
-
-    int id = ++sLastRequestId;
-    auto result = sRequests.try_emplace(id, id, aCallback, aParam);
-
-    if (!result.second) {
-      return nullptr;
-    }
-
-    return &result.first->second;
-  }
-
-  static void Delete(int aId) {
-    mozilla::StaticMutexAutoLock lock(sMutex);
-    sRequests.erase(aId);
-  }
-
-  static Request* Get(int aId) {
-    mozilla::StaticMutexAutoLock lock(sMutex);
-    auto r = sRequests.find(aId);
-
-    if (r == sRequests.end()) {
-      return nullptr;
-    }
-
-    return &r->second;
-  }
-
-  Result mResult;
-  std::queue<RefPtr<WebrtcGlobalParent>> mContactList;
-  const int mRequestId;
-
-  RefPtr<WebrtcGlobalParent> GetNextParent() {
-    while (!mContactList.empty()) {
-      RefPtr<WebrtcGlobalParent> next = mContactList.front();
-      mContactList.pop();
-      if (next->IsActive()) {
-        return next;
-      }
-    }
-
-    return nullptr;
-  }
-
-  MOZ_CAN_RUN_SCRIPT
-  void Complete() {
-    IgnoredErrorResult rv;
-    using RealCallbackType = std::remove_pointer_t<decltype(mCallback.get())>;
-    RefPtr<RealCallbackType> callback(mCallback.get());
-    callback->Call(mResult, rv);
-
-    if (rv.Failed()) {
-      CSFLogError(LOGTAG, "Error firing stats observer callback");
-    }
-  }
-
- protected:
-  
-  
-  
-  
-  static mozilla::StaticMutex sMutex;
-  static std::map<int, Request> sRequests;
-  static int sLastRequestId;
-
-  Callback mCallback;
-
-  explicit RequestManager(int aId, Callback& aCallback)
-      : mRequestId(aId), mCallback(aCallback) {}
-  ~RequestManager() {}
-
- private:
-  RequestManager() = delete;
-  RequestManager& operator=(const RequestManager&) = delete;
-};
-
-template <class Request, typename Callback, typename Result,
-          typename QueryParam>
-mozilla::StaticMutex
-    RequestManager<Request, Callback, Result, QueryParam>::sMutex;
-template <class Request, typename Callback, typename Result,
-          typename QueryParam>
-std::map<int, Request>
-    RequestManager<Request, Callback, Result, QueryParam>::sRequests;
-template <class Request, typename Callback, typename Result,
-          typename QueryParam>
-int RequestManager<Request, Callback, Result, QueryParam>::sLastRequestId;
 
 typedef nsMainThreadPtrHandle<WebrtcGlobalStatisticsCallback>
     StatsRequestCallback;
 
-class StatsRequest
-    : public RequestManager<StatsRequest, StatsRequestCallback,
-                            WebrtcGlobalStatisticsReport, nsAString> {
- public:
-  const nsString mPcIdFilter;
-  explicit StatsRequest(int aId, StatsRequestCallback& aCallback,
-                        nsAString& aFilter)
-      : RequestManager(aId, aCallback), mPcIdFilter(aFilter) {}
-
- private:
-  StatsRequest() = delete;
-  StatsRequest& operator=(const StatsRequest&) = delete;
-};
-
 typedef nsMainThreadPtrHandle<WebrtcGlobalLoggingCallback> LogRequestCallback;
-
-class LogRequest : public RequestManager<LogRequest, LogRequestCallback,
-                                         Sequence<nsString>, const nsACString> {
- public:
-  const nsCString mPattern;
-  explicit LogRequest(int aId, LogRequestCallback& aCallback,
-                      const nsACString& aPattern)
-      : RequestManager(aId, aCallback), mPattern(aPattern) {}
-
- private:
-  LogRequest() = delete;
-  LogRequest& operator=(const LogRequest&) = delete;
-};
 
 class WebrtcContentParents {
  public:
@@ -213,146 +77,48 @@ static PeerConnectionCtx* GetPeerConnectionCtx() {
   return nullptr;
 }
 
-MOZ_CAN_RUN_SCRIPT
-static void OnStatsReport_m(
-    WebrtcGlobalChild* aThisChild, const int aRequestId,
-    nsTArray<UniquePtr<dom::RTCStatsReportInternal>>&& aReports) {
-  MOZ_ASSERT(NS_IsMainThread());
+static RefPtr<PWebrtcGlobalParent::GetStatsPromise>
+GetStatsPromiseForThisProcess(const nsAString& aPcIdFilter) {
+  nsTArray<RefPtr<dom::RTCStatsReportPromise>> promises;
 
-  if (aThisChild) {
-    Stats stats;
-
-    
-    for (auto& report : aReports) {
-      if (report) {
-        stats.AppendElement(*report);
-      }
-    }
-    
-    auto ctx = PeerConnectionCtx::GetInstance();
-    if (ctx) {
-      for (auto& pc : ctx->mStatsForClosedPeerConnections) {
-        stats.AppendElement(pc);
-      }
-    }
-
-    Unused << aThisChild->SendGetStatsResult(aRequestId, stats);
-    return;
-  }
-
-  
-  MOZ_ASSERT(XRE_IsParentProcess());
-
-  StatsRequest* request = StatsRequest::Get(aRequestId);
-
-  if (!request) {
-    CSFLogError(LOGTAG, "Bad RequestId");
-    return;
-  }
-
-  for (auto& report : aReports) {
-    if (report) {
-      if (!request->mResult.mReports.AppendElement(*report, fallible)) {
-        mozalloc_handle_oom(0);
-      }
-    }
-  }
-
-  
-  auto ctx = PeerConnectionCtx::GetInstance();
+  PeerConnectionCtx* ctx = GetPeerConnectionCtx();
   if (ctx) {
-    for (auto&& pc : ctx->mStatsForClosedPeerConnections) {
-      if (!request->mResult.mReports.AppendElement(pc, fallible)) {
-        
-        
-        
-        mozalloc_handle_oom(0);
+    
+    for (const auto& [id, pc] : ctx->GetPeerConnections()) {
+      if (aPcIdFilter.IsEmpty() || aPcIdFilter.EqualsASCII(id.c_str())) {
+        if (pc->HasMedia()) {
+          promises.AppendElement(pc->GetStats(nullptr, true));
+        }
       }
     }
-  }
 
-  request->Complete();
-  StatsRequest::Delete(aRequestId);
-}
-
-MOZ_CAN_RUN_SCRIPT
-static void OnGetLogging_m(WebrtcGlobalChild* aThisChild, const int aRequestId,
-                           Sequence<nsString>&& aLogList) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (!aLogList.IsEmpty()) {
-    if (!aLogList.AppendElement(u"+++++++ END ++++++++"_ns, fallible)) {
-      mozalloc_handle_oom(0);
+    
+    for (const auto& report : ctx->mStatsForClosedPeerConnections) {
+      promises.AppendElement(dom::RTCStatsReportPromise::CreateAndResolve(
+          MakeUnique<dom::RTCStatsReportInternal>(report), __func__));
     }
   }
 
-  if (aThisChild) {
-    
-    
-    Unused << aThisChild->SendGetLogResult(aRequestId, aLogList);
-    return;
-  }
-
-  
-  MOZ_ASSERT(XRE_IsParentProcess());
-
-  LogRequest* request = LogRequest::Get(aRequestId);
-
-  if (!request) {
-    CSFLogError(LOGTAG, "Bad RequestId");
-    return;
-  }
-
-  if (!request->mResult.AppendElements(std::move(aLogList), fallible)) {
-    mozalloc_handle_oom(0);
-  }
-  request->Complete();
-  LogRequest::Delete(aRequestId);
-}
-
-static void RunStatsQuery(
-    const std::map<const std::string, PeerConnectionImpl*>& aPeerConnections,
-    const nsAString& aPcIdFilter, WebrtcGlobalChild* aThisChild,
-    const int aRequestId) {
-  nsTArray<RefPtr<RTCStatsReportPromise>> promises;
-
-  for (auto& idAndPc : aPeerConnections) {
-    MOZ_ASSERT(idAndPc.second);
-    PeerConnectionImpl& pc = *idAndPc.second;
-    if (aPcIdFilter.IsEmpty() ||
-        aPcIdFilter.EqualsASCII(pc.GetIdAsAscii().c_str())) {
-      if (pc.HasMedia()) {
-        promises.AppendElement(
-            pc.GetStats(nullptr, true)
-                ->Then(
-                    GetMainThreadSerialEventTarget(), __func__,
-                    [=](UniquePtr<dom::RTCStatsReportInternal>&& aReport) {
-                      return RTCStatsReportPromise::CreateAndResolve(
-                          std::move(aReport), __func__);
-                    },
-                    [=](nsresult aError) {
-                      
-                      return RTCStatsReportPromise::CreateAndResolve(
-                          UniquePtr<dom::RTCStatsReportInternal>(), __func__);
-                    }));
+  auto UnwrapUniquePtrs = [](dom::RTCStatsReportPromise::AllSettledPromiseType::
+                                 ResolveOrRejectValue&& aResult) {
+    nsTArray<dom::RTCStatsReportInternal> reports;
+    MOZ_RELEASE_ASSERT(aResult.IsResolve(), "AllSettled should never reject!");
+    for (auto& reportResult : aResult.ResolveValue()) {
+      if (reportResult.IsResolve()) {
+        reports.AppendElement(*reportResult.ResolveValue());
       }
     }
-  }
+    return PWebrtcGlobalParent::GetStatsPromise::CreateAndResolve(
+        std::move(reports), __func__);
+  };
 
-  RTCStatsReportPromise::All(GetMainThreadSerialEventTarget(), promises)
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          
-          
-          [aThisChild, aRequestId](
-              nsTArray<UniquePtr<dom::RTCStatsReportInternal>>&& aReports)
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-                OnStatsReport_m(aThisChild, aRequestId, std::move(aReports));
-              },
-          [=](nsresult) { MOZ_CRASH(); });
+  return dom::RTCStatsReportPromise::AllSettled(
+             GetMainThreadSerialEventTarget(), promises)
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             std::move(UnwrapUniquePtrs));
 }
 
-void ClearClosedStats() {
+static void ClearClosedStats() {
   PeerConnectionCtx* ctx = GetPeerConnectionCtx();
 
   if (ctx) {
@@ -370,8 +136,8 @@ void WebrtcGlobalInformation::ClearAllStats(const GlobalObject& aGlobal) {
 
   if (!WebrtcContentParents::Empty()) {
     
-    for (auto& cp : WebrtcContentParents::GetAll()) {
-      Unused << cp->SendClearStatsRequest();
+    for (const auto& cp : WebrtcContentParents::GetAll()) {
+      Unused << cp->SendClearStats();
     }
   }
 
@@ -389,98 +155,98 @@ void WebrtcGlobalInformation::GetAllStats(
 
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  
-  
-  StatsRequestCallback callbackHandle(
-      new nsMainThreadPtrHolder<WebrtcGlobalStatisticsCallback>(
-          "WebrtcGlobalStatisticsCallback", &aStatsCallback));
+  nsTArray<RefPtr<PWebrtcGlobalParent::GetStatsPromise>> statsPromises;
 
   nsString filter;
   if (pcIdFilter.WasPassed()) {
     filter = pcIdFilter.Value();
   }
 
-  auto* request = StatsRequest::Create(callbackHandle, filter);
-
-  if (!request) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
+  for (const auto& cp : WebrtcContentParents::GetAll()) {
+    statsPromises.AppendElement(cp->SendGetStats(filter));
   }
 
-  if (!WebrtcContentParents::Empty()) {
-    
-    for (auto& cp : WebrtcContentParents::GetAll()) {
-      request->mContactList.push(cp);
-    }
+  
+  statsPromises.AppendElement(GetStatsPromiseForThisProcess(filter));
 
-    auto next = request->GetNextParent();
-    if (next) {
-      aRv = next->SendGetStatsRequest(request->mRequestId, request->mPcIdFilter)
-                ? NS_OK
-                : NS_ERROR_FAILURE;
-      return;
-    }
-  }
   
   
-  PeerConnectionCtx* ctx = GetPeerConnectionCtx();
+  StatsRequestCallback callbackHandle(
+      new nsMainThreadPtrHolder<WebrtcGlobalStatisticsCallback>(
+          "WebrtcGlobalStatisticsCallback", &aStatsCallback));
 
-  if (ctx) {
-    RunStatsQuery(ctx->mGetPeerConnections(), filter, nullptr,
-                  request->mRequestId);
-  } else {
-    
-    request->Complete();
-    StatsRequest::Delete(request->mRequestId);
-  }
+  auto FlattenAndCallback =
+      [callbackHandle](
+          PWebrtcGlobalParent::GetStatsPromise::AllSettledPromiseType::
+              ResolveOrRejectValue&& aResult) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+        WebrtcGlobalStatisticsReport flattened;
+        MOZ_RELEASE_ASSERT(aResult.IsResolve(),
+                           "AllSettled should never reject!");
+        for (auto& contentProcessResult : aResult.ResolveValue()) {
+          
+          if (contentProcessResult.IsResolve()) {
+            if (!flattened.mReports.AppendElements(
+                    std::move(contentProcessResult.ResolveValue()), fallible)) {
+              mozalloc_handle_oom(0);
+            }
+          }
+        }
+        IgnoredErrorResult rv;
+        callbackHandle->Call(flattened, rv);
+      };
+
+  PWebrtcGlobalParent::GetStatsPromise::AllSettled(
+      GetMainThreadSerialEventTarget(), statsPromises)
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             std::move(FlattenAndCallback));
 
   aRv = NS_OK;
 }
 
-MOZ_CAN_RUN_SCRIPT
-static nsresult RunLogQuery(const nsCString& aPattern,
-                            WebrtcGlobalChild* aThisChild,
-                            const int aRequestId) {
+static RefPtr<PWebrtcGlobalParent::GetLogPromise> GetLogPromise(
+    const nsCString& aPattern) {
   PeerConnectionCtx* ctx = GetPeerConnectionCtx();
   if (!ctx) {
     
-    OnGetLogging_m(aThisChild, aRequestId, Sequence<nsString>());
-    return NS_OK;
+    return PWebrtcGlobalParent::GetLogPromise::CreateAndResolve(
+        Sequence<nsString>(), __func__);
   }
 
   nsresult rv;
   nsCOMPtr<nsISerialEventTarget> stsThread =
       do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
 
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (!stsThread) {
-    return NS_ERROR_FAILURE;
+  if (NS_WARN_IF(NS_FAILED(rv) || !stsThread)) {
+    return PWebrtcGlobalParent::GetLogPromise::CreateAndResolve(
+        Sequence<nsString>(), __func__);
   }
 
   RefPtr<MediaTransportHandler> transportHandler = ctx->GetTransportHandler();
 
-  InvokeAsync(stsThread, __func__,
-              [transportHandler, aPattern]() {
-                return transportHandler->GetIceLog(aPattern);
-              })
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          
-          
-          [aRequestId, aThisChild](Sequence<nsString>&& aLogLines)
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-                OnGetLogging_m(aThisChild, aRequestId, std::move(aLogLines));
-              },
-          
-          
-          [aRequestId, aThisChild](nsresult aError)
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-                OnGetLogging_m(aThisChild, aRequestId, Sequence<nsString>());
-              });
+  auto AddMarkers =
+      [](MediaTransportHandler::IceLogPromise::ResolveOrRejectValue&& aValue) {
+        nsString pid;
+        pid.AppendInt(getpid());
+        Sequence<nsString> logs;
+        if (aValue.IsResolve() && !aValue.ResolveValue().IsEmpty()) {
+          bool ok = logs.AppendElement(
+              u"+++++++ BEGIN (process id "_ns + pid + u") ++++++++"_ns,
+              fallible);
+          ok &=
+              !!logs.AppendElements(std::move(aValue.ResolveValue()), fallible);
+          ok &= !!logs.AppendElement(
+              u"+++++++ END (process id "_ns + pid + u") ++++++++"_ns,
+              fallible);
+          if (!ok) {
+            mozalloc_handle_oom(0);
+          }
+        }
+        return PWebrtcGlobalParent::GetLogPromise::CreateAndResolve(
+            std::move(logs), __func__);
+      };
 
-  return NS_OK;
+  return transportHandler->GetIceLog(aPattern)->Then(
+      GetMainThreadSerialEventTarget(), __func__, std::move(AddMarkers));
 }
 
 static nsresult RunLogClear() {
@@ -519,8 +285,8 @@ void WebrtcGlobalInformation::ClearLogging(const GlobalObject& aGlobal) {
 
   if (!WebrtcContentParents::Empty()) {
     
-    for (auto& cp : WebrtcContentParents::GetAll()) {
-      Unused << cp->SendClearLogRequest();
+    for (const auto& cp : WebrtcContentParents::GetAll()) {
+      Unused << cp->SendClearLog();
     }
   }
 
@@ -538,44 +304,49 @@ void WebrtcGlobalInformation::GetLogging(
 
   MOZ_ASSERT(XRE_IsParentProcess());
 
+  nsTArray<RefPtr<PWebrtcGlobalParent::GetLogPromise>> logPromises;
+
+  nsAutoCString pattern;
+  CopyUTF16toUTF8(aPattern, pattern);
+
+  for (const auto& cp : WebrtcContentParents::GetAll()) {
+    logPromises.AppendElement(cp->SendGetLog(pattern));
+  }
+
+  
+  logPromises.AppendElement(GetLogPromise(pattern));
+
   
   
   LogRequestCallback callbackHandle(
       new nsMainThreadPtrHolder<WebrtcGlobalLoggingCallback>(
           "WebrtcGlobalLoggingCallback", &aLoggingCallback));
 
-  nsAutoCString pattern;
-  CopyUTF16toUTF8(aPattern, pattern);
+  auto FlattenAndCallback =
+      [callbackHandle](WebrtcGlobalParent::GetLogPromise::
+                           AllSettledPromiseType::ResolveOrRejectValue&& aValue)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            dom::Sequence<nsString> flattened;
+            MOZ_RELEASE_ASSERT(aValue.IsResolve(),
+                               "AllSettled should never reject!");
+            for (auto& logResult : aValue.ResolveValue()) {
+              if (logResult.IsResolve()) {
+                if (!flattened.AppendElements(
+                        std::move(logResult.ResolveValue()), fallible)) {
+                  mozalloc_handle_oom(0);
+                }
+              }
+            }
+            IgnoredErrorResult rv;
+            callbackHandle->Call(flattened, rv);
+          };
 
-  LogRequest* request = LogRequest::Create(callbackHandle, pattern);
+  PWebrtcGlobalParent::GetLogPromise::AllSettled(
+      GetMainThreadSerialEventTarget(), logPromises)
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             std::move(FlattenAndCallback));
 
-  if (!request) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  if (!WebrtcContentParents::Empty()) {
-    
-    for (auto& cp : WebrtcContentParents::GetAll()) {
-      request->mContactList.push(cp);
-    }
-
-    auto next = request->GetNextParent();
-    if (next) {
-      aRv = next->SendGetLogRequest(request->mRequestId, request->mPattern)
-                ? NS_OK
-                : NS_ERROR_FAILURE;
-      return;
-    }
-  }
-
-  nsresult rv = RunLogQuery(request->mPattern, nullptr, request->mRequestId);
-
-  if (NS_FAILED(rv)) {
-    LogRequest::Delete(request->mRequestId);
-  }
-
-  aRv = rv;
+  aRv = NS_OK;
 }
 
 static int32_t sLastSetLevel = 0;
@@ -591,7 +362,7 @@ void WebrtcGlobalInformation::SetDebugLevel(const GlobalObject& aGlobal,
   }
   sLastSetLevel = aLevel;
 
-  for (auto& cp : WebrtcContentParents::GetAll()) {
+  for (const auto& cp : WebrtcContentParents::GetAll()) {
     Unused << cp->SendSetDebugMode(aLevel);
   }
 }
@@ -610,7 +381,7 @@ void WebrtcGlobalInformation::SetAecDebug(const GlobalObject& aGlobal,
 
   sLastAECDebug = aEnable;
 
-  for (auto& cp : WebrtcContentParents::GetAll()) {
+  for (const auto& cp : WebrtcContentParents::GetAll()) {
     Unused << cp->SendSetAecLogging(aEnable);
   }
 }
@@ -622,85 +393,6 @@ bool WebrtcGlobalInformation::AecDebug(const GlobalObject& aGlobal) {
 void WebrtcGlobalInformation::GetAecDebugLogDir(const GlobalObject& aGlobal,
                                                 nsAString& aDir) {
   aDir = NS_ConvertASCIItoUTF16(sAecDebugLogDir.valueOr(""_ns));
-}
-
-mozilla::ipc::IPCResult WebrtcGlobalParent::RecvGetStatsResult(
-    const int& aRequestId, nsTArray<RTCStatsReportInternal>&& Stats) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  StatsRequest* request = StatsRequest::Get(aRequestId);
-
-  if (!request) {
-    CSFLogError(LOGTAG, "Bad RequestId");
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  for (auto& s : Stats) {
-    if (!request->mResult.mReports.AppendElement(s, fallible)) {
-      CSFLogError(LOGTAG, "Out of memory");
-      return IPC_FAIL_NO_REASON(this);
-    }
-  }
-
-  auto next = request->GetNextParent();
-  if (next) {
-    
-    if (!next->SendGetStatsRequest(request->mRequestId, request->mPcIdFilter)) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-    return IPC_OK();
-  }
-
-  
-  PeerConnectionCtx* ctx = GetPeerConnectionCtx();
-
-  if (ctx) {
-    RunStatsQuery(ctx->mGetPeerConnections(), request->mPcIdFilter, nullptr,
-                  aRequestId);
-  } else {
-    
-    request->Complete();
-    StatsRequest::Delete(aRequestId);
-  }
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult WebrtcGlobalParent::RecvGetLogResult(
-    const int& aRequestId, const WebrtcGlobalLog& aLog) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  LogRequest* request = LogRequest::Get(aRequestId);
-
-  if (!request) {
-    CSFLogError(LOGTAG, "Bad RequestId");
-    return IPC_FAIL_NO_REASON(this);
-  }
-  if (!request->mResult.AppendElements(aLog, fallible)) {
-    CSFLogError(LOGTAG, "Out of memory");
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  auto next = request->GetNextParent();
-  if (next) {
-    
-    if (!next->SendGetLogRequest(request->mRequestId, request->mPattern)) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-    return IPC_OK();
-  }
-
-  
-  nsresult rv = RunLogQuery(request->mPattern, nullptr, aRequestId);
-
-  if (NS_FAILED(rv)) {
-    
-    CSFLogError(LOGTAG, "Unable to extract chrome process log");
-    request->Complete();
-    LogRequest::Delete(aRequestId);
-  }
-
-  return IPC_OK();
 }
 
 WebrtcGlobalParent* WebrtcGlobalParent::Alloc() {
@@ -728,26 +420,25 @@ MOZ_IMPLICIT WebrtcGlobalParent::~WebrtcGlobalParent() {
   MOZ_COUNT_DTOR(WebrtcGlobalParent);
 }
 
-mozilla::ipc::IPCResult WebrtcGlobalChild::RecvGetStatsRequest(
-    const int& aRequestId, const nsString& aPcIdFilter) {
-  if (mShutdown) {
+mozilla::ipc::IPCResult WebrtcGlobalChild::RecvGetStats(
+    const nsString& aPcIdFilter, GetStatsResolver&& aResolve) {
+  if (!mShutdown) {
+    GetStatsPromiseForThisProcess(aPcIdFilter)
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [resolve = std::move(aResolve)](
+                nsTArray<dom::RTCStatsReportInternal>&& aReports) {
+              resolve(std::move(aReports));
+            },
+            []() { MOZ_CRASH(); });
     return IPC_OK();
   }
 
-  PeerConnectionCtx* ctx = GetPeerConnectionCtx();
-
-  if (ctx) {
-    RunStatsQuery(ctx->mGetPeerConnections(), aPcIdFilter, this, aRequestId);
-    return IPC_OK();
-  }
-
-  nsTArray<RTCStatsReportInternal> empty_stats;
-  SendGetStatsResult(aRequestId, empty_stats);
-
+  aResolve(nsTArray<RTCStatsReportInternal>());
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WebrtcGlobalChild::RecvClearStatsRequest() {
+mozilla::ipc::IPCResult WebrtcGlobalChild::RecvClearStats() {
   if (mShutdown) {
     return IPC_OK();
   }
@@ -756,23 +447,28 @@ mozilla::ipc::IPCResult WebrtcGlobalChild::RecvClearStatsRequest() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WebrtcGlobalChild::RecvGetLogRequest(
-    const int& aRequestId, const nsCString& aPattern) {
+mozilla::ipc::IPCResult WebrtcGlobalChild::RecvGetLog(
+    const nsCString& aPattern, GetLogResolver&& aResolve) {
   if (mShutdown) {
+    aResolve(Sequence<nsString>());
     return IPC_OK();
   }
 
-  nsresult rv = RunLogQuery(aPattern, this, aRequestId);
-
-  if (NS_FAILED(rv)) {
-    Sequence<nsString> empty_log;
-    SendGetLogResult(aRequestId, empty_log);
-  }
+  GetLogPromise(aPattern)->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [aResolve = std::move(aResolve)](
+          PWebrtcGlobalParent::GetLogPromise::ResolveOrRejectValue&& aValue) {
+        if (aValue.IsResolve()) {
+          aResolve(aValue.ResolveValue());
+        } else {
+          aResolve(Sequence<nsString>());
+        }
+      });
 
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WebrtcGlobalChild::RecvClearLogRequest() {
+mozilla::ipc::IPCResult WebrtcGlobalChild::RecvClearLog() {
   if (mShutdown) {
     return IPC_OK();
   }
