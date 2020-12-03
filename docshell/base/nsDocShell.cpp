@@ -9938,33 +9938,40 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                           nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
                           &doesNotReturnData);
       if (doesNotReturnData) {
-        bool popupBlocked = true;
+        WindowContext* parentContext =
+            mBrowsingContext->GetParentWindowContext();
+        MOZ_ASSERT(parentContext);
+        const bool popupBlocked = [&] {
+          if (parentContext->ConsumeTransientUserGestureActivation()) {
+            return false;
+          }
 
-        
-        
-        
-        if (PopupBlocker::GetPopupControlState() <= PopupBlocker::openBlocked) {
           
           
           
-          
-          nsCOMPtr<nsINode> loadingNode =
-              mScriptGlobal->GetFrameElementInternal();
-          popupBlocked = !PopupBlocker::TryUsePopupOpeningToken(
-              loadingNode ? loadingNode->NodePrincipal() : nullptr);
-        } else if (mBrowsingContext->GetIsActive() &&
-                   PopupBlocker::ConsumeTimerTokenForExternalProtocolIframe()) {
-          popupBlocked = false;
-        } else {
-          
-          WindowContext* parentContext =
-              mBrowsingContext->GetParentWindowContext();
-          MOZ_ASSERT(parentContext);
-          popupBlocked = !parentContext->CanShowPopup();
-        }
+          if (mBrowsingContext->GetIsActive() &&
+              PopupBlocker::ConsumeTimerTokenForExternalProtocolIframe()) {
+            return false;
+          }
+
+          if (parentContext->CanShowPopup()) {
+            return false;
+          }
+
+          return true;
+        }();
 
         
         if (popupBlocked) {
+          nsAutoString message;
+          nsresult rv = nsContentUtils::GetLocalizedString(
+              nsContentUtils::eDOM_PROPERTIES,
+              "ExternalProtocolFrameBlockedNoUserActivation", message);
+          if (NS_SUCCEEDED(rv)) {
+            nsContentUtils::ReportToConsoleByWindowID(
+                message, nsIScriptError::warningFlag, "DOM"_ns,
+                parentContext->InnerWindowId());
+          }
           return NS_OK;
         }
       }
