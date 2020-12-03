@@ -25,7 +25,6 @@ class MediaTransportHandlerIPC : public MediaTransportHandler {
   nsresult CreateIceCtx(const std::string& aName,
                         const nsTArray<dom::RTCIceServer>& aIceServers,
                         dom::RTCIceTransportPolicy aIcePolicy) override;
-  void Destroy() override;
 
   
   
@@ -76,6 +75,7 @@ class MediaTransportHandlerIPC : public MediaTransportHandler {
 
  private:
   friend class MediaTransportChild;
+  void Destroy() override;
 
   
   dom::PMediaTransportChild* mChild = nullptr;
