@@ -223,6 +223,7 @@ HttpBaseChannel::HttpBaseChannel()
       mAsyncOpenWaitingForStreamLength(false),
       mUpgradableToSecure(true),
       mHasNonEmptySandboxingFlag(false),
+      mTaintedOriginFlag(false),
       mTlsFlags(0),
       mSuspendCount(0),
       mInitialRwin(0),
@@ -4297,6 +4298,9 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
     CallQueryInterface(newChannel, realChannel.StartAssignment());
     if (realChannel) {
       realChannel->SetTopWindowURI(mTopWindowURI);
+
+      realChannel->mTaintedOriginFlag =
+          ShouldTaintReplacementChannelOrigin(newURI);
     }
 
     
@@ -4377,6 +4381,40 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
   
   mTimingEnabled = false;
   return NS_OK;
+}
+
+bool HttpBaseChannel::ShouldTaintReplacementChannelOrigin(nsIURI* aNewURI) {
+  if (mTaintedOriginFlag) {
+    return true;
+  }
+
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  if (!ssm) {
+    return true;
+  }
+  bool isPrivateWin = mLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  nsresult rv = ssm->CheckSameOriginURI(aNewURI, mURI, false, isPrivateWin);
+  if (NS_SUCCEEDED(rv)) {
+    return false;
+  }
+  
+  
+
+  if (mLoadInfo->GetLoadingPrincipal()) {
+    bool sameOrigin = false;
+    rv = mLoadInfo->GetLoadingPrincipal()->IsSameOrigin(mURI, isPrivateWin,
+                                                        &sameOrigin);
+    if (NS_FAILED(rv)) {
+      return true;
+    }
+    return !sameOrigin;
+  }
+  if (!mOriginalURI) {
+    return true;
+  }
+
+  rv = ssm->CheckSameOriginURI(mOriginalURI, mURI, false, isPrivateWin);
+  return NS_FAILED(rv);
 }
 
 
