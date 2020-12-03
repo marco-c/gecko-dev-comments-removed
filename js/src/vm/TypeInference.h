@@ -41,10 +41,6 @@ class TempAllocator;
 
 }  
 
-bool ClassCanHaveExtraProperties(const JSClass* clasp);
-
-struct AutoEnterAnalysis;
-
 class TypeZone {
   
   ZoneData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
