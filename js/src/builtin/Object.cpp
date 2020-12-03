@@ -1026,22 +1026,10 @@ PlainObject* js::ObjectCreateImpl(JSContext* cx, HandleObject proto,
   
   gc::AllocKind allocKind = GuessObjectGCKind(0);
 
-  if (!proto) {
-    
-    
-    
-    
-    RootedObjectGroup ngroup(cx, group);
-    if (!ngroup) {
-      ngroup = ObjectGroup::callingAllocationSiteGroup(cx, JSProto_Null);
-      if (!ngroup) {
-        return nullptr;
-      }
-    }
-
-    MOZ_ASSERT(!ngroup->proto().toObjectOrNull());
-
-    return NewObjectWithGroup<PlainObject>(cx, ngroup, allocKind, newKind);
+  
+  if (group) {
+    MOZ_ASSERT(group->proto().toObjectOrNull() == proto);
+    return NewObjectWithGroup<PlainObject>(cx, group, allocKind, newKind);
   }
 
   return NewObjectWithGivenProtoAndKinds<PlainObject>(cx, proto, allocKind,
