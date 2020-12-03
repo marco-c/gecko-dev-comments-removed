@@ -1195,19 +1195,6 @@ bool Predictor::RunPredictions(nsIURI* referrer,
         getter_AddRefs(tmpCancelable));
 
     
-    if (StaticPrefs::network_security_esni_enabled() &&
-        uri->SchemeIs("https")) {
-      nsAutoCString esniHost;
-      esniHost.Append("_esni.");
-      esniHost.Append(hostname);
-      mDnsService->AsyncResolveNative(esniHost, nsIDNSService::RESOLVE_TYPE_TXT,
-                                      (nsIDNSService::RESOLVE_PRIORITY_MEDIUM |
-                                       nsIDNSService::RESOLVE_SPECULATE),
-                                      nullptr, mDNSListener, nullptr,
-                                      originAttributes,
-                                      getter_AddRefs(tmpCancelable));
-    }
-
     predicted = true;
     if (verifier) {
       PREDICTOR_LOG(("    sending preresolve verification"));
