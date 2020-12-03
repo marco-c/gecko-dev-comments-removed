@@ -468,7 +468,7 @@ bool ExceptionHandler::HandleSignal(int , siginfo_t* info, void* uc) {
   GetPHCAddrInfo(info, &addr_info);
 #endif
 
-  if (filter_ && !filter_(callback_context_, &addr_info))
+  if (filter_ && !filter_(callback_context_))
     return false;
 
   
@@ -528,8 +528,17 @@ bool ExceptionHandler::SimulateSignalDelivery(int sig) {
 
 bool ExceptionHandler::GenerateDump(
     CrashContext *context, const mozilla::phc::AddrInfo* addr_info) {
-  if (IsOutOfProcess())
-    return crash_generation_client_->RequestDump(context, sizeof(*context));
+  if (IsOutOfProcess()) {
+    bool success =
+      crash_generation_client_->RequestDump(context, sizeof(*context));
+
+    if (callback_) {
+      success =
+        callback_(minidump_descriptor_, callback_context_, addr_info, success);
+    }
+
+    return success;
+  }
 
   
   
