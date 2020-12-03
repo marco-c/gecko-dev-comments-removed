@@ -432,6 +432,8 @@ class DiscardableRunnable : public Runnable, public nsIDiscardableRunnable {
 };
 
 
+
+
 class CancelableRunnable : public DiscardableRunnable,
                            public nsICancelableRunnable {
  public:
