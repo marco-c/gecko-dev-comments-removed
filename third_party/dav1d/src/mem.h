@@ -25,8 +25,8 @@
 
 
 
-#ifndef DAV1D_COMMON_MEM_H
-#define DAV1D_COMMON_MEM_H
+#ifndef DAV1D_SRC_MEM_H
+#define DAV1D_SRC_MEM_H
 
 #include <stdlib.h>
 
@@ -35,6 +35,22 @@
 #endif
 
 #include "common/attributes.h"
+
+#include "src/thread.h"
+
+typedef struct Dav1dMemPoolBuffer {
+    void *data;
+    struct Dav1dMemPoolBuffer *next;
+} Dav1dMemPoolBuffer;
+
+typedef struct Dav1dMemPool {
+    pthread_mutex_t lock;
+    Dav1dMemPoolBuffer *buf;
+} Dav1dMemPool;
+
+void dav1d_mem_pool_push(Dav1dMemPool *pool, Dav1dMemPoolBuffer *buf);
+Dav1dMemPoolBuffer *dav1d_mem_pool_pop(Dav1dMemPool *pool, size_t size);
+void dav1d_mem_pool_destroy(Dav1dMemPool *pool);
 
 
 
