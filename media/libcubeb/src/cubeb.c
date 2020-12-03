@@ -238,11 +238,6 @@ cubeb_init(cubeb ** context, char const * context_name, char const * backend_nam
 #if defined(USE_OPENSL)
     opensl_init,
 #endif
-    
-    
-#if defined(USE_AAUDIO)
-    aaudio_init,
-#endif
 #if defined(USE_AUDIOTRACK)
     audiotrack_init,
 #endif
