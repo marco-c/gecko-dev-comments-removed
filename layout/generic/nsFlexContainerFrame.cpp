@@ -4533,6 +4533,27 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                        maxBlockEndEdgeOfChildren, areChildrenComplete,
                        flexContainerAscent, lines, axisTracker);
 
+  if (wm.IsVerticalRL()) {
+    
+    
+    const nscoord deltaBCoord =
+        tentativeBorderBoxSize.BSize(wm) - aReflowOutput.Size(wm).BSize(wm);
+    if (deltaBCoord != 0) {
+      const LogicalPoint delta(wm, 0, deltaBCoord);
+      for (const FlexLine& line : lines) {
+        for (const FlexItem& item : line.Items()) {
+          item.Frame()->MovePositionBy(wm, delta);
+        }
+      }
+    }
+  }
+
+  
+  aReflowOutput.SetOverflowAreasToDesiredBounds();
+  for (nsIFrame* childFrame : mFrames) {
+    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, childFrame);
+  }
+
   
   aReflowOutput.mOverflowAreas.UnionWith(ocBounds);
   aStatus.MergeCompletionStatusFrom(ocStatus);
@@ -5371,12 +5392,6 @@ void nsFlexContainerFrame::PopulateReflowOutput(
 
   
   aReflowOutput.SetSize(flexWM, desiredSizeInFlexWM);
-
-  
-  aReflowOutput.SetOverflowAreasToDesiredBounds();
-  for (nsIFrame* childFrame : mFrames) {
-    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, childFrame);
-  }
 }
 
 void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
