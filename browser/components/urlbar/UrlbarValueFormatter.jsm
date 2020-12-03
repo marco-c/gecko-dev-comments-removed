@@ -46,7 +46,7 @@ class UrlbarValueFormatter {
     return this.urlbarInput.querySelector("#urlbar-scheme");
   }
 
-  async update(forceURLFormat = false) {
+  async update() {
     
     
     
@@ -86,14 +86,7 @@ class UrlbarValueFormatter {
     
     
     
-    if (
-      forceURLFormat ||
-      this.urlbarInput.getAttribute("pageproxystate") === "valid"
-    ) {
-      this._formattingApplied = this._formatURL(forceURLFormat);
-    } else {
-      this._formattingApplied = this._formatSearchAlias();
-    }
+    this._formattingApplied = this._formatURL() || this._formatSearchAlias();
   }
 
   _ensureFormattedHostVisible(urlMetaData) {
@@ -134,20 +127,21 @@ class UrlbarValueFormatter {
     });
   }
 
-  _getUrlMetaData(forceURLFormat = false) {
-    if (!forceURLFormat && this.urlbarInput.focused) {
+  _getUrlMetaData() {
+    if (this.urlbarInput.focused) {
       return null;
     }
 
-    const inputValue = this.inputField.value;
+    let url = this.inputField.value;
     let browser = this.window.gBrowser.selectedBrowser;
 
     
     
     
-    if (browser._urlMetaData && browser._urlMetaData.url == inputValue) {
+    if (browser._urlMetaData && browser._urlMetaData.url == url) {
       return browser._urlMetaData.data;
     }
+    browser._urlMetaData = { url, data: null };
 
     
     let flags =
@@ -158,7 +152,7 @@ class UrlbarValueFormatter {
     }
     let uriInfo;
     try {
-      uriInfo = Services.uriFixup.getFixupURIInfo(inputValue, flags);
+      uriInfo = Services.uriFixup.getFixupURIInfo(url, flags);
     } catch (ex) {}
     
     
@@ -168,52 +162,56 @@ class UrlbarValueFormatter {
       uriInfo.keywordProviderName ||
       !["http", "https", "ftp"].includes(uriInfo.fixedURI.scheme)
     ) {
-      browser._urlMetaData = { url: inputValue, data: null };
       return null;
     }
 
-    const { displayHostPort, displayPrePath, port, scheme } = uriInfo.fixedURI;
-
-    let url = UrlbarUtils.losslessDecodeURI(uriInfo.fixedURI);
-    
-    
-    url = /\/$/.test(inputValue) ? url : url.replace(/\/$/, "");
-
-    const schemeWSlashes = `${scheme}://`;
-
-    
-    const domain =
-      port === -1
-        ? displayHostPort
-        : displayHostPort.substring(
-            0,
-            displayHostPort.length - `:${port}`.length
-          );
-
-    const preDomain = decodeURI(
-      displayPrePath.substring(
-        0,
-        displayPrePath.length - displayHostPort.length
-      )
-    );
-
     
     
     
     
     
-    let replacedValue = url;
     let trimmedLength = 0;
-    if (
-      uriInfo.fixedURI.scheme == "http" &&
-      !inputValue.startsWith("http://")
-    ) {
-      replacedValue = replacedValue.replace(/^http:\/\//, "");
+    if (uriInfo.fixedURI.scheme == "http" && !url.startsWith("http://")) {
+      url = "http://" + url;
       trimmedLength = "http://".length;
     }
 
-    browser._urlMetaData = { url: replacedValue, data: null };
-    this.inputField.value = replacedValue;
+    
+    
+    
+    let matchedURL = url.match(
+      /^(([a-z]+:\/\/)(?:[^\/#?]+@)?)(\S+?)(?::\d+)?\s*(?:[\/#?]|$)/
+    );
+    if (!matchedURL) {
+      return null;
+    }
+    let [, preDomain, schemeWSlashes, domain] = matchedURL;
+
+    
+    
+    
+    let replaceUrl = false;
+    try {
+      replaceUrl =
+        Services.io.newURI("http://" + domain).displayHost !=
+        uriInfo.fixedURI.displayHost;
+    } catch (ex) {
+      return null;
+    }
+    if (replaceUrl) {
+      if (this._inGetUrlMetaData) {
+        
+        return null;
+      }
+      try {
+        this._inGetUrlMetaData = true;
+        this.window.gBrowser.userTypedValue = null;
+        this.urlbarInput.setURI(uriInfo.fixedURI);
+        return this._getUrlMetaData();
+      } finally {
+        this._inGetUrlMetaData = false;
+      }
+    }
 
     return (browser._urlMetaData.data = {
       domain,
@@ -248,12 +246,8 @@ class UrlbarValueFormatter {
 
 
 
-
-
-
-
-  _formatURL(forceURLFormat = false) {
-    let urlMetaData = this._getUrlMetaData(forceURLFormat);
+  _formatURL() {
+    let urlMetaData = this._getUrlMetaData();
     if (!urlMetaData) {
       return false;
     }
@@ -322,7 +316,6 @@ class UrlbarValueFormatter {
     }
 
     let selection = controller.getSelection(controller.SELECTION_URLSECONDARY);
-    selection.removeAllRanges();
 
     let rangeLength = preDomain.length + subDomain.length - trimmedLength;
     if (rangeLength) {

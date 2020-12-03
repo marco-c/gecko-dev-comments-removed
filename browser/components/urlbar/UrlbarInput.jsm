@@ -266,19 +266,10 @@ class UrlbarInput {
   
 
 
-
-
-
-
-  formatValue(forceURLFormat = false) {
-    
-    if (!forceURLFormat && this.window.gBrowser.selectedBrowser._isURLLoading) {
-      return;
-    }
-
+  formatValue() {
     
     if (this.editor) {
-      this.valueFormatter.update(forceURLFormat);
+      this.valueFormatter.update();
     }
   }
 
@@ -322,8 +313,6 @@ class UrlbarInput {
 
 
   setURI(uri = null, dueToTabSwitch = false) {
-    this.window.gBrowser.selectedBrowser._isURLLoading = false;
-
     let value = this.window.gBrowser.userTypedValue;
     let valid = false;
 
@@ -350,7 +339,7 @@ class UrlbarInput {
       } else {
         
         try {
-          value = UrlbarUtils.losslessDecodeURI(uri);
+          value = losslessDecodeURI(uri);
         } catch (ex) {
           value = "about:blank";
         }
@@ -366,10 +355,6 @@ class UrlbarInput {
       valid = true;
     }
 
-    
-    
-    this.setPageProxyState(valid ? "valid" : "invalid", dueToTabSwitch);
-
     let isDifferentValidValue = valid && value != this.untrimmedValue;
     this.value = value;
     this.valueIsTyped = !valid;
@@ -379,6 +364,10 @@ class UrlbarInput {
       
       this.selectionStart = this.selectionEnd = 0;
     }
+
+    
+    
+    this.setPageProxyState(valid ? "valid" : "invalid", dueToTabSwitch);
 
     
     
@@ -1886,7 +1875,7 @@ class UrlbarInput {
     });
   }
 
-  _setValue(val, allowTrim, forceURLFormat = false) {
+  _setValue(val, allowTrim) {
     
     let originalUrl = ReaderMode.getOriginalUrlObjectForDisplay(val);
     if (originalUrl) {
@@ -1901,7 +1890,7 @@ class UrlbarInput {
     this.valueIsTyped = false;
     this._resultForCurrentValue = null;
     this.inputField.value = val;
-    this.formatValue(forceURLFormat);
+    this.formatValue();
     this.removeAttribute("actiontype");
 
     
@@ -1931,7 +1920,7 @@ class UrlbarInput {
     try {
       let uri = Services.io.newURI(result.payload.url);
       if (uri) {
-        return UrlbarUtils.losslessDecodeURI(uri);
+        return losslessDecodeURI(uri);
       }
     } catch (ex) {}
 
@@ -2328,8 +2317,7 @@ class UrlbarInput {
   ) {
     
     if (openUILinkWhere == "current") {
-      browser._isURLLoading = true;
-      this._setValue(url, true, true);
+      this.value = url;
       browser.userTypedValue = url;
     }
 
@@ -3292,6 +3280,94 @@ function getDroppableData(event) {
   }
   
   return event.dataTransfer.getData("text/unicode");
+}
+
+
+
+
+
+
+
+
+
+
+function losslessDecodeURI(aURI) {
+  let scheme = aURI.scheme;
+  let value = aURI.displaySpec;
+
+  
+  if (!/%25(?:3B|2F|3F|3A|40|26|3D|2B|24|2C|23)/i.test(value)) {
+    let decodeASCIIOnly = !["https", "http", "file", "ftp"].includes(scheme);
+    if (decodeASCIIOnly) {
+      
+      
+      
+      
+      value = value.replace(
+        /%(2[0-4]|2[6-9a-f]|[3-6][0-9a-f]|7[0-9a-e])/g,
+        decodeURI
+      );
+    } else {
+      try {
+        value = decodeURI(value)
+          
+          
+          
+          
+          
+          .replace(
+            /%(?!3B|2F|3F|3A|40|26|3D|2B|24|2C|23)/gi,
+            encodeURIComponent
+          );
+      } catch (e) {}
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = value.replace(
+    
+    /[\u0000-\u001f\u007f-\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u2800\u3000\ufffc]|[\r\n\t]|\u0020(?=\u0020)|\s$/g,
+    encodeURIComponent
+  );
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  value = value.replace(
+    
+    /[\u00ad\u034f\u061c\u06dd\u070f\u115f\u1160\u17b4\u17b5\u180b-\u180e\u200b\u200e\u200f\u202a-\u202e\u2060-\u206f\u3164\u0600-\u0605\u08e2\ufe00-\ufe0f\ufeff\uffa0\ufff0-\ufffb]|\ud804[\udcbd\udccd]|\ud80d[\udc30-\udc38]|\ud82f[\udca0-\udca3]|\ud834[\udd73-\udd7a]|[\udb40-\udb43][\udc00-\udfff]|\ud83d[\udd0f-\udd13\udee1]/g,
+    encodeURIComponent
+  );
+  return value;
 }
 
 
