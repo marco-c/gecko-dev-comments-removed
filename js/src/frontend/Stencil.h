@@ -402,8 +402,6 @@ class StencilModuleMetadata {
   EntryVector indirectExportEntries;
   EntryVector starExportEntries;
   FunctionDeclarationVector functionDecls;
-  
-  bool isAsync = false;
 
   StencilModuleMetadata() = default;
 

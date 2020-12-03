@@ -11,7 +11,6 @@
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/CompilationInfo.h"
 #include "frontend/ErrorReporter.h"
-#include "frontend/ModuleSharedContext.h"
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/NameCollections.h"
 #include "frontend/SharedContext.h"
@@ -478,27 +477,6 @@ class ParseContext : public Nestable<ParseContext> {
   
   bool atTopLevel() { return atBodyLevel() && sc_->isTopLevelContext(); }
 
-  bool atModuleTopLevel() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return sc_->isModuleContext() && sc_->isTopLevelContext();
-  }
-
   void setSuperScopeNeedsHomeObject() {
     MOZ_ASSERT(sc_->allowSuperProperty());
     superScopeNeedsHomeObject_ = true;
@@ -521,8 +499,7 @@ class ParseContext : public Nestable<ParseContext> {
   }
 
   bool isAsync() const {
-    return sc_->isSuspendableContext() &&
-           sc_->asSuspendableContext()->isAsync();
+    return sc_->isFunctionBox() && sc_->asFunctionBox()->isAsync();
   }
 
   bool isGeneratorOrAsync() const { return isGenerator() || isAsync(); }
@@ -566,7 +543,6 @@ class ParseContext : public Nestable<ParseContext> {
   bool declareFunctionArgumentsObject(const UsedNameTracker& usedNames,
                                       bool canSkipLazyClosedOverBindings);
   bool declareDotGeneratorName();
-  bool declareTopLevelDotGeneratorName();
 
  private:
   MOZ_MUST_USE bool isVarRedeclaredInInnermostScope(

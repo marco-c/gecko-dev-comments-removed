@@ -1,25 +1,15 @@
 
 
-
 function parseAndEvaluate(source) {
     let m = parseModule(source);
     m.declarationInstantiation();
     return m.evaluation();
 }
 
-parseAndEvaluate("this")
-  .then(value => assertEq(typeof(value), "undefined"))
-  .catch(error => {
-    
-    assertEq(false, true)
-  });
+assertEq(typeof(parseAndEvaluate("this")), "undefined");
 
 let m = parseModule("export function getThis() { return this; }");
 m.declarationInstantiation();
-m.evaluation()
-  .then(() => {
-    let f = getModuleEnvironmentValue(m, "getThis");
-    assertEq(typeof(f()), "undefined");
-  });
-
-drainJobQueue();
+m.evaluation();
+let f = getModuleEnvironmentValue(m, "getThis");
+assertEq(typeof(f()), "undefined");

@@ -5702,13 +5702,7 @@ static MOZ_MUST_USE bool IsTopMostAsyncFunctionCall(JSContext* cx) {
   if (iter.done()) {
     return false;
   }
-
-  if (!iter.isFunctionFrame() && iter.isModuleFrame()) {
-    
-    
-    return true;
-  }
-
+  MOZ_ASSERT(iter.isFunctionFrame());
   MOZ_ASSERT(iter.calleeTemplate()->isAsync());
 
 #ifdef DEBUG

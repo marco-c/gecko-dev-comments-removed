@@ -222,16 +222,12 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   
-  template <typename T>
-  mozilla::Maybe<NameLocation> locationOfNameBoundInScopeType(
+  mozilla::Maybe<NameLocation> locationOfNameBoundInFunctionScope(
       const ParserAtom* name, EmitterScope* source);
 
-  
-  
   mozilla::Maybe<NameLocation> locationOfNameBoundInFunctionScope(
       const ParserAtom* name) {
-    return locationOfNameBoundInScopeType<FunctionScope>(
-        name, innermostEmitterScope());
+    return locationOfNameBoundInFunctionScope(name, innermostEmitterScope());
   }
 
   void setVarEmitterScope(EmitterScope* emitterScope) {

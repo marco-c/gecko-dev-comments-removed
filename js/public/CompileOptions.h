@@ -132,7 +132,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool nonSyntacticScope = false;
   bool privateClassFields = false;
   bool privateClassMethods = false;
-  bool topLevelAwait = false;
 
   
   bool useStencilXDR = false;

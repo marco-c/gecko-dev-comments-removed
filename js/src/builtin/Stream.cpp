@@ -29,7 +29,7 @@
 #include "vm/PromiseObject.h"  
 #include "vm/SelfHosting.h"
 
-#include "builtin/HandlerFunction-inl.h"  
+#include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"
 #include "vm/List-inl.h"  
@@ -421,7 +421,7 @@ static MOZ_MUST_USE PromiseObject* ReadableByteStreamControllerPullSteps(
 
     MOZ_RELEASE_ASSERT(unwrappedStream->mode() ==
                        JS::ReadableStreamMode::ExternalSource);
-#if 0  
+#if 0   
         if (unwrappedStream->mode() == JS::ReadableStreamMode::ExternalSource)
 #endif  
     {
@@ -448,7 +448,7 @@ static MOZ_MUST_USE PromiseObject* ReadableByteStreamControllerPullSteps(
       queueTotalSize = queueTotalSize - bytesWritten;
     }
 
-#if 0  
+#if 0   
         else {
             
             
