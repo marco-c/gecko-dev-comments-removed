@@ -73,6 +73,8 @@ struct SortedArenaListSegment {
 
 
 
+
+
 class ArenaList {
   
   
@@ -99,20 +101,26 @@ class ArenaList {
   Arena* head_;
   Arena** cursorp_;
 
-  inline void copy(const ArenaList& other);
+  
+  inline void moveFrom(ArenaList& other);
 
  public:
   inline ArenaList();
-  inline ArenaList(const ArenaList& other);
+  inline ArenaList(ArenaList&& other);
+  inline ~ArenaList();
 
-  inline ArenaList& operator=(const ArenaList& other);
+  inline ArenaList& operator=(ArenaList&& other);
+
+  
+  
+  ArenaList(const ArenaList& other) = delete;
+  ArenaList& operator=(const ArenaList& other) = delete;
 
   inline explicit ArenaList(const SortedArenaListSegment& segment);
 
   inline void check() const;
 
   inline void clear();
-  inline ArenaList copyAndClear();
   inline bool isEmpty() const;
 
   
@@ -120,8 +128,6 @@ class ArenaList {
 
   inline bool isCursorAtHead() const;
   inline bool isCursorAtEnd() const;
-
-  inline void moveCursorToEnd();
 
   
   inline Arena* arenaAfterCursor() const;
@@ -139,7 +145,8 @@ class ArenaList {
   inline void insertBeforeCursor(Arena* a);
 
   
-  inline ArenaList& insertListWithCursorAtEnd(const ArenaList& other);
+  
+  inline ArenaList& insertListWithCursorAtEnd(ArenaList& other);
 
   Arena* removeRemainingArenas(Arena** arenap);
   Arena** pickArenasToRelocate(size_t& arenaTotalOut, size_t& relocTotalOut);
