@@ -581,10 +581,8 @@ function createHighlightButton(highlighterName, id) {
       if (highlighter.isShown()) {
         return highlighter.hide();
       }
-      
-      
-      
-      return highlighter.show({});
+
+      return highlighter.show();
     },
     isChecked(toolbox) {
       
