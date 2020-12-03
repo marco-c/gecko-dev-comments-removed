@@ -1,3 +1,4 @@
+
 "use strict";
 
 load(libdir + "asserts.js");
@@ -13,6 +14,18 @@ let b = registerModule('b', parseModule(`
 `));
 
 a.declarationInstantiation();
-assertThrowsInstanceOf(() => a.evaluation(), UniqueError);
+a.evaluation()
+  .then(r => {
+    
+    assertEq(false, true);
+  })
+  .catch(e => assertEq(e instanceof UniqueError, true));
 b.declarationInstantiation();
-assertThrowsInstanceOf(() => b.evaluation(), UniqueError);
+b.evaluation()
+  .then(r => {
+    
+    assertEq(false, true);
+  })
+  .catch(e => assertEq(e instanceof UniqueError, true));
+
+drainJobQueue();
