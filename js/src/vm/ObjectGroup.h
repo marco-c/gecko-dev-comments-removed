@@ -233,11 +233,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
       NewArrayKind arrayKind = NewArrayKind::Normal);
 
   
-  
-  static JSObject* newPlainObject(JSContext* cx, IdValuePair* properties,
-                                  size_t nproperties, NewObjectKind newKind);
-
-  
 
   
   

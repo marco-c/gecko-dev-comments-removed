@@ -482,13 +482,6 @@ PlainObject* js::NewPlainObjectWithProperties(JSContext* cx,
 }
 
 
-JSObject* ObjectGroup::newPlainObject(JSContext* cx, IdValuePair* properties,
-                                      size_t nproperties,
-                                      NewObjectKind newKind) {
-  return NewPlainObjectWithProperties(cx, properties, nproperties, newKind);
-}
-
-
 ObjectGroup* ObjectGroup::allocationSiteGroup(
     JSContext* cx, JSScript* scriptArg, jsbytecode* pc, JSProtoKey kind,
     HandleObject protoArg ) {
