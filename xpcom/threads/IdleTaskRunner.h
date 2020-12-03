@@ -19,7 +19,7 @@ namespace mozilla {
 
 
 
-class IdleTaskRunner final : public IdleRunnable {
+class IdleTaskRunner final : public CancelableIdleRunnable {
  public:
   
   using CallbackType = std::function<bool(TimeStamp aDeadline)>;
