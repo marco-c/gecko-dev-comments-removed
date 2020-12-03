@@ -716,22 +716,6 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
                              LogicalSize(wm, availISize, NS_UNCONSTRAINEDSIZE),
                              Some(logicalCBSize), initFlags);
 
-  
-  WritingMode outerWM = aReflowInput.GetWritingMode();
-  const LogicalMargin border(outerWM, aDelegatingFrame->GetUsedBorder());
-
-  LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(outerWM);
-
-  
-  
-  
-  if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
-    margin.IStart(outerWM) = margin.IEnd(outerWM) = 0;
-  }
-  if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
-    margin.BStart(outerWM) = margin.BEnd(outerWM) = 0;
-  }
-
   bool constrainBSize =
       (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) &&
 
@@ -750,6 +734,10 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       (aKidFrame->GetLogicalRect(aContainingBlock.Size()).BStart(wm) <=
        aReflowInput.AvailableBSize());
+
+  
+  const WritingMode outerWM = aReflowInput.GetWritingMode();
+  const LogicalMargin border = aDelegatingFrame->GetLogicalUsedBorder(outerWM);
 
   if (constrainBSize) {
     kidReflowInput.AvailableBSize() =
@@ -770,6 +758,17 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
   const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
 
   LogicalMargin offsets = kidReflowInput.ComputedLogicalOffsets(outerWM);
+  LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(outerWM);
+
+  
+  
+  
+  if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
+    margin.IStart(outerWM) = margin.IEnd(outerWM) = 0;
+  }
+  if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
+    margin.BStart(outerWM) = margin.BEnd(outerWM) = 0;
+  }
 
   
   
