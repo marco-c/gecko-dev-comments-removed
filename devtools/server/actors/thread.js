@@ -1492,9 +1492,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
 
-    return {
-      sources: this.sourcesManager.iter().map(s => s.form()),
-    };
+    return this.sourcesManager.iter().map(s => s.form());
   },
 
   
