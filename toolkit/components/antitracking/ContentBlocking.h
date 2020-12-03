@@ -122,7 +122,7 @@ class ContentBlocking final {
   friend class dom::ContentParent;
   
   
-  static MOZ_MUST_USE RefPtr<StorageAccessPermissionGrantPromise>
+  [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
   CompleteAllowAccessFor(
       dom::BrowsingContext* aParentContext, uint64_t aTopLevelWindowId,
       nsIPrincipal* aTrackingPrincipal, const nsCString& aTrackingOrigin,
