@@ -389,7 +389,7 @@ class LiveSavedFrameCache {
   
   
   
-  bool insert(JSContext* cx, FramePtr& framePtr, const jsbytecode* pc,
+  bool insert(JSContext* cx, FramePtr&& framePtr, const jsbytecode* pc,
               HandleSavedFrame savedFrame);
 
   
