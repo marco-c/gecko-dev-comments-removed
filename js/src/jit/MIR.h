@@ -11171,17 +11171,21 @@ class MInCache : public MBinaryInstruction,
 
 
 class MInArray : public MQuaternaryInstruction, public ObjectPolicy<3>::Data {
-  bool needsHoleCheck_;
   bool needsNegativeIntCheck_;
 
   MInArray(MDefinition* elements, MDefinition* index, MDefinition* initLength,
-           MDefinition* object, bool needsHoleCheck)
+           MDefinition* object)
       : MQuaternaryInstruction(classOpcode, elements, index, initLength,
                                object),
-        needsHoleCheck_(needsHoleCheck),
         needsNegativeIntCheck_(true) {
     setResultType(MIRType::Boolean);
     setMovable();
+
+    
+    
+    
+    setGuard();
+
     MOZ_ASSERT(elements->type() == MIRType::Elements);
     MOZ_ASSERT(index->type() == MIRType::Int32);
     MOZ_ASSERT(initLength->type() == MIRType::Int32);
@@ -11192,7 +11196,6 @@ class MInArray : public MQuaternaryInstruction, public ObjectPolicy<3>::Data {
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, elements), (1, index), (2, initLength), (3, object))
 
-  bool needsHoleCheck() const { return needsHoleCheck_; }
   bool needsNegativeIntCheck() const { return needsNegativeIntCheck_; }
   void collectRangeInfoPreTrunc() override;
   AliasSet getAliasSet() const override {
@@ -11203,9 +11206,6 @@ class MInArray : public MQuaternaryInstruction, public ObjectPolicy<3>::Data {
       return false;
     }
     const MInArray* other = ins->toInArray();
-    if (needsHoleCheck() != other->needsHoleCheck()) {
-      return false;
-    }
     if (needsNegativeIntCheck() != other->needsNegativeIntCheck()) {
       return false;
     }
