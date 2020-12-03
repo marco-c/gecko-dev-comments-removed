@@ -93,7 +93,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["extension.timeout", 200],
+  ["extension.timeout", 400],
 
   
   ["filter.javascript", true],
