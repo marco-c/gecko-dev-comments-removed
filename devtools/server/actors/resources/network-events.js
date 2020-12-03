@@ -52,6 +52,26 @@ class NetworkEventWatcher {
 
 
 
+  getThrottleData() {
+    return this.listener.throttleData;
+  }
+
+  
+
+
+
+
+
+  setThrottleData(data) {
+    this.listener.throttleData = data;
+  }
+
+  
+
+
+
+
+
 
   setBlockedUrls(urls) {
     this.listener.setBlockedUrls(urls);
