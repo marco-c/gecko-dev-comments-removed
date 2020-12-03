@@ -148,7 +148,7 @@ var PrintEventHandler = {
 
   
   
-  _nonFlaggedUpdatePreviewSettings: new Set(["pageRanges"]),
+  _nonFlaggedUpdatePreviewSettings: new Set(["pageRanges", "numPagesPerSheet"]),
 
   async init() {
     Services.telemetry.scalarAdd("printing.preview_opened_tm", 1);
@@ -1546,6 +1546,10 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
       
       this.printButton.parentElement.append(this.printButton);
     }
+    this.querySelector("#pages-per-sheet").hidden = !Services.prefs.getBoolPref(
+      "print.pages_per_sheet.enabled",
+      false
+    );
   }
 
   requestPrint() {
