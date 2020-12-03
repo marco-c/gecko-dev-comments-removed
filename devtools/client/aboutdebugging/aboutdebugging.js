@@ -130,9 +130,6 @@ const AboutDebugging = {
     adbProcess.on("adb-ready", this.onAdbProcessReady);
     
     this.onAdbProcessReady();
-
-    
-    await adbAddon.uninstallUnsupportedExtensions();
   },
 
   onAdbAddonUpdated() {

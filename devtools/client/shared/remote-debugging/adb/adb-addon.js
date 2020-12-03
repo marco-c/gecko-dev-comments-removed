@@ -11,12 +11,6 @@ const EventEmitter = require("devtools/shared/event-emitter");
 const PREF_ADB_EXTENSION_URL = "devtools.remote.adb.extensionURL";
 const PREF_ADB_EXTENSION_ID = "devtools.remote.adb.extensionID";
 
-
-
-const ADB_HELPER_ADDON_ID = "adbhelper@mozilla.org";
-
-const VALENCE_ADDON_ID = "fxdevtools-adapters@mozilla.org";
-
 const ADB_ADDON_STATES = {
   DOWNLOADING: "downloading",
   INSTALLED: "installed",
@@ -131,25 +125,6 @@ class ADBAddon extends EventEmitter {
   async uninstall() {
     const addon = await this._getAddon();
     addon.uninstall();
-  }
-
-  
-
-
-
-  async uninstallUnsupportedExtensions() {
-    const [adbHelperAddon, valenceAddon] = await Promise.all([
-      AddonManager.getAddonByID(ADB_HELPER_ADDON_ID),
-      AddonManager.getAddonByID(VALENCE_ADDON_ID),
-    ]);
-
-    if (adbHelperAddon) {
-      adbHelperAddon.uninstall();
-    }
-
-    if (valenceAddon) {
-      valenceAddon.uninstall();
-    }
   }
 
   installFailureHandler(install, message) {
