@@ -35,7 +35,7 @@ void MacroAssemblerX64::loadConstantDouble(double d, FloatRegister dest) {
   
   
   JmpSrc j = masm.vmovsd_ripr(dest.encoding());
-  propagateOOM(dbl->uses.append(CodeOffset(j.offset())));
+  propagateOOM(dbl->uses.append(j));
 }
 
 void MacroAssemblerX64::loadConstantFloat32(float f, FloatRegister dest) {
@@ -48,7 +48,7 @@ void MacroAssemblerX64::loadConstantFloat32(float f, FloatRegister dest) {
   }
   
   JmpSrc j = masm.vmovss_ripr(dest.encoding());
-  propagateOOM(flt->uses.append(CodeOffset(j.offset())));
+  propagateOOM(flt->uses.append(j));
 }
 
 void MacroAssemblerX64::vpRiprOpSimd128(
@@ -60,7 +60,7 @@ void MacroAssemblerX64::vpRiprOpSimd128(
     return;
   }
   JmpSrc j = (masm.*op)(reg.encoding());
-  propagateOOM(val->uses.append(CodeOffset(j.offset())));
+  propagateOOM(val->uses.append(j));
 }
 
 void MacroAssemblerX64::loadConstantSimd128Int(const SimdConstant& v,
@@ -351,9 +351,8 @@ void MacroAssemblerX64::vpcmpgtdSimd128(const SimdConstant& v,
 
 void MacroAssemblerX64::bindOffsets(
     const MacroAssemblerX86Shared::UsesVector& uses) {
-  for (CodeOffset use : uses) {
+  for (JmpSrc src : uses) {
     JmpDst dst(currentOffset());
-    JmpSrc src(use.offset());
     
     
     masm.linkJump(src, dst);
