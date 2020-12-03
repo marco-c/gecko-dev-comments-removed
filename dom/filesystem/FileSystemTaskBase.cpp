@@ -70,29 +70,6 @@ nsresult DispatchToIOThread(nsIRunnable* aRunnable) {
   return target->Dispatch(aRunnable, NS_DISPATCH_NORMAL);
 }
 
-
-
-
-class ErrorRunnable final : public CancelableRunnable {
- public:
-  explicit ErrorRunnable(FileSystemTaskChildBase* aTask)
-      : CancelableRunnable("ErrorRunnable"), mTask(aTask) {
-    MOZ_ASSERT(aTask);
-  }
-
-  NS_IMETHOD
-  Run() override {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mTask->HasError());
-
-    mTask->HandlerCallback();
-    return NS_OK;
-  }
-
- private:
-  RefPtr<FileSystemTaskChildBase> mTask;
-};
-
 }  
 
 
