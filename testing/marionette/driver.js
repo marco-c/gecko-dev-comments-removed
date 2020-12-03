@@ -887,6 +887,8 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   this.dialogObserver = new modal.DialogObserver(this);
   this.dialogObserver.add(this.handleModalDialog.bind(this));
 
+  Services.obs.addObserver(this, "browsing-context-attached");
+
   
   this.dialog = modal.findModalDialogs(this.curBrowser);
 
@@ -894,6 +896,32 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     sessionId: this.sessionID,
     capabilities: this.capabilities,
   };
+};
+
+GeckoDriver.prototype.observe = function(subject, topic, data) {
+  switch (topic) {
+    case "browsing-context-attached":
+      
+      
+      
+      
+      
+      
+      
+      
+      if (
+        subject.browserId == this.contentBrowsingContext?.browserId &&
+        !subject.parent &&
+        !this.contentBrowsingContext?.parent
+      ) {
+        logger.trace(
+          "Remoteness change detected. Set new top-level browsing context " +
+            `to ${subject.id}`
+        );
+        this.contentBrowsingContext = subject;
+      }
+      break;
+  }
 };
 
 
@@ -3034,6 +3062,10 @@ GeckoDriver.prototype.deleteSession = function() {
     this.dialogObserver = null;
   }
 
+  try {
+    Services.obs.removeObserver(this, "browsing-context-attached");
+  } catch (e) {}
+
   this.sandboxes.clear();
   allowAllCerts.disable();
 
@@ -3637,6 +3669,10 @@ GeckoDriver.prototype.receiveMessage = function(message) {
       return { frameId };
 
     case "Marionette:ListenersAttached":
+      if (MarionettePrefs.useActors) {
+        return;
+      }
+
       if (message.json.frameId === this.curBrowser.curFrameId) {
         const browsingContext = BrowsingContext.get(message.json.frameId);
 
