@@ -658,20 +658,7 @@ class Rule {
     const textProps = [];
     const store = this.elementStyle.store;
 
-    
-    let props = this.domRule.declarations;
-    if (!props.length) {
-      
-      
-      
-      props = parseNamedDeclarations(
-        this.cssProperties.isKnown,
-        this.domRule.authoredText,
-        true
-      );
-    }
-
-    for (const prop of props) {
+    for (const prop of this.domRule.declarations) {
       const name = prop.name;
       
       
