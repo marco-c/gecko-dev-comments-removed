@@ -44,14 +44,12 @@
 
 
 
-
-
-#if defined(MALLOC_H) && !defined(XP_DARWIN)
-#  undef MALLOC_H
-#endif
-
-#include "mozilla/mozalloc.h"
 #include "mozHunspellAllocator.h"
+
+
+
+
+#include "mozmemory.h"
 
 #define malloc(size) HunspellAllocator::CountingMalloc(size)
 #define calloc(count, size) HunspellAllocator::CountingCalloc(count, size)
