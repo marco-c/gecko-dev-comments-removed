@@ -188,8 +188,6 @@ const proto = {
   },
 
   _getOwnPropertyLength: function() {
-    
-    
     if (isTypedArray(this.obj)) {
       
       return getArrayLength(this.obj);
