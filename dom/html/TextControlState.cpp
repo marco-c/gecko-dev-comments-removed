@@ -347,7 +347,6 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   NS_IMETHOD ScrollPage(bool aForward) override;
   NS_IMETHOD ScrollLine(bool aForward) override;
   NS_IMETHOD ScrollCharacter(bool aRight) override;
-  NS_IMETHOD SelectAll(void) override;
   NS_IMETHOD CheckVisibility(nsINode* node, int16_t startOffset,
                              int16_t EndOffset, bool* _retval) override;
   virtual nsresult CheckVisibilityContent(nsIContent* aNode,
@@ -750,15 +749,6 @@ TextInputSelectionController::ScrollCharacter(bool aRight) {
   mScrollFrame->ScrollBy(nsIntPoint(aRight ? 1 : -1, 0), ScrollUnit::LINES,
                          ScrollMode::Smooth);
   return NS_OK;
-}
-
-NS_IMETHODIMP
-TextInputSelectionController::SelectAll() {
-  if (!mFrameSelection) {
-    return NS_ERROR_NULL_POINTER;
-  }
-  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
-  return frameSelection->SelectAll();
 }
 
 void TextInputSelectionController::SelectionWillTakeFocus() {
@@ -2776,61 +2766,16 @@ bool TextControlState::SetValueWithTextEditor(
   
   AutoInputEventSuppresser suppressInputEventDispatching(textEditor);
 
-  if (aHandlingSetValue.GetSetValueFlags() & eSetValue_ForXUL) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsISelectionController> kungFuDeathGrip = mSelCon.get();
-    
-    nsString currentValue;
-    if (aHandlingSetValue.GetOldValue()) {
-      currentValue.Assign(*aHandlingSetValue.GetOldValue());
-    } else {
-      mBoundFrame->GetText(currentValue);
-    }
-    uint32_t currentLength = currentValue.Length();
-    uint32_t newlength = aHandlingSetValue.GetSettingValue().Length();
-    if (!currentLength ||
-        !StringBeginsWith(aHandlingSetValue.GetSettingValue(), currentValue)) {
-      
-      currentLength = 0;
-      kungFuDeathGrip->SelectAll();
-    } else {
-      
-      mBoundFrame->SelectAllOrCollapseToEndOfText(false);
-    }
-    const nsAString& insertValue = StringTail(
-        aHandlingSetValue.GetSettingValue(), newlength - currentLength);
-
-    if (insertValue.IsEmpty()) {
-      
-      
-      
-      nsresult rv = textEditor->DeleteSelectionAsAction(
-          nsIEditor::eNone, nsIEditor::eNoStrip, nullptr);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "TextEditor::DeleteSelectionAsAction() failed");
-      return rv != NS_ERROR_OUT_OF_MEMORY;
-    }
-    
-    
-    
-    nsresult rv = textEditor->InsertTextAsAction(insertValue, nullptr);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "TextEditor::InsertTextAsAction() failed");
-    return rv != NS_ERROR_OUT_OF_MEMORY;
+  
+  
+  
+  
+  
+  Maybe<AutoDisableUndo> disableUndo;
+  if (!(aHandlingSetValue.GetSetValueFlags() & eSetValue_PreserveHistory)) {
+    disableUndo.emplace(textEditor);
   }
 
-  
-  
-  
-  AutoDisableUndo disableUndo(textEditor);
   if (selection) {
     
     

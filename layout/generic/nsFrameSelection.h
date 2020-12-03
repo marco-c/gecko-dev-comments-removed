@@ -610,12 +610,6 @@ class nsFrameSelection final {
 
   
 
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SelectAll();
-
-  
-
   void SetDisplaySelection(int16_t aState) { mDisplaySelection = aState; }
   int16_t GetDisplaySelection() const { return mDisplaySelection; }
 

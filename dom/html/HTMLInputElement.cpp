@@ -2642,9 +2642,13 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
   
   
   
-  nsIContent* parent = GetParent();
-  if (parent && parent->IsXULElement()) {
-    aFlags |= TextControlState::eSetValue_ForXUL;
+  
+  
+  
+  
+  
+  if (mParent && mParent->IsXULElement()) {
+    aFlags |= TextControlState::eSetValue_PreserveHistory;
   }
 
   switch (GetValueMode()) {
