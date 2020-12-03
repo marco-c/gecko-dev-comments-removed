@@ -2,6 +2,8 @@
 
 
 
+use crate::error::Result;
+
 
 
 
@@ -13,5 +15,9 @@ pub trait Ping {
     
     
     
-    fn submit(&self, reason: Option<&str>);
+    
+    
+    
+    
+    fn submit(&self, reason: Option<&str>) -> Result<bool>;
 }

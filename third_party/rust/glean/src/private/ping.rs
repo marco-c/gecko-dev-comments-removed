@@ -2,8 +2,6 @@
 
 
 
-use inherent::inherent;
-
 
 #[derive(Clone, Debug)]
 pub struct PingType {
@@ -38,10 +36,7 @@ impl PingType {
         crate::register_ping_type(&me);
         me
     }
-}
 
-#[inherent(pub)]
-impl glean_core::traits::Ping for PingType {
     
     
     
@@ -61,7 +56,7 @@ impl glean_core::traits::Ping for PingType {
     
     
     
-    fn submit(&self, reason: Option<&str>) {
+    pub fn submit(&self, reason: Option<&str>) {
         crate::submit_ping(self, reason)
     }
 }
