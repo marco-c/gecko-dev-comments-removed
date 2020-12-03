@@ -24,6 +24,7 @@
 #include "nsIURI.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 
 class nsJARInputThunk;
@@ -92,7 +93,7 @@ class nsJARChannel final : public nsIJARChannel,
   
   struct {
     bool isCanceled;
-    uint32_t suspendCount;
+    Atomic<uint32_t> suspendCount;
   } mPendingEvent;
 
   nsCOMPtr<nsIInputStreamPump> mPump;

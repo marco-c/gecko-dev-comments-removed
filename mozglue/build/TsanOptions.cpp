@@ -240,10 +240,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:gXPCOMThreadsShutDown\n"
 
          
-         "race:nsJARChannel::Suspend\n"
-         "race:nsJARChannel::Resume\n"
-
-         
          "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
 
          
