@@ -1,0 +1,13 @@
+
+
+
+
+
+
+SOURCES += [
+    'mozva.cpp',
+]
+
+LOCAL_INCLUDES += ['/media/ffvpx']
+
+Library('mozva')
