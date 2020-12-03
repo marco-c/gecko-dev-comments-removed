@@ -109,7 +109,7 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1610010",
-    platform: "desktop",
+    platform: "all",
     domain: "criticalcareontario.ca",
     bug: "1610010",
     config: {
@@ -692,6 +692,44 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://goal.com/*"],
       uaTransformer: originalUA => {
         return originalUA + " Chrome/86.0.4240.110";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1679847",
+    platform: "android",
+    domain: "avto.pro",
+    bug: "1679847",
+    config: {
+      matches: ["https://avto.pro/catalog/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1679869",
+    platform: "android",
+    domain: "vh1.com",
+    bug: "1679869",
+    config: {
+      matches: ["*://*.vh1.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
