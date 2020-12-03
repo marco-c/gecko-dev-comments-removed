@@ -232,6 +232,16 @@ nscoord nsPageSequenceFrame::ComputeCenteringMargin(
   return NSToCoordRound(scaledExtraSpace * 0.5 / scale);
 }
 
+uint32_t nsPageSequenceFrame::GetPagesInFirstSheet() const {
+  nsIFrame* firstSheet = mFrames.FirstChild();
+  if (!firstSheet) {
+    return 0;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(firstSheet->IsPrintedSheetFrame());
+  return static_cast<PrintedSheetFrame*>(firstSheet)->GetNumPages();
+}
+
 
 
 

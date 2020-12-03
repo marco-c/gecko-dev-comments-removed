@@ -127,6 +127,8 @@ class nsPrintJob final : public nsIObserver,
   bool HasEverPrinted() const { return mHasEverPrinted; }
   
   int32_t GetRawNumPages() const;
+  
+  bool GetIsEmpty() const;
 
   
   

@@ -133,6 +133,8 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 
   int32_t GetRawNumPages() const { return mPageData->mRawNumPages; }
 
+  uint32_t GetPagesInFirstSheet() const;
+
   nsresult DoPageEnd();
 
   

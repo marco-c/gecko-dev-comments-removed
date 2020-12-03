@@ -41,6 +41,8 @@ class PrintedSheetFrame final : public nsContainerFrame {
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
+  uint32_t GetNumPages() const { return mNumPages; }
+
  private:
   
   
@@ -51,6 +53,8 @@ class PrintedSheetFrame final : public nsContainerFrame {
   
   
   nsSharedPageData* mPD = nullptr;
+  
+  uint32_t mNumPages = 0;
 };
 
 }  
