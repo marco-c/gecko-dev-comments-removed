@@ -70,6 +70,12 @@ extern ArrayObject* JS_FASTCALL NewDenseFullyAllocatedArray(
     NewObjectKind newKind = GenericObject);
 
 
+
+extern ArrayObject* NewDensePartlyAllocatedArray(
+    JSContext* cx, uint32_t length, HandleObject proto = nullptr,
+    NewObjectKind newKind = GenericObject);
+
+
 extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
                                         const Value* values,
                                         HandleObject proto = nullptr,
@@ -90,10 +96,6 @@ extern ArrayObject* NewFullyAllocatedArrayTryUseGroup(
 extern ArrayObject* NewPartlyAllocatedArrayTryUseGroup(JSContext* cx,
                                                        HandleObjectGroup group,
                                                        size_t length);
-
-extern ArrayObject* NewPartlyAllocatedArrayTryReuseGroup(JSContext* cx,
-                                                         HandleObject obj,
-                                                         size_t length);
 
 extern ArrayObject* NewFullyAllocatedArrayForCallingAllocationSite(
     JSContext* cx, size_t length, NewObjectKind newKind = GenericObject);
