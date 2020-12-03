@@ -132,7 +132,7 @@ class nsPrintJob final : public nsIObserver,
   
   
   
-  int32_t GetPrintPreviewNumSheets();
+  int32_t GetPrintPreviewNumSheets() const;
   already_AddRefed<nsIPrintSettings> GetCurrentPrintSettings();
 
   
@@ -141,7 +141,7 @@ class nsPrintJob final : public nsIObserver,
   void SetIsPrintPreview(bool aIsPrintPreview);
   bool GetIsCreatingPrintPreview() const { return mIsCreatingPrintPreview; }
 
-  std::tuple<nsPageSequenceFrame*, int32_t> GetSeqFrameAndCountSheets();
+  std::tuple<nsPageSequenceFrame*, int32_t> GetSeqFrameAndCountSheets() const;
 
   bool PrePrintSheet();
   bool PrintSheet(nsPrintObject* aPOect, bool& aInRange);

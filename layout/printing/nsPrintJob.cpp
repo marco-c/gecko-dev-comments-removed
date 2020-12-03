@@ -220,30 +220,6 @@ static bool IsParentAFrameSet(nsIDocShell* aParent) {
   return isFrameSet;
 }
 
-static std::tuple<nsPageSequenceFrame*, int32_t>
-GetSeqFrameAndCountSheetsInternal(const UniquePtr<nsPrintObject>& aPO) {
-  if (!aPO) {
-    return {nullptr, 0};
-  }
-
-  
-  
-  
-  if (!aPO->mPresShell) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        false, "GetSeqFrameAndCountSheets needs a non-null pres shell");
-    return {nullptr, 0};
-  }
-
-  nsPageSequenceFrame* seqFrame = aPO->mPresShell->GetPageSequenceFrame();
-  if (!seqFrame) {
-    return {nullptr, 0};
-  }
-
-  
-  return {seqFrame, seqFrame->PrincipalChildList().GetLength()};
-}
-
 
 
 
@@ -435,13 +411,33 @@ nsresult nsPrintJob::Cancel() {
 
 
 std::tuple<nsPageSequenceFrame*, int32_t>
-nsPrintJob::GetSeqFrameAndCountSheets() {
-  MOZ_ASSERT(mPrtPreview);
+nsPrintJob::GetSeqFrameAndCountSheets() const {
+  nsPrintData* printData = mPrtPreview ? mPrtPreview : mPrt;
+  if (NS_WARN_IF(!printData)) {
+    return {nullptr, 0};
+  }
+
+  const nsPrintObject* po = printData->mPrintObject.get();
+  if (NS_WARN_IF(!po)) {
+    return {nullptr, 0};
+  }
+
   
   
-  RefPtr<nsPrintData> printDataForPrintPreview = mPrtPreview;
-  return GetSeqFrameAndCountSheetsInternal(
-      printDataForPrintPreview->mPrintObject);
+  
+  if (!po->mPresShell) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        false, "GetSeqFrameAndCountSheets needs a non-null pres shell");
+    return {nullptr, 0};
+  }
+
+  nsPageSequenceFrame* seqFrame = po->mPresShell->GetPageSequenceFrame();
+  if (!seqFrame) {
+    return {nullptr, 0};
+  }
+
+  
+  return {seqFrame, seqFrame->PrincipalChildList().GetLength()};
 }
 
 
@@ -873,31 +869,17 @@ nsresult nsPrintJob::PrintPreview(Document* aSourceDoc,
   return rv;
 }
 
-
 int32_t nsPrintJob::GetRawNumPages() const {
-  RefPtr<nsPrintData> printData = mPrtPreview ? mPrtPreview : mPrt;
-  if (NS_WARN_IF(!printData)) {
-    return 0;
-  }
-  auto [seqFrame, numSheets] =
-      GetSeqFrameAndCountSheetsInternal(printData->mPrintObject);
-
+  auto [seqFrame, numSheets] = GetSeqFrameAndCountSheets();
   Unused << numSheets;
   return seqFrame ? seqFrame->GetRawNumPages() : 0;
 }
 
-
-int32_t nsPrintJob::GetPrintPreviewNumSheets() {
-  RefPtr<nsPrintData> printData = mPrtPreview ? mPrtPreview : mPrt;
-  if (NS_WARN_IF(!printData)) {
-    return 0;
-  }
-  auto [seqFrame, numSheets] =
-      GetSeqFrameAndCountSheetsInternal(printData->mPrintObject);
+int32_t nsPrintJob::GetPrintPreviewNumSheets() const {
+  auto [seqFrame, numSheets] = GetSeqFrameAndCountSheets();
   Unused << seqFrame;
   return numSheets;
 }
-
 
 already_AddRefed<nsIPrintSettings> nsPrintJob::GetCurrentPrintSettings() {
   if (mPrt) {
