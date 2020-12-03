@@ -234,19 +234,10 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   
 
-  
-  
-  static ObjectGroup* allocationSiteGroup(JSContext* cx, JSScript* script,
-                                          jsbytecode* pc, JSProtoKey key,
-                                          HandleObject proto = nullptr);
-
   static ArrayObject* getOrFixupCopyOnWriteObject(JSContext* cx,
                                                   HandleScript script,
                                                   jsbytecode* pc);
   static ArrayObject* getCopyOnWriteObject(JSScript* script, jsbytecode* pc);
-
- private:
-  static ObjectGroup* defaultNewGroup(JSContext* cx, JSProtoKey key);
 };
 
 

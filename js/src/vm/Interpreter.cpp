@@ -5129,56 +5129,22 @@ bool js::OptimizeSpreadCall(JSContext* cx, HandleValue arg, bool* optimized) {
   return stubChain->tryOptimizeArray(cx, obj.as<ArrayObject>(), optimized);
 }
 
+
 JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
                                  jsbytecode* pc,
                                  NewObjectKind newKind ) {
   MOZ_ASSERT(newKind != SingletonObject);
   bool withTemplate =
       (JSOp(*pc) == JSOp::NewObject || JSOp(*pc) == JSOp::NewObjectWithGroup);
-  bool withTemplateGroup = (JSOp(*pc) == JSOp::NewObjectWithGroup);
-
-  RootedObjectGroup group(cx);
-  RootedPlainObject baseObject(cx);
 
   
   if (withTemplate) {
-    baseObject = &script->getObject(pc)->as<PlainObject>();
+    RootedPlainObject baseObject(cx, &script->getObject(pc)->as<PlainObject>());
+    return CopyInitializerObject(cx, baseObject, newKind);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (withTemplateGroup) {
-    group = baseObject->getGroup(cx, baseObject);
-  } else {
-    group = ObjectGroup::allocationSiteGroup(cx, script, pc, JSProto_Object);
-    if (!group) {
-      return nullptr;
-    }
-  }
-
-  RootedPlainObject obj(cx);
-
-  
-  if (withTemplate) {
-    obj = CopyInitializerObject(cx, baseObject, newKind);
-  } else {
-    MOZ_ASSERT(JSOp(*pc) == JSOp::NewInit);
-    obj = NewBuiltinClassInstanceWithKind<PlainObject>(cx, newKind);
-  }
-
-  if (!obj) {
-    return nullptr;
-  }
-
-  
-  obj->setGroup(group);
-
-  return obj;
+  MOZ_ASSERT(JSOp(*pc) == JSOp::NewInit);
+  return NewBuiltinClassInstanceWithKind<PlainObject>(cx, newKind);
 }
 
 JSObject* js::NewObjectOperationWithTemplate(JSContext* cx,
