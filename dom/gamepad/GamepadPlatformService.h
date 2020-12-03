@@ -76,71 +76,69 @@ class GamepadPlatformService final {
                       uint32_t aNumAxes, uint32_t aNumHaptics,
                       uint32_t aNumLightIndicator, uint32_t aNumTouchEvents);
   
-  void RemoveGamepad(uint32_t aIndex);
+  void RemoveGamepad(uint32_t aServiceId);
 
   
   
   
   
   
-  void NewButtonEvent(uint32_t aIndex, uint32_t aButton, bool aPressed,
+  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed,
                       bool aTouched, double aValue);
   
-  void NewButtonEvent(uint32_t aIndex, uint32_t aButton, bool aPressed);
+  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed);
   
-  void NewButtonEvent(uint32_t aIndex, uint32_t aButton, bool aPressed,
+  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed,
                       bool aTouched);
   
-  void NewButtonEvent(uint32_t aIndex, uint32_t aButton, bool aPressed,
+  void NewButtonEvent(uint32_t aServiceId, uint32_t aButton, bool aPressed,
                       double aValue);
   
   
   
-  void NewAxisMoveEvent(uint32_t aIndex, uint32_t aAxis, double aValue);
+  void NewAxisMoveEvent(uint32_t aServiceId, uint32_t aAxis, double aValue);
   
   
-  void NewPoseEvent(uint32_t aIndex, const GamepadPoseState& aState);
+  void NewPoseEvent(uint32_t aServiceId, const GamepadPoseState& aState);
   
   
-  void NewLightIndicatorTypeEvent(uint32_t aIndex, uint32_t aLight,
+  void NewLightIndicatorTypeEvent(uint32_t aServiceId, uint32_t aLight,
                                   GamepadLightIndicatorType aType);
   
   
-  void NewMultiTouchEvent(uint32_t aIndex, uint32_t aTouchArrayIndex,
+  void NewMultiTouchEvent(uint32_t aServiceId, uint32_t aTouchArrayIndex,
                           const GamepadTouchState& aState);
 
   
-  
-  void ResetGamepadIndexes();
+  static void AddChannelParent(
+      const RefPtr<GamepadEventChannelParent>& aParent);
 
   
-  void AddChannelParent(GamepadEventChannelParent* aParent);
-
-  
-  void RemoveChannelParent(GamepadEventChannelParent* aParent);
-
-  void MaybeShutdown();
+  static void RemoveChannelParent(GamepadEventChannelParent* aParent);
 
  private:
-  GamepadPlatformService();
+  explicit GamepadPlatformService(RefPtr<GamepadEventChannelParent> aParent);
   ~GamepadPlatformService();
+
+  void AddChannelParentInternal(
+      const RefPtr<GamepadEventChannelParent>& aParent);
+  bool RemoveChannelParentInternal(GamepadEventChannelParent* aParent);
+
   template <class T>
-  void NotifyGamepadChange(uint32_t aIndex, const T& aInfo);
-
-  void Cleanup();
-
-  
-  uint32_t mGamepadIndex;
+  void NotifyGamepadChange(uint32_t aServiceId, const T& aInfo,
+                           const MutexAutoLock& aProofOfLock);
 
   
-  
-  
-  nsTArray<RefPtr<GamepadEventChannelParent>> mChannelParents;
+  uint32_t mNextGamepadServiceId;
 
   
   
   Mutex mMutex;
 
+  
+  
+  
+  nsTArray<RefPtr<GamepadEventChannelParent>> mChannelParents;
   std::map<uint32_t, GamepadAdded> mGamepadAdded;
 };
 
