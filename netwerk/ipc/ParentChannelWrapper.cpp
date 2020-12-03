@@ -21,7 +21,16 @@ void ParentChannelWrapper::Register(uint64_t aRegistrarId) {
   nsCOMPtr<nsIChannel> dummy;
   MOZ_ALWAYS_SUCCEEDS(
       NS_LinkRedirectChannels(aRegistrarId, this, getter_AddRefs(dummy)));
-  MOZ_ASSERT(dummy == mChannel);
+
+#ifdef DEBUG
+  
+  
+  if (nsCOMPtr<nsIViewSourceChannel> viewSource = do_QueryInterface(mChannel)) {
+    MOZ_ASSERT(dummy == viewSource->GetInnerChannel());
+  } else {
+    MOZ_ASSERT(dummy == mChannel);
+  }
+#endif
 }
 
 

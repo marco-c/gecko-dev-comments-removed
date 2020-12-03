@@ -1665,11 +1665,12 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   
+  
   bool mustRunStreamFilterInParent = false;
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(this, parentChannel);
   RefPtr<DocumentLoadListener> docListener = do_QueryObject(parentChannel);
-  if (mResponseHead && docListener) {
+  if (mResponseHead && docListener && docListener->GetChannel() == this) {
     nsAutoCString contentType;
     mResponseHead->ContentType(contentType);
 

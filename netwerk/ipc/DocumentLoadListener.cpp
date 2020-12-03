@@ -541,15 +541,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
 
   
   
-  
-  
-  nsCOMPtr<nsIViewSourceChannel> viewSourceChannel;
-  if (aPid && (viewSourceChannel = do_QueryInterface(mChannel))) {
-    viewSourceChannel->SetReplaceRequest(false);
-  }
-
-  
-  
   AddClientChannelHelperInParent(mChannel, std::move(aInfo));
 
   if (documentContext && !documentContext->StartDocumentLoad(this)) {
@@ -1795,8 +1786,12 @@ DocumentLoadListener::RedirectToRealChannel(
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
   MOZ_ASSERT(registrar);
+  nsCOMPtr<nsIChannel> chan = mChannel;
+  if (nsCOMPtr<nsIViewSourceChannel> vsc = do_QueryInterface(chan)) {
+    chan = vsc->GetInnerChannel();
+  }
   mRedirectChannelId = nsContentUtils::GenerateLoadIdentifier();
-  MOZ_ALWAYS_SUCCEEDS(registrar->RegisterChannel(mChannel, mRedirectChannelId));
+  MOZ_ALWAYS_SUCCEEDS(registrar->RegisterChannel(chan, mRedirectChannelId));
 
   if (aDestinationProcess) {
     if (!*aDestinationProcess) {
