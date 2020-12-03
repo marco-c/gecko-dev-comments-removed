@@ -332,8 +332,6 @@ bool MapIteratorObject::next(MapIteratorObject* mapIterator,
     return true;
   }
 
-  
-  
   switch (mapIterator->kind()) {
     case MapObject::Keys:
       resultPairObj->setDenseElement(0, range->front().key.get());
@@ -1130,8 +1128,6 @@ bool SetIteratorObject::next(SetIteratorObject* setIterator,
     return true;
   }
 
-  
-  
   resultObj->setDenseElement(0, range->front().get());
   range->popFront();
   return false;

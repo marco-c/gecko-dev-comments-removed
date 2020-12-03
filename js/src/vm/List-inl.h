@@ -35,9 +35,7 @@ inline bool js::ListObject::append(JSContext* cx, JS::Handle<JS::Value> value) {
     return false;
   }
 
-  
-  
-  ensureDenseInitializedLength(cx, len, 1);
+  ensureDenseInitializedLength(len, 1);
   setDenseElement(len, value);
   return true;
 }
@@ -51,9 +49,7 @@ inline bool js::ListObject::appendValueAndSize(JSContext* cx,
     return false;
   }
 
-  
-  
-  ensureDenseInitializedLength(cx, len, 2);
+  ensureDenseInitializedLength(len, 2);
   setDenseElement(len, value);
   setDenseElement(len + 1, JS::DoubleValue(size));
   return true;
