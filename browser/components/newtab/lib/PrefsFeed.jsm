@@ -29,6 +29,12 @@ ChromeUtils.defineModuleGetter(
   "resource://messaging-system/experiments/ExperimentAPI.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "Region",
+  "resource://gre/modules/Region.jsm"
+);
+
 this.PrefsFeed = class PrefsFeed {
   constructor(prefMap) {
     this._prefMap = prefMap;
@@ -144,6 +150,16 @@ this.PrefsFeed = class PrefsFeed {
     values.platform = AppConstants.platform;
 
     
+    if (Region.home) {
+      values.region = Region.home;
+      this.geo = values.region;
+    } else if (this.geo !== "") {
+      
+      Services.obs.addObserver(this, Region.REGION_TOPIC);
+      this.geo = "";
+    }
+
+    
     values.fxa_endpoint = Services.prefs.getStringPref(
       "browser.newtabpage.activity-stream.fxaccounts.endpoint",
       "https://accounts.firefox.com"
@@ -209,9 +225,16 @@ this.PrefsFeed = class PrefsFeed {
     );
   }
 
+  uninit() {
+    this.removeListeners();
+  }
+
   removeListeners() {
     this._prefs.ignoreBranch(this);
     ExperimentAPI.off(this.onExperimentUpdated);
+    if (this.geo === "") {
+      Services.obs.removeObserver(this, Region.REGION_TOPIC);
+    }
   }
 
   async _setIndexedDBPref(id, value) {
@@ -223,13 +246,28 @@ this.PrefsFeed = class PrefsFeed {
     }
   }
 
+  observe(subject, topic, data) {
+    switch (topic) {
+      case Region.REGION_TOPIC:
+        if (data === Region.REGION_UPDATED) {
+          this.store.dispatch(
+            ac.BroadcastToContent({
+              type: at.PREF_CHANGED,
+              data: { name: "region", value: Region.home },
+            })
+          );
+        }
+        break;
+    }
+  }
+
   onAction(action) {
     switch (action.type) {
       case at.INIT:
         this.init();
         break;
       case at.UNINIT:
-        this.removeListeners();
+        this.uninit();
         break;
       case at.CLEAR_PREF:
         Services.prefs.clearUserPref(this._prefs._branchStr + action.data.name);
