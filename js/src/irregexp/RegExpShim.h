@@ -33,6 +33,7 @@
 #include "js/RegExpFlags.h"
 #include "js/Value.h"
 #include "threading/ExclusiveData.h"
+#include "util/DifferentialTesting.h"
 #include "vm/JSContext.h"
 #include "vm/MutexIDs.h"
 #include "vm/NativeObject.h"
@@ -1094,14 +1095,12 @@ class StackLimitCheck {
   
   bool HasOverflowed() {
     bool overflowed = !js::CheckRecursionLimitDontReport(cx_);
-#ifdef JS_MORE_DETERMINISTIC
-    if (overflowed) {
+    if (overflowed && js::SupportDifferentialTesting()) {
       
       
       
       fprintf(stderr, "ReportOverRecursed called\n");
     }
-#endif
     return overflowed;
   }
 
