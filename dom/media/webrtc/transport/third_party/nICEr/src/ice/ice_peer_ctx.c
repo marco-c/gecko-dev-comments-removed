@@ -311,15 +311,15 @@ int nr_ice_peer_ctx_parse_trickle_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_
 
 
     if (needs_pairing) {
-      if(r=nr_ice_media_stream_pair_candidates(pctx, stream, pstream)) {
-        r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s), stream(%s) failed to pair trickle ICE candidates",pctx->ctx->label,pctx->label,stream->label);
-        ABORT(r);
-      }
-
       
 
       if (!pctx->trickle_grace_period_timer) {
         nr_ice_peer_ctx_start_trickle_timer(pctx);
+      }
+
+      if(r=nr_ice_media_stream_pair_candidates(pctx, stream, pstream)) {
+        r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s), stream(%s) failed to pair trickle ICE candidates",pctx->ctx->label,pctx->label,stream->label);
+        ABORT(r);
       }
 
       
@@ -438,14 +438,14 @@ int nr_ice_peer_ctx_pair_new_trickle_candidate(nr_ice_ctx *ctx, nr_ice_peer_ctx 
     if ((r = nr_ice_peer_ctx_find_pstream(pctx, cand->stream, &pstream)))
       ABORT(r);
 
-    if ((r = nr_ice_media_stream_pair_new_trickle_candidate(pctx, pstream, cand)))
-      ABORT(r);
-
     
 
     if (!pctx->trickle_grace_period_timer) {
       nr_ice_peer_ctx_start_trickle_timer(pctx);
     }
+
+    if ((r = nr_ice_media_stream_pair_new_trickle_candidate(pctx, pstream, cand)))
+      ABORT(r);
 
     _status=0;
  abort:
@@ -540,10 +540,8 @@ int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
     int started = 0;
 
     
-    if(pctx->trickle_grace_period_timer) {
-      NR_async_timer_cancel(pctx->trickle_grace_period_timer);
-      pctx->trickle_grace_period_timer=0;
-    }
+
+    nr_ice_peer_ctx_start_trickle_timer(pctx);
 
     
     pctx->reported_connected = 0;
@@ -622,11 +620,10 @@ int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
 
     if (!started) {
       r_log(LOG_ICE,LOG_NOTICE,"ICE(%s): peer (%s) no checks to start",pctx->ctx->label,pctx->label);
-      ABORT(R_NOT_FOUND);
-    }
-    else {
       
-      nr_ice_peer_ctx_start_trickle_timer(pctx);
+      NR_async_timer_cancel(pctx->trickle_grace_period_timer);
+      pctx->trickle_grace_period_timer=0;
+      ABORT(R_NOT_FOUND);
     }
 
     _status=0;
