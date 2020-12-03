@@ -16,6 +16,10 @@ var { types } = require("devtools/shared/protocol/types");
 
 var Response = function(template = {}) {
   this.template = template;
+  if (this.template instanceof RetVal && this.template.isArrayType()) {
+    throw Error("Arrays should be wrapped in objects");
+  }
+
   const placeholders = findPlaceholders(template, RetVal);
   if (placeholders.length > 1) {
     throw Error("More than one RetVal specified in response");
@@ -83,6 +87,7 @@ exports.Response = Response;
 
 
 var RetVal = function(type) {
+  this._type = type;
   
   loader.lazyGetter(this, "type", function() {
     return types.getType(type);
@@ -96,6 +101,12 @@ RetVal.prototype = {
 
   read: function(v, ctx) {
     return this.type.read(v, ctx);
+  },
+
+  isArrayType: function() {
+    
+    
+    return typeof this._type === "string" && this._type.startsWith("array:");
   },
 };
 
