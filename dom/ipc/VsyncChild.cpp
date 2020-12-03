@@ -20,26 +20,6 @@ VsyncChild::VsyncChild()
 
 VsyncChild::~VsyncChild() { MOZ_ASSERT(NS_IsMainThread()); }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void VsyncChild::AddChildRefreshTimer(VsyncObserver* aVsyncObserver) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mObservers.Contains(aVsyncObserver));
