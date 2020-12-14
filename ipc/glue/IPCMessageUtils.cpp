@@ -5,6 +5,8 @@
 
 
 #include "IPCMessageUtils.h"
+
+#include <cstddef>
 #include "mozilla/CheckedInt.h"
 
 namespace IPC {

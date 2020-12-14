@@ -40,7 +40,7 @@ typedef Observer<SensorAccuracy> ISensorAccuracyObserver;
 }  
 }  
 
-#include "ipc/IPCMessageUtils.h"
+#include "ipc/EnumSerializer.h"
 
 namespace IPC {
 

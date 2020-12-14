@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_useractivation_ipc_utils_h__
 #define mozilla_dom_useractivation_ipc_utils_h__
 
-#include "ipc/IPCMessageUtils.h"
+#include "ipc/EnumSerializer.h"
 
 
 #undef None

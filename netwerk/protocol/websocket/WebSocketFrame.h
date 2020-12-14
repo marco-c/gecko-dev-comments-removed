@@ -7,14 +7,22 @@
 #ifndef mozilla_net_WebSocketFrame_h
 #define mozilla_net_WebSocketFrame_h
 
-#include "nsIWebSocketEventService.h"
-
+#include <cstdint>
+#include "nsISupports.h"
 #include "nsIWebSocketEventService.h"
 #include "nsString.h"
 
+class PickleIterator;
+
+
+
+typedef double DOMHighResTimeStamp;
+
 namespace IPC {
 class Message;
-}
+template <class P>
+struct ParamTraits;
+}  
 
 namespace mozilla {
 namespace net {
@@ -70,6 +78,23 @@ class WebSocketFrame final : public nsIWebSocketFrame {
 };
 
 }  
+}  
+
+namespace IPC {
+template <>
+struct ParamTraits<mozilla::net::WebSocketFrameData> {
+  typedef mozilla::net::WebSocketFrameData paramType;
+
+  static void Write(Message* aMsg, const paramType& aParam) {
+    aParam.WriteIPCParams(aMsg);
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    return aResult->ReadIPCParams(aMsg, aIter);
+  }
+};
+
 }  
 
 #endif  
