@@ -81,22 +81,23 @@ fn create_pre_header(
     for typ in header_args_types {
         pre_header_args_value.push(func.dfg.append_block_param(pre_header, typ), pool);
     }
+
     for BlockPredecessor {
         inst: last_inst, ..
     } in cfg.pred_iter(header)
     {
         
         if !domtree.dominates(header, last_inst, &func.layout) {
-            func.change_branch_destination(last_inst, pre_header);
+            func.rewrite_branch_destination(last_inst, header, pre_header);
         }
     }
-    {
-        let mut pos = EncCursor::new(func, isa).at_top(header);
-        
-        pos.insert_block(pre_header);
-        pos.next_inst();
-        pos.ins().jump(header, pre_header_args_value.as_slice(pool));
-    }
+
+    
+    let mut pos = EncCursor::new(func, isa).at_top(header);
+    pos.insert_block(pre_header);
+    pos.next_inst();
+    pos.ins().jump(header, pre_header_args_value.as_slice(pool));
+
     pre_header
 }
 
