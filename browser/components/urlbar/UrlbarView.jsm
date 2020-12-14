@@ -1365,14 +1365,12 @@ class UrlbarView {
     if (actionSetter) {
       actionSetter();
       item._originalActionSetter = actionSetter;
-      item.setAttribute("has-action", "true");
     } else {
       item._originalActionSetter = () => {
         action.removeAttribute("data-l10n-id");
         action.textContent = "";
       };
       item._originalActionSetter();
-      item.removeAttribute("has-action");
     }
 
     if (!title.hasAttribute("isurl")) {
@@ -1380,6 +1378,8 @@ class UrlbarView {
     } else {
       title.removeAttribute("dir");
     }
+
+    item._elements.get("titleSeparator").hidden = !actionSetter && !setURL;
   }
 
   
@@ -1962,6 +1962,18 @@ class UrlbarView {
 
       
       
+      if (
+        result.heuristic &&
+        !this.selectedElement &&
+        (localSearchMode || engine)
+      ) {
+        item.setAttribute("show-action-text", "true");
+      } else {
+        item.removeAttribute("show-action-text");
+      }
+
+      
+      
       if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
         if (engine) {
           if (!result.payload.originalEngine) {
@@ -1986,16 +1998,11 @@ class UrlbarView {
       
       
       
-      
       if (this.oneOffsRefresh && result.heuristic) {
         title.textContent =
           localSearchMode || engine
             ? this._queryContext.searchString
             : result.title;
-
-        
-        
-        item.toggleAttribute("restyled-search", localSearchMode || engine);
       }
 
       
