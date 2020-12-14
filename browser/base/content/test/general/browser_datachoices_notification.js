@@ -143,12 +143,7 @@ function clearAcceptedPolicy() {
   Preferences.reset(PREF_ACCEPTED_POLICY_DATE);
 }
 
-add_task(async function test_single_window() {
-  clearAcceptedPolicy();
-
-  
-  await closeAllNotifications();
-
+function assertCoherentInitialState() {
   
   Assert.equal(
     Preferences.get(PREF_ACCEPTED_POLICY_VERSION, 0),
@@ -164,6 +159,15 @@ add_task(async function test_single_window() {
     !TelemetryReportingPolicy.testIsUserNotified(),
     "User not notified about datareporting policy."
   );
+}
+
+add_task(async function test_single_window() {
+  clearAcceptedPolicy();
+
+  
+  await closeAllNotifications();
+
+  assertCoherentInitialState();
 
   let alertShownPromise = promiseWaitForAlertActive(gNotificationBox);
   Assert.ok(
@@ -219,9 +223,11 @@ add_task(async function test_single_window() {
 
 add_task(async function test_multiple_windows() {
   clearAcceptedPolicy();
+  assertCoherentInitialState(); 
 
   
   await closeAllNotifications();
+  assertCoherentInitialState(); 
 
   
   
@@ -232,21 +238,7 @@ add_task(async function test_multiple_windows() {
     "2nd window has a global notification box."
   );
 
-  
-  Assert.equal(
-    Preferences.get(PREF_ACCEPTED_POLICY_VERSION, 0),
-    0,
-    "No version should be set on init."
-  );
-  Assert.equal(
-    Preferences.get(PREF_ACCEPTED_POLICY_DATE, 0),
-    0,
-    "No date should be set on init."
-  );
-  Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
-    "User not notified about datareporting policy."
-  );
+  assertCoherentInitialState();
 
   let showAlertPromises = [
     promiseWaitForAlertActive(gNotificationBox),
