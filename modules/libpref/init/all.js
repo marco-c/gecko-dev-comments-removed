@@ -4718,3 +4718,8 @@ pref("browser.privatebrowsing.autostart", false);
 
 
 pref("security.external_protocol_requires_permission", true);
+
+
+#ifdef XP_WIN
+  pref("browser.enableAboutThirdParty", false);
+#endif
