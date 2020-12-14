@@ -4660,9 +4660,10 @@ void SVGTextFrame::DoTextPathLayout() {
       it.Next();
     }
 
+    bool skippedEndOfTextPath = false;
+
     
-    while (!it.AtEnd() && it.TextPathFrame() &&
-           it.TextPathFrame()->GetContent() == textPath) {
+    while (!it.AtEnd() && it.TextPathFrame()) {
       
       uint32_t i = it.TextElementCharIndex();
 
@@ -4695,6 +4696,10 @@ void SVGTextFrame::DoTextPathLayout() {
         
         
         if (it.IsOriginalCharSkipped()) {
+          if (!it.TextPathFrame()) {
+            skippedEndOfTextPath = true;
+            break;
+          }
           
         } else if (it.IsClusterAndLigatureGroupStart()) {
           break;
@@ -4702,6 +4707,9 @@ void SVGTextFrame::DoTextPathLayout() {
           partialAdvance += it.GetAdvance(context);
         }
         partialAdvances.AppendElement(partialAdvance);
+      }
+      if (skippedEndOfTextPath) {
+        break;
       }
 
       
