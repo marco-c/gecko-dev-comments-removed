@@ -181,21 +181,7 @@
 
 
 
-
-
-#define SHUTDOWN_FORCE_KILL_TIMEOUT_MS 5000
-
-
-
-
-
-
-
-
-
-
-
-#define SHUTDOWN_FORCE_CRASH_TIMEOUT_MS 45000
+#define DEFAULT_SHUTDOWN_TIMER_MS 30000
 
 
 #define PROFILE_BEFORE_CHANGE_QM_OBSERVER_ID "profile-before-change-qm"
@@ -3672,13 +3658,6 @@ QuotaManager* QuotaManager::Get() {
 }
 
 
-QuotaManager& QuotaManager::GetRef() {
-  MOZ_ASSERT(gInstance);
-
-  return *gInstance;
-}
-
-
 bool QuotaManager::IsShuttingDown() { return gShutdown; }
 
 
@@ -4088,37 +4067,6 @@ nsresult QuotaManager::Init() {
   return NS_OK;
 }
 
-void QuotaManager::MaybeRecordShutdownStep(const Client::Type aClientType,
-                                           const nsACString& aStepDescription) {
-  AssertIsOnBackgroundThread();
-
-  if (!mShutdownStartedAt) {
-    
-    
-    
-    return;
-  }
-
-  const TimeDuration elapsedSinceShutdownStart =
-      TimeStamp::NowLoRes() - *mShutdownStartedAt;
-
-  const auto stepString =
-      nsPrintfCString("%fs: %s", elapsedSinceShutdownStart.ToSeconds(),
-                      nsPromiseFlatCString(aStepDescription).get());
-
-  mShutdownSteps[aClientType].Append(stepString + "\n"_ns);
-
-#ifdef DEBUG
-  
-
-  NS_DebugBreak(
-      NS_DEBUG_WARNING,
-      nsAutoCString(Client::TypeToText(aClientType) + " shutdown step"_ns)
-          .get(),
-      stepString.get(), __FILE__, __LINE__);
-#endif
-}
-
 void QuotaManager::Shutdown() {
   AssertIsOnOwningThread();
 
@@ -4130,7 +4078,10 @@ void QuotaManager::Shutdown() {
 
   StopIdleMaintenance();
 
-  mShutdownStartedAt.init(TimeStamp::NowLoRes());
+  
+  MOZ_ALWAYS_SUCCEEDS(mShutdownTimer->InitWithNamedFuncCallback(
+      &ShutdownTimerCallback, this, DEFAULT_SHUTDOWN_TIMER_MS,
+      nsITimer::TYPE_ONE_SHOT, "QuotaManager::ShutdownTimerCallback"));
 
   const auto& allClientTypes = AllClientTypes();
 
@@ -4143,48 +4094,6 @@ void QuotaManager::Shutdown() {
   
   
   if (needsToWait) {
-    MOZ_ALWAYS_SUCCEEDS(mShutdownTimer->InitWithNamedFuncCallback(
-        [](nsITimer* aTimer, void* aClosure) {
-          auto* const quotaManager = static_cast<QuotaManager*>(aClosure);
-
-          for (Client::Type type : quotaManager->AllClientTypes()) {
-            quotaManager->mClients[type]->ForceKillActors();
-          }
-
-          MOZ_ALWAYS_SUCCEEDS(aTimer->InitWithNamedFuncCallback(
-              [](nsITimer* aTimer, void* aClosure) {
-                auto* const quotaManager = static_cast<QuotaManager*>(aClosure);
-
-                nsCString annotation;
-
-                for (Client::Type type : quotaManager->AllClientTypes()) {
-                  auto& quotaClient = *quotaManager->mClients[type];
-
-                  if (!quotaClient.IsShutdownCompleted()) {
-                    annotation.Append(nsPrintfCString(
-                        "%s: %s\nIntermediate steps:\n%s\n\n",
-                        Client::TypeToText(type).get(),
-                        quotaClient.GetShutdownStatus().get(),
-                        quotaManager->mShutdownSteps[type].get()));
-                  }
-                }
-
-                
-                
-                MOZ_DIAGNOSTIC_ASSERT(!annotation.IsEmpty());
-
-                CrashReporter::AnnotateCrashReport(
-                    CrashReporter::Annotation::QuotaManagerShutdownTimeout,
-                    annotation.get());
-
-                MOZ_CRASH("Quota manager shutdown timed out");
-              },
-              aClosure, SHUTDOWN_FORCE_CRASH_TIMEOUT_MS,
-              nsITimer::TYPE_ONE_SHOT, "quota::QuotaManager::ForceCrashTimer"));
-        },
-        this, SHUTDOWN_FORCE_KILL_TIMEOUT_MS, nsITimer::TYPE_ONE_SHOT,
-        "quota::QuotaManager::ForceKillTimer"));
-
     MOZ_ALWAYS_TRUE(SpinEventLoopUntil([this, &allClientTypes] {
       return !gNormalOriginOps &&
              std::all_of(allClientTypes.cbegin(), allClientTypes.cend(),
@@ -7710,6 +7619,22 @@ void QuotaManager::FinalizeOriginEviction(
     op->RunOnIOThreadImmediately();
   } else {
     op->Dispatch();
+  }
+}
+
+void QuotaManager::ShutdownTimerCallback(nsITimer* aTimer, void* aClosure) {
+  AssertIsOnBackgroundThread();
+
+  auto quotaManager = static_cast<QuotaManager*>(aClosure);
+  MOZ_ASSERT(quotaManager);
+
+  NS_WARNING(
+      "Some storage operations are taking longer than expected "
+      "during shutdown and will be aborted!");
+
+  
+  for (RefPtr<Client>& client : quotaManager->mClients) {
+    client->AbortAllOperations();
   }
 }
 
