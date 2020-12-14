@@ -362,7 +362,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   static void CopyFavicon(nsIURI* aOldURI, nsIURI* aNewURI,
-                          nsIPrincipal* aLoadingPrincipal,
                           bool aInPrivateBrowsing);
 
   static nsDocShell* Cast(nsIDocShell* aDocShell) {
