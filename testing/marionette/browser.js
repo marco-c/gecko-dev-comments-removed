@@ -94,10 +94,6 @@ class MobileTabBrowser {
     });
     this.window.document.dispatchEvent(event);
   }
-
-  get selectedBrowser() {
-    return this.selectedTab.linkedBrowser;
-  }
 }
 
 
@@ -161,6 +157,8 @@ browser.Context = class {
     
     
     this.tabBrowser = browser.getTabBrowser(this.window);
+
+    this.knownFrames = [];
 
     
     this.newSession = true;
@@ -467,23 +465,23 @@ browser.Context = class {
 
 
 
-  register(target) {
-    if (!this.tabBrowser) {
-      return;
+
+
+  register(uid, target) {
+    if (this.tabBrowser) {
+      
+      
+      if (!this.tab) {
+        this.switchToTab();
+      }
+
+      if (target === this.contentBrowser) {
+        this.updateIdForBrowser(this.contentBrowser, uid);
+      }
     }
 
     
-    
-    if (!this.tab) {
-      this.switchToTab();
-    }
-
-    if (target === this.contentBrowser) {
-      
-      
-      const uid = target.browsingContext.id;
-      this.updateIdForBrowser(this.contentBrowser, uid);
-    }
+    this.knownFrames.push(uid);
   }
 };
 
