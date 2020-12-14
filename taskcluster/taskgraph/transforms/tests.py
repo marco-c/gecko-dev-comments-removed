@@ -572,8 +572,6 @@ test_description_schema = Schema(
         Optional("fetches"): {
             text_type: optionally_keyed_by("test-platform", [text_type])
         },
-        
-        Optional("python-3"): bool,
     }
 )
 
