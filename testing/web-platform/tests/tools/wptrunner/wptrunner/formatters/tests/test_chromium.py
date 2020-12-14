@@ -427,7 +427,7 @@ def test_flaky_test_expected(capfd):
     
     assert test_obj["actual"] == "FAIL"
     
-    assert test_obj["expected"] == "PASS FAIL TIMEOUT"
+    assert test_obj["expected"] == "FAIL PASS TIMEOUT"
     
     
     assert "is_regression" not in test_obj
@@ -534,6 +534,39 @@ def test_known_intermittent_empty(capfd):
     
     assert test_obj["actual"] == "PASS"
     assert test_obj["expected"] == "PASS"
+
+
+def test_known_intermittent_duplicate(capfd):
+    
+
+    
+    output = StringIO()
+    logger = structuredlog.StructuredLogger("test_a")
+    logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
+
+    
+    
+    
+    
+    logger.suite_start(["t1"], run_info={}, time=123)
+    logger.test_start("t1")
+    logger.test_end("t1", status="ERROR", expected="ERROR", known_intermittent=["FAIL", "ERROR"])
+    logger.suite_end()
+
+    
+    
+    captured = capfd.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
+
+    
+    output.seek(0)
+    output_json = json.load(output)
+
+    test_obj = output_json["tests"]["t1"]
+    assert test_obj["actual"] == "FAIL"
+    
+    assert test_obj["expected"] == "FAIL"
 
 
 def test_reftest_screenshots(capfd):
