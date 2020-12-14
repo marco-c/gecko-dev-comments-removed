@@ -33,7 +33,12 @@ var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
     
     
     
-    return {};
+    return {
+      
+      overflowDebuggingPref: true,
+      
+      targetBrowsersPref: true,
+    };
   },
 
   getBoolPref: function(name) {

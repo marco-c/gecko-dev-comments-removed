@@ -88,12 +88,19 @@ class WorkerDescriptorFront extends TargetMixin(
         return;
       }
 
-      const workerTargetForm = await super.getTarget();
+      
+      let connectResponse;
+      if (this.actorID.includes("workerDescriptor")) {
+        connectResponse = await super.getTarget();
+      } else {
+        
+        connectResponse = await this.connect({});
+      }
 
       
       
-      this.targetForm.consoleActor = workerTargetForm.consoleActor;
-      this.targetForm.threadActor = workerTargetForm.threadActor;
+      this.targetForm.consoleActor = connectResponse.consoleActor;
+      this.targetForm.threadActor = connectResponse.threadActor;
 
       if (this.isDestroyedOrBeingDestroyed()) {
         return;

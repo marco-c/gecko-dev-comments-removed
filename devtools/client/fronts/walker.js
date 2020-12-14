@@ -12,6 +12,12 @@ const {
 const { walkerSpec } = require("devtools/shared/specs/walker");
 const { safeAsyncMethod } = require("devtools/shared/async-utils");
 
+loader.lazyRequireGetter(
+  this,
+  "nodeConstants",
+  "devtools/shared/dom-node-constants"
+);
+
 
 
 
@@ -322,6 +328,33 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
         if ("numChildren" in change) {
           targetFront._form.numChildren = change.numChildren;
         }
+      } else if (change.type === "frameLoad") {
+        
+        
+
+        
+        
+        
+        for (const child of targetFront.treeChildren()) {
+          if (child.nodeType === nodeConstants.DOCUMENT_NODE) {
+            console.warn(
+              "Got an unexpected frameLoad in the inspector, " +
+                "please file a bug on bugzilla.mozilla.org!"
+            );
+            console.trace();
+          }
+        }
+      } else if (change.type === "documentUnload") {
+        
+        
+
+        
+        
+        emittedMutation.target = targetFront.actorID;
+        emittedMutation.targetParent = targetFront.parentNode();
+
+        
+        this._releaseFront(targetFront, true);
       } else if (change.type === "shadowRootAttached") {
         targetFront._form.isShadowHost = true;
       } else if (change.type === "customElementDefined") {
@@ -516,19 +549,29 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
   }
 
   _onRootNodeAvailable(rootNode) {
-    if (rootNode.isTopLevelDocument) {
+    if (this._isTopLevelRootNode(rootNode)) {
       this.rootNode = rootNode;
       this._rootNodePromiseResolve(this.rootNode);
     }
   }
 
   _onRootNodeDestroyed(rootNode) {
-    if (rootNode.isTopLevelDocument) {
+    if (this._isTopLevelRootNode(rootNode)) {
       this._rootNodePromise = new Promise(
         r => (this._rootNodePromiseResolve = r)
       );
       this.rootNode = null;
     }
+  }
+
+  _isTopLevelRootNode(rootNode) {
+    if (!rootNode.traits.supportsIsTopLevelDocument) {
+      
+      
+      return true;
+    }
+
+    return rootNode.isTopLevelDocument;
   }
 
   
@@ -540,8 +583,16 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     if (this._isPicking) {
       return Promise.resolve();
     }
-
     this._isPicking = true;
+
+    
+    if (!this.traits.supportsNodePicker) {
+      
+      return doFocus
+        ? this.parentFront.highlighter.pickAndFocus()
+        : this.parentFront.highlighter.pick();
+    }
+
     return super.pick(doFocus);
   }
 
@@ -552,8 +603,14 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     if (!this._isPicking) {
       return Promise.resolve();
     }
-
     this._isPicking = false;
+
+    
+    if (!this.traits.supportsNodePicker) {
+      
+      return this.parentFront.highlighter.cancelPick();
+    }
+
     return super.cancelPick();
   }
 }

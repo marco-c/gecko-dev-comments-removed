@@ -276,10 +276,14 @@ StyleSheetEditor.prototype = {
 
   async _getSourceTextAndPrettify() {
     const styleSheetsFront = await this._getStyleSheetsFront();
+    const traits = await styleSheetsFront.getTraits();
 
     let longStr = null;
     if (this.styleSheet.isOriginalSource) {
       
+      
+      longStr = await this.styleSheet.getText();
+    } else if (!traits.supportResourceRequests) {
       
       longStr = await this.styleSheet.getText();
     } else {
@@ -552,7 +556,13 @@ StyleSheetEditor.prototype = {
 
   async toggleDisabled() {
     const styleSheetsFront = await this._getStyleSheetsFront();
-    styleSheetsFront.toggleDisabled(this.resourceId).catch(console.error);
+    const traits = await styleSheetsFront.getTraits();
+
+    if (traits.supportResourceRequests) {
+      styleSheetsFront.toggleDisabled(this.resourceId).catch(console.error);
+    } else {
+      this.styleSheet.toggleDisabled().catch(console.error);
+    }
   },
 
   
@@ -598,12 +608,17 @@ StyleSheetEditor.prototype = {
 
     try {
       const styleSheetsFront = await this._getStyleSheetsFront();
-      await styleSheetsFront.update(
-        this.resourceId,
-        this._state.text,
-        this.transitionsEnabled
-      );
+      const traits = await styleSheetsFront.getTraits();
 
+      if (traits.supportResourceRequests) {
+        await styleSheetsFront.update(
+          this.resourceId,
+          this._state.text,
+          this.transitionsEnabled
+        );
+      } else {
+        await this.styleSheet.update(this._state.text, this.transitionsEnabled);
+      }
       
       
       this._mappings = null;
@@ -808,12 +823,18 @@ StyleSheetEditor.prototype = {
       this._isUpdating = true;
 
       const styleSheetsFront = await this._getStyleSheetsFront();
+      const traits = await styleSheetsFront.getTraits();
 
-      await styleSheetsFront.update(
-        this.resourceId,
-        text,
-        this.transitionsEnabled
-      );
+      if (traits.supportResourceRequests) {
+        await styleSheetsFront.update(
+          this.resourceId,
+          text,
+          this.transitionsEnabled
+        );
+      } else {
+        const relatedSheet = this.styleSheet.relatedStyleSheet;
+        await relatedSheet.update(text, this.transitionsEnabled);
+      }
     }, this.markLinkedFileBroken);
   },
 

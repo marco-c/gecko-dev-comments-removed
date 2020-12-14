@@ -55,7 +55,12 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
   getTraits() {
     return {
-      traits: {},
+      traits: {
+        
+        isFileNameSupported: true,
+        
+        supportResourceRequests: true,
+      },
     };
   },
 

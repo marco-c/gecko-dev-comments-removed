@@ -1407,8 +1407,21 @@ MarkupView.prototype = {
 
   _onWalkerMutations: function(mutations) {
     for (const mutation of mutations) {
-      const type = mutation.type;
-      const target = mutation.target;
+      let type = mutation.type;
+      let target = mutation.target;
+
+      if (mutation.type === "documentUnload") {
+        
+        
+
+        
+        
+        type = "childList";
+        target = mutation.targetParent;
+        if (!target) {
+          continue;
+        }
+      }
 
       const container = this.getContainer(target);
       if (!container) {
