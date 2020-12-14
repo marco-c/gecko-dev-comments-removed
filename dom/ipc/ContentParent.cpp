@@ -665,6 +665,10 @@ void ContentParent::StartUp() {
   }
 
   
+  
+  nsDebugImpl::SetMultiprocessMode("Parent");
+
+  
   RegisterStrongMemoryReporter(new ContentParentsMemoryReporter());
 
   BackgroundChild::Startup();
@@ -2575,10 +2579,6 @@ ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
   sContentParents->insertBack(this);
 
   mMessageManager = nsFrameMessageManager::NewProcessMessageManager(true);
-
-  
-  
-  nsDebugImpl::SetMultiprocessMode("Parent");
 
 #if defined(XP_WIN)
   if (XRE_IsParentProcess()) {
