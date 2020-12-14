@@ -80,11 +80,15 @@ add_task(async function setup() {
 
   
   registerCleanupFunction(async function() {
+    let settingsWritten = SearchTestUtils.promiseSearchNotification(
+      "write-settings-to-disk-complete"
+    );
     await SearchTestUtils.updateRemoteSettingsConfig();
     await gHttpServer.stop();
     gHttpServer = null;
     await PlacesUtils.history.clear();
     gCUITestUtils.removeSearchBar();
+    await settingsWritten;
   });
 });
 
