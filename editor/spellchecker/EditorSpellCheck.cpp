@@ -14,6 +14,7 @@
 #include "mozilla/dom/StaticRange.h"
 #include "mozilla/intl/LocaleService.h"    
 #include "mozilla/intl/MozLocale.h"        
+#include "mozilla/intl/OSPreferences.h"    
 #include "mozilla/mozalloc.h"              
 #include "mozilla/mozSpellChecker.h"       
 #include "mozilla/Preferences.h"           
@@ -47,6 +48,7 @@ namespace mozilla {
 
 using namespace dom;
 using intl::LocaleService;
+using intl::OSPreferences;
 
 class UpdateDictionaryHolder {
  private:
@@ -737,6 +739,7 @@ nsresult EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher) {
 
 
 
+
   
   
   
@@ -843,6 +846,7 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
   nsAutoCString preferredDict;
   Preferences::GetLocalizedCString("spellchecker.dictionary", preferredDict);
 
+  nsAutoCString appLocaleStr;
   if (!dictName.IsEmpty()) {
     
     BuildDictionaryList(dictName, dictList, DICT_COMPARE_CASE_INSENSITIVE,
@@ -872,6 +876,31 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
                           DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
     }
 
+    if (tryDictList.IsEmpty()) {
+      
+      
+      LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
+      if (!appLocaleStr.IsEmpty()) {
+        mozilla::intl::Locale appLoc = mozilla::intl::Locale(appLocaleStr);
+        if (langCode.Equals(appLoc.GetLanguage())) {
+          BuildDictionaryList(appLocaleStr, dictList,
+                              DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
+        }
+      }
+
+      
+      
+      nsAutoCString sysLocaleStr;
+      OSPreferences::GetInstance()->GetSystemLocale(sysLocaleStr);
+      if (!sysLocaleStr.IsEmpty()) {
+        mozilla::intl::Locale sysLoc = mozilla::intl::Locale(sysLocaleStr);
+        if (langCode.Equals(sysLoc.GetLanguage())) {
+          BuildDictionaryList(sysLocaleStr, dictList,
+                              DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
+        }
+      }
+    }
+
     
 #ifdef DEBUG_DICT
     printf("***** Trying to find match for language code |%s|\n",
@@ -894,11 +923,13 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
 
   
   
-  LocaleService::GetInstance()->GetAppLocaleAsBCP47(dictName);
+  if (appLocaleStr.IsEmpty()) {
+    LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
+  }
 #ifdef DEBUG_DICT
-  printf("***** Trying locale |%s|\n", dictName.get());
+  printf("***** Trying locale |%s|\n", appLocaleStr.get());
 #endif
-  BuildDictionaryList(dictName, dictList, DICT_COMPARE_CASE_INSENSITIVE,
+  BuildDictionaryList(appLocaleStr, dictList, DICT_COMPARE_CASE_INSENSITIVE,
                       tryDictList);
 
   
