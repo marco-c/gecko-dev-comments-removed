@@ -125,7 +125,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     this.applicationType = "browser";
 
     this.traits = {
-      sources: true,
       networkMonitor: true,
       bulk: true,
       
