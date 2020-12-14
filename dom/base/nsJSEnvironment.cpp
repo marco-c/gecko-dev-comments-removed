@@ -94,7 +94,6 @@ using namespace mozilla::dom;
 static nsITimer* sGCTimer;
 static nsITimer* sShrinkingGCTimer;
 static StaticRefPtr<IdleTaskRunner> sCCRunner;
-static StaticRefPtr<IdleTaskRunner> sICCRunner;
 static nsITimer* sFullGCTimer;
 static StaticRefPtr<IdleTaskRunner> sInterSliceGCRunner;
 
@@ -285,7 +284,6 @@ static void KillTimers() {
   nsJSContext::KillGCTimer();
   nsJSContext::KillShrinkingGCTimer();
   nsJSContext::KillCCRunner();
-  nsJSContext::KillICCRunner();
   nsJSContext::KillFullGCTimer();
   nsJSContext::KillInterSliceGCRunner();
 }
@@ -1471,26 +1469,6 @@ uint32_t nsJSContext::GetMaxCCSliceTimeSinceClear() {
   return sCCStats.mMaxSliceTimeSinceClear.ToMilliseconds();
 }
 
-static bool ICCRunnerFired(TimeStamp aDeadline) {
-  if (sScheduler.mDidShutdown) {
-    return false;
-  }
-
-  
-  
-
-  if (sScheduler.InIncrementalGC()) {
-    TimeStamp now = TimeStamp::Now();
-    sScheduler.EnsureCCIsBlocked(now);
-    if (sScheduler.GetCCBlockedTime(now).value() < kMaxCCLockedoutTime) {
-      return false;
-    }
-  }
-
-  nsJSContext::RunCycleCollectorSlice(aDeadline);
-  return true;
-}
-
 
 void nsJSContext::BeginCycleCollectionCallback() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1499,8 +1477,6 @@ void nsJSContext::BeginCycleCollectionCallback() {
   sCCStats.mBeginTime =
       sCCStats.mBeginSliceTime.IsNull() ? startTime : sCCStats.mBeginSliceTime;
   sCCStats.mSuspected = nsCycleCollector_suspectedCount();
-
-  KillCCRunner();
 
   
   
@@ -1512,27 +1488,22 @@ void nsJSContext::BeginCycleCollectionCallback() {
     sCCStats.AfterSyncForgetSkippable(startTime);
   }
 
-  MOZ_ASSERT(!sICCRunner,
-             "Tried to create a new ICC timer when one already existed.");
-
   if (sShuttingDown) {
     return;
   }
 
-  
-  
-  
-  sICCRunner = IdleTaskRunner::Create(
-      ICCRunnerFired, "BeginCycleCollectionCallback::ICCRunnerFired",
-      kICCIntersliceDelay.ToMilliseconds(),
-      kIdleICCSliceBudget.ToMilliseconds(), true, [] { return sShuttingDown; });
+  if (!sCCRunner) {
+    sScheduler.InitCCRunnerStateMachine(
+        mozilla::CCGCScheduler::CCRunnerState::CycleCollecting);
+  }
+  EnsureCCRunner(kICCIntersliceDelay, kIdleICCSliceBudget);
 }
 
 
 void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsJSContext::KillICCRunner();
+  nsJSContext::KillCCRunner();
 
   
   
@@ -1642,10 +1613,6 @@ void ShrinkingGCTimerFired(nsITimer* aTimer, void* aClosure) {
 }
 
 static bool CCRunnerFired(TimeStamp aDeadline) {
-  if (sScheduler.mDidShutdown) {
-    return false;
-  }
-
   bool didDoWork = false;
 
   using CCRunnerAction = CCGCScheduler::CCRunnerAction;
@@ -1703,6 +1670,23 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
 }
 
 
+void nsJSContext::EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget) {
+  MOZ_ASSERT(!sShuttingDown);
+
+  if (!sCCRunner) {
+    sCCRunner = IdleTaskRunner::Create(
+        CCRunnerFired, "EnsureCCRunner::CCRunnerFired", aDelay.ToMilliseconds(),
+        aBudget.ToMilliseconds(), true, [] { return sShuttingDown; });
+  } else {
+    sCCRunner->SetBudget(aBudget.ToMilliseconds());
+    nsIEventTarget* target = mozilla::GetCurrentEventTarget();
+    if (target) {
+      sCCRunner->SetTimer(aDelay.ToMilliseconds(), target);
+    }
+  }
+}
+
+
 bool nsJSContext::HasHadCleanupSinceLastGC() {
   return sScheduler.IsEarlyForgetSkippable(1);
 }
@@ -1740,14 +1724,8 @@ void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
         "Don't check the CC timers if the CC is locked out during an iGC.");
 
     if (sCCRunner) {
-      MOZ_ASSERT(!sICCRunner,
-                 "Shouldn't have both sCCRunner and sICCRunner active at the "
-                 "same time");
       sCCRunner->SetDeadline(aDeadline);
       runnable = sCCRunner;
-    } else if (sICCRunner) {
-      sICCRunner->SetDeadline(aDeadline);
-      runnable = sICCRunner;
     }
   }
 
@@ -1840,13 +1818,6 @@ void nsJSContext::PokeGC(JS::GCReason aReason, JSObject* aObj,
     return;
   }
 
-  if (sICCRunner) {
-    
-    
-    sScheduler.mNeedsGCAfterCC = true;
-    return;
-  }
-
   static bool first = true;
 
   NS_NewTimerWithFuncCallback(
@@ -1873,7 +1844,7 @@ void nsJSContext::PokeShrinkingGC() {
 
 
 void nsJSContext::MaybePokeCC() {
-  if (sCCRunner || sICCRunner || !sScheduler.mHasRunGC || sShuttingDown) {
+  if (sCCRunner || sShuttingDown) {
     return;
   }
 
@@ -1881,12 +1852,11 @@ void nsJSContext::MaybePokeCC() {
     
     nsCycleCollector_dispatchDeferredDeletion();
 
-    sScheduler.ActivateCCRunner();
-    sCCRunner =
-        IdleTaskRunner::Create(CCRunnerFired, "MaybePokeCC::CCRunnerFired",
-                               kCCSkippableDelay.ToMilliseconds(),
-                               kForgetSkippableSliceDuration.ToMilliseconds(),
-                               true, [] { return sShuttingDown; });
+    if (!sCCRunner) {
+      sScheduler.InitCCRunnerStateMachine(
+          mozilla::CCGCScheduler::CCRunnerState::ReducePurple);
+    }
+    EnsureCCRunner(kCCSkippableDelay, kForgetSkippableSliceDuration);
   }
 }
 
@@ -1927,16 +1897,6 @@ void nsJSContext::KillCCRunner() {
   if (sCCRunner) {
     sCCRunner->Cancel();
     sCCRunner = nullptr;
-  }
-}
-
-
-void nsJSContext::KillICCRunner() {
-  sScheduler.UnblockCC();
-
-  if (sICCRunner) {
-    sICCRunner->Cancel();
-    sICCRunner = nullptr;
   }
 }
 
