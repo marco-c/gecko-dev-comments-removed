@@ -517,8 +517,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "HTMLMenuElement", insecureContext: true },
   
-  { name: "HTMLMenuItemElement", insecureContext: true },
-  
   { name: "HTMLMetaElement", insecureContext: true },
   
   { name: "HTMLMeterElement", insecureContext: true },
