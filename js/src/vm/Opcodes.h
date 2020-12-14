@@ -823,14 +823,8 @@
 
 
 
-
-
-
-
-
  \
     MACRO(NewObject, new_object, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
-    MACRO(NewObjectWithGroup, new_object_with_group, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
     
 
 
@@ -3600,6 +3594,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(233)                                   \
   MACRO(234)                                   \
   MACRO(235)                                   \
   MACRO(236)                                   \

@@ -3910,8 +3910,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     }
     END_CASE(NewArray)
 
-    CASE(NewObject)
-    CASE(NewObjectWithGroup) {
+    CASE(NewObject) {
       JSObject* obj = NewObjectOperation(cx, script, REGS.pc);
       if (!obj) {
         goto error;
@@ -5125,16 +5124,13 @@ bool js::OptimizeSpreadCall(JSContext* cx, HandleValue arg, bool* optimized) {
   return stubChain->tryOptimizeArray(cx, obj.as<ArrayObject>(), optimized);
 }
 
-
 JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
                                  jsbytecode* pc,
                                  NewObjectKind newKind ) {
   MOZ_ASSERT(newKind != SingletonObject);
-  bool withTemplate =
-      (JSOp(*pc) == JSOp::NewObject || JSOp(*pc) == JSOp::NewObjectWithGroup);
 
   
-  if (withTemplate) {
+  if (JSOp(*pc) == JSOp::NewObject) {
     RootedPlainObject baseObject(cx, &script->getObject(pc)->as<PlainObject>());
     return CopyInitializerObject(cx, baseObject, newKind);
   }
