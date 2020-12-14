@@ -16,8 +16,6 @@
 
 @implementation nsTouchBar
 
-static const NSTouchBarItemIdentifier BaseIdentifier = @"com.mozilla.firefox.touchbar";
-
 
 
 static NSTouchBarItemIdentifier ShareScrubberIdentifier =
@@ -63,7 +61,8 @@ static const uint32_t kInputIconSize = 16;
     if (!aInputs) {
       
       
-      self.customizationIdentifier = [BaseIdentifier stringByAppendingPathExtension:@"defaultbar"];
+      self.customizationIdentifier =
+          [kTouchBarBaseIdentifier stringByAppendingPathExtension:@"defaultbar"];
       nsCOMPtr<nsIArray> allItems;
 
       nsresult rv = mTouchBarHelper->GetAllItems(getter_AddRefs(allItems));

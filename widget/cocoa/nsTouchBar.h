@@ -11,6 +11,8 @@
 #include "nsTouchBarInput.h"
 #include "nsTouchBarNativeAPIDefines.h"
 
+const NSTouchBarItemIdentifier kTouchBarBaseIdentifier = @"com.mozilla.firefox.touchbar";
+
 
 
 
