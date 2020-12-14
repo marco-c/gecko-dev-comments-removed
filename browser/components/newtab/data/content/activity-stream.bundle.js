@@ -9675,65 +9675,24 @@ class Topic extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
   }
 
 }
-
-class ExploreTopics extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  render() {
-    const {
-      explore_topics
-    } = this.props;
-
-    if (!explore_topics) {
-      return null;
-    }
-
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_1___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(Topic, {
-      dispatch: this.props.dispatch,
-      className: "ds-navigation-inline-explore-more",
-      url: explore_topics.url,
-      name: explore_topics.name
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(Topic, {
-      dispatch: this.props.dispatch,
-      className: "ds-navigation-header-explore-more",
-      url: explore_topics.url,
-      name: explore_topics.header
-    }));
-  }
-
-}
-
 class Navigation extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
   render() {
-    const {
-      links
-    } = this.props || [];
-    const {
-      alignment
-    } = this.props || "centered"; 
-    
-    
-    
-
-    const variant = this.props.display_variant || "basic";
+    const links = this.props.links || [];
+    const alignment = this.props.alignment || "centered";
     const header = this.props.header || {};
-    const {
-      explore_topics
-    } = this.props;
     return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
-      className: `ds-navigation ds-navigation-${alignment} ds-navigation-variant-${variant}`
+      className: `ds-navigation ds-navigation-${alignment}`
     }, header.title ? react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_3__["FluentOrText"], {
       message: header.title
     }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", {
-      className: "ds-header"
+      className: "ds-navigation-header"
     })) : null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("ul", null, links && links.map(t => react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("li", {
       key: t.name
     }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(Topic, {
       url: t.url,
       name: t.name,
       dispatch: this.props.dispatch
-    })))), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(ExploreTopics, {
-      dispatch: this.props.dispatch,
-      explore_topics: explore_topics
-    }));
+    })))));
   }
 
 }
