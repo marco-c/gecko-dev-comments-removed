@@ -80,7 +80,18 @@ class nsJSUtils {
   static nsresult ModuleInstantiate(JSContext* aCx,
                                     JS::Handle<JSObject*> aModule);
 
-  static nsresult ModuleEvaluate(JSContext* aCx, JS::Handle<JSObject*> aModule);
+  
+
+
+
+
+
+
+
+
+
+  static JSObject* ModuleEvaluate(JSContext* aCx,
+                                  JS::Handle<JSObject*> aModule);
 
   
   
