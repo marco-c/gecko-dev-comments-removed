@@ -411,8 +411,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   
   if (newFocusedElement && focusedElement != newFocusedElement) {
-    DebugOnly<nsresult> rvIgnored =
-        nsFocusManager::GetFocusManager()->SetFocus(newFocusedElement, 0);
+    RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
+    DebugOnly<nsresult> rvIgnored = fm->SetFocus(newFocusedElement, 0);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "nsFocusManager::SetFocus() failed to set focus "
                          "to the element, but ignored");
