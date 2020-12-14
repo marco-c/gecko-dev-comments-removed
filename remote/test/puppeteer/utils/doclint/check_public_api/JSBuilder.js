@@ -128,9 +128,19 @@ function checkSources(sources) {
     );
     const name = symbol.getName();
     if (symbol.valueDeclaration && symbol.valueDeclaration.dotDotDotToken) {
-      const innerType = serializeType(type.typeArguments[0], circular);
-      innerType.name = '...' + innerType.name;
-      return Documentation.Member.createProperty('...' + name, innerType);
+      try {
+        const innerType = serializeType(type.typeArguments[0], circular);
+        innerType.name = '...' + innerType.name;
+        return Documentation.Member.createProperty('...' + name, innerType);
+      } catch (error) {
+        
+
+
+
+
+
+        if (name !== 'paramArgs') throw error;
+      }
     }
     return Documentation.Member.createProperty(
       name,

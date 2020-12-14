@@ -14,15 +14,15 @@
 
 
 
-import utils from './utils';
+import utils from './utils.js';
 import os from 'os';
 import expect from 'expect';
 import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
-} from './mocha-utils';
-import { KeyInput } from '../src/common/USKeyboardLayout';
+} from './mocha-utils'; 
+import { KeyInput } from '../lib/cjs/puppeteer/common/USKeyboardLayout.js';
 
 describe('Keyboard', function () {
   setupTestBrowserHooks();
@@ -386,7 +386,15 @@ describe('Keyboard', function () {
       });
     });
     await page.keyboard.press('Meta');
-    const [key, code, metaKey] = await page.evaluate('result');
+    
+    
+    
+    
+    const [key, code, metaKey] = (await page.evaluate('result')) as [
+      string,
+      string,
+      boolean
+    ];
     if (isFirefox && os.platform() !== 'darwin') expect(key).toBe('OS');
     else expect(key).toBe('Meta');
 

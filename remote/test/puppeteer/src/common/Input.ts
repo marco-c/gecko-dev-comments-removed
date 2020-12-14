@@ -14,9 +14,9 @@
 
 
 
-import { assert } from './assert';
-import { CDPSession } from './Connection';
-import { keyDefinitions, KeyDefinition, KeyInput } from './USKeyboardLayout';
+import { assert } from './assert.js';
+import { CDPSession } from './Connection.js';
+import { keyDefinitions, KeyDefinition, KeyInput } from './USKeyboardLayout.js';
 
 type KeyDescription = Required<
   Pick<KeyDefinition, 'keyCode' | 'key' | 'text' | 'code' | 'location'>
@@ -291,6 +291,14 @@ export interface MouseOptions {
 
 
 
+export interface MouseWheelOptions {
+  deltaX?: number;
+  deltaY?: number;
+}
+
+
+
+
 
 
 
@@ -446,6 +454,38 @@ export class Mouse {
       clickCount,
     });
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async wheel(options: MouseWheelOptions = {}): Promise<void> {
+    const { deltaX = 0, deltaY = 0 } = options;
+    await this._client.send('Input.dispatchMouseEvent', {
+      type: 'mouseWheel',
+      x: this._x,
+      y: this._y,
+      deltaX,
+      deltaY,
+      modifiers: this._keyboard._modifiers,
+      pointerType: 'mouse',
+    });
+  }
 }
 
 
@@ -470,15 +510,6 @@ export class Touchscreen {
 
 
   async tap(x: number, y: number): Promise<void> {
-    
-    
-    
-    await this._client.send('Runtime.evaluate', {
-      expression:
-        'new Promise(x => requestAnimationFrame(() => requestAnimationFrame(x)))',
-      awaitPromise: true,
-    });
-
     const touchPoints = [{ x: Math.round(x), y: Math.round(y) }];
     await this._client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',

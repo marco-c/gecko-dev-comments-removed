@@ -1,0 +1,11 @@
+const path = require('path');
+
+require('ts-node').register({
+  
+
+
+
+
+  ignore: ['lib/*', 'node_modules'],
+  project: path.join(__dirname, 'tsconfig.test.json'),
+});

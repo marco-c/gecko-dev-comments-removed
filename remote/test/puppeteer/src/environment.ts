@@ -14,4 +14,4 @@
 
 
 
-export const isNode = typeof document === 'undefined';
+export const isNode = !!(typeof process !== 'undefined' && process.version);

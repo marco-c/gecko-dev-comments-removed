@@ -19,7 +19,7 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
-} from './mocha-utils';
+} from './mocha-utils'; 
 
 describe('Touchscreen', function () {
   setupTestBrowserHooks();

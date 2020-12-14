@@ -20,7 +20,7 @@ import {
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
   describeFailsFirefox,
-} from './mocha-utils';
+} from './mocha-utils'; 
 
 describeFailsFirefox('Accessibility', function () {
   setupTestBrowserHooks();

@@ -14,7 +14,7 @@
 
 
 
-import Protocol from '../protocol';
+import { Protocol } from 'devtools-protocol';
 
 
 

@@ -25,5 +25,5 @@
 
 
 
-const puppeteerExport = require('./lib/cjs/index-core');
+const puppeteerExport = require('./lib/cjs/puppeteer/node-puppeteer-core');
 module.exports = puppeteerExport.default;

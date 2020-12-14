@@ -13,8 +13,12 @@
 
 
 
-import { helper, debugError, PuppeteerEventListener } from '../common/helper';
-import { ConnectionTransport } from '../common/ConnectionTransport';
+import {
+  helper,
+  debugError,
+  PuppeteerEventListener,
+} from '../common/helper.js';
+import { ConnectionTransport } from '../common/ConnectionTransport.js';
 
 export class PipeTransport implements ConnectionTransport {
   _pipeWrite: NodeJS.WritableStream;

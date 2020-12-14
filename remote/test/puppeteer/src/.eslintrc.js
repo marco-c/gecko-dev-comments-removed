@@ -1,6 +1,6 @@
 module.exports = {
-    "extends": "../.eslintrc.js",
-    
+  extends: '../.eslintrc.js',
+  
 
 
 
@@ -9,8 +9,11 @@ module.exports = {
 
 
 
-    "rules": {
-        "no-console": [2, { "allow": ["warn", "error", "assert", "timeStamp", "time", "timeEnd"] }],
-        "no-debugger": 0,
-    }
+  rules: {
+    'no-console': [
+      2,
+      { allow: ['warn', 'error', 'assert', 'timeStamp', 'time', 'timeEnd'] },
+    ],
+    'no-debugger': 0,
+  },
 };

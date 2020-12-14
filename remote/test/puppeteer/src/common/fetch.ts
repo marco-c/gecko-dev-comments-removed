@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { isNode } from '../environment.js';
+
+
+export const getFetch = async (): Promise<typeof fetch> => {
+  return isNode ? await import('node-fetch') : globalThis.fetch;
+};

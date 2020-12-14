@@ -14,19 +14,26 @@
 
 
 
-import utils from './utils';
+import utils from './utils.js';
+import sinon from 'sinon';
 import expect from 'expect';
 import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
-} from './mocha-utils';
+} from './mocha-utils'; 
 
 describe('waittask specs', function () {
   setupTestBrowserHooks();
   setupTestPageAndContextHooks();
 
   describe('Page.waitFor', function () {
+    
+
+
+
+    beforeEach(() => sinon.stub(console, 'warn').callsFake(() => {}));
+
     it('should wait for selector', async () => {
       const { page, server } = getTestState();
 
@@ -95,6 +102,22 @@ describe('waittask specs', function () {
 
       await page.waitFor((arg1, arg2) => arg1 !== arg2, {}, 1, 2);
     });
+
+    it('should log a deprecation warning', async () => {
+      const { page } = getTestState();
+
+      await page.waitFor(() => true);
+
+      const consoleWarnStub = console.warn as sinon.SinonSpy;
+
+      expect(consoleWarnStub.calledOnce).toBe(true);
+      expect(
+        consoleWarnStub.firstCall.calledWith(
+          'waitFor is deprecated and will be removed in a future release. See https://github.com/puppeteer/puppeteer/issues/6214 for details and how to migrate your code.'
+        )
+      ).toBe(true);
+      expect((console.warn as sinon.SinonSpy).calledOnce).toBe(true);
+    });
   });
 
   describe('Frame.waitForFunction', function () {
@@ -105,18 +128,15 @@ describe('waittask specs', function () {
       await page.evaluate(() => (globalThis.__FOO = 1));
       await watchdog;
     });
-    it(
-      'should work when resolved right before execution context disposal',
-      async () => {
-        const { page } = getTestState();
+    it('should work when resolved right before execution context disposal', async () => {
+      const { page } = getTestState();
 
-        await page.evaluateOnNewDocument(() => (globalThis.__RELOADED = true));
-        await page.waitForFunction(() => {
-          if (!globalThis.__RELOADED) window.location.reload();
-          return true;
-        });
-      }
-    );
+      await page.evaluateOnNewDocument(() => (globalThis.__RELOADED = true));
+      await page.waitForFunction(() => {
+        if (!globalThis.__RELOADED) window.location.reload();
+        return true;
+      });
+    });
     it('should poll on interval', async () => {
       const { page } = getTestState();
 
@@ -263,7 +283,7 @@ describe('waittask specs', function () {
         .waitForFunction((element) => !element.parentElement, {}, div)
         .then(() => (resolved = true));
       expect(resolved).toBe(false);
-      await page.evaluate((element) => element.remove(), div);
+      await page.evaluate((element: HTMLElement) => element.remove(), div);
       await waitForFunction;
     });
     it('should respect timeout', async () => {
@@ -328,6 +348,41 @@ describe('waittask specs', function () {
     });
   });
 
+  describe('Page.waitForTimeout', () => {
+    it('waits for the given timeout before resolving', async () => {
+      const { page, server } = getTestState();
+      await page.goto(server.EMPTY_PAGE);
+      const startTime = Date.now();
+      await page.waitForTimeout(1000);
+      const endTime = Date.now();
+      
+
+
+
+
+      expect(endTime - startTime).toBeGreaterThan(900);
+      expect(endTime - startTime).toBeLessThan(1100);
+    });
+  });
+
+  describe('Frame.waitForTimeout', () => {
+    it('waits for the given timeout before resolving', async () => {
+      const { page, server } = getTestState();
+      await page.goto(server.EMPTY_PAGE);
+      const frame = page.mainFrame();
+      const startTime = Date.now();
+      await frame.waitForTimeout(1000);
+      const endTime = Date.now();
+      
+
+
+
+
+      expect(endTime - startTime).toBeGreaterThan(900);
+      expect(endTime - startTime).toBeLessThan(1100);
+    });
+  });
+
   describe('Frame.waitForSelector', function () {
     const addElement = (tag) =>
       document.body.appendChild(document.createElement(tag));
@@ -350,9 +405,9 @@ describe('waittask specs', function () {
         page.waitForSelector('.zombo'),
         page.setContent(`<div class='zombo'>anything</div>`),
       ]);
-      expect(await page.evaluate((x) => x.textContent, handle)).toBe(
-        'anything'
-      );
+      expect(
+        await page.evaluate((x: HTMLElement) => x.textContent, handle)
+      ).toBe('anything');
     });
 
     it('should resolve promise when node is added', async () => {
@@ -549,7 +604,7 @@ describe('waittask specs', function () {
         .catch((error_) => (error = error_));
       expect(error).toBeTruthy();
       expect(error.message).toContain(
-        'waiting for selector "div" failed: timeout'
+        'waiting for selector `div` failed: timeout'
       );
       expect(error).toBeInstanceOf(puppeteer.errors.TimeoutError);
     });
@@ -563,7 +618,7 @@ describe('waittask specs', function () {
         .catch((error_) => (error = error_));
       expect(error).toBeTruthy();
       expect(error.message).toContain(
-        'waiting for selector "div" to be hidden failed: timeout'
+        'waiting for selector `div` to be hidden failed: timeout'
       );
     });
 
@@ -587,7 +642,10 @@ describe('waittask specs', function () {
       const waitForSelector = page.waitForSelector('.zombo');
       await page.setContent(`<div class='zombo'>anything</div>`);
       expect(
-        await page.evaluate((x) => x.textContent, await waitForSelector)
+        await page.evaluate(
+          (x: HTMLElement) => x.textContent,
+          await waitForSelector
+        )
       ).toBe('anything');
     });
     it('should have correct stack trace for timeout', async () => {
@@ -597,7 +655,7 @@ describe('waittask specs', function () {
       await page
         .waitForSelector('.zombo', { timeout: 10 })
         .catch((error_) => (error = error_));
-      expect(error.stack).toContain('waiting for selector ".zombo" failed');
+      expect(error.stack).toContain('waiting for selector `.zombo` failed');
       
       expect(error.stack).toContain('waittask.spec.ts');
     });
@@ -615,7 +673,10 @@ describe('waittask specs', function () {
         '//p[normalize-space(.)="hello world"]'
       );
       expect(
-        await page.evaluate((x) => x.textContent, await waitForXPath)
+        await page.evaluate(
+          (x: HTMLElement) => x.textContent,
+          await waitForXPath
+        )
       ).toBe('hello  world  ');
     });
     it('should respect timeout', async () => {
@@ -627,7 +688,7 @@ describe('waittask specs', function () {
         .catch((error_) => (error = error_));
       expect(error).toBeTruthy();
       expect(error.message).toContain(
-        'waiting for XPath "//div" failed: timeout'
+        'waiting for XPath `//div` failed: timeout'
       );
       expect(error).toBeInstanceOf(puppeteer.errors.TimeoutError);
     });
@@ -682,7 +743,10 @@ describe('waittask specs', function () {
       const waitForXPath = page.waitForXPath('//*[@class="zombo"]');
       await page.setContent(`<div class='zombo'>anything</div>`);
       expect(
-        await page.evaluate((x) => x.textContent, await waitForXPath)
+        await page.evaluate(
+          (x: HTMLElement) => x.textContent,
+          await waitForXPath
+        )
       ).toBe('anything');
     });
     it('should allow you to select a text node', async () => {
@@ -700,7 +764,10 @@ describe('waittask specs', function () {
       await page.setContent(`<div>some text</div>`);
       const waitForXPath = page.waitForXPath('/html/body/div');
       expect(
-        await page.evaluate((x) => x.textContent, await waitForXPath)
+        await page.evaluate(
+          (x: HTMLElement) => x.textContent,
+          await waitForXPath
+        )
       ).toBe('some text');
     });
   });

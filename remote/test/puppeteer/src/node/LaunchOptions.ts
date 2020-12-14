@@ -14,9 +14,6 @@
 
 
 
-import { Viewport } from '../common/PuppeteerViewport';
-
-
 
 
 
@@ -42,14 +39,4 @@ export interface LaunchOptions {
   dumpio?: boolean;
   env?: Record<string, string | undefined>;
   pipe?: boolean;
-}
-
-
-
-
-
-export interface BrowserOptions {
-  ignoreHTTPSErrors?: boolean;
-  defaultViewport?: Viewport;
-  slowMo?: number;
 }

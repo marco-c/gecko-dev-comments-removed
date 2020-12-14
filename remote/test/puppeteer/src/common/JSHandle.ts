@@ -14,22 +14,24 @@
 
 
 
-import { assert } from './assert';
-import { helper, debugError } from './helper';
-import { ExecutionContext } from './ExecutionContext';
-import { Page } from './Page';
-import { CDPSession } from './Connection';
-import { KeyInput } from './USKeyboardLayout';
-import { FrameManager, Frame } from './FrameManager';
-import { getQueryHandlerAndSelector } from './QueryHandler';
-import Protocol from '../protocol';
+import { assert } from './assert.js';
+import { helper, debugError } from './helper.js';
+import { ExecutionContext } from './ExecutionContext.js';
+import { Page } from './Page.js';
+import { CDPSession } from './Connection.js';
+import { KeyInput } from './USKeyboardLayout.js';
+import { FrameManager, Frame } from './FrameManager.js';
+import { getQueryHandlerAndSelector } from './QueryHandler.js';
+import { Protocol } from 'devtools-protocol';
 import {
   EvaluateFn,
   SerializableOrJSHandle,
   EvaluateFnReturnType,
   EvaluateHandleFn,
   WrapElementHandle,
-} from './EvalTypes';
+  UnwrapPromiseLike,
+} from './EvalTypes.js';
+import { isNode } from '../environment.js';
 
 export interface BoxModel {
   content: Array<{ x: number; y: number }>;
@@ -153,12 +155,10 @@ export class JSHandle {
   async evaluate<T extends EvaluateFn>(
     pageFunction: T | string,
     ...args: SerializableOrJSHandle[]
-  ): Promise<EvaluateFnReturnType<T>> {
-    return await this.executionContext().evaluate<EvaluateFnReturnType<T>>(
-      pageFunction,
-      this,
-      ...args
-    );
+  ): Promise<UnwrapPromiseLike<EvaluateFnReturnType<T>>> {
+    return await this.executionContext().evaluate<
+      UnwrapPromiseLike<EvaluateFnReturnType<T>>
+    >(pageFunction, this, ...args);
   }
 
   
@@ -243,7 +243,7 @@ export class JSHandle {
 
 
 
-  async jsonValue(): Promise<{}> {
+  async jsonValue(): Promise<Record<string, unknown>> {
     if (this._remoteObject.objectId) {
       const response = await this._client.send('Runtime.callFunctionOn', {
         functionDeclaration: 'function() { return this; }',
@@ -381,7 +381,6 @@ export class ElementHandle<
           
           
           
-          
           behavior: 'instant',
         });
         return false;
@@ -397,7 +396,6 @@ export class ElementHandle<
         element.scrollIntoView({
           block: 'center',
           inline: 'center',
-          
           
           
           
@@ -445,11 +443,12 @@ export class ElementHandle<
     };
   }
 
-  private _getBoxModel(): Promise<void | Protocol.DOM.getBoxModelReturnValue> {
+  private _getBoxModel(): Promise<void | Protocol.DOM.GetBoxModelResponse> {
+    const params: Protocol.DOM.GetBoxModelRequest = {
+      objectId: this._remoteObject.objectId,
+    };
     return this._client
-      .send('DOM.getBoxModel', {
-        objectId: this._remoteObject.objectId,
-      })
+      .send('DOM.getBoxModel', params)
       .catch((error) => debugError(error));
   }
 
@@ -556,22 +555,21 @@ export class ElementHandle<
       'Multiple file uploads only work with <input type=file multiple>'
     );
 
+    if (!isNode) {
+      throw new Error(
+        `JSHandle#uploadFile can only be used in Node environments.`
+      );
+    }
     
     
-    
-    const path = require('path');
-    
-    const fs = require('fs');
-    
-    const { promisify } = require('util');
-    const access = promisify(fs.access);
-
+    const path = await import('path');
+    const fs = await helper.importFSModule();
     
     const files = await Promise.all(
       filePaths.map(async (filePath) => {
         const resolvedPath: string = path.resolve(filePath);
         try {
-          await access(resolvedPath, fs.constants.R_OK);
+          await fs.promises.access(resolvedPath, fs.constants.R_OK);
         } catch (error) {
           if (error.code === 'ENOENT')
             throw new Error(`${filePath} does not exist or is not readable`);
@@ -619,7 +617,9 @@ export class ElementHandle<
 
 
   async focus(): Promise<void> {
-    await this.evaluate((element) => element.focus());
+    await this.evaluate<(element: HTMLElement) => void>((element) =>
+      element.focus()
+    );
   }
 
   
@@ -772,18 +772,10 @@ export class ElementHandle<
 
 
   async $(selector: string): Promise<ElementHandle | null> {
-    const defaultHandler = (element: Element, selector: string) =>
-      element.querySelector(selector);
     const { updatedSelector, queryHandler } = getQueryHandlerAndSelector(
-      selector,
-      defaultHandler
+      selector
     );
-
-    const handle = await this.evaluateHandle(queryHandler, updatedSelector);
-    const element = handle.asElement();
-    if (element) return element;
-    await handle.dispose();
-    return null;
+    return queryHandler.queryOne(this, updatedSelector);
   }
 
   
@@ -791,25 +783,10 @@ export class ElementHandle<
 
 
   async $$(selector: string): Promise<ElementHandle[]> {
-    const defaultHandler = (element: Element, selector: string) =>
-      element.querySelectorAll(selector);
     const { updatedSelector, queryHandler } = getQueryHandlerAndSelector(
-      selector,
-      defaultHandler
+      selector
     );
-
-    const arrayHandle = await this.evaluateHandle(
-      queryHandler,
-      updatedSelector
-    );
-    const properties = await arrayHandle.getProperties();
-    await arrayHandle.dispose();
-    const result = [];
-    for (const property of properties.values()) {
-      const elementHandle = property.asElement();
-      if (elementHandle) result.push(elementHandle);
-    }
-    return result;
+    return queryHandler.queryAll(this, updatedSelector);
   }
 
   
@@ -882,28 +859,29 @@ export class ElementHandle<
 
 
 
-  async $$eval<ReturnType extends any>(
+  async $$eval<ReturnType>(
     selector: string,
-    pageFunction: EvaluateFn | string,
+    pageFunction: (
+      elements: Element[],
+      ...args: unknown[]
+    ) => ReturnType | Promise<ReturnType>,
     ...args: SerializableOrJSHandle[]
-  ): Promise<ReturnType> {
-    const defaultHandler = (element: Element, selector: string) =>
-      Array.from(element.querySelectorAll(selector));
+  ): Promise<WrapElementHandle<ReturnType>> {
     const { updatedSelector, queryHandler } = getQueryHandlerAndSelector(
-      selector,
-      defaultHandler
+      selector
     );
-
-    const arrayHandle = await this.evaluateHandle(
-      queryHandler,
-      updatedSelector
-    );
-    const result = await arrayHandle.evaluate<(...args: any[]) => ReturnType>(
-      pageFunction,
-      ...args
-    );
+    const arrayHandle = await queryHandler.queryAllArray(this, updatedSelector);
+    const result = await arrayHandle.evaluate<
+      (
+        elements: Element[],
+        ...args: unknown[]
+      ) => ReturnType | Promise<ReturnType>
+    >(pageFunction, ...args);
     await arrayHandle.dispose();
-    return result;
+    
+
+
+    return result as WrapElementHandle<ReturnType>;
   }
 
   

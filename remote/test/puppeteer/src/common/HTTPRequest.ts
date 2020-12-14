@@ -13,20 +13,94 @@
 
 
 
-import { CDPSession } from './Connection';
-import { Frame } from './FrameManager';
-import { HTTPResponse } from './HTTPResponse';
-import { assert } from './assert';
-import { helper, debugError } from './helper';
-import Protocol from '../protocol';
+import { CDPSession } from './Connection.js';
+import { Frame } from './FrameManager.js';
+import { HTTPResponse } from './HTTPResponse.js';
+import { assert } from './assert.js';
+import { helper, debugError } from './helper.js';
+import { Protocol } from 'devtools-protocol';
+
+
+
+
+export interface ContinueRequestOverrides {
+  
+
+
+  url?: string;
+  method?: string;
+  postData?: string;
+  headers?: Record<string, string>;
+}
+
+
+
+
+
+
+export interface ResponseForRequest {
+  status: number;
+  headers: Record<string, string>;
+  contentType: string;
+  body: string | Buffer;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export class HTTPRequest {
+  
+
+
   _requestId: string;
+  
+
+
   _interceptionId: string;
+  
+
+
   _failureText = null;
+  
+
+
   _response: HTTPResponse | null = null;
+  
+
 
   _fromMemoryCache = false;
+  
+
+
   _redirectChain: HTTPRequest[];
 
   private _client: CDPSession;
@@ -41,12 +115,15 @@ export class HTTPRequest {
   private _headers: Record<string, string> = {};
   private _frame: Frame;
 
+  
+
+
   constructor(
     client: CDPSession,
     frame: Frame,
     interceptionId: string,
     allowInterception: boolean,
-    event: Protocol.Network.requestWillBeSentPayload,
+    event: Protocol.Network.RequestWillBeSentEvent,
     redirectChain: HTTPRequest[]
   ) {
     this._client = client;
@@ -66,43 +143,121 @@ export class HTTPRequest {
       this._headers[key.toLowerCase()] = event.request.headers[key];
   }
 
+  
+
+
   url(): string {
     return this._url;
   }
 
+  
+
+
+
+
+
+
+
   resourceType(): string {
+    
+    
+    
+    
+    
     return this._resourceType;
   }
+
+  
+
 
   method(): string {
     return this._method;
   }
 
+  
+
+
   postData(): string | undefined {
     return this._postData;
   }
+
+  
+
+
 
   headers(): Record<string, string> {
     return this._headers;
   }
 
+  
+
+
   response(): HTTPResponse | null {
     return this._response;
   }
+
+  
+
 
   frame(): Frame | null {
     return this._frame;
   }
 
+  
+
+
   isNavigationRequest(): boolean {
     return this._isNavigationRequest;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   redirectChain(): HTTPRequest[] {
     return this._redirectChain.slice();
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   failure(): { errorText: string } | null {
@@ -112,26 +267,49 @@ export class HTTPRequest {
     };
   }
 
-  async continue(
-    overrides: {
-      url?: string;
-      method?: string;
-      postData?: string;
-      headers?: Record<string, string>;
-    } = {}
-  ): Promise<void> {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async continue(overrides: ContinueRequestOverrides = {}): Promise<void> {
     
     if (this._url.startsWith('data:')) return;
     assert(this._allowInterception, 'Request Interception is not enabled!');
     assert(!this._interceptionHandled, 'Request is already handled!');
     const { url, method, postData, headers } = overrides;
     this._interceptionHandled = true;
+
+    const postDataBinaryBase64 = postData
+      ? Buffer.from(postData).toString('base64')
+      : undefined;
+
     await this._client
       .send('Fetch.continueRequest', {
         requestId: this._interceptionId,
         url,
         method,
-        postData,
+        postData: postDataBinaryBase64,
         headers: headers ? headersArray(headers) : undefined,
       })
       .catch((error) => {
@@ -142,12 +320,35 @@ export class HTTPRequest {
       });
   }
 
-  async respond(response: {
-    status: number;
-    headers: Record<string, string>;
-    contentType: string;
-    body: string | Buffer;
-  }): Promise<void> {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async respond(response: ResponseForRequest): Promise<void> {
     
     if (this._url.startsWith('data:')) return;
     assert(this._allowInterception, 'Request Interception is not enabled!');
@@ -187,6 +388,16 @@ export class HTTPRequest {
       });
   }
 
+  
+
+
+
+
+
+
+
+
+
   async abort(errorCode: ErrorCode = 'failed'): Promise<void> {
     
     if (this._url.startsWith('data:')) return;
@@ -209,7 +420,10 @@ export class HTTPRequest {
   }
 }
 
-type ErrorCode =
+
+
+
+export type ErrorCode =
   | 'aborted'
   | 'accessdenied'
   | 'addressunreachable'

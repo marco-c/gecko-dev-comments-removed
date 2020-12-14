@@ -13,20 +13,38 @@
 
 
 
-import { EventEmitter } from './EventEmitter';
-import { assert } from './assert';
-import { helper, debugError } from './helper';
-import Protocol from '../protocol';
-import { Events } from './Events';
-import { CDPSession } from './Connection';
-import { FrameManager } from './FrameManager';
-import { HTTPRequest } from './HTTPRequest';
-import { HTTPResponse } from './HTTPResponse';
+import { EventEmitter } from './EventEmitter.js';
+import { assert } from './assert.js';
+import { helper, debugError } from './helper.js';
+import { Protocol } from 'devtools-protocol';
+import { CDPSession } from './Connection.js';
+import { FrameManager } from './FrameManager.js';
+import { HTTPRequest } from './HTTPRequest.js';
+import { HTTPResponse } from './HTTPResponse.js';
+
+
+
 
 export interface Credentials {
   username: string;
   password: string;
 }
+
+
+
+
+
+
+
+export const NetworkManagerEmittedEvents = {
+  Request: Symbol('NetworkManager.Request'),
+  Response: Symbol('NetworkManager.Response'),
+  RequestFailed: Symbol('NetworkManager.RequestFailed'),
+  RequestFinished: Symbol('NetworkManager.RequestFinished'),
+} as const;
+
+
+
 
 export class NetworkManager extends EventEmitter {
   _client: CDPSession;
@@ -35,7 +53,7 @@ export class NetworkManager extends EventEmitter {
   _requestIdToRequest = new Map<string, HTTPRequest>();
   _requestIdToRequestWillBeSentEvent = new Map<
     string,
-    Protocol.Network.requestWillBeSentPayload
+    Protocol.Network.RequestWillBeSentEvent
   >();
   _extraHTTPHeaders: Record<string, string> = {};
   _offline = false;
@@ -164,7 +182,7 @@ export class NetworkManager extends EventEmitter {
     });
   }
 
-  _onRequestWillBeSent(event: Protocol.Network.requestWillBeSentPayload): void {
+  _onRequestWillBeSent(event: Protocol.Network.RequestWillBeSentEvent): void {
     
     if (
       this._protocolRequestInterceptionEnabled &&
@@ -183,10 +201,7 @@ export class NetworkManager extends EventEmitter {
     this._onRequest(event, null);
   }
 
-  
-
-
-  _onAuthRequired(event: Protocol.Fetch.authRequiredPayload): void {
+  _onAuthRequired(event: Protocol.Fetch.AuthRequiredEvent): void {
     
 
 
@@ -210,7 +225,7 @@ export class NetworkManager extends EventEmitter {
       .catch(debugError);
   }
 
-  _onRequestPaused(event: Protocol.Fetch.requestPausedPayload): void {
+  _onRequestPaused(event: Protocol.Fetch.RequestPausedEvent): void {
     if (
       !this._userRequestInterceptionEnabled &&
       this._protocolRequestInterceptionEnabled
@@ -236,7 +251,7 @@ export class NetworkManager extends EventEmitter {
   }
 
   _onRequest(
-    event: Protocol.Network.requestWillBeSentPayload,
+    event: Protocol.Network.RequestWillBeSentEvent,
     interceptionId?: string
   ): void {
     let redirectChain = [];
@@ -261,11 +276,11 @@ export class NetworkManager extends EventEmitter {
       redirectChain
     );
     this._requestIdToRequest.set(event.requestId, request);
-    this.emit(Events.NetworkManager.Request, request);
+    this.emit(NetworkManagerEmittedEvents.Request, request);
   }
 
   _onRequestServedFromCache(
-    event: Protocol.Network.requestServedFromCachePayload
+    event: Protocol.Network.RequestServedFromCacheEvent
   ): void {
     const request = this._requestIdToRequest.get(event.requestId);
     if (request) request._fromMemoryCache = true;
@@ -283,20 +298,20 @@ export class NetworkManager extends EventEmitter {
     );
     this._requestIdToRequest.delete(request._requestId);
     this._attemptedAuthentications.delete(request._interceptionId);
-    this.emit(Events.NetworkManager.Response, response);
-    this.emit(Events.NetworkManager.RequestFinished, request);
+    this.emit(NetworkManagerEmittedEvents.Response, response);
+    this.emit(NetworkManagerEmittedEvents.RequestFinished, request);
   }
 
-  _onResponseReceived(event: Protocol.Network.responseReceivedPayload): void {
+  _onResponseReceived(event: Protocol.Network.ResponseReceivedEvent): void {
     const request = this._requestIdToRequest.get(event.requestId);
     
     if (!request) return;
     const response = new HTTPResponse(this._client, request, event.response);
     request._response = response;
-    this.emit(Events.NetworkManager.Response, response);
+    this.emit(NetworkManagerEmittedEvents.Response, response);
   }
 
-  _onLoadingFinished(event: Protocol.Network.loadingFinishedPayload): void {
+  _onLoadingFinished(event: Protocol.Network.LoadingFinishedEvent): void {
     const request = this._requestIdToRequest.get(event.requestId);
     
     
@@ -307,10 +322,10 @@ export class NetworkManager extends EventEmitter {
     if (request.response()) request.response()._resolveBody(null);
     this._requestIdToRequest.delete(request._requestId);
     this._attemptedAuthentications.delete(request._interceptionId);
-    this.emit(Events.NetworkManager.RequestFinished, request);
+    this.emit(NetworkManagerEmittedEvents.RequestFinished, request);
   }
 
-  _onLoadingFailed(event: Protocol.Network.loadingFailedPayload): void {
+  _onLoadingFailed(event: Protocol.Network.LoadingFailedEvent): void {
     const request = this._requestIdToRequest.get(event.requestId);
     
     
@@ -320,6 +335,6 @@ export class NetworkManager extends EventEmitter {
     if (response) response._resolveBody(null);
     this._requestIdToRequest.delete(request._requestId);
     this._attemptedAuthentications.delete(request._interceptionId);
-    this.emit(Events.NetworkManager.RequestFailed, request);
+    this.emit(NetworkManagerEmittedEvents.RequestFailed, request);
   }
 }

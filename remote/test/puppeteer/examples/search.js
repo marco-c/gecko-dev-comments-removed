@@ -30,7 +30,7 @@ const puppeteer = require('puppeteer');
   await page.goto('https://developers.google.com/web/');
 
   
-  await page.type('#searchbox input', 'Headless Chrome');
+  await page.type('.devsite-searchbox input', 'Headless Chrome');
 
   
   const allResultsSelector = '.devsite-suggest-all-results';

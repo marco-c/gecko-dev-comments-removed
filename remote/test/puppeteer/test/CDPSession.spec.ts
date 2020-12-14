@@ -14,14 +14,14 @@
 
 
 
-import { waitEvent } from './utils';
+import { waitEvent } from './utils.js';
 import expect from 'expect';
 import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
   describeChromeOnly,
-} from './mocha-utils';
+} from './mocha-utils'; 
 
 describeChromeOnly('Target.createCDPSession', function () {
   setupTestBrowserHooks();

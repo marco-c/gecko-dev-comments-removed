@@ -14,9 +14,9 @@
 
 
 
-import { assert } from './assert';
-import { CDPSession } from './Connection';
-import Protocol from '../protocol';
+import { assert } from './assert.js';
+import { CDPSession } from './Connection.js';
+import { Protocol } from 'devtools-protocol';
 
 
 
