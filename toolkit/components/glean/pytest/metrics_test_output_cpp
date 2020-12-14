@@ -21,6 +21,14 @@ namespace test {
 
 
 
+    constexpr impl::BooleanMetric boolean_metric(1);
+
+    
+
+
+
+
+
     constexpr impl::CounterMetric counter_metric(4);
 
     
