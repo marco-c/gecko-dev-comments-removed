@@ -63,9 +63,30 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
+  "updateDebounce",
+  "browser.region.update.debounce",
+  60 * 60 * 24
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "lastUpdated",
+  "browser.region.update.updated",
+  0
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
   "localGeocodingEnabled",
   "browser.region.local-geocoding",
   false
+);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "timerManager",
+  "@mozilla.org/updates/timer-manager;1",
+  "nsIUpdateTimerManager"
 );
 
 const log = console.createInstance({
@@ -75,6 +96,7 @@ const log = console.createInstance({
 
 const REGION_PREF = "browser.search.region";
 const COLLECTION_ID = "regions";
+const GEOLOCATION_TOPIC = "geolocation-position-events";
 
 
 const UPDATE_PREFIX = "browser.region.update";
@@ -85,6 +107,16 @@ const UPDATE_PREFIX = "browser.region.update";
 const UPDATE_INTERVAL = 60 * 60 * 24 * 14;
 
 const MAX_RETRIES = 3;
+
+
+
+const UPDATE_CHECK_NAME = "region-update-timer";
+const UPDATE_CHECK_INTERVAL = 60 * 60 * 24 * 7;
+
+
+
+let inChildProcess =
+  Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
 
 
 
@@ -104,6 +136,8 @@ class RegionDetector {
   
   _retryCount = 0;
   
+  _initPromise = null;
+  
   REGION_TOPIC = "browser-region";
   
   REGION_UPDATED = "region-updated";
@@ -119,16 +153,28 @@ class RegionDetector {
 
 
 
-  init() {
+  async init() {
+    if (this._initPromise) {
+      return this._initPromise;
+    }
+    if (cacheBustEnabled && !inChildProcess) {
+      Services.tm.idleDispatchToMainThread(() => {
+        timerManager.registerTimer(
+          UPDATE_CHECK_NAME,
+          () => this._updateTimer(),
+          UPDATE_CHECK_INTERVAL
+        );
+      });
+    }
+    let promises = [];
     this._home = Services.prefs.getCharPref(REGION_PREF, null);
-    if (cacheBustEnabled || !this._home) {
-      Services.tm.idleDispatchToMainThread(this._fetchRegion.bind(this));
+    if (!this._home && !inChildProcess) {
+      promises.push(this._idleDispatch(() => this._fetchRegion()));
     }
-    if (localGeocodingEnabled) {
-      Services.tm.idleDispatchToMainThread(
-        this._setupRemoteSettings.bind(this)
-      );
+    if (localGeocodingEnabled && !inChildProcess) {
+      promises.push(this._idleDispatch(() => this._setupRemoteSettings()));
     }
+    return (this._initPromise = Promise.all(promises));
   }
 
   
@@ -272,7 +318,10 @@ class RegionDetector {
     log.info("Setting current region:", region);
     this._current = region;
 
+    let now = Math.round(Date.now() / 1000);
     let prefs = Services.prefs;
+    prefs.setIntPref(`${UPDATE_PREFIX}.updated`, now);
+
     
     let interval = prefs.getIntPref(
       `${UPDATE_PREFIX}.interval`,
@@ -289,14 +338,11 @@ class RegionDetector {
       
       
       prefs.setCharPref(`${UPDATE_PREFIX}.region`, region);
-      prefs.setIntPref(
-        `${UPDATE_PREFIX}.first-seen`,
-        Math.round(Date.now() / 1000)
-      );
+      prefs.setIntPref(`${UPDATE_PREFIX}.first-seen`, now);
     } else if (region != this._home && region == seenRegion) {
       
       
-      if (Math.round(Date.now() / 1000) >= firstSeen + interval) {
+      if (now >= firstSeen + interval) {
         this._setHomeRegion(region);
       }
     } else {
@@ -386,6 +432,9 @@ class RegionDetector {
     this._rsClient = RemoteSettings(COLLECTION_ID);
     this._rsClient.on("sync", this._onRegionFilesSync.bind(this));
     await this._ensureRegionFilesDownloaded();
+    
+    
+    Services.obs.addObserver(this, GEOLOCATION_TOPIC);
   }
 
   
@@ -738,6 +787,60 @@ class RegionDetector {
     });
   }
 
+  
+
+
+
+
+
+
+  _needsUpdateCheck() {
+    let sinceUpdate = Math.round(Date.now() / 1000) - lastUpdated;
+    let needsUpdate = sinceUpdate >= updateDebounce;
+    if (!needsUpdate) {
+      log.info(`Ignoring update check, last seen ${sinceUpdate} seconds ago`);
+    }
+    return needsUpdate;
+  }
+
+  
+
+
+
+  _idleDispatch(fun) {
+    return new Promise(resolve => {
+      Services.tm.idleDispatchToMainThread(fun().then(resolve));
+    });
+  }
+
+  
+
+
+
+  async _updateTimer() {
+    if (this._needsUpdateCheck()) {
+      await this._fetchRegion();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  async _seenLocation(location) {
+    log.info(`Got location update: ${location.lat}:${location.lng}`);
+    if (this._needsUpdateCheck()) {
+      let region = await this._geoCode(location);
+      if (region) {
+        this._setCurrentRegion(region);
+      }
+    }
+  }
+
   onChange(accessPoints) {
     log.info("onChange called");
     if (!accessPoints || !this._wifiDataPromise) {
@@ -754,6 +857,27 @@ class RegionDetector {
       this._wifiDataPromise(data);
       this._wifiDataPromise = null;
     }
+  }
+
+  observe(aSubject, aTopic, aData) {
+    log.info(`Observed ${aTopic}`);
+    switch (aTopic) {
+      case GEOLOCATION_TOPIC:
+        
+        
+        
+        let coords = aSubject.coords || aSubject.wrappedJSObject.coords;
+        this._seenLocation({
+          lat: coords.latitude,
+          lng: coords.longitude,
+        });
+        break;
+    }
+  }
+
+  
+  newInstance() {
+    return new RegionDetector();
   }
 }
 
