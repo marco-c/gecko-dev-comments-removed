@@ -507,7 +507,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
  protected:
   
   
-  virtual void NotifyForcedShutdown() {}
+  virtual void OnGraphThreadDone() {}
 
   
   
@@ -716,7 +716,8 @@ class SourceMediaTrack : public MediaTrack {
     
     bool mPullingEnabled;
     
-    bool mInForcedShutdown;
+    
+    bool mGraphThreadDone;
   };
 
   bool NeedsMixing();
@@ -735,12 +736,12 @@ class SourceMediaTrack : public MediaTrack {
 
   void NotifyDirectConsumers(MediaSegment* aSegment);
 
-  void NotifyForcedShutdown() override {
+  void OnGraphThreadDone() override {
     MutexAutoLock lock(mMutex);
     if (!mUpdateTrack) {
       return;
     }
-    mUpdateTrack->mInForcedShutdown = true;
+    mUpdateTrack->mGraphThreadDone = true;
     if (!mUpdateTrack->mData) {
       return;
     }

@@ -54,7 +54,7 @@ AudioNodeTrack::~AudioNodeTrack() {
   MOZ_COUNT_DTOR(AudioNodeTrack);
 }
 
-void AudioNodeTrack::NotifyForcedShutdown() { mEngine->NotifyForcedShutdown(); }
+void AudioNodeTrack::OnGraphThreadDone() { mEngine->OnGraphThreadDone(); }
 
 void AudioNodeTrack::DestroyImpl() {
   
