@@ -183,6 +183,10 @@ this.PrefsFeed = class PrefsFeed {
       value: searchTopSiteExperimentPrefValue,
     });
 
+    values.mayHaveSponsoredTopSites = Services.prefs.getBoolPref(
+      "browser.topsites.useRemoteSetting"
+    );
+
     
     
     let handoffToAwesomebarPrefValue = Services.prefs.getBoolPref(
