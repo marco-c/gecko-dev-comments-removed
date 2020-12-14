@@ -4419,8 +4419,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       bool toplevelNeedsAlphaVisual = false;
       if (mWindowType == eWindowType_toplevel && !mIsPIPWindow) {
-        toplevelNeedsAlphaVisual = IsToplevelWindowTransparent() ||
-                                   mCSDSupportLevel != CSD_SUPPORT_NONE;
+        toplevelNeedsAlphaVisual = IsToplevelWindowTransparent();
       }
 
       bool isGLVisualSet = false;
@@ -4442,14 +4441,17 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
             gtk_widget_set_visual(mShell, visual);
             mHasAlphaVisual = true;
           }
-        } else if (toplevelNeedsAlphaVisual) {
-          MOZ_ASSERT(mIsX11Display, "Wayland without compositing?");
-          mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
-        } else  {
-          
-          
         }
       }
+
+      
+      
+      
+      
+      
+      
+      
+      mTransparencyBitmapForTitlebar = TitlebarUseShapeMask();
 
       
       
@@ -7898,69 +7900,49 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel(bool aIsPopup) {
   return sCSDSupportLevel;
 }
 
+bool nsWindow::TitlebarUseShapeMask() {
+  static int useShapeMask = []() {
+    
+    if (!gfxPlatformGtk::GetPlatform()->IsX11Display()) {
+      return false;
+    }
 
+    
+    
+    const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
+    if (currentDesktop) {
+      if (strstr(currentDesktop, "GNOME") != nullptr) {
+        const char* sessionType = getenv("XDG_SESSION_TYPE");
+        if (sessionType) {
+          return (strstr(sessionType, "x11") == nullptr);
+        }
+      }
+    }
 
-
-bool nsWindow::TitlebarCanUseShapeMask() {
-  static int canUseShapeMask = -1;
-  if (canUseShapeMask != -1) {
-    return canUseShapeMask;
-  }
-  canUseShapeMask = gfxPlatformGtk::GetPlatform()->IsX11Display();
-
-  const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-  if (!currentDesktop) {
-    return canUseShapeMask;
-  }
-
-  if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
-      strstr(currentDesktop, "GNOME") != nullptr) {
-    const char* sessionType = getenv("XDG_SESSION_TYPE");
-    canUseShapeMask = (sessionType && strstr(sessionType, "x11") == nullptr);
-  }
-
-  return canUseShapeMask;
+    return Preferences::GetBool("widget.titlebar-x11-use-shape-mask", false);
+  }();
+  return useShapeMask;
 }
 
 bool nsWindow::HideTitlebarByDefault() {
-  static int hideTitlebar = -1;
-  if (hideTitlebar != -1) {
-    return hideTitlebar;
-  }
+  static int hideTitlebar = []() {
+    
+    
+    if (Preferences::HasUserValue("widget.default-hidden-titlebar")) {
+      return Preferences::GetBool("widget.default-hidden-titlebar", false);
+    }
 
-  
-  
-  if (Preferences::HasUserValue("widget.default-hidden-titlebar")) {
-    hideTitlebar =
-        Preferences::GetBool("widget.default-hidden-titlebar", false);
-    return hideTitlebar;
-  }
+    
+    const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
+    if (!currentDesktop || GetSystemCSDSupportLevel() == CSD_SUPPORT_NONE) {
+      return false;
+    }
 
-  
-  hideTitlebar = true;
-
-  
-  if (gdk_screen_is_composited(gdk_screen_get_default()) &&
-      !TitlebarCanUseShapeMask()) {
-    hideTitlebar = false;
-    return hideTitlebar;
-  }
-  
-  const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-  if (!currentDesktop || GetSystemCSDSupportLevel() == CSD_SUPPORT_NONE) {
-    hideTitlebar = false;
-    return hideTitlebar;
-  }
-
-  
-  if ((strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
-       strstr(currentDesktop, "GNOME") != nullptr ||
-       strstr(currentDesktop, "Pantheon") != nullptr)) {
-    return hideTitlebar;
-  }
-
-  
-  hideTitlebar = false;
+    
+    return ((strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
+             strstr(currentDesktop, "GNOME") != nullptr ||
+             strstr(currentDesktop, "Pantheon") != nullptr));
+  }();
   return hideTitlebar;
 }
 
