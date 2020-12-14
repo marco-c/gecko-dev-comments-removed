@@ -125,9 +125,6 @@
 
 - (NSArray*)moxSelectedRows;
 
-
-- (NSString*)moxOrientation;
-
 @end
 
 @interface mozOutlineRowAccessible : mozTableRowAccessible
@@ -137,9 +134,6 @@
 
 
 - (NSNumber*)moxDisclosing;
-
-
-- (NSNumber*)moxExpanded;
 
 
 - (id)moxDisclosedByRow;
