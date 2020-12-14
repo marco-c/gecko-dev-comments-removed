@@ -28,9 +28,17 @@ using MultiGetUntrustedModulesPromise =
     MozPromise<bool , nsresult, true>;
 
 class MOZ_HEAP_CLASS MultiGetUntrustedModulesData final {
+  using BackupType = UntrustedModulesBackupService::BackupType;
+
  public:
-  MultiGetUntrustedModulesData()
-      : mBackupSvc(UntrustedModulesBackupService::Get()),
+  
+
+
+
+
+  explicit MultiGetUntrustedModulesData(uint32_t aFlags)
+      : mFlags(aFlags),
+        mBackupSvc(UntrustedModulesBackupService::Get()),
         mPromise(new MultiGetUntrustedModulesPromise::Private(__func__)),
         mNumPending(0) {}
 
@@ -85,11 +93,6 @@ class MOZ_HEAP_CLASS MultiGetUntrustedModulesData final {
       return;
     }
 
-    if (mResults.empty()) {
-      mPromise->Reject(NS_ERROR_NOT_AVAILABLE, __func__);
-      return;
-    }
-
     mPromise->Resolve(true, __func__);
   }
 
@@ -97,18 +100,19 @@ class MOZ_HEAP_CLASS MultiGetUntrustedModulesData final {
     MOZ_ASSERT(NS_IsMainThread());
 
     if (aResult.isSome()) {
-      Unused << mResults.emplaceBack(
-          MakeRefPtr<mozilla::UntrustedModulesDataContainer>(
-              std::move(aResult.ref())));
+      mBackupSvc->Backup(BackupType::Staging, std::move(aResult.ref()));
     }
 
     OnCompletion();
   }
 
  private:
+  
+  
+  uint32_t mFlags;
+
   RefPtr<UntrustedModulesBackupService> mBackupSvc;
   RefPtr<MultiGetUntrustedModulesPromise::Private> mPromise;
-  Vector<RefPtr<UntrustedModulesDataContainer>> mResults;
   size_t mNumPending;
 };
 
@@ -133,8 +137,6 @@ MultiGetUntrustedModulesData::GetUntrustedModuleLoadEvents() {
     }
   }
 
-  Unused << mResults.reserve(mNumPending);
-
   return mPromise;
 }
 
@@ -147,11 +149,6 @@ void MultiGetUntrustedModulesData::Serialize(RefPtr<dom::Promise>&& aPromise) {
     return;
   }
 
-  if (mResults.empty()) {
-    aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
-    return;
-  }
-
   JSContext* cx = jsapi.cx();
   UntrustedModulesDataSerializer serializer(cx, kMaxModulesArrayLen);
   if (!serializer) {
@@ -159,10 +156,60 @@ void MultiGetUntrustedModulesData::Serialize(RefPtr<dom::Promise>&& aPromise) {
     return;
   }
 
-  nsresult rv = serializer.Add(mResults);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aPromise->MaybeReject(rv);
-    return;
+  nsresult rv;
+  if (mFlags & nsITelemetry::INCLUDE_OLD_LOADEVENTS) {
+    
+    
+    if (mFlags & nsITelemetry::KEEP_LOADEVENTS_NEW) {
+      
+      
+      
+      
+      
+      
+      
+      aPromise->MaybeReject(NS_ERROR_INVALID_ARG);
+      return;
+    } else {
+      
+      
+      mBackupSvc->SettleAllStagingData();
+
+      const UntrustedModulesBackupData& settledRef =
+          mBackupSvc->Ref(BackupType::Settled);
+      if (settledRef.IsEmpty()) {
+        aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
+        return;
+      }
+
+      rv = serializer.Add(settledRef);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        aPromise->MaybeReject(rv);
+        return;
+      }
+    }
+  } else {
+    
+    
+    const UntrustedModulesBackupData& stagingRef =
+        mBackupSvc->Ref(BackupType::Staging);
+
+    if (stagingRef.IsEmpty()) {
+      aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
+      return;
+    }
+
+    rv = serializer.Add(stagingRef);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aPromise->MaybeReject(rv);
+      return;
+    }
+
+    
+    
+    if (!(mFlags & nsITelemetry::KEEP_LOADEVENTS_NEW)) {
+      mBackupSvc->SettleAllStagingData();
+    }
   }
 
   JS::RootedValue jsval(cx);
@@ -170,7 +217,8 @@ void MultiGetUntrustedModulesData::Serialize(RefPtr<dom::Promise>&& aPromise) {
   aPromise->MaybeResolve(jsval);
 }
 
-nsresult GetUntrustedModuleLoadEvents(JSContext* cx, dom::Promise** aPromise) {
+nsresult GetUntrustedModuleLoadEvents(uint32_t aFlags, JSContext* cx,
+                                      dom::Promise** aPromise) {
   
   nsIGlobalObject* global = xpc::CurrentNativeGlobal(cx);
   if (NS_WARN_IF(!global)) {
@@ -183,9 +231,7 @@ nsresult GetUntrustedModuleLoadEvents(JSContext* cx, dom::Promise** aPromise) {
     return result.StealNSResult();
   }
 
-  RefPtr<MultiGetUntrustedModulesData> multi(
-      new MultiGetUntrustedModulesData());
-
+  auto multi = MakeRefPtr<MultiGetUntrustedModulesData>(aFlags);
   multi->GetUntrustedModuleLoadEvents()->Then(
       GetMainThreadSerialEventTarget(), __func__,
       [promise, multi](bool) mutable { multi->Serialize(std::move(promise)); },

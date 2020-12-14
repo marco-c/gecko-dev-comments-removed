@@ -200,10 +200,36 @@ interface nsITelemetry : nsISupports
 
 
 
+  
+
+
+
+
+
+
+  const unsigned long INCLUDE_OLD_LOADEVENTS = 1 << 0;
+
+  
+
+
+
+
+
+
+
+  const unsigned long KEEP_LOADEVENTS_NEW = 1 << 1;
+
+  
+
+
+
+
+
+
 
 
   [implicit_jscontext]
-  Promise getUntrustedModuleLoadEvents();
+  Promise getUntrustedModuleLoadEvents([optional] in unsigned long aFlags);
 
   
 
