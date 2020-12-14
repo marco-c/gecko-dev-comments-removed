@@ -37,6 +37,8 @@ class MOZ_STACK_CLASS BranchEmitterBase {
   
   int32_t thenDepth_ = 0;
 
+  enum class ConditionKind { Positive, Negative };
+
   
   
   
@@ -69,7 +71,7 @@ class MOZ_STACK_CLASS BranchEmitterBase {
  protected:
   BranchEmitterBase(BytecodeEmitter* bce, LexicalKind lexicalKind);
 
-  MOZ_MUST_USE bool emitThenInternal();
+  MOZ_MUST_USE bool emitThenInternal(ConditionKind conditionKind);
   void calculateOrCheckPushed();
   MOZ_MUST_USE bool emitElseInternal();
   MOZ_MUST_USE bool emitEndInternal();
@@ -131,7 +133,18 @@ class MOZ_STACK_CLASS BranchEmitterBase {
 
 
 
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS IfEmitter : public BranchEmitterBase {
+ public:
+  using ConditionKind = BranchEmitterBase::ConditionKind;
+
  protected:
 #ifdef DEBUG
   
@@ -201,8 +214,10 @@ class MOZ_STACK_CLASS IfEmitter : public BranchEmitterBase {
   
   MOZ_MUST_USE bool emitIf(const mozilla::Maybe<uint32_t>& ifPos);
 
-  MOZ_MUST_USE bool emitThen();
-  MOZ_MUST_USE bool emitThenElse();
+  MOZ_MUST_USE bool emitThen(
+      ConditionKind conditionKind = ConditionKind::Positive);
+  MOZ_MUST_USE bool emitThenElse(
+      ConditionKind conditionKind = ConditionKind::Positive);
 
   MOZ_MUST_USE bool emitElseIf(const mozilla::Maybe<uint32_t>& ifPos);
   MOZ_MUST_USE bool emitElse();
@@ -285,7 +300,8 @@ class MOZ_STACK_CLASS CondEmitter : public BranchEmitterBase {
   explicit CondEmitter(BytecodeEmitter* bce);
 
   MOZ_MUST_USE bool emitCond();
-  MOZ_MUST_USE bool emitThenElse();
+  MOZ_MUST_USE bool emitThenElse(
+      ConditionKind conditionKind = ConditionKind::Positive);
   MOZ_MUST_USE bool emitElse();
   MOZ_MUST_USE bool emitEnd();
 };
