@@ -83,10 +83,8 @@ class MediaControlService final : public nsIObserver {
 
   
   
-  void NotifyMediaControlHasEverBeenUsed() { mHasEverUsedMediaControl = true; }
-  void NotifyMediaControlHasEverBeenEnabled() {
-    mHasEverEnabledMediaControl = true;
-  }
+  void NotifyMediaControlHasEverBeenUsed();
+  void NotifyMediaControlHasEverBeenEnabled();
 
  private:
   MediaControlService();
