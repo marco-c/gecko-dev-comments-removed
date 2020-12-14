@@ -11,6 +11,7 @@
 #include "base/platform_thread.h"  
 #include "base/thread.h"           
 #include "base/message_loop.h"
+#include "GLTypes.h"  
 #include "nsISupportsImpl.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
 #include "mozilla/gfx/Point.h"
@@ -33,6 +34,7 @@ namespace gl {
 class GLContext;
 }  
 namespace layers {
+class CompositorBridgeParent;
 class SurfacePool;
 }  
 namespace wr {
@@ -265,7 +267,9 @@ class RenderThread final {
   void ClearSharedSurfacePool();
 
   
-  void HandleDeviceReset(const char* aWhere, bool aNotify);
+  void HandleDeviceReset(const char* aWhere,
+                         layers::CompositorBridgeParent* aBridge,
+                         GLenum aReason);
   
   bool IsHandlingDeviceReset();
   

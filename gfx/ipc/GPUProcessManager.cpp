@@ -443,14 +443,14 @@ void GPUProcessManager::SimulateDeviceReset() {
     }
     OnRemoteProcessDeviceReset(mProcess);
   } else {
-    OnInProcessDeviceReset();
+    OnInProcessDeviceReset( false);
   }
 }
 
-void GPUProcessManager::DisableWebRender(wr::WebRenderError aError,
-                                         const nsCString& aMsg) {
+bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
+                                               const nsCString& aMsg) {
   if (!gfx::gfxVars::UseWebRender()) {
-    return;
+    return false;
   }
   
   if (aError == wr::WebRenderError::INITIALIZE) {
@@ -472,6 +472,11 @@ void GPUProcessManager::DisableWebRender(wr::WebRenderError aError,
         .ForceDisable(gfx::FeatureStatus::Unavailable,
                       "Failed to create new surface",
                       "FEATURE_FAILURE_WEBRENDER_NEW_SURFACE"_ns);
+  } else if (aError == wr::WebRenderError::EXCESSIVE_RESETS) {
+    gfx::gfxConfig::GetFeature(gfx::Feature::WEBRENDER)
+        .ForceDisable(gfx::FeatureStatus::Unavailable,
+                      "Device resets exceeded threshold",
+                      "FEATURE_FAILURE_WEBRENDER_EXCESSIVE_RESETS"_ns);
   } else {
     MOZ_ASSERT_UNREACHABLE("Invalid value");
   }
@@ -495,10 +500,17 @@ void GPUProcessManager::DisableWebRender(wr::WebRenderError aError,
                        "FEATURE_FAILURE_LOST_WEBRENDER"_ns);
 #endif
 
-  if (mProcess) {
-    OnRemoteProcessDeviceReset(mProcess);
-  } else {
-    OnInProcessDeviceReset();
+  return true;
+}
+
+void GPUProcessManager::DisableWebRender(wr::WebRenderError aError,
+                                         const nsCString& aMsg) {
+  if (DisableWebRenderConfig(aError, aMsg)) {
+    if (mProcess) {
+      OnRemoteProcessDeviceReset(mProcess);
+    } else {
+      OnInProcessDeviceReset( false);
+    }
   }
 }
 
@@ -514,26 +526,46 @@ void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
   DisableWebRender(aError, nsCString());
 }
 
-void GPUProcessManager::OnInProcessDeviceReset() {
-  RebuildInProcessSessions();
-  NotifyListenersOnCompositeDeviceReset();
-}
-
-void GPUProcessManager::OnRemoteProcessDeviceReset(GPUProcessHost* aHost) {
-  
-  
-  mDeviceResetCount++;
-
+bool GPUProcessManager::OnDeviceReset(bool aTrackThreshold) {
+#ifdef XP_WIN
   
   if (!gfxVars::UseWebRender() && gfxVars::UseDoubleBufferingWithCompositor()) {
     gfxVars::SetUseDoubleBufferingWithCompositor(false);
   }
+#endif
+
+  
+  if (!aTrackThreshold) {
+    return false;
+  }
+
+  
+  
+  mDeviceResetCount++;
 
   auto newTime = TimeStamp::Now();
   auto delta = (int32_t)(newTime - mDeviceResetLastTime).ToMilliseconds();
   mDeviceResetLastTime = newTime;
 
-  if (ShouldLimitDeviceResets(mDeviceResetCount, delta)) {
+  
+  return ShouldLimitDeviceResets(mDeviceResetCount, delta);
+}
+
+void GPUProcessManager::OnInProcessDeviceReset(bool aTrackThreshold) {
+  if (OnDeviceReset(aTrackThreshold)) {
+    gfxCriticalNoteOnce << "In-process device reset threshold exceeded";
+#ifdef MOZ_WIDGET_GTK
+    
+    DisableWebRenderConfig(wr::WebRenderError::EXCESSIVE_RESETS, nsCString());
+#endif
+  }
+
+  RebuildInProcessSessions();
+  NotifyListenersOnCompositeDeviceReset();
+}
+
+void GPUProcessManager::OnRemoteProcessDeviceReset(GPUProcessHost* aHost) {
+  if (OnDeviceReset( true)) {
     DestroyProcess();
     DisableGPUProcess("GPU processed experienced too many device resets");
     HandleProcessLost();
