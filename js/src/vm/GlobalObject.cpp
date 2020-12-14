@@ -93,16 +93,6 @@ JS_FRIEND_API const JSClass* js::ProtoKeyToClass(JSProtoKey key) {
 }
 
 
-
-
-WasmNamespaceObject& js::GlobalObject::getWebAssemblyNamespace() const {
-  Value v = getConstructor(JSProto_WebAssembly);
-  
-  MOZ_ASSERT(v.isObject());
-  return v.toObject().as<WasmNamespaceObject>();
-}
-
-
 bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
   switch (key) {
     case JSProto_Null:

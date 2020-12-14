@@ -258,8 +258,8 @@ assertEq(wasmEvalText(
     let ins1 = new WebAssembly.Instance(mod).exports;
     let ins2 = new WebAssembly.Instance(mod).exports;
     let obj = ins1.make(37);
-    assertEq(obj._0, 37);
-    assertEq(ins2.coerce(obj), 1);
+    assertEq(obj[0], 37);
+    assertEq(ins2.coerce(obj), 0);
 }
 
 

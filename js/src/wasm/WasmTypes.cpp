@@ -39,6 +39,7 @@ using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
 
+using mozilla::CheckedInt32;
 using mozilla::IsPowerOfTwo;
 using mozilla::MakeEnumeratedRange;
 
@@ -793,6 +794,81 @@ ArgTypeVector::ArgTypeVector(const FuncType& funcType)
       hasStackResults_(ABIResultIter::HasStackResults(
           ResultType::Vector(funcType.results()))) {}
 
+static inline CheckedInt32 RoundUpToAlignment(CheckedInt32 address,
+                                              uint32_t align) {
+  MOZ_ASSERT(IsPowerOfTwo(align));
+
+  
+  
+  
+  
+  
+  
+  
+
+  return ((address + (align - 1)) / align) * align;
+}
+
+class StructLayout {
+  CheckedInt32 sizeSoFar = 0;
+  uint32_t structAlignment = 1;
+
+ public:
+  
+  CheckedInt32 addField(ValType type) {
+    uint32_t fieldSize = type.size();
+    uint32_t fieldAlignment = type.alignmentInStruct();
+
+    
+    structAlignment = std::max(structAlignment, fieldAlignment);
+
+    
+    CheckedInt32 offset = RoundUpToAlignment(sizeSoFar, fieldAlignment);
+    if (!offset.isValid()) {
+      return offset;
+    }
+
+    
+    sizeSoFar = offset + fieldSize;
+    if (!sizeSoFar.isValid()) {
+      return sizeSoFar;
+    }
+
+    return offset;
+  }
+
+  
+  
+  CheckedInt32 close() {
+    return RoundUpToAlignment(sizeSoFar, structAlignment);
+  }
+};
+
+bool StructType::computeLayout() {
+  StructLayout layout;
+  for (StructField& field : fields_) {
+    CheckedInt32 offset = layout.addField(field.type);
+    if (!offset.isValid()) {
+      return false;
+    }
+    field.offset = offset.value();
+  }
+
+  CheckedInt32 size = layout.close();
+  if (!size.isValid()) {
+    return false;
+  }
+  size_ = size.value();
+  isInline_ = InlineTypedObject::canAccommodateSize(size_);
+
+  return true;
+}
+
+uint32_t StructType::objectBaseFieldOffset(uint32_t fieldIndex) const {
+  return fields_[fieldIndex].offset +
+         (isInline_ ? InlineTypedObject::offsetOfDataStart() : 0);
+}
+
 
 
 bool StructType::hasPrefix(const StructType& other) const {
@@ -810,16 +886,20 @@ bool StructType::hasPrefix(const StructType& other) const {
 }
 
 size_t StructType::serializedSize() const {
-  return SerializedPodVectorSize(fields_);
+  return SerializedPodVectorSize(fields_) + sizeof(size_) + sizeof(isInline_);
 }
 
 uint8_t* StructType::serialize(uint8_t* cursor) const {
   cursor = SerializePodVector(cursor, fields_);
+  cursor = WriteBytes(cursor, &size_, sizeof(size_));
+  cursor = WriteBytes(cursor, &isInline_, sizeof(isInline_));
   return cursor;
 }
 
 const uint8_t* StructType::deserialize(const uint8_t* cursor) {
-  (cursor = DeserializePodVector(cursor, &fields_));
+  (cursor = DeserializePodVector(cursor, &fields_)) &&
+      (cursor = ReadBytes(cursor, &size_, sizeof(size_))) &&
+      (cursor = ReadBytes(cursor, &isInline_, sizeof(isInline_)));
   return cursor;
 }
 

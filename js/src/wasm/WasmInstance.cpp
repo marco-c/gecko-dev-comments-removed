@@ -971,25 +971,29 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
 
 
- void* Instance::structNew(Instance* instance,
-                                       uint32_t structTypeIndex) {
+ void* Instance::structNew(Instance* instance, void* structDescr) {
   MOZ_ASSERT(SASigStructNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = TlsContext.get();
-  Rooted<TypeDescr*> typeDescr(cx,
-                               instance->structTypeDescrs_[structTypeIndex]);
+  Rooted<TypeDescr*> typeDescr(cx, (TypeDescr*)structDescr);
   MOZ_ASSERT(typeDescr);
   return TypedObject::createZeroed(cx, typeDescr);
 }
 
+static const StructType* GetDescrStructType(JSContext* cx,
+                                            HandleTypeDescr typeDescr) {
+  const TypeDef& typeDef = typeDescr->getType(cx);
+  return typeDef.isStructType() ? &typeDef.structType() : nullptr;
+}
+
  void* Instance::structNarrow(Instance* instance,
-                                          uint32_t outputStructTypeIndex,
+                                          void* outputStructDescr,
                                           void* maybeNullPtr) {
   MOZ_ASSERT(SASigStructNarrow.failureMode == FailureMode::Infallible);
 
   JSContext* cx = TlsContext.get();
 
   Rooted<TypedObject*> obj(cx);
-  Rooted<StructTypeDescr*> typeDescr(cx);
+  Rooted<TypeDescr*> typeDescr(cx);
 
   if (maybeNullPtr == nullptr) {
     return maybeNullPtr;
@@ -997,19 +1001,21 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   void* nonnullPtr = maybeNullPtr;
   obj = static_cast<TypedObject*>(nonnullPtr);
-  typeDescr = &obj->typeDescr().as<StructTypeDescr>();
+  typeDescr = &obj->typeDescr();
 
-  const StructType* inputStructType = instance->structType(typeDescr);
+  const StructType* inputStructType = GetDescrStructType(cx, typeDescr);
   if (inputStructType == nullptr) {
     return nullptr;
   }
+  Rooted<TypeDescr*> outputTypeDescr(cx, (TypeDescr*)outputStructDescr);
+  const StructType* outputStructType = GetDescrStructType(cx, outputTypeDescr);
+  MOZ_ASSERT(outputStructType);
 
   
   
   
 
-  if (!inputStructType->hasPrefix(
-          *instance->structTypes_[outputStructTypeIndex])) {
+  if (!inputStructType->hasPrefix(*outputStructType)) {
     return nullptr;
   }
   return nonnullPtr;
@@ -1077,10 +1083,7 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
                    SharedCode code, UniqueTlsData tlsDataIn,
                    HandleWasmMemoryObject memory,
                    SharedExceptionTagVector&& exceptionTags,
-                   SharedTableVector&& tables,
-                   StructTypePtrVector&& structTypes,
-                   StructTypeDescrVector&& structTypeDescrs,
-                   UniqueDebugState maybeDebug)
+                   SharedTableVector&& tables, UniqueDebugState maybeDebug)
     : realm_(cx->realm()),
       object_(object),
       jsJitArgsRectifier_(
@@ -1095,8 +1098,7 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
       exceptionTags_(std::move(exceptionTags)),
       tables_(std::move(tables)),
       maybeDebug_(std::move(maybeDebug)),
-      structTypeDescrs_(std::move(structTypeDescrs)),
-      structTypes_(std::move(structTypes)) {}
+      hasGcTypes_(false) {}
 
 bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
                     const ValVector& globalImportValues,
@@ -1248,15 +1250,45 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
 
   
   if (!metadata().types.empty()) {
+    
+    if (GcTypesAvailable(cx)) {
+      uint32_t baseIndex = 0;
+      if (!cx->wasm().typeContext->transferTypes(metadata().types,
+                                                 &baseIndex)) {
+        return false;
+      }
+
+      for (uint32_t typeIndex = 0; typeIndex < metadata().types.length();
+           typeIndex++) {
+        const TypeDefWithId& typeDef = metadata().types[typeIndex];
+        if (!typeDef.isStructType()) {
+          continue;
+        }
+#ifndef ENABLE_WASM_GC
+        MOZ_CRASH("Should not have seen any struct types");
+#else
+        uint32_t globalTypeIndex = baseIndex + typeIndex;
+        Rooted<TypeDescr*> typeDescr(
+            cx, TypeDescr::createFromHandle(cx, TypeHandle(globalTypeIndex)));
+
+        if (!typeDescr) {
+          return false;
+        }
+        *((GCPtrObject*)addressOfTypeId(typeDef.id)) = typeDescr;
+        hasGcTypes_ = true;
+#endif
+      }
+    }
+
+    
+    
     ExclusiveData<FuncTypeIdSet>::Guard lockedFuncTypeIdSet =
         funcTypeIdSet.lock();
 
-    uint32_t structIndex = 0;
-    for (const TypeDefWithId& typeDef : metadata().types) {
-      if (typeDef.isStructType()) {
-        MOZ_ASSERT(structTypes_[structIndex] == &typeDef.structType());
-        *addressOfTypeId(typeDef.id) = (void*)(size_t)structIndex;
-        structIndex++;
+    for (uint32_t typeIndex = 0; typeIndex < metadata().types.length();
+         typeIndex++) {
+      const TypeDefWithId& typeDef = metadata().types[typeIndex];
+      if (!typeDef.isFuncType()) {
         continue;
       } else if (typeDef.isFuncType()) {
         const FuncType& funcType = typeDef.funcType();
@@ -1365,16 +1397,6 @@ bool Instance::memoryAccessInBounds(uint8_t* addr, unsigned numBytes) const {
   return true;
 }
 
-const StructType* Instance::structType(
-    HandleStructTypeDescr structTypeDescr) const {
-  for (uint32_t i = 0; i < structTypeDescrs_.length(); i++) {
-    if (structTypeDescrs_[i] == structTypeDescr) {
-      return structTypes_[i];
-    }
-  }
-  return nullptr;
-}
-
 void Instance::tracePrivate(JSTracer* trc) {
   
   
@@ -1403,7 +1425,17 @@ void Instance::tracePrivate(JSTracer* trc) {
   }
 
   TraceNullableEdge(trc, &memory_, "wasm buffer");
-  structTypeDescrs_.trace(trc);
+#ifdef ENABLE_WASM_GC
+  if (hasGcTypes_) {
+    for (const TypeDefWithId& typeDef : metadata().types) {
+      if (!typeDef.isStructType()) {
+        continue;
+      }
+      TraceNullableEdge(trc, ((GCPtrObject*)addressOfTypeId(typeDef.id)),
+                        "wasm typedescr");
+    }
+  }
+#endif
 
   if (maybeDebug_) {
     maybeDebug_->trace(trc);
