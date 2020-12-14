@@ -2325,6 +2325,15 @@ UpdateService.prototype = {
 
 
   _postUpdateProcessing: function AUS__postUpdateProcessing() {
+    if (this.disabledByPolicy) {
+      
+      
+      
+      
+      
+      
+      return;
+    }
     gUpdateFileWriteInfo = { phase: "startup", failure: false };
     if (!this.canCheckForUpdates) {
       LOG(
@@ -2737,6 +2746,16 @@ UpdateService.prototype = {
   _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(
     isNotify
   ) {
+    if (this.disabledByPolicy) {
+      
+      
+      
+      
+      
+      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DISABLED_BY_POLICY);
+      return;
+    }
+
     this._isNotify = isNotify;
 
     
@@ -2886,11 +2905,6 @@ UpdateService.prototype = {
           AUSTLMY.pingCheckCode(
             this._pingSuffix,
             AUSTLMY.CHK_INVALID_DEFAULT_URL
-          );
-        } else if (this.disabledByPolicy) {
-          AUSTLMY.pingCheckCode(
-            this._pingSuffix,
-            AUSTLMY.CHK_DISABLED_BY_POLICY
           );
         } else if (!hasUpdateMutex()) {
           AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
