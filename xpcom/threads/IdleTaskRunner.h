@@ -18,7 +18,6 @@ namespace mozilla {
 
 
 
-
 class IdleTaskRunner final : public CancelableIdleRunnable {
  public:
   
