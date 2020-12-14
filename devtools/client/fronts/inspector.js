@@ -176,14 +176,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
 
 
   async getNodeFrontFromNodeGrip(grip) {
-    
-    
-    
-    const gripHasContentDomReference = "contentDomReference" in grip;
-    if (!gripHasContentDomReference) {
-      return this.walker.gripToNodeFront(grip);
-    }
-
     return this.getNodeActorFromContentDomReference(grip.contentDomReference);
   }
 

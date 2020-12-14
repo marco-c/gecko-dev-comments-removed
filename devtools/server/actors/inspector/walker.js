@@ -2624,33 +2624,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-
-  getNodeActorFromObjectActor: function(objectActorID) {
-    const actor = this.conn.getActor(objectActorID);
-    if (!actor) {
-      return null;
-    }
-
-    const debuggerObject = this.conn.getActor(objectActorID).obj;
-    let rawNode = debuggerObject.unsafeDereference();
-
-    if (!this._isInDOMTree(rawNode)) {
-      return null;
-    }
-
-    
-    
-    if (rawNode.defaultView && rawNode === rawNode.defaultView.document) {
-      rawNode = rawNode.documentElement;
-    }
-
-    return this.attachElement(rawNode);
-  },
-
-  
-
-
-
   getNodeActorFromWindowID: function(windowID) {
     let win;
 
