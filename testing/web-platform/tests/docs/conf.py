@@ -78,6 +78,7 @@ nitpick_ignore = [
     ('py:exc', 'BadOperationException'),
     ('py:exc', 'Exception'),
     ('py:exc', 'ValueError'),
+    ('py:class', 'http.client.HTTPMessage')
 ]
 
 
@@ -211,5 +212,5 @@ epub_title = project
 
 epub_exclude_files = ['search.html']
 
-intersphinx_mapping = {'python': ('https://docs.python.org/2/', None),
+intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
                        'mozilla': ('https://firefox-source-docs.mozilla.org/', None)}
