@@ -1,37 +1,29 @@
 
 
 
+
+
+
+
+
 "use strict";
 
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
 const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 const kDllName = "modules-test.dll";
 
+let gDllHandle;
 let gCurrentPidStr;
-
-async function load_and_free(name) {
-  
-  
-  let dllHandle = ctypes.open(do_get_file(name).path);
-  if (dllHandle) {
-    dllHandle.close();
-    dllHandle = null;
-  }
-  
-  
-  await new Promise(resolve => setTimeout(resolve, 50));
-}
 
 add_task(async function setup() {
   do_get_profile();
 
   
   
-  await load_and_free(kDllName);
+  gDllHandle = ctypes.open(do_get_file(kDllName).path);
 
   
   Cc["@mozilla.org/updates/timer-manager;1"]
@@ -41,7 +33,7 @@ add_task(async function setup() {
   Preferences.set("app.update.url", "http://localhost");
 
   let currentPid = Services.appinfo.processID;
-  gCurrentPidStr = "browser.0x" + currentPid.toString(16);
+  gCurrentPidStr = "0x" + currentPid.toString(16);
 
   
   PingServer.start();
@@ -54,12 +46,12 @@ add_task(async function setup() {
 });
 
 registerCleanupFunction(function() {
+  if (gDllHandle) {
+    gDllHandle.close();
+    gDllHandle = null;
+  }
   return PingServer.stop();
 });
-
-
-
-
 
 add_task(async function test_send_ping() {
   let expectedModules = [
@@ -156,111 +148,4 @@ add_task(async function test_send_ping() {
       `Trustworthiness == expected for module: ${x.nameMatch.source}`
     );
   }
-});
-
-
-
-
-add_task(async function test_new_old_instances() {
-  const kIncludeOld = Telemetry.INCLUDE_OLD_LOADEVENTS;
-  const kKeepNew = Telemetry.KEEP_LOADEVENTS_NEW;
-  const get_events_count = data => data.processes[gCurrentPidStr].events.length;
-
-  
-  await load_and_free(kDllName);
-
-  
-  const baseline = await Telemetry.getUntrustedModuleLoadEvents(kIncludeOld);
-  const baseline_count = get_events_count(baseline);
-  print("baseline_count = " + baseline_count);
-  print("baseline = " + JSON.stringify(baseline));
-
-  await Assert.rejects(
-    Telemetry.getUntrustedModuleLoadEvents(),
-    e => e.result == Cr.NS_ERROR_NOT_AVAILABLE,
-    "New instances should not exist!"
-  );
-
-  await load_and_free(kDllName); 
-
-  
-  await Assert.rejects(
-    Telemetry.getUntrustedModuleLoadEvents(kIncludeOld | kKeepNew),
-    e => e.result == Cr.NS_ERROR_INVALID_ARG,
-    "Passing unsupported flag combination should throw an exception!"
-  );
-
-  await load_and_free(kDllName); 
-
-  
-  
-  let payload = await Telemetry.getUntrustedModuleLoadEvents(kKeepNew);
-  print("payload = " + JSON.stringify(payload));
-  Assert.equal(get_events_count(payload), 2);
-
-  await load_and_free(kDllName); 
-
-  
-  
-  payload = await Telemetry.getUntrustedModuleLoadEvents();
-  Assert.equal(get_events_count(payload), 3);
-
-  payload = await Telemetry.getUntrustedModuleLoadEvents(kIncludeOld);
-  
-  Assert.equal(get_events_count(payload), baseline_count + 3);
-});
-
-
-
-add_task(async function test_private_fields() {
-  await load_and_free(kDllName);
-  const data = await Telemetry.getUntrustedModuleLoadEvents(
-    Telemetry.KEEP_LOADEVENTS_NEW |
-      Telemetry.INCLUDE_PRIVATE_FIELDS_IN_LOADEVENTS
-  );
-
-  for (const module of data.modules) {
-    Assert.ok(!("resolvedDllName" in module));
-    Assert.ok("dllFile" in module);
-    Assert.ok(module.dllFile.QueryInterface);
-    Assert.ok(module.dllFile.QueryInterface(Ci.nsIFile));
-  }
-});
-
-
-
-
-add_task(async function test_exclude_stack() {
-  const baseline = await Telemetry.getUntrustedModuleLoadEvents(
-    Telemetry.EXCLUDE_STACKINFO_FROM_LOADEVENTS |
-      Telemetry.INCLUDE_OLD_LOADEVENTS
-  );
-  Assert.ok(!("combinedStacks" in baseline.processes[gCurrentPidStr]));
-  const baseSet = baseline.processes[gCurrentPidStr].events.map(
-    x => x.processUptimeMS
-  );
-
-  await load_and_free(kDllName);
-  await load_and_free(kDllName);
-  const newLoadsWithStack = await Telemetry.getUntrustedModuleLoadEvents(
-    Telemetry.KEEP_LOADEVENTS_NEW
-  );
-  Assert.ok("combinedStacks" in newLoadsWithStack.processes[gCurrentPidStr]);
-  const newSet = newLoadsWithStack.processes[gCurrentPidStr].events.map(
-    x => x.processUptimeMS
-  );
-
-  const merged = baseSet.concat(newSet);
-
-  const allData = await Telemetry.getUntrustedModuleLoadEvents(
-    Telemetry.KEEP_LOADEVENTS_NEW |
-      Telemetry.EXCLUDE_STACKINFO_FROM_LOADEVENTS |
-      Telemetry.INCLUDE_OLD_LOADEVENTS
-  );
-  Assert.ok(!("combinedStacks" in allData.processes[gCurrentPidStr]));
-  const allSet = allData.processes[gCurrentPidStr].events.map(
-    x => x.processUptimeMS
-  );
-
-  Assert.deepEqual(allSet.sort(), merged.sort());
 });
