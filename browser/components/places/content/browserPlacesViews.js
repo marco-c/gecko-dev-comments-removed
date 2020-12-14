@@ -1008,6 +1008,18 @@ PlacesToolbar.prototype = {
     return this._resultNode && this._rootElt;
   },
 
+  _runBeforeFrameRender(callback) {
+    return new Promise((resolve, reject) => {
+      window.requestAnimationFrame(() => {
+        try {
+          resolve(callback());
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+  },
+
   async _rebuild() {
     
     
@@ -1028,37 +1040,35 @@ PlacesToolbar.prototype = {
       
       
       let startIndex = 0;
-      let limit = await new Promise(resolve =>
-        window.requestAnimationFrame(() => {
-          if (!this._isAlive) {
-            return resolve(cc);
-          }
+      let limit = await this._runBeforeFrameRender(() => {
+        if (!this._isAlive) {
+          return cc;
+        }
 
+        
+        let elt;
+        while (startIndex < cc) {
+          elt = this._insertNewItem(
+            this._resultNode.getChild(startIndex),
+            this._rootElt
+          );
+          ++startIndex;
+          if (elt.localName != "toolbarseparator") {
+            break;
+          }
+        }
+        if (!elt) {
+          return cc;
+        }
+
+        return window.promiseDocumentFlushed(() => {
           
-          let elt;
-          while (startIndex < cc) {
-            elt = this._insertNewItem(
-              this._resultNode.getChild(startIndex),
-              this._rootElt
-            );
-            ++startIndex;
-            if (elt.localName != "toolbarseparator") {
-              break;
-            }
-          }
-          if (!elt) {
-            return resolve(cc);
-          }
-
-          return window.promiseDocumentFlushed(() => {
-            
-            
-            
-            let size = elt.clientHeight || 1; 
-            resolve(Math.min(cc, parseInt((window.screen.width * 1.5) / size)));
-          });
-        })
-      );
+          
+          
+          let size = elt.clientHeight || 1; 
+          return Math.min(cc, parseInt((window.screen.width * 1.5) / size));
+        });
+      });
 
       if (!this._isAlive) {
         return;
