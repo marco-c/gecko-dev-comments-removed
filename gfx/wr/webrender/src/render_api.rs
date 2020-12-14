@@ -108,6 +108,38 @@ impl fmt::Debug for ResourceUpdate {
 
 
 
+#[derive(Clone, Debug)]
+pub enum GenerateFrame {
+    
+    Yes {
+        
+        
+        id: u64,
+    },
+    
+    No,
+}
+
+impl GenerateFrame {
+    
+    pub fn as_bool(&self) -> bool {
+        match self {
+            GenerateFrame::Yes { .. } => true,
+            GenerateFrame::No => false,
+        }
+    }
+
+    
+    pub fn id(&self) -> Option<u64> {
+        match self {
+            GenerateFrame::Yes { id } => Some(*id),
+            GenerateFrame::No => None,
+        }
+    }
+}
+
+
+
 
 
 
@@ -128,7 +160,9 @@ pub struct Transaction {
     use_scene_builder_thread: bool,
 
     
-    generate_frame: bool,
+    
+    
+    generate_frame: GenerateFrame,
 
     
     
@@ -146,7 +180,7 @@ impl Transaction {
             resource_updates: Vec::new(),
             notifications: Vec::new(),
             use_scene_builder_thread: true,
-            generate_frame: false,
+            generate_frame: GenerateFrame::No,
             invalidate_rendered_frame: false,
             low_priority: false,
         }
@@ -171,7 +205,7 @@ impl Transaction {
 
     
     pub fn is_empty(&self) -> bool {
-        !self.generate_frame &&
+        !self.generate_frame.as_bool() &&
             !self.invalidate_rendered_frame &&
             self.scene_ops.is_empty() &&
             self.frame_ops.is_empty() &&
@@ -342,8 +376,8 @@ impl Transaction {
     
     
     
-    pub fn generate_frame(&mut self) {
-        self.generate_frame = true;
+    pub fn generate_frame(&mut self, id: u64) {
+        self.generate_frame = GenerateFrame::Yes{ id };
     }
 
     
@@ -556,7 +590,7 @@ pub struct TransactionMsg {
     
     pub resource_updates: Vec<ResourceUpdate>,
     
-    pub generate_frame: bool,
+    pub generate_frame: GenerateFrame,
     
     
     pub invalidate_rendered_frame: bool,
@@ -579,7 +613,7 @@ pub struct TransactionMsg {
 
 impl fmt::Debug for TransactionMsg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "threaded={}, genframe={}, invalidate={}, low_priority={}",
+        writeln!(f, "threaded={}, genframe={:?}, invalidate={}, low_priority={}",
                         self.use_scene_builder_thread,
                         self.generate_frame,
                         self.invalidate_rendered_frame,
@@ -603,7 +637,7 @@ impl fmt::Debug for TransactionMsg {
 impl TransactionMsg {
     
     pub fn is_empty(&self) -> bool {
-        !self.generate_frame &&
+        !self.generate_frame.as_bool() &&
             !self.invalidate_rendered_frame &&
             self.scene_ops.is_empty() &&
             self.frame_ops.is_empty() &&
@@ -1230,7 +1264,7 @@ impl RenderApi {
             frame_ops: vec![msg],
             resource_updates: Vec::new(),
             notifications: Vec::new(),
-            generate_frame: false,
+            generate_frame: GenerateFrame::No,
             invalidate_rendered_frame: false,
             use_scene_builder_thread: false,
             low_priority: false,
@@ -1249,7 +1283,7 @@ impl RenderApi {
             frame_ops: Vec::new(),
             resource_updates: Vec::new(),
             notifications: Vec::new(),
-            generate_frame: false,
+            generate_frame: GenerateFrame::No,
             invalidate_rendered_frame: false,
             use_scene_builder_thread: false,
             low_priority: false,
@@ -1287,7 +1321,7 @@ impl RenderApi {
         self.resources.update(&mut transaction);
 
         transaction.use_scene_builder_thread |= !transaction.scene_ops.is_empty();
-        if transaction.generate_frame {
+        if transaction.generate_frame.as_bool() {
             transaction.profile.start_time(profiler::API_SEND_TIME);
             transaction.profile.start_time(profiler::TOTAL_FRAME_CPU_TIME);
         }
@@ -1312,7 +1346,7 @@ impl RenderApi {
             .map(|(txn, id)| {
                 let mut txn = txn.finalize(id);
                 self.resources.update(&mut txn);
-                if txn.generate_frame {
+                if txn.generate_frame.as_bool() {
                     txn.profile.start_time(profiler::API_SEND_TIME);
                     txn.profile.start_time(profiler::TOTAL_FRAME_CPU_TIME);
                 }
