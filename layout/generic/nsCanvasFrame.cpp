@@ -841,7 +841,12 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      SetOverflowFrames(std::move(mFrames));
+      
+      
+      MOZ_ASSERT(!kidFrame->IsPlaceholderFrame(),
+                 "we should never push fixed pos placeholders");
+      mFrames.RemoveFrame(kidFrame);
+      SetOverflowFrames(nsFrameList(kidFrame, kidFrame));
       aStatus.SetIncomplete();
     }
 
