@@ -30,8 +30,6 @@ void RemoteDecoderChild::HandleRejectionError(
   
 
   
-  
-  mRemoteProcessCrashTime = TimeStamp::Now();
   if (mRecreatedOnCrash) {
     
     
@@ -40,7 +38,6 @@ void RemoteDecoderChild::HandleRejectionError(
         "RemoteDecoderChild::HandleRejectionError",
         [self, callback = std::move(aCallback)]() {
           MediaResult error(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
-          error.SetGPUCrashTimeStamp(self->mRemoteProcessCrashTime);
           callback(error);
         }));
     return;
