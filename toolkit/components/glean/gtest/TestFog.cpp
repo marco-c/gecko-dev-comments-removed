@@ -74,17 +74,16 @@ TEST(FOG, TestCppStringWorks)
                                  .get());
 }
 
+TEST(FOG, TestCppTimespanWorks)
+{
+  mozilla::glean::test_only::can_we_time_it.Start();
+  PR_Sleep(PR_MillisecondsToInterval(10));
+  mozilla::glean::test_only::can_we_time_it.Stop();
 
-
-
-
-
-
-
-
-
-
-
+  ASSERT_TRUE(
+      mozilla::glean::test_only::can_we_time_it.TestGetValue("test-ping"_ns)
+          .value() > 0);
+}
 
 TEST(FOG, TestCppUuidWorks)
 {
