@@ -7,24 +7,44 @@
 #ifndef builtin_ModuleObject_h
 #define builtin_ModuleObject_h
 
-#include "mozilla/Maybe.h"
+#include "mozilla/HashTable.h"  
+#include "mozilla/Maybe.h"      
 
-#include "jsapi.h"
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "builtin/SelfHostingDefines.h"
-#include "frontend/Stencil.h"
-#include "gc/ZoneAllocator.h"
-#include "js/GCVector.h"
-#include "js/Id.h"
-#include "js/Modules.h"
-#include "js/UniquePtr.h"
-#include "vm/JSAtom.h"
-#include "vm/List.h"
-#include "vm/NativeObject.h"
+#include "builtin/SelfHostingDefines.h"  
+#include "gc/Barrier.h"                  
+#include "gc/Rooting.h"                  
+#include "gc/ZoneAllocator.h"            
+#include "js/Class.h"                    
+#include "js/GCVector.h"                 
+#include "js/Id.h"                       
+#include "js/Modules.h"                  
+#include "js/PropertyDescriptor.h"       
+#include "js/Proxy.h"                    
+#include "js/RootingAPI.h"               
+#include "js/TypeDecls.h"  
+#include "js/UniquePtr.h"  
+#include "js/Value.h"      
+#include "vm/JSAtom.h"     
+#include "vm/JSObject.h"   
+#include "vm/List.h"       
+#include "vm/NativeObject.h"   
 #include "vm/PromiseObject.h"  
-#include "vm/ProxyObject.h"
+#include "vm/ProxyObject.h"    
+#include "vm/Xdr.h"            
+
+class JSFreeOp;
+class JSScript;
+class JSTracer;
 
 namespace js {
+
+class ArrayObject;
+class Shape;
+class Scope;
+class ScriptSourceObject;
 
 class ModuleEnvironmentObject;
 class ModuleObject;
@@ -156,8 +176,9 @@ class IndirectBindingMap {
     HeapPtr<Shape*> shape;
   };
 
-  using Map = HashMap<PreBarrieredId, Binding, DefaultHasher<PreBarrieredId>,
-                      ZoneAllocPolicy>;
+  using Map =
+      mozilla::HashMap<PreBarrieredId, Binding,
+                       mozilla::DefaultHasher<PreBarrieredId>, ZoneAllocPolicy>;
 
   mozilla::Maybe<Map> map_;
 };
@@ -369,11 +390,11 @@ class ModuleObject : public NativeObject {
 
   static bool createEnvironment(JSContext* cx, HandleModuleObject self);
 
-  frontend::FunctionDeclarationVector* functionDeclarations();
-  void initFunctionDeclarations(frontend::FunctionDeclarationVector&& decls);
-
   bool initAsyncSlots(JSContext* cx, bool isAsync,
                       HandleObject asyncParentModulesList);
+
+  
+  
 
  private:
   static const JSClassOps classOps_;
