@@ -197,9 +197,12 @@ void ICEntry::trace(JSTracer* trc) {
   
   MOZ_DIAGNOSTIC_ASSERT(traceMagic_ == EXPECTED_TRACE_MAGIC);
 #endif
-  for (ICStub* stub = firstStub(); stub; stub = stub->next()) {
-    stub->trace(trc);
+  ICStub* stub = firstStub();
+  while (!stub->isFallback()) {
+    stub->toCacheIR_Regular()->trace(trc);
+    stub = stub->next();
   }
+  stub->toFallbackStub()->trace(trc);
 }
 
 
@@ -634,35 +637,24 @@ void ICFallbackStub::maybeInvalidateWarp(JSContext* cx, JSScript* script) {
   }
 }
 
-void ICStub::updateCode(JitCode* code) {
-  
-  gc::PreWriteBarrier(jitCode());
-  stubCode_ = code->raw();
+void ICCacheIR_Regular::trace(JSTracer* trc) {
+  JitCode* stubJitCode = jitCode();
+  TraceManuallyBarrieredEdge(trc, &stubJitCode, "baseline-ic-stub-code");
+
+  TraceCacheIRStub(trc, static_cast<ICStub*>(this), stubInfo());
 }
 
-
-void ICStub::trace(JSTracer* trc) {
-  
-  if (!isFallback()) {
-    JitCode* stubJitCode = jitCode();
-    TraceManuallyBarrieredEdge(trc, &stubJitCode, "baseline-ic-stub-code");
-
-    TraceCacheIRStub(trc, this, toCacheIR_Regular()->stubInfo());
-    return;
-  }
-
-  ICFallbackStub* fallback = toFallbackStub();
-
+void ICFallbackStub::trace(JSTracer* trc) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  fallback->checkTraceMagic();
+  checkTraceMagic();
 #endif
 
   
   MOZ_ASSERT(usesTrampolineCode());
 
-  switch (fallback->kind()) {
+  switch (kind()) {
     case ICStub::NewArray_Fallback: {
-      ICNewArray_Fallback* stub = fallback->toNewArray_Fallback();
+      ICNewArray_Fallback* stub = toNewArray_Fallback();
       TraceNullableEdge(trc, &stub->templateObject(),
                         "baseline-newarray-template");
       TraceEdge(trc, &stub->templateGroup(),
@@ -670,13 +662,13 @@ void ICStub::trace(JSTracer* trc) {
       break;
     }
     case ICStub::NewObject_Fallback: {
-      ICNewObject_Fallback* stub = fallback->toNewObject_Fallback();
+      ICNewObject_Fallback* stub = toNewObject_Fallback();
       TraceNullableEdge(trc, &stub->templateObject(),
                         "baseline-newobject-template");
       break;
     }
     case ICStub::Rest_Fallback: {
-      ICRest_Fallback* stub = fallback->toRest_Fallback();
+      ICRest_Fallback* stub = toRest_Fallback();
       TraceEdge(trc, &stub->templateObject(), "baseline-rest-template");
       break;
     }
@@ -741,7 +733,7 @@ void ICFallbackStub::unlinkStubDontInvalidateWarp(Zone* zone, ICStub* prev,
   if (zone->needsIncrementalBarrier()) {
     
     
-    stub->trace(zone->barrierTracer());
+    stub->toCacheIR_Regular()->trace(zone->barrierTracer());
   }
 
 #ifdef DEBUG
