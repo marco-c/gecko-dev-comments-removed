@@ -120,7 +120,7 @@ class mozSpellChecker final {
 
 
 
-  nsresult GetDictionaryList(nsTArray<nsString>* aDictionaryList);
+  nsresult GetDictionaryList(nsTArray<nsCString>* aDictionaryList);
 
   
 
@@ -128,7 +128,7 @@ class mozSpellChecker final {
 
 
 
-  nsresult GetCurrentDictionary(nsAString& aDictionary);
+  nsresult GetCurrentDictionary(nsACString& aDictionary);
 
   
 
@@ -136,14 +136,14 @@ class mozSpellChecker final {
 
 
 
-  nsresult SetCurrentDictionary(const nsAString& aDictionary);
+  nsresult SetCurrentDictionary(const nsACString& aDictionary);
 
   
 
 
 
   RefPtr<mozilla::GenericPromise> SetCurrentDictionaryFromList(
-      const nsTArray<nsString>& aList);
+      const nsTArray<nsCString>& aList);
 
   void DeleteRemoteEngine() { mEngine = nullptr; }
 
@@ -162,7 +162,7 @@ class mozSpellChecker final {
   nsCOMPtr<mozISpellCheckingEngine> mSpellCheckingEngine;
   bool mFromStart;
 
-  nsString mCurrentDictionary;
+  nsCString mCurrentDictionary;
 
   MOZ_CAN_RUN_SCRIPT
   nsresult SetupDoc(int32_t* outBlockOffset);
