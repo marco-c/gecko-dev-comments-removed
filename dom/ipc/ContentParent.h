@@ -1078,8 +1078,7 @@ class ContentParent final
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  mozilla::ipc::IPCResult RecvAddGeolocationListener(
-      const IPC::Principal& aPrincipal, const bool& aHighAccuracy);
+  mozilla::ipc::IPCResult RecvAddGeolocationListener(const bool& aHighAccuracy);
   mozilla::ipc::IPCResult RecvRemoveGeolocationListener();
 
   

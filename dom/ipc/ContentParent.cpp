@@ -4431,7 +4431,7 @@ static int32_t AddGeolocationListener(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvAddGeolocationListener(
-    const IPC::Principal& aPrincipal, const bool& aHighAccuracy) {
+    const bool& aHighAccuracy) {
   
   
   RecvRemoveGeolocationListener();
