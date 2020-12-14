@@ -1298,7 +1298,7 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
 
   RecordFrame();
 
-  PayloadPresented();
+  PayloadPresented(TimeStamp::Now());
 
   
   mPayload.Clear();
