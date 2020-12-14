@@ -120,7 +120,7 @@ TestHangReport.prototype = {
 };
 
 
-let buttonCount = UpdateUtils.UpdateChannel == "aurora" ? 3 : 2;
+let buttonCount = AppConstants.MOZ_DEV_EDITION ? 3 : 2;
 
 add_task(async function setup() {
   
@@ -155,8 +155,7 @@ add_task(async function terminateScriptTest() {
   let notification = await promise;
 
   let buttons = notification.currentNotification.getElementsByTagName("button");
-  
-  
+  is(buttons.length, buttonCount, "proper number of buttons");
 
   
   buttons[0].click();
@@ -179,8 +178,7 @@ add_task(async function waitForScriptTest() {
   let notification = await promise;
 
   let buttons = notification.currentNotification.getElementsByTagName("button");
-  
-  
+  is(buttons.length, buttonCount, "proper number of buttons");
 
   await pushPrefs(["browser.hangNotification.waitPeriod", 1000]);
 
@@ -253,8 +251,7 @@ add_task(async function terminatePluginTest() {
   let notification = await promise;
 
   let buttons = notification.currentNotification.getElementsByTagName("button");
-  
-  
+  is(buttons.length, buttonCount, "proper number of buttons");
 
   
   buttons[0].click();
