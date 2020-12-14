@@ -20,12 +20,6 @@ add_task(async () => {
       gBrowser,
     },
     async browser => {
-      let isVideoPaused = () => {
-        return SpecialPowers.spawn(browser, [videoID], async videoID => {
-          return content.document.getElementById(videoID).paused;
-        });
-      };
-
       await ensureVideosReady(browser);
 
       let audioPromise = BrowserTestUtils.waitForEvent(
@@ -38,7 +32,7 @@ add_task(async () => {
       });
 
       
-      ok(!(await isVideoPaused()), "The video is not paused.");
+      ok(!(await isVideoPaused(browser, videoID)), "The video is not paused.");
       await audioPromise;
 
       
@@ -58,7 +52,7 @@ add_task(async () => {
       ok(pipWin, "Got Picture-in-Picture window.");
 
       
-      ok(!(await isVideoPaused()), "The video is not paused.");
+      ok(!(await isVideoPaused(browser, videoID)), "The video is not paused.");
 
       
       ok(
