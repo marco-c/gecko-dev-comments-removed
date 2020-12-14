@@ -46,7 +46,6 @@ TransportSecurityInfo::TransportSecurityInfo()
           nsITransportSecurityInfo::CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE),
       mKeaGroup(),
       mSignatureSchemeName(),
-      mIsAcceptedEch(false),
       mIsDelegatedCredential(false),
       mIsDomainMismatch(false),
       mIsNotValidAtThisTime(false),
@@ -195,7 +194,7 @@ TransportSecurityInfo::Write(nsIObjectOutputStream* aStream) {
   
   
   
-  rv = aStream->WriteWStringZ(NS_ConvertUTF8toUTF16("6").get());
+  rv = aStream->WriteWStringZ(NS_ConvertUTF8toUTF16("5").get());
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -272,11 +271,6 @@ TransportSecurityInfo::Write(nsIObjectOutputStream* aStream) {
   }
 
   rv = aStream->WriteBoolean(mIsBuiltCertChainRootBuiltInRoot);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  rv = aStream->WriteBoolean(mIsAcceptedEch);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -541,7 +535,7 @@ TransportSecurityInfo::Read(nsIObjectInputStream* aStream) {
   
   if (!serVersion.EqualsASCII("1") && !serVersion.EqualsASCII("2") &&
       !serVersion.EqualsASCII("3") && !serVersion.EqualsASCII("4") &&
-      !serVersion.EqualsASCII("5") && !serVersion.EqualsASCII("6")) {
+      !serVersion.EqualsASCII("5")) {
     
     rv = ReadSSLStatus(aStream);
     CHILD_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
@@ -618,7 +612,7 @@ TransportSecurityInfo::Read(nsIObjectInputStream* aStream) {
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!serVersion.EqualsASCII("3") && !serVersion.EqualsASCII("4") &&
-        !serVersion.EqualsASCII("5") && !serVersion.EqualsASCII("6")) {
+        !serVersion.EqualsASCII("5")) {
       
       rv = ReadCertList(aStream, mSucceededCertChain);
       CHILD_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
@@ -637,7 +631,7 @@ TransportSecurityInfo::Read(nsIObjectInputStream* aStream) {
   }
   
   if (!serVersion.EqualsASCII("3") && !serVersion.EqualsASCII("4") &&
-      !serVersion.EqualsASCII("5") && !serVersion.EqualsASCII("6")) {
+      !serVersion.EqualsASCII("5")) {
     
     rv = ReadCertList(aStream, mFailedCertChain);
     CHILD_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
@@ -656,8 +650,7 @@ TransportSecurityInfo::Read(nsIObjectInputStream* aStream) {
 
   
   if (serVersion.EqualsASCII("2") || serVersion.EqualsASCII("3") ||
-      serVersion.EqualsASCII("4") || serVersion.EqualsASCII("5") ||
-      serVersion.EqualsASCII("6")) {
+      serVersion.EqualsASCII("4") || serVersion.EqualsASCII("5")) {
     rv = aStream->ReadBoolean(&mIsDelegatedCredential);
     CHILD_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
                             "Deserialization should not fail");
@@ -667,8 +660,7 @@ TransportSecurityInfo::Read(nsIObjectInputStream* aStream) {
   }
 
   
-  if (serVersion.EqualsASCII("4") || serVersion.EqualsASCII("5") ||
-      serVersion.EqualsASCII("6")) {
+  if (serVersion.EqualsASCII("4") || serVersion.EqualsASCII("5")) {
     rv = aStream->ReadBoolean(&mNPNCompleted);
     CHILD_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
                             "Deserialization should not fail");
@@ -692,18 +684,8 @@ TransportSecurityInfo::Read(nsIObjectInputStream* aStream) {
   }
 
   
-  if (serVersion.EqualsASCII("5") || serVersion.EqualsASCII("6")) {
+  if (serVersion.EqualsASCII("5")) {
     rv = aStream->ReadBoolean(&mIsBuiltCertChainRootBuiltInRoot);
-    CHILD_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
-                            "Deserialization should not fail");
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
-  
-  if (serVersion.EqualsASCII("6")) {
-    rv = aStream->ReadBoolean(&mIsAcceptedEch);
     CHILD_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
                             "Deserialization should not fail");
     if (NS_FAILED(rv)) {
@@ -743,7 +725,6 @@ void TransportSecurityInfo::SerializeToIPC(IPC::Message* aMsg) {
   WriteParam(aMsg, mNegotiatedNPN);
   WriteParam(aMsg, mResumed);
   WriteParam(aMsg, mIsBuiltCertChainRootBuiltInRoot);
-  WriteParam(aMsg, mIsAcceptedEch);
 }
 
 bool TransportSecurityInfo::DeserializeFromIPC(const IPC::Message* aMsg,
@@ -773,8 +754,7 @@ bool TransportSecurityInfo::DeserializeFromIPC(const IPC::Message* aMsg,
       !ReadParam(aMsg, aIter, &mNPNCompleted) ||
       !ReadParam(aMsg, aIter, &mNegotiatedNPN) ||
       !ReadParam(aMsg, aIter, &mResumed) ||
-      !ReadParam(aMsg, aIter, &mIsBuiltCertChainRootBuiltInRoot) ||
-      !ReadParam(aMsg, aIter, &mIsAcceptedEch)) {
+      !ReadParam(aMsg, aIter, &mIsBuiltCertChainRootBuiltInRoot)) {
     return false;
   }
 
@@ -1179,16 +1159,6 @@ TransportSecurityInfo::GetIsExtendedValidation(bool* aIsEV) {
   }
 
   return NS_ERROR_NOT_AVAILABLE;
-}
-
-NS_IMETHODIMP
-TransportSecurityInfo::GetIsAcceptedEch(bool* aIsAcceptedEch) {
-  NS_ENSURE_ARG_POINTER(aIsAcceptedEch);
-  if (!mHaveCipherSuiteAndProtocol) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  *aIsAcceptedEch = mIsAcceptedEch;
-  return NS_OK;
 }
 
 NS_IMETHODIMP

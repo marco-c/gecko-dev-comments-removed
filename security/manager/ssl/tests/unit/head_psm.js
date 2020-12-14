@@ -80,11 +80,6 @@ const SSL_ERROR_BAD_CERT_ALERT = SSL_ERROR_BASE + 17;
 const SSL_ERROR_WEAK_SERVER_CERT_KEY = SSL_ERROR_BASE + 132;
 const SSL_ERROR_DC_INVALID_KEY_USAGE = SSL_ERROR_BASE + 184;
 
-const SSL_ERROR_ECH_RETRY_WITH_ECH = SSL_ERROR_BASE + 188;
-const SSL_ERROR_ECH_RETRY_WITHOUT_ECH = SSL_ERROR_BASE + 189;
-const SSL_ERROR_ECH_FAILED = SSL_ERROR_BASE + 190;
-const SSL_ERROR_ECH_REQUIRED_ALERT = SSL_ERROR_BASE + 191;
-
 const MOZILLA_PKIX_ERROR_KEY_PINNING_FAILURE = MOZILLA_PKIX_ERROR_BASE + 0;
 const MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY =
   MOZILLA_PKIX_ERROR_BASE + 1;
@@ -477,19 +472,13 @@ function add_tls_server_setup(serverBinName, certsPath, addDefaultRoot = true) {
 
 
 
-
-
-
-
-
 function add_connection_test(
   aHost,
   aExpectedResult,
   aBeforeConnect,
   aWithSecurityInfo,
   aAfterStreamOpen,
-   aOriginAttributes,
-   aEchConfig
+   aOriginAttributes
 ) {
   add_test(function() {
     if (aBeforeConnect) {
@@ -500,8 +489,7 @@ function add_connection_test(
       aExpectedResult,
       aWithSecurityInfo,
       aAfterStreamOpen,
-      aOriginAttributes,
-      aEchConfig
+      aOriginAttributes
     ).then(run_next_test);
   });
 }
@@ -511,8 +499,7 @@ async function asyncConnectTo(
   aExpectedResult,
    aWithSecurityInfo = undefined,
    aAfterStreamOpen = undefined,
-   aOriginAttributes = undefined,
-   aEchConfig = undefined
+   aOriginAttributes = undefined
 ) {
   const REMOTE_PORT = 8443;
 
@@ -524,9 +511,6 @@ async function asyncConnectTo(
       Ci.nsISocketTransportService
     );
     this.transport = sts.createTransport(["ssl"], host, REMOTE_PORT, null);
-    if (aEchConfig) {
-      this.transport.setEchConfig(atob(aEchConfig));
-    }
     
     
     this.transport.connectionFlags |= Ci.nsISocketTransport.DISABLE_IPV6;

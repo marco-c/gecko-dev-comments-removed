@@ -1155,7 +1155,7 @@ SSLServerCertVerificationJob::Run() {
 
 SECStatus AuthCertificateHookInternal(
     TransportSecurityInfo* infoObject, const void* aPtrForLogging,
-    const UniqueCERTCertificate& serverCert, const nsACString& hostName,
+    const UniqueCERTCertificate& serverCert,
     nsTArray<nsTArray<uint8_t>>&& peerCertChain,
     Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
@@ -1198,10 +1198,10 @@ SECStatus AuthCertificateHookInternal(
 
   if (XRE_IsSocketProcess()) {
     return RemoteProcessCertVerification(
-        serverCert, std::move(peerCertChain), hostName, infoObject->GetPort(),
-        infoObject->GetOriginAttributes(), stapledOCSPResponse,
-        sctsFromTLSExtension, dcInfo, providerFlags, certVerifierFlags,
-        resultTask);
+        serverCert, std::move(peerCertChain), infoObject->GetHostName(),
+        infoObject->GetPort(), infoObject->GetOriginAttributes(),
+        stapledOCSPResponse, sctsFromTLSExtension, dcInfo, providerFlags,
+        certVerifierFlags, resultTask);
   }
 
   
@@ -1209,10 +1209,11 @@ SECStatus AuthCertificateHookInternal(
   
   
   return SSLServerCertVerificationJob::Dispatch(
-      addr, infoObject, serverCert, std::move(peerCertChain), hostName,
-      infoObject->GetPort(), infoObject->GetOriginAttributes(),
-      stapledOCSPResponse, sctsFromTLSExtension, dcInfo, providerFlags, Now(),
-      PR_Now(), certVerifierFlags, resultTask);
+      addr, infoObject, serverCert, std::move(peerCertChain),
+      infoObject->GetHostName(), infoObject->GetPort(),
+      infoObject->GetOriginAttributes(), stapledOCSPResponse,
+      sctsFromTLSExtension, dcInfo, providerFlags, Now(), PR_Now(),
+      certVerifierFlags, resultTask);
 }
 
 
@@ -1300,24 +1301,11 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
                                            channelPreInfo.authKeyBits));
   }
 
-  
-  
-  
-  
-  nsCString echConfig;
-  nsresult nsrv = socketInfo->GetEchConfig(echConfig);
-  bool verifyToEchPublicName =
-      NS_SUCCEEDED(nsrv) && echConfig.Length() && channelPreInfo.echPublicName;
-
-  const nsCString echPublicName(channelPreInfo.echPublicName);
-  const nsACString& hostname =
-      verifyToEchPublicName ? echPublicName : socketInfo->GetHostName();
   socketInfo->SetCertVerificationWaiting();
-  rv = AuthCertificateHookInternal(
-      socketInfo, static_cast<const void*>(fd), serverCert, hostname,
-      std::move(peerCertsBytes), stapledOCSPResponse, sctsFromTLSExtension,
-      dcInfo, providerFlags, certVerifierFlags);
-  return rv;
+  return AuthCertificateHookInternal(socketInfo, static_cast<const void*>(fd),
+                                     serverCert, std::move(peerCertsBytes),
+                                     stapledOCSPResponse, sctsFromTLSExtension,
+                                     dcInfo, providerFlags, certVerifierFlags);
 }
 
 
@@ -1362,10 +1350,10 @@ SECStatus AuthCertificateHookWithInfo(
   
   Maybe<DelegatedCredentialInfo> dcInfo;
 
-  return AuthCertificateHookInternal(
-      infoObject, aPtrForLogging, cert, infoObject->GetHostName(),
-      std::move(peerCertChain), stapledOCSPResponse, sctsFromTLSExtension,
-      dcInfo, providerFlags, certVerifierFlags);
+  return AuthCertificateHookInternal(infoObject, aPtrForLogging, cert,
+                                     std::move(peerCertChain),
+                                     stapledOCSPResponse, sctsFromTLSExtension,
+                                     dcInfo, providerFlags, certVerifierFlags);
 }
 
 NS_IMPL_ISUPPORTS_INHERITED0(SSLServerCertVerificationResult, Runnable)
