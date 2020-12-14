@@ -151,11 +151,10 @@ static void ValidateUntrustedModules(const UntrustedModulesData& aData) {
     EXPECT_FALSE(evt.mIsDependent);
   }
 
+  
+  
   EXPECT_GT(aData.mEvents.length(), 0);
   EXPECT_GT(aData.mStacks.GetModuleCount(), 0);
-  
-  
-  EXPECT_TRUE(aData.mXULLoadDurationMS.isNothing());
   EXPECT_EQ(aData.mSanitizationFailures, 0);
   EXPECT_EQ(aData.mTrustTestFailures, 0);
 }
