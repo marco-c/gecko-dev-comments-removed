@@ -2,6 +2,9 @@ package org.mozilla.gecko.util;
 
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.geckoview.GeckoResult;
+
+import javax.annotation.Nullable;
 
 
 
@@ -19,7 +22,7 @@ public interface EventCallback {
 
 
 
-    public void sendSuccess(Object response);
+    void sendSuccess(Object response);
 
     
 
@@ -27,5 +30,19 @@ public interface EventCallback {
 
 
 
-    public void sendError(Object response);
+    void sendError(Object response);
+
+    
+
+
+
+
+    default <T> void resolveTo(final @Nullable GeckoResult<T> response) {
+        if (response == null) {
+            sendSuccess(null);
+            return;
+        }
+        response.accept(this::sendSuccess, throwable ->
+            sendError(throwable.getMessage()));
+    }
 }
