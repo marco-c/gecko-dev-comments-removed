@@ -1186,10 +1186,8 @@ nsresult IsCertificateDistrustImminent(
   
   
   if (CertDNIsInList(nssRootCert.get(), RootSymantecDNs)) {
-    static const PRTime NULL_TIME = 0;
-
-    rv = CheckForSymantecDistrust(intCerts, eeCert, NULL_TIME,
-                                  RootAppleAndGoogleSPKIs, isDistrusted);
+    rv = CheckForSymantecDistrust(intCerts, RootAppleAndGoogleSPKIs,
+                                  isDistrusted);
     if (NS_FAILED(rv)) {
       return rv;
     }
