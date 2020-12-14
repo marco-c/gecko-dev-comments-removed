@@ -23,6 +23,7 @@
 
 
 
+
 const getRecordingState = state => state.recordingState;
 
 
@@ -55,6 +56,9 @@ const getPresets = state => getInitializedValues(state).presets;
 
 
 const getPresetName = state => state.presetName;
+
+
+const getProfilerViewMode = state => state.profilerViewMode;
 
 
 
@@ -160,6 +164,7 @@ module.exports = {
   getObjdirs,
   getPresets,
   getPresetName,
+  getProfilerViewMode,
   getOpenRemoteDevTools,
   getOpenAboutProfiling,
   getRecordingSettings,
