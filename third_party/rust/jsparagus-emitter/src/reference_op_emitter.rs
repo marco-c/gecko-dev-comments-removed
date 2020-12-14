@@ -500,7 +500,7 @@ where
         
 
         
-        emitter.emit.call_prop(key_index);
+        emitter.emit.get_prop(key_index);
         
 
         emitter.emit.swap();
@@ -560,7 +560,7 @@ where
         
 
         
-        emitter.emit.call_elem();
+        emitter.emit.get_elem();
         
 
         emitter.emit.swap();
