@@ -5039,12 +5039,25 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
       NS_ASSERTION(FindIndexOfLayerIn(mNewChildLayers, ownLayer) < 0,
                    "Layer already in list???");
 
+      
+      
+      
+      
+      
+      
+      
+      const DisplayItemClipChain* clipChainForScrollClips = layerClipChain;
+      if (itemType == DisplayItemType::TYPE_TRANSFORM && mContainerItem &&
+          mContainerItem->GetType() == DisplayItemType::TYPE_PERSPECTIVE) {
+        clipChainForScrollClips = mContainerItem->GetClipChain();
+      }
+
       NewLayerEntry* newLayerEntry = mNewChildLayers.AppendElement();
       newLayerEntry->mLayer = ownLayer;
       newLayerEntry->mAnimatedGeometryRoot = itemAGR;
       newLayerEntry->mASR = itemASR;
       newLayerEntry->mScrollMetadataASR = scrollMetadataASR;
-      newLayerEntry->mClipChain = layerClipChain;
+      newLayerEntry->mClipChain = clipChainForScrollClips;
       newLayerEntry->mLayerState = layerState;
       if (itemType == DisplayItemType::TYPE_FIXED_POSITION) {
         newLayerEntry->mIsFixedToRootScrollFrame =
