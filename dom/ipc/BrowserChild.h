@@ -834,6 +834,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   LayoutDeviceIntPoint mClientOffset;
   
+  
   LayoutDeviceIntPoint mChromeOffset;
   ScreenIntCoord mDynamicToolbarMaxHeight;
   TabId mUniqueId;
