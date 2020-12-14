@@ -1372,12 +1372,14 @@ class UrlbarView {
     if (actionSetter) {
       actionSetter();
       item._originalActionSetter = actionSetter;
+      item.setAttribute("has-action", "true");
     } else {
       item._originalActionSetter = () => {
         action.removeAttribute("data-l10n-id");
         action.textContent = "";
       };
       item._originalActionSetter();
+      item.removeAttribute("has-action");
     }
 
     if (!title.hasAttribute("isurl")) {
@@ -1385,8 +1387,6 @@ class UrlbarView {
     } else {
       title.removeAttribute("dir");
     }
-
-    item._elements.get("titleSeparator").hidden = !actionSetter && !setURL;
   }
 
   
@@ -2005,11 +2005,20 @@ class UrlbarView {
       
       
       
+      
       if (this.oneOffsRefresh && result.heuristic) {
         title.textContent =
           localSearchMode || engine
             ? this._queryContext.searchString
             : result.title;
+
+        
+        
+        if (localSearchMode || engine) {
+          item.setAttribute("restyled-search", "true");
+        } else {
+          item.removeAttribute("restyled-search");
+        }
       }
 
       
