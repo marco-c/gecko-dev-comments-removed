@@ -698,6 +698,8 @@ static MOZ_ALWAYS_INLINE bool LookupOwnPropertyInline(
     }
   }
 
+  MOZ_ASSERT(cx->compartment() == obj->compartment());
+
   
   
   if (Shape* shape = obj->lastProperty()->search(cx, id)) {

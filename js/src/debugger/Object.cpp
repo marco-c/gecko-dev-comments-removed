@@ -2378,6 +2378,11 @@ bool DebuggerObject::forceLexicalInitializationByName(
 
   Rooted<GlobalObject*> referent(cx, &object->referent()->as<GlobalObject>());
 
+  
+  
+  Maybe<AutoRealm> ar;
+  EnterDebuggeeObjectRealm(cx, ar, referent);
+
   RootedObject globalLexical(cx, &referent->lexicalEnvironment());
   RootedObject pobj(cx);
   Rooted<PropertyResult> prop(cx);
