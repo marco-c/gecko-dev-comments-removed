@@ -856,40 +856,20 @@ bool BaselineCacheIRCompiler::emitCompareStringResult(JSOp op,
   return true;
 }
 
-bool BaselineCacheIRCompiler::callTypeUpdateIC(
-    Register obj, ValueOperand val, Register scratch,
-    LiveGeneralRegisterSet saveRegs) {
-  
-  allocator.discardStack(masm);
-
-  
-  return true;
-}
-
 bool BaselineCacheIRCompiler::emitStoreSlotShared(bool isFixed,
                                                   ObjOperandId objId,
                                                   uint32_t offsetOffset,
                                                   ValOperandId rhsId) {
-  Address offsetAddr = stubAddress(offsetOffset);
-
-  
-  
-  AutoScratchRegister scratch1(allocator, masm, R1.scratchReg());
-  ValueOperand val = allocator.useFixedValueRegister(masm, rhsId, R0);
-
   Register obj = allocator.useRegister(masm, objId);
+  ValueOperand val = allocator.useValueRegister(masm, rhsId);
+
+  AutoScratchRegister scratch1(allocator, masm);
   Maybe<AutoScratchRegister> scratch2;
   if (!isFixed) {
     scratch2.emplace(allocator, masm);
   }
 
-  LiveGeneralRegisterSet saveRegs;
-  saveRegs.add(obj);
-  saveRegs.add(val);
-  if (!callTypeUpdateIC(obj, val, scratch1, saveRegs)) {
-    return false;
-  }
-
+  Address offsetAddr = stubAddress(offsetOffset);
   masm.load32(offsetAddr, scratch1);
 
   if (isFixed) {
@@ -924,21 +904,16 @@ bool BaselineCacheIRCompiler::emitStoreDynamicSlot(ObjOperandId objId,
 bool BaselineCacheIRCompiler::emitAddAndStoreSlotShared(
     CacheOp op, ObjOperandId objId, uint32_t offsetOffset, ValOperandId rhsId,
     uint32_t newShapeOffset, Maybe<uint32_t> numNewSlotsOffset) {
-  Address offsetAddr = stubAddress(offsetOffset);
-
-  
-  
-  AutoScratchRegister scratch1(allocator, masm, R1.scratchReg());
-  ValueOperand val = allocator.useFixedValueRegister(masm, rhsId, R0);
-
   Register obj = allocator.useRegister(masm, objId);
+  ValueOperand val = allocator.useValueRegister(masm, rhsId);
+
+  AutoScratchRegister scratch1(allocator, masm);
   AutoScratchRegister scratch2(allocator, masm);
 
   Address newShapeAddr = stubAddress(newShapeOffset);
+  Address offsetAddr = stubAddress(offsetOffset);
 
   if (op == CacheOp::AllocateAndStoreDynamicSlot) {
-    
-    
     
     
     
@@ -968,13 +943,6 @@ bool BaselineCacheIRCompiler::emitAddAndStoreSlotShared(
     masm.PopRegsInMaskIgnore(save, ignore);
 
     masm.branchIfFalseBool(scratch1, failure->label());
-  }
-
-  LiveGeneralRegisterSet saveRegs;
-  saveRegs.add(obj);
-  saveRegs.add(val);
-  if (!callTypeUpdateIC(obj, val, scratch1, saveRegs)) {
-    return false;
   }
 
   
@@ -1036,13 +1004,11 @@ bool BaselineCacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
                                                     ValOperandId rhsId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
-  
-  
-  AutoScratchRegister scratch(allocator, masm, R1.scratchReg());
-  ValueOperand val = allocator.useFixedValueRegister(masm, rhsId, R0);
-
   Register obj = allocator.useRegister(masm, objId);
   Register index = allocator.useRegister(masm, indexId);
+  ValueOperand val = allocator.useValueRegister(masm, rhsId);
+
+  AutoScratchRegister scratch(allocator, masm);
 
   FailurePath* failure;
   if (!addFailurePath(&failure)) {
@@ -1063,18 +1029,6 @@ bool BaselineCacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
   masm.branchTestMagic(Assembler::Equal, element, failure->label());
 
   
-  
-  LiveGeneralRegisterSet saveRegs;
-  saveRegs.add(obj);
-  saveRegs.add(index);
-  saveRegs.add(val);
-  if (!callTypeUpdateIC(obj, val, scratch, saveRegs)) {
-    return false;
-  }
-
-  
-  
-  masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
   EmitPreBarrier(masm, element, MIRType::Value);
   masm.storeValue(val, element);
 
@@ -1109,19 +1063,18 @@ static void EmitAssertWritableArrayLengthElements(MacroAssembler& masm,
 #endif
 }
 
+
 bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
                                                         Int32OperandId indexId,
                                                         ValOperandId rhsId,
                                                         bool handleAdd) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
-  
-  
-  AutoScratchRegister scratch(allocator, masm, R1.scratchReg());
-  ValueOperand val = allocator.useFixedValueRegister(masm, rhsId, R0);
-
   Register obj = allocator.useRegister(masm, objId);
   Register index = allocator.useRegister(masm, indexId);
+  ValueOperand val = allocator.useValueRegister(masm, rhsId);
+
+  AutoScratchRegister scratch(allocator, masm);
 
   FailurePath* failure;
   if (!addFailurePath(&failure)) {
@@ -1144,11 +1097,12 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
   
   Register spectreTemp = InvalidReg;
 
+  Label storeSkipPreBarrier;
   if (handleAdd) {
     
-    Label capacityOk, outOfBounds;
+    Label inBounds, outOfBounds;
     masm.spectreBoundsCheck32(index, initLength, spectreTemp, &outOfBounds);
-    masm.jump(&capacityOk);
+    masm.jump(&inBounds);
 
     
     masm.bind(&outOfBounds);
@@ -1156,10 +1110,10 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
 
     
     
-    Label allocElement;
+    Label allocElement, addNewElement;
     Address capacity(scratch, ObjectElements::offsetOfCapacity());
     masm.spectreBoundsCheck32(index, capacity, spectreTemp, &allocElement);
-    masm.jump(&capacityOk);
+    masm.jump(&addNewElement);
 
     masm.bind(&allocElement);
 
@@ -1182,33 +1136,7 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
     
     masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
 
-    masm.bind(&capacityOk);
-
-    
-    
-  } else {
-    
-    masm.spectreBoundsCheck32(index, initLength, spectreTemp, failure->label());
-  }
-
-  
-  
-  LiveGeneralRegisterSet saveRegs;
-  saveRegs.add(obj);
-  saveRegs.add(index);
-  saveRegs.add(val);
-  if (!callTypeUpdateIC(obj, val, scratch, saveRegs)) {
-    return false;
-  }
-
-  
-  masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
-
-  Label doStore;
-  if (handleAdd) {
-    
-    Label inBounds;
-    masm.branch32(Assembler::NotEqual, initLength, index, &inBounds);
+    masm.bind(&addNewElement);
 
     
     masm.add32(Imm32(1), initLength);
@@ -1221,14 +1149,17 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
     masm.bind(&skipIncrementLength);
 
     
-    masm.jump(&doStore);
+    masm.jump(&storeSkipPreBarrier);
 
     masm.bind(&inBounds);
+  } else {
+    
+    masm.spectreBoundsCheck32(index, initLength, spectreTemp, failure->label());
   }
 
   EmitPreBarrier(masm, element, MIRType::Value);
 
-  masm.bind(&doStore);
+  masm.bind(&storeSkipPreBarrier);
   masm.storeValue(val, element);
 
   emitPostBarrierElement(obj, val, scratch, index);
@@ -1239,13 +1170,12 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
                                             ValOperandId rhsId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
-  
-  
-  AutoScratchRegister scratch(allocator, masm, R1.scratchReg());
-  ValueOperand val = allocator.useFixedValueRegister(masm, rhsId, R0);
-
+  AutoOutputRegister output(*this);
   Register obj = allocator.useRegister(masm, objId);
-  AutoScratchRegister scratchLength(allocator, masm);
+  ValueOperand val = allocator.useValueRegister(masm, rhsId);
+
+  AutoScratchRegisterMaybeOutput scratchLength(allocator, masm, output);
+  AutoScratchRegisterMaybeOutputType scratch(allocator, masm, output);
 
   FailurePath* failure;
   if (!addFailurePath(&failure)) {
@@ -1270,10 +1200,10 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
 
   
   
-  Label capacityOk, allocElement;
+  Label allocElement, addNewElement;
   Address capacity(scratch, ObjectElements::offsetOfCapacity());
   masm.spectreBoundsCheck32(scratchLength, capacity, InvalidReg, &allocElement);
-  masm.jump(&capacityOk);
+  masm.jump(&addNewElement);
 
   masm.bind(&allocElement);
 
@@ -1295,23 +1225,10 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
   
   masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
 
-  masm.bind(&capacityOk);
-
-  
-  
-  LiveGeneralRegisterSet saveRegs;
-  saveRegs.add(obj);
-  saveRegs.add(val);
-  if (!callTypeUpdateIC(obj, val, scratch, saveRegs)) {
-    return false;
-  }
-
-  
-  masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
+  masm.bind(&addNewElement);
 
   
   masm.add32(Imm32(1), elementsInitLength);
-  masm.load32(elementsLength, scratchLength);
   masm.add32(Imm32(1), elementsLength);
 
   
@@ -1321,7 +1238,7 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
 
   
   masm.add32(Imm32(1), scratchLength);
-  masm.tagValue(JSVAL_TYPE_INT32, scratchLength, val);
+  masm.tagValue(JSVAL_TYPE_INT32, scratchLength, output.valueReg());
 
   return true;
 }
