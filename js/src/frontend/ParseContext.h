@@ -478,6 +478,27 @@ class ParseContext : public Nestable<ParseContext> {
   
   bool atTopLevel() { return atBodyLevel() && sc_->isTopLevelContext(); }
 
+  bool atModuleTopLevel() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return sc_->isModuleContext() && sc_->isTopLevelContext();
+  }
+
   void setSuperScopeNeedsHomeObject() {
     MOZ_ASSERT(sc_->allowSuperProperty());
     superScopeNeedsHomeObject_ = true;
@@ -545,6 +566,7 @@ class ParseContext : public Nestable<ParseContext> {
   bool declareFunctionArgumentsObject(const UsedNameTracker& usedNames,
                                       bool canSkipLazyClosedOverBindings);
   bool declareDotGeneratorName();
+  bool declareTopLevelDotGeneratorName();
 
  private:
   MOZ_MUST_USE bool isVarRedeclaredInInnermostScope(
