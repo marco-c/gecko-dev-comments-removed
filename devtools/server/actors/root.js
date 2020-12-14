@@ -144,9 +144,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       },
       
       
-      heapSnapshots: true,
-      
-      
       
       
       
