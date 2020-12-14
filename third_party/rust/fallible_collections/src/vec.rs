@@ -64,17 +64,9 @@ pub trait FallibleVec<T> {
 
 
 
-#[derive(PartialEq)]
+#[derive(Default, PartialEq)]
 pub struct TryVec<T> {
     inner: Vec<T>,
-}
-
-impl<T> Default for TryVec<T> {
-    fn default() -> Self {
-        Self {
-            inner: Default::default(),
-        }
-    }
 }
 
 impl<T: core::fmt::Debug> core::fmt::Debug for TryVec<T> {
