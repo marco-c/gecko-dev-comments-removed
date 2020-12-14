@@ -177,8 +177,9 @@
 
       
       if (popupForSearchBar) {
-        BrowserUsageTelemetry.recordSearchbarSelectedResultMethod(
+        BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
           aEvent,
+          "searchbar",
           this.selectedIndex
         );
 

@@ -289,47 +289,26 @@ class BrowserSearchTelemetryHandler {
 
 
 
-  recordUrlbarSelectedResultMethod(
+
+
+
+  recordSearchSuggestionSelectionMethod(
     event,
+    source,
     index,
     userSelectionBehavior = "none"
   ) {
-    this._recordUrlOrSearchbarSelectedResultMethod(
-      event,
-      index,
-      "FX_URLBAR_SELECTED_RESULT_METHOD",
-      userSelectionBehavior
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-  recordSearchbarSelectedResultMethod(event, highlightedIndex) {
-    this._recordUrlOrSearchbarSelectedResultMethod(
-      event,
-      highlightedIndex,
-      "FX_SEARCHBAR_SELECTED_RESULT_METHOD",
-      "none"
-    );
-  }
-
-  _recordUrlOrSearchbarSelectedResultMethod(
-    event,
-    highlightedIndex,
-    histogramID,
-    userSelectionBehavior
-  ) {
     
     
+    if (source == "searchbar" && userSelectionBehavior != "none") {
+      throw new Error("Did not expect a selection behavior for the searchbar.");
+    }
 
-    let histogram = Services.telemetry.getHistogramById(histogramID);
+    let histogram = Services.telemetry.getHistogramById(
+      source == "urlbar"
+        ? "FX_URLBAR_SELECTED_RESULT_METHOD"
+        : "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
+    );
     
     
     
@@ -340,7 +319,7 @@ class BrowserSearchTelemetryHandler {
     let category;
     if (isClick) {
       category = "click";
-    } else if (highlightedIndex >= 0) {
+    } else if (index >= 0) {
       switch (userSelectionBehavior) {
         case "tab":
           category = "tabEnterSelection";

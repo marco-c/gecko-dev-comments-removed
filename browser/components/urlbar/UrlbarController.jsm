@@ -518,8 +518,9 @@ class UrlbarController {
       
       selectedResult = resultIndex > 0 || !result.heuristic ? resultIndex : -1;
     }
-    BrowserSearchTelemetry.recordUrlbarSelectedResultMethod(
+    BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
       event,
+      "urlbar",
       selectedResult,
       this._userSelectionBehavior
     );
