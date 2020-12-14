@@ -26,8 +26,7 @@ const perfDescription = {
       
       
       
-      
-      activeBrowsingContextID: Arg(4, "nullable:number"),
+      activeBrowsingContextID: Arg(4, "number"),
     },
     "profiler-stopped": {
       type: "profiler-stopped",
