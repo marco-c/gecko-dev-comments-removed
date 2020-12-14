@@ -505,6 +505,8 @@ nsWindow::nsWindow() {
 
   mWindowScaleFactorChanged = true;
   mWindowScaleFactor = 1;
+
+  mCompositedScreen = gdk_screen_is_composited(gdk_screen_get_default());
 }
 
 nsWindow::~nsWindow() {
@@ -910,7 +912,18 @@ void nsWindow::SetParent(nsIWidget* aNewParent) {
   }
 }
 
-bool nsWindow::WidgetTypeSupportsAcceleration() { return !IsSmallPopup(); }
+bool nsWindow::WidgetTypeSupportsAcceleration() {
+  if (IsSmallPopup()) {
+    return false;
+  }
+  
+  
+  
+  if (mWindowType == eWindowType_popup) {
+    return mCompositedScreen;
+  }
+  return true;
+}
 
 void nsWindow::ReparentNativeWidget(nsIWidget* aNewParent) {
   MOZ_ASSERT(aNewParent, "null widget");
@@ -4034,6 +4047,7 @@ void nsWindow::OnCompositedChanged() {
   
   
   NotifyThemeChanged(ThemeChangeKind::MediaQueriesOnly);
+  mCompositedScreen = gdk_screen_is_composited(gdk_screen_get_default());
 }
 
 void nsWindow::OnScaleChanged(GtkAllocation* aAllocation) {
@@ -4183,8 +4197,7 @@ bool nsWindow::IsToplevelWindowTransparent() {
   static bool transparencyConfigured = false;
 
   if (!transparencyConfigured) {
-    GdkScreen* screen = gdk_screen_get_default();
-    if (gdk_screen_is_composited(screen)) {
+    if (gdk_screen_is_composited(gdk_screen_get_default())) {
       
       
       
@@ -4422,9 +4435,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
           (popupNeedsAlphaVisual || toplevelNeedsAlphaVisual)) {
         
         
-        GdkScreen* screen = gtk_widget_get_screen(mShell);
-        if (gdk_screen_is_composited(screen)) {
-          GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
+        if (mCompositedScreen) {
+          GdkVisual* visual =
+              gdk_screen_get_rgba_visual(gtk_widget_get_screen(mShell));
           if (visual) {
             gtk_widget_set_visual(mShell, visual);
             mHasAlphaVisual = true;
@@ -5960,8 +5973,7 @@ gboolean FullscreenTransitionData::TimeoutCallback(gpointer aData) {
 
 
 bool nsWindow::PrepareForFullscreenTransition(nsISupports** aData) {
-  GdkScreen* screen = gtk_widget_get_screen(mShell);
-  if (!gdk_screen_is_composited(screen)) {
+  if (!mCompositedScreen) {
     return false;
   }
   *aData = do_AddRef(new FullscreenTransitionWindow(mShell)).take();
@@ -7928,8 +7940,8 @@ bool nsWindow::HideTitlebarByDefault() {
   hideTitlebar = true;
 
   
-  GdkScreen* screen = gdk_screen_get_default();
-  if (!gdk_screen_is_composited(screen) && !TitlebarCanUseShapeMask()) {
+  if (gdk_screen_is_composited(gdk_screen_get_default()) &&
+      !TitlebarCanUseShapeMask()) {
     hideTitlebar = false;
     return hideTitlebar;
   }
