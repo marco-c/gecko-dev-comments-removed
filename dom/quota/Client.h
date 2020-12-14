@@ -137,16 +137,22 @@ class Client {
 
   virtual void StopIdleMaintenance() = 0;
 
-  void ShutdownWorkThreads();
+  
+  bool InitiateShutdownWorkThreads();
+  void FinalizeShutdownWorkThreads();
+
+  virtual bool IsShutdownCompleted() const = 0;
 
   void MaybeRecordShutdownStep(const nsACString& aStepDescription);
 
  private:
   virtual void InitiateShutdown() = 0;
-  virtual bool IsShutdownCompleted() const = 0;
   virtual nsCString GetShutdownStatus() const = 0;
   virtual void ForceKillActors() = 0;
   virtual void FinalizeShutdown() = 0;
+
+  
+  nsCOMPtr<nsITimer> mShutdownTimer;
 
   nsCString mShutdownSteps;
   LazyInitializedOnce<const TimeStamp> mShutdownStartedAt;

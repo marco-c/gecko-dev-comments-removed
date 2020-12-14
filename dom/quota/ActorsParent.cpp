@@ -4078,18 +4078,34 @@ void QuotaManager::Shutdown() {
       &ShutdownTimerCallback, this, DEFAULT_SHUTDOWN_TIMER_MS,
       nsITimer::TYPE_ONE_SHOT, "QuotaManager::ShutdownTimerCallback"));
 
+  const auto& allClientTypes = AllClientTypes();
+
+  bool needsToWait = false;
+  for (Client::Type type : allClientTypes) {
+    needsToWait |= mClients[type]->InitiateShutdownWorkThreads();
+  }
+  needsToWait |= static_cast<bool>(gNormalOriginOps);
+
   
   
-  for (Client::Type type : AllClientTypes()) {
-    mClients[type]->ShutdownWorkThreads();
+  if (needsToWait) {
+    MOZ_ALWAYS_TRUE(SpinEventLoopUntil([this, &allClientTypes] {
+      return !gNormalOriginOps &&
+             std::all_of(allClientTypes.cbegin(), allClientTypes.cend(),
+                         [&self = *this](const auto type) {
+                           return self.mClients[type]->IsShutdownCompleted();
+                         });
+    }));
+  }
+
+  for (Client::Type type : allClientTypes) {
+    mClients[type]->FinalizeShutdownWorkThreads();
   }
 
   
   if (NS_FAILED(mShutdownTimer->Cancel())) {
     NS_WARNING("Failed to cancel shutdown timer!");
   }
-
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return !gNormalOriginOps; }));
 
   
   
