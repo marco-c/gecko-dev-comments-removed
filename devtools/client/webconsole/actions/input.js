@@ -111,13 +111,7 @@ function evaluateExpression(expression, from = "input") {
       })
       .then(onSettled, onSettled);
 
-    
-    
-    
-    const serverConsoleCommandTimestamp =
-      response.startTime ||
-      (response.resultID && Number(response.resultID.replace(/\-\d*$/, ""))) ||
-      null;
+    const serverConsoleCommandTimestamp = response.startTime;
 
     
     
