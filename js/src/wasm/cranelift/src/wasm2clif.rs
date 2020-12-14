@@ -831,7 +831,7 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
         let wsig_id = self.module_env.signature_id(index);
         let mut sigdata = init_sig_from_wsig(self.static_env.call_conv(), &wsig)?;
 
-        if wsig_id.id_kind() != bindings::FuncTypeIdDescKind::None {
+        if wsig_id.id_kind() != bindings::TypeIdDescKind::None {
             
             sigdata.params.push(ir::AbiParam::special(
                 POINTER_TYPE,
@@ -904,13 +904,13 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
 
         
         let sigid_value = match wsig_id.id_kind() {
-            bindings::FuncTypeIdDescKind::None => None,
-            bindings::FuncTypeIdDescKind::Immediate => {
+            bindings::TypeIdDescKind::None => None,
+            bindings::TypeIdDescKind::Immediate => {
                 
                 let imm = wsig_id.id_immediate() as i64;
                 Some(pos.ins().iconst(POINTER_TYPE, imm))
             }
-            bindings::FuncTypeIdDescKind::Global => {
+            bindings::TypeIdDescKind::Global => {
                 let gv = self.sig_global(pos.func, wsig_id.id_tls_offset());
                 let addr = pos.ins().global_value(POINTER_TYPE, gv);
                 Some(

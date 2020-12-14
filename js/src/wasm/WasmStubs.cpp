@@ -1950,8 +1950,7 @@ static void FillArgumentArrayForExit(
 
 
 static bool GenerateImportFunction(jit::MacroAssembler& masm,
-                                   const FuncImport& fi,
-                                   FuncTypeIdDesc funcTypeId,
+                                   const FuncImport& fi, TypeIdDesc funcTypeId,
                                    FuncOffsets* offsets) {
   AssertExpectedSP(masm);
 

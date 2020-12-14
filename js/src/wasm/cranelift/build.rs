@@ -42,8 +42,8 @@ fn main() {
         .whitelist_function("stackmaps_.*")
         .whitelist_type("Cranelift.*")
         
-        .rustified_enum("BD_.*|Trap|TypeCode|FuncTypeIdDescKind")
-        .whitelist_type("BD_.*|Trap|TypeCode|FuncTypeIdDescKind")
+        .rustified_enum("BD_.*|Trap|TypeCode|TypeIdDescKind")
+        .whitelist_type("BD_.*|Trap|TypeCode|TypeIdDescKind")
         .header("baldrapi.h")
         .clang_args(&[
             "-x",
