@@ -100,6 +100,8 @@ extern "C" const char* __tsan_default_suppressions() {
          "deadlock:mozilla::camera::LockAndDispatch\n"
          
          "deadlock:third_party/rust/rkv/src/env.rs\n"
+         
+         "deadlock:EncryptedClientHelloServer\n"
 
 
 
