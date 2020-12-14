@@ -52,11 +52,11 @@ class TimespanMetric {
 
 
 
-  Maybe<int64_t> TestGetValue(const char* aStorageName) const {
-    if (!fog_timespan_test_has_value(mId, aStorageName)) {
+  Maybe<int64_t> TestGetValue(const nsACString& aStorageName) const {
+    if (!fog_timespan_test_has_value(mId, &aStorageName)) {
       return Nothing();
     }
-    return Some(fog_timespan_test_get_value(mId, aStorageName));
+    return Some(fog_timespan_test_get_value(mId, &aStorageName));
   }
 
  private:

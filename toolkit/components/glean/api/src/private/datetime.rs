@@ -78,6 +78,8 @@ impl DatetimeMetric {
     
     
     
+    #[cfg_attr(not(feature = "with-gecko"), allow(dead_code))]
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn set_with_details(
         &self,
         year: i32,
@@ -155,6 +157,7 @@ impl DatetimeMetricImpl {
         crate::with_glean(move |glean| self.0.set(glean, value))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn set_with_details(
         &self,
         year: i32,
