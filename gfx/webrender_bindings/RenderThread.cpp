@@ -827,6 +827,14 @@ void RenderThread::HandleDeviceReset(const char* aWhere,
   gfx::GPUProcessManager::RecordDeviceReset(GLenumToResetReason(aReason));
 #endif
 
+  {
+    MutexAutoLock lock(mRenderTextureMapLock);
+    mRenderTexturesDeferred.clear();
+    for (const auto& entry : mRenderTextures) {
+      entry.second->ClearCachedResources();
+    }
+  }
+
   
   
   
@@ -857,14 +865,6 @@ void RenderThread::HandleDeviceReset(const char* aWhere,
             gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(guilty);
           }));
 #endif
-    }
-  }
-
-  {
-    MutexAutoLock lock(mRenderTextureMapLock);
-    mRenderTexturesDeferred.clear();
-    for (const auto& entry : mRenderTextures) {
-      entry.second->ClearCachedResources();
     }
   }
 }
