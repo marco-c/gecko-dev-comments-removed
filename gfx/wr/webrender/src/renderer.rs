@@ -6907,8 +6907,7 @@ pub trait AsyncPropertySampler {
     
     
     
-    fn sample(&self, document_id: DocumentId, generated_frame_id: Option<u64>,
-              doc: &FastHashMap<PipelineId, Epoch>) -> Vec<FrameMsg>;
+    fn sample(&self, document_id: DocumentId, generated_frame_id: Option<u64>) -> Vec<FrameMsg>;
     
     
     fn deregister(&self);
