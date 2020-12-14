@@ -2063,11 +2063,13 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       
       
       MOZ_ASSERT(!outerScript->hadLICMInvalidation());
-      if (outerScript->ionScript()->hadLICMBailout()) {
-        outerScript->setHadLICMInvalidation();
-        InvalidateAfterBailout(cx, outerScript, "LICM failure");
-      } else {
-        outerScript->ionScript()->setHadLICMBailout();
+      if (outerScript->hasIonScript()) {
+        if (outerScript->ionScript()->hadLICMBailout()) {
+          outerScript->setHadLICMInvalidation();
+          InvalidateAfterBailout(cx, outerScript, "LICM failure");
+        } else {
+          outerScript->ionScript()->setHadLICMBailout();
+        }
       }
       break;
 
