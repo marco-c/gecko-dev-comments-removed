@@ -2026,6 +2026,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
+    if (!this._shouldEmitNewSource) {
+      return;
+    }
+
+    
+    
+    
+    
     DevToolsUtils.executeSoon(() => {
       if (this.isDestroyed()) {
         return;
@@ -2034,6 +2042,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         source: source.form(),
       });
     });
+  },
+
+  
+  
+  _shouldEmitNewSource: true,
+  disableNewSourceEvents() {
+    this._shouldEmitNewSource = false;
   },
 
   
