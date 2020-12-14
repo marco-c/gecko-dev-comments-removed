@@ -238,12 +238,6 @@ function normalizeCssData(db) {
   
   
   if (typeof db.from == "string") {
-    
-    
-    if (!db.properties) {
-      db = { properties: db };
-    }
-
     const missingSupports = !db.properties.color.supports;
     const missingValues = !db.properties.color.values;
     const missingSubproperties = !db.properties.background.subproperties;
