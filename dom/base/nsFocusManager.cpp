@@ -1990,7 +1990,18 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
       if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
         
         
-        if (!bc->GetDocument()) {
+        Document* subdoc = bc->GetDocument();
+        if (!subdoc) {
+          return aElement;
+        }
+        nsIPrincipal* framerPrincipal = doc->GetPrincipal();
+        nsIPrincipal* frameePrincipal = subdoc->GetPrincipal();
+        if (framerPrincipal && frameePrincipal &&
+            !framerPrincipal->Equals(frameePrincipal)) {
+          
+          
+          
+          
           return aElement;
         }
       }
