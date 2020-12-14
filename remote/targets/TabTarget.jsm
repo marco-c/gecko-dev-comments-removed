@@ -107,6 +107,10 @@ class TabTarget extends Target {
     });
   }
 
+  get title() {
+    return this.browsingContext.currentWindowGlobal.documentTitle;
+  }
+
   get type() {
     return "page";
   }
@@ -131,7 +135,8 @@ class TabTarget extends Target {
       
       faviconUrl: "",
       id: this.id,
-      title: this.title,
+      
+      
       type: this.type,
       url: this.url,
       browsingContextId: this.browsingContext.id,
