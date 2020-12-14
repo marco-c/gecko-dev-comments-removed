@@ -280,32 +280,50 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata,
     for (uint32_t typeIndex = 0; typeIndex < moduleEnv_->types.length();
          typeIndex++) {
       const TypeDef& typeDef = moduleEnv_->types[typeIndex];
-      if (!typeDef.isFuncType()) {
-        continue;
-      }
+      TypeIdDesc& typeId = moduleEnv_->typeIds[typeIndex];
 
-      const FuncType& funcType = typeDef.funcType();
-      TypeIdDesc& funcTypeId = moduleEnv_->typeIds[typeIndex];
-
-      if (TypeIdDesc::isGlobal(funcType)) {
+      if (TypeIdDesc::isGlobal(typeDef)) {
         uint32_t globalDataOffset;
         if (!allocateGlobalBytes(sizeof(void*), sizeof(void*),
                                  &globalDataOffset)) {
           return false;
         }
 
-        funcTypeId = TypeIdDesc::global(funcType, globalDataOffset);
+        typeId = TypeIdDesc::global(typeDef, globalDataOffset);
 
-        FuncType copy;
-        if (!copy.clone(funcType)) {
+        TypeDef copy;
+        if (!copy.clone(typeDef)) {
           return false;
         }
 
-        if (!metadata_->funcTypeIds.emplaceBack(std::move(copy), funcTypeId)) {
+        if (!metadata_->types.emplaceBack(std::move(copy), typeId)) {
           return false;
         }
       } else {
-        funcTypeId = TypeIdDesc::immediate(funcType);
+        typeId = TypeIdDesc::immediate(typeDef);
+      }
+    }
+
+    
+    
+    
+    if (moduleEnv_->functionReferencesEnabled()) {
+      
+      RenumberMap map;
+      for (uint32_t srcIndex = 0, destIndex = 0;
+           srcIndex < moduleEnv_->types.length(); srcIndex++) {
+        const TypeDef& typeDef = moduleEnv_->types[srcIndex];
+        if (!TypeIdDesc::isGlobal(typeDef)) {
+          continue;
+        }
+        if (!map.put(srcIndex, destIndex++)) {
+          return false;
+        }
+      }
+
+      
+      for (TypeDefWithId& typeDef : metadata_->types) {
+        typeDef.renumber(map);
       }
     }
   }
@@ -1248,16 +1266,8 @@ SharedModule ModuleGenerator::finishModule(
     return nullptr;
   }
 
-  StructTypeVector structTypes;
-  for (TypeDef& td : moduleEnv_->types) {
-    if (td.isStructType() && !structTypes.append(std::move(td.structType()))) {
-      return nullptr;
-    }
-  }
-
   MutableCode code =
-      js_new<Code>(std::move(codeTier), *metadata, std::move(jumpTables),
-                   std::move(structTypes));
+      js_new<Code>(std::move(codeTier), *metadata, std::move(jumpTables));
   if (!code || !code->initialize(*linkData_)) {
     return nullptr;
   }
