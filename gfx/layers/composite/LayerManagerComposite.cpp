@@ -51,7 +51,7 @@
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/widget/CompositorWidget.h"  
 #include "ipc/CompositorBench.h"              
-#include "ipc/ShadowLayerUtils.h"
+#include "ipc/SurfaceDescriptor.h"
 #include "mozilla/mozalloc.h"  
 #include "nsAppRunner.h"
 #include "mozilla/RefPtr.h"   
