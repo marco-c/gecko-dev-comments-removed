@@ -8,6 +8,8 @@
 
 #include "mozilla/PrintedSheetFrame.h"
 
+#include <tuple>
+
 #include "mozilla/StaticPrefs_print.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsPageFrame.h"
@@ -29,6 +31,16 @@ NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 NS_IMPL_FRAMEARENA_HELPERS(PrintedSheetFrame)
 
+std::tuple<uint32_t, uint32_t> GetRowAndColFromIdx(uint32_t aIdxOnSheet,
+                                                   uint32_t aNumCols) {
+  
+  
+  
+  
+  
+  return {aIdxOnSheet / aNumCols, aIdxOnSheet % aNumCols};
+}
+
 
 gfx::Matrix4x4 ComputePagesPerSheetTransform(nsIFrame* aFrame,
                                              float aAppUnitsPerPixel) {
@@ -48,8 +60,8 @@ gfx::Matrix4x4 ComputePagesPerSheetTransform(nsIFrame* aFrame,
     if (ppsInfo->mNumPages > 1) {
       scale = pd->mPagesPerSheetScale;
       gridOrigin = pd->mPagesPerSheetGridOrigin;
-      std::tie(rowIdx, colIdx) =
-          ppsInfo->GetRowAndColFromIdx(pageFrame->IndexOnSheet());
+      std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(pageFrame->IndexOnSheet(),
+                                                     pd->mPagesPerSheetNumCols);
     }
   }
 
@@ -293,8 +305,16 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
   
   
   const auto* ppsInfo = mPD->PagesPerSheetInfo();
-  nsSize pageGridFullSize(ppsInfo->mNumCols * pageSize.width,
-                          ppsInfo->mNumRows * pageSize.height);
+
+  
+  
+  
+  
+  
+  uint32_t numCols = ppsInfo->mLargerNumTracks;
+  uint32_t numRows = ppsInfo->mNumPages / numCols;
+
+  nsSize pageGridFullSize(numCols * pageSize.width, numRows * pageSize.height);
 
   if (MOZ_UNLIKELY(availSpaceOnSheet.IsEmpty() || pageGridFullSize.IsEmpty())) {
     
@@ -306,6 +326,7 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
     
     NS_WARNING("Zero area for pages-per-sheet grid, or zero-sized grid");
     mPD->mPagesPerSheetGridOrigin = pageGridOrigin;
+    mPD->mPagesPerSheetNumCols = 1;
     mPD->mPagesPerSheetScale = 0.0f;
     return;
   }
@@ -342,6 +363,7 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
 
   
   mPD->mPagesPerSheetGridOrigin = pageGridOrigin;
+  mPD->mPagesPerSheetNumCols = numCols;
   mPD->mPagesPerSheetScale = scale;
 }
 

@@ -6,8 +6,6 @@
 #ifndef nsPageSequenceFrame_h___
 #define nsPageSequenceFrame_h___
 
-#include <tuple>
-
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
@@ -31,18 +29,11 @@ struct nsPagesPerSheetInfo {
   static const nsPagesPerSheetInfo& LookupInfo(int32_t aPPS);
 
   uint16_t mNumPages;
-  uint16_t mNumRows;
-  uint16_t mNumCols;
 
-  std::tuple<uint16_t, uint16_t> GetRowAndColFromIdx(
-      uint16_t aIdxOnSheet) const {
-    
-    
-    
-    
-    
-    return {aIdxOnSheet / mNumCols, aIdxOnSheet % mNumCols};
-  }
+  
+  
+  
+  uint16_t mLargerNumTracks;
 };
 
 
@@ -86,7 +77,15 @@ class nsSharedPageData {
   
   
   
+  
   float mPagesPerSheetScale = 1.0f;
+  
+  
+  
+  
+  
+  
+  uint32_t mPagesPerSheetNumCols = 1;
   nsPoint mPagesPerSheetGridOrigin;
 
   

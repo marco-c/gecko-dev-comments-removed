@@ -49,12 +49,12 @@ nsPageSequenceFrame* NS_NewPageSequenceFrame(PresShell* aPresShell,
 NS_IMPL_FRAMEARENA_HELPERS(nsPageSequenceFrame)
 
 static const nsPagesPerSheetInfo kSupportedPagesPerSheet[] = {
-    {1, 1, 1},  
+    {1, 1},  
     
-    {4, 2, 2},
+    {4, 2},
     
-    {9, 3, 3},
-    {16, 4, 4},
+    {9, 3},
+    {16, 4},
 };
 
 inline void SanityCheckPagesPerSheetInfo() {
@@ -68,16 +68,12 @@ inline void SanityCheckPagesPerSheetInfo() {
   uint16_t prevInfoPPS = 0;
   for (const auto& info : kSupportedPagesPerSheet) {
     MOZ_ASSERT(info.mNumPages > prevInfoPPS,
-               "page count field should be nonzero & monotonically increase");
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(
-        (uint32_t)info.mNumRows * (uint32_t)info.mNumCols == info.mNumPages,
-        "page count should match rows*cols");
+               "page count field should be positive & monotonically increase");
+    MOZ_ASSERT(info.mLargerNumTracks > 0,
+               "page grid has to have a positive number of tracks");
+    MOZ_ASSERT(info.mNumPages % info.mLargerNumTracks == 0,
+               "page count field should be evenly divisible by "
+               "the given track-count");
     prevInfoPPS = info.mNumPages;
   }
 #endif
