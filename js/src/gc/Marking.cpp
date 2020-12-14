@@ -2429,10 +2429,7 @@ void GCMarker::stop() {
   MOZ_ASSERT(isDrained());
   MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(markLaterArenas == 0);
-
-  if (state == MarkingState::NotActive) {
-    return;
-  }
+  MOZ_ASSERT(state != MarkingState::NotActive);
   state = MarkingState::NotActive;
 
   stack.clear();
@@ -3732,8 +3729,7 @@ static inline bool ShouldCheckMarkState(JSRuntime* rt, T** thingp) {
 
   TenuredCell& thing = (*thingp)->asTenured();
   Zone* zone = thing.zoneFromAnyThread();
-
-  if (zone->gcState() <= Zone::Prepare || zone->isGCFinished()) {
+  if (!zone->isCollectingFromAnyThread() || zone->isGCFinished()) {
     return false;
   }
 
@@ -4000,18 +3996,12 @@ void UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing) {
   }
 
   TenuredCell& tenured = cell->asTenured();
+
+  
+  
+  
+  
   Zone* zone = tenured.zone();
-
-  
-  
-  if (zone->isGCPreparing()) {
-    return;
-  }
-
-  
-  
-  
-  
   if (zone->isGCMarking()) {
     if (!cell->isMarkedBlack()) {
       Cell* tmp = cell;
@@ -4071,11 +4061,6 @@ JS_FRIEND_API bool JS::UnmarkGrayGCThingRecursively(JS::GCCellPtr thing) {
   MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
 
   JSRuntime* rt = thing.asCell()->runtimeFromMainThread();
-  if (thing.asCell()->zone()->isGCPreparing()) {
-    
-    return false;
-  }
-
   gcstats::AutoPhase outerPhase(rt->gc.stats(), gcstats::PhaseKind::BARRIER);
   gcstats::AutoPhase innerPhase(rt->gc.stats(),
                                 gcstats::PhaseKind::UNMARK_GRAY);

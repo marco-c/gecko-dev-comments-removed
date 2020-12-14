@@ -20,11 +20,7 @@ dbg.onEnterFrame = frame => {
 
 
 gczeal(10, 0);
-gcslice(1);
-while (gcstate() !== "NotAcctive" && gcstate() !== "Sweep") {
-  gcslice(1000);
-}
-
+gcslice(1000000);
 let genObj = g.f();
 genObj.return();
 assertEq(gcstate(), "Sweep");

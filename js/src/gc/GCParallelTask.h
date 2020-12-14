@@ -106,7 +106,10 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
   void cancelDispatchedTask(AutoLockHelperThreadState& lock);
 
   
-  void cancelAndWait();
+  void cancelAndWait() {
+    cancel_ = true;
+    join();
+  }
 
   
   
@@ -130,8 +133,6 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
  protected:
   
   virtual void run(AutoLockHelperThreadState& lock) = 0;
-
-  bool isCancelled() const { return cancel_; }
 
  private:
   void assertIdle() const {
