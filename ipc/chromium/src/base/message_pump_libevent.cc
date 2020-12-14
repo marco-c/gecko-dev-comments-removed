@@ -19,6 +19,7 @@
 #include "nsDependentSubstring.h"
 #include "event.h"
 #include "mozilla/UniquePtr.h"
+#include "GeckoProfiler.h"
 
 
 
@@ -106,6 +107,8 @@ bool MessagePumpLibevent::FileDescriptorWatcher::StopWatchingFileDescriptor() {
 
 
 void MessagePumpLibevent::OnWakeup(int socket, short flags, void* context) {
+  AUTO_PROFILER_LABEL("MessagePumpLibevent::OnWakeup", OTHER);
+
   base::MessagePumpLibevent* that =
       static_cast<base::MessagePumpLibevent*>(context);
   DCHECK(that->wakeup_pipe_out_ == socket);
@@ -235,6 +238,8 @@ bool MessagePumpLibevent::WatchFileDescriptor(int fd, bool persistent,
 
 void MessagePumpLibevent::OnLibeventNotification(int fd, short flags,
                                                  void* context) {
+  AUTO_PROFILER_LABEL("MessagePumpLibevent::OnLibeventNotification", OTHER);
+
   Watcher* watcher = static_cast<Watcher*>(context);
 
   if (flags & EV_WRITE) {
@@ -302,6 +307,8 @@ bool MessagePumpLibevent::CatchSignal(int sig, SignalEvent* sigevent,
 
 void MessagePumpLibevent::OnLibeventSignalNotification(int sig, short flags,
                                                        void* context) {
+  AUTO_PROFILER_LABEL("MessagePumpLibevent::OnLibeventSignalNotification", OTHER);
+
   DCHECK(sig > 0);
   DCHECK(EV_SIGNAL == flags);
   DCHECK(context);
@@ -333,6 +340,7 @@ void MessagePumpLibevent::Run(Delegate* delegate) {
 
     
     
+    AUTO_PROFILER_LABEL("MessagePumpLibevent::Run::Wait", IDLE);
     if (delayed_work_time_.is_null()) {
       event_base_loop(event_base_, EVLOOP_ONCE);
     } else {
