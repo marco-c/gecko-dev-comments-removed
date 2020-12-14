@@ -330,6 +330,7 @@ pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.searches",             true);
 pref("browser.urlbar.suggest.topsites",             true);
+pref("browser.urlbar.suggest.engines",              true);
 
 
 
@@ -380,10 +381,6 @@ pref("browser.urlbar.update2.oneOffsRefresh", true);
 
 
 pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", true);
-
-
-
-pref("browser.urlbar.update2.tabToComplete", true);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
 
@@ -1288,6 +1285,7 @@ pref("services.sync.prefs.sync.browser.urlbar.suggest.history", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.openpage", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.searches", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.topsites", true);
+pref("services.sync.prefs.sync.browser.urlbar.suggest.engines", true);
 pref("services.sync.prefs.sync.dom.disable_open_during_load", true);
 pref("services.sync.prefs.sync.dom.disable_window_flip", true);
 pref("services.sync.prefs.sync.dom.disable_window_move_resize", true);

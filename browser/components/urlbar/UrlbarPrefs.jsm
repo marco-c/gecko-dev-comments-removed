@@ -159,6 +159,8 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.searches", false],
 
   
+  ["suggest.engines", true],
+
   
   ["suggest.topsites", true],
 
@@ -208,10 +210,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["update2.restyleBrowsingHistoryAsSearch", true],
-
-  
-  
-  ["update2.tabToComplete", true],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],

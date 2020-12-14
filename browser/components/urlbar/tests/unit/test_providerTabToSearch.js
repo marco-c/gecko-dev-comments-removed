@@ -15,7 +15,6 @@ add_task(async function init() {
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   
   Services.prefs.setBoolPref("browser.urlbar.update2", true);
-  Services.prefs.setBoolPref("browser.urlbar.update2.tabToComplete", true);
   
   
   Services.prefs.setIntPref(
@@ -65,6 +64,24 @@ add_task(async function basic() {
       }),
     ],
   });
+
+  info("Repeat the search but with tab-to-search disabled through pref.");
+  Services.prefs.setBoolPref("browser.urlbar.suggest.engines", false);
+  await check_results({
+    context,
+    autofilled: "example.com/",
+    completed: "https://example.com/",
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://example.com/",
+        title: "https://example.com",
+        heuristic: true,
+        providerName: "Autofill",
+      }),
+    ],
+  });
+  Services.prefs.clearUserPref("browser.urlbar.suggest.engines");
+
   await cleanupPlaces();
 });
 

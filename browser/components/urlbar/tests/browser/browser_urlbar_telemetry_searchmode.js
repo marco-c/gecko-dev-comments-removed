@@ -459,7 +459,6 @@ add_task(async function test_touchbar() {
 add_task(async function test_tabtosearch() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.update2.tabToComplete", true],
       
       ["browser.urlbar.tabToSearch.onboard.interactionsLeft", 0],
     ],
@@ -519,10 +518,7 @@ add_task(async function test_tabtosearch() {
 
 add_task(async function test_tabtosearch_onboard() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.update2.tabToComplete", true],
-      ["browser.urlbar.tabToSearch.onboard.interactionsLeft", 3],
-    ],
+    set: [["browser.urlbar.tabToSearch.onboard.interactionsLeft", 3]],
   });
   await PlacesTestUtils.addVisits([`http://${engineDomain}/`]);
 
