@@ -4501,7 +4501,7 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
       
       
       if (!res.mIsStillLoading && !res.mHasSize) {
-        aError.Throw(NS_ERROR_NOT_AVAILABLE);
+        aError.ThrowInvalidStateError("Passed-in image is \"broken\"");
       }
       return;
     }
