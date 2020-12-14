@@ -649,8 +649,14 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
   if (!p) {
     Rooted<AbstractGeneratorObject*> genObj(cx);
     if (referent.isGeneratorFrame()) {
-      AutoRealm ar(cx, referent.callee());
-      genObj = GetGeneratorObjectForFrame(cx, referent);
+      if (referent.isFunctionFrame()) {
+        AutoRealm ar(cx, referent.callee());
+        genObj = GetGeneratorObjectForFrame(cx, referent);
+      } else {
+        MOZ_ASSERT(referent.isModuleFrame());
+        AutoRealm ar(cx, referent.script()->module());
+        genObj = GetGeneratorObjectForFrame(cx, referent);
+      }
 
       
       
