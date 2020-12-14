@@ -223,6 +223,12 @@ interface nsITelemetry : nsISupports
 
 
 
+  const unsigned long INCLUDE_PRIVATE_FIELDS_IN_LOADEVENTS = 1 << 2;
+
+  
+
+
+
 
 
 
