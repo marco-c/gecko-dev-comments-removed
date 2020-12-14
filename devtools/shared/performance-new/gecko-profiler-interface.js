@@ -89,8 +89,6 @@ class ActorReadyGeckoProfilerInterface {
     
     const settings = {
       entries: options.entries || 1000000,
-      
-      
       duration: options.duration || 0,
       interval: options.interval || 1,
       features: options.features || [
