@@ -3829,6 +3829,8 @@ static void draw_perspective(int nump, Interpolants interp_outs[4],
   if (test_none(pos.z <= -pos.w || pos.z >= pos.w)) {
     
     
+    
+    
     Float w = 1.0f / pos.w;
     vec3 screen = pos.sel(X, Y, Z) * w * scale + offset;
     Point3D p[4] = {{screen.x.x, screen.y.x, screen.z.x, w.x},
@@ -3884,6 +3886,11 @@ static void draw_perspective(int nump, Interpolants interp_outs[4],
     
     for (int i = 0; i < nump; i++) {
       float w = 1.0f / p_clip[i].w;
+      
+      
+      
+      
+      if(!isfinite(w)) w = 0.0f;
       p_clip[i] = Point3D(p_clip[i].sel(X, Y, Z) * w * scale + offset, w);
     }
     draw_perspective_clipped(nump, p_clip, interp_clip, colortex, layer,
@@ -3908,6 +3915,11 @@ static void draw_quad(int nump, Texture& colortex, int layer,
   
   
   float w = 1.0f / pos.w.x;
+  
+  
+  
+  
+  if(!isfinite(w)) w = 0.0f;
   vec2 screen = (pos.sel(X, Y) * w + 1) * 0.5f *
                     vec2_scalar(ctx->viewport.width(), ctx->viewport.height()) +
                 vec2_scalar(ctx->viewport.x0, ctx->viewport.y0);
