@@ -23,7 +23,7 @@ add_task(async function() {
   const client = await createLocalClient();
   const mainRoot = client.mainRoot;
 
-  await addTab(FISSION_TEST_URL);
+  const tab = await addTab(FISSION_TEST_URL);
 
   
   
@@ -100,4 +100,9 @@ add_task(async function() {
   await waitForAllTargetsToBeAttached(targetList);
 
   await client.close();
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    
+    const registration = await content.wrappedJSObject.registrationPromise;
+    registration.unregister();
+  });
 });

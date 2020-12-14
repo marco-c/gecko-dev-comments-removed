@@ -159,5 +159,10 @@ async function testTabFrames(mainRoot) {
   targetList.destroy();
   await waitForAllTargetsToBeAttached(targetList);
 
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    
+    const registration = await content.wrappedJSObject.registrationPromise;
+    registration.unregister();
+  });
   BrowserTestUtils.removeTab(tab);
 }
