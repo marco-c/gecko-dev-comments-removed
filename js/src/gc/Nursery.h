@@ -69,7 +69,6 @@ class GCSchedulingTunables;
 class MinorCollectionTracer;
 class RelocationOverlay;
 class StringRelocationOverlay;
-struct TenureCountCache;
 enum class AllocKind : uint8_t;
 class TenuredCell;
 }  
@@ -480,9 +479,6 @@ class Nursery {
   bool canAllocateBigInts_;
 
   
-  int64_t reportTenurings_;
-
-  
   
   
   mutable JS::GCReason minorGCTriggerReason_;
@@ -679,17 +675,14 @@ class Nursery {
     size_t tenuredBytes;
     size_t tenuredCells;
   };
-  CollectionResult doCollection(JS::GCReason reason,
-                                gc::TenureCountCache& tenureCounts);
+  CollectionResult doCollection(JS::GCReason reason);
 
-  size_t doPretenuring(JSRuntime* rt, JS::GCReason reason,
-                       const gc::TenureCountCache& tenureCounts,
-                       bool highPromotionRate);
+  void doPretenuring(JSRuntime* rt, JS::GCReason reason,
+                     bool highPromotionRate);
 
   
   
-  void collectToFixedPoint(TenuringTracer& trc,
-                           gc::TenureCountCache& tenureCounts);
+  void collectToFixedPoint(TenuringTracer& trc);
 
   
   
@@ -736,11 +729,9 @@ class Nursery {
   void freeChunksFrom(unsigned firstFreeChunk);
 
   void sendTelemetry(JS::GCReason reason, mozilla::TimeDuration totalTime,
-                     bool wasEmpty, size_t pretenureCount,
-                     double promotionRate);
+                     bool wasEmpty, double promotionRate);
 
   void printCollectionProfile(JS::GCReason reason, double promotionRate);
-  void printTenuringData(const gc::TenureCountCache& tenureCounts);
 
   
   void maybeClearProfileDurations();
