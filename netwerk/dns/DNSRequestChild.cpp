@@ -54,6 +54,7 @@ class ChildDNSRecord : public nsIDNSAddrRecord {
   double mTrrFetchDuration;
   double mTrrFetchDurationNetworkOnly;
   bool mIsTRR;
+  uint32_t mEffectiveTRRMode;
 };
 
 NS_IMPL_ISUPPORTS(ChildDNSRecord, nsIDNSRecord, nsIDNSAddrRecord)
@@ -64,6 +65,7 @@ ChildDNSRecord::ChildDNSRecord(const DNSRecord& reply, uint16_t flags)
   mTrrFetchDuration = reply.trrFetchDuration();
   mTrrFetchDurationNetworkOnly = reply.trrFetchDurationNetworkOnly();
   mIsTRR = reply.isTRR();
+  mEffectiveTRRMode = reply.effectiveTRRMode();
 
   
   const nsTArray<NetAddr>& addrs = reply.addrs();
@@ -171,6 +173,12 @@ NS_IMETHODIMP
 ChildDNSRecord::ReportUnusable(uint16_t aPort) {
   
   
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ChildDNSRecord::GetEffectiveTRRMode(uint32_t* aMode) {
+  *aMode = mEffectiveTRRMode;
   return NS_OK;
 }
 

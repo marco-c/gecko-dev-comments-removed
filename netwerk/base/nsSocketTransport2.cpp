@@ -1903,13 +1903,18 @@ bool nsSocketTransport::RecoverFromError() {
               mNetAddr.inet6.ip.u64[1] == 0))) {
           SOCKET_LOG(("  TRR returned 0.0.0.0 and there are no other IPs"));
         } else if (trrEnabled) {
+          uint32_t trrMode = 0;
+          mDNSRecord->GetEffectiveTRRMode(&trrMode);
           
-          
-          
-          SOCKET_LOG(("  failed to connect with TRR enabled, try w/o\n"));
-          mState = STATE_CLOSED;
-          mConnectionFlags |= DISABLE_TRR | BYPASS_CACHE | REFRESH_CACHE;
-          tryAgain = true;
+          if (trrMode != 3) {
+            
+            
+            
+            SOCKET_LOG(("  failed to connect with TRR enabled, try w/o\n"));
+            mState = STATE_CLOSED;
+            mConnectionFlags |= DISABLE_TRR | BYPASS_CACHE | REFRESH_CACHE;
+            tryAgain = true;
+          }
         }
       }
     }
