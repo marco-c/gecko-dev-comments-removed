@@ -78,6 +78,10 @@ class nsViewSourceChannel final : public nsIViewSourceChannel,
   
   nsresult BuildViewSourceURI(nsIURI* aURI, nsIURI** aResult);
 
+  
+  
+  void UpdateChannelInterfaces();
+
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIHttpChannel> mHttpChannel;
