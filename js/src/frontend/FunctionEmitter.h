@@ -11,12 +11,12 @@
 
 #include <stdint.h>  
 
+#include "frontend/AsyncEmitter.h"        
 #include "frontend/DefaultEmitter.h"      
 #include "frontend/EmitterScope.h"        
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/SharedContext.h"       
 #include "frontend/TDZCheckCache.h"       
-#include "frontend/TryEmitter.h"          
 #include "gc/Rooting.h"                   
 #include "vm/BytecodeUtil.h"              
 #include "vm/JSAtom.h"                    
@@ -185,7 +185,7 @@ class MOZ_STACK_CLASS FunctionScriptEmitter {
   mozilla::Maybe<TDZCheckCache> tdzCache_;
 
   
-  mozilla::Maybe<TryEmitter> rejectTryCatch_;
+  mozilla::Maybe<AsyncEmitter> asyncEmitter_;
 
   
   mozilla::Maybe<uint32_t> paramStart_;
@@ -254,11 +254,6 @@ class MOZ_STACK_CLASS FunctionScriptEmitter {
 
  private:
   MOZ_MUST_USE bool emitExtraBodyVarScope();
-
-  
-  
-  MOZ_MUST_USE bool emitAsyncFunctionRejectPrologue();
-  MOZ_MUST_USE bool emitAsyncFunctionRejectEpilogue();
 };
 
 

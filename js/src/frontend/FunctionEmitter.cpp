@@ -10,6 +10,7 @@
 #include "mozilla/Unused.h"
 
 #include "builtin/ModuleObject.h"          
+#include "frontend/AsyncEmitter.h"         
 #include "frontend/BytecodeEmitter.h"      
 #include "frontend/FunctionSyntaxKind.h"   
 #include "frontend/ModuleSharedContext.h"  
@@ -355,6 +356,10 @@ bool FunctionScriptEmitter::prepareForParameters() {
     }
   }
 
+  if (funbox_->needsPromiseResult()) {
+    asyncEmitter_.emplace(bce_);
+  }
+
   if (bodyEnd_) {
     bce_->setFunctionBodyEndPos(*bodyEnd_);
   }
@@ -396,14 +401,15 @@ bool FunctionScriptEmitter::prepareForParameters() {
     }
   }
 
-  
-  
-  
-  
-  
-  if (funbox_->hasParameterExprs && funbox_->needsPromiseResult()) {
-    if (!emitAsyncFunctionRejectPrologue()) {
-      return false;
+  if (funbox_->needsPromiseResult()) {
+    if (funbox_->hasParameterExprs) {
+      if (!asyncEmitter_->prepareForParamsWithExpression()) {
+        return false;
+      }
+    } else {
+      if (!asyncEmitter_->prepareForParamsWithoutExpression()) {
+        return false;
+      }
     }
   }
 
@@ -418,8 +424,8 @@ bool FunctionScriptEmitter::prepareForBody() {
 
   
 
-  if (rejectTryCatch_) {
-    if (!emitAsyncFunctionRejectEpilogue()) {
+  if (funbox_->needsPromiseResult()) {
+    if (!asyncEmitter_->emitParamsEpilogue()) {
       return false;
     }
   }
@@ -430,7 +436,7 @@ bool FunctionScriptEmitter::prepareForBody() {
   }
 
   if (funbox_->needsPromiseResult()) {
-    if (!emitAsyncFunctionRejectPrologue()) {
+    if (!asyncEmitter_->prepareForBody()) {
       return false;
     }
   }
@@ -447,47 +453,6 @@ bool FunctionScriptEmitter::prepareForBody() {
 #ifdef DEBUG
   state_ = State::Body;
 #endif
-  return true;
-}
-
-bool FunctionScriptEmitter::emitAsyncFunctionRejectPrologue() {
-  rejectTryCatch_.emplace(bce_, TryEmitter::Kind::TryCatch,
-                          TryEmitter::ControlKind::NonSyntactic);
-  return rejectTryCatch_->emitTry();
-}
-
-bool FunctionScriptEmitter::emitAsyncFunctionRejectEpilogue() {
-  if (!rejectTryCatch_->emitCatch()) {
-    
-    return false;
-  }
-
-  if (!bce_->emitGetDotGeneratorInInnermostScope()) {
-    
-    return false;
-  }
-  if (!bce_->emit2(JSOp::AsyncResolve,
-                   uint8_t(AsyncFunctionResolveKind::Reject))) {
-    
-    return false;
-  }
-  if (!bce_->emit1(JSOp::SetRval)) {
-    
-    return false;
-  }
-  if (!bce_->emitGetDotGeneratorInInnermostScope()) {
-    
-    return false;
-  }
-  if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
-    
-    return false;
-  }
-
-  if (!rejectTryCatch_->emitEnd()) {
-    return false;
-  }
-  rejectTryCatch_.reset();
   return true;
 }
 
@@ -559,58 +524,73 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
 
 bool FunctionScriptEmitter::emitEndBody() {
   MOZ_ASSERT(state_ == State::Body);
-
   
 
   if (funbox_->needsFinalYield()) {
     
-    bool needsIteratorResult = funbox_->needsIteratorResult();
-    if (needsIteratorResult) {
+    if (funbox_->needsIteratorResult()) {
+      MOZ_ASSERT(!funbox_->needsPromiseResult());
+      
+      
       if (!bce_->emitPrepareIteratorResult()) {
         
         return false;
       }
-    }
 
-    if (!bce_->emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
+      if (!bce_->emit1(JSOp::Undefined)) {
+        
+        return false;
+      }
 
-    if (needsIteratorResult) {
       if (!bce_->emitFinishIteratorResult(true)) {
         
         return false;
       }
-    }
 
-    if (funbox_->needsPromiseResult()) {
+      if (!bce_->emit1(JSOp::SetRval)) {
+        
+        return false;
+      }
+
       if (!bce_->emitGetDotGeneratorInInnermostScope()) {
         
         return false;
       }
 
-      if (!bce_->emit2(JSOp::AsyncResolve,
-                       uint8_t(AsyncFunctionResolveKind::Fulfill))) {
+      
+      if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
         
         return false;
       }
-    }
-
-    if (!bce_->emit1(JSOp::SetRval)) {
+    } else if (funbox_->needsPromiseResult()) {
       
-      return false;
-    }
-
-    if (!bce_->emitGetDotGeneratorInInnermostScope()) {
       
-      return false;
-    }
-
-    
-    if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
+      if (!asyncEmitter_->emitEnd()) {
+        return false;
+      }
+    } else {
       
-      return false;
+      
+      if (!bce_->emit1(JSOp::Undefined)) {
+        
+        return false;
+      }
+
+      if (!bce_->emit1(JSOp::SetRval)) {
+        
+        return false;
+      }
+
+      if (!bce_->emitGetDotGeneratorInInnermostScope()) {
+        
+        return false;
+      }
+
+      
+      if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
+        
+        return false;
+      }
     }
   } else {
     
@@ -633,12 +613,6 @@ bool FunctionScriptEmitter::emitEndBody() {
   if (funbox_->isDerivedClassConstructor()) {
     if (!bce_->emitCheckDerivedClassConstructorReturn()) {
       
-      return false;
-    }
-  }
-
-  if (rejectTryCatch_) {
-    if (!emitAsyncFunctionRejectEpilogue()) {
       return false;
     }
   }
