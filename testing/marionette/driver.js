@@ -277,6 +277,11 @@ GeckoDriver.prototype.QueryInterface = ChromeUtils.generateQI([
 ]);
 
 GeckoDriver.prototype.init = function() {
+  if (MarionettePrefs.useActors) {
+    
+    return;
+  }
+
   this.mm.addMessageListener("Marionette:ListenersAttached", this);
   this.mm.addMessageListener("Marionette:Register", this);
   this.mm.addMessageListener("Marionette:switchedToFrame", this);
@@ -285,6 +290,10 @@ GeckoDriver.prototype.init = function() {
 };
 
 GeckoDriver.prototype.uninit = function() {
+  if (MarionettePrefs.useActors) {
+    return;
+  }
+
   this.mm.removeMessageListener("Marionette:ListenersAttached", this);
   this.mm.removeMessageListener("Marionette:Register", this);
   this.mm.removeMessageListener("Marionette:switchedToFrame", this);
@@ -803,8 +812,11 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     logger.info("Preemptively starting accessibility service in Chrome");
   }
 
-  let registerBrowsers = this.registerPromise();
-  let browserListening = this.listeningPromise();
+  let registerBrowsers, browserListening;
+  if (!MarionettePrefs.useActors) {
+    registerBrowsers = this.registerPromise();
+    browserListening = this.listeningPromise();
+  }
 
   let waitForWindow = function() {
     let windowTypes;
@@ -868,8 +880,18 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     throw new error.WebDriverError("Session already running");
   }
 
-  await registerBrowsers;
-  await browserListening;
+  if (MarionettePrefs.useActors) {
+    for (let win of this.windows) {
+      const tabBrowser = browser.getTabBrowser(win);
+      for (const tab of tabBrowser.tabs) {
+        const contentBrowser = browser.getBrowserForTab(tab);
+        this.registerBrowser(contentBrowser.browsingContext.id, contentBrowser);
+      }
+    }
+  } else {
+    await registerBrowsers;
+    await browserListening;
+  }
 
   if (MarionettePrefs.useActors) {
     registerCommandsActor();
@@ -921,6 +943,14 @@ GeckoDriver.prototype.observe = function(subject, topic, data) {
             `to ${subject.id}`
         );
         this.contentBrowsingContext = subject;
+        if (MarionettePrefs.useActors) {
+          
+          
+          
+          
+          
+          this.updateIdForBrowser(this.curBrowser.contentBrowser, subject.id);
+        }
       }
       break;
   }
@@ -1715,7 +1745,7 @@ GeckoDriver.prototype.setWindowHandle = async function(
     
     
     let registerBrowsers, browserListening;
-    if (winProperties.hasTabBrowser) {
+    if (!MarionettePrefs.useActors && winProperties.hasTabBrowser) {
       registerBrowsers = this.registerPromise();
       browserListening = this.listeningPromise();
     }
@@ -1724,12 +1754,23 @@ GeckoDriver.prototype.setWindowHandle = async function(
 
     this.chromeBrowsingContext = this.mainFrame.browsingContext;
 
-    if (registerBrowsers && browserListening) {
+    if (!winProperties.hasTabBrowser) {
+      this.contentBrowsingContext = null;
+    } else if (MarionettePrefs.useActors) {
+      const tabBrowser = browser.getTabBrowser(winProperties.win);
+
+      
+      
+      const contentBrowser = tabBrowser.tabs
+        ? tabBrowser.selectedBrowser
+        : tabBrowser;
+
+      this.contentBrowsingContext = contentBrowser.browsingContext;
+      this.registerBrowser(this.contentBrowsingContext.id, contentBrowser);
+    } else {
       await registerBrowsers;
       const id = await browserListening;
       this.contentBrowsingContext = BrowsingContext.get(id);
-    } else {
-      this.contentBrowsingContext = null;
     }
   } else {
     
