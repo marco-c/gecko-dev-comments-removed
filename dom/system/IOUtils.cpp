@@ -59,8 +59,7 @@
     }                                                                    \
   } while (0)
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -1417,7 +1416,6 @@ IOUtils::InternalWriteOpts::FromBinding(const WriteOptions& aOptions) {
   return opts;
 }
 
-}  
 }  
 
 #undef REJECT_IF_SHUTTING_DOWN
