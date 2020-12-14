@@ -76,7 +76,7 @@ use crate::gpu_types::{ClearInstance, CompositeInstance, TransformData, ZBufferI
 use crate::internal_types::{TextureSource, ResourceCacheError};
 use crate::internal_types::{CacheTextureId, DebugOutput, FastHashMap, FastHashSet, LayerIndex, RenderedDocument, ResultMsg};
 use crate::internal_types::{TextureCacheAllocationKind, TextureCacheUpdate, TextureUpdateList, TextureUpdateSource};
-use crate::internal_types::{RenderTargetInfo, SavedTargetIndex, Swizzle, DeferredResolveIndex};
+use crate::internal_types::{RenderTargetInfo, Swizzle, DeferredResolveIndex};
 use malloc_size_of::MallocSizeOfOps;
 use crate::picture::{self, ResolvedSurfaceTexture};
 use crate::prim_store::DeferredResolve;
@@ -91,11 +91,10 @@ use crate::resource_cache::ResourceCache;
 use crate::scene_builder_thread::{SceneBuilderThread, SceneBuilderThreadChannels, LowPrioritySceneBuilderThread};
 use crate::screen_capture::AsyncScreenshotGrabber;
 use crate::shade::{Shaders, WrShaders};
-use smallvec::SmallVec;
 use crate::guillotine_allocator::{GuillotineAllocator, FreeRectSlice};
 use crate::texture_cache::TextureCache;
 use crate::render_target::{AlphaRenderTarget, ColorRenderTarget, PictureCacheTarget};
-use crate::render_target::{RenderTarget, TextureCacheRenderTarget, RenderTargetList};
+use crate::render_target::{RenderTarget, TextureCacheRenderTarget};
 use crate::render_target::{RenderTargetKind, BlitJob, BlitJobSource};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::util::drain_filter;
@@ -1155,13 +1154,6 @@ enum PartialPresentMode {
 
 
 
-struct ActiveTexture {
-    texture: Texture,
-    saved_index: Option<SavedTargetIndex>,
-}
-
-
-
 
 
 
@@ -1178,30 +1170,8 @@ struct TextureResolver {
     dummy_cache_texture: Texture,
 
     
-    prev_pass_color: Option<ActiveTexture>,
-    prev_pass_alpha: Option<ActiveTexture>,
-
-    
-    
-    
-    
-    
-    saved_targets: Vec<Texture>,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    render_target_pool: Vec<Texture>,
+    prev_pass_color: Option<CacheTextureId>,
+    prev_pass_alpha: Option<CacheTextureId>,
 }
 
 impl TextureResolver {
@@ -1227,8 +1197,6 @@ impl TextureResolver {
             dummy_cache_texture,
             prev_pass_alpha: None,
             prev_pass_color: None,
-            saved_targets: Vec::default(),
-            render_target_pool: Vec::new(),
         }
     }
 
@@ -1238,135 +1206,26 @@ impl TextureResolver {
         for (_id, texture) in self.texture_cache_map {
             device.delete_texture(texture);
         }
-
-        for texture in self.render_target_pool {
-            device.delete_texture(texture);
-        }
     }
 
     fn begin_frame(&mut self) {
         assert!(self.prev_pass_color.is_none());
         assert!(self.prev_pass_alpha.is_none());
-        assert!(self.saved_targets.is_empty());
-    }
-
-    fn end_frame(&mut self, device: &mut Device, frame_id: GpuFrameId) {
-        
-        self.end_pass(device, None, None);
-        
-        while let Some(target) = self.saved_targets.pop() {
-            self.return_to_pool(device, target);
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        self.gc_targets(
-            device,
-            frame_id,
-            32 * 1024 * 1024,
-            32 * 1024 * 1024 * 10,
-            60,
-        );
-    }
-
-    
-    fn return_to_pool(&mut self, device: &mut Device, target: Texture) {
-        device.invalidate_render_target(&target);
-        self.render_target_pool.push(target);
-    }
-
-    
-    fn on_memory_pressure(
-        &mut self,
-        device: &mut Device,
-    ) {
-        
-        for target in self.render_target_pool.drain(..) {
-            device.delete_texture(target);
-        }
-    }
-
-    
-    pub fn gc_targets(
-        &mut self,
-        device: &mut Device,
-        current_frame_id: GpuFrameId,
-        total_bytes_threshold: usize,
-        total_bytes_red_line_threshold: usize,
-        frames_threshold: usize,
-    ) {
-        
-        let mut rt_pool_size_in_bytes: usize = self.render_target_pool
-            .iter()
-            .map(|t| t.size_in_bytes())
-            .sum();
-
-        
-        
-        if rt_pool_size_in_bytes <= total_bytes_threshold {
-            return;
-        }
-
-        
-        self.render_target_pool.sort_by_key(|t| t.last_frame_used());
-
-        
-        let mut retained_targets = SmallVec::<[Texture; 8]>::new();
-
-        for target in self.render_target_pool.drain(..) {
-            
-            
-            
-            
-            if (rt_pool_size_in_bytes > total_bytes_red_line_threshold) ||
-               (rt_pool_size_in_bytes > total_bytes_threshold &&
-                !target.used_recently(current_frame_id, frames_threshold))
-            {
-                rt_pool_size_in_bytes -= target.size_in_bytes();
-                device.delete_texture(target);
-            } else {
-                retained_targets.push(target);
-            }
-        }
-
-        self.render_target_pool.extend(retained_targets);
     }
 
     fn end_pass(
         &mut self,
         device: &mut Device,
-        a8_texture: Option<ActiveTexture>,
-        rgba8_texture: Option<ActiveTexture>,
+        textures_to_invalidate: &[CacheTextureId],
+        a8_texture: Option<CacheTextureId>,
+        rgba8_texture: Option<CacheTextureId>,
     ) {
         
         
         
-        
-        if let Some(at) = self.prev_pass_color.take() {
-            if let Some(index) = at.saved_index {
-                assert_eq!(self.saved_targets.len() as u32, index.0);
-                self.saved_targets.push(at.texture);
-            } else {
-                self.return_to_pool(device, at.texture);
-            }
-        }
-        if let Some(at) = self.prev_pass_alpha.take() {
-            if let Some(index) = at.saved_index {
-                assert_eq!(self.saved_targets.len() as u32, index.0);
-                self.saved_targets.push(at.texture);
-            } else {
-                self.return_to_pool(device, at.texture);
-            }
+        for texture_id in textures_to_invalidate {
+            let render_target = &self.texture_cache_map[texture_id];
+            device.invalidate_render_target(render_target);
         }
 
         
@@ -1388,7 +1247,7 @@ impl TextureResolver {
             }
             TextureSource::PrevPassAlpha => {
                 let texture = match self.prev_pass_alpha {
-                    Some(ref at) => &at.texture,
+                    Some(ref id) => &self.texture_cache_map[id],
                     None => &self.dummy_cache_texture,
                 };
                 let swizzle = Swizzle::default();
@@ -1397,7 +1256,7 @@ impl TextureResolver {
             }
             TextureSource::PrevPassColor => {
                 let texture = match self.prev_pass_color {
-                    Some(ref at) => &at.texture,
+                    Some(ref id) => &self.texture_cache_map[id],
                     None => &self.dummy_cache_texture,
                 };
                 let swizzle = Swizzle::default();
@@ -1411,31 +1270,9 @@ impl TextureResolver {
                 device.bind_external_texture(sampler, texture);
                 Swizzle::default()
             }
-            TextureSource::TextureCache(index, swizzle) => {
+            TextureSource::TextureCache(index, _, swizzle) => {
                 let texture = &self.texture_cache_map[&index];
                 device.bind_texture(sampler, texture, swizzle);
-                swizzle
-            }
-            TextureSource::RenderTaskCache(saved_index, swizzle) => {
-                if saved_index.0 < self.saved_targets.len() as u32 {
-                    let texture = &self.saved_targets[saved_index.0 as usize];
-                    device.bind_texture(sampler, texture, swizzle)
-                } else {
-                    
-                    if Some(saved_index) == self.prev_pass_color.as_ref().and_then(|at| at.saved_index) {
-                        let texture = match self.prev_pass_color {
-                            Some(ref at) => &at.texture,
-                            None => &self.dummy_cache_texture,
-                        };
-                        device.bind_texture(sampler, texture, swizzle);
-                    } else if Some(saved_index) == self.prev_pass_alpha.as_ref().and_then(|at| at.saved_index) {
-                        let texture = match self.prev_pass_alpha {
-                            Some(ref at) => &at.texture,
-                            None => &self.dummy_cache_texture,
-                        };
-                        device.bind_texture(sampler, texture, swizzle);
-                    }
-                }
                 swizzle
             }
         }
@@ -1452,14 +1289,14 @@ impl TextureResolver {
             }
             TextureSource::PrevPassAlpha => Some((
                 match self.prev_pass_alpha {
-                    Some(ref at) => &at.texture,
+                    Some(ref id) => &self.texture_cache_map[id],
                     None => &self.dummy_cache_texture,
                 },
                 Swizzle::default(),
             )),
             TextureSource::PrevPassColor => Some((
                 match self.prev_pass_color {
-                    Some(ref at) => &at.texture,
+                    Some(ref id) => &self.texture_cache_map[id],
                     None => &self.dummy_cache_texture,
                 },
                 Swizzle::default(),
@@ -1467,11 +1304,8 @@ impl TextureResolver {
             TextureSource::External(..) => {
                 panic!("BUG: External textures cannot be resolved, they can only be bound.");
             }
-            TextureSource::TextureCache(index, swizzle) => {
+            TextureSource::TextureCache(index, _, swizzle) => {
                 Some((&self.texture_cache_map[&index], swizzle))
-            }
-            TextureSource::RenderTaskCache(saved_index, swizzle) => {
-                Some((&self.saved_targets[saved_index.0 as usize], swizzle))
             }
         }
     }
@@ -1503,9 +1337,6 @@ impl TextureResolver {
         
         for t in self.texture_cache_map.values() {
             report.texture_cache_textures += t.size_in_bytes();
-        }
-        for t in self.render_target_pool.iter() {
-            report.render_target_textures += t.size_in_bytes();
         }
 
         report
@@ -3070,7 +2901,6 @@ impl Renderer {
                     
                     
                     if memory_pressure {
-                        self.texture_resolver.on_memory_pressure(&mut self.device);
                         self.texture_upload_pbo_pool.on_memory_pressure(&mut self.device);
                     }
 
@@ -3773,12 +3603,6 @@ impl Renderer {
                 surface_origin_is_top_left,
             );
         }
-        
-        
-        
-        
-        
-        self.texture_resolver.end_frame(&mut self.device, cpu_frame_id);
         self.texture_upload_pbo_pool.end_frame(&mut self.device);
         self.device.end_frame();
 
@@ -5617,40 +5441,32 @@ impl Renderer {
     ) {
         profile_scope!("draw_texture_cache_target");
 
-        let texture_source = TextureSource::TextureCache(*texture, Swizzle::default());
-        let projection = {
-            let (texture, _) = self.texture_resolver
-                .resolve(&texture_source)
-                .expect("BUG: invalid target texture");
-            let target_size = texture.get_dimensions();
-
-            Transform3D::ortho(
-                0.0,
-                target_size.width as f32,
-                0.0,
-                target_size.height as f32,
-                self.device.ortho_near_plane(),
-                self.device.ortho_far_plane(),
-            )
-        };
-
         self.device.disable_depth();
         self.device.disable_depth_write();
 
         self.set_blend(false, FramebufferKind::Other);
 
+        let texture = &self.texture_resolver.texture_cache_map[texture];
+        let target_size = texture.get_dimensions();
+
+        let projection = Transform3D::ortho(
+            0.0,
+            target_size.width as f32,
+            0.0,
+            target_size.height as f32,
+            self.device.ortho_near_plane(),
+            self.device.ortho_far_plane(),
+        );
+
+        let draw_target = DrawTarget::from_texture(
+            texture,
+            layer,
+            false,
+        );
+        self.device.bind_draw_target(draw_target);
+
         {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_CLEAR);
-
-            let (texture, _) = self.texture_resolver
-                .resolve(&texture_source)
-                .expect("BUG: invalid target texture");
-            let draw_target = DrawTarget::from_texture(
-                texture,
-                layer,
-                false,
-            );
-            self.device.bind_draw_target(draw_target);
 
             self.device.disable_depth();
             self.device.disable_depth_write();
@@ -6017,85 +5833,6 @@ impl Renderer {
         partial_present_mode
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn allocate_target_texture<T: RenderTarget>(
-        &mut self,
-        list: &mut RenderTargetList<T>,
-    ) -> Option<ActiveTexture> {
-        if list.targets.is_empty() {
-            return None
-        }
-
-        
-        
-        
-        
-        let mut bounding_rect = DeviceIntRect::zero();
-        for t in list.targets.iter() {
-            bounding_rect = t.used_rect().union(&bounding_rect);
-        }
-        debug_assert_eq!(bounding_rect.origin, DeviceIntPoint::zero());
-        let dimensions = DeviceIntSize::new(
-            (bounding_rect.size.width + 255) & !255,
-            (bounding_rect.size.height + 255) & !255,
-        );
-
-        self.profile.inc(profiler::USED_TARGETS);
-
-        
-        
-        let selector = TargetSelector {
-            size: dimensions,
-            num_layers: list.targets.len(),
-            format: list.format,
-        };
-        let index = self.texture_resolver.render_target_pool
-            .iter()
-            .position(|texture| {
-                selector == TargetSelector {
-                    size: texture.get_dimensions(),
-                    num_layers: texture.get_layer_count() as usize,
-                    format: texture.get_format(),
-                }
-            });
-
-        let rt_info = RenderTargetInfo { has_depth: list.needs_depth() };
-        let texture = if let Some(idx) = index {
-            let mut t = self.texture_resolver.render_target_pool.swap_remove(idx);
-            self.device.reuse_render_target::<u8>(&mut t, rt_info);
-            t
-        } else {
-            self.profile.inc(profiler::CREATED_TARGETS);
-            self.device.create_texture(
-                ImageBufferKind::Texture2DArray,
-                list.format,
-                dimensions.width,
-                dimensions.height,
-                TextureFilter::Linear,
-                Some(rt_info),
-                list.targets.len() as _,
-            )
-        };
-
-        list.check_ready(&texture);
-        Some(ActiveTexture {
-            texture,
-            saved_index: list.saved_index.clone(),
-        })
-    }
-
     fn bind_frame_data(&mut self, frame: &mut Frame) {
         profile_scope!("bind_frame_data");
 
@@ -6258,9 +5995,6 @@ impl Renderer {
 
             profile_scope!("offscreen target");
 
-            let alpha_tex = self.allocate_target_texture(&mut pass.alpha);
-            let color_tex = self.allocate_target_texture(&mut pass.color);
-
             
             
             
@@ -6352,8 +6086,19 @@ impl Renderer {
 
             for (target_index, target) in pass.alpha.targets.iter().enumerate() {
                 results.stats.alpha_target_count += 1;
+
+                let texture_id = pass
+                    .alpha
+                    .texture_id
+                    .expect("bug: no surface for pass");
+
+                let alpha_tex = self.texture_resolver
+                    .texture_cache_map
+                    .get_mut(&texture_id)
+                    .expect("bug: texture not allocated");
+
                 let draw_target = DrawTarget::from_texture(
-                    &alpha_tex.as_ref().unwrap().texture,
+                    alpha_tex,
                     target_index,
                     false,
                 );
@@ -6376,10 +6121,28 @@ impl Renderer {
                 );
             }
 
+            let color_rt_info = RenderTargetInfo { has_depth: pass.color.needs_depth() };
+
             for (target_index, target) in pass.color.targets.iter().enumerate() {
                 results.stats.color_target_count += 1;
+
+                let texture_id = pass
+                    .color
+                    .texture_id
+                    .expect("bug: no surface for pass");
+
+                let color_tex = self.texture_resolver
+                    .texture_cache_map
+                    .get_mut(&texture_id)
+                    .expect("bug: texture not allocated");
+
+                self.device.reuse_render_target::<u8>(
+                    color_tex,
+                    color_rt_info,
+                );
+
                 let draw_target = DrawTarget::from_texture(
-                    &color_tex.as_ref().unwrap().texture,
+                    color_tex,
                     target_index,
                     target.needs_depth(),
                 );
@@ -6417,8 +6180,9 @@ impl Renderer {
             
             self.texture_resolver.end_pass(
                 &mut self.device,
-                alpha_tex,
-                color_tex,
+                &pass.textures_to_invalidate,
+                pass.alpha.texture_id,
+                pass.color.texture_id,
             );
             {
                 profile_scope!("gl.flush");
@@ -6601,8 +6365,11 @@ impl Renderer {
             None => return,
         };
 
-        let textures =
-            self.texture_resolver.render_target_pool.iter().collect::<Vec<&Texture>>();
+        let textures = self.texture_resolver
+            .texture_cache_map
+            .values()
+            .filter(|texture| { texture.is_render_target() })
+            .collect::<Vec<&Texture>>();
 
         Self::do_debug_blit(
             &mut self.device,

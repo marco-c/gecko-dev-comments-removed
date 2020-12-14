@@ -2,7 +2,7 @@
 
 
 
-use api::{BlobImageResources, BlobImageRequest, RasterizedBlobImage};
+use api::{BlobImageResources, BlobImageRequest, RasterizedBlobImage, ImageFormat};
 use api::{DebugFlags, FontInstanceKey, FontKey, FontTemplate, GlyphIndex};
 use api::{ExternalImageData, ExternalImageType, ExternalImageId, BlobImageResult, FontInstanceData};
 use api::{DirtyRect, GlyphDimensions, IdNamespace, DEFAULT_TILE_SIZE};
@@ -25,7 +25,7 @@ use crate::glyph_cache::GlyphCacheEntry;
 use crate::glyph_rasterizer::{GLYPH_FLASHING, FontInstance, GlyphFormat, GlyphKey, GlyphRasterizer};
 use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use crate::gpu_types::UvRectKind;
-use crate::internal_types::{FastHashMap, FastHashSet, TextureSource, ResourceUpdateList};
+use crate::internal_types::{CacheTextureId, FastHashMap, FastHashSet, TextureSource, ResourceUpdateList};
 use crate::profiler::{self, TransactionProfile, bytes_to_mb};
 use crate::render_backend::{FrameId, FrameStamp};
 use crate::render_task_graph::{RenderTaskGraph, RenderTaskId};
@@ -423,6 +423,30 @@ pub type GlyphDimensionsCache = FastHashMap<(FontInstanceKey, GlyphIndex), Optio
 pub struct BlobImageRasterizerEpoch(usize);
 
 
+struct RenderTarget {
+    size: DeviceIntSize,
+    num_layers: usize,
+    format: ImageFormat,
+    texture_id: CacheTextureId,
+    
+    is_active: bool,
+    last_frame_used: FrameId,
+}
+
+impl RenderTarget {
+    fn size_in_bytes(&self) -> usize {
+        let bpp = self.format.bytes_per_pixel() as usize;
+        self.num_layers * (self.size.width * self.size.height) as usize * bpp
+    }
+
+    
+    
+    pub fn used_recently(&self, current_frame_id: FrameId, threshold: usize) -> bool {
+        self.last_frame_used + threshold >= current_frame_id
+    }
+}
+
+
 
 
 
@@ -464,6 +488,9 @@ pub struct ResourceCache {
 
     image_templates_memory: usize,
     font_templates_memory: usize,
+
+    
+    render_target_pool: Vec<RenderTarget>,
 }
 
 impl ResourceCache {
@@ -497,6 +524,7 @@ impl ResourceCache {
             capture_dirty: true,
             image_templates_memory: 0,
             font_templates_memory: 0,
+            render_target_pool: Vec::new(),
         }
     }
 
@@ -1405,6 +1433,25 @@ impl ResourceCache {
         debug_assert_eq!(self.state, State::QueryResources);
         profile_scope!("end_frame");
         self.state = State::Idle;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.gc_render_targets(
+            32 * 1024 * 1024,
+            32 * 1024 * 1024 * 10,
+            60,
+        );
+
         self.texture_cache.end_frame(profile);
     }
 
@@ -1430,6 +1477,9 @@ impl ResourceCache {
         }
         if what.contains(ClearCache::TEXTURE_CACHE) {
             self.texture_cache.clear_all();
+        }
+        if what.contains(ClearCache::RENDER_TARGETS) {
+            self.clear_render_target_pool();
         }
     }
 
@@ -1521,6 +1571,120 @@ impl ResourceCache {
             assert!(!self.cached_images.resources.keys().any(&f));
             assert!(!self.rasterized_blob_images.keys().any(&blob_f));
         }
+    }
+
+    
+    
+    pub fn get_or_create_render_target_from_pool(
+        &mut self,
+        size: DeviceIntSize,
+        num_layers: usize,
+        format: ImageFormat,
+    ) -> CacheTextureId {
+        for target in &mut self.render_target_pool {
+            if target.size == size &&
+               target.num_layers == num_layers &&
+               target.format == format &&
+               !target.is_active {
+                
+                
+                target.is_active = true;
+                target.last_frame_used = self.current_frame_id;
+                return target.texture_id;
+            }
+        }
+
+        
+
+        let texture_id = self.texture_cache.alloc_render_target(
+            size,
+            num_layers,
+            format,
+        );
+
+        self.render_target_pool.push(RenderTarget {
+            size,
+            num_layers,
+            format,
+            texture_id,
+            is_active: true,
+            last_frame_used: self.current_frame_id,
+        });
+
+        texture_id
+    }
+
+    
+    pub fn return_render_target_to_pool(
+        &mut self,
+        id: CacheTextureId,
+    ) {
+        let target = self.render_target_pool
+            .iter_mut()
+            .find(|t| t.texture_id == id)
+            .expect("bug: invalid render target id");
+
+        assert!(target.is_active);
+        target.is_active = false;
+    }
+
+    
+    fn clear_render_target_pool(
+        &mut self,
+    ) {
+        for target in self.render_target_pool.drain(..) {
+            debug_assert!(!target.is_active);
+            self.texture_cache.free_render_target(target.texture_id);
+        }
+    }
+
+    
+    
+    fn gc_render_targets(
+        &mut self,
+        total_bytes_threshold: usize,
+        total_bytes_red_line_threshold: usize,
+        frames_threshold: usize,
+    ) {
+        
+        let mut rt_pool_size_in_bytes: usize = self.render_target_pool
+            .iter()
+            .map(|t| t.size_in_bytes())
+            .sum();
+
+        
+        
+        if rt_pool_size_in_bytes <= total_bytes_threshold {
+            return;
+        }
+
+        
+        self.render_target_pool.sort_by_key(|t| t.last_frame_used);
+
+        
+        let mut retained_targets = SmallVec::<[RenderTarget; 8]>::new();
+
+        for target in self.render_target_pool.drain(..) {
+            debug_assert!(!target.is_active);
+
+            
+            
+            
+            
+            let above_red_line = rt_pool_size_in_bytes > total_bytes_red_line_threshold;
+            let above_threshold = rt_pool_size_in_bytes > total_bytes_threshold;
+            let used_recently = target.used_recently(self.current_frame_id, frames_threshold);
+            let used_this_frame = target.last_frame_used == self.current_frame_id;
+
+            if !used_this_frame && (above_red_line || (above_threshold && !used_recently)) {
+                rt_pool_size_in_bytes -= target.size_in_bytes();
+                self.texture_cache.free_render_target(target.texture_id);
+            } else {
+                retained_targets.push(target);
+            }
+        }
+
+        self.render_target_pool.extend(retained_targets);
     }
 }
 

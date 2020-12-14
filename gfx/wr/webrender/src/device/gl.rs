@@ -486,6 +486,10 @@ impl Texture {
         self.last_frame_used == frame_id
     }
 
+    pub fn is_render_target(&self) -> bool {
+        !self.fbos.is_empty()
+    }
+
     
     
     pub fn used_recently(&self, current_frame_id: GpuFrameId, threshold: usize) -> bool {
