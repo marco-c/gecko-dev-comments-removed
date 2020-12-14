@@ -2069,17 +2069,6 @@ void TextControlState::SetSelectionRange(
   bool changed = false;
   nsresult rv = NS_OK;  
   if (IsSelectionCached()) {
-    nsAutoString value;
-    
-    
-    GetValue(value, false);
-    uint32_t length = value.Length();
-    if (aStart > length) {
-      aStart = length;
-    }
-    if (aEnd > length) {
-      aEnd = length;
-    }
     SelectionProperties& props = GetSelectionProperties();
     changed = props.GetStart() != aStart || props.GetEnd() != aEnd ||
               props.GetDirection() != aDirection;
@@ -2893,6 +2882,7 @@ bool TextControlState::SetValueWithoutTextEditor(
             aHandlingSetValue.GetSetValueFlags()));
 
         SelectionProperties& props = GetSelectionProperties();
+        props.SetMaxLength(aHandlingSetValue.GetSettingValue().Length());
         if (aHandlingSetValue.GetSetValueFlags() &
             eSetValue_MoveCursorToEndIfValueChanged) {
           props.SetStart(aHandlingSetValue.GetSettingValue().Length());
@@ -2903,13 +2893,6 @@ bool TextControlState::SetValueWithoutTextEditor(
           props.SetStart(0);
           props.SetEnd(0);
           props.SetDirection(nsITextControlFrame::eForward);
-        } else {
-          
-          
-          props.SetStart(std::min(
-              props.GetStart(), aHandlingSetValue.GetSettingValue().Length()));
-          props.SetEnd(std::min(props.GetEnd(),
-                                aHandlingSetValue.GetSettingValue().Length()));
         }
       }
 
