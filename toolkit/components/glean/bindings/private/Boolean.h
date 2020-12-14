@@ -8,12 +8,16 @@
 #define mozilla_glean_GleanBoolean_h
 
 #include "nsIGleanMetrics.h"
-#include "mozilla/glean/fog_ffi_generated.h"
 
 namespace mozilla {
 namespace glean {
 
 namespace impl {
+extern "C" {
+void fog_boolean_set(uint32_t id, bool value);
+uint8_t fog_boolean_test_has_value(uint32_t id, const char* storageName);
+uint8_t fog_boolean_test_get_value(uint32_t id, const char* storageName);
+}
 
 class BooleanMetric {
  public:
@@ -40,11 +44,26 @@ class BooleanMetric {
 
 
 
-  Maybe<bool> TestGetValue(const nsACString& aStorageName) const {
-    if (!fog_boolean_test_has_value(mId, &aStorageName)) {
-      return Nothing();
-    }
-    return Some(fog_boolean_test_get_value(mId, &aStorageName));
+  bool TestHasValue(const char* aStorageName) const {
+    return fog_boolean_test_has_value(mId, aStorageName) != 0;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool TestGetValue(const char* aStorageName) const {
+    return fog_boolean_test_get_value(mId, aStorageName) != 0;
   }
 
  private:

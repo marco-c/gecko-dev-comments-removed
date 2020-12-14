@@ -78,8 +78,6 @@ impl DatetimeMetric {
     
     
     
-    #[cfg_attr(not(feature = "with-gecko"), allow(dead_code))]
-    #[allow(clippy::too_many_arguments)]
     pub(crate) fn set_with_details(
         &self,
         year: i32,
@@ -134,7 +132,7 @@ impl DatetimeMetric {
     
     
     
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<String> {
+    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
         match self {
             DatetimeMetric::Parent(p) => {
                 dispatcher::block_on_queue();
@@ -157,7 +155,6 @@ impl DatetimeMetricImpl {
         crate::with_glean(move |glean| self.0.set(glean, value))
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub(crate) fn set_with_details(
         &self,
         year: i32,
@@ -184,10 +181,8 @@ impl DatetimeMetricImpl {
         })
     }
 
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<String> {
-        
-        let storage = storage_name.into().expect("storage name required.");
-        crate::with_glean(move |glean| self.0.test_get_value_as_string(glean, storage))
+    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
+        crate::with_glean(move |glean| self.0.test_get_value_as_string(glean, storage_name))
     }
 }
 

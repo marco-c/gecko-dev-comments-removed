@@ -3,32 +3,78 @@
 
 
 use std::collections::HashMap;
-
-use inherent::inherent;
+use std::hash::Hash;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 use super::{CommonMetricData, Instant, MetricId, RecordedEvent};
 
+use crate::dispatcher;
 use crate::ipc::{need_ipc, with_ipc_payload};
 
-use glean_core::traits::Event;
-pub use glean_core::traits::{EventRecordingError, ExtraKeys, NoExtraKeys};
 
 
 
 
 
 
+
+
+
+pub trait ExtraKeys: Hash + Eq + PartialEq + Copy {
+    
+    const ALLOWED_KEYS: &'static [&'static str];
+
+    
+    
+    
+    
+    
+    
+    
+    fn index(self) -> i32;
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub enum NoExtraKeys {}
+
+impl ExtraKeys for NoExtraKeys {
+    const ALLOWED_KEYS: &'static [&'static str] = &[];
+
+    fn index(self) -> i32 {
+        
+        -1
+    }
+}
+
+
+
+
+
+
+#[derive(Debug)]
 pub enum EventMetric<K> {
     Parent {
         
         
         
         id: MetricId,
-        inner: glean::private::EventMetric<K>,
+        inner: Arc<EventMetricImpl<K>>,
     },
     Child(EventMetricIpc),
 }
-
+#[derive(Clone, Debug)]
+pub struct EventMetricImpl<K> {
+    inner: glean_core::metrics::EventMetric,
+    extra_keys: PhantomData<K>,
+}
 #[derive(Debug)]
 pub struct EventMetricIpc(MetricId);
 
@@ -38,7 +84,7 @@ impl<K: 'static + ExtraKeys + Send + Sync> EventMetric<K> {
         if need_ipc() {
             EventMetric::Child(EventMetricIpc(id))
         } else {
-            let inner = glean::private::EventMetric::new(meta);
+            let inner = Arc::new(EventMetricImpl::new(meta));
             EventMetric::Parent { id, inner }
         }
     }
@@ -50,16 +96,22 @@ impl<K: 'static + ExtraKeys + Send + Sync> EventMetric<K> {
             EventMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
         }
     }
-}
 
-#[inherent(pub)]
-impl<K: 'static + ExtraKeys + Send + Sync> Event for EventMetric<K> {
-    type Extra = K;
-
-    fn record<M: Into<Option<HashMap<K, String>>>>(&self, extra: M) {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn record<M: Into<Option<HashMap<K, String>>> + Send + Sync>(&self, extra: M) {
         match self {
             EventMetric::Parent { inner, .. } => {
-                inner.record(extra);
+                let metric = Arc::clone(&inner);
+                let extra = extra.into();
+                let now = Instant::now();
+                dispatcher::launch(move || metric.record(now, extra));
             }
             EventMetric::Child(c) => {
                 let extra = extra.into().map(|hash_map| {
@@ -82,32 +134,60 @@ impl<K: 'static + ExtraKeys + Send + Sync> Event for EventMetric<K> {
         }
     }
 
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<Vec<RecordedEvent>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<RecordedEvent>> {
         match self {
-            EventMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            EventMetric::Parent { inner, .. } => {
+                dispatcher::block_on_queue();
+                inner.test_get_value(storage_name)
+            }
             EventMetric::Child(_) => {
                 panic!("Cannot get test value for event metric in non-parent process!",)
             }
         }
     }
+}
 
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
-        &self,
-        error: glean::ErrorType,
-        ping_name: S,
-    ) -> i32 {
-        match self {
-            EventMetric::Parent { inner, .. } => {
-                inner.test_get_num_recorded_errors(error, ping_name)
-            }
-            EventMetric::Child(c) => panic!(
-                "Cannot get the number of recorded errors for {:?} in non-parent process!",
-                c.0
-            ),
+impl<K: ExtraKeys> EventMetricImpl<K> {
+    pub fn new(meta: CommonMetricData) -> Self {
+        let allowed_extra_keys = K::ALLOWED_KEYS.iter().map(|s| s.to_string()).collect();
+        let inner = glean_core::metrics::EventMetric::new(meta, allowed_extra_keys);
+
+        Self {
+            inner,
+            extra_keys: PhantomData,
         }
+    }
+
+    pub fn record<M: Into<Option<HashMap<K, String>>>>(&self, then: Instant, extra: M) {
+        
+        let extra = extra
+            .into()
+            .map(|h| h.into_iter().map(|(k, v)| (k.index(), v)).collect());
+
+        crate::with_glean(|glean| self.inner.record(glean, then.as_millis(), extra))
+    }
+
+    pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<RecordedEvent>> {
+        crate::with_glean(|glean| self.inner.test_get_value(glean, storage_name))
     }
 }
 

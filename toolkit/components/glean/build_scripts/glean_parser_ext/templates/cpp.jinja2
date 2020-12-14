@@ -13,22 +13,8 @@ Jinja2 template is not. Please file bugs! #}
 
 #include "mozilla/glean/MetricTypes.h"
 
-namespace mozilla::glean {
-
-enum class NoExtraKeys {};
-
-{% macro generate_extra_keys(obj) %}
-{% for name, suffix in obj["_generate_enums"] %}
-{% if obj|attr(name)|length %}
-    enum class {{ obj.name|Camelize }}{{ suffix }} : int32_t {
-        {% for key in obj|attr(name) %}
-        {{ key | Camelize }},
-        {% endfor %}
-    };
-
-{% endif %}
-{% endfor %}
-{% endmacro %}
+namespace mozilla {
+namespace glean {
 
 {% for category_name, objs in all_objs.items() %}
 namespace {{ category_name|snake_case }} {
@@ -37,10 +23,6 @@ namespace {{ category_name|snake_case }} {
     
 
 
-    {% if obj|attr("_generate_enums") %}
-{{ generate_extra_keys(obj) }}
-    {%- endif %}
-    
 
 
     constexpr impl::{{ obj|type_name }} {{obj.name|snake_case }}({{obj|metric_id}});
@@ -51,5 +33,5 @@ namespace {{ category_name|snake_case }} {
 {% endfor %}
 
 } 
-
+} 
 #endif

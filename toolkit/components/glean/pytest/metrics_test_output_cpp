@@ -11,16 +11,13 @@
 
 #include "mozilla/glean/MetricTypes.h"
 
-namespace mozilla::glean {
-
-enum class NoExtraKeys {};
-
+namespace mozilla {
+namespace glean {
 
 namespace test {
     
 
 
-    
 
 
 
@@ -29,7 +26,6 @@ namespace test {
     
 
 
-    
 
 
 
@@ -38,7 +34,6 @@ namespace test {
     
 
 
-    
 
 
 
@@ -47,7 +42,6 @@ namespace test {
     
 
 
-    
 
 
 
@@ -58,7 +52,6 @@ namespace test_nested {
     
 
 
-    
 
 
 
@@ -67,37 +60,13 @@ namespace test_nested {
     
 
 
-    
 
 
 
     constexpr impl::DatetimeMetric datetime_metric(15);
 
-    
-
-
-    
-
-
-
-    constexpr impl::EventMetric<uint32_t> event_metric(16);
-
-    
-
-
-    enum class EventMetricWithExtraKeys : int32_t {
-        AnExtraKey,
-        AnotherExtraKey,
-    };
-
-    
-
-
-
-    constexpr impl::EventMetric<EventMetricWithExtraKeys> event_metric_with_extra(17);
-
 }
 
 } 
-
+} 
 #endif 
