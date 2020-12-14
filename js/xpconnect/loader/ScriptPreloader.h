@@ -212,6 +212,50 @@ class ScriptPreloader : public nsIObserver,
       const ScriptStatus mStatus;
     };
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    class MOZ_HEAP_CLASS ScriptHolder {
+     public:
+      explicit ScriptHolder(JSScript* script)
+          : mScript(script), mHasScript(script) {}
+      ScriptHolder() : mHasScript(false) {}
+
+      
+      
+      
+      explicit operator bool() const { return mHasScript; }
+
+      
+      JSScript* Get() const {
+        MOZ_ASSERT(NS_IsMainThread());
+        return mScript;
+      }
+
+      
+      
+      void Trace(JSTracer* trc);
+
+      
+      
+      void Set(JS::HandleScript jsscript);
+      void Clear();
+
+     private:
+      JS::Heap<JSScript*> mScript;
+      bool mHasScript;  
+    };
+
     void FreeData() {
       
       
@@ -237,7 +281,7 @@ class ScriptPreloader : public nsIObserver,
     
     bool MaybeDropScript() {
       if (mIsRunOnce && (HasRange() || !mCache.WillWriteScripts())) {
-        mScript = nullptr;
+        mScript.Clear();
         return true;
       }
       return false;
@@ -321,7 +365,7 @@ class ScriptPreloader : public nsIObserver,
 
     TimeStamp mLoadTime{};
 
-    JS::Heap<JSScript*> mScript;
+    ScriptHolder mScript;
 
     
     
