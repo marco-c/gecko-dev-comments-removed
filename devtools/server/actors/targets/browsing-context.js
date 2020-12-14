@@ -292,6 +292,8 @@ const browsingContextTargetPrototype = {
       
       logInPage: true,
       
+      
+      
       watchpoints: true,
       
       navigation: true,

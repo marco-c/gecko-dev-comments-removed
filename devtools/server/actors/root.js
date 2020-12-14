@@ -139,8 +139,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
         return DevToolsServer.allowChromeProcess;
       },
       
-      watchpoints: true,
-      
       
       workerConsoleApiMessagesDispatchedToMainThread: Services.prefs
         ? Services.prefs.getBoolPref(

@@ -4661,8 +4661,6 @@ pref("devtools.errorconsole.deprecation_warnings", true);
   pref("devtools.debugger.remote-enabled", true, sticky);
 #endif
 
-pref("devtools.debugger.features.watchpoints", true);
-
 
 pref("devtools.debugger.features.windowless-service-workers", false);
 
