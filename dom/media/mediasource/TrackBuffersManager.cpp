@@ -1392,10 +1392,9 @@ void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
       MutexAutoLock mut(mMutex);
       mInfo = info;
     }
-
-    
-    mInitData = mParser->InitData();
   }
+  
+  mInitData = mParser->InitData();
 
   
   mChangeTypeReceived = false;
