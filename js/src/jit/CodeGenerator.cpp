@@ -10471,9 +10471,6 @@ void CodeGenerator::visitArraySlice(LArraySlice* lir) {
   masm.createGCObject(temp1, temp2, templateObject, lir->mir()->initialHeap(),
                       &fail);
 
-  
-  masm.copyObjGroupNoPreBarrier(object, temp1, temp2);
-
   masm.jump(&call);
   {
     masm.bind(&fail);

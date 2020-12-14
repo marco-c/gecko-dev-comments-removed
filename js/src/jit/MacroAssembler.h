@@ -1594,9 +1594,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                            Register scratch,
                                            const void* handlerp, Label* label);
 
-  void copyObjGroupNoPreBarrier(Register sourceObj, Register destObj,
-                                Register scratch);
-
   
   
   void maybeBranchTestType(MIRType type, MDefinition* maybeDef, Register tag,
