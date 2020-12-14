@@ -1255,9 +1255,18 @@ class MOZ_NON_PARAM Val : public LitVal {
   
   
   
+  
+  
+  
+  
+  
   static bool fromJSValue(JSContext* cx, ValType targetType, HandleValue val,
                           MutableHandle<Val> rval);
 
+  
+  
+  
+  
   
   
   
