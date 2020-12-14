@@ -28,14 +28,14 @@ add_task(async function() {
   );
 
   info("Show Box Model Highlighter, then hide after half a second");
-  inspector.highlighters.showHighlighterTypeForNode(
+  await inspector.highlighters.showHighlighterTypeForNode(
     inspector.highlighters.TYPES.BOXMODEL,
     nodeFront,
     { duration: HALF_SECOND }
   );
 
   info("Show Box Model Highlighter again, then hide after one second");
-  inspector.highlighters.showHighlighterTypeForNode(
+  await inspector.highlighters.showHighlighterTypeForNode(
     inspector.highlighters.TYPES.BOXMODEL,
     nodeFront,
     { duration: ONE_SECOND }
@@ -45,6 +45,8 @@ add_task(async function() {
   await Promise.all([waitForShowEvents, waitForHideEvents]);
 
   
+
+
 
 
 

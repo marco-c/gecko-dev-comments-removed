@@ -116,6 +116,10 @@ class HighlightersOverlay {
     this._activeHighlighters = new Map();
     
     
+    
+    this._pendingHighlighters = new Map();
+    
+    
     this.highlighters = {};
     
     this.gridHighlighters = new Map();
@@ -369,17 +373,35 @@ class HighlightersOverlay {
 
 
   async showHighlighterTypeForNode(type, nodeFront, options) {
-    const skipShow = await this._beforeShowHighlighterTypeForNode(
+    const promise = this._beforeShowHighlighterTypeForNode(
       type,
       nodeFront,
       options
     );
 
-    if (skipShow) {
+    
+    
+    
+    
+    
+    const id = Symbol();
+    this._pendingHighlighters.set(type, id);
+    const skipShow = await promise;
+
+    if (this._pendingHighlighters.get(type) !== id) {
+      return;
+    } else if (skipShow) {
+      this._pendingHighlighters.delete(type);
       return;
     }
 
     const highlighter = await this._getHighlighterTypeForNode(type, nodeFront);
+
+    if (this._pendingHighlighters.get(type) !== id) {
+      return;
+    }
+    this._pendingHighlighters.delete(type);
+
     
     const timer = this.scheduleAutoHideHighlighterType(type, options?.duration);
     
@@ -431,6 +453,10 @@ class HighlightersOverlay {
 
 
   async hideHighlighterType(type) {
+    if (this._pendingHighlighters.has(type)) {
+      
+      this._pendingHighlighters.delete(type);
+    }
     if (!this._activeHighlighters.has(type)) {
       return;
     }
@@ -1696,6 +1722,7 @@ class HighlightersOverlay {
     }
 
     this._activeHighlighters.clear();
+    this._pendingHighlighters.clear();
     this.gridHighlighters.clear();
     this.parentGridHighlighters.clear();
     this.subgridToParentMap.clear();
@@ -1754,6 +1781,7 @@ class HighlightersOverlay {
     }
 
     this._activeHighlighters.clear();
+    this._pendingHighlighters.clear();
 
     for (const type in this.highlighters) {
       if (this.highlighters[type]) {
