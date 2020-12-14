@@ -176,7 +176,7 @@ function requestTabs() {
 
       
       await Promise.all(
-        tabs.map(descriptorFront => descriptorFront.retrieveAsyncFormData())
+        tabs.map(descriptorFront => descriptorFront.retrieveFavicon())
       );
 
       dispatch({ type: REQUEST_TABS_SUCCESS, tabs });

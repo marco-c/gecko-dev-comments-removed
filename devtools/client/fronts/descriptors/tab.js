@@ -149,24 +149,14 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
 
 
 
-
-
-
-
-
-  async retrieveAsyncFormData() {
+  async retrieveFavicon() {
     try {
-      if (this.traits.getFavicon) {
-        this._form.favicon = await this.getFavicon();
-      }
+      this._form.favicon = await this.getFavicon();
     } catch (e) {
       
       
       if (!this.isDestroyed()) {
-        console.error(
-          "Failed to retrieve the async form data for " + this.url,
-          e
-        );
+        console.error("Failed to retrieve the favicon for " + this.url, e);
       }
     }
   }

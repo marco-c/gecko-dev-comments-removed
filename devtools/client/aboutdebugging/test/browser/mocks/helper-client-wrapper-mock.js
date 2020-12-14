@@ -114,11 +114,9 @@ function createThisFirefoxClientMock() {
   
   
   const mockAboutDebuggingTab = {
-    retrieveAsyncFormData: () => {},
+    retrieveFavicon: () => {},
     outerWindowID: 0,
-    traits: {
-      getFavicon: true,
-    },
+    traits: {},
     url: "about:debugging",
   };
 

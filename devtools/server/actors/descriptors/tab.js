@@ -61,8 +61,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
       title: this._getTitle(),
       traits: {
         
-        getFavicon: true,
-        
         watcher: true,
       },
       url: this._getUrl(),
