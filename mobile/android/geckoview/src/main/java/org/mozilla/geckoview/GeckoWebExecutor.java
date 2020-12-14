@@ -58,7 +58,6 @@ public class GeckoWebExecutor {
             FETCH_FLAGS_NONE,
             FETCH_FLAGS_ANONYMOUS,
             FETCH_FLAGS_NO_REDIRECTS,
-            FETCH_FLAGS_ALLOW_SOME_ERRORS,
             FETCH_FLAGS_PRIVATE,
             FETCH_FLAGS_STREAM_FAILURE_TEST,
     })
@@ -83,11 +82,6 @@ public class GeckoWebExecutor {
 
     
     
-
-
-
-    @WrapForJNI
-     static final int FETCH_FLAGS_ALLOW_SOME_ERRORS = 1 << 2;
 
     
 
@@ -160,11 +154,6 @@ public class GeckoWebExecutor {
         }
 
         return result;
-    }
-
-    
-     @NonNull GeckoResult<WebResponse> fetch(final @NonNull WebExtension.DownloadRequest request) {
-        return fetch(request.request, request.downloadFlags);
     }
 
     
