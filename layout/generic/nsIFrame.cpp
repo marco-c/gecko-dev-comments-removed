@@ -3403,6 +3403,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
     CheckForApzAwareEventHandlers(aBuilder, this);
 
+    
+    
+    
     if (usingMask) {
       clipForMask = ComputeClipForMaskItem(aBuilder, this);
       if (clipForMask) {
