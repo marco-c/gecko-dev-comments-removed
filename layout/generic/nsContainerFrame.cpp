@@ -2462,12 +2462,15 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         
         static const StyleSize autoSize(StyleSize::Auto());
         mainAxisCoord = &autoSize;
-      } else if (!flexBasis->IsAuto()) {
+      } else if (flexBasis->IsSize()) {
         
         
         mainAxisCoord = &flexBasis->AsSize();
-      }  
-         
+      } else {
+        MOZ_ASSERT(flexBasis->IsAuto());
+        
+        
+      }
     }
   }
 
