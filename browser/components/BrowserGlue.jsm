@@ -5063,29 +5063,7 @@ var AboutHomeStartupCache = {
     if (this._cacheTask.isArmed) {
       this.log.trace("Finalizing cache task on shutdown");
       this._finalized = true;
-      await this._cacheTask.finalize();
-    }
-  },
 
-  
-
-
-
-
-
-
-
-  async cacheNow() {
-    this.log.trace("Caching now.");
-    this._cacheProgress = "Getting cache streams";
-
-    let requestCachePromise = this.requestCache();
-    let pageInputStream;
-    let scriptInputStream;
-
-    if (this._finalized) {
-      
-      
       
       
       let { setTimeout, clearTimeout } = ChromeUtils.import(
@@ -5102,17 +5080,30 @@ var AboutHomeStartupCache = {
         );
       });
 
-      let result = await Promise.race([timeoutPromise, requestCachePromise]);
+      let result = await Promise.race([
+        timeoutPromise,
+        this._cacheTask.finalize(),
+      ]);
       clearTimeout(timeoutID);
-
       if (result === TIMED_OUT) {
         this.log.error("Timed out getting cache streams. Skipping cache task.");
-      } else {
-        ({ pageInputStream, scriptInputStream } = result);
       }
-    } else {
-      ({ pageInputStream, scriptInputStream } = await requestCachePromise);
     }
+  },
+
+  
+
+
+
+
+
+
+
+  async cacheNow() {
+    this.log.trace("Caching now.");
+    this._cacheProgress = "Getting cache streams";
+
+    let { pageInputStream, scriptInputStream } = await this.requestCache();
 
     if (!pageInputStream || !scriptInputStream) {
       this._cacheProgress = "Failed to get streams";
