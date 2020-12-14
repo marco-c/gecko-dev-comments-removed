@@ -1858,6 +1858,21 @@ typedef Vector<Export, 0, SystemAllocPolicy> ExportVector;
 
 
 
+struct FuncTypeWithId;
+
+struct FuncDesc {
+  FuncTypeWithId* type;
+  uint32_t typeIndex;
+
+  FuncDesc() = default;
+  FuncDesc(FuncTypeWithId* type, uint32_t typeIndex)
+      : type(type), typeIndex(typeIndex) {}
+};
+
+typedef Vector<FuncDesc, 0, SystemAllocPolicy> FuncDescVector;
+
+
+
 
 
 
@@ -2255,15 +2270,6 @@ class TypeDef {
     return funcType_;
   }
 
-  
-  
-  static const TypeDef* fromFuncTypeWithIdPtr(const FuncTypeWithId* p) {
-    const TypeDef* q =
-        (const TypeDef*)((char*)p - offsetof(TypeDef, funcType_));
-    MOZ_ASSERT(q->tag_ == IsFuncType);
-    return q;
-  }
-
   const StructType& structType() const {
     MOZ_ASSERT(isStructType());
     return structType_;
@@ -2272,15 +2278,6 @@ class TypeDef {
   StructType& structType() {
     MOZ_ASSERT(isStructType());
     return structType_;
-  }
-
-  
-  
-  static const TypeDef* fromStructPtr(const StructType* p) {
-    const TypeDef* q =
-        (const TypeDef*)((char*)p - offsetof(TypeDef, structType_));
-    MOZ_ASSERT(q->tag_ == IsStructType);
-    return q;
   }
 };
 
