@@ -450,7 +450,7 @@ MediaByteRange MP3TrackDemuxer::FindFirstFrame() {
           numSuccFrames);
       mFrameLock = true;
       return candidateFrame;
-    } else if (prevFrame.mStart == mParser.ID3Header().TotalTagSize() &&
+    } else if (prevFrame.mStart == mParser.TotalID3HeaderSize() &&
                currentFrame.mEnd == StreamLength()) {
       
       
@@ -521,7 +521,7 @@ MediaByteRange MP3TrackDemuxer::FindNextFrame() {
       
       
       if (searchingForID3) {
-        maxSkippableBytes += mParser.ID3Header().TotalTagSize();
+        maxSkippableBytes += mParser.TotalID3HeaderSize();
       }
     } else if (mFrameLock) {
       

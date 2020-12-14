@@ -81,18 +81,30 @@ class ID3Parser {
   };
 
   
+  static bool IsBufferStartingWithID3Tag(BufferReader* aReader);
+
+  
   const ID3Header& Header() const;
 
   
+  uint32_t TotalHeadersSize() const;
+
   
-  Result<uint32_t, nsresult> Parse(BufferReader* aReader);
+  
+  uint32_t Parse(BufferReader* aReader);
 
   
   void Reset();
 
  private:
+  uint32_t ParseInternal(BufferReader* aReader);
+
   
   ID3Header mHeader;
+  
+  
+  
+  uint32_t mFormerID3Size = 0;
 };
 
 
@@ -297,6 +309,9 @@ class FrameParser {
 
   
   const ID3Parser::ID3Header& ID3Header() const;
+
+  
+  uint32_t TotalID3HeaderSize() const;
 
   
   const VBRHeader& VBRInfo() const;
