@@ -53,9 +53,7 @@ namespace jit {
                                       \
   _(Compare_Fallback)                 \
                                       \
-  _(GetProp_Fallback)                 \
-                                      \
-  _(CacheIR_Regular)
+  _(GetProp_Fallback)
 
 
 
