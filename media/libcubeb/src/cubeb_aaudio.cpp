@@ -130,6 +130,7 @@ struct cubeb_stream {
   int64_t latest_input_latency = 0;
   bool voice_input;
   bool voice_output;
+  uint64_t previous_clock;
 };
 
 struct cubeb {
@@ -998,6 +999,7 @@ aaudio_stream_init(cubeb * ctx, cubeb_stream ** stream,
   stm->state_callback = state_callback;
   stm->voice_input = input_stream_params && !!(input_stream_params->prefs & CUBEB_STREAM_PREF_VOICE);
   stm->voice_output = output_stream_params && !!(output_stream_params->prefs & CUBEB_STREAM_PREF_VOICE);
+  stm->previous_clock = 0;
 
   LOG("cubeb stream prefs: voice_input: %s voice_output: %s",
       stm->voice_input ? "true" : "false",
@@ -1238,6 +1240,11 @@ aaudio_stream_get_position(cubeb_stream * stm, uint64_t * position)
     
     
     *position = WRAP(AAudioStream_getFramesRead)(stream);
+    if (*position < stm->previous_clock) {
+      *position = stm->previous_clock;
+    } else {
+      stm->previous_clock = *position;
+    }
     return CUBEB_OK;
   case stream_state::INIT:
     assert(false && "Invalid stream");
@@ -1254,10 +1261,13 @@ aaudio_stream_get_position(cubeb_stream * stm, uint64_t * position)
   if (res != AAUDIO_OK) {
     
     
-    
-    
-    if (res == AAUDIO_ERROR_INVALID_STATE && state == stream_state::STARTING) {
+    if (res == AAUDIO_ERROR_INVALID_STATE) {
       *position = WRAP(AAudioStream_getFramesRead)(stream);
+      if (*position < stm->previous_clock) {
+        *position = stm->previous_clock;
+      } else {
+        stm->previous_clock = *position;
+      }
       return CUBEB_OK;
     }
 
@@ -1266,6 +1276,11 @@ aaudio_stream_get_position(cubeb_stream * stm, uint64_t * position)
   }
 
   *position = pos;
+  if (*position < stm->previous_clock) {
+    *position = stm->previous_clock;
+  } else {
+    stm->previous_clock = *position;
+  }
   return CUBEB_OK;
 }
 
