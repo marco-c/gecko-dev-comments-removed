@@ -105,6 +105,17 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   TreatAsRunOnce = 1 << 7,
   
 
@@ -243,6 +254,10 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   HasMappedArgsObj = 1 << 27,
+
+  
+  
+  IsLikelyConstructorWrapper = 1 << 28,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
@@ -293,7 +308,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
   FailedShapeGuard = 1 << 19,
 
   
-  HadLICMInvalidation = 1 << 20,
+  HadFrequentBailouts = 1 << 20,
 
   
   
@@ -308,9 +323,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
 
   
   FailedLexicalCheck = 1 << 24,
-
-  
-  HadSpeculativePhiBailout = 1 << 25,
 };
 
 }  

@@ -86,6 +86,8 @@ class FunctionFlags {
     RESOLVED_LENGTH = 1 << 14,
 
     
+    
+    NEW_SCRIPT_CLEARED = 1 << 15,
 
     
     NORMAL_KIND = NormalFunction << FUNCTION_KIND_SHIFT,
@@ -114,7 +116,7 @@ class FunctionFlags {
     INTERPRETED_METHOD = BASESCRIPT | METHOD_KIND,
 
     
-    MUTABLE_FLAGS = RESOLVED_NAME | RESOLVED_LENGTH,
+    MUTABLE_FLAGS = RESOLVED_NAME | RESOLVED_LENGTH | NEW_SCRIPT_CLEARED,
 
     
     
@@ -296,7 +298,12 @@ class FunctionFlags {
   void setResolvedLength() { setFlags(RESOLVED_LENGTH); }
   void setResolvedName() { setFlags(RESOLVED_NAME); }
 
+  
+  bool wasNewScriptCleared() const { return hasFlags(NEW_SCRIPT_CLEARED); }
+  void setNewScriptCleared() { setFlags(NEW_SCRIPT_CLEARED); }
+
   void setInferredName() { setFlags(HAS_INFERRED_NAME); }
+  void clearInferredName() { clearFlags(HAS_INFERRED_NAME); }
 
   void setGuessedAtom() { setFlags(HAS_GUESSED_ATOM); }
 

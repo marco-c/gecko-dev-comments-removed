@@ -15,7 +15,10 @@
 
 #include "jstypes.h"  
 
-#include "js/TypeDecls.h"
+#include "js/RootingAPI.h"  
+
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSString;
 
 namespace JS {
 
