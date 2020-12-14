@@ -137,11 +137,11 @@ add_connection_test(
 add_task(async function() {
   addCertFromFile(
     certDB,
-    "test_sanctions/symantec-real-google-g2-intermediate.pem",
+    "test_sanctions/apple-ist-ca-8-g1-intermediate.pem",
     ",,"
   );
   let whitelistedCert = constructCertFromFile(
-    "test_sanctions/symantec-real-googlecom.pem"
+    "test_sanctions/gspe72-4-ssl-ls-apple-com.pem"
   );
 
   
@@ -155,7 +155,7 @@ add_task(async function() {
   );
 
   
-  const VALIDATION_TIME = 1518739200;
+  const VALIDATION_TIME = 1577836800;
 
   await checkCertErrorGenericAtTime(
     certDB,
