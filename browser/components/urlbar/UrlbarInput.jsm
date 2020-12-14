@@ -1305,7 +1305,9 @@ class UrlbarInput {
 
 
 
-  search(value, { searchModeEntry, focus = true } = {}) {
+
+
+  search(value, { searchEngine, searchModeEntry, focus = true } = {}) {
     if (focus) {
       this.focus();
     }
@@ -1316,12 +1318,8 @@ class UrlbarInput {
     if (UrlbarPrefs.get("update2")) {
       
       searchMode = UrlbarUtils.searchModeForToken(tokens[0]);
-      if (!searchMode) {
-        
-        let engine = Services.search.getEngineByAlias(tokens[0]);
-        if (engine) {
-          searchMode = { engineName: engine.name };
-        }
+      if (!searchMode && searchEngine) {
+        searchMode = { engineName: searchEngine.name };
       }
     }
 

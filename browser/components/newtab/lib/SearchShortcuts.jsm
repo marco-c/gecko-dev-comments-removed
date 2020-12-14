@@ -55,8 +55,8 @@ this.getSearchProvider = getSearchProvider;
 
 
 
-function getSearchFormURL(keyword) {
-  const engine = Services.search.getEngineByAlias(keyword);
+async function getSearchFormURL(keyword) {
+  const engine = await Services.search.getEngineByAlias(keyword);
   return engine?.wrappedJSObject._searchForm;
 }
 this.getSearchFormURL = getSearchFormURL;
