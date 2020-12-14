@@ -5,6 +5,10 @@
 
 
 addons = {
+    "browsing-data": [
+        "background.js",
+        "manifest.json",
+    ],
     "tabs-activate-remove": [
         "background.js",
         "manifest.json",
