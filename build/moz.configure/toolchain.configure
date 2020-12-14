@@ -2754,6 +2754,9 @@ def libfuzzer_flags(value, tsan):
         
         
         
+        
+        
+        
         return namespace(no_link_flag_supported=False, use_flags=[])
 
     if value:
