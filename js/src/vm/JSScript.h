@@ -1327,31 +1327,6 @@ class ScriptWarmUpData {
 static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
               "JIT code depends on ScriptWarmUpData being pointer-sized");
 
-struct MemberInitializers {
-  static constexpr uint32_t MaxInitializers = INT32_MAX;
-
-#ifdef DEBUG
-  bool valid = false;
-#endif
-
-  
-  
-  uint32_t numMemberInitializers = 0;
-
-  explicit MemberInitializers(uint32_t numMemberInitializers)
-      :
-#ifdef DEBUG
-        valid(true),
-#endif
-        numMemberInitializers(numMemberInitializers) {
-  }
-
-  static MemberInitializers Invalid() { return MemberInitializers(); }
-
- private:
-  MemberInitializers() = default;
-};
-
 
 
 
