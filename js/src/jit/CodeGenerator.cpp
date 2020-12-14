@@ -5688,9 +5688,15 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   }
 
   
-  masm.branchIfFunctionHasNoJitEntry(calleereg, call->mir()->isConstructing(),
-                                     &invoke);
-  masm.loadJitCodeRaw(calleereg, objreg);
+  if (call->mir()->needsArgCheck()) {
+    masm.branchIfFunctionHasNoJitEntry(calleereg, call->mir()->isConstructing(),
+                                       &invoke);
+    masm.loadJitCodeRaw(calleereg, objreg);
+  } else {
+    
+    
+    masm.loadJitCodeNoArgCheck(calleereg, objreg);
+  }
 
   
   if (call->mir()->maybeCrossRealm()) {
@@ -5798,7 +5804,13 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
     masm.switchToObjectRealm(calleereg, objreg);
   }
 
-  masm.loadJitCodeRaw(calleereg, objreg);
+  if (call->mir()->needsArgCheck()) {
+    masm.loadJitCodeRaw(calleereg, objreg);
+  } else {
+    
+    
+    masm.loadJitCodeNoArgCheck(calleereg, objreg);
+  }
 
   
   masm.freeStack(unusedStack);
@@ -11185,6 +11197,7 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   }
 
   ionScript->setMethod(code);
+  ionScript->setSkipArgCheckEntryOffset(getSkipArgCheckEntryOffset());
 
   
   

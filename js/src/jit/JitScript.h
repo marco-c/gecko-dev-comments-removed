@@ -235,6 +235,11 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   FallbackICStubSpace fallbackStubSpace_ = {};
 
   
+  
+  
+  uint8_t* jitCodeSkipArgCheck_ = nullptr;
+
+  
   const char* profileString_ = nullptr;
 
   
@@ -337,6 +342,9 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   static constexpr Offset offsetOfICEntries() { return sizeof(JitScript); }
 
+  static constexpr size_t offsetOfJitCodeSkipArgCheck() {
+    return offsetof(JitScript, jitCodeSkipArgCheck_);
+  }
   static constexpr size_t offsetOfBaselineScript() {
     return offsetof(JitScript, baselineScript_);
   }
