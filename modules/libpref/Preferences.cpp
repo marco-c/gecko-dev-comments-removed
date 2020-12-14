@@ -26,7 +26,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ResultExtensions.h"
@@ -2983,14 +2982,10 @@ class PreferencesWriter final {
   
   
   static Atomic<int> sPendingWriteCount;
-
-  
-  static Mutex sWritingToFile;
 };
 
 Atomic<PrefSaveData*> PreferencesWriter::sPendingWriteData(nullptr);
 Atomic<int> PreferencesWriter::sPendingWriteCount(0);
-Mutex PreferencesWriter::sWritingToFile("PreferencesWriter::sWritingToFile");
 
 class PWRunnable : public Runnable {
  public:
@@ -2999,63 +2994,28 @@ class PWRunnable : public Runnable {
   NS_IMETHOD Run() override {
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    UniquePtr<PrefSaveData> prefs(
+        PreferencesWriter::sPendingWriteData.exchange(nullptr));
     nsresult rv = NS_OK;
-    if (PreferencesWriter::sPendingWriteData) {
-      MutexAutoLock lock(PreferencesWriter::sWritingToFile);
+    if (prefs) {
+      rv = PreferencesWriter::Write(mFile, *prefs);
+
       
       
-      UniquePtr<PrefSaveData> prefs(
-          PreferencesWriter::sPendingWriteData.exchange(nullptr));
-      if (prefs) {
-        rv = PreferencesWriter::Write(mFile, *prefs);
-        
-        
-        
-        nsresult rvCopy = rv;
-        nsCOMPtr<nsIFile> fileCopy(mFile);
-        SchedulerGroup::Dispatch(
-            TaskCategory::Other,
-            NS_NewRunnableFunction("Preferences::WriterRunnable",
-                                   [fileCopy, rvCopy] {
-                                     MOZ_RELEASE_ASSERT(NS_IsMainThread());
-                                     if (NS_FAILED(rvCopy)) {
-                                       Preferences::HandleDirty();
-                                     }
-                                   }));
-      }
+      
+      nsresult rvCopy = rv;
+      nsCOMPtr<nsIFile> fileCopy(mFile);
+      SchedulerGroup::Dispatch(
+          TaskCategory::Other,
+          NS_NewRunnableFunction("Preferences::WriterRunnable",
+                                 [fileCopy, rvCopy] {
+                                   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+                                   if (NS_FAILED(rvCopy)) {
+                                     Preferences::HandleDirty();
+                                   }
+                                 }));
     }
+
     
     
     
