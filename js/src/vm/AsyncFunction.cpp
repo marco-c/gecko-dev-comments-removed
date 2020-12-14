@@ -8,6 +8,7 @@
 
 #include "mozilla/Maybe.h"
 
+#include "builtin/ModuleObject.h"
 #include "builtin/Promise.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GeneratorObject.h"
@@ -213,6 +214,34 @@ AsyncFunctionGeneratorObject* AsyncFunctionGeneratorObject::create(
   }
 
   auto* obj = NewBuiltinClassInstance<AsyncFunctionGeneratorObject>(cx);
+  if (!obj) {
+    return nullptr;
+  }
+  obj->initFixedSlot(PROMISE_SLOT, ObjectValue(*resultPromise));
+
+  
+  obj->setResumeIndex(AbstractGeneratorObject::RESUME_INDEX_RUNNING);
+
+  return obj;
+}
+
+AsyncFunctionGeneratorObject* AsyncFunctionGeneratorObject::create(
+    JSContext* cx, HandleModuleObject module) {
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(module->script()->isAsync());
+
+  Rooted<PromiseObject*> resultPromise(cx, CreatePromiseObjectForAsync(cx));
+  if (!resultPromise) {
+    return nullptr;
+  }
+
+  Rooted<AsyncFunctionGeneratorObject*> obj(
+      cx, NewBuiltinClassInstance<AsyncFunctionGeneratorObject>(cx));
   if (!obj) {
     return nullptr;
   }
