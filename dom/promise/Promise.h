@@ -343,4 +343,15 @@ class Promise : public SupportsWeakPtr {
 }  
 }  
 
+extern "C" {
+
+
+void DomPromise_AddRef(mozilla::dom::Promise* aPromise);
+void DomPromise_Release(mozilla::dom::Promise* aPromise);
+void DomPromise_RejectWithVariant(mozilla::dom::Promise* aPromise,
+                                  nsIVariant* aVariant);
+void DomPromise_ResolveWithVariant(mozilla::dom::Promise* aPromise,
+                                   nsIVariant* aVariant);
+}
+
 #endif  
