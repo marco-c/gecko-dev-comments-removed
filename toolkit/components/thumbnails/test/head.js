@@ -1,32 +1,16 @@
 
 
 
-
-
-
-
-var tmp = {};
-ChromeUtils.import("resource://gre/modules/PageThumbs.jsm", tmp);
-ChromeUtils.import("resource://gre/modules/BackgroundPageThumbs.jsm", tmp);
-ChromeUtils.import("resource://gre/modules/NewTabUtils.jsm", tmp);
-ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm", tmp);
-ChromeUtils.import("resource://gre/modules/FileUtils.jsm", tmp);
-ChromeUtils.import("resource://gre/modules/osfile.jsm", tmp);
-var {
-  PageThumbs,
-  BackgroundPageThumbs,
-  NewTabUtils,
-  PageThumbsStorage,
-  SessionStore,
-  FileUtils,
-  OS,
-} = tmp;
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "PlacesTestUtils",
-  "resource://testing-common/PlacesTestUtils.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BackgroundPageThumbs: "resource://gre/modules/BackgroundPageThumbs.jsm",
+  FileUtils: "resource://gre/modules/FileUtils.jsm",
+  NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
+  PageThumbs: "resource://gre/modules/PageThumbs.jsm",
+  PageThumbsStorage: "resource://gre/modules/PageThumbs.jsm",
+  PlacesTestUtils: "resource://testing-common/PlacesTestUtils.jsm",
+  SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
+});
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -233,7 +217,6 @@ function bgTestPageURL(aOpts = {}) {
 function bgAddPageThumbObserver(url) {
   return new Promise((resolve, reject) => {
     function observe(subject, topic, data) {
-      
       if (data === url) {
         switch (topic) {
           case "page-thumbnail:create":
