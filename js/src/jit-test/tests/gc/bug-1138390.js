@@ -9,7 +9,8 @@ var g = newGlobal();
 
 
 if ("gcstate" in this)
-   assertEq(gcstate(), "Mark");
+  assertEq(gcstate() === "NotActive", false);
+
 g.offThreadCompileScript('23;', {});
 
 

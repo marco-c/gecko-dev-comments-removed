@@ -556,21 +556,12 @@ namespace gc {
 
 extern JS_PUBLIC_API void PerformIncrementalReadBarrier(JS::GCCellPtr thing);
 
-static MOZ_ALWAYS_INLINE bool IsIncrementalBarrierNeededOnTenuredGCThing(
-    const JS::GCCellPtr thing) {
-  MOZ_ASSERT(thing);
-  MOZ_ASSERT(!js::gc::IsInsideNursery(thing.asCell()));
-
+static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
   
   
   
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
-  JS::Zone* zone = JS::GetTenuredGCThingZone(thing);
-  return JS::shadow::Zone::from(zone)->needsIncrementalBarrier();
-}
-
-static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
   
   
   
@@ -584,13 +575,16 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
     return;
   }
 
-  if (IsIncrementalBarrierNeededOnTenuredGCThing(thing)) {
+  auto* zone = JS::shadow::Zone::from(JS::GetTenuredGCThingZone(thing));
+  if (zone->needsIncrementalBarrier()) {
     PerformIncrementalReadBarrier(thing);
-  } else if (detail::TenuredCellIsMarkedGray(thing.asCell())) {
-    JS::UnmarkGrayGCThingRecursively(thing);
+  } else if (!zone->isGCPreparing() &&
+             detail::TenuredCellIsMarkedGray(thing.asCell())) {
+    MOZ_ALWAYS_TRUE(JS::UnmarkGrayGCThingRecursively(thing));
   }
 
-  MOZ_ASSERT(!detail::TenuredCellIsMarkedGray(thing.asCell()));
+  MOZ_ASSERT_IF(!zone->isGCPreparing(),
+                !detail::TenuredCellIsMarkedGray(thing.asCell()));
 }
 
 template <typename T>

@@ -16,6 +16,13 @@ function createOtherCompartment() {
     return g;
 }
 
+function startGCMarking() {
+  startgc(1);
+  while (gcstate() === "Prepare") {
+    gcslice(1);
+  }
+}
+
 gczeal(0);
 
 let g = createOtherCompartment();
@@ -31,7 +38,7 @@ assertEq(getMarks()[0], "gray");
 
 
 schedulezone(this);
-startgc(1);
+startGCMarking()
 assertEq(getMarks()[0], "unmarked");
 g.eval(`grayRoot()`); 
 assertEq(getMarks()[0], "black");
@@ -45,7 +52,7 @@ assertEq(getMarks()[0], "gray");
 
 gczeal(25); 
 schedulezone(this);
-startgc(1);
+startGCMarking();
 assertEq(getMarks()[0], "gray");
 g.eval(`grayRoot()`); 
 assertEq(getMarks()[0], "black");
