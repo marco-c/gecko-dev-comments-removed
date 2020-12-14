@@ -2248,8 +2248,8 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
   
   
   size_t numInputsInRegs = std::min(numInputs, size_t(2));
-  AllocatableGeneralRegisterSet available(
-      ICStubCompilerBase::availableGeneralRegs(numInputsInRegs));
+  AllocatableGeneralRegisterSet available =
+      BaselineICAvailableGeneralRegs(numInputsInRegs);
 
   switch (kind) {
     case CacheKind::NewObject:
