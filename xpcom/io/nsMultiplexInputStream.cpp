@@ -774,7 +774,7 @@ nsMultiplexInputStream::CloseWithStatus(nsresult aStatus) { return Close(); }
 
 
 
-class AsyncWaitRunnable final : public CancelableRunnable {
+class AsyncWaitRunnable final : public DiscardableRunnable {
   RefPtr<nsMultiplexInputStream> mStream;
 
  public:
@@ -796,7 +796,7 @@ class AsyncWaitRunnable final : public CancelableRunnable {
 
  private:
   explicit AsyncWaitRunnable(nsMultiplexInputStream* aStream)
-      : CancelableRunnable("AsyncWaitRunnable"), mStream(aStream) {
+      : DiscardableRunnable("AsyncWaitRunnable"), mStream(aStream) {
     MOZ_ASSERT(aStream);
   }
 };

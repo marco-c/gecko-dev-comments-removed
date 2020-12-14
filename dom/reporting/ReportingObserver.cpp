@@ -85,10 +85,10 @@ void ReportingObserver::TakeRecords(nsTArray<RefPtr<Report>>& aRecords) {
 
 namespace {
 
-class ReportRunnable final : public CancelableRunnable {
+class ReportRunnable final : public DiscardableRunnable {
  public:
   explicit ReportRunnable(nsIGlobalObject* aGlobal)
-      : CancelableRunnable("ReportRunnable"), mGlobal(aGlobal) {}
+      : DiscardableRunnable("ReportRunnable"), mGlobal(aGlobal) {}
 
   
   
