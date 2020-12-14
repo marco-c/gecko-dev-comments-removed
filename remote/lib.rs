@@ -2,12 +2,12 @@
 
 
 
-extern crate failure;
 extern crate http;
 extern crate libc;
 extern crate log;
 extern crate nserror;
 extern crate nsstring;
+extern crate thiserror;
 extern crate xpcom;
 
 mod error;
