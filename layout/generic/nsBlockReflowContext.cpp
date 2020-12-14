@@ -313,7 +313,9 @@ void nsBlockReflowContext::ReflowBlock(
   }
 
   if (!aFrameReflowStatus.IsInlineBreakBefore() &&
+      !aFrameRI.WillReflowAgainForClearance() &&
       aFrameReflowStatus.IsFullyComplete()) {
+    
     
     
     
