@@ -316,6 +316,11 @@ void PathD2D::StreamToSink(PathSink* aSink) const {
 
 bool PathD2D::ContainsPoint(const Point& aPoint,
                             const Matrix& aTransform) const {
+  if (!aTransform.Determinant()) {
+    
+    return false;
+  }
+
   BOOL result;
 
   HRESULT hr = mGeometry->FillContainsPoint(
@@ -332,6 +337,11 @@ bool PathD2D::ContainsPoint(const Point& aPoint,
 bool PathD2D::StrokeContainsPoint(const StrokeOptions& aStrokeOptions,
                                   const Point& aPoint,
                                   const Matrix& aTransform) const {
+  if (!aTransform.Determinant()) {
+    
+    return false;
+  }
+
   BOOL result;
 
   RefPtr<ID2D1StrokeStyle> strokeStyle =
