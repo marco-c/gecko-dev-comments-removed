@@ -252,7 +252,7 @@ struct CompilationStencil {
   Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
 
   
-  StencilModuleMetadata moduleMetadata;
+  mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
 
   
   HashMap<FunctionIndex, RefPtr<const JS::WasmModule>,

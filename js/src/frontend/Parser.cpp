@@ -1707,6 +1707,8 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
     ModuleSharedContext* modulesc) {
   MOZ_ASSERT(checkOptionsCalled_);
 
+  this->compilationInfo_.stencil.moduleMetadata.emplace();
+
   SourceParseContext modulepc(this, modulesc, nullptr);
   if (!modulepc.init()) {
     return null();
@@ -1754,18 +1756,18 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
   
   if (pc_->isAsync()) {
     pc_->sc()->asModuleContext()->builder.noteAsync(
-        this->compilationInfo_.stencil.moduleMetadata);
+        *this->compilationInfo_.stencil.moduleMetadata);
   }
 
   
   if (!modulesc->builder.buildTables(
-          this->compilationInfo_.stencil.moduleMetadata)) {
+          *this->compilationInfo_.stencil.moduleMetadata)) {
     return null();
   }
 
   
   StencilModuleMetadata& moduleMetadata =
-      this->compilationInfo_.stencil.moduleMetadata;
+      *this->compilationInfo_.stencil.moduleMetadata;
   for (auto entry : moduleMetadata.localExportEntries) {
     const ParserAtom* nameId =
         this->compilationInfo_.stencil.getParserAtomAt(cx_, entry.localName);
