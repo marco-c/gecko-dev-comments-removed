@@ -172,7 +172,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates,
        UniqueCERTCertList& builtChain,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
-       CRLiteTelemetryInfo* crliteTelemetryInfo = nullptr,
+       CRLiteLookupResult* crliteLookupResult = nullptr,
        const char* hostname = nullptr);
 
   virtual Result FindIssuer(mozilla::pkix::Input encodedIssuerName,
@@ -268,8 +268,8 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   Result SynchronousCheckRevocationWithServer(
       const mozilla::pkix::CertID& certID, const nsCString& aiaLocation,
       mozilla::pkix::Time time, uint16_t maxOCSPLifetimeInDays,
-      const Result cachedResponseResult, const Result stapledOCSPResponseResult,
-      const Maybe<TimeDuration>& crliteLookupDuration);
+      const Result cachedResponseResult,
+      const Result stapledOCSPResponseResult);
   Result HandleOCSPFailure(const Result cachedResponseResult,
                            const Result stapledOCSPResponseResult,
                            const Result error);
@@ -296,7 +296,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   const Maybe<nsTArray<nsTArray<uint8_t>>>& mExtraCertificates;  
   UniqueCERTCertList& mBuiltChain;                               
   PinningTelemetryInfo* mPinningTelemetryInfo;
-  CRLiteTelemetryInfo* mCRLiteTelemetryInfo;
+  CRLiteLookupResult* mCRLiteLookupResult;
   const char* mHostname;  
 #ifdef MOZ_NEW_CERT_STORAGE
   nsCOMPtr<nsICertStorage> mCertStorage;
