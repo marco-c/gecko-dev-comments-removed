@@ -14,18 +14,19 @@ using namespace js::frontend;
 
 using mozilla::Maybe;
 
-BranchEmitterBase::BranchEmitterBase(BytecodeEmitter* bce, Kind kind)
-    : bce_(bce), kind_(kind) {}
+BranchEmitterBase::BranchEmitterBase(BytecodeEmitter* bce,
+                                     LexicalKind lexicalKind)
+    : bce_(bce), lexicalKind_(lexicalKind) {}
 
-IfEmitter::IfEmitter(BytecodeEmitter* bce, Kind kind)
-    : BranchEmitterBase(bce, kind) {}
+IfEmitter::IfEmitter(BytecodeEmitter* bce, LexicalKind lexicalKind)
+    : BranchEmitterBase(bce, lexicalKind) {}
 
 IfEmitter::IfEmitter(BytecodeEmitter* bce)
-    : IfEmitter(bce, Kind::MayContainLexicalAccessInBranch) {}
+    : IfEmitter(bce, LexicalKind::MayContainLexicalAccessInBranch) {}
 
 bool BranchEmitterBase::emitThenInternal() {
   
-  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+  if (lexicalKind_ == LexicalKind::MayContainLexicalAccessInBranch) {
     tdzCache_.reset();
   }
 
@@ -39,7 +40,7 @@ bool BranchEmitterBase::emitThenInternal() {
   thenDepth_ = bce_->bytecodeSection().stackDepth();
 
   
-  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+  if (lexicalKind_ == LexicalKind::MayContainLexicalAccessInBranch) {
     tdzCache_.emplace(bce_);
   }
 
@@ -61,7 +62,7 @@ bool BranchEmitterBase::emitElseInternal() {
   calculateOrCheckPushed();
 
   
-  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+  if (lexicalKind_ == LexicalKind::MayContainLexicalAccessInBranch) {
     MOZ_ASSERT(tdzCache_.isSome());
     tdzCache_.reset();
   }
@@ -85,7 +86,7 @@ bool BranchEmitterBase::emitElseInternal() {
   bce_->bytecodeSection().setStackDepth(thenDepth_);
 
   
-  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+  if (lexicalKind_ == LexicalKind::MayContainLexicalAccessInBranch) {
     tdzCache_.emplace(bce_);
   }
 
@@ -94,7 +95,7 @@ bool BranchEmitterBase::emitElseInternal() {
 
 bool BranchEmitterBase::emitEndInternal() {
   
-  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+  if (lexicalKind_ == LexicalKind::MayContainLexicalAccessInBranch) {
     MOZ_ASSERT(tdzCache_.isSome());
     tdzCache_.reset();
   }
@@ -137,7 +138,7 @@ bool IfEmitter::emitIf(const Maybe<uint32_t>& ifPos) {
 bool IfEmitter::emitThen() {
   MOZ_ASSERT(state_ == State::If || state_ == State::ElseIf);
 
-  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+  if (lexicalKind_ == LexicalKind::MayContainLexicalAccessInBranch) {
     MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
     MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
   }
@@ -155,7 +156,7 @@ bool IfEmitter::emitThen() {
 bool IfEmitter::emitThenElse() {
   MOZ_ASSERT(state_ == State::If || state_ == State::ElseIf);
 
-  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+  if (lexicalKind_ == LexicalKind::MayContainLexicalAccessInBranch) {
     MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
     MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
   }
@@ -222,7 +223,7 @@ bool IfEmitter::emitEnd() {
 }
 
 InternalIfEmitter::InternalIfEmitter(BytecodeEmitter* bce)
-    : IfEmitter(bce, Kind::NoLexicalAccessInBranch) {
+    : IfEmitter(bce, LexicalKind::NoLexicalAccessInBranch) {
 #ifdef DEBUG
   
   state_ = State::If;
@@ -230,7 +231,7 @@ InternalIfEmitter::InternalIfEmitter(BytecodeEmitter* bce)
 }
 
 CondEmitter::CondEmitter(BytecodeEmitter* bce)
-    : BranchEmitterBase(bce, Kind::MayContainLexicalAccessInBranch) {}
+    : BranchEmitterBase(bce, LexicalKind::MayContainLexicalAccessInBranch) {}
 
 bool CondEmitter::emitCond() {
   MOZ_ASSERT(state_ == State::Start);
