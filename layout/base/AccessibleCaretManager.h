@@ -184,7 +184,8 @@ class AccessibleCaretManager {
 
   
   
-  void ChangeFocusToOrClearOldFocus(nsIFrame* aFrame) const;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ChangeFocusToOrClearOldFocus(
+      nsIFrame* aFrame) const;
 
   MOZ_CAN_RUN_SCRIPT
   nsresult SelectWord(nsIFrame* aFrame, const nsPoint& aPoint) const;
