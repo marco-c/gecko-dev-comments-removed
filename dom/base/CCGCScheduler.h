@@ -5,7 +5,7 @@
 #include "js/SliceBudget.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/MainThreadIdlePeriod.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
 
@@ -85,12 +85,10 @@ class CCGCScheduler {
 
   
 
-  Maybe<TimeDuration> GetCCBlockedTime(TimeStamp now) const {
-    MOZ_ASSERT_IF(mCCBlockStart.IsNull(), !mInIncrementalGC);
-    if (mCCBlockStart.IsNull()) {
-      return {};
-    }
-    return Some(now - mCCBlockStart);
+  TimeDuration GetCCBlockedTime(TimeStamp aNow) const {
+    MOZ_ASSERT(mInIncrementalGC);
+    MOZ_ASSERT(!mCCBlockStart.IsNull());
+    return aNow - mCCBlockStart;
   }
 
   bool InIncrementalGC() const { return mInIncrementalGC; }
@@ -122,6 +120,7 @@ class CCGCScheduler {
   }
 
   void NoteGCEnd() {
+    mInIncrementalGC = false;
     mCCBlockStart = TimeStamp();
     mInIncrementalGC = false;
     mNeedsFullCC = true;
@@ -136,16 +135,10 @@ class CCGCScheduler {
   
   
   
-  enum IsStartingCCLockout { StartingLockout = true, AlreadyLockedOut = false };
-  IsStartingCCLockout EnsureCCIsBlocked(TimeStamp aNow) {
+  void BlockCC(TimeStamp aNow) {
     MOZ_ASSERT(mInIncrementalGC);
-
-    if (mCCBlockStart) {
-      return AlreadyLockedOut;
-    }
-
+    MOZ_ASSERT(mCCBlockStart.IsNull());
     mCCBlockStart = aNow;
-    return StartingLockout;
   }
 
   void UnblockCC() { mCCBlockStart = TimeStamp(); }
@@ -307,7 +300,7 @@ class CCGCScheduler {
            mLikelyShortLivingObjectsNeedingGC > 2500 || mNeedsGCAfterCC;
   }
 
-  bool IsLastEarlyCCTimer(int32_t aCurrentFireCount) {
+  bool IsLastEarlyCCTimer(int32_t aCurrentFireCount) const {
     int32_t numEarlyTimerFires =
         std::max(int32_t(mCCDelay / kCCSkippableDelay) - 2, 1);
 
@@ -329,7 +322,8 @@ class CCGCScheduler {
     CleanupChildless,
     CleanupContentUnbinder,
     CleanupDeferred,
-    CycleCollect
+    StartCycleCollection,
+    CycleCollecting
   };
 
   enum CCRunnerYield { Continue, Yield };
@@ -353,11 +347,17 @@ class CCGCScheduler {
     CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
   };
 
-  void ActivateCCRunner() {
+  void InitCCRunnerStateMachine(CCRunnerState initialState) {
     MOZ_ASSERT(mCCRunnerState == CCRunnerState::Inactive);
-    mCCRunnerState = CCRunnerState::ReducePurple;
-    mCCDelay = kCCDelay;
-    mCCRunnerEarlyFireCount = 0;
+    mCCRunnerState = initialState;
+    if (initialState == CCRunnerState::ReducePurple) {
+      mCCDelay = kCCDelay;
+      mCCRunnerEarlyFireCount = 0;
+    } else if (initialState == CCRunnerState::CycleCollecting) {
+      
+    } else {
+      MOZ_CRASH("Invalid initial state");
+    }
   }
 
   void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
@@ -375,18 +375,29 @@ class CCGCScheduler {
     TimeStamp now = TimeStamp::Now();
 
     if (InIncrementalGC()) {
-      if (EnsureCCIsBlocked(now) == StartingLockout) {
+      if (mCCBlockStart.IsNull()) {
+        BlockCC(now);
+
         
         
         
         
-        mCCRunnerState = CCRunnerState::ReducePurple;
-        mCCRunnerEarlyFireCount = 0;
-        mCCDelay = kCCDelay / int64_t(3);
+        
+        
+        
+        
+        
+        
+
+        if (mCCRunnerState != CCRunnerState::CycleCollecting) {
+          mCCRunnerState = CCRunnerState::ReducePurple;
+          mCCRunnerEarlyFireCount = 0;
+          mCCDelay = kCCDelay / int64_t(3);
+        }
         return {CCRunnerAction::None, Yield};
       }
 
-      if (GetCCBlockedTime(now).value() < kMaxCCLockedoutTime) {
+      if (GetCCBlockedTime(now) < kMaxCCLockedoutTime) {
         return {CCRunnerAction::None, Yield};
       }
 
@@ -400,6 +411,8 @@ class CCGCScheduler {
     switch (mCCRunnerState) {
       case CCRunnerState::ReducePurple:
       case CCRunnerState::CleanupDeferred:
+      case CCRunnerState::StartCycleCollection:
+      case CCRunnerState::CycleCollecting:
         break;
 
       default:
@@ -464,7 +477,7 @@ class CCGCScheduler {
         if (aDeadline.IsNull()) {
           
           
-          mCCRunnerState = CCRunnerState::CycleCollect;
+          mCCRunnerState = CCRunnerState::StartCycleCollection;
           return {CCRunnerAction::None, Yield};
         }
 
@@ -472,7 +485,7 @@ class CCGCScheduler {
 
         
         if (now >= aDeadline) {
-          mCCRunnerState = CCRunnerState::CycleCollect;
+          mCCRunnerState = CCRunnerState::StartCycleCollection;
           return {CCRunnerAction::None, Yield};
         }
 
@@ -486,7 +499,7 @@ class CCGCScheduler {
 
         
         
-        mCCRunnerState = CCRunnerState::CycleCollect;
+        mCCRunnerState = CCRunnerState::StartCycleCollection;
         if (now >= aDeadline) {
           
           return {CCRunnerAction::None, Yield};
@@ -496,12 +509,20 @@ class CCGCScheduler {
 
       
       
-      case CCRunnerState::CycleCollect:
+      
+      
+      
+      
+      case CCRunnerState::StartCycleCollection:
         
         
         
         
-        mCCRunnerState = CCRunnerState::Inactive;
+        mCCRunnerState = CCRunnerState::CycleCollecting;
+        [[fallthrough]];
+
+      
+      case CCRunnerState::CycleCollecting:
         return {CCRunnerAction::CycleCollect, Yield};
 
       default:
@@ -544,6 +565,7 @@ class CCGCScheduler {
     return BudgetFromDuration(budgetTime);
   }
 
+ private:
   
 
   
