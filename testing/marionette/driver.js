@@ -119,7 +119,6 @@ this.GeckoDriver = function(server) {
   this._server = server;
 
   this.sessionID = null;
-  this.wins = new browser.Windows();
   this.browsers = {};
 
   
@@ -517,11 +516,6 @@ GeckoDriver.prototype.addBrowser = function(win) {
 
   this.browsers[winId] = context;
   this.curBrowser = this.browsers[winId];
-  if (!this.wins.has(winId)) {
-    
-    
-    this.wins.set(winId, win);
-  }
 };
 
 
@@ -631,9 +625,6 @@ GeckoDriver.prototype.registerBrowser = function(browserElement) {
   ) {
     this.curBrowser.register(browserElement);
   }
-
-  const browsingContext = browserElement.browsingContext;
-  this.wins.set(browsingContext.id, browsingContext.currentWindowGlobal);
 };
 
 GeckoDriver.prototype.registerPromise = function() {

@@ -492,59 +492,6 @@ browser.Context = class {
 
 
 
-
-
-
-
-
-
-
-
-
-browser.Windows = class extends Map {
-  
-
-
-
-
-
-
-
-
-
-
-  set(id, win) {
-    let wref = Cu.getWeakReference(win);
-    super.set(id, wref);
-    return this;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  get(id) {
-    let wref = super.get(id);
-    if (!wref) {
-      throw new RangeError();
-    }
-    return wref.get();
-  }
-};
-
-
-
-
-
-
 const WindowState = {
   Maximized: "maximized",
   Minimized: "minimized",
