@@ -1009,7 +1009,10 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         response = await this._maybeWaitForResponseResult(response);
         
         
-        response.timestamp = Date.now();
+        
+        
+        
+        response.timestamp = Date.now() + 1;
         
         this.emit("evaluationResult", {
           type: "evaluationResult",
