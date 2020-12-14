@@ -31,22 +31,7 @@ exports.PREFERENCE_TYPES = PREFERENCE_TYPES;
 
 
 
-const DEFAULT_PREFERENCES = [
-  
-  {
-    prefName: "devtools.inspector.compatibility.target-browsers",
-    defaultValue: "",
-    trait: "targetBrowsersPref",
-    type: PREFERENCE_TYPES.CHAR,
-  },
-  
-  {
-    prefName: "devtools.overflow.debugging.enabled",
-    defaultValue: false,
-    trait: "overflowDebuggingPref",
-    type: PREFERENCE_TYPES.BOOL,
-  },
-];
+const DEFAULT_PREFERENCES = [];
 exports.DEFAULT_PREFERENCES = DEFAULT_PREFERENCES;
 
 const METHODS = {
@@ -76,8 +61,11 @@ const METHODS = {
 
 
 async function setDefaultPreferencesIfNeeded(clientWrapper, prefDescriptors) {
-  const preferenceFront = await clientWrapper.getFront("preference");
+  if (!prefDescriptors || prefDescriptors.length === 0) {
+    return;
+  }
 
+  const preferenceFront = await clientWrapper.getFront("preference");
   const preferenceTraits = await preferenceFront.getTraits();
 
   
