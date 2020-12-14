@@ -8,8 +8,9 @@
 #define mozilla_layers_APZInputBridge_h
 
 #include "mozilla/EventForwards.h"  
-#include "mozilla/layers/APZPublicUtils.h"  
-#include "Units.h"                          
+#include "mozilla/layers/APZPublicUtils.h"       
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "Units.h"                               
 
 namespace mozilla {
 
