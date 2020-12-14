@@ -52,7 +52,7 @@ PresentationControlService.prototype = {
   startServer(aEncrypted, aPort) {
     if (this._isServiceInit()) {
       DEBUG &&
-        log("PresentationControlService - server socket has been initialized"); 
+        log("PresentationControlService - server socket has been initialized");
       throw Components.Exception("", Cr.NS_ERROR_FAILURE);
     }
 
@@ -70,7 +70,7 @@ PresentationControlService.prototype = {
       ].getService(Ci.nsILocalCertService);
       localCertService.getOrCreateCert(kLocalCertName, {
         handleCert(aCert, aRv) {
-          DEBUG && log("PresentationControlService - handleCert"); 
+          DEBUG && log("PresentationControlService - handleCert");
           if (aRv) {
             self._notifyServerStopped(aRv);
           } else {
@@ -93,7 +93,7 @@ PresentationControlService.prototype = {
 
   _serverSocketInit(aPort, aCert) {
     if (!this._serverSocket) {
-      DEBUG && log("PresentationControlService - create server socket fail."); 
+      DEBUG && log("PresentationControlService - create server socket fail.");
       throw Components.Exception("", Cr.NS_ERROR_FAILURE);
     }
 
@@ -111,14 +111,14 @@ PresentationControlService.prototype = {
     } catch (e) {
       
       DEBUG &&
-        log("PresentationControlService - init server socket fail: " + e); 
+        log("PresentationControlService - init server socket fail: " + e);
       throw Components.Exception("", Cr.NS_ERROR_FAILURE);
     }
 
     this._port = this._serverSocket.port;
 
     DEBUG &&
-      log("PresentationControlService - service start on port: " + this._port); 
+      log("PresentationControlService - service start on port: " + this._port);
 
     
     Services.obs.addObserver(this, "network:offline-status-changed");
@@ -188,10 +188,10 @@ PresentationControlService.prototype = {
       DEBUG &&
         log(
           "PresentationControlService - Id has not initialized; connect fails"
-        ); 
+        );
       return null;
     }
-    DEBUG && log("PresentationControlService - connect to " + aDeviceInfo.id); 
+    DEBUG && log("PresentationControlService - connect to " + aDeviceInfo.id);
 
     let socketTransport = this._attemptConnect(aDeviceInfo);
     return new TCPControlChannel(this, socketTransport, aDeviceInfo, "sender");
@@ -233,7 +233,7 @@ PresentationControlService.prototype = {
       
       socketTransport.setTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT, 2);
     } catch (e) {
-      DEBUG && log("PresentationControlService - createTransport throws: " + e); 
+      DEBUG && log("PresentationControlService - createTransport throws: " + e);
       
       throw Components.Exception("", Cr.NS_ERROR_FAILURE);
     }
@@ -246,14 +246,14 @@ PresentationControlService.prototype = {
         log(
           "PresentationControlService - should never receive remote " +
             "session request before server socket initialization"
-        ); 
+        );
       return null;
     }
     DEBUG &&
       log(
         "PresentationControlService - responseSession to " +
           JSON.stringify(aDeviceInfo)
-      ); 
+      );
     return new TCPControlChannel(
       this,
       aSocketTransport,
@@ -270,7 +270,7 @@ PresentationControlService.prototype = {
           aDeviceInfo.address +
           ":" +
           aDeviceInfo.port
-      ); 
+      );
     if (!this.listener) {
       this.releaseControlChannel(aControlChannel);
       return;
@@ -297,7 +297,7 @@ PresentationControlService.prototype = {
           aDeviceInfo.address +
           ":" +
           aDeviceInfo.port
-      ); 
+      );
     if (!this.listener) {
       this.releaseControlChannel(aControlChannel);
       return;
@@ -319,7 +319,7 @@ PresentationControlService.prototype = {
           aDeviceInfo.address +
           ":" +
           aDeviceInfo.port
-      ); 
+      );
     if (!this.listener) {
       this.releaseControlChannel(aControlChannel);
       return;
@@ -342,7 +342,7 @@ PresentationControlService.prototype = {
           aClientSocket.host +
           ":" +
           aClientSocket.port
-      ); 
+      );
     let deviceInfo = new TCPDeviceInfo(aClientSocket.host, aClientSocket.port);
     this.holdControlChannel(this.responseSession(deviceInfo, aClientSocket));
   },
@@ -360,13 +360,13 @@ PresentationControlService.prototype = {
 
   
   onStopListening(aServerSocket, aStatus) {
-    DEBUG && log("PresentationControlService - onStopListening: " + aStatus); 
+    DEBUG && log("PresentationControlService - onStopListening: " + aStatus);
   },
 
   close() {
-    DEBUG && log("PresentationControlService - close"); 
+    DEBUG && log("PresentationControlService - close");
     if (this._isServiceInit()) {
-      DEBUG && log("PresentationControlService - close server socket"); 
+      DEBUG && log("PresentationControlService - close server socket");
       this._serverSocket.close();
       this._serverSocket = null;
 
@@ -379,11 +379,11 @@ PresentationControlService.prototype = {
 
   
   observe(aSubject, aTopic, aData) {
-    DEBUG && log("PresentationControlService - observe: " + aTopic); 
+    DEBUG && log("PresentationControlService - observe: " + aTopic);
     switch (aTopic) {
       case "network:offline-status-changed": {
         if (aData == "offline") {
-          DEBUG && log("network offline"); 
+          DEBUG && log("network offline");
           return;
         }
         this._restartServer();
@@ -393,7 +393,7 @@ PresentationControlService.prototype = {
   },
 
   _restartServer() {
-    DEBUG && log("PresentationControlService - restart service"); 
+    DEBUG && log("PresentationControlService - restart service");
 
     
     if (this._isServiceInit()) {
@@ -402,7 +402,7 @@ PresentationControlService.prototype = {
       try {
         this.startServer();
       } catch (e) {
-        DEBUG && log("PresentationControlService - restart service fail: " + e); 
+        DEBUG && log("PresentationControlService - restart service fail: " + e);
       }
     }
   },
@@ -494,7 +494,7 @@ function TCPControlChannel(
   deviceInfo,
   direction
 ) {
-  DEBUG && log("create TCPControlChannel for : " + direction); 
+  DEBUG && log("create TCPControlChannel for : " + direction);
   this._deviceInfo = deviceInfo;
   this._direction = direction;
   this._transport = transport;
@@ -571,7 +571,7 @@ TCPControlChannel.prototype = {
       
       this._terminateTimer = setTimeout(() => {
         DEBUG &&
-          log("TCPControlChannel - terminate timeout: " + aPresentationId); 
+          log("TCPControlChannel - terminate timeout: " + aPresentationId);
         delete this._terminateTimer;
         if (this._pendingDisconnect) {
           this._pendingDisconnect();
@@ -595,7 +595,7 @@ TCPControlChannel.prototype = {
 
   
   _send(aMsg) {
-    DEBUG && log("TCPControlChannel - Send: " + JSON.stringify(aMsg, null, 2)); 
+    DEBUG && log("TCPControlChannel - Send: " + JSON.stringify(aMsg, null, 2));
 
     
 
@@ -608,14 +608,14 @@ TCPControlChannel.prototype = {
     try {
       this._output.write(message, message.length);
     } catch (e) {
-      DEBUG && log("TCPControlChannel - Failed to send message: " + e.name); 
+      DEBUG && log("TCPControlChannel - Failed to send message: " + e.name);
       throw e;
     }
   },
 
   _setSecurityObserver(observer) {
     if (this._transport && this._transport.securityInfo) {
-      DEBUG && log("TCPControlChannel - setSecurityObserver: " + observer); 
+      DEBUG && log("TCPControlChannel - setSecurityObserver: " + observer);
       let connectionInfo = this._transport.securityInfo.QueryInterface(
         Ci.nsITLSServerConnectionInfo
       );
@@ -638,7 +638,7 @@ TCPControlChannel.prototype = {
 
   
   onOutputStreamReady() {
-    DEBUG && log("TCPControlChannel - onOutputStreamReady"); 
+    DEBUG && log("TCPControlChannel - onOutputStreamReady");
     if (this._outgoingMsgs.length === 0) {
       return;
     }
@@ -661,11 +661,11 @@ TCPControlChannel.prototype = {
   
   
   onInputStreamReady(aStream) {
-    DEBUG && log("TCPControlChannel - onInputStreamReady"); 
+    DEBUG && log("TCPControlChannel - onInputStreamReady");
     try {
       aStream.available();
     } catch (e) {
-      DEBUG && log("TCPControlChannel - onInputStreamReady error: " + e.name); 
+      DEBUG && log("TCPControlChannel - onInputStreamReady error: " + e.name);
       
       this._notifyDisconnected(e.result);
     }
@@ -679,7 +679,7 @@ TCPControlChannel.prototype = {
           aStatus.toString(16) +
           " with role: " +
           this._direction
-      ); 
+      );
     if (aStatus === Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
       this._outgoingEnabled = true;
       this._createInputStreamPump();
@@ -689,7 +689,7 @@ TCPControlChannel.prototype = {
   
   onStartRequest() {
     DEBUG &&
-      log("TCPControlChannel - onStartRequest with role: " + this._direction); 
+      log("TCPControlChannel - onStartRequest with role: " + this._direction);
     this._incomingEnabled = true;
   },
 
@@ -701,7 +701,7 @@ TCPControlChannel.prototype = {
           aStatus +
           " with role: " +
           this._direction
-      ); 
+      );
     this._stateMachine.onChannelClosed(aStatus, true);
   },
 
@@ -711,7 +711,7 @@ TCPControlChannel.prototype = {
       aInputStream,
       aInputStream.available()
     );
-    DEBUG && log("TCPControlChannel - onDataAvailable: " + data); 
+    DEBUG && log("TCPControlChannel - onDataAvailable: " + data);
 
     
     let jsonArray = data.split("\n");
@@ -721,7 +721,7 @@ TCPControlChannel.prototype = {
       try {
         msg = JSON.parse(json);
       } catch (e) {
-        DEBUG && log("TCPSignalingChannel - error in parsing json: " + e); 
+        DEBUG && log("TCPSignalingChannel - error in parsing json: " + e);
       }
 
       this._handleMessage(msg);
@@ -734,7 +734,7 @@ TCPControlChannel.prototype = {
     }
 
     DEBUG &&
-      log("TCPControlChannel - create pump with role: " + this._direction); 
+      log("TCPControlChannel - create pump with role: " + this._direction);
     this._pump = Cc["@mozilla.org/network/input-stream-pump;1"].createInstance(
       Ci.nsIInputStreamPump
     );
@@ -751,7 +751,7 @@ TCPControlChannel.prototype = {
           JSON.stringify(this._deviceInfo) +
           ": " +
           JSON.stringify(aMsg)
-      ); 
+      );
     this._stateMachine.onCommand(aMsg);
   },
 
@@ -760,7 +760,7 @@ TCPControlChannel.prototype = {
   },
 
   set listener(aListener) {
-    DEBUG && log("TCPControlChannel - set listener: " + aListener); 
+    DEBUG && log("TCPControlChannel - set listener: " + aListener);
     if (!aListener) {
       this._listener = null;
       return;
@@ -769,7 +769,7 @@ TCPControlChannel.prototype = {
     this._listener = aListener;
     if (this._pendingOpen) {
       this._pendingOpen = false;
-      DEBUG && log("TCPControlChannel - notify pending opened"); 
+      DEBUG && log("TCPControlChannel - notify pending opened");
       this._listener.notifyConnected();
     }
 
@@ -778,7 +778,7 @@ TCPControlChannel.prototype = {
       DEBUG &&
         log(
           "TCPControlChannel - notify pending offer: " + JSON.stringify(offer)
-        ); 
+        );
       this._listener.onOffer(new ChannelDescription(offer));
       this._pendingOffer = null;
     }
@@ -788,19 +788,19 @@ TCPControlChannel.prototype = {
       DEBUG &&
         log(
           "TCPControlChannel - notify pending answer: " + JSON.stringify(answer)
-        ); 
+        );
       this._listener.onAnswer(new ChannelDescription(answer));
       this._pendingAnswer = null;
     }
 
     if (this._pendingClose) {
-      DEBUG && log("TCPControlChannel - notify pending closed"); 
+      DEBUG && log("TCPControlChannel - notify pending closed");
       this._notifyDisconnected(this._pendingCloseReason);
       this._pendingClose = null;
     }
 
     if (this._pendingReconnect) {
-      DEBUG && log("TCPControlChannel - notify pending reconnected"); 
+      DEBUG && log("TCPControlChannel - notify pending reconnected");
       this._notifyReconnected();
       this._pendingReconnect = false;
     }
@@ -818,7 +818,7 @@ TCPControlChannel.prototype = {
       this._pendingOffer = aOffer;
       return;
     }
-    DEBUG && log("TCPControlChannel - notify offer: " + JSON.stringify(aOffer)); 
+    DEBUG && log("TCPControlChannel - notify offer: " + JSON.stringify(aOffer));
     this._listener.onOffer(new ChannelDescription(aOffer));
   },
 
@@ -831,7 +831,7 @@ TCPControlChannel.prototype = {
       return;
     }
     DEBUG &&
-      log("TCPControlChannel - notify answer: " + JSON.stringify(aAnswer)); 
+      log("TCPControlChannel - notify answer: " + JSON.stringify(aAnswer));
     this._listener.onAnswer(new ChannelDescription(aAnswer));
   },
 
@@ -845,7 +845,7 @@ TCPControlChannel.prototype = {
     }
 
     DEBUG &&
-      log("TCPControlChannel - notify opened with role: " + this._direction); 
+      log("TCPControlChannel - notify opened with role: " + this._direction);
     this._listener.notifyConnected();
   },
 
@@ -866,7 +866,7 @@ TCPControlChannel.prototype = {
     }
 
     DEBUG &&
-      log("TCPControlChannel - notify closed with role: " + this._direction); 
+      log("TCPControlChannel - notify closed with role: " + this._direction);
     this._listener.notifyDisconnected(aReason);
   },
 
@@ -879,7 +879,7 @@ TCPControlChannel.prototype = {
     DEBUG &&
       log(
         "TCPControlChannel - notify reconnected with role: " + this._direction
-      ); 
+      );
     this._listener.notifyReconnected();
   },
 
@@ -917,7 +917,7 @@ TCPControlChannel.prototype = {
   },
 
   disconnect(aReason) {
-    DEBUG && log("TCPControlChannel - disconnect with reason: " + aReason); 
+    DEBUG && log("TCPControlChannel - disconnect with reason: " + aReason);
 
     
     if (this._terminateTimer) {
@@ -936,14 +936,14 @@ TCPControlChannel.prototype = {
 
       
       this._disconnectTimer = setTimeout(() => {
-        DEBUG && log("TCPControlChannel - disconnect timeout"); 
+        DEBUG && log("TCPControlChannel - disconnect timeout");
         this._closeTransport();
       }, kDisconnectTimeout);
     }
   },
 
   reconnect(aPresentationId, aUrl) {
-    DEBUG && log("TCPControlChannel - reconnect with role: " + this._direction); 
+    DEBUG && log("TCPControlChannel - reconnect with role: " + this._direction);
     if (this._direction != "sender") {
       throw Components.Exception("", Cr.NS_ERROR_FAILURE);
     }
@@ -1006,7 +1006,7 @@ TCPControlChannel.prototype = {
       
       
       DEBUG &&
-        log("TCPControlChannel - unmatched terminatingId: " + presentationId); 
+        log("TCPControlChannel - unmatched terminatingId: " + presentationId);
       this.disconnect(Cr.NS_ERROR_FAILURE);
     }
 

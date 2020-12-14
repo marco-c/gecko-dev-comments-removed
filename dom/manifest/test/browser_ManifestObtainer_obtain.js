@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 Services.prefs.setBoolPref("dom.manifest.enabled", true);

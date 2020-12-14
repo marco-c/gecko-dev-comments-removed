@@ -21,8 +21,6 @@
 
 
 
-
-
 "use strict";
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -32,7 +30,6 @@ const { ManifestProcessor } = ChromeUtils.import(
 );
 
 var ManifestObtainer = {
-  
   
 
 
@@ -170,4 +167,4 @@ async function fetchManifest(aWindow) {
   return aWindow.fetch(request);
 }
 
-var EXPORTED_SYMBOLS = ["ManifestObtainer"]; 
+var EXPORTED_SYMBOLS = ["ManifestObtainer"];

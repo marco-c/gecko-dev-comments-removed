@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { Manifests } = ChromeUtils.import("resource://gre/modules/Manifest.jsm");

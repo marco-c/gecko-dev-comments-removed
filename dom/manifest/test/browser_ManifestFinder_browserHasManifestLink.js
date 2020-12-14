@@ -1,5 +1,3 @@
-
-
 "use strict";
 const { ManifestFinder } = ChromeUtils.import(
   "resource://gre/modules/ManifestFinder.jsm"

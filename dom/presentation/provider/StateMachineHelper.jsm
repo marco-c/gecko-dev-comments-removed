@@ -4,10 +4,9 @@
 
 
 
-
 "use strict";
 
-var EXPORTED_SYMBOLS = ["State", "CommandType"]; 
+var EXPORTED_SYMBOLS = ["State", "CommandType"];
 
 const State = Object.freeze({
   INIT: 0,
@@ -35,5 +34,5 @@ const CommandType = Object.freeze({
   ICE_CANDIDATE: "ice-candidate", 
 });
 
-this.State = State; 
-this.CommandType = CommandType; 
+this.State = State;
+this.CommandType = CommandType;

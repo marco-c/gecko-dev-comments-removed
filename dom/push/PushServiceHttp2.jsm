@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const { PushDB } = ChromeUtils.import("resource://gre/modules/PushDB.jsm");

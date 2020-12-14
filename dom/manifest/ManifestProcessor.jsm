@@ -58,7 +58,6 @@ const domBundle = Services.strings.createBundle(
 );
 
 var ManifestProcessor = {
-  
   get defaultDisplayMode() {
     return "browser";
   },
@@ -311,4 +310,4 @@ var ManifestProcessor = {
     }
   },
 };
-var EXPORTED_SYMBOLS = ["ManifestProcessor"]; 
+var EXPORTED_SYMBOLS = ["ManifestProcessor"];

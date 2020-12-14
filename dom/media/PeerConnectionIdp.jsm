@@ -2,7 +2,6 @@
 
 
 
-
 var EXPORTED_SYMBOLS = ["PeerConnectionIdp"];
 
 ChromeUtils.defineModuleGetter(

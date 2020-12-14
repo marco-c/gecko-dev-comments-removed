@@ -84,4 +84,4 @@ async function fetchIcon(aWindow, src) {
   });
 }
 
-var EXPORTED_SYMBOLS = ["ManifestIcons"]; 
+var EXPORTED_SYMBOLS = ["ManifestIcons"];

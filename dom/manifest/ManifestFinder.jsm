@@ -5,7 +5,6 @@
 
 var ManifestFinder = {
   
-  
 
 
 
@@ -59,7 +58,4 @@ function checkForManifest(aWindow) {
   return true;
 }
 
-var EXPORTED_SYMBOLS = [
-  
-  "ManifestFinder",
-];
+var EXPORTED_SYMBOLS = ["ManifestFinder"];

@@ -18,7 +18,6 @@
 
 
 
-
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -258,4 +257,4 @@ ImageObjectProcessor.prototype.process = function(
     }
   }
 };
-var EXPORTED_SYMBOLS = ["ImageObjectProcessor"]; 
+var EXPORTED_SYMBOLS = ["ImageObjectProcessor"];
