@@ -131,6 +131,10 @@ void ReportSimdAnalysis(const char* data);
 
 
 
+bool ExceptionsAvailable(JSContext* cx);
+
+
+
 
 MOZ_MUST_USE bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
                        HandleObject importObj,
