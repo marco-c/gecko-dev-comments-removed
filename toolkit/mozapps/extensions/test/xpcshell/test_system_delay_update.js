@@ -21,6 +21,10 @@ const NORMAL_ID = "system1@tests.mozilla.org";
 const distroDir = FileUtils.getDir("ProfD", ["sysfeatures"], true);
 registerDirectory("XREAppFeat", distroDir);
 
+registerCleanupFunction(() => {
+  distroDir.remove(true);
+});
+
 AddonTestUtils.usePrivilegedSignatures = id => "system";
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
@@ -103,16 +107,26 @@ function promiseInstallDeferred(addonID1, addonID2) {
   });
 }
 
+async function checkAddon(addonID, { version }) {
+  let addon = await promiseAddonByID(addonID);
+  Assert.notEqual(addon, null);
+  Assert.equal(addon.version, version);
+  Assert.ok(addon.isCompatible);
+  Assert.ok(!addon.appDisabled);
+  Assert.ok(addon.isActive);
+  Assert.equal(addon.type, "extension");
+}
 
 
 
 
-add_task(async function() {
+
+add_task(async function test_addon_upgrade_on_restart() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
   let xpi = await getSystemAddonXPI(1, "1.0");
-  xpi.copyTo(distroDir, "system1@tests.mozilla.org.xpi");
+  xpi.copyTo(distroDir, `${NORMAL_ID}.xpi`);
 
   
   function background() {
@@ -167,52 +181,26 @@ add_task(async function() {
   ]);
 
   
-  let addon_postponed = await promiseAddonByID(IGNORE_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
-
+  await checkAddon(IGNORE_ID, { version: "1.0" });
   
-  addon_postponed = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
+  await checkAddon(NORMAL_ID, { version: "1.0" });
 
   
   await Promise.all([promiseRestartManager(), extension.awaitStartup()]);
 
-  let addon_upgraded = await promiseAddonByID(IGNORE_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
-
-  addon_upgraded = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
+  await checkAddon(IGNORE_ID, { version: "2.0" });
+  await checkAddon(NORMAL_ID, { version: "2.0" });
 
   await promiseShutdownManager();
 });
 
 
-add_task(async function() {
+add_task(async function test_addon_upgrade_on_reload() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
   let xpi = await getSystemAddonXPI(1, "1.0");
-  xpi.copyTo(distroDir, "system1@tests.mozilla.org.xpi");
+  xpi.copyTo(distroDir, `${NORMAL_ID}.xpi`);
 
   
   
@@ -264,21 +252,8 @@ add_task(async function() {
   ];
 
   
-  let addon_allowed = await promiseAddonByID(COMPLETE_ID);
-  Assert.notEqual(addon_allowed, null);
-  Assert.equal(addon_allowed.version, "1.0");
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
-
-  addon_allowed = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_allowed, null);
-  Assert.equal(addon_allowed.version, "1.0");
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
+  await checkAddon(COMPLETE_ID, { version: "1.0" });
+  await checkAddon(NORMAL_ID, { version: "1.0" });
 
   
   
@@ -287,51 +262,28 @@ add_task(async function() {
     promiseInstallResumed(COMPLETE_ID, NORMAL_ID),
     installSystemAddons(buildSystemAddonUpdates(updateList)),
   ]);
+  await extension.awaitStartup();
 
   
-  addon_allowed = await promiseAddonByID(COMPLETE_ID);
-  Assert.notEqual(addon_allowed, null);
-  Assert.equal(addon_allowed.version, "2.0");
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
-
+  await checkAddon(COMPLETE_ID, { version: "2.0" });
   
-  addon_allowed = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_allowed, null);
-  Assert.equal(addon_allowed.version, "2.0");
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
+  await checkAddon(NORMAL_ID, { version: "2.0" });
 
   
   await Promise.all([promiseRestartManager(), extension.awaitStartup()]);
 
-  let addon_upgraded = await promiseAddonByID(COMPLETE_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
-
-  addon_upgraded = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
+  await checkAddon(COMPLETE_ID, { version: "2.0" });
+  await checkAddon(NORMAL_ID, { version: "2.0" });
 
   await promiseShutdownManager();
 });
 
 function delayBackground() {
   browser.test.onMessage.addListener(msg => {
+    if (msg !== "reload") {
+      browser.test.fail(`Got unexpected test message: ${msg}`);
+    }
     browser.runtime.reload();
-    browser.test.sendMessage("reloaded");
   });
   browser.runtime.onUpdateAvailable.addListener(async function listener() {
     browser.runtime.onUpdateAvailable.removeListener(listener);
@@ -340,12 +292,12 @@ function delayBackground() {
 }
 
 
-add_task(async function() {
+add_task(async function test_addon_upgrade_after_pause() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
   let xpi = await getSystemAddonXPI(1, "1.0");
-  xpi.copyTo(distroDir, "system1@tests.mozilla.org.xpi");
+  xpi.copyTo(distroDir, `${NORMAL_ID}.xpi`);
 
   
   xpi = await createTempWebExtensionFile({
@@ -393,73 +345,36 @@ add_task(async function() {
   ]);
 
   
-  let addon_postponed = await promiseAddonByID(DEFER_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
-
+  await checkAddon(DEFER_ID, { version: "1.0" });
   
-  addon_postponed = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
+  await checkAddon(NORMAL_ID, { version: "1.0" });
 
   let deferred = promiseInstallDeferred(DEFER_ID, NORMAL_ID);
 
   
-  extension.sendMessage("go");
+  extension.setRestarting();
+  extension.sendMessage("reload");
 
-  await Promise.all([deferred, extension.awaitMessage("reloaded")]);
-
-  
-  let addon_allowed = await promiseAddonByID(DEFER_ID);
-  Assert.notEqual(addon_allowed, null);
-  Assert.equal(addon_allowed.version, "2.0");
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
+  await Promise.all([deferred, extension.awaitStartup()]);
 
   
-  addon_allowed = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_allowed, null);
-  Assert.equal(addon_allowed.version, "2.0");
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
+  await checkAddon(DEFER_ID, { version: "2.0" });
+  
+  await checkAddon(NORMAL_ID, { version: "2.0" });
 
   
   await promiseRestartManager();
+  await extension.awaitStartup();
 
-  let addon_upgraded = await promiseAddonByID(DEFER_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
-
-  addon_upgraded = await promiseAddonByID(NORMAL_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
+  await checkAddon(DEFER_ID, { version: "2.0" });
+  await checkAddon(NORMAL_ID, { version: "2.0" });
 
   await promiseShutdownManager();
 });
 
 
 
-add_task(async function() {
+add_task(async function test_multiple_addon_upgrade_postpone() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
@@ -528,73 +443,33 @@ add_task(async function() {
   ]);
 
   
-  let addon_postponed = await promiseAddonByID(DEFER2_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
-
+  await checkAddon(DEFER2_ID, { version: "1.0" });
   
-  addon_postponed = await promiseAddonByID(DEFER_ALSO_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
+  await checkAddon(DEFER_ALSO_ID, { version: "1.0" });
 
   let deferred = promiseInstallDeferred(DEFER2_ID, DEFER_ALSO_ID);
 
   
-  extension1.sendMessage("go");
-  await extension1.awaitMessage("reloaded");
+  extension1.setRestarting();
+  extension1.sendMessage("reload");
 
   
-  addon_postponed = await promiseAddonByID(DEFER2_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
-
-  addon_postponed = await promiseAddonByID(DEFER_ALSO_ID);
-  Assert.notEqual(addon_postponed, null);
-  Assert.equal(addon_postponed.version, "1.0");
-  Assert.ok(addon_postponed.isCompatible);
-  Assert.ok(!addon_postponed.appDisabled);
-  Assert.ok(addon_postponed.isActive);
-  Assert.equal(addon_postponed.type, "extension");
+  await checkAddon(DEFER2_ID, { version: "1.0" });
+  await checkAddon(DEFER_ALSO_ID, { version: "1.0" });
 
   
-  extension2.sendMessage("go");
+  extension2.setRestarting();
+  extension2.sendMessage("reload");
 
   await Promise.all([
-    extension2.awaitMessage("reloaded"),
     deferred,
     extension1.awaitStartup(),
     extension2.awaitStartup(),
   ]);
 
   
-  let addon_allowed = await promiseAddonByID(DEFER2_ID);
-  Assert.notEqual(addon_allowed, null);
-  Assert.equal(addon_allowed.version, "2.0");
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
-
-  
-  addon_allowed = await promiseAddonByID(DEFER_ALSO_ID);
-  Assert.notEqual(addon_allowed, null);
-  
-  Assert.ok(addon_allowed.isCompatible);
-  Assert.ok(!addon_allowed.appDisabled);
-  Assert.ok(addon_allowed.isActive);
-  Assert.equal(addon_allowed.type, "extension");
+  await checkAddon(DEFER2_ID, { version: "2.0" });
+  await checkAddon(DEFER_ALSO_ID, { version: "2.0" });
 
   
   await Promise.all([
@@ -603,21 +478,8 @@ add_task(async function() {
     extension2.awaitStartup(),
   ]);
 
-  let addon_upgraded = await promiseAddonByID(DEFER2_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
-
-  addon_upgraded = await promiseAddonByID(DEFER_ALSO_ID);
-  Assert.notEqual(addon_upgraded, null);
-  Assert.equal(addon_upgraded.version, "2.0");
-  Assert.ok(addon_upgraded.isCompatible);
-  Assert.ok(!addon_upgraded.appDisabled);
-  Assert.ok(addon_upgraded.isActive);
-  Assert.equal(addon_upgraded.type, "extension");
+  await checkAddon(DEFER2_ID, { version: "2.0" });
+  await checkAddon(DEFER_ALSO_ID, { version: "2.0" });
 
   await promiseShutdownManager();
 });

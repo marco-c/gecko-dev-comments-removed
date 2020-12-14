@@ -3574,6 +3574,7 @@ class SystemAddonInstaller extends DirectoryInstaller {
     }
 
     async function postponeAddon(install) {
+      install.ownsTempFile = true;
       let resumeFn;
       if (AddonManagerPrivate.hasUpgradeListener(install.addon.id)) {
         logger.info(
