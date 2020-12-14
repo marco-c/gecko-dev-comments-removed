@@ -335,6 +335,9 @@ class KeymapWrapper {
   static void OnDirectionChanged(GdkKeymap* aGdkKeymap,
                                  KeymapWrapper* aKeymapWrapper);
 
+  gulong mOnKeysChangedSignalHandle;
+  gulong mOnDirectionChangedSignalHandle;
+
   
 
 
