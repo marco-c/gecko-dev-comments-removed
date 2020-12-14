@@ -1347,16 +1347,6 @@
 
 
 
- \
-    MACRO(IterNext, iter_next, NULL, 1, 1, 1, JOF_BYTE) \
-    
-
-
-
-
-
-
-
 
  \
     MACRO(EndIter, end_iter, NULL, 1, 2, 0, JOF_BYTE) \
@@ -3574,6 +3564,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \
   MACRO(232)                                   \
