@@ -196,6 +196,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void Reload(uint32_t aReloadFlags);
   void Stop(uint32_t aStopFlags);
 
+  BrowserParent* GetBrowserParent() const;
+
   
   
   

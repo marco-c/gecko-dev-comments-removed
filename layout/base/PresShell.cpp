@@ -10865,32 +10865,29 @@ nsAccessibilityService* PresShell::GetAccessibilityService() {
 
 
 void PresShell::QueryIsActive() {
-  nsCOMPtr<nsISupports> container = mPresContext->GetContainerWeak();
-  if (mDocument) {
-    Document* displayDoc = mDocument->GetDisplayDocument();
-    if (displayDoc) {
-      
-      
-      
-      MOZ_ASSERT(!container,
-                 "external resource doc shouldn't have its own container");
-
-      nsPresContext* displayPresContext = displayDoc->GetPresContext();
-      if (displayPresContext) {
-        container = displayPresContext->GetContainerWeak();
-      }
-    }
+  Document* doc = mDocument;
+  if (!doc) {
+    return;
+  }
+  if (Document* displayDoc = doc->GetDisplayDocument()) {
+    
+    
+    
+    MOZ_ASSERT(!doc->GetBrowsingContext(),
+               "external resource doc shouldn't have its own BC");
+    doc = displayDoc;
   }
 
-  nsCOMPtr<nsIDocShell> docshell(do_QueryInterface(container));
-  if (docshell) {
-    bool isActive;
-    nsresult rv = docshell->GetIsActive(&isActive);
+  if (BrowsingContext* bc = doc->GetBrowsingContext()) {
     
     
     
     
-    if (NS_SUCCEEDED(rv)) SetIsActive(isActive);
+    auto* browserChild = BrowserChild::GetFrom(doc->GetDocShell());
+    const bool hiddenInRemoteFrame = browserChild &&
+                                     !browserChild->IsTopLevel() &&
+                                     !browserChild->IsVisible();
+    SetIsActive(bc->IsActive() && !hiddenInRemoteFrame);
   }
 }
 

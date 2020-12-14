@@ -75,7 +75,7 @@ add_task(async function() {
   
   await SpecialPowers.spawn(browser, [], () => {
     return ContentTaskUtils.waitForCondition(
-      () => docShell.isActive && content.document.hasFocus(),
+      () => content.browsingContext.isActive && content.document.hasFocus(),
       "document is active"
     );
   });

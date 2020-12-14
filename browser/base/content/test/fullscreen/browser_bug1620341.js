@@ -43,9 +43,6 @@ add_task(async function test_fullscreen_cross_origin() {
             frameDoc.addEventListener(message, handler);
           });
 
-          
-          
-          content.docShell.isActive = true;
           frameDoc.getElementById("request").click();
           await waitForFullscreen;
         });

@@ -920,16 +920,6 @@ child:
 
 
 
-    async SetDocShellIsActive(bool aIsActive);
-
-    
-
-
-
-
-
-
-
 
 
 

@@ -94,7 +94,7 @@ class WindowGlobalParent final : public WindowContext,
 
   
   
-  already_AddRefed<BrowserParent> GetBrowserParent();
+  BrowserParent* GetBrowserParent();
 
   ContentParent* GetContentParent();
 

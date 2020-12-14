@@ -13,52 +13,12 @@ function debug(msg) {
   
 }
 
-
-
-docShell.isActive = true;
-
-function parentDocShell(docshell) {
-  if (!docshell) {
-    return null;
-  }
-  let treeitem = docshell.QueryInterface(Ci.nsIDocShellTreeItem);
-  return treeitem.parent
-    ? treeitem.parent.QueryInterface(Ci.nsIDocShell)
-    : null;
-}
-
-function isTopBrowserElement(docShell) {
-  while (docShell) {
-    docShell = parentDocShell(docShell);
-    if (docShell && docShell.isMozBrowser) {
-      return false;
-    }
-  }
-  return true;
-}
-
 var BrowserElementIsReady;
 
 debug(`Might load BE scripts: BEIR: ${BrowserElementIsReady}`);
 if (!BrowserElementIsReady) {
   debug("Loading BE scripts");
   if (!("BrowserElementIsPreloaded" in this)) {
-    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-      
-      if (isTopBrowserElement(docShell)) {
-        Services.scriptloader.loadSubScript(
-          "chrome://global/content/BrowserElementCopyPaste.js",
-          this
-        );
-      }
-    } else {
-      
-      Services.scriptloader.loadSubScript(
-        "chrome://global/content/BrowserElementCopyPaste.js",
-        this
-      );
-    }
-
     Services.scriptloader.loadSubScript(
       "chrome://global/content/BrowserElementChildPreload.js",
       this
@@ -70,9 +30,6 @@ if (!BrowserElementIsReady) {
 
     if (api) {
       api.destroy();
-    }
-    if ("CopyPasteAssistent" in this) {
-      CopyPasteAssistent.destroy();
     }
 
     BrowserElementIsReady = false;

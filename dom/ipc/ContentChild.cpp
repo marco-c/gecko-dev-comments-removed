@@ -1147,15 +1147,6 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
 
-  
-  
-  newChild->AddPendingDocShellBlocker();
-  auto removePendingDocShellBlocker = MakeScopeExit([&] {
-    if (newChild) {
-      newChild->RemovePendingDocShellBlocker();
-    }
-  });
-
   {
     
     

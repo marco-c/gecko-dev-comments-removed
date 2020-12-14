@@ -74,6 +74,13 @@ class WindowContext;
 struct WindowPostMessageOptions;
 class WindowProxyHolder;
 
+enum class ExplicitActiveStatus : uint8_t {
+  None,
+  Active,
+  Inactive,
+  EndGuard_,
+};
+
 
 
 
@@ -89,7 +96,7 @@ class WindowProxyHolder;
 #define MOZ_EACH_BC_FIELD(FIELD)                                             \
   FIELD(Name, nsString)                                                      \
   FIELD(Closed, bool)                                                        \
-  FIELD(IsActive, bool)                                                      \
+  FIELD(ExplicitActive, ExplicitActiveStatus)                                \
   /* Top()-only. If true, new-playing media will be suspended when in an     \
    * inactive browsing context. */                                           \
   FIELD(SuspendMediaWhenInactive, bool)                                      \
@@ -344,11 +351,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void DisplayLoadError(const nsAString& aURI);
 
   
-  bool IsCached();
+  bool IsCached() const;
 
   
   
-  bool IsTargetable();
+  bool IsTargetable() const;
 
   
   bool InactiveForSuspend() const;
@@ -480,6 +487,13 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool SuspendMediaWhenInactive() const {
     return GetSuspendMediaWhenInactive();
+  }
+
+  bool IsActive() const;
+  void SetIsActive(bool aIsActive, mozilla::ErrorResult& aRv) {
+    SetExplicitActive(aIsActive ? ExplicitActiveStatus::Active
+                                : ExplicitActiveStatus::Inactive,
+                      aRv);
   }
 
   bool AuthorStyleDisabledDefault() const {
@@ -858,7 +872,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
               ContentParent* aSource);
   void DidSet(FieldIndex<IDX_DisplayMode>, enum DisplayMode aOldValue);
 
-  void DidSet(FieldIndex<IDX_IsActive>, bool aOldValue);
+  void DidSet(FieldIndex<IDX_ExplicitActive>, ExplicitActiveStatus aOldValue);
 
   bool CanSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>, const bool& aValue,
               ContentParent* aSource);

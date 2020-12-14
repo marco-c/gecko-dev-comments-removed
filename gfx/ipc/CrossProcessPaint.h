@@ -69,7 +69,7 @@ class PaintFragment final {
 
 
 
-  static PaintFragment Record(nsIDocShell* aDocShell,
+  static PaintFragment Record(dom::BrowsingContext* aBc,
                               const Maybe<IntRect>& aRect, float aScale,
                               nscolor aBackgroundColor,
                               CrossProcessPaintFlags aFlags);

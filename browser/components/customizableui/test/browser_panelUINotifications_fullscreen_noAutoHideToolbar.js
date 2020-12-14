@@ -21,7 +21,7 @@ function waitForDocshellActivated() {
       "visibilitychange",
       true ,
       aEvent => {
-        return content.docShell.isActive;
+        return content.browsingContext.isActive;
       }
     );
   });

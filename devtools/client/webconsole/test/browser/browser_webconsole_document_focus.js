@@ -69,7 +69,7 @@ add_task(async function testSeparateWindowToolboxInactiveTab() {
   await SpecialPowers.spawn(firstTab.linkedBrowser, [], async () => {
     
     await ContentTaskUtils.waitForCondition(
-      () => !docShell.isActive && !content.document.hasFocus(),
+      () => !content.browsingContext.isActive && !content.document.hasFocus(),
       "Waiting for first tab to become inactive"
     );
     content.onFocus = new Promise(resolve => {

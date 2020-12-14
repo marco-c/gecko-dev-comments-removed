@@ -38,7 +38,7 @@ async function changeFullscreen(browser, fullScreenState) {
   SpecialPowers.spawn(browser, [fullScreenState], async state => {
     
     await ContentTaskUtils.waitForCondition(
-      () => docShell.isActive && content.document.hasFocus(),
+      () => content.browsingContext.isActive && content.document.hasFocus(),
       "Waiting for document focus"
     );
     if (state) {

@@ -255,20 +255,21 @@ BrowserElementParent.prototype = {
     });
   },
 
-  
-
-
-  _ownerVisibilityChange() {
-    this._sendAsyncMsg("owner-visibility-change", {
-      visible: !this._window.document.hidden,
-    });
-  },
-
   _handleOwnerEvent(evt) {
     switch (evt.type) {
       case "visibilitychange":
         this._ownerVisibilityChange();
         break;
+    }
+  },
+
+  
+
+
+  _ownerVisibilityChange() {
+    let bc = this._frameLoader?.browsingContext;
+    if (bc) {
+      bc.isActive = !this._window.document.hidden;
     }
   },
 };
