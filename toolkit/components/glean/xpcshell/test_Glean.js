@@ -98,8 +98,7 @@ add_task(async function test_fog_string_works() {
   Assert.equal(value, Glean.test_only.cheesy_string.testGetValue("test-ping"));
 });
 
-
-add_task({ skip_if: () => true }, async function test_fog_timespan_works() {
+add_task(async function test_fog_timespan_works() {
   
   
   Glean.test_only.can_we_time_it.start();
