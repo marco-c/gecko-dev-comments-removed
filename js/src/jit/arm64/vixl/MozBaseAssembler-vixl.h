@@ -27,13 +27,23 @@
 #ifndef jit_arm64_vixl_MozBaseAssembler_vixl_h
 #define jit_arm64_vixl_MozBaseAssembler_vixl_h
 
-#include "jit/arm64/vixl/Constants-vixl.h"
-#include "jit/arm64/vixl/Instructions-vixl.h"
 
-#include "jit/Label.h"
-#include "jit/shared/Assembler-shared.h"
-#include "jit/shared/Disassembler-shared.h"
-#include "jit/shared/IonAssemblerBufferWithConstantPools.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Sprintf.h"     
+
+#include <stddef.h>  
+#include <stdint.h>  
+#include <string.h>  
+
+#include "jit/arm64/vixl/Constants-vixl.h"     
+#include "jit/arm64/vixl/Globals-vixl.h"       
+#include "jit/arm64/vixl/Instructions-vixl.h"  
+
+#include "jit/Label.h"                       
+#include "jit/shared/Assembler-shared.h"     
+#include "jit/shared/Disassembler-shared.h"  
+#include "jit/shared/IonAssemblerBuffer.h"   
+#include "jit/shared/IonAssemblerBufferWithConstantPools.h"  
 
 namespace vixl {
 
