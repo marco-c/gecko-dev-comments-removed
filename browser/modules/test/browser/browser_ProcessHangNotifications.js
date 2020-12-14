@@ -251,7 +251,9 @@ add_task(async function terminatePluginTest() {
   let notification = await promise;
 
   let buttons = notification.currentNotification.getElementsByTagName("button");
-  is(buttons.length, buttonCount, "proper number of buttons");
+  
+  
+  is(buttons.length, 2, "proper number of buttons");
 
   
   buttons[0].click();
