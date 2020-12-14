@@ -63,13 +63,15 @@ class IOUtils final {
                                             const nsAString& aPath,
                                             const ReadUTF8Options& aOptions);
 
-  static already_AddRefed<Promise> WriteAtomic(
-      GlobalObject& aGlobal, const nsAString& aPath, const Uint8Array& aData,
-      const WriteAtomicOptions& aOptions);
+  static already_AddRefed<Promise> Write(GlobalObject& aGlobal,
+                                         const nsAString& aPath,
+                                         const Uint8Array& aData,
+                                         const WriteOptions& aOptions);
 
-  static already_AddRefed<Promise> WriteAtomicUTF8(
-      GlobalObject& aGlobal, const nsAString& aPath, const nsAString& aString,
-      const WriteAtomicOptions& aOptions);
+  static already_AddRefed<Promise> WriteUTF8(GlobalObject& aGlobal,
+                                             const nsAString& aPath,
+                                             const nsAString& aString,
+                                             const WriteOptions& aOptions);
 
   static already_AddRefed<Promise> Move(GlobalObject& aGlobal,
                                         const nsAString& aSourcePath,
@@ -114,7 +116,7 @@ class IOUtils final {
 
   friend class IOUtilsShutdownBlocker;
   struct InternalFileInfo;
-  struct InternalWriteAtomicOpts;
+  struct InternalWriteOpts;
   class MozLZ4;
 
   static StaticDataMutex<StaticRefPtr<nsISerialEventTarget>>
@@ -197,9 +199,9 @@ class IOUtils final {
 
 
 
-  static Result<uint32_t, IOError> WriteAtomicSync(
+  static Result<uint32_t, IOError> WriteSync(
       nsIFile* aFile, const Span<const uint8_t>& aByteArray,
-      const InternalWriteAtomicOpts& aOptions);
+      const InternalWriteOpts& aOptions);
 
   
 
@@ -213,9 +215,9 @@ class IOUtils final {
 
 
 
-  static Result<uint32_t, IOError> WriteAtomicUTF8Sync(
+  static Result<uint32_t, IOError> WriteUTF8Sync(
       nsIFile* aFile, const nsCString& aUTF8String,
-      const InternalWriteAtomicOpts& aOptions);
+      const InternalWriteOpts& aOptions);
 
   
 
@@ -434,15 +436,15 @@ struct IOUtils::InternalFileInfo {
 
 
 
-struct IOUtils::InternalWriteAtomicOpts {
+struct IOUtils::InternalWriteOpts {
   RefPtr<nsIFile> mBackupFile;
-  bool mFlush;
-  bool mNoOverwrite;
   RefPtr<nsIFile> mTmpFile;
-  bool mCompress;
+  bool mFlush = false;
+  bool mNoOverwrite = false;
+  bool mCompress = false;
 
-  static Result<InternalWriteAtomicOpts, IOUtils::IOError> FromBinding(
-      const WriteAtomicOptions& aOptions);
+  static Result<InternalWriteOpts, IOUtils::IOError> FromBinding(
+      const WriteOptions& aOptions);
 };
 
 
