@@ -2008,7 +2008,7 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
 
   
   mozilla::Span<TaggedScriptThingIndex> stencilThings =
-      NewScriptThingSpanUninitialized(cx_, compilationInfo_.stencil.alloc,
+      NewScriptThingSpanUninitialized(cx_, compilationInfo_.alloc,
                                       ngcthings.value());
   if (stencilThings.empty()) {
     return false;

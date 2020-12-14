@@ -208,7 +208,7 @@ struct CompilationInput {
   void trace(JSTracer* trc);
 } JS_HAZ_GC_POINTER;
 
-struct CompilationStencil;
+struct CompilationInfo;
 
 struct MOZ_RAII CompilationState {
   
@@ -225,16 +225,13 @@ struct MOZ_RAII CompilationState {
 
   CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
                    const JS::ReadOnlyCompileOptions& options,
-                   CompilationStencil& stencil, Scope* enclosingScope = nullptr,
+                   CompilationInfo& compilationInfo,
+                   Scope* enclosingScope = nullptr,
                    JSObject* enclosingEnv = nullptr);
 };
 
 
 struct CompilationStencil {
-  
-  
-  LifoAlloc alloc;
-
   
   
   Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
@@ -270,26 +267,10 @@ struct CompilationStencil {
   
   ParserAtomVector parserAtomData;
 
-  
-  static constexpr size_t LifoAllocChunkSize = 512;
-
-  CompilationStencil() : alloc(LifoAllocChunkSize) {}
+  CompilationStencil() = default;
 
   
-  
-  CompilationStencil(CompilationStencil&& other) noexcept
-      : alloc(LifoAllocChunkSize),
-        regExpData(std::move(other.regExpData)),
-        bigIntData(std::move(other.bigIntData)),
-        objLiteralData(std::move(other.objLiteralData)),
-        scriptData(std::move(other.scriptData)),
-        scopeData(std::move(other.scopeData)),
-        moduleMetadata(std::move(other.moduleMetadata)),
-        asmJS(std::move(other.asmJS)),
-        parserAtomData(std::move(other.parserAtomData)) {
-    
-    alloc.steal(&other.alloc);
-  }
+  CompilationStencil(CompilationStencil&& other) = default;
 
   const ParserAtom* getParserAtomAt(JSContext* cx,
                                     TaggedParserAtomIndex taggedIndex) const;
@@ -420,6 +401,13 @@ class ScriptStencilIterable {
 struct CompilationInfo {
   static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
 
+  
+  
+  LifoAlloc alloc;
+
+  
+  static constexpr size_t LifoAllocChunkSize = 512;
+
   CompilationInput input;
   CompilationStencil stencil;
 
@@ -440,7 +428,7 @@ struct CompilationInfo {
 
   
   CompilationInfo(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
-      : input(options) {}
+      : alloc(LifoAllocChunkSize), input(options) {}
 
   static MOZ_MUST_USE bool prepareInputAndStencilForInstantiate(
       JSContext* cx, CompilationInput& input, CompilationStencil& stencil);
@@ -462,7 +450,14 @@ struct CompilationInfo {
                                       bool* succeededOut = nullptr);
 
   
-  CompilationInfo(CompilationInfo&&) = default;
+  
+  CompilationInfo(CompilationInfo&& other) noexcept
+      : alloc(LifoAllocChunkSize),
+        input(std::move(other.input)),
+        stencil(std::move(other.stencil)) {
+    
+    alloc.steal(&other.alloc);
+  }
 
   
   CompilationInfo(const CompilationInfo&) = delete;
@@ -490,18 +485,29 @@ struct CompilationInfoVector {
 
   MOZ_MUST_USE bool buildDelazificationIndices(JSContext* cx);
 
+  
+  static constexpr size_t LifoAllocChunkSize = 512;
+
  public:
   CompilationInfo initial;
+  LifoAlloc allocForDelazifications;
   Vector<CompilationStencil, 0, js::SystemAllocPolicy> delazifications;
   FunctionIndexVector delazificationIndices;
   CompilationAtomCache::AtomCacheVector delazificationAtomCache;
 
   CompilationInfoVector(JSContext* cx,
                         const JS::ReadOnlyCompileOptions& options)
-      : initial(cx, options) {}
+      : initial(cx, options), allocForDelazifications(LifoAllocChunkSize) {}
 
   
-  CompilationInfoVector(CompilationInfoVector&&) = default;
+  CompilationInfoVector(CompilationInfoVector&& other) noexcept
+      : initial(std::move(other.initial)),
+        allocForDelazifications(LifoAllocChunkSize),
+        delazifications(std::move(other.delazifications)),
+        delazificationAtomCache(std::move(other.delazificationAtomCache)) {
+    
+    allocForDelazifications.steal(&other.allocForDelazifications);
+  }
 
   
   CompilationInfoVector(const CompilationInfoVector&) = delete;
