@@ -790,10 +790,23 @@ child:
     prio(input) async RealMouseMoveEvent(WidgetMouseEvent event,
                                          ScrollableLayerGuid aGuid,
                                          uint64_t aInputBlockId) compress;
-
     async NormalPriorityRealMouseMoveEvent(WidgetMouseEvent event,
                                            ScrollableLayerGuid aGuid,
                                            uint64_t aInputBlockId) compress;
+
+    
+
+
+
+
+
+
+    prio(input) async RealMouseMoveEventForTests(WidgetMouseEvent event,
+                                                 ScrollableLayerGuid aGuid,
+                                                 uint64_t aInputBlockId);
+    async NormalPriorityRealMouseMoveEventForTests(WidgetMouseEvent event,
+                                                   ScrollableLayerGuid aGuid,
+                                                   uint64_t aInputBlockId);
 
     
 
