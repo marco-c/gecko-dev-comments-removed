@@ -1975,8 +1975,18 @@ var gIdentityHandler = {
 
   async _createGeoLocationLastAccessIndicator() {
     let lastAccessStr = await this._getGeoLocationLastAccess();
+    let geoContainer = document.getElementById("identity-popup-geo-container");
 
-    if (lastAccessStr == null) {
+    
+    
+    
+    
+    
+    if (
+      lastAccessStr == null ||
+      !geoContainer ||
+      document.getElementById("geo-access-indicator-item")
+    ) {
       return;
     }
     let lastAccess = new Date(lastAccessStr);
@@ -2007,13 +2017,7 @@ var gIdentityHandler = {
     indicator.appendChild(icon);
     indicator.appendChild(text);
 
-    let geoContainer = document.getElementById("identity-popup-geo-container");
-
-    
-    
-    if (geoContainer) {
-      geoContainer.appendChild(indicator);
-    }
+    geoContainer.appendChild(indicator);
   },
 
   _createProtocolHandlerPermissionItem(permission, key) {
