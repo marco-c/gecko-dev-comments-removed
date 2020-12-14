@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 13; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=13 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef MOZILLA_CACHE_INVALIDATOR_H_
 #define MOZILLA_CACHE_INVALIDATOR_H_
@@ -13,31 +13,13 @@
 #include <unordered_set>
 #include <vector>
 
-namespace std {  // You know it's going to be good with this at the top of the
-                 // file.
 
-// The STL is lazy and doesn't provide these:
-template <typename T>
-struct hash<const T*> {
-  auto operator()(const T* const x) const {
-    return hash<T*>()(const_cast<T*>(x));
-  }
-};
-
-template <typename T>
-struct hash<const T> {
-  auto operator()(const T x) const { return hash<T>()(const_cast<T>(x)); }
-};
-
-}  // namespace std
-
-// -
 
 namespace mozilla {
 
 class AbstractCache;
 
-// -
+
 
 class CacheInvalidator {
   friend class AbstractCache;
@@ -47,18 +29,18 @@ class CacheInvalidator {
 
  public:
   virtual ~CacheInvalidator() {
-    // It's actually generally unsafe to wait until now to invalidate caches,
-    // because when used as a mixin, this dtor is called after the dtor for the
-    // derived class. This means that if the derived class holds a cache (or is
-    // a cache!), OnInvalidate() will be called on a destroyed object.
-    // MOZ_ASSERT(!mCaches);
+    
+    
+    
+    
+    
     InvalidateCaches();
   }
 
   void InvalidateCaches() const;
 };
 
-// -
+
 
 class AbstractCache {
   typedef std::vector<const CacheInvalidator*> InvalidatorListT;
@@ -82,7 +64,7 @@ class AbstractCache {
   void AddInvalidator(const CacheInvalidator&);
 };
 
-// -
+
 
 template <typename T>
 class CacheMaybe : public AbstractCache {
@@ -110,7 +92,7 @@ class CacheMaybe : public AbstractCache {
   T* operator->() const { return get(); }
 };
 
-// -
+
 
 template <typename KeyT, typename ValueT>
 class CacheWeakMap final {
@@ -131,7 +113,7 @@ class CacheWeakMap final {
 
   struct DerefHash final {
     size_t operator()(const KeyT* const a) const {
-      return std::hash<const KeyT>()(*a);
+      return std::hash<KeyT>()(*a);
     }
   };
   struct DerefEqual final {
@@ -182,6 +164,6 @@ class CacheWeakMap final {
   ~CacheWeakMap() { Clear(); }
 };
 
-}  // namespace mozilla
+}  
 
-#endif  // MOZILLA_CACHE_INVALIDATOR_H_
+#endif  
