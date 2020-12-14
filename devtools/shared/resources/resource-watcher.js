@@ -270,7 +270,11 @@ class ResourceWatcher {
       
       
       
-      for (const resourceType of this._listenerCount.keys()) {
+      for (const resourceType of Object.values(ResourceWatcher.TYPES)) {
+        
+        if (!this._listenerCount.get(resourceType)) {
+          continue;
+        }
         await this._stopListening(resourceType, { bypassListenerCount: true });
         resources.push(resourceType);
       }
