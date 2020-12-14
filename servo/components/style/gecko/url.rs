@@ -109,7 +109,7 @@ impl CssUrlData {
     
     
     pub fn is_fragment(&self) -> bool {
-        self.as_str().chars().next().map_or(false, |c| c == '#')
+        self.as_str().as_bytes().iter().next().map_or(false, |b| *b == b'#')
     }
 
     
