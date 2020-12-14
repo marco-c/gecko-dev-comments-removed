@@ -162,8 +162,6 @@ browser.Context = class {
     
     this.tabBrowser = browser.getTabBrowser(this.window);
 
-    this.knownFrames = [];
-
     
     this.newSession = true;
 
@@ -470,24 +468,22 @@ browser.Context = class {
 
 
   register(target) {
-    
-    
-    const uid = target.browsingContext.id;
-
-    if (this.tabBrowser) {
-      
-      
-      if (!this.tab) {
-        this.switchToTab();
-      }
-
-      if (target === this.contentBrowser) {
-        this.updateIdForBrowser(this.contentBrowser, uid);
-      }
+    if (!this.tabBrowser) {
+      return;
     }
 
     
-    this.knownFrames.push(uid);
+    
+    if (!this.tab) {
+      this.switchToTab();
+    }
+
+    if (target === this.contentBrowser) {
+      
+      
+      const uid = target.browsingContext.id;
+      this.updateIdForBrowser(this.contentBrowser, uid);
+    }
   }
 };
 
