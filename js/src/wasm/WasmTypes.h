@@ -1252,24 +1252,8 @@ class MOZ_NON_PARAM Val : public LitVal {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
   static bool fromJSValue(JSContext* cx, ValType targetType, HandleValue val,
                           MutableHandle<Val> rval);
-
-  
-  
-  
-  
-  
-  
-  
   
   bool toJSValue(JSContext* cx, MutableHandleValue rval) const;
 
@@ -1309,9 +1293,26 @@ extern MOZ_MUST_USE bool CheckEqRefValue(JSContext* cx, HandleValue v,
 class NoDebug;
 class DebugCodegenVal;
 
+
+
+
+
+
+
+
+
+
 template <typename Debug = NoDebug>
 extern bool ToWebAssemblyValue(JSContext* cx, HandleValue val, ValType type,
                                void* loc, bool mustWrite64);
+
+
+
+
+
+
+
+
 
 template <typename Debug = NoDebug>
 extern bool ToJSValue(JSContext* cx, const void* src, ValType type,
