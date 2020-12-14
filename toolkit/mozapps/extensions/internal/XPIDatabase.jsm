@@ -960,9 +960,11 @@ AddonWrapper = class {
   get canBypassThirdParyInstallPrompt() {
     
     
+    
     return (
-      this.signedState >= AddonManager.SIGNEDSTATE_SIGNED &&
-      this.recommendationStates.length
+      this.signedState == AddonManager.SIGNEDSTATE_PRIVILEGED ||
+      (this.signedState >= AddonManager.SIGNEDSTATE_SIGNED &&
+        this.recommendationStates.length)
     );
   }
 
