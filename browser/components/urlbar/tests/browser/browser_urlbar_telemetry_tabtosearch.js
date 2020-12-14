@@ -67,6 +67,9 @@ function assertTelemetryResults(histograms, type, index, method) {
 
 
 
+
+
+
 async function checkForOnboardingResult(engineName) {
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Popup should be open.");
   let tabToSearchResult = (

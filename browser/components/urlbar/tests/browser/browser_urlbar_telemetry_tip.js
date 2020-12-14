@@ -120,6 +120,9 @@ add_task(async function test() {
   BrowserTestUtils.removeTab(tab);
 });
 
+
+
+
 class TipProvider extends UrlbarProvider {
   constructor(results) {
     super();
