@@ -2098,19 +2098,10 @@ void TextControlState::SetSelectionRange(
 
   if (changed) {
     
-    RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
-        mTextCtrlElement, eFormSelect, CanBubble::eYes);
+    RefPtr<AsyncEventDispatcher> asyncDispatcher =
+        new AsyncEventDispatcher(mTextCtrlElement, u"select"_ns,
+                                 CanBubble::eYes, ChromeOnlyDispatch::eNo);
     asyncDispatcher->PostDOMEvent();
-
-    
-    
-    
-    if (IsSelectionCached() &&
-        StaticPrefs::dom_select_events_textcontrols_enabled()) {
-      asyncDispatcher = new AsyncEventDispatcher(
-          mTextCtrlElement, eSelectionChange, CanBubble::eNo);
-      asyncDispatcher->PostDOMEvent();
-    }
   }
 
   if (NS_FAILED(rv)) {
