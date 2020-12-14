@@ -117,6 +117,7 @@ const char* const legacyICUTimeZones[] = {
     "PRT",
     "PST",
     "SST",
+    "US/Pacific-New",
     "VST",
     "SystemV/AST4",
     "SystemV/AST4ADT",

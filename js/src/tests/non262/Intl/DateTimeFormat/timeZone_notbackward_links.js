@@ -31,7 +31,6 @@ const links = {
     "Europe/San_Marino": "Europe/Rome",
     "Europe/Vatican": "Europe/Rome",
     "GMT": "Etc/GMT",
-    "US/Pacific-New": "America/Los_Angeles",
 };
 
 for (let [linkName, target] of Object.entries(links)) {
