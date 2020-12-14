@@ -1034,6 +1034,27 @@ SearchService.prototype = {
         continue;
       }
 
+      
+      
+      
+      
+      
+      
+      
+      let loadPath = engineJSON._loadPath?.toLowerCase();
+      if (
+        loadPath &&
+        
+        (loadPath.startsWith("[distribution]") ||
+          
+          
+          loadPath.includes("[app]/extensions/langpack") ||
+          loadPath.includes("[other]/langpack") ||
+          loadPath.includes("[profile]/extensions/langpack"))
+      ) {
+        continue;
+      }
+
       try {
         let engine = new SearchEngine({
           isAppProvided: false,
