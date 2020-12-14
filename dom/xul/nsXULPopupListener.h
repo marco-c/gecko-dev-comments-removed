@@ -50,7 +50,8 @@ class nsXULPopupListener : public nsIDOMEventListener {
  private:
 #ifndef NS_CONTEXT_MENU_IS_MOUSEUP
   
-  nsresult FireFocusOnTargetContent(nsIContent* aTargetContent, bool aIsTouch);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  FireFocusOnTargetContent(nsIContent* aTargetContent, bool aIsTouch);
 #endif
 
   
