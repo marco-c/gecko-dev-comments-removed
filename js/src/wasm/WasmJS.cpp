@@ -443,6 +443,11 @@ bool wasm::HasPlatformSupport(JSContext* cx) {
   }
 
   
+  if (!cx->wasm().ensureTypeContext(cx)) {
+    return false;
+  }
+
+  
   
   return BaselinePlatformSupport() || IonPlatformSupport() ||
          CraneliftPlatformSupport();
