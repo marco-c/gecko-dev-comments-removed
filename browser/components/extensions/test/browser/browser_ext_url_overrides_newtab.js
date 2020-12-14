@@ -19,8 +19,6 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/ExtensionControlledPopup.jsm"
 );
 
-const NEWTAB_URI_1 = "webext-newtab-1.html";
-
 function getNotificationSetting(extensionId) {
   return ExtensionSettingsStore.getSetting("newTabNotification", extensionId);
 }
@@ -38,15 +36,33 @@ function clickManage(notification) {
   notification.secondaryButton.click();
 }
 
-function waitForNewTab() {
+async function promiseNewTab(expectUrl = AboutNewTab.newTabURL, win = window) {
   let eventName = "browser-open-newtab-start";
-  return new Promise(resolve => {
-    function observer() {
+  let newTabStartPromise = new Promise(resolve => {
+    async function observer(subject) {
       Services.obs.removeObserver(observer, eventName);
-      resolve();
+      resolve(subject.wrappedJSObject);
     }
     Services.obs.addObserver(observer, eventName);
   });
+
+  let newtabShown = TestUtils.waitForCondition(
+    () => win.gBrowser.currentURI.spec == expectUrl,
+    `Should open correct new tab url ${expectUrl}.`
+  );
+
+  win.BrowserOpenTab();
+  const newTabCreatedPromise = newTabStartPromise;
+  const browser = await newTabCreatedPromise;
+  await newtabShown;
+  const tab = win.gBrowser.selectedTab;
+
+  Assert.deepEqual(
+    browser,
+    tab.linkedBrowser,
+    "browser-open-newtab-start notified with the created browser"
+  );
+  return tab;
 }
 
 function waitForAddonDisabled(addon) {
@@ -77,51 +93,42 @@ function waitForAddonEnabled(addon) {
   });
 }
 
+
+const extensionData = {
+  manifest: {
+    applications: {
+      gecko: {
+        id: "newtaburl@mochi.test",
+      },
+    },
+    chrome_url_overrides: {
+      newtab: "newtab.html",
+    },
+  },
+  files: {
+    "newtab.html": "<h1>New tab!</h1>",
+  },
+  useAddonManager: "temporary",
+};
+
 add_task(async function test_new_tab_opens() {
   let panel = getNewTabDoorhanger().closest("panel");
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      chrome_url_overrides: {
-        newtab: NEWTAB_URI_1,
-      },
-    },
-    useAddonManager: "temporary",
-    files: {
-      [NEWTAB_URI_1]: `
-        <!DOCTYPE html>
-        <head>
-          <meta charset="utf-8"/></head>
-        <html>
-          <body>
-            <script src="newtab.js"></script>
-          </body>
-        </html>
-      `,
-
-      "newtab.js": function() {
-        window.onload = () => {
-          browser.test.sendMessage("from-newtab-page", window.location.href);
-        };
-      },
-    },
-  });
+  let extension = ExtensionTestUtils.loadExtension(extensionData);
 
   await extension.startup();
+  let extensionNewTabUrl = `moz-extension://${extension.uuid}/newtab.html`;
 
   
   let popupShown = promisePopupShown(panel);
-  BrowserOpenTab();
+  let tab = await promiseNewTab(extensionNewTabUrl);
   await popupShown;
-
-  let url = await extension.awaitMessage("from-newtab-page");
-  ok(url.endsWith(NEWTAB_URI_1), "Newtab url is overridden by the extension.");
 
   
   let popupHidden = promisePopupHidden(panel);
   panel.hidePopup();
   await popupHidden;
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab);
   await extension.unload();
 });
 
@@ -149,7 +156,7 @@ add_task(async function test_new_tab_ignore_settings() {
 
   
   let popupShown = promisePopupShown(panel);
-  BrowserOpenTab();
+  let tab = await promiseNewTab();
   await popupShown;
 
   
@@ -187,10 +194,8 @@ add_task(async function test_new_tab_ignore_settings() {
   );
 
   
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  let newTabOpened = waitForNewTab();
-  BrowserOpenTab();
-  await newTabOpened;
+  BrowserTestUtils.removeTab(tab);
+  tab = await promiseNewTab();
 
   
   ok(
@@ -199,7 +204,7 @@ add_task(async function test_new_tab_ignore_settings() {
   );
   is(gURLBar.focused, true, "The URL bar is focused with no doorhanger");
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab);
   await extension.unload();
 });
 
@@ -212,18 +217,11 @@ add_task(async function test_new_tab_keep_settings() {
     version: "1.0",
     name: "New Tab Add-on",
     applications: { gecko: { id: extensionId } },
-    chrome_url_overrides: { newtab: "keep.html" },
-  };
-  let files = {
-    "keep.html":
-      '<script src="newtab.js"></script><h1 id="extension-new-tab">New Tab!</h1>',
-    "newtab.js": () => {
-      window.onload = browser.test.sendMessage("newtab");
-    },
+    chrome_url_overrides: { newtab: "newtab.html" },
   };
   let extension = ExtensionTestUtils.loadExtension({
+    ...extensionData,
     manifest,
-    files,
     useAddonManager: "permanent",
   });
 
@@ -233,11 +231,11 @@ add_task(async function test_new_tab_keep_settings() {
   );
 
   await extension.startup();
+  let extensionNewTabUrl = `moz-extension://${extension.uuid}/newtab.html`;
 
   
   let popupShown = promisePopupShown(panel);
-  BrowserOpenTab();
-  await extension.awaitMessage("newtab");
+  let tab = await promiseNewTab(extensionNewTabUrl);
   await popupShown;
 
   
@@ -286,9 +284,8 @@ add_task(async function test_new_tab_keep_settings() {
   );
 
   
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  BrowserOpenTab();
-  await extension.awaitMessage("newtab");
+  BrowserTestUtils.removeTab(tab);
+  tab = await promiseNewTab(extensionNewTabUrl);
 
   
   ok(
@@ -296,18 +293,18 @@ add_task(async function test_new_tab_keep_settings() {
     "The notification panel is not opened after keeping the changes"
   );
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab);
 
   let upgradedExtension = ExtensionTestUtils.loadExtension({
+    ...extensionData,
     manifest: Object.assign({}, manifest, { version: "2.0" }),
-    files,
     useAddonManager: "permanent",
   });
 
   await upgradedExtension.startup();
+  extensionNewTabUrl = `moz-extension://${upgradedExtension.uuid}/newtab.html`;
 
-  BrowserOpenTab();
-  await upgradedExtension.awaitMessage("newtab");
+  tab = await promiseNewTab(extensionNewTabUrl);
 
   
   ok(
@@ -320,7 +317,7 @@ add_task(async function test_new_tab_keep_settings() {
     "The New Tab notification is set after keeping the changes"
   );
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab);
   await upgradedExtension.unload();
   await extension.unload();
 
@@ -360,7 +357,7 @@ add_task(async function test_new_tab_restore_settings() {
 
   
   let popupShown = promisePopupShown(panel);
-  BrowserOpenTab();
+  let tab = await promiseNewTab();
   await popupShown;
 
   
@@ -382,7 +379,7 @@ add_task(async function test_new_tab_restore_settings() {
     () => gBrowser.currentURI.spec == "about:preferences#home",
     "Should open about:preferences."
   );
-  
+
   let popupHidden = promisePopupHidden(panel);
   clickManage(notification);
   await popupHidden;
@@ -401,17 +398,15 @@ add_task(async function test_new_tab_restore_settings() {
   );
 
   
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  let newTabOpened = waitForNewTab();
-  BrowserOpenTab();
-  await newTabOpened;
+  BrowserTestUtils.removeTab(tab);
+  tab = await promiseNewTab();
 
   ok(
     panel.getAttribute("panelopen") != "true",
     "The notification panel is not opened after keeping the changes"
   );
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab);
   await extension.unload();
 });
 
@@ -428,7 +423,6 @@ add_task(async function test_new_tab_restore_settings_multiple() {
     files: {
       "restore-one.html": `
         <h1 id="extension-new-tab">New Tab!</h1>
-        <script src="newtab.js"></script>
       `,
     },
     useAddonManager: "temporary",
@@ -463,7 +457,7 @@ add_task(async function test_new_tab_restore_settings_multiple() {
 
   
   let popupShown = promisePopupShown(panel);
-  BrowserOpenTab();
+  let tab1 = await promiseNewTab();
   await popupShown;
 
   
@@ -501,7 +495,7 @@ add_task(async function test_new_tab_restore_settings_multiple() {
     () => gBrowser.currentURI.spec == AboutNewTab.newTabURL,
     "Should open correct new tab url."
   );
-  BrowserOpenTab();
+  let tab2 = await promiseNewTab();
   await newtabShown;
   await popupShown;
 
@@ -541,14 +535,12 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   await popupHidden;
   await preferencesShown;
   
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab2);
 
   addonDisabled = waitForAddonDisabled(addonOne);
   addonOne.disable();
   await addonDisabled;
-  let newTabOpened = waitForNewTab();
-  BrowserOpenTab();
-  await newTabOpened;
+  tab2 = await promiseNewTab();
 
   ok(
     panel.getAttribute("panelopen") != "true",
@@ -566,10 +558,8 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   );
 
   
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  newTabOpened = waitForNewTab();
-  BrowserOpenTab();
-  await newTabOpened;
+  BrowserTestUtils.removeTab(tab2);
+  tab2 = await promiseNewTab();
 
   ok(
     panel.getAttribute("panelopen") != "true",
@@ -585,8 +575,8 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   await addonOne.enable();
   await addonTwo.enable();
   await addonsEnabled;
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 
   await extensionOne.unload();
   await extensionTwo.unload();
@@ -599,29 +589,10 @@ add_task(async function test_new_tab_restore_settings_multiple() {
 
 add_task(async function dontTemporarilyShowAboutExtensionPath() {
   await ExtensionSettingsStore.initialize();
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      name: "Test Extension",
-      applications: {
-        gecko: {
-          id: "newtaburl@mochi.test",
-        },
-      },
-      chrome_url_overrides: {
-        newtab: "newtab.html",
-      },
-    },
-    background() {
-      browser.test.sendMessage("url", browser.runtime.getURL("newtab.html"));
-    },
-    files: {
-      "newtab.html": "<h1>New tab!</h1>",
-    },
-    useAddonManager: "temporary",
-  });
+  let extension = ExtensionTestUtils.loadExtension(extensionData);
 
   await extension.startup();
-  let url = await extension.awaitMessage("url");
+  let extensionNewTabUrl = `moz-extension://${extension.uuid}/newtab.html`;
 
   let wpl = {
     onLocationChange() {
@@ -630,7 +601,10 @@ add_task(async function dontTemporarilyShowAboutExtensionPath() {
   };
   gBrowser.addProgressListener(wpl);
 
-  let tab = await BrowserTestUtils.openNewForegroundTab({ gBrowser, url });
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url: extensionNewTabUrl,
+  });
 
   gBrowser.removeProgressListener(wpl);
   is(gURLBar.value, "", "URL bar value should be empty.");
@@ -654,49 +628,23 @@ add_task(async function test_overriding_newtab_incognito_not_allowed() {
   let panel = getNewTabDoorhanger().closest("panel");
 
   let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      chrome_url_overrides: { newtab: "newtab.html" },
-      name: "extension",
-      applications: {
-        gecko: { id: "@not-allowed-newtab" },
-      },
-    },
-    files: {
-      "newtab.html": `
-        <!DOCTYPE html>
-        <head>
-          <meta charset="utf-8"/></head>
-        <html>
-          <body>
-            <script src="newtab.js"></script>
-          </body>
-        </html>
-      `,
-
-      "newtab.js": function() {
-        window.onload = () => {
-          browser.test.sendMessage("from-newtab-page", window.location.href);
-        };
-      },
-    },
+    ...extensionData,
     useAddonManager: "permanent",
   });
 
   await extension.startup();
+  let extensionNewTabUrl = `moz-extension://${extension.uuid}/newtab.html`;
 
   let popupShown = promisePopupShown(panel);
-  BrowserOpenTab();
+  let tab = await promiseNewTab(extensionNewTabUrl);
   await popupShown;
-
-  let url = await extension.awaitMessage("from-newtab-page");
-  ok(url.endsWith("newtab.html"), "Newtab url is overridden by the extension.");
 
   
   let popupHidden = promisePopupHidden(panel);
   panel.hidePopup();
   await popupHidden;
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(tab);
 
   
   
@@ -704,18 +652,14 @@ add_task(async function test_overriding_newtab_incognito_not_allowed() {
   let win = OpenBrowserWindow({ private: true });
   await windowOpenedPromise;
 
-  let newTabOpened = waitForNewTab();
-  win.BrowserOpenTab();
-  await newTabOpened;
+  await promiseNewTab("about:privatebrowsing", win);
 
   is(win.gURLBar.value, "", "newtab not used in private window");
 
   
   let origUrl = AboutNewTab.newTabURL;
-  AboutNewTab.newTabURL = url;
-  newTabOpened = waitForNewTab();
-  win.BrowserOpenTab();
-  await newTabOpened;
+  AboutNewTab.newTabURL = extensionNewTabUrl;
+  await promiseNewTab("about:privatebrowsing", win);
 
   is(win.gURLBar.value, "", "directly set newtab not used in private window");
 
@@ -731,47 +675,21 @@ add_task(async function test_overriding_newtab_incognito_spanning() {
   });
 
   let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      chrome_url_overrides: { newtab: "newtab.html" },
-      name: "extension",
-      applications: {
-        gecko: { id: "@spanning-newtab" },
-      },
-    },
-    files: {
-      "newtab.html": `
-        <!DOCTYPE html>
-        <head>
-          <meta charset="utf-8"/></head>
-        <html>
-          <body>
-            <script src="newtab.js"></script>
-          </body>
-        </html>
-      `,
-
-      "newtab.js": function() {
-        window.onload = () => {
-          browser.test.sendMessage("from-newtab-page", window.location.href);
-        };
-      },
-    },
+    ...extensionData,
     useAddonManager: "permanent",
     incognitoOverride: "spanning",
   });
 
   await extension.startup();
+  let extensionNewTabUrl = `moz-extension://${extension.uuid}/newtab.html`;
 
   let windowOpenedPromise = BrowserTestUtils.waitForNewWindow();
   let win = OpenBrowserWindow({ private: true });
   await windowOpenedPromise;
   let panel = ExtensionControlledPopup._getAndMaybeCreatePanel(win.document);
   let popupShown = promisePopupShown(panel);
-  win.BrowserOpenTab();
+  await promiseNewTab(extensionNewTabUrl, win);
   await popupShown;
-
-  let url = await extension.awaitMessage("from-newtab-page");
-  ok(url.endsWith("newtab.html"), "Newtab url is overridden by the extension.");
 
   
   let popupHidden = promisePopupHidden(panel);
