@@ -25,9 +25,6 @@
 - (NSNumber*)moxInsertionPointLineNumber;
 
 
-- (NSString*)moxRole;
-
-
 - (NSString*)moxSubrole;
 
 
