@@ -5,7 +5,7 @@
 
 
 SOURCES += [
-    'mozva.cpp',
+    'mozva.c',
 ]
 
 LOCAL_INCLUDES += ['/media/ffvpx']
