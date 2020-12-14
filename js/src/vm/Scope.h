@@ -36,6 +36,7 @@
 #include "vm/ScopeKind.h"     
 #include "vm/Shape.h"         
 #include "vm/Xdr.h"           
+#include "wasm/WasmJS.h"      
 
 class JSAtom;
 class JSFreeOp;
@@ -51,7 +52,6 @@ class Zone;
 namespace js {
 
 class GenericPrinter;
-class WasmInstanceObject;  
 
 namespace frontend {
 struct CompilationAtomCache;

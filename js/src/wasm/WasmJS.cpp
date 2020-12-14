@@ -1816,10 +1816,27 @@ bool WasmInstanceObject::isNewborn() const {
 }
 
 
+
+
+
+
+
+using WasmFunctionScopeMap =
+    JS::WeakCache<GCHashMap<uint32_t, WeakHeapPtr<WasmFunctionScope*>,
+                            DefaultHasher<uint32_t>, ZoneAllocPolicy>>;
+class WasmInstanceObject::UnspecifiedScopeMap {
+ public:
+  WasmFunctionScopeMap& asWasmFunctionScopeMap() {
+    return *(WasmFunctionScopeMap*)this;
+  }
+};
+
+
 void WasmInstanceObject::finalize(JSFreeOp* fop, JSObject* obj) {
   WasmInstanceObject& instance = obj->as<WasmInstanceObject>();
   fop->delete_(obj, &instance.exports(), MemoryUse::WasmInstanceExports);
-  fop->delete_(obj, &instance.scopes(), MemoryUse::WasmInstanceScopes);
+  fop->delete_(obj, &instance.scopes().asWasmFunctionScopeMap(),
+               MemoryUse::WasmInstanceScopes);
   fop->delete_(obj, &instance.indirectGlobals(),
                MemoryUse::WasmInstanceGlobals);
   if (!instance.isNewborn()) {
@@ -1856,7 +1873,8 @@ WasmInstanceObject* WasmInstanceObject::create(
     return nullptr;
   }
 
-  UniquePtr<ScopeMap> scopes = js::MakeUnique<ScopeMap>(cx->zone(), cx->zone());
+  UniquePtr<WasmFunctionScopeMap> scopes =
+      js::MakeUnique<WasmFunctionScopeMap>(cx->zone(), cx->zone());
   if (!scopes) {
     ReportOutOfMemory(cx);
     return nullptr;
@@ -2019,8 +2037,8 @@ WasmInstanceObject::ExportMap& WasmInstanceObject::exports() const {
   return *(ExportMap*)getReservedSlot(EXPORTS_SLOT).toPrivate();
 }
 
-WasmInstanceObject::ScopeMap& WasmInstanceObject::scopes() const {
-  return *(ScopeMap*)getReservedSlot(SCOPES_SLOT).toPrivate();
+WasmInstanceObject::UnspecifiedScopeMap& WasmInstanceObject::scopes() const {
+  return *(UnspecifiedScopeMap*)(getReservedSlot(SCOPES_SLOT).toPrivate());
 }
 
 WasmInstanceObject::GlobalObjectVector& WasmInstanceObject::indirectGlobals()
@@ -2142,7 +2160,8 @@ WasmInstanceScope* WasmInstanceObject::getScope(
 
 WasmFunctionScope* WasmInstanceObject::getFunctionScope(
     JSContext* cx, HandleWasmInstanceObject instanceObj, uint32_t funcIndex) {
-  if (ScopeMap::Ptr p = instanceObj->scopes().lookup(funcIndex)) {
+  if (auto p =
+          instanceObj->scopes().asWasmFunctionScopeMap().lookup(funcIndex)) {
     return p->value();
   }
 
@@ -2158,7 +2177,8 @@ WasmFunctionScope* WasmInstanceObject::getFunctionScope(
     return nullptr;
   }
 
-  if (!instanceObj->scopes().putNew(funcIndex, funcScope)) {
+  if (!instanceObj->scopes().asWasmFunctionScopeMap().putNew(funcIndex,
+                                                             funcScope)) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
