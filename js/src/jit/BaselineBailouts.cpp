@@ -2080,6 +2080,13 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       InvalidateAfterBailout(cx, outerScript, "bounds check failure");
       break;
 
+    case BailoutKind::EagerTruncation:
+      
+      MOZ_ASSERT(!outerScript->hadEagerTruncationBailout());
+      outerScript->setHadEagerTruncationBailout();
+      InvalidateAfterBailout(cx, outerScript, "eager range analysis failure");
+      break;
+
     case BailoutKind::TooManyArguments:
       
       
@@ -2144,9 +2151,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       break;
 
     
-    case BailoutKind::OverflowInvalidate:
-      outerScript->setHadOverflowBailout();
-      [[fallthrough]];
     case BailoutKind::DoubleOutput:
     case BailoutKind::ObjectIdentityOrTypeGuard:
       HandleBaselineInfoBailout(cx, outerScript, innerScript);

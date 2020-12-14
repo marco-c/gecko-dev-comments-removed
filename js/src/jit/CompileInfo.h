@@ -86,7 +86,7 @@ class CompileInfo {
         osrPc_(osrPc),
         analysisMode_(analysisMode),
         scriptNeedsArgsObj_(scriptNeedsArgsObj),
-        hadOverflowBailout_(script->hadOverflowBailout()),
+        hadEagerTruncationBailout_(script->hadEagerTruncationBailout()),
         hadSpeculativePhiBailout_(script->hadSpeculativePhiBailout()),
         hadLICMInvalidation_(script->hadLICMInvalidation()),
         hadBoundsCheckBailout_(script->failedBoundsCheck()),
@@ -149,7 +149,7 @@ class CompileInfo {
         osrPc_(nullptr),
         analysisMode_(Analysis_None),
         scriptNeedsArgsObj_(false),
-        hadOverflowBailout_(false),
+        hadEagerTruncationBailout_(false),
         hadSpeculativePhiBailout_(false),
         hadLICMInvalidation_(false),
         hadBoundsCheckBailout_(false),
@@ -379,7 +379,7 @@ class CompileInfo {
 
   
   
-  bool hadOverflowBailout() const { return hadOverflowBailout_; }
+  bool hadEagerTruncationBailout() const { return hadEagerTruncationBailout_; }
   bool hadSpeculativePhiBailout() const { return hadSpeculativePhiBailout_; }
   bool hadLICMInvalidation() const { return hadLICMInvalidation_; }
   bool hadBoundsCheckBailout() const { return hadBoundsCheckBailout_; }
@@ -406,7 +406,7 @@ class CompileInfo {
 
   
   
-  bool hadOverflowBailout_;
+  bool hadEagerTruncationBailout_;
   bool hadSpeculativePhiBailout_;
   bool hadLICMInvalidation_;
   bool hadBoundsCheckBailout_;

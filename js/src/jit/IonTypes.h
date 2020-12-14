@@ -94,6 +94,11 @@ enum class BailoutKind : uint8_t {
   
 
   
+  
+  
+  EagerTruncation,
+
+  
   Inevitable,
 
   
@@ -187,9 +192,6 @@ enum class BailoutKind : uint8_t {
 
   
   
-
-  
-  OverflowInvalidate,
 
   
   
@@ -298,6 +300,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "HoistBoundsCheck";
     case BailoutKind::GenericIon:
       return "GenericIon";
+    case BailoutKind::EagerTruncation:
+      return "EagerTruncation";
 
     
     case BailoutKind::Inevitable:
@@ -354,8 +358,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "InvalidCodePoint";
 
     
-    case BailoutKind::OverflowInvalidate:
-      return "OverflowInvalidate";
     case BailoutKind::DoubleOutput:
       return "DoubleOutput";
 

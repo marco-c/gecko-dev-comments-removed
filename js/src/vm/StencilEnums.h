@@ -297,7 +297,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
 
   
   
-  HadOverflowBailout = 1 << 21,
+  HadEagerTruncationBailout = 1 << 21,
 
   
   
