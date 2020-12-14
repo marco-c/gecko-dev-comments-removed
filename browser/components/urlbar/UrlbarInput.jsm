@@ -1549,7 +1549,11 @@ class UrlbarInput {
         engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
         entry: "shortcut",
       };
-      this.search("");
+      
+      
+      
+      this.search(this.value);
+      this.select();
     } else {
       this.search(UrlbarTokenizer.RESTRICT.SEARCH);
     }
