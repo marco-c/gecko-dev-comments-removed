@@ -4836,6 +4836,18 @@ nsDocShell::SetIsActive(bool aIsActive) {
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aIsActive && InputTaskManager::CanSuspendInputEvent()) {
+    mBrowsingContext->Group()->UpdateInputTaskManagerIfNeeded();
+  }
   return NS_OK;
 }
 
