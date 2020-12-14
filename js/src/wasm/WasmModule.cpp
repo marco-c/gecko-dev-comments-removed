@@ -596,8 +596,8 @@ bool Module::initSegments(JSContext* cx, HandleWasmInstanceObject instanceObj,
   return true;
 }
 
-static const Import& FindImportForFuncImport(const ImportVector& imports,
-                                             uint32_t funcImportIndex) {
+static const Import& FindImportFunction(const ImportVector& imports,
+                                        uint32_t funcImportIndex) {
   for (const Import& import : imports) {
     if (import.kind != DefinitionKind::Function) {
       continue;
@@ -638,7 +638,7 @@ bool Module::instantiateFunctions(JSContext* cx,
         instance.metadata(otherTier).lookupFuncExport(funcIndex);
 
     if (funcExport.funcType() != metadata(tier).funcImports[i].funcType()) {
-      const Import& import = FindImportForFuncImport(imports_, i);
+      const Import& import = FindImportFunction(imports_, i);
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_WASM_BAD_IMPORT_SIG, import.module.get(),
                                import.field.get());
@@ -758,6 +758,88 @@ bool Module::instantiateMemory(JSContext* cx,
 
   return true;
 }
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+bool Module::instantiateImportedException(
+    JSContext* cx, Handle<WasmExceptionObject*> exnObj,
+    WasmExceptionObjectVector& exnObjs, SharedExceptionTagVector* tags) const {
+  MOZ_ASSERT(exnObj);
+  
+  
+
+  
+  ExceptionTag& tag = exnObj->tag();
+
+  if (!tags->append(&tag)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  return true;
+}
+
+bool Module::instantiateLocalException(JSContext* cx, const EventDesc& ed,
+                                       WasmExceptionObjectVector& exnObjs,
+                                       SharedExceptionTagVector* tags,
+                                       uint32_t exnIndex) const {
+  SharedExceptionTag tag;
+  
+  if (exnObjs.length() <= exnIndex && !exnObjs.resize(exnIndex + 1)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  if (ed.isExport) {
+    
+    
+    RootedObject proto(
+        cx, &cx->global()->getPrototype(JSProto_WasmException).toObject());
+    RootedWasmExceptionObject exnObj(
+        cx, WasmExceptionObject::create(cx, ed.type, proto));
+    if (!exnObj) {
+      return false;
+    }
+    
+    tag = &exnObj->tag();
+    
+    exnObjs[exnIndex] = exnObj;
+  } else {
+    
+    tag = SharedExceptionTag(cx->new_<ExceptionTag>());
+    if (!tag) {
+      return false;
+    }
+    
+  }
+  
+  if (!tags->emplaceBack(tag)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  return true;
+}
+
+bool Module::instantiateExceptions(JSContext* cx,
+                                   WasmExceptionObjectVector& exnObjs,
+                                   SharedExceptionTagVector* tags) const {
+  uint32_t exnIndex = 0;
+  for (const EventDesc& ed : metadata().events) {
+    if (exnIndex < exnObjs.length()) {
+      Rooted<WasmExceptionObject*> exnObj(cx, exnObjs[exnIndex]);
+      if (!instantiateImportedException(cx, exnObj, exnObjs, tags)) {
+        return false;
+      }
+    } else {
+      if (!instantiateLocalException(cx, ed, exnObjs, tags, exnIndex)) {
+        return false;
+      }
+    }
+    exnIndex++;
+  }
+  return true;
+}
+#endif
 
 bool Module::instantiateImportedTable(JSContext* cx, const TableDesc& td,
                                       Handle<WasmTableObject*> tableObj,
@@ -1067,11 +1149,15 @@ static bool GetGlobalExport(JSContext* cx, HandleWasmInstanceObject instanceObj,
   return true;
 }
 
-static bool CreateExportObject(
-    JSContext* cx, HandleWasmInstanceObject instanceObj,
-    const JSFunctionVector& funcImports, const WasmTableObjectVector& tableObjs,
-    HandleWasmMemoryObject memoryObj, const ValVector& globalImportValues,
-    const WasmGlobalObjectVector& globalObjs, const ExportVector& exports) {
+static bool CreateExportObject(JSContext* cx,
+                               HandleWasmInstanceObject instanceObj,
+                               const JSFunctionVector& funcImports,
+                               const WasmTableObjectVector& tableObjs,
+                               HandleWasmMemoryObject memoryObj,
+                               const WasmExceptionObjectVector& exceptionObjs,
+                               const ValVector& globalImportValues,
+                               const WasmGlobalObjectVector& globalObjs,
+                               const ExportVector& exports) {
   const Instance& instance = instanceObj->instance();
   const Metadata& metadata = instance.metadata();
   const GlobalDescVector& globals = metadata.globals;
@@ -1137,8 +1223,10 @@ static bool CreateExportObject(
         break;
       }
 #ifdef ENABLE_WASM_EXCEPTIONS
-      case DefinitionKind::Event:
-        MOZ_CRASH("NYI");
+      case DefinitionKind::Event: {
+        val = ObjectValue(*exceptionObjs[exp.eventIndex()]);
+        break;
+      }
 #endif
     }
 
@@ -1361,6 +1449,20 @@ bool Module::instantiate(JSContext* cx, ImportValues& imports,
 
   
   
+  
+  
+  
+  
+
+  SharedExceptionTagVector tags;
+#ifdef ENABLE_WASM_EXCEPTIONS
+  if (!instantiateExceptions(cx, imports.exceptionObjs, &tags)) {
+    return false;
+  }
+#endif
+
+  
+  
 
   Rooted<WasmTableObjectVector> tableObjs(cx);
   SharedTableVector tables;
@@ -1404,15 +1506,16 @@ bool Module::instantiate(JSContext* cx, ImportValues& imports,
 
   instance.set(WasmInstanceObject::create(
       cx, code, dataSegments_, elemSegments_, std::move(tlsData), memory,
-      std::move(tables), std::move(structTypeDescrs.get()), imports.funcs,
-      metadata().globals, imports.globalValues, imports.globalObjs,
-      instanceProto, std::move(maybeDebug)));
+      std::move(tags), std::move(tables), std::move(structTypeDescrs.get()),
+      imports.funcs, metadata().globals, imports.globalValues,
+      imports.globalObjs, instanceProto, std::move(maybeDebug)));
   if (!instance) {
     return false;
   }
 
   if (!CreateExportObject(cx, instance, imports.funcs, tableObjs.get(), memory,
-                          imports.globalValues, imports.globalObjs, exports_)) {
+                          imports.exceptionObjs, imports.globalValues,
+                          imports.globalObjs, exports_)) {
     return false;
   }
 
