@@ -1,29 +1,37 @@
 
 
 
-
-
-
-
-
 "use strict";
 
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
 const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 const kDllName = "modules-test.dll";
 
-let gDllHandle;
 let gCurrentPidStr;
+
+async function load_and_free(name) {
+  
+  
+  let dllHandle = ctypes.open(do_get_file(name).path);
+  if (dllHandle) {
+    dllHandle.close();
+    dllHandle = null;
+  }
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 50));
+}
 
 add_task(async function setup() {
   do_get_profile();
 
   
   
-  gDllHandle = ctypes.open(do_get_file(kDllName).path);
+  await load_and_free(kDllName);
 
   
   Cc["@mozilla.org/updates/timer-manager;1"]
@@ -46,12 +54,12 @@ add_task(async function setup() {
 });
 
 registerCleanupFunction(function() {
-  if (gDllHandle) {
-    gDllHandle.close();
-    gDllHandle = null;
-  }
   return PingServer.stop();
 });
+
+
+
+
 
 add_task(async function test_send_ping() {
   let expectedModules = [
@@ -148,4 +156,56 @@ add_task(async function test_send_ping() {
       `Trustworthiness == expected for module: ${x.nameMatch.source}`
     );
   }
+});
+
+
+
+
+add_task(async function test_new_old_instances() {
+  const kIncludeOld = Telemetry.INCLUDE_OLD_LOADEVENTS;
+  const kKeepNew = Telemetry.KEEP_LOADEVENTS_NEW;
+  const get_events_count = data => data.processes[gCurrentPidStr].events.length;
+
+  
+  await load_and_free(kDllName);
+
+  
+  const baseline = await Telemetry.getUntrustedModuleLoadEvents(kIncludeOld);
+  const baseline_count = get_events_count(baseline);
+  print("baseline_count = " + baseline_count);
+  print("baseline = " + JSON.stringify(baseline));
+
+  await Assert.rejects(
+    Telemetry.getUntrustedModuleLoadEvents(),
+    e => e.result == Cr.NS_ERROR_NOT_AVAILABLE,
+    "New instances should not exist!"
+  );
+
+  await load_and_free(kDllName); 
+
+  
+  await Assert.rejects(
+    Telemetry.getUntrustedModuleLoadEvents(kIncludeOld | kKeepNew),
+    e => e.result == Cr.NS_ERROR_INVALID_ARG,
+    "Passing unsupported flag combination should throw an exception!"
+  );
+
+  await load_and_free(kDllName); 
+
+  
+  
+  let payload = await Telemetry.getUntrustedModuleLoadEvents(kKeepNew);
+  print("payload = " + JSON.stringify(payload));
+  Assert.equal(get_events_count(payload), 2);
+
+  await load_and_free(kDllName); 
+
+  
+  
+  payload = await Telemetry.getUntrustedModuleLoadEvents();
+  Assert.equal(get_events_count(payload), 3);
+
+  payload = await Telemetry.getUntrustedModuleLoadEvents(kIncludeOld);
+  
+  Assert.equal(get_events_count(payload), baseline_count + 3);
 });
