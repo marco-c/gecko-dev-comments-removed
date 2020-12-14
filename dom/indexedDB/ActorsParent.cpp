@@ -5189,9 +5189,6 @@ class QuotaClient final : public mozilla::dom::quota::Client {
   
   
   void ProcessMaintenanceQueue();
-
-  template <typename Condition>
-  static void InvalidateLiveDatabasesMatching(const Condition& aCondition);
 };
 
 class DeleteFilesRunnable final : public Runnable,
@@ -6248,6 +6245,38 @@ void DecreaseBusyCount() {
       gDEBUGThreadSlower = nullptr;
     }
 #endif  
+  }
+}
+
+template <typename Condition>
+void InvalidateLiveDatabasesMatching(const Condition& aCondition) {
+  AssertIsOnBackgroundThread();
+
+  if (!gLiveDatabaseHashtable) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+
+  nsTArray<SafeRefPtr<Database>> databases;
+
+  for (const auto& liveDatabasesEntry : *gLiveDatabaseHashtable) {
+    for (const auto& database : liveDatabasesEntry.GetData()->mLiveDatabases) {
+      MOZ_ASSERT(database);
+
+      if (aCondition(*database)) {
+        databases.AppendElement(
+            SafeRefPtr{database.get(), AcquireStrongRefFromRawPtr{}});
+      }
+    }
+  }
+
+  for (const auto& database : databases) {
+    database->Invalidate();
   }
 }
 
@@ -13181,38 +13210,6 @@ void QuotaClient::ReleaseIOThreadObjects() {
 
   if (IndexedDatabaseManager* mgr = IndexedDatabaseManager::Get()) {
     mgr->InvalidateAllFileManagers();
-  }
-}
-
-template <typename Condition>
-void QuotaClient::InvalidateLiveDatabasesMatching(const Condition& aCondition) {
-  AssertIsOnBackgroundThread();
-
-  if (!gLiveDatabaseHashtable) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-
-  nsTArray<SafeRefPtr<Database>> databases;
-
-  for (const auto& liveDatabasesEntry : *gLiveDatabaseHashtable) {
-    for (const auto& database : liveDatabasesEntry.GetData()->mLiveDatabases) {
-      MOZ_ASSERT(database);
-
-      if (aCondition(*database)) {
-        databases.AppendElement(
-            SafeRefPtr{database.get(), AcquireStrongRefFromRawPtr{}});
-      }
-    }
-  }
-
-  for (const auto& database : databases) {
-    database->Invalidate();
   }
 }
 
