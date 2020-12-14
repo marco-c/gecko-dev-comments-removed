@@ -448,14 +448,14 @@ static bool EscapeRegExpPattern(StringBuffer& sb, const CharT* oldChars,
 }
 
 
-JSAtom* js::EscapeRegExpPattern(JSContext* cx, HandleAtom src) {
+JSLinearString* js::EscapeRegExpPattern(JSContext* cx, HandleAtom src) {
   
   if (src->length() == 0) {
     return cx->names().emptyRegExp;
   }
 
   
-  StringBuffer sb(cx);
+  JSStringBuilder sb(cx);
 
   if (src->hasLatin1Chars()) {
     JS::AutoCheckCannotGC nogc;
@@ -470,7 +470,7 @@ JSAtom* js::EscapeRegExpPattern(JSContext* cx, HandleAtom src) {
   }
 
   
-  return sb.empty() ? src : sb.finishAtom();
+  return sb.empty() ? src : sb.finishString();
 }
 
 
@@ -480,7 +480,7 @@ JSLinearString* RegExpObject::toString(JSContext* cx) const {
   if (!src) {
     return nullptr;
   }
-  RootedAtom escapedSrc(cx, EscapeRegExpPattern(cx, src));
+  RootedLinearString escapedSrc(cx, EscapeRegExpPattern(cx, src));
 
   
   JSStringBuilder sb(cx);
