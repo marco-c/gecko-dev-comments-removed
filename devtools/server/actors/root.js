@@ -127,8 +127,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     this.traits = {
       sources: true,
       networkMonitor: true,
-      
-      storageInspector: true,
       bulk: true,
       
       
