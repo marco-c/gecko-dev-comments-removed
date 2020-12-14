@@ -14,6 +14,7 @@
 #include "Accessible.h"
 #include "TableAccessible.h"
 #include "TableCellAccessible.h"
+#include "XULTreeAccessible.h"
 #include "Pivot.h"
 #include "Relation.h"
 
@@ -409,6 +410,25 @@ using namespace mozilla::a11y;
 }
 
 - (NSArray*)moxColumns {
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    if (acc->IsContent() && acc->GetContent()->IsXULElement(nsGkAtoms::tree)) {
+      XULTreeAccessible* treeAcc = (XULTreeAccessible*)acc;
+      NSMutableArray* cols = [[NSMutableArray alloc] init];
+      
+      
+      
+      Accessible* treeColumns = treeAcc->GetChildAt(0);
+      if (treeColumns) {
+        uint32_t colCount = treeColumns->ChildCount();
+        for (uint32_t i = 0; i < colCount; i++) {
+          Accessible* treeColumnItem = treeColumns->GetChildAt(i);
+          [cols addObject:GetNativeFromGeckoAccessible(treeColumnItem)];
+        }
+        return cols;
+      }
+    }
+  }
+  
   
   return @[];
 }
@@ -425,6 +445,10 @@ using namespace mozilla::a11y;
   return selectedRows;
 }
 
+- (NSString*)moxOrientation {
+  return NSAccessibilityVerticalOrientationValue;
+}
+
 @end
 
 @implementation mozOutlineRowAccessible
@@ -434,6 +458,10 @@ using namespace mozilla::a11y;
 }
 
 - (NSNumber*)moxDisclosing {
+  return @([self stateWithMask:states::EXPANDED] != 0);
+}
+
+- (NSNumber*)moxExpanded {
   return @([self stateWithMask:states::EXPANDED] != 0);
 }
 
@@ -492,8 +520,9 @@ using namespace mozilla::a11y;
   } else if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
     groupPos = proxy->GroupPosition();
   }
-
-  return @(groupPos.level);
+  
+  
+  return groupPos.level > 0 ? @(groupPos.level - 1) : @(groupPos.level);
 }
 
 - (NSArray*)moxDisclosedRows {
