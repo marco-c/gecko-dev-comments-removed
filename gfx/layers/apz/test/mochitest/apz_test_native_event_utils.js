@@ -706,6 +706,13 @@ function synthesizeNativeClickAndWaitForClickEvent(
 }
 
 
+function promiseNativeClickAndClickEvent(aElement, aX, aY) {
+  return new Promise(resolve => {
+    synthesizeNativeClickAndWaitForClickEvent(aElement, aX, aY, resolve);
+  });
+}
+
+
 
 
 
