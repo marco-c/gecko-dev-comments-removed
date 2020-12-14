@@ -89,12 +89,15 @@ function run_test() {
 
   
   
-  const veriSignCertDBKey = `AAAAAAAAAAAAAAAQAAAAzS+A/iOM
-    DiIPSGcSKJGHrLMwgcoxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5WZXJpU2lnbiwg
-    SW5jLjEfMB0GA1UECxMWVmVyaVNpZ24gVHJ1c3QgTmV0d29yazE6MDgGA1UECxMx
-    KGMpIDIwMDcgVmVyaVNpZ24sIEluYy4gLSBGb3IgYXV0aG9yaXplZCB1c2Ugb25s
-    eTFFMEMGA1UEAxM8VmVyaVNpZ24gQ2xhc3MgMyBQdWJsaWMgUHJpbWFyeSBDZXJ0
-    aWZpY2F0aW9uIEF1dGhvcml0eSAtIEc0`;
+  
+  
+  
+  const veriSignCertDBKey = `AAAAAAAAAAAAAAARAAAAzQCLW3VWhFSFCwDPrzhI
+    zrGkMIHKMQswCQYDVQQGEwJVUzEXMBUGA1UEChMOVmVyaVNpZ24sIEluYy4xHzAdB
+    gNVBAsTFlZlcmlTaWduIFRydXN0IE5ldHdvcmsxOjA4BgNVBAsTMShjKSAxOTk5IF
+    ZlcmlTaWduLCBJbmMuIC0gRm9yIGF1dGhvcml6ZWQgdXNlIG9ubHkxRTBDBgNVBAM
+    TPFZlcmlTaWduIENsYXNzIDEgUHVibGljIFByaW1hcnkgQ2VydGlmaWNhdGlvbiBB
+    dXRob3JpdHkgLSBHMw==`;
   let veriSignCert = certdb.findCertByDBKey(veriSignCertDBKey);
   ok(veriSignCert, "Should be able to find VeriSign root");
   ok(veriSignCert.isBuiltInRoot, "VeriSign root is a built-in");
