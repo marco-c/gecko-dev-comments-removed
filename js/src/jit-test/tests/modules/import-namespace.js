@@ -1,5 +1,6 @@
 
 
+
 "use strict";
 
 load(libdir + "asserts.js");
@@ -90,7 +91,14 @@ let d = registerModule('d',
     parseModule("export let d = 2; import * as ns from 'c'; let c = ns.c;"));
 c.declarationInstantiation();
 d.declarationInstantiation();
-assertThrowsInstanceOf(() => c.evaluation(), ReferenceError);
+c.evaluation()
+  .then(r => {
+    
+    assertEq(false, true)
+  })
+  .catch(e => {
+   assertEq(e instanceof ReferenceError, true)
+  });
 
 
 let e = registerModule('e',
@@ -103,3 +111,4 @@ e.evaluation();
 f.evaluation();
 assertEq(e.namespace.f(), 2);
 assertEq(f.namespace.e(), 1);
+drainJobQueue();
