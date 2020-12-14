@@ -172,7 +172,7 @@ class IdlePeriodState {
 
   
   
-  RefPtr<mozilla::ipc::IdleSchedulerChild> mIdleScheduler;
+  RefPtr<ipc::IdleSchedulerChild> mIdleScheduler;
 
   
   

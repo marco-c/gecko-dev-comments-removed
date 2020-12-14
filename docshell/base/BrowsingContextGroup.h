@@ -126,11 +126,6 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   void FlushPostMessageEvents();
 
-  
-  
-  
-  void UpdateInputTaskManagerIfNeeded();
-
   static BrowsingContextGroup* GetChromeGroup();
 
   void GetDocGroups(nsTArray<DocGroup*>& aDocGroups);
@@ -153,9 +148,6 @@ class BrowsingContextGroup final : public nsWrapperCache {
   }
 
   static void GetAllGroups(nsTArray<RefPtr<BrowsingContextGroup>>& aGroups);
-
-  void IncInputEventSuspensionLevel();
-  void DecInputEventSuspensionLevel();
 
  private:
   friend class CanonicalBrowsingContext;
@@ -214,14 +206,8 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   RefPtr<mozilla::ThrottledEventQueue> mTimerEventQueue;
   RefPtr<mozilla::ThrottledEventQueue> mWorkerEventQueue;
-
-  
-  
-  
-  
-  
-  uint32_t mInputEventSuspensionLevel = 0;
 };
+
 }  
 }  
 
