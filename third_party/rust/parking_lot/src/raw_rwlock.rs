@@ -970,11 +970,11 @@ impl RawRwLock {
         
         
         let mut spinwait = SpinWait::new();
-        let mut state = self.state.load(Ordering::Relaxed);
+        let mut state = self.state.load(Ordering::Acquire);
         while state & READERS_MASK != 0 {
             
             if spinwait.spin() {
-                state = self.state.load(Ordering::Relaxed);
+                state = self.state.load(Ordering::Acquire);
                 continue;
             }
 
@@ -1019,7 +1019,7 @@ impl RawRwLock {
                 
                 
                 ParkResult::Unparked(_) | ParkResult::Invalid => {
-                    state = self.state.load(Ordering::Relaxed);
+                    state = self.state.load(Ordering::Acquire);
                     continue;
                 }
 

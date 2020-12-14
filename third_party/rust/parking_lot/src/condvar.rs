@@ -663,6 +663,9 @@ mod tests {
         while !c.notify_one() {
             
             MutexGuard::bump(&mut g);
+            
+            
+            thread::yield_now();
         }
         
         drop(g);
