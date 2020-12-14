@@ -30,17 +30,13 @@ use crate::{
         BackendRwCursorTransaction,
         SafeModeError,
     },
-    error::{
-        CloseError,
-        StoreError,
-    },
+    error::StoreError,
     readwrite::{
         Reader,
         Writer,
     },
     store::{
         single::SingleStore,
-        CloseOptions,
         Options as StoreOptions,
     },
 };
@@ -316,14 +312,13 @@ where
 
     
     
-    pub fn close(self, options: CloseOptions) -> Result<(), CloseError> {
+    pub fn close_and_delete(self) -> Result<(), StoreError> {
         let files = self.env.get_files_on_disk();
+        self.sync(true)?;
         drop(self);
 
-        if options.delete {
-            for file in files {
-                fs::remove_file(file)?;
-            }
+        for file in files {
+            fs::remove_file(file)?;
         }
 
         Ok(())
