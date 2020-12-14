@@ -469,9 +469,11 @@ browser.Context = class {
 
 
 
+  register(target) {
+    
+    
+    const uid = target.browsingContext.id;
 
-
-  register(uid, target) {
     if (this.tabBrowser) {
       
       
