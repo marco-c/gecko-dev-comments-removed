@@ -321,12 +321,6 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this._form.isTopLevelDocument;
   }
 
-  
-  
-  set isTopLevelDocument(isTopLevelDocument) {
-    this._form.isTopLevelDocument = isTopLevelDocument;
-  }
-
   get isShadowRoot() {
     return this._form.isShadowRoot;
   }
