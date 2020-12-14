@@ -10,9 +10,14 @@
 #include <math.h>
 #include <limits.h>
 #include <cmath>
+#include <locale>
+#include <string>
+#include <objbase.h>
+#include <shlobj.h>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/BaseProfilerMarkers.h"
@@ -175,6 +180,29 @@ static const wchar_t* sSearchbarRegSuffix = L"|SearchbarCSSSpan";
 static const wchar_t* sSpringsCSSRegSuffix = L"|SpringsCSSSpan";
 static const wchar_t* sThemeRegSuffix = L"|Theme";
 
+struct LoadedCoTaskMemFreeDeleter {
+  void operator()(void* ptr) {
+    static decltype(CoTaskMemFree)* coTaskMemFree = nullptr;
+    if (!coTaskMemFree) {
+      
+      
+      HMODULE ole32Dll = ::LoadLibraryW(L"ole32");
+      if (!ole32Dll) {
+        printf_stderr(
+            "Could not load ole32 - will not free with CoTaskMemFree");
+        return;
+      }
+      coTaskMemFree = reinterpret_cast<decltype(coTaskMemFree)>(
+          ::GetProcAddress(ole32Dll, "CoTaskMemFree"));
+      if (!coTaskMemFree) {
+        printf_stderr("Could not find CoTaskMemFree");
+        return;
+      }
+    }
+    coTaskMemFree(ptr);
+  }
+};
+
 std::wstring GetRegValueName(const wchar_t* prefix, const wchar_t* suffix) {
   std::wstring result(prefix);
   result.append(suffix);
@@ -204,6 +232,96 @@ UniquePtr<wchar_t[]> GetBinaryPath() {
   }
 
   return buf;
+}
+
+static UniquePtr<wchar_t, LoadedCoTaskMemFreeDeleter> GetKnownFolderPath(
+    REFKNOWNFOLDERID folderId) {
+  static decltype(SHGetKnownFolderPath)* shGetKnownFolderPath = nullptr;
+  if (!shGetKnownFolderPath) {
+    
+    
+    
+    
+    
+    HMODULE shell32Dll = ::LoadLibraryW(L"shell32");
+    if (!shell32Dll) {
+      return nullptr;
+    }
+    shGetKnownFolderPath = reinterpret_cast<decltype(shGetKnownFolderPath)>(
+        ::GetProcAddress(shell32Dll, "SHGetKnownFolderPath"));
+    if (!shGetKnownFolderPath) {
+      return nullptr;
+    }
+  }
+  PWSTR path = nullptr;
+  shGetKnownFolderPath(folderId, 0, nullptr, &path);
+  return UniquePtr<wchar_t, LoadedCoTaskMemFreeDeleter>(path);
+}
+
+
+
+
+
+
+static void MutateStringToLowercase(wchar_t* ptr) {
+  while (*ptr) {
+    wchar_t ch = *ptr;
+    if (ch >= L'A' && ch <= L'Z') {
+      *ptr = ch + (L'a' - L'A');
+    }
+    ++ptr;
+  }
+}
+
+static bool TryGetSkeletonUILock() {
+  auto localAppDataPath = GetKnownFolderPath(FOLDERID_LocalAppData);
+  if (!localAppDataPath) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  UniquePtr<wchar_t[]> binPath = GetBinaryPath();
+  if (!binPath) {
+    return false;
+  }
+
+  
+  MutateStringToLowercase(binPath.get());
+
+  
+  uint32_t hexHashSize = sizeof(uint32_t) * 2 + 1;
+  UniquePtr<wchar_t[]> installHash = MakeUnique<wchar_t[]>(hexHashSize);
+  
+  
+  
+  
+  uint32_t binPathHash = HashString(binPath.get());
+  swprintf(installHash.get(), hexHashSize, L"%08x", binPathHash);
+
+  std::wstring lockFilePath;
+  lockFilePath.append(localAppDataPath.get());
+  lockFilePath.append(
+      L"\\" MOZ_APP_VENDOR L"\\" MOZ_APP_BASENAME L"\\SkeletonUILock-");
+  lockFilePath.append(installHash.get());
+
+  
+  
+  
+  
+  HANDLE lockFile =
+      ::CreateFileW(lockFilePath.c_str(), GENERIC_READ | GENERIC_WRITE,
+                    0,  
+                    nullptr, CREATE_ALWAYS,
+                    FILE_FLAG_DELETE_ON_CLOSE,  
+                    nullptr);
+
+  return lockFile != INVALID_HANDLE_VALUE;
 }
 
 
@@ -1429,6 +1547,11 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
     return;
   }
 
+  if (!TryGetSkeletonUILock()) {
+    printf_stderr("Error trying to get skeleton UI lock %lu\n", GetLastError());
+    return;
+  }
+
   WNDCLASSW wc;
   wc.style = CS_DBLCLKS;
   wc.lpfnWndProc = PreXULSkeletonUIProc;
@@ -1826,6 +1949,14 @@ MFBT_API void SetPreXULSkeletonUIEnabledIfAllowed(bool value) {
   if (result != ERROR_SUCCESS) {
     printf_stderr("Failed persisting enabled to Windows registry\n");
     return;
+  }
+
+  if (!sPreXULSkeletonUIEnabled && value) {
+    
+    
+    
+    
+    Unused << TryGetSkeletonUILock();
   }
 
   sPreXULSkeletonUIEnabled = value;

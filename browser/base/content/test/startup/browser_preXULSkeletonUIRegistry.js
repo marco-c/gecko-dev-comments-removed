@@ -82,7 +82,7 @@ add_task(async function testWritesEnabledOnPrefChange() {
   await BrowserTestUtils.closeWindow(win);
 });
 
-add_task(async function testWritesSizeValuesOnChange() {
+add_task(async function testPersistsNecessaryValuesOnChange() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["browser.startup.preXulSkeletonUI", true]],
