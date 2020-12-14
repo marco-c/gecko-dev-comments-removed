@@ -124,6 +124,8 @@ class Context final : public SafeRefCounted<Context> {
   
   void Dispatch(SafeRefPtr<Action> aAction);
 
+  Maybe<DirectoryLock&> MaybeDirectoryLockRef() const;
+
   
   
   

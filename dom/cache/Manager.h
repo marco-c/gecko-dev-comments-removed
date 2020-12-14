@@ -10,6 +10,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/cache/Types.h"
+#include "mozilla/dom/quota/Client.h"
 #include "CacheCommon.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
@@ -24,6 +25,13 @@ namespace mozilla {
 class ErrorResult;
 
 namespace dom {
+
+namespace quota {
+
+class DirectoryLock;
+
+}  
+
 namespace cache {
 
 class CacheOpArgs;
@@ -65,6 +73,9 @@ class StreamList;
 
 
 class Manager final : public SafeRefCounted<Manager> {
+  using Client = quota::Client;
+  using DirectoryLock = quota::DirectoryLock;
+
  public:
   
   
@@ -132,7 +143,7 @@ class Manager final : public SafeRefCounted<Manager> {
   static nsCString GetShutdownStatus();
 
   
-  static void Abort(const nsACString& aOrigin);
+  static void Abort(const Client::DirectoryLockIdTable& aDirectoryLockIds);
 
   
   static void AbortAll();
@@ -161,6 +172,8 @@ class Manager final : public SafeRefCounted<Manager> {
   void ReleaseBodyId(const nsID& aBodyId);
 
   const ManagerId& GetManagerId() const;
+
+  Maybe<DirectoryLock&> MaybeDirectoryLockRef() const;
 
   
   

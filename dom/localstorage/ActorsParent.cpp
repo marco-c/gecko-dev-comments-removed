@@ -1655,6 +1655,12 @@ class Datastore final
             nsDataHashtable<nsStringHashKey, LSValue>& aValues,
             nsTArray<LSItemInfo>&& aOrderedItems);
 
+  Maybe<DirectoryLock&> MaybeDirectoryLockRef() const {
+    AssertIsOnBackgroundThread();
+
+    return ToMaybeRef(mDirectoryLock.get());
+  }
+
   const nsCString& Origin() const { return mGroupAndOrigin.mOrigin; }
 
   uint32_t PrivateBrowsingId() const { return mPrivateBrowsingId; }
@@ -1776,6 +1782,12 @@ class PrivateDatastore {
   }
 
   ~PrivateDatastore() { mDatastore->NoteFinishedPrivateDatastore(); }
+
+  const Datastore& DatastoreRef() const {
+    AssertIsOnBackgroundThread();
+
+    return *mDatastore;
+  }
 };
 
 class PreparedDatastore {
@@ -1821,11 +1833,18 @@ class PreparedDatastore {
     mDatastore->NoteFinishedPreparedDatastore(this);
   }
 
-  Datastore* GetDatastore() const {
+  const Datastore& DatastoreRef() const {
     AssertIsOnBackgroundThread();
     MOZ_ASSERT(mDatastore);
 
-    return mDatastore;
+    return *mDatastore;
+  }
+
+  Datastore& MutableDatastoreRef() const {
+    AssertIsOnBackgroundThread();
+    MOZ_ASSERT(mDatastore);
+
+    return *mDatastore;
   }
 
   const Maybe<ContentParentId>& GetContentParentId() const {
@@ -1891,6 +1910,12 @@ class Database final
   Datastore* GetDatastore() const {
     AssertIsOnBackgroundThread();
     return mDatastore;
+  }
+
+  Maybe<Datastore&> MaybeDatastoreRef() const {
+    AssertIsOnBackgroundThread();
+
+    return ToMaybeRef(mDatastore.get());
   }
 
   const PrincipalInfo& GetPrincipalInfo() const { return mPrincipalInfo; }
@@ -2346,7 +2371,6 @@ class PrepareDatastoreOp
   NestedState mNestedState;
   const bool mForPreload;
   bool mDatabaseNotAvailable;
-  bool mRequestedDirectoryLock;
   
   
   FlippedOnce<false> mPrivateDatastoreRegistered;
@@ -2365,6 +2389,12 @@ class PrepareDatastoreOp
                      const LSRequestParams& aParams,
                      const Maybe<ContentParentId>& aContentParentId);
 
+  Maybe<DirectoryLock&> MaybeDirectoryLockRef() const {
+    AssertIsOnBackgroundThread();
+
+    return ToMaybeRef(mDirectoryLock.get());
+  }
+
   bool OriginIsKnown() const {
     MOZ_ASSERT(IsOnOwningThread() || IsOnIOThread());
 
@@ -2376,12 +2406,6 @@ class PrepareDatastoreOp
     MOZ_ASSERT(OriginIsKnown());
 
     return mQuotaInfo.mOrigin;
-  }
-
-  bool RequestedDirectoryLock() const {
-    AssertIsOnOwningThread();
-
-    return mRequestedDirectoryLock;
   }
 
   void Invalidate() {
@@ -2764,7 +2788,8 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   void ReleaseIOThreadObjects() override;
 
-  void AbortOperations(const nsACString& aOrigin) override;
+  void AbortOperationsForLocks(
+      const DirectoryLockIdTable& aDirectoryLockIds) override;
 
   void AbortOperationsForProcess(ContentParentId aContentParentId) override;
 
@@ -3344,7 +3369,7 @@ bool RecvPBackgroundLSDatabaseConstructor(PBackgroundLSDatabaseParent* aActor,
 
   auto* database = static_cast<Database*>(aActor);
 
-  database->SetActorAlive(preparedDatastore->GetDatastore());
+  database->SetActorAlive(&preparedDatastore->MutableDatastoreRef());
 
   
   
@@ -6844,7 +6869,6 @@ PrepareDatastoreOp::PrepareDatastoreOp(
       mForPreload(aParams.type() ==
                   LSRequestParams::TLSRequestPreloadDatastoreParams),
       mDatabaseNotAvailable(false),
-      mRequestedDirectoryLock(false),
       mInvalidated(false)
 #ifdef DEBUG
       ,
@@ -7219,8 +7243,6 @@ nsresult PrepareDatastoreOp::OpenDirectory() {
   mPendingDirectoryLock = QuotaManager::Get()->OpenDirectory(
       PERSISTENCE_TYPE_DEFAULT, mQuotaInfo, mozilla::dom::quota::Client::LS,
        false, this);
-
-  mRequestedDirectoryLock = true;
 
   return NS_OK;
 }
@@ -9100,9 +9122,9 @@ void QuotaClient::ReleaseIOThreadObjects() {
   gArchivedOrigins = nullptr;
 }
 
-void QuotaClient::AbortOperations(const nsACString& aOrigin) {
+void QuotaClient::AbortOperationsForLocks(
+    const DirectoryLockIdTable& aDirectoryLockIds) {
   AssertIsOnBackgroundThread();
-  MOZ_ASSERT(!aOrigin.IsEmpty());
 
   
   
@@ -9118,36 +9140,60 @@ void QuotaClient::AbortOperations(const nsACString& aOrigin) {
   
 
   InvalidatePrepareDatastoreOpsMatching(
-      [&aOrigin](const auto& prepareDatastoreOp) {
+      [&aDirectoryLockIds](const auto& prepareDatastoreOp) {
         
         
         
         
-        
-        
-        
-        if (!prepareDatastoreOp.RequestedDirectoryLock()) {
-          return false;
-        }
-
-        MOZ_ASSERT(prepareDatastoreOp.OriginIsKnown());
-
-        return prepareDatastoreOp.Origin() == aOrigin;
+        return IsLockForObjectAcquiredAndContainedInLockTable(
+            prepareDatastoreOp, aDirectoryLockIds);
       });
 
-  if (gPrivateDatastores && gPrivateDatastores->Remove(aOrigin) &&
-      !gPrivateDatastores->Count()) {
-    gPrivateDatastores = nullptr;
+  if (gPrivateDatastores) {
+    gPrivateDatastores->RemoveIf([&aDirectoryLockIds](const auto& iter) {
+      const auto& privateDatastore = iter.Data();
+
+      
+      
+      const auto& datastore = privateDatastore->DatastoreRef();
+
+      
+      
+      
+      return IsLockForObjectContainedInLockTable(datastore, aDirectoryLockIds);
+    });
+
+    if (!gPrivateDatastores->Count()) {
+      gPrivateDatastores = nullptr;
+    }
   }
 
-  InvalidatePreparedDatastoresMatching(
-      [&aOrigin](const auto& preparedDatastore) {
-        return preparedDatastore.Origin() == aOrigin;
-      });
+  InvalidatePreparedDatastoresMatching([&aDirectoryLockIds](
+                                           const auto& preparedDatastore) {
+    
+    
+    const auto& datastore = preparedDatastore.DatastoreRef();
 
-  RequestAllowToCloseDatabasesMatching([&aOrigin](const auto& database) {
-    return database.Origin() == aOrigin;
+    
+    
+    
+    return IsLockForObjectContainedInLockTable(datastore, aDirectoryLockIds);
   });
+
+  RequestAllowToCloseDatabasesMatching(
+      [&aDirectoryLockIds](const auto& database) {
+        const auto& maybeDatastore = database.MaybeDatastoreRef();
+
+        
+        
+        MOZ_ASSERT(maybeDatastore.isSome());
+
+        
+        
+        
+        return IsLockForObjectContainedInLockTable(*maybeDatastore,
+                                                   aDirectoryLockIds);
+      });
 }
 
 void QuotaClient::AbortOperationsForProcess(ContentParentId aContentParentId) {
@@ -9163,7 +9209,7 @@ void QuotaClient::AbortAllOperations() {
   AssertIsOnBackgroundThread();
 
   InvalidatePrepareDatastoreOpsMatching([](const auto& prepareDatastoreOp) {
-    return prepareDatastoreOp.RequestedDirectoryLock();
+    return prepareDatastoreOp.MaybeDirectoryLockRef();
   });
 
   if (gPrivateDatastores) {
