@@ -2738,6 +2738,12 @@ class nsLayoutUtils {
   
 
 
+  static CSSRect GetBoundingFrameRect(
+      nsIFrame* aFrame, const nsIScrollableFrame* aRootScrollFrame);
+
+  
+
+
   static nsBlockFrame* GetFloatContainingBlock(nsIFrame* aFrame);
 
   
