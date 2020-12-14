@@ -58,10 +58,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     );
     this.walker = await this.getWalker({
       showAllAnonymousContent,
-      
-      
-      
-      showUserAgentShadowRoots: showAllAnonymousContent,
     });
 
     
