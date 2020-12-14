@@ -1352,8 +1352,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   DrainPushedFloats();
   OverflowAreas fcBounds;
-  nsReflowStatus fcStatus;
-  ReflowPushedFloats(state, fcBounds, fcStatus);
+  ReflowPushedFloats(state, fcBounds);
 
   
   
@@ -1401,7 +1400,6 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 
   state.mReflowStatus.MergeCompletionStatusFrom(ocStatus);
-  state.mReflowStatus.MergeCompletionStatusFrom(fcStatus);
 
   
   
@@ -6684,8 +6682,7 @@ StyleClear nsBlockFrame::FindTrailingClear() {
 }
 
 void nsBlockFrame::ReflowPushedFloats(BlockReflowInput& aState,
-                                      OverflowAreas& aOverflowAreas,
-                                      nsReflowStatus& aStatus) {
+                                      OverflowAreas& aOverflowAreas) {
   
   
   nsIFrame* f = mFloats.FirstChild();

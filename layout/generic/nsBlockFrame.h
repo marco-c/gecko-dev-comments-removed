@@ -646,8 +646,7 @@ class nsBlockFrame : public nsContainerFrame {
   
 
   void ReflowPushedFloats(BlockReflowInput& aState,
-                          mozilla::OverflowAreas& aOverflowAreas,
-                          nsReflowStatus& aStatus);
+                          mozilla::OverflowAreas& aOverflowAreas);
 
   
 
