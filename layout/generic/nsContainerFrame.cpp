@@ -1835,15 +1835,16 @@ void nsContainerFrame::NormalizeChildLists() {
     nsFrameList childNIFs;
     nsFrameList childOCNIFs;
     for (auto* child : aItems) {
-      auto* childNIF = child->GetNextInFlow();
-      if (childNIF && childNIF->GetParent() != firstNIF) {
-        auto* parent = childNIF->GetParent();
-        parent->StealFrame(childNIF);
-        ReparentFrame(childNIF, parent, firstNIF);
-        if (childNIF->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
-          childOCNIFs.AppendFrame(nullptr, childNIF);
-        } else {
-          childNIFs.AppendFrame(nullptr, childNIF);
+      if (auto* childNIF = child->GetNextInFlow()) {
+        if (auto* parent = childNIF->GetParent();
+            parent != this && parent != firstNIF) {
+          parent->StealFrame(childNIF);
+          ReparentFrame(childNIF, parent, firstNIF);
+          if (childNIF->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+            childOCNIFs.AppendFrame(nullptr, childNIF);
+          } else {
+            childNIFs.AppendFrame(nullptr, childNIF);
+          }
         }
       }
     }
