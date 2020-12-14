@@ -30,23 +30,34 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
   using MayStopProcessingCallbackType = std::function<bool()>;
 
  public:
+  
+  
+  
+  
   static already_AddRefed<IdleTaskRunner> Create(
-      const CallbackType& aCallback, const char* aRunnableName, uint32_t aDelay,
-      int64_t aBudget, bool aRepeating,
+      const CallbackType& aCallback, const char* aRunnableName,
+      uint32_t aMaxDelay, int64_t aNonIdleBudget, bool aRepeating,
       const MayStopProcessingCallbackType& aMayStopProcessing);
 
   NS_IMETHOD Run() override;
 
+  
+  
   void SetDeadline(mozilla::TimeStamp aDeadline) override;
+
   void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget) override;
+
+  
+  
+  void SetBudget(int64_t aBudget);
 
   nsresult Cancel() override;
   void Schedule(bool aAllowIdleDispatch);
 
  private:
   explicit IdleTaskRunner(
-      const CallbackType& aCallback, const char* aRunnableName, uint32_t aDelay,
-      int64_t aBudget, bool aRepeating,
+      const CallbackType& aCallback, const char* aRunnableName,
+      uint32_t aMaxDelay, int64_t aNonIdleBudget, bool aRepeating,
       const MayStopProcessingCallbackType& aMayStopProcessing);
   ~IdleTaskRunner();
   void CancelTimer();
@@ -55,9 +66,19 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsITimer> mScheduleTimer;
   CallbackType mCallback;
+
+  
+  
   uint32_t mDelay;
+
+  
+  
   TimeStamp mDeadline;
+
+  
+  
   TimeDuration mBudget;
+
   bool mRepeating;
   bool mTimerActive;
   MayStopProcessingCallbackType mMayStopProcessing;

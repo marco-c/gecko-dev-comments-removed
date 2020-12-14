@@ -3,9 +3,9 @@
 
 
 #include "js/SliceBudget.h"
+#include "mozilla/MainThreadIdlePeriod.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/MainThreadIdlePeriod.h"
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
 
@@ -200,7 +200,7 @@ class CCGCScheduler {
     }
 
     const TimeDuration maxSlice = TimeDuration::FromMilliseconds(
-        MainThreadIdlePeriod::GetLongIdlePeriod());
+        mozilla::MainThreadIdlePeriod::GetLongIdlePeriod());
 
     
     double sliceDelayMultiplier =
