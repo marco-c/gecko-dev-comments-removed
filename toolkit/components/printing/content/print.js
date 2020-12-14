@@ -84,12 +84,6 @@ function cancelDeferredTasks() {
   deferredTasks = [];
 }
 
-async function finalizeDeferredTasks() {
-  await Promise.all(deferredTasks.map(task => task.finalize()));
-  printPending = true;
-  await PrintEventHandler._updatePrintPreviewTask.finalize();
-}
-
 document.addEventListener(
   "DOMContentLoaded",
   e => {
@@ -118,6 +112,8 @@ var PrintEventHandler = {
   settings: null,
   defaultSettings: null,
   allPaperSizes: {},
+  previewIsEmpty: false,
+  _delayedChanges: {},
   _nonFlaggedChangedSettings: {},
   _userChangedSettings: {},
   settingFlags: {
@@ -220,6 +216,7 @@ var PrintEventHandler = {
       let didPrint = await this.print();
       if (!didPrint) {
         
+        
         this.printForm.enable();
       }
       
@@ -228,9 +225,16 @@ var PrintEventHandler = {
         cancelButton.dataset.cancelL10nId
       );
     });
-    document.addEventListener("update-print-settings", e =>
-      this.onUserSettingsChange(e.detail)
-    );
+    this._createDelayedSettingsChangeTask();
+    document.addEventListener("update-print-settings", e => {
+      this.handleSettingsChange(e.detail);
+    });
+    document.addEventListener("cancel-print-settings", e => {
+      this._delayedSettingsChangeTask.disarm();
+      for (let setting of Object.keys(e.detail)) {
+        delete this._delayedChanges[setting];
+      }
+    });
     document.addEventListener("cancel-print", () => this.cancelPrint());
     document.addEventListener("open-system-dialog", async () => {
       
@@ -291,11 +295,7 @@ var PrintEventHandler = {
 
     
     
-    this._updatePrintPreviewTask = new DeferredTask(async () => {
-      await initialPreviewDone;
-      await this._updatePrintPreview();
-      document.dispatchEvent(new CustomEvent("preview-updated"));
-    }, 0);
+    this._createUpdatePrintPreviewTask(initialPreviewDone);
 
     document.dispatchEvent(
       new CustomEvent("available-destinations", {
@@ -331,6 +331,24 @@ var PrintEventHandler = {
     
     this.printForm.disable();
 
+    if (Object.keys(this._delayedChanges).length) {
+      
+      let task = this._delayedSettingsChangeTask;
+      this._createDelayedSettingsChangeTask();
+      await task.finalize();
+    }
+
+    if (this.settings.pageRanges.length) {
+      
+      let task = this._updatePrintPreviewTask;
+      this._createUpdatePrintPreviewTask();
+      await task.finalize();
+    }
+
+    if (!this.printForm.checkValidity() || this.previewIsEmpty) {
+      return false;
+    }
+
     let settings = systemDialogSettings || this.settings;
 
     if (settings.printerName == PrintUtils.SAVE_TO_PDF_PRINTER) {
@@ -345,8 +363,6 @@ var PrintEventHandler = {
     }
 
     await window._initialized;
-
-    await finalizeDeferredTasks();
 
     
     Services.prefs.setStringPref("print_printer", settings.printerName);
@@ -465,6 +481,58 @@ var PrintEventHandler = {
     return settingsToUpdate;
   },
 
+  _createDelayedSettingsChangeTask() {
+    this._delayedSettingsChangeTask = createDeferredTask(async () => {
+      if (Object.keys(this._delayedChanges).length) {
+        let changes = this._delayedChanges;
+        this._delayedChanges = {};
+        await this.onUserSettingsChange(changes);
+      }
+    }, INPUT_DELAY_MS);
+  },
+
+  _createUpdatePrintPreviewTask(initialPreviewDone = null) {
+    this._updatePrintPreviewTask = new DeferredTask(async () => {
+      await initialPreviewDone;
+      await this._updatePrintPreview();
+      document.dispatchEvent(new CustomEvent("preview-updated"));
+    }, 0);
+  },
+
+  _scheduleDelayedSettingsChange(changes) {
+    Object.assign(this._delayedChanges, changes);
+    this._delayedSettingsChangeTask.disarm();
+    this._delayedSettingsChangeTask.arm();
+  },
+
+  handleSettingsChange(changedSettings = {}) {
+    let delayedChanges = {};
+    let instantChanges = {};
+    for (let [setting, value] of Object.entries(changedSettings)) {
+      switch (setting) {
+        case "pageRanges":
+        case "scaling":
+          delayedChanges[setting] = value;
+          break;
+        case "customMargins":
+          delete this._delayedChanges.margins;
+          changedSettings.margins == "custom"
+            ? (delayedChanges[setting] = value)
+            : (instantChanges[setting] = value);
+          break;
+        default:
+          instantChanges[setting] = value;
+          break;
+      }
+    }
+    if (Object.keys(delayedChanges).length) {
+      this._scheduleDelayedSettingsChange(delayedChanges);
+    }
+    if (Object.keys(instantChanges).length) {
+      this.onUserSettingsChange(instantChanges);
+    }
+  },
+
   async onUserSettingsChange(changedSettings = {}) {
     for (let [setting, value] of Object.entries(changedSettings)) {
       Services.telemetry.keyedScalarAdd(
@@ -572,6 +640,14 @@ var PrintEventHandler = {
         this.viewSettings[setting] != value ||
         (printerChanged && setting == "paperId")
       ) {
+        if (setting == "pageRanges") {
+          
+          
+          
+          if (!this.viewSettings[setting].length && !value.length) {
+            continue;
+          }
+        }
         this.viewSettings[setting] = value;
 
         if (
@@ -651,17 +727,26 @@ var PrintEventHandler = {
         .add(elapsed);
     }
 
-    let totalPageCount, sheetCount, hasSelection;
+    let totalPageCount, sheetCount, hasSelection, isEmpty;
     try {
       
       ({
         totalPageCount,
         sheetCount,
         hasSelection,
+        isEmpty,
       } = await previewBrowser.frameLoader.printPreview(settings, sourceWinId));
     } catch (e) {
       this.reportPrintingError("PRINT_PREVIEW");
       throw e;
+    }
+
+    this.previewIsEmpty = isEmpty;
+    
+    
+    if (this.previewIsEmpty) {
+      this.viewSettings.pageRanges = [];
+      this.updatePrintPreview();
     }
 
     
@@ -1339,6 +1424,15 @@ function PrintUIControlMixin(superClass) {
       );
     }
 
+    cancelSettingsChange(changedSettings) {
+      this.dispatchEvent(
+        new CustomEvent("cancel-print-settings", {
+          bubbles: true,
+          detail: changedSettings,
+        })
+      );
+    }
+
     handleKeypress(e) {
       let char = String.fromCharCode(e.charCode);
       let acceptedChar = e.target.step.includes(".")
@@ -1444,8 +1538,11 @@ class ColorModePicker extends PrintSettingSelect {
   update(settings) {
     this.value = settings[this.settingName] ? "color" : "bw";
     let canSwitch = settings.supportsColor && settings.supportsMonochrome;
-    this.toggleAttribute("disallowed", !canSwitch);
-    this.disabled = !canSwitch;
+    if (this.disablePicker != canSwitch) {
+      this.toggleAttribute("disallowed", !canSwitch);
+      this.disabled = !canSwitch;
+    }
+    this.disablePicker = canSwitch;
   }
 
   handleEvent(e) {
@@ -1572,9 +1669,50 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
   }
 
   enable() {
-    for (let element of this.elements) {
-      if (!element.hasAttribute("disallowed")) {
-        element.disabled = false;
+    let isValid = this.checkValidity();
+    document.body.toggleAttribute("invalid", !isValid);
+    if (isValid) {
+      for (let element of this.elements) {
+        if (!element.hasAttribute("disallowed")) {
+          element.disabled = false;
+        }
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      document
+        .querySelector("#sheet-count")
+        .parentNode.setAttribute("aria-live", "polite");
+    } else {
+      
+      let invalidElement;
+      for (let element of this.elements) {
+        if (!element.checkValidity()) {
+          invalidElement = element;
+          break;
+        }
+      }
+      let section = invalidElement.closest(".section-block");
+      document.body.toggleAttribute("invalid", !isValid);
+      
+      
+      document.body.removeAttribute("aria-describedby");
+      for (let element of this.elements) {
+        
+        
+        
+        element.disabled =
+          element.hasAttribute("disallowed") ||
+          (!isValid &&
+            element.validity.valid &&
+            element.name != "cancel" &&
+            element.closest(".section-block") != this._printerDestination &&
+            element.closest(".section-block") != section);
       }
     }
   }
@@ -1601,38 +1739,7 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
       e.type == "input" ||
       e.type == "revalidate"
     ) {
-      let isValid = this.checkValidity();
-      let section = e.target.closest(".section-block");
-      document.body.toggleAttribute("invalid", !isValid);
-      if (isValid) {
-        
-        
-        
-        
-        
-        
-        
-        
-        document
-          .querySelector("#sheet-count")
-          .parentNode.setAttribute("aria-live", "polite");
-      } else {
-        
-        
-        document.body.removeAttribute("aria-describedby");
-      }
-      for (let element of this.elements) {
-        
-        
-        
-        element.disabled =
-          element.hasAttribute("disallowed") ||
-          (!isValid &&
-            element.validity.valid &&
-            element.name != "cancel" &&
-            element.closest(".section-block") != this._printerDestination &&
-            element.closest(".section-block") != section);
-      }
+      this.enable();
     }
   }
 }
@@ -1655,11 +1762,6 @@ class ScaleInput extends PrintUIControlMixin(HTMLElement) {
     this._percentScale.addEventListener("keypress", this);
     this._percentScale.addEventListener("paste", this);
     this.addEventListener("input", this);
-
-    this._updateScaleTask = createDeferredTask(
-      () => this.updateScale(),
-      INPUT_DELAY_MS
-    );
   }
 
   updateScale() {
@@ -1672,8 +1774,11 @@ class ScaleInput extends PrintUIControlMixin(HTMLElement) {
     let { scaling, shrinkToFit, printerName } = settings;
     this._shrinkToFitChoice.checked = shrinkToFit;
     this._scaleChoice.checked = !shrinkToFit;
-    this._percentScale.disabled = shrinkToFit;
-    this._percentScale.toggleAttribute("disallowed", shrinkToFit);
+    if (this.disableScale != shrinkToFit) {
+      this._percentScale.disabled = shrinkToFit;
+      this._percentScale.toggleAttribute("disallowed", shrinkToFit);
+    }
+    this.disableScale = shrinkToFit;
     if (!this.printerName) {
       this.printerName = printerName;
     }
@@ -1711,8 +1816,6 @@ class ScaleInput extends PrintUIControlMixin(HTMLElement) {
       this.handlePaste(e);
     }
 
-    this._updateScaleTask.disarm();
-
     if (e.target == this._shrinkToFitChoice || e.target == this._scaleChoice) {
       if (!this._percentScale.checkValidity()) {
         this._percentScale.value = 100;
@@ -1728,7 +1831,7 @@ class ScaleInput extends PrintUIControlMixin(HTMLElement) {
       this._scaleError.hidden = true;
     } else if (e.type == "input") {
       if (this._percentScale.checkValidity()) {
-        this._updateScaleTask.arm();
+        this.updateScale();
       }
     }
 
@@ -1736,6 +1839,7 @@ class ScaleInput extends PrintUIControlMixin(HTMLElement) {
     if (this._percentScale.validity.valid) {
       this._scaleError.hidden = true;
     } else {
+      this.cancelSettingsChange({ scaling: true });
       this.showErrorTimeoutId = window.setTimeout(() => {
         this._scaleError.hidden = false;
       }, INPUT_DELAY_MS);
@@ -1748,18 +1852,15 @@ class PageRangeInput extends PrintUIControlMixin(HTMLElement) {
   initialize() {
     super.initialize();
 
-    this._startRange = this.querySelector("#custom-range-start");
-    this._endRange = this.querySelector("#custom-range-end");
+    this._rangeInput = this.querySelector("#custom-range");
+    this._rangeInput.title = "";
     this._rangePicker = this.querySelector("#range-picker");
     this._rangeError = this.querySelector("#error-invalid-range");
     this._startRangeOverflowError = this.querySelector(
       "#error-invalid-start-range-overflow"
     );
 
-    this._updatePageRangeTask = createDeferredTask(
-      () => this.updatePageRange(),
-      INPUT_DELAY_MS
-    );
+    this._pagesSet = new Set();
 
     this.addEventListener("input", this);
     this.addEventListener("keypress", this);
@@ -1772,139 +1873,237 @@ class PageRangeInput extends PrintUIControlMixin(HTMLElement) {
   }
 
   updatePageRange() {
-    this.dispatchSettingsChange({
-      pageRanges: this._rangePicker.value
-        ? [this._startRange.value, this._endRange.value]
-        : [],
-    });
+    let isAll = this._rangePicker.value == "all";
+    if (isAll) {
+      this._pagesSet.clear();
+      for (let i = 1; i <= this._numPages; i++) {
+        this._pagesSet.add(i);
+      }
+      if (!this._rangeInput.checkValidity()) {
+        this._rangeInput.setCustomValidity("");
+        this._rangeInput.value = "";
+      }
+    } else {
+      this.validateRangeInput();
+    }
+
+    this.dispatchEvent(new Event("revalidate", { bubbles: true }));
+
+    document.l10n.setAttributes(
+      this._rangeError,
+      "printui-error-invalid-range",
+      {
+        numPages: this._numPages,
+      }
+    );
+
+    
+    
+    if (this._rangeInput.validity.valid || isAll) {
+      window.clearTimeout(this.showErrorTimeoutId);
+      this._startRangeOverflowError.hidden = this._rangeError.hidden = true;
+    } else {
+      this._rangeInput.focus();
+    }
+  }
+
+  dispatchPageRange(shouldCancel = true) {
+    window.clearTimeout(this.showErrorTimeoutId);
+    if (this._rangeInput.validity.valid || this._rangePicker.value == "all") {
+      this.dispatchSettingsChange({
+        pageRanges: this.formatPageRange(),
+      });
+    } else {
+      if (shouldCancel) {
+        this.cancelSettingsChange({ pageRanges: true });
+      }
+      this.showErrorTimeoutId = window.setTimeout(() => {
+        this._rangeError.hidden =
+          this._rangeInput.validationMessage != "invalid";
+        this._startRangeOverflowError.hidden =
+          this._rangeInput.validationMessage != "startRangeOverflow";
+      }, INPUT_DELAY_MS);
+    }
+  }
+
+  
+  
+  
+  
+  
+  formatPageRange() {
+    if (
+      this._pagesSet.size == 0 ||
+      this._rangeInput.value == "" ||
+      this._rangePicker.value == "all"
+    ) {
+      
+      return [];
+    }
+    let pages = Array.from(this._pagesSet).sort((a, b) => a - b);
+
+    let formattedRanges = [];
+    let startRange = pages[0];
+    let endRange = pages[0];
+    formattedRanges.push(startRange);
+
+    for (let i = 1; i < pages.length; i++) {
+      let currentPage = pages[i - 1];
+      let nextPage = pages[i];
+      if (nextPage > currentPage + 1) {
+        formattedRanges.push(endRange);
+        startRange = endRange = nextPage;
+        formattedRanges.push(startRange);
+      } else {
+        endRange = nextPage;
+      }
+    }
+    formattedRanges.push(endRange);
+
+    return formattedRanges;
   }
 
   update(settings) {
-    this.toggleAttribute("all-pages", !settings.pageRanges.length);
+    let { pageRanges, printerName } = settings;
+    this.toggleAttribute("all-pages", !pageRanges.length);
+    if (!this.printerName) {
+      this.printerName = printerName;
+    }
+
+    let isValid = this._rangeInput.checkValidity();
+    if (this.printerName != printerName && !isValid) {
+      this.printerName = printerName;
+      this._rangeInput.value = "";
+      this.updatePageRange();
+      this.dispatchPageRange();
+    }
+  }
+
+  handleKeypress(e) {
+    let char = String.fromCharCode(e.charCode);
+    let acceptedChar = char.match(/^[0-9,-]$/);
+    if (!acceptedChar && !char.match("\x00") && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+    }
+  }
+
+  handlePaste(e) {
+    let paste = (e.clipboardData || window.clipboardData)
+      .getData("text")
+      .trim();
+    if (!paste.match(/^[0-9,-]*$/)) {
+      e.preventDefault();
+    }
+  }
+
+  
+  _validateRangeInput(value, numPages) {
+    this._pagesSet.clear();
+    var ranges = value.split(",");
+
+    for (let range of ranges) {
+      let rangeParts = range.split("-");
+      if (rangeParts.length > 2) {
+        this._rangeInput.setCustomValidity("invalid");
+        this._rangeInput.title = "";
+        this._pagesSet.clear();
+        return;
+      }
+      let startRange = parseInt(rangeParts[0], 10);
+      let endRange = parseInt(
+        rangeParts.length == 2 ? rangeParts[1] : rangeParts[0],
+        10
+      );
+
+      if (isNaN(startRange) && isNaN(endRange)) {
+        continue;
+      }
+
+      
+      
+      if (isNaN(startRange) && rangeParts[0] == "") {
+        startRange = 1;
+      }
+      
+      
+      if (isNaN(endRange) && rangeParts[1] == "") {
+        endRange = numPages;
+      }
+
+      
+      if (endRange < startRange) {
+        this._rangeInput.setCustomValidity("startRangeOverflow");
+        this._pagesSet.clear();
+        return;
+      } else if (
+        startRange > numPages ||
+        endRange > numPages ||
+        startRange == 0
+      ) {
+        this._rangeInput.setCustomValidity("invalid");
+        this._rangeInput.title = "";
+        this._pagesSet.clear();
+        return;
+      }
+
+      for (let i = startRange; i <= endRange; i++) {
+        this._pagesSet.add(i);
+      }
+    }
+
+    this._rangeInput.setCustomValidity("");
+  }
+
+  validateRangeInput() {
+    let value = this._rangePicker.value == "all" ? "" : this._rangeInput.value;
+    this._validateRangeInput(value, this._numPages);
   }
 
   handleEvent(e) {
+    if (e.type == "change") {
+      
+      
+      return;
+    }
+
     if (e.type == "keypress") {
-      if (e.target == this._startRange || e.target == this._endRange) {
+      if (e.target == this._rangeInput) {
         this.handleKeypress(e);
       }
       return;
     }
 
-    if (
-      e.type === "paste" &&
-      (e.target == this._startRange || e.target == this._endRange)
-    ) {
+    if (e.type === "paste" && e.target == this._rangeInput) {
       this.handlePaste(e);
     }
 
-    this._updatePageRangeTask.disarm();
-
     if (e.type == "page-count") {
       let { totalPages } = e.detail;
-      this._startRange.max = this._endRange.max = this._totalPages = totalPages;
-      this._startRange.disabled = this._endRange.disabled = false;
-      let isChanged = false;
-
       
       
-      
-      if (!this._startRange.checkValidity()) {
-        this._startRange.value = this._totalPages;
-        isChanged = true;
+      if (this._numPages == totalPages) {
+        return;
       }
-      if (!this._endRange.checkValidity()) {
-        this._endRange.value = this._totalPages;
-        isChanged = true;
-      }
-      if (isChanged) {
-        window.clearTimeout(this.showErrorTimeoutId);
-        this._startRange.max = Math.min(this._endRange.value, totalPages);
-        this._endRange.min = Math.max(this._startRange.value, 1);
 
-        this.dispatchEvent(new Event("revalidate", { bubbles: true }));
+      this._numPages = totalPages;
+      this._rangeInput.disabled = false;
 
-        if (this._startRange.validity.valid && this._endRange.validity.valid) {
-          this.dispatchSettingsChange({
-            pageRanges: [this._startRange.value, this._endRange.value],
-          });
-          this._rangeError.hidden = true;
-          this._startRangeOverflowError.hidden = true;
-        }
-      }
+      this.updatePageRange();
+      this.dispatchPageRange(false);
+
       return;
     }
 
     if (e.target == this._rangePicker) {
-      let printAll = e.target.value == "all";
-      this._startRange.required = this._endRange.required = !printAll;
-      this.querySelector(".range-group").hidden = printAll;
-      this._startRange.value = 1;
-      this._endRange.value = this._totalPages || 1;
-
+      this._rangeInput.hidden = e.target.value == "all";
       this.updatePageRange();
-
-      window.clearTimeout(this.showErrorTimeoutId);
-      this._rangeError.hidden = true;
-      this._startRangeOverflowError.hidden = true;
-      return;
-    }
-
-    if (e.target == this._startRange || e.target == this._endRange) {
-      if (this._startRange.checkValidity()) {
-        this._endRange.min = this._startRange.value;
+      this.dispatchPageRange();
+    } else if (e.target == this._rangeInput) {
+      this._rangeInput.focus();
+      if (this._numPages) {
+        this.updatePageRange();
+        this.dispatchPageRange();
       }
-      if (this._endRange.checkValidity()) {
-        this._startRange.max = this._endRange.value;
-      }
-      if (this._startRange.checkValidity() && this._endRange.checkValidity()) {
-        if (this._startRange.value && this._endRange.value) {
-          
-          
-          
-          this._updatePageRangeTask.arm();
-        }
-      }
-    }
-    document.l10n.setAttributes(
-      this._rangeError,
-      "printui-error-invalid-range",
-      {
-        numPages: this._totalPages,
-      }
-    );
-
-    window.clearTimeout(this.showErrorTimeoutId);
-    let hasShownOverflowError = false;
-    let startValidity = this._startRange.validity;
-    let endValidity = this._endRange.validity;
-
-    
-    
-    
-    
-    if (
-      !(
-        (startValidity.rangeOverflow && endValidity.valid) ||
-        (endValidity.rangeUnderflow && startValidity.valid)
-      )
-    ) {
-      this._startRangeOverflowError.hidden = true;
-    } else {
-      hasShownOverflowError = true;
-      this.showErrorTimeoutId = window.setTimeout(() => {
-        this._startRangeOverflowError.hidden = false;
-      }, INPUT_DELAY_MS);
-    }
-
-    
-    
-    if (hasShownOverflowError || (startValidity.valid && endValidity.valid)) {
-      this._rangeError.hidden = true;
-    } else {
-      this.showErrorTimeoutId = window.setTimeout(() => {
-        this._rangeError.hidden = false;
-      }, INPUT_DELAY_MS);
     }
   }
 }
@@ -1920,11 +2119,6 @@ class MarginsPicker extends PrintUIControlMixin(HTMLElement) {
     this._customLeftMargin = this.querySelector("#custom-margin-left");
     this._customRightMargin = this.querySelector("#custom-margin-right");
     this._marginError = this.querySelector("#error-invalid-margin");
-
-    this._updateCustomMarginsTask = createDeferredTask(
-      () => this.updateCustomMargins(),
-      INPUT_DELAY_MS
-    );
 
     this.addEventListener("input", this);
     this.addEventListener("keypress", this);
@@ -2016,7 +2210,7 @@ class MarginsPicker extends PrintUIControlMixin(HTMLElement) {
       
       
       this.setAllMarginValues(settings);
-
+      this.updateMaxValues();
       this.dispatchEvent(new Event("revalidate", { bubbles: true }));
       this._marginError.hidden = true;
     }
@@ -2032,6 +2226,7 @@ class MarginsPicker extends PrintUIControlMixin(HTMLElement) {
       ) {
         window.clearTimeout(this.showErrorTimeoutId);
         this.setAllMarginValues(settings);
+        this.updateMaxValues();
         this.dispatchEvent(new Event("revalidate", { bubbles: true }));
         this._marginError.hidden = true;
       }
@@ -2041,8 +2236,6 @@ class MarginsPicker extends PrintUIControlMixin(HTMLElement) {
       }
       this._marginPicker.value = settings.margins;
     }
-
-    this.updateMaxValues();
   }
 
   handleEvent(e) {
@@ -2060,8 +2253,6 @@ class MarginsPicker extends PrintUIControlMixin(HTMLElement) {
     if (e.type === "paste") {
       this.handlePaste(e);
     }
-
-    this._updateCustomMarginsTask.disarm();
 
     if (e.target == this._marginPicker) {
       let customMargin = e.target.value == "custom";
@@ -2094,7 +2285,7 @@ class MarginsPicker extends PrintUIControlMixin(HTMLElement) {
         this._customRightMargin.validity.valid
       ) {
         this.formatMargin(e.target);
-        this._updateCustomMarginsTask.arm();
+        this.updateCustomMargins();
       } else if (e.target.validity.stepMismatch) {
         
         
@@ -2111,6 +2302,7 @@ class MarginsPicker extends PrintUIControlMixin(HTMLElement) {
     ) {
       this._marginError.hidden = true;
     } else {
+      this.cancelSettingsChange({ customMargins: true, margins: true });
       this.showErrorTimeoutId = window.setTimeout(() => {
         this._marginError.hidden = false;
       }, INPUT_DELAY_MS);
