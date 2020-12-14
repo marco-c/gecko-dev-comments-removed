@@ -102,6 +102,19 @@ extern JS_PUBLIC_API bool FinishDynamicModuleImport(
 
 
 
+
+
+
+
+
+extern JS_PUBLIC_API bool FinishDynamicModuleImport_NoTLA(
+    JSContext* cx, DynamicImportStatus status, Handle<Value> referencingPrivate,
+    Handle<JSString*> specifier, Handle<JSObject*> promise);
+
+
+
+
+
 extern JS_PUBLIC_API JSObject* CompileModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf);
@@ -147,8 +160,11 @@ extern JS_PUBLIC_API bool ModuleInstantiate(JSContext* cx,
 
 
 
-extern JS_PUBLIC_API JSObject* ModuleEvaluate(JSContext* cx,
-                                              Handle<JSObject*> moduleRecord);
+
+extern JS_PUBLIC_API bool ModuleEvaluate(JSContext* cx,
+                                         Handle<JSObject*> moduleRecord,
+                                         MutableHandleValue rval);
+
 
 
 
