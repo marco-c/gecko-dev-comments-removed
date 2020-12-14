@@ -1537,13 +1537,6 @@ static nscoord PartiallyResolveAutoMinSize(
   if (specifiedSizeSuggestion != nscoord_MAX) {
     
     
-    if (aFlexItem.MainMaxSize() != NS_UNCONSTRAINEDSIZE) {
-      specifiedSizeSuggestion =
-          std::min(specifiedSizeSuggestion, aFlexItem.MainMaxSize());
-    }
-
-    
-    
     FLEX_LOGV(" Specified size suggestion: %d", specifiedSizeSuggestion);
     return specifiedSizeSuggestion;
   }
@@ -1589,7 +1582,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
     return;
   }
 
-  FLEX_LOGV("Resolving auto main size or main min size for flex item %p",
+  FLEX_LOGV("Resolving auto main size or auto min main size for flex item %p",
             aFlexItem.Frame());
 
   nscoord resolvedMinSize;  
@@ -1673,14 +1666,15 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
         contentSizeSuggestion = ClampMainSizeViaCrossAxisConstraints(
             contentSizeSuggestion, aFlexItem, aAxisTracker);
       }
-      
-      if (aFlexItem.MainMaxSize() != NS_UNCONSTRAINEDSIZE) {
-        contentSizeSuggestion =
-            std::min(contentSizeSuggestion, aFlexItem.MainMaxSize());
-      }
 
       FLEX_LOGV(" Content size suggestion: %d", contentSizeSuggestion);
       resolvedMinSize = std::min(resolvedMinSize, contentSizeSuggestion);
+
+      
+      if (aFlexItem.MainMaxSize() != NS_UNCONSTRAINEDSIZE) {
+        resolvedMinSize = std::min(resolvedMinSize, aFlexItem.MainMaxSize());
+      }
+      FLEX_LOGV(" Resolved auto min main size: %d", resolvedMinSize);
     }
   }
 
