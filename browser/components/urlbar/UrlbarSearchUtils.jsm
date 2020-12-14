@@ -67,9 +67,22 @@ class SearchUtils {
 
 
 
-  async enginesForDomainPrefix(prefix, { matchAllDomainLevels = false } = {}) {
+
+
+
+  async enginesForDomainPrefix(
+    prefix,
+    { matchAllDomainLevels = false, onlyEnabled = false } = {}
+  ) {
     await this.init();
     prefix = prefix.toLowerCase();
+
+    let disabledEngines = onlyEnabled
+      ? Services.prefs
+          .getStringPref("browser.search.hiddenOneOffs", "")
+          .split(",")
+          .filter(e => !!e)
+      : [];
 
     
     let partialMatchEngines = [];
@@ -90,6 +103,9 @@ class SearchUtils {
     
     let engines = [];
     for (let engine of await Services.search.getVisibleEngines()) {
+      if (disabledEngines.includes(engine.name)) {
+        continue;
+      }
       let domain = engine.getResultDomain();
       if (domain.startsWith(prefix) || domain.startsWith("www." + prefix)) {
         engines.push(engine);
