@@ -3,6 +3,7 @@
 
 
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -11,6 +12,11 @@ use super::{CommonMetricData, Instant, MetricId, RecordedEvent};
 
 use crate::dispatcher;
 use crate::ipc::{need_ipc, with_ipc_payload};
+
+pub enum EventRecordingError {
+    InvalidId,
+    InvalidExtraKey,
+}
 
 
 
@@ -51,6 +57,22 @@ impl ExtraKeys for NoExtraKeys {
     fn index(self) -> i32 {
         
         -1
+    }
+}
+
+impl TryFrom<i32> for NoExtraKeys {
+    type Error = EventRecordingError;
+
+    fn try_from(_value: i32) -> Result<Self, Self::Error> {
+        Err(EventRecordingError::InvalidExtraKey)
+    }
+}
+
+impl TryFrom<&str> for NoExtraKeys {
+    type Error = EventRecordingError;
+
+    fn try_from(_value: &str) -> Result<Self, Self::Error> {
+        Err(EventRecordingError::InvalidExtraKey)
     }
 }
 
@@ -134,13 +156,6 @@ impl<K: 'static + ExtraKeys + Send + Sync> EventMetric<K> {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
