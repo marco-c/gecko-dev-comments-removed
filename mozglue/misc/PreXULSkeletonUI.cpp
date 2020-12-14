@@ -1430,7 +1430,7 @@ const char* NormalizeFlag(const char* arg) {
 
 
 bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
-  const char* approvedArgumentsList[] = {
+  const char* approvedArgumentsArray[] = {
       
       "new-instance", "no-remote", "browser", "foreground", "setDefaultBrowser",
       "attach-console", "wait-for-browser", "osint",
@@ -1442,7 +1442,18 @@ bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
 
       
       
+      "marionette",
+
+      
+      
       "preferences", "search", "url",
+
+#ifndef MOZILLA_OFFICIAL
+      
+      
+      
+      "profile"
+#endif
 
       
       
@@ -1451,14 +1462,33 @@ bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
       
   };
 
-  
-  
-  
-  const char* releaseChannel = MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL);
-  bool acceptProfileArgument = !strcmp(releaseChannel, "default");
+  int approvedArgumentsArraySize =
+      sizeof(approvedArgumentsArray) / sizeof(approvedArgumentsArray[0]);
+  Vector<const char*> approvedArguments;
+  if (!approvedArguments.reserve(approvedArgumentsArraySize)) {
+    return false;
+  }
 
-  const int numApproved =
-      sizeof(approvedArgumentsList) / sizeof(approvedArgumentsList[0]);
+  for (int i = 0; i < approvedArgumentsArraySize; ++i) {
+    approvedArguments.infallibleAppend(approvedArgumentsArray[i]);
+  }
+
+#ifdef MOZILLA_OFFICIAL
+  
+  
+  
+  for (int i = 1; i < argc; ++i) {
+    const char* flag = NormalizeFlag(argv[i]);
+    if (flag && !strcmp(flag, "marionette")) {
+      if (!approvedArguments.append("profile")) {
+        return false;
+      }
+
+      break;
+    }
+  }
+#endif
+
   for (int i = 1; i < argc; ++i) {
     const char* flag = NormalizeFlag(argv[i]);
     if (!flag) {
@@ -1476,19 +1506,8 @@ bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
       continue;
     }
 
-    
-    
-    if (!strcmp(flag, "marionette")) {
-      return true;
-    }
-
-    if (acceptProfileArgument && !strcmp(flag, "profile")) {
-      continue;
-    }
-
     bool approved = false;
-    for (int j = 0; j < numApproved; ++j) {
-      const char* approvedArg = approvedArgumentsList[j];
+    for (const char* approvedArg : approvedArguments) {
       
       
       
