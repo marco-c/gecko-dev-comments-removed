@@ -6,10 +6,10 @@ registerCleanupFunction(async function cleanup() {
 
 let originalEngine;
 add_task(async function test_setup() {
-  
+  // Opening multiple windows on debug build takes too long time.
   requestLongerTimeout(10);
 
-  
+  // Stop search-engine loads from hitting the network
   await Services.search.addEngineWithDetails("MozSearch", {
     method: "GET",
     template: "http://example.com/?q={searchTerms}",
@@ -18,7 +18,7 @@ add_task(async function test_setup() {
   originalEngine = await Services.search.getDefault();
   await Services.search.setDefault(engine);
 
-  
+  // Move New Window button to nav bar, to make it possible to drag and drop.
   let { CustomizableUI } = ChromeUtils.import(
     "resource:///modules/CustomizableUI.jsm"
   );
@@ -36,9 +36,9 @@ add_task(async function test_setup() {
   }
 });
 
-
+// New Window Button opens any link.
 add_task(async function single_url() {
-  await dropText("mochi.test/first", ["https://www.mochi.test/first"]);
+  await dropText("mochi.test/first", ["http://www.mochi.test/first"]);
 });
 add_task(async function single_javascript() {
   await dropText("javascript:'bad'", ["about:blank"]);
@@ -47,36 +47,36 @@ add_task(async function single_javascript_capital() {
   await dropText("jAvascript:'bad'", ["about:blank"]);
 });
 add_task(async function single_url2() {
-  await dropText("mochi.test/second", ["https://www.mochi.test/second"]);
+  await dropText("mochi.test/second", ["http://www.mochi.test/second"]);
 });
 add_task(async function single_data_url() {
   await dropText("data:text/html,bad", ["data:text/html,bad"]);
 });
 add_task(async function single_url3() {
-  await dropText("mochi.test/third", ["https://www.mochi.test/third"]);
+  await dropText("mochi.test/third", ["http://www.mochi.test/third"]);
 });
 
-
+// Single text/plain item, with multiple links.
 add_task(async function multiple_urls() {
   await dropText("mochi.test/1\nmochi.test/2", [
-    "https://www.mochi.test/1",
-    "https://www.mochi.test/2",
+    "http://www.mochi.test/1",
+    "http://www.mochi.test/2",
   ]);
 });
 add_task(async function multiple_urls_javascript() {
   await dropText("javascript:'bad1'\nmochi.test/3", [
     "about:blank",
-    "https://www.mochi.test/3",
+    "http://www.mochi.test/3",
   ]);
 });
 add_task(async function multiple_urls_data() {
   await dropText("mochi.test/4\ndata:text/html,bad1", [
-    "https://www.mochi.test/4",
+    "http://www.mochi.test/4",
     "data:text/html,bad1",
   ]);
 });
 
-
+// Multiple text/plain items, with single and multiple links.
 add_task(async function multiple_items_single_and_multiple_links() {
   await drop(
     [
@@ -84,15 +84,15 @@ add_task(async function multiple_items_single_and_multiple_links() {
       [{ type: "text/plain", data: "mochi.test/6\nmochi.test/7" }],
     ],
     [
-      "https://www.mochi.test/5",
-      "https://www.mochi.test/6",
-      "https://www.mochi.test/7",
+      "http://www.mochi.test/5",
+      "http://www.mochi.test/6",
+      "http://www.mochi.test/7",
     ]
   );
 });
 
-
-
+// Single text/x-moz-url item, with multiple links.
+// "text/x-moz-url" has titles in even-numbered lines.
 add_task(async function single_moz_url_multiple_links() {
   await drop(
     [
@@ -103,11 +103,11 @@ add_task(async function single_moz_url_multiple_links() {
         },
       ],
     ],
-    ["https://www.mochi.test/8", "https://www.mochi.test/9"]
+    ["http://www.mochi.test/8", "http://www.mochi.test/9"]
   );
 });
 
-
+// Single item with multiple types.
 add_task(async function single_item_multiple_types() {
   await drop(
     [
@@ -116,22 +116,22 @@ add_task(async function single_item_multiple_types() {
         { type: "text/x-moz-url", data: "mochi.test/11\nTITLE11" },
       ],
     ],
-    ["https://www.mochi.test/11"]
+    ["http://www.mochi.test/11"]
   );
 });
 
-
+// Warn when too many URLs are dropped.
 add_task(async function multiple_tabs_under_max() {
   let urls = [];
   for (let i = 0; i < 5; i++) {
     urls.push("mochi.test/multi" + i);
   }
   await dropText(urls.join("\n"), [
-    "https://www.mochi.test/multi0",
-    "https://www.mochi.test/multi1",
-    "https://www.mochi.test/multi2",
-    "https://www.mochi.test/multi3",
-    "https://www.mochi.test/multi4",
+    "http://www.mochi.test/multi0",
+    "http://www.mochi.test/multi1",
+    "http://www.mochi.test/multi2",
+    "http://www.mochi.test/multi3",
+    "http://www.mochi.test/multi4",
   ]);
 });
 add_task(async function multiple_tabs_over_max_accept() {
@@ -146,11 +146,11 @@ add_task(async function multiple_tabs_over_max_accept() {
   await dropText(
     urls.join("\n"),
     [
-      "https://www.mochi.test/accept0",
-      "https://www.mochi.test/accept1",
-      "https://www.mochi.test/accept2",
-      "https://www.mochi.test/accept3",
-      "https://www.mochi.test/accept4",
+      "http://www.mochi.test/accept0",
+      "http://www.mochi.test/accept1",
+      "http://www.mochi.test/accept2",
+      "http://www.mochi.test/accept3",
+      "http://www.mochi.test/accept4",
     ],
     true
   );
@@ -194,8 +194,8 @@ async function drop(dragData, expectedURLs, ignoreFirstWindow = false) {
     EventUtils
   );
 
-  
-  
+  // Since synthesizeDrop triggers the srcElement, need to use another button
+  // that should be visible.
   let dragSrcElement = document.getElementById("sidebar-button");
   ok(dragSrcElement, "Sidebar button exists");
   let newWindowButton = document.getElementById("new-window-button");
