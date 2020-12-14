@@ -3041,7 +3041,7 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
   
   
   
-  if (!emitAtomOp(JSOp::CallProp, cx->parserNames().return_)) {
+  if (!emitAtomOp(JSOp::GetProp, cx->parserNames().return_)) {
     
     return false;
   }
@@ -6480,7 +6480,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       
       return false;
     }
-    if (!emitAtomOp(JSOp::CallProp, cx->parserNames().throw_)) {
+    if (!emitAtomOp(JSOp::GetProp, cx->parserNames().throw_)) {
       
       return false;
     }
@@ -6588,7 +6588,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       
       return false;
     }
-    if (!emitAtomOp(JSOp::CallProp, cx->parserNames().return_)) {
+    if (!emitAtomOp(JSOp::GetProp, cx->parserNames().return_)) {
       
       return false;
     }
@@ -7932,11 +7932,6 @@ bool BytecodeEmitter::emitOptionalCall(CallNode* callNode, OptionalEmitter& oe,
 bool BytecodeEmitter::emitCallOrNew(
     CallNode* callNode, ValueUsage valueUsage ) {
   
-
-
-
-
-
 
 
 
@@ -10609,7 +10604,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationForOpcodeSlow(
 
   switch (op) {
     case JSOp::GetProp:
-    case JSOp::CallProp:
     case JSOp::Length:
       return emitInstrumentationSlow(
           InstrumentationKind::GetProperty, [=](uint32_t pushed) {
