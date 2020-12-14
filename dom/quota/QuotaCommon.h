@@ -738,6 +738,8 @@
 #  define RETURN_STATUS_OR_RESULT(_status, _rv) return _rv
 #endif
 
+class mozIStorageConnection;
+class mozIStorageStatement;
 class nsIFile;
 
 namespace mozilla {
@@ -976,6 +978,13 @@ nsDependentCSubstring GetLeafName(const nsACString& aPath);
 
 Result<nsCOMPtr<nsIFile>, nsresult> CloneFileAndAppend(
     nsIFile& aDirectory, const nsAString& aPathElement);
+
+
+
+
+Result<nsCOMPtr<mozIStorageStatement>, nsresult>
+CreateAndExecuteSingleStepStatement(mozIStorageConnection& aConnection,
+                                    const nsACString& aStatementString);
 
 void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
               const nsACString& aSourceFile, int32_t aSourceLine);
