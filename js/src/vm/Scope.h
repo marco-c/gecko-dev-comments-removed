@@ -32,13 +32,14 @@
 #include "js/UniquePtr.h"    
 #include "util/Poison.h"  
 #include "vm/BytecodeUtil.h"  
+#include "vm/JSFunction.h"    
 #include "vm/ScopeKind.h"     
 #include "vm/Shape.h"         
 #include "vm/Xdr.h"           
 
 class JSAtom;
 class JSFreeOp;
-class JSFunction;  
+class JSFunction;
 class JSScript;
 class JSTracer;
 struct JSContext;
@@ -70,22 +71,6 @@ class AbstractBindingIter;
 using BindingIter = AbstractBindingIter<JSAtom>;
 
 class AbstractScopePtr;
-
-enum class BindingKind : uint8_t {
-  Import,
-  FormalParameter,
-  Var,
-  Let,
-  Const,
-
-  
-  
-  NamedLambdaCallee
-};
-
-static inline bool BindingKindIsLexical(BindingKind kind) {
-  return kind == BindingKind::Let || kind == BindingKind::Const;
-}
 
 static inline bool ScopeKindIsCatch(ScopeKind kind) {
   return kind == ScopeKind::SimpleCatch || kind == ScopeKind::Catch;
@@ -233,73 +218,6 @@ class AbstractTrailingNamesArray {
 
   BindingNameT& get(size_t i) { return start()[i]; }
   BindingNameT& operator[](size_t i) { return get(i); }
-};
-
-
-
-class BindingLocation {
- public:
-  enum class Kind {
-    Global,
-    Argument,
-    Frame,
-    Environment,
-    Import,
-    NamedLambdaCallee
-  };
-
- private:
-  Kind kind_;
-  uint32_t slot_;
-
-  BindingLocation(Kind kind, uint32_t slot) : kind_(kind), slot_(slot) {}
-
- public:
-  static BindingLocation Global() {
-    return BindingLocation(Kind::Global, UINT32_MAX);
-  }
-
-  static BindingLocation Argument(uint16_t slot) {
-    return BindingLocation(Kind::Argument, slot);
-  }
-
-  static BindingLocation Frame(uint32_t slot) {
-    MOZ_ASSERT(slot < LOCALNO_LIMIT);
-    return BindingLocation(Kind::Frame, slot);
-  }
-
-  static BindingLocation Environment(uint32_t slot) {
-    MOZ_ASSERT(slot < ENVCOORD_SLOT_LIMIT);
-    return BindingLocation(Kind::Environment, slot);
-  }
-
-  static BindingLocation Import() {
-    return BindingLocation(Kind::Import, UINT32_MAX);
-  }
-
-  static BindingLocation NamedLambdaCallee() {
-    return BindingLocation(Kind::NamedLambdaCallee, UINT32_MAX);
-  }
-
-  bool operator==(const BindingLocation& other) const {
-    return kind_ == other.kind_ && slot_ == other.slot_;
-  }
-
-  bool operator!=(const BindingLocation& other) const {
-    return !operator==(other);
-  }
-
-  Kind kind() const { return kind_; }
-
-  uint32_t slot() const {
-    MOZ_ASSERT(kind_ == Kind::Frame || kind_ == Kind::Environment);
-    return slot_;
-  }
-
-  uint16_t argumentSlot() const {
-    MOZ_ASSERT(kind_ == Kind::Argument);
-    return mozilla::AssertedCast<uint16_t>(slot_);
-  }
 };
 
 
