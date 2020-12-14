@@ -187,6 +187,12 @@ static bool GetRealmConfiguration(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  bool topLevelAwait = cx->options().topLevelAwait();
+  if (!JS_SetProperty(cx, info, "topLevelAwait",
+                      topLevelAwait ? TrueHandleValue : FalseHandleValue)) {
+    return false;
+  }
+
   bool offThreadParseGlobal = js::UseOffThreadParseGlobal();
   if (!JS_SetProperty(
           cx, info, "offThreadParseGlobal",
