@@ -135,9 +135,7 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
 
   void ClearDisplayItems();
 
-  void SubdocumentIntrinsicSizeOrRatioChanged(
-      const mozilla::Maybe<mozilla::IntrinsicSize>& aIntrinsicSize,
-      const mozilla::Maybe<mozilla::AspectRatio>& aIntrinsicRatio);
+  void SubdocumentIntrinsicSizeOrRatioChanged();
 
  protected:
   friend class AsyncFrameInit;
@@ -170,12 +168,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
 
   nsView* mOuterView;
   nsView* mInnerView;
-
-  
-  
-  
-  mozilla::Maybe<mozilla::IntrinsicSize> mSubdocumentIntrinsicSize;
-  mozilla::Maybe<mozilla::AspectRatio> mSubdocumentIntrinsicRatio;
 
   bool mIsInline;
   bool mPostedReflowCallback;

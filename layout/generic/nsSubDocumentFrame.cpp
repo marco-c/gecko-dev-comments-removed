@@ -45,6 +45,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsQueryObject.h"
 #include "RetainedDisplayListBuilder.h"
+#include "nsObjectLoadingContent.h"
 
 #include "Layers.h"
 #include "BasicLayers.h"
@@ -585,7 +586,10 @@ nscoord nsSubDocumentFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
 
-  if (mSubdocumentIntrinsicSize) {
+  nsCOMPtr<nsIObjectLoadingContent> iolc = do_QueryInterface(mContent);
+  auto olc = static_cast<nsObjectLoadingContent*>(iolc.get());
+
+  if (olc && olc->GetSubdocumentIntrinsicSize()) {
     
     
     
@@ -621,9 +625,13 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
     return IntrinsicSize(0, 0);
   }
 
-  if (mSubdocumentIntrinsicSize) {
-    
-    return *mSubdocumentIntrinsicSize;
+  if (nsCOMPtr<nsIObjectLoadingContent> iolc = do_QueryInterface(mContent)) {
+    auto olc = static_cast<nsObjectLoadingContent*>(iolc.get());
+
+    if (auto size = olc->GetSubdocumentIntrinsicSize()) {
+      
+      return *size;
+    }
   }
 
   if (!IsInline()) {
@@ -643,9 +651,15 @@ AspectRatio nsSubDocumentFrame::GetIntrinsicRatio() const {
   
   
   
-  if (mSubdocumentIntrinsicRatio && *mSubdocumentIntrinsicRatio) {
-    
-    return *mSubdocumentIntrinsicRatio;
+  if (nsCOMPtr<nsIObjectLoadingContent> iolc = do_QueryInterface(mContent)) {
+    auto olc = static_cast<nsObjectLoadingContent*>(iolc.get());
+
+    auto ratio = olc->GetSubdocumentIntrinsicRatio();
+    if (ratio && *ratio) {
+      
+      
+      return *ratio;
+    }
   }
 
   
@@ -1156,16 +1170,7 @@ nsPoint nsSubDocumentFrame::GetExtraOffset() const {
   return mInnerView->GetPosition();
 }
 
-void nsSubDocumentFrame::SubdocumentIntrinsicSizeOrRatioChanged(
-    const Maybe<IntrinsicSize>& aIntrinsicSize,
-    const Maybe<AspectRatio>& aIntrinsicRatio) {
-  if (mSubdocumentIntrinsicSize == aIntrinsicSize &&
-      mSubdocumentIntrinsicRatio == aIntrinsicRatio) {
-    return;
-  }
-  mSubdocumentIntrinsicSize = aIntrinsicSize;
-  mSubdocumentIntrinsicRatio = aIntrinsicRatio;
-
+void nsSubDocumentFrame::SubdocumentIntrinsicSizeOrRatioChanged() {
   if (MOZ_UNLIKELY(HasAllStateBits(NS_FRAME_IS_DIRTY))) {
     
     return;
