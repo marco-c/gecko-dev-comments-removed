@@ -346,7 +346,8 @@ class ModuleObject : public NativeObject {
   static bool Instantiate(JSContext* cx, HandleModuleObject self);
 
   
-  static JSObject* Evaluate(JSContext* cx, HandleModuleObject self);
+  static bool Evaluate(JSContext* cx, HandleModuleObject self,
+                       MutableHandleValue rval);
 
   static ModuleNamespaceObject* GetOrCreateModuleNamespace(
       JSContext* cx, HandleModuleObject self);
@@ -414,6 +415,14 @@ bool OnModuleEvaluationFailure(JSContext* cx, HandleObject evaluationPromise);
 bool FinishDynamicModuleImport(JSContext* cx, HandleObject evaluationPromise,
                                HandleValue referencingPrivate,
                                HandleString specifier, HandleObject promise);
+
+
+
+bool FinishDynamicModuleImport_NoTLA(JSContext* cx,
+                                     JS::DynamicImportStatus status,
+                                     HandleValue referencingPrivate,
+                                     HandleString specifier,
+                                     HandleObject promise);
 
 template <XDRMode mode>
 XDRResult XDRModuleObject(XDRState<mode>* xdr, MutableHandleModuleObject modp);
