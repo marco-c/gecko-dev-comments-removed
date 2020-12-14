@@ -345,6 +345,9 @@ body.dark blockquote {
 }
 
 
+.button:not(.dropdown-toggle):hover > .hover-label,
+.button:not(.dropdown-toggle):-moz-focusring > .hover-label,
+
 :not(.dropdown-open) > .dropdown > li > .button:hover > .hover-label,
 :not(.dropdown-open) > .dropdown > li > .button:-moz-focusring > .hover-label {
   visibility: visible;
