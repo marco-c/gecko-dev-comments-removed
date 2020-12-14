@@ -134,7 +134,7 @@ impl DatetimeMetric {
     
     
     
-    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<String> {
         match self {
             DatetimeMetric::Parent(p) => {
                 dispatcher::block_on_queue();
@@ -184,8 +184,10 @@ impl DatetimeMetricImpl {
         })
     }
 
-    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
-        crate::with_glean(move |glean| self.0.test_get_value_as_string(glean, storage_name))
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<String> {
+        
+        let storage = storage_name.into().expect("storage name required.");
+        crate::with_glean(move |glean| self.0.test_get_value_as_string(glean, storage))
     }
 }
 
