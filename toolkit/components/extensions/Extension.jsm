@@ -618,7 +618,21 @@ class ExtensionData {
     });
   }
 
+  canCheckSignature() {
+    
+    
+    
+    
+    
+    
+    
+    return this.constructor != ExtensionData;
+  }
+
   get restrictSchemes() {
+    
+    
+    
     
     
     
@@ -995,6 +1009,18 @@ class ExtensionData {
         } else if (type.api) {
           apiNames.add(type.api);
         } else if (type.invalid) {
+          if (!this.canCheckSignature() && PRIVILEGED_PERMS.has(perm)) {
+            
+            
+            
+            
+            
+            
+            
+            
+            continue;
+          }
+
           this.manifestWarning(`Invalid extension permission: ${perm}`);
           continue;
         }
@@ -2008,10 +2034,6 @@ class Extension extends ExtensionData {
     } finally {
       this.startupStates.delete(name);
     }
-  }
-
-  get restrictSchemes() {
-    return !(this.isPrivileged && this.hasPermission("mozillaAddons"));
   }
 
   

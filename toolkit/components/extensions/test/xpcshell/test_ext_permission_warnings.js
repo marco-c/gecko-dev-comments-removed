@@ -16,13 +16,22 @@ if (AppConstants.MOZ_APP_NAME == "thunderbird") {
 }
 const DUMMY_APP_NAME = "Dummy brandName";
 
+const { createAppInfo } = AddonTestUtils;
+
+AddonTestUtils.init(this);
+AddonTestUtils.overrideCertDB();
+AddonTestUtils.usePrivilegedSignatures = id => id.startsWith("privileged");
+createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
+
 async function getManifestPermissions(extensionData) {
   let extension = ExtensionTestCommon.generate(extensionData);
   
   ExtensionTestUtils.failOnSchemaWarnings(false);
   await extension.loadManifest();
   ExtensionTestUtils.failOnSchemaWarnings(true);
-  return extension.manifestPermissions;
+  const { manifestPermissions } = extension;
+  await extension.cleanupGeneratedFile();
+  return manifestPermissions;
 }
 
 function getPermissionWarnings(manifestPermissions, options) {
@@ -570,3 +579,76 @@ add_task(async function update_unprivileged_with_mozillaAddons() {
     "resource:-scheme is unsupported for unprivileged extensions"
   );
 });
+
+
+
+
+
+add_task(
+  async function test_invalid_permission_warning_on_privileged_permission() {
+    await AddonTestUtils.promiseStartupManager();
+
+    async function testInvalidPermissionWarning({ isPrivileged }) {
+      let id = isPrivileged
+        ? "privileged-addon@mochi.test"
+        : "nonprivileged-addon@mochi.test";
+
+      let expectedWarnings = isPrivileged
+        ? []
+        : ["Reading manifest: Invalid extension permission: mozillaAddons"];
+
+      const ext = ExtensionTestUtils.loadExtension({
+        useAddonManager: "permanent",
+        manifest: {
+          permissions: ["mozillaAddons"],
+          applications: { gecko: { id } },
+        },
+        background() {},
+      });
+
+      await ext.startup();
+      const { warnings } = ext.extension;
+      Assert.deepEqual(
+        warnings,
+        expectedWarnings,
+        `Got the expected warning for ${id}`
+      );
+      await ext.unload();
+    }
+
+    await testInvalidPermissionWarning({ isPrivileged: false });
+    await testInvalidPermissionWarning({ isPrivileged: true });
+
+    info("Test invalid permission warning on ExtensionData instance");
+    
+    
+    let generatedExt = ExtensionTestCommon.generate({
+      manifest: {
+        permissions: ["mozillaAddons"],
+        applications: { gecko: { id: "extension-data@mochi.test" } },
+      },
+    });
+
+    
+    
+    const extData = new ExtensionData(generatedExt.rootURI);
+    await extData.loadManifest();
+    Assert.deepEqual(
+      extData.warnings,
+      [],
+      "No warnings for mozillaAddons permission collected for the ExtensionData instance"
+    );
+
+    
+    
+    Assert.deepEqual(
+      extData.errors,
+      [],
+      "No errors collected by the ExtensionData instance"
+    );
+    
+    await generatedExt.cleanupGeneratedFile();
+
+    await AddonTestUtils.promiseShutdownManager();
+  }
+);
