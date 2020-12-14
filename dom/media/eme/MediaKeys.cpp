@@ -5,32 +5,36 @@
 
 
 #include "mozilla/dom/MediaKeys.h"
+
+#include "ChromiumCDMProxy.h"
 #include "GMPCrashHelper.h"
+#include "mozilla/EMEUtils.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLMediaElement.h"
-#include "mozilla/dom/MediaKeysBinding.h"
-#include "mozilla/dom/MediaKeyMessageEvent.h"
 #include "mozilla/dom/MediaKeyError.h"
+#include "mozilla/dom/MediaKeyMessageEvent.h"
 #include "mozilla/dom/MediaKeySession.h"
 #include "mozilla/dom/MediaKeyStatusMap.h"
-#include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/MediaKeySystemAccess.h"
+#include "mozilla/dom/MediaKeysBinding.h"
 #include "mozilla/dom/UnionTypes.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/dom/WindowContext.h"
+#include "mozilla/dom/WindowGlobalChild.h"
+#include "nsContentCID.h"
+#include "nsContentTypeParser.h"
+#include "nsContentUtils.h"
+#include "nsIScriptObjectPrincipal.h"
+#include "nsPrintfCString.h"
+#include "nsServiceManagerUtils.h"
+
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/MediaDrmCDMProxy.h"
 #endif
-#include "mozilla/EMEUtils.h"
-#include "nsContentUtils.h"
-#include "nsIScriptObjectPrincipal.h"
-#include "nsContentTypeParser.h"
 #ifdef XP_WIN
 #  include "mozilla/WindowsVersion.h"
 #endif
-#include "nsContentCID.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/dom/MediaKeySystemAccess.h"
-#include "nsPrintfCString.h"
-#include "ChromiumCDMProxy.h"
 
 namespace mozilla::dom {
 
@@ -404,7 +408,20 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
   }
   mPrincipal = sop->GetPrincipal();
 
+  
   nsCOMPtr<nsPIDOMWindowInner> window = GetParentObject();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mDocument = window->GetExtantDoc();
   if (!mDocument) {
     NS_WARNING("Failed to get document when creating MediaKeys");
@@ -413,22 +430,60 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
     return promise.forget();
   }
 
-  
-  
-  nsIChannel* channel = mDocument->GetChannel();
-  if (!channel) {
-    NS_WARNING("Failed to get channel when creating MediaKeys");
+  WindowGlobalChild* windowGlobalChild = window->GetWindowGlobalChild();
+  if (!windowGlobalChild) {
+    NS_WARNING("Failed to get window global child when creating MediaKeys");
     promise->MaybeRejectWithInvalidStateError(
-        "Couldn't get channel in MediaKeys::Init");
+        "Couldn't get window global child in MediaKeys::Init");
     return promise.forget();
   }
-  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  MOZ_RELEASE_ASSERT(loadInfo, "Channels should always have LoadInfo");
 
-  if (loadInfo->GetIsTopLevelLoad()) {
+  if (windowGlobalChild->SameOriginWithTop()) {
+    
     
     mTopLevelPrincipal = mPrincipal;
   } else {
+    
+    
+    nsIChannel* channel = mDocument->GetChannel();
+
+    WindowContext* windowContext = mDocument->GetWindowContext();
+    if (!windowContext) {
+      NS_WARNING("Failed to get window context when creating MediaKeys");
+      promise->MaybeRejectWithInvalidStateError(
+          "Couldn't get window context in MediaKeys::Init");
+      return promise.forget();
+    }
+    while (!channel) {
+      
+      
+      
+      
+      
+      
+
+      
+      windowContext = windowContext->GetParentWindowContext();
+      if (!windowContext || !windowContext->GetExtantDoc()) {
+        NS_WARNING(
+            "Failed to get parent window context's document when creating "
+            "MediaKeys");
+        promise->MaybeRejectWithInvalidStateError(
+            "Couldn't get parent window context's document in "
+            "MediaKeys::Init (likely due to an nested about about:blank frame "
+            "that hasn't loaded yet)");
+        return promise.forget();
+      }
+
+      Document* parentDoc = windowContext->GetExtantDoc();
+      channel = parentDoc->GetChannel();
+    }
+
+    MOZ_RELEASE_ASSERT(
+        channel, "Should either have a channel or should have returned by now");
+
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    MOZ_RELEASE_ASSERT(loadInfo, "Channels should always have LoadInfo");
     mTopLevelPrincipal = loadInfo->GetTopLevelPrincipal();
     if (!mTopLevelPrincipal) {
       NS_WARNING("Failed to get top level principal when creating MediaKeys");
@@ -438,6 +493,7 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
     }
   }
 
+  
   if (!mPrincipal || !mTopLevelPrincipal) {
     NS_WARNING("Failed to get principals when creating MediaKeys");
     promise->MaybeRejectWithInvalidStateError(

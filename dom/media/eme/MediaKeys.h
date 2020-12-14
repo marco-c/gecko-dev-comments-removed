@@ -171,6 +171,10 @@ class MediaKeys final : public nsIDocumentActivity,
   
   RefPtr<CDMProxy> mProxy;
 
+  
+  
+  
+  
   RefPtr<HTMLMediaElement> mElement;
   RefPtr<Document> mDocument;
 
@@ -181,7 +185,10 @@ class MediaKeys final : public nsIDocumentActivity,
   PendingKeySessionsHashMap mPendingSessions;
   PromiseId mCreatePromiseId;
 
+  
   RefPtr<nsIPrincipal> mPrincipal;
+  
+  
   RefPtr<nsIPrincipal> mTopLevelPrincipal;
 
   const MediaKeySystemConfiguration mConfig;
