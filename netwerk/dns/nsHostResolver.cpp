@@ -1786,7 +1786,18 @@ static bool different_rrset(AddrInfo* rrset1, AddrInfo* rrset2) {
 }
 
 void nsHostResolver::AddToEvictionQ(nsHostRecord* rec) {
-  MOZ_DIAGNOSTIC_ASSERT(!rec->isInList());
+  if (rec->isInList()) {
+    MOZ_DIAGNOSTIC_ASSERT(!mEvictionQ.contains(rec),
+                          "Already in eviction queue");
+    MOZ_DIAGNOSTIC_ASSERT(!mHighQ.contains(rec), "Already in high queue");
+    MOZ_DIAGNOSTIC_ASSERT(!mMediumQ.contains(rec), "Already in med queue");
+    MOZ_DIAGNOSTIC_ASSERT(!mLowQ.contains(rec), "Already in low queue");
+    MOZ_DIAGNOSTIC_ASSERT(false, "Already on some other queue?");
+
+    
+    
+    rec->remove();
+  }
   mEvictionQ.insertBack(rec);
   if (mEvictionQSize < mMaxCacheEntries) {
     mEvictionQSize++;
