@@ -394,16 +394,17 @@ class nsWindow final : public nsBaseWidget {
   nsresult GetSystemFont(nsCString& aFontName) override;
 
   typedef enum {
-    CSD_SUPPORT_SYSTEM,  
-    CSD_SUPPORT_CLIENT,  
-    CSD_SUPPORT_NONE,    
-    CSD_SUPPORT_UNKNOWN
-  } CSDSupportLevel;
+    GTK_DECORATION_SYSTEM,  
+    GTK_DECORATION_CLIENT,  
+    GTK_DECORATION_NONE,    
+                            
+  } GtkWindowDecoration;
   
 
 
 
-  static CSDSupportLevel GetSystemCSDSupportLevel(bool aIsPopup = false);
+  static GtkWindowDecoration GetToplevelWindowDecoration();
+  static GtkWindowDecoration GetPopupWindowDecoration();
 
   static bool HideTitlebarByDefault();
   static bool GetTopLevelWindowActiveState(nsIFrame* aFrame);
@@ -551,7 +552,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  CSDSupportLevel mCSDSupportLevel;
+  GtkWindowDecoration mGtkWindowDecoration;
   
   bool mDrawToContainer;
   
@@ -700,7 +701,6 @@ class nsWindow final : public nsBaseWidget {
   RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
   mozilla::UniquePtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
-  static CSDSupportLevel sCSDSupportLevel;
 
   static bool sTransparentMainWindow;
 };
