@@ -50,4 +50,3 @@ struct MOZ_TRIVIAL_DTOR BadNonTrivialDtorInMember {
 struct MOZ_TRIVIAL_DTOR OkVirtualMemberInMember {
   VirtualMember m;
 };
-
