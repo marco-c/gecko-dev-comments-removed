@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"  
 
 #include "frontend/BytecodeEmitter.h"     
+#include "frontend/NameOpEmitter.h"       
 #include "vm/AsyncFunctionResolveKind.h"  
 #include "vm/Opcodes.h"                   
 
@@ -55,8 +56,44 @@ bool AsyncEmitter::emitParamsEpilogue() {
   return true;
 }
 
+bool AsyncEmitter::prepareForModule() {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(state_ == State::Start);
+  MOZ_ASSERT(
+      bce_->lookupName(bce_->cx->parserNames().dotGenerator).hasKnownSlot());
+
+  NameOpEmitter noe(bce_, bce_->cx->parserNames().dotGenerator,
+                    NameOpEmitter::Kind::Initialize);
+  if (!noe.prepareForRhs()) {
+    
+    return false;
+  }
+  if (!bce_->emit1(JSOp::Generator)) {
+    
+    return false;
+  }
+  if (!noe.emitAssignment()) {
+    
+    return false;
+  }
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+#ifdef DEBUG
+  state_ = State::ModulePrologue;
+#endif
+
+  return true;
+}
+
 bool AsyncEmitter::prepareForBody() {
-  MOZ_ASSERT(state_ == State::PostParams);
+  MOZ_ASSERT(state_ == State::PostParams || state_ == State::ModulePrologue);
 
   rejectTryCatch_.emplace(bce_, TryEmitter::Kind::TryCatch,
                           TryEmitter::ControlKind::NonSyntactic);

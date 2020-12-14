@@ -63,6 +63,20 @@ struct BytecodeEmitter;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS AsyncEmitter {
  private:
   BytecodeEmitter* bce_;
@@ -103,12 +117,21 @@ class MOZ_STACK_CLASS AsyncEmitter {
   
   
   
+  
+  
+  
+  
+  
+  
+  
 
   enum class State {
     
     Start,
 
     Parameters,
+
+    ModulePrologue,
 
     PostParams,
 
@@ -128,6 +151,7 @@ class MOZ_STACK_CLASS AsyncEmitter {
 
   MOZ_MUST_USE bool prepareForParamsWithoutExpression();
   MOZ_MUST_USE bool prepareForParamsWithExpression();
+  MOZ_MUST_USE bool prepareForModule();
   MOZ_MUST_USE bool emitParamsEpilogue();
   MOZ_MUST_USE bool prepareForBody();
   MOZ_MUST_USE bool emitEnd();
