@@ -33,9 +33,6 @@ const STRUCTURED_INGESTION_SEND_TIMEOUT = 30 * 1000;
 
 const FHR_UPLOAD_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 
-const IS_MAIN_PROCESS =
-  Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
-
 
 
 
@@ -82,12 +79,8 @@ class PingCentre {
   }
 
   _createExperimentsPayload() {
-    let experiments = {};
-    
-    if (!IS_MAIN_PROCESS) {
-      return experiments;
-    }
     let activeExperiments = TelemetryEnvironment.getActiveExperiments();
+    let experiments = {};
     for (let experimentID in activeExperiments) {
       if (
         activeExperiments[experimentID] &&
