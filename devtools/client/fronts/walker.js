@@ -12,12 +12,6 @@ const {
 const { walkerSpec } = require("devtools/shared/specs/walker");
 const { safeAsyncMethod } = require("devtools/shared/async-utils");
 
-loader.lazyRequireGetter(
-  this,
-  "nodeConstants",
-  "devtools/shared/dom-node-constants"
-);
-
 
 
 
@@ -328,33 +322,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
         if ("numChildren" in change) {
           targetFront._form.numChildren = change.numChildren;
         }
-      } else if (change.type === "frameLoad") {
-        
-        
-
-        
-        
-        
-        for (const child of targetFront.treeChildren()) {
-          if (child.nodeType === nodeConstants.DOCUMENT_NODE) {
-            console.warn(
-              "Got an unexpected frameLoad in the inspector, " +
-                "please file a bug on bugzilla.mozilla.org!"
-            );
-            console.trace();
-          }
-        }
-      } else if (change.type === "documentUnload") {
-        
-        
-
-        
-        
-        emittedMutation.target = targetFront.actorID;
-        emittedMutation.targetParent = targetFront.parentNode();
-
-        
-        this._releaseFront(targetFront, true);
       } else if (change.type === "shadowRootAttached") {
         targetFront._form.isShadowHost = true;
       } else if (change.type === "customElementDefined") {
