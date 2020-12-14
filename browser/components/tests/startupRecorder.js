@@ -15,10 +15,7 @@ const { AppConstants } = ChromeUtils.import(
 
 let firstPaintNotification = "widget-first-paint";
 
-if (
-  AppConstants.platform == "linux" ||
-  Services.prefs.getBoolPref("browser.startup.preXulSkeletonUI")
-) {
+if (AppConstants.platform == "linux") {
   firstPaintNotification = "xul-window-visible";
 }
 

@@ -10,9 +10,6 @@ const LINUX = AppConstants.platform == "linux";
 const WIN = AppConstants.platform == "win";
 const MAC = AppConstants.platform == "macosx";
 const WEBRENDER = window.windowUtils.layerManagerType == "WebRender";
-const SKELETONUI = Services.prefs.getBoolPref(
-  "browser.startup.preXulSkeletonUI"
-);
 
 
 
@@ -121,10 +118,7 @@ const startupPhases = {
     },
     {
       name: "PGPU::Msg_GetDeviceStatus",
-      
-      
-      
-      condition: WIN && (WEBRENDER || SKELETONUI),
+      condition: WIN && WEBRENDER, 
       
       
       ignoreIfUnused: true,
@@ -265,7 +259,7 @@ const startupPhases = {
     },
     {
       name: "PCompositorBridge::Msg_FlushRendering",
-      condition: MAC || LINUX || SKELETONUI,
+      condition: MAC || LINUX,
       ignoreIfUnused: true,
       maxCount: 1,
     },

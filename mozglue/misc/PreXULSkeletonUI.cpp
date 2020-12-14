@@ -35,12 +35,12 @@ namespace mozilla {
 struct ColorRect {
   uint32_t color;
   uint32_t borderColor;
-  int x;
-  int y;
-  int width;
-  int height;
-  int borderWidth;
-  int borderRadius;
+  uint32_t x;
+  uint32_t y;
+  uint32_t width;
+  uint32_t height;
+  uint32_t borderWidth;
+  uint32_t borderRadius;
 };
 
 
@@ -51,12 +51,12 @@ struct ColorRect {
 struct DrawRect {
   uint32_t color;
   uint32_t backgroundColor;
-  int x;
-  int y;
-  int width;
-  int height;
-  int borderRadius;
-  int borderWidth;
+  uint32_t x;
+  uint32_t y;
+  uint32_t width;
+  uint32_t height;
+  uint32_t borderRadius;
+  uint32_t borderWidth;
   bool strokeOnly;
 };
 
@@ -161,18 +161,12 @@ StretchDIBitsProc sStretchDIBits = NULL;
 typedef HBRUSH(WINAPI* CreateSolidBrushProc)(COLORREF);
 CreateSolidBrushProc sCreateSolidBrush = NULL;
 
-static int sWindowWidth;
-static int sWindowHeight;
+static uint32_t sWindowWidth;
+static uint32_t sWindowHeight;
 static double sCSSToDevPixelScaling;
 
 static const int kAnimationCSSPixelsPerFrame = 21;
 static const int kAnimationCSSExtraWindowSize = 300;
-
-
-
-
-static const uint32_t kMaxWindowWidth = 1 << 16;
-static const uint32_t kMaxWindowHeight = 1 << 16;
 
 static const wchar_t* sEnabledRegSuffix = L"|Enabled";
 static const wchar_t* sScreenXRegSuffix = L"|ScreenX";
@@ -526,10 +520,6 @@ void RasterizeColorRect(const ColorRect& colorRect) {
   }
 
   for (const DrawRect& rect : drawRects) {
-    if (rect.height <= 0 || rect.width <= 0) {
-      continue;
-    }
-
     
     
     
@@ -538,10 +528,10 @@ void RasterizeColorRect(const ColorRect& colorRect) {
 
     
     
-    int solidRectStartY =
-        std::clamp(rect.y + rect.borderRadius, 0, sTotalChromeHeight);
-    int solidRectEndY = std::clamp(rect.y + rect.height - rect.borderRadius, 0,
-                                   sTotalChromeHeight);
+    int solidRectStartY = std::clamp(rect.y + rect.borderRadius, 0u,
+                                     (uint32_t)sTotalChromeHeight);
+    int solidRectEndY = std::clamp(rect.y + rect.height - rect.borderRadius, 0u,
+                                   (uint32_t)sTotalChromeHeight);
     for (int y = solidRectStartY; y < solidRectEndY; ++y) {
       
       
@@ -552,11 +542,11 @@ void RasterizeColorRect(const ColorRect& colorRect) {
       
       if (rect.strokeOnly && y - rect.y > rect.borderWidth &&
           rect.y + rect.height - y > rect.borderWidth) {
-        int startXLeft = std::clamp(rect.x, 0, sWindowWidth);
-        int endXLeft = std::clamp(rect.x + rect.borderWidth, 0, sWindowWidth);
-        int startXRight =
-            std::clamp(rect.x + rect.width - rect.borderWidth, 0, sWindowWidth);
-        int endXRight = std::clamp(rect.x + rect.width, 0, sWindowWidth);
+        int startXLeft = std::clamp(rect.x, 0u, sWindowWidth);
+        int endXLeft = std::clamp(rect.x + rect.borderWidth, 0u, sWindowWidth);
+        int startXRight = std::clamp(rect.x + rect.width - rect.borderWidth, 0u,
+                                     sWindowWidth);
+        int endXRight = std::clamp(rect.x + rect.width, 0u, sWindowWidth);
 
         uint32_t* lineStart = &sPixelBuffer[y * sWindowWidth];
         uint32_t* dataStartLeft = lineStart + startXLeft;
@@ -566,8 +556,8 @@ void RasterizeColorRect(const ColorRect& colorRect) {
         std::fill(dataStartLeft, dataEndLeft, rect.color);
         std::fill(dataStartRight, dataEndRight, rect.color);
       } else {
-        int startX = std::clamp(rect.x, 0, sWindowWidth);
-        int endX = std::clamp(rect.x + rect.width, 0, sWindowWidth);
+        int startX = std::clamp(rect.x, 0u, sWindowWidth);
+        int endX = std::clamp(rect.x + rect.width, 0u, sWindowWidth);
         uint32_t* lineStart = &sPixelBuffer[y * sWindowWidth];
         uint32_t* dataStart = lineStart + startX;
         uint32_t* dataEnd = lineStart + endX;
@@ -708,7 +698,7 @@ void DrawSkeletonUI(HWND hWnd, CSSPixelSpan urlbarCSSSpan,
   int urlbarTextPlaceholderMarginLeft =
       CSSToDevPixels(10, sCSSToDevPixelScaling);
   int urlbarTextPlaceHolderWidth = CSSToDevPixels(
-      std::clamp(urlbarCSSSpan.end - urlbarCSSSpan.start - 10.0, 0.0, 260.0),
+      std::min((int)(urlbarCSSSpan.end - urlbarCSSSpan.start) - 10, 260),
       sCSSToDevPixelScaling);
   int urlbarTextPlaceholderHeight = CSSToDevPixels(10, sCSSToDevPixelScaling);
 
@@ -962,18 +952,7 @@ void DrawSkeletonUI(HWND hWnd, CSSPixelSpan urlbarCSSSpan,
   sPixelBuffer =
       (uint32_t*)calloc(sWindowWidth * sTotalChromeHeight, sizeof(uint32_t));
 
-  for (auto& rect : *sAnimatedRects) {
-    rect.x = std::clamp(rect.x, 0, sWindowWidth);
-    rect.width = std::clamp(rect.width, 0, sWindowWidth - rect.x);
-    rect.y = std::clamp(rect.y, 0, sTotalChromeHeight);
-    rect.height = std::clamp(rect.height, 0, sTotalChromeHeight - rect.y);
-  }
-
-  for (auto& rect : rects) {
-    rect.x = std::clamp(rect.x, 0, sWindowWidth);
-    rect.width = std::clamp(rect.width, 0, sWindowWidth - rect.x);
-    rect.y = std::clamp(rect.y, 0, sTotalChromeHeight);
-    rect.height = std::clamp(rect.height, 0, sTotalChromeHeight - rect.y);
+  for (const auto& rect : rects) {
     RasterizeColorRect(rect);
   }
 
@@ -993,7 +972,7 @@ void DrawSkeletonUI(HWND hWnd, CSSPixelSpan urlbarCSSSpan,
                  DIB_RGB_COLORS, SRCCOPY);
 
   
-  RECT rect = {0, sTotalChromeHeight, sWindowWidth, sWindowHeight};
+  RECT rect = {0, sTotalChromeHeight, (LONG)sWindowWidth, (LONG)sWindowHeight};
   HBRUSH brush = sCreateSolidBrush(currentTheme.backgroundColor);
   sFillRect(hdc, &rect, brush);
 
@@ -1410,11 +1389,6 @@ const char* NormalizeFlag(const char* arg) {
   return nullptr;
 }
 
-static bool EnvHasValue(const char* name) {
-  const char* val = getenv(name);
-  return (val && *val);
-}
-
 
 
 
@@ -1456,7 +1430,7 @@ static bool EnvHasValue(const char* name) {
 
 
 bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
-  const char* approvedArgumentsArray[] = {
+  const char* approvedArgumentsList[] = {
       
       "new-instance", "no-remote", "browser", "foreground", "setDefaultBrowser",
       "attach-console", "wait-for-browser", "osint",
@@ -1468,18 +1442,7 @@ bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
 
       
       
-      "marionette",
-
-      
-      
       "preferences", "search", "url",
-
-#ifndef MOZILLA_OFFICIAL
-      
-      
-      
-      "profile"
-#endif
 
       
       
@@ -1488,33 +1451,14 @@ bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
       
   };
 
-  int approvedArgumentsArraySize =
-      sizeof(approvedArgumentsArray) / sizeof(approvedArgumentsArray[0]);
-  Vector<const char*> approvedArguments;
-  if (!approvedArguments.reserve(approvedArgumentsArraySize)) {
-    return false;
-  }
-
-  for (int i = 0; i < approvedArgumentsArraySize; ++i) {
-    approvedArguments.infallibleAppend(approvedArgumentsArray[i]);
-  }
-
-#ifdef MOZILLA_OFFICIAL
   
   
   
-  for (int i = 1; i < argc; ++i) {
-    const char* flag = NormalizeFlag(argv[i]);
-    if (flag && !strcmp(flag, "marionette")) {
-      if (!approvedArguments.append("profile")) {
-        return false;
-      }
+  const char* releaseChannel = MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL);
+  bool acceptProfileArgument = !strcmp(releaseChannel, "default");
 
-      break;
-    }
-  }
-#endif
-
+  const int numApproved =
+      sizeof(approvedArgumentsList) / sizeof(approvedArgumentsList[0]);
   for (int i = 1; i < argc; ++i) {
     const char* flag = NormalizeFlag(argv[i]);
     if (!flag) {
@@ -1532,8 +1476,19 @@ bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
       continue;
     }
 
+    
+    
+    if (!strcmp(flag, "marionette")) {
+      return true;
+    }
+
+    if (acceptProfileArgument && !strcmp(flag, "profile")) {
+      continue;
+    }
+
     bool approved = false;
-    for (const char* approvedArg : approvedArguments) {
+    for (int j = 0; j < numApproved; ++j) {
+      const char* approvedArg = approvedArgumentsList[j];
       
       
       
@@ -1555,20 +1510,13 @@ bool AreAllCmdlineArgumentsApproved(int argc, char** argv) {
   return true;
 }
 
-static bool VerifyWindowDimensions(uint32_t windowWidth,
-                                   uint32_t windowHeight) {
-  return windowWidth <= kMaxWindowWidth && windowHeight <= kMaxWindowHeight;
-}
-
 void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
                                     char** argv) {
 #ifdef MOZ_GECKO_PROFILER
   const TimeStamp skeletonStart = TimeStamp::NowUnfuzzed();
 #endif
 
-  if (!AreAllCmdlineArgumentsApproved(argc, argv) ||
-      EnvHasValue("MOZ_SAFE_MODE_RESTART") || EnvHasValue("XRE_PROFILE_PATH") ||
-      EnvHasValue("MOZ_RESET_PROFILE_RESTART")) {
+  if (!AreAllCmdlineArgumentsApproved(argc, argv)) {
     sPreXULSkeletonUIDisallowed = true;
     return;
   }
@@ -1777,11 +1725,6 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
   }
   ThemeColors currentTheme = GetTheme(themeMode);
 
-  if (!VerifyWindowDimensions(windowWidth, windowHeight)) {
-    printf_stderr("Bad window dimensions for skeleton UI.");
-    return;
-  }
-
   sPreXULSkeletonUIWindow =
       sCreateWindowExW(kPreXULSkeletonUIWindowStyleEx, L"MozillaWindowClass",
                        L"", windowStyle, screenX, screenY, windowWidth,
@@ -1815,8 +1758,8 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
     sWindowHeight =
         mi.rcWork.bottom - mi.rcWork.top + sNonClientVerticalMargins * 2;
   } else {
-    sWindowWidth = static_cast<int>(windowWidth);
-    sWindowHeight = static_cast<int>(windowHeight);
+    sWindowWidth = windowWidth;
+    sWindowHeight = windowHeight;
   }
 
   sSetWindowPos(sPreXULSkeletonUIWindow, 0, 0, 0, 0, 0,
