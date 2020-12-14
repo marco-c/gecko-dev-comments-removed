@@ -34,7 +34,15 @@ RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
 
 InProcessCompositorWidget::InProcessCompositorWidget(
     const layers::CompositorOptions& aOptions, nsBaseWidget* aWidget)
-    : CompositorWidget(aOptions), mWidget(aWidget) {}
+    : CompositorWidget(aOptions), mWidget(aWidget) {
+  
+  
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(mWidget);
+}
 
 bool InProcessCompositorWidget::PreRender(WidgetRenderingContext* aContext) {
   return mWidget->PreRender(aContext);
