@@ -9,6 +9,7 @@
 #include <stdint.h>  
 
 #include "BufferTexture.h"
+#include "GeckoProfiler.h"
 #include "IPDLActor.h"
 #include "ImageContainer.h"  
 #include "Layers.h"          
