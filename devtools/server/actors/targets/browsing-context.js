@@ -1084,7 +1084,6 @@ const browsingContextTargetPrototype = {
     return {};
   },
 
-  
   goForward() {
     
     
@@ -1103,7 +1102,6 @@ const browsingContextTargetPrototype = {
     return {};
   },
 
-  
   goBack() {
     
     
