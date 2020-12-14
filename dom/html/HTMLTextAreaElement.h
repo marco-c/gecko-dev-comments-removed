@@ -39,6 +39,8 @@ class HTMLTextAreaElement final : public TextControlElement,
                                   public nsIConstraintValidation {
  public:
   using nsIConstraintValidation::GetValidationMessage;
+  using ValueSetterOption = TextControlState::ValueSetterOption;
+  using ValueSetterOptions = TextControlState::ValueSetterOptions;
 
   explicit HTMLTextAreaElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
@@ -337,8 +339,8 @@ class HTMLTextAreaElement final : public TextControlElement,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetValueInternal(const nsAString& aValue, uint32_t aFlags);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SetValueInternal(const nsAString& aValue, const ValueSetterOptions& aOptions);
 
   
 

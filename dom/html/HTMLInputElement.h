@@ -117,6 +117,8 @@ class HTMLInputElement final : public TextControlElement,
   using nsGenericHTMLFormElementWithState::GetForm;
   using nsGenericHTMLFormElementWithState::GetFormAction;
   using nsIConstraintValidation::GetValidationMessage;
+  using ValueSetterOption = TextControlState::ValueSetterOption;
+  using ValueSetterOptions = TextControlState::ValueSetterOptions;
 
   enum class FromClone { no, yes };
 
@@ -916,13 +918,12 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetValueInternal(const nsAString& aValue, const nsAString* aOldValue,
-                            uint32_t aFlags);
-
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetValueInternal(const nsAString& aValue, uint32_t aFlags) {
-    return SetValueInternal(aValue, nullptr, aFlags);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SetValueInternal(const nsAString& aValue, const nsAString* aOldValue,
+                   const ValueSetterOptions& aOptions);
+  MOZ_CAN_RUN_SCRIPT nsresult SetValueInternal(
+      const nsAString& aValue, const ValueSetterOptions& aOptions) {
+    return SetValueInternal(aValue, nullptr, aOptions);
   }
 
   

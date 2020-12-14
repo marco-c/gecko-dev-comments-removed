@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "mozilla/Decimal.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/TextControlState.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIConstraintValidation.h"
 #include "nsString.h"
@@ -32,6 +33,9 @@ class HTMLInputElement;
 
 class InputType {
  public:
+  using ValueSetterOption = TextControlState::ValueSetterOption;
+  using ValueSetterOptions = TextControlState::ValueSetterOptions;
+
   
   
   
@@ -134,8 +138,8 @@ class InputType {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetValueInternal(const nsAString& aValue, uint32_t aFlags);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SetValueInternal(const nsAString& aValue, const ValueSetterOptions& aOptions);
 
   
 

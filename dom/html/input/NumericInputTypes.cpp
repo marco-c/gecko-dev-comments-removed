@@ -179,5 +179,6 @@ nsresult RangeInputType::MinMaxStepAttrChanged() {
   
   nsAutoString value;
   GetNonFileValueInternal(value);
-  return SetValueInternal(value, TextControlState::eSetValue_Internal);
+  return SetValueInternal(value,
+                          TextControlState::ValueSetterOption::ByInternalAPI);
 }

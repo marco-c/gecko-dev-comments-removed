@@ -1092,8 +1092,13 @@ nsresult HTMLInputElement::Clone(dom::NodeInfo* aNodeInfo,
         nsAutoString value;
         GetNonFileValueInternal(value);
         
-        rv = it->SetValueInternal(value, TextControlState::eSetValue_Notify);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(
+                rv = it->SetValueInternal(
+                    value,
+                    {ValueSetterOption::
+                         UpdateOverlayTextVisibilityAndInvalidateFrame})))) {
+          return rv;
+        }
       }
       break;
     case VALUE_MODE_FILENAME:
@@ -1610,9 +1615,9 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
       
       nsresult rv = SetValueInternal(
           aValue, SanitizesOnValueGetter() ? nullptr : &currentValue,
-          TextControlState::eSetValue_ByContent |
-              TextControlState::eSetValue_Notify |
-              TextControlState::eSetValue_MoveCursorToEndIfValueChanged);
+          {ValueSetterOption::ByContentAPI,
+           ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame,
+           ValueSetterOption::MoveCursorToEndIfValueChanged});
       if (NS_FAILED(rv)) {
         aRv.Throw(rv);
         return;
@@ -1624,9 +1629,9 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
     } else {
       nsresult rv = SetValueInternal(
           aValue,
-          TextControlState::eSetValue_ByContent |
-              TextControlState::eSetValue_Notify |
-              TextControlState::eSetValue_MoveCursorToEndIfValueChanged);
+          {ValueSetterOption::ByContentAPI,
+           ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame,
+           ValueSetterOption::MoveCursorToEndIfValueChanged});
       if (NS_FAILED(rv)) {
         aRv.Throw(rv);
         return;
@@ -2240,9 +2245,9 @@ void HTMLInputElement::SetUserInput(const nsAString& aValue,
       GetValueMode() == VALUE_MODE_VALUE && IsSingleLineTextControl(false);
 
   nsresult rv = SetValueInternal(
-      aValue, TextControlState::eSetValue_BySetUserInput |
-                  TextControlState::eSetValue_Notify |
-                  TextControlState::eSetValue_MoveCursorToEndIfValueChanged);
+      aValue, {ValueSetterOption::BySetUserInputAPI,
+               ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame,
+               ValueSetterOption::MoveCursorToEndIfValueChanged});
   NS_ENSURE_SUCCESS_VOID(rv);
 
   if (!isInputEventDispatchedByTextControlState) {
@@ -2633,9 +2638,9 @@ void HTMLInputElement::UpdateFileList() {
   }
 }
 
-nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
-                                            const nsAString* aOldValue,
-                                            uint32_t aFlags) {
+nsresult HTMLInputElement::SetValueInternal(
+    const nsAString& aValue, const nsAString* aOldValue,
+    const ValueSetterOptions& aOptions) {
   MOZ_ASSERT(GetValueMode() != VALUE_MODE_FILENAME,
              "Don't call SetValueInternal for file inputs");
 
@@ -2647,9 +2652,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
   
   
   
-  if (mParent && mParent->IsXULElement()) {
-    aFlags |= TextControlState::eSetValue_PreserveHistory;
-  }
+  const bool forcePreserveUndoHistory = mParent && mParent->IsXULElement();
 
   switch (GetValueMode()) {
     case VALUE_MODE_VALUE: {
@@ -2663,7 +2666,8 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
       }
       
 
-      bool setValueChanged = !!(aFlags & TextControlState::eSetValue_Notify);
+      const bool setValueChanged = aOptions.contains(
+          ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame);
       if (setValueChanged) {
         SetValueChanged(true);
       }
@@ -2675,8 +2679,11 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
         
         
         
-        
-        if (!mInputData.mState->SetValue(value, aOldValue, aFlags)) {
+        if (!mInputData.mState->SetValue(
+                value, aOldValue,
+                forcePreserveUndoHistory
+                    ? aOptions + ValueSetterOption::PreserveUndoHistory
+                    : aOptions)) {
           return NS_ERROR_OUT_OF_MEMORY;
         }
         
@@ -2685,7 +2692,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
         
         
         
-        if (aFlags & TextControlState::eSetValue_ByContent) {
+        if (aOptions.contains(ValueSetterOption::ByContentAPI)) {
           MaybeUpdateAllValidityStates(!mDoneCreating);
         }
       } else {
@@ -2700,7 +2707,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
             frame->UpdateForValueChange();
           }
         } else if (CreatesDateTimeWidget() &&
-                   !(aFlags & TextControlState::eSetValue_BySetUserInput)) {
+                   !aOptions.contains(ValueSetterOption::BySetUserInputAPI)) {
           if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
             AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
                 dateTimeBoxElement, u"MozDateTimeValueChanged"_ns,
@@ -3376,8 +3383,10 @@ void HTMLInputElement::CancelRangeThumbDrag(bool aIsForUserEvent) {
     mInputType->ConvertNumberToString(mRangeThumbDragStartValue, val);
     
     
-    SetValueInternal(val, TextControlState::eSetValue_BySetUserInput |
-                              TextControlState::eSetValue_Notify);
+    SetValueInternal(
+        val,
+        {ValueSetterOption::BySetUserInputAPI,
+         ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame});
     nsRangeFrame* frame = do_QueryFrame(GetPrimaryFrame());
     if (frame) {
       frame->UpdateForValueChange();
@@ -3397,8 +3406,9 @@ void HTMLInputElement::SetValueOfRangeForUserEvent(Decimal aValue) {
   mInputType->ConvertNumberToString(aValue, val);
   
   
-  SetValueInternal(val, TextControlState::eSetValue_BySetUserInput |
-                            TextControlState::eSetValue_Notify);
+  SetValueInternal(
+      val, {ValueSetterOption::BySetUserInputAPI,
+            ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame});
   nsRangeFrame* frame = do_QueryFrame(GetPrimaryFrame());
   if (frame) {
     frame->UpdateForValueChange();
@@ -3488,8 +3498,10 @@ void HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection) {
   mInputType->ConvertNumberToString(newValue, newVal);
   
   
-  SetValueInternal(newVal, TextControlState::eSetValue_BySetUserInput |
-                               TextControlState::eSetValue_Notify);
+  SetValueInternal(
+      newVal,
+      {ValueSetterOption::BySetUserInputAPI,
+       ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame});
 }
 
 static bool SelectTextFieldOnFocus() {
@@ -4293,23 +4305,24 @@ void HTMLInputElement::UnbindFromTree(bool aNullParent) {
 namespace {
 class TypeChangeSelectionRangeFlagDeterminer {
  public:
+  using ValueSetterOption = TextControlState::ValueSetterOption;
+  using ValueSetterOptions = TextControlState::ValueSetterOptions;
+
   
   
   TypeChangeSelectionRangeFlagDeterminer(uint8_t aOldType, uint8_t aNewType)
       : mOldType(aOldType), mNewType(aNewType) {}
 
   
-  uint32_t GetFlag() const {
+  ValueSetterOptions GetValueSetterOptions() const {
     const bool previouslySelectable = DoesSetRangeTextApply(mOldType);
     const bool nowSelectable = DoesSetRangeTextApply(mNewType);
     const bool moveCursorToBeginAndSetDirectionForward =
         !previouslySelectable && nowSelectable;
-    const uint32_t flag =
-        moveCursorToBeginAndSetDirectionForward
-            ? TextControlState::
-                  eSetValue_MoveCursorToBeginSetSelectionDirectionForward
-            : 0;
-    return flag;
+    if (moveCursorToBeginAndSetDirectionForward) {
+      return {ValueSetterOption::MoveCursorToBeginSetSelectionDirectionForward};
+    }
+    return {};
   }
 
  private:
@@ -4414,13 +4427,13 @@ void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
 
         const TypeChangeSelectionRangeFlagDeterminer flagDeterminer(oldType,
                                                                     mType);
-        const uint32_t selectionRangeFlag = flagDeterminer.GetFlag();
+        ValueSetterOptions options(flagDeterminer.GetValueSetterOptions());
+        options += ValueSetterOption::ByInternalAPI;
 
         
         
         
-        SetValueInternal(
-            value, TextControlState::eSetValue_Internal | selectionRangeFlag);
+        SetValueInternal(value, options);
       }
       break;
     case VALUE_MODE_FILENAME:
@@ -5441,8 +5454,10 @@ void HTMLInputElement::GetValueFromSetRangeText(nsAString& aValue) {
 }
 
 nsresult HTMLInputElement::SetValueFromSetRangeText(const nsAString& aValue) {
-  return SetValueInternal(aValue, TextControlState::eSetValue_ByContent |
-                                      TextControlState::eSetValue_Notify);
+  return SetValueInternal(
+      aValue,
+      {ValueSetterOption::ByContentAPI,
+       ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame});
 }
 
 Nullable<uint32_t> HTMLInputElement::GetSelectionStart(ErrorResult& aRv) {
@@ -5573,7 +5588,7 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
 
   
   
-  return SetValueInternal(resetVal, TextControlState::eSetValue_Internal);
+  return SetValueInternal(resetVal, ValueSetterOption::ByInternalAPI);
 }
 
 void HTMLInputElement::SetDirectionFromValue(bool aNotify) {
@@ -5853,7 +5868,7 @@ void HTMLInputElement::DoneCreatingElement() {
     
     
     
-    SetValueInternal(aValue, TextControlState::eSetValue_Internal);
+    SetValueInternal(aValue, ValueSetterOption::ByInternalAPI);
 
     if (IsDateOrTime(mType)) {
       
@@ -6031,8 +6046,9 @@ bool HTMLInputElement::RestoreState(PresState* aState) {
         
         
         
-        SetValueInternal(inputState.get_TextContentData().value(),
-                         TextControlState::eSetValue_Notify);
+        SetValueInternal(
+            inputState.get_TextContentData().value(),
+            ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame);
         if (inputState.get_TextContentData().lastValueChangeWasInteractive()) {
           mLastValueChangeWasInteractive = true;
           UpdateState(true);

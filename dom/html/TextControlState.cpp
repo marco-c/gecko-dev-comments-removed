@@ -54,6 +54,8 @@ namespace mozilla {
 
 using namespace dom;
 using layers::ScrollInputMethod;
+using ValueSetterOption = TextControlState::ValueSetterOption;
+using ValueSetterOptions = TextControlState::ValueSetterOptions;
 
 
 
@@ -1137,14 +1139,14 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   MOZ_CAN_RUN_SCRIPT AutoTextControlHandlingState(
       TextControlState& aTextControlState, TextControlAction aTextControlAction,
       const nsAString& aSettingValue, const nsAString* aOldValue,
-      uint32_t aFlags, ErrorResult& aRv)
+      const ValueSetterOptions& aOptions, ErrorResult& aRv)
       : mParent(aTextControlState.mHandlingState),
         mTextControlState(aTextControlState),
         mTextCtrlElement(aTextControlState.mTextCtrlElement),
         mTextInputListener(aTextControlState.mTextListener),
         mSettingValue(aSettingValue),
         mOldValue(aOldValue),
-        mSetValueFlags(aFlags),
+        mValueSetterOptions(aOptions),
         mTextControlAction(aTextControlAction) {
     MOZ_ASSERT(aTextControlAction == TextControlAction::SetValue,
                "Use generic constructor");
@@ -1211,15 +1213,15 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     
     
     
-    if (mSetValueFlags & TextControlState::eSetValue_BySetUserInput) {
+    if (mValueSetterOptions.contains(ValueSetterOption::BySetUserInputAPI)) {
       return;
     }
     
     
     
     mTextInputListener->SettingValue(true);
-    mTextInputListener->SetValueChanged(mSetValueFlags &
-                                        TextControlState::eSetValue_Notify);
+    mTextInputListener->SetValueChanged(mValueSetterOptions.contains(
+        ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame));
     mEditActionHandled = false;
     
     
@@ -1246,11 +1248,13 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     if (!Is(TextControlAction::SetValue)) {
       return NS_OK;
     }
-    if (!(mSetValueFlags & TextControlState::eSetValue_BySetUserInput)) {
+    if (!mValueSetterOptions.contains(ValueSetterOption::BySetUserInputAPI)) {
       mTextInputListener->SetValueChanged(true);
       mTextInputListener->SettingValue(
           mParent && mParent->IsHandling(TextControlAction::SetValue));
-      if (!(mSetValueFlags & TextControlState::eSetValue_Notify)) {
+      if (!mValueSetterOptions.contains(
+              ValueSetterOption::
+                  UpdateOverlayTextVisibilityAndInvalidateFrame)) {
         
         
         mTextControlState.ValueWasChanged();
@@ -1286,10 +1290,14 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     
     
     
+    
     ErrorResult error;
     AutoTextControlHandlingState handlingSetValueWithoutEditor(
         mTextControlState, TextControlAction::SetValue, mSettingValue,
-        mOldValue, mSetValueFlags & TextControlState::eSetValue_Notify, error);
+        mOldValue,
+        mValueSetterOptions &
+            ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame,
+        error);
     if (error.Failed()) {
       MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
       error.SuppressException();
@@ -1321,9 +1329,9 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   }
   TextControlElement* GetTextControlElement() const { return mTextCtrlElement; }
   TextInputListener* GetTextInputListener() const { return mTextInputListener; }
-  uint32_t GetSetValueFlags() const {
+  const ValueSetterOptions& ValueSetterOptionsRef() const {
     MOZ_ASSERT(Is(TextControlAction::SetValue));
-    return mSetValueFlags;
+    return mValueSetterOptions;
   }
   const nsAString* GetOldValue() const {
     MOZ_ASSERT(Is(TextControlAction::SetValue));
@@ -1369,7 +1377,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   RefPtr<TextInputListener> const mTextInputListener;
   nsString mSettingValue;
   const nsAString* mOldValue = nullptr;
-  uint32_t mSetValueFlags = 0;
+  ValueSetterOptions mValueSetterOptions;
   TextControlAction const mTextControlAction;
   bool mTextControlStateDestroyed = false;
   bool mEditActionHandled = false;
@@ -1909,8 +1917,9 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
     
     
     
+    
 
-    if (NS_WARN_IF(!SetValue(defaultValue, eSetValue_Internal))) {
+    if (NS_WARN_IF(!SetValue(defaultValue, ValueSetterOption::ByInternalAPI))) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
@@ -2457,7 +2466,7 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
   
   
   if (!mValueTransferInProgress) {
-    DebugOnly<bool> ok = SetValue(value, eSetValue_Internal);
+    DebugOnly<bool> ok = SetValue(value, ValueSetterOption::ByInternalAPI);
     
     NS_WARNING_ASSERTION(ok, "SetValue() couldn't allocate memory");
   }
@@ -2552,17 +2561,17 @@ bool TextControlState::ValueEquals(const nsAString& aValue) const {
 
 #ifdef DEBUG
 
-bool AreFlagsNotDemandingContradictingMovements(uint32_t aFlags) {
-  return !(
-      !!(aFlags &
-         TextControlState::
-             eSetValue_MoveCursorToBeginSetSelectionDirectionForward) &&
-      !!(aFlags & TextControlState::eSetValue_MoveCursorToEndIfValueChanged));
+bool AreFlagsNotDemandingContradictingMovements(
+    const ValueSetterOptions& aOptions) {
+  return !aOptions.contains(
+      {ValueSetterOption::MoveCursorToBeginSetSelectionDirectionForward,
+       ValueSetterOption::MoveCursorToEndIfValueChanged});
 }
 #endif  
 
 bool TextControlState::SetValue(const nsAString& aValue,
-                                const nsAString* aOldValue, uint32_t aFlags) {
+                                const nsAString* aOldValue,
+                                const ValueSetterOptions& aOptions) {
   if (mHandlingState &&
       mHandlingState->IsHandling(TextControlAction::CommitComposition)) {
     
@@ -2575,7 +2584,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
   ErrorResult error;
   AutoTextControlHandlingState handlingSetValue(
-      *this, TextControlAction::SetValue, aValue, aOldValue, aFlags, error);
+      *this, TextControlAction::SetValue, aValue, aOldValue, aOptions, error);
   if (error.Failed()) {
     MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
     error.SuppressException();
@@ -2590,7 +2599,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
   
   
   
-  if (aFlags & (eSetValue_BySetUserInput | eSetValue_ByContent)) {
+  if (aOptions.contains(ValueSetterOption::BySetUserInputAPI) ||
+      aOptions.contains(ValueSetterOption::ByContentAPI)) {
     if (EditorHasComposition()) {
       
       if (handlingSetValue.IsHandling(TextControlAction::CommitComposition)) {
@@ -2663,9 +2673,9 @@ bool TextControlState::SetValue(const nsAString& aValue,
   if (!wasHandlingSetValue) {
     
     
-    auto changeKind = (aFlags & eSetValue_Internal) ? ValueChangeKind::Internal
-                                                    : ValueChangeKind::Script;
-
+    auto changeKind = aOptions.contains(ValueSetterOption::ByInternalAPI)
+                          ? ValueChangeKind::Internal
+                          : ValueChangeKind::Script;
     handlingSetValue.GetTextControlElement()->OnValueChanged(changeKind);
   }
   return true;
@@ -2725,7 +2735,8 @@ bool TextControlState::SetValueWithTextEditor(
 
   aHandlingSetValue.WillSetValueWithTextEditor();
 
-  if (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) {
+  if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+          ValueSetterOption::BySetUserInputAPI)) {
     
     
     
@@ -2757,7 +2768,8 @@ bool TextControlState::SetValueWithTextEditor(
   
   
   Maybe<AutoDisableUndo> disableUndo;
-  if (!(aHandlingSetValue.GetSetValueFlags() & eSetValue_PreserveHistory)) {
+  if (!aHandlingSetValue.ValueSetterOptionsRef().contains(
+          ValueSetterOption::PreserveUndoHistory)) {
     disableUndo.emplace(textEditor);
   }
 
@@ -2774,7 +2786,8 @@ bool TextControlState::SetValueWithTextEditor(
   
   nsresult rv = textEditor->SetTextAsAction(
       aHandlingSetValue.GetSettingValue(),
-      (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) &&
+      aHandlingSetValue.ValueSetterOptionsRef().contains(
+          ValueSetterOption::BySetUserInputAPI) &&
               !StaticPrefs::dom_input_event_allow_to_cancel_set_user_input()
           ? TextEditor::AllowBeforeInputEventCancelable::No
           : TextEditor::AllowBeforeInputEventCancelable::Yes,
@@ -2821,7 +2834,8 @@ bool TextControlState::SetValueWithoutTextEditor(
     
     
     nsString inputEventData(aHandlingSetValue.GetSettingValue());
-    if ((aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) &&
+    if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+            ValueSetterOption::BySetUserInputAPI) &&
         StaticPrefs::dom_input_events_beforeinput_enabled() &&
         !aHandlingSetValue.HasBeforeInputEventDispatched()) {
       
@@ -2880,17 +2894,18 @@ bool TextControlState::SetValueWithoutTextEditor(
       
       if (IsSelectionCached()) {
         MOZ_ASSERT(AreFlagsNotDemandingContradictingMovements(
-            aHandlingSetValue.GetSetValueFlags()));
+            aHandlingSetValue.ValueSetterOptionsRef()));
 
         SelectionProperties& props = GetSelectionProperties();
         props.SetMaxLength(aHandlingSetValue.GetSettingValue().Length());
-        if (aHandlingSetValue.GetSetValueFlags() &
-            eSetValue_MoveCursorToEndIfValueChanged) {
+        if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+                ValueSetterOption::MoveCursorToEndIfValueChanged)) {
           props.SetStart(aHandlingSetValue.GetSettingValue().Length());
           props.SetEnd(aHandlingSetValue.GetSettingValue().Length());
           props.SetDirection(nsITextControlFrame::eForward);
-        } else if (aHandlingSetValue.GetSetValueFlags() &
-                   eSetValue_MoveCursorToBeginSetSelectionDirectionForward) {
+        } else if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+                       ValueSetterOption::
+                           MoveCursorToBeginSetSelectionDirectionForward)) {
           props.SetStart(0);
           props.SetEnd(0);
           props.SetDirection(nsITextControlFrame::eForward);
@@ -2910,7 +2925,8 @@ bool TextControlState::SetValueWithoutTextEditor(
     
     
     
-    if (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) {
+    if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+            ValueSetterOption::BySetUserInputAPI)) {
       MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
 
       

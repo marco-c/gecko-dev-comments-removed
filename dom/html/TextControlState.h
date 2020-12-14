@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
@@ -174,18 +175,16 @@ class TextControlState final : public SupportsWeakPtr {
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnEditActionHandled();
 
-  enum SetValueFlags {
+  enum class ValueSetterOption {
     
-    eSetValue_Internal = 1 << 0,
+    ByInternalAPI,
     
-    eSetValue_BySetUserInput = 1 << 1,
-    
-    
-    eSetValue_ByContent = 1 << 2,
-    
-    eSetValue_Notify = 1 << 3,
+    BySetUserInputAPI,
     
     
+    ByContentAPI,
+    
+    UpdateOverlayTextVisibilityAndInvalidateFrame,
     
     
     
@@ -193,10 +192,11 @@ class TextControlState final : public SupportsWeakPtr {
     
     
     
-    eSetValue_MoveCursorToEndIfValueChanged = 1 << 4,
+    
+    MoveCursorToEndIfValueChanged,
 
     
-    eSetValue_PreserveHistory = 1 << 5,
+    PreserveUndoHistory,
 
     
     
@@ -204,8 +204,10 @@ class TextControlState final : public SupportsWeakPtr {
     
     
     
-    eSetValue_MoveCursorToBeginSetSelectionDirectionForward = 1 << 6,
+    MoveCursorToBeginSetSelectionDirectionForward,
   };
+  using ValueSetterOptions = EnumSet<ValueSetterOption, uint32_t>;
+
   
 
 
@@ -215,13 +217,14 @@ class TextControlState final : public SupportsWeakPtr {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(const nsAString& aValue,
-                                                const nsAString* aOldValue,
-                                                uint32_t aFlags);
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(const nsAString& aValue,
-                                                uint32_t aFlags) {
-    return SetValue(aValue, nullptr, aFlags);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(
+      const nsAString& aValue, const nsAString* aOldValue,
+      const ValueSetterOptions& aOptions);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(
+      const nsAString& aValue, const ValueSetterOptions& aOptions) {
+    return SetValue(aValue, nullptr, aOptions);
   }
+
   
 
 
