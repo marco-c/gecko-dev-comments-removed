@@ -104,8 +104,10 @@ void MediaStatusManager::UpdateMetadata(
   }
   
   
-  if (!mActiveMediaSessionContextId ||
+  if (mActiveMediaSessionContextId &&
       *mActiveMediaSessionContextId == aBrowsingContextId) {
+    LOG("Notify metadata change for active session %" PRIu64,
+        aBrowsingContextId);
     mMetadataChangedEvent.Notify(GetCurrentMediaMetadata());
   }
   if (StaticPrefs::media_mediacontrol_testingevents_enabled()) {
