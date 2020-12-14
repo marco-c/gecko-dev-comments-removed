@@ -747,8 +747,24 @@ class nsLayoutUtils {
     OnlyVisible,
   };
 
-  
+  struct FrameForPointOptions {
+    using Bits = mozilla::EnumSet<FrameForPointOption>;
 
+    Bits mBits;
+    
+    
+    float mVisibleThreshold;
+
+    FrameForPointOptions(Bits aBits, float aVisibleThreshold)
+        : mBits(aBits), mVisibleThreshold(aVisibleThreshold){};
+
+    MOZ_IMPLICIT FrameForPointOptions(Bits aBits)
+        : FrameForPointOptions(aBits, 1.0f) {}
+
+    FrameForPointOptions() : FrameForPointOptions(Bits()){};
+  };
+
+  
 
 
 
@@ -756,10 +772,9 @@ class nsLayoutUtils {
 
 
   static nsIFrame* GetFrameForPoint(RelativeTo aRelativeTo, nsPoint aPt,
-                                    mozilla::EnumSet<FrameForPointOption> = {});
+                                    const FrameForPointOptions& = {});
 
   
-
 
 
 
@@ -769,7 +784,7 @@ class nsLayoutUtils {
 
   static nsresult GetFramesForArea(RelativeTo aRelativeTo, const nsRect& aRect,
                                    nsTArray<nsIFrame*>& aOutFrames,
-                                   mozilla::EnumSet<FrameForPointOption> = {});
+                                   const FrameForPointOptions& = {});
 
   
 

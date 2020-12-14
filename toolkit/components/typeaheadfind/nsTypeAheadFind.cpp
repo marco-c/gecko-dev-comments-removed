@@ -1174,9 +1174,9 @@ bool nsTypeAheadFind::IsRangeRendered(nsRange* aRange) {
     
     nsLayoutUtils::GetFramesForArea(
         RelativeTo{rootFrame}, r, frames,
-        {FrameForPointOption::IgnorePaintSuppression,
-         FrameForPointOption::IgnoreRootScrollFrame,
-         FrameForPointOption::OnlyVisible});
+        {{FrameForPointOption::IgnorePaintSuppression,
+          FrameForPointOption::IgnoreRootScrollFrame,
+          FrameForPointOption::OnlyVisible}});
 
     
     
