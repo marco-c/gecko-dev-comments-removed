@@ -175,6 +175,13 @@ var PrintUtils = {
       true
     ).firstElementChild;
     previewStack.append(browser);
+
+    
+    
+    let previewPagination = document.createElement("printpreview-pagination");
+    previewPagination.classList.add("printPreviewNavigation");
+    previewStack.append(previewPagination);
+
     aDialogBrowser.parentElement.prepend(previewStack);
     return browser;
   },
