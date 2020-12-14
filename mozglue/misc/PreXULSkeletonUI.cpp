@@ -520,6 +520,10 @@ void RasterizeColorRect(const ColorRect& colorRect) {
   }
 
   for (const DrawRect& rect : drawRects) {
+    if (rect.height <= 0 || rect.width <= 0) {
+      continue;
+    }
+
     
     
     
