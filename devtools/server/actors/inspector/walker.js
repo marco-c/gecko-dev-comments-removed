@@ -322,8 +322,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       root: this.rootNode.form(),
       traits: {
         
-        supportsNodePicker: true,
-        
         supportsOverflowDebugging2: true,
       },
     };
