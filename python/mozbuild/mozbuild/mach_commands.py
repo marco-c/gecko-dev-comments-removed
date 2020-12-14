@@ -2111,7 +2111,7 @@ class CreateMachEnvironment(MachCommandBase):
             
             
             try:
-                manager.install_pip_package("glean_sdk~=32.3.1")
+                manager.install_pip_package("glean_sdk~=33.7.0")
             except subprocess.CalledProcessError:
                 print(
                     "Could not install glean_sdk, so telemetry will not be "
