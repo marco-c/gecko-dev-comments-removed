@@ -438,7 +438,11 @@ async function openToolbarContextMenu() {
     "shown"
   );
 
-  EventUtils.synthesizeMouseAtCenter(toolbar, {
+  
+  
+  
+  let bounds = toolbar.getBoundingClientRect();
+  EventUtils.synthesizeMouse(toolbar, bounds.width - 5, 5, {
     type: "contextmenu",
   });
 
