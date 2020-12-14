@@ -253,12 +253,19 @@ class CCGCScheduler {
     CleanupDeferred,
     StartCycleCollection,
     CycleCollecting,
+    Canceled,
     NumStates
   };
 
   void InitCCRunnerStateMachine(CCRunnerState initialState) {
-    MOZ_ASSERT(mCCRunnerState == CCRunnerState::Inactive);
+    
+    
+    MOZ_ASSERT(mCCRunnerState == CCRunnerState::Inactive,
+               "DeactivateCCRunner should have been called");
     mCCRunnerState = initialState;
+
+    
+    
     if (initialState == CCRunnerState::ReducePurple) {
       mCCDelay = kCCDelay;
       mCCRunnerEarlyFireCount = 0;
@@ -425,11 +432,15 @@ CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline,
     bool mTryFinalForgetSkippable;
   };
 
+  
+  
+  
   constexpr StateDescriptor stateDescriptors[] = {
       {false, false},  
       {false, false},  
       {true, true},    
       {true, false},   
+      {false, false},  
       {false, false},  
       {false, false},  
       {false, false}}; 
@@ -438,11 +449,14 @@ CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline,
                 "need one state descriptor per state");
   const StateDescriptor& desc = stateDescriptors[int(mCCRunnerState)];
 
+  
+  MOZ_ASSERT(mCCRunnerState != CCRunnerState::Inactive);
+
   if (mDidShutdown) {
     return {CCRunnerAction::StopRunning, Yield};
   }
 
-  if (mCCRunnerState == CCRunnerState::Inactive) {
+  if (mCCRunnerState == CCRunnerState::Canceled) {
     
     return {CCRunnerAction::StopRunning, Yield};
   }
@@ -486,7 +500,7 @@ CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline,
   if (desc.mCanAbortCC && !IsCCNeeded(aSuspected, now)) {
     
     
-    mCCRunnerState = CCRunnerState::Inactive;
+    mCCRunnerState = CCRunnerState::Canceled;
     NoteForgetSkippableOnlyCycle();
 
     
