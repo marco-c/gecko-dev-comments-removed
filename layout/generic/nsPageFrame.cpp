@@ -588,9 +588,8 @@ static void BuildPreviousPageOverflow(nsDisplayListBuilder* aBuilder,
     
     
     
-    LogicalRect overflowRect(
-        wm, prevPageCF->InkOverflowRectRelativeToSelf(),
-        prevPageCF->GetSize());
+    LogicalRect overflowRect(wm, prevPageCF->InkOverflowRectRelativeToSelf(),
+                             prevPageCF->GetSize());
     overflowRect.BStart(wm) = offsetToCurrentPageBStart;
     overflowRect.BSize(wm) = std::min(remainingOverflow, prevPageCF->BSize(wm));
 

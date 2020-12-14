@@ -101,8 +101,8 @@ class nsSplittableFrame : public nsIFrame {
 
 
 
-  nscoord GetEffectiveComputedBSize(
-      const ReflowInput& aReflowInput, nscoord aConsumed) const;
+  nscoord GetEffectiveComputedBSize(const ReflowInput& aReflowInput,
+                                    nscoord aConsumed) const;
 
   
 

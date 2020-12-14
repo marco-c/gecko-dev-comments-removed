@@ -321,6 +321,6 @@ void safevals() {
 class Subcell : public Cell {
   int method() {
     GC();
-    return f; 
+    return f;  
   }
 };

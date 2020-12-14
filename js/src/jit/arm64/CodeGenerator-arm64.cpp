@@ -77,9 +77,11 @@ void CodeGenerator::visitTestIAndBranch(LTestIAndBranch* test) {
   
   
   if (isNextBlock(mirFalse->lir())) {
-    masm.branch32(Assembler::NonZero, input, Imm32(0), getJumpLabelForBranch(mirTrue));
+    masm.branch32(Assembler::NonZero, input, Imm32(0),
+                  getJumpLabelForBranch(mirTrue));
   } else {
-    masm.branch32(Assembler::Zero, input, Imm32(0), getJumpLabelForBranch(mirFalse));
+    masm.branch32(Assembler::Zero, input, Imm32(0),
+                  getJumpLabelForBranch(mirFalse));
     if (!isNextBlock(mirTrue->lir())) {
       jumpToBlock(mirTrue);
     }
