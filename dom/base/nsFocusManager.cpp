@@ -2829,6 +2829,17 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
     return;
   }
 
+  if (XRE_IsContentProcess()) {
+    BrowsingContext* bc = aWindow->GetBrowsingContext();
+    if (!bc->IsTop()) {
+      
+      
+      
+      
+      WindowRaised(aWindow, aActionId);
+    }
+  }
+
 #if defined(XP_WIN)
   
   
