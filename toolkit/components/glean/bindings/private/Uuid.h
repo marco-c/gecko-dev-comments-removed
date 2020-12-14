@@ -47,12 +47,12 @@ class UuidMetric {
 
 
 
-  Maybe<nsCString> TestGetValue(const char* aStorageName) const {
-    if (!fog_uuid_test_has_value(mId, aStorageName)) {
+  Maybe<nsCString> TestGetValue(const nsACString& aStorageName) const {
+    if (!fog_uuid_test_has_value(mId, &aStorageName)) {
       return Nothing();
     }
     nsCString ret;
-    fog_uuid_test_get_value(mId, aStorageName, &ret);
+    fog_uuid_test_get_value(mId, &aStorageName, &ret);
     return Some(ret);
   }
 
