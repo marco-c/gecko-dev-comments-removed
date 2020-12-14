@@ -28,10 +28,7 @@ const rootSpecPrototype = {
     },
 
     listTabs: {
-      request: {
-        
-        favicons: Option(0, "boolean"),
-      },
+      request: {},
       response: {
         tabs: RetVal("array:tabDescriptor"),
       },

@@ -172,12 +172,7 @@ function requestTabs() {
         runtime.runtimeDetails.info.type,
         DEBUG_TARGET_PANE.TAB
       );
-      const tabs = isSupported
-        ? await clientWrapper.listTabs({
-            
-            favicons: true,
-          })
-        : [];
+      const tabs = isSupported ? await clientWrapper.listTabs() : [];
 
       
       await Promise.all(
