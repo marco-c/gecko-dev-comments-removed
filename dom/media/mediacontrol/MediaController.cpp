@@ -344,17 +344,8 @@ bool MediaController::ShouldActivateController() const {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
   return IsAnyMediaBeingControlled() &&
-         (IsAudible() || IsBeingUsedInPIPModeOrFullscreen()) && !mIsActive;
+         (IsPlaying() || IsBeingUsedInPIPModeOrFullscreen()) && !mIsActive;
 }
 
 bool MediaController::ShouldDeactivateController() const {
