@@ -1,4 +1,7 @@
 var { FileUtils } = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+var { HandlerServiceTestUtils } = ChromeUtils.import(
+  "resource://testing-common/HandlerServiceTestUtils.jsm"
+);
 
 var gMimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 var gHandlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
@@ -193,5 +196,55 @@ async function promiseDownloadFinished(list) {
         }
       },
     });
+  });
+}
+
+function setupMailHandler() {
+  let mailHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("mailto");
+  let gOldMailHandlers = [];
+
+  
+  
+  let handlers = mailHandlerInfo.possibleApplicationHandlers;
+  for (let i = handlers.Count() - 1; i >= 0; i--) {
+    try {
+      let handler = handlers.queryElementAt(i, Ci.nsIWebHandlerApp);
+      gOldMailHandlers.push(handler);
+      
+      handlers.removeElementAt(i);
+    } catch (ex) {}
+  }
+
+  let previousHandling = mailHandlerInfo.alwaysAskBeforeHandling;
+  mailHandlerInfo.alwaysAskBeforeHandling = true;
+
+  
+  
+  
+  
+  let dummy = Cc["@mozilla.org/uriloader/web-handler-app;1"].createInstance(
+    Ci.nsIWebHandlerApp
+  );
+  dummy.name = "Handler 1";
+  dummy.uriTemplate = "https://example.com/first/%s";
+  mailHandlerInfo.possibleApplicationHandlers.appendElement(dummy);
+
+  gHandlerSvc.store(mailHandlerInfo);
+  registerCleanupFunction(() => {
+    
+    let mailHandlers = mailHandlerInfo.possibleApplicationHandlers;
+    for (let i = handlers.Count() - 1; i >= 0; i--) {
+      try {
+        
+        
+        mailHandlers.queryElementAt(i, Ci.nsIWebHandlerApp);
+        mailHandlers.removeElementAt(i);
+      } catch (ex) {}
+    }
+    for (let h of gOldMailHandlers) {
+      mailHandlers.appendElement(h);
+    }
+    mailHandlerInfo.alwaysAskBeforeHandling = previousHandling;
+    gHandlerSvc.store(mailHandlerInfo);
   });
 }

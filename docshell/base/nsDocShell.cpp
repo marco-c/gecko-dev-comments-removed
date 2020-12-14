@@ -9943,19 +9943,39 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
             mBrowsingContext->GetParentWindowContext();
         MOZ_ASSERT(parentContext);
         const bool popupBlocked = [&] {
+          const bool active = mBrowsingContext->GetIsActive();
+
+          
+          
+          
+          
+          const bool hasFreePass = [&] {
+            if (!active || !parentContext->SameOriginWithTop()) {
+              return false;
+            }
+            nsGlobalWindowInner* win =
+                parentContext->TopWindowContext()->GetInnerWindow();
+            return win && win->TryOpenExternalProtocolIframe();
+          }();
+
           if (parentContext->ConsumeTransientUserGestureActivation()) {
+            
             return false;
           }
 
           
           
           
-          if (mBrowsingContext->GetIsActive() &&
+          if (active &&
               PopupBlocker::ConsumeTimerTokenForExternalProtocolIframe()) {
             return false;
           }
 
           if (parentContext->CanShowPopup()) {
+            return false;
+          }
+
+          if (hasFreePass) {
             return false;
           }
 

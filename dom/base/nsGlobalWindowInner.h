@@ -1255,8 +1255,15 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   void HintIsLoading(bool aIsLoading);
 
- public:
   mozilla::dom::ContentMediaController* GetContentMediaController();
+
+  bool TryOpenExternalProtocolIframe() {
+    if (mHasOpenedExternalProtocolFrame) {
+      return false;
+    }
+    mHasOpenedExternalProtocolFrame = true;
+    return true;
+  }
 
  private:
   RefPtr<mozilla::dom::ContentMediaController> mContentMediaController;
@@ -1324,6 +1331,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   bool mHintedWasLoading : 1;
+
+  
+  
+  bool mHasOpenedExternalProtocolFrame : 1;
 
   nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
   nsRefPtrHashtable<nsGenericHashKey<mozilla::dom::GamepadHandle>,
