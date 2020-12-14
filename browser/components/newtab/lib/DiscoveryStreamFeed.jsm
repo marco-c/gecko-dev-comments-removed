@@ -373,12 +373,10 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     const cachedData = (await this.cache.get()) || {};
     let { layout } = cachedData;
     if (this.isExpired({ cachedData, key: "layout", isStartup })) {
-      const start = Cu.now();
       const layoutResponse = await this.fetchFromEndpoint(
         this.config.layout_endpoint
       );
       if (layoutResponse && layoutResponse.layout) {
-        this.layoutRequestTime = Math.round(Cu.now() - start);
         layout = {
           lastUpdated: Date.now(),
           spocs: layoutResponse.spocs,
@@ -601,7 +599,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     
     
     this.componentFeedFetched = false;
-    const start = Cu.now();
     const { newFeedsPromises, newFeeds } = this.buildFeedPromises(
       DiscoveryStream.layout,
       isStartup,
@@ -613,7 +610,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
     if (this.componentFeedFetched) {
       this.cleanUpTopRecImpressionPref(newFeeds);
-      this.componentFeedRequestTime = Math.round(Cu.now() - start);
     }
     await this.cache.set("feeds", newFeeds);
     sendUpdate({
@@ -707,7 +703,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       if (this.isExpired({ cachedData, key: "spocs", isStartup })) {
         const endpoint = this.store.getState().DiscoveryStream.spocs
           .spocs_endpoint;
-        const start = Cu.now();
 
         const headers = new Headers();
         headers.append("content-type", "application/json");
@@ -727,7 +722,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         });
 
         if (spocsResponse) {
-          this.spocsRequestTime = Math.round(Cu.now() - start);
           spocsState = {
             lastUpdated: Date.now(),
             spocs: {
@@ -994,7 +988,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
   async scoreItems(items, type) {
     const filtered = [];
-    const scoreStart = Cu.now();
     const spocsPersonalized = this.store.getState().Prefs.values[
       PREF_SPOCS_PERSONALIZED
     ];
@@ -1020,9 +1013,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       
       .sort(this.sortItem);
 
-    if (this.personalized && personalizedByType) {
-      this.providerSwitcher.dispatchRelevanceScoreDuration(scoreStart);
-    }
     return { data, filtered };
   }
 
@@ -1428,91 +1418,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     return active.concat(expired);
   }
 
-  
-
-
-  async reportCacheAge() {
-    const cachedData = (await this.cache.get()) || {};
-    const { layout, spocs, feeds } = cachedData;
-    let cacheAge = Date.now();
-    let updated = false;
-
-    if (layout && layout.lastUpdated && layout.lastUpdated < cacheAge) {
-      updated = true;
-      cacheAge = layout.lastUpdated;
-    }
-
-    if (spocs && spocs.lastUpdated && spocs.lastUpdated < cacheAge) {
-      updated = true;
-      cacheAge = spocs.lastUpdated;
-    }
-
-    if (feeds) {
-      Object.keys(feeds).forEach(url => {
-        const feed = feeds[url];
-        if (feed.lastUpdated && feed.lastUpdated < cacheAge) {
-          updated = true;
-          cacheAge = feed.lastUpdated;
-        }
-      });
-    }
-
-    if (updated) {
-      this.store.dispatch(
-        ac.PerfEvent({
-          event: "DS_CACHE_AGE_IN_SEC",
-          value: Math.round((Date.now() - cacheAge) / 1000),
-        })
-      );
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  reportRequestTime() {
-    if (this.layoutRequestTime) {
-      this.store.dispatch(
-        ac.PerfEvent({
-          event: "LAYOUT_REQUEST_TIME",
-          value: this.layoutRequestTime,
-        })
-      );
-    }
-    if (this.spocsRequestTime) {
-      this.store.dispatch(
-        ac.PerfEvent({
-          event: "SPOCS_REQUEST_TIME",
-          value: this.spocsRequestTime,
-        })
-      );
-    }
-    if (this.componentFeedRequestTime) {
-      this.store.dispatch(
-        ac.PerfEvent({
-          event: "COMPONENT_FEED_REQUEST_TIME",
-          value: this.componentFeedRequestTime,
-        })
-      );
-    }
-    if (this.totalRequestTime) {
-      this.store.dispatch(
-        ac.PerfEvent({
-          event: "DS_FEED_TOTAL_REQUEST_TIME",
-          value: this.totalRequestTime,
-        })
-      );
-    }
-  }
-
   enableStories() {
     if (this.config.enabled && this.loaded) {
       
@@ -1521,14 +1426,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
   }
 
   async enable() {
-    
-    await this.reportCacheAge();
-    const start = Cu.now();
     await this.refreshAll({ updateOpenTabs: true, isStartup: true });
     Services.obs.addObserver(this, "idle-daily");
     this.loaded = true;
-    this.totalRequestTime = Math.round(Cu.now() - start);
-    this.reportRequestTime();
   }
 
   async reset() {
@@ -1578,10 +1478,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     );
     this.domainAffinitiesLastUpdated = null;
     this.loaded = false;
-    this.layoutRequestTime = undefined;
-    this.spocsRequestTime = undefined;
-    this.componentFeedRequestTime = undefined;
-    this.totalRequestTime = undefined;
   }
 
   async onPrefChange() {

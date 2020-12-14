@@ -237,14 +237,7 @@ this.TopStoriesFeed = class TopStoriesFeed {
       return provider;
     }
 
-    const start = Cu.now();
     const v1Provider = this.UserDomainAffinityProvider(...args);
-    this.store.dispatch(
-      ac.PerfEvent({
-        event: "topstories.domain.affinity.calculation.ms",
-        value: Math.round(Cu.now() - start),
-      })
-    );
 
     return v1Provider;
   }
@@ -332,41 +325,11 @@ this.TopStoriesFeed = class TopStoriesFeed {
     return { topics: this.topics, stories: this.stories };
   }
 
-  dispatchRelevanceScore(start) {
-    let event = "PERSONALIZATION_V1_ITEM_RELEVANCE_SCORE_DURATION";
-    let initialized = true;
-    if (!this.personalized) {
-      return;
-    }
-    const { affinityProviderV2 } = this;
-    if (affinityProviderV2 && affinityProviderV2.use_v2) {
-      if (this.affinityProvider) {
-        initialized = this.affinityProvider.initialized;
-        event = "PERSONALIZATION_V2_ITEM_RELEVANCE_SCORE_DURATION";
-      }
-    }
-
-    
-    
-    
-    
-    
-    if (initialized) {
-      this.store.dispatch(
-        ac.PerfEvent({
-          event,
-          value: Math.round(Cu.now() - start),
-        })
-      );
-    }
-  }
-
   transform(items) {
     if (!items) {
       return [];
     }
 
-    const scoreStart = Cu.now();
     const calcResult = items
       .filter(s => !NewTabUtils.blockedLinks.isBlocked({ url: s.url }))
       .map(s => {
@@ -403,7 +366,6 @@ this.TopStoriesFeed = class TopStoriesFeed {
       })
       .sort(this.personalized ? this.compareScore : (a, b) => 0);
 
-    this.dispatchRelevanceScore(scoreStart);
     return calcResult;
   }
 

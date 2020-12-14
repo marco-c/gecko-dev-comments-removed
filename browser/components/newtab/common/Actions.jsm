@@ -138,7 +138,6 @@ for (const type of [
   "SUBMIT_SIGNIN",
   "SYSTEM_TICK",
   "TELEMETRY_IMPRESSION_STATS",
-  "TELEMETRY_PERFORMANCE_EVENT",
   "TELEMETRY_UNDESIRED_EVENT",
   "TELEMETRY_USER_EVENT",
   "TOP_SITES_CANCEL_EDIT",
@@ -341,21 +340,6 @@ function UndesiredEvent(data, importContext = globalImportContext) {
 
 
 
-function PerfEvent(data, importContext = globalImportContext) {
-  const action = {
-    type: actionTypes.TELEMETRY_PERFORMANCE_EVENT,
-    data,
-  };
-  return importContext === UI_CODE ? AlsoToMain(action) : action;
-}
-
-
-
-
-
-
-
-
 function ImpressionStats(data, importContext = globalImportContext) {
   const action = {
     type: actionTypes.TELEMETRY_IMPRESSION_STATS,
@@ -422,7 +406,6 @@ this.actionCreators = {
   UserEvent,
   ASRouterUserEvent,
   UndesiredEvent,
-  PerfEvent,
   ImpressionStats,
   AlsoToOneContent,
   OnlyToOneContent,
