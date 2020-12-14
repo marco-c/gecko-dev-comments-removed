@@ -3,13 +3,17 @@
 
 
 
+#include "nsAppStartupNotifier.h"
+#include "nsServiceManagerUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsICategoryManager.h"
+#include "nsIObserver.h"
 #include "nsXPCOM.h"
-#include "nsAppStartupNotifier.h"
 #include "mozilla/SimpleEnumerator.h"
+
+using namespace mozilla;
 
 
 nsresult nsAppStartupNotifier::NotifyObservers(const char* aCategory) {

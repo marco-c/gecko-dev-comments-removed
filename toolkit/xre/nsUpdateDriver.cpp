@@ -55,6 +55,10 @@
 using namespace mozilla;
 
 static LazyLogModule sUpdateLog("updatedriver");
+
+#ifdef LOG
+#  undef LOG
+#endif
 #define LOG(args) MOZ_LOG(sUpdateLog, mozilla::LogLevel::Debug, args)
 
 #ifdef XP_WIN
