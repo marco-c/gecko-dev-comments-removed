@@ -11,6 +11,13 @@ const { ContentProcessDomain } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const CONSOLE_MESSAGE_LEVEL_MAP = {
+  [Ci.nsIConsoleMessage.debug]: "verbose",
+  [Ci.nsIConsoleMessage.info]: "info",
+  [Ci.nsIConsoleMessage.warn]: "warning",
+  [Ci.nsIConsoleMessage.error]: "error",
+};
+
 class Log extends ContentProcessDomain {
   constructor(session) {
     super(session);
@@ -28,15 +35,14 @@ class Log extends ContentProcessDomain {
       this.enabled = true;
 
       Services.console.registerListener(this);
-      Services.obs.addObserver(this, "console-api-log-event");
     }
   }
 
   disable() {
     if (this.enabled) {
       this.enabled = false;
+
       Services.console.unregisterListener(this);
-      Services.obs.removeObserver(this, "console-api-log-event");
     }
   }
 
@@ -49,17 +55,24 @@ class Log extends ContentProcessDomain {
 
 
 
-  observe(message, topic) {
-    let entry;
-    if (message instanceof Ci.nsIScriptError) {
-      entry = fromScriptError(message);
-    } else if (message instanceof Ci.nsIConsoleMessage) {
-      entry = fromConsoleMessage(message);
-    } else if (topic == "console-api-log-event") {
-      entry = fromConsoleAPI(message.wrappedJSObject);
-    }
+  observe(message) {
+    
+    if (
+      message instanceof Ci.nsIScriptError &&
+      message.flags == Ci.nsIScriptError.errorFlag
+    ) {
+      const entry = {
+        source: "javascript",
+        level: CONSOLE_MESSAGE_LEVEL_MAP[message.flags],
+        lineNumber: message.lineNumber,
+        stacktrace: message.stack,
+        text: message.errorMessage,
+        timestamp: message.timeStamp,
+        url: message.sourceName,
+      };
 
-    this.emit("Log.entryAdded", { entry });
+      this.emit("Log.entryAdded", { entry });
+    }
   }
 
   
@@ -67,63 +80,4 @@ class Log extends ContentProcessDomain {
   get QueryInterface() {
     return ChromeUtils.generateQI(["nsIConsoleListener"]);
   }
-}
-
-const MESSAGE_LEVELS = {
-  [Ci.nsIConsoleMessage.debug]: "verbose",
-  [Ci.nsIConsoleMessage.info]: "info",
-  [Ci.nsIConsoleMessage.warn]: "warning",
-  [Ci.nsIConsoleMessage.error]: "error",
-};
-
-function fromConsoleMessage(message) {
-  const level = MESSAGE_LEVELS[message.logLevel];
-
-  return {
-    source: "javascript",
-    level,
-    text: message.message,
-    timestamp: Date.now(),
-  };
-}
-
-function fromConsoleAPI(message) {
-  
-  
-
-  
-  
-  const levels = {
-    log: "verbose",
-    info: "info",
-    warn: "warning",
-    error: "error",
-    exception: "error",
-  };
-  const level = levels[message.level] || "info";
-
-  return {
-    source: "javascript",
-    level,
-    text: message.arguments,
-    url: message.filename,
-    lineNumber: message.lineNumber,
-    stackTrace: message.stacktrace,
-    timestamp: Date.now(),
-  };
-}
-
-function fromScriptError(error) {
-  const { logLevel, errorMessage, sourceName, lineNumber, stack } = error;
-  const level = MESSAGE_LEVELS[logLevel];
-
-  return {
-    source: "javascript",
-    level,
-    text: errorMessage,
-    timestamp: Date.now(),
-    url: sourceName,
-    lineNumber,
-    stackTrace: stack,
-  };
 }
