@@ -147,6 +147,7 @@ add_task(async function() {
   certOverrideService.rememberValidityOverride(
     "localhost",
     server.port,
+    {},
     cert,
     overrideBits,
     true
@@ -154,13 +155,13 @@ add_task(async function() {
 
   
   registerCleanupFunction(() => {
-    certOverrideService.clearValidityOverride("localhost", server.port);
+    certOverrideService.clearValidityOverride("localhost", server.port, {});
     server.close();
   });
 
   
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
-    const TLS_HANDSHAKE_FAILURE_URI = `https:
+    const TLS_HANDSHAKE_FAILURE_URI = `https://localhost:${server.port}/`;
     
     
     BrowserTestUtils.loadURI(browser, TLS_HANDSHAKE_FAILURE_URI);

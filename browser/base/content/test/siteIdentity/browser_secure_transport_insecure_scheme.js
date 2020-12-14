@@ -153,6 +153,7 @@ add_task(async function() {
   certOverrideService.rememberValidityOverride(
     "localhost",
     server.port,
+    {},
     cert,
     overrideBits,
     true
@@ -180,7 +181,7 @@ add_task(async function() {
   );
   
   registerCleanupFunction(() => {
-    certOverrideService.clearValidityOverride("localhost", server.port);
+    certOverrideService.clearValidityOverride("localhost", server.port, {});
     Services.prefs.setIntPref("network.proxy.type", oldProxyType);
     MockRegistrar.unregister(mockProxy);
     server.close();
