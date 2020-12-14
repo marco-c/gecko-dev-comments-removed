@@ -365,7 +365,6 @@ ElementEditor.prototype = {
   _createScrollableBadge: function() {
     const isInteractive =
       this.isOverflowDebuggingEnabled &&
-      this.node.walkerFront.traits.supportsOverflowDebugging2 &&
       
       
       !this.node.isDocumentElement;
@@ -503,10 +502,7 @@ ElementEditor.prototype = {
 
 
   updateOverflowHighlight: async function() {
-    if (
-      !this.isOverflowDebuggingEnabled ||
-      !this.node.walkerFront.traits.supportsOverflowDebugging2
-    ) {
+    if (!this.isOverflowDebuggingEnabled) {
       return;
     }
 
