@@ -206,3 +206,32 @@ interface nsIGleanUuid : nsISupports
   [implicit_jscontext]
   jsval testGetValue(in ACString aStorageName);
 };
+
+[scriptable, uuid(1b01424a-1f55-11eb-92a5-0754f6c3f240)]
+interface nsIGleanEvent : nsISupports
+{
+  
+
+
+
+
+  [implicit_jscontext]
+  void record([optional] in jsval aExtra);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [implicit_jscontext]
+  jsval testGetValue(in AUTF8String aStorageName);
+};
