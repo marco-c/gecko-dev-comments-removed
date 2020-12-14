@@ -3768,9 +3768,7 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
         float curDist = curCoord - curSide * cur.w;
         
         
-        
-        
-        float k = nextafterf(prevDist / (prevDist - curDist), 0.0f);
+        float k = nextafterf(prevDist / (prevDist - curDist), 1.0f);
         outP[numClip] = prev + (cur - prev) * k;
         outInterp[numClip] = prevInterp + (curInterp - prevInterp) * k;
         numClip++;
