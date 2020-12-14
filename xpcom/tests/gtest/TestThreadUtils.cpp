@@ -511,6 +511,15 @@ static void TestNewRunnableMethod(bool aNamed) {
     
     char* message = (char*)"Test message";
 
+    {
+      auto bar = MakeRefPtr<nsBar>();
+
+      NS_DispatchToMainThread(
+          aNamed ? NewRunnableMethod("unused", std::move(bar), &nsBar::DoBar1)
+                 : NewRunnableMethod("nsBar::DoBar1", std::move(bar),
+                                     &nsBar::DoBar1));
+    }
+
     NS_DispatchToMainThread(
         aNamed ? NewRunnableMethod("unused", bar, &nsBar::DoBar1)
                : NewRunnableMethod("nsBar::DoBar1", bar, &nsBar::DoBar1));
