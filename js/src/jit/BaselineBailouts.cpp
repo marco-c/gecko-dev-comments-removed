@@ -2062,6 +2062,11 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       
       
       return false;
+
+    case BailoutKind::OnStackInvalidation:
+      
+      break;
+
     default:
       MOZ_CRASH("Unknown bailout kind!");
   }
