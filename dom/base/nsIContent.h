@@ -329,8 +329,8 @@ class nsIContent : public nsINode {
 
 
 
-  virtual bool PerformAccesskey(bool aKeyCausesActivation,
-                                bool aIsTrustedEvent) {
+  MOZ_CAN_RUN_SCRIPT virtual bool PerformAccesskey(bool aKeyCausesActivation,
+                                                   bool aIsTrustedEvent) {
     return false;
   }
 

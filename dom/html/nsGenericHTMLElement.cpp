@@ -2416,7 +2416,7 @@ bool nsGenericHTMLElement::PerformAccesskey(bool aKeyCausesActivation,
 
   
   bool focused = true;
-  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+  if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
     fm->SetFocus(this, nsIFocusManager::FLAG_BYKEY);
 
     

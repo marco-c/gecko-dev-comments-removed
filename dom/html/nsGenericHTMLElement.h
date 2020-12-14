@@ -279,8 +279,8 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
   virtual bool IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                                int32_t* aTabIndex);
-  virtual bool PerformAccesskey(bool aKeyCausesActivation,
-                                bool aIsTrustedEvent) override;
+  MOZ_CAN_RUN_SCRIPT virtual bool PerformAccesskey(
+      bool aKeyCausesActivation, bool aIsTrustedEvent) override;
 
   
 
