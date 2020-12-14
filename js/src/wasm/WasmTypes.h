@@ -1981,6 +1981,20 @@ typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
 
 
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+struct EventDesc {
+  EventKind kind;
+  ResultType type;
+
+  EventDesc(EventKind kind, ResultType type) : kind(kind), type(type) {}
+};
+
+typedef Vector<EventDesc, 0, SystemAllocPolicy> EventDescVector;
+#endif
+
+
+
+
 
 
 struct ElemSegment : AtomicRefCounted<ElemSegment> {
