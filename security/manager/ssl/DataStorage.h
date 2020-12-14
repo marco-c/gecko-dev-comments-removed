@@ -25,6 +25,7 @@ class psm_DataStorageTest;
 
 namespace mozilla {
 class DataStorageMemoryReporter;
+class TaskQueue;
 
 namespace dom {
 class ContentChild;
@@ -167,9 +168,11 @@ class DataStorage : public nsIObserver {
   
   bool IsReady();
 
+  void ShutdownTimer();
+
  private:
   explicit DataStorage(const nsString& aFilename);
-  virtual ~DataStorage();
+  virtual ~DataStorage() = default;
 
   static already_AddRefed<DataStorage> GetFromRawFileName(
       const nsString& aFilename);
@@ -205,18 +208,11 @@ class DataStorage : public nsIObserver {
   void WaitForReady();
   nsresult AsyncWriteData(const MutexAutoLock& aProofOfLock);
   nsresult AsyncReadData(const MutexAutoLock& aProofOfLock);
-  nsresult AsyncSetTimer(const MutexAutoLock& aProofOfLock);
-  nsresult DispatchShutdownTimer(const MutexAutoLock& aProofOfLock);
 
   static nsresult ValidateKeyAndValue(const nsCString& aKey,
                                       const nsCString& aValue);
   static void TimerCallback(nsITimer* aTimer, void* aClosure);
-  void SetTimer();
-  void ShutdownTimer();
   void NotifyObservers(const char* aTopic);
-
-  static void PrefChanged(const char* aPref, void* aSelf);
-  void PrefChanged(const char* aPref);
 
   bool GetInternal(const nsCString& aKey, Entry* aEntry, DataStorageType aType,
                    const MutexAutoLock& aProofOfLock);
@@ -237,12 +233,12 @@ class DataStorage : public nsIObserver {
   DataStorageTable mTemporaryDataTable;
   DataStorageTable mPrivateDataTable;
   nsCOMPtr<nsIFile> mBackingFile;
-  nsCOMPtr<nsITimer>
-      mTimer;            
-  uint32_t mTimerDelay;  
-  bool mPendingWrite;    
+  bool mPendingWrite;  
   bool mShuttingDown;
+  RefPtr<TaskQueue> mBackgroundTaskQueue;
   
+
+  nsCOMPtr<nsITimer> mTimer;  
 
   mozilla::Atomic<bool> mInitCalled;  
 
