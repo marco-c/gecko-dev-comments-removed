@@ -196,10 +196,6 @@ MOZ_MUST_USE bool DeserializeModule(JSContext* cx, const Bytes& serialized,
 
 
 bool IsWasmExportedFunction(JSFunction* fun);
-MOZ_MUST_USE bool CheckFuncRefValue(JSContext* cx, HandleValue v,
-                                    MutableHandleFunction fun);
-MOZ_MUST_USE bool CheckEqRefValue(JSContext* cx, HandleValue v,
-                                  MutableHandleAnyRef vp);
 
 Instance& ExportedFunctionToInstance(JSFunction* fun);
 WasmInstanceObject* ExportedFunctionToInstanceObject(JSFunction* fun);
@@ -207,17 +203,6 @@ uint32_t ExportedFunctionToFuncIndex(JSFunction* fun);
 
 bool IsSharedWasmMemoryObject(JSObject* obj);
 
-
-
-
-
-
-
-
-
-MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType targetType, HandleValue v,
-                               MutableHandleFunction fnval,
-                               MutableHandleAnyRef refval);
 
 
 
