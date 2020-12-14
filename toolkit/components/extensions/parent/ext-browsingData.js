@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 var { XPCOMUtils } = ChromeUtils.import(
@@ -12,12 +10,11 @@ var { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   LoginHelper: "resource://gre/modules/LoginHelper.jsm",
-  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
-  Preferences: "resource://gre/modules/Preferences.jsm",
-  Sanitizer: "resource:///modules/Sanitizer.jsm",
   Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
+  
+  BrowsingDataDelegate: "resource:///modules/ExtensionBrowsingData.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -33,11 +30,26 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const YIELD_PERIOD = 10;
 
+
+
+
+
+
+
+
+const toPRTime = date => {
+  if (typeof date != "number" && date.constructor.name != "Date") {
+    throw new Error("Invalid value passed to toPRTime");
+  }
+  return date * 1000;
+};
+
 const makeRange = options => {
   return options.since == null
     ? null
-    : [PlacesUtils.toPRTime(options.since), PlacesUtils.toPRTime(Date.now())];
+    : [toPRTime(options.since), toPRTime(Date.now())];
 };
+global.makeRange = makeRange;
 
 
 
@@ -100,8 +112,7 @@ const clearCookies = async function(options) {
     }
     for (const cookie of cookies) {
       if (
-        (!options.since ||
-          cookie.creationTime >= PlacesUtils.toPRTime(options.since)) &&
+        (!options.since || cookie.creationTime >= toPRTime(options.since)) &&
         (!options.hostnames ||
           options.hostnames.includes(cookie.host.replace(/^\./, ""))) &&
         (!options.cookieStoreId ||
@@ -125,18 +136,6 @@ const clearCookies = async function(options) {
     
     cookieMgr.removeAll();
   }
-};
-
-const clearDownloads = options => {
-  return Sanitizer.items.downloads.clear(makeRange(options));
-};
-
-const clearFormData = options => {
-  return Sanitizer.items.formdata.clear(makeRange(options));
-};
-
-const clearHistory = options => {
-  return Sanitizer.items.history.clear(makeRange(options));
 };
 
 
@@ -272,166 +271,144 @@ const clearServiceWorkers = options => {
   );
 };
 
-const doRemoval = (options, dataToRemove, extension) => {
-  if (
-    options.originTypes &&
-    (options.originTypes.protectedWeb || options.originTypes.extension)
-  ) {
-    return Promise.reject({
-      message:
-        "Firefox does not support protectedWeb or extension as originTypes.",
-    });
+class BrowsingDataImpl {
+  constructor(extension) {
+    this.extension = extension;
+    
+    
+    this.platformDelegate = new BrowsingDataDelegate(extension);
   }
 
-  if (options.cookieStoreId) {
-    const SUPPORTED_TYPES = ["cookies", "indexedDB"];
-    if (Services.domStorageManager.nextGenLocalStorageEnabled) {
-      
-      SUPPORTED_TYPES.push("localStorage");
+  handleRemoval(dataType, options) {
+    
+    let result = this.platformDelegate.handleRemoval(dataType, options);
+    if (result !== undefined) {
+      return result;
     }
 
-    for (let dataType in dataToRemove) {
-      if (dataToRemove[dataType] && !SUPPORTED_TYPES.includes(dataType)) {
+    
+    switch (dataType) {
+      case "cache":
+        return clearCache(options);
+      case "cookies":
+        return clearCookies(options);
+      case "indexedDB":
+        return clearIndexedDB(options);
+      case "localStorage":
+        return clearLocalStorage(options);
+      case "passwords":
+        return clearPasswords(options);
+      case "pluginData":
+        this.extension?.logger.warn(
+          "pluginData has been deprecated (along with Flash plugin support)"
+        );
+        return Promise.resolve();
+      case "serviceWorkers":
+        return clearServiceWorkers(options);
+      default:
+        return undefined;
+    }
+  }
+
+  doRemoval(options, dataToRemove) {
+    if (
+      options.originTypes &&
+      (options.originTypes.protectedWeb || options.originTypes.extension)
+    ) {
+      return Promise.reject({
+        message:
+          "Firefox does not support protectedWeb or extension as originTypes.",
+      });
+    }
+
+    if (options.cookieStoreId) {
+      const SUPPORTED_TYPES = ["cookies", "indexedDB"];
+      if (Services.domStorageManager.nextGenLocalStorageEnabled) {
+        
+        SUPPORTED_TYPES.push("localStorage");
+      }
+
+      for (let dataType in dataToRemove) {
+        if (dataToRemove[dataType] && !SUPPORTED_TYPES.includes(dataType)) {
+          return Promise.reject({
+            message: `Firefox does not support clearing ${dataType} with 'cookieStoreId'.`,
+          });
+        }
+      }
+
+      if (
+        !isPrivateCookieStoreId(options.cookieStoreId) &&
+        !isDefaultCookieStoreId(options.cookieStoreId) &&
+        !getContainerForCookieStoreId(options.cookieStoreId)
+      ) {
         return Promise.reject({
-          message: `Firefox does not support clearing ${dataType} with 'cookieStoreId'.`,
+          message: `Invalid cookieStoreId: ${options.cookieStoreId}`,
         });
       }
     }
 
-    if (
-      !isPrivateCookieStoreId(options.cookieStoreId) &&
-      !isDefaultCookieStoreId(options.cookieStoreId) &&
-      !getContainerForCookieStoreId(options.cookieStoreId)
-    ) {
-      return Promise.reject({
-        message: `Invalid cookieStoreId: ${options.cookieStoreId}`,
-      });
-    }
-  }
-
-  let removalPromises = [];
-  let invalidDataTypes = [];
-  for (let dataType in dataToRemove) {
-    if (dataToRemove[dataType]) {
-      switch (dataType) {
-        case "cache":
-          removalPromises.push(clearCache(options));
-          break;
-        case "cookies":
-          removalPromises.push(clearCookies(options));
-          break;
-        case "downloads":
-          removalPromises.push(clearDownloads(options));
-          break;
-        case "formData":
-          removalPromises.push(clearFormData(options));
-          break;
-        case "history":
-          removalPromises.push(clearHistory(options));
-          break;
-        case "indexedDB":
-          removalPromises.push(clearIndexedDB(options));
-          break;
-        case "localStorage":
-          removalPromises.push(clearLocalStorage(options));
-          break;
-        case "passwords":
-          removalPromises.push(clearPasswords(options));
-          break;
-        case "pluginData":
-          extension?.logger.warn(
-            "pluginData has been deprecated (along with Flash plugin support)"
-          );
-          break;
-        case "serviceWorkers":
-          removalPromises.push(clearServiceWorkers(options));
-          break;
-        default:
+    let removalPromises = [];
+    let invalidDataTypes = [];
+    for (let dataType in dataToRemove) {
+      if (dataToRemove[dataType]) {
+        let result = this.handleRemoval(dataType, options);
+        if (result === undefined) {
           invalidDataTypes.push(dataType);
+        } else {
+          removalPromises.push(result);
+        }
       }
     }
+    if (invalidDataTypes.length) {
+      this.extension.logger.warn(
+        `Firefox does not support dataTypes: ${invalidDataTypes.toString()}.`
+      );
+    }
+    return Promise.all(removalPromises);
   }
-  if (extension && invalidDataTypes.length) {
-    extension.logger.warn(
-      `Firefox does not support dataTypes: ${invalidDataTypes.toString()}.`
-    );
+
+  settings() {
+    return this.platformDelegate.settings();
   }
-  return Promise.all(removalPromises);
-};
+}
 
 this.browsingData = class extends ExtensionAPI {
   getAPI(context) {
-    let { extension } = context;
+    const impl = new BrowsingDataImpl(context.extension);
     return {
       browsingData: {
         settings() {
-          const PREF_DOMAIN = "privacy.cpd.";
-          
-          
-          const PREF_LIST = [
-            "cache",
-            "cookies",
-            "history",
-            "formdata",
-            "downloads",
-          ];
-
-          
-          
-          
-          
-          let clearRange = Sanitizer.getClearRange();
-          let since = clearRange ? clearRange[0] / 1000 : 0;
-          let options = { since };
-
-          let dataToRemove = {};
-          let dataRemovalPermitted = {};
-
-          for (let item of PREF_LIST) {
-            
-            
-            const name = item === "formdata" ? "formData" : item;
-            dataToRemove[name] = Preferences.get(`${PREF_DOMAIN}${item}`);
-            
-            
-            dataRemovalPermitted[name] = true;
-          }
-
-          return Promise.resolve({
-            options,
-            dataToRemove,
-            dataRemovalPermitted,
-          });
+          return impl.settings();
         },
         remove(options, dataToRemove) {
-          return doRemoval(options, dataToRemove, extension);
+          return impl.doRemoval(options, dataToRemove);
         },
         removeCache(options) {
-          return doRemoval(options, { cache: true });
+          return impl.doRemoval(options, { cache: true });
         },
         removeCookies(options) {
-          return doRemoval(options, { cookies: true });
+          return impl.doRemoval(options, { cookies: true });
         },
         removeDownloads(options) {
-          return doRemoval(options, { downloads: true });
+          return impl.doRemoval(options, { downloads: true });
         },
         removeFormData(options) {
-          return doRemoval(options, { formData: true });
+          return impl.doRemoval(options, { formData: true });
         },
         removeHistory(options) {
-          return doRemoval(options, { history: true });
+          return impl.doRemoval(options, { history: true });
         },
         removeIndexedDB(options) {
-          return doRemoval(options, { indexedDB: true });
+          return impl.doRemoval(options, { indexedDB: true });
         },
         removeLocalStorage(options) {
-          return doRemoval(options, { localStorage: true });
+          return impl.doRemoval(options, { localStorage: true });
         },
         removePasswords(options) {
-          return doRemoval(options, { passwords: true });
+          return impl.doRemoval(options, { passwords: true });
         },
         removePluginData(options) {
-          return doRemoval(options, { pluginData: true }, extension);
+          return impl.doRemoval(options, { pluginData: true });
         },
       },
     };
