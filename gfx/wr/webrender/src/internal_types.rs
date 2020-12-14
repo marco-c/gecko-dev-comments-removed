@@ -235,10 +235,6 @@ pub struct SwizzleSettings {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CacheTextureId(pub u32);
 
-impl CacheTextureId {
-    pub const INVALID: CacheTextureId = CacheTextureId(!0);
-}
-
 
 
 
@@ -251,6 +247,21 @@ impl CacheTextureId {
 
 
 pub type LayerIndex = usize;
+
+
+
+
+
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct SavedTargetIndex(pub u32);
+
+impl SavedTargetIndex {
+    pub const PENDING: Self = SavedTargetIndex(!0);
+}
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -265,9 +276,17 @@ pub enum TextureSource {
     
     Invalid,
     
-    TextureCache(CacheTextureId, ImageBufferKind, Swizzle),
+    TextureCache(CacheTextureId, Swizzle),
     
     External(DeferredResolveIndex, ImageBufferKind),
+    
+    PrevPassAlpha,
+    
+    PrevPassColor,
+    
+    
+    
+    RenderTaskCache(SavedTargetIndex, Swizzle),
     
     
     Dummy,
@@ -276,12 +295,16 @@ pub enum TextureSource {
 impl TextureSource {
     pub fn image_buffer_kind(&self) -> ImageBufferKind {
         match *self {
-            TextureSource::TextureCache(_, image_buffer_kind, _) => image_buffer_kind,
+            TextureSource::TextureCache(..) => ImageBufferKind::Texture2D,
 
             TextureSource::External(_, image_buffer_kind) => image_buffer_kind,
 
             
-            TextureSource::Dummy => ImageBufferKind::Texture2DArray,
+            TextureSource::PrevPassAlpha
+            | TextureSource::PrevPassColor
+            | TextureSource::RenderTaskCache(..)
+            | TextureSource::Dummy => ImageBufferKind::Texture2DArray,
+
 
             TextureSource::Invalid => ImageBufferKind::Texture2D,
         }

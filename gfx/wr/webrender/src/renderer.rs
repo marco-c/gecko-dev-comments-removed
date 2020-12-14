@@ -72,11 +72,11 @@ use crate::glyph_rasterizer::{GlyphFormat, GlyphRasterizer};
 use crate::gpu_cache::{GpuBlockData, GpuCacheUpdate, GpuCacheUpdateList};
 use crate::gpu_cache::{GpuCacheDebugChunk, GpuCacheDebugCmd};
 use crate::gpu_types::{PrimitiveHeaderI, PrimitiveHeaderF, PrimitiveInstanceData, ScalingInstance, SvgFilterInstance};
-use crate::gpu_types::{ClearInstance, CompositeInstance, TransformData, ZBufferId, BlurInstance};
+use crate::gpu_types::{ClearInstance, CompositeInstance, TransformData, ZBufferId};
 use crate::internal_types::{TextureSource, ResourceCacheError};
 use crate::internal_types::{CacheTextureId, DebugOutput, FastHashMap, FastHashSet, LayerIndex, RenderedDocument, ResultMsg};
 use crate::internal_types::{TextureCacheAllocationKind, TextureCacheUpdate, TextureUpdateList, TextureUpdateSource};
-use crate::internal_types::{RenderTargetInfo, Swizzle, DeferredResolveIndex};
+use crate::internal_types::{RenderTargetInfo, SavedTargetIndex, Swizzle, DeferredResolveIndex};
 use malloc_size_of::MallocSizeOfOps;
 use crate::picture::{self, ResolvedSurfaceTexture};
 use crate::prim_store::DeferredResolve;
@@ -91,10 +91,11 @@ use crate::resource_cache::ResourceCache;
 use crate::scene_builder_thread::{SceneBuilderThread, SceneBuilderThreadChannels, LowPrioritySceneBuilderThread};
 use crate::screen_capture::AsyncScreenshotGrabber;
 use crate::shade::{Shaders, WrShaders};
+use smallvec::SmallVec;
 use crate::guillotine_allocator::{GuillotineAllocator, FreeRectSlice};
 use crate::texture_cache::TextureCache;
 use crate::render_target::{AlphaRenderTarget, ColorRenderTarget, PictureCacheTarget};
-use crate::render_target::{RenderTarget, TextureCacheRenderTarget};
+use crate::render_target::{RenderTarget, TextureCacheRenderTarget, RenderTargetList};
 use crate::render_target::{RenderTargetKind, BlitJob, BlitJobSource};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::util::drain_filter;
@@ -358,6 +359,8 @@ pub(crate) enum TextureSampler {
     Color0,
     Color1,
     Color2,
+    PrevPassAlpha,
+    PrevPassColor,
     GpuCache,
     TransformPalette,
     RenderTasks,
@@ -386,13 +389,15 @@ impl Into<TextureSlot> for TextureSampler {
             TextureSampler::Color0 => TextureSlot(0),
             TextureSampler::Color1 => TextureSlot(1),
             TextureSampler::Color2 => TextureSlot(2),
-            TextureSampler::GpuCache => TextureSlot(3),
-            TextureSampler::TransformPalette => TextureSlot(4),
-            TextureSampler::RenderTasks => TextureSlot(5),
-            TextureSampler::Dither => TextureSlot(6),
-            TextureSampler::PrimitiveHeadersF => TextureSlot(7),
-            TextureSampler::PrimitiveHeadersI => TextureSlot(8),
-            TextureSampler::ClipMask => TextureSlot(9),
+            TextureSampler::PrevPassAlpha => TextureSlot(3),
+            TextureSampler::PrevPassColor => TextureSlot(4),
+            TextureSampler::GpuCache => TextureSlot(5),
+            TextureSampler::TransformPalette => TextureSlot(6),
+            TextureSampler::RenderTasks => TextureSlot(7),
+            TextureSampler::Dither => TextureSlot(8),
+            TextureSampler::PrimitiveHeadersF => TextureSlot(9),
+            TextureSampler::PrimitiveHeadersI => TextureSlot(10),
+            TextureSampler::ClipMask => TextureSlot(11),
         }
     }
 }
@@ -1150,6 +1155,13 @@ enum PartialPresentMode {
 
 
 
+struct ActiveTexture {
+    texture: Texture,
+    saved_index: Option<SavedTargetIndex>,
+}
+
+
+
 
 
 
@@ -1164,6 +1176,32 @@ struct TextureResolver {
     
     
     dummy_cache_texture: Texture,
+
+    
+    prev_pass_color: Option<ActiveTexture>,
+    prev_pass_alpha: Option<ActiveTexture>,
+
+    
+    
+    
+    
+    
+    saved_targets: Vec<Texture>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    render_target_pool: Vec<Texture>,
 }
 
 impl TextureResolver {
@@ -1187,6 +1225,10 @@ impl TextureResolver {
             texture_cache_map: FastHashMap::default(),
             external_images: FastHashMap::default(),
             dummy_cache_texture,
+            prev_pass_alpha: None,
+            prev_pass_color: None,
+            saved_targets: Vec::default(),
+            render_target_pool: Vec::new(),
         }
     }
 
@@ -1196,23 +1238,141 @@ impl TextureResolver {
         for (_id, texture) in self.texture_cache_map {
             device.delete_texture(texture);
         }
+
+        for texture in self.render_target_pool {
+            device.delete_texture(texture);
+        }
     }
 
     fn begin_frame(&mut self) {
+        assert!(self.prev_pass_color.is_none());
+        assert!(self.prev_pass_alpha.is_none());
+        assert!(self.saved_targets.is_empty());
+    }
+
+    fn end_frame(&mut self, device: &mut Device, frame_id: GpuFrameId) {
+        
+        self.end_pass(device, None, None);
+        
+        while let Some(target) = self.saved_targets.pop() {
+            self.return_to_pool(device, target);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.gc_targets(
+            device,
+            frame_id,
+            32 * 1024 * 1024,
+            32 * 1024 * 1024 * 10,
+            60,
+        );
+    }
+
+    
+    fn return_to_pool(&mut self, device: &mut Device, target: Texture) {
+        device.invalidate_render_target(&target);
+        self.render_target_pool.push(target);
+    }
+
+    
+    fn on_memory_pressure(
+        &mut self,
+        device: &mut Device,
+    ) {
+        
+        for target in self.render_target_pool.drain(..) {
+            device.delete_texture(target);
+        }
+    }
+
+    
+    pub fn gc_targets(
+        &mut self,
+        device: &mut Device,
+        current_frame_id: GpuFrameId,
+        total_bytes_threshold: usize,
+        total_bytes_red_line_threshold: usize,
+        frames_threshold: usize,
+    ) {
+        
+        let mut rt_pool_size_in_bytes: usize = self.render_target_pool
+            .iter()
+            .map(|t| t.size_in_bytes())
+            .sum();
+
+        
+        
+        if rt_pool_size_in_bytes <= total_bytes_threshold {
+            return;
+        }
+
+        
+        self.render_target_pool.sort_by_key(|t| t.last_frame_used());
+
+        
+        let mut retained_targets = SmallVec::<[Texture; 8]>::new();
+
+        for target in self.render_target_pool.drain(..) {
+            
+            
+            
+            
+            if (rt_pool_size_in_bytes > total_bytes_red_line_threshold) ||
+               (rt_pool_size_in_bytes > total_bytes_threshold &&
+                !target.used_recently(current_frame_id, frames_threshold))
+            {
+                rt_pool_size_in_bytes -= target.size_in_bytes();
+                device.delete_texture(target);
+            } else {
+                retained_targets.push(target);
+            }
+        }
+
+        self.render_target_pool.extend(retained_targets);
     }
 
     fn end_pass(
         &mut self,
         device: &mut Device,
-        textures_to_invalidate: &[CacheTextureId],
+        a8_texture: Option<ActiveTexture>,
+        rgba8_texture: Option<ActiveTexture>,
     ) {
         
         
         
-        for texture_id in textures_to_invalidate {
-            let render_target = &self.texture_cache_map[texture_id];
-            device.invalidate_render_target(render_target);
+        
+        if let Some(at) = self.prev_pass_color.take() {
+            if let Some(index) = at.saved_index {
+                assert_eq!(self.saved_targets.len() as u32, index.0);
+                self.saved_targets.push(at.texture);
+            } else {
+                self.return_to_pool(device, at.texture);
+            }
         }
+        if let Some(at) = self.prev_pass_alpha.take() {
+            if let Some(index) = at.saved_index {
+                assert_eq!(self.saved_targets.len() as u32, index.0);
+                self.saved_targets.push(at.texture);
+            } else {
+                self.return_to_pool(device, at.texture);
+            }
+        }
+
+        
+        
+        self.prev_pass_color = rgba8_texture;
+        self.prev_pass_alpha = a8_texture;
     }
 
     
@@ -1226,6 +1386,24 @@ impl TextureResolver {
                 device.bind_texture(sampler, &self.dummy_cache_texture, swizzle);
                 swizzle
             }
+            TextureSource::PrevPassAlpha => {
+                let texture = match self.prev_pass_alpha {
+                    Some(ref at) => &at.texture,
+                    None => &self.dummy_cache_texture,
+                };
+                let swizzle = Swizzle::default();
+                device.bind_texture(sampler, texture, swizzle);
+                swizzle
+            }
+            TextureSource::PrevPassColor => {
+                let texture = match self.prev_pass_color {
+                    Some(ref at) => &at.texture,
+                    None => &self.dummy_cache_texture,
+                };
+                let swizzle = Swizzle::default();
+                device.bind_texture(sampler, texture, swizzle);
+                swizzle
+            }
             TextureSource::External(ref index, _) => {
                 let texture = self.external_images
                     .get(index)
@@ -1233,9 +1411,31 @@ impl TextureResolver {
                 device.bind_external_texture(sampler, texture);
                 Swizzle::default()
             }
-            TextureSource::TextureCache(index, _, swizzle) => {
+            TextureSource::TextureCache(index, swizzle) => {
                 let texture = &self.texture_cache_map[&index];
                 device.bind_texture(sampler, texture, swizzle);
+                swizzle
+            }
+            TextureSource::RenderTaskCache(saved_index, swizzle) => {
+                if saved_index.0 < self.saved_targets.len() as u32 {
+                    let texture = &self.saved_targets[saved_index.0 as usize];
+                    device.bind_texture(sampler, texture, swizzle)
+                } else {
+                    
+                    if Some(saved_index) == self.prev_pass_color.as_ref().and_then(|at| at.saved_index) {
+                        let texture = match self.prev_pass_color {
+                            Some(ref at) => &at.texture,
+                            None => &self.dummy_cache_texture,
+                        };
+                        device.bind_texture(sampler, texture, swizzle);
+                    } else if Some(saved_index) == self.prev_pass_alpha.as_ref().and_then(|at| at.saved_index) {
+                        let texture = match self.prev_pass_alpha {
+                            Some(ref at) => &at.texture,
+                            None => &self.dummy_cache_texture,
+                        };
+                        device.bind_texture(sampler, texture, swizzle);
+                    }
+                }
                 swizzle
             }
         }
@@ -1250,11 +1450,28 @@ impl TextureResolver {
             TextureSource::Dummy => {
                 Some((&self.dummy_cache_texture, Swizzle::default()))
             }
+            TextureSource::PrevPassAlpha => Some((
+                match self.prev_pass_alpha {
+                    Some(ref at) => &at.texture,
+                    None => &self.dummy_cache_texture,
+                },
+                Swizzle::default(),
+            )),
+            TextureSource::PrevPassColor => Some((
+                match self.prev_pass_color {
+                    Some(ref at) => &at.texture,
+                    None => &self.dummy_cache_texture,
+                },
+                Swizzle::default(),
+            )),
             TextureSource::External(..) => {
                 panic!("BUG: External textures cannot be resolved, they can only be bound.");
             }
-            TextureSource::TextureCache(index, _, swizzle) => {
+            TextureSource::TextureCache(index, swizzle) => {
                 Some((&self.texture_cache_map[&index], swizzle))
+            }
+            TextureSource::RenderTaskCache(saved_index, swizzle) => {
+                Some((&self.saved_targets[saved_index.0 as usize], swizzle))
             }
         }
     }
@@ -1286,6 +1503,9 @@ impl TextureResolver {
         
         for t in self.texture_cache_map.values() {
             report.texture_cache_textures += t.size_in_bytes();
+        }
+        for t in self.render_target_pool.iter() {
+            report.render_target_textures += t.size_in_bytes();
         }
 
         report
@@ -2850,6 +3070,7 @@ impl Renderer {
                     
                     
                     if memory_pressure {
+                        self.texture_resolver.on_memory_pressure(&mut self.device);
                         self.texture_upload_pbo_pool.on_memory_pressure(&mut self.device);
                     }
 
@@ -3552,6 +3773,12 @@ impl Renderer {
                 surface_origin_is_top_left,
             );
         }
+        
+        
+        
+        
+        
+        self.texture_resolver.end_frame(&mut self.device, cpu_frame_id);
         self.texture_upload_pbo_pool.end_frame(&mut self.device);
         self.device.end_frame();
 
@@ -4045,12 +4272,21 @@ impl Renderer {
     }
 
     fn bind_textures(&mut self, textures: &BatchTextures) {
-        for i in 0 .. 3 {
-            self.texture_resolver.bind(
-                &textures.input.colors[i],
+        let mut swizzles = [Swizzle::default(); 3];
+        for i in 0 .. textures.colors.len() {
+            let swizzle = self.texture_resolver.bind(
+                &textures.colors[i],
                 TextureSampler::color(i),
                 &mut self.device,
             );
+            if cfg!(debug_assertions) {
+                swizzles[i] = swizzle;
+                for j in 0 .. i {
+                    if textures.colors[j] == textures.colors[i] && swizzles[j] != swizzle {
+                        error!("Swizzling conflict in {:?}", textures);
+                    }
+                }
+            }
         }
 
         self.texture_resolver.bind(
@@ -4115,13 +4351,9 @@ impl Renderer {
             self.device.disable_scissor();
         }
 
-        let texture_source = TextureSource::TextureCache(
-            readback.get_target_texture(),
-            ImageBufferKind::Texture2DArray,
-            Swizzle::default(),
-        );
         let (cache_texture, _) = self.texture_resolver
-            .resolve(&texture_source).expect("bug: no source texture");
+            .resolve(&TextureSource::PrevPassColor)
+            .unwrap();
 
         
         
@@ -4208,12 +4440,7 @@ impl Renderer {
                     
                     let source = &render_tasks[task_id];
                     let (source_rect, layer) = source.get_target_rect();
-                    let source_texture = TextureSource::TextureCache(
-                        source.get_target_texture(),
-                        ImageBufferKind::Texture2DArray,
-                        Swizzle::default(),
-                    );
-                    (source_texture, layer.0, source_rect)
+                    (TextureSource::PrevPassColor, layer.0, source_rect)
                 }
             };
 
@@ -4675,9 +4902,9 @@ impl Renderer {
                     
                     
                     let uv_rects = [
-                        self.texture_resolver.get_uv_rect(&textures.input.colors[0], planes[0].uv_rect),
-                        self.texture_resolver.get_uv_rect(&textures.input.colors[1], planes[1].uv_rect),
-                        self.texture_resolver.get_uv_rect(&textures.input.colors[2], planes[2].uv_rect),
+                        self.texture_resolver.get_uv_rect(&textures.colors[0], planes[0].uv_rect),
+                        self.texture_resolver.get_uv_rect(&textures.colors[1], planes[1].uv_rect),
+                        self.texture_resolver.get_uv_rect(&textures.colors[2], planes[2].uv_rect),
                     ];
 
                     let instance = CompositeInstance::new_yuv(
@@ -4700,6 +4927,7 @@ impl Renderer {
                     ( textures, instance )
                 },
                 ResolvedExternalSurfaceColorData::Rgb{ ref plane, flip_y, .. } => {
+
                     self.shaders
                         .borrow_mut()
                         .get_composite_shader(
@@ -4712,7 +4940,7 @@ impl Renderer {
                         );
 
                     let textures = BatchTextures::composite_rgb(plane.texture);
-                    let mut uv_rect = self.texture_resolver.get_uv_rect(&textures.input.colors[0], plane.uv_rect);
+                    let mut uv_rect = self.texture_resolver.get_uv_rect(&textures.colors[0], plane.uv_rect);
                     if flip_y {
                         let y = uv_rect.uv0.y;
                         uv_rect.uv0.y = uv_rect.uv1.y;
@@ -4857,9 +5085,9 @@ impl Renderer {
                             
                             
                             let uv_rects = [
-                                self.texture_resolver.get_uv_rect(&textures.input.colors[0], planes[0].uv_rect),
-                                self.texture_resolver.get_uv_rect(&textures.input.colors[1], planes[1].uv_rect),
-                                self.texture_resolver.get_uv_rect(&textures.input.colors[2], planes[2].uv_rect),
+                                self.texture_resolver.get_uv_rect(&textures.colors[0], planes[0].uv_rect),
+                                self.texture_resolver.get_uv_rect(&textures.colors[1], planes[1].uv_rect),
+                                self.texture_resolver.get_uv_rect(&textures.colors[2], planes[2].uv_rect),
                             ];
 
                             (
@@ -5144,15 +5372,19 @@ impl Renderer {
                 .bind(&mut self.device, projection, &mut self.renderer_errors);
 
             if !target.vertical_blurs.is_empty() {
-                self.draw_blurs(
+                self.draw_instanced_batch(
                     &target.vertical_blurs,
+                    VertexArrayKind::Blur,
+                    &BatchTextures::empty(),
                     stats,
                 );
             }
 
             if !target.horizontal_blurs.is_empty() {
-                self.draw_blurs(
+                self.draw_instanced_batch(
                     &target.horizontal_blurs,
+                    VertexArrayKind::Blur,
+                    &BatchTextures::empty(),
                     stats,
                 );
             }
@@ -5186,25 +5418,6 @@ impl Renderer {
 
         if clear_depth.is_some() {
             self.device.invalidate_depth_target();
-        }
-    }
-
-    fn draw_blurs(
-        &mut self,
-        blurs: &FastHashMap<TextureSource, Vec<BlurInstance>>,
-        stats: &mut RendererStats,
-    ) {
-        for (texture, blurs) in blurs {
-            let textures = BatchTextures::composite_rgb(
-                *texture,
-            );
-
-            self.draw_instanced_batch(
-                blurs,
-                VertexArrayKind::Blur,
-                &textures,
-                stats,
-            );
         }
     }
 
@@ -5339,15 +5552,19 @@ impl Renderer {
                 .bind(&mut self.device, projection, &mut self.renderer_errors);
 
             if !target.vertical_blurs.is_empty() {
-                self.draw_blurs(
+                self.draw_instanced_batch(
                     &target.vertical_blurs,
+                    VertexArrayKind::Blur,
+                    &BatchTextures::empty(),
                     stats,
                 );
             }
 
             if !target.horizontal_blurs.is_empty() {
-                self.draw_blurs(
+                self.draw_instanced_batch(
                     &target.horizontal_blurs,
+                    VertexArrayKind::Blur,
+                    &BatchTextures::empty(),
                     stats,
                 );
             }
@@ -5400,32 +5617,40 @@ impl Renderer {
     ) {
         profile_scope!("draw_texture_cache_target");
 
+        let texture_source = TextureSource::TextureCache(*texture, Swizzle::default());
+        let projection = {
+            let (texture, _) = self.texture_resolver
+                .resolve(&texture_source)
+                .expect("BUG: invalid target texture");
+            let target_size = texture.get_dimensions();
+
+            Transform3D::ortho(
+                0.0,
+                target_size.width as f32,
+                0.0,
+                target_size.height as f32,
+                self.device.ortho_near_plane(),
+                self.device.ortho_far_plane(),
+            )
+        };
+
         self.device.disable_depth();
         self.device.disable_depth_write();
 
         self.set_blend(false, FramebufferKind::Other);
 
-        let texture = &self.texture_resolver.texture_cache_map[texture];
-        let target_size = texture.get_dimensions();
-
-        let projection = Transform3D::ortho(
-            0.0,
-            target_size.width as f32,
-            0.0,
-            target_size.height as f32,
-            self.device.ortho_near_plane(),
-            self.device.ortho_far_plane(),
-        );
-
-        let draw_target = DrawTarget::from_texture(
-            texture,
-            layer,
-            false,
-        );
-        self.device.bind_draw_target(draw_target);
-
         {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_CLEAR);
+
+            let (texture, _) = self.texture_resolver
+                .resolve(&texture_source)
+                .expect("BUG: invalid target texture");
+            let draw_target = DrawTarget::from_texture(
+                texture,
+                layer,
+                false,
+            );
+            self.device.bind_draw_target(draw_target);
 
             self.device.disable_depth();
             self.device.disable_depth_write();
@@ -5569,8 +5794,10 @@ impl Renderer {
                 }.bind(&mut self.device, &projection, &mut self.renderer_errors);
             }
 
-            self.draw_blurs(
+            self.draw_instanced_batch(
                 &target.horizontal_blurs,
+                VertexArrayKind::Blur,
+                &BatchTextures::empty(),
                 stats,
             );
         }
@@ -5790,6 +6017,85 @@ impl Renderer {
         partial_present_mode
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn allocate_target_texture<T: RenderTarget>(
+        &mut self,
+        list: &mut RenderTargetList<T>,
+    ) -> Option<ActiveTexture> {
+        if list.targets.is_empty() {
+            return None
+        }
+
+        
+        
+        
+        
+        let mut bounding_rect = DeviceIntRect::zero();
+        for t in list.targets.iter() {
+            bounding_rect = t.used_rect().union(&bounding_rect);
+        }
+        debug_assert_eq!(bounding_rect.origin, DeviceIntPoint::zero());
+        let dimensions = DeviceIntSize::new(
+            (bounding_rect.size.width + 255) & !255,
+            (bounding_rect.size.height + 255) & !255,
+        );
+
+        self.profile.inc(profiler::USED_TARGETS);
+
+        
+        
+        let selector = TargetSelector {
+            size: dimensions,
+            num_layers: list.targets.len(),
+            format: list.format,
+        };
+        let index = self.texture_resolver.render_target_pool
+            .iter()
+            .position(|texture| {
+                selector == TargetSelector {
+                    size: texture.get_dimensions(),
+                    num_layers: texture.get_layer_count() as usize,
+                    format: texture.get_format(),
+                }
+            });
+
+        let rt_info = RenderTargetInfo { has_depth: list.needs_depth() };
+        let texture = if let Some(idx) = index {
+            let mut t = self.texture_resolver.render_target_pool.swap_remove(idx);
+            self.device.reuse_render_target::<u8>(&mut t, rt_info);
+            t
+        } else {
+            self.profile.inc(profiler::CREATED_TARGETS);
+            self.device.create_texture(
+                ImageBufferKind::Texture2DArray,
+                list.format,
+                dimensions.width,
+                dimensions.height,
+                TextureFilter::Linear,
+                Some(rt_info),
+                list.targets.len() as _,
+            )
+        };
+
+        list.check_ready(&texture);
+        Some(ActiveTexture {
+            texture,
+            saved_index: list.saved_index.clone(),
+        })
+    }
+
     fn bind_frame_data(&mut self, frame: &mut Frame) {
         profile_scope!("bind_frame_data");
 
@@ -5802,6 +6108,9 @@ impl Renderer {
         );
         self.current_vertex_data_textures =
             (self.current_vertex_data_textures + 1) % VERTEX_DATA_TEXTURE_COUNT;
+
+        debug_assert!(self.texture_resolver.prev_pass_alpha.is_none());
+        debug_assert!(self.texture_resolver.prev_pass_color.is_none());
     }
 
     fn update_native_surfaces(&mut self) {
@@ -5936,7 +6245,21 @@ impl Renderer {
             #[cfg(not(target_os = "android"))]
             let _gm = self.gpu_profiler.start_marker(&format!("pass {}", _pass_index));
 
+            self.texture_resolver.bind(
+                &TextureSource::PrevPassAlpha,
+                TextureSampler::PrevPassAlpha,
+                &mut self.device,
+            );
+            self.texture_resolver.bind(
+                &TextureSource::PrevPassColor,
+                TextureSampler::PrevPassColor,
+                &mut self.device,
+            );
+
             profile_scope!("offscreen target");
+
+            let alpha_tex = self.allocate_target_texture(&mut pass.alpha);
+            let color_tex = self.allocate_target_texture(&mut pass.color);
 
             
             
@@ -6029,19 +6352,8 @@ impl Renderer {
 
             for (target_index, target) in pass.alpha.targets.iter().enumerate() {
                 results.stats.alpha_target_count += 1;
-
-                let texture_id = pass
-                    .alpha
-                    .texture_id
-                    .expect("bug: no surface for pass");
-
-                let alpha_tex = self.texture_resolver
-                    .texture_cache_map
-                    .get_mut(&texture_id)
-                    .expect("bug: texture not allocated");
-
                 let draw_target = DrawTarget::from_texture(
-                    alpha_tex,
+                    &alpha_tex.as_ref().unwrap().texture,
                     target_index,
                     false,
                 );
@@ -6064,28 +6376,10 @@ impl Renderer {
                 );
             }
 
-            let color_rt_info = RenderTargetInfo { has_depth: pass.color.needs_depth() };
-
             for (target_index, target) in pass.color.targets.iter().enumerate() {
                 results.stats.color_target_count += 1;
-
-                let texture_id = pass
-                    .color
-                    .texture_id
-                    .expect("bug: no surface for pass");
-
-                let color_tex = self.texture_resolver
-                    .texture_cache_map
-                    .get_mut(&texture_id)
-                    .expect("bug: texture not allocated");
-
-                self.device.reuse_render_target::<u8>(
-                    color_tex,
-                    color_rt_info,
-                );
-
                 let draw_target = DrawTarget::from_texture(
-                    color_tex,
+                    &color_tex.as_ref().unwrap().texture,
                     target_index,
                     target.needs_depth(),
                 );
@@ -6123,7 +6417,8 @@ impl Renderer {
             
             self.texture_resolver.end_pass(
                 &mut self.device,
-                &pass.textures_to_invalidate,
+                alpha_tex,
+                color_tex,
             );
             {
                 profile_scope!("gl.flush");
@@ -6306,11 +6601,8 @@ impl Renderer {
             None => return,
         };
 
-        let textures = self.texture_resolver
-            .texture_cache_map
-            .values()
-            .filter(|texture| { texture.is_render_target() })
-            .collect::<Vec<&Texture>>();
+        let textures =
+            self.texture_resolver.render_target_pool.iter().collect::<Vec<&Texture>>();
 
         Self::do_debug_blit(
             &mut self.device,

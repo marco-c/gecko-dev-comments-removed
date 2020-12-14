@@ -12,7 +12,7 @@ use crate::debug_render::DebugItem;
 use crate::gpu_cache::{GpuCache, GpuCacheHandle};
 use crate::gpu_types::{PrimitiveHeaders, TransformPalette, ZBufferIdGenerator};
 use crate::gpu_types::TransformData;
-use crate::internal_types::{CacheTextureId, FastHashMap, PlaneSplitter};
+use crate::internal_types::{FastHashMap, PlaneSplitter, SavedTargetIndex};
 use crate::picture::{DirtyRegion, PictureUpdateState, SliceId, TileCacheInstance};
 use crate::picture::{SurfaceInfo, SurfaceIndex, ROOT_SURFACE_INDEX};
 use crate::picture::{BackdropKind, SubpixelMode, TileCacheLogger, RasterConfig, PictureCompositeMode};
@@ -549,15 +549,6 @@ impl FrameBuilder {
             let use_dual_source_blending = scene.config.dual_source_blending_is_enabled &&
                                            scene.config.dual_source_blending_is_supported;
 
-            
-            
-
-            
-            let mut saved_texture_ids = Vec::new();
-            
-            
-            let mut active_texture_ids = Vec::new();
-
             for pass in &mut passes {
                 let mut ctx = RenderTargetContext {
                     global_device_pixel_scale,
@@ -592,60 +583,6 @@ impl FrameBuilder {
 
                 has_texture_cache_tasks |= !pass.texture_cache.is_empty();
                 has_texture_cache_tasks |= !pass.picture_cache.is_empty();
-
-                
-                
-                let mut save_color = false;
-                let mut save_alpha = false;
-
-                for task_id in &pass.tasks {
-                    let task = &render_tasks[*task_id];
-                    match task.target_kind() {
-                        RenderTargetKind::Color => {
-                            save_color |= task.save_target;
-                        }
-                        RenderTargetKind::Alpha => {
-                            save_alpha |= task.save_target;
-                        }
-                    }
-                }
-
-                
-                
-                
-                for texture_id in active_texture_ids.drain(..) {
-                    resource_cache.return_render_target_to_pool(texture_id);
-                    pass.textures_to_invalidate.push(texture_id);
-                }
-
-                if let Some(texture_id) = pass.color.texture_id {
-                    if save_color {
-                        saved_texture_ids.push(texture_id);
-                    } else {
-                        active_texture_ids.push(texture_id);
-                    }
-                }
-
-                if let Some(texture_id) = pass.alpha.texture_id {
-                    if save_alpha {
-                        saved_texture_ids.push(texture_id);
-                    } else {
-                        active_texture_ids.push(texture_id);
-                    }
-                }
-            }
-
-            assert!(active_texture_ids.is_empty());
-
-            
-            
-            
-            
-            
-
-            for texture_id in saved_texture_ids.drain(..) {
-                resource_cache.return_render_target_to_pool(texture_id);
-                passes.last_mut().unwrap().textures_to_invalidate.push(texture_id);
             }
 
             let mut ctx = RenderTargetContext {
@@ -789,6 +726,23 @@ pub fn build_render_pass(
 ) {
     profile_scope!("build_render_pass");
 
+    let saved_color = if pass.tasks.iter().any(|&task_id| {
+        let t = &render_tasks[task_id];
+        t.target_kind() == RenderTargetKind::Color && t.saved_index.is_some()
+    }) {
+        Some(render_tasks.save_target())
+    } else {
+        None
+    };
+    let saved_alpha = if pass.tasks.iter().any(|&task_id| {
+        let t = &render_tasks[task_id];
+        t.target_kind() == RenderTargetKind::Alpha && t.saved_index.is_some()
+    }) {
+        Some(render_tasks.save_target())
+    } else {
+        None
+    };
+
     
     
     
@@ -811,7 +765,7 @@ pub fn build_render_pass(
                         RenderTargetKind::Color => pass.color.allocate(size),
                         RenderTargetKind::Alpha => pass.alpha.allocate(size),
                     };
-                    *origin = Some((alloc_origin, CacheTextureId::INVALID, target_index));
+                    *origin = Some((alloc_origin, target_index));
                     (None, target_index.0)
                 }
                 RenderTaskLocation::PictureCache { .. } => {
@@ -834,6 +788,15 @@ pub fn build_render_pass(
                     continue;
                 }
             };
+
+            
+            if let Some(index) = task.saved_index {
+                assert_eq!(index, SavedTargetIndex::PENDING);
+                task.saved_index = match target_kind {
+                    RenderTargetKind::Color => saved_color,
+                    RenderTargetKind::Alpha => saved_alpha,
+                };
+            }
 
             
             
@@ -1025,6 +988,7 @@ pub fn build_render_pass(
         gpu_cache,
         render_tasks,
         deferred_resolves,
+        saved_color,
         prim_headers,
         transforms,
         z_generator,
@@ -1035,52 +999,12 @@ pub fn build_render_pass(
         gpu_cache,
         render_tasks,
         deferred_resolves,
+        saved_alpha,
         prim_headers,
         transforms,
         z_generator,
         composite_state,
     );
-
-    
-    
-    
-    
-    
-    
-    
-
-    for &task_id in &pass.tasks {
-        let task = &mut render_tasks[task_id];
-        let target_kind = task.target_kind();
-
-        match task.location {
-            RenderTaskLocation::TextureCache { .. } |
-            RenderTaskLocation::PictureCache { .. } => {}
-
-            RenderTaskLocation::Dynamic(None, _) => {
-                unreachable!();
-            }
-
-            RenderTaskLocation::Dynamic(Some((_, ref mut texture_id, _)), _) => {
-                assert_eq!(*texture_id, CacheTextureId::INVALID);
-
-                match target_kind {
-                    RenderTargetKind::Color => {
-                        *texture_id = pass
-                            .color
-                            .texture_id
-                            .expect("bug: color texture must be allocated by now");
-                    }
-                    RenderTargetKind::Alpha => {
-                        *texture_id = pass
-                            .alpha
-                            .texture_id
-                            .expect("bug: alpha texture must be allocated by now");
-                    }
-                }
-            }
-        }
-    }
 }
 
 
