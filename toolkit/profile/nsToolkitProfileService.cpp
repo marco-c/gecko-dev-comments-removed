@@ -1837,7 +1837,14 @@ nsToolkitProfileService::CreateProfile(nsIFile* aRootDir,
 
 
 bool nsToolkitProfileService::IsSnapEnvironment() {
-  return !!PR_GetEnv("SNAP_NAME");
+  
+  
+  
+  const char* snap_name = PR_GetEnv("SNAP_NAME");
+  if (snap_name == nullptr) {
+    return false;
+  }
+  return (strcmp(snap_name, "firefox") == 0);
 }
 
 
