@@ -170,6 +170,9 @@ class Task {
 
   virtual PerformanceCounter* GetPerformanceCounter() const { return nullptr; }
 
+  
+  virtual bool GetName(nsACString& aName) { return false; }
+
  protected:
   Task(bool aMainThreadOnly,
        uint32_t aPriority = static_cast<uint32_t>(kDefaultPriorityValue))
