@@ -100,6 +100,7 @@ class AccessibleCaretManagerTester : public ::testing::Test {
     }
 
     bool IsTerminated() const override { return false; }
+    bool IsScrollStarted() const { return mIsScrollStarted; }
 
     MOCK_CONST_METHOD0(GetCaretMode, CaretMode());
     MOCK_METHOD1(DispatchCaretStateChangedEvent,
@@ -715,6 +716,11 @@ MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
                               CaretChangedReason::Updateposition));
     EXPECT_CALL(check, Call("scrollend3"));
   }
+
+  
+  mManager.OnScrollStart();
+  mManager.OnScrollEnd();
+  EXPECT_EQ(mManager.IsScrollStarted(), false);
 
   
   mManager.UpdateCarets();
