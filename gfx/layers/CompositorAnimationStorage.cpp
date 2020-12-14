@@ -14,6 +14,7 @@
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"    
 #include "mozilla/layers/OMTAController.h"         
+#include "mozilla/ScopeExit.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "nsDeviceContext.h"                   

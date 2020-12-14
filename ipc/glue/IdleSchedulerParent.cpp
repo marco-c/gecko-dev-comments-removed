@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_page_load.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ipc/IdleSchedulerParent.h"

@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "GLContextProvider.h"
 #include "GLContextWGL.h"
@@ -17,6 +17,7 @@
 
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/webrender/RenderThread.h"
@@ -31,17 +32,17 @@ using namespace mozilla::widget;
 
 WGLLibrary sWGLLib;
 
-/*
-ScopedWindow::~ScopedWindow()
-{
-    if (mDC) {
-        MOZ_ALWAYS_TRUE( ReleaseDC(mDC) );
-    }
-    if (mWindow) {
-        MOZ_ALWAYS_TRUE( DestroyWindow(mWindow) );
-    }
-}
-*/
+
+
+
+
+
+
+
+
+
+
+
 static HWND CreateDummyWindow() {
   WNDCLASSW wc{};
   if (!GetClassInfoW(GetModuleHandle(nullptr), L"GLContextWGLClass", &wc)) {
@@ -52,7 +53,7 @@ static HWND CreateDummyWindow() {
     wc.lpszClassName = L"GLContextWGLClass";
     if (!RegisterClassW(&wc)) {
       NS_WARNING("Failed to register GLContextWGLClass?!");
-      // er. failed to register our class?
+      
       return nullptr;
     }
   }
@@ -79,7 +80,7 @@ bool WGLLibrary::EnsureInitialized() {
   mozilla::ScopedGfxFeatureReporter reporter("WGL");
 
   std::wstring libGLFilename = L"Opengl32.dll";
-  // SU_SPIES_DIRECTORY is for AMD CodeXL/gDEBugger
+  
   if (_wgetenv(L"SU_SPIES_DIRECTORY")) {
     libGLFilename =
         std::wstring(_wgetenv(L"SU_SPIES_DIRECTORY")) + L"\\opengl32.dll";
@@ -127,19 +128,19 @@ bool WGLLibrary::EnsureInitialized() {
   MOZ_ASSERT(mRootDc);
   if (!mRootDc) return false;
 
-  // --
+  
 
   {
     PIXELFORMATDESCRIPTOR pfd{};
     pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
     pfd.nVersion = 1;
     pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
-    // pfd.iPixelType = PFD_TYPE_RGBA;
-    // pfd.cColorBits = 24;
-    // pfd.cRedBits = 8;
-    // pfd.cGreenBits = 8;
-    // pfd.cBlueBits = 8;
-    // pfd.cAlphaBits = 8;
+    
+    
+    
+    
+    
+    
     pfd.iLayerType = PFD_MAIN_PLANE;
 
     const auto pixelFormat = ChoosePixelFormat(mRootDc, &pfd);
@@ -150,9 +151,9 @@ bool WGLLibrary::EnsureInitialized() {
     if (!setPixelFormatOk) return false;
   }
 
-  // --
+  
 
-  // create rendering context
+  
   mDummyGlrc = mSymbols.fCreateContext(mRootDc);
   if (!mDummyGlrc) return false;
 
@@ -168,34 +169,34 @@ bool WGLLibrary::EnsureInitialized() {
 
   const auto loader = GetSymbolLoader();
 
-  // Now we can grab all the other symbols that we couldn't without having
-  // a context current.
-  // clang-format off
+  
+  
+  
     const SymLoadStruct reqExtSymbols[] = {
         { (PRFuncPtr*)&mSymbols.fCreatePbuffer, {{ "wglCreatePbufferARB", "wglCreatePbufferEXT" }} },
         { (PRFuncPtr*)&mSymbols.fDestroyPbuffer, {{ "wglDestroyPbufferARB", "wglDestroyPbufferEXT" }} },
         { (PRFuncPtr*)&mSymbols.fGetPbufferDC, {{ "wglGetPbufferDCARB", "wglGetPbufferDCEXT" }} },
         { (PRFuncPtr*)&mSymbols.fReleasePbufferDC, {{ "wglReleasePbufferDCARB", "wglReleasePbufferDCEXT" }} },
-    //    { (PRFuncPtr*)&mSymbols.fBindTexImage, {{ "wglBindTexImageARB", "wglBindTexImageEXT" }} },
-    //    { (PRFuncPtr*)&mSymbols.fReleaseTexImage, {{ "wglReleaseTexImageARB", "wglReleaseTexImageEXT" }} },
+    
+    
         { (PRFuncPtr*)&mSymbols.fChoosePixelFormat, {{ "wglChoosePixelFormatARB", "wglChoosePixelFormatEXT" }} },
-    //    { (PRFuncPtr*)&mSymbols.fGetPixelFormatAttribiv, {{ "wglGetPixelFormatAttribivARB", "wglGetPixelFormatAttribivEXT" }} },
+    
         SYMBOL(GetExtensionsStringARB),
         END_OF_SYMBOLS
     };
-  // clang-format on
+  
   if (!loader.LoadSymbols(reqExtSymbols)) {
     NS_WARNING("reqExtSymbols missing");
     return false;
   }
 
-  // --
+  
 
   const auto extString = mSymbols.fGetExtensionsStringARB(mRootDc);
   MOZ_ASSERT(extString);
   MOZ_ASSERT(HasExtension(extString, "WGL_ARB_extensions_string"));
 
-  // --
+  
 
   if (HasExtension(extString, "WGL_ARB_create_context")) {
     const SymLoadStruct createContextSymbols[] = {
@@ -211,7 +212,7 @@ bool WGLLibrary::EnsureInitialized() {
     }
   }
 
-  // --
+  
 
   bool hasDXInterop2 = HasExtension(extString, "WGL_NV_DX_interop2");
   if (gfxVars::DXInterop2Blocked() &&
@@ -237,7 +238,7 @@ bool WGLLibrary::EnsureInitialized() {
     }
   }
 
-  // --
+  
 
   cleanup.release();
 
@@ -426,9 +427,9 @@ static RefPtr<GLContext> CreateForWidget(const HWND window,
   }
   if (!foundFormats) return nullptr;
 
-  // We need to make sure we call SetPixelFormat -after- calling
-  // EnsureInitialized, otherwise it can load/unload the dll and
-  // wglCreateContext will fail.
+  
+  
+  
 
   SetPixelFormat(dc, chosenFormat, nullptr);
   const auto context = sWGLLib.CreateContextWithFallback(dc, false);
@@ -454,7 +455,7 @@ already_AddRefed<GLContext> GLContextProviderWGL::CreateForCompositorWidget(
       .forget();
 }
 
-/*static*/
+
 already_AddRefed<GLContext> GLContextProviderWGL::CreateHeadless(
     const GLContextCreateDesc& desc, nsACString* const out_failureId) {
   auto& wgl = sWGLLib;
@@ -510,11 +511,11 @@ already_AddRefed<GLContext> GLContextProviderWGL::CreateHeadless(
   return RefPtr<GLContext>(gl.get()).forget();
 }
 
-/*static*/
+
 GLContext* GLContextProviderWGL::GetGlobalContext() { return nullptr; }
 
-/*static*/
+
 void GLContextProviderWGL::Shutdown() {}
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 

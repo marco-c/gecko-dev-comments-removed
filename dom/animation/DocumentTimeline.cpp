@@ -5,7 +5,6 @@
 
 
 #include "DocumentTimeline.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimelineBinding.h"
 #include "AnimationUtils.h"
