@@ -2609,18 +2609,8 @@ BrowserGlue.prototype = {
       
       {
         task: async () => {
-          if (
-            this._isNewProfile &&
-            Services.prefs.getBoolPref(
-              "browser.toolbars.bookmarks.2h2020",
-              false
-            ) &&
-            
-            !Cu.isInAutomation
-          ) {
-            await PlacesUIUtils.maybeAddImportButton();
-          }
-
+          
+          
           if (
             Services.prefs.getBoolPref(
               "browser.bookmarks.addedImportButton",
@@ -2628,6 +2618,20 @@ BrowserGlue.prototype = {
             )
           ) {
             PlacesUIUtils.removeImportButtonWhenImportSucceeds();
+            return;
+          }
+
+          
+          
+          
+          
+          
+          if (
+            this._isNewProfile &&
+            
+            !Cu.isInAutomation
+          ) {
+            await PlacesUIUtils.maybeAddImportButton();
           }
         },
       },
