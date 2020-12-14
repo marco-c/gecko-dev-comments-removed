@@ -1549,7 +1549,8 @@ bool ProxyObject::initExternalValueArrayAfterSwap(
 }
 
 
-void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
+void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
+                    AutoEnterOOMUnsafeRegion& oomUnsafe) {
   
   MOZ_ASSERT(IsBackgroundFinalized(a->asTenured().getAllocKind()) ==
              IsBackgroundFinalized(b->asTenured().getAllocKind()));
@@ -1557,8 +1558,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
 
   
   MOZ_ASSERT(cx->compartment() == a->compartment());
-
-  AutoEnterOOMUnsafeRegion oomUnsafe;
 
   
   

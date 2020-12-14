@@ -737,6 +737,8 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
 
   AutoDisableProxyCheck adpc;
 
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+
   JS::Compartment* destination = target->compartment();
 
   if (origobj->compartment() == destination) {
@@ -745,7 +747,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     
     
     AutoRealm ar(cx, origobj);
-    JSObject::swap(cx, origobj, target);
+    JSObject::swap(cx, origobj, target, oomUnsafe);
     newIdentity = origobj;
   } else if (ObjectWrapperMap::Ptr p = destination->lookupWrapper(origobj)) {
     
@@ -759,7 +761,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     NukeCrossCompartmentWrapper(cx, newIdentity);
 
     AutoRealm ar(cx, newIdentity);
-    JSObject::swap(cx, newIdentity, target);
+    JSObject::swap(cx, newIdentity, target, oomUnsafe);
   } else {
     
     newIdentity = target;
@@ -771,7 +773,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
   
   
   if (!RemapAllWrappersForObject(cx, origobj, newIdentity)) {
-    MOZ_CRASH();
+    oomUnsafe.crash("JS_TransplantObject");
   }
 
   
@@ -779,14 +781,16 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     RootedObject newIdentityWrapper(cx, newIdentity);
     AutoRealm ar(cx, origobj);
     if (!JS_WrapObject(cx, &newIdentityWrapper)) {
-      MOZ_CRASH();
+      MOZ_RELEASE_ASSERT(cx->isThrowingOutOfMemory() ||
+                         cx->isThrowingOverRecursed());
+      oomUnsafe.crash("JS_TransplantObject");
     }
     MOZ_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) == newIdentity);
-    JSObject::swap(cx, origobj, newIdentityWrapper);
+    JSObject::swap(cx, origobj, newIdentityWrapper, oomUnsafe);
     if (origobj->compartment()->lookupWrapper(newIdentity)) {
       MOZ_ASSERT(origobj->is<CrossCompartmentWrapperObject>());
       if (!origobj->compartment()->putWrapper(cx, newIdentity, origobj)) {
-        MOZ_CRASH();
+        oomUnsafe.crash("JS_TransplantObject");
       }
     }
   }
@@ -852,7 +856,7 @@ JS_FRIEND_API void js::RemapRemoteWindowProxies(
   
   if (targetCompartmentProxy) {
     AutoRealm ar(cx, targetCompartmentProxy);
-    JSObject::swap(cx, targetCompartmentProxy, target);
+    JSObject::swap(cx, targetCompartmentProxy, target, oomUnsafe);
     target.set(targetCompartmentProxy);
   }
 
