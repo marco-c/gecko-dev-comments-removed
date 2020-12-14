@@ -18,31 +18,41 @@ add_task(async function test_mediaStreamVideos() {
       await SpecialPowers.spawn(browser, [], async () => {
         
         
-        let newVideo = content.document.createElement("video");
-        newVideo.src = "test-video.mp4";
-        content.document.body.appendChild(newVideo);
-        newVideo.loop = true;
-      });
-      await ensureVideosReady(browser);
+        
+        
 
-      await SpecialPowers.spawn(browser, [], async () => {
-        let newVideo = content.document.body.lastChild;
-        newVideo.play();
-
-        for (let videoID of ["with-controls", "no-controls"]) {
-          let testedVideo = content.document.createElement("video");
-          testedVideo.id = videoID;
-          testedVideo.srcObject = newVideo.mozCaptureStream().clone();
-          content.document.body.prepend(testedVideo);
-          if (
-            testedVideo.readyState < content.HTMLMediaElement.HAVE_ENOUGH_DATA
-          ) {
-            info(`Waiting for 'canplaythrough' for '${testedVideo.id}'`);
-            await ContentTaskUtils.waitForEvent(testedVideo, "canplaythrough");
-          }
-          testedVideo.play();
-          testedVideo.pause();
+        function logEvent(element, ev) {
+          element.addEventListener(ev, () =>
+            info(
+              `${element.id} got event ${ev}. currentTime=${element.currentTime}`
+            )
+          );
         }
+
+        const newVideo = content.document.createElement("video");
+        newVideo.id = "new-video";
+        newVideo.src = "test-video.mp4";
+        newVideo.preload = "auto";
+        logEvent(newVideo, "timeupdate");
+        logEvent(newVideo, "ended");
+        content.document.body.appendChild(newVideo);
+        await ContentTaskUtils.waitForEvent(newVideo, "loadedmetadata");
+
+        const mediastreamPlayingPromises = [];
+        for (let videoID of ["with-controls", "no-controls"]) {
+          const testedVideo = content.document.createElement("video");
+          testedVideo.id = videoID;
+          testedVideo.srcObject = newVideo.mozCaptureStream();
+          testedVideo.play();
+          mediastreamPlayingPromises.push(
+            new Promise(r => (testedVideo.onplaying = r))
+          );
+          content.document.body.prepend(testedVideo);
+        }
+
+        await newVideo.play();
+        await Promise.all(mediastreamPlayingPromises);
+        newVideo.pause();
       });
     }
   );
