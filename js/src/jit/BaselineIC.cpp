@@ -584,11 +584,13 @@ void ICStubIterator::unlink(JSContext* cx, JSScript* script) {
   unlinked_ = true;
 }
 
+bool ICStub::makesGCCalls() const {
+  if (!isFallback()) {
+    return toCacheIR_Regular()->stubInfo()->makesGCCalls();
+  }
 
-bool ICStub::NonCacheIRStubMakesGCCalls(Kind kind) {
+  Kind kind = toFallbackStub()->kind();
   MOZ_ASSERT(IsValidKind(kind));
-  MOZ_ASSERT(!IsCacheIRKind(kind));
-
   switch (kind) {
     case Call_Fallback:
     
@@ -603,22 +605,13 @@ bool ICStub::NonCacheIRStubMakesGCCalls(Kind kind) {
   }
 }
 
-bool ICStub::makesGCCalls() const {
-  switch (kind()) {
-    case CacheIR_Regular:
-      return toCacheIR_Regular()->stubInfo()->makesGCCalls();
-    default:
-      return NonCacheIRStubMakesGCCalls(kind());
-  }
-}
+
 
 uint32_t ICStub::getEnteredCount() const {
-  switch (kind()) {
-    case CacheIR_Regular:
-      return toCacheIR_Regular()->enteredCount();
-    default:
-      return toFallbackStub()->enteredCount();
+  if (isFallback()) {
+    return toFallbackStub()->enteredCount();
   }
+  return toCacheIR_Regular()->enteredCount();
 }
 
 void ICFallbackStub::trackNotAttached(JSContext* cx, JSScript* script) {
@@ -649,18 +642,27 @@ void ICStub::updateCode(JitCode* code) {
 
 
 void ICStub::trace(JSTracer* trc) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  checkTraceMagic();
-#endif
   
-  if (!usesTrampolineCode()) {
+  if (!isFallback()) {
     JitCode* stubJitCode = jitCode();
     TraceManuallyBarrieredEdge(trc, &stubJitCode, "baseline-ic-stub-code");
+
+    TraceCacheIRStub(trc, this, toCacheIR_Regular()->stubInfo());
+    return;
   }
 
-  switch (kind()) {
+  ICFallbackStub* fallback = toFallbackStub();
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  fallback->checkTraceMagic();
+#endif
+
+  
+  MOZ_ASSERT(usesTrampolineCode());
+
+  switch (fallback->kind()) {
     case ICStub::NewArray_Fallback: {
-      ICNewArray_Fallback* stub = toNewArray_Fallback();
+      ICNewArray_Fallback* stub = fallback->toNewArray_Fallback();
       TraceNullableEdge(trc, &stub->templateObject(),
                         "baseline-newarray-template");
       TraceEdge(trc, &stub->templateGroup(),
@@ -668,19 +670,16 @@ void ICStub::trace(JSTracer* trc) {
       break;
     }
     case ICStub::NewObject_Fallback: {
-      ICNewObject_Fallback* stub = toNewObject_Fallback();
+      ICNewObject_Fallback* stub = fallback->toNewObject_Fallback();
       TraceNullableEdge(trc, &stub->templateObject(),
                         "baseline-newobject-template");
       break;
     }
     case ICStub::Rest_Fallback: {
-      ICRest_Fallback* stub = toRest_Fallback();
+      ICRest_Fallback* stub = fallback->toRest_Fallback();
       TraceEdge(trc, &stub->templateObject(), "baseline-rest-template");
       break;
     }
-    case ICStub::CacheIR_Regular:
-      TraceCacheIRStub(trc, this, toCacheIR_Regular()->stubInfo());
-      break;
     default:
       break;
   }
@@ -745,9 +744,6 @@ void ICFallbackStub::unlinkStubDontInvalidateWarp(Zone* zone, ICStub* prev,
     stub->trace(zone->barrierTracer());
   }
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  stub->checkTraceMagic();
-#endif
 #ifdef DEBUG
   
   
@@ -2797,22 +2793,13 @@ bool JitRuntime::generateBaselineICFallbackCode(JSContext* cx) {
   return true;
 }
 
+
 const CacheIRStubInfo* ICStub::cacheIRStubInfo() const {
-  switch (kind()) {
-    case ICStub::CacheIR_Regular:
-      return toCacheIR_Regular()->stubInfo();
-    default:
-      MOZ_CRASH("Not a CacheIR stub");
-  }
+  return toCacheIR_Regular()->stubInfo();
 }
 
 const uint8_t* ICStub::cacheIRStubData() {
-  switch (kind()) {
-    case ICStub::CacheIR_Regular:
-      return toCacheIR_Regular()->stubDataStart();
-    default:
-      MOZ_CRASH("Not a CacheIR stub");
-  }
+  return toCacheIR_Regular()->stubDataStart();
 }
 
 }  
