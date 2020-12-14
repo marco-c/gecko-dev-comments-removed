@@ -2284,7 +2284,9 @@ class EventManager {
 
     for (let [module, moduleEntry] of extension.persistentListeners) {
       let api = extension.apiManager.getAPI(module, extension, "addon_parent");
-      if (!api.primeListener) {
+      
+      
+      if (!api?.primeListener) {
         
         extension.persistentListeners.delete(module);
         EventManager._writePersistentListeners(extension);

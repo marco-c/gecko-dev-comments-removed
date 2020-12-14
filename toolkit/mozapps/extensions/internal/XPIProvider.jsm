@@ -779,6 +779,8 @@ class XPIStateLocation extends Map {
       addon
     );
 
+    XPIProvider.persistStartupData(addon);
+
     let xpiState = this._addState(addon.id, { file: addon._sourceBundle });
     xpiState.syncWithDB(addon, true);
 
@@ -3107,6 +3109,25 @@ var XPIProvider = {
     let state = XPIStates.findAddon(aID);
     state.startupData = aData;
     XPIStates.save();
+  },
+
+  
+
+
+
+
+
+
+  persistStartupData(addon, state) {
+    if (!addon.startupData) {
+      state = state || XPIStates.findAddon(addon.id);
+      if (state?.enabled) {
+        
+        
+        let persistentListeners = state.startupData?.persistentListeners;
+        addon.startupData = { persistentListeners };
+      }
+    }
   },
 
   getAddonIDByInstanceID(aInstanceID) {

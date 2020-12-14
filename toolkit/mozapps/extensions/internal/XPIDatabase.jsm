@@ -2931,7 +2931,6 @@ this.XPIDatabaseReconcile = {
 
 
 
-
   updateMetadata(aLocation, aOldAddon, aAddonState, aNewAddon) {
     logger.debug(`Add-on ${aOldAddon.id} modified in ${aLocation.name}`);
 
@@ -2973,6 +2972,8 @@ this.XPIDatabaseReconcile = {
 
     
     aNewAddon.updateDate = aAddonState.mtime;
+
+    XPIProvider.persistStartupData(aNewAddon, aAddonState);
 
     
     return XPIDatabase.updateAddonMetadata(
