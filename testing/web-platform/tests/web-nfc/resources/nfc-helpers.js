@@ -195,22 +195,22 @@ function assertWebNDEFMessagesEqual(message, expectedMessage) {
 
 function testMultiScanOptions(message, scanOptions, unmatchedScanOptions, desc) {
   nfc_test(async (t, mockNFC) => {
-    const ndef1 = new NDEFReader();
-    const ndef2 = new NDEFReader();
+    const reader1 = new NDEFReader();
+    const reader2 = new NDEFReader();
     const controller = new AbortController();
 
     
-    ndef1.onreading = t.unreached_func("reading event should not be fired.");
+    reader1.onreading = t.unreached_func("reading event should not be fired.");
     unmatchedScanOptions.signal = controller.signal;
-    await ndef1.scan(unmatchedScanOptions);
+    await reader1.scan(unmatchedScanOptions);
 
-    const ndefWatcher = new EventWatcher(t, ndef2, ["reading", "readingerror"]);
-    const promise = ndefWatcher.wait_for("reading").then(event => {
+    const readerWatcher = new EventWatcher(t, reader2, ["reading", "readingerror"]);
+    const promise = readerWatcher.wait_for("reading").then(event => {
       controller.abort();
       assertWebNDEFMessagesEqual(event.message, new NDEFMessage(message));
     });
     scanOptions.signal = controller.signal;
-    await ndef2.scan(scanOptions);
+    await reader2.scan(scanOptions);
 
     mockNFC.setReadingMessage(message);
     await promise;
@@ -219,15 +219,15 @@ function testMultiScanOptions(message, scanOptions, unmatchedScanOptions, desc) 
 
 function testMultiMessages(message, scanOptions, unmatchedMessage, desc) {
   nfc_test(async (t, mockNFC) => {
-    const ndef = new NDEFReader();
+    const reader = new NDEFReader();
     const controller = new AbortController();
-    const ndefWatcher = new EventWatcher(t, ndef, ["reading", "readingerror"]);
-    const promise = ndefWatcher.wait_for("reading").then(event => {
+    const readerWatcher = new EventWatcher(t, reader, ["reading", "readingerror"]);
+    const promise = readerWatcher.wait_for("reading").then(event => {
       controller.abort();
       assertWebNDEFMessagesEqual(event.message, new NDEFMessage(message));
     });
     scanOptions.signal = controller.signal;
-    await ndef.scan(scanOptions);
+    await reader.scan(scanOptions);
 
     
     mockNFC.setReadingMessage(unmatchedMessage);
