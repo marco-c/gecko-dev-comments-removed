@@ -1059,23 +1059,6 @@ void BaselineInterpreterCodeGen::loadInt32LengthBytecodeOperand(Register dest) {
   LoadInt32Operand(masm, dest);
 }
 
-template <>
-void BaselineCompilerCodeGen::loadInt32IndexBytecodeOperand(ValueOperand dest) {
-  uint32_t index = GET_UINT32(handler.pc());
-  MOZ_ASSERT(index <= INT32_MAX,
-             "the bytecode emitter must fail to compile code that would "
-             "produce an index exceeding int32_t range");
-  masm.moveValue(Int32Value(AssertedCast<int32_t>(index)), dest);
-}
-
-template <>
-void BaselineInterpreterCodeGen::loadInt32IndexBytecodeOperand(
-    ValueOperand dest) {
-  Register scratch = dest.scratchReg();
-  LoadInt32Operand(masm, scratch);
-  masm.tagValue(JSVAL_TYPE_INT32, scratch, dest);
-}
-
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emitDebugPrologue() {
   auto ifDebuggee = [this]() {
@@ -2852,22 +2835,114 @@ bool BaselineCodeGen<Handler>::emit_NewArray() {
   return true;
 }
 
-template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_InitElemArray() {
+static void MarkElementsNonPackedIfHoleValue(MacroAssembler& masm,
+                                             Register elements,
+                                             ValueOperand val) {
+  Label notHole;
+  masm.branchTestMagic(Assembler::NotEqual, val, &notHole);
+  {
+    Address elementsFlags(elements, ObjectElements::offsetOfFlags());
+    masm.or32(Imm32(ObjectElements::NON_PACKED), elementsFlags);
+  }
+  masm.bind(&notHole);
+}
+
+template <>
+bool BaselineInterpreterCodeGen::emit_InitElemArray() {
   
-  frame.syncStack(0);
+  frame.popRegsAndSync(1);
 
   
-  masm.loadValue(frame.addressOfStackValue(-2), R0);
-  loadInt32IndexBytecodeOperand(R1);
+  Register obj = R2.scratchReg();
+  masm.unboxObject(frame.addressOfStackValue(-1), obj);
 
   
-  if (!emitNextIC()) {
-    return false;
+  Register index = R1.scratchReg();
+  LoadInt32Operand(masm, index);
+
+  
+  masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), obj);
+  masm.storeValue(R0, BaseObjectElementIndex(obj, index));
+
+  
+  Address initLength(obj, ObjectElements::offsetOfInitializedLength());
+  masm.add32(Imm32(1), index);
+  masm.store32(index, initLength);
+
+  
+  MarkElementsNonPackedIfHoleValue(masm, obj, R0);
+
+  
+  Label skipBarrier;
+  Register scratch = index;
+  masm.branchValueIsNurseryCell(Assembler::NotEqual, R0, scratch, &skipBarrier);
+  {
+    masm.unboxObject(frame.addressOfStackValue(-1), obj);
+    masm.branchPtrInNurseryChunk(Assembler::Equal, obj, scratch, &skipBarrier);
+    MOZ_ASSERT(obj == R2.scratchReg(), "post barrier expects object in R2");
+    masm.call(&postBarrierSlot_);
+  }
+  masm.bind(&skipBarrier);
+  return true;
+}
+
+template <>
+bool BaselineCompilerCodeGen::emit_InitElemArray() {
+  
+  Maybe<Value> knownValue = frame.knownStackValue(-1);
+  frame.popRegsAndSync(1);
+
+  
+  Register obj = R2.scratchReg();
+  masm.unboxObject(frame.addressOfStackValue(-1), obj);
+
+  uint32_t index = GET_UINT32(handler.pc());
+  MOZ_ASSERT(index <= INT32_MAX,
+             "the bytecode emitter must fail to compile code that would "
+             "produce an index exceeding int32_t range");
+
+  
+  masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), obj);
+  masm.storeValue(R0, Address(obj, index * sizeof(Value)));
+
+  
+  Address initLength(obj, ObjectElements::offsetOfInitializedLength());
+  masm.store32(Imm32(index + 1), initLength);
+
+  
+  
+  
+  if (knownValue && knownValue->isMagic(JS_ELEMENTS_HOLE)) {
+    Address elementsFlags(obj, ObjectElements::offsetOfFlags());
+    masm.or32(Imm32(ObjectElements::NON_PACKED), elementsFlags);
+  } else if (handler.compileDebugInstrumentation()) {
+    MarkElementsNonPackedIfHoleValue(masm, obj, R0);
+  } else {
+#ifdef DEBUG
+    Label notHole;
+    masm.branchTestMagic(Assembler::NotEqual, R0, &notHole);
+    masm.assumeUnreachable("Unexpected hole value");
+    masm.bind(&notHole);
+#endif
   }
 
   
-  frame.pop();
+  if (knownValue) {
+    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(*knownValue));
+  } else {
+    Label skipBarrier;
+    Register scratch = R1.scratchReg();
+    masm.branchValueIsNurseryCell(Assembler::NotEqual, R0, scratch,
+                                  &skipBarrier);
+    {
+      masm.unboxObject(frame.addressOfStackValue(-1), obj);
+      masm.branchPtrInNurseryChunk(Assembler::Equal, obj, scratch,
+                                   &skipBarrier);
+      MOZ_ASSERT(obj == R2.scratchReg(), "post barrier expects object in R2");
+      masm.call(&postBarrierSlot_);
+    }
+    masm.bind(&skipBarrier);
+  }
   return true;
 }
 

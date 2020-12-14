@@ -625,27 +625,6 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
   return false;
 }
 
-inline void InitElemArrayOperation(JSContext* cx, jsbytecode* pc,
-                                   HandleArrayObject arr, HandleValue val) {
-  MOZ_ASSERT(JSOp(*pc) == JSOp::InitElemArray);
-
-  
-  
-  uint32_t index = GET_UINT32(pc);
-  MOZ_ASSERT(index < arr->getDenseCapacity());
-  MOZ_ASSERT(index == arr->getDenseInitializedLength());
-
-  
-  
-  arr->setDenseInitializedLength(index + 1);
-
-  if (val.isMagic(JS_ELEMENTS_HOLE)) {
-    arr->initDenseElementHole(index);
-  } else {
-    arr->initDenseElement(index, val);
-  }
-}
-
 inline bool InitElemIncOperation(JSContext* cx, HandleArrayObject arr,
                                  uint32_t index, HandleValue val) {
   if (index == INT32_MAX) {
