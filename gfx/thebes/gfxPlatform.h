@@ -146,16 +146,18 @@ inline const char* GetBackendName(mozilla::gfx::BackendType aBackend) {
 }
 
 enum class DeviceResetReason {
-  OK = 0,
-  HUNG,
-  REMOVED,
-  RESET,
-  DRIVER_ERROR,
-  INVALID_CALL,
+  OK = 0,        
+  HUNG,          
+  REMOVED,       
+  RESET,         
+  DRIVER_ERROR,  
+  INVALID_CALL,  
   OUT_OF_MEMORY,
-  FORCED_RESET,
-  UNKNOWN,
-  D3D9_RESET
+  FORCED_RESET,  
+  OTHER,         
+  D3D9_RESET,    
+  NVIDIA_VIDEO,  
+  UNKNOWN,       
 };
 
 enum class ForcedDeviceResetReason {
