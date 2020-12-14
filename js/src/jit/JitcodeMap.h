@@ -7,12 +7,31 @@
 #ifndef jit_JitcodeMap_h
 #define jit_JitcodeMap_h
 
-#include "jit/CompactBuffer.h"
-#include "jit/ExecutableAllocator.h"
-#include "jit/shared/Assembler-shared.h"
-#include "vm/BytecodeLocation.h"  
+#include "mozilla/Assertions.h"  
+
+#include <stddef.h>  
+#include <stdint.h>  
+
+#include "jit/CompactBuffer.h"  
+#include "jit/shared/Assembler-shared.h"  
+#include "js/AllocPolicy.h"               
+#include "js/TypeDecls.h"                 
+#include "js/Vector.h"                    
+#include "vm/BytecodeLocation.h"          
+
+class JSScript;
+class JSTracer;
+struct JSRuntime;
+class JSScript;
+
+namespace JS {
+class Zone;
+}  
 
 namespace js {
+
+class GCMarker;
+
 namespace jit {
 
 class InlineScriptTree;
@@ -309,12 +328,7 @@ class JitcodeGlobalEntry {
 
     const char* str() const { return str_; }
 
-    void trackIonAbort(jsbytecode* pc, const char* message) {
-      MOZ_ASSERT(script_->containsPC(pc));
-      MOZ_ASSERT(message);
-      ionAbortPc_ = pc;
-      ionAbortMessage_ = message;
-    }
+    void trackIonAbort(jsbytecode* pc, const char* message);
 
     bool hadIonAbort() const {
       MOZ_ASSERT(!ionAbortPc_ || ionAbortMessage_);
