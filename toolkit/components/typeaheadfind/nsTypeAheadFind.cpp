@@ -499,7 +499,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
       NS_ASSERTION(window, "document has no window");
       if (!window) return NS_ERROR_UNEXPECTED;
 
-      nsFocusManager* fm = nsFocusManager::GetFocusManager();
+      RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
       if (usesIndependentSelection) {
         
 
@@ -524,7 +524,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
         
         
         
-        nsCOMPtr<nsINode> node = returnRange->GetStartContainer();
+        nsINode* node = returnRange->GetStartContainer();
         while (node) {
           nsCOMPtr<nsIEditor> editor;
           if (RefPtr<HTMLInputElement> input =
@@ -557,7 +557,8 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
 
           
           if (fm) {
-            fm->SetFocus(mFoundEditable, 0);
+            nsCOMPtr<Element> newFocusElement = mFoundEditable;
+            fm->SetFocus(newFocusElement, 0);
           }
           break;
         }
