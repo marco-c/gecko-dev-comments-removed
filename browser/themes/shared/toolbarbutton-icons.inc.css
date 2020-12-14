@@ -302,6 +302,7 @@ toolbar[brighttext] {
 #PanelUI-menu-button[badge-status="update-available"],
 #PanelUI-menu-button[badge-status="update-downloading"],
 #PanelUI-menu-button[badge-status="update-manual"],
+#PanelUI-menu-button[badge-status="update-other-instance"],
 #PanelUI-menu-button[badge-status="update-restart"] {
   list-style-image: url("chrome://browser/skin/menu-badged.svg");
 }
@@ -328,7 +329,7 @@ toolbar[brighttext] {
 
 #PlacesChevron,
 #nav-bar-overflow-button {
-  list-style-image: url("chrome://browser/skin/chevron.svg");
+  list-style-image: url("chrome://global/skin/icons/chevron.svg");
 }
 
 #nav-bar-overflow-button[animate] > .toolbarbutton-icon {
