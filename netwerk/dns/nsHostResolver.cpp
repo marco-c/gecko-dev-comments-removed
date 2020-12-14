@@ -295,12 +295,7 @@ AddrHostRecord::AddrHostRecord(const nsHostKey& key)
       addr(nullptr),
       mTRRUsed(false),
       mTRRSuccess(0),
-      mNativeSuccess(0),
-      mNative(false),
-      mNativeUsed(false),
-      usingAnyThread(false),
-      mGetTtl(false),
-      mResolveAgain(false) {}
+      mNativeSuccess(0) {}
 
 AddrHostRecord::~AddrHostRecord() {
   mCallbacks.clear();
@@ -387,12 +382,12 @@ bool AddrHostRecord::RemoveOrRefresh(bool aTrrToo) {
   if (addr_info && !aTrrToo && addr_info->IsTRR()) {
     return false;
   }
-  if (mNative) {
+  if (GetNative()) {
     if (!onQueue()) {
       
       
       
-      mResolveAgain = true;
+      SetResolveAgain(true);
     }
     
     
@@ -403,7 +398,7 @@ bool AddrHostRecord::RemoveOrRefresh(bool aTrrToo) {
 }
 
 void AddrHostRecord::ResolveComplete() {
-  if (mNativeUsed) {
+  if (GetNativeUsed()) {
     if (mNativeSuccess) {
       uint32_t millis = static_cast<uint32_t>(mNativeDuration.ToMilliseconds());
       Telemetry::Accumulate(Telemetry::DNS_NATIVE_LOOKUP_TIME, millis);
@@ -1452,8 +1447,8 @@ nsresult nsHostResolver::NativeLookup(nsHostRecord* aRec) {
   }
   mPendingCount++;
 
-  addrRec->mNative = true;
-  addrRec->mNativeUsed = true;
+  addrRec->SetNative(true);
+  addrRec->SetNativeUsed(true);
   addrRec->mResolving++;
 
   nsresult rv = ConditionallyCreateThread(rec);
@@ -1571,7 +1566,7 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
     RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
     MOZ_ASSERT(addrRec);
 
-    addrRec->mNativeUsed = false;
+    addrRec->SetNativeUsed(false);
     addrRec->mTRRUsed = false;
     addrRec->mNativeSuccess = false;
   }
@@ -1667,7 +1662,7 @@ bool nsHostResolver::GetHostToLookup(AddrHostRecord** result) {
     
     
 
-#define SET_GET_TTL(var, val) (var)->mGetTtl = sGetTtlEnabled && (val)
+#define SET_GET_TTL(var, val) (var)->SetGetTtl(sGetTtlEnabled && (val))
 
     if (!mHighQ.isEmpty()) {
       DeQueue(mHighQ, result);
@@ -1679,7 +1674,7 @@ bool nsHostResolver::GetHostToLookup(AddrHostRecord** result) {
       if (!mMediumQ.isEmpty()) {
         DeQueue(mMediumQ, result);
         mActiveAnyThreadCount++;
-        (*result)->usingAnyThread = true;
+        (*result)->SetUsingAnyThread(true);
         SET_GET_TTL(*result, true);
         return true;
       }
@@ -1687,7 +1682,7 @@ bool nsHostResolver::GetHostToLookup(AddrHostRecord** result) {
       if (!mLowQ.isEmpty()) {
         DeQueue(mLowQ, result);
         mActiveAnyThreadCount++;
-        (*result)->usingAnyThread = true;
+        (*result)->SetUsingAnyThread(true);
         SET_GET_TTL(*result, true);
         return true;
       }
@@ -1852,10 +1847,10 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
     newRRSet = nullptr;
   }
 
-  if (addrRec->mResolveAgain && (status != NS_ERROR_ABORT) && !trrResult) {
+  if (addrRec->GetResolveAgain() && (status != NS_ERROR_ABORT) && !trrResult) {
     LOG(("nsHostResolver record %p resolve again due to flushcache\n",
          addrRec.get()));
-    addrRec->mResolveAgain = false;
+    addrRec->SetResolveAgain(false);
     return LOOKUP_RESOLVEAGAIN;
   }
 
@@ -1907,9 +1902,9 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       status = NS_ERROR_UNKNOWN_HOST;
     }
   } else {  
-    if (addrRec->usingAnyThread) {
+    if (addrRec->GetUsingAnyThread()) {
       mActiveAnyThreadCount--;
-      addrRec->usingAnyThread = false;
+      addrRec->SetUsingAnyThread(false);
     }
 
     addrRec->mNativeSuccess = static_cast<bool>(newRRSet);
@@ -1919,7 +1914,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
   }
 
   
-  addrRec->mNative = false;
+  addrRec->SetNative(false);
 
   
   
@@ -1997,8 +1992,8 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       hasNativeResult = true;
     }
   }
-  if (hasNativeResult && !mShutdown && !addrRec->mGetTtl && !rec->mResolving &&
-      sGetTtlEnabled) {
+  if (hasNativeResult && !mShutdown && !addrRec->GetGetTtl() &&
+      !rec->mResolving && sGetTtlEnabled) {
     LOG(("Issuing second async lookup for TTL for host [%s].",
          addrRec->host.get()));
     addrRec->flags = (addrRec->flags & ~RES_PRIORITY_MEDIUM) | RES_PRIORITY_LOW;
@@ -2158,7 +2153,7 @@ void nsHostResolver::ThreadFunc() {
           rec->host.get()));
 
     TimeStamp startTime = TimeStamp::Now();
-    bool getTtl = rec->mGetTtl;
+    bool getTtl = rec->GetGetTtl();
     TimeDuration inQueue = startTime - rec->mNativeStart;
     uint32_t ms = static_cast<uint32_t>(inQueue.ToMilliseconds());
     Telemetry::Accumulate(Telemetry::DNS_NATIVE_QUEUING, ms);
