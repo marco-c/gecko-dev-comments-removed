@@ -7,28 +7,56 @@
 #ifndef vm_Scope_h
 #define vm_Scope_h
 
-#include "mozilla/Maybe.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Casting.h"          
+#include "mozilla/Maybe.h"            
+#include "mozilla/MemoryReporting.h"  
 
-#include <stddef.h>
+#include <stddef.h>     
+#include <stdint.h>     
+#include <type_traits>  
 
-#include "gc/Policy.h"
-#include "js/UbiNode.h"
-#include "js/UniquePtr.h"
-#include "util/Poison.h"
-#include "vm/BytecodeUtil.h"
-#include "vm/JSObject.h"
-#include "vm/Printer.h"  
-#include "vm/ScopeKind.h"
-#include "vm/Xdr.h"
+#include "builtin/ModuleObject.h"  
+#include "gc/Allocator.h"          
+#include "gc/Barrier.h"            
+#include "gc/Cell.h"               
+#include "gc/MaybeRooted.h"        
+#include "gc/Rooting.h"      
+#include "js/GCPolicyAPI.h"  
+#include "js/HeapAPI.h"      
+#include "js/RootingAPI.h"   
+#include "js/TraceKind.h"    
+#include "js/TypeDecls.h"    
+#include "js/UbiNode.h"      
+#include "js/UniquePtr.h"    
+#include "util/Poison.h"  
+#include "vm/BytecodeUtil.h"  
+#include "vm/ScopeKind.h"     
+#include "vm/Shape.h"         
+#include "vm/Xdr.h"           
+
+class JSAtom;
+class JSFreeOp;
+class JSFunction;  
+class JSScript;
+class JSTracer;
+struct JSContext;
+
+namespace JS {
+class Zone;
+}  
 
 namespace js {
 
+class GenericPrinter;
+class WasmInstanceObject;  
+
 namespace frontend {
 struct CompilationAtomCache;
-class ScriptStencil;
 class ScopeStencil;
 class ParserAtom;
-};  
+}  
 
 template <typename NameT>
 class AbstractBaseScopeData;
@@ -41,7 +69,6 @@ class AbstractBindingIter;
 
 using BindingIter = AbstractBindingIter<JSAtom>;
 
-class ModuleObject;
 class AbstractScopePtr;
 
 enum class BindingKind : uint8_t {
