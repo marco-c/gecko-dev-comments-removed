@@ -3048,8 +3048,10 @@ void HTMLInputElement::Select() {
 
   
   
+  
+  
   state->SetSelectionRange(0, UINT32_MAX,
-                           nsITextControlFrame::SelectionDirection::eNone,
+                           nsITextControlFrame::SelectionDirection::eForward,
                            IgnoredErrorResult());
 }
 
