@@ -37,12 +37,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyServiceGetters(this, {
   BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
 });
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "isSeparateAboutWelcome",
-  "browser.aboutwelcome.enabled",
-  true
-);
 const { actionCreators: ac } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
 );
@@ -62,11 +56,6 @@ const { CFRPageActions } = ChromeUtils.import(
 const { AttributionCode } = ChromeUtils.import(
   "resource:///modules/AttributionCode.jsm"
 );
-
-const TRAILHEAD_CONFIG = {
-  DID_SEE_ABOUT_WELCOME_PREF: "trailhead.firstrun.didSeeAboutWelcome",
-  DYNAMIC_TRIPLET_BUNDLE_LENGTH: 3,
-};
 
 
 
@@ -1021,7 +1010,6 @@ class _ASRouter {
       providerPrefs: ASRouterPreferences.providers,
       userPrefs: ASRouterPreferences.getAllUserPreferences(),
       targetingParameters,
-      trailheadTriplet: ASRouterPreferences.trailheadTriplet,
       errors: this.errors,
     }));
   }
@@ -1097,10 +1085,6 @@ class _ASRouter {
     return Promise.resolve({ evaluationStatus });
   }
 
-  _orderBundle(bundle) {
-    return bundle.sort((a, b) => a.order - b.order);
-  }
-
   unblockAll() {
     return this.setState({ messageBlockList: [] });
   }
@@ -1160,97 +1144,6 @@ class _ASRouter {
     return true;
   }
 
-  async _getBundledMessages(originalMessage, trigger, force = false) {
-    let result = [];
-    let bundleLength;
-    let bundleTemplate;
-    let originalId;
-
-    if (originalMessage.includeBundle) {
-      
-      bundleLength = originalMessage.includeBundle.length;
-      bundleTemplate = originalMessage.includeBundle.template;
-    } else {
-      
-      bundleLength = originalMessage.bundled;
-      bundleTemplate = originalMessage.template;
-      originalId = originalMessage.id;
-      
-      result.push({
-        content: originalMessage.content,
-        id: originalMessage.id,
-        order: originalMessage.order || 0,
-      });
-    }
-
-    
-    let bundledMessagesOfSameTemplate = this.state.messages.filter(
-      msg =>
-        msg.bundled &&
-        msg.template === bundleTemplate &&
-        msg.id !== originalId &&
-        this.isUnblockedMessage(msg)
-    );
-
-    if (force) {
-      
-      for (const message of bundledMessagesOfSameTemplate) {
-        result.push({ content: message.content, id: message.id });
-        
-        if (result.length === bundleLength) {
-          break;
-        }
-      }
-    } else {
-      
-      const allMessages = await this.handleMessageRequest({
-        messages: bundledMessagesOfSameTemplate,
-        triggerId: trigger && trigger.id,
-        triggerContext: trigger && trigger.context,
-        triggerParam: trigger && trigger.param,
-        ordered: true,
-        returnAll: true,
-      });
-
-      if (allMessages && allMessages.length) {
-        
-        
-        result = result.concat(
-          allMessages.slice(0, bundleLength).map(message => ({
-            content: message.content,
-            id: message.id,
-            order: message.order || 0,
-            
-            
-            blockOnClick:
-              ASRouterPreferences.trailheadTriplet.startsWith("dynamic") &&
-              allMessages.length >
-                TRAILHEAD_CONFIG.DYNAMIC_TRIPLET_BUNDLE_LENGTH,
-          }))
-        );
-      }
-    }
-
-    
-    if (result.length < bundleLength) {
-      return null;
-    }
-
-    
-    
-    
-    const extraTemplateStrings = await this._extraTemplateStrings(
-      originalMessage
-    );
-
-    return {
-      bundle: this._orderBundle(result),
-      ...(extraTemplateStrings && { extraTemplateStrings }),
-      provider: originalMessage.provider,
-      template: originalMessage.template,
-    };
-  }
-
   async _extraTemplateStrings(originalMessage) {
     let extraTemplateStrings;
     let localProvider = this._findProvider(originalMessage.provider);
@@ -1268,6 +1161,10 @@ class _ASRouter {
   }
 
   routeCFRMessage(message, browser, trigger, force = false) {
+    if (!message) {
+      return { message: {} };
+    }
+
     switch (message.template) {
       case "whatsnew_panel_message":
         if (force) {
@@ -1318,33 +1215,7 @@ class _ASRouter {
       case "update_action":
         MomentsPageHub.executeAction(message);
         break;
-      default:
-        break;
     }
-  }
-
-  async sendMessage(message, trigger, force, browser) {
-    if (!message) {
-      return { message: {} };
-    } else if (message.bundled) {
-      const bundle =
-        (await this._getBundledMessages(message, trigger, force)) || {};
-      return { message: bundle };
-    } else if (message.includeBundle) {
-      const bundledMessages = await this._getBundledMessages(
-        message,
-        message.includeBundle.trigger,
-        force
-      );
-      return {
-        message: {
-          ...message,
-          trailheadTriplet: ASRouterPreferences.trailheadTriplet || "",
-          bundle: bundledMessages && bundledMessages.bundle,
-        },
-      };
-    }
-    this.routeCFRMessage(message, browser, trigger, force);
 
     return { message };
   }
@@ -1537,7 +1408,7 @@ class _ASRouter {
   }
 
   setMessageById({ id, ...data }, force, browser) {
-    return this.sendMessage(this.getMessageById(id), data, force, browser);
+    return this.routeCFRMessage(this.getMessageById(id), browser, data, force);
   }
 
   blockMessageById(idOrIds) {
@@ -1764,21 +1635,11 @@ class _ASRouter {
     } else {
       const telemetryObject = { tabId };
       TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
-      
-      
-      if (!isSeparateAboutWelcome) {
-        message = await this.handleMessageRequest({
-          template: "extended_triplets",
-        });
-      }
-      
-      if (!message) {
-        message = await this.handleMessageRequest({ provider: "snippets" });
-      }
+      message = await this.handleMessageRequest({ provider: "snippets" });
       TelemetryStopwatch.finish("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
     }
 
-    return this.sendMessage(message, undefined, false, browser);
+    return this.routeCFRMessage(message, browser, undefined, false);
   }
 
   _recordReachEvent(message) {
@@ -1835,11 +1696,11 @@ class _ASRouter {
       );
     }
 
-    return this.sendMessage(
+    return this.routeCFRMessage(
       nonReachMessages[0] || null,
+      browser,
       trigger,
-      false,
-      browser
+      false
     );
   }
 
@@ -1867,7 +1728,6 @@ class _ASRouter {
   }
 }
 this._ASRouter = _ASRouter;
-this.TRAILHEAD_CONFIG = TRAILHEAD_CONFIG;
 
 
 
@@ -1875,9 +1735,4 @@ this.TRAILHEAD_CONFIG = TRAILHEAD_CONFIG;
 
 this.ASRouter = new _ASRouter();
 
-const EXPORTED_SYMBOLS = [
-  "_ASRouter",
-  "ASRouter",
-  "MessageLoaderUtils",
-  "TRAILHEAD_CONFIG",
-];
+const EXPORTED_SYMBOLS = ["_ASRouter", "ASRouter", "MessageLoaderUtils"];
