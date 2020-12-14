@@ -29,11 +29,12 @@ add_task(async function() {
   );
   const originalRequest = getSelectedRequest(store.getState());
 
+  const waitForResentRequestEvent = waitForNetworkEvents(monitor, 1);
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);
   getContextMenuItem(monitor, "request-list-context-resend-only").click();
 
-  await performRequests(monitor, tab, 2);
+  await waitForResentRequestEvent;
 
   
   const selectedRequest = getSelectedRequest(store.getState());

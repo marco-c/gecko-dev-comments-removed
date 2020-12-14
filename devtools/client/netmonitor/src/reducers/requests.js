@@ -33,6 +33,8 @@ function Requests() {
     requests: [],
     
     selectedId: null,
+    
+    
     preselectedId: null,
     
     recording: true,
@@ -171,8 +173,16 @@ function addRequest(state, action) {
   }
 
   
-  if (state.preselectedId && state.preselectedId === action.id) {
-    nextState.selectedId = state.selectedId || state.preselectedId;
+  if (state.preselectedId) {
+    if (state.preselectedId === action.id) {
+      nextState.selectedId = state.selectedId || state.preselectedId;
+    }
+    
+    
+    
+    else if (state.preselectedId === newRequest.resourceId) {
+      nextState.selectedId = action.id;
+    }
     nextState.preselectedId = null;
   }
 
@@ -272,12 +282,18 @@ function closeCustomRequest(state) {
     return state;
   }
 
+  
   const removedRequest = requests.find(needle => needle.id === selectedId);
 
   
   
-  const hasPreselectedId =
-    preselectedId && requests.find(needle => needle.id === preselectedId);
+  
+  
+  const customRequest = requests.find(
+    needle => needle.id === preselectedId || needle.resourceId === preselectedId
+  );
+  const hasPreselectedId = preselectedId && customRequest;
+
   return {
     ...state,
     
@@ -285,7 +301,7 @@ function closeCustomRequest(state) {
       item => item.id !== selectedId
     ),
     preselectedId: hasPreselectedId ? null : preselectedId,
-    selectedId: hasPreselectedId ? preselectedId : null,
+    selectedId: hasPreselectedId ? customRequest.id : null,
   };
 }
 

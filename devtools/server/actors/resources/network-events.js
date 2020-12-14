@@ -31,6 +31,7 @@ class NetworkEventWatcher {
 
 
 
+
   async watch(watcherActor, { onAvailable, onUpdated }) {
     this.networkEvents = new Map();
 
@@ -91,7 +92,7 @@ class NetworkEventWatcher {
   onNetworkEvent(event) {
     const { channelId } = event;
 
-    if (this.networkEvents.get(channelId)) {
+    if (this.networkEvents.has(channelId)) {
       throw new Error(
         `Got notified about channel ${channelId} more than once.`
       );

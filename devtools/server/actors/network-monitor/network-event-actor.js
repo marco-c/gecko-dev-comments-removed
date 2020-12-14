@@ -98,6 +98,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     return {
       resourceType: NETWORK_EVENT,
       
+      
       browsingContextID: this.networkEventWatcher.watcherActor.browserElement
         .browsingContext.id,
       resourceId: this._channelId,
