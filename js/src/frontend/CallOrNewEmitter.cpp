@@ -205,11 +205,7 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
       
       return false;
     }
-    if (!bce_->emit1(JSOp::Not)) {
-      
-      return false;
-    }
-    if (!ifNotOptimizable_->emitThen()) {
+    if (!ifNotOptimizable_->emitThen(IfEmitter::ConditionKind::Negative)) {
       
       return false;
     }

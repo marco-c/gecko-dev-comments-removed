@@ -5239,11 +5239,8 @@ bool BytecodeEmitter::emitAsyncIterator() {
     
     return false;
   }
-  if (!emit1(JSOp::Not)) {
-    
-    return false;
-  }
-  if (!ifAsyncIterIsUndefined.emitThenElse()) {
+  if (!ifAsyncIterIsUndefined.emitThenElse(
+          IfEmitter::ConditionKind::Negative)) {
     
     return false;
   }
@@ -6292,13 +6289,8 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     return false;
   }
 
-  if (!emit1(JSOp::Not)) {
-    
-    return false;
-  }
-
   InternalIfEmitter ifCanSkip(this);
-  if (!ifCanSkip.emitThen()) {
+  if (!ifCanSkip.emitThen(IfEmitter::ConditionKind::Negative)) {
     
     return false;
   }
