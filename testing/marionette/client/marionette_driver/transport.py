@@ -305,8 +305,10 @@ class TcpTransport(object):
                 if exc.errno not in (57, 107):
                     raise
 
-            self._sock.close()
-            self._sock = None
+            if self._sock:
+                
+                self._sock.close()
+                self._sock = None
 
     def __del__(self):
         self.close()
