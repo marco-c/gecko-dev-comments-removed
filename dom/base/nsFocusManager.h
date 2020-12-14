@@ -207,9 +207,9 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  nsresult SetFocusedWindowWithCallerType(mozIDOMWindowProxy* aWindowToFocus,
-                                          mozilla::dom::CallerType aCallerType,
-                                          uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SetFocusedWindowWithCallerType(
+      mozIDOMWindowProxy* aWindowToFocus, mozilla::dom::CallerType aCallerType,
+      uint64_t aActionId);
 
   
 
@@ -257,7 +257,8 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsresult FocusPlugin(mozilla::dom::Element* aPlugin);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  FocusPlugin(mozilla::dom::Element* aPlugin);
 
   static uint32_t FocusOptionsToFocusManagerFlags(
       const mozilla::dom::FocusOptions& aOptions);
@@ -324,10 +325,9 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void SetFocusInner(mozilla::dom::Element* aNewContent, int32_t aFlags,
-                     bool aFocusChanged, bool aAdjustWidget,
-                     uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT void SetFocusInner(mozilla::dom::Element* aNewContent,
+                                        int32_t aFlags, bool aFocusChanged,
+                                        bool aAdjustWidget, uint64_t aActionId);
 
   
 

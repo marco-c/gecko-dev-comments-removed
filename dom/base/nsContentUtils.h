@@ -1604,8 +1604,9 @@ class nsContentUtils {
 
 
 
-  static void RequestFrameFocus(Element& aFrameElement, bool aCanRaise,
-                                mozilla::dom::CallerType aCallerType);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void RequestFrameFocus(
+      Element& aFrameElement, bool aCanRaise,
+      mozilla::dom::CallerType aCallerType);
 
   
 
