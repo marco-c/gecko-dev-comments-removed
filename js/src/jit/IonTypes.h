@@ -88,13 +88,6 @@ enum class BailoutKind : uint8_t {
 
   
   
-  GenericIon,
-
-  
-  
-
-  
-  
   
   EagerTruncation,
 
@@ -107,67 +100,9 @@ enum class BailoutKind : uint8_t {
   DuringVMCall,
 
   
+  
+  
   TooManyArguments,
-
-  
-  DynamicNameNotFound,
-
-  
-  
-  
-  Overflow,
-
-  
-  
-  Round,
-
-  
-  
-  
-  NonPrimitiveInput,
-
-  
-  PrecisionLoss,
-
-  
-  TypeBarrierO,
-  
-  TypeBarrierV,
-
-  
-  Hole,
-
-  
-  NoDenseElementsGuard,
-
-  
-  NegativeIndex,
-
-  
-  
-  
-  
-  
-  
-  ObjectIdentityOrTypeGuard,
-
-  
-  SpecificAtomGuard,
-
-  
-  SpecificSymbolGuard,
-
-  
-  StringToIndexGuard,
-
-  
-  StringToInt32Guard,
-
-  
-  StringToDoubleGuard,
-
-  
-  Unbox,
 
   
   Debugger,
@@ -176,104 +111,8 @@ enum class BailoutKind : uint8_t {
   FirstExecution,
 
   
-  NonInt32ArrayLength,
-
-  
-  
-  FunctionLength,
-
-  
-  FunctionName,
-
-  
-  InvalidCodePoint,
-
-  
-
-  
-  
-
-  
-  
-  
-  
-  DoubleOutput,
-
-  
-
-  
-  BoundsCheck,
-
-  
-  
-  
-  ShapeGuard,
-
-  
-  ProtoGuard,
-
-  
-  ProxyGuard,
-
-  
-  NotProxyGuard,
-
-  
-  NotDOMProxyGuard,
-
-  
-  NotArrayBufferMaybeSharedGuard,
-
-  
-  TypedArrayGuard,
-
-  
-  MegamorphicAccess,
-
-  
-  ArgumentsObjectAccess,
-
-  
-  ArrayPopShift,
-
-  
-  ArraySlice,
-
-  
-  ValueGuard,
-
   
   NotOptimizedArgumentsGuard,
-
-  
-  NullOrUndefinedGuard,
-
-  
-  TagNotEqualGuard,
-
-  
-  FunctionFlagsGuard,
-
-  
-  FunctionIsNonBuiltinCtorGuard,
-
-  
-  FunctionKindGuard,
-
-  
-  FunctionScriptGuard,
-
-  
-  PackedArrayGuard,
-
-  
-  HasGetterSetterGuard,
-
-  
-  DOMExpandoValueGenerationGuard,
-
-  
-  DOMExpandoMissingOrShapeGuard,
 
   
   UninitializedLexical,
@@ -298,118 +137,20 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "LICM";
     case BailoutKind::HoistBoundsCheck:
       return "HoistBoundsCheck";
-    case BailoutKind::GenericIon:
-      return "GenericIon";
     case BailoutKind::EagerTruncation:
       return "EagerTruncation";
-
-    
     case BailoutKind::Inevitable:
       return "Inevitable";
     case BailoutKind::DuringVMCall:
       return "DuringVMCall";
     case BailoutKind::TooManyArguments:
       return "TooManyArguments";
-    case BailoutKind::DynamicNameNotFound:
-      return "DynamicNameNotFound";
-    case BailoutKind::Overflow:
-      return "Overflow";
-    case BailoutKind::Round:
-      return "Round";
-    case BailoutKind::NonPrimitiveInput:
-      return "NonPrimitiveInput";
-    case BailoutKind::PrecisionLoss:
-      return "PrecisionLoss";
-    case BailoutKind::TypeBarrierO:
-      return "TypeBarrierO";
-    case BailoutKind::TypeBarrierV:
-      return "TypeBarrierV";
-    case BailoutKind::Hole:
-      return "Hole";
-    case BailoutKind::NoDenseElementsGuard:
-      return "NoDenseElementsGuard";
-    case BailoutKind::NegativeIndex:
-      return "NegativeIndex";
-    case BailoutKind::ObjectIdentityOrTypeGuard:
-      return "ObjectIdentityOrTypeGuard";
-    case BailoutKind::SpecificAtomGuard:
-      return "SpecifcAtomGuard";
-    case BailoutKind::SpecificSymbolGuard:
-      return "SpecificSymbolGuard";
-    case BailoutKind::StringToIndexGuard:
-      return "StringToIndexGuard";
-    case BailoutKind::StringToInt32Guard:
-      return "StringToInt32Guard";
-    case BailoutKind::StringToDoubleGuard:
-      return "StringToDoubleGuard";
-    case BailoutKind::Unbox:
-      return "Unbox";
     case BailoutKind::Debugger:
       return "Debugger";
     case BailoutKind::FirstExecution:
       return "FirstExecution";
-    case BailoutKind::NonInt32ArrayLength:
-      return "NonInt32ArrayLength";
-    case BailoutKind::FunctionLength:
-      return "FunctionLength";
-    case BailoutKind::FunctionName:
-      return "FunctionName";
-    case BailoutKind::InvalidCodePoint:
-      return "InvalidCodePoint";
-
-    
-    case BailoutKind::DoubleOutput:
-      return "DoubleOutput";
-
-    
-    case BailoutKind::BoundsCheck:
-      return "BoundsCheck";
-    case BailoutKind::ShapeGuard:
-      return "ShapeGuard";
-    case BailoutKind::ProtoGuard:
-      return "ProtoGuard";
-    case BailoutKind::ProxyGuard:
-      return "ProxyGuard";
-    case BailoutKind::NotProxyGuard:
-      return "NotProxyGuard";
-    case BailoutKind::NotDOMProxyGuard:
-      return "NotDOMProxyGuard";
-    case BailoutKind::NotArrayBufferMaybeSharedGuard:
-      return "NotArrayBufferMaybeSharedGuard";
-    case BailoutKind::TypedArrayGuard:
-      return "TypedArrayGuard";
-    case BailoutKind::MegamorphicAccess:
-      return "MegamorphicAccess";
-    case BailoutKind::ArgumentsObjectAccess:
-      return "ArgumentsObjectAccess";
-    case BailoutKind::ArrayPopShift:
-      return "ArrayPopShift";
-    case BailoutKind::ArraySlice:
-      return "ArraySlice";
-    case BailoutKind::ValueGuard:
-      return "ValueGuard";
     case BailoutKind::NotOptimizedArgumentsGuard:
       return "NotOptimizedArgumentsGuard";
-    case BailoutKind::NullOrUndefinedGuard:
-      return "NullOrUndefinedGuard";
-    case BailoutKind::TagNotEqualGuard:
-      return "TagNotEqualGuard";
-    case BailoutKind::FunctionFlagsGuard:
-      return "FunctionFlagsGuard";
-    case BailoutKind::FunctionIsNonBuiltinCtorGuard:
-      return "FunctionIsNonBuiltinCtorGuard";
-    case BailoutKind::FunctionKindGuard:
-      return "FunctionKindGuard";
-    case BailoutKind::FunctionScriptGuard:
-      return "FunctionScriptGuard";
-    case BailoutKind::PackedArrayGuard:
-      return "PackedArrayGuard";
-    case BailoutKind::HasGetterSetterGuard:
-      return "HasGetterSetterGuard";
-    case BailoutKind::DOMExpandoValueGenerationGuard:
-      return "DOMExpandoValueGenerationGuard";
-    case BailoutKind::DOMExpandoMissingOrShapeGuard:
-      return "DOMExpandoMissingOrShapeGuard";
     case BailoutKind::UninitializedLexical:
       return "UninitializedLexical";
     case BailoutKind::IonExceptionDebugMode:

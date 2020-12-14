@@ -253,10 +253,7 @@ void LIRGeneratorShared::assignSnapshot(LInstruction* ins, BailoutKind kind) {
   
   
   MOZ_ASSERT(ins->id() == 0);
-  if (kind == BailoutKind::Unknown) {
-    MOZ_ASSERT(!JitOptions.warpBuilder);
-    kind = BailoutKind::GenericIon;
-  }
+  MOZ_ASSERT(kind != BailoutKind::Unknown);
 
   LSnapshot* snapshot = buildSnapshot(lastResumePoint_, kind);
   if (!snapshot) {
