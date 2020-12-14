@@ -85,7 +85,7 @@ bool OpenTypeGDEF::ParseAttachListTable(const uint8_t *data, size_t length) {
       }
       
       if (last_point_index != 0 && last_point_index >= point_index) {
-        return Error("bad contour indeces: %u >= %u",
+        return Error("bad contour indices: %u >= %u",
                     last_point_index, point_index);
       }
       last_point_index = point_index;
