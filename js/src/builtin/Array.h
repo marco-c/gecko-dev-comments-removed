@@ -85,10 +85,6 @@ extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
 extern ArrayObject* NewDenseFullyAllocatedArrayWithTemplate(
     JSContext* cx, uint32_t length, ArrayObject* templateObject);
 
-
-extern ArrayObject* NewDenseCopyOnWriteArray(JSContext* cx,
-                                             HandleArrayObject templateObject);
-
 extern ArrayObject* NewArrayWithGroup(JSContext* cx, uint32_t length,
                                       HandleObjectGroup group);
 

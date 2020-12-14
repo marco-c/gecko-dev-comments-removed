@@ -4344,8 +4344,7 @@ MArrayState::MArrayState(MDefinition* arr) : MVariadicInstruction(classOpcode) {
   
   setResultType(MIRType::Object);
   setRecoveredOnBailout();
-  numElements_ = arr->isNewArray() ? arr->toNewArray()->length()
-                                   : arr->toNewArrayCopyOnWrite()->length();
+  numElements_ = arr->toNewArray()->length();
 }
 
 bool MArrayState::init(TempAllocator& alloc, MDefinition* obj,
@@ -4362,30 +4361,9 @@ bool MArrayState::init(TempAllocator& alloc, MDefinition* obj,
 
 bool MArrayState::initFromTemplateObject(TempAllocator& alloc,
                                          MDefinition* undefinedVal) {
-  if (!array()->isNewArrayCopyOnWrite()) {
-    for (size_t i = 0; i < numElements(); i++) {
-      initElement(i, undefinedVal);
-    }
-
-    return true;
-  }
-
-  ArrayObject* obj = array()->toNewArrayCopyOnWrite()->templateObject();
-  MOZ_ASSERT(obj->length() == numElements());
-
-  
-  
   for (size_t i = 0; i < numElements(); i++) {
-    Value val = obj->getDenseElement(i);
-    MDefinition* def = undefinedVal;
-    if (!val.isUndefined()) {
-      MConstant* ins = MConstant::New(alloc, val);
-      block()->insertBefore(this, ins);
-      def = ins;
-    }
-    initElement(i, def);
+    initElement(i, undefinedVal);
   }
-
   return true;
 }
 

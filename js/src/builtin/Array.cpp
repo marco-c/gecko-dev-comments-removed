@@ -4078,11 +4078,6 @@ ArrayObject* js::NewDenseFullyAllocatedArrayWithTemplate(
   return arr;
 }
 
-ArrayObject* js::NewDenseCopyOnWriteArray(JSContext* cx,
-                                          HandleArrayObject templateObject) {
-  MOZ_CRASH("TODO(no-TI): remove");
-}
-
 
 ArrayObject* js::NewArrayWithGroup(JSContext* cx, uint32_t length,
                                    HandleObjectGroup group) {
