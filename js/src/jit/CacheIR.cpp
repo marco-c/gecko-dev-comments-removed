@@ -4426,9 +4426,6 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
   maybeEmitIdGuard(id);
 
   
-  
-
-  
   writer.guardShape(objId, oldShape);
 
   
