@@ -560,6 +560,8 @@ var PrintEventHandler = {
         "onUserSettingsChange, changing to printerName:",
         changedSettings.printerName
       );
+      this.printForm.printerChanging = true;
+      this.printForm.disable(el => el.id != "printer-picker");
       let { printerName } = changedSettings;
       
       
@@ -568,6 +570,8 @@ var PrintEventHandler = {
         
         return;
       }
+      this.printForm.printerChanging = false;
+      this.printForm.enable();
     } else {
       changedSettings = this.getSettingsToUpdate();
     }
@@ -1736,8 +1740,11 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
     }
   }
 
-  disable() {
+  disable(filterFn) {
     for (let element of this.elements) {
+      if (filterFn && !filterFn(element)) {
+        continue;
+      }
       element.disabled = element.name != "cancel";
     }
   }
@@ -1753,7 +1760,10 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
       if (e.submitter.name == "print" && this.checkValidity()) {
         this.dispatchEvent(new Event("print", { bubbles: true }));
       }
-    } else if (e.type == "input" || e.type == "revalidate") {
+    } else if (
+      (e.type == "input" || e.type == "revalidate") &&
+      !this.printerChanging
+    ) {
       this.enable();
     }
   }

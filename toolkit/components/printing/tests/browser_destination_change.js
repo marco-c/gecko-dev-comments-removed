@@ -35,12 +35,33 @@ async function changeDestination(helper, dir) {
   await changed;
 }
 
+function assertFormEnabled(form) {
+  for (let element of form.elements) {
+    if (element.hasAttribute("disallowed")) {
+      ok(element.disabled, `${element.id} is disallowed`);
+    } else {
+      ok(!element.disabled, `${element.id} is enabled`);
+    }
+  }
+}
+
+function assertFormDisabled(form) {
+  for (let element of form.elements) {
+    if (element.id == "printer-picker" || element.id == "cancel-button") {
+      ok(!element.disabled, `${element.id} is enabled`);
+    } else {
+      ok(element.disabled, `${element.id} is disabled`);
+    }
+  }
+}
+
 add_task(async function testSlowDestinationChange() {
   await PrintHelper.withTestPage(async helper => {
     let resolvePrinterInfo = await setupPrinters(helper);
     await helper.startPrint();
 
     let destinationPicker = helper.get("printer-picker");
+    let printForm = helper.get("print");
 
     info("Changing to fast printer should change settings");
     await helper.assertSettingsChanged(
@@ -51,6 +72,7 @@ add_task(async function testSlowDestinationChange() {
         is(destinationPicker.value, fastPrinterName, "Fast printer selected");
         
         await helper.awaitAnimationFrame();
+        assertFormEnabled(printForm);
       }
     );
 
@@ -63,6 +85,7 @@ add_task(async function testSlowDestinationChange() {
         
         
         await helper.awaitAnimationFrame();
+        assertFormDisabled(printForm);
       }
     );
 
@@ -72,6 +95,7 @@ add_task(async function testSlowDestinationChange() {
       async () => {
         resolvePrinterInfo();
         await helper.waitForSettingsEvent();
+        assertFormEnabled(printForm);
       }
     );
 
@@ -85,17 +109,21 @@ add_task(async function testSwitchAwayFromSlowDestination() {
     await helper.startPrint();
 
     let destinationPicker = helper.get("printer-picker");
+    let printForm = helper.get("print");
 
     
     await helper.waitForSettingsEvent(async () => {
       await changeDestination(helper, "down");
     });
+    await helper.awaitAnimationFrame();
+    assertFormEnabled(printForm);
 
     
     await changeDestination(helper, "down");
     is(destinationPicker.value, slowPrinterName, "Slow printer selected");
     
     await helper.awaitAnimationFrame();
+    assertFormDisabled(printForm);
 
     
     await helper.waitForSettingsEvent(async () => {
@@ -106,6 +134,9 @@ add_task(async function testSwitchAwayFromSlowDestination() {
       orientation: 0,
     });
 
+    await helper.awaitAnimationFrame();
+    assertFormEnabled(printForm);
+
     
     resolvePrinterInfo();
     
@@ -114,6 +145,7 @@ add_task(async function testSwitchAwayFromSlowDestination() {
       printerName: fastPrinterName,
       orientation: 0,
     });
+    assertFormEnabled(printForm);
 
     await helper.closeDialog();
   });
