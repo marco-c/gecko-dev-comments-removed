@@ -9,6 +9,8 @@
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
 
+using mozilla::TimeDuration;
+
 static const mozilla::TimeDuration kOneMinute =
     mozilla::TimeDuration::FromSeconds(60.0f);
 
@@ -99,9 +101,19 @@ class CCGCScheduler {
     return mCleanupsSinceLastGC < aN;
   }
 
+  bool NeedsFullGC() const { return mNeedsFullGC; }
+
   
 
-  void SetNeedsFullCC() { mNeedsFullCC = true; }
+  void SetNeedsFullGC(bool aNeedGC = true) { mNeedsFullGC = aNeedGC; }
+
+  
+  
+  void EnsureCCThenGC() {
+    MOZ_ASSERT(mCCRunnerState != CCRunnerState::Inactive);
+    mNeedsFullCC = true;
+    mNeedsGCAfterCC = true;
+  }
 
   void NoteGCBegin() {
     
@@ -111,8 +123,14 @@ class CCGCScheduler {
 
   void NoteGCEnd() {
     mCCBlockStart = TimeStamp();
-    mCleanupsSinceLastGC = 0;
     mInIncrementalGC = false;
+    mNeedsFullCC = true;
+    mHasRunGC = true;
+
+    mCleanupsSinceLastGC = 0;
+    mCCollectedWaitingForGC = 0;
+    mCCollectedZonesWaitingForGC = 0;
+    mLikelyShortLivingObjectsNeedingGC = 0;
   }
 
   
@@ -142,9 +160,23 @@ class CCGCScheduler {
     return aSuspectedBeforeForgetSkippable - suspected;
   }
 
+  
+  
+  void NoteCycleCollected(const CycleCollectorResults& aResults) {
+    mCCollectedWaitingForGC += aResults.mFreedGCed;
+    mCCollectedZonesWaitingForGC += aResults.mFreedJSZones;
+  }
+
+  
+  
+  
+  
   void NoteCCEnd(TimeStamp aWhen) {
     mLastCCEndTime = aWhen;
     mNeedsFullCC = false;
+
+    
+    mNeedsGCAfterCC = false;
   }
 
   
@@ -152,6 +184,8 @@ class CCGCScheduler {
   void NoteForgetSkippableOnlyCycle() {
     mLastForgetSkippableCycleEndTime = TimeStamp::Now();
   }
+
+  void Shutdown() { mDidShutdown = true; }
 
   
 
@@ -240,6 +274,10 @@ class CCGCScheduler {
   }
 
   bool ShouldScheduleCC() const {
+    if (!mHasRunGC) {
+      return false;
+    }
+
     TimeStamp now = TimeStamp::Now();
 
     
@@ -260,6 +298,13 @@ class CCGCScheduler {
     }
 
     return IsCCNeeded(nsCycleCollector_suspectedCount(), now);
+  }
+
+  
+  
+  bool NeedsGCAfterCC() const {
+    return mCCollectedWaitingForGC > 250 || mCCollectedZonesWaitingForGC > 0 ||
+           mLikelyShortLivingObjectsNeedingGC > 2500 || mNeedsGCAfterCC;
   }
 
   bool IsLastEarlyCCTimer(int32_t aCurrentFireCount) {
@@ -318,6 +363,10 @@ class CCGCScheduler {
   void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
 
   CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline, uint32_t aSuspected) {
+    if (mDidShutdown) {
+      return {CCRunnerAction::StopRunning, Yield};
+    }
+
     if (mCCRunnerState == CCRunnerState::Inactive) {
       
       return {CCRunnerAction::StopRunning, Yield};
@@ -483,8 +532,8 @@ class CCGCScheduler {
           (endPoint - mForgetSkippableFrequencyStartTime).ToSeconds() / 60;
       uint32_t frequencyPerMinute =
           uint32_t(mForgetSkippableCounter / duration);
-      Telemetry::Accumulate(Telemetry::FORGET_SKIPPABLE_FREQUENCY,
-                            frequencyPerMinute);
+      mozilla::Telemetry::Accumulate(
+          mozilla::Telemetry::FORGET_SKIPPABLE_FREQUENCY, frequencyPerMinute);
       mForgetSkippableCounter = 0;
       mForgetSkippableFrequencyStartTime = aStartTimeStamp;
     }
@@ -504,6 +553,9 @@ class CCGCScheduler {
   
   
   TimeStamp mCCBlockStart;
+
+  bool mDidShutdown = false;
+
   TimeStamp mLastForgetSkippableEndTime;
   uint32_t mForgetSkippableCounter = 0;
   TimeStamp mForgetSkippableFrequencyStartTime;
@@ -513,10 +565,22 @@ class CCGCScheduler {
   CCRunnerState mCCRunnerState = CCRunnerState::Inactive;
   int32_t mCCRunnerEarlyFireCount = 0;
   TimeDuration mCCDelay = kCCDelay;
+
+  
+  
+  bool mHasRunGC = false;
+
   bool mNeedsFullCC = false;
+  bool mNeedsFullGC = true;
+  bool mNeedsGCAfterCC = false;
   uint32_t mPreviousSuspectedCount = 0;
 
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
+
+ public:
+  uint32_t mCCollectedWaitingForGC = 0;
+  uint32_t mCCollectedZonesWaitingForGC = 0;
+  uint32_t mLikelyShortLivingObjectsNeedingGC = 0;
 
   
 
