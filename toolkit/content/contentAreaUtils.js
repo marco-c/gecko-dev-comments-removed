@@ -60,6 +60,7 @@ function saveURL(
   aShouldBypassCache,
   aSkipPrompt,
   aReferrerInfo,
+  aCookieJarSettings,
   aSourceDocument,
   aIsContentWindowPrivate,
   aPrincipal
@@ -74,7 +75,7 @@ function saveURL(
     aFilePickerTitleKey,
     null,
     aReferrerInfo,
-    null,
+    aCookieJarSettings,
     aSourceDocument,
     aSkipPrompt,
     null,
@@ -370,6 +371,8 @@ function internalSave(
     internalPersist(persistArgs);
   }
 }
+
+
 
 
 

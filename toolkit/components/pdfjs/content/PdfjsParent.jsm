@@ -106,6 +106,7 @@ class PdfjsParent extends JSWindowActorParent {
       false ,
       null ,
       null ,
+      null ,
       PrivateBrowsingUtils.isBrowserPrivate(
         this.browser
       ) ,
