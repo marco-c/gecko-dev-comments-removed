@@ -4417,21 +4417,19 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
                                        nsIContent* aMovingInto) {
   RefPtr<OverOutElementsWrapper> wrapper = GetWrapperByEventID(aMouseEvent);
 
-  if (!wrapper || !wrapper->mLastOverElement) return;
+  if (!wrapper || !wrapper->mLastOverElement) {
+    return;
+  }
   
-  if (wrapper->mLastOverElement == wrapper->mFirstOutEventElement) return;
+  if (wrapper->mLastOverElement == wrapper->mFirstOutEventElement) {
+    return;
+  }
 
-  if (wrapper->mLastOverFrame) {
-    
-    
-    nsSubDocumentFrame* subdocFrame =
-        do_QueryFrame(wrapper->mLastOverFrame.GetFrame());
-    if (subdocFrame) {
-      nsIDocShell* docshell = subdocFrame->GetDocShell();
-      if (docshell) {
-        RefPtr<nsPresContext> presContext = docshell->GetPresContext();
-
-        if (presContext) {
+  if (RefPtr<nsFrameLoaderOwner> flo =
+          do_QueryObject(wrapper->mLastOverElement)) {
+    if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
+      if (nsIDocShell* docshell = bc->GetDocShell()) {
+        if (RefPtr<nsPresContext> presContext = docshell->GetPresContext()) {
           EventStateManager* kidESM = presContext->EventStateManager();
           
           kidESM->NotifyMouseOut(aMouseEvent, nullptr);
@@ -4441,7 +4439,9 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
   }
   
   
-  if (!wrapper->mLastOverElement) return;
+  if (!wrapper->mLastOverElement) {
+    return;
+  }
 
   
   
