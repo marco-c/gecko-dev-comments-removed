@@ -252,7 +252,7 @@ class Manager::Factory {
       
       
       SafeRefPtr<Manager> oldManager = Acquire(*aManagerId, Closing);
-      ref->Init(oldManager ? SomeRef(*oldManager) : Nothing());
+      ref->Init(oldManager.maybeDeref());
 
       MOZ_ASSERT(!sFactory->mManagerList.Contains(ref));
       sFactory->mManagerList.AppendElement(ref.unsafeGetRawPtr());
