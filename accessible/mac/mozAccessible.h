@@ -208,6 +208,12 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 - (id)moxEditableAncestor;
 
+
+- (id)moxHighestEditableAncestor;
+
+
+- (id)moxFocusableAncestor;
+
 #ifndef RELEASE_OR_BETA
 
 - (NSString*)moxMozDebugDescription;

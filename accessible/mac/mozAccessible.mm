@@ -6,6 +6,7 @@
 
 
 #import "mozAccessible.h"
+#include "MOXAccessibleBase.h"
 
 #import "MacUtils.h"
 #import "mozView.h"
@@ -829,6 +830,33 @@ struct RoleDescrComparator {
   }
 
   return nil;
+}
+
+- (id)moxHighestEditableAncestor {
+  id highestAncestor = [self moxEditableAncestor];
+  while ([highestAncestor conformsToProtocol:@protocol(MOXAccessible)]) {
+    id ancestorParent = [highestAncestor moxUnignoredParent];
+    if (![ancestorParent conformsToProtocol:@protocol(MOXAccessible)]) {
+      break;
+    }
+
+    id higherAncestor = [ancestorParent moxEditableAncestor];
+
+    if (!higherAncestor) {
+      break;
+    }
+
+    highestAncestor = higherAncestor;
+  }
+
+  return highestAncestor;
+}
+
+- (id)moxFocusableAncestor {
+  
+  
+  
+  return [self moxEditableAncestor];
 }
 
 #ifndef RELEASE_OR_BETA

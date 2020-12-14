@@ -285,6 +285,12 @@
 - (id _Nullable)moxEditableAncestor;
 
 
+- (id _Nullable)moxHighestEditableAncestor;
+
+
+- (id _Nullable)moxFocusableAncestor;
+
+
 - (NSNumber* _Nullable)moxARIAAtomic;
 
 
