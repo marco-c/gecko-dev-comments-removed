@@ -29,7 +29,7 @@
 #include "vm/ObjectOperations.h"  
 #include "vm/PromiseObject.h"  
 
-#include "builtin/streams/HandlerFunction-inl.h"  
+#include "builtin/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"  
