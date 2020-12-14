@@ -1597,11 +1597,16 @@ already_AddRefed<SourceSurface> nsWindow::GetFallbackScrollSnapshot(
 
 
 void nsWindow::Show(bool bState) {
-  if (bState) {
+  if (bState && mIsShowingPreXULSkeletonUI) {
     
     
     
     mIsShowingPreXULSkeletonUI = false;
+    
+    
+    ::SendMessageW(mWnd, WM_CHANGEUISTATE,
+                   MAKEWPARAM(UIS_INITIALIZE, UISF_HIDEFOCUS | UISF_HIDEACCEL),
+                   0);
   }
 
   if (mWindowType == eWindowType_popup) {
