@@ -304,7 +304,13 @@ bool Client::InitiateShutdownWorkThreads() {
               [](nsITimer* aTimer, void* aClosure) {
                 auto* const quotaClient = static_cast<Client*>(aClosure);
 
-                MOZ_DIAGNOSTIC_ASSERT(!quotaClient->IsShutdownCompleted());
+                if (quotaClient->IsShutdownCompleted()) {
+                  
+                  
+                  
+
+                  return;
+                }
 
                 const auto type = TypeToText(quotaClient->GetType());
 
