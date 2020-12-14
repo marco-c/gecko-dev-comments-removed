@@ -39,20 +39,11 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
 
   
   
-  let { messages } = await webConsoleFront.getCachedMessages(["ConsoleAPI"]);
+  const { messages } = await webConsoleFront.getCachedMessages(["ConsoleAPI"]);
 
-  messages = messages.map(message => {
-    
-    
-    if (message._type) {
-      return {
-        message,
-        resourceType: ResourceWatcher.TYPES.CONSOLE_MESSAGE,
-      };
-    }
+  for (const message of messages) {
     message.resourceType = ResourceWatcher.TYPES.CONSOLE_MESSAGE;
-    return message;
-  });
+  }
   onAvailable(messages);
 
   
