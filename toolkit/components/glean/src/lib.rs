@@ -62,11 +62,12 @@ pub unsafe extern "C" fn fog_init() -> nsresult {
         Err(e) => return e,
     };
 
-    
-    let (_os_version, _architecture) = match get_system_info() {
+    let (os_version, _architecture) = match get_system_info() {
         Ok(si) => si,
         Err(e) => return e,
     };
+
+    fog::metrics::fog_validation::os_version.set(os_version);
 
     let client_info = ClientInfoMetrics {
         app_build,

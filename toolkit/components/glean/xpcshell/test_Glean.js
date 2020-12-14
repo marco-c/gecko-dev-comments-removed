@@ -10,7 +10,53 @@
 "use strict";
 
 Cu.importGlobalProperties(["Glean"]);
+const { MockRegistrar } = ChromeUtils.import(
+  "resource://testing-common/MockRegistrar.jsm"
+);
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+
+
+
+
+var SysInfo = {
+  overrides: {},
+
+  
+
+
+
+
+  _getOverridden(name) {
+    if (name in this.overrides) {
+      return this.overrides[name];
+    }
+
+    return undefined;
+  },
+
+  
+  getProperty(name) {
+    let override = this._getOverridden(name);
+    return override !== undefined
+      ? override
+      : this._genuine.QueryInterface(Ci.nsIPropertyBag).getProperty(name);
+  },
+
+  
+  get(name) {
+    let override = this._getOverridden(name);
+    return override !== undefined
+      ? override
+      : this._genuine.QueryInterface(Ci.nsIPropertyBag2).get(name);
+  },
+
+  
+  getPropertyAsACString(name) {
+    return this.get(name);
+  },
+
+  QueryInterface: ChromeUtils.generateQI(["nsIPropertyBag2", "nsISystemInfo"]),
+};
 
 function sleep(ms) {
   
@@ -22,8 +68,22 @@ add_task(function test_setup() {
   do_get_profile();
 
   
+  SysInfo.overrides = {
+    version: "1.2.3",
+    arc: "x64",
+  };
+  MockRegistrar.register("@mozilla.org/system-info;1", SysInfo);
+
+  
   let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
   FOG.initializeFOG();
+});
+
+add_task(function test_osversion_is_set() {
+  Assert.equal(
+    "1.2.3",
+    Glean.fog_validation.os_version.testGetValue("fog-validation")
+  );
 });
 
 add_task(function test_fog_counter_works() {
