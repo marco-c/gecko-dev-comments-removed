@@ -189,18 +189,6 @@ const LOGGER_ID = "addons.xpi";
 
 var logger = Log.repository.getLogger(LOGGER_ID);
 
-XPCOMUtils.defineLazyGetter(this, "gStartupScanScopes", () => {
-  let appBuildID = Services.appinfo.appBuildID;
-  let oldAppBuildID = Services.prefs.getCharPref(PREF_EM_LAST_APP_BUILD_ID, "");
-  Services.prefs.setCharPref(PREF_EM_LAST_APP_BUILD_ID, appBuildID);
-  if (appBuildID !== oldAppBuildID) {
-    
-    return AddonManager.SCOPE_ALL;
-  }
-
-  return Services.prefs.getIntPref(PREF_EM_STARTUP_SCAN_SCOPES, 0);
-});
-
 
 
 
@@ -1443,6 +1431,24 @@ var XPIStates = {
     let changed = false;
     let oldLocations = new Set(Object.keys(oldState));
 
+    let startupScanScopes;
+    if (
+      Services.appinfo.appBuildID ==
+      Services.prefs.getCharPref(PREF_EM_LAST_APP_BUILD_ID, "")
+    ) {
+      startupScanScopes = Services.prefs.getIntPref(
+        PREF_EM_STARTUP_SCAN_SCOPES,
+        0
+      );
+    } else {
+      
+      Services.prefs.setCharPref(
+        PREF_EM_LAST_APP_BUILD_ID,
+        Services.appinfo.appBuildID
+      );
+      startupScanScopes = AddonManager.SCOPE_ALL;
+    }
+
     for (let loc of XPIStates.locations()) {
       oldLocations.delete(loc.name);
 
@@ -1452,7 +1458,7 @@ var XPIStates = {
       changed = changed || loc.changed;
 
       
-      if (ignoreSideloads && !(loc.scope & gStartupScanScopes)) {
+      if (ignoreSideloads && !(loc.scope & startupScanScopes)) {
         continue;
       }
 
