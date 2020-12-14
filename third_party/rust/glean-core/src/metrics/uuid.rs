@@ -4,6 +4,7 @@
 
 use uuid::Uuid;
 
+use crate::error_recording::{record_error, ErrorType};
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
@@ -59,6 +60,28 @@ impl UuidMetric {
     
     
     
+    
+    
+    
+    
+    pub fn set_from_str(&self, glean: &Glean, value: &str) {
+        if !self.should_record(glean) {
+            return;
+        }
+
+        if let Ok(uuid) = uuid::Uuid::parse_str(&value) {
+            self.set(glean, uuid);
+        } else {
+            let msg = format!("Unexpected UUID value '{}'", value);
+            record_error(glean, &self.meta, ErrorType::InvalidValue, msg, None);
+        }
+    }
+
+    
+    
+    
+    
+    
     pub fn generate_and_set(&self, storage: &Glean) -> Uuid {
         let uuid = Uuid::new_v4();
         self.set(storage, uuid);
@@ -91,14 +114,7 @@ impl UuidMetric {
     
     
     
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<String> {
-        match StorageManager.snapshot_metric(
-            glean.storage(),
-            storage_name,
-            &self.meta.identifier(glean),
-        ) {
-            Some(Metric::Uuid(s)) => Some(s),
-            _ => None,
-        }
+    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<Uuid> {
+        self.get_value(glean, storage_name)
     }
 }
