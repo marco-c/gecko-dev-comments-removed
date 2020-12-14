@@ -214,10 +214,10 @@ namespace mozilla {
 
 
 #ifdef __COVERITY__
-#  define MOZ_ATOMIC_BITFIELDS_SET_GUARD(aValue, aFieldSize)
+#  define MOZ_ATOMIC_BITFIELDS_STORE_GUARD(aValue, aFieldSize)
 #else
-#  define MOZ_ATOMIC_BITFIELDS_SET_GUARD(aValue, aFieldSize) \
-    MOZ_ASSERT(((uint64_t)aValue) < (1ull << aFieldSize),    \
+#  define MOZ_ATOMIC_BITFIELDS_STORE_GUARD(aValue, aFieldSize) \
+    MOZ_ASSERT(((uint64_t)aValue) < (1ull << aFieldSize),      \
                "Stored value exceeded capacity of bitfield!")
 #endif
 
@@ -290,7 +290,7 @@ namespace mozilla {
   static_assert(std::is_unsigned<aFieldType>(), #aBitfields                \
                 ": MOZ_ATOMIC_BITFIELDS doesn't support signed payloads"); \
                                                                            \
-  aFieldType MOZ_CONCAT(Get, aFieldName)() const {                         \
+  aFieldType MOZ_CONCAT(Load, aFieldName)() const {                        \
     uint##aBitfieldsSize##_t fieldSize, mask, masked, value;               \
     size_t offset = MOZ_CONCAT(aBitfields, aFieldName);                    \
     fieldSize = aFieldSize;                                                \
@@ -300,8 +300,8 @@ namespace mozilla {
     return value;                                                          \
   }                                                                        \
                                                                            \
-  void MOZ_CONCAT(Set, aFieldName)(aFieldType aValue) {                    \
-    MOZ_ATOMIC_BITFIELDS_SET_GUARD(aValue, aFieldSize);                    \
+  void MOZ_CONCAT(Store, aFieldName)(aFieldType aValue) {                  \
+    MOZ_ATOMIC_BITFIELDS_STORE_GUARD(aValue, aFieldSize);                  \
     uint##aBitfieldsSize##_t fieldSize, mask, resizedValue, packedValue,   \
         oldValue, clearedValue, newValue;                                  \
     size_t offset = MOZ_CONCAT(aBitfields, aFieldName);                    \

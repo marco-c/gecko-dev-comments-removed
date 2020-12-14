@@ -398,7 +398,7 @@ class RasterImage final : public ImageResource,
 
 
   Orientation UsedOrientation() const {
-    return GetHandledOrientation() ? mOrientation : Orientation();
+    return LoadHandledOrientation() ? mOrientation : Orientation();
   }
 
   
