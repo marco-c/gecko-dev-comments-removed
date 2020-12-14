@@ -17,12 +17,16 @@ use tempfile::Builder;
 
 use rkv::{
     backend::{
+        BackendEnvironmentBuilder,
         Lmdb,
         LmdbEnvironment,
         SafeMode,
         SafeModeEnvironment,
     },
+    CloseOptions,
     Rkv,
+    StoreOptions,
+    Value,
 };
 
 
@@ -133,4 +137,121 @@ fn test_same_with_capacity_safe() {
     let created_arc = manager.get_or_create_with_capacity(p, 10, Rkv::with_capacity::<SafeMode>).expect("created");
     let fetched_arc = manager.get(p).expect("success").expect("existed");
     assert!(Arc::ptr_eq(&created_arc, &fetched_arc));
+}
+
+
+
+#[test]
+fn test_safe_mode_corrupt_while_open_1() {
+    type Manager = rkv::Manager<SafeModeEnvironment>;
+
+    let root = Builder::new().prefix("test_safe_mode_corrupt_while_open_1").tempdir().expect("tempdir");
+    fs::create_dir_all(root.path()).expect("dir created");
+
+    
+    let mut manager = Manager::singleton().write().unwrap();
+    let shared_env = manager.get_or_create(root.path(), Rkv::new::<SafeMode>).expect("created");
+    let env = shared_env.read().unwrap();
+
+    
+    let store = env.open_single("store", StoreOptions::create()).expect("opened");
+    let mut writer = env.write().expect("writer");
+    store.put(&mut writer, "foo", &Value::I64(1234)).expect("wrote");
+    store.put(&mut writer, "bar", &Value::Bool(true)).expect("wrote");
+    store.put(&mut writer, "baz", &Value::Str("héllo, yöu")).expect("wrote");
+    writer.commit().expect("committed");
+    env.sync(true).expect("synced");
+
+    
+    let mut safebin = root.path().to_path_buf();
+    safebin.push("data.safe.bin");
+    assert!(safebin.exists());
+
+    
+    fs::write(&safebin, "bogus").expect("dbfile corrupted");
+
+    
+    drop(env);
+    drop(shared_env);
+    manager.try_close(root.path(), CloseOptions::default()).expect("closed without deleting");
+    assert!(manager.get(root.path()).expect("success").is_none());
+
+    
+    manager.get_or_create(root.path(), Rkv::new::<SafeMode>).expect_err("not created");
+    assert!(manager.get(root.path()).expect("success").is_none());
+
+    
+    let mut builder = Rkv::environment_builder::<SafeMode>();
+    builder.set_discard_if_corrupted(true);
+    manager.get_or_create_from_builder(root.path(), builder, Rkv::from_builder::<SafeMode>).expect("created");
+    assert!(manager.get(root.path()).expect("success").is_some());
+}
+
+
+
+#[test]
+fn test_safe_mode_corrupt_while_open_2() {
+    type Manager = rkv::Manager<SafeModeEnvironment>;
+
+    let root = Builder::new().prefix("test_safe_mode_corrupt_while_open_2").tempdir().expect("tempdir");
+    fs::create_dir_all(root.path()).expect("dir created");
+
+    
+    let mut manager = Manager::singleton().write().unwrap();
+    let shared_env = manager.get_or_create(root.path(), Rkv::new::<SafeMode>).expect("created");
+    let env = shared_env.read().unwrap();
+
+    
+    let store = env.open_single("store", StoreOptions::create()).expect("opened");
+    let mut writer = env.write().expect("writer");
+    store.put(&mut writer, "foo", &Value::I64(1234)).expect("wrote");
+    store.put(&mut writer, "bar", &Value::Bool(true)).expect("wrote");
+    store.put(&mut writer, "baz", &Value::Str("héllo, yöu")).expect("wrote");
+    writer.commit().expect("committed");
+    env.sync(true).expect("synced");
+
+    
+    let mut safebin = root.path().to_path_buf();
+    safebin.push("data.safe.bin");
+    assert!(safebin.exists());
+
+    
+    fs::write(&safebin, "bogus").expect("dbfile corrupted");
+
+    
+    let store = env.open_single("store", StoreOptions::default()).expect("opened");
+    let reader = env.read().expect("reader");
+    assert_eq!(store.get(&reader, "foo").expect("read"), Some(Value::I64(1234)));
+    assert_eq!(store.get(&reader, "bar").expect("read"), Some(Value::Bool(true)));
+    assert_eq!(store.get(&reader, "baz").expect("read"), Some(Value::Str("héllo, yöu")));
+    reader.abort();
+
+    
+    let store = env.open_single("store", StoreOptions::default()).expect("opened");
+    let mut writer = env.write().expect("writer");
+    store.put(&mut writer, "foo2", &Value::I64(5678)).expect("wrote");
+    store.put(&mut writer, "bar2", &Value::Bool(false)).expect("wrote");
+    store.put(&mut writer, "baz2", &Value::Str("byé, yöu")).expect("wrote");
+    writer.commit().expect("committed");
+    env.sync(true).expect("synced");
+
+    
+    drop(env);
+    drop(shared_env);
+    manager.try_close(root.path(), CloseOptions::default()).expect("closed without deleting");
+    assert!(manager.get(root.path()).expect("success").is_none());
+
+    
+    let shared_env = manager.get_or_create(root.path(), Rkv::new::<SafeMode>).expect("created");
+    let env = shared_env.read().unwrap();
+
+    
+    let store = env.open_single("store", StoreOptions::default()).expect("opened");
+    let reader = env.read().expect("reader");
+    assert_eq!(store.get(&reader, "foo").expect("read"), Some(Value::I64(1234)));
+    assert_eq!(store.get(&reader, "bar").expect("read"), Some(Value::Bool(true)));
+    assert_eq!(store.get(&reader, "baz").expect("read"), Some(Value::Str("héllo, yöu")));
+    assert_eq!(store.get(&reader, "foo2").expect("read"), Some(Value::I64(5678)));
+    assert_eq!(store.get(&reader, "bar2").expect("read"), Some(Value::Bool(false)));
+    assert_eq!(store.get(&reader, "baz2").expect("read"), Some(Value::Str("byé, yöu")));
 }

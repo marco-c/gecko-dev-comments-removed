@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+use crate::store::keys::EncodableKey;
+
+pub trait PrimitiveInt: EncodableKey {}
+
+impl PrimitiveInt for u32 {}
