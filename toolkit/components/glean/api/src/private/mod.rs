@@ -75,12 +75,6 @@ impl Instant {
     fn as_nanos(&self) -> u64 {
         self.0
     }
-
-    
-    fn as_millis(&self) -> u64 {
-        const NANOS_PER_MILLI: u64 = 1_000_000;
-        self.0 / NANOS_PER_MILLI
-    }
 }
 
 
