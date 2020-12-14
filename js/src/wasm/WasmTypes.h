@@ -656,7 +656,11 @@ class ValType {
   
   bool isExposable() const {
     MOZ_ASSERT(isValid());
+#if defined(ENABLE_WASM_SIMD) || defined(ENABLE_WASM_GC)
     return kind() != ValType::V128 && !isTypeIndex();
+#else
+    return true;
+#endif
   }
 
   Kind kind() const {
@@ -1295,6 +1299,7 @@ extern MOZ_MUST_USE bool CheckEqRefValue(JSContext* cx, HandleValue v,
                                          MutableHandleAnyRef vp);
 class NoDebug;
 class DebugCodegenVal;
+
 template <typename Debug = NoDebug>
 extern bool ToWebAssemblyValue(JSContext* cx, HandleValue val, ValType type,
                                void* loc, bool mustWrite64);
@@ -1368,21 +1373,19 @@ class FuncType {
   bool temporarilyUnsupportedResultCountForJitExit() const {
     return results().length() > MaxResultsForJitExit;
   }
-#ifdef ENABLE_WASM_SIMD
-  bool hasV128ArgOrRet() const {
+  bool hasUnexposableArgOrRet() const {
     for (ValType arg : args()) {
-      if (arg == ValType::V128) {
+      if (!arg.isExposable()) {
         return true;
       }
     }
     for (ValType result : results()) {
-      if (result == ValType::V128) {
+      if (!result.isExposable()) {
         return true;
       }
     }
     return false;
   }
-#endif
   
   
   
@@ -1423,13 +1426,7 @@ class FuncType {
   
   
   
-  
   bool temporarilyUnsupportedReftypeForExit() const {
-    for (ValType arg : args()) {
-      if (arg.isTypeIndex()) {
-        return true;
-      }
-    }
     for (ValType result : results()) {
       if (result.isReference() &&
           (!result.isExternRef() || !result.isNullable())) {

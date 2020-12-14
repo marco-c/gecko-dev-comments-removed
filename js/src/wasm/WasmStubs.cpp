@@ -1038,14 +1038,12 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
   GenerateJitEntryLoadTls(masm, frameSize);
 
-#ifdef ENABLE_WASM_SIMD
-  if (fe.funcType().hasV128ArgOrRet()) {
+  if (fe.funcType().hasUnexposableArgOrRet()) {
     CallSymbolicAddress(masm, !fe.hasEagerStubs(),
                         SymbolicAddress::ReportV128JSCall);
     GenerateJitEntryThrow(masm, frameSize);
     return FinishOffsets(masm, offsets);
   }
-#endif
 
   FloatRegister scratchF = ABINonArgDoubleReg;
   Register scratchG = ScratchIonEntry;
@@ -1375,7 +1373,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
           case RefType::TypeIndex:
-            MOZ_CRASH("returning reference in jitentry NYI");
+            MOZ_CRASH("unexpected return type when calling from ion to wasm");
         }
         break;
       }
@@ -2876,12 +2874,10 @@ bool wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex,
     return true;
   }
 
-#ifdef ENABLE_WASM_SIMD
   
-  if (fe.funcType().hasV128ArgOrRet()) {
+  if (fe.funcType().hasUnexposableArgOrRet()) {
     return true;
   }
-#endif
 
   
   
@@ -2928,13 +2924,11 @@ bool wasm::GenerateStubs(const ModuleEnvironment& env,
       return false;
     }
 
-#ifdef ENABLE_WASM_SIMD
     
     
-    if (fi.funcType().hasV128ArgOrRet()) {
+    if (fi.funcType().hasUnexposableArgOrRet()) {
       continue;
     }
-#endif
 
     if (fi.funcType().temporarilyUnsupportedReftypeForExit()) {
       continue;
