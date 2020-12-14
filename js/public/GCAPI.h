@@ -385,6 +385,12 @@ typedef enum JSGCParamKey {
 
 
   JSGC_PRETENURE_STRING_THRESHOLD = 42,
+
+  
+
+
+
+  JSGC_STOP_PRETENURE_STRING_THRESHOLD = 43,
 } JSGCParamKey;
 
 
