@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const { RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
 const workerDescriptorSpec = generateActorSpec({
   typeName: "workerDescriptor",
@@ -15,13 +15,6 @@ const workerDescriptorSpec = generateActorSpec({
     },
     detach: {
       request: {},
-      response: RetVal("json"),
-    },
-    
-    connect: {
-      request: {
-        options: Arg(0, "json"),
-      },
       response: RetVal("json"),
     },
     getTarget: {
