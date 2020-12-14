@@ -5001,7 +5001,7 @@
       if (includeLabel) {
         label = tab._fullLabel || tab.getAttribute("label");
       }
-      if (AppConstants.NIGHTLY_BUILD) {
+      if (Services.prefs.getBoolPref("browser.tabs.tooltipsShowPid", false)) {
         if (tab.linkedBrowser) {
           
           
