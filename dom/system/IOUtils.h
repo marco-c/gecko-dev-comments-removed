@@ -230,20 +230,6 @@ class IOUtils final {
 
 
 
-  static Result<uint32_t, IOError> WriteSync(PRFileDesc* aFd, nsIFile* aFile,
-                                             const Span<const uint8_t>& aBytes);
-
-  
-
-
-
-
-
-
-
-
-
-
   static Result<Ok, IOError> MoveSync(nsIFile* aSourceFile, nsIFile* aDestFile,
                                       bool aNoOverwrite);
 
