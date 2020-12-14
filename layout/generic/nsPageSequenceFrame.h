@@ -85,6 +85,15 @@ class nsSharedPageData {
   
   
   
+  
+  float mPagesPerSheetScale = 1.0f;
+  nsPoint mPagesPerSheetGridOrigin;
+
+  
+  
+  
+  
+  
   const nsPagesPerSheetInfo* PagesPerSheetInfo();
 
  private:

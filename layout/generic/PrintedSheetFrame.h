@@ -52,6 +52,10 @@ class PrintedSheetFrame final : public nsContainerFrame {
 
   
   
+  void ComputePagesPerSheetOriginAndScale();
+
+  
+  
   nsSharedPageData* mPD = nullptr;
   
   uint32_t mNumPages = 0;

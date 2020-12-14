@@ -36,23 +36,21 @@ gfx::Matrix4x4 ComputePagesPerSheetTransform(nsIFrame* aFrame,
   auto* pageFrame = static_cast<nsPageFrame*>(aFrame);
 
   
+  
   float scale = 1.0f;
+  nsPoint gridOrigin;
   uint32_t rowIdx = 0;
   uint32_t colIdx = 0;
 
   nsSharedPageData* pd = pageFrame->GetSharedPageData();
   if (pd) {
     const auto* ppsInfo = pd->PagesPerSheetInfo();
-
-    
-    
-    
-    
-    
-    scale = 1.0f / static_cast<float>(ppsInfo->mNumCols);
-
-    std::tie(rowIdx, colIdx) =
-        ppsInfo->GetRowAndColFromIdx(pageFrame->IndexOnSheet());
+    if (ppsInfo->mNumPages > 1) {
+      scale = pd->mPagesPerSheetScale;
+      gridOrigin = pd->mPagesPerSheetGridOrigin;
+      std::tie(rowIdx, colIdx) =
+          ppsInfo->GetRowAndColFromIdx(pageFrame->IndexOnSheet());
+    }
   }
 
   
@@ -60,9 +58,18 @@ gfx::Matrix4x4 ComputePagesPerSheetTransform(nsIFrame* aFrame,
 
   
   nsSize pageSize = pageFrame->PresContext()->GetPageSize();
-  return transform.PreTranslate(
+  transform.PreTranslate(
       NSAppUnitsToFloatPixels(colIdx * pageSize.width, aAppUnitsPerPixel),
       NSAppUnitsToFloatPixels(rowIdx * pageSize.height, aAppUnitsPerPixel), 0);
+
+  
+  
+  
+  
+  
+  return transform.PostTranslate(
+      NSAppUnitsToFloatPixels(gridOrigin.x, aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(gridOrigin.y, aAppUnitsPerPixel), 0);
 }
 
 void PrintedSheetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -132,6 +139,12 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
 
   
   const uint32_t desiredPagesPerSheet = mPD->PagesPerSheetInfo()->mNumPages;
+
+  
+  
+  if (desiredPagesPerSheet > 1 && !GetPrevContinuation()) {
+    ComputePagesPerSheetOriginAndScale();
+  }
 
   
   
@@ -256,6 +269,80 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
 
   FinishAndStoreOverflow(&aReflowOutput);
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aReflowOutput);
+}
+
+void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
+  MOZ_ASSERT(mPD->PagesPerSheetInfo()->mNumPages > 1,
+             "Unnecessary to call this in a regular 1-page-per-sheet scenario; "
+             "the computed values won't ever be used in that case");
+  MOZ_ASSERT(!GetPrevContinuation(),
+             "Only needs to be called once, so 1st continuation handles it");
+
+  
+  const nsSize pageSize = PresContext()->GetPageSize();
+
+  
+  
+  nsSize availSpaceOnSheet = pageSize;
+  nsMargin uwm = nsPresContext::CSSTwipsToAppUnits(
+      mPD->mPrintSettings->GetUnwriteableMarginInTwips());
+  availSpaceOnSheet.width -= uwm.LeftRight();
+  availSpaceOnSheet.height -= uwm.TopBottom();
+  nsPoint pageGridOrigin(uwm.left, uwm.top);
+
+  
+  
+  const auto* ppsInfo = mPD->PagesPerSheetInfo();
+  nsSize pageGridFullSize(ppsInfo->mNumCols * pageSize.width,
+                          ppsInfo->mNumRows * pageSize.height);
+
+  if (MOZ_UNLIKELY(availSpaceOnSheet.IsEmpty() || pageGridFullSize.IsEmpty())) {
+    
+    
+    
+    
+    
+    
+    
+    NS_WARNING("Zero area for pages-per-sheet grid, or zero-sized grid");
+    mPD->mPagesPerSheetGridOrigin = pageGridOrigin;
+    mPD->mPagesPerSheetScale = 0.0f;
+    return;
+  }
+
+  
+  float hScale =
+      availSpaceOnSheet.width / static_cast<float>(pageGridFullSize.width);
+  float vScale =
+      availSpaceOnSheet.height / static_cast<float>(pageGridFullSize.height);
+
+  
+  
+  
+  float scale = std::min(hScale, vScale);
+  if (hScale < vScale) {
+    
+    
+    nscoord extraSpace = availSpaceOnSheet.height -
+                         NSToCoordFloor(scale * pageGridFullSize.height);
+    if (MOZ_LIKELY(extraSpace > 0)) {
+      pageGridOrigin.y += extraSpace / 2;
+    }
+  } else if (vScale < hScale) {
+    
+    
+    nscoord extraSpace = availSpaceOnSheet.width -
+                         NSToCoordFloor(scale * pageGridFullSize.width);
+    if (MOZ_LIKELY(extraSpace > 0)) {
+      pageGridOrigin.x += extraSpace / 2;
+    }
+  }
+  
+  
+
+  
+  mPD->mPagesPerSheetGridOrigin = pageGridOrigin;
+  mPD->mPagesPerSheetScale = scale;
 }
 
 void PrintedSheetFrame::AppendDirectlyOwnedAnonBoxes(
