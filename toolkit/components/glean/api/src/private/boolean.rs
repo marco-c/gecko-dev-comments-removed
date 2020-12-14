@@ -2,25 +2,24 @@
 
 
 
-use std::sync::Arc;
+use inherent::inherent;
+
+use glean_core::traits::Boolean;
 
 use super::CommonMetricData;
 
-use crate::dispatcher;
 use crate::ipc::need_ipc;
 use crate::private::MetricId;
 
 
 
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub enum BooleanMetric {
-    Parent(Arc<BooleanMetricImpl>),
+    Parent(glean::private::BooleanMetric),
     Child(BooleanMetricIpc),
 }
 #[derive(Clone, Debug)]
-pub struct BooleanMetricImpl(pub(crate) glean_core::metrics::BooleanMetric);
-#[derive(Debug)]
 pub struct BooleanMetricIpc;
 
 impl BooleanMetric {
@@ -29,7 +28,7 @@ impl BooleanMetric {
         if need_ipc() {
             BooleanMetric::Child(BooleanMetricIpc)
         } else {
-            BooleanMetric::Parent(Arc::new(BooleanMetricImpl::new(meta)))
+            BooleanMetric::Parent(glean::private::BooleanMetric::new(meta))
         }
     }
 
@@ -40,23 +39,22 @@ impl BooleanMetric {
             BooleanMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
         }
     }
+}
 
+#[inherent(pub)]
+impl Boolean for BooleanMetric {
     
     
     
     
     
-    pub fn set(&self, value: bool) {
+    fn set(&self, value: bool) {
         match self {
             BooleanMetric::Parent(p) => {
-                let metric = Arc::clone(&p);
-                dispatcher::launch(move || metric.set(value));
+                Boolean::set(&*p, value);
             }
             BooleanMetric::Child(_) => {
-                log::error!(
-                    "Unable to set boolean metric {:?} in non-parent process. Ignoring.",
-                    self
-                );
+                log::error!("Unable to set boolean metric in non-parent process. Ignoring.");
                 
             }
         }
@@ -74,31 +72,13 @@ impl BooleanMetric {
     
     
     
-    pub fn test_get_value(&self, storage_name: &str) -> Option<bool> {
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<bool> {
         match self {
-            BooleanMetric::Parent(p) => {
-                dispatcher::block_on_queue();
-                p.test_get_value(storage_name)
+            BooleanMetric::Parent(p) => p.test_get_value(ping_name),
+            BooleanMetric::Child(_) => {
+                panic!("Cannot get test value for boolean metric in non-parent process!",)
             }
-            BooleanMetric::Child(_) => panic!(
-                "Cannot get test value for {:?} in non-parent process!",
-                self
-            ),
         }
-    }
-}
-
-impl BooleanMetricImpl {
-    pub fn new(meta: CommonMetricData) -> Self {
-        Self(glean_core::metrics::BooleanMetric::new(meta))
-    }
-
-    pub fn set(&self, value: bool) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
-    }
-
-    pub fn test_get_value(&self, storage_name: &str) -> Option<bool> {
-        crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
     }
 }
 
