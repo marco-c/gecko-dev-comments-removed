@@ -108,12 +108,9 @@ var DateTimePickerPanel = class {
   }
 
   initPicker(detail) {
-    let locale = new Services.intl.Locale(
-      Services.locale.webExposedLocales[0],
-      {
-        calendar: "gregory",
-      }
-    ).toString();
+    
+    
+    let locale = this.setGregorian(Services.locale.webExposedLocales[0]);
 
     
     
@@ -293,6 +290,13 @@ var DateTimePickerPanel = class {
   getDisplayNames(locale, keys, style) {
     const displayNames = Services.intl.getDisplayNames(locale, { keys, style });
     return keys.map(key => displayNames.values[key]);
+  }
+
+  setGregorian(locale) {
+    if (locale.match(/u-ca-/)) {
+      return locale.replace(/u-ca-[^-]+/, "u-ca-gregory");
+    }
+    return locale + "-u-ca-gregory";
   }
 
   handleEvent(aEvent) {

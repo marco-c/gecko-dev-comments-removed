@@ -24,19 +24,16 @@ function test_methods_calling() {
   Services.intl.getDisplayNames("ar");
   Services.intl.getLocaleInfo("de");
   new Services.intl.DateTimeFormat("fr");
-  new Services.intl.ListFormat("fr");
-  new Services.intl.Locale("fr");
   new Services.intl.RelativeTimeFormat("fr");
   ok(true);
 }
 
 function test_constructors() {
   let constructors = [
-    "Collator",
     "DateTimeFormat",
-    "ListFormat",
     "NumberFormat",
     "PluralRules",
+    "Collator",
   ];
 
   constructors.forEach(constructor => {
@@ -44,6 +41,20 @@ function test_constructors() {
     let obj2 = new Services.intl[constructor]();
 
     equal(typeof obj, typeof obj2);
+
+    Assert.throws(() => {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      Services.intl[constructor]();
+    }, /class constructors must be invoked with |new|/);
   });
 }
 
