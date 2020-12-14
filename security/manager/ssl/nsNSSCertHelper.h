@@ -15,8 +15,7 @@
 extern const char* kRootModuleName;
 extern const size_t kRootModuleNameLen;
 
-nsresult GetCertFingerprintByOidTag(CERTCertificate* nsscert, SECOidTag aOidTag,
-                                    nsCString& fp);
+class nsIX509Cert;
 
 
 
