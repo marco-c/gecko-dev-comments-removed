@@ -94,20 +94,6 @@ enum class DynamicImportStatus { Failed = 0, Ok };
 
 
 extern JS_PUBLIC_API bool FinishDynamicModuleImport(
-    JSContext* cx, Handle<JSObject*> evaluationPromise,
-    Handle<Value> referencingPrivate, Handle<JSString*> specifier,
-    Handle<JSObject*> promise);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool FinishDynamicModuleImport_NoTLA(
     JSContext* cx, DynamicImportStatus status, Handle<Value> referencingPrivate,
     Handle<JSString*> specifier, Handle<JSObject*> promise);
 
@@ -159,24 +145,8 @@ extern JS_PUBLIC_API bool ModuleInstantiate(JSContext* cx,
 
 
 
-
-
 extern JS_PUBLIC_API bool ModuleEvaluate(JSContext* cx,
-                                         Handle<JSObject*> moduleRecord,
-                                         MutableHandleValue rval);
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool ThrowOnModuleEvaluationFailure(
-    JSContext* cx, Handle<JSObject*> evaluationPromise);
+                                         Handle<JSObject*> moduleRecord);
 
 
 

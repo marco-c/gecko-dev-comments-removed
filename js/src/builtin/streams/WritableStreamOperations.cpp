@@ -30,8 +30,8 @@
 #include "vm/List.h"         
 #include "vm/PromiseObject.h"  
 
-#include "builtin/HandlerFunction-inl.h"  
-#include "builtin/Promise-inl.h"          
+#include "builtin/Promise-inl.h"  
+#include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  

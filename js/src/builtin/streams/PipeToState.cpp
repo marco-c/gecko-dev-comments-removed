@@ -31,7 +31,7 @@
 #include "vm/PromiseObject.h"  
 #include "vm/Runtime.h"        
 
-#include "builtin/HandlerFunction-inl.h"  
+#include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  

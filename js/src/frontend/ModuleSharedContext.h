@@ -14,7 +14,6 @@
 #include "frontend/SharedContext.h"  
 #include "js/RootingAPI.h"           
 #include "vm/Scope.h"                
-#include "vm/StencilEnums.h"         
 
 namespace js {
 
@@ -24,7 +23,7 @@ namespace frontend {
 
 struct CompilationInfo;
 
-class MOZ_STACK_CLASS ModuleSharedContext : public SuspendableContext {
+class MOZ_STACK_CLASS ModuleSharedContext : public SharedContext {
  public:
   ParserModuleScopeData* bindings;
   ModuleBuilder& builder;

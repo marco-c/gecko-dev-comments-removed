@@ -582,11 +582,8 @@ class InterpreterFrame {
 
 
 
-
-
   JSFunction& callee() const {
-    MOZ_ASSERT(isFunctionFrame() || isModuleFrame());
-    MOZ_ASSERT_IF(isModuleFrame(), script()->isAsync());
+    MOZ_ASSERT(isFunctionFrame());
     return calleev().toObject().as<JSFunction>();
   }
 
@@ -658,7 +655,7 @@ class InterpreterFrame {
 
   void resumeGeneratorFrame(JSObject* envChain) {
     MOZ_ASSERT(script()->isGenerator() || script()->isAsync());
-    MOZ_ASSERT_IF(!script()->isModule(), isFunctionFrame());
+    MOZ_ASSERT(isFunctionFrame());
     flags_ |= HAS_INITIAL_ENV;
     envChain_ = envChain;
   }
@@ -762,11 +759,7 @@ class InterpreterRegs {
     pc = fp_->prevpc();
     unsigned spForNewTarget =
         fp_->isResumedGenerator() ? 0 : fp_->isConstructing();
-    
-    
-    
-    unsigned nActualArgs = fp_->isModuleFrame() ? 0 : fp_->numActualArgs();
-    sp = fp_->prevsp() - nActualArgs - 1 - spForNewTarget;
+    sp = fp_->prevsp() - fp_->numActualArgs() - 1 - spForNewTarget;
     fp_ = fp_->prev();
     MOZ_ASSERT(fp_);
   }

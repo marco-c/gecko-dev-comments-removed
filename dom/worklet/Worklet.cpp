@@ -405,8 +405,7 @@ void ExecutionRunnable::RunOnWorkletThread() {
   
   
   
-  JS::Rooted<JS::Value> ignored(cx);
-  JS::ModuleEvaluate(cx, module, &ignored);
+  JS::ModuleEvaluate(cx, module);
 
   
   mResult = NS_OK;

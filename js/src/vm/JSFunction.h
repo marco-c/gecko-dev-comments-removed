@@ -817,9 +817,6 @@ class FunctionExtended : public JSFunction {
   
   static const unsigned ASMJS_MODULE_SLOT = 0;
 
-  
-  static const unsigned MODULE_SLOT = 0;
-
   static inline size_t offsetOfExtendedSlot(unsigned which) {
     MOZ_ASSERT(which < NUM_EXTENDED_SLOTS);
     return offsetof(FunctionExtended, extendedSlots) +
