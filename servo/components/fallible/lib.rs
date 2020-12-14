@@ -86,12 +86,9 @@ fn try_double_vec<T>(vec: &mut Vec<T>) -> Result<(), FailedAllocationError> {
 impl<T: Array> FallibleVec<T::Item> for SmallVec<T> {
     #[inline(always)]
     fn try_push(&mut self, val: T::Item) -> Result<(), FailedAllocationError> {
-        #[cfg(feature = "known_system_malloc")]
-        {
-            if self.capacity() == self.len() {
-                try_double_small_vec(self)?;
-                debug_assert!(self.capacity() > self.len());
-            }
+        if self.capacity() == self.len() {
+            try_grow_small_vec(self)?;
+            debug_assert!(self.capacity() > self.len());
         }
         self.push(val);
         Ok(())
@@ -99,65 +96,24 @@ impl<T: Array> FallibleVec<T::Item> for SmallVec<T> {
 }
 
 
-
 #[cfg(feature = "known_system_malloc")]
 #[inline(never)]
 #[cold]
-fn try_double_small_vec<T>(svec: &mut SmallVec<T>) -> Result<(), FailedAllocationError>
+fn try_grow_small_vec<T>(svec: &mut SmallVec<T>) -> Result<(), FailedAllocationError>
 where
     T: Array,
 {
-    use std::mem;
-    use std::ptr::copy_nonoverlapping;
-
-    let old_ptr = svec.as_mut_ptr();
-    let old_len = svec.len();
-
-    let old_cap: usize = svec.capacity();
-    let new_cap: usize = if old_cap == 0 {
-        4
-    } else {
-        old_cap
-            .checked_mul(2)
-            .ok_or(FailedAllocationError::new("capacity overflow for SmallVec"))?
+    let error = match svec.try_reserve(1) {
+        Ok(..) => return Ok(()),
+        Err(e) => e,
     };
 
-    
-    
-    let old_size_bytes = old_cap
-        .checked_mul(mem::size_of::<T>())
-        .ok_or(FailedAllocationError::new("capacity overflow for SmallVec"))?;
-
-    let new_size_bytes = new_cap
-        .checked_mul(mem::size_of::<T>())
-        .ok_or(FailedAllocationError::new("capacity overflow for SmallVec"))?;
-
-    let new_ptr;
-    if svec.spilled() {
-        
-        
-        unsafe {
-            new_ptr = alloc::realloc(old_ptr as *mut u8, new_size_bytes);
-        }
-    } else {
-        
-        unsafe {
-            new_ptr = alloc::alloc(new_size_bytes, 0);
-            if !new_ptr.is_null() && old_size_bytes > 0 {
-                copy_nonoverlapping(old_ptr as *const u8, new_ptr as *mut u8, old_size_bytes);
-            }
-        }
-    }
-
-    if new_ptr.is_null() {
-        return Err(FailedAllocationError::new(
+    Err(match error {
+        smallvec::CollectionAllocErr::AllocErr { .. } => FailedAllocationError::new(
             "out of memory when allocating SmallVec",
-        ));
-    }
-
-    let new_vec = unsafe { Vec::from_raw_parts(new_ptr as *mut T::Item, old_len, new_cap) };
-
-    let new_svec = SmallVec::from_vec(new_vec);
-    mem::forget(mem::replace(svec, new_svec));
-    Ok(())
+        ),
+        smallvec::CollectionAllocErr::CapacityOverflow => FailedAllocationError::new(
+            "capacity overflow for SmallVec",
+        ),
+    })
 }
