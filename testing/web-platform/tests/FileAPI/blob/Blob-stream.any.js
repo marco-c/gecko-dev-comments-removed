@@ -5,13 +5,23 @@
 
 
 
-async function read_all_chunks(stream) {
+async function read_and_gc(reader, perform_gc) {
+  const read_promise = reader.read();
+  if (perform_gc)
+    garbageCollect();
+  return read_promise;
+}
+
+
+
+
+async function read_all_chunks(stream, perform_gc = false) {
   assert_true(stream instanceof ReadableStream);
   assert_true('getReader' in stream);
   const reader = stream.getReader();
 
   assert_true('read' in reader);
-  let read_value = await reader.read();
+  let read_value = await read_and_gc(reader, perform_gc);
 
   let out = [];
   let i = 0;
@@ -19,7 +29,7 @@ async function read_all_chunks(stream) {
     for (let val of read_value.value) {
       out[i++] = val;
     }
-    read_value = await reader.read();
+    read_value = await read_and_gc(reader, perform_gc);
   }
   return out;
 }
@@ -56,7 +66,7 @@ promise_test(async() => {
   const stream = blob.stream();
   blob = null;
   garbageCollect();
-  const chunks = await read_all_chunks(stream);
+  const chunks = await read_all_chunks(stream, true);
   assert_array_equals(chunks, input_arr);
 }, "Blob.stream() garbage collection of blob shouldn't break stream" +
       "consumption")
