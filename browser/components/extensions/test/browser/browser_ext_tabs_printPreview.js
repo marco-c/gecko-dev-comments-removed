@@ -55,10 +55,6 @@ async function testPrintPreview() {
     );
 
     gBrowser.getTabDialogBox(gBrowser.selectedBrowser).abortAllDialogs();
-    
-    await BrowserTestUtils.waitForCondition(
-      () => !document.querySelector(".printPreviewBrowser")
-    );
 
     await extension.awaitFinish("tabs.printPreview");
   }
