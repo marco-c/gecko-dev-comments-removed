@@ -3050,9 +3050,9 @@ void HTMLInputElement::Select() {
   
   
   
-  state->SetSelectionRange(0, UINT32_MAX, Optional<nsAString>(),
-                           IgnoredErrorResult(),
-                           TextControlState::ScrollAfterSelection::No);
+  state->SetSelectionRange(0, UINT32_MAX,
+                           nsITextControlFrame::SelectionDirection::eForward,
+                           IgnoredErrorResult());
 }
 
 void HTMLInputElement::DispatchSelectEvent(nsPresContext* aPresContext) {

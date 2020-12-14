@@ -334,8 +334,9 @@ class TextControlState final : public SupportsWeakPtr {
   nsITextControlFrame::SelectionDirection GetSelectionDirection(
       ErrorResult& aRv);
 
-  enum class ScrollAfterSelection { No, Yes };
-
+  
+  
+  
   
   
   
@@ -347,16 +348,14 @@ class TextControlState final : public SupportsWeakPtr {
   
   MOZ_CAN_RUN_SCRIPT void SetSelectionRange(
       uint32_t aStart, uint32_t aEnd,
-      nsITextControlFrame::SelectionDirection aDirection, ErrorResult& aRv,
-      ScrollAfterSelection aScroll = ScrollAfterSelection::Yes);
+      nsITextControlFrame::SelectionDirection aDirection, ErrorResult& aRv);
 
   
   
   
   MOZ_CAN_RUN_SCRIPT void SetSelectionRange(
       uint32_t aSelectionStart, uint32_t aSelectionEnd,
-      const dom::Optional<nsAString>& aDirection, ErrorResult& aRv,
-      ScrollAfterSelection aScroll = ScrollAfterSelection::Yes);
+      const dom::Optional<nsAString>& aDirection, ErrorResult& aRv);
 
   
   
