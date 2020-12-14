@@ -1039,18 +1039,6 @@
 
 
 
- \
-    MACRO(Length, length, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3586,6 +3574,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(230)                                   \
   MACRO(231)                                   \
   MACRO(232)                                   \
   MACRO(233)                                   \

@@ -128,9 +128,6 @@ class MOZ_STACK_CLASS PropOpEmitter {
   
   GCThingIndex propAtomIndex_;
 
-  
-  bool isLength_ = false;
-
 #ifdef DEBUG
   
   
