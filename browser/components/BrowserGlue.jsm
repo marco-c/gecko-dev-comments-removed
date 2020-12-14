@@ -5047,7 +5047,12 @@ var AboutHomeStartupCache = {
 
 
 
-  async onShutdown() {
+
+
+
+
+
+  async onShutdown(withTimeout = true) {
     
     
     if (!this._hasWrittenThisSession) {
@@ -5080,15 +5085,24 @@ var AboutHomeStartupCache = {
         );
       });
 
-      let result = await Promise.race([
-        timeoutPromise,
-        this._cacheTask.finalize(),
-      ]);
+      let promises = [this._cacheTask.finalize()];
+      if (withTimeout) {
+        this.log.trace("Using timeout mechanism.");
+        promises.push(timeoutPromise);
+      } else {
+        this.log.trace("Skipping timeout mechanism.");
+      }
+
+      let result = await Promise.race(promises);
+      this.log.trace("Done blocking shutdown.");
       clearTimeout(timeoutID);
       if (result === TIMED_OUT) {
         this.log.error("Timed out getting cache streams. Skipping cache task.");
+        return false;
       }
     }
+    this.log.trace("onShutdown is exiting");
+    return true;
   },
 
   
@@ -5106,13 +5120,17 @@ var AboutHomeStartupCache = {
     let { pageInputStream, scriptInputStream } = await this.requestCache();
 
     if (!pageInputStream || !scriptInputStream) {
+      this.log.trace("Failed to get cache streams.");
       this._cacheProgress = "Failed to get streams";
       return;
     }
 
+    this.log.trace("Got cache streams.");
+
     this._cacheProgress = "Writing to cache";
 
     try {
+      this.log.trace("Populating cache.");
       await this.populateCache(pageInputStream, scriptInputStream);
     } catch (e) {
       this._cacheProgress = "Failed to populate cache";
@@ -5369,6 +5387,8 @@ var AboutHomeStartupCache = {
         );
       });
     });
+
+    this.log.trace("populateCache has finished.");
   },
 
   

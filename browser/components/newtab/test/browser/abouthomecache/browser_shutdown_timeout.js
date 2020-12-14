@@ -32,11 +32,14 @@ add_task(async function test_shutdown_timeout() {
     
     AboutHomeStartupCache.onPreloadedNewTabMessage();
 
-    await simulateRestart(browser);
+    await simulateRestart(browser, { expectTimeout: true });
 
     Assert.ok(
       true,
       "We reached here, which means shutdown didn't block forever."
     );
+
+    
+    await clearCache();
   });
 });

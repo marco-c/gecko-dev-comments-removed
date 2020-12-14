@@ -71,11 +71,17 @@ let { AboutHomeStartupCache } = ChromeUtils.import(
 
 
 
+
+
+
+
+
 async function simulateRestart(
   browser,
-  { withAutoShutdownWrite, ensureCacheWinsRace } = {
+  { withAutoShutdownWrite, ensureCacheWinsRace, expectTimeout } = {
     withAutoShutdownWrite: true,
     ensureCacheWinsRace: true,
+    expectTimeout: false,
   }
 ) {
   info("Simulating restart of the browser");
@@ -88,7 +94,15 @@ async function simulateRestart(
 
   if (withAutoShutdownWrite && AboutHomeStartupCache.initted) {
     info("Simulating shutdown write");
-    await AboutHomeStartupCache.onShutdown();
+    let timedOut = !(await AboutHomeStartupCache.onShutdown(expectTimeout));
+    if (timedOut && !expectTimeout) {
+      Assert.ok(
+        false,
+        "AboutHomeStartupCache shutdown unexpectedly timed out."
+      );
+    } else if (!timedOut && expectTimeout) {
+      Assert.ok(false, "AboutHomeStartupCache shutdown failed to time out.");
+    }
     info("Shutdown write done");
   } else {
     info("Intentionally skipping shutdown write");
