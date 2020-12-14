@@ -4661,8 +4661,7 @@ void SVGTextFrame::DoTextPathLayout() {
     }
 
     
-    while (!it.AtEnd() && it.TextPathFrame() &&
-           it.TextPathFrame()->GetContent() == textPath) {
+    while (!it.AtEnd() && it.TextPathFrame()) {
       
       uint32_t i = it.TextElementCharIndex();
 
@@ -4694,11 +4693,10 @@ void SVGTextFrame::DoTextPathLayout() {
         
         
         
-        if (it.IsOriginalCharSkipped()) {
-          
-        } else if (it.IsClusterAndLigatureGroupStart()) {
+        if (it.IsClusterAndLigatureGroupStart()) {
           break;
-        } else {
+        }
+        if (!it.IsOriginalCharSkipped()) {
           partialAdvance += it.GetAdvance(context);
         }
         partialAdvances.AppendElement(partialAdvance);
