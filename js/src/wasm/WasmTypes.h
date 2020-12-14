@@ -85,6 +85,11 @@ typedef GCVector<WasmGlobalObject*, 0, SystemAllocPolicy>
     WasmGlobalObjectVector;
 using RootedWasmGlobalObject = Rooted<WasmGlobalObject*>;
 
+class WasmExceptionObject;
+typedef GCVector<WasmExceptionObject*, 0, SystemAllocPolicy>
+    WasmExceptionObjectVector;
+using RootedWasmExceptionObject = Rooted<WasmExceptionObject*>;
+
 class StructTypeDescr;
 typedef GCVector<HeapPtr<StructTypeDescr*>, 0, SystemAllocPolicy>
     StructTypeDescrVector;
@@ -960,6 +965,21 @@ using MutableHandleFuncRef = MutableHandle<FuncRef>;
 
 
 Value UnboxFuncRef(FuncRef val);
+
+
+
+
+
+
+
+
+
+struct ExceptionTag : AtomicRefCounted<ExceptionTag> {
+  ExceptionTag() = default;
+};
+using SharedExceptionTag = RefPtr<ExceptionTag>;
+typedef Vector<SharedExceptionTag, 0, SystemAllocPolicy>
+    SharedExceptionTagVector;
 
 
 

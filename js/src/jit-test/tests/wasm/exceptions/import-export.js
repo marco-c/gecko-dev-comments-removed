@@ -1,0 +1,13 @@
+
+
+
+
+function testException() {
+  assertErrorMessage(
+    () => new WebAssembly.Exception(),
+    WebAssembly.RuntimeError,
+    /cannot call WebAssembly.Exception/
+  );
+}
+
+testException();
