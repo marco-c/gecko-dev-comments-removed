@@ -7036,19 +7036,11 @@ void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
 }
 
 bool Document::ContainsEMEContent() {
-  bool containsEME = false;
-
-  auto check = [&containsEME](nsISupports* aSupports) {
-    nsCOMPtr<nsIContent> content(do_QueryInterface(aSupports));
-    if (auto* mediaElem = HTMLMediaElement::FromNodeOrNull(content)) {
-      if (mediaElem->GetMediaKeys()) {
-        containsEME = true;
-      }
-    }
-  };
-
-  EnumerateActivityObservers(check);
-  return containsEME;
+  nsPIDOMWindowInner* win = GetInnerWindow();
+  
+  
+  
+  return win && win->HasActiveMediaKeysInstance();
 }
 
 bool Document::ContainsMSEContent() {

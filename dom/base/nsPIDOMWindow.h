@@ -61,6 +61,7 @@ class DocGroup;
 class Document;
 class Element;
 class Location;
+class MediaKeys;
 class Navigator;
 class Performance;
 class Selection;
@@ -167,6 +168,21 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   void UnmuteAudioContexts();
 
   void SetAudioCapture(bool aCapture);
+
+  
+
+
+  void AddMediaKeysInstance(mozilla::dom::MediaKeys* aMediaKeysInstance);
+
+  
+
+
+  void RemoveMediaKeysInstance(mozilla::dom::MediaKeys* aMediaKeysInstance);
+
+  
+
+
+  bool HasActiveMediaKeysInstance();
 
   mozilla::dom::Performance* GetPerformance();
 
@@ -640,6 +656,11 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   nsTArray<mozilla::dom::AudioContext*> mAudioContexts;  
+
+  
+  
+  
+  nsTArray<mozilla::dom::MediaKeys*> mMediaKeysInstances;  
 
   RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 

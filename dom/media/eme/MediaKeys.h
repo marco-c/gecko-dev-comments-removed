@@ -8,20 +8,18 @@
 #define mozilla_dom_mediakeys_h__
 
 #include "DecoderDoctorLogger.h"
-#include "nsWrapperCache.h"
-#include "nsISupports.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DetailedPromise.h"
 #include "mozilla/RefPtr.h"
-#include "nsCOMPtr.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsIDocumentActivity.h"
-#include "nsRefPtrHashtable.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/MediaKeysBinding.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/MediaKeyStatusMapBinding.h"  
 #include "mozilla/dom/MediaKeySystemAccessBinding.h"
-#include "mozilla/DetailedPromise.h"
-#include "mozilla/WeakPtr.h"
+#include "mozilla/dom/MediaKeysBinding.h"
+#include "mozilla/dom/Promise.h"
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsRefPtrHashtable.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 
@@ -48,7 +46,7 @@ typedef uint32_t PromiseId;
 
 
 
-class MediaKeys final : public nsIDocumentActivity,
+class MediaKeys final : public nsISupports,
                         public nsWrapperCache,
                         public SupportsWeakPtr,
                         public DecoderDoctorLifeLogger<MediaKeys> {
@@ -57,9 +55,6 @@ class MediaKeys final : public nsIDocumentActivity,
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MediaKeys)
-  
-  
-  NS_DECL_NSIDOCUMENTACTIVITY
 
   MediaKeys(nsPIDOMWindowInner* aParentWindow, const nsAString& aKeySystem,
             const MediaKeySystemConfiguration& aConfig);
@@ -137,6 +132,10 @@ class MediaKeys final : public nsIDocumentActivity,
   
   bool IsBoundToMediaElement() const;
 
+  
+  
+  void OnInnerWindowDestroy();
+
   void GetSessionsInfo(nsString& sessionsInfo);
 
   
@@ -164,8 +163,11 @@ class MediaKeys final : public nsIDocumentActivity,
   
   already_AddRefed<DetailedPromise> RetrievePromise(PromiseId aId);
 
-  void RegisterActivityObserver();
-  void UnregisterActivityObserver();
+  
+  
+  
+  void ConnectInnerWindow();
+  void DisconnectInnerWindow();
 
   
   
@@ -176,8 +178,13 @@ class MediaKeys final : public nsIDocumentActivity,
   
   
   RefPtr<HTMLMediaElement> mElement;
-  RefPtr<Document> mDocument;
 
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsPIDOMWindowInner> mParent;
   const nsString mKeySystem;
   KeySessionHashMap mKeySessions;

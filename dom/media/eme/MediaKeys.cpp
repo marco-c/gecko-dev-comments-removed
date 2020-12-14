@@ -41,7 +41,6 @@ namespace mozilla::dom {
 
 
 
-
 NS_IMPL_CYCLE_COLLECTION_CLASS(MediaKeys)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(MediaKeys)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElement)
@@ -49,18 +48,16 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(MediaKeys)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mKeySessions)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPromises)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingSessions)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(MediaKeys)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(MediaKeys)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElement)
+  tmp->DisconnectInnerWindow();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mKeySessions)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPromises)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingSessions)
-  tmp->UnregisterActivityObserver();
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -70,7 +67,6 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MediaKeys)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(MediaKeys)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
-  NS_INTERFACE_MAP_ENTRY(nsIDocumentActivity)
 NS_INTERFACE_MAP_END
 
 MediaKeys::MediaKeys(nsPIDOMWindowInner* aParent, const nsAString& aKeySystem,
@@ -84,36 +80,48 @@ MediaKeys::MediaKeys(nsPIDOMWindowInner* aParent, const nsAString& aKeySystem,
 }
 
 MediaKeys::~MediaKeys() {
-  UnregisterActivityObserver();
-  mDocument = nullptr;
+  MOZ_ASSERT(NS_IsMainThread());
+
+  DisconnectInnerWindow();
   Shutdown();
   EME_LOG("MediaKeys[%p] destroyed", this);
 }
 
-void MediaKeys::RegisterActivityObserver() {
-  MOZ_ASSERT(mDocument);
-  if (mDocument) {
-    mDocument->RegisterActivityObserver(this);
-  }
+void MediaKeys::ConnectInnerWindow() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsPIDOMWindowInner> innerWindowParent = GetParentObject();
+  MOZ_ASSERT(innerWindowParent,
+             "We should only be connecting when we have an inner window!");
+  innerWindowParent->AddMediaKeysInstance(this);
 }
 
-void MediaKeys::UnregisterActivityObserver() {
-  if (mDocument) {
-    mDocument->UnregisterActivityObserver(this);
+void MediaKeys::DisconnectInnerWindow() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!GetParentObject()) {
+    
+    
+    return;
   }
+
+  GetParentObject()->RemoveMediaKeysInstance(this);
 }
 
+void MediaKeys::OnInnerWindowDestroy() {
+  MOZ_ASSERT(NS_IsMainThread());
 
-void MediaKeys::NotifyOwnerDocumentActivityChanged() {
-  EME_LOG("MediaKeys[%p] NotifyOwnerDocumentActivityChanged()", this);
+  EME_LOG("MediaKeys[%p] OnInnerWindowDestroy()", this);
+
   
-  if (!mDocument->IsCurrentActiveDocument()) {
-    EME_LOG(
-        "MediaKeys[%p] NotifyOwnerDocumentActivityChanged() owning document is "
-        "not active, shutting down!",
-        this);
-    Shutdown();
-  }
+  
+  mParent = nullptr;
+
+  
+  
+  
+  GetMainThreadEventTarget()->Dispatch(
+      NewRunnableMethod("MediaKeys::Shutdown", this, &MediaKeys::Shutdown));
 }
 
 void MediaKeys::Terminated() {
@@ -148,7 +156,10 @@ void MediaKeys::Shutdown() {
     mProxy = nullptr;
   }
 
-  RefPtr<MediaKeys> kungFuDeathGrip = this;
+  
+  
+  
+  RefPtr<MediaKeys> selfReference = this;
 
   for (auto iter = mPromises.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<dom::DetailedPromise>& promise = iter.Data();
@@ -410,6 +421,7 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
 
   
   nsCOMPtr<nsPIDOMWindowInner> window = GetParentObject();
+
   
   
   
@@ -422,8 +434,8 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
   
   
   
-  mDocument = window->GetExtantDoc();
-  if (!mDocument) {
+  Document* document = window->GetExtantDoc();
+  if (!document) {
     NS_WARNING("Failed to get document when creating MediaKeys");
     promise->MaybeRejectWithInvalidStateError(
         "Couldn't get document in MediaKeys::Init");
@@ -445,9 +457,9 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
   } else {
     
     
-    nsIChannel* channel = mDocument->GetChannel();
+    nsIChannel* channel = document->GetChannel();
 
-    WindowContext* windowContext = mDocument->GetWindowContext();
+    WindowContext* windowContext = document->GetWindowContext();
     if (!windowContext) {
       NS_WARNING("Failed to get window context when creating MediaKeys");
       promise->MaybeRejectWithInvalidStateError(
@@ -537,7 +549,7 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
                NS_ConvertUTF8toUTF16(topLevelOrigin),
                KeySystemToGMPName(mKeySystem));
 
-  RegisterActivityObserver();
+  ConnectInnerWindow();
 
   return promise.forget();
 }
