@@ -10,7 +10,7 @@ from six import string_types
 from six.moves.urllib.parse import urlunsplit
 
 from tests.support import defaults
-from tests.support.helpers import cleanup_session
+from tests.support.helpers import cleanup_session, deep_update
 from tests.support.inline import inline
 from tests.support.http_request import HTTPRequest
 from tests.support.sync import Poll
@@ -124,7 +124,7 @@ def session(capabilities, configuration, request):
     
     
     caps = copy.deepcopy(configuration["capabilities"])
-    caps.update(capabilities)
+    deep_update(caps, capabilities)
     caps = {"alwaysMatch": caps}
 
     
