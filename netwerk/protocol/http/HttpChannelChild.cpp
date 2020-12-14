@@ -192,13 +192,13 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
 
   nsrefcnt count = --mRefCnt;
   MOZ_ASSERT(int32_t(count) >= 0, "dup release");
-  NS_LOG_RELEASE(this, count, "HttpChannelChild");
 
   
   
   
   
   if (mKeptAlive && count == 1 && CanSend()) {
+    NS_LOG_RELEASE(this, 1, "HttpChannelChild");
     mKeptAlive = false;
     
     
@@ -213,6 +213,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
     
     if (MOZ_LIKELY(mOnStartRequestCalled && mOnStopRequestCalled) ||
         !mListener) {
+      NS_LOG_RELEASE(this, 0, "HttpChannelChild");
       delete this;
       return 0;
     }
@@ -221,22 +222,45 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
     if (NS_SUCCEEDED(mStatus)) {
       mStatus = NS_ERROR_ABORT;
     }
-    nsresult rv = NS_DispatchToMainThread(
-        NewRunnableMethod("~HttpChannelChild>DoNotifyListener", this,
-                          &HttpChannelChild::DoNotifyListener));
-    if (NS_FAILED(rv)) {
-      
-      mOnStartRequestCalled = true;
-      mOnStopRequestCalled = true;
-      
-      
-      
-      return Release();
-    }
 
-    return 0;
+    
+
+    
+    
+    
+    
+    NS_LOG_ADDREF(this, 2, "HttpChannelChild", sizeof(*this));
+
+    
+    NS_LOG_RELEASE(this, 1, "HttpChannelChild");
+
+    
+    RefPtr<HttpChannelChild> channel = dont_AddRef(this);
+
+    
+    NS_DispatchToMainThread(
+        NewRunnableMethod("~HttpChannelChild>DoNotifyListener", channel,
+                          &HttpChannelChild::DoNotifyListener));
+
+    
+    
+
+    
+    
+    
+    MOZ_ASSERT(!mKeptAlive || !CanSend());
+
+    
+    
+
+    
+    
+    channel = nullptr;
+
+    return mRefCnt;
   }
 
+  NS_LOG_RELEASE(this, count, "HttpChannelChild");
   return count;
 }
 
