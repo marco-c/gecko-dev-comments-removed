@@ -20,7 +20,6 @@ class PageStyleChild extends JSWindowActorChild {
         if (!window || window.closed) {
           return;
         }
-
         let filteredStyleSheets = this._collectStyleSheets(window);
         this.sendAsyncMessage("PageStyle:Add", {
           filteredStyleSheets,
@@ -54,29 +53,66 @@ class PageStyleChild extends JSWindowActorChild {
   
 
 
+  _collectLinks(document) {
+    let result = [];
+    for (let link of document.querySelectorAll("link")) {
+      if (link.namespaceURI !== "http://www.w3.org/1999/xhtml") {
+        continue;
+      }
+      let isStyleSheet = Array.from(link.relList).some(
+        r => r.toLowerCase() == "stylesheet"
+      );
+      if (!isStyleSheet) {
+        continue;
+      }
+      if (!link.href) {
+        continue;
+      }
+      result.push(link);
+    }
+    return result;
+  }
+
+  
+
+
   _switchStylesheet(title) {
-    let docStyleSheets = this.document.styleSheets;
+    let document = this.document;
+    let docStyleSheets = Array.from(document.styleSheets);
+    let links;
 
     
     
     
     let docContainsStyleSheet = !title;
     if (title) {
-      for (let docStyleSheet of docStyleSheets) {
-        if (docStyleSheet.title === title) {
-          docContainsStyleSheet = true;
-          break;
+      links = this._collectLinks(document);
+      docContainsStyleSheet =
+        docStyleSheets.some(sheet => sheet.title == title) ||
+        links.some(link => link.title == title);
+    }
+
+    for (let sheet of docStyleSheets) {
+      if (sheet.title) {
+        if (docContainsStyleSheet) {
+          sheet.disabled = sheet.title !== title;
         }
+      } else if (sheet.disabled) {
+        sheet.disabled = false;
       }
     }
 
-    for (let docStyleSheet of docStyleSheets) {
-      if (docStyleSheet.title) {
-        if (docContainsStyleSheet) {
-          docStyleSheet.disabled = docStyleSheet.title !== title;
+    
+    
+    
+    
+    
+    
+    if (title) {
+      for (let link of links) {
+        if (link.title == title && link.disabled) {
+          link.disabled = false;
         }
-      } else if (docStyleSheet.disabled) {
-        docStyleSheet.disabled = false;
       }
     }
   }
@@ -89,10 +125,12 @@ class PageStyleChild extends JSWindowActorChild {
 
   _collectStyleSheets(content) {
     let result = [];
+    let document = content.document;
 
-    
-    for (let sheet of content.document.styleSheets) {
-      if (!sheet.title) {
+    for (let sheet of document.styleSheets) {
+      let title = sheet.title;
+      if (!title) {
+        
         continue;
       }
 
@@ -102,10 +140,37 @@ class PageStyleChild extends JSWindowActorChild {
         continue;
       }
 
-      result.push({
-        title: sheet.title,
-        disabled: sheet.disabled,
-      });
+      
+      if (
+        sheet.href &&
+        sheet.ownerNode &&
+        sheet.ownerNode.nodeName.toLowerCase() == "link"
+      ) {
+        continue;
+      }
+
+      let disabled = sheet.disabled;
+      result.push({ title, disabled });
+    }
+
+    
+    
+    for (let link of this._collectLinks(document)) {
+      let title = link.title;
+      if (!title) {
+        continue;
+      }
+
+      let media = link.media;
+      if (media && !content.matchMedia(media).matches) {
+        continue;
+      }
+
+      let disabled =
+        link.disabled ||
+        !!link.sheet?.disabled ||
+        document.preferredStyleSheetSet != title;
+      result.push({ title, disabled });
     }
 
     return result;
