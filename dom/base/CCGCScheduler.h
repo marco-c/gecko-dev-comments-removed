@@ -183,18 +183,19 @@ class CCGCScheduler {
 
   
 
-  TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline) const {
+  TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline,
+                                         TimeStamp aNow) const {
     
     
     
     
-    TimeDuration budget = aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2
-                                             : aDeadline - TimeStamp::Now();
+    TimeDuration budget =
+        aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2 : aDeadline - aNow;
     if (!mCCBlockStart) {
       return budget;
     }
 
-    TimeDuration blockedTime = TimeStamp::Now() - mCCBlockStart;
+    TimeDuration blockedTime = aNow - mCCBlockStart;
     TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 10;
     double percentOfBlockedTime =
         std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
