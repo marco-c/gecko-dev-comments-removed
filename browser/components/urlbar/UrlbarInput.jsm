@@ -3131,11 +3131,13 @@ class UrlbarInput {
           
           this.selectionStart = this.selectionEnd = 0;
         }
+        this._keyDownEnterDeferred = null;
       } catch (ex) {
         
         
+        
+        
       }
-      this._keyDownEnterDeferred = null;
       return;
     } else if (event.keyCode === KeyEvent.DOM_VK_CONTROL) {
       this._isKeyDownWithCtrl = false;
