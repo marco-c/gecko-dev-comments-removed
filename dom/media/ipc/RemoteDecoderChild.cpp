@@ -9,10 +9,10 @@
 
 namespace mozilla {
 
-RemoteDecoderChild::RemoteDecoderChild(bool aRecreatedOnCrash)
+RemoteDecoderChild::RemoteDecoderChild(RemoteDecodeIn aLocation)
     : ShmemRecycleAllocator(this),
-      mThread(GetCurrentSerialEventTarget()),
-      mRecreatedOnCrash(aRecreatedOnCrash) {
+      mLocation(aLocation),
+      mThread(GetCurrentSerialEventTarget()) {
   MOZ_DIAGNOSTIC_ASSERT(
       RemoteDecoderManagerChild::GetManagerThread() &&
           RemoteDecoderManagerChild::GetManagerThread()->IsOnCurrentThread(),
@@ -30,7 +30,10 @@ void RemoteDecoderChild::HandleRejectionError(
   
 
   
-  if (mRecreatedOnCrash) {
+  if (mLocation == RemoteDecodeIn::GpuProcess) {
+    
+    
+    
     
     
     RefPtr<RemoteDecoderChild> self = this;
@@ -42,7 +45,10 @@ void RemoteDecoderChild::HandleRejectionError(
         }));
     return;
   }
-  aCallback(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__));
+  
+  
+  
+  aCallback(MediaResult(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__));
 }
 
 

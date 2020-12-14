@@ -13,7 +13,8 @@
 
 namespace mozilla {
 
-RemoteAudioDecoderChild::RemoteAudioDecoderChild() : RemoteDecoderChild() {}
+RemoteAudioDecoderChild::RemoteAudioDecoderChild()
+    : RemoteDecoderChild(RemoteDecodeIn::RddProcess) {}
 
 MediaResult RemoteAudioDecoderChild::ProcessOutput(
     DecodedOutputIPDL&& aDecodedData) {
@@ -38,7 +39,7 @@ MediaResult RemoteAudioDecoderChild::InitIPDL(
     const AudioInfo& aAudioInfo,
     const CreateDecoderParams::OptionSet& aOptions) {
   RefPtr<RemoteDecoderManagerChild> manager =
-      RemoteDecoderManagerChild::GetSingleton(RemoteDecodeIn::RddProcess);
+      RemoteDecoderManagerChild::GetSingleton(mLocation);
 
   
   

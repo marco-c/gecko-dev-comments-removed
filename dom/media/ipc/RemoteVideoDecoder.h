@@ -47,9 +47,6 @@ class RemoteVideoDecoderChild : public RemoteDecoderChild {
 
  private:
   RefPtr<mozilla::layers::BufferRecycleBin> mBufferRecycleBin;
-
-  
-  const RemoteDecodeIn mLocation;
 };
 
 class RemoteVideoDecoderParent final : public RemoteDecoderParent {
