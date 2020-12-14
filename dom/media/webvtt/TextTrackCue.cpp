@@ -3,8 +3,10 @@
 
 
 
-#include "mozilla/dom/HTMLTrackElement.h"
 #include "mozilla/dom/TextTrackCue.h"
+
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/HTMLTrackElement.h"
 #include "mozilla/dom/TextTrackList.h"
 #include "mozilla/dom/TextTrackRegion.h"
 #include "nsComponentManagerUtils.h"
