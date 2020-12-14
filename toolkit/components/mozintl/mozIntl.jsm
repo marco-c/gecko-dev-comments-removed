@@ -14,7 +14,8 @@ const osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(
 
 
 
-const languageTagMatch = /^([a-z]{2,3}|[a-z]{4}|[a-z]{5,8})(?:[-_]([a-z]{4}))?(?:[-_]([A-Z]{2}|[0-9]{3}))?((?:[-_](?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*)(?:[-_][a-wy-z0-9](?:[-_][a-z0-9]{2,8})+)*(?:[-_]x(?:[-_][a-z0-9]{1,8})+)?$/i;
+
+const variantSubtagsMatch = /(?:-(?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))+$/;
 
 function getDateTimePatternStyle(option) {
   switch (option) {
@@ -729,6 +730,7 @@ class MozRelativeTimeFormat extends Intl.RelativeTimeFormat {
 class MozIntl {
   Collator = Intl.Collator;
   ListFormat = Intl.ListFormat;
+  Locale = Intl.Locale;
   NumberFormat = Intl.NumberFormat;
   PluralRules = Intl.PluralRules;
   RelativeTimeFormat = MozRelativeTimeFormat;
@@ -842,21 +844,21 @@ class MozIntl {
       if (typeof localeCode !== "string") {
         throw new TypeError("All locale codes must be strings.");
       }
-      
-      
-      const match = localeCode.match(languageTagMatch);
 
-      if (match === null) {
+      let locale;
+      try {
+        locale = new Intl.Locale(localeCode.replaceAll("_", "-"));
+      } catch {
         return localeCode;
       }
 
-      const [
-        ,
-         languageSubtag,
-        scriptSubtag,
-        regionSubtag,
-        variantSubtags,
-      ] = match;
+      const {
+        language: languageSubtag,
+        script: scriptSubtag,
+        region: regionSubtag,
+      } = locale;
+
+      const variantSubtags = locale.baseName.match(variantSubtagsMatch);
 
       const displayName = [
         this.getLanguageDisplayNames(locales, [languageSubtag])[0],
@@ -873,7 +875,7 @@ class MozIntl {
       }
 
       if (variantSubtags) {
-        displayName.push(...variantSubtags.substr(1).split(/[-_]/)); 
+        displayName.push(...variantSubtags[0].substr(1).split("-")); 
       }
 
       let modifiers;

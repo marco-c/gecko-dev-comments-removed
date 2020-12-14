@@ -309,11 +309,10 @@ NarrateControls.prototype = {
   _getLanguageName(lang) {
     try {
       
-      
-      let langCode = lang.match(/^[a-z]{2,3}/)[0];
+      let langCode = new Services.intl.Locale(lang).language;
 
       return Services.intl.getLanguageDisplayNames(undefined, [langCode]);
-    } catch (e) {
+    } catch {
       return "";
     }
   },
