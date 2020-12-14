@@ -70,7 +70,10 @@ def generate_symbols_file(output, *args):
         
         assert ext == ".def"
         output.write("LIBRARY %s\nEXPORTS\n  %s\n" % (libname, "\n  ".join(symbols)))
-    elif buildconfig.substs.get("GCC_USE_GNU_LD") or buildconfig.substs["OS_TARGET"] == "SunOS":
+    elif (
+        buildconfig.substs.get("GCC_USE_GNU_LD")
+        or buildconfig.substs["OS_TARGET"] == "SunOS"
+    ):
         
         
         
