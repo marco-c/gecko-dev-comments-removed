@@ -619,12 +619,19 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 
     switch (sysno) {
         
-      case __NR_clock_nanosleep:
-      case __NR_clock_getres:
-#ifdef __NR_clock_gettime64
-      case __NR_clock_gettime64:
+        
+        
+        
+      case __NR_gettimeofday:
+#ifdef __NR_time
+      case __NR_time:
 #endif
-      case __NR_clock_gettime: {
+      case __NR_nanosleep:
+        return Allow();
+
+      CASES_FOR_clock_gettime:
+      CASES_FOR_clock_getres:
+      CASES_FOR_clock_nanosleep : {
         
         
         
@@ -645,15 +652,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             .Else(InvalidSyscall());
       }
 
-      case __NR_gettimeofday:
-#ifdef __NR_time
-      case __NR_time:
-#endif
-      case __NR_nanosleep:
-        return Allow();
-
         
-      case __NR_futex:
+      CASES_FOR_futex:
         
         return Allow();
 
