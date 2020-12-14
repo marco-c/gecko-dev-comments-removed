@@ -16,6 +16,7 @@ pub trait Timespan {
     
     
     
+    
     fn start(&self);
 
     
@@ -23,6 +24,7 @@ pub trait Timespan {
     
     fn stop(&self);
 
+    
     
     fn cancel(&self);
 

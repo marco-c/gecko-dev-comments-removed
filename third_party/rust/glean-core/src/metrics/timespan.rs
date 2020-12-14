@@ -51,6 +51,7 @@ impl TimespanMetric {
     
     
     
+    
     pub fn set_start(&mut self, glean: &Glean, start_time: u64) {
         if !self.should_record(glean) {
             return;
@@ -111,10 +112,14 @@ impl TimespanMetric {
     }
 
     
+    
+    
     pub fn cancel(&mut self) {
         self.start_time = None;
     }
 
+    
+    
     
     
     

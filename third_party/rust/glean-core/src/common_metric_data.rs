@@ -5,7 +5,8 @@
 use std::convert::TryFrom;
 
 use crate::error::{Error, ErrorKind};
-use crate::metrics::dynamic_label;
+#[allow(unused_imports)]
+use crate::metrics::{dynamic_label, LabeledMetric};
 use crate::Glean;
 
 
@@ -67,6 +68,8 @@ pub struct CommonMetricData {
     
     
     pub disabled: bool,
+    
+    
     
     
     

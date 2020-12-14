@@ -48,7 +48,7 @@ use configuration::DEFAULT_GLEAN_ENDPOINT;
 pub use core_metrics::ClientInfoMetrics;
 pub use glean_core::{
     global_glean,
-    metrics::{RecordedEvent, TimeUnit},
+    metrics::{DistributionData, MemoryUnit, RecordedEvent, TimeUnit},
     setup_glean, CommonMetricData, Error, ErrorType, Glean, Lifetime, Result,
 };
 use private::RecordedExperimentData;
@@ -310,6 +310,11 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
 
 
 pub fn shutdown() {
+    if !was_initialize_called() {
+        log::warn!("Shutdown called before Glean is initialized");
+        return;
+    }
+
     if let Err(e) = dispatcher::shutdown() {
         log::error!("Can't shutdown dispatcher thread: {:?}", e);
     }

@@ -97,6 +97,8 @@ impl StringListMetric {
     
     
     
+    
+    
     pub fn set(&self, glean: &Glean, value: Vec<String>) {
         if !self.should_record(glean) {
             return;

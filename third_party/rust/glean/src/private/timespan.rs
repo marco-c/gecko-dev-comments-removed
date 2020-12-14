@@ -41,6 +41,7 @@ impl glean_core::traits::Timespan for TimespanMetric {
     
     
     
+    
     fn start(&self) {
         let start_time = time::precise_time_ns();
 
@@ -73,6 +74,7 @@ impl glean_core::traits::Timespan for TimespanMetric {
     }
 
     
+    
     fn cancel(&self) {
         let metric = Arc::clone(&self.0);
         dispatcher::launch(move || {
@@ -95,16 +97,23 @@ impl glean_core::traits::Timespan for TimespanMetric {
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<u64> {
         dispatcher::block_on_queue();
 
-        let metric = self
-            .0
-            .read()
-            .expect("Lock poisoned for timespan metric on test_get_value.");
+        crate::with_glean(|glean| {
+            
+            
+            
+            
+            
+            
+            let metric = self
+                .0
+                .read()
+                .expect("Lock poisoned for timespan metric on test_get_value.");
 
-        let queried_ping_name = ping_name
-            .into()
-            .unwrap_or_else(|| &metric.meta().send_in_pings[0]);
-
-        crate::with_glean(|glean| metric.test_get_value(glean, queried_ping_name))
+            let queried_ping_name = ping_name
+                .into()
+                .unwrap_or_else(|| &metric.meta().send_in_pings[0]);
+            metric.test_get_value(glean, queried_ping_name)
+        })
     }
 
     

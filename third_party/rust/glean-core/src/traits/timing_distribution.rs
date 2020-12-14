@@ -37,6 +37,7 @@ pub trait TimingDistribution {
     
     
     
+    
     fn set_stop_and_accumulate(&mut self, id: TimerId, stop_time: u64);
 
     
@@ -47,8 +48,13 @@ pub trait TimingDistribution {
     
     
     
+    
     fn cancel(&mut self, id: TimerId);
 
+    
+    
+    
+    
     
     
     

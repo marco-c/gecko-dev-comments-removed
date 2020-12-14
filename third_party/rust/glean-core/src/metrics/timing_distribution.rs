@@ -165,6 +165,7 @@ impl TimingDistributionMetric {
     
     
     
+    
     pub fn set_stop_and_accumulate(&mut self, glean: &Glean, id: TimerId, stop_time: u64) {
         
         let mut duration = match self.timings.set_stop(id, stop_time) {
@@ -212,6 +213,7 @@ impl TimingDistributionMetric {
             });
     }
 
+    
     
     
     

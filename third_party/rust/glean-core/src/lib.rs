@@ -96,7 +96,7 @@ pub fn setup_glean(glean: Glean) -> Result<()> {
     
     if GLEAN.get().is_none() {
         if GLEAN.set(Mutex::new(glean)).is_err() {
-            log::error!(
+            log::warn!(
                 "Global Glean object is initialized already. This probably happened concurrently."
             )
         }
@@ -232,6 +232,7 @@ impl Glean {
         })
     }
 
+    
     
     
     
@@ -454,7 +455,7 @@ impl Glean {
         
         let ping_maker = PingMaker::new();
         if let Err(err) = ping_maker.clear_pending_pings(self.get_data_path()) {
-            log::error!("Error clearing pending pings: {}", err);
+            log::warn!("Error clearing pending pings: {}", err);
         }
 
         
@@ -464,7 +465,7 @@ impl Glean {
             data.clear_all()
         }
         if let Err(err) = self.event_data_store.clear_all() {
-            log::error!("Error clearing pending events: {}", err);
+            log::warn!("Error clearing pending events: {}", err);
         }
 
         
@@ -522,6 +523,9 @@ impl Glean {
         self.max_events
     }
 
+    
+    
+    
     
     
     
@@ -671,7 +675,6 @@ impl Glean {
     
     
     
-    
     pub fn get_ping_by_name(&self, ping_name: &str) -> Option<&PingType> {
         self.ping_registry.get(ping_name)
     }
@@ -742,7 +745,7 @@ impl Glean {
     
     
     pub fn clear_application_lifetime_metrics(&self) {
-        log::debug!("Clearing Lifetime::Application metrics");
+        log::trace!("Clearing Lifetime::Application metrics");
         if let Some(data) = self.data_store.as_ref() {
             data.clear_lifetime(Lifetime::Application);
         }
@@ -882,6 +885,8 @@ impl Glean {
             .is_some()
     }
 
+    
+    
     
     
     

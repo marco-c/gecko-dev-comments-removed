@@ -3,6 +3,8 @@
 
 
 use crate::metrics::DistributionData;
+use crate::ErrorType;
+
 
 
 
@@ -32,31 +34,6 @@ pub trait MemoryDistribution {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn accumulate_samples_signed(&self, samples: Vec<i64>);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn test_get_value<'a, S: Into<Option<&'a str>>>(
         &self,
         ping_name: S,
@@ -72,8 +49,12 @@ pub trait MemoryDistribution {
     
     
     
-    fn test_get_value_as_json_string<'a, S: Into<Option<&'a str>>>(
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
+        error: ErrorType,
         ping_name: S,
-    ) -> Option<String>;
+    ) -> i32;
 }
