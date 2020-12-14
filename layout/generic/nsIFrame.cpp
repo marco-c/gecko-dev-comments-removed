@@ -6187,7 +6187,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
         mainAxisCoord = &maxContStyleCoord;
         
         
-      } else if (flexBasis->IsSize()) {
+      } else if (flexBasis->IsSize() && !flexBasis->IsAuto()) {
         
         
         mainAxisCoord = &flexBasis->AsSize();
