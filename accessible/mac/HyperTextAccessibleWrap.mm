@@ -536,7 +536,9 @@ void HyperTextAccessibleWrap::RangeOfChild(Accessible* aChild,
 Accessible* HyperTextAccessibleWrap::LeafAtOffset(int32_t aOffset) {
   HyperTextAccessible* text = this;
   Accessible* child = nullptr;
-  int32_t innerOffset = aOffset;
+  
+  
+  int32_t innerOffset = aOffset > 0 ? aOffset - 1 : aOffset;
   do {
     int32_t childIdx = text->GetChildIndexAtOffset(innerOffset);
     if (childIdx == -1) {
