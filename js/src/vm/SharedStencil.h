@@ -7,11 +7,8 @@
 #ifndef vm_SharedStencil_h
 #define vm_SharedStencil_h
 
-#include "mozilla/Assertions.h"     
-#include "mozilla/Atomics.h"        
-#include "mozilla/Attributes.h"     
-#include "mozilla/HashFunctions.h"  
-#include "mozilla/HashTable.h"      
+#include "mozilla/HashFunctions.h"    
+#include "mozilla/HashTable.h"        
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/RefPtr.h"           
 #include "mozilla/Span.h"             
@@ -598,31 +595,6 @@ struct SharedImmutableScriptData::Hasher {
 using SharedImmutableScriptDataTable =
     mozilla::HashSet<SharedImmutableScriptData*,
                      SharedImmutableScriptData::Hasher, SystemAllocPolicy>;
-
-struct MemberInitializers {
-  static constexpr uint32_t MaxInitializers = INT32_MAX;
-
-#ifdef DEBUG
-  bool valid = false;
-#endif
-
-  
-  
-  uint32_t numMemberInitializers = 0;
-
-  explicit MemberInitializers(uint32_t numMemberInitializers)
-      :
-#ifdef DEBUG
-        valid(true),
-#endif
-        numMemberInitializers(numMemberInitializers) {
-  }
-
-  static MemberInitializers Invalid() { return MemberInitializers(); }
-
- private:
-  MemberInitializers() = default;
-};
 
 }  
 

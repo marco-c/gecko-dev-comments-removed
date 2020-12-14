@@ -38,15 +38,11 @@
 #ifndef vm_MallocProvider_h
 #define vm_MallocProvider_h
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/Likely.h"      
+#include "mozilla/Attributes.h"
+#include "mozilla/Likely.h"
 
-#include <stddef.h>  
-#include <stdint.h>  
-
-#include "js/AllocPolicy.h"  
-#include "js/UniquePtr.h"    
-#include "js/Utility.h"  
+#include "js/UniquePtr.h"
+#include "js/Utility.h"
 
 namespace js {
 

@@ -8,21 +8,19 @@
 #define frontend_Stencil_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 #include "mozilla/Range.h"       
 #include "mozilla/Span.h"        
 #include "mozilla/Variant.h"     
 
-#include <stddef.h>  
 #include <stdint.h>  
+#include <stdlib.h>  
 
 #include "frontend/AbstractScopePtr.h"    
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ObjLiteral.h"          
 #include "frontend/ParserAtom.h"          
 #include "frontend/TypedIndex.h"          
-#include "js/AllocPolicy.h"               
 #include "js/RegExpFlags.h"               
 #include "js/RootingAPI.h"                
 #include "js/TypeDecls.h"                 
@@ -33,15 +31,15 @@
 #include "vm/BigIntType.h"                
 #include "vm/FunctionFlags.h"             
 #include "vm/GeneratorAndAsyncKind.h"     
+#include "vm/JSScript.h"                  
 #include "vm/Scope.h"  
-#include "vm/ScopeKind.h"      
+#include "vm/ScopeKind.h"  
 #include "vm/SharedStencil.h"  
-#include "vm/StencilEnums.h"   
+#include "vm/StencilEnums.h"  
 
 namespace js {
 
 class JSONPrinter;
-class RegExpObject;
 
 namespace frontend {
 

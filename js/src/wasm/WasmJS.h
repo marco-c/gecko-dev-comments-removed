@@ -19,36 +19,10 @@
 #ifndef wasm_js_h
 #define wasm_js_h
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/HashTable.h"   
-#include "mozilla/Maybe.h"       
-
-#include <stdint.h>  
-
-#include "gc/Barrier.h"        
-#include "gc/ZoneAllocator.h"  
-#include "js/AllocPolicy.h"    
-#include "js/Class.h"          
-#include "js/GCHashTable.h"    
-#include "js/GCVector.h"       
-#include "js/PropertySpec.h"   
-#include "js/RootingAPI.h"     
-#include "js/SweepingAPI.h"    
-#include "js/TypeDecls.h"  
-#include "js/Vector.h"        
-#include "vm/JSFunction.h"    
-#include "vm/NativeObject.h"  
-#include "wasm/WasmTypes.h"   
-
-class JSFreeOp;
-class JSObject;
-class JSTracer;
-struct JSContext;
-
-namespace JS {
-class CallArgs;
-class Value;
-}  
+#include "gc/Policy.h"
+#include "gc/ZoneAllocator.h"
+#include "vm/NativeObject.h"
+#include "wasm/WasmTypes.h"
 
 namespace js {
 
@@ -64,8 +38,6 @@ class WasmInstanceScope;
 class SharedArrayRawBuffer;
 
 namespace wasm {
-
-struct ImportValues;
 
 
 
@@ -351,8 +323,12 @@ class WasmInstanceObject : public NativeObject {
   ExportMap& exports() const;
 
   
-  class UnspecifiedScopeMap;
-  UnspecifiedScopeMap& scopes() const;
+  
+  
+  using ScopeMap =
+      JS::WeakCache<GCHashMap<uint32_t, WeakHeapPtr<WasmFunctionScope*>,
+                              DefaultHasher<uint32_t>, ZoneAllocPolicy>>;
+  ScopeMap& scopes() const;
 
  public:
   static const unsigned RESERVED_SLOTS = 6;
