@@ -21,6 +21,8 @@ class OriginAttributesPattern;
 namespace dom {
 
 bool RecvShutdownBackgroundSessionStorageManagers();
+void RecvPropagateBackgroundSessionStorageManager(uint64_t aCurrentTopContextId,
+                                                  uint64_t aTargetTopContextId);
 bool RecvRemoveBackgroundSessionStorageManager(uint64_t aTopContextId);
 
 class BrowsingContext;
@@ -159,6 +161,11 @@ class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
 
   NS_INLINE_DECL_REFCOUNTING(BackgroundSessionStorageManager);
 
+  
+  static void PropagateManager(uint64_t aCurrentTopContextId,
+                               uint64_t aTargetTopContextId);
+
+  
   
   static void RemoveManager(uint64_t aTopContextId);
 
