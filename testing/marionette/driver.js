@@ -627,7 +627,6 @@ GeckoDriver.prototype.registerBrowser = function(browserElement) {
     browserElement.nodeName != "browser" ||
     browserElement.getTabBrowser()
   ) {
-    
     this.curBrowser.register(browserElement);
   }
 
