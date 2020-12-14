@@ -41,20 +41,6 @@ function test_constructors() {
     let obj2 = new Services.intl[constructor]();
 
     equal(typeof obj, typeof obj2);
-
-    Assert.throws(() => {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      Services.intl[constructor]();
-    }, /class constructors must be invoked with |new|/);
   });
 }
 
