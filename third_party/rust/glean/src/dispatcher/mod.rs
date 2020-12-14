@@ -199,52 +199,57 @@ impl Dispatcher {
 
         let queue_preinit = Arc::new(AtomicBool::new(true));
 
-        let worker = thread::spawn(move || {
-            if block_receiver.recv().is_err() {
-                
-                
-                log::error!("The task producer was disconnected. Worker thread will exit.");
-                return;
-            }
-
-            let mut receiver = preinit_receiver;
-            loop {
-                use Command::*;
-
-                match receiver.recv() {
-                    Ok(Shutdown) => {
-                        break;
-                    }
-
-                    Ok(Task(f)) => {
-                        (f)();
-                    }
-
-                    Ok(Swap(swap_done)) => {
-                        
-                        
-                        
-
-                        
-                        
-                        mem::swap(&mut receiver, &mut unbounded_receiver);
-
-                        
-                        
-                        
-                        swap_done
-                            .send(())
-                            .expect("The caller of `flush_init` has gone missing");
-                    }
-
+        let worker = thread::Builder::new()
+            .name("glean.dispatcher".into())
+            .spawn(move || {
+                if block_receiver.recv().is_err() {
                     
-                    Err(_) => {
-                        log::error!("The task producer was disconnected. Worker thread will exit.");
-                        return;
+                    
+                    log::error!("The task producer was disconnected. Worker thread will exit.");
+                    return;
+                }
+
+                let mut receiver = preinit_receiver;
+                loop {
+                    use Command::*;
+
+                    match receiver.recv() {
+                        Ok(Shutdown) => {
+                            break;
+                        }
+
+                        Ok(Task(f)) => {
+                            (f)();
+                        }
+
+                        Ok(Swap(swap_done)) => {
+                            
+                            
+                            
+
+                            
+                            
+                            mem::swap(&mut receiver, &mut unbounded_receiver);
+
+                            
+                            
+                            
+                            swap_done
+                                .send(())
+                                .expect("The caller of `flush_init` has gone missing");
+                        }
+
+                        
+                        Err(_) => {
+                            log::error!(
+                                "The task producer was disconnected. Worker thread will exit."
+                            );
+                            return;
+                        }
                     }
                 }
-            }
-        });
+            })
+            .expect("Failed to spawn Glean's dispatcher thread");
 
         let guard = DispatchGuard {
             queue_preinit,

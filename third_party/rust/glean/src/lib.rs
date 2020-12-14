@@ -2,6 +2,7 @@
 
 
 
+#![deny(broken_intra_doc_links)]
 #![deny(missing_docs)]
 
 
@@ -46,7 +47,9 @@ pub use configuration::Configuration;
 use configuration::DEFAULT_GLEAN_ENDPOINT;
 pub use core_metrics::ClientInfoMetrics;
 pub use glean_core::{
-    global_glean, setup_glean, CommonMetricData, Error, ErrorType, Glean, Lifetime, Result,
+    global_glean,
+    metrics::{RecordedEvent, TimeUnit},
+    setup_glean, CommonMetricData, Error, ErrorType, Glean, Lifetime, Result,
 };
 use private::RecordedExperimentData;
 
@@ -74,6 +77,9 @@ struct RustBindingsState {
 
     
     client_info: ClientInfoMetrics,
+
+    
+    upload_manager: net::UploadManager,
 }
 
 
@@ -124,32 +130,6 @@ fn setup_state(state: RustBindingsState) {
     }
 }
 
-
-
-
-static UPLOAD_MANAGER: OnceCell<Mutex<net::UploadManager>> = OnceCell::new();
-
-
-
-
-fn get_upload_manager() -> &'static Mutex<net::UploadManager> {
-    UPLOAD_MANAGER.get().unwrap()
-}
-
-
-fn setup_upload_manager(upload_manager: net::UploadManager) {
-    if UPLOAD_MANAGER.get().is_none() {
-        if UPLOAD_MANAGER.set(Mutex::new(upload_manager)).is_err() {
-            log::error!(
-                "Global upload state object is initialized already. This probably happened concurrently."
-            );
-        }
-    } else {
-        let mut lock = UPLOAD_MANAGER.get().unwrap().lock().unwrap();
-        *lock = upload_manager;
-    }
-}
-
 fn with_glean<F, R>(f: F) -> R
 where
     F: FnOnce(&Glean) -> R,
@@ -183,139 +163,142 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
         return;
     }
 
-    std::thread::spawn(move || {
-        let core_cfg = glean_core::Configuration {
-            upload_enabled: cfg.upload_enabled,
-            data_path: cfg.data_path.clone(),
-            application_id: cfg.application_id.clone(),
-            language_binding_name: LANGUAGE_BINDING_NAME.into(),
-            max_events: cfg.max_events,
-            delay_ping_lifetime_io: cfg.delay_ping_lifetime_io,
-        };
+    std::thread::Builder::new()
+        .name("glean.init".into())
+        .spawn(move || {
+            let core_cfg = glean_core::Configuration {
+                upload_enabled: cfg.upload_enabled,
+                data_path: cfg.data_path.clone(),
+                application_id: cfg.application_id.clone(),
+                language_binding_name: LANGUAGE_BINDING_NAME.into(),
+                max_events: cfg.max_events,
+                delay_ping_lifetime_io: cfg.delay_ping_lifetime_io,
+            };
 
-        let glean = match Glean::new(core_cfg) {
-            Ok(glean) => glean,
-            Err(err) => {
-                log::error!("Failed to initialize Glean: {}", err);
+            let glean = match Glean::new(core_cfg) {
+                Ok(glean) => glean,
+                Err(err) => {
+                    log::error!("Failed to initialize Glean: {}", err);
+                    return;
+                }
+            };
+
+            
+            
+            if glean_core::setup_glean(glean).is_err() {
                 return;
             }
-        };
 
-        
-        
-        if glean_core::setup_glean(glean).is_err() {
-            return;
-        }
-
-        log::info!("Glean initialized");
-
-        
-        setup_state(RustBindingsState {
-            channel: cfg.channel,
-            client_info,
-        });
-
-        
-        setup_upload_manager(net::UploadManager::new(
-            cfg.server_endpoint
-                .unwrap_or_else(|| DEFAULT_GLEAN_ENDPOINT.to_string()),
-            cfg.uploader
-                .unwrap_or_else(|| Box::new(net::HttpUploader) as Box<dyn net::PingUploader>),
-        ));
-
-        let upload_enabled = cfg.upload_enabled;
-
-        with_glean_mut(|glean| {
-            let state = global_state().lock().unwrap();
+            log::info!("Glean initialized");
 
             
-            
-            if let Some(tag) = PRE_INIT_DEBUG_VIEW_TAG.get() {
-                let lock = tag.try_lock();
-                if let Ok(ref debug_tag) = lock {
-                    glean.set_debug_view_tag(debug_tag);
-                }
-            }
-            
-            
-            let log_pigs = PRE_INIT_LOG_PINGS.load(Ordering::SeqCst);
-            if log_pigs {
-                glean.set_log_pings(log_pigs);
-            }
-            
-            
-            if let Some(tags) = PRE_INIT_SOURCE_TAGS.get() {
-                let lock = tags.try_lock();
-                if let Ok(ref source_tags) = lock {
-                    glean.set_source_tags(source_tags.to_vec());
-                }
-            }
+            let upload_manager = net::UploadManager::new(
+                cfg.server_endpoint
+                    .unwrap_or_else(|| DEFAULT_GLEAN_ENDPOINT.to_string()),
+                cfg.uploader
+                    .unwrap_or_else(|| Box::new(net::HttpUploader) as Box<dyn net::PingUploader>),
+            );
 
             
-            
-            
-            
-            
-            let dirty_flag = glean.is_dirty_flag_set();
-            glean.set_dirty_flag(false);
+            setup_state(RustBindingsState {
+                channel: cfg.channel,
+                client_info,
+                upload_manager,
+            });
 
-            
-            
-            
-            
-            
-            glean.register_ping_type(&glean_metrics::pings::baseline.ping_type);
-            glean.register_ping_type(&glean_metrics::pings::metrics.ping_type);
-            glean.register_ping_type(&glean_metrics::pings::events.ping_type);
+            let upload_enabled = cfg.upload_enabled;
 
-            
-            
+            with_glean_mut(|glean| {
+                let state = global_state().lock().unwrap();
 
-            
-            
-            
-            let is_first_run = glean.is_first_run();
-            if is_first_run {
-                initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
-            }
-
-            
-            let pings_submitted = glean.on_ready_to_submit_pings();
-
-            
-            
-            
-            if pings_submitted || !upload_enabled {
-                let uploader = get_upload_manager().lock().unwrap();
-                uploader.trigger_upload();
-            }
-
-            
-            
-            
-            
-
-            
-            
-            
-            if !is_first_run && dirty_flag {
                 
-            }
+                
+                if let Some(tag) = PRE_INIT_DEBUG_VIEW_TAG.get() {
+                    let lock = tag.try_lock();
+                    if let Ok(ref debug_tag) = lock {
+                        glean.set_debug_view_tag(debug_tag);
+                    }
+                }
+                
+                
+                let log_pigs = PRE_INIT_LOG_PINGS.load(Ordering::SeqCst);
+                if log_pigs {
+                    glean.set_log_pings(log_pigs);
+                }
+                
+                
+                if let Some(tags) = PRE_INIT_SOURCE_TAGS.get() {
+                    let lock = tags.try_lock();
+                    if let Ok(ref source_tags) = lock {
+                        glean.set_source_tags(source_tags.to_vec());
+                    }
+                }
+
+                
+                
+                
+                
+                
+                let dirty_flag = glean.is_dirty_flag_set();
+                glean.set_dirty_flag(false);
+
+                
+                
+                
+                
+                
+                glean.register_ping_type(&glean_metrics::pings::baseline.ping_type);
+                glean.register_ping_type(&glean_metrics::pings::metrics.ping_type);
+                glean.register_ping_type(&glean_metrics::pings::events.ping_type);
+
+                
+                
+
+                
+                
+                
+                let is_first_run = glean.is_first_run();
+                if is_first_run {
+                    initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
+                }
+
+                
+                let pings_submitted = glean.on_ready_to_submit_pings();
+
+                
+                
+                
+                if pings_submitted || !upload_enabled {
+                    state.upload_manager.trigger_upload();
+                }
+
+                
+                
+                
+                
+
+                
+                
+                
+                if !is_first_run && dirty_flag {
+                    
+                }
+
+                
+                
+                
+                if !is_first_run {
+                    glean.clear_application_lifetime_metrics();
+                    initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
+                }
+            });
 
             
-            
-            
-            if !is_first_run {
-                glean.clear_application_lifetime_metrics();
-                initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
+            if let Err(err) = dispatcher::flush_init() {
+                log::error!("Unable to flush the preinit queue: {}", err);
             }
-        });
-
-        
-        if let Err(err) = dispatcher::flush_init() {
-            log::error!("Unable to flush the preinit queue: {}", err);
-        }
-    });
+        })
+        .expect("Failed to spawn Glean's init thread");
 
     
     
@@ -327,7 +310,7 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
 
 
 pub fn shutdown() {
-    if let Err(e) = dispatcher::try_shutdown() {
+    if let Err(e) = dispatcher::shutdown() {
         log::error!("Can't shutdown dispatcher thread: {:?}", e);
     }
 }
@@ -404,8 +387,7 @@ pub fn set_upload_enabled(enabled: bool) {
             if old_enabled && !enabled {
                 
                 
-                let uploader = get_upload_manager().lock().unwrap();
-                uploader.trigger_upload();
+                state.upload_manager.trigger_upload();
             }
         });
     });
@@ -484,8 +466,8 @@ pub(crate) fn submit_ping_by_name_sync(ping: &str, reason: Option<&str>) {
     });
 
     if let Some(true) = submitted_ping {
-        let uploader = get_upload_manager().lock().unwrap();
-        uploader.trigger_upload();
+        let state = global_state().lock().unwrap();
+        state.upload_manager.trigger_upload();
     }
 }
 

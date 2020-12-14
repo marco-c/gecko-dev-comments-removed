@@ -3,7 +3,7 @@
 
 
 use once_cell::sync::Lazy;
-use std::{mem, sync::RwLock};
+use std::sync::RwLock;
 
 use super::{DispatchError, DispatchGuard, Dispatcher};
 
@@ -63,9 +63,19 @@ pub fn flush_init() -> Result<(), DispatchError> {
 
 
 
+pub fn shutdown() -> Result<(), DispatchError> {
+    guard().shutdown()?;
 
-pub fn try_shutdown() -> Result<(), DispatchError> {
-    guard().shutdown()
+    
+    
+    let mut lock = GLOBAL_DISPATCHER.write().unwrap();
+    let dispatcher = lock.as_mut().expect("Global dispatcher has gone missing");
+
+    if let Some(worker) = dispatcher.worker.take() {
+        return worker.join().map_err(|_| DispatchError::WorkerPanic);
+    }
+
+    Ok(())
 }
 
 
@@ -73,9 +83,8 @@ pub fn try_shutdown() -> Result<(), DispatchError> {
 pub(crate) fn reset_dispatcher() {
     
     
-    let _ = try_shutdown();
+    let _ = shutdown();
 
-    
     
     
     
@@ -83,8 +92,7 @@ pub(crate) fn reset_dispatcher() {
     
     let mut lock = GLOBAL_DISPATCHER.write().unwrap();
     let new_dispatcher = Some(Dispatcher::new(GLOBAL_DISPATCHER_LIMIT));
-    let old_dispatcher = mem::replace(&mut *lock, new_dispatcher);
-    old_dispatcher.map(|d| d.join());
+    *lock = new_dispatcher;
 }
 
 #[cfg(test)]

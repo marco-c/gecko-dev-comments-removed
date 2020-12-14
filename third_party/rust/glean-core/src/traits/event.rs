@@ -3,8 +3,77 @@
 
 
 use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::hash::Hash;
 
 use crate::event_database::RecordedEvent;
+use crate::ErrorType;
+
+
+
+
+
+
+
+
+
+
+pub trait ExtraKeys: Hash + Eq + PartialEq + Copy {
+    
+    const ALLOWED_KEYS: &'static [&'static str];
+
+    
+    
+    
+    
+    
+    
+    
+    fn index(self) -> i32;
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub enum NoExtraKeys {}
+
+impl ExtraKeys for NoExtraKeys {
+    const ALLOWED_KEYS: &'static [&'static str] = &[];
+
+    fn index(self) -> i32 {
+        
+        -1
+    }
+}
+
+
+pub enum EventRecordingError {
+    
+    InvalidId,
+    
+    InvalidExtraKey,
+}
+
+impl TryFrom<i32> for NoExtraKeys {
+    type Error = EventRecordingError;
+
+    fn try_from(_value: i32) -> Result<Self, Self::Error> {
+        Err(EventRecordingError::InvalidExtraKey)
+    }
+}
+
+impl TryFrom<&str> for NoExtraKeys {
+    type Error = EventRecordingError;
+
+    fn try_from(_value: &str) -> Result<Self, Self::Error> {
+        Err(EventRecordingError::InvalidExtraKey)
+    }
+}
 
 
 
@@ -12,6 +81,8 @@ use crate::event_database::RecordedEvent;
 
 pub trait Event {
     
+    type Extra: ExtraKeys;
+
     
     
     
@@ -19,7 +90,8 @@ pub trait Event {
     
     
     
-    fn record<M: Into<Option<HashMap<i32, String>>>>(&self, extra: M);
+    
+    fn record<M: Into<Option<HashMap<Self::Extra, String>>>>(&self, extra: M);
 
     
     
@@ -46,8 +118,12 @@ pub trait Event {
     
     
     
-    fn test_get_value_as_json_string<'a, S: Into<Option<&'a str>>>(
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
+        error: ErrorType,
         ping_name: S,
-    ) -> Option<String>;
+    ) -> i32;
 }

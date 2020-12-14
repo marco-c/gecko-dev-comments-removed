@@ -2,7 +2,7 @@
 
 
 
-use std::time::Duration;
+use crate::ErrorType;
 
 
 
@@ -14,30 +14,17 @@ pub trait Timespan {
     
     
     
-    fn set_start(&mut self, start_time: u64);
+    
+    
+    fn start(&self);
 
     
     
     
-    fn set_stop(&mut self, stop_time: u64);
+    fn stop(&self);
 
     
-    fn cancel(&mut self);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn set_raw(&self, elapsed: Duration, overwrite: bool);
+    fn cancel(&self);
 
     
     
@@ -50,4 +37,23 @@ pub trait Timespan {
     
     
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<u64>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: ErrorType,
+        ping_name: S,
+    ) -> i32;
 }

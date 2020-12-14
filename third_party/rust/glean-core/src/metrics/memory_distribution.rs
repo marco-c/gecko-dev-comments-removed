@@ -122,7 +122,6 @@ impl MemoryDistributionMetric {
     
     
     
-    
     pub fn accumulate_samples_signed(&self, glean: &Glean, samples: Vec<i64>) {
         if !self.should_record(glean) {
             return;

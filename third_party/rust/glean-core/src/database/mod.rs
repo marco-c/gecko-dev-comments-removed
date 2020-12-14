@@ -122,6 +122,10 @@ mod backend {
                 Err(MigrateError::ManagerPoisonError) => false,
                 
                 
+                
+                Err(MigrateError::CloseError(_)) => false,
+                
+                
                 Err(MigrateError::StoreError(_)) => false,
                 
                 

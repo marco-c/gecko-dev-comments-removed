@@ -40,10 +40,12 @@ pub trait PingUploader: std::fmt::Debug + Send + Sync {
 
 
 
+#[derive(Debug)]
 pub(crate) struct UploadManager {
     inner: Arc<Inner>,
 }
 
+#[derive(Debug)]
 struct Inner {
     server_endpoint: String,
     uploader: Box<dyn PingUploader + 'static>,
@@ -79,33 +81,37 @@ impl UploadManager {
 
         let inner = Arc::clone(&self.inner);
 
-        thread::spawn(move || {
-            
-            inner.thread_running.store(true, Ordering::SeqCst);
+        thread::Builder::new()
+            .name("glean.upload".into())
+            .spawn(move || {
+                
+                inner.thread_running.store(true, Ordering::SeqCst);
 
-            loop {
-                let incoming_task = with_glean(|glean| glean.get_upload_task());
+                loop {
+                    let incoming_task = with_glean(|glean| glean.get_upload_task());
 
-                match incoming_task {
-                    PingUploadTask::Upload(request) => {
-                        let doc_id = request.document_id.clone();
-                        let upload_url = format!("{}{}", inner.server_endpoint, request.path);
-                        let headers: Vec<(String, String)> = request.headers.into_iter().collect();
-                        let result = inner.uploader.upload(upload_url, request.body, headers);
-                        
-                        with_glean(|glean| glean.process_ping_upload_response(&doc_id, result));
-                    }
-                    PingUploadTask::Wait => {
-                        thread::sleep(THROTTLE_BACKOFF_TIME);
-                    }
-                    PingUploadTask::Done => {
-                        
-                        
-                        inner.thread_running.store(false, Ordering::SeqCst);
-                        return;
+                    match incoming_task {
+                        PingUploadTask::Upload(request) => {
+                            let doc_id = request.document_id.clone();
+                            let upload_url = format!("{}{}", inner.server_endpoint, request.path);
+                            let headers: Vec<(String, String)> =
+                                request.headers.into_iter().collect();
+                            let result = inner.uploader.upload(upload_url, request.body, headers);
+                            
+                            with_glean(|glean| glean.process_ping_upload_response(&doc_id, result));
+                        }
+                        PingUploadTask::Wait => {
+                            thread::sleep(THROTTLE_BACKOFF_TIME);
+                        }
+                        PingUploadTask::Done => {
+                            
+                            
+                            inner.thread_running.store(false, Ordering::SeqCst);
+                            return;
+                        }
                     }
                 }
-            }
-        });
+            })
+            .expect("Failed to spawn Glean's uploader thread");
     }
 }

@@ -149,6 +149,7 @@ impl TimingDistributionMetric {
     
     
     
+    
     pub fn set_start(&mut self, start_time: u64) -> TimerId {
         self.timings.set_start(start_time)
     }
@@ -223,7 +224,6 @@ impl TimingDistributionMetric {
         self.timings.cancel(id);
     }
 
-    
     
     
     
