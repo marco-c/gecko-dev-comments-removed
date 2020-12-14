@@ -23,7 +23,6 @@
 #include "nsThreadUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsObjCExceptions.h"
-#include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include "nsChildView.h"
 #include "nsToolkit.h"
@@ -273,10 +272,6 @@ static void RemoveScreenWakeLockListener() {
 
 
 
-extern "C" CGError CGSSetDebugOptions(int options);
-
-
-
 
 
 
@@ -352,20 +347,6 @@ nsresult nsAppShell::Init() {
                                 @selector(nsAppShell_NSApplication_terminate:));
     }
     gAppShellMethodsSwizzled = true;
-  }
-
-  
-  
-  
-  if (nsCocoaFeatures::macOSVersionMinor() == 10 && nsCocoaFeatures::macOSVersionBugFix() < 2 &&
-      nsCocoaFeatures::macOSVersionMajor() == 10) {
-    
-    
-    
-    
-    
-    
-    CGSSetDebugOptions(0x80000007);
   }
 
 #if !defined(RELEASE_OR_BETA) || defined(DEBUG)

@@ -21,13 +21,6 @@
 #  include "mozilla/SandboxSettings.h"
 #endif
 
-#if defined(XP_MACOSX)
-#  include "nsCocoaFeatures.h"
-
-
-extern "C" CGError CGSSetDebugOptions(int options);
-#endif
-
 #ifdef XP_WIN
 #  if defined(MOZ_SANDBOX)
 #    include "mozilla/sandboxTarget.h"
@@ -166,19 +159,9 @@ bool PluginProcessChild::Init(int aArgc, char* aArgv[]) {
 #  error Sorry
 #endif
 
-  bool retval = mPlugin.InitForChrome(pluginFilename, ParentPid(),
-                                      IOThreadChild::message_loop(),
-                                      IOThreadChild::TakeChannel());
-#if defined(XP_MACOSX)
-  
-  
-  
-  
-  
-  
-  CGSSetDebugOptions(0x80000007);
-#endif
-  return retval;
+  return mPlugin.InitForChrome(pluginFilename, ParentPid(),
+                               IOThreadChild::message_loop(),
+                               IOThreadChild::TakeChannel());
 }
 
 void PluginProcessChild::CleanUp() {
