@@ -5184,7 +5184,7 @@ bool BytecodeEmitter::emitIterator() {
     
     return false;
   }
-  if (!emitElemOpBase(JSOp::CallElem)) {
+  if (!emitElemOpBase(JSOp::GetElem)) {
     
     return false;
   }
@@ -5225,7 +5225,7 @@ bool BytecodeEmitter::emitAsyncIterator() {
     
     return false;
   }
-  if (!emitElemOpBase(JSOp::CallElem)) {
+  if (!emitElemOpBase(JSOp::GetElem)) {
     
     return false;
   }
@@ -5256,7 +5256,7 @@ bool BytecodeEmitter::emitAsyncIterator() {
     
     return false;
   }
-  if (!emitElemOpBase(JSOp::CallElem)) {
+  if (!emitElemOpBase(JSOp::GetElem)) {
     
     return false;
   }
@@ -9573,9 +9573,6 @@ bool BytecodeEmitter::emitInitializeInstanceMembers() {
       return false;
     }
 
-    
-    
-    
     if (!emit1(JSOp::GetElem)) {
       
       return false;
@@ -9635,9 +9632,6 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
       return false;
     }
 
-    
-    
-    
     if (!emit1(JSOp::GetElem)) {
       
       return false;
@@ -10629,7 +10623,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationForOpcodeSlow(
                    emitAtomOp(JSOp::String, atomIndex) && emitDupAt(pushed + 2);
           });
     case JSOp::GetElem:
-    case JSOp::CallElem:
       return emitInstrumentationSlow(
           InstrumentationKind::GetElement,
           [=](uint32_t pushed) { return emitDupAt(pushed + 1, 2); });

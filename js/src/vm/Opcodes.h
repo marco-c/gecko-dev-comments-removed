@@ -1031,12 +1031,8 @@
 
 
 
-
-
-
  \
     MACRO(GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_IC) \
-    MACRO(CallElem, call_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_IC) \
     
 
 
@@ -3594,6 +3590,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(232)                                   \
   MACRO(233)                                   \
   MACRO(234)                                   \
   MACRO(235)                                   \
