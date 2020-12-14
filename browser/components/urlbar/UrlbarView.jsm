@@ -225,6 +225,13 @@ class UrlbarView {
   
 
 
+  clearSelection() {
+    this._selectElement(null, { updateInput: false });
+  }
+
+  
+
+
 
 
 
@@ -435,7 +442,7 @@ class UrlbarView {
   clear() {
     this._rows.textContent = "";
     this.panel.setAttribute("noresults", "true");
-    this._selectElement(null, { updateInput: false });
+    this.clearSelection();
   }
 
   

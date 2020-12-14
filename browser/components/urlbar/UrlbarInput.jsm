@@ -477,13 +477,23 @@ class UrlbarInput {
 
     
     
+    
+    
+    let isComposing = this.editor.composing;
+
+    
+    
     let selectedPrivateResult =
       result &&
       result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
       result.payload.inPrivateWindow;
     let selectedPrivateEngineResult =
       selectedPrivateResult && result.payload.isPrivateEngine;
-    if (element && (!oneOffParams?.engine || selectedPrivateEngineResult)) {
+    if (
+      !isComposing &&
+      element &&
+      (!oneOffParams?.engine || selectedPrivateEngineResult)
+    ) {
       this.pickElement(element, event);
       return;
     }
@@ -577,7 +587,7 @@ class UrlbarInput {
     
 
     
-    if (this._resultForCurrentValue) {
+    if (!isComposing && this._resultForCurrentValue) {
       this.pickResult(this._resultForCurrentValue, event);
       return;
     }
@@ -2895,6 +2905,8 @@ class UrlbarInput {
     let value = this.value;
     this.valueIsTyped = true;
     this._untrimmedValue = value;
+    this._resultForCurrentValue = null;
+
     this.window.gBrowser.userTypedValue = value;
     
     
@@ -3129,6 +3141,18 @@ class UrlbarInput {
 
     
     if (this.view.isOpen) {
+      
+      
+      if (this.searchMode) {
+        
+        
+        
+        
+        if (!this.value) {
+          this.window.gBrowser.userTypedValue = null;
+        }
+        this.confirmSearchMode();
+      }
       this._compositionClosedPopup = true;
       this.view.close();
     } else {
@@ -3140,6 +3164,12 @@ class UrlbarInput {
     if (this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING) {
       throw new Error("Trying to stop a non existing composition?");
     }
+
+    
+    
+    
+    this.view.clearSelection();
+    this._resultForCurrentValue = null;
 
     
     

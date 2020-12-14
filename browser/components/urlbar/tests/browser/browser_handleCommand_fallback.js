@@ -22,6 +22,11 @@ const TEST_STRINGS = [
 ];
 
 add_task(async function() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.autoFill", false]],
+  });
+
   sandbox = sinon.createSandbox();
   let engine = await Services.search.addEngineWithDetails("MozSearch", {
     alias: "moz",
@@ -66,16 +71,7 @@ add_task(async function() {
   
   
   for (let value of TEST_STRINGS) {
-    if (
-      UrlbarPrefs.get("update2") &&
-      (await UrlbarSearchUtils.engineForAlias(value))
-    ) {
-      
-      
-      
-      
-      continue;
-    }
+    info("Input the value normally and Enter.");
     let promise = promiseLoadURL();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -84,12 +80,19 @@ add_task(async function() {
     EventUtils.synthesizeKey("KEY_Enter");
     let args = await promise;
     Assert.ok(args.length, "Sanity check");
-    
+    info("Close the panel and confirm again.");
     promise = promiseLoadURL();
     await UrlbarTestUtils.promisePopupClose(window);
     EventUtils.synthesizeKey("KEY_Enter");
     Assert.deepEqual(await promise, args, "Check arguments are coherent");
+
+    info("Set the value directly and Enter.");
     
+    if (gURLBar.searchMode) {
+      await UrlbarTestUtils.exitSearchMode(window);
+      
+      await UrlbarTestUtils.promisePopupClose(window);
+    }
     promise = promiseLoadURL();
     gURLBar.value = value;
     let spy = sinon.spy(UrlbarUtils, "getHeuristicResultFor");
@@ -133,12 +136,9 @@ add_task(async function no_heuristic_test() {
   
   
   for (let value of TEST_STRINGS) {
-    if (
-      UrlbarPrefs.get("update2") &&
-      (await UrlbarSearchUtils.engineForAlias(value))
-    ) {
-      
-      continue;
+    
+    if (gURLBar.searchMode) {
+      await UrlbarTestUtils.exitSearchMode(window);
     }
     let promise = promiseLoadURL();
     gURLBar.value = value;

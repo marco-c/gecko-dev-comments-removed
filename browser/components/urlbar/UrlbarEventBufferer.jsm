@@ -243,11 +243,14 @@ class UrlbarEventBufferer {
       return false;
     }
 
-    if (
-      DEFERRED_KEY_CODES.has(event.keyCode) &&
-      this.input.controller.keyEventMovesCaret(event)
-    ) {
-      return false;
+    if (DEFERRED_KEY_CODES.has(event.keyCode)) {
+      
+      if (this.input.editor.composing) {
+        return true;
+      }
+      if (this.input.controller.keyEventMovesCaret(event)) {
+        return false;
+      }
     }
 
     
