@@ -143,6 +143,11 @@ class IOUtils final {
   
 
 
+  template <typename T>
+  static void ResolveJSPromise(Promise* aPromise, const T& aValue);
+  
+
+
   static void RejectJSPromise(Promise* aPromise, const IOError& aError);
 
   
