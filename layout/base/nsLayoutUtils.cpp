@@ -1100,7 +1100,7 @@ int32_t nsLayoutUtils::DoCompareTreePosition(
   
   NS_ASSERTION(gPreventAssertInCompareTreePosition || parent,
                "no common ancestor at all???");
-#endif            
+#endif  
   if (!parent) {  
     return 0;
   }
@@ -4342,8 +4342,12 @@ static bool GetPercentBSize(const LengthPercentage& aStyle, nsIFrame* aFrame,
   
   
   
-  nscoord bSizeTakenByBoxSizing =
-      GetBSizeTakenByBoxSizing(pos->mBoxSizing, f, aHorizontalAxis, false);
+  
+  
+  
+  const bool ignorePadding = aFrame->IsAbsolutelyPositioned();
+  nscoord bSizeTakenByBoxSizing = GetBSizeTakenByBoxSizing(
+      pos->mBoxSizing, f, aHorizontalAxis, ignorePadding);
   h = std::max(0, h - bSizeTakenByBoxSizing);
 
   aResult = std::max(aStyle.Resolve(h), 0);
@@ -4880,9 +4884,10 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         AddStateBitToAncestors(
             aFrame, NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE);
 
+        const bool ignorePadding =
+            (aFlags & IGNORE_PADDING) || aFrame->IsAbsolutelyPositioned();
         nscoord bSizeTakenByBoxSizing = GetDefiniteSizeTakenByBoxSizing(
-            boxSizing, aFrame, !isInlineAxis, aFlags & IGNORE_PADDING,
-            aPercentageBasis);
+            boxSizing, aFrame, !isInlineAxis, ignorePadding, aPercentageBasis);
         
         
         
