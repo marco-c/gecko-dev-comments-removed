@@ -22,27 +22,44 @@
 
 
 
-#[allow(unused_imports)]
-#[macro_use]
-extern crate cstr_macros;
-#[macro_use]
-extern crate procedural_masquerade;
+extern crate proc_macro;
 
-#[doc(hidden)]
-pub use cstr_macros::*;
+use crate::parse::parse_input;
+use proc_macro::TokenStream as RawTokenStream;
+use proc_macro2::{Literal, Span, TokenStream};
+use quote::{quote, quote_spanned};
+use std::ffi::CString;
 
-define_invoke_proc_macro!(cstr__invoke_build_bytes);
+mod parse;
 
-#[macro_export]
-macro_rules! cstr {
-    ($t: tt) => {
-        {
-            cstr__invoke_build_bytes! {
-                cstr_internal__build_bytes!($t)
-            }
-            unsafe {
-                ::std::ffi::CStr::from_bytes_with_nul_unchecked(BYTES)
-            }
+struct Error(Span, &'static str);
+
+#[proc_macro]
+pub fn cstr(input: RawTokenStream) -> RawTokenStream {
+    let tokens = match build_byte_str(input.into()) {
+        
+        
+        
+        
+        Ok(s) => quote!(unsafe {
+            #[allow(clippy::transmute_ptr_to_ref)]
+            ::std::mem::transmute::<_, &::std::ffi::CStr>(
+                #s as *const [u8] as *const ::std::ffi::CStr
+            )
+        }),
+        Err(Error(span, msg)) => quote_spanned!(span => compile_error!(#msg)),
+    };
+    tokens.into()
+}
+
+fn build_byte_str(input: TokenStream) -> Result<Literal, Error> {
+    let (bytes, span) = parse_input(input)?;
+    match CString::new(bytes) {
+        Ok(s) => {
+            let mut lit = Literal::byte_string(s.as_bytes_with_nul());
+            lit.set_span(span);
+            Ok(lit)
         }
+        Err(_) => Err(Error(span, "nul byte found in the literal")),
     }
 }

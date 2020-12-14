@@ -7,7 +7,6 @@
 
 
 
-#[macro_use]
 extern crate cstr;
 extern crate futures_task;
 extern crate libc;
