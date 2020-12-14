@@ -6,6 +6,7 @@ import jsonschema
 import os
 import pathlib
 import statistics
+import sys
 
 from mozperftest.utils import strtobool
 from mozperftest.layers import Layer
@@ -170,7 +171,14 @@ class Perfherder(Layer):
 
         
         
-        print("PERFHERDER_DATA: " + json.dumps(all_perfherder_data))
+
+        
+        
+        sys.stdout.write("PERFHERDER_DATA: ")
+        json.dump(all_perfherder_data, sys.stdout)
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
         metadata.set_output(write_json(all_perfherder_data, output, file))
         return metadata
 
