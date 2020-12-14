@@ -214,7 +214,6 @@ PausedDebuggerOverlay.prototype = {
       
       
       
-      
       return false;
     }
 
