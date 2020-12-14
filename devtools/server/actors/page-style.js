@@ -178,8 +178,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         
         fontWeightLevel4:
           CSS.supports("font-weight: 1") && CSS.supports("font-stretch: 100%"),
-        
-        getAttributesInOwnerDocument: true,
       },
     };
   },
