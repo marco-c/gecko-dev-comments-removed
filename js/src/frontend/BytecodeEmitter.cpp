@@ -5467,9 +5467,9 @@ bool BytecodeEmitter::emitForOf(ForNode* forOfLoop,
   unsigned iflags = forOfLoop->iflags();
   IteratorKind iterKind =
       (iflags & JSITER_FORAWAITOF) ? IteratorKind::Async : IteratorKind::Sync;
-  MOZ_ASSERT_IF(iterKind == IteratorKind::Async, sc->asFunctionBox());
+  MOZ_ASSERT_IF(iterKind == IteratorKind::Async, sc->isSuspendableContext());
   MOZ_ASSERT_IF(iterKind == IteratorKind::Async,
-                sc->asFunctionBox()->isAsync());
+                sc->asSuspendableContext()->isAsync());
 
   ParseNode* forHeadExpr = forOfHead->kid3();
 
@@ -6035,7 +6035,8 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
       return false;
     }
 
-    if (sc->asFunctionBox()->isAsync() && sc->asFunctionBox()->isGenerator()) {
+    if (sc->asSuspendableContext()->isAsync() &&
+        sc->asSuspendableContext()->isGenerator()) {
       if (!emitAwaitInInnermostScope()) {
         return false;
       }
@@ -6202,7 +6203,7 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
   }
 
   
-  if (sc->asFunctionBox()->isAsync()) {
+  if (sc->asSuspendableContext()->isAsync()) {
     MOZ_ASSERT(!needsIteratorResult);
     if (!emitAwaitInInnermostScope()) {
       
@@ -6239,7 +6240,7 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
 }
 
 bool BytecodeEmitter::emitAwaitInInnermostScope(UnaryNode* awaitNode) {
-  MOZ_ASSERT(sc->isFunctionBox());
+  MOZ_ASSERT(sc->isSuspendableContext());
   MOZ_ASSERT(awaitNode->isKind(ParseNodeKind::AwaitExpr));
 
   if (!emitTree(awaitNode->kid())) {
@@ -6265,7 +6266,7 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     return false;
   }
 
-  if (sc->asFunctionBox()->needsPromiseResult()) {
+  if (sc->asSuspendableContext()->needsPromiseResult()) {
     if (!emitGetDotGeneratorInScope(currentScope)) {
       
       return false;
@@ -6302,13 +6303,14 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
 
 
 bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
-  MOZ_ASSERT(sc->isFunctionBox());
-  MOZ_ASSERT(sc->asFunctionBox()->isGenerator());
+  MOZ_ASSERT(sc->isSuspendableContext());
+  MOZ_ASSERT(sc->asSuspendableContext()->isGenerator());
 
   
-  IteratorKind iterKind =
-      sc->asFunctionBox()->isAsync() ? IteratorKind::Async : IteratorKind::Sync;
-  bool needsIteratorResult = sc->asFunctionBox()->needsIteratorResult();
+  IteratorKind iterKind = sc->asSuspendableContext()->isAsync()
+                              ? IteratorKind::Async
+                              : IteratorKind::Sync;
+  bool needsIteratorResult = sc->asSuspendableContext()->needsIteratorResult();
 
   
   if (!emitTree(iter)) {
