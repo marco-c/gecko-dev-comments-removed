@@ -14,6 +14,7 @@
 #include "frontend/SharedContext.h"  
 #include "js/RootingAPI.h"           
 #include "vm/Scope.h"                
+#include "vm/StencilEnums.h"         
 
 namespace js {
 
