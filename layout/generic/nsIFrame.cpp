@@ -3406,7 +3406,12 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     
-    if (usingMask) {
+    
+    
+    
+    
+    
+    if (usingMask && !usingFilter) {
       clipForMask = ComputeClipForMaskItem(aBuilder, this);
       if (clipForMask) {
         aBuilder->IntersectDirtyRect(*clipForMask);
