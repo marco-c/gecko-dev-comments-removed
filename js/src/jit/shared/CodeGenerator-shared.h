@@ -128,18 +128,6 @@ class CodeGeneratorShared : public LElementVisitor {
     return *osrEntryOffset_;
   }
 
-  
-  
-  size_t skipArgCheckEntryOffset_;
-
-  inline void setSkipArgCheckEntryOffset(size_t offset) {
-    MOZ_ASSERT(skipArgCheckEntryOffset_ == 0);
-    skipArgCheckEntryOffset_ = offset;
-  }
-  inline size_t getSkipArgCheckEntryOffset() const {
-    return skipArgCheckEntryOffset_;
-  }
-
   typedef js::Vector<CodegenSafepointIndex, 8, SystemAllocPolicy>
       SafepointIndices;
 
