@@ -883,8 +883,6 @@ void FallbackICCodeCompiler::PushStubPayload(MacroAssembler& masm,
 
 
 
-
-
 bool DoToBoolFallback(JSContext* cx, BaselineFrame* frame,
                       ICToBool_Fallback* stub, HandleValue arg,
                       MutableHandleValue ret) {

@@ -584,14 +584,6 @@ void JitCodeHeader::init(JitCode* jitCode) {
   
   MOZ_ASSERT(!gc::IsMovableKind(gc::AllocKind::JITCODE));
   jitCode_ = jitCode;
-
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-  
-  
-  if (CPUInfo::NeedAmdBugWorkaround()) {
-    memset((char*)&nops_, X86Encoding::OneByteOpcodeID::OP_NOP, sizeof(nops_));
-  }
-#endif
 }
 
 template <AllowGC allowGC>

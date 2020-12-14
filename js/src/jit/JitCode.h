@@ -33,12 +33,6 @@ struct JitCodeHeader {
   
   JitCode* jitCode_;
 
-  
-  
-  
-  
-  void* nops_;
-
   void init(JitCode* jitCode);
 
   static JitCodeHeader* FromExecutable(uint8_t* buffer) {
