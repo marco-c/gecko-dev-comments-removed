@@ -645,21 +645,12 @@ Result<CacheId, nsresult> CreateCacheId(mozIStorageConnection& aConn) {
     return Err(rv);
   }
 
-  nsCOMPtr<mozIStorageStatement> state;
-  rv = aConn.CreateStatement("SELECT last_insert_rowid()"_ns,
-                             getter_AddRefs(state));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
-  }
+  CACHE_TRY_INSPECT(const auto& state,
+                    quota::CreateAndExecuteSingleStepStatement<
+                        quota::SingleStepResult::ReturnNullIfNoResult>(
+                        aConn, "SELECT last_insert_rowid()"_ns));
 
-  bool hasMoreData = false;
-  rv = state->ExecuteStep(&hasMoreData);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
-  }
-  if (NS_WARN_IF(!hasMoreData)) {
-    return Err(NS_ERROR_UNEXPECTED);
-  }
+  CACHE_TRY(OkIf(state), Err(NS_ERROR_UNEXPECTED));
 
   CacheId id;
   rv = state->GetInt64(0, &id);
@@ -2066,7 +2057,7 @@ nsresult InsertEntry(mozIStorageConnection& aConn, CacheId aCacheId,
                           quota::CreateAndExecuteSingleStepStatement(
                               aConn, "SELECT last_insert_rowid()"_ns));
 
-        CACHE_TRY_RETURN(MOZ_TO_RESULT_INVOKE(state, GetInt32, 0));
+        CACHE_TRY_RETURN(MOZ_TO_RESULT_INVOKE(*state, GetInt32, 0));
       }()));
 
   rv = aConn.CreateStatement(
@@ -2727,21 +2718,14 @@ Result<int32_t, nsresult> GetEffectiveSchemaVersion(
     
     
     
-    nsCOMPtr<mozIStorageStatement> stmt;
-    rv = aConn.CreateStatement(
-        nsLiteralCString("SELECT name FROM pragma_table_info('entries') WHERE "
-                         "name = 'response_padding_size'"),
-        getter_AddRefs(stmt));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
-    }
-
     
-    bool hasColumn = false;
-    rv = stmt->ExecuteStep(&hasColumn);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
-    }
+    
+    CACHE_TRY_INSPECT(const bool& hasColumn,
+                      quota::CreateAndExecuteSingleStepStatement<
+                          quota::SingleStepResult::ReturnNullIfNoResult>(
+                          aConn,
+                          "SELECT name FROM pragma_table_info('entries') WHERE "
+                          "name = 'response_padding_size'"_ns));
 
     if (hasColumn) {
       return kHackyPaddingSizePresentVersion;
@@ -3116,21 +3100,12 @@ nsresult MigrateFrom16To17(mozIStorageConnection& aConn, bool& aRewriteSchema) {
 
   
   
-  nsCOMPtr<mozIStorageStatement> state;
-  rv = aConn.CreateStatement("PRAGMA foreign_key_check;"_ns,
-                             getter_AddRefs(state));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  CACHE_TRY_INSPECT(const bool& hasResult,
+                    quota::CreateAndExecuteSingleStepStatement<
+                        quota::SingleStepResult::ReturnNullIfNoResult>(
+                        aConn, "PRAGMA foreign_key_check;"_ns));
 
-  bool hasMoreData = false;
-  rv = state->ExecuteStep(&hasMoreData);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (NS_WARN_IF(hasMoreData)) {
-    return NS_ERROR_FAILURE;
-  }
+  CACHE_TRY(OkIf(!hasResult), NS_ERROR_FAILURE);
 
   rv = aConn.SetSchemaVersion(17);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3360,21 +3335,12 @@ nsresult MigrateFrom20To21(mozIStorageConnection& aConn, bool& aRewriteSchema) {
 
   
   
-  nsCOMPtr<mozIStorageStatement> state;
-  rv = aConn.CreateStatement("PRAGMA foreign_key_check;"_ns,
-                             getter_AddRefs(state));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  CACHE_TRY_INSPECT(const bool& hasResult,
+                    quota::CreateAndExecuteSingleStepStatement<
+                        quota::SingleStepResult::ReturnNullIfNoResult>(
+                        aConn, "PRAGMA foreign_key_check;"_ns));
 
-  bool hasMoreData = false;
-  rv = state->ExecuteStep(&hasMoreData);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (NS_WARN_IF(hasMoreData)) {
-    return NS_ERROR_FAILURE;
-  }
+  CACHE_TRY(OkIf(!hasResult), NS_ERROR_FAILURE);
 
   rv = aConn.SetSchemaVersion(21);
   if (NS_WARN_IF(NS_FAILED(rv))) {

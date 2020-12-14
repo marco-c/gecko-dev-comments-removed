@@ -979,10 +979,26 @@ nsDependentCSubstring GetLeafName(const nsACString& aPath);
 Result<nsCOMPtr<nsIFile>, nsresult> CloneFileAndAppend(
     nsIFile& aDirectory, const nsAString& aPathElement);
 
+enum class SingleStepResult { AssertHasResult, ReturnNullIfNoResult };
+
+template <SingleStepResult ResultHandling>
+using SingleStepSuccessType =
+    std::conditional_t<ResultHandling == SingleStepResult::AssertHasResult,
+                       NotNull<nsCOMPtr<mozIStorageStatement>>,
+                       nsCOMPtr<mozIStorageStatement>>;
 
 
 
-Result<nsCOMPtr<mozIStorageStatement>, nsresult>
+
+
+
+
+
+
+
+
+template <SingleStepResult ResultHandling = SingleStepResult::AssertHasResult>
+Result<SingleStepSuccessType<ResultHandling>, nsresult>
 CreateAndExecuteSingleStepStatement(mozIStorageConnection& aConnection,
                                     const nsACString& aStatementString);
 
