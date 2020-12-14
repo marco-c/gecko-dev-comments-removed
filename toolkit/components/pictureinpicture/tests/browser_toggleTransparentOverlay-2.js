@@ -8,10 +8,26 @@
 
 
 
+
 add_task(async () => {
   const PAGE = TEST_ROOT + "test-transparent-overlay-2.html";
   await testToggle(PAGE, {
     "video-zero-opacity": { canToggle: true },
     "video-partial-opacity": { canToggle: true },
   });
+
+  
+  
+  Services.ppmm.sharedData.set(SHARED_DATA_KEY, {
+    "*://example.com/*": { visibilityThreshold: 0.4 },
+  });
+  Services.ppmm.sharedData.flush();
+
+  await testToggle(PAGE, {
+    "video-zero-opacity": { canToggle: true },
+    "video-partial-opacity": { canToggle: false },
+  });
+
+  Services.ppmm.sharedData.set(SHARED_DATA_KEY, {});
+  Services.ppmm.sharedData.flush();
 });

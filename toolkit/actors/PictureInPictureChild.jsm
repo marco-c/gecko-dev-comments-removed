@@ -254,6 +254,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
         
         isTrackingVideos: false,
         togglePolicy: TOGGLE_POLICIES.DEFAULT,
+        toggleVisibilityThreshold: 1.0,
         
         
         
@@ -638,6 +639,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       return;
     }
 
+    let state = this.docState;
     let { clientX, clientY } = event;
     let winUtils = this.contentWindow.windowUtils;
     
@@ -656,7 +658,8 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       1,
       true,
       false,
-      true 
+      true ,
+      state.toggleVisibilityThreshold
     );
     if (!Array.from(elements).includes(video)) {
       return;
@@ -664,7 +667,6 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
 
     let toggle = this.getToggleElement(shadowRoot);
     if (this.isMouseOverToggle(toggle, event)) {
-      let state = this.docState;
       state.isClickingToggle = true;
       state.clickedElement = Cu.getWeakReference(event.originalTarget);
       event.stopImmediatePropagation();
@@ -853,9 +855,13 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
         : gSiteOverrides;
 
       
-      for (let [override, { policy }] of siteOverrides) {
-        if (policy && override.matches(this.document.documentURI)) {
-          state.togglePolicy = policy;
+      for (let [override, { policy, visibilityThreshold }] of siteOverrides) {
+        if (
+          (policy || visibilityThreshold) &&
+          override.matches(this.document.documentURI)
+        ) {
+          state.togglePolicy = policy || TOGGLE_POLICIES.DEFAULT;
+          state.toggleVisibilityThreshold = visibilityThreshold || 1.0;
           break;
         }
       }

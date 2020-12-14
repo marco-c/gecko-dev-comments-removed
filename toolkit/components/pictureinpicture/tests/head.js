@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { TOGGLE_POLICIES } = ChromeUtils.import(
+  "resource://gre/modules/PictureInPictureControls.jsm"
+);
+
 const TEST_ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   "http://example.com"
@@ -20,6 +24,7 @@ const TOGGLE_POSITION_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.position";
 const HAS_USED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.has-used";
+const SHARED_DATA_KEY = "PictureInPicture:SiteOverrides";
 
 
 
@@ -476,9 +481,9 @@ async function getToggleClientRect(
 
     return {
       top: rect.top,
-      right: rect.right,
       left: rect.left,
-      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
     };
   });
 }
@@ -605,22 +610,20 @@ async function testToggleHelper(
   );
 
   info("Hovering the toggle rect now.");
-  
-  
-  
-  let toggleLeft = toggleClientRect.left + 2;
-  let toggleTop = toggleClientRect.top + 2;
+  let toggleCenterX = toggleClientRect.left + toggleClientRect.width / 2;
+  let toggleCenterY = toggleClientRect.top + toggleClientRect.height / 2;
+
   await BrowserTestUtils.synthesizeMouseAtPoint(
-    toggleLeft,
-    toggleTop,
+    toggleCenterX,
+    toggleCenterY,
     {
       type: "mousemove",
     },
     browser
   );
   await BrowserTestUtils.synthesizeMouseAtPoint(
-    toggleLeft,
-    toggleTop,
+    toggleCenterX,
+    toggleCenterY,
     {
       type: "mouseover",
     },
@@ -641,8 +644,8 @@ async function testToggleHelper(
   info("Right-clicking on toggle.");
 
   await BrowserTestUtils.synthesizeMouseAtPoint(
-    toggleLeft,
-    toggleTop,
+    toggleCenterX,
+    toggleCenterY,
     { button: 2 },
     browser
   );
@@ -675,8 +678,8 @@ async function testToggleHelper(
     );
     let domWindowOpened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
     await BrowserTestUtils.synthesizeMouseAtPoint(
-      toggleLeft,
-      toggleTop,
+      toggleCenterX,
+      toggleCenterY,
       {},
       browser
     );
@@ -695,8 +698,8 @@ async function testToggleHelper(
       "Clicking on toggle, and expecting no Picture-in-Picture window opens"
     );
     await BrowserTestUtils.synthesizeMouseAtPoint(
-      toggleLeft,
-      toggleTop,
+      toggleCenterX,
+      toggleCenterY,
       {},
       browser
     );
