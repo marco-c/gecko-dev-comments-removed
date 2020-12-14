@@ -89,7 +89,7 @@ impl RegionInternal for MmapRegion {
             
             (slot.sigstack, limits.signal_stack_size),
         ]
-        .into_iter()
+        .iter()
         {
             
             unsafe { mprotect(*ptr, *len, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE)? };
@@ -138,7 +138,7 @@ impl RegionInternal for MmapRegion {
             (slot.globals, slot.limits.globals_size),
             (slot.sigstack, slot.limits.signal_stack_size),
         ]
-        .into_iter()
+        .iter()
         {
             
             unsafe {
