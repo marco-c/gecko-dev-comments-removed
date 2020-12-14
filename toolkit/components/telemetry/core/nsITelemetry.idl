@@ -207,9 +207,11 @@ interface nsITelemetry : nsISupports
 
 
 
+
   const unsigned long INCLUDE_OLD_LOADEVENTS = 1 << 0;
 
   
+
 
 
 
@@ -224,6 +226,13 @@ interface nsITelemetry : nsISupports
 
 
   const unsigned long INCLUDE_PRIVATE_FIELDS_IN_LOADEVENTS = 1 << 2;
+
+  
+
+
+
+
+  const unsigned long EXCLUDE_STACKINFO_FROM_LOADEVENTS = 1 << 3;
 
   
 

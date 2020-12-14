@@ -164,12 +164,26 @@ void MultiGetUntrustedModulesData::Serialize(RefPtr<dom::Promise>&& aPromise) {
       
       
       
-      
-      
-      
-      
-      aPromise->MaybeReject(NS_ERROR_INVALID_ARG);
-      return;
+      if (mFlags & nsITelemetry::EXCLUDE_STACKINFO_FROM_LOADEVENTS) {
+        
+        
+        rv = serializer.Add(mBackupSvc->Ref(BackupType::Staging));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          aPromise->MaybeReject(rv);
+          return;
+        }
+        rv = serializer.Add(mBackupSvc->Ref(BackupType::Settled));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          aPromise->MaybeReject(rv);
+          return;
+        }
+      } else {
+        
+        
+        
+        aPromise->MaybeReject(NS_ERROR_INVALID_ARG);
+        return;
+      }
     } else {
       
       

@@ -41,6 +41,8 @@ class MOZ_RAII UntrustedModulesDataSerializer final {
                              const IndexMap& aModuleIndices);
   nsresult GetPerProcObject(const UntrustedModulesData& aData,
                             JS::MutableHandleObject aObj);
+  nsresult AddLoadEvents(const Vector<ProcessedModuleLoadEvent>& aEvents,
+                         JS::MutableHandleObject aPerProcObj);
   nsresult AddSingleData(const UntrustedModulesData& aData);
 
  public:
@@ -56,6 +58,12 @@ class MOZ_RAII UntrustedModulesDataSerializer final {
   void GetObject(JS::MutableHandleValue aRet);
 
   
+
+
+
+
+
+
 
 
 
