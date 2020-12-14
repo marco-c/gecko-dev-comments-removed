@@ -45,18 +45,13 @@ add_task(async function testPBNewTab() {
 async function openNewTab(aWindow, aExpectedURL) {
   
   aWindow.BrowserOpenTab();
-
   let browser = aWindow.gBrowser.selectedBrowser;
-  let loadPromise = BrowserTestUtils.browserLoaded(
-    browser,
-    false,
-    aExpectedURL
-  );
-  let alreadyLoaded = await ContentTask.spawn(browser, aExpectedURL, url => {
-    let doc = content.document;
-    return doc && doc.readyState === "complete" && doc.location.href == url;
-  });
-  if (!alreadyLoaded) {
-    await loadPromise;
+
+  
+  if (browser.currentURI.spec === aExpectedURL) {
+    return;
   }
+
+  
+  await BrowserTestUtils.waitForLocationChange(aWindow.gBrowser);
 }

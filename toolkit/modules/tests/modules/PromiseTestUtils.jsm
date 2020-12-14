@@ -160,7 +160,7 @@ var PromiseTestUtils = {
         
         return;
       }
-      message = reason.message || "" + reason;
+      message = reason?.message || "" + reason;
     } catch (ex) {}
 
     
