@@ -1,0 +1,20 @@
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["SearchSERPTelemetryParent"];
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "SearchSERPTelemetry",
+  "resource:///modules/SearchSERPTelemetry.jsm"
+);
+
+class SearchSERPTelemetryParent extends JSWindowActorParent {
+  receiveMessage(msg) {
+    if (msg.name == "SearchTelemetry:PageInfo") {
+      SearchSERPTelemetry.reportPageWithAds(msg.data);
+    }
+  }
+}

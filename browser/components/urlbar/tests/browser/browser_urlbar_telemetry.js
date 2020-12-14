@@ -15,7 +15,7 @@ const SCALAR_SEARCHMODE = "browser.engagement.navigation.urlbar_searchmode";
 const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  SearchTelemetry: "resource:///modules/SearchTelemetry.jsm",
+  SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.jsm",
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.jsm",
 });
 
@@ -1512,7 +1512,7 @@ add_task(async function test_formHistory_enterSelection() {
 add_task(async function test_privateWindow() {
   
   
-  SearchTelemetry.overrideSearchTelemetryForTests([
+  SearchSERPTelemetry.overrideSearchTelemetryForTests([
     {
       telemetryId: "example",
       searchPageRegexp: "^http://example\\.com/",
@@ -1686,6 +1686,6 @@ add_task(async function test_privateWindow() {
   await BrowserTestUtils.closeWindow(win);
 
   
-  SearchTelemetry.overrideSearchTelemetryForTests();
+  SearchSERPTelemetry.overrideSearchTelemetryForTests();
   await UrlbarTestUtils.formHistory.clear();
 });

@@ -3,7 +3,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["SearchTelemetryChild", "ADLINK_CHECK_TIMEOUT_MS"];
+var EXPORTED_SYMBOLS = ["SearchSERPTelemetryChild", "ADLINK_CHECK_TIMEOUT_MS"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -95,7 +95,7 @@ const searchProviders = new SearchProviders();
 
 
 
-class SearchTelemetryChild extends JSWindowActorChild {
+class SearchSERPTelemetryChild extends JSWindowActorChild {
   
 
 
