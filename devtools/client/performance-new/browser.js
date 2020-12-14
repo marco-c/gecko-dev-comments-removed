@@ -20,7 +20,6 @@
 
 
 
-
 const ChromeUtils = require("ChromeUtils");
 const { createLazyLoaders } = ChromeUtils.import(
   "resource://devtools/client/performance-new/typescript-lazy-load.jsm.js"
@@ -69,10 +68,7 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-addon";
 
 
 
-
-
-
-function receiveProfile(profile, profilerViewMode, getSymbolTableCallback) {
+function receiveProfile(profile, getSymbolTableCallback) {
   const Services = lazy.Services();
   
   
@@ -94,22 +90,11 @@ function receiveProfile(profile, profilerViewMode, getSymbolTableCallback) {
     UI_BASE_URL_PATH_DEFAULT
   );
 
-  
-  
-  
-  const viewModeQueryString =
-    profilerViewMode !== undefined && profilerViewMode !== "full"
-      ? `?view=${profilerViewMode}`
-      : "";
-
-  const tab = browser.addWebTab(
-    `${baseUrl}${baseUrlPath}${viewModeQueryString}`,
-    {
-      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
-        userContextId: browser.contentPrincipal.userContextId,
-      }),
-    }
-  );
+  const tab = browser.addWebTab(`${baseUrl}${baseUrlPath}`, {
+    triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
+      userContextId: browser.contentPrincipal.userContextId,
+    }),
+  });
   browser.selectedTab = tab;
   const mm = tab.linkedBrowser.messageManager;
   mm.loadFrameScript(

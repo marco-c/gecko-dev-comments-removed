@@ -36,7 +36,6 @@ const AppConstants = ChromeUtils.import(
 
 
 
-
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
@@ -94,7 +93,6 @@ const presets = {
     features: ["screenshots", "js"],
     threads: ["GeckoMain", "Compositor", "Renderer", "DOM Worker"],
     duration: 0,
-    profilerViewMode: "active-tab",
   },
   "firefox-platform": {
     label: "Firefox Platform",
@@ -200,29 +198,6 @@ async function getSymbolsFromThisBrowser(pageContext, debugName, breakpadId) {
 
 
 
-
-function getProfilerViewModeForCurrentPreset(pageContext) {
-  const postfix = getPrefPostfix(pageContext);
-  const presetName = Services.prefs.getCharPref(PRESET_PREF + postfix);
-
-  if (presetName === "custom") {
-    return undefined;
-  }
-
-  const preset = presets[presetName];
-  if (!preset) {
-    console.error(`Unknown profiler preset was encountered: "${presetName}"`);
-    return undefined;
-  }
-  return preset.profilerViewMode;
-}
-
-
-
-
-
-
-
 async function captureProfile(pageContext) {
   if (!Services.profiler.IsActive()) {
     
@@ -246,9 +221,8 @@ async function captureProfile(pageContext) {
       }
     );
 
-  const profilerViewMode = getProfilerViewModeForCurrentPreset(pageContext);
   const receiveProfile = lazy.BrowserModule().receiveProfile;
-  receiveProfile(profile, profilerViewMode, (debugName, breakpadId) => {
+  receiveProfile(profile, (debugName, breakpadId) => {
     return getSymbolsFromThisBrowser(pageContext, debugName, breakpadId);
   });
 
