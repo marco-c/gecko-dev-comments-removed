@@ -1085,7 +1085,8 @@ bool EventStateManager::LookForAccessKeyAndExecute(
         if (shouldActivate) {
           focusChanged =
               element->PerformAccesskey(shouldActivate, aIsTrustedEvent);
-        } else if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+        } else if (RefPtr<nsFocusManager> fm =
+                       nsFocusManager::GetFocusManager()) {
           fm->SetFocus(element, nsIFocusManager::FLAG_BYKEY);
           focusChanged = true;
         }
@@ -3347,8 +3348,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
         MOZ_ASSERT_IF(newFocus, newFocus->IsElement());
 
-        nsFocusManager* fm = nsFocusManager::GetFocusManager();
-        if (fm) {
+        if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
           
           
           
@@ -3369,7 +3369,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
                 MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
               flags |= nsIFocusManager::FLAG_BYTOUCH;
             }
-            fm->SetFocus(newFocus->AsElement(), flags);
+            fm->SetFocus(MOZ_KnownLive(newFocus->AsElement()), flags);
           } else if (!suppressBlur) {
             
             

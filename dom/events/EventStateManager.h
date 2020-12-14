@@ -568,9 +568,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  bool LookForAccessKeyAndExecute(nsTArray<uint32_t>& aAccessCharCodes,
-                                  bool aIsTrustedEvent, bool aIsRepeat,
-                                  bool aExecute);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool LookForAccessKeyAndExecute(
+      nsTArray<uint32_t>& aAccessCharCodes, bool aIsTrustedEvent,
+      bool aIsRepeat, bool aExecute);
 
   
   
