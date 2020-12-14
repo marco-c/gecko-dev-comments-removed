@@ -7918,8 +7918,8 @@ bool nsWindow::TitlebarUseShapeMask() {
     if (currentDesktop) {
       if (strstr(currentDesktop, "GNOME") != nullptr) {
         const char* sessionType = getenv("XDG_SESSION_TYPE");
-        if (sessionType) {
-          return (strstr(sessionType, "x11") == nullptr);
+        if (sessionType && strstr(sessionType, "x11") != nullptr) {
+          return false;
         }
       }
     }
