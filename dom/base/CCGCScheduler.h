@@ -250,7 +250,7 @@ class CCGCScheduler {
         std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
   }
 
-  bool ShouldFireForgetSkippable(uint32_t aSuspected) const {
+  bool ShouldForgetSkippable(uint32_t aSuspected) const {
     
     
     return ((mPreviousSuspectedCount + 100) <= aSuspected) ||
@@ -365,6 +365,29 @@ class CCGCScheduler {
   void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
 
   CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline, uint32_t aSuspected) {
+    struct StateDescriptor {
+      
+      
+      bool mCanAbortCC;
+
+      
+      
+      bool mTryFinalForgetSkippable;
+    };
+
+    constexpr StateDescriptor stateDescriptors[] = {
+        
+      [int(CCRunnerState::Inactive)] = {false, false},
+      [int(CCRunnerState::ReducePurple)] = {false, false},
+      [int(CCRunnerState::CleanupChildless)] = {true, true},
+      [int(CCRunnerState::CleanupContentUnbinder)] = {true, false},
+      [int(CCRunnerState::CleanupDeferred)] = {false, false},
+      [int(CCRunnerState::StartCycleCollection)] = {false, false},
+      [int(CCRunnerState::CycleCollecting)] = {false, false}
+        
+    };
+    const StateDescriptor& desc = stateDescriptors[int(mCCRunnerState)];
+
     if (mDidShutdown) {
       return {CCRunnerAction::StopRunning, Yield};
     }
@@ -410,30 +433,21 @@ class CCGCScheduler {
     
     
     
-    switch (mCCRunnerState) {
-      case CCRunnerState::ReducePurple:
-      case CCRunnerState::CleanupDeferred:
-      case CCRunnerState::StartCycleCollection:
-      case CCRunnerState::CycleCollecting:
-        break;
+    if (desc.mCanAbortCC && !IsCCNeeded(aSuspected, now)) {
+      
+      
+      mCCRunnerState = CCRunnerState::Inactive;
+      NoteForgetSkippableOnlyCycle();
 
-      default:
+      
+      
+      if (desc.mTryFinalForgetSkippable && ShouldForgetSkippable(aSuspected)) {
         
         
-        if (!IsCCNeeded(aSuspected, now)) {
-          mCCRunnerState = CCRunnerState::Inactive;
-          NoteForgetSkippableOnlyCycle();
+        return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+      }
 
-          
-          
-          if (mCCRunnerState != CCRunnerState::CleanupContentUnbinder &&
-              ShouldFireForgetSkippable(aSuspected)) {
-            
-            
-            return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
-          }
-          return {CCRunnerAction::StopRunning, Yield};
-        }
+      return {CCRunnerAction::StopRunning, Yield};
     }
 
     switch (mCCRunnerState) {
@@ -447,7 +461,7 @@ class CCGCScheduler {
           mCCRunnerState = CCRunnerState::CleanupChildless;
         }
 
-        if (ShouldFireForgetSkippable(aSuspected)) {
+        if (ShouldForgetSkippable(aSuspected)) {
           return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
         }
 
@@ -462,7 +476,7 @@ class CCGCScheduler {
 
         
         
-        return GetNextCCRunnerAction(aDeadline, aSuspected);
+        return {CCRunnerAction::None, Continue};
 
       
       
