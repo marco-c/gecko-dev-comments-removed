@@ -102,6 +102,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["formatting.enabled", true],
 
   
+  ["imeCompositionClosesPanel", true],
+
+  
   ["matchBuckets", "suggestion:4,general:Infinity"],
 
   

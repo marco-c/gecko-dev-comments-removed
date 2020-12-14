@@ -393,6 +393,13 @@ pref("browser.urlbar.eventTelemetry.enabled", false);
 
 pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 1);
 
+
+
+
+
+
+pref("browser.urlbar.imeCompositionClosesPanel", true);
+
 pref("browser.altClickSave", false);
 
 

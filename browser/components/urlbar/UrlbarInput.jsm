@@ -2968,9 +2968,10 @@ class UrlbarInput {
     
     
     if (
-      compositionState == UrlbarUtils.COMPOSITION.COMPOSING ||
-      (compositionState == UrlbarUtils.COMPOSITION.CANCELED &&
-        !compositionClosedPopup)
+      UrlbarPrefs.get("imeCompositionClosesPanel") &&
+      (compositionState == UrlbarUtils.COMPOSITION.COMPOSING ||
+        (compositionState == UrlbarUtils.COMPOSITION.CANCELED &&
+          !compositionClosedPopup))
     ) {
       return;
     }
@@ -3152,6 +3153,10 @@ class UrlbarInput {
     }
     this._compositionState = UrlbarUtils.COMPOSITION.COMPOSING;
 
+    if (!UrlbarPrefs.get("imeCompositionClosesPanel")) {
+      return;
+    }
+
     
     if (this.view.isOpen) {
       
@@ -3178,11 +3183,13 @@ class UrlbarInput {
       throw new Error("Trying to stop a non existing composition?");
     }
 
-    
-    
-    
-    this.view.clearSelection();
-    this._resultForCurrentValue = null;
+    if (UrlbarPrefs.get("imeCompositionClosesPanel")) {
+      
+      
+      
+      this.view.clearSelection();
+      this._resultForCurrentValue = null;
+    }
 
     
     
