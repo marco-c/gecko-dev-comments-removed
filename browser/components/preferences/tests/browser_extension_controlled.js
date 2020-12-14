@@ -920,7 +920,7 @@ add_task(async function testExtensionControlledHomepageUninstalledAddon() {
   let jsonFileName = "extension-settings.json";
   let storePath = PathUtils.join(await PathUtils.getProfileDir(), jsonFileName);
 
-  await IOUtils.writeUTF8(storePath, JSON.stringify(storeData));
+  await IOUtils.writeAtomicUTF8(storePath, JSON.stringify(storeData));
 
   
   

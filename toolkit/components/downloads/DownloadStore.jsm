@@ -168,7 +168,7 @@ DownloadStore.prototype = {
       if (atLeastOneDownload) {
         
         let bytes = gTextEncoder.encode(JSON.stringify(storeData));
-        await IOUtils.write(this.path, bytes, {
+        await IOUtils.writeAtomic(this.path, bytes, {
           tmpPath: this.path + ".tmp",
         });
       } else {
