@@ -127,7 +127,7 @@ class Connection {
     this.send({
       sessionId, 
       id,
-      result,
+      result: typeof result != "undefined" ? result : {},
     });
   }
 

@@ -27,8 +27,9 @@ add_task(async function testCDP({ client }) {
   );
 
   
-  Log.enable();
+  let result = await Log.enable();
   info("Log domain has been enabled");
+  Assert.deepEqual(result, {}, "Got expected result value");
 
   Log.entryAdded(({ entry }) => {
     const { timestamp, level, text, args } = entry;
@@ -37,8 +38,9 @@ add_task(async function testCDP({ client }) {
   });
 
   
-  await Page.enable();
+  result = await Page.enable();
   info("Page domain has been enabled");
+  Assert.deepEqual(result, {}, "Got expected result value");
 
   const frameStoppedLoading = Page.frameStoppedLoading();
   const navigatedWithinDocument = Page.navigatedWithinDocument();
