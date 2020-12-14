@@ -769,11 +769,17 @@ function getTypedURLs(registryKeyPath) {
   ].createInstance(Ci.nsIWindowsRegKey);
   let cTypes = new CtypesKernelHelpers();
   try {
-    typedURLKey.open(
-      Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-      registryKeyPath + "\\TypedURLs",
-      Ci.nsIWindowsRegKey.ACCESS_READ
-    );
+    try {
+      typedURLKey.open(
+        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+        registryKeyPath + "\\TypedURLs",
+        Ci.nsIWindowsRegKey.ACCESS_READ
+      );
+    } catch (ex) {
+      
+      
+      return typedURLs;
+    }
     try {
       typedURLTimeKey.open(
         Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
