@@ -3,6 +3,7 @@
 
 
 #include "js/SliceBudget.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/MainThreadIdlePeriod.h"
 #include "mozilla/Telemetry.h"
@@ -10,7 +11,7 @@
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
 
-using mozilla::TimeDuration;
+namespace mozilla {
 
 static const mozilla::TimeDuration kOneMinute =
     mozilla::TimeDuration::FromSeconds(60.0f);
@@ -62,19 +63,35 @@ static const mozilla::TimeDuration kMaxCCLockedoutTime =
 
 static const uint32_t kCCPurpleLimit = 200;
 
+enum class CCRunnerAction {
+  None,
+  ForgetSkippable,
+  CleanupContentUnbinder,
+  CleanupDeferred,
+  CycleCollect,
+  StopRunning
+};
 
+enum CCRunnerYield { Continue, Yield };
 
-namespace mozilla {
+enum CCRunnerForgetSkippableRemoveChildless {
+  KeepChildless = false,
+  RemoveChildless = true
+};
 
-MOZ_ALWAYS_INLINE
-static TimeDuration TimeBetween(TimeStamp aStart, TimeStamp aEnd) {
-  MOZ_ASSERT(aEnd >= aStart);
-  return aEnd - aStart;
-}
+struct CCRunnerStep {
+  
+  CCRunnerAction mAction;
 
-static inline js::SliceBudget BudgetFromDuration(TimeDuration aDuration) {
-  return js::SliceBudget(js::TimeBudget(aDuration.ToMilliseconds()));
-}
+  
+  
+  CCRunnerYield mYield;
+
+  
+  
+  
+  CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
+};
 
 class CCGCScheduler {
  public:
@@ -183,72 +200,16 @@ class CCGCScheduler {
 
   
 
-  TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline,
-                                         TimeStamp aNow) const {
-    
-    
-    
-    
-    TimeDuration budget =
-        aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2 : aDeadline - aNow;
-    if (!mCCBlockStart) {
-      return budget;
-    }
-
-    TimeDuration blockedTime = aNow - mCCBlockStart;
-    TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 10;
-    double percentOfBlockedTime =
-        std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
-    return std::max(budget, maxSliceGCBudget.MultDouble(percentOfBlockedTime));
-  }
-
   
   
   
-  js::SliceBudget ComputeCCSliceBudget(TimeStamp aDeadline,
-                                       TimeStamp aCCBeginTime,
-                                       TimeStamp aPrevSliceEndTime,
-                                       bool* aPreferShorterSlices) const {
-    TimeStamp now = TimeStamp::Now();
+  inline js::SliceBudget ComputeCCSliceBudget(TimeStamp aDeadline,
+                                              TimeStamp aCCBeginTime,
+                                              TimeStamp aPrevSliceEndTime,
+                                              bool* aPreferShorterSlices) const;
 
-    *aPreferShorterSlices =
-        aDeadline.IsNull() || (aDeadline - now) < kICCSliceBudget;
-
-    TimeDuration baseBudget =
-        aDeadline.IsNull() ? kICCSliceBudget : aDeadline - now;
-
-    if (aCCBeginTime.IsNull()) {
-      
-      return BudgetFromDuration(baseBudget);
-    }
-
-    
-    TimeDuration runningTime = TimeBetween(aCCBeginTime, now);
-    if (runningTime >= kMaxICCDuration) {
-      return js::SliceBudget::unlimited();
-    }
-
-    const TimeDuration maxSlice = TimeDuration::FromMilliseconds(
-        mozilla::MainThreadIdlePeriod::GetLongIdlePeriod());
-
-    
-    double sliceDelayMultiplier =
-        TimeBetween(aPrevSliceEndTime, now) / kICCIntersliceDelay;
-    TimeDuration delaySliceBudget =
-        std::min(baseBudget.MultDouble(sliceDelayMultiplier), maxSlice);
-
-    
-    
-    double percentToHalfDone =
-        std::min(2.0 * (runningTime / kMaxICCDuration), 1.0);
-    TimeDuration laterSliceBudget = maxSlice.MultDouble(percentToHalfDone);
-
-    
-    
-    
-    return BudgetFromDuration(
-        std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
-  }
+  inline TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline,
+                                                TimeStamp aNow) const;
 
   bool ShouldForgetSkippable(uint32_t aSuspected) const {
     
@@ -268,32 +229,7 @@ class CCGCScheduler {
             aNow - mLastCCEndTime > kCCForced);
   }
 
-  bool ShouldScheduleCC() const {
-    if (!mHasRunGC) {
-      return false;
-    }
-
-    TimeStamp now = TimeStamp::Now();
-
-    
-    if (mCleanupsSinceLastGC && !mLastCCEndTime.IsNull()) {
-      if (now - mLastCCEndTime < kCCDelay) {
-        return false;
-      }
-    }
-
-    
-    
-    if ((mCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
-        !mLastForgetSkippableCycleEndTime.IsNull()) {
-      if (now - mLastForgetSkippableCycleEndTime <
-          kTimeBetweenForgetSkippableCycles) {
-        return false;
-      }
-    }
-
-    return IsCCNeeded(nsCycleCollector_suspectedCount(), now);
-  }
+  inline bool ShouldScheduleCC() const;
 
   
   
@@ -309,15 +245,6 @@ class CCGCScheduler {
     return aCurrentFireCount >= numEarlyTimerFires;
   }
 
-  enum class CCRunnerAction {
-    None,
-    ForgetSkippable,
-    CleanupContentUnbinder,
-    CleanupDeferred,
-    CycleCollect,
-    StopRunning
-  };
-
   enum class CCRunnerState {
     Inactive,
     ReducePurple,
@@ -325,28 +252,8 @@ class CCGCScheduler {
     CleanupContentUnbinder,
     CleanupDeferred,
     StartCycleCollection,
-    CycleCollecting
-  };
-
-  enum CCRunnerYield { Continue, Yield };
-
-  enum CCRunnerForgetSkippableRemoveChildless {
-    KeepChildless = false,
-    RemoveChildless = true
-  };
-
-  struct CCRunnerStep {
-    
-    CCRunnerAction mAction;
-
-    
-    
-    CCRunnerYield mYield;
-
-    
-    
-    
-    CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
+    CycleCollecting,
+    NumStates
   };
 
   void InitCCRunnerStateMachine(CCRunnerState initialState) {
@@ -364,222 +271,13 @@ class CCGCScheduler {
 
   void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
 
-  CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline, uint32_t aSuspected) {
-    struct StateDescriptor {
-      
-      
-      bool mCanAbortCC;
-
-      
-      
-      bool mTryFinalForgetSkippable;
-    };
-
-    constexpr StateDescriptor stateDescriptors[] = {
-        
-      [int(CCRunnerState::Inactive)] = {false, false},
-      [int(CCRunnerState::ReducePurple)] = {false, false},
-      [int(CCRunnerState::CleanupChildless)] = {true, true},
-      [int(CCRunnerState::CleanupContentUnbinder)] = {true, false},
-      [int(CCRunnerState::CleanupDeferred)] = {false, false},
-      [int(CCRunnerState::StartCycleCollection)] = {false, false},
-      [int(CCRunnerState::CycleCollecting)] = {false, false}
-        
-    };
-    const StateDescriptor& desc = stateDescriptors[int(mCCRunnerState)];
-
-    if (mDidShutdown) {
-      return {CCRunnerAction::StopRunning, Yield};
-    }
-
-    if (mCCRunnerState == CCRunnerState::Inactive) {
-      
-      return {CCRunnerAction::StopRunning, Yield};
-    }
-
-    TimeStamp now = TimeStamp::Now();
-
-    if (InIncrementalGC()) {
-      if (mCCBlockStart.IsNull()) {
-        BlockCC(now);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        if (mCCRunnerState != CCRunnerState::CycleCollecting) {
-          mCCRunnerState = CCRunnerState::ReducePurple;
-          mCCRunnerEarlyFireCount = 0;
-          mCCDelay = kCCDelay / int64_t(3);
-        }
-        return {CCRunnerAction::None, Yield};
-      }
-
-      if (GetCCBlockedTime(now) < kMaxCCLockedoutTime) {
-        return {CCRunnerAction::None, Yield};
-      }
-
-      
-      
-    }
-
-    
-    
-    
-    if (desc.mCanAbortCC && !IsCCNeeded(aSuspected, now)) {
-      
-      
-      mCCRunnerState = CCRunnerState::Inactive;
-      NoteForgetSkippableOnlyCycle();
-
-      
-      
-      if (desc.mTryFinalForgetSkippable && ShouldForgetSkippable(aSuspected)) {
-        
-        
-        return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
-      }
-
-      return {CCRunnerAction::StopRunning, Yield};
-    }
-
-    switch (mCCRunnerState) {
-      
-      
-      
-      
-      case CCRunnerState::ReducePurple:
-        ++mCCRunnerEarlyFireCount;
-        if (IsLastEarlyCCTimer(mCCRunnerEarlyFireCount)) {
-          mCCRunnerState = CCRunnerState::CleanupChildless;
-        }
-
-        if (ShouldForgetSkippable(aSuspected)) {
-          return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
-        }
-
-        if (aDeadline.IsNull()) {
-          return {CCRunnerAction::None, Yield};
-        }
-
-        
-        
-        
-        mCCRunnerState = CCRunnerState::CleanupChildless;
-
-        
-        
-        return {CCRunnerAction::None, Continue};
-
-      
-      
-      
-      
-      
-      case CCRunnerState::CleanupChildless:
-        mCCRunnerState = CCRunnerState::CleanupContentUnbinder;
-        return {CCRunnerAction::ForgetSkippable, Yield, RemoveChildless};
-
-      
-      
-      case CCRunnerState::CleanupContentUnbinder:
-        if (aDeadline.IsNull()) {
-          
-          
-          mCCRunnerState = CCRunnerState::StartCycleCollection;
-          return {CCRunnerAction::None, Yield};
-        }
-
-        
-
-        
-        if (now >= aDeadline) {
-          mCCRunnerState = CCRunnerState::StartCycleCollection;
-          return {CCRunnerAction::None, Yield};
-        }
-
-        mCCRunnerState = CCRunnerState::CleanupDeferred;
-        return {CCRunnerAction::CleanupContentUnbinder, Continue};
-
-      
-      case CCRunnerState::CleanupDeferred:
-        MOZ_ASSERT(!aDeadline.IsNull(),
-                   "Should only be in CleanupDeferred state when idle");
-
-        
-        
-        mCCRunnerState = CCRunnerState::StartCycleCollection;
-        if (now >= aDeadline) {
-          
-          return {CCRunnerAction::None, Yield};
-        }
-
-        return {CCRunnerAction::CleanupDeferred, Yield};
-
-      
-      
-      
-      
-      
-      
-      case CCRunnerState::StartCycleCollection:
-        
-        
-        
-        
-        mCCRunnerState = CCRunnerState::CycleCollecting;
-        [[fallthrough]];
-
-      
-      case CCRunnerState::CycleCollecting:
-        return {CCRunnerAction::CycleCollect, Yield};
-
-      default:
-        MOZ_CRASH("Unexpected CCRunner state");
-    };
-  }
+  inline CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline,
+                                            uint32_t aSuspected);
 
   
   
   js::SliceBudget ComputeForgetSkippableBudget(TimeStamp aStartTimeStamp,
-                                               TimeStamp aDeadline) {
-    if (mForgetSkippableFrequencyStartTime.IsNull()) {
-      mForgetSkippableFrequencyStartTime = aStartTimeStamp;
-    } else if (aStartTimeStamp - mForgetSkippableFrequencyStartTime >
-               kOneMinute) {
-      TimeStamp startPlusMinute =
-          mForgetSkippableFrequencyStartTime + kOneMinute;
-
-      
-      
-      
-      
-      TimeStamp endPoint =
-          std::max(startPlusMinute, mLastForgetSkippableEndTime);
-
-      
-      double duration =
-          (endPoint - mForgetSkippableFrequencyStartTime).ToSeconds() / 60;
-      uint32_t frequencyPerMinute =
-          uint32_t(mForgetSkippableCounter / duration);
-      mozilla::Telemetry::Accumulate(
-          mozilla::Telemetry::FORGET_SKIPPABLE_FREQUENCY, frequencyPerMinute);
-      mForgetSkippableCounter = 0;
-      mForgetSkippableFrequencyStartTime = aStartTimeStamp;
-    }
-    ++mForgetSkippableCounter;
-
-    TimeDuration budgetTime = aDeadline ? (aDeadline - aStartTimeStamp)
-                                        : kForgetSkippableSliceDuration;
-    return BudgetFromDuration(budgetTime);
-  }
+                                               TimeStamp aDeadline);
 
  private:
   
@@ -624,5 +322,302 @@ class CCGCScheduler {
 
   TimeDuration mActiveIntersliceGCBudget = TimeDuration::FromMilliseconds(5);
 };
+
+js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
+    TimeStamp aDeadline, TimeStamp aCCBeginTime, TimeStamp aPrevSliceEndTime,
+    bool* aPreferShorterSlices) const {
+  TimeStamp now = TimeStamp::Now();
+
+  *aPreferShorterSlices =
+      aDeadline.IsNull() || (aDeadline - now) < kICCSliceBudget;
+
+  TimeDuration baseBudget =
+      aDeadline.IsNull() ? kICCSliceBudget : aDeadline - now;
+
+  if (aCCBeginTime.IsNull()) {
+    
+    return js::SliceBudget(baseBudget);
+  }
+
+  
+  MOZ_ASSERT(now >= aCCBeginTime);
+  TimeDuration runningTime = now - aCCBeginTime;
+  if (runningTime >= kMaxICCDuration) {
+    return js::SliceBudget::unlimited();
+  }
+
+  const TimeDuration maxSlice =
+      TimeDuration::FromMilliseconds(MainThreadIdlePeriod::GetLongIdlePeriod());
+
+  
+  MOZ_ASSERT(now >= aPrevSliceEndTime);
+  double sliceDelayMultiplier = (now - aPrevSliceEndTime) / kICCIntersliceDelay;
+  TimeDuration delaySliceBudget =
+      std::min(baseBudget.MultDouble(sliceDelayMultiplier), maxSlice);
+
+  
+  
+  double percentToHalfDone =
+      std::min(2.0 * (runningTime / kMaxICCDuration), 1.0);
+  TimeDuration laterSliceBudget = maxSlice.MultDouble(percentToHalfDone);
+
+  
+  
+  
+  return js::SliceBudget(std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
+}
+
+inline TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(
+    TimeStamp aDeadline, TimeStamp aNow) const {
+  
+  
+  
+  
+  TimeDuration budget =
+      aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2 : aDeadline - aNow;
+  if (!mCCBlockStart) {
+    return budget;
+  }
+
+  TimeDuration blockedTime = aNow - mCCBlockStart;
+  TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 10;
+  double percentOfBlockedTime =
+      std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
+  return std::max(budget, maxSliceGCBudget.MultDouble(percentOfBlockedTime));
+}
+
+bool CCGCScheduler::ShouldScheduleCC() const {
+  if (!mHasRunGC) {
+    return false;
+  }
+
+  TimeStamp now = TimeStamp::Now();
+
+  
+  if (mCleanupsSinceLastGC && !mLastCCEndTime.IsNull()) {
+    if (now - mLastCCEndTime < kCCDelay) {
+      return false;
+    }
+  }
+
+  
+  
+  if ((mCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
+      !mLastForgetSkippableCycleEndTime.IsNull()) {
+    if (now - mLastForgetSkippableCycleEndTime <
+        kTimeBetweenForgetSkippableCycles) {
+      return false;
+    }
+  }
+
+  return IsCCNeeded(nsCycleCollector_suspectedCount(), now);
+}
+
+CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline,
+                                                  uint32_t aSuspected) {
+  struct StateDescriptor {
+    
+    
+    bool mCanAbortCC;
+
+    
+    
+    bool mTryFinalForgetSkippable;
+  };
+
+  constexpr StateDescriptor stateDescriptors[] = {
+      {false, false},  
+      {false, false},  
+      {true, true},    
+      {true, false},   
+      {false, false},  
+      {false, false},  
+      {false, false}}; 
+  static_assert(mozilla::ArrayLength(stateDescriptors) ==
+                    size_t(CCRunnerState::NumStates),
+                "need one state descriptor per state");
+  const StateDescriptor& desc = stateDescriptors[int(mCCRunnerState)];
+
+  if (mDidShutdown) {
+    return {CCRunnerAction::StopRunning, Yield};
+  }
+
+  if (mCCRunnerState == CCRunnerState::Inactive) {
+    
+    return {CCRunnerAction::StopRunning, Yield};
+  }
+
+  TimeStamp now = TimeStamp::Now();
+
+  if (InIncrementalGC()) {
+    if (mCCBlockStart.IsNull()) {
+      BlockCC(now);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      if (mCCRunnerState != CCRunnerState::CycleCollecting) {
+        mCCRunnerState = CCRunnerState::ReducePurple;
+        mCCRunnerEarlyFireCount = 0;
+        mCCDelay = kCCDelay / int64_t(3);
+      }
+      return {CCRunnerAction::None, Yield};
+    }
+
+    if (GetCCBlockedTime(now) < kMaxCCLockedoutTime) {
+      return {CCRunnerAction::None, Yield};
+    }
+
+    
+    
+  }
+
+  
+  
+  
+  if (desc.mCanAbortCC && !IsCCNeeded(aSuspected, now)) {
+    
+    
+    mCCRunnerState = CCRunnerState::Inactive;
+    NoteForgetSkippableOnlyCycle();
+
+    
+    
+    if (desc.mTryFinalForgetSkippable && ShouldForgetSkippable(aSuspected)) {
+      
+      
+      return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+    }
+
+    return {CCRunnerAction::StopRunning, Yield};
+  }
+
+  switch (mCCRunnerState) {
+      
+      
+      
+      
+    case CCRunnerState::ReducePurple:
+      ++mCCRunnerEarlyFireCount;
+      if (IsLastEarlyCCTimer(mCCRunnerEarlyFireCount)) {
+        mCCRunnerState = CCRunnerState::CleanupChildless;
+      }
+
+      if (ShouldForgetSkippable(aSuspected)) {
+        return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
+      }
+
+      if (aDeadline.IsNull()) {
+        return {CCRunnerAction::None, Yield};
+      }
+
+      
+      
+      
+      mCCRunnerState = CCRunnerState::CleanupChildless;
+
+      
+      
+      return {CCRunnerAction::None, Continue};
+
+      
+      
+      
+      
+      
+    case CCRunnerState::CleanupChildless:
+      mCCRunnerState = CCRunnerState::CleanupContentUnbinder;
+      return {CCRunnerAction::ForgetSkippable, Yield, RemoveChildless};
+
+      
+      
+    case CCRunnerState::CleanupContentUnbinder:
+      if (aDeadline.IsNull()) {
+        
+        
+        mCCRunnerState = CCRunnerState::StartCycleCollection;
+        return {CCRunnerAction::None, Yield};
+      }
+
+      
+
+      
+      if (now >= aDeadline) {
+        mCCRunnerState = CCRunnerState::StartCycleCollection;
+        return {CCRunnerAction::None, Yield};
+      }
+
+      mCCRunnerState = CCRunnerState::CleanupDeferred;
+      return {CCRunnerAction::CleanupContentUnbinder, Continue};
+
+      
+    case CCRunnerState::CleanupDeferred:
+      MOZ_ASSERT(!aDeadline.IsNull(),
+                 "Should only be in CleanupDeferred state when idle");
+
+      
+      
+      mCCRunnerState = CCRunnerState::StartCycleCollection;
+      if (now >= aDeadline) {
+        
+        return {CCRunnerAction::None, Yield};
+      }
+
+      return {CCRunnerAction::CleanupDeferred, Yield};
+
+      
+    case CCRunnerState::StartCycleCollection:
+      
+      
+      
+      mCCRunnerState = CCRunnerState::CycleCollecting;
+      [[fallthrough]];
+
+      
+    case CCRunnerState::CycleCollecting:
+      return {CCRunnerAction::CycleCollect, Yield};
+
+    default:
+      MOZ_CRASH("Unexpected CCRunner state");
+  };
+}
+
+js::SliceBudget CCGCScheduler::ComputeForgetSkippableBudget(
+    TimeStamp aStartTimeStamp, TimeStamp aDeadline) {
+  if (mForgetSkippableFrequencyStartTime.IsNull()) {
+    mForgetSkippableFrequencyStartTime = aStartTimeStamp;
+  } else if (aStartTimeStamp - mForgetSkippableFrequencyStartTime >
+             kOneMinute) {
+    TimeStamp startPlusMinute = mForgetSkippableFrequencyStartTime + kOneMinute;
+
+    
+    
+    
+    
+    TimeStamp endPoint = std::max(startPlusMinute, mLastForgetSkippableEndTime);
+
+    
+    double duration =
+        (endPoint - mForgetSkippableFrequencyStartTime).ToSeconds() / 60;
+    uint32_t frequencyPerMinute = uint32_t(mForgetSkippableCounter / duration);
+    Telemetry::Accumulate(Telemetry::FORGET_SKIPPABLE_FREQUENCY,
+                          frequencyPerMinute);
+    mForgetSkippableCounter = 0;
+    mForgetSkippableFrequencyStartTime = aStartTimeStamp;
+  }
+  ++mForgetSkippableCounter;
+
+  TimeDuration budgetTime =
+      aDeadline ? (aDeadline - aStartTimeStamp) : kForgetSkippableSliceDuration;
+  return js::SliceBudget(budgetTime);
+}
 
 }  
