@@ -143,8 +143,7 @@ class IOUtils final {
   
 
 
-  static void RejectJSPromise(const RefPtr<Promise>& aPromise,
-                              const IOError& aError);
+  static void RejectJSPromise(Promise* aPromise, const IOError& aError);
 
   
 
