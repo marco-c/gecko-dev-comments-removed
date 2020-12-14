@@ -1743,6 +1743,12 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
   }
 
   
+  if (pc_->isAsync()) {
+    pc_->sc()->asModuleContext()->builder.noteAsync(
+        this->compilationInfo_.stencil.moduleMetadata);
+  }
+
+  
   if (!modulesc->builder.buildTables(
           this->compilationInfo_.stencil.moduleMetadata)) {
     return null();
