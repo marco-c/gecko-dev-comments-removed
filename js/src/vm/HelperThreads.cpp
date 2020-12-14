@@ -1086,7 +1086,10 @@ bool GlobalHelperThreadState::submitTask(
 }
 
 static bool StartOffThreadParseTask(JSContext* cx, UniquePtr<ParseTask> task,
-                                    const ReadOnlyCompileOptions& options) {
+                                    const ReadOnlyCompileOptions& options,
+                                    JS::OffThreadToken** tokenOut = nullptr) {
+  MOZ_ASSERT_IF(tokenOut, *tokenOut == nullptr);
+
   
   
   gc::AutoSuppressGC nogc(cx);
@@ -1111,8 +1114,15 @@ static bool StartOffThreadParseTask(JSContext* cx, UniquePtr<ParseTask> task,
     return false;
   }
 
+  JS::OffThreadToken* token = task.get();
   if (!QueueOffThreadParseTask(cx, std::move(task))) {
     return false;
+  }
+
+  
+  
+  if (tokenOut) {
+    *tokenOut = token;
   }
 
   createdForHelper.forget();
@@ -1126,14 +1136,11 @@ static bool StartOffThreadParseScriptInternal(
     void* callbackData, JS::OffThreadToken** tokenOut) {
   auto task = cx->make_unique<ScriptParseTask<Unit>>(cx, srcBuf, callback,
                                                      callbackData);
-  if (tokenOut) {
-    *tokenOut = static_cast<JS::OffThreadToken*>(task.get());
-  }
   if (!task) {
     return false;
   }
 
-  return StartOffThreadParseTask(cx, std::move(task), options);
+  return StartOffThreadParseTask(cx, std::move(task), options, tokenOut);
 }
 
 bool js::StartOffThreadParseScript(JSContext* cx,
@@ -1163,15 +1170,11 @@ static bool StartOffThreadParseModuleInternal(
     void* callbackData, JS::OffThreadToken** tokenOut) {
   auto task = cx->make_unique<ModuleParseTask<Unit>>(cx, srcBuf, callback,
                                                      callbackData);
-
-  if (tokenOut) {
-    *tokenOut = static_cast<JS::OffThreadToken*>(task.get());
-  }
   if (!task) {
     return false;
   }
 
-  return StartOffThreadParseTask(cx, std::move(task), options);
+  return StartOffThreadParseTask(cx, std::move(task), options, tokenOut);
 }
 
 bool js::StartOffThreadParseModule(JSContext* cx,
@@ -1200,19 +1203,16 @@ bool js::StartOffThreadDecodeScript(JSContext* cx,
                                     JS::OffThreadCompileCallback callback,
                                     void* callbackData,
                                     JS::OffThreadToken** tokenOut) {
+  
+  MOZ_RELEASE_ASSERT(options.useStencilXDR || options.useOffThreadParseGlobal);
+
   auto task =
       cx->make_unique<ScriptDecodeTask>(cx, range, callback, callbackData);
-  if (tokenOut) {
-    *tokenOut = static_cast<JS::OffThreadToken*>(task.get());
-  }
   if (!task) {
     return false;
   }
 
-  
-  MOZ_RELEASE_ASSERT(options.useStencilXDR || options.useOffThreadParseGlobal);
-
-  return StartOffThreadParseTask(cx, std::move(task), options);
+  return StartOffThreadParseTask(cx, std::move(task), options, tokenOut);
 }
 
 bool js::StartOffThreadDecodeMultiScripts(JSContext* cx,
