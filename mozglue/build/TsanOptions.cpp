@@ -197,6 +197,11 @@ extern "C" const char* __tsan_default_suppressions() {
          
 
          
+         "race:WalkDiskCacheRunnable::Run\n"
+         
+         "race:RemoveOrRefresh\n"
+         "race:nsHostResolver::ThreadFunc\n"
+         
          "race:nsHttpChannel::OnCacheEntryCheck\n"
          "race:~AutoCacheWaitFlags\n"
 

@@ -19,7 +19,6 @@
 #include "GetAddrInfo.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/DashboardTypes.h"
-#include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h"
@@ -283,7 +282,7 @@ class AddrHostRecord final : public nsHostRecord {
   static DnsPriority GetPriority(uint16_t aFlags);
 
   
-  bool onQueue() { return GetNative() && isInList(); }
+  bool onQueue() { return mNative && isInList(); }
 
   
   mozilla::TimeStamp mTrrStart;
@@ -295,18 +294,17 @@ class AddrHostRecord final : public nsHostRecord {
   uint8_t mTRRSuccess;             
   uint8_t mNativeSuccess;          
 
+  uint16_t mNative : 1;  
+                         
+                         
+  uint16_t mNativeUsed : 1;
+  uint16_t usingAnyThread : 1;  
+                                
+  uint16_t mGetTtl : 1;
+
   
-  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields, 8, (
-    
-    
-    (uint16_t, Native, 1),
-    (uint16_t, NativeUsed, 1),
-    
-    (uint16_t, UsingAnyThread, 1),
-    (uint16_t, GetTtl, 1),
-    (uint16_t, ResolveAgain, 1)
-  ))
   
+  uint16_t mResolveAgain : 1;
 
   
   
