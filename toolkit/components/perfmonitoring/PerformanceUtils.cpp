@@ -82,37 +82,73 @@ void AddWindowTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
   aSizes->mOther += sizes.mOther;
 }
 
-nsresult GetTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
-  
-  AddWindowTabSizes(aWindow, aSizes);
-
-  BrowsingContext* bc = aWindow->GetBrowsingContext();
-  if (!bc) {
+nsresult GetTabSizes(BrowsingContext* aContext, nsTabSizes* aSizes) {
+  if (!aContext) {
     return NS_OK;
   }
 
   
-  for (const auto& frame : bc->Children()) {
-    if (auto* childWin = nsGlobalWindowOuter::Cast(frame->GetDOMWindow())) {
-      MOZ_TRY(GetTabSizes(childWin, aSizes));
-    }
+  nsGlobalWindowOuter* window =
+      nsGlobalWindowOuter::Cast(aContext->GetDOMWindow());
+  if (window) {
+    AddWindowTabSizes(window, aSizes);
+  }
+
+  
+  for (const auto& child : aContext->Children()) {
+    MOZ_TRY(GetTabSizes(child, aSizes));
   }
   return NS_OK;
 }
 
 RefPtr<MemoryPromise> CollectMemoryInfo(
-    const nsCOMPtr<nsPIDOMWindowOuter>& aWindow,
+    const RefPtr<DocGroup>& aDocGroup,
     const RefPtr<AbstractThread>& aEventTarget) {
   
-  nsGlobalWindowOuter* window = nsGlobalWindowOuter::Cast(aWindow);
   nsTabSizes sizes;
-  nsresult rv = GetTabSizes(window, &sizes);
+
+  for (const auto& document : *aDocGroup) {
+    nsGlobalWindowOuter* window =
+        document ? nsGlobalWindowOuter::Cast(document->GetWindow()) : nullptr;
+    if (window) {
+      AddWindowTabSizes(window, &sizes);
+    }
+  }
+
+  BrowsingContextGroup* group = aDocGroup->GetBrowsingContextGroup();
+  
+  uint64_t GCHeapUsage = 0;
+  JSObject* object = group->GetWrapper();
+  if (object != nullptr) {
+    GCHeapUsage = js::GetGCHeapUsageForObjectZone(object);
+  }
+
+  
+  return GetMediaMemorySizes()->Then(
+      aEventTarget, __func__,
+      [GCHeapUsage, sizes](const MediaMemoryInfo& media) {
+        return MemoryPromise::CreateAndResolve(
+            PerformanceMemoryInfo(media, sizes.mDom, sizes.mStyle, sizes.mOther,
+                                  GCHeapUsage),
+            __func__);
+      },
+      [](const nsresult rv) {
+        return MemoryPromise::CreateAndReject(rv, __func__);
+      });
+}
+
+RefPtr<MemoryPromise> CollectMemoryInfo(
+    const RefPtr<BrowsingContext>& aContext,
+    const RefPtr<AbstractThread>& aEventTarget) {
+  
+  nsTabSizes sizes;
+  nsresult rv = GetTabSizes(aContext, &sizes);
   if (NS_FAILED(rv)) {
     return MemoryPromise::CreateAndReject(rv, __func__);
   }
 
   
-  JSObject* obj = window->GetGlobalJSObject();
+  JSObject* obj = aContext->GetWrapper();
   uint64_t GCHeapUsage = 0;
   if (obj != nullptr) {
     GCHeapUsage = js::GetGCHeapUsageForObjectZone(obj);
