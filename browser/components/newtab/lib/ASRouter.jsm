@@ -287,8 +287,19 @@ const MessageLoaderUtils = {
             provider.id,
             options.dispatchCFRAction
           );
-        } else if (RS_PROVIDERS_WITH_L10N.includes(provider.id)) {
-          const locale = Services.locale.appLocaleAsBCP47;
+        } else if (
+          RS_PROVIDERS_WITH_L10N.includes(provider.id) &&
+          (RemoteL10n.isLocaleSupported(Services.locale.appLocaleAsBCP47) ||
+            
+            
+            
+            Services.locale.appLocaleAsBCP47 === "und")
+        ) {
+          let locale = Services.locale.appLocaleAsBCP47;
+          
+          if (locale === "und") {
+            locale = "en-US";
+          }
           const recordId = `${RS_FLUENT_RECORD_PREFIX}-${locale}`;
           const kinto = new KintoHttpClient(
             Services.prefs.getStringPref(RS_SERVER_PREF)
