@@ -77,7 +77,22 @@ TEST(Intl_Locale_OSPreferences, GetDateTimePattern)
     }
   }
 
-  ASSERT_TRUE(1);
+  
+  
+  AutoTArray<nsCString, 10> rpLocales;
+  LocaleService::GetInstance()->GetRegionalPrefsLocales(rpLocales);
+  ASSERT_TRUE(rpLocales.Length() > 0);
+
+  nsAutoCString rpLocalePattern;
+  ASSERT_TRUE(NS_SUCCEEDED(
+      osprefs->GetDateTimePattern(mozIOSPreferences::dateTimeFormatStyleLong,
+                                  mozIOSPreferences::dateTimeFormatStyleLong,
+                                  rpLocales[0], rpLocalePattern)));
+  ASSERT_TRUE(NS_SUCCEEDED(
+      osprefs->GetDateTimePattern(mozIOSPreferences::dateTimeFormatStyleLong,
+                                  mozIOSPreferences::dateTimeFormatStyleLong,
+                                  nsDependentCString(""), pattern)));
+  ASSERT_EQ(rpLocalePattern, pattern);
 }
 
 
