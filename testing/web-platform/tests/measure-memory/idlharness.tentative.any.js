@@ -1,0 +1,15 @@
+
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['performance-measure-memory'],
+  ['hr-time', 'dom'],
+  async idl_array => {
+    
+  }
+);
