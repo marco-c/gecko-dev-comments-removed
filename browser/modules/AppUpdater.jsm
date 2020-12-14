@@ -330,18 +330,7 @@ class AppUpdater {
       case Cr.NS_OK:
         this.aus.removeDownloadListener(this);
         if (this.updateStagingEnabled) {
-          
-          
-          
-          
-          if (this.aus.isOtherInstanceHandlingUpdates) {
-            this._setStatus(AppUpdater.OTHER_INSTANCE_HANDLING_UPDATES);
-          } else {
-            this._setStatus(AppUpdater.STATUS.STAGING);
-          }
-          
-          
-          
+          this._setStatus(AppUpdater.STATUS.STAGING);
           this._awaitStagingComplete();
         } else {
           this._awaitDownloadComplete();

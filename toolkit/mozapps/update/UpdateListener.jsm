@@ -10,21 +10,11 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { clearTimeout, setTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
 
 ChromeUtils.defineModuleGetter(
   this,
   "AppMenuNotifications",
   "resource://gre/modules/AppMenuNotifications.jsm"
-);
-
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "AppUpdateService",
-  "@mozilla.org/updates/update-service;1",
-  "nsIApplicationUpdateService"
 );
 
 const PREF_APP_UPDATE_UNSUPPORTED_URL = "app.update.unsupported.url";
@@ -126,9 +116,7 @@ var UpdateListener = {
     const addTelemetry = id => {
       
       if (type !== "downloading") {
-        
-        let telemetryType = type.replaceAll("-", "");
-        Services.telemetry.getHistogramById(id).add(telemetryType);
+        Services.telemetry.getHistogramById(id).add(type);
       }
     };
     let action = {
@@ -162,11 +150,8 @@ var UpdateListener = {
     }
   },
 
-  showRestartNotification(update, dismissed) {
-    let notification = AppUpdateService.isOtherInstanceHandlingUpdates
-      ? "other-instance"
-      : "restart";
-    this.showUpdateNotification(notification, true, dismissed, () =>
+  showRestartNotification(dismissed) {
+    this.showUpdateNotification("restart", true, dismissed, () =>
       this.requestRestart()
     );
   },
@@ -177,7 +162,10 @@ var UpdateListener = {
       false,
       dismissed,
       () => {
-        AppUpdateService.downloadUpdate(update, true);
+        let updateService = Cc[
+          "@mozilla.org/updates/update-service;1"
+        ].getService(Ci.nsIApplicationUpdateService);
+        updateService.downloadUpdate(update, true);
       },
       doc => this.replaceReleaseNotes(doc, update, "updateAvailableWhatsNew")
     );
@@ -265,22 +253,19 @@ var UpdateListener = {
 
         if (badgeWaitTimeMs < doorhangerWaitTimeMs) {
           this.addTimeout(badgeWaitTimeMs, () => {
-            
-            if (!AppUpdateService.isOtherInstanceHandlingUpdates) {
-              this.showRestartNotification(update, true);
-            }
+            this.showRestartNotification(true);
 
             
             
             
             let remainingTime = doorhangerWaitTimeMs - badgeWaitTimeMs;
             this.addTimeout(remainingTime, () => {
-              this.showRestartNotification(update, false);
+              this.showRestartNotification(false);
             });
           });
         } else {
           this.addTimeout(doorhangerWaitTimeMs, () => {
-            this.showRestartNotification(update, false);
+            this.showRestartNotification(false);
           });
         }
         break;

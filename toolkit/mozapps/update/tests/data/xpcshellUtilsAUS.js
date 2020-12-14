@@ -1619,15 +1619,7 @@ function getSpecialFolderDir(aCSIDL) {
   );
 
   let aryPath = ctypes.char16_t.array()(260);
-  let rv = SHGetSpecialFolderPath(0, aryPath, aCSIDL, false);
-  if (!rv) {
-    do_throw(
-      "SHGetSpecialFolderPath failed to retrieve " +
-        aCSIDL +
-        " with Win32 error " +
-        ctypes.winLastError
-    );
-  }
+  SHGetSpecialFolderPath(0, aryPath, aCSIDL, false);
   lib.close();
 
   let path = aryPath.readString(); 
@@ -4354,7 +4346,6 @@ function adjustGeneralPaths() {
   let ds = Services.dirsvc.QueryInterface(Ci.nsIDirectoryService);
   ds.QueryInterface(Ci.nsIProperties).undefine(NS_GRE_DIR);
   ds.QueryInterface(Ci.nsIProperties).undefine(NS_GRE_BIN_DIR);
-  ds.QueryInterface(Ci.nsIProperties).undefine(XRE_EXECUTABLE_FILE);
   ds.registerProvider(dirProvider);
   registerCleanupFunction(function AGP_cleanup() {
     debugDump("start - unregistering directory provider");
@@ -4412,25 +4403,8 @@ function adjustGeneralPaths() {
     ds.unregisterProvider(dirProvider);
     cleanupTestCommon();
 
-    
-    
-    
-    
-    let syncManager = Cc[
-      "@mozilla.org/updates/update-sync-manager;1"
-    ].getService(Ci.nsIUpdateSyncManager);
-    syncManager.resetSemaphore();
-
     debugDump("finish - unregistering directory provider");
   });
-
-  
-  
-  debugDump("resetting update semaphore");
-  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
-    Ci.nsIUpdateSyncManager
-  );
-  syncManager.resetSemaphore();
 }
 
 
