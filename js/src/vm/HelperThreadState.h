@@ -526,6 +526,8 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
   frontend::CompilationGCOutput gcOutput_;
 
+  frontend::CompilationGCOutput gcOutputForDelazification_;
+
   
   
   Vector<UniquePtr<CompileError>, 0, SystemAllocPolicy> errors;
