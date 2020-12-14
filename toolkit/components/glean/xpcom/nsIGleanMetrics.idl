@@ -13,7 +13,6 @@ interface nsIGleanBoolean : nsISupports
 
 
 
-  [implicit_jscontext]
   void set(in bool value);
 
   
@@ -30,25 +29,7 @@ interface nsIGleanBoolean : nsISupports
 
 
 
-  [implicit_jscontext]
-  bool testHasValue(in AUTF8String aStorageName);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  bool testGetValue(in AUTF8String aStorageName);
+  jsval testGetValue(in AUTF8String aStorageName);
 };
 
 [scriptable, uuid(aa15fd20-1e8a-11eb-9bec-0800200c9a66)]

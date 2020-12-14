@@ -40,26 +40,11 @@ class BooleanMetric {
 
 
 
-  bool TestHasValue(const char* aStorageName) const {
-    return fog_boolean_test_has_value(mId, aStorageName) != 0;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool TestGetValue(const char* aStorageName) const {
-    return fog_boolean_test_get_value(mId, aStorageName) != 0;
+  Maybe<bool> TestGetValue(const nsACString& aStorageName) const {
+    if (!fog_boolean_test_has_value(mId, &aStorageName)) {
+      return Nothing();
+    }
+    return Some(fog_boolean_test_get_value(mId, &aStorageName));
   }
 
  private:
