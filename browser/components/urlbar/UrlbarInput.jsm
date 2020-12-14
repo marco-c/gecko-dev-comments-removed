@@ -2202,7 +2202,8 @@ class UrlbarInput {
     details.isOneOff = isOneOff;
     details.type = eventType;
 
-    this.window.BrowserSearch.recordSearchInTelemetry(
+    BrowserSearchTelemetry.recordSearch(
+      this.window.gBrowser,
       engine,
       
       

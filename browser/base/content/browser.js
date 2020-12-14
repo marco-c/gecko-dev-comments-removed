@@ -4425,7 +4425,9 @@ const BrowserSearch = {
       csp
     );
     if (engine) {
-      BrowserSearch.recordSearchInTelemetry(engine, "contextmenu", { url });
+      BrowserSearchTelemetry.recordSearch(gBrowser, engine, "contextmenu", {
+        url,
+      });
     }
   },
 
@@ -4442,7 +4444,7 @@ const BrowserSearch = {
       csp
     );
     if (engine) {
-      BrowserSearch.recordSearchInTelemetry(engine, "system", { url });
+      BrowserSearchTelemetry.recordSearch(gBrowser, engine, "system", { url });
     }
   },
 
@@ -4461,9 +4463,14 @@ const BrowserSearch = {
       tab
     );
 
-    BrowserSearch.recordSearchInTelemetry(result.engine, "webextension", {
-      url: result.url,
-    });
+    BrowserSearchTelemetry.recordSearch(
+      gBrowser,
+      result.engine,
+      "webextension",
+      {
+        url: result.url,
+      }
+    );
   },
 
   pasteAndSearch(event) {
@@ -4489,53 +4496,6 @@ const BrowserSearch = {
     );
     var where = newWindowPref == 3 ? "tab" : "window";
     openTrustedLinkIn(this.searchEnginesURL, where);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  recordSearchInTelemetry(engine, source, details = {}) {
-    try {
-      BrowserSearchTelemetry.recordSearch(gBrowser, engine, source, details);
-    } catch (ex) {
-      Cu.reportError(ex);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  recordOneoffSearchInTelemetry(engine, source, type) {
-    try {
-      const details = { type, isOneOff: true };
-      BrowserSearchTelemetry.recordSearch(gBrowser, engine, source, details);
-    } catch (ex) {
-      Cu.reportError(ex);
-    }
   },
 };
 
