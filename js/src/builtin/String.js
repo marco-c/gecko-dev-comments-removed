@@ -938,6 +938,39 @@ function String_static_raw(callSite) {
 }
 
 
+
+function String_at(index) {
+    
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("at", this);
+
+    
+    var string = ToString(this);
+
+    
+    var len = string.length;
+
+    
+    var relativeIndex = ToInteger(index);
+
+    
+    var k;
+    if (relativeIndex >= 0) {
+        k = relativeIndex;
+    } else {
+        k = len + relativeIndex;
+    }
+
+    
+    if (k < 0 || k >= len) {
+        return undefined;
+    }
+
+    
+    return string[k];
+}
+
+
 function String_big() {
     if (this === undefined || this === null)
         ThrowIncompatibleMethod("big", this);

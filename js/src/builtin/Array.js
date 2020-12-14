@@ -1140,3 +1140,32 @@ function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunctio
     
     return targetIndex;
 }
+
+
+
+function ArrayAt(index) {
+     
+    var O = ToObject(this);
+
+    
+    var len = ToLength(O.length);
+
+    
+    var relativeIndex = ToInteger(index);
+
+    
+    var k;
+    if (relativeIndex >= 0) {
+        k = relativeIndex;
+    } else {
+        k = len + relativeIndex;
+    }
+
+    
+    if (k < 0 || k >= len) {
+        return undefined;
+    }
+
+    
+    return O[k];
+}
