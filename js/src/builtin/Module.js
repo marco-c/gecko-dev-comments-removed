@@ -587,11 +587,32 @@ function ModuleEvaluate()
     }
 
     
+    if (module.status === MODULE_STATUS_EVALUATED) {
+      module = GetAsyncCycleRoot(module);
+    }
+
+    
+    if (module.topLevelCapability) {
+      return module.topLevelCapability;
+    }
+
+    let capability = CreateTopLevelCapability(module);
+
+    
     let stack = [];
 
     
     try {
         InnerModuleEvaluation(module, stack, 0);
+        if (!module.asyncEvaluating) {
+          ModuleTopLevelCapabilityResolve(module);
+        }
+        
+        assert(module.status === MODULE_STATUS_EVALUATED,
+               "Bad module status after successful evaluation");
+        assert(stack.length === 0,
+               "Stack should be empty after successful evaluation");
+
     } catch (error) {
         for (let i = 0; i < stack.length; i++) {
             let m = stack[i];
@@ -607,17 +628,11 @@ function ModuleEvaluate()
         assert(module.status === MODULE_STATUS_EVALUATED_ERROR,
                "Bad module status after failed evaluation");
 
-        throw error;
+        ModuleTopLevelCapabilityReject(module, error);
     }
 
     
-    assert(module.status === MODULE_STATUS_EVALUATED,
-           "Bad module status after successful evaluation");
-    assert(stack.length === 0,
-           "Stack should be empty after successful evaluation");
-
-    
-    return undefined;
+    return capability;
 }
 
 
@@ -648,6 +663,7 @@ function InnerModuleEvaluation(module, stack, index)
     
     UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_INDEX_SLOT, index);
     UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_ANCESTOR_INDEX_SLOT, index);
+    UnsafeSetReservedSlot(module, MODULE_OBJECT_PENDING_ASYNC_DEPENDENCIES_SLOT, 0);
     index++;
 
     
@@ -677,11 +693,32 @@ function InnerModuleEvaluation(module, stack, index)
             UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_ANCESTOR_INDEX_SLOT,
                                   std_Math_min(module.dfsAncestorIndex,
                                                requiredModule.dfsAncestorIndex));
+        } else {
+          requiredModule = GetAsyncCycleRoot(requiredModule);
+          assert(requiredModule.status === MODULE_STATUS_EVALUATED,
+                `Bad module status in InnerModuleEvaluation: ${requiredModule.status}`);
+          if (requiredModule.evaluationError) {
+            throw GetModuleEvaluationError(module);
+          }
+        }
+        if (requiredModule.asyncEvaluating) {
+            UnsafeSetReservedSlot(module,
+                                  MODULE_OBJECT_PENDING_ASYNC_DEPENDENCIES_SLOT,
+                                  module.pendingAsyncDependencies + 1);
+            AppendAsyncParentModule(requiredModule, module);
         }
     }
 
-    
-    ExecuteModule(module);
+    if (module.pendingAsyncDependencies > 0) {
+      UnsafeSetReservedSlot(module, MODULE_OBJECT_ASYNC_EVALUATING_SLOT, true);
+    } else {
+      if (module.async) {
+        ExecuteAsyncModule(module);
+      } else {
+        
+        ExecuteModule(module);
+      }
+    }
 
     
     assert(CountArrayValues(stack, module) === 1,
@@ -703,3 +740,17 @@ function InnerModuleEvaluation(module, stack, index)
     
     return index;
 }
+
+
+function ExecuteAsyncModule(module) {
+  
+  assert(module.status == MODULE_STATUS_EVALUATING ||
+         module.status == MODULE_STATUS_EVALUATED, "bad status for async module");
+  assert(module.async, "module is not async");
+  UnsafeSetReservedSlot(module, MODULE_OBJECT_ASYNC_EVALUATING_SLOT, true);
+
+  
+
+  ExecuteModule(module);
+}
+
