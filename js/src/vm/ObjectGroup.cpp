@@ -392,11 +392,7 @@ ObjectGroup* ObjectGroupRealm::getStringSplitStringGroup(JSContext* cx) {
 }
 
 void ObjectGroupRealm::addSizeOfExcludingThis(
-    mozilla::MallocSizeOf mallocSizeOf, size_t* allocationSiteTables,
-    size_t* arrayObjectGroupTables, size_t* plainObjectGroupTables,
-    size_t* realmTables) {
-  
-
+    mozilla::MallocSizeOf mallocSizeOf, size_t* realmTables) {
   if (defaultNewTable) {
     *realmTables += defaultNewTable->sizeOfIncludingThis(mallocSizeOf);
   }
