@@ -625,22 +625,30 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
   return false;
 }
 
-static MOZ_ALWAYS_INLINE bool InitArrayElemOperation(JSContext* cx,
-                                                     jsbytecode* pc,
-                                                     HandleArrayObject arr,
-                                                     uint32_t index,
-                                                     HandleValue val) {
-  JSOp op = JSOp(*pc);
-  MOZ_ASSERT(op == JSOp::InitElemArray || op == JSOp::InitElemInc);
+inline void InitElemArrayOperation(JSContext* cx, jsbytecode* pc,
+                                   HandleArrayObject arr, HandleValue val) {
+  MOZ_ASSERT(JSOp(*pc) == JSOp::InitElemArray);
 
   
   
-  
-  MOZ_ASSERT_IF(op == JSOp::InitElemArray, index < arr->getDenseCapacity());
-  MOZ_ASSERT_IF(op == JSOp::InitElemArray,
-                index == arr->getDenseInitializedLength());
+  uint32_t index = GET_UINT32(pc);
+  MOZ_ASSERT(index < arr->getDenseCapacity());
+  MOZ_ASSERT(index == arr->getDenseInitializedLength());
 
-  if (op == JSOp::InitElemInc && index == INT32_MAX) {
+  
+  
+  arr->setDenseInitializedLength(index + 1);
+
+  if (val.isMagic(JS_ELEMENTS_HOLE)) {
+    arr->initDenseElementHole(index);
+  } else {
+    arr->initDenseElement(index, val);
+  }
+}
+
+inline bool InitElemIncOperation(JSContext* cx, HandleArrayObject arr,
+                                 uint32_t index, HandleValue val) {
+  if (index == INT32_MAX) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_SPREAD_TOO_LARGE);
     return false;
@@ -648,22 +656,10 @@ static MOZ_ALWAYS_INLINE bool InitArrayElemOperation(JSContext* cx,
 
   
   if (val.isMagic(JS_ELEMENTS_HOLE)) {
-    if (op == JSOp::InitElemInc) {
-      
-      
-      
-      return SetLengthProperty(cx, arr, index + 1);
-    }
-
-    MOZ_ASSERT(op == JSOp::InitElemArray);
-
     
     
     
-    
-    arr->ensureDenseInitializedLength(index, 1);
-    arr->setDenseElementHole(index);
-    return true;
+    return SetLengthProperty(cx, arr, index + 1);
   }
 
   return DefineDataElement(cx, arr, index, val, JSPROP_ENUMERATE);
