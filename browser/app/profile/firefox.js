@@ -1396,6 +1396,10 @@ pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "{\"id\":
 pref("browser.newtabpage.activity-stream.asrouter.providers.messaging-experiments", "{\"id\":\"messaging-experiments\",\"enabled\":true,\"type\":\"remote-experiments\",\"messageGroups\":[\"cfr\",\"whats-new-panel\",\"moments-page\",\"snippets\",\"cfr-fxa\",\"aboutwelcome\"],\"updateCycleInMs\":3600000}");
 
 
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", true);
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", true);
+
+
 
 pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", true);
 
