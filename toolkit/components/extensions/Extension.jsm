@@ -2037,11 +2037,6 @@ class Extension extends ExtensionData {
   }
 
   
-  
-
-
-
-
 
   static getBootstrapScope() {
     return new BootstrapScope();
