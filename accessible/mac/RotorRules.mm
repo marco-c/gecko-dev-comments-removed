@@ -166,6 +166,31 @@ uint16_t RotorControlRule::Match(const AccessibleOrProxy& aAccOrProxy) {
 
 
 
+RotorTextEntryRule::RotorTextEntryRule(
+    AccessibleOrProxy& aDirectDescendantsFrom)
+    : RotorRule(aDirectDescendantsFrom){};
+
+RotorTextEntryRule::RotorTextEntryRule() : RotorRule(){};
+
+uint16_t RotorTextEntryRule::Match(const AccessibleOrProxy& aAccOrProxy) {
+  uint16_t result = RotorRule::Match(aAccOrProxy);
+
+  
+  
+  
+  
+  if ((result & nsIAccessibleTraversalRule::FILTER_MATCH)) {
+    if (aAccOrProxy.Role() != roles::PASSWORD_TEXT &&
+        aAccOrProxy.Role() != roles::ENTRY) {
+      result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+  }
+
+  return result;
+}
+
+
+
 RotorLinkRule::RotorLinkRule(AccessibleOrProxy& aDirectDescendantsFrom)
     : RotorRule(aDirectDescendantsFrom){};
 
