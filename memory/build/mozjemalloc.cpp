@@ -921,6 +921,15 @@ struct arena_t {
   
   
   
+  
+  
+  
+  
+  bool mIsPrivate;
+
+  
+  
+  
   mozilla::non_crypto::XorShift128PlusRNG* mPRNG;
 
  public:
@@ -962,7 +971,7 @@ struct arena_t {
   
   arena_bin_t mBins[1];  
 
-  explicit arena_t(arena_params_t* aParams);
+  explicit arena_t(arena_params_t* aParams, bool aIsPrivate);
   ~arena_t();
 
  private:
@@ -3456,7 +3465,7 @@ void* arena_t::RallocSmallOrLarge(void* aPtr, size_t aSize, size_t aOldSize) {
   
   
   
-  ret = Malloc(aSize, false);
+  ret = (mIsPrivate ? this : choose_arena(aSize))->Malloc(aSize, false);
   if (!ret) {
     return nullptr;
   }
@@ -3493,7 +3502,7 @@ void arena_t::operator delete(void* aPtr) {
   TypedBaseAlloc<arena_t>::dealloc((arena_t*)aPtr);
 }
 
-arena_t::arena_t(arena_params_t* aParams) {
+arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
   unsigned i;
 
   MOZ_RELEASE_ASSERT(mLock.Init());
@@ -3524,6 +3533,8 @@ arena_t::arena_t(arena_params_t* aParams) {
     }
   }
   mPRNG = nullptr;
+
+  mIsPrivate = aIsPrivate;
 
   mNumDirty = 0;
   
@@ -3580,7 +3591,7 @@ arena_t::~arena_t() {
 
 arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
                                       arena_params_t* aParams) {
-  arena_t* ret = new (fallible) arena_t(aParams);
+  arena_t* ret = new (fallible) arena_t(aParams, aIsPrivate);
   if (!ret) {
     
 
@@ -3770,7 +3781,7 @@ void* arena_t::RallocHuge(void* aPtr, size_t aSize, size_t aOldSize) {
   
   
   
-  ret = MallocHuge(aSize, false);
+  ret = (mIsPrivate ? this : choose_arena(aSize))->MallocHuge(aSize, false);
   if (!ret) {
     return nullptr;
   }
