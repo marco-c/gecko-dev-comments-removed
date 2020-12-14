@@ -7,11 +7,18 @@
 #ifndef frontend_NameAnalysisTypes_h
 #define frontend_NameAnalysisTypes_h
 
+#include "mozilla/Assertions.h"  
+#include "mozilla/Casting.h"     
+
+#include <stdint.h>  
 #include <type_traits>
 
-#include "frontend/ParserAtom.h"
-#include "vm/BytecodeUtil.h"
-#include "vm/Scope.h"
+#include "frontend/ParserAtom.h"     
+#include "js/AllocPolicy.h"          
+#include "js/Vector.h"               
+#include "vm/BindingKind.h"          
+#include "vm/BytecodeFormatFlags.h"  
+#include "vm/BytecodeUtil.h"  
 
 namespace js {
 
