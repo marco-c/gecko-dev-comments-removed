@@ -84,18 +84,11 @@ class Rule {
     this.textProps = this.textProps.concat(this._getDisabledProperties());
 
     this.getUniqueSelector = this.getUniqueSelector.bind(this);
-    this.onDeclarationsUpdated = this.onDeclarationsUpdated.bind(this);
     this.onLocationChanged = this.onLocationChanged.bind(this);
     this.onStyleRuleFrontUpdated = this.onStyleRuleFrontUpdated.bind(this);
     this.updateOriginalLocation = this.updateOriginalLocation.bind(this);
 
-    
-    
-    if (this.domRule.traits.emitsRuleUpdatedEvent) {
-      this.domRule.on("rule-updated", this.onStyleRuleFrontUpdated);
-    } else {
-      this.domRule.on("declarations-updated", this.onDeclarationsUpdated);
-    }
+    this.domRule.on("rule-updated", this.onStyleRuleFrontUpdated);
   }
 
   destroy() {
@@ -103,14 +96,7 @@ class Rule {
       this._unsubscribeSourceMap();
     }
 
-    
-    
-    if (this.domRule.traits.emitsRuleUpdatedEvent) {
-      this.domRule.off("rule-updated", this.onStyleRuleFrontUpdated);
-    } else {
-      this.domRule.off("declarations-updated", this.onDeclarationsUpdated);
-    }
-
+    this.domRule.off("rule-updated", this.onStyleRuleFrontUpdated);
     this.domRule.off("location-changed", this.onLocationChanged);
     this.compatibilityIssues = null;
   }
@@ -914,39 +900,6 @@ class Rule {
       }
     }
     return false;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  onDeclarationsUpdated(declarations) {
-    this.textProps.forEach((textProp, index) => {
-      const isUsedPrevious = textProp.isUsed().used;
-      const isUsedCurrent = declarations[index].isUsed.used;
-
-      
-      if (isUsedPrevious === isUsedCurrent) {
-        return;
-      }
-
-      
-      
-      
-      textProp.isUsed = () => declarations[index].isUsed;
-
-      
-      textProp.editor.updatePropertyUsedIndicator();
-    });
   }
 
   
