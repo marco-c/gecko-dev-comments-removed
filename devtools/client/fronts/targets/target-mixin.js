@@ -136,7 +136,6 @@ function TargetMixin(parentClass) {
 
     getWatcherFront() {
       
-      
       if (this.parentFront.typeName == "watcher") {
         return this.parentFront;
       }
@@ -162,9 +161,9 @@ function TargetMixin(parentClass) {
 
     async getParentTarget() {
       
-      
       const watcherFront = await this.getWatcherFront();
       if (watcherFront) {
+        
         
         if (watcherFront.traits.frame) {
           
@@ -176,15 +175,13 @@ function TargetMixin(parentClass) {
         return null;
       }
 
-      
-      
-      if (!this.parentFront.getParentTarget) {
-        return null;
+      if (this.parentFront.getParentTarget) {
+        return this.parentFront.getParentTarget();
       }
 
       
       
-      return this.parentFront.getParentTarget();
+      return null;
     }
 
     
