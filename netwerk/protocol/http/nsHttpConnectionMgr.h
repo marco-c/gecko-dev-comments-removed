@@ -75,8 +75,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   bool MoveTransToNewConnEntry(nsHttpTransaction* aTrans,
-                               nsHttpConnectionInfo* aNewCI,
-                               bool aNoHttp3ForNewEntry = false);
+                               nsHttpConnectionInfo* aNewCI);
 
   
   
