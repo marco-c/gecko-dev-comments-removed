@@ -137,6 +137,19 @@ const IGNORABLE_EVENTS = new WeakMap();
 
 const KNOWN_ADDONS = [];
 
+
+
+
+
+
+
+const SET_USAGE_PREF_BUTTONS = [
+  "downloads-button",
+  "fxa-toolbar-menu-button",
+  "home-button",
+  "sidebar-button",
+];
+
 function telemetryId(widgetId, obscureAddons = true) {
   
   function addonId(id) {
@@ -1132,6 +1145,10 @@ let BrowserUsageTelemetry = {
     if (item && source) {
       let scalar = `browser.ui.interaction.${source.replace("-", "_")}`;
       Services.telemetry.keyedScalarAdd(scalar, telemetryId(item), 1);
+
+      if (SET_USAGE_PREF_BUTTONS.includes(item)) {
+        Services.prefs.setBoolPref(`browser.engagement.${item}.has-used`, true);
+      }
     }
   },
 
