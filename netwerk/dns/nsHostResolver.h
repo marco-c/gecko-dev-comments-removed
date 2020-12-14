@@ -280,6 +280,9 @@ class AddrHostRecord final : public nsHostRecord {
   static DnsPriority GetPriority(uint16_t aFlags);
 
   
+  bool onQueue() { return mNative && isInList(); }
+
+  
   mozilla::TimeStamp mTrrStart;
   mozilla::TimeStamp mNativeStart;
   mozilla::TimeDuration mTrrDuration;
@@ -293,8 +296,6 @@ class AddrHostRecord final : public nsHostRecord {
                          
                          
   uint16_t mNativeUsed : 1;
-  uint16_t onQueue : 1;         
-                                
   uint16_t usingAnyThread : 1;  
                                 
   uint16_t mGetTtl : 1;
