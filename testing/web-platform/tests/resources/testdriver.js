@@ -158,6 +158,24 @@
 
 
 
+
+
+        delete_all_cookies: function(context=null) {
+            return window.test_driver_internal.delete_all_cookies(context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
         send_keys: function(element, keys) {
             if (!inView(element)) {
                 element.scrollIntoView({behavior: "instant",
@@ -456,6 +474,10 @@
             return new Promise(function(resolve, reject) {
                 element.addEventListener("click", resolve);
             });
+        },
+
+        delete_all_cookies: function(context=null) {
+            return Promise.reject(new Error("unimplemented"));
         },
 
         send_keys: function(element, keys) {
