@@ -120,6 +120,14 @@ class nsDocShellLoadState final {
 
   void SetPrincipalIsExplicit(bool aPrincipalIsExplicit);
 
+
+  
+  
+  
+  bool NotifiedBeforeUnloadListeners() const;
+
+  void SetNotifiedBeforeUnloadListeners(bool aNotifiedBeforeUnloadListeners);
+
   bool ForceAllowDataURI() const;
 
   void SetForceAllowDataURI(bool aForceAllowDataURI);
@@ -359,6 +367,8 @@ class nsDocShellLoadState final {
   
   
   bool mPrincipalIsExplicit;
+
+  bool mNotifiedBeforeUnloadListeners;
 
   
   

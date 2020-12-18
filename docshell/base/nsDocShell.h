@@ -645,10 +645,14 @@ class nsDocShell final : public nsDocLoader,
   void SetHistoryEntryAndUpdateBC(const mozilla::Maybe<nsISHEntry*>& aLSHE,
                                   const mozilla::Maybe<nsISHEntry*>& aOSHE);
 
+  
+  
+  
   static nsresult ReloadDocument(
       nsDocShell* aDocShell, mozilla::dom::Document* aDocument,
       uint32_t aLoadType, mozilla::dom::BrowsingContext* aBrowsingContext,
-      nsIURI* aCurrentURI, nsIReferrerInfo* aReferrerInfo);
+      nsIURI* aCurrentURI, nsIReferrerInfo* aReferrerInfo,
+      bool aNotifiedBeforeUnloadListeners = false);
 
   
   
