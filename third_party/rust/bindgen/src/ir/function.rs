@@ -6,9 +6,11 @@ use super::dot::DotAttributes;
 use super::item::Item;
 use super::traversal::{EdgeKind, Trace, Tracer};
 use super::ty::TypeKind;
-use clang;
+use crate::clang;
+use crate::parse::{
+    ClangItemParser, ClangSubItemParser, ParseError, ParseResult,
+};
 use clang_sys::{self, CXCallingConv};
-use parse::{ClangItemParser, ClangSubItemParser, ParseError, ParseResult};
 use proc_macro2;
 use quote;
 use quote::TokenStreamExt;
@@ -309,7 +311,7 @@ fn args_from_ty_and_cursor(
     cursor: &clang::Cursor,
     ctx: &mut BindgenContext,
 ) -> Vec<(Option<String>, TypeId)> {
-    let cursor_args = cursor.args().unwrap().into_iter();
+    let cursor_args = cursor.args().unwrap_or_default().into_iter();
     let type_args = ty.args().unwrap_or_default().into_iter();
 
     
@@ -375,9 +377,14 @@ impl FunctionSig {
             return Err(ParseError::Continue);
         }
 
-        
         let spelling = cursor.spelling();
-        if spelling.starts_with("operator") {
+
+        
+        let is_operator = |spelling: &str| {
+            spelling.starts_with("operator") &&
+                !clang::is_valid_identifier(spelling)
+        };
+        if is_operator(&spelling) {
             return Err(ParseError::Continue);
         }
 
@@ -419,7 +426,16 @@ impl FunctionSig {
                     }
                     CXChildVisit_Continue
                 });
-                args
+
+                if args.is_empty() {
+                    
+                    
+                    
+                    
+                    args_from_ty_and_cursor(&ty, &cursor, ctx)
+                } else {
+                    args
+                }
             }
         };
 
@@ -479,7 +495,15 @@ impl FunctionSig {
         } else {
             ty.ret_type().ok_or(ParseError::Continue)?
         };
-        let ret = Item::from_ty_or_ref(ty_ret_type, cursor, None, ctx);
+
+        let ret = if is_constructor && ctx.is_target_wasm32() {
+            
+            
+            let void = Item::builtin_type(TypeKind::Void, false, ctx);
+            Item::builtin_type(TypeKind::Pointer(void), false, ctx)
+        } else {
+            Item::from_ty_or_ref(ty_ret_type, cursor, None, ctx)
+        };
 
         
         

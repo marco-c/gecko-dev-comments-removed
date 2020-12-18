@@ -181,6 +181,20 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
 pub fn find(runtime: bool) -> Result<(PathBuf, String), String> {
     search_libclang_directories(runtime)?
         .iter()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        .rev()
         .max_by_key(|f| &f.2)
         .cloned()
         .map(|(path, filename, _)| (path, filename))
@@ -190,6 +204,8 @@ pub fn find(runtime: bool) -> Result<(PathBuf, String), String> {
 
 #[cfg(not(feature = "runtime"))]
 pub fn link() {
+    let cep = common::CommandErrorPrinter::default();
+
     use std::fs;
 
     let (directory, filename) = find(false).unwrap();
@@ -241,4 +257,6 @@ pub fn link() {
 
         println!("cargo:rustc-link-lib=dylib={}", name);
     }
+
+    cep.discard();
 }

@@ -90,7 +90,7 @@ fn find() -> PathBuf {
     };
 
     let files = common::search_libclang_directories(&[name.into()], "LIBCLANG_STATIC_PATH");
-    if let Some((directory, _)) = files.into_iter().nth(0) {
+    if let Some((directory, _)) = files.into_iter().next() {
         directory
     } else {
         panic!("could not find any static libraries");
@@ -99,6 +99,8 @@ fn find() -> PathBuf {
 
 
 pub fn link() {
+    let cep = common::CommandErrorPrinter::default();
+
     let directory = find();
 
     
@@ -133,4 +135,6 @@ pub fn link() {
     } else if cfg!(target_os = "macos") {
         println!("cargo:rustc-flags=-l ffi -l ncurses -l c++ -l z");
     }
+
+    cep.discard();
 }

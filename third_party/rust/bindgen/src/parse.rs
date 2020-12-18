@@ -1,8 +1,8 @@
 
 
-use clang;
-use ir::context::{BindgenContext, ItemId, TypeId};
-use ir::ty::TypeKind;
+use crate::clang;
+use crate::ir::context::{BindgenContext, ItemId, TypeId};
+use crate::ir::ty::TypeKind;
 
 
 

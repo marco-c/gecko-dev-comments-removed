@@ -89,12 +89,12 @@
 
 
 use super::{ConstrainResult, MonotoneFramework};
-use ir::context::{BindgenContext, ItemId};
-use ir::item::{Item, ItemSet};
-use ir::template::{TemplateInstantiation, TemplateParameters};
-use ir::traversal::{EdgeKind, Trace};
-use ir::ty::TypeKind;
-use {HashMap, HashSet};
+use crate::ir::context::{BindgenContext, ItemId};
+use crate::ir::item::{Item, ItemSet};
+use crate::ir::template::{TemplateInstantiation, TemplateParameters};
+use crate::ir::traversal::{EdgeKind, Trace};
+use crate::ir::ty::TypeKind;
+use crate::{HashMap, HashSet};
 
 
 

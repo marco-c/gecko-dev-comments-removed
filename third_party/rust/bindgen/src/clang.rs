@@ -3,10 +3,9 @@
 
 #![allow(non_upper_case_globals, dead_code)]
 
-
+use crate::ir::context::BindgenContext;
 use cexpr;
 use clang_sys::*;
-use ir::context::BindgenContext;
 use regex;
 use std::ffi::{CStr, CString};
 use std::fmt;
@@ -70,20 +69,13 @@ impl Cursor {
 
     
     pub fn mangling(&self) -> String {
-        if clang_Cursor_getMangling::is_loaded() {
-            unsafe { cxstring_into_string(clang_Cursor_getMangling(self.x)) }
-        } else {
-            self.spelling()
-        }
+        unsafe { cxstring_into_string(clang_Cursor_getMangling(self.x)) }
     }
 
     
     
     pub fn cxx_manglings(&self) -> Result<Vec<String>, ()> {
         use clang_sys::*;
-        if !clang_Cursor_getCXXManglings::is_loaded() {
-            return Err(());
-        }
         unsafe {
             let manglings = clang_Cursor_getCXXManglings(self.x);
             if manglings.is_null() {
@@ -237,6 +229,11 @@ impl Cursor {
             CXCursor_TypeAliasTemplateDecl => true,
             _ => false,
         }
+    }
+
+    
+    pub fn is_macro_function_like(&self) -> bool {
+        unsafe { clang_Cursor_isMacroFunctionLike(self.x) != 0 }
     }
 
     
@@ -469,8 +466,7 @@ impl Cursor {
 
     
     pub fn is_inlined_function(&self) -> bool {
-        clang_Cursor_isFunctionInlined::is_loaded() &&
-            unsafe { clang_Cursor_isFunctionInlined(self.x) != 0 }
+        unsafe { clang_Cursor_isFunctionInlined(self.x) != 0 }
     }
 
     
@@ -495,6 +491,19 @@ impl Cursor {
             };
             if t.is_valid() {
                 Some(t)
+            } else {
+                None
+            }
+        }
+    }
+
+    
+    
+    
+    pub fn enum_val_boolean(&self) -> Option<bool> {
+        unsafe {
+            if self.kind() == CXCursor_EnumConstantDecl {
+                Some(clang_getEnumConstantDeclValue(self.x) != 0)
             } else {
                 None
             }
@@ -581,11 +590,7 @@ impl Cursor {
 
     
     pub fn visibility(&self) -> CXVisibilityKind {
-        if clang_getCursorVisibility::is_loaded() {
-            unsafe { clang_getCursorVisibility(self.x) }
-        } else {
-            CXVisibility_Default
-        }
+        unsafe { clang_getCursorVisibility(self.x) }
     }
 
     
@@ -630,16 +635,11 @@ impl Cursor {
     
     
     pub fn is_mutable_field(&self) -> bool {
-        clang_CXXField_isMutable::is_loaded() &&
-            unsafe { clang_CXXField_isMutable(self.x) != 0 }
+        unsafe { clang_CXXField_isMutable(self.x) != 0 }
     }
 
     
     pub fn offset_of_field(&self) -> Result<usize, LayoutError> {
-        if !clang_Cursor_getOffsetOfField::is_loaded() {
-            return Err(LayoutError::from(-1));
-        }
-
         let offset = unsafe { clang_Cursor_getOffsetOfField(self.x) };
 
         if offset < 0 {
@@ -698,30 +698,9 @@ impl Cursor {
 
     
     pub fn cexpr_tokens(self) -> Vec<cexpr::token::Token> {
-        use cexpr::token;
-
         self.tokens()
             .iter()
-            .filter_map(|token| {
-                let kind = match token.kind {
-                    CXToken_Punctuation => token::Kind::Punctuation,
-                    CXToken_Literal => token::Kind::Literal,
-                    CXToken_Identifier => token::Kind::Identifier,
-                    CXToken_Keyword => token::Kind::Keyword,
-                    
-                    
-                    CXToken_Comment => return None,
-                    _ => {
-                        error!("Found unexpected token kind: {:?}", token);
-                        return None;
-                    }
-                };
-
-                Some(token::Token {
-                    kind,
-                    raw: token.spelling().to_vec().into_boxed_slice(),
-                })
-            })
+            .filter_map(|token| token.as_cexpr_token())
             .collect()
     }
 
@@ -801,6 +780,9 @@ pub struct ClangToken {
     spelling: CXString,
     
     
+    pub extent: CXSourceRange,
+    
+    
     pub kind: CXTokenKind,
 }
 
@@ -811,6 +793,30 @@ impl ClangToken {
             CStr::from_ptr(clang_getCString(self.spelling) as *const _)
         };
         c_str.to_bytes()
+    }
+
+    
+    pub fn as_cexpr_token(&self) -> Option<cexpr::token::Token> {
+        use cexpr::token;
+
+        let kind = match self.kind {
+            CXToken_Punctuation => token::Kind::Punctuation,
+            CXToken_Literal => token::Kind::Literal,
+            CXToken_Identifier => token::Kind::Identifier,
+            CXToken_Keyword => token::Kind::Keyword,
+            
+            
+            CXToken_Comment => return None,
+            _ => {
+                warn!("Found unexpected token kind: {:?}", self);
+                return None;
+            }
+        };
+
+        Some(token::Token {
+            kind,
+            raw: self.spelling().to_vec().into_boxed_slice(),
+        })
     }
 }
 
@@ -834,7 +840,12 @@ impl<'a> Iterator for ClangTokenIterator<'a> {
         unsafe {
             let kind = clang_getTokenKind(*raw);
             let spelling = clang_getTokenSpelling(self.tu, *raw);
-            Some(ClangToken { kind, spelling })
+            let extent = clang_getTokenExtent(self.tu, *raw);
+            Some(ClangToken {
+                kind,
+                extent,
+                spelling,
+            })
         }
     }
 }
@@ -1085,8 +1096,8 @@ impl Type {
     pub fn fallible_layout(
         &self,
         ctx: &BindgenContext,
-    ) -> Result<::ir::layout::Layout, LayoutError> {
-        use ir::layout::Layout;
+    ) -> Result<crate::ir::layout::Layout, LayoutError> {
+        use crate::ir::layout::Layout;
         let size = self.fallible_size(ctx)?;
         let align = self.fallible_align(ctx)?;
         Ok(Layout::new(size, align))
@@ -1095,13 +1106,6 @@ impl Type {
     
     
     pub fn num_template_args(&self) -> Option<u32> {
-        
-        
-        
-        if !clang_Type_getNumTemplateArguments::is_loaded() {
-            return None;
-        }
-
         let n = unsafe { clang_Type_getNumTemplateArguments(self.x) };
         if n >= 0 {
             Some(n as u32)
@@ -1231,11 +1235,7 @@ impl Type {
     pub fn named(&self) -> Type {
         unsafe {
             Type {
-                x: if clang_Type_getNamedType::is_loaded() {
-                    clang_Type_getNamedType(self.x)
-                } else {
-                    self.x
-                },
+                x: clang_Type_getNamedType(self.x),
             }
         }
     }
@@ -1538,15 +1538,6 @@ impl Drop for Index {
             clang_disposeIndex(self.x);
         }
     }
-}
-
-
-#[derive(Debug)]
-pub struct Token {
-    
-    pub kind: CXTokenKind,
-    
-    pub spelling: String,
 }
 
 
@@ -1854,11 +1845,7 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
             format!(" {}spelling = \"{}\"", prefix, ty.spelling()),
         );
         let num_template_args =
-            if clang_Type_getNumTemplateArguments::is_loaded() {
-                unsafe { clang_Type_getNumTemplateArguments(ty.x) }
-            } else {
-                -1
-            };
+            unsafe { clang_Type_getNumTemplateArguments(ty.x) };
         if num_template_args >= 0 {
             print_indent(
                 depth,
@@ -1955,10 +1942,6 @@ pub struct EvalResult {
 impl EvalResult {
     
     pub fn new(cursor: Cursor) -> Option<Self> {
-        if !clang_Cursor_Evaluate::is_loaded() {
-            return None;
-        }
-
         
         
         

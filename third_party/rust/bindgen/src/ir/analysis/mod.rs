@@ -53,12 +53,12 @@ pub use self::has_float::HasFloat;
 mod sizedness;
 pub use self::sizedness::{Sizedness, SizednessAnalysis, SizednessResult};
 
-use ir::context::{BindgenContext, ItemId};
+use crate::ir::context::{BindgenContext, ItemId};
 
-use ir::traversal::{EdgeKind, Trace};
+use crate::ir::traversal::{EdgeKind, Trace};
+use crate::HashMap;
 use std::fmt;
 use std::ops;
-use HashMap;
 
 
 
@@ -211,7 +211,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use {HashMap, HashSet};
+    use crate::{HashMap, HashSet};
 
     
     

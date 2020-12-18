@@ -2,9 +2,11 @@
 
 use super::context::{BindgenContext, ItemId};
 use super::function::FunctionSig;
+use super::item::Item;
 use super::traversal::{Trace, Tracer};
 use super::ty::TypeKind;
-use clang;
+use crate::clang;
+use crate::parse::ClangItemParser;
 use clang_sys::CXChildVisit_Continue;
 use clang_sys::CXCursor_ObjCCategoryDecl;
 use clang_sys::CXCursor_ObjCClassMethodDecl;
@@ -12,6 +14,7 @@ use clang_sys::CXCursor_ObjCClassRef;
 use clang_sys::CXCursor_ObjCInstanceMethodDecl;
 use clang_sys::CXCursor_ObjCProtocolDecl;
 use clang_sys::CXCursor_ObjCProtocolRef;
+use clang_sys::CXCursor_ObjCSuperClassRef;
 use clang_sys::CXCursor_TemplateTypeParameter;
 use proc_macro2::{Ident, Span, TokenStream};
 
@@ -31,7 +34,11 @@ pub struct ObjCInterface {
     
     pub template_names: Vec<String>,
 
-    conforms_to: Vec<ItemId>,
+    
+    pub conforms_to: Vec<ItemId>,
+
+    
+    pub parent_class: Option<ItemId>,
 
     
     methods: Vec<ObjCMethod>,
@@ -63,6 +70,7 @@ impl ObjCInterface {
             category: None,
             is_protocol: false,
             template_names: Vec::new(),
+            parent_class: None,
             conforms_to: Vec::new(),
             methods: Vec::new(),
             class_methods: Vec::new(),
@@ -83,9 +91,9 @@ impl ObjCInterface {
             format!("{}_{}", self.name(), cat)
         } else {
             if self.is_protocol {
-                format!("protocol_{}", self.name())
+                format!("P{}", self.name())
             } else {
-                self.name().to_owned()
+                format!("I{}", self.name().to_owned())
             }
         }
     }
@@ -98,6 +106,16 @@ impl ObjCInterface {
     
     pub fn methods(&self) -> &Vec<ObjCMethod> {
         &self.methods
+    }
+
+    
+    pub fn is_protocol(&self) -> bool {
+        self.is_protocol
+    }
+
+    
+    pub fn is_category(&self) -> bool {
+        self.category.is_some()
     }
 
     
@@ -129,13 +147,13 @@ impl ObjCInterface {
                 }
                 CXCursor_ObjCProtocolRef => {
                     
-                    let needle = format!("protocol_{}", c.spelling());
+                    let needle = format!("P{}", c.spelling());
                     let items_map = ctx.items();
                     debug!("Interface {} conforms to {}, find the item", interface.name, needle);
 
                     for (id, item) in items_map
                     {
-                       if let Some(ty) = item.as_type() {
+                        if let Some(ty) = item.as_type() {
                             match *ty.kind() {
                                 TypeKind::ObjCInterface(ref protocol) => {
                                     if protocol.is_protocol
@@ -168,6 +186,10 @@ impl ObjCInterface {
                     let name = c.spelling();
                     interface.template_names.push(name);
                 }
+                CXCursor_ObjCSuperClassRef => {
+                    let item = Item::from_ty_or_ref(c.cur_type(), c, None, ctx);
+                    interface.parent_class = Some(item.into());
+                },
                 _ => {}
             }
             CXChildVisit_Continue

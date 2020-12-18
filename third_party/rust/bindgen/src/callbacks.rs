@@ -1,7 +1,7 @@
 
 
-pub use ir::enum_ty::{EnumVariantCustomBehavior, EnumVariantValue};
-pub use ir::int::IntKind;
+pub use crate::ir::enum_ty::{EnumVariantCustomBehavior, EnumVariantValue};
+pub use crate::ir::int::IntKind;
 use std::fmt;
 use std::panic::UnwindSafe;
 
@@ -38,6 +38,15 @@ pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
     
     
     fn str_macro(&self, _name: &str, _value: &[u8]) {}
+
+    
+    
+    
+    
+    
+    
+    
+    fn func_macro(&self, _name: &str, _value: &[&[u8]]) {}
 
     
     

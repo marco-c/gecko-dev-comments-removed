@@ -42,6 +42,23 @@ fn connection_close() {
     assert_draining(&server, &Error::PeerApplicationError(42));
 }
 
+#[test]
+fn connection_close_with_long_reason_string() {
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    let now = now();
+    
+    let long_reason = String::from_utf8([0x61; 2048].to_vec()).unwrap();
+    client.close(now, 42, long_reason);
+
+    let out = client.process(None, now);
+
+    server.process_input(out.dgram().unwrap(), now);
+    assert_draining(&server, &Error::PeerApplicationError(42));
+}
+
 
 #[test]
 fn early_application_close() {
