@@ -10,6 +10,8 @@
 #include "jsapi-tests/tests.h"
 #include "vm/Realm.h"
 
+using namespace js;
+
 JSObject* keyDelegate = nullptr;
 
 BEGIN_TEST(testWeakMap_basicOperations) {
@@ -95,11 +97,17 @@ BEGIN_TEST(testWeakMap_keyDelegates) {
 
 
 
+  JSRuntime* rt = cx->runtime();
   CHECK(newCCW(map, delegateRoot));
-  js::SliceBudget budget(js::WorkBudget(1000000));
-  cx->runtime()->gc.startDebugGC(GC_NORMAL, budget);
+  js::SliceBudget budget(js::WorkBudget(1000));
+  rt->gc.startDebugGC(GC_NORMAL, budget);
   if (JS::IsIncrementalGCInProgress(cx)) {
-    cx->runtime()->gc.finishGC(JS::GCReason::DEBUG_GC);
+    
+    
+    while (rt->gc.state() == gc::State::Prepare) {
+      rt->gc.debugGCSlice(budget);
+    }
+    rt->gc.finishGC(JS::GCReason::DEBUG_GC);
   }
 #ifdef DEBUG
   CHECK(map->zone()->lastSweepGroupIndex() <
@@ -113,12 +121,18 @@ BEGIN_TEST(testWeakMap_keyDelegates) {
 
   
 
+
   key = nullptr;
   CHECK(newCCW(map, delegateRoot));
-  budget = js::SliceBudget(js::WorkBudget(100000));
-  cx->runtime()->gc.startDebugGC(GC_NORMAL, budget);
+  budget = js::SliceBudget(js::WorkBudget(1000));
+  rt->gc.startDebugGC(GC_NORMAL, budget);
   if (JS::IsIncrementalGCInProgress(cx)) {
-    cx->runtime()->gc.finishGC(JS::GCReason::DEBUG_GC);
+    
+    
+    while (rt->gc.state() == gc::State::Prepare) {
+      rt->gc.debugGCSlice(budget);
+    }
+    rt->gc.finishGC(JS::GCReason::DEBUG_GC);
   }
   CHECK(checkSize(map, 1));
 

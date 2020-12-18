@@ -1,5 +1,7 @@
 
 
+gczeal(0);
+
 
 let d = new Debugger();
 let g = newGlobal({newCompartment: true})

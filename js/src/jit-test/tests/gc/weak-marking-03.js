@@ -28,6 +28,13 @@ function reportMarks(prefix = "") {
   return markstr;
 }
 
+function startGCMarking() {
+  startgc(100000);
+  while (gcstate() === "Prepare") {
+    gcslice(100000);
+  }
+}
+
 function purgeKey() {
   const m = new WeakMap();
   const vals = {};
@@ -47,7 +54,7 @@ function purgeKey() {
 
   vals.key = vals.val = null;
 
-  startgc(100000);
+  startGCMarking();
   
   assertEq(getMarks().join("/"), "black/unmarked/unmarked",
            "marked the map black");
@@ -87,7 +94,7 @@ function removeKey() {
   enqueueMark(m);
   enqueueMark("yield");
 
-  startgc(100000);
+  startGCMarking();
   reportMarks("first: ");
   var marks = getMarks();
   assertEq(marks[0], "black", "map is black");
@@ -106,6 +113,9 @@ function removeKey() {
   m.set(vals.key, vals.val);
   vals.key = vals.val = null;
   startgc(10000);
+  while (gcstate() !== "Mark") {
+    gcslice(100000);
+  }
   marks = getMarks();
   assertEq(marks[0], "black", "map is black");
   assertEq(marks[1], "unmarked", "key not marked yet");
@@ -161,6 +171,9 @@ function nukeMarking() {
 
   
   startgc(1000000);
+  while (gcstate() !== "Mark") {
+    gcslice(100000);
+  }
   assertEq(gcstate(), "Mark", "expected to yield after marking map");
   
   nukeCCW(vals.key);
@@ -195,6 +208,9 @@ function transplantMarking() {
 
   
   startgc(1000000);
+  while (gcstate() !== "Mark") {
+    gcslice(100000);
+  }
   assertEq(gcstate(), "Mark", "expected to yield after marking map");
   
   transplant(g1);
@@ -248,7 +264,7 @@ function grayMarkingMapFirst() {
   };
 
   print("Starting incremental GC");
-  startgc(100000);
+  startGCMarking();
   
   showmarks();
   var marks = getMarks();
@@ -340,7 +356,7 @@ function grayMarkingMapLast() {
   };
 
   print("Starting incremental GC");
-  startgc(100000);
+  startGCMarking();
   
   showmarks();
   var marks = labeledMarks();
@@ -405,7 +421,7 @@ function grayMapKey() {
 
   vals.key = vals.val = null;
 
-  startgc(100000);
+  startGCMarking();
   assertEq(getMarks().join("/"), "gray/unmarked/unmarked",
            "marked the map gray");
 
@@ -457,7 +473,7 @@ function grayKeyMap() {
   
   schedulezone(vals);
 
-  startgc(100000);
+  startGCMarking();
   
   reportMarks("1: ");
   assertEq(getMarks().join("/"), "unmarked/black/unmarked",
@@ -541,7 +557,7 @@ function blackDuringGray() {
   };
 
   print("Starting incremental GC");
-  startgc(100000);
+  startGCMarking();
   
   showmarks();
   var marks = getMarks();
