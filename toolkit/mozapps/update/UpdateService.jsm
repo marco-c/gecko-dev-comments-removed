@@ -21,7 +21,6 @@ const {
 const { FileUtils } = ChromeUtils.import(
   "resource://gre/modules/FileUtils.jsm"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -35,7 +34,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   CertUtils: "resource://gre/modules/CertUtils.jsm",
   ctypes: "resource://gre/modules/ctypes.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
@@ -272,7 +270,7 @@ var gUpdateMutexHandle = null;
 
 var gUpdateDirPermissionFixAttempted = false;
 
-var gLogfileWritePromise;
+var gLogfileOutputStream;
 
 
 
@@ -880,39 +878,22 @@ function LOG(string) {
     }
 
     if (gLogfileEnabled) {
-      if (!gLogfileWritePromise) {
+      if (!gLogfileOutputStream) {
         let logfile = Services.dirsvc.get(KEY_PROFILE_DIR, Ci.nsIFile);
         logfile.append(FILE_UPDATE_MESSAGES);
-        gLogfileWritePromise = OS.File.open(logfile.path, {
-          write: true,
-          append: true,
-        }).catch(error => {
-          dump("*** AUS:SVC Unable to open messages file: " + error + "\n");
-          Services.console.logStringMessage(
-            "AUS:SVC Unable to open messages file: " + error
-          );
-          
-          
-          return Promise.reject(error);
-        });
+        gLogfileOutputStream = FileUtils.openAtomicFileOutputStream(logfile);
       }
-      gLogfileWritePromise = gLogfileWritePromise.then(async logfile => {
-        
-        
-        
-        
-        try {
-          let encoded = new TextEncoder().encode(string + "\n");
-          await logfile.write(encoded);
-          await logfile.flush();
-        } catch (e) {
-          dump("*** AUS:SVC Unable to write to messages file: " + e + "\n");
-          Services.console.logStringMessage(
-            "AUS:SVC Unable to write to messages file: " + e
-          );
-        }
-        return logfile;
-      });
+
+      try {
+        let encoded = new TextEncoder().encode(string + "\n");
+        gLogfileOutputStream.write(encoded, encoded.length);
+        gLogfileOutputStream.flush();
+      } catch (e) {
+        dump("*** AUS:SVC Unable to write to messages file: " + e + "\n");
+        Services.console.logStringMessage(
+          "AUS:SVC Unable to write to messages file: " + e
+        );
+      }
     }
   }
 }
@@ -2403,16 +2384,8 @@ UpdateService.prototype = {
           .createInstance(Ci.nsIUpdateChecker)
           .stopCurrentCheck();
 
-        if (gLogfileWritePromise) {
-          
-          
-          gLogfileWritePromise = gLogfileWritePromise.then(
-            logfile => {
-              logfile.close();
-            },
-            () => {}
-          );
-          await gLogfileWritePromise;
+        if (gLogfileOutputStream) {
+          gLogfileOutputStream.close();
         }
         break;
       case "test-close-handle-update-mutex":
@@ -3891,7 +3864,7 @@ UpdateManager.prototype = {
           file.path
       );
       try {
-        await OS.File.remove(file.path, { ignoreAbsent: true });
+        await IOUtils.remove(file.path);
       } catch (e) {
         LOG(
           "UpdateManager:_writeUpdatesToXMLFile - Delete file exception: " + e
@@ -3922,13 +3895,10 @@ UpdateManager.prototype = {
       
       
       
-      await OS.File.writeAtomic(file.path, xml, {
-        encoding: "utf-8",
+      await IOUtils.writeUTF8(file.path, xml, {
         tmpPath: file.path + ".tmp",
       });
-      await OS.File.setPermissions(file.path, {
-        unixMode: FileUtils.PERMS_FILE,
-      });
+      await IOUtils.setPermissions(file.path, FileUtils.PERMS_FILE);
     } catch (e) {
       LOG("UpdateManager:_writeUpdatesToXMLFile - Exception: " + e);
       return false;
