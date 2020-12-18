@@ -680,8 +680,8 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
       
       dom::BrowsingContext* browsingContext = mDocument->GetBrowsingContext();
       if (browsingContext && !browsingContext->IsTop()) {
-        Element* containingElement =
-            parent->FindContentForSubDocument(mDocument);
+        MOZ_ASSERT(!browsingContext->IsCached());
+        Element* containingElement = browsingContext->GetEmbedderElement();
         if (!containingElement->IsXULElement() ||
             !containingElement->HasAttr(kNameSpaceID_None,
                                         nsGkAtoms::forceOwnRefreshDriver)) {
