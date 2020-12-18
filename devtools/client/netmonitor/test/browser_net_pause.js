@@ -7,10 +7,12 @@
 
 
 add_task(async function() {
-  const { tab, monitor } = await initNetMonitor(PAUSE_URL, { requestCount: 1 });
+  const { tab, monitor, toolbox } = await initNetMonitor(PAUSE_URL, {
+    requestCount: 1,
+  });
   info("Starting test... ");
 
-  const { document, store, windowRequire, connector } = monitor.panelWin;
+  const { document, store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   const pauseButton = document.querySelector(".requests-list-pause-button");
 
@@ -34,7 +36,7 @@ add_task(async function() {
 
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
-  await performPausedRequest(connector, tab, monitor);
+  await performPausedRequest(tab, monitor, toolbox);
   ok(noRequest, "There should be no activity when paused.");
   assertRequestCount(store, 1);
 
@@ -47,8 +49,9 @@ add_task(async function() {
   
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
+  const networkEvents = waitForNetworkEvents(monitor, 1);
   tab.linkedBrowser.reload();
-  await waitForNetworkEvents(monitor, 1);
+  await networkEvents;
   assertRequestCount(store, 1);
 
   return teardown(monitor);
@@ -81,10 +84,14 @@ async function performRequestAndWait(tab, monitor) {
 
 
 
-async function performPausedRequest(connector, tab, monitor) {
+async function performPausedRequest(tab, monitor, toolbox) {
+  const waitForEventWhenPaused = waitForNetworkResource(toolbox);
   await SpecialPowers.spawn(tab.linkedBrowser, [SIMPLE_SJS], async function(
     url
   ) {
     await content.wrappedJSObject.performRequests(url);
   });
+  
+  
+  await waitForEventWhenPaused;
 }

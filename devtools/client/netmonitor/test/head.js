@@ -472,6 +472,24 @@ function waitForNetworkEvents(monitor, getRequests, options = {}) {
   });
 }
 
+
+
+
+
+
+async function waitForNetworkResource(toolbox, noOfExpectedResources = 1) {
+  let countOfAvailableResources = 0;
+  return waitForNextResource(
+    toolbox.resourceWatcher,
+    toolbox.resourceWatcher.TYPES.NETWORK_EVENT,
+    {
+      ignoreExistingResources: true,
+      predicate: resource =>
+        ++countOfAvailableResources >= noOfExpectedResources,
+    }
+  );
+}
+
 function verifyRequestItemTarget(
   document,
   requestList,
