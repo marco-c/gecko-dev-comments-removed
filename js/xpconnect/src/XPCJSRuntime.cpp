@@ -146,7 +146,7 @@ const char* const XPCJSRuntime::mStrings[] = {
 class AsyncFreeSnowWhite : public Runnable {
  public:
   NS_IMETHOD Run() override {
-    AUTO_PROFILER_LABEL("AsyncFreeSnowWhite::Run", GCCC);
+    AUTO_PROFILER_LABEL("AsyncFreeSnowWhite::Run", GCCC_FreeSnowWhite);
 
     TimeStamp start = TimeStamp::Now();
     
