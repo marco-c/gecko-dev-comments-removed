@@ -9,6 +9,7 @@
 
 #include "TaskController.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/StaticPrefs_dom.h"
 
 namespace mozilla {
 
@@ -45,6 +46,39 @@ class InputTaskManager : public TaskManager {
   static void Cleanup() { gInputTaskManager = nullptr; }
   static void Init();
 
+  bool IsSuspended(const MutexAutoLock& aProofOfLock) override {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mSuspensionLevel > 0;
+  }
+
+  bool IsSuspended() {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mSuspensionLevel > 0;
+  }
+
+  void IncSuspensionLevel() {
+    MOZ_ASSERT(NS_IsMainThread());
+    ++mSuspensionLevel;
+  }
+
+  void DecSuspensionLevel() {
+    MOZ_ASSERT(NS_IsMainThread());
+    --mSuspensionLevel;
+  }
+
+  static bool CanSuspendInputEvent() {
+    
+    
+    
+    
+    
+    
+    return XRE_IsContentProcess() &&
+           StaticPrefs::dom_input_events_canSuspendInBCG_enabled_AtStartup() &&
+           InputTaskManager::Get()->State() !=
+               InputEventQueueState::STATE_DISABLED;
+  }
+
  private:
   InputTaskManager() : mInputQueueState(STATE_DISABLED) {}
 
@@ -53,6 +87,9 @@ class InputTaskManager : public TaskManager {
   AutoTArray<TimeStamp, 4> mStartTimes;
 
   static StaticRefPtr<InputTaskManager> gInputTaskManager;
+
+  
+  uint32_t mSuspensionLevel = 0;
 };
 
 }  
