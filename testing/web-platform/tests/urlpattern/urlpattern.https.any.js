@@ -4,7 +4,72 @@ function runTests(data) {
   for (let entry of data) {
     test(function() {
       const pattern = new URLPattern(entry.pattern);
-      assert_equals(pattern.test(entry.input), entry.expected);
+
+      
+      
+      assert_equals(pattern.test(entry.input), !!entry.expected,
+                    'test() result');
+
+      
+      const result = pattern.exec(entry.input);
+
+      
+      if (!entry.expected) {
+        assert_equals(result, entry.expected, 'exec() failed match result');
+        return;
+      }
+
+      
+      
+      if (typeof entry.expected.input === 'object') {
+        assert_object_equals(result.input, entry.expected.input,
+                             'exec() result.input');
+      } else {
+        assert_equals(result.input, entry.expected.input,
+                      'exec() result.input');
+      }
+
+      
+      
+      const component_list = [
+        'protocol',
+        'username',
+        'password',
+        'hostname',
+        'password',
+        'pathname',
+        'search',
+        'hash',
+      ];
+
+      for (let component of component_list) {
+        let expected_obj = entry.expected[component];
+
+        
+        
+        
+        
+        if (!expected_obj) {
+          
+          
+          if (component === 'pathname')
+            expected_obj = { input: '/', groups: {} };
+          else
+            expected_obj = { input: '', groups: {} };
+
+          
+          
+          
+          
+          
+          if (!entry.expected.exactly_empty_components ||
+              !entry.expected.exactly_empty_components.includes(component)) {
+            expected_obj.groups['0'] = '';
+          }
+        }
+        assert_object_equals(result[component], expected_obj,
+                             `exec() result for ${component}`);
+      }
     }, `Pattern: ${JSON.stringify(entry.pattern)} Input: ${JSON.stringify(entry.input)}`);
   }
 }
