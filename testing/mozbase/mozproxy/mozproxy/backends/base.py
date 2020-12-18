@@ -3,13 +3,14 @@
 
 
 from __future__ import absolute_import
+import six
+
 from abc import ABCMeta, abstractmethod
 
 
 
+@six.add_metaclass(ABCMeta)
 class Playback(object):
-    __metaclass__ = ABCMeta
-
     def __init__(self, config):
         self.config = config
         self.host = None

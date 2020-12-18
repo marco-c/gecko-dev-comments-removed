@@ -3,6 +3,7 @@
 
 
 from __future__ import absolute_import, print_function
+import six
 from abc import ABCMeta, abstractmethod, abstractproperty
 from argparse import ArgumentParser, SUPPRESS
 from distutils.util import strtobool
@@ -109,9 +110,8 @@ def get_default_valgrind_suppression_files():
     return rv
 
 
+@six.add_metaclass(ABCMeta)
 class ArgumentContainer:
-    __metaclass__ = ABCMeta
-
     @abstractproperty
     def args(self):
         pass
