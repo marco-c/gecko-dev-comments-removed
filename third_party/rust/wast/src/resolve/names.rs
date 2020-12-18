@@ -64,6 +64,13 @@ pub struct Module<'a> {
     
     
     to_prepend: Vec<ModuleField<'a>>,
+
+    
+    
+    
+    
+    
+    type_cache: HashMap<(usize, Index<'a>), Item<'a>>,
 }
 
 enum InstanceDef<'a> {
@@ -152,15 +159,28 @@ impl<'a> Resolver<'a> {
         
         
         
-        
-        fields.sort_by_key(|field| match field {
-            ModuleField::Type(_)
-            | ModuleField::Alias(Alias {
-                kind: ExportKind::Type(_),
-                ..
-            }) => 0,
-            _ => 1,
+        let sort_types_first = fields.iter().any(|f| match f {
+            ModuleField::NestedModule(m) => match &m.kind {
+                NestedModuleKind::Inline { ty, .. } => ty.is_none(),
+                _ => false,
+            },
+            ModuleField::Import(i) => match &i.item.kind {
+                ItemKind::Module(ty) => ty.index.is_none(),
+                _ => false,
+            },
+            _ => false,
         });
+
+        if sort_types_first {
+            fields.sort_by_key(|field| match field {
+                ModuleField::Type(_)
+                | ModuleField::Alias(Alias {
+                    kind: ExportKind::Type(_),
+                    ..
+                }) => 0,
+                _ => 1,
+            });
+        }
 
         
         
@@ -183,14 +203,16 @@ impl<'a> Resolver<'a> {
         
         
         
-        fields.sort_by_key(|field| match field {
-            ModuleField::Type(_)
-            | ModuleField::Alias(Alias {
-                kind: ExportKind::Type(_),
-                ..
-            }) => 0,
-            _ => 1,
-        });
+        if sort_types_first {
+            fields.sort_by_key(|field| match field {
+                ModuleField::Type(_)
+                | ModuleField::Alias(Alias {
+                    kind: ExportKind::Type(_),
+                    ..
+                }) => 0,
+                _ => 1,
+            });
+        }
 
         
         
@@ -694,8 +716,22 @@ impl<'a> Resolver<'a> {
         type_idx: &Index<'a>,
         switch_module_to_instance: bool,
     ) -> Result<Item<'a>, Error> {
+        
+        
+        
+        
+        
+        
+        
+        
+        if !switch_module_to_instance {
+            if let Some(ret) = self.modules[self.cur].type_cache.get(&(child, *type_idx)) {
+                return Ok(ret.clone());
+            }
+        }
+
         let (ty, child) = self.type_for(child, type_idx)?;
-        match ty {
+        let item = match ty {
             TypeInfo::Func(key) => {
                 let key = key.clone();
                 let my_key = (
@@ -708,7 +744,7 @@ impl<'a> Resolver<'a> {
                         .map(|ty| self.copy_valtype_from_module(span, child, *ty))
                         .collect::<Result<Box<[_]>, Error>>()?,
                 );
-                Ok(Item::Func(self.modules[self.cur].key_to_idx(span, my_key)))
+                Item::Func(self.modules[self.cur].key_to_idx(span, my_key))
             }
 
             TypeInfo::Instance { key, .. } => {
@@ -720,9 +756,7 @@ impl<'a> Resolver<'a> {
                             .map(|x| (*name, x))
                     })
                     .collect::<Result<Vec<_>, Error>>()?;
-                Ok(Item::Instance(
-                    self.modules[self.cur].key_to_idx(span, my_key),
-                ))
+                Item::Instance(self.modules[self.cur].key_to_idx(span, my_key))
             }
 
             TypeInfo::Module { key, .. } => {
@@ -748,16 +782,20 @@ impl<'a> Resolver<'a> {
                             .map(|x| (*module, *field, x))
                     })
                     .collect::<Result<Vec<_>, Error>>()?;
-                Ok(Item::Module(
-                    self.modules[self.cur].key_to_idx(span, (imports, exports)),
-                ))
+                Item::Module(self.modules[self.cur].key_to_idx(span, (imports, exports)))
             }
 
-            TypeInfo::Other => Err(Error::new(
-                span,
-                format!("cannot copy reference types between modules right now"),
-            )),
-        }
+            TypeInfo::Other => {
+                return Err(Error::new(
+                    span,
+                    format!("cannot copy reference types between modules right now"),
+                ))
+            }
+        };
+        self.modules[self.cur]
+            .type_cache
+            .insert((child, *type_idx), item.clone());
+        Ok(item)
     }
 
     fn copy_reftype_from_module(
@@ -1927,10 +1965,13 @@ impl<'a, 'b> ExprResolver<'a, 'b> {
             Throw(i) => {
                 self.module.resolve(i, Ns::Event)?;
             }
-            BrOnExn(b) => {
-                self.resolve_label(&mut b.label)?;
-                self.module.resolve(&mut b.exn, Ns::Event)?;
+            Rethrow(i) => {
+                self.resolve_label(i)?;
             }
+            Catch(i) => {
+                self.module.resolve(i, Ns::Event)?;
+            }
+
             BrOnCast(b) => {
                 self.resolve_label(&mut b.label)?;
                 self.module.resolve_heaptype(&mut b.val)?;
@@ -2077,6 +2118,8 @@ impl<'a, 'b> ExprResolver<'a, 'b> {
             | V128Load16Splat(m)
             | V128Load32Splat(m)
             | V128Load64Splat(m)
+            | V128Load32Zero(m)
+            | V128Load64Zero(m)
             | V128Store(m)
             | MemoryAtomicNotify(m)
             | MemoryAtomicWait32(m)

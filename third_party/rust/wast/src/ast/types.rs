@@ -389,6 +389,8 @@ pub enum MemoryType {
     B64 {
         
         limits: Limits64,
+        
+        shared: bool,
     },
 }
 
@@ -397,7 +399,8 @@ impl<'a> Parse<'a> for MemoryType {
         if parser.peek::<kw::i64>() {
             parser.parse::<kw::i64>()?;
             let limits = parser.parse()?;
-            Ok(MemoryType::B64 { limits })
+            let shared = parser.parse::<Option<kw::shared>>()?.is_some();
+            Ok(MemoryType::B64 { limits, shared })
         } else {
             parser.parse::<Option<kw::i32>>()?;
             let limits = parser.parse()?;

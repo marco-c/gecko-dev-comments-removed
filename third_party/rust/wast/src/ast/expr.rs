@@ -85,6 +85,8 @@ enum Try<'a> {
     
     Do(Instruction<'a>),
     
+    CatchOrUnwind,
+    
     Catch,
     
     
@@ -195,8 +197,8 @@ impl<'a> ExpressionParser<'a> {
                     Level::Try(Try::Do(_)) => {
                         return Err(parser.error("previous `try` had no `do`"));
                     }
-                    Level::Try(Try::Catch) => {
-                        return Err(parser.error("previous `try` had no `catch`"));
+                    Level::Try(Try::CatchOrUnwind) => {
+                        return Err(parser.error("previous `try` had no `catch`, `catch_all`, or `unwind`"));
                     }
                     Level::Try(_) => {
                         self.instrs.push(Instruction::End(None));
@@ -328,7 +330,7 @@ impl<'a> ExpressionParser<'a> {
             if parser.parse::<Option<kw::r#do>>()?.is_some() {
                 
                 
-                *i = Try::Catch;
+                *i = Try::CatchOrUnwind;
                 self.stack.push(Level::TryArm);
                 return Ok(true);
             }
@@ -339,14 +341,47 @@ impl<'a> ExpressionParser<'a> {
         }
 
         
-        if let Try::Catch = i {
-            self.instrs.push(Instruction::Catch);
+        if let Try::CatchOrUnwind = i {
+            
             if parser.parse::<Option<kw::catch>>()?.is_some() {
+                let evt = parser.parse::<ast::Index<'a>>()?;
+                self.instrs.push(Instruction::Catch(evt));
+                *i = Try::Catch;
+                self.stack.push(Level::TryArm);
+                return Ok(true);
+            }
+            
+            if parser.parse::<Option<kw::catch_all>>()?.is_some() {
+                self.instrs.push(Instruction::CatchAll);
+                *i = Try::End;
+                self.stack.push(Level::TryArm);
+                return Ok(true);
+            }
+            
+            if parser.parse::<Option<kw::unwind>>()?.is_some() {
+                self.instrs.push(Instruction::Unwind);
                 *i = Try::End;
                 self.stack.push(Level::TryArm);
                 return Ok(true);
             }
             return Ok(false);
+        }
+
+        if let Try::Catch = i {
+            if parser.parse::<Option<kw::catch>>()?.is_some() {
+                let evt = parser.parse::<ast::Index<'a>>()?;
+                self.instrs.push(Instruction::Catch(evt));
+                *i = Try::Catch;
+                self.stack.push(Level::TryArm);
+                return Ok(true);
+            }
+            if parser.parse::<Option<kw::catch_all>>()?.is_some() {
+                self.instrs.push(Instruction::CatchAll);
+                *i = Try::End;
+                self.stack.push(Level::TryArm);
+                return Ok(true);
+            }
+            return Err(parser.error("unexpected items after `catch`"));
         }
 
         Err(parser.error("too many payloads inside of `(try)`"))
@@ -997,11 +1032,12 @@ instructions! {
         V128Load64Zero(MemArg<8>) : [0xfd, 0xfd] : "v128.load64_zero",
 
         // Exception handling proposal
+        CatchAll : [0x05] : "catch_all", // Reuses the else opcode.
         Try(BlockType<'a>) : [0x06] : "try",
-        Catch : [0x07] : "catch",
+        Catch(ast::Index<'a>) : [0x07] : "catch",
         Throw(ast::Index<'a>) : [0x08] : "throw",
-        Rethrow : [0x09] : "rethrow",
-        BrOnExn(BrOnExn<'a>) : [0x0a] : "br_on_exn",
+        Rethrow(ast::Index<'a>) : [0x09] : "rethrow",
+        Unwind : [0x0a] : "unwind",
     }
 }
 

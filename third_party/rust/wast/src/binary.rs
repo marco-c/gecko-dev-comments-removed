@@ -61,15 +61,6 @@ fn encode_fields(
 
     e.custom_sections(BeforeFirst);
 
-    
-    
-    
-    
-    
-    
-    
-    
-
     let mut items = fields
         .iter()
         .filter(|i| match i {
@@ -106,13 +97,13 @@ fn encode_fields(
             }
             list!(1, Type);
             list!(2, Import);
-            list!(100, NestedModule, Module, |m| match &m.kind {
+            list!(14, NestedModule, Module, |m| match &m.kind {
                 NestedModuleKind::Inline { ty, .. } =>
                     ty.as_ref().expect("type should be filled in"),
                 _ => panic!("only inline modules should be present now"),
             });
-            list!(101, Instance);
-            list!(102, Alias);
+            list!(15, Instance);
+            list!(16, Alias);
         }
     }
 
@@ -132,7 +123,7 @@ fn encode_fields(
     if contains_bulk_memory(&funcs) {
         e.section(12, &data.len());
     }
-    e.section_list(103, ModuleCode, &modules);
+    e.section_list(17, ModuleCode, &modules);
     e.section_list(10, Code, &funcs);
     e.section_list(11, Data, &data);
 
@@ -450,8 +441,8 @@ impl Encode for Import<'_> {
         match self.field {
             Some(s) => s.encode(e),
             None => {
-                e.push(0x01);
-                e.push(0xc0);
+                e.push(0x00);
+                e.push(0xff);
             }
         }
         self.item.encode(e);
@@ -547,8 +538,10 @@ impl Encode for MemoryType {
                     max.encode(e);
                 }
             }
-            MemoryType::B64 { limits } => {
-                let flags = (limits.max.is_some() as u8) | 0x04;
+            MemoryType::B64 { limits, shared } => {
+                let flag_max = limits.max.is_some() as u8;
+                let flag_shared = *shared as u8;
+                let flags = flag_max | (flag_shared << 1) | 0x04;
                 e.push(flags);
                 limits.min.encode(e);
                 if let Some(max) = limits.max {
@@ -649,6 +642,9 @@ impl Encode for ExportKind<'_> {
 
 impl Encode for Elem<'_> {
     fn encode(&self, e: &mut Vec<u8>) {
+        
+        
+        
         
         
         let mut to_encode = self.payload.clone();
@@ -769,8 +765,8 @@ impl Encode for Data<'_> {
             }
         }
         self.data.iter().map(|l| l.len()).sum::<usize>().encode(e);
-        for list in self.data.iter() {
-            e.extend_from_slice(list);
+        for val in self.data.iter() {
+            val.push_onto(e);
         }
     }
 }
