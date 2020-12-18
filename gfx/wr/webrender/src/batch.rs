@@ -1212,8 +1212,12 @@ impl BatchBuilder {
                     render_tasks,
                 ).unwrap();
 
+                
+                
+                
+                let font = run.used_font.clone();
                 ctx.resource_cache.fetch_glyphs(
-                    run.used_font.clone(),
+                    font,
                     &glyph_keys,
                     &mut self.glyph_fetch_buffer,
                     gpu_cache,
