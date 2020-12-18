@@ -69,6 +69,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "sslt.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsContentSecurityManager.h"
 #include "nsIClassOfService.h"
@@ -89,7 +90,6 @@
 #include "nsIStreamConverterService.h"
 #include "nsISiteSecurityService.h"
 #include "nsString.h"
-#include "nsCRT.h"
 #include "CacheObserver.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/Telemetry.h"
@@ -3114,84 +3114,81 @@ bool nsHttpChannel::ResponseWouldVary(nsICacheEntry* entry) {
   nsresult rv;
   nsAutoCString buf, metaKey;
   Unused << mCachedResponseHead->GetHeader(nsHttp::Vary, buf);
-  if (!buf.IsEmpty()) {
-    constexpr auto prefix = "request-"_ns;
+
+  constexpr auto prefix = "request-"_ns;
+
+  
+  for (const nsACString& token :
+       nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
+    LOG(
+        ("nsHttpChannel::ResponseWouldVary [channel=%p] "
+         "processing %s\n",
+         this, nsPromiseFlatCString(token).get()));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (token.EqualsLiteral("*")) {
+      return true;  
+    }
 
     
-    char* val = buf.BeginWriting();  
-    char* token = nsCRT::strtok(val, NS_HTTP_HEADER_SEPS, &val);
-    while (token) {
-      LOG(
-          ("nsHttpChannel::ResponseWouldVary [channel=%p] "
-           "processing %s\n",
-           this, token));
+    metaKey = prefix + token;
+
+    
+    
+    nsCString lastVal;
+    entry->GetMetaDataElement(metaKey.get(), getter_Copies(lastVal));
+    LOG(
+        ("nsHttpChannel::ResponseWouldVary [channel=%p] "
+         "stored value = \"%s\"\n",
+         this, lastVal.get()));
+
+    
+    nsHttpAtom atom = nsHttp::ResolveAtom(token);
+    nsAutoCString newVal;
+    bool hasHeader = NS_SUCCEEDED(mRequestHead.GetHeader(atom, newVal));
+    if (!lastVal.IsEmpty()) {
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (*token == '*')
+      if (!hasHeader) {
         return true;  
-
-      
-      metaKey = prefix + nsDependentCString(token);
-
-      
-      
-      nsCString lastVal;
-      entry->GetMetaDataElement(metaKey.get(), getter_Copies(lastVal));
-      LOG(
-          ("nsHttpChannel::ResponseWouldVary [channel=%p] "
-           "stored value = \"%s\"\n",
-           this, lastVal.get()));
-
-      
-      nsHttpAtom atom = nsHttp::ResolveAtom(token);
-      nsAutoCString newVal;
-      bool hasHeader = NS_SUCCEEDED(mRequestHead.GetHeader(atom, newVal));
-      if (!lastVal.IsEmpty()) {
-        
-        if (!hasHeader) {
-          return true;  
-        }
-
-        
-        
-        
-        nsAutoCString hash;
-        if (atom == nsHttp::Cookie) {
-          rv = Hash(newVal.get(), hash);
-          
-          
-          if (NS_FAILED(rv)) return true;
-          newVal = hash;
-
-          LOG(
-              ("nsHttpChannel::ResponseWouldVary [this=%p] "
-               "set-cookie value hashed to %s\n",
-               this, newVal.get()));
-        }
-
-        if (!newVal.Equals(lastVal)) {
-          return true;  
-        }
-
-      } else if (hasHeader) {  
-        return true;
       }
 
       
-      token = nsCRT::strtok(val, NS_HTTP_HEADER_SEPS, &val);
+      
+      
+      nsAutoCString hash;
+      if (atom == nsHttp::Cookie) {
+        rv = Hash(newVal.get(), hash);
+        
+        
+        if (NS_FAILED(rv)) return true;
+        newVal = hash;
+
+        LOG(
+            ("nsHttpChannel::ResponseWouldVary [this=%p] "
+             "set-cookie value hashed to %s\n",
+             this, newVal.get()));
+      }
+
+      if (!newVal.Equals(lastVal)) {
+        return true;  
+      }
+
+    } else if (hasHeader) {  
+      return true;
     }
   }
+
   return false;
 }
 
@@ -5366,52 +5363,49 @@ nsresult DoAddCacheEntryHeaders(nsHttpChannel* self, nsICacheEntry* entry,
   {
     nsAutoCString buf, metaKey;
     Unused << responseHead->GetHeader(nsHttp::Vary, buf);
-    if (!buf.IsEmpty()) {
-      constexpr auto prefix = "request-"_ns;
 
-      char* bufData = buf.BeginWriting();  
-      char* token = nsCRT::strtok(bufData, NS_HTTP_HEADER_SEPS, &bufData);
-      while (token) {
-        LOG(
-            ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
-             "processing %s",
-             self, token));
-        if (*token != '*') {
-          nsHttpAtom atom = nsHttp::ResolveAtom(token);
-          nsAutoCString val;
-          nsAutoCString hash;
-          if (NS_SUCCEEDED(requestHead->GetHeader(atom, val))) {
-            
-            if (atom == nsHttp::Cookie) {
-              LOG(
-                  ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
-                   "cookie-value %s",
-                   self, val.get()));
-              rv = Hash(val.get(), hash);
-              
-              
-              if (NS_FAILED(rv)) {
-                val = "<hash failed>"_ns;
-              } else {
-                val = hash;
-              }
+    constexpr auto prefix = "request-"_ns;
 
-              LOG(("   hashed to %s\n", val.get()));
-            }
-
-            
-            metaKey = prefix + nsDependentCString(token);
-            entry->SetMetaDataElement(metaKey.get(), val.get());
-          } else {
+    for (const nsACString& token :
+         nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
+      LOG(
+          ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
+           "processing %s",
+           self, nsPromiseFlatCString(token).get()));
+      if (!token.EqualsLiteral("*")) {
+        nsHttpAtom atom = nsHttp::ResolveAtom(token);
+        nsAutoCString val;
+        nsAutoCString hash;
+        if (NS_SUCCEEDED(requestHead->GetHeader(atom, val))) {
+          
+          if (atom == nsHttp::Cookie) {
             LOG(
                 ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
-                 "clearing metadata for %s",
-                 self, token));
-            metaKey = prefix + nsDependentCString(token);
-            entry->SetMetaDataElement(metaKey.get(), nullptr);
+                 "cookie-value %s",
+                 self, val.get()));
+            rv = Hash(val.get(), hash);
+            
+            
+            if (NS_FAILED(rv)) {
+              val = "<hash failed>"_ns;
+            } else {
+              val = hash;
+            }
+
+            LOG(("   hashed to %s\n", val.get()));
           }
+
+          
+          metaKey = prefix + token;
+          entry->SetMetaDataElement(metaKey.get(), val.get());
+        } else {
+          LOG(
+              ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
+               "clearing metadata for %s",
+               self, nsPromiseFlatCString(token).get()));
+          metaKey = prefix + token;
+          entry->SetMetaDataElement(metaKey.get(), nullptr);
         }
-        token = nsCRT::strtok(bufData, NS_HTTP_HEADER_SEPS, &bufData);
       }
     }
   }
