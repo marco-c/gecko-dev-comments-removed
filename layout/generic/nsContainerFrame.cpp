@@ -2225,19 +2225,19 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
     ChildFrameMerger aMergeFunc) {
   nsFrameList* overflowContainers = GetOverflowContainers();
 
-  NS_ASSERTION(!(overflowContainers && GetPrevInFlow() &&
-                 static_cast<nsContainerFrame*>(GetPrevInFlow())
-                     ->GetExcessOverflowContainers()),
-               "conflicting overflow containers lists");
-
-  if (!overflowContainers) {
-    
-    if (auto* prev = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
-      AutoFrameListPtr excessFrames(PresContext(),
-                                    prev->StealExcessOverflowContainers());
-      if (excessFrames) {
-        excessFrames->ApplySetParent(this);
-        nsContainerFrame::ReparentFrameViewList(*excessFrames, prev, this);
+  
+  if (auto* prev = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
+    AutoFrameListPtr excessFrames(PresContext(),
+                                  prev->StealExcessOverflowContainers());
+    if (excessFrames) {
+      excessFrames->ApplySetParent(this);
+      nsContainerFrame::ReparentFrameViewList(*excessFrames, prev, this);
+      if (overflowContainers) {
+        
+        
+        aMergeFunc(*excessFrames, *overflowContainers, this);
+        *overflowContainers = std::move(*excessFrames);
+      } else {
         overflowContainers = SetOverflowContainers(std::move(*excessFrames));
       }
     }
