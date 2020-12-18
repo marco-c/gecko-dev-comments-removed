@@ -3886,9 +3886,6 @@ pref("extensions.webextensions.restrictedDomains", "accounts-static.cdn.mozilla.
 pref("extensions.webextensions.protocol.remote", true);
 
 
-pref("extensions.webextensions.tabhide.enabled", true);
-
-
 pref("extensions.webextensions.userScripts.enabled", true);
 
 pref("extensions.webextensions.background-delayed-startup", false);
