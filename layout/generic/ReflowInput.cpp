@@ -263,7 +263,7 @@ bool ReflowInput::ShouldReflowAllKids() const {
           mFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE));
 }
 
-void ReflowInput::SetComputedWidth(nscoord aComputedWidth) {
+void ReflowInput::SetComputedISize(nscoord aComputedISize) {
   NS_ASSERTION(mFrame, "Must have a frame!");
   
   
@@ -278,18 +278,17 @@ void ReflowInput::SetComputedWidth(nscoord aComputedWidth) {
   
   
 
-  MOZ_ASSERT(aComputedWidth >= 0, "Invalid computed width");
-  if (ComputedWidth() != aComputedWidth) {
-    ComputedWidth() = aComputedWidth;
-    LayoutFrameType frameType = mFrame->Type();
-    if (frameType != LayoutFrameType::Viewport ||  
-        mWritingMode.IsVertical()) {
+  MOZ_ASSERT(aComputedISize >= 0, "Invalid computed inline-size!");
+  if (ComputedISize() != aComputedISize) {
+    ComputedISize() = aComputedISize;
+    const LayoutFrameType frameType = mFrame->Type();
+    if (frameType != LayoutFrameType::Viewport) {
       InitResizeFlags(mFrame->PresContext(), frameType);
     }
   }
 }
 
-void ReflowInput::SetComputedHeight(nscoord aComputedHeight) {
+void ReflowInput::SetComputedBSize(nscoord aComputedBSize) {
   NS_ASSERTION(mFrame, "Must have a frame!");
   
   
@@ -300,13 +299,10 @@ void ReflowInput::SetComputedHeight(nscoord aComputedHeight) {
   
   
 
-  MOZ_ASSERT(aComputedHeight >= 0, "Invalid computed height");
-  if (ComputedHeight() != aComputedHeight) {
-    ComputedHeight() = aComputedHeight;
-    LayoutFrameType frameType = mFrame->Type();
-    if (frameType != LayoutFrameType::Viewport || !mWritingMode.IsVertical()) {
-      InitResizeFlags(mFrame->PresContext(), frameType);
-    }
+  MOZ_ASSERT(aComputedBSize >= 0, "Invalid computed block-size!");
+  if (ComputedBSize() != aComputedBSize) {
+    ComputedBSize() = aComputedBSize;
+    InitResizeFlags(mFrame->PresContext(), mFrame->Type());
   }
 }
 
