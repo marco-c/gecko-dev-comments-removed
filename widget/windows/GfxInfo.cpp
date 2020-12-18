@@ -1206,6 +1206,9 @@ static bool OnlyAllowFeatureOnWhitelistedVendor(int32_t aFeature) {
     case nsIGfxInfo::FEATURE_GPU_PROCESS:
     
     case nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE:
+    
+    
+    case nsIGfxInfo::FEATURE_WEBRENDER_SOFTWARE:
       return false;
     default:
       return true;
