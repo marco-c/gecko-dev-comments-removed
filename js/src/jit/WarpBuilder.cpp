@@ -2172,24 +2172,29 @@ bool WarpBuilder::build_CheckResumeKind(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::build_CanSkipAwait(BytecodeLocation loc) {
-  
-  
-  current->peek(-1)->setImplicitlyUsedUnchecked();
+  MDefinition* val = current->pop();
 
-  
-  
-  pushConstant(BooleanValue(false));
-  return true;
+  MCanSkipAwait* canSkip = MCanSkipAwait::New(alloc(), val);
+  current->add(canSkip);
+
+  current->push(val);
+  current->push(canSkip);
+
+  return resumeAfter(canSkip, loc);
 }
 
 bool WarpBuilder::build_MaybeExtractAwaitValue(BytecodeLocation loc) {
-  
-  
-  current->peek(-1)->setImplicitlyUsedUnchecked();
-  current->peek(-2)->setImplicitlyUsedUnchecked();
+  MDefinition* canSkip = current->pop();
+  MDefinition* value = current->pop();
 
-  
-  return true;
+  MMaybeExtractAwaitValue* extracted =
+      MMaybeExtractAwaitValue::New(alloc(), value, canSkip);
+  current->add(extracted);
+
+  current->push(extracted);
+  current->push(canSkip);
+
+  return resumeAfter(extracted, loc);
 }
 
 bool WarpBuilder::build_Await(BytecodeLocation loc) {
