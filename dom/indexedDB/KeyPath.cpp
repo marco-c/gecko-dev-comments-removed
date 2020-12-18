@@ -26,9 +26,8 @@ namespace mozilla::dom::indexedDB {
 
 namespace {
 
-inline bool IgnoreWhitespace(char16_t c) { return false; }
-
-typedef nsCharSeparatedTokenizerTemplate<IgnoreWhitespace> KeyPathTokenizer;
+using KeyPathTokenizer =
+    nsCharSeparatedTokenizerTemplate<NS_TokenizerIgnoreNothing>;
 
 bool IsValidKeyPathString(const nsAString& aKeyPath) {
   NS_ASSERTION(!aKeyPath.IsVoid(), "What?");
@@ -463,7 +462,8 @@ KeyPath KeyPath::DeserializeFromString(const nsAString& aString) {
     
     
     
-    nsCharSeparatedTokenizerTemplate<IgnoreWhitespace> tokenizer(aString, ',');
+    nsCharSeparatedTokenizerTemplate<NS_TokenizerIgnoreNothing> tokenizer(
+        aString, ',');
     tokenizer.nextToken();
     while (tokenizer.hasMoreTokens()) {
       keyPath.mStrings.AppendElement(tokenizer.nextToken());
