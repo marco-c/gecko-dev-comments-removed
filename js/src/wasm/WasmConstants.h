@@ -887,6 +887,10 @@ enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 
 
 static const unsigned PageSize = 64 * 1024;
+static const unsigned PageBits = 16;
+static_assert(PageSize == (1u << PageBits));
+
+static const unsigned PageMask = ((1u << PageBits) - 1);
 
 
 

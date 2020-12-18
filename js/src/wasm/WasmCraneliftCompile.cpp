@@ -387,7 +387,13 @@ static size_t globalToTlsOffset(size_t globalOffset) {
 
 CraneliftModuleEnvironment::CraneliftModuleEnvironment(
     const ModuleEnvironment& env)
-    : env(&env), min_memory_length(env.minMemoryLength) {}
+    : env(&env) {
+  
+  static_assert(sizeof(env.minMemoryLength) == 8);
+  MOZ_RELEASE_ASSERT(env.minMemoryLength <= (((uint64_t)1) << 32));
+  MOZ_RELEASE_ASSERT((env.minMemoryLength & wasm::PageMask) == 0);
+  min_memory_length = (uint32_t)(env.minMemoryLength >> wasm::PageBits);
+}
 
 TypeCode env_unpack(BD_ValType valType) {
   return UnpackTypeCodeType(PackedTypeCode(valType.packed));
@@ -406,7 +412,18 @@ TypeCode env_elem_typecode(const CraneliftModuleEnvironment* env,
 }
 
 uint32_t env_max_memory(const CraneliftModuleEnvironment* env) {
-  return env->env->maxMemoryLength.valueOr(UINT32_MAX);
+  
+  if (env->env->maxMemoryLength.isSome()) {
+    
+    
+    auto inBytes = *(env->env->maxMemoryLength);
+    static_assert(sizeof(inBytes) == 8);
+    MOZ_RELEASE_ASSERT(inBytes <= (((uint64_t)1) << 32));
+    MOZ_RELEASE_ASSERT((inBytes & wasm::PageMask) == 0);
+    return (uint32_t)(inBytes >> wasm::PageBits);
+  } else {
+    return UINT32_MAX;
+  }
 }
 
 bool env_uses_shared_memory(const CraneliftModuleEnvironment* env) {
