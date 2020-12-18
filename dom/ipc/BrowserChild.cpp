@@ -3623,13 +3623,6 @@ NS_IMETHODIMP BrowserChild::OnStateChange(nsIWebProgress* aWebProgress,
       stateChangeData->contentType().SetIsVoid(true);
       stateChangeData->charset().SetIsVoid(true);
     }
-
-    if (NS_FAILED(aStatus) && mRenderLayers && mPuppetWidget &&
-        mPuppetWidget->HasLayerManager()) {
-      
-      
-      ClearCachedResources();
-    }
   }
 
   Unused << SendOnStateChange(webProgressData, requestData, aStateFlags,
