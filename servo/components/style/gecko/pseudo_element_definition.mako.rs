@@ -6,37 +6,37 @@
 #[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
 pub enum PseudoElement {
     % for pseudo in PSEUDOS:
-        /// ${pseudo.value}
+        
         % if pseudo.is_tree_pseudo_element():
         ${pseudo.capitalized_pseudo()}(ThinBoxedSlice<Atom>),
         % else:
         ${pseudo.capitalized_pseudo()},
         % endif
     % endfor
-    /// ::-webkit-* that we don't recognize
-    /// https://github.com/whatwg/compat/issues/103
+    
+    
     UnknownWebkit(Atom),
 }
 
-/// Important: If you change this, you should also update Gecko's
-/// nsCSSPseudoElements::IsEagerlyCascadedInServo.
+
+
 <% EAGER_PSEUDOS = ["Before", "After", "FirstLine", "FirstLetter"] %>
 <% TREE_PSEUDOS = [pseudo for pseudo in PSEUDOS if pseudo.is_tree_pseudo_element()] %>
 <% SIMPLE_PSEUDOS = [pseudo for pseudo in PSEUDOS if not pseudo.is_tree_pseudo_element()] %>
 
-/// The number of eager pseudo-elements.
+
 pub const EAGER_PSEUDO_COUNT: usize = ${len(EAGER_PSEUDOS)};
 
-/// The number of non-functional pseudo-elements.
+
 pub const SIMPLE_PSEUDO_COUNT: usize = ${len(SIMPLE_PSEUDOS)};
 
-/// The number of tree pseudo-elements.
+
 pub const TREE_PSEUDO_COUNT: usize = ${len(TREE_PSEUDOS)};
 
-/// The number of all pseudo-elements.
+
 pub const PSEUDO_COUNT: usize = ${len(PSEUDOS)};
 
-/// The list of eager pseudos.
+
 pub const EAGER_PSEUDOS: [PseudoElement; EAGER_PSEUDO_COUNT] = [
     % for eager_pseudo_name in EAGER_PSEUDOS:
     PseudoElement::${eager_pseudo_name},
@@ -48,7 +48,7 @@ PseudoElement::${pseudo.capitalized_pseudo()}${"({})".format(tree_arg) if pseudo
 </%def>
 
 impl PseudoElement {
-    /// Returns an index of the pseudo-element.
+    
     #[inline]
     pub fn index(&self) -> usize {
         match *self {
@@ -59,16 +59,16 @@ impl PseudoElement {
         }
     }
 
-    /// Returns an array of `None` values.
-    ///
-    /// FIXME(emilio): Integer generics can't come soon enough.
+    
+    
+    
     pub fn pseudo_none_array<T>() -> [Option<T>; PSEUDO_COUNT] {
         [
             ${",\n            ".join(["None" for pseudo in PSEUDOS])}
         ]
     }
 
-    /// Whether this pseudo-element is an anonymous box.
+    
     #[inline]
     pub fn is_anon_box(&self) -> bool {
         match *self {
@@ -81,14 +81,14 @@ impl PseudoElement {
         }
     }
 
-    /// Whether this pseudo-element is eagerly-cascaded.
+    
     #[inline]
     pub fn is_eager(&self) -> bool {
         matches!(*self,
                  ${" | ".join(map(lambda name: "PseudoElement::{}".format(name), EAGER_PSEUDOS))})
     }
 
-    /// Whether this pseudo-element is tree pseudo-element.
+    
     #[inline]
     pub fn is_tree_pseudo_element(&self) -> bool {
         match *self {
@@ -99,24 +99,20 @@ impl PseudoElement {
         }
     }
 
-    /// Whether this pseudo-element is an unknown Webkit-prefixed pseudo-element.
+    
     #[inline]
     pub fn is_unknown_webkit_pseudo_element(&self) -> bool {
         matches!(*self, PseudoElement::UnknownWebkit(..))
     }
 
-    /// Gets the flags associated to this pseudo-element, or 0 if it's an
-    /// anonymous box.
+    
+    
     pub fn flags(&self) -> u32 {
         match *self {
             % for pseudo in PSEUDOS:
                 ${pseudo_element_variant(pseudo)} =>
                 % if pseudo.is_tree_pseudo_element():
-                    if static_prefs::pref!("layout.css.xul-tree-pseudos.content.enabled") {
-                        0
-                    } else {
-                        structs::CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME
-                    },
+                    structs::CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME,
                 % elif pseudo.is_anon_box():
                     structs::CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS,
                 % else:
@@ -127,7 +123,7 @@ impl PseudoElement {
         }
     }
 
-    /// Construct a pseudo-element from a `PseudoStyleType`.
+    
     #[inline]
     pub fn from_pseudo_type(type_: PseudoStyleType) -> Option<Self> {
         match type_ {
@@ -142,7 +138,7 @@ impl PseudoElement {
         }
     }
 
-    /// Construct a `PseudoStyleType` from a pseudo-element
+    
     #[inline]
     pub fn pseudo_type(&self) -> PseudoStyleType {
         match *self {
@@ -157,7 +153,7 @@ impl PseudoElement {
         }
     }
 
-    /// Get the argument list of a tree pseudo-element.
+    
     #[inline]
     pub fn tree_pseudo_args(&self) -> Option<<&[Atom]> {
         match *self {
@@ -168,7 +164,7 @@ impl PseudoElement {
         }
     }
 
-    /// Construct a tree pseudo-element from atom and args.
+    
     #[inline]
     pub fn from_tree_pseudo_atom(atom: &Atom, args: Box<[Atom]>) -> Option<Self> {
         % for pseudo in PSEUDOS:
@@ -181,14 +177,14 @@ impl PseudoElement {
         None
     }
 
-    /// Constructs a pseudo-element from a string of text.
-    ///
-    /// Returns `None` if the pseudo-element is not recognised.
+    
+    
+    
     #[inline]
     pub fn from_slice(name: &str) -> Option<Self> {
-        // We don't need to support tree pseudos because functional
-        // pseudo-elements needs arguments, and thus should be created
-        // via other methods.
+        
+        
+        
         match_ignore_ascii_case! { name,
             % for pseudo in SIMPLE_PSEUDOS:
             "${pseudo.value[1:]}" => {
@@ -222,10 +218,10 @@ impl PseudoElement {
         None
     }
 
-    /// Constructs a tree pseudo-element from the given name and arguments.
-    /// "name" must start with "-moz-tree-".
-    ///
-    /// Returns `None` if the pseudo-element is not recognized.
+    
+    
+    
+    
     #[inline]
     pub fn tree_pseudo_element(name: &str, args: Box<[Atom]>) -> Option<Self> {
         debug_assert!(starts_with_ignore_ascii_case(name, "-moz-tree-"));
