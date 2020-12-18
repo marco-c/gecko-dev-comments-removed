@@ -112,37 +112,37 @@ class GamepadPlatformService final {
                           const GamepadTouchState& aState);
 
   
-  static void AddChannelParent(
-      const RefPtr<GamepadEventChannelParent>& aParent);
+  
+  void ResetGamepadIndexes();
 
   
-  static void RemoveChannelParent(GamepadEventChannelParent* aParent);
+  void AddChannelParent(GamepadEventChannelParent* aParent);
+
+  
+  void RemoveChannelParent(GamepadEventChannelParent* aParent);
+
+  void MaybeShutdown();
 
  private:
-  explicit GamepadPlatformService(RefPtr<GamepadEventChannelParent> aParent);
+  GamepadPlatformService();
   ~GamepadPlatformService();
-
-  void AddChannelParentInternal(
-      const RefPtr<GamepadEventChannelParent>& aParent);
-  bool RemoveChannelParentInternal(GamepadEventChannelParent* aParent);
-
   template <class T>
-  void NotifyGamepadChange(GamepadHandle aHandle, const T& aInfo,
-                           const MutexAutoLock& aProofOfLock);
+  void NotifyGamepadChange(GamepadHandle aHandle, const T& aInfo);
+
+  void Cleanup();
 
   
   uint32_t mNextGamepadHandleValue;
 
   
   
-  Mutex mMutex;
+  
+  nsTArray<RefPtr<GamepadEventChannelParent>> mChannelParents;
 
   
   
-  
-  
-  
-  nsTArray<RefPtr<GamepadEventChannelParent>> mChannelParents;
+  Mutex mMutex;
+
   std::map<GamepadHandle, GamepadAdded> mGamepadAdded;
 };
 

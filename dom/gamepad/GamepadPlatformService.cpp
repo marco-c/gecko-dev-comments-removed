@@ -11,7 +11,6 @@
 #include "mozilla/dom/GamepadTestChannelParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/Unused.h"
 
 #include "nsCOMPtr.h"
@@ -25,8 +24,7 @@ namespace {
 
 
 
-static StaticMutex gGamepadPlatformServiceSingletonMutex;
-static StaticRefPtr<GamepadPlatformService> gGamepadPlatformServiceSingleton;
+StaticRefPtr<GamepadPlatformService> gGamepadPlatformServiceSingleton;
 
 }  
 
@@ -81,53 +79,43 @@ void GamepadMonitoringState::Set(bool aIsMonitoring) {
   }
 }
 
-
-
-
-
-GamepadPlatformService::GamepadPlatformService(
-    RefPtr<GamepadEventChannelParent> aParent)
+GamepadPlatformService::GamepadPlatformService()
     : mNextGamepadHandleValue(1),
-      mMutex("mozilla::dom::GamepadPlatformService") {
-  AssertIsOnBackgroundThread();
-  mChannelParents.AppendElement(std::move(aParent));
-  MOZ_ASSERT(mChannelParents.Length() == 1);
-}
+      mMutex("mozilla::dom::GamepadPlatformService") {}
 
-GamepadPlatformService::~GamepadPlatformService() {
-  AssertIsOnBackgroundThread();
-  MOZ_ASSERT(mChannelParents.Length() == 1);
-}
+GamepadPlatformService::~GamepadPlatformService() { Cleanup(); }
 
 
 already_AddRefed<GamepadPlatformService>
 GamepadPlatformService::GetParentService() {
   
   MOZ_ASSERT(XRE_IsParentProcess());
-
-  
-  StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
-
-  
   if (!gGamepadPlatformServiceSingleton) {
-    return nullptr;
+    
+    if (IsOnBackgroundThread()) {
+      gGamepadPlatformServiceSingleton = new GamepadPlatformService();
+    } else {
+      return nullptr;
+    }
   }
-
-  return RefPtr<GamepadPlatformService>(gGamepadPlatformServiceSingleton)
-      .forget();
+  RefPtr<GamepadPlatformService> service(gGamepadPlatformServiceSingleton);
+  return service.forget();
 }
 
 template <class T>
-void GamepadPlatformService::NotifyGamepadChange(
-    GamepadHandle aHandle, const T& aInfo, const MutexAutoLock& aProofOfLock) {
+void GamepadPlatformService::NotifyGamepadChange(GamepadHandle aHandle,
+                                                 const T& aInfo) {
   
   
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
-  aProofOfLock.AssertOwns(mMutex);
 
   GamepadChangeEventBody body(aInfo);
   GamepadChangeEvent e(aHandle, body);
+
+  
+  
+  MutexAutoLock autoLock(mMutex);
 
   for (uint32_t i = 0; i < mChannelParents.Length(); ++i) {
     mChannelParents[i]->DispatchUpdateEvent(e);
@@ -136,7 +124,7 @@ void GamepadPlatformService::NotifyGamepadChange(
 
 GamepadHandle GamepadPlatformService::AddGamepad(
     const char* aID, GamepadMappingType aMapping, GamepadHand aHand,
-    uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics,
+    uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aHaptics,
     uint32_t aNumLightIndicator, uint32_t aNumTouchEvents) {
   
   
@@ -148,13 +136,11 @@ GamepadHandle GamepadPlatformService::AddGamepad(
 
   
   GamepadAdded a(NS_ConvertUTF8toUTF16(nsDependentCString(aID)), aMapping,
-                 aHand, 0, aNumButtons, aNumAxes, aNumHaptics,
-                 aNumLightIndicator, aNumTouchEvents);
+                 aHand, 0, aNumButtons, aNumAxes, aHaptics, aNumLightIndicator,
+                 aNumTouchEvents);
 
-  MutexAutoLock autoLock(mMutex);
   mGamepadAdded.emplace(gamepadHandle, a);
-  NotifyGamepadChange<GamepadAdded>(gamepadHandle, a, autoLock);
-
+  NotifyGamepadChange<GamepadAdded>(gamepadHandle, a);
   return gamepadHandle;
 }
 
@@ -164,9 +150,7 @@ void GamepadPlatformService::RemoveGamepad(GamepadHandle aHandle) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
   GamepadRemoved a;
-
-  MutexAutoLock autoLock(mMutex);
-  NotifyGamepadChange<GamepadRemoved>(aHandle, a, autoLock);
+  NotifyGamepadChange<GamepadRemoved>(aHandle, a);
   mGamepadAdded.erase(aHandle);
 }
 
@@ -178,9 +162,7 @@ void GamepadPlatformService::NewButtonEvent(GamepadHandle aHandle,
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
   GamepadButtonInformation a(aButton, aValue, aPressed, aTouched);
-
-  MutexAutoLock autoLock(mMutex);
-  NotifyGamepadChange<GamepadButtonInformation>(aHandle, a, autoLock);
+  NotifyGamepadChange<GamepadButtonInformation>(aHandle, a);
 }
 
 void GamepadPlatformService::NewButtonEvent(GamepadHandle aHandle,
@@ -222,9 +204,7 @@ void GamepadPlatformService::NewAxisMoveEvent(GamepadHandle aHandle,
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
   GamepadAxisInformation a(aAxis, aValue);
-
-  MutexAutoLock autoLock(mMutex);
-  NotifyGamepadChange<GamepadAxisInformation>(aHandle, a, autoLock);
+  NotifyGamepadChange<GamepadAxisInformation>(aHandle, a);
 }
 
 void GamepadPlatformService::NewLightIndicatorTypeEvent(
@@ -234,10 +214,7 @@ void GamepadPlatformService::NewLightIndicatorTypeEvent(
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
   GamepadLightIndicatorTypeInformation a(aLight, aType);
-
-  MutexAutoLock autoLock(mMutex);
-  NotifyGamepadChange<GamepadLightIndicatorTypeInformation>(aHandle, a,
-                                                            autoLock);
+  NotifyGamepadChange<GamepadLightIndicatorTypeInformation>(aHandle, a);
 }
 
 void GamepadPlatformService::NewPoseEvent(GamepadHandle aHandle,
@@ -247,9 +224,7 @@ void GamepadPlatformService::NewPoseEvent(GamepadHandle aHandle,
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
   GamepadPoseInformation a(aState);
-
-  MutexAutoLock autoLock(mMutex);
-  NotifyGamepadChange<GamepadPoseInformation>(aHandle, a, autoLock);
+  NotifyGamepadChange<GamepadPoseInformation>(aHandle, a);
 }
 
 void GamepadPlatformService::NewMultiTouchEvent(
@@ -261,66 +236,45 @@ void GamepadPlatformService::NewMultiTouchEvent(
   MOZ_ASSERT(!NS_IsMainThread());
 
   GamepadTouchInformation a(aTouchArrayIndex, aState);
-
-  MutexAutoLock autoLock(mMutex);
-  NotifyGamepadChange<GamepadTouchInformation>(aHandle, a, autoLock);
+  NotifyGamepadChange<GamepadTouchInformation>(aHandle, a);
 }
 
-void GamepadPlatformService::AddChannelParentInternal(
-    const RefPtr<GamepadEventChannelParent>& aParent) {
-  MutexAutoLock autoLock(mMutex);
-
-  MOZ_RELEASE_ASSERT(!mChannelParents.Contains(aParent));
-  mChannelParents.AppendElement(aParent);
-
+void GamepadPlatformService::ResetGamepadIndexes() {
   
-  for (const auto& evt : mGamepadAdded) {
-    GamepadChangeEventBody body(evt.second);
-    GamepadChangeEvent e(evt.first, body);
-    aParent->DispatchUpdateEvent(e);
-  }
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(!NS_IsMainThread());
+  mNextGamepadHandleValue = 1;
 }
-
-bool GamepadPlatformService::RemoveChannelParentInternal(
-    GamepadEventChannelParent* aParent) {
-  MutexAutoLock autoLock(mMutex);
-
-  MOZ_RELEASE_ASSERT(mChannelParents.Contains(aParent));
-
-  
-  
-  if (mChannelParents.Length() == 1) {
-    return false;
-  }
-
-  mChannelParents.RemoveElement(aParent);
-  return true;
-}
-
 
 void GamepadPlatformService::AddChannelParent(
-    const RefPtr<GamepadEventChannelParent>& aParent) {
+    GamepadEventChannelParent* aParent) {
   
   
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aParent);
+  MOZ_ASSERT(!mChannelParents.Contains(aParent));
 
+  
   {
-    StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
+    MutexAutoLock autoLock(mMutex);
+    mChannelParents.AppendElement(aParent);
 
-    if (gGamepadPlatformServiceSingleton) {
-      gGamepadPlatformServiceSingleton->AddChannelParentInternal(aParent);
-      return;
+    
+    
+    if (mChannelParents.Length() > 1) {
+      for (const auto& evt : mGamepadAdded) {
+        GamepadChangeEventBody body(evt.second);
+        GamepadChangeEvent e(evt.first, body);
+        aParent->DispatchUpdateEvent(e);
+      }
     }
-
-    gGamepadPlatformServiceSingleton =
-        RefPtr<GamepadPlatformService>(new GamepadPlatformService{aParent});
   }
 
   StartGamepadMonitoring();
+
   GamepadMonitoringState::GetSingleton().Set(true);
 }
-
 
 void GamepadPlatformService::RemoveChannelParent(
     GamepadEventChannelParent* aParent) {
@@ -328,33 +282,55 @@ void GamepadPlatformService::RemoveChannelParent(
   
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aParent);
+  MOZ_ASSERT(mChannelParents.Contains(aParent));
 
+  
   {
-    StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
-
-    MOZ_RELEASE_ASSERT(gGamepadPlatformServiceSingleton);
-
-    
-    
-    if (gGamepadPlatformServiceSingleton->RemoveChannelParentInternal(
-            aParent)) {
+    MutexAutoLock autoLock(mMutex);
+    mChannelParents.RemoveElement(aParent);
+    if (!mChannelParents.IsEmpty()) {
       return;
     }
   }
 
   GamepadMonitoringState::GetSingleton().Set(false);
+
   StopGamepadMonitoring();
+  ResetGamepadIndexes();
+  MaybeShutdown();
+}
 
-  StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
+void GamepadPlatformService::MaybeShutdown() {
+  
+  
+  AssertIsOnBackgroundThread();
 
   
-  MOZ_RELEASE_ASSERT(
-      gGamepadPlatformServiceSingleton->mChannelParents.Length() == 1);
-
   
-  MOZ_RELEASE_ASSERT(gGamepadPlatformServiceSingleton->mRefCnt.get() == 1);
+  
+  
+  
+  RefPtr<GamepadPlatformService> kungFuDeathGrip;
 
-  gGamepadPlatformServiceSingleton = nullptr;
+  bool isChannelParentEmpty;
+  {
+    MutexAutoLock autoLock(mMutex);
+    isChannelParentEmpty = mChannelParents.IsEmpty();
+    if (isChannelParentEmpty) {
+      kungFuDeathGrip = gGamepadPlatformServiceSingleton;
+      gGamepadPlatformServiceSingleton = nullptr;
+      mGamepadAdded.clear();
+    }
+  }
+}
+
+void GamepadPlatformService::Cleanup() {
+  
+  
+  AssertIsOnBackgroundThread();
+
+  MutexAutoLock autoLock(mMutex);
+  mChannelParents.Clear();
 }
 
 }  
