@@ -5123,6 +5123,9 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
     return;
   }
 
+  
+  
+  
   RefPtr<BrowsingContext> parent;
   BrowsingContext* bc = GetBrowsingContext();
   if (bc) {
@@ -5145,10 +5148,13 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
       }
       return;
     }
-    if (!bc->IsCached()) {
-      if (Element* frame = bc->GetEmbedderElement()) {
-        nsContentUtils::RequestFrameFocus(*frame, canFocus, aCallerType);
-      }
+    nsCOMPtr<Document> parentdoc = parent->GetDocument();
+    if (!parentdoc) {
+      return;
+    }
+
+    if (Element* frame = parentdoc->FindContentForSubDocument(mDoc)) {
+      nsContentUtils::RequestFrameFocus(*frame, canFocus, aCallerType);
     }
     return;
   }

@@ -821,16 +821,12 @@ bool nsComputedDOMStyle::NeedsToFlushStyle(nsCSSPropertyID aPropID) const {
   
   
   while (doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout()) {
-    if (BrowsingContext* bc = doc->GetBrowsingContext()) {
-      if (Element* element = bc->GetEmbedderElement()) {
-        MOZ_ASSERT(!bc->IsCached());
-        if (ElementNeedsRestyle(element, nullptr, mayNeedToFlushLayout)) {
-          return true;
-        }
-      }
+    Document* parentDocument = doc->GetInProcessParentDocument();
+    Element* element = parentDocument->FindContentForSubDocument(doc);
+    if (ElementNeedsRestyle(element, nullptr, mayNeedToFlushLayout)) {
+      return true;
     }
-
-    doc = doc->GetInProcessParentDocument();
+    doc = parentDocument;
   }
 
   return false;
