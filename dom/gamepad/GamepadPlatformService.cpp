@@ -11,6 +11,7 @@
 #include "mozilla/dom/GamepadTestChannelParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/Unused.h"
 
 #include "nsCOMPtr.h"
@@ -24,6 +25,7 @@ namespace {
 
 
 
+static StaticMutex gGamepadPlatformServiceSingletonMutex;
 static StaticRefPtr<GamepadPlatformService> gGamepadPlatformServiceSingleton;
 
 }  
@@ -103,9 +105,13 @@ GamepadPlatformService::GetParentService() {
   
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  MOZ_RELEASE_ASSERT(
-      gGamepadPlatformServiceSingleton,
-      "Impossible for monitor thread to be running with no platform service");
+  
+  StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
+
+  
+  if (!gGamepadPlatformServiceSingleton) {
+    return nullptr;
+  }
 
   return RefPtr<GamepadPlatformService>(gGamepadPlatformServiceSingleton)
       .forget();
@@ -299,13 +305,17 @@ void GamepadPlatformService::AddChannelParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aParent);
 
-  if (gGamepadPlatformServiceSingleton) {
-    gGamepadPlatformServiceSingleton->AddChannelParentInternal(aParent);
-    return;
-  }
+  {
+    StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
 
-  gGamepadPlatformServiceSingleton =
-      RefPtr<GamepadPlatformService>(new GamepadPlatformService{aParent});
+    if (gGamepadPlatformServiceSingleton) {
+      gGamepadPlatformServiceSingleton->AddChannelParentInternal(aParent);
+      return;
+    }
+
+    gGamepadPlatformServiceSingleton =
+        RefPtr<GamepadPlatformService>(new GamepadPlatformService{aParent});
+  }
 
   StartGamepadMonitoring();
   GamepadMonitoringState::GetSingleton().Set(true);
@@ -319,18 +329,23 @@ void GamepadPlatformService::RemoveChannelParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aParent);
 
-  MOZ_RELEASE_ASSERT(gGamepadPlatformServiceSingleton);
+  {
+    StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
 
-  
-  
-  if (gGamepadPlatformServiceSingleton->RemoveChannelParentInternal(aParent)) {
-    return;
+    MOZ_RELEASE_ASSERT(gGamepadPlatformServiceSingleton);
+
+    
+    
+    if (gGamepadPlatformServiceSingleton->RemoveChannelParentInternal(
+            aParent)) {
+      return;
+    }
   }
 
   GamepadMonitoringState::GetSingleton().Set(false);
   StopGamepadMonitoring();
-  
-  
+
+  StaticMutexAutoLock lock(gGamepadPlatformServiceSingletonMutex);
 
   
   MOZ_RELEASE_ASSERT(
