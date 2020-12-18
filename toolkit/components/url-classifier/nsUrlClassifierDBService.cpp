@@ -2331,13 +2331,14 @@ nsresult nsUrlClassifierDBService::Shutdown() {
   
   
   
-  if (mWorker->IsDBOpened()) {
-    using Worker = nsUrlClassifierDBServiceWorker;
-    RefPtr<nsIRunnable> r = NewRunnableMethod(
-        "nsUrlClassifierDBServiceWorker::FlushAndDisableAsyncUpdate", mWorker,
-        &Worker::FlushAndDisableAsyncUpdate);
-    SyncRunnable::DispatchToThread(gDbBackgroundThread, r);
-  }
+  
+  
+  
+  using Worker = nsUrlClassifierDBServiceWorker;
+  RefPtr<nsIRunnable> r = NewRunnableMethod(
+      "nsUrlClassifierDBServiceWorker::FlushAndDisableAsyncUpdate", mWorker,
+      &Worker::FlushAndDisableAsyncUpdate);
+  SyncRunnable::DispatchToThread(gDbBackgroundThread, r);
   
   
   

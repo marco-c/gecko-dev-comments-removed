@@ -186,9 +186,6 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
   bool IsBusyUpdating() const { return !!mUpdateObserver; }
 
   
-  bool IsDBOpened() const { return !!mClassifier; }
-
-  
   
   
   
