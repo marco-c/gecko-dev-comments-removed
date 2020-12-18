@@ -412,6 +412,17 @@ CssRuleView.prototype = {
       
       event.stopPropagation();
     }
+
+    
+    if (target.classList.contains("js-toggle-flexbox-highlighter")) {
+      this.inspector.highlighters.toggleFlexboxHighlighter(
+        this.inspector.selection.nodeFront,
+        "rule"
+      );
+      
+      
+      event.stopPropagation();
+    }
   },
 
   
@@ -426,23 +437,33 @@ CssRuleView.prototype = {
 
 
   handleHighlighterEvent(eventName, data) {
-    switch (data.type) {
-      
-      
-      case this.inspector.highlighters.TYPES.SELECTOR:
-        if (data?.options?.selector) {
-          const selector = data?.options?.selector;
-          const query = `.js-toggle-selector-highlighter[data-selector='${selector}']`;
-          for (const node of this.styleDocument.querySelectorAll(query)) {
-            if (eventName == "highlighter-hidden") {
-              node.classList.remove("highlighted");
-            }
-            if (eventName == "highlighter-shown") {
-              node.classList.add("highlighted");
-            }
-          }
-        }
-        break;
+    const handlers = {};
+
+    
+    
+    handlers[this.inspector.highlighters.TYPES.SELECTOR] = () => {
+      const selector = data?.options?.selector;
+      if (!selector) {
+        return;
+      }
+
+      const query = `.js-toggle-selector-highlighter[data-selector='${selector}']`;
+      for (const node of this.styleDocument.querySelectorAll(query)) {
+        node.classList.toggle("highlighted", eventName == "highlighter-shown");
+      }
+    };
+
+    
+    
+    handlers[this.inspector.highlighters.TYPES.FLEXBOX] = () => {
+      const query = ".js-toggle-flexbox-highlighter";
+      for (const node of this.styleDocument.querySelectorAll(query)) {
+        node.classList.toggle("active", eventName == "highlighter-shown");
+      }
+    };
+
+    if (typeof handlers[data.type] === "function") {
+      handlers[data.type].call(this);
     }
   },
 

@@ -722,8 +722,6 @@ class HighlightersOverlay {
       color,
     });
 
-    this._toggleRuleViewIcon(node, true, ".ruleview-flex");
-
     const scalars = {
       layout: "devtools.layout.flexboxhighlighter.opened",
       markup: "devtools.markup.flexboxhighlighter.opened",
@@ -758,7 +756,6 @@ class HighlightersOverlay {
     );
 
     await this.hideHighlighterType(TYPES.FLEXBOX);
-    this._toggleRuleViewIcon(node, false, ".ruleview-flex");
 
     
     this.state.flexbox = null;
@@ -1391,17 +1388,6 @@ class HighlightersOverlay {
 
 
 
-  _isRuleViewDisplayFlex(node) {
-    return this.isRuleView(node) && node.classList.contains("ruleview-flex");
-  }
-
-  
-
-
-
-
-
-
   _isRuleViewDisplayGrid(node) {
     return this.isRuleView(node) && node.classList.contains("ruleview-grid");
   }
@@ -1469,11 +1455,6 @@ class HighlightersOverlay {
     if (this._isRuleViewDisplayGrid(event.target)) {
       event.stopPropagation();
       this.toggleGridHighlighter(this.inspector.selection.nodeFront, "rule");
-    }
-
-    if (this._isRuleViewDisplayFlex(event.target)) {
-      event.stopPropagation();
-      this.toggleFlexboxHighlighter(this.inspector.selection.nodeFront, "rule");
     }
 
     if (this._isRuleViewShapeSwatch(event.target)) {
