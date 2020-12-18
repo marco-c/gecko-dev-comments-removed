@@ -302,8 +302,8 @@ struct ReflowInput : public SizeComputationInput {
   nscoord AvailableHeight() const {
     return mAvailableSize.Height(mWritingMode);
   }
-  nscoord ComputedWidth() const { return mComputedWidth; }
-  nscoord ComputedHeight() const { return mComputedHeight; }
+  nscoord ComputedWidth() const { return mComputedSize.Width(mWritingMode); }
+  nscoord ComputedHeight() const { return mComputedSize.Height(mWritingMode); }
   nscoord ComputedMinWidth() const { return mComputedMinWidth; }
   nscoord ComputedMaxWidth() const { return mComputedMaxWidth; }
   nscoord ComputedMinHeight() const { return mComputedMinHeight; }
@@ -320,12 +320,8 @@ struct ReflowInput : public SizeComputationInput {
   
   nscoord AvailableISize() const { return mAvailableSize.ISize(mWritingMode); }
   nscoord AvailableBSize() const { return mAvailableSize.BSize(mWritingMode); }
-  nscoord ComputedISize() const {
-    return mWritingMode.IsVertical() ? mComputedHeight : mComputedWidth;
-  }
-  nscoord ComputedBSize() const {
-    return mWritingMode.IsVertical() ? mComputedWidth : mComputedHeight;
-  }
+  nscoord ComputedISize() const { return mComputedSize.ISize(mWritingMode); }
+  nscoord ComputedBSize() const { return mComputedSize.BSize(mWritingMode); }
   nscoord ComputedMinISize() const {
     return mWritingMode.IsVertical() ? mComputedMinHeight : mComputedMinWidth;
   }
@@ -341,12 +337,8 @@ struct ReflowInput : public SizeComputationInput {
 
   nscoord& AvailableISize() { return mAvailableSize.ISize(mWritingMode); }
   nscoord& AvailableBSize() { return mAvailableSize.BSize(mWritingMode); }
-  nscoord& ComputedISize() {
-    return mWritingMode.IsVertical() ? mComputedHeight : mComputedWidth;
-  }
-  nscoord& ComputedBSize() {
-    return mWritingMode.IsVertical() ? mComputedWidth : mComputedHeight;
-  }
+  nscoord& ComputedISize() { return mComputedSize.ISize(mWritingMode); }
+  nscoord& ComputedBSize() { return mComputedSize.BSize(mWritingMode); }
   nscoord& ComputedMinISize() {
     return mWritingMode.IsVertical() ? mComputedMinHeight : mComputedMinWidth;
   }
@@ -361,9 +353,7 @@ struct ReflowInput : public SizeComputationInput {
   }
 
   mozilla::LogicalSize AvailableSize() const { return mAvailableSize; }
-  mozilla::LogicalSize ComputedSize() const {
-    return mozilla::LogicalSize(mWritingMode, ComputedISize(), ComputedBSize());
-  }
+  mozilla::LogicalSize ComputedSize() const { return mComputedSize; }
   mozilla::LogicalSize ComputedMinSize() const {
     return mozilla::LogicalSize(mWritingMode, ComputedMinISize(),
                                 ComputedMinBSize());
@@ -436,33 +426,6 @@ struct ReflowInput : public SizeComputationInput {
   }
 
  private:
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_INIT_OUTSIDE_CTOR
-  nscoord mComputedWidth;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_INIT_OUTSIDE_CTOR
-  nscoord mComputedHeight;
-
   
   
   mozilla::LogicalMargin mComputedOffsets{mWritingMode};
@@ -1041,6 +1004,19 @@ struct ReflowInput : public SizeComputationInput {
   
   
   mozilla::LogicalSize mAvailableSize{mWritingMode};
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::LogicalSize mComputedSize{mWritingMode};
 };
 
 }  
