@@ -261,11 +261,10 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
         length_(length),
         flags_(hasTwoByteChars ? HasTwoByteCharsFlag : 0) {}
 
- protected:
+ public:
   
   constexpr ParserAtomEntry() = default;
 
- public:
   
   
   ParserAtomEntry(const ParserAtomEntry&) = delete;
