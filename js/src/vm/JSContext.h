@@ -1189,19 +1189,15 @@ namespace gc {
 
 class MOZ_RAII AutoSetThreadIsPerformingGC {
   JSContext* cx;
+  bool prev;
 
  public:
-  AutoSetThreadIsPerformingGC() : cx(TlsContext.get()) {
-    JSFreeOp* fop = cx->defaultFreeOp();
-    MOZ_ASSERT(!fop->isCollecting());
-    fop->isCollecting_ = true;
+  AutoSetThreadIsPerformingGC()
+      : cx(TlsContext.get()), prev(cx->defaultFreeOp()->isCollecting_) {
+    cx->defaultFreeOp()->isCollecting_ = true;
   }
 
-  ~AutoSetThreadIsPerformingGC() {
-    JSFreeOp* fop = cx->defaultFreeOp();
-    MOZ_ASSERT(fop->isCollecting());
-    fop->isCollecting_ = false;
-  }
+  ~AutoSetThreadIsPerformingGC() { cx->defaultFreeOp()->isCollecting_ = prev; }
 };
 
 struct MOZ_RAII AutoSetThreadGCUse {
