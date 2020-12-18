@@ -1358,9 +1358,6 @@ pref("services.sync.syncedTabs.showRemoteIcons", true);
 pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.properties");
 
 
-pref("prompts.tab_modal.enabled", true);
-
-
 
 pref("prompts.defaultModalType", 3);
 

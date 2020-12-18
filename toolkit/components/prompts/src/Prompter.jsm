@@ -1041,16 +1041,11 @@ class ModalPrompter {
     }
 
     
-    
-    if (
-      !ModalPrompter.tabModalEnabled ||
-      !this.browsingContext ||
-      !this.browsingContext.isContent
-    ) {
+    if (!this.browsingContext?.isContent) {
       modalType = Ci.nsIPrompt.MODAL_TYPE_WINDOW;
 
       Cu.reportError(
-        "Prompter: Browser not available or tab modal prompts disabled. Falling back to window prompt."
+        "Prompter: Browser not available. Falling back to window prompt."
       );
     }
     this._modalType = modalType;
@@ -1715,13 +1710,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "defaultModalType",
   "prompts.defaultModalType",
   Ci.nsIPrompt.MODAL_TYPE_WINDOW
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  ModalPrompter,
-  "tabModalEnabled",
-  "prompts.tab_modal.enabled",
-  true
 );
 
 function AuthPromptAdapterFactory() {}
