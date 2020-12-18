@@ -35,6 +35,7 @@ class MarionetteException(Exception):
         self._message = six.text_type(message)
 
     def __str__(self):
+        
         msg = self.message
         tb = None
 
