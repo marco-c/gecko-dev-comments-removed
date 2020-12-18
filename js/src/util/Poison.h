@@ -118,12 +118,6 @@ static MOZ_ALWAYS_INLINE void SetMemCheckKind(void* ptr, size_t bytes,
 
 namespace js {
 
-static inline void AssertPoisonPointerAlignment(void* ptr) {
-  
-  
-  MOZ_ASSERT(uintptr_t(ptr) % sizeof(JS::Value) == 0);
-}
-
 static inline void PoisonImpl(void* ptr, uint8_t value, size_t num) {
   
   
@@ -154,7 +148,6 @@ static inline void PoisonImpl(void* ptr, uint8_t value, size_t num) {
 
 static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
                                 MemCheckKind kind) {
-  AssertPoisonPointerAlignment(ptr);
   PoisonImpl(ptr, value, num);
   SetMemCheckKind(ptr, num, kind);
 }
@@ -167,7 +160,6 @@ extern bool gDisablePoisoning;
 
 static inline void Poison(void* ptr, uint8_t value, size_t num,
                           MemCheckKind kind) {
-  AssertPoisonPointerAlignment(ptr);
 #if defined(JS_GC_POISONING)
   if (!js::gDisablePoisoning) {
     PoisonImpl(ptr, value, num);
@@ -180,7 +172,6 @@ static inline void Poison(void* ptr, uint8_t value, size_t num,
 
 static inline void DebugOnlyPoison(void* ptr, uint8_t value, size_t num,
                                    MemCheckKind kind) {
-  AssertPoisonPointerAlignment(ptr);
 #if defined(DEBUG)
   Poison(ptr, value, num, kind);
 #else
