@@ -167,6 +167,7 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
     case DeviceFamily::ParallelsAll:
     case DeviceFamily::QualcommAll:
     case DeviceFamily::AppleAll:
+    case DeviceFamily::AmazonAll:
       return nullptr;
     default:
       break;
@@ -793,6 +794,7 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
     case DeviceFamily::ParallelsAll:
     case DeviceFamily::QualcommAll:
     case DeviceFamily::AppleAll:
+    case DeviceFamily::AmazonAll:
       NS_WARNING("Invalid DeviceFamily id");
       break;
   }
@@ -937,6 +939,9 @@ const nsAString& GfxDriverInfo::GetDeviceVendor(DeviceFamily id) {
     case DeviceFamily::AppleAll:
       vendor = DeviceVendor::Apple;
       break;
+    case DeviceFamily::AmazonAll:
+      vendor = DeviceVendor::Amazon;
+      break;
     case DeviceFamily::QualcommAll:
       
       
@@ -975,6 +980,7 @@ const nsAString& GfxDriverInfo::GetDeviceVendor(DeviceVendor id) {
     DECLARE_VENDOR_ID(VMWare, "0x15ad");
     DECLARE_VENDOR_ID(VirtualBox, "0x80ee");
     DECLARE_VENDOR_ID(Apple, "0x106b");
+    DECLARE_VENDOR_ID(Amazon, "0x1d0f");
     
     
     DECLARE_VENDOR_ID(Qualcomm, "0x5143");
