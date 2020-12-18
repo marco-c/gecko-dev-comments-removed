@@ -4112,7 +4112,8 @@ bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
 
 
 
-  if (!IsShutdownReason(reason) && reason != JS::GCReason::ROOTS_REMOVED) {
+  if (!IsShutdownReason(reason) && reason != JS::GCReason::ROOTS_REMOVED &&
+      reason != JS::GCReason::XPCONNECT_SHUTDOWN) {
     StartHandlingCompressionsOnGC(rt);
   }
 
