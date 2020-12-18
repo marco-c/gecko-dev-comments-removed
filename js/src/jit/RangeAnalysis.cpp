@@ -3141,7 +3141,7 @@ bool RangeAnalysis::truncate() {
       
       
       if (kind <= MDefinition::TruncateAfterBailouts &&
-          block->info().hadEagerTruncationBailout()) {
+          mir->outerInfo().hadEagerTruncationBailout()) {
         continue;
       }
 
