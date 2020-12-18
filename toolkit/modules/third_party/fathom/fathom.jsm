@@ -137,7 +137,7 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
 
 
-    function *walk(element, shouldTraverse) {
+    function *walk(element, shouldTraverse = element => true) {
         yield element;
         for (let child of element.childNodes) {
             if (shouldTraverse(child)) {
@@ -256,15 +256,6 @@ this.EXPORTED_SYMBOLS = ["fathom"];
     
 
 
-    function *reversed(array) {
-        for (let i = array.length - 1; i >= 0; i--) {
-            yield array[i];
-        }
-    }
-
-    
-
-
 
 
 
@@ -320,6 +311,19 @@ this.EXPORTED_SYMBOLS = ["fathom"];
                 this.add(item);
             }
             return this;
+        }
+
+        
+
+
+
+
+        minus(otherSet) {
+            const ret = new NiceSet(this);
+            for (const item of otherSet) {
+                ret.delete(item);
+            }
+            return ret;
         }
 
         
@@ -405,14 +409,6 @@ this.EXPORTED_SYMBOLS = ["fathom"];
     
 
 
-    function isDomElement(thing) {
-        return thing.nodeName !== undefined;
-    }
-
-    
-    
-
-
 
 
 
@@ -480,11 +476,21 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
 
 
+
+
+
+
+
+
+
+
+
     function isVisible(fnodeOrElement) {
         
         const element = toDomElement(fnodeOrElement);
+        const elementWindow = windowForElement(element);
         const elementRect = element.getBoundingClientRect();
-        const elementStyle = getComputedStyle(element);
+        const elementStyle = elementWindow.getComputedStyle(element);
         
         if (elementRect.width === 0 && elementRect.height === 0 && elementStyle.overflow !== 'hidden') {
             return false;
@@ -493,16 +499,14 @@ this.EXPORTED_SYMBOLS = ["fathom"];
             return false;
         }
         
-        const frame = element.ownerDocument.defaultView;
         if (elementRect.x + elementRect.width < 0 ||
-            elementRect.y + elementRect.height < 0 ||
-            elementRect.x > frame.innerWidth || elementRect.y > frame.innerHeight
+            elementRect.y + elementRect.height < 0
         ) {
             return false;
         }
         for (const ancestor of ancestors(element)) {
             const isElement = ancestor === element;
-            const style = isElement ? elementStyle : getComputedStyle(ancestor);
+            const style = isElement ? elementStyle : elementWindow.getComputedStyle(ancestor);
             if (style.opacity === '0') {
                 return false;
             }
@@ -609,8 +613,44 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         }
     }
 
+    
+    
+
+
+    function isDomElement(thing) {
+        return thing.nodeName !== undefined;
+    }
+
     function isIterable(thing) {
         return thing && typeof thing[Symbol.iterator] === 'function';
+    }
+
+    
+
+
+    function *reversed(array) {
+        for (let i = array.length - 1; i >= 0; i--) {
+            yield array[i];
+        }
+    }
+
+    
+    
+
+
+
+
+    function windowForElement(element) {
+        let doc = element.ownerDocument;
+        if (doc === null) {
+            
+            doc = element;
+        }
+        const win = doc.defaultView;
+        if (win === null) {
+            throw new Error('The element was not in a window.');
+        }
+        return win;
     }
 
     var utilsForFrontend = Object.freeze({
@@ -631,7 +671,6 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         isWhitespace: isWhitespace,
         setDefault: setDefault,
         getDefault: getDefault,
-        reversed: reversed,
         toposort: toposort,
         NiceSet: NiceSet,
         first: first,
@@ -639,7 +678,6 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         numberOfMatches: numberOfMatches,
         page: page,
         domSort: domSort,
-        isDomElement: isDomElement,
         toDomElement: toDomElement,
         attributesMatch: attributesMatch,
         ancestors: ancestors,
@@ -650,7 +688,10 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         linearScale: linearScale,
         flatten: flatten,
         map: map,
-        forEach: forEach
+        forEach: forEach,
+        isDomElement: isDomElement,
+        reversed: reversed,
+        windowForElement: windowForElement
     });
 
     
@@ -1205,7 +1246,7 @@ this.EXPORTED_SYMBOLS = ["fathom"];
             for (let i = 0; i < domNodes.length; i++) {
                 ret.push(ruleset.fnodeForElement(domNodes[i]));
             }
-            return super.fnodesSatisfyingWhen(ret);
+            return this.fnodesSatisfyingWhen(ret);
         }
 
         checkFact(fact) {
@@ -1255,7 +1296,7 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
         fnodes(ruleset) {
             const cached = getDefault(ruleset.typeCache, this._type, () => []);
-            return super.fnodesSatisfyingWhen(cached);
+            return this.fnodesSatisfyingWhen(cached);
         }
 
         
@@ -1993,6 +2034,7 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         
 
 
+
         hasType(type) {
             
             
@@ -2442,7 +2484,6 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
 
 
-
     class Ruleset {
         
 
@@ -2544,6 +2585,7 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         }
 
         
+
 
 
 
@@ -2710,7 +2752,7 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
 
 
-    const version = '3.3';
+    const version = '3.7.2';
 
     exports.and = and;
     exports.atMost = atMost;
