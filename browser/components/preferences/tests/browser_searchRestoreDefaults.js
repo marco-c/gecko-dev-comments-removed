@@ -9,7 +9,7 @@ const { SearchUtils } = ChromeUtils.import(
 );
 add_task(async function test_restore_functionality() {
   
-  for (let engine of await Services.search.getAppProvidedEngines()) {
+  for (let engine of await Services.search.getDefaultEngines()) {
     if (engine.hidden) {
       engine.hidden = false;
     }
@@ -32,7 +32,7 @@ add_task(async function test_restore_functionality() {
 
   let tree = doc.querySelector("#engineList");
   
-  let defaultEngines = await Services.search.getAppProvidedEngines();
+  let defaultEngines = await Services.search.getDefaultEngines();
   for (let i = 0; i < defaultEngines.length; i++) {
     let cellName = tree.view.getCellText(
       i,

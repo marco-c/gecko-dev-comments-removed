@@ -458,7 +458,7 @@ const TargetingGetters = {
     return new Promise(resolve => {
       
       Services.search
-        .getAppProvidedEngines()
+        .getDefaultEngines()
         .then(engines => {
           resolve({
             current: Services.search.defaultEngine.identifier,

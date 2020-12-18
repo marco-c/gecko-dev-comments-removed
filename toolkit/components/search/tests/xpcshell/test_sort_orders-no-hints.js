@@ -61,7 +61,7 @@ add_task(async function test_engine_sort_with_non_builtins_sort() {
   ];
 
   
-  await checkOrder("getAppProvidedEngines", EXPECTED_ORDER);
+  await checkOrder("getDefaultEngines", EXPECTED_ORDER);
 
   const expected = [...EXPECTED_ORDER];
   

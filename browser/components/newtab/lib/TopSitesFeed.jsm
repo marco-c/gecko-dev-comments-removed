@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 "use strict";
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -76,7 +76,7 @@ const DEFAULT_SITES_PREF = "default.sites";
 const SHOWN_ON_NEWTAB_PREF = "feeds.topsites";
 const DEFAULT_TOP_SITES = [];
 const ATTRIBUTION_REQUEST_SITES = [];
-const FRECENCY_THRESHOLD = 100 + 1; // 1 visit (skip first-run/one-time pages)
+const FRECENCY_THRESHOLD = 100 + 1; 
 const MIN_FAVICON_SIZE = 96;
 const CACHED_LINK_PROPS_TO_MIGRATE = ["screenshot", "customScreenshot"];
 const PINNED_FAVICON_PROPS_TO_MIGRATE = [
@@ -88,7 +88,7 @@ const SECTION_ID = "topsites";
 const ROWS_PREF = "topSitesRows";
 const SHOW_SPONSORED_PREF = "showSponsoredTopSites";
 
-// Search experiment stuff
+
 const FILTER_DEFAULT_SEARCH_PREF = "improvesearch.noDefaultSearchTile";
 const SEARCH_FILTERS = [
   "google",
@@ -125,7 +125,7 @@ this.TopSitesFeed = class TopSitesFeed {
       "getTopSites",
       CACHED_LINK_PROPS_TO_MIGRATE,
       (oldOptions, newOptions) =>
-        // Refresh if no old options or requesting more items
+        
         !(oldOptions.numItems >= newOptions.numItems)
     );
     this.pinnedCache = new LinksCache(NewTabUtils.pinnedLinks, "links", [
@@ -136,7 +136,7 @@ this.TopSitesFeed = class TopSitesFeed {
   }
 
   init() {
-    // If the feed was previously disabled PREFS_INITIAL_VALUES was never received
+    
     this._readDefaults({ isStartup: true });
     this._storage = this.store.dbStorage.getDbTable("sectionPrefs");
     Services.obs.addObserver(this, "browser-search-engine-modified");
@@ -156,8 +156,8 @@ this.TopSitesFeed = class TopSitesFeed {
   observe(subj, topic, data) {
     switch (topic) {
       case "browser-search-engine-modified":
-        // We should update the current top sites if the search engine has been changed since
-        // the search engine that gets filtered out of top sites has changed.
+        
+        
         if (
           data === "engine-default" &&
           this.store.getState().Prefs.values[FILTER_DEFAULT_SEARCH_PREF]
@@ -183,9 +183,9 @@ this.TopSitesFeed = class TopSitesFeed {
     return site && site.hostname;
   }
 
-  /**
-   * _readDefaults - sets DEFAULT_TOP_SITES
-   */
+  
+
+
   async _readDefaults({ isStartup = false } = {}) {
     this._useRemoteSetting = Services.prefs.getBoolPref(
       REMOTE_SETTING_DEFAULTS_PREF
@@ -200,7 +200,7 @@ this.TopSitesFeed = class TopSitesFeed {
       return;
     }
 
-    // Unpin old search shortcuts.
+    
     const remoteSettingMigrationID = 1;
     if (
       Services.prefs.getIntPref(REMOTE_SETTING_MIGRATION_ID_PREF, 0) <
@@ -213,8 +213,8 @@ this.TopSitesFeed = class TopSitesFeed {
       );
     }
 
-    // Try using default top sites from enterprise policies. The pref is locked
-    // when set that way.
+    
+    
     if (Services.prefs.prefIsLocked(DEFAULT_SITES_POLICY_PREF)) {
       let sites;
       try {
@@ -226,10 +226,10 @@ this.TopSitesFeed = class TopSitesFeed {
       }
     }
 
-    // Read defaults from remote settings.
+    
     let remoteSettingData = await this._getRemoteConfig();
 
-    // Clear out the array of any previous defaults.
+    
     DEFAULT_TOP_SITES.length = 0;
     ATTRIBUTION_REQUEST_SITES.length = 0;
 
@@ -262,11 +262,11 @@ this.TopSitesFeed = class TopSitesFeed {
   }
 
   refreshDefaults(sites, { isStartup = false } = {}) {
-    // Clear out the array of any previous defaults
+    
     DEFAULT_TOP_SITES.length = 0;
     ATTRIBUTION_REQUEST_SITES.length = 0;
 
-    // Add default sites if any based on the pref
+    
     if (sites) {
       for (const url of sites.split(",")) {
         const site = {
@@ -301,18 +301,18 @@ this.TopSitesFeed = class TopSitesFeed {
       Cu.reportError("Received empty top sites configuration!");
       failed = true;
     }
-    // If we failed, or the result is empty, try loading from the local dump.
+    
     if (firstTime && failed) {
       await this._remoteConfig.db.clear();
-      // Now call this again.
+      
       return this._getRemoteConfig(false);
     }
 
-    // Sort sites based on the "order" attribute.
+    
     result.sort((a, b) => a.order - b.order);
 
     result = result.filter(topsite => {
-      // Filter by region.
+      
       if (topsite.exclude_regions?.includes(Region.home)) {
         return false;
       }
@@ -323,7 +323,7 @@ this.TopSitesFeed = class TopSitesFeed {
         return false;
       }
 
-      // Filter by locale.
+      
       if (topsite.exclude_locales?.includes(Services.locale.appLocaleAsBCP47)) {
         return false;
       }
@@ -334,8 +334,8 @@ this.TopSitesFeed = class TopSitesFeed {
         return false;
       }
 
-      // Filter by experiment.
-      // Exclude this top site if any of the specified experiments are running.
+      
+      
       if (
         topsite.exclude_experiments?.some(experimentID =>
           Services.prefs.getBoolPref(
@@ -346,7 +346,7 @@ this.TopSitesFeed = class TopSitesFeed {
       ) {
         return false;
       }
-      // Exclude this top site if none of the specified experiments are running.
+      
       if (
         topsite.include_experiments?.length &&
         topsite.include_experiments.every(
@@ -379,12 +379,12 @@ this.TopSitesFeed = class TopSitesFeed {
     );
   }
 
-  /**
-   * shouldFilterSearchTile - is default filtering enabled and does a given hostname match the user's default search engine?
-   *
-   * @param {string} hostname a top site hostname, such as "amazon" or "foo"
-   * @returns {bool}
-   */
+  
+
+
+
+
+
   shouldFilterSearchTile(hostname) {
     if (
       this.store.getState().Prefs.values[FILTER_DEFAULT_SEARCH_PREF] &&
@@ -396,20 +396,20 @@ this.TopSitesFeed = class TopSitesFeed {
     return false;
   }
 
-  /**
-   * _maybeInsertSearchShortcuts - if the search shortcuts experiment is running,
-   *                               insert search shortcuts if needed
-   * @param {Array} plainPinnedSites (from the pinnedSitesCache)
-   * @returns {Boolean} Did we insert any search shortcuts?
-   */
+  
+
+
+
+
+
   async _maybeInsertSearchShortcuts(plainPinnedSites) {
-    // Only insert shortcuts if the experiment is running
+    
     if (this.store.getState().Prefs.values[SEARCH_SHORTCUTS_EXPERIMENT]) {
-      // We don't want to insert shortcuts we've previously inserted
+      
       const prevInsertedShortcuts = this.store
         .getState()
         .Prefs.values[SEARCH_SHORTCUTS_HAVE_PINNED_PREF].split(",")
-        .filter(s => s); // Filter out empty strings
+        .filter(s => s); 
       const newInsertedShortcuts = [];
 
       let shouldPin = this._useRemoteSetting
@@ -421,7 +421,7 @@ this.TopSitesFeed = class TopSitesFeed {
         .map(getSearchProvider)
         .filter(s => s && s.shortURL !== this._currentSearchHostname);
 
-      // If we've previously inserted all search shortcuts return early
+      
       if (
         shouldPin.every(shortcut =>
           prevInsertedShortcuts.includes(shortcut.shortURL)
@@ -434,9 +434,9 @@ this.TopSitesFeed = class TopSitesFeed {
         this.store.getState().Prefs.values[ROWS_PREF] *
         TOP_SITES_MAX_SITES_PER_ROW;
 
-      // The plainPinnedSites array is populated with pinned sites at their
-      // respective indices, and null everywhere else, but is not always the
-      // right length
+      
+      
+      
       const emptySlots = Math.max(numberOfSlots - plainPinnedSites.length, 0);
       const pinnedSites = [...plainPinnedSites].concat(
         Array(emptySlots).fill(null)
@@ -444,9 +444,9 @@ this.TopSitesFeed = class TopSitesFeed {
 
       const tryToInsertSearchShortcut = async shortcut => {
         const nextAvailable = pinnedSites.indexOf(null);
-        // Only add a search shortcut if the site isn't already pinned, we
-        // haven't previously inserted it, there's space to pin it, and the
-        // search engine is available in Firefox
+        
+        
+        
         if (
           !pinnedSites.find(s => s && s.hostname === shortcut.shortURL) &&
           !prevInsertedShortcuts.includes(shortcut.shortURL) &&
@@ -478,20 +478,20 @@ this.TopSitesFeed = class TopSitesFeed {
     return false;
   }
 
-  // eslint-disable-next-line max-statements
+  
   async getLinksWithDefaults(isStartup = false) {
     const prefValues = this.store.getState().Prefs.values;
     const numItems = prefValues[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
     const searchShortcutsExperiment =
       !this._useRemoteSetting && prefValues[SEARCH_SHORTCUTS_EXPERIMENT];
-    // We must wait for search services to initialize in order to access default
-    // search engine properties without triggering a synchronous initialization
+    
+    
     await Services.search.init();
 
-    // Get all frecent sites from history.
+    
     let frecent = [];
     const cache = await this.frecentCache.request({
-      // We need to overquery due to the top 5 alexa search + default search possibly being removed
+      
       numItems: numItems + SEARCH_FILTERS.length + 1,
       topsiteFrecency: FRECENCY_THRESHOLD,
     });
@@ -507,7 +507,7 @@ this.TopSitesFeed = class TopSitesFeed {
       }
     }
 
-    // Get defaults.
+    
     let date = new Date();
     let pad = number => number.toString().padStart(2, "0");
     let yyyymmddhh =
@@ -524,7 +524,7 @@ this.TopSitesFeed = class TopSitesFeed {
       let isBlocked = NewTabUtils.blockedLinks.isBlocked({
         url: link.url,
       });
-      // Process %YYYYMMDDHH% tag in the URL.
+      
       let url_end;
       let url_start;
       if (this._useRemoteSetting) {
@@ -533,22 +533,22 @@ this.TopSitesFeed = class TopSitesFeed {
       if (typeof url_end === "string") {
         link = {
           ...link,
-          // Save original URL without %YYYYMMDDHH% replaced so it can be
-          // blocked properly.
+          
+          
           original_url: link.url,
           url: url_start + yyyymmddhh + url_end,
         };
         if (link.url_urlbar) {
           link.url_urlbar = link.url_urlbar.replace("%YYYYMMDDHH%", yyyymmddhh);
         }
-        // Update frecent link that may have an unprocessed or old datetime
-        // tag. This list has only one entry per domain so we don't have
-        // to look for multiple entries here.
+        
+        
+        
         let frecentIndex = frecent.findIndex(
           frecentLink =>
-            // Look for unprocessed datetime tag:
+            
             frecentLink.url === link.original_url ||
-            // Look for processed datetime tag:
+            
             (frecentLink.url.startsWith(url_start) &&
               frecentLink.url.endsWith(url_end) &&
               frecentLink.url.length === link.url.length)
@@ -562,12 +562,12 @@ this.TopSitesFeed = class TopSitesFeed {
           }
         }
       }
-      // Drop blocked default sites.
+      
       if (isBlocked) {
         continue;
       }
-      // If we've previously blocked a search shortcut, remove the default top site
-      // that matches the hostname
+      
+      
       const searchProvider = getSearchProvider(shortURL(link));
       if (
         searchProvider &&
@@ -589,12 +589,12 @@ this.TopSitesFeed = class TopSitesFeed {
       }
     }
 
-    // Get pinned links augmented with desired properties
+    
     let plainPinned = await this.pinnedCache.request();
 
-    // Insert search shortcuts if we need to.
-    // _maybeInsertSearchShortcuts returns true if any search shortcuts are
-    // inserted, meaning we need to expire and refresh the pinnedCache
+    
+    
+    
     if (await this._maybeInsertSearchShortcuts(plainPinned)) {
       this.pinnedCache.expire();
       plainPinned = await this.pinnedCache.request();
@@ -606,16 +606,16 @@ this.TopSitesFeed = class TopSitesFeed {
           return link;
         }
 
-        // Copy all properties from a frecent link and add more
+        
         const finder = other => other.url === link.url;
 
-        // Remove frecent link's screenshot if pinned link has a custom one
+        
         const frecentSite = frecent.find(finder);
         if (frecentSite && link.customScreenshotURL) {
           delete frecentSite.screenshot;
         }
-        // If the link is a frecent site, do not copy over 'isDefault', else check
-        // if the site is a default site
+        
+        
         const copy = Object.assign(
           {},
           frecentSite || { isDefault: !!notBlockedDefaultSites.find(finder) },
@@ -624,7 +624,7 @@ this.TopSitesFeed = class TopSitesFeed {
           { searchTopSite: !!link.searchTopSite }
         );
 
-        // Add in favicons if we don't already have it
+        
         if (!copy.favicon) {
           try {
             NewTabUtils.activityStreamProvider._faviconBytesToDataURI(
@@ -635,7 +635,7 @@ this.TopSitesFeed = class TopSitesFeed {
               copy.__sharedCache.updateLink(prop, copy[prop]);
             }
           } catch (e) {
-            // Some issue with favicon, so just continue without one
+            
           }
         }
 
@@ -643,7 +643,7 @@ this.TopSitesFeed = class TopSitesFeed {
       })
     );
 
-    // Remove any duplicates from frecent and default sites
+    
     const [
       ,
       dedupedSponsored,
@@ -652,14 +652,14 @@ this.TopSitesFeed = class TopSitesFeed {
     ] = this.dedupe.group(pinned, sponsored, frecent, notBlockedDefaultSites);
     const dedupedUnpinned = [...dedupedFrecent, ...dedupedDefaults];
 
-    // Remove adult sites if we need to
+    
     const checkedAdult = prefValues.filterAdult
       ? filterAdult(dedupedUnpinned)
       : dedupedUnpinned;
 
-    // Insert the original pinned sites into the deduped frecent and defaults.
+    
     let withPinned = insertPinned(checkedAdult, pinned);
-    // Insert sponsored sites at their desired position.
+    
     dedupedSponsored.forEach(link => {
       if (!link) {
         return;
@@ -671,13 +671,13 @@ this.TopSitesFeed = class TopSitesFeed {
         withPinned.splice(index, 0, link);
       }
     });
-    // Remove excess items after we inserted sponsored ones.
+    
     withPinned = withPinned.slice(0, numItems);
 
-    // Now, get a tippy top icon, a rich icon, or screenshot for every item
+    
     for (const link of withPinned) {
       if (link) {
-        // If there is a custom screenshot this is the only image we display
+        
         if (link.customScreenshotURL) {
           this._fetchScreenshot(link, link.customScreenshotURL, isStartup);
         } else if (link.searchTopSite && !link.isDefault) {
@@ -686,10 +686,10 @@ this.TopSitesFeed = class TopSitesFeed {
           this._fetchIcon(link, isStartup);
         }
 
-        // Remove internal properties that might be updated after dispatch
+        
         delete link.__sharedCache;
 
-        // Indicate that these links should get a frecency bonus when clicked
+        
         link.typedBonus = true;
 
         if (ATTRIBUTION_REQUEST_SITES.includes(link.original_url || link.url)) {
@@ -703,15 +703,15 @@ this.TopSitesFeed = class TopSitesFeed {
     return withPinned;
   }
 
-  /**
-   * Attach TippyTop icon to the given search shortcut
-   *
-   * Note that it queries the search form URL from search service For Yandex,
-   * and uses it to choose the best icon for its shortcut variants.
-   *
-   * @param {Object} link A link object with a `url` property
-   * @param {string} keyword Search keyword
-   */
+  
+
+
+
+
+
+
+
+
   async _attachTippyTopIconForSearchShortcut(link, keyword) {
     if (
       ["@\u044F\u043D\u0434\u0435\u043A\u0441", "@yandex"].includes(keyword)
@@ -727,14 +727,14 @@ this.TopSitesFeed = class TopSitesFeed {
     }
   }
 
-  /**
-   * Refresh the top sites data for content.
-   * @param {bool} options.broadcast Should the update be broadcasted.
-   * @param {bool} options.isStartup Being called while TopSitesFeed is initting.
-   */
+  
+
+
+
+
   async refresh(options = {}) {
     if (!this._startedUp && !options.isStartup) {
-      // Initial refresh still pending.
+      
       return;
     }
     this._startedUp = true;
@@ -763,10 +763,10 @@ this.TopSitesFeed = class TopSitesFeed {
     }
 
     if (options.broadcast) {
-      // Broadcast an update to all open content pages
+      
       this.store.dispatch(ac.BroadcastToContent(newAction));
     } else {
-      // Don't broadcast only update the state and update the preloaded tab.
+      
       this.store.dispatch(ac.AlsoToPreloaded(newAction));
     }
   }
@@ -780,9 +780,9 @@ this.TopSitesFeed = class TopSitesFeed {
       await this._tippyTopProvider.init();
     }
 
-    // Populate the state with available search shortcuts
+    
     let searchShortcuts = [];
-    for (const engine of await Services.search.getAppProvidedEngines()) {
+    for (const engine of await Services.search.getDefaultEngines()) {
       const shortcut = CUSTOM_SEARCH_SHORTCUTS.find(s =>
         engine.aliases.includes(s.keyword)
       );
@@ -819,36 +819,36 @@ this.TopSitesFeed = class TopSitesFeed {
     };
   }
 
-  /**
-   * Get an image for the link preferring tippy top, rich favicon, screenshots.
-   */
+  
+
+
   async _fetchIcon(link, isStartup = false) {
-    // Nothing to do if we already have a rich icon from the page
+    
     if (link.favicon && link.faviconSize >= MIN_FAVICON_SIZE) {
       return;
     }
 
-    // Nothing more to do if we can use a default tippy top icon
+    
     this._tippyTopProvider.processSite(link);
     if (link.tippyTopIcon) {
       return;
     }
 
-    // Make a request for a better icon
+    
     this._requestRichIcon(link.url);
 
-    // Also request a screenshot if we don't have one yet
+    
     await this._fetchScreenshot(link, link.url, isStartup);
   }
 
-  /**
-   * Fetch, cache and broadcast a screenshot for a specific topsite.
-   * @param link cached topsite object
-   * @param url where to fetch the image from
-   * @param isStartup Whether the screenshot is fetched while initting TopSitesFeed.
-   */
+  
+
+
+
+
+
   async _fetchScreenshot(link, url, isStartup = false) {
-    // We shouldn't bother caching screenshots if they won't be shown.
+    
     if (
       link.screenshot ||
       !this.store.getState().Prefs.values[SHOWN_ON_NEWTAB_PREF]
@@ -872,11 +872,11 @@ this.TopSitesFeed = class TopSitesFeed {
     );
   }
 
-  /**
-   * Dispatch screenshot preview to target or notify if request failed.
-   * @param customScreenshotURL {string} The URL used to capture the screenshot
-   * @param target {string} Id of content process where to dispatch the result
-   */
+  
+
+
+
+
   async getScreenshotPreview(url, target) {
     const preview = (await Screenshots.getScreenshotForURL(url)) || "";
     this.store.dispatch(
@@ -906,22 +906,22 @@ this.TopSitesFeed = class TopSitesFeed {
     );
   }
 
-  /**
-   * Inform others that top sites data has been updated due to pinned changes.
-   */
+  
+
+
   _broadcastPinnedSitesUpdated() {
-    // Pinned data changed, so make sure we get latest
+    
     this.pinnedCache.expire();
 
-    // Refresh to update pinned sites with screenshots, trigger deduping, etc.
+    
     this.refresh({ broadcast: true });
   }
 
-  /**
-   * Pin a site at a specific position saving only the desired keys.
-   * @param customScreenshotURL {string} User set URL of preview image for site
-   * @param label {string} User set string of custom site name
-   */
+  
+
+
+
+
   async _pinSiteAt({ customScreenshotURL, label, url, searchTopSite }, index) {
     const toPin = { url };
     if (label) {
@@ -939,7 +939,7 @@ this.TopSitesFeed = class TopSitesFeed {
   }
 
   async _clearLinkCustomScreenshot(site) {
-    // If screenshot url changed or was removed we need to update the cached link obj
+    
     if (site.customScreenshotURL !== undefined) {
       const pinned = await this.pinnedCache.request();
       const link = pinned.find(pin => pin && pin.url === site.url);
@@ -949,20 +949,20 @@ this.TopSitesFeed = class TopSitesFeed {
     }
   }
 
-  /**
-   * Handle a pin action of a site to a position.
-   */
+  
+
+
   async pin(action) {
     let { site, index } = action.data;
     index = this._adjustPinIndexForSponsoredLinks(site, index);
-    // If valid index provided, pin at that position
+    
     if (index >= 0) {
       await this._pinSiteAt(site, index);
       this._broadcastPinnedSitesUpdated();
     } else {
-      // Bug 1458658. If the top site is being pinned from an 'Add a Top Site' option,
-      // then we want to make sure to unblock that link if it has previously been
-      // blocked. We know if the site has been added because the index will be -1.
+      
+      
+      
       if (index === -1) {
         NewTabUtils.blockedLinks.unblock({ url: site.url });
         this.frecentCache.expire();
@@ -971,9 +971,9 @@ this.TopSitesFeed = class TopSitesFeed {
     }
   }
 
-  /**
-   * Handle an unpin action of a site.
-   */
+  
+
+
   unpin(action) {
     const { site } = action.data;
     NewTabUtils.pinnedLinks.unpin(site);
@@ -992,17 +992,17 @@ this.TopSitesFeed = class TopSitesFeed {
     this.pinnedCache.expire();
   }
 
-  /**
-   * Reduces the given pinning index by the number of preceding sponsored
-   * sites, to accomodate for sponsored sites pushing pinned ones to the side,
-   * effectively increasing their index again.
-   */
+  
+
+
+
+
   _adjustPinIndexForSponsoredLinks(site, index) {
     if (!this._linksWithDefaults) {
       return index;
     }
-    // Adjust insertion index for sponsored sites since their position is
-    // fixed.
+    
+    
     let adjustedIndex = index;
     for (let i = 0; i < index; i++) {
       if (
@@ -1015,15 +1015,15 @@ this.TopSitesFeed = class TopSitesFeed {
     return adjustedIndex;
   }
 
-  /**
-   * Insert a site to pin at a position shifting over any other pinned sites.
-   */
+  
+
+
   _insertPin(site, originalIndex, draggedFromIndex) {
     let index = this._adjustPinIndexForSponsoredLinks(site, originalIndex);
 
-    // Don't insert any pins past the end of the visible top sites. Otherwise,
-    // we can end up with a bunch of pinned sites that can never be unpinned again
-    // from the UI.
+    
+    
+    
     const topSitesCount =
       this.store.getState().Prefs.values[ROWS_PREF] *
       TOP_SITES_MAX_SITES_PER_ROW;
@@ -1036,21 +1036,21 @@ this.TopSitesFeed = class TopSitesFeed {
       this._pinSiteAt(site, index);
     } else {
       pinned[draggedFromIndex] = null;
-      // Find the hole to shift the pinned site(s) towards. We shift towards the
-      // hole left by the site being dragged.
+      
+      
       let holeIndex = index;
       const indexStep = index > draggedFromIndex ? -1 : 1;
       while (pinned[holeIndex]) {
         holeIndex += indexStep;
       }
       if (holeIndex >= topSitesCount || holeIndex < 0) {
-        // There are no holes, so we will effectively unpin the last slot and shifting
-        // towards it. This only happens when adding a new top site to an already
-        // fully pinned grid.
+        
+        
+        
         holeIndex = topSitesCount - 1;
       }
 
-      // Shift towards the hole.
+      
       const shiftingStep = holeIndex > index ? -1 : 1;
       while (holeIndex !== index) {
         const nextIndex = holeIndex + shiftingStep;
@@ -1061,18 +1061,18 @@ this.TopSitesFeed = class TopSitesFeed {
     }
   }
 
-  /**
-   * Handle an insert (drop/add) action of a site.
-   */
+  
+
+
   async insert(action) {
     let { index } = action.data;
-    // Treat invalid pin index values (e.g., -1, undefined) as insert in the first position
+    
     if (!(index > 0)) {
       index = 0;
     }
 
-    // Inserting a top site pins it in the specified slot, pushing over any link already
-    // pinned in the slot (unless it's the last slot, then it replaces).
+    
+    
     this._insertPin(
       action.data.site,
       index,
@@ -1087,29 +1087,29 @@ this.TopSitesFeed = class TopSitesFeed {
   }
 
   updatePinnedSearchShortcuts({ addedShortcuts, deletedShortcuts }) {
-    // Unpin the deletedShortcuts.
+    
     deletedShortcuts.forEach(({ url }) => {
       NewTabUtils.pinnedLinks.unpin({ url });
     });
 
-    // Pin the addedShortcuts.
+    
     const numberOfSlots =
       this.store.getState().Prefs.values[ROWS_PREF] *
       TOP_SITES_MAX_SITES_PER_ROW;
     addedShortcuts.forEach(shortcut => {
-      // Find first hole in pinnedLinks.
+      
       let index = NewTabUtils.pinnedLinks.links.findIndex(link => !link);
       if (
         index < 0 &&
         NewTabUtils.pinnedLinks.links.length + 1 < numberOfSlots
       ) {
-        // pinnedLinks can have less slots than the total available.
+        
         index = NewTabUtils.pinnedLinks.links.length;
       }
       if (index >= 0) {
         NewTabUtils.pinnedLinks.pin(shortcut, index);
       } else {
-        // No slots available, we need to do an insert in first slot and push over other pinned links.
+        
         this._insertPin(shortcut, 0, numberOfSlots);
       }
     });
@@ -1121,12 +1121,12 @@ this.TopSitesFeed = class TopSitesFeed {
     switch (action.type) {
       case at.INIT:
         this.init();
-        this.updateCustomSearchShortcuts(true /* isStartup */);
+        this.updateCustomSearchShortcuts(true );
         break;
       case at.SYSTEM_TICK:
         this.refresh({ broadcast: false });
         break;
-      // All these actions mean we need new top sites
+      
       case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINK_DELETED:
         this.frecentCache.expire();

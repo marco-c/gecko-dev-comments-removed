@@ -58,7 +58,7 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/AboutNewTab.jsm"
 );
 
-// ASRouterTargeting.findMatchingMessage
+
 add_task(async function find_matching_message() {
   const messages = [
     { id: "foo", targeting: "FOO" },
@@ -109,7 +109,7 @@ add_task(async function check_other_error_handling() {
   Assert.ok(called, "Attribute error caught");
 });
 
-// ASRouterTargeting.Environment
+
 add_task(async function check_locale() {
   ok(
     Services.locale.appLocaleAsBCP47,
@@ -254,7 +254,7 @@ add_task(async function check_isFxAEnabled() {
 });
 
 add_task(async function check_totalBookmarksCount() {
-  // Make sure we remove default bookmarks so they don't interfere
+  
   await clearHistoryAndBookmarks();
   const message = { id: "foo", targeting: "totalBookmarksCount > 0" };
 
@@ -280,7 +280,7 @@ add_task(async function check_totalBookmarksCount() {
     "Should select correct item after bookmarks are added."
   );
 
-  // Cleanup
+  
   await PlacesUtils.bookmarks.remove(bookmark.guid);
 });
 
@@ -306,7 +306,7 @@ add_task(async function check_needsUpdate() {
 
 add_task(async function checksearchEngines() {
   const result = await ASRouterTargeting.Environment.searchEngines;
-  const expectedInstalled = (await Services.search.getAppProvidedEngines())
+  const expectedInstalled = (await Services.search.getDefaultEngines())
     .map(engine => engine.identifier)
     .sort()
     .join(",");
@@ -344,7 +344,7 @@ add_task(async function checksearchEngines() {
   const message2 = {
     id: "foo",
     targeting: `searchEngines[${
-      (await Services.search.getAppProvidedEngines())[0].identifier
+      (await Services.search.getDefaultEngines())[0].identifier
     } in .installed]`,
   };
   is(
@@ -467,8 +467,8 @@ add_task(async function checkAddonsInfo() {
     "should correctly provide `isWebExtension` property"
   );
 
-  // As we installed our test addon the addons database must be initialised, so
-  // (in this test environment) we expect to receive "full" data
+  
+  
 
   ok(isFullData, "should receive full data");
 
@@ -497,14 +497,14 @@ add_task(async function checkFrecentSites() {
 
   const visits = [];
   for (const [uri, count, visitDate] of [
-    ["https://mozilla1.com/", 10, timeDaysAgo(0)], // frecency 1000
-    ["https://mozilla2.com/", 5, timeDaysAgo(1)], // frecency 500
-    ["https://mozilla3.com/", 1, timeDaysAgo(2)], // frecency 100
+    ["https://mozilla1.com/", 10, timeDaysAgo(0)], 
+    ["https://mozilla2.com/", 5, timeDaysAgo(1)], 
+    ["https://mozilla3.com/", 1, timeDaysAgo(2)], 
   ]) {
     [...Array(count).keys()].forEach(() =>
       visits.push({
         uri,
-        visitDate: visitDate * 1000, // Places expects microseconds
+        visitDate: visitDate * 1000, 
       })
     );
   }
@@ -587,15 +587,15 @@ add_task(async function checkFrecentSites() {
     "should select correct item when filtering by frecency and lastVisitDate with multiple candidate domains"
   );
 
-  // Cleanup
+  
   await clearHistoryAndBookmarks();
 });
 
 add_task(async function check_pinned_sites() {
-  // Fresh profiles come with an empty set of pinned websites (pref doesn't
-  // exist). Search shortcut topsites make this test more complicated because
-  // the feature pins a new website on startup. Behaviour can vary when running
-  // with --verify so it's more predictable to clear pins entirely.
+  
+  
+  
+  
   Services.prefs.clearUserPref("browser.newtabpage.pinned");
   NewTabUtils.pinnedLinks.resetCache();
   const originalPin = JSON.stringify(NewTabUtils.pinnedLinks.links);
@@ -608,7 +608,7 @@ add_task(async function check_pinned_sites() {
     NewTabUtils.pinnedLinks.pin(site, NewTabUtils.pinnedLinks.links.length)
   );
 
-  // Unpinning adds null to the list of pinned sites, which we should test that we handle gracefully for our targeting
+  
   NewTabUtils.pinnedLinks.unpin(sitesToPin[1]);
   ok(
     NewTabUtils.pinnedLinks.links.includes(null),
@@ -648,7 +648,7 @@ add_task(async function check_pinned_sites() {
     "should select correct item by host and searchTopSite in pinnedSites"
   );
 
-  // Cleanup
+  
   sitesToPin.forEach(site => NewTabUtils.pinnedLinks.unpin(site));
 
   await clearHistoryAndBookmarks();
@@ -733,12 +733,12 @@ add_task(async function check_provider_cohorts() {
 });
 
 add_task(async function check_xpinstall_enabled() {
-  // should default to true if pref doesn't exist
+  
   is(await ASRouterTargeting.Environment.xpinstallEnabled, true);
-  // flip to false, check targeting reflects that
+  
   await pushPrefs(["xpinstall.enabled", false]);
   is(await ASRouterTargeting.Environment.xpinstallEnabled, false);
-  // flip to true, check targeting reflects that
+  
   await pushPrefs(["xpinstall.enabled", true]);
   is(await ASRouterTargeting.Environment.xpinstallEnabled, true);
 });
