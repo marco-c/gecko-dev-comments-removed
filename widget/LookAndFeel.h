@@ -21,6 +21,7 @@ struct gfxFontStyle;
 namespace mozilla {
 
 namespace widget {
+class FullLookAndFeel;
 class LookAndFeelCache;
 }  
 
@@ -400,6 +401,9 @@ class LookAndFeel {
     
     
     CaretAspectRatio,
+
+    
+    End,
   };
 
   
@@ -555,6 +559,7 @@ class LookAndFeel {
 
   static widget::LookAndFeelCache GetCache();
   static void SetCache(const widget::LookAndFeelCache& aCache);
+  static void SetData(widget::FullLookAndFeel&& aTables);
   static void NotifyChangedAllWindows(widget::ThemeChangeKind);
 };
 

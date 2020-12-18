@@ -46,7 +46,7 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   static OperatingSystemVersion GetOperatingSystemVersion();
 
  public:
-  nsLookAndFeel();
+  explicit nsLookAndFeel(const LookAndFeelCache* aCache);
   virtual ~nsLookAndFeel();
 
   void NativeInit() final;
@@ -62,6 +62,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   void SetCacheImpl(const LookAndFeelCache& aCache) override;
 
  private:
+  void DoSetCache(const LookAndFeelCache& aCache);
+
   
 
 

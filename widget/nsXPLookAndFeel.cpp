@@ -10,6 +10,7 @@
 #include "nsXPLookAndFeel.h"
 #include "nsLookAndFeel.h"
 #include "HeadlessLookAndFeel.h"
+#include "RemoteLookAndFeel.h"
 #include "nsContentUtils.h"
 #include "nsCRT.h"
 #include "nsFont.h"
@@ -254,11 +255,44 @@ nsXPLookAndFeel* nsXPLookAndFeel::GetInstance() {
 
   NS_ENSURE_TRUE(!sShutdown, nullptr);
 
-  if (gfxPlatform::IsHeadless()) {
-    sInstance = new widget::HeadlessLookAndFeel();
-  } else {
-    sInstance = new nsLookAndFeel();
+  
+  
+  
+  
+  
+  
+
+  LookAndFeelCache* lnfCache = nullptr;
+  FullLookAndFeel* fullLnf = nullptr;
+  widget::LookAndFeelData* lnfData = nullptr;
+
+  if (auto* cc = mozilla::dom::ContentChild::GetSingleton()) {
+    lnfData = &cc->BorrowLookAndFeelData();
+    switch (lnfData->type()) {
+      case widget::LookAndFeelData::TLookAndFeelCache:
+        lnfCache = &lnfData->get_LookAndFeelCache();
+        break;
+      case widget::LookAndFeelData::TFullLookAndFeel:
+        fullLnf = &lnfData->get_FullLookAndFeel();
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("unexpected LookAndFeelData type");
+    }
   }
+
+  if (fullLnf) {
+    sInstance = new widget::RemoteLookAndFeel(std::move(*fullLnf));
+  } else if (gfxPlatform::IsHeadless()) {
+    sInstance = new widget::HeadlessLookAndFeel(lnfCache);
+  } else {
+    sInstance = new nsLookAndFeel(lnfCache);
+  }
+
+  
+  if (lnfData) {
+    *lnfData = widget::LookAndFeelData{};
+  }
+
   return sInstance;
 }
 
@@ -460,15 +494,6 @@ void nsXPLookAndFeel::Init() {
 
   for (i = 0; i < ArrayLength(sColorPrefs); ++i) {
     InitColorFromPref(i);
-  }
-
-  if (XRE_IsContentProcess()) {
-    mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
-
-    LookAndFeel::SetCache(cc->BorrowLookAndFeelCache());
-    
-    
-    cc->BorrowLookAndFeelCache() = LookAndFeelCache{};
   }
 }
 
@@ -1086,6 +1111,11 @@ widget::LookAndFeelCache LookAndFeel::GetCache() {
 
 void LookAndFeel::SetCache(const widget::LookAndFeelCache& aCache) {
   nsLookAndFeel::GetInstance()->SetCacheImpl(aCache);
+}
+
+
+void LookAndFeel::SetData(widget::FullLookAndFeel&& aTables) {
+  nsLookAndFeel::GetInstance()->SetDataImpl(std::move(aTables));
 }
 
 }  

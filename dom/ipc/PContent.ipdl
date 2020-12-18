@@ -580,7 +580,7 @@ child:
 
 
 
-    async ThemeChanged(LookAndFeelCache aCache, ThemeChangeKind aKind);
+    async ThemeChanged(LookAndFeelData lookAndFeelData, ThemeChangeKind aKind);
 
     async UpdateSystemParameters(SystemParameterKVPair[] aUpdates);
 
@@ -688,7 +688,7 @@ child:
 
     async SetXPCOMProcessAttributes(XPCOMInitData xpcomInit,
                                     StructuredCloneData initialData,
-                                    LookAndFeelCache lookAndFeelCache,
+                                    LookAndFeelData lookAndFeeldata,
                                     
                                     SystemFontListEntry[] systemFontList,
                                     SharedMemoryHandle? sharedUASheetHandle,

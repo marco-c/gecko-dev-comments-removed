@@ -1,0 +1,53 @@
+
+
+
+
+
+
+
+#ifndef mozilla_widget_RemoteLookAndFeel_h__
+#define mozilla_widget_RemoteLookAndFeel_h__
+
+#include "mozilla/widget/nsXPLookAndFeel.h"
+#include "mozilla/widget/LookAndFeelTypes.h"
+
+namespace mozilla::widget {
+
+
+
+
+
+class RemoteLookAndFeel final : public nsXPLookAndFeel {
+ public:
+  explicit RemoteLookAndFeel(FullLookAndFeel&& aTables);
+
+  virtual ~RemoteLookAndFeel();
+
+  void NativeInit() override {}
+
+  nsresult NativeGetInt(IntID aID, int32_t& aResult) override;
+  nsresult NativeGetFloat(FloatID aID, float& aResult) override;
+  nsresult NativeGetColor(ColorID aID, nscolor& aResult) override;
+  bool NativeGetFont(FontID aID, nsString& aFontName,
+                     gfxFontStyle& aFontStyle) override;
+
+  char16_t GetPasswordCharacterImpl() override;
+  bool GetEchoPasswordImpl() override;
+
+  
+  
+  void SetDataImpl(FullLookAndFeel&& aTables) override;
+
+  
+  
+  
+  
+  static FullLookAndFeel ExtractData();
+
+ private:
+  FullLookAndFeel mTables;
+};
+
+}  
+
+#endif  
