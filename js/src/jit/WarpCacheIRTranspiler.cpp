@@ -1084,6 +1084,16 @@ bool WarpCacheIRTranspiler::emitGuardBooleanToInt32(ValOperandId inputId,
 
 bool WarpCacheIRTranspiler::emitGuardIsNumber(ValOperandId inputId) {
   
+  MDefinition* def = getOperand(inputId);
+  if (def->type() == MIRType::Int32) {
+    auto* ins = MToDouble::New(alloc(), def);
+    add(ins);
+
+    setOperand(inputId, ins);
+    return true;
+  }
+
+  
   return emitGuardTo(inputId, MIRType::Double);
 }
 
