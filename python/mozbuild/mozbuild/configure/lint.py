@@ -91,7 +91,7 @@ class LintSandbox(ConfigureSandbox):
         
         co_lnotab = bytes([0, 127] * (offset // 127) + [0, offset % 127])
         code = thrower.__code__
-        code = types.CodeType(
+        codetype_args = [
             code.co_argcount,
             code.co_kwonlyargcount,
             code.co_nlocals,
@@ -105,7 +105,12 @@ class LintSandbox(ConfigureSandbox):
             funcname,
             firstline,
             co_lnotab,
-        )
+        ]
+        if hasattr(code, "co_posonlyargcount"):
+            
+            codetype_args.insert(1, code.co_posonlyargcount)
+
+        code = types.CodeType(*codetype_args)
         thrower = types.FunctionType(
             code,
             thrower.__globals__,
