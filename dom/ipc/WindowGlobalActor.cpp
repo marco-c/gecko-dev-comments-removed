@@ -142,6 +142,8 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
   }
   init.securityInfo() = securityInfo;
 
+  fields.mIsLocalIP = init.principal()->GetIsLocalIpAddress();
+
   
   
   
