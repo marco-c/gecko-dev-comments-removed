@@ -18,7 +18,6 @@ namespace js {
 namespace jit {
 
 class CodeGenerator;
-class MRootList;
 class WarpSnapshot;
 
 
@@ -32,7 +31,6 @@ class IonCompileTask final : public HelperThreadTask,
   
   CodeGenerator* backgroundCodegen_ = nullptr;
 
-  MRootList* rootList_ = nullptr;
   WarpSnapshot* snapshot_ = nullptr;
 
   
@@ -52,10 +50,6 @@ class IonCompileTask final : public HelperThreadTask,
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
   void trace(JSTracer* trc);
 
-  void setRootList(MRootList& rootList) {
-    MOZ_ASSERT(!rootList_);
-    rootList_ = &rootList;
-  }
   CodeGenerator* backgroundCodegen() const { return backgroundCodegen_; }
   void setBackgroundCodegen(CodeGenerator* codegen) {
     backgroundCodegen_ = codegen;
@@ -82,8 +76,6 @@ void AttachFinishedCompilations(JSContext* cx);
 void FinishOffThreadTask(JSRuntime* runtime, IonCompileTask* task,
                          const AutoLockHelperThreadState& lock);
 void FreeIonCompileTask(IonCompileTask* task);
-
-MOZ_MUST_USE bool CreateMIRRootList(IonCompileTask& task);
 
 }  
 }  
