@@ -34,14 +34,6 @@ impl TimespanMetric {
 
 #[inherent(pub)]
 impl glean_core::traits::Timespan for TimespanMetric {
-    
-    
-    
-    
-    
-    
-    
-    
     fn start(&self) {
         let start_time = time::precise_time_ns();
 
@@ -56,9 +48,6 @@ impl glean_core::traits::Timespan for TimespanMetric {
         });
     }
 
-    
-    
-    
     fn stop(&self) {
         let stop_time = time::precise_time_ns();
 
@@ -73,8 +62,6 @@ impl glean_core::traits::Timespan for TimespanMetric {
         });
     }
 
-    
-    
     fn cancel(&self) {
         let metric = Arc::clone(&self.0);
         dispatcher::launch(move || {
@@ -84,18 +71,9 @@ impl glean_core::traits::Timespan for TimespanMetric {
             lock.cancel()
         });
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<u64> {
-        dispatcher::block_on_queue();
+        crate::block_on_dispatcher();
 
         crate::with_glean(|glean| {
             
@@ -116,25 +94,12 @@ impl glean_core::traits::Timespan for TimespanMetric {
         })
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: ErrorType,
         ping_name: S,
     ) -> i32 {
-        dispatcher::block_on_queue();
+        crate::block_on_dispatcher();
 
         let metric = self
             .0

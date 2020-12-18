@@ -43,6 +43,14 @@ pub use global::*;
 mod global;
 
 
+enum Blocked {
+    
+    Shutdown,
+    
+    Continue,
+}
+
+
 enum Command {
     
     Task(Box<dyn FnOnce() + Send>),
@@ -100,7 +108,7 @@ struct DispatchGuard {
     queue_preinit: Arc<AtomicBool>,
 
     
-    block_sender: Sender<()>,
+    block_sender: Sender<Blocked>,
 
     
     preinit_sender: Sender<Command>,
@@ -146,6 +154,18 @@ impl DispatchGuard {
             .expect("Failed to receive message on single-use channel");
     }
 
+    fn kill(&mut self) -> Result<(), DispatchError> {
+        
+        let old_val = self.queue_preinit.swap(false, Ordering::SeqCst);
+        if !old_val {
+            return Err(DispatchError::AlreadyFlushed);
+        }
+
+        
+        self.block_sender.send(Blocked::Shutdown)?;
+        Ok(())
+    }
+
     fn flush_init(&mut self) -> Result<(), DispatchError> {
         
         let old_val = self.queue_preinit.swap(false, Ordering::SeqCst);
@@ -154,7 +174,7 @@ impl DispatchGuard {
         }
 
         
-        self.block_sender.send(())?;
+        self.block_sender.send(Blocked::Continue)?;
 
         
         let (swap_sender, swap_receiver) = bounded(0);
@@ -193,7 +213,7 @@ impl Dispatcher {
     
     
     pub fn new(max_queue_size: usize) -> Self {
-        let (block_sender, block_receiver) = bounded(0);
+        let (block_sender, block_receiver) = bounded(1);
         let (preinit_sender, preinit_receiver) = bounded(max_queue_size);
         let (sender, mut unbounded_receiver) = unbounded();
 
@@ -202,11 +222,20 @@ impl Dispatcher {
         let worker = thread::Builder::new()
             .name("glean.dispatcher".into())
             .spawn(move || {
-                if block_receiver.recv().is_err() {
-                    
-                    
-                    log::error!("The task producer was disconnected. Worker thread will exit.");
-                    return;
+                match block_receiver.recv() {
+                    Err(_) => {
+                        
+                        
+                        log::error!("The task producer was disconnected. Worker thread will exit.");
+                        return;
+                    }
+                    Ok(Blocked::Shutdown) => {
+                        
+                        return;
+                    }
+                    Ok(Blocked::Continue) => {
+                        
+                    }
                 }
 
                 let mut receiver = preinit_receiver;

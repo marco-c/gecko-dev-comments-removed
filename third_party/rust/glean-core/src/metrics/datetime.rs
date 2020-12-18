@@ -13,7 +13,7 @@ use crate::util::{get_iso_time_string, local_now_with_offset};
 use crate::CommonMetricData;
 use crate::Glean;
 
-use chrono::{DateTime, FixedOffset, TimeZone};
+use chrono::{DateTime, FixedOffset, TimeZone, Timelike};
 
 
 
@@ -136,9 +136,69 @@ impl DatetimeMetric {
         match StorageManager.snapshot_metric(
             glean.storage(),
             storage_name,
-            &self.meta().identifier(glean),
+            &self.meta.identifier(glean),
+            self.meta.lifetime,
         ) {
             Some(Metric::Datetime(dt, _)) => Some(dt),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<Datetime> {
+        match StorageManager.snapshot_metric(
+            glean.storage(),
+            storage_name,
+            &self.meta.identifier(glean),
+            self.meta.lifetime,
+        ) {
+            Some(Metric::Datetime(d, tu)) => {
+                
+                
+                
+                
+                let time = d.time();
+                match tu {
+                    TimeUnit::Nanosecond => d.date().and_hms_nano_opt(
+                        time.hour(),
+                        time.minute(),
+                        time.second(),
+                        time.nanosecond(),
+                    ),
+                    TimeUnit::Microsecond => d.date().and_hms_nano_opt(
+                        time.hour(),
+                        time.minute(),
+                        time.second(),
+                        time.nanosecond() / 1000,
+                    ),
+                    TimeUnit::Millisecond => d.date().and_hms_nano_opt(
+                        time.hour(),
+                        time.minute(),
+                        time.second(),
+                        time.nanosecond() / 1000000,
+                    ),
+                    TimeUnit::Second => {
+                        d.date()
+                            .and_hms_nano_opt(time.hour(), time.minute(), time.second(), 0)
+                    }
+                    TimeUnit::Minute => d.date().and_hms_nano_opt(time.hour(), time.minute(), 0, 0),
+                    TimeUnit::Hour => d.date().and_hms_nano_opt(time.hour(), 0, 0, 0),
+                    TimeUnit::Day => d.date().and_hms_nano_opt(0, 0, 0, 0),
+                }
+            }
             _ => None,
         }
     }
@@ -155,6 +215,7 @@ impl DatetimeMetric {
             glean.storage(),
             storage_name,
             &self.meta.identifier(glean),
+            self.meta.lifetime,
         ) {
             Some(Metric::Datetime(d, tu)) => Some(get_iso_time_string(d, tu)),
             _ => None,

@@ -59,13 +59,7 @@ pub fn flush_init() -> Result<(), DispatchError> {
     guard().flush_init()
 }
 
-
-
-
-
-pub fn shutdown() -> Result<(), DispatchError> {
-    guard().shutdown()?;
-
+fn join_dispatcher_thread() -> Result<(), DispatchError> {
     
     
     let mut lock = GLOBAL_DISPATCHER.write().unwrap();
@@ -76,6 +70,25 @@ pub fn shutdown() -> Result<(), DispatchError> {
     }
 
     Ok(())
+}
+
+
+
+
+
+
+pub fn kill() -> Result<(), DispatchError> {
+    guard().kill()?;
+    join_dispatcher_thread()
+}
+
+
+
+
+
+pub fn shutdown() -> Result<(), DispatchError> {
+    guard().shutdown()?;
+    join_dispatcher_thread()
 }
 
 

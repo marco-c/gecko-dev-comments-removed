@@ -2,6 +2,8 @@
 
 
 
+use crate::ErrorType;
+
 
 
 
@@ -54,8 +56,11 @@ pub trait StringList {
     
     
     
-    fn test_get_value_as_json_string<'a, S: Into<Option<&'a str>>>(
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
+        error: ErrorType,
         ping_name: S,
-    ) -> Option<String>;
+    ) -> i32;
 }

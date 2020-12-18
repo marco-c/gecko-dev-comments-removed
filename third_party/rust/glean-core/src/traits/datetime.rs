@@ -4,36 +4,13 @@
 
 #![allow(clippy::too_many_arguments)]
 
+use crate::ErrorType;
+
 
 
 
 
 pub trait Datetime {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn set_with_details(
-        &self,
-        year: i32,
-        month: u32,
-        day: u32,
-        hour: u32,
-        minute: u32,
-        second: u32,
-        nano: u32,
-        offset_seconds: i32,
-    );
-
     
     
     
@@ -72,8 +49,10 @@ pub trait Datetime {
     
     
     
-    fn test_get_value_as_string<'a, S: Into<Option<&'a str>>>(
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
+        error: ErrorType,
         ping_name: S,
-    ) -> Option<String>;
+    ) -> i32;
 }

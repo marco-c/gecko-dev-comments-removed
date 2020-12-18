@@ -49,7 +49,7 @@ pub use core_metrics::ClientInfoMetrics;
 pub use glean_core::{
     global_glean,
     metrics::{DistributionData, MemoryUnit, RecordedEvent, TimeUnit},
-    setup_glean, CommonMetricData, Error, ErrorType, Glean, Lifetime, Result,
+    setup_glean, CommonMetricData, Error, ErrorType, Glean, HistogramType, Lifetime, Result,
 };
 use private::RecordedExperimentData;
 
@@ -91,6 +91,9 @@ static INITIALIZE_CALLED: AtomicBool = AtomicBool::new(false);
 static PRE_INIT_DEBUG_VIEW_TAG: OnceCell<Mutex<String>> = OnceCell::new();
 static PRE_INIT_LOG_PINGS: AtomicBool = AtomicBool::new(false);
 static PRE_INIT_SOURCE_TAGS: OnceCell<Mutex<Vec<String>>> = OnceCell::new();
+
+
+static PRE_INIT_PING_REGISTRATION: OnceCell<Mutex<Vec<private::PingType>>> = OnceCell::new();
 
 
 
@@ -253,6 +256,14 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
 
                 
                 
+                if let Some(tags) = PRE_INIT_PING_REGISTRATION.get() {
+                    let lock = tags.try_lock();
+                    if let Ok(pings) = lock {
+                        for ping in &*pings {
+                            glean.register_ping_type(&ping.ping_type);
+                        }
+                    }
+                }
 
                 
                 
@@ -310,14 +321,29 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
 
 
 pub fn shutdown() {
-    if !was_initialize_called() {
+    if global_glean().is_none() {
         log::warn!("Shutdown called before Glean is initialized");
+        if let Err(e) = dispatcher::kill() {
+            log::error!("Can't kill dispatcher thread: {:?}", e);
+        }
+
         return;
     }
 
     if let Err(e) = dispatcher::shutdown() {
         log::error!("Can't shutdown dispatcher thread: {:?}", e);
     }
+}
+
+
+
+
+fn block_on_dispatcher() {
+    assert!(
+        was_initialize_called(),
+        "initialize was never called. Can't block on the dispatcher queue."
+    );
+    dispatcher::block_on_queue()
 }
 
 
@@ -411,6 +437,14 @@ pub fn register_ping_type(ping: &private::PingType) {
                 glean.register_ping_type(&ping.ping_type);
             })
         })
+    } else {
+        
+        
+        
+        
+        let m = PRE_INIT_PING_REGISTRATION.get_or_init(Default::default);
+        let mut lock = m.lock().unwrap();
+        lock.push(ping.clone());
     }
 }
 
@@ -510,7 +544,7 @@ pub fn set_experiment_inactive(experiment_id: String) {
 
 #[allow(dead_code)]
 pub(crate) fn test_is_experiment_active(experiment_id: String) -> bool {
-    dispatcher::block_on_queue();
+    block_on_dispatcher();
     with_glean(|glean| glean.test_is_experiment_active(experiment_id.to_owned()))
 }
 
@@ -519,7 +553,7 @@ pub(crate) fn test_is_experiment_active(experiment_id: String) -> bool {
 
 #[allow(dead_code)]
 pub(crate) fn test_get_experiment_data(experiment_id: String) -> RecordedExperimentData {
-    dispatcher::block_on_queue();
+    block_on_dispatcher();
     with_glean(|glean| {
         let json_data = glean
             .test_get_experiment_data_as_json(experiment_id.to_owned())

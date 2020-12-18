@@ -23,9 +23,6 @@ pub use http_uploader::*;
 mod http_uploader;
 
 
-const THROTTLE_BACKOFF_TIME: Duration = Duration::from_secs(60);
-
-
 pub trait PingUploader: std::fmt::Debug + Send + Sync {
     
     
@@ -100,8 +97,8 @@ impl UploadManager {
                             
                             with_glean(|glean| glean.process_ping_upload_response(&doc_id, result));
                         }
-                        PingUploadTask::Wait => {
-                            thread::sleep(THROTTLE_BACKOFF_TIME);
+                        PingUploadTask::Wait(time) => {
+                            thread::sleep(Duration::from_millis(time));
                         }
                         PingUploadTask::Done => {
                             

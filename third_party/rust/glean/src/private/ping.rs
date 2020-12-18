@@ -42,25 +42,6 @@ impl PingType {
 
 #[inherent(pub)]
 impl glean_core::traits::Ping for PingType {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn submit(&self, reason: Option<&str>) {
         crate::submit_ping(self, reason)
     }

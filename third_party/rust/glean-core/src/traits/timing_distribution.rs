@@ -4,6 +4,7 @@
 
 use crate::metrics::DistributionData;
 use crate::metrics::TimerId;
+use crate::ErrorType;
 
 
 
@@ -20,11 +21,7 @@ pub trait TimingDistribution {
     
     
     
-    
-    
-    
-    
-    fn set_start(&mut self, start_time: u64);
+    fn start(&mut self) -> TimerId;
 
     
     
@@ -37,8 +34,7 @@ pub trait TimingDistribution {
     
     
     
-    
-    fn set_stop_and_accumulate(&mut self, id: TimerId, stop_time: u64);
+    fn stop_and_accumulate(&mut self, id: TimerId);
 
     
     
@@ -50,34 +46,6 @@ pub trait TimingDistribution {
     
     
     fn cancel(&mut self, id: TimerId);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn accumulate_samples_signed(&mut self, samples: Vec<i64>);
 
     
     
@@ -104,8 +72,12 @@ pub trait TimingDistribution {
     
     
     
-    fn test_get_value_as_json_string<'a, S: Into<Option<&'a str>>>(
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
+        error: ErrorType,
         ping_name: S,
-    ) -> Option<String>;
+    ) -> i32;
 }

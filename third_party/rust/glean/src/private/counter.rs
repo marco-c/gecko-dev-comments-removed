@@ -32,32 +32,13 @@ impl CounterMetric {
 
 #[inherent(pub)]
 impl glean_core::traits::Counter for CounterMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn add(&self, amount: i32) {
         let metric = Arc::clone(&self.0);
         dispatcher::launch(move || crate::with_glean(|glean| metric.add(glean, amount)));
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32> {
-        dispatcher::block_on_queue();
+        crate::block_on_dispatcher();
 
         let queried_ping_name = ping_name
             .into()
@@ -66,25 +47,12 @@ impl glean_core::traits::Counter for CounterMetric {
         crate::with_glean(|glean| self.0.test_get_value(glean, queried_ping_name))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: ErrorType,
         ping_name: S,
     ) -> i32 {
-        dispatcher::block_on_queue();
+        crate::block_on_dispatcher();
 
         crate::with_glean_mut(|glean| {
             glean_core::test_get_num_recorded_errors(&glean, self.0.meta(), error, ping_name.into())

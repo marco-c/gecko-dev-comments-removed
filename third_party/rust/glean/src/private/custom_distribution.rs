@@ -5,8 +5,8 @@
 use inherent::inherent;
 use std::sync::Arc;
 
-use glean_core::metrics::{DistributionData, MemoryUnit, MetricType};
-use glean_core::ErrorType;
+use glean_core::metrics::{DistributionData, MetricType};
+use glean_core::{CommonMetricData, ErrorType, HistogramType};
 
 use crate::dispatcher;
 
@@ -21,22 +21,36 @@ use crate::dispatcher;
 
 
 #[derive(Clone)]
-pub struct MemoryDistributionMetric(pub(crate) Arc<glean_core::metrics::MemoryDistributionMetric>);
+pub struct CustomDistributionMetric(pub(crate) Arc<glean_core::metrics::CustomDistributionMetric>);
 
-impl MemoryDistributionMetric {
+impl CustomDistributionMetric {
     
-    pub fn new(meta: glean_core::CommonMetricData, memory_unit: MemoryUnit) -> Self {
+    pub fn new(
+        meta: CommonMetricData,
+        range_min: u64,
+        range_max: u64,
+        bucket_count: u64,
+        histogram_type: HistogramType,
+    ) -> Self {
         Self(Arc::new(
-            glean_core::metrics::MemoryDistributionMetric::new(meta, memory_unit),
+            glean_core::metrics::CustomDistributionMetric::new(
+                meta,
+                range_min,
+                range_max,
+                bucket_count,
+                histogram_type,
+            ),
         ))
     }
 }
 
 #[inherent(pub)]
-impl glean_core::traits::MemoryDistribution for MemoryDistributionMetric {
-    fn accumulate(&self, sample: u64) {
+impl glean_core::traits::CustomDistribution for CustomDistributionMetric {
+    fn accumulate_samples_signed(&self, samples: Vec<i64>) {
         let metric = Arc::clone(&self.0);
-        dispatcher::launch(move || crate::with_glean(|glean| metric.accumulate(glean, sample)));
+        dispatcher::launch(move || {
+            crate::with_glean(|glean| metric.accumulate_samples_signed(glean, samples))
+        });
     }
 
     fn test_get_value<'a, S: Into<Option<&'a str>>>(

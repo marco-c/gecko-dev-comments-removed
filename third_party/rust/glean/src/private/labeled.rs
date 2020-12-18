@@ -8,8 +8,6 @@ use std::sync::Arc;
 use glean_core::metrics::MetricType;
 use glean_core::ErrorType;
 
-use crate::dispatcher;
-
 
 
 
@@ -124,41 +122,17 @@ impl<T> glean_core::traits::Labeled<T> for LabeledMetric<T>
 where
     T: AllowLabeled + Clone,
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn get(&self, label: &str) -> T {
         let inner = self.0.get(label);
         T::from_inner(inner)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: ErrorType,
         ping_name: S,
     ) -> i32 {
-        dispatcher::block_on_queue();
+        crate::block_on_dispatcher();
 
         crate::with_glean_mut(|glean| {
             glean_core::test_get_num_recorded_errors(

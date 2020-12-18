@@ -31,28 +31,13 @@ impl BooleanMetric {
 
 #[inherent(pub)]
 impl glean_core::traits::Boolean for BooleanMetric {
-    
-    
-    
-    
-    
     fn set(&self, value: bool) {
         let metric = Arc::clone(&self.0);
         dispatcher::launch(move || crate::with_glean(|glean| metric.set(glean, value)));
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<bool> {
-        dispatcher::block_on_queue();
+        crate::block_on_dispatcher();
 
         let queried_ping_name = match ping_name.into() {
             Some(name) => name,
