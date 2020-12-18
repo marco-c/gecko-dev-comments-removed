@@ -106,7 +106,6 @@ class DocAccessible;
 #endif
 
 namespace dom {
-class BrowserParent;
 class Element;
 class Event;
 class HTMLSlotElement;
@@ -119,7 +118,6 @@ class SourceSurface;
 
 namespace layers {
 class LayerManager;
-struct LayersId;
 }  
 
 namespace layout {
@@ -176,13 +174,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   static nsIContent* GetCapturingContent() {
     return sCapturingContentInfo.mContent;
-  }
-
-  
-
-  static dom::BrowserParent* GetCapturingRemoteTarget() {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    return sCapturingContentInfo.mRemoteTarget;
   }
 
   
@@ -1649,8 +1640,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  static void SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
-                                  WidgetEvent* aEvent = nullptr);
+  static void SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags);
 
   
 
@@ -1658,13 +1648,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   static void ReleaseCapturingContent() {
     PresShell::SetCapturingContent(nullptr, CaptureFlags::None);
-  }
-
-  static void ReleaseCapturingRemoteTarget(dom::BrowserParent* aBrowserParent) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    if (sCapturingContentInfo.mRemoteTarget == aBrowserParent) {
-      sCapturingContentInfo.mRemoteTarget = nullptr;
-    }
   }
 
   
@@ -3138,15 +3121,13 @@ class PresShell final : public nsStubDocumentObserver,
 
   struct CapturingContentInfo final {
     CapturingContentInfo()
-        : mRemoteTarget(nullptr),
-          mAllowed(false),
+        : mAllowed(false),
           mPointerLock(false),
           mRetargetToElement(false),
           mPreventDrag(false) {}
 
     
     StaticRefPtr<nsIContent> mContent;
-    dom::BrowserParent* mRemoteTarget;
     bool mAllowed;
     bool mPointerLock;
     bool mRetargetToElement;
