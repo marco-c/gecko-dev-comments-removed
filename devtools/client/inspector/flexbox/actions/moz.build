@@ -5,6 +5,7 @@
 
 
 DevToolsModules(
+    "flexbox-highlighter.js",
     "flexbox.js",
     "index.js",
 )

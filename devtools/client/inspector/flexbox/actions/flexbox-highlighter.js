@@ -1,0 +1,39 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  
+
+
+
+
+
+
+
+  toggleFlexboxHighlighter(nodeFront, reason) {
+    return async thunkOptions => {
+      const { inspector } = thunkOptions;
+      if (!inspector || inspector._destroyed) {
+        return;
+      }
+
+      await inspector.highlighters.toggleFlexboxHighlighter(nodeFront, reason);
+    };
+  },
+};
