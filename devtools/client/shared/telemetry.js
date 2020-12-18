@@ -93,8 +93,11 @@ class Telemetry {
 
 
 
-
   start(histogramId, obj, { inSeconds } = {}) {
+    if (TelemetryStopwatch.running(histogramId, obj)) {
+      return false;
+    }
+
     return TelemetryStopwatch.start(histogramId, obj, { inSeconds });
   }
 

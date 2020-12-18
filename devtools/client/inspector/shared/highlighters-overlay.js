@@ -212,6 +212,42 @@ class HighlightersOverlay {
 
 
 
+  async _afterShowHighlighterTypeForNode(type, nodeFront, options) {
+    
+    if (type === TYPES.FLEXBOX) {
+      this.telemetry.toolOpened(
+        "FLEXBOX_HIGHLIGHTER",
+        this.inspector.toolbox.sessionId,
+        this
+      );
+
+      const scalars = {
+        layout: "devtools.layout.flexboxhighlighter.opened",
+        markup: "devtools.markup.flexboxhighlighter.opened",
+        rule: "devtools.rules.flexboxhighlighter.opened",
+      };
+
+      if (scalars[options.trigger]) {
+        this.telemetry.scalarAdd(scalars[options.trigger], 1);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -263,6 +299,25 @@ class HighlightersOverlay {
     }
 
     return skipShow;
+  }
+
+  
+
+
+
+
+
+
+
+  async _beforeHideHighlighterType(type) {
+    
+    if (type === TYPES.FLEXBOX) {
+      this.telemetry.toolClosed(
+        "FLEXBOX_HIGHLIGHTER",
+        this.inspector.toolbox.sessionId,
+        this
+      );
+    }
   }
 
   
@@ -406,6 +461,7 @@ class HighlightersOverlay {
       timer,
     });
     await highlighter.show(nodeFront, options);
+    await this._afterShowHighlighterTypeForNode(type, nodeFront, options);
 
     
     
@@ -460,6 +516,7 @@ class HighlightersOverlay {
     
     clearTimeout(timer);
     this._activeHighlighters.delete(type);
+    await this._beforeHideHighlighterType(type);
     await highlighter.hide();
 
     
@@ -710,28 +767,15 @@ class HighlightersOverlay {
 
 
 
-  async showFlexboxHighlighter(node, options, trigger) {
-    this.telemetry.toolOpened(
-      "FLEXBOX_HIGHLIGHTER",
-      this.inspector.toolbox.sessionId,
-      this
-    );
 
+
+  async showFlexboxHighlighter(node, options, trigger) {
     const color = await this.getFlexboxHighlighterColor(node);
     await this.showHighlighterTypeForNode(TYPES.FLEXBOX, node, {
       ...options,
+      trigger,
       color,
     });
-
-    const scalars = {
-      layout: "devtools.layout.flexboxhighlighter.opened",
-      markup: "devtools.markup.flexboxhighlighter.opened",
-      rule: "devtools.rules.flexboxhighlighter.opened",
-    };
-
-    if (scalars[trigger]) {
-      this.telemetry.scalarAdd(scalars[trigger], 1);
-    }
 
     try {
       
@@ -750,12 +794,6 @@ class HighlightersOverlay {
 
 
   async hideFlexboxHighlighter(node) {
-    this.telemetry.toolClosed(
-      "FLEXBOX_HIGHLIGHTER",
-      this.inspector.toolbox.sessionId,
-      this
-    );
-
     await this.hideHighlighterType(TYPES.FLEXBOX);
 
     
