@@ -54,7 +54,8 @@ class MediaResource : public DecoderDoctorLifeLogger<MediaResource> {
   
   
   
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(MediaResource, Destroy());
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(
+      MediaResource)
 
   
   
@@ -115,9 +116,6 @@ class MediaResource : public DecoderDoctorLifeLogger<MediaResource> {
 
  protected:
   virtual ~MediaResource() = default;
-
- private:
-  void Destroy();
 };
 
 
