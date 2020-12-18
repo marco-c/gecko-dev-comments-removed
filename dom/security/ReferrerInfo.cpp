@@ -162,11 +162,8 @@ ReferrerPolicy ReferrerInfo::ReferrerPolicyFromHeaderString(
     const nsAString& aContent) {
   
   
-  nsCharSeparatedTokenizer tokenizer(aContent, ',');
-  nsAutoString token;
   ReferrerPolicyEnum referrerPolicy = ReferrerPolicy::_empty;
-  while (tokenizer.hasMoreTokens()) {
-    token = tokenizer.nextToken();
+  for (const auto& token : nsCharSeparatedTokenizer(aContent, ',').ToRange()) {
     if (token.IsEmpty()) {
       continue;
     }

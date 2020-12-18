@@ -229,9 +229,9 @@ uint32_t ClearSiteData::ParseHeader(nsIHttpChannel* aChannel,
 
   uint32_t flags = 0;
 
-  nsCCharSeparatedTokenizer token(headerValue, ',');
-  while (token.hasMoreTokens()) {
-    auto value = token.nextToken();
+  for (auto value : nsCCharSeparatedTokenizer(headerValue, ',').ToRange()) {
+    
+    
     value.StripTaggedASCII(mozilla::ASCIIMask::MaskWhitespace());
 
     if (value.EqualsLiteral("\"cache\"")) {

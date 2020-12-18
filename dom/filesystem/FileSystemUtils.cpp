@@ -11,12 +11,6 @@
 
 namespace mozilla::dom {
 
-namespace {
-
-bool TokenizerIgnoreNothing(char16_t ) { return false; }
-
-}  
-
 
 bool FileSystemUtils::IsDescendantPath(const nsAString& aPath,
                                        const nsAString& aDescendantPath) {
@@ -47,11 +41,10 @@ bool FileSystemUtils::IsValidRelativeDOMPath(const nsAString& aPath,
   constexpr auto kParentDir = u".."_ns;
 
   
-  nsCharSeparatedTokenizerTemplate<TokenizerIgnoreNothing> tokenizer(
-      aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
-
-  while (tokenizer.hasMoreTokens()) {
-    nsDependentSubstring pathComponent = tokenizer.nextToken();
+  for (const nsAString& pathComponent :
+       nsCharSeparatedTokenizerTemplate<NS_TokenizerIgnoreNothing>{
+           aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR}
+           .ToRange()) {
     
     
     

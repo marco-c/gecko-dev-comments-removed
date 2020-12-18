@@ -335,10 +335,8 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
   Preferences::GetLocalizedString("intl.accept_languages", acceptLang);
 
   
-  nsCharSeparatedTokenizer langTokenizer(acceptLang, ',');
-  while (langTokenizer.hasMoreTokens()) {
-    nsDependentSubstring lang = langTokenizer.nextToken();
-
+  for (nsDependentSubstring lang :
+       nsCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
     
     
     if (lang.Length() > 2 && lang[2] == char16_t('_')) {
@@ -349,12 +347,10 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
     
     
     if (lang.Length() > 2) {
-      nsCharSeparatedTokenizer localeTokenizer(lang, '-');
       int32_t pos = 0;
       bool first = true;
-      while (localeTokenizer.hasMoreTokens()) {
-        const nsAString& code = localeTokenizer.nextToken();
-
+      for (const nsAString& code :
+           nsCharSeparatedTokenizer(lang, '-').ToRange()) {
         if (code.Length() == 2 && !first) {
           nsAutoString upper(code);
           ToUpperCase(upper);
