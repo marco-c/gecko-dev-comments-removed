@@ -18,6 +18,10 @@ class BaseHistory : public IHistory {
   void UnregisterVisitedCallback(nsIURI*, dom::Link*) final;
   void NotifyVisited(nsIURI*, VisitedStatus) final;
 
+  
+  
+  static bool CanStore(nsIURI*);
+
  protected:
   void NotifyVisitedInThisProcess(nsIURI*, VisitedStatus);
   void NotifyVisitedFromParent(nsIURI*, VisitedStatus);

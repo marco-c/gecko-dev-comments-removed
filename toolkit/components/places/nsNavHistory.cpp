@@ -879,73 +879,9 @@ nsNavHistory::CanAddURI(nsIURI* aURI, bool* canAdd) {
   NS_ENSURE_ARG_POINTER(canAdd);
 
   
-  if (IsHistoryDisabled()) {
-    *canAdd = false;
-    return NS_OK;
-  }
-
-  return CanAddURIToHistory(aURI, canAdd);
-}
-
-
-
-
-
-
-nsresult nsNavHistory::CanAddURIToHistory(nsIURI* aURI, bool* aCanAdd) {
-  
-  *aCanAdd = false;
-
-  
-  nsCString spec;
-  nsresult rv = aURI->GetSpec(spec);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (spec.Length() > MaxURILength()) {
-    return NS_OK;
-  }
-
-  nsAutoCString scheme;
-  rv = aURI->GetScheme(scheme);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https")) {
-    *aCanAdd = true;
-    return NS_OK;
-  }
-
-  
-  *aCanAdd =
-      !scheme.EqualsLiteral("about") && !scheme.EqualsLiteral("blob") &&
-      !scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("data") &&
-      !scheme.EqualsLiteral("imap") && !scheme.EqualsLiteral("javascript") &&
-      !scheme.EqualsLiteral("mailbox") && !scheme.EqualsLiteral("moz-anno") &&
-      !scheme.EqualsLiteral("news") && !scheme.EqualsLiteral("page-icon") &&
-      !scheme.EqualsLiteral("resource") &&
-      !scheme.EqualsLiteral("view-source") &&
-      !scheme.EqualsLiteral("moz-extension");
-
+  *canAdd = !IsHistoryDisabled() && BaseHistory::CanStore(aURI);
   return NS_OK;
 }
-
-
-
-
-uint32_t nsNavHistory::MaxURILength() {
-  
-  
-  static uint32_t maxSpecLength = 0;
-  if (!maxSpecLength) {
-    maxSpecLength = Preferences::GetInt(PREF_HISTORY_MAXURLLEN,
-                                        PREF_HISTORY_MAXURLLEN_DEFAULT);
-    if (maxSpecLength < 255 || maxSpecLength > INT32_MAX) {
-      maxSpecLength = PREF_HISTORY_MAXURLLEN_DEFAULT;
-    }
-  }
-  return maxSpecLength;
-}
-
-
 
 NS_IMETHODIMP
 nsNavHistory::GetNewQuery(nsINavHistoryQuery** _retval) {
