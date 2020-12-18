@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/Boolean.h"
+#include "mozilla/glean/bindings/Boolean.h"
 
 #include "nsString.h"
 #include "mozilla/Components.h"

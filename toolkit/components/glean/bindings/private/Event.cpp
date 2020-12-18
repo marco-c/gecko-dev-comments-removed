@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/Event.h"
+#include "mozilla/glean/bindings/Event.h"
 
 #include "Common.h"
 #include "nsString.h"

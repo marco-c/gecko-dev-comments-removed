@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/Counter.h"
+#include "mozilla/glean/bindings/Counter.h"
 
 #include "nsString.h"
 #include "mozilla/Components.h"

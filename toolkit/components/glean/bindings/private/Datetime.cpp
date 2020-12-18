@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/Datetime.h"
+#include "mozilla/glean/bindings/Datetime.h"
 
 #include "nsString.h"
 #include "mozilla/Components.h"

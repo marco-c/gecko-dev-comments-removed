@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/String.h"
+#include "mozilla/glean/bindings/String.h"
 
 #include "nsString.h"
 #include "mozilla/Components.h"

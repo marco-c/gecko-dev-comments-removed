@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/Timespan.h"
+#include "mozilla/glean/bindings/Timespan.h"
 
 #include "nsString.h"
 #include "mozilla/Components.h"

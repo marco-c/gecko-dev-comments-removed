@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/MemoryDistribution.h"
+#include "mozilla/glean/bindings/MemoryDistribution.h"
 
 #include "mozilla/Components.h"
 #include "nsIClassInfoImpl.h"

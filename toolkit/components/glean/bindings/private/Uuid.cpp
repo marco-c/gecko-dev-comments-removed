@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/Uuid.h"
+#include "mozilla/glean/bindings/Uuid.h"
 
 #include "nsString.h"
 #include "mozilla/Components.h"
