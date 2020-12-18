@@ -68,8 +68,6 @@ class DocumentTimeline final : public AnimationTimeline,
 
   Document* GetDocument() const override { return mDocument; }
 
-  void UpdateLastRefreshDriverTime();
-
  protected:
   TimeStamp GetCurrentTimeStamp() const;
   nsRefreshDriver* GetRefreshDriver() const;
@@ -83,7 +81,7 @@ class DocumentTimeline final : public AnimationTimeline,
   
   
   
-  TimeStamp mLastRefreshDriverTime;
+  mutable TimeStamp mLastRefreshDriverTime;
   bool mIsObservingRefreshDriver;
 
   TimeDuration mOriginTime;
