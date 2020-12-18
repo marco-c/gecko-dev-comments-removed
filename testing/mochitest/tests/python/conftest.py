@@ -3,10 +3,10 @@
 
 
 from __future__ import absolute_import, print_function, unicode_literals
+import six
 import json
 import os
 from argparse import Namespace
-from cStringIO import StringIO
 
 import pytest
 
@@ -40,7 +40,8 @@ def runtests(setup_test_harness, binary, parser, request):
     mochitest_root = runtests.SCRIPT_DIR
     test_root = os.path.join(mochitest_root, "tests", "selftests")
 
-    buf = StringIO()
+    
+    buf = six.StringIO()
     options = vars(parser.parse_args([]))
     options.update(
         {
