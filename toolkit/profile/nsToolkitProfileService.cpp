@@ -949,6 +949,10 @@ nsresult nsToolkitProfileService::Init() {
 NS_IMETHODIMP
 nsToolkitProfileService::SetStartWithLastProfile(bool aValue) {
   if (mStartWithLast != aValue) {
+    
+    
+    
+    
     nsresult rv = mProfileDB.SetString("General", "StartWithLastProfile",
                                        aValue ? "1" : "0");
     NS_ENSURE_SUCCESS(rv, rv);
