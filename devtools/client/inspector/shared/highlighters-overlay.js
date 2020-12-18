@@ -116,6 +116,9 @@ class HighlightersOverlay {
     this._pendingHighlighters = new Map();
     
     
+    this._restorableHighlighters = new Map();
+    
+    
     this.highlighters = {};
     
     this.gridHighlighters = new Map();
@@ -141,9 +144,14 @@ class HighlightersOverlay {
 
     
     this.state = {
-      flexbox: {},
+      
+      
       
       grids: new Map(),
+      
+      
+      
+      
       shapes: {},
     };
 
@@ -181,6 +189,10 @@ class HighlightersOverlay {
       this.showHighlighterTypeForNode.bind(this),
       () => this.destroyed
     );
+    this.restoreState = safeAsyncMethod(
+      this.restoreState.bind(this),
+      () => this.destroyed
+    );
 
     
     this.inspector.on("markupmutation", this.onMarkupMutation);
@@ -214,6 +226,7 @@ class HighlightersOverlay {
 
   async _afterShowHighlighterTypeForNode(type, nodeFront, options) {
     
+    
     if (type === TYPES.FLEXBOX) {
       this.telemetry.toolOpened(
         "FLEXBOX_HIGHLIGHTER",
@@ -230,6 +243,16 @@ class HighlightersOverlay {
       if (scalars[options.trigger]) {
         this.telemetry.scalarAdd(scalars[options.trigger], 1);
       }
+
+      const { url } = this.target;
+      const selectors = [...this.inspector.selectionCssSelectors];
+
+      this._restorableHighlighters.set(type, {
+        options,
+        selectors,
+        type,
+        url,
+      });
     }
   }
 
@@ -310,6 +333,9 @@ class HighlightersOverlay {
 
 
   async _beforeHideHighlighterType(type) {
+    
+    this._restorableHighlighters.delete(type);
+
     
     if (type === TYPES.FLEXBOX) {
       this.telemetry.toolClosed(
@@ -776,28 +802,13 @@ class HighlightersOverlay {
       trigger,
       color,
     });
-
-    try {
-      
-      const { url } = this.target;
-      const selector = await node.getUniqueSelector();
-      this.state.flexbox = { selector, options, url };
-    } catch (e) {
-      this._handleRejection(e);
-    }
   }
 
   
 
 
-
-
-
-  async hideFlexboxHighlighter(node) {
+  async hideFlexboxHighlighter() {
     await this.hideHighlighterType(TYPES.FLEXBOX);
-
-    
-    this.state.flexbox = null;
   }
 
   
@@ -923,8 +934,8 @@ class HighlightersOverlay {
     try {
       
       const { url } = this.target;
-      const selector = await node.getUniqueSelector();
-      this.state.grids.set(node, { selector, options, url });
+      const selectors = await node.getAllSelectors();
+      this.state.grids.set(node, { selectors, options, url });
 
       
       
@@ -1119,15 +1130,13 @@ class HighlightersOverlay {
 
 
   async restoreFlexboxState() {
-    try {
-      await this.restoreState(
-        "flexbox",
-        this.state.flexbox,
-        this.showFlexboxHighlighter
-      );
-    } catch (e) {
-      this._handleRejection(e);
+    const state = this._restorableHighlighters.get(TYPES.FLEXBOX);
+    if (!state) {
+      return;
     }
+
+    this._restorableHighlighters.delete(TYPES.FLEXBOX);
+    await this.restoreState(TYPES.FLEXBOX, state, this.showFlexboxHighlighter);
   }
 
   
@@ -1142,7 +1151,11 @@ class HighlightersOverlay {
 
     try {
       for (const gridState of values) {
-        await this.restoreState("grid", gridState, this.showGridHighlighter);
+        await this.restoreState(
+          TYPES.GRID,
+          gridState,
+          this.showGridHighlighter
+        );
       }
     } catch (e) {
       this._handleRejection(e);
@@ -1163,27 +1176,33 @@ class HighlightersOverlay {
 
 
 
-  async restoreState(name, state, showFunction) {
-    const { selector, options, url } = state;
 
-    if (!selector || url !== this.target.url) {
+
+
+
+
+
+
+
+
+
+  async restoreState(type, state, showFunction) {
+    const { selectors = [], options, url } = state;
+
+    if (!selectors.length || url !== this.target.url) {
       
-      this.emit(`${name}-state-restored`, { restored: false });
+      this.emit(`highlighter-discarded`, { type });
       return;
     }
 
-    const rootNode = await this.walker.getRootNode();
-    const nodeFront = await this.walker.querySelector(rootNode, selector);
+    const inspectorFront = await this.target.getFront("inspector");
+    const nodeFront = await inspectorFront.walker.findNodeFront(selectors);
 
     if (nodeFront) {
-      if (options.hoverPoint) {
-        options.hoverPoint = null;
-      }
-
       await showFunction(nodeFront, options);
-      this.emit(`${name}-state-restored`, { restored: true });
+      this.emit(`highlighter-restored`, { type });
     } else {
-      this.emit(`${name}-state-restored`, { restored: false });
+      this.emit(`highlighter-discarded`, { type });
     }
   }
 
