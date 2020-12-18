@@ -1925,8 +1925,10 @@ class InsertIterator final {
 
 bool InsertIterator::Next() {
   if (mNodesIdx > 0) {
+    
+    
     Accessible* nextChild = mWalker.Next();
-    if (nextChild) {
+    if (nextChild && mProcessedNodes.EnsureInserted(nextChild->GetContent())) {
       mChildBefore = mChild;
       mChild = nextChild;
       return true;
@@ -1934,16 +1936,6 @@ bool InsertIterator::Next() {
   }
 
   while (mNodesIdx < mNodes->Length()) {
-    
-
-    
-    
-    
-    
-    
-    
-    
-    nsIContent* prevNode = mNodes->SafeElementAt(mNodesIdx - 1);
     nsIContent* node = mNodes->ElementAt(mNodesIdx++);
     
     
@@ -1954,6 +1946,14 @@ bool InsertIterator::Next() {
 
     Accessible* container = Document()->AccessibleOrTrueContainer(
         node->GetFlattenedTreeParentNode(), true);
+    
+    
+    
+    
+    
+    
+    
+    
     if (container != Context()) {
       continue;
     }
@@ -1973,8 +1973,9 @@ bool InsertIterator::Next() {
                       "container", container, "node", node);
 #endif
 
-    
-    if (mChild && prevNode && prevNode->GetNextSibling() == node) {
+    nsIContent* prevNode = mChild ? mChild->GetContent() : nullptr;
+    if (prevNode && prevNode->GetNextSibling() == node) {
+      
       Accessible* nextChild = mWalker.Scope(node);
       if (nextChild) {
         mChildBefore = mChild;
@@ -1982,6 +1983,8 @@ bool InsertIterator::Next() {
         return true;
       }
     } else {
+      
+      
       TreeWalker finder(container);
       if (finder.Seek(node)) {
         mChild = mWalker.Scope(node);
