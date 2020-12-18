@@ -485,7 +485,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   _canShowOverlay() {
     
     
-    return this._parent.window && !this._parent.window.isChromeWindow;
+    
+    
+    return (
+      
+      
+      this._parent.window?.document?.documentElement &&
+      !this._parent.window.isChromeWindow
+    );
   },
 
   async showOverlay() {
