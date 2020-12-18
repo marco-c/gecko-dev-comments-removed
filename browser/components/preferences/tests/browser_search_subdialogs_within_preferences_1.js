@@ -13,8 +13,6 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneHome", { leaveOpen: true });
-
   
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -22,6 +20,8 @@ add_task(async function() {
       ["browser.startup.page", 1],
     ],
   });
+
+  await openPreferencesViaOpenPreferencesAPI("paneHome", { leaveOpen: true });
 
   
   await BrowserTestUtils.waitForCondition(() =>
