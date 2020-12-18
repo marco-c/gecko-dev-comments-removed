@@ -3461,7 +3461,14 @@
         this._tabLayerCache.splice(tabCacheIndex, 1);
       }
 
-      this._blurTab(aTab);
+      
+      
+      let screenShareInActiveTab =
+        aTab == this.selectedTab && aTab._sharingState?.webRTC?.screen;
+
+      if (!screenShareInActiveTab) {
+        this._blurTab(aTab);
+      }
 
       var closeWindow = false;
       var newTab = false;
