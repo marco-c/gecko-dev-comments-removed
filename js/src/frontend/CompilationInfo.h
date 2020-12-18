@@ -243,6 +243,15 @@ struct CompilationStencil {
   
   Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
 
   
