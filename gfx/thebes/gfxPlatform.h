@@ -786,6 +786,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   static bool WebRenderEnvvarDisabled();
 
+  static const char* WebRenderResourcePathOverride();
+
   void NotifyFrameStats(nsTArray<mozilla::layers::FrameStats>&& aFrameStats);
 
   virtual void OnMemoryPressure(
