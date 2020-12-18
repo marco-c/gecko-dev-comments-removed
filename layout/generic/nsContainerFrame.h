@@ -329,18 +329,6 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
   friend class nsOverflowContinuationTracker;
 
   typedef void (*ChildFrameMerger)(nsFrameList& aDest, nsFrameList& aSrc,
@@ -805,19 +793,6 @@ class nsContainerFrame : public nsSplittableFrame {
   static void ReparentFloatsForInlineChild(nsIFrame* aOurBlock,
                                            nsIFrame* aFrame,
                                            bool aReparentSiblings);
-
-  
-
-
-
-
-
-
-
-
-
-  bool TryRemoveFrame(FrameListPropertyDescriptor aProp,
-                      nsIFrame* aChildToRemove);
 
   
   

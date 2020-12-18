@@ -1406,14 +1406,15 @@ void nsContainerFrame::DisplayOverflowContainers(
   }
 }
 
-bool nsContainerFrame::TryRemoveFrame(FrameListPropertyDescriptor aProp,
-                                      nsIFrame* aChildToRemove) {
-  nsFrameList* list = GetProperty(aProp);
+static bool TryRemoveFrame(nsIFrame* aFrame,
+                           nsContainerFrame::FrameListPropertyDescriptor aProp,
+                           nsIFrame* aChildToRemove) {
+  nsFrameList* list = aFrame->GetProperty(aProp);
   if (list && list->StartRemoveFrame(aChildToRemove)) {
     
     if (list->IsEmpty()) {
-      Unused << TakeProperty(aProp);
-      list->Delete(PresShell());
+      Unused << aFrame->TakeProperty(aProp);
+      list->Delete(aFrame->PresShell());
     }
     return true;
   }
@@ -1424,10 +1425,11 @@ bool nsContainerFrame::MaybeStealOverflowContainerFrame(nsIFrame* aChild) {
   bool removed = false;
   if (MOZ_UNLIKELY(aChild->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER))) {
     
-    removed = TryRemoveFrame(OverflowContainersProperty(), aChild);
+    removed = ::TryRemoveFrame(this, OverflowContainersProperty(), aChild);
     if (!removed) {
       
-      removed = TryRemoveFrame(ExcessOverflowContainersProperty(), aChild);
+      removed =
+          ::TryRemoveFrame(this, ExcessOverflowContainersProperty(), aChild);
     }
   }
   return removed;
@@ -2223,19 +2225,19 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
     ChildFrameMerger aMergeFunc) {
   nsFrameList* overflowContainers = GetOverflowContainers();
 
-  
-  if (auto* prev = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
-    AutoFrameListPtr excessFrames(PresContext(),
-                                  prev->StealExcessOverflowContainers());
-    if (excessFrames) {
-      excessFrames->ApplySetParent(this);
-      nsContainerFrame::ReparentFrameViewList(*excessFrames, prev, this);
-      if (overflowContainers) {
-        
-        
-        aMergeFunc(*excessFrames, *overflowContainers, this);
-        *overflowContainers = std::move(*excessFrames);
-      } else {
+  NS_ASSERTION(!(overflowContainers && GetPrevInFlow() &&
+                 static_cast<nsContainerFrame*>(GetPrevInFlow())
+                     ->GetExcessOverflowContainers()),
+               "conflicting overflow containers lists");
+
+  if (!overflowContainers) {
+    
+    if (auto* prev = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
+      AutoFrameListPtr excessFrames(PresContext(),
+                                    prev->StealExcessOverflowContainers());
+      if (excessFrames) {
+        excessFrames->ApplySetParent(this);
+        nsContainerFrame::ReparentFrameViewList(*excessFrames, prev, this);
         overflowContainers = SetOverflowContainers(std::move(*excessFrames));
       }
     }
