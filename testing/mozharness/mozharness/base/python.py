@@ -702,6 +702,7 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
             
             
             if cpu_percent:
+                
                 cpu_percent_str = str(round(cpu_percent)) + "%"
             else:
                 cpu_percent_str = "Can't collect data"

@@ -105,6 +105,7 @@ class JSONFormatter(Formatter):
 
     def format(self, record):
         
+        
         output = {
             "_time": int(round(record.created * 1000, 0)),
             "_namespace": record.name,
