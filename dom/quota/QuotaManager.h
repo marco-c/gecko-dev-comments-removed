@@ -13,6 +13,7 @@
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/InitializedOnce.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
@@ -153,6 +154,8 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   static QuotaManager* Get();
+
+  static QuotaManager& GetRef();
 
   
   static bool IsShuttingDown();
@@ -422,6 +425,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void NotifyStoragePressure(uint64_t aUsage);
 
+  void MaybeRecordShutdownStep(Client::Type aClientType,
+                               const nsACString& aStepDescription);
+
   static void GetStorageId(PersistenceType aPersistenceType,
                            const nsACString& aOrigin, Client::Type aClientType,
                            nsACString& aDatabaseId);
@@ -567,8 +573,6 @@ class QuotaManager final : public BackgroundThreadObject {
 
   int64_t GenerateDirectoryLockId();
 
-  static void ShutdownTimerCallback(nsITimer* aTimer, void* aClosure);
-
   
   nsCOMPtr<nsIThread> mIOThread;
 
@@ -576,6 +580,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   nsCOMPtr<nsITimer> mShutdownTimer;
+
+  EnumeratedArray<Client::Type, Client::TYPE_MAX, nsCString> mShutdownSteps;
+  LazyInitializedOnce<const TimeStamp> mShutdownStartedAt;
 
   mozilla::Mutex mQuotaMutex;
 
