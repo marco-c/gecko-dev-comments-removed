@@ -13,7 +13,6 @@
 #include "base/message_loop.h"
 #include "GLTypes.h"  
 #include "nsISupportsImpl.h"
-#include "ThreadSafeRefcountingWithMainThreadDestruction.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/DataMutex.h"
@@ -131,8 +130,7 @@ class RendererEvent {
 
 
 class RenderThread final {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(
-      RenderThread)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(RenderThread)
 
  public:
   

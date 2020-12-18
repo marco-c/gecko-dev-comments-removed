@@ -735,6 +735,62 @@ class ThreadSafeAutoRefCnt {
   NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING_WITH_DESTROY(      \
       _class, delete (this), __VA_ARGS__)
 
+#if !defined(XPCOM_GLUE_AVOID_NSPR)
+class nsISerialEventTarget;
+namespace mozilla {
+
+
+nsISerialEventTarget* GetMainThreadSerialEventTarget();
+
+namespace detail {
+using DeleteVoidFunction = void(void*);
+void ProxyDeleteVoid(const char* aRunnableName,
+                     nsISerialEventTarget* aEventTarget, void* aSelf,
+                     DeleteVoidFunction* aDeleteFunc);
+}  
+}  
+
+
+
+
+
+#  define NS_PROXY_DELETE_TO_EVENT_TARGET(_class, _target) \
+    ::mozilla::detail::ProxyDeleteVoid(                    \
+        "ProxyDelete " #_class, _target, this,             \
+        [](void* self) { delete static_cast<_class*>(self); })
+
+
+
+
+
+
+
+
+
+
+
+
+#  define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET( \
+      _class, _target, ...)                                                  \
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(                      \
+        _class, NS_PROXY_DELETE_TO_EVENT_TARGET(_class, _target), __VA_ARGS__)
+
+
+
+
+
+
+
+
+
+
+
+#  define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD( \
+      _class, ...)                                                          \
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(      \
+        _class, ::mozilla::GetMainThreadSerialEventTarget(), __VA_ARGS__)
+#endif
+
 
 
 

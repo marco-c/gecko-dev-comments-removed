@@ -7,13 +7,13 @@
 #ifndef MOZILLA_GFX_VR_VRMANAGERCHILD_H
 #define MOZILLA_GFX_VR_VRMANAGERCHILD_H
 
+#include "nsISupportsImpl.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/WindowBinding.h"  
 #include "mozilla/dom/WebXRBinding.h"
 #include "mozilla/dom/XRFrame.h"
 #include "mozilla/gfx/PVRManagerChild.h"
-#include "mozilla/ipc/SharedMemory.h"  
-#include "ThreadSafeRefcountingWithMainThreadDestruction.h"
+#include "mozilla/ipc/SharedMemory.h"          
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"        
 
