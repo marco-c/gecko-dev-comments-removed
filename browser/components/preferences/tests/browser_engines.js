@@ -30,7 +30,7 @@ add_task(async function() {
   );
 
   
-  let defaultEngines = await Services.search.getDefaultEngines();
+  let defaultEngines = await Services.search.getAppProvidedEngines();
   for (let i = 0; i < defaultEngines.length; i++) {
     let engine = defaultEngines[i];
     is(

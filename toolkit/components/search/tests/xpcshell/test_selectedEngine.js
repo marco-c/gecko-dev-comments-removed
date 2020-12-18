@@ -100,7 +100,7 @@ add_task(async function test_resetToOriginalDefaultEngine() {
 
 add_task(async function test_fallback_kept_after_restart() {
   
-  let builtInEngines = await Services.search.getDefaultEngines();
+  let builtInEngines = await Services.search.getAppProvidedEngines();
   let nonDefaultBuiltInEngine;
   for (let engine of builtInEngines) {
     if (engine.name != kDefaultEngineName) {

@@ -782,7 +782,7 @@ this.TopSitesFeed = class TopSitesFeed {
 
     
     let searchShortcuts = [];
-    for (const engine of await Services.search.getDefaultEngines()) {
+    for (const engine of await Services.search.getAppProvidedEngines()) {
       const shortcut = CUSTOM_SEARCH_SHORTCUTS.find(s =>
         engine.aliases.includes(s.keyword)
       );
