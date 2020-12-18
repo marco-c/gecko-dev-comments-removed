@@ -52,6 +52,12 @@ const PREF_APP_UPDATE_BITS_ENABLED = "app.update.BITS.enabled";
 const PREF_APP_UPDATE_CANCELATIONS = "app.update.cancelations";
 const PREF_APP_UPDATE_CANCELATIONS_OSX = "app.update.cancelations.osx";
 const PREF_APP_UPDATE_CANCELATIONS_OSX_MAX = "app.update.cancelations.osx.max";
+const PREF_APP_UPDATE_CHECK_ONLY_INSTANCE_ENABLED =
+  "app.update.checkOnlyInstance.enabled";
+const PREF_APP_UPDATE_CHECK_ONLY_INSTANCE_INTERVAL =
+  "app.update.checkOnlyInstance.interval";
+const PREF_APP_UPDATE_CHECK_ONLY_INSTANCE_TIMEOUT =
+  "app.update.checkOnlyInstance.timeout";
 const PREF_APP_UPDATE_DISABLEDFORTESTING = "app.update.disabledForTesting";
 const PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS = "app.update.download.attempts";
 const PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS = "app.update.download.maxAttempts";
@@ -247,6 +253,18 @@ const LANGPACK_UPDATE_DEFAULT_TIMEOUT = 300000;
 
 
 
+const ONLY_INSTANCE_CHECK_DEFAULT_POLL_INTERVAL_MS = 5 * 60 * 1000; 
+
+
+
+const ONLY_INSTANCE_CHECK_DEFAULT_TIMEOUT_MS = 6 * 60 * 60 * 1000; 
+
+
+
+const ONLY_INSTANCE_CHECK_MAX_TIMEOUT_MS = 2 * 24 * 60 * 60 * 1000; 
+
+
+
 
 var gUpdateFileWriteInfo = { phase: null, failure: false };
 var gUpdateMutexHandle = null;
@@ -315,6 +333,106 @@ function unwrap(obj) {
 
 
 const LangPackUpdates = new WeakMap();
+
+
+
+
+
+
+
+
+let gOtherInstancePollPromise;
+
+
+
+
+
+
+
+
+
+
+function isOtherInstanceRunning(callback) {
+  const checkEnabled = Services.prefs.getBoolPref(
+    PREF_APP_UPDATE_CHECK_ONLY_INSTANCE_ENABLED,
+    true
+  );
+  if (!checkEnabled) {
+    LOG("isOtherInstanceRunning - disabled by pref, skipping check");
+    return false;
+  }
+
+  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+    Ci.nsIUpdateSyncManager
+  );
+  return syncManager.isOtherInstanceRunning();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForOtherInstances() {
+  
+  if (gOtherInstancePollPromise) {
+    return gOtherInstancePollPromise;
+  }
+
+  let timeout = Services.prefs.getIntPref(
+    PREF_APP_UPDATE_CHECK_ONLY_INSTANCE_TIMEOUT,
+    ONLY_INSTANCE_CHECK_DEFAULT_TIMEOUT_MS
+  );
+  
+  if (timeout > ONLY_INSTANCE_CHECK_MAX_TIMEOUT_MS) {
+    timeout = ONLY_INSTANCE_CHECK_MAX_TIMEOUT_MS;
+  }
+
+  let interval = Services.prefs.getIntPref(
+    PREF_APP_UPDATE_CHECK_ONLY_INSTANCE_INTERVAL,
+    ONLY_INSTANCE_CHECK_DEFAULT_POLL_INTERVAL_MS
+  );
+  
+  interval = Math.min(interval, timeout);
+
+  let iterations = 0;
+  const maxIterations = Math.ceil(timeout / interval);
+
+  gOtherInstancePollPromise = new Promise(function(resolve, reject) {
+    let poll = function() {
+      iterations++;
+      if (!isOtherInstanceRunning()) {
+        LOG("waitForOtherInstances - no other instances found, exiting");
+        resolve(false);
+        gOtherInstancePollPromise = undefined;
+      } else if (iterations >= maxIterations) {
+        LOG(
+          "waitForOtherInstances - timeout expired while other instances " +
+            "are still running"
+        );
+        resolve(true);
+        gOtherInstancePollPromise = undefined;
+      } else if (iterations + 1 == maxIterations && timeout % interval != 0) {
+        
+        
+        setTimeout(poll, timeout % interval);
+      } else {
+        setTimeout(poll, interval);
+      }
+    };
+
+    LOG("waitForOtherInstances - beginning polling");
+    poll();
+  });
+
+  return gOtherInstancePollPromise;
+}
 
 
 
@@ -2355,7 +2473,7 @@ UpdateService.prototype = {
         "UpdateService:_postUpdateProcessing - unable to apply " +
           "updates... returning early"
       );
-      if (!this.isOtherInstanceHandlingUpdates) {
+      if (hasUpdateMutex()) {
         
         
         cleanupUpdate();
@@ -2908,6 +3026,8 @@ UpdateService.prototype = {
           );
         } else if (!hasUpdateMutex()) {
           AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
+        } else if (isOtherInstanceRunning()) {
+          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OTHER_INSTANCE);
         } else if (!this.canCheckForUpdates) {
           AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_CHECK);
         }
@@ -3233,6 +3353,15 @@ UpdateService.prototype = {
       return false;
     }
 
+    if (isOtherInstanceRunning()) {
+      
+      
+      LOG(
+        "UpdateService.canCheckForUpdates - another instance is holding the " +
+          "lock, will need to wait for it prior to checking for updates"
+      );
+    }
+
     LOG("UpdateService.canCheckForUpdates - able to check for updates");
     return true;
   },
@@ -3248,7 +3377,9 @@ UpdateService.prototype = {
 
 
   get canApplyUpdates() {
-    return getCanApplyUpdates() && hasUpdateMutex();
+    return (
+      getCanApplyUpdates() && hasUpdateMutex() && !isOtherInstanceRunning()
+    );
   },
 
   
@@ -3262,7 +3393,7 @@ UpdateService.prototype = {
 
 
   get isOtherInstanceHandlingUpdates() {
-    return !hasUpdateMutex();
+    return !hasUpdateMutex() || isOtherInstanceRunning();
   },
 
   
@@ -3434,7 +3565,7 @@ UpdateService.prototype = {
     this.canStageUpdates;
     LOG("Elevation required: " + this.elevationRequired);
     LOG(
-      "Update being handled by other instance: " +
+      "Other instance of the application currently running: " +
         this.isOtherInstanceHandlingUpdates
     );
     LOG("Downloading: " + !!this.isDownloading);
@@ -4114,47 +4245,62 @@ Checker.prototype = {
       return;
     }
 
-    this.getUpdateURL(force).then(url => {
-      if (!url) {
-        return;
-      }
+    waitForOtherInstances()
+      .then(() => this.getUpdateURL(force))
+      .then(url => {
+        if (!url) {
+          return;
+        }
 
-      this._request = new XMLHttpRequest();
-      this._request.open("GET", url, true);
-      this._request.channel.notificationCallbacks = new CertUtils.BadCertHandler(
-        false
-      );
-      
-      this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
-      
-      this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
-      
-      this._request.channel.QueryInterface(
-        Ci.nsIHttpChannelInternal
-      ).beConservative = true;
+        
+        
+        
+        
+        
+        
+        if (this._request) {
+          LOG(
+            "Checker: checkForUpdates: check request already active, aborting"
+          );
+          return;
+        }
 
-      this._request.overrideMimeType("text/xml");
-      
-      
-      
-      this._request.setRequestHeader("Cache-Control", "no-cache");
-      
-      
-      this._request.setRequestHeader("Pragma", "no-cache");
+        this._request = new XMLHttpRequest();
+        this._request.open("GET", url, true);
+        this._request.channel.notificationCallbacks = new CertUtils.BadCertHandler(
+          false
+        );
+        
+        this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
+        
+        this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
+        
+        this._request.channel.QueryInterface(
+          Ci.nsIHttpChannelInternal
+        ).beConservative = true;
 
-      var self = this;
-      this._request.addEventListener("error", function(event) {
-        self.onError(event);
+        this._request.overrideMimeType("text/xml");
+        
+        
+        
+        this._request.setRequestHeader("Cache-Control", "no-cache");
+        
+        
+        this._request.setRequestHeader("Pragma", "no-cache");
+
+        var self = this;
+        this._request.addEventListener("error", function(event) {
+          self.onError(event);
+        });
+        this._request.addEventListener("load", function(event) {
+          self.onLoad(event);
+        });
+
+        LOG("Checker:checkForUpdates - sending request to: " + url);
+        this._request.send(null);
+
+        this._callback = listener;
       });
-      this._request.addEventListener("load", function(event) {
-        self.onLoad(event);
-      });
-
-      LOG("Checker:checkForUpdates - sending request to: " + url);
-      this._request.send(null);
-
-      this._callback = listener;
-    });
   },
 
   
