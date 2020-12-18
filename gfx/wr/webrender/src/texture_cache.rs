@@ -25,6 +25,7 @@ use crate::slab_allocator::*;
 use std::cell::Cell;
 use std::mem;
 use std::rc::Rc;
+use euclid::size2;
 
 
 
@@ -239,7 +240,7 @@ struct SharedTextures {
     alpha8_linear: AllocatorList<SlabAllocator, TextureParameters>,
     alpha16_linear: AllocatorList<SlabAllocator, TextureParameters>,
     color8_linear: AllocatorList<SlabAllocator, TextureParameters>,
-    color8_glyphs: AllocatorList<SlabAllocator, TextureParameters>,
+    color8_glyphs: AllocatorList<BucketedShelfAllocator, TextureParameters>,
 }
 
 impl SharedTextures {
@@ -288,9 +289,10 @@ impl SharedTextures {
             
             color8_glyphs: AllocatorList::new(
                 2048,
-                SlabAllocatorParameters {
-                    region_size: GLYPH_TEXTURE_REGION_DIMENSIONS,
-                    slab_sizes: SlabSizes::Glyphs,
+                ShelfAllocatorOptions {
+                    num_columns: 2,
+                    alignment: size2(4, 8),
+                    .. ShelfAllocatorOptions::default()
                 },
                 TextureParameters {
                     formats: color_formats.clone(),
