@@ -10,6 +10,7 @@
 
 #include <utility>
 
+#include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/net/DNS.h"
@@ -300,7 +301,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
       const nsTArray<nsCString>& unsafeHeaders,
       bool aShouldStripRequestBodyHeader) override;
   virtual void SetAltDataForChild(bool aIsForChild) override;
-  virtual void DisableAltDataCache() override { mDisableAltDataCache = true; };
+  virtual void DisableAltDataCache() override {
+    StoreDisableAltDataCache(true);
+  };
 
   NS_IMETHOD GetConnectionInfoHashKey(
       nsACString& aConnectionInfoHashKey) override;
@@ -322,11 +325,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD GetResponseEmbedderPolicy(
       nsILoadInfo::CrossOriginEmbedderPolicy* aOutPolicy) override;
   virtual bool GetHasNonEmptySandboxingFlag() override {
-    return mHasNonEmptySandboxingFlag;
+    return LoadHasNonEmptySandboxingFlag();
   }
   virtual void SetHasNonEmptySandboxingFlag(
       bool aHasNonEmptySandboxingFlag) override {
-    mHasNonEmptySandboxingFlag = aHasNonEmptySandboxingFlag;
+    StoreHasNonEmptySandboxingFlag(aHasNonEmptySandboxingFlag);
   }
 
   inline void CleanRedirectCacheChainIfNecessary() {
@@ -422,7 +425,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   int64_t GetAltDataLength() { return mAltDataLength; }
   bool IsNavigation();
 
-  bool IsDeliveringAltData() const { return mDeliveringAltData; }
+  bool IsDeliveringAltData() const { return LoadDeliveringAltData(); }
 
   static void PropagateReferenceIfNeeded(nsIURI* aURI,
                                          nsCOMPtr<nsIURI>& aRedirectURI);
@@ -457,7 +460,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   }
 
   void SetUploadStreamHasHeaders(bool hasHeaders) {
-    mUploadStreamHasHeaders = hasHeaders;
+    StoreUploadStreamHasHeaders(hasHeaders);
   }
 
   virtual nsresult SetReferrerHeader(const nsACString& aReferrer,
@@ -523,7 +526,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   
   
-  bool HasAppliedConversion() { return mHasAppliedConversion; }
+  bool HasAppliedConversion() { return LoadHasAppliedConversion(); }
 
  protected:
   nsresult GetTopWindowURI(nsIURI* aURIBeingLoaded, nsIURI** aTopWindowURI);
@@ -556,8 +559,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   inline void CallOnModifyRequestObservers() {
     gHttpHandler->OnModifyRequest(this);
-    MOZ_ASSERT(!mRequestObserversCalled);
-    mRequestObserversCalled = true;
+    MOZ_ASSERT(!LoadRequestObserversCalled());
+    StoreRequestObserversCalled(true);
   }
 
   
@@ -755,80 +758,90 @@ class HttpBaseChannel : public nsHashPropertyBag,
   uint32_t mCaps;
   uint32_t mClassOfService;
 
-  uint32_t mUpgradeToSecure : 1;
-  uint32_t mApplyConversion : 1;
   
-  
-  uint32_t mHasAppliedConversion : 1;
-  uint32_t mIsPending : 1;
-  uint32_t mWasOpened : 1;
-  
-  uint32_t mRequestObserversCalled : 1;
-  uint32_t mResponseHeadersModified : 1;
-  uint32_t mAllowSTS : 1;
-  uint32_t mThirdPartyFlags : 3;
-  uint32_t mUploadStreamHasHeaders : 1;
-  uint32_t mInheritApplicationCache : 1;
-  uint32_t mChooseApplicationCache : 1;
-  uint32_t mLoadedFromApplicationCache : 1;
-  uint32_t mChannelIsForDownload : 1;
-  uint32_t mTracingEnabled : 1;
-  
-  uint32_t mTimingEnabled : 1;
-  uint32_t mReportTiming : 1;
-  uint32_t mAllowSpdy : 1;
-  uint32_t mAllowHttp3 : 1;
-  uint32_t mAllowAltSvc : 1;
-  
-  
-  
-  uint32_t mBeConservative : 1;
-  
-  uint32_t mIsTRRServiceChannel : 1;
-  
-  
-  
-  uint32_t mResolvedByTRR : 1;
-  uint32_t mResponseTimeoutEnabled : 1;
-  
-  uint32_t mAllRedirectsSameOrigin : 1;
+  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields1, 32, (
+    (uint32_t, UpgradeToSecure, 1),
+    (uint32_t, ApplyConversion, 1),
+    
+    
+    (uint32_t, HasAppliedConversion, 1),
+    (uint32_t, IsPending, 1),
+    (uint32_t, WasOpened, 1),
+    
+    
+    (uint32_t, RequestObserversCalled, 1),
+    (uint32_t, ResponseHeadersModified, 1),
+    (uint32_t, AllowSTS, 1),
+    (uint32_t, ThirdPartyFlags, 3),
+    (uint32_t, UploadStreamHasHeaders, 1),
+    (uint32_t, InheritApplicationCache, 1),
+    (uint32_t, ChooseApplicationCache, 1),
+    (uint32_t, LoadedFromApplicationCache, 1),
+    (uint32_t, ChannelIsForDownload, 1),
+    (uint32_t, TracingEnabled, 1),
+    
+    (uint32_t, TimingEnabled, 1),
+    (uint32_t, ReportTiming, 1),
+    (uint32_t, AllowSpdy, 1),
+    (uint32_t, AllowHttp3, 1),
+    (uint32_t, AllowAltSvc, 1),
+    
+    
+    
+    (uint32_t, BeConservative, 1),
+    
+    (uint32_t, IsTRRServiceChannel, 1),
+    
+    
+    
+    (uint32_t, ResolvedByTRR, 1),
+    (uint32_t, ResponseTimeoutEnabled, 1),
+    
+    (uint32_t, AllRedirectsSameOrigin, 1),
+
+    
+    
+    (uint32_t, AllRedirectsPassTimingAllowCheck, 1),
+
+    
+    
+    (uint32_t, ResponseCouldBeSynthesized, 1),
+
+    (uint32_t, BlockAuthPrompt, 1),
+
+    
+    
+    (uint32_t, AllowStaleCacheContent, 1),
+
+    
+    
+    (uint32_t, PreferCacheLoadOverBypass, 1)
+  ))
 
   
   
-  uint32_t mAllRedirectsPassTimingAllowCheck : 1;
+  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields2, 32, (
+    
+    
+    (uint32_t, AddedAsNonTailRequest, 1),
 
-  
-  
-  uint32_t mResponseCouldBeSynthesized : 1;
+    
+    
+    
+    (uint32_t, AsyncOpenWaitingForStreamLength, 1),
 
-  uint32_t mBlockAuthPrompt : 1;
+    
+    
+    (uint32_t, UpgradableToSecure, 1),
 
-  
-  
-  uint32_t mAllowStaleCacheContent : 1;
+    
+    (uint32_t, HasNonEmptySandboxingFlag, 1),
 
+    
+    
+    (uint32_t, TaintedOriginFlag, 1)
+  ))
   
-  
-  uint32_t mPreferCacheLoadOverBypass : 1;
-
-  
-  
-  uint32_t mAddedAsNonTailRequest : 1;
-
-  
-  
-  
-  uint32_t mAsyncOpenWaitingForStreamLength : 1;
-
-  
-  
-  uint32_t mUpgradableToSecure : 1;
-
-  
-  uint32_t mHasNonEmptySandboxingFlag : 1;
-
-  
-  uint32_t mTaintedOriginFlag : 1;
 
   
   
@@ -862,46 +875,53 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   int8_t mInternalRedirectCount;
 
-  bool mAsyncOpenTimeOverriden : 1;
-  bool mForcePending : 1;
+  
+  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields3, 8, (
+    (bool, AsyncOpenTimeOverriden, 1),
+    (bool, ForcePending, 1),
 
-  
-  bool mDeliveringAltData : 1;
+    
+    (bool, DeliveringAltData, 1),
 
-  bool mCorsIncludeCredentials : 1;
+    (bool, CorsIncludeCredentials, 1),
 
-  
-  
-  bool mOnStartRequestCalled : 1;
-  bool mOnStopRequestCalled : 1;
+    
+    
+    (bool, OnStartRequestCalled, 1),
+    (bool, OnStopRequestCalled, 1),
 
-  
-  
-  bool mAfterOnStartRequestBegun : 1;
+    
+    
+    (bool, AfterOnStartRequestBegun, 1),
 
-  bool mRequireCORSPreflight : 1;
-
-  
-  
-  bool mAltDataForChild : 1;
-
-  
-  
-  
-  bool mDisableAltDataCache : 1;
-
-  bool mForceMainDocumentChannel : 1;
-  
-  
-  bool mPendingInputStreamLengthOperation : 1;
+    (bool, RequireCORSPreflight, 1)
+  ))
 
   
   
-  bool mListenerRequiresContentConversion : 1;
+  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields4, 8, (
+    
+    
+    (bool, AltDataForChild, 1),
+    
+    
+    
+    (bool, DisableAltDataCache, 1),
 
+    (bool, ForceMainDocumentChannel, 1),
+    
+    
+    (bool, PendingInputStreamLengthOperation, 1),
+
+    
+    
+    (bool, ListenerRequiresContentConversion, 1),
+
+    
+    
+    (uint32_t, HasCrossOriginOpenerPolicyMismatch, 1)
+  ))
   
-  
-  uint32_t mHasCrossOriginOpenerPolicyMismatch : 1;
 
   bool EnsureRequestContextID();
   bool EnsureRequestContext();

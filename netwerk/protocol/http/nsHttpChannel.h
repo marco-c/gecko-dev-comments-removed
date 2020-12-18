@@ -28,6 +28,7 @@
 #include "nsICorsPreflightCallback.h"
 #include "AlternateServices.h"
 #include "nsIRaceCacheWithNetwork.h"
+#include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/extensions/PStreamFilterParent.h"
 #include "mozilla/net/DocumentLoadListener.h"
@@ -198,7 +199,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   void SetWarningReporter(HttpChannelSecurityWarningReporter* aReporter);
   HttpChannelSecurityWarningReporter* GetWarningReporter();
 
-  bool DataSentToChildProcess() { return mDataSentToChildProcess; }
+  bool DataSentToChildProcess() { return LoadDataSentToChildProcess(); }
 
  public: 
   uint32_t GetRequestTime() const { return mRequestTime; }
@@ -235,9 +236,9 @@ class nsHttpChannel final : public HttpBaseChannel,
     explicit AutoCacheWaitFlags(nsHttpChannel* channel)
         : mChannel(channel), mKeep(0) {
       
-      mChannel->mCacheEntriesToWaitFor =
+      mChannel->StoreCacheEntriesToWaitFor(
           nsHttpChannel::WAIT_FOR_CACHE_ENTRY |
-          nsHttpChannel::WAIT_FOR_OFFLINE_CACHE_ENTRY;
+          nsHttpChannel::WAIT_FOR_OFFLINE_CACHE_ENTRY);
     }
 
     void Keep(uint32_t flags) {
@@ -247,7 +248,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
     ~AutoCacheWaitFlags() {
       
-      mChannel->mCacheEntriesToWaitFor &= mKeep;
+      mChannel->StoreCacheEntriesToWaitFor(
+          mChannel->LoadCacheEntriesToWaitFor() & mKeep);
     }
 
    private:
@@ -658,87 +660,96 @@ class nsHttpChannel final : public HttpBaseChannel,
   Atomic<bool> mAuthRetryPending;
 
   
-  uint32_t mCachedContentIsPartial : 1;
-  uint32_t mCacheOnlyMetadata : 1;
-  uint32_t mTransactionReplaced : 1;
-  uint32_t mProxyAuthPending : 1;
   
-  
-  
-  uint32_t mCustomAuthHeader : 1;
-  uint32_t mResuming : 1;
-  uint32_t mInitedCacheEntry : 1;
-  
-  
-  uint32_t mFallbackChannel : 1;
-  
-  
-  
-  uint32_t mCustomConditionalRequest : 1;
-  uint32_t mFallingBack : 1;
-  uint32_t mWaitingForRedirectCallback : 1;
-  
-  
-  uint32_t mRequestTimeInitialized : 1;
-  uint32_t mCacheEntryIsReadOnly : 1;
-  uint32_t mCacheEntryIsWriteOnly : 1;
-  
-  uint32_t mCacheEntriesToWaitFor : 2;
-  
-  
-  
-  
-  uint32_t mConcurrentCacheAccess : 1;
-  
-  uint32_t mIsPartialRequest : 1;
-  
-  uint32_t mHasAutoRedirectVetoNotifier : 1;
-  
-  
-  uint32_t mPinCacheContent : 1;
-  
-  uint32_t mIsCorsPreflightDone : 1;
+  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields5, 32, (
+    (uint32_t, CachedContentIsPartial, 1),
+    (uint32_t, CacheOnlyMetadata, 1),
+    (uint32_t, TransactionReplaced, 1),
+    (uint32_t, ProxyAuthPending, 1),
+    
+    
+    
+    (uint32_t, CustomAuthHeader, 1),
+    (uint32_t, Resuming, 1),
+    (uint32_t, InitedCacheEntry, 1),
+    
+    
+    (uint32_t, FallbackChannel, 1),
+    
+    
+    
+    (uint32_t, CustomConditionalRequest, 1),
+    (uint32_t, FallingBack, 1),
+    (uint32_t, WaitingForRedirectCallback, 1),
+    
+    
+    (uint32_t, RequestTimeInitialized, 1),
+    (uint32_t, CacheEntryIsReadOnly, 1),
+    (uint32_t, CacheEntryIsWriteOnly, 1),
+    
+    (uint32_t, CacheEntriesToWaitFor, 2),
+    
+    
+    
+    
+    (uint32_t, ConcurrentCacheAccess, 1),
+    
+    (uint32_t, IsPartialRequest, 1),
+    
+    (uint32_t, HasAutoRedirectVetoNotifier, 1),
+    
+    
+    (uint32_t, PinCacheContent, 1),
+    
+    (uint32_t, IsCorsPreflightDone, 1),
+
+    
+    
+    
+    (uint32_t, StronglyFramed, 1),
+
+    
+    (uint32_t, UsedNetwork, 1),
+
+    
+    (uint32_t, AuthConnectionRestartable, 1),
+
+    
+    
+    
+    (uint32_t, ChannelClassifierCancellationPending, 1),
+
+    
+    
+    (uint32_t, AsyncResumePending, 1),
+
+    
+    
+    (uint32_t, HasBeenIsolatedChecked, 1),
+    
+    
+    
+    (uint32_t, IsIsolated, 1),
+
+    
+    (uint32_t, TopWindowOriginComputed, 1),
+
+    
+    
+    (uint32_t, DataSentToChildProcess, 1),
+
+    (uint32_t, UseHTTPSSVC, 1),
+    (uint32_t, WaitHTTPSSVCRecord, 1)
+  ))
 
   
   
+  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields6, 32, (
+    
+    
+    (uint32_t, HTTPSSVCTelemetryReported, 1)
+  ))
   
-  uint32_t mStronglyFramed : 1;
-
-  
-  uint32_t mUsedNetwork : 1;
-
-  
-  uint32_t mAuthConnectionRestartable : 1;
-
-  
-  
-  
-  uint32_t mChannelClassifierCancellationPending : 1;
-
-  
-  
-  uint32_t mAsyncResumePending : 1;
-
-  
-  
-  uint32_t mHasBeenIsolatedChecked : 1;
-  
-  
-  
-  uint32_t mIsIsolated : 1;
-
-  
-  uint32_t mTopWindowOriginComputed : 1;
-
-  
-  
-  uint32_t mDataSentToChildProcess : 1;
-
-  uint32_t mUseHTTPSSVC : 1;
-  uint32_t mWaitHTTPSSVCRecord : 1;
-  
-  
-  uint32_t mHTTPSSVCTelemetryReported : 1;
 
   
   
