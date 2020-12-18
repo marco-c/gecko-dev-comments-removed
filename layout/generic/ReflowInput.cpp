@@ -2509,9 +2509,12 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
     needPaddingProp = false;
   } else if (aPadding) {  
     SetComputedLogicalPadding(wm, *aPadding);
-    needPaddingProp = mFrame->StylePadding()->IsWidthDependent() ||
-                      mFrame->HasAnyStateBits(NS_FRAME_REFLOW_ROOT |
-                                              NS_FRAME_DYNAMIC_REFLOW_ROOT);
+    nsMargin stylePadding;
+    
+    
+    
+    needPaddingProp = !mFrame->StylePadding()->GetPadding(stylePadding) ||
+                      aPadding->GetPhysicalMargin(wm) != stylePadding;
   } else {
     needPaddingProp = ComputePadding(aCBWM, aPercentBasis, aFrameType);
   }
