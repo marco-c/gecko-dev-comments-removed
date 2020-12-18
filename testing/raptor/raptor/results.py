@@ -6,6 +6,7 @@
 
 from __future__ import absolute_import
 
+import six
 import json
 import os
 
@@ -791,7 +792,9 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                             item
                         ):
                             
-                            for measurement in new_result["measurements"].iteritems():
+                            for measurement in six.iteritems(
+                                new_result["measurements"]
+                            ):
                                 self.results[i]["measurements"][measurement[0]].extend(
                                     measurement[1]
                                 )
