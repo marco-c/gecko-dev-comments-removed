@@ -329,6 +329,18 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   friend class nsOverflowContinuationTracker;
 
   typedef void (*ChildFrameMerger)(nsFrameList& aDest, nsFrameList& aSrc,
