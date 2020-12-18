@@ -2,7 +2,7 @@
 
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 from distutils.version import LooseVersion
 import json
 import math

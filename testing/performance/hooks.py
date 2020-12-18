@@ -1,6 +1,7 @@
 
 
 
+from __future__ import absolute_import
 import os
 from mozperftest.test.browsertime import add_options, add_option
 

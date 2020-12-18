@@ -3,6 +3,7 @@
 
 """ Manages a metadata file.
 """
+from __future__ import absolute_import
 import os
 import datetime
 from collections.abc import MutableMapping

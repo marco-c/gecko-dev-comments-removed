@@ -6,6 +6,7 @@
 
 
 
+from __future__ import absolute_import
 import os
 
 ABS_WORK_DIR = os.path.join(os.getcwd(), "build")
