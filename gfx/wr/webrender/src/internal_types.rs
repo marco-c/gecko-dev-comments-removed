@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags};
 use api::{ImageFormat, NotificationRequest, Shadow, FilterOp, ImageBufferKind};
@@ -33,7 +33,7 @@ use crate::capture::PlainExternalImage;
 pub type FastHashMap<K, V> = HashMap<K, V, BuildHasherDefault<FxHasher>>;
 pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
 
-
+/// Custom field embedded inside the Polygon struct of the plane-split crate.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PlaneSplitAnchor {
@@ -59,13 +59,13 @@ impl Default for PlaneSplitAnchor {
     }
 }
 
-
+/// A concrete plane splitter type used in WebRender.
 pub type PlaneSplitter = BspSplitter<f64, WorldPixel, PlaneSplitAnchor>;
 
-
+/// An arbitrary number which we assume opacity is invisible below.
 const OPACITY_EPSILON: f32 = 0.001;
 
-
+/// Equivalent to api::FilterOp with added internal information
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -116,7 +116,7 @@ impl Filter {
 
     pub fn is_noop(&self) -> bool {
         match *self {
-            Filter::Identity => false, 
+            Filter::Identity => false, // this is intentional
             Filter::Blur(width, height) => width == 0.0 && height == 0.0,
             Filter::Brightness(amount) => amount == 1.0,
             Filter::Contrast(amount) => amount == 1.0,
@@ -154,9 +154,9 @@ impl Filter {
 
 
     pub fn as_int(&self) -> i32 {
-        
+        // Must be kept in sync with brush_blend.glsl
         match *self {
-            Filter::Identity => 0, 
+            Filter::Identity => 0, // matches `Contrast(1)`
             Filter::Contrast(..) => 0,
             Filter::Grayscale(..) => 1,
             Filter::HueRotate(..) => 2,
@@ -213,23 +213,23 @@ impl Default for Swizzle {
     }
 }
 
-
+/// Swizzle settings of the texture cache.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 pub struct SwizzleSettings {
-    
+    /// Swizzle required on sampling a texture with BGRA8 format.
     pub bgra8_sampling_swizzle: Swizzle,
 }
 
-
-
-
-
-
-
-
-
+/// An ID for a texture that is owned by the `texture_cache` module.
+///
+/// This can include atlases or standalone textures allocated via the texture
+/// cache (e.g.  if an image is too large to be added to an atlas). The texture
+/// cache manages the allocation and freeing of these IDs, and the rendering
+/// thread maintains a map from cache texture ID to native texture.
+///
+/// We never reuse IDs, so we use a u64 here to be safe.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -239,17 +239,17 @@ impl CacheTextureId {
     pub const INVALID: CacheTextureId = CacheTextureId(!0);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/// Canonical type for texture layer indices.
+///
+/// WebRender is currently not very consistent about layer index types. Some
+/// places use i32 (since that's the type used in various OpenGL APIs), some
+/// places use u32 (since having it be signed is non-sensical, but the
+/// underlying graphics APIs generally operate on 32-bit integers) and some
+/// places use usize (since that's most natural in Rust).
+///
+/// Going forward, we aim to us usize throughout the codebase, since that allows
+/// operations like indexing without a cast, and convert to the required type in
+/// the device module when making calls into the platform layer.
 pub type LayerIndex = usize;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -257,31 +257,31 @@ pub type LayerIndex = usize;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DeferredResolveIndex(pub u32);
 
-
+/// Identifies the source of an input texture to a shader.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum TextureSource {
-    
+    /// Equivalent to `None`, allowing us to avoid using `Option`s everywhere.
     Invalid,
-    
-    TextureCache(CacheTextureId, ImageBufferKind, Swizzle),
-    
+    /// An entry in the texture cache.
+    TextureCache(CacheTextureId, Swizzle),
+    /// An external image texture, mananged by the embedding.
     External(DeferredResolveIndex, ImageBufferKind),
-    
-    
+    /// Select a dummy 1x1 white texture. This can be used by image
+    /// shaders that want to draw a solid color.
     Dummy,
 }
 
 impl TextureSource {
     pub fn image_buffer_kind(&self) -> ImageBufferKind {
         match *self {
-            TextureSource::TextureCache(_, image_buffer_kind, _) => image_buffer_kind,
+            TextureSource::TextureCache(..) => ImageBufferKind::Texture2D,
 
             TextureSource::External(_, image_buffer_kind) => image_buffer_kind,
 
-            
-            TextureSource::Dummy => ImageBufferKind::Texture2DArray,
+            // Render tasks use texture arrays for now.
+            TextureSource::Dummy => ImageBufferKind::Texture2D,
 
             TextureSource::Invalid => ImageBufferKind::Texture2D,
         }
@@ -312,21 +312,21 @@ pub enum TextureUpdateSource {
         channel_index: u8,
     },
     Bytes { data: Arc<Vec<u8>> },
-    
-    
+    /// Clears the target area, rather than uploading any pixels. Used when the
+    /// texture cache debug display is active.
     DebugClear,
 }
 
-
+/// Command to allocate, reallocate, or free a texture for the texture cache.
 #[derive(Debug)]
 pub struct TextureCacheAllocation {
-    
+    /// The virtual ID (i.e. distinct from device ID) of the texture.
     pub id: CacheTextureId,
-    
+    /// Details corresponding to the operation in question.
     pub kind: TextureCacheAllocationKind,
 }
 
-
+/// Information used when allocating / reallocating.
 #[derive(Debug)]
 pub struct TextureCacheAllocInfo {
     pub width: i32,
@@ -335,24 +335,24 @@ pub struct TextureCacheAllocInfo {
     pub format: ImageFormat,
     pub filter: TextureFilter,
     pub target: ImageBufferKind,
-    
+    /// Indicates whether this corresponds to one of the shared texture caches.
     pub is_shared_cache: bool,
-    
+    /// If true, this texture requires a depth target.
     pub has_depth: bool,
 }
 
-
+/// Sub-operation-specific information for allocation operations.
 #[derive(Debug)]
 pub enum TextureCacheAllocationKind {
-    
+    /// Performs an initial texture allocation.
     Alloc(TextureCacheAllocInfo),
-    
+    /// Reallocates the texture without preserving its contents.
     Reset(TextureCacheAllocInfo),
-    
+    /// Frees the texture and the corresponding cache ID.
     Free,
 }
 
-
+/// Command to update the contents of the texture cache.
 #[derive(Debug)]
 pub struct TextureCacheUpdate {
     pub rect: DeviceIntRect,
@@ -363,24 +363,24 @@ pub struct TextureCacheUpdate {
     pub source: TextureUpdateSource,
 }
 
-
-
-
-
-
+/// Atomic set of commands to manipulate the texture cache, generated on the
+/// RenderBackend thread and executed on the Renderer thread.
+///
+/// The list of allocation operations is processed before the updates. This is
+/// important to allow coalescing of certain allocation operations.
 #[derive(Default)]
 pub struct TextureUpdateList {
-    
-    
+    /// Indicates that there was some kind of cleanup clear operation. Used for
+    /// sanity checks.
     pub clears_shared_cache: bool,
-    
+    /// Commands to alloc/realloc/free the textures. Processed first.
     pub allocations: Vec<TextureCacheAllocation>,
-    
+    /// Commands to update the contents of the textures. Processed second.
     pub updates: FastHashMap<CacheTextureId, Vec<TextureCacheUpdate>>,
 }
 
 impl TextureUpdateList {
-    
+    /// Mints a new `TextureUpdateList`.
     pub fn new() -> Self {
         TextureUpdateList {
             clears_shared_cache: false,
@@ -389,18 +389,18 @@ impl TextureUpdateList {
         }
     }
 
-    
+    /// Returns true if this is a no-op (no updates to be applied).
     pub fn is_nop(&self) -> bool {
         self.allocations.is_empty() && self.updates.is_empty()
     }
 
-    
+    /// Sets the clears_shared_cache flag for renderer-side sanity checks.
     #[inline]
     pub fn note_clear(&mut self) {
         self.clears_shared_cache = true;
     }
 
-    
+    /// Pushes an update operation onto the list.
     #[inline]
     pub fn push_update(&mut self, id: CacheTextureId, update: TextureCacheUpdate) {
         self.updates
@@ -409,8 +409,8 @@ impl TextureUpdateList {
             .push(update);
     }
 
-    
-    
+    /// Sends a command to the Renderer to clear the portion of the shared region
+    /// we just freed. Used when the texture cache debugger is enabled.
     #[cold]
     pub fn push_debug_clear(
         &mut self,
@@ -433,7 +433,7 @@ impl TextureUpdateList {
     }
 
 
-    
+    /// Pushes an allocation operation onto the list.
     pub fn push_alloc(&mut self, id: CacheTextureId, info: TextureCacheAllocInfo) {
         debug_assert!(!self.allocations.iter().any(|x| x.id == id));
         self.allocations.push(TextureCacheAllocation {
@@ -442,15 +442,15 @@ impl TextureUpdateList {
         });
     }
 
-    
-    
+    /// Pushes a reallocation operation onto the list, potentially coalescing
+    /// with previous operations.
     pub fn push_reset(&mut self, id: CacheTextureId, info: TextureCacheAllocInfo) {
         self.debug_assert_coalesced(id);
 
-        
+        // Drop any unapplied updates to the to-be-freed texture.
         self.updates.remove(&id);
 
-        
+        // Coallesce this realloc into a previous alloc or realloc, if available.
         if let Some(cur) = self.allocations.iter_mut().find(|x| x.id == id) {
             match cur.kind {
                 TextureCacheAllocationKind::Alloc(ref mut i) => *i = info,
@@ -466,20 +466,20 @@ impl TextureUpdateList {
         });
     }
 
-    
-    
+    /// Pushes a free operation onto the list, potentially coalescing with
+    /// previous operations.
     pub fn push_free(&mut self, id: CacheTextureId) {
         self.debug_assert_coalesced(id);
 
-        
+        // Drop any unapplied updates to the to-be-freed texture.
         self.updates.remove(&id);
 
-        
-        
+        // Drop any allocations for it as well. If we happen to be allocating and
+        // freeing in the same batch, we can collapse them to a no-op.
         let idx = self.allocations.iter().position(|x| x.id == id);
         let removed_kind = idx.map(|i| self.allocations.remove(i).kind);
         match removed_kind {
-            Some(TextureCacheAllocationKind::Alloc(..)) => {  },
+            Some(TextureCacheAllocationKind::Alloc(..)) => { /* no-op! */ },
             Some(TextureCacheAllocationKind::Free) => panic!("Double free"),
             Some(TextureCacheAllocationKind::Reset(..)) |
             None => {
@@ -499,24 +499,24 @@ impl TextureUpdateList {
     }
 }
 
-
-
+/// A list of updates built by the render backend that should be applied
+/// by the renderer thread.
 pub struct ResourceUpdateList {
-    
+    /// List of OS native surface create / destroy operations to apply.
     pub native_surface_updates: Vec<NativeSurfaceOperation>,
 
-    
+    /// Atomic set of texture cache updates to apply.
     pub texture_updates: TextureUpdateList,
 }
 
 impl ResourceUpdateList {
-    
+    /// Returns true if this update list has no effect.
     pub fn is_nop(&self) -> bool {
         self.texture_updates.is_nop() && self.native_surface_updates.is_empty()
     }
 }
 
-
+/// Wraps a frame_builder::Frame, but conceptually could hold more information
 pub struct RenderedDocument {
     pub frame: Frame,
     pub is_new_scene: bool,
@@ -565,11 +565,11 @@ impl ResourceCacheError {
     }
 }
 
-
+/// Primitive metadata we pass around in a bunch of places
 #[derive(Copy, Clone, Debug)]
 pub struct LayoutPrimitiveInfo {
-    
-    
+    /// NOTE: this is *ideally* redundant with the clip_rect
+    /// but that's an ongoing project, so for now it exists and is used :(
     pub rect: LayoutRect,
     pub clip_rect: LayoutRect,
     pub flags: PrimitiveFlags,
