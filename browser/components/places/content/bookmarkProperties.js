@@ -237,7 +237,6 @@ var BookmarkPropertiesPanel = {
 
 
   async onDialogLoad() {
-    document.title = this._getDialogTitle();
     document.addEventListener("dialogaccept", function() {
       BookmarkPropertiesPanel.onDialogAccept();
     });
@@ -251,6 +250,7 @@ var BookmarkPropertiesPanel = {
       .getButton("accept");
     acceptButton.disabled = true;
     await this._determineItemInfo();
+    document.title = this._getDialogTitle();
 
     
     
