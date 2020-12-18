@@ -3,6 +3,7 @@
 
 
 from __future__ import absolute_import
+import six
 import ConfigParser
 import json
 import os
@@ -137,7 +138,7 @@ class MercurialRepoManipulationMixin(object):
         force=None,
         halt_on_failure=True,
     ):
-        if isinstance(tags, basestring):
+        if isinstance(tags, six.string_types):
             tags = [tags]
         cmd = self.query_exe("hg", return_type="list") + ["tag"]
         if not message:
