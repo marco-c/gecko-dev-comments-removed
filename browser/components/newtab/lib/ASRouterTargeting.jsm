@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 const FXA_ENABLED_PREF = "identity.fxaccounts.enabled";
 const DISTRIBUTION_ID_PREF = "distribution.id";
@@ -106,8 +106,8 @@ const FXA_USERNAME_PREF = "services.sync.username";
 
 const { activityStreamProvider: asProvider } = NewTabUtils;
 
-const FXA_ATTACHED_CLIENTS_UPDATE_INTERVAL = 4 * 60 * 60 * 1000; // Four hours
-const FRECENT_SITES_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // Six hours
+const FXA_ATTACHED_CLIENTS_UPDATE_INTERVAL = 4 * 60 * 60 * 1000; 
+const FRECENT_SITES_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; 
 const FRECENT_SITES_IGNORE_BLOCKED = false;
 const FRECENT_SITES_NUM_ITEMS = 25;
 const FRECENT_SITES_MIN_FRECENCY = 100;
@@ -115,12 +115,12 @@ const FRECENT_SITES_MIN_FRECENCY = 100;
 const CACHE_EXPIRATION = 5 * 60 * 1000;
 const jexlEvaluationCache = new Map();
 
-/**
- * CachedTargetingGetter
- * @param property {string} Name of the method called on ActivityStreamProvider
- * @param options {{}?} Options object passsed to ActivityStreamProvider method
- * @param updateInterval {number?} Update interval for query. Defaults to FRECENT_SITES_UPDATE_INTERVAL
- */
+
+
+
+
+
+
 function CachedTargetingGetter(
   property,
   options = null,
@@ -129,7 +129,7 @@ function CachedTargetingGetter(
   return {
     _lastUpdated: 0,
     _value: null,
-    // For testing
+    
     expire() {
       this._lastUpdated = 0;
       this._value = null;
@@ -178,7 +178,7 @@ function CheckBrowserNeedsUpdate(
   const checker = {
     _lastUpdated: 0,
     _value: null,
-    // For testing. Avoid update check network call.
+    
     setUp(value) {
       this._lastUpdated = Date.now();
       this._value = value;
@@ -239,25 +239,25 @@ const QueryCache = {
   },
 };
 
-/**
- * sortMessagesByWeightedRank
- *
- * Each message has an associated weight, which is guaranteed to be strictly
- * positive. Sort the messages so that higher weighted messages are more likely
- * to come first.
- *
- * Specifically, sort them so that the probability of message x_1 with weight
- * w_1 appearing before message x_2 with weight w_2 is (w_1 / (w_1 + w_2)).
- *
- * This is equivalent to requiring that x_1 appearing before x_2 is (w_1 / w_2)
- * "times" as likely as x_2 appearing before x_1.
- *
- * See Bug 1484996, Comment 2 for a justification of the method.
- *
- * @param {Array} messages - A non-empty array of messages to sort, all with
- *                           strictly positive weights
- * @returns the sorted array
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function sortMessagesByWeightedRank(messages) {
   return messages
     .map(message => ({
@@ -268,15 +268,15 @@ function sortMessagesByWeightedRank(messages) {
     .map(({ message }) => message);
 }
 
-/**
- * getSortedMessages - Given an array of Messages, applies sorting and filtering rules
- *                     in expected order.
- *
- * @param {Array<Message>} messages
- * @param {{}} options
- * @param {boolean} options.ordered - Should .order be used instead of random weighted sorting?
- * @returns {Array<Message>}
- */
+
+
+
+
+
+
+
+
+
 function getSortedMessages(messages, options = {}) {
   let { ordered } = { ordered: false, ...options };
   let result = messages;
@@ -287,12 +287,12 @@ function getSortedMessages(messages, options = {}) {
   }
 
   result.sort((a, b) => {
-    // If we find at least one score, we need to apply filtering by threshold at the end.
+    
     if (!isNaN(a.score) || !isNaN(b.score)) {
       hasScores = true;
     }
 
-    // First sort by score if we're doing personalization:
+    
     if (a.score > b.score || (!isNaN(a.score) && isNaN(b.score))) {
       return -1;
     }
@@ -300,7 +300,7 @@ function getSortedMessages(messages, options = {}) {
       return 1;
     }
 
-    // Next, sort by priority
+    
     if (a.priority > b.priority || (!isNaN(a.priority) && isNaN(b.priority))) {
       return -1;
     }
@@ -308,7 +308,7 @@ function getSortedMessages(messages, options = {}) {
       return 1;
     }
 
-    // Sort messages with targeting expressions higher than those with none
+    
     if (a.targeting && !b.targeting) {
       return -1;
     }
@@ -316,7 +316,7 @@ function getSortedMessages(messages, options = {}) {
       return 1;
     }
 
-    // Next, sort by order *ascending* if ordered = true
+    
     if (ordered) {
       if (a.order > b.order || (!isNaN(a.order) && isNaN(b.order))) {
         return 1;
@@ -340,17 +340,17 @@ function getSortedMessages(messages, options = {}) {
   return result;
 }
 
-/**
- * parseAboutPageURL - Parse a URL string retrieved from about:home and about:new, returns
- *                    its type (web extenstion or custom url) and the parsed url(s)
- *
- * @param {string} url - A URL string for home page or newtab page
- * @returns {Object} {
- *   isWebExt: boolean,
- *   isCustomUrl: boolean,
- *   urls: Array<{url: string, host: string}>
- * }
- */
+
+
+
+
+
+
+
+
+
+
+
 function parseAboutPageURL(url) {
   let ret = {
     isWebExt: false,
@@ -361,9 +361,9 @@ function parseAboutPageURL(url) {
     ret.isWebExt = true;
     ret.urls.push({ url, host: "" });
   } else {
-    // The home page URL could be either a single URL or a list of "|" separated URLs.
-    // Note that it should work with "about:home" and "about:blank", in which case the
-    // "host" is set as an empty string.
+    
+    
+    
     for (const _url of url.split("|")) {
       if (!["about:home", "about:newtab", "about:blank"].includes(_url)) {
         ret.isCustomUrl = true;
@@ -374,7 +374,7 @@ function parseAboutPageURL(url) {
         ret.urls.push({ url: _url, host });
       } catch (e) {}
     }
-    // If URL parsing failed, just return the given url with an empty host
+    
     if (!ret.urls.length) {
       ret.urls.push({ url, host: "" });
     }
@@ -396,13 +396,13 @@ const TargetingGetters = {
   get browserSettings() {
     const { settings } = TelemetryEnvironment.currentEnvironment;
     return {
-      // This way of getting attribution is deprecated - use atttributionData instead
+      
       attribution: settings.attribution,
       update: settings.update,
     };
   },
   get attributionData() {
-    // Attribution is determined at startup - so we can use the cached attribution at this point
+    
     return AttributionCode.getCachedAttributionData();
   },
   get currentDate() {
@@ -428,7 +428,7 @@ const TargetingGetters = {
     };
   },
   get xpinstallEnabled() {
-    // This is needed for all add-on recommendations, to know if we allow xpi installs in the first place
+    
     return isXPIInstallEnabled;
   },
   get addonsInfo() {
@@ -456,7 +456,7 @@ const TargetingGetters = {
   },
   get searchEngines() {
     return new Promise(resolve => {
-      // Note: calling init ensures this code is only executed after Search has been initialized
+      
       Services.search
         .getAppProvidedEngines()
         .then(engines => {
@@ -600,8 +600,8 @@ const TargetingGetters = {
     return ClientEnvironment.userId;
   },
   get profileRestartCount() {
-    // Counter starts at 1 when a profile is created, substract 1 so the value
-    // returned matches expectations
+    
+    
     return (
       TelemetrySession.getMetadata("targeting").profileSubsessionCounter - 1
     );
@@ -661,8 +661,9 @@ this.ASRouterTargeting = {
         candidateMessageTrigger.params.includes(trigger.param.host)) ||
       (candidateMessageTrigger.params &&
         trigger.param.type &&
-        candidateMessageTrigger.params.filter(t => t === trigger.param.type)
-          .length) ||
+        candidateMessageTrigger.params.filter(
+          t => (t & trigger.param.type) === t
+        ).length) ||
       (candidateMessageTrigger.patterns &&
         trigger.param.url &&
         new MatchPatternSet(candidateMessageTrigger.patterns).matches(
@@ -671,12 +672,12 @@ this.ASRouterTargeting = {
     );
   },
 
-  /**
-   * getCachedEvaluation - Return a cached jexl evaluation if available
-   *
-   * @param {string} targeting JEXL expression to lookup
-   * @returns {obj|null} Object with value result or null if not available
-   */
+  
+
+
+
+
+
   getCachedEvaluation(targeting) {
     if (jexlEvaluationCache.has(targeting)) {
       const { timestamp, value } = jexlEvaluationCache.get(targeting);
@@ -689,17 +690,17 @@ this.ASRouterTargeting = {
     return null;
   },
 
-  /**
-   * checkMessageTargeting - Checks is a message's targeting parameters are satisfied
-   *
-   * @param {*} message An AS router message
-   * @param {obj} targetingContext a TargetingContext instance complete with eval environment
-   * @param {func} onError A function to handle errors (takes two params; error, message)
-   * @param {boolean} shouldCache Should the JEXL evaluations be cached and reused.
-   * @returns
-   */
+  
+
+
+
+
+
+
+
+
   async checkMessageTargeting(message, targetingContext, onError, shouldCache) {
-    // If no targeting is specified,
+    
     if (!message.targeting) {
       return true;
     }
@@ -740,8 +741,8 @@ this.ASRouterTargeting = {
       (trigger
         ? this.isTriggerMatch(trigger, message.trigger)
         : !message.trigger) &&
-      // If a trigger expression was passed to this function, the message should match it.
-      // Otherwise, we should choose a message with no trigger property (i.e. a message that can show up at any time)
+      
+      
       this.checkMessageTargeting(
         message,
         targetingContext,
@@ -751,19 +752,19 @@ this.ASRouterTargeting = {
     );
   },
 
-  /**
-   * findMatchingMessage - Given an array of messages, returns one message
-   *                       whos targeting expression evaluates to true
-   *
-   * @param {Array<Message>} messages An array of AS router messages
-   * @param {trigger} string A trigger expression if a message for that trigger is desired
-   * @param {obj|null} context A FilterExpression context. Defaults to TargetingGetters above.
-   * @param {func} onError A function to handle errors (takes two params; error, message)
-   * @param {func} ordered An optional param when true sort message by order specified in message
-   * @param {boolean} shouldCache Should the JEXL evaluations be cached and reused.
-   * @param {boolean} returnAll Should we return all matching messages, not just the first one found.
-   * @returns {obj|Array<Message>} If returnAll is false, a single message. If returnAll is true, an array of messages.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
   async findMatchingMessage({
     messages,
     trigger = {},
@@ -794,7 +795,7 @@ this.ASRouterTargeting = {
 
     for (const candidate of sortedMessages) {
       if (await isMatch(candidate)) {
-        // If not returnAll, we should return the first message we find that matches.
+        
         if (!returnAll) {
           return candidate;
         }
@@ -806,7 +807,7 @@ this.ASRouterTargeting = {
   },
 };
 
-// Export for testing
+
 this.getSortedMessages = getSortedMessages;
 this.QueryCache = QueryCache;
 this.CachedTargetingGetter = CachedTargetingGetter;
