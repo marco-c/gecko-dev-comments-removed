@@ -53,8 +53,9 @@ function checkIfMediaControllerBecomeInactiveAfterMediaEnds(tab) {
         1,
         `Receive ${activeChangedNums} times 'onactivechange'`
       );
+      
+      
       ok(controller.isActive, "controller should be active");
-      ok(controller.isAudible, "controller should be audible");
       ok(controller.isPlaying, "controller should be playing");
     };
     controller.ondeactivated = () => {
