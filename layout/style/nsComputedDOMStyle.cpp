@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* DOM object returned from element.getComputedStyle() */
 
 #include "nsComputedDOMStyle.h"
 
@@ -67,10 +67,10 @@ using namespace mozilla::dom;
 #  define DEBUG_ComputedDOMStyle
 #endif
 
-
-
-
-
+/*
+ * This is the implementation of the readonly CSSStyleDeclaration that is
+ * returned by the getComputedStyle() function.
+ */
 
 already_AddRefed<nsComputedDOMStyle> NS_NewComputedDOMStyle(
     dom::Element* aElement, const nsAString& aPseudoElt, Document* aDocument,
@@ -100,27 +100,27 @@ static Element* GetRenderedElement(Element* aElement, nsAtom* aPseudo) {
   return nullptr;
 }
 
-
+// Whether aDocument needs to restyle for aElement
 static bool ElementNeedsRestyle(Element* aElement, nsAtom* aPseudo,
                                 bool aMayNeedToFlushLayout) {
   const Document* doc = aElement->GetComposedDoc();
   if (!doc) {
-    
-    
+    // If the element is out of the document we don't return styles for it, so
+    // nothing to do.
     return false;
   }
 
   PresShell* presShell = doc->GetPresShell();
   if (!presShell) {
-    
-    
-    
-    
+    // If there's no pres-shell we'll just either mint a new style from our
+    // caller document, or return no styles, so nothing to do (unless our owner
+    // element needs to get restyled, which could cause us to gain a pres shell,
+    // but the caller checks that).
     return false;
   }
 
-  
-  
+  // Unfortunately we don't know if the sheet change affects mElement or not, so
+  // just assume it will and that we need to flush normally.
   ServoStyleSet* styleSet = presShell->StyleSet();
   if (styleSet->StyleSheetsHaveChanged()) {
     return true;
@@ -129,18 +129,18 @@ static bool ElementNeedsRestyle(Element* aElement, nsAtom* aPseudo,
   nsPresContext* presContext = presShell->GetPresContext();
   MOZ_ASSERT(presContext);
 
-  
-  
-  
-  
-  
-  
+  // Pending media query updates can definitely change style on the element. For
+  // example, if you change the zoom factor and then call getComputedStyle, you
+  // should be able to observe the style with the new media queries.
+  //
+  // TODO(emilio): Does this need to also check the user font set? (it affects
+  // ch / ex units).
   if (presContext->HasPendingMediaQueryUpdates()) {
-    
+    // So gotta flush.
     return true;
   }
 
-  
+  // If the pseudo-element is animating, make sure to flush.
   if (aElement->MayHaveAnimations() && aPseudo) {
     if (aPseudo == nsCSSPseudoElements::before()) {
       if (EffectSet::GetEffectSet(aElement, PseudoStyleType::before)) {
@@ -157,9 +157,9 @@ static bool ElementNeedsRestyle(Element* aElement, nsAtom* aPseudo,
     }
   }
 
-  
-  
-  
+  // For Servo, we need to process the restyle-hint-invalidations first, to
+  // expand LaterSiblings hint, so that we can look whether ancestors need
+  // restyling.
   RestyleManager* restyleManager = presContext->RestyleManager();
   restyleManager->ProcessAllPendingAttributeAndStateInvalidations();
 
@@ -168,23 +168,23 @@ static bool ElementNeedsRestyle(Element* aElement, nsAtom* aPseudo,
     return false;
   }
 
-  
-  
+  // If there's a pseudo, we need to prefer that element, as the pseudo itself
+  // may have explicit restyles.
   Element* styledElement = GetRenderedElement(aElement, aPseudo);
-  
+  // Try to skip the restyle otherwise.
   return Servo_HasPendingRestyleAncestor(
       styledElement ? styledElement : aElement, aMayNeedToFlushLayout);
 }
 
-
-
-
-
+/**
+ * An object that represents the ordered set of properties that are exposed on
+ * an nsComputedDOMStyle object and how their computed values can be obtained.
+ */
 struct ComputedStyleMap {
   friend class nsComputedDOMStyle;
 
   struct Entry {
-    
+    // Create a pointer-to-member-function type.
     typedef already_AddRefed<CSSValue> (nsComputedDOMStyle::*ComputeMethod)();
 
     nsCSSPropertyID mProperty;
@@ -195,34 +195,34 @@ struct ComputedStyleMap {
     }
   };
 
-  
-  
+  // This generated file includes definition of kEntries which is typed
+  // Entry[] and used below, so this #include has to be put here.
 #include "nsComputedDOMStyleGenerated.inc"
 
-  
-
-
-
+  /**
+   * Returns the number of properties that should be exposed on an
+   * nsComputedDOMStyle, ecxluding any disabled properties.
+   */
   uint32_t Length() {
     Update();
     return mExposedPropertyCount;
   }
 
-  
-
-
-
-
+  /**
+   * Returns the property at the given index in the list of properties
+   * that should be exposed on an nsComputedDOMStyle, excluding any
+   * disabled properties.
+   */
   nsCSSPropertyID PropertyAt(uint32_t aIndex) {
     Update();
     return kEntries[EntryIndex(aIndex)].mProperty;
   }
 
-  
-
-
-
-
+  /**
+   * Searches for and returns the computed style map entry for the given
+   * property, or nullptr if the property is not exposed on nsComputedDOMStyle
+   * or is currently disabled.
+   */
   const Entry* FindEntryForProperty(nsCSSPropertyID aPropID) {
     Update();
     for (uint32_t i = 0; i < mExposedPropertyCount; i++) {
@@ -234,44 +234,44 @@ struct ComputedStyleMap {
     return nullptr;
   }
 
-  
-
-
-
+  /**
+   * Records that mIndexMap needs updating, due to prefs changing that could
+   * affect the set of properties exposed on an nsComputedDOMStyle.
+   */
   void MarkDirty() { mExposedPropertyCount = 0; }
 
-  
-  
-  
+  // The member variables are public so that we can use an initializer in
+  // nsComputedDOMStyle::GetComputedStyleMap.  Use the member functions
+  // above to get information from this object.
 
-  
-
-
-
-
-
+  /**
+   * The number of properties that should be exposed on an nsComputedDOMStyle.
+   * This will be less than eComputedStyleProperty_COUNT if some property
+   * prefs are disabled.  A value of 0 indicates that it and mIndexMap are out
+   * of date.
+   */
   uint32_t mExposedPropertyCount;
 
-  
-
-
+  /**
+   * A map of indexes on the nsComputedDOMStyle object to indexes into kEntries.
+   */
   uint32_t mIndexMap[ArrayLength(kEntries)];
 
  private:
-  
-
-
+  /**
+   * Returns whether mExposedPropertyCount and mIndexMap are out of date.
+   */
   bool IsDirty() { return mExposedPropertyCount == 0; }
 
-  
-
-
-
+  /**
+   * Updates mExposedPropertyCount and mIndexMap to take into account properties
+   * whose prefs are currently disabled.
+   */
   void Update();
 
-  
-
-
+  /**
+   * Maps an nsComputedDOMStyle indexed getter index to an index into kEntries.
+   */
   uint32_t EntryIndex(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < mExposedPropertyCount);
     return mIndexMap[aIndex];
@@ -308,8 +308,8 @@ nsComputedDOMStyle::nsComputedDOMStyle(dom::Element* aElement,
       mResolvedComputedStyle(false) {
   MOZ_ASSERT(aElement);
   MOZ_ASSERT(aDocument);
-  
-  
+  // TODO(emilio, bug 548397, https://github.com/w3c/csswg-drafts/issues/2403):
+  // Should use aElement->OwnerDoc() instead.
   mDocumentWeak = do_GetWeakReference(aDocument);
   mElement = aElement;
   mPseudo = nsCSSPseudoElements::GetPseudoAtom(aPseudoElt);
@@ -323,7 +323,7 @@ nsComputedDOMStyle::~nsComputedDOMStyle() {
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsComputedDOMStyle)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsComputedDOMStyle)
-  tmp->ClearComputedStyle();  
+  tmp->ClearComputedStyle();  // remove observer before clearing mElement
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -346,7 +346,7 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(nsComputedDOMStyle)
   return tmp->HasKnownLiveWrapper();
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
-
+// QueryInterface implementation for nsComputedDOMStyle
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsComputedDOMStyle)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
@@ -381,8 +381,8 @@ void nsComputedDOMStyle::SetCssText(const nsACString& aCssText,
 }
 
 uint32_t nsComputedDOMStyle::Length() {
-  
-  
+  // Make sure we have up to date style so that we can include custom
+  // properties.
   UpdateCurrentStyleSources(eCSSPropertyExtra_variable);
   if (!mComputedStyle) {
     return 0;
@@ -463,7 +463,7 @@ nsresult nsComputedDOMStyle::GetPropertyValue(
   return NS_OK;
 }
 
-
+/* static */
 already_AddRefed<ComputedStyle> nsComputedDOMStyle::GetComputedStyle(
     Element* aElement, nsAtom* aPseudo, StyleType aStyleType) {
   if (Document* doc = aElement->GetComposedDoc()) {
@@ -472,19 +472,19 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::GetComputedStyle(
   return GetComputedStyleNoFlush(aElement, aPseudo, aStyleType);
 }
 
-
-
-
-
-
-
-
-
+/**
+ * The following function checks whether we need to explicitly resolve the style
+ * again, even though we have a style coming from the frame.
+ *
+ * This basically checks whether the style is or may be under a ::first-line or
+ * ::first-letter frame, in which case we can't return the frame style, and we
+ * need to resolve it. See bug 505515.
+ */
 static bool MustReresolveStyle(const mozilla::ComputedStyle* aStyle) {
   MOZ_ASSERT(aStyle);
 
-  
-  
+  // TODO(emilio): We may want to avoid re-resolving pseudo-element styles
+  // more often.
   return aStyle->HasPseudoElementData() && !aStyle->IsPseudoElement();
 }
 
@@ -501,11 +501,11 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
     StyleType aStyleType) {
   MOZ_ASSERT(aElement, "NULL element");
 
-  
-  
-  
-  
-  
+  // If the content has a pres shell, we must use it.  Otherwise we'd
+  // potentially mix rule trees by using the wrong pres shell's style
+  // set.  Using the pres shell from the content also means that any
+  // content that's actually *in* a document will get the style from the
+  // correct document.
   PresShell* presShell = nsContentUtils::GetPresShellForContent(aElement);
   bool inDocWithShell = true;
   if (!presShell) {
@@ -522,24 +522,24 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
   }
 
   if (!aElement->IsInComposedDoc()) {
-    
-    
-    
-    
-    
+    // Don't return styles for disconnected elements, that makes no sense. This
+    // can only happen with a non-null presShell for cross-document calls.
+    //
+    // FIXME(emilio, bug 1483798): This should also not return styles for
+    // elements outside of the flat tree, not just outside of the document.
     return nullptr;
   }
 
-  
-  
-  
+  // XXX the !aElement->IsHTMLElement(nsGkAtoms::area)
+  // check is needed due to bug 135040 (to avoid using
+  // mPrimaryFrame). Remove it once that's fixed.
   if (inDocWithShell && aStyleType == eAll &&
       !aElement->IsHTMLElement(nsGkAtoms::area)) {
     if (Element* element = GetRenderedElement(aElement, aPseudo)) {
       if (nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(element)) {
         ComputedStyle* result = styleFrame->Style();
-        
-        
+        // Don't use the style if it was influenced by pseudo-elements,
+        // since then it's not the primary style for this element / pseudo.
         if (!MustReresolveStyle(result)) {
           RefPtr<ComputedStyle> ret = result;
           return ret.forget();
@@ -548,8 +548,8 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
     }
   }
 
-  
-  
+  // No frame has been created, or we have a pseudo, or we're looking
+  // for the default style, so resolve the style ourselves.
   ServoStyleSet* styleSet = presShell->StyleSet();
 
   StyleRuleInclusion rules = aStyleType == eDefaultOnly
@@ -584,8 +584,8 @@ nsComputedDOMStyle::GetUnanimatedComputedStyleNoFlush(Element* aElement,
 }
 
 nsMargin nsComputedDOMStyle::GetAdjustedValuesForBoxSizing() {
-  
-  
+  // We want the width/height of whatever parts 'width' or 'height' controls,
+  // which can be different depending on the value of the 'box-sizing' property.
   const nsStylePosition* stylePos = StylePosition();
 
   nsMargin adjustment;
@@ -693,8 +693,8 @@ void nsComputedDOMStyle::GetCSSImageURLs(const nsACString& aPropertyName,
                                          mozilla::ErrorResult& aRv) {
   nsCSSPropertyID prop = nsCSSProps::LookupProperty(aPropertyName);
   if (prop == eCSSProperty_UNKNOWN) {
-    
-    
+    // Note: not using nsPrintfCString here in case aPropertyName contains
+    // nulls.
     aRv.ThrowSyntaxError("Invalid property name '"_ns + aPropertyName + "'"_ns);
     return;
   }
@@ -709,9 +709,9 @@ void nsComputedDOMStyle::GetCSSImageURLs(const nsACString& aPropertyName,
   ClearCurrentStyleSources();
 }
 
-
-
-
+// nsDOMCSSDeclaration abstract methods which should never be called
+// on a nsComputedDOMStyle object, but must be defined to avoid
+// compile errors.
 DeclarationBlock* nsComputedDOMStyle::GetOrCreateCSSDeclaration(
     Operation aOperation, DeclarationBlock** aCreated) {
   MOZ_CRASH("called nsComputedDOMStyle::GetCSSDeclaration");
@@ -812,14 +812,14 @@ static bool MayNeedToFlushLayout(nsCSSPropertyID aPropID) {
 bool nsComputedDOMStyle::NeedsToFlushStyle(nsCSSPropertyID aPropID) const {
   bool mayNeedToFlushLayout = MayNeedToFlushLayout(aPropID);
 
-  
+  // We always compute styles from the element's owner document.
   if (ElementNeedsRestyle(mElement, mPseudo, mayNeedToFlushLayout)) {
     return true;
   }
 
   Document* doc = mElement->OwnerDoc();
-  
-  
+  // If parent document is there, also needs to check if there is some change
+  // that needs to flush this document (e.g. size change for iframe).
   while (doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout()) {
     Document* parentDocument = doc->GetInProcessParentDocument();
     Element* element = parentDocument->FindContentForSubDocument(doc);
@@ -833,8 +833,8 @@ bool nsComputedDOMStyle::NeedsToFlushStyle(nsCSSPropertyID aPropID) const {
 }
 
 static bool IsNonReplacedInline(nsIFrame* aFrame) {
-  
-  
+  // FIXME: this should be IsInlineInsideStyle() since width/height
+  // doesn't apply to ruby boxes.
   return aFrame->StyleDisplay()->IsInlineFlow() &&
          !aFrame->IsFrameOfType(nsIFrame::eReplaced);
 }
@@ -902,29 +902,29 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
     case eCSSProperty_border_bottom_width:
     case eCSSProperty_border_left_width:
     case eCSSProperty_border_right_width:
-      
-      
-      
-      
-      
-      
+      // FIXME(emilio): This should return false per spec (bug 1551000), but
+      // themed borders don't make that easy, so for now flush for that case.
+      //
+      // TODO(emilio): If we make GetUsedBorder() stop returning 0 for an
+      // unreflowed frame, or something of that sort, then we can stop flushing
+      // layout for themed frames.
       return style->StyleDisplay()->HasAppearance();
     case eCSSProperty_top:
     case eCSSProperty_right:
     case eCSSProperty_bottom:
     case eCSSProperty_left:
-      
+      // Doing better than this is actually hard.
       return style->StyleDisplay()->mPosition != StylePositionProperty::Static;
     case eCSSProperty_padding_top:
     case eCSSProperty_padding_right:
     case eCSSProperty_padding_bottom:
     case eCSSProperty_padding_left: {
       Side side = SideForPaddingOrMarginOrInsetProperty(aPropID);
-      
-      
-      
-      
-      
+      // Theming can override used padding, sigh.
+      //
+      // TODO(emilio): If we make GetUsedPadding() stop returning 0 for an
+      // unreflowed frame, or something of that sort, then we can stop flushing
+      // layout for themed frames.
       return PaddingNeedsUsedValue(style->StylePadding()->mPadding.Get(side),
                                    *style);
     }
@@ -932,8 +932,8 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
     case eCSSProperty_margin_right:
     case eCSSProperty_margin_bottom:
     case eCSSProperty_margin_left: {
-      
-      
+      // NOTE(emilio): This is dubious, but matches other browsers.
+      // See https://github.com/w3c/csswg-drafts/issues/2328
       Side side = SideForPaddingOrMarginOrInsetProperty(aPropID);
       return !style->StyleMargin()->mMargin.Get(side).ConvertsToLength();
     }
@@ -984,11 +984,11 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
     return;
   }
 
-  
-  
-  
-  
-  
+  // We don't return styles for disconnected elements anymore, so don't go
+  // through the trouble of flushing or what not.
+  //
+  // TODO(emilio): We may want to return earlier for elements outside of the
+  // flat tree too: https://github.com/w3c/csswg-drafts/issues/1964
   if (!mElement->IsInComposedDoc()) {
     ClearComputedStyle();
     return;
@@ -997,8 +997,8 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
   DebugOnly<bool> didFlush = false;
   if (NeedsToFlushStyle(aPropID)) {
     didFlush = true;
-    
-    
+    // We look at the frame in NeedsToFlushLayout, so flush frames, not only
+    // styles.
     Flush(*document, FlushType::Frames);
   }
 
@@ -1021,29 +1021,29 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We need to use GetUndisplayedRestyleGeneration instead of
+  // GetRestyleGeneration, because the caching of mComputedStyle is an
+  // optimization that is useful only for displayed elements.
+  // For undisplayed elements we need to take into account any DOM changes that
+  // might cause a restyle, because Servo will not increase the generation for
+  // undisplayed elements.
+  // As for Gecko, GetUndisplayedRestyleGeneration is effectively equal to
+  // GetRestyleGeneration, since the generation is incremented whenever we
+  // process restyles.
   uint64_t currentGeneration =
       mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration();
 
   if (mComputedStyle && mComputedStyleGeneration == currentGeneration &&
       mPresShellId == mPresShell->GetPresShellId()) {
-    
+    // Our cached style is still valid.
     return;
   }
 
   mComputedStyle = nullptr;
 
-  
-  
-  
+  // XXX the !mElement->IsHTMLElement(nsGkAtoms::area)
+  // check is needed due to bug 135040 (to avoid using
+  // mPrimaryFrame). Remove it once that's fixed.
   if (mStyleType == eAll && !mElement->IsHTMLElement(nsGkAtoms::area)) {
     mOuterFrame = GetOuterFrame();
     mInnerFrame = mOuterFrame;
@@ -1056,7 +1056,7 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
 
   if (!mComputedStyle || MustReresolveStyle(mComputedStyle)) {
     PresShell* presShellForContent = mElement->OwnerDoc()->GetPresShell();
-    
+    // Need to resolve a style.
     RefPtr<ComputedStyle> resolvedComputedStyle = DoGetComputedStyleNoFlush(
         mElement, mPseudo,
         presShellForContent ? presShellForContent : mPresShell, mStyleType);
@@ -1065,9 +1065,9 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
       return;
     }
 
-    
-    
-    
+    // No need to re-get the generation, even though GetComputedStyle
+    // will flush, since we flushed style at the top of this function.
+    // We don't need to check this if we only flushed the parent.
     NS_ASSERTION(
         !didFlush ||
             currentGeneration ==
@@ -1080,8 +1080,8 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
                  "should not have pseudo-element data");
   }
 
-  
-  
+  // mExposeVisitedStyle is set to true only by testing APIs that
+  // require chrome privilege.
   MOZ_ASSERT(!mExposeVisitedStyle || nsContentUtils::IsCallerChrome(),
              "mExposeVisitedStyle set incorrectly");
   if (mExposeVisitedStyle && mComputedStyle->RelevantLinkVisited()) {
@@ -1092,11 +1092,11 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
 }
 
 void nsComputedDOMStyle::ClearCurrentStyleSources() {
-  
-  
-  
-  
-  
+  // Release the current style if we got it off the frame.
+  //
+  // For a style we resolved, keep it around so that we can re-use it next time
+  // this object is queried, but not if it-s a re-resolved style because we were
+  // inside a pseudo-element.
   if (!mResolvedComputedStyle || mOuterFrame) {
     ClearComputedStyle();
   }
@@ -1108,8 +1108,8 @@ void nsComputedDOMStyle::ClearCurrentStyleSources() {
 
 void nsComputedDOMStyle::RemoveProperty(const nsACString& aPropertyName,
                                         nsACString& aReturn, ErrorResult& aRv) {
-  
-  
+  // Note: not using nsPrintfCString here in case aPropertyName contains
+  // nulls.
   aRv.ThrowNoModificationAllowedError("Can't remove property '"_ns +
                                       aPropertyName +
                                       "' from computed style"_ns);
@@ -1125,8 +1125,8 @@ void nsComputedDOMStyle::SetProperty(const nsACString& aPropertyName,
                                      const nsACString& aPriority,
                                      nsIPrincipal* aSubjectPrincipal,
                                      ErrorResult& aRv) {
-  
-  
+  // Note: not using nsPrintfCString here in case aPropertyName contains
+  // nulls.
   aRv.ThrowNoModificationAllowedError("Can't set value for property '"_ns +
                                       aPropertyName + "' in computed style"_ns);
 }
@@ -1142,8 +1142,8 @@ void nsComputedDOMStyle::IndexedGetter(uint32_t aIndex, bool& aFound,
     return;
   }
 
-  
-  
+  // Custom properties are exposed with indexed properties just after all
+  // of the built-in properties.
   UpdateCurrentStyleSources(eCSSPropertyExtra_variable);
   if (!mComputedStyle) {
     aFound = false;
@@ -1166,13 +1166,13 @@ void nsComputedDOMStyle::IndexedGetter(uint32_t aIndex, bool& aFound,
   ClearCurrentStyleSources();
 }
 
-
+// Property getters...
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetBottom() {
   return GetOffsetWidthFor(eSideBottom);
 }
 
-
+/* static */
 void nsComputedDOMStyle::SetToRGBAColor(nsROCSSPrimitiveValue* aValue,
                                         nscolor aColor) {
   nsAutoString string;
@@ -1202,18 +1202,18 @@ static Position MaybeResolvePositionForTransform(const LengthPercentage& aX,
   return {LengthPercentage::FromPixels(p.x), LengthPercentage::FromPixels(p.y)};
 }
 
-
-
-
+/* Convert the stored representation into a list of two values and then hand
+ * it back.
+ */
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransformOrigin() {
-  
+  /* We need to build up a list of two values.  We'll call them
+   * width and height.
+   */
 
-
-
-  
+  /* Store things as a value list */
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
 
-  
+  /* Now, get the values. */
   const auto& origin = StyleDisplay()->mTransformOrigin;
 
   RefPtr<nsROCSSPrimitiveValue> width = new nsROCSSPrimitiveValue;
@@ -1228,18 +1228,18 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransformOrigin() {
   return valueList.forget();
 }
 
-
-
-
+/* Convert the stored representation into a list of two values and then hand
+ * it back.
+ */
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetPerspectiveOrigin() {
-  
+  /* We need to build up a list of two values.  We'll call them
+   * width and height.
+   */
 
-
-
-  
+  /* Store things as a value list */
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
 
-  
+  /* Now, get the values. */
   const auto& origin = StyleDisplay()->mPerspectiveOrigin;
 
   auto position = MaybeResolvePositionForTransform(
@@ -1253,7 +1253,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransform() {
   return GetTransformValue(display->mTransform);
 }
 
-
+/* static */
 already_AddRefed<nsROCSSPrimitiveValue> nsComputedDOMStyle::MatrixToCSSValue(
     const mozilla::gfx::Matrix4x4& matrix) {
   bool is3D = !matrix.Is2D();
@@ -1303,7 +1303,7 @@ already_AddRefed<nsROCSSPrimitiveValue> nsComputedDOMStyle::MatrixToCSSValue(
   }
   resultString.Append(')');
 
-  
+  /* Create a value to hold our result. */
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
   val->SetString(resultString);
@@ -1327,8 +1327,8 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetOsxFontSmoothing() {
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetImageLayerPosition(
     const nsStyleImageLayers& aLayers) {
   if (aLayers.mPositionXCount != aLayers.mPositionYCount) {
-    
-    
+    // No value to return.  We can't express this combination of
+    // values as a shorthand.
     return nullptr;
   }
 
@@ -1361,8 +1361,8 @@ void nsComputedDOMStyle::SetValueToURLValue(const StyleComputedUrl* aURL,
     return;
   }
 
-  
-  
+  // If we have a usable nsIURI in the URLValue, and the url() wasn't
+  // a fragment-only URL, serialize the nsIURI.
   if (!aURL->IsLocalRef()) {
     if (nsIURI* uri = aURL->GetURI()) {
       aValue->SetURI(uri);
@@ -1370,7 +1370,7 @@ void nsComputedDOMStyle::SetValueToURLValue(const StyleComputedUrl* aURL,
     }
   }
 
-  
+  // Otherwise, serialize the specified URL value.
   NS_ConvertUTF8toUTF16 source(aURL->SpecifiedSerialization());
   nsAutoString url;
   url.AppendLiteral(u"url(");
@@ -1395,7 +1395,7 @@ static void AppendGridLineNames(nsACString& aResult,
     aResult.Append('[');
   }
   for (uint32_t i = 0;;) {
-    
+    // TODO: Maybe use servo to do this and avoid the silly utf16->utf8 dance?
     nsAutoString name;
     nsStyleUtil::AppendEscapedCSSIdent(
         nsDependentAtomString(aLineNames[i].AsAtom()), name);
@@ -1481,7 +1481,7 @@ already_AddRefed<nsROCSSPrimitiveValue> nsComputedDOMStyle::GetGridTrackBreadth(
 already_AddRefed<nsROCSSPrimitiveValue> nsComputedDOMStyle::GetGridTrackSize(
     const StyleTrackSize& aTrackSize) {
   if (aTrackSize.IsFitContent()) {
-    
+    // A fit-content() function.
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
     nsAutoString argumentStr, fitContentStr;
     fitContentStr.AppendLiteral("fit-content(");
@@ -1507,8 +1507,8 @@ already_AddRefed<nsROCSSPrimitiveValue> nsComputedDOMStyle::GetGridTrackSize(
     return GetGridTrackBreadth(min);
   }
 
-  
-  
+  // minmax(auto, <flex>) is equivalent to (and is our internal representation
+  // of) <flex>, and both compute to <flex>
   if (min.IsAuto() && max.IsFr()) {
     return GetGridTrackBreadth(max);
   }
@@ -1552,13 +1552,13 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
     subgridKeyword->SetString("subgrid");
     valueList->AppendCSSValue(subgridKeyword.forget());
     for (const auto& lineNames : aTrackInfo.mResolvedLineNames) {
-      AppendGridLineNames(valueList, lineNames,  false);
+      AppendGridLineNames(valueList, lineNames, /*aSuppressEmptyList*/ false);
     }
     uint32_t line = aTrackInfo.mResolvedLineNames.Length();
     uint32_t lastLine = aTrackInfo.mNumExplicitTracks + 1;
     const Span<const StyleCustomIdent> empty;
     for (; line < lastLine; ++line) {
-      AppendGridLineNames(valueList, empty,  false);
+      AppendGridLineNames(valueList, empty, /*aSuppressEmptyList*/ false);
     }
     return valueList.forget();
   }
@@ -1582,14 +1582,14 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
     return val.forget();
   }
 
-  
-  
-  
-  
-  
+  // We've done layout on the grid and have resolved the sizes of its tracks,
+  // so we'll return those sizes here.  The grid spec says we MAY use
+  // repeat(<positive-integer>, Npx) here for consecutive tracks with the same
+  // size, but that doesn't seem worth doing since even for repeat(auto-*)
+  // the resolved size might differ for the repeated tracks.
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
 
-  
+  // Add any leading implicit tracks.
   if (serializeImplicit) {
     for (uint32_t i = 0; i < numLeadingImplicitTracks; ++i) {
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
@@ -1602,31 +1602,31 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
     const auto* const autoRepeatValue = aTrackList.GetRepeatAutoValue();
     const auto repeatLineNames = autoRepeatValue->line_names.AsSpan();
     MOZ_ASSERT(repeatLineNames.Length() >= 2);
-    
-    
-    
+    // Number of tracks inside the repeat, not including any repetitions.
+    // Check that if we have truncated the number of tracks due to overflowing
+    // the maximum track limit then we also truncate this repeat count.
     MOZ_ASSERT(repeatLineNames.Length() ==
                autoRepeatValue->track_sizes.len + 1);
-    
-    
-    
-    
+    // If we have truncated the first repetition of repeat tracks, then we
+    // can't index using autoRepeatValue->track_sizes.len, and
+    // aTrackInfo.mRemovedRepeatTracks.Length() will account for all repeat
+    // tracks that haven't been truncated.
     const uint32_t numRepeatTracks =
         std::min(aTrackInfo.mRemovedRepeatTracks.Length(),
                  autoRepeatValue->track_sizes.len);
     MOZ_ASSERT(repeatLineNames.Length() >= numRepeatTracks + 1);
-    
+    // The total of all tracks in all repetitions of the repeat.
     const uint32_t totalNumRepeatTracks =
         aTrackInfo.mRemovedRepeatTracks.Length();
     const uint32_t repeatStart = aTrackInfo.mRepeatFirstTrack;
-    
-    
+    // We need to skip over any track sizes which were resolved to 0 by
+    // collapsed tracks. Keep track of the iteration separately.
     const auto explicitTrackSizeBegin =
         trackSizes.cbegin() + numLeadingImplicitTracks;
     const auto explicitTrackSizeEnd =
         explicitTrackSizeBegin + numExplicitTracks;
     auto trackSizeIter = explicitTrackSizeBegin;
-    
+    // Write any leading explicit tracks before the repeat.
     for (uint32_t i = 0; i < repeatStart; i++) {
       AppendGridLineNames(valueList, aTrackInfo.mResolvedLineNames[i]);
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
@@ -1634,27 +1634,27 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
       valueList->AppendCSSValue(val.forget());
     }
     auto lineNameIter = aTrackInfo.mResolvedLineNames.cbegin() + repeatStart;
-    
-    
-    
-    
+    // Write the track names at the start of the repeat, including the names
+    // at the end of the last non-repeat track. Unlike all later repeat line
+    // name lists, this one needs the resolved line name which includes both
+    // the last non-repeat line names and the leading repeat line names.
     AppendGridLineNames(valueList, *lineNameIter++);
     {
-      
-      
+      // Write out the first repeat value, checking for size zero (removed
+      // track).
       const nscoord firstRepeatTrackSize =
           (!aTrackInfo.mRemovedRepeatTracks[0]) ? *trackSizeIter++ : 0;
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
       val->SetAppUnits(firstRepeatTrackSize);
       valueList->AppendCSSValue(val.forget());
     }
-    
-    
+    // Write the line names and track sizes inside the repeat, checking for
+    // removed tracks (size 0).
     for (uint32_t i = 1; i < totalNumRepeatTracks; i++) {
       const uint32_t repeatIndex = i % numRepeatTracks;
-      
-      
-      
+      // If we are rolling over from one repetition to the next, include track
+      // names from both the end of the previous repeat and the start of the
+      // next.
       if (repeatIndex == 0) {
         AppendGridLineNames(valueList,
                             repeatLineNames[numRepeatTracks].AsSpan(),
@@ -1670,20 +1670,20 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
       val->SetAppUnits(repeatTrackSize);
       valueList->AppendCSSValue(val.forget());
     }
-    
-    
+    // The resolved line names include a single repetition of the auto-repeat
+    // line names. Skip over those.
     lineNameIter += numRepeatTracks - 1;
-    
+    // Write out any more tracks after the repeat.
     while (trackSizeIter != explicitTrackSizeEnd) {
       AppendGridLineNames(valueList, *lineNameIter++);
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
       val->SetAppUnits(*trackSizeIter++);
       valueList->AppendCSSValue(val.forget());
     }
-    
+    // Write the final trailing line name.
     AppendGridLineNames(valueList, *lineNameIter++);
   } else if (numExplicitTracks > 0) {
-    
+    // If there are explicit tracks but no repeat tracks, just serialize those.
     for (uint32_t i = 0;; i++) {
       AppendGridLineNames(valueList, aTrackInfo.mResolvedLineNames[i]);
       if (i == numExplicitTracks) {
@@ -1694,7 +1694,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
       valueList->AppendCSSValue(val.forget());
     }
   }
-  
+  // Add any trailing implicit tracks.
   if (serializeImplicit) {
     for (uint32_t i = numLeadingImplicitTracks + numExplicitTracks;
          i < numSizes; ++i) {
@@ -1711,8 +1711,8 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetGridTemplateColumns() {
   nsGridContainerFrame* gridFrame =
       nsGridContainerFrame::GetGridFrameWithComputedInfo(mInnerFrame);
   if (!gridFrame) {
-    
-    
+    // The element doesn't have a box - return the computed value.
+    // https://drafts.csswg.org/css-grid/#resolved-track-list
     nsAutoCString string;
     mComputedStyle->GetComputedPropertyValue(eCSSProperty_grid_template_columns,
                                              string);
@@ -1721,7 +1721,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetGridTemplateColumns() {
     return value.forget();
   }
 
-  
+  // GetGridFrameWithComputedInfo() above ensures that this returns non-null:
   const ComputedGridTrackInfo* info = gridFrame->GetComputedTemplateColumns();
   return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateColumns,
                                     *info);
@@ -1731,8 +1731,8 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetGridTemplateRows() {
   nsGridContainerFrame* gridFrame =
       nsGridContainerFrame::GetGridFrameWithComputedInfo(mInnerFrame);
   if (!gridFrame) {
-    
-    
+    // The element doesn't have a box - return the computed value.
+    // https://drafts.csswg.org/css-grid/#resolved-track-list
     nsAutoCString string;
     mComputedStyle->GetComputedPropertyValue(eCSSProperty_grid_template_rows,
                                              string);
@@ -1741,7 +1741,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetGridTemplateRows() {
     return value.forget();
   }
 
-  
+  // GetGridFrameWithComputedInfo() above ensures that this returns non-null:
   const ComputedGridTrackInfo* info = gridFrame->GetComputedTemplateRows();
   return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateRows, *info);
 }
@@ -1857,7 +1857,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTextDecoration() {
         getPropertyValue(eCSSProperty_text_decoration_style));
   }
 
-  
+  // The resolved color shouldn't be currentColor, so we always serialize it.
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
   SetValueFromComplexColor(val, StyleTextReset()->mTextDecorationColor);
   valueList->AppendCSSValue(val.forget());
@@ -1912,19 +1912,19 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMaxWidth() {
   return val.forget();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function indicates whether we should return "auto" as the
+ * getComputedStyle() result for the (default) "min-width: auto" and
+ * "min-height: auto" CSS values.
+ *
+ * As of this writing, the CSS Sizing draft spec says this "auto" value
+ * *always* computes to itself.  However, for now, we only make it compute to
+ * itself for grid and flex items (the containers where "auto" has special
+ * significance), because those are the only areas where the CSSWG has actually
+ * resolved on this "computes-to-itself" behavior. For elements in other sorts
+ * of containers, this function returns false, which will make us resolve
+ * "auto" to 0.
+ */
 bool nsComputedDOMStyle::ShouldHonorMinSizeAutoInAxis(PhysicalAxis aAxis) {
   return mOuterFrame && mOuterFrame->IsFlexOrGridItem();
 }
@@ -1972,9 +1972,9 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetOffsetWidthFor(
 
   mozilla::StylePositionProperty position = display->mPosition;
   if (!mOuterFrame) {
-    
-    
-    
+    // GetNonStaticPositionOffset or GetAbsoluteOffset don't handle elements
+    // without frames in any sensible way. GetStaticOffset, however, is perfect
+    // for that case.
     position = StylePositionProperty::Static;
   }
 
@@ -2072,20 +2072,20 @@ nscoord nsComputedDOMStyle::GetUsedAbsoluteOffset(mozilla::Side aSide) {
   nsRect containerRect = container->GetRect();
 
   if (container->IsViewportFrame()) {
-    
-    
-    
-    
-    
-    
+    // For absolutely positioned frames scrollbars are taken into
+    // account by virtue of getting a containing block that does
+    // _not_ include the scrollbars.  For fixed positioned frames,
+    // the containing block is the viewport, which _does_ include
+    // scrollbars.  We have to do some extra work.
+    // the first child in the default frame list is what we want
     nsIFrame* scrollingChild = container->PrincipalChildList().FirstChild();
     nsIScrollableFrame* scrollFrame = do_QueryFrame(scrollingChild);
     if (scrollFrame) {
       scrollbarSizes = scrollFrame->GetActualScrollbarSizes();
     }
 
-    
-    
+    // The viewport size might have been expanded by the visual viewport or
+    // the minimum-scale size.
     const ViewportFrame* viewportFrame = do_QueryFrame(container);
     MOZ_ASSERT(viewportFrame);
     containerRect.SizeTo(
@@ -2172,14 +2172,14 @@ bool nsComputedDOMStyle::GetLineHeightCoord(nscoord& aCoord) {
 
   nsPresContext* presContext = mPresShell->GetPresContext();
 
-  
-  
+  // lie about font size inflation since we lie about font size (since
+  // the inflation only applies to text)
   aCoord = ReflowInput::CalcLineHeight(mElement, mComputedStyle, presContext,
                                        blockHeight, 1.0f);
 
-  
-  
-  
+  // CalcLineHeight uses font->mFont.size, but we want to use
+  // font->mSize as the font size.  Adjust for that.  Also adjust for
+  // the text zoom, if any.
   const nsStyleFont* font = StyleFont();
   float fCoord = float(aCoord);
   if (font->mAllowZoomAndMinSize) {
@@ -2219,8 +2219,8 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetMarginWidthFor(
   } else {
     AssertFlushedPendingReflows();
 
-    
-    
+    // For tables, GetUsedMargin always returns an empty margin, so we
+    // should read the margin from the table wrapper frame instead.
     val->SetAppUnits(mOuterFrame->GetUsedMargin().Side(aSide));
     NS_ASSERTION(mOuterFrame == mInnerFrame ||
                      mInnerFrame->GetUsedMargin() == nsMargin(0, 0, 0, 0),
@@ -2411,36 +2411,36 @@ bool nsComputedDOMStyle::GetFrameBorderRectHeight(nscoord& aHeight) {
   return true;
 }
 
-
-
-
-
+/* If the property is "none", hand back "none" wrapped in a value.
+ * Otherwise, compute the aggregate transform matrix and hands it back in a
+ * "matrix" wrapper.
+ */
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetTransformValue(
     const StyleTransform& aTransform) {
-  
-
-
+  /* If there are no transforms, then we should construct a single-element
+   * entry and hand it back.
+   */
   if (aTransform.IsNone()) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
     val->SetString("none");
     return val.forget();
   }
 
-  
+  /* Otherwise, we need to compute the current value of the transform matrix,
+   * store it in a string, and hand it back to the caller.
+   */
 
-
-
-  
-
-
-
-
-
-
-
-
-
-
+  /* Use the inner frame for the reference box.  If we don't have an inner
+   * frame we use empty dimensions to allow us to continue (and percentage
+   * values in the transform will simply give broken results).
+   * TODO: There is no good way for us to represent the case where there's no
+   * frame, which is problematic.  The reason is that when we have percentage
+   * transforms, there are a total of four stored matrix entries that influence
+   * the transform based on the size of the element.  However, this poses a
+   * problem, because only two of these values can be explicitly referenced
+   * using the named transforms.  Until a real solution is found, we'll just
+   * use this approach.
+   */
   nsStyleTransformMatrix::TransformReferenceBox refBox(mInnerFrame, nsRect());
   gfx::Matrix4x4 matrix = nsStyleTransformMatrix::ReadTransforms(
       aTransform, refBox, float(mozilla::AppUnitsPerCSSPixel()));
@@ -2452,9 +2452,9 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMask() {
   const nsStyleSVGReset* svg = StyleSVGReset();
   const nsStyleImageLayers::Layer& firstLayer = svg->mMask.mLayers[0];
 
-  
-  
-  
+  // Mask is now a shorthand, but it used to be a longhand, so that we
+  // need to support computed style for the cases where it used to be
+  // a longhand.
   if (svg->mMask.mImageCount > 1 ||
       firstLayer.mClip != StyleGeometryBox::BorderBox ||
       firstLayer.mOrigin != StyleGeometryBox::BorderBox ||
@@ -2491,7 +2491,7 @@ void nsComputedDOMStyle::ParentChainChanged(nsIContent* aContent) {
   ClearComputedStyle();
 }
 
-
+/* static */
 ComputedStyleMap* nsComputedDOMStyle::GetComputedStyleMap() {
   static ComputedStyleMap map{};
   return &map;
@@ -2499,24 +2499,24 @@ ComputedStyleMap* nsComputedDOMStyle::GetComputedStyleMap() {
 
 static StaticAutoPtr<nsTArray<const char*>> gCallbackPrefs;
 
-
+/* static */
 void nsComputedDOMStyle::RegisterPrefChangeCallbacks() {
-  
-  
-  
-  
+  // Note that this will register callbacks for all properties with prefs, not
+  // just those that are implemented on computed style objects, as it's not
+  // easy to grab specific property data from ServoCSSPropList.h based on the
+  // entries iterated in nsComputedDOMStylePropertyList.h.
 
   AutoTArray<const char*, 64> prefs;
   for (const auto* p = nsCSSProps::kPropertyPrefTable;
        p->mPropID != eCSSProperty_UNKNOWN; p++) {
-    
-    
-    
-    
-    
-    
-    
-    
+    // Many properties are controlled by the same preference, so de-duplicate
+    // them before adding observers.
+    //
+    // Note: This is done by pointer comparison, which works because the mPref
+    // members are string literals from the same same translation unit, and are
+    // therefore de-duplicated by the compiler. On the off chance that we wind
+    // up with some duplicates with different pointers, though, it's not a bit
+    // deal.
     if (!prefs.ContainsSorted(p->mPref)) {
       prefs.InsertElementSorted(p->mPref);
     }
@@ -2531,7 +2531,7 @@ void nsComputedDOMStyle::RegisterPrefChangeCallbacks() {
                                  GetComputedStyleMap());
 }
 
-
+/* static */
 void nsComputedDOMStyle::UnregisterPrefChangeCallbacks() {
   if (!gCallbackPrefs) {
     return;
