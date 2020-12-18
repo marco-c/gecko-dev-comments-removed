@@ -98,7 +98,6 @@ class AbstractGeneratorObject : public NativeObject {
   void setStackStorage(ArrayObject& stackStorage) {
     setFixedSlot(STACK_STORAGE_SLOT, ObjectValue(stackStorage));
   }
-  void clearStackStorage() { setFixedSlot(STACK_STORAGE_SLOT, NullValue()); }
 
   
   
