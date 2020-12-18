@@ -8856,29 +8856,10 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
           ("Moving the loading entry to the active entry on nsDocShell %p to "
            "%s",
            this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
+      bool hadActiveEntry = !!mActiveEntry;
       mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
-      nsID changeID = {};
-      if (XRE_IsParentProcess()) {
-        
-        
-        mBrowsingContext->Canonical()->SessionHistoryCommit(
-            mLoadingEntry->mLoadId, changeID, mLoadType, true);
-      } else {
-        RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
-        if (rootSH) {
-          
-          
-          rootSH->SetIndexAndLength(mLoadingEntry->mRequestedIndex,
-                                    mLoadingEntry->mSessionHistoryLength,
-                                    changeID);
-        }
-        ContentChild* cc = ContentChild::GetSingleton();
-        
-        
-        mozilla::Unused << cc->SendHistoryCommit(mBrowsingContext,
-                                                 mLoadingEntry->mLoadId,
-                                                 changeID, mLoadType, true);
-      }
+      mBrowsingContext->SessionHistoryCommit(*mLoadingEntry, mLoadType,
+                                             hadActiveEntry, true , true);
       
       SetCacheKeyOnHistoryEntry(nullptr, cacheKey);
 
@@ -13274,41 +13255,9 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist) {
 
   if (mActiveEntry) {
     MOZ_ASSERT(loadingEntry);
-    nsID changeID = {};
     uint32_t loadType =
         mLoadType == LOAD_ERROR_PAGE ? mFailedLoadType : mLoadType;
-    if (XRE_IsParentProcess()) {
-      mBrowsingContext->Canonical()->SessionHistoryCommit(
-          loadingEntry->mLoadId, changeID, loadType, aPersist);
-    } else {
-      RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
-      if (rootSH) {
-        if (!loadingEntry->mLoadIsFromSessionHistory) {
-          
-          
-          
-          
-          
-          
-          
-          if (!LOAD_TYPE_HAS_FLAGS(
-                  mLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY) &&
-              (mBrowsingContext->IsTop() || hadActiveEntry) &&
-              mBrowsingContext->ShouldUpdateSessionHistory(loadType)) {
-            changeID = rootSH->AddPendingHistoryChange();
-          }
-        } else {
-          
-          
-          rootSH->SetIndexAndLength(loadingEntry->mRequestedIndex,
-                                    loadingEntry->mSessionHistoryLength,
-                                    changeID);
-        }
-      }
-      ContentChild* cc = ContentChild::GetSingleton();
-      mozilla::Unused << cc->SendHistoryCommit(mBrowsingContext,
-                                               loadingEntry->mLoadId, changeID,
-                                               loadType, aPersist);
-    }
+    mBrowsingContext->SessionHistoryCommit(*loadingEntry, loadType,
+                                           hadActiveEntry, aPersist, false);
   }
 }

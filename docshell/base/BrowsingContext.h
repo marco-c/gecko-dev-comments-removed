@@ -63,6 +63,7 @@ class CanonicalBrowsingContext;
 class ChildSHistory;
 class ContentParent;
 class Element;
+struct LoadingSessionHistoryInfo;
 template <typename>
 struct Nullable;
 template <typename T>
@@ -721,6 +722,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   bool IsPopupAllowed();
+
+  void SessionHistoryCommit(const LoadingSessionHistoryInfo& aInfo,
+                            uint32_t aLoadType, bool aHadActiveEntry,
+                            bool aPersist, bool aCloneEntryChildren);
 
   
   

@@ -2921,6 +2921,44 @@ bool BrowsingContext::IsPopupAllowed() {
   return false;
 }
 
+void BrowsingContext::SessionHistoryCommit(
+    const LoadingSessionHistoryInfo& aInfo, uint32_t aLoadType,
+    bool aHadActiveEntry, bool aPersist, bool aCloneEntryChildren) {
+  nsID changeID = {};
+  if (XRE_IsContentProcess()) {
+    RefPtr<ChildSHistory> rootSH = Top()->GetChildSessionHistory();
+    if (rootSH) {
+      if (!aInfo.mLoadIsFromSessionHistory) {
+        
+        
+        
+        
+        
+        
+        
+        if (!LOAD_TYPE_HAS_FLAGS(
+                aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY) &&
+            (IsTop() || aHadActiveEntry) &&
+            ShouldUpdateSessionHistory(aLoadType)) {
+          changeID = rootSH->AddPendingHistoryChange();
+        }
+      } else {
+        
+        
+        rootSH->SetIndexAndLength(aInfo.mRequestedIndex,
+                                  aInfo.mSessionHistoryLength, changeID);
+      }
+    }
+    ContentChild* cc = ContentChild::GetSingleton();
+    mozilla::Unused << cc->SendHistoryCommit(this, aInfo.mLoadId, changeID,
+                                             aLoadType, aPersist,
+                                             aCloneEntryChildren);
+  } else {
+    Canonical()->SessionHistoryCommit(aInfo.mLoadId, changeID, aLoadType,
+                                      aPersist, aCloneEntryChildren);
+  }
+}
+
 void BrowsingContext::SetActiveSessionHistoryEntry(
     const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
     uint32_t aLoadType, uint32_t aUpdatedCacheKey) {
