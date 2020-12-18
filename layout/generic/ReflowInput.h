@@ -297,7 +297,6 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  
   nscoord AvailableWidth() const { return mAvailableSize.Width(mWritingMode); }
   nscoord AvailableHeight() const {
     return mAvailableSize.Height(mWritingMode);
@@ -317,9 +316,6 @@ struct ReflowInput : public SizeComputationInput {
     return mComputedMaxSize.Height(mWritingMode);
   }
 
-  
-  
-  
   
   nscoord AvailableISize() const { return mAvailableSize.ISize(mWritingMode); }
   nscoord AvailableBSize() const { return mAvailableSize.BSize(mWritingMode); }
@@ -578,8 +574,6 @@ struct ReflowInput : public SizeComputationInput {
   
   int16_t mReflowDepth = 0;
 
-  
-  
   
   bool IsHResize() const {
     return mWritingMode.IsVertical() ? mFlags.mIsBResize : mFlags.mIsIResize;
@@ -947,7 +941,7 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  void ComputeMinMaxValues(const mozilla::LogicalSize& aContainingBlockSize);
+  void ComputeMinMaxValues(const mozilla::LogicalSize& aCBSize);
 
   
   
