@@ -970,6 +970,32 @@ this.VideoControlsImplWidget = class {
           case "media-videoCasting":
             this.updateCasting(aEvent.detail);
             break;
+          case "focusin":
+            
+            
+            if (
+              this.prefs["media.videocontrols.keyboard-tab-to-all-controls"] &&
+              
+              
+              this.clickToPlay.hidden &&
+              
+              this.dynamicControls &&
+              
+              
+              
+              
+              
+              
+              !this.controlBar.matches("div:hover")
+            ) {
+              this.startFadeIn(this.controlBar);
+              this.window.clearTimeout(this._hideControlsTimeout);
+              this._hideControlsTimeout = this.window.setTimeout(
+                () => this._hideControlsFn(),
+                this.HIDE_CONTROLS_TIMEOUT_MS
+              );
+            }
+            break;
           default:
             this.log("!!! control event " + aEvent.type + " not handled!");
         }
@@ -2467,6 +2493,8 @@ this.VideoControlsImplWidget = class {
           { el: this.video.textTracks, type: "change" },
 
           { el: this.video, type: "media-videoCasting", touchOnly: true },
+
+          { el: this.controlBar, type: "focusin" },
         ];
 
         for (let {
