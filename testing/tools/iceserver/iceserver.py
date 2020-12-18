@@ -850,8 +850,8 @@ if __name__ == "__main__":
         lines.pop(0)  
         lines.pop()  
         
-        lines = list(map(string.strip, lines))
-        certbase64 = string.join(lines, "")
+        lines = list(map(str.strip, lines))
+        certbase64 = "".join(lines)  
 
         turns_url = ', "turns:' + hostname + '"'
         cert_prop = ', "cert":"' + certbase64 + '"'
