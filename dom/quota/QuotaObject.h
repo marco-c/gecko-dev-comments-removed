@@ -14,12 +14,14 @@
 #include <cstdint>
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/dom/quota/QuotaCommon.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 
-BEGIN_QUOTA_NAMESPACE
+
+#include "mozilla/dom/quota/QuotaCommon.h"
+
+namespace mozilla::dom::quota {
 
 class OriginInfo;
 class QuotaManager;
@@ -80,6 +82,6 @@ class QuotaObject {
   bool mWritingDone;
 };
 
-END_QUOTA_NAMESPACE
+}  
 
 #endif  
