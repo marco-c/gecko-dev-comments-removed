@@ -20,6 +20,7 @@
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIObserverService.h"
+#include "nsReadableUtils.h"
 #include "nsXPCOMPrivate.h"
 #include "runnable_utils.h"
 
@@ -213,18 +214,14 @@ struct GMPCapabilityAndVersion {
     s.AppendLiteral(" version=");
     s.Append(mVersion);
     s.AppendLiteral(" tags=[");
-    nsCString tags;
-    for (const GMPCapability& cap : mCapabilities) {
-      if (!tags.IsEmpty()) {
-        tags.AppendLiteral(" ");
-      }
-      tags.Append(cap.mAPIName);
-      for (const nsCString& tag : cap.mAPITags) {
-        tags.AppendLiteral(":");
-        tags.Append(tag);
-      }
-    }
-    s.Append(tags);
+    StringJoinAppend(s, " "_ns, mCapabilities,
+                     [](auto& tags, const GMPCapability& cap) {
+                       tags.Append(cap.mAPIName);
+                       for (const nsCString& tag : cap.mAPITags) {
+                         tags.AppendLiteral(":");
+                         tags.Append(tag);
+                       }
+                     });
     s.AppendLiteral("]");
     return s;
   }
@@ -237,15 +234,11 @@ struct GMPCapabilityAndVersion {
 StaticMutex sGMPCapabilitiesMutex;
 StaticAutoPtr<nsTArray<GMPCapabilityAndVersion>> sGMPCapabilities;
 
-static nsCString GMPCapabilitiesToString() {
-  nsCString s;
-  for (const GMPCapabilityAndVersion& gmp : *sGMPCapabilities) {
-    if (!s.IsEmpty()) {
-      s.AppendLiteral(", ");
-    }
-    s.Append(gmp.ToString());
-  }
-  return s;
+static auto GMPCapabilitiesToString() {
+  return StringJoin(", "_ns, *sGMPCapabilities,
+                    [](nsACString& dest, const GMPCapabilityAndVersion& gmp) {
+                      dest.Append(gmp.ToString());
+                    });
 }
 
 
