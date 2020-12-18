@@ -426,6 +426,14 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     
     
     
+    if (type == FrameType::BaselineJS) {
+      return nullptr;
+    }
+
+    
+    
+    
+    
     
     
     
@@ -1576,6 +1584,7 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   
   
   
+  
   MOZ_ASSERT(iter.isBailoutJS());
 #if defined(DEBUG) || defined(JS_JITSPEW)
   FrameType prevFrameType = iter.prevType();
@@ -1583,7 +1592,8 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
              prevFrameType == FrameType::IonJS ||
              prevFrameType == FrameType::BaselineStub ||
              prevFrameType == FrameType::Rectifier ||
-             prevFrameType == FrameType::IonICCall);
+             prevFrameType == FrameType::IonICCall ||
+             prevFrameType == FrameType::BaselineJS);
 #endif
 
   

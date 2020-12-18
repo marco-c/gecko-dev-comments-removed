@@ -5887,6 +5887,37 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   Register scratch2 = regs.takeAny();
   Label loop, loopDone;
   masm.load16ZeroExtend(Address(callee, JSFunction::offsetOfNargs()), scratch2);
+
+  static_assert(sizeof(Value) == 8);
+  static_assert(JitStackAlignment == 16 || JitStackAlignment == 8);
+  
+  
+  
+  if (JitStackValueAlignment > 1) {
+    Register alignment = regs.takeAny();
+    masm.moveStackPtrTo(alignment);
+    masm.alignJitStackBasedOnNArgs(scratch2, false);
+
+    
+    masm.subStackPtrFrom(alignment);
+
+    
+    
+    
+    
+    Label alignmentZero;
+    masm.branchPtr(Assembler::Equal, alignment, ImmWord(0), &alignmentZero);
+
+    
+    
+    
+    
+    
+    
+    masm.storeValue(DoubleValue(0), Address(masm.getStackPointer(), 0));
+    masm.bind(&alignmentZero);
+  }
+
   masm.branchTest32(Assembler::Zero, scratch2, scratch2, &loopDone);
   masm.bind(&loop);
   {
