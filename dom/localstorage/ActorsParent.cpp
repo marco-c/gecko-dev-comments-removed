@@ -7369,7 +7369,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     MOZ_ASSERT(hasUsage);
 
     
-    mUsage = usageInfo.DatabaseUsage().value();
+    mUsage = usageInfo.DatabaseUsage().valueOr(0);
   } else {
     
     MOZ_ASSERT(!hasUsage);
