@@ -11793,6 +11793,25 @@ class MAsyncResolve : public MBinaryInstruction,
   AsyncFunctionResolveKind resolveKind() { return resolveKind_; }
 };
 
+
+
+
+
+class MGeneratorReturn : public MUnaryInstruction,
+                         public BoxInputsPolicy::Data {
+  explicit MGeneratorReturn(MDefinition* ins)
+      : MUnaryInstruction(classOpcode, ins) {
+    setGuard();
+  }
+
+ public:
+  INSTRUCTION_HEADER(GeneratorReturn)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, input))
+
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
 class MCheckThisReinit : public MUnaryInstruction,
                          public BoxInputsPolicy::Data {
   explicit MCheckThisReinit(MDefinition* thisVal)

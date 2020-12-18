@@ -3801,7 +3801,11 @@ void CodeGenerator::visitReturn(LReturn* lir) {
   MOZ_ASSERT(ToRegister(result) == JSReturnReg);
 #endif
   
-  if (current->mir() != *gen->graph().poBegin()) {
+  
+  
+  
+  
+  if (current->mir() != *gen->graph().poBegin() || lir->isGenerator()) {
     masm.jump(&returnLabel_);
   }
 }

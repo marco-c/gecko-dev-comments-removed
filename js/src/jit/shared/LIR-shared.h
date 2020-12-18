@@ -2209,10 +2209,15 @@ class LUrshD : public LBinaryMath<1> {
 
 
 class LReturn : public LInstructionHelper<0, BOX_PIECES, 0> {
+  bool isGenerator_;
+
  public:
   LIR_HEADER(Return)
 
-  LReturn() : LInstructionHelper(classOpcode) {}
+  explicit LReturn(bool isGenerator)
+      : LInstructionHelper(classOpcode), isGenerator_(isGenerator) {}
+
+  bool isGenerator() { return isGenerator_; }
 };
 
 class LThrow : public LCallInstructionHelper<0, BOX_PIECES, 0> {
