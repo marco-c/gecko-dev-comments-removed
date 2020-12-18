@@ -1631,6 +1631,13 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
       
       
       
+      bool currentIsSameOrAncestor =
+          IsSameOrAncestor(focusedBrowsingContext, newWindow);
+      
+      
+      
+      
+      
       
       
       
@@ -1643,14 +1650,8 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
         commonAncestor = GetCommonAncestor(newWindow, focusedBrowsingContext);
       }
 
-      
-      
-      
-      
       if (!Blur(
-              (focusMovesToDifferentBC || focusedBrowsingContext->IsInProcess())
-                  ? focusedBrowsingContext.get()
-                  : nullptr,
+              currentIsSameOrAncestor ? focusedBrowsingContext.get() : nullptr,
               commonAncestor ? commonAncestor.get() : nullptr,
               focusMovesToDifferentBC, aAdjustWidget, aActionId,
               elementToFocus)) {
@@ -3544,12 +3545,11 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         docShell->TabToTreeOwner(forward, forDocumentNavigation, &tookFocus);
         
         if (tookFocus) {
-          if (GetFocusedBrowsingContext() &&
-              GetFocusedBrowsingContext()->IsInProcess()) {
+          nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
+          if (window->GetFocusedElement() == mFocusedElement) {
             Blur(GetFocusedBrowsingContext(), nullptr, true, true,
                  GenerateFocusActionId());
           } else {
-            nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
             window->SetFocusedElement(nullptr);
           }
           return NS_OK;

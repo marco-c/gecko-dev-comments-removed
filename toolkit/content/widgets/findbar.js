@@ -1147,8 +1147,6 @@
       }
 
       if (this.prefillWithSelection && userWantsPrefill) {
-        this.browser.finder.getInitialSelection();
-
         
         
         this._findField.focus();
@@ -1159,6 +1157,7 @@
         
         this._findField.select();
 
+        this.browser.finder.getInitialSelection();
         return startFindPromise;
       }
 
