@@ -1,23 +1,23 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef frontend_ParserAtom_h
 #define frontend_ParserAtom_h
 
-#include "mozilla/DebugOnly.h"      
-#include "mozilla/HashFunctions.h"  
-#include "mozilla/Range.h"          
+#include "mozilla/DebugOnly.h"      // mozilla::DebugOnly
+#include "mozilla/HashFunctions.h"  // HashString
+#include "mozilla/Range.h"          // mozilla::Range
 
-#include "ds/LifoAlloc.h"         
-#include "frontend/TypedIndex.h"  
-#include "js/HashTable.h"         
-#include "js/UniquePtr.h"         
-#include "js/Vector.h"            
+#include "ds/LifoAlloc.h"         // LifoAlloc
+#include "frontend/TypedIndex.h"  // TypedIndex
+#include "js/HashTable.h"         // HashSet
+#include "js/UniquePtr.h"         // js::UniquePtr
+#include "js/Vector.h"            // Vector
 #include "vm/CommonPropertyNames.h"
-#include "vm/StringType.h"  
+#include "vm/StringType.h"  // CompareChars, StringEqualsAscii
 
 namespace js {
 namespace frontend {
@@ -32,11 +32,11 @@ class SpecificParserAtomLookup;
 
 class ParserAtomsTable;
 
-
-
-
-
-
+// An index to map WellKnownParserAtoms to cx->names().
+// This is consistent across multiple compilation.
+//
+// GetWellKnownAtom in ParserAtom.cpp relies on the fact that
+// JSAtomState fields and this enum variants use the same order.
 enum class WellKnownAtomId : uint32_t {
 #define ENUM_ENTRY_(_, name, _2) name,
   FOR_EACH_COMMON_PROPERTYNAME(ENUM_ENTRY_)
@@ -48,23 +48,23 @@ enum class WellKnownAtomId : uint32_t {
           Limit,
 };
 
-
+// These types correspond into indices in the StaticStrings arrays.
 enum class StaticParserString1 : uint8_t;
 enum class StaticParserString2 : uint16_t;
 
 class ParserAtom;
 using ParserAtomIndex = TypedIndex<ParserAtom>;
 
-
-
-
-
-
-
-
-
-
-
+// ParserAtomIndex, WellKnownAtomId, StaticParserString1, StaticParserString2,
+// or null.
+//
+// 0x0000_0000  Null atom
+//
+// 0x1YYY_YYYY  28-bit ParserAtom
+//
+// 0x2000_YYYY  Well-known atom ID
+// 0x2001_YYYY  Static length-1 atom
+// 0x2002_YYYY  Static length-2 atom
 class TaggedParserAtomIndex {
   uint32_t data_;
 
@@ -120,7 +120,7 @@ class TaggedParserAtomIndex {
       : data_(uint32_t(index) | WellKnownTag | WellKnownSubTag) {
     MOZ_ASSERT(uint32_t(index) < SmallIndexLimit);
 
-    
+    // Static1/Static2 string shouldn't use WellKnownAtomId.
 #define CHECK_(_, name, _2) MOZ_ASSERT(index != WellKnownAtomId::name);
     FOR_EACH_NON_EMPTY_TINY_PROPERTYNAME(CHECK_)
 #undef CHECK_
@@ -132,6 +132,15 @@ class TaggedParserAtomIndex {
 
   static TaggedParserAtomIndex star() {
     return TaggedParserAtomIndex(StaticParserString1('*'));
+  }
+  static TaggedParserAtomIndex arguments() {
+    return TaggedParserAtomIndex(WellKnownAtomId::arguments);
+  }
+  static TaggedParserAtomIndex dotThis() {
+    return TaggedParserAtomIndex(WellKnownAtomId::dotThis);
+  }
+  static TaggedParserAtomIndex dotGenerator() {
+    return TaggedParserAtomIndex(WellKnownAtomId::dotGenerator);
   }
   static TaggedParserAtomIndex null() { return TaggedParserAtomIndex(); }
 
@@ -191,14 +200,14 @@ class TaggedParserAtomIndex {
   explicit operator bool() const { return !isNull(); }
 };
 
-
-
-
-
-
-
-
-
+/**
+ * A ParserAtomEntry is an in-parser representation of an interned atomic
+ * string.  It mostly mirrors the information carried by a JSAtom*.
+ *
+ * The atom contents are stored in one of two locations:
+ *  1. Inline Latin1Char storage (immediately after the ParserAtomEntry memory).
+ *  2. Inline char16_t storage (immediately after the ParserAtomEntry memory).
+ */
 class alignas(alignof(uint32_t)) ParserAtomEntry {
   friend class ParserAtomsTable;
   friend class WellKnownParserAtoms;
@@ -206,10 +215,10 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
 
   static const uint16_t MAX_LATIN1_CHAR = 0xff;
 
-  
-  
-  
-  
+  // Helper routine to read some sequence of two-byte chars, and write them
+  // into a target buffer of a particular character width.
+  //
+  // The characters in the sequence must have been verified prior
   template <typename CharT, typename SeqCharT>
   static void drainChar16Seq(CharT* buf, InflatedChar16Sequence<SeqCharT> seq,
                              uint32_t length) {
@@ -229,21 +238,21 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   }
 
  private:
-  
+  // The JSAtom-compatible hash of the string.
   HashNumber hash_ = 0;
 
-  
+  // The length of the buffer in chars_.
   uint32_t length_ = 0;
 
   TaggedParserAtomIndex index_;
 
-  
+  // Encoding type.
   bool hasTwoByteChars_ = false;
 
-  
+  // Mutable flags.
   bool usedByStencil_ = false;
 
-  
+  // End of fields.
 
   static const uint32_t MAX_LENGTH = JSString::MAX_LENGTH;
 
@@ -251,12 +260,12 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
       : hash_(hash), length_(length), hasTwoByteChars_(hasTwoByteChars) {}
 
  protected:
-  
+  // The constexpr constructor is used by StaticParserAtomEntry.
   constexpr ParserAtomEntry() = default;
 
  public:
-  
-  
+  // ParserAtomEntries may own their content buffers in variant_, and thus
+  // cannot be copy-constructed - as a new chars would need to be allocated.
   ParserAtomEntry(const ParserAtomEntry&) = delete;
   ParserAtomEntry(ParserAtomEntry&& other) = delete;
 
@@ -321,8 +330,8 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   bool isUsedByStencil() const { return usedByStencil_; }
   void markUsedByStencil() const {
     if (isParserAtomIndex()) {
-      
-      
+      // Use const method + const_cast here to avoid marking static strings'
+      // field mutable.
       const_cast<ParserAtomEntry*>(this)->usedByStencil_ = true;
     }
   }
@@ -374,18 +383,18 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   }
 
  public:
-  
-  
+  // Convert this entry to a js-atom.  The first time this method is called
+  // the entry will cache the JSAtom pointer to return later.
   JSAtom* toJSAtom(JSContext* cx, CompilationAtomCache& atomCache) const;
 
-  
+  // Same as toJSAtom, but this is guaranteed to be instantiated.
   JSAtom* toExistingJSAtom(JSContext* cx,
                            CompilationAtomCache& atomCache) const;
 
-  
+  // Convert NotInstantiated and usedByStencil entry to a js-atom.
   JSAtom* instantiate(JSContext* cx, CompilationAtomCache& atomCache) const;
 
-  
+  // Convert this entry to a number.
   bool toNumber(JSContext* cx, double* result) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -415,9 +424,9 @@ inline const ParserName* ParserAtomEntry::asName() const {
   return static_cast<const ParserName*>(this);
 }
 
-
-
-
+// A ParserAtomEntry with explicit inline storage. This is compatible with
+// constexpr to have builtin atoms. Care must be taken to ensure these atoms are
+// unique.
 template <size_t Length>
 class StaticParserAtomEntry : public ParserAtomEntry {
   alignas(alignof(ParserAtomEntry)) char storage_[Length] = {};
@@ -439,11 +448,11 @@ class StaticParserAtomEntry<0> : public ParserAtomEntry {
   constexpr StaticParserAtomEntry() = default;
 };
 
-
-
-
-
-
+/**
+ * A lookup structure that allows for querying ParserAtoms in
+ * a hashtable using a flexible input type that supports string
+ * representations of various forms.
+ */
 class ParserAtomLookup {
  protected:
   HashNumber hash_;
@@ -465,12 +474,12 @@ struct ParserAtomLookupHasher {
   }
 };
 
-
-
-
+// We use this class to build a read-only constexpr table of ParserAtoms for the
+// well-known atoms set. This should be resolved at compile-time (including hash
+// computation) thanks to C++ constexpr.
 class WellKnownParserAtoms_ROM {
-  
-  
+  // NOTE: While the well-known strings are all Latin1, we must use char16_t in
+  //       some places in order to have constexpr mozilla::HashString.
   using CharTraits = std::char_traits<char>;
   using Char16Traits = std::char_traits<char16_t>;
 
@@ -495,27 +504,27 @@ class WellKnownParserAtoms_ROM {
 
  public:
   constexpr WellKnownParserAtoms_ROM() {
-    
+    // Empty atom
     emptyAtom.setHashAndLength(mozilla::HashString(u""), 0);
     emptyAtom.setWellKnownAtomId(WellKnownAtomId::empty);
 
-    
+    // Length-1 static atoms
     for (size_t i = 0; i < ASCII_STATIC_LIMIT; ++i) {
       init(length1Table[i], i);
     }
 
-    
+    // Length-2 static atoms
     for (size_t i = 0; i < NUM_LENGTH2_ENTRIES; ++i) {
       init(length2Table[i], i);
     }
 
-    
+    // Initialize each well-known property atoms
 #define PROPERTYNAME_FIELD_(_, name, text) \
   init(name, name.storage(), u"" text, WellKnownAtomId::name);
     FOR_EACH_NONTINY_COMMON_PROPERTYNAME(PROPERTYNAME_FIELD_)
 #undef PROPERTYNAME_FIELD_
 
-    
+    // Initialize each well-known prototype atoms
 #define PROPERTYNAME_FIELD_(name, _) \
   init(name, name.storage(), u"" #name, WellKnownAtomId::name);
     JS_FOR_EACH_PROTOTYPE(PROPERTYNAME_FIELD_)
@@ -523,11 +532,11 @@ class WellKnownParserAtoms_ROM {
   }
 
  private:
-  
+  // Initialization moved out of the constructor to workaround bug 1668238.
   static constexpr void init(StaticParserAtomEntry<1>& entry, size_t i) {
     size_t len = 1;
     char16_t buf[] = {static_cast<char16_t>(i),
-                       0};
+                      /* null-terminator */ 0};
     entry.setHashAndLength(mozilla::HashString(buf), len);
     entry.setStaticParserString1(StaticParserString1(i));
     entry.storage()[0] = buf[0];
@@ -537,7 +546,7 @@ class WellKnownParserAtoms_ROM {
     size_t len = 2;
     char16_t buf[] = {StaticStrings::fromSmallChar(i >> 6),
                       StaticStrings::fromSmallChar(i & 0x003F),
-                       0};
+                      /* null-terminator */ 0};
     entry.setHashAndLength(mozilla::HashString(buf), len);
     entry.setStaticParserString2(StaticParserString2(i));
     entry.storage()[0] = buf[0];
@@ -555,7 +564,7 @@ class WellKnownParserAtoms_ROM {
   }
 
  public:
-  
+  // Fast-path tiny strings since they are abundant in minified code.
   template <typename CharsT>
   const ParserAtom* lookupTiny(CharsT chars, size_t length) const {
     static_assert(std::is_same_v<CharsT, const Latin1Char*> ||
@@ -586,28 +595,28 @@ class WellKnownParserAtoms_ROM {
         break;
     }
 
-    
+    // No match on tiny Atoms
     return nullptr;
   }
 };
 
 using ParserAtomVector = Vector<ParserAtomEntry*, 0, js::SystemAllocPolicy>;
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * WellKnownParserAtoms reserves a set of common ParserAtoms on the JSRuntime
+ * in a read-only format to be used by parser. These reserved atoms can be
+ * translated to equivalent JSAtoms in constant time.
+ *
+ * The common-names set allows the parser to lookup up specific atoms in
+ * constant time.
+ *
+ * We also reserve tiny (length 1/2) parser-atoms for fast lookup similar to
+ * the js::StaticStrings mechanism. This speeds up parsing minified code.
+ */
 class WellKnownParserAtoms {
  public:
-  
-  
+  // Named fields allow quickly finding an atom if it is known at compile time.
+  // This is particularly useful for the Parser.
 #define PROPERTYNAME_FIELD_(_, name, _2) const ParserName* name{};
   FOR_EACH_COMMON_PROPERTYNAME(PROPERTYNAME_FIELD_)
 #undef PROPERTYNAME_FIELD_
@@ -616,14 +625,14 @@ class WellKnownParserAtoms {
   JS_FOR_EACH_PROTOTYPE(PROPERTYNAME_FIELD_)
 #undef PROPERTYNAME_FIELD_
 
-  
-  
-  
-  
+  // The ParserAtomEntry of all well-known and tiny ParserAtoms are generated at
+  // compile-time into a ROM that is computed using constexpr. This results in
+  // the data being in the .rodata section of binary and easily shared by
+  // multiple JS processes.
   static constexpr WellKnownParserAtoms_ROM rom_ = {};
 
-  
-  
+  // Common property and prototype names are tracked in a hash table. This table
+  // does not key for any items already in a direct-indexing tiny atom table.
   using EntrySet = HashSet<const ParserAtomEntry*, ParserAtomLookupHasher,
                            js::SystemAllocPolicy>;
   EntrySet wellKnownSet_;
@@ -636,7 +645,7 @@ class WellKnownParserAtoms {
  public:
   bool init(JSContext* cx);
 
-  
+  // Maximum length of any well known atoms. This can be increased if needed.
   static constexpr size_t MaxWellKnownLength = 32;
 
   template <typename CharT>
@@ -656,17 +665,17 @@ class WellKnownParserAtoms {
 bool InstantiateMarkedAtoms(JSContext* cx, const ParserAtomVector& entries,
                             CompilationAtomCache& atomCache);
 
-
-
-
-
+/**
+ * A ParserAtomsTable owns and manages the vector of ParserAtom entries
+ * associated with a given compile session.
+ */
 class ParserAtomsTable {
  private:
   const WellKnownParserAtoms& wellKnownTable_;
 
   LifoAlloc& alloc_;
 
-  
+  // The ParserAtomEntry are owned by the LifoAlloc.
   using EntrySet = HashSet<const ParserAtomEntry*, ParserAtomLookupHasher,
                            js::SystemAllocPolicy>;
   EntrySet entrySet_;
@@ -677,8 +686,8 @@ class ParserAtomsTable {
   ParserAtomsTable(ParserAtomsTable&&) = default;
 
  private:
-  
-  
+  // Internal APIs for interning to the table after well-known atoms cases have
+  // been tested.
   const ParserAtom* addEntry(JSContext* cx, EntrySet::AddPtr& addPtr,
                              ParserAtomEntry* entry);
   template <typename AtomCharT, typename SeqCharT>
@@ -714,9 +723,9 @@ class ParserAtomsTable {
   const ParserAtom* getParserAtom(TaggedParserAtomIndex index) const;
 };
 
-
-
-
+// Lightweight version of ParserAtomsTable.
+// This doesn't support deduplication.
+// Used while decoding XDR.
 class ParserAtomVectorBuilder {
  private:
   const WellKnownParserAtoms& wellKnownTable_;
@@ -755,7 +764,7 @@ class ParserAtomVectorBuilder {
 
 template <typename CharT>
 class SpecificParserAtomLookup : public ParserAtomLookup {
-  
+  // The sequence of characters to look up.
   InflatedChar16Sequence<CharT> seq_;
 
  public:
@@ -776,7 +785,7 @@ class SpecificParserAtomLookup : public ParserAtomLookup {
 template <typename CharT>
 inline bool ParserAtomEntry::equalsSeq(
     HashNumber hash, InflatedChar16Sequence<CharT> seq) const {
-  
+  // Compare hashes first.
   if (hash_ != hash) {
     return false;
   }
@@ -801,7 +810,7 @@ inline bool ParserAtomEntry::equalsSeq(
 
 JSAtom* GetWellKnownAtom(JSContext* cx, WellKnownAtomId atomId);
 
-} 
-} 
+} /* namespace frontend */
+} /* namespace js */
 
-#endif  
+#endif  // frontend_ParserAtom_h

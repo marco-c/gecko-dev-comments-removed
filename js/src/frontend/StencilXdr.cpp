@@ -164,28 +164,7 @@ template <XDRMode mode>
 template <XDRMode mode>
 static XDRResult XDRParserBindingName(XDRState<mode>* xdr,
                                       ParserBindingName& bnamep) {
-  
-  uint8_t flags = 0;
-  const ParserAtom* atom = nullptr;
-
-  if (mode == XDR_ENCODE) {
-    flags = bnamep.flagsForXDR();
-    atom = bnamep.name();
-  }
-
-  
-  MOZ_TRY(xdr->codeUint8(&flags));
-
-  
-  MOZ_TRY(XDRParserAtomOrNull(xdr, &atom));
-
-  if (mode == XDR_ENCODE) {
-    return Ok();
-  }
-
-  MOZ_ASSERT(mode == XDR_DECODE);
-  bnamep = ParserBindingName::fromXDR(atom, flags);
-  return Ok();
+  return xdr->codeUint32(bnamep.rawData());
 }
 
 template <typename ScopeDataT, XDRMode mode>

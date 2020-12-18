@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "frontend/ParseNode.h"
 
@@ -44,10 +44,10 @@ void ListNode::checkConsistency() const {
 }
 #endif
 
-
-
-
-
+/*
+ * Allocate a ParseNode from parser's node freelist or, failing that, from
+ * cx's temporary arena.
+ */
 void* ParseNodeAllocator::allocNode(size_t size) {
   LifoAlloc::AutoFallibleScope fallibleAllocator(&alloc);
   void* p = alloc.alloc(size);
@@ -61,24 +61,24 @@ ParseNode* ParseNode::appendOrCreateList(ParseNodeKind kind, ParseNode* left,
                                          ParseNode* right,
                                          FullParseHandler* handler,
                                          ParseContext* pc) {
-  
-  
-  
-  
-  
+  // The asm.js specification is written in ECMAScript grammar terms that
+  // specify *only* a binary tree.  It's a royal pain to implement the asm.js
+  // spec to act upon n-ary lists as created below.  So for asm.js, form a
+  // binary tree of lists exactly as ECMAScript would by skipping the
+  // following optimization.
   if (!pc->useAsmOrInsideUseAsm()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Left-associative trees of a given operator (e.g. |a + b + c|) are
+    // binary trees in the spec: (+ (+ a b) c) in Lisp terms.  Recursively
+    // processing such a tree, exactly implemented that way, would blow the
+    // the stack.  We use a list node that uses O(1) stack to represent
+    // such operations: (+ a b c).
+    //
+    // (**) is right-associative; per spec |a ** b ** c| parses as
+    // (** a (** b c)). But we treat this the same way, creating a list
+    // node: (** a b c). All consumers must understand that this must be
+    // processed with a right fold, whereas the list (+ a b c) must be
+    // processed with a left fold because (+) is left-associative.
+    //
     if (left->isKind(kind) &&
         (kind == ParseNodeKind::PowExpr ? !left->isInParens()
                                         : left->isBinaryOperation())) {
@@ -323,8 +323,8 @@ void NameNode::dumpImpl(GenericPrinter& out, int indent) {
       return;
 
     case ParseNodeKind::Name:
-    case ParseNodeKind::PrivateName:  
-                                      
+    case ParseNodeKind::PrivateName:  // atom() already includes the '#', no
+                                      // need to specially include it.
     case ParseNodeKind::PropertyNameExpr:
       if (!atom()) {
         out.put("#<null name>");
@@ -367,12 +367,12 @@ void LexicalScopeNode::dumpImpl(GenericPrinter& out, int indent) {
   if (!isEmptyScope()) {
     ParserScopeData<LexicalScope>* bindings = scopeBindings();
     for (uint32_t i = 0; i < bindings->length; i++) {
-      const ParserAtom* name = bindings->trailingNames[i].name();
-      if (name->hasLatin1Chars()) {
-        DumpName(out, name->latin1Chars(), name->length());
-      } else {
-        DumpName(out, name->twoByteChars(), name->length());
-      }
+      auto index = bindings->trailingNames[i].name();
+      JSONPrinter json(out);
+      json.setIndentLevel((nameIndent + 1) / 2);
+      json.beginObject();
+      DumpTaggedParserAtomIndex(json, index, nullptr);
+      json.endObject();
       if (i < bindings->length - 1) {
         IndentNewLine(out, nameIndent);
       }
@@ -423,17 +423,17 @@ RegExpObject* RegExpLiteral::create(JSContext* cx,
 }
 
 bool js::frontend::IsAnonymousFunctionDefinition(ParseNode* pn) {
-  
-  
-  
-  
-  
+  // ES 2017 draft
+  // 12.15.2 (ArrowFunction, AsyncArrowFunction).
+  // 14.1.12 (FunctionExpression).
+  // 14.4.8 (Generatoression).
+  // 14.6.8 (AsyncFunctionExpression)
   if (pn->is<FunctionNode>() &&
       !pn->as<FunctionNode>().funbox()->explicitName()) {
     return true;
   }
 
-  
+  // 14.5.8 (ClassExpression)
   if (pn->is<ClassNode>() && !pn->as<ClassNode>().names()) {
     return true;
   }
