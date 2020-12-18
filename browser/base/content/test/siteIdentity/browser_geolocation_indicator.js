@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 ChromeUtils.import("resource:///modules/PermissionUI.jsm", this);
 ChromeUtils.import("resource:///modules/SitePermissions.jsm", this);
 const { PermissionTestUtils } = ChromeUtils.import(
@@ -67,6 +69,12 @@ async function testIdentityPopupGeoContainer(
   timestampVisible
 ) {
   
+  
+  if (timestampVisible && !containerVisible) {
+    ok(false, "Can't have timestamp without container");
+  }
+
+  
   if (!gIdentityHandler._identityBox.hasAttribute("open")) {
     await openIdentityPopup();
   }
@@ -74,25 +82,27 @@ async function testIdentityPopupGeoContainer(
   let checkContainer = checkForDOMElement(
     containerVisible,
     "identity-popup-geo-container"
-  ).then(container => {
-    if (containerVisible && timestampVisible) {
-      is(
-        container.childElementCount,
-        2,
-        "identity-popup-geo-container should have two elements."
-      );
-      is(
-        container.childNodes[0].classList[0],
-        "identity-popup-permission-item",
-        "Geo container should have permission item."
-      );
-      is(
-        container.childNodes[1].id,
-        "geo-access-indicator-item",
-        "Geo container should have indicator item."
-      );
-    }
-  });
+  );
+
+  if (containerVisible && timestampVisible) {
+    
+    
+    let container = await checkContainer;
+    await BrowserTestUtils.waitForCondition(
+      () => container.childElementCount == 2,
+      "identity-popup-geo-container should have two elements."
+    );
+    is(
+      container.childNodes[0].classList[0],
+      "identity-popup-permission-item",
+      "Geo container should have permission item."
+    );
+    is(
+      container.childNodes[1].id,
+      "geo-access-indicator-item",
+      "Geo container should have indicator item."
+    );
+  }
   let checkAccessIndicator = checkForDOMElement(
     timestampVisible,
     "geo-access-indicator-item"
