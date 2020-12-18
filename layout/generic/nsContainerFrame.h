@@ -807,6 +807,19 @@ class nsContainerFrame : public nsSplittableFrame {
                                            bool aReparentSiblings);
 
   
+
+
+
+
+
+
+
+
+
+  bool TryRemoveFrame(FrameListPropertyDescriptor aProp,
+                      nsIFrame* aChildToRemove);
+
+  
   
 
 

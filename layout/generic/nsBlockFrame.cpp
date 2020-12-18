@@ -5171,27 +5171,31 @@ bool nsBlockFrame::DrainOverflowLines() {
       
       
       
-      auto HasOverflowContainers = [this]() -> bool {
-        return GetOverflowContainers() || GetExcessOverflowContainers();
-      };
-      nsFrameList ocContinuations;
-      if (HasOverflowContainers()) {
+      if (GetOverflowContainers()) {
+        nsFrameList ocContinuations;
         for (auto* f : overflowLines->mFrames) {
           auto* cont = f;
           bool done = false;
           while (!done && (cont = cont->GetNextContinuation()) &&
                  cont->GetParent() == this) {
             bool onlyChild = !cont->GetPrevSibling() && !cont->GetNextSibling();
-            if (MaybeStealOverflowContainerFrame(cont)) {
-              cont->RemoveStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
+            if (cont->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) &&
+                TryRemoveFrame(OverflowContainersProperty(), cont)) {
               ocContinuations.AppendFrame(nullptr, cont);
-              done = onlyChild && !HasOverflowContainers();
+              done = onlyChild;
               continue;
             }
             break;
           }
           if (done) {
             break;
+          }
+        }
+        if (!ocContinuations.IsEmpty()) {
+          if (nsFrameList* eoc = GetExcessOverflowContainers()) {
+            eoc->InsertFrames(nullptr, nullptr, ocContinuations);
+          } else {
+            SetExcessOverflowContainers(std::move(ocContinuations));
           }
         }
       }
@@ -5231,7 +5235,6 @@ bool nsBlockFrame::DrainOverflowLines() {
       mLines.splice(mLines.begin(), overflowLines->mLines);
       NS_ASSERTION(overflowLines->mLines.empty(), "splice should empty list");
       delete overflowLines;
-      AddFrames(ocContinuations, mFrames.LastChild(), nullptr);
       didFindOverflow = true;
     }
   }
@@ -6221,8 +6224,8 @@ void nsBlockFrame::DoRemoveFrameInternal(nsIFrame* aDeletedFrame,
   }
 
   while (line != line_end && aDeletedFrame) {
-    NS_ASSERTION(this == aDeletedFrame->GetParent(), "messed up delete code");
-    NS_ASSERTION(line->Contains(aDeletedFrame), "frame not in line");
+    MOZ_ASSERT(this == aDeletedFrame->GetParent(), "messed up delete code");
+    MOZ_ASSERT(line->Contains(aDeletedFrame), "frame not in line");
 
     if (!(aFlags & FRAMES_ARE_EMPTY)) {
       line->MarkDirty();

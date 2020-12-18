@@ -1406,15 +1406,14 @@ void nsContainerFrame::DisplayOverflowContainers(
   }
 }
 
-static bool TryRemoveFrame(nsIFrame* aFrame,
-                           nsContainerFrame::FrameListPropertyDescriptor aProp,
-                           nsIFrame* aChildToRemove) {
-  nsFrameList* list = aFrame->GetProperty(aProp);
+bool nsContainerFrame::TryRemoveFrame(FrameListPropertyDescriptor aProp,
+                                      nsIFrame* aChildToRemove) {
+  nsFrameList* list = GetProperty(aProp);
   if (list && list->StartRemoveFrame(aChildToRemove)) {
     
     if (list->IsEmpty()) {
-      Unused << aFrame->TakeProperty(aProp);
-      list->Delete(aFrame->PresShell());
+      Unused << TakeProperty(aProp);
+      list->Delete(PresShell());
     }
     return true;
   }
@@ -1425,11 +1424,10 @@ bool nsContainerFrame::MaybeStealOverflowContainerFrame(nsIFrame* aChild) {
   bool removed = false;
   if (MOZ_UNLIKELY(aChild->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER))) {
     
-    removed = ::TryRemoveFrame(this, OverflowContainersProperty(), aChild);
+    removed = TryRemoveFrame(OverflowContainersProperty(), aChild);
     if (!removed) {
       
-      removed =
-          ::TryRemoveFrame(this, ExcessOverflowContainersProperty(), aChild);
+      removed = TryRemoveFrame(ExcessOverflowContainersProperty(), aChild);
     }
   }
   return removed;
