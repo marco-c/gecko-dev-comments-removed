@@ -174,9 +174,6 @@ class RenderThread final {
   void HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender);
 
   
-  void WakeUp(wr::WindowId aWindowId);
-
-  
   void SetClearColor(wr::WindowId aWindowId, wr::ColorF aColor);
 
   
