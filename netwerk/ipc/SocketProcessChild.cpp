@@ -499,7 +499,10 @@ namespace {
 
 class DataResolverBase {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DataResolverBase)
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(
+      DataResolverBase)
 
   DataResolverBase() = default;
 
