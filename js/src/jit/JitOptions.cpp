@@ -137,7 +137,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(warpAsync, false);
 
   
-  SET_DEFAULT(warpGenerator, true);
+  SET_DEFAULT(warpGenerator, false);
 
   
   
