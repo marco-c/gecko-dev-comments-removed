@@ -11,9 +11,9 @@ from virtualenv.util.six import ensure_text
 from .activator import Activator
 
 if sys.version_info >= (3, 7):
-    from importlib.resources import read_binary
+    from importlib.resources import read_text
 else:
-    from importlib_resources import read_binary
+    from importlib_resources import read_text
 
 
 @add_metaclass(ABCMeta)
@@ -44,8 +44,7 @@ class ViaTemplateActivator(Activator):
         for template in templates:
             text = self.instantiate_template(replacements, template, creator)
             dest = to_folder / self.as_name(template)
-            
-            dest.write_bytes(text.encode("utf-8"))
+            dest.write_text(text, encoding="utf-8")
             generated.append(dest)
         return generated
 
@@ -54,8 +53,7 @@ class ViaTemplateActivator(Activator):
 
     def instantiate_template(self, replacements, template, creator):
         
-        binary = read_binary(self.__module__, str(template))
-        text = binary.decode("utf-8", errors="strict")
+        text = read_text(self.__module__, str(template), encoding="utf-8", errors="strict")
         for key, value in replacements.items():
             value = self._repr_unicode(creator, value)
             text = text.replace(key, value)
