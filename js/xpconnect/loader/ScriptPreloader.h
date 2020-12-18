@@ -531,6 +531,10 @@ class ScriptPreloader : public nsIObserver,
   bool mFinishDecodeRunnablePending = false;
 
   
+  
+  bool mWaitingForDecode = false;
+
+  
   static ProcessType sProcessType;
 
   

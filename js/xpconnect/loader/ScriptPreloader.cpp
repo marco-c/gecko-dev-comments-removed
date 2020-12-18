@@ -930,7 +930,9 @@ JSScript* ScriptPreloader::WaitForCachedScript(
           FinishOffThreadDecode(token);
         } else {
           MOZ_ASSERT(!mParsingScripts.empty());
+          mWaitingForDecode = true;
           mal.Wait();
+          mWaitingForDecode = false;
         }
       }
     }
@@ -955,13 +957,12 @@ void ScriptPreloader::OffThreadDecodeCallback(JS::OffThreadToken* token,
   cache->mMonitor.AssertNotCurrentThreadOwns();
   MonitorAutoLock mal(cache->mMonitor);
 
-  
-  
-  mal.NotifyAll();
-
-  
-  
-  if (!cache->mFinishDecodeRunnablePending) {
+  if (cache->mWaitingForDecode) {
+    
+    mal.Notify();
+  } else if (!cache->mFinishDecodeRunnablePending) {
+    
+    
     cache->mFinishDecodeRunnablePending = true;
     NS_DispatchToMainThread(
         NewRunnableMethod("ScriptPreloader::DoFinishOffThreadDecode", cache,
@@ -981,13 +982,18 @@ void ScriptPreloader::FinishPendingParses(MonitorAutoLock& aMal) {
       MonitorAutoUnlock mau(mMonitor);
       FinishOffThreadDecode(token);
     } else {
+      mWaitingForDecode = true;
       aMal.Wait();
+      mWaitingForDecode = false;
     }
   }
 }
 
 void ScriptPreloader::DoFinishOffThreadDecode() {
-  mFinishDecodeRunnablePending = false;
+  {
+    MonitorAutoLock mal(mMonitor);
+    mFinishDecodeRunnablePending = false;
+  }
 
   if (JS::OffThreadToken* token = mToken.exchange(nullptr)) {
     FinishOffThreadDecode(token);
