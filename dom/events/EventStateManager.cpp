@@ -1387,6 +1387,9 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
                      PointerEventHandler::GetPointerCapturingRemoteTarget(
                          mouseEvent->pointerId)) {
         remote = pointerCapturedRemote;
+      } else if (BrowserParent* capturingRemote =
+                     PresShell::GetCapturingRemoteTarget()) {
+        remote = capturingRemote;
       }
 
       
@@ -3254,7 +3257,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           !PresShell::GetCapturingContent()) {
         if (nsIContent* content =
                 mCurrentTarget ? mCurrentTarget->GetContent() : nullptr) {
-          PresShell::SetCapturingContent(content, CaptureFlags::None);
+          PresShell::SetCapturingContent(content, CaptureFlags::None, aEvent);
         } else {
           PresShell::ReleaseCapturingContent();
         }
@@ -3425,6 +3428,10 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       break;
     }
     case eMouseUp: {
+      
+      
+      PresShell::ReleaseCapturingContent();
+
       ClearGlobalActiveContent(this);
       WidgetMouseEvent* mouseUpEvent = aEvent->AsMouseEvent();
       if (mouseUpEvent && EventCausesClickEvents(*mouseUpEvent)) {
