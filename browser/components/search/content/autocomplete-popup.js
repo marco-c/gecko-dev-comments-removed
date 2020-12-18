@@ -22,9 +22,8 @@
         
         
         
-        let searchbar = document.getElementById("searchbar");
-        if (searchbar.hasAttribute("showonlysettings")) {
-          searchbar.removeAttribute("showonlysettings");
+        if (this.searchbar.hasAttribute("showonlysettings")) {
+          this.searchbar.removeAttribute("showonlysettings");
           this.setAttribute("showonlysettings", "true");
 
           
@@ -90,6 +89,7 @@
       this._searchbarEngine = this.querySelector(".search-panel-header");
       this._searchbarEngineName = this.querySelector(".searchbar-engine-name");
       this._oneOffButtons = new SearchOneOffs(this._searchOneOffsContainer);
+      this._searchbar = document.getElementById("searchbar");
     }
 
     get oneOffButtons() {
@@ -131,6 +131,13 @@
       return this._searchbarEngineName;
     }
 
+    get searchbar() {
+      if (!this._searchbar) {
+        this.initialize();
+      }
+      return this._searchbar;
+    }
+
     get bundle() {
       if (!this._bundle) {
         const kBundleURI = "chrome://browser/locale/search.properties";
@@ -154,14 +161,10 @@
         return;
       }
 
-      let searchBar = BrowserSearch.searchBar;
-      let popupForSearchBar = searchBar && searchBar.textbox == this.mInput;
-      if (popupForSearchBar) {
-        searchBar.telemetrySearchDetails = {
-          index: this.selectedIndex,
-          kind: "mouse",
-        };
-      }
+      this.searchbar.telemetrySearchDetails = {
+        index: this.selectedIndex,
+        kind: "mouse",
+      };
 
       
       if (
@@ -176,44 +179,42 @@
       }
 
       
-      if (popupForSearchBar) {
-        BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
-          aEvent,
-          "searchbar",
-          this.selectedIndex
-        );
+      BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
+        aEvent,
+        "searchbar",
+        this.selectedIndex
+      );
 
+      
+      let search = this.input.controller.getValueAt(this.selectedIndex);
+
+      
+      let where = whereToOpenLink(aEvent, false, true);
+      let params = {};
+
+      
+      let modifier =
+        AppConstants.platform == "macosx" ? aEvent.metaKey : aEvent.ctrlKey;
+      if (
+        where == "tab" &&
+        aEvent instanceof MouseEvent &&
+        (aEvent.button == 1 || modifier)
+      ) {
+        params.inBackground = true;
+      }
+
+      
+      if (!(where == "tab" && params.inBackground)) {
         
-        let search = this.input.controller.getValueAt(this.selectedIndex);
+        this.closePopup();
+        this.input.controller.handleEscape();
+      }
 
-        
-        let where = whereToOpenLink(aEvent, false, true);
-        let params = {};
-
-        
-        let modifier =
-          AppConstants.platform == "macosx" ? aEvent.metaKey : aEvent.ctrlKey;
-        if (
-          where == "tab" &&
-          aEvent instanceof MouseEvent &&
-          (aEvent.button == 1 || modifier)
-        ) {
-          params.inBackground = true;
-        }
-
-        
-        if (!(where == "tab" && params.inBackground)) {
-          
-          this.closePopup();
-          this.input.controller.handleEscape();
-        }
-
-        searchBar.doSearch(search, where, null, params);
-        if (where == "tab" && params.inBackground) {
-          searchBar.focus();
-        } else {
-          searchBar.value = search;
-        }
+      this.searchbar.doSearch(search, where, null, params);
+      if (where == "tab" && params.inBackground) {
+        this.searchbar.focus();
+      } else {
+        this.searchbar.value = search;
       }
     }
 
@@ -248,8 +249,7 @@
 
     
     handleOneOffSearch(event, engine, where, params) {
-      let searchbar = document.getElementById("searchbar");
-      searchbar.handleSearchCommandWhere(event, engine, where, params);
+      this.searchbar.handleSearchCommandWhere(event, engine, where, params);
     }
 
     
