@@ -202,6 +202,28 @@ class RegistryMutex {
 };
 
 
+static bool CheckIfAppRanRecently(bool* aResult) {
+  const ULONGLONG kTaskExpirationDays = 90;
+  const ULONGLONG kTaskExpirationSeconds = kTaskExpirationDays * 24 * 60 * 60;
+
+  MaybeQwordResult lastRunTimeResult =
+      RegistryGetValueQword(IsPrefixed::Prefixed, L"AppLastRunTime");
+  if (lastRunTimeResult.isErr()) {
+    return false;
+  }
+  mozilla::Maybe<ULONGLONG> lastRunTimeMaybe = lastRunTimeResult.unwrap();
+  if (!lastRunTimeMaybe.isSome()) {
+    return false;
+  }
+
+  ULONGLONG secondsSinceLastRunTime =
+      SecondsPassedSince(lastRunTimeMaybe.value());
+
+  *aResult = secondsSinceLastRunTime < kTaskExpirationSeconds;
+  return true;
+}
+
+
 
 
 
@@ -333,6 +355,14 @@ int wmain(int argc, wchar_t** argv) {
     
     if (!regMutex.Acquire()) {
       return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);
+    }
+
+    
+    
+    
+    bool ranRecently = false;
+    if (!CheckIfAppRanRecently(&ranRecently) || !ranRecently) {
+      return SCHED_E_TASK_ATTEMPTED;
     }
 
     
