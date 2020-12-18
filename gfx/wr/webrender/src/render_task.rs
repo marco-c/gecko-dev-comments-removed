@@ -64,7 +64,7 @@ pub enum RenderTaskLocation {
     
     
     
-    Dynamic(Option<(DeviceIntPoint, CacheTextureId)>, DeviceIntSize),
+    Dynamic(Option<(DeviceIntPoint, CacheTextureId, RenderTargetIndex)>, DeviceIntSize),
     
     
     TextureCache {
@@ -106,7 +106,7 @@ impl RenderTaskLocation {
     pub fn to_source_rect(&self) -> (DeviceIntRect, LayerIndex) {
         match *self {
             RenderTaskLocation::Dynamic(None, _) => panic!("Expected position to be set for the task!"),
-            RenderTaskLocation::Dynamic(Some((origin, _)), size) => (DeviceIntRect::new(origin, size), 0),
+            RenderTaskLocation::Dynamic(Some((origin, _, layer)), size) => (DeviceIntRect::new(origin, size), layer.0 as LayerIndex),
             RenderTaskLocation::TextureCache { rect, layer, .. } => (rect, layer),
             RenderTaskLocation::PictureCache { .. } => {
                 panic!("bug: picture cache tasks should never be a source!");
@@ -1340,7 +1340,7 @@ impl RenderTask {
 
     pub fn get_target_texture(&self) -> CacheTextureId {
         match self.location {
-            RenderTaskLocation::Dynamic(Some((_, texture_id)), _) => {
+            RenderTaskLocation::Dynamic(Some((_, texture_id, _)), _) => {
                 assert_ne!(texture_id, CacheTextureId::INVALID);
                 texture_id
             }
@@ -1368,8 +1368,8 @@ impl RenderTask {
             
             
             
-            RenderTaskLocation::Dynamic(Some((origin, _)), size) => {
-                (DeviceIntRect::new(origin, size), RenderTargetIndex(0))
+            RenderTaskLocation::Dynamic(Some((origin, _, target_index)), size) => {
+                (DeviceIntRect::new(origin, size), target_index)
             }
             RenderTaskLocation::Dynamic(None, _) => {
                 (DeviceIntRect::zero(), RenderTargetIndex(0))
