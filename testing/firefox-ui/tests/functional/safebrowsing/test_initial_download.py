@@ -61,7 +61,10 @@ class TestSafeBrowsingInitialDownload(MarionetteTestCase):
             base_names = self.marionette.get_pref(pref_name).split(",")
 
             
-            base_names = filter(lambda x: not x.startswith("moztest-"), base_names)
+            
+            base_names = list(
+                filter(lambda x: not x.startswith("moztest-"), base_names)
+            )
 
             for ext in my_file_extensions:
                 files.extend(
