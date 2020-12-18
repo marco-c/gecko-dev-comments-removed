@@ -113,6 +113,14 @@ let ContentDispatchChooserTelemetry = {
 
 
 
+  SANDBOXED_AUXILIARY_NAVIGATION: 0x2,
+  SANDBOXED_TOPLEVEL_NAVIGATION: 0x4,
+  SANDBOXED_TOPLEVEL_NAVIGATION_USER_ACTIVATION: 0x20000,
+
+  
+
+
+
   get _telemetryLabels() {
     if (!this._telemetryLabelArray) {
       this._telemetryLabelArray = Services.telemetry.getCategoricalLabels().EXTERNAL_PROTOCOL_HANDLER_DIALOG_CONTEXT_SCHEME;
@@ -170,13 +178,23 @@ let ContentDispatchChooserTelemetry = {
       return "TOPLEVEL";
     }
 
+    let { sandboxFlags } = aBrowsingContext;
+    if (sandboxFlags) {
+      
+      
+      if (
+        !(sandboxFlags & this.SANDBOXED_TOPLEVEL_NAVIGATION) ||
+        !(sandboxFlags & this.SANDBOXED_TOPLEVEL_NAVIGATION_USER_ACTIVATION) ||
+        !(sandboxFlags & this.SANDBOXED_AUXILIARY_NAVIGATION)
+      ) {
+        return "SUB_SANDBOX_ALLOW";
+      }
+      return "SUB_SANDBOX_NOALLOW";
+    }
+
     
     if (!aTriggeringPrincipal) {
       return "UNKNOWN";
-    }
-
-    if (aTriggeringPrincipal.isNullPrincipal) {
-      return "NULLPRINCIPAL";
     }
 
     let topLevelPrincipal =
