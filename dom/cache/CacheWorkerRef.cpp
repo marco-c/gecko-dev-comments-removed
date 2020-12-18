@@ -92,33 +92,31 @@ SafeRefPtr<CacheWorkerRef> CacheWorkerRef::PreferBehavior(
   return static_cast<bool>(replace) ? std::move(replace) : std::move(orig);
 }
 
-void CacheWorkerRef::AddActor(ActorChild* aActor) {
+void CacheWorkerRef::AddActor(ActorChild& aActor) {
   NS_ASSERT_OWNINGTHREAD(CacheWorkerRef);
-  MOZ_DIAGNOSTIC_ASSERT(aActor);
-  MOZ_ASSERT(!mActorList.Contains(aActor));
+  MOZ_ASSERT(!mActorList.Contains(&aActor));
 
-  mActorList.AppendElement(aActor);
+  mActorList.AppendElement(WrapNotNullUnchecked(&aActor));
 
   
   
   
   
   if (mNotified) {
-    aActor->StartDestroy();
+    aActor.StartDestroy();
   }
 }
 
-void CacheWorkerRef::RemoveActor(ActorChild* aActor) {
+void CacheWorkerRef::RemoveActor(ActorChild& aActor) {
   NS_ASSERT_OWNINGTHREAD(CacheWorkerRef);
-  MOZ_DIAGNOSTIC_ASSERT(aActor);
 
 #if defined(RELEASE_OR_BETA)
-  mActorList.RemoveElement(aActor);
+  mActorList.RemoveElement(&aActor);
 #else
-  MOZ_DIAGNOSTIC_ASSERT(mActorList.RemoveElement(aActor));
+  MOZ_DIAGNOSTIC_ASSERT(mActorList.RemoveElement(&aActor));
 #endif
 
-  MOZ_ASSERT(!mActorList.Contains(aActor));
+  MOZ_ASSERT(!mActorList.Contains(&aActor));
 
   if (mActorList.IsEmpty()) {
     mStrongWorkerRef = nullptr;
@@ -135,9 +133,8 @@ void CacheWorkerRef::Notify() {
 
   
   
-  for (uint32_t i = 0; i < mActorList.Length(); ++i) {
-    MOZ_DIAGNOSTIC_ASSERT(mActorList[i]);
-    mActorList[i]->StartDestroy();
+  for (const auto& actor : mActorList) {
+    actor->StartDestroy();
   }
 }
 
