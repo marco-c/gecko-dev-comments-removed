@@ -170,17 +170,17 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     if (aSample->mCrypto.IsEncrypted()) {
       return NS_OK;
     }
-    
-    
-    if (!aSample->mKeyframe) {
-      return NS_OK;
-    }
-
     auto dataSpan = Span<const uint8_t>(aSample->Data(), aSample->Size());
 
+    
     VPXDecoder::VPXStreamInfo info;
     if (!VPXDecoder::GetStreamInfo(dataSpan, info, mCodec)) {
       return NS_ERROR_DOM_MEDIA_DECODE_ERR;
+    }
+    
+    
+    if (!info.mKeyFrame) {
+      return NS_OK;
     }
 
     nsresult rv = NS_OK;
@@ -188,8 +188,6 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       if (mInfo.ref().IsCompatible(info)) {
         return rv;
       }
-      mCurrentConfig.mImage = info.mImage;
-      mCurrentConfig.mDisplay = info.mDisplay;
       
       
       mCurrentConfig.ResetImageRect();
@@ -198,11 +196,17 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
           "VPXChangeMonitor::CheckForChange has detected a change in the "
           "stream and will request a new decoder");
       rv = NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER;
+    } else if (mCurrentConfig.mImage != info.mImage ||
+               mCurrentConfig.mDisplay != info.mDisplay) {
+      PROFILER_MARKER_TEXT("VPX Stream Init Discrepancy", MEDIA_PLAYBACK, {},
+                           "VPXChangeMonitor::CheckForChange has detected a "
+                           "discrepancy between initialization data and stream "
+                           "content and will request a new decoder");
+      rv = NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER;
     }
     mInfo = Some(info);
-    
-    
-    
+    mCurrentConfig.mImage = info.mImage;
+    mCurrentConfig.mDisplay = info.mDisplay;
     mCurrentConfig.mColorDepth = gfx::ColorDepthForBitDepth(info.mBitDepth);
     mCurrentConfig.mColorSpace = info.ColorSpace();
     mCurrentConfig.mColorRange = info.ColorRange();
