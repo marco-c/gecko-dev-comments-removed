@@ -1042,7 +1042,11 @@ class ModalPrompter {
 
     
     
-    if (!this.browsingContext || !this.browsingContext.isContent) {
+    if (
+      !ModalPrompter.tabModalEnabled ||
+      !this.browsingContext ||
+      !this.browsingContext.isContent
+    ) {
       modalType = Ci.nsIPrompt.MODAL_TYPE_WINDOW;
 
       Cu.reportError(
@@ -1711,6 +1715,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "defaultModalType",
   "prompts.defaultModalType",
   Ci.nsIPrompt.MODAL_TYPE_WINDOW
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  ModalPrompter,
+  "tabModalEnabled",
+  "prompts.tab_modal.enabled",
+  true
 );
 
 function AuthPromptAdapterFactory() {}
