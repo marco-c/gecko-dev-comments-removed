@@ -56,7 +56,7 @@ class CacheIRHealth {
   
   Happiness determineStubHappiness(uint32_t stubHealthScore);
   
-  Happiness spewStubHealth(AutoStructuredSpewer& spew, ICStub* stub);
+  Happiness spewStubHealth(AutoStructuredSpewer& spew, ICCacheIRStub* stub);
   
   Happiness spewHealthForStubsInCacheIREntry(AutoStructuredSpewer& spew,
                                              ICEntry* entry);
