@@ -79,10 +79,6 @@ var ModuleManager = {
     
     
     
-    aBrowser.docShellIsActive = true;
-    
-    
-    
     
     aBrowser.preserveLayers(true);
 
