@@ -618,13 +618,15 @@ function mainThreadFetch(
 
         
         let sourceMapURL;
-        try {
-          sourceMapURL = request.getResponseHeader("SourceMap");
-        } catch (e) {}
-        if (!sourceMapURL) {
+        if (request instanceof Ci.nsIHttpChannel) {
           try {
-            sourceMapURL = request.getResponseHeader("X-SourceMap");
+            sourceMapURL = request.getResponseHeader("SourceMap");
           } catch (e) {}
+          if (!sourceMapURL) {
+            try {
+              sourceMapURL = request.getResponseHeader("X-SourceMap");
+            } catch (e) {}
+          }
         }
 
         resolve({
