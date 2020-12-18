@@ -696,6 +696,8 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
 #ifdef MOZ_JS_DEV_ERROR_INTERCEPTOR
   JS_SetErrorInterceptorCallback(mJSRuntime, &mErrorInterceptor);
 #endif  
+
+  JS_SetDestroyZoneCallback(aCx, OnZoneDestroyed);
 }
 
 #ifdef NS_BUILD_REFCNT_LOGGING
@@ -730,6 +732,8 @@ void CycleCollectedJSRuntime::Shutdown(JSContext* cx) {
 #ifdef DEBUG
   mShutdownCalled = true;
 #endif
+
+  JS_SetDestroyZoneCallback(cx, nullptr);
 }
 
 CycleCollectedJSRuntime::~CycleCollectedJSRuntime() {
@@ -1801,6 +1805,15 @@ void CycleCollectedJSRuntime::PrepareWaitingZonesForGC() {
     }
     mZonesWaitingForGC.Clear();
   }
+}
+
+
+void CycleCollectedJSRuntime::OnZoneDestroyed(JSFreeOp* aFop, JS::Zone* aZone) {
+  
+  
+  
+  CycleCollectedJSRuntime* runtime = Get();
+  runtime->mZonesWaitingForGC.RemoveEntry(aZone);
 }
 
 void CycleCollectedJSRuntime::EnvironmentPreparer::invoke(
