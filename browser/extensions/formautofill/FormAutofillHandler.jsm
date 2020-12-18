@@ -80,7 +80,7 @@ class FormAutofillSection {
       
       [FIELD_STATES.NORMAL]: null,
       
-      [FIELD_STATES.AUTO_FILLED]: "autofill",
+      [FIELD_STATES.AUTO_FILLED]: "-moz-autofill",
       
       [FIELD_STATES.PREVIEW]: "-moz-autofill-preview",
     };
