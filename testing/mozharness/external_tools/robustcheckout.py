@@ -790,11 +790,14 @@ def _docheckout(
             
             
             with repo.wlock(), timeit("sparse_update_config", "sparse-update-config"):
-                fcounts = map(
-                    len,
-                    sparsemod._updateconfigandrefreshwdir(
-                        repo, [], [], [sparse_profile], force=True
-                    ),
+                
+                fcounts = list(
+                    map(
+                        len,
+                        sparsemod._updateconfigandrefreshwdir(
+                            repo, [], [], [sparse_profile], force=True
+                        ),
+                    )
                 )
 
                 repo.ui.status(

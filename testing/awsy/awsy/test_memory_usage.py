@@ -53,7 +53,8 @@ class TestMemoryUsage(AwsyTestCase):
         tp5n_manifest = self.testvars.get("pageManifest", default_tp5n_manifest)
         with open(tp5n_manifest) as fp:
             urls = fp.readlines()
-        urls = map(lambda x: x.replace("localhost", "localhost:{}"), urls)
+        
+        urls = list(map(lambda x: x.replace("localhost", "localhost:{}"), urls))
 
         
         
