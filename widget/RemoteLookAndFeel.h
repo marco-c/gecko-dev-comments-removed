@@ -42,10 +42,28 @@ class RemoteLookAndFeel final : public nsXPLookAndFeel {
   
   
   
-  static FullLookAndFeel ExtractData();
+  
+  
+  
+  static const FullLookAndFeel* ExtractData();
+
+  
+  
+  
+  
+  
+  static void ClearCachedData();
 
  private:
   FullLookAndFeel mTables;
+
+  
+  
+  
+  
+  
+  
+  static StaticAutoPtr<FullLookAndFeel> sCachedTables;
 };
 
 }  
