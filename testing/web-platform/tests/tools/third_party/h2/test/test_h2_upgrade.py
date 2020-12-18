@@ -260,11 +260,11 @@ class TestServerUpgrade(object):
         )
         c.receive_data(f.serialize())
 
-        expected_frame = frame_factory.build_rst_stream_frame(
+        expected = frame_factory.build_rst_stream_frame(
             stream_id=1,
             error_code=h2.errors.ErrorCodes.STREAM_CLOSED,
-        )
-        assert c.data_to_send() == expected_frame.serialize()
+        ).serialize()
+        assert c.data_to_send() == expected
 
     def test_client_settings_are_applied(self, frame_factory):
         """
@@ -278,7 +278,7 @@ class TestServerUpgrade(object):
         
         
         assert (
-            client.local_settings._settings != server.remote_settings._settings
+            client.local_settings != server.remote_settings
         )
 
         
@@ -297,10 +297,6 @@ class TestServerUpgrade(object):
         )
         assert server.data_to_send() == expected_frame.serialize()
 
-        
-        
-        
-        
         assert (
-            client.local_settings._settings == server.remote_settings._settings
+            client.local_settings == server.remote_settings
         )

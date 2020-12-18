@@ -55,9 +55,9 @@ copyright = u'2015, Cory Benfield'
 
 
 
-version = '3.0.1'
+version = '3.2.0'
 
-release = '3.0.1'
+release = '3.2.0'
 
 
 
