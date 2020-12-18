@@ -30,8 +30,8 @@ const kOperations = [];
       const readBytes = new Uint8Array(readSharedArrayBuffer);
       return readBytes;
     },
-    assertRejection: (testCase, file, readBytes) => {
-      return promise_rejects_dom(testCase, 'InvalidStateError',
+    assertRejection: async (testCase, file, readBytes) => {
+      await promise_rejects_dom(testCase, 'InvalidStateError',
                                  file.read(readBytes, 4));
     },
     assertUnchanged: (readBytes) => {
@@ -48,8 +48,8 @@ const kOperations = [];
       writtenBytes.set([96, 97, 98, 99]);
       return writtenBytes;
     },
-    assertRejection: (testCase, file, writtenBytes) => {
-      return promise_rejects_dom(testCase, 'InvalidStateError',
+    assertRejection: async (testCase, file, writtenBytes) => {
+      await promise_rejects_dom(testCase, 'InvalidStateError',
                                  file.write(writtenBytes, 4));
     },
     assertUnchanged: () => {},
@@ -59,8 +59,8 @@ const kOperations = [];
   const kOpGetLength = {
     name: 'getLength',
     prepare: () => {},
-    assertRejection: (testCase, file) => {
-      return promise_rejects_dom(testCase, 'InvalidStateError',
+    assertRejection: async (testCase, file) => {
+      await promise_rejects_dom(testCase, 'InvalidStateError',
                                  file.getLength());
     },
     assertUnchanged: () => {},
@@ -82,7 +82,7 @@ const kOperations = [];
     name: 'setLength',
     prepare: () => {},
     assertRejection: async (testCase, file, readBytes) => {
-      return promise_rejects_dom(testCase, 'InvalidStateError',
+      await promise_rejects_dom(testCase, 'InvalidStateError',
                                 file.setLength(2));
     },
     assertUnchanged: () => {},
