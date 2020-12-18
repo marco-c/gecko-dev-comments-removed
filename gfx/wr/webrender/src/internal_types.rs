@@ -265,7 +265,7 @@ pub enum TextureSource {
     
     Invalid,
     
-    TextureCache(CacheTextureId, Swizzle),
+    TextureCache(CacheTextureId, ImageBufferKind, Swizzle),
     
     External(DeferredResolveIndex, ImageBufferKind),
     
@@ -276,12 +276,12 @@ pub enum TextureSource {
 impl TextureSource {
     pub fn image_buffer_kind(&self) -> ImageBufferKind {
         match *self {
-            TextureSource::TextureCache(..) => ImageBufferKind::Texture2D,
+            TextureSource::TextureCache(_, image_buffer_kind, _) => image_buffer_kind,
 
             TextureSource::External(_, image_buffer_kind) => image_buffer_kind,
 
             
-            TextureSource::Dummy => ImageBufferKind::Texture2D,
+            TextureSource::Dummy => ImageBufferKind::Texture2DArray,
 
             TextureSource::Invalid => ImageBufferKind::Texture2D,
         }
