@@ -1770,10 +1770,7 @@ void MLoadDataViewElement::computeRange(TempAllocator& alloc) {
 void MArrayLength::computeRange(TempAllocator& alloc) {
   
   
-  
-  
-  uint32_t max = JitOptions.warpBuilder ? UINT32_MAX : INT32_MAX;
-  setRange(Range::NewUInt32Range(alloc, 0, max));
+  setRange(Range::NewUInt32Range(alloc, 0, UINT32_MAX));
 }
 
 void MInitializedLength::computeRange(TempAllocator& alloc) {

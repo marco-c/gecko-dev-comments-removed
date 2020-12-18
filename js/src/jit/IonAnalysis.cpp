@@ -1250,20 +1250,8 @@ bool js::jit::DeadIfUnused(const MDefinition* def) {
   }
 
   
-  
-  
-  
-  
   if (def->isGuard()) {
-    if (JitOptions.warpBuilder) {
-      return false;
-    }
-    if (def->isImplicitlyUsed()) {
-      return false;
-    }
-    if (def->block() != def->block()->graph().osrBlock()) {
-      return false;
-    }
+    return false;
   }
 
   
@@ -1606,11 +1594,7 @@ bool TypeAnalyzer::shouldSpecializeOsrPhis() const {
   
   
   
-  
-  
-  
-  
-  return JitOptions.warpBuilder && !mir->outerInfo().hadSpeculativePhiBailout();
+  return !mir->outerInfo().hadSpeculativePhiBailout();
 }
 
 

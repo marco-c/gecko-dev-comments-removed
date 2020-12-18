@@ -131,9 +131,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(ion, true);
 
   
-  SET_DEFAULT(warpBuilder, true);
-
-  
   SET_DEFAULT(warpAsync, false);
 
   

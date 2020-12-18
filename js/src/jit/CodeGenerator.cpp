@@ -4003,8 +4003,6 @@ void CodeGenerator::visitPointer(LPointer* lir) {
 }
 
 void CodeGenerator::visitNurseryObject(LNurseryObject* lir) {
-  MOZ_ASSERT(JitOptions.warpBuilder);
-
   Register output = ToRegister(lir->output());
   uint32_t nurseryIndex = lir->mir()->nurseryIndex();
 
@@ -7813,12 +7811,9 @@ void CodeGenerator::visitArrayLength(LArrayLength* lir) {
   masm.load32(length, output);
 
   
-  
-  if (JitOptions.warpBuilder) {
-    Label bail;
-    masm.branchTest32(Assembler::Signed, output, output, &bail);
-    bailoutFrom(&bail, lir->snapshot());
-  }
+  Label bail;
+  masm.branchTest32(Assembler::Signed, output, output, &bail);
+  bailoutFrom(&bail, lir->snapshot());
 }
 
 static void SetLengthFromIndex(MacroAssembler& masm, const LAllocation* index,
@@ -10463,12 +10458,9 @@ void CodeGenerator::visitArraySlice(LArraySlice* lir) {
 
   Label call, fail;
 
-  if (JitOptions.warpBuilder) {
-    Label bail;
-    masm.branchArrayIsNotPacked(object, temp1, temp2, &bail);
-
-    bailoutFrom(&bail, lir->snapshot());
-  }
+  Label bail;
+  masm.branchArrayIsNotPacked(object, temp1, temp2, &bail);
+  bailoutFrom(&bail, lir->snapshot());
 
   
   TemplateObject templateObject(lir->mir()->templateObj());
@@ -11107,10 +11099,7 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
     return false;
   }
 
-  size_t numNurseryObjects = 0;
-  if (JitOptions.warpBuilder) {
-    numNurseryObjects = snapshot->nurseryObjects().length();
-  }
+  size_t numNurseryObjects = snapshot->nurseryObjects().length();
 
   IonScript* ionScript = IonScript::New(
       cx, compilationId, graph.totalSlotCount(), argumentSlots, scriptFrameSize,
@@ -11325,11 +11314,9 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   
   
   
-  if (JitOptions.warpBuilder) {
-    const auto& nurseryObjects = snapshot->nurseryObjects();
-    for (size_t i = 0; i < nurseryObjects.length(); i++) {
-      ionScript->nurseryObjects()[i].init(nurseryObjects[i]);
-    }
+  const auto& nurseryObjects = snapshot->nurseryObjects();
+  for (size_t i = 0; i < nurseryObjects.length(); i++) {
+    ionScript->nurseryObjects()[i].init(nurseryObjects[i]);
   }
 
   

@@ -4842,7 +4842,7 @@ void JSScript::argumentsOptimizationFailed(JSContext* cx, HandleScript script) {
 
   
   
-  if (jit::JitOptions.warpBuilder) {
+  {
     jit::RecompileInfoVector invalid;
     AddPendingInvalidation(invalid, script);
     Invalidate(cx, invalid);

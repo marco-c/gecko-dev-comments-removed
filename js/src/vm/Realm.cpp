@@ -621,11 +621,8 @@ bool Realm::collectCoverage() const {
 }
 
 bool Realm::collectCoverageForPGO() const {
-  if (jit::JitOptions.warpBuilder) {
-    
-    return false;
-  }
-  return !jit::JitOptions.disablePgo;
+  
+  return false;
 }
 
 bool Realm::collectCoverageForDebug() const {

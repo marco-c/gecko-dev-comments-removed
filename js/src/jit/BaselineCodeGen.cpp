@@ -564,14 +564,9 @@ bool BaselineCompilerCodeGen::emitNextIC() {
   MOZ_ASSERT(BytecodeOpHasIC(JSOp(*handler.pc())));
 
   
-  if (JitOptions.warpBuilder) {
-    masm.loadPtr(frame.addressOfICScript(), ICStubReg);
-    size_t firstStubOffset = ICScript::offsetOfFirstStub(entryIndex);
-    masm.loadPtr(Address(ICStubReg, firstStubOffset), ICStubReg);
-  } else {
-    masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
-                 ICStubReg);
-  }
+  masm.loadPtr(frame.addressOfICScript(), ICStubReg);
+  size_t firstStubOffset = ICScript::offsetOfFirstStub(entryIndex);
+  masm.loadPtr(Address(ICStubReg, firstStubOffset), ICStubReg);
 
   CodeOffset returnOffset;
   EmitCallIC(masm, &returnOffset);
@@ -1095,11 +1090,6 @@ void BaselineCompilerCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
     masm.storePtr(nonFunctionEnv, frame.addressOfEnvironmentChain());
   }
 
-  if (!JitOptions.warpBuilder) {
-    
-    return;
-  }
-
   
   
   
@@ -1156,22 +1146,14 @@ void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   masm.bind(&done);
   masm.storePtr(scratch1, frame.addressOfInterpreterScript());
 
-  if (JitOptions.warpBuilder) {
-    
-    masm.loadJitScript(scratch1, scratch2);
-    masm.computeEffectiveAddress(
-        Address(scratch2, JitScript::offsetOfICScript()), scratch2);
-    masm.storePtr(scratch2, frame.addressOfICScript());
-    masm.computeEffectiveAddress(
-        Address(scratch2, ICScript::offsetOfICEntries()), scratch2);
-    masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
-  } else {
-    
-    masm.loadJitScript(scratch1, scratch2);
-    masm.computeEffectiveAddress(
-        Address(scratch2, JitScript::offsetOfICEntries()), scratch2);
-    masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
-  }
+  
+  masm.loadJitScript(scratch1, scratch2);
+  masm.computeEffectiveAddress(Address(scratch2, JitScript::offsetOfICScript()),
+                               scratch2);
+  masm.storePtr(scratch2, frame.addressOfICScript());
+  masm.computeEffectiveAddress(Address(scratch2, ICScript::offsetOfICEntries()),
+                               scratch2);
+  masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
 
   
   masm.loadPtr(Address(scratch1, JSScript::offsetOfSharedData()), scratch1);
@@ -1291,24 +1273,16 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   Register scriptReg = R2.scratchReg();
   Register countReg = R0.scratchReg();
 
-  uint32_t warmUpCountOffset;
-  if (JitOptions.warpBuilder) {
-    
-    masm.loadPtr(frame.addressOfICScript(), scriptReg);
-    warmUpCountOffset = ICScript::offsetOfWarmUpCount();
-  } else {
-    
-    masm.movePtr(ImmPtr(script->jitScript()), scriptReg);
-    warmUpCountOffset = JitScript::offsetOfWarmUpCount();
-  }
+  
+  masm.loadPtr(frame.addressOfICScript(), scriptReg);
 
   
-  Address warmUpCounterAddr(scriptReg, warmUpCountOffset);
+  Address warmUpCounterAddr(scriptReg, ICScript::offsetOfWarmUpCount());
   masm.load32(warmUpCounterAddr, countReg);
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
 
-  if (JitOptions.warpBuilder && !JitOptions.disableInlining) {
+  if (!JitOptions.disableInlining) {
     
     
     
@@ -1347,20 +1321,15 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   uint32_t warmUpThreshold = info->compilerWarmUpThreshold(script, pc);
   masm.branch32(Assembler::LessThan, countReg, Imm32(warmUpThreshold), &done);
 
-  if (JitOptions.warpBuilder) {
-    
-    Address depthAddr(scriptReg, ICScript::offsetOfDepth());
-    masm.branch32(Assembler::NotEqual, depthAddr, Imm32(0), &done);
+  
+  Address depthAddr(scriptReg, ICScript::offsetOfDepth());
+  masm.branch32(Assembler::NotEqual, depthAddr, Imm32(0), &done);
 
-    
-    
-    constexpr int32_t offset = -int32_t(JitScript::offsetOfICScript()) +
-                               int32_t(JitScript::offsetOfIonScript());
-    masm.loadPtr(Address(scriptReg, offset), scriptReg);
-  } else {
-    
-    masm.loadPtr(Address(scriptReg, JitScript::offsetOfIonScript()), scriptReg);
-  }
+  
+  
+  constexpr int32_t offset = -int32_t(JitScript::offsetOfICScript()) +
+                             int32_t(JitScript::offsetOfIonScript());
+  masm.loadPtr(Address(scriptReg, offset), scriptReg);
 
   
   
@@ -5799,15 +5768,13 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
   static_assert(BaselineDisabledScript == 0x1,
                 "Comparison below requires specific sentinel encoding");
 
-  if (JitOptions.warpBuilder) {
-    
-    masm.loadJitScript(script, scratch);
-    masm.computeEffectiveAddress(
-        Address(scratch, JitScript::offsetOfICScript()), scratch);
-    Address icScriptAddr(BaselineFrameReg,
-                         BaselineFrame::reverseOffsetOfICScript());
-    masm.storePtr(scratch, icScriptAddr);
-  }
+  
+  masm.loadJitScript(script, scratch);
+  masm.computeEffectiveAddress(Address(scratch, JitScript::offsetOfICScript()),
+                               scratch);
+  Address icScriptAddr(BaselineFrameReg,
+                       BaselineFrame::reverseOffsetOfICScript());
+  masm.storePtr(scratch, icScriptAddr);
 
   Label noBaselineScript;
   masm.loadJitScript(script, scratch);
@@ -6222,18 +6189,10 @@ bool BaselineInterpreterCodeGen::emit_JumpTarget() {
   masm.lshiftPtr(Imm32(shift), scratch1);
 
   
-  if (JitOptions.warpBuilder) {
-    masm.loadPtr(frame.addressOfICScript(), scratch2);
-    masm.computeEffectiveAddress(
-        BaseIndex(scratch2, scratch1, TimesOne, ICScript::offsetOfICEntries()),
-        scratch2);
-  } else {
-    loadScript(scratch2);
-    masm.loadJitScript(scratch2, scratch2);
-    masm.computeEffectiveAddress(
-        BaseIndex(scratch2, scratch1, TimesOne, JitScript::offsetOfICEntries()),
-        scratch2);
-  }
+  masm.loadPtr(frame.addressOfICScript(), scratch2);
+  masm.computeEffectiveAddress(
+      BaseIndex(scratch2, scratch1, TimesOne, ICScript::offsetOfICEntries()),
+      scratch2);
   masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
   return true;
 }

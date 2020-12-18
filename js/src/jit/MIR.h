@@ -2522,7 +2522,6 @@ class WrappedFunction : public TempObject {
   js::FunctionFlags flags_;
 
  public:
-  explicit WrappedFunction(JSFunction* fun);
   WrappedFunction(JSFunction* nativeFun, uint16_t nargs, FunctionFlags flags);
 
   
@@ -6396,16 +6395,14 @@ class MPhi final : public MDefinition,
 
   
   void addInput(MDefinition* ins) {
-    MOZ_ASSERT_IF(JitOptions.warpBuilder && type() != MIRType::Value,
-                  ins->type() == type());
+    MOZ_ASSERT_IF(type() != MIRType::Value, ins->type() == type());
     inputs_.infallibleEmplaceBack(ins, this);
   }
 
   
   
   MOZ_MUST_USE bool addInputSlow(MDefinition* ins) {
-    MOZ_ASSERT_IF(JitOptions.warpBuilder && type() != MIRType::Value,
-                  ins->type() == type());
+    MOZ_ASSERT_IF(type() != MIRType::Value, ins->type() == type());
     return inputs_.emplaceBack(ins, this);
   }
 
@@ -11528,10 +11525,6 @@ class MIsCallable : public MUnaryInstruction,
                     public BoxExceptPolicy<0, MIRType::Object>::Data {
   explicit MIsCallable(MDefinition* object)
       : MUnaryInstruction(classOpcode, object) {
-    MOZ_ASSERT_IF(
-        !JitOptions.warpBuilder,
-        object->type() == MIRType::Object || object->type() == MIRType::Value);
-
     setResultType(MIRType::Boolean);
     setMovable();
   }

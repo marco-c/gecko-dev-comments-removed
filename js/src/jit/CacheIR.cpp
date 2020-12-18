@@ -991,10 +991,6 @@ static bool CanAttachDOMCall(JSContext* cx, JSJitInfo::OpType type,
   MOZ_ASSERT(type == JSJitInfo::Getter || type == JSJitInfo::Setter ||
              type == JSJitInfo::Method);
 
-  if (!JitOptions.warpBuilder) {
-    return false;
-  }
-
   if (mode != ICState::Mode::Specialized) {
     return false;
   }
@@ -4901,7 +4897,7 @@ void CallIRGenerator::emitCalleeGuard(ObjOperandId calleeId,
   
   
   
-  if (!JitOptions.warpBuilder || isFirstStub_ || !callee->hasBaseScript() ||
+  if (isFirstStub_ || !callee->hasBaseScript() ||
       callee->isSelfHostedBuiltin()) {
     writer.guardSpecificFunction(calleeId, callee);
   } else {
@@ -5141,12 +5137,6 @@ AttachDecision CallIRGenerator::tryAttachArraySlice(HandleFunction callee) {
   }
 
   writer.packedArraySliceResult(templateObj, objId, int32BeginId, int32EndId);
-
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
-  }
-
   writer.returnFromIC();
 
   trackAttached("ArraySlice");
@@ -5936,12 +5926,6 @@ AttachDecision CallIRGenerator::tryAttachStringConstructor(
   ValOperandId argId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_, flags);
   StringOperandId strId = writer.guardToString(argId);
-
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
-  }
-
   writer.newStringObjectResult(templateObj, strId);
   writer.returnFromIC();
 
@@ -7821,10 +7805,6 @@ AttachDecision CallIRGenerator::tryAttachNewArrayIterator(
 
   
 
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
-  }
   writer.newArrayIteratorResult(templateObj);
   writer.returnFromIC();
 
@@ -7848,10 +7828,6 @@ AttachDecision CallIRGenerator::tryAttachNewStringIterator(
 
   
 
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
-  }
   writer.newStringIteratorResult(templateObj);
   writer.returnFromIC();
 
@@ -7875,10 +7851,6 @@ AttachDecision CallIRGenerator::tryAttachNewRegExpStringIterator(
 
   
 
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
-  }
   writer.newRegExpStringIteratorResult(templateObj);
   writer.returnFromIC();
 
@@ -7952,11 +7924,6 @@ AttachDecision CallIRGenerator::tryAttachObjectCreate(HandleFunction callee) {
     writer.guardIsNull(argId);
   }
 
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
-  }
-
   writer.objectCreateResult(templateObj);
   writer.returnFromIC();
 
@@ -8013,12 +7980,6 @@ AttachDecision CallIRGenerator::tryAttachArrayConstructor(
   }
 
   writer.newArrayFromLengthResult(templateObj, lengthId);
-
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
-  }
-
   writer.returnFromIC();
 
   trackAttached("ArrayConstructor");
@@ -8114,11 +8075,6 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayConstructor(
       writer.guardIsNotProxy(objId);
       writer.newTypedArrayFromArrayResult(templateObj, objId);
     }
-  }
-
-  if (!JitOptions.warpBuilder) {
-    
-    writer.metaNativeTemplateObject(callee, templateObj);
   }
 
   writer.returnFromIC();
@@ -8234,7 +8190,7 @@ AttachDecision CallIRGenerator::tryAttachWasmCall(HandleFunction calleeFunc) {
 
   MOZ_ASSERT(calleeFunc->isWasmWithJitEntry());
 
-  if (!JitOptions.warpBuilder || !JitOptions.enableWasmIonFastCalls) {
+  if (!JitOptions.enableWasmIonFastCalls) {
     return AttachDecision::NoAction;
   }
   if (!isFirstStub_) {
@@ -8853,24 +8809,23 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
     if (templateObj) {
       
       
-      if (JitOptions.warpBuilder) {
-        
-        
-        
-        JSFunction* newTarget = &newTarget_.toObject().as<JSFunction>();
-        Shape* shape = newTarget->lookupPure(cx_->names().prototype);
-        MOZ_ASSERT(shape);
-        MOZ_ASSERT(newTarget->numFixedSlots() == 0, "Stub code relies on this");
-        uint32_t slot = shape->slot();
-        JSObject* prototypeObject = &newTarget->getSlot(slot).toObject();
+      
+      JSFunction* newTarget = &newTarget_.toObject().as<JSFunction>();
+      Shape* shape = newTarget->lookupPure(cx_->names().prototype);
+      MOZ_ASSERT(shape);
+      MOZ_ASSERT(newTarget->numFixedSlots() == 0, "Stub code relies on this");
+      uint32_t slot = shape->slot();
+      JSObject* prototypeObject = &newTarget->getSlot(slot).toObject();
 
-        ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
-            ArgumentKind::NewTarget, argcId, flags);
-        ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
-        writer.guardShape(newTargetObjId, newTarget->lastProperty());
-        ObjOperandId protoId = writer.loadObject(prototypeObject);
-        writer.guardDynamicSlotIsSpecificObject(newTargetObjId, protoId, slot);
-      }
+      ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
+          ArgumentKind::NewTarget, argcId, flags);
+      ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
+      writer.guardShape(newTargetObjId, newTarget->lastProperty());
+      ObjOperandId protoId = writer.loadObject(prototypeObject);
+      writer.guardDynamicSlotIsSpecificObject(newTargetObjId, protoId, slot);
+
+      
+      
       writer.metaScriptedTemplateObject(calleeFunc, templateObj);
     }
   } else {
