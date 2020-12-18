@@ -69,7 +69,7 @@ inline void EmitPreBarrier(MacroAssembler& masm, const AddrType& addr,
 
 inline void EmitStubGuardFailure(MacroAssembler& masm) {
   
-  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
+  masm.loadPtr(Address(ICStubReg, ICCacheIRStub::offsetOfNext()), ICStubReg);
 
   
   masm.jmp(Operand(ICStubReg, ICStub::offsetOfStubCode()));

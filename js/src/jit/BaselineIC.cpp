@@ -200,7 +200,7 @@ void ICEntry::trace(JSTracer* trc) {
   ICStub* stub = firstStub();
   while (!stub->isFallback()) {
     stub->toCacheIRStub()->trace(trc);
-    stub = stub->next();
+    stub = stub->toCacheIRStub()->next();
   }
   stub->toFallbackStub()->trace(trc);
 }
@@ -552,7 +552,7 @@ bool ICScript::initICEntries(JSContext* cx, JSScript* script) {
 
 ICStubConstIterator& ICStubConstIterator::operator++() {
   MOZ_ASSERT(currentStub_ != nullptr);
-  currentStub_ = currentStub_->next();
+  currentStub_ = currentStub_->toCacheIRStub()->next();
   return *this;
 }
 
@@ -564,23 +564,23 @@ ICStubIterator::ICStubIterator(ICFallbackStub* fallbackStub, bool end)
       unlinked_(false) {}
 
 ICStubIterator& ICStubIterator::operator++() {
-  MOZ_ASSERT(currentStub_->next() != nullptr);
+  MOZ_ASSERT(!currentStub_->isFallback());
   if (!unlinked_) {
-    previousStub_ = currentStub_;
+    previousStub_ = currentStub_->toCacheIRStub();
   }
-  currentStub_ = currentStub_->next();
+  currentStub_ = currentStub_->toCacheIRStub()->next();
   unlinked_ = false;
   return *this;
 }
 
 void ICStubIterator::unlink(JSContext* cx, JSScript* script) {
-  MOZ_ASSERT(currentStub_->next() != nullptr);
   MOZ_ASSERT(currentStub_ != fallbackStub_);
+  MOZ_ASSERT(currentStub_->maybeNext() != nullptr);
   MOZ_ASSERT(!unlinked_);
 
   fallbackStub_->maybeInvalidateWarp(cx, script);
   fallbackStub_->unlinkStubDontInvalidateWarp(cx->zone(), previousStub_,
-                                              currentStub_);
+                                              currentStub_->toCacheIRStub());
 
   
   
@@ -606,15 +606,6 @@ bool ICStub::makesGCCalls() const {
     default:
       return false;
   }
-}
-
-
-
-uint32_t ICStub::getEnteredCount() const {
-  if (isFallback()) {
-    return toFallbackStub()->enteredCount();
-  }
-  return toCacheIRStub()->enteredCount();
 }
 
 void ICFallbackStub::trackNotAttached(JSContext* cx, JSScript* script) {
@@ -645,10 +636,6 @@ void ICCacheIRStub::trace(JSTracer* trc) {
 }
 
 void ICFallbackStub::trace(JSTracer* trc) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  checkTraceMagic();
-#endif
-
   
   MOZ_ASSERT(usesTrampolineCode());
 
@@ -716,10 +703,9 @@ static void TryAttachStub(const char* name, JSContext* cx, BaselineFrame* frame,
   }
 }
 
-void ICFallbackStub::unlinkStubDontInvalidateWarp(Zone* zone, ICStub* prev,
-                                                  ICStub* stub) {
-  MOZ_ASSERT(stub->next());
-
+void ICFallbackStub::unlinkStubDontInvalidateWarp(Zone* zone,
+                                                  ICCacheIRStub* prev,
+                                                  ICCacheIRStub* stub) {
   if (prev) {
     MOZ_ASSERT(prev->next() == stub);
     prev->setNext(stub->next());
@@ -733,7 +719,7 @@ void ICFallbackStub::unlinkStubDontInvalidateWarp(Zone* zone, ICStub* prev,
   if (zone->needsIncrementalBarrier()) {
     
     
-    stub->toCacheIRStub()->trace(zone->barrierTracer());
+    stub->trace(zone->barrierTracer());
   }
 
 #ifdef DEBUG

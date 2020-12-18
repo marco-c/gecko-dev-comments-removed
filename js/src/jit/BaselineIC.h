@@ -238,7 +238,7 @@ class ICStubIterator {
  private:
   ICEntry* icEntry_;
   ICFallbackStub* fallbackStub_;
-  ICStub* previousStub_;
+  ICCacheIRStub* previousStub_;
   ICStub* currentStub_;
   bool unlinked_;
 
@@ -280,7 +280,7 @@ class ICStub {
 
  public:
   
-  enum Kind : uint16_t {
+  enum Kind : uint8_t {
     INVALID = 0,
 #define DEF_ENUM_KIND(kindName) kindName,
     IC_BASELINE_STUB_KIND_LIST(DEF_ENUM_KIND)
@@ -331,18 +331,22 @@ class ICStub {
 
   
   
-  ICStub* next_ = nullptr;
+  
+  
+  uint32_t enteredCount_ = 0;
 
-  explicit ICStub(uint8_t* stubCode) : stubCode_(stubCode) {
-    MOZ_ASSERT(stubCode != nullptr);
-  }
+  
+  bool isFallback_;
 
-  explicit ICStub(JitCode* stubCode) : ICStub(stubCode->raw()) {
+  ICStub(uint8_t* stubCode, bool isFallback)
+      : stubCode_(stubCode), isFallback_(isFallback) {
     MOZ_ASSERT(stubCode != nullptr);
   }
 
  public:
-  inline bool isFallback() const { return next_ == nullptr; }
+  inline bool isFallback() const { return isFallback_; }
+
+  inline ICStub* maybeNext() const;
 
   inline const ICFallbackStub* toFallbackStub() const {
     MOZ_ASSERT(isFallback());
@@ -363,14 +367,6 @@ class ICStub {
     return reinterpret_cast<const ICCacheIRStub*>(this);
   }
 
-  inline ICStub* next() const { return next_; }
-
-  inline bool hasNext() const { return next_ != nullptr; }
-
-  inline void setNext(ICStub* stub) { next_ = stub; }
-
-  inline ICStub** addressOfNext() { return &next_; }
-
   bool usesTrampolineCode() const {
     
     
@@ -383,39 +379,24 @@ class ICStub {
 
   inline uint8_t* rawStubCode() const { return stubCode_; }
 
-  inline ICFallbackStub* getChainFallback() {
-    ICStub* lastStub = this;
-    while (lastStub->next_) {
-      lastStub = lastStub->next_;
-    }
-    MOZ_ASSERT(lastStub->isFallback());
-    return lastStub->toFallbackStub();
-  }
+  uint32_t enteredCount() const { return enteredCount_; }
+  inline void incrementEnteredCount() { enteredCount_++; }
+  void resetEnteredCount() { enteredCount_ = 0; }
+
+  inline ICFallbackStub* getChainFallback();
 
   inline ICStubConstIterator beginHere() {
     return ICStubConstIterator::StartingAt(this);
   }
 
-  static inline size_t offsetOfNext() { return offsetof(ICStub, next_); }
-
-  static inline size_t offsetOfStubCode() {
+  static constexpr size_t offsetOfStubCode() {
     return offsetof(ICStub, stubCode_);
+  }
+  static constexpr size_t offsetOfEnteredCount() {
+    return offsetof(ICStub, enteredCount_);
   }
 
   bool makesGCCalls() const;
-
-  
-  
-  uint32_t getEnteredCount() const;
-
-  
-  
-  
-  
-  bool allocatedInFallbackSpace() const {
-    MOZ_ASSERT(next());
-    return makesGCCalls();
-  }
 };
 
 class ICFallbackStub : public ICStub {
@@ -429,51 +410,19 @@ class ICFallbackStub : public ICStub {
   ICEntry* icEntry_ = nullptr;
 
   
-  
-  
-  
-  uint32_t enteredCount_ = 0;
-
-  
   ICState state_{};
 
-  
-  
-  uint16_t kindBits_;
+  Kind kind_;
 
-  static const uint16_t KIND_OFFSET = 0;
-  static const uint16_t KIND_BITS = 5;
-  static const uint16_t KIND_MASK = (1 << KIND_BITS) - 1;
-  static const uint16_t MAGIC_OFFSET = KIND_OFFSET + KIND_BITS;
-  static const uint16_t MAGIC_BITS = 11;
-  static const uint16_t MAGIC_MASK = (1 << MAGIC_BITS) - 1;
-  static const uint16_t EXPECTED_MAGIC = 0b10011100011;
-
-  static_assert(LIMIT <= (1 << KIND_BITS), "Not enough kind bits");
-  static_assert(LIMIT > (1 << (KIND_BITS - 1)), "Too many kind bits");
-  static_assert(KIND_BITS + MAGIC_BITS == 16, "Unused bits");
-
-  ICFallbackStub(Kind kind, TrampolinePtr stubCode) : ICStub(stubCode.value) {
-    setKind(kind);
-  }
-
-  inline void setKind(Kind kind) {
-    kindBits_ = (kind << KIND_OFFSET) | (EXPECTED_MAGIC << MAGIC_OFFSET);
+  ICFallbackStub(Kind kind, TrampolinePtr stubCode)
+      : ICStub(stubCode.value,  true), kind_(kind) {
+    isFallback_ = true;
   }
 
  public:
   inline ICEntry* icEntry() const { return icEntry_; }
 
-  inline Kind kind() const {
-    return (Kind)((kindBits_ >> KIND_OFFSET) & KIND_MASK);
-  }
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  inline void checkTraceMagic() {
-    uint16_t magic = (kindBits_ >> MAGIC_OFFSET) & MAGIC_MASK;
-    MOZ_DIAGNOSTIC_ASSERT(magic == EXPECTED_MAGIC);
-  }
-#endif
+  inline Kind kind() const { return kind_; }
 
 #define KIND_METHODS(kindName)                                    \
   inline bool is##kindName() const { return kind() == kindName; } \
@@ -508,12 +457,7 @@ class ICFallbackStub : public ICStub {
   }
 
   
-  void addNewStub(ICStub* stub) {
-    MOZ_ASSERT(stub->next() == nullptr);
-    stub->setNext(icEntry_->firstStub());
-    icEntry_->setFirstStub(stub);
-    state_.trackAttached();
-  }
+  inline void addNewStub(ICCacheIRStub* stub);
 
   ICStubConstIterator beginChainConst() const {
     return ICStubConstIterator(icEntry_->firstStub());
@@ -539,43 +483,67 @@ class ICFallbackStub : public ICStub {
   
   void maybeInvalidateWarp(JSContext* cx, JSScript* script);
 
-  void unlinkStubDontInvalidateWarp(Zone* zone, ICStub* prev, ICStub* stub);
-
-  
-  
-  uint32_t enteredCount() const { return enteredCount_; }
-  inline void incrementEnteredCount() { enteredCount_++; }
-  void resetEnteredCount() { enteredCount_ = 0; }
+  void unlinkStubDontInvalidateWarp(Zone* zone, ICCacheIRStub* prev,
+                                    ICCacheIRStub* stub);
 };
 
 class ICCacheIRStub : public ICStub {
- protected:
-  const CacheIRStubInfo* stubInfo_;
+  
+  ICStub* next_ = nullptr;
 
-  
-  
-  
-  
-  uint32_t enteredCount_ = 0;
+  const CacheIRStubInfo* stubInfo_;
 
  public:
   ICCacheIRStub(JitCode* stubCode, const CacheIRStubInfo* stubInfo)
-      : ICStub(stubCode), stubInfo_(stubInfo) {}
+      : ICStub(stubCode->raw(),  false),
+        stubInfo_(stubInfo) {}
+
+  ICStub* next() const { return next_; }
+  void setNext(ICStub* stub) { next_ = stub; }
 
   const CacheIRStubInfo* stubInfo() const { return stubInfo_; }
   uint8_t* stubDataStart();
 
-  
-  
-  uint32_t enteredCount() const { return enteredCount_; }
-  void resetEnteredCount() { enteredCount_ = 0; }
-
   void trace(JSTracer* trc);
 
-  static constexpr size_t offsetOfEnteredCount() {
-    return offsetof(ICCacheIRStub, enteredCount_);
+  
+  
+  
+  
+  bool allocatedInFallbackSpace() const { return makesGCCalls(); }
+
+  static constexpr size_t offsetOfNext() {
+    return offsetof(ICCacheIRStub, next_);
   }
 };
+
+
+#ifdef JS_64BIT
+static_assert(sizeof(ICFallbackStub) == 4 * sizeof(uintptr_t));
+static_assert(sizeof(ICCacheIRStub) == 4 * sizeof(uintptr_t));
+#else
+static_assert(sizeof(ICFallbackStub) == 5 * sizeof(uintptr_t));
+static_assert(sizeof(ICCacheIRStub) == 5 * sizeof(uintptr_t));
+#endif
+
+inline ICStub* ICStub::maybeNext() const {
+  return isFallback() ? nullptr : toCacheIRStub()->next();
+}
+
+inline void ICFallbackStub::addNewStub(ICCacheIRStub* stub) {
+  MOZ_ASSERT(stub->next() == nullptr);
+  stub->setNext(icEntry_->firstStub());
+  icEntry_->setFirstStub(stub);
+  state_.trackAttached();
+}
+
+inline ICFallbackStub* ICStub::getChainFallback() {
+  ICStub* lastStub = this;
+  while (!lastStub->isFallback()) {
+    lastStub = lastStub->toCacheIRStub()->next();
+  }
+  return lastStub->toFallbackStub();
+}
 
 AllocatableGeneralRegisterSet BaselineICAvailableGeneralRegs(size_t numInputs);
 
