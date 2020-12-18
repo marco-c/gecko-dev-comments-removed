@@ -815,10 +815,6 @@ bool JS::AddMozDisplayNamesConstructor(JSContext* cx, JS::HandleObject intl) {
   return IntlNotEnabled(cx);
 }
 
-bool JS::AddDisplayNamesConstructor(JSContext* cx, JS::HandleObject intl) {
-  return IntlNotEnabled(cx);
-}
-
 #endif  
 
 JS_FRIEND_API JS::Zone* js::GetObjectZoneFromAnyThread(const JSObject* obj) {

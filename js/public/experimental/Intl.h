@@ -45,17 +45,6 @@ extern JS_FRIEND_API bool AddMozDateTimeFormatConstructor(
 extern JS_FRIEND_API bool AddMozDisplayNamesConstructor(JSContext* cx,
                                                         Handle<JSObject*> intl);
 
-
-
-
-
-
-
-
-
-extern JS_FRIEND_API bool AddDisplayNamesConstructor(JSContext* cx,
-                                                     Handle<JSObject*> intl);
-
 }  
 
 #endif  
