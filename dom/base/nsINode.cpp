@@ -3328,11 +3328,20 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
   if (aDeep && aNode->IsElement()) {
     if (aClone) {
-      if (clone->OwnerDoc()->IsStaticDocument()) {
+      if (nodeInfo->GetDocument()->IsStaticDocument()) {
+        
+        
         
         
         
         clone->AsElement()->CloneAnimationsFrom(*aNode->AsElement());
+
+        
+        
+        
+        if (aNode->AsElement()->State().HasState(NS_EVENT_STATE_DEFINED)) {
+          clone->AsElement()->SetDefined(true);
+        }
 
         
         ShadowRoot* originalShadowRoot = aNode->AsElement()->GetShadowRoot();
