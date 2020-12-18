@@ -1257,11 +1257,6 @@ class Document : public nsINode,
   
 
 
-  Element* FindContentForSubDocument(Document* aDocument) const;
-
-  
-
-
   DocumentType* GetDoctype() const;
 
   
