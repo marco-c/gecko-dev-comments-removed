@@ -125,7 +125,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
           aCallback);
 
   void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID,
-                            uint32_t aLoadType);
+                            uint32_t aLoadType, bool aPersist);
 
   
   
