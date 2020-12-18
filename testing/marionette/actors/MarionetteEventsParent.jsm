@@ -68,10 +68,6 @@ function registerEventsActor() {
           pageshow: { mozSystemGroup: true },
           
           popstate: { capture: true, mozSystemGroup: true },
-
-          click: {},
-          dblclick: {},
-          unload: { capture: true },
         },
       },
 

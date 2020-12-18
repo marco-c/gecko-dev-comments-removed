@@ -58,6 +58,23 @@ class MarionetteCommandsChild extends JSWindowActorChild {
       `[${this.browsingContext.id}] MarionetteCommands actor created ` +
         `for window id ${this.innerWindowId}`
     );
+
+    
+    
+    this.document.defaultView.addEventListener(
+      "click",
+      event.DoubleClickTracker.setClick
+    );
+    this.document.defaultView.addEventListener(
+      "dblclick",
+      event.DoubleClickTracker.resetClick
+    );
+    this.document.defaultView.addEventListener(
+      "unload",
+      event.DoubleClickTracker.resetClick,
+      true
+    );
+    clearActionInputState();
   }
 
   async receiveMessage(msg) {
