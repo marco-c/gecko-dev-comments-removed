@@ -56,7 +56,13 @@ GamepadEventChannelParent::GamepadEventChannelParent() {
 void GamepadEventChannelParent::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsOnBackgroundThread();
 
-  GamepadPlatformService::RemoveChannelParent(this);
+  
+  
+  
+  if (!mShutdown) {
+    GamepadPlatformService::RemoveChannelParent(this);
+    mShutdown = true;
+  }
 }
 
 mozilla::ipc::IPCResult GamepadEventChannelParent::RecvVibrateHaptic(

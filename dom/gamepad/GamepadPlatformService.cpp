@@ -264,7 +264,7 @@ void GamepadPlatformService::AddChannelParentInternal(
     const RefPtr<GamepadEventChannelParent>& aParent) {
   MutexAutoLock autoLock(mMutex);
 
-  MOZ_ASSERT(!mChannelParents.Contains(aParent));
+  MOZ_RELEASE_ASSERT(!mChannelParents.Contains(aParent));
   mChannelParents.AppendElement(aParent);
 
   
@@ -279,7 +279,7 @@ bool GamepadPlatformService::RemoveChannelParentInternal(
     GamepadEventChannelParent* aParent) {
   MutexAutoLock autoLock(mMutex);
 
-  MOZ_ASSERT(mChannelParents.Contains(aParent));
+  MOZ_RELEASE_ASSERT(mChannelParents.Contains(aParent));
 
   
   
@@ -318,7 +318,8 @@ void GamepadPlatformService::RemoveChannelParent(
   
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aParent);
-  MOZ_ASSERT(gGamepadPlatformServiceSingleton);
+
+  MOZ_RELEASE_ASSERT(gGamepadPlatformServiceSingleton);
 
   
   
@@ -328,8 +329,13 @@ void GamepadPlatformService::RemoveChannelParent(
 
   GamepadMonitoringState::GetSingleton().Set(false);
   StopGamepadMonitoring();
+  
+  
 
   
+  MOZ_RELEASE_ASSERT(
+      gGamepadPlatformServiceSingleton->mChannelParents.Length() == 1);
+
   
   MOZ_RELEASE_ASSERT(gGamepadPlatformServiceSingleton->mRefCnt.get() == 1);
 
