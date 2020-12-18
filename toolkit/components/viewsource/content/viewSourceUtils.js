@@ -329,10 +329,6 @@ var gViewSourceUtils = {
     ]),
 
     destroy() {
-      if (this.webShell) {
-        this.webShell.QueryInterface(Ci.nsIBaseWindow).destroy();
-      }
-      this.webShell = null;
       this.editor = null;
       this.resolve = null;
       this.reject = null;
@@ -346,22 +342,9 @@ var gViewSourceUtils = {
     onStateChange(aProgress, aRequest, aFlag, aStatus) {
       
       if (aFlag & this.mnsIWebProgressListener.STATE_STOP && aStatus == 0) {
-        if (!this.webShell) {
-          
-          
-          this.onContentLoaded();
-          return 0;
-        }
-        var webNavigation = this.webShell.QueryInterface(Ci.nsIWebNavigation);
-        if (webNavigation.document.readyState == "complete") {
-          
-          this.onContentLoaded();
-        } else {
-          webNavigation.document.addEventListener(
-            "DOMContentLoaded",
-            this.onContentLoaded.bind(this)
-          );
-        }
+        
+        
+        this.onContentLoaded();
       }
       return 0;
     },
@@ -374,44 +357,7 @@ var gViewSourceUtils = {
       }
       try {
         if (!this.file) {
-          
-
-          
-          
-          this.file = gViewSourceUtils.getTemporaryFile(
-            this.data.uri,
-            this.data.doc,
-            this.data.doc.contentType
-          );
-
-          
-          var webNavigation = this.webShell.QueryInterface(Ci.nsIWebNavigation);
-          var foStream = Cc[
-            "@mozilla.org/network/file-output-stream;1"
-          ].createInstance(Ci.nsIFileOutputStream);
-          foStream.init(this.file, 0x02 | 0x08 | 0x20, -1, 0); 
-          var coStream = Cc[
-            "@mozilla.org/intl/converter-output-stream;1"
-          ].createInstance(Ci.nsIConverterOutputStream);
-          coStream.init(foStream, this.data.doc.characterSet);
-
-          
-          coStream.writeString(webNavigation.document.body.textContent);
-
-          
-          coStream.close();
-          foStream.close();
-
-          let helperService = Cc[
-            "@mozilla.org/uriloader/external-helper-app-service;1"
-          ].getService(Ci.nsPIExternalAppLauncher);
-          if (this.data.isPrivate) {
-            
-            helperService.deleteTemporaryPrivateFileWhenPossible(this.file);
-          } else {
-            
-            helperService.deleteTemporaryFileOnExit(this.file);
-          }
+          throw new Error("View-source progress listener should have a file!");
         }
 
         var editorArgs = gViewSourceUtils.buildEditorArgs(
@@ -431,7 +377,6 @@ var gViewSourceUtils = {
       }
     },
 
-    webShell: null,
     editor: null,
     resolve: null,
     reject: null,
