@@ -1808,7 +1808,7 @@ this.VideoControlsImplWidget = class {
           return;
         }
 
-        var keystroke = "";
+        let keystroke = "";
         if (event.altKey) {
           keystroke += "alt-";
         }
@@ -1830,29 +1830,10 @@ this.VideoControlsImplWidget = class {
             keystroke += "accel-";
           }
         }
-        switch (event.keyCode) {
-          case this.window.KeyEvent.DOM_VK_UP:
-            keystroke += "upArrow";
-            break;
-          case this.window.KeyEvent.DOM_VK_DOWN:
-            keystroke += "downArrow";
-            break;
-          case this.window.KeyEvent.DOM_VK_LEFT:
-            keystroke += "leftArrow";
-            break;
-          case this.window.KeyEvent.DOM_VK_RIGHT:
-            keystroke += "rightArrow";
-            break;
-          case this.window.KeyEvent.DOM_VK_HOME:
-            keystroke += "home";
-            break;
-          case this.window.KeyEvent.DOM_VK_END:
-            keystroke += "end";
-            break;
-        }
-
-        if (String.fromCharCode(event.charCode) == " ") {
-          keystroke += "space";
+        if (event.key == " ") {
+          keystroke += "Space";
+        } else {
+          keystroke += event.key;
         }
 
         this.log("Got keystroke: " + keystroke);
@@ -1860,7 +1841,7 @@ this.VideoControlsImplWidget = class {
 
         try {
           switch (keystroke) {
-            case "space" :
+            case "Space" :
               let target = event.originalTarget;
               if (target.localName === "button" && !target.disabled) {
                 break;
@@ -1868,24 +1849,24 @@ this.VideoControlsImplWidget = class {
 
               this.togglePause();
               break;
-            case "downArrow" :
+            case "ArrowDown" :
               oldval = this.video.volume;
               this.video.volume = oldval < 0.1 ? 0 : oldval - 0.1;
               this.video.muted = false;
               break;
-            case "upArrow" :
+            case "ArrowUp" :
               oldval = this.video.volume;
               this.video.volume = oldval > 0.9 ? 1 : oldval + 0.1;
               this.video.muted = false;
               break;
-            case "accel-downArrow" :
+            case "accel-ArrowDown" :
               this.video.muted = true;
               break;
-            case "accel-upArrow" :
+            case "accel-ArrowUp" :
               this.video.muted = false;
               break;
-            case "leftArrow": 
-            case "accel-leftArrow" :
+            case "ArrowLeft" :
+            case "accel-ArrowLeft" :
               oldval = this.video.currentTime;
               if (keystroke == "leftArrow") {
                 newval = oldval - 15;
@@ -1896,8 +1877,8 @@ this.VideoControlsImplWidget = class {
               }
               this.video.currentTime = newval >= 0 ? newval : 0;
               break;
-            case "rightArrow": 
-            case "accel-rightArrow" :
+            case "ArrowRight" :
+            case "accel-ArrowRight" :
               oldval = this.video.currentTime;
               var maxtime =
                 this.video.duration || this.maxCurrentTimeSeen / 1000;
@@ -1908,10 +1889,10 @@ this.VideoControlsImplWidget = class {
               }
               this.video.currentTime = newval <= maxtime ? newval : maxtime;
               break;
-            case "home" :
+            case "Home" :
               this.video.currentTime = 0;
               break;
-            case "end" :
+            case "End" :
               if (this.video.currentTime != this.video.duration) {
                 this.video.currentTime =
                   this.video.duration || this.maxCurrentTimeSeen / 1000;
