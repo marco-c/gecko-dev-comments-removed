@@ -982,9 +982,6 @@ DownloadsDataCtor.prototype = {
       download,
       DownloadsCommon.stateOfDownload(download)
     );
-    if (download.error?.becauseBlockedByReputationCheck) {
-      this._notifyDownloadEvent("error");
-    }
   },
 
   onDownloadChanged(download) {
@@ -1075,7 +1072,6 @@ DownloadsDataCtor.prototype = {
 
 
 
-
   _notifyDownloadEvent(aType) {
     DownloadsCommon.log(
       "Attempting to notify that a new download has started or finished."
@@ -1089,7 +1085,7 @@ DownloadsDataCtor.prototype = {
       return;
     }
 
-    if (this.panelHasShownBefore && aType != "error") {
+    if (this.panelHasShownBefore) {
       
       
       

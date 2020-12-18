@@ -1676,12 +1676,15 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
 
   mDownloadClassification =
       nsContentSecurityUtils::ClassifyDownload(aChannel, MIMEType);
-
-  if (mDownloadClassification == nsITransfer::DOWNLOAD_FORBIDDEN) {
+  if (mDownloadClassification != nsITransfer::DOWNLOAD_ACCEPTABLE) {
+    
     
     
     mCanceled = true;
     request->Cancel(NS_ERROR_ABORT);
+    if (mDownloadClassification != nsITransfer::DOWNLOAD_FORBIDDEN) {
+      CreateFailedTransfer();
+    }
     return NS_OK;
   }
 
@@ -1915,9 +1918,6 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     }
   }
 
-  if (mDownloadClassification != nsITransfer::DOWNLOAD_ACCEPTABLE) {
-    request->Suspend();
-  }
   return NS_OK;
 }
 

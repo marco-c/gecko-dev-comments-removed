@@ -1006,15 +1006,6 @@ Download.prototype = {
           if (!this.stopped || this._finalized) {
             return;
           }
-          
-          
-          
-          if (
-            this.error.reputationCheckVerdict ==
-            DownloadError.BLOCK_VERDICT_INSECURE
-          ) {
-            return;
-          }
 
           this.hasBlockedData = false;
           this.hasPartialData = false;

@@ -337,7 +337,12 @@ DownloadLegacyTransfer.prototype = {
     browsingContextId = 0,
     handleInternally = false
   ) {
-    this._cancelable = aCancelable;
+    if (aDownloadClassification == Ci.nsITransfer.DOWNLOAD_ACCEPTABLE) {
+      
+      
+      this._cancelable = aCancelable;
+    }
+
     let launchWhenSucceeded = false,
       contentType = null,
       launcherPath = null;
@@ -392,12 +397,6 @@ DownloadLegacyTransfer.prototype = {
       
       
       serialisedDownload.saver = "copy";
-
-      
-      
-      this._download = null;
-      this._cancelable.cancel(Cr.NS_ERROR_ABORT);
-      this._cancelable = null;
     }
 
     Downloads.createDownload(serialisedDownload)
