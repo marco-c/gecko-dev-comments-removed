@@ -556,13 +556,6 @@ this.TelemetryFeed = class TelemetryFeed {
     });
   }
 
-  createSpocsFillPing(data) {
-    return Object.assign(this.createPing(null), data, {
-      impression_id: this._impressionId,
-      session_id: "n/a",
-    });
-  }
-
   createUserEvent(action) {
     return Object.assign(
       this.createPing(au.getPortIdOfSender(action)),
@@ -941,9 +934,6 @@ this.TelemetryFeed = class TelemetryFeed {
           action.data
         );
         break;
-      case at.DISCOVERY_STREAM_SPOCS_FILL:
-        this.handleDiscoveryStreamSpocsFill(action.data);
-        break;
       case at.TELEMETRY_UNDESIRED_EVENT:
         this.handleUndesiredEvent(action);
         break;
@@ -1029,38 +1019,6 @@ this.TelemetryFeed = class TelemetryFeed {
     );
     loadedContentSets[data.source] = loadedContents;
     session.loadedContentSets = loadedContentSets;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  handleDiscoveryStreamSpocsFill(data) {
-    const payload = this.createSpocsFillPing(data);
-    this.sendStructuredIngestionEvent(
-      payload,
-      STRUCTURED_INGESTION_NAMESPACE_AS,
-      "spoc-fills",
-      "1"
-    );
   }
 
   
