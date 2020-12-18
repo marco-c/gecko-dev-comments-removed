@@ -47,6 +47,10 @@ MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
                             JS::MutableHandle<JS::Value> aValue);
 
 
+MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsACString& aArgument,
+                            JS::MutableHandle<JS::Value> aValue);
+
+
 
 
 
