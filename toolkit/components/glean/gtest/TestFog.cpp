@@ -63,6 +63,8 @@ TEST(FOG, TestCppCounterWorks)
   ASSERT_EQ(
       42,
       mozilla::glean::test_only::bad_code.TestGetValue("test-ping"_ns).value());
+  
+  ASSERT_EQ(42, test_only::bad_code.TestGetValue().value());
 }
 
 TEST(FOG, TestCppStringWorks)

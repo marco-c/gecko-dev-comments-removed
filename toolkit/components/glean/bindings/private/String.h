@@ -44,12 +44,16 @@ class StringMetric {
 
 
 
-  Maybe<nsCString> TestGetValue(const nsACString& aStorageName) const {
-    if (!fog_string_test_has_value(mId, &aStorageName)) {
+
+
+
+  Maybe<nsCString> TestGetValue(
+      const nsACString& aPingName = nsCString()) const {
+    if (!fog_string_test_has_value(mId, &aPingName)) {
       return Nothing();
     }
     nsCString ret;
-    fog_string_test_get_value(mId, &aStorageName, &ret);
+    fog_string_test_get_value(mId, &aPingName, &ret);
     return Some(ret);
   }
 

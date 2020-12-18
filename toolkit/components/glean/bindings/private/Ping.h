@@ -40,7 +40,7 @@ class Ping {
 
 
 
-  void Submit(const nsACString& aReason) const {
+  void Submit(const nsACString& aReason = nsCString()) const {
     fog_submit_ping_by_id(mId, &aReason);
   }
 

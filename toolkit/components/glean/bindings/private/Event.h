@@ -75,9 +75,12 @@ class EventMetric {
 
 
 
+
+
+
   Maybe<nsTArray<RecordedEvent>> TestGetValue(
-      const nsACString& aStorageName) const {
-    if (!fog_event_test_has_value(mId, &aStorageName)) {
+      const nsACString& aPingName = nsCString()) const {
+    if (!fog_event_test_has_value(mId, &aPingName)) {
       return Nothing();
     }
 

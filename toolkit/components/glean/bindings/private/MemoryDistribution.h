@@ -53,7 +53,11 @@ class MemoryDistributionMetric {
 
 
 
-  Maybe<DistributionData> TestGetValue(const nsACString& aPingName) const {
+
+
+
+  Maybe<DistributionData> TestGetValue(
+      const nsACString& aPingName = nsCString()) const {
     if (!fog_memory_distribution_test_has_value(mId, &aPingName)) {
       return Nothing();
     }

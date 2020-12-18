@@ -40,11 +40,14 @@ class CounterMetric {
 
 
 
-  Maybe<int32_t> TestGetValue(const nsACString& aStorageName) const {
-    if (!fog_counter_test_has_value(mId, &aStorageName)) {
+
+
+
+  Maybe<int32_t> TestGetValue(const nsACString& aPingName = nsCString()) const {
+    if (!fog_counter_test_has_value(mId, &aPingName)) {
       return Nothing();
     }
-    return Some(fog_counter_test_get_value(mId, &aStorageName));
+    return Some(fog_counter_test_get_value(mId, &aPingName));
   }
 
  private:
