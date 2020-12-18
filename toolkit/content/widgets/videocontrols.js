@@ -996,6 +996,31 @@ this.VideoControlsImplWidget = class {
               );
             }
             break;
+          case "mousedown":
+            
+            
+            
+            
+            
+            
+            
+            if (
+              this.prefs["media.videocontrols.keyboard-tab-to-all-controls"] &&
+              !aEvent.currentTarget.matches(":focus")
+            ) {
+              aEvent.currentTarget.addEventListener(
+                "mouseup",
+                aEvent => {
+                  if (aEvent.currentTarget.matches(":focus")) {
+                    
+                    
+                    this.video.focus();
+                  }
+                },
+                { once: true }
+              );
+            }
+            break;
           default:
             this.log("!!! control event " + aEvent.type + " not handled!");
         }
@@ -1875,20 +1900,36 @@ this.VideoControlsImplWidget = class {
 
         this.log("Got keystroke: " + keystroke);
 
+        
+        
+        
+        
+        
         try {
+          const target = event.originalTarget;
+          const allTabbable = this.prefs[
+            "media.videocontrols.keyboard-tab-to-all-controls"
+          ];
           switch (keystroke) {
             case "Space" :
-              let target = event.originalTarget;
               if (target.localName === "button" && !target.disabled) {
                 break;
               }
               this.togglePause();
               break;
             case "ArrowDown" :
-              this.keyboardVolumeDecrease();
+              if (allTabbable && target == this.scrubber) {
+                this.keyboardSeekBack( false);
+              } else {
+                this.keyboardVolumeDecrease();
+              }
               break;
             case "ArrowUp" :
-              this.keyboardVolumeIncrease();
+              if (allTabbable && target == this.scrubber) {
+                this.keyboardSeekForward( false);
+              } else {
+                this.keyboardVolumeIncrease();
+              }
               break;
             case "accel-ArrowDown" :
               this.video.muted = true;
@@ -1897,13 +1938,21 @@ this.VideoControlsImplWidget = class {
               this.video.muted = false;
               break;
             case "ArrowLeft" :
-              this.keyboardSeekBack( false);
+              if (allTabbable && target == this.volumeControl) {
+                this.keyboardVolumeDecrease();
+              } else {
+                this.keyboardSeekBack( false);
+              }
               break;
             case "accel-ArrowLeft" :
               this.keyboardSeekBack( true);
               break;
             case "ArrowRight" :
-              this.keyboardSeekForward( false);
+              if (allTabbable && target == this.volumeControl) {
+                this.keyboardVolumeIncrease();
+              } else {
+                this.keyboardSeekForward( false);
+              }
               break;
             case "accel-ArrowRight" :
               this.keyboardSeekForward( true);
@@ -2499,6 +2548,8 @@ this.VideoControlsImplWidget = class {
           { el: this.video, type: "media-videoCasting", touchOnly: true },
 
           { el: this.controlBar, type: "focusin" },
+          { el: this.scrubber, type: "mousedown" },
+          { el: this.volumeControl, type: "mousedown" },
         ];
 
         for (let {
