@@ -85,12 +85,6 @@ interface nsIWebSocketListener : nsISupports
                                   in unsigned short aCode,
                                   in AUTF8String aReason);
 
-    
-
-
-
-    [must_use] void OnError();
-
 };
 
 
