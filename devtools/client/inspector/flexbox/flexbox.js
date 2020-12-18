@@ -4,7 +4,6 @@
 
 "use strict";
 
-const flags = require("devtools/shared/flags");
 const { throttle } = require("devtools/shared/throttle");
 
 const {
@@ -45,73 +44,39 @@ class FlexboxInspector {
     this.init();
   }
 
-  
-  get highlighters() {
-    if (!this._highlighters) {
-      
-      this._highlighters = this.inspector.highlighters;
-    }
-
-    return this._highlighters;
-  }
-
   init() {
     if (!this.inspector) {
       return;
     }
 
-    if (flags.testing) {
-      
-      this.highlighters.on(
-        "flexbox-highlighter-hidden",
-        this.onHighlighterHidden
-      );
-      this.highlighters.on(
-        "flexbox-highlighter-shown",
-        this.onHighlighterShown
-      );
-    } else {
-      this.document.addEventListener(
-        "mousemove",
-        () => {
-          this.highlighters.on(
-            "flexbox-highlighter-hidden",
-            this.onHighlighterHidden
-          );
-          this.highlighters.on(
-            "flexbox-highlighter-shown",
-            this.onHighlighterShown
-          );
-        },
-        { once: true }
-      );
-    }
-
+    this.inspector.highlighters.on(
+      "highlighter-shown",
+      this.onHighlighterShown
+    );
+    this.inspector.highlighters.on(
+      "highlighter-hidden",
+      this.onHighlighterHidden
+    );
     this.inspector.sidebar.on("select", this.onSidebarSelect);
 
     this.onSidebarSelect();
   }
 
   destroy() {
-    if (this._highlighters) {
-      this.highlighters.off(
-        "flexbox-highlighter-hidden",
-        this.onHighlighterHidden
-      );
-      this.highlighters.off(
-        "flexbox-highlighter-shown",
-        this.onHighlighterShown
-      );
-    }
-
     this.selection.off("new-node-front", this.onUpdatePanel);
-    this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.inspector.off("new-root", this.onNavigate);
-
     this.inspector.off("reflow-in-selected-target", this.onReflow);
+    this.inspector.highlighters.off(
+      "highlighter-shown",
+      this.onHighlighterShown
+    );
+    this.inspector.highlighters.off(
+      "highlighter-hidden",
+      this.onHighlighterHidden
+    );
+    this.inspector.sidebar.off("select", this.onSidebarSelect);
 
     this._customHostColors = null;
-    this._highlighters = null;
     this._overlayColor = null;
     this.document = null;
     this.inspector = null;
@@ -268,6 +233,7 @@ class FlexboxInspector {
       this.inspector.sidebar.getCurrentTabID() === "layoutview"
     );
   }
+
   
 
 
@@ -278,8 +244,13 @@ class FlexboxInspector {
 
 
 
-  onHighlighterShown(nodeFront) {
-    return this.onHighlighterChange(true, nodeFront);
+
+
+
+  onHighlighterShown(data) {
+    if (data.type === this.inspector.highlighters.TYPES.FLEXBOX) {
+      this.onHighlighterChange(true, data.nodeFront);
+    }
   }
 
   
@@ -292,12 +263,16 @@ class FlexboxInspector {
 
 
 
-  onHighlighterHidden(nodeFront) {
-    return this.onHighlighterChange(false, nodeFront);
+
+
+
+  onHighlighterHidden(data) {
+    if (data.type === this.inspector.highlighters.TYPES.FLEXBOX) {
+      this.onHighlighterChange(false, data.nodeFront);
+    }
   }
 
   
-
 
 
 
@@ -397,7 +372,9 @@ class FlexboxInspector {
     const { flexbox } = this.store.getState();
 
     if (flexbox.highlighted) {
-      this.highlighters.showFlexboxHighlighter(flexbox.flexContainer.nodeFront);
+      this.inspector.highlighters.showFlexboxHighlighter(
+        flexbox.flexContainer.nodeFront
+      );
     }
 
     this._overlayColor = color;
@@ -506,8 +483,10 @@ class FlexboxInspector {
       }
 
       const highlighted =
-        this.inspector.isHighlighterReady &&
-        flexContainer.nodeFront === this.highlighters.flexboxHighlighterShown;
+        flexContainer.nodeFront ===
+        this.inspector.highlighters.getNodeForActiveHighlighter(
+          this.inspector.highlighters.TYPES.FLEXBOX
+        );
       const color = await this.getOverlayColor();
 
       this.store.dispatch(
