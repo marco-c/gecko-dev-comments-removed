@@ -1133,18 +1133,6 @@ TextPropertyEditor.prototype = {
     });
 
     
-    
-    if (this.isDisplayFlex()) {
-      this.ruleView.highlighters.hideFlexboxHighlighter();
-    }
-
-    if (this.isDisplayGrid()) {
-      this.ruleView.highlighters.hideGridHighlighter(
-        this.ruleView.inspector.selection.nodeFront
-      );
-    }
-
-    
     this.prop.setValue(val.value, val.priority);
 
     if (!this.prop.enabled) {
@@ -1281,30 +1269,6 @@ TextPropertyEditor.prototype = {
 
   isNameValid: function() {
     return this.prop.isNameValid();
-  },
-
-  
-
-
-
-
-  isDisplayFlex: function() {
-    return (
-      this.prop.name === "display" &&
-      (this.prop.value === "flex" || this.prop.value === "inline-flex")
-    );
-  },
-
-  
-
-
-
-
-  isDisplayGrid: function() {
-    return (
-      this.prop.name === "display" &&
-      (this.prop.value === "grid" || this.prop.value === "inline-grid")
-    );
   },
 };
 
