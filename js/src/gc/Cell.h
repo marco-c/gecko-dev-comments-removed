@@ -37,6 +37,9 @@ extern bool RuntimeFromMainThreadIsHeapMajorCollecting(
 extern bool CurrentThreadIsIonCompiling();
 
 extern bool CurrentThreadIsGCMarking();
+extern bool CurrentThreadIsGCSweeping();
+extern bool CurrentThreadIsGCFinalizing();
+extern bool RuntimeIsVerifyingPreBarriers(JSRuntime* runtime);
 
 #endif
 
@@ -500,8 +503,6 @@ MOZ_ALWAYS_INLINE void ReadBarrierImpl(Cell* thing) {
   }
 }
 
-void AssertSafeToSkipPreWriteBarrier(TenuredCell* thing);
-
 MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(TenuredCell* thing) {
   MOZ_ASSERT(!CurrentThreadIsIonCompiling());
   MOZ_ASSERT(!CurrentThreadIsGCMarking());
@@ -510,33 +511,35 @@ MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(TenuredCell* thing) {
     return;
   }
 
-#ifdef JS_GC_ZEAL
   
   
-  
-  
-  
-  
-  
-  
-  
-  if (!CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread())) {
-    AssertSafeToSkipPreWriteBarrier(thing);
+
+  JS::shadow::Zone* zone = thing->shadowZoneFromAnyThread();
+  if (!zone->needsIncrementalBarrier()) {
     return;
   }
+
+  
+  
+  
+  
+  bool checkThread = zone->isAtomsZone();
+#ifdef JS_GC_ZEAL
+  checkThread = checkThread || zone->isSelfHostingZone();
 #endif
-
-  
-  
-
-  JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
-  if (shadowZone->needsIncrementalBarrier()) {
-    MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone));
-    Cell* tmp = thing;
-    TraceManuallyBarrieredGenericPointerEdge(shadowZone->barrierTracer(), &tmp,
-                                             "pre barrier");
-    MOZ_ASSERT(tmp == thing);
+  JSRuntime* runtime = thing->runtimeFromAnyThread();
+  if (checkThread && !CurrentThreadCanAccessRuntime(runtime)) {
+    MOZ_ASSERT(CurrentThreadIsGCFinalizing() ||
+               RuntimeIsVerifyingPreBarriers(runtime));
+    return;
   }
+
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
+  MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(zone));
+  Cell* tmp = thing;
+  TraceManuallyBarrieredGenericPointerEdge(zone->barrierTracer(), &tmp,
+                                           "pre barrier");
+  MOZ_ASSERT(tmp == thing);
 }
 
 MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(Cell* thing) {

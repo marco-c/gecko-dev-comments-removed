@@ -305,12 +305,6 @@ void CellPtrPreWriteBarrier(JS::GCCellPtr thing);
 
 #ifdef DEBUG
 
-
-
-bool CurrentThreadIsIonCompiling();
-
-bool CurrentThreadIsGCSweeping();
-bool CurrentThreadIsGCFinalizing();
 bool CurrentThreadIsTouchingGrayThings();
 
 bool IsMarkedBlack(JSObject* obj);
