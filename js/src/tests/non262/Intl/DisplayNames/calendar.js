@@ -1,5 +1,7 @@
 
 
+addMozIntlDisplayNames(this);
+
 let dn1 = new Intl.DisplayNames("en", {type: "month", calendar: "gregory"});
 assertEq(dn1.of(1), "January");
 assertEq(dn1.resolvedOptions().calendar, "gregory");

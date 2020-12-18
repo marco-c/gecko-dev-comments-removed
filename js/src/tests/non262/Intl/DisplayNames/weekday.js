@@ -1,5 +1,7 @@
 
 
+addMozIntlDisplayNames(this);
+
 const tests = {
   "en": {
     long: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],

@@ -17,19 +17,27 @@ function thisValues() {
         ...[{}, [], /(?:)/, function(){}, new Proxy({}, {})],
 
         
-        ...[].concat(...intlConstructors.map(ctor => [
-            
-            new ctor(),
+        ...[].concat(...intlConstructors.map(ctor => {
+            let args = [];
+            if (ctor === Intl.DisplayNames) {
+                
+                args = [undefined, {type: "language"}];
+            }
 
-            
-            new class extends ctor {},
+            return [
+                
+                new ctor(...args),
 
-            
-            Object.create(ctor.prototype),
+                
+                new class extends ctor {}(...args),
 
-            
-            Object.setPrototypeOf(new ctor(), Object.prototype),
-        ])),
+                
+                Object.create(ctor.prototype),
+
+                
+                Object.setPrototypeOf(new ctor(...args), Object.prototype),
+            ];
+        })),
     ];
 }
 

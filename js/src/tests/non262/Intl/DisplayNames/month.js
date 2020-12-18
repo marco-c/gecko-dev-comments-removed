@@ -1,5 +1,7 @@
 
 
+addMozIntlDisplayNames(this);
+
 const tests = {
   "en": {
     long: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", 13],

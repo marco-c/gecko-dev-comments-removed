@@ -31,15 +31,21 @@ function IsPrimitive(o) {
 }
 
 function intlObjects(ctor) {
+    let args = [];
+    if (ctor === Intl.DisplayNames) {
+        
+        args = [undefined, {type: "language"}];
+    }
+
     return [
         
-        new ctor(),
+        new ctor(...args),
 
         
-        new class extends ctor {},
+        new class extends ctor {}(...args),
 
         
-        Object.setPrototypeOf(new ctor(), Object.prototype),
+        Object.setPrototypeOf(new ctor(...args), Object.prototype),
     ];
 }
 

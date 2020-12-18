@@ -1,5 +1,7 @@
 
 
+addMozIntlDisplayNames(this);
+
 const tests = {
   "en": {
     long: ["1st quarter", "2nd quarter", "3rd quarter", "4th quarter"],

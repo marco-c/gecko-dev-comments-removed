@@ -78,23 +78,29 @@ function findUnicodeExtensionKeys(locale) {
 
 
 for (let IntlService of IntlServices) {
+    let options = undefined;
+    if (IntlService === Intl.DisplayNames) {
+        
+        options = {type: "language"};
+    }
+
     
     let ext = unicodeExtensions.slice(0);
 
     let locale, keys;
 
     
-    locale = new IntlService(`de-u-${ext.join("-")}`).resolvedOptions().locale;
+    locale = new IntlService(`de-u-${ext.join("-")}`, options).resolvedOptions().locale;
     keys = findUnicodeExtensionKeys(locale);
     assertEqArray(keys, keys.slice(0).sort());
 
     
-    locale = new IntlService(`de-u-${ext.sort().join("-")}`).resolvedOptions().locale;
+    locale = new IntlService(`de-u-${ext.sort().join("-")}`, options).resolvedOptions().locale;
     keys = findUnicodeExtensionKeys(locale);
     assertEqArray(keys, keys.slice(0).sort());
 
     
-    locale = new IntlService(`de-u-${ext.sort(reverse).join("-")}`).resolvedOptions().locale;
+    locale = new IntlService(`de-u-${ext.sort(reverse).join("-")}`, options).resolvedOptions().locale;
     keys = findUnicodeExtensionKeys(locale);
     assertEqArray(keys, keys.slice(0).sort());
 }
