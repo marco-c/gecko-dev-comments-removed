@@ -126,7 +126,9 @@ class ExperimentStore extends SharedDataMap {
 
   _emitExperimentUpdates(experiment) {
     this.emit(`update:${experiment.slug}`, experiment);
-    this.emit(`update:${experiment.branch.feature.featureId}`, experiment);
+    if (experiment.branch.feature) {
+      this.emit(`update:${experiment.branch.feature.featureId}`, experiment);
+    }
   }
 
   
@@ -140,7 +142,7 @@ class ExperimentStore extends SharedDataMap {
 
 
   _updateSyncStore(experiment) {
-    if (SYNC_ACCESS_FEATURES.includes(experiment.branch.feature.featureId)) {
+    if (SYNC_ACCESS_FEATURES.includes(experiment.branch.feature?.featureId)) {
       if (!experiment.active) {
         
         if (syncDataStore[experiment.slug]) {

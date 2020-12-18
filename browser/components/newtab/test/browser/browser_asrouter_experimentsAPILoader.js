@@ -148,7 +148,7 @@ const client = RemoteSettings("nimbus-desktop-experiments");
 
 
 
-async function setup() {
+async function setup(getPayload = EXPERIMENT_PAYLOAD) {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["app.shield.optoutstudies.enabled", true],
@@ -164,7 +164,7 @@ async function setup() {
     42,
     [
       
-      { ...EXPERIMENT_PAYLOAD() },
+      { ...getPayload() },
     ],
     { clear: true }
   );
@@ -244,5 +244,25 @@ add_task(async function test_exposure_ping() {
   );
 
   exposureSpy.restore();
+  await cleanup();
+});
+
+add_task(async function test_featureless_experiment() {
+  const payload = () => {
+    let experiment = EXPERIMENT_PAYLOAD();
+    
+    experiment.branches.forEach(branch => delete branch.feature);
+    return experiment;
+  };
+  Assert.ok(ExperimentAPI._store.getAllActive().length === 0, "Empty store");
+  await setup(payload);
+  
+  await RemoteSettingsExperimentLoader.updateRecipes();
+  
+  await BrowserTestUtils.waitForCondition(
+    () => ExperimentAPI._store.getAllActive().length === 1,
+    "ExperimentAPI should return an experiment"
+  );
+
   await cleanup();
 });
