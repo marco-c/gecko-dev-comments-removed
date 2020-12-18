@@ -1120,13 +1120,27 @@ void nsLookAndFeel::EnsureInit() {
 
     
     if (ShouldHonorThemeScrollbarColors()) {
-      style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
+      
+      
+      style = GetStyleContext(MOZ_GTK_SCROLLBAR_VERTICAL);
       gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
                                              &color);
-      mMozScrollbar = mThemedScrollbar = GDK_RGBA_TO_NS_RGBA(color);
+      mThemedScrollbar = GDK_RGBA_TO_NS_RGBA(color);
       gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
                                              &color);
       mThemedScrollbarInactive = GDK_RGBA_TO_NS_RGBA(color);
+
+      style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
+      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                             &color);
+      mThemedScrollbar =
+          NS_ComposeColors(mThemedScrollbar, GDK_RGBA_TO_NS_RGBA(color));
+      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
+                                             &color);
+      mThemedScrollbarInactive = NS_ComposeColors(mThemedScrollbarInactive,
+                                                  GDK_RGBA_TO_NS_RGBA(color));
+
+      mMozScrollbar = mThemedScrollbar;
 
       style = GetStyleContext(MOZ_GTK_SCROLLBAR_THUMB_VERTICAL);
       gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
