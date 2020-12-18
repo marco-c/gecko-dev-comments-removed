@@ -58,7 +58,7 @@ nsresult WakeLock::Init(const nsAString& aTopic, nsPIDOMWindowInner* aWindow) {
   if (aWindow) {
     nsCOMPtr<Document> doc = aWindow->GetExtantDoc();
     NS_ENSURE_STATE(doc);
-    mHidden = doc->Hidden();
+    mHidden = IsDocumentInvisible(*doc);
   }
 
   AttachEventListener();
@@ -171,6 +171,13 @@ void WakeLock::Unlock(ErrorResult& aRv) {
 
 void WakeLock::GetTopic(nsAString& aTopic) { aTopic.Assign(mTopic); }
 
+bool WakeLock::IsDocumentInvisible(const Document& aDocument) const {
+  
+  
+  
+  return aDocument.Hidden() && !aDocument.HasPictureInPictureChildElement();
+}
+
 NS_IMETHODIMP
 WakeLock::HandleEvent(Event* aEvent) {
   nsAutoString type;
@@ -181,10 +188,7 @@ WakeLock::HandleEvent(Event* aEvent) {
     NS_ENSURE_STATE(doc);
 
     bool oldHidden = mHidden;
-    
-    
-    
-    mHidden = doc->Hidden() && !doc->HasPictureInPictureChildElement();
+    mHidden = IsDocumentInvisible(*doc);
 
     if (mLocked && oldHidden != mHidden) {
       hal::ModifyWakeLock(
