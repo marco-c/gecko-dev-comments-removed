@@ -179,6 +179,7 @@ void CanvasChild::Destroy() {
 }
 
 void CanvasChild::OnTextureWriteLock() {
+  
   if (!mRecorder) {
     return;
   }
@@ -188,6 +189,7 @@ void CanvasChild::OnTextureWriteLock() {
 }
 
 void CanvasChild::OnTextureForwarded() {
+  
   if (!mRecorder) {
     return;
   }
@@ -203,6 +205,7 @@ void CanvasChild::OnTextureForwarded() {
 }
 
 void CanvasChild::EnsureBeginTransaction() {
+  
   if (!mRecorder) {
     return;
   }
@@ -214,6 +217,7 @@ void CanvasChild::EnsureBeginTransaction() {
 }
 
 void CanvasChild::EndTransaction() {
+  
   if (!mRecorder) {
     return;
   }
@@ -246,7 +250,10 @@ bool CanvasChild::ShouldBeCleanedUp() const {
 
 already_AddRefed<gfx::DrawTarget> CanvasChild::CreateDrawTarget(
     gfx::IntSize aSize, gfx::SurfaceFormat aFormat) {
-  MOZ_ASSERT(mRecorder);
+  
+  if (!mRecorder) {
+    return nullptr;
+  }
 
   RefPtr<gfx::DrawTarget> dummyDt = gfx::Factory::CreateDrawTarget(
       gfx::BackendType::SKIA, gfx::IntSize(1, 1), aFormat);
@@ -256,6 +263,7 @@ already_AddRefed<gfx::DrawTarget> CanvasChild::CreateDrawTarget(
 }
 
 void CanvasChild::RecordEvent(const gfx::RecordedEvent& aEvent) {
+  
   if (!mRecorder) {
     return;
   }
@@ -268,6 +276,7 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aSurface);
 
+  
   if (!mRecorder) {
     return nullptr;
   }
@@ -304,6 +313,7 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
 already_AddRefed<gfx::SourceSurface> CanvasChild::WrapSurface(
     const RefPtr<gfx::SourceSurface>& aSurface) {
   MOZ_ASSERT(aSurface);
+  
   if (!mRecorder) {
     return nullptr;
   }
