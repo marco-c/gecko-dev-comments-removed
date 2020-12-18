@@ -81,6 +81,44 @@ add_task(async function setupTestCommon() {
     ],
   });
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let exePath = Services.dirsvc.get(XRE_EXECUTABLE_FILE, Ci.nsIFile);
+  let dirProvider = {
+    getFile: function AGP_DP_getFile(aProp, aPersistent) {
+      
+      
+      aPersistent.value = false;
+      switch (aProp) {
+        case XRE_EXECUTABLE_FILE:
+          exePath.append("browser-test");
+          return exePath;
+      }
+      return null;
+    },
+    QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
+  };
+  let ds = Services.dirsvc.QueryInterface(Ci.nsIDirectoryService);
+  ds.QueryInterface(Ci.nsIProperties).undefine(XRE_EXECUTABLE_FILE);
+  ds.registerProvider(dirProvider);
+
+  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+    Ci.nsIUpdateSyncManager
+  );
+  syncManager.resetLock();
+
+  ds.unregisterProvider(dirProvider);
+
   setUpdateTimerPrefs();
   reloadUpdateManagerData(true);
   removeUpdateFiles(true);
@@ -107,6 +145,13 @@ registerCleanupFunction(async () => {
   
   
   await finishTestRestoreUpdaterBackup();
+  
+  
+  
+  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+    Ci.nsIUpdateSyncManager
+  );
+  syncManager.resetLock();
 });
 
 
