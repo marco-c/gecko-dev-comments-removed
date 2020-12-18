@@ -5,8 +5,15 @@
 
 
 #include "RefMessageBodyService.h"
+
+#include <cstdint>
+#include <cstdlib>
+#include "mozilla/ErrorResult.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "nsBaseHashtable.h"
 #include "nsContentUtils.h"
+#include "nsDebug.h"
 
 namespace mozilla::dom {
 
