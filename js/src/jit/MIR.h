@@ -6725,6 +6725,27 @@ class MThrowRuntimeLexicalError : public MNullaryInstruction {
 };
 
 
+class MThrowMsg : public MNullaryInstruction {
+  const ThrowMsgKind throwMsgKind_;
+
+  explicit MThrowMsg(ThrowMsgKind throwMsgKind)
+      : MNullaryInstruction(classOpcode), throwMsgKind_(throwMsgKind) {
+    setGuard();
+    setResultType(MIRType::None);
+  }
+
+ public:
+  INSTRUCTION_HEADER(ThrowMsg)
+  TRIVIAL_NEW_WRAPPERS
+
+  ThrowMsgKind throwMsgKind() const { return throwMsgKind_; }
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::ExceptionState);
+  }
+};
+
+
 
 class MGlobalDeclInstantiation : public MNullaryInstruction {
   MGlobalDeclInstantiation() : MNullaryInstruction(classOpcode) { setGuard(); }
