@@ -911,27 +911,26 @@ JSScript* ScriptPreloader::WaitForCachedScript(
     LOG(Info, "Must wait for async script load: %s\n", script->mURL.get());
     auto start = TimeStamp::Now();
 
-    mMonitor.AssertNotCurrentThreadOwns();
-    MonitorAutoLock mal(mMonitor);
-
     
     
-    
-    MaybeFinishOffThreadDecode();
-
-    if (!script->mReadyToExecute &&
-        script->mSize < MAX_MAINTHREAD_DECODE_SIZE) {
+    if (script->mSize < MAX_MAINTHREAD_DECODE_SIZE) {
       LOG(Info, "Script is small enough to recompile on main thread\n");
 
       script->mReadyToExecute = true;
       Telemetry::ScalarAdd(
           Telemetry::ScalarID::SCRIPT_PRELOADER_MAINTHREAD_RECOMPILE, 1);
     } else {
-      while (!script->mReadyToExecute) {
-        mal.Wait();
+      MonitorAutoLock mal(mMonitor);
 
-        MonitorAutoUnlock mau(mMonitor);
-        MaybeFinishOffThreadDecode();
+      
+      while (!script->mReadyToExecute) {
+        if (mToken) {
+          MonitorAutoUnlock mau(mMonitor);
+          MaybeFinishOffThreadDecode();
+        } else {
+          MOZ_ASSERT(!mParsingScripts.empty());
+          mal.Wait();
+        }
       }
     }
 
@@ -970,14 +969,17 @@ void ScriptPreloader::OffThreadDecodeCallback(JS::OffThreadToken* token,
 void ScriptPreloader::FinishPendingParses(MonitorAutoLock& aMal) {
   mMonitor.AssertCurrentThreadOwns();
 
+  
   mPendingScripts.clear();
-
-  MaybeFinishOffThreadDecode();
 
   
   while (!mParsingScripts.empty()) {
-    aMal.Wait();
-    MaybeFinishOffThreadDecode();
+    if (mToken) {
+      MonitorAutoUnlock mau(mMonitor);
+      MaybeFinishOffThreadDecode();
+    } else {
+      aMal.Wait();
+    }
   }
 }
 
@@ -987,6 +989,8 @@ void ScriptPreloader::DoFinishOffThreadDecode() {
 }
 
 void ScriptPreloader::MaybeFinishOffThreadDecode() {
+  mMonitor.AssertNotCurrentThreadOwns();
+
   if (!mToken) {
     return;
   }

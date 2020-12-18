@@ -239,9 +239,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:gXPCOMThreadsShutDown\n"
 
          
-         "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
-
-         
          "race:CacheFileMetadata::SetHash\n"
          "race:CacheFileMetadata::OnDataWritten\n"
 
