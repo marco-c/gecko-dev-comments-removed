@@ -588,13 +588,6 @@ bool GetPrototypeOf(JSContext* cx, HandleObject target,
 bool DoConcatStringObject(JSContext* cx, HandleValue lhs, HandleValue rhs,
                           MutableHandleValue res);
 
-
-
-
-
-MOZ_MUST_USE bool TrySkipAwait(JSContext* cx, HandleValue val,
-                               MutableHandleValue resolved);
-
 bool IsPossiblyWrappedTypedArray(JSContext* cx, JSObject* obj, bool* result);
 
 void* AllocateString(JSContext* cx);

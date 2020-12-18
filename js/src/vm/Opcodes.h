@@ -2171,9 +2171,24 @@
 
 
 
+ \
+    MACRO(CanSkipAwait, can_skip_await, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
  \
-    MACRO(TrySkipAwait, try_skip_await, NULL, 1, 1, 2, JOF_BYTE) \
+    MACRO(MaybeExtractAwaitValue, maybe_extract_await_value, NULL, 1, 2, 2, JOF_BYTE) \
     
 
 
@@ -3564,7 +3579,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \
   MACRO(232)                                   \

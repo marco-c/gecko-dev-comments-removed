@@ -245,9 +245,6 @@ enum JSWhyMagic {
   JS_OFF_THREAD_CONSTRUCTOR,
 
   
-  JS_CANNOT_SKIP_AWAIT,
-
-  
   JS_GENERIC_MAGIC,
 
   

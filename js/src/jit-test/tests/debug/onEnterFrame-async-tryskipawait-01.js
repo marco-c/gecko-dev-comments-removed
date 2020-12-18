@@ -1,9 +1,9 @@
-
-
+// CanSkipAwait with resolved Promises when attaching onEnterFrame
+// after the initial call into the async function.
 
 load(libdir + "array-compare.js");
 
-let g = newGlobal({newCompartment: true});
+let g = newGlobal({ newCompartment: true });
 let dbg = new Debugger(g);
 
 let log = [];
@@ -20,9 +20,9 @@ g.eval(`
 `);
 
 function neverCalled(e) {
-    
-    
-    
+    // Quit with non-zero exit code to ensure a test suite error is shown,
+    // even when this function is called within promise handlers which normally
+    // swallow any exceptions.
     print("Error: " + e + "\nstack:\n" + e.stack);
     quit(1);
 }

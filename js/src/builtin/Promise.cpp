@@ -5760,8 +5760,8 @@ static MOZ_MUST_USE bool IsTopMostAsyncFunctionCall(JSContext* cx) {
   return false;
 }
 
-MOZ_MUST_USE bool js::TrySkipAwait(JSContext* cx, HandleValue val,
-                                   bool* canSkip, MutableHandleValue resolved) {
+MOZ_MUST_USE bool js::CanSkipAwait(JSContext* cx, HandleValue val,
+                                   bool* canSkip) {
   if (!cx->canSkipEnqueuingJobs) {
     *canSkip = false;
     return true;
@@ -5775,7 +5775,6 @@ MOZ_MUST_USE bool js::TrySkipAwait(JSContext* cx, HandleValue val,
   
   
   if (!val.isObject()) {
-    resolved.set(val);
     *canSkip = true;
     return true;
   }
@@ -5805,8 +5804,33 @@ MOZ_MUST_USE bool js::TrySkipAwait(JSContext* cx, HandleValue val,
     return true;
   }
 
-  resolved.set(promise->value());
   *canSkip = true;
+  return true;
+}
+
+MOZ_MUST_USE bool js::ExtractAwaitValue(JSContext* cx, HandleValue val,
+                                        MutableHandleValue resolved) {
+
+
+#ifdef DEBUG
+  bool canSkip;
+  if (!CanSkipAwait(cx, val, &canSkip)) {
+    return false;
+  }
+  MOZ_ASSERT(canSkip == true);
+#endif
+
+  
+  
+  if (!val.isObject()) {
+    resolved.set(val);
+    return true;
+  }
+
+  JSObject* obj = &val.toObject();
+  PromiseObject* promise = &obj->as<PromiseObject>();
+  resolved.set(promise->value());
+
   return true;
 }
 

@@ -137,9 +137,10 @@ MOZ_MUST_USE JSObject* AsyncFunctionAwait(
 
 
 
-MOZ_MUST_USE bool TrySkipAwait(JSContext* cx, JS::Handle<JS::Value> val,
-                               bool* canSkip,
-                               JS::MutableHandle<JS::Value> resolved);
+MOZ_MUST_USE bool CanSkipAwait(JSContext* cx, JS::Handle<JS::Value> val,
+                               bool* canSkip);
+MOZ_MUST_USE bool ExtractAwaitValue(JSContext* cx, JS::Handle<JS::Value> val,
+                                    JS::MutableHandle<JS::Value> resolved);
 
 MOZ_MUST_USE bool AsyncGeneratorAwait(
     JSContext* cx, JS::Handle<AsyncGeneratorObject*> asyncGenObj,

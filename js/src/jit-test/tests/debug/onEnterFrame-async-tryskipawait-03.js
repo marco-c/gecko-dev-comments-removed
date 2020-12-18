@@ -3,7 +3,7 @@
 
 load(libdir + "array-compare.js");
 
-let g = newGlobal({newCompartment: true});
+let g = newGlobal({ newCompartment: true });
 let dbg = new Debugger(g);
 
 let log = [];
