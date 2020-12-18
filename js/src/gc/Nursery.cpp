@@ -1192,8 +1192,9 @@ void js::Nursery::doPretenuring(JSRuntime* rt, JS::GCReason reason,
   bool pretenureBigInt = false;
   if (tunables().attemptPretenuring()) {
     
+    
     bool pretenureAll =
-        highPromotionRate && previousGC.nurseryUsedBytes >= 4 * 1024 * 1024;
+        highPromotionRate && previousGC.nurseryUsedBytes >= 3 * 1024 * 1024;
 
     pretenureStr =
         pretenureAll ||
