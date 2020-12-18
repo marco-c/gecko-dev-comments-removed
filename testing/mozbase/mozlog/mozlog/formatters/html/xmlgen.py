@@ -43,6 +43,7 @@ else:
     def u(s):
         return unicode(s)
 
+    
     unicode = unicode
 
 
