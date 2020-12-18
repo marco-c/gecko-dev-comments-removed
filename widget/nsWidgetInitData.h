@@ -103,7 +103,6 @@ struct nsWidgetInitData {
         clipSiblings(false),
         mDropShadow(false),
         mListenForResizes(false),
-        mUnicode(true),
         mRTL(false),
         mNoAutoHide(false),
         mIsDragPopup(false),
@@ -127,7 +126,6 @@ struct nsWidgetInitData {
   
   bool clipChildren, clipSiblings, mDropShadow;
   bool mListenForResizes;
-  bool mUnicode;
   bool mRTL;
   bool mNoAutoHide;   
   bool mIsDragPopup;  
