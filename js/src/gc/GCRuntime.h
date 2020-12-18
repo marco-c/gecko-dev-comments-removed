@@ -536,6 +536,8 @@ class GCRuntime {
   
   
   bool isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind);
+
+  bool hasZone(Zone* target);
 #endif
 
   

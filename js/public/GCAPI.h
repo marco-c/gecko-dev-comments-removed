@@ -579,7 +579,7 @@ extern JS_PUBLIC_API bool InternalGCReason(JS::GCReason reason);
 
 
 
-extern JS_PUBLIC_API void PrepareZoneForGC(Zone* zone);
+extern JS_PUBLIC_API void PrepareZoneForGC(JSContext* cx, Zone* zone);
 
 
 
@@ -603,7 +603,7 @@ extern JS_PUBLIC_API bool IsGCScheduled(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API void SkipZoneForGC(Zone* zone);
+extern JS_PUBLIC_API void SkipZoneForGC(JSContext* cx, Zone* zone);
 
 
 
