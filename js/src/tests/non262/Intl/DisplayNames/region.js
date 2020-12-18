@@ -118,6 +118,19 @@ for (let [locale, localeTests] of Object.entries(tests)) {
   assertEq(dn1.of("aa"), "AA");
   assertEq(dn2.of("aa"), "AA");
   assertEq(dn3.of("aa"), undefined);
+
+  
+  assertEq(new Intl.Locale("und-998").region, "XZ");
+
+  
+  assertEq(dn1.of("998"), "998");
+  assertEq(dn2.of("998"), "998");
+  assertEq(dn3.of("998"), undefined);
+
+  
+  assertEq(dn1.of("XZ"), "XZ");
+  assertEq(dn2.of("XZ"), "XZ");
+  assertEq(dn3.of("XZ"), undefined);
 }
 
 

@@ -455,7 +455,8 @@ static JSString* GetScriptDisplayName(JSContext* cx,
 
     
     if (str->empty() && fallback == DisplayNamesFallback::Code) {
-      return NewStringCopy(cx, tag.script().span());
+      script.toTitleCase();
+      return NewStringCopy(cx, script.span());
     }
 
     return str;
@@ -492,7 +493,8 @@ static JSString* GetScriptDisplayName(JSContext* cx,
 
   
   if (str->empty() && fallback == DisplayNamesFallback::Code) {
-    return NewStringCopy(cx, tag.script().span());
+    script.toTitleCase();
+    return NewStringCopy(cx, script.span());
   }
 
   return str;
@@ -553,7 +555,8 @@ static JSString* GetRegionDisplayName(JSContext* cx,
 
   
   if (str->empty() && fallback == DisplayNamesFallback::Code) {
-    return NewStringCopy(cx, tag.region().span());
+    region.toUpperCase();
+    return NewStringCopy(cx, region.span());
   }
 
   return str;
