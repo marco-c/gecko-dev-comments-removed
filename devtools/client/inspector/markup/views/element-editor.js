@@ -113,8 +113,6 @@ function ElementEditor(container, node) {
   this.onDisplayBadgeClick = this.onDisplayBadgeClick.bind(this);
   this.onScrollableBadgeClick = this.onScrollableBadgeClick.bind(this);
   this.onExpandBadgeClick = this.onExpandBadgeClick.bind(this);
-  this.onFlexboxHighlighterChange = this.onFlexboxHighlighterChange.bind(this);
-  this.onGridHighlighterChange = this.onGridHighlighterChange.bind(this);
   this.onTagEdit = this.onTagEdit.bind(this);
 
   
@@ -225,6 +223,10 @@ ElementEditor.prototype = {
     close.appendChild(this.closeTag);
 
     close.appendChild(this.doc.createTextNode(">"));
+  },
+
+  get displayBadge() {
+    return this._displayBadge;
   },
 
   set selected(value) {
@@ -400,9 +402,6 @@ ElementEditor.prototype = {
     const showDisplayBadge = displayType in DISPLAY_TYPES;
 
     if (this._displayBadge && !showDisplayBadge) {
-      this.stopTrackingFlexboxHighlighterEvents();
-      this.stopTrackingGridHighlighterEvents();
-
       this._displayBadge.remove();
       this._displayBadge = null;
     } else if (showDisplayBadge) {
@@ -428,22 +427,17 @@ ElementEditor.prototype = {
     this._displayBadge.dataset.display = displayType;
     this._displayBadge.title = DISPLAY_TYPES[displayType];
 
-    if (displayType === "flex" || displayType === "inline-flex") {
-      this._displayBadge.classList.toggle("interactive", true);
-      this.startTrackingFlexboxHighlighterEvents();
-    } else if (
+    const isFlex = displayType === "flex" || displayType === "inline-flex";
+    const isGrid =
       displayType === "grid" ||
       displayType === "inline-grid" ||
-      displayType === "subgrid"
-    ) {
-      this._displayBadge.classList.toggle(
-        "interactive",
-        this.highlighters.canGridHighlighterToggle(this.node)
-      );
-      this.startTrackingGridHighlighterEvents();
-    } else {
-      this._displayBadge.classList.remove("interactive");
-    }
+      displayType === "subgrid";
+
+    const isInteractive =
+      isFlex ||
+      (isGrid && this.highlighters.canGridHighlighterToggle(this.node));
+
+    this._displayBadge.classList.toggle("interactive", isInteractive);
   },
 
   updateOverflowBadge: function() {
@@ -907,51 +901,11 @@ ElementEditor.prototype = {
     this.markup.inspector.once("markupmutation", onMutations);
   },
 
-  startTrackingFlexboxHighlighterEvents() {
-    this.highlighters.on(
-      "flexbox-highlighter-hidden",
-      this.onFlexboxHighlighterChange
-    );
-    this.highlighters.on(
-      "flexbox-highlighter-shown",
-      this.onFlexboxHighlighterChange
-    );
-  },
-
-  startTrackingGridHighlighterEvents() {
-    this.highlighters.on(
-      "grid-highlighter-hidden",
-      this.onGridHighlighterChange
-    );
-    this.highlighters.on(
-      "grid-highlighter-shown",
-      this.onGridHighlighterChange
-    );
-  },
-
-  stopTrackingFlexboxHighlighterEvents() {
-    this.highlighters.off(
-      "flexbox-highlighter-hidden",
-      this.onFlexboxHighlighterChange
-    );
-    this.highlighters.off(
-      "flexbox-highlighter-shown",
-      this.onFlexboxHighlighterChange
-    );
-  },
-
-  stopTrackingGridHighlighterEvents() {
-    this.highlighters.off(
-      "grid-highlighter-hidden",
-      this.onGridHighlighterChange
-    );
-    this.highlighters.off(
-      "grid-highlighter-shown",
-      this.onGridHighlighterChange
-    );
-  },
-
   
+
+
+
+
 
 
 
@@ -964,13 +918,7 @@ ElementEditor.prototype = {
       target.dataset.display === "flex" ||
       target.dataset.display === "inline-flex"
     ) {
-      
-      this.stopTrackingFlexboxHighlighterEvents();
-
-      this._displayBadge.classList.toggle("active");
       await this.highlighters.toggleFlexboxHighlighter(this.node, "markup");
-
-      this.startTrackingFlexboxHighlighterEvents();
     }
 
     if (
@@ -984,13 +932,7 @@ ElementEditor.prototype = {
         return;
       }
 
-      
-      this.stopTrackingGridHighlighterEvents();
-
-      this._displayBadge.classList.toggle("active");
       await this.highlighters.toggleGridHighlighter(this.node, "markup");
-
-      this.startTrackingGridHighlighterEvents();
     }
   },
 
@@ -1046,43 +988,6 @@ ElementEditor.prototype = {
   
 
 
-
-
-  onFlexboxHighlighterChange: function() {
-    if (!this._displayBadge) {
-      return;
-    }
-
-    this._displayBadge.classList.toggle(
-      "active",
-      this.highlighters.flexboxHighlighterShown === this.node
-    );
-  },
-
-  
-
-
-
-
-  onGridHighlighterChange: function() {
-    if (!this._displayBadge) {
-      return;
-    }
-
-    this._displayBadge.classList.toggle(
-      "active",
-      this.highlighters.gridHighlighters.has(this.node)
-    );
-
-    this._displayBadge.classList.toggle(
-      "interactive",
-      this.highlighters.canGridHighlighterToggle(this.node)
-    );
-  },
-
-  
-
-
   onTagEdit: function(newTagName, isCommit) {
     if (
       !isCommit ||
@@ -1104,8 +1009,6 @@ ElementEditor.prototype = {
   destroy: function() {
     if (this._displayBadge) {
       this._displayBadge.removeEventListener("click", this.onDisplayBadgeClick);
-      this.stopTrackingFlexboxHighlighterEvents();
-      this.stopTrackingGridHighlighterEvents();
     }
 
     if (this._customBadge) {

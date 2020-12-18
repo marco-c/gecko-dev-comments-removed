@@ -325,6 +325,17 @@ function MarkupView(inspector, frame, controllerWindow) {
     this._onToolboxPickerHover
   );
 
+  
+  this.onHighlighterShown = data =>
+    this.handleHighlighterEvent("highlighter-shown", data);
+  this.onHighlighterHidden = data =>
+    this.handleHighlighterEvent("highlighter-hidden", data);
+  this.inspector.highlighters.on("highlighter-shown", this.onHighlighterShown);
+  this.inspector.highlighters.on(
+    "highlighter-hidden",
+    this.onHighlighterHidden
+  );
+
   if (flags.testing) {
     
     this._initTooltips();
@@ -721,6 +732,59 @@ MarkupView.prototype = {
     return this.inspector.highlighters.hideHighlighterType(
       this.inspector.highlighters.TYPES.BOXMODEL
     );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  handleHighlighterEvent: function(eventName, data) {
+    switch (data.type) {
+      
+      
+      
+      case this.inspector.highlighters.TYPES.FLEXBOX:
+      case this.inspector.highlighters.TYPES.GRID:
+        const { nodeFront } = data;
+        if (!nodeFront) {
+          return;
+        }
+
+        
+        const container = this.getContainer(nodeFront);
+        const badge = container?.editor?.displayBadge;
+        if (badge) {
+          badge.classList.toggle("active", eventName == "highlighter-shown");
+        }
+
+        
+        
+        if (data.type === this.inspector.highlighters.TYPES.GRID) {
+          
+          const selector = "[data-display*='grid']:not(.active)";
+          const isLimited = this.inspector.highlighters.isGridHighlighterLimitReached();
+          Array.from(this._elt.querySelectorAll(selector)).map(el => {
+            el.classList.toggle("interactive", !isLimited);
+          });
+        }
+        break;
+    }
   },
 
   
@@ -2318,6 +2382,14 @@ MarkupView.prototype = {
     this.inspector.toolbox.nodePicker.off(
       "picker-node-hovered",
       this._onToolboxPickerHover
+    );
+    this.inspector.highlighters.off(
+      "highlighter-shown",
+      this.onHighlighterShown
+    );
+    this.inspector.highlighters.off(
+      "highlighter-hidden",
+      this.onHighlighterHidden
     );
     this.win.removeEventListener("copy", this._onCopy);
     this.win.removeEventListener("mouseup", this._onMouseUp);

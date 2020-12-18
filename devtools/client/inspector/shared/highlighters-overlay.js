@@ -506,6 +506,16 @@ class HighlightersOverlay {
 
 
 
+  isGridHighlighterLimitReached() {
+    return this.gridHighlighters.size === this.maxGridHighlighters;
+  }
+
+  
+
+
+
+
+
   isRuleView(node) {
     return !!node.closest("#ruleview-panel");
   }
@@ -890,6 +900,14 @@ class HighlightersOverlay {
       
       
       this.emit("grid-highlighter-shown", node, options);
+
+      
+      
+      this.emit("highlighter-shown", {
+        type: TYPES.GRID,
+        nodeFront: node,
+        options,
+      });
     } catch (e) {
       this._handleRejection(e);
     }
@@ -980,6 +998,13 @@ class HighlightersOverlay {
     
     
     this.emit("grid-highlighter-hidden", node);
+
+    
+    
+    this.emit("highlighter-hidden", {
+      type: TYPES.GRID,
+      nodeFront: node,
+    });
   }
 
   
