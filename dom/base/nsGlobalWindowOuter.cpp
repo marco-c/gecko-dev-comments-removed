@@ -5123,9 +5123,6 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
     return;
   }
 
-  
-  
-  
   RefPtr<BrowsingContext> parent;
   BrowsingContext* bc = GetBrowsingContext();
   if (bc) {
