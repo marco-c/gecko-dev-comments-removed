@@ -34,6 +34,27 @@ using mozilla::LogLevel;
 
 static mozilla::LazyLogModule gWin32SoundLog("nsSound");
 
+
+
+
+
+
+
+
+
+
+
+
+static bool ShouldSuppressPlaySound() {
+#if defined(_M_AMD64)
+  if (::GetModuleHandle(L"wslbdhm64.dll") &&
+      !::GetModuleHandle(L"wslbscrwh64.dll")) {
+    return true;
+  }
+#endif  
+  return false;
+}
+
 class nsSoundPlayer : public mozilla::Runnable {
  public:
   explicit nsSoundPlayer(const nsAString& aSoundName)
@@ -62,6 +83,10 @@ class nsSoundPlayer : public mozilla::Runnable {
 
 NS_IMETHODIMP
 nsSoundPlayer::Run() {
+  if (ShouldSuppressPlaySound()) {
+    return NS_OK;
+  }
+
   MOZ_ASSERT(!mSoundName.IsEmpty() || mSoundData,
              "Sound name or sound data should be specified");
   DWORD flags = SND_NODEFAULT | SND_ASYNC;
@@ -123,6 +148,9 @@ void nsSound::PurgeLastSound() {
                                    
                                    
                                    
+                                   if (ShouldSuppressPlaySound()) {
+                                     return;
+                                   }
                                    ::PlaySoundW(nullptr, nullptr, SND_PURGE);
                                  }),
           NS_DISPATCH_NORMAL);
@@ -247,8 +275,13 @@ NS_IMETHODIMP nsSound::Init() {
   
   
   mPlayerThread->Dispatch(
-      NS_NewRunnableFunction(
-          "nsSound::Init", []() { ::PlaySoundW(nullptr, nullptr, SND_PURGE); }),
+      NS_NewRunnableFunction("nsSound::Init",
+                             []() {
+                               if (ShouldSuppressPlaySound()) {
+                                 return;
+                               }
+                               ::PlaySoundW(nullptr, nullptr, SND_PURGE);
+                             }),
       NS_DISPATCH_NORMAL);
 
   mInited = true;
