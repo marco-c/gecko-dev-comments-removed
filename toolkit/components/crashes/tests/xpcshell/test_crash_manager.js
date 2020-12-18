@@ -120,6 +120,15 @@ add_task(async function test_store_expires() {
 });
 
 
+add_task(async function test_empty_events_dir() {
+  let m = await getManager();
+  await m.deleteEventsDirs();
+
+  let paths = await m._getUnprocessedEventsFiles();
+  Assert.equal(paths.length, 0);
+});
+
+
 add_task(async function test_unprocessed_events_files() {
   let m = await getManager();
   await m.createEventsFile("1", "test.1", new Date(), "foo", "{}", 0);
