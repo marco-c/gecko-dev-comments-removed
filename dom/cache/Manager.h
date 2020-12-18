@@ -177,8 +177,8 @@ class Manager final : public SafeRefCounted<Manager> {
 
   
   
-  void AddStreamList(StreamList* aStreamList);
-  void RemoveStreamList(StreamList* aStreamList);
+  void AddStreamList(StreamList& aStreamList);
+  void RemoveStreamList(StreamList& aStreamList);
 
   void ExecuteCacheOp(Listener* aListener, CacheId aCacheId,
                       const CacheOpArgs& aOpArgs);
@@ -268,7 +268,7 @@ class Manager final : public SafeRefCounted<Manager> {
   static ListenerId sNextListenerId;
 
   
-  nsTArray<StreamList*> mStreamLists;
+  nsTArray<NotNull<StreamList*>> mStreamLists;
 
   bool mShuttingDown;
   State mState;
