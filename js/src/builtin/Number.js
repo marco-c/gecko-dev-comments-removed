@@ -57,53 +57,37 @@ function Number_isNaN(num) {
 
 function Number_isInteger(number) {
     
+
+    
     if (typeof number !== "number")
         return false;
 
-    
-    
-    if (number === -(2 ** 31))
-        return true;
+    var integer = std_Math_trunc(number);
 
     
     
-    var absNumber = std_Math_abs(number);
-    var integer = std_Math_floor(absNumber);
-
     
-    if (absNumber - integer !== 0)
-        return false;
-
-    
-    return true;
+    return number - integer === 0;
 }
 
 
 
 function Number_isSafeInteger(number) {
     
+
+    
     if (typeof number !== "number")
         return false;
 
-    
-    
-    if (number === -(2 ** 31))
-        return true;
+    var integer = std_Math_trunc(number);
 
     
-    var absNumber = std_Math_abs(number);
-    var integer = std_Math_floor(absNumber);
-
     
-    if (absNumber - integer !== 0)
+    if (number - integer !== 0)
         return false;
 
     
-    if (integer <= (2 ** 53) - 1)
-        return true;
-
-    
-    return false;
+    return -((2 ** 53) - 1) <= integer && integer <= (2 ** 53) - 1;
 }
 
 function Global_isNaN(number) {
