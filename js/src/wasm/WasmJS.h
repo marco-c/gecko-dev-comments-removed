@@ -152,6 +152,9 @@ bool ThreadsAvailable(JSContext* cx);
 
 bool SimdAvailable(JSContext* cx);
 
+
+bool SimdWormholeAvailable(JSContext* cx);
+
 #if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
 
 void ReportSimdAnalysis(const char* data);
@@ -202,7 +205,6 @@ WasmInstanceObject* ExportedFunctionToInstanceObject(JSFunction* fun);
 uint32_t ExportedFunctionToFuncIndex(JSFunction* fun);
 
 bool IsSharedWasmMemoryObject(JSObject* obj);
-
 
 
 

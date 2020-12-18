@@ -700,7 +700,37 @@ enum class SimdOp {
   F32x4ConvertUI32x4 = 0xfb,
   V128Load32Zero = 0xfc,
   V128Load64Zero = 0xfd,
+
+
+
+#ifdef ENABLE_WASM_SIMD_WORMHOLE
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  MozWHSELFTEST = 0x200,
+
+  
+  MozWHPMADDUBSW = 0x201,
+
+  
+  MozWHPMADDWD = 0x202,
+#endif
 
   Limit
 };
