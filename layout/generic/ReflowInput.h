@@ -298,8 +298,10 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  nscoord AvailableWidth() const { return mAvailableWidth; }
-  nscoord AvailableHeight() const { return mAvailableHeight; }
+  nscoord AvailableWidth() const { return mAvailableSize.Width(mWritingMode); }
+  nscoord AvailableHeight() const {
+    return mAvailableSize.Height(mWritingMode);
+  }
   nscoord ComputedWidth() const { return mComputedWidth; }
   nscoord ComputedHeight() const { return mComputedHeight; }
   nscoord ComputedMinWidth() const { return mComputedMinWidth; }
@@ -307,8 +309,6 @@ struct ReflowInput : public SizeComputationInput {
   nscoord ComputedMinHeight() const { return mComputedMinHeight; }
   nscoord ComputedMaxHeight() const { return mComputedMaxHeight; }
 
-  nscoord& AvailableWidth() { return mAvailableWidth; }
-  nscoord& AvailableHeight() { return mAvailableHeight; }
   nscoord& ComputedWidth() { return mComputedWidth; }
   nscoord& ComputedHeight() { return mComputedHeight; }
   nscoord& ComputedMinWidth() { return mComputedMinWidth; }
@@ -320,12 +320,8 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  nscoord AvailableISize() const {
-    return mWritingMode.IsVertical() ? mAvailableHeight : mAvailableWidth;
-  }
-  nscoord AvailableBSize() const {
-    return mWritingMode.IsVertical() ? mAvailableWidth : mAvailableHeight;
-  }
+  nscoord AvailableISize() const { return mAvailableSize.ISize(mWritingMode); }
+  nscoord AvailableBSize() const { return mAvailableSize.BSize(mWritingMode); }
   nscoord ComputedISize() const {
     return mWritingMode.IsVertical() ? mComputedHeight : mComputedWidth;
   }
@@ -345,12 +341,8 @@ struct ReflowInput : public SizeComputationInput {
     return mWritingMode.IsVertical() ? mComputedMaxWidth : mComputedMaxHeight;
   }
 
-  nscoord& AvailableISize() {
-    return mWritingMode.IsVertical() ? mAvailableHeight : mAvailableWidth;
-  }
-  nscoord& AvailableBSize() {
-    return mWritingMode.IsVertical() ? mAvailableWidth : mAvailableHeight;
-  }
+  nscoord& AvailableISize() { return mAvailableSize.ISize(mWritingMode); }
+  nscoord& AvailableBSize() { return mAvailableSize.BSize(mWritingMode); }
   nscoord& ComputedISize() {
     return mWritingMode.IsVertical() ? mComputedHeight : mComputedWidth;
   }
@@ -370,10 +362,7 @@ struct ReflowInput : public SizeComputationInput {
     return mWritingMode.IsVertical() ? mComputedMaxWidth : mComputedMaxHeight;
   }
 
-  mozilla::LogicalSize AvailableSize() const {
-    return mozilla::LogicalSize(mWritingMode, AvailableISize(),
-                                AvailableBSize());
-  }
+  mozilla::LogicalSize AvailableSize() const { return mAvailableSize; }
   mozilla::LogicalSize ComputedSize() const {
     return mozilla::LogicalSize(mWritingMode, ComputedISize(), ComputedBSize());
   }
@@ -449,22 +438,6 @@ struct ReflowInput : public SizeComputationInput {
   }
 
  private:
-  
-  
-  
-  
-  nscoord mAvailableWidth = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  nscoord mAvailableHeight = 0;
-
   
   
   
@@ -744,14 +717,12 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
-
   ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
               gfxContext* aRenderingContext,
               const mozilla::LogicalSize& aAvailableSpace,
               InitFlags aFlags = {});
 
   
-
 
 
 
@@ -1048,6 +1019,26 @@ struct ReflowInput : public SizeComputationInput {
                                     nscoord* aOutsideBoxSizing) const;
 
   void CalculateBlockSideMargins(LayoutFrameType aFrameType);
+
+ private:
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::LogicalSize mAvailableSize{mWritingMode};
 };
 
 }  
