@@ -6423,8 +6423,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
 }
 
 
-void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
-                                    WidgetEvent* aEvent) {
+void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags) {
   
   
   if (!aContent && sCapturingContentInfo.mPointerLock &&
@@ -6433,7 +6432,6 @@ void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
   }
 
   sCapturingContentInfo.mContent = nullptr;
-  sCapturingContentInfo.mRemoteTarget = nullptr;
 
   
   
@@ -6441,13 +6439,6 @@ void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
       sCapturingContentInfo.mAllowed || (aFlags & CaptureFlags::PointerLock)) {
     if (aContent) {
       sCapturingContentInfo.mContent = aContent;
-    }
-    if (aEvent) {
-      MOZ_ASSERT(XRE_IsParentProcess());
-      MOZ_ASSERT(aEvent->mMessage == eMouseDown);
-      MOZ_ASSERT(aEvent->mLayersId.IsValid());
-      sCapturingContentInfo.mRemoteTarget =
-          BrowserParent::GetBrowserParentFromLayersId(aEvent->mLayersId);
     }
     
     
