@@ -269,10 +269,6 @@ pub enum TextureSource {
     
     External(DeferredResolveIndex, ImageBufferKind),
     
-    PrevPassAlpha,
-    
-    PrevPassColor,
-    
     
     Dummy,
 }
@@ -285,10 +281,7 @@ impl TextureSource {
             TextureSource::External(_, image_buffer_kind) => image_buffer_kind,
 
             
-            TextureSource::PrevPassAlpha
-            | TextureSource::PrevPassColor
-            | TextureSource::Dummy => ImageBufferKind::Texture2DArray,
-
+            TextureSource::Dummy => ImageBufferKind::Texture2DArray,
 
             TextureSource::Invalid => ImageBufferKind::Texture2D,
         }
