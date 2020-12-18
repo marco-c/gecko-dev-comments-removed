@@ -7532,12 +7532,17 @@ bool BytecodeEmitter::isRestParameter(ParseNode* expr) {
   if (paramLoc && lookupName(name) == *paramLoc) {
     ParserFunctionScopeData* bindings = funbox->functionScopeBindings();
     if (bindings->nonPositionalFormalStart > 0) {
-      
-      
-      const ParserAtom* paramName =
+      auto index =
           bindings->trailingNames[bindings->nonPositionalFormalStart - 1]
               .name();
-      return paramName && name == paramName;
+      if (index.isNull()) {
+        
+        
+        return false;
+      }
+      const ParserAtom* paramName =
+          compilationInfo.stencil.getParserAtomAt(cx, index);
+      return name == paramName;
     }
   }
 
@@ -10342,7 +10347,7 @@ bool BytecodeEmitter::emitClass(
       MOZ_ASSERT(!constructorScope->isEmptyScope());
       MOZ_ASSERT(constructorScope->scopeBindings()->length == 1);
       MOZ_ASSERT(constructorScope->scopeBindings()->trailingNames[0].name() ==
-                 cx->parserNames().dotInitializers);
+                 cx->parserNames().dotInitializers->toIndex());
 
       auto needsInitializer = [](ParseNode* propdef) {
         return NeedsFieldInitializer(propdef, false) ||

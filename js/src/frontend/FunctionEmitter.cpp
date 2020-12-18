@@ -481,7 +481,7 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
   const ParserAtom* name = nullptr;
   for (ParserBindingIter bi(*funbox_->functionScopeBindings(), true); bi;
        bi++) {
-    name = bi.name();
+    name = bce_->compilationInfo.stencil.getParserAtomAt(bce_->cx, bi.name());
 
     
     if (!bce_->locationOfNameBoundInScope(name,
