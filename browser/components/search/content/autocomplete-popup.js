@@ -161,10 +161,7 @@
         return;
       }
 
-      this.searchbar.telemetrySearchDetails = {
-        index: this.selectedIndex,
-        kind: "mouse",
-      };
+      this.searchbar.telemetrySelectedIndex = this.selectedIndex;
 
       
       if (
