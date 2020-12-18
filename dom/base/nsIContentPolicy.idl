@@ -12,11 +12,6 @@ interface nsILoadInfo;
 
 
 
-typedef unsigned long nsContentPolicyType;
-
-
-
-
 
 
 
@@ -29,11 +24,13 @@ interface nsIContentPolicy : nsISupports
   
 
 
-  const nsContentPolicyType TYPE_INVALID = 0;
+  cenum nsContentPolicyType : 8 {
+    
 
-  
 
+    TYPE_INVALID = 0,
 
+    
 
 
 
@@ -61,43 +58,43 @@ interface nsIContentPolicy : nsISupports
 
 
 
-  const nsContentPolicyType TYPE_OTHER = 1;
 
-  
 
+    TYPE_OTHER = 1,
 
-  const nsContentPolicyType TYPE_SCRIPT = 2;
+    
 
-  
 
+    TYPE_SCRIPT = 2,
 
-  const nsContentPolicyType TYPE_IMAGE = 3;
+    
 
-  
 
+    TYPE_IMAGE = 3,
 
-  const nsContentPolicyType TYPE_STYLESHEET = 4;
+    
 
-  
 
+    TYPE_STYLESHEET = 4,
 
+    
 
-  const nsContentPolicyType TYPE_OBJECT = 5;
 
-  
 
+    TYPE_OBJECT = 5,
 
-  const nsContentPolicyType TYPE_DOCUMENT = 6;
+    
 
-  
 
+    TYPE_DOCUMENT = 6,
 
+    
 
-  const nsContentPolicyType TYPE_SUBDOCUMENT = 7;
 
-  
 
+    TYPE_SUBDOCUMENT = 7,
 
+    
 
 
 
@@ -105,330 +102,334 @@ interface nsIContentPolicy : nsISupports
 
 
 
-  const nsContentPolicyType TYPE_REFRESH = 8;
 
-  
 
+    TYPE_REFRESH = 8,
 
+    
 
-  
 
 
-  const nsContentPolicyType TYPE_PING = 10;
+    
 
-  
 
+    TYPE_PING = 10,
 
-  const nsContentPolicyType TYPE_XMLHTTPREQUEST = 11;
-  const nsContentPolicyType TYPE_DATAREQUEST    = 11; 
+    
 
-  
 
+    TYPE_XMLHTTPREQUEST = 11,
+    TYPE_DATAREQUEST    = 11, 
 
-  const nsContentPolicyType TYPE_OBJECT_SUBREQUEST = 12;
+    
 
-  
 
+    TYPE_OBJECT_SUBREQUEST = 12,
 
-  const nsContentPolicyType TYPE_DTD = 13;
+    
 
-  
 
+    TYPE_DTD = 13,
 
-  const nsContentPolicyType TYPE_FONT = 14;
+    
 
-  
 
+    TYPE_FONT = 14,
 
-  const nsContentPolicyType TYPE_MEDIA = 15;
+    
 
-  
 
+    TYPE_MEDIA = 15,
 
-  const nsContentPolicyType TYPE_WEBSOCKET = 16;
+    
 
-  
 
+    TYPE_WEBSOCKET = 16,
 
-  const nsContentPolicyType TYPE_CSP_REPORT = 17;
+    
 
-  
 
+    TYPE_CSP_REPORT = 17,
 
-  const nsContentPolicyType TYPE_XSLT = 18;
+    
 
-  
 
+    TYPE_XSLT = 18,
 
-  const nsContentPolicyType TYPE_BEACON = 19;
+    
 
-  
 
+    TYPE_BEACON = 19,
 
+    
 
-  const nsContentPolicyType TYPE_FETCH = 20;
 
-  
 
+    TYPE_FETCH = 20,
 
-  const nsContentPolicyType TYPE_IMAGESET = 21;
+    
 
-  
 
+    TYPE_IMAGESET = 21,
 
-  const nsContentPolicyType TYPE_WEB_MANIFEST = 22;
+    
 
-  
 
+    TYPE_WEB_MANIFEST = 22,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_SCRIPT = 23;
 
-  
 
+    TYPE_INTERNAL_SCRIPT = 23,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_WORKER = 24;
 
-  
 
+    TYPE_INTERNAL_WORKER = 24,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_SHARED_WORKER = 25;
 
-  
 
+    TYPE_INTERNAL_SHARED_WORKER = 25,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_EMBED = 26;
 
-  
 
+    TYPE_INTERNAL_EMBED = 26,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_OBJECT = 27;
 
-  
 
+    TYPE_INTERNAL_OBJECT = 27,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_FRAME = 28;
 
-  
 
+    TYPE_INTERNAL_FRAME = 28,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_IFRAME = 29;
 
-  
 
+    TYPE_INTERNAL_IFRAME = 29,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_AUDIO = 30;
 
-  
 
+    TYPE_INTERNAL_AUDIO = 30,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_VIDEO = 31;
 
-  
 
+    TYPE_INTERNAL_VIDEO = 31,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_TRACK = 32;
 
-  
 
+    TYPE_INTERNAL_TRACK = 32,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_XMLHTTPREQUEST = 33;
 
-  
 
+    TYPE_INTERNAL_XMLHTTPREQUEST = 33,
 
+    
 
 
-  const nsContentPolicyType TYPE_INTERNAL_EVENTSOURCE = 34;
 
-  
 
+    TYPE_INTERNAL_EVENTSOURCE = 34,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_SERVICE_WORKER = 35;
 
-  
 
+    TYPE_INTERNAL_SERVICE_WORKER = 35,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_SCRIPT_PRELOAD = 36;
 
-  
 
+    TYPE_INTERNAL_SCRIPT_PRELOAD = 36,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_IMAGE = 37;
 
-  
 
+    TYPE_INTERNAL_IMAGE = 37,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_IMAGE_PRELOAD = 38;
 
-  
 
+    TYPE_INTERNAL_IMAGE_PRELOAD = 38,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_STYLESHEET = 39;
 
-  
 
+    TYPE_INTERNAL_STYLESHEET = 39,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_STYLESHEET_PRELOAD = 40;
 
-  
 
+    TYPE_INTERNAL_STYLESHEET_PRELOAD = 40,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_IMAGE_FAVICON = 41;
 
-  
 
+    TYPE_INTERNAL_IMAGE_FAVICON = 41,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS = 42;
 
-  
 
+    TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS = 42,
 
-  const nsContentPolicyType TYPE_SAVEAS_DOWNLOAD = 43;
+    
 
-  
 
+    TYPE_SAVEAS_DOWNLOAD = 43,
 
-  const nsContentPolicyType TYPE_SPECULATIVE = 44;
+    
 
-  
 
+    TYPE_SPECULATIVE = 44,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_MODULE = 45;
 
-  
 
+    TYPE_INTERNAL_MODULE = 45,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_MODULE_PRELOAD = 46;
 
-  
 
+    TYPE_INTERNAL_MODULE_PRELOAD = 46,
 
+    
 
-  const nsContentPolicyType TYPE_INTERNAL_DTD = 47;
 
-  
 
+    TYPE_INTERNAL_DTD = 47,
 
+    
 
-  const nsContentPolicyType TYPE_INTERNAL_FORCE_ALLOWED_DTD = 48;
 
-  
 
+    TYPE_INTERNAL_FORCE_ALLOWED_DTD = 48,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_AUDIOWORKLET = 49;
 
-  
 
+    TYPE_INTERNAL_AUDIOWORKLET = 49,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_PAINTWORKLET = 50;
 
-  
 
+    TYPE_INTERNAL_PAINTWORKLET = 50,
 
+    
 
-  const nsContentPolicyType TYPE_INTERNAL_FONT_PRELOAD = 51;
 
-  
 
+    TYPE_INTERNAL_FONT_PRELOAD = 51,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_CHROMEUTILS_COMPILED_SCRIPT = 52;
 
-  
 
+    TYPE_INTERNAL_CHROMEUTILS_COMPILED_SCRIPT = 52,
 
+    
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_FRAME_MESSAGEMANAGER_SCRIPT = 53;
 
-  
 
+    TYPE_INTERNAL_FRAME_MESSAGEMANAGER_SCRIPT = 53,
 
+    
 
 
 
 
-  const nsContentPolicyType TYPE_INTERNAL_FETCH_PRELOAD = 54;
 
-  
 
+    TYPE_INTERNAL_FETCH_PRELOAD = 54,
 
+    
 
 
 
+
+
+
+  };
 
   
 
@@ -546,3 +547,5 @@ interface nsIContentPolicy : nsISupports
                       in nsILoadInfo aLoadInfo,
                       in ACString    aMimeType);
 };
+
+typedef nsIContentPolicy_nsContentPolicyType nsContentPolicyType;

@@ -8312,7 +8312,7 @@ bool nsDocShell::JustStartedNetworkLoad() {
 
 
 
-uint32_t nsDocShell::DetermineContentType() {
+nsContentPolicyType nsDocShell::DetermineContentType() {
   if (!IsFrame()) {
     return nsIContentPolicy::TYPE_DOCUMENT;
   }
@@ -9898,7 +9898,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   }
 
   nsresult rv;
-  uint32_t contentPolicyType = DetermineContentType();
+  nsContentPolicyType contentPolicyType = DetermineContentType();
 
   if (IsFrame()) {
     MOZ_ASSERT(contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||

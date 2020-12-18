@@ -1003,7 +1003,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  uint32_t DetermineContentType();
+  nsContentPolicyType DetermineContentType();
 
   
   
