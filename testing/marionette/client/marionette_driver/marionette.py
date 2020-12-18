@@ -207,6 +207,10 @@ class HTMLElement(object):
     def __eq__(self, other_element):
         return self.id == other_element.id
 
+    def __hash__(self):
+        
+        return hash(self.id)
+
     def find_element(self, method, target):
         """Returns an ``HTMLElement`` instance that matches the specified
         method and target, relative to the current element.
