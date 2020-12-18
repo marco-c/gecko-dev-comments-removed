@@ -11,12 +11,16 @@
 #include "mozilla/RangedPtr.h"
 #include "mozilla/TypedEnumBits.h"
 
-#include "nsDependentSubstring.h"
 #include "nsCRTGlue.h"
+#include "nsTDependentSubstring.h"
 
 
 
-enum class nsTokenizerFlags { Default = 0, SeparatorOptional = 1 << 0 };
+enum class nsTokenizerFlags {
+  Default = 0,
+  SeparatorOptional = 1 << 0,
+  IncludeEmptyTokenAtEnd = 1 << 1
+};
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTokenizerFlags)
 
@@ -70,7 +74,11 @@ class nsTCharSeparatedTokenizer {
     MOZ_ASSERT(mIter == mEnd || !IsWhitespace(*mIter),
                "Should be at beginning of token if there is one");
 
-    return mIter < mEnd;
+    if constexpr (Flags & nsTokenizerFlags::IncludeEmptyTokenAtEnd) {
+      return mIter < mEnd || (mIter == mEnd && mSeparatorAfterCurrentToken);
+    } else {
+      return mIter < mEnd;
+    }
   }
 
   
@@ -246,5 +254,21 @@ auto nsTCharSeparatedTokenizer<TDependentSubstringType, IsWhitespace,
                                Flags>::ToRange() const {
   return nsTokenizedRange{nsTCharSeparatedTokenizer{*this}};
 }
+
+
+
+template <typename T>
+class nsTSubstringSplitter
+    : public nsTokenizedRange<nsTCharSeparatedTokenizerTemplate<
+          NS_TokenizerIgnoreNothing, T,
+          nsTokenizerFlags::IncludeEmptyTokenAtEnd>> {
+ public:
+  using nsTokenizedRange<nsTCharSeparatedTokenizerTemplate<
+      NS_TokenizerIgnoreNothing, T,
+      nsTokenizerFlags::IncludeEmptyTokenAtEnd>>::nsTokenizedRange;
+};
+
+extern template class nsTSubstringSplitter<char>;
+extern template class nsTSubstringSplitter<char16_t>;
 
 #endif 
