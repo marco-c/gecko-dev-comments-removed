@@ -665,6 +665,16 @@ struct PlanarYCbCrData {
 
 
 
+struct PlanarYCbCrAData : PlanarYCbCrData {
+  uint8_t* mAlphaChannel = nullptr;
+  gfx::IntSize mAlphaSize = gfx::IntSize(0, 0);
+  bool mPremultipliedAlpha = false;
+
+  bool hasAlpha() { return mAlphaChannel; }
+};
+
+
+
 
 
 
