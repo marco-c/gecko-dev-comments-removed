@@ -904,8 +904,9 @@ JSScript* ScriptPreloader::WaitForCachedScript(
   
   
   
-  
-  MaybeFinishOffThreadDecode();
+  if (JS::OffThreadToken* token = mToken.exchange(nullptr)) {
+    FinishOffThreadDecode(token);
+  }
 
   if (!script->mReadyToExecute) {
     LOG(Info, "Must wait for async script load: %s\n", script->mURL.get());
@@ -924,9 +925,9 @@ JSScript* ScriptPreloader::WaitForCachedScript(
 
       
       while (!script->mReadyToExecute) {
-        if (mToken) {
+        if (JS::OffThreadToken* token = mToken.exchange(nullptr)) {
           MonitorAutoUnlock mau(mMonitor);
-          MaybeFinishOffThreadDecode();
+          FinishOffThreadDecode(token);
         } else {
           MOZ_ASSERT(!mParsingScripts.empty());
           mal.Wait();
@@ -947,18 +948,20 @@ void ScriptPreloader::OffThreadDecodeCallback(JS::OffThreadToken* token,
                                               void* context) {
   auto cache = static_cast<ScriptPreloader*>(context);
 
+  
+  
+  MOZ_ALWAYS_FALSE(cache->mToken.exchange(token));
+
   cache->mMonitor.AssertNotCurrentThreadOwns();
   MonitorAutoLock mal(cache->mMonitor);
 
   
   
-  cache->mToken = token;
   mal.NotifyAll();
 
   
   
-  
-  if (cache->mToken && !cache->mFinishDecodeRunnablePending) {
+  if (!cache->mFinishDecodeRunnablePending) {
     cache->mFinishDecodeRunnablePending = true;
     NS_DispatchToMainThread(
         NewRunnableMethod("ScriptPreloader::DoFinishOffThreadDecode", cache,
@@ -974,9 +977,9 @@ void ScriptPreloader::FinishPendingParses(MonitorAutoLock& aMal) {
 
   
   while (!mParsingScripts.empty()) {
-    if (mToken) {
+    if (JS::OffThreadToken* token = mToken.exchange(nullptr)) {
       MonitorAutoUnlock mau(mMonitor);
-      MaybeFinishOffThreadDecode();
+      FinishOffThreadDecode(token);
     } else {
       aMal.Wait();
     }
@@ -985,18 +988,17 @@ void ScriptPreloader::FinishPendingParses(MonitorAutoLock& aMal) {
 
 void ScriptPreloader::DoFinishOffThreadDecode() {
   mFinishDecodeRunnablePending = false;
-  MaybeFinishOffThreadDecode();
+
+  if (JS::OffThreadToken* token = mToken.exchange(nullptr)) {
+    FinishOffThreadDecode(token);
+  }
 }
 
-void ScriptPreloader::MaybeFinishOffThreadDecode() {
+void ScriptPreloader::FinishOffThreadDecode(JS::OffThreadToken* token) {
   mMonitor.AssertNotCurrentThreadOwns();
-
-  if (!mToken) {
-    return;
-  }
+  MOZ_ASSERT(token);
 
   auto cleanup = MakeScopeExit([&]() {
-    mToken = nullptr;
     mParsingSources.clear();
     mParsingScripts.clear();
 
@@ -1016,7 +1018,7 @@ void ScriptPreloader::MaybeFinishOffThreadDecode() {
   
   
   
-  Unused << JS::FinishMultiOffThreadScriptsDecoder(cx, mToken, &jsScripts);
+  Unused << JS::FinishMultiOffThreadScriptsDecoder(cx, token, &jsScripts);
 
   unsigned i = 0;
   for (auto script : mParsingScripts) {
