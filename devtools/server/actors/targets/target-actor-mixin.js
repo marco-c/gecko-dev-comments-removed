@@ -24,17 +24,33 @@ module.exports = function(targetType, targetActorSpec, implementation) {
 
 
 
-    addWatcherDataEntry(type, entries) {
+    async addWatcherDataEntry(type, entries) {
       if (type == "resources") {
-        return this._watchTargetResources(entries);
-      }
+        await this._watchTargetResources(entries);
+      } else if (type == "breakpoints") {
+        
+        
+        
+        
+        if (typeof this.attach == "function") {
+          this.attach();
+        }
 
-      return Promise.resolve();
+        await Promise.all(
+          entries.map(({ location, options }) =>
+            this.threadActor.setBreakpoint(location, options)
+          )
+        );
+      }
     },
 
     removeWatcherDataEntry(type, entries) {
       if (type == "resources") {
         return this._unwatchTargetResources(entries);
+      } else if (type == "breakpoints") {
+        for (const { location } of entries) {
+          this.threadActor.removeBreakpoint(location);
+        }
       }
 
       return Promise.resolve();

@@ -213,6 +213,19 @@ const WatcherRegistry = {
 
 
 
+  unregisterWatcher(watcher) {
+    watchedDataByWatcherActor.delete(watcher.actorID);
+    watcherActors.delete(watcher.actorID);
+  },
+
+  
+
+
+
+
+
+
+
   watchTargets(watcher, targetType) {
     this.addWatcherDataEntry(watcher, SUPPORTED_DATA.TARGETS, [targetType]);
   },

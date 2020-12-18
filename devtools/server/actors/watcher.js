@@ -39,6 +39,12 @@ loader.lazyRequireGetter(
   "devtools/server/actors/network-monitor/network-parent",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "BreakpointListActor",
+  "devtools/server/actors/breakpoint-list",
+  true
+);
 
 exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
@@ -83,6 +89,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       this.unwatchTargets(targetType);
     }
     this.unwatchResources(Object.values(Resources.TYPES));
+
+    WatcherRegistry.unregisterWatcher(this);
 
     
     protocol.Actor.prototype.destroy.call(this);
@@ -145,6 +153,10 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
             enableServerWatcher && hasBrowserElement,
           [Resources.TYPES.SOURCE]: hasBrowserElement,
         },
+        
+        
+        
+        "set-breakpoints": true,
       },
     };
   },
@@ -427,5 +439,69 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
   getNetworkParentActor() {
     return new NetworkParentActor(this);
+  },
+
+  
+
+
+
+
+
+  getBreakpointListActor() {
+    return new BreakpointListActor(this);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async addDataEntry(type, entries) {
+    WatcherRegistry.addWatcherDataEntry(this, type, entries);
+
+    await Promise.all(
+      Object.values(Targets.TYPES)
+        .filter(targetType =>
+          WatcherRegistry.isWatchingTargets(this, targetType)
+        )
+        .map(async targetType => {
+          const targetHelperModule = TARGET_HELPERS[targetType];
+          await targetHelperModule.addWatcherDataEntry({
+            watcher: this,
+            type,
+            entries,
+          });
+        })
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  removeDataEntry(type, entries) {
+    WatcherRegistry.removeWatcherDataEntry(this, type, entries);
+
+    Object.values(Targets.TYPES)
+      .filter(targetType => WatcherRegistry.isWatchingTargets(this, targetType))
+      .forEach(targetType => {
+        const targetHelperModule = TARGET_HELPERS[targetType];
+        targetHelperModule.removeWatcherDataEntry({
+          watcher: this,
+          type,
+          entries,
+        });
+      });
   },
 });

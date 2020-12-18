@@ -225,19 +225,53 @@ function hasBreakpoint(location: BreakpointLocation) {
   return !!breakpoints[makePendingLocationId(location)];
 }
 
-function setBreakpoint(
+async function setBreakpoint(
   location: BreakpointLocation,
   options: BreakpointOptions
 ) {
   breakpoints[makePendingLocationId(location)] = { location, options };
 
-  return forEachThread(thread => thread.setBreakpoint(location, options));
+  const hasWatcherSupport = targetList.hasTargetWatcherSupport(
+    "set-breakpoints"
+  );
+  if (!hasWatcherSupport) {
+    
+    return forEachThread(async thread =>
+      thread.setBreakpoint(location, options)
+    );
+  }
+  const breakpointsFront = await targetList.watcherFront.getBreakpointListActor();
+  await breakpointsFront.setBreakpoint(location, options);
+
+  
+  
+  return forEachThread(async thread => {
+    if (!targetList.hasTargetWatcherSupport(thread.targetFront.targetType)) {
+      return thread.setBreakpoint(location, options);
+    }
+  });
 }
 
-function removeBreakpoint(location: PendingLocation) {
+async function removeBreakpoint(location: PendingLocation) {
   delete breakpoints[makePendingLocationId((location: any))];
 
-  return forEachThread(thread => thread.removeBreakpoint(location));
+  const hasWatcherSupport = targetList.hasTargetWatcherSupport(
+    "set-breakpoints"
+  );
+  if (!hasWatcherSupport) {
+    
+    return forEachThread(async thread => thread.removeBreakpoint(location));
+  }
+  const breakpointsFront = await targetList.watcherFront.getBreakpointListActor();
+  await breakpointsFront.removeBreakpoint(location);
+
+  
+  
+  return forEachThread(async thread => {
+    if (!targetList.hasTargetWatcherSupport(thread.targetFront.targetType)) {
+      return thread.removeBreakpoint(location);
+    }
+  });
 }
 
 function evaluateInFrame(
