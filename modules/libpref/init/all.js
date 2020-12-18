@@ -80,7 +80,8 @@ pref("security.enterprise_roots.enabled", false);
 
 
 
-#ifdef NIGHTLY_BUILD
+
+#ifdef EARLY_BETA_OR_EARLIER
   pref("security.osclientcerts.autoload", true);
 #else
   pref("security.osclientcerts.autoload", false);
