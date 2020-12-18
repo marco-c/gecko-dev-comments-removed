@@ -16564,7 +16564,17 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   if (CookieJarSettings()->GetRejectThirdPartyContexts()) {
     
-    if (StorageDisabledByAntiTracking(this, nullptr)) {
+    uint32_t antiTrackingRejectedReason = 0;
+    if (StorageDisabledByAntiTracking(this, nullptr,
+                                      antiTrackingRejectedReason)) {
+      
+      
+      if (antiTrackingRejectedReason ==
+          nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION) {
+        promise->MaybeRejectWithUndefined();
+        return promise.forget();
+      }
+
       
       
       MOZ_ASSERT(!CookieJarSettings()->GetIsOnContentBlockingAllowList());

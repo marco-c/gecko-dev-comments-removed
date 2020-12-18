@@ -333,14 +333,15 @@ bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
   return disabled;
 }
 
-bool StorageDisabledByAntiTracking(dom::Document* aDocument, nsIURI* aURI) {
-  uint32_t rejectedReason = 0;
+bool StorageDisabledByAntiTracking(dom::Document* aDocument, nsIURI* aURI,
+                                   uint32_t& aRejectedReason) {
+  aRejectedReason = 0;
   
   
   
   return StorageDisabledByAntiTracking(
       aDocument->GetInnerWindow(), aDocument->GetChannel(),
-      aDocument->NodePrincipal(), aURI, rejectedReason);
+      aDocument->NodePrincipal(), aURI, aRejectedReason);
 }
 
 bool ShouldPartitionStorage(StorageAccess aAccess) {
