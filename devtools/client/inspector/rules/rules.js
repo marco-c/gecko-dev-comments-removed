@@ -565,7 +565,13 @@ CssRuleView.prototype = {
       let text = "";
 
       const nodeName = target?.nodeName;
-      if (nodeName === "input" || nodeName == "textarea") {
+      const targetType = target?.type;
+
+      if (
+        
+        (nodeName === "input" && targetType !== "checkbox") ||
+        nodeName == "textarea"
+      ) {
         const start = Math.min(target.selectionStart, target.selectionEnd);
         const end = Math.max(target.selectionStart, target.selectionEnd);
         const count = end - start;
