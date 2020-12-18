@@ -88,7 +88,7 @@ struct AnimationValue {
   
   void SerializeSpecifiedValue(nsCSSPropertyID aProperty,
                                const RawServoStyleSet* aRawSet,
-                               nsAString& aString) const;
+                               nsACString& aString) const;
 
   
   bool IsInterpolableWith(nsCSSPropertyID aProperty,
@@ -102,7 +102,7 @@ struct AnimationValue {
   
   
   static AnimationValue FromString(nsCSSPropertyID aProperty,
-                                   const nsAString& aValue,
+                                   const nsACString& aValue,
                                    dom::Element* aElement);
 
   
@@ -119,7 +119,7 @@ struct AnimationValue {
 inline std::ostream& operator<<(std::ostream& aOut,
                                 const AnimationValue& aValue) {
   MOZ_ASSERT(aValue.mServo);
-  nsString s;
+  nsAutoCString s;
   Servo_AnimationValue_Dump(aValue.mServo, &s);
   return aOut << s;
 }

@@ -83,7 +83,7 @@ class ServoCSSParser {
 
 
   static already_AddRefed<RawServoDeclarationBlock> ParseProperty(
-      nsCSSPropertyID aProperty, const nsAString& aValue,
+      nsCSSPropertyID aProperty, const nsACString& aValue,
       const ParsingEnvironment& aParsingEnvironment,
       ParsingMode aParsingMode = ParsingMode::Default);
 
@@ -94,7 +94,7 @@ class ServoCSSParser {
 
 
 
-  static bool ParseEasing(const nsAString& aValue, nsTimingFunction& aResult);
+  static bool ParseEasing(const nsACString& aValue, nsTimingFunction& aResult);
 
   
 
@@ -122,7 +122,7 @@ class ServoCSSParser {
 
 
   static bool ParseFontShorthandForMatching(
-      const nsAString& aValue, URLExtraData* aUrl,
+      const nsACString& aValue, URLExtraData* aUrl,
       RefPtr<SharedFontList>& aList, StyleComputedFontStyleDescriptor& aStyle,
       float& aStretch, float& aWeight);
 

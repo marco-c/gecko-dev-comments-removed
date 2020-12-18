@@ -9,7 +9,6 @@
 use num_traits::ToPrimitive;
 use std::borrow::Cow;
 use std::convert::AsRef;
-use std::fmt::{self, Write};
 use std::iter::{Filter, Peekable};
 use std::str::Split;
 
@@ -174,95 +173,9 @@ pub fn string_as_ascii_lowercase<'a>(input: &'a str) -> Cow<'a, str> {
 
 
 #[cfg(feature = "gecko")]
-pub type CssStringWriter = ::nsstring::nsAString;
+pub type CssStringWriter = ::nsstring::nsACString;
 
 
 
 #[cfg(feature = "gecko")]
-pub type CssString = ::nsstring::nsString;
-
-
-
-
-#[cfg(feature = "gecko")]
-pub enum CssStringBorrow<'a> {
-    
-    UTF16(&'a ::nsstring::nsString),
-    
-    UTF8(&'a str),
-}
-
-#[cfg(feature = "gecko")]
-impl<'a> CssStringBorrow<'a> {
-    
-    pub fn append_to(&self, dest: &mut CssStringWriter) -> fmt::Result {
-        match *self {
-            CssStringBorrow::UTF16(s) => {
-                dest.append(s);
-                Ok(())
-            },
-            CssStringBorrow::UTF8(s) => dest.write_str(s),
-        }
-    }
-
-    
-    pub fn is_empty(&self) -> bool {
-        match *self {
-            CssStringBorrow::UTF16(s) => s.is_empty(),
-            CssStringBorrow::UTF8(s) => s.is_empty(),
-        }
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl<'a> From<&'a str> for CssStringBorrow<'a> {
-    fn from(s: &'a str) -> Self {
-        CssStringBorrow::UTF8(s)
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl<'a> From<&'a ::nsstring::nsString> for CssStringBorrow<'a> {
-    fn from(s: &'a ::nsstring::nsString) -> Self {
-        CssStringBorrow::UTF16(s)
-    }
-}
-
-
-#[cfg(feature = "servo")]
-pub type CssStringWriter = String;
-
-
-#[cfg(feature = "servo")]
-pub type CssString = String;
-
-
-#[cfg(feature = "servo")]
-pub struct CssStringBorrow<'a>(&'a str);
-
-#[cfg(feature = "servo")]
-impl<'a> CssStringBorrow<'a> {
-    
-    pub fn append_to(&self, dest: &mut CssStringWriter) -> fmt::Result {
-        dest.write_str(self.0)
-    }
-
-    
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-}
-
-#[cfg(feature = "servo")]
-impl<'a> From<&'a str> for CssStringBorrow<'a> {
-    fn from(s: &'a str) -> Self {
-        CssStringBorrow(s)
-    }
-}
-
-#[cfg(feature = "servo")]
-impl<'a> From<&'a String> for CssStringBorrow<'a> {
-    fn from(s: &'a String) -> Self {
-        CssStringBorrow(&*s)
-    }
-}
+pub type CssString = ::nsstring::nsCString;

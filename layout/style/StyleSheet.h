@@ -343,11 +343,11 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   css::Rule* GetDOMOwnerRule() const;
   dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal, ErrorResult&);
-  uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
+  uint32_t InsertRule(const nsACString& aRule, uint32_t aIndex,
                       nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
   void DeleteRule(uint32_t aIndex, nsIPrincipal& aSubjectPrincipal,
                   ErrorResult& aRv);
-  int32_t AddRule(const nsAString& aSelector, const nsAString& aBlock,
+  int32_t AddRule(const nsACString& aSelector, const nsACString& aBlock,
                   const dom::Optional<uint32_t>& aIndex,
                   nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
   already_AddRefed<dom::Promise> Replace(const nsACString& aText, ErrorResult&);
@@ -418,7 +418,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void DropStyleSet(ServoStyleSet* aStyleSet);
 
   nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
-  nsresult InsertRuleIntoGroup(const nsAString& aRule, css::GroupRule* aGroup,
+  nsresult InsertRuleIntoGroup(const nsACString& aRule, css::GroupRule* aGroup,
                                uint32_t aIndex);
 
   
@@ -487,10 +487,10 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
  protected:
   
-  uint32_t InsertRuleInternal(const nsAString& aRule, uint32_t aIndex,
+  uint32_t InsertRuleInternal(const nsACString& aRule, uint32_t aIndex,
                               ErrorResult&);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult&);
-  nsresult InsertRuleIntoGroupInternal(const nsAString& aRule,
+  nsresult InsertRuleIntoGroupInternal(const nsACString& aRule,
                                        css::GroupRule* aGroup, uint32_t aIndex);
 
   

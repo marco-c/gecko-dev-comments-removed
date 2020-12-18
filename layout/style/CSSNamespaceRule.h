@@ -34,7 +34,7 @@ class CSSNamespaceRule final : public css::Rule {
   void GetURLSpec(nsString& aURLSpec) const;
 
   
-  void GetCssText(nsAString& aCssText) const final;
+  void GetCssText(nsACString& aCssText) const final;
 
   
   uint16_t Type() const final { return CSSRule_Binding::NAMESPACE_RULE; }

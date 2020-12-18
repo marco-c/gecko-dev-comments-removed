@@ -16,7 +16,9 @@ enum IterationCompositeOperation {
 };
 
 dictionary KeyframeEffectOptions : EffectTiming {
+  [Pref="dom.animations-api.compositing.enabled"]
   IterationCompositeOperation iterationComposite = "replace";
+  [Pref="dom.animations-api.compositing.enabled"]
   CompositeOperation          composite = "replace";
   DOMString?                  pseudoElement = null;
 };
@@ -47,8 +49,8 @@ interface KeyframeEffect : AnimationEffect {
 // Non-standard extensions
 dictionary AnimationPropertyValueDetails {
   required double             offset;
-           DOMString          value;
-           DOMString          easing;
+           UTF8String         value;
+           UTF8String         easing;
   required CompositeOperation composite;
 };
 

@@ -32,9 +32,9 @@ class CSSMediaRule final : public css::ConditionRule {
   
   uint16_t Type() const override { return CSSRule_Binding::MEDIA_RULE; }
   
-  void GetCssText(nsAString& aCssText) const final;
-  void GetConditionText(nsAString& aConditionText) final;
-  void SetConditionText(const nsAString& aConditionText,
+  void GetCssText(nsACString& aCssText) const final;
+  void GetConditionText(nsACString& aConditionText) final;
+  void SetConditionText(const nsACString& aConditionText,
                         ErrorResult& aRv) final;
   dom::MediaList* Media();
 

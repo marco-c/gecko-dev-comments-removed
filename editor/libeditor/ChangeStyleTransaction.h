@@ -69,8 +69,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
 
-  static bool ValueIncludes(const nsAString& aValueList,
-                            const nsAString& aValue);
+  static bool ValueIncludes(const nsACString& aValueList,
+                            const nsACString& aValue);
 
  private:
   virtual ~ChangeStyleTransaction() = default;
@@ -82,8 +82,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
 
-  void AddValueToMultivalueProperty(nsAString& aValues,
-                                    const nsAString& aNewValue);
+  void AddValueToMultivalueProperty(nsACString& aValues,
+                                    const nsACString& aNewValue);
 
   
 
@@ -98,8 +98,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
 
-  void RemoveValueFromListOfValues(nsAString& aValues,
-                                   const nsAString& aRemoveValue);
+  void RemoveValueFromListOfValues(nsACString& aValues,
+                                   const nsACString& aRemoveValue);
 
   
 
@@ -108,7 +108,7 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
   MOZ_CAN_RUN_SCRIPT nsresult SetStyle(bool aAttributeWasSet,
-                                       nsAString& aValue);
+                                       nsACString& aValue);
 
   
   RefPtr<nsStyledElement> mStyledElement;
@@ -117,12 +117,12 @@ class ChangeStyleTransaction final : public EditTransactionBase {
   RefPtr<nsAtom> mProperty;
 
   
-  nsString mValue;
+  nsCString mValue;
 
   
-  nsString mUndoValue;
+  nsCString mUndoValue;
   
-  nsString mRedoValue;
+  nsCString mRedoValue;
 
   
   bool mRemoveProperty;

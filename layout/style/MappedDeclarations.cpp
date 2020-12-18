@@ -31,11 +31,12 @@ void MappedDeclarations::SetBackgroundImage(const nsAttrValue& aValue) {
   if (aValue.Type() != nsAttrValue::eURL) {
     return;
   }
-  
   nsAutoString str;
   aValue.ToString(str);
+  nsAutoCString utf8;
+  CopyUTF16toUTF8(str, utf8);
   Servo_DeclarationBlock_SetBackgroundImage(
-      mDecl, &str, mDocument->DefaultStyleAttrURLData());
+      mDecl, &utf8, mDocument->DefaultStyleAttrURLData());
 }
 
 }  

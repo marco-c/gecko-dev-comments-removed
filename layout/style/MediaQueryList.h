@@ -29,7 +29,7 @@ class MediaQueryList final : public DOMEventTargetHelper,
  public:
   
   
-  MediaQueryList(Document* aDocument, const nsAString& aMediaQueryList,
+  MediaQueryList(Document* aDocument, const nsACString& aMediaQueryList,
                  CallerType aCallerType);
 
  private:
@@ -50,7 +50,7 @@ class MediaQueryList final : public DOMEventTargetHelper,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
-  void GetMedia(nsAString& aMedia);
+  void GetMedia(nsACString& aMedia);
   bool Matches();
   void AddListener(EventListener* aListener, ErrorResult& aRv);
   void RemoveListener(EventListener* aListener, ErrorResult& aRv);

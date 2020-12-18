@@ -88,7 +88,7 @@ class InspectorUtils {
 
   
   static void GetSelectorText(GlobalObject& aGlobal, BindingStyleRule& aRule,
-                              uint32_t aSelectorIndex, nsString& aText,
+                              uint32_t aSelectorIndex, nsACString& aText,
                               ErrorResult& aRv);
   static uint64_t GetSpecificity(GlobalObject& aGlobal, BindingStyleRule& aRule,
                                  uint32_t aSelectorIndex, ErrorResult& aRv);

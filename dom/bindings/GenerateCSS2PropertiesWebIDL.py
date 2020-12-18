@@ -10,8 +10,10 @@ import runpy
 
 
 
+
+
 def generateLine(propName, extendedAttrs):
-    return "  [%s] attribute [TreatNullAs=EmptyString] DOMString %s;\n" % (
+    return "  [%s] attribute [TreatNullAs=EmptyString] UTF8String %s;\n" % (
         ", ".join(extendedAttrs),
         propName,
     )

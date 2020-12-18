@@ -793,7 +793,8 @@ bool HTMLLinkElement::CheckPreloadAttrs(const nsAttrValue& aAs,
 
   
   if (!aMedia.IsEmpty()) {
-    RefPtr<MediaList> mediaList = MediaList::Create(aMedia);
+    RefPtr<MediaList> mediaList =
+        MediaList::Create(NS_ConvertUTF16toUTF8(aMedia));
     if (!mediaList->Matches(*aDocument)) {
       return false;
     }
