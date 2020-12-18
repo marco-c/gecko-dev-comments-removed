@@ -149,8 +149,8 @@ class Context final : public SafeRefCounted<Context> {
   
   void CancelForCacheId(CacheId aCacheId);
 
-  void AddActivity(Activity* aActivity);
-  void RemoveActivity(Activity* aActivity);
+  void AddActivity(Activity& aActivity);
+  void RemoveActivity(Activity& aActivity);
 
   const QuotaInfo& GetQuotaInfo() const { return mQuotaInfo; }
 
@@ -200,7 +200,7 @@ class Context final : public SafeRefCounted<Context> {
 
   
   
-  nsTObserverArray<Activity*> mActivityList;
+  nsTObserverArray<NotNull<Activity*>> mActivityList;
 
   
   
