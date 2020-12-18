@@ -5,7 +5,13 @@
 from __future__ import absolute_import, print_function
 
 import os
-from cStringIO import StringIO
+
+try:
+    
+    from cStringIO import StringIO
+except ImportError:
+    
+    from io import StringIO
 from functools import partial
 
 import mozunit
