@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from six.moves.urllib.parse import quote
 
@@ -45,6 +45,7 @@ class BaseMouseAction(MarionetteTestCase):
         )
 
     def get_element_center_point(self, elem):
+        
         return {
             "x": elem.rect["x"] + elem.rect["width"] / 2,
             "y": elem.rect["y"] + elem.rect["height"] / 2,

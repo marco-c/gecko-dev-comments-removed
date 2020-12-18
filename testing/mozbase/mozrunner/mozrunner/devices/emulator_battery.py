@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 
 class EmulatorBattery(object):
@@ -26,6 +26,7 @@ class EmulatorBattery(object):
                     value = float(value)
                 status[field] = value
 
+        
         state["level"] = status.get("capacity", 0.0) / 100
         if status.get("AC") == "online":
             state["charging"] = True

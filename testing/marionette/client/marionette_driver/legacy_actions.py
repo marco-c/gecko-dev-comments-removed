@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from . import errors
 from .marionette import MouseButton
@@ -218,12 +218,14 @@ class Actions(object):
         time_increment = 10
         if time_increment >= duration:
             time_increment = duration
+        
         move_x = time_increment * 1.0 / duration * (x2 - x1)
         move_y = time_increment * 1.0 / duration * (y2 - y1)
         self.action_chain.append(["press", element, x1, y1])
         while elapsed < duration:
             elapsed += time_increment
             self.action_chain.append(["moveByOffset", move_x, move_y])
+            
             self.action_chain.append(["wait", time_increment / 1000])
         self.action_chain.append(["release"])
         return self

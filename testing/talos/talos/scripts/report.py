@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import argparse
 import collections
@@ -77,6 +77,7 @@ def generate_report(tuple_list, filepath, mode="variance"):
             for day in day_name:
                 if mode == "variance":
                     
+                    
                     tenth = len(days[day]) / 10
                     average = numpy.average(sorted(days[day])[tenth : tenth * 9 + 1])
                 elif mode == "count":
@@ -115,6 +116,7 @@ def is_normal(y):
     else:
         clean_week = y
 
+    
     
     avg = sum(clean_week) / len(clean_week)
     for i in six.moves.range(5, 7):

@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import json
 import os
@@ -137,6 +137,7 @@ class RunOnceBenchmark(Benchmark):
         for bench, scores in self.scores.items():
             for score, values in scores.items():
                 test_name = "{}-{}".format(self.name, score)
+                
                 mean = sum(values) / len(values)
                 self.suite["subtests"].append({"name": test_name, "value": mean})
                 bench_total += int(sum(values))
@@ -193,6 +194,7 @@ class Ares6(Benchmark):
     def collect_results(self):
         for bench, scores in self.scores.items():
             for score, values in scores.items():
+                
                 mean = sum(values) / len(values)
                 test_name = "{}-{}".format(bench, score)
                 self.suite["subtests"].append({"name": test_name, "value": mean})
@@ -296,6 +298,7 @@ class WebToolingBenchmark(Benchmark):
         for bench, scores in self.scores.items():
             for score_name, values in scores.items():
                 test_name = "{}-{}".format(self.name, score_name)
+                
                 mean = sum(values) / len(values)
                 self.suite["subtests"].append(
                     {
@@ -348,6 +351,7 @@ class Octane(RunOnceBenchmark):
         for bench, scores in self.scores.items():
             for score_name, values in scores.items():
                 test_name = "{}-{}".format(self.name, score_name)
+                
                 mean = sum(values) / len(values)
                 self.suite["subtests"].append({"name": test_name, "value": mean})
                 if score_name == "score":

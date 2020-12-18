@@ -7,6 +7,7 @@
 """Python usage, esp. virtualenv.
 """
 
+from __future__ import division
 import errno
 import json
 import os
@@ -834,6 +835,7 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
 
         for attr in cpu_attrs:
             value = getattr(cpu_times, attr)
+            
             
             percent = value / cpu_total * 100.0 if cpu_total else 0.0
 

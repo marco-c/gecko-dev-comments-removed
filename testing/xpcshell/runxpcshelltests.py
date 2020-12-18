@@ -4,7 +4,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import copy
 import json
@@ -1654,6 +1654,7 @@ class XPCShellTests(object):
             and self.mozInfo["tsan"]
             and not options.get("threadCount")
         ):
+            
             
             
             self.threadCount = self.threadCount / 2

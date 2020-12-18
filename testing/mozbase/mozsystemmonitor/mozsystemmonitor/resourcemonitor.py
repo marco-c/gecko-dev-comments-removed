@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from contextlib import contextmanager
 import multiprocessing
@@ -527,10 +527,12 @@ class SystemResourceMonitor(object):
             return 0
 
         if per_cpu:
+            
             return [sum(x) / samples for x in cpu]
 
         cores = [sum(x) for x in cpu]
 
+        
         return sum(cores) / len(cpu) / samples
 
     def aggregate_cpu_times(self, start=None, end=None, phase=None, per_cpu=True):
@@ -672,6 +674,7 @@ class SystemResourceMonitor(object):
 
         def populate_derived(e):
             if e["cpu_percent_cores"]:
+                
                 e["cpu_percent_mean"] = sum(e["cpu_percent_cores"]) / len(
                     e["cpu_percent_cores"]
                 )

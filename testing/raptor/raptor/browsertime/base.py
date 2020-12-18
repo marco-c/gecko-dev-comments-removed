@@ -4,7 +4,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from abc import ABCMeta, abstractmethod
 
@@ -322,8 +322,10 @@ class Browsertime(Perftest):
         
         
         
+        
         bt_timeout = int(timeout / 1000) * int(test.get("page_cycles", 1))
 
+        
         
         
         

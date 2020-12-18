@@ -1,7 +1,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import hashlib
 import os
@@ -312,6 +312,7 @@ class ProfileSymbolicator:
         left = 0
         right = len(libs) - 1
         while left <= right:
+            
             mid = (left + right) / 2
             if address >= libs[mid]["end"]:
                 left = mid + 1

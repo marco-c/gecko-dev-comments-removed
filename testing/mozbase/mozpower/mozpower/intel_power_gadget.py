@@ -1,7 +1,7 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 import csv
 import os
@@ -548,6 +548,7 @@ class IPGResultsHandler(object):
         
         
         column_datatypes = {"System Time": str, "RDTSC": int, "default": float}
+        
         expected_samples = int(
             self._ipg_measure_duration / (float(self._sampling_rate) / 1000)
         )
@@ -694,6 +695,7 @@ class IPGResultsHandler(object):
             )
 
         
+        
         expected_samples = int(
             self._ipg_measure_duration / (float(self._sampling_rate) / 1000)
         )
@@ -817,6 +819,7 @@ class IPGResultsHandler(object):
         watt_usage = {}
         for measure in cut_results:
             if "watt" in measure.lower() and "limit" not in measure.lower():
+                
                 watt_usage[replace_measure_name(measure) + "-avg"] = sum(
                     [float(val) for val in cut_results[measure]]
                 ) / len(cut_results[measure])
@@ -839,6 +842,7 @@ class IPGResultsHandler(object):
             elif "gt " in utilized_name:
                 utilized_name = "gpu"
 
+            
             average_utilization[utilized_name] = sum(
                 [float(val) for val in cut_results[utilization]]
             ) / len(cut_results[utilization])
@@ -857,6 +861,7 @@ class IPGResultsHandler(object):
                 fmeasure_name = "cpu"
             elif "gt " in fmeasure_name:
                 fmeasure_name = "gpu"
+            
 
             frequency_info[fmeasure_name]["favg"] = sum(
                 [float(val) for val in cut_results[frequency_measure]]

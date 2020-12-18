@@ -1,7 +1,7 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 
 def get_logger(logger_name):
@@ -32,6 +32,7 @@ def average_summary(values):
     :param list values: list of values to average.
     :returns: float
     """
+    
     return sum([float(v[0]) for v in values]) / len(values)
 
 

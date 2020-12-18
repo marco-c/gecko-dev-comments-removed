@@ -3,7 +3,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -54,10 +54,12 @@ PERF_SUITES = [
 
 def median(values):
     sorted_ = sorted(values)
+    
     med = int(len(sorted_) / 2)
 
     if len(sorted_) % 2:
         return sorted_[med]
+    
     return (sorted_[med - 1] + sorted_[med]) / 2
 
 
@@ -171,6 +173,7 @@ def create_suite(
         suite["subtests"].append(subtest)
         total += math.log(subtest["value"])
 
+    
     
     
     suite["value"] = math.exp(total / len(checkpoints))

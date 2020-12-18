@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import io
 import os
@@ -3401,6 +3401,7 @@ class ADBDevice(ADBCommand):
                 elif parameter == "scale":
                     scale = float(value)
                 if parameter is not None and scale is not None:
+                    
                     percentage = 100.0 * level / scale
                     break
         return percentage

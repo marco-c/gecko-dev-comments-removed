@@ -5,6 +5,8 @@
 
 
 
+from __future__ import division
+
 import re
 from operator import itemgetter
 
@@ -150,6 +152,7 @@ class ShutdownLeaks(object):
                 )
 
             if test["hiddenWindowsCount"] > 0:
+                
                 
                 
                 

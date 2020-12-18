@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import base64
 import datetime
@@ -1195,6 +1195,7 @@ class Marionette(object):
 
         timeout = self.session.get("moz:shutdownTimeout")
         if timeout is not None:
+            
             self.shutdown_timeout = timeout / 1000 + 10
 
         return self.session

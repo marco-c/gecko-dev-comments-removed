@@ -6,7 +6,7 @@
 
 """Utility functions for mozrunner"""
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -170,6 +170,7 @@ def test_environment(
 
             
             if mozinfo.isWin:
+                
                 totalMemory = (
                     int(
                         os.popen(
@@ -179,6 +180,7 @@ def test_environment(
                     / 1024
                 )
             elif mozinfo.isMac:
+                
                 totalMemory = (
                     int(os.popen("sysctl hw.memsize").readlines()[0].split()[1]) / 1024
                 )

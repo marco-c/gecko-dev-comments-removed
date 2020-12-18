@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import functools
 from collections import deque
@@ -307,6 +307,7 @@ class TbplFormatter(BaseFormatter):
 
     def suite_end(self, data):
         start_time = self.suite_start_time
+        
         time = int((data["time"] - start_time) / 1000)
 
         return "SUITE-END | took %is\n" % time

@@ -4,7 +4,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import json
 import os
@@ -73,7 +73,9 @@ class WebExtension(Perftest):
         
 
         
+        
         timeout = int(timeout / 1000) * int(test.get("page_cycles", 1))
+        
         
         
         timeout += int(self.post_startup_delay / 1000) + 10

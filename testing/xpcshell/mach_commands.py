@@ -4,7 +4,7 @@
 
 
 
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import errno
 import logging
@@ -260,6 +260,7 @@ class MachCommands(MachCommandBase):
             )
 
         if not params["threadCount"]:
+            
             params["threadCount"] = int((cpu_count() * 3) / 2)
 
         if conditions.is_android(self) or self.substs.get("MOZ_BUILD_APP") == "b2g":

@@ -4,7 +4,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import math
 
@@ -120,8 +120,11 @@ def median(series):
     series = sorted(series)
     if len(series) % 2:
         
-        return series[len(series) / 2]
+        
+        
+        return series[int(len(series) / 2)]
     else:
+        
         
         middle = int(len(series) / 2)  
         return 0.5 * (series[middle - 1] + series[middle])
@@ -181,6 +184,7 @@ def geometric_mean(series):
     total = 0
     for i in series:
         total += math.log(i + 1)
+    
     return math.exp(total / len(series)) - 1
 
 
@@ -269,6 +273,7 @@ def v8_subtest(series, name):
         "Splay": 81491.0,
     }
 
+    
     return reference[name] / geometric_mean(series)
 
 

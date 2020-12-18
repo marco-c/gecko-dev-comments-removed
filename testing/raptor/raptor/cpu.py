@@ -1,7 +1,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import time
 import threading
@@ -132,7 +132,9 @@ class AndroidCPUProfiler(object):
             u"type": u"cpu",
             u"test": test_name + "-avg",
             u"unit": u"%",
-            u"values": {u"avg": sum(self.polls) / len(self.polls)},
+            u"values": {
+                u"avg": sum(self.polls) / len(self.polls)
+            },  
         }
         self.raptor.control_server.submit_supporting_data(avg_cpuinfo_data)
 

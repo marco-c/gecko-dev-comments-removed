@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import math
 import six
@@ -180,6 +180,7 @@ def geometric_mean(series):
     total = 0
     for i in series:
         total += math.log(i + 1)
+    
     return math.exp(total / len(series)) - 1
 
 
@@ -254,6 +255,7 @@ def v8_subtest(series, name):
         "Splay": 81491.0,
     }
 
+    
     return reference[name] / geometric_mean(series)
 
 

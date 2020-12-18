@@ -1,7 +1,7 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 
 import os
@@ -164,6 +164,7 @@ def test_usage_with_fallback():
             cpu_profiler.polls.append(cpu_profiler.get_app_cpu_usage())
             cpu_profiler.polls.append(0)
 
+            
             
             avg_cpuinfo_data = {
                 "type": "cpu",
