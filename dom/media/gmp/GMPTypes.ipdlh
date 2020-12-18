@@ -19,12 +19,23 @@ namespace gmp {
 
 
 
-
-
-struct NodeIdData {
+struct NodeIdParts {
   nsString mOrigin;
   nsString mTopLevelOrigin;
   nsString mGMPName;
+};
+
+
+
+
+
+
+
+
+
+union NodeIdVariant {
+  nsCString;
+  NodeIdParts;
 };
 
 struct GMPVideoEncodedFrameData {
