@@ -1,40 +1,40 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "frontend/Stencil.h"
 
-#include "mozilla/RefPtr.h"  // RefPtr
+#include "mozilla/RefPtr.h"  
 
-#include <memory>  // std::uninitialized_fill
+#include <memory>  
 
-#include "frontend/AbstractScopePtr.h"  // ScopeIndex
-#include "frontend/BytecodeSection.h"   // EmitScriptThingsVector
-#include "frontend/CompilationInfo.h"  // CompilationInfo, CompilationInfoVector, CompilationGCOutput
+#include "frontend/AbstractScopePtr.h"  
+#include "frontend/BytecodeSection.h"   
+#include "frontend/CompilationInfo.h"  
 #include "frontend/SharedContext.h"
-#include "gc/AllocKind.h"    // gc::AllocKind
-#include "js/CallArgs.h"     // JSNative
-#include "js/RootingAPI.h"   // Rooted
-#include "js/Transcoding.h"  // JS::TranscodeBuffer
-#include "js/Value.h"        // ObjectValue
-#include "js/WasmModule.h"   // JS::WasmModule
+#include "gc/AllocKind.h"    
+#include "js/CallArgs.h"     
+#include "js/RootingAPI.h"   
+#include "js/Transcoding.h"  
+#include "js/Value.h"        
+#include "js/WasmModule.h"   
 #include "vm/EnvironmentObject.h"
-#include "vm/GeneratorAndAsyncKind.h"  // GeneratorKind, FunctionAsyncKind
-#include "vm/JSContext.h"              // JSContext
-#include "vm/JSFunction.h"  // JSFunction, GetFunctionPrototype, NewFunctionWithProto
-#include "vm/JSObject.h"      // JSObject
-#include "vm/JSONPrinter.h"   // js::JSONPrinter
-#include "vm/JSScript.h"      // BaseScript, JSScript
-#include "vm/ObjectGroup.h"   // TenuredObject
-#include "vm/Printer.h"       // js::Fprinter
-#include "vm/Scope.h"         // Scope, ScopeKindString
-#include "vm/StencilEnums.h"  // ImmutableScriptFlagsEnum
-#include "vm/StringType.h"    // JSAtom, js::CopyChars
-#include "vm/Xdr.h"           // XDRMode, XDRResult, XDREncoder
-#include "wasm/AsmJS.h"       // InstantiateAsmJS
-#include "wasm/WasmModule.h"  // wasm::Module
+#include "vm/GeneratorAndAsyncKind.h"  
+#include "vm/JSContext.h"              
+#include "vm/JSFunction.h"  
+#include "vm/JSObject.h"      
+#include "vm/JSONPrinter.h"   
+#include "vm/JSScript.h"      
+#include "vm/ObjectGroup.h"   
+#include "vm/Printer.h"       
+#include "vm/Scope.h"         
+#include "vm/StencilEnums.h"  
+#include "vm/StringType.h"    
+#include "vm/Xdr.h"           
+#include "wasm/AsmJS.h"       
+#include "wasm/WasmModule.h"  
 
 using namespace js;
 using namespace js::frontend;
@@ -128,7 +128,7 @@ uint32_t ScopeStencil::nextFrameSlot() const {
       return nextFrameSlot<LexicalScope>();
     case ScopeKind::NamedLambda:
     case ScopeKind::StrictNamedLambda:
-      // Named lambda scopes cannot have frame slots.
+      
       return 0;
     case ScopeKind::Eval:
     case ScopeKind::StrictEval:
@@ -187,8 +187,8 @@ static JSFunction* CreateFunction(JSContext* cx, CompilationInput& input,
           ? FunctionAsyncKind::AsyncFunction
           : FunctionAsyncKind::SyncFunction;
 
-  // Determine the new function's proto. This must be done for singleton
-  // functions.
+  
+  
   RootedObject proto(cx);
   if (!GetFunctionPrototype(cx, generatorKind, asyncKind, &proto)) {
     return nullptr;
@@ -245,15 +245,15 @@ static bool InstantiateScriptSourceObject(JSContext* cx,
     return false;
   }
 
-  // Off-thread compilations do all their GC heap allocation, including the
-  // SSO, in a temporary compartment. Hence, for the SSO to refer to the
-  // gc-heap-allocated values in |options|, it would need cross-compartment
-  // wrappers from the temporary compartment to the real compartment --- which
-  // would then be inappropriate once we merged the temporary and real
-  // compartments.
-  //
-  // Instead, we put off populating those SSO slots in off-thread compilations
-  // until after we've merged compartments.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!cx->isHelperThreadContext()) {
     Rooted<ScriptSourceObject*> sourceObject(cx, gcOutput.sourceObject);
     if (!ScriptSourceObject::initFromOptions(cx, sourceObject, input.options)) {
@@ -264,7 +264,7 @@ static bool InstantiateScriptSourceObject(JSContext* cx,
   return true;
 }
 
-// Instantiate ModuleObject if this is a module compile.
+
 static bool MaybeInstantiateModule(JSContext* cx, CompilationInput& input,
                                    CompilationStencil& stencil,
                                    CompilationGCOutput& gcOutput) {
@@ -283,7 +283,7 @@ static bool MaybeInstantiateModule(JSContext* cx, CompilationInput& input,
   return true;
 }
 
-// Instantiate JSFunctions for each FunctionBox.
+
 static bool InstantiateFunctions(JSContext* cx, CompilationInput& input,
                                  CompilationStencil& stencil,
                                  CompilationGCOutput& gcOutput) {
@@ -304,25 +304,25 @@ static bool InstantiateFunctions(JSContext* cx, CompilationInput& input,
   return true;
 }
 
-// Instantiate Scope for each ScopeStencil.
-//
-// This should be called after InstantiateFunctions, given FunctionScope needs
-// associated JSFunction pointer, and also should be called before
-// InstantiateScriptStencils, given JSScript needs Scope pointer in gc things.
+
+
+
+
+
 static bool InstantiateScopes(JSContext* cx, CompilationInput& input,
                               CompilationStencil& stencil,
                               CompilationGCOutput& gcOutput) {
-  // While allocating Scope object from ScopeStencil, Scope object for the
-  // enclosing Scope should already be allocated.
-  //
-  // Enclosing scope of ScopeStencil can be either ScopeStencil or Scope*
-  // pointer.
-  //
-  // If the enclosing scope is ScopeStencil, it's guaranteed to be earlier
-  // element in compilationInfo.scopeData, because enclosing_ field holds index
-  // into it, and newly created ScopeStencil is pushed back to the vector.
-  //
-  // If the enclosing scope is Scope*, it's CompilationInput.enclosingScope.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   for (const ScopeStencil& scd : stencil.scopeData) {
     Scope* scope = scd.createScope(cx, input, gcOutput);
@@ -335,9 +335,9 @@ static bool InstantiateScopes(JSContext* cx, CompilationInput& input,
   return true;
 }
 
-// Instantiate js::BaseScripts from ScriptStencils for inner functions of the
-// compilation. Note that standalone functions and functions being delazified
-// are handled below with other top-levels.
+
+
+
 static bool InstantiateScriptStencils(JSContext* cx, CompilationInput& input,
                                       CompilationStencil& stencil,
                                       CompilationGCOutput& gcOutput) {
@@ -348,11 +348,11 @@ static bool InstantiateScriptStencils(JSContext* cx, CompilationInput& input,
     auto& scriptStencil = item.script;
     fun = item.function;
     if (scriptStencil.sharedData) {
-      // If the function was not referenced by enclosing script's bytecode, we
-      // do not generate a BaseScript for it. For example, `(function(){});`.
-      //
-      // `wasFunctionEmitted` is false also for standalone functions. They are
-      // handled in InstantiateTopLevel.
+      
+      
+      
+      
+      
       if (!scriptStencil.wasFunctionEmitted) {
         continue;
       }
@@ -364,8 +364,8 @@ static bool InstantiateScriptStencils(JSContext* cx, CompilationInput& input,
         return false;
       }
 
-      // NOTE: Inner functions can be marked `allowRelazify` after merging
-      // a stencil for delazification into the top-level stencil.
+      
+      
       if (scriptStencil.allowRelazify) {
         MOZ_ASSERT(script->isRelazifiable());
         script->setAllowRelazify();
@@ -383,8 +383,8 @@ static bool InstantiateScriptStencils(JSContext* cx, CompilationInput& input,
   return true;
 }
 
-// Instantiate the Stencil for the top-level script of the compilation. This
-// includes standalone functions and functions being delazified.
+
+
 static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
                                 CompilationStencil& stencil,
                                 CompilationGCOutput& gcOutput) {
@@ -395,7 +395,7 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
     fun = gcOutput.functions[CompilationInfo::TopLevelIndex];
   }
 
-  // Top-level asm.js does not generate a JSScript.
+  
   if (scriptStencil.functionFlags.isAsmJSNative()) {
     return true;
   }
@@ -430,7 +430,7 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
     gcOutput.script->setAllowRelazify();
   }
 
-  // Finish initializing the ModuleObject if needed.
+  
   if (scriptStencil.isModule()) {
     Rooted<JSScript*> script(cx, gcOutput.script);
 
@@ -442,8 +442,8 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
       return false;
     }
 
-    // Off-thread compilation with parseGlobal will freeze the module object
-    // in GlobalHelperThreadState::finishSingleParseTask instead.
+    
+    
     if (!cx->isHelperThreadContext()) {
       if (!ModuleObject::Freeze(cx, module)) {
         return false;
@@ -454,10 +454,10 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
   return true;
 }
 
-// When a function is first referenced by enclosing script's bytecode, we need
-// to update it with information determined by the BytecodeEmitter. This applies
-// to both initial and delazification parses. The functions being update may or
-// may not have bytecode at this point.
+
+
+
+
 static void UpdateEmittedInnerFunctions(JSContext* cx, CompilationInput& input,
                                         CompilationStencil& stencil,
                                         CompilationGCOutput& gcOutput) {
@@ -470,10 +470,10 @@ static void UpdateEmittedInnerFunctions(JSContext* cx, CompilationInput& input,
 
     if (scriptStencil.functionFlags.isAsmJSNative() ||
         fun->baseScript()->hasBytecode()) {
-      // Non-lazy inner functions don't use the enclosingScope_ field.
+      
       MOZ_ASSERT(scriptStencil.lazyFunctionEnclosingScopeIndex_.isNothing());
     } else {
-      // Apply updates from FunctionEmitter::emitLazy().
+      
       BaseScript* script = fun->baseScript();
 
       ScopeIndex index = *scriptStencil.lazyFunctionEnclosingScopeIndex_;
@@ -484,8 +484,8 @@ static void UpdateEmittedInnerFunctions(JSContext* cx, CompilationInput& input,
         script->setMemberInitializers(*scriptStencil.memberInitializers);
       }
 
-      // Inferred and Guessed names are computed by BytecodeEmitter and so may
-      // need to be applied to existing JSFunctions during delazification.
+      
+      
       if (fun->displayAtom() == nullptr) {
         JSAtom* funcAtom = nullptr;
         if (scriptStencil.functionFlags.hasInferredName() ||
@@ -505,8 +505,8 @@ static void UpdateEmittedInnerFunctions(JSContext* cx, CompilationInput& input,
   }
 }
 
-// During initial parse we must link lazy-functions-inside-lazy-functions to
-// their enclosing script.
+
+
 static void LinkEnclosingLazyScript(CompilationStencil& stencil,
                                     CompilationGCOutput& gcOutput) {
   for (auto item : CompilationInfo::functionScriptStencils(stencil, gcOutput)) {
@@ -533,8 +533,8 @@ static void LinkEnclosingLazyScript(CompilationStencil& stencil,
 }
 
 #ifdef DEBUG
-// Some fields aren't used in delazification, given the target functions and
-// scripts are already instantiated, but they still should match.
+
+
 static void AssertDelazificationFieldsMatch(CompilationStencil& stencil,
                                             CompilationGCOutput& gcOutput) {
   for (auto item : CompilationInfo::functionScriptStencils(stencil, gcOutput)) {
@@ -555,7 +555,7 @@ static void AssertDelazificationFieldsMatch(CompilationStencil& stencil,
     MOZ_ASSERT(script->extent().lineno == scriptStencil.extent.lineno);
     MOZ_ASSERT(script->extent().column == scriptStencil.extent.column);
 
-    // Names are updated by UpdateInnerFunctions.
+    
     constexpr uint16_t HAS_INFERRED_NAME =
         uint16_t(FunctionFlags::Flags::HAS_INFERRED_NAME);
     constexpr uint16_t HAS_GUESSED_ATOM =
@@ -569,21 +569,21 @@ static void AssertDelazificationFieldsMatch(CompilationStencil& stencil,
                (scriptStencil.functionFlags.toRaw() |
                 acceptableDifferenceForFunction));
 
-    // Delazification shouldn't delazify inner scripts.
+    
     MOZ_ASSERT_IF(item.functionIndex == 0, scriptStencil.sharedData);
     MOZ_ASSERT_IF(item.functionIndex > 0, !scriptStencil.sharedData);
 
-    // FIXME: If this function is lazily parsed again, nargs isn't set to
-    //        correct value (bug 1666978).
+    
+    
     MOZ_ASSERT_IF(scriptStencil.sharedData,
                   fun->nargs() == scriptStencil.nargs);
   }
 }
-#endif  // DEBUG
+#endif  
 
-// When delazifying, use the existing JSFunctions. The initial and delazifying
-// parse are required to generate the same sequence of functions for lazy
-// parsing to work at all.
+
+
+
 static void FunctionsFromExistingLazy(CompilationInput& input,
                                       CompilationGCOutput& gcOutput) {
   MOZ_ASSERT(input.lazy);
@@ -601,7 +601,7 @@ static void FunctionsFromExistingLazy(CompilationInput& input,
   MOZ_ASSERT(idx == gcOutput.functions.length());
 }
 
-/* static */
+
 bool CompilationInfo::instantiateStencils(JSContext* cx,
                                           CompilationInfo& compilationInfo,
                                           CompilationGCOutput& gcOutput) {
@@ -615,7 +615,7 @@ bool CompilationInfo::instantiateStencils(JSContext* cx,
                                              compilationInfo.stencil, gcOutput);
 }
 
-/* static */
+
 bool CompilationInfo::instantiateStencilsAfterPreparation(
     JSContext* cx, CompilationInput& input, CompilationStencil& stencil,
     CompilationGCOutput& gcOutput) {
@@ -671,7 +671,7 @@ bool CompilationInfo::instantiateStencilsAfterPreparation(
     return false;
   }
 
-  // Must be infallible from here forward.
+  
 
   UpdateEmittedInnerFunctions(cx, input, stencil, gcOutput);
 
@@ -683,10 +683,10 @@ bool CompilationInfo::instantiateStencilsAfterPreparation(
 }
 
 bool CompilationInfoVector::buildDelazificationIndices(JSContext* cx) {
-  // Standalone-functions are not supported by XDR.
+  
   MOZ_ASSERT(!initial.stencil.scriptData[0].isFunction());
 
-  // If no delazifications, we are done.
+  
   if (delazifications.empty()) {
     return true;
   }
@@ -764,7 +764,7 @@ bool CompilationInfoVector::instantiateStencilsAfterPreparation(
       return false;
     }
 
-    // Destroy elements, without unreserving.
+    
     gcOutputForDelazification.functions.clear();
     gcOutputForDelazification.scopes.clear();
 
@@ -774,7 +774,7 @@ bool CompilationInfoVector::instantiateStencilsAfterPreparation(
   return true;
 }
 
-/* static */
+
 bool CompilationInfo::prepareInputAndStencilForInstantiate(
     JSContext* cx, CompilationInput& input, CompilationStencil& stencil) {
   if (!input.atomCache.allocate(cx, stencil.parserAtomData.length())) {
@@ -784,7 +784,7 @@ bool CompilationInfo::prepareInputAndStencilForInstantiate(
   return true;
 }
 
-/* static */
+
 bool CompilationInfo::prepareGCOutputForInstantiate(
     JSContext* cx, CompilationStencil& stencil, CompilationGCOutput& gcOutput) {
   if (!gcOutput.functions.reserve(stencil.scriptData.length())) {
@@ -799,7 +799,7 @@ bool CompilationInfo::prepareGCOutputForInstantiate(
   return true;
 }
 
-/* static */
+
 bool CompilationInfo::prepareForInstantiate(JSContext* cx,
                                             CompilationInfo& compilationInfo,
                                             CompilationGCOutput& gcOutput) {
@@ -877,7 +877,7 @@ bool CompilationInfo::serializeStencils(JSContext* cx, JS::TranscodeBuffer& buf,
     return false;
   }
 
-  // Lineareize the endcoder, return empty buffer on failure.
+  
   res = encoder.linearize(buf);
   if (res.isErr()) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
@@ -920,8 +920,8 @@ CompilationState::CompilationState(JSContext* cx,
                                    LifoAllocScope& frontendAllocScope,
                                    const JS::ReadOnlyCompileOptions& options,
                                    CompilationInfo& compilationInfo,
-                                   Scope* enclosingScope /* = nullptr */,
-                                   JSObject* enclosingEnv /* = nullptr */)
+                                   Scope* enclosingScope ,
+                                   JSObject* enclosingEnv )
     : directives(options.forceStrictMode()),
       scopeContext(cx, enclosingScope, enclosingEnv),
       usedNames(cx),
@@ -976,7 +976,7 @@ void frontend::DumpTaggedParserAtomIndex(
 #  undef CASE_
 
       default:
-        // This includes tiny WellKnownAtomId atoms, which is invalid.
+        
         json.property("index", size_t(index));
         break;
     }
@@ -1026,22 +1026,22 @@ void RegExpStencil::dumpFields(js::JSONPrinter& json,
 
   GenericPrinter& out = json.beginStringProperty("flags");
 
-  if (flags_.global()) {
+  if (flags().global()) {
     out.put("g");
   }
-  if (flags_.ignoreCase()) {
+  if (flags().ignoreCase()) {
     out.put("i");
   }
-  if (flags_.multiline()) {
+  if (flags().multiline()) {
     out.put("m");
   }
-  if (flags_.dotAll()) {
+  if (flags().dotAll()) {
     out.put("s");
   }
-  if (flags_.unicode()) {
+  if (flags().unicode()) {
     out.put("u");
   }
-  if (flags_.sticky()) {
+  if (flags().sticky()) {
     out.put("y");
   }
 
@@ -1605,7 +1605,7 @@ void CompilationStencil::dump() {
 void CompilationStencil::dump(js::JSONPrinter& json) {
   json.beginObject();
 
-  // FIXME: dump asmJS
+  
 
   json.beginListProperty("scriptData");
   for (auto& data : scriptData) {
@@ -1646,7 +1646,7 @@ void CompilationStencil::dump(js::JSONPrinter& json) {
   json.endObject();
 }
 
-#endif  // defined(DEBUG) || defined(JS_JITSPEW)
+#endif  
 
 mozilla::Span<TaggedScriptThingIndex>
 js::frontend::NewScriptThingSpanUninitialized(JSContext* cx, LifoAlloc& alloc,
@@ -1735,7 +1735,7 @@ bool CompilationAtomCache::allocate(JSContext* cx, size_t length) {
 
 void CompilationAtomCache::stealBuffer(AtomCacheVector& atoms) {
   atoms_ = std::move(atoms);
-  // Destroy elements, without unreserving.
+  
   atoms_.clear();
 }
 
