@@ -21,7 +21,9 @@ static void UpdateAllowedBehavior(StyleTouchAction aTouchActionValue,
   if (aTouchActionValue != StyleTouchAction::AUTO) {
     
     aOutBehavior &= ~AllowedTouchBehavior::DOUBLE_TAP_ZOOM;
-    if (aTouchActionValue != StyleTouchAction::MANIPULATION) {
+    if (aTouchActionValue != StyleTouchAction::MANIPULATION &&
+        !(aTouchActionValue & StyleTouchAction::PINCH_ZOOM)) {
+      
       
       aOutBehavior &= ~AllowedTouchBehavior::PINCH_ZOOM;
     }
