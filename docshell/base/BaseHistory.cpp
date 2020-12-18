@@ -80,7 +80,10 @@ void BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   }
 
   if (!CanStore(aURI)) {
-    return aLink->VisitedQueryFinished( false);
+    if (aLink) {
+      aLink->VisitedQueryFinished( false);
+    }
+    return;
   }
 
   
