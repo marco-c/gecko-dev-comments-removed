@@ -579,9 +579,9 @@ def get_raptor_test_list(args, oskey):
         
         if next_test.get("measure") is not None:
             _measures = []
-            for m in [m.strip() for m in next_test["measure"].split(",")]:
+            for measure in [m.strip() for m in next_test["measure"].split(",")]:
                 
-                _measures.append(m)
+                _measures.append(measure)
             next_test["measure"] = _measures
 
             
