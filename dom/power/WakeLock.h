@@ -22,8 +22,6 @@ class ErrorResult;
 
 namespace dom {
 
-class ContentParent;
-
 class WakeLock final : public nsIDOMEventListener,
                        public nsIObserver,
                        public nsSupportsWeakReference,
@@ -46,11 +44,6 @@ class WakeLock final : public nsIDOMEventListener,
   
   
   nsresult Init(const nsAString& aTopic, nsPIDOMWindowInner* aWindow);
-
-  
-  
-  
-  nsresult Init(const nsAString& aTopic, ContentParent* aContentParent);
 
   
 

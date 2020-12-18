@@ -38,21 +38,6 @@ class PowerManagerService : public nsIPowerManagerService,
   
   void Notify(const hal::WakeLockInformation& aWakeLockInfo) override;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<WakeLock> NewWakeLockOnBehalfOfProcess(
-      const nsAString& aTopic, ContentParent* aContentParent);
-
   already_AddRefed<WakeLock> NewWakeLock(const nsAString& aTopic,
                                          nsPIDOMWindowInner* aWindow,
                                          mozilla::ErrorResult& aRv);
