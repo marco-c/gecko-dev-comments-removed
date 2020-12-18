@@ -3137,27 +3137,6 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       return nullptr;
     }
 
-    if (clone->IsHTMLElement() || clone->IsXULElement()) {
-      
-      
-      Element* cloneElem = clone->AsElement();
-      CustomElementData* data = elem->GetCustomElementData();
-      RefPtr<nsAtom> typeAtom = data ? data->GetCustomElementType() : nullptr;
-
-      if (typeAtom) {
-        cloneElem->SetCustomElementData(new CustomElementData(typeAtom));
-
-        MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
-        CustomElementDefinition* definition =
-            nsContentUtils::LookupCustomElementDefinition(
-                nodeInfo->GetDocument(), nodeInfo->NameAtom(),
-                nodeInfo->NamespaceID(), typeAtom);
-        if (definition) {
-          nsContentUtils::EnqueueUpgradeReaction(cloneElem, definition);
-        }
-      }
-    }
-
     if (aParent) {
       
       
@@ -3334,14 +3313,9 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         
         
         
+        
+        
         clone->AsElement()->CloneAnimationsFrom(*aNode->AsElement());
-
-        
-        
-        
-        if (aNode->AsElement()->State().HasState(NS_EVENT_STATE_DEFINED)) {
-          clone->AsElement()->SetDefined(true);
-        }
 
         
         ShadowRoot* originalShadowRoot = aNode->AsElement()->GetShadowRoot();
