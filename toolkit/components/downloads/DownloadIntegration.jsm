@@ -58,7 +58,6 @@ ChromeUtils.defineModuleGetter(
   "NetUtil",
   "resource://gre/modules/NetUtil.jsm"
 );
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(
   this,
   "PlacesUtils",
@@ -264,7 +263,7 @@ var DownloadIntegration = {
 
     this._store = new DownloadStore(
       list,
-      OS.Path.join(OS.Constants.Path.profileDir, "downloads.json")
+      PathUtils.join(await PathUtils.getProfileDir(), "downloads.json")
     );
     this._store.onsaveitem = this.shouldPersistDownload.bind(this);
 
@@ -371,7 +370,9 @@ var DownloadIntegration = {
             Ci.nsIFile
           );
           directoryPath = directory.path;
-          await OS.File.makeDir(directoryPath, { ignoreExisting: true });
+          await IOUtils.makeDirectory(directoryPath, {
+            createAncestors: false,
+          });
         } catch (ex) {
           
           directoryPath = await this.getSystemDownloadsDirectory();
@@ -497,7 +498,7 @@ var DownloadIntegration = {
           referrerInfo: aDownload.source.referrerInfo,
           fileSize: aDownload.currentBytes,
           sha256Hash: hash,
-          suggestedFileName: OS.Path.basename(aDownload.target.path),
+          suggestedFileName: PathUtils.filename(aDownload.target.path),
           signatureInfo: sigInfo,
           redirects: channelRedirects,
         },
@@ -604,40 +605,27 @@ var DownloadIntegration = {
         
         zone = Ci.mozIDownloadPlatform.ZONE_INTERNET;
       }
-      try {
-        
-        
-        if (zone >= Ci.mozIDownloadPlatform.ZONE_INTERNET) {
-          let streamPath = aDownload.target.path + ":Zone.Identifier";
-          let stream = await OS.File.open(
-            streamPath,
-            { create: true },
-            { winAllowLengthBeyondMaxPathWithCaveats: true }
-          );
-          try {
-            let zoneId = "[ZoneTransfer]\r\nZoneId=" + zone + "\r\n";
-            let { url, isPrivate, referrerInfo } = aDownload.source;
-            if (!isPrivate) {
-              let referrer = referrerInfo
-                ? referrerInfo.computedReferrerSpec
-                : "";
-              zoneId +=
-                this._zoneIdKey("ReferrerUrl", referrer) +
-                this._zoneIdKey("HostUrl", url, "about:internet");
-            }
-            await stream.write(new TextEncoder().encode(zoneId));
-          } finally {
-            await stream.close();
+      
+      
+      if (zone >= Ci.mozIDownloadPlatform.ZONE_INTERNET) {
+        let path = aDownload.target.path + ":Zone.Identifier";
+        try {
+          let zoneId = "[ZoneTransfer]\r\nZoneId=" + zone + "\r\n";
+          let { url, isPrivate, referrerInfo } = aDownload.source;
+          if (!isPrivate) {
+            let referrer = referrerInfo
+              ? referrerInfo.computedReferrerSpec
+              : "";
+            zoneId +=
+              this._zoneIdKey("ReferrerUrl", referrer) +
+              this._zoneIdKey("HostUrl", url, "about:internet");
           }
-        }
-      } catch (ex) {
-        
-        
-        
-        
-        
-        if (!(ex instanceof OS.File.Error) || ex.winLastError != 123) {
-          Cu.reportError(ex);
+          await IOUtils.writeUTF8(path, new TextEncoder().encode(zoneId));
+        } catch (ex) {
+          
+          if (!(ex instanceof DOMException)) {
+            Cu.reportError(ex);
+          }
         }
       }
     }
@@ -660,26 +648,19 @@ var DownloadIntegration = {
           ));
       
       
-      let options = {};
+      let unixMode;
       if (isTemporaryDownload) {
-        options.unixMode = 0o400;
-        options.winAttributes = { readOnly: true };
+        unixMode = 0o400;
       } else {
-        options.unixMode = 0o666;
+        unixMode = 0o666;
       }
       
-      await OS.File.setPermissions(aDownload.target.path, options);
+      await IOUtils.setPermissions(aDownload.target.path, unixMode);
     } catch (ex) {
       
       
       
-      
-      
-      
-      if (
-        !(ex instanceof OS.File.Error) ||
-        ex.unixErrno != OS.Constants.libc.EPERM
-      ) {
+      if (!(ex instanceof DOMException)) {
         Cu.reportError(ex);
       }
     }
@@ -958,15 +939,15 @@ var DownloadIntegration = {
     
     
     
-    let directoryPath = OS.Path.join(
+    let directoryPath = PathUtils.join(
       this._getDirectory(aName),
       DownloadUIHelper.strings.downloadsFolder
     );
 
     
-    return OS.File.makeDir(directoryPath, { ignoreExisting: true }).then(
-      () => directoryPath
-    );
+    return IOUtils.makeDirectory(directoryPath, {
+      createAncestors: false,
+    }).then(() => directoryPath);
   },
 
   
