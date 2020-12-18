@@ -6045,11 +6045,32 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
     return false;
   }
 
-  
-  
+  Label afterFrameRestore;
+  masm.jump(&afterFrameRestore);
   masm.bind(&returnTarget);
+
+  
+  
+  
+
+  
+  masm.loadPtr(Address(masm.getStackPointer(), 0), BaselineFrameReg);
+  
+  masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), BaselineFrameReg);
+  
+  masm.addStackPtrTo(BaselineFrameReg);
+
+  
+  
+  masm.addPtr(Imm32(2 * sizeof(void*)), BaselineFrameReg);
+  masm.bind(&afterFrameRestore);
+
+  
   masm.computeEffectiveAddress(frame.addressOfStackValue(-1),
                                masm.getStackPointer());
+
+  
+  
   if (JSScript* script = handler.maybeScript()) {
     masm.switchToRealm(script->realm(), R2.scratchReg());
   } else {
