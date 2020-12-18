@@ -178,16 +178,6 @@ where
         
         
         match *pseudo_class {
-            #[cfg(feature = "gecko")]
-            NonTSPseudoClass::MozAny(ref selectors) => {
-                use selectors::matching::matches_complex_selector;
-                return context.nest(|context| {
-                    selectors
-                        .iter()
-                        .any(|s| matches_complex_selector(s.iter(), self, context, _setter))
-                });
-            },
-
             
             
             
