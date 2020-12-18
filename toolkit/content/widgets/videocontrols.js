@@ -1531,10 +1531,14 @@ this.VideoControlsImplWidget = class {
             if (!this.hasError() && this.isVideoInFullScreen) {
               this.controlsSpacer.setAttribute("hideCursor", true);
             }
-            
-            
-            
-            this.fullscreenButton.setAttribute("tabindex", "-1");
+            if (
+              !this.prefs["media.videocontrols.keyboard-tab-to-all-controls"]
+            ) {
+              
+              
+              
+              this.fullscreenButton.setAttribute("tabindex", "-1");
+            }
           }
 
           
