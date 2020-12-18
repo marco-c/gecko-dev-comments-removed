@@ -77,6 +77,11 @@ def assert_actions(logger):
         actions = [json.loads(l)["action"] for l in lines]
         assert actions == expected
         buf.truncate(0)
+        
+        
+        
+        
+        buf.seek(0)
 
     return inner
 
