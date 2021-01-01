@@ -132,8 +132,6 @@ add_task(async function setup() {
   });
 
   
-  Preferences.set(PREF_TELEMETRY_LOG_LEVEL, "Trace");
-  
   Preferences.set(PREF_BYPASS_NOTIFICATION, false);
   
   Preferences.set(PREF_CURRENT_POLICY_VERSION, TEST_POLICY_VERSION);
@@ -226,70 +224,69 @@ add_task(async function test_single_window() {
   );
 });
 
-add_task(async function test_multiple_windows() {
-  clearAcceptedPolicy();
-  assertCoherentInitialState(); 
 
-  
-  await closeAllNotifications();
-  assertCoherentInitialState(); 
 
-  
-  
-  let otherWindow = await BrowserTestUtils.openNewBrowserWindow();
 
-  Assert.ok(
-    otherWindow.gNotificationBox,
-    "2nd window has a global notification box."
-  );
 
-  assertCoherentInitialState();
 
-  let showAlertPromises = [
-    promiseWaitForAlertActive(gNotificationBox),
-    promiseWaitForAlertActive(otherWindow.gNotificationBox),
-  ];
 
-  Assert.ok(
-    !TelemetryReportingPolicy.canUpload(),
-    "User should not be allowed to upload."
-  );
 
-  
-  triggerInfoBar(10 * 1000);
-  await Promise.all(showAlertPromises);
 
-  
-  let closeAlertPromises = [
-    promiseWaitForNotificationClose(gNotificationBox.currentNotification),
-    promiseWaitForNotificationClose(
-      otherWindow.gNotificationBox.currentNotification
-    ),
-  ];
-  gNotificationBox.currentNotification.close();
-  await Promise.all(closeAlertPromises);
 
-  
-  await BrowserTestUtils.closeWindow(otherWindow);
 
-  
-  Assert.ok(
-    TelemetryReportingPolicy.canUpload(),
-    "User should be allowed to upload now."
-  );
-  Assert.equal(
-    TelemetryReportingPolicy.testIsUserNotified(),
-    true,
-    "User notified about datareporting policy."
-  );
-  Assert.equal(
-    Preferences.get(PREF_ACCEPTED_POLICY_VERSION, 0),
-    TEST_POLICY_VERSION,
-    "Version pref set."
-  );
-  Assert.greater(
-    parseInt(Preferences.get(PREF_ACCEPTED_POLICY_DATE, null), 10),
-    -1,
-    "Date pref set."
-  );
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
