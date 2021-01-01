@@ -115,6 +115,8 @@ var PrintEventHandler = {
   allPaperSizes: {},
   previewIsEmpty: false,
   _delayedChanges: {},
+  _hasRenderedSelectionPreview: false,
+  _hasRenderedPrimaryPreview: false,
   _userChangedSettings: {},
   settingFlags: {
     margins: Ci.nsIPrintSettings.kInitSaveMargins,
@@ -144,7 +146,11 @@ var PrintEventHandler = {
 
   
   
-  _nonFlaggedUpdatePreviewSettings: new Set(["pageRanges", "numPagesPerSheet"]),
+  _nonFlaggedUpdatePreviewSettings: new Set([
+    "pageRanges",
+    "numPagesPerSheet",
+    "printSelectionOnly",
+  ]),
   _noPreviewUpdateSettings: new Set(["numCopies", "printDuplex"]),
 
   async init() {
@@ -154,10 +160,10 @@ var PrintEventHandler = {
     
     
     let sourceBrowsingContext = this.getSourceBrowsingContext();
-    this.previewBrowser = PrintUtils.createPreviewBrowser(
-      sourceBrowsingContext,
-      ourBrowser
-    );
+    ({
+      previewBrowser: this.previewBrowser,
+      selectionPreviewBrowser: this.selectionPreviewBrowser,
+    } = PrintUtils.createPreviewBrowsers(sourceBrowsingContext, ourBrowser));
 
     
     
@@ -171,6 +177,10 @@ var PrintEventHandler = {
       this.previewBrowser.swapDocShells(existingBrowser);
       existingBrowser.remove();
     }
+    this.hasSelection =
+      args.getProperty("hasSelection") && this.selectionPreviewBrowser;
+    document.querySelector("#print-selection-container").hidden = !this
+      .hasSelection;
 
     let sourcePrincipal =
       sourceBrowsingContext.currentWindowGlobal.documentPrincipal;
@@ -180,6 +190,14 @@ var PrintEventHandler = {
       sourceBrowsingContext.currentWindowContext.documentTitle;
     this.originalSourceCurrentURI =
       sourceBrowsingContext.currentWindowContext.documentURI.spec;
+
+    this.sourceWindowId =
+      sourceBrowsingContext.top.embedderElement.browsingContext.currentWindowGlobal.outerWindowId;
+    this.selectionWindowId =
+      sourceBrowsingContext.currentWindowGlobal.outerWindowId;
+
+    
+    sourceBrowsingContext = undefined;
 
     this.printProgressIndicator = document.getElementById("print-progress");
     this.printForm = document.getElementById("print");
@@ -297,10 +315,7 @@ var PrintEventHandler = {
     let settingsToChange = await this.refreshSettings(selectedPrinter.value);
     await this.updateSettings(settingsToChange, true);
 
-    
-    let initialPreviewDone = this._updatePrintPreview(sourceBrowsingContext);
-    
-    sourceBrowsingContext = undefined;
+    let initialPreviewDone = this._updatePrintPreview();
 
     
     
@@ -319,6 +334,9 @@ var PrintEventHandler = {
     );
 
     await document.l10n.translateElements([this.previewBrowser]);
+    if (this.selectionPreviewBrowser) {
+      await document.l10n.translateElements([this.selectionPreviewBrowser]);
+    }
 
     document.body.removeAttribute("loading");
 
@@ -726,13 +744,12 @@ var PrintEventHandler = {
 
 
 
-
-
-
-
-
-  async _updatePrintPreview(sourceBrowsingContext) {
-    let { previewBrowser, settings } = this;
+  async _updatePrintPreview() {
+    let { settings } = this;
+    let { printSelectionOnly } = this.viewSettings;
+    if (!this.selectionPreviewBrowser) {
+      printSelectionOnly = false;
+    }
 
     
     settings.showPrintProgress = false;
@@ -740,9 +757,24 @@ var PrintEventHandler = {
     this._showRenderingIndicator();
 
     let sourceWinId;
-    if (sourceBrowsingContext) {
-      sourceWinId = sourceBrowsingContext.currentWindowGlobal.outerWindowId;
+
+    
+    if (printSelectionOnly && !this._hasRenderedSelectionPreview) {
+      sourceWinId = this.selectionWindowId;
+      this._hasRenderedSelectionPreview = true;
+    } else if (!printSelectionOnly && !this._hasRenderedPrimaryPreview) {
+      sourceWinId = this.sourceWindowId;
+      this._hasRenderedPrimaryPreview = true;
     }
+
+    this.previewBrowser.parentElement.setAttribute(
+      "previewtype",
+      printSelectionOnly ? "selection" : "primary"
+    );
+
+    let previewBrowser = printSelectionOnly
+      ? this.selectionPreviewBrowser
+      : this.previewBrowser;
 
     const isFirstCall = !this.printInitiationTime;
     if (isFirstCall) {
@@ -757,13 +789,12 @@ var PrintEventHandler = {
         .add(elapsed);
     }
 
-    let totalPageCount, sheetCount, hasSelection, isEmpty;
+    let totalPageCount, sheetCount, isEmpty;
     try {
       
       ({
         totalPageCount,
         sheetCount,
-        hasSelection,
         isEmpty,
       } = await previewBrowser.frameLoader.printPreview(settings, sourceWinId));
     } catch (e) {
@@ -780,14 +811,14 @@ var PrintEventHandler = {
     }
 
     
-    settings.isPrintSelectionRBEnabled = hasSelection;
+    settings.isPrintSelectionRBEnabled = this.hasSelection;
 
     document.dispatchEvent(
       new CustomEvent("page-count", {
         detail: { sheetCount, totalPages: totalPageCount },
       })
     );
-    this.previewBrowser.setAttribute("sheet-count", sheetCount);
+    previewBrowser.setAttribute("sheet-count", sheetCount);
 
     this._hideRenderingIndicator();
 
@@ -1684,7 +1715,12 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
   }
 
   removeNonPdfSettings() {
-    let selectors = ["#margins", "#headers-footers", "#backgrounds"];
+    let selectors = [
+      "#margins",
+      "#headers-footers",
+      "#backgrounds",
+      "#print-selection-container",
+    ];
     for (let selector of selectors) {
       this.querySelector(selector).remove();
     }

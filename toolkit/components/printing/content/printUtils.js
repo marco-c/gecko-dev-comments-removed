@@ -143,38 +143,55 @@ var PrintUtils = {
     }
   },
 
-  createPreviewBrowser(aBrowsingContext, aDialogBrowser) {
-    let browser = gBrowser.createBrowser({
-      remoteType: aBrowsingContext.currentRemoteType,
-      userContextId: aBrowsingContext.originAttributes.userContextId,
-      initialBrowsingContextGroupId: aBrowsingContext.group.id,
-      skipLoad: true,
-    });
-    browser.addEventListener("DOMWindowClose", function(e) {
+  createPreviewBrowsers(aBrowsingContext, aDialogBrowser) {
+    let _createPreviewBrowser = previewType => {
       
       
-      
-      
-      
-      
-      
-      
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    browser.addEventListener("contextmenu", function(e) {
-      e.preventDefault();
-    });
-    browser.classList.add("printPreviewBrowser");
-    browser.setAttribute("flex", "1");
-    browser.setAttribute("printpreview", "true");
-    document.l10n.setAttributes(browser, "printui-preview-label");
+      let browsingContext =
+        previewType == "selection"
+          ? aBrowsingContext
+          : aBrowsingContext.top.embedderElement.browsingContext;
+      let browser = gBrowser.createBrowser({
+        remoteType: browsingContext.currentRemoteType,
+        userContextId: browsingContext.originAttributes.userContextId,
+        initialBrowsingContextGroupId: browsingContext.group.id,
+        skipLoad: true,
+      });
+      browser.addEventListener("DOMWindowClose", function(e) {
+        
+        
+        
+        
+        
+        
+        
+        
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      browser.addEventListener("contextmenu", function(e) {
+        e.preventDefault();
+      });
+      browser.classList.add("printPreviewBrowser");
+      browser.setAttribute("flex", "1");
+      browser.setAttribute("printpreview", "true");
+      browser.setAttribute("previewtype", previewType);
+      document.l10n.setAttributes(browser, "printui-preview-label");
+      return browser;
+    };
 
     let previewStack = document.importNode(
       document.getElementById("printPreviewStackTemplate").content,
       true
     ).firstElementChild;
-    previewStack.append(browser);
+
+    let previewBrowser = _createPreviewBrowser("primary");
+    previewStack.append(previewBrowser);
+    let selectionPreviewBrowser;
+    if (aBrowsingContext.currentRemoteType) {
+      selectionPreviewBrowser = _createPreviewBrowser("selection");
+      previewStack.append(selectionPreviewBrowser);
+    }
 
     
     
@@ -183,7 +200,7 @@ var PrintUtils = {
     previewStack.append(previewPagination);
 
     aDialogBrowser.parentElement.prepend(previewStack);
-    return browser;
+    return { previewBrowser, selectionPreviewBrowser };
   },
 
   
@@ -209,6 +226,17 @@ var PrintUtils = {
     aPrintInitiationTime,
     aPrintSelectionOnly
   ) {
+    let hasSelection = aPrintSelectionOnly;
+    if (!aPrintSelectionOnly) {
+      let sourceActor = aBrowsingContext.currentWindowGlobal.getActor(
+        "PrintingSelection"
+      );
+      hasSelection = await sourceActor.sendQuery(
+        "PrintingSelection:HasSelection",
+        {}
+      );
+    }
+
     let sourceBrowser = aBrowsingContext.top.embedderElement;
     let previewBrowser = this.getPreviewBrowser(sourceBrowser);
     if (previewBrowser) {
@@ -227,6 +255,7 @@ var PrintUtils = {
     let args = PromptUtils.objectToPropBag({
       previewBrowser: aExistingPreviewBrowser,
       printSelectionOnly: !!aPrintSelectionOnly,
+      hasSelection,
     });
     let dialogBox = gBrowser.getTabDialogBox(sourceBrowser);
     return dialogBox.open(
@@ -297,8 +326,11 @@ var PrintUtils = {
       !PRINT_ALWAYS_SILENT &&
       (!aOpenWindowInfo || aOpenWindowInfo.isForWindowDotPrint)
     ) {
+      let browsingContext = Services.focus.focusedContentBrowsingContext
+        ? Services.focus.focusedContentBrowsingContext
+        : aBrowsingContext;
       this._openTabModalPrint(
-        aBrowsingContext,
+        browsingContext,
         browser,
         printInitiationTime,
         aPrintSelectionOnly
@@ -423,8 +455,11 @@ var PrintUtils = {
     }
 
     if (PRINT_TAB_MODAL) {
+      let browsingContext = Services.focus.focusedContentBrowsingContext
+        ? Services.focus.focusedContentBrowsingContext
+        : gBrowser.selectedBrowser.browsingContext;
       return this._openTabModalPrint(
-        gBrowser.selectedBrowser.browsingContext,
+        browsingContext,
          undefined,
         Date.now()
       );
