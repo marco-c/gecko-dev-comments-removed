@@ -33,7 +33,7 @@ int ParentMain(int argc, wchar_t* argv[]) {
 
   
   
-  nsAutoHandle job(::CreateJobObject(nullptr, nullptr));
+  nsAutoHandle job(::CreateJobObjectW(nullptr, nullptr));
   if (!job) {
     printf(
         "TEST-UNEXPECTED-FAIL | DllInterceptorCrossProcess | Job creation "
