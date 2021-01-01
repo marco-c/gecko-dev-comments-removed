@@ -947,9 +947,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
 
   static bool setElement(JSContext* cx, Handle<TypedArrayObject*> obj,
                          uint64_t index, HandleValue v, ObjectOpResult& result);
-  static bool defineElement(JSContext* cx, Handle<TypedArrayObject*> obj,
-                            uint64_t index, HandleValue v,
-                            ObjectOpResult& result);
 };
 
 template <typename NativeType>
@@ -1007,34 +1004,6 @@ template <typename NativeType>
  bool TypedArrayObjectTemplate<NativeType>::setElement(
     JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
     ObjectOpResult& result) {
-  
-
-  
-  NativeType nativeValue;
-  if (!convertValue(cx, v, &nativeValue)) {
-    return false;
-  }
-
-  
-  if (index < obj->length().get()) {
-    MOZ_ASSERT(!obj->hasDetachedBuffer(),
-               "detaching an array buffer sets the length to zero");
-    TypedArrayObjectTemplate<NativeType>::setIndex(*obj, index, nativeValue);
-  }
-
-  
-  return result.succeed();
-}
-
-
-
-
-
-
-template <typename NativeType>
- bool TypedArrayObjectTemplate<NativeType>::defineElement(
-    JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
-    ObjectOpResult& result) {
   MOZ_ASSERT(!obj->hasDetachedBuffer());
   MOZ_ASSERT(index < obj->length().get());
 
@@ -1047,7 +1016,9 @@ template <typename NativeType>
   }
 
   
-  if (!obj->hasDetachedBuffer()) {
+  if (index < obj->length().get()) {
+    MOZ_ASSERT(!obj->hasDetachedBuffer(),
+               "detaching an array buffer sets the length to zero");
     TypedArrayObjectTemplate<NativeType>::setIndex(*obj, index, nativeValue);
   }
 
@@ -2501,10 +2472,10 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   
   if (desc.hasValue()) {
     switch (obj->type()) {
-#define DEFINE_TYPED_ARRAY_ELEMENT(T, N)                              \
-  case Scalar::N:                                                     \
-    return TypedArrayObjectTemplate<T>::defineElement(cx, obj, index, \
-                                                      desc.value(), result);
+#define DEFINE_TYPED_ARRAY_ELEMENT(T, N)                           \
+  case Scalar::N:                                                  \
+    return TypedArrayObjectTemplate<T>::setElement(cx, obj, index, \
+                                                   desc.value(), result);
       JS_FOR_EACH_TYPED_ARRAY(DEFINE_TYPED_ARRAY_ELEMENT)
 #undef DEFINE_TYPED_ARRAY_ELEMENT
       case Scalar::MaxTypedArrayViewType:
