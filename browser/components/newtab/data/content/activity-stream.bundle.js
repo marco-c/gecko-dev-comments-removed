@@ -574,13 +574,11 @@ const PrefsButton = ({
 }));
 const PersonalizeButton = ({
   onClick
-}) => react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("div", {
-  className: "button-wrapper"
-}, react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("button", {
+}) => react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("button", {
   className: "personalize-button",
   onClick: onClick,
   "data-l10n-id": "newtab-personalize-button-label"
-})); 
+}); 
 
 
 function debounce(func, wait) {
