@@ -65,9 +65,11 @@ public class WebExtension {
         void onActionDelegate(final ActionDelegate delegate);
         void onBrowsingDataDelegate(final BrowsingDataDelegate delegate);
         void onTabDelegate(final TabDelegate delegate);
+        void onDownloadDelegate(final DownloadDelegate delegate);
         ActionDelegate getActionDelegate();
         BrowsingDataDelegate getBrowsingDataDelegate();
         TabDelegate getTabDelegate();
+        DownloadDelegate getDownloadDelegate();
     }
 
     private DelegateController mDelegateController = null;
@@ -988,6 +990,7 @@ public class WebExtension {
         final private HashMap<String, ActionDelegate> mActionDelegates;
         final private HashMap<String, BrowsingDataDelegate> mBrowsingDataDelegates;
         final private HashMap<String, TabDelegate> mTabDelegates;
+        final private HashMap<String, DownloadDelegate> mDownloadDelegates;
 
         final private GeckoSession mSession;
         final private EventDispatcher mEventDispatcher;
@@ -1022,6 +1025,7 @@ public class WebExtension {
             mActionDelegates = new HashMap<>();
             mBrowsingDataDelegates = new HashMap<>();
             mTabDelegates = new HashMap<>();
+            mDownloadDelegates = new HashMap<>();
             mEventDispatcher = session != null
                     ? session.getEventDispatcher()
                     : EventDispatcher.getInstance();
@@ -1036,7 +1040,8 @@ public class WebExtension {
                     "GeckoView:WebExtension:Connect",
                     "GeckoView:WebExtension:Disconnect",
                     "GeckoView:BrowsingData:GetSettings",
-                    "GeckoView:BrowsingData:Clear");
+                    "GeckoView:BrowsingData:Clear",
+                    "GeckoView:WebExtension:Download");
         }
 
         public void unregisterWebExtension(final WebExtension extension) {
@@ -1044,6 +1049,7 @@ public class WebExtension {
             mActionDelegates.remove(extension.id);
             mBrowsingDataDelegates.remove(extension.id);
             mTabDelegates.remove(extension.id);
+            mDownloadDelegates.remove(extension.id);
         }
 
         public void setTabDelegate(final WebExtension webExtension,
@@ -1117,6 +1123,15 @@ public class WebExtension {
             }
 
             runtime.getWebExtensionController().handleMessage(event, message, callback, mSession);
+        }
+
+        public void setDownloadDelegate(final @NonNull WebExtension extension,
+                                        final @Nullable DownloadDelegate delegate) {
+            mDownloadDelegates.put(extension.id, delegate);
+        }
+
+        public WebExtension.DownloadDelegate getDownloadDelegate(final WebExtension extension) {
+            return mDownloadDelegates.get(extension.id);
         }
     }
 
@@ -2194,23 +2209,68 @@ public class WebExtension {
         }
     }
 
-    
-     interface DownloadDelegate {
+    public interface DownloadDelegate {
+        
+
+
+
+
+
+
+
         @AnyThread
-        default GeckoResult<WebExtension.Download> onDownload(WebExtension source, DownloadRequest request) {
+        @Nullable
+        default GeckoResult<WebExtension.Download> onDownload(@NonNull WebExtension source, @NonNull DownloadRequest request) {
             return null;
         }
     }
 
     
+
+
+
+
+
+
+
+
+    @UiThread
+    public void setDownloadDelegate(final @Nullable DownloadDelegate delegate) {
+        if (mDelegateController != null) {
+            mDelegateController.onDownloadDelegate(delegate);
+        }
+    }
+
     
 
 
 
-    static class Download {
-         final String id;
 
-        private Download(final String id) {
+
+
+
+    @UiThread
+    @Nullable
+    public DownloadDelegate getDownloadDelegate() {
+        return mDelegateController.getDownloadDelegate();
+    }
+
+    
+
+
+
+    public static class Download {
+        
+
+
+
+        public final @NonNull int id;
+
+        
+
+
+
+        protected Download(final int id) {
             this.id = id;
         }
 
@@ -2336,45 +2396,147 @@ public class WebExtension {
     }
 
     
-    
 
 
-    static final class DownloadRequest {
-         final WebRequest request;
-         final @GeckoWebExecutor.FetchFlags int downloadFlags;
-         final String filename;
-         final @ConflictActionFlags int conflictActionFlag;
+    public static class DownloadRequest {
+        
 
-        @IntDef(flag = true, value = { UNIQUIFY, OVERWRITE, PROMPT })
+
+        public final @NonNull WebRequest request;
+
+        
+
+
+        public final @GeckoWebExecutor.FetchFlags int downloadFlags;
+
+        
+
+
+        public final @Nullable String filename;
+
+        
+
+
+
+        public final @ConflictActionFlags int conflictActionFlag;
+
+        
+
+
+
+        public final boolean saveAs;
+
+        
+
+
+
+
+
+
+        public final boolean allowHttpErrors;
+
+        @IntDef(flag = true, value = {CONFLICT_ACTION_UNIQUIFY, CONFLICT_ACTION_OVERWRITE, CONFLICT_ACTION_PROMPT})
          @interface ConflictActionFlags {}
 
         
 
 
-         static final int UNIQUIFY = 0;
+        public static final int CONFLICT_ACTION_UNIQUIFY = 0;
 
         
 
 
-         static final int OVERWRITE = 1;
+        public static final int CONFLICT_ACTION_OVERWRITE = 1;
 
         
 
 
-         static final int PROMPT = 1 << 1;
+        public static final int CONFLICT_ACTION_PROMPT = 1 << 1;
 
-        private DownloadRequest(final DownloadRequest.Builder builder) {
+        protected DownloadRequest(final DownloadRequest.Builder builder) {
             this.request = builder.mRequest;
             this.downloadFlags = builder.mDownloadFlags;
             this.filename = builder.mFilename;
             this.conflictActionFlag = builder.mConflictActionFlag;
+            this.saveAs = builder.mSaveAs;
+            this.allowHttpErrors = builder.mAllowHttpErrors;
         }
 
-         class Builder {
+        
+
+
+
+
+
+         static DownloadRequest fromBundle(final GeckoBundle optionsBundle) {
+            final String uri = optionsBundle.getString("url");
+
+            WebRequest.Builder mainRequestBuilder = new WebRequest.Builder(uri);
+
+            String method = optionsBundle.getString("method");
+            if (method != null) {
+                mainRequestBuilder.method(method);
+
+                if (method.equals("POST")) {
+                    String body = optionsBundle.getString("body");
+                    mainRequestBuilder.body(body);
+                }
+            }
+
+            GeckoBundle[] headers = optionsBundle.getBundleArray("headers");
+            if (headers != null) {
+                for (GeckoBundle header : headers) {
+                    String value = header.getString("value");
+                    if (value == null) {
+                        value = header.getString("binaryValue");
+                    }
+                    mainRequestBuilder.addHeader(header.getString("name"), value);
+                }
+            }
+
+            WebRequest mainRequest = mainRequestBuilder.build();
+
+            int downloadFlags = GeckoWebExecutor.FETCH_FLAGS_NONE;
+            boolean incognito = optionsBundle.getBoolean("incognito");
+            if (incognito) {
+                downloadFlags |= GeckoWebExecutor.FETCH_FLAGS_PRIVATE;
+            }
+
+            boolean allowHttpErrors = optionsBundle.getBoolean("allowHttpErrors");
+
+            int conflictActionFlags = CONFLICT_ACTION_UNIQUIFY;
+            String conflictActionString = optionsBundle.getString("conflictAction");
+            if (conflictActionString != null) {
+                switch (conflictActionString.toLowerCase()) {
+                    case "overwrite":
+                        conflictActionFlags |= WebExtension.DownloadRequest.CONFLICT_ACTION_OVERWRITE;
+                        break;
+                    case "prompt":
+                        conflictActionFlags |= WebExtension.DownloadRequest.CONFLICT_ACTION_PROMPT;
+                        break;
+                }
+            }
+
+            boolean saveAs = optionsBundle.getBoolean("saveAs");
+
+            WebExtension.DownloadRequest request = new WebExtension.DownloadRequest.Builder(mainRequest)
+                    .filename(optionsBundle.getString("filename"))
+                    .downloadFlags(downloadFlags)
+                    .conflictAction(conflictActionFlags)
+                    .saveAs(saveAs)
+                    .allowHttpErrors(allowHttpErrors)
+                    .build();
+
+            return request;
+        }
+
+         static class Builder {
             private final WebRequest mRequest;
             private @GeckoWebExecutor.FetchFlags int mDownloadFlags = 0;
             private String mFilename = null;
-            private @ConflictActionFlags int mConflictActionFlag = UNIQUIFY;
+            private @ConflictActionFlags int mConflictActionFlag = CONFLICT_ACTION_UNIQUIFY;
+            private boolean mSaveAs = false;
+            private boolean mAllowHttpErrors = false;
 
              Builder(final WebRequest request) {
                 this.mRequest = request;
@@ -2392,6 +2554,16 @@ public class WebExtension {
 
              Builder conflictAction(final @ConflictActionFlags int conflictActionFlag) {
                 this.mConflictActionFlag = conflictActionFlag;
+                return this;
+            }
+
+             Builder saveAs(final boolean saveAs) {
+                this.mSaveAs = saveAs;
+                return this;
+            }
+
+             Builder allowHttpErrors(final boolean allowHttpErrors) {
+                this.mAllowHttpErrors = allowHttpErrors;
                 return this;
             }
 

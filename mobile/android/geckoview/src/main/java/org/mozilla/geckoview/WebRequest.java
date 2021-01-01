@@ -17,6 +17,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 
 
 
@@ -165,6 +167,25 @@ public class WebRequest extends WebMessage {
             if (buffer != null && !buffer.isDirect()) {
                 throw new IllegalArgumentException("body must be directly allocated");
             }
+            mBody = buffer;
+            return this;
+        }
+
+        
+
+
+
+
+
+        public @NonNull Builder body(final @Nullable String bodyString) {
+            if (bodyString == null) {
+                mBody = null;
+                return this;
+            }
+            CharBuffer chars = CharBuffer.wrap(bodyString);
+            ByteBuffer buffer = ByteBuffer.allocateDirect(bodyString.length());
+            Charset.forName("UTF-8").newEncoder().encode(chars, buffer, true);
+
             mBody = buffer;
             return this;
         }
