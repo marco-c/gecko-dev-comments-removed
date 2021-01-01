@@ -359,10 +359,6 @@ pref("browser.urlbar.update2", true);
 
 
 
-pref("browser.urlbar.update2.disableOneOffsHorizontalKeyNavigation", true);
-
-
-
 
 
 pref("browser.urlbar.update2.emptySearchBehavior", 0);

@@ -151,6 +151,10 @@ class SearchOneOffs {
     
     
     Services.obs.addObserver(this, "lightweight-theme-changed", true);
+
+    
+    
+    this.disableOneOffsHorizontalKeyNavigation = false;
   }
 
   addEventListener(...args) {

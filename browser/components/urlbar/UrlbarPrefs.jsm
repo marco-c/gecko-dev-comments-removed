@@ -194,10 +194,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["update2.disableOneOffsHorizontalKeyNavigation", true],
-
-  
-  
   
   
   ["update2.emptySearchBehavior", 0],

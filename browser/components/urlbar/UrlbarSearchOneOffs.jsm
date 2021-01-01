@@ -31,7 +31,8 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     this.view = view;
     this.input = view.input;
     UrlbarPrefs.addObserver(this);
-    this._setupOneOffsHorizontalKeyNavigation();
+    
+    this.disableOneOffsHorizontalKeyNavigation = true;
   }
 
   
@@ -317,16 +318,6 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     ) {
       this.invalidateCache();
     }
-    this._setupOneOffsHorizontalKeyNavigation();
-  }
-
-  
-
-
-  _setupOneOffsHorizontalKeyNavigation() {
-    this.disableOneOffsHorizontalKeyNavigation =
-      UrlbarPrefs.get("update2") &&
-      UrlbarPrefs.get("update2.disableOneOffsHorizontalKeyNavigation");
   }
 
   
