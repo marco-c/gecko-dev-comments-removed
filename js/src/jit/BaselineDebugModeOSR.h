@@ -22,7 +22,7 @@ namespace jit {
 
 
 
-MOZ_MUST_USE bool RecompileOnStackBaselineScriptsForDebugMode(
+[[nodiscard]] bool RecompileOnStackBaselineScriptsForDebugMode(
     JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
     DebugAPI::IsObserving observing);
 

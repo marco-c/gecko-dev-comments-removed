@@ -4403,8 +4403,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
                       IntConversionBehavior::ClampToUint8);
   }
 
-  MOZ_MUST_USE bool icBuildOOLFakeExitFrame(void* fakeReturnAddr,
-                                            AutoSaveLiveRegisters& save);
+  [[nodiscard]] bool icBuildOOLFakeExitFrame(void* fakeReturnAddr,
+                                             AutoSaveLiveRegisters& save);
 
   
   

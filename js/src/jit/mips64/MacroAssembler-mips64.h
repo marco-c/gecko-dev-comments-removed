@@ -431,36 +431,37 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
   
   
   
-  MOZ_MUST_USE Register extractObject(const Address& address, Register scratch);
-  MOZ_MUST_USE Register extractObject(const ValueOperand& value,
-                                      Register scratch) {
+  [[nodiscard]] Register extractObject(const Address& address,
+                                       Register scratch);
+  [[nodiscard]] Register extractObject(const ValueOperand& value,
+                                       Register scratch) {
     unboxObject(value, scratch);
     return scratch;
   }
-  MOZ_MUST_USE Register extractString(const ValueOperand& value,
-                                      Register scratch) {
+  [[nodiscard]] Register extractString(const ValueOperand& value,
+                                       Register scratch) {
     unboxString(value, scratch);
     return scratch;
   }
-  MOZ_MUST_USE Register extractSymbol(const ValueOperand& value,
-                                      Register scratch) {
+  [[nodiscard]] Register extractSymbol(const ValueOperand& value,
+                                       Register scratch) {
     unboxSymbol(value, scratch);
     return scratch;
   }
-  MOZ_MUST_USE Register extractInt32(const ValueOperand& value,
-                                     Register scratch) {
+  [[nodiscard]] Register extractInt32(const ValueOperand& value,
+                                      Register scratch) {
     unboxInt32(value, scratch);
     return scratch;
   }
-  MOZ_MUST_USE Register extractBoolean(const ValueOperand& value,
-                                       Register scratch) {
+  [[nodiscard]] Register extractBoolean(const ValueOperand& value,
+                                        Register scratch) {
     unboxBoolean(value, scratch);
     return scratch;
   }
-  MOZ_MUST_USE Register extractTag(const Address& address, Register scratch);
-  MOZ_MUST_USE Register extractTag(const BaseIndex& address, Register scratch);
-  MOZ_MUST_USE Register extractTag(const ValueOperand& value,
-                                   Register scratch) {
+  [[nodiscard]] Register extractTag(const Address& address, Register scratch);
+  [[nodiscard]] Register extractTag(const BaseIndex& address, Register scratch);
+  [[nodiscard]] Register extractTag(const ValueOperand& value,
+                                    Register scratch) {
     MOZ_ASSERT(scratch != ScratchRegister);
     splitTag(value, scratch);
     return scratch;

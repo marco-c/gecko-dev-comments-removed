@@ -145,7 +145,7 @@ class JitContext {
 };
 
 
-MOZ_MUST_USE bool InitializeJit();
+[[nodiscard]] bool InitializeJit();
 
 
 

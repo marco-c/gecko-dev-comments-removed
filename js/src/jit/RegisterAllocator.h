@@ -35,12 +35,12 @@ struct AllocationIntegrityState {
 
   
   
-  MOZ_MUST_USE bool record();
+  [[nodiscard]] bool record();
 
   
   
   
-  MOZ_MUST_USE bool check();
+  [[nodiscard]] bool check();
 
  private:
   LIRGraph& graph;
@@ -114,12 +114,12 @@ struct AllocationIntegrityState {
       IntegrityItemSet;
   IntegrityItemSet seen;
 
-  MOZ_MUST_USE bool checkIntegrity(LBlock* block, LInstruction* ins,
-                                   uint32_t vreg, LAllocation alloc);
+  [[nodiscard]] bool checkIntegrity(LBlock* block, LInstruction* ins,
+                                    uint32_t vreg, LAllocation alloc);
   void checkSafepointAllocation(LInstruction* ins, uint32_t vreg,
                                 LAllocation alloc);
-  MOZ_MUST_USE bool addPredecessor(LBlock* block, uint32_t vreg,
-                                   LAllocation alloc);
+  [[nodiscard]] bool addPredecessor(LBlock* block, uint32_t vreg,
+                                    LAllocation alloc);
 
   void dump();
 };
@@ -199,7 +199,7 @@ class InstructionDataMap {
  public:
   InstructionDataMap() : insData_() {}
 
-  MOZ_MUST_USE bool init(MIRGenerator* gen, uint32_t numInstructions) {
+  [[nodiscard]] bool init(MIRGenerator* gen, uint32_t numInstructions) {
     if (!insData_.init(gen->alloc(), numInstructions)) {
       return false;
     }
@@ -252,7 +252,7 @@ class RegisterAllocator {
     }
   }
 
-  MOZ_MUST_USE bool init();
+  [[nodiscard]] bool init();
 
   TempAllocator& alloc() const { return mir->alloc(); }
 

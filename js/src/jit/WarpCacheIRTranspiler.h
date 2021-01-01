@@ -23,7 +23,7 @@ class WarpBuilder;
 class WarpCacheIR;
 
 
-MOZ_MUST_USE bool TranspileCacheIRToMIR(
+[[nodiscard]] bool TranspileCacheIRToMIR(
     WarpBuilder* builder, BytecodeLocation loc,
     const WarpCacheIR* cacheIRSnapshot,
     std::initializer_list<MDefinition*> inputs,

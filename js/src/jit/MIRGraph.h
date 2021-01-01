@@ -42,11 +42,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
  private:
   MBasicBlock(MIRGraph& graph, const CompileInfo& info, BytecodeSite* site,
               Kind kind);
-  MOZ_MUST_USE bool init();
+  [[nodiscard]] bool init();
   void copySlots(MBasicBlock* from);
-  MOZ_MUST_USE bool inherit(TempAllocator& alloc, size_t stackDepth,
-                            MBasicBlock* maybePred, uint32_t popped);
-  MOZ_MUST_USE bool inheritResumePoint(MBasicBlock* pred);
+  [[nodiscard]] bool inherit(TempAllocator& alloc, size_t stackDepth,
+                             MBasicBlock* maybePred, uint32_t popped);
+  [[nodiscard]] bool inheritResumePoint(MBasicBlock* pred);
   void assertUsesAreNotWithin(MUseIterator use, MUseIterator end);
 
   
@@ -168,8 +168,8 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   MDefinition* argumentsObject();
 
   
-  MOZ_MUST_USE bool increaseSlots(size_t num);
-  MOZ_MUST_USE bool ensureHasSlots(size_t num);
+  [[nodiscard]] bool increaseSlots(size_t num);
+  [[nodiscard]] bool ensureHasSlots(size_t num);
 
   
   
@@ -243,19 +243,19 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   
   
   
-  MOZ_MUST_USE bool addPredecessor(TempAllocator& alloc, MBasicBlock* pred);
-  MOZ_MUST_USE bool addPredecessorPopN(TempAllocator& alloc, MBasicBlock* pred,
-                                       uint32_t popped);
+  [[nodiscard]] bool addPredecessor(TempAllocator& alloc, MBasicBlock* pred);
+  [[nodiscard]] bool addPredecessorPopN(TempAllocator& alloc, MBasicBlock* pred,
+                                        uint32_t popped);
 
   
   
-  MOZ_MUST_USE bool addPredecessorSameInputsAs(MBasicBlock* pred,
-                                               MBasicBlock* existingPred);
+  [[nodiscard]] bool addPredecessorSameInputsAs(MBasicBlock* pred,
+                                                MBasicBlock* existingPred);
 
   
-  MOZ_MUST_USE bool addPredecessorWithoutPhis(MBasicBlock* pred);
+  [[nodiscard]] bool addPredecessorWithoutPhis(MBasicBlock* pred);
   void inheritSlots(MBasicBlock* parent);
-  MOZ_MUST_USE bool initEntrySlots(TempAllocator& alloc);
+  [[nodiscard]] bool initEntrySlots(TempAllocator& alloc);
 
   
   
@@ -279,8 +279,8 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 
   
   
-  MOZ_MUST_USE bool setBackedge(MBasicBlock* block);
-  MOZ_MUST_USE bool setBackedgeWasm(MBasicBlock* block, size_t paramCount);
+  [[nodiscard]] bool setBackedge(MBasicBlock* block);
+  [[nodiscard]] bool setBackedgeWasm(MBasicBlock* block, size_t paramCount);
 
   
   
@@ -295,10 +295,10 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void inheritPhis(MBasicBlock* header);
 
   
-  MOZ_MUST_USE bool inheritPhisFromBackedge(MBasicBlock* backedge);
+  [[nodiscard]] bool inheritPhisFromBackedge(MBasicBlock* backedge);
 
   
-  MOZ_MUST_USE bool specializePhis(TempAllocator& alloc);
+  [[nodiscard]] bool specializePhis(TempAllocator& alloc);
 
   void insertBefore(MInstruction* at, MInstruction* ins);
   void insertAfter(MInstruction* at, MInstruction* ins);
@@ -633,7 +633,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 #endif
    public:
     explicit BackupPoint(MBasicBlock* current);
-    MOZ_MUST_USE bool init(TempAllocator& alloc);
+    [[nodiscard]] bool init(TempAllocator& alloc);
     MBasicBlock* restore();
   };
 
@@ -746,7 +746,7 @@ class MIRGraph {
   }
   MIRGraphReturns* returnAccumulator() const { return returnAccumulator_; }
 
-  MOZ_MUST_USE bool addReturn(MBasicBlock* returnBlock) {
+  [[nodiscard]] bool addReturn(MBasicBlock* returnBlock) {
     if (!returnAccumulator_) {
       return true;
     }
@@ -766,7 +766,7 @@ class MIRGraph {
     return blocks_.begin(at);
   }
   ReversePostorderIterator rpoEnd() { return blocks_.end(); }
-  MOZ_MUST_USE bool removeSuccessorBlocks(MBasicBlock* block);
+  [[nodiscard]] bool removeSuccessorBlocks(MBasicBlock* block);
   void removeBlock(MBasicBlock* block);
   void removeBlockIncludingPhis(MBasicBlock* block);
   void moveBlockToEnd(MBasicBlock* block) {

@@ -270,7 +270,7 @@ class MoveResolver {
   PendingMove* findCycledMove(PendingMoveIterator* stack,
                               PendingMoveIterator end,
                               const PendingMove* first);
-  MOZ_MUST_USE bool addOrderedMove(const MoveOp& move);
+  [[nodiscard]] bool addOrderedMove(const MoveOp& move);
   void reorderMove(size_t from, size_t to);
 
   
@@ -290,9 +290,9 @@ class MoveResolver {
   
   
   
-  MOZ_MUST_USE bool addMove(const MoveOperand& from, const MoveOperand& to,
-                            MoveOp::Type type);
-  MOZ_MUST_USE bool resolve();
+  [[nodiscard]] bool addMove(const MoveOperand& from, const MoveOperand& to,
+                             MoveOp::Type type);
+  [[nodiscard]] bool resolve();
   void sortMemoryToMemoryMoves();
 
   size_t numMoves() const { return orderedMoves_.length(); }

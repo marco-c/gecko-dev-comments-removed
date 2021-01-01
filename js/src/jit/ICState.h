@@ -91,7 +91,7 @@ class ICState {
 
   
   
-  MOZ_MUST_USE MOZ_ALWAYS_INLINE bool maybeTransition() {
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool maybeTransition() {
     
     
     

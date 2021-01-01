@@ -225,10 +225,10 @@ def gen_compiler_method(name, args):
             args_code += "  {} {} = {};\\\n".format(cpp_type, cpp_name, readexpr)
 
     
-    code = "MOZ_MUST_USE bool {}({});\\\n".format(method_name, ", ".join(method_args))
+    code = "[[nodiscard]] bool {}({});\\\n".format(method_name, ", ".join(method_args))
 
     
-    code += "MOZ_MUST_USE bool {}(CacheIRReader& reader) {{\\\n".format(method_name)
+    code += "[[nodiscard]] bool {}(CacheIRReader& reader) {{\\\n".format(method_name)
     code += args_code
     code += "  return {}({});\\\n".format(method_name, ", ".join(cpp_args))
     code += "}\\\n"
