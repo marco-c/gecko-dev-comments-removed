@@ -2019,7 +2019,11 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
   }
 
   
+  bool wasLocking = mAspectRatio != 0.0;
   mBounds.SizeTo(width, height);
+  if (wasLocking) {
+    LockAspectRatio(true);  
+  }
 
   if (mWnd) {
     
