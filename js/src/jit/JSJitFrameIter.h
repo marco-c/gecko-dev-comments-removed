@@ -476,7 +476,7 @@ class SnapshotIterator {
  public:
   
   uint32_t pcOffset() const;
-  inline MOZ_MUST_USE bool resumeAfter() const {
+  [[nodiscard]] inline bool resumeAfter() const {
     
     
     

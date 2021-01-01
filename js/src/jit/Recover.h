@@ -162,8 +162,8 @@ class MOZ_NON_PARAM RInstruction {
   
   
   
-  virtual MOZ_MUST_USE bool recover(JSContext* cx,
-                                    SnapshotIterator& iter) const = 0;
+  [[nodiscard]] virtual bool recover(JSContext* cx,
+                                     SnapshotIterator& iter) const = 0;
 
   
   

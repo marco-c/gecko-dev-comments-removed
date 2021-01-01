@@ -105,7 +105,7 @@ class RematerializedFrame {
 
   
   
-  static MOZ_MUST_USE bool RematerializeInlineFrames(
+  [[nodiscard]] static bool RematerializeInlineFrames(
       JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
       MaybeReadFallback& fallback, RematerializedFrameVector& frames);
 

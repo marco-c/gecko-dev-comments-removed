@@ -778,10 +778,10 @@ static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
 
 
 
-static MOZ_MUST_USE bool UpdateGotoSuccessor(TempAllocator& alloc,
-                                             MBasicBlock* block,
-                                             MBasicBlock* target,
-                                             MBasicBlock* existingPred) {
+[[nodiscard]] static bool UpdateGotoSuccessor(TempAllocator& alloc,
+                                              MBasicBlock* block,
+                                              MBasicBlock* target,
+                                              MBasicBlock* existingPred) {
   MInstruction* ins = block->lastIns();
   MOZ_ASSERT(ins->isGoto());
   ins->toGoto()->target()->removePredecessor(block);
@@ -798,7 +798,7 @@ static MOZ_MUST_USE bool UpdateGotoSuccessor(TempAllocator& alloc,
 
 
 
-static MOZ_MUST_USE bool UpdateTestSuccessors(
+[[nodiscard]] static bool UpdateTestSuccessors(
     TempAllocator& alloc, MBasicBlock* block, MDefinition* value,
     MBasicBlock* ifTrue, MBasicBlock* ifFalse, MBasicBlock* existingPred) {
   MInstruction* ins = block->lastIns();

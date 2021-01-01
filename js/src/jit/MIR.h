@@ -344,7 +344,8 @@ class MNode : public TempObject {
   inline MDefinition* toDefinition();
   inline MResumePoint* toResumePoint();
 
-  virtual MOZ_MUST_USE bool writeRecoverData(CompactBufferWriter& writer) const;
+  [[nodiscard]] virtual bool writeRecoverData(
+      CompactBufferWriter& writer) const;
 
 #ifdef JS_JITSPEW
   virtual void dump(GenericPrinter& out) const = 0;
@@ -856,7 +857,7 @@ class MDefinition : public MNode {
   
   
   
-  virtual MOZ_MUST_USE bool updateForReplacement(MDefinition* ins) {
+  [[nodiscard]] virtual bool updateForReplacement(MDefinition* ins) {
     return true;
   }
 
@@ -1444,7 +1445,7 @@ class MConstant : public MNullaryInstruction {
 
   
   
-  bool MOZ_MUST_USE valueToBoolean(bool* res) const;
+  [[nodiscard]] bool valueToBoolean(bool* res) const;
 
   
   
@@ -6623,7 +6624,7 @@ class MPhi final : public MDefinition,
 
   
   
-  static MOZ_MUST_USE bool markIteratorPhis(const PhiVector& iterators);
+  [[nodiscard]] static bool markIteratorPhis(const PhiVector& iterators);
 
   
   
