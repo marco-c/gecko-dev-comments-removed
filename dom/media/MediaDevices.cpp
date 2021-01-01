@@ -10,6 +10,7 @@
 #include "mozilla/dom/MediaDevicesBinding.h"
 #include "mozilla/dom/NavigatorBinding.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WindowContext.h"
 #include "mozilla/MediaManager.h"
 #include "MediaTrackConstraints.h"
 #include "nsContentUtils.h"
@@ -166,12 +167,8 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
   
 
 
-  Document* doc = owner->GetExtantDoc();
-  if (NS_WARN_IF(!doc)) {
-    p->MaybeRejectWithSecurityError("No document.");
-    return p.forget();
-  }
-  if (!doc->HasBeenUserGestureActivated()) {
+  WindowContext* wc = owner->GetWindowContext();
+  if (!wc || !wc->HasValidTransientUserGestureActivation()) {
     p->MaybeRejectWithInvalidStateError(
         "getDisplayMedia must be called from a user gesture handler.");
     return p.forget();
