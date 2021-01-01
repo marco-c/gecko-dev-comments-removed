@@ -26,13 +26,7 @@ use std::{
     sync::Arc,
 };
 
-use ::libc;
-use libc::{free, malloc, memset};
-
-use crate::{
-    double_to_s15Fixed16Number,
-    transform::{get_rgb_colorants, precache_output, set_rgb_colorants},
-};
+use crate::transform::{precache_output, set_rgb_colorants};
 use crate::{matrix::matrix, s15Fixed16Number, s15Fixed16Number_to_float, Intent, Intent::*};
 
 pub static qcms_supports_iccv4: AtomicBool = AtomicBool::new(false);
@@ -259,7 +253,7 @@ fn read_uInt8Number(mut mem: &mut mem_source, mut offset: usize) -> uInt8Number 
 fn read_uInt16Number(mut mem: &mut mem_source, mut offset: usize) -> uInt16Number {
     read_u16(mem, offset)
 }
-fn write_u32(mut mem: &mut [u8], mut offset: usize, mut value: u32) {
+pub fn write_u32(mut mem: &mut [u8], mut offset: usize, mut value: u32) {
     if offset <= mem.len() - std::mem::size_of_val(&value) {
         panic!("OOB");
     }
@@ -268,7 +262,7 @@ fn write_u32(mut mem: &mut [u8], mut offset: usize, mut value: u32) {
         std::ptr::write_unaligned(mem.add(offset) as *mut u32, cpu_to_be32(value));
     }
 }
-fn write_u16(mut mem: &mut [u8], mut offset: usize, mut value: u16) {
+pub fn write_u16(mut mem: &mut [u8], mut offset: usize, mut value: u16) {
     if offset <= mem.len() - std::mem::size_of_val(&value) {
         panic!("OOB");
     }
@@ -307,7 +301,7 @@ fn check_profile_version(mut src: &mut mem_source) {
 }
 
 const INPUT_DEVICE_PROFILE: u32 = 0x73636e72; 
-const DISPLAY_DEVICE_PROFILE: u32 = 0x6d6e7472; 
+pub const DISPLAY_DEVICE_PROFILE: u32 = 0x6d6e7472; 
 const OUTPUT_DEVICE_PROFILE: u32 = 0x70727472; 
 const DEVICE_LINK_PROFILE: u32 = 0x6c696e6b; 
 const COLOR_SPACE_PROFILE: u32 = 0x73706163; 
@@ -452,7 +446,7 @@ pub extern "C" fn qcms_profile_is_bogus(mut profile: &mut qcms_profile) -> bool 
     let mut bY: f32;
     let mut bZ: f32;
     let mut negative: bool;
-    let mut i: libc::c_uint;
+    let mut i: u32;
     
     if profile.color_space != RGB_SIGNATURE {
         return false;
@@ -525,16 +519,16 @@ pub extern "C" fn qcms_profile_is_bogus(mut profile: &mut qcms_profile) -> bool 
     false
 }
 
-const TAG_bXYZ: u32 = 0x6258595a;
-const TAG_gXYZ: u32 = 0x6758595a;
-const TAG_rXYZ: u32 = 0x7258595a;
-const TAG_rTRC: u32 = 0x72545243;
-const TAG_bTRC: u32 = 0x62545243;
-const TAG_gTRC: u32 = 0x67545243;
-const TAG_kTRC: u32 = 0x6b545243;
-const TAG_A2B0: u32 = 0x41324230;
-const TAG_B2A0: u32 = 0x42324130;
-const TAG_CHAD: u32 = 0x63686164;
+pub const TAG_bXYZ: u32 = 0x6258595a;
+pub const TAG_gXYZ: u32 = 0x6758595a;
+pub const TAG_rXYZ: u32 = 0x7258595a;
+pub const TAG_rTRC: u32 = 0x72545243;
+pub const TAG_bTRC: u32 = 0x62545243;
+pub const TAG_gTRC: u32 = 0x67545243;
+pub const TAG_kTRC: u32 = 0x6b545243;
+pub const TAG_A2B0: u32 = 0x41324230;
+pub const TAG_B2A0: u32 = 0x42324130;
+pub const TAG_CHAD: u32 = 0x63686164;
 
 fn find_tag(mut index: &tag_index, mut tag_id: u32) -> Option<&tag> {
     for t in index {
@@ -575,7 +569,7 @@ fn read_tag_s15Fixed16ArrayType(
         i = 0u8;
         while (i as i32) < 9 {
             matrix.m[(i as i32 / 3) as usize][(i as i32 % 3) as usize] = s15Fixed16Number_to_float(
-                read_s15Fixed16Number(src, (offset + 8 + (i as i32 * 4) as libc::c_uint) as usize),
+                read_s15Fixed16Number(src, (offset + 8 + (i as i32 * 4) as u32) as usize),
             );
             i += 1
         }
@@ -1057,7 +1051,7 @@ fn build_sRGB_gamma_table(mut num_entries: i32) -> Vec<u16> {
 fn curve_from_table(mut table: &[u16]) -> Box<curveType> {
     Box::new(curveType::Curve(table.to_vec()))
 }
-fn float_to_u8Fixed8Number(mut a: f32) -> u16 {
+pub fn float_to_u8Fixed8Number(mut a: f32) -> u16 {
     if a > 255.0 + 255.0 / 256f32 {
         0xffffu16
     } else if a < 0.0 {
@@ -1331,115 +1325,4 @@ impl qcms_profile {
     pub fn precache_output_transform(&mut self) {
         crate::transform::qcms_profile_precache_output_transform(self);
     }
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn qcms_data_create_rgb_with_gamma(
-    mut white_point: qcms_CIE_xyY,
-    mut primaries: qcms_CIE_xyYTRIPLE,
-    mut gamma: f32,
-    mut mem: *mut *mut libc::c_void,
-    mut size: *mut usize,
-) {
-    let mut length: u32;
-    let mut index: u32;
-    let mut xyz_count: u32;
-    let mut trc_count: u32;
-    let mut tag_table_offset: usize;
-    let mut tag_data_offset: usize;
-    let mut data: *mut libc::c_void;
-    let mut colorants: matrix = matrix {
-        m: [[0.; 3]; 3],
-        invalid: false,
-    };
-    let mut TAG_XYZ: [u32; 3] = [TAG_rXYZ, TAG_gXYZ, TAG_bXYZ];
-    let mut TAG_TRC: [u32; 3] = [TAG_rTRC, TAG_gTRC, TAG_bTRC];
-    if mem.is_null() || size.is_null() {
-        return;
-    }
-    *mem = std::ptr::null_mut::<libc::c_void>();
-    *size = 0;
-    
-
-
-
-
-    xyz_count = 3; 
-    trc_count = 3; 
-    length =
-        (128 + 4) as libc::c_uint + 12 * (xyz_count + trc_count) + xyz_count * 20 + trc_count * 16;
-    
-    data = malloc(length as usize);
-    if data.is_null() {
-        return;
-    }
-    memset(data, 0, length as usize);
-    
-    if !get_rgb_colorants(&mut colorants, white_point, primaries) {
-        free(data);
-        return;
-    }
-    let data = std::slice::from_raw_parts_mut(data as *mut u8, length as usize);
-    
-    tag_table_offset = (128 + 4) as usize; 
-    tag_data_offset = ((128 + 4) as libc::c_uint + 12 * (xyz_count + trc_count)) as usize;
-    index = 0;
-    while index < xyz_count {
-        
-        write_u32(data, tag_table_offset, TAG_XYZ[index as usize]); 
-        write_u32(data, tag_table_offset + 4, tag_data_offset as u32);
-        write_u32(data, tag_table_offset + 8, 20);
-        
-        write_u32(data, tag_data_offset, XYZ_TYPE);
-        
-        write_u32(
-            data,
-            tag_data_offset + 8,
-            double_to_s15Fixed16Number(colorants.m[0][index as usize] as f64) as u32,
-        );
-        write_u32(
-            data,
-            tag_data_offset + 12,
-            double_to_s15Fixed16Number(colorants.m[1][index as usize] as f64) as u32,
-        );
-        write_u32(
-            data,
-            tag_data_offset + 16,
-            double_to_s15Fixed16Number(colorants.m[2][index as usize] as f64) as u32,
-        );
-        tag_table_offset += 12;
-        tag_data_offset += 20;
-        index += 1
-    }
-    
-    index = 0;
-    while index < trc_count {
-        
-        write_u32(data, tag_table_offset, TAG_TRC[index as usize]); 
-        write_u32(data, tag_table_offset + 4, tag_data_offset as u32);
-        write_u32(data, tag_table_offset + 8, 14);
-        
-        write_u32(data, tag_data_offset, CURVE_TYPE);
-        
-        write_u32(data, tag_data_offset + 8, 1); 
-        write_u16(data, tag_data_offset + 12, float_to_u8Fixed8Number(gamma));
-        tag_table_offset += 12;
-        tag_data_offset += 16;
-        index += 1
-    }
-    
-
-
-
-
-
-    write_u32(data, 0, length); 
-    write_u32(data, 12, DISPLAY_DEVICE_PROFILE); 
-    write_u32(data, 16, RGB_SIGNATURE); 
-    write_u32(data, 20, XYZ_TYPE); 
-    write_u32(data, 64, QCMS_INTENT_PERCEPTUAL as u32); 
-    write_u32(data, 128, 6); 
-                             
-    *mem = data.as_mut_ptr() as *mut libc::c_void;
-    *size = length as usize;
 }
