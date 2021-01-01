@@ -1451,6 +1451,11 @@ class ProfileChunkedBuffer {
           
           
           
+          
+          
+          currentChunkFilled = true;
+          
+          
           if (ProfileBufferChunk* next = GetOrCreateNextChunk(aLock);
               MOZ_LIKELY(next)) {
             
@@ -1466,7 +1471,6 @@ class ProfileChunkedBuffer {
             const auto mem1 = next->ReserveInitialBlockAsTail(
                 blockBytes - mem0.LengthBytes());
             MOZ_ASSERT(next->RemainingBytes() != 0);
-            currentChunkFilled = true;
             nextChunkInitialized = true;
             
             maybeEntryWriter.emplace(
