@@ -3708,6 +3708,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
 
 
+  void loadBigInt(Register bigInt, Register dest, Label* fail);
+
+  
+
+
+
+
   void loadBigIntNonZero(Register bigInt, Register dest, Label* fail);
 
   
