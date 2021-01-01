@@ -282,8 +282,17 @@ void gfxConfigManager::ConfigureWebRender() {
   if (!mFeatureWrQualified->IsEnabled()) {
     
     
-    mFeatureWr->Disable(FeatureStatus::Disabled, "Not qualified",
-                        "FEATURE_FAILURE_NOT_QUALIFIED"_ns);
+    if (!mFeatureWrSoftware->IsEnabled()) {
+      mFeatureWr->Disable(FeatureStatus::Disabled, "Not qualified",
+                          "FEATURE_FAILURE_NOT_QUALIFIED"_ns);
+    }
+  } else {
+    
+    
+    
+    mFeatureWrSoftware->Disable(FeatureStatus::Disabled,
+                                "Overriden by qualified hardware",
+                                "FEATURE_FAILURE_OVERRIDEN"_ns);
   }
 
   
@@ -297,9 +306,6 @@ void gfxConfigManager::ConfigureWebRender() {
     mFeatureWr->ForceDisable(FeatureStatus::UnavailableInSafeMode,
                              "Safe-mode is enabled",
                              "FEATURE_FAILURE_SAFE_MODE"_ns);
-    mFeatureWrSoftware->ForceDisable(FeatureStatus::UnavailableInSafeMode,
-                                     "Safe-mode is enabled",
-                                     "FEATURE_FAILURE_SAFE_MODE"_ns);
   }
 
   if (mXRenderEnabled) {
@@ -307,9 +313,6 @@ void gfxConfigManager::ConfigureWebRender() {
     
     mFeatureWr->ForceDisable(FeatureStatus::Blocked, "XRender is enabled",
                              "FEATURE_FAILURE_XRENDER"_ns);
-    mFeatureWrSoftware->ForceDisable(FeatureStatus::Blocked,
-                                     "XRender is enabled",
-                                     "FEATURE_FAILURE_XRENDER"_ns);
   }
 
   mFeatureWrAngle->EnableByDefault();

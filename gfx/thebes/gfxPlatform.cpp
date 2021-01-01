@@ -2706,29 +2706,29 @@ void gfxPlatform::InitWebRenderConfig() {
   manager.Init();
   manager.ConfigureWebRender();
 
-  bool hasHardware = gfxConfig::IsEnabled(Feature::WEBRENDER);
-  bool hasSoftware = gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE);
-  bool hasWebRender = hasHardware || hasSoftware;
-
 #ifdef XP_WIN
   if (gfxConfig::IsEnabled(Feature::WEBRENDER_ANGLE)) {
-    gfxVars::SetUseWebRenderANGLE(hasWebRender);
+    gfxVars::SetUseWebRenderANGLE(gfxConfig::IsEnabled(Feature::WEBRENDER));
   }
 #endif
 
   if (Preferences::GetBool("gfx.webrender.program-binary-disk", false)) {
-    gfxVars::SetUseWebRenderProgramBinaryDisk(hasWebRender);
+    gfxVars::SetUseWebRenderProgramBinaryDisk(
+        gfxConfig::IsEnabled(Feature::WEBRENDER));
   }
 
   if (StaticPrefs::gfx_webrender_use_optimized_shaders_AtStartup()) {
-    gfxVars::SetUseWebRenderOptimizedShaders(hasWebRender);
+    gfxVars::SetUseWebRenderOptimizedShaders(
+        gfxConfig::IsEnabled(Feature::WEBRENDER));
   }
 
-  gfxVars::SetUseSoftwareWebRender(!hasHardware && hasSoftware);
+  gfxVars::SetUseSoftwareWebRender(
+      gfxConfig::IsEnabled(Feature::WEBRENDER) &&
+      gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE));
 
   
   
-  if (hasWebRender) {
+  if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxVars::SetUseWebRender(true);
     reporter.SetSuccessful();
 
@@ -3353,26 +3353,13 @@ void gfxPlatform::NotifyCompositorCreated(LayersBackend aBackend) {
 }
 
 
-void gfxPlatform::DisableWebRender(FeatureStatus aStatus, const char* aMessage,
-                                   const nsACString& aFailureId) {
+void gfxPlatform::NotifyGPUProcessDisabled() {
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxConfig::GetFeature(Feature::WEBRENDER)
-        .ForceDisable(aStatus, aMessage, aFailureId);
+        .ForceDisable(FeatureStatus::Unavailable, "GPU Process is disabled",
+                      "FEATURE_FAILURE_GPU_PROCESS_DISABLED"_ns);
+    gfxVars::SetUseWebRender(false);
   }
-  
-  
-  if (gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE)) {
-    gfxConfig::GetFeature(Feature::WEBRENDER_SOFTWARE)
-        .ForceDisable(aStatus, aMessage, aFailureId);
-  }
-  gfxVars::SetUseWebRender(false);
-  gfxVars::SetUseSoftwareWebRender(false);
-}
-
-
-void gfxPlatform::NotifyGPUProcessDisabled() {
-  DisableWebRender(FeatureStatus::Unavailable, "GPU Process is disabled",
-                   "FEATURE_FAILURE_GPU_PROCESS_DISABLED"_ns);
   gfxVars::SetRemoteCanvasEnabled(false);
 }
 
