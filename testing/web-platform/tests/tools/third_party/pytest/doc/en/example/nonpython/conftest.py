@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 
 import pytest
 
@@ -9,7 +9,6 @@ def pytest_collect_file(parent, path):
 
 
 class YamlFile(pytest.File):
-
     def collect(self):
         import yaml  
 
@@ -19,7 +18,6 @@ class YamlFile(pytest.File):
 
 
 class YamlItem(pytest.Item):
-
     def __init__(self, name, parent, spec):
         super(YamlItem, self).__init__(name, parent)
         self.spec = spec

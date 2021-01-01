@@ -1,12 +1,6 @@
-try:
-    
-    import unittest2 as unittest
-except ImportError:
-    
-    import unittest
-
 import funcsigs
 
+import unittest2 as unittest
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_string (self):
@@ -21,7 +15,3 @@ class TestFormatAnnotation(unittest.TestCase):
         class dummy (object): pass
         self.assertEqual(funcsigs.formatannotation(dummy),
                          "tests.test_formatannotation.dummy")
-
-
-if __name__ == "__main__":
-    unittest.begin()

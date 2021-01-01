@@ -14,6 +14,7 @@
 .. _`distribute docs`:
 .. _`distribute`: https:
 .. _`pip`: https:
+.. _`venv`: https:
 .. _`virtualenv`: https:
 .. _hudson: http:
 .. _jenkins: http:

@@ -16,11 +16,9 @@
 
 
 
-
-
+import datetime
 import os
 import sys
-import datetime
 
 from _pytest import __version__ as version
 
@@ -42,11 +40,13 @@ todo_include_todos = 1
 
 
 extensions = [
+    "pygments_pytest",
     "sphinx.ext.autodoc",
-    "sphinx.ext.todo",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
     "sphinx.ext.viewcode",
+    "sphinx_removed_in",
     "sphinxcontrib_trio",
 ]
 
@@ -65,7 +65,7 @@ master_doc = "contents"
 
 project = u"pytest"
 year = datetime.datetime.utcnow().year
-copyright = u"2015–{} , holger krekel and pytest-dev team".format(year)
+copyright = u"2015–2020, holger krekel and pytest-dev team"
 
 
 
@@ -275,7 +275,7 @@ man_pages = [("usage", "pytest", u"pytest usage", [u"holger krekel at merlinux e
 epub_title = u"pytest"
 epub_author = u"holger krekel at merlinux eu"
 epub_publisher = u"holger krekel at merlinux eu"
-epub_copyright = u"2013, holger krekel et alii"
+epub_copyright = u"2013-2020, holger krekel et alii"
 
 
 
@@ -329,13 +329,13 @@ texinfo_documents = [
 
 
 
-intersphinx_mapping = {"python": ("http://docs.python.org/3", None)}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 
 def setup(app):
     
     
-    app.add_description_unit(
+    app.add_object_type(
         "confval",
         "confval",
         objname="configuration value",

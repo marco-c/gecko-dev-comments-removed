@@ -2,7 +2,7 @@
 """Function signature objects for callables
 
 Back port of Python 3.3's function signature tools from the inspect module,
-modified to be compatible with Python 2.6, 2.7 and 3.2+.
+modified to be compatible with Python 2.6, 2.7 and 3.3+.
 """
 from __future__ import absolute_import, division, print_function
 import itertools
@@ -13,7 +13,7 @@ import types
 try:
     from collections import OrderedDict
 except ImportError:
-    from funcsigs.odict import OrderedDict
+    from ordereddict import OrderedDict
 
 from funcsigs.version import __version__
 
@@ -62,17 +62,28 @@ def signature(obj):
         sig = signature(obj.__func__)
         if obj.__self__ is None:
             
-            if sig.parameters:
-                first = sig.parameters.values()[0].replace(
-                    kind=_POSITIONAL_ONLY)
-                return sig.replace(
-                    parameters=(first,) + tuple(sig.parameters.values())[1:])
-            else:
-                return sig
+            return sig
         else:
             
-            
-            return sig.replace(parameters=tuple(sig.parameters.values())[1:])
+            params = tuple(sig.parameters.values())
+
+            if not params or params[0].kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
+                raise ValueError('invalid method signature')
+
+            kind = params[0].kind
+            if kind in (_POSITIONAL_OR_KEYWORD, _POSITIONAL_ONLY):
+                
+                
+                params = params[1:]
+            else:
+                if kind is not _VAR_POSITIONAL:
+                    
+                    
+                    raise ValueError('invalid argument type')
+                
+                
+
+            return sig.replace(parameters=params)
 
     try:
         sig = obj.__signature__
@@ -769,16 +780,16 @@ class Signature(object):
                 
                 arguments[kwargs_param.name] = kwargs
             else:
-                raise TypeError('too many keyword arguments')
+                raise TypeError('too many keyword arguments %r' % kwargs)
 
         return self._bound_arguments_cls(self, arguments)
 
-    def bind(self, *args, **kwargs):
+    def bind(*args, **kwargs):
         '''Get a BoundArguments object, that maps the passed `args`
         and `kwargs` to the function's signature.  Raises `TypeError`
         if the passed arguments can not be bound.
         '''
-        return self._bind(args, kwargs)
+        return args[0]._bind(args[1:], kwargs)
 
     def bind_partial(self, *args, **kwargs):
         '''Get a BoundArguments object, that partially maps the

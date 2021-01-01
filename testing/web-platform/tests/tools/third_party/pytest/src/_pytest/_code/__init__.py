@@ -1,10 +1,15 @@
+# -*- coding: utf-8 -*-
 """ python inspection/code generation API """
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from .code import Code  
 from .code import ExceptionInfo  
+from .code import filter_traceback  
 from .code import Frame  
-from .code import Traceback  
 from .code import getrawcode  
-from .source import Source  
+from .code import Traceback  
 from .source import compile_ as compile  
 from .source import getfslineno  
+from .source import Source  

@@ -45,7 +45,7 @@ def test_change_level_undo(testdir):
             assert 0
     """
     )
-    result = testdir.runpytest_subprocess()
+    result = testdir.runpytest()
     result.stdout.fnmatch_lines(["*log from test1*", "*2 failed in *"])
     assert "log from test2" not in result.stdout.str()
 
@@ -71,6 +71,27 @@ def test_log_access(caplog):
     assert caplog.records[0].levelname == "INFO"
     assert caplog.records[0].msg == "boo %s"
     assert "boo arg" in caplog.text
+
+
+def test_messages(caplog):
+    caplog.set_level(logging.INFO)
+    logger.info("boo %s", "arg")
+    logger.info("bar %s\nbaz %s", "arg1", "arg2")
+    assert "boo arg" == caplog.messages[0]
+    assert "bar arg1\nbaz arg2" == caplog.messages[1]
+    assert caplog.text.count("\n") > len(caplog.messages)
+    assert len(caplog.text.splitlines()) > len(caplog.messages)
+
+    try:
+        raise Exception("test")
+    except Exception:
+        logger.exception("oops")
+
+    assert "oops" in caplog.text
+    assert "oops" in caplog.messages[-1]
+    
+    assert "Exception" in caplog.text
+    assert "Exception" not in caplog.messages[-1]
 
 
 def test_record_tuples(caplog):
