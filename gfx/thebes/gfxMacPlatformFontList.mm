@@ -1286,7 +1286,7 @@ void gfxMacPlatformFontList::RegisteredFontsChangedNotificationCallback(
   
   fl->ForceGlobalReflow();
 
-  dom::ContentParent::NotifyUpdatedFonts(true);
+  mozilla::dom::ContentParent::NotifyUpdatedFonts();
 }
 
 gfxFontEntry* gfxMacPlatformFontList::PlatformGlobalFontFallback(const uint32_t aCh,

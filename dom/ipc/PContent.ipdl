@@ -608,9 +608,7 @@ child:
 
 
 
-
-
-    async RebuildFontList(bool aFulLRebuild);
+    async RebuildFontList();
 
     
 
@@ -1433,23 +1431,6 @@ parent:
 
 
     sync InitOtherFamilyNames(uint32_t aGeneration, bool aDefer) returns (bool aLoaded);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    async StartCmapLoading(uint32_t aGeneration, uint32_t aStartIndex);
 
     
 

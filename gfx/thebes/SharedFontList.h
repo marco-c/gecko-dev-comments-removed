@@ -290,13 +290,6 @@ struct Family {
   
   bool IsInitialized() const { return !mFaces.IsNull(); }
 
-  
-  
-  
-  bool IsFullyInitialized() const {
-    return IsInitialized() && !mCharacterMap.IsNull();
-  }
-
   void FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
                             nsTArray<Face*>& aFaceList,
                             bool aIgnoreSizeTolerance = false) const;
