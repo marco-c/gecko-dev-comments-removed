@@ -225,10 +225,6 @@ class BrowserChild::DelayedDeleteRunnable final : public Runnable,
 
   
   
-  
-  
-  
-  
   bool mReadyToDelete = false;
 
  public:
@@ -248,8 +244,7 @@ class BrowserChild::DelayedDeleteRunnable final : public Runnable,
   }
 
   NS_IMETHOD GetPriority(uint32_t* aPriority) override {
-    *aPriority = mReadyToDelete ? nsIRunnablePriority::PRIORITY_INPUT_HIGH
-                                : nsIRunnablePriority::PRIORITY_NORMAL;
+    *aPriority = nsIRunnablePriority::PRIORITY_NORMAL;
     return NS_OK;
   }
 
