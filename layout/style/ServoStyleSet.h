@@ -210,10 +210,8 @@ class ServoStyleSet {
   
   
   
-  
-  
   already_AddRefed<ComputedStyle> ResolveStyleLazily(
-      dom::Element&, PseudoStyleType = PseudoStyleType::NotPseudo,
+      const dom::Element&, PseudoStyleType = PseudoStyleType::NotPseudo,
       StyleRuleInclusion = StyleRuleInclusion::All);
 
   
