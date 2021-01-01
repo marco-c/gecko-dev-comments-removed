@@ -159,24 +159,25 @@ nsresult JsepSessionImpl::AddRtpExtension(
     SdpDirectionAttribute::Direction direction) {
   mLastError.clear();
 
-  if (mRtpExtensions.size() + 1 > UINT16_MAX) {
-    JSEP_SET_ERROR("Too many rtp extensions have been added");
-    return NS_ERROR_FAILURE;
-  }
-
-  for (auto ext = mRtpExtensions.begin(); ext != mRtpExtensions.end(); ++ext) {
-    if (ext->mExtmap.direction == direction &&
-        ext->mExtmap.extensionname == extensionName) {
-      if (ext->mMediaType != mediaType) {
-        ext->mMediaType = JsepMediaType::kAudioVideo;
+  for (auto& ext : mRtpExtensions) {
+    if (ext.mExtmap.direction == direction &&
+        ext.mExtmap.extensionname == extensionName) {
+      if (ext.mMediaType != mediaType) {
+        ext.mMediaType = JsepMediaType::kAudioVideo;
       }
       return NS_OK;
     }
   }
 
+  uint16_t freeEntry = GetNeverUsedExtmapEntry();
+
+  if (freeEntry == 0) {
+    return NS_ERROR_FAILURE;
+  }
+
   JsepExtmapMediaType extMediaType = {
       mediaType,
-      {static_cast<uint16_t>(mRtpExtensions.size() + 1), direction,
+      {freeEntry, direction,
        
        direction != SdpDirectionAttribute::kSendrecv, extensionName, ""}};
 
@@ -450,8 +451,54 @@ std::string JsepSessionImpl::GetNewMid() {
 
 void JsepSessionImpl::AddCommonExtmaps(const SdpMediaSection& remoteMsection,
                                        SdpMediaSection* msection) {
-  mSdpHelper.AddCommonExtmaps(remoteMsection, GetRtpExtensions(*msection),
-                              msection);
+  auto negotiatedRtpExtensions = GetRtpExtensions(*msection);
+  mSdpHelper.NegotiateAndAddExtmaps(remoteMsection, negotiatedRtpExtensions,
+                                    msection);
+  for (const auto& negotiatedExtension : negotiatedRtpExtensions) {
+    if (negotiatedExtension.entry == 0) {
+      MOZ_ASSERT(false, "This should have been caught sooner");
+      continue;
+    }
+
+    for (auto& originalExtension : mRtpExtensions) {
+      if (negotiatedExtension.extensionname ==
+          originalExtension.mExtmap.extensionname) {
+        
+        originalExtension.mExtmap.entry = negotiatedExtension.entry;
+        mExtmapEntriesEverUsed.insert(negotiatedExtension.entry);
+      } else if (originalExtension.mExtmap.entry == negotiatedExtension.entry) {
+        
+        
+        originalExtension.mExtmap.entry = GetNeverUsedExtmapEntry();
+      }
+    }
+  }
+}
+
+uint16_t JsepSessionImpl::GetNeverUsedExtmapEntry() {
+  uint16_t result = 1;
+
+  
+  for (const auto used : mExtmapEntriesEverUsed) {
+    if (result != used) {
+      MOZ_ASSERT(result < used);
+      break;
+    }
+
+    
+    
+    if (used == 4095) {
+      JSEP_SET_ERROR(
+          "Too many rtp extensions have been added. "
+          "That's 4095. Who _does_ that?");
+      return 0;
+    }
+
+    result = used + 1;
+  }
+
+  mExtmapEntriesEverUsed.insert(result);
+  return result;
 }
 
 JsepSession::Result JsepSessionImpl::CreateAnswer(
