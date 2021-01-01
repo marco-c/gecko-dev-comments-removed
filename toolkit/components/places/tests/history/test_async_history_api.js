@@ -63,6 +63,8 @@ function promiseUpdatePlaces(aPlaces, aOptions, aBatchFrecencyNotifications) {
 
 
 
+class TitleChangedObserver {
+  
 
 
 
@@ -71,23 +73,33 @@ function promiseUpdatePlaces(aPlaces, aOptions, aBatchFrecencyNotifications) {
 
 
 
-function TitleChangedObserver(aURI, aExpectedTitle, aCallback) {
-  this.uri = aURI;
-  this.expectedTitle = aExpectedTitle;
-  this.callback = aCallback;
-}
-TitleChangedObserver.prototype = {
-  __proto__: NavHistoryObserver.prototype,
-  onTitleChanged(aURI, aTitle, aGUID) {
-    info("onTitleChanged(" + aURI.spec + ", " + aTitle + ", " + aGUID + ")");
-    if (!this.uri.equals(aURI)) {
+
+
+  constructor(aURI, aExpectedTitle, aCallback) {
+    this.uri = aURI;
+    this.expectedTitle = aExpectedTitle;
+    this.callback = aCallback;
+    this.handlePlacesEvent = this.handlePlacesEvent.bind(this);
+    PlacesObservers.addListener(["page-title-changed"], this.handlePlacesEvent);
+  }
+
+  handlePlacesEvent(aEvents) {
+    info("'page-title-changed'!!!");
+    Assert.equal(aEvents.length, 1, "Right number of title changed notified");
+    Assert.equal(aEvents[0].type, "page-title-changed");
+    if (this.uri.spec !== aEvents[0].url) {
       return;
     }
-    Assert.equal(aTitle, this.expectedTitle);
-    do_check_guid_for_uri(aURI, aGUID);
+    Assert.equal(aEvents[0].title, this.expectedTitle);
+    do_check_guid_for_uri(this.uri, aEvents[0].pageGuid);
     this.callback();
-  },
-};
+
+    PlacesObservers.removeListener(
+      ["page-title-changed"],
+      this.handlePlacesEvent
+    );
+  }
+}
 
 
 
@@ -947,15 +959,10 @@ add_task(async function test_title_change_notifies() {
   };
   Assert.equal(false, await PlacesUtils.history.hasVisits(place.uri));
 
-  let silentObserver = new TitleChangedObserver(
-    place.uri,
-    "DO NOT WANT",
-    function() {
-      do_throw("unexpected callback!");
-    }
-  );
+  new TitleChangedObserver(place.uri, "DO NOT WANT", function() {
+    do_throw("unexpected callback!");
+  });
 
-  PlacesUtils.history.addObserver(silentObserver);
   let placesResult = await promiseUpdatePlaces(place);
   if (placesResult.errors.length) {
     do_throw("Unexpected error.");
@@ -981,13 +988,10 @@ add_task(async function test_title_change_notifies() {
             place.title
         );
         if (expectedNotification) {
-          PlacesUtils.history.removeObserver(silentObserver);
-          PlacesUtils.history.removeObserver(titleChangeObserver);
           resolve();
         }
       }
     );
-    PlacesUtils.history.addObserver(titleChangeObserver);
   });
 
   let visitPromise = new Promise(resolve => {
