@@ -69,13 +69,6 @@ class HistoryObserver extends Observer {
   }
 
   
-
-
-  onClearHistory() {
-    this.dispatch({ type: at.PLACES_HISTORY_CLEARED });
-  }
-
-  
   onBeginUpdateBatch() {}
 
   onEndUpdateBatch() {}

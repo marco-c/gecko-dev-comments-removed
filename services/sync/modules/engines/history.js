@@ -619,14 +619,6 @@ HistoryTracker.prototype = {
     }
   },
 
-  onClearHistory() {
-    this._log.trace("onClearHistory");
-    
-    
-    
-    this.score += SCORE_INCREMENT_XLARGE;
-  },
-
   onBeginUpdateBatch() {},
   onEndUpdateBatch() {},
   onBeforeDeleteURI() {},

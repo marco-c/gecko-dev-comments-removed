@@ -553,12 +553,6 @@ nsPlacesExpiration.prototype = {
     } else if (aTopic == TOPIC_TESTING_MODE) {
       this._testingMode = true;
     } else if (aTopic == PlacesUtils.TOPIC_INIT_COMPLETE) {
-      
-      
-      
-      
-      PlacesUtils.history.addObserver(this, true);
-
       const placesObserver = new PlacesWeakCallbackWrapper(
         
         () => {
@@ -568,36 +562,6 @@ nsPlacesExpiration.prototype = {
       PlacesObservers.addListener(["history-cleared"], placesObserver);
     }
   },
-
-  
-
-  _inBatchMode: false,
-  onBeginUpdateBatch: function PEX_onBeginUpdateBatch() {
-    this._inBatchMode = true;
-
-    
-    if (this._timer) {
-      this._timer.cancel();
-      this._timer = null;
-    }
-  },
-
-  onEndUpdateBatch: function PEX_onEndUpdateBatch() {
-    this._inBatchMode = false;
-
-    
-    if (!this._timer) {
-      this._newTimer();
-    }
-  },
-
-  onClearHistory: function PEX_onClearHistory() {
-    
-    this.status = STATUS.CLEAN;
-  },
-
-  onDeleteURI() {},
-  onDeleteVisits() {},
 
   
 
@@ -802,10 +766,6 @@ nsPlacesExpiration.prototype = {
 
 
   async _expire(aAction, aLimit) {
-    
-    if (this._inBatchMode) {
-      return;
-    }
     
     if (this._shuttingDown && aAction != ACTION.SHUTDOWN_DIRTY) {
       return;
