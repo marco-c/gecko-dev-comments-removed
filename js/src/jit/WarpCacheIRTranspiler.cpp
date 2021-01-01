@@ -4313,13 +4313,8 @@ bool WarpCacheIRTranspiler::emitCallNativeSetter(ObjOperandId receiverId,
 }
 
 
-bool WarpCacheIRTranspiler::emitMetaTwoByte(MetaTwoByteKind kind,
-                                            uint32_t functionObjectOffset,
+bool WarpCacheIRTranspiler::emitMetaTwoByte(uint32_t functionObjectOffset,
                                             uint32_t templateObjectOffset) {
-  if (kind != MetaTwoByteKind::ScriptedTemplateObject) {
-    return true;
-  }
-
   JSObject* templateObj = tenuredObjectStubField(templateObjectOffset);
   MConstant* templateConst = constant(ObjectValue(*templateObj));
 

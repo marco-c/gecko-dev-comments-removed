@@ -8854,49 +8854,6 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
-                                                 MutableHandleObject res) {
-  AutoRealm ar(cx_, calleeFunc);
-
-  
-  
-  bool isSuper = op_ == JSOp::SuperCall || op_ == JSOp::SpreadSuperCall;
-  if (isSuper) {
-    return true;
-  }
-
-  if (!calleeFunc->hasJitInfo() ||
-      calleeFunc->jitInfo()->type() != JSJitInfo::InlinableNative) {
-    return true;
-  }
-
-  bool isConstructing = IsConstructOp(op_);
-
-  
-  
-  
-  switch (calleeFunc->jitInfo()->inlinableNative) {
-    case InlinableNative::String: {
-      if (!isConstructing) {
-        return true;
-      }
-
-      if (args_.length() == 1 && args_[0].isString()) {
-        
-        return true;
-      }
-
-      RootedString emptyString(cx_, cx_->runtime()->emptyString);
-      res.set(StringObject::create(cx_, emptyString,  nullptr,
-                                   TenuredObject));
-      return !!res;
-    }
-
-    default:
-      return true;
-  }
-}
-
 AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   MOZ_ASSERT(calleeFunc->isNativeWithoutJitEntry());
 
@@ -8919,12 +8876,6 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   
   if (isSpecialized) {
     TRY_ATTACH(tryAttachInlinableNative(calleeFunc));
-  }
-
-  RootedObject templateObj(cx_);
-  if (isSpecialized && !getTemplateObjectForNative(calleeFunc, &templateObj)) {
-    cx_->clearPendingException();
-    return AttachDecision::NoAction;
   }
 
   
@@ -8979,11 +8930,6 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   }
 
   writer.returnFromIC();
-
-  if (templateObj) {
-    MOZ_ASSERT(isSpecialized);
-    writer.metaNativeTemplateObject(calleeFunc, templateObj);
-  }
 
   return AttachDecision::Attach;
 }
