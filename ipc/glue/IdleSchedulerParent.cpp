@@ -213,46 +213,56 @@ int32_t IdleSchedulerParent::ActiveCount() {
   return 0;
 }
 
-void IdleSchedulerParent::Schedule(IdleSchedulerParent* aRequester) {
-  if (sWaitingForIdle.isEmpty()) {
-    return;
-  }
-
-  if (!aRequester || !aRequester->mRunningPrioritizedOperation) {
-    int32_t activeCount = ActiveCount();
+bool IdleSchedulerParent::HasSpareCycles(int32_t aActiveCount) {
+  
+  if (sCPUsForChildProcesses > 1 && sCPUsForChildProcesses <= aActiveCount) {
     
-    if (sCPUsForChildProcesses > 1 && sCPUsForChildProcesses <= activeCount) {
-      
-      EnsureStarvationTimer();
-      return;
-    }
-
-    if (sChildProcessesRunningPrioritizedOperation > 0 &&
-        sCPUsForChildProcesses / 2 <= activeCount) {
-      
-      
-      EnsureStarvationTimer();
-      return;
-    }
+    return false;
   }
 
+  if (sChildProcessesRunningPrioritizedOperation > 0 &&
+      sCPUsForChildProcesses / 2 <= aActiveCount) {
+    
+    
+    return false;
+  }
+
+  return true;
+}
+
+void IdleSchedulerParent::SendIdleTime() {
   
   
-  RefPtr<IdleSchedulerParent> idleRequester;
+  MOZ_ASSERT(IsDoingIdleTask());
+  Unused << SendIdleTime(mCurrentRequestId, mRequestedIdleBudget);
+}
+
+void IdleSchedulerParent::Schedule(IdleSchedulerParent* aRequester) {
+  
+  
+  
+  
+  int32_t activeCount = ActiveCount();
+
   if (aRequester && aRequester->mRunningPrioritizedOperation) {
+    
     if (aRequester->isInList()) {
       aRequester->remove();
     }
-    idleRequester = aRequester;
-  } else {
-    idleRequester = sWaitingForIdle.popFirst();
+    aRequester->SendIdleTime();
+    activeCount++;
   }
 
-  
-  
-  MOZ_ASSERT(idleRequester->IsDoingIdleTask());
-  Unused << idleRequester->SendIdleTime(idleRequester->mCurrentRequestId,
-                                        idleRequester->mRequestedIdleBudget);
+  while (!sWaitingForIdle.isEmpty() && HasSpareCycles(activeCount)) {
+    
+    RefPtr<IdleSchedulerParent> idleRequester = sWaitingForIdle.popFirst();
+    idleRequester->SendIdleTime();
+    activeCount++;
+  }
+
+  if (!sWaitingForIdle.isEmpty()) {
+    EnsureStarvationTimer();
+  }
 }
 
 void IdleSchedulerParent::EnsureStarvationTimer() {
