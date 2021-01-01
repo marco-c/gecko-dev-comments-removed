@@ -80,6 +80,19 @@ function bigIntDecBail(i) {
   if (i >= 99) bailout();
 }
 
+function bigIntBitNotBail(i) {
+  var x = [0n, maxBigInt][0 + (i >= 99)];
+
+  var a = ~x;
+
+  
+  
+  
+  resumeHere();
+
+  if (i >= 99) bailout();
+}
+
 
 eval(`(${resumeHere})`);
 
@@ -126,6 +139,15 @@ try {
 try {
   for (let i = 0; i < 100; i++) {
     bigIntDecBail(i);
+  }
+  throw new Error("missing exception");
+} catch (e) {
+  assertEq(e instanceof RangeError || e === "out of memory", true, String(e));
+}
+
+try {
+  for (let i = 0; i < 100; i++) {
+    bigIntBitNotBail(i);
   }
   throw new Error("missing exception");
 } catch (e) {
