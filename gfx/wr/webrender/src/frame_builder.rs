@@ -25,7 +25,7 @@ use crate::render_target::{RenderTarget, PictureCacheTarget, TextureCacheRenderT
 use crate::render_target::{RenderTargetContext, RenderTargetKind};
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraph};
 use crate::render_task_graph::{RenderPass, RenderTaskGraphBuilder};
-use crate::render_task::{RenderTaskLocation, RenderTaskKind};
+use crate::render_task::{RenderTaskLocation, RenderTaskKind, StaticRenderTaskSurface};
 use crate::resource_cache::{ResourceCache};
 use crate::scene::{BuiltScene, SceneProperties};
 use crate::space::SpaceMapper;
@@ -775,18 +775,27 @@ pub fn build_render_pass(
             
             
             let (texture_target, layer) = match task.location {
-                RenderTaskLocation::TextureCache { texture, layer, .. } => {
+                RenderTaskLocation::Static { surface: StaticRenderTaskSurface::TextureCache { texture, layer, .. }, .. } => {
                     (Some(texture), layer)
                 }
-                RenderTaskLocation::Dynamic(ref mut origin, size) => {
+                RenderTaskLocation::Unallocated { size } => {
                     let (target_index, texture_id, alloc_origin) =  match target_kind {
                         RenderTargetKind::Color => pass.color.allocate(size, ctx.resource_cache),
                         RenderTargetKind::Alpha => pass.alpha.allocate(size, ctx.resource_cache),
                     };
-                    *origin = Some((alloc_origin, texture_id));
+
+                    task.location = RenderTaskLocation::Dynamic {
+                        rect: DeviceIntRect::new(alloc_origin, size),
+                        texture_id,
+                    };
+
                     (None, target_index)
                 }
-                RenderTaskLocation::PictureCache { .. } => {
+                RenderTaskLocation::Dynamic { .. } => {
+                    
+                    unreachable!();
+                }
+                RenderTaskLocation::Static { surface: StaticRenderTaskSurface::PictureCache { .. }, .. } => {
                     
                     
                     let pic_index = match task.kind {
@@ -951,7 +960,7 @@ pub fn build_render_pass(
             let (target_rect, _) = task.get_target_rect();
 
             match task.location {
-                RenderTaskLocation::PictureCache { ref surface, .. } => {
+                RenderTaskLocation::Static { surface: StaticRenderTaskSurface::PictureCache { ref surface, .. }, .. } => {
                     
                     
                     
