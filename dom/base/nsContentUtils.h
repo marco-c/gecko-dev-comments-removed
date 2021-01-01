@@ -3153,7 +3153,7 @@ class nsContentUtils {
 
 
 
-  static bool IsLocalRefURL(const nsString& aString);
+  static bool IsLocalRefURL(const nsAString& aString);
 
   
 
