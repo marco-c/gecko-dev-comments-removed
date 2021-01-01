@@ -824,14 +824,6 @@ void LIRGenerator::visitTest(MTest* test) {
       add(lir, test);
       return;
     }
-
-    
-    if (comp->compareType() == MCompare::Compare_Bitwise) {
-      LCompareBitwiseAndBranch* lir = new (alloc()) LCompareBitwiseAndBranch(
-          comp, ifTrue, ifFalse, useBoxAtStart(left), useBoxAtStart(right));
-      add(lir, test);
-      return;
-    }
   }
 
   
@@ -1079,14 +1071,6 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   if (comp->isFloat32Comparison()) {
     define(new (alloc()) LCompareF(useRegister(left), useRegister(right)),
            comp);
-    return;
-  }
-
-  
-  if (comp->compareType() == MCompare::Compare_Bitwise) {
-    LCompareBitwise* lir = new (alloc())
-        LCompareBitwise(useBoxAtStart(left), useBoxAtStart(right));
-    define(lir, comp);
     return;
   }
 

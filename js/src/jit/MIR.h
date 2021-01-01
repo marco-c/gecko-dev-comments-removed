@@ -2945,9 +2945,6 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
     Compare_RefOrNull,
 
     
-    Compare_Bitwise,
-
-    
     Compare_Unknown
   };
 
@@ -3032,7 +3029,7 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
     if (compareType_ == Compare_Unknown) {
       return AliasSet::Store(AliasSet::Any);
     }
-    MOZ_ASSERT(compareType_ <= Compare_Bitwise);
+    MOZ_ASSERT(compareType_ <= Compare_RefOrNull);
     return AliasSet::None();
   }
 

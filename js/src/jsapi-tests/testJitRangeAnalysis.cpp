@@ -268,9 +268,9 @@ BEGIN_TEST(testJitRangeAnalysis_StrictCompareBeta) {
 
   
   
-  MCompare::CompareType nonNumerics[] = {
-      MCompare::Compare_Unknown, MCompare::Compare_Object,
-      MCompare::Compare_Bitwise, MCompare::Compare_String};
+  MCompare::CompareType nonNumerics[] = {MCompare::Compare_Unknown,
+                                         MCompare::Compare_Object,
+                                         MCompare::Compare_String};
   for (size_t i = 0; i < mozilla::ArrayLength(nonNumerics); ++i) {
     cmp->setCompareType(nonNumerics[i]);
     if (!func.runRangeAnalysis()) {
