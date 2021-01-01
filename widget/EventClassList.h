@@ -53,7 +53,6 @@ NS_EVENT_CLASS(Internal, SMILTimeEvent)
 
 NS_EVENT_CLASS(Widget, CommandEvent)
 NS_EVENT_CLASS(Widget, ContentCommandEvent)
-NS_EVENT_CLASS(Widget, PluginEvent)
 
 
 NS_EVENT_CLASS(Internal, MutationEvent)

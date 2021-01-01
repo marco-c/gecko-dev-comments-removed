@@ -317,9 +317,6 @@ NS_EVENT_MESSAGE(eEdgeUICanceled)
 NS_EVENT_MESSAGE(eEdgeUICompleted)
 
 
-NS_EVENT_MESSAGE(ePluginInputEvent)
-
-
 
 NS_EVENT_MESSAGE(eSetSelection)
 

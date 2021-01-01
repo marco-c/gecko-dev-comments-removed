@@ -1487,14 +1487,6 @@ nsresult nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
     }
   }
 
-  if (mInstanceOwner->SendNativeEvents() &&
-      anEvent->IsNativeEventDelivererForPlugin()) {
-    *anEventStatus = mInstanceOwner->ProcessEvent(*anEvent);
-    
-    
-    return rv;
-  }
-
 #ifdef XP_WIN
   rv = nsIFrame::HandleEvent(aPresContext, anEvent, anEventStatus);
   return rv;

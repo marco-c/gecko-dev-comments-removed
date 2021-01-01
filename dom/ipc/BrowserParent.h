@@ -569,8 +569,6 @@ class BrowserParent final : public PBrowserParent,
 
   void SendRealTouchEvent(WidgetTouchEvent& aEvent);
 
-  void SendPluginEvent(WidgetPluginEvent& aEvent);
-
   
 
 

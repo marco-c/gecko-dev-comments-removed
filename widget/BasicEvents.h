@@ -771,10 +771,6 @@ class WidgetEvent : public WidgetEventTime {
 
 
   bool IsContentCommandEvent() const;
-  
-
-
-  bool IsNativeEventDelivererForPlugin() const;
 
   
 
@@ -808,16 +804,6 @@ class WidgetEvent : public WidgetEventTime {
 
 
   bool WillBeSentToRemoteProcess() const;
-  
-
-
-
-  bool IsRetargetedNativeEventDelivererForPlugin() const;
-  
-
-
-
-  bool IsNonRetargetedNativeEventDelivererForPlugin() const;
   
 
 
