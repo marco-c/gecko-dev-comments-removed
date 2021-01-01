@@ -818,17 +818,6 @@ void RenderThread::HandleDeviceReset(const char* aWhere,
     }
   }
 
-  
-  
-  
-  if (aReason == LOCAL_GL_PURGED_CONTEXT_RESET_NV) {
-    MOZ_ASSERT(aBridge);
-    layers::CompositorThread()->Dispatch(NewRunnableMethod(
-        "CompositorBridgeParent::NotifyWebRenderContextPurge", aBridge,
-        &layers::CompositorBridgeParent::NotifyWebRenderContextPurge));
-    return;
-  }
-
   mHandlingDeviceReset = aReason != LOCAL_GL_NO_ERROR;
   if (mHandlingDeviceReset) {
     

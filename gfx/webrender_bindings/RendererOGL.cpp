@@ -161,7 +161,7 @@ RenderedFrameId RendererOGL::UpdateAndRender(
   }
   
 
-  if (!mCompositor->BeginFrame()) {
+  if (mThread->IsHandlingDeviceReset() || !mCompositor->BeginFrame()) {
     CheckGraphicsResetStatus("BeginFrame",  true);
     mCompositor->GetWidget()->PostRender(&widgetContext);
     return RenderedFrameId();

@@ -517,7 +517,10 @@ bool GLContext::InitImpl() {
         END_SYMBOLS};
     (void)fnLoadSymbols(symbols, nullptr);
 
-    auto err = fGetError();
+    
+    
+    
+    auto err = mSymbols.fGetError();
     if (err == LOCAL_GL_CONTEXT_LOST) {
       MOZ_ASSERT(mSymbols.fGetGraphicsResetStatus);
       const auto status = fGetGraphicsResetStatus();
