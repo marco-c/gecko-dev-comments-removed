@@ -3703,7 +3703,20 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
 
+
+
+  void loadBigIntNonZero(Register bigInt, Register dest, Label* fail);
+
+  
+
+
   void initializeBigInt64(Scalar::Type type, Register bigInt, Register64 val);
+
+  
+
+
+
+  void initializeBigInt(Register bigInt, Register val);
 
   
 
