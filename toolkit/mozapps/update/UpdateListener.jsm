@@ -33,6 +33,13 @@ const PREF_APP_UPDATE_UNSUPPORTED_URL = "app.update.unsupported.url";
 var UpdateListener = {
   timeouts: [],
 
+  restartDoorhangerShown: false,
+  
+  
+  
+  
+  updateFirstReadyTime: null,
+
   get badgeWaitTime() {
     return Services.prefs.getIntPref("app.update.badgeWaitTime", 4 * 24 * 3600); 
   },
@@ -53,6 +60,12 @@ var UpdateListener = {
   },
 
   reset() {
+    this.clearPendingAndActiveNotifications();
+    this.restartDoorhangerShown = false;
+    this.updateFirstReadyTime = null;
+  },
+
+  clearPendingAndActiveNotifications() {
     AppMenuNotifications.removeNotification(/^update-/);
     this.clearCallbacks();
   },
@@ -166,6 +179,9 @@ var UpdateListener = {
     let notification = AppUpdateService.isOtherInstanceHandlingUpdates
       ? "other-instance"
       : "restart";
+    if (!dismissed) {
+      this.restartDoorhangerShown = true;
+    }
     this.showUpdateNotification(notification, true, dismissed, () =>
       this.requestRestart()
     );
@@ -260,8 +276,22 @@ var UpdateListener = {
       case "success":
         this.clearCallbacks();
 
-        let badgeWaitTimeMs = this.badgeWaitTime * 1000;
-        let doorhangerWaitTimeMs = update.promptWaitTime * 1000;
+        let initialBadgeWaitTimeMs = this.badgeWaitTime * 1000;
+        let initialDoorhangerWaitTimeMs = update.promptWaitTime * 1000;
+        let now = Date.now();
+
+        if (!this.updateFirstReadyTime) {
+          this.updateFirstReadyTime = now;
+        }
+
+        let badgeWaitTimeMs = Math.max(
+          0,
+          this.updateFirstReadyTime + initialBadgeWaitTimeMs - now
+        );
+        let doorhangerWaitTimeMs = Math.max(
+          0,
+          this.updateFirstReadyTime + initialDoorhangerWaitTimeMs - now
+        );
 
         if (badgeWaitTimeMs < doorhangerWaitTimeMs) {
           this.addTimeout(badgeWaitTimeMs, () => {
@@ -270,17 +300,19 @@ var UpdateListener = {
               this.showRestartNotification(update, true);
             }
 
-            
-            
-            
-            let remainingTime = doorhangerWaitTimeMs - badgeWaitTimeMs;
-            this.addTimeout(remainingTime, () => {
-              this.showRestartNotification(update, false);
-            });
+            if (!this.restartDoorhangerShown) {
+              
+              
+              
+              let remainingTime = doorhangerWaitTimeMs - badgeWaitTimeMs;
+              this.addTimeout(remainingTime, () => {
+                this.showRestartNotification(update, false);
+              });
+            }
           });
         } else {
           this.addTimeout(doorhangerWaitTimeMs, () => {
-            this.showRestartNotification(update, false);
+            this.showRestartNotification(update, this.restartDoorhangerShown);
           });
         }
         break;
@@ -292,7 +324,6 @@ var UpdateListener = {
       case "show-prompt":
         
         
-        this.clearCallbacks();
         this.showUpdateAvailableNotification(update, false);
         break;
       case "cant-apply":
@@ -312,9 +343,24 @@ var UpdateListener = {
         this.showUpdateDownloadingNotification();
         break;
       case "idle":
-        this.reset();
+        this.clearPendingAndActiveNotifications();
         break;
     }
+  },
+
+  handleUpdateSwap() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.clearPendingAndActiveNotifications();
   },
 
   observe(subject, topic, status) {
@@ -341,6 +387,9 @@ var UpdateListener = {
         break;
       case "update-error":
         this.handleUpdateError(update, status);
+        break;
+      case "update-swap":
+        this.handleUpdateSwap();
         break;
     }
   },

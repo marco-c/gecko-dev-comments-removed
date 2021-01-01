@@ -46,9 +46,12 @@ class AppUpdater {
       "nsIUpdateManager"
     );
     this.QueryInterface = ChromeUtils.generateQI([
+      "nsIObserver",
       "nsIProgressEventSink",
       "nsIRequestObserver",
+      "nsISupportsWeakReference",
     ]);
+    Services.obs.addObserver(this, "update-swap",  true);
   }
 
   
@@ -389,32 +392,41 @@ class AppUpdater {
   _awaitStagingComplete() {
     let observer = (aSubject, aTopic, aData) => {
       
-      let status = aData;
-      if (
-        status == "applied" ||
-        status == "applied-service" ||
-        status == "pending" ||
-        status == "pending-service" ||
-        status == "pending-elevate"
-      ) {
-        
-        
-        
-        this._setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
-      } else if (status == "failed") {
-        
-        
-        this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
-      } else if (status == "downloading") {
-        
-        
-        
-        this._setupDownloadListener();
-        return;
+      switch (aTopic) {
+        case "update-staged":
+          let status = aData;
+          if (
+            status == "applied" ||
+            status == "applied-service" ||
+            status == "pending" ||
+            status == "pending-service" ||
+            status == "pending-elevate"
+          ) {
+            
+            
+            
+            this._setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
+          } else if (status == "failed") {
+            
+            
+            this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
+          } else if (status == "downloading") {
+            
+            
+            
+            this._setupDownloadListener();
+            return;
+          }
+          break;
+        case "update-error":
+          this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
+          break;
       }
       Services.obs.removeObserver(observer, "update-staged");
+      Services.obs.removeObserver(observer, "update-error");
     };
     Services.obs.addObserver(observer, "update-staged");
+    Services.obs.addObserver(observer, "update-error");
   }
 
   
@@ -488,6 +500,43 @@ class AppUpdater {
       listener(status, ...listenerArgs);
     }
     return status;
+  }
+
+  observe(subject, topic, status) {
+    switch (topic) {
+      case "update-swap":
+        this._handleUpdateSwap();
+        break;
+    }
+  }
+
+  _handleUpdateSwap() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      this._status == AppUpdater.STATUS.DOWNLOADING ||
+      this._status == AppUpdater.STATUS.STAGING
+    ) {
+      
+      return;
+    }
+
+    if (this.updateStagingEnabled) {
+      this._setStatus(AppUpdater.STATUS.STAGING);
+      this._awaitStagingComplete();
+    } else {
+      this._setStatus(AppUpdater.STATUS.DOWNLOADING);
+      this._awaitDownloadComplete();
+    }
   }
 }
 
