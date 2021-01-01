@@ -21,18 +21,11 @@
 
 
 
-use ::libc;
-
 use crate::{
     iccread::{curveType, qcms_profile},
     s15Fixed16Number_to_float,
 };
 use crate::{matrix::matrix, transform::PRECACHE_OUTPUT_MAX, transform::PRECACHE_OUTPUT_SIZE};
-
-pub type int32_t = i32;
-
-pub type uint8_t = libc::c_uchar;
-pub type uint16_t = libc::c_ushort;
 
 
 pub type uint16_fract_t = u16;
