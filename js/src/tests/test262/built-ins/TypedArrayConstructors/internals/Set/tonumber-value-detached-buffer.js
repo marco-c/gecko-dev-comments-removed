@@ -29,6 +29,13 @@
 
 
 
+
+
+
+
+
+
+
 testWithTypedArrayConstructors(function(TA) {
   let ta = new TA(1);
   let result = Reflect.set(ta, 0, {
@@ -38,7 +45,7 @@ testWithTypedArrayConstructors(function(TA) {
     }
   });
 
-  assert.sameValue(result, false);
+  assert.sameValue(result, true);
   assert.sameValue(ta[0], undefined);
 });
 

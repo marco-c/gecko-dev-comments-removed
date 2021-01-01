@@ -21,25 +21,20 @@
 
 
 
-
-
-
-
-
-
-
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   let ta = new TA(1);
+  let isDetached = false;
   let result = Reflect.set(ta, 0, {
     valueOf() {
       $DETACHBUFFER(ta.buffer);
+      isDetached = true;
       return 42n;
     }
   });
 
-  assert.sameValue(result, false);
+  assert.sameValue(result, true);
   assert.sameValue(ta[0], undefined);
+  assert.sameValue(isDetached, true);
 });
 
 reportCompare(0, 0);

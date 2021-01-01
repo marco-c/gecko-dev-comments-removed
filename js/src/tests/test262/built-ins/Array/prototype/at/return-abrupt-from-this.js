@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.at, 'function');
+
+assert.throws(TypeError, () => {
+  Array.prototype.at.call(undefined);
+}, '`Array.prototype.at.call(undefined)` throws TypeError');
+
+assert.throws(TypeError, () => {
+  Array.prototype.at.call(null);
+}, '`Array.prototype.at.call(null)` throws TypeError');
+
+reportCompare(0, 0);

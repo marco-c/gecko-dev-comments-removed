@@ -23,11 +23,12 @@
 
 
 
+
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA([42n]);
-  assert.sameValue(Reflect.set(sample, '-1', 1n), false, 'Reflect.set("new TA([42n])", "-1", 1n) must return false');
-  assert.sameValue(Reflect.set(sample, '1', 1n), false, 'Reflect.set("new TA([42n])", "1", 1n) must return false');
-  assert.sameValue(Reflect.set(sample, '2', 1n), false, 'Reflect.set("new TA([42n])", "2", 1n) must return false');
+  assert.sameValue(Reflect.set(sample, '-1', 1n), true, 'Reflect.set("new TA([42n])", "-1", 1n) must return false');
+  assert.sameValue(Reflect.set(sample, '1', 1n), true, 'Reflect.set("new TA([42n])", "1", 1n) must return false');
+  assert.sameValue(Reflect.set(sample, '2', 1n), true, 'Reflect.set("new TA([42n])", "2", 1n) must return false');
   assert.sameValue(sample.hasOwnProperty('-1'), false, 'sample.hasOwnProperty("-1") must return false');
   assert.sameValue(sample.hasOwnProperty('1'), false, 'sample.hasOwnProperty("1") must return false');
   assert.sameValue(sample.hasOwnProperty('2'), false, 'sample.hasOwnProperty("2") must return false');

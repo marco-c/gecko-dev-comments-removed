@@ -21,14 +21,15 @@
 
 
 
-
 let Array;
 
 assert.sameValue(Array, undefined);
-
 assert.sameValue(typeof this.Array, 'function');
-verifyNotEnumerable(this, 'Array');
-verifyWritable(this, 'Array');
-verifyConfigurable(this, 'Array');
+
+
+let descriptor = Object.getOwnPropertyDescriptor(this, 'Array');
+assert.sameValue(descriptor.configurable, true);
+assert.sameValue(descriptor.enumerable, false);
+assert.sameValue(descriptor.writable, true);
 
 reportCompare(0, 0);

@@ -19,15 +19,21 @@
 
 
 
+
+
+
+
+
 testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA(10);
-  function detachAndReturnIndex(){
+  const sample = new TA(10);
+  let isDetached = false;
+  function valueOf(){
     $DETACHBUFFER(sample.buffer);
+    isDetached = true;
     return 0;
   }
-  assert.throws(TypeError, function() {
-    sample.includes(0, {valueOf :detachAndReturnIndex});
-  });
+  assert.sameValue(sample.includes(0, {valueOf}), false);
+  assert.sameValue(isDetached, true);
 });
 
 reportCompare(0, 0);

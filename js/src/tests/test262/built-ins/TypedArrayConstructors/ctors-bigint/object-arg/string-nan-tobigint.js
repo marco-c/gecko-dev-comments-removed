@@ -52,6 +52,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 testWithBigIntTypedArrayConstructors(function(TA) {
 
   assert.throws(SyntaxError, function() {

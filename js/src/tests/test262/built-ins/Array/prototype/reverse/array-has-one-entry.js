@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let a = [1];
+
+Object.freeze(a);
+
+a.reverse();
+
+reportCompare(0, 0);

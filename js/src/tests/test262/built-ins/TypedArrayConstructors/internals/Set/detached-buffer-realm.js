@@ -28,6 +28,7 @@
 
 
 
+
 let other = $262.createRealm().global;
 testWithTypedArrayConstructors(function(TA) {
   let OtherTA = other[TA.name];

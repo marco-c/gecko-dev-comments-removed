@@ -19,14 +19,10 @@
 
 
 
-
-
-
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([42]);
 
-  assert.sameValue(Reflect.set(sample, "-0", 1), false, 'Reflect.set(sample, "-0", 1) must return false');
+  assert.sameValue(Reflect.set(sample, "-0", 1), true, 'Reflect.set(sample, "-0", 1) must return true');
   assert.sameValue(sample.hasOwnProperty("-0"), false, 'sample.hasOwnProperty("-0") must return false');
 });
 

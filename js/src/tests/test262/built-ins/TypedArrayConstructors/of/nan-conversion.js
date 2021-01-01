@@ -17,6 +17,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 testWithTypedArrayConstructors(function(TA) {
   var result = TA.of(NaN, undefined);
   assert.sameValue(result.length, 2);

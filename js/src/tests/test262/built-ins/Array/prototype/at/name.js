@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.at, 'function');
+
+assert.sameValue(
+  Array.prototype.at.name, 'at',
+  'The value of Array.prototype.at.name is "at"'
+);
+
+verifyProperty(Array.prototype.at, 'name', {
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

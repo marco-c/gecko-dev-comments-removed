@@ -66,6 +66,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 testWithTypedArrayConstructors(function(FA) {
   var precision = FA === Float32Array ? "single" : "double";
   var samples = new FA(1);

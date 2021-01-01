@@ -19,15 +19,11 @@
 
 
 
-
-
-
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([42]);
 
-  assert.sameValue(Reflect.set(sample, "1.1", 1), false, 'Reflect.set(sample, "1.1", 1) must return false');
-  assert.sameValue(Reflect.set(sample, "0.0001", 1), false, 'Reflect.set(sample, "0.0001", 1) must return false');
+  assert.sameValue(Reflect.set(sample, "1.1", 1), true, 'Reflect.set(sample, "1.1", 1) must return true');
+  assert.sameValue(Reflect.set(sample, "0.0001", 1), true, 'Reflect.set(sample, "0.0001", 1) must return true');
 
   assert.sameValue(sample.hasOwnProperty("1.1"), false, 'sample.hasOwnProperty("1.1") must return false');
   assert.sameValue(

@@ -18,18 +18,14 @@
 
 
 
-
-
-
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA([42n]);
-  assert.sameValue(Reflect.set(sample, '1.1', 1n), false, 'Reflect.set("new TA([42n])", "1.1", 1n) must return false');
+  assert.sameValue(Reflect.set(sample, '1.1', 1n), true, 'Reflect.set("new TA([42n])", "1.1", 1n) must return true');
 
   assert.sameValue(
     Reflect.set(sample, '0.0001', 1n),
-    false,
-    'Reflect.set("new TA([42n])", "0.0001", 1n) must return false'
+    true,
+    'Reflect.set("new TA([42n])", "0.0001", 1n) must return true'
   );
 
   assert.sameValue(sample.hasOwnProperty('1.1'), false, 'sample.hasOwnProperty("1.1") must return false');

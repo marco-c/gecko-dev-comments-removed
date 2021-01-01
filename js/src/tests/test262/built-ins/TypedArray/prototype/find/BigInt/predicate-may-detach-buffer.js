@@ -40,21 +40,20 @@
 
 
 
+
+
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA(2);
   var loops = 0;
-  var completion = false;
+  var sample = new TA(2);
 
-  assert.throws(TypeError, function() {
-    sample.find(function() {
-      loops++;
+  sample.find(function() {
+    if (loops === 0) {
       $DETACHBUFFER(sample.buffer);
-      completion = true;
-    });
-  }, "throws a TypeError getting a value from the detached buffer");
+    }
+    loops++;
+  });
 
-  assert.sameValue(loops, 1, "predicate is called once");
-  assert(completion, "abrupt completion does not come from DETACHBUFFER");
+  assert.sameValue(loops, 2);
 });
 
 reportCompare(0, 0);
