@@ -2139,17 +2139,6 @@ class UrlbarInput {
 
   _recordSearch(engine, event, searchActionDetails = {}) {
     const isOneOff = this.view.oneOffSearchButtons.maybeRecordTelemetry(event);
-    
-    let eventType = "unknown";
-    if (event instanceof KeyboardEvent) {
-      eventType = "key";
-    } else if (event instanceof MouseEvent) {
-      eventType = "mouse";
-    }
-    
-    let details = searchActionDetails;
-    details.isOneOff = isOneOff;
-    details.type = eventType;
 
     BrowserSearchTelemetry.recordSearch(
       this.window.gBrowser,
@@ -2160,7 +2149,7 @@ class UrlbarInput {
       
       
       this.searchMode && !isOneOff ? "urlbar-searchmode" : "urlbar",
-      details
+      { ...searchActionDetails, isOneOff }
     );
   }
 

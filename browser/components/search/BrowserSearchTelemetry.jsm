@@ -80,8 +80,6 @@ class BrowserSearchTelemetryHandler {
 
 
 
-
-
   recordSearch(tabbrowser, engine, source, details = {}) {
     try {
       if (!this.shouldRecordSearchCount(tabbrowser)) {
