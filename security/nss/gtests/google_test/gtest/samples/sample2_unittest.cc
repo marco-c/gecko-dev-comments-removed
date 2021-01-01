@@ -66,7 +66,7 @@ TEST(MyString, DefaultConstructor) {
   
   
   
-  EXPECT_STREQ(NULL, s.c_string());
+  EXPECT_STREQ(nullptr, s.c_string());
 
   EXPECT_EQ(0u, s.Length());
 }
@@ -77,8 +77,7 @@ const char kHelloString[] = "Hello, world!";
 TEST(MyString, ConstructorFromCString) {
   const MyString s(kHelloString);
   EXPECT_EQ(0, strcmp(s.c_string(), kHelloString));
-  EXPECT_EQ(sizeof(kHelloString)/sizeof(kHelloString[0]) - 1,
-            s.Length());
+  EXPECT_EQ(sizeof(kHelloString) / sizeof(kHelloString[0]) - 1, s.Length());
 }
 
 
@@ -101,7 +100,7 @@ TEST(MyString, Set) {
   EXPECT_EQ(0, strcmp(s.c_string(), kHelloString));
 
   
-  s.Set(NULL);
-  EXPECT_STREQ(NULL, s.c_string());
+  s.Set(nullptr);
+  EXPECT_STREQ(nullptr, s.c_string());
 }
 }  

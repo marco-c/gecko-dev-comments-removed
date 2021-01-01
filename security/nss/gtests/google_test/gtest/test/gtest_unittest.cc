@@ -37,21 +37,21 @@
 
 
 TEST(CommandLineFlagsTest, CanBeAccessedInCodeOnceGTestHIsIncluded) {
-  bool dummy = testing::GTEST_FLAG(also_run_disabled_tests)
-      || testing::GTEST_FLAG(break_on_failure)
-      || testing::GTEST_FLAG(catch_exceptions)
-      || testing::GTEST_FLAG(color) != "unknown"
-      || testing::GTEST_FLAG(filter) != "unknown"
-      || testing::GTEST_FLAG(list_tests)
-      || testing::GTEST_FLAG(output) != "unknown"
-      || testing::GTEST_FLAG(print_time)
-      || testing::GTEST_FLAG(random_seed)
-      || testing::GTEST_FLAG(repeat) > 0
-      || testing::GTEST_FLAG(show_internal_stack_frames)
-      || testing::GTEST_FLAG(shuffle)
-      || testing::GTEST_FLAG(stack_trace_depth) > 0
-      || testing::GTEST_FLAG(stream_result_to) != "unknown"
-      || testing::GTEST_FLAG(throw_on_failure);
+  bool dummy = testing::GTEST_FLAG(also_run_disabled_tests) ||
+               testing::GTEST_FLAG(break_on_failure) ||
+               testing::GTEST_FLAG(catch_exceptions) ||
+               testing::GTEST_FLAG(color) != "unknown" ||
+               testing::GTEST_FLAG(filter) != "unknown" ||
+               testing::GTEST_FLAG(list_tests) ||
+               testing::GTEST_FLAG(output) != "unknown" ||
+               testing::GTEST_FLAG(print_time) ||
+               testing::GTEST_FLAG(random_seed) ||
+               testing::GTEST_FLAG(repeat) > 0 ||
+               testing::GTEST_FLAG(show_internal_stack_frames) ||
+               testing::GTEST_FLAG(shuffle) ||
+               testing::GTEST_FLAG(stack_trace_depth) > 0 ||
+               testing::GTEST_FLAG(stream_result_to) != "unknown" ||
+               testing::GTEST_FLAG(throw_on_failure);
   EXPECT_TRUE(dummy || !dummy);  
 }
 
@@ -61,11 +61,10 @@ TEST(CommandLineFlagsTest, CanBeAccessedInCodeOnceGTestHIsIncluded) {
 #include <time.h>
 
 #include <map>
-#include <vector>
 #include <ostream>
-#if GTEST_LANG_CXX11
+#include <type_traits>
 #include <unordered_set>
-#endif  
+#include <vector>
 
 #include "gtest/gtest-spi.h"
 #include "src/gtest-internal-inl.h"
@@ -80,7 +79,7 @@ class StreamingListenerTest : public Test {
   class FakeSocketWriter : public StreamingListener::AbstractSocketWriter {
    public:
     
-    virtual void Send(const std::string& message) { output_ += message; }
+    void Send(const std::string& message) override { output_ += message; }
 
     std::string output_;
   };
@@ -88,8 +87,8 @@ class StreamingListenerTest : public Test {
   StreamingListenerTest()
       : fake_sock_writer_(new FakeSocketWriter),
         streamer_(fake_sock_writer_),
-        test_info_obj_("FooTest", "Bar", NULL, NULL,
-                       CodeLocation(__FILE__, __LINE__), 0, NULL) {}
+        test_info_obj_("FooTest", "Bar", nullptr, nullptr,
+                       CodeLocation(__FILE__, __LINE__), nullptr, nullptr) {}
 
  protected:
   std::string* output() { return &(fake_sock_writer_->output_); }
@@ -114,13 +113,13 @@ TEST_F(StreamingListenerTest, OnTestIterationEnd) {
 
 TEST_F(StreamingListenerTest, OnTestCaseStart) {
   *output() = "";
-  streamer_.OnTestCaseStart(TestCase("FooTest", "Bar", NULL, NULL));
+  streamer_.OnTestCaseStart(TestCase("FooTest", "Bar", nullptr, nullptr));
   EXPECT_EQ("event=TestCaseStart&name=FooTest\n", *output());
 }
 
 TEST_F(StreamingListenerTest, OnTestCaseEnd) {
   *output() = "";
-  streamer_.OnTestCaseEnd(TestCase("FooTest", "Bar", NULL, NULL));
+  streamer_.OnTestCaseEnd(TestCase("FooTest", "Bar", nullptr, nullptr));
   EXPECT_EQ("event=TestCaseEnd&passed=1&elapsed_time=0ms\n", *output());
 }
 
@@ -138,8 +137,8 @@ TEST_F(StreamingListenerTest, OnTestEnd) {
 
 TEST_F(StreamingListenerTest, OnTestPartResult) {
   *output() = "";
-  streamer_.OnTestPartResult(TestPartResult(
-      TestPartResult::kFatalFailure, "foo.cc", 42, "failed=\n&%"));
+  streamer_.OnTestPartResult(TestPartResult(TestPartResult::kFatalFailure,
+                                            "foo.cc", 42, "failed=\n&%"));
 
   
   EXPECT_EQ(
@@ -228,14 +227,12 @@ using testing::TestProperty;
 using testing::TestResult;
 using testing::TimeInMillis;
 using testing::UnitTest;
-using testing::internal::AddReference;
 using testing::internal::AlwaysFalse;
 using testing::internal::AlwaysTrue;
 using testing::internal::AppendUserMessage;
 using testing::internal::ArrayAwareFind;
 using testing::internal::ArrayEq;
 using testing::internal::CodePointToUtf8;
-using testing::internal::CompileAssertTypesEqual;
 using testing::internal::CopyArray;
 using testing::internal::CountIf;
 using testing::internal::EqFailure;
@@ -252,7 +249,6 @@ using testing::internal::GetTestTypeId;
 using testing::internal::GetTimeInMillis;
 using testing::internal::GetTypeId;
 using testing::internal::GetUnitTestImpl;
-using testing::internal::ImplicitlyConvertible;
 using testing::internal::Int32;
 using testing::internal::Int32FromEnvOrDie;
 using testing::internal::IsAProtocolMessage;
@@ -265,8 +261,6 @@ using testing::internal::OsStackTraceGetterInterface;
 using testing::internal::ParseInt32Flag;
 using testing::internal::RelationToSourceCopy;
 using testing::internal::RelationToSourceReference;
-using testing::internal::RemoveConst;
-using testing::internal::RemoveReference;
 using testing::internal::ShouldRunTestOnShard;
 using testing::internal::ShouldShard;
 using testing::internal::ShouldUseColor;
@@ -296,11 +290,9 @@ using testing::internal::GetCapturedStdout;
 using testing::internal::ThreadWithParam;
 #endif
 
-class TestingVector : public std::vector<int> {
-};
+class TestingVector : public std::vector<int> {};
 
-::std::ostream& operator<<(::std::ostream& os,
-                           const TestingVector& vector) {
+::std::ostream& operator<<(::std::ostream& os, const TestingVector& vector) {
   os << "{ ";
   for (size_t i = 0; i < vector.size(); i++) {
     os << vector[i] << " ";
@@ -440,12 +432,11 @@ class FormatEpochTimeInMillisAsIso8601Test : public Test {
   static const TimeInMillis kMillisPerSec = 1000;
 
  private:
-  virtual void SetUp() {
-    saved_tz_ = NULL;
+  void SetUp() override {
+    saved_tz_ = nullptr;
 
     GTEST_DISABLE_MSC_DEPRECATED_PUSH_()
-    if (getenv("TZ"))
-      saved_tz_ = strdup(getenv("TZ"));
+    if (getenv("TZ")) saved_tz_ = strdup(getenv("TZ"));
     GTEST_DISABLE_MSC_DEPRECATED_POP_()
 
     
@@ -454,16 +445,16 @@ class FormatEpochTimeInMillisAsIso8601Test : public Test {
     SetTimeZone("UTC+00");
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     SetTimeZone(saved_tz_);
     free(const_cast<char*>(saved_tz_));
-    saved_tz_ = NULL;
+    saved_tz_ = nullptr;
   }
 
   static void SetTimeZone(const char* time_zone) {
-    
-    
-    
+
+
+
 #if _MSC_VER || GTEST_OS_WINDOWS_MINGW
     
     
@@ -494,9 +485,8 @@ TEST_F(FormatEpochTimeInMillisAsIso8601Test, PrintsTwoDigitSegments) {
 }
 
 TEST_F(FormatEpochTimeInMillisAsIso8601Test, MillisecondsDoNotAffectResult) {
-  EXPECT_EQ(
-      "2011-10-31T18:52:42",
-      FormatEpochTimeInMillisAsIso8601(1320087162 * kMillisPerSec + 234));
+  EXPECT_EQ("2011-10-31T18:52:42",
+            FormatEpochTimeInMillisAsIso8601(1320087162 * kMillisPerSec + 234));
 }
 
 TEST_F(FormatEpochTimeInMillisAsIso8601Test, PrintsLeadingZeroes) {
@@ -513,37 +503,88 @@ TEST_F(FormatEpochTimeInMillisAsIso8601Test, PrintsEpochStart) {
   EXPECT_EQ("1970-01-01T00:00:00", FormatEpochTimeInMillisAsIso8601(0));
 }
 
-#if GTEST_CAN_COMPARE_NULL
+#ifdef __BORLANDC__
 
-# ifdef __BORLANDC__
-
-#  pragma option push -w-ccc -w-rch
-# endif
+#pragma option push -w-ccc -w-rch
+#endif
 
 
 
-TEST(NullLiteralTest, IsTrueForNullLiterals) {
-  EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(NULL));
-  EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(0));
-  EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(0U));
-  EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(0L));
+TEST(NullLiteralTest, LHSAllowsNullLiterals) {
+  EXPECT_EQ(0, static_cast<void*>(nullptr));     
+  ASSERT_EQ(0, static_cast<void*>(nullptr));     
+  EXPECT_EQ(NULL, static_cast<void*>(nullptr));  
+  ASSERT_EQ(NULL, static_cast<void*>(nullptr));  
+  EXPECT_EQ(nullptr, static_cast<void*>(nullptr));
+  ASSERT_EQ(nullptr, static_cast<void*>(nullptr));
+
+  const int* const p = nullptr;
+  EXPECT_EQ(0, p);     
+  ASSERT_EQ(0, p);     
+  EXPECT_EQ(NULL, p);  
+  ASSERT_EQ(NULL, p);  
+  EXPECT_EQ(nullptr, p);
+  ASSERT_EQ(nullptr, p);
 }
 
+struct ConvertToAll {
+  template <typename T>
+  operator T() const {  
+    return T();
+  }
+};
 
+struct ConvertToPointer {
+  template <class T>
+  operator T*() const {  
+    return nullptr;
+  }
+};
 
-TEST(NullLiteralTest, IsFalseForNonNullLiterals) {
-  EXPECT_FALSE(GTEST_IS_NULL_LITERAL_(1));
-  EXPECT_FALSE(GTEST_IS_NULL_LITERAL_(0.0));
-  EXPECT_FALSE(GTEST_IS_NULL_LITERAL_('a'));
-  EXPECT_FALSE(GTEST_IS_NULL_LITERAL_(static_cast<void*>(NULL)));
+struct ConvertToAllButNoPointers {
+  template <typename T,
+            typename std::enable_if<!std::is_pointer<T>::value, int>::type = 0>
+  operator T() const {  
+    return T();
+  }
+};
+
+struct MyType {};
+inline bool operator==(MyType const&, MyType const&) { return true; }
+
+TEST(NullLiteralTest, ImplicitConversion) {
+  EXPECT_EQ(ConvertToPointer{}, static_cast<void*>(nullptr));
+#if !defined(__GNUC__) || defined(__clang__)
+  
+  EXPECT_EQ(ConvertToAll{}, static_cast<void*>(nullptr));
+#endif
+  EXPECT_EQ(ConvertToAll{}, MyType{});
+  EXPECT_EQ(ConvertToAllButNoPointers{}, MyType{});
 }
 
-# ifdef __BORLANDC__
+#ifdef __clang__
+#pragma clang diagnostic push
+#if __has_warning("-Wzero-as-null-pointer-constant")
+#pragma clang diagnostic error "-Wzero-as-null-pointer-constant"
+#endif
+#endif
 
-#  pragma option pop
-# endif
+TEST(NullLiteralTest, NoConversionNoWarning) {
+  
+  
+  EXPECT_EQ(0, 0);
+  ASSERT_EQ(0, 0);
+}
 
-#endif  
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+#ifdef __BORLANDC__
+
+#pragma option pop
+#endif
+
 
 
 
@@ -570,20 +611,17 @@ TEST(CodePointToUtf8Test, CanEncode8To11Bits) {
   
   
   
-  EXPECT_EQ("\xD5\xB6",
-            CodePointToUtf8(static_cast<wchar_t>(0x576)));
+  EXPECT_EQ("\xD5\xB6", CodePointToUtf8(static_cast<wchar_t>(0x576)));
 }
 
 
 
 TEST(CodePointToUtf8Test, CanEncode12To16Bits) {
   
-  EXPECT_EQ("\xE0\xA3\x93",
-            CodePointToUtf8(static_cast<wchar_t>(0x8D3)));
+  EXPECT_EQ("\xE0\xA3\x93", CodePointToUtf8(static_cast<wchar_t>(0x8D3)));
 
   
-  EXPECT_EQ("\xEC\x9D\x8D",
-            CodePointToUtf8(static_cast<wchar_t>(0xC74D)));
+  EXPECT_EQ("\xEC\x9D\x8D", CodePointToUtf8(static_cast<wchar_t>(0xC74D)));
 }
 
 #if !GTEST_WIDE_STRING_USES_UTF16_
@@ -635,7 +673,7 @@ TEST(WideStringToUtf8Test, CanEncode8To11Bits) {
   EXPECT_STREQ("\xC3\x93", WideStringToUtf8(L"\xD3", -1).c_str());
 
   
-  const wchar_t s[] = { 0x576, '\0' };
+  const wchar_t s[] = {0x576, '\0'};
   EXPECT_STREQ("\xD5\xB6", WideStringToUtf8(s, 1).c_str());
   EXPECT_STREQ("\xD5\xB6", WideStringToUtf8(s, -1).c_str());
 }
@@ -644,12 +682,12 @@ TEST(WideStringToUtf8Test, CanEncode8To11Bits) {
 
 TEST(WideStringToUtf8Test, CanEncode12To16Bits) {
   
-  const wchar_t s1[] = { 0x8D3, '\0' };
+  const wchar_t s1[] = {0x8D3, '\0'};
   EXPECT_STREQ("\xE0\xA3\x93", WideStringToUtf8(s1, 1).c_str());
   EXPECT_STREQ("\xE0\xA3\x93", WideStringToUtf8(s1, -1).c_str());
 
   
-  const wchar_t s2[] = { 0xC74D, '\0' };
+  const wchar_t s2[] = {0xC74D, '\0'};
   EXPECT_STREQ("\xEC\x9D\x8D", WideStringToUtf8(s2, 1).c_str());
   EXPECT_STREQ("\xEC\x9D\x8D", WideStringToUtf8(s2, -1).c_str());
 }
@@ -684,11 +722,11 @@ TEST(WideStringToUtf8Test, CanEncodeInvalidCodePoint) {
   EXPECT_STREQ("(Invalid Unicode 0xABCDFF)",
                WideStringToUtf8(L"\xABCDFF", -1).c_str());
 }
-#else  
+#else   
 
 
 TEST(WideStringToUtf8Test, CanEncodeValidUtf16SUrrogatePairs) {
-  const wchar_t s[] = { 0xD801, 0xDC00, '\0' };
+  const wchar_t s[] = {0xD801, 0xDC00, '\0'};
   EXPECT_STREQ("\xF0\x90\x90\x80", WideStringToUtf8(s, -1).c_str());
 }
 
@@ -696,13 +734,13 @@ TEST(WideStringToUtf8Test, CanEncodeValidUtf16SUrrogatePairs) {
 
 TEST(WideStringToUtf8Test, CanEncodeInvalidUtf16SurrogatePair) {
   
-  const wchar_t s1[] = { 0xD800, '\0' };
+  const wchar_t s1[] = {0xD800, '\0'};
   EXPECT_STREQ("\xED\xA0\x80", WideStringToUtf8(s1, -1).c_str());
   
-  const wchar_t s2[] = { 0xD800, 'M', '\0' };
+  const wchar_t s2[] = {0xD800, 'M', '\0'};
   EXPECT_STREQ("\xED\xA0\x80M", WideStringToUtf8(s2, -1).c_str());
   
-  const wchar_t s3[] = { 0xDC00, 'P', 'Q', 'R', '\0' };
+  const wchar_t s3[] = {0xDC00, 'P', 'Q', 'R', '\0'};
   EXPECT_STREQ("\xED\xB0\x80PQR", WideStringToUtf8(s3, -1).c_str());
 }
 #endif  
@@ -710,21 +748,24 @@ TEST(WideStringToUtf8Test, CanEncodeInvalidUtf16SurrogatePair) {
 
 #if !GTEST_WIDE_STRING_USES_UTF16_
 TEST(WideStringToUtf8Test, ConcatenatesCodepointsCorrectly) {
-  const wchar_t s[] = { 0x108634, 0xC74D, '\n', 0x576, 0x8D3, 0x108634, '\0'};
+  const wchar_t s[] = {0x108634, 0xC74D, '\n', 0x576, 0x8D3, 0x108634, '\0'};
   EXPECT_STREQ(
       "\xF4\x88\x98\xB4"
-          "\xEC\x9D\x8D"
-          "\n"
-          "\xD5\xB6"
-          "\xE0\xA3\x93"
-          "\xF4\x88\x98\xB4",
+      "\xEC\x9D\x8D"
+      "\n"
+      "\xD5\xB6"
+      "\xE0\xA3\x93"
+      "\xF4\x88\x98\xB4",
       WideStringToUtf8(s, -1).c_str());
 }
 #else
 TEST(WideStringToUtf8Test, ConcatenatesCodepointsCorrectly) {
-  const wchar_t s[] = { 0xC74D, '\n', 0x576, 0x8D3, '\0'};
+  const wchar_t s[] = {0xC74D, '\n', 0x576, 0x8D3, '\0'};
   EXPECT_STREQ(
-      "\xEC\x9D\x8D" "\n" "\xD5\xB6" "\xE0\xA3\x93",
+      "\xEC\x9D\x8D"
+      "\n"
+      "\xD5\xB6"
+      "\xE0\xA3\x93",
       WideStringToUtf8(s, -1).c_str());
 }
 #endif  
@@ -733,9 +774,8 @@ TEST(WideStringToUtf8Test, ConcatenatesCodepointsCorrectly) {
 
 TEST(RandomDeathTest, GeneratesCrashesOnInvalidRange) {
   testing::internal::Random random(42);
-  EXPECT_DEATH_IF_SUPPORTED(
-      random.Generate(0),
-      "Cannot generate a number in the range \\[0, 0\\)");
+  EXPECT_DEATH_IF_SUPPORTED(random.Generate(0),
+                            "Cannot generate a number in the range \\[0, 0\\)");
   EXPECT_DEATH_IF_SUPPORTED(
       random.Generate(testing::internal::Random::kMaxRange + 1),
       "Generation of a number in \\[0, 2147483649\\) was requested, "
@@ -851,23 +891,23 @@ TEST(ContainerUtilityDeathTest, ShuffleRange) {
 
 class VectorShuffleTest : public Test {
  protected:
-  static const int kVectorSize = 20;
+  static const size_t kVectorSize = 20;
 
   VectorShuffleTest() : random_(1) {
-    for (int i = 0; i < kVectorSize; i++) {
+    for (int i = 0; i < static_cast<int>(kVectorSize); i++) {
       vector_.push_back(i);
     }
   }
 
   static bool VectorIsCorrupt(const TestingVector& vector) {
-    if (kVectorSize != static_cast<int>(vector.size())) {
+    if (kVectorSize != vector.size()) {
       return true;
     }
 
-    bool found_in_vector[kVectorSize] = { false };
+    bool found_in_vector[kVectorSize] = {false};
     for (size_t i = 0; i < vector.size(); i++) {
       const int e = vector[i];
-      if (e < 0 || e >= kVectorSize || found_in_vector[e]) {
+      if (e < 0 || e >= static_cast<int>(kVectorSize) || found_in_vector[e]) {
         return true;
       }
       found_in_vector[e] = true;
@@ -884,15 +924,15 @@ class VectorShuffleTest : public Test {
 
   static bool RangeIsShuffled(const TestingVector& vector, int begin, int end) {
     for (int i = begin; i < end; i++) {
-      if (i != vector[i]) {
+      if (i != vector[static_cast<size_t>(i)]) {
         return true;
       }
     }
     return false;
   }
 
-  static bool RangeIsUnshuffled(
-      const TestingVector& vector, int begin, int end) {
+  static bool RangeIsUnshuffled(const TestingVector& vector, int begin,
+                                int end) {
     return !RangeIsShuffled(vector, begin, end);
   }
 
@@ -908,7 +948,7 @@ class VectorShuffleTest : public Test {
   TestingVector vector_;
 };  
 
-const int VectorShuffleTest::kVectorSize;
+const size_t VectorShuffleTest::kVectorSize;
 
 TEST_F(VectorShuffleTest, HandlesEmptyRange) {
   
@@ -917,7 +957,7 @@ TEST_F(VectorShuffleTest, HandlesEmptyRange) {
   ASSERT_PRED1(VectorIsUnshuffled, vector_);
 
   
-  ShuffleRange(&random_, kVectorSize/2, kVectorSize/2, &vector_);
+  ShuffleRange(&random_, kVectorSize / 2, kVectorSize / 2, &vector_);
   ASSERT_PRED1(VectorIsNotCorrupt, vector_);
   ASSERT_PRED1(VectorIsUnshuffled, vector_);
 
@@ -939,7 +979,7 @@ TEST_F(VectorShuffleTest, HandlesRangeOfSizeOne) {
   ASSERT_PRED1(VectorIsUnshuffled, vector_);
 
   
-  ShuffleRange(&random_, kVectorSize/2, kVectorSize/2 + 1, &vector_);
+  ShuffleRange(&random_, kVectorSize / 2, kVectorSize / 2 + 1, &vector_);
   ASSERT_PRED1(VectorIsNotCorrupt, vector_);
   ASSERT_PRED1(VectorIsUnshuffled, vector_);
 
@@ -960,17 +1000,18 @@ TEST_F(VectorShuffleTest, ShufflesEntireVector) {
   
   
   EXPECT_NE(0, vector_[0]);
-  EXPECT_NE(kVectorSize - 1, vector_[kVectorSize - 1]);
+  EXPECT_NE(static_cast<int>(kVectorSize - 1), vector_[kVectorSize - 1]);
 }
 
 TEST_F(VectorShuffleTest, ShufflesStartOfVector) {
-  const int kRangeSize = kVectorSize/2;
+  const int kRangeSize = kVectorSize / 2;
 
   ShuffleRange(&random_, 0, kRangeSize, &vector_);
 
   ASSERT_PRED1(VectorIsNotCorrupt, vector_);
   EXPECT_PRED3(RangeIsShuffled, vector_, 0, kRangeSize);
-  EXPECT_PRED3(RangeIsUnshuffled, vector_, kRangeSize, kVectorSize);
+  EXPECT_PRED3(RangeIsUnshuffled, vector_, kRangeSize,
+               static_cast<int>(kVectorSize));
 }
 
 TEST_F(VectorShuffleTest, ShufflesEndOfVector) {
@@ -979,23 +1020,25 @@ TEST_F(VectorShuffleTest, ShufflesEndOfVector) {
 
   ASSERT_PRED1(VectorIsNotCorrupt, vector_);
   EXPECT_PRED3(RangeIsUnshuffled, vector_, 0, kRangeSize);
-  EXPECT_PRED3(RangeIsShuffled, vector_, kRangeSize, kVectorSize);
+  EXPECT_PRED3(RangeIsShuffled, vector_, kRangeSize,
+               static_cast<int>(kVectorSize));
 }
 
 TEST_F(VectorShuffleTest, ShufflesMiddleOfVector) {
-  int kRangeSize = kVectorSize/3;
-  ShuffleRange(&random_, kRangeSize, 2*kRangeSize, &vector_);
+  const int kRangeSize = static_cast<int>(kVectorSize) / 3;
+  ShuffleRange(&random_, kRangeSize, 2 * kRangeSize, &vector_);
 
   ASSERT_PRED1(VectorIsNotCorrupt, vector_);
   EXPECT_PRED3(RangeIsUnshuffled, vector_, 0, kRangeSize);
-  EXPECT_PRED3(RangeIsShuffled, vector_, kRangeSize, 2*kRangeSize);
-  EXPECT_PRED3(RangeIsUnshuffled, vector_, 2*kRangeSize, kVectorSize);
+  EXPECT_PRED3(RangeIsShuffled, vector_, kRangeSize, 2 * kRangeSize);
+  EXPECT_PRED3(RangeIsUnshuffled, vector_, 2 * kRangeSize,
+               static_cast<int>(kVectorSize));
 }
 
 TEST_F(VectorShuffleTest, ShufflesRepeatably) {
   TestingVector vector2;
-  for (int i = 0; i < kVectorSize; i++) {
-    vector2.push_back(i);
+  for (size_t i = 0; i < kVectorSize; i++) {
+    vector2.push_back(static_cast<int>(i));
   }
 
   random_.Reseed(1234);
@@ -1006,7 +1049,7 @@ TEST_F(VectorShuffleTest, ShufflesRepeatably) {
   ASSERT_PRED1(VectorIsNotCorrupt, vector_);
   ASSERT_PRED1(VectorIsNotCorrupt, vector2);
 
-  for (int i = 0; i < kVectorSize; i++) {
+  for (size_t i = 0; i < kVectorSize; i++) {
     EXPECT_EQ(vector_[i], vector2[i]) << " where i is " << i;
   }
 }
@@ -1034,11 +1077,11 @@ TEST(StringTest, EndsWithCaseInsensitive) {
 
 
 
-static const wchar_t* const kNull = NULL;
+static const wchar_t* const kNull = nullptr;
 
 
 TEST(StringTest, CaseInsensitiveWideCStringEquals) {
-  EXPECT_TRUE(String::CaseInsensitiveWideCStringEquals(NULL, NULL));
+  EXPECT_TRUE(String::CaseInsensitiveWideCStringEquals(nullptr, nullptr));
   EXPECT_FALSE(String::CaseInsensitiveWideCStringEquals(kNull, L""));
   EXPECT_FALSE(String::CaseInsensitiveWideCStringEquals(L"", kNull));
   EXPECT_FALSE(String::CaseInsensitiveWideCStringEquals(kNull, L"foobar"));
@@ -1052,13 +1095,12 @@ TEST(StringTest, CaseInsensitiveWideCStringEquals) {
 
 
 TEST(StringTest, ShowWideCString) {
-  EXPECT_STREQ("(null)",
-               String::ShowWideCString(NULL).c_str());
+  EXPECT_STREQ("(null)", String::ShowWideCString(NULL).c_str());
   EXPECT_STREQ("", String::ShowWideCString(L"").c_str());
   EXPECT_STREQ("foo", String::ShowWideCString(L"foo").c_str());
 }
 
-# if GTEST_OS_WINDOWS_MOBILE
+#if GTEST_OS_WINDOWS_MOBILE
 TEST(StringTest, AnsiAndUtf16Null) {
   EXPECT_EQ(NULL, String::AnsiToUtf16(NULL));
   EXPECT_EQ(NULL, String::Utf16ToAnsi(NULL));
@@ -1067,21 +1109,21 @@ TEST(StringTest, AnsiAndUtf16Null) {
 TEST(StringTest, AnsiAndUtf16ConvertBasic) {
   const char* ansi = String::Utf16ToAnsi(L"str");
   EXPECT_STREQ("str", ansi);
-  delete [] ansi;
+  delete[] ansi;
   const WCHAR* utf16 = String::AnsiToUtf16("str");
   EXPECT_EQ(0, wcsncmp(L"str", utf16, 3));
-  delete [] utf16;
+  delete[] utf16;
 }
 
 TEST(StringTest, AnsiAndUtf16ConvertPathChars) {
   const char* ansi = String::Utf16ToAnsi(L".:\\ \"*?");
   EXPECT_STREQ(".:\\ \"*?", ansi);
-  delete [] ansi;
+  delete[] ansi;
   const WCHAR* utf16 = String::AnsiToUtf16(".:\\ \"*?");
   EXPECT_EQ(0, wcsncmp(L".:\\ \"*?", utf16, 3));
-  delete [] utf16;
+  delete[] utf16;
 }
-# endif  
+#endif  
 
 #endif  
 
@@ -1103,9 +1145,7 @@ TEST(TestPropertyTest, ReplaceStringValue) {
 
 
 
-static void AddFatalFailure() {
-  FAIL() << "Expected fatal failure.";
-}
+static void AddFatalFailure() { FAIL() << "Expected fatal failure."; }
 
 static void AddNonfatalFailure() {
   ADD_FAILURE() << "Expected non-fatal failure.";
@@ -1113,10 +1153,7 @@ static void AddNonfatalFailure() {
 
 class ScopedFakeTestPartResultReporterTest : public Test {
  public:  
-  enum FailureMode {
-    FATAL_FAILURE,
-    NONFATAL_FAILURE
-  };
+  enum FailureMode { FATAL_FAILURE, NONFATAL_FAILURE };
   static void AddFailure(FailureMode failure) {
     if (failure == FATAL_FAILURE) {
       AddFatalFailure();
@@ -1156,10 +1193,10 @@ TEST_F(ScopedFakeTestPartResultReporterTest, DeprecatedConstructor) {
 #if GTEST_IS_THREADSAFE
 
 class ScopedFakeTestPartResultReporterWithThreadsTest
-  : public ScopedFakeTestPartResultReporterTest {
+    : public ScopedFakeTestPartResultReporterTest {
  protected:
   static void AddFailureInOtherThread(FailureMode failure) {
-    ThreadWithParam<FailureMode> thread(&AddFailure, failure, NULL);
+    ThreadWithParam<FailureMode> thread(&AddFailure, failure, nullptr);
     thread.Join();
   }
 };
@@ -1195,12 +1232,6 @@ TEST_F(ExpectFatalFailureTest, CatchesFatalFaliure) {
   EXPECT_FATAL_FAILURE(AddFatalFailure(), "Expected fatal failure.");
 }
 
-#if GTEST_HAS_GLOBAL_STRING
-TEST_F(ExpectFatalFailureTest, AcceptsStringObject) {
-  EXPECT_FATAL_FAILURE(AddFatalFailure(), ::string("Expected fatal failure."));
-}
-#endif
-
 TEST_F(ExpectFatalFailureTest, AcceptsStdStringObject) {
   EXPECT_FATAL_FAILURE(AddFatalFailure(),
                        ::std::string("Expected fatal failure."));
@@ -1215,7 +1246,7 @@ TEST_F(ExpectFatalFailureTest, CatchesFatalFailureOnAllThreads) {
 
 #ifdef __BORLANDC__
 
-# pragma option push -w-ccc
+#pragma option push -w-ccc
 #endif
 
 
@@ -1243,7 +1274,7 @@ void DoesNotAbortHelper(bool* aborted) {
 
 #ifdef __BORLANDC__
 
-# pragma option pop
+#pragma option pop
 #endif
 
 TEST_F(ExpectFatalFailureTest, DoesNotAbort) {
@@ -1262,16 +1293,20 @@ static int global_var = 0;
 TEST_F(ExpectFatalFailureTest, AcceptsMacroThatExpandsToUnprotectedComma) {
 #ifndef __BORLANDC__
   
-  EXPECT_FATAL_FAILURE({
-    GTEST_USE_UNPROTECTED_COMMA_;
-    AddFatalFailure();
-  }, "");
+  EXPECT_FATAL_FAILURE(
+      {
+        GTEST_USE_UNPROTECTED_COMMA_;
+        AddFatalFailure();
+      },
+      "");
 #endif
 
-  EXPECT_FATAL_FAILURE_ON_ALL_THREADS({
-    GTEST_USE_UNPROTECTED_COMMA_;
-    AddFatalFailure();
-  }, "");
+  EXPECT_FATAL_FAILURE_ON_ALL_THREADS(
+      {
+        GTEST_USE_UNPROTECTED_COMMA_;
+        AddFatalFailure();
+      },
+      "");
 }
 
 
@@ -1279,16 +1314,8 @@ TEST_F(ExpectFatalFailureTest, AcceptsMacroThatExpandsToUnprotectedComma) {
 typedef ScopedFakeTestPartResultReporterTest ExpectNonfatalFailureTest;
 
 TEST_F(ExpectNonfatalFailureTest, CatchesNonfatalFailure) {
-  EXPECT_NONFATAL_FAILURE(AddNonfatalFailure(),
-                          "Expected non-fatal failure.");
+  EXPECT_NONFATAL_FAILURE(AddNonfatalFailure(), "Expected non-fatal failure.");
 }
-
-#if GTEST_HAS_GLOBAL_STRING
-TEST_F(ExpectNonfatalFailureTest, AcceptsStringObject) {
-  EXPECT_NONFATAL_FAILURE(AddNonfatalFailure(),
-                          ::string("Expected non-fatal failure."));
-}
-#endif
 
 TEST_F(ExpectNonfatalFailureTest, AcceptsStdStringObject) {
   EXPECT_NONFATAL_FAILURE(AddNonfatalFailure(),
@@ -1306,15 +1333,19 @@ TEST_F(ExpectNonfatalFailureTest, CatchesNonfatalFailureOnAllThreads) {
 
 
 TEST_F(ExpectNonfatalFailureTest, AcceptsMacroThatExpandsToUnprotectedComma) {
-  EXPECT_NONFATAL_FAILURE({
-    GTEST_USE_UNPROTECTED_COMMA_;
-    AddNonfatalFailure();
-  }, "");
+  EXPECT_NONFATAL_FAILURE(
+      {
+        GTEST_USE_UNPROTECTED_COMMA_;
+        AddNonfatalFailure();
+      },
+      "");
 
-  EXPECT_NONFATAL_FAILURE_ON_ALL_THREADS({
-    GTEST_USE_UNPROTECTED_COMMA_;
-    AddNonfatalFailure();
-  }, "");
+  EXPECT_NONFATAL_FAILURE_ON_ALL_THREADS(
+      {
+        GTEST_USE_UNPROTECTED_COMMA_;
+        AddNonfatalFailure();
+      },
+      "");
 }
 
 #if GTEST_IS_THREADSAFE
@@ -1358,21 +1389,18 @@ class TestResultTest : public Test {
   typedef std::vector<TestPartResult> TPRVector;
 
   
-  TestPartResult * pr1, * pr2;
+  TestPartResult *pr1, *pr2;
 
   
-  TestResult * r0, * r1, * r2;
+  TestResult *r0, *r1, *r2;
 
-  virtual void SetUp() {
+  void SetUp() override {
     
-    pr1 = new TestPartResult(TestPartResult::kSuccess,
-                             "foo/bar.cc",
-                             10,
+    pr1 = new TestPartResult(TestPartResult::kSuccess, "foo/bar.cc", 10,
                              "Success!");
 
     
-    pr2 = new TestPartResult(TestPartResult::kFatalFailure,
-                             "foo/bar.cc",
+    pr2 = new TestPartResult(TestPartResult::kFatalFailure, "foo/bar.cc",
                              -1,  
                              "Failure!");
 
@@ -1385,10 +1413,10 @@ class TestResultTest : public Test {
     
     
     
-    TPRVector* results1 = const_cast<TPRVector*>(
-        &TestResultAccessor::test_part_results(*r1));
-    TPRVector* results2 = const_cast<TPRVector*>(
-        &TestResultAccessor::test_part_results(*r2));
+    TPRVector* results1 =
+        const_cast<TPRVector*>(&TestResultAccessor::test_part_results(*r1));
+    TPRVector* results2 =
+        const_cast<TPRVector*>(&TestResultAccessor::test_part_results(*r2));
 
     
 
@@ -1400,7 +1428,7 @@ class TestResultTest : public Test {
     results2->push_back(*pr2);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     delete pr1;
     delete pr2;
 
@@ -1556,7 +1584,7 @@ class GTestFlagSaverTest : public Test {
   
   
   
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     saver_ = new GTestFlagSaver;
 
     GTEST_FLAG(also_run_disabled_tests) = false;
@@ -1578,9 +1606,9 @@ class GTestFlagSaverTest : public Test {
 
   
   
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     delete saver_;
-    saver_ = NULL;
+    saver_ = nullptr;
   }
 
   
@@ -1624,21 +1652,17 @@ class GTestFlagSaverTest : public Test {
   static GTestFlagSaver* saver_;
 };
 
-GTestFlagSaver* GTestFlagSaverTest::saver_ = NULL;
+GTestFlagSaver* GTestFlagSaverTest::saver_ = nullptr;
 
 
 
 
 
-TEST_F(GTestFlagSaverTest, ModifyGTestFlags) {
-  VerifyAndModifyFlags();
-}
+TEST_F(GTestFlagSaverTest, ModifyGTestFlags) { VerifyAndModifyFlags(); }
 
 
 
-TEST_F(GTestFlagSaverTest, VerifyGTestFlags) {
-  VerifyAndModifyFlags();
-}
+TEST_F(GTestFlagSaverTest, VerifyGTestFlags) { VerifyAndModifyFlags(); }
 
 
 
@@ -1655,12 +1679,12 @@ static void SetEnv(const char* name, const char* value) {
 
   
   
-  std::string *prev_env = NULL;
+  std::string* prev_env = NULL;
   if (added_env.find(name) != added_env.end()) {
     prev_env = added_env[name];
   }
-  added_env[name] = new std::string(
-      (Message() << name << "=" << value).GetString());
+  added_env[name] =
+      new std::string((Message() << name << "=" << value).GetString());
 
   
   
@@ -1692,7 +1716,7 @@ TEST(Int32FromGTestEnvTest, ReturnsDefaultWhenVariableIsNotSet) {
   EXPECT_EQ(10, Int32FromGTestEnv("temp", 10));
 }
 
-# if !defined(GTEST_GET_INT32_FROM_ENV_)
+#if !defined(GTEST_GET_INT32_FROM_ENV_)
 
 
 
@@ -1718,7 +1742,7 @@ TEST(Int32FromGTestEnvTest, ReturnsDefaultWhenValueIsInvalid) {
   EXPECT_EQ(50, Int32FromGTestEnv("temp", 50));
 }
 
-# endif  
+#endif  
 
 
 
@@ -1780,8 +1804,8 @@ TEST(ParseInt32FlagTest, ParsesAndReturnsValidValue) {
   EXPECT_TRUE(ParseInt32Flag("--" GTEST_FLAG_PREFIX_ "abc=456", "abc", &value));
   EXPECT_EQ(456, value);
 
-  EXPECT_TRUE(ParseInt32Flag("--" GTEST_FLAG_PREFIX_ "abc=-789",
-                             "abc", &value));
+  EXPECT_TRUE(
+      ParseInt32Flag("--" GTEST_FLAG_PREFIX_ "abc=-789", "abc", &value));
   EXPECT_EQ(-789, value);
 }
 
@@ -1803,8 +1827,7 @@ TEST(Int32FromEnvOrDieTest, ParsesAndReturnsValidValue) {
 TEST(Int32FromEnvOrDieDeathTest, AbortsOnFailure) {
   SetEnv(GTEST_FLAG_PREFIX_UPPER_ "VAR", "xxx");
   EXPECT_DEATH_IF_SUPPORTED(
-      Int32FromEnvOrDie(GTEST_FLAG_PREFIX_UPPER_ "VAR", 123),
-      ".*");
+      Int32FromEnvOrDie(GTEST_FLAG_PREFIX_UPPER_ "VAR", 123), ".*");
 }
 
 
@@ -1812,8 +1835,7 @@ TEST(Int32FromEnvOrDieDeathTest, AbortsOnFailure) {
 TEST(Int32FromEnvOrDieDeathTest, AbortsOnInt32Overflow) {
   SetEnv(GTEST_FLAG_PREFIX_UPPER_ "VAR", "1234567891234567891234");
   EXPECT_DEATH_IF_SUPPORTED(
-      Int32FromEnvOrDie(GTEST_FLAG_PREFIX_UPPER_ "VAR", 123),
-      ".*");
+      Int32FromEnvOrDie(GTEST_FLAG_PREFIX_UPPER_ "VAR", 123), ".*");
 }
 
 
@@ -1828,12 +1850,12 @@ TEST(ShouldRunTestOnShardTest, IsPartitionWhenThereIsOneShard) {
 
 class ShouldShardTest : public testing::Test {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     index_var_ = GTEST_FLAG_PREFIX_UPPER_ "INDEX";
     total_var_ = GTEST_FLAG_PREFIX_UPPER_ "TOTAL";
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     SetEnv(index_var_, "");
     SetEnv(total_var_, "");
   }
@@ -1920,7 +1942,8 @@ TEST(ShouldRunTestOnShardTest, IsPartitionWhenThereAreFiveShards) {
           prev_selected_shard_index = shard_index;
         } else {
           ADD_FAILURE() << "Shard " << prev_selected_shard_index << " and "
-            << shard_index << " are both selected to run test " << test_id;
+                        << shard_index << " are both selected to run test "
+                        << test_id;
         }
       }
     }
@@ -1932,7 +1955,7 @@ TEST(ShouldRunTestOnShardTest, IsPartitionWhenThereAreFiveShards) {
     int num_tests_on_shard = 0;
     for (int test_id = 0; test_id < num_tests; test_id++) {
       num_tests_on_shard +=
-        ShouldRunTestOnShard(num_shards, shard_index, test_id);
+          ShouldRunTestOnShard(num_shards, shard_index, test_id);
     }
     EXPECT_GE(num_tests_on_shard, num_tests / num_shards);
   }
@@ -1949,7 +1972,7 @@ TEST(ShouldRunTestOnShardTest, IsPartitionWhenThereAreFiveShards) {
 
 
 TEST(UnitTestTest, CanGetOriginalWorkingDir) {
-  ASSERT_TRUE(UnitTest::GetInstance()->original_working_dir() != NULL);
+  ASSERT_TRUE(UnitTest::GetInstance()->original_working_dir() != nullptr);
   EXPECT_STRNE(UnitTest::GetInstance()->original_working_dir(), "");
 }
 
@@ -1971,20 +1994,21 @@ void ExpectNonFatalFailureRecordingPropertyWithReservedKey(
 void ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest(
     const char* key) {
   const TestInfo* test_info = UnitTest::GetInstance()->current_test_info();
-  ASSERT_TRUE(test_info != NULL);
+  ASSERT_TRUE(test_info != nullptr);
   ExpectNonFatalFailureRecordingPropertyWithReservedKey(*test_info->result(),
                                                         key);
 }
 
-void ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestCase(
+void ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestSuite(
     const char* key) {
-  const TestCase* test_case = UnitTest::GetInstance()->current_test_case();
-  ASSERT_TRUE(test_case != NULL);
+  const testing::TestSuite* test_suite =
+      UnitTest::GetInstance()->current_test_suite();
+  ASSERT_TRUE(test_suite != nullptr);
   ExpectNonFatalFailureRecordingPropertyWithReservedKey(
-      test_case->ad_hoc_test_result(), key);
+      test_suite->ad_hoc_test_result(), key);
 }
 
-void ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+void ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
     const char* key) {
   ExpectNonFatalFailureRecordingPropertyWithReservedKey(
       UnitTest::GetInstance()->ad_hoc_test_result(), key);
@@ -1993,32 +2017,35 @@ void ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
 
 
 
-class UnitTestRecordPropertyTest :
-    public testing::internal::UnitTestRecordPropertyTestHelper {
+class UnitTestRecordPropertyTest
+    : public testing::internal::UnitTestRecordPropertyTestHelper {
  public:
-  static void SetUpTestCase() {
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestCase(
+  static void SetUpTestSuite() {
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestSuite(
         "disabled");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestSuite(
         "errors");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestSuite(
         "failures");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestSuite(
         "name");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestSuite(
         "tests");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTestSuite(
         "time");
 
     Test::RecordProperty("test_case_key_1", "1");
-    const TestCase* test_case = UnitTest::GetInstance()->current_test_case();
-    ASSERT_TRUE(test_case != NULL);
 
-    ASSERT_EQ(1, test_case->ad_hoc_test_result().test_property_count());
+    const testing::TestSuite* test_suite =
+        UnitTest::GetInstance()->current_test_suite();
+
+    ASSERT_TRUE(test_suite != nullptr);
+
+    ASSERT_EQ(1, test_suite->ad_hoc_test_result().test_property_count());
     EXPECT_STREQ("test_case_key_1",
-                 test_case->ad_hoc_test_result().GetTestProperty(0).key());
+                 test_suite->ad_hoc_test_result().GetTestProperty(0).key());
     EXPECT_STREQ("1",
-                 test_case->ad_hoc_test_result().GetTestProperty(0).value());
+                 test_suite->ad_hoc_test_result().GetTestProperty(0).value());
   }
 };
 
@@ -2030,8 +2057,7 @@ TEST_F(UnitTestRecordPropertyTest, OnePropertyFoundWhenAdded) {
 
   EXPECT_STREQ("key_1",
                unit_test_.ad_hoc_test_result().GetTestProperty(0).key());
-  EXPECT_STREQ("1",
-               unit_test_.ad_hoc_test_result().GetTestProperty(0).value());
+  EXPECT_STREQ("1", unit_test_.ad_hoc_test_result().GetTestProperty(0).value());
 }
 
 
@@ -2071,17 +2097,14 @@ TEST_F(UnitTestRecordPropertyTest, OverridesValuesForDuplicateKeys) {
 }
 
 TEST_F(UnitTestRecordPropertyTest,
-       AddFailureInsideTestsWhenUsingTestCaseReservedKeys) {
-  ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest(
-      "name");
+       AddFailureInsideTestsWhenUsingTestSuiteReservedKeys) {
+  ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest("name");
   ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest(
       "value_param");
   ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest(
       "type_param");
-  ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest(
-      "status");
-  ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest(
-      "time");
+  ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest("status");
+  ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest("time");
   ExpectNonFatalFailureRecordingPropertyWithReservedKeyForCurrentTest(
       "classname");
 }
@@ -2096,28 +2119,28 @@ TEST_F(UnitTestRecordPropertyTest,
 
 class UnitTestRecordPropertyTestEnvironment : public Environment {
  public:
-  virtual void TearDown() {
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+  void TearDown() override {
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "tests");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "failures");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "disabled");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "errors");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "name");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "timestamp");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "time");
-    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestCase(
+    ExpectNonFatalFailureRecordingPropertyWithReservedKeyOutsideOfTestSuite(
         "random_seed");
   }
 };
 
 
-static Environment* record_property_env =
+static Environment* record_property_env GTEST_ATTRIBUTE_UNUSED_ =
     AddGlobalTestEnvironment(new UnitTestRecordPropertyTestEnvironment);
 
 
@@ -2129,9 +2152,7 @@ static Environment* record_property_env =
 
 
 
-bool IsEven(int n) {
-  return (n % 2) == 0;
-}
+bool IsEven(int n) { return (n % 2) == 0; }
 
 
 struct IsEvenFunctor {
@@ -2178,41 +2199,37 @@ struct AssertIsEvenFunctor {
 };
 
 
-bool SumIsEven2(int n1, int n2) {
-  return IsEven(n1 + n2);
-}
+bool SumIsEven2(int n1, int n2) { return IsEven(n1 + n2); }
 
 
 
 struct SumIsEven3Functor {
-  bool operator()(int n1, int n2, int n3) {
-    return IsEven(n1 + n2 + n3);
-  }
+  bool operator()(int n1, int n2, int n3) { return IsEven(n1 + n2 + n3); }
 };
 
 
 
-AssertionResult AssertSumIsEven4(
-    const char* e1, const char* e2, const char* e3, const char* e4,
-    int n1, int n2, int n3, int n4) {
+AssertionResult AssertSumIsEven4(const char* e1, const char* e2, const char* e3,
+                                 const char* e4, int n1, int n2, int n3,
+                                 int n4) {
   const int sum = n1 + n2 + n3 + n4;
   if (IsEven(sum)) {
     return AssertionSuccess();
   }
 
   Message msg;
-  msg << e1 << " + " << e2 << " + " << e3 << " + " << e4
-      << " (" << n1 << " + " << n2 << " + " << n3 << " + " << n4
-      << ") evaluates to " << sum << ", which is not even.";
+  msg << e1 << " + " << e2 << " + " << e3 << " + " << e4 << " (" << n1 << " + "
+      << n2 << " + " << n3 << " + " << n4 << ") evaluates to " << sum
+      << ", which is not even.";
   return AssertionFailure(msg);
 }
 
 
 
 struct AssertSumIsEven5Functor {
-  AssertionResult operator()(
-      const char* e1, const char* e2, const char* e3, const char* e4,
-      const char* e5, int n1, int n2, int n3, int n4, int n5) {
+  AssertionResult operator()(const char* e1, const char* e2, const char* e3,
+                             const char* e4, const char* e5, int n1, int n2,
+                             int n3, int n4, int n5) {
     const int sum = n1 + n2 + n3 + n4 + n5;
     if (IsEven(sum)) {
       return AssertionSuccess();
@@ -2220,13 +2237,11 @@ struct AssertSumIsEven5Functor {
 
     Message msg;
     msg << e1 << " + " << e2 << " + " << e3 << " + " << e4 << " + " << e5
-        << " ("
-        << n1 << " + " << n2 << " + " << n3 << " + " << n4 << " + " << n5
-        << ") evaluates to " << sum << ", which is not even.";
+        << " (" << n1 << " + " << n2 << " + " << n3 << " + " << n4 << " + "
+        << n5 << ") evaluates to " << sum << ", which is not even.";
     return AssertionFailure(msg);
   }
 };
-
 
 
 
@@ -2237,11 +2252,12 @@ TEST(Pred1Test, WithoutFormat) {
   ASSERT_PRED1(IsEven, 4);
 
   
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED1(IsEven, 5) << "This failure is expected.";
-  }, "This failure is expected.");
-  EXPECT_FATAL_FAILURE(ASSERT_PRED1(IsEvenFunctor(), 5),
-                       "evaluates to false");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED1(IsEven, 5) << "This failure is expected.";
+      },
+      "This failure is expected.");
+  EXPECT_FATAL_FAILURE(ASSERT_PRED1(IsEvenFunctor(), 5), "evaluates to false");
 }
 
 
@@ -2249,15 +2265,17 @@ TEST(Pred1Test, WithFormat) {
   
   EXPECT_PRED_FORMAT1(AssertIsEven, 2);
   ASSERT_PRED_FORMAT1(AssertIsEvenFunctor(), 4)
-    << "This failure is UNEXPECTED!";
+      << "This failure is UNEXPECTED!";
 
   
   const int n = 5;
   EXPECT_NONFATAL_FAILURE(EXPECT_PRED_FORMAT1(AssertIsEvenFunctor(), n),
                           "n evaluates to 5, which is not even.");
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_PRED_FORMAT1(AssertIsEven, 5) << "This failure is expected.";
-  }, "This failure is expected.");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_PRED_FORMAT1(AssertIsEven, 5) << "This failure is expected.";
+      },
+      "This failure is expected.");
 }
 
 
@@ -2269,13 +2287,14 @@ TEST(Pred1Test, SingleEvaluationOnFailure) {
   EXPECT_EQ(1, n) << "The argument is not evaluated exactly once.";
 
   
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_PRED_FORMAT1(AssertIsEvenFunctor(), n++)
-        << "This failure is expected.";
-  }, "This failure is expected.");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_PRED_FORMAT1(AssertIsEvenFunctor(), n++)
+            << "This failure is expected.";
+      },
+      "This failure is expected.");
   EXPECT_EQ(2, n) << "The argument is not evaluated exactly once.";
 }
-
 
 
 
@@ -2288,19 +2307,23 @@ TEST(PredTest, WithoutFormat) {
   
   const int n1 = 1;
   const int n2 = 2;
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED2(SumIsEven2, n1, n2) << "This failure is expected.";
-  }, "This failure is expected.");
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_PRED3(SumIsEven3Functor(), 1, 2, 4);
-  }, "evaluates to false");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED2(SumIsEven2, n1, n2) << "This failure is expected.";
+      },
+      "This failure is expected.");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_PRED3(SumIsEven3Functor(), 1, 2, 4);
+      },
+      "evaluates to false");
 }
 
 
 TEST(PredTest, WithFormat) {
   
-  ASSERT_PRED_FORMAT4(AssertSumIsEven4, 4, 6, 8, 10) <<
-    "This failure is UNEXPECTED!";
+  ASSERT_PRED_FORMAT4(AssertSumIsEven4, 4, 6, 8, 10)
+      << "This failure is UNEXPECTED!";
   EXPECT_PRED_FORMAT5(AssertSumIsEven5Functor(), 2, 4, 6, 8, 10);
 
   
@@ -2308,13 +2331,17 @@ TEST(PredTest, WithFormat) {
   const int n2 = 2;
   const int n3 = 4;
   const int n4 = 6;
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT4(AssertSumIsEven4, n1, n2, n3, n4);
-  }, "evaluates to 13, which is not even.");
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_PRED_FORMAT5(AssertSumIsEven5Functor(), 1, 2, 4, 6, 8)
-        << "This failure is expected.";
-  }, "This failure is expected.");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT4(AssertSumIsEven4, n1, n2, n3, n4);
+      },
+      "evaluates to 13, which is not even.");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_PRED_FORMAT5(AssertSumIsEven5Functor(), 1, 2, 4, 6, 8)
+            << "This failure is expected.";
+      },
+      "This failure is expected.");
 }
 
 
@@ -2332,9 +2359,8 @@ TEST(PredTest, SingleEvaluationOnFailure) {
   int n3 = 0;
   int n4 = 0;
   int n5 = 0;
-  ASSERT_PRED_FORMAT5(AssertSumIsEven5Functor(),
-                      n1++, n2++, n3++, n4++, n5++)
-                        << "This failure is UNEXPECTED!";
+  ASSERT_PRED_FORMAT5(AssertSumIsEven5Functor(), n1++, n2++, n3++, n4++, n5++)
+      << "This failure is UNEXPECTED!";
   EXPECT_EQ(1, n1) << "Argument 1 is not evaluated exactly once.";
   EXPECT_EQ(1, n2) << "Argument 2 is not evaluated exactly once.";
   EXPECT_EQ(1, n3) << "Argument 3 is not evaluated exactly once.";
@@ -2343,19 +2369,23 @@ TEST(PredTest, SingleEvaluationOnFailure) {
 
   
   n1 = n2 = n3 = 0;
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED3(SumIsEven3Functor(), ++n1, n2++, n3++)
-        << "This failure is expected.";
-  }, "This failure is expected.");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED3(SumIsEven3Functor(), ++n1, n2++, n3++)
+            << "This failure is expected.";
+      },
+      "This failure is expected.");
   EXPECT_EQ(1, n1) << "Argument 1 is not evaluated exactly once.";
   EXPECT_EQ(1, n2) << "Argument 2 is not evaluated exactly once.";
   EXPECT_EQ(1, n3) << "Argument 3 is not evaluated exactly once.";
 
   
   n1 = n2 = n3 = n4 = 0;
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT4(AssertSumIsEven4, ++n1, n2++, n3++, n4++);
-  }, "evaluates to 1, which is not even.");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT4(AssertSumIsEven4, ++n1, n2++, n3++, n4++);
+      },
+      "evaluates to 1, which is not even.");
   EXPECT_EQ(1, n1) << "Argument 1 is not evaluated exactly once.";
   EXPECT_EQ(1, n2) << "Argument 2 is not evaluated exactly once.";
   EXPECT_EQ(1, n3) << "Argument 3 is not evaluated exactly once.";
@@ -2363,12 +2393,20 @@ TEST(PredTest, SingleEvaluationOnFailure) {
 }
 
 
-
-
-
-bool IsPositive(double x) {
-  return x > 0;
+TEST(PredTest, ExpectPredEvalFailure) {
+  std::set<int> set_a = {2, 1, 3, 4, 5};
+  std::set<int> set_b = {0, 4, 8};
+  const auto compare_sets = [](std::set<int>, std::set<int>) { return false; };
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_PRED2(compare_sets, set_a, set_b),
+      "compare_sets(set_a, set_b) evaluates to false, where\nset_a evaluates "
+      "to { 1, 2, 3, 4, 5 }\nset_b evaluates to { 0, 4, 8 }");
 }
+
+
+
+
+bool IsPositive(double x) { return x > 0; }
 
 template <typename T>
 bool IsNegative(T x) {
@@ -2384,7 +2422,7 @@ bool GreaterThan(T1 x1, T2 x2) {
 
 TEST(PredicateAssertionTest, AcceptsOverloadedFunction) {
   
-  EXPECT_PRED1((bool (*)(int))(IsPositive), 5);  
+  EXPECT_PRED1((bool (*)(int))(IsPositive), 5);       
   ASSERT_PRED1((bool (*)(double))(IsPositive), 6.0);  
 }
 
@@ -2400,28 +2438,24 @@ TEST(PredicateAssertionTest, AcceptsTemplateFunction) {
 
 
 
-
 AssertionResult IsPositiveFormat(const char* , int n) {
-  return n > 0 ? AssertionSuccess() :
-      AssertionFailure(Message() << "Failure");
+  return n > 0 ? AssertionSuccess() : AssertionFailure(Message() << "Failure");
 }
 
 AssertionResult IsPositiveFormat(const char* , double x) {
-  return x > 0 ? AssertionSuccess() :
-      AssertionFailure(Message() << "Failure");
+  return x > 0 ? AssertionSuccess() : AssertionFailure(Message() << "Failure");
 }
 
 template <typename T>
 AssertionResult IsNegativeFormat(const char* , T x) {
-  return x < 0 ? AssertionSuccess() :
-      AssertionFailure(Message() << "Failure");
+  return x < 0 ? AssertionSuccess() : AssertionFailure(Message() << "Failure");
 }
 
 template <typename T1, typename T2>
 AssertionResult EqualsFormat(const char* , const char* ,
                              const T1& x1, const T2& x2) {
-  return x1 == x2 ? AssertionSuccess() :
-      AssertionFailure(Message() << "Failure");
+  return x1 == x2 ? AssertionSuccess()
+                  : AssertionFailure(Message() << "Failure");
 }
 
 
@@ -2441,121 +2475,112 @@ TEST(PredicateFormatAssertionTest, AcceptsTemplateFunction) {
 
 
 
-
 TEST(StringAssertionTest, ASSERT_STREQ) {
-  const char * const p1 = "good";
+  const char* const p1 = "good";
   ASSERT_STREQ(p1, p1);
 
   
   const char p2[] = "good";
   ASSERT_STREQ(p1, p2);
 
-  EXPECT_FATAL_FAILURE(ASSERT_STREQ("bad", "good"),
-                       "  \"bad\"\n  \"good\"");
+  EXPECT_FATAL_FAILURE(ASSERT_STREQ("bad", "good"), "  \"bad\"\n  \"good\"");
 }
 
 
 TEST(StringAssertionTest, ASSERT_STREQ_Null) {
-  ASSERT_STREQ(static_cast<const char *>(NULL), NULL);
-  EXPECT_FATAL_FAILURE(ASSERT_STREQ(NULL, "non-null"),
-                       "non-null");
+  ASSERT_STREQ(static_cast<const char*>(nullptr), nullptr);
+  EXPECT_FATAL_FAILURE(ASSERT_STREQ(nullptr, "non-null"), "non-null");
 }
 
 
 TEST(StringAssertionTest, ASSERT_STREQ_Null2) {
-  EXPECT_FATAL_FAILURE(ASSERT_STREQ("non-null", NULL),
-                       "non-null");
+  EXPECT_FATAL_FAILURE(ASSERT_STREQ("non-null", nullptr), "non-null");
 }
 
 
 TEST(StringAssertionTest, ASSERT_STRNE) {
   ASSERT_STRNE("hi", "Hi");
-  ASSERT_STRNE("Hi", NULL);
-  ASSERT_STRNE(NULL, "Hi");
-  ASSERT_STRNE("", NULL);
-  ASSERT_STRNE(NULL, "");
+  ASSERT_STRNE("Hi", nullptr);
+  ASSERT_STRNE(nullptr, "Hi");
+  ASSERT_STRNE("", nullptr);
+  ASSERT_STRNE(nullptr, "");
   ASSERT_STRNE("", "Hi");
   ASSERT_STRNE("Hi", "");
-  EXPECT_FATAL_FAILURE(ASSERT_STRNE("Hi", "Hi"),
-                       "\"Hi\" vs \"Hi\"");
+  EXPECT_FATAL_FAILURE(ASSERT_STRNE("Hi", "Hi"), "\"Hi\" vs \"Hi\"");
 }
 
 
 TEST(StringAssertionTest, ASSERT_STRCASEEQ) {
   ASSERT_STRCASEEQ("hi", "Hi");
-  ASSERT_STRCASEEQ(static_cast<const char *>(NULL), NULL);
+  ASSERT_STRCASEEQ(static_cast<const char*>(nullptr), nullptr);
 
   ASSERT_STRCASEEQ("", "");
-  EXPECT_FATAL_FAILURE(ASSERT_STRCASEEQ("Hi", "hi2"),
-                       "Ignoring case");
+  EXPECT_FATAL_FAILURE(ASSERT_STRCASEEQ("Hi", "hi2"), "Ignoring case");
 }
 
 
 TEST(StringAssertionTest, ASSERT_STRCASENE) {
   ASSERT_STRCASENE("hi1", "Hi2");
-  ASSERT_STRCASENE("Hi", NULL);
-  ASSERT_STRCASENE(NULL, "Hi");
-  ASSERT_STRCASENE("", NULL);
-  ASSERT_STRCASENE(NULL, "");
+  ASSERT_STRCASENE("Hi", nullptr);
+  ASSERT_STRCASENE(nullptr, "Hi");
+  ASSERT_STRCASENE("", nullptr);
+  ASSERT_STRCASENE(nullptr, "");
   ASSERT_STRCASENE("", "Hi");
   ASSERT_STRCASENE("Hi", "");
-  EXPECT_FATAL_FAILURE(ASSERT_STRCASENE("Hi", "hi"),
-                       "(ignoring case)");
+  EXPECT_FATAL_FAILURE(ASSERT_STRCASENE("Hi", "hi"), "(ignoring case)");
 }
 
 
 TEST(StringAssertionTest, STREQ_Wide) {
   
-  ASSERT_STREQ(static_cast<const wchar_t *>(NULL), NULL);
+  ASSERT_STREQ(static_cast<const wchar_t*>(nullptr), nullptr);
 
   
   ASSERT_STREQ(L"", L"");
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_STREQ(L"non-null", NULL),
-                          "non-null");
+  EXPECT_NONFATAL_FAILURE(EXPECT_STREQ(L"non-null", nullptr), "non-null");
 
   
   EXPECT_STREQ(L"Hi", L"Hi");
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_STREQ(L"abc", L"Abc"),
-                          "Abc");
+  EXPECT_NONFATAL_FAILURE(EXPECT_STREQ(L"abc", L"Abc"), "Abc");
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_STREQ(L"abc\x8119", L"abc\x8120"),
-                          "abc");
+  EXPECT_NONFATAL_FAILURE(EXPECT_STREQ(L"abc\x8119", L"abc\x8120"), "abc");
 
   
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_STREQ(L"abc\x8119", L"abc\x8121") << "Expected failure";
-  }, "Expected failure");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_STREQ(L"abc\x8119", L"abc\x8121") << "Expected failure";
+      },
+      "Expected failure");
 }
 
 
 TEST(StringAssertionTest, STRNE_Wide) {
   
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_STRNE(static_cast<const wchar_t *>(NULL), NULL);
-  }, "");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_STRNE(static_cast<const wchar_t*>(nullptr), nullptr);
+      },
+      "");
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_STRNE(L"", L""),
-                          "L\"\"");
+  EXPECT_NONFATAL_FAILURE(EXPECT_STRNE(L"", L""), "L\"\"");
 
   
-  ASSERT_STRNE(L"non-null", NULL);
+  ASSERT_STRNE(L"non-null", nullptr);
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_STRNE(L"Hi", L"Hi"),
-                          "L\"Hi\"");
+  EXPECT_NONFATAL_FAILURE(EXPECT_STRNE(L"Hi", L"Hi"), "L\"Hi\"");
 
   
   EXPECT_STRNE(L"abc", L"Abc");
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_STRNE(L"abc\x8119", L"abc\x8119"),
-                          "abc");
+  EXPECT_NONFATAL_FAILURE(EXPECT_STRNE(L"abc\x8119", L"abc\x8119"), "abc");
 
   
   ASSERT_STRNE(L"abc\x8119", L"abc\x8120") << "This shouldn't happen";
@@ -2566,11 +2591,11 @@ TEST(StringAssertionTest, STRNE_Wide) {
 
 
 TEST(IsSubstringTest, ReturnsCorrectResultForCString) {
-  EXPECT_FALSE(IsSubstring("", "", NULL, "a"));
-  EXPECT_FALSE(IsSubstring("", "", "b", NULL));
+  EXPECT_FALSE(IsSubstring("", "", nullptr, "a"));
+  EXPECT_FALSE(IsSubstring("", "", "b", nullptr));
   EXPECT_FALSE(IsSubstring("", "", "needle", "haystack"));
 
-  EXPECT_TRUE(IsSubstring("", "", static_cast<const char*>(NULL), NULL));
+  EXPECT_TRUE(IsSubstring("", "", static_cast<const char*>(nullptr), nullptr));
   EXPECT_TRUE(IsSubstring("", "", "needle", "two needles"));
 }
 
@@ -2581,19 +2606,21 @@ TEST(IsSubstringTest, ReturnsCorrectResultForWideCString) {
   EXPECT_FALSE(IsSubstring("", "", L"b", kNull));
   EXPECT_FALSE(IsSubstring("", "", L"needle", L"haystack"));
 
-  EXPECT_TRUE(IsSubstring("", "", static_cast<const wchar_t*>(NULL), NULL));
+  EXPECT_TRUE(
+      IsSubstring("", "", static_cast<const wchar_t*>(nullptr), nullptr));
   EXPECT_TRUE(IsSubstring("", "", L"needle", L"two needles"));
 }
 
 
 
 TEST(IsSubstringTest, GeneratesCorrectMessageForCString) {
-  EXPECT_STREQ("Value of: needle_expr\n"
-               "  Actual: \"needle\"\n"
-               "Expected: a substring of haystack_expr\n"
-               "Which is: \"haystack\"",
-               IsSubstring("needle_expr", "haystack_expr",
-                           "needle", "haystack").failure_message());
+  EXPECT_STREQ(
+      "Value of: needle_expr\n"
+      "  Actual: \"needle\"\n"
+      "Expected: a substring of haystack_expr\n"
+      "Which is: \"haystack\"",
+      IsSubstring("needle_expr", "haystack_expr", "needle", "haystack")
+          .failure_message());
 }
 
 
@@ -2614,13 +2641,14 @@ TEST(IsSubstringTest, ReturnsCorrectResultForStdWstring) {
 
 
 TEST(IsSubstringTest, GeneratesCorrectMessageForWstring) {
-  EXPECT_STREQ("Value of: needle_expr\n"
-               "  Actual: L\"needle\"\n"
-               "Expected: a substring of haystack_expr\n"
-               "Which is: L\"haystack\"",
-               IsSubstring(
-                   "needle_expr", "haystack_expr",
-                   ::std::wstring(L"needle"), L"haystack").failure_message());
+  EXPECT_STREQ(
+      "Value of: needle_expr\n"
+      "  Actual: L\"needle\"\n"
+      "Expected: a substring of haystack_expr\n"
+      "Which is: L\"haystack\"",
+      IsSubstring("needle_expr", "haystack_expr", ::std::wstring(L"needle"),
+                  L"haystack")
+          .failure_message());
 }
 
 #endif  
@@ -2644,13 +2672,13 @@ TEST(IsNotSubstringTest, ReturnsCorrectResultForWideCString) {
 
 
 TEST(IsNotSubstringTest, GeneratesCorrectMessageForWideCString) {
-  EXPECT_STREQ("Value of: needle_expr\n"
-               "  Actual: L\"needle\"\n"
-               "Expected: not a substring of haystack_expr\n"
-               "Which is: L\"two needles\"",
-               IsNotSubstring(
-                   "needle_expr", "haystack_expr",
-                   L"needle", L"two needles").failure_message());
+  EXPECT_STREQ(
+      "Value of: needle_expr\n"
+      "  Actual: L\"needle\"\n"
+      "Expected: not a substring of haystack_expr\n"
+      "Which is: L\"two needles\"",
+      IsNotSubstring("needle_expr", "haystack_expr", L"needle", L"two needles")
+          .failure_message());
 }
 
 
@@ -2663,13 +2691,14 @@ TEST(IsNotSubstringTest, ReturnsCorrectResultsForStdString) {
 
 
 TEST(IsNotSubstringTest, GeneratesCorrectMessageForStdString) {
-  EXPECT_STREQ("Value of: needle_expr\n"
-               "  Actual: \"needle\"\n"
-               "Expected: not a substring of haystack_expr\n"
-               "Which is: \"two needles\"",
-               IsNotSubstring(
-                   "needle_expr", "haystack_expr",
-                   ::std::string("needle"), "two needles").failure_message());
+  EXPECT_STREQ(
+      "Value of: needle_expr\n"
+      "  Actual: \"needle\"\n"
+      "Expected: not a substring of haystack_expr\n"
+      "Which is: \"two needles\"",
+      IsNotSubstring("needle_expr", "haystack_expr", ::std::string("needle"),
+                     "two needles")
+          .failure_message());
 }
 
 #if GTEST_HAS_STD_WSTRING
@@ -2709,27 +2738,27 @@ class FloatingPointTest : public Test {
   typedef typename testing::internal::FloatingPoint<RawType> Floating;
   typedef typename Floating::Bits Bits;
 
-  virtual void SetUp() {
+  void SetUp() override {
     const size_t max_ulps = Floating::kMaxUlps;
 
     
     const Bits zero_bits = Floating(0).bits();
 
     
-    values_.close_to_positive_zero = Floating::ReinterpretBits(
-        zero_bits + max_ulps/2);
-    values_.close_to_negative_zero = -Floating::ReinterpretBits(
-        zero_bits + max_ulps - max_ulps/2);
-    values_.further_from_negative_zero = -Floating::ReinterpretBits(
-        zero_bits + max_ulps + 1 - max_ulps/2);
+    values_.close_to_positive_zero =
+        Floating::ReinterpretBits(zero_bits + max_ulps / 2);
+    values_.close_to_negative_zero =
+        -Floating::ReinterpretBits(zero_bits + max_ulps - max_ulps / 2);
+    values_.further_from_negative_zero =
+        -Floating::ReinterpretBits(zero_bits + max_ulps + 1 - max_ulps / 2);
 
     
     const Bits one_bits = Floating(1).bits();
 
     
     values_.close_to_one = Floating::ReinterpretBits(one_bits + max_ulps);
-    values_.further_from_one = Floating::ReinterpretBits(
-        one_bits + max_ulps + 1);
+    values_.further_from_one =
+        Floating::ReinterpretBits(one_bits + max_ulps + 1);
 
     
     values_.infinity = Floating::Infinity();
@@ -2738,23 +2767,23 @@ class FloatingPointTest : public Test {
     const Bits infinity_bits = Floating(values_.infinity).bits();
 
     
-    values_.close_to_infinity = Floating::ReinterpretBits(
-        infinity_bits - max_ulps);
-    values_.further_from_infinity = Floating::ReinterpretBits(
-        infinity_bits - max_ulps - 1);
+    values_.close_to_infinity =
+        Floating::ReinterpretBits(infinity_bits - max_ulps);
+    values_.further_from_infinity =
+        Floating::ReinterpretBits(infinity_bits - max_ulps - 1);
 
     
     
     
-    values_.nan1 = Floating::ReinterpretBits(Floating::kExponentBitMask
-        | (static_cast<Bits>(1) << (Floating::kFractionBitCount - 1)) | 1);
-    values_.nan2 = Floating::ReinterpretBits(Floating::kExponentBitMask
-        | (static_cast<Bits>(1) << (Floating::kFractionBitCount - 1)) | 200);
+    values_.nan1 = Floating::ReinterpretBits(
+        Floating::kExponentBitMask |
+        (static_cast<Bits>(1) << (Floating::kFractionBitCount - 1)) | 1);
+    values_.nan2 = Floating::ReinterpretBits(
+        Floating::kExponentBitMask |
+        (static_cast<Bits>(1) << (Floating::kFractionBitCount - 1)) | 200);
   }
 
-  void TestSize() {
-    EXPECT_EQ(sizeof(RawType), sizeof(Bits));
-  }
+  void TestSize() { EXPECT_EQ(sizeof(RawType), sizeof(Bits)); }
 
   static TestValues values_;
 };
@@ -2767,17 +2796,13 @@ typename FloatingPointTest<RawType>::TestValues
 typedef FloatingPointTest<float> FloatTest;
 
 
-TEST_F(FloatTest, Size) {
-  TestSize();
-}
+TEST_F(FloatTest, Size) { TestSize(); }
 
 
 TEST_F(FloatTest, Zeros) {
   EXPECT_FLOAT_EQ(0.0, -0.0);
-  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(-0.0, 1.0),
-                          "1.0");
-  EXPECT_FATAL_FAILURE(ASSERT_FLOAT_EQ(0.0, 1.5),
-                       "1.5");
+  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(-0.0, 1.0), "1.0");
+  EXPECT_FATAL_FAILURE(ASSERT_FLOAT_EQ(0.0, 1.5), "1.5");
 }
 
 
@@ -2798,10 +2823,11 @@ TEST_F(FloatTest, AlmostZeros) {
   EXPECT_FLOAT_EQ(-0.0, v.close_to_negative_zero);
   EXPECT_FLOAT_EQ(v.close_to_positive_zero, v.close_to_negative_zero);
 
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_FLOAT_EQ(v.close_to_positive_zero,
-                    v.further_from_negative_zero);
-  }, "v.further_from_negative_zero");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_FLOAT_EQ(v.close_to_positive_zero, v.further_from_negative_zero);
+      },
+      "v.further_from_negative_zero");
 }
 
 
@@ -2813,8 +2839,7 @@ TEST_F(FloatTest, SmallDiff) {
 
 
 TEST_F(FloatTest, LargeDiff) {
-  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(2.5, 3.0),
-                          "3.0");
+  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(2.5, 3.0), "3.0");
 }
 
 
@@ -2824,8 +2849,6 @@ TEST_F(FloatTest, LargeDiff) {
 TEST_F(FloatTest, Infinity) {
   EXPECT_FLOAT_EQ(values_.infinity, values_.close_to_infinity);
   EXPECT_FLOAT_EQ(-values_.infinity, -values_.close_to_infinity);
-#if !GTEST_OS_SYMBIAN
-  
   EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(values_.infinity, -values_.infinity),
                           "-values_.infinity");
 
@@ -2833,14 +2856,10 @@ TEST_F(FloatTest, Infinity) {
   
   EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(values_.infinity, values_.nan1),
                           "values_.nan1");
-#endif  
 }
 
 
 TEST_F(FloatTest, NaN) {
-#if !GTEST_OS_SYMBIAN
-
-
   
   
   
@@ -2849,16 +2868,11 @@ TEST_F(FloatTest, NaN) {
   
   static const FloatTest::TestValues& v = this->values_;
 
-  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(v.nan1, v.nan1),
-                          "v.nan1");
-  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(v.nan1, v.nan2),
-                          "v.nan2");
-  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(1.0, v.nan1),
-                          "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(v.nan1, v.nan1), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(v.nan1, v.nan2), "v.nan2");
+  EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(1.0, v.nan1), "v.nan1");
 
-  EXPECT_FATAL_FAILURE(ASSERT_FLOAT_EQ(v.nan1, v.infinity),
-                       "v.infinity");
-#endif  
+  EXPECT_FATAL_FAILURE(ASSERT_FLOAT_EQ(v.nan1, v.infinity), "v.infinity");
 }
 
 
@@ -2882,7 +2896,7 @@ TEST_F(FloatTest, Commutative) {
 TEST_F(FloatTest, EXPECT_NEAR) {
   EXPECT_NEAR(-1.0f, -1.1f, 0.2f);
   EXPECT_NEAR(2.0f, 3.0f, 1.0f);
-  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0f,1.5f, 0.25f),  
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0f, 1.5f, 0.25f),  
                           "The difference between 1.0f and 1.5f is 0.5, "
                           "which exceeds 0.25f");
   
@@ -2893,7 +2907,7 @@ TEST_F(FloatTest, EXPECT_NEAR) {
 TEST_F(FloatTest, ASSERT_NEAR) {
   ASSERT_NEAR(-1.0f, -1.1f, 0.2f);
   ASSERT_NEAR(2.0f, 3.0f, 1.0f);
-  EXPECT_FATAL_FAILURE(ASSERT_NEAR(1.0f,1.5f, 0.25f),  
+  EXPECT_FATAL_FAILURE(ASSERT_NEAR(1.0f, 1.5f, 0.25f),  
                        "The difference between 1.0f and 1.5f is 0.5, "
                        "which exceeds 0.25f");
   
@@ -2916,41 +2930,40 @@ TEST_F(FloatTest, FloatLEFails) {
                           "(2.0f) <= (1.0f)");
 
   
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT2(FloatLE, values_.further_from_one, 1.0f);
-  }, "(values_.further_from_one) <= (1.0f)");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT2(FloatLE, values_.further_from_one, 1.0f);
+      },
+      "(values_.further_from_one) <= (1.0f)");
 
-#if !GTEST_OS_SYMBIAN && !defined(__BORLANDC__)
-  
-  
-  
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT2(FloatLE, values_.nan1, values_.infinity);
-  }, "(values_.nan1) <= (values_.infinity)");
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT2(FloatLE, -values_.infinity, values_.nan1);
-  }, "(-values_.infinity) <= (values_.nan1)");
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_PRED_FORMAT2(FloatLE, values_.nan1, values_.nan1);
-  }, "(values_.nan1) <= (values_.nan1)");
-#endif  
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT2(FloatLE, values_.nan1, values_.infinity);
+      },
+      "(values_.nan1) <= (values_.infinity)");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT2(FloatLE, -values_.infinity, values_.nan1);
+      },
+      "(-values_.infinity) <= (values_.nan1)");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_PRED_FORMAT2(FloatLE, values_.nan1, values_.nan1);
+      },
+      "(values_.nan1) <= (values_.nan1)");
 }
 
 
 typedef FloatingPointTest<double> DoubleTest;
 
 
-TEST_F(DoubleTest, Size) {
-  TestSize();
-}
+TEST_F(DoubleTest, Size) { TestSize(); }
 
 
 TEST_F(DoubleTest, Zeros) {
   EXPECT_DOUBLE_EQ(0.0, -0.0);
-  EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(-0.0, 1.0),
-                          "1.0");
-  EXPECT_FATAL_FAILURE(ASSERT_DOUBLE_EQ(0.0, 1.0),
-                       "1.0");
+  EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(-0.0, 1.0), "1.0");
+  EXPECT_FATAL_FAILURE(ASSERT_DOUBLE_EQ(0.0, 1.0), "1.0");
 }
 
 
@@ -2971,10 +2984,12 @@ TEST_F(DoubleTest, AlmostZeros) {
   EXPECT_DOUBLE_EQ(-0.0, v.close_to_negative_zero);
   EXPECT_DOUBLE_EQ(v.close_to_positive_zero, v.close_to_negative_zero);
 
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_DOUBLE_EQ(v.close_to_positive_zero,
-                     v.further_from_negative_zero);
-  }, "v.further_from_negative_zero");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_DOUBLE_EQ(v.close_to_positive_zero,
+                         v.further_from_negative_zero);
+      },
+      "v.further_from_negative_zero");
 }
 
 
@@ -2986,8 +3001,7 @@ TEST_F(DoubleTest, SmallDiff) {
 
 
 TEST_F(DoubleTest, LargeDiff) {
-  EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(2.0, 3.0),
-                          "3.0");
+  EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(2.0, 3.0), "3.0");
 }
 
 
@@ -2997,8 +3011,6 @@ TEST_F(DoubleTest, LargeDiff) {
 TEST_F(DoubleTest, Infinity) {
   EXPECT_DOUBLE_EQ(values_.infinity, values_.close_to_infinity);
   EXPECT_DOUBLE_EQ(-values_.infinity, -values_.close_to_infinity);
-#if !GTEST_OS_SYMBIAN
-  
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(values_.infinity, -values_.infinity),
                           "-values_.infinity");
 
@@ -3006,38 +3018,24 @@ TEST_F(DoubleTest, Infinity) {
   
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(values_.infinity, values_.nan1),
                           "values_.nan1");
-#endif  
 }
 
 
 TEST_F(DoubleTest, NaN) {
-#if !GTEST_OS_SYMBIAN
-  
-  
-  
-  
-  
-  
   static const DoubleTest::TestValues& v = this->values_;
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(v.nan1, v.nan1),
-                          "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(v.nan1, v.nan1), "v.nan1");
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(v.nan1, v.nan2), "v.nan2");
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(1.0, v.nan1), "v.nan1");
-  EXPECT_FATAL_FAILURE(ASSERT_DOUBLE_EQ(v.nan1, v.infinity),
-                       "v.infinity");
-#endif  
+  EXPECT_FATAL_FAILURE(ASSERT_DOUBLE_EQ(v.nan1, v.infinity), "v.infinity");
 }
 
 
 TEST_F(DoubleTest, Reflexive) {
   EXPECT_DOUBLE_EQ(0.0, 0.0);
   EXPECT_DOUBLE_EQ(1.0, 1.0);
-#if !GTEST_OS_SYMBIAN
-  
   ASSERT_DOUBLE_EQ(values_.infinity, values_.infinity);
-#endif  
 }
 
 
@@ -3088,26 +3086,28 @@ TEST_F(DoubleTest, DoubleLEFails) {
                           "(2.0) <= (1.0)");
 
   
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT2(DoubleLE, values_.further_from_one, 1.0);
-  }, "(values_.further_from_one) <= (1.0)");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT2(DoubleLE, values_.further_from_one, 1.0);
+      },
+      "(values_.further_from_one) <= (1.0)");
 
-#if !GTEST_OS_SYMBIAN && !defined(__BORLANDC__)
-  
-  
-  
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT2(DoubleLE, values_.nan1, values_.infinity);
-  }, "(values_.nan1) <= (values_.infinity)");
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_PRED_FORMAT2(DoubleLE, -values_.infinity, values_.nan1);
-  }, " (-values_.infinity) <= (values_.nan1)");
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_PRED_FORMAT2(DoubleLE, values_.nan1, values_.nan1);
-  }, "(values_.nan1) <= (values_.nan1)");
-#endif  
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT2(DoubleLE, values_.nan1, values_.infinity);
+      },
+      "(values_.nan1) <= (values_.infinity)");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_PRED_FORMAT2(DoubleLE, -values_.infinity, values_.nan1);
+      },
+      " (-values_.infinity) <= (values_.nan1)");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_PRED_FORMAT2(DoubleLE, values_.nan1, values_.nan1);
+      },
+      "(values_.nan1) <= (values_.nan1)");
 }
-
 
 
 
@@ -3120,19 +3120,17 @@ TEST(DisabledTest, DISABLED_TestShouldNotRun) {
 
 
 
-TEST(DisabledTest, NotDISABLED_TestShouldRun) {
-  EXPECT_EQ(1, 1);
-}
+TEST(DisabledTest, NotDISABLED_TestShouldRun) { EXPECT_EQ(1, 1); }
 
 
 
-TEST(DISABLED_TestCase, TestShouldNotRun) {
+TEST(DISABLED_TestSuite, TestShouldNotRun) {
   FAIL() << "Unexpected failure: Test in disabled test case should not be run.";
 }
 
 
 
-TEST(DISABLED_TestCase, DISABLED_TestShouldNotRun) {
+TEST(DISABLED_TestSuite, DISABLED_TestShouldNotRun) {
   FAIL() << "Unexpected failure: Test in disabled test case should not be run.";
 }
 
@@ -3140,14 +3138,14 @@ TEST(DISABLED_TestCase, DISABLED_TestShouldNotRun) {
 
 class DisabledTestsTest : public Test {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     FAIL() << "Unexpected failure: All tests disabled in test case. "
-              "SetUpTestCase() should not be called.";
+              "SetUpTestSuite() should not be called.";
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     FAIL() << "Unexpected failure: All tests disabled in test case. "
-              "TearDownTestCase() should not be called.";
+              "TearDownTestSuite() should not be called.";
   }
 };
 
@@ -3164,21 +3162,19 @@ TEST_F(DisabledTestsTest, DISABLED_TestShouldNotRun_2) {
 #if GTEST_HAS_TYPED_TEST
 
 template <typename T>
-class TypedTest : public Test {
-};
+class TypedTest : public Test {};
 
 typedef testing::Types<int, double> NumericTypes;
-TYPED_TEST_CASE(TypedTest, NumericTypes);
+TYPED_TEST_SUITE(TypedTest, NumericTypes);
 
 TYPED_TEST(TypedTest, DISABLED_ShouldNotRun) {
   FAIL() << "Unexpected failure: Disabled typed test should not run.";
 }
 
 template <typename T>
-class DISABLED_TypedTest : public Test {
-};
+class DISABLED_TypedTest : public Test {};
 
-TYPED_TEST_CASE(DISABLED_TypedTest, NumericTypes);
+TYPED_TEST_SUITE(DISABLED_TypedTest, NumericTypes);
 
 TYPED_TEST(DISABLED_TypedTest, ShouldNotRun) {
   FAIL() << "Unexpected failure: Disabled typed test should not run.";
@@ -3191,34 +3187,32 @@ TYPED_TEST(DISABLED_TypedTest, ShouldNotRun) {
 #if GTEST_HAS_TYPED_TEST_P
 
 template <typename T>
-class TypedTestP : public Test {
-};
+class TypedTestP : public Test {};
 
-TYPED_TEST_CASE_P(TypedTestP);
+TYPED_TEST_SUITE_P(TypedTestP);
 
 TYPED_TEST_P(TypedTestP, DISABLED_ShouldNotRun) {
   FAIL() << "Unexpected failure: "
          << "Disabled type-parameterized test should not run.";
 }
 
-REGISTER_TYPED_TEST_CASE_P(TypedTestP, DISABLED_ShouldNotRun);
+REGISTER_TYPED_TEST_SUITE_P(TypedTestP, DISABLED_ShouldNotRun);
 
-INSTANTIATE_TYPED_TEST_CASE_P(My, TypedTestP, NumericTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(My, TypedTestP, NumericTypes);
 
 template <typename T>
-class DISABLED_TypedTestP : public Test {
-};
+class DISABLED_TypedTestP : public Test {};
 
-TYPED_TEST_CASE_P(DISABLED_TypedTestP);
+TYPED_TEST_SUITE_P(DISABLED_TypedTestP);
 
 TYPED_TEST_P(DISABLED_TypedTestP, ShouldNotRun) {
   FAIL() << "Unexpected failure: "
          << "Disabled type-parameterized test should not run.";
 }
 
-REGISTER_TYPED_TEST_CASE_P(DISABLED_TypedTestP, ShouldNotRun);
+REGISTER_TYPED_TEST_SUITE_P(DISABLED_TypedTestP, ShouldNotRun);
 
-INSTANTIATE_TYPED_TEST_CASE_P(My, DISABLED_TypedTestP, NumericTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(My, DISABLED_TypedTestP, NumericTypes);
 
 #endif  
 
@@ -3229,15 +3223,11 @@ class SingleEvaluationTest : public Test {
   
   
   
-  static void CompareAndIncrementCharPtrs() {
-    ASSERT_STREQ(p1_++, p2_++);
-  }
+  static void CompareAndIncrementCharPtrs() { ASSERT_STREQ(p1_++, p2_++); }
 
   
   
-  static void CompareAndIncrementInts() {
-    ASSERT_NE(a_++, b_++);
-  }
+  static void CompareAndIncrementInts() { ASSERT_NE(a_++, b_++); }
 
  protected:
   SingleEvaluationTest() {
@@ -3280,8 +3270,7 @@ TEST_F(SingleEvaluationTest, ASSERT_STR) {
   EXPECT_EQ(s2_ + 1, p2_);
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_STRCASEEQ(p1_++, p2_++),
-                          "Ignoring case");
+  EXPECT_NONFATAL_FAILURE(EXPECT_STRCASEEQ(p1_++, p2_++), "Ignoring case");
   EXPECT_EQ(s1_ + 2, p1_);
   EXPECT_EQ(s2_ + 2, p2_);
 }
@@ -3327,24 +3316,27 @@ TEST_F(SingleEvaluationTest, OtherCases) {
 
 #if GTEST_HAS_EXCEPTIONS
 
-void ThrowAnInteger() {
-  throw 1;
-}
+void ThrowAnInteger() { throw 1; }
 
 
 TEST_F(SingleEvaluationTest, ExceptionTests) {
   
-  EXPECT_THROW({  
-    a_++;
-    ThrowAnInteger();
-  }, int);
+  EXPECT_THROW(
+      {  
+        a_++;
+        ThrowAnInteger();
+      },
+      int);
   EXPECT_EQ(1, a_);
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_THROW({  
-    a_++;
-    ThrowAnInteger();
-  }, bool), "throws a different type");
+  EXPECT_NONFATAL_FAILURE(EXPECT_THROW(
+                              {  
+                                a_++;
+                                ThrowAnInteger();
+                              },
+                              bool),
+                          "throws a different type");
   EXPECT_EQ(2, a_);
 
   
@@ -3357,9 +3349,10 @@ TEST_F(SingleEvaluationTest, ExceptionTests) {
 
   
   EXPECT_NONFATAL_FAILURE(EXPECT_NO_THROW({  
-    a_++;
-    ThrowAnInteger();
-  }), "it throws");
+                            a_++;
+                            ThrowAnInteger();
+                          }),
+                          "it throws");
   EXPECT_EQ(5, a_);
 
   
@@ -3380,12 +3373,8 @@ TEST_F(SingleEvaluationTest, ExceptionTests) {
 class NoFatalFailureTest : public Test {
  protected:
   void Succeeds() {}
-  void FailsNonFatal() {
-    ADD_FAILURE() << "some non-fatal failure";
-  }
-  void Fails() {
-    FAIL() << "some fatal failure";
-  }
+  void FailsNonFatal() { ADD_FAILURE() << "some non-fatal failure"; }
+  void Fails() { FAIL() << "some fatal failure"; }
 
   void DoAssertNoFatalFailureOnFails() {
     ASSERT_NO_FATAL_FAILURE(Fails());
@@ -3404,12 +3393,10 @@ TEST_F(NoFatalFailureTest, NoFailure) {
 }
 
 TEST_F(NoFatalFailureTest, NonFatalIsNoFailure) {
-  EXPECT_NONFATAL_FAILURE(
-      EXPECT_NO_FATAL_FAILURE(FailsNonFatal()),
-      "some non-fatal failure");
-  EXPECT_NONFATAL_FAILURE(
-      ASSERT_NO_FATAL_FAILURE(FailsNonFatal()),
-      "some non-fatal failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NO_FATAL_FAILURE(FailsNonFatal()),
+                          "some non-fatal failure");
+  EXPECT_NONFATAL_FAILURE(ASSERT_NO_FATAL_FAILURE(FailsNonFatal()),
+                          "some non-fatal failure");
 }
 
 TEST_F(NoFatalFailureTest, AssertNoFatalFailureOnFatalFailure) {
@@ -3481,7 +3468,7 @@ std::string EditsToString(const std::vector<EditType>& edits) {
 std::vector<size_t> CharsToIndices(const std::string& str) {
   std::vector<size_t> out;
   for (size_t i = 0; i < str.size(); ++i) {
-    out.push_back(str[i]);
+    out.push_back(static_cast<size_t>(str[i]));
   }
   return out;
 }
@@ -3494,7 +3481,7 @@ std::vector<std::string> CharsToLines(const std::string& str) {
   return out;
 }
 
-TEST(EditDistance, TestCases) {
+TEST(EditDistance, TestSuites) {
   struct Case {
     int line;
     const char* left;
@@ -3532,8 +3519,9 @@ TEST(EditDistance, TestCases) {
                 EditsToString(CalculateOptimalEdits(CharsToIndices(c->left),
                                                     CharsToIndices(c->right))))
         << "Left <" << c->left << "> Right <" << c->right << "> Edits <"
-        << EditsToString(CalculateOptimalEdits(
-               CharsToIndices(c->left), CharsToIndices(c->right))) << ">";
+        << EditsToString(CalculateOptimalEdits(CharsToIndices(c->left),
+                                               CharsToIndices(c->right)))
+        << ">";
     EXPECT_TRUE(c->expected_diff == CreateUnifiedDiff(CharsToLines(c->left),
                                                       CharsToLines(c->right)))
         << "Left <" << c->left << "> Right <" << c->right << "> Diff <"
@@ -3546,8 +3534,7 @@ TEST(EditDistance, TestCases) {
 TEST(AssertionTest, EqFailure) {
   const std::string foo_val("5"), bar_val("6");
   const std::string msg1(
-      EqFailure("foo", "bar", foo_val, bar_val, false)
-      .failure_message());
+      EqFailure("foo", "bar", foo_val, bar_val, false).failure_message());
   EXPECT_STREQ(
       "Expected equality of these values:\n"
       "  foo\n"
@@ -3557,8 +3544,7 @@ TEST(AssertionTest, EqFailure) {
       msg1.c_str());
 
   const std::string msg2(
-      EqFailure("foo", "6", foo_val, bar_val, false)
-      .failure_message());
+      EqFailure("foo", "6", foo_val, bar_val, false).failure_message());
   EXPECT_STREQ(
       "Expected equality of these values:\n"
       "  foo\n"
@@ -3567,8 +3553,7 @@ TEST(AssertionTest, EqFailure) {
       msg2.c_str());
 
   const std::string msg3(
-      EqFailure("5", "bar", foo_val, bar_val, false)
-      .failure_message());
+      EqFailure("5", "bar", foo_val, bar_val, false).failure_message());
   EXPECT_STREQ(
       "Expected equality of these values:\n"
       "  5\n"
@@ -3585,9 +3570,8 @@ TEST(AssertionTest, EqFailure) {
       msg4.c_str());
 
   const std::string msg5(
-      EqFailure("foo", "bar",
-                std::string("\"x\""), std::string("\"y\""),
-                true).failure_message());
+      EqFailure("foo", "bar", std::string("\"x\""), std::string("\"y\""), true)
+          .failure_message());
   EXPECT_STREQ(
       "Expected equality of these values:\n"
       "  foo\n"
@@ -3622,24 +3606,21 @@ TEST(AssertionTest, AppendUserMessage) {
   const std::string foo("foo");
 
   Message msg;
-  EXPECT_STREQ("foo",
-               AppendUserMessage(foo, msg).c_str());
+  EXPECT_STREQ("foo", AppendUserMessage(foo, msg).c_str());
 
   msg << "bar";
-  EXPECT_STREQ("foo\nbar",
-               AppendUserMessage(foo, msg).c_str());
+  EXPECT_STREQ("foo\nbar", AppendUserMessage(foo, msg).c_str());
 }
 
 #ifdef __BORLANDC__
 
-# pragma option push -w-ccc -w-rch
+#pragma option push -w-ccc -w-rch
 #endif
 
 
 TEST(AssertionTest, ASSERT_TRUE) {
   ASSERT_TRUE(2 > 1);  
-  EXPECT_FATAL_FAILURE(ASSERT_TRUE(2 < 1),
-                       "2 < 1");
+  EXPECT_FATAL_FAILURE(ASSERT_TRUE(2 < 1), "2 < 1");
 }
 
 
@@ -3687,7 +3668,7 @@ TEST(AssertionTest, AssertFalseWithAssertionResult) {
 
 #ifdef __BORLANDC__
 
-# pragma option pop
+#pragma option pop
 #endif
 
 
@@ -3698,14 +3679,13 @@ TEST(ExpectTest, ASSERT_EQ_Double) {
   ASSERT_EQ(5.6, 5.6);
 
   
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(5.1, 5.2),
-                       "5.1");
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(5.1, 5.2), "5.1");
 }
 
 
 TEST(AssertionTest, ASSERT_EQ) {
   ASSERT_EQ(5, 2 + 3);
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(5, 2*3),
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(5, 2 * 3),
                        "Expected equality of these values:\n"
                        "  5\n"
                        "  2*3\n"
@@ -3713,22 +3693,19 @@ TEST(AssertionTest, ASSERT_EQ) {
 }
 
 
-#if GTEST_CAN_COMPARE_NULL
 TEST(AssertionTest, ASSERT_EQ_NULL) {
   
-  const char* p = NULL;
+  const char* p = nullptr;
   
   
   
   
-  ASSERT_EQ(NULL, p);
+  ASSERT_EQ(nullptr, p);
 
   
   static int n = 0;
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(NULL, &n),
-                       "  &n\n    Which is:");
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(nullptr, &n), "  &n\n    Which is:");
 }
-#endif  
 
 
 
@@ -3741,8 +3718,7 @@ TEST(ExpectTest, ASSERT_EQ_0) {
   ASSERT_EQ(0, n);
 
   
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(0, 5.6),
-                       "  0\n  5.6");
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(0, 5.6), "  0\n  5.6");
 }
 
 
@@ -3757,30 +3733,26 @@ TEST(AssertionTest, ASSERT_NE) {
 TEST(AssertionTest, ASSERT_LE) {
   ASSERT_LE(2, 3);
   ASSERT_LE(2, 2);
-  EXPECT_FATAL_FAILURE(ASSERT_LE(2, 0),
-                       "Expected: (2) <= (0), actual: 2 vs 0");
+  EXPECT_FATAL_FAILURE(ASSERT_LE(2, 0), "Expected: (2) <= (0), actual: 2 vs 0");
 }
 
 
 TEST(AssertionTest, ASSERT_LT) {
   ASSERT_LT(2, 3);
-  EXPECT_FATAL_FAILURE(ASSERT_LT(2, 2),
-                       "Expected: (2) < (2), actual: 2 vs 2");
+  EXPECT_FATAL_FAILURE(ASSERT_LT(2, 2), "Expected: (2) < (2), actual: 2 vs 2");
 }
 
 
 TEST(AssertionTest, ASSERT_GE) {
   ASSERT_GE(2, 1);
   ASSERT_GE(2, 2);
-  EXPECT_FATAL_FAILURE(ASSERT_GE(2, 3),
-                       "Expected: (2) >= (3), actual: 2 vs 3");
+  EXPECT_FATAL_FAILURE(ASSERT_GE(2, 3), "Expected: (2) >= (3), actual: 2 vs 3");
 }
 
 
 TEST(AssertionTest, ASSERT_GT) {
   ASSERT_GT(2, 1);
-  EXPECT_FATAL_FAILURE(ASSERT_GT(2, 2),
-                       "Expected: (2) > (2), actual: 2 vs 2");
+  EXPECT_FATAL_FAILURE(ASSERT_GT(2, 2), "Expected: (2) > (2), actual: 2 vs 2");
 }
 
 #if GTEST_HAS_EXCEPTIONS
@@ -3791,14 +3763,14 @@ void ThrowNothing() {}
 TEST(AssertionTest, ASSERT_THROW) {
   ASSERT_THROW(ThrowAnInteger(), int);
 
-# ifndef __BORLANDC__
+#ifndef __BORLANDC__
 
   
   EXPECT_FATAL_FAILURE(
       ASSERT_THROW(ThrowAnInteger(), bool),
       "Expected: ThrowAnInteger() throws an exception of type bool.\n"
       "  Actual: it throws a different type.");
-# endif
+#endif
 
   EXPECT_FATAL_FAILURE(
       ASSERT_THROW(ThrowNothing(), bool),
@@ -3817,10 +3789,9 @@ TEST(AssertionTest, ASSERT_NO_THROW) {
 
 TEST(AssertionTest, ASSERT_ANY_THROW) {
   ASSERT_ANY_THROW(ThrowAnInteger());
-  EXPECT_FATAL_FAILURE(
-      ASSERT_ANY_THROW(ThrowNothing()),
-      "Expected: ThrowNothing() throws an exception.\n"
-      "  Actual: it doesn't.");
+  EXPECT_FATAL_FAILURE(ASSERT_ANY_THROW(ThrowNothing()),
+                       "Expected: ThrowNothing() throws an exception.\n"
+                       "  Actual: it doesn't.");
 }
 
 #endif  
@@ -3834,14 +3805,11 @@ TEST(AssertionTest, AssertPrecedence) {
 }
 
 
-void TestEq1(int x) {
-  ASSERT_EQ(1, x);
-}
+void TestEq1(int x) { ASSERT_EQ(1, x); }
 
 
 TEST(AssertionTest, NonFixtureSubroutine) {
-  EXPECT_FATAL_FAILURE(TestEq1(2),
-                       "  x\n    Which is: 2");
+  EXPECT_FATAL_FAILURE(TestEq1(2), "  x\n    Which is: 2");
 }
 
 
@@ -3853,6 +3821,7 @@ class Uncopyable {
   bool operator==(const Uncopyable& rhs) const {
     return value() == rhs.value();
   }
+
  private:
   
   
@@ -3865,10 +3834,7 @@ class Uncopyable {
   return os << value.value();
 }
 
-
-bool IsPositiveUncopyable(const Uncopyable& x) {
-  return x.value() > 0;
-}
+bool IsPositiveUncopyable(const Uncopyable& x) { return x.value() > 0; }
 
 
 void TestAssertNonPositive() {
@@ -3887,8 +3853,9 @@ TEST(AssertionTest, AssertWorksWithUncopyableObject) {
   Uncopyable x(5);
   ASSERT_PRED1(IsPositiveUncopyable, x);
   ASSERT_EQ(x, x);
-  EXPECT_FATAL_FAILURE(TestAssertNonPositive(),
-    "IsPositiveUncopyable(y) evaluates to false, where\ny evaluates to -1");
+  EXPECT_FATAL_FAILURE(
+      TestAssertNonPositive(),
+      "IsPositiveUncopyable(y) evaluates to false, where\ny evaluates to -1");
   EXPECT_FATAL_FAILURE(TestAssertEqualsUncopyable(),
                        "Expected equality of these values:\n"
                        "  x\n    Which is: 5\n  y\n    Which is: -1");
@@ -3899,18 +3866,16 @@ TEST(AssertionTest, ExpectWorksWithUncopyableObject) {
   Uncopyable x(5);
   EXPECT_PRED1(IsPositiveUncopyable, x);
   Uncopyable y(-1);
-  EXPECT_NONFATAL_FAILURE(EXPECT_PRED1(IsPositiveUncopyable, y),
-    "IsPositiveUncopyable(y) evaluates to false, where\ny evaluates to -1");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_PRED1(IsPositiveUncopyable, y),
+      "IsPositiveUncopyable(y) evaluates to false, where\ny evaluates to -1");
   EXPECT_EQ(x, x);
   EXPECT_NONFATAL_FAILURE(EXPECT_EQ(x, y),
                           "Expected equality of these values:\n"
                           "  x\n    Which is: 5\n  y\n    Which is: -1");
 }
 
-enum NamedEnum {
-  kE1 = 0,
-  kE2 = 1
-};
+enum NamedEnum { kE1 = 0, kE2 = 1 };
 
 TEST(AssertionTest, NamedEnum) {
   EXPECT_EQ(kE1, kE1);
@@ -3920,16 +3885,13 @@ TEST(AssertionTest, NamedEnum) {
 }
 
 
-
-
-
-#if !GTEST_OS_MAC && !defined(__SUNPRO_CC) && !defined(__HP_aCC)
+#if !defined(__SUNPRO_CC) && !defined(__HP_aCC)
 
 
 enum {
   kCaseA = -1,
 
-# if GTEST_OS_LINUX
+#if GTEST_OS_LINUX
 
   
   
@@ -3942,21 +3904,21 @@ enum {
   
   kCaseB = testing::internal::kMaxBiggestInt,
 
-# else
+#else
 
   kCaseB = INT_MAX,
 
-# endif  
+#endif  
 
   kCaseC = 42
 };
 
 TEST(AssertionTest, AnonymousEnum) {
-# if GTEST_OS_LINUX
+#if GTEST_OS_LINUX
 
   EXPECT_EQ(static_cast<int>(kCaseA), static_cast<int>(kCaseB));
 
-# endif  
+#endif  
 
   EXPECT_EQ(kCaseA, kCaseA);
   EXPECT_NE(kCaseA, kCaseB);
@@ -3964,10 +3926,8 @@ TEST(AssertionTest, AnonymousEnum) {
   EXPECT_LE(kCaseA, kCaseB);
   EXPECT_GT(kCaseB, kCaseA);
   EXPECT_GE(kCaseA, kCaseA);
-  EXPECT_NONFATAL_FAILURE(EXPECT_GE(kCaseA, kCaseB),
-                          "(kCaseA) >= (kCaseB)");
-  EXPECT_NONFATAL_FAILURE(EXPECT_GE(kCaseA, kCaseC),
-                          "-1 vs 42");
+  EXPECT_NONFATAL_FAILURE(EXPECT_GE(kCaseA, kCaseB), "(kCaseA) >= (kCaseB)");
+  EXPECT_NONFATAL_FAILURE(EXPECT_GE(kCaseA, kCaseC), "-1 vs 42");
 
   ASSERT_EQ(kCaseA, kCaseA);
   ASSERT_NE(kCaseA, kCaseB);
@@ -3976,34 +3936,25 @@ TEST(AssertionTest, AnonymousEnum) {
   ASSERT_GT(kCaseB, kCaseA);
   ASSERT_GE(kCaseA, kCaseA);
 
-# ifndef __BORLANDC__
+#ifndef __BORLANDC__
 
   
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseB),
-                       "  kCaseB\n    Which is: ");
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseC),
-                       "\n    Which is: 42");
-# endif
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseB), "  kCaseB\n    Which is: ");
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseC), "\n    Which is: 42");
+#endif
 
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseC),
-                       "\n    Which is: -1");
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseC), "\n    Which is: -1");
 }
 
 #endif  
 
 #if GTEST_OS_WINDOWS
 
-static HRESULT UnexpectedHRESULTFailure() {
-  return E_UNEXPECTED;
-}
+static HRESULT UnexpectedHRESULTFailure() { return E_UNEXPECTED; }
 
-static HRESULT OkHRESULTSuccess() {
-  return S_OK;
-}
+static HRESULT OkHRESULTSuccess() { return S_OK; }
 
-static HRESULT FalseHRESULTSuccess() {
-  return S_FALSE;
-}
+static HRESULT FalseHRESULTSuccess() { return S_FALSE; }
 
 
 
@@ -4014,8 +3965,8 @@ TEST(HRESULTAssertionTest, EXPECT_HRESULT_SUCCEEDED) {
   EXPECT_HRESULT_SUCCEEDED(S_FALSE);
 
   EXPECT_NONFATAL_FAILURE(EXPECT_HRESULT_SUCCEEDED(UnexpectedHRESULTFailure()),
-    "Expected: (UnexpectedHRESULTFailure()) succeeds.\n"
-    "  Actual: 0x8000FFFF");
+                          "Expected: (UnexpectedHRESULTFailure()) succeeds.\n"
+                          "  Actual: 0x8000FFFF");
 }
 
 TEST(HRESULTAssertionTest, ASSERT_HRESULT_SUCCEEDED) {
@@ -4023,35 +3974,35 @@ TEST(HRESULTAssertionTest, ASSERT_HRESULT_SUCCEEDED) {
   ASSERT_HRESULT_SUCCEEDED(S_FALSE);
 
   EXPECT_FATAL_FAILURE(ASSERT_HRESULT_SUCCEEDED(UnexpectedHRESULTFailure()),
-    "Expected: (UnexpectedHRESULTFailure()) succeeds.\n"
-    "  Actual: 0x8000FFFF");
+                       "Expected: (UnexpectedHRESULTFailure()) succeeds.\n"
+                       "  Actual: 0x8000FFFF");
 }
 
 TEST(HRESULTAssertionTest, EXPECT_HRESULT_FAILED) {
   EXPECT_HRESULT_FAILED(E_UNEXPECTED);
 
   EXPECT_NONFATAL_FAILURE(EXPECT_HRESULT_FAILED(OkHRESULTSuccess()),
-    "Expected: (OkHRESULTSuccess()) fails.\n"
-    "  Actual: 0x0");
+                          "Expected: (OkHRESULTSuccess()) fails.\n"
+                          "  Actual: 0x0");
   EXPECT_NONFATAL_FAILURE(EXPECT_HRESULT_FAILED(FalseHRESULTSuccess()),
-    "Expected: (FalseHRESULTSuccess()) fails.\n"
-    "  Actual: 0x1");
+                          "Expected: (FalseHRESULTSuccess()) fails.\n"
+                          "  Actual: 0x1");
 }
 
 TEST(HRESULTAssertionTest, ASSERT_HRESULT_FAILED) {
   ASSERT_HRESULT_FAILED(E_UNEXPECTED);
 
-# ifndef __BORLANDC__
+#ifndef __BORLANDC__
 
   
   EXPECT_FATAL_FAILURE(ASSERT_HRESULT_FAILED(OkHRESULTSuccess()),
-    "Expected: (OkHRESULTSuccess()) fails.\n"
-    "  Actual: 0x0");
-# endif
+                       "Expected: (OkHRESULTSuccess()) fails.\n"
+                       "  Actual: 0x0");
+#endif
 
   EXPECT_FATAL_FAILURE(ASSERT_HRESULT_FAILED(FalseHRESULTSuccess()),
-    "Expected: (FalseHRESULTSuccess()) fails.\n"
-    "  Actual: 0x1");
+                       "Expected: (FalseHRESULTSuccess()) fails.\n"
+                       "  Actual: 0x1");
 }
 
 
@@ -4061,32 +4012,30 @@ TEST(HRESULTAssertionTest, Streaming) {
   EXPECT_HRESULT_FAILED(E_UNEXPECTED) << "unexpected failure";
   ASSERT_HRESULT_FAILED(E_UNEXPECTED) << "unexpected failure";
 
-  EXPECT_NONFATAL_FAILURE(
-      EXPECT_HRESULT_SUCCEEDED(E_UNEXPECTED) << "expected failure",
-      "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_HRESULT_SUCCEEDED(E_UNEXPECTED)
+                              << "expected failure",
+                          "expected failure");
 
-# ifndef __BORLANDC__
+#ifndef __BORLANDC__
 
   
-  EXPECT_FATAL_FAILURE(
-      ASSERT_HRESULT_SUCCEEDED(E_UNEXPECTED) << "expected failure",
-      "expected failure");
-# endif
+  EXPECT_FATAL_FAILURE(ASSERT_HRESULT_SUCCEEDED(E_UNEXPECTED)
+                           << "expected failure",
+                       "expected failure");
+#endif
 
-  EXPECT_NONFATAL_FAILURE(
-      EXPECT_HRESULT_FAILED(S_OK) << "expected failure",
-      "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_HRESULT_FAILED(S_OK) << "expected failure",
+                          "expected failure");
 
-  EXPECT_FATAL_FAILURE(
-      ASSERT_HRESULT_FAILED(S_OK) << "expected failure",
-      "expected failure");
+  EXPECT_FATAL_FAILURE(ASSERT_HRESULT_FAILED(S_OK) << "expected failure",
+                       "expected failure");
 }
 
 #endif  
 
 #ifdef __BORLANDC__
 
-# pragma option push -w-ccc -w-rch
+#pragma option push -w-ccc -w-rch
 #endif
 
 
@@ -4100,8 +4049,7 @@ TEST(AssertionSyntaxTest, BasicAssertionsBehavesLikeSingleStatement) {
   else
     ;  
 
-  if (AlwaysFalse())
-    ASSERT_LT(1, 3);
+  if (AlwaysFalse()) ASSERT_LT(1, 3);
 
   if (AlwaysFalse())
     ;  
@@ -4125,24 +4073,21 @@ TEST(ExpectThrowTest, DoesNotGenerateUnreachableCodeWarning) {
 }
 
 TEST(AssertionSyntaxTest, ExceptionAssertionsBehavesLikeSingleStatement) {
-  if (AlwaysFalse())
-    EXPECT_THROW(ThrowNothing(), bool);
+  if (AlwaysFalse()) EXPECT_THROW(ThrowNothing(), bool);
 
   if (AlwaysTrue())
     EXPECT_THROW(ThrowAnInteger(), int);
   else
     ;  
 
-  if (AlwaysFalse())
-    EXPECT_NO_THROW(ThrowAnInteger());
+  if (AlwaysFalse()) EXPECT_NO_THROW(ThrowAnInteger());
 
   if (AlwaysTrue())
     EXPECT_NO_THROW(ThrowNothing());
   else
     ;  
 
-  if (AlwaysFalse())
-    EXPECT_ANY_THROW(ThrowNothing());
+  if (AlwaysFalse()) EXPECT_ANY_THROW(ThrowNothing());
 
   if (AlwaysTrue())
     EXPECT_ANY_THROW(ThrowAnInteger());
@@ -4184,8 +4129,8 @@ TEST(AssertionSyntaxTest, WorksWithSwitch) {
   }
 
   switch (0)
-    case 0:
-      EXPECT_FALSE(false) << "EXPECT_FALSE failed in switch case";
+  case 0:
+    EXPECT_FALSE(false) << "EXPECT_FALSE failed in switch case";
 
   
   
@@ -4196,22 +4141,20 @@ TEST(AssertionSyntaxTest, WorksWithSwitch) {
   }
 
   switch (0)
-    case 0:
-      EXPECT_NE(1, 2);
+  case 0:
+    EXPECT_NE(1, 2);
 }
 
 #if GTEST_HAS_EXCEPTIONS
 
-void ThrowAString() {
-    throw "std::string";
-}
+void ThrowAString() { throw "std::string"; }
 
 
 
 TEST(AssertionSyntaxTest, WorksWithConst) {
-    ASSERT_THROW(ThrowAString(), const char*);
+  ASSERT_THROW(ThrowAString(), const char*);
 
-    EXPECT_THROW(ThrowAString(), const char*);
+  EXPECT_THROW(ThrowAString(), const char*);
 }
 
 #endif  
@@ -4302,7 +4245,7 @@ TEST(AssertionWithMessageTest, ASSERT_STR) {
 TEST(AssertionWithMessageTest, ASSERT_FLOATING) {
   ASSERT_FLOAT_EQ(1, 1) << "This should succeed.";
   ASSERT_DOUBLE_EQ(1, 1) << "This should succeed.";
-  EXPECT_FATAL_FAILURE(ASSERT_NEAR(1,1.2, 0.1) << "Expect failure.",  
+  EXPECT_FATAL_FAILURE(ASSERT_NEAR(1, 1.2, 0.1) << "Expect failure.",  
                        "Expect failure.");
   
   
@@ -4311,43 +4254,45 @@ TEST(AssertionWithMessageTest, ASSERT_FLOATING) {
 
 TEST(AssertionWithMessageTest, ASSERT_FALSE) {
   ASSERT_FALSE(false) << "This shouldn't fail.";
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_FALSE(true) << "Expected failure: " << 2 << " > " << 1
-                       << " evaluates to " << true;
-  }, "Expected failure");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_FALSE(true) << "Expected failure: " << 2 << " > " << 1
+                           << " evaluates to " << true;
+      },
+      "Expected failure");
 }
 
 
-TEST(AssertionWithMessageTest, FAIL) {
-  EXPECT_FATAL_FAILURE(FAIL() << 0,
-                       "0");
-}
+TEST(AssertionWithMessageTest, FAIL) { EXPECT_FATAL_FAILURE(FAIL() << 0, "0"); }
 
 
-TEST(AssertionWithMessageTest, SUCCEED) {
-  SUCCEED() << "Success == " << 1;
-}
+TEST(AssertionWithMessageTest, SUCCEED) { SUCCEED() << "Success == " << 1; }
 
 
 TEST(AssertionWithMessageTest, ASSERT_TRUE) {
   ASSERT_TRUE(true) << "This should succeed.";
   ASSERT_TRUE(true) << true;
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_TRUE(false) << static_cast<const char *>(NULL)
-                       << static_cast<char *>(NULL);
-  }, "(null)(null)");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_TRUE(false) << static_cast<const char*>(nullptr)
+                           << static_cast<char*>(nullptr);
+      },
+      "(null)(null)");
 }
 
 #if GTEST_OS_WINDOWS
 
 TEST(AssertionWithMessageTest, WideStringMessage) {
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_TRUE(false) << L"This failure is expected.\x8119";
-  }, "This failure is expected.");
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_EQ(1, 2) << "This failure is "
-                    << L"expected too.\x8120";
-  }, "This failure is expected too.");
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_TRUE(false) << L"This failure is expected.\x8119";
+      },
+      "This failure is expected.");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_EQ(1, 2) << "This failure is " << L"expected too.\x8120";
+      },
+      "This failure is expected too.");
 }
 #endif  
 
@@ -4363,8 +4308,7 @@ TEST(ExpectTest, EXPECT_TRUE) {
                           "Value of: 2 < 1\n"
                           "  Actual: false\n"
                           "Expected: true");
-  EXPECT_NONFATAL_FAILURE(EXPECT_TRUE(2 > 3),
-                          "2 > 3");
+  EXPECT_NONFATAL_FAILURE(EXPECT_TRUE(2 > 3), "2 > 3");
 }
 
 
@@ -4393,8 +4337,7 @@ TEST(ExpectTest, EXPECT_FALSE) {
                           "Value of: 2 > 1\n"
                           "  Actual: true\n"
                           "Expected: false");
-  EXPECT_NONFATAL_FAILURE(EXPECT_FALSE(2 < 3),
-                          "2 < 3");
+  EXPECT_NONFATAL_FAILURE(EXPECT_FALSE(2 < 3), "2 < 3");
 }
 
 
@@ -4413,19 +4356,18 @@ TEST(ExpectTest, ExpectFalseWithAssertionResult) {
 
 #ifdef __BORLANDC__
 
-# pragma option pop
+#pragma option pop
 #endif
 
 
 TEST(ExpectTest, EXPECT_EQ) {
   EXPECT_EQ(5, 2 + 3);
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(5, 2*3),
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(5, 2 * 3),
                           "Expected equality of these values:\n"
                           "  5\n"
                           "  2*3\n"
                           "    Which is: 6");
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(5, 2 - 3),
-                          "2 - 3");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(5, 2 - 3), "2 - 3");
 }
 
 
@@ -4436,27 +4378,23 @@ TEST(ExpectTest, EXPECT_EQ_Double) {
   EXPECT_EQ(5.6, 5.6);
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(5.1, 5.2),
-                          "5.1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(5.1, 5.2), "5.1");
 }
 
-#if GTEST_CAN_COMPARE_NULL
 
 TEST(ExpectTest, EXPECT_EQ_NULL) {
   
-  const char* p = NULL;
+  const char* p = nullptr;
   
   
   
   
-  EXPECT_EQ(NULL, p);
+  EXPECT_EQ(nullptr, p);
 
   
   int n = 0;
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(NULL, &n),
-                          "  &n\n    Which is:");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(nullptr, &n), "  &n\n    Which is:");
 }
-#endif  
 
 
 
@@ -4469,8 +4407,7 @@ TEST(ExpectTest, EXPECT_EQ_0) {
   EXPECT_EQ(0, n);
 
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(0, 5.6),
-                          "  0\n  5.6");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(0, 5.6), "  0\n  5.6");
 }
 
 
@@ -4480,19 +4417,16 @@ TEST(ExpectTest, EXPECT_NE) {
   EXPECT_NONFATAL_FAILURE(EXPECT_NE('a', 'a'),
                           "Expected: ('a') != ('a'), "
                           "actual: 'a' (97, 0x61) vs 'a' (97, 0x61)");
-  EXPECT_NONFATAL_FAILURE(EXPECT_NE(2, 2),
-                          "2");
-  char* const p0 = NULL;
-  EXPECT_NONFATAL_FAILURE(EXPECT_NE(p0, p0),
-                          "p0");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NE(2, 2), "2");
+  char* const p0 = nullptr;
+  EXPECT_NONFATAL_FAILURE(EXPECT_NE(p0, p0), "p0");
   
   
   
   
   void* pv1 = (void*)0x1234;  
   char* const p1 = reinterpret_cast<char*>(pv1);
-  EXPECT_NONFATAL_FAILURE(EXPECT_NE(p1, p1),
-                          "p1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NE(p1, p1), "p1");
 }
 
 
@@ -4501,8 +4435,7 @@ TEST(ExpectTest, EXPECT_LE) {
   EXPECT_LE(2, 2);
   EXPECT_NONFATAL_FAILURE(EXPECT_LE(2, 0),
                           "Expected: (2) <= (0), actual: 2 vs 0");
-  EXPECT_NONFATAL_FAILURE(EXPECT_LE(1.1, 0.9),
-                          "(1.1) <= (0.9)");
+  EXPECT_NONFATAL_FAILURE(EXPECT_LE(1.1, 0.9), "(1.1) <= (0.9)");
 }
 
 
@@ -4510,8 +4443,7 @@ TEST(ExpectTest, EXPECT_LT) {
   EXPECT_LT(2, 3);
   EXPECT_NONFATAL_FAILURE(EXPECT_LT(2, 2),
                           "Expected: (2) < (2), actual: 2 vs 2");
-  EXPECT_NONFATAL_FAILURE(EXPECT_LT(2, 1),
-                          "(2) < (1)");
+  EXPECT_NONFATAL_FAILURE(EXPECT_LT(2, 1), "(2) < (1)");
 }
 
 
@@ -4520,8 +4452,7 @@ TEST(ExpectTest, EXPECT_GE) {
   EXPECT_GE(2, 2);
   EXPECT_NONFATAL_FAILURE(EXPECT_GE(2, 3),
                           "Expected: (2) >= (3), actual: 2 vs 3");
-  EXPECT_NONFATAL_FAILURE(EXPECT_GE(0.9, 1.1),
-                          "(0.9) >= (1.1)");
+  EXPECT_NONFATAL_FAILURE(EXPECT_GE(0.9, 1.1), "(0.9) >= (1.1)");
 }
 
 
@@ -4529,8 +4460,7 @@ TEST(ExpectTest, EXPECT_GT) {
   EXPECT_GT(2, 1);
   EXPECT_NONFATAL_FAILURE(EXPECT_GT(2, 2),
                           "Expected: (2) > (2), actual: 2 vs 2");
-  EXPECT_NONFATAL_FAILURE(EXPECT_GT(2, 3),
-                          "(2) > (3)");
+  EXPECT_NONFATAL_FAILURE(EXPECT_GT(2, 3), "(2) > (3)");
 }
 
 #if GTEST_HAS_EXCEPTIONS
@@ -4558,10 +4488,9 @@ TEST(ExpectTest, EXPECT_NO_THROW) {
 
 TEST(ExpectTest, EXPECT_ANY_THROW) {
   EXPECT_ANY_THROW(ThrowAnInteger());
-  EXPECT_NONFATAL_FAILURE(
-      EXPECT_ANY_THROW(ThrowNothing()),
-      "Expected: ThrowNothing() throws an exception.\n"
-      "  Actual: it doesn't.");
+  EXPECT_NONFATAL_FAILURE(EXPECT_ANY_THROW(ThrowNothing()),
+                          "Expected: ThrowNothing() throws an exception.\n"
+                          "  Actual: it doesn't.");
 }
 
 #endif  
@@ -4572,7 +4501,6 @@ TEST(ExpectTest, ExpectPrecedence) {
   EXPECT_NONFATAL_FAILURE(EXPECT_EQ(true, true && false),
                           "  true && false\n    Which is: false");
 }
-
 
 
 
@@ -4590,7 +4518,7 @@ TEST(StreamableToStringTest, Pointer) {
 
 
 TEST(StreamableToStringTest, NullPointer) {
-  int* p = NULL;
+  int* p = nullptr;
   EXPECT_STREQ("(null)", StreamableToString(p).c_str());
 }
 
@@ -4601,7 +4529,7 @@ TEST(StreamableToStringTest, CString) {
 
 
 TEST(StreamableToStringTest, NullCString) {
-  char* p = NULL;
+  char* p = nullptr;
   EXPECT_STREQ("(null)", StreamableToString(p).c_str());
 }
 
@@ -4611,8 +4539,7 @@ TEST(StreamableToStringTest, NullCString) {
 TEST(StreamableTest, string) {
   static const std::string str(
       "This failure message is a std::string, and is expected.");
-  EXPECT_FATAL_FAILURE(FAIL() << str,
-                       str.c_str());
+  EXPECT_FATAL_FAILURE(FAIL() << str, str.c_str());
 }
 
 
@@ -4620,25 +4547,24 @@ TEST(StreamableTest, string) {
 TEST(StreamableTest, stringWithEmbeddedNUL) {
   static const char char_array_with_nul[] =
       "Here's a NUL\0 and some more string";
-  static const std::string string_with_nul(char_array_with_nul,
-                                           sizeof(char_array_with_nul)
-                                           - 1);  
+  static const std::string string_with_nul(
+      char_array_with_nul,
+      sizeof(char_array_with_nul) - 1);  
   EXPECT_FATAL_FAILURE(FAIL() << string_with_nul,
                        "Here's a NUL\\0 and some more string");
 }
 
 
 TEST(StreamableTest, NULChar) {
-  EXPECT_FATAL_FAILURE({  
-    FAIL() << "A NUL" << '\0' << " and some more string";
-  }, "A NUL\\0 and some more string");
+  EXPECT_FATAL_FAILURE(
+      {  
+        FAIL() << "A NUL" << '\0' << " and some more string";
+      },
+      "A NUL\\0 and some more string");
 }
 
 
-TEST(StreamableTest, int) {
-  EXPECT_FATAL_FAILURE(FAIL() << 900913,
-                       "900913");
-}
+TEST(StreamableTest, int) { EXPECT_FATAL_FAILURE(FAIL() << 900913, "900913"); }
 
 
 
@@ -4646,17 +4572,18 @@ TEST(StreamableTest, int) {
 
 
 TEST(StreamableTest, NullCharPtr) {
-  EXPECT_FATAL_FAILURE(FAIL() << static_cast<const char*>(NULL),
-                       "(null)");
+  EXPECT_FATAL_FAILURE(FAIL() << static_cast<const char*>(nullptr), "(null)");
 }
 
 
 
 TEST(StreamableTest, BasicIoManip) {
-  EXPECT_FATAL_FAILURE({  
-    FAIL() << "Line 1." << std::endl
-           << "A NUL char " << std::ends << std::flush << " in line 2.";
-  }, "Line 1.\nA NUL char \\0 in line 2.");
+  EXPECT_FATAL_FAILURE(
+      {  
+        FAIL() << "Line 1." << std::endl
+               << "A NUL char " << std::ends << std::flush << " in line 2.";
+      },
+      "Line 1.\nA NUL char \\0 in line 2.");
 }
 
 
@@ -4670,8 +4597,7 @@ void AddFailureHelper(bool* aborted) {
 
 TEST(MacroTest, ADD_FAILURE) {
   bool aborted = true;
-  EXPECT_NONFATAL_FAILURE(AddFailureHelper(&aborted),
-                          "Intentional failure.");
+  EXPECT_NONFATAL_FAILURE(AddFailureHelper(&aborted), "Intentional failure.");
   EXPECT_FALSE(aborted);
 }
 
@@ -4692,10 +4618,22 @@ TEST(MacroTest, ADD_FAILURE_AT) {
 
 
 TEST(MacroTest, FAIL) {
-  EXPECT_FATAL_FAILURE(FAIL(),
-                       "Failed");
+  EXPECT_FATAL_FAILURE(FAIL(), "Failed");
   EXPECT_FATAL_FAILURE(FAIL() << "Intentional failure.",
                        "Intentional failure.");
+}
+
+
+TEST(MacroTest, GTEST_FAIL_AT) {
+  
+  
+  EXPECT_FATAL_FAILURE(GTEST_FAIL_AT("foo.cc", 42) << "Wrong!", "Wrong!");
+
+  
+  EXPECT_FATAL_FAILURE(GTEST_FAIL_AT("foo.cc", 42), "Failed");
+
+  
+  
 }
 
 
@@ -4713,37 +4651,34 @@ TEST(MacroTest, SUCCEED) {
 
 
 TEST(EqAssertionTest, Bool) {
-  EXPECT_EQ(true,  true);
-  EXPECT_FATAL_FAILURE({
-      bool false_value = false;
-      ASSERT_EQ(false_value, true);
-    }, "  false_value\n    Which is: false\n  true");
+  EXPECT_EQ(true, true);
+  EXPECT_FATAL_FAILURE(
+      {
+        bool false_value = false;
+        ASSERT_EQ(false_value, true);
+      },
+      "  false_value\n    Which is: false\n  true");
 }
 
 
 TEST(EqAssertionTest, Int) {
   ASSERT_EQ(32, 32);
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(32, 33),
-                          "  32\n  33");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(32, 33), "  32\n  33");
 }
 
 
 TEST(EqAssertionTest, Time_T) {
-  EXPECT_EQ(static_cast<time_t>(0),
-            static_cast<time_t>(0));
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(static_cast<time_t>(0),
-                                 static_cast<time_t>(1234)),
-                       "1234");
+  EXPECT_EQ(static_cast<time_t>(0), static_cast<time_t>(0));
+  EXPECT_FATAL_FAILURE(
+      ASSERT_EQ(static_cast<time_t>(0), static_cast<time_t>(1234)), "1234");
 }
 
 
 TEST(EqAssertionTest, Char) {
   ASSERT_EQ('z', 'z');
   const char ch = 'b';
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ('\0', ch),
-                          "  ch\n    Which is: 'b'");
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ('a', ch),
-                          "  ch\n    Which is: 'b'");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ('\0', ch), "  ch\n    Which is: 'b'");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ('a', ch), "  ch\n    Which is: 'b'");
 }
 
 
@@ -4759,8 +4694,7 @@ TEST(EqAssertionTest, WideChar) {
 
   static wchar_t wchar;
   wchar = L'b';
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(L'a', wchar),
-                          "wchar");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(L'a', wchar), "wchar");
   wchar = 0x8119;
   EXPECT_FATAL_FAILURE(ASSERT_EQ(static_cast<wchar_t>(0x8120), wchar),
                        "  wchar\n    Which is: L'");
@@ -4779,13 +4713,11 @@ TEST(EqAssertionTest, StdString) {
 
   
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ("Test", ::std::string("test")),
-                          "\"test\"");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ("Test", ::std::string("test")), "\"test\"");
 
   
   char* const p1 = const_cast<char*>("foo");
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(::std::string("bar"), p1),
-                          "p1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(::std::string("bar"), p1), "p1");
 
   
   
@@ -4806,101 +4738,38 @@ TEST(EqAssertionTest, StdWideString) {
 
   
   
-  const wchar_t kTestX8119[] = { 'T', 'e', 's', 't', 0x8119, '\0' };
+  const wchar_t kTestX8119[] = {'T', 'e', 's', 't', 0x8119, '\0'};
   EXPECT_EQ(::std::wstring(kTestX8119), kTestX8119);
 
   
   
-  const wchar_t kTestX8120[] = { 'T', 'e', 's', 't', 0x8120, '\0' };
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_EQ(::std::wstring(kTestX8119), kTestX8120);
-  }, "kTestX8120");
+  const wchar_t kTestX8120[] = {'T', 'e', 's', 't', 0x8120, '\0'};
+  EXPECT_NONFATAL_FAILURE(
+      {  
+        EXPECT_EQ(::std::wstring(kTestX8119), kTestX8120);
+      },
+      "kTestX8120");
 
   
   
   ::std::wstring wstr3(wstr1);
   wstr3.at(2) = L'\0';
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(wstr1, wstr3),
-                          "wstr3");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(wstr1, wstr3), "wstr3");
 
   
   
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_EQ(const_cast<wchar_t*>(L"foo"), ::std::wstring(L"bar"));
-  }, "");
-}
-
-#endif  
-
-#if GTEST_HAS_GLOBAL_STRING
-
-TEST(EqAssertionTest, GlobalString) {
-  
-  EXPECT_EQ("Test", ::string("Test"));
-
-  
-  const ::string str1("A * in the middle");
-  const ::string str2(str1);
-  ASSERT_EQ(str1, str2);
-
-  
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(::string("Test"), "test"),
-                          "test");
-
-  
-  
-  ::string str3(str1);
-  str3.at(2) = '\0';
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(str1, str3),
-                          "str3");
-
-  
-  EXPECT_FATAL_FAILURE({  
-    ASSERT_EQ(::string("bar"), const_cast<char*>("foo"));
-  }, "");
-}
-
-#endif  
-
-#if GTEST_HAS_GLOBAL_WSTRING
-
-
-TEST(EqAssertionTest, GlobalWideString) {
-  
-  static const ::wstring wstr1(L"A * in the middle");
-  static const ::wstring wstr2(wstr1);
-  EXPECT_EQ(wstr1, wstr2);
-
-  
-  const wchar_t kTestX8119[] = { 'T', 'e', 's', 't', 0x8119, '\0' };
-  ASSERT_EQ(kTestX8119, ::wstring(kTestX8119));
-
-  
-  
-  const wchar_t kTestX8120[] = { 'T', 'e', 's', 't', 0x8120, '\0' };
-  EXPECT_NONFATAL_FAILURE({  
-    EXPECT_EQ(kTestX8120, ::wstring(kTestX8119));
-  }, "Test\\x8119");
-
-  
-  wchar_t* const p1 = const_cast<wchar_t*>(L"foo");
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p1, ::wstring(L"bar")),
-                          "bar");
-
-  
-  
-  static ::wstring wstr3;
-  wstr3 = wstr1;
-  wstr3.at(2) = L'\0';
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(wstr1, wstr3),
-                       "wstr3");
+  EXPECT_FATAL_FAILURE(
+      {  
+        ASSERT_EQ(const_cast<wchar_t*>(L"foo"), ::std::wstring(L"bar"));
+      },
+      "");
 }
 
 #endif  
 
 
 TEST(EqAssertionTest, CharPointer) {
-  char* const p0 = NULL;
+  char* const p0 = nullptr;
   
   
   
@@ -4911,10 +4780,8 @@ TEST(EqAssertionTest, CharPointer) {
   char* const p2 = reinterpret_cast<char*>(pv2);
   ASSERT_EQ(p1, p1);
 
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p0, p2),
-                          "  p2\n    Which is:");
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p1, p2),
-                          "  p2\n    Which is:");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p0, p2), "  p2\n    Which is:");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p1, p2), "  p2\n    Which is:");
   EXPECT_FATAL_FAILURE(ASSERT_EQ(reinterpret_cast<char*>(0x1234),
                                  reinterpret_cast<char*>(0xABC0)),
                        "ABC0");
@@ -4922,7 +4789,7 @@ TEST(EqAssertionTest, CharPointer) {
 
 
 TEST(EqAssertionTest, WideCharPointer) {
-  wchar_t* const p0 = NULL;
+  wchar_t* const p0 = nullptr;
   
   
   
@@ -4933,23 +4800,19 @@ TEST(EqAssertionTest, WideCharPointer) {
   wchar_t* const p2 = reinterpret_cast<wchar_t*>(pv2);
   EXPECT_EQ(p0, p0);
 
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p0, p2),
-                          "  p2\n    Which is:");
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p1, p2),
-                          "  p2\n    Which is:");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p0, p2), "  p2\n    Which is:");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p1, p2), "  p2\n    Which is:");
   void* pv3 = (void*)0x1234;  
   void* pv4 = (void*)0xABC0;  
   const wchar_t* p3 = reinterpret_cast<const wchar_t*>(pv3);
   const wchar_t* p4 = reinterpret_cast<const wchar_t*>(pv4);
-  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p3, p4),
-                          "p4");
+  EXPECT_NONFATAL_FAILURE(EXPECT_EQ(p3, p4), "p4");
 }
 
 
 TEST(EqAssertionTest, OtherPointer) {
-  ASSERT_EQ(static_cast<const int*>(NULL),
-            static_cast<const int*>(NULL));
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(static_cast<const int*>(NULL),
+  ASSERT_EQ(static_cast<const int*>(nullptr), static_cast<const int*>(nullptr));
+  EXPECT_FATAL_FAILURE(ASSERT_EQ(static_cast<const int*>(nullptr),
                                  reinterpret_cast<const int*>(0x1234)),
                        "0x1234");
 }
@@ -4965,15 +4828,11 @@ class UnprintableChar {
   bool operator!=(const UnprintableChar& rhs) const {
     return char_ != rhs.char_;
   }
-  bool operator<(const UnprintableChar& rhs) const {
-    return char_ < rhs.char_;
-  }
+  bool operator<(const UnprintableChar& rhs) const { return char_ < rhs.char_; }
   bool operator<=(const UnprintableChar& rhs) const {
     return char_ <= rhs.char_;
   }
-  bool operator>(const UnprintableChar& rhs) const {
-    return char_ > rhs.char_;
-  }
+  bool operator>(const UnprintableChar& rhs) const { return char_ > rhs.char_; }
   bool operator>=(const UnprintableChar& rhs) const {
     return char_ >= rhs.char_;
   }
@@ -4999,8 +4858,8 @@ TEST(ComparisonAssertionTest, AcceptsUnprintableArgs) {
   EXPECT_NONFATAL_FAILURE(EXPECT_GT(x, y), "1-byte object <78>");
   EXPECT_NONFATAL_FAILURE(EXPECT_GT(x, y), "1-byte object <79>");
 
-  
-  
+
+
 #ifndef __BORLANDC__
   
   EXPECT_FATAL_FAILURE(ASSERT_NE(UnprintableChar('x'), UnprintableChar('x')),
@@ -5035,9 +4894,7 @@ class Foo {
 
 
 
-TEST(FRIEND_TEST_Test, TEST) {
-  ASSERT_EQ(1, Foo().Bar());
-}
+TEST(FRIEND_TEST_Test, TEST) { ASSERT_EQ(1, Foo().Bar()); }
 
 
 class FRIEND_TEST_Test2 : public Test {
@@ -5047,9 +4904,7 @@ class FRIEND_TEST_Test2 : public Test {
 
 
 
-TEST_F(FRIEND_TEST_Test2, TEST_F) {
-  ASSERT_EQ(1, foo.Bar());
-}
+TEST_F(FRIEND_TEST_Test2, TEST_F) { ASSERT_EQ(1, foo.Bar()); }
 
 
 
@@ -5065,7 +4920,7 @@ class TestLifeCycleTest : public Test {
 
   
   
-  ~TestLifeCycleTest() { count_--; }
+  ~TestLifeCycleTest() override { count_--; }
 
   
   int count() const { return count_; }
@@ -5157,7 +5012,6 @@ TEST(AssertionResultTest, CanStreamOstreamManipulators) {
 }
 
 
-#if GTEST_LANG_CXX11
 
 TEST(AssertionResultTest, ConstructibleFromContextuallyConvertibleToBool) {
   struct ExplicitlyConvertibleToBool {
@@ -5169,8 +5023,6 @@ TEST(AssertionResultTest, ConstructibleFromContextuallyConvertibleToBool) {
   EXPECT_FALSE(v1);
   EXPECT_TRUE(v2);
 }
-
-#endif  
 
 struct ConvertibleToAssertionResult {
   operator AssertionResult() const { return AssertionResult(true); }
@@ -5187,15 +5039,14 @@ class Base {
  public:
   explicit Base(int an_x) : x_(an_x) {}
   int x() const { return x_; }
+
  private:
   int x_;
 };
-std::ostream& operator<<(std::ostream& os,
-                         const Base& val) {
+std::ostream& operator<<(std::ostream& os, const Base& val) {
   return os << val.x();
 }
-std::ostream& operator<<(std::ostream& os,
-                         const Base* pointer) {
+std::ostream& operator<<(std::ostream& os, const Base* pointer) {
   return os << "(" << pointer->x() << ")";
 }
 
@@ -5212,7 +5063,7 @@ TEST(MessageTest, CanStreamUserTypeInGlobalNameSpace) {
 namespace {
 class MyTypeInUnnamedNameSpace : public Base {
  public:
-  explicit MyTypeInUnnamedNameSpace(int an_x): Base(an_x) {}
+  explicit MyTypeInUnnamedNameSpace(int an_x) : Base(an_x) {}
 };
 std::ostream& operator<<(std::ostream& os,
                          const MyTypeInUnnamedNameSpace& val) {
@@ -5237,14 +5088,12 @@ TEST(MessageTest, CanStreamUserTypeInUnnamedNameSpace) {
 namespace namespace1 {
 class MyTypeInNameSpace1 : public Base {
  public:
-  explicit MyTypeInNameSpace1(int an_x): Base(an_x) {}
+  explicit MyTypeInNameSpace1(int an_x) : Base(an_x) {}
 };
-std::ostream& operator<<(std::ostream& os,
-                         const MyTypeInNameSpace1& val) {
+std::ostream& operator<<(std::ostream& os, const MyTypeInNameSpace1& val) {
   return os << val.x();
 }
-std::ostream& operator<<(std::ostream& os,
-                         const MyTypeInNameSpace1* pointer) {
+std::ostream& operator<<(std::ostream& os, const MyTypeInNameSpace1* pointer) {
   return os << "(" << pointer->x() << ")";
 }
 }  
@@ -5262,7 +5111,7 @@ TEST(MessageTest, CanStreamUserTypeInUserNameSpace) {
 namespace namespace2 {
 class MyTypeInNameSpace2 : public ::Base {
  public:
-  explicit MyTypeInNameSpace2(int an_x): Base(an_x) {}
+  explicit MyTypeInNameSpace2(int an_x) : Base(an_x) {}
 };
 }  
 std::ostream& operator<<(std::ostream& os,
@@ -5285,29 +5134,26 @@ TEST(MessageTest, CanStreamUserTypeInUserNameSpaceWithStreamOperatorInGlobal) {
 
 TEST(MessageTest, NullPointers) {
   Message msg;
-  char* const p1 = NULL;
-  unsigned char* const p2 = NULL;
-  int* p3 = NULL;
-  double* p4 = NULL;
-  bool* p5 = NULL;
-  Message* p6 = NULL;
+  char* const p1 = nullptr;
+  unsigned char* const p2 = nullptr;
+  int* p3 = nullptr;
+  double* p4 = nullptr;
+  bool* p5 = nullptr;
+  Message* p6 = nullptr;
 
   msg << p1 << p2 << p3 << p4 << p5 << p6;
-  ASSERT_STREQ("(null)(null)(null)(null)(null)(null)",
-               msg.GetString().c_str());
+  ASSERT_STREQ("(null)(null)(null)(null)(null)(null)", msg.GetString().c_str());
 }
 
 
 TEST(MessageTest, WideStrings) {
   
-  const wchar_t* const_wstr = NULL;
-  EXPECT_STREQ("(null)",
-               (Message() << const_wstr).GetString().c_str());
+  const wchar_t* const_wstr = nullptr;
+  EXPECT_STREQ("(null)", (Message() << const_wstr).GetString().c_str());
 
   
-  wchar_t* wstr = NULL;
-  EXPECT_STREQ("(null)",
-               (Message() << wstr).GetString().c_str());
+  wchar_t* wstr = nullptr;
+  EXPECT_STREQ("(null)", (Message() << wstr).GetString().c_str());
 
   
   const_wstr = L"abc\x8119";
@@ -5316,10 +5162,8 @@ TEST(MessageTest, WideStrings) {
 
   
   wstr = const_cast<wchar_t*>(const_wstr);
-  EXPECT_STREQ("abc\xe8\x84\x99",
-               (Message() << wstr).GetString().c_str());
+  EXPECT_STREQ("abc\xe8\x84\x99", (Message() << wstr).GetString().c_str());
 }
-
 
 
 namespace testing {
@@ -5329,19 +5173,17 @@ namespace testing {
 class TestInfoTest : public Test {
  protected:
   static const TestInfo* GetTestInfo(const char* test_name) {
-    const TestCase* const test_case = GetUnitTestImpl()->
-        GetTestCase("TestInfoTest", "", NULL, NULL);
+    const TestSuite* const test_suite =
+        GetUnitTestImpl()->GetTestSuite("TestInfoTest", "", nullptr, nullptr);
 
-    for (int i = 0; i < test_case->total_test_count(); ++i) {
-      const TestInfo* const test_info = test_case->GetTestInfo(i);
-      if (strcmp(test_name, test_info->name()) == 0)
-        return test_info;
+    for (int i = 0; i < test_suite->total_test_count(); ++i) {
+      const TestInfo* const test_info = test_suite->GetTestInfo(i);
+      if (strcmp(test_name, test_info->name()) == 0) return test_info;
     }
-    return NULL;
+    return nullptr;
   }
 
-  static const TestResult* GetTestResult(
-      const TestInfo* test_info) {
+  static const TestResult* GetTestResult(const TestInfo* test_info) {
     return test_info->result();
   }
 };
@@ -5365,61 +5207,48 @@ TEST_F(TestInfoTest, result) {
   ASSERT_EQ(0, GetTestResult(test_info)->total_part_count());
 }
 
-#define VERIFY_CODE_LOCATION \
-  const int expected_line = __LINE__ - 1; \
+#define VERIFY_CODE_LOCATION                                                \
+  const int expected_line = __LINE__ - 1;                                   \
   const TestInfo* const test_info = GetUnitTestImpl()->current_test_info(); \
-  ASSERT_TRUE(test_info); \
-  EXPECT_STREQ(__FILE__, test_info->file()); \
+  ASSERT_TRUE(test_info);                                                   \
+  EXPECT_STREQ(__FILE__, test_info->file());                                \
   EXPECT_EQ(expected_line, test_info->line())
 
-TEST(CodeLocationForTEST, Verify) {
-  VERIFY_CODE_LOCATION;
-}
+TEST(CodeLocationForTEST, Verify) { VERIFY_CODE_LOCATION; }
 
-class CodeLocationForTESTF : public Test {
-};
+class CodeLocationForTESTF : public Test {};
 
-TEST_F(CodeLocationForTESTF, Verify) {
-  VERIFY_CODE_LOCATION;
-}
+TEST_F(CodeLocationForTESTF, Verify) { VERIFY_CODE_LOCATION; }
 
-class CodeLocationForTESTP : public TestWithParam<int> {
-};
+class CodeLocationForTESTP : public TestWithParam<int> {};
 
-TEST_P(CodeLocationForTESTP, Verify) {
-  VERIFY_CODE_LOCATION;
-}
+TEST_P(CodeLocationForTESTP, Verify) { VERIFY_CODE_LOCATION; }
 
-INSTANTIATE_TEST_CASE_P(, CodeLocationForTESTP, Values(0));
+INSTANTIATE_TEST_SUITE_P(, CodeLocationForTESTP, Values(0));
 
 template <typename T>
-class CodeLocationForTYPEDTEST : public Test {
-};
+class CodeLocationForTYPEDTEST : public Test {};
 
-TYPED_TEST_CASE(CodeLocationForTYPEDTEST, int);
+TYPED_TEST_SUITE(CodeLocationForTYPEDTEST, int);
 
-TYPED_TEST(CodeLocationForTYPEDTEST, Verify) {
-  VERIFY_CODE_LOCATION;
-}
+TYPED_TEST(CodeLocationForTYPEDTEST, Verify) { VERIFY_CODE_LOCATION; }
 
 template <typename T>
-class CodeLocationForTYPEDTESTP : public Test {
-};
+class CodeLocationForTYPEDTESTP : public Test {};
 
-TYPED_TEST_CASE_P(CodeLocationForTYPEDTESTP);
+TYPED_TEST_SUITE_P(CodeLocationForTYPEDTESTP);
 
-TYPED_TEST_P(CodeLocationForTYPEDTESTP, Verify) {
-  VERIFY_CODE_LOCATION;
-}
+TYPED_TEST_P(CodeLocationForTYPEDTESTP, Verify) { VERIFY_CODE_LOCATION; }
 
-REGISTER_TYPED_TEST_CASE_P(CodeLocationForTYPEDTESTP, Verify);
+REGISTER_TYPED_TEST_SUITE_P(CodeLocationForTYPEDTESTP, Verify);
 
-INSTANTIATE_TYPED_TEST_CASE_P(My, CodeLocationForTYPEDTESTP, int);
+INSTANTIATE_TYPED_TEST_SUITE_P(My, CodeLocationForTYPEDTESTP, int);
 
 #undef VERIFY_CODE_LOCATION
 
 
 
+#ifndef REMOVE_LEGACY_TEST_CASEAPI
 class SetUpTestCaseTest : public Test {
  protected:
   
@@ -5451,11 +5280,11 @@ class SetUpTestCaseTest : public Test {
     EXPECT_EQ(0, counter_);
 
     
-    shared_resource_ = NULL;
+    shared_resource_ = nullptr;
   }
 
   
-  virtual void SetUp() {
+  void SetUp() override {
     
     
     EXPECT_EQ(1, counter_);
@@ -5469,38 +5298,97 @@ class SetUpTestCaseTest : public Test {
 };
 
 int SetUpTestCaseTest::counter_ = 0;
-const char* SetUpTestCaseTest::shared_resource_ = NULL;
+const char* SetUpTestCaseTest::shared_resource_ = nullptr;
 
 
-TEST_F(SetUpTestCaseTest, Test1) {
-  EXPECT_STRNE(NULL, shared_resource_);
+TEST_F(SetUpTestCaseTest, Test1) { EXPECT_STRNE(nullptr, shared_resource_); }
+
+
+TEST_F(SetUpTestCaseTest, Test2) { EXPECT_STREQ("123", shared_resource_); }
+#endif  
+
+
+class SetUpTestSuiteTest : public Test {
+ protected:
+  
+  
+  static void SetUpTestSuite() {
+    printf("Setting up the test suite . . .\n");
+
+    
+    
+    
+    shared_resource_ = "123";
+
+    
+    counter_++;
+
+    
+    EXPECT_EQ(1, counter_);
+  }
+
+  
+  
+  static void TearDownTestSuite() {
+    printf("Tearing down the test suite . . .\n");
+
+    
+    counter_--;
+
+    
+    EXPECT_EQ(0, counter_);
+
+    
+    shared_resource_ = nullptr;
+  }
+
+  
+  void SetUp() override {
+    
+    
+    EXPECT_EQ(1, counter_);
+  }
+
+  
+  static int counter_;
+
+  
+  static const char* shared_resource_;
+};
+
+int SetUpTestSuiteTest::counter_ = 0;
+const char* SetUpTestSuiteTest::shared_resource_ = nullptr;
+
+
+TEST_F(SetUpTestSuiteTest, TestSetupTestSuite1) {
+  EXPECT_STRNE(nullptr, shared_resource_);
 }
 
 
-TEST_F(SetUpTestCaseTest, Test2) {
+TEST_F(SetUpTestSuiteTest, TestSetupTestSuite2) {
   EXPECT_STREQ("123", shared_resource_);
 }
 
 
 
 
-
 struct Flags {
   
-  Flags() : also_run_disabled_tests(false),
-            break_on_failure(false),
-            catch_exceptions(false),
-            death_test_use_fork(false),
-            filter(""),
-            list_tests(false),
-            output(""),
-            print_time(true),
-            random_seed(0),
-            repeat(1),
-            shuffle(false),
-            stack_trace_depth(kMaxStackTraceDepth),
-            stream_result_to(""),
-            throw_on_failure(false) {}
+  Flags()
+      : also_run_disabled_tests(false),
+        break_on_failure(false),
+        catch_exceptions(false),
+        death_test_use_fork(false),
+        filter(""),
+        list_tests(false),
+        output(""),
+        print_time(true),
+        random_seed(0),
+        repeat(1),
+        shuffle(false),
+        stack_trace_depth(kMaxStackTraceDepth),
+        stream_result_to(""),
+        throw_on_failure(false) {}
 
   
 
@@ -5637,7 +5525,7 @@ struct Flags {
 class ParseFlagsTest : public Test {
  protected:
   
-  virtual void SetUp() {
+  void SetUp() override {
     GTEST_FLAG(also_run_disabled_tests) = false;
     GTEST_FLAG(break_on_failure) = false;
     GTEST_FLAG(catch_exceptions) = false;
@@ -5656,11 +5544,11 @@ class ParseFlagsTest : public Test {
 
   
   template <typename CharType>
-  static void AssertStringArrayEq(size_t size1, CharType** array1,
-                                  size_t size2, CharType** array2) {
+  static void AssertStringArrayEq(int size1, CharType** array1, int size2,
+                                  CharType** array2) {
     ASSERT_EQ(size1, size2) << " Array sizes different.";
 
-    for (size_t i = 0; i != size1; i++) {
+    for (int i = 0; i != size1; i++) {
       ASSERT_STREQ(array1[i], array2[i]) << " where i == " << i;
     }
   }
@@ -5689,22 +5577,22 @@ class ParseFlagsTest : public Test {
   
   
   template <typename CharType>
-  static void TestParsingFlags(int argc1, const CharType** argv1,
-                               int argc2, const CharType** argv2,
-                               const Flags& expected, bool should_print_help) {
+  static void TestParsingFlags(int argc1, const CharType** argv1, int argc2,
+                               const CharType** argv2, const Flags& expected,
+                               bool should_print_help) {
     const bool saved_help_flag = ::testing::internal::g_help_flag;
     ::testing::internal::g_help_flag = false;
 
-# if GTEST_HAS_STREAM_REDIRECTION
+#if GTEST_HAS_STREAM_REDIRECTION
     CaptureStdout();
-# endif
+#endif
 
     
     internal::ParseGoogleTestFlagsOnly(&argc1, const_cast<CharType**>(argv1));
 
-# if GTEST_HAS_STREAM_REDIRECTION
+#if GTEST_HAS_STREAM_REDIRECTION
     const std::string captured_stdout = GetCapturedStdout();
-# endif
+#endif
 
     
     CheckFlags(expected);
@@ -5717,166 +5605,106 @@ class ParseFlagsTest : public Test {
     
     EXPECT_EQ(should_print_help, ::testing::internal::g_help_flag);
 
-# if GTEST_HAS_STREAM_REDIRECTION
+#if GTEST_HAS_STREAM_REDIRECTION
     const char* const expected_help_fragment =
         "This program contains tests written using";
     if (should_print_help) {
       EXPECT_PRED_FORMAT2(IsSubstring, expected_help_fragment, captured_stdout);
     } else {
-      EXPECT_PRED_FORMAT2(IsNotSubstring,
-                          expected_help_fragment, captured_stdout);
+      EXPECT_PRED_FORMAT2(IsNotSubstring, expected_help_fragment,
+                          captured_stdout);
     }
-# endif  
+#endif  
 
     ::testing::internal::g_help_flag = saved_help_flag;
   }
 
-  
-  
 
-# define GTEST_TEST_PARSING_FLAGS_(argv1, argv2, expected, should_print_help) \
-  TestParsingFlags(sizeof(argv1)/sizeof(*argv1) - 1, argv1, \
-                   sizeof(argv2)/sizeof(*argv2) - 1, argv2, \
-                   expected, should_print_help)
+
+
+#define GTEST_TEST_PARSING_FLAGS_(argv1, argv2, expected, should_print_help) \
+  TestParsingFlags(sizeof(argv1) / sizeof(*argv1) - 1, argv1,                \
+                   sizeof(argv2) / sizeof(*argv2) - 1, argv2, expected,      \
+                   should_print_help)
 };
 
 
 TEST_F(ParseFlagsTest, Empty) {
-  const char* argv[] = {
-    NULL
-  };
+  const char* argv[] = {nullptr};
 
-  const char* argv2[] = {
-    NULL
-  };
+  const char* argv2[] = {nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags(), false);
 }
 
 
 TEST_F(ParseFlagsTest, NoFlag) {
-  const char* argv[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags(), false);
 }
 
 
 TEST_F(ParseFlagsTest, FilterBad) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_filter",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_filter", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    "--gtest_filter",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", "--gtest_filter", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Filter(""), true);
 }
 
 
 TEST_F(ParseFlagsTest, FilterEmpty) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_filter=",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_filter=", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Filter(""), false);
 }
 
 
 TEST_F(ParseFlagsTest, FilterNonEmpty) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_filter=abc",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_filter=abc", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Filter("abc"), false);
 }
 
 
 TEST_F(ParseFlagsTest, BreakOnFailureWithoutValue) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_break_on_failure",
-    NULL
-};
+  const char* argv[] = {"foo.exe", "--gtest_break_on_failure", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::BreakOnFailure(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, BreakOnFailureFalse_0) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_break_on_failure=0",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_break_on_failure=0", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::BreakOnFailure(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, BreakOnFailureFalse_f) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_break_on_failure=f",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_break_on_failure=f", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::BreakOnFailure(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, BreakOnFailureFalse_F) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_break_on_failure=F",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_break_on_failure=F", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::BreakOnFailure(false), false);
 }
@@ -5884,48 +5712,27 @@ TEST_F(ParseFlagsTest, BreakOnFailureFalse_F) {
 
 
 TEST_F(ParseFlagsTest, BreakOnFailureTrue) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_break_on_failure=1",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_break_on_failure=1", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::BreakOnFailure(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, CatchExceptions) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_catch_exceptions",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_catch_exceptions", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::CatchExceptions(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, DeathTestUseFork) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_death_test_use_fork",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_death_test_use_fork", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::DeathTestUseFork(true), false);
 }
@@ -5933,36 +5740,21 @@ TEST_F(ParseFlagsTest, DeathTestUseFork) {
 
 
 TEST_F(ParseFlagsTest, DuplicatedFlags) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_filter=a",
-    "--gtest_filter=b",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_filter=a", "--gtest_filter=b",
+                        nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Filter("b"), false);
 }
 
 
 TEST_F(ParseFlagsTest, UnrecognizedFlag) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_break_on_failure",
-    "bar",  
-    "--gtest_filter=b",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_break_on_failure",
+                        "bar",  
+                        "--gtest_filter=b", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    "bar",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", "bar", nullptr};
 
   Flags flags;
   flags.break_on_failure = true;
@@ -5972,421 +5764,242 @@ TEST_F(ParseFlagsTest, UnrecognizedFlag) {
 
 
 TEST_F(ParseFlagsTest, ListTestsFlag) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_list_tests",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_list_tests", nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(true), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, ListTestsTrue) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_list_tests=1",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_list_tests=1", nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(true), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, ListTestsFalse) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_list_tests=0",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_list_tests=0", nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(false), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, ListTestsFalse_f) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_list_tests=f",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_list_tests=f", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, ListTestsFalse_F) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_list_tests=F",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_list_tests=F", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ListTests(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, OutputEmpty) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_output",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_output", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    "--gtest_output",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", "--gtest_output", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags(), true);
 }
 
 
 TEST_F(ParseFlagsTest, OutputXml) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_output=xml",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_output=xml", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Output("xml"), false);
 }
 
 
 TEST_F(ParseFlagsTest, OutputXmlFile) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_output=xml:file",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_output=xml:file", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Output("xml:file"), false);
 }
 
 
 TEST_F(ParseFlagsTest, OutputXmlDirectory) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_output=xml:directory/path/",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_output=xml:directory/path/",
+                        nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-  GTEST_TEST_PARSING_FLAGS_(argv, argv2,
-                            Flags::Output("xml:directory/path/"), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Output("xml:directory/path/"),
+                            false);
 }
 
 
 TEST_F(ParseFlagsTest, PrintTimeFlag) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_print_time",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_print_time", nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(true), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, PrintTimeTrue) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_print_time=1",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_print_time=1", nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(true), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, PrintTimeFalse) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_print_time=0",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_print_time=0", nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(false), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, PrintTimeFalse_f) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_print_time=f",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_print_time=f", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, PrintTimeFalse_F) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_print_time=F",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_print_time=F", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::PrintTime(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, RandomSeed) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_random_seed=1000",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_random_seed=1000", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::RandomSeed(1000), false);
 }
 
 
 TEST_F(ParseFlagsTest, Repeat) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_repeat=1000",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_repeat=1000", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Repeat(1000), false);
 }
 
 
 TEST_F(ParseFlagsTest, AlsoRunDisabledTestsFlag) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_also_run_disabled_tests",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_also_run_disabled_tests", nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2,
-                              Flags::AlsoRunDisabledTests(true), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::AlsoRunDisabledTests(true),
+                            false);
 }
 
 
 TEST_F(ParseFlagsTest, AlsoRunDisabledTestsTrue) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_also_run_disabled_tests=1",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_also_run_disabled_tests=1",
+                        nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2,
-                              Flags::AlsoRunDisabledTests(true), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::AlsoRunDisabledTests(true),
+                            false);
 }
 
 
 TEST_F(ParseFlagsTest, AlsoRunDisabledTestsFalse) {
-    const char* argv[] = {
-      "foo.exe",
-      "--gtest_also_run_disabled_tests=0",
-      NULL
-    };
+  const char* argv[] = {"foo.exe", "--gtest_also_run_disabled_tests=0",
+                        nullptr};
 
-    const char* argv2[] = {
-      "foo.exe",
-      NULL
-    };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-    GTEST_TEST_PARSING_FLAGS_(argv, argv2,
-                              Flags::AlsoRunDisabledTests(false), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::AlsoRunDisabledTests(false),
+                            false);
 }
 
 
 TEST_F(ParseFlagsTest, ShuffleWithoutValue) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_shuffle",
-    NULL
-};
+  const char* argv[] = {"foo.exe", "--gtest_shuffle", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Shuffle(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, ShuffleFalse_0) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_shuffle=0",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_shuffle=0", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Shuffle(false), false);
 }
 
 
 TEST_F(ParseFlagsTest, ShuffleTrue) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_shuffle=1",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_shuffle=1", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Shuffle(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, StackTraceDepth) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_stack_trace_depth=5",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_stack_trace_depth=5", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::StackTraceDepth(5), false);
 }
 
 TEST_F(ParseFlagsTest, StreamResultTo) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_stream_result_to=localhost:1234",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_stream_result_to=localhost:1234",
+                        nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
-  GTEST_TEST_PARSING_FLAGS_(
-      argv, argv2, Flags::StreamResultTo("localhost:1234"), false);
+  GTEST_TEST_PARSING_FLAGS_(argv, argv2,
+                            Flags::StreamResultTo("localhost:1234"), false);
 }
 
 
 TEST_F(ParseFlagsTest, ThrowOnFailureWithoutValue) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_throw_on_failure",
-    NULL
-};
+  const char* argv[] = {"foo.exe", "--gtest_throw_on_failure", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ThrowOnFailure(true), false);
 }
 
 
 TEST_F(ParseFlagsTest, ThrowOnFailureFalse_0) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_throw_on_failure=0",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_throw_on_failure=0", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ThrowOnFailure(false), false);
 }
@@ -6394,37 +6007,24 @@ TEST_F(ParseFlagsTest, ThrowOnFailureFalse_0) {
 
 
 TEST_F(ParseFlagsTest, ThrowOnFailureTrue) {
-  const char* argv[] = {
-    "foo.exe",
-    "--gtest_throw_on_failure=1",
-    NULL
-  };
+  const char* argv[] = {"foo.exe", "--gtest_throw_on_failure=1", nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::ThrowOnFailure(true), false);
 }
 
-# if GTEST_OS_WINDOWS
+#if GTEST_OS_WINDOWS
 
 TEST_F(ParseFlagsTest, WideStrings) {
-  const wchar_t* argv[] = {
-    L"foo.exe",
-    L"--gtest_filter=Foo*",
-    L"--gtest_list_tests=1",
-    L"--gtest_break_on_failure",
-    L"--non_gtest_flag",
-    NULL
-  };
+  const wchar_t* argv[] = {L"foo.exe",
+                           L"--gtest_filter=Foo*",
+                           L"--gtest_list_tests=1",
+                           L"--gtest_break_on_failure",
+                           L"--non_gtest_flag",
+                           NULL};
 
-  const wchar_t* argv2[] = {
-    L"foo.exe",
-    L"--non_gtest_flag",
-    NULL
-  };
+  const wchar_t* argv2[] = {L"foo.exe", L"--non_gtest_flag", NULL};
 
   Flags expected_flags;
   expected_flags.break_on_failure = true;
@@ -6433,7 +6033,7 @@ TEST_F(ParseFlagsTest, WideStrings) {
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, expected_flags, false);
 }
-# endif  
+#endif  
 
 #if GTEST_USE_OWN_FLAGFILE_FLAG_
 class FlagfileTest : public ParseFlagsTest {
@@ -6472,60 +6072,39 @@ TEST_F(FlagfileTest, Empty) {
   std::string flagfile_flag =
       std::string("--" GTEST_FLAG_PREFIX_ "flagfile=") + flagfile_path.c_str();
 
-  const char* argv[] = {
-    "foo.exe",
-    flagfile_flag.c_str(),
-    NULL
-  };
+  const char* argv[] = {"foo.exe", flagfile_flag.c_str(), nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags(), false);
 }
 
 
 TEST_F(FlagfileTest, FilterNonEmpty) {
-  internal::FilePath flagfile_path(CreateFlagfile(
-      "--"  GTEST_FLAG_PREFIX_  "filter=abc"));
+  internal::FilePath flagfile_path(
+      CreateFlagfile("--" GTEST_FLAG_PREFIX_ "filter=abc"));
   std::string flagfile_flag =
       std::string("--" GTEST_FLAG_PREFIX_ "flagfile=") + flagfile_path.c_str();
 
-  const char* argv[] = {
-    "foo.exe",
-    flagfile_flag.c_str(),
-    NULL
-  };
+  const char* argv[] = {"foo.exe", flagfile_flag.c_str(), nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   GTEST_TEST_PARSING_FLAGS_(argv, argv2, Flags::Filter("abc"), false);
 }
 
 
 TEST_F(FlagfileTest, SeveralFlags) {
-  internal::FilePath flagfile_path(CreateFlagfile(
-      "--"  GTEST_FLAG_PREFIX_  "filter=abc\n"
-      "--"  GTEST_FLAG_PREFIX_  "break_on_failure\n"
-      "--"  GTEST_FLAG_PREFIX_  "list_tests"));
+  internal::FilePath flagfile_path(
+      CreateFlagfile("--" GTEST_FLAG_PREFIX_ "filter=abc\n"
+                     "--" GTEST_FLAG_PREFIX_ "break_on_failure\n"
+                     "--" GTEST_FLAG_PREFIX_ "list_tests"));
   std::string flagfile_flag =
       std::string("--" GTEST_FLAG_PREFIX_ "flagfile=") + flagfile_path.c_str();
 
-  const char* argv[] = {
-    "foo.exe",
-    flagfile_flag.c_str(),
-    NULL
-  };
+  const char* argv[] = {"foo.exe", flagfile_flag.c_str(), nullptr};
 
-  const char* argv2[] = {
-    "foo.exe",
-    NULL
-  };
+  const char* argv2[] = {"foo.exe", nullptr};
 
   Flags expected_flags;
   expected_flags.break_on_failure = true;
@@ -6541,34 +6120,31 @@ class CurrentTestInfoTest : public Test {
  protected:
   
   
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     
-    const TestInfo* test_info =
-      UnitTest::GetInstance()->current_test_info();
-    EXPECT_TRUE(test_info == NULL)
+    const TestInfo* test_info = UnitTest::GetInstance()->current_test_info();
+    EXPECT_TRUE(test_info == nullptr)
         << "There should be no tests running at this point.";
   }
 
   
   
-  static void TearDownTestCase() {
-    const TestInfo* test_info =
-      UnitTest::GetInstance()->current_test_info();
-    EXPECT_TRUE(test_info == NULL)
+  static void TearDownTestSuite() {
+    const TestInfo* test_info = UnitTest::GetInstance()->current_test_info();
+    EXPECT_TRUE(test_info == nullptr)
         << "There should be no tests running at this point.";
   }
 };
 
 
 
-TEST_F(CurrentTestInfoTest, WorksForFirstTestInATestCase) {
-  const TestInfo* test_info =
-    UnitTest::GetInstance()->current_test_info();
-  ASSERT_TRUE(NULL != test_info)
+TEST_F(CurrentTestInfoTest, WorksForFirstTestInATestSuite) {
+  const TestInfo* test_info = UnitTest::GetInstance()->current_test_info();
+  ASSERT_TRUE(nullptr != test_info)
       << "There is a test running so we should have a valid TestInfo.";
   EXPECT_STREQ("CurrentTestInfoTest", test_info->test_case_name())
       << "Expected the name of the currently running test case.";
-  EXPECT_STREQ("WorksForFirstTestInATestCase", test_info->name())
+  EXPECT_STREQ("WorksForFirstTestInATestSuite", test_info->name())
       << "Expected the name of the currently running test.";
 }
 
@@ -6576,19 +6152,17 @@ TEST_F(CurrentTestInfoTest, WorksForFirstTestInATestCase) {
 
 
 
-TEST_F(CurrentTestInfoTest, WorksForSecondTestInATestCase) {
-  const TestInfo* test_info =
-    UnitTest::GetInstance()->current_test_info();
-  ASSERT_TRUE(NULL != test_info)
+TEST_F(CurrentTestInfoTest, WorksForSecondTestInATestSuite) {
+  const TestInfo* test_info = UnitTest::GetInstance()->current_test_info();
+  ASSERT_TRUE(nullptr != test_info)
       << "There is a test running so we should have a valid TestInfo.";
   EXPECT_STREQ("CurrentTestInfoTest", test_info->test_case_name())
       << "Expected the name of the currently running test case.";
-  EXPECT_STREQ("WorksForSecondTestInATestCase", test_info->name())
+  EXPECT_STREQ("WorksForSecondTestInATestSuite", test_info->name())
       << "Expected the name of the currently running test.";
 }
 
 }  
-
 
 
 
@@ -6628,12 +6202,8 @@ TEST(NestedTestingNamespaceTest, Failure) {
 
 class ProtectedFixtureMethodsTest : public Test {
  protected:
-  virtual void SetUp() {
-    Test::SetUp();
-  }
-  virtual void TearDown() {
-    Test::TearDown();
-  }
+  void SetUp() override { Test::SetUp(); }
+  void TearDown() override { Test::TearDown(); }
 };
 
 
@@ -6642,13 +6212,12 @@ TEST(StreamingAssertionsTest, Unconditional) {
   SUCCEED() << "expected success";
   EXPECT_NONFATAL_FAILURE(ADD_FAILURE() << "expected failure",
                           "expected failure");
-  EXPECT_FATAL_FAILURE(FAIL() << "expected failure",
-                       "expected failure");
+  EXPECT_FATAL_FAILURE(FAIL() << "expected failure", "expected failure");
 }
 
 #ifdef __BORLANDC__
 
-# pragma option push -w-ccc -w-rch
+#pragma option push -w-ccc -w-rch
 #endif
 
 TEST(StreamingAssertionsTest, Truth) {
@@ -6671,7 +6240,7 @@ TEST(StreamingAssertionsTest, Truth2) {
 
 #ifdef __BORLANDC__
 
-# pragma option pop
+#pragma option pop
 #endif
 
 TEST(StreamingAssertionsTest, IntegerEquals) {
@@ -6742,28 +6311,32 @@ TEST(StreamingAssertionsTest, FloatingPointEquals) {
 TEST(StreamingAssertionsTest, Throw) {
   EXPECT_THROW(ThrowAnInteger(), int) << "unexpected failure";
   ASSERT_THROW(ThrowAnInteger(), int) << "unexpected failure";
-  EXPECT_NONFATAL_FAILURE(EXPECT_THROW(ThrowAnInteger(), bool) <<
-                          "expected failure", "expected failure");
-  EXPECT_FATAL_FAILURE(ASSERT_THROW(ThrowAnInteger(), bool) <<
-                       "expected failure", "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_THROW(ThrowAnInteger(), bool)
+                              << "expected failure",
+                          "expected failure");
+  EXPECT_FATAL_FAILURE(ASSERT_THROW(ThrowAnInteger(), bool)
+                           << "expected failure",
+                       "expected failure");
 }
 
 TEST(StreamingAssertionsTest, NoThrow) {
   EXPECT_NO_THROW(ThrowNothing()) << "unexpected failure";
   ASSERT_NO_THROW(ThrowNothing()) << "unexpected failure";
-  EXPECT_NONFATAL_FAILURE(EXPECT_NO_THROW(ThrowAnInteger()) <<
-                          "expected failure", "expected failure");
-  EXPECT_FATAL_FAILURE(ASSERT_NO_THROW(ThrowAnInteger()) <<
-                       "expected failure", "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NO_THROW(ThrowAnInteger())
+                              << "expected failure",
+                          "expected failure");
+  EXPECT_FATAL_FAILURE(ASSERT_NO_THROW(ThrowAnInteger()) << "expected failure",
+                       "expected failure");
 }
 
 TEST(StreamingAssertionsTest, AnyThrow) {
   EXPECT_ANY_THROW(ThrowAnInteger()) << "unexpected failure";
   ASSERT_ANY_THROW(ThrowAnInteger()) << "unexpected failure";
-  EXPECT_NONFATAL_FAILURE(EXPECT_ANY_THROW(ThrowNothing()) <<
-                          "expected failure", "expected failure");
-  EXPECT_FATAL_FAILURE(ASSERT_ANY_THROW(ThrowNothing()) <<
-                       "expected failure", "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_ANY_THROW(ThrowNothing())
+                              << "expected failure",
+                          "expected failure");
+  EXPECT_FATAL_FAILURE(ASSERT_ANY_THROW(ThrowNothing()) << "expected failure",
+                       "expected failure");
 }
 
 #endif  
@@ -6773,12 +6346,12 @@ TEST(StreamingAssertionsTest, AnyThrow) {
 TEST(ColoredOutputTest, UsesColorsWhenGTestColorFlagIsYes) {
   GTEST_FLAG(color) = "yes";
 
-  SetEnv("TERM", "xterm");  
-  EXPECT_TRUE(ShouldUseColor(true));  
+  SetEnv("TERM", "xterm");             
+  EXPECT_TRUE(ShouldUseColor(true));   
   EXPECT_TRUE(ShouldUseColor(false));  
 
-  SetEnv("TERM", "dumb");  
-  EXPECT_TRUE(ShouldUseColor(true));  
+  SetEnv("TERM", "dumb");              
+  EXPECT_TRUE(ShouldUseColor(true));   
   EXPECT_TRUE(ShouldUseColor(false));  
 }
 
@@ -6798,12 +6371,12 @@ TEST(ColoredOutputTest, UsesColorsWhenGTestColorFlagIsAliasOfYes) {
 TEST(ColoredOutputTest, UsesNoColorWhenGTestColorFlagIsNo) {
   GTEST_FLAG(color) = "no";
 
-  SetEnv("TERM", "xterm");  
-  EXPECT_FALSE(ShouldUseColor(true));  
+  SetEnv("TERM", "xterm");              
+  EXPECT_FALSE(ShouldUseColor(true));   
   EXPECT_FALSE(ShouldUseColor(false));  
 
-  SetEnv("TERM", "dumb");  
-  EXPECT_FALSE(ShouldUseColor(true));  
+  SetEnv("TERM", "dumb");               
+  EXPECT_FALSE(ShouldUseColor(true));   
   EXPECT_FALSE(ShouldUseColor(false));  
 }
 
@@ -6823,7 +6396,7 @@ TEST(ColoredOutputTest, UsesNoColorWhenGTestColorFlagIsInvalid) {
 TEST(ColoredOutputTest, UsesColorsWhenStdoutIsTty) {
   GTEST_FLAG(color) = "auto";
 
-  SetEnv("TERM", "xterm");  
+  SetEnv("TERM", "xterm");              
   EXPECT_FALSE(ShouldUseColor(false));  
   EXPECT_TRUE(ShouldUseColor(true));    
 }
@@ -6831,7 +6404,7 @@ TEST(ColoredOutputTest, UsesColorsWhenStdoutIsTty) {
 TEST(ColoredOutputTest, UsesColorsWhenTermSupportsColors) {
   GTEST_FLAG(color) = "auto";
 
-#if GTEST_OS_WINDOWS
+#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_MINGW
   
 
   SetEnv("TERM", "dumb");
@@ -6846,49 +6419,49 @@ TEST(ColoredOutputTest, UsesColorsWhenTermSupportsColors) {
   
   
 
-  SetEnv("TERM", "dumb");  
+  SetEnv("TERM", "dumb");              
   EXPECT_FALSE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "emacs");  
+  SetEnv("TERM", "emacs");             
   EXPECT_FALSE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "vt100");  
+  SetEnv("TERM", "vt100");             
   EXPECT_FALSE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "xterm-mono");  
+  SetEnv("TERM", "xterm-mono");        
   EXPECT_FALSE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "xterm");  
+  SetEnv("TERM", "xterm");            
   EXPECT_TRUE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "xterm-color");  
+  SetEnv("TERM", "xterm-color");      
   EXPECT_TRUE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "xterm-256color");  
+  SetEnv("TERM", "xterm-256color");   
   EXPECT_TRUE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "screen");  
+  SetEnv("TERM", "screen");           
   EXPECT_TRUE(ShouldUseColor(true));  
 
   SetEnv("TERM", "screen-256color");  
   EXPECT_TRUE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "tmux");  
+  SetEnv("TERM", "tmux");             
   EXPECT_TRUE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "tmux-256color");  
+  SetEnv("TERM", "tmux-256color");    
   EXPECT_TRUE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "rxvt-unicode");  
+  SetEnv("TERM", "rxvt-unicode");     
   EXPECT_TRUE(ShouldUseColor(true));  
 
   SetEnv("TERM", "rxvt-unicode-256color");  
+  EXPECT_TRUE(ShouldUseColor(true));        
+
+  SetEnv("TERM", "linux");            
   EXPECT_TRUE(ShouldUseColor(true));  
 
-  SetEnv("TERM", "linux");  
-  EXPECT_TRUE(ShouldUseColor(true));  
-
-  SetEnv("TERM", "cygwin");  
+  SetEnv("TERM", "cygwin");           
   EXPECT_TRUE(ShouldUseColor(true));  
 #endif  
 }
@@ -7006,20 +6579,17 @@ TEST(HasFailureTest, WorksOutsideOfTestBody2) {
 
 class TestListener : public EmptyTestEventListener {
  public:
-  TestListener() : on_start_counter_(NULL), is_destroyed_(NULL) {}
+  TestListener() : on_start_counter_(nullptr), is_destroyed_(nullptr) {}
   TestListener(int* on_start_counter, bool* is_destroyed)
-      : on_start_counter_(on_start_counter),
-        is_destroyed_(is_destroyed) {}
+      : on_start_counter_(on_start_counter), is_destroyed_(is_destroyed) {}
 
-  virtual ~TestListener() {
-    if (is_destroyed_)
-      *is_destroyed_ = true;
+  ~TestListener() override {
+    if (is_destroyed_) *is_destroyed_ = true;
   }
 
  protected:
-  virtual void OnTestProgramStart(const UnitTest& ) {
-    if (on_start_counter_ != NULL)
-      (*on_start_counter_)++;
+  void OnTestProgramStart(const UnitTest& ) override {
+    if (on_start_counter_ != nullptr) (*on_start_counter_)++;
   }
 
  private:
@@ -7031,9 +6601,9 @@ class TestListener : public EmptyTestEventListener {
 TEST(TestEventListenersTest, ConstructionWorks) {
   TestEventListeners listeners;
 
-  EXPECT_TRUE(TestEventListenersAccessor::GetRepeater(&listeners) != NULL);
-  EXPECT_TRUE(listeners.default_result_printer() == NULL);
-  EXPECT_TRUE(listeners.default_xml_generator() == NULL);
+  EXPECT_TRUE(TestEventListenersAccessor::GetRepeater(&listeners) != nullptr);
+  EXPECT_TRUE(listeners.default_result_printer() == nullptr);
+  EXPECT_TRUE(listeners.default_xml_generator() == nullptr);
 }
 
 
@@ -7042,12 +6612,12 @@ TEST(TestEventListenersTest, DestructionWorks) {
   bool default_result_printer_is_destroyed = false;
   bool default_xml_printer_is_destroyed = false;
   bool extra_listener_is_destroyed = false;
-  TestListener* default_result_printer = new TestListener(
-      NULL, &default_result_printer_is_destroyed);
-  TestListener* default_xml_printer = new TestListener(
-      NULL, &default_xml_printer_is_destroyed);
-  TestListener* extra_listener = new TestListener(
-      NULL, &extra_listener_is_destroyed);
+  TestListener* default_result_printer =
+      new TestListener(nullptr, &default_result_printer_is_destroyed);
+  TestListener* default_xml_printer =
+      new TestListener(nullptr, &default_xml_printer_is_destroyed);
+  TestListener* extra_listener =
+      new TestListener(nullptr, &extra_listener_is_destroyed);
 
   {
     TestEventListeners listeners;
@@ -7071,8 +6641,8 @@ TEST(TestEventListenersTest, Append) {
   {
     TestEventListeners listeners;
     listeners.Append(listener);
-    TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-        *UnitTest::GetInstance());
+    TestEventListenersAccessor::GetRepeater(&listeners)
+        ->OnTestProgramStart(*UnitTest::GetInstance());
     EXPECT_EQ(1, on_start_counter);
   }
   EXPECT_TRUE(is_destroyed);
@@ -7087,21 +6657,21 @@ class SequenceTestingListener : public EmptyTestEventListener {
       : vector_(vector), id_(id) {}
 
  protected:
-  virtual void OnTestProgramStart(const UnitTest& ) {
+  void OnTestProgramStart(const UnitTest& ) override {
     vector_->push_back(GetEventDescription("OnTestProgramStart"));
   }
 
-  virtual void OnTestProgramEnd(const UnitTest& ) {
+  void OnTestProgramEnd(const UnitTest& ) override {
     vector_->push_back(GetEventDescription("OnTestProgramEnd"));
   }
 
-  virtual void OnTestIterationStart(const UnitTest& ,
-                                    int ) {
+  void OnTestIterationStart(const UnitTest& ,
+                            int ) override {
     vector_->push_back(GetEventDescription("OnTestIterationStart"));
   }
 
-  virtual void OnTestIterationEnd(const UnitTest& ,
-                                  int ) {
+  void OnTestIterationEnd(const UnitTest& ,
+                          int ) override {
     vector_->push_back(GetEventDescription("OnTestIterationEnd"));
   }
 
@@ -7125,32 +6695,32 @@ TEST(EventListenerTest, AppendKeepsOrder) {
   listeners.Append(new SequenceTestingListener(&vec, "2nd"));
   listeners.Append(new SequenceTestingListener(&vec, "3rd"));
 
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-      *UnitTest::GetInstance());
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestProgramStart(*UnitTest::GetInstance());
   ASSERT_EQ(3U, vec.size());
   EXPECT_STREQ("1st.OnTestProgramStart", vec[0].c_str());
   EXPECT_STREQ("2nd.OnTestProgramStart", vec[1].c_str());
   EXPECT_STREQ("3rd.OnTestProgramStart", vec[2].c_str());
 
   vec.clear();
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramEnd(
-      *UnitTest::GetInstance());
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestProgramEnd(*UnitTest::GetInstance());
   ASSERT_EQ(3U, vec.size());
   EXPECT_STREQ("3rd.OnTestProgramEnd", vec[0].c_str());
   EXPECT_STREQ("2nd.OnTestProgramEnd", vec[1].c_str());
   EXPECT_STREQ("1st.OnTestProgramEnd", vec[2].c_str());
 
   vec.clear();
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestIterationStart(
-      *UnitTest::GetInstance(), 0);
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestIterationStart(*UnitTest::GetInstance(), 0);
   ASSERT_EQ(3U, vec.size());
   EXPECT_STREQ("1st.OnTestIterationStart", vec[0].c_str());
   EXPECT_STREQ("2nd.OnTestIterationStart", vec[1].c_str());
   EXPECT_STREQ("3rd.OnTestIterationStart", vec[2].c_str());
 
   vec.clear();
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestIterationEnd(
-      *UnitTest::GetInstance(), 0);
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestIterationEnd(*UnitTest::GetInstance(), 0);
   ASSERT_EQ(3U, vec.size());
   EXPECT_STREQ("3rd.OnTestIterationEnd", vec[0].c_str());
   EXPECT_STREQ("2nd.OnTestIterationEnd", vec[1].c_str());
@@ -7170,9 +6740,9 @@ TEST(TestEventListenersTest, Release) {
     TestEventListeners listeners;
     listeners.Append(listener);
     EXPECT_EQ(listener, listeners.Release(listener));
-    TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-        *UnitTest::GetInstance());
-    EXPECT_TRUE(listeners.Release(listener) == NULL);
+    TestEventListenersAccessor::GetRepeater(&listeners)
+        ->OnTestProgramStart(*UnitTest::GetInstance());
+    EXPECT_TRUE(listeners.Release(listener) == nullptr);
   }
   EXPECT_EQ(0, on_start_counter);
   EXPECT_FALSE(is_destroyed);
@@ -7182,24 +6752,27 @@ TEST(TestEventListenersTest, Release) {
 
 TEST(EventListenerTest, SuppressEventForwarding) {
   int on_start_counter = 0;
-  TestListener* listener = new TestListener(&on_start_counter, NULL);
+  TestListener* listener = new TestListener(&on_start_counter, nullptr);
 
   TestEventListeners listeners;
   listeners.Append(listener);
   ASSERT_TRUE(TestEventListenersAccessor::EventForwardingEnabled(listeners));
   TestEventListenersAccessor::SuppressEventForwarding(&listeners);
   ASSERT_FALSE(TestEventListenersAccessor::EventForwardingEnabled(listeners));
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-      *UnitTest::GetInstance());
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestProgramStart(*UnitTest::GetInstance());
   EXPECT_EQ(0, on_start_counter);
 }
 
 
 
 TEST(EventListenerDeathTest, EventsNotForwardedInDeathTestSubprecesses) {
-  EXPECT_DEATH_IF_SUPPORTED({
-      GTEST_CHECK_(TestEventListenersAccessor::EventForwardingEnabled(
-          *GetUnitTestImpl()->listeners())) << "expected failure";},
+  EXPECT_DEATH_IF_SUPPORTED(
+      {
+        GTEST_CHECK_(TestEventListenersAccessor::EventForwardingEnabled(
+            *GetUnitTestImpl()->listeners()))
+            << "expected failure";
+      },
       "expected failure");
 }
 
@@ -7216,22 +6789,22 @@ TEST(EventListenerTest, default_result_printer) {
 
   EXPECT_EQ(listener, listeners.default_result_printer());
 
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-      *UnitTest::GetInstance());
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestProgramStart(*UnitTest::GetInstance());
 
   EXPECT_EQ(1, on_start_counter);
 
   
   
-  TestEventListenersAccessor::SetDefaultResultPrinter(&listeners, NULL);
+  TestEventListenersAccessor::SetDefaultResultPrinter(&listeners, nullptr);
 
-  EXPECT_TRUE(listeners.default_result_printer() == NULL);
+  EXPECT_TRUE(listeners.default_result_printer() == nullptr);
   EXPECT_TRUE(is_destroyed);
 
   
   
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-      *UnitTest::GetInstance());
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestProgramStart(*UnitTest::GetInstance());
   EXPECT_EQ(1, on_start_counter);
 }
 
@@ -7249,12 +6822,12 @@ TEST(EventListenerTest, RemovingDefaultResultPrinterWorks) {
     TestEventListenersAccessor::SetDefaultResultPrinter(&listeners, listener);
 
     EXPECT_EQ(listener, listeners.Release(listener));
-    EXPECT_TRUE(listeners.default_result_printer() == NULL);
+    EXPECT_TRUE(listeners.default_result_printer() == nullptr);
     EXPECT_FALSE(is_destroyed);
 
     
-    TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-        *UnitTest::GetInstance());
+    TestEventListenersAccessor::GetRepeater(&listeners)
+        ->OnTestProgramStart(*UnitTest::GetInstance());
     EXPECT_EQ(0, on_start_counter);
   }
   
@@ -7275,22 +6848,22 @@ TEST(EventListenerTest, default_xml_generator) {
 
   EXPECT_EQ(listener, listeners.default_xml_generator());
 
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-      *UnitTest::GetInstance());
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestProgramStart(*UnitTest::GetInstance());
 
   EXPECT_EQ(1, on_start_counter);
 
   
   
-  TestEventListenersAccessor::SetDefaultXmlGenerator(&listeners, NULL);
+  TestEventListenersAccessor::SetDefaultXmlGenerator(&listeners, nullptr);
 
-  EXPECT_TRUE(listeners.default_xml_generator() == NULL);
+  EXPECT_TRUE(listeners.default_xml_generator() == nullptr);
   EXPECT_TRUE(is_destroyed);
 
   
   
-  TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-      *UnitTest::GetInstance());
+  TestEventListenersAccessor::GetRepeater(&listeners)
+      ->OnTestProgramStart(*UnitTest::GetInstance());
   EXPECT_EQ(1, on_start_counter);
 }
 
@@ -7308,12 +6881,12 @@ TEST(EventListenerTest, RemovingDefaultXmlGeneratorWorks) {
     TestEventListenersAccessor::SetDefaultXmlGenerator(&listeners, listener);
 
     EXPECT_EQ(listener, listeners.Release(listener));
-    EXPECT_TRUE(listeners.default_xml_generator() == NULL);
+    EXPECT_TRUE(listeners.default_xml_generator() == nullptr);
     EXPECT_FALSE(is_destroyed);
 
     
-    TestEventListenersAccessor::GetRepeater(&listeners)->OnTestProgramStart(
-        *UnitTest::GetInstance());
+    TestEventListenersAccessor::GetRepeater(&listeners)
+        ->OnTestProgramStart(*UnitTest::GetInstance());
     EXPECT_EQ(0, on_start_counter);
   }
   
@@ -7372,13 +6945,12 @@ GTEST_TEST(AlternativeNameTest, Works) {
 
 
 
-
 class ConversionHelperBase {};
 class ConversionHelperDerived : public ConversionHelperBase {};
 
 
 TEST(IsAProtocolMessageTest, ValueIsCompileTimeConstant) {
-  GTEST_COMPILE_ASSERT_(IsAProtocolMessage<ProtocolMessage>::value,
+  GTEST_COMPILE_ASSERT_(IsAProtocolMessage<::proto2::Message>::value,
                         const_true);
   GTEST_COMPILE_ASSERT_(!IsAProtocolMessage<int>::value, const_false);
 }
@@ -7386,8 +6958,7 @@ TEST(IsAProtocolMessageTest, ValueIsCompileTimeConstant) {
 
 
 TEST(IsAProtocolMessageTest, ValueIsTrueWhenTypeIsAProtocolMessage) {
-  EXPECT_TRUE(IsAProtocolMessage< ::proto2::Message>::value);
-  EXPECT_TRUE(IsAProtocolMessage<ProtocolMessage>::value);
+  EXPECT_TRUE(IsAProtocolMessage<::proto2::Message>::value);
 }
 
 
@@ -7399,67 +6970,10 @@ TEST(IsAProtocolMessageTest, ValueIsFalseWhenTypeIsNotAProtocolMessage) {
 
 
 
-TEST(CompileAssertTypesEqual, CompilesWhenTypesAreEqual) {
-  CompileAssertTypesEqual<void, void>();
-  CompileAssertTypesEqual<int*, int*>();
-}
-
-
-TEST(RemoveReferenceTest, DoesNotAffectNonReferenceType) {
-  CompileAssertTypesEqual<int, RemoveReference<int>::type>();
-  CompileAssertTypesEqual<const char, RemoveReference<const char>::type>();
-}
-
-
-TEST(RemoveReferenceTest, RemovesReference) {
-  CompileAssertTypesEqual<int, RemoveReference<int&>::type>();
-  CompileAssertTypesEqual<const char, RemoveReference<const char&>::type>();
-}
-
-
-
-template <typename T1, typename T2>
-void TestGTestRemoveReference() {
-  CompileAssertTypesEqual<T1, GTEST_REMOVE_REFERENCE_(T2)>();
-}
-
-TEST(RemoveReferenceTest, MacroVersion) {
-  TestGTestRemoveReference<int, int>();
-  TestGTestRemoveReference<const char, const char&>();
-}
-
-
-
-TEST(RemoveConstTest, DoesNotAffectNonConstType) {
-  CompileAssertTypesEqual<int, RemoveConst<int>::type>();
-  CompileAssertTypesEqual<char&, RemoveConst<char&>::type>();
-}
-
-
-TEST(RemoveConstTest, RemovesConst) {
-  CompileAssertTypesEqual<int, RemoveConst<const int>::type>();
-  CompileAssertTypesEqual<char[2], RemoveConst<const char[2]>::type>();
-  CompileAssertTypesEqual<char[2][3], RemoveConst<const char[2][3]>::type>();
-}
-
-
-
-template <typename T1, typename T2>
-void TestGTestRemoveConst() {
-  CompileAssertTypesEqual<T1, GTEST_REMOVE_CONST_(T2)>();
-}
-
-TEST(RemoveConstTest, MacroVersion) {
-  TestGTestRemoveConst<int, int>();
-  TestGTestRemoveConst<double&, double&>();
-  TestGTestRemoveConst<char, const char>();
-}
-
-
-
 template <typename T1, typename T2>
 void TestGTestRemoveReferenceAndConst() {
-  CompileAssertTypesEqual<T1, GTEST_REMOVE_REFERENCE_AND_CONST_(T2)>();
+  static_assert(std::is_same<T1, GTEST_REMOVE_REFERENCE_AND_CONST_(T2)>::value,
+                "GTEST_REMOVE_REFERENCE_AND_CONST_ failed.");
 }
 
 TEST(RemoveReferenceToConstTest, Works) {
@@ -7471,34 +6985,11 @@ TEST(RemoveReferenceToConstTest, Works) {
 }
 
 
-TEST(AddReferenceTest, DoesNotAffectReferenceType) {
-  CompileAssertTypesEqual<int&, AddReference<int&>::type>();
-  CompileAssertTypesEqual<const char&, AddReference<const char&>::type>();
-}
-
-
-TEST(AddReferenceTest, AddsReference) {
-  CompileAssertTypesEqual<int&, AddReference<int>::type>();
-  CompileAssertTypesEqual<const char&, AddReference<const char>::type>();
-}
-
-
-
-template <typename T1, typename T2>
-void TestGTestAddReference() {
-  CompileAssertTypesEqual<T1, GTEST_ADD_REFERENCE_(T2)>();
-}
-
-TEST(AddReferenceTest, MacroVersion) {
-  TestGTestAddReference<int&, int>();
-  TestGTestAddReference<const char&, const char&>();
-}
-
-
 
 template <typename T1, typename T2>
 void TestGTestReferenceToConst() {
-  CompileAssertTypesEqual<T1, GTEST_REFERENCE_TO_CONST_(T2)>();
+  static_assert(std::is_same<T1, GTEST_REFERENCE_TO_CONST_(T2)>::value,
+                "GTEST_REFERENCE_TO_CONST_ failed.");
 }
 
 TEST(GTestReferenceToConstTest, Works) {
@@ -7506,36 +6997,6 @@ TEST(GTestReferenceToConstTest, Works) {
   TestGTestReferenceToConst<const int&, const int>();
   TestGTestReferenceToConst<const double&, double>();
   TestGTestReferenceToConst<const std::string&, const std::string&>();
-}
-
-
-TEST(ImplicitlyConvertibleTest, ValueIsCompileTimeConstant) {
-  GTEST_COMPILE_ASSERT_((ImplicitlyConvertible<int, int>::value), const_true);
-  GTEST_COMPILE_ASSERT_((!ImplicitlyConvertible<void*, int*>::value),
-                        const_false);
-}
-
-
-
-TEST(ImplicitlyConvertibleTest, ValueIsTrueWhenConvertible) {
-  EXPECT_TRUE((ImplicitlyConvertible<int, double>::value));
-  EXPECT_TRUE((ImplicitlyConvertible<double, int>::value));
-  EXPECT_TRUE((ImplicitlyConvertible<int*, void*>::value));
-  EXPECT_TRUE((ImplicitlyConvertible<int*, const int*>::value));
-  EXPECT_TRUE((ImplicitlyConvertible<ConversionHelperDerived&,
-                                     const ConversionHelperBase&>::value));
-  EXPECT_TRUE((ImplicitlyConvertible<const ConversionHelperBase,
-                                     ConversionHelperBase>::value));
-}
-
-
-
-TEST(ImplicitlyConvertibleTest, ValueIsFalseWhenNotConvertible) {
-  EXPECT_FALSE((ImplicitlyConvertible<double, int*>::value));
-  EXPECT_FALSE((ImplicitlyConvertible<void*, int*>::value));
-  EXPECT_FALSE((ImplicitlyConvertible<const int*, int*>::value));
-  EXPECT_FALSE((ImplicitlyConvertible<ConversionHelperBase&,
-                                      ConversionHelperDerived&>::value));
 }
 
 
@@ -7549,13 +7010,11 @@ TEST(IsContainerTestTest, WorksForNonContainer) {
 }
 
 TEST(IsContainerTestTest, WorksForContainer) {
+  EXPECT_EQ(sizeof(IsContainer), sizeof(IsContainerTest<std::vector<bool>>(0)));
   EXPECT_EQ(sizeof(IsContainer),
-            sizeof(IsContainerTest<std::vector<bool> >(0)));
-  EXPECT_EQ(sizeof(IsContainer),
-            sizeof(IsContainerTest<std::map<int, double> >(0)));
+            sizeof(IsContainerTest<std::map<int, double>>(0)));
 }
 
-#if GTEST_LANG_CXX11
 struct ConstOnlyContainerWithPointerIterator {
   using const_iterator = int*;
   const_iterator begin() const;
@@ -7577,7 +7036,6 @@ TEST(IsContainerTestTest, ConstOnlyContainer) {
   EXPECT_EQ(sizeof(IsContainer),
             sizeof(IsContainerTest<ConstOnlyContainerWithClassIterator>(0)));
 }
-#endif  
 
 
 struct AHashTable {
@@ -7590,13 +7048,8 @@ struct NotReallyAHashTable {
 TEST(IsHashTable, Basic) {
   EXPECT_TRUE(testing::internal::IsHashTable<AHashTable>::value);
   EXPECT_FALSE(testing::internal::IsHashTable<NotReallyAHashTable>::value);
-#if GTEST_LANG_CXX11
   EXPECT_FALSE(testing::internal::IsHashTable<std::vector<int>>::value);
   EXPECT_TRUE(testing::internal::IsHashTable<std::unordered_set<int>>::value);
-#endif  
-#if GTEST_HAS_HASH_SET_
-  EXPECT_TRUE(testing::internal::IsHashTable<__gnu_cxx::hash_set<int>>::value);
-#endif  
 }
 
 
@@ -7608,8 +7061,8 @@ TEST(ArrayEqTest, WorksForDegeneratedArrays) {
 
 TEST(ArrayEqTest, WorksForOneDimensionalArrays) {
   
-  const int a[] = { 0, 1 };
-  long b[] = { 0, 1 };
+  const int a[] = {0, 1};
+  long b[] = {0, 1};
   EXPECT_TRUE(ArrayEq(a, b));
   EXPECT_TRUE(ArrayEq(a, 2, b));
 
@@ -7619,9 +7072,9 @@ TEST(ArrayEqTest, WorksForOneDimensionalArrays) {
 }
 
 TEST(ArrayEqTest, WorksForTwoDimensionalArrays) {
-  const char a[][3] = { "hi", "lo" };
-  const char b[][3] = { "hi", "lo" };
-  const char c[][3] = { "hi", "li" };
+  const char a[][3] = {"hi", "lo"};
+  const char b[][3] = {"hi", "lo"};
+  const char c[][3] = {"hi", "li"};
 
   EXPECT_TRUE(ArrayEq(a, b));
   EXPECT_TRUE(ArrayEq(a, 2, b));
@@ -7639,11 +7092,11 @@ TEST(ArrayAwareFindTest, WorksForOneDimensionalArray) {
 }
 
 TEST(ArrayAwareFindTest, WorksForTwoDimensionalArray) {
-  int a[][2] = { { 0, 1 }, { 2, 3 }, { 4, 5 } };
-  const int b[2] = { 2, 3 };
+  int a[][2] = {{0, 1}, {2, 3}, {4, 5}};
+  const int b[2] = {2, 3};
   EXPECT_EQ(a + 1, ArrayAwareFind(a, a + 3, b));
 
-  const int c[2] = { 6, 7 };
+  const int c[2] = {6, 7};
   EXPECT_EQ(a + 3, ArrayAwareFind(a, a + 3, c));
 }
 
@@ -7669,7 +7122,7 @@ TEST(CopyArrayTest, WorksForOneDimensionalArrays) {
 }
 
 TEST(CopyArrayTest, WorksForTwoDimensionalArrays) {
-  const int a[2][3] = { { 0, 1, 2 }, { 3, 4, 5 } };
+  const int a[2][3] = {{0, 1, 2}, {3, 4, 5}};
   int b[2][3];
 #ifndef __BORLANDC__  
   CopyArray(a, &b);
@@ -7684,7 +7137,7 @@ TEST(CopyArrayTest, WorksForTwoDimensionalArrays) {
 
 
 TEST(NativeArrayTest, ConstructorFromArrayWorks) {
-  const int a[3] = { 0, 1, 2 };
+  const int a[3] = {0, 1, 2};
   NativeArray<int> na(a, 3, RelationToSourceReference());
   EXPECT_EQ(3U, na.size());
   EXPECT_EQ(a, na.begin());
@@ -7714,7 +7167,7 @@ TEST(NativeArrayTest, TypeMembersAreCorrect) {
 }
 
 TEST(NativeArrayTest, MethodsWork) {
-  const int a[3] = { 0, 1, 2 };
+  const int a[3] = {0, 1, 2};
   NativeArray<int> na(a, 3, RelationToSourceCopy());
   ASSERT_EQ(3U, na.size());
   EXPECT_EQ(3, na.end() - na.begin());
@@ -7733,17 +7186,95 @@ TEST(NativeArrayTest, MethodsWork) {
   NativeArray<int> na2(a, 3, RelationToSourceReference());
   EXPECT_TRUE(na == na2);
 
-  const int b1[3] = { 0, 1, 1 };
-  const int b2[4] = { 0, 1, 2, 3 };
+  const int b1[3] = {0, 1, 1};
+  const int b2[4] = {0, 1, 2, 3};
   EXPECT_FALSE(na == NativeArray<int>(b1, 3, RelationToSourceReference()));
   EXPECT_FALSE(na == NativeArray<int>(b2, 4, RelationToSourceCopy()));
 }
 
 TEST(NativeArrayTest, WorksForTwoDimensionalArray) {
-  const char a[2][3] = { "hi", "lo" };
+  const char a[2][3] = {"hi", "lo"};
   NativeArray<char[3]> na(a, 2, RelationToSourceReference());
   ASSERT_EQ(2U, na.size());
   EXPECT_EQ(a, na.begin());
+}
+
+
+TEST(IndexSequence, MakeIndexSequence) {
+  using testing::internal::IndexSequence;
+  using testing::internal::MakeIndexSequence;
+  EXPECT_TRUE(
+      (std::is_same<IndexSequence<>, MakeIndexSequence<0>::type>::value));
+  EXPECT_TRUE(
+      (std::is_same<IndexSequence<0>, MakeIndexSequence<1>::type>::value));
+  EXPECT_TRUE(
+      (std::is_same<IndexSequence<0, 1>, MakeIndexSequence<2>::type>::value));
+  EXPECT_TRUE((
+      std::is_same<IndexSequence<0, 1, 2>, MakeIndexSequence<3>::type>::value));
+  EXPECT_TRUE(
+      (std::is_base_of<IndexSequence<0, 1, 2>, MakeIndexSequence<3>>::value));
+}
+
+
+TEST(ElemFromList, Basic) {
+  using testing::internal::ElemFromList;
+  using Idx = testing::internal::MakeIndexSequence<3>::type;
+  EXPECT_TRUE((
+      std::is_same<int, ElemFromList<0, Idx, int, double, char>::type>::value));
+  EXPECT_TRUE(
+      (std::is_same<double,
+                    ElemFromList<1, Idx, int, double, char>::type>::value));
+  EXPECT_TRUE(
+      (std::is_same<char,
+                    ElemFromList<2, Idx, int, double, char>::type>::value));
+  EXPECT_TRUE(
+      (std::is_same<
+          char, ElemFromList<7, testing::internal::MakeIndexSequence<12>::type,
+                             int, int, int, int, int, int, int, char, int, int,
+                             int, int>::type>::value));
+}
+
+
+TEST(FlatTuple, Basic) {
+  using testing::internal::FlatTuple;
+
+  FlatTuple<int, double, const char*> tuple = {};
+  EXPECT_EQ(0, tuple.Get<0>());
+  EXPECT_EQ(0.0, tuple.Get<1>());
+  EXPECT_EQ(nullptr, tuple.Get<2>());
+
+  tuple = FlatTuple<int, double, const char*>(7, 3.2, "Foo");
+  EXPECT_EQ(7, tuple.Get<0>());
+  EXPECT_EQ(3.2, tuple.Get<1>());
+  EXPECT_EQ(std::string("Foo"), tuple.Get<2>());
+
+  tuple.Get<1>() = 5.1;
+  EXPECT_EQ(5.1, tuple.Get<1>());
+}
+
+TEST(FlatTuple, ManyTypes) {
+  using testing::internal::FlatTuple;
+
+
+
+
+#define GTEST_FLAT_TUPLE_INT8 int, int, int, int, int, int, int, int,
+#define GTEST_FLAT_TUPLE_INT16 GTEST_FLAT_TUPLE_INT8 GTEST_FLAT_TUPLE_INT8
+#define GTEST_FLAT_TUPLE_INT32 GTEST_FLAT_TUPLE_INT16 GTEST_FLAT_TUPLE_INT16
+#define GTEST_FLAT_TUPLE_INT64 GTEST_FLAT_TUPLE_INT32 GTEST_FLAT_TUPLE_INT32
+#define GTEST_FLAT_TUPLE_INT128 GTEST_FLAT_TUPLE_INT64 GTEST_FLAT_TUPLE_INT64
+#define GTEST_FLAT_TUPLE_INT256 GTEST_FLAT_TUPLE_INT128 GTEST_FLAT_TUPLE_INT128
+
+  
+  
+  FlatTuple<GTEST_FLAT_TUPLE_INT256 int> tuple;
+
+  tuple.Get<0>() = 7;
+  tuple.Get<99>() = 17;
+  tuple.Get<256>() = 1000;
+  EXPECT_EQ(7, tuple.Get<0>());
+  EXPECT_EQ(17, tuple.Get<99>());
+  EXPECT_EQ(1000, tuple.Get<256>());
 }
 
 
@@ -7776,14 +7307,14 @@ TEST(SkipPrefixTest, DoesNotSkipWhenPrefixDoesNotMatch) {
 
 class AdHocTestResultTest : public testing::Test {
  protected:
-  static void SetUpTestCase() {
-    FAIL() << "A failure happened inside SetUpTestCase().";
+  static void SetUpTestSuite() {
+    FAIL() << "A failure happened inside SetUpTestSuite().";
   }
 };
 
-TEST_F(AdHocTestResultTest, AdHocTestResultForTestCaseShowsFailure) {
+TEST_F(AdHocTestResultTest, AdHocTestResultForTestSuiteShowsFailure) {
   const testing::TestResult& test_result = testing::UnitTest::GetInstance()
-                                               ->current_test_case()
+                                               ->current_test_suite()
                                                ->ad_hoc_test_result();
   EXPECT_TRUE(test_result.Failed());
 }
@@ -7792,4 +7323,31 @@ TEST_F(AdHocTestResultTest, AdHocTestResultTestForUnitTestDoesNotShowFailure) {
   const testing::TestResult& test_result =
       testing::UnitTest::GetInstance()->ad_hoc_test_result();
   EXPECT_FALSE(test_result.Failed());
+}
+
+class DynamicUnitTestFixture : public testing::Test {};
+
+class DynamicTest : public DynamicUnitTestFixture {
+  void TestBody() override { EXPECT_TRUE(true); }
+};
+
+auto* dynamic_test = testing::RegisterTest(
+    "DynamicUnitTestFixture", "DynamicTest", "TYPE", "VALUE", __FILE__,
+    __LINE__, []() -> DynamicUnitTestFixture* { return new DynamicTest; });
+
+TEST(RegisterTest, WasRegistered) {
+  auto* unittest = testing::UnitTest::GetInstance();
+  for (int i = 0; i < unittest->total_test_suite_count(); ++i) {
+    auto* tests = unittest->GetTestSuite(i);
+    if (tests->name() != std::string("DynamicUnitTestFixture")) continue;
+    for (int j = 0; j < tests->total_test_count(); ++j) {
+      if (tests->GetTestInfo(j)->name() != std::string("DynamicTest")) continue;
+      
+      EXPECT_STREQ(tests->GetTestInfo(j)->value_param(), "VALUE");
+      EXPECT_STREQ(tests->GetTestInfo(j)->type_param(), "TYPE");
+      return;
+    }
+  }
+
+  FAIL() << "Didn't find the test!";
 }

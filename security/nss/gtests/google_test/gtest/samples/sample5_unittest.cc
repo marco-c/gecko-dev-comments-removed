@@ -42,7 +42,6 @@
 
 
 
-
 #include <limits.h>
 #include <time.h>
 #include "gtest/gtest.h"
@@ -63,15 +62,13 @@ class QuickTest : public testing::Test {
  protected:
   
   
-  virtual void SetUp() {
-    start_time_ = time(NULL);
-  }
+  void SetUp() override { start_time_ = time(nullptr); }
 
   
   
-  virtual void TearDown() {
+  void TearDown() override {
     
-    const time_t end_time = time(NULL);
+    const time_t end_time = time(nullptr);
 
     
     
@@ -86,12 +83,10 @@ class QuickTest : public testing::Test {
 
 
 
-
 class IntegerFunctionTest : public QuickTest {
   
   
 };
-
 
 
 
@@ -111,7 +106,6 @@ TEST_F(IntegerFunctionTest, Factorial) {
   EXPECT_EQ(6, Factorial(3));
   EXPECT_EQ(40320, Factorial(8));
 }
-
 
 
 TEST_F(IntegerFunctionTest, IsPrime) {
@@ -139,10 +133,9 @@ TEST_F(IntegerFunctionTest, IsPrime) {
 
 
 
-
 class QueueTest : public QuickTest {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     
     QuickTest::SetUp();
 
@@ -168,24 +161,21 @@ class QueueTest : public QuickTest {
 
 
 
-
-TEST_F(QueueTest, DefaultConstructor) {
-  EXPECT_EQ(0u, q0_.Size());
-}
+TEST_F(QueueTest, DefaultConstructor) { EXPECT_EQ(0u, q0_.Size()); }
 
 
 TEST_F(QueueTest, Dequeue) {
   int* n = q0_.Dequeue();
-  EXPECT_TRUE(n == NULL);
+  EXPECT_TRUE(n == nullptr);
 
   n = q1_.Dequeue();
-  EXPECT_TRUE(n != NULL);
+  EXPECT_TRUE(n != nullptr);
   EXPECT_EQ(1, *n);
   EXPECT_EQ(0u, q1_.Size());
   delete n;
 
   n = q2_.Dequeue();
-  EXPECT_TRUE(n != NULL);
+  EXPECT_TRUE(n != nullptr);
   EXPECT_EQ(2, *n);
   EXPECT_EQ(1u, q2_.Size());
   delete n;

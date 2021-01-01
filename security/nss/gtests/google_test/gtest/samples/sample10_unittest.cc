@@ -29,7 +29,6 @@
 
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -74,12 +73,12 @@ int Water::allocated_ = 0;
 class LeakChecker : public EmptyTestEventListener {
  private:
   
-  virtual void OnTestStart(const TestInfo& ) {
+  void OnTestStart(const TestInfo& ) override {
     initially_allocated_ = Water::allocated();
   }
 
   
-  virtual void OnTestEnd(const TestInfo& ) {
+  void OnTestEnd(const TestInfo& ) override {
     int difference = Water::allocated() - initially_allocated_;
 
     
@@ -100,18 +99,19 @@ TEST(ListenersTest, DoesNotLeak) {
 
 TEST(ListenersTest, LeaksWater) {
   Water* water = new Water;
-  EXPECT_TRUE(water != NULL);
+  EXPECT_TRUE(water != nullptr);
 }
 }  
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   InitGoogleTest(&argc, argv);
 
   bool check_for_leaks = false;
-  if (argc > 1 && strcmp(argv[1], "--check_for_leaks") == 0 )
+  if (argc > 1 && strcmp(argv[1], "--check_for_leaks") == 0)
     check_for_leaks = true;
   else
-    printf("%s\n", "Run this program with --check_for_leaks to enable "
+    printf("%s\n",
+           "Run this program with --check_for_leaks to enable "
            "custom leak checking in the tests.");
 
   

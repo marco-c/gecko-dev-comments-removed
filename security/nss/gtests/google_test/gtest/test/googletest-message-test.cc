@@ -69,8 +69,9 @@ TEST(MessageTest, StreamsFloat) {
 
 
 TEST(MessageTest, StreamsDouble) {
-  const std::string s = (Message() << 1260570880.4555497 << " "
-                                  << 1260572265.1954534).GetString();
+  const std::string s =
+      (Message() << 1260570880.4555497 << " " << 1260572265.1954534)
+          .GetString();
   
   EXPECT_PRED_FORMAT2(testing::IsSubstring, "1260570880.45", s.c_str());
   EXPECT_PRED_FORMAT2(testing::IsSubstring, " 1260572265.19", s.c_str());
@@ -85,7 +86,7 @@ TEST(MessageTest, StreamsPointer) {
 
 
 TEST(MessageTest, StreamsNullPointer) {
-  int* p = NULL;
+  int* p = nullptr;
   EXPECT_EQ("(null)", (Message() << p).GetString());
 }
 
@@ -96,7 +97,7 @@ TEST(MessageTest, StreamsCString) {
 
 
 TEST(MessageTest, StreamsNullCString) {
-  char* p = NULL;
+  char* p = nullptr;
   EXPECT_EQ("(null)", (Message() << p).GetString());
 }
 
@@ -108,8 +109,7 @@ TEST(MessageTest, StreamsString) {
 
 
 TEST(MessageTest, StreamsStringWithEmbeddedNUL) {
-  const char char_array_with_nul[] =
-      "Here's a NUL\0 and some more string";
+  const char char_array_with_nul[] = "Here's a NUL\0 and some more string";
   const ::std::string string_with_nul(char_array_with_nul,
                                       sizeof(char_array_with_nul) - 1);
   EXPECT_EQ("Here's a NUL\\0 and some more string",
@@ -129,10 +129,11 @@ TEST(MessageTest, StreamsInt) {
 
 
 TEST(MessageTest, StreamsBasicIoManip) {
-  EXPECT_EQ("Line 1.\nA NUL char \\0 in line 2.",
-               (Message() << "Line 1." << std::endl
-                         << "A NUL char " << std::ends << std::flush
-                         << " in line 2.").GetString());
+  EXPECT_EQ(
+      "Line 1.\nA NUL char \\0 in line 2.",
+      (Message() << "Line 1." << std::endl
+                 << "A NUL char " << std::ends << std::flush << " in line 2.")
+          .GetString());
 }
 
 

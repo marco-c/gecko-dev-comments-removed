@@ -78,18 +78,22 @@ TEST_F(RSATest, DecryptBlockTestErrors) {
 
   uint8_t in[256] = {0};
   
+  
+  
   rv = RSA_DecryptBlock(key.get(), out, &outputLen, maxOutputLen, in,
                         sizeof(in));
-  EXPECT_EQ(SECFailure, rv);
+  EXPECT_EQ(SECSuccess, rv);
   
-  EXPECT_EQ(maxOutputLen, outputLen);
+  EXPECT_LE(outputLen, 245u);
 
+  
+  
   
   uint8_t out_long[260] = {0};
   maxOutputLen = sizeof(out_long);
   rv = RSA_DecryptBlock(key.get(), out_long, &outputLen, maxOutputLen, in,
                         sizeof(in));
-  EXPECT_EQ(SECFailure, rv);
+  EXPECT_EQ(SECSuccess, rv);
   
   EXPECT_LE(outputLen, 245u);
   

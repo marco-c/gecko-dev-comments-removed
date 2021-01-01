@@ -35,32 +35,33 @@
 #define GTEST_SRC_GTEST_INTERNAL_INL_H_
 
 #ifndef _WIN32_WCE
-# include <errno.h>
+#include <errno.h>
 #endif  
 #include <stddef.h>
 #include <stdlib.h>  
 #include <string.h>  
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "gtest/internal/gtest-port.h"
 
 #if GTEST_CAN_STREAM_RESULTS_
-# include <arpa/inet.h>  
-# include <netdb.h>  
+#include <arpa/inet.h>  
+#include <netdb.h>      
 #endif
 
 #if GTEST_OS_WINDOWS
-# include <windows.h>  
-#endif  
+#include <windows.h>  
+#endif                
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
 
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
-)
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(
+    4251 )
 
 namespace testing {
 
@@ -121,21 +122,21 @@ GTEST_API_ std::string FormatEpochTimeInMillisAsIso8601(TimeInMillis ms);
 
 
 
-GTEST_API_ bool ParseInt32Flag(
-    const char* str, const char* flag, Int32* value);
+GTEST_API_ bool ParseInt32Flag(const char* str, const char* flag, Int32* value);
 
 
 
 inline int GetRandomSeedFromFlag(Int32 random_seed_flag) {
-  const unsigned int raw_seed = (random_seed_flag == 0) ?
-      static_cast<unsigned int>(GetTimeInMillis()) :
-      static_cast<unsigned int>(random_seed_flag);
+  const unsigned int raw_seed =
+      (random_seed_flag == 0) ? static_cast<unsigned int>(GetTimeInMillis())
+                              : static_cast<unsigned int>(random_seed_flag);
 
   
   
   const int normalized_seed =
       static_cast<int>((raw_seed - 1U) %
-                       static_cast<unsigned int>(kMaxRandomSeed)) + 1;
+                       static_cast<unsigned int>(kMaxRandomSeed)) +
+      1;
   return normalized_seed;
 }
 
@@ -268,8 +269,8 @@ GTEST_API_ Int32 Int32FromEnvOrDie(const char* env_var, Int32 default_val);
 
 
 
-GTEST_API_ bool ShouldRunTestOnShard(
-    int total_shards, int shard_index, int test_id);
+GTEST_API_ bool ShouldRunTestOnShard(int total_shards, int shard_index,
+                                     int test_id);
 
 
 
@@ -281,8 +282,7 @@ inline int CountIf(const Container& c, Predicate predicate) {
   
   int count = 0;
   for (typename Container::const_iterator it = c.begin(); it != c.end(); ++it) {
-    if (predicate(*it))
-      ++count;
+    if (predicate(*it)) ++count;
   }
   return count;
 }
@@ -297,7 +297,8 @@ void ForEach(const Container& c, Functor functor) {
 
 template <typename E>
 inline E GetElementOr(const std::vector<E>& v, int i, E default_value) {
-  return (i < 0 || i >= static_cast<int>(v.size())) ? default_value : v[i];
+  return (i < 0 || i >= static_cast<int>(v.size())) ? default_value
+                                                    : v[static_cast<size_t>(i)];
 }
 
 
@@ -311,16 +312,19 @@ void ShuffleRange(internal::Random* random, int begin, int end,
   GTEST_CHECK_(0 <= begin && begin <= size)
       << "Invalid shuffle range start " << begin << ": must be in range [0, "
       << size << "].";
-  GTEST_CHECK_(begin <= end && end <= size)
-      << "Invalid shuffle range finish " << end << ": must be in range ["
-      << begin << ", " << size << "].";
+  GTEST_CHECK_(begin <= end && end <= size) << "Invalid shuffle range finish "
+                                            << end << ": must be in range ["
+                                            << begin << ", " << size << "].";
 
   
   
   for (int range_width = end - begin; range_width >= 2; range_width--) {
     const int last_in_range = begin + range_width - 1;
-    const int selected = begin + random->Generate(range_width);
-    std::swap((*v)[selected], (*v)[last_in_range]);
+    const int selected =
+        begin +
+        static_cast<int>(random->Generate(static_cast<UInt32>(range_width)));
+    std::swap((*v)[static_cast<size_t>(selected)],
+              (*v)[static_cast<size_t>(last_in_range)]);
   }
 }
 
@@ -385,12 +389,12 @@ class GTEST_API_ UnitTestOptions {
   
   
   
-  static bool PatternMatchesString(const char *pattern, const char *str);
+  static bool PatternMatchesString(const char* pattern, const char* str);
 
   
   
-  static bool FilterMatchesTest(const std::string &test_case_name,
-                                const std::string &test_name);
+  static bool FilterMatchesTest(const std::string& test_suite_name,
+                                const std::string& test_name);
 
 #if GTEST_OS_WINDOWS
   
@@ -442,8 +446,8 @@ class OsStackTraceGetter : public OsStackTraceGetterInterface {
  public:
   OsStackTraceGetter() {}
 
-  virtual std::string CurrentStackTrace(int max_depth, int skip_count);
-  virtual void UponLeavingGTest();
+  std::string CurrentStackTrace(int max_depth, int skip_count) override;
+  void UponLeavingGTest() override;
 
  private:
 #if GTEST_HAS_ABSL
@@ -469,12 +473,12 @@ struct TraceInfo {
 
 
 class DefaultGlobalTestPartResultReporter
-  : public TestPartResultReporterInterface {
+    : public TestPartResultReporterInterface {
  public:
   explicit DefaultGlobalTestPartResultReporter(UnitTestImpl* unit_test);
   
   
-  virtual void ReportTestPartResult(const TestPartResult& result);
+  void ReportTestPartResult(const TestPartResult& result) override;
 
  private:
   UnitTestImpl* const unit_test_;
@@ -490,7 +494,7 @@ class DefaultPerThreadTestPartResultReporter
   explicit DefaultPerThreadTestPartResultReporter(UnitTestImpl* unit_test);
   
   
-  virtual void ReportTestPartResult(const TestPartResult& result);
+  void ReportTestPartResult(const TestPartResult& result) override;
 
  private:
   UnitTestImpl* const unit_test_;
@@ -529,20 +533,23 @@ class GTEST_API_ UnitTestImpl {
       TestPartResultReporterInterface* reporter);
 
   
-  int successful_test_case_count() const;
+  int successful_test_suite_count() const;
 
   
-  int failed_test_case_count() const;
+  int failed_test_suite_count() const;
 
   
-  int total_test_case_count() const;
+  int total_test_suite_count() const;
 
   
   
-  int test_case_to_run_count() const;
+  int test_suite_to_run_count() const;
 
   
   int successful_test_count() const;
+
+  
+  int skipped_test_count() const;
 
   
   int failed_test_count() const;
@@ -570,26 +577,32 @@ class GTEST_API_ UnitTestImpl {
   TimeInMillis elapsed_time() const { return elapsed_time_; }
 
   
+  
   bool Passed() const { return !Failed(); }
 
   
   
   bool Failed() const {
-    return failed_test_case_count() > 0 || ad_hoc_test_result()->Failed();
+    return failed_test_suite_count() > 0 || ad_hoc_test_result()->Failed();
   }
 
   
   
-  const TestCase* GetTestCase(int i) const {
-    const int index = GetElementOr(test_case_indices_, i, -1);
-    return index < 0 ? NULL : test_cases_[i];
+  const TestSuite* GetTestSuite(int i) const {
+    const int index = GetElementOr(test_suite_indices_, i, -1);
+    return index < 0 ? nullptr : test_suites_[static_cast<size_t>(i)];
   }
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  const TestCase* GetTestCase(int i) const { return GetTestSuite(i); }
+#endif  
 
   
   
-  TestCase* GetMutableTestCase(int i) {
-    const int index = GetElementOr(test_case_indices_, i, -1);
-    return index < 0 ? NULL : test_cases_[index];
+  TestSuite* GetMutableSuiteCase(int i) {
+    const int index = GetElementOr(test_suite_indices_, i, -1);
+    return index < 0 ? nullptr : test_suites_[static_cast<size_t>(index)];
   }
 
   
@@ -636,10 +649,18 @@ class GTEST_API_ UnitTestImpl {
   
   
   
-  TestCase* GetTestCase(const char* test_case_name,
-                        const char* type_param,
-                        Test::SetUpTestCaseFunc set_up_tc,
-                        Test::TearDownTestCaseFunc tear_down_tc);
+  TestSuite* GetTestSuite(const char* test_suite_name, const char* type_param,
+                          internal::SetUpTestSuiteFunc set_up_tc,
+                          internal::TearDownTestSuiteFunc tear_down_tc);
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  TestCase* GetTestCase(const char* test_case_name, const char* type_param,
+                        internal::SetUpTestSuiteFunc set_up_tc,
+                        internal::TearDownTestSuiteFunc tear_down_tc) {
+    return GetTestSuite(test_case_name, type_param, set_up_tc, tear_down_tc);
+  }
+#endif  
 
   
   
@@ -648,8 +669,8 @@ class GTEST_API_ UnitTestImpl {
   
   
   
-  void AddTestInfo(Test::SetUpTestCaseFunc set_up_tc,
-                   Test::TearDownTestCaseFunc tear_down_tc,
+  void AddTestInfo(internal::SetUpTestSuiteFunc set_up_tc,
+                   internal::TearDownTestSuiteFunc tear_down_tc,
                    TestInfo* test_info) {
     
     
@@ -664,21 +685,20 @@ class GTEST_API_ UnitTestImpl {
           << "Failed to get the current working directory.";
     }
 
-    GetTestCase(test_info->test_case_name(),
-                test_info->type_param(),
-                set_up_tc,
-                tear_down_tc)->AddTestInfo(test_info);
+    GetTestSuite(test_info->test_suite_name(), test_info->type_param(),
+                 set_up_tc, tear_down_tc)
+        ->AddTestInfo(test_info);
   }
 
   
   
-  internal::ParameterizedTestCaseRegistry& parameterized_test_registry() {
+  internal::ParameterizedTestSuiteRegistry& parameterized_test_registry() {
     return parameterized_test_registry_;
   }
 
   
-  void set_current_test_case(TestCase* a_current_test_case) {
-    current_test_case_ = a_current_test_case;
+  void set_current_test_suite(TestSuite* a_current_test_suite) {
+    current_test_suite_ = a_current_test_suite;
   }
 
   
@@ -704,13 +724,11 @@ class GTEST_API_ UnitTestImpl {
 
   
   void ClearNonAdHocTestResult() {
-    ForEach(test_cases_, TestCase::ClearTestCaseResult);
+    ForEach(test_suites_, TestSuite::ClearTestSuiteResult);
   }
 
   
-  void ClearAdHocTestResult() {
-    ad_hoc_test_result_.Clear();
-  }
+  void ClearAdHocTestResult() { ad_hoc_test_result_.Clear(); }
 
   
   
@@ -718,10 +736,7 @@ class GTEST_API_ UnitTestImpl {
   
   void RecordProperty(const TestProperty& test_property);
 
-  enum ReactionToSharding {
-    HONOR_SHARDING_PROTOCOL,
-    IGNORE_SHARDING_PROTOCOL
-  };
+  enum ReactionToSharding { HONOR_SHARDING_PROTOCOL, IGNORE_SHARDING_PROTOCOL };
 
   
   
@@ -734,7 +749,7 @@ class GTEST_API_ UnitTestImpl {
   
   void ListTestsMatchingFilter();
 
-  const TestCase* current_test_case() const { return current_test_case_; }
+  const TestSuite* current_test_suite() const { return current_test_suite_; }
   TestInfo* current_test_info() { return current_test_info_; }
   const TestInfo* current_test_info() const { return current_test_info_; }
 
@@ -841,29 +856,29 @@ class GTEST_API_ UnitTestImpl {
 
   
   
-  std::vector<TestCase*> test_cases_;
+  std::vector<TestSuite*> test_suites_;
 
   
   
   
   
-  std::vector<int> test_case_indices_;
+  std::vector<int> test_suite_indices_;
 
   
   
-  internal::ParameterizedTestCaseRegistry parameterized_test_registry_;
+  internal::ParameterizedTestSuiteRegistry parameterized_test_registry_;
 
   
   bool parameterized_tests_registered_;
 
   
-  int last_death_test_case_;
+  int last_death_test_suite_;
 
   
   
   
   
-  TestCase* current_test_case_;
+  TestSuite* current_test_suite_;
 
   
   
@@ -910,8 +925,8 @@ class GTEST_API_ UnitTestImpl {
 #if GTEST_HAS_DEATH_TEST
   
   
-  internal::scoped_ptr<InternalRunDeathTestFlag> internal_run_death_test_flag_;
-  internal::scoped_ptr<internal::DeathTestFactory> death_test_factory_;
+  std::unique_ptr<InternalRunDeathTestFlag> internal_run_death_test_flag_;
+  std::unique_ptr<internal::DeathTestFactory> death_test_factory_;
 #endif  
 
   
@@ -944,8 +959,9 @@ GTEST_API_ bool IsValidEscape(char ch);
 GTEST_API_ bool AtomMatchesChar(bool escaped, char pattern, char ch);
 GTEST_API_ bool ValidateRegex(const char* regex);
 GTEST_API_ bool MatchRegexAtHead(const char* regex, const char* str);
-GTEST_API_ bool MatchRepetitionAndRegexAtHead(
-    bool escaped, char ch, char repeat, const char* regex, const char* str);
+GTEST_API_ bool MatchRepetitionAndRegexAtHead(bool escaped, char ch,
+                                              char repeat, const char* regex,
+                                              const char* str);
 GTEST_API_ bool MatchRegexAnywhere(const char* regex, const char* str);
 
 #endif  
@@ -976,26 +992,24 @@ bool ParseNaturalNumber(const ::std::string& str, Integer* number) {
   errno = 0;
 
   char* end;
-  
-  
 
-# if GTEST_OS_WINDOWS && !defined(__GNUC__)
+
+
+#if GTEST_OS_WINDOWS && !defined(__GNUC__)
 
   
   typedef unsigned __int64 BiggestConvertible;
   const BiggestConvertible parsed = _strtoui64(str.c_str(), &end, 10);
 
-# else
+#else
 
   typedef unsigned long long BiggestConvertible;  
   const BiggestConvertible parsed = strtoull(str.c_str(), &end, 10);
 
-# endif  
+#endif  
 
   const bool parse_success = *end == '\0' && errno == 0;
 
-  
-  
   GTEST_CHECK_(sizeof(Integer) <= sizeof(parsed));
 
   const Integer result = static_cast<Integer>(parsed);
@@ -1059,21 +1073,19 @@ class StreamingListener : public EmptyTestEventListener {
       MakeConnection();
     }
 
-    virtual ~SocketWriter() {
-      if (sockfd_ != -1)
-        CloseConnection();
+    ~SocketWriter() override {
+      if (sockfd_ != -1) CloseConnection();
     }
 
     
-    virtual void Send(const std::string& message) {
+    void Send(const std::string& message) override {
       GTEST_CHECK_(sockfd_ != -1)
           << "Send() can be called only when there is a connection.";
 
-      const int len = static_cast<int>(message.length());
-      if (write(sockfd_, message.c_str(), len) != len) {
-        GTEST_LOG_(WARNING)
-            << "stream_result_to: failed to stream to "
-            << host_name_ << ":" << port_num_;
+      const auto len = static_cast<size_t>(message.length());
+      if (write(sockfd_, message.c_str(), len) != static_cast<ssize_t>(len)) {
+        GTEST_LOG_(WARNING) << "stream_result_to: failed to stream to "
+                            << host_name_ << ":" << port_num_;
       }
     }
 
@@ -1082,7 +1094,7 @@ class StreamingListener : public EmptyTestEventListener {
     void MakeConnection();
 
     
-    void CloseConnection() {
+    void CloseConnection() override {
       GTEST_CHECK_(sockfd_ != -1)
           << "CloseConnection() can be called only when there is a connection.";
 
@@ -1106,13 +1118,15 @@ class StreamingListener : public EmptyTestEventListener {
   }
 
   explicit StreamingListener(AbstractSocketWriter* socket_writer)
-      : socket_writer_(socket_writer) { Start(); }
+      : socket_writer_(socket_writer) {
+    Start();
+  }
 
-  void OnTestProgramStart(const UnitTest& ) {
+  void OnTestProgramStart(const UnitTest& ) override {
     SendLn("event=TestProgramStart");
   }
 
-  void OnTestProgramEnd(const UnitTest& unit_test) {
+  void OnTestProgramEnd(const UnitTest& unit_test) override {
     
     
     SendLn("event=TestProgramEnd&passed=" + FormatBool(unit_test.Passed()));
@@ -1121,45 +1135,49 @@ class StreamingListener : public EmptyTestEventListener {
     socket_writer_->CloseConnection();
   }
 
-  void OnTestIterationStart(const UnitTest& , int iteration) {
+  void OnTestIterationStart(const UnitTest& ,
+                            int iteration) override {
     SendLn("event=TestIterationStart&iteration=" +
            StreamableToString(iteration));
   }
 
-  void OnTestIterationEnd(const UnitTest& unit_test, int ) {
-    SendLn("event=TestIterationEnd&passed=" +
-           FormatBool(unit_test.Passed()) + "&elapsed_time=" +
-           StreamableToString(unit_test.elapsed_time()) + "ms");
+  void OnTestIterationEnd(const UnitTest& unit_test,
+                          int ) override {
+    SendLn("event=TestIterationEnd&passed=" + FormatBool(unit_test.Passed()) +
+           "&elapsed_time=" + StreamableToString(unit_test.elapsed_time()) +
+           "ms");
   }
 
-  void OnTestCaseStart(const TestCase& test_case) {
+  
+  
+  void OnTestCaseStart(const TestCase& test_case) override {
     SendLn(std::string("event=TestCaseStart&name=") + test_case.name());
   }
 
-  void OnTestCaseEnd(const TestCase& test_case) {
-    SendLn("event=TestCaseEnd&passed=" + FormatBool(test_case.Passed())
-           + "&elapsed_time=" + StreamableToString(test_case.elapsed_time())
-           + "ms");
+  
+  
+  void OnTestCaseEnd(const TestCase& test_case) override {
+    SendLn("event=TestCaseEnd&passed=" + FormatBool(test_case.Passed()) +
+           "&elapsed_time=" + StreamableToString(test_case.elapsed_time()) +
+           "ms");
   }
 
-  void OnTestStart(const TestInfo& test_info) {
+  void OnTestStart(const TestInfo& test_info) override {
     SendLn(std::string("event=TestStart&name=") + test_info.name());
   }
 
-  void OnTestEnd(const TestInfo& test_info) {
+  void OnTestEnd(const TestInfo& test_info) override {
     SendLn("event=TestEnd&passed=" +
-           FormatBool((test_info.result())->Passed()) +
-           "&elapsed_time=" +
+           FormatBool((test_info.result())->Passed()) + "&elapsed_time=" +
            StreamableToString((test_info.result())->elapsed_time()) + "ms");
   }
 
-  void OnTestPartResult(const TestPartResult& test_part_result) {
+  void OnTestPartResult(const TestPartResult& test_part_result) override {
     const char* file_name = test_part_result.file_name();
-    if (file_name == NULL)
-      file_name = "";
-    SendLn("event=TestPartResult&file=" + UrlEncode(file_name) +
-           "&line=" + StreamableToString(test_part_result.line_number()) +
-           "&message=" + UrlEncode(test_part_result.message()));
+    if (file_name == nullptr) file_name = "";
+    SendLn("event=TestPartResult&file=" + UrlEncode(file_name) + "&line=" +
+           StreamableToString(test_part_result.line_number()) + "&message=" +
+           UrlEncode(test_part_result.message()));
   }
 
  private:
@@ -1172,7 +1190,7 @@ class StreamingListener : public EmptyTestEventListener {
 
   std::string FormatBool(bool value) { return value ? "1" : "0"; }
 
-  const scoped_ptr<AbstractSocketWriter> socket_writer_;
+  const std::unique_ptr<AbstractSocketWriter> socket_writer_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(StreamingListener);
 };  

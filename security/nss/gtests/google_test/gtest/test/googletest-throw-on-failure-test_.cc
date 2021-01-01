@@ -33,19 +33,18 @@
 
 
 
-
 #include "gtest/gtest.h"
 
-#include <stdio.h>                      
-#include <stdlib.h>                     
-#include <exception>                    
+#include <stdio.h>    
+#include <stdlib.h>   
+#include <exception>  
 
 
 
 
 void TerminateHandler() {
   fprintf(stderr, "%s\n", "Unhandled C++ exception terminating the program.");
-  fflush(NULL);
+  fflush(nullptr);
   exit(1);
 }
 

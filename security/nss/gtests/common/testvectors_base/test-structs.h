@@ -88,6 +88,31 @@ typedef struct HkdfTestVectorStr {
   bool valid;
 } HkdfTestVector;
 
+enum class IkeTestType {
+  ikeGxy,         
+  ikeV1Psk,       
+  ikeV2Rekey,     
+  ikeV1,          
+  ikeV1AppB,      
+  ikeV1AppBQuick, 
+  ikePlus         
+};
+
+typedef struct IkeTestVectorStr {
+  uint32_t id;
+  IkeTestType test_type;
+  std::string ikm;
+  std::string gxykm;
+  std::string prevkm;
+  std::string okm;
+  std::string Ni;
+  std::string Nr;
+  std::string seed_data;
+  uint8_t key_number;
+  uint32_t size;
+  bool valid;
+} IkeTestVector;
+
 typedef struct RsaSignatureTestVectorStr {
   SECOidTag hash_oid;
   uint32_t id;

@@ -34,7 +34,6 @@
 
 
 
-
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
@@ -50,9 +49,7 @@ using ::testing::Values;
 
 typedef PrimeTable* CreatePrimeTableFunc();
 
-PrimeTable* CreateOnTheFlyPrimeTable() {
-  return new OnTheFlyPrimeTable();
-}
+PrimeTable* CreateOnTheFlyPrimeTable() { return new OnTheFlyPrimeTable(); }
 
 template <size_t max_precalculated>
 PrimeTable* CreatePreCalculatedPrimeTable() {
@@ -65,11 +62,11 @@ PrimeTable* CreatePreCalculatedPrimeTable() {
 
 class PrimeTableTestSmpl7 : public TestWithParam<CreatePrimeTableFunc*> {
  public:
-  virtual ~PrimeTableTestSmpl7() { delete table_; }
-  virtual void SetUp() { table_ = (*GetParam())(); }
-  virtual void TearDown() {
+  ~PrimeTableTestSmpl7() override { delete table_; }
+  void SetUp() override { table_ = (*GetParam())(); }
+  void TearDown() override {
     delete table_;
-    table_ = NULL;
+    table_ = nullptr;
   }
 
  protected:
@@ -110,8 +107,8 @@ TEST_P(PrimeTableTestSmpl7, CanGetNextPrime) {
 
 
 
-INSTANTIATE_TEST_CASE_P(OnTheFlyAndPreCalculated, PrimeTableTestSmpl7,
-                        Values(&CreateOnTheFlyPrimeTable,
-                               &CreatePreCalculatedPrimeTable<1000>));
+INSTANTIATE_TEST_SUITE_P(OnTheFlyAndPreCalculated, PrimeTableTestSmpl7,
+                         Values(&CreateOnTheFlyPrimeTable,
+                                &CreatePreCalculatedPrimeTable<1000>));
 
 }  

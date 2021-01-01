@@ -29,7 +29,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 
 namespace {
@@ -41,7 +40,6 @@ using ::testing::Test;
 using ::testing::TestEventListeners;
 using ::testing::TestInfo;
 using ::testing::UnitTest;
-using ::testing::internal::scoped_ptr;
 
 
 
@@ -77,19 +75,19 @@ TEST(DISABLED_D, DISABLED_B) {}
 
 class TestNamePrinter : public EmptyTestEventListener {
  public:
-  virtual void OnTestIterationStart(const UnitTest& ,
-                                    int ) {
+  void OnTestIterationStart(const UnitTest& ,
+                            int ) override {
     printf("----\n");
   }
 
-  virtual void OnTestStart(const TestInfo& test_info) {
+  void OnTestStart(const TestInfo& test_info) override {
     printf("%s.%s\n", test_info.test_case_name(), test_info.name());
   }
 };
 
 }  
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   InitGoogleTest(&argc, argv);
 
   

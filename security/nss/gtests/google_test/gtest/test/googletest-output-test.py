@@ -55,7 +55,6 @@ NO_STACKTRACE_SUPPORT_FLAG = '--no_stacktrace_support'
 IS_LINUX = os.name == 'posix' and os.uname()[0] == 'Linux'
 IS_WINDOWS = os.name == 'nt'
 
-
 GOLDEN_NAME = 'googletest-output-test-golden-lin.txt'
 
 PROGRAM_PATH = gtest_test_utils.GetTestExecutablePath('googletest-output-test_')
@@ -287,7 +286,7 @@ class GTestOutputTest(gtest_test_utils.TestCase):
     
     
     
-    golden = ToUnixLineEnding(golden_file.read())
+    golden = ToUnixLineEnding(golden_file.read().decode())
     golden_file.close()
 
     

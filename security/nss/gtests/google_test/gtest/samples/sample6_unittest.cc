@@ -31,7 +31,6 @@
 
 
 
-
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
@@ -61,7 +60,7 @@ class PrimeTableTest : public testing::Test {
   
   PrimeTableTest() : table_(CreatePrimeTable<T>()) {}
 
-  virtual ~PrimeTableTest() { delete table_; }
+  ~PrimeTableTest() override { delete table_; }
 
   
   
@@ -92,7 +91,7 @@ using testing::Types;
 
 typedef Types<OnTheFlyPrimeTable, PreCalculatedPrimeTable> Implementations;
 
-TYPED_TEST_CASE(PrimeTableTest, Implementations);
+TYPED_TEST_SUITE(PrimeTableTest, Implementations);
 
 
 
@@ -157,13 +156,12 @@ using testing::Types;
 
 
 template <class T>
-class PrimeTableTest2 : public PrimeTableTest<T> {
-};
+class PrimeTableTest2 : public PrimeTableTest<T> {};
 
 
 
 
-TYPED_TEST_CASE_P(PrimeTableTest2);
+TYPED_TEST_SUITE_P(PrimeTableTest2);
 
 
 
@@ -196,7 +194,7 @@ TYPED_TEST_P(PrimeTableTest2, CanGetNextPrime) {
 
 
 
-REGISTER_TYPED_TEST_CASE_P(
+REGISTER_TYPED_TEST_SUITE_P(
     PrimeTableTest2,  
     
     ReturnsFalseForNonPrimes, ReturnsTrueForPrimes, CanGetNextPrime);
@@ -216,9 +214,9 @@ REGISTER_TYPED_TEST_CASE_P(
 
 typedef Types<OnTheFlyPrimeTable, PreCalculatedPrimeTable>
     PrimeTableImplementations;
-INSTANTIATE_TYPED_TEST_CASE_P(OnTheFlyAndPreCalculated,    
-                              PrimeTableTest2,             
-                              PrimeTableImplementations);  
+INSTANTIATE_TYPED_TEST_SUITE_P(OnTheFlyAndPreCalculated,    
+                               PrimeTableTest2,             
+                               PrimeTableImplementations);  
 
 #endif  
 }  

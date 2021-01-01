@@ -31,6 +31,12 @@ HMAC_Init(HMACContext *cx, const SECHashObject *hash_obj,
           const unsigned char *secret, unsigned int secret_len, PRBool isFIPS);
 
 
+
+SECStatus
+HMAC_ReInit(HMACContext *cx, const SECHashObject *hash_obj,
+            const unsigned char *secret, unsigned int secret_len, PRBool isFIPS);
+
+
 extern void
 HMAC_Begin(HMACContext *cx);
 

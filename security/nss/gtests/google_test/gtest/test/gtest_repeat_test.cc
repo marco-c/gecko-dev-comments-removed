@@ -29,7 +29,6 @@
 
 
 
-
 #include <stdlib.h>
 #include <iostream>
 #include "gtest/gtest.h"
@@ -51,19 +50,18 @@ namespace {
 
 
 
-#define GTEST_CHECK_INT_EQ_(expected, actual) \
-  do {\
-    const int expected_val = (expected);\
-    const int actual_val = (actual);\
-    if (::testing::internal::IsTrue(expected_val != actual_val)) {\
-      ::std::cout << "Value of: " #actual "\n"\
-                  << "  Actual: " << actual_val << "\n"\
-                  << "Expected: " #expected "\n"\
-                  << "Which is: " << expected_val << "\n";\
-      ::testing::internal::posix::Abort();\
-    }\
+#define GTEST_CHECK_INT_EQ_(expected, actual)                      \
+  do {                                                             \
+    const int expected_val = (expected);                           \
+    const int actual_val = (actual);                               \
+    if (::testing::internal::IsTrue(expected_val != actual_val)) { \
+      ::std::cout << "Value of: " #actual "\n"                     \
+                  << "  Actual: " << actual_val << "\n"            \
+                  << "Expected: " #expected "\n"                   \
+                  << "Which is: " << expected_val << "\n";         \
+      ::testing::internal::posix::Abort();                         \
+    }                                                              \
   } while (::testing::internal::AlwaysFalse())
-
 
 
 
@@ -74,8 +72,8 @@ int g_environment_tear_down_count = 0;
 class MyEnvironment : public testing::Environment {
  public:
   MyEnvironment() {}
-  virtual void SetUp() { g_environment_set_up_count++; }
-  virtual void TearDown() { g_environment_tear_down_count++; }
+  void SetUp() override { g_environment_set_up_count++; }
+  void TearDown() override { g_environment_tear_down_count++; }
 };
 
 
@@ -91,9 +89,7 @@ TEST(FooTest, ShouldFail) {
 
 int g_should_pass_count = 0;
 
-TEST(FooTest, ShouldPass) {
-  g_should_pass_count++;
-}
+TEST(FooTest, ShouldPass) { g_should_pass_count++; }
 
 
 
@@ -117,13 +113,11 @@ const int kNumberOfParamTests = 10;
 class MyParamTest : public testing::TestWithParam<int> {};
 
 TEST_P(MyParamTest, ShouldPass) {
-  
   GTEST_CHECK_INT_EQ_(g_param_test_count % kNumberOfParamTests, GetParam());
   g_param_test_count++;
 }
-INSTANTIATE_TEST_CASE_P(MyParamSequence,
-                        MyParamTest,
-                        testing::Range(0, kNumberOfParamTests));
+INSTANTIATE_TEST_SUITE_P(MyParamSequence, MyParamTest,
+                         testing::Range(0, kNumberOfParamTests));
 
 
 void ResetCounts() {

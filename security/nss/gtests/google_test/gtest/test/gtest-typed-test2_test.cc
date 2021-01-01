@@ -27,7 +27,6 @@
 
 
 
-
 #include <vector>
 
 #include "test/gtest-typed-test_test.h"
@@ -38,7 +37,7 @@
 
 
 
-INSTANTIATE_TYPED_TEST_CASE_P(Vector, ContainerTest,
-                              testing::Types<std::vector<int> >);
+INSTANTIATE_TYPED_TEST_SUITE_P(Vector, ContainerTest,
+                               testing::Types<std::vector<int> >);
 
 #endif  

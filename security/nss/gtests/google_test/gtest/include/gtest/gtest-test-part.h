@@ -37,8 +37,8 @@
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
 
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
-)
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(
+    4251 )
 
 namespace testing {
 
@@ -53,22 +53,20 @@ class GTEST_API_ TestPartResult {
   enum Type {
     kSuccess,          
     kNonFatalFailure,  
-    kFatalFailure      
+    kFatalFailure,     
+    kSkip              
   };
 
   
   
   
-  TestPartResult(Type a_type,
-                 const char* a_file_name,
-                 int a_line_number,
+  TestPartResult(Type a_type, const char* a_file_name, int a_line_number,
                  const char* a_message)
       : type_(a_type),
-        file_name_(a_file_name == NULL ? "" : a_file_name),
+        file_name_(a_file_name == nullptr ? "" : a_file_name),
         line_number_(a_line_number),
         summary_(ExtractSummary(a_message)),
-        message_(a_message) {
-  }
+        message_(a_message) {}
 
   
   Type type() const { return type_; }
@@ -76,7 +74,7 @@ class GTEST_API_ TestPartResult {
   
   
   const char* file_name() const {
-    return file_name_.empty() ? NULL : file_name_.c_str();
+    return file_name_.empty() ? nullptr : file_name_.c_str();
   }
 
   
@@ -90,16 +88,19 @@ class GTEST_API_ TestPartResult {
   const char* message() const { return message_.c_str(); }
 
   
-  bool passed() const { return type_ == kSuccess; }
+  bool skipped() const { return type_ == kSkip; }
 
   
-  bool failed() const { return type_ != kSuccess; }
+  bool passed() const { return type_ == kSuccess; }
 
   
   bool nonfatally_failed() const { return type_ == kNonFatalFailure; }
 
   
   bool fatally_failed() const { return type_ == kFatalFailure; }
+
+  
+  bool failed() const { return fatally_failed() || nonfatally_failed(); }
 
  private:
   Type type_;
@@ -164,9 +165,10 @@ class GTEST_API_ HasNewFatalFailureHelper
     : public TestPartResultReporterInterface {
  public:
   HasNewFatalFailureHelper();
-  virtual ~HasNewFatalFailureHelper();
-  virtual void ReportTestPartResult(const TestPartResult& result);
+  ~HasNewFatalFailureHelper() override;
+  void ReportTestPartResult(const TestPartResult& result) override;
   bool has_new_fatal_failure() const { return has_new_fatal_failure_; }
+
  private:
   bool has_new_fatal_failure_;
   TestPartResultReporterInterface* original_reporter_;

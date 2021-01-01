@@ -35,7 +35,6 @@
 #include <string.h>
 
 
-
 class MyString {
  private:
   const char* c_string_;
@@ -50,15 +49,15 @@ class MyString {
   
 
   
-  MyString() : c_string_(NULL) {}
+  MyString() : c_string_(nullptr) {}
 
   
-  explicit MyString(const char* a_c_string) : c_string_(NULL) {
+  explicit MyString(const char* a_c_string) : c_string_(nullptr) {
     Set(a_c_string);
   }
 
   
-  MyString(const MyString& string) : c_string_(NULL) {
+  MyString(const MyString& string) : c_string_(nullptr) {
     Set(string.c_string_);
   }
 
@@ -71,13 +70,10 @@ class MyString {
   
   const char* c_string() const { return c_string_; }
 
-  size_t Length() const {
-    return c_string_ == NULL ? 0 : strlen(c_string_);
-  }
+  size_t Length() const { return c_string_ == nullptr ? 0 : strlen(c_string_); }
 
   
   void Set(const char* c_string);
 };
-
 
 #endif  

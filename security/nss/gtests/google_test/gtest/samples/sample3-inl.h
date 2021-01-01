@@ -37,7 +37,6 @@
 
 
 
-
 template <typename E>  
 class Queue;
 
@@ -58,10 +57,11 @@ class QueueNode {
  private:
   
   
-  explicit QueueNode(const E& an_element) : element_(an_element), next_(NULL) {}
+  explicit QueueNode(const E& an_element)
+      : element_(an_element), next_(nullptr) {}
 
   
-  const QueueNode& operator = (const QueueNode&);
+  const QueueNode& operator=(const QueueNode&);
   QueueNode(const QueueNode&);
 
   E element_;
@@ -72,7 +72,7 @@ template <typename E>
 class Queue {
  public:
   
-  Queue() : head_(NULL), last_(NULL), size_(0) {}
+  Queue() : head_(nullptr), last_(nullptr), size_(0) {}
 
   
   ~Queue() { Clear(); }
@@ -83,15 +83,15 @@ class Queue {
       
       QueueNode<E>* node = head_;
       QueueNode<E>* next = node->next();
-      for (; ;) {
+      for (;;) {
         delete node;
         node = next;
-        if (node == NULL) break;
+        if (node == nullptr) break;
         next = node->next();
       }
 
       
-      head_ = last_ = NULL;
+      head_ = last_ = nullptr;
       size_ = 0;
     }
   }
@@ -128,14 +128,14 @@ class Queue {
   
   E* Dequeue() {
     if (size_ == 0) {
-      return NULL;
+      return nullptr;
     }
 
     const QueueNode<E>* const old_head = head_;
     head_ = head_->next_;
     size_--;
     if (size_ == 0) {
-      last_ = NULL;
+      last_ = nullptr;
     }
 
     E* element = new E(old_head->element());
@@ -150,7 +150,8 @@ class Queue {
   template <typename F>
   Queue* Map(F function) const {
     Queue* new_queue = new Queue();
-    for (const QueueNode<E>* node = head_; node != NULL; node = node->next_) {
+    for (const QueueNode<E>* node = head_; node != nullptr;
+         node = node->next_) {
       new_queue->Enqueue(function(node->element()));
     }
 
@@ -160,11 +161,11 @@ class Queue {
  private:
   QueueNode<E>* head_;  
   QueueNode<E>* last_;  
-  size_t size_;  
+  size_t size_;         
 
   
   Queue(const Queue&);
-  const Queue& operator = (const Queue&);
+  const Queue& operator=(const Queue&);
 };
 
 #endif  

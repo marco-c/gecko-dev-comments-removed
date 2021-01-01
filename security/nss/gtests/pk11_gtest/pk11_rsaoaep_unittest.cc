@@ -90,30 +90,31 @@ class RsaOaepWycheproofTest
 
 TEST_P(RsaOaepWycheproofTest, OaepDecrypt) { TestDecrypt(GetParam()); }
 
-INSTANTIATE_TEST_CASE_P(WycheproofRsa2048Sha1OaepTest, RsaOaepWycheproofTest,
-                        ::testing::ValuesIn(kRsaOaep2048Sha1WycheproofVectors));
+INSTANTIATE_TEST_SUITE_P(
+    WycheproofRsa2048Sha1OaepTest, RsaOaepWycheproofTest,
+    ::testing::ValuesIn(kRsaOaep2048Sha1WycheproofVectors));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     WycheproofOaep2048Sha256Sha1Test, RsaOaepWycheproofTest,
     ::testing::ValuesIn(kRsaOaep2048Sha256Mgf1Sha1WycheproofVectors));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     WycheproofOaep2048Sha256Sha256Test, RsaOaepWycheproofTest,
     ::testing::ValuesIn(kRsaOaep2048Sha256Mgf1Sha256WycheproofVectors));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     WycheproofOaep2048Sha384Sha1Test, RsaOaepWycheproofTest,
     ::testing::ValuesIn(kRsaOaep2048Sha384Mgf1Sha1WycheproofVectors));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     WycheproofOaep2048Sha384Sha384Test, RsaOaepWycheproofTest,
     ::testing::ValuesIn(kRsaOaep2048Sha384Mgf1Sha384WycheproofVectors));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     WycheproofOaep2048Sha512Sha1Test, RsaOaepWycheproofTest,
     ::testing::ValuesIn(kRsaOaep2048Sha512Mgf1Sha1WycheproofVectors));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     WycheproofOaep2048Sha512Sha512Test, RsaOaepWycheproofTest,
     ::testing::ValuesIn(kRsaOaep2048Sha512Mgf1Sha512WycheproofVectors));
 
@@ -157,10 +158,31 @@ TEST(Pkcs11RsaOaepTest, TestOaepWrapUnwrap) {
   PK11SymKey* p_unwrapped_tmp = nullptr;
 
   
+  rv = PK11_ExtractKeyValue(to_wrap.get());
+  ASSERT_EQ(rv, SECSuccess);
+
+  
+  SECItem* expectedItem = PK11_GetKeyData(to_wrap.get());
+
+  
+  
+  
+  
+  
   
   p_unwrapped_tmp = PK11_PubUnwrapSymKey(priv.get(), wrapped.get(), CKM_AES_CBC,
                                          CKA_DECRYPT, 16);
-  ASSERT_EQ(p_unwrapped_tmp, nullptr);
+  
+  
+  ASSERT_NE(p_unwrapped_tmp, nullptr);
+  ScopedPK11SymKey fakeUnwrapped;
+  fakeUnwrapped.reset(p_unwrapped_tmp);
+  rv = PK11_ExtractKeyValue(fakeUnwrapped.get());
+  ASSERT_EQ(rv, SECSuccess);
+
+  
+  SECItem* fakeItem = PK11_GetKeyData(fakeUnwrapped.get());
+  ASSERT_NE(SECITEM_CompareItem(fakeItem, expectedItem), 0);
 
   ScopedPK11SymKey unwrapped;
   p_unwrapped_tmp = PK11_PubUnwrapSymKeyWithMechanism(
@@ -170,15 +192,10 @@ TEST(Pkcs11RsaOaepTest, TestOaepWrapUnwrap) {
 
   unwrapped.reset(p_unwrapped_tmp);
 
-  
-  rv = PK11_ExtractKeyValue(to_wrap.get());
-  ASSERT_EQ(rv, SECSuccess);
-
   rv = PK11_ExtractKeyValue(unwrapped.get());
   ASSERT_EQ(rv, SECSuccess);
 
   
-  SECItem* expectedItem = PK11_GetKeyData(to_wrap.get());
   SECItem* actualItem = PK11_GetKeyData(unwrapped.get());
 
   ASSERT_EQ(SECITEM_CompareItem(actualItem, expectedItem), 0);

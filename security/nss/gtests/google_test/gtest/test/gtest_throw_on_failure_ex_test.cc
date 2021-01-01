@@ -29,7 +29,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 
 #include <stdlib.h>
@@ -55,23 +54,22 @@ void TestFailureThrowsRuntimeError() {
   
   try {
     EXPECT_EQ(3, 3);
-  } catch(...) {
+  } catch (...) {
     Fail("A successful assertion wrongfully threw.");
   }
 
   
   try {
     EXPECT_EQ(2, 3) << "Expected failure";
-  } catch(const std::runtime_error& e) {
-    if (strstr(e.what(), "Expected failure") != NULL)
-      return;
+  } catch (const std::runtime_error& e) {
+    if (strstr(e.what(), "Expected failure") != nullptr) return;
 
     printf("%s",
            "A failed assertion did throw an exception of the right type, "
            "but the message is incorrect.  Instead of containing \"Expected "
            "failure\", it is:\n");
     Fail(e.what());
-  } catch(...) {
+  } catch (...) {
     Fail("A failed assertion threw the wrong type of exception.");
   }
   Fail("A failed assertion should've thrown but didn't.");

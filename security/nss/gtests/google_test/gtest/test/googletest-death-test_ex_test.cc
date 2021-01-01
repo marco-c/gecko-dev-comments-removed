@@ -35,15 +35,15 @@
 
 #if GTEST_HAS_DEATH_TEST
 
-# if GTEST_HAS_SEH
-#  include <windows.h>          
-# endif
+#if GTEST_HAS_SEH
+#include <windows.h>  
+#endif
 
-# include "gtest/gtest-spi.h"
+#include "gtest/gtest-spi.h"
 
-# if GTEST_HAS_EXCEPTIONS
+#if GTEST_HAS_EXCEPTIONS
 
-#  include <exception>  
+#include <exception>  
 
 
 
@@ -59,7 +59,7 @@ TEST(CxxExceptionDeathTest, ExceptionIsFailure) {
 
 class TestException : public std::exception {
  public:
-  virtual const char* what() const throw() { return "exceptional message"; }
+  const char* what() const throw() override { return "exceptional message"; }
 };
 
 TEST(CxxExceptionDeathTest, PrintsMessageForStdExceptions) {
@@ -67,12 +67,11 @@ TEST(CxxExceptionDeathTest, PrintsMessageForStdExceptions) {
   EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(throw TestException(), ""),
                           "exceptional message");
   
-  EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(throw TestException(), ""),
-                          "googletest-death-test_ex_test.cc");
+  EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(throw TestException(), ""), __FILE__);
 }
-# endif  
+#endif  
 
-# if GTEST_HAS_SEH
+#if GTEST_HAS_SEH
 
 
 
@@ -81,7 +80,7 @@ TEST(SehExceptionDeasTest, CatchExceptionsDoesNotInterfere) {
       << "with catch_exceptions "
       << (testing::GTEST_FLAG(catch_exceptions) ? "enabled" : "disabled");
 }
-# endif
+#endif
 
 #endif  
 

@@ -31,62 +31,42 @@
 
 
 
-
 #include <ctype.h>
 #include <limits.h>
 #include <string.h>
 #include <algorithm>
 #include <deque>
+#include <forward_list>
 #include <list>
 #include <map>
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "gtest/gtest-printers.h"
 #include "gtest/gtest.h"
 
-#if GTEST_HAS_UNORDERED_MAP_
-# include <unordered_map>  
-#endif  
-
-#if GTEST_HAS_UNORDERED_SET_
-# include <unordered_set>  
-#endif  
-
-#if GTEST_HAS_STD_FORWARD_LIST_
-# include <forward_list> 
-#endif  
 
 
 
-
-enum AnonymousEnum {
-  kAE1 = -1,
-  kAE2 = 1
-};
+enum AnonymousEnum { kAE1 = -1, kAE2 = 1 };
 
 
-enum EnumWithoutPrinter {
-  kEWP1 = -2,
-  kEWP2 = 42
-};
+enum EnumWithoutPrinter { kEWP1 = -2, kEWP2 = 42 };
 
 
-enum EnumWithStreaming {
-  kEWS1 = 10
-};
+enum EnumWithStreaming { kEWS1 = 10 };
 
 std::ostream& operator<<(std::ostream& os, EnumWithStreaming e) {
   return os << (e == kEWS1 ? "kEWS1" : "invalid");
 }
 
 
-enum EnumWithPrintTo {
-  kEWPT1 = 1
-};
+enum EnumWithPrintTo { kEWPT1 = 1 };
 
 void PrintTo(EnumWithPrintTo e, std::ostream* os) {
   *os << (e == kEWPT1 ? "kEWPT1" : "invalid");
@@ -103,6 +83,7 @@ template <typename T>
 class UnprintableTemplateInGlobal {
  public:
   UnprintableTemplateInGlobal() : value_() {}
+
  private:
   T value_;
 };
@@ -128,6 +109,7 @@ class UnprintableInFoo {
  public:
   UnprintableInFoo() : z_(0) { memcpy(xy_, "\xEF\x12\x0\x0\x34\xAB\x0\x0", 8); }
   double z() const { return z_; }
+
  private:
   char xy_[8];
   double z_;
@@ -144,8 +126,7 @@ void PrintTo(const PrintableViaPrintTo& x, ::std::ostream* os) {
 }
 
 
-struct PointerPrintable {
-};
+struct PointerPrintable {};
 
 ::std::ostream& operator<<(::std::ostream& os,
                            const PointerPrintable* ) {
@@ -159,6 +140,7 @@ class PrintableViaPrintToTemplate {
   explicit PrintableViaPrintToTemplate(const T& a_value) : value_(a_value) {}
 
   const T& value() const { return value_; }
+
  private:
   T value_;
 };
@@ -175,6 +157,7 @@ class StreamableTemplateInFoo {
   StreamableTemplateInFoo() : value_() {}
 
   const T& value() const { return value_; }
+
  private:
   T value_;
 };
@@ -192,7 +175,13 @@ class PathLike {
  public:
   struct iterator {
     typedef PathLike value_type;
+
+    iterator& operator++();
+    PathLike& operator*();
   };
+
+  using value_type = char;
+  using const_iterator = iterator;
 
   PathLike() {}
 
@@ -228,9 +217,7 @@ using ::testing::internal::Strings;
 using ::testing::internal::UniversalPrint;
 using ::testing::internal::UniversalPrinter;
 using ::testing::internal::UniversalTersePrint;
-#if GTEST_HAS_TR1_TUPLE || GTEST_HAS_STD_TUPLE_
 using ::testing::internal::UniversalTersePrintTupleFieldsToStrings;
-#endif
 
 
 
@@ -304,15 +291,13 @@ TEST(PrintCharTest, PlainChar) {
 
 TEST(PrintCharTest, SignedChar) {
   EXPECT_EQ("'\\0'", Print(static_cast<signed char>('\0')));
-  EXPECT_EQ("'\\xCE' (-50)",
-            Print(static_cast<signed char>(-50)));
+  EXPECT_EQ("'\\xCE' (-50)", Print(static_cast<signed char>(-50)));
 }
 
 
 TEST(PrintCharTest, UnsignedChar) {
   EXPECT_EQ("'\\0'", Print(static_cast<unsigned char>('\0')));
-  EXPECT_EQ("'b' (98, 0x62)",
-            Print(static_cast<unsigned char>('b')));
+  EXPECT_EQ("'b' (98, 0x62)", Print(static_cast<unsigned char>('b')));
 }
 
 
@@ -354,10 +339,10 @@ TEST(PrintTypeSizeTest, Wchar_t) {
 TEST(PrintBuiltInTypeTest, Integer) {
   EXPECT_EQ("'\\xFF' (255)", Print(static_cast<unsigned char>(255)));  
   EXPECT_EQ("'\\x80' (-128)", Print(static_cast<signed char>(-128)));  
-  EXPECT_EQ("65535", Print(USHRT_MAX));  
-  EXPECT_EQ("-32768", Print(SHRT_MIN));  
-  EXPECT_EQ("4294967295", Print(UINT_MAX));  
-  EXPECT_EQ("-2147483648", Print(INT_MIN));  
+  EXPECT_EQ("65535", Print(USHRT_MAX));                                
+  EXPECT_EQ("-32768", Print(SHRT_MIN));                                
+  EXPECT_EQ("4294967295", Print(UINT_MAX));                            
+  EXPECT_EQ("-2147483648", Print(INT_MIN));                            
   EXPECT_EQ("18446744073709551615",
             Print(static_cast<testing::internal::UInt64>(-1)));  
   EXPECT_EQ("-9223372036854775808",
@@ -370,7 +355,7 @@ TEST(PrintBuiltInTypeTest, Size_t) {
 #if !GTEST_OS_WINDOWS
   
   EXPECT_EQ("-2", Print(static_cast<ssize_t>(-2)));  
-#endif  
+#endif                                               
 }
 
 
@@ -405,15 +390,16 @@ TEST(PrintCStringTest, NonConst) {
 
 
 TEST(PrintCStringTest, Null) {
-  const char* p = NULL;
+  const char* p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
 
 TEST(PrintCStringTest, EscapesProperly) {
   const char* p = "'\"?\\\a\b\f\n\r\t\v\x7F\xFF a";
-  EXPECT_EQ(PrintPointer(p) + " pointing to \"'\\\"?\\\\\\a\\b\\f"
-            "\\n\\r\\t\\v\\x7F\\xFF a\"",
+  EXPECT_EQ(PrintPointer(p) +
+                " pointing to \"'\\\"?\\\\\\a\\b\\f"
+                "\\n\\r\\t\\v\\x7F\\xFF a\"",
             Print(p));
 }
 
@@ -440,16 +426,18 @@ TEST(PrintWideCStringTest, NonConst) {
 
 
 TEST(PrintWideCStringTest, Null) {
-  const wchar_t* p = NULL;
+  const wchar_t* p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
 
 TEST(PrintWideCStringTest, EscapesProperly) {
-  const wchar_t s[] = {'\'', '"', '?', '\\', '\a', '\b', '\f', '\n', '\r',
-                       '\t', '\v', 0xD3, 0x576, 0x8D3, 0xC74D, ' ', 'a', '\0'};
-  EXPECT_EQ(PrintPointer(s) + " pointing to L\"'\\\"?\\\\\\a\\b\\f"
-            "\\n\\r\\t\\v\\xD3\\x576\\x8D3\\xC74D a\"",
+  const wchar_t s[] = {'\'',  '"',   '?',    '\\', '\a', '\b',
+                       '\f',  '\n',  '\r',   '\t', '\v', 0xD3,
+                       0x576, 0x8D3, 0xC74D, ' ',  'a',  '\0'};
+  EXPECT_EQ(PrintPointer(s) +
+                " pointing to L\"'\\\"?\\\\\\a\\b\\f"
+                "\\n\\r\\t\\v\\xD3\\x576\\x8D3\\xC74D a\"",
             Print(static_cast<const wchar_t*>(s)));
 }
 #endif  
@@ -460,7 +448,7 @@ TEST(PrintWideCStringTest, EscapesProperly) {
 TEST(PrintCharPointerTest, SignedChar) {
   signed char* p = reinterpret_cast<signed char*>(0x1234);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -468,7 +456,7 @@ TEST(PrintCharPointerTest, SignedChar) {
 TEST(PrintCharPointerTest, ConstSignedChar) {
   signed char* p = reinterpret_cast<signed char*>(0x1234);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -476,7 +464,7 @@ TEST(PrintCharPointerTest, ConstSignedChar) {
 TEST(PrintCharPointerTest, UnsignedChar) {
   unsigned char* p = reinterpret_cast<unsigned char*>(0x1234);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -484,7 +472,7 @@ TEST(PrintCharPointerTest, UnsignedChar) {
 TEST(PrintCharPointerTest, ConstUnsignedChar) {
   const unsigned char* p = reinterpret_cast<const unsigned char*>(0x1234);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -494,7 +482,7 @@ TEST(PrintCharPointerTest, ConstUnsignedChar) {
 TEST(PrintPointerToBuiltInTypeTest, Bool) {
   bool* p = reinterpret_cast<bool*>(0xABCD);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -502,7 +490,7 @@ TEST(PrintPointerToBuiltInTypeTest, Bool) {
 TEST(PrintPointerToBuiltInTypeTest, Void) {
   void* p = reinterpret_cast<void*>(0xABCD);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -510,7 +498,7 @@ TEST(PrintPointerToBuiltInTypeTest, Void) {
 TEST(PrintPointerToBuiltInTypeTest, ConstVoid) {
   const void* p = reinterpret_cast<const void*>(0xABCD);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -518,7 +506,7 @@ TEST(PrintPointerToBuiltInTypeTest, ConstVoid) {
 TEST(PrintPointerToPointerTest, IntPointerPointer) {
   int** p = reinterpret_cast<int**>(0xABCD);
   EXPECT_EQ(PrintPointer(p), Print(p));
-  p = NULL;
+  p = nullptr;
   EXPECT_EQ("NULL", Print(p));
 }
 
@@ -531,10 +519,9 @@ TEST(PrintPointerTest, NonMemberFunctionPointer) {
   
   
   
-  EXPECT_EQ(
-      PrintPointer(reinterpret_cast<const void*>(
-          reinterpret_cast<internal::BiggestInt>(&MyFunction))),
-      Print(&MyFunction));
+  EXPECT_EQ(PrintPointer(reinterpret_cast<const void*>(
+                reinterpret_cast<internal::BiggestInt>(&MyFunction))),
+            Print(&MyFunction));
   int (*p)(bool) = NULL;  
   EXPECT_EQ("NULL", Print(p));
 }
@@ -543,14 +530,13 @@ TEST(PrintPointerTest, NonMemberFunctionPointer) {
 
 template <typename StringType>
 AssertionResult HasPrefix(const StringType& str, const StringType& prefix) {
-  if (str.find(prefix, 0) == 0)
-    return AssertionSuccess();
+  if (str.find(prefix, 0) == 0) return AssertionSuccess();
 
   const bool is_wide_string = sizeof(prefix[0]) > 1;
   const char* const begin_string_quote = is_wide_string ? "L\"" : "\"";
-  return AssertionFailure()
-      << begin_string_quote << prefix << "\" is not a prefix of "
-      << begin_string_quote << str << "\"\n";
+  return AssertionFailure() << begin_string_quote << prefix
+                            << "\" is not a prefix of " << begin_string_quote
+                            << str << "\"\n";
 }
 
 
@@ -571,8 +557,7 @@ TEST(PrintPointerTest, MemberVariablePointer) {
   EXPECT_TRUE(HasPrefix(Print(&Foo::value),
                         Print(sizeof(&Foo::value)) + "-byte object "));
   int Foo::*p = NULL;  
-  EXPECT_TRUE(HasPrefix(Print(p),
-                        Print(sizeof(p)) + "-byte object "));
+  EXPECT_TRUE(HasPrefix(Print(p), Print(sizeof(p)) + "-byte object "));
 }
 
 
@@ -586,8 +571,7 @@ TEST(PrintPointerTest, MemberFunctionPointer) {
       HasPrefix(Print(&Foo::MyVirtualMethod),
                 Print(sizeof((&Foo::MyVirtualMethod))) + "-byte object "));
   int (Foo::*p)(char) = NULL;  
-  EXPECT_TRUE(HasPrefix(Print(p),
-                        Print(sizeof(p)) + "-byte object "));
+  EXPECT_TRUE(HasPrefix(Print(p), Print(sizeof(p)) + "-byte object "));
 }
 
 
@@ -601,29 +585,26 @@ std::string PrintArrayHelper(T (&a)[N]) {
 
 
 TEST(PrintArrayTest, OneDimensionalArray) {
-  int a[5] = { 1, 2, 3, 4, 5 };
+  int a[5] = {1, 2, 3, 4, 5};
   EXPECT_EQ("{ 1, 2, 3, 4, 5 }", PrintArrayHelper(a));
 }
 
 
 TEST(PrintArrayTest, TwoDimensionalArray) {
-  int a[2][5] = {
-    { 1, 2, 3, 4, 5 },
-    { 6, 7, 8, 9, 0 }
-  };
+  int a[2][5] = {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 0}};
   EXPECT_EQ("{ { 1, 2, 3, 4, 5 }, { 6, 7, 8, 9, 0 } }", PrintArrayHelper(a));
 }
 
 
 TEST(PrintArrayTest, ConstArray) {
-  const bool a[1] = { false };
+  const bool a[1] = {false};
   EXPECT_EQ("{ false }", PrintArrayHelper(a));
 }
 
 
 TEST(PrintArrayTest, CharArrayWithNoTerminatingNul) {
   
-  char a[] = { 'H', '\0', 'i' };
+  char a[] = {'H', '\0', 'i'};
   EXPECT_EQ("\"H\\0i\" (no terminating NUL)", PrintArrayHelper(a));
 }
 
@@ -636,7 +617,7 @@ TEST(PrintArrayTest, ConstCharArrayWithTerminatingNul) {
 
 TEST(PrintArrayTest, WCharArrayWithNoTerminatingNul) {
   
-  const wchar_t a[] = { L'H', L'\0', L'i' };
+  const wchar_t a[] = {L'H', L'\0', L'i'};
   EXPECT_EQ("L\"H\\0i\" (no terminating NUL)", PrintArrayHelper(a));
 }
 
@@ -654,22 +635,12 @@ TEST(PrintArrayTest, ObjectArray) {
 
 
 TEST(PrintArrayTest, BigArray) {
-  int a[100] = { 1, 2, 3 };
+  int a[100] = {1, 2, 3};
   EXPECT_EQ("{ 1, 2, 3, 0, 0, 0, 0, 0, ..., 0, 0, 0, 0, 0, 0, 0, 0 }",
             PrintArrayHelper(a));
 }
 
 
-
-#if GTEST_HAS_GLOBAL_STRING
-
-TEST(PrintStringTest, StringInGlobalNamespace) {
-  const char s[] = "'\"?\\\a\b\f\n\0\r\t\v\x7F\xFF a";
-  const ::string str(s, sizeof(s));
-  EXPECT_EQ("\"'\\\"?\\\\\\a\\b\\f\\n\\0\\r\\t\\v\\x7F\\xFF a\\0\"",
-            Print(str));
-}
-#endif  
 
 
 TEST(PrintStringTest, StringInStdNamespace) {
@@ -684,45 +655,38 @@ TEST(PrintStringTest, StringAmbiguousHex) {
   
 
   
-  EXPECT_EQ("\"0\\x12\" \"3\"", Print(::std::string("0\x12" "3")));
+  EXPECT_EQ("\"0\\x12\" \"3\"", Print(::std::string("0\x12"
+                                                    "3")));
   
-  EXPECT_EQ("\"mm\\x6\" \"bananas\"", Print(::std::string("mm\x6" "bananas")));
+  EXPECT_EQ("\"mm\\x6\" \"bananas\"", Print(::std::string("mm\x6"
+                                                          "bananas")));
   
-  EXPECT_EQ("\"NOM\\x6\" \"BANANA\"", Print(::std::string("NOM\x6" "BANANA")));
+  EXPECT_EQ("\"NOM\\x6\" \"BANANA\"", Print(::std::string("NOM\x6"
+                                                          "BANANA")));
   
   EXPECT_EQ("\"!\\x5-!\"", Print(::std::string("!\x5-!")));
 }
 
 
-
-#if GTEST_HAS_GLOBAL_WSTRING
-// ::wstring.
-TEST(PrintWideStringTest, StringInGlobalNamespace) {
-  const wchar_t s[] = L"'\"?\\\a\b\f\n\0\r\t\v\xD3\x576\x8D3\xC74D a";
-  const ::wstring str(s, sizeof(s)/sizeof(wchar_t));
-  EXPECT_EQ("L\"'\\\"?\\\\\\a\\b\\f\\n\\0\\r\\t\\v"
-            "\\xD3\\x576\\x8D3\\xC74D a\\0\"",
-            Print(str));
-}
-#endif  
-
 #if GTEST_HAS_STD_WSTRING
 
 TEST(PrintWideStringTest, StringInStdNamespace) {
   const wchar_t s[] = L"'\"?\\\a\b\f\n\0\r\t\v\xD3\x576\x8D3\xC74D a";
-  const ::std::wstring str(s, sizeof(s)/sizeof(wchar_t));
-  EXPECT_EQ("L\"'\\\"?\\\\\\a\\b\\f\\n\\0\\r\\t\\v"
-            "\\xD3\\x576\\x8D3\\xC74D a\\0\"",
-            Print(str));
+  const ::std::wstring str(s, sizeof(s) / sizeof(wchar_t));
+  EXPECT_EQ(
+      "L\"'\\\"?\\\\\\a\\b\\f\\n\\0\\r\\t\\v"
+      "\\xD3\\x576\\x8D3\\xC74D a\\0\"",
+      Print(str));
 }
 
 TEST(PrintWideStringTest, StringAmbiguousHex) {
   
-  EXPECT_EQ("L\"0\\x12\" L\"3\"", Print(::std::wstring(L"0\x12" L"3")));
-  EXPECT_EQ("L\"mm\\x6\" L\"bananas\"",
-            Print(::std::wstring(L"mm\x6" L"bananas")));
-  EXPECT_EQ("L\"NOM\\x6\" L\"BANANA\"",
-            Print(::std::wstring(L"NOM\x6" L"BANANA")));
+  EXPECT_EQ("L\"0\\x12\" L\"3\"", Print(::std::wstring(L"0\x12"
+                                                       L"3")));
+  EXPECT_EQ("L\"mm\\x6\" L\"bananas\"", Print(::std::wstring(L"mm\x6"
+                                                             L"bananas")));
+  EXPECT_EQ("L\"NOM\\x6\" L\"BANANA\"", Print(::std::wstring(L"NOM\x6"
+                                                             L"BANANA")));
   EXPECT_EQ("L\"!\\x5-!\"", Print(::std::wstring(L"!\x5-!")));
 }
 #endif  // GTEST_HAS_STD_WSTRING
@@ -816,8 +780,6 @@ TEST(PrintStlContainerTest, NonEmptyDeque) {
   EXPECT_EQ("{ 1, 3 }", Print(non_empty));
 }
 
-#if GTEST_HAS_UNORDERED_MAP_
-
 TEST(PrintStlContainerTest, OneElementHashMap) {
   ::std::unordered_map<int, char> map1;
   map1[1] = 'a';
@@ -833,12 +795,8 @@ TEST(PrintStlContainerTest, HashMultiMap) {
   const std::string result = Print(map1);
   EXPECT_TRUE(result == "{ (5, true), (5, false) }" ||
               result == "{ (5, false), (5, true) }")
-                  << " where Print(map1) returns \"" << result << "\".";
+      << " where Print(map1) returns \"" << result << "\".";
 }
-
-#endif  
-
-#if GTEST_HAS_UNORDERED_SET_
 
 TEST(PrintStlContainerTest, HashSet) {
   ::std::unordered_set<int> set1;
@@ -848,7 +806,7 @@ TEST(PrintStlContainerTest, HashSet) {
 
 TEST(PrintStlContainerTest, HashMultiSet) {
   const int kSize = 5;
-  int a[kSize] = { 1, 1, 2, 5, 1 };
+  int a[kSize] = {1, 1, 2, 5, 1};
   ::std::unordered_multiset<int> set1(a, a + kSize);
 
   
@@ -874,8 +832,6 @@ TEST(PrintStlContainerTest, HashMultiSet) {
   std::sort(a, a + kSize);
   EXPECT_TRUE(std::equal(a, a + kSize, numbers.begin()));
 }
-
-#endif
 
 TEST(PrintStlContainerTest, List) {
   const std::string a[] = {"hello", "world"};
@@ -906,25 +862,22 @@ TEST(PrintStlContainerTest, MultiMap) {
 }
 
 TEST(PrintStlContainerTest, Set) {
-  const unsigned int a[] = { 3, 0, 5 };
+  const unsigned int a[] = {3, 0, 5};
   set<unsigned int> set1(a, a + 3);
   EXPECT_EQ("{ 0, 3, 5 }", Print(set1));
 }
 
 TEST(PrintStlContainerTest, MultiSet) {
-  const int a[] = { 1, 1, 2, 5, 1 };
+  const int a[] = {1, 1, 2, 5, 1};
   multiset<int> set1(a, a + 5);
   EXPECT_EQ("{ 1, 1, 1, 2, 5 }", Print(set1));
 }
 
-#if GTEST_HAS_STD_FORWARD_LIST_
-
 TEST(PrintStlContainerTest, SinglyLinkedList) {
-  int a[] = { 9, 2, 8 };
+  int a[] = {9, 2, 8};
   const std::forward_list<int> ints(a, a + 3);
   EXPECT_EQ("{ 9, 2, 8 }", Print(ints));
 }
-#endif  
 
 TEST(PrintStlContainerTest, Pair) {
   pair<const bool, int> p(true, 5);
@@ -939,15 +892,17 @@ TEST(PrintStlContainerTest, Vector) {
 }
 
 TEST(PrintStlContainerTest, LongSequence) {
-  const int a[100] = { 1, 2, 3 };
+  const int a[100] = {1, 2, 3};
   const vector<int> v(a, a + 100);
-  EXPECT_EQ("{ 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
-            "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ... }", Print(v));
+  EXPECT_EQ(
+      "{ 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+      "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ... }",
+      Print(v));
 }
 
 TEST(PrintStlContainerTest, NestedContainer) {
-  const int a1[] = { 1, 2 };
-  const int a2[] = { 3, 4, 5 };
+  const int a1[] = {1, 2};
+  const int a2[] = {3, 4, 5};
   const list<int> l1(a1, a1 + 2);
   const list<int> l2(a2, a2 + 3);
 
@@ -958,13 +913,13 @@ TEST(PrintStlContainerTest, NestedContainer) {
 }
 
 TEST(PrintStlContainerTest, OneDimensionalNativeArray) {
-  const int a[3] = { 1, 2, 3 };
+  const int a[3] = {1, 2, 3};
   NativeArray<int> b(a, 3, RelationToSourceReference());
   EXPECT_EQ("{ 1, 2, 3 }", Print(b));
 }
 
 TEST(PrintStlContainerTest, TwoDimensionalNativeArray) {
-  const int a[2][3] = { { 1, 2, 3 }, { 4, 5, 6 } };
+  const int a[2][3] = {{1, 2, 3}, {4, 5, 6}};
   NativeArray<int[3]> b(a, 2, RelationToSourceReference());
   EXPECT_EQ("{ { 1, 2, 3 }, { 4, 5, 6 } }", Print(b));
 }
@@ -991,67 +946,6 @@ TEST(PrintStlContainerTest, ConstIterator) {
   EXPECT_EQ("1-byte object <00>", Print(it));
 }
 
-#if GTEST_HAS_TR1_TUPLE
-
-
-
-TEST(PrintTr1TupleTest, VariousSizes) {
-  ::std::tr1::tuple<> t0;
-  EXPECT_EQ("()", Print(t0));
-
-  ::std::tr1::tuple<int> t1(5);
-  EXPECT_EQ("(5)", Print(t1));
-
-  ::std::tr1::tuple<char, bool> t2('a', true);
-  EXPECT_EQ("('a' (97, 0x61), true)", Print(t2));
-
-  ::std::tr1::tuple<bool, int, int> t3(false, 2, 3);
-  EXPECT_EQ("(false, 2, 3)", Print(t3));
-
-  ::std::tr1::tuple<bool, int, int, int> t4(false, 2, 3, 4);
-  EXPECT_EQ("(false, 2, 3, 4)", Print(t4));
-
-  ::std::tr1::tuple<bool, int, int, int, bool> t5(false, 2, 3, 4, true);
-  EXPECT_EQ("(false, 2, 3, 4, true)", Print(t5));
-
-  ::std::tr1::tuple<bool, int, int, int, bool, int> t6(false, 2, 3, 4, true, 6);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6)", Print(t6));
-
-  ::std::tr1::tuple<bool, int, int, int, bool, int, int> t7(
-      false, 2, 3, 4, true, 6, 7);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6, 7)", Print(t7));
-
-  ::std::tr1::tuple<bool, int, int, int, bool, int, int, bool> t8(
-      false, 2, 3, 4, true, 6, 7, true);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6, 7, true)", Print(t8));
-
-  ::std::tr1::tuple<bool, int, int, int, bool, int, int, bool, int> t9(
-      false, 2, 3, 4, true, 6, 7, true, 9);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6, 7, true, 9)", Print(t9));
-
-  const char* const str = "8";
-  
-  
-  ::std::tr1::tuple<bool, char, short, testing::internal::Int32,  
-                    testing::internal::Int64, float, double, const char*, void*,
-                    std::string>
-      t10(false, 'a', static_cast<short>(3), 4, 5, 1.5F, -2.5, str,  
-          ImplicitCast_<void*>(NULL), "10");
-  EXPECT_EQ("(false, 'a' (97, 0x61), 3, 4, 5, 1.5, -2.5, " + PrintPointer(str) +
-            " pointing to \"8\", NULL, \"10\")",
-            Print(t10));
-}
-
-
-TEST(PrintTr1TupleTest, NestedTuple) {
-  ::std::tr1::tuple< ::std::tr1::tuple<int, bool>, char> nested(
-      ::std::tr1::make_tuple(5, true), 'a');
-  EXPECT_EQ("((5, true), 'a' (97, 0x61))", Print(nested));
-}
-
-#endif  
-
-#if GTEST_HAS_STD_TUPLE_
 
 
 
@@ -1071,34 +965,14 @@ TEST(PrintStdTupleTest, VariousSizes) {
   ::std::tuple<bool, int, int, int> t4(false, 2, 3, 4);
   EXPECT_EQ("(false, 2, 3, 4)", Print(t4));
 
-  ::std::tuple<bool, int, int, int, bool> t5(false, 2, 3, 4, true);
-  EXPECT_EQ("(false, 2, 3, 4, true)", Print(t5));
-
-  ::std::tuple<bool, int, int, int, bool, int> t6(false, 2, 3, 4, true, 6);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6)", Print(t6));
-
-  ::std::tuple<bool, int, int, int, bool, int, int> t7(
-      false, 2, 3, 4, true, 6, 7);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6, 7)", Print(t7));
-
-  ::std::tuple<bool, int, int, int, bool, int, int, bool> t8(
-      false, 2, 3, 4, true, 6, 7, true);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6, 7, true)", Print(t8));
-
-  ::std::tuple<bool, int, int, int, bool, int, int, bool, int> t9(
-      false, 2, 3, 4, true, 6, 7, true, 9);
-  EXPECT_EQ("(false, 2, 3, 4, true, 6, 7, true, 9)", Print(t9));
-
   const char* const str = "8";
-  
-  
   ::std::tuple<bool, char, short, testing::internal::Int32,  
                testing::internal::Int64, float, double, const char*, void*,
                std::string>
       t10(false, 'a', static_cast<short>(3), 4, 5, 1.5F, -2.5, str,  
-          ImplicitCast_<void*>(NULL), "10");
+          nullptr, "10");
   EXPECT_EQ("(false, 'a' (97, 0x61), 3, 4, 5, 1.5, -2.5, " + PrintPointer(str) +
-            " pointing to \"8\", NULL, \"10\")",
+                " pointing to \"8\", NULL, \"10\")",
             Print(t10));
 }
 
@@ -1109,20 +983,31 @@ TEST(PrintStdTupleTest, NestedTuple) {
   EXPECT_EQ("((5, true), 'a' (97, 0x61))", Print(nested));
 }
 
-#endif  
+TEST(PrintNullptrT, Basic) { EXPECT_EQ("(nullptr)", Print(nullptr)); }
 
-#if GTEST_LANG_CXX11
-TEST(PrintNullptrT, Basic) {
-  EXPECT_EQ("(nullptr)", Print(nullptr));
+TEST(PrintReferenceWrapper, Printable) {
+  int x = 5;
+  EXPECT_EQ("@" + PrintPointer(&x) + " 5", Print(std::ref(x)));
+  EXPECT_EQ("@" + PrintPointer(&x) + " 5", Print(std::cref(x)));
 }
-#endif  
+
+TEST(PrintReferenceWrapper, Unprintable) {
+  ::foo::UnprintableInFoo up;
+  EXPECT_EQ(
+      "@" + PrintPointer(&up) +
+          " 16-byte object <EF-12 00-00 34-AB 00-00 00-00 00-00 00-00 00-00>",
+      Print(std::ref(up)));
+  EXPECT_EQ(
+      "@" + PrintPointer(&up) +
+          " 16-byte object <EF-12 00-00 34-AB 00-00 00-00 00-00 00-00 00-00>",
+      Print(std::cref(up)));
+}
 
 
 
 
 TEST(PrintUnprintableTypeTest, InGlobalNamespace) {
-  EXPECT_EQ("1-byte object <00>",
-            Print(UnprintableTemplateInGlobal<char>()));
+  EXPECT_EQ("1-byte object <00>", Print(UnprintableTemplateInGlobal<char>()));
 }
 
 
@@ -1139,14 +1024,15 @@ struct Big {
 };
 
 TEST(PrintUnpritableTypeTest, BigObject) {
-  EXPECT_EQ("257-byte object <00-00 00-00 00-00 00-00 00-00 00-00 "
-            "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
-            "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
-            "00-00 00-00 00-00 00-00 00-00 00-00 ... 00-00 00-00 00-00 "
-            "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
-            "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
-            "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00>",
-            Print(Big()));
+  EXPECT_EQ(
+      "257-byte object <00-00 00-00 00-00 00-00 00-00 00-00 "
+      "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
+      "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
+      "00-00 00-00 00-00 00-00 00-00 00-00 ... 00-00 00-00 00-00 "
+      "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
+      "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 "
+      "00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00>",
+      Print(Big()));
 }
 
 
@@ -1175,8 +1061,7 @@ TEST(PrintStreamableTypeTest, PathLikeInUserNamespace) {
 
 
 TEST(PrintPrintableTypeTest, InUserNamespace) {
-  EXPECT_EQ("PrintableViaPrintTo: 0",
-            Print(::foo::PrintableViaPrintTo()));
+  EXPECT_EQ("PrintableViaPrintTo: 0", Print(::foo::PrintableViaPrintTo()));
 }
 
 
@@ -1198,16 +1083,14 @@ TEST(PrintReferenceTest, PrintsAddressAndValue) {
   int n = 5;
   EXPECT_EQ("@" + PrintPointer(&n) + " 5", PrintByRef(n));
 
-  int a[2][3] = {
-    { 0, 1, 2 },
-    { 3, 4, 5 }
-  };
+  int a[2][3] = {{0, 1, 2}, {3, 4, 5}};
   EXPECT_EQ("@" + PrintPointer(a) + " { { 0, 1, 2 }, { 3, 4, 5 } }",
             PrintByRef(a));
 
   const ::foo::UnprintableInFoo x;
-  EXPECT_EQ("@" + PrintPointer(&x) + " 16-byte object "
-            "<EF-12 00-00 34-AB 00-00 00-00 00-00 00-00 00-00>",
+  EXPECT_EQ("@" + PrintPointer(&x) +
+                " 16-byte object "
+                "<EF-12 00-00 34-AB 00-00 00-00 00-00 00-00 00-00>",
             PrintByRef(x));
 }
 
@@ -1223,33 +1106,29 @@ TEST(PrintReferenceTest, HandlesFunctionPointer) {
   
   const std::string fp_string = PrintPointer(reinterpret_cast<const void*>(
       reinterpret_cast<internal::BiggestInt>(fp)));
-  EXPECT_EQ("@" + fp_pointer_string + " " + fp_string,
-            PrintByRef(fp));
+  EXPECT_EQ("@" + fp_pointer_string + " " + fp_string, PrintByRef(fp));
 }
 
 
 
 TEST(PrintReferenceTest, HandlesMemberFunctionPointer) {
   int (Foo::*p)(char ch) = &Foo::MyMethod;
-  EXPECT_TRUE(HasPrefix(
-      PrintByRef(p),
-      "@" + PrintPointer(reinterpret_cast<const void*>(&p)) + " " +
-          Print(sizeof(p)) + "-byte object "));
+  EXPECT_TRUE(HasPrefix(PrintByRef(p),
+                        "@" + PrintPointer(reinterpret_cast<const void*>(&p)) +
+                            " " + Print(sizeof(p)) + "-byte object "));
 
   char (Foo::*p2)(int n) = &Foo::MyVirtualMethod;
-  EXPECT_TRUE(HasPrefix(
-      PrintByRef(p2),
-      "@" + PrintPointer(reinterpret_cast<const void*>(&p2)) + " " +
-          Print(sizeof(p2)) + "-byte object "));
+  EXPECT_TRUE(HasPrefix(PrintByRef(p2),
+                        "@" + PrintPointer(reinterpret_cast<const void*>(&p2)) +
+                            " " + Print(sizeof(p2)) + "-byte object "));
 }
 
 
 
 TEST(PrintReferenceTest, HandlesMemberVariablePointer) {
   int Foo::*p = &Foo::value;  
-  EXPECT_TRUE(HasPrefix(
-      PrintByRef(p),
-      "@" + PrintPointer(&p) + " " + Print(sizeof(p)) + "-byte object "));
+  EXPECT_TRUE(HasPrefix(PrintByRef(p), "@" + PrintPointer(&p) + " " +
+                                           Print(sizeof(p)) + "-byte object "));
 }
 
 
@@ -1258,8 +1137,7 @@ TEST(PrintReferenceTest, HandlesMemberVariablePointer) {
 
 
 TEST(FormatForComparisonFailureMessageTest, WorksForScalar) {
-  EXPECT_STREQ("123",
-               FormatForComparisonFailureMessage(123, 124).c_str());
+  EXPECT_STREQ("123", FormatForComparisonFailureMessage(123, 124).c_str());
 }
 
 
@@ -1273,9 +1151,8 @@ TEST(FormatForComparisonFailureMessageTest, WorksForNonCharPointer) {
 TEST(FormatForComparisonFailureMessageTest, FormatsNonCharArrayAsPointer) {
   
   
-  int n[] = { 1, 2, 3 };
-  EXPECT_EQ(PrintPointer(n),
-            FormatForComparisonFailureMessage(n, n).c_str());
+  int n[] = {1, 2, 3};
+  EXPECT_EQ(PrintPointer(n), FormatForComparisonFailureMessage(n, n).c_str());
 }
 
 
@@ -1291,8 +1168,7 @@ TEST(FormatForComparisonFailureMessageTest, WorksForCharPointerVsPointer) {
 
   
   const char* s = "hello";
-  EXPECT_EQ(PrintPointer(s),
-            FormatForComparisonFailureMessage(s, s).c_str());
+  EXPECT_EQ(PrintPointer(s), FormatForComparisonFailureMessage(s, s).c_str());
 
   
   char ch = 'a';
@@ -1309,8 +1185,7 @@ TEST(FormatForComparisonFailureMessageTest, WorksForWCharPointerVsPointer) {
 
   
   const wchar_t* s = L"hello";
-  EXPECT_EQ(PrintPointer(s),
-            FormatForComparisonFailureMessage(s, s).c_str());
+  EXPECT_EQ(PrintPointer(s), FormatForComparisonFailureMessage(s, s).c_str());
 
   
   wchar_t ch = L'a';
@@ -1320,21 +1195,6 @@ TEST(FormatForComparisonFailureMessageTest, WorksForWCharPointerVsPointer) {
 
 
 
-
-#if GTEST_HAS_GLOBAL_STRING
-
-TEST(FormatForComparisonFailureMessageTest, WorksForCharPointerVsString) {
-  const char* s = "hello \"world";
-  EXPECT_STREQ("\"hello \\\"world\"",  
-               FormatForComparisonFailureMessage(s, ::string()).c_str());
-
-  
-  char str[] = "hi\1";
-  char* p = str;
-  EXPECT_STREQ("\"hi\\x1\"",  
-               FormatForComparisonFailureMessage(p, ::string()).c_str());
-}
-#endif
 
 
 TEST(FormatForComparisonFailureMessageTest, WorksForCharPointerVsStdString) {
@@ -1348,21 +1208,6 @@ TEST(FormatForComparisonFailureMessageTest, WorksForCharPointerVsStdString) {
   EXPECT_STREQ("\"hi\\x1\"",  
                FormatForComparisonFailureMessage(p, ::std::string()).c_str());
 }
-
-#if GTEST_HAS_GLOBAL_WSTRING
-
-TEST(FormatForComparisonFailureMessageTest, WorksForWCharPointerVsWString) {
-  const wchar_t* s = L"hi \"world";
-  EXPECT_STREQ("L\"hi \\\"world\"",  
-               FormatForComparisonFailureMessage(s, ::wstring()).c_str());
-
-  
-  wchar_t str[] = L"hi\1";
-  wchar_t* p = str;
-  EXPECT_STREQ("L\"hi\\x1\"",  
-               FormatForComparisonFailureMessage(p, ::wstring()).c_str());
-}
-#endif
 
 #if GTEST_HAS_STD_WSTRING
 
@@ -1386,7 +1231,7 @@ TEST(FormatForComparisonFailureMessageTest, WorksForWCharPointerVsStdWString) {
 
 TEST(FormatForComparisonFailureMessageTest, WorksForCharArrayVsPointer) {
   char str[] = "hi \"world\"";
-  char* p = NULL;
+  char* p = nullptr;
   EXPECT_EQ(PrintPointer(str),
             FormatForComparisonFailureMessage(str, p).c_str());
 }
@@ -1401,7 +1246,7 @@ TEST(FormatForComparisonFailureMessageTest, WorksForCharArrayVsCharArray) {
 
 TEST(FormatForComparisonFailureMessageTest, WorksForWCharArrayVsPointer) {
   wchar_t str[] = L"hi \"world\"";
-  wchar_t* p = NULL;
+  wchar_t* p = nullptr;
   EXPECT_EQ(PrintPointer(str),
             FormatForComparisonFailureMessage(str, p).c_str());
 }
@@ -1416,31 +1261,12 @@ TEST(FormatForComparisonFailureMessageTest, WorksForWCharArrayVsWCharArray) {
 
 
 
-#if GTEST_HAS_GLOBAL_STRING
-
-TEST(FormatForComparisonFailureMessageTest, WorksForCharArrayVsString) {
-  const char str[] = "hi \"w\0rld\"";
-  EXPECT_STREQ("\"hi \\\"w\"",  
-                                
-               FormatForComparisonFailureMessage(str, ::string()).c_str());
-}
-#endif
-
 
 TEST(FormatForComparisonFailureMessageTest, WorksForCharArrayVsStdString) {
   const char str[] = "hi \"world\"";
   EXPECT_STREQ("\"hi \\\"world\\\"\"",  
                FormatForComparisonFailureMessage(str, ::std::string()).c_str());
 }
-
-#if GTEST_HAS_GLOBAL_WSTRING
-
-TEST(FormatForComparisonFailureMessageTest, WorksForWCharArrayVsWString) {
-  const wchar_t str[] = L"hi \"world\"";
-  EXPECT_STREQ("L\"hi \\\"world\\\"\"",  
-               FormatForComparisonFailureMessage(str, ::wstring()).c_str());
-}
-#endif
 
 #if GTEST_HAS_STD_WSTRING
 
@@ -1456,13 +1282,11 @@ TEST(FormatForComparisonFailureMessageTest, WorksForWCharArrayVsStdWString) {
 
 
 
-#define EXPECT_PRINT_TO_STRING_(value, expected_string)         \
-  EXPECT_TRUE(PrintToString(value) == (expected_string))        \
+#define EXPECT_PRINT_TO_STRING_(value, expected_string)  \
+  EXPECT_TRUE(PrintToString(value) == (expected_string)) \
       << " where " #value " prints as " << (PrintToString(value))
 
-TEST(PrintToStringTest, WorksForScalar) {
-  EXPECT_PRINT_TO_STRING_(123, "123");
-}
+TEST(PrintToStringTest, WorksForScalar) { EXPECT_PRINT_TO_STRING_(123, "123"); }
 
 TEST(PrintToStringTest, WorksForPointerToConstChar) {
   const char* p = "hello";
@@ -1487,7 +1311,7 @@ TEST(PrintToStringTest, EscapesForPointerToNonConstChar) {
 }
 
 TEST(PrintToStringTest, WorksForArray) {
-  int n[3] = { 1, 2, 3 };
+  int n[3] = {1, 2, 3};
   EXPECT_PRINT_TO_STRING_(n, "{ 1, 2, 3 }");
 }
 
@@ -1504,7 +1328,7 @@ TEST(PrintToStringTest, WorksForCharArrayWithEmbeddedNul) {
   EXPECT_PRINT_TO_STRING_(mutable_str_with_nul, "\"hello\\0 world\"");
 }
 
-  TEST(PrintToStringTest, ContainsNonLatin) {
+TEST(PrintToStringTest, ContainsNonLatin) {
   
   std::string non_ascii_str = ::std::string("오전 4:30");
   EXPECT_PRINT_TO_STRING_(non_ascii_str,
@@ -1521,57 +1345,58 @@ TEST(IsValidUTF8Test, IllFormedUTF8) {
   
   
 
-  static const char *const kTestdata[][2] = {
-    
-    {"\xC3\x74", "\"\\xC3t\""},
-    
-    {"\xC3\x84\xA4", "\"\\xC3\\x84\\xA4\""},
-    
-    {"abc\xC3", "\"abc\\xC3\""},
-    
-    {"x\xE2\x70\x94", "\"x\\xE2p\\x94\""},
-    
-    {"\xE2\x80", "\"\\xE2\\x80\""},
-    
-    {"\xE2\x80\xC3\x84", "\"\\xE2\\x80\\xC3\\x84\""},
-    
-    {"\xE2\x80\x7A", "\"\\xE2\\x80z\""},
-    
-    {"\xE2\xE2\x80\x94", "\"\\xE2\\xE2\\x80\\x94\""},
-    
-    {"\xF0\xE2\x80\x94", "\"\\xF0\\xE2\\x80\\x94\""},
-    
-    {"\xF0\xE2\x80", "\"\\xF0\\xE2\\x80\""},
-     
-    {"abc\xE2\x80\x94\xC3\x74xyc", "\"abc\\xE2\\x80\\x94\\xC3txyc\""},
-    {"abc\xC3\x84\xE2\x80\xC3\x84xyz",
-     "\"abc\\xC3\\x84\\xE2\\x80\\xC3\\x84xyz\""},
-    
-    
-    {"\xC0\x80", "\"\\xC0\\x80\""},
-    {"\xC1\x81", "\"\\xC1\\x81\""},
-    
-    {"\xE0\x80\x80", "\"\\xE0\\x80\\x80\""},
-    {"\xf0\x80\x80\x80", "\"\\xF0\\x80\\x80\\x80\""},
-    
-    
-    {"\xED\x9F\xBF", "\"\\xED\\x9F\\xBF\"\n    As Text: \"퟿\""},
-    
-    {"\xED\xA0\x80", "\"\\xED\\xA0\\x80\""},
-    
-    {"\xED\xAD\xBF", "\"\\xED\\xAD\\xBF\""},
-    
-    {"\xED\xAE\x80", "\"\\xED\\xAE\\x80\""},
-    
-    {"\xED\xAF\xBF", "\"\\xED\\xAF\\xBF\""},
-    
-    {"\xED\xB3\xBF", "\"\\xED\\xB3\\xBF\""},
-    
-    
-    {"\xEE\x80\x80", "\"\\xEE\\x80\\x80\"\n    As Text: \"\""}
-  };
+  static const char* const kTestdata[][2] = {
+      
+      {"\xC3\x74", "\"\\xC3t\""},
+      
+      {"\xC3\x84\xA4", "\"\\xC3\\x84\\xA4\""},
+      
+      {"abc\xC3", "\"abc\\xC3\""},
+      
+      {"x\xE2\x70\x94", "\"x\\xE2p\\x94\""},
+      
+      {"\xE2\x80", "\"\\xE2\\x80\""},
+      
+      {"\xE2\x80\xC3\x84", "\"\\xE2\\x80\\xC3\\x84\""},
+      
+      {"\xE2\x80\x7A", "\"\\xE2\\x80z\""},
+      
+      {"\xE2\xE2\x80\x94", "\"\\xE2\\xE2\\x80\\x94\""},
+      
+      {"\xF0\xE2\x80\x94", "\"\\xF0\\xE2\\x80\\x94\""},
+      
+      {"\xF0\xE2\x80", "\"\\xF0\\xE2\\x80\""},
+      
+      {"abc\xE2\x80\x94\xC3\x74xyc", "\"abc\\xE2\\x80\\x94\\xC3txyc\""},
+      {"abc\xC3\x84\xE2\x80\xC3\x84xyz",
+       "\"abc\\xC3\\x84\\xE2\\x80\\xC3\\x84xyz\""},
+      
+      
+      {"\xC0\x80", "\"\\xC0\\x80\""},
+      {"\xC1\x81", "\"\\xC1\\x81\""},
+      
+      {"\xE0\x80\x80", "\"\\xE0\\x80\\x80\""},
+      {"\xf0\x80\x80\x80", "\"\\xF0\\x80\\x80\\x80\""},
+      
+      
+      
+      {"\xED\x9F\xBF", "\"\\xED\\x9F\\xBF\"\n    As Text: \"퟿\""},
+      
+      {"\xED\xA0\x80", "\"\\xED\\xA0\\x80\""},
+      
+      {"\xED\xAD\xBF", "\"\\xED\\xAD\\xBF\""},
+      
+      {"\xED\xAE\x80", "\"\\xED\\xAE\\x80\""},
+      
+      {"\xED\xAF\xBF", "\"\\xED\\xAF\\xBF\""},
+      
+      {"\xED\xB3\xBF", "\"\\xED\\xB3\\xBF\""},
+      
+      
+      
+      {"\xEE\x80\x80", "\"\\xEE\\x80\\x80\"\n    As Text: \"\""}};
 
-  for (int i = 0; i < int(sizeof(kTestdata)/sizeof(kTestdata[0])); ++i) {
+  for (int i = 0; i < int(sizeof(kTestdata) / sizeof(kTestdata[0])); ++i) {
     EXPECT_PRINT_TO_STRING_(kTestdata[i][0], kTestdata[i][1]);
   }
 }
@@ -1602,7 +1427,7 @@ TEST(UniversalTersePrintTest, WorksForCString) {
   UniversalTersePrint(s2, &ss2);
   EXPECT_EQ("\"abc\"", ss2.str());
 
-  const char* s3 = NULL;
+  const char* s3 = nullptr;
   ::std::stringstream ss3;
   UniversalTersePrint(s3, &ss3);
   EXPECT_EQ("NULL", ss3.str());
@@ -1632,7 +1457,7 @@ TEST(UniversalPrintTest, WorksForCString) {
   UniversalPrint(s2, &ss2);
   EXPECT_EQ(PrintPointer(s2) + " pointing to \"abc\"", std::string(ss2.str()));
 
-  const char* s3 = NULL;
+  const char* s3 = nullptr;
   ::std::stringstream ss3;
   UniversalPrint(s3, &ss3);
   EXPECT_EQ("NULL", ss3.str());
@@ -1650,57 +1475,21 @@ TEST(UniversalPrintTest, WorksForCharArray) {
   EXPECT_EQ("\"\\\"Line\\0 1\\\"\\nLine 2\"", ss2.str());
 }
 
-#if GTEST_HAS_TR1_TUPLE
-
-TEST(UniversalTersePrintTupleFieldsToStringsTestWithTr1, PrintsEmptyTuple) {
-  Strings result = UniversalTersePrintTupleFieldsToStrings(
-      ::std::tr1::make_tuple());
-  EXPECT_EQ(0u, result.size());
-}
-
-TEST(UniversalTersePrintTupleFieldsToStringsTestWithTr1, PrintsOneTuple) {
-  Strings result = UniversalTersePrintTupleFieldsToStrings(
-      ::std::tr1::make_tuple(1));
-  ASSERT_EQ(1u, result.size());
-  EXPECT_EQ("1", result[0]);
-}
-
-TEST(UniversalTersePrintTupleFieldsToStringsTestWithTr1, PrintsTwoTuple) {
-  Strings result = UniversalTersePrintTupleFieldsToStrings(
-      ::std::tr1::make_tuple(1, 'a'));
-  ASSERT_EQ(2u, result.size());
-  EXPECT_EQ("1", result[0]);
-  EXPECT_EQ("'a' (97, 0x61)", result[1]);
-}
-
-TEST(UniversalTersePrintTupleFieldsToStringsTestWithTr1, PrintsTersely) {
-  const int n = 1;
-  Strings result = UniversalTersePrintTupleFieldsToStrings(
-      ::std::tr1::tuple<const int&, const char*>(n, "a"));
-  ASSERT_EQ(2u, result.size());
-  EXPECT_EQ("1", result[0]);
-  EXPECT_EQ("\"a\"", result[1]);
-}
-
-#endif  
-
-#if GTEST_HAS_STD_TUPLE_
-
 TEST(UniversalTersePrintTupleFieldsToStringsTestWithStd, PrintsEmptyTuple) {
   Strings result = UniversalTersePrintTupleFieldsToStrings(::std::make_tuple());
   EXPECT_EQ(0u, result.size());
 }
 
 TEST(UniversalTersePrintTupleFieldsToStringsTestWithStd, PrintsOneTuple) {
-  Strings result = UniversalTersePrintTupleFieldsToStrings(
-      ::std::make_tuple(1));
+  Strings result =
+      UniversalTersePrintTupleFieldsToStrings(::std::make_tuple(1));
   ASSERT_EQ(1u, result.size());
   EXPECT_EQ("1", result[0]);
 }
 
 TEST(UniversalTersePrintTupleFieldsToStringsTestWithStd, PrintsTwoTuple) {
-  Strings result = UniversalTersePrintTupleFieldsToStrings(
-      ::std::make_tuple(1, 'a'));
+  Strings result =
+      UniversalTersePrintTupleFieldsToStrings(::std::make_tuple(1, 'a'));
   ASSERT_EQ(2u, result.size());
   EXPECT_EQ("1", result[0]);
   EXPECT_EQ("'a' (97, 0x61)", result[1]);
@@ -1714,8 +1503,6 @@ TEST(UniversalTersePrintTupleFieldsToStringsTestWithStd, PrintsTersely) {
   EXPECT_EQ("1", result[0]);
   EXPECT_EQ("\"a\"", result[1]);
 }
-
-#endif  
 
 #if GTEST_HAS_ABSL
 
@@ -1743,6 +1530,65 @@ TEST(PrintOneofTest, Basic) {
       PrintToString(Type(NonPrintable{})));
 }
 #endif  
+namespace {
+class string_ref;
+
+
+
+
+class string_ptr {
+ public:
+  string_ptr(const char* data, size_t size) : data_(data), size_(size) {}
+
+  string_ptr& operator++() noexcept {
+    data_ += size_;
+    return *this;
+  }
+
+  string_ref operator*() const noexcept;
+
+ private:
+  const char* data_;
+  size_t size_;
+};
+
+
+
+
+class string_ref {
+ public:
+  string_ref(const char* data, size_t size) : data_(data), size_(size) {}
+
+  string_ptr operator&() const noexcept { return {data_, size_}; }  
+
+  bool operator==(const char* s) const noexcept {
+    if (size_ > 0 && data_[size_ - 1] != 0) {
+      return std::string(data_, size_) == std::string(s);
+    } else {
+      return std::string(data_) == std::string(s);
+    }
+  }
+
+ private:
+  const char* data_;
+  size_t size_;
+};
+
+string_ref string_ptr::operator*() const noexcept { return {data_, size_}; }
+
+TEST(string_ref, compare) {
+  const char* s = "alex\0davidjohn\0";
+  string_ptr ptr(s, 5);
+  EXPECT_EQ(*ptr, "alex");
+  EXPECT_TRUE(*ptr == "alex");
+  ++ptr;
+  EXPECT_EQ(*ptr, "david");
+  EXPECT_TRUE(*ptr == "david");
+  ++ptr;
+  EXPECT_EQ(*ptr, "john");
+}
+
+}  
 
 }  
 }  

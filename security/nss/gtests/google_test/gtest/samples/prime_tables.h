@@ -31,8 +31,6 @@
 
 
 
-
-
 #ifndef GTEST_SAMPLES_PRIME_TABLES_H_
 #define GTEST_SAMPLES_PRIME_TABLES_H_
 
@@ -54,10 +52,10 @@ class PrimeTable {
 
 class OnTheFlyPrimeTable : public PrimeTable {
  public:
-  virtual bool IsPrime(int n) const {
+  bool IsPrime(int n) const override {
     if (n <= 1) return false;
 
-    for (int i = 2; i*i <= n; i++) {
+    for (int i = 2; i * i <= n; i++) {
       
       if ((n % i) == 0) return false;
     }
@@ -65,7 +63,7 @@ class OnTheFlyPrimeTable : public PrimeTable {
     return true;
   }
 
-  virtual int GetNextPrime(int p) const {
+  int GetNextPrime(int p) const override {
     for (int n = p + 1; n > 0; n++) {
       if (IsPrime(n)) return n;
     }
@@ -83,13 +81,13 @@ class PreCalculatedPrimeTable : public PrimeTable {
       : is_prime_size_(max + 1), is_prime_(new bool[max + 1]) {
     CalculatePrimesUpTo(max);
   }
-  virtual ~PreCalculatedPrimeTable() { delete[] is_prime_; }
+  ~PreCalculatedPrimeTable() override { delete[] is_prime_; }
 
-  virtual bool IsPrime(int n) const {
+  bool IsPrime(int n) const override {
     return 0 <= n && n < is_prime_size_ && is_prime_[n];
   }
 
-  virtual int GetNextPrime(int p) const {
+  int GetNextPrime(int p) const override {
     for (int n = p + 1; n < is_prime_size_; n++) {
       if (is_prime_[n]) return n;
     }
@@ -104,13 +102,13 @@ class PreCalculatedPrimeTable : public PrimeTable {
 
     
     
-    for (int i = 2; i*i <= max; i += i%2+1) {
+    for (int i = 2; i * i <= max; i += i % 2 + 1) {
       if (!is_prime_[i]) continue;
 
       
       
       
-      for (int j = i*i; j <= max; j += i) {
+      for (int j = i * i; j <= max; j += i) {
         is_prime_[j] = false;
       }
     }
