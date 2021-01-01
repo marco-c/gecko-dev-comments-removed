@@ -125,16 +125,14 @@ class ProfileBuffer final {
 
  private:
   
-  static constexpr auto WorkerBufferBytes = MakePowerOfTwo32<65536>();
-
-  
   
   
   
   
   mutable ProfileBufferChunkManagerSingle mWorkerChunkManager{
-      ProfileBufferChunk::Create(ProfileBufferChunk::SizeofChunkMetadata() +
-                                 WorkerBufferBytes.Value())};
+      ProfileBufferChunk::Create(
+          ProfileBufferChunk::SizeofChunkMetadata() +
+          ProfileBufferChunkManager::scExpectedMaximumStackSize)};
 
   
   double mFirstSamplingTimeUs = 0.0;

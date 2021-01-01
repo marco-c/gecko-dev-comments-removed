@@ -578,9 +578,6 @@ struct LiveProfiledThreadData {
 constexpr static uint32_t scBytesPerEntry = 8;
 
 
-constexpr static uint32_t scExpectedMaximumStackSize = 64 * 1024;
-
-
 
 
 
@@ -594,7 +591,8 @@ class ActivePS {
   
 
   
-  constexpr static uint32_t scMinimumChunkSize = 2 * scExpectedMaximumStackSize;
+  constexpr static uint32_t scMinimumChunkSize =
+      2 * ProfileBufferChunkManager::scExpectedMaximumStackSize;
 
   
   
@@ -2257,7 +2255,8 @@ void SamplerThread::Run() {
   
   
   
-  ProfileBufferChunkManagerSingle localChunkManager(scExpectedMaximumStackSize);
+  ProfileBufferChunkManagerSingle localChunkManager(
+      ProfileBufferChunkManager::scExpectedMaximumStackSize);
   ProfileChunkedBuffer localBuffer(
       ProfileChunkedBuffer::ThreadSafety::WithoutMutex, localChunkManager);
   ProfileBuffer localProfileBuffer(localBuffer);
@@ -3042,9 +3041,11 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   
   
   
-  
   PowerOfTwo32 capacity =
-      (aCapacity.Value() >= 8192u) ? aCapacity : BASE_PROFILER_DEFAULT_ENTRIES;
+      (aCapacity.Value() >=
+       ProfileBufferChunkManager::scExpectedMaximumStackSize / scBytesPerEntry)
+          ? aCapacity
+          : BASE_PROFILER_DEFAULT_ENTRIES;
   Maybe<double> duration = aDuration;
 
   if (aDuration && *aDuration <= 0) {
@@ -3585,7 +3586,8 @@ UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
 
   auto buffer = MakeUnique<ProfileChunkedBuffer>(
       ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
-      MakeUnique<ProfileBufferChunkManagerSingle>(scExpectedMaximumStackSize));
+      MakeUnique<ProfileBufferChunkManagerSingle>(
+          ProfileBufferChunkManager::scExpectedMaximumStackSize));
 
   if (!profiler_capture_backtrace_into(*buffer)) {
     return nullptr;

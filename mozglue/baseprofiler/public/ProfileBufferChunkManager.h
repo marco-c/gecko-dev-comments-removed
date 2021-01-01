@@ -36,6 +36,12 @@ class ProfileBufferChunkManager {
 #endif
 
   
+  
+  
+  constexpr static ProfileBufferChunk::Length scExpectedMaximumStackSize =
+      64 * 1024;
+
+  
   [[nodiscard]] virtual size_t MaxTotalSize() const = 0;
 
   

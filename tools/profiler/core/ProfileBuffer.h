@@ -161,9 +161,6 @@ class ProfileBuffer final {
 
  private:
   
-  static constexpr auto WorkerBufferBytes = mozilla::MakePowerOfTwo32<65536>();
-
-  
   
   
   
@@ -171,7 +168,7 @@ class ProfileBuffer final {
   mutable mozilla::ProfileBufferChunkManagerSingle mWorkerChunkManager{
       mozilla::ProfileBufferChunk::Create(
           mozilla::ProfileBufferChunk::SizeofChunkMetadata() +
-          WorkerBufferBytes.Value())};
+          mozilla::ProfileBufferChunkManager::scExpectedMaximumStackSize)};
 
   double mFirstSamplingTimeUs = 0.0;
   double mLastSamplingTimeUs = 0.0;

@@ -277,7 +277,8 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
     
     
     
-    ProfileBufferChunkManagerSingle chunkManager(64 * 1024);
+    ProfileBufferChunkManagerSingle chunkManager(
+        ProfileBufferChunkManager::scExpectedMaximumStackSize);
     ProfileChunkedBuffer chunkedBuffer(
         ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
     aOptions.StackRef().UseRequestedBacktrace(
