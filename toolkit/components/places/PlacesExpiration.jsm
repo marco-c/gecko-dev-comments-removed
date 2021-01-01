@@ -558,6 +558,14 @@ nsPlacesExpiration.prototype = {
       
       
       PlacesUtils.history.addObserver(this, true);
+
+      const placesObserver = new PlacesWeakCallbackWrapper(
+        
+        () => {
+          this.status = STATUS.CLEAN;
+        }
+      );
+      PlacesObservers.addListener(["history-cleared"], placesObserver);
     }
   },
 
