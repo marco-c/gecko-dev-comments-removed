@@ -240,9 +240,6 @@ class nsPluginFrame final : public nsIFrame,
                       const ReflowInput& aReflowInput,
                       ReflowOutput& aDesiredSize);
 
-  bool IsFocusable(int32_t* aTabIndex = nullptr,
-                   bool aWithMouse = false) override;
-
   
   bool IsHidden(bool aCheckVisibilityStyle = true) const;
 

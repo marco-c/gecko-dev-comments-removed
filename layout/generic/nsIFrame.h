@@ -4218,8 +4218,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool IsFocusable(int32_t* aTabIndex = nullptr,
-                           bool aWithMouse = false);
+  bool IsFocusable(int32_t* aTabIndex = nullptr, bool aWithMouse = false);
 
   
   
