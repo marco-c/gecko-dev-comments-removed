@@ -527,7 +527,21 @@ class Context {
 
 
   logError(error) {
-    Cu.reportError(error);
+    if (this.cloneScope) {
+      Cu.reportError(
+        
+        
+        
+        
+        typeof error == "string" ? error : String(error),
+        
+        
+        
+        this.principal && ChromeUtils.getCallerLocation(this.principal)
+      );
+    } else {
+      Cu.reportError(error);
+    }
   }
 
   
