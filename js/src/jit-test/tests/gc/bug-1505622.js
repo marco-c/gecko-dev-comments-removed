@@ -1,39 +1,30 @@
 
 
+function allocUntilFail() {
+    gc();
+    let initGCNumber = gcparam("gcNumber");
+    let error;
+    try {
+        let a = [];
+        while (true) {
+            a.push(Symbol()); 
+        }
+    } catch(err) {
+        error = err;
+    }
+    let finalGCNumber = gcparam("gcNumber");
+    gc();
+    assertEq(error, "out of memory");
+    return finalGCNumber - initGCNumber;
+}
+
 
 gczeal(0);
 
 
 gc();
-const initialSize = gcparam("gcBytes");
-const initialMaxSize = gcparam("maxBytes");
-
-function allocUntilFail() {
-  gc();
-  const initGCNumber = gcparam("majorGCNumber");
-
-  
-  gcparam("maxBytes", initialSize + 16 * 1024);
-
-  let error;
-  try {
-    let a = [];
-    while (true) {
-      a.push(Symbol()); 
-    }
-  } catch(err) {
-    error = err;
-  }
-
-  const finalGCNumber = gcparam("majorGCNumber");
-
-  
-  gcparam("maxBytes", initialMaxSize);
-
-  gc();
-  assertEq(error, "out of memory");
-  return finalGCNumber - initGCNumber;
-}
+let currentSize = gcparam("gcBytes");
+gcparam("maxBytes", currentSize + 16 * 1024);
 
 
 gcparam("minLastDitchGCPeriod", 5);
