@@ -1464,6 +1464,33 @@ function rbigintneg(i) {
     return i;
 }
 
+let uceFault_bitand_bigint = eval(`(${uceFault})`.replace('uceFault', 'uceFault_bitand_bigint'));
+function rbigintbitand(i) {
+    var x = 1n & i;
+    if (uceFault_bitand_bigint(i) || uceFault_bitand_bigint(i))
+        assertEq(x, 1n  );
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
+let uceFault_bitor_bigint = eval(`(${uceFault})`.replace('uceFault', 'uceFault_bitor_bigint'));
+function rbigintbitor(i) {
+    var x = i | -100n; 
+    if (uceFault_bitor_bigint(i) || uceFault_bitor_bigint(i))
+        assertEq(x, -1n) 
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
+let uceFault_bitxor_bigint = eval(`(${uceFault})`.replace('uceFault', 'uceFault_bitxor_bigint'));
+function rbigintbitxor(i) {
+    var x = 1n ^ i;
+    if (uceFault_bitxor_bigint(i) || uceFault_bitxor_bigint(i))
+        assertEq(x, 98n  );
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
 for (j = 100 - max; j < 100; j++) {
     with({}){} 
     let i = j < 2 ? (Math.abs(j) % 50) + 2 : j;
@@ -1608,6 +1635,9 @@ for (j = 100 - max; j < 100; j++) {
     rbigintinc(BigInt(i));
     rbigintdec(BigInt(i));
     rbigintneg(BigInt(i));
+    rbigintbitand(BigInt(i));
+    rbigintbitor(BigInt(i));
+    rbigintbitxor(BigInt(i));
 }
 
 
