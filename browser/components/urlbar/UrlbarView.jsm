@@ -809,6 +809,11 @@ class UrlbarView {
 
 
 
+
+
+
+
+
   static addDynamicViewTemplate(name, viewTemplate) {
     this.dynamicViewTemplatesByName.set(name, viewTemplate);
     if (viewTemplate.stylesheet) {
@@ -1094,27 +1099,41 @@ class UrlbarView {
   _createRowContentForDynamicType(item, result) {
     let { dynamicType } = result.payload;
     let viewTemplate = UrlbarView.dynamicViewTemplatesByName.get(dynamicType);
-    this._buildViewForDynamicType(dynamicType, item._content, viewTemplate);
+    this._buildViewForDynamicType(
+      dynamicType,
+      item._content,
+      item._elements,
+      viewTemplate
+    );
   }
 
-  _buildViewForDynamicType(type, parentNode, template) {
+  _buildViewForDynamicType(type, parentNode, elementsByName, template) {
     
     for (let className of template.classList || []) {
       parentNode.classList.add(className);
     }
     
     for (let [name, value] of Object.entries(template.attributes || {})) {
+      if (name == "id") {
+        
+        
+        Cu.reportError(
+          "Dynamic results are prohibited from setting their own IDs."
+        );
+        continue;
+      }
       parentNode.setAttribute(name, value);
     }
     if (template.name) {
       parentNode.setAttribute("name", template.name);
+      elementsByName.set(template.name, parentNode);
     }
     
     for (let childTemplate of template.children || []) {
       let child = this._createElement(childTemplate.tag);
       child.classList.add(`urlbarView-dynamic-${type}-${childTemplate.name}`);
       parentNode.appendChild(child);
-      this._buildViewForDynamicType(type, child, childTemplate);
+      this._buildViewForDynamicType(type, child, elementsByName, childTemplate);
     }
   }
 
@@ -1436,16 +1455,28 @@ class UrlbarView {
   async _updateRowForDynamicType(item, result) {
     item.setAttribute("dynamicType", result.payload.dynamicType);
 
+    let idsByName = new Map();
+    for (let [name, node] of item._elements) {
+      node.id = `${item.id}-${name}`;
+      idsByName.set(name, node.id);
+    }
+
     
     let provider = UrlbarProvidersManager.getProvider(result.providerName);
-    let viewUpdate = await provider.getViewUpdate(result);
+    let viewUpdate = await provider.getViewUpdate(result, idsByName);
 
     
     for (let [nodeName, update] of Object.entries(viewUpdate)) {
-      let node = item.querySelector(
-        `.urlbarView-dynamic-${result.payload.dynamicType}-${nodeName}`
-      );
+      let node = item.querySelector(`#${item.id}-${nodeName}`);
       for (let [attrName, value] of Object.entries(update.attributes || {})) {
+        if (attrName == "id") {
+          
+          
+          Cu.reportError(
+            "Dynamic results are prohibited from setting their own IDs."
+          );
+          continue;
+        }
         node.setAttribute(attrName, value);
       }
       for (let [styleName, value] of Object.entries(update.style || {})) {

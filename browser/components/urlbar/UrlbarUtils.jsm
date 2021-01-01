@@ -1650,7 +1650,14 @@ class UrlbarProvider {
 
 
 
-  getViewUpdate(result) {
+
+
+
+
+
+
+
+  getViewUpdate(result, idsByName) {
     return null;
   }
 

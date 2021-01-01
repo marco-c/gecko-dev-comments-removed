@@ -155,7 +155,10 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
 
-  getViewUpdate(result) {
+
+
+
+  getViewUpdate(result, idsByName) {
     return {
       icon: {
         attributes: {

@@ -183,8 +183,11 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 
-  async getViewUpdate(result) {
-    return this._notifyListener("getViewUpdate", result);
+
+
+
+  async getViewUpdate(result, idsByName) {
+    return this._notifyListener("getViewUpdate", result, idsByName);
   }
 
   
