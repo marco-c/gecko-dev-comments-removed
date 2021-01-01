@@ -1533,7 +1533,7 @@ class TypeAnalyzer {
   bool tryEmitFloatOperations();
 
   bool shouldSpecializeOsrPhis() const;
-  MIRType guessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) const;
+  MIRType guessPhiType(MPhi* phi) const;
 
  public:
   TypeAnalyzer(MIRGenerator* mir, MIRGraph& graph) : mir(mir), graph(graph) {}
@@ -1598,8 +1598,7 @@ bool TypeAnalyzer::shouldSpecializeOsrPhis() const {
 }
 
 
-MIRType TypeAnalyzer::guessPhiType(MPhi* phi,
-                                   bool* hasInputsWithEmptyTypes) const {
+MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
 #ifdef DEBUG
   
   
@@ -1618,11 +1617,9 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi,
   }
 #endif
 
-  *hasInputsWithEmptyTypes = false;
-
   MIRType type = MIRType::None;
   bool convertibleToFloat32 = false;
-  bool hasPhiInputs = false;
+  DebugOnly<bool> hasPhiInputs = false;
   for (size_t i = 0, e = phi->numOperands(); i < e; i++) {
     MDefinition* in = phi->getOperand(i);
     if (in->isPhi()) {
@@ -1637,8 +1634,6 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi,
         continue;
       }
     }
-
-    
 
     
     
@@ -1679,12 +1674,7 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi,
     }
   }
 
-  if (type == MIRType::None && !hasPhiInputs) {
-    
-    
-    MOZ_ASSERT(*hasInputsWithEmptyTypes);
-    type = MIRType::Value;
-  }
+  MOZ_ASSERT_IF(type == MIRType::None, hasPhiInputs);
 
   return type;
 }
@@ -1766,8 +1756,6 @@ bool TypeAnalyzer::propagateAllPhiSpecializations() {
 }
 
 bool TypeAnalyzer::specializePhis() {
-  Vector<MPhi*, 0, SystemAllocPolicy> phisWithEmptyInputTypes;
-
   for (PostorderIterator block(graph.poBegin()); block != graph.poEnd();
        block++) {
     if (mir->shouldCancel("Specialize Phis (main loop)")) {
@@ -1779,22 +1767,13 @@ bool TypeAnalyzer::specializePhis() {
         return false;
       }
 
-      bool hasInputsWithEmptyTypes;
-      MIRType type = guessPhiType(*phi, &hasInputsWithEmptyTypes);
+      MIRType type = guessPhiType(*phi);
       phi->specialize(type);
       if (type == MIRType::None) {
         
         
         
         
-
-        
-        
-        
-        
-        if (hasInputsWithEmptyTypes && !phisWithEmptyInputTypes.append(*phi)) {
-          return false;
-        }
         continue;
       }
       if (!propagateSpecialization(*phi)) {
@@ -1803,28 +1782,9 @@ bool TypeAnalyzer::specializePhis() {
     }
   }
 
-  do {
-    if (!propagateAllPhiSpecializations()) {
-      return false;
-    }
-
-    
-    
-    
-    while (!phisWithEmptyInputTypes.empty()) {
-      if (mir->shouldCancel("Specialize Phis (phisWithEmptyInputTypes)")) {
-        return false;
-      }
-
-      MPhi* phi = phisWithEmptyInputTypes.popCopy();
-      if (phi->type() == MIRType::None) {
-        phi->specialize(MIRType::Value);
-        if (!propagateSpecialization(phi)) {
-          return false;
-        }
-      }
-    }
-  } while (!phiWorklist_.empty());
+  if (!propagateAllPhiSpecializations()) {
+    return false;
+  }
 
   if (shouldSpecializeOsrPhis() && graph.osrBlock()) {
     
