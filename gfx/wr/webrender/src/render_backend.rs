@@ -39,7 +39,7 @@ use crate::prim_store::{PrimitiveScratchBuffer, PrimitiveInstance};
 use crate::prim_store::{PrimitiveInstanceKind, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::interned::*;
 use crate::profiler::{self, TransactionProfile};
-use crate::render_task_graph::RenderTaskGraphBuilder;
+use crate::render_task_graph::RenderTaskGraphCounters;
 use crate::renderer::{AsyncPropertySampler, PipelineInfo};
 use crate::resource_cache::ResourceCache;
 #[cfg(feature = "replay")]
@@ -431,9 +431,6 @@ struct Document {
     frame_builder: FrameBuilder,
 
     
-    rg_builder: RenderTaskGraphBuilder,
-
-    
     
     hit_tester: Option<Arc<HitTester>>,
     
@@ -459,6 +456,9 @@ struct Document {
     
     
     scratch: ScratchBuffer,
+    
+    
+    render_task_counters: RenderTaskGraphCounters,
 
     #[cfg(feature = "replay")]
     loaded_scene: Scene,
@@ -506,12 +506,12 @@ impl Document {
             has_built_scene: false,
             data_stores: DataStores::default(),
             scratch: ScratchBuffer::default(),
+            render_task_counters: RenderTaskGraphCounters::new(),
             #[cfg(feature = "replay")]
             loaded_scene: Scene::new(),
             prev_composite_descriptor: CompositeDescriptor::empty(),
             dirty_rects_are_valid: true,
             profile: TransactionProfile::new(),
-            rg_builder: RenderTaskGraphBuilder::new(),
         }
     }
 
@@ -623,7 +623,6 @@ impl Document {
                 &mut self.scene,
                 resource_cache,
                 gpu_cache,
-                &mut self.rg_builder,
                 self.stamp,
                 accumulated_scale_factor,
                 self.view.scene.device_rect.origin,
@@ -631,6 +630,7 @@ impl Document {
                 &self.dynamic_properties,
                 &mut self.data_stores,
                 &mut self.scratch,
+                &mut self.render_task_counters,
                 debug_flags,
                 tile_cache_logger,
                 tile_caches,
@@ -1944,11 +1944,11 @@ impl RenderBackend {
                         has_built_scene: false,
                         data_stores,
                         scratch: ScratchBuffer::default(),
+                        render_task_counters: RenderTaskGraphCounters::new(),
                         loaded_scene: scene.clone(),
                         prev_composite_descriptor: CompositeDescriptor::empty(),
                         dirty_rects_are_valid: false,
                         profile: TransactionProfile::new(),
-                        rg_builder: RenderTaskGraphBuilder::new(),
                     };
                     entry.insert(doc);
                 }
