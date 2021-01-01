@@ -879,9 +879,9 @@ void DecoderDoctorDiagnostics::StoreFormatDiagnostics(dom::Document* aDocument,
 
   mFormat = aFormat;
   if (aCanPlay) {
-    mFlags -= Flags::CanPlay;
-  } else {
     mFlags += Flags::CanPlay;
+  } else {
+    mFlags -= Flags::CanPlay;
   }
 
   
