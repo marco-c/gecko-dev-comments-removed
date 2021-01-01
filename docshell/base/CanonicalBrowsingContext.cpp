@@ -579,6 +579,8 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
 
       HistoryCommitIndexAndLength(aChangeID, caller);
 
+      shistory->LogHistory();
+
       return;
     }
     
@@ -697,6 +699,8 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
 
   
   HistoryCommitIndexAndLength(aChangeID, caller);
+
+  static_cast<nsSHistory*>(shistory)->LogHistory();
 }
 
 void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
