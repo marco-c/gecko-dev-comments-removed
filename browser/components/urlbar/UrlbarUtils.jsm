@@ -386,7 +386,10 @@ var UrlbarUtils = {
 
 
   getTokenMatches(tokens, str, highlightType) {
-    str = str.toLocaleLowerCase();
+    
+    
+    
+    str = str.substring(0, UrlbarUtils.MAX_TEXT_LENGTH).toLocaleLowerCase();
     
     
     
