@@ -305,7 +305,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                    unsigned errorNumber, ...);
 
   
-  bool intoScriptStencil(ScriptStencil* script);
+  bool intoScriptStencil(ScriptStencil* script, FunctionIndex index);
 
   
   

@@ -1923,6 +1923,7 @@ bool PerHandlerParser<FullParseHandler>::finishFunction(
   if (funbox->isInterpreted()) {
     
     funbox->emitBytecode = true;
+    this->compilationState_.nonLazyFunctionCount++;
   }
 
   bool hasParameterExprs = funbox->hasParameterExprs;

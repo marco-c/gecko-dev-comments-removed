@@ -7,9 +7,11 @@
 #ifndef frontend_CompilationInfo_h
 #define frontend_CompilationInfo_h
 
+#include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/RefPtr.h"  
 #include "mozilla/Span.h"
+#include "mozilla/Variant.h"  
 
 #include "builtin/ModuleObject.h"
 #include "ds/LifoAlloc.h"
@@ -29,6 +31,7 @@
 #include "vm/JSFunction.h"  
 #include "vm/JSScript.h"    
 #include "vm/Realm.h"
+#include "vm/SharedStencil.h"  
 
 namespace js {
 
@@ -223,11 +226,49 @@ struct MOZ_RAII CompilationState {
   
   ParserAtomsTable parserAtoms;
 
+  
+  
+  
+  
+  
+  size_t nonLazyFunctionCount = 0;
+
   CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
                    const JS::ReadOnlyCompileOptions& options,
                    CompilationInfo& compilationInfo,
                    Scope* enclosingScope = nullptr,
                    JSObject* enclosingEnv = nullptr);
+};
+
+
+struct SharedDataContainer {
+  using SingleSharedData = RefPtr<js::SharedImmutableScriptData>;
+  using SharedDataVector =
+      Vector<RefPtr<js::SharedImmutableScriptData>, 0, js::SystemAllocPolicy>;
+  using SharedDataMap =
+      HashMap<FunctionIndex, RefPtr<js::SharedImmutableScriptData>,
+              mozilla::DefaultHasher<FunctionIndex>, js::SystemAllocPolicy>;
+
+  mozilla::Variant<SingleSharedData, SharedDataVector, SharedDataMap> storage;
+
+  
+  SharedDataContainer() : storage(mozilla::AsVariant(SingleSharedData())) {}
+
+  bool prepareStorageFor(JSContext* cx, size_t nonLazyScriptCount,
+                         size_t allScriptCount);
+
+  
+  js::SharedImmutableScriptData* get(FunctionIndex index);
+
+  
+  bool addAndShare(JSContext* cx, FunctionIndex index,
+                   js::SharedImmutableScriptData* data);
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(js::JSONPrinter& json);
+  void dumpFields(js::JSONPrinter& json);
+#endif
 };
 
 
@@ -242,6 +283,7 @@ struct CompilationStencil {
   
   
   Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
+  SharedDataContainer sharedData;
 
   Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
 
@@ -265,6 +307,15 @@ struct CompilationStencil {
 
   const ParserAtom* getParserAtomAt(JSContext* cx,
                                     TaggedParserAtomIndex taggedIndex) const;
+
+  bool prepareStorageFor(JSContext* cx, size_t nonLazyFunctionCount) {
+    size_t nonLazyScriptCount = nonLazyFunctionCount;
+    if (!scriptData[0].isFunction()) {
+      nonLazyScriptCount++;
+    }
+    return sharedData.prepareStorageFor(cx, nonLazyScriptCount,
+                                        scriptData.length());
+  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();

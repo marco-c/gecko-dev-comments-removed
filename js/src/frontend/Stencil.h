@@ -574,9 +574,6 @@ class ScriptStencil {
   mozilla::Span<TaggedScriptThingIndex> gcThings;
 
   
-  RefPtr<js::SharedImmutableScriptData> sharedData = {};
-
-  
   SourceExtent extent = {};
 
   
@@ -615,8 +612,13 @@ class ScriptStencil {
   bool allowRelazify : 1;
 
   
+  
+  bool hasSharedData : 1;
 
-  ScriptStencil() : wasFunctionEmitted(false), allowRelazify(false) {}
+  
+
+  ScriptStencil()
+      : wasFunctionEmitted(false), allowRelazify(false), hasSharedData(false) {}
 
   bool isFunction() const {
     bool result = functionFlags.toRaw() != 0x0000;
