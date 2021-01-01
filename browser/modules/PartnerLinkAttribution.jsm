@@ -18,20 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 var PartnerLinkAttribution = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async makeRequest({ targetURL, source, campaignID }) {
+  async makeRequest({ targetURL, source }) {
     let partner = targetURL.match(/^https?:\/\/(?:www.)?([^.]*)/)[1];
 
     function record(method, objectString) {
@@ -43,21 +30,13 @@ var PartnerLinkAttribution = {
     }
     record("click", source);
 
-    let attributionUrl = Services.prefs.getStringPref(
+    const attributionUrl = Services.prefs.getStringPref(
       "browser.partnerlink.attributionURL"
     );
     if (!attributionUrl) {
       record("attribution", "abort");
       return;
     }
-
-    
-    if (!campaignID) {
-      campaignID = Services.prefs.getStringPref(
-        "browser.partnerlink.campaign.topsites"
-      );
-    }
-    attributionUrl = attributionUrl + campaignID;
     let result = await sendRequest(attributionUrl, source, targetURL);
     record("attribution", result ? "success" : "failure");
   },
@@ -71,14 +50,7 @@ var PartnerLinkAttribution = {
 
 
   async makeSearchEngineRequest(engine, targetUrl) {
-    let cid;
-    if (engine.attribution?.cid) {
-      cid = engine.attribution.cid;
-    } else if (engine.sendAttributionRequest) {
-      cid = Services.prefs.getStringPref(
-        "browser.partnerlink.campaign.topsites"
-      );
-    } else {
+    if (!engine.sendAttributionRequest) {
       return;
     }
 
@@ -101,11 +73,10 @@ var PartnerLinkAttribution = {
       return;
     }
 
-    let attributionUrl = Services.prefs.getStringPref(
+    const attributionUrl = Services.prefs.getStringPref(
       "browser.partnerlink.attributionURL",
       ""
     );
-    attributionUrl = attributionUrl + cid;
 
     targetParams.delete(searchUrlQueryParamName);
     let strippedTargetUrl = `${url.prePath}${url.filePath}`;
