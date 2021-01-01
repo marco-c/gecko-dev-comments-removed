@@ -718,6 +718,11 @@ SearchSuggestionController.engineOffersSuggestions = function(engine) {
 
 
 
+SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH = 255;
+
+
+
+
 XPCOMUtils.defineLazyPreferenceGetter(
   SearchSuggestionController.prototype,
   "remoteTimeout",
