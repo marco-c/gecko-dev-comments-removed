@@ -10,7 +10,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
-  BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.jsm",
   clearTimeout: "resource://gre/modules/Timer.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SearchUIUtils: "resource:///modules/SearchUIUtils.jsm",
@@ -1039,46 +1038,30 @@ class SearchOneOffs {
 
 
 
-
-  maybeRecordTelemetry(aEvent) {
-    if (!aEvent) {
+  eventTargetIsAOneOff(event) {
+    if (!event) {
       return false;
     }
 
-    let source = null;
-    let engine = null;
-    let target = aEvent.originalTarget;
+    let target = event.originalTarget;
 
-    if (aEvent instanceof KeyboardEvent) {
-      if (this.selectedButton) {
-        source = "oneoff";
-        engine = this.selectedButton.engine;
-      }
-    } else if (aEvent instanceof MouseEvent) {
-      if (target.classList.contains("searchbar-engine-one-off-item")) {
-        source = "oneoff";
-        engine = target.engine;
-      }
-    } else if (
-      aEvent instanceof this.window.XULCommandEvent &&
+    if (event instanceof KeyboardEvent && this.selectedButton) {
+      return true;
+    }
+    if (
+      event instanceof MouseEvent &&
+      target.classList.contains("searchbar-engine-one-off-item")
+    ) {
+      return true;
+    }
+    if (
+      event instanceof this.window.XULCommandEvent &&
       target.classList.contains("search-one-offs-context-open-in-new-tab")
     ) {
-      source = "oneoff-context";
-      engine = this._contextEngine;
+      return true;
     }
 
-    if (!source) {
-      return false;
-    }
-
-    if (this.telemetryOrigin) {
-      source += "-" + this.telemetryOrigin;
-    }
-
-    BrowserSearchTelemetry.recordSearch(this.window.gBrowser, engine, source, {
-      isOneOff: true,
-    });
-    return true;
+    return false;
   }
 
   _resetAddEngineMenuTimeout() {
