@@ -23,7 +23,7 @@ for (constructor of constructors) {
   assertEq(Object.isFrozen(a), false);
 
   
-  Object.seal(a);
+  assertThrowsInstanceOf(() => Object.seal(a), TypeError);
 
   
   assertThrowsInstanceOf(() => Object.freeze(a), TypeError);
@@ -75,7 +75,7 @@ for (constructor of constructors) {
   assertEq(a[5], 3);
 
   
-  Object.defineProperty(a, 20, {value: 3});
+  assertThrowsInstanceOf(() => Object.defineProperty(a, 20, {value: 3}), TypeError);
   assertEq(a[20], undefined);
 
   

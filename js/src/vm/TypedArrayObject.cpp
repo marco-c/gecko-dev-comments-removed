@@ -1039,10 +1039,16 @@ template <typename NativeType>
 
 
 
+
+
+
 template <typename NativeType>
  bool TypedArrayObjectTemplate<NativeType>::defineElement(
     JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
     ObjectOpResult& result) {
+  MOZ_ASSERT(!obj->hasDetachedBuffer());
+  MOZ_ASSERT(index < obj->length().get());
+
   
 
   
@@ -1052,14 +1058,9 @@ template <typename NativeType>
   }
 
   
-  if (obj->hasDetachedBuffer()) {
-    return result.fail(JSMSG_TYPED_ARRAY_DETACHED);
+  if (!obj->hasDetachedBuffer()) {
+    TypedArrayObjectTemplate<NativeType>::setIndex(*obj, index, nativeValue);
   }
-
-  
-
-  
-  TypedArrayObjectTemplate<NativeType>::setIndex(*obj, index, nativeValue);
 
   
   return result.succeed();
@@ -2473,6 +2474,7 @@ bool js::SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
 }
 
 
+
 bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
                                  uint64_t index,
                                  Handle<PropertyDescriptor> desc,
@@ -2480,14 +2482,11 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   
 
   
-
-  
-  
   if (index >= obj->length().get()) {
     if (obj->hasDetachedBuffer()) {
-      return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+      return result.fail(JSMSG_TYPED_ARRAY_DETACHED);
     }
-    return result.failSoft(JSMSG_BAD_INDEX);
+    return result.fail(JSMSG_DEFINE_BAD_INDEX);
   }
 
   
@@ -2496,7 +2495,7 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   }
 
   
-  if (desc.hasConfigurable() && desc.configurable()) {
+  if (desc.hasConfigurable() && !desc.configurable()) {
     return result.fail(JSMSG_CANT_REDEFINE_PROP);
   }
 
