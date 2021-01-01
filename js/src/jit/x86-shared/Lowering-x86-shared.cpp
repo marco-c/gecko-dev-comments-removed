@@ -465,6 +465,28 @@ void LIRGeneratorX86Shared::lowerPowOfTwoI(MPow* mir) {
   define(lir, mir);
 }
 
+void LIRGeneratorX86Shared::lowerBigIntLsh(MBigIntLsh* ins) {
+  
+  
+  LDefinition shiftAlloc = Assembler::HasBMI2() ? temp() : tempFixed(ecx);
+  auto* lir =
+      new (alloc()) LBigIntLsh(useRegister(ins->lhs()), useRegister(ins->rhs()),
+                               temp(), shiftAlloc, temp());
+  define(lir, ins);
+  assignSafepoint(lir, ins);
+}
+
+void LIRGeneratorX86Shared::lowerBigIntRsh(MBigIntRsh* ins) {
+  
+  
+  LDefinition shiftAlloc = Assembler::HasBMI2() ? temp() : tempFixed(ecx);
+  auto* lir =
+      new (alloc()) LBigIntRsh(useRegister(ins->lhs()), useRegister(ins->rhs()),
+                               temp(), shiftAlloc, temp());
+  define(lir, ins);
+  assignSafepoint(lir, ins);
+}
+
 void LIRGeneratorX86Shared::lowerWasmBuiltinTruncateToInt32(
     MWasmBuiltinTruncateToInt32* ins) {
   MDefinition* opd = ins->input();
