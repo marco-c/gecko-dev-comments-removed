@@ -325,6 +325,9 @@ DManipEventHandler::OnContentUpdated(IDirectManipulationViewport* viewport,
   } else if (mState == State::ePinching) {
     if (mShouldSendPinchStart) {
       updateLastScale = SendPinch(Phase::eStart, scale);
+      
+      
+      MOZ_ASSERT(updateLastScale);
       mShouldSendPinchStart = false;
     } else {
       updateLastScale = SendPinch(Phase::eMiddle, scale);
