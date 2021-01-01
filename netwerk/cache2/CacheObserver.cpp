@@ -27,9 +27,6 @@ static float const kDefaultHalfLifeHours = 24.0F;
 float CacheObserver::sHalfLifeHours = kDefaultHalfLifeHours;
 
 
-int32_t CacheObserver::sAutoMemoryCacheCapacity = -1;
-
-
 
 
 
@@ -95,32 +92,40 @@ uint32_t CacheObserver::MemoryCacheCapacity() {
     return StaticPrefs::browser_cache_memory_capacity();
   }
 
-  if (sAutoMemoryCacheCapacity != -1) return sAutoMemoryCacheCapacity;
+  
+  
+  
+  static int32_t sAutoMemoryCacheCapacity = ([] {
+    uint64_t bytes = PR_GetPhysicalMemorySize();
+    
+    
+    
+    if (bytes == 0) {
+      bytes = 32 * 1024 * 1024;
+    }
+    
+    
+    
+    if (bytes > INT64_MAX) {
+      bytes = INT64_MAX;
+    }
+    uint64_t kbytes = bytes >> 10;
+    double kBytesD = double(kbytes);
+    double x = log(kBytesD) / log(2.0) - 14;
 
-  static uint64_t bytes = PR_GetPhysicalMemorySize();
-  
-  
-  
-  if (bytes == 0) bytes = 32 * 1024 * 1024;
+    int32_t capacity = 0;
+    if (x > 0) {
+      
+      capacity = (int32_t)(x * x / 3.0 + x + 2.0 / 3 + 0.1);
+      if (capacity > 32) {
+        capacity = 32;
+      }
+      capacity <<= 10;
+    }
+    return capacity;
+  })();
 
-  
-  
-  
-  if (bytes > INT64_MAX) bytes = INT64_MAX;
-
-  uint64_t kbytes = bytes >> 10;
-  double kBytesD = double(kbytes);
-  double x = log(kBytesD) / log(2.0) - 14;
-
-  int32_t capacity = 0;
-  if (x > 0) {
-    capacity = (int32_t)(x * x / 3.0 + x + 2.0 / 3 + 0.1);  
-    if (capacity > 32) capacity = 32;
-    capacity <<= 10;
-  }
-
-  
-  return sAutoMemoryCacheCapacity = capacity;
+  return sAutoMemoryCacheCapacity;
 }
 
 
