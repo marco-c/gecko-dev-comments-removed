@@ -257,7 +257,6 @@ class WindowSurfaceWayland : public WindowSurface {
   
   bool mSmoothRendering;
 
-  bool mIsMainThread;
   gint mSurfaceReadyTimerID;
   mozilla::Mutex mSurfaceLock;
 };
