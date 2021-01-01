@@ -170,12 +170,15 @@ IPCResult IdleSchedulerParent::RecvIdleTimeUsed(uint64_t aId) {
   
   MOZ_ASSERT(IsWaitingForIdle() || IsDoingIdleTask());
 
-  if (mCurrentRequestId == aId) {
-    if (IsWaitingForIdle()) {
-      remove();
-    }
-    mRequestedIdleBudget = TimeDuration();
+  
+  
+  
+  MOZ_ASSERT(mCurrentRequestId == aId);
+
+  if (IsWaitingForIdle()) {
+    remove();
   }
+  mRequestedIdleBudget = TimeDuration();
   Schedule(nullptr);
   return IPC_OK();
 }

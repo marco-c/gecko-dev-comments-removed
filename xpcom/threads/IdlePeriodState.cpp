@@ -196,6 +196,9 @@ void IdlePeriodState::RequestIdleToken(TimeStamp aLocalIdlePeriodHint) {
 void IdlePeriodState::SetIdleToken(uint64_t aId, TimeDuration aDuration) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
+
+  
+  
   if (mIdleRequestId == aId) {
     mIdleToken = TimeStamp::Now() + aDuration;
   }
