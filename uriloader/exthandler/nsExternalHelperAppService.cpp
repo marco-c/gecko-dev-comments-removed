@@ -1678,15 +1678,12 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
 
   mDownloadClassification =
       nsContentSecurityUtils::ClassifyDownload(aChannel, MIMEType);
-  if (mDownloadClassification != nsITransfer::DOWNLOAD_ACCEPTABLE) {
-    
+
+  if (mDownloadClassification == nsITransfer::DOWNLOAD_FORBIDDEN) {
     
     
     mCanceled = true;
     request->Cancel(NS_ERROR_ABORT);
-    if (mDownloadClassification != nsITransfer::DOWNLOAD_FORBIDDEN) {
-      CreateFailedTransfer();
-    }
     return NS_OK;
   }
 
@@ -1919,7 +1916,6 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
       rv = PromptForSaveDestination();
     }
   }
-
   return NS_OK;
 }
 
@@ -2266,6 +2262,13 @@ nsresult nsExternalAppHandler::CreateTransfer() {
   mDialog = nullptr;
   if (!mDialogProgressListener) {
     NS_WARNING("The dialog should nullify the dialog progress listener");
+  }
+  
+  
+  if (mDownloadClassification != nsITransfer::DOWNLOAD_ACCEPTABLE) {
+    mCanceled = true;
+    mRequest->Cancel(NS_ERROR_ABORT);
+    return CreateFailedTransfer();
   }
   nsresult rv;
 

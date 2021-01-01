@@ -537,11 +537,14 @@ DownloadsViewUI.DownloadElementShell.prototype = {
             
             switch (verdict) {
               case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
-                this.showButton("askOpenOrRemoveFile");
-                break;
               case Downloads.Error.BLOCK_VERDICT_INSECURE:
               case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
-                this.showButton("askRemoveFileOrAllow");
+                
+                if (this.download.launchWhenSucceeded) {
+                  this.showButton("askOpenOrRemoveFile");
+                } else {
+                  this.showButton("askRemoveFileOrAllow");
+                }
                 break;
               default:
                 
@@ -684,6 +687,9 @@ DownloadsViewUI.DownloadElementShell.prototype = {
     return this.download.unblock().then(() => this.downloadsCmd_open());
   },
 
+  unblockAndSave() {
+    return this.download.unblock();
+  },
   
 
 
@@ -731,6 +737,7 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       case "downloadsCmd_chooseUnblock":
       case "downloadsCmd_chooseOpen":
       case "downloadsCmd_unblock":
+      case "downloadsCmd_unblockAndSave":
       case "downloadsCmd_unblockAndOpen":
         return this.download.hasBlockedData;
       case "downloadsCmd_cancel":
