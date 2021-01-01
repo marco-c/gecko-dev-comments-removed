@@ -85,8 +85,10 @@ struct ShutdownStep {
 
 static ShutdownStep sShutdownSteps[] = {
     ShutdownStep("quit-application"),
+    ShutdownStep("profile-change-net-teardown"),
     ShutdownStep("profile-change-teardown"),
     ShutdownStep("profile-before-change"),
+    ShutdownStep("profile-before-change-qm"),
     ShutdownStep("xpcom-will-shutdown"),
     ShutdownStep("xpcom-shutdown"),
 };
@@ -205,7 +207,7 @@ void RunWatchdog(void* arg) {
         MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
       }
 
-      MOZ_CRASH("Shutdown hanging before starting.");
+      MOZ_CRASH("Shutdown hanging before starting any known phase.");
     }
 
     
@@ -216,9 +218,19 @@ void RunWatchdog(void* arg) {
     }
 
     
-    CrashReporter::SetMinidumpAnalysisAllThreads();
+    
+    
+    
+    
+#if defined(XP_WIN)
+    Sleep(1000 );
+#else
+    usleep(1000000 );
+#endif
 
-    MOZ_CRASH("Shutdown too long, probably frozen, causing a crash.");
+    
+    CrashReporter::SetMinidumpAnalysisAllThreads();
+    MOZ_CRASH("Shutdown hanging after all known phases and workers finished.");
   }
 }
 
