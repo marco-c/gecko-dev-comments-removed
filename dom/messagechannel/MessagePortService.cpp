@@ -12,6 +12,7 @@
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/WeakPtr.h"
 #include "nsTArray.h"
 
 using mozilla::ipc::AssertIsOnBackgroundThread;
@@ -31,16 +32,10 @@ void AssertIsInMainProcess() {
 struct MessagePortService::NextParent {
   uint32_t mSequenceID;
   
-  CheckedUnsafePtr<MessagePortParent> mParent;
+  WeakPtr<MessagePortParent> mParent;
 };
 
 }  
-
-
-
-
-MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
-    mozilla::dom::MessagePortService::NextParent);
 
 namespace mozilla::dom {
 
@@ -277,14 +272,13 @@ void MessagePortService::CloseAll(const nsID& aUUID, bool aForced) {
     data->mParent = nullptr;
   }
 
-  for (auto& nextParent : data->mNextParents) {
-    
-    
-    MessagePortParent* parent = nextParent.mParent;
-    nextParent.mParent = nullptr;
-
-    parent->CloseAndDelete();
+  for (const auto& nextParent : data->mNextParents) {
+    MessagePortParent* const parent = nextParent.mParent;
+    if (parent) {
+      parent->CloseAndDelete();
+    }
   }
+  data->mNextParents.Clear();
 
   nsID destinationUUID = data->mDestinationUUID;
 
