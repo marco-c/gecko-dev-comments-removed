@@ -369,10 +369,6 @@ pref("browser.urlbar.shortcuts.bookmarks", true);
 pref("browser.urlbar.shortcuts.tabs", true);
 pref("browser.urlbar.shortcuts.history", true);
 
-
-
-pref("browser.urlbar.update2.oneOffsRefresh", true);
-
 pref("browser.urlbar.eventTelemetry.enabled", false);
 
 

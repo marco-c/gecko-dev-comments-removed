@@ -7,15 +7,6 @@
 
 "use strict";
 
-add_task(async function init() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.update2", true],
-      ["browser.urlbar.update2.oneOffsRefresh", true],
-    ],
-  });
-});
-
 
 
 add_task(async function activeTab() {

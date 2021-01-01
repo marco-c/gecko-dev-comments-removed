@@ -24,14 +24,6 @@ if (AppConstants.platform == "macosx") {
 
 add_task(async function init() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.update2", true],
-      ["browser.urlbar.update2.oneOffsRefresh", true],
-    ],
-  });
-
-  
   
   let defaultEngine = await SearchTestUtils.promiseNewSearchEngine(
     getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME

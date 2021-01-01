@@ -1539,22 +1539,18 @@ class UrlbarInput {
 
 
   searchModeShortcut() {
-    if (this.view.oneOffsRefresh) {
-      
-      
-      this.searchMode = {
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
-        entry: "shortcut",
-      };
-      
-      
-      
-      this.search(this.value);
-      this.select();
-    } else {
-      this.search(UrlbarTokenizer.RESTRICT.SEARCH);
-    }
+    
+    
+    this.searchMode = {
+      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
+      entry: "shortcut",
+    };
+    
+    
+    
+    this.search(this.value);
+    this.select();
   }
 
   

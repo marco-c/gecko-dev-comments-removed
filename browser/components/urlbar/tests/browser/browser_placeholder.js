@@ -273,14 +273,6 @@ add_task(async function test_search_mode_history() {
 
 async function doSearchModeTest(expectedSearchMode, expectedPlaceholderL10n) {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.update2", true],
-      ["browser.urlbar.update2.oneOffsRefresh", true],
-    ],
-  });
-
-  
   if (gURLBar.getAttribute("pageproxystate") == "invalid") {
     gURLBar.handleRevert();
   }
@@ -300,5 +292,4 @@ async function doSearchModeTest(expectedSearchMode, expectedPlaceholderL10n) {
 
   await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
   await UrlbarTestUtils.promisePopupClose(window);
-  await SpecialPowers.popPrefEnv();
 }
