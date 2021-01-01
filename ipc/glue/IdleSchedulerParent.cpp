@@ -101,7 +101,6 @@ IPCResult IdleSchedulerParent::RecvInitForIdleUse(
     InitForIdleUseResolver&& aResolve) {
   
   
-  
   if (!sActiveChildCounter) {
     sActiveChildCounter = new base::SharedMemory();
     size_t shmemSize = NS_IDLE_SCHEDULER_COUNTER_ARRAY_LENGHT * sizeof(int32_t);
