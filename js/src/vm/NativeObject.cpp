@@ -2668,6 +2668,12 @@ bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   
   
   
+  
+  
+  
+  
+  
+  
   for (;;) {
     
     bool done;
