@@ -143,7 +143,7 @@ mtd {
 
 :not(mtable) > mtr,
 :not(mtable) > mlabeledtr,
-:not(mtr):not(mlabeledtr) > mtd {
+:not(mtr, mlabeledtr) > mtd {
   display: none !important;
 }
 

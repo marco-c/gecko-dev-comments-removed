@@ -19,7 +19,7 @@ button:not([disabled="true"]):hover:active {
 
 
 
-button[default="true"]:not([disabled="true"]):not(:-moz-window-inactive) {
+button[default="true"]:not([disabled="true"], :-moz-window-inactive) {
   color: -moz-mac-defaultbuttontext;
 }
 

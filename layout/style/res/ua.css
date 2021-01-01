@@ -356,7 +356,7 @@
   transform: none !important;
 }
 
-xul|*:fullscreen:not(:root):not([hidden="true"]) {
+xul|*:fullscreen:not(:root, [hidden="true"]) {
   
 
 
@@ -366,7 +366,7 @@ xul|*:fullscreen:not(:root):not([hidden="true"]) {
 
 
 
-*|*:fullscreen:not(:root):not(:-moz-browser-frame) {
+*|*:fullscreen:not(:root, :-moz-browser-frame) {
   -moz-top-layer: top !important;
 }
 
