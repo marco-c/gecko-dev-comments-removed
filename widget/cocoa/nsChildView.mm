@@ -52,7 +52,6 @@
 #include "nsMenuUtilsX.h"
 #include "nsMenuBarX.h"
 #include "NativeKeyBindings.h"
-#include "ComplexTextInputPanel.h"
 
 #include "gfxContext.h"
 #include "gfxQuartzSurface.h"
@@ -1470,27 +1469,6 @@ void nsChildView::UpdateCurrentInputEventCount() {
 bool nsChildView::HasPendingInputEvent() { return DoHasPendingInputEvent(); }
 
 #pragma mark -
-
-nsresult nsChildView::StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
-                                     int32_t aPanelX, int32_t aPanelY, nsString& aCommitted) {
-  NS_ENSURE_TRUE(mView, NS_ERROR_NOT_AVAILABLE);
-
-  ComplexTextInputPanel* ctiPanel = ComplexTextInputPanel::GetSharedComplexTextInputPanel();
-
-  ctiPanel->PlacePanel(aPanelX, aPanelY);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ctiPanel->InterpretKeyEvent([mView lastKeyDownEvent], aCommitted);
-
-  return NS_OK;
-}
 
 void nsChildView::SetInputContext(const InputContext& aContext, const InputContextAction& aAction) {
   NS_ENSURE_TRUE_VOID(mTextInputHandler);
