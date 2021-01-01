@@ -552,17 +552,6 @@ bool BaselineStackBuilder::initFrame() {
                             : script_->offsetToPC(iter_.pcOffset());
   op_ = JSOp(*pc_);
 
-  
-  
-  
-  
-  
-  
-  
-  if (!JitOptions.disablePgo && script_->hasScriptCounts()) {
-    script_->incHitCount(pc_);
-  }
-
   return true;
 }
 

@@ -601,7 +601,7 @@ void Realm::updateDebuggerObservesCoverage() {
   runtime_->decrementNumDebuggeeRealmsObservingCoverage();
 
   
-  if (collectCoverage()) {
+  if (collectCoverageForDebug()) {
     return;
   }
 
@@ -614,15 +614,6 @@ coverage::LCovRealm* Realm::lcovRealm() {
     lcovRealm_ = js::MakeUnique<coverage::LCovRealm>(this);
   }
   return lcovRealm_.get();
-}
-
-bool Realm::collectCoverage() const {
-  return collectCoverageForPGO() || collectCoverageForDebug();
-}
-
-bool Realm::collectCoverageForPGO() const {
-  
-  return false;
 }
 
 bool Realm::collectCoverageForDebug() const {

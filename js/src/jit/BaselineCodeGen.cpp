@@ -215,8 +215,7 @@ MethodStatus BaselineCompiler::compile() {
 
   
   
-  
-  if (!script->hasScriptCounts() && cx->realm()->collectCoverage()) {
+  if (!script->hasScriptCounts() && cx->realm()->collectCoverageForDebug()) {
     if (!script->initScriptCounts(cx)) {
       return Method_Error;
     }

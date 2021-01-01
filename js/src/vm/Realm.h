@@ -753,9 +753,7 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
-  bool collectCoverage() const;
   bool collectCoverageForDebug() const;
-  bool collectCoverageForPGO() const;
 
   
   js::coverage::LCovRealm* lcovRealm();
