@@ -1319,9 +1319,7 @@ Search.prototype = {
     
     if (
       match.style == "favicon" &&
-      (UrlbarPrefs.get("restyleSearches") ||
-        (this._searchModeEngine &&
-          UrlbarPrefs.get("update2.restyleBrowsingHistoryAsSearch")))
+      (UrlbarPrefs.get("restyleSearches") || this._searchModeEngine)
     ) {
       let restyled = this._maybeRestyleSearchMatch(match);
       if (restyled && UrlbarPrefs.get("maxHistoricalSearchSuggestions") == 0) {
@@ -1674,11 +1672,7 @@ Search.prototype = {
       
       
 
-      if (
-        UrlbarPrefs.get("restyleSearches") ||
-        (this._searchModeEngine &&
-          UrlbarPrefs.get("update2.restyleBrowsingHistoryAsSearch"))
-      ) {
+      if (UrlbarPrefs.get("restyleSearches") || this._searchModeEngine) {
         
         
         
