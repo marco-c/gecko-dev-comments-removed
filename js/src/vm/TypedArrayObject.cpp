@@ -947,8 +947,9 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
 
   static bool setElement(JSContext* cx, Handle<TypedArrayObject*> obj,
                          uint64_t index, HandleValue v, ObjectOpResult& result);
-  static bool defineElement(JSContext* cx, HandleObject obj, uint64_t index,
-                            HandleValue v, ObjectOpResult& result);
+  static bool defineElement(JSContext* cx, Handle<TypedArrayObject*> obj,
+                            uint64_t index, HandleValue v,
+                            ObjectOpResult& result);
 };
 
 template <typename NativeType>
@@ -1040,7 +1041,7 @@ template <typename NativeType>
 
 template <typename NativeType>
  bool TypedArrayObjectTemplate<NativeType>::defineElement(
-    JSContext* cx, HandleObject obj, uint64_t index, HandleValue v,
+    JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
     ObjectOpResult& result) {
   
 
@@ -1051,15 +1052,14 @@ template <typename NativeType>
   }
 
   
-  if (obj->as<TypedArrayObject>().hasDetachedBuffer()) {
+  if (obj->hasDetachedBuffer()) {
     return result.fail(JSMSG_TYPED_ARRAY_DETACHED);
   }
 
   
 
   
-  TypedArrayObjectTemplate<NativeType>::setIndex(obj->as<TypedArrayObject>(),
-                                                 index, nativeValue);
+  TypedArrayObjectTemplate<NativeType>::setIndex(*obj, index, nativeValue);
 
   
   return result.succeed();
@@ -2473,20 +2473,18 @@ bool js::SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
 }
 
 
-bool js::DefineTypedArrayElement(JSContext* cx, HandleObject obj,
+bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
                                  uint64_t index,
                                  Handle<PropertyDescriptor> desc,
                                  ObjectOpResult& result) {
-  MOZ_ASSERT(obj->is<TypedArrayObject>());
-
   
 
   
 
   
   
-  if (index >= obj->as<TypedArrayObject>().length().get()) {
-    if (obj->as<TypedArrayObject>().hasDetachedBuffer()) {
+  if (index >= obj->length().get()) {
+    if (obj->hasDetachedBuffer()) {
       return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
     }
     return result.failSoft(JSMSG_BAD_INDEX);
@@ -2514,8 +2512,7 @@ bool js::DefineTypedArrayElement(JSContext* cx, HandleObject obj,
 
   
   if (desc.hasValue()) {
-    TypedArrayObject* tobj = &obj->as<TypedArrayObject>();
-    switch (tobj->type()) {
+    switch (obj->type()) {
 #define DEFINE_TYPED_ARRAY_ELEMENT(T, N)                              \
   case Scalar::N:                                                     \
     return TypedArrayObjectTemplate<T>::defineElement(cx, obj, index, \

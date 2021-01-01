@@ -280,8 +280,8 @@ bool SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
 
 
 
-bool DefineTypedArrayElement(JSContext* cx, HandleObject arr, uint64_t index,
-                             Handle<PropertyDescriptor> desc,
+bool DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
+                             uint64_t index, Handle<PropertyDescriptor> desc,
                              ObjectOpResult& result);
 
 static inline constexpr unsigned TypedArrayShift(Scalar::Type viewType) {
