@@ -1521,14 +1521,22 @@ impl Device {
             supports_extension(&extensions, "GL_ARB_copy_image")
         };
 
-        let supports_buffer_storage = supports_extension(&extensions, "GL_EXT_buffer_storage") ||
-            supports_extension(&extensions, "GL_ARB_buffer_storage");
+        let is_adreno = renderer_name.starts_with("Adreno");
+
+        
+        
+        
+        
+        let supports_buffer_storage = if is_adreno {
+            false
+        } else {
+            supports_extension(&extensions, "GL_EXT_buffer_storage") ||
+            supports_extension(&extensions, "GL_ARB_buffer_storage")
+        };
 
         
         
         let supports_blit_to_texture_array = !renderer_name.starts_with("Adreno");
-
-        let is_adreno = renderer_name.starts_with("Adreno");
 
         
         
