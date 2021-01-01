@@ -966,6 +966,8 @@ class Assembler : public AssemblerX86Shared {
 
   void negq(Register reg) { masm.negq_r(reg.encoding()); }
 
+  void notq(Register reg) { masm.notq_r(reg.encoding()); }
+
   void mov(ImmWord word, Register dest) {
     
     
