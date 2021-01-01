@@ -2043,74 +2043,6 @@ GeckoDriver.prototype.releaseActions = async function() {
 
 
 
-
-
-
-
-GeckoDriver.prototype.actionChain = async function(cmd) {
-  assert.open(this.getBrowsingContext());
-  await this._handleUserPrompts();
-
-  let { chain, nextId } = cmd.parameters;
-
-  switch (this.context) {
-    case Context.Chrome:
-      
-      
-      assert.firefox();
-
-      return this.legacyactions.dispatchActions(
-        chain,
-        nextId,
-        { frame: this.getCurrentWindow() },
-        this.curBrowser.seenEls
-      );
-
-    case Context.Content:
-      return this.listener.actionChain(chain, nextId);
-
-    default:
-      throw new TypeError(`Unknown context: ${this.context}`);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.multiAction = async function(cmd) {
-  assert.content(this.context);
-  assert.open(this.getBrowsingContext());
-  await this._handleUserPrompts();
-
-  let { value, max_length } = cmd.parameters; 
-  await this.listener.multiAction(value, max_length);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 GeckoDriver.prototype.findElement = async function(cmd) {
   const { element: el, using, value } = cmd.parameters;
 
@@ -3976,8 +3908,6 @@ GeckoDriver.prototype.commands = {
   "Marionette:Quit": GeckoDriver.prototype.quit,
   "Marionette:SetContext": GeckoDriver.prototype.setContext,
   "Marionette:SetScreenOrientation": GeckoDriver.prototype.setScreenOrientation,
-  "Marionette:ActionChain": GeckoDriver.prototype.actionChain, 
-  "Marionette:MultiAction": GeckoDriver.prototype.multiAction, 
   "Marionette:SingleTap": GeckoDriver.prototype.singleTap,
 
   
