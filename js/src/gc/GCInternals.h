@@ -274,17 +274,6 @@ struct SweepingTracer final : public GenericTracer {
   T* onEdge(T* thingp);
 };
 
-
-
-struct TenureCount {
-  ObjectGroup* group;
-  unsigned count;
-
-  
-  
-  
-} JS_HAZ_NON_GC_POINTER;
-
 extern void DelayCrossCompartmentGrayMarking(JSObject* src);
 
 inline bool IsOOMReason(JS::GCReason reason) {

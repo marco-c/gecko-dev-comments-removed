@@ -50,6 +50,7 @@ class JSDependentString;
 
 namespace js {
 
+struct StringStats;
 class AutoLockGCBgAlloc;
 class ObjectElements;
 class PlainObject;
@@ -479,6 +480,9 @@ class Nursery {
   bool canAllocateBigInts_;
 
   
+  bool reportDeduplications_;
+
+  
   
   
   mutable JS::GCReason minorGCTriggerReason_;
@@ -732,6 +736,7 @@ class Nursery {
                      bool wasEmpty, double promotionRate);
 
   void printCollectionProfile(JS::GCReason reason, double promotionRate);
+  void printDeduplicationData(js::StringStats& prev, js::StringStats& curr);
 
   
   void maybeClearProfileDurations();
