@@ -1894,6 +1894,8 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
       
 
       
+
+      
       
       
       if (!obj->as<TypedArrayObject>().convertForSideEffect(cx, v)) {
@@ -1901,14 +1903,9 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
       }
 
       
-      
-      if (obj->as<TypedArrayObject>().hasDetachedBuffer()) {
-        return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
-      }
 
       
-      
-      return result.failSoft(JSMSG_BAD_INDEX);
+      return result.succeed();
     }
   } else if (obj->is<ArgumentsObject>()) {
     

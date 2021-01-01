@@ -1016,22 +1016,11 @@ template <typename NativeType>
   }
 
   
-  if (obj->hasDetachedBuffer()) {
-    return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+  if (index < obj->length().get()) {
+    MOZ_ASSERT(!obj->hasDetachedBuffer(),
+               "detaching an array buffer sets the length to zero");
+    TypedArrayObjectTemplate<NativeType>::setIndex(*obj, index, nativeValue);
   }
-
-  
-
-  
-  size_t length = obj->length().get();
-
-  
-  if (index >= length) {
-    return result.failSoft(JSMSG_BAD_INDEX);
-  }
-
-  
-  TypedArrayObjectTemplate<NativeType>::setIndex(*obj, index, nativeValue);
 
   
   return result.succeed();
