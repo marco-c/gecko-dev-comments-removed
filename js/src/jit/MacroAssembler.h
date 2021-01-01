@@ -1467,7 +1467,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branchLatin1String(Register string, Label* label);
   inline void branchTwoByteString(Register string, Label* label);
 
-  inline void branchIfNegativeBigInt(Register bigInt, Label* label);
+  inline void branchIfBigIntIsNegative(Register bigInt, Label* label);
   inline void branchIfBigIntIsNonNegative(Register bigInt, Label* label);
 
   inline void branchTestFunctionFlags(Register fun, uint32_t flags,
@@ -3699,6 +3699,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
 
   void initializeBigInt64(Scalar::Type type, Register bigInt, Register64 val);
+
+  
+
+
+  void compareBigIntAndInt32(JSOp op, Register bigInt, Register int32,
+                             Register scratch1, Register scratch2,
+                             Label* ifTrue, Label* ifFalse);
 
   void loadJSContext(Register dest);
 
