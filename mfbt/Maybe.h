@@ -497,6 +497,13 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
 
 
 
+
+
+
+
+
+
+
   template <typename V>
   constexpr T valueOr(V&& aDefault) const {
     if (isSome()) {
