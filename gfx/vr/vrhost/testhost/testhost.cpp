@@ -8,7 +8,7 @@
 #include "vrhost/vrhostex.h"
 
 int main(int argc, char* argv[], char* envp[]) {
-  HINSTANCE hVR = ::LoadLibrary("vrhost.dll");
+  HINSTANCE hVR = ::LoadLibraryW(L"vrhost.dll");
   if (hVR != nullptr) {
     
     
