@@ -22,7 +22,6 @@ var unexpected = [
   
   "ReadableStreamDefaultReader",
   "ReadableStreamBYOBReader",
-  "ReadableStreamDefaultController",
   "ReadableByteStreamController",
   "WritableStreamDefaultWriter",
   "WritableStreamDefaultController",
