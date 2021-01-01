@@ -143,6 +143,8 @@ var PrintEventHandler = {
   originalSourceContentTitle: null,
   originalSourceCurrentURI: null,
   previewBrowser: null,
+  selectionPreviewBrowser: null,
+  currentPreviewBrowser: null,
 
   
   
@@ -165,20 +167,20 @@ var PrintEventHandler = {
       selectionPreviewBrowser: this.selectionPreviewBrowser,
     } = PrintUtils.createPreviewBrowsers(sourceBrowsingContext, ourBrowser));
 
-    
-    
-    
-    
     let args = window.arguments[0];
     this.printSelectionOnly = args.getProperty("printSelectionOnly");
+    this.hasSelection =
+      args.getProperty("hasSelection") && this.selectionPreviewBrowser;
+    
+    
+    
+    
     let existingBrowser = args.getProperty("previewBrowser");
     if (existingBrowser) {
       sourceBrowsingContext = existingBrowser.browsingContext;
       this.previewBrowser.swapDocShells(existingBrowser);
       existingBrowser.remove();
     }
-    this.hasSelection =
-      args.getProperty("hasSelection") && this.selectionPreviewBrowser;
     document.querySelector("#print-selection-container").hidden = !this
       .hasSelection;
 
@@ -352,6 +354,9 @@ var PrintEventHandler = {
 
   unload() {
     this.previewBrowser.frameLoader.exitPrintPreview();
+    if (this.selectionPreviewBrowser) {
+      this.selectionPreviewBrowser.frameLoader.exitPrintPreview();
+    }
   },
 
   async print(systemDialogSettings) {
@@ -397,8 +402,8 @@ var PrintEventHandler = {
     try {
       
       this.settings.showPrintProgress = false;
-      let bc = this.previewBrowser.browsingContext;
       this.printProgressIndicator.hidden = false;
+      let bc = this.currentPreviewBrowser.browsingContext;
       await this._doPrint(bc, settings);
     } catch (e) {
       Cu.reportError(e);
@@ -772,7 +777,7 @@ var PrintEventHandler = {
       printSelectionOnly ? "selection" : "primary"
     );
 
-    let previewBrowser = printSelectionOnly
+    this.currentPreviewBrowser = printSelectionOnly
       ? this.selectionPreviewBrowser
       : this.previewBrowser;
 
@@ -796,7 +801,10 @@ var PrintEventHandler = {
         totalPageCount,
         sheetCount,
         isEmpty,
-      } = await previewBrowser.frameLoader.printPreview(settings, sourceWinId));
+      } = await this.currentPreviewBrowser.frameLoader.printPreview(
+        settings,
+        sourceWinId
+      ));
     } catch (e) {
       this.reportPrintingError("PRINT_PREVIEW");
       throw e;
@@ -818,7 +826,7 @@ var PrintEventHandler = {
         detail: { sheetCount, totalPages: totalPageCount },
       })
     );
-    previewBrowser.setAttribute("sheet-count", sheetCount);
+    this.currentPreviewBrowser.setAttribute("sheet-count", sheetCount);
 
     this._hideRenderingIndicator();
 
