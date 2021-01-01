@@ -252,6 +252,10 @@ void MacroAssembler::sub64(Imm64 imm, Register64 dest) {
   sbbl(imm.hi(), dest.high);
 }
 
+void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
+  imull(rhs, srcDest);
+}
+
 
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest) {
   
