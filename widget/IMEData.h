@@ -261,47 +261,45 @@ struct IMENotificationRequests final {
 
 
 
-struct IMEState final {
+
+enum class IMEEnabled {
+  
+
+
+
+  Disabled,
+  
+
+
+  Enabled,
   
 
 
 
 
 
-
-
-
-  enum Enabled {
-    
-
-
-
-    DISABLED,
-    
-
-
-    ENABLED,
-    
+  Password,
+  
 
 
 
 
 
-    PASSWORD,
-    
+  Plugin,
+  
+
+
+
+  Unknown,
+};
 
 
 
 
 
-    PLUGIN,
-    
 
-
-
-    UNKNOWN
-  };
-  Enabled mEnabled;
+struct IMEState final {
+  IMEEnabled mEnabled;
 
   
 
@@ -336,22 +334,24 @@ struct IMEState final {
   };
   Open mOpen;
 
-  IMEState() : mEnabled(ENABLED), mOpen(DONT_CHANGE_OPEN_STATE) {}
+  IMEState() : mEnabled(IMEEnabled::Enabled), mOpen(DONT_CHANGE_OPEN_STATE) {}
 
-  explicit IMEState(Enabled aEnabled, Open aOpen = DONT_CHANGE_OPEN_STATE)
+  explicit IMEState(IMEEnabled aEnabled, Open aOpen = DONT_CHANGE_OPEN_STATE)
       : mEnabled(aEnabled), mOpen(aOpen) {}
 
   
   
   
   bool IsEditable() const {
-    return mEnabled == ENABLED || mEnabled == PASSWORD;
+    return mEnabled == IMEEnabled::Enabled || mEnabled == IMEEnabled::Password;
   }
   
   
   
   
-  bool MaybeEditable() const { return IsEditable() || mEnabled == PLUGIN; }
+  bool MaybeEditable() const {
+    return IsEditable() || mEnabled == IMEEnabled::Plugin;
+  }
 };
 
 
@@ -980,8 +980,7 @@ struct CandidateWindowPosition {
   bool mExcludeRect;
 };
 
-std::ostream& operator<<(std::ostream& aStream,
-                         const IMEState::Enabled& aEnabled);
+std::ostream& operator<<(std::ostream& aStream, const IMEEnabled& aEnabled);
 std::ostream& operator<<(std::ostream& aStream, const IMEState::Open& aOpen);
 std::ostream& operator<<(std::ostream& aStream, const IMEState& aState);
 std::ostream& operator<<(std::ostream& aStream,

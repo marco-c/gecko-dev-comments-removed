@@ -426,7 +426,7 @@ class WinUtils {
 
 
   static bool IsIMEEnabled(const InputContext& aInputContext);
-  static bool IsIMEEnabled(IMEState::Enabled aIMEState);
+  static bool IsIMEEnabled(IMEEnabled aIMEState);
 
   
 

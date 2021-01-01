@@ -378,6 +378,7 @@ class nsIWidget : public nsISupports {
   typedef mozilla::layers::PLayerTransactionChild PLayerTransactionChild;
   typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
   typedef mozilla::layers::ZoomConstraints ZoomConstraints;
+  typedef mozilla::widget::IMEEnabled IMEEnabled;
   typedef mozilla::widget::IMEMessage IMEMessage;
   typedef mozilla::widget::IMENotification IMENotification;
   typedef mozilla::widget::IMENotificationRequests IMENotificationRequests;
@@ -1864,7 +1865,7 @@ class nsIWidget : public nsISupports {
 
 
   bool PluginHasFocus() {
-    return GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN;
+    return GetInputContext().mIMEState.mEnabled == IMEEnabled::Plugin;
   }
 
   

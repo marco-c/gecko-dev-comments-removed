@@ -94,7 +94,7 @@ PuppetWidget::PuppetWidget(BrowserChild* aBrowserChild)
       mNeedIMEStateInit(false),
       mIgnoreCompositionEvents(false) {
   
-  mInputContext.mIMEState.mEnabled = IMEState::UNKNOWN;
+  mInputContext.mIMEState.mEnabled = IMEEnabled::Unknown;
 }
 
 PuppetWidget::~PuppetWidget() { Destroy(); }
@@ -696,7 +696,7 @@ void PuppetWidget::DefaultProcOfPluginEvent(const WidgetPluginEvent& aEvent) {
 
 
 bool PuppetWidget::HaveValidInputContextCache() const {
-  return (mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
+  return (mInputContext.mIMEState.mEnabled != IMEEnabled::Unknown &&
           IMEStateManager::GetWidgetForActiveInputContext() == this);
 }
 
@@ -761,7 +761,7 @@ nsresult PuppetWidget::NotifyIMEOfFocusChange(
 
   bool gotFocus = aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS;
   if (gotFocus) {
-    if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN) {
+    if (mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin) {
       
       
       if (NS_WARN_IF(!mContentCache.CacheAll(this, &aIMENotification))) {
@@ -807,7 +807,7 @@ nsresult PuppetWidget::NotifyIMEOfCompositionUpdate(
     return NS_ERROR_FAILURE;
   }
 
-  if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN &&
+  if (mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin &&
       NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
@@ -827,7 +827,7 @@ nsresult PuppetWidget::NotifyIMEOfTextChange(
   }
 
   
-  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
+  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -860,7 +860,7 @@ nsresult PuppetWidget::NotifyIMEOfSelectionChange(
 
   
   
-  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
+  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -886,7 +886,7 @@ nsresult PuppetWidget::NotifyIMEOfMouseButtonEvent(
 
   
   
-  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
+  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -911,7 +911,7 @@ nsresult PuppetWidget::NotifyIMEOfPositionChange(
   }
   
   
-  if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN &&
+  if (mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin &&
       NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
@@ -1233,8 +1233,8 @@ void PuppetWidget::EnableIMEForPlugin(bool aEnable) {
 
   
   if (NS_WARN_IF(HaveValidInputContextCache() &&
-                 mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
-                 mInputContext.mIMEState.mEnabled != IMEState::PLUGIN)) {
+                 mInputContext.mIMEState.mEnabled != IMEEnabled::Unknown &&
+                 mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin)) {
     return;
   }
 
@@ -1350,7 +1350,7 @@ PuppetWidget::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
 
 NS_IMETHODIMP_(IMENotificationRequests)
 PuppetWidget::GetIMENotificationRequests() {
-  if (mInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
+  if (mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin) {
     
     
     

@@ -435,7 +435,7 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
   const InputContext& oldInputContext = aWindow->GetInputContext();
 
   
-  sPluginHasFocus = (aInputContext.mIMEState.mEnabled == IMEState::PLUGIN);
+  sPluginHasFocus = (aInputContext.mIMEState.mEnabled == IMEEnabled::Plugin);
   if (sPluginHasFocus) {
     
     aWindow->DispatchPluginSettingEvents();
@@ -460,7 +460,7 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
       if (sIsIMMEnabled) {
         
         AssociateIMEContext(aWindow, enable && NeedsToAssociateIMC());
-      } else if (oldInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
+      } else if (oldInputContext.mIMEState.mEnabled == IMEEnabled::Plugin) {
         
         
         AssociateIMEContext(aWindow, false);
@@ -519,7 +519,7 @@ void IMEHandler::InitInputContext(nsWindow* aWindow,
   }
 
   
-  aInputContext.mIMEState.mEnabled = IMEState::ENABLED;
+  aInputContext.mIMEState.mEnabled = IMEEnabled::Enabled;
 
   if (sIsInTSFMode) {
     TSFTextStore::SetInputContext(

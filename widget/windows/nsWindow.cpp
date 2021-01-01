@@ -8633,7 +8633,7 @@ void nsWindow::DefaultProcOfPluginEvent(const WidgetPluginEvent& aEvent) {
 
 void nsWindow::EnableIMEForPlugin(bool aEnable) {
   
-  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled != IMEState::PLUGIN)) {
+  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin)) {
     return;
   }
 

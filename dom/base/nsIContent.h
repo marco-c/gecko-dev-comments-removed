@@ -24,6 +24,7 @@ class ShadowRoot;
 class HTMLSlotElement;
 }  
 namespace widget {
+enum class IMEEnabled;
 struct IMEState;
 }  
 }  
@@ -49,6 +50,7 @@ enum nsLinkState {
 
 class nsIContent : public nsINode {
  public:
+  using IMEEnabled = mozilla::widget::IMEEnabled;
   using IMEState = mozilla::widget::IMEState;
   using BindContext = mozilla::dom::BindContext;
 
