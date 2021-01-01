@@ -2643,6 +2643,12 @@ BrowserGlue.prototype = {
         },
       },
 
+      {
+        task: () => {
+          PlacesUIUtils.ensureBookmarkToolbarTelemetryListening();
+        },
+      },
+
       
       {
         task: () => {
