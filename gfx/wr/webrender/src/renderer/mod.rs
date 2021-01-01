@@ -61,7 +61,7 @@ use crate::debug_colors;
 use crate::debug_render::{DebugItem, DebugRenderer};
 use crate::device::{CustomVAO, DepthFunction, Device, DrawTarget, ExternalTexture, GpuFrameId, Program};
 use crate::device::{ProgramCache, ReadTarget, ShaderError, Texture, TextureFilter, TextureFlags, TextureSlot};
-use crate::device::{TextureUploader, UploadMethod, UploadPBOPool, UploadStagingBuffer, VAO, VBO, VertexUsageHint};
+use crate::device::{UploadMethod, UploadPBOPool, UploadStagingBuffer, VBO, VertexUsageHint};
 use crate::device::query::{GpuSampler, GpuTimer};
 #[cfg(feature = "capture")]
 use crate::device::FBOId;
@@ -72,8 +72,8 @@ use crate::glyph_cache::GlyphCache;
 use crate::glyph_rasterizer::{GlyphFormat, GlyphRasterizer};
 use crate::gpu_cache::{GpuBlockData, GpuCacheUpdate, GpuCacheUpdateList};
 use crate::gpu_cache::{GpuCacheDebugChunk, GpuCacheDebugCmd};
-use crate::gpu_types::{PrimitiveHeaderI, PrimitiveHeaderF, PrimitiveInstanceData, ScalingInstance, SvgFilterInstance};
-use crate::gpu_types::{ClearInstance, CompositeInstance, TransformData, ZBufferId, BlurInstance};
+use crate::gpu_types::{PrimitiveInstanceData, ScalingInstance, SvgFilterInstance};
+use crate::gpu_types::{BlurInstance, ClearInstance, CompositeInstance, ZBufferId};
 use crate::internal_types::{TextureSource, ResourceCacheError};
 use crate::internal_types::{CacheTextureId, DebugOutput, FastHashMap, FastHashSet, LayerIndex, RenderedDocument, ResultMsg};
 use crate::internal_types::{TextureCacheAllocationKind, TextureCacheUpdate, TextureUpdateList, TextureUpdateSource};
@@ -87,7 +87,7 @@ use crate::device::query::{GpuProfiler, GpuDebugMethod};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use crate::render_backend::{FrameId, RenderBackend};
 use crate::render_task_graph::RenderTaskGraph;
-use crate::render_task::{RenderTask, RenderTaskData, RenderTaskKind};
+use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::resource_cache::ResourceCache;
 use crate::scene_builder_thread::{SceneBuilderThread, SceneBuilderThreadChannels, LowPrioritySceneBuilderThread};
 use crate::screen_capture::AsyncScreenshotGrabber;
@@ -100,13 +100,11 @@ use crate::render_target::{RenderTargetKind, BlitJob, BlitJobSource};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::util::drain_filter;
 
-use std;
 use std::cmp;
 use std::collections::VecDeque;
 #[cfg(any(feature = "capture", feature = "replay"))]
 use std::collections::hash_map::Entry;
 use std::f32;
-use std::marker::PhantomData;
 use std::mem;
 use std::os::raw::c_void;
 use std::path::PathBuf;
@@ -125,19 +123,9 @@ cfg_if! {
     }
 }
 
-const VERTEX_TEXTURE_EXTRA_ROWS: i32 = 10;
+mod vertex;
 
-
-
-
-
-
-
-
-
-
-
-const VERTEX_DATA_TEXTURE_COUNT: usize = 3;
+pub use vertex::{desc, VertexArrayKind, MAX_VERTEX_TEXTURE_WIDTH};
 
 
 
@@ -151,7 +139,18 @@ pub fn wr_has_been_initialized() -> bool {
     HAS_BEEN_INITIALIZED.load(Ordering::SeqCst)
 }
 
-pub const MAX_VERTEX_TEXTURE_WIDTH: usize = webrender_build::MAX_VERTEX_TEXTURE_WIDTH;
+
+
+
+
+
+
+
+
+
+
+pub const VERTEX_DATA_TEXTURE_COUNT: usize = 3;
+
 
 
 
@@ -396,691 +395,6 @@ impl Into<TextureSlot> for TextureSampler {
             TextureSampler::ClipMask => TextureSlot(9),
         }
     }
-}
-
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct PackedVertex {
-    pub pos: [f32; 2],
-}
-
-pub(crate) mod desc {
-    use crate::device::{VertexAttribute, VertexAttributeKind, VertexDescriptor};
-
-    pub const PRIM_INSTANCES: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aData",
-                count: 4,
-                kind: VertexAttributeKind::I32,
-            },
-        ],
-    };
-
-    pub const BLUR: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aBlurRenderTaskAddress",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aBlurSourceTaskAddress",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aBlurDirection",
-                count: 1,
-                kind: VertexAttributeKind::I32,
-            },
-        ],
-    };
-
-    pub const LINE: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aTaskRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aLocalSize",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aWavyLineThickness",
-                count: 1,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aStyle",
-                count: 1,
-                kind: VertexAttributeKind::I32,
-            },
-            VertexAttribute {
-                name: "aAxisSelect",
-                count: 1,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const GRADIENT: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aTaskRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aStops",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            
-            
-            
-            
-            VertexAttribute {
-                name: "aColor0",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aColor1",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aColor2",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aColor3",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aAxisSelect",
-                count: 1,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aStartStop",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const BORDER: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aTaskOrigin",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aColor0",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aColor1",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aFlags",
-                count: 1,
-                kind: VertexAttributeKind::I32,
-            },
-            VertexAttribute {
-                name: "aWidths",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aRadii",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipParams1",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipParams2",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const SCALE: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aScaleTargetRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aScaleSourceRect",
-                count: 4,
-                kind: VertexAttributeKind::I32,
-            },
-            VertexAttribute {
-                name: "aScaleSourceLayer",
-                count: 1,
-                kind: VertexAttributeKind::I32,
-            },
-        ],
-    };
-
-    pub const CLIP_RECT: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            
-            VertexAttribute {
-                name: "aClipDeviceArea",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipOrigins",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aDevicePixelScale",
-                count: 1,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aTransformIds",
-                count: 2,
-                kind: VertexAttributeKind::I32,
-            },
-            
-            VertexAttribute {
-                name: "aClipLocalPos",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipLocalRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipMode",
-                count: 1,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRect_TL",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRadii_TL",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRect_TR",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRadii_TR",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRect_BL",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRadii_BL",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRect_BR",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipRadii_BR",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const CLIP_BOX_SHADOW: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            
-            VertexAttribute {
-                name: "aClipDeviceArea",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipOrigins",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aDevicePixelScale",
-                count: 1,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aTransformIds",
-                count: 2,
-                kind: VertexAttributeKind::I32,
-            },
-            
-            VertexAttribute {
-                name: "aClipDataResourceAddress",
-                count: 2,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aClipSrcRectSize",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipMode",
-                count: 1,
-                kind: VertexAttributeKind::I32,
-            },
-            VertexAttribute {
-                name: "aStretchMode",
-                count: 2,
-                kind: VertexAttributeKind::I32,
-            },
-            VertexAttribute {
-                name: "aClipDestRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const CLIP_IMAGE: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            
-            VertexAttribute {
-                name: "aClipDeviceArea",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipOrigins",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aDevicePixelScale",
-                count: 1,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aTransformIds",
-                count: 2,
-                kind: VertexAttributeKind::I32,
-            },
-            
-            VertexAttribute {
-                name: "aClipTileRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aClipDataResourceAddress",
-                count: 2,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aClipLocalRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const GPU_CACHE_UPDATE: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::U16Norm,
-            },
-            VertexAttribute {
-                name: "aValue",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[],
-    };
-
-    pub const RESOLVE: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const SVG_FILTER: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aFilterRenderTaskAddress",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aFilterInput1TaskAddress",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aFilterInput2TaskAddress",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aFilterKind",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aFilterInputCount",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aFilterGenericInt",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aFilterExtraDataAddress",
-                count: 2,
-                kind: VertexAttributeKind::U16,
-            },
-        ],
-    };
-
-    pub const VECTOR_STENCIL: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aFromPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aCtrlPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aToPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aFromNormal",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aCtrlNormal",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aToNormal",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aPathID",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aPad",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-        ],
-    };
-
-    pub const VECTOR_COVER: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aTargetRect",
-                count: 4,
-                kind: VertexAttributeKind::I32,
-            },
-            VertexAttribute {
-                name: "aStencilOrigin",
-                count: 2,
-                kind: VertexAttributeKind::I32,
-            },
-            VertexAttribute {
-                name: "aSubpixel",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-            VertexAttribute {
-                name: "aPad",
-                count: 1,
-                kind: VertexAttributeKind::U16,
-            },
-        ],
-    };
-
-    pub const COMPOSITE: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aDeviceRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aDeviceClipRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aColor",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aParams",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aUvRect0",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aUvRect1",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aUvRect2",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aTextureLayers",
-                count: 3,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-
-    pub const CLEAR: VertexDescriptor = VertexDescriptor {
-        vertex_attributes: &[
-            VertexAttribute {
-                name: "aPosition",
-                count: 2,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-        instance_attributes: &[
-            VertexAttribute {
-                name: "aRect",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-            VertexAttribute {
-                name: "aColor",
-                count: 4,
-                kind: VertexAttributeKind::F32,
-            },
-        ],
-    };
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub(crate) enum VertexArrayKind {
-    Primitive,
-    Blur,
-    ClipImage,
-    ClipRect,
-    ClipBoxShadow,
-    VectorStencil,
-    VectorCover,
-    Border,
-    Scale,
-    LineDecoration,
-    Gradient,
-    Resolve,
-    SvgFilter,
-    Composite,
-    Clear,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -1623,123 +937,6 @@ impl GpuCacheTexture {
     }
 }
 
-struct VertexDataTexture<T> {
-    texture: Option<Texture>,
-    format: ImageFormat,
-    _marker: PhantomData<T>,
-}
-
-impl<T> VertexDataTexture<T> {
-    fn new(
-        format: ImageFormat,
-    ) -> Self {
-        VertexDataTexture {
-            texture: None,
-            format,
-            _marker: PhantomData,
-        }
-    }
-
-    
-    fn texture(&self) -> &Texture {
-        self.texture.as_ref().unwrap()
-    }
-
-    
-    fn size_in_bytes(&self) -> usize {
-        self.texture.as_ref().map_or(0, |t| t.size_in_bytes())
-    }
-
-    fn update<'a>(
-        &'a mut self,
-        device: &mut Device,
-        texture_uploader: &mut TextureUploader<'a>,
-        data: &mut Vec<T>
-    ) {
-        debug_assert!(mem::size_of::<T>() % 16 == 0);
-        let texels_per_item = mem::size_of::<T>() / 16;
-        let items_per_row = MAX_VERTEX_TEXTURE_WIDTH / texels_per_item;
-        debug_assert_ne!(items_per_row, 0);
-
-        
-        let mut len = data.len();
-        if len == 0 {
-            if self.texture.is_some() {
-                return;
-            }
-            data.reserve(items_per_row);
-            len = items_per_row;
-        } else {
-            
-            
-            
-            let extra = len % items_per_row;
-            if extra != 0 {
-                let padding = items_per_row - extra;
-                data.reserve(padding);
-                len += padding;
-            }
-        }
-
-        let needed_height = (len / items_per_row) as i32;
-        let existing_height = self.texture.as_ref().map_or(0, |t| t.get_dimensions().height);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if needed_height > existing_height || needed_height + VERTEX_TEXTURE_EXTRA_ROWS < existing_height {
-            
-            if let Some(t) = self.texture.take() {
-                device.delete_texture(t);
-            }
-
-            let texture = device.create_texture(
-                ImageBufferKind::Texture2D,
-                self.format,
-                MAX_VERTEX_TEXTURE_WIDTH as i32,
-                
-                
-                needed_height.max(2),
-                TextureFilter::Nearest,
-                None,
-                1,
-            );
-            self.texture = Some(texture);
-        }
-
-        
-        
-        
-        
-        
-        let logical_width = if needed_height == 1 {
-            data.len() * texels_per_item
-        } else {
-            MAX_VERTEX_TEXTURE_WIDTH - (MAX_VERTEX_TEXTURE_WIDTH % texels_per_item)
-        };
-
-        let rect = DeviceIntRect::new(
-            DeviceIntPoint::zero(),
-            DeviceIntSize::new(logical_width as i32, needed_height),
-        );
-
-        debug_assert!(len <= data.capacity(), "CPU copy will read out of bounds");
-        texture_uploader.upload(device, self.texture(), rect, 0, None, None, data.as_ptr(), len);
-    }
-
-    fn deinit(mut self, device: &mut Device) {
-        if let Some(t) = self.texture.take() {
-            device.delete_texture(t);
-        }
-    }
-}
-
 #[derive(PartialEq)]
 struct TargetSelector {
     size: DeviceIntSize,
@@ -1790,24 +987,6 @@ impl LazyInitializedDebugRenderer {
 }
 
 
-
-pub struct RendererVAOs {
-    prim_vao: VAO,
-    blur_vao: VAO,
-    clip_rect_vao: VAO,
-    clip_box_shadow_vao: VAO,
-    clip_image_vao: VAO,
-    border_vao: VAO,
-    line_vao: VAO,
-    scale_vao: VAO,
-    gradient_vao: VAO,
-    resolve_vao: VAO,
-    svg_filter_vao: VAO,
-    composite_vao: VAO,
-    clear_vao: VAO,
-}
-
-
 struct DebugOverlayState {
     
     is_enabled: bool,
@@ -1823,95 +1002,6 @@ impl DebugOverlayState {
             is_enabled: false,
             current_size: None,
         }
-    }
-}
-
-pub struct VertexDataTextures {
-    prim_header_f_texture: VertexDataTexture<PrimitiveHeaderF>,
-    prim_header_i_texture: VertexDataTexture<PrimitiveHeaderI>,
-    transforms_texture: VertexDataTexture<TransformData>,
-    render_task_texture: VertexDataTexture<RenderTaskData>,
-}
-
-impl VertexDataTextures {
-    fn new() -> Self {
-        VertexDataTextures {
-            prim_header_f_texture: VertexDataTexture::new(ImageFormat::RGBAF32),
-            prim_header_i_texture: VertexDataTexture::new(ImageFormat::RGBAI32),
-            transforms_texture: VertexDataTexture::new(ImageFormat::RGBAF32),
-            render_task_texture: VertexDataTexture::new(ImageFormat::RGBAF32),
-        }
-    }
-
-    fn update(
-        &mut self,
-        device: &mut Device,
-        pbo_pool: &mut UploadPBOPool,
-        frame: &mut Frame,
-    ) {
-        let mut texture_uploader = device.upload_texture(pbo_pool);
-        self.prim_header_f_texture.update(
-            device,
-            &mut texture_uploader,
-            &mut frame.prim_headers.headers_float,
-        );
-        self.prim_header_i_texture.update(
-            device,
-            &mut texture_uploader,
-            &mut frame.prim_headers.headers_int,
-        );
-        self.transforms_texture.update(
-            device,
-            &mut texture_uploader,
-            &mut frame.transform_palette,
-        );
-        self.render_task_texture.update(
-            device,
-            &mut texture_uploader,
-            &mut frame.render_tasks.task_data,
-        );
-
-        
-        
-        texture_uploader.flush(device);
-
-        device.bind_texture(
-            TextureSampler::PrimitiveHeadersF,
-            &self.prim_header_f_texture.texture(),
-            Swizzle::default(),
-        );
-        device.bind_texture(
-            TextureSampler::PrimitiveHeadersI,
-            &self.prim_header_i_texture.texture(),
-            Swizzle::default(),
-        );
-        device.bind_texture(
-            TextureSampler::TransformPalette,
-            &self.transforms_texture.texture(),
-            Swizzle::default(),
-        );
-        device.bind_texture(
-            TextureSampler::RenderTasks,
-            &self.render_task_texture.texture(),
-            Swizzle::default(),
-        );
-    }
-
-    fn size_in_bytes(&self) -> usize {
-        self.prim_header_f_texture.size_in_bytes() +
-        self.prim_header_i_texture.size_in_bytes() +
-        self.transforms_texture.size_in_bytes() +
-        self.render_task_texture.size_in_bytes()
-    }
-
-    fn deinit(
-        self,
-        device: &mut Device,
-    ) {
-        self.transforms_texture.deinit(device);
-        self.prim_header_f_texture.deinit(device);
-        self.prim_header_i_texture.deinit(device);
-        self.render_task_texture.deinit(device);
     }
 }
 
@@ -2008,10 +1098,10 @@ pub struct Renderer {
     last_time: u64,
 
     pub gpu_profiler: GpuProfiler,
-    vaos: RendererVAOs,
+    vaos: vertex::RendererVAOs,
 
     gpu_cache_texture: GpuCacheTexture,
-    vertex_data_textures: Vec<VertexDataTextures>,
+    vertex_data_textures: Vec<vertex::VertexDataTextures>,
     current_vertex_data_textures: usize,
 
     
@@ -2304,43 +1394,14 @@ impl Renderer {
             None
         };
 
-        let x0 = 0.0;
-        let y0 = 0.0;
-        let x1 = 1.0;
-        let y1 = 1.0;
+        let vaos = vertex::RendererVAOs::new(&mut device);
 
-        let quad_indices: [u16; 6] = [0, 1, 2, 2, 1, 3];
-        let quad_vertices = [
-            PackedVertex { pos: [x0, y0] },
-            PackedVertex { pos: [x1, y0] },
-            PackedVertex { pos: [x0, y1] },
-            PackedVertex { pos: [x1, y1] },
-        ];
-
-        let prim_vao = device.create_vao(&desc::PRIM_INSTANCES);
-        device.bind_vao(&prim_vao);
-        device.update_vao_indices(&prim_vao, &quad_indices, VertexUsageHint::Static);
-        device.update_vao_main_vertices(&prim_vao, &quad_vertices, VertexUsageHint::Static);
-
-        let blur_vao = device.create_vao_with_new_instances(&desc::BLUR, &prim_vao);
-        let clip_rect_vao = device.create_vao_with_new_instances(&desc::CLIP_RECT, &prim_vao);
-        let clip_box_shadow_vao = device.create_vao_with_new_instances(&desc::CLIP_BOX_SHADOW, &prim_vao);
-        let clip_image_vao = device.create_vao_with_new_instances(&desc::CLIP_IMAGE, &prim_vao);
-        let border_vao = device.create_vao_with_new_instances(&desc::BORDER, &prim_vao);
-        let scale_vao = device.create_vao_with_new_instances(&desc::SCALE, &prim_vao);
-        let line_vao = device.create_vao_with_new_instances(&desc::LINE, &prim_vao);
-        let gradient_vao = device.create_vao_with_new_instances(&desc::GRADIENT, &prim_vao);
-        let resolve_vao = device.create_vao_with_new_instances(&desc::RESOLVE, &prim_vao);
-        let svg_filter_vao = device.create_vao_with_new_instances(&desc::SVG_FILTER, &prim_vao);
-        let composite_vao = device.create_vao_with_new_instances(&desc::COMPOSITE, &prim_vao);
-        let clear_vao = device.create_vao_with_new_instances(&desc::CLEAR, &prim_vao);
         let texture_upload_pbo_pool = UploadPBOPool::new(&mut device, options.upload_pbo_default_size);
-
         let texture_resolver = TextureResolver::new(&mut device);
 
         let mut vertex_data_textures = Vec::new();
         for _ in 0 .. VERTEX_DATA_TEXTURE_COUNT {
-            vertex_data_textures.push(VertexDataTextures::new());
+            vertex_data_textures.push(vertex::VertexDataTextures::new());
         }
 
         
@@ -2611,21 +1672,7 @@ impl Renderer {
             clear_caches_with_quads: options.clear_caches_with_quads,
             last_time: 0,
             gpu_profiler,
-            vaos: RendererVAOs {
-                prim_vao,
-                blur_vao,
-                clip_rect_vao,
-                clip_box_shadow_vao,
-                clip_image_vao,
-                border_vao,
-                scale_vao,
-                gradient_vao,
-                resolve_vao,
-                line_vao,
-                svg_filter_vao,
-                composite_vao,
-                clear_vao,
-            },
+            vaos,
             vertex_data_textures,
             current_vertex_data_textures: 0,
             pipeline_info: PipelineInfo::default(),
@@ -4085,7 +3132,7 @@ impl Renderer {
         
         debug_assert!(!data.is_empty());
 
-        let vao = get_vao(vertex_array_kind, &self.vaos);
+        let vao = &self.vaos[vertex_array_kind];
         self.device.bind_vao(vao);
 
         let chunk_size = if self.debug_flags.contains(DebugFlags::DISABLE_BATCHING) {
@@ -6668,20 +5715,7 @@ impl Renderer {
         }
         self.texture_upload_pbo_pool.deinit(&mut self.device);
         self.texture_resolver.deinit(&mut self.device);
-        self.device.delete_vao(self.vaos.prim_vao);
-        self.device.delete_vao(self.vaos.resolve_vao);
-        self.device.delete_vao(self.vaos.clip_rect_vao);
-        self.device.delete_vao(self.vaos.clip_box_shadow_vao);
-        self.device.delete_vao(self.vaos.clip_image_vao);
-        self.device.delete_vao(self.vaos.gradient_vao);
-        self.device.delete_vao(self.vaos.blur_vao);
-        self.device.delete_vao(self.vaos.line_vao);
-        self.device.delete_vao(self.vaos.border_vao);
-        self.device.delete_vao(self.vaos.scale_vao);
-        self.device.delete_vao(self.vaos.svg_filter_vao);
-        self.device.delete_vao(self.vaos.composite_vao);
-        self.device.delete_vao(self.vaos.clear_vao);
-
+        self.vaos.deinit(&mut self.device);
         self.debug.deinit(&mut self.device);
 
         if let Ok(shaders) = Rc::try_unwrap(self.shaders) {
@@ -7537,24 +6571,6 @@ impl Renderer {
     }
 }
 
-fn get_vao(vertex_array_kind: VertexArrayKind, vaos: &RendererVAOs) -> &VAO {
-    match vertex_array_kind {
-        VertexArrayKind::Primitive => &vaos.prim_vao,
-        VertexArrayKind::ClipImage => &vaos.clip_image_vao,
-        VertexArrayKind::ClipRect => &vaos.clip_rect_vao,
-        VertexArrayKind::ClipBoxShadow => &vaos.clip_box_shadow_vao,
-        VertexArrayKind::Blur => &vaos.blur_vao,
-        VertexArrayKind::VectorStencil | VertexArrayKind::VectorCover => unreachable!(),
-        VertexArrayKind::Border => &vaos.border_vao,
-        VertexArrayKind::Scale => &vaos.scale_vao,
-        VertexArrayKind::LineDecoration => &vaos.line_vao,
-        VertexArrayKind::Gradient => &vaos.gradient_vao,
-        VertexArrayKind::Resolve => &vaos.resolve_vao,
-        VertexArrayKind::SvgFilter => &vaos.svg_filter_vao,
-        VertexArrayKind::Composite => &vaos.composite_vao,
-        VertexArrayKind::Clear => &vaos.clear_vao,
-    }
-}
 #[derive(Clone, Copy, PartialEq)]
 enum FramebufferKind {
     Main,
