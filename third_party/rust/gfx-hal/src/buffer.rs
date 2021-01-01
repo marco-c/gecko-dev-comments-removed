@@ -5,7 +5,7 @@
 
 
 
-use crate::{device, format, Backend, IndexType};
+use crate::{device::OutOfMemory, format::Format};
 
 
 pub type Offset = u64;
@@ -40,7 +40,7 @@ pub type State = Access;
 #[derive(Clone, Debug, PartialEq)]
 pub enum CreationError {
     
-    OutOfMemory(device::OutOfMemory),
+    OutOfMemory(OutOfMemory),
 
     
     
@@ -51,8 +51,8 @@ pub enum CreationError {
     },
 }
 
-impl From<device::OutOfMemory> for CreationError {
-    fn from(error: device::OutOfMemory) -> Self {
+impl From<OutOfMemory> for CreationError {
+    fn from(error: OutOfMemory) -> Self {
         CreationError::OutOfMemory(error)
     }
 }
@@ -83,14 +83,14 @@ impl std::error::Error for CreationError {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ViewCreationError {
     
-    OutOfMemory(device::OutOfMemory),
+    OutOfMemory(OutOfMemory),
 
     
-    UnsupportedFormat(Option<format::Format>),
+    UnsupportedFormat(Option<Format>),
 }
 
-impl From<device::OutOfMemory> for ViewCreationError {
-    fn from(error: device::OutOfMemory) -> Self {
+impl From<OutOfMemory> for ViewCreationError {
+    fn from(error: OutOfMemory) -> Self {
         ViewCreationError::OutOfMemory(error)
     }
 }
@@ -190,17 +190,3 @@ bitflags!(
         const MEMORY_WRITE = 0x10000;
     }
 );
-
-
-
-
-
-#[derive(Debug)]
-pub struct IndexBufferView<'a, B: Backend> {
-    
-    pub buffer: &'a B::Buffer,
-    
-    pub range: SubRange,
-    
-    pub index_type: IndexType,
-}

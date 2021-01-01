@@ -252,7 +252,7 @@ pub trait Surface<B: Backend>: fmt::Debug + Any + Send + Sync {
 
 pub trait PresentationSurface<B: Backend>: Surface<B> {
     
-    type SwapchainImage: Borrow<B::ImageView> + fmt::Debug + Send + Sync;
+    type SwapchainImage: Borrow<B::Image> + Borrow<B::ImageView> + fmt::Debug + Send + Sync;
 
     
     unsafe fn configure_swapchain(

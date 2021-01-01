@@ -3,8 +3,6 @@
 
 
 
-#![allow(unknown_lints)]
-
 
 
 
@@ -384,7 +382,9 @@ impl Default for Limits {
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct DeviceDescriptor {
+pub struct DeviceDescriptor<L> {
+    
+    pub label: L,
     
     
     pub features: Features,
@@ -394,6 +394,17 @@ pub struct DeviceDescriptor {
     
     
     pub shader_validation: bool,
+}
+
+impl<L> DeviceDescriptor<L> {
+    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> DeviceDescriptor<K> {
+        DeviceDescriptor {
+            label: fun(&self.label),
+            features: self.features,
+            limits: self.limits.clone(),
+            shader_validation: self.shader_validation,
+        }
+    }
 }
 
 bitflags::bitflags! {
@@ -434,6 +445,12 @@ pub enum TextureViewDimension {
     CubeArray,
     
     D3,
+}
+
+impl Default for TextureViewDimension {
+    fn default() -> Self {
+        Self::D2
+    }
 }
 
 impl TextureViewDimension {
@@ -1154,7 +1171,7 @@ pub enum VertexFormat {
 }
 
 impl VertexFormat {
-    pub fn size(&self) -> u64 {
+    pub const fn size(&self) -> u64 {
         match self {
             Self::Uchar2 | Self::Char2 | Self::Uchar2Norm | Self::Char2Norm => 2,
             Self::Uchar4
@@ -1214,9 +1231,9 @@ bitflags::bitflags! {
         const INDEX = 16;
         /// Allow a buffer to be the vertex buffer in a draw operation.
         const VERTEX = 32;
-        /// Allow a buffer to be a [`BindingType::UniformBuffer`] inside a bind group.
+        /// Allow a buffer to be a [`BufferBindingType::Uniform`] inside a bind group.
         const UNIFORM = 64;
-        /// Allow a buffer to be a [`BindingType::StorageBuffer`] inside a bind group.
+        /// Allow a buffer to be a [`BufferBindingType::Storage`] inside a bind group.
         const STORAGE = 128;
         /// Allow a buffer to be the indirect buffer in an indirect draw call.
         const INDIRECT = 256;
@@ -1313,12 +1330,12 @@ bitflags::bitflags! {
         /// Allows a texture to be the destination in a  [`CommandEncoder::copy_texture_to_buffer`],
         /// [`CommandEncoder::copy_texture_to_texture`], or [`Queue::write_texture`] operation.
         const COPY_DST = 2;
-        /// Allows a texture to be a [`BindingType::SampledTexture`] in a bind group.
+        /// Allows a texture to be a [`BindingType::Texture`] in a bind group.
         const SAMPLED = 4;
         /// Allows a texture to be a [`BindingType::StorageTexture`] in a bind group.
         const STORAGE = 8;
-        /// Allows a texture to be a output attachment of a renderpass.
-        const OUTPUT_ATTACHMENT = 16;
+        /// Allows a texture to be an output attachment of a renderpass.
+        const RENDER_ATTACHMENT = 16;
     }
 }
 
@@ -1630,85 +1647,6 @@ impl<T> Default for RenderBundleDescriptor<Option<T>> {
 }
 
 
-
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum TextureComponentType {
-    
-    Float,
-    
-    Sint,
-    
-    Uint,
-    
-    DepthComparison,
-}
-
-impl From<TextureFormat> for TextureComponentType {
-    fn from(format: TextureFormat) -> Self {
-        match format {
-            TextureFormat::R8Uint
-            | TextureFormat::R16Uint
-            | TextureFormat::Rg8Uint
-            | TextureFormat::R32Uint
-            | TextureFormat::Rg16Uint
-            | TextureFormat::Rgba8Uint
-            | TextureFormat::Rg32Uint
-            | TextureFormat::Rgba16Uint
-            | TextureFormat::Rgba32Uint => Self::Uint,
-
-            TextureFormat::R8Sint
-            | TextureFormat::R16Sint
-            | TextureFormat::Rg8Sint
-            | TextureFormat::R32Sint
-            | TextureFormat::Rg16Sint
-            | TextureFormat::Rgba8Sint
-            | TextureFormat::Rg32Sint
-            | TextureFormat::Rgba16Sint
-            | TextureFormat::Rgba32Sint => Self::Sint,
-
-            TextureFormat::R8Unorm
-            | TextureFormat::R8Snorm
-            | TextureFormat::R16Float
-            | TextureFormat::R32Float
-            | TextureFormat::Rg8Unorm
-            | TextureFormat::Rg8Snorm
-            | TextureFormat::Rg16Float
-            | TextureFormat::Rg11b10Float
-            | TextureFormat::Rg32Float
-            | TextureFormat::Rgba8Snorm
-            | TextureFormat::Rgba16Float
-            | TextureFormat::Rgba32Float
-            | TextureFormat::Rgba8Unorm
-            | TextureFormat::Rgba8UnormSrgb
-            | TextureFormat::Bgra8Unorm
-            | TextureFormat::Bgra8UnormSrgb
-            | TextureFormat::Rgb10a2Unorm
-            | TextureFormat::Depth32Float
-            | TextureFormat::Depth24Plus
-            | TextureFormat::Depth24PlusStencil8
-            | TextureFormat::Bc1RgbaUnorm
-            | TextureFormat::Bc1RgbaUnormSrgb
-            | TextureFormat::Bc2RgbaUnorm
-            | TextureFormat::Bc2RgbaUnormSrgb
-            | TextureFormat::Bc3RgbaUnorm
-            | TextureFormat::Bc3RgbaUnormSrgb
-            | TextureFormat::Bc4RUnorm
-            | TextureFormat::Bc4RSnorm
-            | TextureFormat::Bc5RgUnorm
-            | TextureFormat::Bc5RgSnorm
-            | TextureFormat::Bc6hRgbSfloat
-            | TextureFormat::Bc6hRgbUfloat
-            | TextureFormat::Bc7RgbaUnorm
-            | TextureFormat::Bc7RgbaUnormSrgb => Self::Float,
-        }
-    }
-}
-
-
 #[repr(C)]
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
@@ -1735,56 +1673,209 @@ pub struct TextureDataLayout {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum BufferBindingType {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Uniform,
+    
+    
+    
+    
+    
+    
+    
+    
+    Storage {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        read_only: bool,
+    },
+}
+
+impl Default for BufferBindingType {
+    fn default() -> Self {
+        Self::Uniform
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum TextureSampleType {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Float { filterable: bool },
+    
+    
+    
+    
+    
+    
+    
+    Depth,
+    
+    
+    
+    
+    
+    
+    
+    Sint,
+    
+    
+    
+    
+    
+    
+    
+    Uint,
+}
+
+impl Default for TextureSampleType {
+    fn default() -> Self {
+        Self::Float { filterable: true }
+    }
+}
+
+impl From<TextureFormat> for TextureSampleType {
+    fn from(format: TextureFormat) -> Self {
+        match format {
+            TextureFormat::R8Uint
+            | TextureFormat::R16Uint
+            | TextureFormat::Rg8Uint
+            | TextureFormat::R32Uint
+            | TextureFormat::Rg16Uint
+            | TextureFormat::Rgba8Uint
+            | TextureFormat::Rg32Uint
+            | TextureFormat::Rgba16Uint
+            | TextureFormat::Rgba32Uint => Self::Uint,
+
+            TextureFormat::R8Sint
+            | TextureFormat::R16Sint
+            | TextureFormat::Rg8Sint
+            | TextureFormat::R32Sint
+            | TextureFormat::Rg16Sint
+            | TextureFormat::Rgba8Sint
+            | TextureFormat::Rg32Sint
+            | TextureFormat::Rgba16Sint
+            | TextureFormat::Rgba32Sint => Self::Sint,
+
+            TextureFormat::R32Float | TextureFormat::Rg32Float | TextureFormat::Rgba32Float => {
+                Self::Float { filterable: false }
+            }
+
+            TextureFormat::R8Unorm
+            | TextureFormat::R8Snorm
+            | TextureFormat::R16Float
+            | TextureFormat::Rg8Unorm
+            | TextureFormat::Rg8Snorm
+            | TextureFormat::Rg16Float
+            | TextureFormat::Rg11b10Float
+            | TextureFormat::Rgba8Snorm
+            | TextureFormat::Rgba16Float
+            | TextureFormat::Rgba8Unorm
+            | TextureFormat::Rgba8UnormSrgb
+            | TextureFormat::Bgra8Unorm
+            | TextureFormat::Bgra8UnormSrgb
+            | TextureFormat::Rgb10a2Unorm
+            | TextureFormat::Bc1RgbaUnorm
+            | TextureFormat::Bc1RgbaUnormSrgb
+            | TextureFormat::Bc2RgbaUnorm
+            | TextureFormat::Bc2RgbaUnormSrgb
+            | TextureFormat::Bc3RgbaUnorm
+            | TextureFormat::Bc3RgbaUnormSrgb
+            | TextureFormat::Bc4RUnorm
+            | TextureFormat::Bc4RSnorm
+            | TextureFormat::Bc5RgUnorm
+            | TextureFormat::Bc5RgSnorm
+            | TextureFormat::Bc6hRgbSfloat
+            | TextureFormat::Bc6hRgbUfloat
+            | TextureFormat::Bc7RgbaUnorm
+            | TextureFormat::Bc7RgbaUnormSrgb => Self::Float { filterable: true },
+
+            TextureFormat::Depth32Float
+            | TextureFormat::Depth24Plus
+            | TextureFormat::Depth24PlusStencil8 => Self::Depth,
+        }
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum StorageTextureAccess {
+    
+    
+    
+    
+    
+    
+    ReadOnly,
+    
+    
+    
+    
+    
+    
+    WriteOnly,
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BindingType {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    UniformBuffer {
+    Buffer {
+        ty: BufferBindingType,
         
         
-        dynamic: bool,
+        #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+        has_dynamic_offset: bool,
         
         
         
         
+        #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
         min_binding_size: Option<BufferSize>,
-    },
-    
-    
-    
-    
-    
-    
-    
-    
-    StorageBuffer {
-        
-        
-        dynamic: bool,
-        
-        
-        
-        
-        min_binding_size: Option<BufferSize>,
-        
-        
-        
-        
-        
-        
-        
-        
-        readonly: bool,
     },
     
     
@@ -1796,6 +1887,11 @@ pub enum BindingType {
     Sampler {
         
         
+        
+        
+        filtering: bool,
+        
+        
         comparison: bool,
     },
     
@@ -1805,12 +1901,11 @@ pub enum BindingType {
     
     
     
-    SampledTexture {
+    Texture {
         
-        dimension: TextureViewDimension,
+        sample_type: TextureSampleType,
         
-        
-        component_type: TextureComponentType,
+        view_dimension: TextureViewDimension,
         
         
         
@@ -1826,23 +1921,20 @@ pub enum BindingType {
     
     StorageTexture {
         
-        dimension: TextureViewDimension,
+        access: StorageTextureAccess,
         
         format: TextureFormat,
         
-        
-        
-        
-        
-        
-        readonly: bool,
+        view_dimension: TextureViewDimension,
     },
 }
 
 impl BindingType {
     pub fn has_dynamic_offset(&self) -> bool {
         match *self {
-            Self::UniformBuffer { dynamic, .. } | Self::StorageBuffer { dynamic, .. } => dynamic,
+            Self::Buffer {
+                has_dynamic_offset, ..
+            } => has_dynamic_offset,
             _ => false,
         }
     }
@@ -1865,6 +1957,7 @@ pub struct BindGroupLayoutEntry {
     
     
     
+    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
     pub count: Option<NonZeroU32>,
 }
 

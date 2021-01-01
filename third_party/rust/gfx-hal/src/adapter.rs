@@ -28,6 +28,16 @@ pub struct MemoryType {
 }
 
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct MemoryHeap {
+    
+    pub size: u64,
+    
+    pub flags: memory::HeapFlags,
+}
+
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MemoryProperties {
@@ -35,7 +45,7 @@ pub struct MemoryProperties {
     
     pub memory_types: Vec<MemoryType>,
     
-    pub memory_heaps: Vec<u64>,
+    pub memory_heaps: Vec<MemoryHeap>,
 }
 
 

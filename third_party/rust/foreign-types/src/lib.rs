@@ -178,52 +178,10 @@
 #![no_std]
 #![warn(missing_docs)]
 #![doc(html_root_url="https://docs.rs/foreign-types/0.3")]
+extern crate foreign_types_shared;
 
-use core::cell::UnsafeCell;
-
-
-
-
-pub struct Opaque(UnsafeCell<()>);
-
-
-pub trait ForeignType: Sized {
-    
-    type CType;
-
-    
-    type Ref: ForeignTypeRef<CType = Self::CType>;
-
-    
-    unsafe fn from_ptr(ptr: *mut Self::CType) -> Self;
-
-    
-    fn as_ptr(&self) -> *mut Self::CType;
-}
-
-
-pub trait ForeignTypeRef: Sized {
-    
-    type CType;
-
-    
-    #[inline]
-    unsafe fn from_ptr<'a>(ptr: *mut Self::CType) -> &'a Self {
-        &*(ptr as *mut _)
-    }
-
-    
-    #[inline]
-    unsafe fn from_ptr_mut<'a>(ptr: *mut Self::CType) -> &'a mut Self {
-        &mut *(ptr as *mut _)
-    }
-
-    
-    #[inline]
-    fn as_ptr(&self) -> *mut Self::CType {
-        self as *const _ as *mut _
-    }
-}
+#[doc(inline)]
+pub use foreign_types_shared::*;
 
 
 

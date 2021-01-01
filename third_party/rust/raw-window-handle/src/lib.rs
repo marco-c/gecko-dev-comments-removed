@@ -88,17 +88,14 @@ mod platform {
 
 
 
+
+
+
 pub unsafe trait HasRawWindowHandle {
     fn raw_window_handle(&self) -> RawWindowHandle;
 }
 
-unsafe impl HasRawWindowHandle for RawWindowHandle {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        *self
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RawWindowHandle {
     #[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "ios")))]
     #[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "ios"))]
@@ -192,6 +189,6 @@ pub enum RawWindowHandle {
 }
 
 mod seal {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct Seal;
 }

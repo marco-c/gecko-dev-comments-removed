@@ -9,6 +9,8 @@
     clippy::unneeded_field_pattern,
     clippy::match_like_matches_macro
 )]
+
+#![allow(clippy::manual_strip, clippy::unknown_clippy_lints)]
 #![deny(clippy::panic)]
 
 mod arena;

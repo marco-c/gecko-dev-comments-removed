@@ -11,7 +11,7 @@ use libc::{c_ulong, c_void};
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct XlibHandle {
     
     pub window: c_ulong,
@@ -32,7 +32,7 @@ pub struct XlibHandle {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct XcbHandle {
     
     pub window: u32, 
@@ -53,7 +53,7 @@ pub struct XcbHandle {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WaylandHandle {
     
     pub surface: *mut c_void,

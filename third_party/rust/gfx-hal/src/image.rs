@@ -494,6 +494,28 @@ impl Into<[f32; 4]> for PackedColor {
 }
 
 
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum BorderColor {
+    
+    TransparentBlack,
+    
+    OpaqueBlack,
+    
+    OpaqueWhite,
+}
+
+impl Into<[f32; 4]> for BorderColor {
+    fn into(self) -> [f32; 4] {
+        match self {
+            BorderColor::TransparentBlack => [0.0, 0.0, 0.0, 0.0],
+            BorderColor::OpaqueBlack => [0.0, 0.0, 0.0, 1.0],
+            BorderColor::OpaqueWhite => [1.0, 1.0, 1.0, 1.0],
+        }
+    }
+}
+
+
 
 
 
@@ -519,7 +541,7 @@ pub struct SamplerDesc {
     
     pub comparison: Option<Comparison>,
     
-    pub border: PackedColor,
+    pub border: BorderColor,
     
     pub normalized: bool,
     
@@ -540,7 +562,7 @@ impl SamplerDesc {
             lod_bias: Lod(0.0),
             lod_range: Lod::RANGE.clone(),
             comparison: None,
-            border: PackedColor(0),
+            border: BorderColor::TransparentBlack,
             normalized: true,
             anisotropy_clamp: None,
         }
@@ -583,6 +605,12 @@ pub enum Layout {
     Preinitialized,
     
     Present,
+}
+
+impl Default for Layout {
+    fn default() -> Self {
+        Self::General
+    }
 }
 
 bitflags!(
