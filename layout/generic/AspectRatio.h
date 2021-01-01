@@ -26,17 +26,30 @@ enum LogicalAxis : uint8_t;
 class LogicalSize;
 class WritingMode;
 
+enum class UseBoxSizing : uint8_t {
+  
+  No,
+  
+  
+  Yes,
+};
+
 struct AspectRatio {
   friend struct IPC::ParamTraits<mozilla::AspectRatio>;
 
-  AspectRatio() : mRatio(0.0f) {}
-  explicit AspectRatio(float aRatio) : mRatio(std::max(aRatio, 0.0f)) {}
+  AspectRatio() = default;
+  explicit AspectRatio(float aRatio,
+                       UseBoxSizing aUseBoxSizing = UseBoxSizing::No)
+      : mRatio(std::max(aRatio, 0.0f)), mUseBoxSizing(aUseBoxSizing) {}
 
-  static AspectRatio FromSize(float aWidth, float aHeight) {
+  static AspectRatio FromSize(float aWidth, float aHeight,
+                              UseBoxSizing aUseBoxSizing = UseBoxSizing::No) {
     if (aWidth == 0.0f || aHeight == 0.0f) {
+      
+      
       return AspectRatio();
     }
-    return AspectRatio(aWidth / aHeight);
+    return AspectRatio(aWidth / aHeight, aUseBoxSizing);
   }
 
   template <typename T, typename Sub>
@@ -65,13 +78,17 @@ struct AspectRatio {
     
     
     return AspectRatio(
-        std::max(std::numeric_limits<float>::epsilon(), 1.0f / mRatio));
+        std::max(std::numeric_limits<float>::epsilon(), 1.0f / mRatio),
+        mUseBoxSizing);
   }
 
   [[nodiscard]] inline AspectRatio ConvertToWritingMode(
       const WritingMode& aWM) const;
 
   
+
+
+
 
 
 
@@ -117,7 +134,8 @@ struct AspectRatio {
 
  private:
   
-  float mRatio;
+  float mRatio = 0.0f;
+  UseBoxSizing mUseBoxSizing = UseBoxSizing::No;
 };
 
 }  

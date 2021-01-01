@@ -556,7 +556,7 @@ static AspectRatio ComputeIntrinsicRatio(imgIContainer* aImage,
     if (ratio.auto_ && ratio.HasRatio()) {
       
       
-      return ratio.ratio.AsRatio().ToLayoutRatio();
+      return ratio.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::Yes);
     }
   }
   if (aFrame.ShouldShowBrokenImageIcon()) {

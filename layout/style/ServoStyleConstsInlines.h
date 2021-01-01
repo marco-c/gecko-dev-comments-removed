@@ -975,15 +975,19 @@ template <>
 void StyleImage::ResolveImage(dom::Document&, const StyleImage*);
 
 template <>
-inline AspectRatio StyleRatio<StyleNonNegativeNumber>::ToLayoutRatio() const {
+inline AspectRatio StyleRatio<StyleNonNegativeNumber>::ToLayoutRatio(
+    UseBoxSizing aUseBoxSizing) const {
   
   
-  return AspectRatio::FromSize(_0, _1);
+  
+  return AspectRatio::FromSize(_0, _1, aUseBoxSizing);
 }
 
 template <>
 inline AspectRatio StyleAspectRatio::ToLayoutRatio() const {
-  return HasRatio() ? ratio.AsRatio().ToLayoutRatio() : AspectRatio();
+  return HasRatio() ? ratio.AsRatio().ToLayoutRatio(auto_ ? UseBoxSizing::No
+                                                          : UseBoxSizing::Yes)
+                    : AspectRatio();
 }
 
 }  
