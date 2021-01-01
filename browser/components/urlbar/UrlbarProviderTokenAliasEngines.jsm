@@ -123,12 +123,17 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
       this._autofillData.instance == this.queryInstance
     ) {
       addCallback(this, this._autofillData.result);
+      if (!UrlbarPrefs.get("update2")) {
+        return;
+      }
     }
 
     for (let { engine, tokenAliases } of this._engines) {
       if (
-        tokenAliases[0].startsWith(queryContext.trimmedSearchString) &&
-        engine.name != this._autofillData?.result.payload.engine
+        (!UrlbarPrefs.get("update2") &&
+          queryContext.trimmedSearchString == "@") ||
+        (tokenAliases[0].startsWith(queryContext.trimmedSearchString) &&
+          engine.name != this._autofillData?.result.payload.engine)
       ) {
         let result = new UrlbarResult(
           UrlbarUtils.RESULT_TYPE.SEARCH,
@@ -180,6 +185,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
           
           
           if (
+            UrlbarPrefs.get("update2") &&
             lowerCaseSearchString.startsWith(alias) &&
             UrlbarTokenizer.REGEXP_SPACES_START.test(
               lowerCaseSearchString.substring(alias.length)
@@ -203,16 +209,21 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
               query: ["", UrlbarUtils.HIGHLIGHT.TYPED],
               icon: engine.iconURI?.spec,
               
-              keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
+              
+              keywordOffer: UrlbarPrefs.get("update2")
+                ? UrlbarUtils.KEYWORD_OFFER.SHOW
+                : UrlbarUtils.KEYWORD_OFFER.HIDE,
             })
           );
-
-          
-          
-          
-          
-          result.suggestedIndex = 0;
-
+          if (UrlbarPrefs.get("update2")) {
+            
+            
+            
+            
+            result.suggestedIndex = 0;
+          } else {
+            result.heuristic = true;
+          }
           result.autofill = {
             value,
             selectionStart: queryContext.searchString.length,

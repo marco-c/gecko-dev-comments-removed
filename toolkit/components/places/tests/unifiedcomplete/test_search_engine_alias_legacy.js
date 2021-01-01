@@ -10,9 +10,10 @@ const SUGGESTIONS_ENGINE_NAME = "engine-suggestions.xml";
 
 
 
+
+
 add_task(async function basicGetAndPost() {
-  
-  Services.prefs.setBoolPref("browser.urlbar.update2", true);
+  Services.prefs.setBoolPref("browser.urlbar.update2", false);
 
   
   
@@ -37,7 +38,15 @@ add_task(async function basicGetAndPost() {
     await check_autocomplete({
       search: alias,
       searchParam: "enable-actions",
-      matches: [],
+      matches: [
+        makeSearchMatch(`${alias} `, {
+          engineName: `Aliased${alias.toUpperCase()}MozSearch`,
+          searchQuery: "",
+          alias,
+          heuristic: true,
+        }),
+        historyMatch,
+      ],
     });
 
     await check_autocomplete({

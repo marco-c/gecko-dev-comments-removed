@@ -65,6 +65,7 @@ class ProviderUnifiedComplete extends UrlbarProvider {
   isActive(queryContext) {
     if (
       !queryContext.trimmedSearchString &&
+      UrlbarPrefs.get("update2") &&
       queryContext.searchMode?.engineName &&
       UrlbarPrefs.get("update2.emptySearchBehavior") < 2
     ) {
@@ -206,6 +207,28 @@ function makeUrlbarResult(tokens, info) {
           );
         }
 
+        let keywordOffer;
+        if (
+          !UrlbarPrefs.get("update2") &&
+          action.params.alias?.startsWith("@") &&
+          !action.params.searchQuery.trim()
+        ) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          keywordOffer = UrlbarUtils.KEYWORD_OFFER.HIDE;
+        }
         return new UrlbarResult(
           UrlbarUtils.RESULT_TYPE.SEARCH,
           UrlbarUtils.RESULT_SOURCE.SEARCH,
@@ -222,6 +245,7 @@ function makeUrlbarResult(tokens, info) {
               UrlbarUtils.HIGHLIGHT.NONE,
             ],
             icon: info.icon,
+            keywordOffer,
           })
         );
       }

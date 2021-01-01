@@ -31,8 +31,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     this.view = view;
     this.input = view.input;
     UrlbarPrefs.addObserver(this);
-    
-    this.disableOneOffsHorizontalKeyNavigation = true;
+    this._setupOneOffsHorizontalKeyNavigation();
   }
 
   
@@ -173,7 +172,12 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
-  handleSearchCommand(event, searchMode) {
+
+
+
+
+
+  handleSearchCommand(event, searchMode, forceNewTab = false) {
     
     
     if (
@@ -196,14 +200,15 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
       this.input.value && this.input.getAttribute("pageproxystate") != "valid";
     let engine = Services.search.getEngineByName(searchMode.engineName);
 
-    let { where, params } = this._whereToOpen(event);
+    let { where, params } = this._whereToOpen(event, forceNewTab);
 
     
     
     if (
-      userTypedSearchString &&
-      engine &&
-      (event.shiftKey || where != "current")
+      !this.view.oneOffsRefresh ||
+      (userTypedSearchString &&
+        engine &&
+        (event.shiftKey || where != "current"))
     ) {
       this.input.handleNavigation({
         event,
@@ -304,10 +309,24 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     
     
     if (
-      [...UrlbarUtils.LOCAL_SEARCH_MODES.map(m => m.pref)].includes(changedPref)
+      [
+        "update2",
+        "update2.oneOffsRefresh",
+        ...UrlbarUtils.LOCAL_SEARCH_MODES.map(m => m.pref),
+      ].includes(changedPref)
     ) {
       this.invalidateCache();
     }
+    this._setupOneOffsHorizontalKeyNavigation();
+  }
+
+  
+
+
+  _setupOneOffsHorizontalKeyNavigation() {
+    this.disableOneOffsHorizontalKeyNavigation =
+      UrlbarPrefs.get("update2") &&
+      UrlbarPrefs.get("update2.disableOneOffsHorizontalKeyNavigation");
   }
 
   
@@ -318,6 +337,10 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
   _rebuildEngineList(engines) {
     super._rebuildEngineList(engines);
+
+    if (!this.view.oneOffsRefresh) {
+      return;
+    }
 
     for (let { source, pref, restrict } of UrlbarUtils.LOCAL_SEARCH_MODES) {
       if (!UrlbarPrefs.get(pref)) {
@@ -343,6 +366,11 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
   _on_click(event) {
+    if (!this.view.oneOffsRefresh) {
+      super._on_click(event);
+      return;
+    }
+
     
     if (event.button == 2) {
       return;
@@ -369,6 +397,11 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
   _on_contextmenu(event) {
     
-    event.preventDefault();
+    if (this.view.oneOffsRefresh) {
+      event.preventDefault();
+      return;
+    }
+
+    super._on_contextmenu(event);
   }
 }

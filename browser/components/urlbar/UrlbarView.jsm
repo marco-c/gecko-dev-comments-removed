@@ -101,6 +101,16 @@ class UrlbarView {
 
 
 
+  get oneOffsRefresh() {
+    return (
+      UrlbarPrefs.get("update2") && UrlbarPrefs.get("update2.oneOffsRefresh")
+    );
+  }
+
+  
+
+
+
   get isOpen() {
     return this.input.hasAttribute("open");
   }
@@ -626,7 +636,8 @@ class UrlbarView {
       
       
       this.oneOffSearchButtons.enable(
-        (firstResult.providerName != "UrlbarProviderSearchTips" ||
+        ((this.oneOffsRefresh &&
+          firstResult.providerName != "UrlbarProviderSearchTips") ||
           queryContext.trimmedSearchString) &&
           queryContext.trimmedSearchString[0] != "@" &&
           (queryContext.trimmedSearchString[0] !=
@@ -645,6 +656,7 @@ class UrlbarView {
           setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
         });
       } else if (
+        UrlbarPrefs.get("update2") &&
         firstResult.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW &&
         queryContext.trimmedSearchString != "@"
       ) {
@@ -1272,7 +1284,13 @@ class UrlbarView {
               { engine: result.payload.engine }
             );
           };
-        } else if (!result.payload.keywordOffer) {
+        } else if (!this._shouldLocalizeSearchResultTitle(result)) {
+          
+          
+          
+          
+          
+          
           actionSetter = () => {
             this.document.l10n.setAttributes(
               action,
@@ -1369,6 +1387,28 @@ class UrlbarView {
     } else {
       title.removeAttribute("dir");
     }
+  }
+
+  
+
+
+
+
+
+
+
+  _shouldLocalizeSearchResultTitle(result) {
+    if (
+      result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+      !result.payload.keywordOffer
+    ) {
+      return false;
+    }
+
+    return (
+      UrlbarPrefs.get("update2") ||
+      result.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.HIDE
+    );
   }
 
   _iconForResult(result, iconUrlOverride = null) {
@@ -1743,7 +1783,7 @@ class UrlbarView {
 
 
   _setResultTitle(result, titleNode) {
-    if (result.payload.keywordOffer) {
+    if (this._shouldLocalizeSearchResultTitle(result)) {
       
       
       
@@ -1913,6 +1953,7 @@ class UrlbarView {
       
       
       if (
+        this.oneOffsRefresh &&
         result.heuristic &&
         !engine &&
         !localSearchMode &&
@@ -1954,9 +1995,18 @@ class UrlbarView {
 
       
       
+      if (
+        !this.oneOffsRefresh &&
+        result.type != UrlbarUtils.RESULT_TYPE.SEARCH
+      ) {
+        continue;
+      }
+
       
       
-      if (result.heuristic) {
+      
+      
+      if (this.oneOffsRefresh && result.heuristic) {
         title.textContent =
           localSearchMode || engine
             ? this._queryContext.searchString
@@ -2011,6 +2061,9 @@ class UrlbarView {
         iconOverride = UrlbarUtils.ICON.SEARCH_GLASS;
       }
       if (
+        
+        
+        !this.oneOffsRefresh ||
         result.heuristic ||
         (result.payload.inPrivateWindow && !result.payload.isPrivateEngine)
       ) {

@@ -76,6 +76,13 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  
+  
+  
+  ["experiment.update2", true],
+
+  
+  
   ["experimental.expandTextOnFocus", false],
 
   
@@ -183,9 +190,26 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  ["update2", true],
+
+  
+  
+  ["update2.disableOneOffsHorizontalKeyNavigation", true],
+
+  
+  
   
   
   ["update2.emptySearchBehavior", 0],
+
+  
+  
+  ["update2.oneOffsRefresh", true],
+
+  
+  
+  
+  ["update2.restyleBrowsingHistoryAsSearch", true],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],
@@ -420,6 +444,16 @@ class Preferences {
             this.get("suggest." + type) && Ci.mozIPlacesAutoComplete[behavior];
         }
         return val;
+      }
+      case "update2": {
+        
+        
+        
+        
+        if (!this._readPref("experiment.update2")) {
+          return false;
+        }
+        return this._readPref(pref);
       }
     }
     return this._readPref(pref);

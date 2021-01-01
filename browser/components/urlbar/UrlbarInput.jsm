@@ -794,7 +794,29 @@ class UrlbarInput {
           if (searchModeParams) {
             this.searchMode = searchModeParams;
             this.search("");
+          } else {
+            
+            
+            
+            this.controller.engagementEvent.record(event, {
+              searchString: this._lastSearchString,
+              selIndex,
+              selType: "keywordoffer",
+              provider: result.providerName,
+            });
+
+            
+            
+            
+            this.selectionStart = this.selectionEnd = this.value.length;
+
+            
+            
+            
+            
+            this.startQuery();
           }
+
           return;
         }
 
@@ -959,6 +981,19 @@ class UrlbarInput {
       },
       browser
     );
+  }
+
+  
+
+
+
+
+
+
+  onPrefChanged(changedPref) {
+    if (changedPref == "update2" && !UrlbarPrefs.get("update2")) {
+      this.searchMode = null;
+    }
   }
 
   
@@ -1279,9 +1314,13 @@ class UrlbarInput {
 
     let tokens = value.trim().split(UrlbarTokenizer.REGEXP_SPACES);
     
-    let searchMode = UrlbarUtils.searchModeForToken(tokens[0]);
-    if (!searchMode && searchEngine) {
-      searchMode = { engineName: searchEngine.name };
+    let searchMode;
+    if (UrlbarPrefs.get("update2")) {
+      
+      searchMode = UrlbarUtils.searchModeForToken(tokens[0]);
+      if (!searchMode && searchEngine) {
+        searchMode = { engineName: searchEngine.name };
+      }
     }
 
     if (searchMode) {
@@ -1405,7 +1444,10 @@ class UrlbarInput {
       ObjectUtils.deepEqual(currentSearchMode, searchMode);
 
     
-    if (searchMode?.engineName) {
+    
+    if (!UrlbarPrefs.get("update2")) {
+      searchMode = null;
+    } else if (searchMode?.engineName) {
       if (!Services.search.isInitialized) {
         await Services.search.init();
       }
@@ -1494,19 +1536,25 @@ class UrlbarInput {
   
 
 
+
+
   searchModeShortcut() {
-    
-    
-    this.searchMode = {
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-      engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
-      entry: "shortcut",
-    };
-    
-    
-    
-    this.search(this.value);
-    this.select();
+    if (this.view.oneOffsRefresh) {
+      
+      
+      this.searchMode = {
+        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
+        entry: "shortcut",
+      };
+      
+      
+      
+      this.search(this.value);
+      this.select();
+    } else {
+      this.search(UrlbarTokenizer.RESTRICT.SEARCH);
+    }
   }
 
   
@@ -1760,6 +1808,7 @@ class UrlbarInput {
   
 
   _addObservers() {
+    UrlbarPrefs.addObserver(this);
     Services.obs.addObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED, true);
   }
 
@@ -2507,6 +2556,10 @@ class UrlbarInput {
 
 
   _searchModeForResult(result, entry = null) {
+    if (!UrlbarPrefs.get("update2")) {
+      return null;
+    }
+
     
     if (!result.payload.keyword && !result.payload.engine) {
       return null;

@@ -355,6 +355,14 @@ pref("browser.urlbar.richSuggestions.tail", true);
 
 
 
+pref("browser.urlbar.update2", true);
+
+
+
+pref("browser.urlbar.update2.disableOneOffsHorizontalKeyNavigation", true);
+
+
+
 
 
 pref("browser.urlbar.update2.emptySearchBehavior", 0);
@@ -364,6 +372,15 @@ pref("browser.urlbar.update2.emptySearchBehavior", 0);
 pref("browser.urlbar.shortcuts.bookmarks", true);
 pref("browser.urlbar.shortcuts.tabs", true);
 pref("browser.urlbar.shortcuts.history", true);
+
+
+
+pref("browser.urlbar.update2.oneOffsRefresh", true);
+
+
+
+
+pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", true);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
 

@@ -1092,7 +1092,10 @@ Search.prototype = {
 
     
     
-    if (!UrlbarTokenizer.REGEXP_SPACES_START.test(query)) {
+    if (
+      UrlbarPrefs.get("update2") &&
+      !UrlbarTokenizer.REGEXP_SPACES_START.test(query)
+    ) {
       return false;
     }
 
@@ -1316,7 +1319,9 @@ Search.prototype = {
     
     if (
       match.style == "favicon" &&
-      (UrlbarPrefs.get("restyleSearches") || this._searchModeEngine)
+      (UrlbarPrefs.get("restyleSearches") ||
+        (this._searchModeEngine &&
+          UrlbarPrefs.get("update2.restyleBrowsingHistoryAsSearch")))
     ) {
       let restyled = this._maybeRestyleSearchMatch(match);
       if (restyled && UrlbarPrefs.get("maxHistoricalSearchSuggestions") == 0) {
@@ -1669,7 +1674,11 @@ Search.prototype = {
       
       
 
-      if (UrlbarPrefs.get("restyleSearches") || this._searchModeEngine) {
+      if (
+        UrlbarPrefs.get("restyleSearches") ||
+        (this._searchModeEngine &&
+          UrlbarPrefs.get("update2.restyleBrowsingHistoryAsSearch"))
+      ) {
         
         
         

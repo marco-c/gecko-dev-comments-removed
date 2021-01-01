@@ -151,10 +151,6 @@ class SearchOneOffs {
     
     
     Services.obs.addObserver(this, "lightweight-theme-changed", true);
-
-    
-    
-    this.disableOneOffsHorizontalKeyNavigation = false;
   }
 
   addEventListener(...args) {
@@ -726,7 +722,7 @@ class SearchOneOffs {
 
 
 
-  _whereToOpen(aEvent, aForceNewTab = false) {
+  _whereToOpen(aEvent, aForceNewTab) {
     let where = "current";
     let params;
     

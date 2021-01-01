@@ -1,8 +1,13 @@
 "use strict";
 
+const { UrlbarTestUtils } = ChromeUtils.import(
+  "resource://testing-common/UrlbarTestUtils.jsm"
+);
+
 const TEST_ENGINE_NAME = "Foo";
 const TEST_ENGINE_BASENAME = "testEngine.xml";
 const SEARCHBAR_BASE_ID = "searchbar-engine-one-off-item-";
+const URLBAR_BASE_ID = "urlbar-engine-one-off-item-";
 
 let originalEngine;
 let originalPrivateEngine;
@@ -45,6 +50,7 @@ async function testSearchBarChangeEngine(win, testPrivate, isPrivateWindow) {
   await resetEngines();
 
   let oneOffButton = await openPopupAndGetEngineButton(
+    true,
     searchPopup,
     searchOneOff,
     SEARCHBAR_BASE_ID,
@@ -103,6 +109,127 @@ add_task(async function test_searchBarChangeEngine_privateWindow() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+async function testUrlBarChangeEngine(win, testPrivate, isPrivateWindow) {
+  info(
+    `Testing urlbar with testPrivate: ${testPrivate} isPrivateWindow: ${isPrivateWindow}`
+  );
+
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
+  
+  await resetEngines();
+
+  const urlbar = win.document.getElementById("urlbar");
+  const urlBarOneOff = UrlbarTestUtils.getOneOffSearchButtons(win);
+
+  let oneOffButton = await openPopupAndGetEngineButton(
+    false,
+    null,
+    urlBarOneOff,
+    URLBAR_BASE_ID,
+    TEST_ENGINE_NAME
+  );
+
+  const setDefaultEngineMenuItem = urlBarOneOff.querySelector(
+    ".search-one-offs-context-set-default" + (testPrivate ? "-private" : "")
+  );
+
+  
+  let promise = promiseDefaultEngineChanged(testPrivate);
+  EventUtils.synthesizeMouseAtCenter(setDefaultEngineMenuItem, {}, win);
+
+  
+  await promise;
+
+  let defaultEngine = await Services.search[
+    testPrivate ? "getDefaultPrivate" : "getDefault"
+  ]();
+
+  
+  Assert.equal(
+    oneOffButton.id,
+    URLBAR_BASE_ID + defaultEngine.name,
+    "Should now have the original engine's id for the button"
+  );
+  Assert.equal(
+    oneOffButton.getAttribute("tooltiptext"),
+    defaultEngine.name,
+    "Should now have the original engine's name for the tooltip"
+  );
+  Assert.equal(
+    oneOffButton.image,
+    defaultEngine.iconURI.spec,
+    "Should now have the original engine's uri for the image"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(win);
+
+  
+  await EventUtils.synthesizeNativeMouseMove(urlbar);
+}
+
+
+add_task(async function test_urlBarChangeEngine_normal_legacy() {
+  await testUrlBarChangeEngine(window, false, false);
+  await testUrlBarChangeEngine(window, true, false);
+});
+
+
+add_task(async function test_urlBarChangeEngine_private_legacy() {
+  const win = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  await testUrlBarChangeEngine(win, true, true);
+  await BrowserTestUtils.closeWindow(win);
+});
+
+async function testUrlbarEngineDefaultDisabled(isPrivate) {
+  const originalDefault = await Services.search[
+    isPrivate ? "getDefaultPrivate" : "getDefault"
+  ]();
+
+  const urlBarOneOff = UrlbarTestUtils.getOneOffSearchButtons(window);
+
+  const oneOffButton = await openPopupAndGetEngineButton(
+    false,
+    null,
+    urlBarOneOff,
+    URLBAR_BASE_ID,
+    originalDefault.name
+  );
+
+  Assert.equal(
+    oneOffButton.id,
+    URLBAR_BASE_ID + originalDefault.name,
+    "Should now have the original engine's id for the button"
+  );
+
+  const setDefaultEngineMenuItem = urlBarOneOff.querySelector(
+    ".search-one-offs-context-set-default" + (isPrivate ? "-private" : "")
+  );
+  Assert.equal(
+    setDefaultEngineMenuItem.disabled,
+    true,
+    "Should have disabled the setting as default for the default engine"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(window);
+}
+
+add_task(async function test_urlBarEngineDefaultDisabled_normal() {
+  await testUrlbarEngineDefaultDisabled(false);
+});
+
+add_task(async function test_urlBarEngineDefaultDisabled_private() {
+  await testUrlbarEngineDefaultDisabled(true);
+});
+
 
 
 
@@ -146,7 +273,10 @@ function promiseDefaultEngineChanged(testPrivate) {
 
 
 
+
+
 async function openPopupAndGetEngineButton(
+  isSearch,
   popup,
   oneOffInstance,
   baseId,
@@ -154,14 +284,23 @@ async function openPopupAndGetEngineButton(
 ) {
   const win = oneOffInstance.container.ownerGlobal;
   
-  win.gURLBar.blur();
-  let shownPromise = promiseEvent(popup, "popupshown");
-  let builtPromise = promiseEvent(oneOffInstance, "rebuild");
-  let searchbar = win.document.getElementById("searchbar");
-  let searchIcon = searchbar.querySelector(".searchbar-search-button");
-  
-  EventUtils.synthesizeMouseAtCenter(searchIcon, {}, win);
-  await Promise.all([shownPromise, builtPromise]);
+  if (isSearch) {
+    
+    win.gURLBar.blur();
+    let shownPromise = promiseEvent(popup, "popupshown");
+    let builtPromise = promiseEvent(oneOffInstance, "rebuild");
+    let searchbar = win.document.getElementById("searchbar");
+    let searchIcon = searchbar.querySelector(".searchbar-search-button");
+    
+    EventUtils.synthesizeMouseAtCenter(searchIcon, {}, win);
+    await Promise.all([shownPromise, builtPromise]);
+  } else {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window: win,
+      waitForFocus,
+      value: "a",
+    });
+  }
 
   const contextMenu = oneOffInstance.contextMenuPopup;
   let oneOffButton = oneOffInstance.buttons;
@@ -186,12 +325,35 @@ async function openPopupAndGetEngineButton(
     undefined,
     "One-off for test engine should exist"
   );
-  Assert.equal(
-    oneOffButton.getAttribute("tooltiptext"),
-    engineName,
-    "One-off should have the tooltip set to the engine name"
-  );
-
+  if (isSearch) {
+    Assert.equal(
+      oneOffButton.getAttribute("tooltiptext"),
+      engineName,
+      "One-off should have the tooltip set to the engine name"
+    );
+  } else {
+    let aliases = oneOffButton.engine.aliases;
+    if (!aliases.length) {
+      Assert.equal(
+        oneOffButton.getAttribute("tooltiptext"),
+        engineName,
+        "One-off without alias should have the tooltip set to the engine name"
+      );
+    } else {
+      let l10n = {
+        id: "search-one-offs-engine-with-alias",
+        args: {
+          engineName,
+          alias: aliases[0],
+        },
+      };
+      Assert.deepEqual(
+        win.document.l10n.getAttributes(oneOffButton),
+        l10n,
+        "One-off with alias has expected tooltip l10n values"
+      );
+    }
+  }
   Assert.equal(
     oneOffButton.id,
     baseId + engineName,

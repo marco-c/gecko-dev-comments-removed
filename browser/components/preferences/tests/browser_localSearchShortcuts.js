@@ -46,6 +46,16 @@ add_task(async function visible() {
 });
 
 
+add_task(async function update2Disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
+  await checkRowVisibility(false);
+  await SpecialPowers.popPrefEnv();
+  await checkRowVisibility(true);
+});
+
+
 
 add_task(async function syncFromPrefs() {
   let col = gTree.columns.getNamedColumn("engineShown");

@@ -6,11 +6,11 @@
 
 
 
+
+
 add_task(async function() {
-  
-  
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2", true]],
+    set: [["browser.urlbar.update2", false]],
   });
 
   const ICON_URI =
@@ -36,11 +36,6 @@ add_task(async function() {
     "about:mozilla"
   );
 
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.autoFill", false]],
-  });
-
   registerCleanupFunction(async function() {
     await Services.search.setDefault(originalEngine);
     await Services.search.removeEngine(engine);
@@ -57,19 +52,18 @@ add_task(async function() {
     window,
     value: "moz",
   });
-  Assert.equal(gURLBar.value, "moz", "Value should be unchanged");
+  Assert.equal(
+    gURLBar.value,
+    "moz",
+    "Preselected search keyword result shouldn't automatically add a space"
+  );
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "moz open a search",
   });
-  
-  await UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: engine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "open a search", "value should be query");
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(result.image, ICON_URI, "Should have the correct image");
 
   let tabPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   EventUtils.synthesizeKey("KEY_Enter");

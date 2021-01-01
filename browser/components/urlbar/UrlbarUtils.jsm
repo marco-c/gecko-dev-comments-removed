@@ -583,6 +583,10 @@ var UrlbarUtils = {
 
 
   searchModeForToken(token) {
+    if (!UrlbarPrefs.get("update2")) {
+      return null;
+    }
+
     if (token == UrlbarTokenizer.RESTRICT.SEARCH) {
       return {
         engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,

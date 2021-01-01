@@ -68,7 +68,29 @@ add_task(async function searchEngineAlias() {
   );
 });
 
+
+add_task(async function searchRestriction_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
+  gURLBar.blur();
+  await UrlbarTestUtils.promisePopupOpen(window, () =>
+    gURLBar.search(UrlbarTokenizer.RESTRICT.SEARCH)
+  );
+  ok(gURLBar.hasAttribute("focused"), "url bar is focused");
+  
+  await assertUrlbarValue(UrlbarTokenizer.RESTRICT.SEARCH + " ");
+
+  assertOneOffButtonsVisible(false);
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function searchRestriction() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
   gURLBar.blur();
   await UrlbarTestUtils.promisePopupOpen(window, () =>
     gURLBar.search(UrlbarTokenizer.RESTRICT.SEARCH)
@@ -83,9 +105,16 @@ add_task(async function searchRestriction() {
   assertOneOffButtonsVisible(true);
   await UrlbarTestUtils.exitSearchMode(window);
   await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function historyRestriction() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
   gURLBar.blur();
   await UrlbarTestUtils.promisePopupOpen(window, () =>
     gURLBar.search(UrlbarTokenizer.RESTRICT.HISTORY)
@@ -99,9 +128,16 @@ add_task(async function historyRestriction() {
   Assert.ok(!gURLBar.value, "The Urlbar has no value.");
   await UrlbarTestUtils.exitSearchMode(window);
   await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function historyRestrictionWithString() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
   gURLBar.blur();
   
   
@@ -126,9 +162,13 @@ add_task(async function historyRestrictionWithString() {
   assertOneOffButtonsVisible(true);
   await UrlbarTestUtils.exitSearchMode(window);
   await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function tagRestriction() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
   gURLBar.blur();
   await UrlbarTestUtils.promisePopupOpen(window, () =>
     gURLBar.search(UrlbarTokenizer.RESTRICT.TAG)
@@ -140,6 +180,7 @@ add_task(async function tagRestriction() {
   await assertUrlbarValue(`${UrlbarTokenizer.RESTRICT.TAG} `);
   assertOneOffButtonsVisible(true);
   await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -188,6 +229,10 @@ add_task(async function searchIME() {
 
 
 add_task(async function searchWithAlias() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
+
   await UrlbarTestUtils.promisePopupOpen(window, async () =>
     gURLBar.search(`${ALIAS} test`, {
       searchEngine: aliasEngine,
@@ -204,6 +249,7 @@ add_task(async function searchWithAlias() {
   assertOneOffButtonsVisible(true);
   await UrlbarTestUtils.exitSearchMode(window);
   await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
 });
 
 

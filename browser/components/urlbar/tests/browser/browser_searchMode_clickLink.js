@@ -11,6 +11,15 @@
 const LINK_PAGE_URL =
   "http://mochi.test:8888/browser/browser/components/urlbar/tests/browser/dummy_page.html";
 
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
+});
+
 
 
 

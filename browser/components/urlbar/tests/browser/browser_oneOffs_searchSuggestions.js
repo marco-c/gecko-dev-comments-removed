@@ -105,7 +105,64 @@ async function selectSecondSuggestion(index, isFormHistory) {
 
 
 
+
+add_task(async function test_returnAfterSuggestion_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
+  await withSuggestions(async (index, usingFormHistory) => {
+    await selectSecondSuggestion(index, usingFormHistory);
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
+    await assertState({
+      inputValue: "foobar",
+      resultIndex: index + 1,
+      oneOffIndex: 0,
+      suggestion: {
+        isFormHistory: usingFormHistory,
+      },
+    });
+
+    let heuristicResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+    Assert.ok(
+      !BrowserTestUtils.is_visible(heuristicResult.element.action),
+      "The heuristic action should not be visible"
+    );
+
+    await UrlbarTestUtils.formHistory.clear();
+    let formHistoryPromise = UrlbarTestUtils.formHistory.promiseChanged("add");
+    let resultsPromise = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      `http://mochi.test:8888/?terms=foobar`
+    );
+    EventUtils.synthesizeKey("KEY_Enter");
+    await resultsPromise;
+    await formHistoryPromise;
+    let entries = (
+      await UrlbarTestUtils.formHistory.search({
+        value: "foobar",
+        source: gEngine.name,
+      })
+    ).map(entry => entry.value);
+    Assert.ok(entries.includes("foobar"));
+  });
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
 add_task(async function test_returnAfterSuggestion() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
   await withSuggestions(async (index, usingFormHistory) => {
     await selectSecondSuggestion(index, usingFormHistory);
 
@@ -135,11 +192,54 @@ add_task(async function test_returnAfterSuggestion() {
     });
     await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   });
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function test_returnAfterSuggestion_nonDefault_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
+  await withSuggestions(async (index, usingFormHistory) => {
+    await selectSecondSuggestion(index, usingFormHistory);
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
+    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
+    await assertState({
+      inputValue: "foobar",
+      resultIndex: index + 1,
+      oneOffIndex: 1,
+      suggestion: {
+        isFormHistory: usingFormHistory,
+      },
+    });
+
+    let resultsPromise = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      `http://localhost:20709/?terms=foobar`
+    );
+    EventUtils.synthesizeKey("KEY_Enter");
+    await resultsPromise;
+  });
+  await SpecialPowers.popPrefEnv();
 });
 
 
 
 add_task(async function test_returnAfterSuggestion_nonDefault() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
   await withSuggestions(async (index, usingFormHistory) => {
     await selectSecondSuggestion(index, usingFormHistory);
 
@@ -164,10 +264,43 @@ add_task(async function test_returnAfterSuggestion_nonDefault() {
     });
     await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   });
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function test_clickAfterSuggestion_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
+  await withSuggestions(async (index, usingFormHistory) => {
+    await selectSecondSuggestion(index, usingFormHistory);
+
+    let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(
+      window
+    ).getSelectableButtons(true);
+    let resultsPromise = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      `http://mochi.test:8888/?terms=foobar`
+    );
+    EventUtils.synthesizeMouseAtCenter(oneOffs[0], {});
+    await resultsPromise;
+  });
+  await SpecialPowers.popPrefEnv();
 });
 
 
 add_task(async function test_clickAfterSuggestion() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
   await withSuggestions(async (index, usingFormHistory) => {
     await selectSecondSuggestion(index, usingFormHistory);
 
@@ -183,10 +316,43 @@ add_task(async function test_clickAfterSuggestion() {
     });
     await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   });
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function test_clickAfterSuggestion_nonDefault_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
+  await withSuggestions(async (index, usingFormHistory) => {
+    await selectSecondSuggestion(index, usingFormHistory);
+
+    let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(
+      window
+    ).getSelectableButtons(true);
+    let resultsPromise = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      `http://localhost:20709/?terms=foobar`
+    );
+    EventUtils.synthesizeMouseAtCenter(oneOffs[1], {});
+    await resultsPromise;
+  });
+  await SpecialPowers.popPrefEnv();
 });
 
 
 add_task(async function test_clickAfterSuggestion_nonDefault() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
   await withSuggestions(async (index, usingFormHistory) => {
     await selectSecondSuggestion(index, usingFormHistory);
 
@@ -202,6 +368,7 @@ add_task(async function test_clickAfterSuggestion_nonDefault() {
     });
     await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   });
+  await SpecialPowers.popPrefEnv();
 });
 
 

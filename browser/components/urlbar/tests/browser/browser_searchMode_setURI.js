@@ -8,6 +8,15 @@
 
 "use strict";
 
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
+});
+
 
 
 

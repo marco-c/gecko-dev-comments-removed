@@ -296,10 +296,18 @@ add_task(async function oncePerSession() {
 
 
 
-add_task(async function shortcut_buttons_with_tip() {
+add_task(async function update2() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
   await checkTab(
     window,
     "about:newtab",
     UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
   );
+  await SpecialPowers.popPrefEnv();
 });

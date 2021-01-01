@@ -85,6 +85,8 @@ function assertSearchModeScalars(entry, engineOrSource, resultIndex = -1) {
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
       
       
       ["browser.urlbar.tabToSearch.onboard.interactionsLeft", 0],
