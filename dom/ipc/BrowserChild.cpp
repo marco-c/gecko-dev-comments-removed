@@ -553,27 +553,11 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   NS_ENSURE_SUCCESS(rv, rv);
 #endif
 
-  InitVsyncChild();
-
   
   
   UpdateVisibility();
 
   return NS_OK;
-}
-
-void BrowserChild::InitVsyncChild() {
-#if defined(MOZ_WAYLAND)
-  if (!IsWaylandDisabled()) {
-    PVsyncChild* actor = SendPVsyncConstructor();
-    mVsyncChild = static_cast<VsyncChild*>(actor);
-  } else
-#endif
-  {
-    PBackgroundChild* actorChild =
-        BackgroundChild::GetOrCreateForCurrentThread();
-    mVsyncChild = static_cast<VsyncChild*>(actorChild->SendPVsyncConstructor());
-  }
 }
 
 void BrowserChild::NotifyTabContextUpdated() {
@@ -2188,7 +2172,18 @@ bool BrowserChild::DeallocPVsyncChild(PVsyncChild* aActor) {
   return true;
 }
 
-RefPtr<VsyncChild> BrowserChild::GetVsyncChild() { return mVsyncChild; }
+RefPtr<VsyncChild> BrowserChild::GetVsyncChild() {
+  
+  
+  
+#if defined(MOZ_WAYLAND)
+  if (!IsWaylandDisabled() && !mVsyncChild) {
+    PVsyncChild* actor = SendPVsyncConstructor();
+    mVsyncChild = static_cast<VsyncChild*>(actor);
+  }
+#endif
+  return mVsyncChild;
+}
 
 mozilla::ipc::IPCResult BrowserChild::RecvActivateFrameEvent(
     const nsString& aType, const bool& capture) {
