@@ -57,7 +57,7 @@ pub fn clamp_float(mut a: f32) -> f32 {
     } else {
         
         return 0.;
-    };
+    }
 }
 
 
