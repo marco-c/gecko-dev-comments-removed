@@ -144,7 +144,12 @@ void RemoteDecoderManagerChild::Shutdown() {
 
 void RemoteDecoderManagerChild::RunWhenGPUProcessRecreated(
     already_AddRefed<Runnable> aTask) {
-  MOZ_ASSERT(GetManagerThread() && GetManagerThread()->IsOnCurrentThread());
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    
+    return;
+  }
+  MOZ_ASSERT(managerThread->IsOnCurrentThread());
 
   
   auto* manager = GetSingleton(RemoteDecodeIn::GpuProcess);
@@ -159,7 +164,12 @@ void RemoteDecoderManagerChild::RunWhenGPUProcessRecreated(
 
 RemoteDecoderManagerChild* RemoteDecoderManagerChild::GetSingleton(
     RemoteDecodeIn aLocation) {
-  MOZ_ASSERT(GetManagerThread() && GetManagerThread()->IsOnCurrentThread());
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    
+    return nullptr;
+  }
+  MOZ_ASSERT(managerThread->IsOnCurrentThread());
   switch (aLocation) {
     case RemoteDecodeIn::GpuProcess:
       return sRemoteDecoderManagerChildForGPUProcess;
@@ -405,7 +415,13 @@ RemoteDecoderManagerChild::RemoteDecoderManagerChild(RemoteDecodeIn aLocation)
 
 void RemoteDecoderManagerChild::OpenForRDDProcess(
     Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
-  MOZ_ASSERT(GetManagerThread() && GetManagerThread()->IsOnCurrentThread());
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    
+    return;
+  }
+  MOZ_ASSERT(managerThread->IsOnCurrentThread());
+
   
   
   
@@ -429,7 +445,12 @@ void RemoteDecoderManagerChild::OpenForRDDProcess(
 
 void RemoteDecoderManagerChild::OpenForGPUProcess(
     Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
-  MOZ_ASSERT(GetManagerThread() && GetManagerThread()->IsOnCurrentThread());
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    
+    return;
+  }
+  MOZ_ASSERT(managerThread->IsOnCurrentThread());
   
   
   sRemoteDecoderManagerChildForGPUProcess = nullptr;
