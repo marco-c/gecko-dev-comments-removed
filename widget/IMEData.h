@@ -283,13 +283,6 @@ enum class IMEEnabled {
 
 
 
-
-
-  Plugin,
-  
-
-
-
   Unknown,
 };
 
@@ -344,13 +337,6 @@ struct IMEState final {
   
   bool IsEditable() const {
     return mEnabled == IMEEnabled::Enabled || mEnabled == IMEEnabled::Password;
-  }
-  
-  
-  
-  
-  bool MaybeEditable() const {
-    return IsEditable() || mEnabled == IMEEnabled::Plugin;
   }
 };
 

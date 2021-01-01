@@ -754,18 +754,10 @@ nsresult PuppetWidget::NotifyIMEOfFocusChange(
 
   bool gotFocus = aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS;
   if (gotFocus) {
-    if (mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin) {
-      
-      
-      if (NS_WARN_IF(!mContentCache.CacheAll(this, &aIMENotification))) {
-        return NS_ERROR_FAILURE;
-      }
-    } else {
-      
-      
-      if (NS_WARN_IF(!mContentCache.CacheEditorRect(this, &aIMENotification))) {
-        return NS_ERROR_FAILURE;
-      }
+    
+    
+    if (NS_WARN_IF(!mContentCache.CacheAll(this, &aIMENotification))) {
+      return NS_ERROR_FAILURE;
     }
   } else {
     
@@ -800,8 +792,7 @@ nsresult PuppetWidget::NotifyIMEOfCompositionUpdate(
     return NS_ERROR_FAILURE;
   }
 
-  if (mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin &&
-      NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
+  if (NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
   mBrowserChild->SendNotifyIMECompositionUpdate(mContentCache,
@@ -816,11 +807,6 @@ nsresult PuppetWidget::NotifyIMEOfTextChange(
              "Passed wrong notification");
 
   if (!mBrowserChild) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -853,12 +839,6 @@ nsresult PuppetWidget::NotifyIMEOfSelectionChange(
 
   
   
-  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
   mContentCache.SetSelection(
       this, aIMENotification.mSelectionChangeData.mOffset,
       aIMENotification.mSelectionChangeData.Length(),
@@ -874,12 +854,6 @@ nsresult PuppetWidget::NotifyIMEOfMouseButtonEvent(
     const IMENotification& aIMENotification) {
   MOZ_ASSERT(IMEStateManager::CanSendNotificationToWidget());
   if (!mBrowserChild) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -902,10 +876,7 @@ nsresult PuppetWidget::NotifyIMEOfPositionChange(
   if (NS_WARN_IF(!mContentCache.CacheEditorRect(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
-  
-  
-  if (mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin &&
-      NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
+  if (NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
   if (mIMENotificationRequestsOfParent.WantPositionChanged()) {
@@ -1317,14 +1288,6 @@ PuppetWidget::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
 
 NS_IMETHODIMP_(IMENotificationRequests)
 PuppetWidget::GetIMENotificationRequests() {
-  if (mInputContext.mIMEState.mEnabled == IMEEnabled::Plugin) {
-    
-    
-    
-    return IMENotificationRequests(
-        mIMENotificationRequestsOfParent.mWantUpdates |
-        IMENotificationRequests::NOTIFY_POSITION_CHANGE);
-  }
   return IMENotificationRequests(
       mIMENotificationRequestsOfParent.mWantUpdates |
       IMENotificationRequests::NOTIFY_TEXT_CHANGE |

@@ -1887,7 +1887,7 @@ nsINode* IMEStateManager::GetRootEditableNode(nsPresContext* aPresContext,
 
 
 bool IMEStateManager::IsIMEObserverNeeded(const IMEState& aState) {
-  return aState.MaybeEditable();
+  return aState.IsEditable();
 }
 
 
