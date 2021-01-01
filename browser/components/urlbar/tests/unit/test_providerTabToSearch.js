@@ -14,8 +14,6 @@ add_task(async function init() {
   
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   
-  Services.prefs.setBoolPref("browser.urlbar.update2", true);
-  
   
   Services.prefs.setIntPref(
     "browser.urlbar.tabToSearch.onboard.interactionsLeft",
@@ -30,8 +28,6 @@ add_task(async function init() {
     Services.prefs.clearUserPref(
       "browser.urlbar.tabToSearch.onboard.interactionsLeft"
     );
-    Services.prefs.clearUserPref("browser.urlbar.update2.tabToComplete");
-    Services.prefs.clearUserPref("browser.urlbar.update2");
     Services.prefs.clearUserPref("browser.search.suggest.enabled");
   });
 });

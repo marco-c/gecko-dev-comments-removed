@@ -296,7 +296,7 @@ add_task(async function oncePerSession() {
 
 
 
-add_task(async function update2() {
+add_task(async function shortcut_buttons_with_tip() {
   await checkTab(
     window,
     "about:newtab",

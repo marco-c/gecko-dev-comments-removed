@@ -76,13 +76,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  
-  
-  
-  ["experiment.update2", true],
-
-  
-  
   ["experimental.expandTextOnFocus", false],
 
   
@@ -187,10 +180,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["usepreloadedtopurls.expire_days", 14],
-
-  
-  
-  ["update2", true],
 
   
   
@@ -431,16 +420,6 @@ class Preferences {
             this.get("suggest." + type) && Ci.mozIPlacesAutoComplete[behavior];
         }
         return val;
-      }
-      case "update2": {
-        
-        
-        
-        
-        if (!this._readPref("experiment.update2")) {
-          return false;
-        }
-        return this._readPref(pref);
       }
     }
     return this._readPref(pref);

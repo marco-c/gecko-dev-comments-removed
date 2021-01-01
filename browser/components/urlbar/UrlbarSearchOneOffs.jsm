@@ -173,12 +173,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
-
-
-
-
-
-  handleSearchCommand(event, searchMode, forceNewTab = false) {
+  handleSearchCommand(event, searchMode) {
     
     
     if (
@@ -201,7 +196,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
       this.input.value && this.input.getAttribute("pageproxystate") != "valid";
     let engine = Services.search.getEngineByName(searchMode.engineName);
 
-    let { where, params } = this._whereToOpen(event, forceNewTab);
+    let { where, params } = this._whereToOpen(event);
 
     
     
