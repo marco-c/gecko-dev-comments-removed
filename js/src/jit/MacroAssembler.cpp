@@ -1277,13 +1277,19 @@ void MacroAssembler::loadBigIntNonZero(Register bigInt, Register dest,
   loadPtr(Address(bigInt, BigInt::offsetOfInlineDigits()), dest);
 
   
+  bigIntDigitToSignedPtr(bigInt, dest, fail);
+}
+
+void MacroAssembler::bigIntDigitToSignedPtr(Register bigInt, Register digit,
+                                            Label* fail) {
   
-  branchTestPtr(Assembler::Signed, dest, dest, fail);
+  
+  branchTestPtr(Assembler::Signed, digit, digit, fail);
 
   
   Label nonNegative;
   branchIfBigIntIsNonNegative(bigInt, &nonNegative);
-  negPtr(dest);
+  negPtr(digit);
   bind(&nonNegative);
 }
 

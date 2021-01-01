@@ -13,11 +13,13 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EnumeratedRange.h"
+#include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/Unused.h"
 
+#include <limits>
 #include <type_traits>
 #include <utility>
 
@@ -8752,6 +8754,113 @@ void CodeGenerator::visitBigIntMul(LBigIntMul* ins) {
   
   masm.newGCBigInt(output, temp2, ool->entry(), bigIntsCanBeInNursery());
   masm.initializeBigInt(output, temp1);
+
+  masm.bind(ool->rejoin());
+}
+
+void CodeGenerator::visitBigIntDiv(LBigIntDiv* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  Register rhs = ToRegister(ins->rhs());
+  Register temp1 = ToRegister(ins->temp1());
+  Register temp2 = ToRegister(ins->temp2());
+  Register output = ToRegister(ins->output());
+
+  using Fn = BigInt* (*)(JSContext*, HandleBigInt, HandleBigInt);
+  auto* ool = oolCallVM<Fn, BigInt::div>(ins, ArgList(lhs, rhs),
+                                         StoreRegisterTo(output));
+
+  
+  if (ins->mir()->canBeDivideByZero()) {
+    masm.branchIfBigIntIsZero(rhs, ool->entry());
+  }
+
+  
+  Label lhsNonZero;
+  masm.branchIfBigIntIsNonZero(lhs, &lhsNonZero);
+  masm.movePtr(lhs, output);
+  masm.jump(ool->rejoin());
+  masm.bind(&lhsNonZero);
+
+  
+  
+  masm.loadBigIntNonZero(lhs, temp1, ool->entry());
+  masm.loadBigIntNonZero(rhs, temp2, ool->entry());
+
+  
+  
+  
+  
+  Label notOne;
+  masm.branchPtr(Assembler::NotEqual, temp2, ImmWord(1), &notOne);
+  masm.movePtr(lhs, output);
+  masm.jump(ool->rejoin());
+  masm.bind(&notOne);
+
+  static constexpr auto DigitMin = std::numeric_limits<
+      mozilla::SignedStdintTypeForSize<sizeof(BigInt::Digit)>::Type>::min();
+
+  
+  Label notOverflow;
+  masm.branchPtr(Assembler::NotEqual, temp1, ImmWord(DigitMin), &notOverflow);
+  masm.branchPtr(Assembler::Equal, temp2, ImmWord(-1), ool->entry());
+  masm.bind(&notOverflow);
+
+  emitBigIntDiv(ins, temp1, temp2, output, ool->entry());
+
+  masm.bind(ool->rejoin());
+}
+
+void CodeGenerator::visitBigIntMod(LBigIntMod* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  Register rhs = ToRegister(ins->rhs());
+  Register temp1 = ToRegister(ins->temp1());
+  Register temp2 = ToRegister(ins->temp2());
+  Register output = ToRegister(ins->output());
+
+  using Fn = BigInt* (*)(JSContext*, HandleBigInt, HandleBigInt);
+  auto* ool = oolCallVM<Fn, BigInt::mod>(ins, ArgList(lhs, rhs),
+                                         StoreRegisterTo(output));
+
+  
+  if (ins->mir()->canBeDivideByZero()) {
+    masm.branchIfBigIntIsZero(rhs, ool->entry());
+  }
+
+  
+  Label lhsNonZero;
+  masm.branchIfBigIntIsNonZero(lhs, &lhsNonZero);
+  masm.movePtr(lhs, output);
+  masm.jump(ool->rejoin());
+  masm.bind(&lhsNonZero);
+
+  
+  
+  masm.loadBigIntAbsolute(lhs, temp1, ool->entry());
+  masm.loadBigIntAbsolute(rhs, temp2, ool->entry());
+
+  
+  
+  Label notBelow;
+  masm.branchPtr(Assembler::AboveOrEqual, temp1, temp2, &notBelow);
+  masm.movePtr(lhs, output);
+  masm.jump(ool->rejoin());
+  masm.bind(&notBelow);
+
+  
+  masm.bigIntDigitToSignedPtr(lhs, temp1, ool->entry());
+  masm.bigIntDigitToSignedPtr(rhs, temp2, ool->entry());
+
+  static constexpr auto DigitMin = std::numeric_limits<
+      mozilla::SignedStdintTypeForSize<sizeof(BigInt::Digit)>::Type>::min();
+
+  
+  Label notOverflow;
+  masm.branchPtr(Assembler::NotEqual, temp1, ImmWord(DigitMin), &notOverflow);
+  masm.branchPtr(Assembler::NotEqual, temp2, ImmWord(-1), &notOverflow);
+  masm.movePtr(ImmWord(0), temp1);
+  masm.bind(&notOverflow);
+
+  emitBigIntMod(ins, temp1, temp2, output, ool->entry());
 
   masm.bind(ool->rejoin());
 }
