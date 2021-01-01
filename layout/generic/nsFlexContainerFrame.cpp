@@ -1501,14 +1501,25 @@ static nscoord PartiallyResolveAutoMinSize(
 
   const auto itemWM = aFlexItem.GetWritingMode();
   const auto cbWM = aAxisTracker.GetWritingMode();
-  const auto cbSize =
-      aItemReflowInput.mContainingBlockSize.ConvertTo(cbWM, itemWM);
   const auto& mainStyleSize =
       aItemReflowInput.mStylePosition->Size(aAxisTracker.MainAxis(), cbWM);
+  const auto& maxMainStyleSize =
+      aItemReflowInput.mStylePosition->MaxSize(aAxisTracker.MainAxis(), cbWM);
   const auto boxSizingAdjust =
       aItemReflowInput.mStylePosition->mBoxSizing == StyleBoxSizing::Border
           ? aFlexItem.BorderPadding().Size(cbWM)
           : LogicalSize(cbWM);
+
+  
+  
+  
+  
+  
+  const auto percentBasis =
+      aFlexItem.Frame()->IsPercentageResolvedAgainstZero(mainStyleSize,
+                                                         maxMainStyleSize)
+          ? LogicalSize(cbWM, 0, 0)
+          : aItemReflowInput.mContainingBlockSize.ConvertTo(cbWM, itemWM);
 
   
   
@@ -1520,16 +1531,16 @@ static nscoord PartiallyResolveAutoMinSize(
       
       
       specifiedSizeSuggestion = aFlexItem.Frame()->ComputeISizeValue(
-          cbSize.ISize(cbWM), boxSizingAdjust.ISize(cbWM),
+          percentBasis.ISize(cbWM), boxSizingAdjust.ISize(cbWM),
           mainStyleSize.AsLengthPercentage());
     }
   } else {
-    if (!nsLayoutUtils::IsAutoBSize(mainStyleSize, cbSize.BSize(cbWM))) {
+    if (!nsLayoutUtils::IsAutoBSize(mainStyleSize, percentBasis.BSize(cbWM))) {
       
       
       
       specifiedSizeSuggestion = nsLayoutUtils::ComputeBSizeValue(
-          cbSize.BSize(cbWM), boxSizingAdjust.BSize(cbWM),
+          percentBasis.BSize(cbWM), boxSizingAdjust.BSize(cbWM),
           mainStyleSize.AsLengthPercentage());
     }
   }
