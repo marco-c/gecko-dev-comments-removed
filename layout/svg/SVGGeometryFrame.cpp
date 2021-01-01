@@ -136,37 +136,37 @@ nsresult SVGGeometryFrame::AttributeChanged(int32_t aNameSpaceID,
 
 void SVGGeometryFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsIFrame::DidSetComputedStyle(aOldComputedStyle);
+  auto* element = static_cast<SVGGeometryElement*>(GetContent());
+  if (!aOldComputedStyle) {
+    element->ClearAnyCachedPath();
+    return;
+  }
 
-  if (aOldComputedStyle) {
-    SVGGeometryElement* element =
-        static_cast<SVGGeometryElement*>(GetContent());
-
-    const auto* oldStyleSVG = aOldComputedStyle->StyleSVG();
-    if (!SVGContentUtils::ShapeTypeHasNoCorners(GetContent())) {
-      if (StyleSVG()->mStrokeLinecap != oldStyleSVG->mStrokeLinecap &&
-          element->IsSVGElement(nsGkAtoms::path)) {
-        
-        
+  const auto* oldStyleSVG = aOldComputedStyle->StyleSVG();
+  if (!SVGContentUtils::ShapeTypeHasNoCorners(GetContent())) {
+    if (StyleSVG()->mStrokeLinecap != oldStyleSVG->mStrokeLinecap &&
+        element->IsSVGElement(nsGkAtoms::path)) {
+      
+      
+      
+      
+      element->ClearAnyCachedPath();
+    } else if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
+      if (StyleSVG()->mClipRule != oldStyleSVG->mClipRule) {
         
         
         element->ClearAnyCachedPath();
-      } else if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
-        if (StyleSVG()->mClipRule != oldStyleSVG->mClipRule) {
-          
-          
-          element->ClearAnyCachedPath();
-        }
-      } else {
-        if (StyleSVG()->mFillRule != oldStyleSVG->mFillRule) {
-          
-          element->ClearAnyCachedPath();
-        }
+      }
+    } else {
+      if (StyleSVG()->mFillRule != oldStyleSVG->mFillRule) {
+        
+        element->ClearAnyCachedPath();
       }
     }
+  }
 
-    if (element->IsGeometryChangedViaCSS(*Style(), *aOldComputedStyle)) {
-      element->ClearAnyCachedPath();
-    }
+  if (element->IsGeometryChangedViaCSS(*Style(), *aOldComputedStyle)) {
+    element->ClearAnyCachedPath();
   }
 }
 
