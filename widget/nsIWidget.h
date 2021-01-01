@@ -1864,13 +1864,6 @@ class nsIWidget : public nsISupports {
   
 
 
-  bool PluginHasFocus() {
-    return GetInputContext().mIMEState.mEnabled == IMEEnabled::Plugin;
-  }
-
-  
-
-
   virtual void EnableIMEForPlugin(bool aEnable) {}
 
   

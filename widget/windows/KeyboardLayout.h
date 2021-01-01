@@ -759,14 +759,6 @@ class MOZ_STACK_CLASS NativeKey final {
 
 
 
-  bool MaybeDispatchPluginEventsForRemovedCharMessages() const;
-
-  
-
-
-
-
-
 
   bool NeedsToHandleWithoutFollowingCharMessages() const;
 
