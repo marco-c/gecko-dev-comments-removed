@@ -99,6 +99,7 @@ add_task(async function testPersistsNecessaryValuesOnChange() {
     "SearchbarCSSSpan",
     "Theme",
     "MenubarShown",
+    "RTLEnabled",
   ];
 
   
