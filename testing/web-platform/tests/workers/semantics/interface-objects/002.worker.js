@@ -20,10 +20,6 @@ var unexpected = [
   
   "DOMImplementation",
   
-  "ReadableStreamDefaultReader",
-  "ReadableStreamBYOBReader",
-  "ReadableByteStreamController",
-  "WritableStreamDefaultWriter",
   "WritableStreamDefaultController",
   
   "IDBEnvironment",

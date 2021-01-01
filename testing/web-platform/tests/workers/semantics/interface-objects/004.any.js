@@ -18,10 +18,6 @@ var unexpected = [
   "HashChangeEvent",
   "PageTransitionEvent",
   
-  "ReadableStreamDefaultReader",
-  "ReadableStreamBYOBReader",
-  "ReadableByteStreamController",
-  "WritableStreamDefaultWriter",
   "WritableStreamDefaultController",
   
   "IDBEnvironment",
