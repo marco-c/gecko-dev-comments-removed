@@ -1334,17 +1334,15 @@ nsresult nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
       }
       break;
     }  
-    else {
-      aDesiredSize.Height() = rowRect.YMost();
-      prevRowFrame = rowFrame;
-      
-      nsTableRowFrame* nextRow = rowFrame->GetNextRow();
-      if (nextRow && nsTableFrame::PageBreakAfter(rowFrame, nextRow)) {
-        PushChildren(nextRow, rowFrame);
-        aStatus.Reset();
-        aStatus.SetIncomplete();
-        break;
-      }
+    aDesiredSize.Height() = rowRect.YMost();
+    prevRowFrame = rowFrame;
+    
+    nsTableRowFrame* nextRow = rowFrame->GetNextRow();
+    if (nextRow && nsTableFrame::PageBreakAfter(rowFrame, nextRow)) {
+      PushChildren(nextRow, rowFrame);
+      aStatus.Reset();
+      aStatus.SetIncomplete();
+      break;
     }
     
     
