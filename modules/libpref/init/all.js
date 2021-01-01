@@ -4593,11 +4593,7 @@ pref("marionette.contentListener", false);
 #if defined(ENABLE_REMOTE_AGENT)
   
   
-  #if defined(NIGHTLY_BUILD)
-    pref("remote.enabled", true);
-  #else
-    pref("remote.enabled", false);
-  #endif
+  pref("remote.enabled", true);
 
   
   

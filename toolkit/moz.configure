@@ -1049,15 +1049,14 @@ add_old_configure_assignment("FT2_CFLAGS", ft2_info.cflags)
 
 
 
-@depends(target, build_project, milestone)
-def remote_default(target, project, milestone):
+@depends(target, build_project)
+def remote_default(target, project):
     
     if target.os == "Android":
         return False
 
     
-    
-    return project == "browser" and milestone.is_nightly
+    return project == "browser"
 
 
 option("--enable-cdp", default=remote_default, help="{Enable|Disable} remote agent")
