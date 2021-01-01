@@ -298,6 +298,45 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
   masm.bind(&done);
 }
 
+void CodeGeneratorX64::emitBigIntDiv(LBigIntDiv* ins, Register dividend,
+                                     Register divisor, Register output,
+                                     Label* fail) {
+  
+
+  MOZ_ASSERT(dividend == rax);
+  MOZ_ASSERT(output == rdx);
+
+  
+  masm.cqo();
+
+  masm.idivq(divisor);
+
+  
+  masm.newGCBigInt(output, divisor, fail, bigIntsCanBeInNursery());
+  masm.initializeBigInt(output, dividend);
+}
+
+void CodeGeneratorX64::emitBigIntMod(LBigIntMod* ins, Register dividend,
+                                     Register divisor, Register output,
+                                     Label* fail) {
+  
+
+  MOZ_ASSERT(dividend == rax);
+  MOZ_ASSERT(output == rdx);
+
+  
+  masm.cqo();
+
+  masm.idivq(divisor);
+
+  
+  masm.movq(output, dividend);
+
+  
+  masm.newGCBigInt(output, divisor, fail, bigIntsCanBeInNursery());
+  masm.initializeBigInt(output, dividend);
+}
+
 void CodeGenerator::visitWasmRegisterResult(LWasmRegisterResult* lir) {
   if (JitOptions.spectreIndexMasking) {
     if (MWasmRegisterResult* mir = lir->mir()) {

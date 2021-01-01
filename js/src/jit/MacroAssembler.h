@@ -3735,6 +3735,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
 
+
+  void bigIntDigitToSignedPtr(Register bigInt, Register digit, Label* fail);
+
+  
+
+
   void initializeBigInt64(Scalar::Type type, Register bigInt, Register64 val);
 
   
