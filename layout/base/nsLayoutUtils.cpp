@@ -4544,54 +4544,6 @@ static int32_t gNoiseIndent = 0;
 
 
 
-inline static bool FormControlShrinksForPercentISize(nsIFrame* aFrame) {
-  if (!aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
-    
-    return false;
-  }
-
-  LayoutFrameType fType = aFrame->Type();
-  if (fType == LayoutFrameType::Meter || fType == LayoutFrameType::Progress ||
-      fType == LayoutFrameType::Range) {
-    
-    
-    return true;
-  }
-
-  if (!static_cast<nsIFormControlFrame*>(do_QueryFrame(aFrame))) {
-    
-    
-    return false;
-  }
-
-  if (fType == LayoutFrameType::GfxButtonControl ||
-      fType == LayoutFrameType::HTMLButtonControl) {
-    
-    
-    
-    return false;
-  }
-
-  return true;
-}
-
-
-
-
-static bool IsReplacedBoxResolvedAgainstZero(
-    nsIFrame* aFrame, const StyleSize& aStyleSize,
-    const StyleMaxSize& aStyleMaxSize) {
-  const bool sizeHasPercent = aStyleSize.HasPercent();
-  return ((sizeHasPercent || aStyleMaxSize.HasPercent()) &&
-          aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
-         (sizeHasPercent && FormControlShrinksForPercentISize(aFrame));
-}
-
-
-
-
-
-
 
 
 
@@ -4639,7 +4591,7 @@ static nscoord AddIntrinsicSizeOffset(
 
   nscoord size;
   if (aType == IntrinsicISizeType::MinISize &&
-      ::IsReplacedBoxResolvedAgainstZero(aFrame, aStyleSize, aStyleMaxSize)) {
+      aFrame->IsPercentageResolvedAgainstZero(aStyleSize, aStyleMaxSize)) {
     
     result = 0;  
   } else if (GetAbsoluteCoord(aStyleSize, size) ||
@@ -5047,7 +4999,7 @@ nscoord nsLayoutUtils::MinSizeContributionForAxis(
         
         
         fixedMinSize = &minSize;
-      } else if (::IsReplacedBoxResolvedAgainstZero(aFrame, size, maxSize)) {
+      } else if (aFrame->IsPercentageResolvedAgainstZero(size, maxSize)) {
         
         minSize = 0;
         fixedMinSize = &minSize;

@@ -3302,6 +3302,24 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+  bool IsPercentageResolvedAgainstZero(
+      const mozilla::StyleSize& aStyleSize,
+      const mozilla::StyleMaxSize& aStyleMaxSize) const;
+
+  
+
+
   bool IsBlockWrapper() const;
 
   
