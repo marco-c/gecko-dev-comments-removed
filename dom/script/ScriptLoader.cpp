@@ -3021,13 +3021,7 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
       JS::Rooted<JS::Value> rval(cx);
 
       rv = nsJSUtils::ModuleEvaluate(cx, module, &rval);
-
-      if (NS_SUCCEEDED(rv)) {
-        
-        
-        
-        MOZ_ASSERT(!aes.HasException());
-      }
+      MOZ_ASSERT(NS_FAILED(rv) == aes.HasException());
 
       if (NS_FAILED(rv)) {
         LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
@@ -3042,22 +3036,14 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
         }
       } else {
         
-        JS::Rooted<JSObject*> aEvaluationPromise(cx);
-        if (NS_SUCCEEDED(rv)) {
-          
-          
-          
-          
-          aEvaluationPromise.set(&rval.toObject());
-        }
+        JS::Rooted<JSObject*> aEvaluationPromise(cx, &rval.toObject());
         if (request->IsDynamicImport()) {
           FinishDynamicImport(cx, request, rv, aEvaluationPromise);
         } else {
           
           
           if (!JS::ThrowOnModuleEvaluationFailure(cx, aEvaluationPromise)) {
-            LOG(("ScriptLoadRequest (%p):   evaluation failed on throw",
-                 aRequest));
+            LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
             
             
             rv = NS_OK;
