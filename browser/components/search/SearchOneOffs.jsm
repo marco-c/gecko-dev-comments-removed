@@ -726,7 +726,7 @@ class SearchOneOffs {
 
 
 
-  _whereToOpen(aEvent, aForceNewTab) {
+  _whereToOpen(aEvent, aForceNewTab = false) {
     let where = "current";
     let params;
     

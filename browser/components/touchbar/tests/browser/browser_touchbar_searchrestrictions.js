@@ -23,12 +23,6 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
-add_task(async function init() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2", true]],
-  });
-});
-
 
 
 

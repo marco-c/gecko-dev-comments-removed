@@ -355,10 +355,6 @@ pref("browser.urlbar.richSuggestions.tail", true);
 
 
 
-pref("browser.urlbar.update2", true);
-
-
-
 
 
 pref("browser.urlbar.update2.emptySearchBehavior", 0);

@@ -1092,10 +1092,7 @@ Search.prototype = {
 
     
     
-    if (
-      UrlbarPrefs.get("update2") &&
-      !UrlbarTokenizer.REGEXP_SPACES_START.test(query)
-    ) {
+    if (!UrlbarTokenizer.REGEXP_SPACES_START.test(query)) {
       return false;
     }
 

@@ -12,9 +12,6 @@ const SUGGESTIONS_ENGINE_NAME = "engine-suggestions.xml";
 
 add_task(async function basicGetAndPost() {
   
-  Services.prefs.setBoolPref("browser.urlbar.update2", true);
-
-  
   
   await Services.search.addEngineWithDetails("AliasedGETMozSearch", {
     alias: "get",

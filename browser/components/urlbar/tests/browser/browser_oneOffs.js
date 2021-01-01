@@ -68,65 +68,6 @@ add_task(async function init() {
 
 
 
-
-
-add_task(async function noOneOffs_legacy() {
-  
-  let value = "@";
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value,
-    fireInputEvent: true,
-  });
-  await TestUtils.waitForCondition(
-    () => !oneOffSearchButtons._rebuilding,
-    "Waiting for one-offs to finish rebuilding"
-  );
-
-  Assert.equal(
-    UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
-    false,
-    "One-offs should be hidden"
-  );
-  assertState(-1, -1, value);
-
-  
-  
-  let resultCount = UrlbarTestUtils.getResultCount(window);
-
-  
-  for (let i = 0; i < resultCount; i++) {
-    EventUtils.synthesizeKey("KEY_ArrowDown");
-    assertState(i, -1);
-  }
-
-  
-  EventUtils.synthesizeKey("KEY_ArrowDown");
-  assertState(-1, -1, value);
-
-  
-  EventUtils.synthesizeKey("KEY_ArrowDown");
-  assertState(0, -1);
-
-  
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  assertState(-1, -1, value);
-
-  
-  for (let i = resultCount - 1; i >= 0; i--) {
-    EventUtils.synthesizeKey("KEY_ArrowUp");
-    assertState(i, -1);
-  }
-
-  
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  assertState(-1, -1, value);
-
-  await hidePopup();
-});
-
-
-
 add_task(async function noOneOffs() {
   
   let value = "@";
@@ -485,6 +426,7 @@ add_task(async function oneOffReturn() {
 
   gBrowser.removeTab(gBrowser.selectedTab);
   await UrlbarTestUtils.formHistory.clear();
+  await hidePopup();
 });
 
 
@@ -520,7 +462,7 @@ add_task(async function allOneOffsHiddenExceptCurrentEngine() {
     "The one-off buttons should be hidden"
   );
   EventUtils.synthesizeKey("KEY_ArrowUp");
-  assertState(1, -1);
+  assertState(0, -1);
   await hidePopup();
   await SpecialPowers.popPrefEnv();
 });
@@ -555,46 +497,6 @@ add_task(async function hiddenWhenUsingSearchAlias() {
     "Should be showing the one-off buttons"
   );
   await hidePopup();
-});
-
-
-
-
-add_task(async function localOneOffs_legacy() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2", false]],
-  });
-
-  oneOffSearchButtons.invalidateCache();
-  let rebuildPromise = BrowserTestUtils.waitForEvent(
-    oneOffSearchButtons,
-    "rebuild"
-  );
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "localOneOffsWithoutUpdate2",
-  });
-  await rebuildPromise;
-
-  Assert.equal(oneOffSearchButtons.localButtons.length, 0);
-  Assert.equal(
-    document.getElementById("urlbar-engine-one-off-item-bookmarks"),
-    null,
-    "Bookmarks one-off should not exist"
-  );
-  Assert.equal(
-    document.getElementById("urlbar-engine-one-off-item-tabs"),
-    null,
-    "Tabs one-off should not exist"
-  );
-  Assert.equal(
-    document.getElementById("urlbar-engine-one-off-item-history"),
-    null,
-    "History one-off should not exist"
-  );
-
-  await hidePopup();
-  await SpecialPowers.popPrefEnv();
 });
 
 

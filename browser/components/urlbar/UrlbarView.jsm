@@ -645,7 +645,6 @@ class UrlbarView {
           setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
         });
       } else if (
-        UrlbarPrefs.get("update2") &&
         firstResult.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW &&
         queryContext.trimmedSearchString != "@"
       ) {
@@ -1273,13 +1272,7 @@ class UrlbarView {
               { engine: result.payload.engine }
             );
           };
-        } else if (!this._shouldLocalizeSearchResultTitle(result)) {
-          
-          
-          
-          
-          
-          
+        } else if (!result.payload.keywordOffer) {
           actionSetter = () => {
             this.document.l10n.setAttributes(
               action,
@@ -1376,28 +1369,6 @@ class UrlbarView {
     } else {
       title.removeAttribute("dir");
     }
-  }
-
-  
-
-
-
-
-
-
-
-  _shouldLocalizeSearchResultTitle(result) {
-    if (
-      result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-      !result.payload.keywordOffer
-    ) {
-      return false;
-    }
-
-    return (
-      UrlbarPrefs.get("update2") ||
-      result.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.HIDE
-    );
   }
 
   _iconForResult(result, iconUrlOverride = null) {
@@ -1772,7 +1743,7 @@ class UrlbarView {
 
 
   _setResultTitle(result, titleNode) {
-    if (this._shouldLocalizeSearchResultTitle(result)) {
+    if (result.payload.keywordOffer) {
       
       
       

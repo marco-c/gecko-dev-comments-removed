@@ -1,13 +1,8 @@
 "use strict";
 
-const { UrlbarTestUtils } = ChromeUtils.import(
-  "resource://testing-common/UrlbarTestUtils.jsm"
-);
-
 const TEST_ENGINE_NAME = "Foo";
 const TEST_ENGINE_BASENAME = "testEngine.xml";
 const SEARCHBAR_BASE_ID = "searchbar-engine-one-off-item-";
-const URLBAR_BASE_ID = "urlbar-engine-one-off-item-";
 
 let originalEngine;
 let originalPrivateEngine;
@@ -50,7 +45,6 @@ async function testSearchBarChangeEngine(win, testPrivate, isPrivateWindow) {
   await resetEngines();
 
   let oneOffButton = await openPopupAndGetEngineButton(
-    true,
     searchPopup,
     searchOneOff,
     SEARCHBAR_BASE_ID,
@@ -152,10 +146,7 @@ function promiseDefaultEngineChanged(testPrivate) {
 
 
 
-
-
 async function openPopupAndGetEngineButton(
-  isSearch,
   popup,
   oneOffInstance,
   baseId,
@@ -163,23 +154,14 @@ async function openPopupAndGetEngineButton(
 ) {
   const win = oneOffInstance.container.ownerGlobal;
   
-  if (isSearch) {
-    
-    win.gURLBar.blur();
-    let shownPromise = promiseEvent(popup, "popupshown");
-    let builtPromise = promiseEvent(oneOffInstance, "rebuild");
-    let searchbar = win.document.getElementById("searchbar");
-    let searchIcon = searchbar.querySelector(".searchbar-search-button");
-    
-    EventUtils.synthesizeMouseAtCenter(searchIcon, {}, win);
-    await Promise.all([shownPromise, builtPromise]);
-  } else {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window: win,
-      waitForFocus,
-      value: "a",
-    });
-  }
+  win.gURLBar.blur();
+  let shownPromise = promiseEvent(popup, "popupshown");
+  let builtPromise = promiseEvent(oneOffInstance, "rebuild");
+  let searchbar = win.document.getElementById("searchbar");
+  let searchIcon = searchbar.querySelector(".searchbar-search-button");
+  
+  EventUtils.synthesizeMouseAtCenter(searchIcon, {}, win);
+  await Promise.all([shownPromise, builtPromise]);
 
   const contextMenu = oneOffInstance.contextMenuPopup;
   let oneOffButton = oneOffInstance.buttons;
@@ -204,35 +186,12 @@ async function openPopupAndGetEngineButton(
     undefined,
     "One-off for test engine should exist"
   );
-  if (isSearch) {
-    Assert.equal(
-      oneOffButton.getAttribute("tooltiptext"),
-      engineName,
-      "One-off should have the tooltip set to the engine name"
-    );
-  } else {
-    let aliases = oneOffButton.engine.aliases;
-    if (!aliases.length) {
-      Assert.equal(
-        oneOffButton.getAttribute("tooltiptext"),
-        engineName,
-        "One-off without alias should have the tooltip set to the engine name"
-      );
-    } else {
-      let l10n = {
-        id: "search-one-offs-engine-with-alias",
-        args: {
-          engineName,
-          alias: aliases[0],
-        },
-      };
-      Assert.deepEqual(
-        win.document.l10n.getAttributes(oneOffButton),
-        l10n,
-        "One-off with alias has expected tooltip l10n values"
-      );
-    }
-  }
+  Assert.equal(
+    oneOffButton.getAttribute("tooltiptext"),
+    engineName,
+    "One-off should have the tooltip set to the engine name"
+  );
+
   Assert.equal(
     oneOffButton.id,
     baseId + engineName,
