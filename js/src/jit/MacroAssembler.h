@@ -3736,6 +3736,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
 
+
+  void copyBigIntWithInlineDigits(Register src, Register dest, Register temp,
+                                  Label* fail, bool attemptNursery);
+
+  
+
+
   void compareBigIntAndInt32(JSOp op, Register bigInt, Register int32,
                              Register scratch1, Register scratch2,
                              Label* ifTrue, Label* ifFalse);
