@@ -536,6 +536,7 @@ class ProfileChunkedBuffer {
     mRangeStart = mRangeEnd = mNextChunkRangeStart;
     mPushedBlockCount = 0;
     mClearedBlockCount = 0;
+    mFailedPutBytes = 0;
     if (mCurrentChunk) {
       mCurrentChunk->MarkDone();
       mCurrentChunk->MarkRecycled();
@@ -576,6 +577,9 @@ class ProfileChunkedBuffer {
     
     
     uint64_t mClearedBlockCount = 0;
+
+    
+    uint64_t mFailedPutBytes = 0;
   };
 
   
@@ -585,7 +589,8 @@ class ProfileChunkedBuffer {
   
   [[nodiscard]] State GetState() const {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
-    return {mRangeStart, mRangeEnd, mPushedBlockCount, mClearedBlockCount};
+    return {mRangeStart, mRangeEnd, mPushedBlockCount, mClearedBlockCount,
+            mFailedPutBytes};
   }
 
   [[nodiscard]] bool IsEmpty() const {
@@ -1100,10 +1105,11 @@ class ProfileChunkedBuffer {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
     fprintf(aFile,
             "ProfileChunkedBuffer[%p] State: range %u-%u pushed=%u cleared=%u "
-            "(live=%u)",
+            "(live=%u) failed-puts=%u bytes",
             this, unsigned(mRangeStart), unsigned(mRangeEnd),
             unsigned(mPushedBlockCount), unsigned(mClearedBlockCount),
-            unsigned(mPushedBlockCount) - unsigned(mClearedBlockCount));
+            unsigned(mPushedBlockCount) - unsigned(mClearedBlockCount),
+            unsigned(mFailedPutBytes));
     if (MOZ_UNLIKELY(!mChunkManager)) {
       fprintf(aFile, " - Out-of-session\n");
       return;
@@ -1175,6 +1181,7 @@ class ProfileChunkedBuffer {
       mRangeStart = mRangeEnd;
       mPushedBlockCount = 0;
       mClearedBlockCount = 0;
+      mFailedPutBytes = 0;
     }
     return chunkManager;
   }
@@ -1386,10 +1393,11 @@ class ProfileChunkedBuffer {
     if (MOZ_LIKELY(mChunkManager)) {
       
 
+      const Length blockBytes =
+          std::forward<CallbackBlockBytes>(aCallbackBlockBytes)();
+
       if (ProfileBufferChunk* current = GetOrCreateCurrentChunk(aLock);
           MOZ_LIKELY(current)) {
-        const Length blockBytes =
-            std::forward<CallbackBlockBytes>(aCallbackBlockBytes)();
         if (blockBytes <= current->RemainingBytes()) {
           
           currentChunkFilled = blockBytes == current->RemainingBytes();
@@ -1432,10 +1440,16 @@ class ProfileChunkedBuffer {
             MOZ_ASSERT(maybeEntryWriter->RemainingBytes() == blockBytes);
             mRangeEnd += blockBytes;
             mPushedBlockCount += aBlockCount;
+          } else {
+            
+            mFailedPutBytes += blockBytes;
           }
         }
-      }  
-    }    
+      } else {
+        
+        mFailedPutBytes += blockBytes;
+      }
+    }  
 
     
     
@@ -1598,6 +1612,9 @@ class ProfileChunkedBuffer {
   
   
   Atomic<uint64_t, MemoryOrdering::ReleaseAcquire> mClearedBlockCount{0};
+
+  
+  uint64_t mFailedPutBytes = 0;
 };
 
 
@@ -1664,6 +1681,7 @@ struct ProfileBufferEntryWriter::Serializer<ProfileChunkedBuffer> {
       
       aEW.WriteObject(static_cast<uint64_t>(aBuffer.mPushedBlockCount));
       aEW.WriteObject(static_cast<uint64_t>(aBuffer.mClearedBlockCount));
+      
     });
   }
 };
@@ -1713,6 +1731,8 @@ struct ProfileBufferEntryReader::Deserializer<ProfileChunkedBuffer> {
     
     aBuffer.mPushedBlockCount = aER.ReadObject<uint64_t>();
     aBuffer.mClearedBlockCount = aER.ReadObject<uint64_t>();
+    
+    aBuffer.mFailedPutBytes = 0;
   }
 
   
