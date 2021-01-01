@@ -6643,7 +6643,10 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
 
   if (docFactory) {
     nsCOMPtr<nsIPrincipal> principal, partitionedPrincipal;
-    uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
+    const uint32_t sandboxFlags =
+        mBrowsingContext->GetHasLoadedNonInitialDocument()
+            ? mBrowsingContext->GetSandboxFlags()
+            : mBrowsingContext->GetInitialSandboxFlags();
     
     
     
