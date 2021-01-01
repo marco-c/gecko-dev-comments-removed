@@ -62,6 +62,12 @@ def gh_request(method_name, url, body=None, media_type=None):
 
     logger.info('Response status code: %s', resp.status_code)
 
+    
+    
+    
+    if resp.status_code == 422:
+        logger.error(resp.json())
+
     resp.raise_for_status()
 
     if resp.status_code == 204:
