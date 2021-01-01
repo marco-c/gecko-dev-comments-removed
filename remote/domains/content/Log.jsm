@@ -46,6 +46,16 @@ class Log extends ContentProcessDomain {
     }
   }
 
+  _getLogCategory(category) {
+    if (category.startsWith("CORS")) {
+      return "network";
+    } else if (category.includes("javascript")) {
+      return "javascript";
+    }
+
+    return "other";
+  }
+
   
 
   
@@ -56,19 +66,19 @@ class Log extends ContentProcessDomain {
 
 
   observe(message) {
-    
-    if (
-      message instanceof Ci.nsIScriptError &&
-      message.flags == Ci.nsIScriptError.errorFlag
-    ) {
+    if (message instanceof Ci.nsIScriptError && !message.hasException) {
+      let url;
+      if (message.sourceName !== "debugger eval code") {
+        url = message.sourceName;
+      }
+
       const entry = {
-        source: "javascript",
-        level: CONSOLE_MESSAGE_LEVEL_MAP[message.flags],
-        lineNumber: message.lineNumber,
-        stacktrace: message.stack,
+        source: this._getLogCategory(message.category),
+        level: CONSOLE_MESSAGE_LEVEL_MAP[message.logLevel],
         text: message.errorMessage,
         timestamp: message.timeStamp,
-        url: message.sourceName,
+        url,
+        lineNumber: message.lineNumber,
       };
 
       this.emit("Log.entryAdded", { entry });
