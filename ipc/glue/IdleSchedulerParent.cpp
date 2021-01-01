@@ -17,15 +17,14 @@ namespace ipc {
 base::SharedMemory* IdleSchedulerParent::sActiveChildCounter = nullptr;
 std::bitset<NS_IDLE_SCHEDULER_COUNTER_ARRAY_LENGHT>
     IdleSchedulerParent::sInUseChildCounters;
-LinkedList<IdleSchedulerParent> IdleSchedulerParent::sDefault;
 LinkedList<IdleSchedulerParent> IdleSchedulerParent::sWaitingForIdle;
-LinkedList<IdleSchedulerParent> IdleSchedulerParent::sIdle;
 Atomic<int32_t> IdleSchedulerParent::sCPUsForChildProcesses(-1);
 uint32_t IdleSchedulerParent::sChildProcessesRunningPrioritizedOperation = 0;
+uint32_t IdleSchedulerParent::sChildProcessesAlive = 0;
 nsITimer* IdleSchedulerParent::sStarvationPreventer = nullptr;
 
 IdleSchedulerParent::IdleSchedulerParent() {
-  sDefault.insertBack(this);
+  sChildProcessesAlive++;
 
   if (sCPUsForChildProcesses == -1) {
     
@@ -81,14 +80,18 @@ IdleSchedulerParent::~IdleSchedulerParent() {
 
   if (isInList()) {
     remove();
-    if (sDefault.isEmpty() && sWaitingForIdle.isEmpty() && sIdle.isEmpty()) {
-      delete sActiveChildCounter;
-      sActiveChildCounter = nullptr;
+  }
 
-      if (sStarvationPreventer) {
-        sStarvationPreventer->Cancel();
-        NS_RELEASE(sStarvationPreventer);
-      }
+  MOZ_ASSERT(sChildProcessesAlive > 0);
+  sChildProcessesAlive--;
+  if (sChildProcessesAlive == 0) {
+    MOZ_ASSERT(sWaitingForIdle.isEmpty());
+    delete sActiveChildCounter;
+    sActiveChildCounter = nullptr;
+
+    if (sStarvationPreventer) {
+      sStarvationPreventer->Cancel();
+      NS_RELEASE(sStarvationPreventer);
     }
   }
 
@@ -97,6 +100,13 @@ IdleSchedulerParent::~IdleSchedulerParent() {
 
 IPCResult IdleSchedulerParent::RecvInitForIdleUse(
     InitForIdleUseResolver&& aResolve) {
+  
+  
+  
+  MOZ_ASSERT(sChildProcessesAlive > 0);
+
+  MOZ_ASSERT(IsNotDoingIdleTask());
+
   
   
   if (!sActiveChildCounter) {
@@ -142,10 +152,12 @@ IPCResult IdleSchedulerParent::RecvInitForIdleUse(
 
 IPCResult IdleSchedulerParent::RecvRequestIdleTime(uint64_t aId,
                                                    TimeDuration aBudget) {
+  MOZ_ASSERT(aBudget);
+  MOZ_ASSERT(IsNotDoingIdleTask());
+
   mCurrentRequestId = aId;
   mRequestedIdleBudget = aBudget;
 
-  remove();
   sWaitingForIdle.insertBack(this);
 
   Schedule(this);
@@ -153,10 +165,16 @@ IPCResult IdleSchedulerParent::RecvRequestIdleTime(uint64_t aId,
 }
 
 IPCResult IdleSchedulerParent::RecvIdleTimeUsed(uint64_t aId) {
+  
+  
+  
+  MOZ_ASSERT(IsWaitingForIdle() || IsDoingIdleTask());
+
   if (mCurrentRequestId == aId) {
-    
-    remove();
-    sDefault.insertBack(this);
+    if (IsWaitingForIdle()) {
+      remove();
+    }
+    mRequestedIdleBudget = TimeDuration();
   }
   Schedule(nullptr);
   return IPC_OK();
@@ -222,13 +240,17 @@ void IdleSchedulerParent::Schedule(IdleSchedulerParent* aRequester) {
   
   RefPtr<IdleSchedulerParent> idleRequester;
   if (aRequester && aRequester->mRunningPrioritizedOperation) {
-    aRequester->remove();
+    if (aRequester->isInList()) {
+      aRequester->remove();
+    }
     idleRequester = aRequester;
   } else {
     idleRequester = sWaitingForIdle.popFirst();
   }
 
-  sIdle.insertBack(idleRequester);
+  
+  
+  MOZ_ASSERT(idleRequester->IsDoingIdleTask());
   Unused << idleRequester->SendIdleTime(idleRequester->mCurrentRequestId,
                                         idleRequester->mRequestedIdleBudget);
 }

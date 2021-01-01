@@ -53,12 +53,23 @@ class IdleSchedulerParent final
 
   uint64_t mCurrentRequestId = 0;
   
+  
   TimeDuration mRequestedIdleBudget;
 
   
   uint32_t mRunningPrioritizedOperation = 0;
 
   uint32_t mChildId = 0;
+
+  
+  bool IsWaitingForIdle() const {
+    MOZ_ASSERT_IF(isInList(), mRequestedIdleBudget);
+    return isInList();
+  }
+  bool IsDoingIdleTask() const { return !isInList() && mRequestedIdleBudget; }
+  bool IsNotDoingIdleTask() const {
+    return !isInList() && !mRequestedIdleBudget;
+  }
 
   
   
@@ -75,19 +86,21 @@ class IdleSchedulerParent final
       sInUseChildCounters;
 
   
-  static LinkedList<IdleSchedulerParent> sDefault;
-
+  
+  
+  
+  
   
   static LinkedList<IdleSchedulerParent> sWaitingForIdle;
-
-  
-  static LinkedList<IdleSchedulerParent> sIdle;
 
   static Atomic<int32_t> sCPUsForChildProcesses;
 
   
   
   static uint32_t sChildProcessesRunningPrioritizedOperation;
+
+  
+  static uint32_t sChildProcessesAlive;
 
   static nsITimer* sStarvationPreventer;
 };
