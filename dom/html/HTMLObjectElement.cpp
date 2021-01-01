@@ -44,9 +44,6 @@ HTMLObjectElement::HTMLObjectElement(
 }
 
 HTMLObjectElement::~HTMLObjectElement() {
-#ifdef XP_MACOSX
-  OnFocusBlurPlugin(this, false);
-#endif
   UnregisterActivityObserver();
   nsImageLoadingContent::Destroy();
 }
@@ -93,109 +90,6 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(
 
 NS_IMPL_ELEMENT_CLONE(HTMLObjectElement)
 
-#ifdef XP_MACOSX
-
-static nsIWidget* GetWidget(Element* aElement) {
-  return nsContentUtils::WidgetForDocument(aElement->OwnerDoc());
-}
-
-Element* HTMLObjectElement::sLastFocused = nullptr;  
-
-class PluginFocusSetter : public Runnable {
- public:
-  PluginFocusSetter(nsIWidget* aWidget, Element* aElement)
-      : Runnable("PluginFocusSetter"), mWidget(aWidget), mElement(aElement) {}
-
-  NS_IMETHOD Run() override {
-    if (mElement) {
-      HTMLObjectElement::sLastFocused = mElement;
-      bool value = true;
-      mWidget->SetPluginFocused(value);
-    } else if (!HTMLObjectElement::sLastFocused) {
-      bool value = false;
-      mWidget->SetPluginFocused(value);
-    }
-
-    return NS_OK;
-  }
-
- private:
-  nsCOMPtr<nsIWidget> mWidget;
-  nsCOMPtr<Element> mElement;
-};
-
-void HTMLObjectElement::OnFocusBlurPlugin(Element* aElement, bool aFocus) {
-  
-  
-  
-  
-  
-  if (aFocus) {
-    nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(aElement);
-    bool hasRunningPlugin = false;
-    if (olc) {
-      hasRunningPlugin =
-          static_cast<nsObjectLoadingContent*>(olc.get())->HasRunningPlugin();
-    }
-    if (!hasRunningPlugin) {
-      aFocus = false;
-    }
-  }
-
-  if (aFocus || aElement == sLastFocused) {
-    if (!aFocus) {
-      sLastFocused = nullptr;
-    }
-    nsIWidget* widget = GetWidget(aElement);
-    if (widget) {
-      nsContentUtils::AddScriptRunner(
-          new PluginFocusSetter(widget, aFocus ? aElement : nullptr));
-    }
-  }
-}
-
-void HTMLObjectElement::HandlePluginCrashed(Element* aElement) {
-  OnFocusBlurPlugin(aElement, false);
-}
-
-void HTMLObjectElement::HandlePluginInstantiated(Element* aElement) {
-  
-  
-  
-  
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (fm && fm->GetFocusedElement() == aElement) {
-    OnFocusBlurPlugin(aElement, true);
-  }
-}
-
-void HTMLObjectElement::HandleFocusBlurPlugin(Element* aElement,
-                                              WidgetEvent* aEvent) {
-  if (!aEvent->IsTrusted()) {
-    return;
-  }
-  switch (aEvent->mMessage) {
-    case eFocus: {
-      OnFocusBlurPlugin(aElement, true);
-      break;
-    }
-    case eBlur: {
-      OnFocusBlurPlugin(aElement, false);
-      break;
-    }
-    default:
-      break;
-  }
-}
-
-NS_IMETHODIMP
-HTMLObjectElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
-  HandleFocusBlurPlugin(this, aVisitor.mEvent);
-  return NS_OK;
-}
-
-#endif  
-
 nsresult HTMLObjectElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
   nsresult rv = nsGenericHTMLFormElement::BindToTree(aContext, aParent);
@@ -222,14 +116,6 @@ nsresult HTMLObjectElement::BindToTree(BindContext& aContext,
 }
 
 void HTMLObjectElement::UnbindFromTree(bool aNullParent) {
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  
-  OnFocusBlurPlugin(this, false);
-#endif
   nsObjectLoadingContent::UnbindFromTree(aNullParent);
   nsGenericHTMLFormElement::UnbindFromTree(aNullParent);
 }

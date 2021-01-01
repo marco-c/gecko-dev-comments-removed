@@ -1794,7 +1794,7 @@ bool TextInputHandler::HandleKeyDownEvent(NSEvent* aNativeEvent, uint32_t aUniqu
   
   
   
-  if (!widget->IsPluginFocused() && (IsIMEEnabled() || IsASCIICapableOnly())) {
+  if (IsIMEEnabled() || IsASCIICapableOnly()) {
     MOZ_LOG(gLog, LogLevel::Info,
             ("%p TextInputHandler::HandleKeyDownEvent, calling interpretKeyEvents", this));
     [mView interpretKeyEvents:[NSArray arrayWithObject:aNativeEvent]];

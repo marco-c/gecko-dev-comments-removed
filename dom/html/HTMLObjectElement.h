@@ -34,18 +34,6 @@ class HTMLObjectElement final : public nsGenericHTMLFormElement,
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLObjectElement, object)
   virtual int32_t TabIndexDefault() override;
 
-#ifdef XP_MACOSX
-  
-  NS_IMETHOD PostHandleEvent(EventChainPostVisitor& aVisitor) override;
-  
-  static void OnFocusBlurPlugin(Element* aElement, bool aFocus);
-  static void HandleFocusBlurPlugin(Element* aElement, WidgetEvent* aEvent);
-  static void HandlePluginCrashed(Element* aElement);
-  static void HandlePluginInstantiated(Element* aElement);
-  
-  static Element* sLastFocused;
-#endif
-
   
   virtual bool IsInteractiveHTMLContent() const override;
 

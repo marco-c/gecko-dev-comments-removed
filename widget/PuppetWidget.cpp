@@ -680,12 +680,6 @@ nsresult PuppetWidget::StartPluginIME(const WidgetKeyboardEvent& aKeyboardEvent,
   return NS_OK;
 }
 
-void PuppetWidget::SetPluginFocused(bool& aFocused) {
-  if (mBrowserChild) {
-    mBrowserChild->SendSetPluginFocused(aFocused);
-  }
-}
-
 
 
 bool PuppetWidget::HaveValidInputContextCache() const {

@@ -38,9 +38,6 @@ HTMLEmbedElement::HTMLEmbedElement(
 }
 
 HTMLEmbedElement::~HTMLEmbedElement() {
-#ifdef XP_MACOSX
-  HTMLObjectElement::OnFocusBlurPlugin(this, false);
-#endif
   UnregisterActivityObserver();
   nsImageLoadingContent::Destroy();
 }
@@ -58,16 +55,6 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(
     imgINotificationObserver, nsIImageLoadingContent, nsIChannelEventSink)
 
 NS_IMPL_ELEMENT_CLONE(HTMLEmbedElement)
-
-#ifdef XP_MACOSX
-
-NS_IMETHODIMP
-HTMLEmbedElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
-  HTMLObjectElement::HandleFocusBlurPlugin(this, aVisitor.mEvent);
-  return NS_OK;
-}
-
-#endif  
 
 void HTMLEmbedElement::AsyncEventRunning(AsyncEventDispatcher* aEvent) {
   nsImageLoadingContent::AsyncEventRunning(aEvent);
@@ -97,14 +84,6 @@ nsresult HTMLEmbedElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 }
 
 void HTMLEmbedElement::UnbindFromTree(bool aNullParent) {
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  
-  HTMLObjectElement::OnFocusBlurPlugin(this, false);
-#endif
   nsObjectLoadingContent::UnbindFromTree(aNullParent);
   nsGenericHTMLElement::UnbindFromTree(aNullParent);
 }

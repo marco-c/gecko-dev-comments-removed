@@ -27,11 +27,6 @@ class HTMLEmbedElement final : public nsGenericHTMLElement,
   NS_DECL_ISUPPORTS_INHERITED
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLEmbedElement, embed)
 
-#ifdef XP_MACOSX
-  
-  NS_IMETHOD PostHandleEvent(EventChainPostVisitor& aVisitor) override;
-#endif
-
   bool AllowFullscreen() const {
     
     
