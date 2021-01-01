@@ -70,6 +70,112 @@ class BrowserSearchTelemetryHandler {
 
 
 
+  recordSearchSuggestionSelectionMethod(
+    event,
+    source,
+    index,
+    userSelectionBehavior = "none"
+  ) {
+    
+    
+    if (source == "searchbar" && userSelectionBehavior != "none") {
+      throw new Error("Did not expect a selection behavior for the searchbar.");
+    }
+
+    let histogram = Services.telemetry.getHistogramById(
+      source == "urlbar"
+        ? "FX_URLBAR_SELECTED_RESULT_METHOD"
+        : "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
+    );
+    
+    
+    
+    let isClick =
+      event &&
+      (ChromeUtils.getClassName(event) == "MouseEvent" ||
+        event.type == "command");
+    let category;
+    if (isClick) {
+      category = "click";
+    } else if (index >= 0) {
+      switch (userSelectionBehavior) {
+        case "tab":
+          category = "tabEnterSelection";
+          break;
+        case "arrow":
+          category = "arrowEnterSelection";
+          break;
+        case "rightClick":
+          
+          category = "rightClickEnter";
+          break;
+        default:
+          category = "enterSelection";
+      }
+    } else {
+      category = "enter";
+    }
+    histogram.add(category);
+  }
+
+  
+
+
+
+
+
+
+
+
+  recordSearchMode(searchMode) {
+    
+    
+    if (searchMode.isPreview) {
+      return;
+    }
+    let scalarKey;
+    if (searchMode.engineName) {
+      let engine = Services.search.getEngineByName(searchMode.engineName);
+      let resultDomain = engine.getResultDomain();
+      
+      
+      if (!engine.isAppProvided) {
+        scalarKey = "other";
+      } else if (resultDomain.includes("amazon.")) {
+        
+        scalarKey = "Amazon";
+      } else if (resultDomain.endsWith("wikipedia.org")) {
+        
+        scalarKey = "Wikipedia";
+      } else {
+        scalarKey = searchMode.engineName;
+      }
+    } else if (searchMode.source) {
+      scalarKey = UrlbarUtils.getResultSourceName(searchMode.source) || "other";
+    }
+
+    Services.telemetry.keyedScalarAdd(
+      "urlbar.searchmode." + searchMode.entry,
+      scalarKey,
+      1
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -133,72 +239,6 @@ class BrowserSearchTelemetryHandler {
       
       console.error(ex);
     }
-  }
-
-  _recordSearch(engine, url, source, action = null) {
-    
-    
-    
-    
-    
-    if (!(action == "oneoff" && !url)) {
-      PartnerLinkAttribution.makeSearchEngineRequest(engine, url).catch(
-        Cu.reportError
-      );
-    }
-
-    let scalarKey = action ? "search_" + action : "search";
-    Services.telemetry.keyedScalarAdd(
-      "browser.engagement.navigation." + source,
-      scalarKey,
-      1
-    );
-    Services.telemetry.recordEvent("navigation", "search", source, action, {
-      engine: engine.telemetryId,
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-  recordSearchMode(searchMode) {
-    
-    
-    if (searchMode.isPreview) {
-      return;
-    }
-    let scalarKey;
-    if (searchMode.engineName) {
-      let engine = Services.search.getEngineByName(searchMode.engineName);
-      let resultDomain = engine.getResultDomain();
-      
-      
-      if (!engine.isAppProvided) {
-        scalarKey = "other";
-      } else if (resultDomain.includes("amazon.")) {
-        
-        scalarKey = "Amazon";
-      } else if (resultDomain.endsWith("wikipedia.org")) {
-        
-        scalarKey = "Wikipedia";
-      } else {
-        scalarKey = searchMode.engineName;
-      }
-    } else if (searchMode.source) {
-      scalarKey = UrlbarUtils.getResultSourceName(searchMode.source) || "other";
-    }
-
-    Services.telemetry.keyedScalarAdd(
-      "urlbar.searchmode." + searchMode.entry,
-      scalarKey,
-      1
-    );
   }
 
   _handleSearchAction(engine, source, details) {
@@ -283,67 +323,27 @@ class BrowserSearchTelemetryHandler {
     this._recordSearch(engine, details.url, sourceName, "enter");
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  recordSearchSuggestionSelectionMethod(
-    event,
-    source,
-    index,
-    userSelectionBehavior = "none"
-  ) {
+  _recordSearch(engine, url, source, action = null) {
     
     
-    if (source == "searchbar" && userSelectionBehavior != "none") {
-      throw new Error("Did not expect a selection behavior for the searchbar.");
+    
+    
+    
+    if (!(action == "oneoff" && !url)) {
+      PartnerLinkAttribution.makeSearchEngineRequest(engine, url).catch(
+        Cu.reportError
+      );
     }
 
-    let histogram = Services.telemetry.getHistogramById(
-      source == "urlbar"
-        ? "FX_URLBAR_SELECTED_RESULT_METHOD"
-        : "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
+    let scalarKey = action ? "search_" + action : "search";
+    Services.telemetry.keyedScalarAdd(
+      "browser.engagement.navigation." + source,
+      scalarKey,
+      1
     );
-    
-    
-    
-    let isClick =
-      event &&
-      (ChromeUtils.getClassName(event) == "MouseEvent" ||
-        event.type == "command");
-    let category;
-    if (isClick) {
-      category = "click";
-    } else if (index >= 0) {
-      switch (userSelectionBehavior) {
-        case "tab":
-          category = "tabEnterSelection";
-          break;
-        case "arrow":
-          category = "arrowEnterSelection";
-          break;
-        case "rightClick":
-          
-          category = "rightClickEnter";
-          break;
-        default:
-          category = "enterSelection";
-      }
-    } else {
-      category = "enter";
-    }
-    histogram.add(category);
+    Services.telemetry.recordEvent("navigation", "search", source, action, {
+      engine: engine.telemetryId,
+    });
   }
 }
 
