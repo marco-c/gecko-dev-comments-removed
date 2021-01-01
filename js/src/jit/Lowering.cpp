@@ -975,6 +975,14 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   }
 
   
+  if (comp->compareType() == MCompare::Compare_BigInt) {
+    auto* lir = new (alloc()) LCompareBigInt(
+        useRegister(left), useRegister(right), temp(), temp(), temp());
+    define(lir, comp);
+    return;
+  }
+
+  
   if (comp->compareType() == MCompare::Compare_Unknown) {
     LCompareVM* lir =
         new (alloc()) LCompareVM(useBoxAtStart(left), useBoxAtStart(right));
