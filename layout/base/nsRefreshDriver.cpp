@@ -981,6 +981,7 @@ static StaticRefPtr<InactiveRefreshDriverTimer> sThrottledRateTimer;
 
 void nsRefreshDriver::CreateVsyncRefreshTimer() {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mOwnTimer);
 
   PodArrayZero(sJankLevels);
 
@@ -988,52 +989,29 @@ void nsRefreshDriver::CreateVsyncRefreshTimer() {
     return;
   }
 
-  if (!mOwnTimer) {
-    
-    nsPresContext* pc = GetPresContext();
-    nsIWidget* widget = pc->GetRootWidget();
-    if (widget) {
-      if (RefPtr<gfx::VsyncSource> localVsyncSource =
-              widget->GetVsyncSource()) {
+  
+  nsPresContext* pc = GetPresContext();
+  nsIWidget* widget = pc->GetRootWidget();
+  if (widget) {
+    if (RefPtr<gfx::VsyncSource> localVsyncSource = widget->GetVsyncSource()) {
+      mOwnTimer = new VsyncRefreshDriverTimer(localVsyncSource);
+      sRegularRateTimerList->AppendElement(mOwnTimer.get());
+      return;
+    }
+    if (BrowserChild* browserChild = widget->GetOwningBrowserChild()) {
+      if (RefPtr<VsyncChild> localVsyncSource = browserChild->GetVsyncChild()) {
         mOwnTimer = new VsyncRefreshDriverTimer(localVsyncSource);
         sRegularRateTimerList->AppendElement(mOwnTimer.get());
         return;
       }
-      if (BrowserChild* browserChild = widget->GetOwningBrowserChild()) {
-        if (RefPtr<VsyncChild> localVsyncSource =
-                browserChild->GetVsyncChild()) {
-          mOwnTimer = new VsyncRefreshDriverTimer(localVsyncSource);
-          sRegularRateTimerList->AppendElement(mOwnTimer.get());
-          return;
-        }
-      }
     }
   }
-  if (!sRegularRateTimer) {
-    if (XRE_IsParentProcess()) {
-      
-      gfxPlatform::GetPlatform();
-      
-      sRegularRateTimer = new VsyncRefreshDriverTimer();
-    } else {
-      PBackgroundChild* actorChild =
-          BackgroundChild::GetOrCreateForCurrentThread();
-      if (NS_WARN_IF(!actorChild)) {
-        return;
-      }
-
-      dom::PVsyncChild* actor = actorChild->SendPVsyncConstructor();
-      if (NS_WARN_IF(!actor)) {
-        return;
-      }
-
-      dom::VsyncChild* child = static_cast<dom::VsyncChild*>(actor);
-
-      RefPtr<RefreshDriverTimer> vsyncRefreshDriverTimer =
-          new VsyncRefreshDriverTimer(child);
-
-      sRegularRateTimer = std::move(vsyncRefreshDriverTimer);
-    }
+  if (!sRegularRateTimer && XRE_IsParentProcess()) {
+    
+    gfxPlatform::GetPlatform();
+    
+    sRegularRateTimer = new VsyncRefreshDriverTimer();
+    sRegularRateTimerList->AppendElement(sRegularRateTimer);
   }
 }
 
@@ -1123,6 +1101,7 @@ RefreshDriverTimer* nsRefreshDriver::ChooseTimer() {
   if (!sRegularRateTimer) {
     double rate = GetRegularTimerInterval();
     sRegularRateTimer = new StartupRefreshDriverTimer(rate);
+    sRegularRateTimerList->AppendElement(sRegularRateTimer);
   }
 
   return sRegularRateTimer;
@@ -2734,47 +2713,30 @@ TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault) {
   
   
   
-  if (sRegularRateTimer) {
-    return sRegularRateTimer->GetIdleDeadlineHint(aDefault);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  TimeStamp hint = TimeStamp();
+  TimeStamp hint = aDefault;
   if (sRegularRateTimerList) {
     for (RefreshDriverTimer* timer : *sRegularRateTimerList) {
       TimeStamp newHint = timer->GetIdleDeadlineHint(aDefault);
-      if (newHint < aDefault && (hint.IsNull() || newHint > hint)) {
+      if (newHint > hint) {
         hint = newHint;
       }
     }
   }
-
-  return hint.IsNull() ? aDefault : hint;
+  return hint;
 }
 
 
 Maybe<TimeStamp> nsRefreshDriver::GetNextTickHint() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (sRegularRateTimer) {
-    return sRegularRateTimer->GetNextTickHint();
-  }
-
   Maybe<TimeStamp> hint = Nothing();
   if (sRegularRateTimerList) {
     for (RefreshDriverTimer* timer : *sRegularRateTimerList) {
-      if (Maybe<TimeStamp> newHint = timer->GetNextTickHint()) {
-        if (!hint || newHint.value() < hint.value()) {
-          hint = newHint;
-        }
+      Maybe<TimeStamp> newHint = timer->GetNextTickHint();
+      if ((newHint.isSome() && hint.isNothing()) ||
+          (newHint.isSome() && hint.isSome() &&
+           newHint.value() > hint.value())) {
+        hint = newHint;
       }
     }
   }
