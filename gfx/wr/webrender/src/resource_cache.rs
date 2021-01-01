@@ -527,28 +527,6 @@ impl ResourceCache {
         }
     }
 
-    
-    #[cfg(test)]
-    pub fn new_for_testing() -> Self {
-        use rayon::ThreadPoolBuilder;
-
-        let texture_cache = TextureCache::new_for_testing(
-            4096,
-            ImageFormat::RGBA8,
-        );
-        let workers = Arc::new(ThreadPoolBuilder::new().build().unwrap());
-        let glyph_rasterizer = GlyphRasterizer::new(workers).unwrap();
-        let cached_glyphs = GlyphCache::new();
-        let font_instances = SharedFontInstanceMap::new();
-
-        ResourceCache::new(
-            texture_cache,
-            glyph_rasterizer,
-            cached_glyphs,
-            font_instances,
-        )
-    }
-
     pub fn max_texture_size(&self) -> i32 {
         self.texture_cache.max_texture_size()
     }
@@ -581,7 +559,6 @@ impl ResourceCache {
         rg_builder: &mut RenderTaskGraphBuilder,
         user_data: Option<[f32; 3]>,
         is_opaque: bool,
-        parent_render_task_id: RenderTaskId,
         f: F,
     ) -> RenderTaskCacheEntryHandle
     where
@@ -594,7 +571,6 @@ impl ResourceCache {
             rg_builder,
             user_data,
             is_opaque,
-            parent_render_task_id,
             |render_graph| Ok(f(render_graph))
         ).expect("Failed to request a render task from the resource cache!")
     }
@@ -1467,7 +1443,7 @@ impl ResourceCache {
         
         
         self.gc_render_targets(
-            64 * 1024 * 1024,
+            32 * 1024 * 1024,
             32 * 1024 * 1024 * 10,
             60,
         );
@@ -1681,7 +1657,7 @@ impl ResourceCache {
         let mut retained_targets = SmallVec::<[RenderTarget; 8]>::new();
 
         for target in self.render_target_pool.drain(..) {
-            assert!(!target.is_active);
+            debug_assert!(!target.is_active);
 
             
             
@@ -1701,19 +1677,6 @@ impl ResourceCache {
         }
 
         self.render_target_pool.extend(retained_targets);
-    }
-
-    #[cfg(test)]
-    pub fn validate_surfaces(
-        &self,
-        expected_surfaces: &[(i32, i32, ImageFormat)],
-    ) {
-        assert_eq!(expected_surfaces.len(), self.render_target_pool.len());
-
-        for (expected, surface) in expected_surfaces.iter().zip(self.render_target_pool.iter()) {
-            assert_eq!(DeviceIntSize::new(expected.0, expected.1), surface.size);
-            assert_eq!(expected.2, surface.format);
-        }
     }
 }
 

@@ -5108,7 +5108,7 @@ impl Renderer {
                     
                     
                     
-                    Some(draw_target.to_framebuffer_rect(target.used_rect))
+                    Some(draw_target.to_framebuffer_rect(target.used_rect()))
                 }
                 DrawTarget::Texture { .. } | DrawTarget::External { .. } => {
                     None
