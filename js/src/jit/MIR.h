@@ -2948,6 +2948,9 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
     Compare_BigInt_Double,
 
     
+    Compare_BigInt_String,
+
+    
     Compare_RefOrNull,
 
     

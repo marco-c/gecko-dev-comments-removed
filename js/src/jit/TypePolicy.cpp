@@ -207,8 +207,10 @@ bool ComparePolicy::adjustInputs(TempAllocator& alloc,
 
   
   
+  
   if (compare->compareType() == MCompare::Compare_BigInt_Int32 ||
-      compare->compareType() == MCompare::Compare_BigInt_Double) {
+      compare->compareType() == MCompare::Compare_BigInt_Double ||
+      compare->compareType() == MCompare::Compare_BigInt_String) {
     if (MDefinition* in = def->getOperand(0); in->type() != MIRType::BigInt) {
       auto* replace =
           MUnbox::New(alloc, in, MIRType::BigInt, MUnbox::Infallible);
@@ -225,10 +227,14 @@ bool ComparePolicy::adjustInputs(TempAllocator& alloc,
         replace = MToNumberInt32::New(
             alloc, in, IntConversionInputKind::NumbersOrBoolsOnly);
       }
-    } else {
-      MOZ_ASSERT(compare->compareType() == MCompare::Compare_BigInt_Double);
+    } else if (compare->compareType() == MCompare::Compare_BigInt_Double) {
       if (in->type() != MIRType::Double) {
         replace = MToDouble::New(alloc, in, MToFPInstruction::NumbersOnly);
+      }
+    } else {
+      MOZ_ASSERT(compare->compareType() == MCompare::Compare_BigInt_String);
+      if (in->type() != MIRType::String) {
+        replace = MUnbox::New(alloc, in, MIRType::String, MUnbox::Infallible);
       }
     }
 
