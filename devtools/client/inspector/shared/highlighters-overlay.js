@@ -88,6 +88,27 @@ const HIGHLIGHTER_EVENTS = {
 };
 
 
+const TELEMETRY_TOOL_IDS = {
+  [TYPES.FLEXBOX]: "FLEXBOX_HIGHLIGHTER",
+  [TYPES.GRID]: "GRID_HIGHLIGHTER",
+};
+
+
+const TELEMETRY_SCALARS = {
+  [TYPES.FLEXBOX]: {
+    layout: "devtools.layout.flexboxhighlighter.opened",
+    markup: "devtools.markup.flexboxhighlighter.opened",
+    rule: "devtools.rules.flexboxhighlighter.opened",
+  },
+
+  [TYPES.GRID]: {
+    grid: "devtools.grid.gridinspector.opened",
+    markup: "devtools.markup.gridinspector.opened",
+    rule: "devtools.rules.gridinspector.opened",
+  },
+};
+
+
 
 
 class HighlightersOverlay {
@@ -128,11 +149,6 @@ class HighlightersOverlay {
     
     
     this.gridHighlighters = new Map();
-    
-    
-    
-    this.isGridHighlighterTimerActive = false;
-
     
     
     
@@ -234,27 +250,30 @@ class HighlightersOverlay {
 
 
 
+  _afterShowHighlighterTypeForNode(type, nodeFront, options) {
+    switch (type) {
+      
+      case TYPES.FLEXBOX:
+      case TYPES.GRID:
+        const toolID = TELEMETRY_TOOL_IDS[type];
+        if (toolID) {
+          this.telemetry.toolOpened(
+            toolID,
+            this.inspector.toolbox.sessionId,
+            this
+          );
+        }
 
-  async _afterShowHighlighterTypeForNode(type, nodeFront, options) {
-    
+        const scalar = TELEMETRY_SCALARS[type]?.[options?.trigger];
+        if (scalar) {
+          this.telemetry.scalarAdd(scalar, 1);
+        }
+
+        break;
+    }
+
     
     if (type === TYPES.FLEXBOX) {
-      this.telemetry.toolOpened(
-        "FLEXBOX_HIGHLIGHTER",
-        this.inspector.toolbox.sessionId,
-        this
-      );
-
-      const scalars = {
-        layout: "devtools.layout.flexboxhighlighter.opened",
-        markup: "devtools.markup.flexboxhighlighter.opened",
-        rule: "devtools.rules.flexboxhighlighter.opened",
-      };
-
-      if (scalars[options.trigger]) {
-        this.telemetry.scalarAdd(scalars[options.trigger], 1);
-      }
-
       const { url } = this.target;
       const selectors = [...this.inspector.selectionCssSelectors];
 
@@ -343,17 +362,32 @@ class HighlightersOverlay {
 
 
 
-  async _beforeHideHighlighterType(type) {
-    
-    this._restorableHighlighters.delete(type);
+  _beforeHideHighlighterType(type) {
+    switch (type) {
+      
+      case TYPES.FLEXBOX:
+      case TYPES.GRID:
+        const toolID = TELEMETRY_TOOL_IDS[type];
+        const conditions = {
+          [TYPES.FLEXBOX]: () => {
+            
+            return true;
+          },
+          [TYPES.GRID]: () => {
+            
+            return this.gridHighlighters.size === 1;
+          },
+        };
 
-    
-    if (type === TYPES.FLEXBOX) {
-      this.telemetry.toolClosed(
-        "FLEXBOX_HIGHLIGHTER",
-        this.inspector.toolbox.sessionId,
-        this
-      );
+        if (toolID && conditions[type].call(this)) {
+          this.telemetry.toolClosed(
+            toolID,
+            this.inspector.toolbox.sessionId,
+            this
+          );
+        }
+
+        break;
     }
   }
 
@@ -537,7 +571,7 @@ class HighlightersOverlay {
       timer,
     });
     await highlighter.show(nodeFront, options);
-    await this._afterShowHighlighterTypeForNode(type, nodeFront, options);
+    this._afterShowHighlighterTypeForNode(type, nodeFront, options);
 
     
     
@@ -591,8 +625,10 @@ class HighlightersOverlay {
     const { highlighter, nodeFront, timer } = data;
     
     clearTimeout(timer);
+    
+    this._restorableHighlighters.delete(type);
     this._activeHighlighters.delete(type);
-    await this._beforeHideHighlighterType(type);
+    this._beforeHideHighlighterType(type);
     await highlighter.hide();
 
     
@@ -1003,24 +1039,11 @@ class HighlightersOverlay {
     options = { ...options, ...this.getGridHighlighterSettings(node) };
     await highlighter.show(node, options);
 
+    this._afterShowHighlighterTypeForNode(TYPES.GRID, node, {
+      ...options,
+      trigger,
+    });
     this._toggleRuleViewIcon(node, true, ".ruleview-grid");
-
-    if (!this.isGridHighlighterTimerActive) {
-      this.telemetry.toolOpened(
-        "grid_highlighter",
-        this.inspector.toolbox.sessionId,
-        this
-      );
-      this.isGridHighlighterTimerActive = true;
-    }
-
-    if (trigger === "grid") {
-      this.telemetry.scalarAdd("devtools.grid.gridinspector.opened", 1);
-    } else if (trigger === "markup") {
-      this.telemetry.scalarAdd("devtools.markup.gridinspector.opened", 1);
-    } else if (trigger === "rule") {
-      this.telemetry.scalarAdd("devtools.rules.gridinspector.opened", 1);
-    }
 
     try {
       
@@ -1162,6 +1185,7 @@ class HighlightersOverlay {
       await this.hideParentGridHighlighter(parentGridNode);
     }
 
+    this._beforeHideHighlighterType(TYPES.GRID);
     
     
     highlighter.destroy();
@@ -1173,15 +1197,6 @@ class HighlightersOverlay {
     await this.restoreParentGridHighlighter(node);
 
     this._toggleRuleViewIcon(node, false, ".ruleview-grid");
-
-    if (this.isGridHighlighterTimerActive && !this.gridHighlighters.size) {
-      this.telemetry.toolClosed(
-        "grid_highlighter",
-        this.inspector.toolbox.sessionId,
-        this
-      );
-      this.isGridHighlighterTimerActive = false;
-    }
 
     
     
