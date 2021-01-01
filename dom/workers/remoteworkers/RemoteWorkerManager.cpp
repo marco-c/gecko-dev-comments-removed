@@ -445,6 +445,26 @@ void RemoteWorkerManager::LaunchInternal(
   MOZ_ASSERT(aTargetActor == mParentActor ||
              mChildActors.Contains(aTargetActor));
 
+  
+  
+  if (aTargetActor != mParentActor) {
+    RefPtr<ContentParent> contentParent =
+        BackgroundParent::GetContentParent(aTargetActor->Manager());
+
+    
+    
+    
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+        __func__, [contentParent = std::move(contentParent),
+                   principalInfo = aData.principalInfo()] {
+          TransmitPermissionsAndBlobURLsForPrincipalInfo(contentParent,
+                                                         principalInfo);
+        });
+
+    MOZ_ALWAYS_SUCCEEDS(
+        SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
+  }
+
   RemoteWorkerParent* workerActor = static_cast<RemoteWorkerParent*>(
       aTargetActor->Manager()->SendPRemoteWorkerConstructor(aData));
   if (NS_WARN_IF(!workerActor)) {
@@ -572,19 +592,6 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActorInternal(
             (aActor->OtherPid() == aProcessId || !actor)) {
           ++lock->mCount;
 
-          
-          
-          
-          nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-              __func__, [contentParent = std::move(aContentParent),
-                         principalInfo = aData.principalInfo()] {
-                TransmitPermissionsAndBlobURLsForPrincipalInfo(contentParent,
-                                                               principalInfo);
-              });
-
-          MOZ_ALWAYS_SUCCEEDS(
-              SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
-
           actor = aActor;
           return false;
         }
@@ -656,8 +663,6 @@ void RemoteWorkerManager::LaunchNewContentProcess(
                                    const nsCString& remoteType) mutable {
     if (aValue.IsResolve()) {
       LOG(("LaunchNewContentProcess: successfully got child process"));
-      TransmitPermissionsAndBlobURLsForPrincipalInfo(aValue.ResolveValue(),
-                                                     principalInfo);
 
       
       
@@ -697,8 +702,23 @@ void RemoteWorkerManager::LaunchNewContentProcess(
         auto remoteType =
             workerRemoteType.IsEmpty() ? DEFAULT_REMOTE_TYPE : workerRemoteType;
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         ContentParent::GetNewOrUsedBrowserProcessAsync(
-             remoteType)
+             remoteType,
+             nullptr,
+            hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
+             true)
             ->Then(GetCurrentSerialEventTarget(), __func__,
                    [callback = std::move(callback),
                     remoteType](const CallbackParamType& aValue) mutable {
