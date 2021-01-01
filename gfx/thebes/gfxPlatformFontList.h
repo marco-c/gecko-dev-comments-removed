@@ -203,9 +203,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual void GetFontList(nsAtom* aLangGroup, const nsACString& aGenericFamily,
                            nsTArray<nsString>& aListOfFonts);
 
-  
-  
-  void UpdateFontList(bool aFullRebuild = true);
+  void UpdateFontList();
 
   virtual void ClearLangGroupPrefFonts();
 
@@ -282,20 +280,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   void SetupFamilyCharMap(uint32_t aGeneration,
                           const mozilla::fontlist::Pointer& aFamilyPtr);
-
-  
-  
-  void StartCmapLoadingFromFamily(uint32_t aStartIndex);
-
-  
-  void StartCmapLoading(uint32_t aGeneration, uint32_t aStartIndex);
-
-  void CancelLoadCmapsTask() {
-    if (mLoadCmapsRunnable) {
-      mLoadCmapsRunnable->Cancel();
-      mLoadCmapsRunnable = nullptr;
-    }
-  }
 
   
   
@@ -495,9 +479,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   void SetVisibilityLevel();
-
-  
-  void InitializeCodepointsWithNoFonts();
 
   
   
@@ -881,9 +862,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
       mFontEntries;
 
   RefPtr<gfxFontEntry> mDefaultFontEntry;
-
-  RefPtr<mozilla::CancelableRunnable> mLoadCmapsRunnable;
-  uint32_t mStartedLoadingCmapsFrom = 0xffffffffu;
 
   FontVisibility mVisibilityLevel = FontVisibility::Unknown;
 
