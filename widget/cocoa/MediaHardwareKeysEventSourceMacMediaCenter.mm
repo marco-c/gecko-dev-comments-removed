@@ -7,6 +7,7 @@
 #include "MediaHardwareKeysEventSourceMacMediaCenter.h"
 
 #include "mozilla/dom/MediaControlUtils.h"
+#include "nsCocoaUtils.h"
 
 using namespace mozilla::dom;
 
@@ -101,6 +102,7 @@ void MediaHardwareKeysEventSourceMacMediaCenter::BeginListeningForEvents() {
 void MediaHardwareKeysEventSourceMacMediaCenter::EndListeningForEvents() {
   MPNowPlayingInfoCenter* center = [MPNowPlayingInfoCenter defaultCenter];
   center.playbackState = MPNowPlayingPlaybackStatePaused;
+  center.nowPlayingInfo = nil;
   MPRemoteCommandCenter* commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
   commandCenter.togglePlayPauseCommand.enabled = false;
   [commandCenter.togglePlayPauseCommand removeTarget:nil];
@@ -148,6 +150,22 @@ void MediaHardwareKeysEventSourceMacMediaCenter::SetPlaybackState(
     center.playbackState = MPNowPlayingPlaybackStateStopped;
   }
   MediaControlKeySource::SetPlaybackState(aState);
+}
+
+void MediaHardwareKeysEventSourceMacMediaCenter::SetMediaMetadata(
+    const dom::MediaMetadataBase& aMetadata) {
+  NSMutableDictionary* nowPlayingInfo = [NSMutableDictionary dictionary];
+  [nowPlayingInfo setObject:nsCocoaUtils::ToNSString(aMetadata.mTitle)
+                     forKey:MPMediaItemPropertyTitle];
+  [nowPlayingInfo setObject:nsCocoaUtils::ToNSString(aMetadata.mArtist)
+                     forKey:MPMediaItemPropertyArtist];
+  [nowPlayingInfo setObject:nsCocoaUtils::ToNSString(aMetadata.mAlbum)
+                     forKey:MPMediaItemPropertyAlbumTitle];
+  
+  
+  
+  
+  [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfo;
 }
 
 }
