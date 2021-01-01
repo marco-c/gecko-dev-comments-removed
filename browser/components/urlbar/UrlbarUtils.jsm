@@ -28,8 +28,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
-  SearchSuggestionController:
-    "resource://gre/modules/SearchSuggestionController.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
@@ -386,10 +384,7 @@ var UrlbarUtils = {
 
 
   getTokenMatches(tokens, str, highlightType) {
-    
-    
-    
-    str = str.substring(0, UrlbarUtils.MAX_TEXT_LENGTH).toLocaleLowerCase();
+    str = str.toLocaleLowerCase();
     
     
     
@@ -934,13 +929,7 @@ var UrlbarUtils = {
     
     
     
-    
-    
-    if (
-      !value ||
-      input.isPrivate ||
-      value.length > SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH
-    ) {
+    if (!value || input.isPrivate) {
       return Promise.resolve();
     }
     return new Promise((resolve, reject) => {
