@@ -524,6 +524,13 @@ class ProfileChunkedBuffer {
     return ResetChunkManager(lock);
   }
 
+  
+  
+  
+  
+  
+  
+  
   void Clear() {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
     if (MOZ_UNLIKELY(!mChunkManager)) {
@@ -531,17 +538,46 @@ class ProfileChunkedBuffer {
       return;
     }
 
-    Unused << mChunkManager->GetExtantReleasedChunks();
-
     mRangeStart = mRangeEnd = mNextChunkRangeStart;
     mPushedBlockCount = 0;
     mClearedBlockCount = 0;
     mFailedPutBytes = 0;
+
+    
+    
+    
+    UniquePtr<ProfileBufferChunk> releasedChunks =
+        mChunkManager->GetExtantReleasedChunks();
+    if (releasedChunks) {
+      
+      
+      for (ProfileBufferChunk* chunk = releasedChunks.get(); chunk;
+           chunk = chunk->GetNext()) {
+        chunk->MarkRecycled();
+      }
+      mNextChunks = ProfileBufferChunk::Join(std::move(mNextChunks),
+                                             std::move(releasedChunks));
+    }
+
     if (mCurrentChunk) {
+      
+      
       mCurrentChunk->MarkDone();
       mCurrentChunk->MarkRecycled();
-      InitializeCurrentChunk(lock);
+    } else {
+      if (!mNextChunks) {
+        
+        
+        return;
+      }
+
+      
+      mCurrentChunk = std::exchange(mNextChunks, mNextChunks->ReleaseNext());
     }
+
+    
+    
+    InitializeCurrentChunk(lock);
   }
 
   
