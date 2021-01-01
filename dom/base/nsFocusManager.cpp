@@ -1631,13 +1631,6 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
       
       
       
-      bool currentIsSameOrAncestor =
-          IsSameOrAncestor(focusedBrowsingContext, newWindow);
-      
-      
-      
-      
-      
       
       
       
@@ -1650,11 +1643,28 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
         commonAncestor = GetCommonAncestor(newWindow, focusedBrowsingContext);
       }
 
-      if (!Blur(
-              currentIsSameOrAncestor ? focusedBrowsingContext.get() : nullptr,
-              commonAncestor ? commonAncestor.get() : nullptr,
-              focusMovesToDifferentBC, aAdjustWidget, aActionId,
-              elementToFocus)) {
+      bool needToClearFocusedElement = false;
+      if (focusedBrowsingContext->IsChrome()) {
+        
+        needToClearFocusedElement = true;
+      } else {
+        
+        
+        if (focusedBrowsingContext->Top() == browsingContextToFocus->Top()) {
+          
+          
+          
+          
+          needToClearFocusedElement = (focusMovesToDifferentBC ||
+                                       focusedBrowsingContext->IsInProcess());
+        }
+      }
+
+      if (!Blur(needToClearFocusedElement ? focusedBrowsingContext.get()
+                                          : nullptr,
+                commonAncestor ? commonAncestor.get() : nullptr,
+                focusMovesToDifferentBC, aAdjustWidget, aActionId,
+                elementToFocus)) {
         return;
       }
     }
@@ -3545,11 +3555,12 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         docShell->TabToTreeOwner(forward, forDocumentNavigation, &tookFocus);
         
         if (tookFocus) {
-          nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
-          if (window->GetFocusedElement() == mFocusedElement) {
+          if (GetFocusedBrowsingContext() &&
+              GetFocusedBrowsingContext()->IsInProcess()) {
             Blur(GetFocusedBrowsingContext(), nullptr, true, true,
                  GenerateFocusActionId());
           } else {
+            nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
             window->SetFocusedElement(nullptr);
           }
           return NS_OK;
