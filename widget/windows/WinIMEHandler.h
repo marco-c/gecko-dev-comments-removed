@@ -154,11 +154,6 @@ class IMEHandler final {
   
 
 
-  static void SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm);
-
-  
-
-
   static void DefaultProcOfPluginEvent(nsWindow* aWindow,
                                        const NPEvent* aPluginEvent);
 

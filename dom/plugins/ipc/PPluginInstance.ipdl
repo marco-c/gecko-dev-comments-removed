@@ -254,10 +254,6 @@ parent:
 
   sync GetCompositionString(uint32_t aType)
                             returns (uint8_t[] aDist, int32_t aLength);
-  
-  
-  
-  async SetCandidateWindow(CandidateWindowPosition aPosition);
   async RequestCommitOrCancel(bool aCommitted);
 
   

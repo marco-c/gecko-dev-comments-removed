@@ -1871,12 +1871,6 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void SetCandidateWindowForPlugin(
-      const mozilla::widget::CandidateWindowPosition& aPosition) = 0;
-
-  
-
-
   virtual void DefaultProcOfPluginEvent(
       const mozilla::WidgetPluginEvent& aEvent) = 0;
 

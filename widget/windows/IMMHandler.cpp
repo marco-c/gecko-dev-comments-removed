@@ -2563,30 +2563,6 @@ bool IMMHandler::OnKeyDownEvent(nsWindow* aWindow, WPARAM wParam, LPARAM lParam,
 }
 
 
-void IMMHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm) {
-  
-  
-  
-  if (aWindow->PluginHasFocus()) {
-    
-    
-    
-    
-    
-    static const int32_t kCaretHeight = 20;
-    
-    
-    
-    LayoutDeviceIntRect caretRect(aForm->ptCurrentPos.x,
-                                  aForm->ptCurrentPos.y - kCaretHeight, 1,
-                                  kCaretHeight);
-    IMEHandler::CreateNativeCaret(aWindow, caretRect);
-  }
-  IMEContext context(aWindow);
-  ::ImmSetCandidateWindow(context.get(), aForm);
-}
-
-
 void IMMHandler::DefaultProcOfPluginEvent(nsWindow* aWindow,
                                           const NPEvent* aEvent) {
   switch (aEvent->event) {

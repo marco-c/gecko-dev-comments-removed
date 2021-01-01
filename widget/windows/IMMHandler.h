@@ -126,7 +126,6 @@ class IMMHandler final {
   
   static nsresult OnMouseButtonEvent(nsWindow* aWindow,
                                      const IMENotification& aIMENotification);
-  static void SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm);
   static void DefaultProcOfPluginEvent(nsWindow* aWindow,
                                        const NPEvent* aEvent);
 
