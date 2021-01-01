@@ -1011,22 +1011,6 @@ void TISInputSourceWrapper::InitKeyEvent(NSEvent* aNativeKeyEvent, WidgetKeyboar
   
   aKeyEvent.mNativeKeyEvent = aNativeKeyEvent;
 
-  
-  if ([aNativeKeyEvent type] == NSKeyDown || [aNativeKeyEvent type] == NSKeyUp) {
-    aKeyEvent.mNativeKeyCode = [aNativeKeyEvent keyCode];
-    aKeyEvent.mNativeModifierFlags = [aNativeKeyEvent modifierFlags];
-    nsAutoString nativeChars;
-    nsCocoaUtils::GetStringForNSString([aNativeKeyEvent characters], nativeChars);
-    aKeyEvent.mNativeCharacters.Assign(nativeChars);
-    nsAutoString nativeCharsIgnoringModifiers;
-    nsCocoaUtils::GetStringForNSString([aNativeKeyEvent charactersIgnoringModifiers],
-                                       nativeCharsIgnoringModifiers);
-    aKeyEvent.mNativeCharactersIgnoringModifiers.Assign(nativeCharsIgnoringModifiers);
-  } else if ([aNativeKeyEvent type] == NSFlagsChanged) {
-    aKeyEvent.mNativeKeyCode = [aNativeKeyEvent keyCode];
-    aKeyEvent.mNativeModifierFlags = [aNativeKeyEvent modifierFlags];
-  }
-
   aKeyEvent.mRefPoint = LayoutDeviceIntPoint(0, 0);
 
   UInt32 kbType = GetKbdType();
@@ -1838,7 +1822,7 @@ bool TextInputHandler::HandleKeyDownEvent(NSEvent* aNativeEvent, uint32_t aUniqu
     
     
     
-    if (!(interpretKeyEventsCalled && IsNormalCharInputtingEvent(keypressEvent))) {
+    if (!(interpretKeyEventsCalled && IsNormalCharInputtingEvent(aNativeEvent))) {
       MOZ_LOG(gLog, LogLevel::Info,
               ("%p TextInputHandler::HandleKeyDownEvent, trying to dispatch "
                "eKeyPress event since it's not yet dispatched",
@@ -4928,13 +4912,18 @@ bool TextInputHandlerBase::SetSelection(NSRange& aRange) {
   return false;
 }
 
- bool TextInputHandlerBase::IsNormalCharInputtingEvent(
-    const WidgetKeyboardEvent& aKeyEvent) {
-  
-  if (aKeyEvent.mNativeCharacters.IsEmpty() || aKeyEvent.IsMeta()) {
+ bool TextInputHandlerBase::IsNormalCharInputtingEvent(NSEvent* aNativeEvent) {
+  if ([aNativeEvent type] != NSKeyDown && [aNativeEvent type] != NSKeyUp) {
     return false;
   }
-  return !IsControlChar(aKeyEvent.mNativeCharacters[0]);
+  nsAutoString nativeChars;
+  nsCocoaUtils::GetStringForNSString([aNativeEvent characters], nativeChars);
+
+  
+  if (nativeChars.IsEmpty() || ([aNativeEvent modifierFlags] & NSCommandKeyMask)) {
+    return false;
+  }
+  return !IsControlChar(nativeChars[0]);
 }
 
  bool TextInputHandlerBase::IsModifierKey(UInt32 aNativeKeyCode) {

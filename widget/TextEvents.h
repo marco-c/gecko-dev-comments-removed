@@ -137,13 +137,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
         mCharCode(0),
         mPseudoCharCode(0),
         mLocation(eKeyLocationStandard),
-        mUniqueId(0)
-#ifdef XP_MACOSX
-        ,
-        mNativeModifierFlags(0),
-        mNativeKeyCode(0)
-#endif  
-        ,
+        mUniqueId(0),
         mKeyNameIndex(KEY_NAME_INDEX_Unidentified),
         mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN),
         mIsRepeat(false),
@@ -153,8 +147,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
         mUseLegacyKeyCodeAndCharCodeValues(false),
         mEditCommandsForSingleLineEditorInitialized(false),
         mEditCommandsForMultiLineEditorInitialized(false),
-        mEditCommandsForRichTextEditorInitialized(false) {
-  }
+        mEditCommandsForRichTextEditorInitialized(false) {}
 
  public:
   virtual WidgetKeyboardEvent* AsKeyboardEvent() override { return this; }
@@ -168,13 +161,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
         mCharCode(0),
         mPseudoCharCode(0),
         mLocation(eKeyLocationStandard),
-        mUniqueId(0)
-#ifdef XP_MACOSX
-        ,
-        mNativeModifierFlags(0),
-        mNativeKeyCode(0)
-#endif  
-        ,
+        mUniqueId(0),
         mKeyNameIndex(KEY_NAME_INDEX_Unidentified),
         mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN),
         mIsRepeat(false),
@@ -385,15 +372,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
   
   nsString mCodeValue;
 
-#ifdef XP_MACOSX
   
-  nsString mNativeCharacters;
-  nsString mNativeCharactersIgnoringModifiers;
-  
-  
-  nsString mPluginTextEventString;
-#endif  
-
   
   void* mNativeKeyEvent;
   
@@ -413,12 +392,6 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
   
   
   uint32_t mUniqueId;
-
-#ifdef XP_MACOSX
-  
-  uint32_t mNativeModifierFlags;
-  uint16_t mNativeKeyCode;
-#endif  
 
   
   KeyNameIndex mKeyNameIndex;
@@ -703,14 +676,6 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
     
     mNativeKeyEvent = nullptr;
     mUniqueId = aEvent.mUniqueId;
-#ifdef XP_MACOSX
-    mNativeKeyCode = aEvent.mNativeKeyCode;
-    mNativeModifierFlags = aEvent.mNativeModifierFlags;
-    mNativeCharacters.Assign(aEvent.mNativeCharacters);
-    mNativeCharactersIgnoringModifiers.Assign(
-        aEvent.mNativeCharactersIgnoringModifiers);
-    mPluginTextEventString.Assign(aEvent.mPluginTextEventString);
-#endif
     mIsSynthesizedByTIP = aEvent.mIsSynthesizedByTIP;
     mMaybeSkippableInRemoteProcess = aEvent.mMaybeSkippableInRemoteProcess;
     mUseLegacyKeyCodeAndCharCodeValues =

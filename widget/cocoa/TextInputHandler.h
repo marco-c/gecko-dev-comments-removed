@@ -825,7 +825,7 @@ class TextInputHandlerBase : public TextEventDispatcherListener {
 
 
 
-  static bool IsNormalCharInputtingEvent(const WidgetKeyboardEvent& aKeyEvent);
+  static bool IsNormalCharInputtingEvent(NSEvent* aNativeEvent);
 
   
 
