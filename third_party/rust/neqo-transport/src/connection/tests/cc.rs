@@ -302,11 +302,11 @@ fn cc_cong_avoidance_recovery_period_to_cong_avoidance() {
     
     
     let mut expected_cwnd = client.loss_recovery.cwnd();
+    
+    let (mut c_tx_dgrams, next_now) = fill_cwnd(&mut client, 0, now);
+    now = next_now;
     for i in 0..5 {
         qinfo!("iteration {}", i);
-        
-        let (mut c_tx_dgrams, next_now) = fill_cwnd(&mut client, 0, now);
-        now = next_now;
 
         let c_tx_size: usize = c_tx_dgrams.iter().map(|d| d.len()).sum();
         qinfo!(
@@ -318,20 +318,33 @@ fn cc_cong_avoidance_recovery_period_to_cong_avoidance() {
 
         
         
+        let mut next_c_tx_dgrams: Vec<Datagram> = Vec::new();
+
+        
+        
         
         let most = c_tx_dgrams.len() - MAX_UNACKED_PKTS - 1;
         let s_tx_dgram = ack_bytes(&mut server, 0, c_tx_dgrams.drain(..most), now);
         for dgram in s_tx_dgram {
             assert_eq!(client.loss_recovery.cwnd(), expected_cwnd);
             client.process_input(dgram, now);
+            
+            let (mut new_pkts, next_now) = fill_cwnd(&mut client, 0, now);
+            now = next_now;
+            next_c_tx_dgrams.append(&mut new_pkts);
         }
         let s_tx_dgram = ack_bytes(&mut server, 0, c_tx_dgrams, now);
         for dgram in s_tx_dgram {
             assert_eq!(client.loss_recovery.cwnd(), expected_cwnd);
             client.process_input(dgram, now);
+            
+            let (mut new_pkts, next_now) = fill_cwnd(&mut client, 0, now);
+            now = next_now;
+            next_c_tx_dgrams.append(&mut new_pkts);
         }
         expected_cwnd += MAX_DATAGRAM_SIZE;
         assert_eq!(client.loss_recovery.cwnd(), expected_cwnd);
+        c_tx_dgrams = next_c_tx_dgrams;
     }
 }
 
@@ -495,13 +508,17 @@ fn pace() {
     }
     let gap = client.process_output(now).callback();
     assert_ne!(gap, Duration::new(0, 0));
-    for _ in PACING_BURST_SIZE..cwnd_packets(POST_HANDSHAKE_CWND) {
+    
+    for _ in PACING_BURST_SIZE..cwnd_packets(POST_HANDSHAKE_CWND) - 1 {
         assert_eq!(client.process_output(now).callback(), gap);
         now += gap;
         let dgram = client.process_output(now).dgram();
         assert!(dgram.is_some());
         count += 1;
     }
+    let dgram = client.process_output(now).dgram();
+    assert!(dgram.is_some());
+    count += 1;
     assert_eq!(count, cwnd_packets(POST_HANDSHAKE_CWND));
     let fin = client.process_output(now).callback();
     assert_ne!(fin, Duration::new(0, 0));
