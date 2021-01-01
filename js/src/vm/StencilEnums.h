@@ -276,6 +276,9 @@ enum class MutableScriptFlagsEnum : uint32_t {
   SpewEnabled = 1 << 15,
 
   
+  NeedsFinalWarmUpCount = 1 << 16,
+
+  
   
   
 
@@ -283,34 +286,34 @@ enum class MutableScriptFlagsEnum : uint32_t {
   
   
   
-  BaselineDisabled = 1 << 16,
-  IonDisabled = 1 << 17,
+  BaselineDisabled = 1 << 17,
+  IonDisabled = 1 << 18,
 
   
-  FailedBoundsCheck = 1 << 18,
+  FailedBoundsCheck = 1 << 19,
 
   
-  FailedShapeGuard = 1 << 19,
+  FailedShapeGuard = 1 << 20,
 
   
-  HadLICMInvalidation = 1 << 20,
-
-  
-  
-  HadEagerTruncationBailout = 1 << 21,
+  HadLICMInvalidation = 1 << 21,
 
   
   
-  Uninlineable = 1 << 22,
+  HadEagerTruncationBailout = 1 << 22,
 
   
-  InvalidatedIdempotentCache = 1 << 23,
+  
+  Uninlineable = 1 << 23,
 
   
-  FailedLexicalCheck = 1 << 24,
+  InvalidatedIdempotentCache = 1 << 24,
 
   
-  HadSpeculativePhiBailout = 1 << 25,
+  FailedLexicalCheck = 1 << 25,
+
+  
+  HadSpeculativePhiBailout = 1 << 26,
 };
 
 }  
