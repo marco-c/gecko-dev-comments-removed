@@ -14,6 +14,7 @@
 #include "nsWaylandDisplay.h"
 #include "nsWindow.h"
 #include "WindowSurface.h"
+#include "mozilla/Mutex.h"
 
 #define BACK_BUFFER_NUM 3
 
@@ -145,7 +146,7 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   
-  void CommitWaylandBuffer();
+  void FlushPendingCommits();
 
   RefPtr<nsWaylandDisplay> GetWaylandDisplay() { return mWaylandDisplay; };
 
@@ -180,6 +181,7 @@ class WindowSurfaceWayland : public WindowSurface {
 
   void DrawDelayedImageCommits(gfx::DrawTarget* aDrawTarget,
                                LayoutDeviceIntRegion& aWaylandBufferDamage);
+  void FlushPendingCommitsInternal();
 
   
   nsWindow* mWindow;
@@ -256,8 +258,8 @@ class WindowSurfaceWayland : public WindowSurface {
   bool mSmoothRendering;
 
   bool mIsMainThread;
-
   gint mSurfaceReadyTimerID;
+  mozilla::Mutex mSurfaceLock;
 };
 
 }  
