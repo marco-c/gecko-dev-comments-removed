@@ -99,65 +99,6 @@ add_task(async function emptySearch() {
   });
 });
 
-add_task(async function emptySearch_withHistory_noRestyle() {
-  
-  await PlacesTestUtils.addVisits([
-    `http://mochi.test/`,
-    
-    `http://mochi.test/redirect`,
-    
-    {
-      uri: `http://mochi.test/notitle`,
-      title: "",
-    },
-    {
-      uri: `http://mochi.test/target`,
-      transition: PlacesUtils.history.TRANSITIONS.REDIRECT_TEMPORARY,
-      referrer: `http://mochi.test/redirect`,
-    },
-  ]);
-  await BrowserTestUtils.withNewTab("about:robots", async function(browser) {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.urlbar.update2.emptySearchBehavior", 2],
-        ["browser.urlbar.update2.restyleBrowsingHistoryAsSearch", false],
-        
-        
-        ["browser.urlbar.matchBuckets", "general:5,suggestion:Infinity"],
-      ],
-    });
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: "",
-    });
-    await UrlbarTestUtils.enterSearchMode(window);
-    Assert.equal(gURLBar.value, "", "Urlbar value should be cleared.");
-    
-    
-    await checkResults([
-      ...expectedFormHistoryResults,
-      {
-        heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-        url: `http://mochi.test/target`,
-      },
-      {
-        heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-        url: `http://mochi.test/`,
-      },
-    ]);
-
-    await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
-    await UrlbarTestUtils.promisePopupClose(window);
-    await SpecialPowers.popPrefEnv();
-  });
-
-  await PlacesUtils.history.clear();
-});
-
 add_task(async function emptySearch_withRestyledHistory() {
   
   await PlacesTestUtils.addVisits([
@@ -176,10 +117,7 @@ add_task(async function emptySearch_withRestyledHistory() {
   ]);
   await BrowserTestUtils.withNewTab("about:robots", async function(browser) {
     await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.urlbar.update2.emptySearchBehavior", 2],
-        ["browser.urlbar.update2.restyleBrowsingHistoryAsSearch", true],
-      ],
+      set: [["browser.urlbar.update2.emptySearchBehavior", 2]],
     });
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -234,7 +172,6 @@ add_task(async function emptySearch_withRestyledHistory_noSearchHistory() {
     await SpecialPowers.pushPrefEnv({
       set: [
         ["browser.urlbar.update2.emptySearchBehavior", 2],
-        ["browser.urlbar.update2.restyleBrowsingHistoryAsSearch", true],
         ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
       ],
     });

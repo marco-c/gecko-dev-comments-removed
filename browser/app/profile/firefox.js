@@ -373,11 +373,6 @@ pref("browser.urlbar.shortcuts.history", true);
 
 pref("browser.urlbar.update2.oneOffsRefresh", true);
 
-
-
-
-pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", true);
-
 pref("browser.urlbar.eventTelemetry.enabled", false);
 
 
