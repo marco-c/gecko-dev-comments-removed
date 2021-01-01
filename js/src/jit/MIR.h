@@ -11662,6 +11662,22 @@ class MMaybeExtractAwaitValue : public MBinaryInstruction,
   NAMED_OPERANDS((0, value), (1, canSkip))
 };
 
+class MIncrementWarmUpCounter : public MNullaryInstruction {
+ private:
+  JSScript* script_;
+
+  explicit MIncrementWarmUpCounter(JSScript* script)
+      : MNullaryInstruction(classOpcode), script_(script) {}
+
+ public:
+  INSTRUCTION_HEADER(IncrementWarmUpCounter)
+  TRIVIAL_NEW_WRAPPERS
+
+  JSScript* script() const { return script_; }
+
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
 
 
 
