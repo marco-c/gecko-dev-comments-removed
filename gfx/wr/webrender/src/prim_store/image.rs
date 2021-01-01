@@ -210,17 +210,17 @@ impl ImageData {
                                     kind: RenderTaskCacheKeyKind::Image(image_cache_key),
                                 },
                                 frame_state.gpu_cache,
-                                frame_state.render_tasks,
+                                frame_state.rg_builder,
                                 None,
                                 image_properties.descriptor.is_opaque(),
-                                |render_tasks| {
+                                |rg_builder| {
                                     
                                     
                                     
                                     
                                     let cache_to_target_task_id = RenderTask::new_scaling_with_padding(
                                         BlitSource::Image { key: image_cache_key },
-                                        render_tasks,
+                                        rg_builder,
                                         target_kind,
                                         *size,
                                         padding,
@@ -229,7 +229,7 @@ impl ImageData {
                                     
                                     
                                     
-                                    render_tasks.add().init(RenderTask::new_blit(
+                                    rg_builder.add().init(RenderTask::new_blit(
                                         *size,
                                         BlitSource::RenderTask {
                                             task_id: cache_to_target_task_id,
