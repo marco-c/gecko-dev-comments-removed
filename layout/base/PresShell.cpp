@@ -3773,11 +3773,11 @@ void PresShell::DispatchSynthMouseMove(WidgetGUIEvent* aEvent) {
 }
 
 void PresShell::ClearMouseCaptureOnView(nsView* aView) {
-  if (sCapturingContentInfo.mContent) {
+  if (nsIContent* capturingContent = GetCapturingContent()) {
     if (aView) {
       
       
-      nsIFrame* frame = sCapturingContentInfo.mContent->GetPrimaryFrame();
+      nsIFrame* frame = capturingContent->GetPrimaryFrame();
       if (frame) {
         nsView* view = frame->GetClosestView();
         
@@ -3785,10 +3785,10 @@ void PresShell::ClearMouseCaptureOnView(nsView* aView) {
         if (view) {
           do {
             if (view == aView) {
-              sCapturingContentInfo.mContent = nullptr;
+              ReleaseCapturingContent();
               
               
-              sCapturingContentInfo.mAllowed = false;
+              AllowMouseCapture(false);
               break;
             }
 
@@ -3800,38 +3800,39 @@ void PresShell::ClearMouseCaptureOnView(nsView* aView) {
       }
     }
 
-    sCapturingContentInfo.mContent = nullptr;
+    ReleaseCapturingContent();
   }
 
   
   
   
-  sCapturingContentInfo.mAllowed = false;
+  AllowMouseCapture(false);
 }
 
 void PresShell::ClearMouseCapture(nsIFrame* aFrame) {
-  if (!sCapturingContentInfo.mContent) {
-    sCapturingContentInfo.mAllowed = false;
+  nsIContent* capturingContent = GetCapturingContent();
+  if (!capturingContent) {
+    AllowMouseCapture(false);
     return;
   }
 
   
   if (!aFrame) {
-    sCapturingContentInfo.mContent = nullptr;
-    sCapturingContentInfo.mAllowed = false;
+    ReleaseCapturingContent();
+    AllowMouseCapture(false);
     return;
   }
 
-  nsIFrame* capturingFrame = sCapturingContentInfo.mContent->GetPrimaryFrame();
+  nsIFrame* capturingFrame = capturingContent->GetPrimaryFrame();
   if (!capturingFrame) {
-    sCapturingContentInfo.mContent = nullptr;
-    sCapturingContentInfo.mAllowed = false;
+    ReleaseCapturingContent();
+    AllowMouseCapture(false);
     return;
   }
 
   if (nsLayoutUtils::IsAncestorFrameCrossDoc(aFrame, capturingFrame)) {
-    sCapturingContentInfo.mContent = nullptr;
-    sCapturingContentInfo.mAllowed = false;
+    ReleaseCapturingContent();
+    AllowMouseCapture(false);
   }
 }
 
@@ -6423,7 +6424,8 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
 }
 
 
-void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags) {
+void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
+                                    WidgetEvent* aEvent) {
   
   
   if (!aContent && sCapturingContentInfo.mPointerLock &&
@@ -6432,6 +6434,7 @@ void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags) {
   }
 
   sCapturingContentInfo.mContent = nullptr;
+  sCapturingContentInfo.mRemoteTarget = nullptr;
 
   
   
@@ -6439,6 +6442,14 @@ void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags) {
       sCapturingContentInfo.mAllowed || (aFlags & CaptureFlags::PointerLock)) {
     if (aContent) {
       sCapturingContentInfo.mContent = aContent;
+    }
+    if (aEvent) {
+      MOZ_ASSERT(XRE_IsParentProcess());
+      MOZ_ASSERT(aEvent->mMessage == eMouseDown);
+      MOZ_ASSERT(aEvent->HasBeenPostedToRemoteProcess());
+      sCapturingContentInfo.mRemoteTarget =
+          BrowserParent::GetLastMouseRemoteTarget();
+      MOZ_ASSERT(sCapturingContentInfo.mRemoteTarget);
     }
     
     
