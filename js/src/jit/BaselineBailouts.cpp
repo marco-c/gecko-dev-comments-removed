@@ -2023,7 +2023,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
 
     case BailoutKind::EagerTruncation:
       
-      MOZ_ASSERT(!outerScript->hadEagerTruncationBailout());
       outerScript->setHadEagerTruncationBailout();
       InvalidateAfterBailout(cx, outerScript, "eager range analysis failure");
       break;
