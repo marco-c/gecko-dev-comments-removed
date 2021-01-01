@@ -719,19 +719,6 @@ static bool BlockComputesConstant(MBasicBlock* block, MDefinition* value,
 
 
 
-
-
-static bool IsPhiRedudantFilter(MPhi* phi) {
-  
-  if (phi->operandIfRedundant()) {
-    return true;
-  }
-
-  return false;
-}
-
-
-
 static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
                               MPhi** pphi, MTest** ptest) {
   *pphi = nullptr;
@@ -774,15 +761,9 @@ static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
 
   for (MPhiIterator iter = phiBlock->phisBegin(); iter != phiBlock->phisEnd();
        ++iter) {
-    if (*iter == phi) {
-      continue;
+    if (*iter != phi) {
+      return false;
     }
-
-    if (IsPhiRedudantFilter(*iter)) {
-      continue;
-    }
-
-    return false;
   }
 
   if (phiBlock != testBlock && !testBlock->phisEmpty()) {
@@ -944,23 +925,6 @@ static bool MaybeFoldConditionBlock(MIRGraph& graph,
       phi->getOperand(phiBlock->indexForPredecessor(falseBranch));
 
   
-
-  
-  for (MPhiIterator iter = phiBlock->phisBegin(); iter != phiBlock->phisEnd();
-       ++iter) {
-    if (*iter == phi) {
-      continue;
-    }
-
-    MOZ_ASSERT(IsPhiRedudantFilter(*iter));
-    MDefinition* redundant = (*iter)->operandIfRedundant();
-
-    if (!redundant) {
-      redundant = (*iter)->getOperand(0);
-    }
-
-    (*iter)->replaceAllUsesWith(redundant);
-  }
 
   
   phiBlock->discardPhi(*phiBlock->phisBegin());
