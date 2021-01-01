@@ -924,9 +924,13 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
   Header& header = GetHeader();
 
   Family* families = Families();
+  if (!families) {
+    return nullptr;
+  }
+
   size_t match;
-  if (families && BinarySearchIf(families, 0, header.mFamilyCount,
-                                 FamilyNameComparator(this, aName), &match)) {
+  if (BinarySearchIf(families, 0, header.mFamilyCount,
+                     FamilyNameComparator(this, aName), &match)) {
     return &families[match];
   }
 
@@ -935,11 +939,11 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
   }
 
   if (header.mAliasCount) {
-    families = AliasFamilies();
+    Family* aliases = AliasFamilies();
     size_t match;
-    if (families && BinarySearchIf(families, 0, header.mAliasCount,
-                                   FamilyNameComparator(this, aName), &match)) {
-      return &families[match];
+    if (aliases && BinarySearchIf(aliases, 0, header.mAliasCount,
+                                  FamilyNameComparator(this, aName), &match)) {
+      return &aliases[match];
     }
   }
 
@@ -961,38 +965,49 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
       pfl->mLocalNameTable.Clear();
       return nullptr;
     }
-    const nsLiteralCString kStyleSuffixes[] = {" book"_ns,   " medium"_ns,
-                                               " normal"_ns, " regular"_ns,
-                                               " roman"_ns,  " upright"_ns};
-    for (const auto& styleName : kStyleSuffixes) {
-      if (StringEndsWith(aName, styleName)) {
-        
-        
-        nsAutoCString strippedName(aName.BeginReading(),
-                                   aName.Length() - styleName.Length());
-        families = Families();
-        if (families &&
-            BinarySearchIf(families, 0, header.mFamilyCount,
-                           FamilyNameComparator(this, strippedName), &match)) {
-          
-          
-          
-          
-          Family* candidateFamily = &families[match];
-          if (pfl->mAliasTable.Lookup(aName)) {
-            return candidateFamily;
-          }
-          
-          
-          
-          
-          
-          pfl->ReadFaceNamesForFamily(candidateFamily, false);
-          if (pfl->mAliasTable.Lookup(aName)) {
-            return candidateFamily;
-          }
-        }
+
+    
+    
+    if (auto lookup = pfl->mAliasTable.Lookup(aName)) {
+      return FindFamily(lookup.Data()->mBaseFamily, true);
+    }
+
+    
+    
+    const char* data = aName.BeginReading();
+    int32_t index = aName.Length();
+    while (--index > 0) {
+      if (data[index] == ' ') {
         break;
+      }
+    }
+    if (index <= 0) {
+      return nullptr;
+    }
+    nsAutoCString base(Substring(aName, 0, index));
+    if (BinarySearchIf(families, 0, header.mFamilyCount,
+                       FamilyNameComparator(this, base), &match)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      Family* baseFamily = &families[match];
+      pfl->ReadFaceNamesForFamily(baseFamily, false);
+      if (auto lookup = pfl->mAliasTable.Lookup(aName)) {
+        if (lookup.Data()->mFaces.Length() != baseFamily->NumFaces()) {
+          
+          
+          
+          
+          
+          
+          pfl->InitOtherFamilyNames( true);
+        }
+        return baseFamily;
       }
     }
   }
