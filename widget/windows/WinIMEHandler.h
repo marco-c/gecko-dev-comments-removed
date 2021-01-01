@@ -154,12 +154,6 @@ class IMEHandler final {
   
 
 
-  static void DefaultProcOfPluginEvent(nsWindow* aWindow,
-                                       const NPEvent* aPluginEvent);
-
-  
-
-
   static void OnKeyboardLayoutChanged();
 
 #ifdef DEBUG

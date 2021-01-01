@@ -686,13 +686,6 @@ void PuppetWidget::SetPluginFocused(bool& aFocused) {
   }
 }
 
-void PuppetWidget::DefaultProcOfPluginEvent(const WidgetPluginEvent& aEvent) {
-  if (!mBrowserChild) {
-    return;
-  }
-  mBrowserChild->SendDefaultProcOfPluginEvent(aEvent);
-}
-
 
 
 bool PuppetWidget::HaveValidInputContextCache() const {

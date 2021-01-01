@@ -1871,12 +1871,6 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void DefaultProcOfPluginEvent(
-      const mozilla::WidgetPluginEvent& aEvent) = 0;
-
-  
-
-
   virtual void EnableIMEForPlugin(bool aEnable) {}
 
   

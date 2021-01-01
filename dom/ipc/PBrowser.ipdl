@@ -405,11 +405,6 @@ parent:
     
 
 
-    async DefaultProcOfPluginEvent(WidgetPluginEvent aEvent);
-
-    
-
-
 
     async RequestFocus(bool canRaise, CallerType aCallerType);
 
