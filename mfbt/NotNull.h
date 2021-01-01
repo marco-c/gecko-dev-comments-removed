@@ -115,6 +115,8 @@ class MovingNotNull;
 
 
 
+
+
 template <typename T>
 class NotNull {
   template <typename U>
