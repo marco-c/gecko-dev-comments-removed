@@ -2027,7 +2027,6 @@ BOOL PluginInstanceChild::ImmAssociateContextExProc(HWND hWND, HIMC hImc,
     
     
     self->mLastEnableIMEState = !!(dwFlags & IACE_DEFAULT);
-    self->SendEnableIME(self->mLastEnableIMEState);
   }
   return sImm32ImmAssociateContextExStub(hWND, hImc, dwFlags);
 }
@@ -2112,11 +2111,7 @@ int16_t PluginInstanceChild::WinlessHandleEvent(NPEvent& event) {
   
   
 
-  if (event.event == WM_SETFOCUS) {
-    
-    
-    SendEnableIME(mLastEnableIMEState);
-  } else if (event.event == WM_KILLFOCUS) {
+  if (event.event == WM_KILLFOCUS) {
     
     
     mLastEnableIMEState = true;

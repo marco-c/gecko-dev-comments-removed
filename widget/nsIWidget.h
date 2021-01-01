@@ -1864,11 +1864,6 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void EnableIMEForPlugin(bool aEnable) {}
-
-  
-
-
 
 
 

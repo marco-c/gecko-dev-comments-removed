@@ -259,11 +259,6 @@ parent:
   
   
   
-  async EnableIME(bool aEnable);
-
-  
-  
-  
   
   
   async OnWindowedPluginKeyEvent(NativeEventData aKeyEventData);

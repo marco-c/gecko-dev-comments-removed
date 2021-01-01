@@ -1210,23 +1210,6 @@ nsIWidgetListener* PuppetWidget::GetCurrentWidgetListener() {
   return mAttachedWidgetListener;
 }
 
-void PuppetWidget::EnableIMEForPlugin(bool aEnable) {
-  if (!mBrowserChild) {
-    return;
-  }
-
-  
-  if (NS_WARN_IF(HaveValidInputContextCache() &&
-                 mInputContext.mIMEState.mEnabled != IMEEnabled::Unknown &&
-                 mInputContext.mIMEState.mEnabled != IMEEnabled::Plugin)) {
-    return;
-  }
-
-  
-  
-  mBrowserChild->SendEnableIMEForPlugin(aEnable);
-}
-
 void PuppetWidget::ZoomToRect(const uint32_t& aPresShellId,
                               const ScrollableLayerGuid::ViewID& aViewId,
                               const CSSRect& aRect, const uint32_t& aFlags) {
