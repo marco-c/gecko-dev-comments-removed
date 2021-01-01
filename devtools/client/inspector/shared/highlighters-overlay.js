@@ -124,16 +124,6 @@ class HighlightersOverlay {
     this.gridHighlighters = new Map();
     
     
-    this.parentGridHighlighters = new Map();
-    
-    
-    this.extraGridHighlighterPool = [];
-
-    
-    this.subgridToParentMap = new Map();
-
-    
-    
     
     this.isGridHighlighterTimerActive = false;
 
@@ -865,220 +855,6 @@ class HighlightersOverlay {
 
 
 
-
-
-
-
-
-
-  async showGridHighlighter(node, options, trigger) {
-    
-    
-    if (!this.gridHighlighters.has(node)) {
-      if (this.maxGridHighlighters === 1) {
-        
-        
-        for (const nodeFront of this.gridHighlighters.keys()) {
-          await this.hideGridHighlighter(nodeFront);
-        }
-      } else if (this.gridHighlighters.size === this.maxGridHighlighters) {
-        
-        
-        return;
-      }
-    } else if (this.parentGridHighlighters.has(node)) {
-      
-      
-      await this.hideGridHighlighter(node);
-    }
-
-    if (node.displayType === "subgrid") {
-      
-      
-      const parentGridNode = await this.walker.getParentGridNode(node);
-      this.subgridToParentMap.set(node, parentGridNode);
-      await this.showParentGridHighlighter(parentGridNode);
-    }
-
-    const highlighter = await this._getGridHighlighter(node);
-    if (!highlighter) {
-      return;
-    }
-
-    options = Object.assign({}, options, this.getGridHighlighterSettings(node));
-
-    const isShown = await highlighter.show(node, options);
-    if (!isShown) {
-      return;
-    }
-
-    this._toggleRuleViewIcon(node, true, ".ruleview-grid");
-
-    if (!this.isGridHighlighterTimerActive) {
-      this.telemetry.toolOpened(
-        "grid_highlighter",
-        this.inspector.toolbox.sessionId,
-        this
-      );
-      this.isGridHighlighterTimerActive = true;
-    }
-
-    if (trigger === "grid") {
-      this.telemetry.scalarAdd("devtools.grid.gridinspector.opened", 1);
-    } else if (trigger === "markup") {
-      this.telemetry.scalarAdd("devtools.markup.gridinspector.opened", 1);
-    } else if (trigger === "rule") {
-      this.telemetry.scalarAdd("devtools.rules.gridinspector.opened", 1);
-    }
-
-    try {
-      
-      const { url } = this.target;
-      const selectors = await node.getAllSelectors();
-      this.state.grids.set(node, { selectors, options, url });
-
-      
-      
-      this.emit("grid-highlighter-shown", node, options);
-
-      
-      
-      this.emit("highlighter-shown", {
-        type: TYPES.GRID,
-        nodeFront: node,
-        options,
-      });
-    } catch (e) {
-      this._handleRejection(e);
-    }
-  }
-
-  
-
-
-
-
-
-  async showParentGridHighlighter(node) {
-    if (this.gridHighlighters.has(node)) {
-      
-      return;
-    }
-
-    const highlighter = await this._getGridHighlighter(node, true);
-    if (!highlighter) {
-      return;
-    }
-
-    await highlighter.show(node, {
-      ...this.getGridHighlighterSettings(node),
-      globalAlpha: SUBGRID_PARENT_ALPHA,
-    });
-  }
-
-  
-
-
-
-
-
-  async hideGridHighlighter(node) {
-    let highlighter;
-
-    if (this.gridHighlighters.has(node)) {
-      highlighter = this.gridHighlighters.get(node);
-      this.gridHighlighters.delete(node);
-    } else if (this.parentGridHighlighters.has(node)) {
-      highlighter = this.parentGridHighlighters.get(node);
-      this.parentGridHighlighters.delete(node);
-    } else {
-      return;
-    }
-
-    
-    
-    await highlighter.hide();
-    this.extraGridHighlighterPool.push(highlighter);
-    this.state.grids.delete(node);
-
-    
-    
-    if (this.subgridToParentMap.has(node)) {
-      const parentGridNode = this.subgridToParentMap.get(node);
-      this.subgridToParentMap.delete(node);
-      await this.hideParentGridHighlighter(parentGridNode);
-    }
-
-    
-    
-    
-    
-    for (const highlightedNode of this.gridHighlighters.keys()) {
-      const parentGridNode = await this.walker.getParentGridNode(
-        highlightedNode
-      );
-      if (node === parentGridNode) {
-        this.subgridToParentMap.set(highlightedNode, node);
-        await this.showParentGridHighlighter(node);
-        break;
-      }
-    }
-
-    this._toggleRuleViewIcon(node, false, ".ruleview-grid");
-
-    if (this.isGridHighlighterTimerActive && !this.gridHighlighters.size) {
-      this.telemetry.toolClosed(
-        "grid_highlighter",
-        this.inspector.toolbox.sessionId,
-        this
-      );
-      this.isGridHighlighterTimerActive = false;
-    }
-
-    
-    
-    this.emit("grid-highlighter-hidden", node);
-
-    
-    
-    this.emit("highlighter-hidden", {
-      type: TYPES.GRID,
-      nodeFront: node,
-    });
-  }
-
-  
-
-
-
-
-
-  async hideParentGridHighlighter(node) {
-    
-    
-    for (const parentGridNode of this.subgridToParentMap.values()) {
-      if (parentGridNode === node) {
-        
-        
-        return;
-      }
-    }
-
-    const highlighter = this.parentGridHighlighters.get(node);
-    if (highlighter) {
-      await highlighter.hide();
-      this.extraGridHighlighterPool.push(highlighter);
-    }
-    this.state.grids.delete(node);
-    this.parentGridHighlighters.delete(node);
-  }
-
-  
-
-
-
-
-
   async toggleGeometryHighlighter(node) {
     if (node == this.geometryEditorHighlighterShown) {
       await this.hideGeometryEditor();
@@ -1275,51 +1051,6 @@ class HighlightersOverlay {
     }
 
     this.highlighters[type] = highlighter;
-    return highlighter;
-  }
-
-  
-
-
-
-
-
-
-
-
-  async _getGridHighlighter(node, isParent) {
-    if (isParent && this.parentGridHighlighters.has(node)) {
-      return this.parentGridHighlighters.get(node);
-    } else if (this.gridHighlighters.has(node)) {
-      return this.gridHighlighters.get(node);
-    }
-
-    let highlighter;
-
-    
-    
-    if (this.extraGridHighlighterPool.length > 0) {
-      highlighter = this.extraGridHighlighterPool.pop();
-    } else {
-      try {
-        highlighter = await this.inspectorFront.getHighlighterByType(
-          "CssGridHighlighter"
-        );
-      } catch (e) {
-        this._handleRejection(e);
-      }
-    }
-
-    if (!highlighter) {
-      return null;
-    }
-
-    if (isParent) {
-      this.parentGridHighlighters.set(node, highlighter);
-    } else {
-      this.gridHighlighters.set(node, highlighter);
-    }
-
     return highlighter;
   }
 
@@ -1745,16 +1476,6 @@ class HighlightersOverlay {
     this.destroyEditors();
 
     
-    
-    for (const highlighter of this.gridHighlighters.values()) {
-      this.extraGridHighlighterPool.push(highlighter);
-    }
-
-    for (const highlighter of this.parentGridHighlighters.values()) {
-      this.extraGridHighlighterPool.push(highlighter);
-    }
-
-    
     for (const { highlighter, timer } of this._activeHighlighters.values()) {
       await highlighter.hide();
       clearTimeout(timer);
@@ -1763,8 +1484,6 @@ class HighlightersOverlay {
     this._activeHighlighters.clear();
     this._pendingHighlighters.clear();
     this.gridHighlighters.clear();
-    this.parentGridHighlighters.clear();
-    this.subgridToParentMap.clear();
 
     this.geometryEditorHighlighterShown = null;
     this.hoveredHighlighterShown = null;
@@ -1782,30 +1501,6 @@ class HighlightersOverlay {
     }
 
     this.editors = {};
-  }
-
-  
-
-
-  destroyGridHighlighters() {
-    for (const highlighter of this.gridHighlighters.values()) {
-      highlighter.finalize();
-    }
-
-    for (const highlighter of this.parentGridHighlighters.values()) {
-      highlighter.finalize();
-    }
-
-    for (const highlighter of this.extraGridHighlighterPool) {
-      highlighter.finalize();
-    }
-
-    this.gridHighlighters.clear();
-    this.parentGridHighlighters.clear();
-
-    this.gridHighlighters = null;
-    this.parentGridHighlighters = null;
-    this.extraGridHighlighterPool = null;
   }
 
   
@@ -1846,10 +1541,7 @@ class HighlightersOverlay {
     this.walker.off("display-change", this.onDisplayChange);
 
     this.destroyEditors();
-    this.destroyGridHighlighters();
     this.destroyHighlighters();
-
-    this.subgridToParentMap.clear();
 
     this._lastHovered = null;
 
@@ -1857,7 +1549,6 @@ class HighlightersOverlay {
     this.inspectorFront = null;
     this.state = null;
     this.store = null;
-    this.subgridToParentMap = null;
     this.target = null;
     this.telemetry = null;
     this.walker = null;
