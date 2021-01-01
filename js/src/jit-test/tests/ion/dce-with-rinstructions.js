@@ -1426,6 +1426,15 @@ function rbigintsub(i) {
     return i;
 }
 
+let uceFault_mul_bigint = eval(`(${uceFault})`.replace('uceFault', 'uceFault_mul_bigint'));
+function rbigintmul(i) {
+    var x = 2n * i;
+    if (uceFault_mul_bigint(i) || uceFault_mul_bigint(i))
+        assertEq(x, 198n  );
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
 for (j = 100 - max; j < 100; j++) {
     with({}){} 
     let i = j < 2 ? (Math.abs(j) % 50) + 2 : j;
@@ -1566,6 +1575,7 @@ for (j = 100 - max; j < 100; j++) {
     rsign_double(i);
     rbigintadd(BigInt(i));
     rbigintsub(BigInt(i));
+    rbigintmul(BigInt(i));
 }
 
 

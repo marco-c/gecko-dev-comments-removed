@@ -41,6 +41,19 @@ function bigIntSubBail(i) {
   if (i >= 99) bailout();
 }
 
+function bigIntMulBail(i) {
+  var x = [0n, maxBigInt][0 + (i >= 99)];
+
+  var a = x * 2n;
+
+  
+  
+  
+  resumeHere();
+
+  if (i >= 99) bailout();
+}
+
 
 eval(`(${resumeHere})`);
 
@@ -60,6 +73,15 @@ try {
 try {
   for (let i = 0; i < 100; i++) {
     bigIntSubBail(i);
+  }
+  throw new Error("missing exception");
+} catch (e) {
+  assertEq(e instanceof RangeError || e === "out of memory", true, String(e));
+}
+
+try {
+  for (let i = 0; i < 100; i++) {
+    bigIntMulBail(i);
   }
   throw new Error("missing exception");
 } catch (e) {
