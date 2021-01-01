@@ -1503,6 +1503,9 @@ void gfxMacPlatformFontList::LookupSystemFont(LookAndFeel::FontID aSystemFontID,
                                               nsACString& aSystemFontName,
                                               gfxFontStyle& aFontStyle) {
   
+  nsAutoreleasePool localPool;
+
+  
   NSFont* font = nullptr;
   char* systemFontName = nullptr;
   switch (aSystemFontID) {

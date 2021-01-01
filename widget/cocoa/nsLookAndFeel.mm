@@ -640,6 +640,8 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle&
     return true;
   }
 
+  
+
   nsAutoCString name;
   gfxPlatformMac::LookupSystemFont(aID, name, aFontStyle);
   aFontName.Append(NS_ConvertUTF8toUTF16(name));
