@@ -59,26 +59,13 @@ const TYPE_PDF = "application/pdf";
 
 const PREF_PDFJS_DISABLED = "pdfjs.disabled";
 
-const PREF_DISABLED_PLUGIN_TYPES = "plugin.disable_full_page_plugin_for_types";
-
 
 const PREF_CONTAINERS_EXTENSION = "privacy.userContext.extension";
-
-
-const PREF_SHOW_PLUGINS_IN_LIST = "browser.download.show_plugins_in_list";
-const PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS =
-  "browser.download.hide_plugins_without_extensions";
 
 
 const CONTAINERS_KEY = "privacy.containers";
 
 const AUTO_UPDATE_CHANGED_TOPIC = "auto-update-config-change";
-
-
-
-
-
-const kActionUsePlugin = 5;
 
 const ICON_URL_APP =
   AppConstants.platform == "linux"
@@ -723,8 +710,6 @@ var gMainPane = {
 
     
     
-    Services.prefs.addObserver(PREF_SHOW_PLUGINS_IN_LIST, this);
-    Services.prefs.addObserver(PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS, this);
     Services.obs.addObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
 
     setEventListener("filter", "command", gMainPane.filter);
@@ -1920,11 +1905,7 @@ var gMainPane = {
 
   destroy() {
     window.removeEventListener("unload", this);
-    Services.prefs.removeObserver(PREF_SHOW_PLUGINS_IN_LIST, this);
-    Services.prefs.removeObserver(PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS, this);
-
     Services.prefs.removeObserver(PREF_CONTAINERS_EXTENSION, this);
-
     Services.obs.removeObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
   },
 
@@ -1943,18 +1924,7 @@ var gMainPane = {
       
       
       if (!this._storingAction) {
-        
-        
-        if (
-          aData == PREF_SHOW_PLUGINS_IN_LIST ||
-          aData == PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS
-        ) {
-          await this._rebuildVisibleTypes();
-          await this._rebuildView();
-          await this._sortListView();
-        } else {
-          await this._rebuildView();
-        }
+        await this._rebuildView();
       }
     } else if (aTopic == AUTO_UPDATE_CHANGED_TOPIC) {
       if (aData != "true" && aData != "false") {
@@ -1979,7 +1949,6 @@ var gMainPane = {
 
   _loadData() {
     this._loadInternalHandlers();
-    this._loadPluginHandlers();
     this._loadApplicationHandlers();
   },
 
@@ -2010,49 +1979,6 @@ var gMainPane = {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _loadPluginHandlers() {
-    "use strict";
-
-    let mimeTypes = navigator.mimeTypes;
-
-    for (let mimeType of mimeTypes) {
-      let handlerInfoWrapper;
-      if (mimeType.type in this._handledTypes) {
-        handlerInfoWrapper = this._handledTypes[mimeType.type];
-      } else {
-        let wrappedHandlerInfo = gMIMEService.getFromTypeAndExtension(
-          mimeType.type,
-          null
-        );
-        handlerInfoWrapper = new HandlerInfoWrapper(
-          mimeType.type,
-          wrappedHandlerInfo
-        );
-        handlerInfoWrapper.handledOnlyByPlugin = true;
-        this._handledTypes[mimeType.type] = handlerInfoWrapper;
-      }
-      handlerInfoWrapper.pluginName = mimeType.enabledPlugin.name;
-    }
-  },
-
-  
-
-
   _loadApplicationHandlers() {
     for (let wrappedHandlerInfo of gHandlerService.enumerate()) {
       let type = wrappedHandlerInfo.type;
@@ -2064,8 +1990,6 @@ var gMainPane = {
         handlerInfoWrapper = new HandlerInfoWrapper(type, wrappedHandlerInfo);
         this._handledTypes[type] = handlerInfoWrapper;
       }
-
-      handlerInfoWrapper.handledOnlyByPlugin = false;
     }
   },
 
@@ -2105,13 +2029,6 @@ var gMainPane = {
     
     
     let visibleDescriptions = new Map();
-
-    
-    var showPlugins = Services.prefs.getBoolPref(PREF_SHOW_PLUGINS_IN_LIST);
-    var hidePluginsWithoutExtensions = Services.prefs.getBoolPref(
-      PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS
-    );
-
     for (let type in this._handledTypes) {
       
       
@@ -2119,27 +2036,6 @@ var gMainPane = {
       await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
 
       let handlerInfo = this._handledTypes[type];
-
-      
-      
-      
-      
-      
-      
-      
-      if (
-        hidePluginsWithoutExtensions &&
-        handlerInfo.handledOnlyByPlugin &&
-        handlerInfo.wrappedHandlerInfo instanceof Ci.nsIMIMEInfo &&
-        !handlerInfo.primaryExtension
-      ) {
-        continue;
-      }
-
-      
-      if (handlerInfo.handledOnlyByPlugin && !showPlugins) {
-        continue;
-      }
 
       
       this._visibleTypes.push(handlerInfo);
@@ -2418,21 +2314,6 @@ var gMainPane = {
     }
 
     
-    if (handlerInfo.pluginName) {
-      var pluginMenuItem = document.createXULElement("menuitem");
-      pluginMenuItem.setAttribute("action", kActionUsePlugin);
-      document.l10n.setAttributes(
-        pluginMenuItem,
-        "applications-use-plugin-in",
-        {
-          "plugin-name": handlerInfo.pluginName,
-        }
-      );
-      pluginMenuItem.setAttribute(APP_ICON_ATTR_NAME, "plugin");
-      menuPopup.appendChild(pluginMenuItem);
-    }
-
-    
     let canOpenWithOtherApp = true;
     if (AppConstants.platform == "win") {
       
@@ -2472,6 +2353,12 @@ var gMainPane = {
     if (handlerInfo.alwaysAskBeforeHandling) {
       menu.selectedItem = askMenuItem;
     } else {
+      
+      
+      
+      
+      const kActionUsePlugin = 5;
+
       switch (handlerInfo.preferredAction) {
         case Ci.nsIHandlerInfo.handleInternally:
           if (internalMenuItem) {
@@ -2509,7 +2396,7 @@ var gMainPane = {
           break;
         case kActionUsePlugin:
           
-          menu.selectedItem = pluginMenuItem || askMenuItem;
+          menu.selectedItem = askMenuItem;
           break;
         case Ci.nsIHandlerInfo.saveToDisk:
           menu.selectedItem = saveMenuItem;
@@ -2608,7 +2495,6 @@ var gMainPane = {
   
   
   
-  
   _storingAction: false,
 
   onSelectAction(aActionItem) {
@@ -2625,13 +2511,6 @@ var gMainPane = {
     var handlerInfo = this.selectedHandlerListItem.handlerInfoWrapper;
 
     let action = parseInt(aActionItem.getAttribute("action"));
-
-    
-    if (action == kActionUsePlugin) {
-      handlerInfo.enablePluginType();
-    } else if (handlerInfo.pluginName && !handlerInfo.isDisabledPluginType) {
-      handlerInfo.disablePluginType();
-    }
 
     
     
@@ -2654,10 +2533,6 @@ var gMainPane = {
     handlerInfo.preferredAction = action;
 
     handlerInfo.store();
-
-    
-    
-    handlerInfo.handledOnlyByPlugin = false;
 
     
     this.selectedHandlerListItem.refreshAction();
@@ -3308,27 +3183,6 @@ class HandlerInfoWrapper {
     this.type = type;
     this.wrappedHandlerInfo = handlerInfo;
     this.disambiguateDescription = false;
-
-    
-    
-    
-    
-    
-    this.pluginName = "";
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.handledOnlyByPlugin = false;
   }
 
   get description() {
@@ -3390,9 +3244,6 @@ class HandlerInfoWrapper {
           return "handleInternally";
         }
         break;
-
-      case kActionUsePlugin:
-        return "plugin";
     }
 
     return "";
@@ -3497,11 +3348,6 @@ class HandlerInfoWrapper {
   
   get preferredAction() {
     
-    if (this.pluginName && !this.isDisabledPluginType) {
-      return kActionUsePlugin;
-    }
-
-    
     
     
     
@@ -3522,36 +3368,10 @@ class HandlerInfoWrapper {
   }
 
   set preferredAction(aNewValue) {
-    
-    
-    
-    if (
-      aNewValue == kActionUsePlugin &&
-      this.preferredAction != Ci.nsIHandlerInfo.saveToDisk
-    ) {
-      aNewValue = Ci.nsIHandlerInfo.saveToDisk;
-    }
-
-    
-    
-    
-    
-
-    if (aNewValue != kActionUsePlugin) {
-      this.wrappedHandlerInfo.preferredAction = aNewValue;
-    }
+    this.wrappedHandlerInfo.preferredAction = aNewValue;
   }
 
   get alwaysAskBeforeHandling() {
-    
-    
-    
-    
-    
-    if (this.pluginName && this.handledOnlyByPlugin) {
-      return false;
-    }
-
     
     
     
@@ -3573,10 +3393,6 @@ class HandlerInfoWrapper {
   }
 
   
-  
-  
-  
-  
   get primaryExtension() {
     try {
       if (
@@ -3588,67 +3404,6 @@ class HandlerInfoWrapper {
     } catch (ex) {}
 
     return null;
-  }
-
-  get isDisabledPluginType() {
-    return this._getDisabledPluginTypes().includes(this.type);
-  }
-
-  _getDisabledPluginTypes() {
-    var types = "";
-
-    if (Services.prefs.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES)) {
-      types = Services.prefs.getCharPref(PREF_DISABLED_PLUGIN_TYPES);
-    }
-
-    
-    
-    if (types != "") {
-      return types.split(",");
-    }
-
-    return [];
-  }
-
-  disablePluginType() {
-    var disabledPluginTypes = this._getDisabledPluginTypes();
-
-    if (!disabledPluginTypes.includes(this.type)) {
-      disabledPluginTypes.push(this.type);
-    }
-
-    Services.prefs.setCharPref(
-      PREF_DISABLED_PLUGIN_TYPES,
-      disabledPluginTypes.join(",")
-    );
-
-    
-    Services.catMan.deleteCategoryEntry(
-      "Gecko-Content-Viewers",
-      this.type,
-      false
-    );
-  }
-
-  enablePluginType() {
-    var disabledPluginTypes = this._getDisabledPluginTypes();
-
-    var type = this.type;
-    disabledPluginTypes = disabledPluginTypes.filter(v => v != type);
-
-    Services.prefs.setCharPref(
-      PREF_DISABLED_PLUGIN_TYPES,
-      disabledPluginTypes.join(",")
-    );
-
-    
-    Services.catMan.addCategoryEntry(
-      "Gecko-Content-Viewers",
-      this.type,
-      "@mozilla.org/content/plugin/document-loader-factory;1",
-      false,
-      true
-    );
   }
 
   store() {
