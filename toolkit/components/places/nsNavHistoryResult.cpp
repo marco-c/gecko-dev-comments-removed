@@ -2186,10 +2186,8 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
 
 
 
-NS_IMETHODIMP
-nsNavHistoryQueryResultNode::OnTitleChanged(nsIURI* aURI,
-                                            const nsAString& aPageTitle,
-                                            const nsACString& aGUID) {
+nsresult nsNavHistoryQueryResultNode::OnTitleChanged(
+    nsIURI* aURI, const nsAString& aPageTitle, const nsACString& aGUID) {
   if (!mExpanded) {
     
     
@@ -4217,15 +4215,6 @@ void nsNavHistoryResult::HandlePlacesEvent(const PlacesEventSequence& aEvents) {
       }
     }
   }
-}
-
-NS_IMETHODIMP
-nsNavHistoryResult::OnTitleChanged(nsIURI* aURI, const nsAString& aPageTitle,
-                                   const nsACString& aGUID) {
-  NS_ENSURE_ARG(aURI);
-
-  ENUMERATE_HISTORY_OBSERVERS(OnTitleChanged(aURI, aPageTitle, aGUID));
-  return NS_OK;
 }
 
 NS_IMETHODIMP

@@ -348,12 +348,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
-  void NotifyTitleChange(nsIURI* aURI, const nsString& title,
-                         const nsACString& aGUID);
-
-  
-
-
   void NotifyFrecencyChanged(const nsACString& aSpec, int32_t aNewFrecency,
                              const nsACString& aGUID, bool aHidden,
                              PRTime aLastVisitDate);
