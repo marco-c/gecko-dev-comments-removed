@@ -518,6 +518,9 @@ class FirefoxLauncher implements ProductLauncher {
       'network.cookie.cookieBehavior': 0,
 
       
+      'network.cookie.sameSite.laxByDefault': false,
+
+      
       'network.http.prompt-temp-redirect': false,
 
       
