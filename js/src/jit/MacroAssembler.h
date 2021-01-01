@@ -875,7 +875,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
   inline void not32(Register reg) PER_SHARED_ARCH;
-  inline void notPtr(Register reg) PER_ARCH;
 
   inline void and32(Register src, Register dest) PER_SHARED_ARCH;
   inline void and32(Imm32 imm, Register dest) PER_SHARED_ARCH;
@@ -903,8 +902,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void xor32(Register src, Register dest) PER_SHARED_ARCH;
   inline void xor32(Imm32 imm, Register dest) PER_SHARED_ARCH;
-  inline void xor32(Imm32 imm, const Address& dest) PER_SHARED_ARCH;
-  inline void xor32(const Address& src, Register dest) PER_SHARED_ARCH;
 
   inline void xorPtr(Register src, Register dest) PER_ARCH;
   inline void xorPtr(Imm32 imm, Register dest) PER_ARCH;
@@ -991,12 +988,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void subDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
 
+  
   inline void mul32(Register rhs, Register srcDest) PER_SHARED_ARCH;
 
   inline void mul32(Register src1, Register src2, Register dest, Label* onOver)
       DEFINED_ON(arm64);
-
-  inline void mulPtr(Register rhs, Register srcDest) DEFINED_ON(x86, x64);
 
   inline void mul64(const Operand& src, const Register64& dest) DEFINED_ON(x64);
   inline void mul64(const Operand& src, const Register64& dest,
@@ -1183,8 +1179,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void rshift32(Register shift, Register srcDest) PER_SHARED_ARCH;
   inline void rshift32Arithmetic(Register shift,
                                  Register srcDest) PER_SHARED_ARCH;
-  inline void lshiftPtr(Register shift, Register srcDest) PER_ARCH;
-  inline void rshiftPtr(Register shift, Register srcDest) PER_ARCH;
 
   
   
@@ -1432,15 +1426,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branchNeg32(Condition cond, Register reg,
                           Label* label) PER_SHARED_ARCH;
 
-  inline void branchAddPtr(Condition cond, Register src, Register dest,
-                           Label* label) PER_SHARED_ARCH;
-
-  inline void branchSubPtr(Condition cond, Register src, Register dest,
-                           Label* label) PER_SHARED_ARCH;
-
-  inline void branchMulPtr(Condition cond, Register src, Register dest,
-                           Label* label) PER_SHARED_ARCH;
-
   inline void decBranchPtr(Condition cond, Register lhs, Imm32 rhs,
                            Label* label) PER_SHARED_ARCH;
 
@@ -1481,10 +1466,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branchLatin1String(Register string, Label* label);
   inline void branchTwoByteString(Register string, Label* label);
 
-  inline void branchIfBigIntIsNegative(Register bigInt, Label* label);
-  inline void branchIfBigIntIsNonNegative(Register bigInt, Label* label);
-  inline void branchIfBigIntIsZero(Register bigInt, Label* label);
-  inline void branchIfBigIntIsNonZero(Register bigInt, Label* label);
+  inline void branchIfNegativeBigInt(Register bigInt, Label* label);
 
   inline void branchTestFunctionFlags(Register fun, uint32_t flags,
                                       Condition cond, Label* label);
@@ -3693,11 +3675,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void addToCharPtr(Register chars, Register index, CharEncoding encoding);
 
-  
-
-
+ private:
   void loadBigIntDigits(Register bigInt, Register digits);
 
+ public:
   
 
 
@@ -3714,59 +3695,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
 
-
-
-  void loadBigInt(Register bigInt, Register dest, Label* fail);
-
-  
-
-
-
-
-  void loadBigIntNonZero(Register bigInt, Register dest, Label* fail);
-
-  
-
-
-
-
-  void loadBigIntAbsolute(Register bigInt, Register dest, Label* fail);
-
-  
-
-
-
-  void bigIntDigitToSignedPtr(Register bigInt, Register digit, Label* fail);
-
-  
-
-
   void initializeBigInt64(Scalar::Type type, Register bigInt, Register64 val);
-
-  
-
-
-
-  void initializeBigInt(Register bigInt, Register val);
-
-  
-
-
-  void initializeBigIntAbsolute(Register bigInt, Register val);
-
-  
-
-
-
-  void copyBigIntWithInlineDigits(Register src, Register dest, Register temp,
-                                  Label* fail, bool attemptNursery);
-
-  
-
-
-  void compareBigIntAndInt32(JSOp op, Register bigInt, Register int32,
-                             Register scratch1, Register scratch2,
-                             Label* ifTrue, Label* ifFalse);
 
   void loadJSContext(Register dest);
 

@@ -942,45 +942,6 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
   masm.Pop(WasmTlsReg);
 }
 
-void CodeGeneratorX86::emitBigIntDiv(LBigIntDiv* ins, Register dividend,
-                                     Register divisor, Register output,
-                                     Label* fail) {
-  
-
-  MOZ_ASSERT(dividend == eax);
-  MOZ_ASSERT(output == edx);
-
-  
-  masm.cdq();
-
-  masm.idiv(divisor);
-
-  
-  masm.newGCBigInt(output, divisor, fail, bigIntsCanBeInNursery());
-  masm.initializeBigInt(output, dividend);
-}
-
-void CodeGeneratorX86::emitBigIntMod(LBigIntMod* ins, Register dividend,
-                                     Register divisor, Register output,
-                                     Label* fail) {
-  
-
-  MOZ_ASSERT(dividend == eax);
-  MOZ_ASSERT(output == edx);
-
-  
-  masm.cdq();
-
-  masm.idiv(divisor);
-
-  
-  masm.movl(output, dividend);
-
-  
-  masm.newGCBigInt(output, divisor, fail, bigIntsCanBeInNursery());
-  masm.initializeBigInt(output, dividend);
-}
-
 void CodeGenerator::visitWasmSelectI64(LWasmSelectI64* lir) {
   MOZ_ASSERT(lir->mir()->type() == MIRType::Int64);
 
