@@ -3596,10 +3596,12 @@ void SamplerThread::Run() {
             
             
             auto state = localBuffer.GetState();
-            if (NS_WARN_IF(state.mClearedBlockCount !=
-                           previousState.mClearedBlockCount)) {
-              LOG("Stack sample too big for local storage, needed %u bytes",
-                  unsigned(state.mRangeEnd - previousState.mRangeEnd));
+            if (NS_WARN_IF(state.mFailedPutBytes !=
+                           previousState.mFailedPutBytes)) {
+              LOG("Stack sample too big for local storage, failed to store %u "
+                  "bytes",
+                  unsigned(state.mFailedPutBytes -
+                           previousState.mFailedPutBytes));
               
               
               CorePS::CoreBuffer().PutObjects(
