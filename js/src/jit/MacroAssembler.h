@@ -3726,6 +3726,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
 
+
+
+  void loadBigIntAbsolute(Register bigInt, Register dest, Label* fail);
+
+  
+
+
   void initializeBigInt64(Scalar::Type type, Register bigInt, Register64 val);
 
   
@@ -3733,6 +3740,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
 
   void initializeBigInt(Register bigInt, Register val);
+
+  
+
+
+  void initializeBigIntAbsolute(Register bigInt, Register val);
 
   
 

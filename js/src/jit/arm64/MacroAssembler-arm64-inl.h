@@ -1761,8 +1761,13 @@ void MacroAssembler::cmp32LoadPtr(Condition cond, const Address& lhs, Imm32 rhs,
   
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
+
+  
+  
   Label done;
-  branch32(Assembler::InvertCondition(cond), lhs, rhs, &done);
+  cmp32(lhs, rhs);
+  B(&done, Assembler::InvertCondition(cond));
+
   loadPtr(src, scratch64.asUnsized());
   Csel(ARMRegister(dest, 64), scratch64, ARMRegister(dest, 64), cond);
   bind(&done);
