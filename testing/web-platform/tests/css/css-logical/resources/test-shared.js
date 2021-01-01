@@ -69,6 +69,27 @@ export const writingModes = [
     block: "horizontal", inline: "vertical" },
 ];
 
+
+
+if (CSS.supports("-webkit-writing-mode", "horizontal-bt")) {
+  writingModes.push (
+  {
+    styles: [
+      {"-webkit-writing-mode": "horizontal-bt", "direction": "ltr"},
+    ],
+    blockStart: "bottom", blockEnd: "top", inlineStart: "left", inlineEnd: "right",
+    over: "top", under: "bottom", lineLeft: "left", lineRight: "right",
+    block: "vertical", inline: "horizontal" },
+  {
+    styles: [
+      {"-webkit-writing-mode": "horizontal-bt", "direction": "rtl"},
+    ],
+    blockStart: "bottom", blockEnd: "top", inlineStart: "right", inlineEnd: "left",
+    over: "top", under: "bottom", lineLeft: "left", lineRight: "right",
+    block: "vertical", inline: "horizontal" },
+  )
+}
+
 export function testCSSValues(testName, style, expectedValues) {
   for (const [property, value] of expectedValues) {
     assert_equals(style.getPropertyValue(property), value, `${testName}, ${property}`);
