@@ -4891,15 +4891,21 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
         params.mCompositorASR = itemASR;
       }
 
-      if (itemType == DisplayItemType::TYPE_PERSPECTIVE) {
-        
-        
-        
-        
-        
-        
-        
-        
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      bool deferASRForPerspective =
+          itemType == DisplayItemType::TYPE_PERSPECTIVE ||
+          (itemType == DisplayItemType::TYPE_OWN_LAYER &&
+           item->Frame()->IsTransformed() && item->Frame()->HasPerspective());
+      if (deferASRForPerspective) {
         scrollMetadataASR = GetASRForPerspective(
             scrollMetadataASR,
             item->Frame()->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME));
