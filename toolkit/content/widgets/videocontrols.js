@@ -2106,7 +2106,9 @@ this.VideoControlsImplWidget = class {
           }
         }
 
-        this.textTrackListContainer.hidden = true;
+        if (!this.textTrackListContainer.hidden) {
+          this.toggleClosedCaption();
+        }
       },
 
       onControlBarAnimationFinished() {
@@ -2126,8 +2128,37 @@ this.VideoControlsImplWidget = class {
       toggleClosedCaption() {
         if (this.textTrackListContainer.hidden) {
           this.textTrackListContainer.hidden = false;
+          if (this.prefs["media.videocontrols.keyboard-tab-to-all-controls"]) {
+            
+            
+            this.window.clearTimeout(this._hideControlsTimeout);
+            this._hideControlsTimeout = 0;
+          }
         } else {
           this.textTrackListContainer.hidden = true;
+          
+          
+          if (
+            this.prefs["media.videocontrols.keyboard-tab-to-all-controls"] &&
+            !this.controlBar.hidden &&
+            
+            
+            this.clickToPlay.hidden &&
+            
+            this.dynamicControls &&
+            
+            
+            
+            
+            
+            !this.controlBar.matches("div:hover")
+          ) {
+            this.window.clearTimeout(this._hideControlsTimeout);
+            this._hideControlsTimeout = this.window.setTimeout(
+              () => this._hideControlsFn(),
+              this.HIDE_CONTROLS_TIMEOUT_MS
+            );
+          }
         }
       },
 
