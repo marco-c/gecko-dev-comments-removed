@@ -7001,6 +7001,9 @@ bool GCRuntime::hasForegroundWork() const {
     case State::NotActive:
       
       return false;
+    case State::Prepare:
+      
+      return !unmarkTask.wasStarted();
     case State::Finalize:
       
       return !isBackgroundSweeping();
