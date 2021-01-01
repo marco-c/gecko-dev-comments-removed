@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 
 use api::units::*;
@@ -23,30 +23,22 @@ use crate::render_task::{RenderTaskKind, RenderTaskAddress, BlitSource};
 use crate::render_task::{RenderTask, ScalingTask, SvgFilterInfo};
 use crate::render_task_graph::{RenderTaskGraph, RenderTaskId};
 use crate::resource_cache::ResourceCache;
-use crate::guillotine_allocator::{GuillotineAllocator};
 use crate::visibility::PrimitiveVisibilityMask;
-use std::{mem};
 
 
 const STYLE_SOLID: i32 = ((BorderStyle::Solid as i32) << 8) | ((BorderStyle::Solid as i32) << 16);
 const STYLE_MASK: i32 = 0x00FF_FF00;
 
-/// According to apitrace, textures larger than 2048 break fast clear
-/// optimizations on some intel drivers. We sometimes need to go larger, but
-/// we try to avoid it. This can go away when proper tiling support lands,
-/// since we can then split large primitives across multiple textures.
-const IDEAL_MAX_TEXTURE_DIMENSION: i32 = 2048;
 
-/// A tag used to identify the output format of a `RenderTarget`.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum RenderTargetKind {
-    Color, // RGBA8
-    Alpha, // R8
+    Color, 
+    Alpha, 
 }
 
-/// Identifies a given `RenderTarget` in a `RenderTargetList`.
+
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -69,35 +61,35 @@ pub struct RenderTargetContext<'a, 'rc> {
     pub tile_caches: &'a FastHashMap<SliceId, Box<TileCacheInstance>>,
 }
 
-/// Represents a number of rendering operations on a surface.
-///
-/// In graphics parlance, a "render target" usually means "a surface (texture or
-/// framebuffer) bound to the output of a shader". This trait has a slightly
-/// different meaning, in that it represents the operations on that surface
-/// _before_ it's actually bound and rendered. So a `RenderTarget` is built by
-/// the `RenderBackend` by inserting tasks, and then shipped over to the
-/// `Renderer` where a device surface is resolved and the tasks are transformed
-/// into draw commands on that surface.
-///
-/// We express this as a trait to generalize over color and alpha surfaces.
-/// a given `RenderTask` will draw to one or the other, depending on its type
-/// and sometimes on its parameters. See `RenderTask::target_kind`.
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait RenderTarget {
-    /// Creates a new RenderTarget of the given type.
+    
     fn new(
         texture_id: CacheTextureId,
-        target_size: DeviceIntSize,
         screen_size: DeviceIntSize,
         gpu_supports_fast_clears: bool,
+        used_rect: DeviceIntRect,
     ) -> Self;
 
-    /// Optional hook to provide additional processing for the target at the
-    /// end of the build phase.
+    
+    
     fn build(
         &mut self,
         _ctx: &mut RenderTargetContext,
         _gpu_cache: &mut GpuCache,
-        _render_tasks: &mut RenderTaskGraph,
+        _render_tasks: &RenderTaskGraph,
         _deferred_resolves: &mut Vec<DeferredResolve>,
         _prim_headers: &mut PrimitiveHeaders,
         _transforms: &mut TransformPalette,
@@ -106,15 +98,15 @@ pub trait RenderTarget {
     ) {
     }
 
-    /// Associates a `RenderTask` with this target. That task must be assigned
-    /// to a region returned by invoking `allocate()` on this target.
-    ///
-    /// TODO(gw): It's a bit odd that we need the deferred resolves and mutable
-    /// GPU cache here. They are typically used by the build step above. They
-    /// are used for the blit jobs to allow resolve_image to be called. It's a
-    /// bit of extra overhead to store the image key here and the resolve them
-    /// in the build step separately.  BUT: if/when we add more texture cache
-    /// target jobs, we might want to tidy this up.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn add_task(
         &mut self,
         task_id: RenderTaskId,
@@ -127,65 +119,48 @@ pub trait RenderTarget {
     );
 
     fn needs_depth(&self) -> bool;
-
-    fn used_rect(&self) -> DeviceIntRect;
-    fn add_used(&mut self, rect: DeviceIntRect);
     fn texture_id(&self) -> CacheTextureId;
-    fn save_target(&self) -> bool;
-
-    fn allocate(
-        &mut self,
-        size: DeviceIntSize,
-    ) -> Option<(CacheTextureId, DeviceIntPoint)>;
 }
 
-/// A series of `RenderTarget` instances, serving as the high-level container
-/// into which `RenderTasks` are assigned.
-///
-/// During the build phase, we iterate over the tasks in each `RenderPass`. For
-/// each task, we invoke `allocate()` on the `RenderTargetList`, which in turn
-/// attempts to allocate an output region in the last `RenderTarget` in the
-/// list. If allocation fails (or if the list is empty), a new `RenderTarget` is
-/// created and appended to the list. The build phase then assign the task into
-/// the target associated with the final allocation.
-///
-/// The result is that each `RenderPass` is associated with one or two
-/// `RenderTargetLists`, depending on whether we have all our tasks have the
-/// same `RenderTargetKind`. The lists are then shipped to the `Renderer`, which
-/// allocates a device texture array, with one slice per render target in the
-/// list.
-///
-/// The upshot of this scheme is that it maximizes batching. In a given pass,
-/// we need to do a separate batch for each individual render target. But with
-/// the texture array, we can expose the entirety of the previous pass to each
-/// task in the current pass in a single batch, which generally allows each
-/// task to be drawn in a single batch regardless of how many results from the
-/// previous pass it depends on.
-///
-/// Note that in some cases (like drop-shadows), we can depend on the output of
-/// a pass earlier than the immediately-preceding pass.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct RenderTargetList<T> {
-    screen_size: DeviceIntSize,
     pub format: ImageFormat,
     pub targets: Vec<T>,
-    // pub alloc_tracker: GuillotineAllocator,
-    // pub texture_id: Option<CacheTextureId>,
-    gpu_supports_fast_clears: bool,
 }
 
 impl<T: RenderTarget> RenderTargetList<T> {
     pub fn new(
-        screen_size: DeviceIntSize,
         format: ImageFormat,
-        gpu_supports_fast_clears: bool,
     ) -> Self {
         RenderTargetList {
-            screen_size,
             format,
             targets: Vec::new(),
-            gpu_supports_fast_clears,
         }
     }
 
@@ -193,7 +168,7 @@ impl<T: RenderTarget> RenderTargetList<T> {
         &mut self,
         ctx: &mut RenderTargetContext,
         gpu_cache: &mut GpuCache,
-        render_tasks: &mut RenderTaskGraph,
+        render_tasks: &RenderTaskGraph,
         deferred_resolves: &mut Vec<DeferredResolve>,
         prim_headers: &mut PrimitiveHeaders,
         transforms: &mut TransformPalette,
@@ -218,71 +193,21 @@ impl<T: RenderTarget> RenderTargetList<T> {
         }
     }
 
-    pub fn allocate(
-        &mut self,
-        requested_size: DeviceIntSize,
-        resource_cache: &mut ResourceCache,
-    ) -> (usize, CacheTextureId, DeviceIntPoint) {
-        let is_standalone =
-            requested_size.width > IDEAL_MAX_TEXTURE_DIMENSION ||
-            requested_size.height > IDEAL_MAX_TEXTURE_DIMENSION;
-
-        let target_size = if is_standalone {
-            requested_size
-        } else {
-            DeviceIntSize::new(
-                IDEAL_MAX_TEXTURE_DIMENSION,
-                IDEAL_MAX_TEXTURE_DIMENSION,
-            )
-        };
-
-        for (target_index, target) in self.targets.iter_mut().enumerate() {
-            if let Some((texture_id, origin)) = target.allocate(requested_size) {
-                // TODO(gw): Move `add_used` into `allocate` when adding the
-                //           full graph functionality.
-                target.add_used(DeviceIntRect::new(origin, requested_size));
-                return (target_index, texture_id, origin);
-            }
-        }
-
-        let texture_id = resource_cache.get_or_create_render_target_from_pool(
-            target_size,
-            self.format,
-        );
-
-        let mut target = T::new(
-            texture_id,
-            target_size,
-            self.screen_size,
-            self.gpu_supports_fast_clears,
-        );
-
-        let (texture_id, origin) = target.allocate(requested_size).expect("bug: unable to alloc");
-
-        target.add_used(DeviceIntRect::new(origin, requested_size));
-
-        let target_index = self.targets.len();
-
-        self.targets.push(target);
-
-        (target_index, texture_id, origin)
-    }
-
     pub fn needs_depth(&self) -> bool {
         self.targets.iter().any(|target| target.needs_depth())
     }
 }
 
 
-/// Contains the work (in the form of instance arrays) needed to fill a color
-/// color output surface (RGBA8).
-///
-/// See `RenderTarget`.
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ColorRenderTarget {
     pub alpha_batch_containers: Vec<AlphaBatchContainer>,
-    // List of blur operations to apply for this render target.
+    
     pub vertical_blurs: FastHashMap<TextureSource, Vec<BlurInstance>>,
     pub horizontal_blurs: FastHashMap<TextureSource, Vec<BlurInstance>>,
     pub scalings: FastHashMap<TextureSource, Vec<ScalingInstance>>,
@@ -290,21 +215,19 @@ pub struct ColorRenderTarget {
     pub blits: Vec<BlitJob>,
     alpha_tasks: Vec<RenderTaskId>,
     screen_size: DeviceIntSize,
-    // Track the used rect of the render target, so that
-    // we can set a scissor rect and only clear to the
-    // used portion of the target as an optimization.
-    pub used_rect: DeviceIntRect,
-    allocator: GuillotineAllocator,
     pub texture_id: CacheTextureId,
-    save_target: bool,
+    
+    
+    
+    pub used_rect: DeviceIntRect,
 }
 
 impl RenderTarget for ColorRenderTarget {
     fn new(
         texture_id: CacheTextureId,
-        target_size: DeviceIntSize,
         screen_size: DeviceIntSize,
         _: bool,
+        used_rect: DeviceIntRect,
     ) -> Self {
         ColorRenderTarget {
             alpha_batch_containers: Vec::new(),
@@ -315,29 +238,16 @@ impl RenderTarget for ColorRenderTarget {
             blits: Vec::new(),
             alpha_tasks: Vec::new(),
             screen_size,
-            used_rect: DeviceIntRect::zero(),
-            allocator: GuillotineAllocator::new(Some(target_size)),
             texture_id,
-            save_target: false,
+            used_rect,
         }
-    }
-
-    fn allocate(
-        &mut self,
-        size: DeviceIntSize,
-    ) -> Option<(CacheTextureId, DeviceIntPoint)> {
-        self.allocator
-            .allocate(&size)
-            .map(|(_, origin)| {
-                (self.texture_id, origin)
-            })
     }
 
     fn build(
         &mut self,
         ctx: &mut RenderTargetContext,
         gpu_cache: &mut GpuCache,
-        render_tasks: &mut RenderTaskGraph,
+        render_tasks: &RenderTaskGraph,
         deferred_resolves: &mut Vec<DeferredResolve>,
         prim_headers: &mut PrimitiveHeaders,
         transforms: &mut TransformPalette,
@@ -361,7 +271,7 @@ impl RenderTarget for ColorRenderTarget {
                             surface.raster_spatial_node_index
                         }
                         None => {
-                            // This must be the main framebuffer
+                            
                             ROOT_SPATIAL_NODE_INDEX
                         }
                     };
@@ -374,23 +284,23 @@ impl RenderTarget for ColorRenderTarget {
                         Some(target_rect)
                     };
 
-                    // Typical workloads have a single or a few batch builders with a
-                    // large number of batches (regular pictres) and a higher number
-                    // of batch builders with only a single or two batches (for example
-                    // rendering isolated primitives to compute their shadows).
-                    // We can easily guess which category we are in for each picture
-                    // by checking whether it has multiple clusters.
+                    
+                    
+                    
+                    
+                    
+                    
                     let prealloc_batch_count = if pic.prim_list.clusters.len() > 1 {
                         128
                     } else {
                         0
                     };
 
-                    // TODO(gw): The type names of AlphaBatchBuilder and BatchBuilder
-                    //           are still confusing. Once more of the picture caching
-                    //           improvement code lands, the AlphaBatchBuilder and
-                    //           AlphaBatchList types will be collapsed into one, which
-                    //           should simplify coming up with better type names.
+                    
+                    
+                    
+                    
+                    
                     let alpha_batch_builder = AlphaBatchBuilder::new(
                         self.screen_size,
                         ctx.break_advanced_blend_batches,
@@ -445,10 +355,6 @@ impl RenderTarget for ColorRenderTarget {
         self.texture_id
     }
 
-    fn save_target(&self) -> bool {
-        self.save_target
-    }
-
     fn add_task(
         &mut self,
         task_id: RenderTaskId,
@@ -461,8 +367,6 @@ impl RenderTarget for ColorRenderTarget {
     ) {
         profile_scope!("add_task");
         let task = &render_tasks[task_id];
-
-        self.save_target |= task.save_target;
 
         match task.kind {
             RenderTaskKind::VerticalBlur(..) => {
@@ -519,7 +423,7 @@ impl RenderTarget for ColorRenderTarget {
             RenderTaskKind::Blit(ref task_info) => {
                 let source = match task_info.source {
                     BlitSource::Image { key } => {
-                        // Get the cache item for the source texture.
+                        
                         let cache_item = resolve_image(
                             key.request,
                             ctx.resource_cache,
@@ -527,8 +431,8 @@ impl RenderTarget for ColorRenderTarget {
                             deferred_resolves,
                         );
 
-                        // Work out a source rect to copy from the texture, depending on whether
-                        // a sub-rect is present or not.
+                        
+                        
                         let source_rect = key.texel_rect.map_or(cache_item.uv_rect.to_i32(), |sub_rect| {
                             DeviceIntRect::new(
                                 DeviceIntPoint::new(
@@ -539,8 +443,8 @@ impl RenderTarget for ColorRenderTarget {
                             )
                         });
 
-                        // Store the blit job for the renderer to execute, including
-                        // the allocated destination rect within this target.
+                        
+                        
                         BlitJobSource::Texture(
                             cache_item.texture_id,
                             cache_item.texture_layer,
@@ -570,45 +474,31 @@ impl RenderTarget for ColorRenderTarget {
             !ab.opaque_batches.is_empty()
         })
     }
-
-    fn used_rect(&self) -> DeviceIntRect {
-        self.used_rect
-    }
-
-    fn add_used(&mut self, rect: DeviceIntRect) {
-        self.used_rect = self.used_rect.union(&rect);
-    }
 }
 
-/// Contains the work (in the form of instance arrays) needed to fill an alpha
-/// output surface (R8).
-///
-/// See `RenderTarget`.
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct AlphaRenderTarget {
     pub clip_batcher: ClipBatcher,
-    // List of blur operations to apply for this render target.
+    
     pub vertical_blurs: FastHashMap<TextureSource, Vec<BlurInstance>>,
     pub horizontal_blurs: FastHashMap<TextureSource, Vec<BlurInstance>>,
     pub scalings: FastHashMap<TextureSource, Vec<ScalingInstance>>,
     pub zero_clears: Vec<RenderTaskId>,
     pub one_clears: Vec<RenderTaskId>,
-    // Track the used rect of the render target, so that
-    // we can set a scissor rect and only clear to the
-    // used portion of the target as an optimization.
-    pub used_rect: DeviceIntRect,
-    allocator: GuillotineAllocator,
     pub texture_id: CacheTextureId,
-    save_target: bool,
 }
 
 impl RenderTarget for AlphaRenderTarget {
     fn new(
         texture_id: CacheTextureId,
-        target_size: DeviceIntSize,
         _: DeviceIntSize,
         gpu_supports_fast_clears: bool,
+        _: DeviceIntRect,
     ) -> Self {
         AlphaRenderTarget {
             clip_batcher: ClipBatcher::new(gpu_supports_fast_clears),
@@ -617,30 +507,12 @@ impl RenderTarget for AlphaRenderTarget {
             scalings: FastHashMap::default(),
             zero_clears: Vec::new(),
             one_clears: Vec::new(),
-            used_rect: DeviceIntRect::zero(),
-            allocator: GuillotineAllocator::new(Some(target_size)),
             texture_id,
-            save_target: false,
         }
-    }
-
-    fn allocate(
-        &mut self,
-        size: DeviceIntSize,
-    ) -> Option<(CacheTextureId, DeviceIntPoint)> {
-        self.allocator
-            .allocate(&size)
-            .map(|(_, origin)| {
-                (self.texture_id, origin)
-            })
     }
 
     fn texture_id(&self) -> CacheTextureId {
         self.texture_id
-    }
-
-    fn save_target(&self) -> bool {
-        self.save_target
     }
 
     fn add_task(
@@ -656,8 +528,6 @@ impl RenderTarget for AlphaRenderTarget {
         profile_scope!("add_task");
         let task = &render_tasks[task_id];
         let (target_rect, _) = task.get_target_rect();
-
-        self.save_target |= task.save_target;
 
         match task.kind {
             RenderTaskKind::Readback |
@@ -745,14 +615,6 @@ impl RenderTarget for AlphaRenderTarget {
     fn needs_depth(&self) -> bool {
         false
     }
-
-    fn used_rect(&self) -> DeviceIntRect {
-        self.used_rect
-    }
-
-    fn add_used(&mut self, rect: DeviceIntRect) {
-        self.used_rect = self.used_rect.union(&rect);
-    }
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -795,12 +657,12 @@ impl TextureCacheRenderTarget {
     pub fn add_task(
         &mut self,
         task_id: RenderTaskId,
-        render_tasks: &mut RenderTaskGraph,
+        render_tasks: &RenderTaskGraph,
     ) {
         profile_scope!("add_task");
         let task_address = task_id.into();
 
-        let task = &mut render_tasks[task_id];
+        let task = &render_tasks[task_id];
         let target_rect = task.get_target_rect();
 
         match task.kind {
@@ -830,13 +692,13 @@ impl TextureCacheRenderTarget {
             RenderTaskKind::Blit(ref task_info) => {
                 match task_info.source {
                     BlitSource::Image { .. } => {
-                        // reading/writing from the texture cache at the same time
-                        // is undefined behavior.
+                        
+                        
                         panic!("bug: a single blit cannot be to/from texture cache");
                     }
                     BlitSource::RenderTask { task_id } => {
-                        // Add a blit job to copy from an existing render
-                        // task to this target.
+                        
+                        
                         self.blits.push(BlitJob {
                             source: BlitJobSource::RenderTask(task_id),
                             target_rect: target_rect.0,
@@ -844,14 +706,18 @@ impl TextureCacheRenderTarget {
                     }
                 }
             }
-            RenderTaskKind::Border(ref mut task_info) => {
+            RenderTaskKind::Border(ref task_info) => {
                 self.clears.push(target_rect.0);
 
                 let task_origin = target_rect.0.origin.to_f32();
-                let instances = mem::replace(&mut task_info.instances, Vec::new());
+                
+                
+                
+                
+                let instances = task_info.instances.clone();
                 for mut instance in instances {
-                    // TODO(gw): It may be better to store the task origin in
-                    //           the render task data instead of per instance.
+                    
+                    
                     instance.task_origin = task_origin;
                     if instance.flags & STYLE_MASK == STYLE_SOLID {
                         self.border_segments_solid.push(instance);
@@ -940,7 +806,7 @@ fn add_scaling_instances(
         Some(key) => {
             assert!(source_task.is_none());
 
-            // Get the cache item for the source texture.
+            
             let cache_item = resolve_image(
                 key.request,
                 resource_cache,
@@ -948,8 +814,8 @@ fn add_scaling_instances(
                 deferred_resolves,
             );
 
-            // Work out a source rect to copy from the texture, depending on whether
-            // a sub-rect is present or not.
+            
+            
             let source_rect = key.texel_rect.map_or(cache_item.uv_rect, |sub_rect| {
                 DeviceIntRect::new(
                     DeviceIntPoint::new(
@@ -1040,7 +906,7 @@ fn add_svg_filter_instances(
         SvgFilterInfo::ComponentTransfer(..) |
         SvgFilterInfo::Identity => 1,
 
-        // Not techincally a 2 input filter, but we have 2 inputs here: original content & blurred content.
+        
         SvgFilterInfo::DropShadow(..) |
         SvgFilterInfo::Blend(..) |
         SvgFilterInfo::Composite(..) => 2,
@@ -1078,7 +944,7 @@ fn add_svg_filter_instances(
     for (ref mut batch_textures, ref mut batch) in instances.iter_mut() {
         if let Some(combined_textures) = batch_textures.combine_textures(textures) {
             batch.push(instance);
-            // Update the batch textures to the newly combined batch textures
+            
             *batch_textures = combined_textures;
             return;
         }
@@ -1087,7 +953,7 @@ fn add_svg_filter_instances(
     instances.push((textures, vec![instance]));
 }
 
-// Defines where the source data for a blit job can be found.
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BlitJobSource {
@@ -1095,7 +961,7 @@ pub enum BlitJobSource {
     RenderTask(RenderTaskId),
 }
 
-// Information required to do a blit from a source to a target.
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct BlitJob {
