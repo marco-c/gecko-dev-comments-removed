@@ -312,8 +312,11 @@ class ContentParent final
 
   static void NotifyUpdatedDictionaries();
 
-  static void NotifyUpdatedFonts();
-  static void NotifyRebuildFontList();
+  
+  
+  
+  
+  static void NotifyUpdatedFonts(bool aFullRebuild);
 
 #if defined(XP_WIN)
   
@@ -1201,6 +1204,9 @@ class ContentParent final
   mozilla::ipc::IPCResult RecvSetupFamilyCharMap(
       const uint32_t& aGeneration,
       const mozilla::fontlist::Pointer& aFamilyPtr);
+
+  mozilla::ipc::IPCResult RecvStartCmapLoading(const uint32_t& aGeneration,
+                                               const uint32_t& aStartIndex);
 
   mozilla::ipc::IPCResult RecvGetHyphDict(nsIURI* aURIParams,
                                           base::SharedMemoryHandle* aOutHandle,

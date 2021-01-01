@@ -358,7 +358,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  virtual nsresult UpdateFontList();
+
+
+  nsresult UpdateFontList(bool aFullRebuild = true);
 
   
 
