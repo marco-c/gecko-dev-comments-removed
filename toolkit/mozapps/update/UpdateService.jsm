@@ -3082,7 +3082,7 @@ UpdateService.prototype = {
 
 
   checkForBackgroundUpdates: function AUS_checkForBackgroundUpdates() {
-    this._checkForBackgroundUpdates(false);
+    return this._checkForBackgroundUpdates(false);
   },
 
   
@@ -3116,7 +3116,7 @@ UpdateService.prototype = {
       
       
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DISABLED_BY_POLICY);
-      return;
+      return false;
     }
 
     this._isNotify = isNotify;
@@ -3234,7 +3234,7 @@ UpdateService.prototype = {
     
     if (this.isDownloading) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADING);
-      return;
+      return false;
     }
 
     
@@ -3254,7 +3254,7 @@ UpdateService.prototype = {
       um.readyUpdate.selectedPatch.type == "complete"
     ) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADED);
-      return;
+      return false;
     }
 
     
@@ -3265,7 +3265,7 @@ UpdateService.prototype = {
     
     if (gStagingInProgress) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADED);
-      return;
+      return false;
     }
 
     let validUpdateURL = true;
@@ -3296,6 +3296,7 @@ UpdateService.prototype = {
 
         this.backgroundChecker.checkForUpdates(this, false);
       });
+    return true;
   },
 
   
