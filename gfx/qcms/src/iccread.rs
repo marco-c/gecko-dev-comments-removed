@@ -1333,6 +1333,11 @@ impl qcms_profile {
         }
         Some(profile)
     }
+    
+    
+    pub fn precache_output_transform(&mut self) {
+        crate::transform::qcms_profile_precache_output_transform(self);
+    }
 }
 
 #[no_mangle]
