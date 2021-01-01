@@ -237,6 +237,12 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
 
   
   if (GetDropTargetHelper()) {
+    
+    
+    
+    
+    
+    GetDropTargetHelper()->DragLeave();
     POINT pt = {ptl.x, ptl.y};
     GetDropTargetHelper()->DragEnter(mHWnd, pIDataSource, &pt, *pdwEffect);
   }
@@ -313,6 +319,8 @@ nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
   
   if (GetDropTargetHelper()) {
     if (dragImageChanged) {
+      
+      GetDropTargetHelper()->DragLeave();
       
       
       POINT pt = {ptl.x, ptl.y};
