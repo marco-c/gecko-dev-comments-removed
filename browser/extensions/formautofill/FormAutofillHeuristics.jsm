@@ -8,7 +8,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["FormAutofillHeuristics"];
+var EXPORTED_SYMBOLS = ["FormAutofillHeuristics", "LabelUtils"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
@@ -25,8 +25,6 @@ ChromeUtils.defineModuleGetter(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   CreditCard: "resource://gre/modules/CreditCard.jsm",
-  creditCardRuleset: "resource://formautofill/CreditCardRuleset.jsm",
-  LabelUtils: "resource://formautofill/FormAutofillUtils.jsm",
 });
 
 this.log = null;
@@ -174,26 +172,6 @@ class FieldScanner {
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -353,6 +331,116 @@ class FieldScanner {
     return index < this._elements.length;
   }
 }
+
+var LabelUtils = {
+  
+  
+  
+  EXCLUDED_TAGS: ["SCRIPT", "NOSCRIPT", "OPTION", "STYLE"],
+
+  
+  
+  
+  _mappedLabels: null,
+
+  
+  
+  
+  _unmappedLabels: null,
+
+  
+  
+  _labelStrings: null,
+
+  
+
+
+
+
+
+
+
+
+
+  extractLabelStrings(element) {
+    if (this._labelStrings.has(element)) {
+      return this._labelStrings.get(element);
+    }
+    let strings = [];
+    let _extractLabelStrings = el => {
+      if (this.EXCLUDED_TAGS.includes(el.tagName)) {
+        return;
+      }
+
+      if (el.nodeType == el.TEXT_NODE || !el.childNodes.length) {
+        let trimmedText = el.textContent.trim();
+        if (trimmedText) {
+          strings.push(trimmedText);
+        }
+        return;
+      }
+
+      for (let node of el.childNodes) {
+        let nodeType = node.nodeType;
+        if (nodeType != node.ELEMENT_NODE && nodeType != node.TEXT_NODE) {
+          continue;
+        }
+        _extractLabelStrings(node);
+      }
+    };
+    _extractLabelStrings(element);
+    this._labelStrings.set(element, strings);
+    return strings;
+  },
+
+  generateLabelMap(doc) {
+    let mappedLabels = new Map();
+    let unmappedLabels = [];
+
+    for (let label of doc.querySelectorAll("label")) {
+      let id = label.htmlFor;
+      if (!id) {
+        let control = label.control;
+        if (!control) {
+          continue;
+        }
+        id = control.id;
+      }
+      if (id) {
+        let labels = mappedLabels.get(id);
+        if (labels) {
+          labels.push(label);
+        } else {
+          mappedLabels.set(id, [label]);
+        }
+      } else {
+        unmappedLabels.push(label);
+      }
+    }
+
+    this._mappedLabels = mappedLabels;
+    this._unmappedLabels = unmappedLabels;
+    this._labelStrings = new WeakMap();
+  },
+
+  clearLabelMap() {
+    this._mappedLabels = null;
+    this._unmappedLabels = null;
+    this._labelStrings = null;
+  },
+
+  findLabelElements(element) {
+    if (!this._mappedLabels) {
+      this.generateLabelMap(element.ownerDocument);
+    }
+
+    let id = element.id;
+    if (!id) {
+      return this._unmappedLabels.filter(label => label.control == element);
+    }
+    return this._mappedLabels.get(id) || [];
+  },
+};
 
 
 
@@ -925,53 +1013,6 @@ this.FormAutofillHeuristics = {
     return regexps;
   },
 
-  
-
-
-
-
-
-
-  _topFathomField(element) {
-    
-    const fieldNames = [
-      "cc-name",
-      "cc-number",
-      "cc-exp-month",
-      "cc-exp-year",
-      "cc-exp",
-      "cc-type",
-    ];
-
-    
-
-
-
-
-
-
-
-
-    function confidence(fieldName) {
-      const fnodes = creditCardRuleset.against(element).get(fieldName);
-      
-      
-      return fnodes.length ? fnodes[0].scoreFor(fieldName) : 0;
-    }
-
-    
-    const fieldsAndConfidences = fieldNames.map(fieldName => [
-      fieldName,
-      confidence(fieldName),
-    ]);
-
-    
-    fieldsAndConfidences.sort(
-      ([_1, confidence1], [_2, confidence2]) => confidence2 - confidence1
-    );
-    return fieldsAndConfidences[0];
-  },
-
   getInfo(element) {
     let info = element.getAutocompleteInfo();
     
@@ -1007,18 +1048,21 @@ this.FormAutofillHeuristics = {
       };
     }
 
-    
-    const [mostConfidentFieldName, mostConfidentScore] = this._topFathomField(
-      element
-    );
-    if (mostConfidentScore > 0.5) {
+    let regexps = this._getRegExpList(isAutoCompleteOff, element.tagName);
+    if (!regexps.length) {
+      return null;
+    }
+
+    let matchedFieldName = this._findMatchedFieldName(element, regexps);
+    if (matchedFieldName) {
       return {
-        fieldName: mostConfidentFieldName,
+        fieldName: matchedFieldName,
         section: "",
         addressType: "",
         contactType: "",
       };
     }
+
     return null;
   },
 
