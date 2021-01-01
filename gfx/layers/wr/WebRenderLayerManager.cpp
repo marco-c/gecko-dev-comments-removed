@@ -68,9 +68,16 @@ bool WebRenderLayerManager::Initialize(
   
   static bool hasInitialized = false;
 
+  WindowKind windowKind;
+  if (mWidget->WindowType() == eWindowType_toplevel) {
+    windowKind = WindowKind::MAIN;
+  } else {
+    windowKind = WindowKind::SECONDARY;
+  }
+
   LayoutDeviceIntSize size = mWidget->GetClientSize();
   PWebRenderBridgeChild* bridge =
-      aCBChild->SendPWebRenderBridgeConstructor(aLayersId, size);
+      aCBChild->SendPWebRenderBridgeConstructor(aLayersId, size, windowKind);
   if (!bridge) {
     
     

@@ -165,6 +165,11 @@ struct LayersObserverEpoch {
 class CompositionOpportunityType {};
 typedef BaseTransactionId<CompositionOpportunityType> CompositionOpportunityId;
 
+
+
+
+enum class WindowKind : int8_t { MAIN = 0, SECONDARY, LAST };
+
 enum class LayersBackend : int8_t {
   LAYERS_NONE = 0,
   LAYERS_BASIC,

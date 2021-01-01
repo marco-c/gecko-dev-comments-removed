@@ -201,7 +201,8 @@ bool ContentCompositorBridgeParent::DeallocPAPZParent(PAPZParent* aActor) {
 
 PWebRenderBridgeParent*
 ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
-    const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize& aSize) {
+    const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize& aSize,
+    const WindowKind& aWindowKind) {
   LayersId layersId = wr::AsLayersId(aPipelineId);
   
   if (!LayerTreeOwnerTracker::Get()->IsMapped(layersId, OtherPid())) {

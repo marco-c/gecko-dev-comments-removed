@@ -31,6 +31,7 @@ use euclid::size2;
 
 
 
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -244,7 +245,7 @@ struct SharedTextures {
 
 impl SharedTextures {
     
-    fn new(color_formats: TextureFormatPair<ImageFormat>) -> Self {
+    fn new(color_formats: TextureFormatPair<ImageFormat>, config: &TextureCacheConfig) -> Self {
         Self {
             
             
@@ -255,7 +256,7 @@ impl SharedTextures {
             
             
             alpha8_linear: AllocatorList::new(
-                1024,
+                config.alpha8_texture_size,
                 ShelfAllocatorOptions {
                     num_columns: 1,
                     alignment: size2(8, 8),
@@ -269,7 +270,7 @@ impl SharedTextures {
             
             
             alpha16_linear: AllocatorList::new(
-                TEXTURE_REGION_DIMENSIONS,
+                config.alpha16_texture_size,
                 SlabAllocatorParameters {
                     region_size: TEXTURE_REGION_DIMENSIONS,
                 },
@@ -280,9 +281,9 @@ impl SharedTextures {
             ),
             
             color8_linear: AllocatorList::new(
-                2048,
+                config.color8_linear_texture_size,
                 ShelfAllocatorOptions {
-                    num_columns: 2,
+                    num_columns: if config.color8_linear_texture_size >= 1024 { 2 } else { 1 },
                     alignment: size2(16, 16),
                     .. ShelfAllocatorOptions::default()
                 },
@@ -293,9 +294,9 @@ impl SharedTextures {
             ),
             
             color8_glyphs: AllocatorList::new(
-                2048,
+                config.color8_glyph_texture_size,
                 ShelfAllocatorOptions {
-                    num_columns: 2,
+                    num_columns: if config.color8_glyph_texture_size >= 1024 { 2 } else { 1 },
                     alignment: size2(4, 8),
                     .. ShelfAllocatorOptions::default()
                 },
@@ -308,7 +309,7 @@ impl SharedTextures {
             
             
             color8_nearest: AllocatorList::new(
-                512,
+                config.color8_nearest_texture_size,
                 ShelfAllocatorOptions::default(),
                 TextureParameters {
                     formats: color_formats,
@@ -461,6 +462,28 @@ struct CacheAllocParams {
 
 
 
+#[derive(Clone)]
+pub struct TextureCacheConfig {
+    pub color8_linear_texture_size: i32,
+    pub color8_nearest_texture_size: i32,
+    pub color8_glyph_texture_size: i32,
+    pub alpha8_texture_size: i32,
+    pub alpha16_texture_size: i32,
+}
+
+impl TextureCacheConfig {
+    pub const DEFAULT: Self = TextureCacheConfig {
+        color8_linear_texture_size: 2048,
+        color8_nearest_texture_size: 512,
+        color8_glyph_texture_size: 2048,
+        alpha8_texture_size: 1024,
+        alpha16_texture_size: 512,
+    };
+}
+
+
+
+
 
 
 
@@ -542,6 +565,7 @@ impl TextureCache {
         default_picture_tile_size: DeviceIntSize,
         color_formats: TextureFormatPair<ImageFormat>,
         swizzle: Option<SwizzleSettings>,
+        config: &TextureCacheConfig,
     ) -> Self {
         let pending_updates = TextureUpdateList::new();
 
@@ -555,7 +579,7 @@ impl TextureCache {
         let next_texture_id = CacheTextureId(1);
 
         TextureCache {
-            shared_textures: SharedTextures::new(color_formats),
+            shared_textures: SharedTextures::new(color_formats, config),
             picture_textures: PictureTextures::new(
                 default_picture_tile_size,
             ),
