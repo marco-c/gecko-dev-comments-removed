@@ -19,7 +19,7 @@
 }
 
 
-@media print {
+@media print, (prefers-reduced-motion) {
   .innerDiv {
     padding: 0 !important;
   }
