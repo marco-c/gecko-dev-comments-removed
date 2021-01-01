@@ -93,20 +93,19 @@ pub fn lut_interp_linear16(mut input_value: u16, mut table: &[u16]) -> u16 {
 fn lut_interp_linear_precache_output(mut input_value: u32, mut table: &[u16]) -> u8 {
     
 
-    let mut value: u32 = input_value * (table.len() - 1) as libc::c_uint;
+    let mut value: u32 = input_value * (table.len() - 1) as u32;
     
-    let mut upper: u32 =
-        (value + PRECACHE_OUTPUT_MAX as libc::c_uint - 1) / PRECACHE_OUTPUT_MAX as libc::c_uint;
+    let mut upper: u32 = (value + PRECACHE_OUTPUT_MAX as u32 - 1) / PRECACHE_OUTPUT_MAX as u32;
     
-    let mut lower: u32 = value / PRECACHE_OUTPUT_MAX as libc::c_uint;
+    let mut lower: u32 = value / PRECACHE_OUTPUT_MAX as u32;
     
-    let mut interp: u32 = value % PRECACHE_OUTPUT_MAX as libc::c_uint;
+    let mut interp: u32 = value % PRECACHE_OUTPUT_MAX as u32;
     
-    value = table[upper as usize] as libc::c_uint * interp
-        + table[lower as usize] as libc::c_uint * (PRECACHE_OUTPUT_MAX as libc::c_uint - interp); 
-                                                                                                  
-    value += (PRECACHE_OUTPUT_MAX * 65535 / 255 / 2) as libc::c_uint; 
-    value /= (PRECACHE_OUTPUT_MAX * 65535 / 255) as libc::c_uint;
+    value = table[upper as usize] as u32 * interp
+        + table[lower as usize] as u32 * (PRECACHE_OUTPUT_MAX as u32 - interp); 
+                                                                                
+    value += (PRECACHE_OUTPUT_MAX * 65535 / 255 / 2) as u32; 
+    value /= (PRECACHE_OUTPUT_MAX * 65535 / 255) as u32;
     value as u8
 }
 
@@ -383,7 +382,7 @@ pub fn compute_precache_linear(mut output: &mut [u8; PRECACHE_OUTPUT_SIZE]) {
     let mut v: u32 = 0;
     while v < PRECACHE_OUTPUT_SIZE as u32 {
         
-        output[v as usize] = (v / (PRECACHE_OUTPUT_SIZE / 256) as libc::c_uint) as u8;
+        output[v as usize] = (v / (PRECACHE_OUTPUT_SIZE / 256) as u32) as u8;
         v += 1
     }
 }
