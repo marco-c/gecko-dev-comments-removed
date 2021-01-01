@@ -287,7 +287,7 @@ void PlacesObservers::NotifyListeners(
       
       
       [&](auto& cb, const auto& events)
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY { MOZ_KnownLive(cb)->Call(aEvents); });
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY { MOZ_KnownLive(cb)->Call(events); });
 
   CallListeners<WeakPtr<places::INativePlacesEventCallback>,
                 RefPtr<places::INativePlacesEventCallback>>(
@@ -307,7 +307,7 @@ void PlacesObservers::NotifyListeners(
       
       [&](auto& cb, const auto& events) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         RefPtr<PlacesEventCallback> callback(cb->mCallback);
-        callback->Call(aEvents);
+        callback->Call(events);
       });
 
   auto& listenersToRemove = *JSListeners::GetListenersToRemove();
