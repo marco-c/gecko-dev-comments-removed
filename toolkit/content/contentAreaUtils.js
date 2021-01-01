@@ -1163,16 +1163,6 @@ function getDefaultExtension(aFilename, aURI, aContentType) {
   } 
 
   
-  
-  if (aContentType?.startsWith("image/")) {
-    let mimeInfo = getMIMEInfoForType(aContentType, "");
-    let exts = Array.from(mimeInfo.getFileExtensions());
-    if (exts.length) {
-      return exts[0];
-    }
-  }
-
-  
   var url = Cc["@mozilla.org/network/standard-url-mutator;1"]
     .createInstance(Ci.nsIURIMutator)
     .setSpec("http://example.com") 
@@ -1185,7 +1175,13 @@ function getDefaultExtension(aFilename, aURI, aContentType) {
   
   
 
-  var mimeInfo = getMIMEInfoForType(aContentType, ext);
+  
+  
+  var lookupExt = ext;
+  if (aContentType?.startsWith("image/")) {
+    lookupExt = "";
+  }
+  var mimeInfo = getMIMEInfoForType(aContentType, lookupExt);
 
   if (ext && mimeInfo && mimeInfo.extensionExists(ext)) {
     return ext;
@@ -1201,11 +1197,15 @@ function getDefaultExtension(aFilename, aURI, aContentType) {
   if (urlext && mimeInfo && mimeInfo.extensionExists(urlext)) {
     return urlext;
   }
+
+  
+  
   try {
     if (mimeInfo) {
       return mimeInfo.primaryExtension;
     }
   } catch (e) {}
+
   
   
   return ext || urlext;
