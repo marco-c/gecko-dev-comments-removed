@@ -248,7 +248,16 @@ class StyleSheetWatcher {
 
 
 
-  async update(resourceId, text, transition, kind = UPDATE_GENERAL) {
+
+
+
+  async update(
+    resourceId,
+    text,
+    transition,
+    kind = UPDATE_GENERAL,
+    cause = ""
+  ) {
     const { styleSheet } = this._styleSheetMap.get(resourceId);
     InspectorUtils.parseStyleSheet(styleSheet, text);
     modifiedStyleSheets.set(styleSheet, text);
@@ -262,10 +271,10 @@ class StyleSheetWatcher {
     }
 
     if (transition) {
-      this._startTransition(resourceId, kind);
+      this._startTransition(resourceId, kind, cause);
     } else {
       this._notifyResourceUpdated(resourceId, "style-applied", {
-        event: { kind },
+        event: { kind, cause },
       });
     }
 
@@ -280,7 +289,7 @@ class StyleSheetWatcher {
     });
   }
 
-  _startTransition(resourceId, kind) {
+  _startTransition(resourceId, kind, cause) {
     const { styleSheet } = this._styleSheetMap.get(resourceId);
     const document = styleSheet.ownerNode.ownerDocument;
     const window = styleSheet.ownerNode.ownerGlobal;
@@ -299,19 +308,19 @@ class StyleSheetWatcher {
     
     window.clearTimeout(this._transitionTimeout);
     this._transitionTimeout = window.setTimeout(
-      this._onTransitionEnd.bind(this, resourceId, kind),
+      this._onTransitionEnd.bind(this, resourceId, kind, cause),
       TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS
     );
   }
 
-  _onTransitionEnd(resourceId, kind) {
+  _onTransitionEnd(resourceId, kind, cause) {
     const { styleSheet } = this._styleSheetMap.get(resourceId);
     const document = styleSheet.ownerNode.ownerDocument;
 
     this._transitionTimeout = null;
     removePseudoClassLock(document.documentElement, TRANSITION_PSEUDO_CLASS);
     this._notifyResourceUpdated(resourceId, "style-applied", {
-      event: { kind },
+      event: { kind, cause },
     });
   }
 

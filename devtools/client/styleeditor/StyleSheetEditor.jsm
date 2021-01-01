@@ -51,6 +51,8 @@ const SELECTOR_HIGHLIGHT_TIMEOUT = 500;
 
 const EMIT_MEDIA_RULES_THROTTLING = 500;
 
+const STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR = "styleeditor";
+
 
 
 
@@ -91,6 +93,10 @@ function StyleSheetEditor(
   this.highlighter = highlighter;
   this.styleSheetFriendlyIndex = styleSheetFriendlyIndex;
 
+  
+  
+  
+  
   
   this._isUpdating = false;
   
@@ -388,13 +394,23 @@ StyleSheetEditor.prototype = {
   
 
 
-  onStyleApplied: function() {
-    if (this._isUpdating) {
+
+  onStyleApplied: function(update) {
+    const updateIsFromSyleSheetEditor =
+      update?.event?.cause === STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR;
+
+    
+    
+    if (this._isUpdating || updateIsFromSyleSheetEditor) {
+      
       
       
       this._isUpdating = false;
       this.emit("style-applied");
-    } else if (this.sourceEditor) {
+      return;
+    }
+
+    if (this.sourceEditor) {
       this._getSourceTextAndPrettify().then(newText => {
         this._justSetText = true;
         const firstLine = this.sourceEditor.getFirstVisibleLine();
@@ -594,6 +610,7 @@ StyleSheetEditor.prototype = {
       this._state.text = this.sourceEditor.getText();
     }
 
+    
     this._isUpdating = true;
 
     try {
@@ -601,7 +618,8 @@ StyleSheetEditor.prototype = {
       await styleSheetsFront.update(
         this.resourceId,
         this._state.text,
-        this.transitionsEnabled
+        this.transitionsEnabled,
+        STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR
       );
 
       
@@ -805,6 +823,7 @@ StyleSheetEditor.prototype = {
 
       
       
+      
       this._isUpdating = true;
 
       const styleSheetsFront = await this._getStyleSheetsFront();
@@ -812,7 +831,8 @@ StyleSheetEditor.prototype = {
       await styleSheetsFront.update(
         this.resourceId,
         text,
-        this.transitionsEnabled
+        this.transitionsEnabled,
+        STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR
       );
     }, this.markLinkedFileBroken);
   },

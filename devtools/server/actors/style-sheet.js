@@ -459,7 +459,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  update: function(text, transition, kind = UPDATE_GENERAL) {
+  update: function(text, transition, kind = UPDATE_GENERAL, cause) {
     InspectorUtils.parseStyleSheet(this.rawSheet, text);
 
     modifiedStyleSheets.set(this.rawSheet, text);
@@ -471,9 +471,9 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     }
 
     if (transition) {
-      this._startTransition(kind);
+      this._startTransition(kind, cause);
     } else {
-      this.emit("style-applied", kind, this);
+      this.emit("style-applied", kind, this, cause);
     }
 
     this._getMediaRules().then(rules => {
@@ -485,7 +485,10 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _startTransition: function(kind) {
+
+
+
+  _startTransition: function(kind, cause) {
     if (!this._transitionSheetLoaded) {
       this._transitionSheetLoaded = true;
       
@@ -500,7 +503,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     
     this.window.clearTimeout(this._transitionTimeout);
     this._transitionTimeout = this.window.setTimeout(
-      this._onTransitionEnd.bind(this, kind),
+      this._onTransitionEnd.bind(this, kind, cause),
       TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS
     );
   },
@@ -509,13 +512,16 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _onTransitionEnd: function(kind) {
+
+
+
+  _onTransitionEnd: function(kind, cause) {
     this._transitionTimeout = null;
     removePseudoClassLock(
       this.document.documentElement,
       TRANSITION_PSEUDO_CLASS
     );
-    this.emit("style-applied", kind, this);
+    this.emit("style-applied", kind, this, cause);
   },
 });
 

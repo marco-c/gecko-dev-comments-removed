@@ -14,6 +14,13 @@ const {
   getResourceWatcher,
 } = require("devtools/server/actors/resources/index");
 
+loader.lazyRequireGetter(
+  this,
+  "UPDATE_GENERAL",
+  "devtools/server/actors/style-sheet",
+  true
+);
+
 
 
 
@@ -357,17 +364,23 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return actor.getText();
   },
 
-  update(resourceId, text, transition) {
+  update(resourceId, text, transition, cause = "") {
     const styleSheetsWatcher = this._getStyleSheetsWatcher();
     if (styleSheetsWatcher) {
-      return styleSheetsWatcher.update(resourceId, text, transition);
+      return styleSheetsWatcher.update(
+        resourceId,
+        text,
+        transition,
+        UPDATE_GENERAL,
+        cause
+      );
     }
 
     
     
     
     const actor = this._getStyleSheetActor(resourceId);
-    return actor.update(text, transition);
+    return actor.update(text, transition, UPDATE_GENERAL, cause);
   },
 });
 
