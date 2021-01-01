@@ -94,11 +94,6 @@ class nsJSContext : public nsIScriptContext {
   static void RunNextCollectorTimer(
       JS::GCReason aReason,
       mozilla::TimeStamp aDeadline = mozilla::TimeStamp());
-  
-  
-  
-  static void MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
-                                         JS::GCReason aReason);
 
   
   static void PokeGC(JS::GCReason aReason, JSObject* aObj, uint32_t aDelay = 0);
