@@ -48,11 +48,11 @@ class ICEntry;
 
 
 
+enum SpewContext : uint8_t { Shell, Transition, TrialInlining };
 
 class CacheIRHealth {
   enum Happiness : uint8_t { Sad, MediumSad, MediumHappy, Happy };
 
- public:
   
   Happiness determineStubHappiness(uint32_t stubHealthScore);
   
@@ -65,9 +65,14 @@ class CacheIRHealth {
   Happiness spewJSOpAndCacheIRHealth(AutoStructuredSpewer& spew,
                                      HandleScript script, jit::ICEntry* entry,
                                      jsbytecode* pc, JSOp op);
+
+ public:
+  
+  void rateIC(JSContext* cx, ICEntry* entry, HandleScript script,
+              SpewContext context);
   
   
-  void rateMyCacheIR(JSContext* cx, HandleScript script);
+  void rateScript(JSContext* cx, HandleScript script, SpewContext context);
 };
 
 }  
