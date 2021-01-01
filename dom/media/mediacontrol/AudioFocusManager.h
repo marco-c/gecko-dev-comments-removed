@@ -7,6 +7,7 @@
 
 #include "base/basictypes.h"
 #include "nsTArray.h"
+#include "VideoUtils.h"
 
 namespace mozilla {
 namespace dom {
@@ -29,15 +30,24 @@ class AudioFocusManager {
   void RevokeAudioFocus(IMediaController* aController);
 
   explicit AudioFocusManager() = default;
-  ~AudioFocusManager() = default;
+  ~AudioFocusManager();
 
   uint32_t GetAudioFocusNums() const;
 
  private:
   friend class MediaControlService;
-  void ClearFocusControllersIfNeeded();
+  
+  
+  bool ClearFocusControllersIfNeeded();
+
+  void CreateTimerForUpdatingTelemetry();
+  
+  
+  void UpdateTelemetryDataFromTimer(uint32_t aPrevFocusNum,
+                                    uint64_t aPrevActiveControllerNum);
 
   nsTArray<RefPtr<IMediaController>> mOwningFocusControllers;
+  RefPtr<SimpleTimer> mTelemetryTimer;
 };
 
 }  
