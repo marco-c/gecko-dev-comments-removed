@@ -1928,7 +1928,7 @@ bool InsertIterator::Next() {
     
     
     Accessible* nextChild = mWalker.Next();
-    if (nextChild && mProcessedNodes.EnsureInserted(nextChild->GetContent())) {
+    if (nextChild) {
       mChildBefore = mChild;
       mChild = nextChild;
       return true;
