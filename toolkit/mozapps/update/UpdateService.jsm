@@ -3087,6 +3087,16 @@ UpdateService.prototype = {
 
   
   get _pingSuffix() {
+    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
+    if (um.readyUpdate) {
+      
+      
+      
+      
+      return AUSTLMY.SUBSEQUENT;
+    }
     return this._isNotify ? AUSTLMY.NOTIFY : AUSTLMY.EXTERNAL;
   },
 
@@ -3114,8 +3124,10 @@ UpdateService.prototype = {
     
     
     
+    
     AUSTLMY.pingGeneric("UPDATE_PING_COUNT_" + this._pingSuffix, true, false);
 
+    
     
     
     
@@ -3127,12 +3139,14 @@ UpdateService.prototype = {
     
     
     
+    
     AUSTLMY.pingGeneric(
       "UPDATE_CANNOT_STAGE_" + this._pingSuffix,
       getCanStageUpdates(),
       true
     );
     if (AppConstants.platform == "win") {
+      
       
       
       
@@ -3146,7 +3160,10 @@ UpdateService.prototype = {
     
     
     
+    
+    
     AUSTLMY.pingLastUpdateTime(this._pingSuffix);
+    
     
     
     
@@ -3160,6 +3177,7 @@ UpdateService.prototype = {
     
     
     
+    
     AUSTLMY.pingBoolPref(
       "UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_" + this._pingSuffix,
       PREF_APP_UPDATE_STAGING_ENABLED,
@@ -3170,6 +3188,7 @@ UpdateService.prototype = {
       
       
       
+      
       AUSTLMY.pingIntPref(
         "UPDATE_PREF_UPDATE_CANCELATIONS_" + this._pingSuffix,
         PREF_APP_UPDATE_CANCELATIONS,
@@ -3177,18 +3196,8 @@ UpdateService.prototype = {
         0
       );
     }
-    if (AppConstants.platform == "macosx") {
-      
-      
-      
-      AUSTLMY.pingIntPref(
-        "UPDATE_PREF_UPDATE_CANCELATIONS_OSX_" + this._pingSuffix,
-        PREF_APP_UPDATE_CANCELATIONS_OSX,
-        0,
-        0
-      );
-    }
     if (AppConstants.MOZ_MAINTENANCE_SERVICE) {
+      
       
       
       
@@ -3200,6 +3209,7 @@ UpdateService.prototype = {
       
       
       
+      
       AUSTLMY.pingIntPref(
         "UPDATE_PREF_SERVICE_ERRORS_" + this._pingSuffix,
         PREF_APP_UPDATE_SERVICE_ERRORS,
@@ -3207,6 +3217,8 @@ UpdateService.prototype = {
         0
       );
       if (AppConstants.platform == "win") {
+        
+        
         
         
         
@@ -5668,6 +5680,7 @@ Downloader.prototype = {
         }
 
         if (migratedToReadyUpdate) {
+          AUSTLMY.pingMoveResult(AUSTLMY.MOVE_RESULT_SUCCESS);
           if (shouldUseService()) {
             state = STATE_PENDING_SERVICE;
           } else if (getElevationRequired()) {
@@ -5690,6 +5703,7 @@ Downloader.prototype = {
             "Downloader:onStopRequest - failed to move the downloading " +
               "update to the ready update directory."
           );
+          AUSTLMY.pingMoveResult(AUSTLMY.MOVE_RESULT_UNKNOWN_FAILURE);
 
           state = STATE_DOWNLOAD_FAILED;
           status = Cr.NS_ERROR_FILE_COPY_OR_MOVE_FAILED;

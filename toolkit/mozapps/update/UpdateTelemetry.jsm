@@ -31,6 +31,12 @@ var AUSTLMY = {
   EXTERNAL: "EXTERNAL",
   
   NOTIFY: "NOTIFY",
+  
+  
+  
+  
+  
+  SUBSEQUENT: "SUBSEQUENT",
 
   
 
@@ -113,6 +119,8 @@ var AUSTLMY = {
 
 
 
+
+
   pingCheckCode: function UT_pingCheckCode(aSuffix, aCode) {
     try {
       if (aCode == this.CHK_NO_UPDATE_FOUND) {
@@ -130,6 +138,7 @@ var AUSTLMY = {
   },
 
   
+
 
 
 
@@ -421,6 +430,8 @@ var AUSTLMY = {
 
 
 
+
+
   pingLastUpdateTime: function UT_pingLastUpdateTime(aSuffix) {
     const PREF_APP_UPDATE_LASTUPDATETIME =
       "app.update.lastUpdateTime.background-update-timer";
@@ -454,6 +465,8 @@ var AUSTLMY = {
   },
 
   
+
+
 
 
 
@@ -602,6 +615,20 @@ var AUSTLMY = {
     } catch (e) {
       Cu.reportError(e);
     }
+  },
+
+  
+
+
+  MOVE_RESULT_SUCCESS: "SUCCESS",
+  MOVE_RESULT_UNKNOWN_FAILURE: "UNKNOWN_FAILURE",
+
+  
+
+
+
+  pingMoveResult: function UT_pingMoveResult(aResult) {
+    Services.telemetry.keyedScalarAdd("update.move_result", aResult, 1);
   },
 };
 Object.freeze(AUSTLMY);
