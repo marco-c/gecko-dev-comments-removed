@@ -197,10 +197,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["update2.emptySearchBehavior", 0],
-
-  
-  
-  ["update2.oneOffsRefresh", true],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],

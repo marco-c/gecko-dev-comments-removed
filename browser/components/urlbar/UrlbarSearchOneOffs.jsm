@@ -206,10 +206,9 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     
     
     if (
-      !this.view.oneOffsRefresh ||
-      (userTypedSearchString &&
-        engine &&
-        (event.shiftKey || where != "current"))
+      userTypedSearchString &&
+      engine &&
+      (event.shiftKey || where != "current")
     ) {
       this.input.handleNavigation({
         event,
@@ -310,11 +309,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     
     
     if (
-      [
-        "update2",
-        "update2.oneOffsRefresh",
-        ...UrlbarUtils.LOCAL_SEARCH_MODES.map(m => m.pref),
-      ].includes(changedPref)
+      [...UrlbarUtils.LOCAL_SEARCH_MODES.map(m => m.pref)].includes(changedPref)
     ) {
       this.invalidateCache();
     }
@@ -328,10 +323,6 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
   _rebuildEngineList(engines) {
     super._rebuildEngineList(engines);
-
-    if (!this.view.oneOffsRefresh) {
-      return;
-    }
 
     for (let { source, pref, restrict } of UrlbarUtils.LOCAL_SEARCH_MODES) {
       if (!UrlbarPrefs.get(pref)) {
@@ -357,11 +348,6 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
   _on_click(event) {
-    if (!this.view.oneOffsRefresh) {
-      super._on_click(event);
-      return;
-    }
-
     
     if (event.button == 2) {
       return;
@@ -388,11 +374,6 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
   _on_contextmenu(event) {
     
-    if (this.view.oneOffsRefresh) {
-      event.preventDefault();
-      return;
-    }
-
-    super._on_contextmenu(event);
+    event.preventDefault();
   }
 }

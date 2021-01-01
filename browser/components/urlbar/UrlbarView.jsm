@@ -101,16 +101,6 @@ class UrlbarView {
 
 
 
-  get oneOffsRefresh() {
-    return (
-      UrlbarPrefs.get("update2") && UrlbarPrefs.get("update2.oneOffsRefresh")
-    );
-  }
-
-  
-
-
-
   get isOpen() {
     return this.input.hasAttribute("open");
   }
@@ -636,8 +626,7 @@ class UrlbarView {
       
       
       this.oneOffSearchButtons.enable(
-        ((this.oneOffsRefresh &&
-          firstResult.providerName != "UrlbarProviderSearchTips") ||
+        (firstResult.providerName != "UrlbarProviderSearchTips" ||
           queryContext.trimmedSearchString) &&
           queryContext.trimmedSearchString[0] != "@" &&
           (queryContext.trimmedSearchString[0] !=
@@ -1953,7 +1942,6 @@ class UrlbarView {
       
       
       if (
-        this.oneOffsRefresh &&
         result.heuristic &&
         !engine &&
         !localSearchMode &&
@@ -1995,18 +1983,9 @@ class UrlbarView {
 
       
       
-      if (
-        !this.oneOffsRefresh &&
-        result.type != UrlbarUtils.RESULT_TYPE.SEARCH
-      ) {
-        continue;
-      }
-
       
       
-      
-      
-      if (this.oneOffsRefresh && result.heuristic) {
+      if (result.heuristic) {
         title.textContent =
           localSearchMode || engine
             ? this._queryContext.searchString
@@ -2061,9 +2040,6 @@ class UrlbarView {
         iconOverride = UrlbarUtils.ICON.SEARCH_GLASS;
       }
       if (
-        
-        
-        !this.oneOffsRefresh ||
         result.heuristic ||
         (result.payload.inPrivateWindow && !result.payload.isPrivateEngine)
       ) {
