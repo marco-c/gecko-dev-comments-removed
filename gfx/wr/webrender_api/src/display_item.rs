@@ -305,7 +305,7 @@ pub struct ScrollFrameDisplayItem {
     pub content_rect: LayoutRect,
     pub clip_rect: LayoutRect,
     pub parent_space_and_clip: SpaceAndClipInfo,
-    pub external_id: Option<ExternalScrollId>,
+    pub external_id: ExternalScrollId,
     pub scroll_sensitivity: ScrollSensitivity,
     
     
