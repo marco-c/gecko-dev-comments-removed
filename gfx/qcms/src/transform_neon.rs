@@ -17,16 +17,6 @@ unsafe extern "C" fn qcms_transform_data_template_lut_neon<F: Format>(
     mut length: usize,
 ) {
     let mut mat: *const [f32; 4] = (*transform).matrix.as_ptr();
-    let mut input_back: [u8; 32] = [0; 32];
-    
-
-
-
-    let mut input: *const f32 = (&mut *input_back.as_mut_ptr().offset(16isize) as *mut u8 as usize
-        & !(0xf) as usize) as *mut f32;
-    
-
-    let mut output: *const u32 = input as *mut u32;
     
     let mut igtbl_r: *const f32 = (*transform).input_gamma_table_r.as_ref().unwrap().as_ptr();
     let mut igtbl_g: *const f32 = (*transform).input_gamma_table_g.as_ref().unwrap().as_ptr();

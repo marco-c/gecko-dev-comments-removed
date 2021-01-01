@@ -1108,10 +1108,6 @@ fn transform_precacheLUT_float(
     mut in_type: qcms_data_type,
 ) -> Option<Box<qcms_transform>> {
     
-    let mut x: u16;
-    let mut y: u16;
-    let mut z: u16;
-    let mut l: u32;
     let mut lutSize: u32 = (3 * samples * samples * samples) as u32;
 
     let mut src = Vec::with_capacity(lutSize as usize);
@@ -1150,7 +1146,7 @@ pub fn transform_create(
     mut in_type: qcms_data_type,
     mut out: &Profile,
     mut out_type: qcms_data_type,
-    mut intent: Intent,
+    _intent: Intent,
 ) -> Option<Box<qcms_transform>> {
     
     let matching_format = match (in_type, out_type) {
