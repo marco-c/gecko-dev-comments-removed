@@ -121,6 +121,12 @@ class HighlightersOverlay {
     
     this.highlighters = {};
     
+    
+    
+    
+    
+    
+    
     this.gridHighlighters = new Map();
     
     
@@ -197,6 +203,19 @@ class HighlightersOverlay {
     this.walker.on("display-change", this.onDisplayChange);
 
     EventEmitter.decorate(this);
+  }
+
+  
+  
+  get parentGridHighlighters() {
+    return Array.from(this.gridHighlighters.values()).reduce((map, value) => {
+      const { parentGridNode, parentGridHighlighter } = value;
+      if (parentGridNode) {
+        map.set(parentGridNode, parentGridHighlighter);
+      }
+
+      return map;
+    }, new Map());
   }
 
   
@@ -344,11 +363,50 @@ class HighlightersOverlay {
 
 
 
+  _getMaxActiveHighlighters(type) {
+    let max;
+
+    switch (type) {
+      
+      
+      
+      
+      case TYPES.GRID:
+        max = this.maxGridHighlighters;
+        break;
+      
+      
+      default:
+        max = 1;
+    }
+
+    return max;
+  }
+
+  
+
+
+
+
+
+
+
 
 
   async _getHighlighterTypeForNode(type, nodeFront) {
     const { inspectorFront } = nodeFront;
-    const highlighter = await inspectorFront.getOrCreateHighlighterByType(type);
+    const max = this._getMaxActiveHighlighters(type);
+    let highlighter;
+
+    
+    
+    
+    if (max === 1) {
+      highlighter = await inspectorFront.getOrCreateHighlighterByType(type);
+    } else {
+      highlighter = await inspectorFront.getHighlighterByType(type);
+    }
+
     return highlighter;
   }
 
@@ -554,12 +612,9 @@ class HighlightersOverlay {
 
 
   canGridHighlighterToggle(node) {
-    const maxGridHighlighters = Services.prefs.getIntPref(
-      "devtools.gridinspector.maxHighlighters"
-    );
     return (
-      maxGridHighlighters === 1 ||
-      this.gridHighlighters.size < maxGridHighlighters ||
+      this.maxGridHighlighters === 1 ||
+      this.gridHighlighters.size < this.maxGridHighlighters ||
       this.gridHighlighters.has(node)
     );
   }
@@ -847,6 +902,320 @@ class HighlightersOverlay {
     }
 
     await this.showGridHighlighter(node, {}, trigger);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async showGridHighlighter(node, options, trigger) {
+    if (!this.gridHighlighters.has(node)) {
+      
+      
+      if (this.maxGridHighlighters === 1) {
+        await this.hideGridHighlighter(
+          this.gridHighlighters.keys().next().value
+        );
+      } else if (this.gridHighlighters.size === this.maxGridHighlighters) {
+        return;
+      }
+    }
+
+    
+    
+    const isHighlightedAsParentGrid = Array.from(this.gridHighlighters.values())
+      .map(value => value.parentGridNode)
+      .includes(node);
+    if (isHighlightedAsParentGrid) {
+      await this.hideParentGridHighlighter(node);
+    }
+
+    
+    
+    let parentGridNode = null;
+    let parentGridHighlighter = null;
+    if (node.displayType === "subgrid") {
+      parentGridNode = await node.walkerFront.getParentGridNode(node);
+      parentGridHighlighter = await this.showParentGridHighlighter(
+        parentGridNode
+      );
+    }
+
+    
+    
+    let highlighter;
+    if (this.gridHighlighters.has(node)) {
+      highlighter = this.gridHighlighters.get(node).highlighter;
+    }
+
+    if (!highlighter) {
+      highlighter = await this._getHighlighterTypeForNode(TYPES.GRID, node);
+    }
+
+    this.gridHighlighters.set(node, {
+      highlighter,
+      parentGridNode,
+      parentGridHighlighter,
+    });
+
+    options = { ...options, ...this.getGridHighlighterSettings(node) };
+    await highlighter.show(node, options);
+
+    this._toggleRuleViewIcon(node, true, ".ruleview-grid");
+
+    if (!this.isGridHighlighterTimerActive) {
+      this.telemetry.toolOpened(
+        "grid_highlighter",
+        this.inspector.toolbox.sessionId,
+        this
+      );
+      this.isGridHighlighterTimerActive = true;
+    }
+
+    if (trigger === "grid") {
+      this.telemetry.scalarAdd("devtools.grid.gridinspector.opened", 1);
+    } else if (trigger === "markup") {
+      this.telemetry.scalarAdd("devtools.markup.gridinspector.opened", 1);
+    } else if (trigger === "rule") {
+      this.telemetry.scalarAdd("devtools.rules.gridinspector.opened", 1);
+    }
+
+    try {
+      
+      const { url } = this.target;
+      const selectors = await node.getAllSelectors();
+      this.state.grids.set(node, { selectors, options, url });
+
+      
+      
+      this.emit("grid-highlighter-shown", node, options);
+
+      
+      
+      this.emit("highlighter-shown", {
+        type: TYPES.GRID,
+        nodeFront: node,
+        highlighter,
+        options,
+      });
+    } catch (e) {
+      this._handleRejection(e);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async showParentGridHighlighter(node) {
+    const isHighlighted = Array.from(this.gridHighlighters.keys()).includes(
+      node
+    );
+
+    if (!node || isHighlighted) {
+      return null;
+    }
+
+    
+    let highlighter = this.getParentGridHighlighter(node);
+    if (!highlighter) {
+      highlighter = await this._getHighlighterTypeForNode(TYPES.GRID, node);
+    }
+
+    await highlighter.show(node, {
+      ...this.getGridHighlighterSettings(node),
+      
+      globalAlpha: SUBGRID_PARENT_ALPHA,
+    });
+
+    return highlighter;
+  }
+
+  
+
+
+
+
+
+
+
+  getParentGridHighlighter(node) {
+    
+    const value = Array.from(this.gridHighlighters.values()).find(
+      ({ parentGridNode }) => {
+        return parentGridNode === node;
+      }
+    );
+
+    if (!value) {
+      return null;
+    }
+
+    const { parentGridHighlighter } = value;
+    return parentGridHighlighter;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async restoreParentGridHighlighter(node) {
+    
+    const entry = Array.from(this.gridHighlighters.entries()).find(
+      ([key, value]) => {
+        return value?.parentGridNode === node;
+      }
+    );
+
+    if (!Array.isArray(entry)) {
+      return;
+    }
+
+    const [highlightedSubgridNode, data] = entry;
+    if (!data.parentGridHighlighter) {
+      const parentGridHighlighter = await this.showParentGridHighlighter(node);
+      this.gridHighlighters.set(highlightedSubgridNode, {
+        ...data,
+        parentGridHighlighter,
+      });
+    }
+  }
+
+  
+
+
+
+
+
+  async hideGridHighlighter(node) {
+    const { highlighter, parentGridNode } =
+      this.gridHighlighters.get(node) || {};
+
+    if (!highlighter) {
+      return;
+    }
+
+    
+    if (parentGridNode) {
+      await this.hideParentGridHighlighter(parentGridNode);
+    }
+
+    
+    
+    highlighter.destroy();
+    this.gridHighlighters.delete(node);
+    this.state.grids.delete(node);
+
+    
+    
+    await this.restoreParentGridHighlighter(node);
+
+    this._toggleRuleViewIcon(node, false, ".ruleview-grid");
+
+    if (this.isGridHighlighterTimerActive && !this.gridHighlighters.size) {
+      this.telemetry.toolClosed(
+        "grid_highlighter",
+        this.inspector.toolbox.sessionId,
+        this
+      );
+      this.isGridHighlighterTimerActive = false;
+    }
+
+    
+    
+    this.emit("grid-highlighter-hidden", node);
+
+    
+    
+    this.emit("highlighter-hidden", {
+      type: TYPES.GRID,
+      nodeFront: node,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  async hideParentGridHighlighter(node) {
+    let count = 0;
+    let parentGridHighlighter;
+    let subgridNode;
+    for (const [key, value] of this.gridHighlighters.entries()) {
+      if (value.parentGridNode === node) {
+        parentGridHighlighter = value.parentGridHighlighter;
+        subgridNode = key;
+        count++;
+      }
+    }
+
+    if (!parentGridHighlighter || count > 1) {
+      return;
+    }
+
+    
+    parentGridHighlighter.destroy();
+
+    
+    this.gridHighlighters.set(subgridNode, {
+      ...this.gridHighlighters.get(subgridNode),
+      parentGridHighlighter: null,
+    });
   }
 
   
@@ -1508,13 +1877,27 @@ class HighlightersOverlay {
 
   destroyHighlighters() {
     
-    for (const { highlighter, timer } of this._activeHighlighters.values()) {
-      highlighter.finalize();
-      clearTimeout(timer);
+    const values = [
+      ...this._activeHighlighters.values(),
+      ...this.gridHighlighters.values(),
+    ];
+    for (const { highlighter, parentGridHighlighter, timer } of values) {
+      if (highlighter) {
+        highlighter.destroy();
+      }
+
+      if (parentGridHighlighter) {
+        parentGridHighlighter.destroy();
+      }
+
+      if (timer) {
+        clearTimeout(timer);
+      }
     }
 
     this._activeHighlighters.clear();
     this._pendingHighlighters.clear();
+    this.gridHighlighters.clear();
 
     for (const type in this.highlighters) {
       if (this.highlighters[type]) {
@@ -1522,8 +1905,6 @@ class HighlightersOverlay {
         this.highlighters[type] = null;
       }
     }
-
-    this.highlighters = null;
   }
 
   

@@ -627,9 +627,10 @@ class GridInspector {
 
         
         
+        
         if (this.highlighters.gridHighlighters.has(node)) {
           this.highlighters.showGridHighlighter(node);
-        } else if (this.highlighters.parentGridHighlighters.has(node)) {
+        } else {
           this.highlighters.showParentGridHighlighter(node);
         }
       }
