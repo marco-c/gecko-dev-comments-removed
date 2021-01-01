@@ -293,8 +293,6 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   nsIContent* GetFocusedContent();
   
-  bool IsPlugin(nsIContent* aContent);
-  
   nsresult QueryContentRect(nsIContent* aContent,
                             WidgetQueryContentEvent* aEvent);
   

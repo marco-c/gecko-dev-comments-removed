@@ -85,14 +85,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void Init(nsIWidget* aWidget, nsPresContext* aPresContext,
-                               nsIContent* aContent, EditorBase* aEditorBase);
+  MOZ_CAN_RUN_SCRIPT void Init(nsIWidget& aWidget, nsPresContext& aPresContext,
+                               nsIContent* aContent, EditorBase& aEditorBase);
 
   
 
@@ -125,14 +119,13 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool MaybeReinitialize(nsIWidget* aWidget,
-                                            nsPresContext* aPresContext,
+  MOZ_CAN_RUN_SCRIPT bool MaybeReinitialize(nsIWidget& aWidget,
+                                            nsPresContext& aPresContext,
                                             nsIContent* aContent,
-                                            EditorBase* aEditorBase);
+                                            EditorBase& aEditorBase);
 
   bool IsManaging(nsPresContext* aPresContext, nsIContent* aContent) const;
   bool IsManaging(const TextComposition* aTextComposition) const;
-  bool WasInitializedWithPlugin() const;
   bool WasInitializedWith(const EditorBase& aEditorBase) const {
     return mEditorBase == &aEditorBase;
   }
@@ -182,11 +175,9 @@ class IMEContentObserver final : public nsStubMutationObserver,
     eState_Observing
   };
   State GetState() const;
-  MOZ_CAN_RUN_SCRIPT bool InitWithEditor(nsPresContext* aPresContext,
+  MOZ_CAN_RUN_SCRIPT bool InitWithEditor(nsPresContext& aPresContext,
                                          nsIContent* aContent,
-                                         EditorBase* aEditorBase);
-  bool InitWithPlugin(nsPresContext* aPresContext, nsIContent* aContent);
-  bool IsInitializedWithPlugin() const { return !mEditorBase; }
+                                         EditorBase& aEditorBase);
   void OnIMEReceivedFocus();
   void Clear();
   bool IsObservingContent(nsPresContext* aPresContext,
@@ -291,8 +282,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
   }
 
   
-
-
 
 
 

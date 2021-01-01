@@ -190,7 +190,7 @@ class IMEStateManager {
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static void UpdateIMEState(
       const IMEState& aNewIMEState, nsIContent* aContent,
-      EditorBase* aEditorBase);
+      EditorBase& aEditorBase);
 
   
   
@@ -315,7 +315,7 @@ class IMEStateManager {
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static void CreateIMEContentObserver(
-      EditorBase* aEditorBase);
+      EditorBase& aEditorBase);
 
   static void DestroyIMEContentObserver();
 
