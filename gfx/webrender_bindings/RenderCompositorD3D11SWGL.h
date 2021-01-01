@@ -41,6 +41,8 @@ class RenderCompositorD3D11SWGL : public RenderCompositor {
 
   LayoutDeviceIntSize GetBufferSize() override;
 
+  GLenum IsContextLost(bool aForce) override;
+
   
   bool SupportsExternalBufferTextures() const override { return false; }
 
