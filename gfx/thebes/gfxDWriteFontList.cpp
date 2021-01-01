@@ -1854,10 +1854,14 @@ nsresult gfxDWriteFontList::GetFontSubstitutes() {
     RemoveCharsetFromFontSubstitute(actualFontName);
     BuildKeyNameFromFontName(actualFontName);
     if (SharedFontList()) {
-      if (SharedFontList()->FindFamily(substituteName)) {
+      
+      
+      if (SharedFontList()->FindFamily(substituteName,
+                                        true)) {
         continue;
       }
-      if (SharedFontList()->FindFamily(actualFontName)) {
+      if (SharedFontList()->FindFamily(actualFontName,
+                                        true)) {
         mSubstitutions.Put(substituteName, new nsCString(actualFontName));
       } else if (mSubstitutions.Get(actualFontName)) {
         mSubstitutions.Put(substituteName,
@@ -1897,12 +1901,16 @@ void gfxDWriteFontList::GetDirectWriteSubstitutes() {
     nsAutoCString substituteName(sub.aliasName);
     BuildKeyNameFromFontName(substituteName);
     if (SharedFontList()) {
-      if (SharedFontList()->FindFamily(substituteName)) {
+      
+      
+      if (SharedFontList()->FindFamily(substituteName,
+                                        true)) {
         continue;
       }
       nsAutoCString actualFontName(sub.actualName);
       BuildKeyNameFromFontName(actualFontName);
-      if (SharedFontList()->FindFamily(actualFontName)) {
+      if (SharedFontList()->FindFamily(actualFontName,
+                                        true)) {
         mSubstitutions.Put(substituteName, new nsCString(actualFontName));
       } else {
         mNonExistingFonts.AppendElement(substituteName);

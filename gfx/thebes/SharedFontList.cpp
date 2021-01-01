@@ -849,7 +849,9 @@ void FontList::SetLocalNames(
     (void)new (&faces[i]) LocalFaceRec();
     const auto& rec = aLocalNameTable.Get(faceArray[i]);
     faces[i].mKey.Assign(faceArray[i], this);
-    const auto* family = FindFamily(rec.mFamilyName);
+    
+    
+    const auto* family = FindFamily(rec.mFamilyName,  true);
     if (!family) {
       
       continue;
@@ -905,7 +907,7 @@ nsCString FontList::LocalizedFamilyName(const Family* aFamily) {
   return aFamily->DisplayName().AsString(this);
 }
 
-Family* FontList::FindFamily(const nsCString& aName) {
+Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
   struct FamilyNameComparator {
     FamilyNameComparator(FontList* aList, const nsCString& aTarget)
         : mList(aList), mTarget(aTarget) {}
@@ -926,6 +928,10 @@ Family* FontList::FindFamily(const nsCString& aName) {
   if (families && BinarySearchIf(families, 0, header.mFamilyCount,
                                  FamilyNameComparator(this, aName), &match)) {
     return &families[match];
+  }
+
+  if (aPrimaryNameOnly) {
+    return nullptr;
   }
 
   if (header.mAliasCount) {

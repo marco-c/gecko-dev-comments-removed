@@ -146,7 +146,7 @@ class FontList {
 
 
 
-  Family* FindFamily(const nsCString& aName);
+  Family* FindFamily(const nsCString& aName, bool aPrimaryNameOnly = false);
 
   
 
