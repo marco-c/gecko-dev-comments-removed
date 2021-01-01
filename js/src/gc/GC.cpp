@@ -8069,6 +8069,9 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
 #ifdef MOZ_VTUNE
   MOZ_ASSERT(!sourceZone->scriptVTuneIdMap);
 #endif
+#ifdef JS_CACHEIR_SPEW
+  MOZ_ASSERT(!sourceZone->scriptFinalWarmUpCountMap);
+#endif
 
   
   
