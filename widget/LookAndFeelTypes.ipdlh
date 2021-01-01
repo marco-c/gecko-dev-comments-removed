@@ -53,9 +53,7 @@ struct LookAndFeelCache {
 
 
 
-
-
-struct FullLookAndFeel {
+struct LookAndFeelTables {
     int32_t[] ints;
     float[] floats;
     nscolor[] colors;
@@ -68,6 +66,23 @@ struct FullLookAndFeel {
 
     uint16_t passwordChar;
     bool passwordEcho;
+};
+
+struct LookAndFeelTheme {
+#ifdef MOZ_WIDGET_GTK
+    nsCString themeName;
+    bool preferDarkTheme;
+#endif
+};
+
+
+
+
+struct FullLookAndFeel {
+    LookAndFeelTables tables;
+#ifdef MOZ_WIDGET_GTK
+    LookAndFeelTheme theme;
+#endif
 };
 
 union LookAndFeelData {
