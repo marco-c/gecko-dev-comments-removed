@@ -82,79 +82,76 @@ add_task(function test_setup() {
 add_task(function test_osversion_is_set() {
   Assert.equal(
     "1.2.3",
-    Glean.fog_validation.os_version.testGetValue("fog-validation")
+    Glean.fogValidation.osVersion.testGetValue("fog-validation")
   );
 });
 
 add_task(function test_fog_counter_works() {
-  Glean.test_only.bad_code.add(31);
-  Assert.equal(31, Glean.test_only.bad_code.testGetValue("test-ping"));
+  Glean.testOnly.badCode.add(31);
+  Assert.equal(31, Glean.testOnly.badCode.testGetValue("test-ping"));
 });
 
 add_task(async function test_fog_string_works() {
   const value = "a cheesy string!";
-  Glean.test_only.cheesy_string.set(value);
+  Glean.testOnly.cheesyString.set(value);
 
-  Assert.equal(value, Glean.test_only.cheesy_string.testGetValue("test-ping"));
+  Assert.equal(value, Glean.testOnly.cheesyString.testGetValue("test-ping"));
 });
 
 add_task(async function test_fog_timespan_works() {
   
   
-  Glean.test_only.can_we_time_it.start();
+  Glean.testOnly.canWeTimeIt.start();
   await sleep(10);
-  Glean.test_only.can_we_time_it.stop();
+  Glean.testOnly.canWeTimeIt.stop();
 
-  Assert.ok(Glean.test_only.can_we_time_it.testGetValue("test-ping") > 0);
+  Assert.ok(Glean.testOnly.canWeTimeIt.testGetValue("test-ping") > 0);
 });
 
 add_task(async function test_fog_uuid_works() {
   const kTestUuid = "decafdec-afde-cafd-ecaf-decafdecafde";
-  Glean.test_only.what_id_it.set(kTestUuid);
-  Assert.equal(kTestUuid, Glean.test_only.what_id_it.testGetValue("test-ping"));
+  Glean.testOnly.whatIdIt.set(kTestUuid);
+  Assert.equal(kTestUuid, Glean.testOnly.whatIdIt.testGetValue("test-ping"));
 
-  Glean.test_only.what_id_it.generateAndSet();
+  Glean.testOnly.whatIdIt.generateAndSet();
   
   
-  Assert.notEqual(
-    kTestUuid,
-    Glean.test_only.what_id_it.testGetValue("test-ping")
-  );
+  Assert.notEqual(kTestUuid, Glean.testOnly.whatIdIt.testGetValue("test-ping"));
 });
 
 
 add_task({ skip_if: () => true }, function test_fog_datetime_works() {
   const value = new Date("2020-06-11T12:00:00");
 
-  Glean.test_only.what_a_date.set(value.getTime() * 1000);
+  Glean.testOnly.whatADate.set(value.getTime() * 1000);
 
-  const received = Glean.test_only.what_a_date.testGetValue("test-ping");
+  const received = Glean.testOnly.whatADate.testGetValue("test-ping");
   Assert.ok(received.startsWith("2020-06-11T12:00:00"));
 });
 
 add_task(function test_fog_boolean_works() {
-  Glean.test_only.can_we_flag_it.set(false);
-  Assert.equal(false, Glean.test_only.can_we_flag_it.testGetValue("test-ping"));
+  Glean.testOnly.canWeFlagIt.set(false);
+  Assert.equal(false, Glean.testOnly.canWeFlagIt.testGetValue("test-ping"));
   
-  Assert.equal(false, Glean.test_only.can_we_flag_it.testGetValue());
+  Assert.equal(false, Glean.testOnly.canWeFlagIt.testGetValue());
 });
 
 add_task(async function test_fog_event_works() {
-  Glean.test_only_ipc.no_extra_event.record();
+  Glean.testOnlyIpc.noExtraEvent.record();
   
   
 
   let extra = { extra1: "can set extras", extra2: "passing more data" };
-  Glean.test_only_ipc.an_event.record(extra);
+  Glean.testOnlyIpc.anEvent.record(extra);
   
   
 });
 
 add_task(async function test_fog_memory_distribution_works() {
-  Glean.test_only.do_you_remember.accumulate(7);
-  Glean.test_only.do_you_remember.accumulate(17);
+  Glean.testOnly.doYouRemember.accumulate(7);
+  Glean.testOnly.doYouRemember.accumulate(17);
 
-  let data = Glean.test_only.do_you_remember.testGetValue("test-ping");
+  let data = Glean.testOnly.doYouRemember.testGetValue("test-ping");
   
   Assert.equal(24 * 1024 * 1024, data.sum, "Sum's correct");
   for (let [bucket, count] of Object.entries(data.values)) {
