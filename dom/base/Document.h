@@ -1609,11 +1609,11 @@ class Document : public nsINode,
  private:
   class SelectorCacheKey {
    public:
-    explicit SelectorCacheKey(const nsAString& aString) : mKey(aString) {
+    explicit SelectorCacheKey(const nsACString& aString) : mKey(aString) {
       MOZ_COUNT_CTOR(SelectorCacheKey);
     }
 
-    nsString mKey;
+    nsCString mKey;
     nsExpirationState mState;
 
     nsExpirationState* GetExpirationState() { return &mState; }
@@ -1627,33 +1627,27 @@ class Document : public nsINode,
   class SelectorCache final : public nsExpirationTracker<SelectorCacheKey, 4> {
    public:
     using SelectorList = UniquePtr<RawServoSelectorList>;
+    using Table = nsDataHashtable<nsCStringHashKey, SelectorList>;
 
     explicit SelectorCache(nsIEventTarget* aEventTarget);
+    void NotifyExpired(SelectorCacheKey*) final;
 
-    void CacheList(const nsAString& aSelector, SelectorList aSelectorList) {
+    
+    
+    
+    
+    
+    
+    
+    Table::EntryPtr GetList(const nsACString& aSelector) {
       MOZ_ASSERT(NS_IsMainThread());
-      SelectorCacheKey* key = new SelectorCacheKey(aSelector);
-      mTable.Put(key->mKey, std::move(aSelectorList));
-      AddObject(key);
-    }
-
-    void NotifyExpired(SelectorCacheKey* aSelector) final;
-
-    
-    
-    
-    
-    
-    
-    
-    SelectorList* GetList(const nsAString& aSelector) {
-      return mTable.GetValue(aSelector);
+      return mTable.LookupForAdd(aSelector);
     }
 
     ~SelectorCache();
 
    private:
-    nsDataHashtable<nsStringHashKey, SelectorList> mTable;
+    Table mTable;
   };
 
   SelectorCache& GetSelectorCache() {

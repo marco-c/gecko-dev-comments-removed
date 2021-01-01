@@ -1509,9 +1509,9 @@ class nsINode : public mozilla::dom::EventTarget {
     SetTextContentInternal(aTextContent, nullptr, aError);
   }
 
-  mozilla::dom::Element* QuerySelector(const nsAString& aSelector,
+  mozilla::dom::Element* QuerySelector(const nsACString& aSelector,
                                        mozilla::ErrorResult& aResult);
-  already_AddRefed<nsINodeList> QuerySelectorAll(const nsAString& aSelector,
+  already_AddRefed<nsINodeList> QuerySelectorAll(const nsACString& aSelector,
                                                  mozilla::ErrorResult& aResult);
 
  protected:
@@ -2160,7 +2160,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   const RawServoSelectorList* ParseSelectorList(
-      const nsAString& aSelectorString, mozilla::ErrorResult&);
+      const nsACString& aSelectorString, mozilla::ErrorResult&);
 
  public:
   

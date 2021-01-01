@@ -114,7 +114,7 @@ class HTMLTextFieldAccessible : public HyperTextAccessibleWrap {
       return el;
     }
     
-    return Elm()->Closest(u"search-textbox"_ns, IgnoreErrors());
+    return Elm()->Closest("search-textbox"_ns, IgnoreErrors());
   }
 };
 
