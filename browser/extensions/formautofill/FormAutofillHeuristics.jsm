@@ -26,7 +26,7 @@ ChromeUtils.defineModuleGetter(
 XPCOMUtils.defineLazyModuleGetters(this, {
   CreditCard: "resource://gre/modules/CreditCard.jsm",
   creditCardRuleset: "resource://formautofill/CreditCardRuleset.jsm",
-  LabelUtils: "resource://formautofill/FormAutofillUtils.jsm",  
+  LabelUtils: "resource://formautofill/FormAutofillUtils.jsm",
 });
 
 this.log = null;
@@ -174,6 +174,26 @@ class FieldScanner {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -905,6 +925,53 @@ this.FormAutofillHeuristics = {
     return regexps;
   },
 
+  
+
+
+
+
+
+
+  _topFathomField(element) {
+    
+    const fieldNames = [
+      "cc-name",
+      "cc-number",
+      "cc-exp-month",
+      "cc-exp-year",
+      "cc-exp",
+      "cc-type",
+    ];
+
+    
+
+
+
+
+
+
+
+
+    function confidence(fieldName) {
+      const fnodes = creditCardRuleset.against(element).get(fieldName);
+      
+      
+      return fnodes.length ? fnodes[0].scoreFor(fieldName) : 0;
+    }
+
+    
+    const fieldsAndConfidences = fieldNames.map(fieldName => [
+      fieldName,
+      confidence(fieldName),
+    ]);
+
+    
+    fieldsAndConfidences.sort(
+      ([_1, confidence1], [_2, confidence2]) => confidence2 - confidence1
+    );
+    return fieldsAndConfidences[0];
+  },
+
   getInfo(element) {
     let info = element.getAutocompleteInfo();
     
@@ -940,21 +1007,18 @@ this.FormAutofillHeuristics = {
       };
     }
 
-    let regexps = this._getRegExpList(isAutoCompleteOff, element.tagName);
-    if (!regexps.length) {
-      return null;
-    }
-
-    let matchedFieldName = this._findMatchedFieldName(element, regexps);
-    if (matchedFieldName) {
+    
+    const [mostConfidentFieldName, mostConfidentScore] = this._topFathomField(
+      element
+    );
+    if (mostConfidentScore > 0.5) {
       return {
-        fieldName: matchedFieldName,
+        fieldName: mostConfidentFieldName,
         section: "",
         addressType: "",
         contactType: "",
       };
     }
-
     return null;
   },
 
