@@ -68,6 +68,10 @@ class CacheIRHealth {
 
  public:
   
+  
+  void spewScriptFinalWarmUpCount(JSContext* cx, const char* filename,
+                                  JSScript* script, uint32_t warmUpCount);
+  
   void rateIC(JSContext* cx, ICEntry* entry, HandleScript script,
               SpewContext context);
   
