@@ -18,7 +18,7 @@ for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     Object.seal(ta);
 
     assertEq(Object.isExtensible(ta), false);
-    assertEq(Object.isSealed(ta), true);
+    assertEq(Object.isSealed(ta), false);
     assertEq(Object.isFrozen(ta), false);
 }
 
@@ -38,7 +38,7 @@ for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     assertThrowsInstanceOf(() => Object.freeze(ta), TypeError);
 
     assertEq(Object.isExtensible(ta), false);
-    assertEq(Object.isSealed(ta), true);
+    assertEq(Object.isSealed(ta), false);
     assertEq(Object.isFrozen(ta), false);
 }
 
@@ -58,7 +58,7 @@ for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     Object.preventExtensions(ta);
 
     assertEq(Object.isExtensible(ta), false);
-    assertEq(Object.isSealed(ta), true);
+    assertEq(Object.isSealed(ta), false);
     assertEq(Object.isFrozen(ta), false);
 }
 

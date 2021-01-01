@@ -8,17 +8,18 @@ var array = new Int32Array(0);
 Object.preventExtensions(array);
 assertEq(Object.isSealed(array), true);
 
+
 array = new Int32Array(1);
 array.b = "test";
 Object.preventExtensions(array);
 assertEq(Object.isSealed(array), false);
 Object.defineProperty(array, "b", {configurable: false});
-assertEq(Object.isSealed(array), true);
+assertEq(Object.isSealed(array), false);
 
 array = new Int32Array(2);
 array.b = "test";
 Object.seal(array);
-assertEq(Object.isSealed(array), true);
+assertEq(Object.isSealed(array), false);
 assertThrowsInstanceOf(() => array.c = 15, TypeError);
 
 

@@ -676,8 +676,7 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
     
     
     if (nobj->is<TypedArrayObject>() &&
-        nobj->as<TypedArrayObject>().length().get() > 0 &&
-        level == IntegrityLevel::Frozen) {
+        nobj->as<TypedArrayObject>().length().get() > 0) {
       *result = false;
       return true;
     }

@@ -2770,6 +2770,11 @@ bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
     return result.failCantDelete();
   }
 
+  
+  if (prop.isTypedArrayElement()) {
+    return result.failCantDelete();
+  }
+
   if (!CallJSDeletePropertyOp(cx, obj->getClass()->getDelProperty(), obj, id,
                               result)) {
     return false;
@@ -2777,9 +2782,6 @@ bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
   if (!result) {
     return true;
   }
-
-  
-  MOZ_ASSERT(!prop.isTypedArrayElement());
 
   
   if (prop.isDenseElement()) {
