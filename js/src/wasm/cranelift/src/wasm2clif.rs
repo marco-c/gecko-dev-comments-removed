@@ -71,10 +71,7 @@ fn imm64(offset: usize) -> ir::immediates::Imm64 {
 
 
 
-fn init_sig_from_wsig(
-    call_conv: CallConv,
-    wsig: &bindings::FuncType,
-) -> WasmResult<ir::Signature> {
+fn init_sig_from_wsig(call_conv: CallConv, wsig: &bindings::FuncType) -> WasmResult<ir::Signature> {
     let mut sig = ir::Signature::new(call_conv);
 
     for arg_type in wsig.args() {
