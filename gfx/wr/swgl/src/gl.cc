@@ -3763,7 +3763,12 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
         
         
         
-        assert(numClip < nump + 2);
+        if (numClip >= nump + 2) {
+          
+          
+          assert(false);
+          return 0;
+        }
         float prevDist = prevCoord - prevSide * prev.w;
         float curDist = curCoord - prevSide * cur.w;
         
@@ -3786,7 +3791,10 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
         
         
         
-        assert(numClip < nump + 2);
+        if (numClip >= nump + 2) {
+          assert(false);
+          return 0;
+        }
         float prevDist = prevCoord - curSide * prev.w;
         float curDist = curCoord - curSide * cur.w;
         
@@ -3806,7 +3814,10 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
     }
     if (!curSide) {
       
-      assert(numClip < nump + 2);
+      if (numClip >= nump + 2) {
+        assert(false);
+        return 0;
+      }
       outP[numClip] = cur;
       outInterp[numClip] = curInterp;
       numClip++;
