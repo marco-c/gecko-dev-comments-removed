@@ -92,9 +92,10 @@ language = None
 
 
 exclude_patterns = [
+    '**/.tox',
+    '**/.DS_Store',
+    '**/Thumbs.db',
     '_build',
-    'Thumbs.db',
-    '.DS_Store'
 ]
 
 from docs.wpt_lint_rules import WPTLintRules
