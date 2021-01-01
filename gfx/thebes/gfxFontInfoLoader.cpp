@@ -128,22 +128,26 @@ gfxFontInfoLoader::ShutdownObserver::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
+
+
+
+
+
+
+
 void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
+  if (aDelay == 0 && (mState == stateTimerOff || mState == stateAsyncLoad)) {
+    
+    
+    return;
+  }
+
   NS_ASSERTION(!mFontInfo, "fontinfo should be null when starting font loader");
 
   
   if (mState != stateInitial && mState != stateTimerOff &&
       mState != stateTimerOnDelay) {
     CancelLoader();
-  }
-
-  
-  if (!mTimer) {
-    mTimer = NS_NewTimer();
-    if (!mTimer) {
-      NS_WARNING("Failure to create font info loader timer");
-      return;
-    }
   }
 
   AddShutdownObserver();
@@ -156,11 +160,29 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
     NS_ASSERTION(!gXPCOMThreadsShutDown,
                  "Bug 1508626 - Setting delay timer for font loader after "
                  "shutdown but before observer");
-    mState = stateTimerOnDelay;
+    
+    
+    
+    MOZ_ASSERT(!mTimer, "duplicate use of StartLoader() with delay?");
+    if (mTimer) {
+      return;
+    }
+    mTimer = NS_NewTimer();
     mTimer->InitWithNamedFuncCallback(DelayedStartCallback, this, aDelay,
                                       nsITimer::TYPE_ONE_SHOT,
                                       "gfxFontInfoLoader::StartLoader");
+    mState = stateTimerOnDelay;
     return;
+  }
+
+  
+  
+  
+
+  
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
   }
 
   NS_ASSERTION(
