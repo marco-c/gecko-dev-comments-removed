@@ -555,7 +555,13 @@ struct Texture {
       flags &= ~flag;
     }
   }
-  void set_should_free(bool val) { set_flag(SHOULD_FREE, val); }
+  void set_should_free(bool val) {
+    
+    
+    
+    assert(!buf);
+    set_flag(SHOULD_FREE, val);
+  }
   void set_cleared(bool val) { set_flag(CLEARED, val); }
 
   
@@ -659,8 +665,14 @@ struct Texture {
 
   void cleanup() {
     assert(!locked);  
-    if (buf && should_free()) {
-      free(buf);
+    if (buf) {
+      
+      
+      
+      
+      if (should_free()) {
+        free(buf);
+      }
       buf = nullptr;
       buf_size = 0;
       buf_bpp = 0;
