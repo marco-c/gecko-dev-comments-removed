@@ -3,6 +3,12 @@
 function runTests(data) {
   for (let entry of data) {
     test(function() {
+      if (entry.error) {
+        assert_throws_js(TypeError, _ => new URLPattern(entry.pattern),
+                         'URLPattern() constructor');
+        return;
+      }
+
       const pattern = new URLPattern(entry.pattern);
 
       
@@ -50,12 +56,7 @@ function runTests(data) {
         
         
         if (!expected_obj) {
-          
-          
-          if (component === 'pathname')
-            expected_obj = { input: '/', groups: {} };
-          else
-            expected_obj = { input: '', groups: {} };
+          expected_obj = { input: '', groups: {} };
 
           
           
