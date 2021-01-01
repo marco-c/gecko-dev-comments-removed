@@ -567,6 +567,14 @@ class nsLayoutUtils {
 
 
     SCROLLABLE_STOP_AT_PAGE = 0x20,
+    
+
+
+
+
+
+
+    SCROLLABLE_FOLLOW_OOF_TO_PLACEHOLDER = 0x40
   };
   
 
@@ -1352,7 +1360,7 @@ class nsLayoutUtils {
 
 
 
-  static nsIFrame* GetParentOrPlaceholderForCrossDoc(nsIFrame* aFrame);
+  static nsIFrame* GetParentOrPlaceholderForCrossDoc(const nsIFrame* aFrame);
 
   
 
