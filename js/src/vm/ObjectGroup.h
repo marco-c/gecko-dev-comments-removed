@@ -200,14 +200,6 @@ class ObjectGroupRealm {
   } defaultNewGroupCache = {};
 
   
-  
-  
-  
-  
-  
-  WeakHeapPtrObjectGroup stringSplitStringGroup = {};
-
-  
 
  private:
   friend class ObjectGroup;
@@ -224,14 +216,10 @@ class ObjectGroupRealm {
   static ObjectGroupRealm& get(const ObjectGroup* group);
   static ObjectGroupRealm& getForNewObject(JSContext* cx);
 
-  static ObjectGroup* getStringSplitStringGroup(JSContext* cx);
-
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* realmTables);
 
   void clearTables();
-
-  void traceWeak(JSTracer* trc);
 
   void purge() { defaultNewGroupCache.purge(); }
 
