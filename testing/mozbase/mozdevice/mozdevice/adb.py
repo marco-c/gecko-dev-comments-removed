@@ -640,12 +640,13 @@ def ADBDeviceFactory(
             % (device, ADBDEVICES)
         )
     
-    adbdevice.rm(
-        posixpath.join(adbdevice.test_root, "*"),
-        recursive=True,
-        force=True,
-        timeout=timeout,
-    )
+    if test_root:
+        adbdevice.rm(
+            posixpath.join(adbdevice.test_root, "*"),
+            recursive=True,
+            force=True,
+            timeout=timeout,
+        )
     
     
     if verbose != adbdevice._verbose:
@@ -714,6 +715,71 @@ class ADBDevice(ADBCommand):
 
     SOCKET_DIRECTION_FORWARD = "forward"
 
+    
+    
+    
+    BUILTINS = set(
+        [
+            "alias",
+            "bg",
+            "bind",
+            "break",
+            "builtin",
+            "caller",
+            "cd",
+            "command",
+            "compgen",
+            "complete",
+            "compopt",
+            "continue",
+            "declare",
+            "dirs",
+            "disown",
+            "echo",
+            "enable",
+            "eval",
+            "exec",
+            "exit",
+            "export",
+            "false",
+            "fc",
+            "fg",
+            "getopts",
+            "hash",
+            "help",
+            "history",
+            "jobs",
+            "kill",
+            "let",
+            "local",
+            "logout",
+            "mapfile",
+            "popd",
+            "printf",
+            "pushd",
+            "pwd",
+            "read",
+            "readonly",
+            "return",
+            "set",
+            "shift",
+            "shopt",
+            "source",
+            "suspend",
+            "test",
+            "times",
+            "trap",
+            "true",
+            "type",
+            "typeset",
+            "ulimit",
+            "umask",
+            "unalias",
+            "unset",
+            "wait",
+        ]
+    )
+
     def __init__(
         self,
         device=None,
@@ -750,6 +816,8 @@ class ADBDevice(ADBCommand):
             _TEST_ROOT = test_root
         self._test_root = None
         self._run_as_package = None
+        
+        self._debuggable_packages = {}
         self._device_ready_retry_wait = device_ready_retry_wait
         self._device_ready_retry_attempts = device_ready_retry_attempts
         self._have_root_shell = False
@@ -759,8 +827,6 @@ class ADBDevice(ADBCommand):
         self._re_internal_storage = None
 
         self._wait_for_boot_completed(timeout=timeout)
-
-        self.package_dir = None
 
         
         
@@ -839,6 +905,21 @@ class ADBDevice(ADBCommand):
             raise ADBTimeoutError("ADBDevice: /sdcard not found.")
 
         self._logger.info("%s supported" % self._ls)
+
+        
+        
+        
+        
+        
+        remove_builtins = set()
+        for builtin in self.BUILTINS:
+            try:
+                self.ls("/system/*bin/%s" % builtin, timeout=timeout)
+                self._logger.debug("Removing %s from BUILTINS" % builtin)
+                remove_builtins.add(builtin)
+            except ADBError:
+                pass
+        self.BUILTINS.difference_update(remove_builtins)
 
         
         boot_completed = False
@@ -1004,7 +1085,6 @@ class ADBDevice(ADBCommand):
                 stack_trace_dir = "/data/anr"
         self.stack_trace_dir = stack_trace_dir
         self.enforcing = "Permissive"
-
         self.run_as_package = run_as_package
 
         self._logger.debug("ADBDevice: %s" % self.__dict__)
@@ -1257,6 +1337,38 @@ class ADBDevice(ADBCommand):
             self._re_internal_storage = re.compile("/|".join(list(storage_dirs)) + "/")
         return self._re_internal_storage.match(path) is not None
 
+    def is_package_debuggable(self, package):
+        if not package:
+            return False
+
+        if not self.is_app_installed(package):
+            self._logger.warning(
+                "Can not check if package %s is debuggable as it is not installed."
+                % package
+            )
+            return False
+
+        if package in self._debuggable_packages:
+            return self._debuggable_packages[package]
+
+        try:
+            self.shell_output("run-as %s ls /system" % package)
+            self._debuggable_packages[package] = True
+        except ADBError as e:
+            self._debuggable_packages[package] = False
+            self._logger.warning("Package %s is not debuggable: %s" % (package, str(e)))
+        return self._debuggable_packages[package]
+
+    @property
+    def package_dir(self):
+        if not self._run_as_package:
+            return None
+        
+        
+        
+        
+        return "/data/data/%s" % self._run_as_package
+
     @property
     def run_as_package(self):
         """Returns the name of the package which will be used in run-as to change
@@ -1267,6 +1379,49 @@ class ADBDevice(ADBCommand):
     def run_as_package(self, value):
         if self._have_root_shell or self._have_su or self._have_android_su:
             
+            return
+
+        if self._run_as_package == value:
+            
+            return
+
+        if not value:
+            if self._test_root:
+                
+                
+                self.rm(
+                    posixpath.join(self._test_root, "*"), recursive=True, force=True
+                )
+            self._logger.info(
+                "Setting run_as_package to None. Resetting test root from %s to %s"
+                % (self._test_root, self._initial_test_root)
+            )
+            self._run_as_package = None
+            
+            
+            
+            self.test_root = self._initial_test_root
+            if self._test_root:
+                
+                self.rm(
+                    posixpath.join(self._test_root, "*"), recursive=True, force=True
+                )
+            return
+
+        if not self.is_package_debuggable(value):
+            self._logger.warning(
+                "Can not set run_as_package to %s since it is not debuggable." % value
+            )
+            
+            
+            
+            
+            paths = [
+                "/storage/emulated/0/Android/data/%s/test_root" % value,
+                "/sdcard/test_root",
+                "/mnt/sdcard/test_root",
+            ]
+            self._try_test_root_candidates(paths)
             return
 
         
@@ -1288,28 +1443,39 @@ class ADBDevice(ADBCommand):
                 "Verify bytecode of debuggable apps must be turned off to use run-as"
             )
 
+        self._logger.info("Setting run_as_package to %s" % value)
+
         self._run_as_package = value
-        if not value:
-            if self._test_root:
-                self._logger.info(
-                    "Resetting test root from %s to None" % self._test_root
-                )
-            self._test_root = None
-        else:
-            self._logger.info("Setting run_as_package to %s" % value)
-            if not self.is_app_installed(value):
-                raise ADBError("run_as_package %s is not installed." % value)
-            self.package_dir = "/data/data/%s" % value
-            new_test_root = posixpath.join(self.package_dir, "test_root")
-            if self.test_root != new_test_root:
+        old_test_root = self._test_root
+        new_test_root = posixpath.join(self.package_dir, "test_root")
+        if old_test_root != new_test_root:
+            try:
                 
-                self.rm(posixpath.join(self.test_root, "*"), recursive=True, force=True)
+                if old_test_root:
+                    self.rm(
+                        posixpath.join(old_test_root, "*"), recursive=True, force=True
+                    )
                 self.test_root = posixpath.join(self.package_dir, "test_root")
                 
                 self.rm(posixpath.join(self.test_root, "*"), recursive=True, force=True)
+            except ADBError as e:
+                
+                
+                
+                self._run_as_package = None
+                self.test_root = old_test_root
+                self._logger.warning(
+                    "Exception %s setting test_root to %s. "
+                    "Resetting test_root to %s."
+                    % (str(e), new_test_root, old_test_root)
+                )
+                raise ADBError(
+                    "Unable to initialize test root while setting run_as_package %s"
+                    % value
+                )
 
     def enable_run_as_for_path(self, path):
-        return self.package_dir is not None and path.startswith(self.package_dir)
+        return self._run_as_package is not None and path.startswith(self.package_dir)
 
     @property
     def test_root(self):
@@ -1326,7 +1492,15 @@ class ADBDevice(ADBCommand):
 
         The default list of directories checked by test_root are:
 
-        - /data/local/tmp/test_root
+        If the device is rooted:
+            - /data/local/tmp/test_root
+
+        If run_as_package is not available and the device is not rooted:
+
+            - /data/local/tmp/test_root
+            - /sdcard/test_root
+            - /storage/sdcard/test_root
+            - /mnt/sdcard/test_root
 
         You may override the default list by providing a test_root argument to
         the :class:`ADBDevice` constructor which will then be used when
@@ -1339,9 +1513,20 @@ class ADBDevice(ADBCommand):
             self._logger.debug("Using cached test_root %s" % self._test_root)
             return self._test_root
 
+        if self.run_as_package is not None:
+            raise ADBError(
+                "run_as_package is %s however test_root is None" % self.run_as_package
+            )
+
         if self._share_test_root and _TEST_ROOT:
+            self._logger.debug(
+                "Attempting to use shared test_root %s" % self._test_root
+            )
             paths = [_TEST_ROOT]
         elif self._initial_test_root is not None:
+            self._logger.debug(
+                "Attempting to use initial test_root %s" % self._test_root
+            )
             paths = [self._initial_test_root]
         else:
             
@@ -1352,33 +1537,25 @@ class ADBDevice(ADBCommand):
             
             
             
+            
+            
+            
+            
+            
+            
             paths = ["/data/local/tmp/test_root"]
-
-        max_attempts = 3
-        for attempt in range(1, max_attempts + 1):
-            for test_root in paths:
-                self._logger.debug(
-                    "Setting test root to %s attempt %d of %d"
-                    % (test_root, attempt, max_attempts)
+            if not self.is_rooted:
+                
+                
+                paths.extend(
+                    [
+                        "/sdcard/test_root",
+                        "/storage/sdcard/test_root",
+                        "/mnt/sdcard/test_root",
+                    ]
                 )
 
-                if self._try_test_root(test_root):
-                    self._test_root = test_root
-                    self._logger.info("Setting test_root to %s" % self._test_root)
-                    return self._test_root
-
-                self._logger.debug(
-                    "_setup_test_root: "
-                    "Attempt %d of %d failed to set test_root to %s"
-                    % (attempt, max_attempts, test_root)
-                )
-
-            if attempt != max_attempts:
-                time.sleep(20)
-
-        raise ADBError(
-            "Unable to set up test root using paths: [%s]" % ", ".join(paths)
-        )
+        return self._try_test_root_candidates(paths)
 
     @test_root.setter
     def test_root(self, value):
@@ -1386,15 +1563,17 @@ class ADBDevice(ADBCommand):
         
         
         global _TEST_ROOT
+        if self._test_root == value:
+            return
         self._logger.debug("Setting test_root from %s to %s" % (self._test_root, value))
-        if self._test_root and self._test_root != value:
-            self._logger.info(
-                "Resetting test root from %s to %s" % (self._test_root, value)
-            )
+        old_test_root = self._test_root
         self._test_root = value
         if self._share_test_root:
             _TEST_ROOT = value
-        if value and not self._try_test_root(value):
+        if not value:
+            return
+        if not self._try_test_root(value):
+            self._test_root = old_test_root
             raise ADBError("Unable to set test_root to %s" % value)
         readme = posixpath.join(value, "README")
         if not self.is_file(readme):
@@ -1410,20 +1589,42 @@ class ADBDevice(ADBCommand):
                 if tmpf:
                     os.unlink(tmpf.name)
 
-    def _try_test_root(self, test_root):
-        base_path, _ = posixpath.split(test_root)
-        if not self.is_dir(base_path):
-            self._logger.debug(
-                "_try_test_root: is_dir base_path %s is False" % base_path
-            )
-            return False
+    def _try_test_root_candidates(self, paths):
+        max_attempts = 3
+        for test_root in paths:
+            for attempt in range(1, max_attempts + 1):
+                self._logger.debug(
+                    "Setting test root to %s attempt %d of %d"
+                    % (test_root, attempt, max_attempts)
+                )
 
+                if self._try_test_root(test_root):
+                    if not self._test_root:
+                        
+                        
+                        
+                        self._initial_test_root = test_root
+                    self._test_root = test_root
+                    self._logger.info("Setting test_root to %s" % self._test_root)
+                    return self._test_root
+
+                self._logger.debug(
+                    "_setup_test_root: "
+                    "Attempt %d of %d failed to set test_root to %s"
+                    % (attempt, max_attempts, test_root)
+                )
+
+                if attempt != max_attempts:
+                    time.sleep(20)
+
+        raise ADBError(
+            "Unable to set up test root using paths: [%s]" % ", ".join(paths)
+        )
+
+    def _try_test_root(self, test_root):
         try:
             if not self.is_dir(test_root):
-                self._logger.debug(
-                    "_try_test_root: is_dir test_root %s is False" % test_root
-                )
-                self.mkdir(test_root)
+                self.mkdir(test_root, parents=True)
             proof_dir = posixpath.join(test_root, "proof")
             if self.is_dir(proof_dir):
                 self.rm(proof_dir, recursive=True)
@@ -1739,7 +1940,11 @@ class ADBDevice(ADBCommand):
                 signal.signal(signal.SIGALRM, default_alarm_handler)
             return line
 
-        if self._have_root_shell:
+        first_word = cmd.split(" ")[0]
+        if first_word in self.BUILTINS:
+            
+            pass
+        elif self._have_root_shell:
             pass
         elif self._have_android_su:
             cmd = "su 0 %s" % cmd
@@ -3430,12 +3635,16 @@ class ADBDevice(ADBCommand):
         package = None
         data = None
         cmd = "dumpsys window windows"
+        verbose = self._verbose
         try:
+            self._verbose = False
             data = self.shell_output(cmd, timeout=timeout)
         except Exception as e:
             
             self._logger.info("_get_top_activity_P: Exception %s: %s" % (cmd, e))
             return package
+        finally:
+            self._verbose = verbose
         m = re.search("mFocusedApp(.+)/", data)
         if not m:
             
@@ -3457,12 +3666,16 @@ class ADBDevice(ADBCommand):
         package = None
         data = None
         cmd = "dumpsys window"
+        verbose = self._verbose
         try:
+            self._verbose = False
             data = self.shell_output(cmd, timeout=timeout)
         except Exception as e:
             
             self._logger.info("_get_top_activity_Q: Exception %s: %s" % (cmd, e))
             return package
+        finally:
+            self._verbose = verbose
         m = re.search(r"mFocusedWindow=Window{\S+ \S+ (\S+)/\S+}", data)
         if m:
             package = m.group(1)
