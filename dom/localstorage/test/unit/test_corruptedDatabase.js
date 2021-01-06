@@ -3,12 +3,8 @@
 
 
 
-async function testSteps() {
-  const principal = getPrincipal("http://example.org");
-
-  info("Setting pref");
-
-  Services.prefs.setBoolPref("dom.storage.next_gen", true);
+async function doTest(profile) {
+  info("Testing profile " + profile);
 
   info("Clearing");
 
@@ -17,21 +13,9 @@ async function testSteps() {
 
   info("Installing package");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  installPackage("corruptedDatabase_profile");
+  installPackage(profile);
+
+  const principal = getPrincipal("http://example.org");
 
   let storage = getLocalStorage(principal);
 
@@ -50,4 +34,37 @@ async function testSteps() {
   await requestFinished(request);
 
   is(request.result.usage, 0, "Correct usage");
+}
+
+async function testSteps() {
+  info("Setting pref");
+
+  Services.prefs.setBoolPref("dom.storage.next_gen", true);
+
+  
+
+  const profiles = [
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    "corruptedDatabase_profile",
+    
+    
+    "corruptedDatabase_missingUsageFile_profile",
+  ];
+
+  for (const profile of profiles) {
+    await doTest(profile);
+  }
 }

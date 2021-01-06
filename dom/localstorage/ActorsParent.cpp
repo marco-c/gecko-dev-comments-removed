@@ -505,7 +505,18 @@ CreateStorageConnection(nsIFile& aDBFile, nsIFile& aUsageFile,
                             nsresult> {
                 if (rv == NS_ERROR_FILE_CORRUPTED) {
                   
-                  LS_TRY(aUsageFile.Remove(false));
+                  
+                  LS_TRY(
+                      ToResult(aUsageFile.Remove(false))
+                          .orElse(
+                              [](const nsresult rv) -> Result<Ok, nsresult> {
+                                if (rv == NS_ERROR_FILE_NOT_FOUND ||
+                                    rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+                                  return Ok{};
+                                }
+
+                                return Err(rv);
+                              }));
 
                   
                   LS_TRY(aDBFile.Remove(false));
@@ -8789,6 +8800,9 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
         &aGroupAndOrigin]() -> Result<UsageInfo, nsresult> {
         if (fileExists) {
           LS_TRY_RETURN(
+              
+              
+              
               LoadUsageFile(*usageFile)
                   .orElse([&file, &usageFile, &usageJournalFile,
                            &aGroupAndOrigin](
