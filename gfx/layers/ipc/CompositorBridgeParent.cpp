@@ -65,6 +65,7 @@
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webgpu/WebGPUParent.h"
+#include "mozilla/webrender/RenderThread.h"
 #include "mozilla/media/MediaSystemResourceService.h"  
 #include "mozilla/mozalloc.h"                          
 #include "mozilla/PerfStats.h"

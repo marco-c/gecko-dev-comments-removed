@@ -4,6 +4,7 @@
 
 
 #include "mozilla/Logging.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/intl/MozLocale.h"
 #include "mozilla/intl/OSPreferences.h"

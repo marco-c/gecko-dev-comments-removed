@@ -9,7 +9,9 @@
 
 #include "moz_external_vr.h"
 #include "base/process.h"  
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
 
 class nsIThread;
 namespace mozilla {

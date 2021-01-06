@@ -5,6 +5,7 @@
 
 
 #include "CheckerboardEvent.h"
+#include "mozilla/Logging.h"
 
 #include <algorithm>  
 

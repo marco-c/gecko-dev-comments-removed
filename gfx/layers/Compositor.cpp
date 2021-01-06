@@ -5,6 +5,7 @@
 
 
 #include "mozilla/layers/Compositor.h"
+#include "mozilla/layers/CompositionRecorder.h"
 #include "base/message_loop.h"  
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/CompositorBridgeParent.h"  

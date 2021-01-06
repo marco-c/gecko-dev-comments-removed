@@ -4,6 +4,7 @@
 
 
 #include "gfxFontInfoLoader.h"
+#include "mozilla/gfx/Logging.h"
 #include "nsCRT.h"
 #include "nsIObserverService.h"
 #include "nsXPCOM.h"        

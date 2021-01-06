@@ -7,8 +7,9 @@
 #include "ImageBridgeParent.h"
 #include <stdint.h>            
 #include "CompositableHost.h"  
-#include "base/process.h"      
-#include "base/task.h"         
+#include "GeckoProfiler.h"
+#include "base/process.h"  
+#include "base/task.h"     
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/Hal.h"        

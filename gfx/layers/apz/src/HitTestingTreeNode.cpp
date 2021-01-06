@@ -3,6 +3,7 @@
 
 
 #include "HitTestingTreeNode.h"
+#include <stack>
 
 #include "AsyncPanZoomController.h"  
 #include "mozilla/StaticPrefs_layout.h"

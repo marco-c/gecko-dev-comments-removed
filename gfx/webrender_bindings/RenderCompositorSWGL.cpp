@@ -6,6 +6,7 @@
 
 #include "RenderCompositorSWGL.h"
 
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/CompositorWidget.h"
 
 namespace mozilla {
@@ -57,13 +58,13 @@ bool RenderCompositorSWGL::BeginFrame() {
   
   
   uint8_t* data = nullptr;
-  IntSize size;
+  gfx::IntSize size;
   int32_t stride = 0;
-  SurfaceFormat format = SurfaceFormat::UNKNOWN;
+  gfx::SurfaceFormat format = gfx::SurfaceFormat::UNKNOWN;
   if (!mSurface && mDT->LockBits(&data, &size, &stride, &format) &&
       (size != bounds.Size().ToUnknownSize() ||
-       (format != SurfaceFormat::B8G8R8A8 &&
-        format != SurfaceFormat::B8G8R8X8))) {
+       (format != gfx::SurfaceFormat::B8G8R8A8 &&
+        format != gfx::SurfaceFormat::B8G8R8X8))) {
     
     
     mDT->ReleaseBits(data);
@@ -78,11 +79,11 @@ bool RenderCompositorSWGL::BeginFrame() {
     
     size = bounds.Size().ToUnknownSize();
     if (!mSurface || mSurface->GetSize() != size) {
-      mSurface =
-          Factory::CreateDataSourceSurface(size, SurfaceFormat::B8G8R8A8);
+      mSurface = gfx::Factory::CreateDataSourceSurface(
+          size, gfx::SurfaceFormat::B8G8R8A8);
     }
     gfx::DataSourceSurface::MappedSurface map = {nullptr, 0};
-    if (!mSurface || !mSurface->Map(DataSourceSurface::READ_WRITE, &map)) {
+    if (!mSurface || !mSurface->Map(gfx::DataSourceSurface::READ_WRITE, &map)) {
       
       mWidget->EndRemoteDrawingInRegion(mDT, mRegion);
       ClearMappedBuffer();
