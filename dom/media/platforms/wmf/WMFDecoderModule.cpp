@@ -249,41 +249,26 @@ static bool CanCreateWMFDecoder() {
 
 
 bool WMFDecoderModule::HasH264() {
-  if (XRE_IsContentProcess()) {
-    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::H264);
-  }
   return CanCreateWMFDecoder<CLSID_CMSH264DecoderMFT>();
 }
 
 
 bool WMFDecoderModule::HasVP8() {
-  if (XRE_IsContentProcess()) {
-    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::VP8);
-  }
   return sUsableVPXMFT && CanCreateWMFDecoder<CLSID_WebmMfVpxDec>();
 }
 
 
 bool WMFDecoderModule::HasVP9() {
-  if (XRE_IsContentProcess()) {
-    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::VP9);
-  }
   return sUsableVPXMFT && CanCreateWMFDecoder<CLSID_WebmMfVpxDec>();
 }
 
 
 bool WMFDecoderModule::HasAAC() {
-  if (XRE_IsContentProcess()) {
-    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::AAC);
-  }
   return CanCreateWMFDecoder<CLSID_CMSAACDecMFT>();
 }
 
 
 bool WMFDecoderModule::HasMP3() {
-  if (XRE_IsContentProcess()) {
-    return PDMFactory::Supported().contains(PDMFactory::MediaCodecs::MP3);
-  }
   return CanCreateWMFDecoder<CLSID_CMP3DecMediaObject>();
 }
 
