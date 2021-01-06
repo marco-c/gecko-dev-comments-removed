@@ -7,7 +7,9 @@
 #include "TimelineConsumers.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ObservedDocShell.h"
 #include "mozilla/Services.h"
+#include "mozilla/TimelineMarker.h"
 #include "jsapi.h"
 #include "nsAppRunner.h"  
 #include "nsCRT.h"
