@@ -101,6 +101,41 @@ interface nsIPrintSettings : nsISupports
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+  [noscript, notxpcom, nostdcall] void GetEffectiveSheetSize(out double aWidth,
+                                                             out double aHeight);
+
+  
+
+
+
+
+
+
+
+
+  [noscript, notxpcom, nostdcall] long GetSheetOrientation();
+
+  
+
+
+
+
+  [noscript, notxpcom, nostdcall] bool HasOrthogonalSheetsAndPages();
+
+  
+
+
   nsIPrintSettings clone();
 
   

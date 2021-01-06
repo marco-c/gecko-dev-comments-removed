@@ -1823,7 +1823,19 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
          adjSize.width, adjSize.height));
 
   aPO->mPresShell->BeginObservingDocument();
-  aPO->mPresContext->SetPageSize(adjSize);
+
+  
+  
+  
+  
+  
+  
+  nsSize pageSize = adjSize;
+  if (printData->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+    std::swap(pageSize.width, pageSize.height);
+  }
+
+  aPO->mPresContext->SetPageSize(pageSize);
 
   int32_t p2a = aPO->mPresContext->DeviceContext()->AppUnitsPerDevPixel();
   if (documentIsTopLevel && mIsCreatingPrintPreview) {
