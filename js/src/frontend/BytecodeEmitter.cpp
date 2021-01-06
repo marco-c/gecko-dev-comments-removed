@@ -9025,11 +9025,12 @@ bool BytecodeEmitter::emitDestructuringRestExclusionSetObjLiteral(
   return true;
 }
 
-
 bool BytecodeEmitter::emitObjLiteralArray(ParseNode* arrayHead) {
+  MOZ_ASSERT(checkSingletonContext());
+
   ObjLiteralWriter writer;
 
-  ObjLiteralFlags flags(ObjLiteralFlag::Array);
+  ObjLiteralFlags flags(ObjLiteralFlag::Array, ObjLiteralFlag::Singleton);
 
   writer.beginObject(flags);
 
@@ -9767,6 +9768,10 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode) {
 bool BytecodeEmitter::emitArrayLiteral(ListNode* array) {
   
   
+  if (checkSingletonContext() && !array->hasNonConstInitializer() &&
+      array->head() && isArrayObjLiteralCompatible(array->head())) {
+    return emitObjLiteralArray(array->head());
+  }
 
   return emitArray(array->head(), array->count());
 }

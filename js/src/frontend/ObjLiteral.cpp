@@ -97,7 +97,6 @@ static JSObject* InterpretObjLiteralObj(
 static JSObject* InterpretObjLiteralArray(
     JSContext* cx, frontend::CompilationAtomCache& atomCache,
     const mozilla::Span<const uint8_t> literalInsns, ObjLiteralFlags flags) {
-  
   ObjLiteralReader reader(literalInsns);
   ObjLiteralInsn insn;
 
