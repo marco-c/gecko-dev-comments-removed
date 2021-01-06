@@ -16,13 +16,15 @@ async function getPreviewText(previewBrowser) {
 }
 
 add_task(async function print_selection() {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["print.tab_modal.enabled", true]],
-  });
-
   let i = 0;
   for (let source of sources) {
+    
+    
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [["print.tab_modal.enabled", true]],
+    });
+
     is(
       document.querySelector(".printPreviewBrowser"),
       null,
