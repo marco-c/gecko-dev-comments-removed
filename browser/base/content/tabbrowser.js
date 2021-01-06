@@ -6204,8 +6204,11 @@
           
           
           
+          
+          
           if (
             !this.mTab.hasAttribute("pending") &&
+            !this.mTab.hasAttribute("customizemode") &&
             aWebProgress.isLoadingDocument
           ) {
             
