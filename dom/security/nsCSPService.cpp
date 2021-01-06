@@ -153,8 +153,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
       rv = preloadCsp->ShouldLoad(
           contentType, cspEventListener, aContentLocation,
           nullptr,  
-          aLoadInfo->GetSendCSPViolationEvents(), cspNonce, parserCreatedScript,
-          aDecision);
+          false, cspNonce, parserCreatedScript, aDecision);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -345,8 +344,6 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
 
 
 
-  policyType =
-      nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
 
   int16_t decision = nsIContentPolicy::ACCEPT;
   bool parserCreatedScript = aLoadInfo->GetParserCreatedScript();
