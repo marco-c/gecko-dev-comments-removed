@@ -1,15 +1,15 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ActorsParent.h"
 
-
+// Local includes
 #include "SimpleDBCommon.h"
 
-
+// Global includes
 #include <cstdint>
 #include <cstdlib>
 #include <new>
@@ -85,17 +85,17 @@ using namespace mozilla::ipc;
 
 namespace {
 
-
-
-
+/*******************************************************************************
+ * Constants
+ ******************************************************************************/
 
 const uint32_t kCopyBufferSize = 32768;
 
 constexpr auto kSDBSuffix = u".sdb"_ns;
 
-
-
-
+/*******************************************************************************
+ * Actor class declarations
+ ******************************************************************************/
 
 class StreamHelper final : public Runnable {
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
@@ -189,7 +189,7 @@ class Connection final : public PBackgroundSDBConnectionParent {
 
   bool VerifyRequestParams(const SDBRequestParams& aParams) const;
 
-  
+  // IPDL methods.
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvDeleteMe() override;
@@ -249,8 +249,8 @@ class ConnectionOperationBase : public Runnable,
     }
   }
 
-  
-  
+  // May be called on any thread, but you should call IsActorDestroyed() if
+  // you know you're on the background thread because it is slightly faster.
   bool OperationMayProceed() const { return mOperationMayProceed; }
 
   bool IsActorDestroyed() const {
@@ -259,17 +259,17 @@ class ConnectionOperationBase : public Runnable,
     return mActorDestroyed;
   }
 
-  
-  
-  
-  
+  // May be overridden by subclasses if they need to perform work on the
+  // background thread before being dispatched but must always call the base
+  // class implementation. Returning false will kill the child actors and
+  // prevent dispatch.
   virtual bool Init();
 
   virtual nsresult Dispatch();
 
-  
-  
-  
+  // This callback will be called on the background thread before releasing the
+  // final reference to this request object. Subclasses may perform any
+  // additional cleanup here but must always call the base class implementation.
   virtual void Cleanup();
 
  protected:
@@ -289,55 +289,55 @@ class ConnectionOperationBase : public Runnable,
 
   void DatabaseWork();
 
-  
+  // Methods that subclasses must implement.
   virtual nsresult DoDatabaseWork(nsIFileStream* aFileStream) = 0;
 
-  
+  // Subclasses use this override to set the IPDL response value.
   virtual void GetResponse(SDBRequestResponse& aResponse) = 0;
 
-  
+  // A method that subclasses may implement.
   virtual void OnSuccess();
 
  private:
   NS_IMETHOD
   Run() override;
 
-  
+  // IPDL methods.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 };
 
 class OpenOp final : public ConnectionOperationBase,
                      public OpenDirectoryListener {
   enum class State {
-    
-    
+    // Just created on the PBackground thread, dispatched to the main thread.
+    // Next step is FinishOpen.
     Initial,
 
-    
-    
-    
-    
+    // Opening directory or initializing quota manager on the PBackground
+    // thread. Next step is either DirectoryOpenPending if quota manager is
+    // already initialized or QuotaManagerPending if quota manager needs to be
+    // initialized.
     FinishOpen,
 
-    
-    
-    
+    // Waiting for quota manager initialization to complete on the PBackground
+    // thread. Next step is either SendingResults if initialization failed or
+    // DirectoryOpenPending if initialization succeeded.
     QuotaManagerPending,
 
-    
-    
-    
+    // Waiting for directory open allowed on the PBackground thread. The next
+    // step is either SendingResults if directory lock failed to acquire, or
+    // DatabaseWorkOpen if directory lock is acquired.
     DirectoryOpenPending,
 
-    
-    
+    // Waiting to do/doing work on the QuotaManager IO thread. Its next step is
+    // SendingResults.
     DatabaseWorkOpen,
 
-    
-    
+    // Waiting to send/sending results on the PBackground thread. Next step is
+    // Completed.
     SendingResults,
 
-    
+    // All done.
     Completed
   };
 
@@ -370,7 +370,7 @@ class OpenOp final : public ConnectionOperationBase,
 
   void StreamClosedCallback();
 
-  
+  // ConnectionOperationBase overrides
   nsresult DoDatabaseWork(nsIFileStream* aFileStream) override;
 
   void GetResponse(SDBRequestResponse& aResponse) override;
@@ -384,7 +384,7 @@ class OpenOp final : public ConnectionOperationBase,
   NS_IMETHOD
   Run() override;
 
-  
+  // OpenDirectoryListener overrides.
   void DirectoryLockAcquired(DirectoryLock* aLock) override;
 
   void DirectoryLockFailed() override;
@@ -456,9 +456,9 @@ class CloseOp final : public ConnectionOperationBase {
   void OnSuccess() override;
 };
 
-
-
-
+/*******************************************************************************
+ * Other class declarations
+ ******************************************************************************/
 
 class QuotaClient final : public mozilla::dom::quota::Client {
   static QuotaClient* sInstance;
@@ -532,9 +532,9 @@ class QuotaClient final : public mozilla::dom::quota::Client {
   void FinalizeShutdown() override;
 };
 
-
-
-
+/*******************************************************************************
+ * Globals
+ ******************************************************************************/
 
 using ConnectionArray = nsTArray<NotNull<RefPtr<Connection>>>;
 
@@ -553,11 +553,11 @@ void AllowToCloseConnectionsMatching(const Condition& aCondition) {
   }
 }
 
-}  
+}  // namespace
 
-
-
-
+/*******************************************************************************
+ * Exported functions
+ ******************************************************************************/
 
 PBackgroundSDBConnectionParent* AllocPBackgroundSDBConnectionParent(
     const PersistenceType& aPersistenceType,
@@ -617,11 +617,11 @@ already_AddRefed<mozilla::dom::quota::Client> CreateQuotaClient() {
   return client.forget();
 }
 
-}  
+}  // namespace simpledb
 
-
-
-
+/*******************************************************************************
+ * StreamHelper
+ ******************************************************************************/
 
 StreamHelper::StreamHelper(nsIFileStream* aFileStream, nsIRunnable* aCallback)
     : Runnable("dom::StreamHelper"),
@@ -686,9 +686,9 @@ StreamHelper::Run() {
   return NS_OK;
 }
 
-
-
-
+/*******************************************************************************
+ * Connection
+ ******************************************************************************/
 
 Connection::Connection(PersistenceType aPersistenceType,
                        const PrincipalInfo& aPrincipalInfo)
@@ -871,7 +871,7 @@ PBackgroundSDBRequestParent* Connection::AllocPBackgroundSDBRequestParent(
   }
 
 #ifdef DEBUG
-  
+  // Always verify parameters in DEBUG builds!
   bool trustParams = false;
 #else
   PBackgroundParent* backgroundActor = Manager();
@@ -917,7 +917,7 @@ PBackgroundSDBRequestParent* Connection::AllocPBackgroundSDBRequestParent(
       MOZ_CRASH("Should never get here!");
   }
 
-  
+  // Transfer ownership to IPDL.
   return actor.forget().take();
 }
 
@@ -951,15 +951,15 @@ bool Connection::DeallocPBackgroundSDBRequestParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  
+  // Transfer ownership back from IPDL.
   RefPtr<ConnectionOperationBase> actor =
       dont_AddRef(static_cast<ConnectionOperationBase*>(aActor));
   return true;
 }
 
-
-
-
+/*******************************************************************************
+ * ConnectionOperationBase
+ ******************************************************************************/
 
 ConnectionOperationBase::~ConnectionOperationBase() {
   MOZ_ASSERT(
@@ -1035,8 +1035,8 @@ void ConnectionOperationBase::DatabaseWork() {
   MOZ_ASSERT(NS_SUCCEEDED(mResultCode));
 
   if (!OperationMayProceed()) {
-    
-    
+    // The operation was canceled in some way, likely because the child process
+    // has crashed.
     mResultCode = NS_ERROR_FAILURE;
   } else {
     nsIFileStream* fileStream = mConnection->GetFileStream();
@@ -1183,7 +1183,7 @@ nsresult OpenOp::OpenDirectory() {
       QuotaManager::Get()->OpenDirectory(GetConnection()->GetPersistenceType(),
                                          mQuotaInfo,
                                          mozilla::dom::quota::Client::SDB,
-                                          false, this);
+                                         /* aExclusive */ false, this);
 
   return NS_OK;
 }
@@ -1203,7 +1203,7 @@ nsresult OpenOp::SendToIOThread() {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  
+  // Must set this before dispatching otherwise we will race with the IO thread.
   mState = State::DatabaseWorkOpen;
 
   nsresult rv = quotaManager->IOThread()->Dispatch(this, NS_DISPATCH_NORMAL);
@@ -1301,8 +1301,8 @@ nsresult OpenOp::DatabaseWork() {
     return rv;
   }
 
-  
-  
+  // Must set mState before dispatching otherwise we will race with the owning
+  // thread.
   mState = State::SendingResults;
 
   rv = OwningEventTarget()->Dispatch(this, NS_DISPATCH_NORMAL);
@@ -1361,13 +1361,13 @@ void OpenOp::Cleanup() {
   MOZ_ASSERT_IF(mFileStreamOpen, mFileStream);
 
   if (mFileStream && mFileStreamOpen) {
-    
-    
+    // If we have an initialized file stream then the operation must have failed
+    // and there must be a directory lock too.
     MOZ_ASSERT(NS_FAILED(ResultCode()));
     MOZ_ASSERT(mDirectoryLock);
 
-    
-    
+    // We must close the stream on the I/O thread before releasing it on this
+    // thread. The directory lock can't be released either.
     nsCOMPtr<nsIRunnable> callback =
         NewRunnableMethod("dom::OpenOp::StreamClosedCallback", this,
                           &OpenOp::StreamClosedCallback);
@@ -1418,8 +1418,8 @@ OpenOp::Run() {
   if (NS_WARN_IF(NS_FAILED(rv)) && mState != State::SendingResults) {
     MaybeSetFailureCode(rv);
 
-    
-    
+    // Must set mState before dispatching otherwise we will race with the owning
+    // thread.
     mState = State::SendingResults;
 
     if (IsOnOwningThread()) {
@@ -1444,8 +1444,8 @@ void OpenOp::DirectoryLockAcquired(DirectoryLock* aLock) {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     MaybeSetFailureCode(rv);
 
-    
-    
+    // The caller holds a strong reference to us, no need for a self reference
+    // before calling Run().
 
     mState = State::SendingResults;
     MOZ_ALWAYS_SUCCEEDS(Run());
@@ -1461,8 +1461,8 @@ void OpenOp::DirectoryLockFailed() {
 
   MaybeSetFailureCode(NS_ERROR_FAILURE);
 
-  
-  
+  // The caller holds a strong reference to us, no need for a self reference
+  // before calling Run().
 
   mState = State::SendingResults;
   MOZ_ALWAYS_SUCCEEDS(Run());
@@ -1672,9 +1672,9 @@ void CloseOp::OnSuccess() {
   GetConnection()->OnClose();
 }
 
-
-
-
+/*******************************************************************************
+ * QuotaClient
+ ******************************************************************************/
 
 QuotaClient* QuotaClient::sInstance = nullptr;
 
@@ -1735,60 +1735,35 @@ Result<UsageInfo, nsresult> QuotaClient::GetUsageForOrigin(
   DebugOnly<bool> exists;
   MOZ_ASSERT(NS_SUCCEEDED(directory->Exists(&exists)) && exists);
 
-  nsCOMPtr<nsIDirectoryEnumerator> directoryEntries;
-  rv = directory->GetDirectoryEntries(getter_AddRefs(directoryEntries));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
-  }
+  SDB_TRY_RETURN(ReduceEachFileAtomicCancelable(
+      *directory, aCanceled, UsageInfo{},
+      [](UsageInfo usageInfo,
+         const nsCOMPtr<nsIFile>& file) -> Result<UsageInfo, nsresult> {
+        SDB_TRY_INSPECT(const bool& isDirectory,
+                        MOZ_TO_RESULT_INVOKE(file, IsDirectory));
 
-  UsageInfo res;
+        if (isDirectory) {
+          Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
+          return usageInfo;
+        }
 
-  while (!aCanceled) {
-    nsCOMPtr<nsIFile> file;
-    rv = directoryEntries->GetNextFile(getter_AddRefs(file));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
-    }
+        nsString leafName;
+        SDB_TRY(file->GetLeafName(leafName));
 
-    if (!file) {
-      break;
-    }
+        if (StringEndsWith(leafName, kSDBSuffix)) {
+          SDB_TRY_INSPECT(const int64_t& fileSize,
+                          MOZ_TO_RESULT_INVOKE(file, GetFileSize));
 
-    bool isDirectory;
-    rv = file->IsDirectory(&isDirectory);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
-    }
+          MOZ_ASSERT(fileSize >= 0);
 
-    if (isDirectory) {
-      Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
-      continue;
-    }
+          return usageInfo +
+                 UsageInfo{DatabaseUsageType(Some(uint64_t(fileSize)))};
+        }
 
-    nsString leafName;
-    rv = file->GetLeafName(leafName);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
-    }
+        Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
 
-    if (StringEndsWith(leafName, kSDBSuffix)) {
-      int64_t fileSize;
-      rv = file->GetFileSize(&fileSize);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
-      }
-
-      MOZ_ASSERT(fileSize >= 0);
-
-      res += DatabaseUsageType(Some(uint64_t(fileSize)));
-
-      continue;
-    }
-
-    Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
-  }
-
-  return res;
+        return usageInfo;
+      }));
 }
 
 void QuotaClient::OnOriginClearCompleted(PersistenceType aPersistenceType,
@@ -1803,8 +1778,8 @@ void QuotaClient::AbortOperationsForLocks(
   AssertIsOnBackgroundThread();
 
   AllowToCloseConnectionsMatching([&aDirectoryLockIds](const auto& connection) {
-    
-    
+    // If the connections is registered in gOpenConnections then it must have
+    // a directory lock.
     return IsLockForObjectContainedInLockTable(connection, aDirectoryLockIds);
   });
 }
@@ -1839,16 +1814,16 @@ void QuotaClient::InitiateShutdown() {
 bool QuotaClient::IsShutdownCompleted() const { return !gOpenConnections; }
 
 void QuotaClient::ForceKillActors() {
-  
+  // Currently we don't implement killing actors (are there any to kill here?).
 }
 
 nsCString QuotaClient::GetShutdownStatus() const {
-  
+  // XXX Gather information here.
   return "To be implemented"_ns;
 }
 
 void QuotaClient::FinalizeShutdown() {
-  
+  // Nothing to do here.
 }
 
-}  
+}  // namespace mozilla::dom
