@@ -104,10 +104,7 @@ def _run_subprocess(cls, exe, app_data):
         result.executable = exe  
     else:
         msg = "failed to query {} with code {}{}{}".format(
-            exe,
-            code,
-            " out: {!r}".format(out) if out else "",
-            " err: {!r}".format(err) if err else "",
+            exe, code, " out: {!r}".format(out) if out else "", " err: {!r}".format(err) if err else "",
         )
         failure = RuntimeError(msg)
     return failure, result

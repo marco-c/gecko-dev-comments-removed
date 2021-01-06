@@ -51,11 +51,7 @@ def setup(root, **lintargs):
     virtualenv_manager = lintargs["virtualenv_manager"]
     try:
         virtualenv_manager.install_pip_requirements(
-            PYLINT_REQUIREMENTS_PATH,
-            quiet=True,
-            
-            
-            legacy_resolver=True,
+            PYLINT_REQUIREMENTS_PATH, quiet=True
         )
     except subprocess.CalledProcessError:
         print(PYLINT_INSTALL_ERROR)

@@ -242,11 +242,7 @@ class MachCommands(MachCommandBase):
                 and test["requirements"] not in installed_requirements
             ):
                 self.virtualenv_manager.install_pip_requirements(
-                    test["requirements"],
-                    quiet=True,
-                    
-                    
-                    legacy_resolver=True,
+                    test["requirements"], quiet=True
                 )
                 installed_requirements.add(test["requirements"])
 
