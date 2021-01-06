@@ -237,7 +237,7 @@ bool BrowsingContext::IsOwnedByProcess() const {
 }
 
 bool BrowsingContext::SameOriginWithTop() {
-  MOZ_ASSERT(IsInProcess());
+  MOZ_DIAGNOSTIC_ASSERT(IsInProcess());
   
   if (!Top()->IsInProcess()) {
     return false;
