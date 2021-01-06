@@ -15,7 +15,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/gfx/gfxVars.h"
 
 extern "C" {
 
@@ -28,7 +27,6 @@ extern Boolean VTIsHardwareDecodeSupported(CMVideoCodecType codecType)
 namespace mozilla {
 
 bool AppleDecoderModule::sInitialized = false;
-bool AppleDecoderModule::sCanUseHardwareVideoDecoder = true;
 bool AppleDecoderModule::sCanUseVP9Decoder = false;
 
 
@@ -36,8 +34,6 @@ void AppleDecoderModule::Init() {
   if (sInitialized) {
     return;
   }
-
-  sCanUseHardwareVideoDecoder = gfx::gfxVars::CanUseHardwareVideoDecoding();
 
   sInitialized = true;
   if (RegisterSupplementalVP9Decoder()) {
@@ -134,7 +130,7 @@ bool AppleDecoderModule::CanCreateVP9Decoder() {
   
   if (__builtin_available(macOS 10.13, *)) {
     
-    if (!sCanUseHardwareVideoDecoder || !VTIsHardwareDecodeSupported ||
+    if (!VTIsHardwareDecodeSupported ||
         !VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9)) {
       return false;
     }
