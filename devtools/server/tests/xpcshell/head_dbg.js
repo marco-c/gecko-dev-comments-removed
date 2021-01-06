@@ -75,8 +75,6 @@ async function startupAddonsManager() {
   const profileDir = do_get_profile().clone();
   profileDir.append("extensions");
 
-  
-  
   AddonTestUtils.init(globalThis);
   AddonTestUtils.overrideCertDB();
   AddonTestUtils.appInfo = getAppInfo();
