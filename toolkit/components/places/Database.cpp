@@ -67,18 +67,6 @@
 #define ENV_ALLOW_CORRUPTION \
   "ALLOW_PLACES_DATABASE_TO_LOSE_DATA_AND_BECOME_CORRUPT"
 
-
-
-#define PREF_HISTORY_MAXURLLEN "places.history.maxUrlLength"
-
-
-
-
-
-
-
-#define PREF_HISTORY_MAXURLLEN_DEFAULT 2000
-
 #define PREF_MIGRATE_V52_ORIGIN_FRECENCIES \
   "places.database.migrateV52OriginFrecencies"
 
