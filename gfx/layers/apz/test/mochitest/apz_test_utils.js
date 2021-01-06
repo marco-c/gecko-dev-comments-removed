@@ -229,7 +229,7 @@ function getLastContentDisplayportFor(elementId) {
 }
 
 
-function waitForFrame() {
+function promiseFrame() {
   return new Promise(resolve => {
     window.requestAnimationFrame(resolve);
   });
