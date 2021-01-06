@@ -425,8 +425,12 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void NotifyStoragePressure(uint64_t aUsage);
 
+  
   void MaybeRecordShutdownStep(Client::Type aClientType,
                                const nsACString& aStepDescription);
+
+  
+  void MaybeRecordQuotaManagerShutdownStep(const nsACString& aStepDescription);
 
   static void GetStorageId(PersistenceType aPersistenceType,
                            const nsACString& aOrigin, Client::Type aClientType,
@@ -573,6 +577,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   int64_t GenerateDirectoryLockId();
 
+  void MaybeRecordShutdownStep(Maybe<Client::Type> aClientType,
+                               const nsACString& aStepDescription);
+
   
   nsCOMPtr<nsIThread> mIOThread;
 
@@ -583,6 +590,10 @@ class QuotaManager final : public BackgroundThreadObject {
 
   EnumeratedArray<Client::Type, Client::TYPE_MAX, nsCString> mShutdownSteps;
   LazyInitializedOnce<const TimeStamp> mShutdownStartedAt;
+  Atomic<bool> mShutdownStarted;
+
+  
+  nsCString mQuotaManagerShutdownSteps;
 
   mozilla::Mutex mQuotaMutex;
 
