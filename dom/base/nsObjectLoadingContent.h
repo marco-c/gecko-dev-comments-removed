@@ -540,7 +540,8 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
   void NotifyStateChanged(ObjectType aOldType, mozilla::EventStates aOldState,
-                          bool aSync, bool aNotify);
+                          FallbackType aOldFallbackType, bool aSync,
+                          bool aNotify);
 
   
 
