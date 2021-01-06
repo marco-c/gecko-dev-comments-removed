@@ -92,15 +92,25 @@ void PrintedSheetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayBorderBackgroundOutline(aBuilder, aLists);
   }
 
-  const nsRect visible = aBuilder->GetVisibleRect();
-
   
   
   for (auto* frame : mFrames) {
     if (!frame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE)) {
+      
+      
+      
+      
+      
+      
+      
       nsDisplayList content;
+      {
+        nsRect visibleRect = frame->GetRect();
+        nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
+            aBuilder, this, visibleRect, visibleRect);
 
-      frame->BuildDisplayListForStackingContext(aBuilder, &content);
+        frame->BuildDisplayListForStackingContext(aBuilder, &content);
+      }
       content.AppendNewToTop<nsDisplayTransform>(aBuilder, frame, &content,
                                                  content.GetBuildingRect(),
                                                  ComputePagesPerSheetTransform);
