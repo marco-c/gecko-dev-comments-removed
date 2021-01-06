@@ -339,8 +339,10 @@ MInstruction* WarpBuilder::buildNamedLambdaEnv(
   
   size_t enclosingSlot = NamedLambdaObject::enclosingEnvironmentSlot();
   size_t lambdaSlot = NamedLambdaObject::lambdaSlot();
-  current->add(MStoreFixedSlot::New(alloc(), namedLambda, enclosingSlot, env));
-  current->add(MStoreFixedSlot::New(alloc(), namedLambda, lambdaSlot, callee));
+  current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda,
+                                               enclosingSlot, env));
+  current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda, lambdaSlot,
+                                               callee));
 
   return namedLambda;
 }
@@ -357,8 +359,10 @@ MInstruction* WarpBuilder::buildCallObject(MDefinition* callee,
   
   size_t enclosingSlot = CallObject::enclosingEnvironmentSlot();
   size_t calleeSlot = CallObject::calleeSlot();
-  current->add(MStoreFixedSlot::New(alloc(), callObj, enclosingSlot, env));
-  current->add(MStoreFixedSlot::New(alloc(), callObj, calleeSlot, callee));
+  current->add(
+      MStoreFixedSlot::NewUnbarriered(alloc(), callObj, enclosingSlot, env));
+  current->add(
+      MStoreFixedSlot::NewUnbarriered(alloc(), callObj, calleeSlot, callee));
 
   
   MSlots* slots = nullptr;
@@ -387,9 +391,11 @@ MInstruction* WarpBuilder::buildCallObject(MDefinition* callee,
         current->add(slots);
       }
       uint32_t dynamicSlot = slot - numFixedSlots;
-      current->add(MStoreDynamicSlot::New(alloc(), slots, dynamicSlot, param));
+      current->add(MStoreDynamicSlot::NewUnbarriered(alloc(), slots,
+                                                     dynamicSlot, param));
     } else {
-      current->add(MStoreFixedSlot::New(alloc(), callObj, slot, param));
+      current->add(
+          MStoreFixedSlot::NewUnbarriered(alloc(), callObj, slot, param));
     }
   }
 
@@ -2294,9 +2300,9 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
 
   
   
-  current->add(MStoreFixedSlot::New(alloc(), genObj,
-                                    AbstractGeneratorObject::resumeIndexSlot(),
-                                    constant(Int32Value(resumeIndex))));
+  current->add(MStoreFixedSlot::NewUnbarriered(
+      alloc(), genObj, AbstractGeneratorObject::resumeIndexSlot(),
+      constant(Int32Value(resumeIndex))));
 
   
   current->add(MStoreFixedSlot::NewBarriered(
