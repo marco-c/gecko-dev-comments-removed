@@ -367,6 +367,18 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
+  void NotifyMediaTrackAdded(dom::MediaTrack* aTrack);
+
+  
+
+
+
+  void NotifyMediaTrackRemoved(dom::MediaTrack* aTrack);
+
+  
+
+
+
   void NotifyMediaTrackEnabled(dom::MediaTrack* aTrack);
 
   

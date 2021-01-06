@@ -48,6 +48,7 @@ class VideoFrameContainer;
 class MediaFormatReader;
 class MediaDecoderStateMachine;
 struct MediaPlaybackEvent;
+struct SharedDummyTrack;
 
 enum class Visibility : uint8_t;
 
@@ -173,13 +174,18 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
 
+  enum class OutputCaptureState { Capture, Halt, None };
   
   
   
   
   
   
-  void SetOutputCaptured(bool aCaptured);
+  
+  
+  
+  void SetOutputCaptureState(OutputCaptureState aState,
+                             SharedDummyTrack* aDummyTrack = nullptr);
   
   
   
@@ -638,7 +644,11 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
-  Canonical<bool> mOutputCaptured;
+  Canonical<OutputCaptureState> mOutputCaptureState;
+
+  
+  
+  Canonical<nsMainThreadPtrHandle<SharedDummyTrack>> mOutputDummyTrack;
 
   
   Canonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
@@ -690,8 +700,12 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   CanonicalSecondaryVideoContainer() {
     return &mSecondaryVideoContainer;
   }
-  AbstractCanonical<bool>* CanonicalOutputCaptured() {
-    return &mOutputCaptured;
+  AbstractCanonical<OutputCaptureState>* CanonicalOutputCaptureState() {
+    return &mOutputCaptureState;
+  }
+  AbstractCanonical<nsMainThreadPtrHandle<SharedDummyTrack>>*
+  CanonicalOutputDummyTrack() {
+    return &mOutputDummyTrack;
   }
   AbstractCanonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>>*
   CanonicalOutputTracks() {
