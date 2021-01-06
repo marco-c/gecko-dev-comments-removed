@@ -83,8 +83,7 @@ class MOZ_STACK_CLASS LexicalScopeEmitter {
   
   const EmitterScope& emitterScope() const { return *emitterScope_; }
 
-  MOZ_MUST_USE bool emitScope(ScopeKind kind,
-                              LexicalScope::ParserData* bindings);
+  MOZ_MUST_USE bool emitScope(ScopeKind kind, ParserLexicalScopeData* bindings);
   MOZ_MUST_USE bool emitEmptyScope();
 
   MOZ_MUST_USE bool emitEnd();
