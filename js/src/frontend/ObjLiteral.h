@@ -172,24 +172,20 @@ enum class ObjLiteralFlag : uint8_t {
 
   
   
-  
-  SpecificGroup = 2,
-  
-  
-  Singleton = 3,
+  Singleton = 2,
   
   
-  ArrayCOW = 4,
+  ArrayCOW = 3,
 
   
-  NoValues = 5,
+  NoValues = 4,
 
   
   
   
   
   
-  IsInnerSingleton = 6,
+  IsInnerSingleton = 5,
 };
 
 using ObjLiteralFlags = mozilla::EnumSet<ObjLiteralFlag>;

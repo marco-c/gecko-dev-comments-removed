@@ -9744,13 +9744,8 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
     
     
     ObjLiteralFlags flags;
-    if (isSingletonContext) {
-      
-      
-      flags += ObjLiteralFlag::SpecificGroup;
-      if (!isInner) {
-        flags += ObjLiteralFlag::Singleton;
-      }
+    if (isSingletonContext && !isInner) {
+      flags += ObjLiteralFlag::Singleton;
     }
     if (!useObjLiteralValues) {
       flags += ObjLiteralFlag::NoValues;
