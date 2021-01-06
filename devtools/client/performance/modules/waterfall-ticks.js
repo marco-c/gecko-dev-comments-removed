@@ -22,7 +22,7 @@ function drawWaterfallBackground(doc, dataScale, waterfallWidth) {
   const ctx = canvas.getContext("2d");
 
   
-  const canvasWidth = (canvas.width = waterfallWidth);
+  const canvasWidth = (canvas.width = Math.max(waterfallWidth, 1));
   
   const canvasHeight = (canvas.height = 1);
 

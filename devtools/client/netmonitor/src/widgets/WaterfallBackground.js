@@ -59,8 +59,10 @@ class WaterfallBackground {
     }
 
     
-    const canvasWidth = (this.canvas.width =
-      state.waterfallWidth - REQUESTS_WATERFALL.LABEL_WIDTH);
+    const canvasWidth = (this.canvas.width = Math.max(
+      state.waterfallWidth - REQUESTS_WATERFALL.LABEL_WIDTH,
+      1
+    ));
     
     const canvasHeight = (this.canvas.height = 1);
 
