@@ -2144,7 +2144,8 @@ bool WarpBuilder::build_FinalYieldRval(BytecodeLocation loc) {
   MDefinition* gen = current->pop();
 
   auto setSlotNull = [this, gen](size_t slot) {
-    auto* ins = MStoreFixedSlot::New(alloc(), gen, slot, constant(NullValue()));
+    auto* ins = MStoreFixedSlot::NewBarriered(alloc(), gen, slot,
+                                              constant(NullValue()));
     current->add(ins);
   };
 
@@ -2290,12 +2291,17 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
 
   
   uint32_t resumeIndex = loc.getResumeIndex();
+
+  
+  
   current->add(MStoreFixedSlot::New(alloc(), genObj,
                                     AbstractGeneratorObject::resumeIndexSlot(),
                                     constant(Int32Value(resumeIndex))));
-  current->add(MStoreFixedSlot::New(alloc(), genObj,
-                                    AbstractGeneratorObject::envChainSlot(),
-                                    current->environmentChain()));
+
+  
+  current->add(MStoreFixedSlot::NewBarriered(
+      alloc(), genObj, AbstractGeneratorObject::envChainSlot(),
+      current->environmentChain()));
 
   
   
