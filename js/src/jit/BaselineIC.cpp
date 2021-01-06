@@ -588,26 +588,7 @@ void ICStubIterator::unlink(JSContext* cx, JSScript* script) {
   unlinked_ = true;
 }
 
-bool ICStub::makesGCCalls() const {
-  if (!isFallback()) {
-    return toCacheIRStub()->stubInfo()->makesGCCalls();
-  }
-
-  Kind kind = toFallbackStub()->kind();
-  MOZ_ASSERT(IsValidKind(kind));
-  switch (kind) {
-    case Call_Fallback:
-    
-    
-    
-    case GetProp_Fallback:
-    case SetProp_Fallback:
-    case GetElem_Fallback:
-      return true;
-    default:
-      return false;
-  }
-}
+bool ICCacheIRStub::makesGCCalls() const { return stubInfo()->makesGCCalls(); }
 
 void ICFallbackStub::trackNotAttached(JSContext* cx, JSScript* script) {
   maybeInvalidateWarp(cx, script);
