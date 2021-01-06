@@ -10,6 +10,7 @@
 #  include <process.h>
 
 #  include "WMF.h"
+#  include "WMFDecoderModule.h"
 #  include "mozilla/WinDllServices.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #else
@@ -24,6 +25,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/RemoteDecoderManagerChild.h"
 #include "mozilla/RemoteDecoderManagerParent.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -151,6 +153,18 @@ mozilla::ipc::IPCResult RDDParent::RecvInit(
 }
 
 IPCResult RDDParent::RecvUpdateVar(const GfxVarUpdate& aUpdate) {
+#if defined(XP_WIN)
+  auto scopeExit = MakeScopeExit(
+      [couldUseHWDecoder = gfx::gfxVars::CanUseHardwareVideoDecoding()] {
+        if (couldUseHWDecoder != gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+          
+          
+          WMFDecoderModule::Init();
+          Unused << RDDParent::GetSingleton()->SendUpdateMediaCodecsSupported(
+              PDMFactory::Supported(true ));
+        }
+      });
+#endif
   gfxVars::ApplyUpdate(aUpdate);
   return IPC_OK();
 }
