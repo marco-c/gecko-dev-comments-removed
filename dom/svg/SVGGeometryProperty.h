@@ -146,7 +146,8 @@ float ResolveImpl(ComputedStyle const& aStyle, SVGElement* aElement,
 
       if (aspectRatio) {
         
-        return Other::AspectRatioRelative(aspectRatio).ApplyTo(lengthOther);
+        return Other::AspectRatioRelative(aspectRatio)
+            .ApplyToFloat(lengthOther);
       }
 
       float intrinsicLength = intrinsicImageSize.*Tag::SizeGetter;
