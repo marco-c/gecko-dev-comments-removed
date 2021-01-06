@@ -12,6 +12,7 @@
 #![feature(arm_target_feature)]
 #![feature(raw_ref_op)]
 
+
 #[repr(u32)]
 #[derive(Clone, Copy)]
 pub enum Intent {
@@ -25,6 +26,9 @@ use Intent::*;
 
 impl Default for Intent {
     fn default() -> Self {
+        
+
+
         QCMS_INTENT_PERCEPTUAL
     }
 }
