@@ -103,41 +103,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace js {
 
 class JSONPrinter;
@@ -171,7 +136,8 @@ enum class ObjLiteralFlag : uint8_t {
   Array = 1,
 
   
-  NoValues = 2,
+  
+  Singleton = 2,
 };
 
 using ObjLiteralFlags = mozilla::EnumSet<ObjLiteralFlag>;
