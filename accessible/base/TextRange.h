@@ -17,6 +17,9 @@ class nsIVariant;
 class nsRange;
 
 namespace mozilla {
+namespace dom {
+class Selection;
+}  
 namespace a11y {
 
 class Accessible;
