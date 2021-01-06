@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 const Services = require("Services");
 const isFissionEnabled = Services.appinfo.fissionAutostart;
 

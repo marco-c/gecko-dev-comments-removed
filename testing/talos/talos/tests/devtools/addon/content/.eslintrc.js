@@ -9,6 +9,7 @@ module.exports = {
     module: true,
     reportError: true,
     require: true,
+    rootURI: true,
   },
   rules: {
     "no-unused-vars": ["error", { args: "none", vars: "all" }],
@@ -17,6 +18,7 @@ module.exports = {
 
     
     "mozilla/no-aArgs": "error",
+    "mozilla/no-define-cc-etc": "off",
     
     "mozilla/reject-importGlobalProperties": ["error", "everything"],
     "mozilla/var-only-at-top-level": "error",

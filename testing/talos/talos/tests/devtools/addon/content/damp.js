@@ -1,5 +1,8 @@
-"use strict";
 
+
+
+
+"use strict";
 
 
 
@@ -297,13 +300,13 @@ Damp.prototype = {
   },
 
   _reportAllResults() {
-    var testNames = [];
-    var testResults = [];
+    const testNames = [];
+    const testResults = [];
 
-    var out = "";
-    for (var i in this._results) {
+    let out = "";
+    for (const i in this._results) {
       const res = this._results[i];
-      var disp = []
+      const disp = []
         .concat(res.value)
         .map(function(a) {
           return isNaN(a) ? -1 : a.toFixed(1);
