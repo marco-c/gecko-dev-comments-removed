@@ -151,7 +151,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
     if (preloadCsp) {
       
       rv = preloadCsp->ShouldLoad(
-          contentType, cspEventListener, aContentLocation, aMimeTypeGuess,
+          contentType, cspEventListener, aContentLocation,
           nullptr,  
           aLoadInfo->GetSendCSPViolationEvents(), cspNonce, parserCreatedScript,
           aDecision);
@@ -177,7 +177,6 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   if (csp) {
     
     rv = csp->ShouldLoad(contentType, cspEventListener, aContentLocation,
-                         aMimeTypeGuess,
                          nullptr,  
                          aLoadInfo->GetSendCSPViolationEvents(), cspNonce,
                          parserCreatedScript, aDecision);
@@ -361,7 +360,6 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
           policyType,  
           cspEventListener,
           aNewURI,       
-          ""_ns,         
           aOriginalURI,  
           true,          
           cspNonce,      
@@ -383,7 +381,6 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
     csp->ShouldLoad(policyType,  
                     cspEventListener,
                     aNewURI,       
-                    ""_ns,         
                     aOriginalURI,  
                     true,          
                     cspNonce,      
