@@ -7012,7 +7012,7 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   bool isWindowLevelMouseExit =
       (aGUIEvent->mMessage == eMouseExitFromWidget) &&
       (mouseEvent &&
-       (mouseEvent->mExitFrom.value() == WidgetMouseEvent::eTopLevel ||
+       (mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePlatformTopLevel ||
         mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePuppet));
 
   

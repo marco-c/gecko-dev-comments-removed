@@ -5013,11 +5013,11 @@ void ChildViewMouseTracker::ReEvaluateMouseEnterState(NSEvent* aEvent, ChildView
   if (sLastMouseEventView != oldView) {
     
     WidgetMouseEvent::ExitFrom exitFrom = [sLastMouseEventView window] == [oldView window]
-                                              ? WidgetMouseEvent::eChild
-                                              : WidgetMouseEvent::eTopLevel;
+                                              ? WidgetMouseEvent::ePlatformChild
+                                              : WidgetMouseEvent::ePlatformTopLevel;
     [oldView sendMouseEnterOrExitEvent:aEvent enter:NO exitFrom:exitFrom];
     
-    if (exitFrom == WidgetMouseEvent::eTopLevel) {
+    if (exitFrom == WidgetMouseEvent::ePlatformTopLevel) {
       [[nsCursorManager sharedInstance] setCursor:eCursor_standard];
     }
     [sLastMouseEventView sendMouseEnterOrExitEvent:aEvent enter:YES exitFrom:exitFrom];

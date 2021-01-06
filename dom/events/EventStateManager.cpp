@@ -653,7 +653,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       
-      if (mouseEvent->mExitFrom.value() != WidgetMouseEvent::eTopLevel &&
+      if (mouseEvent->mExitFrom.value() !=
+              WidgetMouseEvent::ePlatformTopLevel &&
           mouseEvent->mExitFrom.value() != WidgetMouseEvent::ePuppet) {
         
         
@@ -662,8 +663,9 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         mouseEvent->mReason = WidgetMouseEvent::eSynthesized;
         
       } else {
-        MOZ_ASSERT_IF(XRE_IsParentProcess(), mouseEvent->mExitFrom.value() ==
-                                                 WidgetMouseEvent::eTopLevel);
+        MOZ_ASSERT_IF(XRE_IsParentProcess(),
+                      mouseEvent->mExitFrom.value() ==
+                          WidgetMouseEvent::ePlatformTopLevel);
         MOZ_ASSERT_IF(XRE_IsContentProcess(), mouseEvent->mExitFrom.value() ==
                                                   WidgetMouseEvent::ePuppet);
         
