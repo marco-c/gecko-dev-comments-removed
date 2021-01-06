@@ -5635,15 +5635,19 @@ class DSDismiss extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompone
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "CollapsibleSection", function() { return CollapsibleSection; });
+(function(global) { __webpack_require__.d(__webpack_exports__, "_CollapsibleSection", function() { return _CollapsibleSection; });
+ __webpack_require__.d(__webpack_exports__, "CollapsibleSection", function() { return CollapsibleSection; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(35);
  var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(37);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(38);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(37);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(38);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(24);
+
 
 
 
@@ -5656,10 +5660,11 @@ __webpack_require__.r(__webpack_exports__);
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
-class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
+class _CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
   constructor(props) {
     super(props);
     this.onBodyMount = this.onBodyMount.bind(this);
+    this.collapseOrExpandSection = this.collapseOrExpandSection.bind(this);
     this.onHeaderClick = this.onHeaderClick.bind(this);
     this.onKeyPress = this.onKeyPress.bind(this);
     this.onTransitionEnd = this.onTransitionEnd.bind(this);
@@ -5721,12 +5726,11 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
     this.sectionBody = node;
   }
 
-  onHeaderClick() {
+  collapseOrExpandSection() {
     
     
     
-    
-    if (!this.sectionBody || this.props.collapsed === undefined) {
+    if (!this.sectionBody) {
       return;
     } 
 
@@ -5736,10 +5740,26 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
       maxHeight: `${this._getSectionBodyHeight()}px`
     });
     const {
-      action,
-      userEvent
-    } = content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__["SectionMenuOptions"].CheckCollapsed(this.props);
+      action
+    } = content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_6__["SectionMenuOptions"].CheckCollapsed(this.props);
     this.props.dispatch(action);
+  }
+
+  onHeaderClick() {
+    
+    
+    
+    
+    
+    
+    if (this.props.Prefs.values["newNewtabExperience.enabled"] || !this.sectionBody || this.props.collapsed === undefined) {
+      return;
+    }
+
+    this.collapseOrExpandSection();
+    const {
+      userEvent
+    } = content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_6__["SectionMenuOptions"].CheckCollapsed(this.props);
     this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
       event: userEvent,
       source: this.props.eventSource
@@ -5814,6 +5834,14 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
 
   render() {
     const isCollapsible = this.props.collapsed !== undefined;
+    const isNewNewtabExperienceEnabled = this.props.Prefs.values["newNewtabExperience.enabled"]; 
+    
+    
+
+    if (isNewNewtabExperienceEnabled && this.props.collapsed) {
+      this.collapseOrExpandSection();
+    }
+
     const {
       enableAnimation,
       isAnimating,
@@ -5870,14 +5898,14 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
     }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
       className: "click-target-container"
     }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-      className: "click-target",
+      className: `click-target ${isNewNewtabExperienceEnabled ? " new-header" : " click-pointer"}`,
       role: "button",
       tabIndex: "0",
       onKeyPress: this.onKeyPress,
       onClick: this.onHeaderClick
-    }, this.renderIcon(), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
+    }, !isNewNewtabExperienceEnabled && this.renderIcon(), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
       message: title
-    }), isCollapsible && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
+    }), !isNewNewtabExperienceEnabled && isCollapsible && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
       "data-l10n-id": collapsed ? "newtab-section-expand-section-label" : "newtab-section-collapse-section-label",
       className: `collapsible-arrow icon ${collapsed ? "icon-arrowhead-forward-small" : "icon-arrowhead-down-small"}`
     })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
@@ -5888,11 +5916,11 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
       message: learnMore.link.message
     }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
       href: learnMore.link.href
-    })))))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__["ContextMenuButton"], {
+    })))))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__["ContextMenuButton"], {
       tooltip: "newtab-menu-section-tooltip",
       onUpdate: this.onMenuUpdate,
       refFunction: this.setContextMenuButtonRef
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__["SectionMenu"], {
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_5__["SectionMenu"], {
       id: id,
       extraOptions: extraMenuOptions,
       source: eventSource,
@@ -5915,16 +5943,16 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
   }
 
 }
-CollapsibleSection.defaultProps = {
+_CollapsibleSection.defaultProps = {
   document: global.document || {
     addEventListener: () => {},
     removeEventListener: () => {},
     visibilityState: "hidden"
-  },
-  Prefs: {
-    values: {}
   }
 };
+const CollapsibleSection = Object(react_redux__WEBPACK_IMPORTED_MODULE_4__["connect"])(state => ({
+  Prefs: state.Prefs
+}))(_CollapsibleSection);
 }.call(this, __webpack_require__(3)))
 
  }),
@@ -6056,7 +6084,10 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(22);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(38);
+ var react_redux__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7);
+ var react_redux__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_3__);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(38);
+
 
 
 
@@ -6071,7 +6102,7 @@ class _SectionMenu extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComp
     const {
       action,
       userEvent
-    } = content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__["SectionMenuOptions"].ExpandSection(this.props);
+    } = content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__["SectionMenuOptions"].ExpandSection(this.props);
     this.props.dispatch(action);
 
     if (userEvent) {
@@ -6087,6 +6118,16 @@ class _SectionMenu extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComp
       props
     } = this;
     const propOptions = props.isWebExtension ? [...WEBEXT_SECTION_MENU_OPTIONS] : [...DEFAULT_SECTION_MENU_OPTIONS]; 
+    
+
+    if (props.Prefs.values["newNewtabExperience.enabled"]) {
+      if (props.isWebExtension) {
+        propOptions.splice(2, 2);
+      } else {
+        propOptions.splice(4, 1);
+      }
+    } 
+
 
     if (props.isFixed) {
       propOptions.splice(propOptions.indexOf("MoveUp"), 3);
@@ -6102,7 +6143,7 @@ class _SectionMenu extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComp
       propOptions.splice(-1, 0, "PrivacyNotice");
     }
 
-    const options = propOptions.map(o => content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__["SectionMenuOptions"][o](props)).map(option => {
+    const options = propOptions.map(o => content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__["SectionMenuOptions"][o](props)).map(option => {
       const {
         action,
         id,
@@ -6148,7 +6189,9 @@ class _SectionMenu extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComp
   }
 
 }
-const SectionMenu = _SectionMenu;
+const SectionMenu = Object(react_redux__WEBPACK_IMPORTED_MODULE_3__["connect"])(state => ({
+  Prefs: state.Prefs
+}))(_SectionMenu);
 
  }),
 
@@ -8588,6 +8631,16 @@ class _TopSites extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureCompone
       extraMenuOptions.push("AddSearchShortcut");
     }
 
+    const canShowCustomizationMenu = props.Prefs.values["newNewtabExperience.enabled"] || props.Prefs.values["customizationMenu.enabled"];
+    const hideTitle = props.Prefs.values.hideTopSitesTitle || canShowCustomizationMenu; 
+    
+
+    let collapsed;
+
+    if (props.TopSites.pref) {
+      collapsed = canShowCustomizationMenu ? false : props.TopSites.pref.collapsed;
+    }
+
     return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__["ComponentPerfTimer"], {
       id: "topsites",
       initialized: props.TopSites.initialized,
@@ -8599,11 +8652,11 @@ class _TopSites extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureCompone
       title: props.title || {
         id: "newtab-section-header-topsites"
       },
-      hideTitle: props.Prefs.values.hideTopSitesTitle,
+      hideTitle: hideTitle,
       extraMenuOptions: extraMenuOptions,
       showPrefName: "feeds.topsites",
       eventSource: _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["TOP_SITES_SOURCE"],
-      collapsed: props.TopSites.pref ? props.TopSites.pref.collapsed : undefined,
+      collapsed: collapsed,
       isFixed: props.isFixed,
       isFirst: props.isFirst,
       isLast: props.isLast,
