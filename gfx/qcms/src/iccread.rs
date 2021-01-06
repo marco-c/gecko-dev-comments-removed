@@ -976,11 +976,11 @@ fn profile_create() -> Box<Profile> {
 
 fn build_sRGB_gamma_table(num_entries: i32) -> Vec<u16> {
     
-    let gamma: f64 = 2.4f64;
-    let a: f64 = 1.0f64 / 1.055f64;
-    let b: f64 = 0.055f64 / 1.055f64;
-    let c: f64 = 1.0f64 / 12.92f64;
-    let d: f64 = 0.04045f64;
+    let gamma: f64 = 2.4;
+    let a: f64 = 1.0 / 1.055;
+    let b: f64 = 0.055 / 1.055;
+    let c: f64 = 1.0 / 12.92;
+    let d: f64 = 0.04045;
     let mut table = Vec::with_capacity(num_entries as usize);
 
     for i in 0..num_entries {
@@ -992,21 +992,21 @@ fn build_sRGB_gamma_table(num_entries: i32) -> Vec<u16> {
         
         if x >= d {
             let e: f64 = a * x + b;
-            if e > 0f64 {
+            if e > 0. {
                 y = e.powf(gamma)
             } else {
-                y = 0f64
+                y = 0.
             }
         } else {
             y = c * x
         }
         
-        output = y * 65535.0f64 + 0.5f64;
-        if output > 65535.0f64 {
-            output = 65535f64
+        output = y * 65535.0 + 0.5;
+        if output > 65535.0 {
+            output = 65535.0
         }
-        if output < 0f64 {
-            output = 0f64
+        if output < 0.0 {
+            output = 0.0
         }
         table.push(output.floor() as u16);
     }
@@ -1045,34 +1045,34 @@ fn white_point_from_temp(temp_K: i32) -> qcms_CIE_xyY {
     let T2 = T * T; 
     let T3 = T2 * T;
     
-    let x = if T >= 4000.0f64 && T <= 7000.0f64 {
-        -4.6070f64 * (1E9f64 / T3)
-            + 2.9678f64 * (1E6f64 / T2)
-            + 0.09911f64 * (1E3f64 / T)
-            + 0.244063f64
-    } else if T > 7000.0f64 && T <= 25000.0f64 {
-        -2.0064f64 * (1E9f64 / T3)
-            + 1.9018f64 * (1E6f64 / T2)
-            + 0.24748f64 * (1E3f64 / T)
-            + 0.237040f64
+    let x = if T >= 4000.0 && T <= 7000.0 {
+        -4.6070 * (1E9 / T3)
+            + 2.9678 * (1E6 / T2)
+            + 0.09911 * (1E3 / T)
+            + 0.244063
+    } else if T > 7000.0 && T <= 25000.0 {
+        -2.0064 * (1E9 / T3)
+            + 1.9018 * (1E6 / T2)
+            + 0.24748 * (1E3 / T)
+            + 0.237040
     } else {
         
         
-        white_point.x = -1.0f64;
-        white_point.y = -1.0f64;
-        white_point.Y = -1.0f64;
+        white_point.x = -1.0;
+        white_point.y = -1.0;
+        white_point.Y = -1.0;
         debug_assert!(false, "invalid temp");
         return white_point;
     };
     
-    let y = -3.000f64 * (x * x) + 2.870f64 * x - 0.275f64;
+    let y = -3.000 * (x * x) + 2.870 * x - 0.275;
     
     
     
     
     white_point.x = x;
     white_point.y = y;
-    white_point.Y = 1.0f64;
+    white_point.Y = 1.0;
     white_point
 }
 #[no_mangle]
@@ -1108,23 +1108,23 @@ impl Profile {
         let Rec709Primaries = qcms_CIE_xyYTRIPLE {
             red: {
                 qcms_CIE_xyY {
-                    x: 0.6400f64,
-                    y: 0.3300f64,
-                    Y: 1.0f64,
+                    x: 0.6400,
+                    y: 0.3300,
+                    Y: 1.0,
                 }
             },
             green: {
                 qcms_CIE_xyY {
-                    x: 0.3000f64,
-                    y: 0.6000f64,
-                    Y: 1.0f64,
+                    x: 0.3000,
+                    y: 0.6000,
+                    Y: 1.0,
                 }
             },
             blue: {
                 qcms_CIE_xyY {
-                    x: 0.1500f64,
-                    y: 0.0600f64,
-                    Y: 1.0f64,
+                    x: 0.1500,
+                    y: 0.0600,
+                    Y: 1.0,
                 }
             },
         };
