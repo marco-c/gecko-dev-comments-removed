@@ -3619,21 +3619,6 @@ class LValueToObject : public LInstructionHelper<1, BOX_PIECES, 0> {
 };
 
 
-class LValueToObjectOrNull : public LInstructionHelper<1, BOX_PIECES, 0> {
- public:
-  LIR_HEADER(ValueToObjectOrNull)
-
-  explicit LValueToObjectOrNull(const LBoxAllocation& input)
-      : LInstructionHelper(classOpcode) {
-    setBoxOperand(Input, input);
-  }
-
-  static const size_t Input = 0;
-
-  const MToObjectOrNull* mir() { return mir_->toToObjectOrNull(); }
-};
-
-
 class LPowHalfD : public LInstructionHelper<1, 1, 0> {
  public:
   LIR_HEADER(PowHalfD);
