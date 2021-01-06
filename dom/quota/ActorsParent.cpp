@@ -8423,6 +8423,13 @@ RecordQuotaInfoLoadTimeHelper::Run() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mInitializedTime.isSome()) {
+    
+    
+    
+    
+    
+    
+    
     const auto key = [this, wasSuspended = gLastOSWake > *mInitializedTime]() {
       if (wasSuspended) {
         return "WasSuspended"_ns;
