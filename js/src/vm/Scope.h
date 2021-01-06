@@ -491,10 +491,7 @@ class LexicalScope : public Scope {
   friend class frontend::ScopeStencil;
 
  public:
-  
-  
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
+  struct SlotInfo {
     
     
     uint32_t nextFrameSlot = 0;
@@ -505,6 +502,13 @@ class LexicalScope : public Scope {
     
     uint32_t constStart = 0;
     uint32_t length = 0;
+  };
+
+  
+  
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;
@@ -540,7 +544,7 @@ class LexicalScope : public Scope {
   static uint32_t nextFrameSlot(const AbstractScopePtr& scope);
 
  public:
-  uint32_t nextFrameSlot() const { return data().nextFrameSlot; }
+  uint32_t nextFrameSlot() const { return data().slotInfo.nextFrameSlot; }
 
   
   
@@ -582,15 +586,7 @@ class FunctionScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::Function;
 
  public:
-  
-  
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
-    
-    
-    
-    HeapPtr<JSFunction*> canonicalFunction = {};
-
+  struct SlotInfo {
     
     
     uint32_t nextFrameSlot = 0;
@@ -629,6 +625,18 @@ class FunctionScope : public Scope {
     uint16_t nonPositionalFormalStart = 0;
     uint16_t varStart = 0;
     uint32_t length = 0;
+  };
+
+  
+  
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    
+    
+    
+    HeapPtr<JSFunction*> canonicalFunction = {};
+
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;
@@ -669,16 +677,16 @@ class FunctionScope : public Scope {
   const Data& data() const { return *static_cast<const Data*>(rawData()); }
 
  public:
-  uint32_t nextFrameSlot() const { return data().nextFrameSlot; }
+  uint32_t nextFrameSlot() const { return data().slotInfo.nextFrameSlot; }
 
   JSFunction* canonicalFunction() const { return data().canonicalFunction; }
 
   JSScript* script() const;
 
-  bool hasParameterExprs() const { return data().hasParameterExprs; }
+  bool hasParameterExprs() const { return data().slotInfo.hasParameterExprs; }
 
   uint32_t numPositionalFormalParameters() const {
-    return data().nonPositionalFormalStart;
+    return data().slotInfo.nonPositionalFormalStart;
   }
 
   static bool isSpecialName(JSContext* cx, JSAtom* name);
@@ -702,10 +710,7 @@ class VarScope : public Scope {
   friend class frontend::ScopeStencil;
 
  public:
-  
-  
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
+  struct SlotInfo {
     
     
     uint32_t nextFrameSlot = 0;
@@ -714,6 +719,13 @@ class VarScope : public Scope {
     
     
     uint32_t length = 0;
+  };
+
+  
+  
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;
@@ -746,7 +758,7 @@ class VarScope : public Scope {
   const Data& data() const { return *static_cast<const Data*>(rawData()); }
 
  public:
-  uint32_t nextFrameSlot() const { return data().nextFrameSlot; }
+  uint32_t nextFrameSlot() const { return data().slotInfo.nextFrameSlot; }
 };
 
 template <>
@@ -779,10 +791,7 @@ class GlobalScope : public Scope {
   friend class GCMarker;
 
  public:
-  
-  
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
+  struct SlotInfo {
     
     
     
@@ -793,6 +802,13 @@ class GlobalScope : public Scope {
     uint32_t letStart = 0;
     uint32_t constStart = 0;
     uint32_t length = 0;
+  };
+
+  
+  
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;
@@ -828,7 +844,7 @@ class GlobalScope : public Scope {
  public:
   bool isSyntactic() const { return kind() != ScopeKind::NonSyntactic; }
 
-  bool hasBindings() const { return data().length > 0; }
+  bool hasBindings() const { return data().slotInfo.length > 0; }
 };
 
 template <>
@@ -872,10 +888,7 @@ class EvalScope : public Scope {
   friend class frontend::ScopeStencil;
 
  public:
-  
-  
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
+  struct SlotInfo {
     
     
     uint32_t nextFrameSlot = 0;
@@ -888,6 +901,13 @@ class EvalScope : public Scope {
     
     
     uint32_t length = 0;
+  };
+
+  
+  
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;
@@ -923,11 +943,11 @@ class EvalScope : public Scope {
   
   static Scope* nearestVarScopeForDirectEval(Scope* scope);
 
-  uint32_t nextFrameSlot() const { return data().nextFrameSlot; }
+  uint32_t nextFrameSlot() const { return data().slotInfo.nextFrameSlot; }
 
   bool strict() const { return kind() == ScopeKind::StrictEval; }
 
-  bool hasBindings() const { return data().length > 0; }
+  bool hasBindings() const { return data().slotInfo.length > 0; }
 
   bool isNonGlobal() const {
     if (strict()) {
@@ -959,13 +979,7 @@ class ModuleScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::Module;
 
  public:
-  
-  
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
-    
-    HeapPtr<ModuleObject*> module = {};
-
+  struct SlotInfo {
     
     
     uint32_t nextFrameSlot = 0;
@@ -980,6 +994,16 @@ class ModuleScope : public Scope {
     uint32_t letStart = 0;
     uint32_t constStart = 0;
     uint32_t length = 0;
+  };
+
+  
+  
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    
+    HeapPtr<ModuleObject*> module = {};
+
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;
@@ -1012,7 +1036,7 @@ class ModuleScope : public Scope {
   const Data& data() const { return *static_cast<const Data*>(rawData()); }
 
  public:
-  uint32_t nextFrameSlot() const { return data().nextFrameSlot; }
+  uint32_t nextFrameSlot() const { return data().slotInfo.nextFrameSlot; }
 
   ModuleObject* module() const { return data().module; }
 
@@ -1029,11 +1053,7 @@ class WasmInstanceScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::WasmInstance;
 
  public:
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
-    
-    HeapPtr<WasmInstanceObject*> instance = {};
-
+  struct SlotInfo {
     
     
     uint32_t nextFrameSlot = 0;
@@ -1044,6 +1064,14 @@ class WasmInstanceScope : public Scope {
     
     uint32_t globalsStart = 0;
     uint32_t length = 0;
+  };
+
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    
+    HeapPtr<WasmInstanceObject*> instance = {};
+
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;
@@ -1067,9 +1095,9 @@ class WasmInstanceScope : public Scope {
 
   uint32_t memoriesStart() const { return 0; }
 
-  uint32_t globalsStart() const { return data().globalsStart; }
+  uint32_t globalsStart() const { return data().slotInfo.globalsStart; }
 
-  uint32_t namesCount() const { return data().length; }
+  uint32_t namesCount() const { return data().slotInfo.length; }
 };
 
 
@@ -1083,8 +1111,7 @@ class WasmFunctionScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::WasmFunction;
 
  public:
-  template <typename NameT>
-  struct AbstractData : public AbstractBaseScopeData<NameT> {
+  struct SlotInfo {
     
     
     uint32_t nextFrameSlot = 0;
@@ -1093,6 +1120,11 @@ class WasmFunctionScope : public Scope {
     
     
     uint32_t length = 0;
+  };
+
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
+    SlotInfo slotInfo;
 
     
     AbstractTrailingNamesArray<NameT> trailingNames;

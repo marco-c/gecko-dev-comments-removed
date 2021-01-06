@@ -142,9 +142,9 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         CopyBindingNames(cx, global.bindings, allAtoms,
                          data->trailingNames.start());
 
-        data->letStart = global.let_start;
-        data->constStart = global.const_start;
-        data->length = numBindings;
+        data->slotInfo.letStart = global.let_start;
+        data->slotInfo.constStart = global.const_start;
+        data->slotInfo.length = numBindings;
 
         if (!ScopeStencil::createForGlobalScope(
                 cx, compilationInfo, ScopeKind::Global, data, &index)) {
@@ -167,8 +167,9 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
                          data->trailingNames.start());
 
         
+        
 
-        data->length = numBindings;
+        data->slotInfo.length = numBindings;
 
         uint32_t firstFrameSlot = var.first_frame_slot;
         ScopeIndex enclosingIndex(var.enclosing);
@@ -196,8 +197,8 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         
         
 
-        data->constStart = lexical.const_start;
-        data->length = numBindings;
+        data->slotInfo.constStart = lexical.const_start;
+        data->slotInfo.length = numBindings;
 
         uint32_t firstFrameSlot = lexical.first_frame_slot;
         ScopeIndex enclosingIndex(lexical.enclosing);
@@ -224,10 +225,11 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         
         
 
-        data->hasParameterExprs = function.has_parameter_exprs;
-        data->nonPositionalFormalStart = function.non_positional_formal_start;
-        data->varStart = function.var_start;
-        data->length = numBindings;
+        data->slotInfo.hasParameterExprs = function.has_parameter_exprs;
+        data->slotInfo.nonPositionalFormalStart =
+            function.non_positional_formal_start;
+        data->slotInfo.varStart = function.var_start;
+        data->slotInfo.length = numBindings;
 
         bool hasParameterExprs = function.has_parameter_exprs;
         bool needsEnvironment = function.non_positional_formal_start;
