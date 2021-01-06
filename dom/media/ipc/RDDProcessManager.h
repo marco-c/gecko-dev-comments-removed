@@ -32,8 +32,6 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   using EnsureRDDPromise =
       MozPromise<ipc::Endpoint<PRemoteDecoderManagerChild>, nsresult, true>;
   
-  RefPtr<GenericNonExclusivePromise> LaunchRDDProcess();
-  
   
   RefPtr<EnsureRDDPromise> EnsureRDDProcessAndCreateBridge(
       base::ProcessId aOtherProcess);
@@ -106,9 +104,6 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   
   
   nsTArray<dom::Pref> mQueuedPrefs;
-  
-  
-  RefPtr<GenericNonExclusivePromise> mLaunchRDDPromise;
 };
 
 }  

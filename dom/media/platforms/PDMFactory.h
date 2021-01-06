@@ -46,6 +46,11 @@ class PDMFactory final {
 
   
   
+  static already_AddRefed<PDMFactory> PDMFactoryForRdd();
+  static already_AddRefed<PDMFactory> PDMFactoryForGpu();
+
+  
+  
   RefPtr<PDMCreateDecoderPromise> CreateDecoder(
       const CreateDecoderParams& aParams);
 
@@ -87,12 +92,15 @@ class PDMFactory final {
 
   using MediaCodecsSupported = EnumSet<MediaCodecs>;
 
-  static MediaCodecsSupported Supported(bool aForceRefresh = false);
-  static bool SupportsMimeType(const nsACString& aMimeType,
-                               const MediaCodecsSupported& aSupported);
+  static MediaCodecsSupported Supported();
+  static void SetSupported(const MediaCodecsSupported& aSupported);
 
  private:
   virtual ~PDMFactory();
+  
+  
+  
+  explicit PDMFactory(const RemoteDecodeIn& aProcess);
 
   void CreatePDMs();
   void CreateNullPDM();
