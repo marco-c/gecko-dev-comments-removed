@@ -30,6 +30,7 @@
 #include "nsGenericHTMLElement.h"
 #include "nsIHapticFeedback.h"
 #include "nsIScrollableFrame.h"
+#include "nsLayoutUtils.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla {
@@ -862,7 +863,7 @@ nsIFrame* AccessibleCaretManager::GetFocusableFrame(nsIFrame* aFrame) const {
   
   nsIFrame* focusableFrame = aFrame;
   while (focusableFrame) {
-    if (focusableFrame->IsFocusable(nullptr, true)) {
+    if (focusableFrame->IsFocusable( true)) {
       break;
     }
     focusableFrame = focusableFrame->GetParent();

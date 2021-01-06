@@ -201,8 +201,7 @@ nsresult nsXULPopupListener::FireFocusOnTargetContent(
   nsIFrame* currFrame = targetFrame;
   
   while (currFrame) {
-    int32_t tabIndexUnused;
-    if (currFrame->IsFocusable(&tabIndexUnused, true) &&
+    if (currFrame->IsFocusable( true) &&
         currFrame->GetContent()->IsElement()) {
       newFocusElement = currFrame->GetContent()->AsElement();
       break;

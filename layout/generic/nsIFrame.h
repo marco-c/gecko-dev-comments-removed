@@ -4200,6 +4200,17 @@ class nsIFrame : public nsQueryFrame {
                                     const nsStyleEffects* aEffects,
                                     const nsSize& aSize) const;
 
+  struct Focusable {
+    bool mFocusable = false;
+    
+    
+    
+    
+    int32_t mTabIndex = -1;
+
+    explicit operator bool() const { return mFocusable; }
+  };
+
   
 
 
@@ -4214,11 +4225,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
-  bool IsFocusable(int32_t* aTabIndex = nullptr, bool aWithMouse = false);
+  [[nodiscard]] Focusable IsFocusable(bool aWithMouse = false);
 
   
   
@@ -4321,6 +4328,9 @@ class nsIFrame : public nsQueryFrame {
   static nsIFrame* GetParentXULBox(const nsIFrame* aFrame);
 
  protected:
+  
+  bool IsFocusableDueToScrollFrame();
+
   
 
 
