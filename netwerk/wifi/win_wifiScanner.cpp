@@ -15,10 +15,10 @@ class InterfaceScanCallbackData {
   explicit InterfaceScanCallbackData(uint32_t numInterfaces)
       : mCurrentlyScanningInterfaces(numInterfaces) {
     mAllInterfacesDoneScanningEvent =
-        ::CreateEvent(nullptr,   
-                      TRUE,      
-                      FALSE,     
-                      nullptr);  
+        ::CreateEventW(nullptr,   
+                       TRUE,      
+                       FALSE,     
+                       nullptr);  
     MOZ_ASSERT(NULL != mAllInterfacesDoneScanningEvent);
   }
 
