@@ -1249,10 +1249,9 @@ static nsIContent* NextSiblingWhichMayHaveFrame(nsIContent* aContent) {
 
 
 
-
 static inline bool CanSkipOverflowUpdates(const nsIFrame* aFrame) {
   return aFrame->HasAnyStateBits(
-      NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN | NS_FRAME_FIRST_REFLOW);
+      NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
 }
 
 void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
@@ -1492,7 +1491,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
     } else {
       NS_ASSERTION(frame, "This shouldn't happen");
 
-      if (!frame->FrameMaintainsOverflow() || CanSkipOverflowUpdates(frame)) {
+      if (!frame->FrameMaintainsOverflow()) {
         
         
         hint &=
