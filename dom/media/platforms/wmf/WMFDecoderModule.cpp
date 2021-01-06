@@ -68,15 +68,16 @@ WMFDecoderModule::~WMFDecoderModule() {
   }
 }
 
-static bool IsRemoteAcceleratedCompositor(const SupportDecoderParams& aParams) {
-  if (!aParams.mKnowsCompositor) {
+static bool IsRemoteAcceleratedCompositor(
+    layers::KnowsCompositor* aKnowsCompositor) {
+  if (!aKnowsCompositor) {
     return false;
   }
 
   TextureFactoryIdentifier ident =
-      aParams.mKnowsCompositor->GetTextureFactoryIdentifier();
+      aKnowsCompositor->GetTextureFactoryIdentifier();
   return ident.mParentBackend != LayersBackend::LAYERS_BASIC &&
-         !aParams.mKnowsCompositor->UsingSoftwareWebRender() &&
+         !aKnowsCompositor->UsingSoftwareWebRender() &&
          ident.mParentProcessType == GeckoProcessType_GPU;
 }
 
@@ -172,6 +173,13 @@ nsresult WMFDecoderModule::Startup() {
 
 already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
+  
+  
+  if (XRE_IsGPUProcess() &&
+      !IsRemoteAcceleratedCompositor(aParams.mKnowsCompositor)) {
+    return nullptr;
+  }
+
   UniquePtr<WMFVideoMFTManager> manager(new WMFVideoMFTManager(
       aParams.VideoConfig(), aParams.mKnowsCompositor, aParams.mImageContainer,
       aParams.mRate.mValue, aParams.mOptions, sDXVAEnabled));
@@ -201,6 +209,11 @@ already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
 
 already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateAudioDecoder(
     const CreateDecoderParams& aParams) {
+  if (XRE_IsGPUProcess()) {
+    
+    return nullptr;
+  }
+
   UniquePtr<WMFAudioMFTManager> manager(
       new WMFAudioMFTManager(aParams.AudioConfig()));
 
@@ -287,11 +300,12 @@ bool WMFDecoderModule::Supports(const SupportDecoderParams& aParams,
                                 DecoderDoctorDiagnostics* aDiagnostics) const {
   
   
-  if (XRE_IsGPUProcess() && !IsRemoteAcceleratedCompositor(aParams)) {
+  
+  const auto& trackInfo = aParams.mConfig;
+  if (XRE_IsGPUProcess() && !trackInfo.GetAsVideoInfo()) {
     return false;
   }
 
-  const auto& trackInfo = aParams.mConfig;
   const auto* videoInfo = trackInfo.GetAsVideoInfo();
   
   

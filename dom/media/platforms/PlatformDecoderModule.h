@@ -315,6 +315,8 @@ class PlatformDecoderModule {
   virtual nsresult Startup() { return NS_OK; }
 
   
+  
+  
   virtual bool SupportsMimeType(
       const nsACString& aMimeType,
       DecoderDoctorDiagnostics* aDiagnostics) const = 0;
