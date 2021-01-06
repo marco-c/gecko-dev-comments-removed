@@ -734,7 +734,7 @@ LayoutDeviceIntSize RenderCompositorANGLE::GetBufferSize() {
     
     size.width = std::max(size.width, 1);
     size.height = std::max(size.height, 1);
-    return mWidget->GetClientSize();
+    return size;
   }
 }
 
