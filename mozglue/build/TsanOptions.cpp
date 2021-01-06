@@ -247,6 +247,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "thread:libglib-2\n"
 
          
+         
+         
+         
          "thread:mozilla::layers::ImageBridgeChild\n"
          "race:mozilla::layers::ImageBridgeChild::ShutDown\n"
 
