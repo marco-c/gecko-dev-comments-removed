@@ -907,7 +907,10 @@ fn modular_transform_create_output(out: &Profile) -> Option<Box<qcms_modular_tra
 
 
 
-fn modular_transform_create(input: &Profile, output: &Profile) -> Option<Box<qcms_modular_transform>> {
+fn modular_transform_create(
+    input: &Profile,
+    output: &Profile,
+) -> Option<Box<qcms_modular_transform>> {
     let mut first_transform = None;
     let mut next_transform = &mut first_transform;
     if input.color_space == RGB_SIGNATURE {

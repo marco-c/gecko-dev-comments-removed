@@ -26,7 +26,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::transform::{PrecacheOuput, set_rgb_colorants};
+use crate::transform::{set_rgb_colorants, PrecacheOuput};
 use crate::{matrix::Matrix, s15Fixed16Number, s15Fixed16Number_to_float, Intent, Intent::*};
 
 pub static SUPPORTS_ICCV4: AtomicBool = AtomicBool::new(cfg!(feature = "iccv4-enabled"));
@@ -327,8 +327,6 @@ fn read_tag_table(_profile: &mut Profile, mem: &mut mem_source) -> Vec<tag> {
 
     index
 }
-
-
 
 
 
@@ -948,15 +946,9 @@ fn white_point_from_temp(temp_K: i32) -> qcms_CIE_xyY {
     let T3 = T2 * T;
     
     let x = if T >= 4000.0 && T <= 7000.0 {
-        -4.6070 * (1E9 / T3)
-            + 2.9678 * (1E6 / T2)
-            + 0.09911 * (1E3 / T)
-            + 0.244063
+        -4.6070 * (1E9 / T3) + 2.9678 * (1E6 / T2) + 0.09911 * (1E3 / T) + 0.244063
     } else if T > 7000.0 && T <= 25000.0 {
-        -2.0064 * (1E9 / T3)
-            + 1.9018 * (1E6 / T2)
-            + 0.24748 * (1E3 / T)
-            + 0.237040
+        -2.0064 * (1E9 / T3) + 1.9018 * (1E6 / T2) + 0.24748 * (1E3 / T) + 0.237040
     } else {
         
         
