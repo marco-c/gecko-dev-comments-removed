@@ -9,6 +9,8 @@
 
 
 
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -20,6 +22,15 @@ loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
   { name: "promisified-events.js", dir: MOCHITESTS_DIR }
 );
+
+
+const AXTextStateChangeTypeEdit = 1;
+const AXTextStateChangeTypeSelectionMove = 2;
+const AXTextStateChangeTypeSelectionExtend = 3;
+
+
+const AXTextEditTypeDelete = 1;
+const AXTextEditTypeTyping = 3;
 
 function getNativeInterface(accDoc, id) {
   return findAccessibleChildByID(accDoc, id).nativeInterface.QueryInterface(
