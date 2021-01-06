@@ -52,7 +52,8 @@ inline js::gc::AllocKind js::PlainObject::allocKindForTenure() const {
 namespace js {
 
 
-static inline PlainObject* CopyInitializerObject(
+
+static inline PlainObject* CopyTemplateObject(
     JSContext* cx, JS::Handle<PlainObject*> baseobj,
     NewObjectKind newKind = GenericObject) {
   MOZ_ASSERT(!baseobj->inDictionaryMode());
@@ -62,8 +63,9 @@ static inline PlainObject* CopyInitializerObject(
   allocKind = gc::ForegroundToBackgroundAllocKind(allocKind);
   MOZ_ASSERT_IF(baseobj->isTenured(),
                 allocKind == baseobj->asTenured().getAllocKind());
-  JS::Rooted<PlainObject*> obj(
-      cx, NewBuiltinClassInstance<PlainObject>(cx, allocKind, newKind));
+  RootedObject proto(cx, baseobj->staticPrototype());
+  JS::Rooted<PlainObject*> obj(cx, NewObjectWithGivenProtoAndKinds<PlainObject>(
+                                       cx, proto, allocKind, newKind));
   if (!obj) {
     return nullptr;
   }
