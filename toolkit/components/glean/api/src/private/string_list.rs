@@ -2,30 +2,29 @@
 
 
 
-use std::sync::Arc;
+use inherent::inherent;
 
 use super::{CommonMetricData, MetricId};
 
-use crate::dispatcher;
+use glean_core::traits::StringList;
+
 use crate::ipc::{need_ipc, with_ipc_payload};
 
 
 
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub enum StringListMetric {
     Parent {
         
         
         
         id: MetricId,
-        inner: Arc<StringListMetricImpl>,
+        inner: glean::private::StringListMetric,
     },
     Child(StringListMetricIpc),
 }
 #[derive(Clone, Debug)]
-pub struct StringListMetricImpl(glean_core::metrics::StringListMetric);
-#[derive(Debug)]
 pub struct StringListMetricIpc(MetricId);
 
 impl StringListMetric {
@@ -34,7 +33,7 @@ impl StringListMetric {
         if need_ipc() {
             StringListMetric::Child(StringListMetricIpc(id))
         } else {
-            let inner = Arc::new(StringListMetricImpl::new(meta));
+            let inner = glean::private::StringListMetric::new(meta);
             StringListMetric::Parent { id, inner }
         }
     }
@@ -48,7 +47,10 @@ impl StringListMetric {
             StringListMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
         }
     }
+}
 
+#[inherent(pub)]
+impl StringList for StringListMetric {
     
     
     
@@ -59,12 +61,10 @@ impl StringListMetric {
     
     
     
-    pub fn add<S: Into<String>>(&self, value: S) {
+    fn add<S: Into<String>>(&self, value: S) {
         match self {
             StringListMetric::Parent { inner, .. } => {
-                let metric = Arc::clone(&inner);
-                let value = value.into();
-                dispatcher::launch(move || metric.add(value));
+                StringList::add(&*inner, value);
             }
             StringListMetric::Child(c) => {
                 with_ipc_payload(move |payload| {
@@ -91,16 +91,15 @@ impl StringListMetric {
     
     
     
-    pub fn set(&self, value: Vec<String>) {
+    fn set(&self, value: Vec<String>) {
         match self {
             StringListMetric::Parent { inner, .. } => {
-                let metric = Arc::clone(&inner);
-                dispatcher::launch(move || metric.set(value));
+                StringList::set(&*inner, value);
             }
-            StringListMetric::Child(_c) => {
+            StringListMetric::Child(c) => {
                 log::error!(
                     "Unable to set string list metric {:?} in non-main process. Ignoring.",
-                    self
+                    c.0
                 );
                 
             }
@@ -119,35 +118,42 @@ impl StringListMetric {
     
     
     
-    pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<String>> {
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<Vec<String>> {
         match self {
-            StringListMetric::Parent { inner, .. } => {
-                dispatcher::block_on_queue();
-                inner.test_get_value(storage_name)
+            StringListMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            StringListMetric::Child(c) => {
+                panic!("Cannot get test value for {:?} in non-parent process!", c.0)
             }
-            StringListMetric::Child(_c) => panic!(
-                "Cannot get test value for {:?} in non-parent process!",
-                self
-            ),
         }
     }
-}
 
-impl StringListMetricImpl {
-    pub fn new(meta: CommonMetricData) -> Self {
-        Self(glean_core::metrics::StringListMetric::new(meta))
-    }
-
-    pub fn add<S: Into<String>>(&self, value: S) {
-        crate::with_glean(move |glean| self.0.add(glean, value))
-    }
-
-    pub fn set(&self, value: Vec<String>) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
-    }
-
-    pub fn test_get_value(&self, storage_name: &str) -> Option<Vec<String>> {
-        crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: glean::ErrorType,
+        ping_name: S,
+    ) -> i32 {
+        match self {
+            StringListMetric::Parent { inner, .. } => {
+                inner.test_get_num_recorded_errors(error, ping_name)
+            }
+            StringListMetric::Child(c) => panic!(
+                "Cannot get the number of recorded errors for {:?} in non-parent process!",
+                c.0
+            ),
+        }
     }
 }
 
