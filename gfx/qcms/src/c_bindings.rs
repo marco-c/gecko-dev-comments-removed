@@ -335,7 +335,7 @@ pub unsafe extern "C" fn qcms_data_create_rgb_with_gamma(
     write_u32(data, 12, DISPLAY_DEVICE_PROFILE); 
     write_u32(data, 16, RGB_SIGNATURE); 
     write_u32(data, 20, XYZ_TYPE); 
-    write_u32(data, 64, Intent::QCMS_INTENT_PERCEPTUAL as u32); 
+    write_u32(data, 64, Intent::Perceptual as u32); 
     write_u32(data, 128, 6); 
                              
     *mem = data.as_mut_ptr() as *mut libc::c_void;
