@@ -2491,6 +2491,11 @@ static PreRecordedMetaInformation PreRecordMetaInformation() {
   return info;
 }
 
+
+
+static void StreamMetaPlatformSampleUnits(PSLockRef aLock,
+                                          SpliceableJSONWriter& aWriter);
+
 static void StreamMetaJSCustomObject(
     PSLockRef aLock, SpliceableJSONWriter& aWriter, bool aIsShuttingDown,
     const PreRecordedMetaInformation& aPreRecordedMetaInformation) {
@@ -2593,6 +2598,14 @@ static void StreamMetaJSCustomObject(
     aWriter.IntProperty("logicalCPUs",
                         aPreRecordedMetaInformation.mProcessInfoCpuCount);
   }
+
+  aWriter.StartObjectProperty("sampleUnits");
+  {
+    aWriter.StringProperty("time", "ms");
+    aWriter.StringProperty("eventDelay", "ms");
+    StreamMetaPlatformSampleUnits(aLock, aWriter);
+  }
+  aWriter.EndObject();
 
   
   
@@ -3119,6 +3132,9 @@ class Sampler {
 
 
 
+static RunningTimes GetThreadRunningTimesDiff(
+    PSLockRef aLock, const RegisteredThread& aRegisteredThread);
+
 
 
 
@@ -3257,6 +3273,8 @@ void SamplerThread::Run() {
   
   const bool stackSampling = !ProfilerFeature::HasNoStackSampling(features);
 
+  const bool cpuUtilization = ProfilerFeature::HasCPUUtilization(features);
+
   
   
   
@@ -3340,7 +3358,7 @@ void SamplerThread::Run() {
         }
         TimeStamp countersSampled = TimeStamp::NowUnfuzzed();
 
-        if (stackSampling) {
+        if (stackSampling || cpuUtilization) {
           samplingState = SamplingState::SamplingCompleted;
 
           const Vector<LiveProfiledThreadData>& liveThreads =
@@ -3352,14 +3370,22 @@ void SamplerThread::Run() {
                 thread.mProfiledThreadData.get();
             RefPtr<ThreadInfo> info = registeredThread->Info();
 
+            RunningTimes runningTimesDiff;
+            if (cpuUtilization) {
+              runningTimesDiff =
+                  GetThreadRunningTimesDiff(lock, *registeredThread);
+            }
+
+            
+            
             
             
             
             if (registeredThread->RacyRegisteredThread()
                     .CanDuplicateLastSampleDueToSleep()) {
-              bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
+              const bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
                   info->ThreadId(), CorePS::ProcessStartTime(),
-                  profiledThreadData->LastSample());
+                  profiledThreadData->LastSample(), runningTimesDiff);
               if (dup_ok) {
                 continue;
               }
@@ -3386,208 +3412,219 @@ void SamplerThread::Run() {
 
             
             
-            mSampler.SuspendAndSampleAndResumeThread(
-                lock, *registeredThread, now,
-                [&](const Registers& aRegs, const TimeStamp& aNow) {
-                  DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
-                                   now, aRegs, samplePos, localProfileBuffer);
-
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-
-                  TimeDuration currentEventDelay;
-                  TimeDuration currentEventRunning;
-                  registeredThread->GetRunningEventDelay(
-                      aNow, currentEventDelay, currentEventRunning);
-
-                  
-                  
-
-                  
-                  
-                  
-                  
-                  unresponsiveDuration_ms =
-                      Some(currentEventDelay.ToMilliseconds() +
-                           currentEventRunning.ToMilliseconds());
-                });
-
             
-            
-            
-            if (unresponsiveDuration_ms.isSome()) {
+            if (!runningTimesDiff.IsEmpty()) {
               CorePS::CoreBuffer().PutObjects(
-                  ProfileBufferEntry::Kind::UnresponsiveDurationMs,
-                  *unresponsiveDuration_ms);
+                  ProfileBufferEntry::Kind::RunningTimes, runningTimesDiff);
+            }
+
+            if (stackSampling) {
+              
+              
+              mSampler.SuspendAndSampleAndResumeThread(
+                  lock, *registeredThread, now,
+                  [&](const Registers& aRegs, const TimeStamp& aNow) {
+                    DoPeriodicSample(lock, *registeredThread,
+                                     *profiledThreadData, now, aRegs, samplePos,
+                                     localProfileBuffer);
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    TimeDuration currentEventDelay;
+                    TimeDuration currentEventRunning;
+                    registeredThread->GetRunningEventDelay(
+                        aNow, currentEventDelay, currentEventRunning);
+
+                    
+                    
+
+                    
+                    
+                    
+                    
+                    unresponsiveDuration_ms =
+                        Some(currentEventDelay.ToMilliseconds() +
+                             currentEventRunning.ToMilliseconds());
+                  });
+
+              
+              
+              
+              if (unresponsiveDuration_ms.isSome()) {
+                CorePS::CoreBuffer().PutObjects(
+                    ProfileBufferEntry::Kind::UnresponsiveDurationMs,
+                    *unresponsiveDuration_ms);
+              }
             }
 
             

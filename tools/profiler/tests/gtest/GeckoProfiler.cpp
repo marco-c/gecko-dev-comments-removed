@@ -2215,7 +2215,14 @@ TEST(GeckoProfiler, CPUUsage)
       }
     }
 
-    
+    {
+      GET_JSON(sampleUnits, meta["sampleUnits"], Object);
+      {
+        EXPECT_EQ_JSON(sampleUnits["time"], String, "ms");
+        EXPECT_EQ_JSON(sampleUnits["eventDelay"], String, "ms");
+      }
+    }
+
     
     GET_JSON(threads, aRoot["threads"], Array);
     {
@@ -2223,8 +2230,30 @@ TEST(GeckoProfiler, CPUUsage)
       {
         GET_JSON(samples, thread0["samples"], Object);
         {
+          Json::ArrayIndex threadCPUDeltaIndex = 0;
           GET_JSON(schema, samples["schema"], Object);
-          EXPECT_FALSE(schema.isMember("threadCPUUsage"));
+          {
+            GET_JSON(index, schema["threadCPUDelta"], UInt);
+            threadCPUDeltaIndex = index.asUInt();
+          }
+
+          unsigned threadCPUDeltaCount = 0;
+          GET_JSON(data, samples["data"], Array);
+          EXPECT_GE(data.size(), MinSamplings);
+          for (const Json::Value& sample : data) {
+            ASSERT_TRUE(sample.isArray());
+            if (sample.isValidIndex(threadCPUDeltaIndex)) {
+              if (!sample[threadCPUDeltaIndex].isNull()) {
+                EXPECT_TRUE(sample[threadCPUDeltaIndex].isUInt64());
+                ++threadCPUDeltaCount;
+              }
+            }
+          }
+
+          
+          
+          
+          EXPECT_EQ(threadCPUDeltaCount, 0u);
         }
       }
     }

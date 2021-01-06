@@ -14,6 +14,8 @@
 #include "mozilla/ProfileBufferChunkManagerSingle.h"
 #include "mozilla/ProfileChunkedBuffer.h"
 
+class RunningTimes;
+
 
 
 
@@ -86,7 +88,8 @@ class ProfileBuffer final {
   
   bool DuplicateLastSample(int aThreadId,
                            const mozilla::TimeStamp& aProcessStartTime,
-                           mozilla::Maybe<uint64_t>& aLastSample);
+                           mozilla::Maybe<uint64_t>& aLastSample,
+                           const RunningTimes& aRunningTimes);
 
   void DiscardSamplesBeforeTime(double aTime);
 
