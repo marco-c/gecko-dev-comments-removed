@@ -181,7 +181,8 @@ class WindowSurfaceWayland : public WindowSurface {
 
   void DrawDelayedImageCommits(gfx::DrawTarget* aDrawTarget,
                                LayoutDeviceIntRegion& aWaylandBufferDamage);
-  void FlushPendingCommitsInternal();
+  
+  bool FlushPendingCommitsLocked();
 
   
   nsWindow* mWindow;

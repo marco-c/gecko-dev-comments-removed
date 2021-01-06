@@ -908,7 +908,9 @@ bool WindowSurfaceWayland::CommitImageCacheToWaylandBuffer() {
 
 void WindowSurfaceWayland::FlushPendingCommits() {
   MutexAutoLock lock(mSurfaceLock);
-  FlushPendingCommitsInternal();
+  if (FlushPendingCommitsLocked()) {
+    mWaylandDisplay->QueueSyncBegin();
+  }
 }
 
 
@@ -921,9 +923,9 @@ static int WaylandBufferFlushPendingCommits(void* data) {
   return true;
 }
 
-void WindowSurfaceWayland::FlushPendingCommitsInternal() {
-  LOGWAYLAND(("WindowSurfaceWayland::FlushPendingCommitsInternal [%p]\n",
-              (void*)this));
+bool WindowSurfaceWayland::FlushPendingCommitsLocked() {
+  LOGWAYLAND(
+      ("WindowSurfaceWayland::FlushPendingCommitsLocked [%p]\n", (void*)this));
   LOGWAYLAND(
       ("   mDrawToWaylandBufferDirectly = %d\n", mDrawToWaylandBufferDirectly));
   LOGWAYLAND(("   mCanSwitchWaylandBuffer = %d\n", mCanSwitchWaylandBuffer));
@@ -933,7 +935,7 @@ void WindowSurfaceWayland::FlushPendingCommitsInternal() {
   LOGWAYLAND(("   mBufferCommitAllowed = %d\n", mBufferCommitAllowed));
 
   if (!mBufferCommitAllowed) {
-    return;
+    return false;
   }
 
   if (CommitImageCacheToWaylandBuffer()) {
@@ -942,7 +944,7 @@ void WindowSurfaceWayland::FlushPendingCommitsInternal() {
 
   
   if (!mBufferPendingCommit) {
-    return;
+    return false;
   }
 
   MOZ_ASSERT(!mWaylandBuffer->IsAttached(),
@@ -964,7 +966,7 @@ void WindowSurfaceWayland::FlushPendingCommitsInternal() {
       mSurfaceReadyTimerID = g_timeout_add(
           EVENT_LOOP_DELAY, &WaylandBufferFlushPendingCommits, this);
     }
-    return;
+    return true;
   }
   if (mSurfaceReadyTimerID) {
     g_source_remove(mSurfaceReadyTimerID);
@@ -984,7 +986,7 @@ void WindowSurfaceWayland::FlushPendingCommitsInternal() {
       LOGWAYLAND(("    [%p] wait for frame callback.\n", (void*)this));
       
       
-      return;
+      return true;
     }
     
     
@@ -1019,20 +1021,12 @@ void WindowSurfaceWayland::FlushPendingCommitsInternal() {
   mLastCommitTime = g_get_monotonic_time() / 1000;
 
   
-  moz_container_wayland_surface_unlock(container, &waylandSurface);
-
-  
-  
-  
-  mWaylandDisplay->SyncBegin();
-
-  
   mBufferPendingCommit = false;
+
+  return true;
 }
 
 void WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion) {
-  MutexAutoLock lock(mSurfaceLock);
-
 #ifdef MOZ_LOGGING
   {
     gfx::IntRect lockSize = aInvalidRegion.GetBounds().ToUnknownRect();
@@ -1046,6 +1040,8 @@ void WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion) {
   }
 #endif
 
+  MutexAutoLock lock(mSurfaceLock);
+
   if (mDrawToWaylandBufferDirectly) {
     MOZ_ASSERT(mWaylandBuffer->IsLocked());
     mWaylandBufferDamage.OrWith(aInvalidRegion);
@@ -1055,7 +1051,9 @@ void WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion) {
   }
 
   mBufferCommitAllowed = true;
-  FlushPendingCommitsInternal();
+  if (FlushPendingCommitsLocked()) {
+    mWaylandDisplay->QueueSyncBegin();
+  }
 }
 
 void WindowSurfaceWayland::FrameCallbackHandler() {
@@ -1071,7 +1069,9 @@ void WindowSurfaceWayland::FrameCallbackHandler() {
   wl_callback_destroy(mFrameCallback);
   mFrameCallback = nullptr;
 
-  FlushPendingCommitsInternal();
+  if (FlushPendingCommitsLocked()) {
+    mWaylandDisplay->QueueSyncBegin();
+  }
 }
 
 }  
