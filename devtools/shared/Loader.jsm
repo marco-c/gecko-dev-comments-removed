@@ -78,6 +78,19 @@ function DevToolsLoader({
     paths.promise = "resource://gre/modules/Promise-backend.js";
   }
 
+  
+  
+  
+  const dampTestPath = Services.prefs.getCharPref(
+    "devtools.damp.test-path",
+    ""
+  );
+  if (dampTestPath) {
+    
+    
+    paths["damp-test"] = dampTestPath;
+  }
+
   this.loader = new Loader({
     paths,
     invisibleToDebugger,

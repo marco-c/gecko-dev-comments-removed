@@ -3,7 +3,9 @@
 
 "use strict";
 
-const loaders = ChromeUtils.import("resource://devtools/shared/base-loader.js");
+const BaseLoader = ChromeUtils.import(
+  "resource://devtools/shared/base-loader.js"
+);
 const { require: devtoolsRequire, loader } = ChromeUtils.import(
   "resource://devtools/shared/Loader.jsm"
 );
@@ -106,9 +108,9 @@ function BrowserLoader(options) {
 
 function BrowserLoaderBuilder({
   baseURI,
-  window,
-  useOnlyShared,
   commonLibRequire,
+  useOnlyShared,
+  window,
 }) {
   assert(
     !!baseURI !== !!useOnlyShared,
@@ -198,13 +200,13 @@ function BrowserLoaderBuilder({
     },
   };
 
-  const mainModule = loaders.Module(baseURI, joinURI(baseURI, "main.js"));
-  this.loader = loaders.Loader(opts);
+  const mainModule = BaseLoader.Module(baseURI, joinURI(baseURI, "main.js"));
+  this.loader = BaseLoader.Loader(opts);
   
   if (flags.testing) {
     window.getBrowserLoaderForWindow = () => this;
   }
-  this.require = loaders.Require(this.loader, mainModule);
+  this.require = BaseLoader.Require(this.loader, mainModule);
 }
 
 BrowserLoaderBuilder.prototype = {

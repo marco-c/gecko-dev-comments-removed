@@ -5,6 +5,9 @@ ChromeUtils.defineModuleGetter(
   "Services",
   "resource://gre/modules/Services.jsm"
 );
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 this.damp = class extends ExtensionAPI {
@@ -13,14 +16,48 @@ this.damp = class extends ExtensionAPI {
       damp: {
         startTest() {
           let { rootURI } = context.extension;
-          let window = context.appWindow;
-          if (!("Damp" in window)) {
-            let script = rootURI.resolve("content/damp.js");
-            Services.scriptloader.loadSubScript(script, window);
-          }
 
-          let damp = new window.Damp();
-          return damp.startTest(rootURI);
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+
+          dump("[damp-api] Expose damp test path as a char preference\n");
+          
+          
+          const dampTestPath = rootURI.resolve("content");
+          Services.prefs.setCharPref("devtools.damp.test-path", dampTestPath);
+
+          dump("[damp-api] Retrieve the main DevTools loader\n");
+          const { loader, require } = ChromeUtils.import(
+            "resource://devtools/shared/Loader.jsm"
+          );
+
+          
+          
+          loader.loader.globals.rootURI = rootURI;
+          loader.loader.globals.dampWindow = context.appWindow;
+
+          dump("[damp-api] Instanciate the DAMP runner and start the test\n");
+          const { Damp } = require("damp-test/damp");
+          const damp = new Damp();
+          return damp.startTest();
         },
       },
     };
