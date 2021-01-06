@@ -3524,10 +3524,8 @@ static ArrayObject* SplitSingleCharHelper(JSContext* cx, HandleLinearString str,
 }
 
 
-
-ArrayObject* js::StringSplitString(JSContext* cx, HandleObjectGroup group,
-                                   HandleString str, HandleString sep,
-                                   uint32_t limit) {
+ArrayObject* js::StringSplitString(JSContext* cx, HandleString str,
+                                   HandleString sep, uint32_t limit) {
   MOZ_ASSERT(limit > 0, "Only called for strictly positive limit.");
 
   RootedLinearString linearStr(cx, str->ensureLinear(cx));
