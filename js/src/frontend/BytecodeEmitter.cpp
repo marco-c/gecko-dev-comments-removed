@@ -9034,14 +9034,12 @@ bool BytecodeEmitter::emitDestructuringRestExclusionSetObjLiteral(
   return true;
 }
 
-bool BytecodeEmitter::emitObjLiteralArray(ParseNode* arrayHead, bool isCow) {
+
+bool BytecodeEmitter::emitObjLiteralArray(ParseNode* arrayHead) {
   ObjLiteralWriter writer;
 
   ObjLiteralFlags flags(ObjLiteralFlag::Array);
-  if (isCow) {
-    
-    flags += ObjLiteralFlag::ArrayCOW;
-  }
+
   writer.beginObject(flags);
 
   writer.beginDenseArrayElements();

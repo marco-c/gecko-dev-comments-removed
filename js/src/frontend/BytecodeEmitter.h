@@ -500,7 +500,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitDestructuringRestExclusionSetObjLiteral(
       ListNode* pattern);
 
-  MOZ_MUST_USE bool emitObjLiteralArray(ParseNode* arrayHead, bool isCow);
+  MOZ_MUST_USE bool emitObjLiteralArray(ParseNode* arrayHead);
 
   
   MOZ_MUST_USE bool isRHSObjLiteralCompatible(ParseNode* value);
