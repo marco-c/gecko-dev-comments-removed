@@ -4,6 +4,7 @@
 
 
 #include "EditAggregateTransaction.h"
+#include "mozilla/ReverseIterator.h"  
 #include "nsAString.h"
 #include "nsCOMPtr.h"          
 #include "nsError.h"           
