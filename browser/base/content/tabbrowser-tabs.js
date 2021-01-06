@@ -59,9 +59,12 @@
       );
       this._hiddenSoundPlayingTabs = new Set();
 
-      let strId = PrivateBrowsingUtils.isWindowPrivate(window)
-        ? "emptyPrivateTabTitle"
-        : "emptyTabTitle";
+      
+      let strId =
+        PrivateBrowsingUtils.isWindowPrivate(window) &&
+        !Services.prefs.getBoolPref("browser.privatebrowsing.autostart")
+          ? "emptyPrivateTabTitle"
+          : "emptyTabTitle";
       this.emptyTabTitle = gTabBrowserBundle.GetStringFromName("tabs." + strId);
 
       var tab = this.allTabs[0];
