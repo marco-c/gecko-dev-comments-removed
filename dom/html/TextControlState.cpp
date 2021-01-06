@@ -2307,6 +2307,11 @@ void TextControlState::SetRangeText(const nsAString& aReplacement,
     selectionEnd = *aSelectionEnd;
   }
 
+  
+  Selection* selection =
+      mSelCon ? mSelCon->GetSelection(SelectionType::eNormal) : nullptr;
+  SelectionBatcher selectionBatcher(selection);  
+
   MOZ_ASSERT(aStart <= aEnd);
   value.Replace(aStart, aEnd - aStart, aReplacement);
   nsresult rv =
