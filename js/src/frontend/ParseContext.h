@@ -14,6 +14,7 @@
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/NameCollections.h"
+#include "frontend/ScriptIndex.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/UsedNameTracker.h"
 #include "js/friend/ErrorMessages.h"  
@@ -348,7 +349,7 @@ class ParseContext : public Nestable<ParseContext> {
   
   
   
-  Vector<FunctionIndex, 4> innerFunctionIndexesForLazy;
+  Vector<ScriptIndex, 4> innerFunctionIndexesForLazy;
 
   
   

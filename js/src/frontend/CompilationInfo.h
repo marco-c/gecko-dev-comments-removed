@@ -16,6 +16,7 @@
 #include "builtin/ModuleObject.h"
 #include "ds/LifoAlloc.h"
 #include "frontend/ParserAtom.h"
+#include "frontend/ScriptIndex.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
 #include "frontend/UsedNameTracker.h"
@@ -246,8 +247,8 @@ struct SharedDataContainer {
   using SharedDataVector =
       Vector<RefPtr<js::SharedImmutableScriptData>, 0, js::SystemAllocPolicy>;
   using SharedDataMap =
-      HashMap<FunctionIndex, RefPtr<js::SharedImmutableScriptData>,
-              mozilla::DefaultHasher<FunctionIndex>, js::SystemAllocPolicy>;
+      HashMap<ScriptIndex, RefPtr<js::SharedImmutableScriptData>,
+              mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
 
   mozilla::Variant<SingleSharedData, SharedDataVector, SharedDataMap> storage;
 
@@ -258,10 +259,10 @@ struct SharedDataContainer {
                          size_t allScriptCount);
 
   
-  js::SharedImmutableScriptData* get(FunctionIndex index);
+  js::SharedImmutableScriptData* get(ScriptIndex index);
 
   
-  bool addAndShare(JSContext* cx, FunctionIndex index,
+  bool addAndShare(JSContext* cx, ScriptIndex index,
                    js::SharedImmutableScriptData* data);
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -291,8 +292,8 @@ struct CompilationStencil {
   mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
 
   
-  HashMap<FunctionIndex, RefPtr<const JS::WasmModule>,
-          mozilla::DefaultHasher<FunctionIndex>, js::SystemAllocPolicy>
+  HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
+          mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>
       asmJS;
 
   
@@ -356,12 +357,12 @@ class ScriptStencilIterable {
    public:
     const ScriptStencil& script;
     JSFunction* function;
-    FunctionIndex functionIndex;
+    ScriptIndex index;
 
     ScriptAndFunction() = delete;
     ScriptAndFunction(const ScriptStencil& script, JSFunction* function,
-                      FunctionIndex functionIndex)
-        : script(script), function(function), functionIndex(functionIndex) {}
+                      ScriptIndex index)
+        : script(script), function(function), index(index) {}
   };
 
   class Iterator {
@@ -416,9 +417,8 @@ class ScriptStencilIterable {
     ScriptAndFunction operator*() {
       const ScriptStencil& script = stencil_.scriptData[index_];
 
-      FunctionIndex functionIndex = FunctionIndex(index_);
-      return ScriptAndFunction(script, gcOutput_.functions[functionIndex],
-                               functionIndex);
+      ScriptIndex index = ScriptIndex(index_);
+      return ScriptAndFunction(script, gcOutput_.functions[index], index);
     }
 
     static Iterator end(const CompilationStencil& stencil,
@@ -441,7 +441,7 @@ class ScriptStencilIterable {
 
 
 struct CompilationInfo {
-  static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
+  static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
   
   
@@ -519,7 +519,7 @@ struct CompilationInfo {
 struct CompilationInfoVector {
  private:
   using FunctionKey = uint64_t;
-  using FunctionIndexVector = Vector<FunctionIndex, 0, js::SystemAllocPolicy>;
+  using ScriptIndexVector = Vector<ScriptIndex, 0, js::SystemAllocPolicy>;
 
   static FunctionKey toFunctionKey(const SourceExtent& extent) {
     return (FunctionKey)extent.sourceStart << 32 | extent.sourceEnd;
@@ -534,7 +534,7 @@ struct CompilationInfoVector {
   CompilationInfo initial;
   LifoAlloc allocForDelazifications;
   Vector<CompilationStencil, 0, js::SystemAllocPolicy> delazifications;
-  FunctionIndexVector delazificationIndices;
+  ScriptIndexVector delazificationIndices;
   CompilationAtomCache::AtomCacheVector delazificationAtomCache;
 
   CompilationInfoVector(JSContext* cx,

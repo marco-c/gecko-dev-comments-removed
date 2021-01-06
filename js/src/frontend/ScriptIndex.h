@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef frontend_ScriptIndex_h
+#define frontend_ScriptIndex_h
+
+#include "frontend/TypedIndex.h"  
+
+namespace js {
+namespace frontend {
+
+class ScriptStencil;
+
+using ScriptIndex = TypedIndex<ScriptStencil>;
+
+} 
+} 
+
+#endif 

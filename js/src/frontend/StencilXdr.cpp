@@ -13,8 +13,9 @@
 #include <type_traits>  
 #include <utility>      
 
-#include "vm/JSScript.h"      
-#include "vm/StencilEnums.h"  
+#include "frontend/ScriptIndex.h"  
+#include "vm/JSScript.h"           
+#include "vm/StencilEnums.h"       
 
 using namespace js;
 using namespace js::frontend;
@@ -443,7 +444,7 @@ template <XDRMode mode>
 
   if (stencil.kind_ == ScopeKind::Function) {
     if (mode == XDR_DECODE) {
-      stencil.functionIndex_ = mozilla::Some(FunctionIndex());
+      stencil.functionIndex_ = mozilla::Some(ScriptIndex());
     }
     MOZ_ASSERT(stencil.functionIndex_.isSome());
     MOZ_TRY(xdr->codeUint32(&stencil.functionIndex_->index));
@@ -712,7 +713,7 @@ XDRResult XDRSharedDataContainer(XDRState<mode>* xdr,
         }
       } else {
         for (uint32_t i = 0; i < count; i++) {
-          FunctionIndex index;
+          ScriptIndex index;
           MOZ_TRY(xdr->codeUint32(&index.index));
 
           RefPtr<SharedImmutableScriptData> data;

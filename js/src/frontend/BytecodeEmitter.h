@@ -35,6 +35,7 @@
 #include "frontend/NameCollections.h"      
 #include "frontend/ParseNode.h"            
 #include "frontend/Parser.h"               
+#include "frontend/ScriptIndex.h"          
 #include "frontend/SharedContext.h"        
 #include "frontend/SourceNotes.h"          
 #include "frontend/TokenStream.h"          
@@ -305,7 +306,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                    unsigned errorNumber, ...);
 
   
-  bool intoScriptStencil(ScriptStencil* script, FunctionIndex index);
+  bool intoScriptStencil(ScriptStencil* script, ScriptIndex scriptIndex);
 
   
   
