@@ -171,11 +171,7 @@ enum class ObjLiteralFlag : uint8_t {
   Array = 1,
 
   
-  
-  Singleton = 2,
-
-  
-  NoValues = 3,
+  NoValues = 2,
 };
 
 using ObjLiteralFlags = mozilla::EnumSet<ObjLiteralFlag>;

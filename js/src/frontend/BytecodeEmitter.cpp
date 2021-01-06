@@ -8931,12 +8931,12 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
 }
 
 bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
-                                                 ObjLiteralFlags flags) {
+                                                 ObjLiteralFlags flags,
+                                                 bool singleton) {
   ObjLiteralWriter writer;
 
   writer.beginObject(flags);
   bool noValues = flags.contains(ObjLiteralFlag::NoValues);
-  bool singleton = flags.contains(ObjLiteralFlag::Singleton);
 
   for (ParseNode* propdef : obj->contents()) {
     BinaryNode* prop = &propdef->as<BinaryNode>();
@@ -9740,9 +9740,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
     
     
     ObjLiteralFlags flags;
-    if (isSingletonContext && !isInner) {
-      flags += ObjLiteralFlag::Singleton;
-    }
     if (!useObjLiteralValues) {
       flags += ObjLiteralFlag::NoValues;
     }
@@ -9752,7 +9749,8 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
     
     
     
-    if (!emitPropertyListObjLiteral(objNode, flags)) {
+    bool singleton = isSingletonContext && !isInner;
+    if (!emitPropertyListObjLiteral(objNode, flags, singleton)) {
       
       return false;
     }
