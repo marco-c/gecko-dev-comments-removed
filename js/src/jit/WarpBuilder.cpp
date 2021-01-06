@@ -2235,11 +2235,25 @@ bool WarpBuilder::build_Yield(BytecodeLocation loc) { return build_Await(loc); }
 
 bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
                                MDefinition* retVal) {
+  
+  
+  
+  
+  
+  MDefinition* genObj = gen;
+  if (genObj->type() != MIRType::Object) {
+    auto* unbox =
+        MUnbox::New(alloc(), gen, MIRType::Object, MUnbox::Mode::Infallible);
+    current->add(unbox);
+
+    genObj = unbox;
+  }
+
   int32_t slotsToCopy = current->stackDepth() - info().firstLocalSlot();
   MOZ_ASSERT(slotsToCopy >= 0);
   if (slotsToCopy > 0) {
     auto* arraySlot = MLoadFixedSlot::New(
-        alloc(), gen, AbstractGeneratorObject::stackStorageSlot());
+        alloc(), genObj, AbstractGeneratorObject::stackStorageSlot());
     current->add(arraySlot);
 
     auto* arrayObj = MUnbox::New(alloc(), arraySlot, MIRType::Object,
@@ -2276,10 +2290,10 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
 
   
   uint32_t resumeIndex = loc.getResumeIndex();
-  current->add(MStoreFixedSlot::New(alloc(), gen,
+  current->add(MStoreFixedSlot::New(alloc(), genObj,
                                     AbstractGeneratorObject::resumeIndexSlot(),
                                     constant(Int32Value(resumeIndex))));
-  current->add(MStoreFixedSlot::New(alloc(), gen,
+  current->add(MStoreFixedSlot::New(alloc(), genObj,
                                     AbstractGeneratorObject::envChainSlot(),
                                     current->environmentChain()));
 
