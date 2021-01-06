@@ -194,6 +194,11 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
                "before observer");
 
   mFontInfo = CreateFontInfoData();
+  if (!mFontInfo) {
+    
+    mState = stateTimerOff;
+    return;
+  }
 
   
   InitLoader();
