@@ -308,6 +308,28 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
   nsSize availSpaceOnSheet = pageSize;
   nsMargin uwm = nsPresContext::CSSTwipsToAppUnits(
       mPD->mPrintSettings->GetUnwriteableMarginInTwips());
+
+  if (mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+    
+    
+    
+    
+    std::swap(availSpaceOnSheet.width, availSpaceOnSheet.height);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsMargin rotated(uwm.right, uwm.bottom, uwm.left, uwm.top);
+    uwm = rotated;
+  }
+
   availSpaceOnSheet.width -= uwm.LeftRight();
   availSpaceOnSheet.height -= uwm.TopBottom();
   nsPoint pageGridOrigin(uwm.left, uwm.top);
@@ -315,15 +337,15 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
   
   
   const auto* ppsInfo = mPD->PagesPerSheetInfo();
+  uint32_t smallerNumTracks = ppsInfo->mNumPages / ppsInfo->mLargerNumTracks;
+  bool pageSizeIsPortraitLike = pageSize.width > pageSize.height;
+  auto numCols =
+      pageSizeIsPortraitLike ? smallerNumTracks : ppsInfo->mLargerNumTracks;
+  auto numRows =
+      pageSizeIsPortraitLike ? ppsInfo->mLargerNumTracks : smallerNumTracks;
 
   
   
-  
-  
-  
-  uint32_t numCols = ppsInfo->mLargerNumTracks;
-  uint32_t numRows = ppsInfo->mNumPages / numCols;
-
   nsSize pageGridFullSize(numCols * pageSize.width, numRows * pageSize.height);
 
   if (MOZ_UNLIKELY(availSpaceOnSheet.IsEmpty() || pageGridFullSize.IsEmpty())) {

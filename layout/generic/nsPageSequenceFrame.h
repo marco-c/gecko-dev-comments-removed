@@ -84,7 +84,6 @@ class nsSharedPageData {
   
   
   
-  
   uint32_t mPagesPerSheetNumCols = 1;
   nsPoint mPagesPerSheetGridOrigin;
 

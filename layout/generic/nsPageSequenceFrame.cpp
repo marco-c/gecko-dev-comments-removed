@@ -49,12 +49,15 @@ nsPageSequenceFrame* NS_NewPageSequenceFrame(PresShell* aPresShell,
 NS_IMPL_FRAMEARENA_HELPERS(nsPageSequenceFrame)
 
 static const nsPagesPerSheetInfo kSupportedPagesPerSheet[] = {
-    {1, 1},  
     
+    
+    {1, 1},
+    {2, 2},
     {4, 2},
-    
+    {6, 3},
     {9, 3},
     {16, 4},
+    
 };
 
 inline void SanityCheckPagesPerSheetInfo() {
@@ -315,6 +318,14 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   nscoord maxInflatedSheetHeight = 0;
 
   
+  
+  
+  nsSize sheetSize = aPresContext->GetPageSize();
+  if (mPageData->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+    std::swap(sheetSize.width, sheetSize.height);
+  }
+
+  
   for (nsIFrame* kidFrame : mFrames) {
     
     MOZ_ASSERT(kidFrame->IsPrintedSheetFrame(),
@@ -325,7 +336,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     
     ReflowInput kidReflowInput(
         aPresContext, aReflowInput, kidFrame,
-        LogicalSize(kidFrame->GetWritingMode(), aPresContext->GetPageSize()));
+        LogicalSize(kidFrame->GetWritingMode(), sheetSize));
     ReflowOutput kidReflowOutput(kidReflowInput);
     nsReflowStatus status;
 
