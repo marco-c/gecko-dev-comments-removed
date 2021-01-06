@@ -9916,32 +9916,9 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                           nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
                           &doesNotReturnData);
       if (doesNotReturnData) {
-        
-        
-        
-        
-        WindowContext* sourceWindowContext = [&] {
-          const MaybeDiscardedBrowsingContext& sourceBC =
-              aLoadState->SourceBrowsingContext();
-          if (!sourceBC.IsNullOrDiscarded()) {
-            if (WindowContext* wc = sourceBC.get()->GetCurrentWindowContext()) {
-              return wc;
-            }
-          }
-          return mBrowsingContext->GetParentWindowContext();
-        }();
-
-        MOZ_ASSERT(sourceWindowContext);
-        
-        
-        
-        
-        
-        
-        WindowContext* context =
-            sourceWindowContext->IsInProcess()
-                ? sourceWindowContext
-                : mBrowsingContext->GetCurrentWindowContext();
+        WindowContext* parentContext =
+            mBrowsingContext->GetParentWindowContext();
+        MOZ_ASSERT(parentContext);
         const bool popupBlocked = [&] {
           const bool active = mBrowsingContext->IsActive();
 
@@ -9950,15 +9927,15 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
           
           
           const bool hasFreePass = [&] {
-            if (!active || !context->SameOriginWithTop()) {
+            if (!active || !parentContext->SameOriginWithTop()) {
               return false;
             }
             nsGlobalWindowInner* win =
-                context->TopWindowContext()->GetInnerWindow();
+                parentContext->TopWindowContext()->GetInnerWindow();
             return win && win->TryOpenExternalProtocolIframe();
           }();
 
-          if (context->ConsumeTransientUserGestureActivation()) {
+          if (parentContext->ConsumeTransientUserGestureActivation()) {
             
             return false;
           }
@@ -9971,7 +9948,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
             return false;
           }
 
-          if (sourceWindowContext->CanShowPopup()) {
+          if (parentContext->CanShowPopup()) {
             return false;
           }
 
@@ -9991,7 +9968,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
           if (NS_SUCCEEDED(rv)) {
             nsContentUtils::ReportToConsoleByWindowID(
                 message, nsIScriptError::warningFlag, "DOM"_ns,
-                context->InnerWindowId());
+                parentContext->InnerWindowId());
           }
           return NS_OK;
         }
