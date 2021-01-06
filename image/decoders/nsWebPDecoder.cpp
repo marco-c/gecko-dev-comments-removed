@@ -5,6 +5,8 @@
 
 
 #include "ImageLogging.h"  
+#include "gfxPlatform.h"
+#include "mozilla/TelemetryHistogramEnums.h"
 #include "nsWebPDecoder.h"
 
 #include "RasterImage.h"

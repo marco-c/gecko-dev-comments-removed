@@ -8,6 +8,7 @@
 
 #include "Image.h"
 #include "nsIStreamListener.h"
+#include "mozilla/gfx/Point.h"
 #include "mozilla/MemoryReporting.h"
 
 class nsIRequest;
@@ -79,12 +80,13 @@ class VectorImage final : public ImageResource, public nsIStreamListener {
   virtual bool ShouldAnimate() override;
 
  private:
-  Tuple<ImgDrawResult, IntSize, RefPtr<SourceSurface>> GetFrameInternal(
-      const IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
-      uint32_t aWhichFrame, uint32_t aFlags) override;
+  Tuple<ImgDrawResult, gfx::IntSize, RefPtr<gfx::SourceSurface>>
+  GetFrameInternal(const gfx::IntSize& aSize,
+                   const Maybe<SVGImageContext>& aSVGContext,
+                   uint32_t aWhichFrame, uint32_t aFlags) override;
 
-  Tuple<ImgDrawResult, IntSize> GetImageContainerSize(
-      layers::LayerManager* aManager, const IntSize& aSize,
+  Tuple<ImgDrawResult, gfx::IntSize> GetImageContainerSize(
+      layers::LayerManager* aManager, const gfx::IntSize& aSize,
       uint32_t aFlags) override;
 
   
@@ -92,8 +94,8 @@ class VectorImage final : public ImageResource, public nsIStreamListener {
 
 
 
-  Tuple<RefPtr<SourceSurface>, IntSize> LookupCachedSurface(
-      const IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
+  Tuple<RefPtr<gfx::SourceSurface>, gfx::IntSize> LookupCachedSurface(
+      const gfx::IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
       uint32_t aFlags);
 
   bool MaybeRestrictSVGContext(Maybe<SVGImageContext>& aNewSVGContext,
@@ -106,7 +108,7 @@ class VectorImage final : public ImageResource, public nsIStreamListener {
 
   
   
-  already_AddRefed<SourceSurface> CreateSurface(
+  already_AddRefed<gfx::SourceSurface> CreateSurface(
       const SVGDrawingParameters& aParams, gfxDrawable* aSVGDrawable,
       bool& aWillCache);
 

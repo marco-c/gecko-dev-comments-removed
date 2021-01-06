@@ -34,6 +34,7 @@
 #include "js/ArrayBuffer.h"
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
+#include "Orientation.h"
 
 using namespace mozilla::gfx;
 

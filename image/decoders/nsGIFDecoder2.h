@@ -156,7 +156,7 @@ class nsGIFDecoder2 : public Decoder {
 
   gif_struct mGIFStruct;
 
-  SwizzleRowFn mSwizzleFn;  
+  gfx::SwizzleRowFn mSwizzleFn;  
   SurfacePipe mPipe;  
 };
 

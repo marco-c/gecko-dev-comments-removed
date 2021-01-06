@@ -4,6 +4,7 @@
 
 
 #include "FrameAnimator.h"
+#include "GeckoProfiler.h"
 
 #include <utility>
 
