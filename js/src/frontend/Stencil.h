@@ -286,7 +286,7 @@ class ScopeStencil {
 
   
   template <typename SpecificScopeType>
-  UniquePtr<typename SpecificScopeType::Data> createSpecificScopeData(
+  UniquePtr<typename SpecificScopeType::RuntimeData> createSpecificScopeData(
       JSContext* cx, CompilationAtomCache& atomCache,
       CompilationGCOutput& gcOutput) const;
 
