@@ -8973,8 +8973,6 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
   }
 
   
-
-  
   MOZ_ASSERT_IF(singleton, compilationInfo.input.options.isRunOnce);
 
   JSOp op = singleton ? JSOp::Object : JSOp::NewObject;
@@ -9749,9 +9747,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
     }
     if (!useObjLiteralValues) {
       flags += ObjLiteralFlag::NoValues;
-    }
-    if (isInner) {
-      flags += ObjLiteralFlag::IsInnerSingleton;
     }
 
     

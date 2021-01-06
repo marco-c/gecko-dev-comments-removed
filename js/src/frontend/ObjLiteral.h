@@ -179,13 +179,6 @@ enum class ObjLiteralFlag : uint8_t {
 
   
   NoValues = 4,
-
-  
-  
-  
-  
-  
-  IsInnerSingleton = 5,
 };
 
 using ObjLiteralFlags = mozilla::EnumSet<ObjLiteralFlag>;
