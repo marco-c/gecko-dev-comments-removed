@@ -3244,15 +3244,18 @@ void SamplerThread::Run() {
 
   
   
-  const bool noStackSampling = []() {
+  const uint32_t features = []() -> uint32_t {
     PSAutoLock lock(gPSMutex);
     if (!ActivePS::Exists(lock)) {
       
       
-      return false;
+      return 0;
     }
-    return ActivePS::FeatureNoStackSampling(lock);
+    return ActivePS::Features(lock);
   }();
+
+  
+  const bool stackSampling = !ProfilerFeature::HasNoStackSampling(features);
 
   
   
@@ -3337,7 +3340,7 @@ void SamplerThread::Run() {
         }
         TimeStamp countersSampled = TimeStamp::NowUnfuzzed();
 
-        if (!noStackSampling) {
+        if (stackSampling) {
           samplingState = SamplingState::SamplingCompleted;
 
           const Vector<LiveProfiledThreadData>& liveThreads =
