@@ -18,8 +18,6 @@
 
 using namespace mozilla;
 
-#define MAC_OS_X_PAGE_SETUP_PREFNAME "print.macosx.pagesetup-2"
-
 NS_IMPL_ISUPPORTS_INHERITED(nsPrintSettingsX, nsPrintSettings, nsPrintSettingsX)
 
 nsPrintSettingsX::nsPrintSettingsX() {
@@ -65,69 +63,6 @@ nsPrintSettingsX& nsPrintSettingsX::operator=(const nsPrintSettingsX& rhs) {
   return *this;
 }
 
-nsresult nsPrintSettingsX::ReadPageFormatFromPrefs() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  nsAutoCString encodedData;
-  nsresult rv = Preferences::GetCString(MAC_OS_X_PAGE_SETUP_PREFNAME, encodedData);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  char* decodedData = PL_Base64Decode(encodedData.get(), encodedData.Length(), nullptr);
-  NSData* data = [NSData dataWithBytes:decodedData length:strlen(decodedData)];
-  if (!data) {
-    return NS_ERROR_FAILURE;
-  }
-
-  PMPageFormat newPageFormat;
-  OSStatus status = ::PMPageFormatCreateWithDataRepresentation((CFDataRef)data, &newPageFormat);
-  if (status == noErr) {
-    SetPMPageFormat(newPageFormat);
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
-nsresult nsPrintSettingsX::WritePageFormatToPrefs() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
-  
-  
-  
-  
-  
-  
-
-  NSPrintInfo* printInfo = CreateOrCopyPrintInfo();
-  if (NS_WARN_IF(!printInfo)) {
-    return NS_ERROR_FAILURE;
-  }
-  [printInfo autorelease];
-
-  PMPageFormat pageFormat = static_cast<PMPageFormat>([printInfo PMPageFormat]);
-
-  NSData* data = nil;
-  OSStatus err = ::PMPageFormatCreateDataRepresentation(pageFormat, (CFDataRef*)&data,
-                                                        kPMDataFormatXMLDefault);
-  if (err != noErr) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsAutoCString encodedData;
-  encodedData.Adopt(PL_Base64Encode((char*)[data bytes], [data length], nullptr));
-  if (!encodedData.get()) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  return Preferences::SetCString(MAC_OS_X_PAGE_SETUP_PREFNAME, encodedData);
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
-}
-
 nsresult nsPrintSettingsX::_Clone(nsIPrintSettings** _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   auto newSettings = MakeRefPtr<nsPrintSettingsX>();
@@ -156,21 +91,6 @@ struct KnownMonochromeSetting {
 static const KnownMonochromeSetting kKnownMonochromeSettings[] = {
     CUPS_EACH_MONOCHROME_PRINTER_SETTING(DECLARE_KNOWN_MONOCHROME_SETTING)};
 #undef DECLARE_KNOWN_MONOCHROME_SETTING
-
-void nsPrintSettingsX::SetPMPageFormat(PMPageFormat aPageFormat) {
-  
-  NSPrintInfo* printInfo = CreateOrCopyPrintInfo();
-  if (NS_WARN_IF(!printInfo)) {
-    return;
-  }
-  
-  PMPageFormat oldPageFormat = static_cast<PMPageFormat>([printInfo PMPageFormat]);
-  ::PMCopyPageFormat(aPageFormat, oldPageFormat);
-  [printInfo updateFromPMPageFormat];
-  
-  SetPageFormatFromPrintInfo(printInfo);
-  [printInfo release];
-}
 
 NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
@@ -307,7 +227,10 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(nullptr);
 }
 
-void nsPrintSettingsX::SetPageFormatFromPrintInfo(const NSPrintInfo* aPrintInfo) {
+void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrintInfo) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  
   NSSize paperSize = [aPrintInfo paperSize];
   const bool areSheetsOfPaperPortraitMode =
       ([aPrintInfo orientation] == NSPaperOrientationPortrait);
@@ -332,15 +255,6 @@ void nsPrintSettingsX::SetPageFormatFromPrintInfo(const NSPrintInfo* aPrintInfo)
   mUnwriteableMargin.right = [aPrintInfo rightMargin];
   mUnwriteableMargin.bottom = [aPrintInfo bottomMargin];
   mUnwriteableMargin.left = [aPrintInfo leftMargin];
-
-  SetIsInitializedFromPrinter(true);
-}
-
-void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrintInfo) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  
-  SetPageFormatFromPrintInfo(aPrintInfo);
 
   if (aAdoptPrintInfo) {
     
