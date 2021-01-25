@@ -9,7 +9,6 @@
 
 
 
-
 test(() => {
   const testObject = {};
   const argument = { "element": "externref", "initial": 3 };
