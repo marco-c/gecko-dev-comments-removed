@@ -152,24 +152,6 @@ CSSPoint FrameMetrics::ApplyPureRelativeScrollUpdateFrom(
   return GetVisualScrollOffset() - origin;
 }
 
-void FrameMetrics::UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
-  
-  
-  
-  
-  
-  MOZ_ASSERT(aInfo.GetType() != ScrollUpdateType::PureRelative);
-
-  
-  
-  CSSPoint relativeOffset = GetVisualScrollOffset() - GetLayoutScrollOffset();
-  MOZ_ASSERT(IsRootContent() || relativeOffset == CSSPoint());
-
-  SetLayoutScrollOffset(aInfo.GetDestination());
-  ClampAndSetVisualScrollOffset(aInfo.GetDestination() + relativeOffset);
-  mScrollGeneration = aInfo.GetGeneration();
-}
-
 ScrollSnapInfo::ScrollSnapInfo()
     : mScrollSnapStrictnessX(StyleScrollSnapStrictness::None),
       mScrollSnapStrictnessY(StyleScrollSnapStrictness::None) {}

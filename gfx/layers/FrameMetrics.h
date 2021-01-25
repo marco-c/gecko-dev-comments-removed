@@ -266,7 +266,16 @@ struct FrameMetrics {
   CSSPoint ApplyPureRelativeScrollUpdateFrom(
       const ScrollPositionUpdate& aUpdate);
 
-  void UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo);
+  void UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(aInfo.GetType() != ScrollUpdateType::PureRelative);
+    SetLayoutScrollOffset(aInfo.GetDestination());
+    mScrollGeneration = aInfo.GetGeneration();
+  }
 
  public:
   void SetPresShellResolution(float aPresShellResolution) {
