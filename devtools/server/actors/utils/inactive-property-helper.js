@@ -351,6 +351,25 @@ class InactivePropertyHelper {
           "inactive-css-not-for-internal-table-elements-except-table-cells",
         numFixProps: 1,
       },
+      
+      {
+        invalidProperties: [
+          "fill",
+          "fill-opacity",
+          "stroke",
+          "stroke-dasharray",
+          "stroke-dashoffset",
+          "stroke-linecap",
+          "stroke-linejoin",
+          "stroke-miterlimit",
+          "stroke-opacity",
+          "stroke-width",
+        ],
+        when: () => !this.isSvgShapeElement && !this.isSvgTextElement,
+        fixId: "inactive-css-not-svg-shape-or-text-fix",
+        msgId: "inactive-css-not-svg-shape-or-text",
+        numFixProps: 11,
+      },
     ];
   }
 
@@ -1033,6 +1052,31 @@ class InactivePropertyHelper {
     }
 
     return computedStyle(current).writingMode;
+  }
+
+  
+
+
+  get isSvgShapeElement() {
+    return (
+      this.isSvg &&
+      this.nodeNameOneOf([
+        "circle",
+        "ellipse",
+        "line",
+        "path",
+        "polygon",
+        "polyline",
+        "rect",
+      ])
+    );
+  }
+
+  
+
+
+  get isSvgTextElement() {
+    return this.isSvg && this.nodeNameOneOf(["text", "textpath", "tspan"]);
   }
 }
 
