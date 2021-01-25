@@ -752,6 +752,13 @@ NetworkObserver.prototype = {
   
 
 
+
+
+
+
+
+
+
   _createNetworkEvent: function(
     channel,
     {
@@ -870,24 +877,6 @@ NetworkObserver.prototype = {
     event.discardRequestBody = !this.saveRequestAndResponseBodies;
     event.discardResponseBody = !this.saveRequestAndResponseBodies;
 
-    const headers = [];
-    let cookies = [];
-    let cookieHeader = null;
-
-    
-    channel.visitRequestHeaders({
-      visitHeader: function(name, value) {
-        if (name == "Cookie") {
-          cookieHeader = value;
-        }
-        headers.push({ name: name, value: value });
-      },
-    });
-
-    if (cookieHeader) {
-      cookies = NetworkHelper.parseCookieHeader(cookieHeader);
-    }
-
     
     
     if (!blockedReason) {
@@ -918,10 +907,38 @@ NetworkObserver.prototype = {
       this._setupResponseListener(httpActivity, fromCache);
     }
 
-    httpActivity.owner.addRequestHeaders(headers, extraStringData);
-    httpActivity.owner.addRequestCookies(cookies);
+    this.fetchRequestHeadersAndCookies(channel, httpActivity, extraStringData);
 
     return httpActivity;
+  },
+
+  
+
+
+
+
+
+  fetchRequestHeadersAndCookies(channel, httpActivity, extraStringData) {
+    const headers = [];
+    let cookies = [];
+    let cookieHeader = null;
+
+    
+    channel.visitRequestHeaders({
+      visitHeader: function(name, value) {
+        if (name == "Cookie") {
+          cookieHeader = value;
+        }
+        headers.push({ name: name, value: value });
+      },
+    });
+
+    if (cookieHeader) {
+      cookies = NetworkHelper.parseCookieHeader(cookieHeader);
+    }
+
+    httpActivity.owner.addRequestHeaders(headers, extraStringData);
+    httpActivity.owner.addRequestCookies(cookies);
   },
 
   
