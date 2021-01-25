@@ -172,11 +172,7 @@ pref("security.cert_pinning.max_max_age_seconds", 5184000);
 
 
 
-#if defined(NIGHTLY_BUILD)
-pref("security.pki.crlite_mode", 2);
-#else
 pref("security.pki.crlite_mode", 1);
-#endif
 
 
 
