@@ -286,28 +286,14 @@ enum class BrowsingContextOrigin { Similar, Different };
 
 
 
-
 static BrowsingContextOrigin SimilarOrigin(const Element& aTarget,
                                            const nsINode* aRoot) {
   if (!aRoot) {
     return BrowsingContextOrigin::Different;
   }
-  nsIPrincipal* principal1 = aTarget.NodePrincipal();
-  nsIPrincipal* principal2 = aRoot->NodePrincipal();
-
-  if (principal1 == principal2) {
-    return BrowsingContextOrigin::Similar;
-  }
-
-  nsAutoCString baseDomain1;
-  nsAutoCString baseDomain2;
-  if (NS_FAILED(principal1->GetBaseDomain(baseDomain1)) ||
-      NS_FAILED(principal2->GetBaseDomain(baseDomain2))) {
-    return BrowsingContextOrigin::Different;
-  }
-
-  return baseDomain1 == baseDomain2 ? BrowsingContextOrigin::Similar
-                                    : BrowsingContextOrigin::Different;
+  return aTarget.OwnerDoc()->GetDocGroup() == aRoot->OwnerDoc()->GetDocGroup()
+             ? BrowsingContextOrigin::Similar
+             : BrowsingContextOrigin::Different;
 }
 
 
