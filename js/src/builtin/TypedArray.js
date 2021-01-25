@@ -1016,11 +1016,12 @@ function TypedArraySlice(start, end) {
 }
 
 
+
+
 function TypedArraySome(callbackfn) {
     
     var O = this;
 
-    
     
     var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
@@ -1039,17 +1040,15 @@ function TypedArraySome(callbackfn) {
     if (!IsCallable(callbackfn))
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
-    
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var thisArg = arguments.length > 1 ? arguments[1] : void 0;
 
-    
     
     for (var k = 0; k < len; k++) {
         
         var kValue = O[k];
 
         
-        var testResult = callContentFunction(callbackfn, T, kValue, k, O);
+        var testResult = callContentFunction(callbackfn, thisArg, kValue, k, O);
 
         
         if (testResult)
