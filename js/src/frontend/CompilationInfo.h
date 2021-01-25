@@ -328,9 +328,6 @@ struct BaseCompilationStencil {
   mozilla::Span<BaseParserScopeData*> scopeNames;
 
   
-  mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
-
-  
   
   
   ParserAtomSpan parserAtomData;
@@ -516,6 +513,9 @@ struct CompilationStencil : public BaseCompilationStencil {
   static constexpr size_t LifoAllocChunkSize = 512;
 
   CompilationInput input;
+
+  
+  mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
 
   
   HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
