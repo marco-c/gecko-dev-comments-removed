@@ -2165,10 +2165,25 @@ Result<SavedResponse, nsresult> ReadResponse(mozIStorageConnection& aConn,
 
 #ifdef DEBUG
     nsDependentCSubstring scheme = url->Scheme();
+
     MOZ_ASSERT(
         scheme == "http" || scheme == "https" || scheme == "file" ||
-        (StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup() &&
-         scheme == "moz-extension"));
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        scheme == "moz-extension");
 #endif
 
     nsCString origin;
