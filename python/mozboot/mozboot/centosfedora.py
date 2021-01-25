@@ -24,6 +24,7 @@ class CentOSFedoraBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         
         self.packages = [
             "nodejs",
+            "python-devel",
             "which",
         ]
 
