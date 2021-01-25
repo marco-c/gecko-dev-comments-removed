@@ -11,14 +11,14 @@
     border: 1px solid grey;
   }
 </style>
-
+<!--- Ensure the text isn't chopped -->
 <select><option>XXXXXXXXXXXX</option></select>
 <select><option>X XXXXXXXXXX</option></select>
 
+<!--- Test that the display text doesn't overflow the select. -->
+<select style="overflow: hidden"><option>XXXXXXXXXXXXXXXXXX</option></select>
 
-<select style="overflow: hidden"><option>XXXXXXXXXXXXXXXXX</option></select>
-
-
+<!-- Test that this only affects themed comboboxes -->
 <div class="unthemed" style="padding-right: 15ch"><div style="padding: 0 4px; overflow: hidden;">XXXXXXXXXX</div></div>
 
 <select id="src" style="padding-left: 10ch; padding-right: 10ch"><option>XXXXXXXXXX</option></select>
