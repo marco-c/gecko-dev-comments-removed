@@ -88,7 +88,13 @@ function getUnicodeUrl(url) {
       return url;
     }
     const readableHostname = getUnicodeHostname(hostname);
-    url = decodeURI(url);
+
+    
+
+
+
+
+    url = decodeURIComponent(url);
     return url.replace(hostname, readableHostname);
   } catch (err) {}
   return url;
