@@ -114,6 +114,10 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 - (nsStaticAtom*)ARIARole;
 
+
+- (NSArray<mozAccessible*>*)getRelationsByType:
+    (mozilla::a11y::RelationType)relationType;
+
 #pragma mark - mozAccessible protocol / widget
 
 
