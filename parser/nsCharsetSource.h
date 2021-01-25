@@ -11,12 +11,20 @@ enum {
   kCharsetFromFallback,
   kCharsetFromTopLevelDomain,
   kCharsetFromDocTypeDefault,  
+  
+  kCharsetFromInitialAutoDetectionASCII,
   kCharsetFromInitialAutoDetectionWouldHaveBeenUTF8,
-  kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8,
+  kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8Generic,
+  kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8Content,
+  kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8DependedOnTLD,
   kCharsetFromFinalJapaneseAutoDetection,
+  
   kCharsetFromFinalAutoDetectionWouldHaveBeenUTF8,
-  kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8,
+  kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8Generic,
+  kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8Content,
+  kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8DependedOnTLD,
   kCharsetFromFinalAutoDetectionFile,
+  
   kCharsetFromParentFrame,  
                             
                             

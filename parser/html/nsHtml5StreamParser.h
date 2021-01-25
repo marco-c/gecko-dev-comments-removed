@@ -365,6 +365,11 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
+  int32_t MaybeRollBackSource(int32_t aSource);
+
+  
+
+
   void GuessEncoding(bool aEof, bool aInitial);
 
   inline void DontGuessEncoding() {
@@ -613,6 +618,10 @@ class nsHtml5StreamParser final : public nsISupports {
   bool mInitialEncodingWasFromParentFrame;
 
   bool mHasHadErrors;
+
+  bool mDetectorHasSeenNonAscii;
+
+  bool mDetectorHadOnlySeenAsciiWhenFirstGuessing;
 
   
 

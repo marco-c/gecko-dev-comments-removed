@@ -61,6 +61,15 @@ class EncodingDetector final {
 
 
 
+  static inline bool TldMayAffectGuess(Span<const char> aTLD) {
+    return chardetng_encoding_detector_tld_may_affect_guess(aTLD.Elements(),
+                                                            aTLD.Length());
+  }
+
+  
+
+
+
 
 
 

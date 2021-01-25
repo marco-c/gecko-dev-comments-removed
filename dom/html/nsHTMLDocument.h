@@ -70,6 +70,8 @@ class nsHTMLDocument : public mozilla::dom::Document {
 
   bool IsPlainText() const { return mIsPlainText; }
 
+  bool IsViewSource() const { return mViewSource; }
+
   
   bool ResolveName(JSContext* aCx, const nsAString& aName,
                    JS::MutableHandle<JS::Value> aRetval,
@@ -194,6 +196,11 @@ class nsHTMLDocument : public mozilla::dom::Document {
 
 
   bool mIsPlainText;
+
+  
+
+
+  bool mViewSource;
 };
 
 namespace mozilla {

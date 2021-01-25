@@ -53,6 +53,16 @@ void chardetng_encoding_detector_free(CHARDETNG_ENCODING_DETECTOR* detector);
 
 
 
+bool chardetng_encoding_detector_tld_may_affect_guess(char const* tld, size_t tld_len);
+
+
+
+
+
+
+
+
+
 
 
 
