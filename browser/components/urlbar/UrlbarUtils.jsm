@@ -158,6 +158,7 @@ var UrlbarUtils = {
   
   
   HIGHLIGHT: {
+    NONE: 0,
     TYPED: 1,
     SUGGESTED: 2,
   },

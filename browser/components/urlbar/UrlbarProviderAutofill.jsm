@@ -287,6 +287,12 @@ class ProviderAutofill extends UrlbarProvider {
     }
 
     
+    
+    if (queryContext.searchString.length > UrlbarUtils.MAX_TEXT_LENGTH) {
+      return false;
+    }
+
+    
     if (
       !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.HISTORY) &&
       !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.BOOKMARKS)
