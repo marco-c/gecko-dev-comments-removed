@@ -98,6 +98,9 @@ class StackwalkerARM64 : public Stackwalker {
                                   StackFrameARM64* last_frame);
 
   
+  bool ValidInstructionPointerInFrame(const StackFrameARM64& frame);
+
+  
   
   const MDRawContextARM64* context_;
 

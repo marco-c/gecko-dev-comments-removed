@@ -287,6 +287,17 @@ void StackwalkerARM64::CorrectRegLRByFramePointer(
   last_frame->context.iregs[MD_CONTEXT_ARM64_REG_LR] = last_lr;
 }
 
+bool StackwalkerARM64::ValidInstructionPointerInFrame(const StackFrameARM64& frame) {
+  const uint64_t ip = frame.context.iregs[MD_CONTEXT_ARM64_REG_PC];
+
+  if ((ip < 0x1000) || (ip > 0x000fffffffffffff)) {
+    
+    return false;
+  }
+
+  return true;
+}
+
 StackFrame* StackwalkerARM64::GetCallerFrame(const CallStack* stack,
                                              bool stack_scan_allowed) {
   if (!memory_ || !stack) {
@@ -305,11 +316,12 @@ StackFrame* StackwalkerARM64::GetCallerFrame(const CallStack* stack,
     frame.reset(GetCallerByCFIFrameInfo(frames, cfi_frame_info.get()));
 
   
-  if (!frame.get())
+  if (!frame.get() || !ValidInstructionPointerInFrame(*frame))
     frame.reset(GetCallerByFramePointer(frames));
 
   
-  if (stack_scan_allowed && !frame.get())
+  if (stack_scan_allowed &&
+      (!frame.get() || !ValidInstructionPointerInFrame(*frame)))
     frame.reset(GetCallerByStackScan(frames));
 
   
