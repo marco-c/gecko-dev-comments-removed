@@ -22,7 +22,7 @@ use style_traits::{CssWriter, ToCss};
     Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericImage<G, MozImageRect, ImageUrl, Color, Percentage> {
+pub enum GenericImage<G, MozImageRect, ImageUrl, Color, Percentage, Resolution> {
     
     None,
     
@@ -51,6 +51,9 @@ pub enum GenericImage<G, MozImageRect, ImageUrl, Color, Percentage> {
     
     
     CrossFade(Box<GenericCrossFade<Self, Color, Percentage>>),
+
+    
+    ImageSet(Box<GenericImageSet<Self, Resolution>>),
 }
 
 pub use self::GenericImage as Image;
@@ -98,7 +101,7 @@ pub struct GenericCrossFadeElement<Image, Color, Percentage> {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem, ToCss, Parse,
+    Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem, ToCss,
 )]
 #[repr(C, u8)]
 pub enum GenericCrossFadeImage<I, C> {
@@ -112,6 +115,36 @@ pub enum GenericCrossFadeImage<I, C> {
 pub use self::GenericCrossFade as CrossFade;
 pub use self::GenericCrossFadeElement as CrossFadeElement;
 pub use self::GenericCrossFadeImage as CrossFadeImage;
+
+
+#[css(comma, function = "image-set")]
+#[derive(
+    Clone, Debug, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem, ToCss, ToComputedValue,
+)]
+#[repr(C)]
+pub struct GenericImageSet<Image, Resolution> {
+    
+    #[css(iterable)]
+    pub items: crate::OwnedSlice<GenericImageSetItem<Image, Resolution>>,
+}
+
+
+#[derive(
+    Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem, ToCss,
+)]
+#[repr(C)]
+pub struct GenericImageSetItem<Image, Resolution> {
+    
+    pub image: Image,
+    
+    
+    
+    pub resolution: Resolution,
+    
+}
+
+pub use self::GenericImageSet as ImageSet;
+pub use self::GenericImageSetItem as ImageSetItem;
 
 
 
@@ -351,26 +384,23 @@ pub struct GenericMozImageRect<NumberOrPercentage, MozImageRectUrl> {
 
 pub use self::GenericMozImageRect as MozImageRect;
 
-impl<G, R, U, C, P> fmt::Debug for Image<G, R, U, C, P>
+impl<G, R, U, C, P, Resolution> fmt::Debug for Image<G, R, U, C, P, Resolution>
 where
-    G: ToCss,
-    R: ToCss,
-    U: ToCss,
-    C: ToCss,
-    P: ToCss,
+    Image<G, R, U, C, P, Resolution>: ToCss,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.to_css(&mut CssWriter::new(f))
     }
 }
 
-impl<G, R, U, C, P> ToCss for Image<G, R, U, C, P>
+impl<G, R, U, C, P, Resolution> ToCss for Image<G, R, U, C, P, Resolution>
 where
     G: ToCss,
     R: ToCss,
     U: ToCss,
     C: ToCss,
     P: ToCss,
+    Resolution: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -389,6 +419,7 @@ where
                 serialize_atom_identifier(selector, dest)?;
                 dest.write_str(")")
             },
+            Image::ImageSet(ref is) => is.to_css(dest),
             Image::CrossFade(ref cf) => cf.to_css(dest),
         }
     }

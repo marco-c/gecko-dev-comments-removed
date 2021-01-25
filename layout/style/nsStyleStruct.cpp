@@ -1589,10 +1589,12 @@ bool StyleImage::IsComplete() const {
     
     case Tag::CrossFade:
       return true;
-    default:
-      MOZ_ASSERT_UNREACHABLE("unexpected image type");
-      return false;
+    case Tag::ImageSet:
+      
+      return true;
   }
+  MOZ_ASSERT_UNREACHABLE("unexpected image type");
+  return false;
 }
 
 template <>
@@ -1614,10 +1616,15 @@ bool StyleImage::IsSizeAvailable() const {
              !(status & imgIRequest::STATUS_ERROR) &&
              (status & imgIRequest::STATUS_SIZE_AVAILABLE);
     }
-    default:
-      MOZ_ASSERT_UNREACHABLE("unexpected image type");
-      return false;
+    case Tag::ImageSet:
+      
+      return true;
+    case Tag::CrossFade:
+      
+      return true;
   }
+  MOZ_ASSERT_UNREACHABLE("unexpected image type");
+  return false;
 }
 
 template <>

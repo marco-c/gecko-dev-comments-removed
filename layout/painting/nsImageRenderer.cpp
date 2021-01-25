@@ -265,11 +265,12 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
       }
       break;
     }
+    case StyleImage::Tag::ImageSet:  
+    
+    case StyleImage::Tag::CrossFade:
     
     
     case StyleImage::Tag::Gradient:
-    
-    case StyleImage::Tag::CrossFade:
     case StyleImage::Tag::None:
       break;
   }
@@ -522,6 +523,7 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
     
     
     case StyleImage::Tag::CrossFade:
+    case StyleImage::Tag::ImageSet:  
     case StyleImage::Tag::None:
       break;
   }
