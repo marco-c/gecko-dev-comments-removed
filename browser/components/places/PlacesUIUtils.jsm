@@ -1553,23 +1553,6 @@ var PlacesUIUtils = {
 };
 
 
-
-
-
-
-
-
-
-PlacesUIUtils.canLoadToolbarContentPromise = new Promise(resolve => {
-  PlacesUIUtils.unblockToolbars = () => {
-    resolve("waited-for-session-idle");
-    
-    
-    PlacesUIUtils.canLoadToolbarContentPromise = Promise.resolve("immediate");
-  };
-});
-
-
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "PLACES_FLAVORS", () => {
   return [
     PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,

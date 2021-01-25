@@ -2413,14 +2413,6 @@ BrowserGlue.prototype = {
         },
       },
 
-      {
-        task: () => {
-          
-          
-          PlacesUIUtils.unblockToolbars();
-        },
-      },
-
       
       {
         task: () => {

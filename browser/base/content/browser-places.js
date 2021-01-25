@@ -1140,6 +1140,18 @@ var PlacesMenuDNDHandler = {
 
 
 var PlacesToolbarHelper = {
+  
+
+
+
+
+
+  _readyToShowCallback() {
+    this._canShowPromise = Promise.resolve();
+  },
+  _readyToShow: false,
+  _canShowPromise: null,
+
   get _viewElt() {
     return document.getElementById("PlacesToolbar");
   },
@@ -1148,20 +1160,23 @@ var PlacesToolbarHelper = {
 
 
 
-  async init() {
-    let telemetryKey = await PlacesUIUtils.canLoadToolbarContentPromise;
-    let didCreate = this._realInit();
-    this._measureToolbarPaintDelay(telemetryKey, didCreate);
+
+
+  init() {
+    if (!this._readyToShow) {
+      this._canShowPromise = new Promise(resolve => {
+        this._readyToShowCallback = resolve;
+      });
+      this._canShowPromise.then(() => this._realInit());
+    } else {
+      this._realInit();
+    }
   },
-
-  
-
-
 
   _realInit() {
     let viewElt = this._viewElt;
-    if (!viewElt || viewElt._placesView || window.closed) {
-      return false;
+    if (!viewElt || viewElt._placesView) {
+      return;
     }
 
     
@@ -1186,7 +1201,7 @@ var PlacesToolbarHelper = {
       this._isCustomizing ||
       getComputedStyle(toolbar, "").display == "none"
     ) {
-      return false;
+      return;
     }
 
     if (
@@ -1198,52 +1213,11 @@ var PlacesToolbarHelper = {
     }
 
     new PlacesToolbar(`place:parent=${PlacesUtils.bookmarks.toolbarGuid}`);
-    return true;
   },
 
-  
-  _shouldMeasure: true,
-  _measureToolbarPaintDelay(telemetryKey, didCreate) {
-    if (!this._shouldMeasure) {
-      return;
-    }
-    this._shouldMeasure = false;
-    
-    
-    
-    if (!didCreate) {
-      return;
-    }
-
-    let recordDelay = time => {
-      let entries = window.performance.getEntriesByType("paint");
-      let timeEntry = entries.find(e => e.name == "first-contentful-paint");
-      let histogram = Services.telemetry.getKeyedHistogramById(
-        "PLACES_BOOKMARKS_TOOLBAR_RENDER_DELAY_MS"
-      );
-      if (timeEntry) {
-        let delay = time - timeEntry.startTime - timeEntry.duration;
-        histogram.add(telemetryKey, Math.round(delay));
-      } else {
-        
-        
-        histogram.add(telemetryKey, 0);
-      }
-    };
-    if (!window.windowUtils.isMozAfterPaintPending) {
-      recordDelay(performance.now());
-      return;
-    }
-    let removeListeners = () => {
-      window.removeEventListener("unload", removeListeners);
-      window.removeEventListener("MozAfterPaint", paintHandler);
-    };
-    let paintHandler = ev => {
-      removeListeners();
-      recordDelay(ev.paintTimeStamp);
-    };
-    window.addEventListener("MozAfterPaint", paintHandler);
-    window.addEventListener("unload", removeListeners);
+  startShowingToolbar() {
+    this._readyToShow = true;
+    this._readyToShowCallback();
   },
 
   handleEvent(event) {
@@ -1265,6 +1239,7 @@ var PlacesToolbarHelper = {
       window.removeEventListener("toolbarvisibilitychange", this);
     }
     CustomizableUI.removeListener(this);
+    this._readyToShowCallback = () => {};
   },
 
   customizeStart: function PTH_customizeStart() {
