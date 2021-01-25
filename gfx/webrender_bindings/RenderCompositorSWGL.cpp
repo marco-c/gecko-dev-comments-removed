@@ -157,13 +157,19 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
     
     mSurface->Unmap();
     if (aDirty) {
+      
+      
+      
+      
+      LayoutDeviceIntRect bounds = mRegion.GetBounds();
+      gfx::IntPoint srcOffset = bounds.TopLeft().ToUnknownPoint();
+      gfx::IntPoint dstOffset = mDT->GetSize() == bounds.Size().ToUnknownSize()
+                                    ? srcOffset
+                                    : gfx::IntPoint(0, 0);
       for (auto iter = mRegion.RectIter(); !iter.Done(); iter.Next()) {
-        const LayoutDeviceIntRect& dirtyRect = iter.Get();
-        gfx::Rect bounds(dirtyRect.x, dirtyRect.y, dirtyRect.width,
-                         dirtyRect.height);
-        mDT->DrawSurface(mSurface, bounds, bounds,
-                         gfx::DrawSurfaceOptions(gfx::SamplingFilter::POINT),
-                         gfx::DrawOptions(1.0f, gfx::CompositionOp::OP_SOURCE));
+        gfx::IntRect dirtyRect = iter.Get().ToUnknownRect();
+        mDT->CopySurface(mSurface, dirtyRect - srcOffset,
+                         dirtyRect.TopLeft() - dstOffset);
       }
     }
   } else {
