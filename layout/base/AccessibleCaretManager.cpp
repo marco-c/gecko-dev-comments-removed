@@ -127,34 +127,34 @@ nsresult AccessibleCaretManager::OnSelectionChanged(Document* aDoc,
       return NS_OK;
     }
     
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return NS_OK;
   }
 
   
   if (aReason & nsISelectionListener::KEYPRESS_REASON) {
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return NS_OK;
   }
 
   
   
   if (aReason & nsISelectionListener::MOUSEDOWN_REASON) {
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return NS_OK;
   }
 
   
   if (aReason & (nsISelectionListener::COLLAPSETOSTART_REASON |
                  nsISelectionListener::COLLAPSETOEND_REASON)) {
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return NS_OK;
   }
 
   
   if (StaticPrefs::layout_accessiblecaret_hide_carets_for_mouse_input() &&
       mLastInputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return NS_OK;
   }
 
@@ -163,7 +163,7 @@ nsresult AccessibleCaretManager::OnSelectionChanged(Document* aDoc,
   if (StaticPrefs::layout_accessiblecaret_hide_carets_for_mouse_input() &&
       mLastInputSource == MouseEvent_Binding::MOZ_SOURCE_KEYBOARD &&
       (aReason & nsISelectionListener::SELECTALL_REASON)) {
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return NS_OK;
   }
 
@@ -171,7 +171,7 @@ nsresult AccessibleCaretManager::OnSelectionChanged(Document* aDoc,
   return NS_OK;
 }
 
-void AccessibleCaretManager::HideCarets() {
+void AccessibleCaretManager::HideCaretsAndDispatchCaretStateChangedEvent() {
   if (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible()) {
     AC_LOG("%s", __FUNCTION__);
     mFirstCaret->SetAppearance(Appearance::None);
@@ -190,7 +190,7 @@ void AccessibleCaretManager::UpdateCarets(const UpdateCaretsHintSet& aHint) {
 
   switch (mLastUpdateCaretMode) {
     case CaretMode::None:
-      HideCarets();
+      HideCaretsAndDispatchCaretStateChangedEvent();
       break;
     case CaretMode::Cursor:
       UpdateCaretsForCursorMode(aHint);
@@ -245,7 +245,7 @@ void AccessibleCaretManager::UpdateCaretsForCursorMode(
   int32_t offset = 0;
   nsIFrame* frame = nullptr;
   if (!IsCaretDisplayableInCursorMode(&frame, &offset)) {
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return;
   }
 
@@ -310,7 +310,7 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
 
   if (!CompareTreePosition(startFrame, endFrame)) {
     
-    HideCarets();
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return;
   }
 
@@ -711,8 +711,8 @@ void AccessibleCaretManager::OnScrollEnd() {
   
   if (StaticPrefs::layout_accessiblecaret_hide_carets_for_mouse_input() &&
       mLastInputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
-    AC_LOG("%s: HideCarets()", __FUNCTION__);
-    HideCarets();
+    AC_LOG("%s: HideCaretsAndDispatchCaretStateChangedEvent()", __FUNCTION__);
+    HideCaretsAndDispatchCaretStateChangedEvent();
     return;
   }
 
@@ -760,14 +760,14 @@ void AccessibleCaretManager::OnReflow() {
 }
 
 void AccessibleCaretManager::OnBlur() {
-  AC_LOG("%s: HideCarets()", __FUNCTION__);
-  HideCarets();
+  AC_LOG("%s: HideCaretsAndDispatchCaretStateChangedEvent()", __FUNCTION__);
+  HideCaretsAndDispatchCaretStateChangedEvent();
 }
 
 void AccessibleCaretManager::OnKeyboardEvent() {
   if (GetCaretMode() == CaretMode::Cursor) {
-    AC_LOG("%s: HideCarets()", __FUNCTION__);
-    HideCarets();
+    AC_LOG("%s: HideCaretsAndDispatchCaretStateChangedEvent()", __FUNCTION__);
+    HideCaretsAndDispatchCaretStateChangedEvent();
   }
 }
 

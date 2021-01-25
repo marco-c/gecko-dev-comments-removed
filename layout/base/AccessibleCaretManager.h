@@ -166,8 +166,9 @@ class AccessibleCaretManager {
       const UpdateCaretsHintSet& aHints = UpdateCaretsHint::Default);
 
   
+  
   MOZ_CAN_RUN_SCRIPT
-  void HideCarets();
+  void HideCaretsAndDispatchCaretStateChangedEvent();
 
   MOZ_CAN_RUN_SCRIPT
   void UpdateCaretsForCursorMode(const UpdateCaretsHintSet& aHints);
