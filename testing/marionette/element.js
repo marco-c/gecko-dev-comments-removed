@@ -235,7 +235,7 @@ element.Store = class {
       delete this.els[webEl.uuid];
     }
 
-    if (el === null || element.isStale(el, win)) {
+    if (element.isStale(el, win)) {
       throw new error.StaleElementReferenceError(
         pprint`The element reference of ${el || webEl.uuid} is stale; ` +
           "either the element is no longer attached to the DOM, " +
@@ -813,14 +813,18 @@ element.getElementId = function(el) {
 
 
 
-element.resolveElement = function(id, win = undefined) {
-  const el = ContentDOMReference.resolve(id);
-  if (el === null) {
-    
+
+
+element.resolveElement = function(id, win) {
+  
+  if (id.browsingContextId != win?.browsingContext.id) {
     throw new error.NoSuchElementError(
       `Web element reference not seen before: ${JSON.stringify(id.webElRef)}`
     );
   }
+
+  const el = ContentDOMReference.resolve(id);
+
   if (element.isStale(el, win)) {
     throw new error.StaleElementReferenceError(
       pprint`The element reference of ${el || JSON.stringify(id.webElRef)} ` +
@@ -882,14 +886,13 @@ element.isCollection = function(seq) {
 
 
 
+
+
 element.isStale = function(el, win = undefined) {
-  if (!el) {
-    throw new TypeError(`Expected Element got ${el}`);
-  }
   if (typeof win == "undefined") {
     win = el.ownerGlobal;
   }
-  if (!el.ownerGlobal || el.ownerDocument !== win.document) {
+  if (el === null || !el.ownerGlobal || el.ownerDocument !== win.document) {
     return true;
   }
 
