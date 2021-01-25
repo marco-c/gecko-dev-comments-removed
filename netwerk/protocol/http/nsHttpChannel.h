@@ -824,7 +824,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult TriggerNetwork();
   void CancelNetworkRequest(nsresult aStatus);
 
-  void SetHTTPSSVCRecord(nsIDNSHTTPSSVCRecord* aRecord);
+  void SetHTTPSSVCRecord(already_AddRefed<nsIDNSHTTPSSVCRecord>&& aRecord);
 
   
   
@@ -861,7 +861,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  nsCOMPtr<nsIDNSHTTPSSVCRecord> mHTTPSSVCRecord;
+  
+  Maybe<nsCOMPtr<nsIDNSHTTPSSVCRecord>> mHTTPSSVCRecord;
 
  protected:
   virtual void DoNotifyListenerCleanup() override;
