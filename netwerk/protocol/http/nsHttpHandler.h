@@ -443,6 +443,12 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   
+  void OnTransactionSuspendedDueToAuthentication(nsIHttpChannel* chan) {
+    NotifyObservers(chan, "http-on-transaction-suspended-authentication");
+  }
+
+  
+  
   [[nodiscard]] static nsresult GenerateHostPort(const nsCString& host,
                                                  int32_t port,
                                                  nsACString& hostLine);
