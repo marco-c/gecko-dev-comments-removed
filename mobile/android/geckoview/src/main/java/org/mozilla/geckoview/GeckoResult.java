@@ -374,6 +374,40 @@ public class GeckoResult<T> {
 
 
 
+    public @NonNull <U> GeckoResult<U> map(@Nullable final OnValueMapper<T, U> valueMapper) {
+        return map(valueMapper, null);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public @NonNull <U> GeckoResult<U> map(@Nullable final OnValueMapper<T, U> valueMapper,
+                                           @Nullable final OnExceptionMapper exceptionMapper) {
+        final OnValueListener<T, U> valueListener = valueMapper != null
+                ? value -> GeckoResult.fromValue(valueMapper.onValue(value))
+                : null;
+        final OnExceptionListener<U> exceptionListener = exceptionMapper != null
+                ? error -> GeckoResult.fromException(exceptionMapper.onException(error))
+                : null;
+        return then(valueListener, exceptionListener);
+    }
+
+    
+
+
+
+
+
+
+
     public @NonNull <U> GeckoResult<U> exceptionally(@NonNull final OnExceptionListener<U> exceptionListener) {
         return then(null, exceptionListener);
     }
@@ -844,6 +878,43 @@ public class GeckoResult<T> {
 
         @AnyThread
         @Nullable GeckoResult<U> onValue(@Nullable T value) throws Throwable;
+    }
+
+    
+
+
+
+
+
+    public interface OnValueMapper<T, U> {
+        
+
+
+
+
+
+
+
+
+        @AnyThread
+        @Nullable U onValue(@Nullable T value) throws Throwable;
+    }
+
+    
+
+
+    public interface OnExceptionMapper {
+        
+
+
+
+
+
+
+
+
+        @AnyThread
+        @Nullable Throwable onException(@NonNull Throwable exception) throws Throwable;
     }
 
     
