@@ -333,7 +333,7 @@ struct BaseCompilationStencil {
   
   
   
-  using FunctionKey = uint32_t;
+  using FunctionKey = uint64_t;
 
   static constexpr FunctionKey NullFunctionKey = 0;
 
@@ -361,9 +361,8 @@ struct BaseCompilationStencil {
   }
 
   static FunctionKey toFunctionKey(const SourceExtent& extent) {
-    
-    
-    auto result = extent.sourceStart + 1;
+    auto result = static_cast<FunctionKey>(extent.sourceStart) << 32 |
+                  static_cast<FunctionKey>(extent.sourceEnd);
     MOZ_ASSERT(result != NullFunctionKey);
     return result;
   }
