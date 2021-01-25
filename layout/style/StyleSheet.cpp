@@ -1142,7 +1142,7 @@ already_AddRefed<StyleSheet> StyleSheet::CreateEmptyChildSheet(
 
 
 
-static bool AllowParallelParse(css::Loader& aLoader, nsIURI* aSheetURI) {
+static bool AllowParallelParse(css::Loader& aLoader, URLExtraData* aUrlData) {
   
   
   Document* doc = aLoader.GetDocument();
@@ -1157,7 +1157,7 @@ static bool AllowParallelParse(css::Loader& aLoader, nsIURI* aSheetURI) {
   
   
   
-  if (dom::IsChromeURI(aSheetURI)) {
+  if (aUrlData->ChromeRulesEnabled()) {
     return false;
   }
 
@@ -1179,7 +1179,7 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
                               : StyleAllowImportRules::Yes;
   const bool shouldRecordCounters =
       aLoader.GetDocument() && aLoader.GetDocument()->GetStyleUseCounters();
-  if (!AllowParallelParse(aLoader, GetSheetURI())) {
+  if (!AllowParallelParse(aLoader, Inner().mURLData)) {
     UniquePtr<StyleUseCounters> counters =
         shouldRecordCounters ? Servo_UseCounters_Create().Consume() : nullptr;
 
