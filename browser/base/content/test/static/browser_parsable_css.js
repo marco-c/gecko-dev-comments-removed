@@ -92,22 +92,13 @@ if (
   });
 }
 
-if (Services.prefs.getBoolPref("layout.css.file-selector-button.enabled")) {
-  
-  whitelist.push({
-    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
-    errorMessage: /Expected color but found \u2018-moz.*/i,
-    platforms: ["linux"],
-    isFromDevTools: false,
-  });
-} else {
-  
-  whitelist.push({
-    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
-    errorMessage: /Unknown pseudo-.*file-selector-button/i,
-    isFromDevTools: false,
-  });
-}
+
+whitelist.push({
+  sourceName: /(?:res|gre-resources)\/forms\.css$/i,
+  errorMessage: /Expected color but found \u2018-moz.*/i,
+  platforms: ["linux"],
+  isFromDevTools: false,
+});
 
 if (!Services.prefs.getBoolPref("layout.css.autofill.enabled")) {
   
