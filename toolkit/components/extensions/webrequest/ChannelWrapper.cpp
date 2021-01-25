@@ -819,9 +819,9 @@ MozContentPolicyType GetContentPolicyType(ExtContentPolicyType aType) {
       return MozContentPolicyType::Speculative;
     case ExtContentPolicy::TYPE_INVALID:
     case ExtContentPolicy::TYPE_OTHER:
-    case ExtContentPolicy::TYPE_REFRESH:
     case ExtContentPolicy::TYPE_SAVEAS_DOWNLOAD:
       break;
+      
   }
   return MozContentPolicyType::Other;
 }

@@ -98,14 +98,6 @@ interface nsIContentPolicy : nsISupports
 
 
 
-
-
-
-
-
-
-    TYPE_REFRESH = 8,
-
     
 
 
@@ -119,7 +111,6 @@ interface nsIContentPolicy : nsISupports
 
 
     TYPE_XMLHTTPREQUEST = 11,
-    TYPE_DATAREQUEST    = TYPE_XMLHTTPREQUEST, 
 
     
 
@@ -563,10 +554,8 @@ enum class ExtContentPolicyType : uint8_t {
   TYPE_OBJECT = nsIContentPolicy::TYPE_OBJECT,
   TYPE_DOCUMENT = nsIContentPolicy::TYPE_DOCUMENT,
   TYPE_SUBDOCUMENT = nsIContentPolicy::TYPE_SUBDOCUMENT,
-  TYPE_REFRESH = nsIContentPolicy::TYPE_REFRESH,
   TYPE_PING = nsIContentPolicy::TYPE_PING,
   TYPE_XMLHTTPREQUEST = nsIContentPolicy::TYPE_XMLHTTPREQUEST,
-  TYPE_DATAREQUEST    = nsIContentPolicy::TYPE_DATAREQUEST,
   TYPE_OBJECT_SUBREQUEST = nsIContentPolicy::TYPE_OBJECT_SUBREQUEST,
   TYPE_DTD = nsIContentPolicy::TYPE_DTD,
   TYPE_FONT = nsIContentPolicy::TYPE_FONT,

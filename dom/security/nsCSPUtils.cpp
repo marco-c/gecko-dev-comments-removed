@@ -343,8 +343,8 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
     
     
     case nsIContentPolicy::TYPE_INVALID:
-    case nsIContentPolicy::TYPE_REFRESH:
       MOZ_ASSERT(false, "Can not map nsContentPolicyType to CSPDirective");
+      
   }
   return nsIContentSecurityPolicy::DEFAULT_SRC_DIRECTIVE;
 }

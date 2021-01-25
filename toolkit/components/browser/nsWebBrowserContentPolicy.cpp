@@ -41,12 +41,6 @@ nsWebBrowserContentPolicy::ShouldLoad(nsIURI* aContentLocation,
     case ExtContentPolicy::TYPE_SUBDOCUMENT:
       rv = shell->GetAllowSubframes(&allowed);
       break;
-#if 0
-    
-    case nsIContentPolicy::TYPE_REFRESH:
-      rv = shell->GetAllowMetaRedirects(&allowed); 
-      break;
-#endif
     case ExtContentPolicy::TYPE_IMAGE:
     case ExtContentPolicy::TYPE_IMAGESET:
       rv = shell->GetAllowImages(&allowed);

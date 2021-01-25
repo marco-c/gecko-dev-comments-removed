@@ -230,8 +230,6 @@ RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
       return RequestDestination::Iframe;
     case nsIContentPolicy::TYPE_INTERNAL_FRAME:
       return RequestDestination::Frame;
-    case nsIContentPolicy::TYPE_REFRESH:
-      return RequestDestination::_empty;
     case nsIContentPolicy::TYPE_PING:
       return RequestDestination::_empty;
     case nsIContentPolicy::TYPE_XMLHTTPREQUEST:
@@ -279,6 +277,7 @@ RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
       return RequestDestination::Paintworklet;
     case nsIContentPolicy::TYPE_INVALID:
       break;
+      
   }
 
   MOZ_ASSERT(false, "Unhandled nsContentPolicyType value");
@@ -295,16 +294,10 @@ bool InternalRequest::IsNavigationContentPolicy(
   
   
   
-  
-  
-  
-  
-  
   return aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
          aContentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT ||
          aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME ||
-         aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
-         aContentPolicyType == nsIContentPolicy::TYPE_REFRESH;
+         aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME;
 }
 
 

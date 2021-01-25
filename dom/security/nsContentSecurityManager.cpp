@@ -432,18 +432,12 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
       break;
     }
 
-    case ExtContentPolicy::TYPE_REFRESH: {
-      MOZ_ASSERT(false, "contentPolicyType not supported yet");
-      break;
-    }
-
     case ExtContentPolicy::TYPE_PING: {
       mimeTypeGuess.Truncate();
       break;
     }
 
     case ExtContentPolicy::TYPE_XMLHTTPREQUEST: {
-      
 #ifdef DEBUG
       {
         nsCOMPtr<nsINode> node = aLoadInfo->LoadingNode();
@@ -580,10 +574,10 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
       break;
     }
 
-    default:
-      
+    case ExtContentPolicy::TYPE_INVALID:
       MOZ_ASSERT(false,
                  "can not perform security check without a valid contentType");
+      
   }
 
   int16_t shouldLoad = nsIContentPolicy::ACCEPT;

@@ -42,9 +42,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  
   if (contentType == ExtContentPolicy::TYPE_CSP_REPORT ||
-      contentType == ExtContentPolicy::TYPE_REFRESH ||
       contentType == ExtContentPolicy::TYPE_DOCUMENT) {
     return false;
   }

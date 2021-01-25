@@ -494,10 +494,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
 
-  static_assert(TYPE_DATAREQUEST == TYPE_XMLHTTPREQUEST,
-                "TYPE_DATAREQUEST is not a synonym for "
-                "TYPE_XMLHTTPREQUEST");
-
   switch (contentType) {
     
     case ExtContentPolicy::TYPE_DOCUMENT:
@@ -558,9 +554,9 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     case ExtContentPolicy::TYPE_SPECULATIVE:
       break;
 
-    
-    default:
+    case ExtContentPolicy::TYPE_INVALID:
       MOZ_ASSERT(false, "Mixed content of unknown type");
+      
   }
 
   
