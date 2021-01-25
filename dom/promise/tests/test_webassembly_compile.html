@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html>
 <head>
   <title>WebAssembly.compile Test</title>
@@ -162,7 +162,12 @@ function compileStreamingBadMime() {
     var init = { headers: { "Content-Type": mimeType } };
     promises.push(
       WebAssembly.compileStreaming(new Response(sampleCode, init))
-      .then(() => Promise.reject(), err => Promise.resolve())
+      .then(() => Promise.reject(), err => {
+        is(err.message,
+          `WebAssembly: Response has unsupported MIME type '${mimeType}' expected 'application/wasm'`,
+          "correct MIME type error message");
+        return Promise.resolve();
+      })
     );
   }
   Promise.all(promises)
