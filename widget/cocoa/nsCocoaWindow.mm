@@ -985,7 +985,9 @@ void nsCocoaWindow::Show(bool bState) {
 bool nsCocoaWindow::NeedsRecreateToReshow() {
   
   
-  return (mWindowType == eWindowType_popup) && mWasShown && ([[NSScreen screens] count] > 1);
+  
+  return (mWindowType == eWindowType_popup) && (mPopupType != ePopupTypeTooltip) && mWasShown &&
+         ([[NSScreen screens] count] > 1);
 }
 
 struct ShadowParams {
