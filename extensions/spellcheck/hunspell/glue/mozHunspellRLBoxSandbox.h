@@ -4,16 +4,11 @@
 
 
 
-#ifndef mozHunspellFileMgrSandbox_h
-#define mozHunspellFileMgrSandbox_h
+#ifndef mozHunspellRLBoxSandbox_h
+#define mozHunspellRLBoxSandbox_h
 
 #include <string>
 #include <stdint.h>
-
-#include "mozilla/Result.h"
-#include "mozilla/ResultExtensions.h"
-#include "nsIInputStream.h"
-#include "nsReadLine.h"
 
 
 

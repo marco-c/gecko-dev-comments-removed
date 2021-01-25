@@ -5,7 +5,7 @@
 
 
 UNIFIED_SOURCES += [
-    '../glue/mozHunspellFileMgrSandbox.cpp',
+    '../glue/mozHunspellRLBoxSandbox.cpp',
     'affentry.cxx',
     'affixmgr.cxx',
     'csutil.cxx',

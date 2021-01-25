@@ -82,10 +82,6 @@
 #include "w_char.hxx"
 #include "htypes.hxx"
 
-#ifdef MOZILLA_CLIENT
-#include "nscore.h"  
-#endif
-
 
 #define NOCAP 0
 #define INITCAP 1
