@@ -2064,7 +2064,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     const sourceUrl = sourceActor.url;
     if (this._onLoadBreakpointURLs.has(sourceUrl)) {
+      
+      
       this.setBreakpoint({ sourceUrl, line: 1 }, {});
+      
+      
+      (async () => {
+        const [firstLine] = await sourceActor.getBreakableLines();
+        if (firstLine != 1) {
+          this.setBreakpoint({ sourceUrl, line: firstLine }, {});
+        }
+      })();
     }
 
     const bpActors = this.breakpointActorMap
