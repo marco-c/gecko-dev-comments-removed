@@ -294,6 +294,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:storage::Connection::Release\n"
 
+         
+         "race:EventSourceImpl::OnStopRequest\n"
+         "race:UpdateDontKeepAlive\n"
+
       
       ;  
 }
