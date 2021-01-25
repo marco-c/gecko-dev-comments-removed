@@ -6,10 +6,7 @@
 
 
 
-
-
-setDiscardSource(true);
-
+function test() {
 
 var propertyName = [
     
@@ -217,7 +214,7 @@ function asm() {
 
 assertFunctionName(asm, "asm");
 assertFunctionName(asm().f, "f");
+}
 
-
-if (typeof reportCompare === "function")
-    reportCompare(0, 0);
+var g = newGlobal({ discardSource: true });
+g.evaluate(test.toString() + "test()");

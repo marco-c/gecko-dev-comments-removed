@@ -1,10 +1,7 @@
 
 
 
-
-
-setDiscardSource(true);
-
+function test() {
 
 var propertyName = [
     
@@ -25,6 +22,9 @@ var nativeCode = RegExp([
     "^", "function", ("(?:" + propertyName + ")?"), "\\(", "\\)", "\\{", "\\[native code\\]", "\\}", "$"
 ].join("\\s*"));
 
+function reportMatch(pattern, str) {
+  assertEq(pattern.test(str), true);
+}
 
 
 
@@ -207,3 +207,7 @@ function asm() {
 
 reportMatch(nativeCode, asm.toString());
 reportMatch(nativeCode, asm().f.toString());
+}
+
+var g = newGlobal({ discardSource: true });
+g.evaluate(test.toString() + "test()");
