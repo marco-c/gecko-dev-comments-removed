@@ -88,7 +88,7 @@ class LSWriteOptimizerBase {
 
 
 
-  void GetSortedWriteInfos(nsTArray<WriteInfo*>& aWriteInfos);
+  void GetSortedWriteInfos(nsTArray<NotNull<WriteInfo*>>& aWriteInfos);
 };
 
 

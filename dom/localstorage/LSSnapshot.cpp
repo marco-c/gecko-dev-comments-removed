@@ -72,7 +72,7 @@ void SnapshotWriteOptimizer::Enumerate(nsTArray<LSWriteInfo>& aWriteInfos) {
   
   
 
-  nsTArray<WriteInfo*> writeInfos;
+  nsTArray<NotNull<WriteInfo*>> writeInfos;
   GetSortedWriteInfos(writeInfos);
 
   for (WriteInfo* writeInfo : writeInfos) {
