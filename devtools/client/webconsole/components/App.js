@@ -145,6 +145,8 @@ class App extends Component {
         actions.reverseSearchInputToggle({ initialValue, access: "keyboard" })
       );
       event.stopPropagation();
+      
+      event.preventDefault();
     }
 
     if (
