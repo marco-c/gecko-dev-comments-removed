@@ -2677,8 +2677,6 @@ AttachDecision GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
       return AttachDecision::NoAction;
     }
 
-    MOZ_ASSERT(!env->hasUncacheableProto());
-
     
     
     
@@ -2817,8 +2815,6 @@ AttachDecision BindNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
     if (env->is<WithEnvironmentObject>()) {
       return AttachDecision::NoAction;
     }
-
-    MOZ_ASSERT(!env->hasUncacheableProto());
 
     
     
