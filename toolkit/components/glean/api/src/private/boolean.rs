@@ -116,12 +116,6 @@ mod test {
 
             
             
-
-            
-            let result = std::panic::catch_unwind(move || {
-                child_metric.test_get_value("store1");
-            });
-            assert!(result.is_err());
         }
 
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());

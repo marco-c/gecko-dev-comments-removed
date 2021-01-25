@@ -199,12 +199,6 @@ mod test {
 
             child_metric.add("child_value");
             assert!(ipc::take_buf().unwrap().len() > 0);
-
-            
-            let result = std::panic::catch_unwind(move || {
-                child_metric.test_get_value("store1");
-            });
-            assert!(result.is_err());
         }
 
         

@@ -130,11 +130,5 @@ mod test {
 
         
         
-
-        
-        let result = std::panic::catch_unwind(move || {
-            child_metric.test_get_value("store1");
-        });
-        assert!(result.is_err());
     }
 }
