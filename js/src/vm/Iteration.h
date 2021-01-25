@@ -453,8 +453,6 @@ inline Value IteratorMore(JSObject* iterobj) {
 extern PlainObject* CreateIterResultObject(JSContext* cx, HandleValue value,
                                            bool done);
 
-enum class IteratorKind { Sync, Async };
-
 
 
 

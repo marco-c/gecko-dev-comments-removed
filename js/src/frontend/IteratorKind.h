@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef frontend_IteratorKind_h
+#define frontend_IteratorKind_h
+
+namespace js::frontend {
+
+enum class IteratorKind { Sync, Async };
+
+} 
+
+#endif 

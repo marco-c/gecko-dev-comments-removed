@@ -16,8 +16,8 @@
 
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/BytecodeOffset.h"             
+#include "frontend/IteratorKind.h"               
 #include "frontend/TryEmitter.h"                 
-#include "vm/Iteration.h"                        
 
 namespace js {
 namespace frontend {
