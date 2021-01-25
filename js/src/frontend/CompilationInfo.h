@@ -256,6 +256,9 @@ struct MOZ_RAII CompilationState {
                    JSObject* enclosingEnv = nullptr);
 
   bool finish(JSContext* cx, CompilationInfo& compilationInfo);
+
+  const ParserAtom* getParserAtomAt(JSContext* cx,
+                                    TaggedParserAtomIndex taggedIndex) const;
 };
 
 
@@ -316,7 +319,7 @@ struct CompilationStencil {
   
   
   
-  ParserAtomVector parserAtomData;
+  ParserAtomSpan parserAtomData;
 
   CompilationStencil() = default;
 
