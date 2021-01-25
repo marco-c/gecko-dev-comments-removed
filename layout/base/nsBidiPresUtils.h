@@ -351,7 +351,7 @@ class nsBidiPresUtils {
   
   
   
-  static bool IsReversedDirectionFrame(nsIFrame* aFrame) {
+  static bool IsReversedDirectionFrame(const nsIFrame* aFrame) {
     mozilla::FrameBidiData bidiData = aFrame->GetBidiData();
     return !IS_SAME_DIRECTION(bidiData.embeddingLevel, bidiData.baseLevel);
   }
