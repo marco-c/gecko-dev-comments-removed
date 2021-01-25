@@ -229,7 +229,7 @@ promise_test(async t => {
   encoder.close();
 
   return endAfterEventLoopTurn();
-}, 'Test encoder consumes (destroys) frames.');
+}, 'Test encoder consumes (closes) frames.');
 
 promise_test(async t => {
   let encoder = new VideoEncoder(getDefaultCodecInit(t));
@@ -251,12 +251,11 @@ promise_test(async t => {
   let encoder = new VideoEncoder(getDefaultCodecInit(t));
 
   let frame = await createVideoFrame(640, 480, 0);
-  frame.destroy();
+  frame.close();
 
   encoder.configure(defaultConfig);
 
-  frame.destroy();
   assert_throws_dom("OperationError", () => {
     encoder.encode(frame)
   });
-}, 'Verify encoding destroyed frames throws.');
+}, 'Verify encoding closed frames throws.');
