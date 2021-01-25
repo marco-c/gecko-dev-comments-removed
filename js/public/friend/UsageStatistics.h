@@ -83,7 +83,7 @@ extern JS_FRIEND_API void JS_SetAccumulateTelemetryCallback(
 
 
 
-enum class JSUseCounter { ASMJS, WASM };
+enum class JSUseCounter { ASMJS, WASM, WASM_DUPLICATE_IMPORTS };
 
 using JSSetUseCounterCallback = void (*)(JSObject*, JSUseCounter);
 
