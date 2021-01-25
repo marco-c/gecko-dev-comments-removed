@@ -25,7 +25,6 @@
 #include "js/friend/WindowProxy.h"    
 #include "js/Printf.h"
 #include "vm/ArrayObject.h"
-#include "vm/EqualityOperations.h"  
 #include "vm/Interpreter.h"
 #include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
@@ -821,48 +820,6 @@ bool MutatePrototype(JSContext* cx, HandlePlainObject obj, HandleValue value) {
   RootedObject newProto(cx, value.toObjectOrNull());
   return SetPrototype(cx, obj, newProto);
 }
-
-template <EqualityKind Kind>
-bool LooselyEqual(JSContext* cx, MutableHandleValue lhs, MutableHandleValue rhs,
-                  bool* res) {
-  if (!js::LooselyEqual(cx, lhs, rhs, res)) {
-    return false;
-  }
-  if (Kind != EqualityKind::Equal) {
-    *res = !*res;
-  }
-  return true;
-}
-
-template bool LooselyEqual<EqualityKind::Equal>(JSContext* cx,
-                                                MutableHandleValue lhs,
-                                                MutableHandleValue rhs,
-                                                bool* res);
-template bool LooselyEqual<EqualityKind::NotEqual>(JSContext* cx,
-                                                   MutableHandleValue lhs,
-                                                   MutableHandleValue rhs,
-                                                   bool* res);
-
-template <EqualityKind Kind>
-bool StrictlyEqual(JSContext* cx, MutableHandleValue lhs,
-                   MutableHandleValue rhs, bool* res) {
-  if (!js::StrictlyEqual(cx, lhs, rhs, res)) {
-    return false;
-  }
-  if (Kind != EqualityKind::Equal) {
-    *res = !*res;
-  }
-  return true;
-}
-
-template bool StrictlyEqual<EqualityKind::Equal>(JSContext* cx,
-                                                 MutableHandleValue lhs,
-                                                 MutableHandleValue rhs,
-                                                 bool* res);
-template bool StrictlyEqual<EqualityKind::NotEqual>(JSContext* cx,
-                                                    MutableHandleValue lhs,
-                                                    MutableHandleValue rhs,
-                                                    bool* res);
 
 template <EqualityKind Kind>
 bool StringsEqual(JSContext* cx, HandleString lhs, HandleString rhs,
