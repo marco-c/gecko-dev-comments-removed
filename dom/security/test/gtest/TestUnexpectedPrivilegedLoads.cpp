@@ -33,7 +33,7 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
 
   struct testCasesAndResults {
     nsCString urlstring;
-    nsContentPolicyType contentType;
+    ExtContentPolicyType contentType;
     nsCString remoteType;
     testResults expected;
   };
@@ -54,36 +54,36 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
   
   testCasesAndResults myTestCases[] = {
       {"chrome://firegestures/content/browser.js"_ns,
-       nsIContentPolicy::TYPE_SCRIPT,
+       ExtContentPolicy::TYPE_SCRIPT,
        "web"_ns,
        {"chromeuri"_ns, "TYPE_SCRIPT"_ns, "web"_ns,
         "chrome://firegestures/content/browser.js"_ns}},
       {"resource://firegestures/content/browser.js"_ns,
-       nsIContentPolicy::TYPE_SCRIPT,
+       ExtContentPolicy::TYPE_SCRIPT,
        "web"_ns,
        {"resourceuri"_ns, "TYPE_SCRIPT"_ns, "web"_ns,
         "resource://firegestures/content/browser.js"_ns}},
       {
        
        "blob://000-000"_ns,
-       nsIContentPolicy::TYPE_SCRIPT,
+       ExtContentPolicy::TYPE_SCRIPT,
        "webIsolated=https://blob.example/"_ns,
        {"bloburi"_ns, "TYPE_SCRIPT"_ns, "webIsolated"_ns, "unknown"_ns}},
       {
        
        "moz-icon:blahblah"_ns,
-       nsIContentPolicy::TYPE_IMAGE,
+       ExtContentPolicy::TYPE_IMAGE,
        "web"_ns,
        {"other"_ns, "TYPE_IMAGE"_ns, "web"_ns, "unknown"_ns}},
       {
        
        "data://blahblahblah"_ns,
-       nsIContentPolicy::TYPE_DOCUMENT,
+       ExtContentPolicy::TYPE_DOCUMENT,
        "webCOOP+COEP=https://data.example"_ns,
        {"dataurl"_ns, "TYPE_DOCUMENT"_ns, "webCOOP+COEP"_ns, "unknown"_ns}},
       {
        "file://c/users/tom/file.txt"_ns,
-       nsIContentPolicy::TYPE_SCRIPT,
+       ExtContentPolicy::TYPE_SCRIPT,
        "web"_ns,
        {
 #if defined(XP_WIN)
@@ -96,13 +96,13 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
        }},
       {
        ""_ns,
-       nsIContentPolicy::TYPE_IMAGE,
+       ExtContentPolicy::TYPE_IMAGE,
        "web"_ns,
        {"other"_ns, "TYPE_IMAGE"_ns, "web"_ns, "unknown"_ns}},
       {
        
        "URLWillResultInNullPtr"_ns,
-       nsIContentPolicy::TYPE_FONT,
+       ExtContentPolicy::TYPE_FONT,
        "web"_ns,
        {"other"_ns, "TYPE_FONT"_ns, "web"_ns, "unknown"_ns}},
   };

@@ -24,11 +24,7 @@ nsNoDataProtocolContentPolicy::ShouldLoad(nsIURI* aContentLocation,
                                           nsILoadInfo* aLoadInfo,
                                           const nsACString& aMimeGuess,
                                           int16_t* aDecision) {
-  nsContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
-
-  MOZ_ASSERT(contentType == nsContentUtils::InternalContentPolicyTypeToExternal(
-                                contentType),
-             "We should only see external content policy types here.");
+  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
 
   *aDecision = nsIContentPolicy::ACCEPT;
 
@@ -36,8 +32,10 @@ nsNoDataProtocolContentPolicy::ShouldLoad(nsIURI* aContentLocation,
   
   
   
-  if (contentType != TYPE_DOCUMENT && contentType != TYPE_SUBDOCUMENT &&
-      contentType != TYPE_OBJECT && contentType != TYPE_WEBSOCKET) {
+  if (contentType != ExtContentPolicy::TYPE_DOCUMENT &&
+      contentType != ExtContentPolicy::TYPE_SUBDOCUMENT &&
+      contentType != ExtContentPolicy::TYPE_OBJECT &&
+      contentType != ExtContentPolicy::TYPE_WEBSOCKET) {
     
     
     nsAutoCString scheme;

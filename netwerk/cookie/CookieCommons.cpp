@@ -474,9 +474,9 @@ bool CookieCommons::IsSafeTopLevelNav(nsIChannel* aChannel) {
   }
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   if (loadInfo->GetExternalContentPolicyType() !=
-          nsIContentPolicy::TYPE_DOCUMENT &&
+          ExtContentPolicy::TYPE_DOCUMENT &&
       loadInfo->GetExternalContentPolicyType() !=
-          nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
+          ExtContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
     return false;
   }
   return NS_IsSafeMethodNav(aChannel);
@@ -500,9 +500,9 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
   bool isForeign = true;
   nsresult rv;
   if (loadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_DOCUMENT ||
+          ExtContentPolicy::TYPE_DOCUMENT ||
       loadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
+          ExtContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
     
     
     
@@ -527,7 +527,7 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
   
   
   if (loadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_SUBDOCUMENT) {
+      ExtContentPolicy::TYPE_SUBDOCUMENT) {
     rv = loadInfo->TriggeringPrincipal()->IsThirdPartyChannel(aChannel,
                                                               &isForeign);
     if (NS_FAILED(rv) || isForeign) {
