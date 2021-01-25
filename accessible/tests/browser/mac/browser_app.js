@@ -130,14 +130,16 @@ add_task(async () => {
       EventUtils.synthesizeMouseAtCenter(document.body, {
         type: "contextmenu",
       });
-      await BrowserTestUtils.waitForPopupEvent(menu, "shown");
+      await waitForMacEvent("AXMenuOpened");
 
       
       is(rootChildCount(), 6, "Root has 6 children");
 
       
+      let closed = waitForMacEvent("AXMenuClosed", "contentAreaContextMenu");
       EventUtils.synthesizeKey("KEY_Escape");
       await BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+      await closed;
 
       
       is(rootChildCount(), 5, "Root has 5 children");
@@ -206,9 +208,10 @@ add_task(async () => {
         { type: "contextmenu" },
         browser
       );
-      await BrowserTestUtils.waitForPopupEvent(menu, "shown");
+      await waitForMacEvent("AXMenuOpened");
+
       menu = await getMacAccessible(menu);
-      const menuChildren = menu.getAttributeValue("AXChildren");
+      let menuChildren = menu.getAttributeValue("AXChildren");
       
       is(
         menuChildren.length,
@@ -236,24 +239,26 @@ add_task(async () => {
       
       
       is(
-        menuChildren[1].getAttributeValue("AXChildren").length,
-        0,
-        "Submenu 1 has no chldren when hidden"
+        menuChildren[1].getAttributeValue("AXVisibleChildren"),
+        null,
+        "Submenu 1 has no visible chldren when hidden"
       );
       is(
-        menuChildren[11].getAttributeValue("AXChildren").length,
-        0,
-        "Submenu 2 has no chldren when hidden"
+        menuChildren[11].getAttributeValue("AXVisibleChildren"),
+        null,
+        "Submenu 2 has no visible chldren when hidden"
       );
 
       
-      const contextMenu = document.getElementById(
-        "context-openlinkinusercontext-menu"
-      );
       EventUtils.synthesizeKey("KEY_ArrowDown");
       EventUtils.synthesizeKey("KEY_ArrowDown");
       EventUtils.synthesizeKey("KEY_ArrowRight");
-      await BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+      await waitForMacEvent("AXMenuOpened");
+
+      
+      menu = document.getElementById("contentAreaContextMenu");
+      menu = await getMacAccessible(menu);
+      menuChildren = menu.getAttributeValue("AXChildren");
 
       
       is(
@@ -277,7 +282,9 @@ add_task(async () => {
 
       
       EventUtils.synthesizeKey("KEY_Escape");
+      await waitForMacEvent("AXMenuClosed");
       EventUtils.synthesizeKey("KEY_Escape");
+      await waitForMacEvent("AXMenuClosed");
     }
   );
 });
