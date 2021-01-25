@@ -83,7 +83,10 @@ bool RenderCompositorSWGL::AllocateMappedBuffer() {
     mMappedStride = stride;
     
     
-    if (size == gfx::IntSize(bounds.XMost(), bounds.YMost())) {
+    
+    
+    
+    if (size != bounds.Size().ToUnknownSize()) {
       
       bounds.ExpandToEnclose(LayoutDeviceIntPoint(0, 0));
     }
