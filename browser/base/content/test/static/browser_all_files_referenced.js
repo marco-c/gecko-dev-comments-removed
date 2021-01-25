@@ -174,6 +174,7 @@ var whitelist = [
   { file: "chrome://marionette/content/test.xhtml" },
   { file: "chrome://marionette/content/test_dialog.properties" },
   { file: "chrome://marionette/content/test_dialog.xhtml" },
+  { file: "chrome://marionette/content/test_menupopup.xhtml" },
   
   { file: "chrome://pippki/content/resetpassword.xhtml" },
   
