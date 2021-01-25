@@ -635,6 +635,17 @@ class ContentParent final
 
   
   
+  enum class ValidatePrincipalOptions {
+    AllowNullPtr,  
+    AllowSystem,
+    AllowExpanded,
+  };
+  bool ValidatePrincipal(
+      nsIPrincipal* aPrincipal,
+      const EnumSet<ValidatePrincipalOptions>& aOptions = {});
+
+  
+  
   
   
   
