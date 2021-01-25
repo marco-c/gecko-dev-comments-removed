@@ -159,6 +159,7 @@ this.Store = class Store {
   async _initIndexedDB(telemetryKey) {
     this.dbStorage = new ActivityStreamStorage({
       storeNames: ["sectionPrefs", "snippets"],
+      telemetry: this.feeds.get(telemetryKey),
     });
     
     
