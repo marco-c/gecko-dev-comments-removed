@@ -154,16 +154,30 @@ class FormValidationChild extends JSWindowActorChild {
 
     panelData.message = this._validationMessage;
 
-    panelData.screenRect = BrowserUtils.getElementBoundingScreenRect(aElement);
+    
+    
+    panelData.contentRect = BrowserUtils.getElementBoundingRect(aElement);
 
     
     
+    let offset = 0;
+
     if (
       aElement.tagName == "INPUT" &&
       (aElement.type == "radio" || aElement.type == "checkbox")
     ) {
       panelData.position = "bottomcenter topleft";
     } else {
+      let win = aElement.ownerGlobal;
+      let style = win.getComputedStyle(aElement);
+      if (style.direction == "rtl") {
+        offset =
+          parseInt(style.paddingRight) + parseInt(style.borderRightWidth);
+      } else {
+        offset = parseInt(style.paddingLeft) + parseInt(style.borderLeftWidth);
+      }
+      let zoomFactor = this.contentWindow.windowUtils.fullZoom;
+      panelData.offset = Math.round(offset * zoomFactor);
       panelData.position = "after_start";
     }
     this.sendAsyncMessage("FormValidation:ShowPopup", panelData);

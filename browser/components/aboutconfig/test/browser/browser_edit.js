@@ -188,15 +188,6 @@ add_task(async function test_reset_user_pref() {
 });
 
 add_task(async function test_modify() {
-  
-  
-  let invalidFormPopupHiddenPromise = BrowserTestUtils.waitForEvent(
-    window,
-    "popuphidden",
-    false,
-    event => event.target.id == "invalid-form-popup"
-  );
-
   await AboutConfigTest.withNewTab(async function() {
     
     for (let nameOfBoolPref of [
@@ -228,13 +219,6 @@ add_task(async function test_modify() {
     Assert.ok(!row.valueInput);
     Assert.equal(row.value, Preferences.get(PREF_MODIFY_STRING));
 
-    let invalidFormPopupShownPromise = BrowserTestUtils.waitForEvent(
-      window,
-      "popupshown",
-      false,
-      event => event.target.id == "invalid-form-popup"
-    );
-
     
     for (let invalidValue of [
       "",
@@ -249,8 +233,6 @@ add_task(async function test_modify() {
       
       Assert.ok(intRow.valueInput);
     }
-
-    await invalidFormPopupShownPromise;
 
     
     for (let [prefName, willDelete] of [
@@ -277,8 +259,6 @@ add_task(async function test_modify() {
       Assert.equal(row.hasClass("deleted"), willDelete);
     }
   });
-
-  await invalidFormPopupHiddenPromise;
 });
 
 add_task(async function test_edit_field_selected() {
