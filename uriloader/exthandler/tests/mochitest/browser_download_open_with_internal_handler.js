@@ -141,6 +141,22 @@ add_task(async function test_check_open_with_internal_handler() {
     let download = await downloadFinishedPromise;
 
     let subdialogPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
+    
+    BrowserTestUtils.loadURI(newTab.linkedBrowser, TEST_PATH + file);
+    let subDialogWindow = await subdialogPromise;
+    let subDoc = subDialogWindow.document;
+    
+    
+    await waitForAcceptButtonToGetEnabled(subDoc);
+    let subInternalHandlerRadio = subDoc.querySelector("#handleInternally");
+    ok(
+      !subInternalHandlerRadio.hidden,
+      "This option should be shown when the dialog is shown for another PDF"
+    );
+    
+    subDoc.querySelector("#unknownContentType").cancelDialog();
+
+    subdialogPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
     await SpecialPowers.spawn(newTab.linkedBrowser, [], async () => {
       let downloadButton;
       await ContentTaskUtils.waitForCondition(() => {
@@ -153,12 +169,12 @@ add_task(async function test_check_open_with_internal_handler() {
     info(
       "Waiting for unknown content type dialog to appear from pdf.js download button click"
     );
-    let subDialogWindow = await subdialogPromise;
-    let subDoc = subDialogWindow.document;
+    subDialogWindow = await subdialogPromise;
+    subDoc = subDialogWindow.document;
     
     
     await waitForAcceptButtonToGetEnabled(subDoc);
-    let subInternalHandlerRadio = subDoc.querySelector("#handleInternally");
+    subInternalHandlerRadio = subDoc.querySelector("#handleInternally");
     ok(
       subInternalHandlerRadio.hidden,
       "The option should be hidden when the dialog is opened from pdf.js"

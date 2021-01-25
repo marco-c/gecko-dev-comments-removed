@@ -1313,8 +1313,11 @@ nsUnknownContentTypeDialog.prototype = {
     
     if (primaryExtension == "pdf") {
       return (
-        !browsingContext?.currentWindowGlobal?.documentPrincipal?.URI?.schemeIs(
-          "resource"
+        !(
+          this.mLauncher.source.schemeIs("blob") ||
+          this.mLauncher.source.equalsExceptRef(
+            browsingContext.currentWindowGlobal.documentURI
+          )
         ) &&
         !Services.prefs.getBoolPref("pdfjs.disabled", true) &&
         Services.prefs.getBoolPref(
