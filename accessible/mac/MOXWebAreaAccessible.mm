@@ -223,7 +223,21 @@ using namespace mozilla::a11y;
     return YES;
   }
 
+  if (selector == @selector(moxElementBusy)) {
+    
+    return YES;
+  }
+
   return [super moxBlockSelector:selector];
+}
+
+- (void)moxPostNotification:(NSString*)notification {
+  if (![notification isEqualToString:@"AXElementBusyChanged"]) {
+    
+    
+    
+    [super moxPostNotification:notification];
+  }
 }
 
 - (id)rootGroup {

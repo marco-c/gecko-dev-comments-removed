@@ -125,6 +125,9 @@
 - (NSNumber* _Nullable)moxRequired;
 
 
+- (NSNumber* _Nullable)moxElementBusy;
+
+
 - (NSString* _Nullable)moxDOMIdentifier;
 
 

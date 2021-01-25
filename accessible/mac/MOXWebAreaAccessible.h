@@ -39,6 +39,9 @@ using namespace mozilla::a11y;
 - (BOOL)moxBlockSelector:(SEL)selector;
 
 
+- (void)moxPostNotification:(NSString*)notification;
+
+
 - (void)handleAccessibleEvent:(uint32_t)eventType;
 
 

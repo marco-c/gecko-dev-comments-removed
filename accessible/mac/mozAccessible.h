@@ -209,6 +209,9 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 - (NSNumber*)moxRequired;
 
 
+- (NSNumber*)moxElementBusy;
+
+
 - (id)moxEditableAncestor;
 
 
