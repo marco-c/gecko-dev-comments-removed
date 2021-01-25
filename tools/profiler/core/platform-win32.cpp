@@ -150,6 +150,9 @@ static RunningTimes GetThreadRunningTimesDiff(
     }
   }
 
+  
+  newRunningTimes.SetPostMeasurementTimeStamp(TimeStamp::NowUnfuzzed());
+
   RunningTimes diff =
       newRunningTimes - platformData->PreviousThreadRunningTimesRef();
   platformData->PreviousThreadRunningTimesRef() = newRunningTimes;
