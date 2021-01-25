@@ -19,7 +19,6 @@ use smallvec::{smallvec, SmallVec};
 use neqo_common::{qdebug, qinfo, qlog::NeqoQlog, qtrace};
 
 use crate::cc::CongestionControlAlgorithm;
-use crate::cid::ConnectionIdEntry;
 use crate::connection::LOCAL_IDLE_TIMEOUT;
 use crate::crypto::CryptoRecoveryToken;
 use crate::flow_mgr::FlowControlRecoveryToken;
@@ -53,8 +52,6 @@ pub enum RecoveryToken {
     Flow(FlowControlRecoveryToken),
     HandshakeDone,
     NewToken(usize),
-    NewConnectionId(ConnectionIdEntry<[u8; 16]>),
-    RetireConnectionId(u64),
 }
 
 #[derive(Debug)]
@@ -162,13 +159,9 @@ impl Default for RttVals {
 
 #[derive(Debug)]
 pub struct SendProfile {
-    
     limit: usize,
-    
     pto: Option<PNSpace>,
-    
     probe: PNSpaceSet,
-    
     paced: bool,
 }
 
@@ -590,13 +583,12 @@ impl PtoState {
 
     
     
-    pub fn send_profile(&mut self, mtu: usize) -> Option<SendProfile> {
+    pub fn send_profile(&mut self, mtu: usize) -> SendProfile {
         if self.packets > 0 {
-            
             self.packets -= 1;
-            Some(SendProfile::new_pto(self.space, mtu, self.probe))
+            SendProfile::new_pto(self.space, mtu, self.probe)
         } else {
-            None
+            SendProfile::new_limited(0)
         }
     }
 }
@@ -771,8 +763,7 @@ impl LossRecovery {
         
         
         
-        self.packet_sender
-            .on_packets_acked(&acked_packets, self.rtt_vals.min_rtt, now);
+        self.packet_sender.on_packets_acked(&acked_packets);
 
         self.pto_state = None;
 
@@ -1001,22 +992,13 @@ impl LossRecovery {
     
     
     #[allow(clippy::option_if_let_else, clippy::unknown_clippy_lints)]
-    pub fn send_profile(
-        &mut self,
-        now: Instant,
-        mtu: usize,
-        amplification_limit: usize,
-    ) -> SendProfile {
+    pub fn send_profile(&mut self, now: Instant, mtu: usize) -> SendProfile {
         qdebug!([self], "get send profile {:?}", now);
-        if let Some(profile) = self
-            .pto_state
-            .as_mut()
-            .and_then(|pto| pto.send_profile(mtu))
-        {
-            profile
+        if let Some(pto) = self.pto_state.as_mut() {
+            pto.send_profile(mtu)
         } else {
-            let limit = min(self.cwnd_avail(), amplification_limit);
-            if limit > mtu {
+            let cwnd = self.cwnd_avail();
+            if cwnd > mtu {
                 
                 if self.next_paced().map_or(false, |t| t > now) {
                     SendProfile::new_paced()
@@ -1029,7 +1011,7 @@ impl LossRecovery {
                 
                 SendProfile::new_pto(PNSpace::Initial, mtu, PNSpaceSet::all())
             } else {
-                SendProfile::new_limited(limit)
+                SendProfile::new_limited(cwnd)
             }
         }
     }
@@ -1479,33 +1461,10 @@ mod tests {
         
         let expected_pto = pn_time(2) + (INITIAL_RTT * 3) + MAX_ACK_DELAY;
         lr.discard(PNSpace::Handshake, expected_pto);
-        let profile = lr.send_profile(expected_pto, 10000, 10000);
+        let profile = lr.send_profile(expected_pto, 10000);
         assert!(profile.pto.is_some());
         assert!(!profile.should_probe(PNSpace::Initial));
         assert!(!profile.should_probe(PNSpace::Handshake));
         assert!(profile.should_probe(PNSpace::ApplicationData));
-    }
-
-    #[test]
-    fn no_pto_if_amplification_limited() {
-        let mut lr = LossRecovery::new(CongestionControlAlgorithm::NewReno, StatsCell::default());
-        lr.start_pacer(now());
-        lr.on_packet_sent(SentPacket::new(
-            PacketType::Initial,
-            0,
-            now(),
-            true,
-            Vec::new(),
-            ON_SENT_SIZE,
-        ));
-
-        let expected_pto = now() + (INITIAL_RTT * 3);
-        assert_eq!(lr.pto_time(PNSpace::Initial), Some(expected_pto));
-        let profile = lr.send_profile(expected_pto, 10000, 10);
-        assert!(profile.ack_only(PNSpace::Initial));
-        assert!(profile.pto.is_none());
-        assert!(!profile.should_probe(PNSpace::Initial));
-        assert!(!profile.should_probe(PNSpace::Handshake));
-        assert!(!profile.should_probe(PNSpace::ApplicationData));
     }
 }

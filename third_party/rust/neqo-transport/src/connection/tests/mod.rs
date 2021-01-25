@@ -7,24 +7,24 @@
 #![deny(clippy::pedantic)]
 
 use super::{
-    Connection, ConnectionError, ConnectionId, ConnectionIdRef, Output, State, LOCAL_IDLE_TIMEOUT,
+    Connection, ConnectionError, FixedConnectionIdManager, Output, State, LOCAL_IDLE_TIMEOUT,
 };
 use crate::addr_valid::{AddressValidation, ValidateAddress};
 use crate::cc::CWND_INITIAL_PKTS;
 use crate::events::ConnectionEvent;
+use crate::frame::StreamType;
 use crate::path::PATH_MTU_V6;
 use crate::recovery::ACK_ONLY_SIZE_LIMIT;
-use crate::{ConnectionIdDecoder, ConnectionIdGenerator, ConnectionParameters, Error, StreamType};
+use crate::ConnectionParameters;
 
 use std::cell::RefCell;
-use std::convert::TryFrom;
 use std::mem;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use neqo_common::{event::Provider, qdebug, qtrace, Datagram, Decoder};
-use neqo_crypto::{random, AllowZeroRtt, AuthenticationStatus, ResumptionToken};
-use test_fixture::{self, addr, fixture_init, now};
+use neqo_common::{event::Provider, qdebug, qtrace, Datagram};
+use neqo_crypto::{AllowZeroRtt, AuthenticationStatus, ResumptionToken};
+use test_fixture::{self, fixture_init, loopback, now};
 
 
 mod cc;
@@ -32,7 +32,6 @@ mod close;
 mod handshake;
 mod idle;
 mod keys;
-mod migration;
 mod recovery;
 mod resumption;
 mod stream;
@@ -43,82 +42,37 @@ const DEFAULT_RTT: Duration = Duration::from_millis(100);
 const AT_LEAST_PTO: Duration = Duration::from_secs(1);
 const DEFAULT_STREAM_DATA: &[u8] = b"message";
 
-const FORCE_IDLE_CLIENT_1RTT_PACKETS: usize = 3;
 
 
 
 
 
 
-
-
-#[derive(Debug, Default)]
-pub struct CountingConnectionIdGenerator {
-    counter: u32,
-}
-
-impl ConnectionIdDecoder for CountingConnectionIdGenerator {
-    fn decode_cid<'a>(&self, dec: &mut Decoder<'a>) -> Option<ConnectionIdRef<'a>> {
-        let len = usize::from(dec.peek_byte().unwrap());
-        dec.decode(len).map(ConnectionIdRef::from)
-    }
-}
-
-impl ConnectionIdGenerator for CountingConnectionIdGenerator {
-    fn generate_cid(&mut self) -> Option<ConnectionId> {
-        let mut r = random(20);
-        r[0] = 8;
-        r[1] = u8::try_from(self.counter >> 24).unwrap();
-        r[2] = u8::try_from((self.counter >> 16) & 0xff).unwrap();
-        r[3] = u8::try_from((self.counter >> 8) & 0xff).unwrap();
-        r[4] = u8::try_from(self.counter & 0xff).unwrap();
-        self.counter += 1;
-        Some(ConnectionId::from(&r[..8]))
-    }
-
-    fn as_decoder(&self) -> &dyn ConnectionIdDecoder {
-        self
-    }
-}
-
-
-
-
-
-
-
-pub fn new_client(params: ConnectionParameters) -> Connection {
+pub fn default_client() -> Connection {
     fixture_init();
     Connection::new_client(
         test_fixture::DEFAULT_SERVER_NAME,
         test_fixture::DEFAULT_ALPN,
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
-        addr(),
-        addr(),
-        params,
+        Rc::new(RefCell::new(FixedConnectionIdManager::new(3))),
+        loopback(),
+        loopback(),
+        &ConnectionParameters::default(),
     )
     .expect("create a default client")
 }
-pub fn default_client() -> Connection {
-    new_client(ConnectionParameters::default())
-}
-
-pub fn new_server(params: ConnectionParameters) -> Connection {
+pub fn default_server() -> Connection {
     fixture_init();
 
     let mut c = Connection::new_server(
         test_fixture::DEFAULT_KEYS,
         test_fixture::DEFAULT_ALPN,
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
-        params,
+        Rc::new(RefCell::new(FixedConnectionIdManager::new(5))),
+        &ConnectionParameters::default(),
     )
     .expect("create a default server");
     c.server_enable_0rtt(&test_fixture::anti_replay(), AllowZeroRtt {})
         .expect("enable 0-RTT");
     c
-}
-pub fn default_server() -> Connection {
-    new_server(ConnectionParameters::default())
 }
 
 
@@ -152,23 +106,12 @@ fn handshake(
         let output = a.process(input, now).dgram();
         assert!(had_input || output.is_some());
         input = output;
-        qtrace!("handshake: t += {:?}", rtt / 2);
+        qtrace!("t += {:?}", rtt / 2);
         now += rtt / 2;
         mem::swap(&mut a, &mut b);
     }
     let _ = a.process(input, now);
     now
-}
-
-fn connect_fail(
-    client: &mut Connection,
-    server: &mut Connection,
-    client_error: Error,
-    server_error: Error,
-) {
-    handshake(client, server, now(), Duration::new(0, 0));
-    assert_error(client, &ConnectionError::Transport(client_error));
-    assert_error(server, &ConnectionError::Transport(server_error));
 }
 
 fn connect_with_rtt(
@@ -179,7 +122,7 @@ fn connect_with_rtt(
 ) -> Instant {
     let now = handshake(client, server, now, rtt);
     assert_eq!(*client.state(), State::Confirmed);
-    assert_eq!(*server.state(), State::Confirmed);
+    assert_eq!(*client.state(), State::Confirmed);
 
     assert_eq!(client.loss_recovery.rtt(), rtt);
     assert_eq!(server.loss_recovery.rtt(), rtt);
@@ -218,50 +161,25 @@ fn exchange_ticket(
 
 
 
-fn force_idle(
-    client: &mut Connection,
-    server: &mut Connection,
-    rtt: Duration,
-    mut now: Instant,
-) -> Instant {
-    
-    
-    qtrace!("force_idle: send reordered client packets");
-    let c1 = send_something(client, now);
-    let c2 = send_something(client, now);
-    now += rtt / 2;
-    server.process_input(c2, now);
-    server.process_input(c1, now);
 
-    
-    qtrace!("force_idle: send reordered server packets");
-    let s1 = send_something(server, now);
-    let s2 = send_something(server, now);
+fn connect_rtt_idle(client: &mut Connection, server: &mut Connection, rtt: Duration) -> Instant {
+    let mut now = connect_with_rtt(client, server, now(), rtt);
+    let p1 = send_something(server, now);
+    let p2 = send_something(server, now);
     now += rtt / 2;
     
-    client.process_input(s2, now);
+    client.process_input(p2, now);
     
-    let ack = client.process(Some(s1), now).dgram();
+    let ack = client.process(Some(p1), now).dgram();
     assert!(ack.is_some());
-    assert_eq!(
-        client.process_output(now),
-        Output::Callback(LOCAL_IDLE_TIMEOUT)
-    );
-    now += rtt / 2;
     assert_eq!(
         server.process(ack, now),
         Output::Callback(LOCAL_IDLE_TIMEOUT)
     );
-    now
-}
-
-
-fn connect_rtt_idle(client: &mut Connection, server: &mut Connection, rtt: Duration) -> Instant {
-    let now = connect_with_rtt(client, server, now(), rtt);
-    let now = force_idle(client, server, rtt, now);
-    
-    let _ = client.events().count();
-    let _ = server.events().count();
+    assert_eq!(
+        client.process_output(now),
+        Output::Callback(LOCAL_IDLE_TIMEOUT)
+    );
     now
 }
 
@@ -329,8 +247,7 @@ const POST_HANDSHAKE_CWND: usize = PATH_MTU_V6 * CWND_INITIAL_PKTS;
 
 
 const fn cwnd_packets(data: usize) -> usize {
-    
-    (data + PATH_MTU_V6 - ACK_ONLY_SIZE_LIMIT) / PATH_MTU_V6
+    (data + ACK_ONLY_SIZE_LIMIT - 1) / PATH_MTU_V6
 }
 
 

@@ -13,17 +13,15 @@ use neqo_crypto::{
     constants::{TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3},
     hkdf,
     hp::HpKey,
-    AllowZeroRtt, AuthenticationStatus, ResumptionToken, ZeroRttCheckResult, ZeroRttChecker,
+    AllowZeroRtt, AuthenticationStatus, ResumptionToken,
 };
 use neqo_transport::{
     server::{ActiveConnectionRef, Server, ValidateAddress},
-    stream_id::StreamIndex,
-    Connection, ConnectionError, ConnectionEvent, ConnectionParameters, Error, Output, QuicVersion,
-    State, StreamType,
+    Connection, ConnectionError, ConnectionEvent, ConnectionParameters, Error,
+    FixedConnectionIdManager, Output, QuicVersion, State, StreamType, LOCAL_STREAM_LIMIT_BIDI,
+    LOCAL_STREAM_LIMIT_UNI,
 };
-use test_fixture::{
-    self, addr, assertions, default_client, now, split_datagram, CountingConnectionIdGenerator,
-};
+use test_fixture::{self, assertions, default_client, loopback, now, split_datagram};
 
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -40,7 +38,7 @@ fn default_server() -> Server {
         test_fixture::DEFAULT_ALPN,
         test_fixture::anti_replay(),
         Box::new(AllowZeroRtt {}),
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
+        Rc::new(RefCell::new(FixedConnectionIdManager::new(9))),
         ConnectionParameters::default(),
     )
     .expect("should create a server")
@@ -221,93 +219,12 @@ fn drop_non_initial() {
     let mut bogus_data: Vec<u8> = header.into();
     bogus_data.resize(1200, 66);
 
-    let bogus = Datagram::new(test_fixture::addr(), test_fixture::addr(), bogus_data);
+    let bogus = Datagram::new(
+        test_fixture::loopback(),
+        test_fixture::loopback(),
+        bogus_data,
+    );
     assert!(server.process(Some(bogus), now()).dgram().is_none());
-}
-
-#[test]
-fn drop_short_initial() {
-    const CID: &[u8] = &[55; 8]; 
-    let mut server = default_server();
-
-    
-    let mut header = neqo_common::Encoder::with_capacity(1199);
-    header
-        .encode_byte(0xca)
-        .encode_uint(4, QuicVersion::default().as_u32())
-        .encode_vec(1, CID)
-        .encode_vec(1, CID);
-    let mut bogus_data: Vec<u8> = header.into();
-    bogus_data.resize(1199, 66);
-
-    let bogus = Datagram::new(test_fixture::addr(), test_fixture::addr(), bogus_data);
-    assert!(server.process(Some(bogus), now()).dgram().is_none());
-}
-
-
-
-
-
-#[test]
-fn zero_rtt() {
-    let mut server = default_server();
-    let token = get_ticket(&mut server);
-
-    
-    let mut now = now();
-    let t = server.process(None, now).callback();
-    now += t;
-    assert_eq!(server.process(None, now), Output::None);
-    assert_eq!(server.active_connections().len(), 1);
-
-    let start_time = now;
-    let mut client = default_client();
-    client.enable_resumption(now, &token).unwrap();
-
-    let mut client_send = || {
-        let client_stream = client.stream_create(StreamType::UniDi).unwrap();
-        client.stream_send(client_stream, &[1, 2, 3]).unwrap();
-        match client.process(None, now) {
-            Output::Datagram(d) => d,
-            Output::Callback(t) => {
-                
-                now += t;
-                client.process(None, now).dgram().unwrap()
-            }
-            Output::None => panic!(),
-        }
-    };
-
-    
-    let c1 = client_send();
-    assertions::assert_coalesced_0rtt(&c1);
-    let c2 = client_send();
-    let c3 = client_send();
-    let c4 = client_send();
-
-    
-    let _ = server.process(Some(c2), now);
-    assert!(server.active_connections().is_empty());
-
-    
-    let shs = server.process(Some(c1), now).dgram();
-    let _ = server.process(Some(c3), now);
-    
-    let active = server.active_connections();
-    assert_eq!(active.len(), 1);
-    assert_eq!(active[0].borrow().stats().frame_rx.stream, 2);
-
-    
-    
-    now += now - start_time;
-    let cfin = client.process(shs, now).dgram();
-    let _ = server.process(cfin, now);
-
-    
-    let _ = server.process(Some(c4), now);
-    let active = server.active_connections();
-    assert_eq!(active.len(), 1);
-    assert_eq!(active[0].borrow().stats().frame_rx.stream, 2);
 }
 
 #[test]
@@ -367,7 +284,9 @@ fn get_ticket(server: &mut Server) -> ResumptionToken {
     let dgram = server.process(None, now()).dgram();
     client.process_input(dgram.unwrap(), now()); 
 
-    let ticket = client
+    
+    assert_eq!(server.active_connections().len(), 1);
+    client
         .events()
         .find_map(|e| {
             if let ConnectionEvent::ResumptionToken(token) = e {
@@ -376,15 +295,7 @@ fn get_ticket(server: &mut Server) -> ResumptionToken {
                 None
             }
         })
-        .unwrap();
-
-    
-    client.close(now(), 0, "got a ticket");
-    let dgram = client.process_output(now()).dgram();
-    let _ = server.process(dgram, now());
-    
-    assert_eq!(server.active_connections().len(), 1);
-    ticket
+        .unwrap()
 }
 
 
@@ -684,7 +595,7 @@ fn vn_after_retry() {
     encoder.encode_vec(1, &client.odcid().unwrap()[..]);
     encoder.encode_vec(1, &[]);
     encoder.encode_uint(4, 0x5a5a_6a6a_u64);
-    let vn = Datagram::new(addr(), addr(), encoder);
+    let vn = Datagram::new(loopback(), loopback(), encoder);
 
     assert_ne!(
         client.process(Some(vn), now()).callback(),
@@ -1031,7 +942,7 @@ fn closed() {
     assert_eq!(res, Output::None);
 }
 
-fn can_create_streams(c: &mut Connection, t: StreamType, n: u64) {
+fn can_create_streams(c: &mut Connection, t: StreamType, n: usize) {
     for _ in 0..n {
         c.stream_create(t).unwrap();
     }
@@ -1047,10 +958,10 @@ fn max_streams() {
         test_fixture::DEFAULT_ALPN,
         test_fixture::anti_replay(),
         Box::new(AllowZeroRtt {}),
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
+        Rc::new(RefCell::new(FixedConnectionIdManager::new(9))),
         ConnectionParameters::default()
-            .max_streams(StreamType::BiDi, StreamIndex::new(MAX_STREAMS))
-            .max_streams(StreamType::UniDi, StreamIndex::new(MAX_STREAMS)),
+            .max_streams(StreamType::BiDi, MAX_STREAMS)
+            .max_streams(StreamType::UniDi, MAX_STREAMS),
     )
     .expect("should create a server");
 
@@ -1058,8 +969,16 @@ fn max_streams() {
     connect(&mut client, &mut server);
 
     
-    can_create_streams(&mut client, StreamType::UniDi, MAX_STREAMS);
-    can_create_streams(&mut client, StreamType::BiDi, MAX_STREAMS);
+    can_create_streams(
+        &mut client,
+        StreamType::UniDi,
+        usize::try_from(MAX_STREAMS).unwrap(),
+    );
+    can_create_streams(
+        &mut client,
+        StreamType::BiDi,
+        usize::try_from(MAX_STREAMS).unwrap(),
+    );
 }
 
 #[test]
@@ -1070,7 +989,7 @@ fn max_streams_default() {
         test_fixture::DEFAULT_ALPN,
         test_fixture::anti_replay(),
         Box::new(AllowZeroRtt {}),
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
+        Rc::new(RefCell::new(FixedConnectionIdManager::new(9))),
         ConnectionParameters::default(),
     )
     .expect("should create a server");
@@ -1079,46 +998,14 @@ fn max_streams_default() {
     connect(&mut client, &mut server);
 
     
-    let local_limit_unidi = ConnectionParameters::default().get_max_streams(StreamType::UniDi);
-    can_create_streams(&mut client, StreamType::UniDi, local_limit_unidi.as_u64());
-    let local_limit_bidi = ConnectionParameters::default().get_max_streams(StreamType::BiDi);
-    can_create_streams(&mut client, StreamType::BiDi, local_limit_bidi.as_u64());
-}
-
-#[derive(Debug)]
-struct RejectZeroRtt {}
-impl ZeroRttChecker for RejectZeroRtt {
-    fn check(&self, _token: &[u8]) -> ZeroRttCheckResult {
-        ZeroRttCheckResult::Reject
-    }
-}
-
-#[test]
-fn max_streams_after_0rtt_rejection() {
-    const MAX_STREAMS: u64 = 40;
-    let mut server = Server::new(
-        now(),
-        test_fixture::DEFAULT_KEYS,
-        test_fixture::DEFAULT_ALPN,
-        test_fixture::anti_replay(),
-        Box::new(RejectZeroRtt {}),
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
-        ConnectionParameters::default()
-            .max_streams(StreamType::BiDi, StreamIndex::new(MAX_STREAMS))
-            .max_streams(StreamType::UniDi, StreamIndex::new(MAX_STREAMS)),
-    )
-    .expect("should create a server");
-    let token = get_ticket(&mut server);
-
-    let mut client = default_client();
-    client.enable_resumption(now(), &token).unwrap();
-    let _ = client.stream_create(StreamType::BiDi).unwrap();
-    let dgram = client.process_output(now()).dgram();
-    let dgram = server.process(dgram, now()).dgram();
-    let dgram = client.process(dgram, now()).dgram();
-    assert!(dgram.is_some()); 
-
-    
-    can_create_streams(&mut client, StreamType::UniDi, MAX_STREAMS);
-    can_create_streams(&mut client, StreamType::BiDi, MAX_STREAMS);
+    can_create_streams(
+        &mut client,
+        StreamType::UniDi,
+        usize::try_from(LOCAL_STREAM_LIMIT_UNI).unwrap(),
+    );
+    can_create_streams(
+        &mut client,
+        StreamType::BiDi,
+        usize::try_from(LOCAL_STREAM_LIMIT_BIDI).unwrap(),
+    );
 }

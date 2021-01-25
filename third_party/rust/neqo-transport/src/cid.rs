@@ -6,43 +6,24 @@
 
 
 
-use crate::frame::FRAME_TYPE_NEW_CONNECTION_ID;
-use crate::packet::PacketBuilder;
-use crate::recovery::RecoveryToken;
-use crate::stats::FrameStats;
-use crate::{Error, Res};
-
-use neqo_common::{hex, hex_with_len, qinfo, Decoder, Encoder};
+use neqo_common::{hex, hex_with_len, Decoder};
 use neqo_crypto::random;
 
-use smallvec::SmallVec;
 use std::borrow::Borrow;
-use std::cell::{Ref, RefCell};
 use std::cmp::max;
-use std::cmp::min;
 use std::convert::AsRef;
-use std::convert::TryFrom;
-use std::ops::Deref;
-use std::rc::Rc;
 
 pub const MAX_CONNECTION_ID_LEN: usize = 20;
-pub const LOCAL_ACTIVE_CID_LIMIT: usize = 8;
-pub const CONNECTION_ID_SEQNO_INITIAL: u64 = 0;
-pub const CONNECTION_ID_SEQNO_PREFERRED: u64 = 1;
-
-const CONNECTION_ID_SEQNO_ODCID: u64 = u64::MAX;
-
-const CONNECTION_ID_SEQNO_EMPTY: u64 = u64::MAX - 1;
 
 #[derive(Clone, Default, Eq, Hash, PartialEq)]
 pub struct ConnectionId {
-    pub(crate) cid: SmallVec<[u8; MAX_CONNECTION_ID_LEN]>,
+    pub(crate) cid: Vec<u8>,
 }
 
 impl ConnectionId {
     pub fn generate(len: usize) -> Self {
         assert!(matches!(len, 0..=MAX_CONNECTION_ID_LEN));
-        Self::from(random(len))
+        Self { cid: random(len) }
     }
 
     
@@ -70,27 +51,19 @@ impl Borrow<[u8]> for ConnectionId {
     }
 }
 
-impl From<SmallVec<[u8; MAX_CONNECTION_ID_LEN]>> for ConnectionId {
-    fn from(cid: SmallVec<[u8; MAX_CONNECTION_ID_LEN]>) -> Self {
-        Self { cid }
-    }
-}
-
-impl From<Vec<u8>> for ConnectionId {
-    fn from(cid: Vec<u8>) -> Self {
-        Self::from(SmallVec::from(cid))
-    }
-}
-
-impl<T: AsRef<[u8]> + ?Sized> From<&T> for ConnectionId {
-    fn from(buf: &T) -> Self {
-        Self::from(SmallVec::from(buf.as_ref()))
+impl From<&[u8]> for ConnectionId {
+    fn from(buf: &[u8]) -> Self {
+        Self {
+            cid: Vec::from(buf),
+        }
     }
 }
 
 impl<'a> From<&ConnectionIdRef<'a>> for ConnectionId {
     fn from(cidref: &ConnectionIdRef<'a>) -> Self {
-        Self::from(SmallVec::from(cidref.cid))
+        Self {
+            cid: Vec::from(cidref.cid),
+        }
     }
 }
 
@@ -137,9 +110,9 @@ impl<'a> ::std::fmt::Display for ConnectionIdRef<'a> {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> From<&'a T> for ConnectionIdRef<'a> {
-    fn from(cid: &'a T) -> Self {
-        Self { cid: cid.as_ref() }
+impl<'a> From<&'a [u8]> for ConnectionIdRef<'a> {
+    fn from(cid: &'a [u8]) -> Self {
+        Self { cid }
     }
 }
 
@@ -158,416 +131,12 @@ impl<'a> PartialEq<ConnectionId> for ConnectionIdRef<'a> {
 }
 
 pub trait ConnectionIdDecoder {
-    
     fn decode_cid<'a>(&self, dec: &mut Decoder<'a>) -> Option<ConnectionIdRef<'a>>;
 }
 
-pub trait ConnectionIdGenerator: ConnectionIdDecoder {
-    
-    
-    fn generate_cid(&mut self) -> Option<ConnectionId>;
-    
-    
-    
-    
-    
-    
-    
-    
-    fn generates_empty_cids(&self) -> bool {
-        false
-    }
+pub trait ConnectionIdManager: ConnectionIdDecoder {
+    fn generate_cid(&mut self) -> ConnectionId;
     fn as_decoder(&self) -> &dyn ConnectionIdDecoder;
-}
-
-
-#[derive(Default)]
-pub struct EmptyConnectionIdGenerator {}
-
-impl ConnectionIdDecoder for EmptyConnectionIdGenerator {
-    fn decode_cid<'a>(&self, _: &mut Decoder<'a>) -> Option<ConnectionIdRef<'a>> {
-        Some(ConnectionIdRef::from(&[]))
-    }
-}
-
-impl ConnectionIdGenerator for EmptyConnectionIdGenerator {
-    fn generate_cid(&mut self) -> Option<ConnectionId> {
-        Some(ConnectionId::from(&[]))
-    }
-    fn as_decoder(&self) -> &dyn ConnectionIdDecoder {
-        self
-    }
-    fn generates_empty_cids(&self) -> bool {
-        true
-    }
-}
-
-
-
-
-pub struct RandomConnectionIdGenerator {
-    len: usize,
-}
-
-impl RandomConnectionIdGenerator {
-    pub fn new(len: usize) -> Self {
-        Self { len }
-    }
-}
-
-impl ConnectionIdDecoder for RandomConnectionIdGenerator {
-    fn decode_cid<'a>(&self, dec: &mut Decoder<'a>) -> Option<ConnectionIdRef<'a>> {
-        dec.decode(self.len).map(ConnectionIdRef::from)
-    }
-}
-
-impl ConnectionIdGenerator for RandomConnectionIdGenerator {
-    fn generate_cid(&mut self) -> Option<ConnectionId> {
-        Some(ConnectionId::from(&random(self.len)))
-    }
-
-    fn as_decoder(&self) -> &dyn ConnectionIdDecoder {
-        self
-    }
-
-    fn generates_empty_cids(&self) -> bool {
-        self.len == 0
-    }
-}
-
-
-
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct ConnectionIdEntry<SRT: Clone + PartialEq> {
-    
-    seqno: u64,
-    
-    cid: ConnectionId,
-    
-    srt: SRT,
-}
-
-impl ConnectionIdEntry<[u8; 16]> {
-    
-    
-    fn random_srt() -> [u8; 16] {
-        <[u8; 16]>::try_from(&random(16)[..]).unwrap()
-    }
-
-    
-    pub fn initial_remote(cid: ConnectionId) -> Self {
-        Self::new(CONNECTION_ID_SEQNO_INITIAL, cid, Self::random_srt())
-    }
-
-    
-    
-    pub fn empty_remote() -> Self {
-        Self::new(
-            CONNECTION_ID_SEQNO_EMPTY,
-            ConnectionId::from(&[]),
-            Self::random_srt(),
-        )
-    }
-
-    fn token_equal(a: &[u8; 16], b: &[u8; 16]) -> bool {
-        
-        
-        let mut c = 0;
-        for (&a, &b) in a.iter().zip(b) {
-            c |= a ^ b;
-        }
-        c == 0
-    }
-
-    
-    pub fn is_stateless_reset(&self, token: &[u8; 16]) -> bool {
-        
-        (self.seqno < (1 << 62)) && Self::token_equal(&self.srt, token)
-    }
-
-    
-    fn any_part_equal(&self, other: &Self) -> bool {
-        self.seqno == other.seqno || self.cid == other.cid || self.srt == other.srt
-    }
-
-    
-    pub fn sequence_number(&self) -> u64 {
-        self.seqno
-    }
-}
-
-impl ConnectionIdEntry<()> {
-    
-    pub fn initial_local(cid: ConnectionId) -> Self {
-        Self::new(0, cid, ())
-    }
-}
-
-impl<SRT: Clone + PartialEq> ConnectionIdEntry<SRT> {
-    pub fn new(seqno: u64, cid: ConnectionId, srt: SRT) -> Self {
-        Self { seqno, cid, srt }
-    }
-
-    
-    pub fn set_stateless_reset_token(&mut self, srt: SRT) {
-        assert_eq!(self.seqno, CONNECTION_ID_SEQNO_INITIAL);
-        self.srt = srt;
-    }
-
-    
-    pub fn update_cid(&mut self, cid: ConnectionId) {
-        assert_eq!(self.seqno, CONNECTION_ID_SEQNO_INITIAL);
-        self.cid = cid;
-    }
-
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.cid
-    }
-}
-
-pub type RemoteConnectionIdEntry = ConnectionIdEntry<[u8; 16]>;
-
-
-
-#[derive(Debug, Default)]
-pub struct ConnectionIdStore<SRT: Clone + PartialEq> {
-    cids: SmallVec<[ConnectionIdEntry<SRT>; 8]>,
-}
-
-impl<SRT: Clone + PartialEq> ConnectionIdStore<SRT> {
-    pub fn retire(&mut self, seqno: u64) {
-        self.cids.retain(|c| c.seqno != seqno);
-    }
-
-    pub fn contains(&self, cid: &ConnectionIdRef) -> bool {
-        self.cids.iter().any(|c| &c.cid == cid)
-    }
-
-    pub fn next(&mut self) -> Option<ConnectionIdEntry<SRT>> {
-        if self.cids.is_empty() {
-            None
-        } else {
-            Some(self.cids.remove(0))
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.cids.len()
-    }
-}
-
-impl ConnectionIdStore<[u8; 16]> {
-    pub fn add_remote(&mut self, entry: ConnectionIdEntry<[u8; 16]>) -> Res<()> {
-        
-        if self.cids.iter().any(|c| c == &entry) {
-            return Ok(());
-        }
-        
-        if self.cids.iter().any(|c| c.any_part_equal(&entry)) {
-            qinfo!("ConnectionIdStore found reused part in NEW_CONNECTION_ID");
-            return Err(Error::ProtocolViolation);
-        }
-        if self.cids.len() >= LOCAL_ACTIVE_CID_LIMIT {
-            qinfo!("ConnectionIdStore received too many connection IDs");
-            return Err(Error::ConnectionIdLimitExceeded);
-        }
-
-        self.cids.push(entry);
-        Ok(())
-    }
-}
-
-impl ConnectionIdStore<()> {
-    fn add_local(&mut self, entry: ConnectionIdEntry<()>) {
-        self.cids.push(entry);
-    }
-}
-
-pub struct ConnectionIdDecoderRef<'a> {
-    generator: Ref<'a, dyn ConnectionIdGenerator>,
-}
-
-
-
-impl<'a: 'b, 'b> ConnectionIdDecoderRef<'a> {
-    pub fn as_ref(&'a self) -> &'b dyn ConnectionIdDecoder {
-        self.generator.as_decoder()
-    }
-}
-
-
-
-
-pub struct ConnectionIdManager {
-    
-    generator: Rc<RefCell<dyn ConnectionIdGenerator>>,
-    
-    
-    
-    connection_ids: ConnectionIdStore<()>,
-    
-    
-    limit: usize,
-    
-    next_seqno: u64,
-    
-    lost_new_connection_id: Vec<ConnectionIdEntry<[u8; 16]>>,
-}
-
-impl ConnectionIdManager {
-    pub fn new(generator: Rc<RefCell<dyn ConnectionIdGenerator>>, initial: ConnectionId) -> Self {
-        let mut connection_ids = ConnectionIdStore::default();
-        connection_ids.add_local(ConnectionIdEntry::initial_local(initial));
-        Self {
-            generator,
-            connection_ids,
-            
-            
-            
-            
-            
-            
-            
-            limit: 2,
-            next_seqno: 2, 
-            lost_new_connection_id: Vec::new(),
-        }
-    }
-
-    pub fn decoder(&self) -> ConnectionIdDecoderRef {
-        ConnectionIdDecoderRef {
-            generator: self.generator.deref().borrow(),
-        }
-    }
-
-    
-    pub fn preferred_address_cid(&mut self) -> Res<(ConnectionId, [u8; 16])> {
-        if self.generator.deref().borrow().generates_empty_cids() {
-            return Err(Error::ConnectionIdsExhausted);
-        }
-        if let Some(cid) = self.generator.borrow_mut().generate_cid() {
-            assert_ne!(cid.len(), 0);
-            self.connection_ids.add_local(ConnectionIdEntry::new(
-                CONNECTION_ID_SEQNO_PREFERRED,
-                cid.clone(),
-                (),
-            ));
-
-            let srt = <[u8; 16]>::try_from(&random(16)[..]).unwrap();
-            Ok((cid, srt))
-        } else {
-            Err(Error::ConnectionIdsExhausted)
-        }
-    }
-
-    pub fn is_valid(&self, cid: &ConnectionIdRef) -> bool {
-        self.connection_ids.contains(cid)
-    }
-
-    pub fn retire(&mut self, seqno: u64) {
-        
-
-        self.connection_ids.retire(seqno);
-        self.lost_new_connection_id.retain(|cid| cid.seqno != seqno);
-    }
-
-    
-    
-    pub fn add_odcid(&mut self, cid: ConnectionId) {
-        let entry = ConnectionIdEntry::new(CONNECTION_ID_SEQNO_ODCID, cid, ());
-        self.connection_ids.add_local(entry);
-    }
-
-    
-    pub fn remove_odcid(&mut self) {
-        self.connection_ids.retire(CONNECTION_ID_SEQNO_ODCID);
-    }
-
-    pub fn set_limit(&mut self, limit: u64) {
-        debug_assert!(limit >= 2);
-        self.limit = min(
-            LOCAL_ACTIVE_CID_LIMIT,
-            usize::try_from(limit).unwrap_or(LOCAL_ACTIVE_CID_LIMIT),
-        );
-    }
-
-    fn write_entry(
-        &mut self,
-        entry: &ConnectionIdEntry<[u8; 16]>,
-        builder: &mut PacketBuilder,
-        stats: &mut FrameStats,
-    ) -> Res<bool> {
-        let len = 1 + Encoder::varint_len(entry.seqno) + 1 + 1 + entry.cid.len() + 16;
-        if builder.remaining() < len {
-            return Ok(false);
-        }
-
-        builder.encode_varint(FRAME_TYPE_NEW_CONNECTION_ID);
-        builder.encode_varint(entry.seqno);
-        builder.encode_varint(0u64);
-        builder.encode_vec(1, &entry.cid);
-        builder.encode(&entry.srt);
-        if builder.len() > builder.limit() {
-            return Err(Error::InternalError(8));
-        }
-
-        stats.new_connection_id += 1;
-        Ok(true)
-    }
-
-    pub fn write_frames(
-        &mut self,
-        builder: &mut PacketBuilder,
-        tokens: &mut Vec<RecoveryToken>,
-        stats: &mut FrameStats,
-    ) -> Res<()> {
-        if self.generator.deref().borrow().generates_empty_cids() {
-            debug_assert_eq!(self.generator.borrow_mut().generate_cid().unwrap().len(), 0);
-            return Ok(());
-        }
-
-        while let Some(entry) = self.lost_new_connection_id.pop() {
-            if self.write_entry(&entry, builder, stats)? {
-                tokens.push(RecoveryToken::NewConnectionId(entry));
-            } else {
-                
-                self.lost_new_connection_id.push(entry);
-                break;
-            }
-        }
-
-        
-        
-        
-        while self.connection_ids.len() < self.limit && builder.remaining() >= 47 {
-            let maybe_cid = self.generator.borrow_mut().generate_cid();
-            if let Some(cid) = maybe_cid {
-                assert_ne!(cid.len(), 0);
-                
-                let srt = <[u8; 16]>::try_from(&random(16)[..]).unwrap();
-
-                let seqno = self.next_seqno;
-                self.next_seqno += 1;
-                self.connection_ids
-                    .add_local(ConnectionIdEntry::new(seqno, cid.clone(), ()));
-
-                let entry = ConnectionIdEntry::new(seqno, cid, srt);
-                debug_assert!(self.write_entry(&entry, builder, stats)?);
-                tokens.push(RecoveryToken::NewConnectionId(entry));
-            }
-        }
-        Ok(())
-    }
-
-    pub fn lost(&mut self, entry: &ConnectionIdEntry<[u8; 16]>) {
-        self.lost_new_connection_id.push(entry.clone());
-    }
-
-    pub fn acked(&mut self, entry: &ConnectionIdEntry<[u8; 16]>) {
-        self.lost_new_connection_id
-            .retain(|e| e.seqno != entry.seqno);
-    }
 }
 
 #[cfg(test)]
