@@ -6,6 +6,7 @@
 
 
 #import "mozSelectableElements.h"
+#import "MOXWebAreaAccessible.h"
 #import "MacUtils.h"
 #include "Accessible-inl.h"
 #include "nsCocoaUtils.h"
@@ -18,7 +19,16 @@ using namespace mozilla::a11y;
 
 
 - (NSArray*)selectableChildren {
-  return [[self moxUnignoredChildren]
+  NSArray* toFilter;
+  if ([self isKindOfClass:[mozMenuAccessible class]]) {
+    
+    
+    
+    toFilter = [static_cast<mozMenuAccessible*>(self) moxVisibleChildren];
+  } else {
+    toFilter = [self moxUnignoredChildren];
+  }
+  return [toFilter
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(
                                                    mozAccessible* child,
                                                    NSDictionary* bindings) {
@@ -38,14 +48,13 @@ using namespace mozilla::a11y;
 
 
 - (NSArray*)moxSelectedChildren {
-  return [[self moxUnignoredChildren]
+  return [[self selectableChildren]
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(
                                                    mozAccessible* child,
                                                    NSDictionary* bindings) {
         
         
-        return [child isKindOfClass:[mozSelectableChildAccessible class]] &&
-               [[(mozSelectableChildAccessible*)child moxSelected] boolValue];
+        return [[(mozSelectableChildAccessible*)child moxSelected] boolValue];
       }]];
 }
 
@@ -154,20 +163,38 @@ using namespace mozilla::a11y;
   return @"";
 }
 
-- (NSArray*)moxChildren {
+- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent {
   
   
   
   
   
   
-  if (mIsOpened) {
-    return [super moxChildren];
+  if ([parent isKindOfClass:[MOXWebAreaAccessible class]] ||
+      [parent isKindOfClass:[MOXRootGroup class]]) {
+    
+    return [super moxIgnoreWithParent:parent];
   }
-  return nil;
+
+  if ([parent isKindOfClass:[mozMenuItemAccessible class]] &&
+      [parent geckoAccessible].Role() == roles::PARENT_MENUITEM) {
+    
+    
+    id grandparent = [parent moxUnignoredParent];
+    if ([grandparent isKindOfClass:[mozMenuAccessible class]]) {
+      mozMenuAccessible* parentMenu =
+          static_cast<mozMenuAccessible*>(grandparent);
+      return ![parentMenu isOpened];
+    }
+  }
+
+  
+  
+  return [super moxIgnoreWithParent:parent];
 }
 
 - (NSArray*)moxVisibleChildren {
+  
   
   
   
@@ -188,8 +215,7 @@ using namespace mozilla::a11y;
 
 - (id)moxTitleUIElement {
   id parent = [self moxUnignoredParent];
-  if ([parent isKindOfClass:[mozAccessible class]] &&
-      [parent geckoAccessible].Role() == roles::PARENT_MENUITEM) {
+  if (parent && [parent isKindOfClass:[mozAccessible class]]) {
     return parent;
   }
 
@@ -216,12 +242,46 @@ using namespace mozilla::a11y;
   [super expire];
 }
 
+- (BOOL)isOpened {
+  return mIsOpened;
+}
+
 @end
 
 @implementation mozMenuItemAccessible
 
 - (NSString*)moxLabel {
   return @"";
+}
+
+- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent {
+  
+  
+  
+  
+  
+  
+  mozAccessible* grandparent =
+      GetNativeFromGeckoAccessible([parent geckoAccessible].Parent());
+  if ([grandparent isKindOfClass:[MOXWebAreaAccessible class]]) {
+    return [parent moxIgnoreWithParent:grandparent];
+  }
+
+  grandparent = [parent moxUnignoredParent];
+  if ([grandparent isKindOfClass:[mozMenuItemAccessible class]]) {
+    mozMenuItemAccessible* acc =
+        static_cast<mozMenuItemAccessible*>(grandparent);
+    if ([acc geckoAccessible].Role() == roles::PARENT_MENUITEM) {
+      mozMenuAccessible* parentMenu = static_cast<mozMenuAccessible*>(parent);
+      
+      
+      return ![parentMenu isOpened];
+    }
+  }
+
+  
+  
+  return [super moxIgnoreWithParent:parent];
 }
 
 - (NSString*)moxMenuItemMarkChar {

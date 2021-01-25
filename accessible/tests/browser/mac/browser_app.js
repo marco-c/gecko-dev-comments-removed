@@ -206,7 +206,8 @@ add_task(async () => {
         { type: "contextmenu" },
         browser
       );
-      await BrowserTestUtils.waitForPopupEvent(menu, "shown");
+      await waitForMacEvent("AXMenuOpened");
+
       menu = await getMacAccessible(menu);
       const menuChildren = menu.getAttributeValue("AXChildren");
       
@@ -236,24 +237,21 @@ add_task(async () => {
       
       
       is(
-        menuChildren[1].getAttributeValue("AXChildren").length,
-        0,
-        "Submenu 1 has no chldren when hidden"
+        menuChildren[1].getAttributeValue("AXVisibleChildren"),
+        null,
+        "Submenu 1 has no visible chldren when hidden"
       );
       is(
-        menuChildren[11].getAttributeValue("AXChildren").length,
-        0,
-        "Submenu 2 has no chldren when hidden"
+        menuChildren[11].getAttributeValue("AXVisibleChildren"),
+        null,
+        "Submenu 2 has no visible chldren when hidden"
       );
 
       
-      const contextMenu = document.getElementById(
-        "context-openlinkinusercontext-menu"
-      );
       EventUtils.synthesizeKey("KEY_ArrowDown");
       EventUtils.synthesizeKey("KEY_ArrowDown");
       EventUtils.synthesizeKey("KEY_ArrowRight");
-      await BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+      await waitForMacEvent("AXMenuOpened");
 
       
       is(
