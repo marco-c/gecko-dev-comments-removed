@@ -137,7 +137,6 @@ for (const type of [
   "SUBMIT_SIGNIN",
   "SYSTEM_TICK",
   "TELEMETRY_IMPRESSION_STATS",
-  "TELEMETRY_UNDESIRED_EVENT",
   "TELEMETRY_USER_EVENT",
   "TOP_SITES_CANCEL_EDIT",
   "TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL",
@@ -309,21 +308,6 @@ function ASRouterUserEvent(data) {
 
 
 
-function UndesiredEvent(data, importContext = globalImportContext) {
-  const action = {
-    type: actionTypes.TELEMETRY_UNDESIRED_EVENT,
-    data,
-  };
-  return importContext === UI_CODE ? AlsoToMain(action) : action;
-}
-
-
-
-
-
-
-
-
 function ImpressionStats(data, importContext = globalImportContext) {
   const action = {
     type: actionTypes.TELEMETRY_IMPRESSION_STATS,
@@ -389,7 +373,6 @@ this.actionCreators = {
   BroadcastToContent,
   UserEvent,
   ASRouterUserEvent,
-  UndesiredEvent,
   ImpressionStats,
   AlsoToOneContent,
   OnlyToOneContent,
