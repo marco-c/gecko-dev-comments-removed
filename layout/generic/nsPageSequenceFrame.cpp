@@ -504,11 +504,13 @@ static void GetPrintCanvasElementsInFrame(
   }
 }
 
-nsIFrame* nsPageSequenceFrame::GetCurrentSheetFrame() {
+PrintedSheetFrame* nsPageSequenceFrame::GetCurrentSheetFrame() {
   uint32_t i = 0;
   for (nsIFrame* child : mFrames) {
+    MOZ_ASSERT(child->IsPrintedSheetFrame(),
+               "Our children must all be PrintedSheetFrame");
     if (i == mCurrentSheetIdx) {
-      return child;
+      return static_cast<PrintedSheetFrame*>(child);
     }
     ++i;
   }
@@ -517,7 +519,7 @@ nsIFrame* nsPageSequenceFrame::GetCurrentSheetFrame() {
 
 nsresult nsPageSequenceFrame::PrePrintNextSheet(nsITimerCallback* aCallback,
                                                 bool* aDone) {
-  nsIFrame* currentSheet = GetCurrentSheetFrame();
+  PrintedSheetFrame* currentSheet = GetCurrentSheetFrame();
   if (!currentSheet) {
     *aDone = true;
     return NS_ERROR_FAILURE;
@@ -621,7 +623,7 @@ nsresult nsPageSequenceFrame::PrintNextSheet() {
   
   
 
-  nsIFrame* currentSheetFrame = GetCurrentSheetFrame();
+  PrintedSheetFrame* currentSheetFrame = GetCurrentSheetFrame();
   if (!currentSheetFrame) {
     return NS_ERROR_FAILURE;
   }
