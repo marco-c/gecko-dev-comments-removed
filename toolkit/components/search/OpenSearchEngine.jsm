@@ -47,8 +47,6 @@ const OPENSEARCH_LOCALNAME = "OpenSearchDescription";
 const MOZSEARCH_NS_10 = "http://www.mozilla.org/2006/browser/search/";
 const MOZSEARCH_LOCALNAME = "SearchPlugin";
 
-const OS_PARAM_INPUT_ENCODING_DEF = "UTF-8";
-
 
 
 
@@ -435,9 +433,6 @@ class OpenSearchEngine extends SearchEngine {
   _parse() {
     var doc = this._data;
 
-    
-    this._queryCharset = OS_PARAM_INPUT_ENCODING_DEF;
-
     for (var i = 0; i < doc.children.length; ++i) {
       var child = doc.children[i];
       switch (child.localName) {
@@ -459,7 +454,10 @@ class OpenSearchEngine extends SearchEngine {
           this._parseImage(child);
           break;
         case "InputEncoding":
-          this._queryCharset = child.textContent.toUpperCase();
+          
+          
+          
+          this._queryCharset = child.textContent;
           break;
 
         

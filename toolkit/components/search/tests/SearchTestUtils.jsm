@@ -243,6 +243,8 @@ var SearchTestUtils = Object.freeze({
 
 
 
+
+
   createEngineManifest(options = {}) {
     options.id = options.id ?? "example@tests.mozilla.org";
     options.name = options.name ?? "Example";
@@ -263,6 +265,10 @@ var SearchTestUtils = Object.freeze({
         },
       },
     };
+    if (options.encoding) {
+      manifest.chrome_settings_overrides.search_provider.encoding =
+        options.encoding;
+    }
     if (options.keyword) {
       manifest.chrome_settings_overrides.search_provider.keyword =
         options.keyword;

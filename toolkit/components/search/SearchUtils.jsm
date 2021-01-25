@@ -155,10 +155,7 @@ var SearchUtils = {
   
   MAX_ICON_SIZE: 20000,
 
-  
-  
-  
-  DEFAULT_QUERY_CHARSET: "ISO-8859-1",
+  DEFAULT_QUERY_CHARSET: "UTF-8",
 
   
   DEFAULT_TAG: "default",

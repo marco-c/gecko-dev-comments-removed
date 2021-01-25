@@ -183,6 +183,11 @@ add_task(async function test_settings_write() {
         }
       }
     }
+    
+    
+    if (engine?.queryCharset == SearchUtils.DEFAULT_QUERY_CHARSET) {
+      delete engine.queryCharset;
+    }
   }
 
   

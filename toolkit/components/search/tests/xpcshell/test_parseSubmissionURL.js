@@ -25,6 +25,7 @@ add_task(async function test_parseSubmissionURL() {
       name: "bacon_addParam",
       details: {
         alias: "bacon_addParam",
+        encoding: "windows-1252",
         description: "Search Bacon",
         method: "GET",
         template: "http://www.bacon.test/find",
@@ -81,7 +82,6 @@ add_task(async function test_parseSubmissionURL() {
   Assert.ok(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
   Assert.equal(result.termsLength, "caff%C3%A8".length);
 
-  
   
   url = "http://www.bacon.test/find?q=caff%E8";
   result = Services.search.parseSubmissionURL(url);

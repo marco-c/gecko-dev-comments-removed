@@ -44,12 +44,21 @@ add_task(async function basic_install_test() {
   Assert.deepEqual(await getEngineNames(), ["Plain", "Special"]);
 
   
-  let extension = await SearchTestUtils.installSearchExtension();
+  let extension = await SearchTestUtils.installSearchExtension({
+    encoding: "windows-1252",
+  });
   Assert.deepEqual((await getEngineNames()).sort(), [
     "Example",
     "Plain",
     "Special",
   ]);
+
+  let engine = await Services.search.getEngineByName("Example");
+  Assert.equal(
+    engine.wrappedJSObject.queryCharset,
+    "windows-1252",
+    "Should have the correct charset"
+  );
 
   
   await extension.awaitStartup();
