@@ -860,7 +860,9 @@ this.tabs = class extends ExtensionAPI {
           if (updateProperties.highlighted !== null) {
             if (updateProperties.highlighted) {
               if (!nativeTab.selected && !nativeTab.multiselected) {
-                tabbrowser.addToMultiSelectedTabs(nativeTab);
+                tabbrowser.addToMultiSelectedTabs(nativeTab, {
+                  isLastMultiSelectChange: true,
+                });
                 
                 
                 if (updateProperties.active !== false) {
@@ -869,7 +871,9 @@ this.tabs = class extends ExtensionAPI {
                 }
               }
             } else {
-              tabbrowser.removeFromMultiSelectedTabs(nativeTab);
+              tabbrowser.removeFromMultiSelectedTabs(nativeTab, {
+                isLastMultiSelectChange: true,
+              });
             }
           }
           if (updateProperties.muted !== null) {

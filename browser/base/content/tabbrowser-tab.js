@@ -336,16 +336,20 @@
             gBrowser.selectedTab = lastSelectedTab;
 
             
-            gBrowser.clearMultiSelectedTabs();
+            gBrowser.clearMultiSelectedTabs({ isLastMultiSelectChange: false });
           }
           gBrowser.addRangeToMultiSelectedTabs(lastSelectedTab, this);
         } else if (accelKey) {
           
           eventMaySelectTab = false;
           if (this.multiselected) {
-            gBrowser.removeFromMultiSelectedTabs(this);
+            gBrowser.removeFromMultiSelectedTabs(this, {
+              isLastMultiSelectChange: true,
+            });
           } else if (this != gBrowser.selectedTab) {
-            gBrowser.addToMultiSelectedTabs(this);
+            gBrowser.addToMultiSelectedTabs(this, {
+              isLastMultiSelectChange: true,
+            });
             gBrowser.lastMultiSelectedTab = this;
           }
         } else if (!this.selected && this.multiselected) {
@@ -387,7 +391,12 @@
       ) {
         
         
-        gBrowser.clearMultiSelectedTabs();
+
+        
+        
+        let isLastMultiSelectChange = gBrowser.selectedTab == this;
+
+        gBrowser.clearMultiSelectedTabs({ isLastMultiSelectChange });
       }
 
       if (
