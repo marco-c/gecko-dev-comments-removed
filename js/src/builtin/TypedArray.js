@@ -818,11 +818,12 @@ function TypedArrayMap(callbackfn) {
 }
 
 
+
+
 function TypedArrayReduce(callbackfn) {
     
     var O = this;
 
-    
     
     var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
@@ -849,10 +850,8 @@ function TypedArrayReduce(callbackfn) {
     var k = 0;
 
     
-    
     var accumulator = arguments.length > 1 ? arguments[1] : O[k++];
 
-    
     
     for (; k < len; k++) {
         accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
