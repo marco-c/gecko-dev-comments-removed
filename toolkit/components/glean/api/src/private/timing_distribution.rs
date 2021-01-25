@@ -2,48 +2,40 @@
 
 
 
+use inherent::inherent;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
-    Arc, RwLock,
+    RwLock,
 };
+use std::time::Instant;
 
-use super::{CommonMetricData, Instant, MetricId, TimeUnit};
+use super::{CommonMetricData, MetricId, TimeUnit};
+use glean::{DistributionData, ErrorType};
+use glean_core::metrics::TimerId;
 
-use crate::dispatcher;
 use crate::ipc::{need_ipc, with_ipc_payload};
+use glean_core::traits::TimingDistribution;
 
 
 
 
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct TimerId(glean_core::metrics::TimerId);
-
-
-
-
-#[derive(Debug)]
 pub enum TimingDistributionMetric {
     Parent {
         
         
         
         id: MetricId,
-        inner: Arc<TimingDistributionMetricImpl>,
+        inner: glean::private::TimingDistributionMetric,
     },
     Child(TimingDistributionMetricIpc),
-}
-#[derive(Debug)]
-pub struct TimingDistributionMetricImpl {
-    inner: RwLock<glean_core::metrics::TimingDistributionMetric>,
 }
 #[derive(Debug)]
 pub struct TimingDistributionMetricIpc {
     metric_id: MetricId,
     next_timer_id: AtomicUsize,
-    instants: RwLock<HashMap<u64, std::time::Instant>>,
+    instants: RwLock<HashMap<u64, Instant>>,
 }
 
 impl TimingDistributionMetric {
@@ -56,7 +48,7 @@ impl TimingDistributionMetric {
                 instants: RwLock::new(HashMap::new()),
             })
         } else {
-            let inner = Arc::new(TimingDistributionMetricImpl::new(meta, time_unit));
+            let inner = glean::private::TimingDistributionMetric::new(meta, time_unit);
             TimingDistributionMetric::Parent { id, inner }
         }
     }
@@ -76,21 +68,23 @@ impl TimingDistributionMetric {
             }
         }
     }
+}
 
+#[inherent(pub)]
+impl TimingDistribution for TimingDistributionMetric {
     
     
     
     
     
-    pub fn start(&self) -> TimerId {
+    
+    
+    
+    
+    
+    fn start(&self) -> TimerId {
         match self {
-            TimingDistributionMetric::Parent { inner, .. } => {
-                
-                
-                
-                
-                inner.start()
-            }
+            TimingDistributionMetric::Parent { inner, .. } => inner.start(),
             TimingDistributionMetric::Child(c) => {
                 
                 
@@ -103,10 +97,10 @@ impl TimingDistributionMetric {
                     .instants
                     .write()
                     .expect("lock of instants map was poisoned");
-                if let Some(_v) = map.insert(id, std::time::Instant::now()) {
+                if let Some(_v) = map.insert(id, Instant::now()) {
                     
                 }
-                TimerId(id)
+                id
             }
         }
     }
@@ -120,18 +114,19 @@ impl TimingDistributionMetric {
     
     
     
-    pub fn stop_and_accumulate(&self, id: TimerId) {
+    
+    
+    fn stop_and_accumulate(&self, id: TimerId) {
         match self {
             TimingDistributionMetric::Parent { inner, .. } => {
-                let metric = Arc::clone(&inner);
-                dispatcher::launch(move || metric.stop_and_accumulate(id));
+                inner.stop_and_accumulate(id);
             }
             TimingDistributionMetric::Child(c) => {
                 let mut map = c
                     .instants
                     .write()
                     .expect("Write lock must've been poisoned.");
-                if let Some(start) = map.remove(&id.0) {
+                if let Some(start) = map.remove(&id) {
                     let sample = start.elapsed().as_nanos();
                     with_ipc_payload(move |payload| {
                         if let Some(v) = payload.timing_samples.get_mut(&c.metric_id) {
@@ -154,18 +149,19 @@ impl TimingDistributionMetric {
     
     
     
-    pub fn cancel(&self, id: TimerId) {
+    
+    
+    fn cancel(&self, id: TimerId) {
         match self {
             TimingDistributionMetric::Parent { inner, .. } => {
-                let metric = Arc::clone(&inner);
-                dispatcher::launch(move || metric.cancel(id));
+                inner.cancel(id);
             }
             TimingDistributionMetric::Child(c) => {
                 let mut map = c
                     .instants
                     .write()
                     .expect("Write lock must've been poisoned.");
-                if map.remove(&id.0).is_none() {
+                if map.remove(&id).is_none() {
                     
                 }
             }
@@ -182,84 +178,17 @@ impl TimingDistributionMetric {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<DistributionData> {
         match self {
-            TimingDistributionMetric::Parent { inner, .. } => {
-                dispatcher::block_on_queue();
-                inner.test_get_value(storage_name)
+            TimingDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            TimingDistributionMetric::Child(c) => {
+                panic!("Cannot get test value for {:?} in non-parent process!", c)
             }
-            TimingDistributionMetric::Child(_c) => panic!(
-                "Cannot get test value for {:?} in non-parent process!",
-                self
-            ),
         }
     }
-}
-
-impl TimingDistributionMetricImpl {
-    pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
-        let inner = RwLock::new(glean_core::metrics::TimingDistributionMetric::new(
-            meta, time_unit,
-        ));
-        Self { inner }
-    }
-
-    pub fn start(&self) -> TimerId {
-        let now = Instant::now();
-
-        let mut inner = self
-            .inner
-            .write()
-            .expect("lock of wrapped metric was poisoned");
-        TimerId(inner.set_start(now.as_nanos()))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn stop_and_accumulate(&self, id: TimerId) {
-        crate::with_glean(|glean| {
-            let TimerId(id) = id;
-            let now = Instant::now();
-
-            let mut inner = self
-                .inner
-                .write()
-                .expect("lock of wrapped metric was poisoned");
-            inner.set_stop_and_accumulate(glean, id, now.as_nanos())
-        })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn cancel(&self, id: TimerId) {
-        let TimerId(id) = id;
-        let mut inner = self
-            .inner
-            .write()
-            .expect("lock of wrapped metric was poisoned");
-        inner.cancel(id)
-    }
 
     
     
@@ -274,20 +203,20 @@ impl TimingDistributionMetricImpl {
     
     
     
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
-        crate::with_glean(move |glean| {
-            let inner = self
-                .inner
-                .read()
-                .expect("lock of wrapped metric was poisoned");
-            inner.test_get_value_as_json_string(glean, storage_name)
-        })
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: ErrorType,
+        ping_name: S,
+    ) -> i32 {
+        match self {
+            TimingDistributionMetric::Parent { inner, .. } => {
+                inner.test_get_num_recorded_errors(error, ping_name)
+            }
+            TimingDistributionMetric::Child(c) => panic!(
+                "Cannot get number of recorded errors for {:?} in non-parent process!",
+                c
+            ),
+        }
     }
 }
 
@@ -296,7 +225,6 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
-    #[ignore] 
     fn smoke_test_timing_distribution() {
         let _lock = lock_test();
 
@@ -309,11 +237,10 @@ mod test {
         metric.cancel(id);
 
         
-        assert_eq!(None, metric.test_get_value("store1"));
+        assert!(metric.test_get_value("store1").is_none());
     }
 
     #[test]
-    #[ignore] 
     fn timing_distribution_child() {
         let _lock = lock_test();
 
