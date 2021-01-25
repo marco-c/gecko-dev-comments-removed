@@ -6,14 +6,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
+<!-- The "global.css" stylesheet is imported first to allow other stylesheets to
+     override rules using selectors with the same specificity. This applies to
+     both "content" and "skin" packages, which bug 1385444 will unify later. -->
 <?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
 
-
-
-
+<!-- While these stylesheets are defined in Toolkit, they are only used in the
+     main browser window, so we can load them here. Bug 1474241 is on file to
+     consider moving these widgets to the "browser" folder. -->
 <?xml-stylesheet href="chrome://global/content/tabprompts.css" type="text/css"?>
 <?xml-stylesheet href="chrome://global/skin/tabprompts.css" type="text/css"?>
 
@@ -207,10 +207,10 @@
                 oncommand="TabContextMenu.closeContextTabs();"/>
     </menupopup>
 
-    
-
-
-
+    <!-- bug 415444/582485: event.stopPropagation is here for the cloned version
+         of this menupopup, to prevent already-handled clicks on menu items from
+         propagating to the back or forward button.
+    -->
     <menupopup id="backForwardMenu"
                onpopupshowing="return FillHistoryMenu(event.target);"
                oncommand="gotoHistoryIndex(event); event.stopPropagation();"
@@ -221,7 +221,7 @@
     <menupopup id="new-tab-button-popup"
                onpopupshowing="return CreateContainerTabMenu(event);"
                onclick="checkForMiddleClick(this, event);"/>
-    
+    <!-- for search and content formfill/pw manager -->
 
     <panel is="autocomplete-richlistbox-popup"
            type="autocomplete-richlistbox"
@@ -233,7 +233,7 @@
            norolluponanchor="true"
            nomaxresults="true" />
 
-    
+    <!-- for search with one-off buttons -->
     <panel is="search-autocomplete-richlistbox-popup"
            type="autocomplete-richlistbox"
            id="PopupSearchAutoComplete"
@@ -242,8 +242,8 @@
            hidden="true" />
 
     <html:template id="dateTimePickerTemplate">
-      
-
+      <!-- for date/time picker. consumeoutsideclicks is set to never, so that
+           clicks on the anchored input box are never consumed. -->
       <panel id="DateTimePickerPanel"
              type="arrow"
              hidden="true"
@@ -256,10 +256,10 @@
       </panel>
     </html:template>
 
-    
-
-
-
+    <!-- for select dropdowns. The menupopup is what shows the list of options,
+         and the popuponly menulist makes things like the menuactive attributes
+         work correctly on the menupopup. ContentSelectDropdown expects the
+         popuponly menulist to be its immediate parent. -->
     <menulist popuponly="true" id="ContentSelectDropdown" hidden="true">
       <menupopup rolluponmousewheel="true"
                  activateontab="true" position="after_start"
@@ -279,7 +279,7 @@
     </html:template>
 
     <html:template id="invalidFormTemplate">
-      
+      <!-- for invalid form error message -->
       <panel id="invalid-form-popup" type="arrow" orient="vertical" noautofocus="true" level="parent">
         <description/>
       </panel>
@@ -342,7 +342,7 @@
     </html:template>
 
     <html:template id="UITourTooltipTemplate">
-      
+      <!-- UI tour experience -->
       <panel id="UITourTooltip"
              type="arrow"
              noautofocus="true"
@@ -367,7 +367,7 @@
       </panel>
     </html:template>
     <html:template id="UITourHighlightTemplate">
-      
+      <!-- type="default" forces frames to be created so that the panel's size can be determined -->
       <panel id="UITourHighlightContainer"
              type="default"
              noautofocus="true"
@@ -416,7 +416,7 @@
                      class="subviewbutton subviewbutton-iconic sync-ui-item"
                      oncommand="SidebarUI.show('viewTabsSidebar');"/>
       <toolbarseparator/>
-      
+      <!-- Extension toolbarbuttons go here. -->
       <toolbarseparator id="sidebar-extensions-separator"/>
       <toolbarbutton id="sidebar-reverse-position"
                      class="subviewbutton"
@@ -481,12 +481,12 @@
                 observes="History:UndoCloseTab"/>
       <menuseparator/>
       <menuseparator id="viewToolbarsMenuSeparator"/>
-      
-
-
-
-
-
+      <!-- XXXgijs: we're using oncommand handler here to avoid the event being
+                    redirected to the command element, thus preventing
+                    listeners on the menupopup or further up the tree from
+                    seeing the command event pass by. The observes attribute is
+                    here so that the menuitem is still disabled and re-enabled
+                    correctly. -->
       <menuitem oncommand="gCustomizeMode.enter()"
                 observes="cmd_CustomizeToolbars"
                 class="viewCustomizeToolbar"
@@ -802,10 +802,10 @@
                        command="Browser:RestoreLastSession"/>
         <toolbarseparator/>
         <toolbaritem id="appMenu-zoom-controls" class="toolbaritem-combined-buttons" closemenu="none">
-          
+          <!-- Use a spacer, because panel sizing code gets confused when using CSS methods. -->
           <spacer class="before-label"/>
           <label value="&fullZoom.label;"/>
-          
+          <!-- This spacer keeps the scrollbar from overlapping the view. -->
           <spacer class="after-label"/>
           <toolbarbutton id="appMenu-zoomReduce-button"
                          class="subviewbutton subviewbutton-iconic"
@@ -833,10 +833,10 @@
         </toolbaritem>
         <toolbarseparator/>
         <toolbaritem id="appMenu-edit-controls" class="toolbaritem-combined-buttons" closemenu="none">
-          
+          <!-- Use a spacer, because panel sizing code gets confused when using CSS methods. -->
           <spacer class="before-label"/>
           <label value="&editMenu.label;"/>
-          
+          <!-- This spacer keeps the scrollbar from overlapping the view. -->
           <spacer class="after-label"/>
           <toolbarbutton id="appMenu-cut-button"
                          class="subviewbutton subviewbutton-iconic"
@@ -990,7 +990,7 @@
                      smoothscroll="false"
                      flatList="true"
                      tooltip="bhTooltip">
-          
+          <!-- history menu items will go here -->
         </toolbaritem>
       </vbox>
       <toolbarbutton id="PanelUI-historyMore"
@@ -1039,7 +1039,7 @@
                      smoothscroll="false"
                      flatList="true"
                      tooltip="bhTooltip">
-          
+          <!-- bookmarks menu items will go here -->
         </toolbaritem>
       </vbox>
       <toolbarbutton id="panelMenu_showAllBookmarks"
@@ -1090,13 +1090,13 @@
                       flex="1"
                       value="custom">
               <menupopup id="PanelUI-profiler-presets-menupopup" presetsbuilt="false">
-                
-
-
+                <!-- The rest of the values get dynamically inserted. The "presetsbuilt"
+                    attribute will get updated to "true" once the presets have been
+                    built. -->
                 <menuitem id="PanelUI-profiler-presets-custom" label="Custom" value="custom"/>
               </menupopup>
             </menulist>
-            
+            <!-- The following description gets inserted dynamically. -->
             <description id="PanelUI-profiler-content-description" />
             <hbox id="PanelUI-profiler-content-custom">
               <button id="PanelUI-profiler-content-custom-button">
@@ -1211,8 +1211,8 @@
     <panelview id="PanelUI-remotetabs" flex="1" class="PanelUI-subView"
                descriptionheightworkaround="true">
       <vbox class="panel-subview-body">
-        
-        
+        <!-- this widget has 3 boxes in the body, but only 1 is ever visible -->
+        <!-- When Sync is ready to sync -->
         <vbox id="PanelUI-remotetabs-main" hidden="true">
           <vbox id="PanelUI-remotetabs-buttons">
             <toolbarbutton id="PanelUI-remotetabs-view-sidebar"
@@ -1237,7 +1237,7 @@
             <toolbarseparator id="PanelUI-remotetabs-separator"/>
           </vbox>
           <deck id="PanelUI-remotetabs-deck">
-            
+            <!-- Sync is ready to Sync and the "tabs" engine is enabled -->
             <vbox id="PanelUI-remotetabs-tabspane">
               <vbox id="PanelUI-remotetabs-tabslist"
                     showAllLabel="&appMenuRemoteTabs.showAll.label;"
@@ -1247,7 +1247,7 @@
                     notabsforclientlabel="&appMenuRemoteTabs.notabs.label;"
                     />
             </vbox>
-            
+            <!-- Sync is ready to Sync but the "tabs" engine isn't enabled-->
             <hbox id="PanelUI-remotetabs-tabsdisabledpane" pack="center" flex="1">
               <vbox class="PanelUI-remotetabs-instruction-box" align="center">
                 <hbox pack="center">
@@ -1262,11 +1262,11 @@
                 </hbox>
               </vbox>
             </hbox>
-            
+            <!-- Sync is ready to Sync but we are still fetching the tabs to show -->
             <vbox id="PanelUI-remotetabs-fetching">
-              
+              <!-- Show intentionally blank panel, see bug 1239845 -->
             </vbox>
-            
+            <!-- Sync has only 1 (ie, this) device connected -->
             <hbox id="PanelUI-remotetabs-nodevicespane" pack="center" flex="1">
               <vbox class="PanelUI-remotetabs-instruction-box" align="center">
                 <hbox pack="center">
@@ -1281,9 +1281,9 @@
             </hbox>
           </deck>
         </vbox>
-        
+        <!-- a box to ensure contained boxes are centered horizonally -->
         <hbox pack="center" flex="1">
-          
+          <!-- When Sync is not configured -->
           <vbox id="PanelUI-remotetabs-setupsync"
                 flex="1"
                 align="center"
@@ -1296,7 +1296,7 @@
                            label="&appMenuRemoteTabs.signintosync.label;"
                            oncommand="gSync.openPrefs('synced-tabs');"/>
           </vbox>
-          
+          <!-- When Sync is not enabled -->
           <vbox id="PanelUI-remotetabs-syncdisabled"
                 flex="1"
                 align="center"
@@ -1309,7 +1309,7 @@
                            label="&appMenuRemoteTabs.turnonsync.label;"
                            oncommand="gSync.openPrefs('synced-tabs');"/>
           </vbox>
-          
+          <!-- When Sync needs re-authentication -->
           <vbox id="PanelUI-remotetabs-reauthsync"
                 flex="1"
                 align="center"
@@ -1322,7 +1322,7 @@
                            label="&appMenuRemoteTabs.signintosync.label;"
                            oncommand="gSync.openPrefs('synced-tabs');"/>
           </vbox>
-          
+          <!-- When Sync needs verification -->
           <vbox id="PanelUI-remotetabs-unverified"
                 flex="1"
                 align="center"
@@ -1363,14 +1363,14 @@
                         closemenu="none"
                         oncommand="gSync.showSendToDeviceViewFromFxaMenu(this);"/>
         <toolbarseparator/>
-        
+        <!-- The `Connect Another Device` button is disabled by default until the user logs into Sync. -->
         <toolbarbutton id="PanelUI-fxa-menu-connect-device-button"
                         class="subviewbutton subviewbutton-iconic"
                         label="&fxa.menu.connectAnotherDevice2.label;"
                         disabled="true"
                         oncommand="gSync.openConnectAnotherDeviceFromFxaMenu(this);"/>
         <toolbarseparator/>
-        
+        <!-- The `Sync Now` button is hidden by default until the user logs into Sync. -->
         <toolbarbutton id="PanelUI-fxa-menu-syncnow-button"
                         data-l10n-id="fxa-toolbar-sync-now"
                         syncinglabel="fxa-toolbar-sync-syncing"
@@ -1430,7 +1430,7 @@
       </vbox>
     </panelview>
 
-    
+    <!-- This panelview is used to contain the dynamically created buttons for send tab to devices -->
     <panelview id="PanelUI-sendTabToDevice" flex="1" class="PanelUI-subView">
       <vbox class="panel-subview-body">
         <toolbarbutton id="PanelUI-sendTabToDevice-syncingDevices" class="subviewbutton subviewbutton-iconic pageAction-sendToDevice-notReady"
@@ -1497,7 +1497,7 @@
                      smoothscroll="false"
                      flatList="true"
                      tooltip="bhTooltip">
-          
+          <!-- Recent Highlights will go here -->
         </toolbaritem>
       </vbox>
     </panelview>
@@ -1534,7 +1534,7 @@
                      orient="vertical"
                      smoothscroll="false">
           <html:div id="PanelUI-whatsNew-message-container" role="document">
-            
+            <!-- What's New messages will be rendered here -->
           </html:div>
         </toolbaritem>
       </vbox>
@@ -1545,13 +1545,13 @@
     </panelview>
   </html:template>
 
-  
-
+  <!-- Temporary wrapper until we move away from XUL flex to allow a negative
+       margin-top to slide the toolbox off screen in fullscreen layout.-->
   <box>
   <toolbox id="navigator-toolbox" flex="1">
 
     <vbox id="titlebar">
-      
+      <!-- Menu -->
       <toolbar type="menubar" id="toolbar-menubar"
                class="browser-toolbar chromeclass-menubar titlebar-color"
                customizable="true"
@@ -1639,8 +1639,8 @@
 #include titlebar-items.inc.xhtml
 
 #ifdef XP_MACOSX
-        
-
+        <!-- OS X does not natively support RTL for its titlebar items, so we prevent this secondary
+             buttonbox from reversing order in RTL by forcing an LTR direction. -->
         <hbox id="titlebar-secondary-buttonbox" dir="ltr">
           <button class="accessibility-indicator" tooltiptext="&accessibilityIndicator.tooltip;" aria-live="polite"/>
           <hbox class="private-browsing-indicator"/>
@@ -1727,8 +1727,8 @@
                   pageproxystate="invalid">
               <box id="urlbar-search-button"
                    class="chromeclass-toolbar-additional"/>
-              
-
+              <!-- Use onclick instead of normal popup= syntax since the popup
+                   code fires onmousedown, and hence eats our favicon drag events. -->
               <box id="tracking-protection-icon-container" align="center"
                    role="button"
                    onclick="gProtectionsHandler.handleProtectionsButtonEvent(event);"
@@ -1930,9 +1930,9 @@
 
         <toolbarspring cui-areatype="toolbar" class="chromeclass-toolbar-additional"/>
 
-        
-
-
+        <!-- This is a placeholder for the Downloads Indicator.  It is visible
+             during the customization of the toolbar, in the palette, and before
+             the Downloads Indicator overlay is loaded. -->
         <toolbarbutton id="downloads-button"
                        class="toolbarbutton-1 chromeclass-toolbar-additional"
                        badged="true"
@@ -1949,10 +1949,10 @@
                        hidden="true"
                        tooltip="dynamic-shortcut-tooltip"
                        indicator="true">
-            
-
-
-
+            <!-- The panel's anchor area is smaller than the outer button, but must
+                 always be visible and must not move or resize when the indicator
+                 state changes, otherwise the panel could change its position or lose
+                 its arrow unexpectedly. -->
             <stack id="downloads-indicator-anchor"
                    consumeanchor="downloads-button">
               <box id="downloads-indicator-icon"/>
@@ -2165,7 +2165,7 @@
                     data-l10n-id="bookmarks-tools-sidebar-visibility"
                     data-l10n-args='{ "isVisible": false }'
                     oncommand="SidebarUI.toggle('viewBookmarksSidebar');"/>
-          
+          <!-- NB: temporary solution for bug 985024, this should go away soon. -->
           <menuitem id="BMB_bookmarksShowAllTop"
                     class="menuitem-iconic subviewbutton"
                     data-l10n-id="bookmarks-show-all-bookmarks"
@@ -2190,7 +2190,7 @@
                         data-l10n-args='{ "isVisible": false }'
                         oncommand="BookmarkingUI.toggleBookmarksToolbar('bookmarks-widget');"/>
               <menuseparator/>
-              
+              <!-- Bookmarks toolbar items -->
             </menupopup>
           </menu>
           <menu id="BMB_unsortedBookmarks"
@@ -2222,7 +2222,7 @@
           </menu>
 
           <menuseparator/>
-          
+          <!-- Bookmarks menu items will go here -->
           <menuitem id="BMB_bookmarksShowAll"
                     class="subviewbutton panel-subview-footer"
                     data-l10n-id="bookmarks-show-all-bookmarks"
@@ -2246,7 +2246,6 @@
   </box>
 
   <hbox flex="1" id="browser">
-    <vbox id="browser-border-start" hidden="true" layer="true"/>
     <vbox id="sidebar-box" hidden="true" class="chromeclass-extrachrome">
       <box id="sidebar-header" align="center">
         <toolbarbutton id="sidebar-switcher-target" flex="1" class="tabbable">
@@ -2268,14 +2267,13 @@
 
     <splitter id="sidebar-splitter" class="chromeclass-extrachrome sidebar-splitter" hidden="true"/>
     <vbox id="appcontent" flex="1">
-      
+      <!-- gHighPriorityNotificationBox will be added here lazily. -->
       <tabbox id="tabbrowser-tabbox"
               flex="1" tabcontainer="tabbrowser-tabs">
         <tabpanels id="tabbrowser-tabpanels"
                     flex="1" class="plain" selectedIndex="0"/>
       </tabbox>
     </vbox>
-    <vbox id="browser-border-end" hidden="true" layer="true"/>
   </hbox>
 
   <html:template id="customizationPanel">
@@ -2312,12 +2310,12 @@
   </html:div>
 
   <vbox id="browser-bottombox" layer="true">
-    
+    <!-- gNotificationBox will be added here lazily. -->
   </vbox>
 
   <html:div id="a11y-announcement" role="alert"/>
 
-  
+  <!-- Put it at the very end to make sure it's not covered by anything. -->
   <html:div id="fullscr-toggler" hidden="hidden"/>
 </html:body>
 </html>
