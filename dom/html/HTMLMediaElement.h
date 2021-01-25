@@ -1759,10 +1759,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mPendingTextTrackChanged = false;
 
-  
-  
-  bool mHadNonEmptyVideo = false;
-
  public:
   
   
