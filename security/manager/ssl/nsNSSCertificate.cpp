@@ -102,24 +102,18 @@ bool nsNSSCertificate::InitFromDER(char* certDER, int derLen) {
   }
 
   mCert.reset(aCert);
-  GetSubjectAltNames();
   return true;
 }
 
 nsNSSCertificate::nsNSSCertificate(CERTCertificate* cert)
-    : mCert(nullptr),
-      mCertType(CERT_TYPE_NOT_YET_INITIALIZED),
-      mSubjectAltNames() {
+    : mCert(nullptr), mCertType(CERT_TYPE_NOT_YET_INITIALIZED) {
   if (cert) {
     mCert.reset(CERT_DupCertificate(cert));
-    GetSubjectAltNames();
   }
 }
 
 nsNSSCertificate::nsNSSCertificate()
-    : mCert(nullptr),
-      mCertType(CERT_TYPE_NOT_YET_INITIALIZED),
-      mSubjectAltNames() {}
+    : mCert(nullptr), mCertType(CERT_TYPE_NOT_YET_INITIALIZED) {}
 
 static uint32_t getCertType(CERTCertificate* cert) {
   nsNSSCertTrust trust(cert->trust);
@@ -471,82 +465,6 @@ nsNSSCertificate::GetSubjectName(nsAString& _subjectName) {
     LossyUTF8ToUTF16(mCert->subjectName, strlen(mCert->subjectName),
                      _subjectName);
   }
-  return NS_OK;
-}
-
-
-
-void nsNSSCertificate::GetSubjectAltNames() {
-  mSubjectAltNames.clear();
-
-  ScopedAutoSECItem altNameExtension;
-  SECStatus rv = CERT_FindCertExtension(
-      mCert.get(), SEC_OID_X509_SUBJECT_ALT_NAME, &altNameExtension);
-  if (rv != SECSuccess) {
-    return;
-  }
-  UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
-  if (!arena) {
-    return;
-  }
-  CERTGeneralName* sanNameList(
-      CERT_DecodeAltNameExtension(arena.get(), &altNameExtension));
-  if (!sanNameList) {
-    return;
-  }
-
-  CERTGeneralName* current = sanNameList;
-  do {
-    nsAutoString name;
-    switch (current->type) {
-      case certDNSName: {
-        nsDependentCSubstring nameFromCert(
-            BitwiseCast<char*, unsigned char*>(current->name.other.data),
-            current->name.other.len);
-        
-        
-        if (IsAscii(nameFromCert)) {
-          name.Assign(NS_ConvertASCIItoUTF16(nameFromCert));
-          mSubjectAltNames.push_back(name);
-        }
-      } break;
-
-      case certIPAddress: {
-        
-        char buf[net::kNetAddrMaxCStrBufSize] = {0};
-        PRNetAddr addr;
-        memset(&addr, 0, sizeof(addr));
-        if (current->name.other.len == 4) {
-          addr.inet.family = PR_AF_INET;
-          memcpy(&addr.inet.ip, current->name.other.data,
-                 current->name.other.len);
-          PR_NetAddrToString(&addr, buf, sizeof(buf));
-          name.AssignASCII(buf);
-        } else if (current->name.other.len == 16) {
-          addr.ipv6.family = PR_AF_INET6;
-          memcpy(&addr.ipv6.ip, current->name.other.data,
-                 current->name.other.len);
-          PR_NetAddrToString(&addr, buf, sizeof(buf));
-          name.AssignASCII(buf);
-        } else {
-          
-        }
-        if (!name.IsEmpty()) {
-          mSubjectAltNames.push_back(name);
-        }
-        break;
-      }
-
-      default:  
-        break;
-    }
-    current = CERT_GetNextGeneralName(current);
-  } while (current != sanNameList);  
-}
-
-NS_IMETHODIMP
-nsNSSCertificate::GetSubjectAltNames(nsAString& _subjectAltNames) {
-  _subjectAltNames = StringJoin(u","_ns, mSubjectAltNames);
   return NS_OK;
 }
 

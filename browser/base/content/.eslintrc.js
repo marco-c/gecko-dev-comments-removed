@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  overrides: [
+    {
+      files: "aboutNetError.js",
+      parserOptions: {
+        sourceType: "module",
+      },
+    },
+  ],
+};

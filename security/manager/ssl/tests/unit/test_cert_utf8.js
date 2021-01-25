@@ -39,16 +39,6 @@ function run_test() {
     "SUBJECT EMAILADDRESS",
     certificateBytesToAlter
   );
-  testUTF8InField(
-    "subjectAltNames",
-    "SUBJECT ALT DNSNAME",
-    certificateBytesToAlter
-  );
-  testUTF8InField(
-    "subjectAltNames",
-    "SUBJECT ALT RFC822@NAME",
-    certificateBytesToAlter
-  );
 }
 
 
