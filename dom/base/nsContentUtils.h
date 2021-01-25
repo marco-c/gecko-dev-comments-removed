@@ -1374,18 +1374,6 @@ class nsContentUtils {
 
 
 
-
-
-
-  static nsContentPolicyType InternalContentPolicyTypeToExternalOrWorker(
-      nsContentPolicyType aType);
-
-  
-
-
-
-
-
   static bool IsPreloadType(nsContentPolicyType aType);
 
   
@@ -3492,20 +3480,6 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
 
     default:
       return aType;
-  }
-}
-
- inline nsContentPolicyType
-nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(
-    nsContentPolicyType aType) {
-  switch (aType) {
-    case nsIContentPolicy::TYPE_INTERNAL_WORKER:
-    case nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER:
-    case nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER:
-      return aType;
-
-    default:
-      return InternalContentPolicyTypeToExternal(aType);
   }
 }
 

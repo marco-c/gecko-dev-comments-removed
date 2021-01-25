@@ -130,12 +130,6 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   
   
   
-  aContentType =
-      nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(aContentType);
-
-  
-  
-  
   
   
   
