@@ -507,12 +507,12 @@ BEGIN_TEST(testScriptSourceCompression_offThread) {
 
   js::Monitor monitor(js::mutexid::ShellOffThreadState);
   JS::CompileOptions options(cx);
-  JS::OffThreadToken* token = nullptr;
+  JS::OffThreadToken* token;
 
   
   options.forceAsync = true;
 
-  CHECK(JS::CompileOffThread(cx, options, source, callback, &monitor, &token));
+  CHECK(token = JS::CompileOffThread(cx, options, source, callback, &monitor));
 
   {
     
