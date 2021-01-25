@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 %filter substitution
 
@@ -68,7 +68,7 @@
 #PanelUI-menu-button[badge-status="update-unsupported"] > .toolbarbutton-badge-stack > .toolbarbutton-badge {
   border-radius: 50%;
   box-shadow: none;
-  
+  /* "!important" is necessary to override the rule in toolbarbutton.css */
   margin: -7px 0 0 !important;
   margin-inline-end: -4px !important;
   min-width: 12px;
@@ -111,7 +111,7 @@
   background: url(chrome://browser/skin/warning.svg) center / contain no-repeat transparent;
   box-shadow: none;
   border-radius: 0;
-  
+  /* Use the included fallbacks defined in the SVG file instead of inheriting from .toolbarbutton-1. */
   -moz-context-properties: none;
 }
 
@@ -138,8 +138,8 @@ panelview {
   padding: 0;
 }
 
-
-
+/* This section is to anchor all the drop down panels at the same height, shift the
+  panel`s top margin according to its positioning and the uidensity of the window. */
 #downloadsPanel,
 #widget-overflow,
 #appMenu-popup,
@@ -148,8 +148,8 @@ panelview {
   margin-top: -6px;
 }
 
-
-
+/* The difference between the toolbar buttons` padding and the urlbar-icons` padding,
+   then subtract 6px. */
 #pageActionActivatedActionPanel,
 #pageActionPanel,
 #editBookmarkPanel,
@@ -157,13 +157,13 @@ panelview {
   margin-top: calc(var(--toolbarbutton-inner-padding) - var(--urlbar-icon-padding) - 6px)
 }
 
-
-
+/* The identity popup does not have any padding of its own,
+   otherwise would use the same formula as above. */
 #identity-popup {
   margin-top: calc(var(--toolbarbutton-inner-padding) - 6px);
 }
 
-
+/* The bookmarks toolbar is too thin to have the panels overlap 6px. */
 #downloadsPanel.bookmarks-toolbar,
 #widget-overflow.bookmarks-toolbar,
 #appMenu-popup.bookmarks-toolbar,
@@ -171,8 +171,8 @@ panelview {
   margin-top: -1px;
 }
 
-
-
+/* The BMB_bookmarksPopup is unique because it is built into the
+   bookmarks-menu-button, resulting in many edge cases. */
 #BMB_bookmarksPopup {
   margin-top: -8px;
 }
@@ -268,7 +268,7 @@ panelview {
   padding: 0;
 }
 
-
+/* Remove padding on xul:arrowscrollbox to avoid extra padding on footer */
 #BMB_bookmarksPopup menupopup::part(arrowscrollbox) {
   padding-bottom: 0;
 }
@@ -278,8 +278,8 @@ panelview {
 }
 
 %ifndef XP_MACOSX
-
-
+/* Add some space at the top because there are no headers in menupopups of
+   the bookmarks menu. */
 #BMB_bookmarksPopup menupopup::part(arrowscrollbox-scrollbox) {
   padding-top: 4px;
 }
@@ -299,8 +299,8 @@ panelview {
 }
 
 #confirmation-hint[hidearrow]::part(arrowbox) {
-  
-
+  /* Don't display the arrow but keep the popup at the same vertical
+     offset as other arrow panels. */
   visibility: hidden;
 }
 
@@ -311,7 +311,7 @@ panelview {
   height: 14px;
 }
 
-
+/* Don't show the checkmark if there is a description */
 #confirmation-hint.with-description #confirmation-hint-checkmark-animation-container {
   display: none;
 }
@@ -420,7 +420,7 @@ panelview:not([mainview]) .toolbarbutton-text,
   max-width: @wideMenuPanelWidth@;
 }
 
-
+/* Add 2 * 16px extra width for touch mode button padding. */
 #appMenu-popup[touchmode] panelview {
   min-width: calc(@menuPanelWidth@ + 32px);
 }
@@ -457,7 +457,7 @@ toolbarpaletteitem[place="menu-panel"] > .toolbarbutton-1 {
   -moz-box-flex: 1;
 }
 
-
+/* Help webextension buttons fit in. */
 toolbarpaletteitem[place="palette"] > toolbarbutton[constrain-size="true"] > .toolbarbutton-icon,
 toolbarpaletteitem[place="palette"] > toolbarbutton[constrain-size="true"] > .toolbarbutton-badge-stack > .toolbarbutton-icon,
 toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton-icon,
@@ -473,9 +473,9 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   margin: 0;
 }
 
-
-
-
+/* above we treat the container as the icon for the margins, that is so the
+/* badge itself is positioned correctly. Here we make sure that the icon itself
+/* has the minimum size we want, but no padding/margin. */
 .customization-palette .toolbarbutton-1 > .toolbarbutton-badge-stack > .toolbarbutton-icon {
   width: @panelPaletteIconSize@;
   height: @panelPaletteIconSize@;
@@ -503,7 +503,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 .addon-banner-item {
   background-color: @appmenuWarningBackgroundColor@;
   color: @appmenuWarningColor@;
-  
+  /* Force border to override `.addon-banner-item` selector below */
   border-top: 1px solid @appmenuWarningBorderColor@ !important;
   display: flex;
   flex: 1 1 0%;
@@ -561,7 +561,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 }
 
 #appMenu-addon-banners:not(:empty) + .panel-banner-item {
-  
+  /* Overlap the .addon-banner-item border so there's one border. */
   margin-top: -1px;
 }
 
@@ -570,7 +570,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 }
 
 .panel-banner-item > .toolbarbutton-text {
-  width: 0; 
+  width: 0; /* Fancy cropping solution for flexbox. */
 }
 
 .panel-banner-item > .toolbarbutton-icon {
@@ -582,7 +582,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   margin-top: 6px;
 }
 
-
+/* FxAccount indicator bits. */
 
 #appMenu-fxa-label {
   -moz-context-properties: fill;
@@ -625,7 +625,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   list-style-image: url(chrome://browser/skin/sign-out.svg);
 }
 
-
+/* Handle different UI states. */
 #appMenu-fxa-status[fxastatus="signedin"] > #appMenu-fxa-label > .toolbarbutton-icon,
 #appMenu-fxa-status:not([fxastatus="signedin"]) > #appMenu-fxa-avatar,
 :root:not([fxastatus="signedin"]) #PanelUI-fxa-menu-syncnow-button {
@@ -633,7 +633,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 }
 
 #appMenu-fxa-status[fxastatus="signedin"] > #appMenu-fxa-label {
-  
+  /* 12px space before the avatar, then 16px for the avatar */
   padding-inline-start: 28px;
   margin-inline-start: -28px;
 }
@@ -642,7 +642,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   margin-inline-start: 12px;
 }
 
-
+/* Error states */
 #appMenu-fxa-status[fxastatus="unverified"] > #appMenu-fxa-label,
 #appMenu-fxa-status[fxastatus="login-failed"] > #appMenu-fxa-label {
   list-style-image: url(chrome://browser/skin/warning.svg);
@@ -672,7 +672,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   background-color: @appmenuWarningBackgroundColorActive@;
 }
 
-
+/* Tracking Protection Button & Toggle */
 
 #appMenu-protection-report-text {
   -moz-context-properties: fill;
@@ -712,7 +712,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 :root[lwt-popup-brighttext] .addon-banner-item {
   color: @appmenuWarningColorBrightText@;
   background: @appmenuWarningBackgroundColorBrightText@;
-  
+  /* override `.addon-banner-item` border-top !important defined above */
   border: 0 !important;
 }
 
@@ -748,7 +748,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   background-color: @appmenuWarningBackgroundColorActiveBrightText@;
 }
 
-
+/* Firefox Account Toolbar Panel */
 
 #fxa-avatar-image {
   width: 16px;
@@ -781,7 +781,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   list-style-image: var(--avatar-image-url);
 }
 
-
+/* Non-signedin statuses icons are not totally round. */
 :root[fxastatus="signedin"] #fxa-menu-avatar,
 :root[fxastatus="signedin"] #fxa-avatar-image {
   border-radius: 50%;
@@ -789,9 +789,9 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 
 .PanelUI-fxa-service-description-label,
 .PanelUI-remotetabs-instruction-label {
-  
-
-
+  /* Use 'lighter' font for this to de-emphasize it compared to the title.
+   * We use 300 on Linux because 100 is too light (lacks contrast with
+   * the background) for some fonts in combination with anti-aliasing. */
 %if defined(XP_MACOSX) || defined(XP_WIN)
   font-weight: lighter;
 %else
@@ -834,8 +834,8 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   color: var(--panel-disabled-color);
 }
 
-
-
+/* From the FxA menu -> synced tabs, we don't need to clutter the view with
+   redundant buttons because these are accessible from the main menu */
 panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
   display: none;
 }
@@ -880,9 +880,9 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 
 .PanelUI-fxa-service-description-label,
 .PanelUI-remotetabs-instruction-label {
-  
-
-
+  /* If you change the margin here, the min-height of the synced tabs panel
+    (e.g. #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-setupsync, etc) may
+    need adjusting (see bug 1248506) */
   margin: 0;
   text-align: center;
   text-shadow: none;
@@ -898,13 +898,13 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 .PanelUI-remotetabs-button {
   appearance: none;
   background-color: #0060df;
-  
-
+  /* !important for the color as an OSX specific rule when a lightweight theme
+     is used for buttons in the toolbox overrides. See bug 1238531 for details */
   color: white !important;
   border-radius: 2px;
-  
-
-
+  /* If you change the margin or padding below, the min-height of the synced tabs
+     panel (e.g. #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-setupsync,
+     etc) may need adjusting (see bug 1248506) */
   margin-block: 15px;
   padding: 8px;
   text-shadow: none;
@@ -932,7 +932,7 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 
 .PanelUI-remotetabs-notabsforclient-label {
   color: var(--panel-description-color);
-  
+  /* This margin is to line this label up with the labels in toolbarbuttons. */
   margin-inline-start: 28px;
 }
 
@@ -942,9 +942,9 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 
 .fxaSyncIllustration,
 .fxaSyncIllustrationIssue {
-  
-
-
+  /* If you change the margin here, the min-height of the synced tabs panel
+  (e.g. #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-setupsync, etc) may
+  need adjusting (see bug 1248506) */
   width: 204px;
   height: var(--panel-ui-sync-illustration-height);
   -moz-context-properties: fill;
@@ -961,18 +961,18 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 
 .PanelUI-fxa-signin-button > .toolbarbutton-text,
 .PanelUI-remotetabs-button > .toolbarbutton-text {
-  
+  /* !important to override ".cui-widget-panel toolbarbutton > .toolbarbutton-text" above. */
   text-align: center !important;
   text-shadow: none;
 }
 
-#PanelUI-remotetabs[mainview] { 
+#PanelUI-remotetabs[mainview] { /* panel anchored to toolbar button might be too skinny */
   min-width: 19em;
 }
 
-
-
-
+/* Work around bug 1224412 - these boxes will cause scrollbars to appear when
+   the panel is anchored to a toolbar button.
+*/
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-setupsync,
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-syncdisabled,
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-reauthsync,
@@ -980,9 +980,9 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-nodevicespane,
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-tabsdisabledpane {
   min-height: calc(var(--panel-ui-sync-illustration-height) +
-                   15px + 
-                   30px + 
-                   8px + 
+                   15px + /* margin of .fxaSyncIllustration */
+                   30px + /* margin of .PanelUI-remotetabs-button */
+                   8px + /* padding of .PanelUI-remotetabs-button */
                    1em);
 }
 
@@ -990,8 +990,8 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
   color: var(--panel-description-color);
 }
 
-
-
+/* Collapse the non-active vboxes in the remotetabs deck to use only the
+   height the active box needs */
 #PanelUI-remotetabs-deck:not([selectedIndex="1"]) > #PanelUI-remotetabs-tabsdisabledpane,
 #PanelUI-remotetabs-deck:not([selectedIndex="2"]) > #PanelUI-remotetabs-fetching,
 #PanelUI-remotetabs-deck:not([selectedIndex="3"]) > #PanelUI-remotetabs-nodevicespane {
@@ -1003,7 +1003,7 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 }
 
 .panel-banner-item {
-  color: black !important ;
+  color: black !important /* !important overrides the toolbarbutton:hover default style on Linux */;
   background-color: hsla(96,65%,75%,.5);
 }
 
@@ -1081,7 +1081,7 @@ panelview .toolbarbutton-1,
 
 .subviewbutton > .toolbarbutton-text {
   padding: 0;
-  padding-inline-start: 24px; 
+  padding-inline-start: 24px; /* This is 16px for the icon + 8px for the padding as defined below. */
 }
 
 .subviewbutton > .menu-right {
@@ -1092,7 +1092,7 @@ panelview .toolbarbutton-1,
   fill-opacity: 0.6;
   width: unset;
   height: unset;
-  
+  /* Reset the rect we inherit from the button */
   -moz-image-region: auto;
 }
 
@@ -1114,7 +1114,7 @@ panelview .toolbarbutton-1,
 .subviewbutton.restoreallitem > .toolbarbutton-text,
 .subviewbutton.bookmark-item > .toolbarbutton-text,
 .subviewbutton[checked="true"] > .toolbarbutton-text {
-  padding-inline-start: 8px; 
+  padding-inline-start: 8px; /* See '.subviewbutton-iconic > .toolbarbutton-text' rule above. */
 }
 
 .subviewbutton-iconic > .toolbarbutton-icon {
@@ -1124,16 +1124,16 @@ panelview .toolbarbutton-1,
   fill: currentColor;
 }
 
-
-
-
+/* We don't always display: none this item, and if it has forced width (like above)
+ * or margin, that impacts the position of the label. Fix:
+ */
 .subviewbutton > .toolbarbutton-icon {
   margin: 0;
 }
 
 .subviewbutton.panel-subview-footer > .menu-text {
   appearance: none;
-  padding-inline-start: 0 !important; 
+  padding-inline-start: 0 !important; /* to override menu.css on Windows */
   padding-inline-end: 6px;
   -moz-box-flex: 0;
 }
@@ -1148,7 +1148,7 @@ panelview .toolbarbutton-1,
 
 .subviewbutton > .menu-accel-container > .menu-iconic-accel,
 .subviewbutton > .menu-accel-container > .menu-accel {
-  margin-inline-end: 0 !important; 
+  margin-inline-end: 0 !important; /* to override menu.css on Windows */
 }
 
 .subviewbutton[shortcut]::after {
@@ -1189,7 +1189,7 @@ panelview .toolbarbutton-1,
   fill: currentColor;
   fill-opacity: 0.4;
   float: inline-end;
-  
+  /* Centers the icon and resizes it to 12px square. */
   transform: translateY(2px) scale(.75);
 }
 
@@ -1201,7 +1201,7 @@ panelview .toolbarbutton-1,
 }
 
 .subviewbutton[type="open-to-new"]::after {
-  content: url(chrome://browser/skin/open-in-new.svg);
+  content: url(chrome://global/skin/icons/open-in-new.svg);
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: 0.6;
@@ -1214,9 +1214,9 @@ panelview .toolbarbutton-1,
   transform: scaleX(-1);
 }
 
-
+/* A menu item with some buttons at the end. */
 .toolbaritem-menu-buttons {
-  
+  /* Use the same margin at the start as at the end (other margin set below). */
   margin-inline-start: 8px;
 }
 
@@ -1245,12 +1245,12 @@ panelmultiview .toolbaritem-combined-buttons > label {
 }
 
 panelmultiview .toolbaritem-combined-buttons > spacer.before-label {
-  width: 36px; 
+  width: 36px; /* 12px toolbarbutton padding + 16px icon + 8px label padding start */
 }
 
 panelmultiview .toolbaritem-combined-buttons > spacer.after-label {
   -moz-box-flex: 1;
-  width: 20px; 
+  width: 20px; /* a little bigger than the width of the scrollbar */
 }
 
 .PanelUI-subView .toolbaritem-combined-buttons > .subviewbutton {
@@ -1265,7 +1265,7 @@ panelmultiview .toolbaritem-combined-buttons > spacer.after-label {
   margin-inline-start: 10px;
 }
 
-
+/* Unset the min-height constraint, because that works better for a text-only button. */
 #appMenu-zoomReset-button {
   min-height: unset;
   border: 1px solid var(--panel-separator-color);
@@ -1358,11 +1358,11 @@ menuitem.panel-subview-footer@menuStateActive@,
 }
 
 #BMB_bookmarksPopup menupopup > .bookmarks-actions-menuseparator {
-  
+  /* Hide bottom separator as the styled footer includes a top border serving the same purpose */
   display: none;
 }
 
-
+/* Disabled (empty) item is always alone and never has an icon, so fix its left padding */
 #BMB_bookmarksPopup menupopup[emptyplacesresult] .bookmark-item.subviewbutton {
   padding-left: 6px;
 }
@@ -1450,7 +1450,7 @@ toolbarpaletteitem[place="menu-panel"] > toolbaritem {
 
 .toolbaritem-combined-buttons@inAnyPanel@ > toolbarbutton:not(.toolbarbutton-1)[disabled] {
   opacity: 0.4;
-  
+  /* Override toolbarbutton.css which sets the color to GrayText */
   color: inherit;
 }
 
@@ -1487,9 +1487,9 @@ toolbarpaletteitem[place="menu-panel"] > toolbaritem {
   width: @wideMenuPanelWidth@;
 }
 
-
-
-
+/* In customize mode, the overflow list is constrained by its container,
+ * so we set width: auto to avoid the scrollbar not fitting.
+ */
 #customization-panelHolder > .widget-overflow-list {
   width: auto;
 }
@@ -1746,7 +1746,7 @@ toolbarpaletteitem[place="menu-panel"] > .subviewbutton-nav::after {
 }
 
 .panel-header > .subviewbutton-back + label {
-  
+  /* Add the size of the back button to center properly. */
   margin-inline-end: 32px;
 }
 
@@ -1762,8 +1762,8 @@ toolbarpaletteitem[place="menu-panel"] > .subviewbutton-nav::after {
 }
 
 .subviewbutton-back > .toolbarbutton-text {
-  
-
+  /* !important to override .cui-widget-panel .toolbarbutton-text
+   * selector further down. */
   display: none !important;
 }
 
@@ -1789,7 +1789,7 @@ toolbarpaletteitem[place="menu-panel"] > .subviewbutton-nav::after {
 }
 
 .subviewbutton.download > .action-button {
-  appearance: none; 
+  appearance: none; /* To avoid native Windows hover styling */
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: 1;
@@ -1798,7 +1798,7 @@ toolbarpaletteitem[place="menu-panel"] > .subviewbutton-nav::after {
 %else
   list-style-image: url("chrome://browser/skin/folder.svg");
 %endif
-  
+  /* Measurement to vertically center this button: 1 line of text minus half of 4px top margin. */
   margin: calc(1em - 2px) 0 0;
   padding: 4px;
 }
@@ -1820,7 +1820,7 @@ toolbarpaletteitem[place="menu-panel"] > .subviewbutton-nav::after {
   background-color: var(--arrowpanel-dimmed-even-further);
 }
 
-
+/* What's New panel */
 #customizationui-widget-multiview #PanelUI-whatsNew {
   max-width: @menuPanelWidth@;
 }
@@ -1838,9 +1838,9 @@ toolbarpaletteitem[place="menu-panel"] > .subviewbutton-nav::after {
 }
 
 #protections-popup #messaging-system-message-container[disabled] {
-   
-
-
+   /* Offset the height when hidden. This makes the panel content
+   * cover the info message and reveal it as it slides down, rather
+   * than the info message growing in height. */
   margin-bottom: -260px;
   pointer-events: none;
 }
@@ -1879,7 +1879,7 @@ panelview[mainview] #PanelUI-whatsNew-content {
   height: 43em;
 }
 
-
+/* Hide the What's New header when the panel is a subview */
 panelview:not([mainview]) #PanelUI-whatsNew-title {
   display: none;
 }
@@ -1909,9 +1909,9 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   background-color: var(--arrowpanel-dimmed-even-further);
 }
 
-
-
-
+/* These checkbox styles have been pulled from `common.inc.css` and
+   duplicated here to ensure they apply correctly. See
+   https://searchfox.org/mozilla-central/rev/7908ce29657cfd623993046bd8e38664e1c0b28e/toolkit/themes/shared/in-content/common.inc.css#559 */
 #PanelUI-whatsNew checkbox {
   appearance: none;
   height: 30px;
@@ -1952,10 +1952,10 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   padding: 0;
 }
 
-
-
-
-
+/* The following 2 rules show a 1 pixel line separator between What's New
+ * messages while at the same time ensuring that the first message (which has
+ * a date header) will not show the separator
+ */
 #PanelUI-whatsNew .whatsNew-message-body::before {
   content: "";
   display: block;
@@ -1966,7 +1966,7 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
 }
 
 #PanelUI-whatsNew .has-icon::before {
-  
+  /* the width of the icon + the grid margin */
   width: calc(104% + 40px);
 }
 
@@ -1995,8 +1995,8 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
 }
 
 #protections-popup-message .whatsNew-message-body {
-  
-
+  /* -10px to compensate for the margin on the container. We can't get rid of that
+     because it helps position the background image. */
   margin: 0 calc(-10px + var(--horizontal-padding)) var(--vertical-section-padding);
 }
 
@@ -2080,8 +2080,8 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
 }
 
 #PanelUI-profiler {
-  
-
+  /* On Linux, the popup was too wide for the content due to this rule. This is marked
+     as !important to get over the specificity of the CustomizeableUI base rules. */
   min-width: 0 !important;
 }
 
@@ -2089,7 +2089,7 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   max-width: 290px;
 }
 
-
+/* Make the width nicely sized for when the panel is in the overflow menu area. */
 #widget-overflow #PanelUI-profiler description {
   max-width: 347px;
 }
@@ -2101,8 +2101,8 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
 #PanelUI-profiler-header[isinfocollapsed="false"] {
   background: radial-gradient(circle farthest-side at top right, #03b1f4, #0556cd);
   color: #fff;
-  
-
+  /* Set custom hover/focus/active states on the info button,
+     to make them more visible on the header background */
   --arrowpanel-dimmed: #0003;
   --arrowpanel-dimmed-further: #0005;
   --arrowpanel-dimmed-even-further: #0007;
@@ -2138,9 +2138,9 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   opacity: 1;
 }
 
-
-
-
+/* The header has an attribute "animationready" that is either set to "true" or to
+   "false". When the DOM is being initialized it is set to "false" so that animatios
+   do not run. */
 #PanelUI-profiler-header[animationready="true"] #PanelUI-profiler-info {
   transition: margin-block-end 250ms, opacity 250ms;
 }
@@ -2149,8 +2149,8 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   opacity: 0;
 }
 
-
-
+/* Fill the little arrow part of the Profiler panel with the color closest to
+   the panel itself, when the info section is expanded */
 #customizationui-widget-panel[viewId="PanelUI-profiler"][mainviewshowing][arrowposition="after_end"][isinfoexpanded="true"]::part(arrow) {
   fill: #03b1f4;
 }
@@ -2159,7 +2159,7 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   fill: #0556cd;
 }
 
-
+/* Hide the unused box that gets added here. */
 #PanelUI-profiler-learn-more > hbox {
   display: none;
 }
@@ -2204,7 +2204,7 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
 
 #PanelUI-profiler-presets {
   appearance: none;
-  position: relative; 
+  position: relative; /* Ensure there is a stacking context for the dropdown arrow. */
   width: 100%;
   min-height: 24px;
   background-color: #EDEDF0;
@@ -2218,7 +2218,7 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   margin: 8px 15px;
 }
 
-
+/* This is dark-mode specific styling. */
 :root[lwt-popup-brighttext] #PanelUI-profiler-presets {
   background-color: rgb(47, 47, 51);
   color: #fff;
@@ -2357,8 +2357,8 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
 
 .PanelUI-profiler-button-primary {
   background-color: #0060DF;
-  
-
+  /* The !important designation here is to overcome the specificity of the button.css
+     styles that are being applied on linux for hovers. */
   color: #fff !important;
 }
 
@@ -2393,12 +2393,12 @@ panelview:not([mainview]) #PanelUI-whatsNew-title {
   opacity: 0.5;
 }
 
-
-
-
+/**
+ * Override the specificity of `#PanelUI-profiler description`
+ */
 description#PanelUI-profiler-locked {
   padding: 16px;
   line-height: 1.5;
-  
+  /* Make sure this description is wider than the header's */
   max-width: 310px;
 }

@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 .popup-notification-icon,
@@ -25,14 +25,14 @@
   -moz-outline-radius: var(--toolbarbutton-border-radius);
 }
 
-
-
-
+/* This class can be used alone or in combination with the class defining the
+   type of icon displayed. This rule must be defined before the others in order
+   for its list-style-image to be overridden. */
 .notification-anchor-icon {
   list-style-image: url(chrome://browser/skin/notification-icons/default-info.svg);
 }
 
-
+/* INDIVIDUAL NOTIFICATIONS */
 
 .focus-tab-by-prompt-icon {
   list-style-image: url(chrome://browser/skin/notification-icons/focus-tab-by-prompt.svg);
@@ -74,7 +74,7 @@
 }
 
 .open-protocol-handler-icon {
-  list-style-image: url(chrome://browser/skin/open-in-new.svg);
+  list-style-image: url(chrome://global/skin/icons/open-in-new.svg);
 }
 
 .open-protocol-handler-icon:-moz-locale-dir(rtl) {
@@ -215,7 +215,7 @@
 
 html|*#webRTC-previewVideo {
   width: 300px;
-  
+  /* If we don't set the min-width, width is ignored. */
   min-width: 300px;
   min-height: 10em;
   max-height: 200px;
@@ -240,7 +240,7 @@ html|*#webRTC-previewVideo {
   margin-inline-start: 0;
 }
 
-
+/* This icon has a block sign in it, so we don't need a blocked version. */
 .popup-icon {
   list-style-image: url("chrome://browser/skin/notification-icons/popup.svg");
 }
@@ -264,7 +264,7 @@ html|*#webRTC-previewVideo {
   min-width: 6.5em;
 }
 
-
+/* EME */
 
 .popup-notification-icon[popupid="drmContentPlaying"],
 .drm-icon {
@@ -283,7 +283,7 @@ html|*#webRTC-previewVideo {
   100% { transform: translateX(0); }
 }
 
-
+/* INSTALL ADDONS */
 
 .install-icon {
   list-style-image: url(chrome://mozapps/skin/extensions/extension.svg);
@@ -316,13 +316,13 @@ html|*#webRTC-previewVideo {
   list-style-image: url(chrome://browser/skin/addons/addon-install-installed.svg);
 }
 
-
+/* OFFLINE APPS */
 
 .popup-notification-icon[popupid="offline-app-usage"] {
   list-style-image: url(chrome://global/skin/icons/question-64.png);
 }
 
-
+/* PLUGINS */
 
 .plugin-icon {
   list-style-image: url(chrome://global/skin/plugins/plugin.svg);
@@ -368,8 +368,8 @@ html|*#webRTC-previewVideo {
 }
 
 #notification-popup-box[hidden] {
-  
-
+  /* Override display:none to make the pluginBlockedNotification animation work
+     when showing the notification repeatedly. */
   display: -moz-box;
   visibility: collapse;
 }
@@ -387,7 +387,7 @@ html|*#webRTC-previewVideo {
   }
 }
 
-
+/* TRANSLATION */
 
 .translation-icon {
   list-style-image: url(chrome://browser/skin/translation-16.png);
@@ -411,7 +411,7 @@ html|*#webRTC-previewVideo {
 }
 %endif
 
-
+/* UPDATE */
 .popup-notification-icon[popupid="update-available"],
 .popup-notification-icon[popupid="update-downloading"],
 .popup-notification-icon[popupid="update-manual"],
