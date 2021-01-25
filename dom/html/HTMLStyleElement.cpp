@@ -92,17 +92,10 @@ nsresult HTMLStyleElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 }
 
 void HTMLStyleElement::UnbindFromTree(bool aNullParent) {
-  nsCOMPtr<Document> oldDoc = GetUncomposedDoc();
+  RefPtr<Document> oldDoc = GetUncomposedDoc();
   ShadowRoot* oldShadow = GetContainingShadow();
 
   nsGenericHTMLElement::UnbindFromTree(aNullParent);
-
-  if (oldShadow && GetContainingShadow()) {
-    
-    
-    
-    return;
-  }
 
   Unused << UpdateStyleSheetInternal(oldDoc, oldShadow);
 }
