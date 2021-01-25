@@ -2,6 +2,7 @@
 
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
 
 const Paths = SessionFile.Paths;
@@ -30,9 +31,28 @@ function prepareTest() {
 
 
 async function getUpgradeBackups() {
-  let children = await IOUtils.getChildren(Paths.backups);
+  let iterator;
+  let backups = [];
 
-  return children.filter(path => path.startsWith(Paths.upgradeBackupPrefix));
+  try {
+    iterator = new OS.File.DirectoryIterator(Paths.backups);
+
+    
+    await iterator.forEach(function(file) {
+      
+      if (file.path.startsWith(Paths.upgradeBackupPrefix)) {
+        
+        backups.push(file.path);
+      }
+    }, this);
+  } finally {
+    if (iterator) {
+      iterator.close();
+    }
+  }
+
+  
+  return backups;
 }
 
 add_task(async function init() {
@@ -44,8 +64,9 @@ add_task(async function test_upgrade_backup() {
   let test = prepareTest();
   info("Let's check if we create an upgrade backup");
   await SessionFile.wipe();
-  await IOUtils.writeUTF8(Paths.clean, test.contents, {
-    compress: true,
+  await OS.File.writeAtomic(Paths.clean, test.contents, {
+    encoding: "utf-8",
+    compression: "lz4",
   });
   await SessionFile.read(); 
   await SessionFile.write(""); 
@@ -57,12 +78,12 @@ add_task(async function test_upgrade_backup() {
   );
 
   is(
-    await IOUtils.exists(Paths.upgradeBackup),
+    await OS.File.exists(Paths.upgradeBackup),
     true,
     "upgrade backup file has been created"
   );
 
-  let data = await IOUtils.read(Paths.upgradeBackup, { decompress: true });
+  let data = await OS.File.read(Paths.upgradeBackup, { compression: "lz4" });
   is(
     test.contents,
     new TextDecoder().decode(data),
@@ -73,12 +94,13 @@ add_task(async function test_upgrade_backup() {
   let newContents = JSON.stringify({
     "something else entirely": Math.random(),
   });
-  await IOUtils.writeUTF8(Paths.clean, newContents, {
-    compress: true,
+  await OS.File.writeAtomic(Paths.clean, newContents, {
+    encoding: "utf-8",
+    compression: "lz4",
   });
   await SessionFile.read(); 
   await SessionFile.write(""); 
-  data = await IOUtils.read(Paths.upgradeBackup, { decompress: true });
+  data = await OS.File.read(Paths.upgradeBackup, { compression: "lz4" });
   is(
     test.contents,
     new TextDecoder().decode(data),
@@ -91,34 +113,41 @@ add_task(async function test_upgrade_backup_removal() {
   let maxUpgradeBackups = Preferences.get(PREF_MAX_UPGRADE_BACKUPS, 3);
   info("Let's see if we remove backups if there are too many");
   await SessionFile.wipe();
-  await IOUtils.makeDirectory(Paths.backups);
-  await IOUtils.writeUTF8(Paths.clean, test.contents, {
-    compress: true,
+  await OS.File.makeDir(Paths.backups);
+  await OS.File.writeAtomic(Paths.clean, test.contents, {
+    encoding: "utf-8",
+    compression: "lz4",
   });
 
   
-  if (await IOUtils.exists(Paths.nextUpgradeBackup)) {
-    await IOUtils.remove(Paths.nextUpgradeBackup);
+  if (OS.File.exists(Paths.nextUpgradeBackup)) {
+    await OS.File.remove(Paths.nextUpgradeBackup);
   }
 
   
-  await IOUtils.writeUTF8(Paths.upgradeBackupPrefix + "20080101010101", "", {
-    compress: true,
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20080101010101", "", {
+    encoding: "utf-8",
+    compression: "lz4",
   });
-  await IOUtils.writeUTF8(Paths.upgradeBackupPrefix + "20090101010101", "", {
-    compress: true,
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20090101010101", "", {
+    encoding: "utf-8",
+    compression: "lz4",
   });
-  await IOUtils.writeUTF8(Paths.upgradeBackupPrefix + "20100101010101", "", {
-    compress: true,
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20100101010101", "", {
+    encoding: "utf-8",
+    compression: "lz4",
   });
-  await IOUtils.writeUTF8(Paths.upgradeBackupPrefix + "20110101010101", "", {
-    compress: true,
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20110101010101", "", {
+    encoding: "utf-8",
+    compression: "lz4",
   });
-  await IOUtils.writeUTF8(Paths.upgradeBackupPrefix + "20120101010101", "", {
-    compress: true,
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20120101010101", "", {
+    encoding: "utf-8",
+    compression: "lz4",
   });
-  await IOUtils.writeUTF8(Paths.upgradeBackupPrefix + "20130101010101", "", {
-    compress: true,
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20130101010101", "", {
+    encoding: "utf-8",
+    compression: "lz4",
   });
 
   
@@ -135,7 +164,7 @@ add_task(async function test_upgrade_backup_removal() {
     "upgrade backup should be set"
   );
   is(
-    await IOUtils.exists(Paths.upgradeBackup),
+    await OS.File.exists(Paths.upgradeBackup),
     true,
     "upgrade backup file has been created"
   );

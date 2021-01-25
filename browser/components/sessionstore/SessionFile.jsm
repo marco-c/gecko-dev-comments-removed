@@ -97,16 +97,13 @@ var SessionFile = {
 Object.freeze(SessionFile);
 
 var Path = OS.Path;
-var profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
+var profileDir = OS.Constants.Path.profileDir;
 
 var SessionFileInternal = {
   Paths: Object.freeze({
-    profileDir,
     
     
     clean: Path.join(profileDir, "sessionstore.jsonlz4"),
-
-    oldClean: Path.join(profileDir, "sessionstore.js"),
 
     
     
