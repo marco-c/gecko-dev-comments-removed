@@ -122,14 +122,6 @@ class ComparePolicy final : public TypePolicy {
                                   MInstruction* def) const override;
 };
 
-class SameValuePolicy final : public TypePolicy {
- public:
-  constexpr SameValuePolicy() = default;
-  EMPTY_DATA_;
-  [[nodiscard]] bool adjustInputs(TempAllocator& alloc,
-                                  MInstruction* def) const override;
-};
-
 
 class TestPolicy final : public TypePolicy {
  public:
