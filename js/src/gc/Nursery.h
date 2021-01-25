@@ -724,6 +724,10 @@ class Nursery {
                                            ObjectElements* newHeader,
                                            uint32_t capacity);
 
+#ifdef DEBUG
+  bool checkForwardingPointerLocation(void* ptr, bool expectedInside);
+#endif
+
   
   
   void sweep(JSTracer* trc);
