@@ -1,7 +1,7 @@
 <!doctype html>
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <html>
   <head>
     <meta charset="utf-8">
@@ -49,9 +49,9 @@
           <input type="radio" name="scale-choice" id="percent-scale-choice">
           <span class="col">
             <label id="percent-scale-label" for="percent-scale-choice" data-l10n-id="printui-scale-pcent"></label>
-            
-
-
+            <!-- Note that here and elsewhere, we're setting aria-errormessage
+                 attributes to a list of all possible errors. The a11y APIs
+                 will filter this down to visible items only. -->
             <input
               id="percent-scale" class="photon-number"
               type="number" min="10" max="200" step="1" size="6"
@@ -172,7 +172,9 @@
               <label id="pages-per-sheet-label" class="block-label" data-l10n-id="printui-pages-per-sheet"></label>
               <select is="setting-select" id="pages-per-sheet-picker" class="row" data-setting-name="numPagesPerSheet">
                 <option value="1">1</option>
+                <option value="2">2</option>
                 <option value="4">4</option>
+                <option value="6">6</option>
                 <option value="9">9</option>
                 <option value="16">16</option>
               </select>
