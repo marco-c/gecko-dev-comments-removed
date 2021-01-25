@@ -134,15 +134,15 @@ add_task(async () => {
   
   await flushApzRepaintsInPopup(browserForPopup);
 
-  const wheelEventPromise = SpecialPowers.spawn(
+  const scrollEventPromise = SpecialPowers.spawn(
     browserForPopup,
     [],
     async () => {
       return new Promise(resolve => {
         content.window.addEventListener(
-          "wheel",
+          "scroll",
           event => {
-            dump("Got a wheel event in the popup content document\n");
+            dump("Got a scroll event in the popup content document\n");
             resolve();
           },
           { once: true }
@@ -165,11 +165,11 @@ add_task(async () => {
     );
   });
 
-  await wheelEventPromise;
+  
+  
+  const apzPromise = flushApzRepaintsInPopup(browserForPopup);
 
-  
-  
-  await flushApzRepaintsInPopup(browserForPopup);
+  await Promise.all([apzPromise, scrollEventPromise]);
 
   const scrollY = await SpecialPowers.spawn(browserForPopup, [], () => {
     return content.window.scrollY;
