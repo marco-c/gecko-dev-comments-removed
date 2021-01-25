@@ -50,8 +50,6 @@ class MediaDecoderStateMachine;
 struct MediaPlaybackEvent;
 struct SharedDummyTrack;
 
-enum class Visibility : uint8_t;
-
 struct MOZ_STACK_CLASS MediaDecoderInit {
   MediaDecoderOwner* const mOwner;
   const double mVolume;
@@ -141,9 +139,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   virtual void Play();
 
   
-  virtual void NotifyOwnerActivityChanged(bool aIsDocumentVisible,
-                                          Visibility aElementVisibility,
-                                          bool aIsElementInTree);
+  virtual void NotifyOwnerActivityChanged(bool aIsOwnerInvisible,
+                                          bool aIsOwnerConnected);
 
   
   virtual void Pause();
@@ -307,9 +304,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   bool CanPlayThrough();
 
   
-  virtual void SetElementVisibility(bool aIsDocumentVisible,
-                                    Visibility aElementVisibility,
-                                    bool aIsElementInTree);
+  virtual void SetElementVisibility(bool aIsOwnerInvisible,
+                                    bool aIsOwnerConnected);
 
   
   
@@ -570,13 +566,11 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   UniquePtr<MediaInfo> mInfo;
 
   
-  bool mIsDocumentVisible;
+  bool mIsOwnerInvisible;
 
   
-  Visibility mElementVisibility;
-
   
-  bool mIsElementInTree;
+  bool mIsOwnerConnected;
 
   
   bool mForcedHidden;
