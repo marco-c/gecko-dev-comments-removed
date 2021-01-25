@@ -127,9 +127,6 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
     CSPCONTEXTLOG((">>>>                      aContentType: %d", aContentType));
   }
 
-  bool isPreload = nsContentUtils::IsPreloadType(aContentType);
-
-  
   
   
   
@@ -154,15 +151,14 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
     return NS_OK;
   }
 
-  bool permitted =
-      permitsInternal(dir,
-                      nullptr,  
-                      aCSPEventListener, aContentLocation,
-                      aOriginalURIIfRedirect, aNonce, isPreload,
-                      false,  
-                      aSendViolationReports,
-                      true,  
-                      aParserCreated);
+  bool permitted = permitsInternal(
+      dir,
+      nullptr,  
+      aCSPEventListener, aContentLocation, aOriginalURIIfRedirect, aNonce,
+      false,  
+      aSendViolationReports,
+      true,  
+      aParserCreated);
 
   *outDecision =
       permitted ? nsIContentPolicy::ACCEPT : nsIContentPolicy::REJECT_SERVER;
@@ -180,9 +176,9 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
 bool nsCSPContext::permitsInternal(
     CSPDirective aDir, Element* aTriggeringElement,
     nsICSPEventListener* aCSPEventListener, nsIURI* aContentLocation,
-    nsIURI* aOriginalURIIfRedirect, const nsAString& aNonce, bool aIsPreload,
-    bool aSpecific, bool aSendViolationReports,
-    bool aSendContentLocationInViolationReports, bool aParserCreated) {
+    nsIURI* aOriginalURIIfRedirect, const nsAString& aNonce, bool aSpecific,
+    bool aSendViolationReports, bool aSendContentLocationInViolationReports,
+    bool aParserCreated) {
   EnsureIPCPoliciesRead();
   bool permits = true;
 
@@ -201,7 +197,7 @@ bool nsCSPContext::permitsInternal(
       
       
       
-      if (!aIsPreload && aSendViolationReports) {
+      if (aSendViolationReports) {
         uint32_t lineNumber = 0;
         uint32_t columnNumber = 0;
         nsAutoString spec;
@@ -1618,7 +1614,6 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
                         ancestorsArray[a],
                         nullptr,  
                         u""_ns,   
-                        false,    
                         true,     
                         true,     
                         okToSendAncestor,
@@ -1655,7 +1650,6 @@ nsCSPContext::Permits(Element* aTriggeringElement,
       permitsInternal(aDir, aTriggeringElement, aCSPEventListener, aURI,
                       nullptr,  
                       u""_ns,   
-                      false,    
                       aSpecific,
                       true,    
                       true,    
