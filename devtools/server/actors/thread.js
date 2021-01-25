@@ -413,7 +413,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.reconfigure(options);
 
     
-    this._setupForBreaking();
+    this._state = STATES.RUNNING;
 
     
     
@@ -1273,18 +1273,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
   },
 
-  _setupForBreaking() {
-    this.maybePauseOnExceptions();
-    this._state = STATES.RUNNING;
-  },
-
   
 
 
 
 
   doResume({ resumeLimit } = {}) {
-    this._setupForBreaking();
+    this._state = STATES.RUNNING;
 
     
     this._pausePool.destroy();
@@ -1588,7 +1583,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     
     this.dbg.onEnterFrame = undefined;
-    this.dbg.onExceptionUnwind = undefined;
     this._requestedFrameRestart = null;
     this._clearSteppingHooks();
 
@@ -1773,7 +1767,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this.sourcesManager.reset();
       this.clearDebuggees();
       this.dbg.enable();
-      this.maybePauseOnExceptions();
       
       
       this.global = window;
@@ -1806,7 +1799,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.removeAllWatchpoints();
     this.disableAllBreakpoints();
     this.dbg.onEnterFrame = undefined;
-    this.dbg.onExceptionUnwind = undefined;
   },
 
   _onNavigate() {
@@ -1925,6 +1917,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _onExceptionUnwind(youngestFrame, value) {
+    
+    if (this.isPaused()) {
+      return undefined;
+    }
+
     let willBeCaught = false;
     for (let frame = youngestFrame; frame != null; frame = frame.older) {
       if (frame.script.isInCatchScope(frame.offset)) {
