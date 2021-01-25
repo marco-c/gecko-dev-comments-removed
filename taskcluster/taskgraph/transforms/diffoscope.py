@@ -29,6 +29,8 @@ diff_description_schema = Schema(
         
         Required("name"): text_type,
         
+        Required("tier"): int,
+        
         Required("symbol"): text_type,
         
         Optional("job-from"): text_type,
@@ -125,7 +127,7 @@ def fill_template(config, tasks):
                 "symbol": task["symbol"],
                 "platform": "diff/opt",
                 "kind": "other",
-                "tier": 2,
+                "tier": task["tier"],
             },
             "worker-type": "b-linux",
             "worker": {
