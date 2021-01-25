@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/Logging.h"
 
@@ -40,8 +40,8 @@ extern ChildView* gLastDragView;
 extern NSEvent* gLastDragMouseDownEvent;
 extern bool gUserCancelledDrag;
 
-// This global makes the transferable array available to Cocoa's promised
-// file destination callback.
+
+
 nsIArray* gDraggedTransferables = nullptr;
 
 NSString* const kPublicUrlPboardType = @"public.url";
@@ -65,7 +65,7 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   LayoutDeviceIntRect dragRect(0, 0, 20, 20);
   NSImage* image = ConstructDragImage(mSourceNode, aRegion, mScreenPosition, &dragRect);
   if (!image) {
-    // if no image was returned, just draw a rectangle
+    
     NSSize size;
     size.width = nsCocoaUtils::DevPixelsToCocoaPoints(dragRect.width, scaleFactor);
     size.height = nsCocoaUtils::DevPixelsToCocoaPoints(dragRect.height, scaleFactor);
@@ -102,7 +102,7 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   nsPresContext* pc;
   nsresult rv = DrawDrag(aDOMNode, aRegion, aPoint, aDragRect, &surface, &pc);
   if (pc && (!aDragRect->width || !aDragRect->height)) {
-    // just use some suitable defaults
+    
     int32_t size = nsCocoaUtils::CocoaPointsToDevPixels(20, scaleFactor);
     aDragRect->SetRect(pc->CSSPixelsToDevPixels(aPoint.x), pc->CSSPixelsToDevPixels(aPoint.y), size,
                        size);
@@ -146,8 +146,8 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   for (uint32_t i = 0; i < height; ++i) {
     uint8_t* src = map.mData + i * map.mStride;
     for (uint32_t j = 0; j < width; ++j) {
-      // Reduce transparency overall by multipying by a factor. Remember, Alpha
-      // is premultipled here. Also, Quartz likes RGBA, so do that translation as well.
+      
+      
 #ifdef IS_BIG_ENDIAN
       dest[0] = uint8_t(src[1] * DRAG_TRANSLUCENCY);
       dest[1] = uint8_t(src[2] * DRAG_TRANSLUCENCY);
@@ -178,10 +178,10 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
 bool nsDragService::IsValidType(NSString* availableType, bool allowFileURL) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
-  // Prevent exposing fileURL for non-fileURL type.
-  // We need URL provided by dropped webloc file, but don't need file's URL.
-  // kUTTypeFileURL is returned by [NSPasteboard availableTypeFromArray:] for
-  // kPublicUrlPboardType, since it conforms to kPublicUrlPboardType.
+  
+  
+  
+  
   bool isValid = true;
   if (!allowFileURL &&
       [availableType isEqualToString:[UTIHelper stringFromPboardType:(NSString*)kUTTypeFileURL]]) {
@@ -249,20 +249,20 @@ nsresult nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
   if (!gLastDragView) {
-    // gLastDragView is non-null between -[ChildView mouseDown:] and -[ChildView mouseUp:].
-    // If we get here with gLastDragView being null, that means that the mouse button has already
-    // been released. In that case we need to abort the drag because the OS won't know where to drop
-    // whatever's being dragged, and we might end up with a stuck drag & drop session.
+    
+    
+    
+    
     return NS_ERROR_FAILURE;
   }
 
   mDataItems = aTransferableArray;
 
-  // Save the transferables away in case a promised file callback is invoked.
+  
   gDraggedTransferables = aTransferableArray;
 
-  // We need to retain the view and the event during the drag in case either
-  // gets destroyed.
+  
+  
   mNativeDragView = [gLastDragView retain];
   mNativeDragEvent = [gLastDragMouseDownEvent retain];
 
@@ -281,18 +281,18 @@ nsresult nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
         return NS_ERROR_FAILURE;
       }
 
-      // Transform the transferable to an NSDictionary
+      
       NSDictionary* pasteboardOutputDict =
           nsClipboard::PasteboardDictFromTransferable(currentTransferable);
       if (!pasteboardOutputDict) {
         return NS_ERROR_FAILURE;
       }
 
-      // write everything out to the general pasteboard
+      
       [types addObjectsFromArray:[pasteboardOutputDict allKeys]];
-      // Gecko is initiating this drag so we always want its own views to
-      // consider it. Add our wildcard type to the pasteboard to accomplish
-      // this.
+      
+      
+      
       [types addObject:[UTIHelper stringFromPboardType:kMozWildcardPboardType]];
     }
   }
@@ -329,14 +329,14 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
 
   if (!aTransferable) return NS_ERROR_FAILURE;
 
-  // get flavor list that includes all acceptable flavors (including ones obtained through
-  // conversion)
+  
+  
   nsTArray<nsCString> flavors;
   nsresult rv = aTransferable->FlavorsTransferableCanImport(flavors);
   if (NS_FAILED(rv)) return NS_ERROR_FAILURE;
 
-  // if this drag originated within Mozilla we should just use the cached data from
-  // when the drag started if possible
+  
+  
   if (mDataItems) {
     nsCOMPtr<nsITransferable> currentTransferable = do_QueryElementAt(mDataItems, aItemIndex);
     if (currentTransferable) {
@@ -347,13 +347,13 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
         rv = currentTransferable->GetTransferData(flavorStr.get(), getter_AddRefs(dataSupports));
         if (NS_SUCCEEDED(rv)) {
           aTransferable->SetTransferData(flavorStr.get(), dataSupports);
-          return NS_OK;  // maybe try to fill in more types? Is there a point?
+          return NS_OK;  
         }
       }
     }
   }
 
-  // now check the actual clipboard for data
+  
   for (uint32_t i = 0; i < flavors.Length(); i++) {
     nsCString& flavorStr = flavors[i];
 
@@ -380,11 +380,11 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
       if (!filePath) continue;
 
       unsigned int stringLength = [filePath length];
-      unsigned int dataLength = (stringLength + 1) * sizeof(char16_t);  // in bytes
+      unsigned int dataLength = (stringLength + 1) * sizeof(char16_t);  
       char16_t* clipboardDataPtr = (char16_t*)malloc(dataLength);
       if (!clipboardDataPtr) return NS_ERROR_OUT_OF_MEMORY;
       [filePath getCharacters:reinterpret_cast<unichar*>(clipboardDataPtr)];
-      clipboardDataPtr[stringLength] = 0;  // null terminate
+      clipboardDataPtr[stringLength] = 0;  
 
       nsCOMPtr<nsIFile> file;
       rv = NS_NewLocalFile(nsDependentString(clipboardDataPtr), true, getter_AddRefs(file));
@@ -410,7 +410,7 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
       if (!clipboardDataPtr) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
-      [pasteboardData getBytes:clipboardDataPtr];
+      [pasteboardData getBytes:clipboardDataPtr length:dataLength];
 
       nsCOMPtr<nsISupports> genericDataWrapper;
       nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr, clipboardDataPtr, dataLength,
@@ -452,15 +452,15 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
       unsigned int dataLength = [stringData length];
       void* clipboardDataPtr = malloc(dataLength);
       if (!clipboardDataPtr) return NS_ERROR_OUT_OF_MEMORY;
-      [stringData getBytes:clipboardDataPtr];
+      [stringData getBytes:clipboardDataPtr length:dataLength];
 
-      // The DOM only wants LF, so convert from MacOS line endings to DOM line endings.
+      
       int32_t signedDataLength = dataLength;
       nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(flavorStr, &clipboardDataPtr,
                                                          &signedDataLength);
       dataLength = signedDataLength;
 
-      // skip BOM (Byte Order Mark to distinguish little or big endian)
+      
       char16_t* clipboardDataPtrNoBOM = (char16_t*)clipboardDataPtr;
       if ((dataLength > 2) &&
           ((clipboardDataPtrNoBOM[0] == 0xFEFF) || (clipboardDataPtrNoBOM[0] == 0xFFFE))) {
@@ -476,14 +476,14 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
       break;
     }
 
-    // We have never supported this on Mac OS X, we should someday. Normally dragging images
-    // in is accomplished with a file path drag instead of the image data itself.
-    /*
-    if (flavorStr.EqualsLiteral(kPNGImageMime) || flavorStr.EqualsLiteral(kJPEGImageMime) ||
-        flavorStr.EqualsLiteral(kJPGImageMime) || flavorStr.EqualsLiteral(kGIFImageMime)) {
+    
+    
+    
 
-    }
-    */
+
+
+
+
   }
   return NS_OK;
 
@@ -500,7 +500,7 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
 
   nsDependentCString dataFlavor(aDataFlavor);
 
-  // first see if we have data for this in our cached transferable
+  
   if (mDataItems) {
     uint32_t dataItemsCount;
     mDataItems->GetLength(&dataItemsCount);
@@ -557,7 +557,7 @@ nsDragService::GetNumDropItems(uint32_t* aNumItems) {
 
   *aNumItems = 0;
 
-  // first check to see if we have a number of items cached
+  
   if (mDataItems) {
     mDataItems->GetLength(aNumItems);
     return NS_OK;
@@ -583,13 +583,13 @@ nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX, int32_t aImageY
 void nsDragService::DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoint) {
   aPoint.y = nsCocoaUtils::FlippedScreenY(aPoint.y);
 
-  // XXX It feels like we should be using the backing scale factor at aPoint
-  // rather than the initial drag view, but I've seen no ill effects of this.
+  
+  
   CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(mNativeDragView);
   LayoutDeviceIntPoint devPoint = nsCocoaUtils::CocoaPointsToDevPixels(aPoint, scaleFactor);
 
-  // If the image has changed, call enumerateDraggingItemsWithOptions to get
-  // the item being dragged and update its image.
+  
+  
   if (mDragImageChanged && mNativeDragView) {
     mDragImageChanged = false;
 
@@ -602,7 +602,7 @@ void nsDragService::DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoin
     if (pc) {
       void (^changeImageBlock)(NSDraggingItem*, NSInteger, BOOL*) =
           ^(NSDraggingItem* draggingItem, NSInteger idx, BOOL* stop) {
-            // We never add more than one item right now, but check just in case.
+            
             if (idx > 0) {
               return;
             }
@@ -612,7 +612,7 @@ void nsDragService::DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoin
             CSSIntPoint screenPoint = CSSIntPoint(nsPresContext::AppUnitsToIntCSSPixels(pt.x),
                                                   nsPresContext::AppUnitsToIntCSSPixels(pt.y));
 
-            // Create a new image; if one isn't returned don't change the current one.
+            
             LayoutDeviceIntRect newRect;
             NSImage* image = ConstructDragImage(mSourceNode, Nothing(), screenPoint, &newRect);
             if (image) {
