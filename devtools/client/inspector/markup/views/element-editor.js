@@ -608,6 +608,25 @@ ElementEditor.prototype = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _createAttribute: function(attribute, before = null) {
     const attr = this.doc.createElement("span");
     attr.dataset.attr = attribute.name;
@@ -736,27 +755,21 @@ ElementEditor.prototype = {
       attribute.value
     );
 
-    
-    
-    const collapse = value => {
-      if (value && value.match(COLLAPSE_DATA_URL_REGEX)) {
-        return truncateString(value, COLLAPSE_DATA_URL_LENGTH);
-      }
-      return this.markup.collapseAttributes
-        ? truncateString(value, this.markup.collapseAttributeLength)
-        : value;
-    };
-
     val.innerHTML = "";
+
+    
+    
     for (const token of parsedLinksData) {
       if (token.type === "string") {
-        val.appendChild(this.doc.createTextNode(collapse(token.value)));
+        val.appendChild(
+          this.doc.createTextNode(this._truncateAttributeValue(token.value))
+        );
       } else {
         const link = this.doc.createElement("span");
         link.classList.add("link");
         link.setAttribute("data-type", token.type);
         link.setAttribute("data-link", token.value);
-        link.textContent = collapse(token.value);
+        link.textContent = this._truncateAttributeValue(token.value);
         val.appendChild(link);
       }
     }
@@ -764,6 +777,24 @@ ElementEditor.prototype = {
     name.textContent = attribute.name;
 
     return attr;
+  },
+
+  
+
+
+
+
+
+
+
+  _truncateAttributeValue: function(value) {
+    if (value && value.match(COLLAPSE_DATA_URL_REGEX)) {
+      return truncateString(value, COLLAPSE_DATA_URL_LENGTH);
+    }
+
+    return this.markup.collapseAttributes
+      ? truncateString(value, this.markup.collapseAttributeLength)
+      : value;
   },
 
   
