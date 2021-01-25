@@ -591,6 +591,9 @@ class DesktopInstance(GeckoInstance):
         
         "browser.warnOnQuit": False,
         
+        
+        "prompts.contentPromptSubDialog": False,
+        
         "startup.homepage_welcome_url": "about:blank",
         "startup.homepage_welcome_url.additional": "",
     }

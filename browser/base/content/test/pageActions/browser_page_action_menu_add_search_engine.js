@@ -107,6 +107,10 @@ add_task(async function one() {
 
 
 add_task(async function invalid() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["prompts.contentPromptSubDialog", false]],
+  });
+
   let url =
     getRootDirectory(gTestPath) +
     "page_action_menu_add_search_engine_invalid.html";

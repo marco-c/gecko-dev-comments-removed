@@ -21,4 +21,8 @@ const RecommendedPreferences = {
   "browser.contentblocking.features.standard":
     "-tp,tpPrivate,cookieBehavior0,-cm,-fp",
   "network.cookie.cookieBehavior": 0,
+
+  
+  
+  "prompts.contentPromptSubDialog": false,
 };
