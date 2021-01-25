@@ -3933,6 +3933,10 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
 
   
 
+  
+  
+  
+  
   dom::Uint8ClampedArray scopedArr;
 
   
@@ -3997,7 +4001,10 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
     return Some(webgl::TexUnpackBlobDesc{
         imageTarget, explicitSize, gfxAlphaType::NonPremult, {}, {}});
   }();
-  if (!desc) return;
+  if (!desc) {
+    scopedArr.Reset();
+    return;
+  }
 
   
   
@@ -4028,6 +4035,7 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
       EnqueueError(LOCAL_GL_INVALID_OPERATION,
                    "Non-DOM-Element uploads with alpha-premult"
                    " or y-flip do not support subrect selection.");
+      scopedArr.Reset(); 
       return;
     }
   }
@@ -4082,6 +4090,7 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
 
   Run<RPROC(TexImage)>(static_cast<uint32_t>(level), respecFormat,
                        CastUvec3(offset), pi, std::move(*desc));
+  scopedArr.Reset(); 
 }
 
 void ClientWebGLContext::CompressedTexImage(bool sub, uint8_t funcDims,
