@@ -614,6 +614,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
 
 
   void DispatchPanGestureInput(mozilla::PanGestureInput& aInput);
+  void DispatchPinchGestureInput(mozilla::PinchGestureInput& aInput);
 
 #if defined(XP_WIN)
   void UpdateScrollCapture() override;
