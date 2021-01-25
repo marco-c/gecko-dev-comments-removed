@@ -102,12 +102,6 @@ bool UnmarkGrayGCThingUnchecked(JSRuntime* rt, JS::GCCellPtr thing);
 
 bool UnmarkGrayShapeRecursively(Shape* shape);
 
-template <typename T>
-void CheckTracedThing(JSTracer* trc, T* thing);
-
-template <typename T>
-void CheckTracedThing(JSTracer* trc, T thing);
-
 namespace gc {
 
 
@@ -165,6 +159,20 @@ inline void CheckGCThingAfterMovingGC(const WeakHeapPtr<T*>& t);
 #endif  
 
 } 
+
+
+#ifdef DEBUG
+template <typename T>
+void CheckTracedThing(JSTracer* trc, T* thing);
+template <typename T>
+void CheckTracedThing(JSTracer* trc, const T& thing);
+#else
+template <typename T>
+inline void CheckTracedThing(JSTracer* trc, T* thing) {}
+template <typename T>
+inline void CheckTracedThing(JSTracer* trc, const T& thing) {}
+#endif
+
 } 
 
 #endif 

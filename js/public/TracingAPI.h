@@ -30,12 +30,7 @@ JS_FRIEND_API size_t GCTraceKindSize(JS::TraceKind kind);
 enum class TracerKind {
   
   
-  
   Marking,
-
-  
-  
-  Tenuring,
 
   
   
@@ -44,6 +39,7 @@ enum class TracerKind {
   Generic,
 
   
+  Tenuring,
   Moving,
   GrayBuffering,
   ClearEdges,
