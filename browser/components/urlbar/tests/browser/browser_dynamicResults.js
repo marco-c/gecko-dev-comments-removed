@@ -46,6 +46,9 @@ const DYNAMIC_TYPE_VIEW_TEMPLATE = {
   ],
 };
 
+const DUMMY_PAGE =
+  "http://example.com/browser/browser/base/content/test/general/dummy_page.html";
+
 
 add_task(async function registration() {
   
@@ -401,6 +404,96 @@ add_task(async function pick() {
 });
 
 
+add_task(async function shouldNavigate() {
+  
+
+
+  class TestShouldNavigateProvider extends TestProvider {
+    
+
+
+
+    async startQuery(context, addCallback) {
+      for (let result of this._results) {
+        result.payload.searchString = context.searchString;
+        result.payload.shouldNavigate = true;
+        result.payload.url = DUMMY_PAGE;
+        addCallback(this, result);
+      }
+    }
+  }
+
+  await withDynamicTypeProvider(async provider => {
+    
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+      waitForFocus: SimpleTest.waitForFocus,
+    });
+
+    
+    let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
+    Assert.equal(
+      row.result.type,
+      UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      "row.result.type"
+    );
+
+    
+    
+    let element = row.querySelector(
+      `.urlbarView-dynamic-${DYNAMIC_TYPE_NAME}-selectable`
+    );
+    Assert.ok(element, "Sanity check element");
+    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 1 });
+    Assert.equal(
+      UrlbarTestUtils.getSelectedElement(window),
+      element,
+      `Selected element: ${name}`
+    );
+
+    
+    await UrlbarTestUtils.promisePopupClose(window, () =>
+      EventUtils.synthesizeKey("KEY_Enter")
+    );
+
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    is(
+      gBrowser.currentURI.spec,
+      DUMMY_PAGE,
+      "We navigated to payload.url when result selected"
+    );
+
+    BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:home");
+    await BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      "about:home"
+    );
+
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+      waitForFocus: SimpleTest.waitForFocus,
+    });
+
+    row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
+    element = row.querySelector(
+      `.urlbarView-dynamic-${DYNAMIC_TYPE_NAME}-selectable`
+    );
+
+    EventUtils.synthesizeMouseAtCenter(element, {});
+
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    is(
+      gBrowser.currentURI.spec,
+      DUMMY_PAGE,
+      "We navigated to payload.url when result is clicked"
+    );
+  }, new TestShouldNavigateProvider());
+});
+
+
 
 
 class TestProvider extends UrlbarTestUtils.TestProvider {
@@ -477,7 +570,15 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
   }
 }
 
-async function withDynamicTypeProvider(callback) {
+
+
+
+
+
+async function withDynamicTypeProvider(
+  callback,
+  provider = new TestProvider()
+) {
   
   UrlbarResult.addDynamicResultType(DYNAMIC_TYPE_NAME);
   UrlbarView.addDynamicViewTemplate(
@@ -486,7 +587,6 @@ async function withDynamicTypeProvider(callback) {
   );
 
   
-  let provider = new TestProvider();
   UrlbarProvidersManager.registerProvider(provider);
 
   await callback(provider);

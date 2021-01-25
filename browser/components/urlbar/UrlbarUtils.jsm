@@ -1284,6 +1284,12 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       dynamicType: {
         type: "string",
       },
+      
+      
+      
+      shouldNavigate: {
+        type: "boolean",
+      },
     },
   },
 };
