@@ -127,7 +127,11 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
   void AddPostRefreshObserver(nsAPostRefreshObserver* aObserver);
+  void AddPostRefreshObserver(mozilla::OneShotPostRefreshObserver* aObserver) =
+      delete;
   void RemovePostRefreshObserver(nsAPostRefreshObserver* aObserver);
+  void RemovePostRefreshObserver(
+      mozilla::OneShotPostRefreshObserver* aObserver) = delete;
 
   
 

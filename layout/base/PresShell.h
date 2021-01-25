@@ -1152,7 +1152,11 @@ class PresShell final : public nsStubDocumentObserver,
                              FlushType aFlushType);
 
   bool AddPostRefreshObserver(nsAPostRefreshObserver* aObserver);
+  bool AddPostRefreshObserver(mozilla::OneShotPostRefreshObserver* aObserver) =
+      delete;
   bool RemovePostRefreshObserver(nsAPostRefreshObserver* aObserver);
+  bool RemovePostRefreshObserver(
+      mozilla::OneShotPostRefreshObserver* aObserver) = delete;
 
   
   
