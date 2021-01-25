@@ -61,7 +61,13 @@ add_gcc_warning("-Wempty-body")
 add_gcc_warning("-Wignored-qualifiers")
 
 
-add_gcc_warning("-Woverloaded-virtual", cxx_compiler)
+
+
+add_gcc_warning(
+    "-Woverloaded-virtual",
+    cxx_compiler,
+    when=depends(cxx_compiler)(lambda c: c.type != "gcc"),
+)
 
 
 add_gcc_warning("-Wpointer-arith")
