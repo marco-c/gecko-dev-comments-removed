@@ -1116,9 +1116,12 @@ static bool IsItemProbablyActive(
       return true;
     }
     case DisplayItemType::TYPE_SVG_GEOMETRY: {
-      auto* svgItem = static_cast<DisplaySVGGeometry*>(aItem);
-      return svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
-                                     aDisplayListBuilder);
+      if (StaticPrefs::gfx_webrender_svg_images()) {
+        auto* svgItem = static_cast<DisplaySVGGeometry*>(aItem);
+        return svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
+                                       aDisplayListBuilder);
+      }
+      return false;
     }
     case DisplayItemType::TYPE_BLEND_MODE: {
       
