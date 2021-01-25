@@ -162,7 +162,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eTableCell,
     kNoReqStates,
     eARIASelectableIfDefined,
-    eARIAReadonlyOrEditableIfDefined
+    eARIAReadonly
   },
   { 
     nsGkAtoms::combobox,
@@ -707,7 +707,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eSelect | eTable,
     kNoReqStates,
     eARIAMultiSelectable,
-    eARIAReadonlyOrEditable,
+    eARIAReadonly,
     eFocusableUntilDisabled
   },
   { 
@@ -720,7 +720,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eTableCell,
     kNoReqStates,
     eARIASelectable,
-    eARIAReadonlyOrEditableIfDefined
+    eARIAReadonly
   },
   { 
     nsGkAtoms::group,
@@ -1058,7 +1058,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eTableCell,
     kNoReqStates,
     eARIASelectableIfDefined,
-    eARIAReadonlyOrEditableIfDefined
+    eARIAReadonly
   },
   { 
     nsGkAtoms::scrollbar,
@@ -1280,7 +1280,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     eSelect | eTable,
     kNoReqStates,
-    eARIAReadonlyOrEditable,
+    eARIAReadonly,
     eARIAMultiSelectable,
     eFocusableUntilDisabled,
     eARIAOrientation

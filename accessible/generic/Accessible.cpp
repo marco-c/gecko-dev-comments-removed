@@ -1284,11 +1284,10 @@ void Accessible::ApplyARIAState(uint64_t* aState) const {
     aria::MapToState(roleMapEntry->attributeMap4, element, aState);
 
   
-  
   if ((roleMapEntry->Is(nsGkAtoms::gridcell) ||
        roleMapEntry->Is(nsGkAtoms::columnheader) ||
        roleMapEntry->Is(nsGkAtoms::rowheader)) &&
-      !(*aState & (states::READONLY | states::EDITABLE))) {
+      !nsAccUtils::HasDefinedARIAToken(mContent, nsGkAtoms::aria_readonly)) {
     const TableCellAccessible* cell = AsTableCell();
     if (cell) {
       TableAccessible* table = cell->Table();
@@ -1296,7 +1295,7 @@ void Accessible::ApplyARIAState(uint64_t* aState) const {
         Accessible* grid = table->AsAccessible();
         uint64_t gridState = 0;
         grid->ApplyARIAState(&gridState);
-        *aState |= (gridState & (states::READONLY | states::EDITABLE));
+        *aState |= gridState & states::READONLY;
       }
     }
   }
