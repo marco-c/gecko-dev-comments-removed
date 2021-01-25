@@ -2,27 +2,25 @@
 
 
 
-use std::sync::Arc;
+use inherent::inherent;
 
 use super::{CommonMetricData, MetricId};
 
 use super::TimeUnit;
-use crate::dispatcher;
 use crate::ipc::need_ipc;
-use chrono::{DateTime, FixedOffset};
+use chrono::{FixedOffset, TimeZone};
+use glean_core::traits::Datetime;
 
 
 
 
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub enum DatetimeMetric {
-    Parent(Arc<DatetimeMetricImpl>),
+    Parent(glean::private::DatetimeMetric),
     Child(DatetimeMetricIpc),
 }
-#[derive(Debug)]
-pub struct DatetimeMetricImpl(glean_core::metrics::DatetimeMetric);
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DatetimeMetricIpc;
 
 impl DatetimeMetric {
@@ -31,7 +29,7 @@ impl DatetimeMetric {
         if need_ipc() {
             DatetimeMetric::Child(DatetimeMetricIpc)
         } else {
-            DatetimeMetric::Parent(Arc::new(DatetimeMetricImpl::new(meta, time_unit)))
+            DatetimeMetric::Parent(glean::private::DatetimeMetric::new(meta, time_unit))
         }
     }
 
@@ -40,28 +38,6 @@ impl DatetimeMetric {
         match self {
             DatetimeMetric::Parent { .. } => DatetimeMetric::Child(DatetimeMetricIpc),
             DatetimeMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn set(&self, value: Option<DateTime<FixedOffset>>) {
-        match self {
-            DatetimeMetric::Parent(p) => {
-                let metric = Arc::clone(&p);
-                dispatcher::launch(move || metric.set(value));
-            }
-            DatetimeMetric::Child(_) => {
-                log::error!(
-                    "Unable to set datetime metric {:?} in non-parent process. Ignoring.",
-                    self
-                );
-                
-            }
         }
     }
 
@@ -93,24 +69,51 @@ impl DatetimeMetric {
     ) {
         match self {
             DatetimeMetric::Parent(p) => {
-                let metric = Arc::clone(&p);
-                dispatcher::launch(move || {
-                    metric.set_with_details(
-                        year,
-                        month,
-                        day,
-                        hour,
-                        minute,
-                        second,
-                        nano,
-                        offset_seconds,
-                    )
-                });
+                let tz = FixedOffset::east_opt(offset_seconds);
+                if tz.is_none() {
+                    log::error!(
+                        "Unable to set datetime metric with invalid offset seconds {}",
+                        offset_seconds
+                    );
+                    
+                    return;
+                }
+
+                let value = FixedOffset::east(offset_seconds)
+                    .ymd_opt(year, month, day)
+                    .and_hms_nano_opt(hour, minute, second, nano);
+                match value.single() {
+                    Some(d) => p.set(Some(d)),
+                    _ => {
+                        log::error!("Unable to construct datetime")
+                        
+                    }
+                }
+            }
+            DatetimeMetric::Child(_) => {
+                log::error!("Unable to set datetime metric in non-parent process. Ignoring.");
+                
+            }
+        }
+    }
+}
+
+#[inherent(pub)]
+impl Datetime for DatetimeMetric {
+    
+    
+    
+    
+    
+    
+    fn set(&self, value: Option<glean_core::metrics::Datetime>) {
+        match self {
+            DatetimeMetric::Parent(p) => {
+                Datetime::set(&*p, value);
             }
             DatetimeMetric::Child(_) => {
                 log::error!(
-                    "Unable to set datetime metric {:?} in non-parent process. Ignoring.",
-                    self
+                    "Unable to set datetime metric DatetimeMetric in non-parent process. Ignoring."
                 );
                 
             }
@@ -129,76 +132,50 @@ impl DatetimeMetric {
     
     
     
-    
-    
-    
-    
-    
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<String> {
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<glean_core::metrics::Datetime> {
         match self {
-            DatetimeMetric::Parent(p) => {
-                dispatcher::block_on_queue();
-                p.test_get_value(storage_name)
+            DatetimeMetric::Parent(p) => p.test_get_value(ping_name),
+            DatetimeMetric::Child(_) => {
+                panic!("Cannot get test value for DatetimeMetric in non-parent process!")
             }
-            DatetimeMetric::Child(_) => panic!(
-                "Cannot get test value for {:?} in non-parent process!",
-                self
-            ),
         }
     }
-}
 
-impl DatetimeMetricImpl {
-    pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
-        Self(glean_core::metrics::DatetimeMetric::new(meta, time_unit))
-    }
-
-    pub fn set(&self, value: Option<DateTime<FixedOffset>>) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn set_with_details(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
-        year: i32,
-        month: u32,
-        day: u32,
-        hour: u32,
-        minute: u32,
-        second: u32,
-        nano: u32,
-        offset_seconds: i32,
-    ) {
-        crate::with_glean(move |glean| {
-            self.0.set_with_details(
-                glean,
-                year,
-                month,
-                day,
-                hour,
-                minute,
-                second,
-                nano,
-                offset_seconds,
-            );
-        })
-    }
-
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<String> {
-        
-        let storage = storage_name.into().expect("storage name required.");
-        crate::with_glean(move |glean| self.0.test_get_value_as_string(glean, storage))
+        error: glean::ErrorType,
+        ping_name: S,
+    ) -> i32 {
+        match self {
+            DatetimeMetric::Parent(p) => p.test_get_num_recorded_errors(error, ping_name),
+            DatetimeMetric::Child(_) => panic!("Cannot get the number of recorded errors for DatetimeMetric in non-parent process!"),
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use chrono::{FixedOffset, TimeZone};
+    use chrono::{DateTime, FixedOffset, TimeZone};
 
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
-    #[ignore] 
     fn sets_datetime_value() {
         let _lock = lock_test();
 
@@ -210,13 +187,12 @@ mod test {
         metric.set(Some(a_datetime));
 
         assert_eq!(
-            "2020-05-07T11:58:00+05:00",
+            DateTime::parse_from_rfc3339("2020-05-07T11:58:00+05:00").unwrap(),
             metric.test_get_value("store1").unwrap()
         );
     }
 
     #[test]
-    #[ignore] 
     fn sets_datetime_value_with_details() {
         let _lock = lock_test();
 
@@ -225,13 +201,12 @@ mod test {
         metric.set_with_details(2020, 05, 07, 11, 58, 0, 0, 5 * 3600);
 
         assert_eq!(
-            "2020-05-07T11:58:00+05:00",
+            DateTime::parse_from_rfc3339("2020-05-07T11:58:00+05:00").unwrap(),
             metric.test_get_value("store1").unwrap()
         );
     }
 
     #[test]
-    #[ignore] 
     fn datetime_ipc() {
         
         let _lock = lock_test();
@@ -265,7 +240,7 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert_eq!(
-            "2020-10-13T16:41:00+05:00",
+            DateTime::parse_from_rfc3339("2020-10-13T16:41:00+05:00").unwrap(),
             parent_metric.test_get_value("store1").unwrap()
         );
     }
