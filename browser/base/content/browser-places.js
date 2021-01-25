@@ -1140,18 +1140,6 @@ var PlacesMenuDNDHandler = {
 
 
 var PlacesToolbarHelper = {
-  
-
-
-
-
-
-  _readyToShowCallback() {
-    this._canShowPromise = Promise.resolve();
-  },
-  _readyToShow: false,
-  _canShowPromise: null,
-
   get _viewElt() {
     return document.getElementById("PlacesToolbar");
   },
@@ -1160,22 +1148,14 @@ var PlacesToolbarHelper = {
 
 
 
-
-
-  init() {
-    if (!this._readyToShow) {
-      this._canShowPromise = new Promise(resolve => {
-        this._readyToShowCallback = resolve;
-      });
-      this._canShowPromise.then(() => this._realInit());
-    } else {
-      this._realInit();
-    }
+  async init() {
+    await PlacesUIUtils.canLoadToolbarContentPromise;
+    this._realInit();
   },
 
   _realInit() {
     let viewElt = this._viewElt;
-    if (!viewElt || viewElt._placesView) {
+    if (!viewElt || viewElt._placesView || window.closed) {
       return;
     }
 
@@ -1215,11 +1195,6 @@ var PlacesToolbarHelper = {
     new PlacesToolbar(`place:parent=${PlacesUtils.bookmarks.toolbarGuid}`);
   },
 
-  startShowingToolbar() {
-    this._readyToShow = true;
-    this._readyToShowCallback();
-  },
-
   handleEvent(event) {
     switch (event.type) {
       case "toolbarvisibilitychange":
@@ -1239,7 +1214,6 @@ var PlacesToolbarHelper = {
       window.removeEventListener("toolbarvisibilitychange", this);
     }
     CustomizableUI.removeListener(this);
-    this._readyToShowCallback = () => {};
   },
 
   customizeStart: function PTH_customizeStart() {

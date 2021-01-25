@@ -1553,6 +1553,15 @@ var PlacesUIUtils = {
 };
 
 
+
+
+
+
+PlacesUIUtils.canLoadToolbarContentPromise = new Promise(resolve => {
+  PlacesUIUtils.unblockToolbars = resolve;
+});
+
+
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "PLACES_FLAVORS", () => {
   return [
     PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
