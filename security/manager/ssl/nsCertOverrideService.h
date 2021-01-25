@@ -111,15 +111,6 @@ class nsCertOverrideService final : public nsICertOverrideService,
   nsresult Init();
   void RemoveAllTemporaryOverrides();
 
-  typedef void (*CertOverrideEnumerator)(
-      const RefPtr<nsCertOverride>& aSettings, void* aUserData);
-
-  
-  
-  nsresult EnumerateCertOverrides(nsIX509Cert* aCert,
-                                  CertOverrideEnumerator enumerator,
-                                  void* aUserData);
-
   
   
   

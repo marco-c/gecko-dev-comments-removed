@@ -30,11 +30,12 @@
 
 
 
-function getLabelForCertTreeItem(certTreeItem) {
+
+function getLabelForCertToDelete(certToDelete) {
   let element = document.createXULElement("label");
-  let cert = certTreeItem.cert;
+  let cert = certToDelete.cert;
   if (!cert) {
-    element.setAttribute("value", certTreeItem.hostPort);
+    element.setAttribute("value", certToDelete.hostPort);
     return element;
   }
 
@@ -93,10 +94,10 @@ function onLoad() {
   document.addEventListener("dialogcancel", onDialogCancel);
 
   let box = document.getElementById("certlist");
-  let certTreeItems = window.arguments[1];
-  for (let certTreeItem of certTreeItems) {
+  let certsToDelete = window.arguments[1];
+  for (let certToDelete of certsToDelete) {
     let listItem = document.createXULElement("richlistitem");
-    let label = getLabelForCertTreeItem(certTreeItem);
+    let label = getLabelForCertToDelete(certToDelete);
     listItem.appendChild(label);
     box.appendChild(listItem);
   }
