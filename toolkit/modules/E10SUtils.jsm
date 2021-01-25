@@ -50,6 +50,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.tabs.remote.useCrossOriginOpenerPolicy",
   false
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "useOriginAttributesInRemoteType",
+  "browser.tabs.remote.useOriginAttributesInRemoteType",
+  false
+);
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "serializationHelper",
@@ -137,7 +143,8 @@ function validatedWebRemoteType(
   aCurrentUri,
   aResultPrincipal,
   aRemoteSubframes,
-  aIsWorker = false
+  aIsWorker = false,
+  aOriginAttributes = {}
 ) {
   
   
@@ -207,10 +214,20 @@ function validatedWebRemoteType(
   
   
   if (aRemoteSubframes) {
-    
-    
-    
     let originAttributes = {};
+    if (useOriginAttributesInRemoteType) {
+      
+      let {
+        userContextId,
+        privateBrowsingId,
+        geckoViewSessionContextId,
+      } = aOriginAttributes;
+      originAttributes = {
+        userContextId,
+        privateBrowsingId,
+        geckoViewSessionContextId,
+      };
+    }
 
     
     let targetPrincipal;
@@ -330,7 +347,8 @@ var E10SUtils = {
   canLoadURIInRemoteType(
     aURL,
     aRemoteSubframes,
-    aRemoteType = DEFAULT_REMOTE_TYPE
+    aRemoteType = DEFAULT_REMOTE_TYPE,
+    aOriginAttributes = {}
   ) {
     
     
@@ -338,7 +356,14 @@ var E10SUtils = {
 
     return (
       aRemoteType ==
-      this.getRemoteTypeForURI(aURL, true, aRemoteSubframes, aRemoteType)
+      this.getRemoteTypeForURI(
+        aURL,
+        true,
+        aRemoteSubframes,
+        aRemoteType,
+        null,
+        aOriginAttributes
+      )
     );
   },
 
@@ -347,7 +372,8 @@ var E10SUtils = {
     aMultiProcess,
     aRemoteSubframes,
     aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
-    aCurrentUri
+    aCurrentUri,
+    aOriginAttributes = {}
   ) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
@@ -374,7 +400,11 @@ var E10SUtils = {
       aMultiProcess,
       aRemoteSubframes,
       aPreferredRemoteType,
-      aCurrentUri
+      aCurrentUri,
+      null, 
+      false, 
+      false, 
+      aOriginAttributes
     );
   },
 
@@ -386,7 +416,8 @@ var E10SUtils = {
     aCurrentUri = null,
     aResultPrincipal = null,
     aIsSubframe = false,
-    aIsWorker = false
+    aIsWorker = false,
+    aOriginAttributes = {}
   ) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
@@ -528,7 +559,10 @@ var E10SUtils = {
             aRemoteSubframes,
             aPreferredRemoteType,
             aCurrentUri,
-            aResultPrincipal
+            aResultPrincipal,
+            false, 
+            false, 
+            aOriginAttributes
           );
         }
 
@@ -543,7 +577,8 @@ var E10SUtils = {
           aCurrentUri,
           aResultPrincipal,
           aRemoteSubframes,
-          aIsWorker
+          aIsWorker,
+          aOriginAttributes
         );
         log.debug(`  validatedWebRemoteType() returning: ${remoteType}`);
         return remoteType;
@@ -612,7 +647,9 @@ var E10SUtils = {
       aPreferredRemoteType,
       currentURI,
       aPrincipal,
-      aIsSubframe
+      aIsSubframe,
+      false, 
+      aPrincipal.originAttributes
     );
   },
 
@@ -690,7 +727,8 @@ var E10SUtils = {
         null,
         aPrincipal,
         false, 
-        true 
+        true, 
+        aPrincipal.originAttributes
       );
     }
 
@@ -932,6 +970,38 @@ var E10SUtils = {
 
   isWebRemoteType(aRemoteType) {
     return aRemoteType.startsWith(WEB_REMOTE_TYPE);
+  },
+
+  
+
+
+  predictOriginAttributes({
+    window,
+    browser,
+    userContextId,
+    geckoViewSessionContextId,
+    privateBrowsingId,
+  }) {
+    if (browser) {
+      if (browser.browsingContext) {
+        return browser.browsingContext.originAttributes;
+      }
+      if (!window) {
+        window = browser.contentDocument?.defaultView;
+      }
+      if (!userContextId) {
+        userContextId = browser.getAttribute("usercontextid") || 0;
+      }
+      if (!geckoViewSessionContextId) {
+        geckoViewSessionContextId =
+          browser.getAttribute("geckoViewSessionContextId") || "";
+      }
+    }
+
+    if (window && !privateBrowsingId) {
+      privateBrowsingId = window.browsingContext.usePrivateBrowsing ? 1 : 0;
+    }
+    return { privateBrowsingId, userContextId, geckoViewSessionContextId };
   },
 };
 

@@ -144,16 +144,6 @@ var ModuleManager = {
     );
   },
 
-  remoteTypeFor(aURI, currentType) {
-    return E10SUtils.getRemoteTypeForURI(
-      aURI,
-       true,
-       false,
-      currentType,
-      this.browser.currentURI
-    );
-  },
-
   
   async prepareToChangeRemoteness() {
     
@@ -182,17 +172,10 @@ var ModuleManager = {
     this.forEach(module => {
       module.onDestroyBrowser();
     });
-
-    
-    
-    this.docShellIsActiveWhileSwitchingProcess = this.browser.docShellIsActive;
   },
 
   didChangeBrowserRemoteness() {
     debug`DidChangeBrowserRemoteness`;
-
-    this.browser.docShellIsActive = this.docShellIsActiveWhileSwitchingProcess;
-    this.docShellIsActiveWhileSwitchingProcess = undefined;
 
     this.forEach(module => {
       if (module.impl) {

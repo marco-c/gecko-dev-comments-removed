@@ -613,11 +613,14 @@ max-width: ${width}px; max-height: ${height}px`;
     if (Services.appinfo.OS === "Android") {
       return;
     }
-
+    let oa = E10SUtils.predictOriginAttributes({ browser });
     let remoteType = E10SUtils.getRemoteTypeForURI(
       url,
       this.useRemoteTabs,
-      this.useRemoteSubframes
+      this.useRemoteSubframes,
+      E10SUtils.DEFAULT_REMOTE_TYPE,
+      null,
+      oa
     );
 
     

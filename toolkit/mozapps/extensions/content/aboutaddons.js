@@ -2355,10 +2355,15 @@ class InlineOptionsBrowser extends HTMLElement {
     let readyPromise;
     let remoteSubframes = window.docShell.QueryInterface(Ci.nsILoadContext)
       .useRemoteSubframes;
+    
+    
+    
+    var oa = E10SUtils.predictOriginAttributes({ browser });
     let loadRemote = E10SUtils.canLoadURIInRemoteType(
       optionsURL,
       remoteSubframes,
-      E10SUtils.EXTENSION_REMOTE_TYPE
+      E10SUtils.EXTENSION_REMOTE_TYPE,
+      oa
     );
     if (loadRemote) {
       browser.setAttribute("remote", "true");

@@ -3122,10 +3122,14 @@ async function BrowserViewSourceOfDocument(args) {
     
     
     
+    var oa = E10SUtils.predictOriginAttributes({ window });
     preferredRemoteType = E10SUtils.getRemoteTypeForURI(
       args.URL,
       gMultiProcessBrowser,
-      gFissionBrowser
+      gFissionBrowser,
+      E10SUtils.DEFAULT_REMOTE_TYPE,
+      null,
+      oa
     );
   }
 

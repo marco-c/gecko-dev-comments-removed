@@ -2556,6 +2556,10 @@ pref("browser.tabs.remote.autostart", false);
 
 
 
+pref("browser.tabs.remote.useOriginAttributesInRemoteType", false);
+
+
+
 pref("browser.tabs.remote.separateFileUriProcess", true);
 
 

@@ -681,12 +681,14 @@ function StartCurrentTest()
 
 
 function updateBrowserRemotenessByURL(aBrowser, aURL) {
+  var oa = E10SUtils.predictOriginAttributes({ browser: aBrowser });
   let remoteType = E10SUtils.getRemoteTypeForURI(
     aURL,
     aBrowser.ownerGlobal.docShell.nsILoadContext.useRemoteTabs,
     aBrowser.ownerGlobal.docShell.nsILoadContext.useRemoteSubframes,
     aBrowser.remoteType,
-    aBrowser.currentURI
+    aBrowser.currentURI,
+    oa
   );
   
   

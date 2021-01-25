@@ -478,12 +478,14 @@ function openFile() {
 
 
 function updateBrowserRemotenessByURL(aURL) {
+  let oa = E10SUtils.predictOriginAttributes({ browser: gBrowser });
   let remoteType = E10SUtils.getRemoteTypeForURI(
     aURL,
     gMultiProcessBrowser,
     gFissionBrowser,
     gBrowser.remoteType,
-    gBrowser.currentURI
+    gBrowser.currentURI,
+    oa
   );
   if (gBrowser.remoteType != remoteType) {
     gDebugger.detachBrowser();
