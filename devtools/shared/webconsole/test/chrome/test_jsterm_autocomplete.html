@@ -5,8 +5,8 @@
   <title>Test for JavaScript terminal functionality</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="common.js"></script>
-  
-
+  <!-- Any copyright is dedicated to the Public Domain.
+     - http://creativecommons.org/publicdomain/zero/1.0/ -->
 </head>
 <body>
 <p>Test for JavaScript terminal autocomplete functionality</p>
@@ -447,7 +447,7 @@
   async function doAutocompleteCommands(webConsoleFront) {
     info("test autocomplete for 'c'");
     let matches = (await webConsoleFront.autocomplete("c")).matches;
-    ok(matches.includes("cd") && matches.includes("clear"), "commands are returned");
+    ok(matches.includes("clear"), "commands are returned");
 
     info("test autocomplete for 's'");
     matches = (await webConsoleFront.autocomplete("s")).matches;
@@ -459,27 +459,27 @@
 
     info("test autocomplete for 'window.c'");
     matches = (await webConsoleFront.autocomplete("window.c")).matches;
-    ok(!matches.includes("cd") && !matches.includes("clear"), "commands are not returned");
+    ok(!matches.includes("clear"), "commands are not returned");
 
     info("test autocomplete for 'window[c'");
     matches = (await webConsoleFront.autocomplete("window[c")).matches;
-    ok(!matches.includes("cd") && !matches.includes("clear"), "commands are not returned");
+    ok(!matches.includes("clear"), "commands are not returned");
 
     info(`test autocomplete for 'window["c'`);
     matches = (await webConsoleFront.autocomplete(`window["c`)).matches;
-    ok(!matches.includes("cd") && !matches.includes("clear"), "commands are not returned");
+    ok(!matches.includes("clear"), "commands are not returned");
 
     info(`test autocomplete for 'window["c'`);
     matches = (await webConsoleFront.autocomplete(`window["c`)).matches;
-    ok(!matches.includes("cd") && !matches.includes("clear"), "commands are not returned");
+    ok(!matches.includes("clear"), "commands are not returned");
 
     info(`test autocomplete for 'window[";c'`);
     matches = (await webConsoleFront.autocomplete(`window[";c`)).matches;
-    ok(!matches.includes("cd") && !matches.includes("clear"), "commands are not returned");
+    ok(!matches.includes("clear"), "commands are not returned");
 
     info(`test autocomplete for 'window[;c'`);
     matches = (await webConsoleFront.autocomplete(`window[;c`)).matches;
-    ok(!matches.includes("cd") && !matches.includes("clear"), "commands are not returned");
+    ok(!matches.includes("clear"), "commands are not returned");
   }
 
   async function doAutocompleteAfterOperator(webConsoleFront) {
