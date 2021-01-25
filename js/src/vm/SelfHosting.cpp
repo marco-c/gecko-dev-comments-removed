@@ -2863,7 +2863,7 @@ bool JSRuntime::initSelfHostingFromXDR(
 
   
   Rooted<frontend::CompilationGCOutput> output(cx);
-  if (!frontend::CompilationInfo::instantiateStencils(cx, stencilSet.initial,
+  if (!frontend::CompilationInfo::instantiateStencils(cx, stencilSet,
                                                       output.get())) {
     return false;
   }
@@ -2908,7 +2908,7 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
     
     Rooted<frontend::CompilationStencilSet> stencilSet(
         cx, frontend::CompilationStencilSet(cx, options));
-    if (!stencilSet.get().initial.input.initForSelfHostingGlobal(cx)) {
+    if (!stencilSet.get().input.initForSelfHostingGlobal(cx)) {
       return false;
     }
 

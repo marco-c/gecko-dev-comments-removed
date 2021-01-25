@@ -366,14 +366,14 @@ bool frontend::InstantiateStencils(
 
   
   if (!cx->isHelperThreadContext()) {
-    if (!stencilSet.initial.input.source()->tryCompressOffThread(cx)) {
+    if (!stencilSet.input.source()->tryCompressOffThread(cx)) {
       return false;
     }
   }
 
   Rooted<JSScript*> script(cx, gcOutput.script);
   tellDebuggerAboutCompiledScript(
-      cx, stencilSet.initial.input.options.hideScriptFromDebugger, script);
+      cx, stencilSet.input.options.hideScriptFromDebugger, script);
 
   return true;
 }
@@ -1259,7 +1259,7 @@ void CompilationAtomCache::trace(JSTracer* trc) { atoms_.trace(trc); }
 void CompilationInfo::trace(JSTracer* trc) { input.trace(trc); }
 
 void CompilationStencilSet::trace(JSTracer* trc) {
-  initial.trace(trc);
+  CompilationInfo::trace(trc);
   delazificationAtomCache.trace(trc);
 }
 
