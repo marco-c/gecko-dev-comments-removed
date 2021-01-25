@@ -299,6 +299,11 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:storage::Connection::Release\n"
 
+         
+         "race:CacheEntry::OpenOutputStream\n"
+         "race:CacheEntry::GetSecurityInfo\n"
+         "race:CacheEntry::GetIsForcedValid\n"
+
       
       ;  
 }
