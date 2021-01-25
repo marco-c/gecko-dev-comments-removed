@@ -8,6 +8,146 @@
 
 
 
+async function testFrameCrash(numTabs) {
+  let browser, rootBC, iframeBC;
+
+  for (let count = 0; count < numTabs; count++) {
+    let tab = await BrowserTestUtils.openNewForegroundTab({
+      gBrowser,
+      url: "about:blank",
+    });
+
+    browser = tab.linkedBrowser;
+    rootBC = browser.browsingContext;
+
+    
+    
+    iframeBC = await SpecialPowers.spawn(browser, [], async () => {
+      let iframe = content.document.createElement("iframe");
+      iframe.setAttribute("src", "http://example.com");
+
+      content.document.body.appendChild(iframe);
+      await ContentTaskUtils.waitForEvent(iframe, "load");
+      return iframe.frameLoader.browsingContext;
+    });
+  }
+
+  is(iframeBC.parent, rootBC, "oop frame has root as parent");
+
+  let eventFiredPromise = BrowserTestUtils.waitForEvent(
+    browser,
+    "oop-browser-crashed"
+  );
+
+  BrowserTestUtils.crashFrame(
+    browser,
+    true ,
+    true ,
+    iframeBC
+  );
+
+  let notificationPromise = BrowserTestUtils.waitForNotificationBar(
+    gBrowser,
+    browser,
+    "subframe-crashed"
+  );
+
+  info("Waiting for oop-browser-crashed event.");
+  await eventFiredPromise.then(event => {
+    ok(!event.isTopFrame, "should not be reporting top-level frame crash");
+    ok(event.childID != 0, "childID is non-zero");
+
+    isnot(
+      event.browsingContextId,
+      rootBC,
+      "top frame browsing context id not expected."
+    );
+
+    is(
+      event.browsingContextId,
+      iframeBC.id,
+      "oop frame browsing context id expected."
+    );
+  });
+
+  if (numTabs == 1) {
+    
+    
+    let {
+      subject: windowGlobal,
+    } = await BrowserUtils.promiseObserved("window-global-created", wgp =>
+      wgp.documentURI.spec.startsWith("about:framecrashed")
+    );
+
+    is(
+      windowGlobal,
+      iframeBC.currentWindowGlobal,
+      "Resolved on expected window global"
+    );
+
+    let newIframeURI = await SpecialPowers.spawn(iframeBC, [], async () => {
+      return content.document.documentURI;
+    });
+
+    ok(
+      newIframeURI.startsWith("about:framecrashed"),
+      "The iframe is now pointing at about:framecrashed"
+    );
+  }
+
+  
+  await notificationPromise;
+
+  for (let count = 1; count <= numTabs; count++) {
+    let notificationBox = gBrowser.getNotificationBox(gBrowser.browsers[count]);
+    let notification = notificationBox.currentNotification;
+    ok(notification, "Notification " + count + " should be visible");
+    is(
+      notification.getAttribute("value"),
+      "subframe-crashed",
+      "Should be showing the right notification" + count
+    );
+
+    let buttons = notification.querySelectorAll(".notification-button");
+    is(
+      buttons.length,
+      2,
+      "Notification " + count + " should have only two buttons."
+    );
+  }
+
+  
+  let notificationBox = gBrowser.getNotificationBox(gBrowser.selectedBrowser);
+  let notification = notificationBox.currentNotification;
+  notification.dismiss();
+
+  for (let count = 1; count <= numTabs; count++) {
+    let nb = gBrowser.getNotificationBox(gBrowser.browsers[count]);
+
+    await TestUtils.waitForCondition(
+      () => !nb.currentNotification,
+      "notification closed"
+    );
+
+    ok(
+      !nb.currentNotification,
+      "notification " + count + " closed when dismiss button is pressed"
+    );
+  }
+
+  for (let count = 1; count <= numTabs; count++) {
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+}
+
+
+
+
+
+
+
+
+
 add_task(async function() {
   
   ok(
@@ -15,79 +155,13 @@ add_task(async function() {
     "This test only makes sense of we can use OOP iframes."
   );
 
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      url: "about:blank",
-    },
-    async browser => {
-      let rootBC = browser.browsingContext;
+  
+  
+  const uAppDataPath = Services.dirsvc.get("UAppData", Ci.nsIFile).path;
+  let path = PathUtils.join(uAppDataPath, "Crash Reports", "pending");
+  await IOUtils.makeDirectory(path, { ignoreExisting: true });
 
-      
-      
-      let iframeBC = await SpecialPowers.spawn(browser, [], async () => {
-        let iframe = content.document.createElement("iframe");
-        iframe.setAttribute("src", "http://example.com");
-
-        content.document.body.appendChild(iframe);
-        await ContentTaskUtils.waitForEvent(iframe, "load");
-        return iframe.frameLoader.browsingContext;
-      });
-
-      is(iframeBC.parent, rootBC, "oop frame has root as parent");
-
-      let eventFiredPromise = BrowserTestUtils.waitForEvent(
-        browser,
-        "oop-browser-crashed"
-      );
-
-      BrowserTestUtils.crashFrame(
-        browser,
-        true ,
-        true ,
-        iframeBC
-      );
-
-      info("Waiting for oop-browser-crashed event.");
-      await eventFiredPromise.then(event => {
-        ok(!event.isTopFrame, "should not be reporting top-level frame crash");
-        ok(event.childID != 0, "childID is non-zero");
-
-        isnot(
-          event.browsingContextId,
-          rootBC,
-          "top frame browsing context id not expected."
-        );
-
-        is(
-          event.browsingContextId,
-          iframeBC.id,
-          "oop frame browsing context id expected."
-        );
-      });
-
-      
-      
-      let {
-        subject: windowGlobal,
-      } = await BrowserUtils.promiseObserved("window-global-created", wgp =>
-        wgp.documentURI.spec.startsWith("about:framecrashed")
-      );
-
-      is(
-        windowGlobal,
-        iframeBC.currentWindowGlobal,
-        "Resolved on expected window global"
-      );
-
-      let newIframeURI = await SpecialPowers.spawn(iframeBC, [], async () => {
-        return content.document.documentURI;
-      });
-
-      ok(
-        newIframeURI.startsWith("about:framecrashed"),
-        "The iframe is now pointing at about:framecrashed"
-      );
-    }
-  );
+  
+  await testFrameCrash(1);
+  await testFrameCrash(4);
 });

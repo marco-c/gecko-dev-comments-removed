@@ -119,6 +119,13 @@
 
 
 
+
+
+
+
+
+
+
     appendNotification(
       aLabel,
       aValue,
@@ -391,6 +398,12 @@
         ["spacer", "spacer"],
       ]) {
         this[propertyName] = this.querySelector(selector);
+      }
+    }
+
+    disconnectedCallback() {
+      if (this.eventCallback) {
+        this.eventCallback("disconnected");
       }
     }
 
