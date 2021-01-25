@@ -27,6 +27,16 @@ const RESIZE_DEBOUNCE_RATE_MS = 500;
 
 
 
+const TOP_RIGHT_QUADRANT = 1;
+const TOP_LEFT_QUADRANT = 2;
+const BOTTOM_LEFT_QUADRANT = 3;
+const BOTTOM_RIGHT_QUADRANT = 4;
+
+
+
+
+
+
 
 
 
@@ -70,7 +80,7 @@ let Player = {
     "contextmenu",
     "dblclick",
     "keydown",
-    "mouseout",
+    "mouseup",
     "MozDOMFullscreen:Entered",
     "MozDOMFullscreen:Exited",
     "resize",
@@ -96,6 +106,13 @@ let Player = {
 
 
   showingTimeout: null,
+
+  
+
+
+
+  oldMouseUpWindowX: window.screenX,
+  oldMouseUpWindowY: window.screenY,
 
   
 
@@ -162,6 +179,16 @@ let Player = {
       });
     }, RESIZE_DEBOUNCE_RATE_MS);
 
+    this.lastScreenX = window.screenX;
+    this.lastScreenY = window.screenY;
+
+    this.recordEvent("create", {
+      width: window.outerWidth.toString(),
+      height: window.outerHeight.toString(),
+      screenX: window.screenX.toString(),
+      screenY: window.screenY.toString(),
+    });
+
     this.computeAndSetMinimumSize(window.outerWidth, window.outerHeight);
 
     
@@ -169,17 +196,6 @@ let Player = {
     
     window.requestAnimationFrame(() => {
       window.focus();
-      
-      
-      this.recordEvent("create", {
-        width: window.outerWidth.toString(),
-        height: window.outerHeight.toString(),
-        screenX: window.screenX.toString(),
-        screenY: window.screenY.toString(),
-      });
-
-      this.lastScreenX = window.screenX;
-      this.lastScreenY = window.screenY;
     });
   },
 
@@ -231,8 +247,8 @@ let Player = {
         break;
       }
 
-      case "mouseout": {
-        this.onMouseOut(event);
+      case "mouseup": {
+        this.onMouseUp(event);
         break;
       }
 
@@ -344,7 +360,92 @@ let Player = {
     });
   },
 
-  onMouseOut(event) {
+  
+
+
+
+  determineCurrentQuadrant() {
+    
+    let windowCenterX = window.screenX + window.innerWidth / 2;
+    let windowCenterY = window.screenY + window.innerHeight / 2;
+    let quadrant = null;
+    let halfWidth = window.screen.availLeft + window.screen.availWidth / 2;
+    let halfHeight = window.screen.availTop + window.screen.availHeight / 2;
+
+    let leftHalf = windowCenterX < halfWidth;
+    let rightHalf = windowCenterX > halfWidth;
+    let topHalf = windowCenterY < halfHeight;
+    let bottomHalf = windowCenterY > halfHeight;
+
+    if (leftHalf && topHalf) {
+      quadrant = TOP_LEFT_QUADRANT;
+    } else if (rightHalf && topHalf) {
+      quadrant = TOP_RIGHT_QUADRANT;
+    } else if (leftHalf && bottomHalf) {
+      quadrant = BOTTOM_LEFT_QUADRANT;
+    } else if (rightHalf && bottomHalf) {
+      quadrant = BOTTOM_RIGHT_QUADRANT;
+    }
+    return quadrant;
+  },
+
+  
+
+
+
+  moveToTopRight() {
+    window.moveTo(
+      window.screen.availLeft + window.screen.availWidth - window.innerWidth,
+      window.screen.availTop
+    );
+  },
+
+  
+
+
+  moveToTopLeft() {
+    window.moveTo(window.screen.availLeft, window.screen.availTop);
+  },
+
+  
+
+
+  moveToBottomRight() {
+    window.moveTo(
+      window.screen.availLeft + window.screen.availWidth - window.innerWidth,
+      window.screen.availTop + window.screen.availHeight - window.innerHeight
+    );
+  },
+
+  
+
+
+  moveToBottomLeft() {
+    window.moveTo(
+      window.screen.availLeft,
+      window.screen.availTop + window.screen.availHeight - window.innerHeight
+    );
+  },
+
+  determineDirectionDragged() {
+    
+    let deltaX = this.oldMouseUpWindowX - window.screenX;
+    let deltaY = this.oldMouseUpWindowY - window.screenY;
+    let dragDirection = "";
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX < 0) {
+      dragDirection = "draggedRight";
+    } else if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 0) {
+      dragDirection = "draggedLeft";
+    } else if (Math.abs(deltaX) < Math.abs(deltaY) && deltaY < 0) {
+      dragDirection = "draggedDown";
+    } else if (Math.abs(deltaX) < Math.abs(deltaY) && deltaY > 0) {
+      dragDirection = "draggedUp";
+    }
+    return dragDirection;
+  },
+
+  onMouseUp(event) {
     if (
       window.screenX != this.lastScreenX ||
       window.screenY != this.lastScreenY
@@ -354,9 +455,85 @@ let Player = {
         screenY: window.screenY.toString(),
       });
     }
-
     this.lastScreenX = window.screenX;
     this.lastScreenY = window.screenY;
+
+    
+    
+    let quadrant = this.determineCurrentQuadrant();
+    let dragAction = this.determineDirectionDragged();
+
+    if (event.metaKey && AppConstants.platform == "macosx" && dragAction) {
+      
+      switch (quadrant) {
+        case TOP_RIGHT_QUADRANT:
+          switch (dragAction) {
+            case "draggedRight":
+              this.moveToTopRight();
+              break;
+            case "draggedLeft":
+              this.moveToTopLeft();
+              break;
+            case "draggedDown":
+              this.moveToBottomRight();
+              break;
+            case "draggedUp":
+              this.moveToTopRight();
+              break;
+          }
+          break;
+        case TOP_LEFT_QUADRANT:
+          switch (dragAction) {
+            case "draggedRight":
+              this.moveToTopRight();
+              break;
+            case "draggedLeft":
+              this.moveToTopLeft();
+              break;
+            case "draggedDown":
+              this.moveToBottomLeft();
+              break;
+            case "draggedUp":
+              this.moveToTopLeft();
+              break;
+          }
+          break;
+        case BOTTOM_LEFT_QUADRANT:
+          switch (dragAction) {
+            case "draggedRight":
+              this.moveToBottomRight();
+              break;
+            case "draggedLeft":
+              this.moveToBottomLeft();
+              break;
+            case "draggedDown":
+              this.moveToBottomLeft();
+              break;
+            case "draggedUp":
+              this.moveToTopLeft();
+              break;
+          }
+          break;
+        case BOTTOM_RIGHT_QUADRANT:
+          switch (dragAction) {
+            case "draggedRight":
+              this.moveToBottomRight();
+              break;
+            case "draggedLeft":
+              this.moveToBottomLeft();
+              break;
+            case "draggedDown":
+              this.moveToBottomRight();
+              break;
+            case "draggedUp":
+              this.moveToTopRight();
+              break;
+          }
+          break;
+      } 
+    } 
+    this.oldMouseUpWindowX = window.screenX;
+    this.oldMouseUpWindowY = window.screenY;
   },
 
   onResize(event) {
