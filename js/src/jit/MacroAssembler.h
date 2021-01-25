@@ -3605,8 +3605,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
 
-  void spectreMaskIndex(Register index, Register length, Register output);
-  void spectreMaskIndex(Register index, const Address& length, Register output);
+  void spectreMaskIndex32(Register index, Register length, Register output);
+  void spectreMaskIndex32(Register index, const Address& length,
+                          Register output);
 
   
   
