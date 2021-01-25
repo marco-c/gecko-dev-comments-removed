@@ -211,7 +211,10 @@ class ActorReadyGeckoProfilerInterface {
     
     switch (topic) {
       case "chrome-document-global-created":
-        if (PrivateBrowsingUtils.isWindowPrivate(subject)) {
+        if (
+          subject.isChromeWindow &&
+          PrivateBrowsingUtils.isWindowPrivate(subject)
+        ) {
           this.emit("profile-locked-by-private-browsing");
         }
         break;
