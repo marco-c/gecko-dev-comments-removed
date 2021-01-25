@@ -124,9 +124,6 @@ bool GlobalObject::splicePrototype(JSContext* cx, Handle<GlobalObject*> global,
 
 
 
-
-
-
 struct ObjectGroupRealm::NewEntry {
   WeakHeapPtrObjectGroup group;
 
