@@ -428,8 +428,8 @@ bool AccessibleCaretManager::UpdateCaretsForOverlappingTilt() {
   return true;
 }
 
-void AccessibleCaretManager::UpdateCaretsForAlwaysTilt(nsIFrame* aStartFrame,
-                                                       nsIFrame* aEndFrame) {
+void AccessibleCaretManager::UpdateCaretsForAlwaysTilt(
+    const nsIFrame* aStartFrame, const nsIFrame* aEndFrame) {
   
   
   if (UpdateCaretsForOverlappingTilt()) {

@@ -284,8 +284,8 @@ class AccessibleCaretManager {
   virtual bool UpdateCaretsForOverlappingTilt();
 
   
-  virtual void UpdateCaretsForAlwaysTilt(nsIFrame* aStartFrame,
-                                         nsIFrame* aEndFrame);
+  virtual void UpdateCaretsForAlwaysTilt(const nsIFrame* aStartFrame,
+                                         const nsIFrame* aEndFrame);
 
   
   
