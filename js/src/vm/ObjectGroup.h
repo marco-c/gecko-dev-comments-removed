@@ -61,7 +61,7 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   JS::Realm* realm_;  
 
   
-  TypeDescr* typeDescr_ = nullptr;
+  GCPtr<TypeDescr*> typeDescr_;  
 
   
 
@@ -82,7 +82,8 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   friend class js::jit::MacroAssembler;
 
  public:
-  inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm);
+  inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm,
+                     TypeDescr* descr);
 
   bool hasDynamicPrototype() const { return proto_.isDynamic(); }
 
@@ -109,8 +110,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
     return *typeDescr_;
   }
 
-  void setTypeDescr(TypeDescr* descr) { typeDescr_ = descr; }
-
   
 
   void traceChildren(JSTracer* trc);
@@ -128,7 +127,7 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   static ObjectGroup* defaultNewGroup(JSContext* cx, const JSClass* clasp,
                                       TaggedProto proto,
-                                      TypeDescr* descr = nullptr);
+                                      Handle<TypeDescr*> descr = nullptr);
 };
 
 
