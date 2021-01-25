@@ -3244,7 +3244,6 @@ class MToFPInstruction : public MUnaryInstruction, public ToDoublePolicy::Data {
   
   enum ConversionKind {
     NonStringPrimitives,
-    NonNullNonStringPrimitives,
     NumbersOnly
   };
 
