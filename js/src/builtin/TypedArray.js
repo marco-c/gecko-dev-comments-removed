@@ -920,7 +920,7 @@ function TypedArraySlice(start, end) {
             ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
 
         
-        var sliced = TypedArrayBitwiseSlice(O, A, k | 0, count | 0);
+        var sliced = TypedArrayBitwiseSlice(O, A, k, count);
 
         
         if (!sliced) {
