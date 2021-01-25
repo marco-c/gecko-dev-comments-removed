@@ -167,6 +167,13 @@ class CompositorWidget {
 
 
 
+  virtual void ClearBeforePaint(RefPtr<gfx::DrawTarget> aTarget,
+                                const LayoutDeviceIntRegion& aRegion) {}
+
+  
+
+
+
 
 
   virtual void CleanupWindowEffects() {}

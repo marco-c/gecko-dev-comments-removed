@@ -1248,9 +1248,11 @@ void nsWindow::Move(double aX, double aY) {
   }
 }
 
-bool nsWindow::IsWaylandPopup() {
-  return !mIsX11Display && mIsTopLevel && mWindowType == eWindowType_popup;
+bool nsWindow::IsPopup() {
+  return mIsTopLevel && mWindowType == eWindowType_popup;
 }
+
+bool nsWindow::IsWaylandPopup() { return !mIsX11Display && IsPopup(); }
 
 void nsWindow::HideWaylandTooltips() {
   while (gVisibleWaylandPopupWindows) {
@@ -1777,7 +1779,8 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
   }
 #endif
 
-  if (!g_signal_handler_find(
+  if (isWidgetVisible &&
+      !g_signal_handler_find(
           gdkWindow, G_SIGNAL_MATCH_FUNC, 0, 0, nullptr,
           FuncToGpointer(NativeMoveResizeWaylandPopupCallback), this)) {
     g_signal_connect(gdkWindow, "moved-to-rect",

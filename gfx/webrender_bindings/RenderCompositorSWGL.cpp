@@ -61,6 +61,7 @@ bool RenderCompositorSWGL::AllocateMappedBuffer() {
   if (!mDT) {
     return false;
   }
+  mWidget->ClearBeforePaint(mDT, mRegion);
   
   
   
