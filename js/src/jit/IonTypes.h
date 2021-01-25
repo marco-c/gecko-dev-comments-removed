@@ -133,6 +133,11 @@ enum class BailoutKind : uint8_t {
   EagerTruncation,
 
   
+  
+  
+  UnboxFolding,
+
+  
   Inevitable,
 
   
@@ -183,6 +188,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "HoistBoundsCheck";
     case BailoutKind::EagerTruncation:
       return "EagerTruncation";
+    case BailoutKind::UnboxFolding:
+      return "UnboxFolding";
     case BailoutKind::Inevitable:
       return "Inevitable";
     case BailoutKind::DuringVMCall:

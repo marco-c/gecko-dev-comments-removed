@@ -2050,6 +2050,15 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       InvalidateAfterBailout(cx, outerScript, "eager range analysis failure");
       break;
 
+    case BailoutKind::UnboxFolding:
+      
+      
+      
+      MOZ_ASSERT(!outerScript->hadUnboxFoldingBailout());
+      outerScript->setHadUnboxFoldingBailout();
+      InvalidateAfterBailout(cx, outerScript, "unbox folding failure");
+      break;
+
     case BailoutKind::TooManyArguments:
       
       

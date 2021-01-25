@@ -316,8 +316,11 @@ enum class MutableScriptFlagsEnum : uint32_t {
   HadSpeculativePhiBailout = 1 << 26,
 
   
+  HadUnboxFoldingBailout = 1 << 27,
+
   
-  IsInlinableLargeFunction = 1 << 27,
+  
+  IsInlinableLargeFunction = 1 << 28,
 };
 
 }  
