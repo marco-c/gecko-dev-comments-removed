@@ -2,6 +2,16 @@
 
 
 
+mod guillotine;
+mod slab;
+
+pub use guillotine::*;
+pub use slab::*;
+
+
+
+
+
 use api::units::*;
 use crate::internal_types::CacheTextureId;
 use euclid::{point2, size2, default::Box2D};
