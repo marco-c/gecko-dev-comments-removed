@@ -2466,19 +2466,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       Cu.reportError(ex);
       throw ex;
     } finally {
-      
-      
-      Services.telemetry.recordEvent(
-        "exp_import",
-        "impression",
-        "formfill",
-        (importable?.browsers?.length ?? 0) + "",
-        {
-          autofillResult: autofillResult + "",
-          loginsCount: foundLogins.length + "",
-        }
-      );
-
       if (autofillResult == -1) {
         
         throw new Error("_fillForm: autofillResult must be specified");

@@ -255,7 +255,6 @@ class ImportableLoginsAutocompleteItem extends AutocompleteItem {
   }
 
   removeFromStorage() {
-    Services.telemetry.recordEvent("exp_import", "event", "delete", this.label);
     this._actor.sendAsyncMessage(
       "PasswordManager:decreaseSuggestImportCount",
       100
@@ -392,18 +391,6 @@ function LoginAutoCompleteResult(
   if (this.matchCount > 0) {
     this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
     this.defaultIndex = 0;
-    
-    
-    Services.telemetry.recordEvent(
-      "exp_import",
-      "impression",
-      "popup",
-      (importable?.browsers?.length ?? 0) + "",
-      {
-        loginsCount: logins.length + "",
-        searchLength: aSearchString.length + "",
-      }
-    );
   } else if (hidingFooterOnPWFieldAutoOpened) {
     
     
@@ -798,19 +785,12 @@ let gAutoCompleteListener = {
       case "importableLogins":
         loginManager.sendAsyncMessage("PasswordManager:HandleImportable", {
           browserId: selectedRowComment,
-          type: "enter",
         });
         break;
       case "loginsFooter":
         loginManager.sendAsyncMessage("PasswordManager:OpenPreferences", {
           entryPoint: "autocomplete",
         });
-        Services.telemetry.recordEvent(
-          "exp_import",
-          "event",
-          "enter",
-          "loginsFooter"
-        );
         break;
     }
   },

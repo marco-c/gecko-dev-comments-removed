@@ -53,26 +53,6 @@ this.LoginHelper = {
     this.updateSignonPrefs();
     Services.telemetry.setEventRecordingEnabled("pwmgr", true);
     Services.telemetry.setEventRecordingEnabled("form_autocomplete", true);
-
-    
-    const setImportRecording = exp =>
-      Services.telemetry.setEventRecordingEnabled("exp_import", exp?.active);
-    let ExperimentAPI;
-    try {
-      ({ ExperimentAPI } = ChromeUtils.import(
-        "resource://messaging-system/experiments/ExperimentAPI.jsm"
-      ));
-    } catch (ex) {
-      
-    }
-    if (ExperimentAPI) {
-      const slug = "password-autocomplete-wizardless";
-      ExperimentAPI.on("update", { slug }, (event, experiment) =>
-        setImportRecording(experiment)
-      );
-    } else {
-      setImportRecording();
-    }
   },
 
   updateSignonPrefs() {
