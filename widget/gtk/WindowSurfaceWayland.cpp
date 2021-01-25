@@ -14,6 +14,8 @@
 #include "gfxPlatform.h"
 #include "MozContainer.h"
 #include "nsTArray.h"
+#include "base/message_loop.h"  
+#include "base/task.h"          
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_widget.h"
 
