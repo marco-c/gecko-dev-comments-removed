@@ -115,7 +115,7 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
     return true;
   }
 
-  size_t byteLength = tarray->byteLength().deprecatedGetUint32();
+  size_t byteLength = tarray->byteLength().get();
 
   AutoRealm ar(cx, tarray);
   Rooted<ArrayBufferObject*> buffer(
@@ -220,7 +220,8 @@ size_t TypedArrayObject::objectMoved(JSObject* obj, JSObject* old) {
   
   
   
-  size_t nbytes = oldObj->byteLength().deprecatedGetUint32();
+  size_t nbytes = oldObj->byteLength().get();
+  MOZ_ASSERT(nbytes <= Nursery::MaxNurseryBufferSize);
 
   constexpr size_t headerSize = dataOffset() + sizeof(HeapSlot);
 
