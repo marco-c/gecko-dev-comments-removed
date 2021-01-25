@@ -253,23 +253,19 @@ static bool InstantiateScriptSourceObject(JSContext* cx,
 }
 
 
-static bool MaybeInstantiateModule(JSContext* cx, CompilationInput& input,
-                                   CompilationStencil& stencil,
-                                   CompilationGCOutput& gcOutput) {
-  if (stencil.scriptExtra[CompilationStencil::TopLevelIndex].isModule()) {
-    gcOutput.module = ModuleObject::create(cx);
-    if (!gcOutput.module) {
-      return false;
-    }
 
-    Rooted<ModuleObject*> module(cx, gcOutput.module);
-    if (!stencil.asCompilationStencil().moduleMetadata->initModule(
-            cx, input.atomCache, module)) {
-      return false;
-    }
+static bool InstantiateModuleObject(JSContext* cx, CompilationInput& input,
+                                    CompilationStencil& stencil,
+                                    CompilationGCOutput& gcOutput) {
+  MOZ_ASSERT(stencil.scriptExtra[CompilationStencil::TopLevelIndex].isModule());
+
+  gcOutput.module = ModuleObject::create(cx);
+  if (!gcOutput.module) {
+    return false;
   }
 
-  return true;
+  Rooted<ModuleObject*> module(cx, gcOutput.module);
+  return stencil.moduleMetadata->initModule(cx, input.atomCache, module);
 }
 
 
@@ -623,22 +619,23 @@ bool CompilationStencil::instantiateStencilsAfterPreparation(
 
   
   if (isInitialParse) {
-    if (stencil.asCompilationStencil()
-            .scriptExtra[CompilationStencil::TopLevelIndex]
-            .isModule()) {
-      MOZ_ASSERT(input.enclosingScope == nullptr);
-      input.enclosingScope = &cx->global()->emptyGlobalScope();
-      MOZ_ASSERT(input.enclosingScope->environmentChainLength() ==
-                 ModuleScope::EnclosingEnvironmentChainLength);
-    }
+    CompilationStencil& initialStencil = stencil.asCompilationStencil();
 
     if (!InstantiateScriptSourceObject(cx, input, gcOutput)) {
       return false;
     }
 
-    if (!MaybeInstantiateModule(cx, input, stencil.asCompilationStencil(),
-                                gcOutput)) {
-      return false;
+    if (initialStencil.moduleMetadata) {
+      
+      
+      MOZ_ASSERT(input.enclosingScope == nullptr);
+      input.enclosingScope = &cx->global()->emptyGlobalScope();
+      MOZ_ASSERT(input.enclosingScope->environmentChainLength() ==
+                 ModuleScope::EnclosingEnvironmentChainLength);
+
+      if (!InstantiateModuleObject(cx, input, initialStencil, gcOutput)) {
+        return false;
+      }
     }
 
     if (!InstantiateFunctions(cx, input, stencil, gcOutput)) {
