@@ -570,6 +570,25 @@ const PanelUI = {
     }
 
     
+    if (
+      Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.customizationMenu.enabled"
+      ) ||
+      Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.newNewtabExperience.enabled"
+      )
+    ) {
+      this.libraryRecentHighlights.previousElementSibling.setAttribute(
+        "data-l10n-id",
+        "library-recent-activity-label"
+      );
+    } else {
+      this.libraryRecentHighlights.previousElementSibling.removeAttribute(
+        "data-l10n-id"
+      );
+    }
+
+    
     this.makeLibraryRecentHighlightsInvisible();
 
     
