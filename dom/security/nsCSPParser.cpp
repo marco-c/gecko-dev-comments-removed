@@ -826,7 +826,8 @@ nsCSPDirective* nsCSPParser::directiveName() {
                 NS_ConvertUTF16toUTF8(mCurValue).get()));
 
   
-  if (!CSP_IsValidDirective(mCurToken)) {
+  CSPDirective directive = CSP_StringToCSPDirective(mCurToken);
+  if (directive == nsIContentSecurityPolicy::NO_DIRECTIVE) {
     AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "couldNotProcessUnknownDirective", params);
@@ -837,8 +838,7 @@ nsCSPDirective* nsCSPParser::directiveName() {
   
   
   
-  if (CSP_IsDirective(mCurToken,
-                      nsIContentSecurityPolicy::REFLECTED_XSS_DIRECTIVE)) {
+  if (directive == nsIContentSecurityPolicy::REFLECTED_XSS_DIRECTIVE) {
     AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "notSupportingDirective", params);
@@ -849,8 +849,7 @@ nsCSPDirective* nsCSPParser::directiveName() {
   
   
   
-  if (CSP_IsDirective(mCurToken,
-                      nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE) &&
+  if (directive == nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE &&
       !StaticPrefs::security_csp_enableNavigateTo()) {
     AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
@@ -860,7 +859,7 @@ nsCSPDirective* nsCSPParser::directiveName() {
 
   
   
-  if (mPolicy->hasDirective(CSP_StringToCSPDirective(mCurToken))) {
+  if (mPolicy->hasDirective(directive)) {
     AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag, "duplicateDirective",
                              params);
@@ -871,12 +870,9 @@ nsCSPDirective* nsCSPParser::directiveName() {
   
   
   if (mDeliveredViaMetaTag &&
-      ((CSP_IsDirective(mCurToken,
-                        nsIContentSecurityPolicy::REPORT_URI_DIRECTIVE)) ||
-       (CSP_IsDirective(mCurToken,
-                        nsIContentSecurityPolicy::FRAME_ANCESTORS_DIRECTIVE)) ||
-       (CSP_IsDirective(mCurToken,
-                        nsIContentSecurityPolicy::SANDBOX_DIRECTIVE)))) {
+      ((directive == nsIContentSecurityPolicy::REPORT_URI_DIRECTIVE) ||
+       (directive == nsIContentSecurityPolicy::FRAME_ANCESTORS_DIRECTIVE) ||
+       (directive == nsIContentSecurityPolicy::SANDBOX_DIRECTIVE))) {
     
     AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
@@ -885,51 +881,43 @@ nsCSPDirective* nsCSPParser::directiveName() {
   }
 
   
-  if (CSP_IsDirective(mCurToken,
-                      nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT)) {
-    return new nsBlockAllMixedContentDirective(
-        CSP_StringToCSPDirective(mCurToken));
+  if (directive == nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT) {
+    return new nsBlockAllMixedContentDirective(directive);
   }
 
   
-  if (CSP_IsDirective(
-          mCurToken, nsIContentSecurityPolicy::UPGRADE_IF_INSECURE_DIRECTIVE)) {
-    return new nsUpgradeInsecureDirective(CSP_StringToCSPDirective(mCurToken));
+  if (directive == nsIContentSecurityPolicy::UPGRADE_IF_INSECURE_DIRECTIVE) {
+    return new nsUpgradeInsecureDirective(directive);
   }
 
   
   
   
-  if (CSP_IsDirective(mCurToken,
-                      nsIContentSecurityPolicy::CHILD_SRC_DIRECTIVE)) {
-    mChildSrc = new nsCSPChildSrcDirective(CSP_StringToCSPDirective(mCurToken));
+  if (directive == nsIContentSecurityPolicy::CHILD_SRC_DIRECTIVE) {
+    mChildSrc = new nsCSPChildSrcDirective(directive);
     return mChildSrc;
   }
 
   
-  if (CSP_IsDirective(mCurToken,
-                      nsIContentSecurityPolicy::FRAME_SRC_DIRECTIVE)) {
-    mFrameSrc = new nsCSPDirective(CSP_StringToCSPDirective(mCurToken));
+  if (directive == nsIContentSecurityPolicy::FRAME_SRC_DIRECTIVE) {
+    mFrameSrc = new nsCSPDirective(directive);
     return mFrameSrc;
   }
 
   
-  if (CSP_IsDirective(mCurToken,
-                      nsIContentSecurityPolicy::WORKER_SRC_DIRECTIVE)) {
-    mWorkerSrc = new nsCSPDirective(CSP_StringToCSPDirective(mCurToken));
+  if (directive == nsIContentSecurityPolicy::WORKER_SRC_DIRECTIVE) {
+    mWorkerSrc = new nsCSPDirective(directive);
     return mWorkerSrc;
   }
 
   
   
-  if (CSP_IsDirective(mCurToken,
-                      nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE)) {
-    mScriptSrc =
-        new nsCSPScriptSrcDirective(CSP_StringToCSPDirective(mCurToken));
+  if (directive == nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) {
+    mScriptSrc = new nsCSPScriptSrcDirective(directive);
     return mScriptSrc;
   }
 
-  return new nsCSPDirective(CSP_StringToCSPDirective(mCurToken));
+  return new nsCSPDirective(directive);
 }
 
 
