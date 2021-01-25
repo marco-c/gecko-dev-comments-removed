@@ -541,11 +541,12 @@ function TypedArrayFindIndex(predicate) {
 }
 
 
+
+
 function TypedArrayForEach(callbackfn) {
     
     var O = this;
 
-    
     
     var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
@@ -564,15 +565,12 @@ function TypedArrayForEach(callbackfn) {
     if (!IsCallable(callbackfn))
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
-    
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var thisArg = arguments.length > 1 ? arguments[1] : void 0;
 
-    
     
     for (var k = 0; k < len; k++) {
         
-        
-        callContentFunction(callbackfn, T, O[k], k, O);
+        callContentFunction(callbackfn, thisArg, O[k], k, O);
     }
 
     
