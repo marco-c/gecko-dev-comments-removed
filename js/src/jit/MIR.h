@@ -3312,27 +3312,6 @@ class MCreateThisWithTemplate : public MUnaryInstruction,
 
 
 
-class MCreateThisWithProto : public MTernaryInstruction,
-                             public MixPolicy<ObjectPolicy<0>, ObjectPolicy<1>,
-                                              ObjectPolicy<2>>::Data {
-  MCreateThisWithProto(MDefinition* callee, MDefinition* newTarget,
-                       MDefinition* prototype)
-      : MTernaryInstruction(classOpcode, callee, newTarget, prototype) {
-    setResultType(MIRType::Object);
-  }
-
- public:
-  INSTRUCTION_HEADER(CreateThisWithProto)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, getCallee), (1, getNewTarget), (2, getPrototype))
-
-  
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-  bool possiblyCalls() const override { return true; }
-};
-
-
-
 class MCreateThis : public MBinaryInstruction,
                     public MixPolicy<ObjectPolicy<0>, ObjectPolicy<1>>::Data {
   explicit MCreateThis(MDefinition* callee, MDefinition* newTarget)
