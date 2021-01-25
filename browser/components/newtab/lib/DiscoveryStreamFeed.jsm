@@ -58,6 +58,7 @@ const PREF_IMPRESSION_ID = "browser.newtabpage.activity-stream.impressionId";
 const PREF_ENABLED = "discoverystream.enabled";
 const PREF_HARDCODED_BASIC_LAYOUT = "discoverystream.hardcoded-basic-layout";
 const PREF_SPOCS_ENDPOINT = "discoverystream.spocs-endpoint";
+const PREF_SPOCS_ENDPOINT_QUERY = "discoverystream.spocs-endpoint-query";
 const PREF_REGION_BASIC_LAYOUT = "discoverystream.region-basic-layout";
 const PREF_USER_TOPSTORIES = "feeds.section.topstories";
 const PREF_SYSTEM_TOPSTORIES = "feeds.system.topstories";
@@ -388,6 +389,26 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
+  
+
+
+
+
+  addEndpointQuery(url, query) {
+    if (!query) {
+      return url;
+    }
+
+    const urlObject = new URL(url);
+    const params = new URLSearchParams(query);
+
+    for (let [key, val] of params.entries()) {
+      urlObject.searchParams.append(key, val);
+    }
+
+    return urlObject.toString();
+  }
+
   async loadLayout(sendUpdate, isStartup) {
     let layoutResp = {};
     let url = "";
@@ -419,6 +440,13 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         this.store.getState().Prefs.values[PREF_SPOCS_ENDPOINT] ||
         this.config.spocs_endpoint ||
         layoutResp.spocs.url;
+
+      const spocsEndpointQuery = this.store.getState().Prefs.values[
+        PREF_SPOCS_ENDPOINT_QUERY
+      ];
+
+      
+      url = this.addEndpointQuery(url, spocsEndpointQuery);
 
       if (
         url &&
@@ -1521,6 +1549,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       case PREF_ENABLED:
       case PREF_HARDCODED_BASIC_LAYOUT:
       case PREF_SPOCS_ENDPOINT:
+      case PREF_SPOCS_ENDPOINT_QUERY:
         
         this.configReset();
         break;
