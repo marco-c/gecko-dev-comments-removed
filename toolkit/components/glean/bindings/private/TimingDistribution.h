@@ -1,0 +1,109 @@
+
+
+
+
+
+
+#ifndef mozilla_glean_GleanTimingDistribution_h
+#define mozilla_glean_GleanTimingDistribution_h
+
+#include "mozilla/glean/bindings/DistributionData.h"
+#include "mozilla/glean/fog_ffi_generated.h"
+#include "mozilla/Maybe.h"
+#include "nsDataHashtable.h"
+#include "nsIGleanMetrics.h"
+#include "nsTArray.h"
+
+namespace mozilla::glean {
+
+typedef uint64_t TimerId;
+
+namespace impl {
+
+class TimingDistributionMetric {
+ public:
+  constexpr explicit TimingDistributionMetric(uint32_t aId) : mId(aId) {}
+
+  
+
+
+
+
+  TimerId Start() const { return fog_timing_distribution_start(mId); }
+
+  
+
+
+
+
+
+
+
+
+
+  void StopAndAccumulate(TimerId&& aId) const {
+    fog_timing_distribution_stop_and_accumulate(mId, aId);
+  }
+
+  
+
+
+
+
+
+  void Cancel(TimerId&& aId) const { fog_timing_distribution_cancel(mId, aId); }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Maybe<DistributionData> TestGetValue(
+      const nsACString& aPingName = nsCString()) const {
+    if (!fog_timing_distribution_test_has_value(mId, &aPingName)) {
+      return Nothing();
+    }
+    nsTArray<uint64_t> buckets;
+    nsTArray<uint64_t> counts;
+    DistributionData ret;
+    fog_timing_distribution_test_get_value(mId, &aPingName, &ret.sum, &buckets,
+                                           &counts);
+    for (size_t i = 0; i < buckets.Length(); ++i) {
+      ret.values.Put(buckets[i], counts[i]);
+    }
+    return Some(std::move(ret));
+  }
+
+ private:
+  const uint32_t mId;
+};
+}  
+
+class GleanTimingDistribution final : public nsIGleanTimingDistribution {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIGLEANTIMINGDISTRIBUTION
+
+  explicit GleanTimingDistribution(uint64_t aId) : mTimingDist(aId){};
+
+ private:
+  virtual ~GleanTimingDistribution() = default;
+
+  const impl::TimingDistributionMetric mTimingDist;
+};
+
+}  
+
+#endif 

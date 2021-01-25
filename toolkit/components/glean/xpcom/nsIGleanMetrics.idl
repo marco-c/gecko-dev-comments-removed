@@ -97,6 +97,58 @@ interface nsIGleanCounter : nsISupports
   jsval testGetValue([optional] in AUTF8String aPingName);
 };
 
+[scriptable, uuid(92e14730-9b5f-45a1-b018-f588d0b964d8)]
+interface nsIGleanTimingDistribution : nsISupports
+{
+  
+
+
+
+
+  [implicit_jscontext]
+  jsval start();
+
+  
+
+
+
+
+
+
+
+
+
+  void stopAndAccumulate(in uint64_t aId);
+
+  
+
+
+
+
+
+  void cancel(in uint64_t aId);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [implicit_jscontext]
+	jsval testGetValue([optional] in ACString aPingName);
+};
+
 [scriptable, uuid(eea5ed46-16ba-46cd-bb1f-504581987fe1)]
 interface nsIGleanMemoryDistribution : nsISupports
 {
