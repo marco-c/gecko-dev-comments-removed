@@ -4467,11 +4467,10 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     const LogicalSize availableSizeForItems =
-      ComputeAvailableSizeForItems(aReflowInput, borderPadding);
+        ComputeAvailableSizeForItems(aReflowInput, borderPadding);
     mayNeedNextInFlow = effectiveContentBSize > availableSizeForItems.BSize(wm);
-    if (mayNeedNextInFlow &&
-        aReflowInput.mStyleBorder->mBoxDecorationBreak ==
-            StyleBoxDecorationBreak::Slice) {
+    if (mayNeedNextInFlow && aReflowInput.mStyleBorder->mBoxDecorationBreak ==
+                                 StyleBoxDecorationBreak::Slice) {
       borderPadding.BEnd(wm) = 0;
     }
   }
