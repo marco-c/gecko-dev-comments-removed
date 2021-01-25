@@ -89,10 +89,36 @@ typedef unsigned __int64 uint64_t;
 HB_BEGIN_DECLS
 
 
+
+
+
+
+
 typedef int hb_bool_t;
 
+
+
+
+
+
+
+
 typedef uint32_t hb_codepoint_t;
+
+
+
+
+
+
+
+
 typedef int32_t hb_position_t;
+
+
+
+
+
+
 typedef uint32_t hb_mask_t;
 
 typedef union _hb_var_int_t {
@@ -107,9 +133,33 @@ typedef union _hb_var_int_t {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 typedef uint32_t hb_tag_t;
 
+
+
+
+
+
+
 #define HB_TAG(c1,c2,c3,c4) ((hb_tag_t)((((uint32_t)(c1)&0xFF)<<24)|(((uint32_t)(c2)&0xFF)<<16)|(((uint32_t)(c3)&0xFF)<<8)|((uint32_t)(c4)&0xFF)))
+
+
+
+
+
+
+
 #define HB_UNTAG(tag)   (uint8_t)(((tag)>>24)&0xFF), (uint8_t)(((tag)>>16)&0xFF), (uint8_t)(((tag)>>8)&0xFF), (uint8_t)((tag)&0xFF)
 
 #define HB_TAG_NONE HB_TAG(0,0,0,0)
@@ -123,6 +173,13 @@ hb_tag_from_string (const char *str, int len);
 
 HB_EXTERN void
 hb_tag_to_string (hb_tag_t tag, char *buf);
+
+
+
+
+
+
+
 
 
 
@@ -148,12 +205,59 @@ hb_direction_from_string (const char *str, int len);
 HB_EXTERN const char *
 hb_direction_to_string (hb_direction_t direction);
 
+
+
+
+
+
+
+
 #define HB_DIRECTION_IS_VALID(dir)	((((unsigned int) (dir)) & ~3U) == 4)
 
+
+
+
+
+
+
+
+
 #define HB_DIRECTION_IS_HORIZONTAL(dir)	((((unsigned int) (dir)) & ~1U) == 4)
+
+
+
+
+
+
+
+
 #define HB_DIRECTION_IS_VERTICAL(dir)	((((unsigned int) (dir)) & ~1U) == 6)
+
+
+
+
+
+
+
+
 #define HB_DIRECTION_IS_FORWARD(dir)	((((unsigned int) (dir)) & ~2U) == 4)
+
+
+
+
+
+
+
+
 #define HB_DIRECTION_IS_BACKWARD(dir)	((((unsigned int) (dir)) & ~2U) == 5)
+
+
+
+
+
+
+
+
 #define HB_DIRECTION_REVERSE(dir)	((hb_direction_t) (((unsigned int) (dir)) ^ 1))
 
 
@@ -171,6 +275,168 @@ hb_language_to_string (hb_language_t language);
 
 HB_EXTERN hb_language_t
 hb_language_get_default (void);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -410,6 +676,12 @@ hb_script_get_horizontal_direction (hb_script_t script);
 
 
 
+
+
+
+
+
+
 typedef struct hb_user_data_key_t {
   
   char unused;
@@ -468,6 +740,12 @@ hb_feature_to_string (hb_feature_t *feature,
 
 
 
+
+
+
+
+
+
 typedef struct hb_variation_t {
   hb_tag_t tag;
   float    value;
@@ -480,6 +758,7 @@ hb_variation_from_string (const char *str, int len,
 HB_EXTERN void
 hb_variation_to_string (hb_variation_t *variation,
 			char *buf, unsigned int size);
+
 
 
 

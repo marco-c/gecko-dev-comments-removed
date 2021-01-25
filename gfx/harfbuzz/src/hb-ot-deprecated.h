@@ -82,8 +82,7 @@ hb_ot_tag_from_language (hb_language_t language);
 
 
 
-typedef struct hb_ot_var_axis_t
-{
+typedef struct hb_ot_var_axis_t {
   hb_tag_t tag;
   hb_ot_name_id_t name_id;
   float min_value;

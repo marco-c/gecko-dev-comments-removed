@@ -58,6 +58,8 @@
 
 
 
+
+
 unsigned int
 hb_face_count (hb_blob_t *blob)
 {
@@ -92,6 +94,12 @@ DEFINE_NULL_INSTANCE (hb_face_t) =
 
   
 };
+
+
+
+
+
+
 
 
 
@@ -191,6 +199,9 @@ _hb_face_for_data_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void
 
 
 
+
+
+
 hb_face_t *
 hb_face_create (hb_blob_t    *blob,
 		unsigned int  index)
@@ -200,10 +211,15 @@ hb_face_create (hb_blob_t    *blob,
   if (unlikely (!blob))
     blob = hb_blob_get_empty ();
 
-  hb_face_for_data_closure_t *closure = _hb_face_for_data_closure_create (hb_sanitize_context_t ().sanitize_blob<OT::OpenTypeFontFile> (hb_blob_reference (blob)), index);
+  blob = hb_sanitize_context_t ().sanitize_blob<OT::OpenTypeFontFile> (hb_blob_reference (blob));
+
+  hb_face_for_data_closure_t *closure = _hb_face_for_data_closure_create (blob, index);
 
   if (unlikely (!closure))
+  {
+    hb_blob_destroy (blob);
     return hb_face_get_empty ();
+  }
 
   face = hb_face_create_for_tables (_hb_face_for_data_reference_table,
 				    closure,
@@ -245,6 +261,8 @@ hb_face_reference (hb_face_t *face)
 {
   return hb_object_reference (face);
 }
+
+
 
 
 
@@ -311,6 +329,7 @@ hb_face_set_user_data (hb_face_t          *face,
 
 
 
+
 void *
 hb_face_get_user_data (const hb_face_t    *face,
 		       hb_user_data_key_t *key)
@@ -363,6 +382,7 @@ hb_face_is_immutable (const hb_face_t *face)
 
 
 
+
 hb_blob_t *
 hb_face_reference_table (const hb_face_t *face,
 			 hb_tag_t tag)
@@ -372,6 +392,8 @@ hb_face_reference_table (const hb_face_t *face,
 
   return face->reference_table (tag);
 }
+
+
 
 
 
@@ -398,6 +420,9 @@ hb_face_reference_blob (hb_face_t *face)
 
 
 
+
+
+
 void
 hb_face_set_index (hb_face_t    *face,
 		   unsigned int  index)
@@ -407,6 +432,8 @@ hb_face_set_index (hb_face_t    *face,
 
   face->index = index;
 }
+
+
 
 
 
@@ -507,6 +534,8 @@ hb_face_get_glyph_count (const hb_face_t *face)
 
 
 
+
+
 unsigned int
 hb_face_get_table_tags (const hb_face_t *face,
 			unsigned int  start_offset,
@@ -542,6 +571,9 @@ hb_face_get_table_tags (const hb_face_t *face,
 
 
 
+
+
+
 void
 hb_face_collect_unicodes (hb_face_t *face,
 			  hb_set_t  *out)
@@ -557,12 +589,15 @@ hb_face_collect_unicodes (hb_face_t *face,
 
 
 
+
 void
 hb_face_collect_variation_selectors (hb_face_t *face,
 				     hb_set_t  *out)
 {
   face->table.cmap->collect_variation_selectors (out);
 }
+
+
 
 
 
@@ -709,6 +744,9 @@ hb_face_builder_create ()
 
 
 
+
+
+
 hb_bool_t
 hb_face_builder_add_table (hb_face_t *face, hb_tag_t tag, hb_blob_t *blob)
 {
@@ -716,7 +754,10 @@ hb_face_builder_add_table (hb_face_t *face, hb_tag_t tag, hb_blob_t *blob)
     return false;
 
   hb_face_builder_data_t *data = (hb_face_builder_data_t *) face->user_data;
+
   hb_face_builder_data_t::table_entry_t *entry = data->tables.push ();
+  if (data->tables.in_error())
+    return false;
 
   entry->tag = tag;
   entry->blob = hb_blob_reference (blob);

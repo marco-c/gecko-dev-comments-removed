@@ -230,8 +230,6 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
 
   
 
-  
-
 
 
 

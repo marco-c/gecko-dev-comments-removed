@@ -20,11 +20,11 @@ hb.font_set_scale (font, upem, upem)
 hb.ot_font_set_funcs (font)
 
 buf = hb.buffer_create ()
-class Debugger(object):
+class Debugger (object):
 	def message (self, buf, font, msg, data, _x_what_is_this):
-		print(msg)
+		print (msg)
 		return True
-debugger = Debugger()
+debugger = Debugger ()
 hb.buffer_set_message_func (buf, debugger.message, 1, 0)
 
 
@@ -33,17 +33,16 @@ hb.buffer_set_message_func (buf, debugger.message, 1, 0)
 
 
 
-if False:
-	
-	
-	
-	hb.buffer_add_utf8 (buf, text.encode('utf-8'), 0, -1)
-	
-	
-elif sys.maxunicode == 0x10FFFF:
-	hb.buffer_add_utf32 (buf, array.array('I', text.encode('utf-32'))[1:], 0, -1)
+
+
+
+
+
+
+if sys.maxunicode == 0x10FFFF:
+	hb.buffer_add_utf32 (buf, array.array ('I', text.encode ('utf-32'))[1:], 0, -1)
 else:
-	hb.buffer_add_utf16 (buf, array.array('H', text.encode('utf-16'))[1:], 0, -1)
+	hb.buffer_add_utf16 (buf, array.array ('H', text.encode ('utf-16'))[1:], 0, -1)
 
 
 hb.buffer_guess_segment_properties (buf)
@@ -54,11 +53,11 @@ del font
 infos = hb.buffer_get_glyph_infos (buf)
 positions = hb.buffer_get_glyph_positions (buf)
 
-for info,pos in zip(infos, positions):
+for info, pos in zip (infos, positions):
 	gid = info.codepoint
 	cluster = info.cluster
 	x_advance = pos.x_advance
 	x_offset = pos.x_offset
 	y_offset = pos.y_offset
 
-	print("gid%d=%d@%d,%d+%d" % (gid, cluster, x_advance, x_offset, y_offset))
+	print ("gid%d=%d@%d,%d+%d" % (gid, cluster, x_advance, x_offset, y_offset))

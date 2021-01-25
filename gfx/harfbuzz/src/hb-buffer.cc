@@ -54,6 +54,7 @@
 
 
 
+
 hb_bool_t
 hb_segment_properties_equal (const hb_segment_properties_t *a,
 			     const hb_segment_properties_t *b)
@@ -617,8 +618,7 @@ hb_buffer_t::unsafe_to_break_from_outbuffer (unsigned int start, unsigned int en
 void
 hb_buffer_t::guess_segment_properties ()
 {
-  assert (content_type == HB_BUFFER_CONTENT_TYPE_UNICODE ||
-	  (!len && content_type == HB_BUFFER_CONTENT_TYPE_INVALID));
+  assert_unicode ();
 
   
   if (props.script == HB_SCRIPT_INVALID) {
@@ -798,6 +798,7 @@ hb_buffer_set_user_data (hb_buffer_t        *buffer,
 
 
 
+
 void *
 hb_buffer_get_user_data (hb_buffer_t        *buffer,
 			 hb_user_data_key_t *key)
@@ -834,11 +835,13 @@ hb_buffer_set_content_type (hb_buffer_t              *buffer,
 
 
 
+
 hb_buffer_content_type_t
 hb_buffer_get_content_type (hb_buffer_t *buffer)
 {
   return buffer->content_type;
 }
+
 
 
 
@@ -1095,15 +1098,19 @@ hb_buffer_get_flags (hb_buffer_t *buffer)
 
 
 
+
+
 void
-hb_buffer_set_cluster_level (hb_buffer_t       *buffer,
-		     hb_buffer_cluster_level_t  cluster_level)
+hb_buffer_set_cluster_level (hb_buffer_t               *buffer,
+			     hb_buffer_cluster_level_t  cluster_level)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->cluster_level = cluster_level;
 }
+
+
 
 
 
@@ -1143,6 +1150,7 @@ hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
 
   buffer->replacement = replacement;
 }
+
 
 
 
@@ -1415,6 +1423,25 @@ hb_buffer_get_glyph_positions (hb_buffer_t  *buffer,
 
 
 
+
+
+HB_EXTERN hb_bool_t
+hb_buffer_has_positions (hb_buffer_t  *buffer)
+{
+  return buffer->have_positions;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 hb_glyph_flags_t
 (hb_glyph_info_get_glyph_flags) (const hb_glyph_info_t *info)
 {
@@ -1513,8 +1540,7 @@ hb_buffer_add_utf (hb_buffer_t  *buffer,
   typedef typename utf_t::codepoint_t T;
   const hb_codepoint_t replacement = buffer->replacement;
 
-  assert (buffer->content_type == HB_BUFFER_CONTENT_TYPE_UNICODE ||
-	  (!buffer->len && buffer->content_type == HB_BUFFER_CONTENT_TYPE_INVALID));
+  buffer->assert_unicode ();
 
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1834,8 +1860,8 @@ void
 hb_buffer_normalize_glyphs (hb_buffer_t *buffer)
 {
   assert (buffer->have_positions);
-  assert (buffer->content_type == HB_BUFFER_CONTENT_TYPE_GLYPHS ||
-	  (!buffer->len && buffer->content_type == HB_BUFFER_CONTENT_TYPE_INVALID));
+
+  buffer->assert_glyphs ();
 
   bool backward = HB_DIRECTION_IS_BACKWARD (buffer->props.direction);
 

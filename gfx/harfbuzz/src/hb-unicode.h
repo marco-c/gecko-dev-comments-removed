@@ -51,6 +51,41 @@ HB_BEGIN_DECLS
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef enum
 {
   HB_UNICODE_GENERAL_CATEGORY_CONTROL,			
@@ -84,6 +119,67 @@ typedef enum
   HB_UNICODE_GENERAL_CATEGORY_PARAGRAPH_SEPARATOR,	
   HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR		
 } hb_unicode_general_category_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -176,6 +272,18 @@ typedef enum
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct hb_unicode_funcs_t hb_unicode_funcs_t;
 
 
@@ -227,24 +335,125 @@ hb_unicode_funcs_get_parent (hb_unicode_funcs_t *ufuncs);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef hb_unicode_combining_class_t	(*hb_unicode_combining_class_func_t)	(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      unicode,
 										 void               *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef hb_unicode_general_category_t	(*hb_unicode_general_category_func_t)	(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      unicode,
 										 void               *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef hb_codepoint_t			(*hb_unicode_mirroring_func_t)		(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      unicode,
 										 void               *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef hb_script_t			(*hb_unicode_script_func_t)		(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      unicode,
 										 void               *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 typedef hb_bool_t			(*hb_unicode_compose_func_t)		(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      a,
 										 hb_codepoint_t      b,
 										 hb_codepoint_t     *ab,
 										 void               *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef hb_bool_t			(*hb_unicode_decompose_func_t)		(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      ab,
 										 hb_codepoint_t     *a,
@@ -356,9 +565,23 @@ hb_unicode_funcs_set_decompose_func (hb_unicode_funcs_t *ufuncs,
 
 
 
+
+
+
+
+
+
+
 HB_EXTERN hb_unicode_combining_class_t
 hb_unicode_combining_class (hb_unicode_funcs_t *ufuncs,
 			    hb_codepoint_t unicode);
+
+
+
+
+
+
+
 
 
 
@@ -374,9 +597,23 @@ hb_unicode_general_category (hb_unicode_funcs_t *ufuncs,
 
 
 
+
+
+
+
+
+
+
 HB_EXTERN hb_codepoint_t
 hb_unicode_mirroring (hb_unicode_funcs_t *ufuncs,
 		      hb_codepoint_t unicode);
+
+
+
+
+
+
+
 
 
 
@@ -387,11 +624,39 @@ HB_EXTERN hb_script_t
 hb_unicode_script (hb_unicode_funcs_t *ufuncs,
 		   hb_codepoint_t unicode);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 HB_EXTERN hb_bool_t
 hb_unicode_compose (hb_unicode_funcs_t *ufuncs,
 		    hb_codepoint_t      a,
 		    hb_codepoint_t      b,
 		    hb_codepoint_t     *ab);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 HB_EXTERN hb_bool_t
 hb_unicode_decompose (hb_unicode_funcs_t *ufuncs,

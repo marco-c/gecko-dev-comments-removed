@@ -46,6 +46,8 @@
 
 
 
+
+
 hb_set_t *
 hb_set_create ()
 {
@@ -58,6 +60,8 @@ hb_set_create ()
 
   return set;
 }
+
+
 
 
 
@@ -80,11 +84,17 @@ hb_set_get_empty ()
 
 
 
+
+
 hb_set_t *
 hb_set_reference (hb_set_t *set)
 {
   return hb_object_reference (set);
 }
+
+
+
+
 
 
 
@@ -114,6 +124,8 @@ hb_set_destroy (hb_set_t *set)
 
 
 
+
+
 hb_bool_t
 hb_set_set_user_data (hb_set_t           *set,
 		      hb_user_data_key_t *key,
@@ -123,6 +135,9 @@ hb_set_set_user_data (hb_set_t           *set,
 {
   return hb_object_set_user_data (set, key, data, destroy, replace);
 }
+
+
+
 
 
 
@@ -231,6 +246,7 @@ hb_set_add (hb_set_t       *set,
 
 
 
+
 void
 hb_set_add_range (hb_set_t       *set,
 		  hb_codepoint_t  first,
@@ -265,6 +281,7 @@ hb_set_del (hb_set_t       *set,
 
 
 
+
 void
 hb_set_del_range (hb_set_t       *set,
 		  hb_codepoint_t  first,
@@ -272,6 +289,7 @@ hb_set_del_range (hb_set_t       *set,
 {
   set->del_range (first, last);
 }
+
 
 
 
@@ -382,6 +400,7 @@ hb_set_subtract (hb_set_t       *set,
 
 
 
+
 void
 hb_set_symmetric_difference (hb_set_t       *set,
 			     const hb_set_t *other)
@@ -467,12 +486,14 @@ hb_set_get_max (const hb_set_t *set)
 
 
 
+
 hb_bool_t
 hb_set_next (const hb_set_t *set,
 	     hb_codepoint_t *codepoint)
 {
   return set->next (codepoint);
 }
+
 
 
 
@@ -509,6 +530,7 @@ hb_set_previous (const hb_set_t *set,
 
 
 
+
 hb_bool_t
 hb_set_next_range (const hb_set_t *set,
 		   hb_codepoint_t *first,
@@ -516,6 +538,7 @@ hb_set_next_range (const hb_set_t *set,
 {
   return set->next_range (first, last);
 }
+
 
 
 

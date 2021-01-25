@@ -309,6 +309,9 @@ _hb_ot_get_font_funcs ()
 
 
 
+
+
+
 void
 hb_ot_font_set_funcs (hb_font_t *font)
 {

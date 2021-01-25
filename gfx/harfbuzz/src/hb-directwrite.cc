@@ -34,6 +34,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 typedef HRESULT (* WINAPI t_DWriteCreateFactory)(
   DWRITE_FACTORY_TYPE factoryType,
   REFIID              iid,

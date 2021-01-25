@@ -27,7 +27,6 @@
 #ifndef HB_NO_STYLE
 #ifdef HB_EXPERIMENTAL_API
 
-#include "hb-aat-fdsc-table.hh"
 #include "hb-ot-var-avar-table.hh"
 #include "hb-ot-var-fvar-table.hh"
 #include "hb-ot-stat-table.hh"
@@ -105,19 +104,6 @@ hb_style_get_value (hb_font_t *font, hb_tag_t tag)
   float value;
   if (face->table.STAT->get_value (style_tag, &value))
     return value;
-
-  
-  const AAT::FontDescriptor &descriptor = face->table.fdsc->get_descriptor (style_tag);
-  if (descriptor.has_data ())
-  {
-    float value = descriptor.get_value ();
-    
-    
-    if (style_tag == HB_STYLE_TAG_WEIGHT) value *= 400.f;
-    
-    if (style_tag == HB_STYLE_TAG_WIDTH) value *= 100.f;
-    return value;
-  }
 
   switch ((unsigned) style_tag)
   {

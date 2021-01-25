@@ -46,6 +46,12 @@ hb_face_count (hb_blob_t *blob);
 
 
 
+
+
+
+
+
+
 typedef struct hb_face_t hb_face_t;
 
 HB_EXTERN hb_face_t *

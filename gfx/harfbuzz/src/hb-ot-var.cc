@@ -71,6 +71,11 @@ hb_ot_var_has_data (hb_face_t *face)
 
 
 
+
+
+
+
+
 unsigned int
 hb_ot_var_get_axis_count (hb_face_t *face)
 {
@@ -78,6 +83,14 @@ hb_ot_var_get_axis_count (hb_face_t *face)
 }
 
 #ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
+
 
 
 
@@ -92,6 +105,13 @@ hb_ot_var_get_axes (hb_face_t        *face,
 {
   return face->table.fvar->get_axes_deprecated (start_offset, axes_count, axes_array);
 }
+
+
+
+
+
+
+
 
 
 
@@ -114,6 +134,16 @@ hb_ot_var_find_axis (hb_face_t        *face,
 
 
 
+
+
+
+
+
+
+
+
+
+
 HB_EXTERN unsigned int
 hb_ot_var_get_axis_infos (hb_face_t             *face,
 			  unsigned int           start_offset,
@@ -122,6 +152,14 @@ hb_ot_var_get_axis_infos (hb_face_t             *face,
 {
   return face->table.fvar->get_axis_infos (start_offset, axes_count, axes_array);
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -141,11 +179,33 @@ hb_ot_var_find_axis_info (hb_face_t             *face,
 
 
 
+
+
+
+
+
+
+
+
+
+
 unsigned int
 hb_ot_var_get_named_instance_count (hb_face_t *face)
 {
   return face->table.fvar->get_instance_count ();
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 hb_ot_name_id_t
 hb_ot_var_named_instance_get_subfamily_name_id (hb_face_t   *face,
@@ -154,12 +214,39 @@ hb_ot_var_named_instance_get_subfamily_name_id (hb_face_t   *face,
   return face->table.fvar->get_instance_subfamily_name_id (instance_index);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 hb_ot_name_id_t
 hb_ot_var_named_instance_get_postscript_name_id (hb_face_t  *face,
 						unsigned int instance_index)
 {
   return face->table.fvar->get_instance_postscript_name_id (instance_index);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 unsigned int
 hb_ot_var_named_instance_get_design_coords (hb_face_t    *face,
@@ -169,6 +256,13 @@ hb_ot_var_named_instance_get_design_coords (hb_face_t    *face,
 {
   return face->table.fvar->get_instance_coords (instance_index, coords_length, coords);
 }
+
+
+
+
+
+
+
 
 
 
@@ -197,6 +291,17 @@ hb_ot_var_normalize_variations (hb_face_t            *face,
 
   face->table.avar->map_coords (coords, coords_length);
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

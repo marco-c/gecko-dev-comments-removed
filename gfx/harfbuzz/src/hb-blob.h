@@ -55,12 +55,29 @@ HB_BEGIN_DECLS
 
 
 
+
+
+
+
+
+
+
+
+
 typedef enum {
   HB_MEMORY_MODE_DUPLICATE,
   HB_MEMORY_MODE_READONLY,
   HB_MEMORY_MODE_WRITABLE,
   HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE
 } hb_memory_mode_t;
+
+
+
+
+
+
+
+
 
 typedef struct hb_blob_t hb_blob_t;
 

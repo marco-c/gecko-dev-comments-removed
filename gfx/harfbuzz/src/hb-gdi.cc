@@ -28,6 +28,16 @@
 
 #include "hb-gdi.h"
 
+
+
+
+
+
+
+
+
+
+
 static hb_blob_t *
 _hb_gdi_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data)
 {

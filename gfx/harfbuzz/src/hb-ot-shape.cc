@@ -220,7 +220,13 @@ hb_ot_shape_plan_t::init0 (hb_face_t                     *face,
   {
     data = shaper->data_create (this);
     if (unlikely (!data))
+    {
+      map.fini ();
+#ifndef HB_NO_AAT_SHAPE
+      aat_map.fini ();
+#endif
       return false;
+    }
   }
 
   return true;
@@ -890,8 +896,11 @@ hb_ot_substitute_post (const hb_ot_shape_context_t *c)
     hb_aat_layout_remove_deleted_glyphs (c->buffer);
 #endif
 
-  if (c->plan->shaper->postprocess_glyphs)
+  if (c->plan->shaper->postprocess_glyphs &&
+    c->buffer->message(c->font, "start postprocess-glyphs")) {
     c->plan->shaper->postprocess_glyphs (c->plan, c->buffer, c->font);
+    (void) c->buffer->message(c->font, "end postprocess-glyphs");
+  }
 }
 
 
@@ -1091,12 +1100,12 @@ hb_ot_shape_internal (hb_ot_shape_context_t *c)
   if (likely (!hb_unsigned_mul_overflows (c->buffer->len, HB_BUFFER_MAX_LEN_FACTOR)))
   {
     c->buffer->max_len = hb_max (c->buffer->len * HB_BUFFER_MAX_LEN_FACTOR,
-			      (unsigned) HB_BUFFER_MAX_LEN_MIN);
+				 (unsigned) HB_BUFFER_MAX_LEN_MIN);
   }
   if (likely (!hb_unsigned_mul_overflows (c->buffer->len, HB_BUFFER_MAX_OPS_FACTOR)))
   {
     c->buffer->max_ops = hb_max (c->buffer->len * HB_BUFFER_MAX_OPS_FACTOR,
-			      (unsigned) HB_BUFFER_MAX_OPS_MIN);
+				 (unsigned) HB_BUFFER_MAX_OPS_MIN);
   }
 
   
@@ -1114,8 +1123,11 @@ hb_ot_shape_internal (hb_ot_shape_context_t *c)
 
   hb_ensure_native_direction (c->buffer);
 
-  if (c->plan->shaper->preprocess_text)
+  if (c->plan->shaper->preprocess_text &&
+    c->buffer->message(c->font, "start preprocess-text")) {
     c->plan->shaper->preprocess_text (c->plan, c->buffer, c->font);
+    (void) c->buffer->message(c->font, "end preprocess-text");
+  }
 
   hb_ot_substitute_pre (c);
   hb_ot_position (c);
@@ -1152,6 +1164,12 @@ _hb_ot_shape (hb_shape_plan_t    *shape_plan,
 
 
 
+
+
+
+
+
+
 void
 hb_ot_shape_plan_collect_lookups (hb_shape_plan_t *shape_plan,
 				  hb_tag_t         table_tag,
@@ -1179,6 +1197,15 @@ add_char (hb_font_t          *font,
       glyphs->add (glyph);
   }
 }
+
+
+
+
+
+
+
+
+
 
 
 

@@ -48,6 +48,13 @@
 
 
 
+
+
+
+
+
+
+
 bool
 hb_shape_plan_key_t::init (bool                           copy,
 			   hb_face_t                     *face,
@@ -176,6 +183,7 @@ hb_shape_plan_key_t::equal (const hb_shape_plan_key_t *other)
 
 
 
+
 hb_shape_plan_t *
 hb_shape_plan_create (hb_face_t                     *face,
 		      const hb_segment_properties_t *props,
@@ -188,6 +196,24 @@ hb_shape_plan_create (hb_face_t                     *face,
 				nullptr, 0,
 				shaper_list);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 hb_shape_plan_t *
 hb_shape_plan_create2 (hb_face_t                     *face,
@@ -284,6 +310,8 @@ hb_shape_plan_reference (hb_shape_plan_t *shape_plan)
 
 
 
+
+
 void
 hb_shape_plan_destroy (hb_shape_plan_t *shape_plan)
 {
@@ -331,6 +359,7 @@ hb_shape_plan_set_user_data (hb_shape_plan_t    *shape_plan,
 
 
 
+
 void *
 hb_shape_plan_get_user_data (hb_shape_plan_t    *shape_plan,
 			     hb_user_data_key_t *key)
@@ -355,26 +384,12 @@ hb_shape_plan_get_shaper (hb_shape_plan_t *shape_plan)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-hb_bool_t
-hb_shape_plan_execute (hb_shape_plan_t    *shape_plan,
-		       hb_font_t          *font,
-		       hb_buffer_t        *buffer,
-		       const hb_feature_t *features,
-		       unsigned int        num_features)
+static bool
+_hb_shape_plan_execute_internal (hb_shape_plan_t    *shape_plan,
+				 hb_font_t          *font,
+				 hb_buffer_t        *buffer,
+				 const hb_feature_t *features,
+				 unsigned int        num_features)
 {
   DEBUG_MSG_FUNC (SHAPE_PLAN, shape_plan,
 		  "num_features=%d shaper_func=%p, shaper_name=%s",
@@ -386,7 +401,8 @@ hb_shape_plan_execute (hb_shape_plan_t    *shape_plan,
     return true;
 
   assert (!hb_object_is_immutable (buffer));
-  assert (buffer->content_type == HB_BUFFER_CONTENT_TYPE_UNICODE);
+
+  buffer->assert_unicode ();
 
   if (unlikely (hb_object_is_inert (shape_plan)))
     return false;
@@ -427,6 +443,37 @@ hb_shape_plan_execute (hb_shape_plan_t    *shape_plan,
 
 
 
+hb_bool_t
+hb_shape_plan_execute (hb_shape_plan_t    *shape_plan,
+		       hb_font_t          *font,
+		       hb_buffer_t        *buffer,
+		       const hb_feature_t *features,
+		       unsigned int        num_features)
+{
+  bool ret = _hb_shape_plan_execute_internal (shape_plan, font, buffer,
+					      features, num_features);
+
+  if (ret && buffer->content_type == HB_BUFFER_CONTENT_TYPE_UNICODE)
+    buffer->content_type = HB_BUFFER_CONTENT_TYPE_GLYPHS;
+
+  return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -444,6 +491,25 @@ hb_shape_plan_create_cached (hb_face_t                     *face,
 				       nullptr, 0,
 				       shaper_list);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 hb_shape_plan_t *
 hb_shape_plan_create_cached2 (hb_face_t                     *face,

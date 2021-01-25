@@ -36,6 +36,20 @@
 
 HB_BEGIN_DECLS
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct hb_shape_plan_t hb_shape_plan_t;
 
 HB_EXTERN hb_shape_plan_t *

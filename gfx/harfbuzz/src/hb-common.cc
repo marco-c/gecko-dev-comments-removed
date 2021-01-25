@@ -95,6 +95,9 @@ _hb_options_init ()
 
 
 
+
+
+
 hb_tag_t
 hb_tag_from_string (const char *str, int len)
 {
@@ -123,6 +126,7 @@ hb_tag_from_string (const char *str, int len)
 
 
 
+
 void
 hb_tag_to_string (hb_tag_t tag, char *buf)
 {
@@ -141,6 +145,11 @@ const char direction_strings[][4] = {
   "ttb",
   "btt"
 };
+
+
+
+
+
 
 
 
@@ -401,6 +410,7 @@ hb_language_to_string (hb_language_t language)
 
 
 
+
 hb_language_t
 hb_language_get_default ()
 {
@@ -448,7 +458,12 @@ hb_script_from_iso15924_tag (hb_tag_t tag)
     case HB_TAG('Q','a','a','c'): return HB_SCRIPT_COPTIC;
 
     
+    case HB_TAG('A','r','a','n'): return HB_SCRIPT_ARABIC;
     case HB_TAG('C','y','r','s'): return HB_SCRIPT_CYRILLIC;
+    case HB_TAG('G','e','o','k'): return HB_SCRIPT_GEORGIAN;
+    case HB_TAG('H','a','n','s'): return HB_SCRIPT_HAN;
+    case HB_TAG('H','a','n','t'): return HB_SCRIPT_HAN;
+    case HB_TAG('J','a','m','o'): return HB_SCRIPT_HANGUL;
     case HB_TAG('L','a','t','f'): return HB_SCRIPT_LATIN;
     case HB_TAG('L','a','t','g'): return HB_SCRIPT_LATIN;
     case HB_TAG('S','y','r','e'): return HB_SCRIPT_SYRIAC;
@@ -501,6 +516,11 @@ hb_script_to_iso15924_tag (hb_script_t script)
 {
   return (hb_tag_t) script;
 }
+
+
+
+
+
 
 
 
@@ -645,6 +665,8 @@ hb_version_string ()
 {
   return HB_VERSION_STRING;
 }
+
+
 
 
 

@@ -46,6 +46,8 @@
 
 
 
+
+
 hb_map_t *
 hb_map_create ()
 {
@@ -58,6 +60,8 @@ hb_map_create ()
 
   return map;
 }
+
+
 
 
 
@@ -80,11 +84,17 @@ hb_map_get_empty ()
 
 
 
+
+
 hb_map_t *
 hb_map_reference (hb_map_t *map)
 {
   return hb_object_reference (map);
 }
+
+
+
+
 
 
 
@@ -114,6 +124,8 @@ hb_map_destroy (hb_map_t *map)
 
 
 
+
+
 hb_bool_t
 hb_map_set_user_data (hb_map_t           *map,
 		      hb_user_data_key_t *key,
@@ -123,6 +135,9 @@ hb_map_set_user_data (hb_map_t           *map,
 {
   return hb_object_set_user_data (map, key, data, destroy, replace);
 }
+
+
+
 
 
 
@@ -217,6 +232,8 @@ hb_map_del (hb_map_t       *map,
 
 
 
+
+
 hb_bool_t
 hb_map_has (const hb_map_t *map,
 	    hb_codepoint_t  key)
@@ -247,11 +264,15 @@ hb_map_clear (hb_map_t *map)
 
 
 
+
+
 hb_bool_t
 hb_map_is_empty (const hb_map_t *map)
 {
   return map->is_empty ();
 }
+
+
 
 
 

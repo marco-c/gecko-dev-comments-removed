@@ -51,9 +51,7 @@
 #include "hb-ot-name-table.hh"
 #include "hb-ot-os2-table.hh"
 
-#include "hb-aat-layout-lcar-table.hh"
 #include "hb-aat-layout-morx-table.hh"
-
 #include "hb-aat-layout-opbd-table.hh" 
 
 
@@ -368,21 +366,7 @@ hb_ot_layout_get_ligature_carets (hb_font_t      *font,
 				  unsigned int   *caret_count ,
 				  hb_position_t  *caret_array )
 {
-  unsigned int result_caret_count = caret_count ? *caret_count : 0;
-  unsigned int result = font->face->table.GDEF->table->get_lig_carets (font, direction, glyph, start_offset, &result_caret_count, caret_array);
-  if (result)
-  {
-    if (caret_count) *caret_count = result_caret_count;
-  }
-  else
-  {
-#ifndef HB_NO_AAT
-    result = font->face->table.lcar->get_lig_carets (font, direction, glyph, start_offset, caret_count, caret_array);
-#else
-    if (caret_count) *caret_count = 0;
-#endif
-  }
-  return result;
+  return font->face->table.GDEF->table->get_lig_carets (font, direction, glyph, start_offset, caret_count, caret_array);
 }
 #endif
 
@@ -1897,7 +1881,7 @@ void hb_ot_map_t::substitute (const hb_ot_shape_plan_t *plan, hb_font_t *font, h
   GSUBProxy proxy (font->face);
   if (!buffer->message (font, "start table GSUB")) return;
   apply (proxy, plan, font, buffer);
-  (void)buffer->message (font, "end table GSUB");
+  (void) buffer->message (font, "end table GSUB");
 }
 
 void hb_ot_map_t::position (const hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const
@@ -1905,7 +1889,7 @@ void hb_ot_map_t::position (const hb_ot_shape_plan_t *plan, hb_font_t *font, hb_
   GPOSProxy proxy (font->face);
   if (!buffer->message (font, "start table GPOS")) return;
   apply (proxy, plan, font, buffer);
-  (void)buffer->message (font, "end table GPOS");
+  (void) buffer->message (font, "end table GPOS");
 }
 
 void

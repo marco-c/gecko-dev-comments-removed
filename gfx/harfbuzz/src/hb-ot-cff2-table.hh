@@ -441,7 +441,8 @@ struct cff2
       { fini (); return; }
 
       fdCount = fdArray->count;
-      privateDicts.resize (fdCount);
+      if (!privateDicts.resize (fdCount))
+      { fini (); return; }
 
       
       for (unsigned int i = 0; i < fdCount; i++)

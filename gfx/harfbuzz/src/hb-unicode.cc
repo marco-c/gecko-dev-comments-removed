@@ -52,6 +52,11 @@
 
 
 
+
+
+
+
+
 static hb_unicode_combining_class_t
 hb_unicode_combining_class_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
 				hb_codepoint_t      unicode   HB_UNUSED,
@@ -132,6 +137,16 @@ hb_unicode_decompose_compatibility_nil (hb_unicode_funcs_t *ufuncs     HB_UNUSED
 #if !defined(HB_NO_UNICODE_FUNCS) && defined(HAVE_ICU) && defined(HAVE_ICU_BUILTIN)
 #include "hb-icu.h"
 #endif
+
+
+
+
+
+
+
+
+
+
 
 hb_unicode_funcs_t *
 hb_unicode_funcs_get_default ()
@@ -239,6 +254,8 @@ hb_unicode_funcs_reference (hb_unicode_funcs_t *ufuncs)
 
 
 
+
+
 void
 hb_unicode_funcs_destroy (hb_unicode_funcs_t *ufuncs)
 {
@@ -289,12 +306,14 @@ hb_unicode_funcs_set_user_data (hb_unicode_funcs_t *ufuncs,
 
 
 
+
 void *
 hb_unicode_funcs_get_user_data (hb_unicode_funcs_t *ufuncs,
 				hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (ufuncs, key);
 }
+
 
 
 
@@ -324,11 +343,13 @@ hb_unicode_funcs_make_immutable (hb_unicode_funcs_t *ufuncs)
 
 
 
+
 hb_bool_t
 hb_unicode_funcs_is_immutable (hb_unicode_funcs_t *ufuncs)
 {
   return hb_object_is_immutable (ufuncs);
 }
+
 
 
 
@@ -400,6 +421,10 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
 
 
 
+
+
+
+
 hb_bool_t
 hb_unicode_compose (hb_unicode_funcs_t *ufuncs,
 		    hb_codepoint_t      a,
@@ -408,6 +433,9 @@ hb_unicode_compose (hb_unicode_funcs_t *ufuncs,
 {
   return ufuncs->compose (a, b, ab);
 }
+
+
+
 
 
 
@@ -432,6 +460,7 @@ hb_unicode_decompose (hb_unicode_funcs_t *ufuncs,
 }
 
 #ifndef HB_DISABLE_DEPRECATED
+
 
 
 

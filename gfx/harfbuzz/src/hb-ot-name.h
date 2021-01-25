@@ -88,8 +88,7 @@ typedef unsigned int hb_ot_name_id_t;
 
 
 
-typedef struct hb_ot_name_entry_t
-{
+typedef struct hb_ot_name_entry_t {
   hb_ot_name_id_t name_id;
   
   hb_var_int_t    var;

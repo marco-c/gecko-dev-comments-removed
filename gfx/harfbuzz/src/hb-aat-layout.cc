@@ -28,7 +28,6 @@
 #include "hb.hh"
 
 #include "hb-aat-layout.hh"
-#include "hb-aat-fdsc-table.hh" 
 #include "hb-aat-layout-ankr-table.hh"
 #include "hb-aat-layout-bsln-table.hh" 
 #include "hb-aat-layout-feat-table.hh"
@@ -84,7 +83,12 @@ AAT::hb_aat_apply_context_t::set_ankr_table (const AAT::ankr *ankr_table_)
 
 
 
+
+
+
 #if !defined(HB_NO_AAT) || defined(HAVE_CORETEXT)
+
+
 
 
 
@@ -168,6 +172,17 @@ static const hb_aat_feature_mapping_t feature_mappings[] =
   {HB_TAG ('z','e','r','o'), HB_AAT_LAYOUT_FEATURE_TYPE_TYPOGRAPHIC_EXTRAS,      HB_AAT_LAYOUT_FEATURE_SELECTOR_SLASHED_ZERO_ON,                HB_AAT_LAYOUT_FEATURE_SELECTOR_SLASHED_ZERO_OFF},
 };
 
+
+
+
+
+
+
+
+
+
+
+
 const hb_aat_feature_mapping_t *
 hb_aat_layout_find_feature_mapping (hb_tag_t tag)
 {
@@ -201,6 +216,12 @@ hb_aat_layout_compile_map (const hb_aat_map_builder_t *mapper,
     return;
   }
 }
+
+
+
+
+
+
 
 
 
@@ -271,6 +292,12 @@ hb_aat_layout_remove_deleted_glyphs (hb_buffer_t *buffer)
 
 
 
+
+
+
+
+
+
 hb_bool_t
 hb_aat_layout_has_positioning (hb_face_t *face)
 {
@@ -289,6 +316,10 @@ hb_aat_layout_position (const hb_ot_shape_plan_t *plan,
   c.set_ankr_table (font->face->table.ankr.get ());
   kerx.apply (&c);
 }
+
+
+
+
 
 
 
@@ -326,6 +357,9 @@ hb_aat_layout_track (const hb_ot_shape_plan_t *plan,
 
 
 
+
+
+
 unsigned int
 hb_aat_layout_get_feature_types (hb_face_t                    *face,
 				 unsigned int                  start_offset,
@@ -344,12 +378,18 @@ hb_aat_layout_get_feature_types (hb_face_t                    *face,
 
 
 
+
+
 hb_ot_name_id_t
 hb_aat_layout_feature_type_get_name_id (hb_face_t                    *face,
 					hb_aat_layout_feature_type_t  feature_type)
 {
   return face->table.feat->get_feature_name_id (feature_type);
 }
+
+
+
+
 
 
 
