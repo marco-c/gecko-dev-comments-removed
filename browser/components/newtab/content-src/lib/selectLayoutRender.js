@@ -2,42 +2,46 @@
 
 
 
-export const selectLayoutRender = ({
-  state = {},
-  prefs = {},
-  rollCache = [],
-  locale = "",
-}) => {
+export const selectLayoutRender = ({ state = {}, prefs = {}, locale = "" }) => {
   const { layout, feeds, spocs } = state;
-  let spocIndexMap = {};
-  let bufferRollCache = [];
+  let spocIndexPlacementMap = {};
 
-  function rollForSpocs(data, spocsConfig, spocsData, placementName) {
-    if (!spocIndexMap[placementName] && spocIndexMap[placementName] !== 0) {
-      spocIndexMap[placementName] = 0;
+  
+
+
+
+
+
+  function fillSpocPositionsForPlacement(
+    data,
+    spocsConfig,
+    spocsData,
+    placementName
+  ) {
+    if (
+      !spocIndexPlacementMap[placementName] &&
+      spocIndexPlacementMap[placementName] !== 0
+    ) {
+      spocIndexPlacementMap[placementName] = 0;
     }
     const results = [...data];
     for (let position of spocsConfig.positions) {
-      const spoc = spocsData[spocIndexMap[placementName]];
+      const spoc = spocsData[spocIndexPlacementMap[placementName]];
+      
       if (!spoc) {
         break;
       }
 
       
-      let rickRoll;
-      if (!rollCache.length) {
-        rickRoll = Math.random();
-        bufferRollCache.push(rickRoll);
-      } else {
-        rickRoll = rollCache.shift();
-        bufferRollCache.push(rickRoll);
-      }
+      
+      
+      spocIndexPlacementMap[placementName]++;
 
-      if (rickRoll <= spocsConfig.probability) {
-        spocIndexMap[placementName]++;
-        if (!spocs.blocked.includes(spoc.url)) {
-          results.splice(position.index, 0, spoc);
-        }
+      
+      
+      
+      if (!spocs.blocked.includes(spoc.url)) {
+        results.splice(position.index, 0, spoc);
       }
     }
 
@@ -118,7 +122,7 @@ export const selectLayoutRender = ({
         spocsData.items &&
         spocsData.items.length
       ) {
-        result = rollForSpocs(
+        result = fillSpocPositionsForPlacement(
           result,
           component.spocs,
           spocsData.items,
@@ -251,11 +255,6 @@ export const selectLayoutRender = ({
   };
 
   const layoutRender = renderLayout();
-
-  
-  if (!rollCache.length) {
-    rollCache.push(...bufferRollCache);
-  }
 
   return { layoutRender };
 };

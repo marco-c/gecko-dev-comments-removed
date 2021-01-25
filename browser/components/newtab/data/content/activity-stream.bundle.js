@@ -3135,8 +3135,6 @@ __webpack_require__.r(__webpack_exports__);
 
 const ALLOWED_CSS_URL_PREFIXES = ["chrome://", "resource://", "https://img-getpocket.cdn.mozilla.net/"];
 const DUMMY_CSS_SELECTOR = "DUMMY#CSS.SELECTOR";
-let rollCache = []; 
-
 
 
 
@@ -3342,12 +3340,6 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_13___default.a
     });
   }
 
-  componentWillReceiveProps(oldProps) {
-    if (this.props.DiscoveryStream.layout !== oldProps.DiscoveryStream.layout) {
-      rollCache = [];
-    }
-  }
-
   render() {
     
     const {
@@ -3355,7 +3347,6 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_13___default.a
     } = Object(content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_15__["selectLayoutRender"])({
       state: this.props.DiscoveryStream,
       prefs: this.props.Prefs.values,
-      rollCache,
       locale: this.props.locale
     });
     const {
@@ -9861,7 +9852,6 @@ __webpack_require__.r(__webpack_exports__);
 const selectLayoutRender = ({
   state = {},
   prefs = {},
-  rollCache = [],
   locale = ""
 }) => {
   const {
@@ -9869,40 +9859,37 @@ const selectLayoutRender = ({
     feeds,
     spocs
   } = state;
-  let spocIndexMap = {};
-  let bufferRollCache = [];
+  let spocIndexPlacementMap = {};
+  
 
-  function rollForSpocs(data, spocsConfig, spocsData, placementName) {
-    if (!spocIndexMap[placementName] && spocIndexMap[placementName] !== 0) {
-      spocIndexMap[placementName] = 0;
+
+
+
+
+
+  function fillSpocPositionsForPlacement(data, spocsConfig, spocsData, placementName) {
+    if (!spocIndexPlacementMap[placementName] && spocIndexPlacementMap[placementName] !== 0) {
+      spocIndexPlacementMap[placementName] = 0;
     }
 
     const results = [...data];
 
     for (let position of spocsConfig.positions) {
-      const spoc = spocsData[spocIndexMap[placementName]];
+      const spoc = spocsData[spocIndexPlacementMap[placementName]]; 
 
       if (!spoc) {
         break;
       } 
+      
+      
 
 
-      let rickRoll;
+      spocIndexPlacementMap[placementName]++; 
+      
+      
 
-      if (!rollCache.length) {
-        rickRoll = Math.random();
-        bufferRollCache.push(rickRoll);
-      } else {
-        rickRoll = rollCache.shift();
-        bufferRollCache.push(rickRoll);
-      }
-
-      if (rickRoll <= spocsConfig.probability) {
-        spocIndexMap[placementName]++;
-
-        if (!spocs.blocked.includes(spoc.url)) {
-          results.splice(position.index, 0, spoc);
-        }
+      if (!spocs.blocked.includes(spoc.url)) {
+        results.splice(position.index, 0, spoc);
       }
     }
 
@@ -9967,7 +9954,7 @@ const selectLayoutRender = ({
       const spocsData = spocs.data[placementName]; 
 
       if (spocs.loaded && spocsData && spocsData.items && spocsData.items.length) {
-        result = rollForSpocs(result, component.spocs, spocsData.items, placementName);
+        result = fillSpocPositionsForPlacement(result, component.spocs, spocsData.items, placementName);
       }
     }
 
@@ -10073,12 +10060,7 @@ const selectLayoutRender = ({
     return renderedLayoutArray;
   };
 
-  const layoutRender = renderLayout(); 
-
-  if (!rollCache.length) {
-    rollCache.push(...bufferRollCache);
-  }
-
+  const layoutRender = renderLayout();
   return {
     layoutRender
   };
