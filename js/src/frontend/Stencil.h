@@ -719,8 +719,6 @@ class ScriptStencil {
   
   
 
-  uint32_t memberInitializers_ = 0;
-
   
   
   
@@ -765,6 +763,12 @@ class ScriptStencil {
 
   
   
+  
+  
+  
+  
+  
+  
   static constexpr uint16_t HasMemberInitializersFlag = 1 << 3;
 
   
@@ -805,19 +809,7 @@ class ScriptStencil {
     return flags_ & HasMemberInitializersFlag;
   }
 
- private:
   void setHasMemberInitializers() { flags_ |= HasMemberInitializersFlag; }
-
- public:
-  void setMemberInitializers(MemberInitializers member) {
-    memberInitializers_ = member.serialize();
-    setHasMemberInitializers();
-  }
-
-  MemberInitializers memberInitializers() const {
-    MOZ_ASSERT(hasMemberInitializers());
-    return MemberInitializers(memberInitializers_);
-  }
 
   bool hasLazyFunctionEnclosingScopeIndex() const {
     return flags_ & HasLazyFunctionEnclosingScopeIndexFlag;
@@ -856,6 +848,10 @@ class ScriptStencilExtra {
   SourceExtent extent;
 
   
+  
+  uint32_t memberInitializers_ = 0;
+
+  
   uint16_t nargs = 0;
 
   
@@ -865,6 +861,14 @@ class ScriptStencilExtra {
 
   bool isModule() const {
     return immutableFlags.hasFlag(ImmutableScriptFlagsEnum::IsModule);
+  }
+
+  void setMemberInitializers(MemberInitializers member) {
+    memberInitializers_ = member.serialize();
+  }
+
+  MemberInitializers memberInitializers() const {
+    return MemberInitializers(memberInitializers_);
   }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
