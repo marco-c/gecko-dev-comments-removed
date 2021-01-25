@@ -1880,6 +1880,7 @@
       
       
       
+      
       aBrowser.docShellIsActive = this.shouldActivateDocShell(aBrowser);
 
       
@@ -5695,6 +5696,7 @@
 
           browser.droppedLinkHandler = oldDroppedLinkHandler;
 
+          
           
           
           
