@@ -92,3 +92,34 @@ function addListeners(elem) {
     });
   });
 }
+
+
+function touchScrollInTarget() {
+  return Promise.resolve();
+}
+
+
+function Actions() {}
+Actions.prototype = {
+  addPointer() {
+    return this;
+  },
+  pointerMove() {
+    return this;
+  },
+  pointerDown() {
+    return this;
+  },
+  pause() {
+    return this;
+  },
+  pointerUp() {
+    return this;
+  },
+  send() {
+    return Promise.resolve();
+  },
+};
+const test_driver = {
+  Actions,
+};
