@@ -82,18 +82,7 @@ async function loadExtension({ background, extraFiles = {} }) {
   return ext;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-function add_settings_tasks(prefName, type, background) {
+function add_settings_tasks(prefName, background) {
   let defaultPreferences = new Preferences({ defaultBranch: true });
 
   let originalValue = defaultPreferences.get(prefName);
@@ -101,38 +90,18 @@ function add_settings_tasks(prefName, type, background) {
     defaultPreferences.set(prefName, originalValue);
   });
 
-  let firstValue, secondValue;
-  switch (type) {
-    case "string":
-      firstValue = "test value 1";
-      secondValue = "test value 2";
-      break;
-    case "number":
-      firstValue = 10;
-      secondValue = 100;
-      break;
-    case "boolean":
-      firstValue = false;
-      secondValue = true;
-      break;
-    default:
-      Assert.fail(
-        `"type" parameter must be one of "string", "number", or "boolean"`
-      );
-  }
-
   add_task(async function get() {
     let ext = await loadExtension({ background });
 
-    defaultPreferences.set(prefName, firstValue);
+    defaultPreferences.set(prefName, false);
     ext.sendMessage("get", {});
     let result = await ext.awaitMessage("done");
-    Assert.strictEqual(result.value, firstValue);
+    Assert.strictEqual(result.value, false);
 
-    defaultPreferences.set(prefName, secondValue);
+    defaultPreferences.set(prefName, true);
     ext.sendMessage("get", {});
     result = await ext.awaitMessage("done");
-    Assert.strictEqual(result.value, secondValue);
+    Assert.strictEqual(result.value, true);
 
     await ext.unload();
   });
@@ -140,112 +109,112 @@ function add_settings_tasks(prefName, type, background) {
   add_task(async function set() {
     let ext = await loadExtension({ background });
 
-    defaultPreferences.set(prefName, firstValue);
-    ext.sendMessage("set", { value: secondValue });
+    defaultPreferences.set(prefName, false);
+    ext.sendMessage("set", { value: true });
     let result = await ext.awaitMessage("done");
     Assert.strictEqual(result, true);
-    Assert.strictEqual(defaultPreferences.get(prefName), secondValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), true);
 
-    ext.sendMessage("set", { value: firstValue });
+    ext.sendMessage("set", { value: false });
     result = await ext.awaitMessage("done");
     Assert.strictEqual(result, true);
-    Assert.strictEqual(defaultPreferences.get(prefName), firstValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), false);
 
     await ext.unload();
   });
 
   add_task(async function clear() {
     
-    defaultPreferences.set(prefName, firstValue);
+    defaultPreferences.set(prefName, false);
     let ext = await loadExtension({ background });
     ext.sendMessage("clear", {});
     let result = await ext.awaitMessage("done");
     Assert.strictEqual(result, false);
-    Assert.strictEqual(defaultPreferences.get(prefName), firstValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), false);
     await ext.unload();
 
     
-    defaultPreferences.set(prefName, firstValue);
+    defaultPreferences.set(prefName, false);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: secondValue });
+    ext.sendMessage("set", { value: true });
     await ext.awaitMessage("done");
     ext.sendMessage("clear", {});
     result = await ext.awaitMessage("done");
     Assert.strictEqual(result, true);
-    Assert.strictEqual(defaultPreferences.get(prefName), firstValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), false);
     await ext.unload();
 
     
-    defaultPreferences.set(prefName, secondValue);
+    defaultPreferences.set(prefName, true);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: firstValue });
+    ext.sendMessage("set", { value: false });
     await ext.awaitMessage("done");
     ext.sendMessage("clear", {});
     result = await ext.awaitMessage("done");
     Assert.strictEqual(result, true);
-    Assert.strictEqual(defaultPreferences.get(prefName), secondValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), true);
     await ext.unload();
 
     
-    defaultPreferences.set(prefName, firstValue);
+    defaultPreferences.set(prefName, false);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: firstValue });
+    ext.sendMessage("set", { value: false });
     await ext.awaitMessage("done");
     ext.sendMessage("clear", {});
     result = await ext.awaitMessage("done");
     Assert.strictEqual(result, true);
-    Assert.strictEqual(defaultPreferences.get(prefName), firstValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), false);
     await ext.unload();
 
     
-    defaultPreferences.set(prefName, secondValue);
+    defaultPreferences.set(prefName, true);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: secondValue });
+    ext.sendMessage("set", { value: true });
     await ext.awaitMessage("done");
     ext.sendMessage("clear", {});
     result = await ext.awaitMessage("done");
     Assert.strictEqual(result, true);
-    Assert.strictEqual(defaultPreferences.get(prefName), secondValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), true);
     await ext.unload();
   });
 
   add_task(async function shutdown() {
     
-    defaultPreferences.set(prefName, firstValue);
+    defaultPreferences.set(prefName, false);
     let ext = await loadExtension({ background });
     await ext.unload();
-    Assert.strictEqual(defaultPreferences.get(prefName), firstValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), false);
 
     
-    defaultPreferences.set(prefName, firstValue);
+    defaultPreferences.set(prefName, false);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: secondValue });
+    ext.sendMessage("set", { value: true });
     await ext.awaitMessage("done");
     await ext.unload();
-    Assert.strictEqual(defaultPreferences.get(prefName), firstValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), false);
 
     
-    defaultPreferences.set(prefName, secondValue);
+    defaultPreferences.set(prefName, true);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: firstValue });
+    ext.sendMessage("set", { value: false });
     await ext.awaitMessage("done");
     await ext.unload();
-    Assert.strictEqual(defaultPreferences.get(prefName), secondValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), true);
 
     
-    defaultPreferences.set(prefName, firstValue);
+    defaultPreferences.set(prefName, false);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: firstValue });
+    ext.sendMessage("set", { value: false });
     await ext.awaitMessage("done");
     await ext.unload();
-    Assert.strictEqual(defaultPreferences.get(prefName), firstValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), false);
 
     
-    defaultPreferences.set(prefName, secondValue);
+    defaultPreferences.set(prefName, true);
     ext = await loadExtension({ background });
-    ext.sendMessage("set", { value: secondValue });
+    ext.sendMessage("set", { value: true });
     await ext.awaitMessage("done");
     await ext.unload();
-    Assert.strictEqual(defaultPreferences.get(prefName), secondValue);
+    Assert.strictEqual(defaultPreferences.get(prefName), true);
   });
 }
