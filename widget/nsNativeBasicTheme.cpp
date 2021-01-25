@@ -1291,8 +1291,11 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
       PaintRoundedFocusRect(dt, devPxRect, dpiRatio, 0.0f, 0.0f);
       break;
     default:
-      MOZ_ASSERT_UNREACHABLE(
-          "Should not get here with a widget type we don't support.");
+      
+      
+      
+      
+      
       return NS_ERROR_NOT_IMPLEMENTED;
   }
 
