@@ -44,12 +44,9 @@ add_task(async function print_selection() {
         let helper = new PrintHelper(browser);
 
         
-        PrintUtils.startPrintWindow(
-          "tests",
-          frameBC,
-          null,
-           true
-        );
+        PrintUtils.startPrintWindow("tests", frameBC, {
+          printSelectionOnly: true,
+        });
 
         await BrowserTestUtils.waitForCondition(
           () => !!document.querySelector(".printPreviewBrowser")

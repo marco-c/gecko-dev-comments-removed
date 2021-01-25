@@ -171,6 +171,7 @@ var PrintEventHandler = {
     this.printSelectionOnly = args.getProperty("printSelectionOnly");
     this.hasSelection =
       args.getProperty("hasSelection") && this.selectionPreviewBrowser;
+    this.printFrameOnly = args.getProperty("printFrameOnly");
     
     
     
@@ -193,8 +194,10 @@ var PrintEventHandler = {
     this.originalSourceCurrentURI =
       sourceBrowsingContext.currentWindowContext.documentURI.spec;
 
-    this.sourceWindowId =
-      sourceBrowsingContext.top.embedderElement.browsingContext.currentWindowGlobal.outerWindowId;
+    this.sourceWindowId = this.printFrameOnly
+      ? sourceBrowsingContext.currentWindowGlobal.outerWindowId
+      : sourceBrowsingContext.top.embedderElement.browsingContext
+          .currentWindowGlobal.outerWindowId;
     this.selectionWindowId =
       sourceBrowsingContext.currentWindowGlobal.outerWindowId;
 

@@ -220,11 +220,14 @@ var PrintUtils = {
 
 
 
+
+
   async _openTabModalPrint(
     aBrowsingContext,
     aExistingPreviewBrowser,
     aPrintInitiationTime,
-    aPrintSelectionOnly
+    aPrintSelectionOnly,
+    aPrintFrameOnly
   ) {
     let hasSelection = aPrintSelectionOnly;
     if (!aPrintSelectionOnly) {
@@ -256,6 +259,7 @@ var PrintUtils = {
       previewBrowser: aExistingPreviewBrowser,
       printSelectionOnly: !!aPrintSelectionOnly,
       hasSelection,
+      printFrameOnly: !!aPrintFrameOnly,
     });
     let dialogBox = gBrowser.getTabDialogBox(sourceBrowser);
     return dialogBox.open(
@@ -280,26 +284,29 @@ var PrintUtils = {
 
 
 
-  startPrintWindow(
-    aTrigger,
-    aBrowsingContext,
-    aOpenWindowInfo,
-    aPrintSelectionOnly
-  ) {
+
+
+
+
+  startPrintWindow(aTrigger, aBrowsingContext, aOptions) {
     const printInitiationTime = Date.now();
+    let openWindowInfo, printSelectionOnly, printFrameOnly;
+    if (aOptions) {
+      ({ openWindowInfo, printSelectionOnly, printFrameOnly } = aOptions);
+    }
 
     
     
     
     
-    if (!aOpenWindowInfo || aOpenWindowInfo.isForWindowDotPrint) {
+    if (!openWindowInfo || openWindowInfo.isForWindowDotPrint) {
       Services.telemetry.keyedScalarAdd("printing.trigger", aTrigger, 1);
     }
 
     let browser = null;
-    if (aOpenWindowInfo) {
+    if (openWindowInfo) {
       browser = document.createXULElement("browser");
-      browser.openWindowInfo = aOpenWindowInfo;
+      browser.openWindowInfo = openWindowInfo;
       browser.setAttribute("type", "content");
       let remoteType = aBrowsingContext.currentRemoteType;
       if (remoteType) {
@@ -324,14 +331,15 @@ var PrintUtils = {
     if (
       PRINT_TAB_MODAL &&
       !PRINT_ALWAYS_SILENT &&
-      (!aOpenWindowInfo || aOpenWindowInfo.isForWindowDotPrint)
+      (!openWindowInfo || openWindowInfo.isForWindowDotPrint)
     ) {
       let browsingContext = aBrowsingContext;
       let focusedBc = Services.focus.focusedContentBrowsingContext;
       if (
         focusedBc &&
         focusedBc.top.embedderElement == browsingContext.top.embedderElement &&
-        (!aOpenWindowInfo || !aOpenWindowInfo.isForWindowDotPrint)
+        (!openWindowInfo || !openWindowInfo.isForWindowDotPrint) &&
+        !printFrameOnly
       ) {
         browsingContext = focusedBc;
       }
@@ -339,7 +347,8 @@ var PrintUtils = {
         browsingContext,
         browser,
         printInitiationTime,
-        aPrintSelectionOnly
+        printSelectionOnly,
+        printFrameOnly
       ).catch(() => {});
       return browser;
     }
@@ -351,7 +360,7 @@ var PrintUtils = {
     }
 
     let settings = this.getPrintSettings();
-    settings.printSelectionOnly = aPrintSelectionOnly;
+    settings.printSelectionOnly = printSelectionOnly;
     this.printWindow(aBrowsingContext, settings);
     return null;
   },
