@@ -428,18 +428,17 @@ function _setupDevToolsServer(breakpointFiles, callback) {
   DevToolsServer.setRootActor(createRootActor);
   DevToolsServer.allowChromeProcess = true;
 
-  
-  
   const TOPICS = [
-    "devtools-thread-instantiated",
-    "devtools-thread-resumed",
+    
+    
+    "devtools-thread-ready",
+    
     "xpcshell-test-devtools-shutdown",
   ];
   let observe = function(subject, topic, data) {
-    if (topic === "devtools-thread-instantiated") {
+    if (topic === "devtools-thread-ready") {
       const threadActor = subject.wrappedJSObject;
       threadActor.setBreakpointOnLoad(breakpointFiles);
-      return;
     }
 
     for (let topicToRemove of TOPICS) {

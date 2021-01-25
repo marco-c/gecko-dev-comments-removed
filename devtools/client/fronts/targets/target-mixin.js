@@ -488,6 +488,12 @@ function TargetMixin(parentClass) {
       }
       const threadFront = await this.attachThread(options);
 
+      
+      
+      
+      if (this.getTrait("noPauseOnThreadActorAttach")) {
+        return;
+      }
       try {
         if (this.isDestroyedOrBeingDestroyed() || threadFront.isDestroyed()) {
           return;

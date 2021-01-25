@@ -219,13 +219,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     this._firstStatementBreakpoint = null;
     this._debuggerNotificationObserver = new DebuggerNotificationObserver();
-
-    if (Services.obs) {
-      
-      
-      this.wrappedJSObject = this;
-      Services.obs.notifyObservers(this, "devtools-thread-instantiated");
-    }
   },
 
   
@@ -244,16 +237,19 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return this._dbg;
   },
 
+  
+  
+  
+  
+  
+  
   get state() {
     return this._state;
   },
 
+  
   get attached() {
-    return (
-      this.state == "attached" ||
-      this.state == "running" ||
-      this.state == "paused"
-    );
+    return this.state == "running" || this.state == "paused";
   },
 
   get threadLifetimePool() {
@@ -388,7 +384,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       };
     }
 
-    this._state = "attached";
     this.dbg.onDebuggerStatement = this.onDebuggerStatement;
     this.dbg.onNewScript = this.onNewScript;
     this.dbg.onNewDebuggee = this._onNewDebuggee;
@@ -420,39 +415,22 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
+    this.conn.send({ from: this.actorID });
+
+    
+    this._setupForBreaking();
+
+    
+    
+    
     if (this._parent.onThreadAttached) {
       this._parent.onThreadAttached();
     }
-
-    try {
-      
-      const packet = this._paused();
-      if (!packet) {
-        throw {
-          error: "notAttached",
-          message: "cannot attach, could not create pause packet",
-        };
-      }
-      packet.why = { type: "attached" };
-
+    if (Services.obs) {
       
       
-      
-      this.conn.send({ from: this.actorID });
-      this.emit("paused", packet);
-
-      
-      this._pushThreadPause();
-
-      
-      
-      
-    } catch (e) {
-      reportException("DBG-SERVER", e);
-      throw {
-        error: "notAttached",
-        message: e.toString(),
-      };
+      this.wrappedJSObject = this;
+      Services.obs.notifyObservers(this, "devtools-thread-ready");
     }
   },
 
@@ -1294,29 +1272,30 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
   },
 
+  _setupForBreaking() {
+    this.maybePauseOnExceptions();
+    this._state = "running";
+  },
+
   
 
 
 
 
   doResume({ resumeLimit } = {}) {
-    this.maybePauseOnExceptions();
-    this._state = "running";
+    this._setupForBreaking();
 
     
     this._pausePool.destroy();
-
     this._pausePool = null;
+
     this._pauseActor = null;
     this._popThreadPause();
+
     
     
     this.emit("resumed");
     this.hideOverlay();
-
-    if (Services.obs) {
-      Services.obs.notifyObservers(this, "devtools-thread-resumed");
-    }
   },
 
   
