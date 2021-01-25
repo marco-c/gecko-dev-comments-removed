@@ -8269,16 +8269,6 @@ nsresult PresShell::EventHandler::DispatchEvent(
 
   nsContentUtils::SetIsHandlingKeyBoardEvent(wasHandlingKeyBoardEvent);
 
-  if (aEvent->mMessage == ePointerUp || aEvent->mMessage == ePointerCancel) {
-    
-    
-    
-    WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
-    MOZ_ASSERT(pointerEvent);
-    PointerEventHandler::ReleasePointerCaptureById(pointerEvent->pointerId);
-    PointerEventHandler::CheckPointerCaptureState(pointerEvent);
-  }
-
   if (mPresShell->IsDestroying()) {
     return NS_OK;
   }
