@@ -1588,19 +1588,25 @@ impl Device {
              
              
 
-        
-        
-        
-        
-        
-        
+        let is_angle = renderer_name.starts_with("ANGLE");
+
         
         
         let optimal_pbo_stride = if is_adreno {
+            
+            
             StrideAlignment::Pixels(NonZeroUsize::new(64).unwrap())
         } else if is_macos {
+            
+            
             StrideAlignment::Bytes(NonZeroUsize::new(256).unwrap())
+        } else if is_angle {
+            
+            
+            StrideAlignment::Bytes(NonZeroUsize::new(1).unwrap())
         } else {
+            
+            
             StrideAlignment::Bytes(NonZeroUsize::new(4).unwrap())
         };
 
