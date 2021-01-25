@@ -112,6 +112,46 @@ static size_t GetMaybeSortedIndex(const nsTArray<Elem>& aArray,
   return index;
 }
 
+
+
+static bool TriggerAsyncDecodeAtIntrinsicSize(imgIRequest* aRequest) {
+  uint32_t status = 0;
+  
+  
+  
+  if (NS_SUCCEEDED(aRequest->GetImageStatus(&status))) {
+    if (status & imgIRequest::STATUS_FRAME_COMPLETE) {
+      
+      return false;
+    }
+    if (status & imgIRequest::STATUS_ERROR) {
+      
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<imgIContainer> imgContainer;
+  aRequest->GetImage(getter_AddRefs(imgContainer));
+  if (imgContainer) {
+    imgContainer->RequestDecodeForSize(gfx::IntSize(0, 0),
+                                       imgIContainer::DECODE_FLAGS_DEFAULT);
+  } else {
+    
+    
+    aRequest->StartDecoding(imgIContainer::FLAG_NONE);
+  }
+  return true;
+}
+
 void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
                                           nsIFrame* aFrame, Flags aFlags) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -158,7 +198,7 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
   
   
   FrameWithFlags fwf(aFrame);
-  FrameWithFlags* fwfToModify(&fwf);
+  FrameWithFlags* fwfToModify = &fwf;
 
   
   bool found;
@@ -177,15 +217,7 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
 
     
     if (!(fwfToModify->mFlags & Flags::IsBlockingLoadEvent)) {
-      
-      
-      uint32_t status = 0;
-      
-      
-      
-      if (NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
-          !(status & imgIRequest::STATUS_FRAME_COMPLETE) &&
-          !(status & imgIRequest::STATUS_ERROR)) {
+      if (TriggerAsyncDecodeAtIntrinsicSize(aRequest)) {
         
         
         fwfToModify->mFlags |= Flags::IsBlockingLoadEvent;
@@ -193,31 +225,6 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
         
         
         mDocument->BlockOnload();
-
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        nsCOMPtr<imgIContainer> imgContainer;
-        aRequest->GetImage(getter_AddRefs(imgContainer));
-        if (imgContainer) {
-          imgContainer->RequestDecodeForSize(
-              gfx::IntSize(0, 0), imgIContainer::DECODE_FLAGS_DEFAULT);
-        } else {
-          
-          
-          aRequest->StartDecoding(imgIContainer::FLAG_NONE);
-        }
       }
     }
   }
@@ -263,12 +270,7 @@ void ImageLoader::RemoveRequestToFrameMapping(imgIRequest* aRequest,
     uint32_t i = GetMaybeSortedIndex(*frameSet, FrameWithFlags(aFrame), &found,
                                      FrameOnlyComparator());
     if (found) {
-      FrameWithFlags& fwf = frameSet->ElementAt(i - 1);
-      if (fwf.mFlags & Flags::IsBlockingLoadEvent) {
-        mDocument->UnblockOnload(false);
-        
-        
-      }
+      UnblockOnloadIfNeeded(frameSet->ElementAt(i - 1));
       frameSet->RemoveElementAt(i - 1);
     }
 
@@ -550,14 +552,10 @@ static void InvalidateImages(nsIFrame* aFrame, imgIRequest* aRequest,
   }
 }
 
-void ImageLoader::RequestPaintIfNeeded(FrameSet* aFrameSet,
-                                       imgIRequest* aRequest,
-                                       bool aForcePaint) {
-  NS_ASSERTION(aFrameSet, "Must have a frame set");
-  NS_ASSERTION(mDocument, "Should have returned earlier!");
-
-  for (FrameWithFlags& fwf : *aFrameSet) {
-    InvalidateImages(fwf.mFrame, aRequest, aForcePaint);
+void ImageLoader::UnblockOnloadIfNeeded(FrameWithFlags& aFwf) {
+  if (aFwf.mFlags & Flags::IsBlockingLoadEvent) {
+    mDocument->UnblockOnload(false);
+    aFwf.mFlags &= ~Flags::IsBlockingLoadEvent;
   }
 }
 
@@ -574,25 +572,7 @@ void ImageLoader::UnblockOnloadIfNeeded(nsIFrame* aFrame,
   size_t i =
       frameSet->BinaryIndexOf(FrameWithFlags(aFrame), FrameOnlyComparator());
   if (i != FrameSet::NoIndex) {
-    FrameWithFlags& fwf = frameSet->ElementAt(i);
-    if (fwf.mFlags & Flags::IsBlockingLoadEvent) {
-      mDocument->UnblockOnload(false);
-      fwf.mFlags &= ~Flags::IsBlockingLoadEvent;
-    }
-  }
-}
-
-void ImageLoader::RequestReflowIfNeeded(FrameSet* aFrameSet,
-                                        imgIRequest* aRequest) {
-  MOZ_ASSERT(aFrameSet);
-
-  for (FrameWithFlags& fwf : *aFrameSet) {
-    if (fwf.mFlags &
-        Flags::RequiresReflowOnFirstFrameCompleteAndLoadEventBlocking) {
-      
-      
-      RequestReflowOnFrame(&fwf, aRequest);
-    }
+    UnblockOnloadIfNeeded(frameSet->ElementAt(i));
   }
 }
 
@@ -636,24 +616,6 @@ void ImageLoader::ImageReflowCallback::ReflowCallbackCanceled() {
 
   
   delete this;
-}
-
-void ImageLoader::RequestReflowOnFrame(FrameWithFlags* aFwf,
-                                       imgIRequest* aRequest) {
-  nsIFrame* frame = aFwf->mFrame;
-
-  
-  
-  
-  nsIFrame* parent = frame->GetInFlowParent();
-  parent->PresShell()->FrameNeedsReflow(parent, IntrinsicDirty::StyleChange,
-                                        NS_FRAME_IS_DIRTY);
-
-  
-  
-  
-  auto* unblocker = new ImageReflowCallback(this, frame, aRequest);
-  parent->PresShell()->PostReflowCallback(unblocker);
 }
 
 void GlobalImageObserver::Notify(imgIRequest* aRequest, int32_t aType,
@@ -761,25 +723,14 @@ void ImageLoader::OnImageIsAnimated(imgIRequest* aRequest) {
 }
 
 void ImageLoader::OnFrameComplete(imgIRequest* aRequest) {
-  if (!mDocument) {
-    return;
-  }
-
-  FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
-  if (!frameSet) {
-    return;
-  }
-
-  
-  RequestReflowIfNeeded(frameSet, aRequest);
-
-  
-  
-  
-  RequestPaintIfNeeded(frameSet, aRequest,  true);
+  ImageFrameChanged(aRequest,  true);
 }
 
 void ImageLoader::OnFrameUpdate(imgIRequest* aRequest) {
+  ImageFrameChanged(aRequest,  false);
+}
+
+void ImageLoader::ImageFrameChanged(imgIRequest* aRequest, bool aFirstFrame) {
   if (!mDocument) {
     return;
   }
@@ -789,7 +740,32 @@ void ImageLoader::OnFrameUpdate(imgIRequest* aRequest) {
     return;
   }
 
-  RequestPaintIfNeeded(frameSet, aRequest,  false);
+  for (FrameWithFlags& fwf : *frameSet) {
+    
+    
+    
+    const bool forceRepaint = aFirstFrame;
+    InvalidateImages(fwf.mFrame, aRequest, forceRepaint);
+    if (!aFirstFrame) {
+      
+      continue;
+    }
+    if (fwf.mFlags &
+        Flags::RequiresReflowOnFirstFrameCompleteAndLoadEventBlocking) {
+      
+      
+      
+      nsIFrame* parent = fwf.mFrame->GetInFlowParent();
+      parent->PresShell()->FrameNeedsReflow(parent, IntrinsicDirty::StyleChange,
+                                            NS_FRAME_IS_DIRTY);
+      
+      
+      if (fwf.mFlags & Flags::IsBlockingLoadEvent) {
+        auto* unblocker = new ImageReflowCallback(this, fwf.mFrame, aRequest);
+        parent->PresShell()->PostReflowCallback(unblocker);
+      }
+    }
+  }
 }
 
 void ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
@@ -810,11 +786,7 @@ void ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
   if (NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
       status & imgIRequest::STATUS_ERROR) {
     for (FrameWithFlags& fwf : *frameSet) {
-      if (fwf.mFlags & Flags::IsBlockingLoadEvent) {
-        
-        mDocument->UnblockOnload(false);
-        fwf.mFlags &= ~Flags::IsBlockingLoadEvent;
-      }
+      UnblockOnloadIfNeeded(fwf);
     }
   }
 }
