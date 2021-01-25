@@ -140,6 +140,15 @@ void GtkCompositorWidget::ClearBeforePaint(
     }
     aTarget->Flush();
   }
+
+  
+  
+  gfx::Rect rect;
+  if (mWidget->GetTitlebarRect(rect)) {
+    aTarget->FillRect(rect, ColorPattern(DeviceColor(0, 0, 0, 0)),
+                      DrawOptions(1.0f, CompositionOp::OP_SOURCE));
+    aTarget->Flush();
+  }
 }
 
 }  
