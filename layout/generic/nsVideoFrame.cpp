@@ -573,44 +573,24 @@ nscoord nsVideoFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
 
+  nsSize size = kFallbackIntrinsicSize;
   if (HasVideoElement()) {
-    nsSize size = GetVideoIntrinsicSize();
-    result = GetWritingMode().IsVertical() ? size.height : size.width;
+    size = GetVideoIntrinsicSize();
   } else {
     
     
-    nsIFrame* kid = mFrames.LastChild();
-    if (!StyleDisplay()->IsContainSize() && kid) {
-      result = nsLayoutUtils::IntrinsicForContainer(
-          aRenderingContext, kid, IntrinsicISizeType::MinISize);
-    } else {
-      result = 0;
+    if (StyleDisplay()->IsContainSize() || !mFrames.LastChild()) {
+      size = nsSize();
     }
   }
 
+  result = GetWritingMode().IsVertical() ? size.height : size.width;
   return result;
 }
 
 nscoord nsVideoFrame::GetPrefISize(gfxContext* aRenderingContext) {
-  nscoord result;
-  DISPLAY_PREF_INLINE_SIZE(this, result);
-
-  if (HasVideoElement()) {
-    nsSize size = GetVideoIntrinsicSize();
-    result = GetWritingMode().IsVertical() ? size.height : size.width;
-  } else {
-    
-    
-    nsIFrame* kid = mFrames.LastChild();
-    if (!StyleDisplay()->IsContainSize() && kid) {
-      result = nsLayoutUtils::IntrinsicForContainer(
-          aRenderingContext, kid, IntrinsicISizeType::PrefISize);
-    } else {
-      result = 0;
-    }
-  }
-
-  return result;
+  
+  return GetMinISize(aRenderingContext);
 }
 
 Maybe<nsSize> nsVideoFrame::PosterImageSize() const {
