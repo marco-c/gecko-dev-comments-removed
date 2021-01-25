@@ -185,6 +185,8 @@ class RenderCompositor {
     return ipc::FileDescriptor();
   }
 
+  virtual bool IsPaused() { return false; }
+
  protected:
   
   RenderedFrameId mLatestRenderFrameId = RenderedFrameId{2};

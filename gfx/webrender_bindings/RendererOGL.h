@@ -104,6 +104,9 @@ class RendererOGL {
   bool Resume();
 
   
+  bool IsPaused();
+
+  
   void CheckGraphicsResetStatus(const char* aCaller, bool aForce);
 
   layers::SyncObjectHost* GetSyncObject() const;
