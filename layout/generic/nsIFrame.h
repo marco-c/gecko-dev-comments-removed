@@ -2753,6 +2753,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
   enum class AspectRatioUsage : uint8_t {
     None,
     ToComputeISize,
@@ -2767,10 +2770,16 @@ class nsIFrame : public nsQueryFrame {
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin,
       const mozilla::LogicalSize& aBorderPadding,
+      const mozilla::StyleSizeOverrides& aSizeOverrides,
       mozilla::ComputeSizeFlags aFlags);
 
  protected:
   
+
+
+
+
+
 
 
 
@@ -2789,6 +2798,7 @@ class nsIFrame : public nsQueryFrame {
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin,
       const mozilla::LogicalSize& aBorderPadding,
+      const mozilla::StyleSizeOverrides& aSizeOverrides,
       mozilla::ComputeSizeFlags aFlags);
 
   
