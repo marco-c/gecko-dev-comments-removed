@@ -441,7 +441,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
 
   
   
-  MOZ_MUST_USE bool emitLexical(ParserLexicalScopeData* bindings);
+  MOZ_MUST_USE bool emitLexical(LexicalScope::ParserData* bindings);
 
   MOZ_MUST_USE bool emitCond();
   MOZ_MUST_USE bool emitTable(const TableGenerator& tableGen);
