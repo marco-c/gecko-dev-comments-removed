@@ -406,7 +406,9 @@ NetworkObserver.prototype = {
       const { status } = channel;
       if (status == 0) {
         
-        this._createNetworkEvent(subject, {});
+        
+        
+        this._createNetworkEvent(subject, { inProgressRequest: true });
       } else {
         if (reason == 0) {
           
@@ -759,6 +761,7 @@ NetworkObserver.prototype = {
       fromServiceWorker,
       blockedReason,
       blockingExtension,
+      inProgressRequest,
     }
   ) {
     const httpActivity = this.createOrGetActivityObject(channel);
@@ -908,7 +911,10 @@ NetworkObserver.prototype = {
 
     httpActivity.owner = this.owner.onNetworkEvent(event);
 
-    if (!event.blockedReason) {
+    
+    
+    const recordRequestContent = !event.blockedReason && !inProgressRequest;
+    if (recordRequestContent) {
       this._setupResponseListener(httpActivity, fromCache);
     }
 
