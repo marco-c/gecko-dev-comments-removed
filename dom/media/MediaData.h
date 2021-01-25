@@ -374,6 +374,11 @@ class AudioData : public MediaData {
   
   bool AdjustForStartTime(const media::TimeUnit& aStartTime);
 
+  
+  
+  
+  void SetOriginalStartTime(const media::TimeUnit& aStartTime);
+
   const uint32_t mChannels;
   
   
