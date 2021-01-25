@@ -18,9 +18,9 @@ add_task(async function() {
 
   
   
-  let testResumed = false;
+  let testInitialized = false;
   const { DevToolsServer } = _setupDevToolsServer([testFile.path], () => {
-    testResumed = true;
+    testInitialized = true;
   });
   const transport = DevToolsServer.connectPipe();
   const client = new DevToolsClient(transport);
@@ -38,29 +38,36 @@ add_task(async function() {
   
   const targetDescriptor = await client.mainRoot.getMainProcess();
   const front = await targetDescriptor.getTarget();
+
   const threadFront = await front.attachThread();
 
   
   
-  threadFront.resume().then(() => {
-    
-    ok(testResumed);
-    
+  ok(testInitialized);
+
+  const onPause = waitForPause(threadFront);
+
+  
+  
+  Services.tm.dispatchToMainThread(() => {
     load(testFile.path);
-    
   });
 
-  const packet1 = await waitForPause(threadFront);
+  
+  info("Wait for first paused event");
+  const packet1 = await onPause;
   equal(
     packet1.why.type,
     "breakpoint",
     "yay - hit the breakpoint at the first line in our script"
   );
 
+  const onPause2 = waitForPause(threadFront);
   
   threadFront.resume();
 
-  const packet2 = await waitForPause(threadFront);
+  info("Wait for second pause event");
+  const packet2 = await onPause2;
   equal(
     packet2.why.type,
     "debuggerStatement",

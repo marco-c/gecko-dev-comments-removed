@@ -11,6 +11,7 @@ add_task(async function() {
   initTestDevToolsServer();
   addTestGlobal(GLOBAL_NAME);
   addTestGlobal(GLOBAL_NAME);
+
   
   const firstClient = new DevToolsClient(DevToolsServer.connectPipe());
   await firstClient.connect();
@@ -18,6 +19,7 @@ add_task(async function() {
     firstClient,
     GLOBAL_NAME
   );
+  await firstThreadFront.interrupt();
 
   const secondClient = new DevToolsClient(DevToolsServer.connectPipe());
   await secondClient.connect();
@@ -25,7 +27,9 @@ add_task(async function() {
     secondClient,
     GLOBAL_NAME
   );
+  await secondThreadFront.interrupt();
 
+  
   let result;
   try {
     result = await firstThreadFront.resume();

@@ -107,7 +107,6 @@ async function testEarlyDebuggerStatement(
 
   
   const threadFront = await targetFront.attachThread();
-  await threadFront.resume();
   ok(true, "Pause wasn't called before we've attached.");
 
   return threadFront;

@@ -387,23 +387,10 @@ async function attachTestTab(client, title) {
 async function attachTestThread(client, title) {
   const targetFront = await attachTestTab(client, title);
   const threadFront = await targetFront.getFront("thread");
-  const onPaused = threadFront.once("paused");
   await targetFront.attachThread({
     autoBlackBox: true,
   });
-  const response = await onPaused;
-  Assert.equal(threadFront.state, "paused", "Thread client is paused");
-  Assert.ok("why" in response);
-  Assert.equal(response.why.type, "attached");
-  return { targetFront, threadFront };
-}
-
-
-
-
-async function attachTestTabAndResume(client, title) {
-  const { targetFront, threadFront } = await attachTestThread(client, title);
-  await threadFront.resume();
+  Assert.equal(threadFront.state, "attached", "Thread front is attached");
   return { targetFront, threadFront };
 }
 
@@ -808,7 +795,6 @@ async function setupTestFromUrl(url) {
   await targetFront.attach();
 
   const threadFront = await attachThread(targetFront);
-  await resume(threadFront);
 
   const sourceUrl = getFileUrl(url);
   const promise = waitForNewSource(threadFront, sourceUrl);
@@ -872,7 +858,7 @@ function threadFrontTest(test, options = {}) {
 
     
     
-    const { targetFront, threadFront } = await attachTestTabAndResume(
+    const { targetFront, threadFront } = await attachTestThread(
       client,
       scriptName
     );
