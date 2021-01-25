@@ -133,18 +133,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       context.heuristicResult?.type == UrlbarUtils.RESULT_TYPE.SEARCH
         ? UrlbarPrefs.get("matchBucketsSearch")
         : UrlbarPrefs.get("matchBuckets");
-    
-    
-    if (context.searchMode?.engineName) {
-      let suggestionsIndex = buckets.findIndex(b => b[0] == "suggestion");
-      let generalIndex = buckets.findIndex(b => b[0] == "general");
-      if (generalIndex < suggestionsIndex) {
-        
-        buckets = buckets.slice();
-        buckets[generalIndex] = "suggestion";
-        buckets[suggestionsIndex] = "general";
-      }
-    }
     logger.debug(`Buckets: ${buckets}`);
 
     
@@ -153,6 +141,24 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     for (let [group, maxResultCount] of buckets) {
       let results = this._addResults(group, maxResultCount, state);
       resultsByBucketIndex.push(results);
+    }
+
+    
+    
+    
+    
+    if (context.searchMode?.engineName) {
+      let suggestionsIndex = resultsByBucketIndex.findIndex(
+        results =>
+          results[0] &&
+          !results[0].heuristic &&
+          results[0].type == UrlbarUtils.RESULT_TYPE.SEARCH
+      );
+      if (suggestionsIndex > 1) {
+        logger.debug(`Transplanting suggestions before general results.`);
+        let removed = resultsByBucketIndex.splice(suggestionsIndex, 1);
+        resultsByBucketIndex.splice(1, 0, ...removed);
+      }
     }
 
     
