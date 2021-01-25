@@ -983,22 +983,6 @@ var BrowserTestUtils = {
 
 
 
-  async openNewWindowWithFlushedXULCacheForMozSupports(options) {
-    
-    Services.obs.notifyObservers(null, "chrome-flush-caches");
-    await TestUtils.waitForTick();
-
-    return BrowserTestUtils.openNewBrowserWindow(options);
-  },
-
-  
-
-
-
-
-
-
-
 
 
 
