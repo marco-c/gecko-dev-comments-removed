@@ -313,7 +313,7 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
                                nsProxyInfo* aProxyInfo,
                                uint32_t aProxyResolveFlags, nsIURI* aProxyURI,
                                uint64_t aChannelId,
-                               nsContentPolicyType aContentPolicyType) {
+                               ExtContentPolicyType aContentPolicyType) {
   LOG1(("HttpBaseChannel::Init [this=%p]\n", this));
 
   MOZ_ASSERT(aURI, "null uri");
@@ -2168,9 +2168,9 @@ nsresult HttpBaseChannel::ProcessCrossOriginEmbedderPolicyHeader() {
 
   
   if (mLoadInfo->GetExternalContentPolicyType() !=
-          nsIContentPolicy::TYPE_DOCUMENT &&
+          ExtContentPolicy::TYPE_DOCUMENT &&
       mLoadInfo->GetExternalContentPolicyType() !=
-          nsIContentPolicy::TYPE_SUBDOCUMENT) {
+          ExtContentPolicy::TYPE_SUBDOCUMENT) {
     return NS_OK;
   }
 
@@ -2183,7 +2183,7 @@ nsresult HttpBaseChannel::ProcessCrossOriginEmbedderPolicyHeader() {
 
   
   if (mLoadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_SUBDOCUMENT &&
+          ExtContentPolicy::TYPE_SUBDOCUMENT &&
       mLoadInfo->GetLoadingEmbedderPolicy() !=
           nsILoadInfo::EMBEDDER_POLICY_NULL &&
       resultPolicy != nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
@@ -2204,14 +2204,14 @@ nsresult HttpBaseChannel::ProcessCrossOriginResourcePolicyHeader() {
 
   
   if (mLoadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_DOCUMENT ||
+          ExtContentPolicy::TYPE_DOCUMENT ||
       mLoadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_WEBSOCKET) {
+          ExtContentPolicy::TYPE_WEBSOCKET) {
     return NS_OK;
   }
 
   if (mLoadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_SUBDOCUMENT) {
+      ExtContentPolicy::TYPE_SUBDOCUMENT) {
     
     if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
       return NS_OK;
@@ -2317,7 +2317,7 @@ nsresult HttpBaseChannel::ComputeCrossOriginOpenerPolicyMismatch() {
 
   
   if (mLoadInfo->GetExternalContentPolicyType() !=
-      nsIContentPolicy::TYPE_DOCUMENT) {
+      ExtContentPolicy::TYPE_DOCUMENT) {
     return NS_OK;
   }
 
@@ -2469,7 +2469,7 @@ nsresult ProcessXCTO(HttpBaseChannel* aChannel, nsIURI* aURI,
 
   
   if (aLoadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_STYLESHEET) {
+      ExtContentPolicy::TYPE_STYLESHEET) {
     if (contentType.EqualsLiteral(TEXT_CSS)) {
       return NS_OK;
     }
@@ -2479,7 +2479,7 @@ nsresult ProcessXCTO(HttpBaseChannel* aChannel, nsIURI* aURI,
   }
 
   if (aLoadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_SCRIPT) {
+      ExtContentPolicy::TYPE_SCRIPT) {
     if (nsContentUtils::IsJavascriptMIMEType(
             NS_ConvertUTF8toUTF16(contentType))) {
       return NS_OK;
@@ -2490,8 +2490,8 @@ nsresult ProcessXCTO(HttpBaseChannel* aChannel, nsIURI* aURI,
   }
 
   auto policyType = aLoadInfo->GetExternalContentPolicyType();
-  if (policyType == nsIContentPolicy::TYPE_DOCUMENT ||
-      policyType == nsIContentPolicy::TYPE_SUBDOCUMENT) {
+  if (policyType == ExtContentPolicy::TYPE_DOCUMENT ||
+      policyType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
     
     
     
@@ -2513,7 +2513,7 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
   }
 
   if (aLoadInfo->GetExternalContentPolicyType() !=
-      nsIContentPolicy::TYPE_SCRIPT) {
+      ExtContentPolicy::TYPE_SCRIPT) {
     
     return NS_OK;
   }
@@ -2715,7 +2715,7 @@ void WarnWrongMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
   }
 
   if (aLoadInfo->GetExternalContentPolicyType() !=
-      nsIContentPolicy::TYPE_SCRIPT) {
+      ExtContentPolicy::TYPE_SCRIPT) {
     
     return;
   }
@@ -3525,17 +3525,17 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
   nsCOMPtr<nsILoadInfo> newLoadInfo =
       static_cast<mozilla::net::LoadInfo*>(mLoadInfo.get())->Clone();
 
-  nsContentPolicyType contentPolicyType =
+  ExtContentPolicyType contentPolicyType =
       mLoadInfo->GetExternalContentPolicyType();
-  if (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
-      contentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT) {
+  if (contentPolicyType == ExtContentPolicy::TYPE_DOCUMENT ||
+      contentPolicyType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
     nsCOMPtr<nsIPrincipal> nullPrincipalToInherit =
         NullPrincipal::CreateWithoutOriginAttributes();
     newLoadInfo->SetPrincipalToInherit(nullPrincipalToInherit);
   }
 
   bool isTopLevelDoc = newLoadInfo->GetExternalContentPolicyType() ==
-                       nsIContentPolicy::TYPE_DOCUMENT;
+                       ExtContentPolicy::TYPE_DOCUMENT;
 
   if (isTopLevelDoc) {
     
@@ -3853,7 +3853,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
     
     
     if (loadInfo->GetExternalContentPolicyType() !=
-        nsIContentPolicy::TYPE_DOCUMENT) {
+        ExtContentPolicy::TYPE_DOCUMENT) {
       nsCOMPtr<nsIPrincipal> principal = loadInfo->GetLoadingPrincipal();
       config.timedChannel->timingAllowCheckForPrincipal() =
           Some(oldTimedChannel->TimingAllowCheck(principal));

@@ -269,7 +269,7 @@ bool PerformanceTimingData::CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
 
   
   if (loadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_DOCUMENT) {
+      ExtContentPolicy::TYPE_DOCUMENT) {
     return true;
   }
 
