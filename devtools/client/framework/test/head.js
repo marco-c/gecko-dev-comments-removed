@@ -456,3 +456,20 @@ async function sendToolboxReloadShortcut(shortcut, toolbox) {
   info("Wait for page and toolbox reload promises");
   await Promise.all(promises);
 }
+
+function getErrorIcon(toolbox) {
+  return toolbox.doc.querySelector(".toolbox-error");
+}
+
+function getErrorIconCount(toolbox) {
+  const textContent = getErrorIcon(toolbox)?.textContent;
+  try {
+    const int = parseInt(textContent, 10);
+    
+    return int.toString() === textContent ? int : textContent;
+  } catch (e) {
+    
+    
+    return textContent;
+  }
+}

@@ -2982,6 +2982,8 @@ Toolbox.prototype = {
 
 
   async _onWillNavigate() {
+    
+    this.setErrorCount(0);
     this.updateToolboxButtons();
     const toolId = this.currentToolId;
     
