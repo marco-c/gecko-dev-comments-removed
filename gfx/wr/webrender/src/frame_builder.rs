@@ -72,6 +72,7 @@ pub struct FrameBuilderConfig {
     pub tile_size_override: Option<DeviceIntSize>,
     pub max_depth_ids: i32,
     pub max_target_size: i32,
+    pub force_invalidation: bool,
 }
 
 
