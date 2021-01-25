@@ -1533,7 +1533,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  TimeStamp mTimeUpdateTime;
+  TimeStamp mQueueTimeUpdateRunnerTime;
 
   
   
@@ -1891,6 +1891,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   bool IsBeingUsedInPictureInPictureMode() const;
+
+  
+  bool ShouldQueueTimeupdateAsyncTask(TimeupdateType aType) const;
 };
 
 

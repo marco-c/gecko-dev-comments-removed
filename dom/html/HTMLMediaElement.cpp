@@ -6578,26 +6578,38 @@ void HTMLMediaElement::SetRequestHeaders(nsIHttpChannel* aChannel) {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
+bool HTMLMediaElement::ShouldQueueTimeupdateAsyncTask(
+    TimeupdateType aType) const {
+  NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
+  
+  if (aType == TimeupdateType::eMandatory) {
+    return true;
+  }
+
+  
+  
+  if (mLastCurrentTime == CurrentTime()) {
+    return false;
+  }
+
+  
+  if (!mQueueTimeUpdateRunnerTime.IsNull() &&
+      TimeStamp::Now() - mQueueTimeUpdateRunnerTime <
+          TimeDuration::FromMilliseconds(TIMEUPDATE_MS)) {
+    return false;
+  }
+  return true;
+}
+
 void HTMLMediaElement::FireTimeUpdate(TimeupdateType aType) {
   NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
 
-  TimeStamp now = TimeStamp::Now();
-  double time = CurrentTime();
-
-  
-  
-  
-  
-  if (aType == TimeupdateType::eMandatory ||
-      (mLastCurrentTime != time &&
-       (mTimeUpdateTime.IsNull() ||
-        now - mTimeUpdateTime >=
-            TimeDuration::FromMilliseconds(TIMEUPDATE_MS)))) {
+  if (ShouldQueueTimeupdateAsyncTask(aType)) {
     DispatchAsyncEvent(u"timeupdate"_ns);
-    mTimeUpdateTime = now;
-    mLastCurrentTime = time;
+    mQueueTimeUpdateRunnerTime = TimeStamp::Now();
+    mLastCurrentTime = CurrentTime();
   }
-  if (mFragmentEnd >= 0.0 && time >= mFragmentEnd) {
+  if (mFragmentEnd >= 0.0 && CurrentTime() >= mFragmentEnd) {
     Pause();
     mFragmentEnd = -1.0;
     mFragmentStart = -1.0;
