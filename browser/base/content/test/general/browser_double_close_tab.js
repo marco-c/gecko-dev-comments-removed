@@ -45,10 +45,6 @@ add_task(async function() {
     set: [["dom.require_user_interaction_for_beforeunload", false]],
   });
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["prompts.contentPromptSubDialog", false]],
-  });
-
   testTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
   
   
