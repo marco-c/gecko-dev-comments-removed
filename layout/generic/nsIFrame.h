@@ -2145,6 +2145,18 @@ class nsIFrame : public nsQueryFrame {
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus);
 
+  
+
+
+
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   SelectByTypeAtPoint(nsPresContext* aPresContext, const nsPoint& aPoint,
                       nsSelectionAmount aBeginAmountType,
