@@ -21,6 +21,29 @@ using namespace mozilla::gfx;
 
 NS_IMPL_ISUPPORTS_INHERITED(nsNativeBasicTheme, nsNativeTheme, nsITheme)
 
+namespace {
+
+
+
+
+
+
+
+
+
+struct MOZ_RAII AutoClipRect {
+  AutoClipRect(DrawTarget& aDt, const LayoutDeviceRect& aRect) : mDt(aDt) {
+    mDt.PushClipRect(aRect.ToUnknownRect());
+  }
+
+  ~AutoClipRect() { mDt.PopClip(); }
+
+ private:
+  DrawTarget& mDt;
+};
+
+}  
+
 static bool IsScrollbarWidthThin(nsIFrame* aFrame) {
   ComputedStyle* style = nsLayoutUtils::StyleForScrollbar(aFrame);
   auto scrollbarWidth = style->StyleUIReset()->mScrollbarWidth;
@@ -1175,6 +1198,15 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
       aFrame = parentFrame;
       eventState = GetContentState(parentFrame, aAppearance);
     }
+  }
+
+  
+  
+  Maybe<AutoClipRect> maybeClipRect;
+  if (aAppearance != StyleAppearance::FocusOutline &&
+      aAppearance != StyleAppearance::Range &&
+      !eventState.HasState(NS_EVENT_STATE_FOCUSRING)) {
+    maybeClipRect.emplace(*dt, devPxRect);
   }
 
   DPIRatio dpiRatio = GetDPIRatio(aFrame);

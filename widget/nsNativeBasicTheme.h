@@ -199,25 +199,6 @@ class nsNativeBasicTheme : protected nsNativeTheme, public nsITheme {
   static bool IsRootScrollbar(nsIFrame* aFrame);
   static LayoutDeviceRect FixAspectRatio(const LayoutDeviceRect& aRect);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  struct MOZ_RAII AutoClipRect {
-    AutoClipRect(DrawTarget& aDt, const LayoutDeviceRect& aRect) : mDt(aDt) {
-      mDt.PushClipRect(aRect.ToUnknownRect());
-    }
-
-    ~AutoClipRect() { mDt.PopClip(); }
-
-   private:
-    DrawTarget& mDt;
-  };
-
   virtual std::pair<sRGBColor, sRGBColor> ComputeCheckboxColors(
       const EventStates& aState, StyleAppearance aAppearance);
   virtual sRGBColor ComputeCheckmarkColor(const EventStates& aState);
