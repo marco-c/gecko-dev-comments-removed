@@ -228,6 +228,7 @@ void EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins) {
 
 
 bool EffectiveAddressAnalysis::analyze() {
+  JitSpew(JitSpew_EAA, "Begin");
   for (ReversePostorderIterator block(graph_.rpoBegin());
        block != graph_.rpoEnd(); block++) {
     for (MInstructionIterator i = block->begin(); i != block->end(); i++) {
