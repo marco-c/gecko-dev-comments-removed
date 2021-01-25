@@ -1,13 +1,13 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!DOCTYPE html>
 <html>
   <head>
     <title data-l10n-id="addons-page-title"></title>
 
-    
+    <!-- Bug 1571346 Remove 'unsafe-inline' from style-src within about:addons -->
     <meta http-equiv="Content-Security-Policy" content="default-src chrome:; style-src chrome: 'unsafe-inline'; img-src chrome: file: jar: https: http:; connect-src chrome: data: https: http:; object-src 'none'">
     <link rel="stylesheet" href="chrome://global/content/tabprompts.css">
     <link rel="stylesheet" href="chrome://global/skin/tabprompts.css">
@@ -21,7 +21,7 @@
     <link rel="localization" href="toolkit/about/aboutAddons.ftl">
     <link rel="localization" href="toolkit/about/abuseReports.ftl">
 
-    
+    <!-- Defer scripts so all the templates are loaded by the time they run. -->
     <script defer src="chrome://mozapps/content/extensions/named-deck.js"></script>
     <script defer src="chrome://mozapps/content/extensions/aboutaddonsCommon.js"></script>
     <script defer src="chrome://mozapps/content/extensions/message-bar.js"></script>
@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    
+    <!-- Include helpers for the inline options browser select and context menus. -->
     <content-select-dropdown></content-select-dropdown>
     <proxy-context-menu id="contentAreaContextMenu"></proxy-context-menu>
 
@@ -179,7 +179,7 @@
                 aria-haspopup="menu"
                 aria-expanded="false"></button>
             </div>
-            
+            <!-- This ends up in the tab order when the ellipsis happens, but it isn't necessary. -->
             <span class="addon-description" tabindex="-1"></span>
           </div>
         </div>
@@ -205,7 +205,6 @@
 
     <template name="addon-description-in-disco-card">
       <div>
-        <strong class="disco-description-intro"></strong>
         <span class="disco-description-main"></span>
       </div>
       <div class="disco-description-statistics">
@@ -291,7 +290,7 @@
           </div>
           <div class="addon-detail-row addon-detail-row-homepage">
             <label data-l10n-id="addon-detail-homepage-label"></label>
-            
+            <!-- URLs should always be displayed as LTR. -->
             <a target="_blank" data-telemetry-name="homepage" dir="ltr"></a>
           </div>
           <div class="addon-detail-row addon-detail-row-rating">
