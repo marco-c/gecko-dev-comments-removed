@@ -9,7 +9,12 @@ import time
 
 
 
-MESSAGE_SIZE = 16 * 1024 * 1024
+MESSAGE_SIZE = 1024 * 1024
+
+
+
+
+MESSAGE_COUNT = 16
 
 
 def web_socket_do_extra_handshake(request):
@@ -27,7 +32,9 @@ def web_socket_transfer_data(request):
     start_time = time.time()
 
     
-    request.ws_stream.send_message(b' ' * MESSAGE_SIZE, binary=True)
+    for i in range(MESSAGE_COUNT):
+        request.ws_stream.send_message(b' ' * MESSAGE_SIZE, binary=True)
 
     
-    request.ws_stream.send_message(six.text_type(time.time() - start_time), binary=False)
+    request.ws_stream.send_message(six.text_type(time.time() - start_time),
+                                   binary=False)

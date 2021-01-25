@@ -5,6 +5,7 @@
 
 
 const JITTER_ALLOWANCE_MS = 200;
+const LARGE_MESSAGE_COUNT = 16;
 
 
 
@@ -23,7 +24,9 @@ promise_test(async t => {
   await reader.read();
 
   
-  await reader.read();
+  for (let i = 0; i < LARGE_MESSAGE_COUNT; ++i) {
+    await reader.read();
+  }
 
   
   const { value, done } = await reader.read();
