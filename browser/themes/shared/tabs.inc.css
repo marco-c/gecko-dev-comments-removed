@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 %filter substitution
 %define horizontalTabPadding 9px
@@ -9,6 +9,15 @@
 :root {
   --tab-min-height: 33px;
 }
+
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+:root {
+  --tab-min-height: calc(1.2em + 1.7em); /* line-heights of both lines of text when visible */
+  --proton-tab-radius: 4px;
+  --proton-shadow-blur-radius: 6px;
+  --proton-tab-block-margin: 2px;
+}
+} /*** END proton ***/
 
 :root[uidensity=compact] {
   --tab-min-height: 29px;
@@ -29,18 +38,18 @@
 }
 
 #tabbrowser-tabpanels {
-  
+  /* Value for --in-content-page-background in in-content/common.inc.css */
   background-color: #f9f9fa;
 }
 
 :root[privatebrowsingmode=temporary] #tabbrowser-tabpanels {
-  
+  /* Value for --in-content-page-background in aboutPrivateBrowsing.css */
   background-color: #25003e;
 }
 
 @media (prefers-color-scheme: dark) {
   #tabbrowser-tabpanels {
-    
+    /* Value for --in-content-page-background for dark mode in in-content/common.inc.css */
     background-color: #2A2A2E;
   }
 }
@@ -55,16 +64,25 @@
   min-height: inherit;
 }
 
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+#tabbrowser-arrowscrollbox::part(scrollbox) {
+  /* Add padding to match the shadow's blur radius so the
+    shadow doesn't get clipped when either the first or
+    last tab is selected */
+  padding-inline: var(--proton-shadow-blur-radius);
+}
+} /*** END proton ***/
+
 @supports -moz-bool-pref("layout.css.emulate-moz-box-with-flex") {
   .tab-stack {
-    
+    /* Needed to allow tabs to shrink to be skinnier than their page-title: */
     min-width: 0;
   }
 
   #tabbrowser-arrowscrollbox::part(scrollbox) {
-    
-
-
+    /* Needed to prevent tabstrip from growing as wide as the sum of the tabs'
+       page-title widths (when we'd rather have it be as wide as the window and
+       compress the tabs to their minimum size): */
     max-width: 100%;
   }
 }
@@ -74,13 +92,20 @@
   background-color: transparent;
   border-radius: 0;
   border-width: 0;
-  margin: 0 !important ;
-  padding: 0 !important ;
+  margin: 0 !important /* override tabbox.css */;
+  padding: 0 !important /* override tabbox.css */;
   -moz-box-align: stretch;
 }
 
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+.tabbrowser-tab {
+  border-radius: var(--proton-tab-radius);
+  min-height: var(--tab-min-height);
+}
+} /*** END proton ***/
 
-
+/* The selected tab should appear above the border between the tabs toolbar and
+   the navigation toolbar. */
 .tabbrowser-tab[visuallyselected=true] {
   position: relative;
   z-index: 2;
@@ -103,20 +128,20 @@
   :root[sessionrestored] .tab-loading-burst::before {
     position: absolute;
     content: "";
-    
-
-
-
+    /* We set the width to be a percentage of the tab's width so that we can use
+       the `scale` transform to scale it up to the full size of the tab when the
+       burst occurs. We also need to set the margin-inline-start so that the
+       center of the burst matches the center of the favicon. */
     width: 5%;
     height: 100%;
-    
-
+    /* Center the burst over the .tab-loading-burst; it's 9px from the edge thanks
+       to .tab-content, plus 8px more since .tab-loading-burst is 16px wide. */
     margin-inline-start: calc(17px - 2.5%);
   }
 
   :root[sessionrestored] .tab-loading-burst[pinned]::before {
-    
-
+    /* This is like the margin-inline-start rule above, except that icons for
+       pinned tabs are 12px from the edge. */
     margin-inline-start: calc(20px - 2.5%);
   }
 
@@ -161,10 +186,15 @@
 .tab-icon-pending,
 .tab-icon-image,
 .tab-sharing-icon-overlay,
-.tab-icon-sound,
 .tab-close-button {
   margin-top: 1px;
 }
+
+@supports not -moz-bool-pref("browser.proton.tabs.enabled") {
+.tab-icon-sound {
+  margin-top: 1px;
+}
+} /*** END !proton ***/
 
 .tab-throbber,
 .tab-throbber-tabslist,
@@ -214,11 +244,11 @@
     animation: tab-throbber-animation 1.05s steps(30) infinite;
     -moz-context-properties: fill;
 
-    
-
-
-
-
+    /* XXX: It would be nice to transition between the "connecting" color and the
+       "loading" color (see the `.tab-throbber[progress]::before` rule below);
+       however, that currently forces main thread painting. When this is fixed
+       (after WebRender lands), we can do something like
+       `transition: fill 0.333s, opacity 0.333s;` */
 
     fill: currentColor;
     opacity: 0.7;
@@ -239,8 +269,8 @@
   }
 
   #TabsToolbar[brighttext] .tab-throbber[busy]:not([selected=true])::before {
-    
-
+    /* Don't change the --tab-loading-fill variable because this should only affect
+       tabs that are not visually selected. */
     fill: #717171;
     opacity: 1;
   }
@@ -251,8 +281,8 @@
   }
 
   #TabsToolbar[brighttext] .tab-throbber[progress]:not([selected=true])::before {
-    
-
+    /* Don't change the --tab-loading-fill variable because this should only affect
+       tabs that are not visually selected. */
     fill: #84c1ff;
   }
 }
@@ -282,7 +312,7 @@
 }
 
 .tab-sharing-icon-overlay {
-  
+  /* 16px of the icon + 6px of margin-inline-end of .tab-icon-image */
   margin-inline-start: -22px;
   position: relative;
   -moz-context-properties: fill;
@@ -391,7 +421,7 @@
 
 .tab-label {
   margin-inline: 0;
-  
+  /* Maintain consistent alignment in case of font fallback for non-Latin characters. */
   line-height: 1.7em;
 }
 
@@ -406,6 +436,11 @@
   padding: 10px calc(@horizontalTabPadding@ - 2px);
 }
 
+@supports not -moz-bool-pref("browser.proton.tabs.enabled") {
+.tab-label-container.proton {
+  display: none;
+}
+
 .tab-icon-sound {
   margin-inline-start: 1px;
   width: 16px;
@@ -414,7 +449,31 @@
   -moz-context-properties: fill;
   fill: currentColor;
 }
+} /*** END !proton ***/
 
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+.tab-label-container:not(.proton),
+.tab-label-container:not(.proton) + .tab-icon-sound {
+  display: none;
+}
+
+.tab-icon-sound {
+  font-size: .9em;
+  line-height: 1.2em;
+  -moz-box-align: center;
+}
+
+.tab-icon-sound-image {
+  margin-block: 1px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+} /*** END proton ***/
+
+@supports not -moz-bool-pref("browser.proton.tabs.enabled") {
 .tab-icon-sound[soundplaying],
 .tab-icon-sound[muted],
 .tab-icon-sound[activemedia-blocked] {
@@ -424,6 +483,19 @@
 .tab-icon-sound[muted] {
   list-style-image: url(chrome://browser/skin/tabbrowser/tab-audio-muted.svg);
 }
+} /*** END !proton ***/
+
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+.tab-icon-sound[soundplaying],
+.tab-icon-sound[muted],
+.tab-icon-sound[activemedia-blocked] {
+  list-style-image: url(chrome://browser/skin/tabbrowser/proton-tab-audio-playing.svg);
+}
+
+.tab-icon-sound[muted] {
+  list-style-image: url(chrome://browser/skin/tabbrowser/proton-tab-audio-muted.svg);
+}
+} /*** END proton ***/
 
 .tab-icon-sound[activemedia-blocked] {
   list-style-image: url(chrome://browser/skin/tabbrowser/tab-audio-blocked.svg);
@@ -466,7 +538,12 @@
   opacity: 0;
 }
 
+.tab-icon-sound[muted] > .tab-icon-sound-playing-label,
+.tab-icon-sound:not([muted]) > .tab-icon-sound-muted-label {
+  display: none;
+}
 
+/* Tab Overflow */
 #tabbrowser-arrowscrollbox:not([scrolledtostart])::part(overflow-start-indicator),
 #tabbrowser-arrowscrollbox:not([scrolledtoend])::part(overflow-end-indicator) {
   width: 18px;
@@ -480,7 +557,7 @@
   border-image-slice: 1;
   pointer-events: none;
   position: relative;
-  z-index: 3; 
+  z-index: 3; /* the selected tab's z-index + 1 */
 }
 
 #tabbrowser-arrowscrollbox:-moz-locale-dir(rtl)::part(overflow-start-indicator),
@@ -520,12 +597,33 @@
   height: 2px;
 }
 
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+.tab-line {
+  display: none;
+}
+} /*** END proton ***/
 
+/* Selected tab */
 
 .tab-background {
   border: 1px none transparent;
   background-clip: padding-box;
 }
+
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+.tab-background {
+  border-radius: var(--proton-tab-radius);
+  margin-block: var(--proton-tab-block-margin);
+}
+
+:root[sizemode=maximized] .tabbrowser-tab {
+  margin-top: 0 !important;
+}
+
+.tabbrowser-tab[visuallyselected=true] > .tab-stack > .tab-background {
+  box-shadow: 0 2px var(--proton-shadow-blur-radius) rgba(58,57,68,.2);
+}
+} /*** END proton ***/
 
 %ifdef MENUBAR_CAN_AUTOHIDE
 #toolbar-menubar:not([autohide=true]) + #TabsToolbar,
@@ -551,7 +649,7 @@
   background-repeat: repeat-x;
 }
 
-
+/* Add a translucent color on top of multiselected tabs */
 .tab-background[multiselected=true]:not([selected=true]) > .tab-background-inner {
   background: currentColor;
   opacity: .1;
@@ -562,12 +660,12 @@
   background-color: var(--tab-line-color);
 }
 
+/*
+ * LightweightThemeConsumer will set the current lightweight theme's header
+ * image to the lwt-header-image variable, used in each of the following rulesets.
+ */
 
-
-
-
-
-
+/* Lightweight theme on tabs */
 #tabbrowser-tabs:not([movingtab]) > #tabbrowser-arrowscrollbox > .tabbrowser-tab > .tab-stack > .tab-background[multiselected=true]:-moz-lwtheme,
 #tabbrowser-tabs:not([movingtab]) > #tabbrowser-arrowscrollbox > .tabbrowser-tab > .tab-stack > .tab-background[selected=true]:-moz-lwtheme {
   background-attachment: scroll, scroll, fixed;
@@ -580,7 +678,7 @@
   background-size: auto 100%, auto 100%, auto auto;
 }
 
-
+/* Tab hover */
 
 .tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected=true], [multiselected]) {
   background-color: rgba(0,0,0,.1);
@@ -615,9 +713,9 @@
   opacity: 0.5;
 }
 
+/* Pinned tabs */
 
-
-
+/* Pinned tab separators need position: absolute when positioned (during overflow). */
 #tabbrowser-tabs[positionpinnedtabs] > #tabbrowser-arrowscrollbox > .tabbrowser-tab[pinned]::after {
   display: block;
   position: absolute;
@@ -636,6 +734,18 @@
   background-repeat: no-repeat;
 }
 
+@supports -moz-bool-pref("browser.proton.tabs.enabled") {
+.tabbrowser-tab:is([image], [pinned]) > .tab-stack > .tab-content[attention]:not([selected="true"]),
+.tabbrowser-tab > .tab-stack > .tab-content[pinned][titlechanged]:not([selected="true"]) {
+  /* Only show the top half of the 12px tall indicator-tab-attention.svg. */
+  background-position: center bottom -6px;
+}
+
+#tabbrowser-tabs:not([positionpinnedtabs]) > #tabbrowser-arrowscrollbox > .tabbrowser-tab[pinned] + .tabbrowser-tab:not([pinned]) {
+  margin-inline-start: 12px !important; /* .tabbrowser-tab sets margin: 0 !important; */
+}
+} /*** END proton ***/
+
 .tabbrowser-tab[image] > .tab-stack > .tab-content[attention]:not([pinned], [selected="true"]) {
   background-position-x: left 11px;
 }
@@ -648,19 +758,19 @@
   font-weight: bold;
 }
 
-
+/* Tab drag and drop */
 
 .tab-drop-indicator {
   width: 12px;
   margin-inline-start: -12px;
   background: url(chrome://browser/skin/tabbrowser/tab-drag-indicator.svg) no-repeat center;
   position: relative;
-  
-
+  /* The z-index needs to be big enough to trump other positioned UI pieces
+     that we want to overlay. The selected tab uses 2. */
   z-index: 3;
 }
 
-
+/* Drag space */
 
 .titlebar-spacer[type="pre-tabs"],
 .titlebar-spacer[type="post-tabs"] {
@@ -673,8 +783,9 @@
   }
 }
 
+/* Tab separators */
 
-
+@supports not -moz-bool-pref("browser.proton.tabs.enabled") {
 .titlebar-spacer[type="pre-tabs"] {
   border-inline-end: 1px solid var(--lwt-background-tab-separator-color, currentColor);
   opacity: 0.2;
@@ -687,14 +798,14 @@
   opacity: 0.3;
 }
 
-
-
-
-
-
-
-
-
+/* Move the ::before pseudo-element on tabs 1px to the left
+ * to avoid resizing the tab when the pseudo-element is removed again
+ * (this currently happens when a tab is dragged and dropped).
+ *
+ * Note that this doesn't perfectly solve the issue (dragged tabs
+ * may still resize very slightly) on some DPI settings with uneven
+ * scaling factors on Windows, because of bug 477157.
+ */
 .tabbrowser-tab::before {
   margin-inline-start: -1px;
 }
@@ -704,7 +815,7 @@
 %else
 :root[tabsintitlebar]:not([extradragspace]) .tabbrowser-tab::after,
 %endif
-
+/* Show full height tab separators on hover and multiselection. */
 .tabbrowser-tab:hover::after,
 #tabbrowser-tabs:not([movingtab]) > #tabbrowser-arrowscrollbox > .tabbrowser-tab[beforehovered]::after,
 .tabbrowser-tab[multiselected]::after,
@@ -713,7 +824,7 @@
   margin-bottom: 0;
 }
 
-
+/* Show full height tab separators on selected tabs. */
 #tabbrowser-tabs:not([movingtab]) > #tabbrowser-arrowscrollbox > .tabbrowser-tab[beforeselected-visible]::after,
 #tabbrowser-tabs[movingtab] > #tabbrowser-arrowscrollbox > .tabbrowser-tab[visuallyselected]::before,
 .tabbrowser-tab[visuallyselected]::after {
@@ -724,13 +835,14 @@
 }
 
 .tabbrowser-tab::after,
-
+/* Also show separators beside the selected tab when dragging it. */
 #tabbrowser-tabs[movingtab] > #tabbrowser-arrowscrollbox > .tabbrowser-tab[visuallyselected]::before {
   content: "";
   display: block;
 }
+} /*** END !proton ***/
 
-
+/* Tab bar scroll arrows */
 
 #tabbrowser-arrowscrollbox::part(scrollbutton-up),
 #tabbrowser-arrowscrollbox::part(scrollbutton-down) {
@@ -738,14 +850,14 @@
   fill-opacity: var(--toolbarbutton-icon-fill-opacity);
 }
 
-
+/* New tab button */
 
 #tabs-newtab-button,
 #TabsToolbar #new-tab-button {
   list-style-image: url(chrome://browser/skin/add.svg);
 }
 
-
+/* All tabs button and menupopup */
 
 #alltabs-button {
   list-style-image: url(chrome://global/skin/icons/arrow-dropdown-16.svg);
@@ -754,13 +866,13 @@
 #tabbrowser-tabs[hiddensoundplaying] ~ #alltabs-button > .toolbarbutton-badge-stack > .toolbarbutton-badge {
   background: transparent url(chrome://browser/skin/tabbrowser/badge-audio-playing.svg);
   box-shadow: none;
-  
+  /* Match the color of the button, rather than label default. */
   color: inherit;
   display: block;
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: var(--toolbarbutton-icon-fill-opacity);
-  
+  /* "!important" is necessary to override the rule in toolbarbutton.css */
   margin: -7px 0 0 !important;
   margin-inline-end: -4px !important;
   min-width: 12px;
@@ -772,9 +884,9 @@
   max-width: 42em;
 }
 
-
-
-
+/* The list of tabs is in its own panel-subview-body which will scroll. We don't
+   want any padding above/below the scrollbars, so remove the padding/margin
+   from the separator and outer panel-subview-body. */
 #allTabsMenu-allTabsView > .panel-subview-body {
   padding-bottom: 0;
 }
@@ -801,7 +913,7 @@
 
 .all-tabs-item:hover > .all-tabs-button,
 .all-tabs-item:hover > .all-tabs-secondary-button {
-  
+  /* Since the background is set on the item, don't set it on the children. */
   background-color: transparent !important;
 }
 
