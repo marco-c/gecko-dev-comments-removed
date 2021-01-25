@@ -742,9 +742,7 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   
-  void ResolveFlexBaseSizeFromAspectRatio(
-      const ReflowInput& aItemReflowInput,
-      const FlexboxAxisTracker& aAxisTracker);
+  void ResolveFlexBaseSizeFromAspectRatio(const ReflowInput& aItemReflowInput);
 
   uint32_t NumAutoMarginsInMainAxis() const {
     return NumAutoMarginsInAxis(MainAxis());
@@ -762,7 +760,7 @@ class nsFlexContainerFrame::FlexItem final {
   
   
   nscoord ClampMainSizeViaCrossAxisConstraints(
-      nscoord aMainSize, const FlexboxAxisTracker& aAxisTracker) const;
+      nscoord aMainSize, const ReflowInput& aItemReflowInput) const;
 
   
   
@@ -1427,7 +1425,7 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
-  item->ResolveFlexBaseSizeFromAspectRatio(childRI, aAxisTracker);
+  item->ResolveFlexBaseSizeFromAspectRatio(childRI);
 
   
   
@@ -1449,21 +1447,6 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
 }
 
 
-
-
-
-
-static nscoord MainSizeFromAspectRatio(nscoord aCrossSize,
-                                       const AspectRatio& aAspectRatio,
-                                       const FlexboxAxisTracker& aAxisTracker) {
-  MOZ_ASSERT(aAspectRatio,
-             "Invalid ratio; will divide by 0! Caller should've checked...");
-  AspectRatio ratio = aAxisTracker.IsMainAxisHorizontal()
-                          ? aAspectRatio
-                          : aAspectRatio.Inverted();
-
-  return ratio.ApplyTo(aCrossSize);
-}
 
 
 
@@ -1538,16 +1521,16 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   
-  if (aFlexItem.HasAspectRatio() &&
-      aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
+  if (const auto& aspectRatio = aFlexItem.GetAspectRatio();
+      aspectRatio && aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
     
-    nscoord transferredSizeSuggestion = MainSizeFromAspectRatio(
-        aFlexItem.CrossSize(), aFlexItem.GetAspectRatio(), aAxisTracker);
+    nscoord transferredSizeSuggestion = aspectRatio.ComputeRatioDependentSize(
+        aFlexItem.MainAxis(), cbWM, aFlexItem.CrossSize(), boxSizingAdjust);
 
     
     
     transferredSizeSuggestion = aFlexItem.ClampMainSizeViaCrossAxisConstraints(
-        transferredSizeSuggestion, aAxisTracker);
+        transferredSizeSuggestion, aItemReflowInput);
 
     FLEX_LOGV(" Transferred size suggestion: %d", transferredSizeSuggestion);
     return transferredSizeSuggestion;
@@ -1658,7 +1641,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
       
       if (aFlexItem.HasAspectRatio()) {
         contentSizeSuggestion = aFlexItem.ClampMainSizeViaCrossAxisConstraints(
-            contentSizeSuggestion, aAxisTracker);
+            contentSizeSuggestion, aItemReflowInput);
       }
 
       FLEX_LOGV(" Content size suggestion: %d", contentSizeSuggestion);
@@ -2230,8 +2213,7 @@ bool FlexItem::IsCrossSizeDefinite(const ReflowInput& aItemReflowInput) const {
 }
 
 void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
-    const ReflowInput& aItemReflowInput,
-    const FlexboxAxisTracker& aAxisTracker) {
+    const ReflowInput& aItemReflowInput) {
   
   
   
@@ -2245,8 +2227,12 @@ void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
           aItemReflowInput.mStylePosition->mFlexBasis,
           aItemReflowInput.mStylePosition->Size(MainAxis(), mCBWM)) &&
       IsCrossSizeDefinite(aItemReflowInput)) {
-    const nscoord mainSizeFromRatio =
-        MainSizeFromAspectRatio(CrossSize(), GetAspectRatio(), aAxisTracker);
+    const LogicalSize contentBoxSizeToBoxSizingAdjust =
+        aItemReflowInput.mStylePosition->mBoxSizing == StyleBoxSizing::Border
+            ? BorderPadding().Size(mCBWM)
+            : LogicalSize(mCBWM);
+    const nscoord mainSizeFromRatio = mAspectRatio.ComputeRatioDependentSize(
+        MainAxis(), mCBWM, CrossSize(), contentBoxSizeToBoxSizingAdjust);
     SetFlexBaseSizeAndMainSize(mainSizeFromRatio);
   }
 }
@@ -2318,17 +2304,21 @@ bool FlexItem::CanMainSizeInfluenceCrossSize() const {
 }
 
 nscoord FlexItem::ClampMainSizeViaCrossAxisConstraints(
-    nscoord aMainSize, const FlexboxAxisTracker& aAxisTracker) const {
+    nscoord aMainSize, const ReflowInput& aItemReflowInput) const {
   MOZ_ASSERT(HasAspectRatio(), "Caller should've checked the ratio is valid!");
 
-  const auto& aspectRatio = GetAspectRatio();
-  const nscoord mainMinSizeFromRatio =
-      MainSizeFromAspectRatio(CrossMinSize(), aspectRatio, aAxisTracker);
+  const LogicalSize contentBoxSizeToBoxSizingAdjust =
+      aItemReflowInput.mStylePosition->mBoxSizing == StyleBoxSizing::Border
+          ? BorderPadding().Size(mCBWM)
+          : LogicalSize(mCBWM);
+
+  const nscoord mainMinSizeFromRatio = mAspectRatio.ComputeRatioDependentSize(
+      MainAxis(), mCBWM, CrossMinSize(), contentBoxSizeToBoxSizingAdjust);
   nscoord clampedMainSize = std::max(aMainSize, mainMinSizeFromRatio);
 
   if (CrossMaxSize() != NS_UNCONSTRAINEDSIZE) {
-    const nscoord mainMaxSizeFromRatio =
-        MainSizeFromAspectRatio(CrossMaxSize(), aspectRatio, aAxisTracker);
+    const nscoord mainMaxSizeFromRatio = mAspectRatio.ComputeRatioDependentSize(
+        MainAxis(), mCBWM, CrossMaxSize(), contentBoxSizeToBoxSizingAdjust);
     clampedMainSize = std::min(clampedMainSize, mainMaxSizeFromRatio);
   }
 
