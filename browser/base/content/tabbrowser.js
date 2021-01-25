@@ -968,9 +968,14 @@
           ? "Private"
           : "Default";
       if (title) {
+        
+        
+        
+        
+        
         return docElement.dataset["contentTitle" + dataSuffix].replace(
           "CONTENTTITLE",
-          title
+          () => title
         );
       }
 
