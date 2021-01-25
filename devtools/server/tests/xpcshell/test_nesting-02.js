@@ -19,46 +19,45 @@ add_task(
 );
 
 function test_nesting(thread) {
-  const { resolve, promise: p } = defer();
-
   
   
   
   
   
   let currentStep = 0;
-
-  executeSoon(function() {
+  const p = new Promise(resolve => {
     executeSoon(function() {
-      
-      Assert.equal(++currentStep, 2);
-      
-      
-      Assert.equal(thread._nestedEventLoops.size, 2);
-
       executeSoon(function() {
         
-        Assert.equal(++currentStep, 3);
+        Assert.equal(++currentStep, 2);
         
         
         Assert.equal(thread._nestedEventLoops.size, 2);
+
+        executeSoon(function() {
+          
+          Assert.equal(++currentStep, 3);
+          
+          
+          Assert.equal(thread._nestedEventLoops.size, 2);
+          
+          Assert.ok(!!eventLoop);
+          eventLoop.resolve();
+        });
+
+        resolve(true);
         
-        Assert.ok(!!eventLoop);
-        eventLoop.resolve();
+        
+        Assert.equal(thread._nestedEventLoops.size, 2);
       });
 
-      resolve(true);
       
+      Assert.equal(++currentStep, 1);
       
-      Assert.equal(thread._nestedEventLoops.size, 2);
+      Assert.equal(thread._nestedEventLoops.size, 1);
+      const eventLoop = thread._nestedEventLoops.push();
+      eventLoop.enter();
     });
-
-    
-    Assert.equal(++currentStep, 1);
-    
-    Assert.equal(thread._nestedEventLoops.size, 1);
-    const eventLoop = thread._nestedEventLoops.push();
-    eventLoop.enter();
   });
 
   Assert.equal(thread.unsafeSynchronize(p), true);
