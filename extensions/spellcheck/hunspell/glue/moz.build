@@ -5,12 +5,10 @@
 
 
 UNIFIED_SOURCES += [
-    "hunspell_csutil.cxx",
     "mozHunspell.cpp",
-    "mozHunspellRLBoxHost.cpp",
+    "mozHunspellFileMgrHost.cpp",
     "RemoteSpellCheckEngineChild.cpp",
     "RemoteSpellCheckEngineParent.cpp",
-    "RLBoxHunspell.cpp",
 ]
 
 DEFINES["HUNSPELL_STATIC"] = True
