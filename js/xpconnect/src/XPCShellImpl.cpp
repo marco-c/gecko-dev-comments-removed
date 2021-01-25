@@ -1262,6 +1262,11 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     options.creationOptions().setNewCompartmentAndZone();
     xpc::SetPrefableRealmOptions(options);
 
+    
+    
+    
+    options.behaviors().setDiscardSource(false);
+
     JS::Rooted<JSObject*> glob(cx);
     rv = xpc::InitClassesWithNewWrappedGlobal(
         cx, static_cast<nsIGlobalObject*>(backstagePass), systemprincipal, 0,
@@ -1314,11 +1319,6 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
       backstagePass->SetGlobalObject(glob);
 
       JSAutoRealm ar(cx, glob);
-
-      
-      
-      
-      JS::RealmBehaviorsRef(cx).setDiscardSource(false);
 
       if (!JS_InitReflectParse(cx, glob)) {
         return 1;

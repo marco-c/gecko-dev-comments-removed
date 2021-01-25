@@ -495,7 +495,10 @@ class JS::Realm : public JS::shadow::Realm {
   const JS::RealmCreationOptions& creationOptions() const {
     return creationOptions_;
   }
-  JS::RealmBehaviors& behaviors() { return behaviors_; }
+
+  
+  
+  
   const JS::RealmBehaviors& behaviors() const { return behaviors_; }
 
   void setNonLive() { behaviors_.setNonLive(); }
