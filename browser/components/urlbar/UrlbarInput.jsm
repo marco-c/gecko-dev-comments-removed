@@ -883,22 +883,27 @@ class UrlbarInput {
       }
       case UrlbarUtils.RESULT_TYPE.DYNAMIC: {
         url = result.payload.url;
+        
+        
         if (!url || !result.payload.shouldNavigate) {
           this.handleRevert();
+        }
+
+        let provider = UrlbarProvidersManager.getProvider(result.providerName);
+        if (!provider) {
+          Cu.reportError(`Provider not found: ${result.providerName}`);
+          return;
+        }
+        provider.tryMethod("pickResult", result, element);
+
+        
+        if (!url || !result.payload.shouldNavigate) {
           this.controller.engagementEvent.record(event, {
             selIndex,
             searchString: this._lastSearchString,
             selType: this.controller.engagementEvent.typeFromElement(element),
             provider: result.providerName,
           });
-          let provider = UrlbarProvidersManager.getProvider(
-            result.providerName
-          );
-          if (!provider) {
-            Cu.reportError(`Provider not found: ${result.providerName}`);
-            return;
-          }
-          provider.tryMethod("pickResult", result, element);
           return;
         }
         break;
