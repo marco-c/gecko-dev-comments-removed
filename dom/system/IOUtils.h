@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_IOUtils__
 #define mozilla_dom_IOUtils__
 
-#include "js/Utility.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Buffer.h"
@@ -71,7 +70,7 @@ class IOUtils final {
 
   static already_AddRefed<Promise> WriteUTF8(GlobalObject& aGlobal,
                                              const nsAString& aPath,
-                                             const nsACString& aString,
+                                             const nsAString& aString,
                                              const WriteOptions& aOptions);
 
   static already_AddRefed<Promise> Move(GlobalObject& aGlobal,
@@ -108,19 +107,6 @@ class IOUtils final {
 
   static already_AddRefed<Promise> Exists(GlobalObject& aGlobal,
                                           const nsAString& aPath);
-
-  class JsBuffer;
-
-  
-
-
-
-
-
-  enum class BufferKind {
-    String,
-    Uint8Array,
-  };
 
  private:
   ~IOUtils() = default;
@@ -167,7 +153,7 @@ class IOUtils final {
 
 
   template <typename T>
-  static void ResolveJSPromise(Promise* aPromise, T&& aValue);
+  static void ResolveJSPromise(Promise* aPromise, const T& aValue);
   
 
 
@@ -185,11 +171,8 @@ class IOUtils final {
 
 
 
-
-  static Result<JsBuffer, IOError> ReadSync(nsIFile* aFile,
-                                            const Maybe<uint32_t>& aMaxBytes,
-                                            const bool aDecompress,
-                                            BufferKind aBufferKind);
+  static Result<nsTArray<uint8_t>, IOError> ReadSync(
+      nsIFile* aFile, const Maybe<uint32_t>& aMaxBytes, const bool aDecompress);
 
   
 
@@ -201,7 +184,7 @@ class IOUtils final {
 
 
 
-  static Result<JsBuffer, IOError> ReadUTF8Sync(nsIFile* aFile,
+  static Result<nsString, IOError> ReadUTF8Sync(nsIFile* aFile,
                                                 const bool aDecompress);
 
   
@@ -218,6 +201,22 @@ class IOUtils final {
 
   static Result<uint32_t, IOError> WriteSync(
       nsIFile* aFile, const Span<const uint8_t>& aByteArray,
+      const InternalWriteOpts& aOptions);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static Result<uint32_t, IOError> WriteUTF8Sync(
+      nsIFile* aFile, const nsCString& aUTF8String,
       const InternalWriteOpts& aOptions);
 
   
@@ -464,8 +463,8 @@ class IOUtils::MozLZ4 {
 
 
 
-  static Result<IOUtils::JsBuffer, IOError> Decompress(
-      Span<const uint8_t> aFileContents, IOUtils::BufferKind);
+  static Result<nsTArray<uint8_t>, IOError> Decompress(
+      Span<const uint8_t> aFileContents);
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
@@ -475,105 +474,6 @@ class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
 
  private:
   virtual ~IOUtilsShutdownBlocker() = default;
-};
-
-
-
-
-
-class IOUtils::JsBuffer final {
- public:
-  
-
-
-
-
-
-
-
-
-
-  static Result<JsBuffer, IOUtils::IOError> Create(
-      IOUtils::BufferKind aBufferKind, size_t aCapacity);
-
-  
-
-
-
-
-
-
-
-
-
-  static JsBuffer CreateEmpty(IOUtils::BufferKind aBufferKind);
-
-  JsBuffer(const JsBuffer&) = delete;
-  JsBuffer(JsBuffer&& aOther) noexcept;
-  JsBuffer& operator=(const JsBuffer&) = delete;
-  JsBuffer& operator=(JsBuffer&& aOther) noexcept;
-
-  size_t Length() { return mLength; }
-  char* Elements() { return mBuffer.get(); }
-  void SetLength(size_t aNewLength) {
-    MOZ_RELEASE_ASSERT(aNewLength <= mCapacity);
-    mLength = aNewLength;
-  }
-
-  
-
-
-
-
-
-
-
-  Span<char> BeginWriting() { return Span(mBuffer.get(), mCapacity); }
-
-  
-
-
-
-
-
-  Span<const char> BeginReading() const { return Span(mBuffer.get(), mLength); }
-
-  
-
-
-
-
-
-
-
-
-
-
-  static JSString* IntoString(JSContext* aCx, JsBuffer aBuffer);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static JSObject* IntoUint8Array(JSContext* aCx, JsBuffer aBuffer);
-
-  friend MOZ_MUST_USE bool ToJSValue(JSContext* aCx, JsBuffer&& aBuffer,
-                                     JS::MutableHandle<JS::Value> aValue);
-
- private:
-  IOUtils::BufferKind mBufferKind;
-  size_t mCapacity;
-  size_t mLength;
-  JS::UniqueChars mBuffer;
-
-  JsBuffer(BufferKind aBufferKind, size_t aCapacity);
 };
 
 }  
