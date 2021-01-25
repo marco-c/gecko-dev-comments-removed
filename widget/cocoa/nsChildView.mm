@@ -160,8 +160,6 @@ static bool sIsTabletPointerActivated = false;
 
 static uint32_t sUniqueKeyEventId = 0;
 
-static NSMutableDictionary* sNativeKeyEventsMap = [NSMutableDictionary dictionary];
-
 
 @interface PixelHostingView : NSView {
 }
@@ -1054,7 +1052,8 @@ void nsChildView::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) {
   
   
   
-  NSEvent* cocoaEvent = [sNativeKeyEventsMap objectForKey:@(aEvent->mUniqueId)];
+  NSMutableDictionary* nativeKeyEventsMap = [ChildView sNativeKeyEventsMap];
+  NSEvent* cocoaEvent = [nativeKeyEventsMap objectForKey:@(aEvent->mUniqueId)];
   if (!cocoaEvent) {
     return;
   }
@@ -1062,7 +1061,7 @@ void nsChildView::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) {
   if (SendEventToNativeMenuSystem(cocoaEvent)) {
     aEvent->PreventDefault();
   }
-  [sNativeKeyEventsMap removeObjectForKey:@(aEvent->mUniqueId)];
+  [nativeKeyEventsMap removeObjectForKey:@(aEvent->mUniqueId)];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -3815,10 +3814,11 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   if (mGeckoChild) {
     if (mTextInputHandler) {
       sUniqueKeyEventId++;
-      [sNativeKeyEventsMap setObject:theEvent forKey:@(sUniqueKeyEventId)];
+      NSMutableDictionary* nativeKeyEventsMap = [ChildView sNativeKeyEventsMap];
+      [nativeKeyEventsMap setObject:theEvent forKey:@(sUniqueKeyEventId)];
       
       
-      [sNativeKeyEventsMap removeObjectForKey:@(sUniqueKeyEventId - 10)];
+      [nativeKeyEventsMap removeObjectForKey:@(sUniqueKeyEventId - 10)];
       mTextInputHandler->HandleKeyDownEvent(theEvent, sUniqueKeyEventId);
     } else {
       
@@ -4937,6 +4937,8 @@ nsresult nsChildView::GetSelectionAsPlaintext(nsAString& aResult) {
 }
 
 + (NSMutableDictionary*)sNativeKeyEventsMap {
+  
+  static NSMutableDictionary* sNativeKeyEventsMap = [[NSMutableDictionary alloc] init];
   return sNativeKeyEventsMap;
 }
 
