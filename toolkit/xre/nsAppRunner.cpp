@@ -4720,6 +4720,17 @@ nsresult XREMain::XRE_mainRun() {
   nsresult rv = NS_OK;
   NS_ASSERTION(mScopedXPCOM, "Scoped xpcom not initialized.");
 
+#if defined(XP_WIN)
+  RefPtr<mozilla::DllServices> dllServices(mozilla::DllServices::Get());
+  dllServices->StartUntrustedModulesProcessor();
+  auto dllServicesDisable =
+      MakeScopeExit([&dllServices]() { dllServices->DisableFull(); });
+
+#  if defined(MOZ_GECKO_PROFILER)
+  mozilla::mscom::InitProfilerMarkers();
+#  endif  
+#endif    
+
   
   
   nsCOMPtr<nsIAppStartup> appStartup;
@@ -4729,17 +4740,6 @@ nsresult XREMain::XRE_mainRun() {
     
     mozilla::MacAutoreleasePool pool;
 #endif
-
-#if defined(XP_WIN)
-    RefPtr<mozilla::DllServices> dllServices(mozilla::DllServices::Get());
-    dllServices->StartUntrustedModulesProcessor();
-    auto dllServicesDisable =
-        MakeScopeExit([&dllServices]() { dllServices->DisableFull(); });
-
-#  if defined(MOZ_GECKO_PROFILER)
-    mozilla::mscom::InitProfilerMarkers();
-#  endif  
-#endif    
 
     rv = mScopedXPCOM->SetWindowCreator(mNativeApp);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
