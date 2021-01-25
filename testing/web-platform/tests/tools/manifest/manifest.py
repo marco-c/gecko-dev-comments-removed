@@ -1,6 +1,7 @@
 import io
 import itertools
 import os
+import sys
 from atomicwrites import atomic_write
 from copy import deepcopy
 from multiprocessing import Pool, cpu_count
@@ -173,6 +174,8 @@ class Manifest(object):
         constructed in the case we are not updating a path, but the absence of an item from
         the iterator may be used to remove defunct entries from the manifest."""
 
+        logger = get_logger()
+
         changed = False
 
         
@@ -221,20 +224,33 @@ class Manifest(object):
                     to_update.append(source_file)
 
         if to_update:
+            logger.debug("Computing manifest update for %s items" % len(to_update))
             changed = True
 
+
+        
+        
         if parallel and len(to_update) > 25 and cpu_count() > 1:
             
             
             
-            pool = Pool()
+            
+            
+            
+            processes = cpu_count()
+            if sys.platform == "win32" and processes > 48:
+                processes = 48
+            pool = Pool(processes)
 
             
             
             
+            chunksize = max(1, len(to_update) // 10000)
+            logger.debug("Doing a multiprocessed update. CPU count: %s, "
+                "processes: %s, chunksize: %s" % (cpu_count(), processes, chunksize))
             results = pool.imap_unordered(compute_manifest_items,
                                           to_update,
-                                          chunksize=max(1, len(to_update) // 10000)
+                                          chunksize=chunksize
                                           )  
         elif PY3:
             results = map(compute_manifest_items, to_update)
@@ -444,6 +460,7 @@ def _load_and_update(tests_root,
         update = True
 
     if rebuild or update:
+        logger.info("Updating manifest")
         for retry in range(2):
             try:
                 tree = vcs.get_tree(tests_root, manifest, manifest_path, cache_root,
