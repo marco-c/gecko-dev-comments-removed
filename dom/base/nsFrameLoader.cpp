@@ -2519,10 +2519,6 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     return false;
   }
 
-  if (mPendingBrowsingContext->IsTop()) {
-    mPendingBrowsingContext->InitSessionHistory();
-  }
-
   
   
   
