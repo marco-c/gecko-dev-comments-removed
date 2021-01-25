@@ -756,21 +756,25 @@ XDRResult XDRIncrementalStencilEncoder::linearize(JS::TranscodeBuffer& buffer,
                 JS::IsTranscodingBytecodeAligned(buffer.begin()));
   MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(buffer.length()));
 
-  Rooted<ScriptSourceHolder> holder(cx(), ss);
-  uint32_t nchunks = 1 + encodedFunctions_.count();
+  
+  
+  XDRBuffer<XDR_ENCODE> outputBuf(cx(), buffer, buffer.length());
 
-  switchToHeaderBuf();
-  MOZ_TRY(XDRStencilHeader(this, nullptr, &holder, &nchunks));
-  switchToMainBuf();
+  
+  {
+    switchToBuffer(&outputBuf);
 
-  size_t totalLength = buffer.length() + header_.length() + slices_.length();
-  if (!buffer.reserve(totalLength)) {
-    ReportOutOfMemory(cx());
-    return fail(JS::TranscodeResult_Throw);
+    Rooted<ScriptSourceHolder> holder(cx(), ss);
+    uint32_t nchunks = 1 + encodedFunctions_.count();
+    MOZ_TRY(XDRStencilHeader(this, nullptr, &holder, &nchunks));
+
+    switchToMainBuf();
   }
 
-  buffer.infallibleAppend(header_.begin(), header_.length());
-  buffer.infallibleAppend(slices_.begin(), slices_.length());
+  
+  if (!buffer.append(slices_.begin(), slices_.length())) {
+    return fail(JS::TranscodeResult_Throw);
+  }
 
   return Ok();
 }
