@@ -145,7 +145,6 @@ class ProcessedModuleLoadEvent final {
   uintptr_t mBaseAddress;
   RefPtr<ModuleRecord> mModule;
   bool mIsDependent;
-  uint32_t mLoadStatus;  
 
   ProcessedModuleLoadEvent(const ProcessedModuleLoadEvent&) = delete;
   ProcessedModuleLoadEvent& operator=(const ProcessedModuleLoadEvent&) = delete;
@@ -516,7 +515,6 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
     WriteParam(aMsg, aParam.mRequestedDllName);
     WriteParam(aMsg, aParam.mBaseAddress);
     WriteParam(aMsg, aParam.mIsDependent);
-    WriteParam(aMsg, aParam.mLoadStatus);
 
     
     
@@ -555,10 +553,6 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
     }
 
     if (!ReadParam(aMsg, aIter, &aResult->mIsDependent)) {
-      return false;
-    }
-
-    if (!ReadParam(aMsg, aIter, &aResult->mLoadStatus)) {
       return false;
     }
 

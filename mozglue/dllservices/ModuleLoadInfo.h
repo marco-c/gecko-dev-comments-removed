@@ -15,15 +15,6 @@ namespace mozilla {
 
 struct ModuleLoadInfo final {
   
-  
-  
-  enum class Status : uint32_t {
-    Loaded = 0,
-    Blocked,
-    Redirected,
-  };
-
-  
 #if !defined(MOZILLA_INTERNAL_API)
 
   
@@ -48,12 +39,11 @@ struct ModuleLoadInfo final {
 
 
   ModuleLoadInfo(nt::AllocatedUnicodeString&& aSectionName,
-                 const void* aBaseAddr, Status aLoadStatus)
+                 const void* aBaseAddr)
       : mLoadTimeInfo(),
         mThreadId(nt::RtlGetCurrentThreadId()),
         mSectionName(std::move(aSectionName)),
-        mBaseAddr(aBaseAddr),
-        mStatus(aLoadStatus) {
+        mBaseAddr(aBaseAddr) {
 #  if defined(IMPL_MFBT)
     ::QueryPerformanceCounter(&mBeginTimestamp);
 #  else
@@ -138,14 +128,6 @@ struct ModuleLoadInfo final {
   bool WasMapped() const { return !mSectionName.IsEmpty(); }
 
   
-
-
-  bool WasDenied() const {
-    return mStatus == ModuleLoadInfo::Status::Blocked ||
-           mStatus == ModuleLoadInfo::Status::Redirected;
-  }
-
-  
   LARGE_INTEGER mBeginTimestamp;
   
   LARGE_INTEGER mLoadTimeInfo;
@@ -161,8 +143,6 @@ struct ModuleLoadInfo final {
   const void* mBaseAddr;
   
   Vector<PVOID, 0, nt::RtlAllocPolicy> mBacktrace;
-  
-  Status mStatus;
 };
 
 using ModuleLoadInfoVec = Vector<ModuleLoadInfo, 0, nt::RtlAllocPolicy>;
