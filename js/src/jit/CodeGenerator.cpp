@@ -1388,177 +1388,79 @@ void CodeGenerator::testValueTruthyKernel(
     const ValueOperand& value, const LDefinition* scratch1,
     const LDefinition* scratch2, FloatRegister fr, Label* ifTruthy,
     Label* ifFalsy, OutOfLineTestObject* ool, MDefinition* valueMIR) {
-  
-  
-  
-  
-  
-  bool mightBeUndefined = valueMIR->mightBeType(MIRType::Undefined);
-  bool mightBeNull = valueMIR->mightBeType(MIRType::Null);
-  bool mightBeBoolean = valueMIR->mightBeType(MIRType::Boolean);
-  bool mightBeInt32 = valueMIR->mightBeType(MIRType::Int32);
-  bool mightBeObject = valueMIR->mightBeType(MIRType::Object);
-  bool mightBeString = valueMIR->mightBeType(MIRType::String);
-  bool mightBeSymbol = valueMIR->mightBeType(MIRType::Symbol);
-  bool mightBeDouble = valueMIR->mightBeType(MIRType::Double);
-  bool mightBeBigInt = valueMIR->mightBeType(MIRType::BigInt);
-  int tagCount = int(mightBeUndefined) + int(mightBeNull) +
-                 int(mightBeBoolean) + int(mightBeInt32) + int(mightBeObject) +
-                 int(mightBeString) + int(mightBeSymbol) + int(mightBeDouble) +
-                 int(mightBeBigInt);
-
-  
-  MOZ_ASSERT(tagCount > 0);
-
-  
-  
-  if (int(mightBeNull) + int(mightBeUndefined) == tagCount) {
-    masm.jump(ifFalsy);
-    return;
-  }
-
   ScratchTagScope tag(masm, value);
   masm.splitTagForTest(value, tag);
 
-  if (mightBeUndefined) {
-    MOZ_ASSERT(tagCount > 1);
-    masm.branchTestUndefined(Assembler::Equal, tag, ifFalsy);
-    --tagCount;
-  }
+  masm.branchTestUndefined(Assembler::Equal, tag, ifFalsy);
+  masm.branchTestNull(Assembler::Equal, tag, ifFalsy);
 
-  if (mightBeNull) {
-    MOZ_ASSERT(tagCount > 1);
-    masm.branchTestNull(Assembler::Equal, tag, ifFalsy);
-    --tagCount;
+  Label notBoolean;
+  masm.branchTestBoolean(Assembler::NotEqual, tag, &notBoolean);
+  {
+    ScratchTagScopeRelease _(&tag);
+    masm.branchTestBooleanTruthy(false, value, ifFalsy);
   }
+  masm.jump(ifTruthy);
+  masm.bind(&notBoolean);
 
-  if (mightBeBoolean) {
-    MOZ_ASSERT(tagCount != 0);
-    Label notBoolean;
-    if (tagCount != 1) {
-      masm.branchTestBoolean(Assembler::NotEqual, tag, &notBoolean);
-    }
+  Label notInt32;
+  masm.branchTestInt32(Assembler::NotEqual, tag, &notInt32);
+  {
+    ScratchTagScopeRelease _(&tag);
+    masm.branchTestInt32Truthy(false, value, ifFalsy);
+  }
+  masm.jump(ifTruthy);
+  masm.bind(&notInt32);
+
+  if (ool) {
+    Label notObject;
+    masm.branchTestObject(Assembler::NotEqual, tag, &notObject);
+
     {
       ScratchTagScopeRelease _(&tag);
-      masm.branchTestBooleanTruthy(false, value, ifFalsy);
+      Register objreg = masm.extractObject(value, ToRegister(scratch1));
+      testObjectEmulatesUndefined(objreg, ifFalsy, ifTruthy,
+                                  ToRegister(scratch2), ool);
     }
-    if (tagCount != 1) {
-      masm.jump(ifTruthy);
-    }
-    
-    masm.bind(&notBoolean);
-    --tagCount;
-  }
 
-  if (mightBeInt32) {
-    MOZ_ASSERT(tagCount != 0);
-    Label notInt32;
-    if (tagCount != 1) {
-      masm.branchTestInt32(Assembler::NotEqual, tag, &notInt32);
-    }
-    {
-      ScratchTagScopeRelease _(&tag);
-      masm.branchTestInt32Truthy(false, value, ifFalsy);
-    }
-    if (tagCount != 1) {
-      masm.jump(ifTruthy);
-    }
-    
-    masm.bind(&notInt32);
-    --tagCount;
-  }
-
-  if (mightBeObject) {
-    MOZ_ASSERT(tagCount != 0);
-    if (ool) {
-      Label notObject;
-
-      if (tagCount != 1) {
-        masm.branchTestObject(Assembler::NotEqual, tag, &notObject);
-      }
-
-      {
-        ScratchTagScopeRelease _(&tag);
-        Register objreg = masm.extractObject(value, ToRegister(scratch1));
-        testObjectEmulatesUndefined(objreg, ifFalsy, ifTruthy,
-                                    ToRegister(scratch2), ool);
-      }
-
-      masm.bind(&notObject);
-    } else {
-      if (tagCount != 1) {
-        masm.branchTestObject(Assembler::Equal, tag, ifTruthy);
-      }
-      
-    }
-    --tagCount;
+    masm.bind(&notObject);
   } else {
-    MOZ_ASSERT(!ool,
-               "We better not have an unused OOL path, since the code "
-               "generator will try to "
-               "generate code for it but we never set up its labels, which "
-               "will cause null "
-               "derefs of those labels.");
+    masm.branchTestObject(Assembler::Equal, tag, ifTruthy);
   }
 
-  if (mightBeString) {
-    
-    MOZ_ASSERT(tagCount != 0);
-    Label notString;
-    if (tagCount != 1) {
-      masm.branchTestString(Assembler::NotEqual, tag, &notString);
-    }
-    {
-      ScratchTagScopeRelease _(&tag);
-      masm.branchTestStringTruthy(false, value, ifFalsy);
-    }
-    if (tagCount != 1) {
-      masm.jump(ifTruthy);
-    }
-    
-    masm.bind(&notString);
-    --tagCount;
+  Label notString;
+  masm.branchTestString(Assembler::NotEqual, tag, &notString);
+  {
+    ScratchTagScopeRelease _(&tag);
+    masm.branchTestStringTruthy(false, value, ifFalsy);
   }
+  masm.jump(ifTruthy);
+  masm.bind(&notString);
 
-  if (mightBeBigInt) {
-    MOZ_ASSERT(tagCount != 0);
-    Label notBigInt;
-    if (tagCount != 1) {
-      masm.branchTestBigInt(Assembler::NotEqual, tag, &notBigInt);
-    }
-    {
-      ScratchTagScopeRelease _(&tag);
-      masm.branchTestBigIntTruthy(false, value, ifFalsy);
-    }
-    if (tagCount != 1) {
-      masm.jump(ifTruthy);
-    }
-    masm.bind(&notBigInt);
-    --tagCount;
+  Label notBigInt;
+  masm.branchTestBigInt(Assembler::NotEqual, tag, &notBigInt);
+  {
+    ScratchTagScopeRelease _(&tag);
+    masm.branchTestBigIntTruthy(false, value, ifFalsy);
   }
+  masm.jump(ifTruthy);
+  masm.bind(&notBigInt);
 
-  if (mightBeSymbol) {
-    
-    MOZ_ASSERT(tagCount != 0);
-    if (tagCount != 1) {
-      masm.branchTestSymbol(Assembler::Equal, tag, ifTruthy);
-    }
-    
-    --tagCount;
+  
+  masm.branchTestSymbol(Assembler::Equal, tag, ifTruthy);
+
+  
+#ifdef DEBUG
+  Label isDouble;
+  masm.branchTestDouble(Assembler::Equal, tag, &isDouble);
+  masm.assumeUnreachable("Unexpected Value type in testValueTruthyKernel");
+  masm.bind(&isDouble);
+#endif
+  {
+    ScratchTagScopeRelease _(&tag);
+    masm.unboxDouble(value, fr);
+    masm.branchTestDoubleTruthy(false, fr, ifFalsy);
   }
-
-  if (mightBeDouble) {
-    MOZ_ASSERT(tagCount == 1);
-    
-    {
-      ScratchTagScopeRelease _(&tag);
-      masm.unboxDouble(value, fr);
-      masm.branchTestDoubleTruthy(false, fr, ifFalsy);
-    }
-    --tagCount;
-  }
-
-  MOZ_ASSERT(tagCount == 0);
 
   
 }
@@ -12788,152 +12690,71 @@ void CodeGenerator::visitTypeOfV(LTypeOfV* lir) {
   const JSAtomState& names = gen->runtime->names();
   Label done;
 
-  MDefinition* input = lir->mir()->input();
+  OutOfLineTypeOfV* ool = nullptr;
+  if (lir->mir()->inputMaybeCallableOrEmulatesUndefined()) {
+    
+    
+    ool = new (alloc()) OutOfLineTypeOfV(lir);
+    addOutOfLineCode(ool, lir->mir());
+    masm.branchTestObject(Assembler::Equal, tag, ool->entry());
+  } else {
+    
+    
+    Label notObject;
+    masm.branchTestObject(Assembler::NotEqual, tag, &notObject);
+    masm.movePtr(ImmGCPtr(names.object), output);
+    masm.jump(&done);
+    masm.bind(&notObject);
+  }
 
-  bool testObject = input->mightBeType(MIRType::Object);
-  bool testNumber =
-      input->mightBeType(MIRType::Int32) || input->mightBeType(MIRType::Double);
-  bool testBoolean = input->mightBeType(MIRType::Boolean);
-  bool testUndefined = input->mightBeType(MIRType::Undefined);
-  bool testNull = input->mightBeType(MIRType::Null);
-  bool testString = input->mightBeType(MIRType::String);
-  bool testSymbol = input->mightBeType(MIRType::Symbol);
-  bool testBigInt = input->mightBeType(MIRType::BigInt);
+  Label notNumber;
+  masm.branchTestNumber(Assembler::NotEqual, tag, &notNumber);
+  masm.movePtr(ImmGCPtr(names.number), output);
+  masm.jump(&done);
+  masm.bind(&notNumber);
 
-  unsigned numTests = unsigned(testObject) + unsigned(testNumber) +
-                      unsigned(testBoolean) + unsigned(testUndefined) +
-                      unsigned(testNull) + unsigned(testString) +
-                      unsigned(testSymbol) + unsigned(testBigInt);
+  Label notUndefined;
+  masm.branchTestUndefined(Assembler::NotEqual, tag, &notUndefined);
+  masm.movePtr(ImmGCPtr(names.undefined), output);
+  masm.jump(&done);
+  masm.bind(&notUndefined);
+
+  Label notNull;
+  masm.branchTestNull(Assembler::NotEqual, tag, &notNull);
+  masm.movePtr(ImmGCPtr(names.object), output);
+  masm.jump(&done);
+  masm.bind(&notNull);
+
+  Label notBoolean;
+  masm.branchTestBoolean(Assembler::NotEqual, tag, &notBoolean);
+  masm.movePtr(ImmGCPtr(names.boolean), output);
+  masm.jump(&done);
+  masm.bind(&notBoolean);
+
+  Label notString;
+  masm.branchTestString(Assembler::NotEqual, tag, &notString);
+  masm.movePtr(ImmGCPtr(names.string), output);
+  masm.jump(&done);
+  masm.bind(&notString);
+
+  Label notSymbol;
+  masm.branchTestSymbol(Assembler::NotEqual, tag, &notSymbol);
+  masm.movePtr(ImmGCPtr(names.symbol), output);
+  masm.jump(&done);
+  masm.bind(&notSymbol);
 
   
-  MOZ_ASSERT(numTests > 0);
-
-  OutOfLineTypeOfV* ool = nullptr;
-  if (testObject) {
-    if (lir->mir()->inputMaybeCallableOrEmulatesUndefined()) {
-      
-      
-      ool = new (alloc()) OutOfLineTypeOfV(lir);
-      addOutOfLineCode(ool, lir->mir());
-
-      if (numTests > 1) {
-        masm.branchTestObject(Assembler::Equal, tag, ool->entry());
-      } else {
-        masm.jump(ool->entry());
-      }
-    } else {
-      
-      
-      Label notObject;
-      if (numTests > 1) {
-        masm.branchTestObject(Assembler::NotEqual, tag, &notObject);
-      }
-      masm.movePtr(ImmGCPtr(names.object), output);
-      if (numTests > 1) {
-        masm.jump(&done);
-      }
-      masm.bind(&notObject);
-    }
-    numTests--;
-  }
-
-  if (testNumber) {
-    Label notNumber;
-    if (numTests > 1) {
-      masm.branchTestNumber(Assembler::NotEqual, tag, &notNumber);
-    }
-    masm.movePtr(ImmGCPtr(names.number), output);
-    if (numTests > 1) {
-      masm.jump(&done);
-    }
-    masm.bind(&notNumber);
-    numTests--;
-  }
-
-  if (testUndefined) {
-    Label notUndefined;
-    if (numTests > 1) {
-      masm.branchTestUndefined(Assembler::NotEqual, tag, &notUndefined);
-    }
-    masm.movePtr(ImmGCPtr(names.undefined), output);
-    if (numTests > 1) {
-      masm.jump(&done);
-    }
-    masm.bind(&notUndefined);
-    numTests--;
-  }
-
-  if (testNull) {
-    Label notNull;
-    if (numTests > 1) {
-      masm.branchTestNull(Assembler::NotEqual, tag, &notNull);
-    }
-    masm.movePtr(ImmGCPtr(names.object), output);
-    if (numTests > 1) {
-      masm.jump(&done);
-    }
-    masm.bind(&notNull);
-    numTests--;
-  }
-
-  if (testBoolean) {
-    Label notBoolean;
-    if (numTests > 1) {
-      masm.branchTestBoolean(Assembler::NotEqual, tag, &notBoolean);
-    }
-    masm.movePtr(ImmGCPtr(names.boolean), output);
-    if (numTests > 1) {
-      masm.jump(&done);
-    }
-    masm.bind(&notBoolean);
-    numTests--;
-  }
-
-  if (testString) {
-    Label notString;
-    if (numTests > 1) {
-      masm.branchTestString(Assembler::NotEqual, tag, &notString);
-    }
-    masm.movePtr(ImmGCPtr(names.string), output);
-    if (numTests > 1) {
-      masm.jump(&done);
-    }
-    masm.bind(&notString);
-    numTests--;
-  }
-
-  if (testSymbol) {
-    Label notSymbol;
-    if (numTests > 1) {
-      masm.branchTestSymbol(Assembler::NotEqual, tag, &notSymbol);
-    }
-    masm.movePtr(ImmGCPtr(names.symbol), output);
-    if (numTests > 1) {
-      masm.jump(&done);
-    }
-    masm.bind(&notSymbol);
-    numTests--;
-  }
-
-  if (testBigInt) {
-    Label notBigInt;
-    if (numTests > 1) {
-      masm.branchTestBigInt(Assembler::NotEqual, tag, &notBigInt);
-    }
-    masm.movePtr(ImmGCPtr(names.bigint), output);
-    if (numTests > 1) {
-      masm.jump(&done);
-    }
-    masm.bind(&notBigInt);
-    numTests--;
-  }
-
-  MOZ_ASSERT(numTests == 0);
+#ifdef DEBUG
+  Label isBigInt;
+  masm.branchTestBigInt(Assembler::Equal, tag, &isBigInt);
+  masm.assumeUnreachable("Unexpected Value type in visitTypeOfV");
+  masm.bind(&isBigInt);
+#endif
+  masm.movePtr(ImmGCPtr(names.bigint), output);
+  
 
   masm.bind(&done);
-  if (ool) {
-    masm.bind(ool->rejoin());
-  }
+  masm.bind(ool->rejoin());
 }
 
 void CodeGenerator::emitTypeOfObject(Register obj, Register output,
