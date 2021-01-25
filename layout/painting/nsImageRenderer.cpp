@@ -61,77 +61,63 @@ nsImageRenderer::nsImageRenderer(nsIFrame* aForFrame, const StyleImage* aImage,
       mExtendMode(ExtendMode::CLAMP),
       mMaskOp(StyleMaskMode::MatchSource) {}
 
-static bool ShouldTreatAsCompleteDueToSyncDecode(const StyleImage* aImage,
-                                                 uint32_t aFlags) {
-  if (!(aFlags & nsImageRenderer::FLAG_SYNC_DECODE_IMAGES)) {
-    return false;
-  }
-
-  imgRequestProxy* req = aImage->GetImageRequest();
-  if (!req) {
-    return false;
-  }
-
-  uint32_t status = 0;
-  if (NS_FAILED(req->GetImageStatus(&status))) {
-    return false;
-  }
-
-  if (status & imgIRequest::STATUS_ERROR) {
-    
-    
-    nsCOMPtr<imgIContainer> image;
-    req->GetImage(getter_AddRefs(image));
-    return bool(image);
-  }
-
-  if (!(status & imgIRequest::STATUS_LOAD_COMPLETE)) {
-    
-    
-    return false;
-  }
-
-  return true;
-}
-
 bool nsImageRenderer::PrepareImage() {
-  if (mImage->IsNone() ||
-      (mImage->IsImageRequestType() && !mImage->GetImageRequest())) {
-    
-    
+  if (mImage->IsNone()) {
     mPrepareResult = ImgDrawResult::BAD_IMAGE;
     return false;
   }
 
-  if (!mImage->IsComplete()) {
-    
-    bool frameComplete = mImage->StartDecoding();
-
-    
-    if ((mFlags & nsImageRenderer::FLAG_PAINTING_TO_WINDOW) &&
-        mImage->IsImageRequestType()) {
-      MOZ_ASSERT(mImage->GetImageRequest(),
-                 "must have image data, since we checked above");
-      mImage->GetImageRequest()->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
-    }
-
-    
-    
-    
-    
-    if (!(frameComplete || mImage->IsComplete()) &&
-        !ShouldTreatAsCompleteDueToSyncDecode(mImage, mFlags)) {
-      mPrepareResult = ImgDrawResult::NOT_READY;
+  const bool isImageRequest = mImage->IsImageRequestType();
+  MOZ_ASSERT_IF(!isImageRequest, !mImage->GetImageRequest());
+  imgRequestProxy* request = nullptr;
+  if (isImageRequest) {
+    request = mImage->GetImageRequest();
+    if (!request) {
+      
+      
+      mPrepareResult = ImgDrawResult::BAD_IMAGE;
       return false;
     }
   }
 
-  if (mImage->IsImageRequestType()) {
-    MOZ_ASSERT(mImage->GetImageRequest(),
-               "must have image data, since we checked above");
+  if (!mImage->IsComplete()) {
+    MOZ_DIAGNOSTIC_ASSERT(isImageRequest);
+
+    
+    bool frameComplete =
+        request->StartDecodingWithResult(imgIContainer::FLAG_ASYNC_NOTIFY);
+
+    
+    if (mFlags & nsImageRenderer::FLAG_PAINTING_TO_WINDOW) {
+      request->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
+    }
+
+    
+    
+    if (!frameComplete && !mImage->IsComplete()) {
+      uint32_t imageStatus = 0;
+      request->GetImageStatus(&imageStatus);
+      if (imageStatus & imgIRequest::STATUS_ERROR) {
+        mPrepareResult = ImgDrawResult::BAD_IMAGE;
+        return false;
+      }
+
+      
+      
+      
+      const bool syncDecodeWillComplete =
+          (mFlags & FLAG_SYNC_DECODE_IMAGES) &&
+          (imageStatus & imgIRequest::STATUS_LOAD_COMPLETE);
+      if (!syncDecodeWillComplete) {
+        mPrepareResult = ImgDrawResult::NOT_READY;
+        return false;
+      }
+    }
+  }
+
+  if (isImageRequest) {
     nsCOMPtr<imgIContainer> srcImage;
-    DebugOnly<nsresult> rv =
-        mImage->GetImageRequest()->GetImage(getter_AddRefs(srcImage));
+    DebugOnly<nsresult> rv = request->GetImage(getter_AddRefs(srcImage));
     MOZ_ASSERT(NS_SUCCEEDED(rv) && srcImage,
                "If GetImage() is failing, mImage->IsComplete() "
                "should have returned false");
