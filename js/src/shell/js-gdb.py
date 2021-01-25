@@ -7,6 +7,10 @@
 
 
 
+import gdb
+import os
+import re
+
 from os.path import abspath, dirname
 
 devel_objdir = abspath(os.path.join(dirname(__file__), "..", ".."))
