@@ -42,7 +42,7 @@ add_task(async function() {
 
   
   BrowserTestUtils.loadURI(browser, "about:robots");
-  await promiseTabRestored(tab);
+  await promiseBrowserLoaded(browser);
   ok(!browser.isRemoteBrowser, "browser is not remote anymore");
 
   
