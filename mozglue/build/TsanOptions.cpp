@@ -286,6 +286,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:DataChannelConnection::SetSignals\n"
          "race:DataChannelConnection::SetReady\n"
 
+         
+         "race:nsTimerImpl::Shutdown\n"
+         "race:nsTimerImpl::CancelImpl\n"
+
       
       ;  
 }
