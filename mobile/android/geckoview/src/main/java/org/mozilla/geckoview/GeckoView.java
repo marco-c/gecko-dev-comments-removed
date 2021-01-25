@@ -171,6 +171,14 @@ public class GeckoView extends FrameLayout {
 
         public void setDynamicToolbarMaxHeight(final int height) {
             mDynamicToolbarMaxHeight = height;
+
+            
+            
+            
+            
+            
+            setVerticalClipping(0);
+
             if (mDisplay != null) {
                 mDisplay.setDynamicToolbarMaxHeight(height);
             }
