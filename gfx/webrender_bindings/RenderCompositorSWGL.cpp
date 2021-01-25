@@ -46,9 +46,16 @@ bool RenderCompositorSWGL::MakeCurrent() {
 
 bool RenderCompositorSWGL::BeginFrame() {
   
+  
   ClearMappedBuffer();
-  LayoutDeviceIntRect bounds(LayoutDeviceIntPoint(), GetBufferSize());
-  mRegion = LayoutDeviceIntRegion(bounds);
+  mRegion = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetBufferSize());
+  wr_swgl_make_current(mContext);
+  return true;
+}
+
+bool RenderCompositorSWGL::AllocateMappedBuffer() {
+  
+  MOZ_ASSERT(!mDT);
   layers::BufferMode bufferMode = layers::BufferMode::BUFFERED;
   mDT = mWidget->StartRemoteDrawingInRegion(mRegion, &bufferMode);
   if (!mDT) {
@@ -62,18 +69,24 @@ bool RenderCompositorSWGL::BeginFrame() {
   int32_t stride = 0;
   gfx::SurfaceFormat format = gfx::SurfaceFormat::UNKNOWN;
   if (!mSurface && mDT->LockBits(&data, &size, &stride, &format) &&
-      (size != bounds.Size().ToUnknownSize() ||
-       (format != gfx::SurfaceFormat::B8G8R8A8 &&
-        format != gfx::SurfaceFormat::B8G8R8X8))) {
+      (format != gfx::SurfaceFormat::B8G8R8A8 &&
+       format != gfx::SurfaceFormat::B8G8R8X8)) {
     
     
     mDT->ReleaseBits(data);
     data = nullptr;
   }
+  LayoutDeviceIntRect bounds = mRegion.GetBounds();
   
   if (data) {
     mMappedData = data;
     mMappedStride = stride;
+    
+    
+    if (size == gfx::IntSize(bounds.XMost(), bounds.YMost())) {
+      
+      bounds.ExpandToEnclose(LayoutDeviceIntPoint(0, 0));
+    }
   } else {
     
     
@@ -93,13 +106,44 @@ bool RenderCompositorSWGL::BeginFrame() {
     mMappedStride = map.mStride;
   }
   MOZ_ASSERT(mMappedData != nullptr && mMappedStride > 0);
-  wr_swgl_make_current(mContext);
-  wr_swgl_init_default_framebuffer(mContext, bounds.width, bounds.height,
-                                   mMappedStride, mMappedData);
+  wr_swgl_init_default_framebuffer(mContext, bounds.x, bounds.y, bounds.width,
+                                   bounds.height, mMappedStride, mMappedData);
   return true;
 }
 
-void RenderCompositorSWGL::CommitMappedBuffer() {
+void RenderCompositorSWGL::StartCompositing(
+    const wr::DeviceIntRect* aDirtyRects, size_t aNumDirtyRects) {
+  if (mDT) {
+    
+    CommitMappedBuffer(false);
+    
+    mRegion = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetBufferSize());
+  }
+  if (aNumDirtyRects) {
+    
+    auto bounds = mRegion.GetBounds();
+    mRegion.SetEmpty();
+    for (size_t i = 0; i < aNumDirtyRects; i++) {
+      const auto& rect = aDirtyRects[i];
+      mRegion.OrWith(LayoutDeviceIntRect(rect.origin.x, rect.origin.y,
+                                         rect.size.width, rect.size.height));
+    }
+    
+    mRegion.AndWith(bounds);
+  }
+  
+  
+  
+  if (!AllocateMappedBuffer()) {
+    gfxCriticalNote
+        << "RenderCompositorSWGL failed mapping default framebuffer";
+    
+    
+    wr_swgl_init_default_framebuffer(mContext, 0, 0, 2, 2, 0, nullptr);
+  }
+}
+
+void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
   if (!mDT) {
     return;
   }
@@ -109,13 +153,15 @@ void RenderCompositorSWGL::CommitMappedBuffer() {
     
     
     mSurface->Unmap();
-    for (auto iter = mRegion.RectIter(); !iter.Done(); iter.Next()) {
-      const LayoutDeviceIntRect& dirtyRect = iter.Get();
-      gfx::Rect bounds(dirtyRect.x, dirtyRect.y, dirtyRect.width,
-                       dirtyRect.height);
-      mDT->DrawSurface(mSurface, bounds, bounds,
-                       gfx::DrawSurfaceOptions(gfx::SamplingFilter::POINT),
-                       gfx::DrawOptions(1.0f, gfx::CompositionOp::OP_SOURCE));
+    if (aDirty) {
+      for (auto iter = mRegion.RectIter(); !iter.Done(); iter.Next()) {
+        const LayoutDeviceIntRect& dirtyRect = iter.Get();
+        gfx::Rect bounds(dirtyRect.x, dirtyRect.y, dirtyRect.width,
+                         dirtyRect.height);
+        mDT->DrawSurface(mSurface, bounds, bounds,
+                         gfx::DrawSurfaceOptions(gfx::SamplingFilter::POINT),
+                         gfx::DrawOptions(1.0f, gfx::CompositionOp::OP_SOURCE));
+      }
     }
   } else {
     
@@ -126,18 +172,13 @@ void RenderCompositorSWGL::CommitMappedBuffer() {
   ClearMappedBuffer();
 }
 
-void RenderCompositorSWGL::CancelFrame() { CommitMappedBuffer(); }
+void RenderCompositorSWGL::CancelFrame() { CommitMappedBuffer(false); }
 
 RenderedFrameId RenderCompositorSWGL::EndFrame(
     const nsTArray<DeviceIntRect>& aDirtyRects) {
-  if (!aDirtyRects.IsEmpty()) {
-    mRegion.SetEmpty();
-    for (auto& rect : aDirtyRects) {
-      mRegion.OrWith(LayoutDeviceIntRect(rect.origin.x, rect.origin.y,
-                                         rect.size.width, rect.size.height));
-    }
-  }
-
+  
+  
+  
   RenderedFrameId frameId = GetNextRenderFrameId();
   CommitMappedBuffer();
   return frameId;
