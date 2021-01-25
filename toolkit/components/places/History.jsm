@@ -876,6 +876,7 @@ var invalidateFrecencies = async function(db, idList) {
 
   const observers = PlacesUtils.history.getObservers();
   notify(observers, "onManyFrecenciesChanged");
+  PlacesObservers.notifyListeners([new PlacesRanking()]);
 
   
   await db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
@@ -923,7 +924,10 @@ var clear = async function(db) {
   
   notify(observers, "onManyFrecenciesChanged");
 
-  PlacesObservers.notifyListeners([new PlacesHistoryCleared()]);
+  PlacesObservers.notifyListeners([
+    new PlacesHistoryCleared(),
+    new PlacesRanking(),
+  ]);
 
   
   await db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
