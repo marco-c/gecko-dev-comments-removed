@@ -41,13 +41,6 @@ extern bool CopyDataPropertiesNative(JSContext* cx,
                                      bool* optimized);
 
 
-
-extern PlainObject* CreateThisForFunctionWithProto(
-    JSContext* cx, JS::Handle<JSFunction*> callee,
-    JS::Handle<JSObject*> newTarget, JS::Handle<JSObject*> proto,
-    NewObjectKind newKind = GenericObject);
-
-
 extern PlainObject* CreateThisForFunction(JSContext* cx,
                                           JS::Handle<JSFunction*> callee,
                                           JS::Handle<JSObject*> newTarget,
