@@ -618,8 +618,10 @@ void PDMFactory::SetCDMProxy(CDMProxy* aProxy) {
 }
 
 
-PDMFactory::MediaCodecsSupported PDMFactory::Supported() {
-  static MediaCodecsSupported supported = []() {
+PDMFactory::MediaCodecsSupported PDMFactory::Supported(bool aForceRefresh) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  static auto calculate = []() {
     auto pdm = MakeRefPtr<PDMFactory>();
     MediaCodecsSupported supported;
     
@@ -665,7 +667,11 @@ PDMFactory::MediaCodecsSupported PDMFactory::Supported() {
       supported += MediaCodecs::Wave;
     }
     return supported;
-  }();
+  };
+  static MediaCodecsSupported supported = calculate();
+  if (aForceRefresh) {
+    supported = calculate();
+  }
   return supported;
 }
 
