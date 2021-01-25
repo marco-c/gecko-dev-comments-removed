@@ -216,6 +216,12 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 - (NSNumber*)moxElementBusy;
 
 
+- (NSArray*)moxLinkedUIElements;
+
+
+- (NSArray*)moxARIAControls;
+
+
 - (id)moxEditableAncestor;
 
 
