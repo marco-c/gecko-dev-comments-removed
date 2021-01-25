@@ -931,8 +931,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   int32_t mWordCacheMaxEntries;
 
-  uint64_t mTotalPhysicalMemory;
-  uint64_t mTotalVirtualMemory;
+  uint64_t mTotalSystemMemory;
 
   
   RefPtr<mozilla::gfx::VsyncSource> mVsyncSource;
