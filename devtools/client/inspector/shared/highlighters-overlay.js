@@ -1591,17 +1591,6 @@ class HighlightersOverlay {
 
 
 
-  _isRuleViewDisplayGrid(node) {
-    return this.isRuleView(node) && node.classList.contains("ruleview-grid");
-  }
-
-  
-
-
-
-
-
-
   _isRuleViewShapeSwatch(node) {
     return (
       this.isRuleView(node) && node.classList.contains("ruleview-shapeswatch")
@@ -1655,11 +1644,6 @@ class HighlightersOverlay {
   }
 
   onClick(event) {
-    if (this._isRuleViewDisplayGrid(event.target)) {
-      event.stopPropagation();
-      this.toggleGridHighlighter(this.inspector.selection.nodeFront, "rule");
-    }
-
     if (this._isRuleViewShapeSwatch(event.target)) {
       event.stopPropagation();
 

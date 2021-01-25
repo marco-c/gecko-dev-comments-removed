@@ -402,14 +402,14 @@ CssRuleView.prototype = {
 
 
 
+
+
   handleClickEvent(event) {
     const target = event.target;
 
     
     if (target.classList.contains("js-toggle-selector-highlighter")) {
       this.toggleSelectorHighlighter(target.dataset.selector);
-      
-      
       event.stopPropagation();
     }
 
@@ -419,8 +419,15 @@ CssRuleView.prototype = {
         this.inspector.selection.nodeFront,
         "rule"
       );
-      
-      
+      event.stopPropagation();
+    }
+
+    
+    if (target.classList.contains("js-toggle-grid-highlighter")) {
+      this.inspector.highlighters.toggleGridHighlighter(
+        this.inspector.selection.nodeFront,
+        "rule"
+      );
       event.stopPropagation();
     }
   },
