@@ -1005,8 +1005,7 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
         
         
         fallbackStub->setTrialInliningState(TrialInliningState::Failure);
-        fallbackStub->unlinkStubDontInvalidateWarp(cx_->zone(),
-                                                   nullptr, stub);
+        fallbackStub->unlinkStub(cx_->zone(), nullptr, stub);
         targetScript->setUninlineable();
         info_->inlineScriptTree()->removeCallee(inlineScriptTree);
         icScript_->removeInlinedChild(loc.bytecodeToOffset(script_));
