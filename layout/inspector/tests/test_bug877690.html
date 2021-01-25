@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=877690
+-->
 <head>
 <meta charset="utf-8">
 <title>Test for Bug 877690</title>
@@ -64,6 +64,10 @@ function do_test() {
       "repeat-x", "repeat-y", "space", "round", "fixed", "scroll", "local", "center", "top", "bottom", "left", "right",
       "border-box", "padding-box", "content-box", "text", "contain",
       "cover", "none", "-moz-element", "-moz-image-rect", "url", ...allGradients ];
+
+  if(SpecialPowers.getBoolPref("layout.css.image-set.enabled")) {
+    expected.push("image-set");
+  }
 
   if(SpecialPowers.getBoolPref("layout.css.cross-fade.enabled")) {
     expected.push("cross-fade");
@@ -145,6 +149,10 @@ function do_test() {
   var expected = [ "auto", "inherit", "revert", "initial", "unset", "repeat", "stretch",
                    "-moz-element", "-moz-image-rect", "url", ...allGradients,
                    "fill", "none", "round", "space" ];
+
+  if(SpecialPowers.getBoolPref("layout.css.image-set.enabled")) {
+    expected.push("image-set");
+  }
 
   if(SpecialPowers.getBoolPref("layout.css.cross-fade.enabled")) {
     expected.push("cross-fade");
