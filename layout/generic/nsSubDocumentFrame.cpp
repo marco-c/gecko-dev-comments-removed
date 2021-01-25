@@ -1427,8 +1427,21 @@ bool nsDisplayRemote::UpdateScrollData(
 
   if (aLayerData) {
     aLayerData->SetReferentId(mLayersId);
-    aLayerData->SetTransform(
-        mozilla::gfx::Matrix4x4::Translation(mOffset.x, mOffset.y, 0.0));
+    Matrix4x4 m = Matrix4x4::Translation(mOffset.x, mOffset.y, 0.0);
+
+    
+    
+    
+    
+    nsPresContext* inProcessRootContext =
+        mFrame->PresContext()->GetInProcessRootContentDocumentPresContext();
+    if (inProcessRootContext &&
+        inProcessRootContext->IsRootContentDocumentCrossProcess()) {
+      float resolution = inProcessRootContext->PresShell()->GetResolution();
+      m.PostScale(resolution, resolution, 1.0);
+    }
+
+    aLayerData->SetTransform(m);
     aLayerData->SetEventRegionsOverride(mEventRegionsOverride);
     aLayerData->SetRemoteDocumentSize(GetFrameSize(mFrame));
   }
