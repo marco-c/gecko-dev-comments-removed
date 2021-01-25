@@ -6493,10 +6493,6 @@ class MPhi final : public MDefinition,
 
  protected:
   MUse* getUseFor(size_t index) override {
-    
-    
-    
-    
     MOZ_ASSERT(index < numOperands());
     return &inputs_[index];
   }
@@ -11491,7 +11487,6 @@ class MResumePoint final : public MNode
   friend class MBasicBlock;
   friend void AssertBasicGraphCoherency(MIRGraph& graph, bool force);
 
-  
   
   FixedList<MUse> operands_;
 

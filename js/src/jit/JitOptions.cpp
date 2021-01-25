@@ -76,9 +76,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(checkRangeAnalysis, false);
 
   
-  SET_DEFAULT(disableInlineBacktracking, false);
-
-  
   SET_DEFAULT(disableAma, false);
 
   

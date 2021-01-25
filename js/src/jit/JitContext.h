@@ -87,7 +87,6 @@ class JitContext {
 #ifdef DEBUG
   
   
-  
   bool inIonBackend_ = false;
 
   bool isCompilingWasm_ = false;

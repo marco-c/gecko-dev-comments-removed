@@ -1760,10 +1760,8 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayLength(HandleObject obj,
   maybeEmitIdGuard(id);
   
   
-  
-  
   EmitCallGetterResultGuards(writer, obj, holder, shape, objId, mode_);
-  writer.loadTypedArrayLengthResult(objId, &fun);
+  writer.loadTypedArrayLengthResult(objId);
   writer.returnFromIC();
 
   trackAttached("TypedArrayLength");
@@ -7665,9 +7663,7 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayLength(
     writer.guardIsNotProxy(objArgId);
   }
 
-  
-  
-  writer.loadTypedArrayLengthResult(objArgId, callee);
+  writer.loadTypedArrayLengthResult(objArgId);
   writer.returnFromIC();
 
   trackAttached("TypedArrayLength");

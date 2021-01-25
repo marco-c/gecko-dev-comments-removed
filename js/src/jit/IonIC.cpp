@@ -355,19 +355,10 @@ bool IonGetNameIC::update(JSContext* cx, HandleScript outerScript,
   }
 
   if (JSOp(*GetNextPc(pc)) == JSOp::Typeof) {
-    if (!FetchName<GetNameMode::TypeOf>(cx, obj, holder, name, prop, res)) {
-      return false;
-    }
-  } else {
-    if (!FetchName<GetNameMode::Normal>(cx, obj, holder, name, prop, res)) {
-      return false;
-    }
+    return FetchName<GetNameMode::TypeOf>(cx, obj, holder, name, prop, res);
   }
 
-  
-  
-
-  return true;
+  return FetchName<GetNameMode::Normal>(cx, obj, holder, name, prop, res);
 }
 
 
