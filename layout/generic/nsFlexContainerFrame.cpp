@@ -5433,8 +5433,32 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     const LogicalSize& aAvailableSize, const nsSize& aContainerSize,
     bool aHasLineClampEllipsis) {
   WritingMode outerWM = aReflowInput.GetWritingMode();
+
+  StyleSizeOverrides sizeOverrides;
+  
+  if (aItem.IsInlineAxisMainAxis()) {
+    sizeOverrides.mStyleISize.emplace(aItem.StyleMainSize());
+  } else {
+    sizeOverrides.mStyleBSize.emplace(aItem.StyleMainSize());
+  }
+  
+  
+  if (aItem.IsStretched()) {
+    if (aItem.IsInlineAxisCrossAxis()) {
+      sizeOverrides.mStyleISize.emplace(aItem.StyleCrossSize());
+    } else {
+      sizeOverrides.mStyleBSize.emplace(aItem.StyleCrossSize());
+    }
+  }
+  if (sizeOverrides.mStyleBSize && aItem.HadMeasuringReflow()) {
+    
+    
+    
+    aItem.Frame()->SetHasBSizeChange(true);
+  }
+
   ReflowInput childReflowInput(PresContext(), aReflowInput, aItem.Frame(),
-                               aAvailableSize);
+                               aAvailableSize, Nothing(), {}, sizeOverrides);
   childReflowInput.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
   
   
@@ -5443,47 +5467,10 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
   childReflowInput.mFlags.mApplyLineClamp =
       !childReflowInput.mFlags.mInsideLineClamp && aHasLineClampEllipsis;
 
-  
-  
-  bool didOverrideComputedISize = false;
-  bool didOverrideComputedBSize = false;
-
-  
-  if (aItem.IsInlineAxisMainAxis()) {
-    childReflowInput.SetComputedISize(aItem.MainSize());
-    didOverrideComputedISize = true;
-  } else {
-    childReflowInput.SetComputedBSize(aItem.MainSize());
-    childReflowInput.mFlags.mBSizeIsSetByAspectRatio = false;
-    didOverrideComputedBSize = true;
-    if (aItem.TreatBSizeAsIndefinite()) {
-      childReflowInput.mFlags.mTreatBSizeAsIndefinite = true;
-    }
+  if (aItem.TreatBSizeAsIndefinite() && aItem.IsBlockAxisMainAxis()) {
+    childReflowInput.mFlags.mTreatBSizeAsIndefinite = true;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aItem.IsStretched() || aItem.HasAspectRatio()) {
-    if (aItem.IsInlineAxisCrossAxis()) {
-      childReflowInput.SetComputedISize(aItem.CrossSize());
-      didOverrideComputedISize = true;
-    } else {
-      
-      
-      
-      
-      childReflowInput.SetComputedBSize(aItem.CrossSize());
-      childReflowInput.mFlags.mBSizeIsSetByAspectRatio = false;
-      didOverrideComputedBSize = true;
-    }
-  }
   if (aItem.IsStretched() && aItem.IsBlockAxisCrossAxis()) {
     
     
@@ -5497,22 +5484,6 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     aItem.Frame()->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
 
-  
-  
-  
-  if (aItem.HadMeasuringReflow()) {
-    if (didOverrideComputedISize) {
-      
-      
-      
-      
-      childReflowInput.SetIResize(true);
-    }
-    if (didOverrideComputedBSize) {
-      childReflowInput.SetBResize(true);
-      childReflowInput.mFlags.mIsBResizeForPercentages = true;
-    }
-  }
   
   
   
