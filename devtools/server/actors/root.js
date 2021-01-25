@@ -128,18 +128,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       networkMonitor: true,
       
       
-      
-      
-      
-      
-      
-      
-      
-      get allowChromeProcess() {
-        return DevToolsServer.allowChromeProcess;
-      },
-      
-      
       workerConsoleApiMessagesDispatchedToMainThread: Services.prefs
         ? Services.prefs.getBoolPref(
             "dom.worker.console.dispatch_events_to_main_thread"
