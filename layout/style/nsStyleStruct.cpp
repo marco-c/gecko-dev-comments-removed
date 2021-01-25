@@ -1530,6 +1530,10 @@ bool StyleImage::StartDecoding() const {
 
 template <>
 bool StyleImage::IsOpaque() const {
+  if (IsImageSet()) {
+    return FinalImage().IsOpaque();
+  }
+
   if (!IsComplete()) {
     return false;
   }
@@ -1586,11 +1590,10 @@ bool StyleImage::IsComplete() const {
              (status & imgIRequest::STATUS_SIZE_AVAILABLE) &&
              (status & imgIRequest::STATUS_FRAME_COMPLETE);
     }
+    case Tag::ImageSet:
+      return FinalImage().IsComplete();
     
     case Tag::CrossFade:
-      return true;
-    case Tag::ImageSet:
-      
       return true;
   }
   MOZ_ASSERT_UNREACHABLE("unexpected image type");
@@ -1617,8 +1620,7 @@ bool StyleImage::IsSizeAvailable() const {
              (status & imgIRequest::STATUS_SIZE_AVAILABLE);
     }
     case Tag::ImageSet:
-      
-      return true;
+      return FinalImage().IsSizeAvailable();
     case Tag::CrossFade:
       
       return true;
@@ -1710,7 +1712,7 @@ nsStyleImageLayers::nsStyleImageLayers(const nsStyleImageLayers& aSource)
 
 static bool AnyLayerIsElementImage(const nsStyleImageLayers& aLayers) {
   NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, aLayers) {
-    if (aLayers.mLayers[i].mImage.IsElement()) {
+    if (aLayers.mLayers[i].mImage.FinalImage().IsElement()) {
       return true;
     }
   }
@@ -1743,8 +1745,9 @@ nsChangeHint nsStyleImageLayers::CalcDifference(
       const Layer& lessLayersLayer = lessLayers.mLayers[i];
       nsChangeHint layerDifference =
           moreLayersLayer.CalcDifference(lessLayersLayer);
-      if (layerDifference && (moreLayersLayer.mImage.IsElement() ||
-                              lessLayersLayer.mImage.IsElement())) {
+      if (layerDifference &&
+          (moreLayersLayer.mImage.FinalImage().IsElement() ||
+           lessLayersLayer.mImage.FinalImage().IsElement())) {
         layerDifference |=
             nsChangeHint_UpdateEffects | nsChangeHint_RepaintFrame;
       }
@@ -1848,6 +1851,7 @@ bool nsStyleImageLayers::operator==(const nsStyleImageLayers& aOther) const {
 static bool SizeDependsOnPositioningAreaSize(const StyleBackgroundSize& aSize,
                                              const StyleImage& aImage) {
   MOZ_ASSERT(!aImage.IsNone(), "caller should have handled this");
+  MOZ_ASSERT(!aImage.IsImageSet(), "caller should have handled this");
 
   
   if (aSize.IsCover() || aSize.IsContain()) {
@@ -1951,7 +1955,7 @@ bool nsStyleImageLayers::Layer::
   }
 
   return mPosition.DependsOnPositioningAreaSize() ||
-         SizeDependsOnPositioningAreaSize(mSize, mImage) ||
+         SizeDependsOnPositioningAreaSize(mSize, mImage.FinalImage()) ||
          mRepeat.DependsOnPositioningAreaSize();
 }
 

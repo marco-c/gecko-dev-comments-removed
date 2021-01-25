@@ -50,8 +50,8 @@ nsSize CSSSizeOrRatio::ComputeConcreteSize() const {
 nsImageRenderer::nsImageRenderer(nsIFrame* aForFrame, const StyleImage* aImage,
                                  uint32_t aFlags)
     : mForFrame(aForFrame),
-      mImage(aImage),
-      mType(aImage->tag),
+      mImage(&aImage->FinalImage()),
+      mType(mImage->tag),
       mImageContainer(nullptr),
       mGradientData(nullptr),
       mPaintServerFrame(nullptr),
@@ -265,7 +265,8 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
       }
       break;
     }
-    case StyleImage::Tag::ImageSet:  
+    case StyleImage::Tag::ImageSet:
+      MOZ_FALLTHROUGH_ASSERT("image-set should be resolved already");
     
     case StyleImage::Tag::CrossFade:
     
@@ -520,10 +521,11 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
           aOpacity);
       break;
     }
+    case StyleImage::Tag::ImageSet:
+      MOZ_FALLTHROUGH_ASSERT("image-set should be resolved already");
     
     
     case StyleImage::Tag::CrossFade:
-    case StyleImage::Tag::ImageSet:  
     case StyleImage::Tag::None:
       break;
   }
