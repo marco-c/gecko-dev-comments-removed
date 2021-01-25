@@ -414,9 +414,6 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
 
   nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
   if (!csp) {
-    if (!StaticPrefs::extensions_content_script_csp_enabled()) {
-      return true;
-    }
     
     
     auto* basePrin = BasePrincipal::Cast(subjectPrincipal);
