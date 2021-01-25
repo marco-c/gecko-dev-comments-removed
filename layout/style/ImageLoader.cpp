@@ -113,8 +113,10 @@ static size_t GetMaybeSortedIndex(const nsTArray<Elem>& aArray,
 }
 
 void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
-                                          nsIFrame* aFrame, FrameFlags aFlags) {
+                                          nsIFrame* aFrame, Flags aFlags) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!(aFlags & Flags::IsBlockingLoadEvent),
+             "Shouldn't be used in the public API");
 
   {
     nsCOMPtr<imgINotificationObserver> observer;
@@ -169,11 +171,12 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
   }
 
   
-  if (aFlags & REQUEST_REQUIRES_REFLOW) {
-    fwfToModify->mFlags |= REQUEST_REQUIRES_REFLOW;
+  if (aFlags & Flags::RequiresReflowOnFirstFrameCompleteAndLoadEventBlocking) {
+    fwfToModify->mFlags |=
+        Flags::RequiresReflowOnFirstFrameCompleteAndLoadEventBlocking;
 
     
-    if ((fwfToModify->mFlags & REQUEST_HAS_BLOCKED_ONLOAD) == 0) {
+    if (!(fwfToModify->mFlags & Flags::IsBlockingLoadEvent)) {
       
       
       uint32_t status = 0;
@@ -185,7 +188,7 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
           !(status & imgIRequest::STATUS_ERROR)) {
         
         
-        fwfToModify->mFlags |= REQUEST_HAS_BLOCKED_ONLOAD;
+        fwfToModify->mFlags |= Flags::IsBlockingLoadEvent;
 
         
         
@@ -261,7 +264,7 @@ void ImageLoader::RemoveRequestToFrameMapping(imgIRequest* aRequest,
                                      FrameOnlyComparator());
     if (found) {
       FrameWithFlags& fwf = frameSet->ElementAt(i - 1);
-      if (fwf.mFlags & REQUEST_HAS_BLOCKED_ONLOAD) {
+      if (fwf.mFlags & Flags::IsBlockingLoadEvent) {
         mDocument->UnblockOnload(false);
         
         
@@ -572,9 +575,9 @@ void ImageLoader::UnblockOnloadIfNeeded(nsIFrame* aFrame,
       frameSet->BinaryIndexOf(FrameWithFlags(aFrame), FrameOnlyComparator());
   if (i != FrameSet::NoIndex) {
     FrameWithFlags& fwf = frameSet->ElementAt(i);
-    if (fwf.mFlags & REQUEST_HAS_BLOCKED_ONLOAD) {
+    if (fwf.mFlags & Flags::IsBlockingLoadEvent) {
       mDocument->UnblockOnload(false);
-      fwf.mFlags &= ~REQUEST_HAS_BLOCKED_ONLOAD;
+      fwf.mFlags &= ~Flags::IsBlockingLoadEvent;
     }
   }
 }
@@ -584,7 +587,8 @@ void ImageLoader::RequestReflowIfNeeded(FrameSet* aFrameSet,
   MOZ_ASSERT(aFrameSet);
 
   for (FrameWithFlags& fwf : *aFrameSet) {
-    if (fwf.mFlags & REQUEST_REQUIRES_REFLOW) {
+    if (fwf.mFlags &
+        Flags::RequiresReflowOnFirstFrameCompleteAndLoadEventBlocking) {
       
       
       RequestReflowOnFrame(&fwf, aRequest);
@@ -806,10 +810,10 @@ void ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
   if (NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
       status & imgIRequest::STATUS_ERROR) {
     for (FrameWithFlags& fwf : *frameSet) {
-      if (fwf.mFlags & REQUEST_HAS_BLOCKED_ONLOAD) {
+      if (fwf.mFlags & Flags::IsBlockingLoadEvent) {
         
         mDocument->UnblockOnload(false);
-        fwf.mFlags &= ~REQUEST_HAS_BLOCKED_ONLOAD;
+        fwf.mFlags &= ~Flags::IsBlockingLoadEvent;
       }
     }
   }
