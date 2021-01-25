@@ -132,7 +132,7 @@ static bool gAppShellMethodsSwizzled = false;
 
   mozilla::BackgroundHangMonitor().NotifyActivity();
 
-  if ([anEvent type] == NSApplicationDefined && [anEvent subtype] == kEventSubtypeTrace) {
+  if ([anEvent type] == NSEventTypeApplicationDefined && [anEvent subtype] == kEventSubtypeTrace) {
     mozilla::SignalTracerThread();
     return;
   }
@@ -393,7 +393,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
     
     
     
-    [NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined
+    [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
                                         location:NSMakePoint(0, 0)
                                    modifierFlags:0
                                        timestamp:0
@@ -414,7 +414,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
   }
 
   
-  [NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined
+  [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
                                       location:NSMakePoint(0, 0)
                                  modifierFlags:0
                                      timestamp:0
@@ -577,7 +577,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
     if (aMayWait) {
       currentMode = [currentRunLoop currentMode];
       if (!currentMode) currentMode = NSDefaultRunLoopMode;
-      NSEvent* nextEvent = [NSApp nextEventMatchingMask:NSAnyEventMask
+      NSEvent* nextEvent = [NSApp nextEventMatchingMask:NSEventMaskAny
                                               untilDate:waitUntil
                                                  inMode:currentMode
                                                 dequeue:YES];
@@ -598,8 +598,9 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       EventAttributes attrs = GetEventAttributes(currentEvent);
       UInt32 eventKind = GetEventKind(currentEvent);
       UInt32 eventClass = GetEventClass(currentEvent);
-      bool osCocoaEvent = ((eventClass == 'appl') || (eventClass == kEventClassAppleEvent) ||
-                           ((eventClass == 'cgs ') && (eventKind != NSApplicationDefined)));
+      bool osCocoaEvent =
+          ((eventClass == 'appl') || (eventClass == kEventClassAppleEvent) ||
+           ((eventClass == 'cgs ') && (eventKind != NSEventTypeApplicationDefined)));
       
       
       
@@ -848,7 +849,7 @@ nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProc
   NSEvent* currentEvent = [NSApp currentEvent];
   if (currentEvent) {
     TextInputHandler::sLastModifierState =
-        [currentEvent modifierFlags] & NSDeviceIndependentModifierFlagsMask;
+        [currentEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
   }
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();

@@ -1246,11 +1246,11 @@ class TextInputHandler : public IMEInputHandler {
     ModifierKey(NSUInteger aFlags, unsigned short aKeyCode) : flags(aFlags), keyCode(aKeyCode) {}
 
     NSUInteger GetDeviceDependentFlags() const {
-      return (flags & ~NSDeviceIndependentModifierFlagsMask);
+      return (flags & ~NSEventModifierFlagDeviceIndependentFlagsMask);
     }
 
     NSUInteger GetDeviceIndependentFlags() const {
-      return (flags & NSDeviceIndependentModifierFlagsMask);
+      return (flags & NSEventModifierFlagDeviceIndependentFlagsMask);
     }
   };
   typedef nsTArray<ModifierKey> ModifierKeyArray;

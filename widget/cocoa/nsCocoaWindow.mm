@@ -356,12 +356,12 @@ static unsigned int WindowMaskForBorderStyle(nsBorderStyle aBorderStyle) {
 
 
 
-  if (!allOrDefault && !(aBorderStyle & eBorderStyle_title)) return NSBorderlessWindowMask;
+  if (!allOrDefault && !(aBorderStyle & eBorderStyle_title)) return NSWindowStyleMaskBorderless;
 
-  unsigned int mask = NSTitledWindowMask;
-  if (allOrDefault || aBorderStyle & eBorderStyle_close) mask |= NSClosableWindowMask;
-  if (allOrDefault || aBorderStyle & eBorderStyle_minimize) mask |= NSMiniaturizableWindowMask;
-  if (allOrDefault || aBorderStyle & eBorderStyle_resizeh) mask |= NSResizableWindowMask;
+  unsigned int mask = NSWindowStyleMaskTitled;
+  if (allOrDefault || aBorderStyle & eBorderStyle_close) mask |= NSWindowStyleMaskClosable;
+  if (allOrDefault || aBorderStyle & eBorderStyle_minimize) mask |= NSWindowStyleMaskMiniaturizable;
+  if (allOrDefault || aBorderStyle & eBorderStyle_resizeh) mask |= NSWindowStyleMaskResizable;
 
   return mask;
 }
@@ -375,7 +375,7 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
   
-  unsigned int features = NSBorderlessWindowMask;
+  unsigned int features = NSWindowStyleMaskBorderless;
 
   
   switch (mWindowType) {
@@ -385,9 +385,9 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
       break;
     case eWindowType_popup:
       if (aBorderStyle != eBorderStyle_default && mBorderStyle & eBorderStyle_title) {
-        features |= NSTitledWindowMask;
+        features |= NSWindowStyleMaskTitled;
         if (aBorderStyle & eBorderStyle_close) {
-          features |= NSClosableWindowMask;
+          features |= NSWindowStyleMaskClosable;
         }
       }
       break;
@@ -397,11 +397,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
       break;
     case eWindowType_sheet:
       if (mParent->WindowType() != eWindowType_invisible && aBorderStyle & eBorderStyle_resizeh) {
-        features = NSResizableWindowMask;
+        features = NSWindowStyleMaskResizable;
       } else {
-        features = NSMiniaturizableWindowMask;
+        features = NSWindowStyleMaskMiniaturizable;
       }
-      features |= NSTitledWindowMask;
+      features |= NSWindowStyleMaskTitled;
       break;
     default:
       NS_ERROR("Unhandled window type!");
@@ -450,14 +450,14 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
   
   
   if ((mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog) &&
-      (features & NSTitledWindowMask))
+      (features & NSWindowStyleMaskTitled))
     windowClass = [ToolbarWindow class];
   
   else if (mWindowType == eWindowType_popup)
     windowClass = [PopupWindow class];
   
   
-  else if (features == NSBorderlessWindowMask)
+  else if (features == NSWindowStyleMaskBorderless)
     windowClass = [BorderlessWindow class];
 
   
@@ -1533,7 +1533,7 @@ static bool AlwaysUsesNativeFullScreen() {
   NSScreen* cocoaScreen = ScreenHelperCocoa::CocoaScreenForScreen(widgetScreen);
 
   NSWindow* win = [[NSWindow alloc] initWithContentRect:[cocoaScreen frame]
-                                              styleMask:NSBorderlessWindowMask
+                                              styleMask:NSWindowStyleMaskBorderless
                                                 backing:NSBackingStoreBuffered
                                                   defer:YES];
   [win setBackgroundColor:[NSColor blackColor]];
@@ -2013,7 +2013,7 @@ nsresult nsCocoaWindow::DispatchEvent(WidgetGUIEvent* event, nsEventStatus& aSta
 static nsSizeMode GetWindowSizeMode(NSWindow* aWindow, bool aFullScreen) {
   if (aFullScreen) return nsSizeMode_Fullscreen;
   if ([aWindow isMiniaturized]) return nsSizeMode_Minimized;
-  if (([aWindow styleMask] & NSResizableWindowMask) && [aWindow isZoomed])
+  if (([aWindow styleMask] & NSWindowStyleMaskResizable) && [aWindow isZoomed])
     return nsSizeMode_Maximized;
   return nsSizeMode_Normal;
 }
@@ -2244,7 +2244,7 @@ LayoutDeviceIntSize nsCocoaWindow::ClientToWindowSize(const LayoutDeviceIntSize&
   
   
   NSUInteger styleMask = [mWindow styleMask];
-  styleMask &= ~NSFullSizeContentViewWindowMask;
+  styleMask &= ~NSWindowStyleMaskFullSizeContentView;
   NSRect inflatedRect = [NSWindow frameRectForContentRect:rect styleMask:styleMask];
   r = nsCocoaUtils::CocoaRectToGeckoRectDevPix(inflatedRect, backingScale);
   return r.Size();
@@ -3282,7 +3282,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     return aFrameRect;
   }
   NSUInteger styleMask = [self styleMask];
-  styleMask &= ~NSFullSizeContentViewWindowMask;
+  styleMask &= ~NSWindowStyleMaskFullSizeContentView;
   return [NSWindow contentRectForFrameRect:aFrameRect styleMask:styleMask];
 }
 
@@ -3291,7 +3291,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     return aChildViewRect;
   }
   NSUInteger styleMask = [self styleMask];
-  styleMask &= ~NSFullSizeContentViewWindowMask;
+  styleMask &= ~NSWindowStyleMaskFullSizeContentView;
   return [NSWindow frameRectForContentRect:aChildViewRect styleMask:styleMask];
 }
 
@@ -3562,7 +3562,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   
   
   
-  aStyle |= NSFullSizeContentViewWindowMask;
+  aStyle |= NSWindowStyleMaskFullSizeContentView;
 
   
   
@@ -3642,7 +3642,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 - (void)setContentView:(NSView*)aView {
   [super setContentView:aView];
 
-  if (!([self styleMask] & NSFullSizeContentViewWindowMask)) {
+  if (!([self styleMask] & NSWindowStyleMaskFullSizeContentView)) {
     
     
     
@@ -3685,7 +3685,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   
   NSRect frameRect = [self frame];
   NSUInteger styleMask = [self styleMask];
-  styleMask &= ~NSFullSizeContentViewWindowMask;
+  styleMask &= ~NSWindowStyleMaskFullSizeContentView;
   NSRect originalContentRect = [NSWindow contentRectForFrameRect:frameRect styleMask:styleMask];
   return NSMaxY(frameRect) - NSMaxY(originalContentRect);
 }
@@ -3751,8 +3751,8 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 - (NSPoint)windowButtonsPositionWithDefaultPosition:(NSPoint)aDefaultPosition {
   NSInteger styleMask = [self styleMask];
-  if ([self drawsContentsIntoWindowFrame] && !(styleMask & NSFullScreenWindowMask) &&
-      (styleMask & NSTitledWindowMask)) {
+  if ([self drawsContentsIntoWindowFrame] && !(styleMask & NSWindowStyleMaskFullScreen) &&
+      (styleMask & NSWindowStyleMaskTitled)) {
     if (NSIsEmptyRect(mWindowButtonsRect)) {
       
       
@@ -3823,17 +3823,17 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   NSEventType type = [anEvent type];
 
   switch (type) {
-    case NSScrollWheel:
-    case NSLeftMouseDown:
-    case NSLeftMouseUp:
-    case NSRightMouseDown:
-    case NSRightMouseUp:
-    case NSOtherMouseDown:
-    case NSOtherMouseUp:
-    case NSMouseMoved:
-    case NSLeftMouseDragged:
-    case NSRightMouseDragged:
-    case NSOtherMouseDragged: {
+    case NSEventTypeScrollWheel:
+    case NSEventTypeLeftMouseDown:
+    case NSEventTypeLeftMouseUp:
+    case NSEventTypeRightMouseDown:
+    case NSEventTypeRightMouseUp:
+    case NSEventTypeOtherMouseDown:
+    case NSEventTypeOtherMouseUp:
+    case NSEventTypeMouseMoved:
+    case NSEventTypeLeftMouseDragged:
+    case NSEventTypeRightMouseDragged:
+    case NSEventTypeOtherMouseDragged: {
       
       
       
@@ -3912,17 +3912,17 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   NSEventType type = [anEvent type];
 
   switch (type) {
-    case NSScrollWheel:
-    case NSLeftMouseDown:
-    case NSLeftMouseUp:
-    case NSRightMouseDown:
-    case NSRightMouseUp:
-    case NSOtherMouseDown:
-    case NSOtherMouseUp:
-    case NSMouseMoved:
-    case NSLeftMouseDragged:
-    case NSRightMouseDragged:
-    case NSOtherMouseDragged: {
+    case NSEventTypeScrollWheel:
+    case NSEventTypeLeftMouseDown:
+    case NSEventTypeLeftMouseUp:
+    case NSEventTypeRightMouseDown:
+    case NSEventTypeRightMouseUp:
+    case NSEventTypeOtherMouseDown:
+    case NSEventTypeOtherMouseUp:
+    case NSEventTypeMouseMoved:
+    case NSEventTypeLeftMouseDragged:
+    case NSEventTypeRightMouseDragged:
+    case NSEventTypeOtherMouseDragged: {
       
       
       

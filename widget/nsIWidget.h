@@ -1587,6 +1587,7 @@ class nsIWidget : public nsISupports {
 
 
 
+
   virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
                                               uint32_t aNativeMessage,
                                               uint32_t aModifierFlags,
