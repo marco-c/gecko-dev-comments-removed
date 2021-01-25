@@ -516,6 +516,7 @@ var E10SUtils = {
       case "news":
       case "nntp":
       case "snews":
+        
         return NOT_REMOTE;
 
       default:
