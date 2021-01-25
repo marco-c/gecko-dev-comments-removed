@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/InlinableNatives.h"
 
@@ -37,7 +37,7 @@ INLINABLE_NATIVE_LIST(ADD_NATIVE)
 const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
   switch (native) {
 #ifdef JS_HAS_INTL_API
-    // Intl natives.
+    
     case InlinableNative::IntlGuardToCollator:
       return &CollatorObject::class_;
     case InlinableNative::IntlGuardToDateTimeFormat:
@@ -63,7 +63,7 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
       MOZ_CRASH("Intl API disabled");
 #endif
 
-    // Utility intrinsics.
+    
     case InlinableNative::IntrinsicGuardToArrayIterator:
       return &ArrayIteratorObject::class_;
     case InlinableNative::IntrinsicGuardToMapIterator:
@@ -95,15 +95,15 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
   }
 }
 
-// Returns true if |native| can be inlined cross-realm. Especially inlined
-// natives that can allocate objects or throw exceptions shouldn't be inlined
-// cross-realm without a careful analysis because we might use the wrong realm!
-//
-// Note that self-hosting intrinsics are never called cross-realm. See the
-// MOZ_CRASH below.
-//
-// If you are adding a new inlinable native, the safe thing is to |return false|
-// here.
+
+
+
+
+
+
+
+
+
 bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
   switch (native) {
     case InlinableNative::MathAbs:
@@ -144,11 +144,11 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
       return true;
 
     case InlinableNative::Array:
-      // Cross-realm case handled by inlineArray.
+      
       return true;
 
     case InlinableNative::MathRandom:
-      // RNG state is per-realm.
+      
       return false;
 
     case InlinableNative::IntlGuardToCollator:
@@ -219,7 +219,7 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::TestBailout:
     case InlinableNative::TestAssertFloat32:
     case InlinableNative::TestAssertRecoveredOnBailout:
-      // Testing functions, not worth inlining cross-realm.
+      
       return false;
 
     case InlinableNative::ArrayIsArray:
@@ -238,6 +238,8 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::AtomicsOr:
     case InlinableNative::AtomicsXor:
     case InlinableNative::AtomicsIsLockFree:
+    case InlinableNative::BigIntAsIntN:
+    case InlinableNative::BigIntAsUintN:
     case InlinableNative::DataViewGetInt8:
     case InlinableNative::DataViewGetUint8:
     case InlinableNative::DataViewGetInt16:
@@ -275,7 +277,7 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::ObjectIsPrototypeOf:
     case InlinableNative::ObjectToString:
     case InlinableNative::TypedArrayConstructor:
-      // Default to false for most natives.
+      
       return false;
 
     case InlinableNative::Limit:
