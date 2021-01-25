@@ -46,6 +46,8 @@ class Selection;
 
 
 
+
+
 class AccessibleCaretManager {
  public:
   explicit AccessibleCaretManager(PresShell* aPresShell);
