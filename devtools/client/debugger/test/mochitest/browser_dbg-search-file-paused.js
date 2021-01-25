@@ -34,7 +34,7 @@ add_task(async function() {
 
   info("Switching files via frame click");
   const frames = findAllElements(dbg, "frames");
-  pressMouseDown(dbg, frames[1])
+  await pressMouseDown(dbg, frames[1])
 
   
   
@@ -47,7 +47,7 @@ add_task(async function() {
   el.value = "";
   type(dbg, "func");
   await waitForSearchState(dbg);
-  pressMouseDown(dbg, frames[0]);
+  await pressMouseDown(dbg, frames[0]);
   await waitFor(() => cm.state.search.query === "func");
 
   
@@ -66,6 +66,6 @@ function getFocusedEl(dbg) {
   return doc.activeElement;
 }
 
-function pressMouseDown(dbg, node) {
-  EventUtils.sendMouseEvent({ type: "mousedown" }, node, dbg.win);
+async function pressMouseDown(dbg, node) {
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, node, dbg.win);
 }

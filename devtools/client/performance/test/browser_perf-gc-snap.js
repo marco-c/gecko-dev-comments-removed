@@ -6,23 +6,23 @@
 
 
 
-function* spawnTest() {
-  let { panel } = yield initPerformance(ALLOCS_URL);
+async function spawnTest() {
+  let { panel } = await initPerformance(ALLOCS_URL);
   let { $, $$, EVENTS, PerformanceController, OverviewView, DetailsView, WaterfallView, MemoryCallTreeView } = panel.panelWin;
   let EPSILON = 0.00001;
 
   Services.prefs.setBoolPref(ALLOCATIONS_PREF, true);
 
-  yield startRecording(panel);
-  yield idleWait(1000);
-  yield stopRecording(panel);
+  await startRecording(panel);
+  await idleWait(1000);
+  await stopRecording(panel);
 
   injectGCMarkers(PerformanceController, WaterfallView);
 
   
   let rendered = WaterfallView.once(EVENTS.UI_WATERFALL_RENDERED);
   OverviewView.setTimeInterval({ startTime: 0, endTime: Number.MAX_VALUE });
-  yield rendered;
+  await rendered;
 
   let bars = $$(".waterfall-marker-bar");
   let gcMarkers = PerformanceController.getCurrentRecording().getMarkers();
@@ -36,15 +36,15 @@ function* spawnTest() {
   let targetMarker = gcMarkers[1];
   let targetBar = bars[1];
   info(`Clicking GC Marker of type ${targetMarker.causeName} ${targetMarker.start}:${targetMarker.end}`);
-  EventUtils.sendMouseEvent({ type: "mousedown" }, targetBar);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, targetBar);
   let showAllocsButton;
   
-  yield waitUntil(() => showAllocsButton = $("#waterfall-details .custom-button[type='show-allocations']"));
+  await waitUntil(() => showAllocsButton = $("#waterfall-details .custom-button[type='show-allocations']"));
   ok(showAllocsButton, "GC buttons when allocations are enabled");
 
   rendered = once(MemoryCallTreeView, EVENTS.UI_MEMORY_CALL_TREE_RENDERED);
-  EventUtils.sendMouseEvent({ type: "click" }, showAllocsButton);
-  yield rendered;
+  await EventUtils.sendMouseEvent({ type: "click" }, showAllocsButton);
+  await rendered;
 
   is(OverviewView.getTimeInterval().startTime, 0, "When clicking first GC, should use 0 as start time");
   within(OverviewView.getTimeInterval().endTime, targetMarker.start, EPSILON, "Correct end time range");
@@ -52,8 +52,8 @@ function* spawnTest() {
   let duration = PerformanceController.getCurrentRecording().getDuration();
   rendered = once(WaterfallView, EVENTS.UI_WATERFALL_RENDERED);
   OverviewView.setTimeInterval({ startTime: 0, endTime: duration });
-  yield DetailsView.selectView("waterfall");
-  yield rendered;
+  await DetailsView.selectView("waterfall");
+  await rendered;
 
   
 
@@ -64,14 +64,14 @@ function* spawnTest() {
   targetBar = bars[4];
 
   info(`Clicking GC Marker of type ${targetMarker.causeName} ${targetMarker.start}:${targetMarker.end}`);
-  EventUtils.sendMouseEvent({ type: "mousedown" }, targetBar);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, targetBar);
   
-  yield waitUntil(() => showAllocsButton = $("#waterfall-details .custom-button[type='show-allocations']"));
+  await waitUntil(() => showAllocsButton = $("#waterfall-details .custom-button[type='show-allocations']"));
   ok(showAllocsButton, "GC buttons when allocations are enabled");
 
   rendered = once(MemoryCallTreeView, EVENTS.UI_MEMORY_CALL_TREE_RENDERED);
-  EventUtils.sendMouseEvent({ type: "click" }, showAllocsButton);
-  yield rendered;
+  await EventUtils.sendMouseEvent({ type: "click" }, showAllocsButton);
+  await rendered;
 
   within(OverviewView.getTimeInterval().startTime, gcMarkers[2].end, EPSILON,
     "selection start range is last marker from previous GC cycle.");
@@ -87,32 +87,32 @@ function* spawnTest() {
   duration = PerformanceController.getCurrentRecording().getDuration();
   rendered = once(WaterfallView, EVENTS.UI_WATERFALL_RENDERED);
   OverviewView.setTimeInterval({ startTime: 0, endTime: duration });
-  yield rendered;
+  await rendered;
 
   Services.prefs.setBoolPref(ALLOCATIONS_PREF, false);
-  yield startRecording(panel);
+  await startRecording(panel);
   rendered = once(WaterfallView, EVENTS.UI_WATERFALL_RENDERED);
-  yield stopRecording(panel);
-  yield rendered;
+  await stopRecording(panel);
+  await rendered;
 
   injectGCMarkers(PerformanceController, WaterfallView);
 
   
   rendered = WaterfallView.once(EVENTS.UI_WATERFALL_RENDERED);
   OverviewView.setTimeInterval({ startTime: 0, endTime: Number.MAX_VALUE });
-  yield rendered;
+  await rendered;
 
   ok(true, "WaterfallView rendered after recording is stopped.");
 
   bars = $$(".waterfall-marker-bar");
   gcMarkers = PerformanceController.getCurrentRecording().getMarkers();
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, bars[0]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, bars[0]);
   showAllocsButton = $("#waterfall-details .custom-button[type='show-allocations']");
   ok(!showAllocsButton, "No GC buttons when allocations are disabled");
 
 
-  yield teardown(panel);
+  await teardown(panel);
   finish();
 }
 

@@ -45,14 +45,14 @@ add_task(async function() {
   treeRoot.on("link", handler);
 
   
-  rightMousedown(A.target.querySelector(".call-tree-url"));
+  await rightMousedown(A.target.querySelector(".call-tree-url"));
 
   
   await idleWait(100);
   ok(!linkEvent, "The `link` event not fired for right click.");
 
   
-  mousedown(A.target.querySelector(".call-tree-url"));
+  await mousedown(A.target.querySelector(".call-tree-url"));
 
   
   await waitUntil(() => linkEvent);

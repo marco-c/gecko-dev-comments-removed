@@ -24,7 +24,7 @@ add_task(async function() {
 
   
   const xhrRequestItem = document.querySelectorAll(".request-list-item")[0];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequestItem);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequestItem);
   const waitForHeaders = waitUntil(() =>
     document.querySelector(".headers-overview")
   );
@@ -32,7 +32,7 @@ add_task(async function() {
   const firstRequest = getSelectedRequest(store.getState());
 
   
-  EventUtils.sendMouseEvent({ type: "contextmenu" }, xhrRequestItem);
+  await EventUtils.sendMouseEvent({ type: "contextmenu" }, xhrRequestItem);
   getContextMenuItem(monitor, "request-list-context-resend").click();
 
   
