@@ -362,6 +362,8 @@ static bool IsSystemOrAddonOrAboutPrincipal(nsIPrincipal* aPrincipal) {
 }
 
 bool nsNodeInfoManager::InternalSVGEnabled() {
+  MOZ_ASSERT(!mSVGEnabled, "Caller should use the cached mSVGEnabled!");
+
   
   
   nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();
@@ -396,6 +398,8 @@ bool nsNodeInfoManager::InternalSVGEnabled() {
 }
 
 bool nsNodeInfoManager::InternalMathMLEnabled() {
+  MOZ_ASSERT(!mMathMLEnabled, "Caller should use the cached mMathMLEnabled!");
+
   
   
   nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();

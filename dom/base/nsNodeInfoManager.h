@@ -101,13 +101,16 @@ class nsNodeInfoManager final {
   
 
 
-  bool SVGEnabled() { return mSVGEnabled.valueOr(InternalSVGEnabled()); }
+  bool SVGEnabled() {
+    return mSVGEnabled.valueOrFrom([this] { return InternalSVGEnabled(); });
+  }
 
   
 
 
   bool MathMLEnabled() {
-    return mMathMLEnabled.valueOr(InternalMathMLEnabled());
+    return mMathMLEnabled.valueOrFrom(
+        [this] { return InternalMathMLEnabled(); });
   }
 
   mozilla::dom::DOMArena* GetArenaAllocator() { return mArena; }
