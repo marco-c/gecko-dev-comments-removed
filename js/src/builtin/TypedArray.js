@@ -906,6 +906,8 @@ function TypedArrayReduceRight(callbackfn) {
 }
 
 
+
+
 function TypedArrayReverse() {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -923,8 +925,6 @@ function TypedArrayReverse() {
     
     var middle = std_Math_floor(len / 2);
 
-    
-    
     
     for (var lower = 0; lower !== middle; lower++) {
         
