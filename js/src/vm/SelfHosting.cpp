@@ -2880,12 +2880,6 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
     return true;
   }
 
-  
-
-
-
-  JS::AutoDisableGenerationalGC disable(cx);
-
   Rooted<GlobalObject*> shg(cx, JSRuntime::createSelfHostingGlobal(cx));
   if (!shg) {
     return false;
