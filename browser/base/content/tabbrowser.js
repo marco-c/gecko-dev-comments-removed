@@ -5026,7 +5026,12 @@
       if (includeLabel) {
         label = tab._fullLabel || tab.getAttribute("label");
       }
-      if (Services.prefs.getBoolPref("browser.tabs.tooltipsShowPid", false)) {
+      if (
+        Services.prefs.getBoolPref(
+          "browser.tabs.tooltipsShowPidAndActiveness",
+          false
+        )
+      ) {
         if (tab.linkedBrowser) {
           
           
@@ -5044,6 +5049,9 @@
               }
               label += "]";
             }
+          }
+          if (tab.linkedBrowser.docShellIsActive) {
+            label += " [A]";
           }
         }
       }
