@@ -348,11 +348,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
-  void NotifyManyFrecenciesChanged();
-
-  
-
-
 
 
   bool IsFrecencyDecaying() const;
@@ -384,13 +379,17 @@ class nsNavHistory final : public nsSupportsWeakReference,
       const RefPtr<nsNavHistoryQuery>& aQuery,
       nsNavHistoryQueryOptions* aOptions);
 
-  void DecayFrecencyCompleted(uint16_t reason);
+  void DecayFrecencyCompleted();
+
+  static void InvalidateDaysOfHistory();
 
  private:
   ~nsNavHistory();
 
   
   static nsNavHistory* gHistoryService;
+
+  static mozilla::Atomic<int32_t> sDaysOfHistory;
 
  protected:
   
@@ -498,7 +497,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
   int64_t mTagsFolder;
 
-  int32_t mDaysOfHistory;
   int64_t mLastCachedStartOfDay;
   int64_t mLastCachedEndOfDay;
 

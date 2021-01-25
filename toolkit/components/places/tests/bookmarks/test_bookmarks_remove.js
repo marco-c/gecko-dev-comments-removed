@@ -3,11 +3,11 @@
 
 const UNVISITED_BOOKMARK_BONUS = 140;
 
-function promiseFrecencyChanged(expectedURI, expectedFrecency) {
+function promiseRankingChanged() {
   return PlacesTestUtils.waitForNotification(
-    "onManyFrecenciesChanged",
+    "pages-rank-changed",
     () => true,
-    "history"
+    "places"
   );
 }
 
@@ -106,7 +106,7 @@ add_task(async function remove_roots_fail() {
 add_task(async function remove_bookmark() {
   
   
-  let frecencyChangedPromise = promiseFrecencyChanged();
+  let promise = promiseRankingChanged();
   let bm1 = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
@@ -115,20 +115,20 @@ add_task(async function remove_bookmark() {
   });
   checkBookmarkObject(bm1);
 
-  await frecencyChangedPromise;
+  await promise;
 
   
-  frecencyChangedPromise = promiseFrecencyChanged();
+  promise = promiseRankingChanged();
 
   await PlacesUtils.bookmarks.remove(bm1.guid);
 
-  await frecencyChangedPromise;
+  await promise;
 });
 
 add_task(async function remove_multiple_bookmarks_simple() {
   
   
-  let frecencyChangedPromise = promiseFrecencyChanged();
+  const promise1 = promiseRankingChanged();
   let bm1 = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
@@ -137,7 +137,7 @@ add_task(async function remove_multiple_bookmarks_simple() {
   });
   checkBookmarkObject(bm1);
 
-  let frecencyChangedPromise1 = promiseFrecencyChanged();
+  const promise2 = promiseRankingChanged();
   let bm2 = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
@@ -146,19 +146,15 @@ add_task(async function remove_multiple_bookmarks_simple() {
   });
   checkBookmarkObject(bm2);
 
-  await Promise.all([frecencyChangedPromise, frecencyChangedPromise1]);
+  await Promise.all([promise1, promise2]);
 
   
   
-  let manyFrencenciesPromise = PlacesTestUtils.waitForNotification(
-    "onManyFrecenciesChanged",
-    () => true,
-    "history"
-  );
+  const promise3 = promiseRankingChanged();
 
   await PlacesUtils.bookmarks.remove([bm1, bm2]);
 
-  await manyFrencenciesPromise;
+  await promise3;
 });
 
 add_task(async function remove_multiple_bookmarks_complex() {
@@ -315,12 +311,12 @@ add_task(async function test_contents_removed() {
     false,
     false
   );
-  let frecencyChangedPromise = promiseFrecencyChanged();
+  const promise = promiseRankingChanged();
   await PlacesUtils.bookmarks.remove(folder1);
   Assert.strictEqual(await PlacesUtils.bookmarks.fetch(folder1.guid), null);
   Assert.strictEqual(await PlacesUtils.bookmarks.fetch(bm1.guid), null);
 
-  await frecencyChangedPromise;
+  await promise;
 
   let expectedNotifications = [
     {
@@ -360,13 +356,13 @@ add_task(async function test_nested_contents_removed() {
     title: "",
   });
 
-  let frecencyChangedPromise = promiseFrecencyChanged();
+  const promise = promiseRankingChanged();
   await PlacesUtils.bookmarks.remove(folder1);
   Assert.strictEqual(await PlacesUtils.bookmarks.fetch(folder1.guid), null);
   Assert.strictEqual(await PlacesUtils.bookmarks.fetch(folder2.guid), null);
   Assert.strictEqual(await PlacesUtils.bookmarks.fetch(bm1.guid), null);
 
-  await frecencyChangedPromise;
+  await promise;
 });
 
 add_task(async function remove_folder_empty_title() {
