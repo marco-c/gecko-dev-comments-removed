@@ -608,6 +608,11 @@ static void SendStreamAudio(DecodedStreamData* aStream,
 
   MOZ_ASSERT(aData);
   AudioData* audio = aData;
+
+  if (!audio->Frames()) {
+    
+    return;
+  }
   
   
   CheckedInt64 audioWrittenOffset =
@@ -621,8 +626,9 @@ static void SendStreamAudio(DecodedStreamData* aStream,
   }
 
   if (audioWrittenOffset.value() + AUDIO_FUZZ_FRAMES < frameOffset.value()) {
-    int64_t silentFrames = frameOffset.value() - audioWrittenOffset.value();
     
+    
+    int64_t silentFrames = frameOffset.value() - audioWrittenOffset.value();
     AudioSegment silence;
     silence.InsertNullDataAtStart(silentFrames);
     aStream->mAudioFramesWritten += silentFrames;
