@@ -34,7 +34,8 @@ struct URLExtraData {
     
     
     nsCOMPtr<nsIURI> referrer = mReferrerInfo->GetOriginalReferrer();
-    mIsChrome = referrer ? dom::IsChromeURI(referrer) : false;
+    mChromeRulesEnabled = referrer && (referrer->SchemeIs("chrome") ||
+                                       referrer->SchemeIs("resource"));
   }
 
   URLExtraData(nsIURI* aBaseURI, nsIReferrerInfo* aReferrerInfo,
@@ -73,8 +74,7 @@ struct URLExtraData {
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
-  
-  bool mIsChrome;
+  bool mChromeRulesEnabled;
 
   static StaticRefPtr<URLExtraData> sDummy;
   static StaticRefPtr<URLExtraData> sDummyChrome;
