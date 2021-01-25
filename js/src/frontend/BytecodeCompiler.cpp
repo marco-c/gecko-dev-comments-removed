@@ -1098,6 +1098,11 @@ static bool CompileLazyFunctionToStencilImpl(JSContext* cx,
     return false;
   }
 
+  
+  
+  compilationInfo.stencil.functionKey =
+      CompilationStencil::toFunctionKey(lazy->extent());
+
   assertException.reset();
   return true;
 }
