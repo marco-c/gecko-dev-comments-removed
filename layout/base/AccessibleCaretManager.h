@@ -50,6 +50,7 @@ class Selection;
 
 class AccessibleCaretManager {
  public:
+  
   explicit AccessibleCaretManager(PresShell* aPresShell);
   virtual ~AccessibleCaretManager() = default;
 
@@ -160,6 +161,15 @@ class AccessibleCaretManager {
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const UpdateCaretsHint& aResult);
 
+  enum class Terminated : bool { No, Yes };
+
+  
+  
+  
+  
+  
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Terminated MaybeFlushLayout();
+
   
   
   
@@ -230,8 +240,6 @@ class AccessibleCaretManager {
   void StopSelectionAutoScrollTimer() const;
 
   void ClearMaintainedSelection() const;
-
-  enum class Terminated : bool { No, Yes };
 
   static dom::Element* GetEditingHostForFrame(const nsIFrame* aFrame);
   dom::Selection* GetSelection() const;
@@ -333,14 +341,7 @@ class AccessibleCaretManager {
    public:
     ~LayoutFlusher();
 
-    
-    
-    
-    
-    
-    
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Terminated
-    MaybeFlush(const AccessibleCaretManager& aAccessibleCaretManager);
+    MOZ_CAN_RUN_SCRIPT void MaybeFlush(const PresShell& aPresShell);
 
     
     
