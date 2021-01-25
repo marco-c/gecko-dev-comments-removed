@@ -74,32 +74,28 @@ const size_t ArenaBitmapWords = HowMany(ArenaBitmapBits, JS_BITS_PER_WORD);
 
 
 
-class alignas(CellAlignBytes) ChunkHeader {
+
+class alignas(CellAlignBytes) ChunkBase {
+ protected:
+  ChunkBase(JSRuntime* rt, StoreBuffer* sb) : storeBuffer(sb), runtime(rt) {
+    MOZ_ASSERT((uintptr_t(this) & ChunkMask) == 0);
+  }
+
  public:
-  
-  ChunkHeader(JSRuntime* rt, StoreBuffer* sb) : storeBuffer(sb), runtime(rt) {}
-
-  
-  explicit ChunkHeader(JSRuntime* rt) : storeBuffer(nullptr), runtime(rt) {}
-
   
   
   StoreBuffer* storeBuffer;
 
   
   JSRuntime* runtime;
-
-  
 };
 
 
 struct TenuredChunkInfo {
-  void init() { next = prev = nullptr; }
-
  private:
   friend class ChunkPool;
-  TenuredChunk* next;
-  TenuredChunk* prev;
+  TenuredChunk* next = nullptr;
+  TenuredChunk* prev = nullptr;
 
  public:
   
@@ -143,11 +139,11 @@ struct TenuredChunkInfo {
 const size_t BitsPerArenaWithHeaders =
     (ArenaSize + ArenaBitmapBytes) * CHAR_BIT + 1;
 const size_t ChunkBitsAvailable =
-    (ChunkSize - sizeof(ChunkHeader) - sizeof(TenuredChunkInfo)) * CHAR_BIT;
+    (ChunkSize - sizeof(ChunkBase) - sizeof(TenuredChunkInfo)) * CHAR_BIT;
 const size_t ArenasPerChunk = ChunkBitsAvailable / BitsPerArenaWithHeaders;
 
 const size_t CalculatedChunkSizeRequired =
-    sizeof(ChunkHeader) + sizeof(TenuredChunkInfo) +
+    sizeof(ChunkBase) + sizeof(TenuredChunkInfo) +
     RoundUp(ArenasPerChunk * ArenaBitmapBytes, sizeof(uintptr_t)) +
     RoundUp(ArenasPerChunk, sizeof(uint32_t) * CHAR_BIT) / CHAR_BIT +
     ArenasPerChunk * ArenaSize;
@@ -219,12 +215,14 @@ static_assert(ArenaBitmapBytes * ArenasPerChunk == sizeof(MarkBitmap),
 using DecommitBitmap = mozilla::BitSet<ArenasPerChunk, uint32_t>;
 
 
-class TenuredChunkBase {
+class TenuredChunkBase : public ChunkBase {
  public:
-  ChunkHeader header;
   TenuredChunkInfo info;
   MarkBitmap markBits;
   DecommitBitmap decommittedArenas;
+
+ protected:
+  explicit TenuredChunkBase(JSRuntime* runtime) : ChunkBase(runtime, nullptr) {}
 };
 
 
@@ -244,10 +242,8 @@ static_assert((FirstArenaAdjustmentBits % MarkBitmapWordBits) == 0);
 constexpr size_t FirstArenaAdjustmentWords =
     FirstArenaAdjustmentBits / MarkBitmapWordBits;
 
-const size_t ChunkRuntimeOffset =
-    offsetof(TenuredChunkBase, header) + offsetof(ChunkHeader, runtime);
-const size_t ChunkStoreBufferOffset =
-    offsetof(TenuredChunkBase, header) + offsetof(ChunkHeader, storeBuffer);
+const size_t ChunkRuntimeOffset = offsetof(ChunkBase, runtime);
+const size_t ChunkStoreBufferOffset = offsetof(ChunkBase, storeBuffer);
 const size_t ChunkMarkBitmapOffset = offsetof(TenuredChunkBase, markBits);
 
 
@@ -508,9 +504,9 @@ MOZ_ALWAYS_INLINE void MarkBitmap::getMarkWordAndMask(const TenuredCell* cell,
 
 namespace detail {
 
-static MOZ_ALWAYS_INLINE ChunkHeader* GetCellChunkHeader(const Cell* cell) {
+static MOZ_ALWAYS_INLINE ChunkBase* GetCellChunkBase(const Cell* cell) {
   MOZ_ASSERT(cell);
-  return reinterpret_cast<ChunkHeader*>(uintptr_t(cell) & ~ChunkMask);
+  return reinterpret_cast<ChunkBase*>(uintptr_t(cell) & ~ChunkMask);
 }
 
 static MOZ_ALWAYS_INLINE TenuredChunkBase* GetCellChunkBase(
@@ -563,7 +559,7 @@ extern JS_PUBLIC_API bool ObjectIsMarkedBlack(const JSObject* obj);
 #endif
 
 MOZ_ALWAYS_INLINE bool CellHasStoreBuffer(const Cell* cell) {
-  return GetCellChunkHeader(cell)->storeBuffer;
+  return GetCellChunkBase(cell)->storeBuffer;
 }
 
 } 
