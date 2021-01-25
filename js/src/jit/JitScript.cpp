@@ -403,6 +403,9 @@ void JitScript::purgeOptimizedStubs(JSScript* script) {
   if (hasInliningRoot()) {
     inliningRoot()->purgeOptimizedStubs(zone);
   }
+#ifdef DEBUG
+  failedICHash_.reset();
+#endif
 }
 
 void ICScript::purgeOptimizedStubs(Zone* zone) {
@@ -663,3 +666,49 @@ JitScript* ICScript::outerJitScript() {
   uint8_t* ptr = reinterpret_cast<uint8_t*>(this);
   return reinterpret_cast<JitScript*>(ptr - JitScript::offsetOfICScript());
 }
+
+#ifdef DEBUG
+
+
+
+
+
+
+
+
+
+
+
+
+
+HashNumber ICScript::hash() {
+  HashNumber h = 0;
+  for (size_t i = 0; i < numICEntries(); i++) {
+    ICStub* stub = icEntry(i).firstStub();
+
+    
+    h = mozilla::AddToHash(h, stub);
+
+    
+    if (!stub->isFallback()) {
+      stub = stub->toCacheIRStub()->next();
+      while (!stub->isFallback()) {
+        h = mozilla::AddToHash(h, stub->enteredCount());
+        stub = stub->toCacheIRStub()->next();
+      }
+    }
+
+    
+    MOZ_ASSERT(stub->isFallback());
+    h = mozilla::AddToHash(h, stub->enteredCount());
+  }
+
+  if (inlinedChildren_) {
+    for (auto& callsite : *inlinedChildren_) {
+      h = mozilla::AddToHash(h, callsite.callee_->hash());
+    }
+  }
+  return h;
+}
+
+#endif
