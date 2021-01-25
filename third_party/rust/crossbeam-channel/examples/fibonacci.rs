@@ -1,7 +1,5 @@
 
 
-extern crate crossbeam_channel;
-
 use std::thread;
 
 use crossbeam_channel::{bounded, Sender};

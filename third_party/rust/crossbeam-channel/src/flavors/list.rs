@@ -2,18 +2,17 @@
 
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 use std::ptr;
 use std::sync::atomic::{self, AtomicPtr, AtomicUsize, Ordering};
 use std::time::Instant;
 
 use crossbeam_utils::{Backoff, CachePadded};
 
-use maybe_uninit::MaybeUninit;
-
-use context::Context;
-use err::{RecvTimeoutError, SendTimeoutError, TryRecvError, TrySendError};
-use select::{Operation, SelectHandle, Selected, Token};
-use waker::SyncWaker;
+use crate::context::Context;
+use crate::err::{RecvTimeoutError, SendTimeoutError, TryRecvError, TrySendError};
+use crate::select::{Operation, SelectHandle, Selected, Token};
+use crate::waker::SyncWaker;
 
 
 
@@ -184,12 +183,12 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn receiver(&self) -> Receiver<T> {
+    pub fn receiver(&self) -> Receiver<'_, T> {
         Receiver(self)
     }
 
     
-    pub fn sender(&self) -> Sender<T> {
+    pub fn sender(&self) -> Sender<'_, T> {
         Sender(self)
     }
 
@@ -500,6 +499,14 @@ impl<T> Channel<T> {
                 head &= !((1 << SHIFT) - 1);
 
                 
+                if (tail >> SHIFT) & (LAP - 1) == LAP - 1 {
+                    tail = tail.wrapping_add(1 << SHIFT);
+                }
+                if (head >> SHIFT) & (LAP - 1) == LAP - 1 {
+                    head = head.wrapping_add(1 << SHIFT);
+                }
+
+                
                 let lap = (head >> SHIFT) / LAP;
                 tail = tail.wrapping_sub((lap * LAP) << SHIFT);
                 head = head.wrapping_sub((lap * LAP) << SHIFT);
@@ -507,15 +514,6 @@ impl<T> Channel<T> {
                 
                 tail >>= SHIFT;
                 head >>= SHIFT;
-
-                
-                if head == BLOCK_CAP {
-                    head = 0;
-                    tail -= LAP;
-                }
-                if tail == BLOCK_CAP {
-                    tail += 1;
-                }
 
                 
                 return tail - head - tail / LAP;
@@ -599,12 +597,12 @@ impl<T> Drop for Channel<T> {
 }
 
 
-pub struct Receiver<'a, T: 'a>(&'a Channel<T>);
+pub struct Receiver<'a, T>(&'a Channel<T>);
 
 
-pub struct Sender<'a, T: 'a>(&'a Channel<T>);
+pub struct Sender<'a, T>(&'a Channel<T>);
 
-impl<'a, T> SelectHandle for Receiver<'a, T> {
+impl<T> SelectHandle for Receiver<'_, T> {
     fn try_select(&self, token: &mut Token) -> bool {
         self.0.start_recv(token)
     }
@@ -640,7 +638,7 @@ impl<'a, T> SelectHandle for Receiver<'a, T> {
     }
 }
 
-impl<'a, T> SelectHandle for Sender<'a, T> {
+impl<T> SelectHandle for Sender<'_, T> {
     fn try_select(&self, token: &mut Token) -> bool {
         self.0.start_send(token)
     }

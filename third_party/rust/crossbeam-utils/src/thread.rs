@@ -121,7 +121,8 @@ use std::panic;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use sync::WaitGroup;
+use crate::sync::WaitGroup;
+use cfg_if::cfg_if;
 
 type SharedVec<T> = Arc<Mutex<Vec<T>>>;
 type SharedOption<T> = Arc<Mutex<Option<T>>>;
@@ -165,18 +166,15 @@ where
     wg.wait();
 
     
-    let panics: Vec<_> = {
-        let mut handles = scope.handles.lock().unwrap();
-
+    let panics: Vec<_> = scope
+        .handles
+        .lock()
+        .unwrap()
         
-        let panics = handles
-            .drain(..)
-            .filter_map(|handle| handle.lock().unwrap().take())
-            .filter_map(|handle| handle.join().err())
-            .collect();
-
-        panics
-    };
+        .drain(..)
+        .filter_map(|handle| handle.lock().unwrap().take())
+        .filter_map(|handle| handle.join().err())
+        .collect();
 
     
     
@@ -205,9 +203,18 @@ pub struct Scope<'env> {
     _marker: PhantomData<&'env mut &'env ()>,
 }
 
-unsafe impl<'env> Sync for Scope<'env> {}
+unsafe impl Sync for Scope<'_> {}
 
 impl<'env> Scope<'env> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -243,10 +250,11 @@ impl<'env> Scope<'env> {
         F: Send + 'env,
         T: Send + 'env,
     {
-        self.builder().spawn(f).unwrap()
+        self.builder()
+            .spawn(f)
+            .expect("failed to spawn scoped thread")
     }
 
-    
     
     
     
@@ -268,8 +276,8 @@ impl<'env> Scope<'env> {
     }
 }
 
-impl<'env> fmt::Debug for Scope<'env> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl fmt::Debug for Scope<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad("Scope { .. }")
     }
 }
@@ -306,14 +314,14 @@ impl<'env> fmt::Debug for Scope<'env> {
 
 
 
-
 #[derive(Debug)]
-pub struct ScopedThreadBuilder<'scope, 'env: 'scope> {
+pub struct ScopedThreadBuilder<'scope, 'env> {
     scope: &'scope Scope<'env>,
     builder: thread::Builder,
 }
 
 impl<'scope, 'env> ScopedThreadBuilder<'scope, 'env> {
+    
     
     
     
@@ -355,11 +363,27 @@ impl<'scope, 'env> ScopedThreadBuilder<'scope, 'env> {
     
     
     
+    
+    
+    
+    
     pub fn stack_size(mut self, size: usize) -> ScopedThreadBuilder<'scope, 'env> {
         self.builder = self.builder.stack_size(size);
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -419,15 +443,11 @@ impl<'scope, 'env> ScopedThreadBuilder<'scope, 'env> {
                 };
 
                 
-                let mut closure = Some(closure);
-                let closure = move || closure.take().unwrap()();
+                let closure: Box<dyn FnOnce() + Send + 'env> = Box::new(closure);
+                let closure: Box<dyn FnOnce() + Send + 'static> =
+                    unsafe { mem::transmute(closure) };
 
                 
-                let closure: Box<dyn FnMut() + Send + 'env> = Box::new(closure);
-                let closure: Box<dyn FnMut() + Send + 'static> = unsafe { mem::transmute(closure) };
-
-                
-                let mut closure = closure;
                 self.builder.spawn(move || closure())?
             };
 
@@ -448,8 +468,11 @@ impl<'scope, 'env> ScopedThreadBuilder<'scope, 'env> {
     }
 }
 
-unsafe impl<'scope, T> Send for ScopedJoinHandle<'scope, T> {}
-unsafe impl<'scope, T> Sync for ScopedJoinHandle<'scope, T> {}
+unsafe impl<T> Send for ScopedJoinHandle<'_, T> {}
+unsafe impl<T> Sync for ScopedJoinHandle<'_, T> {}
+
+
+
 
 
 pub struct ScopedJoinHandle<'scope, T> {
@@ -466,7 +489,7 @@ pub struct ScopedJoinHandle<'scope, T> {
     _marker: PhantomData<&'scope ()>,
 }
 
-impl<'scope, T> ScopedJoinHandle<'scope, T> {
+impl<T> ScopedJoinHandle<'_, T> {
     
     
     
@@ -522,8 +545,44 @@ impl<'scope, T> ScopedJoinHandle<'scope, T> {
     }
 }
 
-impl<'scope, T> fmt::Debug for ScopedJoinHandle<'scope, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+cfg_if! {
+    if #[cfg(unix)] {
+        use std::os::unix::thread::{JoinHandleExt, RawPthread};
+
+        impl<T> JoinHandleExt for ScopedJoinHandle<'_, T> {
+            fn as_pthread_t(&self) -> RawPthread {
+                // Borrow the handle. The handle will surely be available because the root scope waits
+                // for nested scopes before joining remaining threads.
+                let handle = self.handle.lock().unwrap();
+                handle.as_ref().unwrap().as_pthread_t()
+            }
+            fn into_pthread_t(self) -> RawPthread {
+                self.as_pthread_t()
+            }
+        }
+    } else if #[cfg(windows)] {
+        use std::os::windows::io::{AsRawHandle, IntoRawHandle, RawHandle};
+
+        impl<T> AsRawHandle for ScopedJoinHandle<'_, T> {
+            fn as_raw_handle(&self) -> RawHandle {
+                // Borrow the handle. The handle will surely be available because the root scope waits
+                // for nested scopes before joining remaining threads.
+                let handle = self.handle.lock().unwrap();
+                handle.as_ref().unwrap().as_raw_handle()
+            }
+        }
+
+        #[cfg(windows)]
+        impl<T> IntoRawHandle for ScopedJoinHandle<'_, T> {
+            fn into_raw_handle(self) -> RawHandle {
+                self.as_raw_handle()
+            }
+        }
+    }
+}
+
+impl<T> fmt::Debug for ScopedJoinHandle<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad("ScopedJoinHandle { .. }")
     }
 }

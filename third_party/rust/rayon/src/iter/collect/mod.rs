@@ -1,9 +1,9 @@
 use super::{IndexedParallelIterator, IntoParallelIterator, ParallelExtend, ParallelIterator};
 use std::slice;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 mod consumer;
 use self::consumer::CollectConsumer;
+use self::consumer::CollectResult;
 use super::unzip::unzip_indexed;
 
 mod test;
@@ -17,9 +17,8 @@ where
     T: Send,
 {
     v.truncate(0); 
-    let mut collect = Collect::new(v, pi.len());
-    pi.drive(collect.as_consumer());
-    collect.complete();
+    let len = pi.len();
+    Collect::new(v, len).with_consumer(|consumer| pi.drive(consumer));
 }
 
 
@@ -38,9 +37,7 @@ where
     I: ParallelIterator<Item = T>,
     T: Send,
 {
-    let mut collect = Collect::new(v, len);
-    pi.drive_unindexed(collect.as_consumer());
-    collect.complete();
+    Collect::new(v, len).with_consumer(|consumer| pi.drive_unindexed(consumer));
 }
 
 
@@ -57,46 +54,44 @@ where
     right.truncate(0);
 
     let len = pi.len();
-    let mut left = Collect::new(left, len);
-    let mut right = Collect::new(right, len);
-
-    unzip_indexed(pi, left.as_consumer(), right.as_consumer());
-
-    left.complete();
-    right.complete();
+    Collect::new(right, len).with_consumer(|right_consumer| {
+        let mut right_result = None;
+        Collect::new(left, len).with_consumer(|left_consumer| {
+            let (left_r, right_r) = unzip_indexed(pi, left_consumer, right_consumer);
+            right_result = Some(right_r);
+            left_r
+        });
+        right_result.unwrap()
+    });
 }
 
 
-struct Collect<'c, T: Send + 'c> {
-    writes: AtomicUsize,
+struct Collect<'c, T: Send> {
     vec: &'c mut Vec<T>,
     len: usize,
 }
 
 impl<'c, T: Send + 'c> Collect<'c, T> {
     fn new(vec: &'c mut Vec<T>, len: usize) -> Self {
-        Collect {
-            writes: AtomicUsize::new(0),
-            vec,
-            len,
-        }
+        Collect { vec, len }
     }
 
     
-    fn as_consumer(&mut self) -> CollectConsumer<'_, T> {
-        
-        self.vec.reserve(self.len);
-
-        
-        let start = self.vec.len();
-        let mut slice = &mut self.vec[start..];
-        slice = unsafe { slice::from_raw_parts_mut(slice.as_mut_ptr(), self.len) };
-        CollectConsumer::new(&self.writes, slice)
-    }
-
     
-    fn complete(self) {
+    
+    
+    
+    
+    
+    
+    fn with_consumer<F>(mut self, scope_fn: F)
+    where
+        F: FnOnce(CollectConsumer<'_, T>) -> CollectResult<'_, T>,
+    {
         unsafe {
+            let slice = Self::reserve_get_tail_slice(&mut self.vec, self.len);
+            let result = scope_fn(CollectConsumer::new(slice));
+
             
             
             
@@ -104,16 +99,44 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
             
             
             
-            let actual_writes = self.writes.load(Ordering::Relaxed);
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let actual_writes = result.len();
             assert!(
                 actual_writes == self.len,
                 "expected {} total writes, but got {}",
                 self.len,
                 actual_writes
             );
+
+            
+            
+            result.release_ownership();
+
             let new_len = self.vec.len() + self.len;
             self.vec.set_len(new_len);
         }
+    }
+
+    
+    
+    
+    
+    unsafe fn reserve_get_tail_slice(vec: &mut Vec<T>, len: usize) -> &mut [T] {
+        
+        vec.reserve(len);
+
+        
+        let start = vec.len();
+        let slice = &mut vec[start..];
+        slice::from_raw_parts_mut(slice.as_mut_ptr(), len)
     }
 }
 

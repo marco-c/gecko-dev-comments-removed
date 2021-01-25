@@ -16,8 +16,9 @@
 
 
 
-use iter::plumbing::*;
-use iter::*;
+use crate::iter::plumbing::*;
+use crate::iter::*;
+use std::char;
 use std::ops::RangeInclusive;
 
 
@@ -48,7 +49,8 @@ pub struct Iter<T> {
 
 impl<T> Iter<T>
 where
-    RangeInclusive<T>: Clone + Iterator<Item = T> + DoubleEndedIterator,
+    RangeInclusive<T>: Eq,
+    T: Ord + Copy,
 {
     
     
@@ -56,7 +58,16 @@ where
     
     
     fn bounds(&self) -> Option<(T, T)> {
-        Some((self.range.clone().next()?, self.range.clone().next_back()?))
+        let start = *self.range.start();
+        let end = *self.range.end();
+        if start <= end && self.range == (start..=end) {
+            
+            
+            
+            Some((start, end))
+        } else {
+            None
+        }
     }
 }
 
@@ -147,6 +158,80 @@ parallel_range_impl! {i64}
 parallel_range_impl! {u128}
 parallel_range_impl! {i128}
 
+
+macro_rules! convert_char {
+    ( $self:ident . $method:ident ( $( $arg:expr ),* ) ) => {
+        if let Some((start, end)) = $self.bounds() {
+            let start = start as u32;
+            let end = end as u32;
+            if start < 0xD800 && 0xE000 <= end {
+                // chain the before and after surrogate range fragments
+                (start..0xD800)
+                    .into_par_iter()
+                    .chain(0xE000..end + 1) // cannot use RangeInclusive, so add one to end
+                    .map(|codepoint| unsafe { char::from_u32_unchecked(codepoint) })
+                    .$method($( $arg ),*)
+            } else {
+                // no surrogate range to worry about
+                (start..end + 1) // cannot use RangeInclusive, so add one to end
+                    .into_par_iter()
+                    .map(|codepoint| unsafe { char::from_u32_unchecked(codepoint) })
+                    .$method($( $arg ),*)
+            }
+        } else {
+            empty().into_par_iter().$method($( $arg ),*)
+        }
+    };
+}
+
+impl ParallelIterator for Iter<char> {
+    type Item = char;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    where
+        C: UnindexedConsumer<Self::Item>,
+    {
+        convert_char!(self.drive(consumer))
+    }
+
+    fn opt_len(&self) -> Option<usize> {
+        Some(self.len())
+    }
+}
+
+
+impl IndexedParallelIterator for Iter<char> {
+    
+    fn drive<C>(self, consumer: C) -> C::Result
+    where
+        C: Consumer<Self::Item>,
+    {
+        convert_char!(self.drive(consumer))
+    }
+
+    fn len(&self) -> usize {
+        if let Some((start, end)) = self.bounds() {
+            
+            let start = start as u32;
+            let end = end as u32;
+            let mut count = end - start;
+            if start < 0xD800 && 0xE000 <= end {
+                count -= 0x800
+            }
+            (count + 1) as usize 
+        } else {
+            0
+        }
+    }
+
+    fn with_producer<CB>(self, callback: CB) -> CB::Output
+    where
+        CB: ProducerCallback<Self::Item>,
+    {
+        convert_char!(self.with_producer(callback))
+    }
+}
+
 #[test]
 #[cfg(target_pointer_width = "64")]
 fn test_u32_opt_len() {
@@ -191,8 +276,8 @@ fn test_u128_opt_len() {
 #[test]
 #[cfg(target_pointer_width = "64")]
 fn test_usize_i64_overflow() {
+    use crate::ThreadPoolBuilder;
     use std::i64;
-    use ThreadPoolBuilder;
 
     let iter = (-2..=i64::MAX).into_par_iter();
     assert_eq!(iter.opt_len(), Some(i64::MAX as usize + 3));

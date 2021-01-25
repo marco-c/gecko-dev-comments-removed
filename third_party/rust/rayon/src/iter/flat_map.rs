@@ -40,10 +40,7 @@ where
     where
         C: UnindexedConsumer<Self::Item>,
     {
-        let consumer = FlatMapConsumer {
-            base: consumer,
-            map_op: &self.map_op,
-        };
+        let consumer = FlatMapConsumer::new(consumer, &self.map_op);
         self.base.drive_unindexed(consumer)
     }
 }
@@ -51,7 +48,7 @@ where
 
 
 
-struct FlatMapConsumer<'f, C, F: 'f> {
+struct FlatMapConsumer<'f, C, F> {
     base: C,
     map_op: &'f F,
 }
@@ -109,7 +106,7 @@ where
     }
 }
 
-struct FlatMapFolder<'f, C, F: 'f, R> {
+struct FlatMapFolder<'f, C, F, R> {
     base: C,
     map_op: &'f F,
     previous: Option<R>,
@@ -126,10 +123,9 @@ where
     fn consume(self, item: T) -> Self {
         let map_op = self.map_op;
         let par_iter = map_op(item).into_par_iter();
-        let result = par_iter.drive_unindexed(self.base.split_off_left());
+        let consumer = self.base.split_off_left();
+        let result = par_iter.drive_unindexed(consumer);
 
-        
-        
         let previous = match self.previous {
             None => Some(result),
             Some(previous) => {

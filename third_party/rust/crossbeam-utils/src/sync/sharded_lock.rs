@@ -5,11 +5,12 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::panic::{RefUnwindSafe, UnwindSafe};
-use std::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::sync::{LockResult, PoisonError, TryLockError, TryLockResult};
+use std::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::thread::{self, ThreadId};
 
-use CachePadded;
+use crate::CachePadded;
+use lazy_static::lazy_static;
 
 
 const NUM_SHARDS: usize = 8;
@@ -99,16 +100,19 @@ impl<T> ShardedLock<T> {
     pub fn new(value: T) -> ShardedLock<T> {
         ShardedLock {
             shards: (0..NUM_SHARDS)
-                .map(|_| CachePadded::new(Shard {
-                    lock: RwLock::new(()),
-                    write_guard: UnsafeCell::new(None),
-                }))
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
+                .map(|_| {
+                    CachePadded::new(Shard {
+                        lock: RwLock::new(()),
+                        write_guard: UnsafeCell::new(None),
+                    })
+                })
+                .collect::<Box<[_]>>(),
             value: UnsafeCell::new(value),
         }
     }
 
+    
+    
     
     
     
@@ -180,6 +184,8 @@ impl<T: ?Sized> ShardedLock<T> {
     
     
     
+    
+    
     pub fn get_mut(&mut self) -> LockResult<&mut T> {
         let is_poisoned = self.is_poisoned();
         let inner = unsafe { &mut *self.value.get() };
@@ -213,7 +219,9 @@ impl<T: ?Sized> ShardedLock<T> {
     
     
     
-    pub fn try_read(&self) -> TryLockResult<ShardedLockReadGuard<T>> {
+    
+    
+    pub fn try_read(&self) -> TryLockResult<ShardedLockReadGuard<'_, T>> {
         
         
         let current_index = current_index().unwrap_or(0);
@@ -232,7 +240,7 @@ impl<T: ?Sized> ShardedLock<T> {
                     _marker: PhantomData,
                 };
                 Err(TryLockError::Poisoned(PoisonError::new(guard)))
-            },
+            }
             Err(TryLockError::WouldBlock) => Err(TryLockError::WouldBlock),
         }
     }
@@ -264,7 +272,16 @@ impl<T: ?Sized> ShardedLock<T> {
     
     
     
-    pub fn read(&self) -> LockResult<ShardedLockReadGuard<T>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn read(&self) -> LockResult<ShardedLockReadGuard<'_, T>> {
         
         
         let current_index = current_index().unwrap_or(0);
@@ -306,7 +323,9 @@ impl<T: ?Sized> ShardedLock<T> {
     
     
     
-    pub fn try_write(&self) -> TryLockResult<ShardedLockWriteGuard<T>> {
+    
+    
+    pub fn try_write(&self) -> TryLockResult<ShardedLockWriteGuard<'_, T>> {
         let mut poisoned = false;
         let mut blocked = None;
 
@@ -317,7 +336,7 @@ impl<T: ?Sized> ShardedLock<T> {
                 Err(TryLockError::Poisoned(err)) => {
                     poisoned = true;
                     err.into_inner()
-                },
+                }
                 Err(TryLockError::WouldBlock) => {
                     blocked = Some(i);
                     break;
@@ -377,7 +396,16 @@ impl<T: ?Sized> ShardedLock<T> {
     
     
     
-    pub fn write(&self) -> LockResult<ShardedLockWriteGuard<T>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn write(&self) -> LockResult<ShardedLockWriteGuard<'_, T>> {
         let mut poisoned = false;
 
         
@@ -414,20 +442,26 @@ impl<T: ?Sized> ShardedLock<T> {
 }
 
 impl<T: ?Sized + fmt::Debug> fmt::Debug for ShardedLock<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.try_read() {
-            Ok(guard) => f.debug_struct("ShardedLock").field("data", &&*guard).finish(),
-            Err(TryLockError::Poisoned(err)) => {
-                f.debug_struct("ShardedLock").field("data", &&**err.get_ref()).finish()
-            },
+            Ok(guard) => f
+                .debug_struct("ShardedLock")
+                .field("data", &&*guard)
+                .finish(),
+            Err(TryLockError::Poisoned(err)) => f
+                .debug_struct("ShardedLock")
+                .field("data", &&**err.get_ref())
+                .finish(),
             Err(TryLockError::WouldBlock) => {
                 struct LockedPlaceholder;
                 impl fmt::Debug for LockedPlaceholder {
-                    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                         f.write_str("<locked>")
                     }
                 }
-                f.debug_struct("ShardedLock").field("data", &LockedPlaceholder).finish()
+                f.debug_struct("ShardedLock")
+                    .field("data", &LockedPlaceholder)
+                    .finish()
             }
         }
     }
@@ -446,17 +480,15 @@ impl<T> From<T> for ShardedLock<T> {
 }
 
 
-
-
-pub struct ShardedLockReadGuard<'a, T: ?Sized + 'a> {
+pub struct ShardedLockReadGuard<'a, T: ?Sized> {
     lock: &'a ShardedLock<T>,
     _guard: RwLockReadGuard<'a, ()>,
     _marker: PhantomData<RwLockReadGuard<'a, T>>,
 }
 
-unsafe impl<'a, T: ?Sized + Sync> Sync for ShardedLockReadGuard<'a, T> {}
+unsafe impl<T: ?Sized + Sync> Sync for ShardedLockReadGuard<'_, T> {}
 
-impl<'a, T: ?Sized> Deref for ShardedLockReadGuard<'a, T> {
+impl<T: ?Sized> Deref for ShardedLockReadGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -464,31 +496,29 @@ impl<'a, T: ?Sized> Deref for ShardedLockReadGuard<'a, T> {
     }
 }
 
-impl<'a, T: fmt::Debug> fmt::Debug for ShardedLockReadGuard<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: fmt::Debug> fmt::Debug for ShardedLockReadGuard<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ShardedLockReadGuard")
             .field("lock", &self.lock)
             .finish()
     }
 }
 
-impl<'a, T: ?Sized + fmt::Display> fmt::Display for ShardedLockReadGuard<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: ?Sized + fmt::Display> fmt::Display for ShardedLockReadGuard<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
 }
 
 
-
-
-pub struct ShardedLockWriteGuard<'a, T: ?Sized + 'a> {
+pub struct ShardedLockWriteGuard<'a, T: ?Sized> {
     lock: &'a ShardedLock<T>,
     _marker: PhantomData<RwLockWriteGuard<'a, T>>,
 }
 
-unsafe impl<'a, T: ?Sized + Sync> Sync for ShardedLockWriteGuard<'a, T> {}
+unsafe impl<T: ?Sized + Sync> Sync for ShardedLockWriteGuard<'_, T> {}
 
-impl<'a, T: ?Sized> Drop for ShardedLockWriteGuard<'a, T> {
+impl<T: ?Sized> Drop for ShardedLockWriteGuard<'_, T> {
     fn drop(&mut self) {
         
         for shard in self.lock.shards.iter().rev() {
@@ -501,21 +531,21 @@ impl<'a, T: ?Sized> Drop for ShardedLockWriteGuard<'a, T> {
     }
 }
 
-impl<'a, T: fmt::Debug> fmt::Debug for ShardedLockWriteGuard<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: fmt::Debug> fmt::Debug for ShardedLockWriteGuard<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ShardedLockWriteGuard")
             .field("lock", &self.lock)
             .finish()
     }
 }
 
-impl<'a, T: ?Sized + fmt::Display> fmt::Display for ShardedLockWriteGuard<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: ?Sized + fmt::Display> fmt::Display for ShardedLockWriteGuard<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
 }
 
-impl<'a, T: ?Sized> Deref for ShardedLockWriteGuard<'a, T> {
+impl<T: ?Sized> Deref for ShardedLockWriteGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -523,7 +553,7 @@ impl<'a, T: ?Sized> Deref for ShardedLockWriteGuard<'a, T> {
     }
 }
 
-impl<'a, T: ?Sized> DerefMut for ShardedLockWriteGuard<'a, T> {
+impl<T: ?Sized> DerefMut for ShardedLockWriteGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.lock.value.get() }
     }

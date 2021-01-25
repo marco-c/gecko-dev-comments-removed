@@ -333,6 +333,7 @@ impl Glean {
             .is_none()
         {
             self.core_metrics.first_run_date.set(self, None);
+            self.core_metrics.first_run_hour.set(self, None);
             
             
             
@@ -453,6 +454,8 @@ impl Glean {
             .first_run_date
             .get_value(self, "glean_client_info");
 
+        let existing_first_run_hour = self.core_metrics.first_run_hour.get_value(self, "metrics");
+
         
         let ping_maker = PingMaker::new();
         if let Err(err) = ping_maker.clear_pending_pings(self.get_data_path()) {
@@ -493,6 +496,13 @@ impl Glean {
                 self.core_metrics
                     .first_run_date
                     .set(self, Some(existing_first_run_date));
+            }
+
+            
+            if let Some(existing_first_run_hour) = existing_first_run_hour {
+                self.core_metrics
+                    .first_run_hour
+                    .set(self, Some(existing_first_run_hour));
             }
 
             self.upload_enabled = false;

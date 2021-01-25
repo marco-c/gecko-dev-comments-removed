@@ -267,17 +267,10 @@ impl Backoff {
     pub fn is_completed(&self) -> bool {
         self.step.get() > YIELD_LIMIT
     }
-
-    #[inline]
-    #[doc(hidden)]
-    #[deprecated(note = "use `is_completed` instead")]
-    pub fn is_complete(&self) -> bool {
-        self.is_completed()
-    }
 }
 
 impl fmt::Debug for Backoff {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Backoff")
             .field("step", &self.step)
             .field("is_completed", &self.is_completed())

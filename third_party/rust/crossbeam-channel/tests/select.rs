@@ -1,8 +1,5 @@
 
 
-extern crate crossbeam_channel;
-extern crate crossbeam_utils;
-
 use std::any::Any;
 use std::cell::Cell;
 use std::thread;

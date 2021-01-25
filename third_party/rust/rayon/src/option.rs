@@ -5,9 +5,8 @@
 
 
 
-use iter::plumbing::*;
-use iter::*;
-use std;
+use crate::iter::plumbing::*;
+use crate::iter::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 
@@ -85,7 +84,7 @@ impl<T: Send> IndexedParallelIterator for IntoIter<T> {
 
 
 #[derive(Debug)]
-pub struct Iter<'a, T: Sync + 'a> {
+pub struct Iter<'a, T: Sync> {
     inner: IntoIter<&'a T>,
 }
 
@@ -123,7 +122,7 @@ delegate_indexed_iterator! {
 
 
 #[derive(Debug)]
-pub struct IterMut<'a, T: Send + 'a> {
+pub struct IterMut<'a, T: Send> {
     inner: IntoIter<&'a mut T>,
 }
 

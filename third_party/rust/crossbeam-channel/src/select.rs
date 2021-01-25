@@ -7,13 +7,13 @@ use std::time::{Duration, Instant};
 
 use crossbeam_utils::Backoff;
 
-use channel::{self, Receiver, Sender};
-use context::Context;
-use err::{ReadyTimeoutError, TryReadyError};
-use err::{RecvError, SendError};
-use err::{SelectTimeoutError, TrySelectError};
-use flavors;
-use utils;
+use crate::channel::{self, Receiver, Sender};
+use crate::context::Context;
+use crate::err::{ReadyTimeoutError, TryReadyError};
+use crate::err::{RecvError, SendError};
+use crate::err::{SelectTimeoutError, TrySelectError};
+use crate::flavors;
+use crate::utils;
 
 
 
@@ -21,7 +21,7 @@ use utils;
 
 #[derive(Debug, Default)]
 pub struct Token {
-    pub after: flavors::after::AfterToken,
+    pub at: flavors::at::AtToken,
     pub array: flavors::array::ArrayToken,
     pub list: flavors::list::ListToken,
     pub never: flavors::never::NeverToken,
@@ -119,7 +119,7 @@ pub trait SelectHandle {
     fn unwatch(&self, oper: Operation);
 }
 
-impl<'a, T: SelectHandle> SelectHandle for &'a T {
+impl<T: SelectHandle> SelectHandle for &T {
     fn try_select(&self, token: &mut Token) -> bool {
         (**self).try_select(token)
     }
@@ -481,9 +481,16 @@ pub fn select_timeout<'a>(
     handles: &mut [(&'a dyn SelectHandle, usize, *const u8)],
     timeout: Duration,
 ) -> Result<SelectedOperation<'a>, SelectTimeoutError> {
-    let timeout = Timeout::At(Instant::now() + timeout);
+    select_deadline(handles, Instant::now() + timeout)
+}
 
-    match run_select(handles, timeout) {
+
+#[inline]
+pub fn select_deadline<'a>(
+    handles: &mut [(&'a dyn SelectHandle, usize, *const u8)],
+    deadline: Instant,
+) -> Result<SelectedOperation<'a>, SelectTimeoutError> {
+    match run_select(handles, Timeout::At(deadline)) {
         None => Err(SelectTimeoutError),
         Some((token, index, ptr)) => Ok(SelectedOperation {
             token,
@@ -576,7 +583,6 @@ pub fn select_timeout<'a>(
 
 
 
-
 pub struct Select<'a> {
     
     handles: Vec<(&'a dyn SelectHandle, usize, *const u8)>,
@@ -585,8 +591,8 @@ pub struct Select<'a> {
     next_index: usize,
 }
 
-unsafe impl<'a> Send for Select<'a> {}
-unsafe impl<'a> Sync for Select<'a> {}
+unsafe impl Send for Select<'_> {}
+unsafe impl Sync for Select<'_> {}
 
 impl<'a> Select<'a> {
     
@@ -608,7 +614,6 @@ impl<'a> Select<'a> {
         }
     }
 
-    
     
     
     
@@ -645,7 +650,6 @@ impl<'a> Select<'a> {
     
     
     
-    
     pub fn recv<T>(&mut self, r: &'a Receiver<T>) -> usize {
         let i = self.next_index;
         let ptr = r as *const Receiver<_> as *const u8;
@@ -654,7 +658,6 @@ impl<'a> Select<'a> {
         i
     }
 
-    
     
     
     
@@ -748,17 +751,10 @@ impl<'a> Select<'a> {
     
     
     
-    
-    
-    
-    
     pub fn try_select(&mut self) -> Result<SelectedOperation<'a>, TrySelectError> {
         try_select(&mut self.handles)
     }
 
-    
-    
-    
     
     
     
@@ -849,9 +845,6 @@ impl<'a> Select<'a> {
     
     
     
-    
-    
-    
     pub fn select_timeout(
         &mut self,
         timeout: Duration,
@@ -860,6 +853,60 @@ impl<'a> Select<'a> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn select_deadline(
+        &mut self,
+        deadline: Instant,
+    ) -> Result<SelectedOperation<'a>, SelectTimeoutError> {
+        select_deadline(&mut self.handles, deadline)
+    }
+
     
     
     
@@ -993,9 +1040,53 @@ impl<'a> Select<'a> {
     
     
     pub fn ready_timeout(&mut self, timeout: Duration) -> Result<usize, ReadyTimeoutError> {
-        let timeout = Timeout::At(Instant::now() + timeout);
+        self.ready_deadline(Instant::now() + timeout)
+    }
 
-        match run_ready(&mut self.handles, timeout) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn ready_deadline(&mut self, deadline: Instant) -> Result<usize, ReadyTimeoutError> {
+        match run_ready(&mut self.handles, Timeout::At(deadline)) {
             None => Err(ReadyTimeoutError),
             Some(index) => Ok(index),
         }
@@ -1017,8 +1108,8 @@ impl<'a> Default for Select<'a> {
     }
 }
 
-impl<'a> fmt::Debug for Select<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl fmt::Debug for Select<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad("Select { .. }")
     }
 }
@@ -1049,7 +1140,7 @@ pub struct SelectedOperation<'a> {
     _marker: PhantomData<&'a ()>,
 }
 
-impl<'a> SelectedOperation<'a> {
+impl SelectedOperation<'_> {
     
     
     
@@ -1078,9 +1169,6 @@ impl<'a> SelectedOperation<'a> {
         self.index
     }
 
-    
-    
-    
     
     
     
@@ -1139,9 +1227,6 @@ impl<'a> SelectedOperation<'a> {
     
     
     
-    
-    
-    
     pub fn recv<T>(mut self, r: &Receiver<T>) -> Result<T, RecvError> {
         assert!(
             r as *const Receiver<T> as *const u8 == self.ptr,
@@ -1153,13 +1238,13 @@ impl<'a> SelectedOperation<'a> {
     }
 }
 
-impl<'a> fmt::Debug for SelectedOperation<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl fmt::Debug for SelectedOperation<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad("SelectedOperation { .. }")
     }
 }
 
-impl<'a> Drop for SelectedOperation<'a> {
+impl Drop for SelectedOperation<'_> {
     fn drop(&mut self) {
         panic!("dropped `SelectedOperation` without completing the operation");
     }

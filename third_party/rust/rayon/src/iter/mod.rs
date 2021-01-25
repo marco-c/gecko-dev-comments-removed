@@ -73,110 +73,125 @@
 
 
 
+
+
+
+
+
+
 use self::plumbing::*;
 use self::private::Try;
 pub use either::Either;
 use std::cmp::{self, Ordering};
 use std::iter::{Product, Sum};
-use std::ops::Fn;
+use std::ops::{Fn, RangeBounds};
 
-
-
-
-
-
-
-
-
-
-
-
-mod par_bridge;
-pub use self::par_bridge::{IterBridge, ParallelBridge};
-
-mod chain;
-mod find;
-mod find_first_last;
-pub use self::chain::Chain;
-mod chunks;
-pub use self::chunks::Chunks;
-mod collect;
-mod enumerate;
-pub use self::enumerate::Enumerate;
-mod filter;
-pub use self::filter::Filter;
-mod filter_map;
-pub use self::filter_map::FilterMap;
-mod flat_map;
-pub use self::flat_map::FlatMap;
-mod flatten;
-pub use self::flatten::Flatten;
-mod fold;
-mod for_each;
-mod from_par_iter;
 pub mod plumbing;
-pub use self::fold::{Fold, FoldWith};
-mod try_fold;
-pub use self::try_fold::{TryFold, TryFoldWith};
-mod reduce;
-mod skip;
-mod try_reduce;
-mod try_reduce_with;
-pub use self::skip::Skip;
-mod splitter;
-pub use self::splitter::{split, Split};
-mod take;
-pub use self::take::Take;
-mod map;
-pub use self::map::Map;
-mod map_with;
-pub use self::map_with::{MapInit, MapWith};
-mod zip;
-pub use self::zip::Zip;
-mod zip_eq;
-pub use self::zip_eq::ZipEq;
-mod interleave;
-pub use self::interleave::Interleave;
-mod interleave_shortest;
-pub use self::interleave_shortest::InterleaveShortest;
-mod intersperse;
-pub use self::intersperse::Intersperse;
-mod update;
-pub use self::update::Update;
-
-mod noop;
-mod rev;
-pub use self::rev::Rev;
-mod len;
-pub use self::len::{MaxLen, MinLen};
-
-mod cloned;
-pub use self::cloned::Cloned;
-mod copied;
-pub use self::copied::Copied;
-
-mod product;
-mod sum;
-
-mod inspect;
-pub use self::inspect::Inspect;
-mod panic_fuse;
-pub use self::panic_fuse::PanicFuse;
-mod while_some;
-pub use self::while_some::WhileSome;
-mod extend;
-mod repeat;
-mod unzip;
-pub use self::repeat::{repeat, Repeat};
-pub use self::repeat::{repeatn, RepeatN};
-
-mod empty;
-pub use self::empty::{empty, Empty};
-mod once;
-pub use self::once::{once, Once};
 
 #[cfg(test)]
 mod test;
+
+
+
+
+
+
+
+
+
+
+
+
+mod chain;
+mod chunks;
+mod cloned;
+mod collect;
+mod copied;
+mod empty;
+mod enumerate;
+mod extend;
+mod filter;
+mod filter_map;
+mod find;
+mod find_first_last;
+mod flat_map;
+mod flat_map_iter;
+mod flatten;
+mod flatten_iter;
+mod fold;
+mod for_each;
+mod from_par_iter;
+mod inspect;
+mod interleave;
+mod interleave_shortest;
+mod intersperse;
+mod len;
+mod map;
+mod map_with;
+mod multizip;
+mod noop;
+mod once;
+mod panic_fuse;
+mod par_bridge;
+mod positions;
+mod product;
+mod reduce;
+mod repeat;
+mod rev;
+mod skip;
+mod splitter;
+mod sum;
+mod take;
+mod try_fold;
+mod try_reduce;
+mod try_reduce_with;
+mod unzip;
+mod update;
+mod while_some;
+mod zip;
+mod zip_eq;
+
+pub use self::{
+    chain::Chain,
+    chunks::Chunks,
+    cloned::Cloned,
+    copied::Copied,
+    empty::{empty, Empty},
+    enumerate::Enumerate,
+    filter::Filter,
+    filter_map::FilterMap,
+    flat_map::FlatMap,
+    flat_map_iter::FlatMapIter,
+    flatten::Flatten,
+    flatten_iter::FlattenIter,
+    fold::{Fold, FoldWith},
+    inspect::Inspect,
+    interleave::Interleave,
+    interleave_shortest::InterleaveShortest,
+    intersperse::Intersperse,
+    len::{MaxLen, MinLen},
+    map::Map,
+    map_with::{MapInit, MapWith},
+    multizip::MultiZip,
+    once::{once, Once},
+    panic_fuse::PanicFuse,
+    par_bridge::{IterBridge, ParallelBridge},
+    positions::Positions,
+    repeat::{repeat, repeatn, Repeat, RepeatN},
+    rev::Rev,
+    skip::Skip,
+    splitter::{split, Split},
+    take::Take,
+    try_fold::{TryFold, TryFoldWith},
+    update::Update,
+    while_some::WhileSome,
+    zip::Zip,
+    zip_eq::ZipEq,
+};
+
+mod step_by;
+#[cfg(step_by)]
+pub use self::step_by::StepBy;
 
 
 
@@ -411,9 +426,6 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
-    
-    
-    
     fn for_each_init<OP, INIT, T>(self, init: INIT, op: OP)
     where
         OP: Fn(&mut T, Self::Item) + Sync + Send,
@@ -494,9 +506,6 @@ pub trait ParallelIterator: Sized + Send {
         self.map_with(init, op).try_reduce(<()>::default, ok)
     }
 
-    
-    
-    
     
     
     
@@ -618,9 +627,6 @@ pub trait ParallelIterator: Sized + Send {
         MapWith::new(self, init, map_op)
     }
 
-    
-    
-    
     
     
     
@@ -835,6 +841,8 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
+    
+    
     fn flat_map<F, PI>(self, map_op: F) -> FlatMap<Self, F>
     where
         F: Fn(Self::Item) -> PI + Sync + Send,
@@ -855,11 +863,84 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn flat_map_iter<F, SI>(self, map_op: F) -> FlatMapIter<Self, F>
+    where
+        F: Fn(Self::Item) -> SI + Sync + Send,
+        SI: IntoIterator,
+        SI::Item: Send,
+    {
+        FlatMapIter::new(self, map_op)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn flatten(self) -> Flatten<Self>
     where
         Self::Item: IntoParallelIterator,
     {
         Flatten::new(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn flatten_iter(self) -> FlattenIter<Self>
+    where
+        Self::Item: IntoIterator,
+        <Self::Item as IntoIterator>::Item: Send,
+    {
+        FlattenIter::new(self)
     }
 
     
@@ -1880,6 +1961,11 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
+    
+    
+    
+    
+    
     fn collect<C>(self) -> C
     where
         C: FromParallelIterator<Self::Item>,
@@ -2441,6 +2527,30 @@ pub trait IndexedParallelIterator: ParallelIterator {
     
     
     
+    
+    
+    
+    
+    
+    #[cfg(step_by)]
+    fn step_by(self, step: usize) -> StepBy<Self> {
+        StepBy::new(self, step)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn skip(self, n: usize) -> Skip<Self> {
         Skip::new(self, n)
     }
@@ -2578,6 +2688,31 @@ pub trait IndexedParallelIterator: ParallelIterator {
         P: Fn(Self::Item) -> bool + Sync + Send,
     {
         self.position_any(predicate)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn positions<P>(self, predicate: P) -> Positions<Self, P>
+    where
+        P: Fn(Self::Item) -> bool + Sync + Send,
+    {
+        Positions::new(self, predicate)
     }
 
     
@@ -2814,6 +2949,124 @@ where
     fn par_extend<I>(&mut self, par_iter: I)
     where
         I: IntoParallelIterator<Item = T>;
+}
+
+
+
+
+
+
+
+
+pub trait ParallelDrainFull {
+    
+    type Iter: ParallelIterator<Item = Self::Item>;
+
+    
+    
+    type Item: Send;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_drain(self) -> Self::Iter;
+}
+
+
+
+
+
+
+
+pub trait ParallelDrainRange<Idx = usize> {
+    
+    type Iter: ParallelIterator<Item = Self::Item>;
+
+    
+    
+    type Item: Send;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_drain<R: RangeBounds<Idx>>(self, range: R) -> Self::Iter;
 }
 
 

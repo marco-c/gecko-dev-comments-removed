@@ -191,7 +191,7 @@ where
 }
 
 
-struct UnzipA<'b, I, OP, FromB: 'b> {
+struct UnzipA<'b, I, OP, FromB> {
     base: I,
     op: OP,
     b: &'b mut FromB,
@@ -283,7 +283,7 @@ where
 }
 
 
-struct UnzipConsumer<'a, OP: 'a, CA, CB> {
+struct UnzipConsumer<'a, OP, CA, CB> {
     op: &'a OP,
     left: CA,
     right: CB,
@@ -358,7 +358,7 @@ where
 }
 
 
-struct UnzipFolder<'a, OP: 'a, FA, FB> {
+struct UnzipFolder<'a, OP, FA, FB> {
     op: &'a OP,
     left: FA,
     right: FB,

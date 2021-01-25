@@ -1,7 +1,8 @@
-#![doc(html_root_url = "https://docs.rs/rayon/1.2")]
+#![doc(html_root_url = "https://docs.rs/rayon/1.5")]
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]
+#![warn(rust_2018_idioms)]
 
 
 
@@ -78,20 +79,9 @@
 
 
 
-extern crate crossbeam_deque;
-extern crate either;
-extern crate rayon_core;
 
-#[cfg(test)]
-extern crate rand;
-#[cfg(test)]
-extern crate rand_xorshift;
-#[cfg(test)]
-#[macro_use]
-extern crate doc_comment;
 
-#[cfg(test)]
-doctest!("../README.md");
+
 
 #[macro_use]
 mod delegate;
@@ -110,6 +100,7 @@ pub mod range_inclusive;
 pub mod result;
 pub mod slice;
 pub mod str;
+pub mod string;
 pub mod vec;
 
 mod math;

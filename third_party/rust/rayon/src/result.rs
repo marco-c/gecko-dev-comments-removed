@@ -5,11 +5,11 @@
 
 
 
-use iter::plumbing::*;
-use iter::*;
+use crate::iter::plumbing::*;
+use crate::iter::*;
 use std::sync::Mutex;
 
-use option;
+use crate::option;
 
 
 #[derive(Debug, Clone)]
@@ -35,7 +35,7 @@ delegate_indexed_iterator! {
 
 
 #[derive(Debug)]
-pub struct Iter<'a, T: Sync + 'a> {
+pub struct Iter<'a, T: Sync> {
     inner: option::IntoIter<&'a T>,
 }
 
@@ -65,7 +65,7 @@ delegate_indexed_iterator! {
 
 
 #[derive(Debug)]
-pub struct IterMut<'a, T: Send + 'a> {
+pub struct IterMut<'a, T: Send> {
     inner: option::IntoIter<&'a mut T>,
 }
 

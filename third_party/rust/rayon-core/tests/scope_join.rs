@@ -1,5 +1,3 @@
-extern crate rayon_core;
-
 
 fn pseudo_join<F, G>(f: F, g: G)
 where

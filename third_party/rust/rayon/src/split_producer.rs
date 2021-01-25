@@ -2,10 +2,10 @@
 
 
 
-use iter::plumbing::{Folder, UnindexedProducer};
+use crate::iter::plumbing::{Folder, UnindexedProducer};
 
 
-pub(super) struct SplitProducer<'p, P: 'p, V> {
+pub(super) struct SplitProducer<'p, P, V> {
     data: V,
     separator: &'p P,
 

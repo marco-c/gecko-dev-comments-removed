@@ -1,6 +1,6 @@
-use iter::plumbing::*;
-use iter::Either::{Left, Right};
-use iter::*;
+use crate::iter::plumbing::*;
+use crate::iter::Either::{Left, Right};
+use crate::iter::*;
 
 
 impl<L, R> ParallelIterator for Either<L, R>

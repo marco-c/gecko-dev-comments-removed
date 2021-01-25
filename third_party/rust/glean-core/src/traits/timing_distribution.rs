@@ -21,7 +21,7 @@ pub trait TimingDistribution {
     
     
     
-    fn start(&mut self) -> TimerId;
+    fn start(&self) -> TimerId;
 
     
     
@@ -34,7 +34,7 @@ pub trait TimingDistribution {
     
     
     
-    fn stop_and_accumulate(&mut self, id: TimerId);
+    fn stop_and_accumulate(&self, id: TimerId);
 
     
     
@@ -45,7 +45,7 @@ pub trait TimingDistribution {
     
     
     
-    fn cancel(&mut self, id: TimerId);
+    fn cancel(&self, id: TimerId);
 
     
     

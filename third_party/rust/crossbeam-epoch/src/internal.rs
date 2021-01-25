@@ -38,23 +38,24 @@
 use core::cell::{Cell, UnsafeCell};
 use core::mem::{self, ManuallyDrop};
 use core::num::Wrapping;
-use core::{ptr, fmt};
 use core::sync::atomic;
 use core::sync::atomic::Ordering;
+use core::{fmt, ptr};
 
 use crossbeam_utils::CachePadded;
+use memoffset::offset_of;
 
-use atomic::{Shared, Owned};
-use collector::{Collector, LocalHandle};
-use deferred::Deferred;
-use epoch::{AtomicEpoch, Epoch};
-use guard::{unprotected, Guard};
-use sync::list::{Entry, IsElement, IterError, List};
-use sync::queue::Queue;
+use crate::atomic::{Owned, Shared};
+use crate::collector::{Collector, LocalHandle};
+use crate::deferred::Deferred;
+use crate::epoch::{AtomicEpoch, Epoch};
+use crate::guard::{unprotected, Guard};
+use crate::sync::list::{Entry, IsElement, IterError, List};
+use crate::sync::queue::Queue;
 
 
 #[cfg(not(feature = "sanitize"))]
-const MAX_OBJECTS: usize = 64;
+const MAX_OBJECTS: usize = 62;
 #[cfg(feature = "sanitize")]
 const MAX_OBJECTS: usize = 4;
 
@@ -62,7 +63,7 @@ const MAX_OBJECTS: usize = 4;
 pub struct Bag {
     
     deferreds: [Deferred; MAX_OBJECTS],
-    len: usize
+    len: usize,
 }
 
 
@@ -104,29 +105,87 @@ impl Bag {
 }
 
 impl Default for Bag {
+    #[rustfmt::skip]
     fn default() -> Self {
         
         #[cfg(not(feature = "sanitize"))]
-        return Bag { len: 0, deferreds:
-            [Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
-             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func)]
+        return Bag {
+            len: 0,
+            deferreds: [
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+            ],
         };
         #[cfg(feature = "sanitize")]
-        return Bag { len: 0, deferreds: [Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func)] };
+        return Bag {
+            len: 0,
+            deferreds: [
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+                Deferred::new(no_op_func),
+            ],
+        };
     }
 }
 
@@ -143,8 +202,10 @@ impl Drop for Bag {
 
 
 impl fmt::Debug for Bag {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Bag").field("deferreds", &&self.deferreds[..self.len]).finish()
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Bag")
+            .field("deferreds", &&self.deferreds[..self.len])
+            .finish()
     }
 }
 
@@ -311,6 +372,13 @@ pub struct Local {
     pin_count: Cell<Wrapping<usize>>,
 }
 
+
+
+#[test]
+fn local_size() {
+    assert!(core::mem::size_of::<Local>() <= 2048, "An allocation of `Local` should be <= 2048 bytes.");
+}
+
 impl Local {
     
     
@@ -330,8 +398,8 @@ impl Local {
                 handle_count: Cell::new(1),
                 pin_count: Cell::new(Wrapping(0)),
             })
-            .into_shared(&unprotected());
-            collector.global.locals.insert(local, &unprotected());
+            .into_shared(unprotected());
+            collector.global.locals.insert(local, unprotected());
             LocalHandle {
                 local: local.as_raw(),
             }
@@ -521,7 +589,7 @@ impl Local {
             let collector: Collector = ptr::read(&*(*self.collector.get()));
 
             
-            self.entry.delete(&unprotected());
+            self.entry.delete(unprotected());
 
             
             

@@ -1,3 +1,6 @@
+
+#![allow(clippy::mutex_atomic)]
+
 use std::fmt;
 use std::sync::{Arc, Condvar, Mutex};
 
@@ -52,6 +55,17 @@ struct Inner {
     count: Mutex<usize>,
 }
 
+impl Default for WaitGroup {
+    fn default() -> Self {
+        Self {
+            inner: Arc::new(Inner {
+                cvar: Condvar::new(),
+                count: Mutex::new(1),
+            }),
+        }
+    }
+}
+
 impl WaitGroup {
     
     
@@ -62,13 +76,8 @@ impl WaitGroup {
     
     
     
-    pub fn new() -> WaitGroup {
-        WaitGroup {
-            inner: Arc::new(Inner {
-                cvar: Condvar::new(),
-                count: Mutex::new(1),
-            }),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     
@@ -130,10 +139,8 @@ impl Clone for WaitGroup {
 }
 
 impl fmt::Debug for WaitGroup {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let count: &usize = &*self.inner.count.lock().unwrap();
-        f.debug_struct("WaitGroup")
-            .field("count", count)
-            .finish()
+        f.debug_struct("WaitGroup").field("count", count).finish()
     }
 }

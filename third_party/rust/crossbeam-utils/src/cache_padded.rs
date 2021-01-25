@@ -63,8 +63,16 @@ use core::ops::{Deref, DerefMut};
 
 
 
-#[cfg_attr(target_arch = "x86_64", repr(align(128)))]
-#[cfg_attr(not(target_arch = "x86_64"), repr(align(64)))]
+
+
+
+
+
+#[cfg_attr(any(target_arch = "x86_64", target_arch = "aarch64"), repr(align(128)))]
+#[cfg_attr(
+    not(any(target_arch = "x86_64", target_arch = "aarch64")),
+    repr(align(64))
+)]
 pub struct CachePadded<T> {
     value: T,
 }
@@ -82,7 +90,7 @@ impl<T> CachePadded<T> {
     
     
     
-    pub fn new(t: T) -> CachePadded<T> {
+    pub const fn new(t: T) -> CachePadded<T> {
         CachePadded::<T> { value: t }
     }
 
@@ -117,7 +125,7 @@ impl<T> DerefMut for CachePadded<T> {
 }
 
 impl<T: fmt::Debug> fmt::Debug for CachePadded<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CachePadded")
             .field("value", &self.value)
             .finish()

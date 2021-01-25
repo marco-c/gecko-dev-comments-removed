@@ -4,12 +4,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 
-use join;
-use thread_pool::ThreadPool;
-use unwind;
 #[allow(deprecated)]
-use Configuration;
-use ThreadPoolBuilder;
+use crate::Configuration;
+use crate::{join, Scope, ScopeFifo, ThreadPool, ThreadPoolBuilder};
 
 #[test]
 #[should_panic(expected = "Hello, world!")]
@@ -134,7 +131,7 @@ fn panic_thread_name() {
             format!("panic_thread_name#{}", i)
         });
 
-    let pool = unwind::halt_unwinding(|| builder.build());
+    let pool = crate::unwind::halt_unwinding(|| builder.build());
     assert!(pool.is_err(), "thread-name panic should propagate!");
 
     
@@ -266,4 +263,76 @@ fn spawn_fifo_order() {
     let vec = test_spawn_order!(spawn_fifo);
     let expected: Vec<i32> = (0..10).collect(); 
     assert_eq!(vec, expected);
+}
+
+#[test]
+fn nested_scopes() {
+    
+    fn nest<'scope, OP>(pools: &[ThreadPool], scopes: Vec<&Scope<'scope>>, op: OP)
+    where
+        OP: FnOnce(&[&Scope<'scope>]) + Send,
+    {
+        if let Some((pool, tail)) = pools.split_first() {
+            pool.scope(move |s| {
+                
+                
+                let mut scopes = scopes;
+                scopes.push(s);
+                nest(tail, scopes, op)
+            })
+        } else {
+            (op)(&scopes)
+        }
+    }
+
+    let pools: Vec<_> = (0..10)
+        .map(|_| ThreadPoolBuilder::new().num_threads(1).build().unwrap())
+        .collect();
+
+    let counter = AtomicUsize::new(0);
+    nest(&pools, vec![], |scopes| {
+        for &s in scopes {
+            s.spawn(|_| {
+                
+                counter.fetch_add(1, Ordering::Relaxed);
+            });
+        }
+    });
+    assert_eq!(counter.into_inner(), pools.len());
+}
+
+#[test]
+fn nested_fifo_scopes() {
+    
+    fn nest<'scope, OP>(pools: &[ThreadPool], scopes: Vec<&ScopeFifo<'scope>>, op: OP)
+    where
+        OP: FnOnce(&[&ScopeFifo<'scope>]) + Send,
+    {
+        if let Some((pool, tail)) = pools.split_first() {
+            pool.scope_fifo(move |s| {
+                
+                
+                let mut scopes = scopes;
+                scopes.push(s);
+                nest(tail, scopes, op)
+            })
+        } else {
+            (op)(&scopes)
+        }
+    }
+
+    let pools: Vec<_> = (0..10)
+        .map(|_| ThreadPoolBuilder::new().num_threads(1).build().unwrap())
+        .collect();
+
+    let counter = AtomicUsize::new(0);
+    nest(&pools, vec![], |scopes| {
+        for &s in scopes {
+            s.spawn_fifo(|_| {
+                
+                counter.fetch_add(1, Ordering::Relaxed);
+            });
+        }
+    });
+    assert_eq!(counter.into_inner(), pools.len());
 }

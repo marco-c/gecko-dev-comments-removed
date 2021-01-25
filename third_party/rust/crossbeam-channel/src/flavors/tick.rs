@@ -7,9 +7,9 @@ use std::time::{Duration, Instant};
 
 use crossbeam_utils::atomic::AtomicCell;
 
-use context::Context;
-use err::{RecvTimeoutError, TryRecvError};
-use select::{Operation, SelectHandle, Token};
+use crate::context::Context;
+use crate::err::{RecvTimeoutError, TryRecvError};
+use crate::select::{Operation, SelectHandle, Token};
 
 
 pub type TickToken = Option<Instant>;

@@ -1,8 +1,8 @@
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Condvar, Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Condvar, Mutex};
 use std::usize;
 
-use sleep::Sleep;
+use crate::registry::{Registry, WorkerThread};
 
 
 
@@ -30,43 +30,189 @@ use sleep::Sleep;
 
 
 
-pub(super) trait Latch: LatchProbe {
+pub(super) trait Latch {
+    
+    
+    
+    
+    
+    
+    
+    
     
     fn set(&self);
 }
 
-pub(super) trait LatchProbe {
-    
-    fn probe(&self) -> bool;
+pub(super) trait AsCoreLatch {
+    fn as_core_latch(&self) -> &CoreLatch;
 }
 
 
+const UNSET: usize = 0;
 
 
-pub(super) struct SpinLatch {
-    b: AtomicBool,
+
+const SLEEPY: usize = 1;
+
+
+
+const SLEEPING: usize = 2;
+
+
+const SET: usize = 3;
+
+
+
+
+#[derive(Debug)]
+pub(super) struct CoreLatch {
+    state: AtomicUsize,
 }
 
-impl SpinLatch {
+impl CoreLatch {
     #[inline]
-    pub(super) fn new() -> SpinLatch {
-        SpinLatch {
-            b: AtomicBool::new(false),
+    fn new() -> Self {
+        Self {
+            state: AtomicUsize::new(0),
         }
     }
-}
 
-impl LatchProbe for SpinLatch {
+    
+    
     #[inline]
-    fn probe(&self) -> bool {
-        self.b.load(Ordering::SeqCst)
+    pub(super) fn addr(&self) -> usize {
+        self as *const CoreLatch as usize
+    }
+
+    
+    
+    
+    #[inline]
+    pub(super) fn get_sleepy(&self) -> bool {
+        self.state
+            .compare_exchange(UNSET, SLEEPY, Ordering::SeqCst, Ordering::Relaxed)
+            .is_ok()
+    }
+
+    
+    
+    
+    #[inline]
+    pub(super) fn fall_asleep(&self) -> bool {
+        self.state
+            .compare_exchange(SLEEPY, SLEEPING, Ordering::SeqCst, Ordering::Relaxed)
+            .is_ok()
+    }
+
+    
+    
+    
+    #[inline]
+    pub(super) fn wake_up(&self) {
+        if !self.probe() {
+            let _ =
+                self.state
+                    .compare_exchange(SLEEPING, UNSET, Ordering::SeqCst, Ordering::Relaxed);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn set(&self) -> bool {
+        let old_state = self.state.swap(SET, Ordering::AcqRel);
+        old_state == SLEEPING
+    }
+
+    
+    #[inline]
+    pub(super) fn probe(&self) -> bool {
+        self.state.load(Ordering::Acquire) == SET
     }
 }
 
-impl Latch for SpinLatch {
+
+
+
+pub(super) struct SpinLatch<'r> {
+    core_latch: CoreLatch,
+    registry: &'r Arc<Registry>,
+    target_worker_index: usize,
+    cross: bool,
+}
+
+impl<'r> SpinLatch<'r> {
+    
+    
+    
+    
+    #[inline]
+    pub(super) fn new(thread: &'r WorkerThread) -> SpinLatch<'r> {
+        SpinLatch {
+            core_latch: CoreLatch::new(),
+            registry: thread.registry(),
+            target_worker_index: thread.index(),
+            cross: false,
+        }
+    }
+
+    
+    
+    
+    #[inline]
+    pub(super) fn cross(thread: &'r WorkerThread) -> SpinLatch<'r> {
+        SpinLatch {
+            cross: true,
+            ..SpinLatch::new(thread)
+        }
+    }
+
+    #[inline]
+    pub(super) fn probe(&self) -> bool {
+        self.core_latch.probe()
+    }
+}
+
+impl<'r> AsCoreLatch for SpinLatch<'r> {
+    #[inline]
+    fn as_core_latch(&self) -> &CoreLatch {
+        &self.core_latch
+    }
+}
+
+impl<'r> Latch for SpinLatch<'r> {
     #[inline]
     fn set(&self) {
-        self.b.store(true, Ordering::SeqCst);
+        let cross_registry;
+
+        let registry = if self.cross {
+            
+            
+            
+            
+            
+            cross_registry = Arc::clone(self.registry);
+            &cross_registry
+        } else {
+            
+            
+            
+            self.registry
+        };
+        let target_worker_index = self.target_worker_index;
+
+        
+        if self.core_latch.set() {
+            
+            
+            
+            
+            registry.notify_worker_latch_is_set(target_worker_index);
+        }
     }
 }
 
@@ -104,15 +250,6 @@ impl LockLatch {
     }
 }
 
-impl LatchProbe for LockLatch {
-    #[inline]
-    fn probe(&self) -> bool {
-        
-        let guard = self.m.lock().unwrap();
-        *guard
-    }
-}
-
 impl Latch for LockLatch {
     #[inline]
     fn set(&self) {
@@ -127,8 +264,19 @@ impl Latch for LockLatch {
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub(super) struct CountLatch {
+    core_latch: CoreLatch,
     counter: AtomicUsize,
 }
 
@@ -136,72 +284,47 @@ impl CountLatch {
     #[inline]
     pub(super) fn new() -> CountLatch {
         CountLatch {
+            core_latch: CoreLatch::new(),
             counter: AtomicUsize::new(1),
         }
     }
 
     #[inline]
     pub(super) fn increment(&self) {
-        debug_assert!(!self.probe());
+        debug_assert!(!self.core_latch.probe());
         self.counter.fetch_add(1, Ordering::Relaxed);
     }
-}
 
-impl LatchProbe for CountLatch {
-    #[inline]
-    fn probe(&self) -> bool {
-        
-        self.counter.load(Ordering::SeqCst) == 0
-    }
-}
-
-impl Latch for CountLatch {
+    
+    
+    
+    
     
     #[inline]
-    fn set(&self) {
-        self.counter.fetch_sub(1, Ordering::SeqCst);
+    fn set(&self) -> bool {
+        if self.counter.fetch_sub(1, Ordering::SeqCst) == 1 {
+            self.core_latch.set();
+            true
+        } else {
+            false
+        }
     }
-}
 
-
-
-
-pub(super) struct TickleLatch<'a, L: Latch> {
-    inner: L,
-    sleep: &'a Sleep,
-}
-
-impl<'a, L: Latch> TickleLatch<'a, L> {
+    
+    
+    
     #[inline]
-    pub(super) fn new(latch: L, sleep: &'a Sleep) -> Self {
-        TickleLatch {
-            inner: latch,
-            sleep,
+    pub(super) fn set_and_tickle_one(&self, registry: &Registry, target_worker_index: usize) {
+        if self.set() {
+            registry.notify_worker_latch_is_set(target_worker_index);
         }
     }
 }
 
-impl<'a, L: Latch> LatchProbe for TickleLatch<'a, L> {
+impl AsCoreLatch for CountLatch {
     #[inline]
-    fn probe(&self) -> bool {
-        self.inner.probe()
-    }
-}
-
-impl<'a, L: Latch> Latch for TickleLatch<'a, L> {
-    #[inline]
-    fn set(&self) {
-        self.inner.set();
-        self.sleep.tickle(usize::MAX);
-    }
-}
-
-impl<'a, L> LatchProbe for &'a L
-where
-    L: LatchProbe,
-{
-    fn probe(&self) -> bool {
-        L::probe(self)
+    fn as_core_latch(&self) -> &CoreLatch {
+        &self.core_latch
     }
 }
 
@@ -209,6 +332,7 @@ impl<'a, L> Latch for &'a L
 where
     L: Latch,
 {
+    #[inline]
     fn set(&self) {
         L::set(self);
     }

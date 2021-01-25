@@ -4,9 +4,8 @@
 
 
 
-use iter::*;
-use rayon_core;
-use slice::ParallelSliceMut;
+use crate::iter::*;
+use crate::slice::ParallelSliceMut;
 use std::mem;
 use std::mem::size_of;
 use std::ptr;

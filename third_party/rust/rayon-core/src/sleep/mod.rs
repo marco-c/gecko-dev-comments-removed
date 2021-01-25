@@ -1,281 +1,392 @@
 
 
 
-use log::Event::*;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use crate::latch::CoreLatch;
+use crate::log::Event::*;
+use crate::log::Logger;
+use crossbeam_utils::CachePadded;
+use std::sync::atomic::Ordering;
 use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::usize;
 
+mod counters;
+use self::counters::{AtomicCounters, JobsEventCounter};
+
+
+
+
+
+
+
+
 pub(super) struct Sleep {
-    state: AtomicUsize,
-    data: Mutex<()>,
-    tickle: Condvar,
+    logger: Logger,
+
+    
+    
+    worker_sleep_states: Vec<CachePadded<WorkerSleepState>>,
+
+    counters: AtomicCounters,
 }
 
-const AWAKE: usize = 0;
-const SLEEPING: usize = 1;
 
-const ROUNDS_UNTIL_SLEEPY: usize = 32;
-const ROUNDS_UNTIL_ASLEEP: usize = 64;
+
+
+
+
+pub(super) struct IdleState {
+    
+    worker_index: usize,
+
+    
+    rounds: u32,
+
+    
+    
+    jobs_counter: JobsEventCounter,
+}
+
+
+#[derive(Default)]
+struct WorkerSleepState {
+    
+    
+    is_blocked: Mutex<bool>,
+
+    condvar: Condvar,
+}
+
+const ROUNDS_UNTIL_SLEEPY: u32 = 32;
+const ROUNDS_UNTIL_SLEEPING: u32 = ROUNDS_UNTIL_SLEEPY + 1;
 
 impl Sleep {
-    pub(super) fn new() -> Sleep {
+    pub(super) fn new(logger: Logger, n_threads: usize) -> Sleep {
         Sleep {
-            state: AtomicUsize::new(AWAKE),
-            data: Mutex::new(()),
-            tickle: Condvar::new(),
+            logger,
+            worker_sleep_states: (0..n_threads).map(|_| Default::default()).collect(),
+            counters: AtomicCounters::new(),
         }
     }
 
-    fn anyone_sleeping(&self, state: usize) -> bool {
-        state & SLEEPING != 0
-    }
-
-    fn any_worker_is_sleepy(&self, state: usize) -> bool {
-        (state >> 1) != 0
-    }
-
-    fn worker_is_sleepy(&self, state: usize, worker_index: usize) -> bool {
-        (state >> 1) == (worker_index + 1)
-    }
-
-    fn with_sleepy_worker(&self, state: usize, worker_index: usize) -> usize {
-        debug_assert!(state == AWAKE || state == SLEEPING);
-        ((worker_index + 1) << 1) + state
-    }
-
     #[inline]
-    pub(super) fn work_found(&self, worker_index: usize, yields: usize) -> usize {
-        log!(FoundWork {
+    pub(super) fn start_looking(&self, worker_index: usize, latch: &CoreLatch) -> IdleState {
+        self.logger.log(|| ThreadIdle {
             worker: worker_index,
-            yields: yields,
+            latch_addr: latch.addr(),
         });
-        if yields > ROUNDS_UNTIL_SLEEPY {
-            
-            
-            
-            self.tickle(worker_index);
+
+        self.counters.add_inactive_thread();
+
+        IdleState {
+            worker_index,
+            rounds: 0,
+            jobs_counter: JobsEventCounter::DUMMY,
         }
-        0
     }
 
     #[inline]
-    pub(super) fn no_work_found(&self, worker_index: usize, yields: usize) -> usize {
-        log!(DidNotFindWork {
-            worker: worker_index,
-            yields: yields,
+    pub(super) fn work_found(&self, idle_state: IdleState) {
+        self.logger.log(|| ThreadFoundWork {
+            worker: idle_state.worker_index,
+            yields: idle_state.rounds,
         });
-        if yields < ROUNDS_UNTIL_SLEEPY {
+
+        
+        
+        let threads_to_wake = self.counters.sub_inactive_thread();
+        self.wake_any_threads(threads_to_wake as u32);
+    }
+
+    #[inline]
+    pub(super) fn no_work_found(
+        &self,
+        idle_state: &mut IdleState,
+        latch: &CoreLatch,
+        has_injected_jobs: impl FnOnce() -> bool,
+    ) {
+        if idle_state.rounds < ROUNDS_UNTIL_SLEEPY {
             thread::yield_now();
-            yields + 1
-        } else if yields == ROUNDS_UNTIL_SLEEPY {
+            idle_state.rounds += 1;
+        } else if idle_state.rounds == ROUNDS_UNTIL_SLEEPY {
+            idle_state.jobs_counter = self.announce_sleepy(idle_state.worker_index);
+            idle_state.rounds += 1;
             thread::yield_now();
-            if self.get_sleepy(worker_index) {
-                yields + 1
-            } else {
-                yields
-            }
-        } else if yields < ROUNDS_UNTIL_ASLEEP {
+        } else if idle_state.rounds < ROUNDS_UNTIL_SLEEPING {
+            idle_state.rounds += 1;
             thread::yield_now();
-            if self.still_sleepy(worker_index) {
-                yields + 1
-            } else {
-                log!(GotInterrupted {
-                    worker: worker_index
-                });
-                0
-            }
         } else {
-            debug_assert_eq!(yields, ROUNDS_UNTIL_ASLEEP);
-            self.sleep(worker_index);
-            0
-        }
-    }
-
-    pub(super) fn tickle(&self, worker_index: usize) {
-        
-        
-        
-        
-        let old_state = self.state.load(Ordering::SeqCst);
-        if old_state != AWAKE {
-            self.tickle_cold(worker_index);
+            debug_assert_eq!(idle_state.rounds, ROUNDS_UNTIL_SLEEPING);
+            self.sleep(idle_state, latch, has_injected_jobs);
         }
     }
 
     #[cold]
-    fn tickle_cold(&self, worker_index: usize) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let old_state = self.state.swap(AWAKE, Ordering::Release);
-        log!(Tickle {
+    fn announce_sleepy(&self, worker_index: usize) -> JobsEventCounter {
+        let counters = self
+            .counters
+            .increment_jobs_event_counter_if(JobsEventCounter::is_active);
+        let jobs_counter = counters.jobs_counter();
+        self.logger.log(|| ThreadSleepy {
             worker: worker_index,
-            old_state: old_state,
+            jobs_counter: jobs_counter.as_usize(),
         });
-        if self.anyone_sleeping(old_state) {
-            let _data = self.data.lock().unwrap();
-            self.tickle.notify_all();
-        }
+        jobs_counter
     }
 
-    fn get_sleepy(&self, worker_index: usize) -> bool {
-        loop {
-            
-            
-            
-            
-            
-            
-            let state = self.state.load(Ordering::Acquire);
-            log!(GetSleepy {
+    #[cold]
+    fn sleep(
+        &self,
+        idle_state: &mut IdleState,
+        latch: &CoreLatch,
+        has_injected_jobs: impl FnOnce() -> bool,
+    ) {
+        let worker_index = idle_state.worker_index;
+
+        if !latch.get_sleepy() {
+            self.logger.log(|| ThreadSleepInterruptedByLatch {
                 worker: worker_index,
-                state: state,
+                latch_addr: latch.addr(),
             });
-            if self.any_worker_is_sleepy(state) {
-                
-                debug_assert!(
-                    !self.worker_is_sleepy(state, worker_index),
-                    "worker {} called `is_sleepy()`, \
-                     but they are already sleepy (state={})",
-                    worker_index,
-                    state
-                );
-                return false;
-            } else {
-                
-                let new_state = self.with_sleepy_worker(state, worker_index);
 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if self
-                    .state
-                    .compare_exchange(state, new_state, Ordering::SeqCst, Ordering::Relaxed)
-                    .is_ok()
-                {
-                    log!(GotSleepy {
-                        worker: worker_index,
-                        old_state: state,
-                        new_state: new_state,
-                    });
-                    return true;
-                }
-            }
+            return;
         }
-    }
 
-    fn still_sleepy(&self, worker_index: usize) -> bool {
-        let state = self.state.load(Ordering::SeqCst);
-        self.worker_is_sleepy(state, worker_index)
-    }
+        let sleep_state = &self.worker_sleep_states[worker_index];
+        let mut is_blocked = sleep_state.is_blocked.lock().unwrap();
+        debug_assert!(!*is_blocked);
 
-    fn sleep(&self, worker_index: usize) {
+        
+        
+        if !latch.fall_asleep() {
+            self.logger.log(|| ThreadSleepInterruptedByLatch {
+                worker: worker_index,
+                latch_addr: latch.addr(),
+            });
+
+            idle_state.wake_fully();
+            return;
+        }
+
         loop {
-            
-            
-            
-            
-            
-            
-            
-            let state = self.state.load(Ordering::Acquire);
-            if self.worker_is_sleepy(state, worker_index) {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let data = self.data.lock().unwrap();
+            let counters = self.counters.load(Ordering::SeqCst);
 
+            
+            debug_assert!(idle_state.jobs_counter.is_sleepy());
+            if counters.jobs_counter() != idle_state.jobs_counter {
                 
                 
                 
                 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if self
-                    .state
-                    .compare_exchange(state, SLEEPING, Ordering::SeqCst, Ordering::Relaxed)
-                    .is_ok()
-                {
-                    
-                    
-                    
-                    
-                    
-                    
-                    log!(FellAsleep {
-                        worker: worker_index
-                    });
-                    let _ = self.tickle.wait(data).unwrap();
-                    log!(GotAwoken {
-                        worker: worker_index
-                    });
-                    return;
-                }
-            } else {
-                log!(GotInterrupted {
-                    worker: worker_index
+                self.logger.log(|| ThreadSleepInterruptedByJob {
+                    worker: worker_index,
                 });
+
+                idle_state.wake_partly();
+                latch.wake_up();
                 return;
             }
+
+            
+            if self.counters.try_add_sleeping_thread(counters) {
+                break;
+            }
         }
+
+        
+
+        self.logger.log(|| ThreadSleeping {
+            worker: worker_index,
+            latch_addr: latch.addr(),
+        });
+
+        
+        
+        
+        
+        
+        
+        std::sync::atomic::fence(Ordering::SeqCst);
+        if has_injected_jobs() {
+            
+            
+            
+            self.counters.sub_sleeping_thread();
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            *is_blocked = true;
+            while *is_blocked {
+                is_blocked = sleep_state.condvar.wait(is_blocked).unwrap();
+            }
+        }
+
+        
+        idle_state.wake_fully();
+        latch.wake_up();
+
+        self.logger.log(|| ThreadAwoken {
+            worker: worker_index,
+            latch_addr: latch.addr(),
+        });
+    }
+
+    
+    
+    
+    
+    pub(super) fn notify_worker_latch_is_set(&self, target_worker_index: usize) {
+        self.wake_specific_thread(target_worker_index);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub(super) fn new_injected_jobs(
+        &self,
+        source_worker_index: usize,
+        num_jobs: u32,
+        queue_was_empty: bool,
+    ) {
+        
+        
+        
+        std::sync::atomic::fence(Ordering::SeqCst);
+
+        self.new_jobs(source_worker_index, num_jobs, queue_was_empty)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub(super) fn new_internal_jobs(
+        &self,
+        source_worker_index: usize,
+        num_jobs: u32,
+        queue_was_empty: bool,
+    ) {
+        self.new_jobs(source_worker_index, num_jobs, queue_was_empty)
+    }
+
+    
+    #[inline]
+    fn new_jobs(&self, source_worker_index: usize, num_jobs: u32, queue_was_empty: bool) {
+        
+        
+        
+        let counters = self
+            .counters
+            .increment_jobs_event_counter_if(JobsEventCounter::is_sleepy);
+        let num_awake_but_idle = counters.awake_but_idle_threads();
+        let num_sleepers = counters.sleeping_threads();
+
+        self.logger.log(|| JobThreadCounts {
+            worker: source_worker_index,
+            num_idle: num_awake_but_idle as u16,
+            num_sleepers: num_sleepers as u16,
+        });
+
+        if num_sleepers == 0 {
+            
+            return;
+        }
+
+        
+        
+        let num_awake_but_idle = num_awake_but_idle as u32;
+        let num_sleepers = num_sleepers as u32;
+
+        
+        
+        
+        if !queue_was_empty {
+            let num_to_wake = std::cmp::min(num_jobs, num_sleepers);
+            self.wake_any_threads(num_to_wake);
+        } else if num_awake_but_idle < num_jobs {
+            let num_to_wake = std::cmp::min(num_jobs - num_awake_but_idle, num_sleepers);
+            self.wake_any_threads(num_to_wake);
+        }
+    }
+
+    #[cold]
+    fn wake_any_threads(&self, mut num_to_wake: u32) {
+        if num_to_wake > 0 {
+            for i in 0..self.worker_sleep_states.len() {
+                if self.wake_specific_thread(i) {
+                    num_to_wake -= 1;
+                    if num_to_wake == 0 {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    fn wake_specific_thread(&self, index: usize) -> bool {
+        let sleep_state = &self.worker_sleep_states[index];
+
+        let mut is_blocked = sleep_state.is_blocked.lock().unwrap();
+        if *is_blocked {
+            *is_blocked = false;
+            sleep_state.condvar.notify_one();
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            self.counters.sub_sleeping_thread();
+
+            self.logger.log(|| ThreadNotify { worker: index });
+
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl IdleState {
+    fn wake_fully(&mut self) {
+        self.rounds = 0;
+        self.jobs_counter = JobsEventCounter::DUMMY;
+    }
+
+    fn wake_partly(&mut self) {
+        self.rounds = ROUNDS_UNTIL_SLEEPY;
+        self.jobs_counter = JobsEventCounter::DUMMY;
     }
 }

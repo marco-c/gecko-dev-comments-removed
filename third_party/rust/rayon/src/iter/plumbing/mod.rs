@@ -4,7 +4,7 @@
 
 
 
-use join_context;
+use crate::join_context;
 
 use super::IndexedParallelIterator;
 
@@ -264,7 +264,7 @@ impl Splitter {
     #[inline]
     fn new() -> Splitter {
         Splitter {
-            splits: ::current_num_threads(),
+            splits: crate::current_num_threads(),
         }
     }
 
@@ -275,7 +275,7 @@ impl Splitter {
         if stolen {
             
             
-            self.splits = cmp::max(::current_num_threads(), self.splits / 2);
+            self.splits = cmp::max(crate::current_num_threads(), self.splits / 2);
             true
         } else if splits > 0 {
             

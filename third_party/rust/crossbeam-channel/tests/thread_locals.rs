@@ -1,13 +1,9 @@
 
 
-#[macro_use]
-extern crate crossbeam_channel;
-extern crate crossbeam_utils;
-
 use std::thread;
 use std::time::Duration;
 
-use crossbeam_channel::unbounded;
+use crossbeam_channel::{select, unbounded};
 use crossbeam_utils::thread::scope;
 
 fn ms(ms: u64) -> Duration {

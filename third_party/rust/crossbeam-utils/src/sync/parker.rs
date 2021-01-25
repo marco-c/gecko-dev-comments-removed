@@ -1,8 +1,8 @@
 use std::fmt;
 use std::marker::PhantomData;
-use std::sync::{Arc, Condvar, Mutex};
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::SeqCst;
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 
@@ -58,6 +58,21 @@ pub struct Parker {
 
 unsafe impl Send for Parker {}
 
+impl Default for Parker {
+    fn default() -> Self {
+        Self {
+            unparker: Unparker {
+                inner: Arc::new(Inner {
+                    state: AtomicUsize::new(EMPTY),
+                    lock: Mutex::new(()),
+                    cvar: Condvar::new(),
+                }),
+            },
+            _marker: PhantomData,
+        }
+    }
+}
+
 impl Parker {
     
     
@@ -70,16 +85,7 @@ impl Parker {
     
     
     pub fn new() -> Parker {
-        Parker {
-            unparker: Unparker {
-                inner: Arc::new(Inner {
-                    state: AtomicUsize::new(EMPTY),
-                    lock: Mutex::new(()),
-                    cvar: Condvar::new(),
-                }),
-            },
-            _marker: PhantomData,
-        }
+        Self::default()
     }
 
     
@@ -145,20 +151,52 @@ impl Parker {
     
     
     
-    
-    
     pub fn unparker(&self) -> &Unparker {
         &self.unparker
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_raw(this: Parker) -> *const () {
+        Unparker::into_raw(this.unparker)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_raw(ptr: *const ()) -> Parker {
+        Parker {
+            unparker: Unparker::from_raw(ptr),
+            _marker: PhantomData,
+        }
     }
 }
 
 impl fmt::Debug for Parker {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad("Parker { .. }")
     }
 }
-
-
 
 
 pub struct Unparker {
@@ -199,10 +237,48 @@ impl Unparker {
     pub fn unpark(&self) {
         self.inner.unpark()
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_raw(this: Unparker) -> *const () {
+        Arc::into_raw(this.inner) as *const ()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_raw(ptr: *const ()) -> Unparker {
+        Unparker {
+            inner: Arc::from_raw(ptr as *const Inner),
+        }
+    }
 }
 
 impl fmt::Debug for Unparker {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad("Unparker { .. }")
     }
 }
@@ -228,7 +304,11 @@ struct Inner {
 impl Inner {
     fn park(&self, timeout: Option<Duration>) {
         
-        if self.state.compare_exchange(NOTIFIED, EMPTY, SeqCst, SeqCst).is_ok() {
+        if self
+            .state
+            .compare_exchange(NOTIFIED, EMPTY, SeqCst, SeqCst)
+            .is_ok()
+        {
             return;
         }
 
@@ -264,10 +344,16 @@ impl Inner {
                     
                     m = self.cvar.wait(m).unwrap();
 
-                    match self.state.compare_exchange(NOTIFIED, EMPTY, SeqCst, SeqCst) {
-                        Ok(_) => return, 
-                        Err(_) => {} 
+                    if self
+                        .state
+                        .compare_exchange(NOTIFIED, EMPTY, SeqCst, SeqCst)
+                        .is_ok()
+                    {
+                        
+                        return;
                     }
+
+                    
                 }
             }
             Some(timeout) => {
@@ -278,7 +364,7 @@ impl Inner {
 
                 match self.state.swap(EMPTY, SeqCst) {
                     NOTIFIED => {} 
-                    PARKED => {} 
+                    PARKED => {}   
                     n => panic!("inconsistent park_timeout state: {}", n),
                 }
             }
@@ -291,9 +377,9 @@ impl Inner {
         
         
         match self.state.swap(NOTIFIED, SeqCst) {
-            EMPTY => return, 
+            EMPTY => return,    
             NOTIFIED => return, 
-            PARKED => {} 
+            PARKED => {}        
             _ => panic!("inconsistent state in unpark"),
         }
 
