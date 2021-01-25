@@ -117,6 +117,12 @@ extern MOZ_MUST_USE bool CompileLazyFunctionToStencil(
 extern bool InstantiateStencilsForDelazify(JSContext* cx,
                                            CompilationStencil& stencil);
 
+
+inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {
+  return !options.discardSource && !options.sourceIsLazy &&
+         !options.forceFullParse();
+}
+
 }  
 
 }  

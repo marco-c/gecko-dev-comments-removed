@@ -9,8 +9,9 @@
 #include "mozilla/RefPtr.h"   
 #include "mozilla/Sprintf.h"  
 
-#include "frontend/AbstractScopePtr.h"  
-#include "frontend/BytecodeSection.h"   
+#include "frontend/AbstractScopePtr.h"     
+#include "frontend/BytecodeCompilation.h"  
+#include "frontend/BytecodeSection.h"      
 #include "frontend/CompilationInfo.h"  
 #include "frontend/SharedContext.h"
 #include "gc/AllocKind.h"    
@@ -674,7 +675,7 @@ bool CompilationStencil::instantiateStencilsAfterPreparation(
   
 
   
-  {
+  if (CanLazilyParse(input.options)) {
     UpdateEmittedInnerFunctions(cx, input, stencil, gcOutput);
 
     if (isInitialParse) {
