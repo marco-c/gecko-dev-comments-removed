@@ -2239,9 +2239,9 @@ nsresult LaunchChild(bool aBlankCommandLine) {
   PRStatus failed = PR_WaitProcess(process, &exitCode);
   if (failed || exitCode) return NS_ERROR_FAILURE;
 #      endif  
-#    endif  
-#  endif  
-#endif  
+#    endif    
+#  endif      
+#endif        
 
   return NS_ERROR_LAUNCHED_CHILD_PROCESS;
 }
@@ -4186,7 +4186,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     }
   }
 #  endif 
-#endif 
+#endif   
 
 #if defined(XP_WIN)
   
@@ -4714,425 +4714,434 @@ nsresult XREMain::XRE_mainRun() {
   nsresult rv = NS_OK;
   NS_ASSERTION(mScopedXPCOM, "Scoped xpcom not initialized.");
 
+  
+  
+  nsCOMPtr<nsIAppStartup> appStartup;
+  {
 #if defined(XP_WIN)
-  RefPtr<mozilla::DllServices> dllServices(mozilla::DllServices::Get());
-  dllServices->StartUntrustedModulesProcessor();
-  auto dllServicesDisable =
-      MakeScopeExit([&dllServices]() { dllServices->DisableFull(); });
+    RefPtr<mozilla::DllServices> dllServices(mozilla::DllServices::Get());
+    dllServices->StartUntrustedModulesProcessor();
+    auto dllServicesDisable =
+        MakeScopeExit([&dllServices]() { dllServices->DisableFull(); });
 
 #  if defined(MOZ_GECKO_PROFILER)
-  mozilla::mscom::InitProfilerMarkers();
+    mozilla::mscom::InitProfilerMarkers();
 #  endif  
-#endif  
+#endif    
 
-  rv = mScopedXPCOM->SetWindowCreator(mNativeApp);
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-  
-  nsCOMPtr<nsIPrefService> prefs =
-      do_GetService("@mozilla.org/preferences-service;1", &rv);
-  if (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsIPrefBranch> defaultPrefBranch;
-    rv = prefs->GetDefaultBranch(nullptr, getter_AddRefs(defaultPrefBranch));
-
-    if (NS_SUCCEEDED(rv)) {
-      nsAutoCString sval;
-      rv = defaultPrefBranch->GetCharPref("app.update.channel", sval);
-      if (NS_SUCCEEDED(rv)) {
-        CrashReporter::AnnotateCrashReport(
-            CrashReporter::Annotation::ReleaseChannel, sval);
-      }
-    }
-  }
-  
-  CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::FramePoisonBase,
-      nsPrintfCString("%.16" PRIu64, uint64_t(gMozillaPoisonBase)));
-  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::FramePoisonSize,
-                                     uint32_t(gMozillaPoisonSize));
-
-  bool includeContextHeap =
-      Preferences::GetBool("toolkit.crashreporter.include_context_heap", false);
-  CrashReporter::SetIncludeContextHeap(includeContextHeap);
-
-#ifdef XP_WIN
-  PR_CreateThread(PR_USER_THREAD, AnnotateWMIData_ThreadStart, 0,
-                  PR_PRIORITY_LOW, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
-#endif
-
-#if defined(XP_LINUX) && !defined(ANDROID)
-  PR_CreateThread(PR_USER_THREAD, AnnotateLSBRelease, 0, PR_PRIORITY_LOW,
-                  PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
-#endif
-
-  if (mStartOffline) {
-    nsCOMPtr<nsIIOService> io(
-        do_GetService("@mozilla.org/network/io-service;1"));
-    NS_ENSURE_TRUE(io, NS_ERROR_FAILURE);
-    io->SetManageOfflineStatus(false);
-    io->SetOffline(true);
-  }
-
-#ifdef XP_WIN
-  mozilla::DllPrefetchExperimentRegistryInfo prefetchRegInfo;
-  mozilla::AlteredDllPrefetchMode dllPrefetchMode =
-      prefetchRegInfo.GetAlteredDllPrefetchMode();
-
-  if (!PR_GetEnv("XRE_NO_DLL_READAHEAD") &&
-      dllPrefetchMode != mozilla::AlteredDllPrefetchMode::NoPrefetch) {
-    nsCOMPtr<nsIFile> greDir = mDirProvider.GetGREDir();
-    nsAutoString path;
-    rv = greDir->GetPath(path);
-    if (NS_SUCCEEDED(rv)) {
-      PRThread* readAheadThread;
-      wchar_t* pathRaw;
-
-      
-      
-      
-      if (dllPrefetchMode ==
-          mozilla::AlteredDllPrefetchMode::OptimizedPrefetch) {
-        pathRaw = new wchar_t[MAX_PATH];
-        wcscpy_s(pathRaw, MAX_PATH, path.get());
-      } else {
-        pathRaw = nullptr;
-      }
-      readAheadThread = PR_CreateThread(
-          PR_USER_THREAD, ReadAheadDlls_ThreadStart, (void*)pathRaw,
-          PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
-      if (readAheadThread == NULL) {
-        delete[] pathRaw;
-      }
-    }
-  }
-#endif
-
-  if (gDoMigration) {
-    nsCOMPtr<nsIFile> file;
-    mDirProvider.GetAppDir()->Clone(getter_AddRefs(file));
-    file->AppendNative("override.ini"_ns);
-    nsINIParser parser;
-    nsresult rv = parser.Init(file);
-    
-    if (NS_FAILED(rv)) {
-      bool persistent;
-      mDirProvider.GetFile(XRE_APP_DISTRIBUTION_DIR, &persistent,
-                           getter_AddRefs(file));
-      file->AppendNative("distribution.ini"_ns);
-      rv = parser.Init(file);
-    }
-    if (NS_SUCCEEDED(rv)) {
-      nsAutoCString buf;
-      rv = parser.GetString("XRE", "EnableProfileMigrator", buf);
-      if (NS_SUCCEEDED(rv)) {
-        if (buf[0] == '0' || buf[0] == 'f' || buf[0] == 'F') {
-          gDoMigration = false;
-        }
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  bool initializedJSContext = false;
-
-  {
-    
-    if (mAppData->flags & NS_XRE_ENABLE_PROFILE_MIGRATOR && gDoMigration) {
-      gDoMigration = false;
-
-      xpc::InitializeJSContext();
-      initializedJSContext = true;
-
-      nsCOMPtr<nsIProfileMigrator> pm(
-          do_CreateInstance(NS_PROFILEMIGRATOR_CONTRACTID));
-      if (pm) {
-        nsAutoCString aKey;
-        nsAutoCString aName;
-        if (gDoProfileReset) {
-          
-          
-          aKey = MOZ_APP_NAME;
-          gResetOldProfile->GetName(aName);
-        }
-        pm->Migrate(&mDirProvider, aKey, aName);
-      }
-    }
-
-    if (gDoProfileReset) {
-      if (!initializedJSContext) {
-        xpc::InitializeJSContext();
-        initializedJSContext = true;
-      }
-
-      nsresult backupCreated =
-          ProfileResetCleanup(mProfileSvc, gResetOldProfile);
-      if (NS_FAILED(backupCreated)) {
-        NS_WARNING("Could not cleanup the profile that was reset");
-      }
-    }
-  }
-
-#ifndef XP_WIN
-  nsCOMPtr<nsIFile> profileDir;
-  nsAutoCString path;
-  rv = mDirProvider.GetProfileStartupDir(getter_AddRefs(profileDir));
-  if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(profileDir->GetNativePath(path)) &&
-      !IsUtf8(path)) {
-    PR_fprintf(
-        PR_STDERR,
-        "Error: The profile path is not valid UTF-8. Unable to continue.\n");
-    return NS_ERROR_FAILURE;
-  }
-#endif
-
-  
-  
-  mDirProvider.InitializeUserPrefs();
-
-  
-  
-  if (!initializedJSContext) {
-    xpc::InitializeJSContext();
-  }
-
-  
-  
-  
-  
-  mDirProvider.FinishInitializingUserPrefs();
-
-  nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY);
-
-  nsCOMPtr<nsIAppStartup> appStartup(components::AppStartup::Service());
-  NS_ENSURE_TRUE(appStartup, NS_ERROR_FAILURE);
-
-  mDirProvider.DoStartup();
-
-#ifdef MOZ_THUNDERBIRD
-  if (Preferences::GetBool("security.prompt_for_master_password_on_startup",
-                           false)) {
-    
-    
-    
-    
-    nsCOMPtr<nsIPK11TokenDB> db =
-        do_GetService("@mozilla.org/security/pk11tokendb;1");
-    nsCOMPtr<nsIPK11Token> token;
-    if (NS_SUCCEEDED(db->GetInternalKeyToken(getter_AddRefs(token)))) {
-      Unused << token->Login(false);
-    }
-  }
-#endif
-
-  
-  
-  mozilla::FilePreferences::InitDirectoriesWhitelist();
-  mozilla::FilePreferences::InitPrefs();
-
-  OverrideDefaultLocaleIfNeeded();
-
-  nsCString userAgentLocale;
-  LocaleService::GetInstance()->GetAppLocaleAsBCP47(userAgentLocale);
-  CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::useragent_locale, userAgentLocale);
-
-  appStartup->GetShuttingDown(&mShuttingDown);
-
-  nsCOMPtr<nsICommandLineRunner> cmdLine;
-
-  nsCOMPtr<nsIFile> workingDir;
-  rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
-                              getter_AddRefs(workingDir));
-  if (NS_FAILED(rv)) {
-    
-    workingDir = nullptr;
-  }
-
-  if (!mShuttingDown) {
-    cmdLine = new nsCommandLine();
-
-    rv = cmdLine->Init(gArgc, gArgv, workingDir,
-                       nsICommandLine::STATE_INITIAL_LAUNCH);
+    rv = mScopedXPCOM->SetWindowCreator(mNativeApp);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
     
+    nsCOMPtr<nsIPrefService> prefs =
+        do_GetService("@mozilla.org/preferences-service;1", &rv);
+    if (NS_SUCCEEDED(rv)) {
+      nsCOMPtr<nsIPrefBranch> defaultPrefBranch;
+      rv = prefs->GetDefaultBranch(nullptr, getter_AddRefs(defaultPrefBranch));
 
-    nsCOMPtr<nsIObserverService> obsService =
-        mozilla::services::GetObserverService();
-    if (obsService) {
-      obsService->NotifyObservers(cmdLine, "command-line-startup", nullptr);
+      if (NS_SUCCEEDED(rv)) {
+        nsAutoCString sval;
+        rv = defaultPrefBranch->GetCharPref("app.update.channel", sval);
+        if (NS_SUCCEEDED(rv)) {
+          CrashReporter::AnnotateCrashReport(
+              CrashReporter::Annotation::ReleaseChannel, sval);
+        }
+      }
     }
-  }
-
-#ifdef XP_WIN
-  
-  
-  
-  char appFile[MAX_PATH];
-  if (GetEnvironmentVariableA("XUL_APP_FILE", appFile, sizeof(appFile))) {
-    SmprintfPointer saved = mozilla::Smprintf("XUL_APP_FILE=%s", appFile);
     
-    PR_SetEnv(saved.release());
-  }
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::FramePoisonBase,
+        nsPrintfCString("%.16" PRIu64, uint64_t(gMozillaPoisonBase)));
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::FramePoisonSize,
+        uint32_t(gMozillaPoisonSize));
+
+    bool includeContextHeap = Preferences::GetBool(
+        "toolkit.crashreporter.include_context_heap", false);
+    CrashReporter::SetIncludeContextHeap(includeContextHeap);
+
+#ifdef XP_WIN
+    PR_CreateThread(PR_USER_THREAD, AnnotateWMIData_ThreadStart, 0,
+                    PR_PRIORITY_LOW, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
 #endif
 
-  mozilla::AppShutdown::SaveEnvVarsForPotentialRestart();
-
-  
-  
-  SaveToEnv("XRE_PROFILE_PATH=");
-  SaveToEnv("XRE_PROFILE_LOCAL_PATH=");
-  SaveToEnv("XRE_START_OFFLINE=");
-  SaveToEnv("XUL_APP_FILE=");
-  SaveToEnv("XRE_BINARY_PATH=");
-  SaveToEnv("XRE_RESTARTED_BY_PROFILE_MANAGER=");
-
-  if (!mShuttingDown) {
-#ifdef XP_MACOSX
-    bool lazyHiddenWindow = false;
-#else
-    bool lazyHiddenWindow =
-        Preferences::GetBool("toolkit.lazyHiddenWindow", false);
+#if defined(XP_LINUX) && !defined(ANDROID)
+    PR_CreateThread(PR_USER_THREAD, AnnotateLSBRelease, 0, PR_PRIORITY_LOW,
+                    PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
 #endif
 
-    if (!lazyHiddenWindow) {
-      rv = appStartup->CreateHiddenWindow();
-      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+    if (mStartOffline) {
+      nsCOMPtr<nsIIOService> io(
+          do_GetService("@mozilla.org/network/io-service;1"));
+      NS_ENSURE_TRUE(io, NS_ERROR_FAILURE);
+      io->SetManageOfflineStatus(false);
+      io->SetOffline(true);
     }
 
 #ifdef XP_WIN
-    Preferences::RegisterCallbackAndCall(RegisterApplicationRestartChanged,
-                                         PREF_WIN_REGISTER_APPLICATION_RESTART);
-    SetupAlteredPrefetchPref();
-    SetupSkeletonUIPrefs();
+    mozilla::DllPrefetchExperimentRegistryInfo prefetchRegInfo;
+    mozilla::AlteredDllPrefetchMode dllPrefetchMode =
+        prefetchRegInfo.GetAlteredDllPrefetchMode();
+
+    if (!PR_GetEnv("XRE_NO_DLL_READAHEAD") &&
+        dllPrefetchMode != mozilla::AlteredDllPrefetchMode::NoPrefetch) {
+      nsCOMPtr<nsIFile> greDir = mDirProvider.GetGREDir();
+      nsAutoString path;
+      rv = greDir->GetPath(path);
+      if (NS_SUCCEEDED(rv)) {
+        PRThread* readAheadThread;
+        wchar_t* pathRaw;
+
+        
+        
+        
+        if (dllPrefetchMode ==
+            mozilla::AlteredDllPrefetchMode::OptimizedPrefetch) {
+          pathRaw = new wchar_t[MAX_PATH];
+          wcscpy_s(pathRaw, MAX_PATH, path.get());
+        } else {
+          pathRaw = nullptr;
+        }
+        readAheadThread = PR_CreateThread(
+            PR_USER_THREAD, ReadAheadDlls_ThreadStart, (void*)pathRaw,
+            PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
+        if (readAheadThread == NULL) {
+          delete[] pathRaw;
+        }
+      }
+    }
+#endif
+
+    if (gDoMigration) {
+      nsCOMPtr<nsIFile> file;
+      mDirProvider.GetAppDir()->Clone(getter_AddRefs(file));
+      file->AppendNative("override.ini"_ns);
+      nsINIParser parser;
+      nsresult rv = parser.Init(file);
+      
+      if (NS_FAILED(rv)) {
+        bool persistent;
+        mDirProvider.GetFile(XRE_APP_DISTRIBUTION_DIR, &persistent,
+                             getter_AddRefs(file));
+        file->AppendNative("distribution.ini"_ns);
+        rv = parser.Init(file);
+      }
+      if (NS_SUCCEEDED(rv)) {
+        nsAutoCString buf;
+        rv = parser.GetString("XRE", "EnableProfileMigrator", buf);
+        if (NS_SUCCEEDED(rv)) {
+          if (buf[0] == '0' || buf[0] == 'f' || buf[0] == 'F') {
+            gDoMigration = false;
+          }
+        }
+      }
+    }
+
+    
+    
+    
+    
+    
+    bool initializedJSContext = false;
+
+    {
+      
+      if (mAppData->flags & NS_XRE_ENABLE_PROFILE_MIGRATOR && gDoMigration) {
+        gDoMigration = false;
+
+        xpc::InitializeJSContext();
+        initializedJSContext = true;
+
+        nsCOMPtr<nsIProfileMigrator> pm(
+            do_CreateInstance(NS_PROFILEMIGRATOR_CONTRACTID));
+        if (pm) {
+          nsAutoCString aKey;
+          nsAutoCString aName;
+          if (gDoProfileReset) {
+            
+            
+            aKey = MOZ_APP_NAME;
+            gResetOldProfile->GetName(aName);
+          }
+          pm->Migrate(&mDirProvider, aKey, aName);
+        }
+      }
+
+      if (gDoProfileReset) {
+        if (!initializedJSContext) {
+          xpc::InitializeJSContext();
+          initializedJSContext = true;
+        }
+
+        nsresult backupCreated =
+            ProfileResetCleanup(mProfileSvc, gResetOldProfile);
+        if (NS_FAILED(backupCreated)) {
+          NS_WARNING("Could not cleanup the profile that was reset");
+        }
+      }
+    }
+
+#ifndef XP_WIN
+    nsCOMPtr<nsIFile> profileDir;
+    nsAutoCString path;
+    rv = mDirProvider.GetProfileStartupDir(getter_AddRefs(profileDir));
+    if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(profileDir->GetNativePath(path)) &&
+        !IsUtf8(path)) {
+      PR_fprintf(
+          PR_STDERR,
+          "Error: The profile path is not valid UTF-8. Unable to continue.\n");
+      return NS_ERROR_FAILURE;
+    }
+#endif
+
+    
+    
+    mDirProvider.InitializeUserPrefs();
+
+    
+    
+    if (!initializedJSContext) {
+      xpc::InitializeJSContext();
+    }
+
+    
+    
+    
+    
+    mDirProvider.FinishInitializingUserPrefs();
+
+    nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY);
+
+    appStartup = components::AppStartup::Service();
+    NS_ENSURE_TRUE(appStartup, NS_ERROR_FAILURE);
+
+    mDirProvider.DoStartup();
+
+#ifdef MOZ_THUNDERBIRD
+    if (Preferences::GetBool("security.prompt_for_master_password_on_startup",
+                             false)) {
+      
+      
+      
+      
+      nsCOMPtr<nsIPK11TokenDB> db =
+          do_GetService("@mozilla.org/security/pk11tokendb;1");
+      nsCOMPtr<nsIPK11Token> token;
+      if (NS_SUCCEEDED(db->GetInternalKeyToken(getter_AddRefs(token)))) {
+        Unused << token->Login(false);
+      }
+    }
+#endif
+
+    
+    
+    mozilla::FilePreferences::InitDirectoriesWhitelist();
+    mozilla::FilePreferences::InitPrefs();
+
+    OverrideDefaultLocaleIfNeeded();
+
+    nsCString userAgentLocale;
+    LocaleService::GetInstance()->GetAppLocaleAsBCP47(userAgentLocale);
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::useragent_locale, userAgentLocale);
+
+    appStartup->GetShuttingDown(&mShuttingDown);
+
+    nsCOMPtr<nsICommandLineRunner> cmdLine;
+
+    nsCOMPtr<nsIFile> workingDir;
+    rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
+                                getter_AddRefs(workingDir));
+    if (NS_FAILED(rv)) {
+      
+      workingDir = nullptr;
+    }
+
+    if (!mShuttingDown) {
+      cmdLine = new nsCommandLine();
+
+      rv = cmdLine->Init(gArgc, gArgv, workingDir,
+                         nsICommandLine::STATE_INITIAL_LAUNCH);
+      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+      
+
+      nsCOMPtr<nsIObserverService> obsService =
+          mozilla::services::GetObserverService();
+      if (obsService) {
+        obsService->NotifyObservers(cmdLine, "command-line-startup", nullptr);
+      }
+    }
+
+#ifdef XP_WIN
+    
+    
+    
+    char appFile[MAX_PATH];
+    if (GetEnvironmentVariableA("XUL_APP_FILE", appFile, sizeof(appFile))) {
+      SmprintfPointer saved = mozilla::Smprintf("XUL_APP_FILE=%s", appFile);
+      
+      
+      PR_SetEnv(saved.release());
+    }
+#endif
+
+    mozilla::AppShutdown::SaveEnvVarsForPotentialRestart();
+
+    
+    
+    SaveToEnv("XRE_PROFILE_PATH=");
+    SaveToEnv("XRE_PROFILE_LOCAL_PATH=");
+    SaveToEnv("XRE_START_OFFLINE=");
+    SaveToEnv("XUL_APP_FILE=");
+    SaveToEnv("XRE_BINARY_PATH=");
+    SaveToEnv("XRE_RESTARTED_BY_PROFILE_MANAGER=");
+
+    if (!mShuttingDown) {
+#ifdef XP_MACOSX
+      bool lazyHiddenWindow = false;
+#else
+      bool lazyHiddenWindow =
+          Preferences::GetBool("toolkit.lazyHiddenWindow", false);
+#endif
+
+      if (!lazyHiddenWindow) {
+        rv = appStartup->CreateHiddenWindow();
+        NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+      }
+
+#ifdef XP_WIN
+      Preferences::RegisterCallbackAndCall(
+          RegisterApplicationRestartChanged,
+          PREF_WIN_REGISTER_APPLICATION_RESTART);
+      SetupAlteredPrefetchPref();
+      SetupSkeletonUIPrefs();
 #  if defined(MOZ_LAUNCHER_PROCESS)
-    SetupLauncherProcessPref();
+      SetupLauncherProcessPref();
 #  endif  
 #  if defined(MOZ_DEFAULT_BROWSER_AGENT)
-    Preferences::RegisterCallbackAndCall(&OnDefaultAgentTelemetryPrefChanged,
-                                         kPrefHealthReportUploadEnabled);
-    Preferences::RegisterCallbackAndCall(&OnDefaultAgentTelemetryPrefChanged,
-                                         kPrefDefaultAgentEnabled);
+      Preferences::RegisterCallbackAndCall(&OnDefaultAgentTelemetryPrefChanged,
+                                           kPrefHealthReportUploadEnabled);
+      Preferences::RegisterCallbackAndCall(&OnDefaultAgentTelemetryPrefChanged,
+                                           kPrefDefaultAgentEnabled);
 
-    Preferences::RegisterCallbackAndCall(
-        &OnDefaultAgentRemoteSettingsPrefChanged, kPrefServicesSettingsServer);
-    Preferences::RegisterCallbackAndCall(
-        &OnDefaultAgentRemoteSettingsPrefChanged,
-        kPrefSecurityContentSignatureRootHash);
-    SetDefaultAgentLastRunTime();
+      Preferences::RegisterCallbackAndCall(
+          &OnDefaultAgentRemoteSettingsPrefChanged,
+          kPrefServicesSettingsServer);
+      Preferences::RegisterCallbackAndCall(
+          &OnDefaultAgentRemoteSettingsPrefChanged,
+          kPrefSecurityContentSignatureRootHash);
+      SetDefaultAgentLastRunTime();
 #  endif  
 #endif
 
 #if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK)
-    
-    
-    g_unsetenv("DESKTOP_STARTUP_ID");
+      
+      
+      g_unsetenv("DESKTOP_STARTUP_ID");
 #endif
 
 #ifdef XP_MACOSX
-    
-    
-    cmdLine = new nsCommandLine();
+      
+      
+      cmdLine = new nsCommandLine();
 
-    char** tempArgv = static_cast<char**>(malloc(gArgc * sizeof(char*)));
-    for (int i = 0; i < gArgc; i++) {
-      tempArgv[i] = strdup(gArgv[i]);
-    }
-    CommandLineServiceMac::SetupMacCommandLine(gArgc, tempArgv, false);
-    rv = cmdLine->Init(gArgc, tempArgv, workingDir,
-                       nsICommandLine::STATE_INITIAL_LAUNCH);
-    free(tempArgv);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+      char** tempArgv = static_cast<char**>(malloc(gArgc * sizeof(char*)));
+      for (int i = 0; i < gArgc; i++) {
+        tempArgv[i] = strdup(gArgv[i]);
+      }
+      CommandLineServiceMac::SetupMacCommandLine(gArgc, tempArgv, false);
+      rv = cmdLine->Init(gArgc, tempArgv, workingDir,
+                         nsICommandLine::STATE_INITIAL_LAUNCH);
+      free(tempArgv);
+      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 #endif
 
-    nsCOMPtr<nsIObserverService> obsService =
-        mozilla::services::GetObserverService();
-    if (obsService)
-      obsService->NotifyObservers(nullptr, "final-ui-startup", nullptr);
+      nsCOMPtr<nsIObserverService> obsService =
+          mozilla::services::GetObserverService();
+      if (obsService)
+        obsService->NotifyObservers(nullptr, "final-ui-startup", nullptr);
 
-    (void)appStartup->DoneStartingUp();
+      (void)appStartup->DoneStartingUp();
 
-    CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::StartupCrash,
-                                       false);
+      CrashReporter::AnnotateCrashReport(
+          CrashReporter::Annotation::StartupCrash, false);
 
-    appStartup->GetShuttingDown(&mShuttingDown);
-  }
+      appStartup->GetShuttingDown(&mShuttingDown);
+    }
 
-  if (!mShuttingDown) {
-    rv = cmdLine->Run();
-    NS_ENSURE_SUCCESS_LOG(rv, NS_ERROR_FAILURE);
+    if (!mShuttingDown) {
+      rv = cmdLine->Run();
+      NS_ENSURE_SUCCESS_LOG(rv, NS_ERROR_FAILURE);
 
-    appStartup->GetShuttingDown(&mShuttingDown);
-  }
+      appStartup->GetShuttingDown(&mShuttingDown);
+    }
 
-  if (!mShuttingDown) {
+    if (!mShuttingDown) {
 #if defined(MOZ_HAS_REMOTE)
-    
-    
-    if (mRemoteService && !mDisableRemoteServer) {
-      mRemoteService->StartupServer();
-      mRemoteService->UnlockStartup();
+      
+      
+      if (mRemoteService && !mDisableRemoteServer) {
+        mRemoteService->StartupServer();
+        mRemoteService->UnlockStartup();
+      }
+#endif 
+
+      mNativeApp->Enable();
+    }
+
+#ifdef MOZ_INSTRUMENT_EVENT_LOOP
+    if (PR_GetEnv("MOZ_INSTRUMENT_EVENT_LOOP")) {
+      bool logToConsole = true;
+      mozilla::InitEventTracing(logToConsole);
     }
 #endif 
 
-    mNativeApp->Enable();
-  }
-
-#ifdef MOZ_INSTRUMENT_EVENT_LOOP
-  if (PR_GetEnv("MOZ_INSTRUMENT_EVENT_LOOP")) {
-    bool logToConsole = true;
-    mozilla::InitEventTracing(logToConsole);
-  }
-#endif 
-
-  
-  Telemetry::ScalarSet(Telemetry::ScalarID::GECKO_VERSION,
-                       NS_ConvertASCIItoUTF16(gAppData->version));
-  Telemetry::ScalarSet(Telemetry::ScalarID::GECKO_BUILD_ID,
-                       NS_ConvertASCIItoUTF16(gAppData->buildID));
+    
+    Telemetry::ScalarSet(Telemetry::ScalarID::GECKO_VERSION,
+                         NS_ConvertASCIItoUTF16(gAppData->version));
+    Telemetry::ScalarSet(Telemetry::ScalarID::GECKO_BUILD_ID,
+                         NS_ConvertASCIItoUTF16(gAppData->buildID));
 
 #if defined(MOZ_SANDBOX) && defined(XP_LINUX)
-  
-  
-  SandboxInfo sandboxInfo = SandboxInfo::Get();
-  Telemetry::Accumulate(Telemetry::SANDBOX_HAS_SECCOMP_BPF,
-                        sandboxInfo.Test(SandboxInfo::kHasSeccompBPF));
-  Telemetry::Accumulate(Telemetry::SANDBOX_HAS_SECCOMP_TSYNC,
-                        sandboxInfo.Test(SandboxInfo::kHasSeccompTSync));
-  Telemetry::Accumulate(
-      Telemetry::SANDBOX_HAS_USER_NAMESPACES_PRIVILEGED,
-      sandboxInfo.Test(SandboxInfo::kHasPrivilegedUserNamespaces));
-  Telemetry::Accumulate(Telemetry::SANDBOX_HAS_USER_NAMESPACES,
-                        sandboxInfo.Test(SandboxInfo::kHasUserNamespaces));
-  Telemetry::Accumulate(Telemetry::SANDBOX_CONTENT_ENABLED,
-                        sandboxInfo.Test(SandboxInfo::kEnabledForContent));
-  Telemetry::Accumulate(Telemetry::SANDBOX_MEDIA_ENABLED,
-                        sandboxInfo.Test(SandboxInfo::kEnabledForMedia));
-  nsAutoCString flagsString;
-  flagsString.AppendInt(sandboxInfo.AsInteger());
+    
+    
+    SandboxInfo sandboxInfo = SandboxInfo::Get();
+    Telemetry::Accumulate(Telemetry::SANDBOX_HAS_SECCOMP_BPF,
+                          sandboxInfo.Test(SandboxInfo::kHasSeccompBPF));
+    Telemetry::Accumulate(Telemetry::SANDBOX_HAS_SECCOMP_TSYNC,
+                          sandboxInfo.Test(SandboxInfo::kHasSeccompTSync));
+    Telemetry::Accumulate(
+        Telemetry::SANDBOX_HAS_USER_NAMESPACES_PRIVILEGED,
+        sandboxInfo.Test(SandboxInfo::kHasPrivilegedUserNamespaces));
+    Telemetry::Accumulate(Telemetry::SANDBOX_HAS_USER_NAMESPACES,
+                          sandboxInfo.Test(SandboxInfo::kHasUserNamespaces));
+    Telemetry::Accumulate(Telemetry::SANDBOX_CONTENT_ENABLED,
+                          sandboxInfo.Test(SandboxInfo::kEnabledForContent));
+    Telemetry::Accumulate(Telemetry::SANDBOX_MEDIA_ENABLED,
+                          sandboxInfo.Test(SandboxInfo::kEnabledForMedia));
+    nsAutoCString flagsString;
+    flagsString.AppendInt(sandboxInfo.AsInteger());
 
-  CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::ContentSandboxCapabilities, flagsString);
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::ContentSandboxCapabilities, flagsString);
 #endif 
 
 #if defined(XP_WIN)
-  LauncherResult<bool> isAdminWithoutUac = IsAdminWithoutUac();
-  if (isAdminWithoutUac.isOk()) {
-    Telemetry::ScalarSet(
-        Telemetry::ScalarID::OS_ENVIRONMENT_IS_ADMIN_WITHOUT_UAC,
-        isAdminWithoutUac.unwrap());
-  }
+    LauncherResult<bool> isAdminWithoutUac = IsAdminWithoutUac();
+    if (isAdminWithoutUac.isOk()) {
+      Telemetry::ScalarSet(
+          Telemetry::ScalarID::OS_ENVIRONMENT_IS_ADMIN_WITHOUT_UAC,
+          isAdminWithoutUac.unwrap());
+    }
 #endif 
 
 #if defined(MOZ_SANDBOX)
-  AddSandboxAnnotations();
+    AddSandboxAnnotations();
 #endif 
 
-  mProfileSvc->CompleteStartup();
+    mProfileSvc->CompleteStartup();
+  }
 
   {
     rv = appStartup->Run();
