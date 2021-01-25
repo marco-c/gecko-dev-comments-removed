@@ -444,33 +444,61 @@ CssRuleView.prototype = {
 
 
   handleHighlighterEvent(eventName, data) {
-    const handlers = {};
+    switch (data.type) {
+      
+      
+      case this.inspector.highlighters.TYPES.SELECTOR:
+        {
+          const selector = data?.options?.selector;
+          if (!selector) {
+            return;
+          }
 
-    
-    
-    handlers[this.inspector.highlighters.TYPES.SELECTOR] = () => {
-      const selector = data?.options?.selector;
-      if (!selector) {
-        return;
-      }
+          const query = `.js-toggle-selector-highlighter[data-selector='${selector}']`;
+          for (const node of this.styleDocument.querySelectorAll(query)) {
+            node.classList.toggle(
+              "highlighted",
+              eventName == "highlighter-shown"
+            );
+          }
+        }
+        break;
 
-      const query = `.js-toggle-selector-highlighter[data-selector='${selector}']`;
-      for (const node of this.styleDocument.querySelectorAll(query)) {
-        node.classList.toggle("highlighted", eventName == "highlighter-shown");
-      }
-    };
+      
+      
+      case this.inspector.highlighters.TYPES.FLEXBOX:
+        {
+          const query = ".js-toggle-flexbox-highlighter";
+          for (const node of this.styleDocument.querySelectorAll(query)) {
+            node.classList.toggle("active", eventName == "highlighter-shown");
+          }
+        }
+        break;
 
-    
-    
-    handlers[this.inspector.highlighters.TYPES.FLEXBOX] = () => {
-      const query = ".js-toggle-flexbox-highlighter";
-      for (const node of this.styleDocument.querySelectorAll(query)) {
-        node.classList.toggle("active", eventName == "highlighter-shown");
-      }
-    };
+      
+      
+      case this.inspector.highlighters.TYPES.GRID:
+        {
+          const query = ".js-toggle-grid-highlighter";
+          for (const node of this.styleDocument.querySelectorAll(query)) {
+            
+            
+            
+            if (data.nodeFront === this.inspector.selection.nodeFront) {
+              node.classList.toggle("active", eventName == "highlighter-shown");
+            }
 
-    if (typeof handlers[data.type] === "function") {
-      handlers[data.type].call(this);
+            
+            
+            node.toggleAttribute(
+              "disabled",
+              !this.inspector.highlighters.canGridHighlighterToggle(
+                this.inspector.selection.nodeFront
+              )
+            );
+          }
+        }
+        break;
     }
   },
 

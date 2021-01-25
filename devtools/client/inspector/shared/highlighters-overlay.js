@@ -1047,7 +1047,6 @@ class HighlightersOverlay {
       ...options,
       trigger,
     });
-    this._toggleRuleViewIcon(node, true, ".ruleview-grid");
 
     try {
       
@@ -1199,8 +1198,6 @@ class HighlightersOverlay {
     
     
     await this.restoreParentGridHighlighter(node);
-
-    this._toggleRuleViewIcon(node, false, ".ruleview-grid");
 
     
     
@@ -1462,41 +1459,6 @@ class HighlightersOverlay {
   _handleRejection(error) {
     if (!this.destroyed) {
       console.error(error);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  _toggleRuleViewIcon(node, active, selector) {
-    const ruleViewEl = this.inspector.getPanel("ruleview").view.element;
-
-    if (this.inspector.selection.nodeFront !== node) {
-      if (selector === ".ruleview-grid") {
-        for (const icon of ruleViewEl.querySelectorAll(selector)) {
-          if (
-            this.canGridHighlighterToggle(this.inspector.selection.nodeFront)
-          ) {
-            icon.removeAttribute("disabled");
-          } else {
-            icon.setAttribute("disabled", true);
-          }
-        }
-      }
-
-      return;
-    }
-
-    for (const icon of ruleViewEl.querySelectorAll(selector)) {
-      icon.classList.toggle("active", active);
     }
   }
 
