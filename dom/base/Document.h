@@ -3556,14 +3556,12 @@ class Document : public nsINode,
 
 
   inline nsHTMLDocument* AsHTMLDocument();
-  inline const nsHTMLDocument* AsHTMLDocument() const;
 
   
 
 
 
   inline SVGDocument* AsSVGDocument();
-  inline const SVGDocument* AsSVGDocument() const;
 
   
 
