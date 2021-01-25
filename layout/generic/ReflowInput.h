@@ -30,20 +30,7 @@ class nsReflowStatus;
 
 namespace mozilla {
 enum class LayoutFrameType : uint8_t;
-
-
-
-
-
-
-
-
-
-struct StyleSizeOverrides {
-  Maybe<StyleSize> mStyleISize;
-  Maybe<StyleSize> mStyleBSize;
-};
-}  
+}
 
 
 
@@ -529,9 +516,6 @@ struct ReflowInput : public SizeComputationInput {
     bool mBSizeIsSetByAspectRatio : 1;
   };
   Flags mFlags;
-
-  mozilla::StyleSizeOverrides mStyleSizeOverrides;
-
   mozilla::ComputeSizeFlags mComputeSizeFlags;
 
   
@@ -635,15 +619,12 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
-
-
   ReflowInput(nsPresContext* aPresContext,
               const ReflowInput& aParentReflowInput, nsIFrame* aFrame,
               const mozilla::LogicalSize& aAvailableSpace,
               const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
                   mozilla::Nothing(),
               InitFlags aFlags = {},
-              const mozilla::StyleSizeOverrides& aSizeOverrides = {},
               mozilla::ComputeSizeFlags aComputeSizeFlags = {});
 
   
@@ -665,6 +646,13 @@ struct ReflowInput : public SizeComputationInput {
                 mozilla::Nothing(),
             const mozilla::Maybe<mozilla::LogicalMargin>& aPadding =
                 mozilla::Nothing());
+
+  
+
+
+
+  nscoord GetContainingBlockContentISize(
+      mozilla::WritingMode aWritingMode) const;
 
   
 

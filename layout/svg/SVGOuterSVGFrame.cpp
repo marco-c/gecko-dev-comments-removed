@@ -291,7 +291,7 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWritingMode,
     const LogicalSize& aCBSize, nscoord aAvailableISize,
     const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
-    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
+    ComputeSizeFlags aFlags) {
   if (IsRootOfImage() || mIsInObjectOrEmbed) {
     
     
@@ -353,7 +353,7 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
 
   return {ComputeSizeWithIntrinsicDimensions(
               aRenderingContext, aWritingMode, intrinsicSize, GetAspectRatio(),
-              cbSize, aMargin, aBorderPadding, aSizeOverrides, aFlags),
+              cbSize, aMargin, aBorderPadding, aFlags),
           AspectRatioUsage::None};
 }
 
