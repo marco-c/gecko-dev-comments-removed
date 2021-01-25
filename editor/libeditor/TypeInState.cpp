@@ -11,6 +11,7 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/MouseEvent.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAString.h"
 #include "nsDebug.h"
@@ -50,7 +51,12 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(TypeInState, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(TypeInState, Release)
 
-TypeInState::TypeInState() : mRelativeFontSize(0) { Reset(); }
+TypeInState::TypeInState()
+    : mRelativeFontSize(0),
+      mMouseDownFiredInLinkElement(false),
+      mMouseUpFiredInLinkElement(false) {
+  Reset();
+}
 
 TypeInState::~TypeInState() {
   
@@ -78,6 +84,31 @@ nsresult TypeInState::UpdateSelState(Selection* aSelection) {
   return NS_OK;
 }
 
+void TypeInState::PreHandleMouseEvent(const MouseEvent& aMouseDownOrUpEvent) {
+  MOZ_ASSERT(aMouseDownOrUpEvent.WidgetEventPtr()->mMessage == eMouseDown ||
+             aMouseDownOrUpEvent.WidgetEventPtr()->mMessage == eMouseUp);
+  bool& eventFiredInLinkElement =
+      aMouseDownOrUpEvent.WidgetEventPtr()->mMessage == eMouseDown
+          ? mMouseDownFiredInLinkElement
+          : mMouseUpFiredInLinkElement;
+  eventFiredInLinkElement = false;
+  if (aMouseDownOrUpEvent.DefaultPrevented()) {
+    return;
+  }
+  
+  
+  EventTarget* target = aMouseDownOrUpEvent.GetExplicitOriginalTarget();
+  if (NS_WARN_IF(!target)) {
+    return;
+  }
+  nsCOMPtr<nsIContent> targetContent = do_QueryInterface(target);
+  if (NS_WARN_IF(!targetContent)) {
+    return;
+  }
+  eventFiredInLinkElement =
+      HTMLEditUtils::IsContentInclusiveDescendantOfLink(*targetContent);
+}
+
 void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
   
   
@@ -89,7 +120,23 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
   
   
 
+  bool mouseEventFiredInLinkElement = false;
+  if (aReason & (nsISelectionListener::MOUSEDOWN_REASON |
+                 nsISelectionListener::MOUSEUP_REASON)) {
+    MOZ_ASSERT((aReason & (nsISelectionListener::MOUSEDOWN_REASON |
+                           nsISelectionListener::MOUSEUP_REASON)) !=
+               (nsISelectionListener::MOUSEDOWN_REASON |
+                nsISelectionListener::MOUSEUP_REASON));
+    bool& eventFiredInLinkElement =
+        aReason & nsISelectionListener::MOUSEDOWN_REASON
+            ? mMouseDownFiredInLinkElement
+            : mMouseUpFiredInLinkElement;
+    mouseEventFiredInLinkElement = eventFiredInLinkElement;
+    eventFiredInLinkElement = false;
+  }
+
   bool unlink = false;
+  bool resetAllStyles = true;
   if (aSelection.IsCollapsed() && aSelection.RangeCount()) {
     EditorRawDOMPoint selectionStartPoint(
         EditorBase::GetStartPoint(aSelection));
@@ -97,36 +144,65 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
       return;
     }
 
-    if (mLastSelectionPoint == selectionStartPoint) {
-      
-      return;
-    }
-
-    
-    
-    if (aReason == nsISelectionListener::KEYPRESS_REASON &&
-        mLastSelectionPoint.IsSet() && selectionStartPoint.IsInTextNode() &&
-        (selectionStartPoint.IsStartOfContainer() ||
-         selectionStartPoint.IsEndOfContainer()) &&
-        
-        
-        mLastSelectionPoint.GetContainer() !=
-            selectionStartPoint.GetContainer()) {
+    RefPtr<Element> linkElement;
+    if (HTMLEditUtils::IsPointAtEdgeOfLink(selectionStartPoint,
+                                           getter_AddRefs(linkElement))) {
       
       
-      bool maybeStartOfAnchor = selectionStartPoint.IsStartOfContainer();
-      for (EditorRawDOMPoint point(selectionStartPoint.GetContainer());
-           point.IsSet() && (maybeStartOfAnchor ? point.IsStartOfContainer()
-                                                : point.IsAtLastContent());
-           point.Set(point.GetContainer())) {
-        
-        if (HTMLEditUtils::IsLink(point.GetContainer())) {
+      if (aReason == nsISelectionListener::KEYPRESS_REASON) {
+        MOZ_ASSERT(!(aReason & (nsISelectionListener::MOUSEDOWN_REASON |
+                                nsISelectionListener::MOUSEUP_REASON)));
+        if (mLastSelectionPoint == selectionStartPoint) {
           
-          unlink = !mLastSelectionPoint.GetContainer()->IsInclusiveDescendantOf(
-              point.GetContainer());
-          break;
+          return;
         }
+        if (mLastSelectionPoint.IsSet() && selectionStartPoint.IsInTextNode() &&
+            
+            
+            mLastSelectionPoint.GetContainer() !=
+                selectionStartPoint.GetContainer()) {
+          
+          
+          bool maybeStartOfAnchor = selectionStartPoint.IsStartOfContainer();
+          for (EditorRawDOMPoint point(selectionStartPoint.GetContainer());
+               point.IsSet() && (maybeStartOfAnchor ? point.IsStartOfContainer()
+                                                    : point.IsAtLastContent());
+               point.Set(point.GetContainer())) {
+            
+            if (HTMLEditUtils::IsLink(point.GetContainer())) {
+              
+              unlink =
+                  !mLastSelectionPoint.GetContainer()->IsInclusiveDescendantOf(
+                      point.GetContainer());
+              break;
+            }
+          }
+        }
+      } else if (aReason & (nsISelectionListener::MOUSEDOWN_REASON |
+                            nsISelectionListener::MOUSEUP_REASON)) {
+        if (mLastSelectionPoint == selectionStartPoint) {
+          
+          
+          if (AreAllStylesCleared() || IsLinkStyleSet()) {
+            return;
+          }
+          
+          
+          
+          if (AreSomeStylesSet() ||
+              (AreSomeStylesCleared() && !IsOnlyLinkStyleCleared())) {
+            resetAllStyles = false;
+          }
+        }
+
+        
+        
+        
+        
+        unlink = !mouseEventFiredInLinkElement;
       }
+    } else if (mLastSelectionPoint == selectionStartPoint) {
+      return;
     }
 
     mLastSelectionPoint = selectionStartPoint;
@@ -137,10 +213,24 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
     mLastSelectionPoint.Clear();
   }
 
-  Reset();
+  if (resetAllStyles) {
+    Reset();
+    if (unlink) {
+      ClearProp(nsGkAtoms::a, nullptr);
+    }
+    return;
+  }
 
+  if (unlink == IsExplicitlyLinkStyleCleared()) {
+    return;
+  }
+
+  
+  
   if (unlink) {
     ClearProp(nsGkAtoms::a, nullptr);
+  } else if (!unlink) {
+    RemovePropFromClearedList(nsGkAtoms::a, nullptr);
   }
 }
 
@@ -302,7 +392,7 @@ bool TypeInState::IsPropCleared(nsAtom* aProp, nsAtom* aAttr,
   if (FindPropInList(aProp, aAttr, nullptr, mClearedArray, outIndex)) {
     return true;
   }
-  if (FindPropInList(nullptr, nullptr, nullptr, mClearedArray, outIndex)) {
+  if (AreAllStylesCleared()) {
     
     outIndex = -1;
     return true;
@@ -312,7 +402,7 @@ bool TypeInState::IsPropCleared(nsAtom* aProp, nsAtom* aAttr,
 
 bool TypeInState::FindPropInList(nsAtom* aProp, nsAtom* aAttr,
                                  nsAString* outValue,
-                                 nsTArray<PropItem*>& aList,
+                                 const nsTArray<PropItem*>& aList,
                                  int32_t& outIndex) {
   if (aAttr == nsGkAtoms::_empty) {
     aAttr = nullptr;

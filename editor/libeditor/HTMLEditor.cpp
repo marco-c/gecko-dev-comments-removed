@@ -700,6 +700,24 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
   return rv;
 }
 
+void HTMLEditor::PreHandleMouseDown(const MouseEvent& aMouseDownEvent) {
+  if (mTypeInState) {
+    
+    
+    
+    mTypeInState->PreHandleMouseEvent(aMouseDownEvent);
+  }
+}
+
+void HTMLEditor::PreHandleMouseUp(const MouseEvent& aMouseUpEvent) {
+  if (mTypeInState) {
+    
+    
+    
+    mTypeInState->PreHandleMouseEvent(aMouseUpEvent);
+  }
+}
+
 nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   
   
