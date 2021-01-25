@@ -1666,8 +1666,7 @@ static nsresult GetNSSProfilePath(nsAutoCString& aProfilePath) {
 
 
 
-static nsresult AttemptToRenamePKCS11ModuleDB(
-    const nsACString& profilePath, const nsACString& moduleDBFilename) {
+static nsresult AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath) {
   nsCOMPtr<nsIFile> profileDir = do_CreateInstance("@mozilla.org/file/local;1");
   if (!profileDir) {
     return NS_ERROR_FAILURE;
@@ -1682,6 +1681,7 @@ static nsresult AttemptToRenamePKCS11ModuleDB(
   if (NS_FAILED(rv)) {
     return rv;
   }
+  const char* moduleDBFilename = "pkcs11.txt";
   nsAutoCString destModuleDBFilename(moduleDBFilename);
   destModuleDBFilename.Append(".fips");
   nsCOMPtr<nsIFile> dbFile;
@@ -1689,7 +1689,7 @@ static nsresult AttemptToRenamePKCS11ModuleDB(
   if (NS_FAILED(rv) || !dbFile) {
     return NS_ERROR_FAILURE;
   }
-  rv = dbFile->AppendNative(moduleDBFilename);
+  rv = dbFile->AppendNative(nsAutoCString(moduleDBFilename));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1702,7 +1702,7 @@ static nsresult AttemptToRenamePKCS11ModuleDB(
   
   if (!exists) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("%s doesn't exist?", PromiseFlatCString(moduleDBFilename).get()));
+            ("%s doesn't exist?", moduleDBFilename));
     return NS_OK;
   }
   nsCOMPtr<nsIFile> destDBFile;
@@ -1733,117 +1733,6 @@ static nsresult AttemptToRenamePKCS11ModuleDB(
   
   Unused << dbFile->MoveToNative(profileDir, destModuleDBFilename);
   return NS_OK;
-}
-
-
-
-
-
-
-
-static nsresult AttemptToRenameBothPKCS11ModuleDBVersions(
-    const nsACString& profilePath) {
-  constexpr auto legacyModuleDBFilename = "secmod.db"_ns;
-  constexpr auto sqlModuleDBFilename = "pkcs11.txt"_ns;
-  nsresult rv =
-      AttemptToRenamePKCS11ModuleDB(profilePath, legacyModuleDBFilename);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  return AttemptToRenamePKCS11ModuleDB(profilePath, sqlModuleDBFilename);
-}
-
-
-
-static nsresult GetFileIfExists(const nsACString& path,
-                                const nsACString& filename,
-                                 nsIFile** result) {
-  MOZ_ASSERT(result);
-  if (!result) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  *result = nullptr;
-  nsCOMPtr<nsIFile> file = do_CreateInstance("@mozilla.org/file/local;1");
-  if (!file) {
-    return NS_ERROR_FAILURE;
-  }
-#  ifdef XP_WIN
-  
-  
-  nsresult rv = file->InitWithPath(NS_ConvertUTF8toUTF16(path));
-#  else
-  nsresult rv = file->InitWithNativePath(path);
-#  endif
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  rv = file->AppendNative(filename);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  bool exists;
-  rv = file->Exists(&exists);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (exists) {
-    file.forget(result);
-  }
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void MaybeCleanUpOldNSSFiles(const nsACString& profilePath) {
-  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-  if (!slot) {
-    return;
-  }
-  
-  
-  
-  bool hasPassword =
-      PK11_NeedLogin(slot.get()) && !PK11_NeedUserInit(slot.get());
-  if (!hasPassword) {
-    return;
-  }
-  constexpr auto newKeyDBFilename = "key4.db"_ns;
-  nsCOMPtr<nsIFile> newDBFile;
-  nsresult rv =
-      GetFileIfExists(profilePath, newKeyDBFilename, getter_AddRefs(newDBFile));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-  
-  
-  
-  if (!newDBFile) {
-    return;
-  }
-  constexpr auto oldKeyDBFilename = "key3.db"_ns;
-  nsCOMPtr<nsIFile> oldDBFile;
-  rv =
-      GetFileIfExists(profilePath, oldKeyDBFilename, getter_AddRefs(oldDBFile));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-  if (!oldDBFile) {
-    return;
-  }
-  
-  
-  Unused << oldDBFile->Remove(false);
 }
 #endif  
 
@@ -1883,9 +1772,6 @@ static nsresult InitializeNSSWithFallbacks(const nsACString& profilePath,
       profilePath, NSSDBConfig::ReadWrite, safeModeDBConfig);
   if (srv == SECSuccess) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized NSS in r/w mode"));
-#ifndef ANDROID
-    MaybeCleanUpOldNSSFiles(profilePath);
-#endif  
     return NS_OK;
   }
 #ifndef ANDROID
@@ -1938,7 +1824,7 @@ static nsresult InitializeNSSWithFallbacks(const nsACString& profilePath,
       
       
       
-      nsresult rv = AttemptToRenameBothPKCS11ModuleDBVersions(profilePath);
+      nsresult rv = AttemptToRenamePKCS11ModuleDB(profilePath);
       if (NS_FAILED(rv)) {
 #  ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
         
