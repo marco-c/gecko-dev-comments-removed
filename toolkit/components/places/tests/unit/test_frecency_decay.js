@@ -9,12 +9,44 @@ const PREF_FREC_DECAY_RATE_DEF = 0.975;
 
 
 
-function promiseRankingChanged() {
-  return PlacesTestUtils.waitForNotification(
-    "pages-rank-changed",
-    () => true,
-    "places"
-  );
+
+
+function promiseFrecencyChanged(expectedURI, expectedFrecency) {
+  let deferred = PromiseUtils.defer();
+  let obs = new NavHistoryObserver();
+  obs.onFrecencyChanged = (uri, newFrecency, guid, hidden, visitDate) => {
+    PlacesUtils.history.removeObserver(obs);
+    Assert.ok(!!uri, "uri should not be null");
+    Assert.ok(
+      uri.equals(NetUtil.newURI(expectedURI)),
+      "uri should be the expected one"
+    );
+    Assert.equal(
+      newFrecency,
+      expectedFrecency,
+      "Frecency should be the expected one"
+    );
+    deferred.resolve();
+  };
+  PlacesUtils.history.addObserver(obs);
+  return deferred.promise;
+}
+
+
+
+
+
+
+function promiseManyFrecenciesChanged() {
+  let deferred = PromiseUtils.defer();
+  let obs = new NavHistoryObserver();
+  obs.onManyFrecenciesChanged = () => {
+    PlacesUtils.history.removeObserver(obs);
+    Assert.ok(true);
+    deferred.resolve();
+  };
+  PlacesUtils.history.addObserver(obs);
+  return deferred.promise;
 }
 
 add_task(async function setup() {
@@ -31,7 +63,7 @@ add_task(async function test_frecency_decay() {
 
   
   let url = "http://example.com/b";
-  let promiseOne = promiseRankingChanged();
+  let promiseOne = promiseFrecencyChanged(url, unvisitedBookmarkFrecency);
   await PlacesUtils.bookmarks.insert({
     url,
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
@@ -39,7 +71,7 @@ add_task(async function test_frecency_decay() {
   await promiseOne;
 
   
-  let promiseMany = promiseRankingChanged();
+  let promiseMany = promiseManyFrecenciesChanged();
   PlacesUtils.history
     .QueryInterface(Ci.nsIObserver)
     .observe(null, "idle-daily", "");
