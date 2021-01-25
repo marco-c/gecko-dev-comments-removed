@@ -909,8 +909,13 @@ class nsDisplayListBuilder {
 
 
 
-
   uint32_t GetBackgroundPaintFlags();
+
+  
+
+
+
+  uint32_t GetImageRendererFlags() const;
 
   
 
