@@ -21,6 +21,8 @@ function syncIncrementalGC() {
 
 
 function basicSweeping() {
+  gc();
+
   var wm1 = new WeakMap();
   wm1.set({'name': 'obj1'}, {'name': 'val1'});
   var hold = {'name': 'obj2'};
@@ -37,6 +39,8 @@ basicSweeping();
 
 
 function weakGraph() {
+  gc();
+
   var wm1 = new WeakMap();
   var obj1 = {'name': 'obj1'};
   var obj2 = {'name': 'obj2'};
@@ -62,6 +66,8 @@ weakGraph();
 
 
 function deadWeakMap() {
+  gc();
+
   var wm1 = new WeakMap();
   var obj1 = makeFinalizeObserver();
   var obj2 = {'name': 'obj2'};
@@ -91,6 +97,8 @@ deadWeakMap();
 
 
 function deadKeys() {
+  gc();
+
   var wm1 = new WeakMap();
   var obj1 = makeFinalizeObserver();
   var obj2 = {'name': 'obj2'};
@@ -118,6 +126,8 @@ deadKeys();
 
 
 function weakKeysRealloc() {
+  gc();
+
   var wm1 = new WeakMap;
   var wm2 = new WeakMap;
   var wm3 = new WeakMap;
@@ -129,8 +139,6 @@ function weakKeysRealloc() {
     wm3.set(Object.create(null), wm2);
   }
   wm3.set(Object.create(null), makeFinalizeObserver());
-
-  finishgc();  
 
   wm2 = undefined;
   wm3 = undefined;
@@ -148,6 +156,8 @@ weakKeysRealloc();
 
 
 function deletedKeys() {
+  gc();
+
   var wm = new WeakMap;
   var g = newGlobal();
 
@@ -168,6 +178,8 @@ deletedKeys();
 
 
 function incrementalAdds() {
+  gc();
+
   var initialCount = finalizeCount();
 
   var wm1 = new WeakMap;
