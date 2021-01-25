@@ -30,7 +30,7 @@
 #include "gc/Rooting.h"
 #include "js/CallArgs.h"
 #include "js/Class.h"
-#include "js/experimental/Intl.h"  
+#include "js/experimental/Intl.h"     
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCVector.h"
 #include "js/PropertyDescriptor.h"

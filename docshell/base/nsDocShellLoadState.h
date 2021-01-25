@@ -120,7 +120,6 @@ class nsDocShellLoadState final {
 
   void SetPrincipalIsExplicit(bool aPrincipalIsExplicit);
 
-
   
   
   

@@ -24,4 +24,4 @@ enum class EWhichPostFilter { eContainsText };
 }  
 }  
 
-#endif 
+#endif  

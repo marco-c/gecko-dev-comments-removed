@@ -379,7 +379,8 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
   
   
   
-  return js::SliceBudget(std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
+  return js::SliceBudget(
+      std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
 }
 
 inline TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(

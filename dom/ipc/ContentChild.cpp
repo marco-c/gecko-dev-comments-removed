@@ -1639,7 +1639,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
       CrashReporter::Annotation::ContentSandboxCapabilities,
       static_cast<int>(SandboxInfo::Get().AsInteger()));
 #  endif 
-#endif 
+#endif   
 
   return IPC_OK();
 }
@@ -2159,7 +2159,7 @@ void ContentChild::ActorDestroy(ActorDestroyReason why) {
   CrashReporterClient::DestroySingleton();
 
   XRE_ShutdownChildProcess();
-#endif  
+#endif    
 }
 
 void ContentChild::ProcessingError(Result aCode, const char* aReason) {

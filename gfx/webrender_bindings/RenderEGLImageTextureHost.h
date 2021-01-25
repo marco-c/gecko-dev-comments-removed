@@ -27,6 +27,7 @@ class RenderEGLImageTextureHost final : public RenderTextureHost {
     
     return mSize.width * mSize.height;
   }
+
  private:
   virtual ~RenderEGLImageTextureHost();
   void DeleteTextureHandle();
