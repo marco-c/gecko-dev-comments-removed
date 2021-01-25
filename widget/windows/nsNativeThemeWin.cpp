@@ -33,6 +33,7 @@
 #include "nsWindow.h"
 #include "nsComboboxControlFrame.h"
 #include "prinrval.h"
+#include "ScrollbarUtil.h"
 #include "WinUtils.h"
 
 #include "gfxPlatform.h"
@@ -1470,38 +1471,6 @@ static inline double GetThemeDpiScaleFactor(nsIFrame* aFrame) {
   return 1.0;
 }
 
-static bool IsScrollbarWidthThin(ComputedStyle* aStyle) {
-  auto scrollbarWidth = aStyle->StyleUIReset()->mScrollbarWidth;
-  return scrollbarWidth == StyleScrollbarWidth::Thin;
-}
-
-static bool IsScrollbarWidthThin(nsIFrame* aFrame) {
-  ComputedStyle* style = nsLayoutUtils::StyleForScrollbar(aFrame);
-  return IsScrollbarWidthThin(style);
-}
-
-
-
-
-
-
-static ComputedStyle* GetCustomScrollbarStyle(nsIFrame* aFrame,
-                                              bool* aDarkScrollbar = nullptr) {
-  ComputedStyle* style = nsLayoutUtils::StyleForScrollbar(aFrame);
-  if (style->StyleUI()->HasCustomScrollbars()) {
-    return style;
-  }
-  bool useDarkScrollbar = !StaticPrefs::widget_disable_dark_scrollbar() &&
-                          nsNativeTheme::IsDarkBackground(aFrame);
-  if (useDarkScrollbar || IsScrollbarWidthThin(style)) {
-    if (aDarkScrollbar) {
-      *aDarkScrollbar = useDarkScrollbar;
-    }
-    return style;
-  }
-  return nullptr;
-}
-
 NS_IMETHODIMP
 nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                        StyleAppearance aAppearance,
@@ -2589,40 +2558,12 @@ nsITheme::ThemeGeometryType nsNativeThemeWin::ThemeGeometryTypeForWidget(
 
 nsITheme::Transparency nsNativeThemeWin::GetWidgetTransparency(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
-  if (IsWidgetScrollbarPart(aAppearance)) {
-    if (ComputedStyle* style = GetCustomScrollbarStyle(aFrame)) {
-      auto* ui = style->StyleUI();
-      if (ui->mScrollbarColor.IsAuto() ||
-          ui->mScrollbarColor.AsColors().track.MaybeTransparent()) {
-        return eTransparent;
-      }
-      
-      
-      
-      switch (aAppearance) {
-        case StyleAppearance::ScrollbarthumbHorizontal:
-        case StyleAppearance::ScrollbarthumbVertical:
-        case StyleAppearance::ScrollbarbuttonUp:
-        case StyleAppearance::ScrollbarbuttonDown:
-        case StyleAppearance::ScrollbarbuttonLeft:
-        case StyleAppearance::ScrollbarbuttonRight:
-          return eTransparent;
-        default:
-          break;
-      }
-    }
+  if (auto transparency =
+          ScrollbarUtil::GetScrollbarPartTransparency(aFrame, aAppearance)) {
+    return *transparency;
   }
 
   switch (aAppearance) {
-    case StyleAppearance::ScrollbarHorizontal:
-    case StyleAppearance::ScrollbarVertical:
-    case StyleAppearance::Scrollcorner:
-    case StyleAppearance::Statusbar:
-      
-      
-      
-      
-      return eOpaque;
     case StyleAppearance::MozWinGlass:
     case StyleAppearance::MozWinBorderlessGlass:
     case StyleAppearance::ProgressBar:
@@ -2850,7 +2791,7 @@ nsresult nsNativeThemeWin::ClassicGetMinimumWidgetSize(
     case StyleAppearance::ScrollbarbuttonUp:
     case StyleAppearance::ScrollbarbuttonDown:
       
-      if (!IsScrollbarWidthThin(aFrame)) {
+      if (!ScrollbarUtil::IsScrollbarWidthThin(aFrame)) {
         (*aResult).width = ::GetSystemMetrics(SM_CXVSCROLL);
         (*aResult).height = ::GetSystemMetrics(SM_CYVSCROLL);
       }
@@ -2859,7 +2800,7 @@ nsresult nsNativeThemeWin::ClassicGetMinimumWidgetSize(
     case StyleAppearance::ScrollbarbuttonLeft:
     case StyleAppearance::ScrollbarbuttonRight:
       
-      if (!IsScrollbarWidthThin(aFrame)) {
+      if (!ScrollbarUtil::IsScrollbarWidthThin(aFrame)) {
         (*aResult).width = ::GetSystemMetrics(SM_CXHSCROLL);
         (*aResult).height = ::GetSystemMetrics(SM_CYHSCROLL);
       }
@@ -2932,7 +2873,7 @@ nsresult nsNativeThemeWin::ClassicGetMinimumWidgetSize(
       }
       
       
-      if (IsScrollbarWidthThin(aFrame)) {
+      if (ScrollbarUtil::IsScrollbarWidthThin(aFrame)) {
         aResult->width >>= 1;
       }
       *aIsOverridable = false;
@@ -2947,7 +2888,7 @@ nsresult nsNativeThemeWin::ClassicGetMinimumWidgetSize(
       }
       
       
-      if (IsScrollbarWidthThin(aFrame)) {
+      if (ScrollbarUtil::IsScrollbarWidthThin(aFrame)) {
         aResult->height >>= 1;
       }
       *aIsOverridable = false;
@@ -3931,109 +3872,13 @@ uint32_t nsNativeThemeWin::GetWidgetNativeDrawingFlags(
   }
 }
 
-static nscolor GetScrollbarButtonColor(nscolor aTrackColor,
-                                       EventStates aStates) {
-  
-  
-
-  bool isActive = aStates.HasState(NS_EVENT_STATE_ACTIVE);
-  bool isHover = aStates.HasState(NS_EVENT_STATE_HOVER);
-  if (!isActive && !isHover) {
-    return aTrackColor;
-  }
-  float luminance = RelativeLuminanceUtils::Compute(aTrackColor);
-  if (isActive) {
-    if (luminance >= 0.18f) {
-      luminance *= 0.134f;
-    } else {
-      luminance /= 0.134f;
-      luminance = std::min(luminance, 1.0f);
-    }
-  } else {
-    if (luminance >= 0.18f) {
-      luminance *= 0.805f;
-    } else {
-      luminance /= 0.805f;
-    }
-  }
-  return RelativeLuminanceUtils::Adjust(aTrackColor, luminance);
-}
-
-static nscolor GetScrollbarArrowColor(nscolor aButtonColor) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  float luminance = RelativeLuminanceUtils::Compute(aButtonColor);
-  
-  
-  
-  if (luminance >= 0.72) {
-    
-    
-    const float GRAY96_LUMINANCE = 0.117f;
-    return RelativeLuminanceUtils::Adjust(aButtonColor, GRAY96_LUMINANCE);
-  }
-  
-  
-  
-  if (luminance >= 0.18) {
-    return NS_RGBA(0, 0, 0, NS_GET_A(aButtonColor));
-  }
-  return NS_RGBA(255, 255, 255, NS_GET_A(aButtonColor));
-}
-
-static nscolor AdjustScrollbarFaceColor(nscolor aFaceColor,
-                                        EventStates aStates) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  bool isActive = aStates.HasState(NS_EVENT_STATE_ACTIVE);
-  bool isHover = aStates.HasState(NS_EVENT_STATE_HOVER);
-  if (!isActive && !isHover) {
-    return aFaceColor;
-  }
-  float luminance = RelativeLuminanceUtils::Compute(aFaceColor);
-  if (isActive) {
-    if (luminance >= 0.18f) {
-      luminance *= 0.192f;
-    } else {
-      luminance /= 0.192f;
-    }
-  } else {
-    if (luminance >= 0.18f) {
-      luminance *= 0.625f;
-    } else {
-      luminance /= 0.625f;
-    }
-  }
-  return RelativeLuminanceUtils::Adjust(aFaceColor, luminance);
-}
-
 
 bool nsNativeThemeWin::MayDrawCustomScrollbarPart(gfxContext* aContext,
                                                   nsIFrame* aFrame,
                                                   StyleAppearance aAppearance,
                                                   const nsRect& aRect,
                                                   const nsRect& aClipRect) {
-  bool darkScrollbar = false;
-  ComputedStyle* style = GetCustomScrollbarStyle(aFrame, &darkScrollbar);
+  ComputedStyle* style = ScrollbarUtil::GetCustomScrollbarStyle(aFrame);
   if (!style) {
     return false;
   }
@@ -4048,12 +3893,8 @@ bool nsNativeThemeWin::MayDrawCustomScrollbarPart(gfxContext* aContext,
   gfxRect clipRect = ThebesRect(NSRectToSnappedRect(aClipRect, p2a, *dt));
   ctx->Clip(clipRect);
 
-  const nsStyleUI* ui = style->StyleUI();
-  auto* customColors =
-      ui->mScrollbarColor.IsAuto() ? nullptr : &ui->mScrollbarColor.AsColors();
-  nscolor trackColor = customColors ? customColors->track.CalcColor(*style)
-                                    : (darkScrollbar ? NS_RGBA(20, 20, 25, 77)
-                                                     : NS_RGB(240, 240, 240));
+  nscolor trackColor = ScrollbarUtil::GetScrollbarTrackColor(aFrame);
+
   switch (aAppearance) {
     case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarVertical:
@@ -4088,11 +3929,8 @@ bool nsNativeThemeWin::MayDrawCustomScrollbarPart(gfxContext* aContext,
   switch (aAppearance) {
     case StyleAppearance::ScrollbarthumbVertical:
     case StyleAppearance::ScrollbarthumbHorizontal: {
-      nscolor faceColor = customColors
-                              ? customColors->thumb.CalcColor(*style)
-                              : (darkScrollbar ? NS_RGBA(249, 249, 250, 102)
-                                               : NS_RGB(205, 205, 205));
-      faceColor = AdjustScrollbarFaceColor(faceColor, eventStates);
+      nscolor faceColor =
+          ScrollbarUtil::GetScrollbarThumbColor(aFrame, eventStates);
       ctx->SetColor(sRGBColor::FromABGR(faceColor));
       ctx->Rectangle(bgRect);
       ctx->Fill();
@@ -4102,7 +3940,8 @@ bool nsNativeThemeWin::MayDrawCustomScrollbarPart(gfxContext* aContext,
     case StyleAppearance::ScrollbarbuttonDown:
     case StyleAppearance::ScrollbarbuttonLeft:
     case StyleAppearance::ScrollbarbuttonRight: {
-      nscolor buttonColor = GetScrollbarButtonColor(trackColor, eventStates);
+      nscolor buttonColor =
+          ScrollbarUtil::GetScrollbarButtonColor(trackColor, eventStates);
       ctx->SetColor(sRGBColor::FromABGR(buttonColor));
       ctx->Rectangle(bgRect);
       ctx->Fill();
@@ -4147,7 +3986,7 @@ bool nsNativeThemeWin::MayDrawCustomScrollbarPart(gfxContext* aContext,
       ctx->LineTo(gfxPoint(5.0, 12.0));
       ctx->ClosePath();
       
-      nscolor arrowColor = GetScrollbarArrowColor(buttonColor);
+      nscolor arrowColor = ScrollbarUtil::GetScrollbarArrowColor(buttonColor);
       ctx->SetColor(sRGBColor::FromABGR(arrowColor));
       ctx->Fill();
       break;
