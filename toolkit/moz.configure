@@ -2381,17 +2381,6 @@ set_define("MOZ_ENABLE_FORKSERVER", forkserver_flag, forkserver_flag)
 
 
 
-option(
-    "--disable-new-cert-storage",
-    env="MOZ_NEW_CERT_STORAGE",
-    help="{Enable|Disable} new certificate storage",
-)
-
-set_config("MOZ_NEW_CERT_STORAGE", True, when="--enable-new-cert-storage")
-set_define("MOZ_NEW_CERT_STORAGE", True, when="--enable-new-cert-storage")
-
-
-
 
 with only_when(compile_environment & target_is_linux):
     

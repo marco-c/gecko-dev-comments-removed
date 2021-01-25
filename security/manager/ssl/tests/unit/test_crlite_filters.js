@@ -114,279 +114,239 @@ async function syncAndDownload(filters, clear = true) {
   return results[1]; 
 }
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_filters_disabled() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, false);
+add_task(async function test_crlite_filters_disabled() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, false);
 
-    let result = await syncAndDownload([
-      { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
-    ]);
-    equal(result, "disabled", "CRLite filter download should not have run");
-  }
-);
+  let result = await syncAndDownload([
+    { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
+  ]);
+  equal(result, "disabled", "CRLite filter download should not have run");
+});
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_no_filters() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+add_task(async function test_crlite_no_filters() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
-    let result = await syncAndDownload([]);
-    equal(
-      result,
-      "unavailable",
-      "CRLite filter download should have run, but nothing was available"
-    );
-  }
-);
+  let result = await syncAndDownload([]);
+  equal(
+    result,
+    "unavailable",
+    "CRLite filter download should have run, but nothing was available"
+  );
+});
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_only_incremental_filters() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+add_task(async function test_crlite_only_incremental_filters() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
-    let result = await syncAndDownload([
-      {
-        timestamp: "2019-01-01T06:00:00Z",
-        type: "diff",
-        id: "0001",
-        parent: "0000",
-      },
-      {
-        timestamp: "2019-01-01T18:00:00Z",
-        type: "diff",
-        id: "0002",
-        parent: "0001",
-      },
-      {
-        timestamp: "2019-01-01T12:00:00Z",
-        type: "diff",
-        id: "0003",
-        parent: "0002",
-      },
-    ]);
-    equal(
-      result,
-      "unavailable",
-      "CRLite filter download should have run, but no full filters were available"
-    );
-  }
-);
+  let result = await syncAndDownload([
+    {
+      timestamp: "2019-01-01T06:00:00Z",
+      type: "diff",
+      id: "0001",
+      parent: "0000",
+    },
+    {
+      timestamp: "2019-01-01T18:00:00Z",
+      type: "diff",
+      id: "0002",
+      parent: "0001",
+    },
+    {
+      timestamp: "2019-01-01T12:00:00Z",
+      type: "diff",
+      id: "0003",
+      parent: "0002",
+    },
+  ]);
+  equal(
+    result,
+    "unavailable",
+    "CRLite filter download should have run, but no full filters were available"
+  );
+});
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_incremental_filters_with_wrong_parent() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+add_task(async function test_crlite_incremental_filters_with_wrong_parent() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
-    let result = await syncAndDownload([
-      { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
-      {
-        timestamp: "2019-01-01T06:00:00Z",
-        type: "diff",
-        id: "0001",
-        parent: "0000",
-      },
-      {
-        timestamp: "2019-01-01T12:00:00Z",
-        type: "diff",
-        id: "0003",
-        parent: "0002",
-      },
-      {
-        timestamp: "2019-01-01T18:00:00Z",
-        type: "diff",
-        id: "0004",
-        parent: "0003",
-      },
-    ]);
-    let [status, filters] = result.split(";");
-    equal(status, "finished", "CRLite filter download should have run");
-    let filtersSplit = filters.split(",");
-    deepEqual(
-      filtersSplit,
-      ["2019-01-01T00:00:00Z-full", "2019-01-01T06:00:00Z-diff"],
-      "Should have downloaded the expected CRLite filters"
-    );
-  }
-);
+  let result = await syncAndDownload([
+    { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
+    {
+      timestamp: "2019-01-01T06:00:00Z",
+      type: "diff",
+      id: "0001",
+      parent: "0000",
+    },
+    {
+      timestamp: "2019-01-01T12:00:00Z",
+      type: "diff",
+      id: "0003",
+      parent: "0002",
+    },
+    {
+      timestamp: "2019-01-01T18:00:00Z",
+      type: "diff",
+      id: "0004",
+      parent: "0003",
+    },
+  ]);
+  let [status, filters] = result.split(";");
+  equal(status, "finished", "CRLite filter download should have run");
+  let filtersSplit = filters.split(",");
+  deepEqual(
+    filtersSplit,
+    ["2019-01-01T00:00:00Z-full", "2019-01-01T06:00:00Z-diff"],
+    "Should have downloaded the expected CRLite filters"
+  );
+});
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_incremental_filter_too_early() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+add_task(async function test_crlite_incremental_filter_too_early() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
-    let result = await syncAndDownload([
-      { timestamp: "2019-01-02T00:00:00Z", type: "full", id: "0000" },
-      {
-        timestamp: "2019-01-01T00:00:00Z",
-        type: "diff",
-        id: "0001",
-        parent: "0000",
-      },
-    ]);
-    equal(
-      result,
-      "finished;2019-01-02T00:00:00Z-full",
-      "CRLite filter download should have run"
-    );
-  }
-);
+  let result = await syncAndDownload([
+    { timestamp: "2019-01-02T00:00:00Z", type: "full", id: "0000" },
+    {
+      timestamp: "2019-01-01T00:00:00Z",
+      type: "diff",
+      id: "0001",
+      parent: "0000",
+    },
+  ]);
+  equal(
+    result,
+    "finished;2019-01-02T00:00:00Z-full",
+    "CRLite filter download should have run"
+  );
+});
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_filters_basic() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+add_task(async function test_crlite_filters_basic() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
-    let result = await syncAndDownload([
-      { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
-    ]);
-    equal(
-      result,
-      "finished;2019-01-01T00:00:00Z-full",
-      "CRLite filter download should have run"
-    );
-  }
-);
+  let result = await syncAndDownload([
+    { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
+  ]);
+  equal(
+    result,
+    "finished;2019-01-01T00:00:00Z-full",
+    "CRLite filter download should have run"
+  );
+});
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_filters_full_and_incremental() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+add_task(async function test_crlite_filters_full_and_incremental() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
-    let result = await syncAndDownload([
-      
-      {
-        timestamp: "2019-01-01T06:00:00Z",
-        type: "diff",
-        id: "0001",
-        parent: "0000",
-      },
-      { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
-      {
-        timestamp: "2019-01-01T18:00:00Z",
-        type: "diff",
-        id: "0003",
-        parent: "0002",
-      },
-      {
-        timestamp: "2019-01-01T12:00:00Z",
-        type: "diff",
-        id: "0002",
-        parent: "0001",
-      },
-    ]);
-    let [status, filters] = result.split(";");
-    equal(status, "finished", "CRLite filter download should have run");
-    let filtersSplit = filters.split(",");
-    deepEqual(
-      filtersSplit,
-      [
-        "2019-01-01T00:00:00Z-full",
-        "2019-01-01T06:00:00Z-diff",
-        "2019-01-01T12:00:00Z-diff",
-        "2019-01-01T18:00:00Z-diff",
-      ],
-      "Should have downloaded the expected CRLite filters"
-    );
-  }
-);
+  let result = await syncAndDownload([
+    
+    {
+      timestamp: "2019-01-01T06:00:00Z",
+      type: "diff",
+      id: "0001",
+      parent: "0000",
+    },
+    { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
+    {
+      timestamp: "2019-01-01T18:00:00Z",
+      type: "diff",
+      id: "0003",
+      parent: "0002",
+    },
+    {
+      timestamp: "2019-01-01T12:00:00Z",
+      type: "diff",
+      id: "0002",
+      parent: "0001",
+    },
+  ]);
+  let [status, filters] = result.split(";");
+  equal(status, "finished", "CRLite filter download should have run");
+  let filtersSplit = filters.split(",");
+  deepEqual(
+    filtersSplit,
+    [
+      "2019-01-01T00:00:00Z-full",
+      "2019-01-01T06:00:00Z-diff",
+      "2019-01-01T12:00:00Z-diff",
+      "2019-01-01T18:00:00Z-diff",
+    ],
+    "Should have downloaded the expected CRLite filters"
+  );
+});
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_filters_multiple_days() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+add_task(async function test_crlite_filters_multiple_days() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
-    let result = await syncAndDownload([
-      
-      {
-        timestamp: "2019-01-02T06:00:00Z",
-        type: "diff",
-        id: "0011",
-        parent: "0010",
-      },
-      {
-        timestamp: "2019-01-03T12:00:00Z",
-        type: "diff",
-        id: "0022",
-        parent: "0021",
-      },
-      {
-        timestamp: "2019-01-02T12:00:00Z",
-        type: "diff",
-        id: "0012",
-        parent: "0011",
-      },
-      {
-        timestamp: "2019-01-03T18:00:00Z",
-        type: "diff",
-        id: "0023",
-        parent: "0022",
-      },
-      {
-        timestamp: "2019-01-02T18:00:00Z",
-        type: "diff",
-        id: "0013",
-        parent: "0012",
-      },
-      { timestamp: "2019-01-02T00:00:00Z", type: "full", id: "0010" },
-      { timestamp: "2019-01-03T00:00:00Z", type: "full", id: "0020" },
-      {
-        timestamp: "2019-01-01T06:00:00Z",
-        type: "diff",
-        id: "0001",
-        parent: "0000",
-      },
-      {
-        timestamp: "2019-01-01T18:00:00Z",
-        type: "diff",
-        id: "0003",
-        parent: "0002",
-      },
-      {
-        timestamp: "2019-01-01T12:00:00Z",
-        type: "diff",
-        id: "0002",
-        parent: "0001",
-      },
-      { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
-      {
-        timestamp: "2019-01-03T06:00:00Z",
-        type: "diff",
-        id: "0021",
-        parent: "0020",
-      },
-    ]);
-    let [status, filters] = result.split(";");
-    equal(status, "finished", "CRLite filter download should have run");
-    let filtersSplit = filters.split(",");
-    deepEqual(
-      filtersSplit,
-      [
-        "2019-01-03T00:00:00Z-full",
-        "2019-01-03T06:00:00Z-diff",
-        "2019-01-03T12:00:00Z-diff",
-        "2019-01-03T18:00:00Z-diff",
-      ],
-      "Should have downloaded the expected CRLite filters"
-    );
-  }
-);
+  let result = await syncAndDownload([
+    
+    {
+      timestamp: "2019-01-02T06:00:00Z",
+      type: "diff",
+      id: "0011",
+      parent: "0010",
+    },
+    {
+      timestamp: "2019-01-03T12:00:00Z",
+      type: "diff",
+      id: "0022",
+      parent: "0021",
+    },
+    {
+      timestamp: "2019-01-02T12:00:00Z",
+      type: "diff",
+      id: "0012",
+      parent: "0011",
+    },
+    {
+      timestamp: "2019-01-03T18:00:00Z",
+      type: "diff",
+      id: "0023",
+      parent: "0022",
+    },
+    {
+      timestamp: "2019-01-02T18:00:00Z",
+      type: "diff",
+      id: "0013",
+      parent: "0012",
+    },
+    { timestamp: "2019-01-02T00:00:00Z", type: "full", id: "0010" },
+    { timestamp: "2019-01-03T00:00:00Z", type: "full", id: "0020" },
+    {
+      timestamp: "2019-01-01T06:00:00Z",
+      type: "diff",
+      id: "0001",
+      parent: "0000",
+    },
+    {
+      timestamp: "2019-01-01T18:00:00Z",
+      type: "diff",
+      id: "0003",
+      parent: "0002",
+    },
+    {
+      timestamp: "2019-01-01T12:00:00Z",
+      type: "diff",
+      id: "0002",
+      parent: "0001",
+    },
+    { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
+    {
+      timestamp: "2019-01-03T06:00:00Z",
+      type: "diff",
+      id: "0021",
+      parent: "0020",
+    },
+  ]);
+  let [status, filters] = result.split(";");
+  equal(status, "finished", "CRLite filter download should have run");
+  let filtersSplit = filters.split(",");
+  deepEqual(
+    filtersSplit,
+    [
+      "2019-01-03T00:00:00Z-full",
+      "2019-01-03T06:00:00Z-diff",
+      "2019-01-03T12:00:00Z-diff",
+      "2019-01-03T18:00:00Z-diff",
+    ],
+    "Should have downloaded the expected CRLite filters"
+  );
+});
 
 function getCRLiteEnrollmentRecordFor(nsCert) {
   let { subjectString, spkiHashString } = getSubjectAndSPKIHash(nsCert);
@@ -397,315 +357,305 @@ function getCRLiteEnrollmentRecordFor(nsCert) {
   };
 }
 
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_filters_and_check_revocation() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
-    Services.prefs.setIntPref(
-      "security.pki.crlite_mode",
-      CRLiteModeEnforcePrefValue
-    );
-    Services.prefs.setBoolPref(INTERMEDIATES_ENABLED_PREF, true);
+add_task(async function test_crlite_filters_and_check_revocation() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+  Services.prefs.setIntPref(
+    "security.pki.crlite_mode",
+    CRLiteModeEnforcePrefValue
+  );
+  Services.prefs.setBoolPref(INTERMEDIATES_ENABLED_PREF, true);
 
-    let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-      Ci.nsIX509CertDB
-    );
-    let issuerCert = constructCertFromFile("test_crlite_filters/issuer.pem");
-    let noSCTCertIssuer = constructCertFromFile(
-      "test_crlite_filters/no-sct-issuer.pem"
-    );
+  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  let issuerCert = constructCertFromFile("test_crlite_filters/issuer.pem");
+  let noSCTCertIssuer = constructCertFromFile(
+    "test_crlite_filters/no-sct-issuer.pem"
+  );
 
-    let crliteEnrollmentRecords = [
-      getCRLiteEnrollmentRecordFor(issuerCert),
-      getCRLiteEnrollmentRecordFor(noSCTCertIssuer),
-    ];
+  let crliteEnrollmentRecords = [
+    getCRLiteEnrollmentRecordFor(issuerCert),
+    getCRLiteEnrollmentRecordFor(noSCTCertIssuer),
+  ];
 
-    await IntermediatePreloadsClient.onSync({
-      data: {
-        current: crliteEnrollmentRecords,
-        created: crliteEnrollmentRecords,
-        updated: [],
-        deleted: [],
-      },
-    });
+  await IntermediatePreloadsClient.onSync({
+    data: {
+      current: crliteEnrollmentRecords,
+      created: crliteEnrollmentRecords,
+      updated: [],
+      deleted: [],
+    },
+  });
 
-    let result = await syncAndDownload([
-      { timestamp: "2020-10-17T00:00:00Z", type: "full", id: "0000" },
-    ]);
-    equal(
-      result,
-      "finished;2020-10-17T00:00:00Z-full",
-      "CRLite filter download should have run"
-    );
+  let result = await syncAndDownload([
+    { timestamp: "2020-10-17T00:00:00Z", type: "full", id: "0000" },
+  ]);
+  equal(
+    result,
+    "finished;2020-10-17T00:00:00Z-full",
+    "CRLite filter download should have run"
+  );
 
-    let validCert = constructCertFromFile("test_crlite_filters/valid.pem");
-    
-    
-    
-    
-    
-    await checkCertErrorGenericAtTime(
-      certdb,
-      validCert,
-      PRErrorCodeSuccess,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "vpn.worldofspeed.org",
-      0
-    );
+  let validCert = constructCertFromFile("test_crlite_filters/valid.pem");
+  
+  
+  
+  
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    validCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "vpn.worldofspeed.org",
+    0
+  );
 
-    let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedCert,
-      SEC_ERROR_REVOKED_CERTIFICATE,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "us-datarecovery.com",
-      0
-    );
+  let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedCert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "us-datarecovery.com",
+    0
+  );
 
-    
-    let revokedInStashCert = constructCertFromFile(
-      "test_crlite_filters/revoked-in-stash.pem"
-    );
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedInStashCert,
-      PRErrorCodeSuccess,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "stokedmoto.com",
-      0
-    );
+  
+  let revokedInStashCert = constructCertFromFile(
+    "test_crlite_filters/revoked-in-stash.pem"
+  );
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStashCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "stokedmoto.com",
+    0
+  );
 
-    result = await syncAndDownload(
-      [
-        {
-          timestamp: "2020-10-17T03:00:00Z",
-          type: "diff",
-          id: "0001",
-          parent: "0000",
-        },
-      ],
-      false
-    );
-    equal(
-      result,
-      "finished;2020-10-17T03:00:00Z-diff",
-      "Should have downloaded the expected CRLite filters"
-    );
-
-    
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedInStashCert,
-      SEC_ERROR_REVOKED_CERTIFICATE,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "stokedmoto.com",
-      0
-    );
-
-    
-    let revokedInStash2Cert = constructCertFromFile(
-      "test_crlite_filters/revoked-in-stash-2.pem"
-    );
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedInStash2Cert,
-      PRErrorCodeSuccess,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "icsreps.com",
-      0
-    );
-
-    result = await syncAndDownload(
-      [
-        {
-          timestamp: "2020-10-17T06:00:00Z",
-          type: "diff",
-          id: "0002",
-          parent: "0001",
-        },
-      ],
-      false
-    );
-    equal(
-      result,
-      "finished;2020-10-17T06:00:00Z-diff",
-      "Should have downloaded the expected CRLite filters"
-    );
-
-    
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedInStash2Cert,
-      SEC_ERROR_REVOKED_CERTIFICATE,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "icsreps.com",
-      0
-    );
-
-    
-    await checkCertErrorGenericAtTime(
-      certdb,
-      validCert,
-      PRErrorCodeSuccess,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "vpn.worldofspeed.org",
-      0
-    );
-
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedCert,
-      SEC_ERROR_REVOKED_CERTIFICATE,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "us-datarecovery.com",
-      0
-    );
-
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedInStashCert,
-      SEC_ERROR_REVOKED_CERTIFICATE,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "stokedmoto.com",
-      0
-    );
-
-    
-    
-    
-    
-    
-    let noSCTCert = constructCertFromFile("test_crlite_filters/no-sct.pem");
-    
-    
-    
-    Services.prefs.setCharPref("network.dns.localDomains", "ocsp.digicert.com");
-    Services.prefs.setBoolPref("security.OCSP.require", true);
-    Services.prefs.setIntPref("security.OCSP.enabled", 1);
-    await checkCertErrorGenericAtTime(
-      certdb,
-      noSCTCert,
-      SEC_ERROR_OCSP_SERVER_ERROR,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "mail233.messagelabs.com",
-      0
-    );
-    Services.prefs.clearUserPref("network.dns.localDomains");
-    Services.prefs.clearUserPref("security.OCSP.require");
-    Services.prefs.clearUserPref("security.OCSP.enabled");
-
-    
-    
-    
-    
-    
-    
-    Services.prefs.setIntPref(
-      "security.pki.crlite_ct_merge_delay_seconds",
-      60 * 60 * 24 * 60
-    );
-    
-    
-    
-    
-    await checkCertErrorGenericAtTime(
-      certdb,
-      revokedCert,
-      PRErrorCodeSuccess,
-      certificateUsageSSLServer,
-      new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-      false,
-      "us-datarecovery.com",
-      Ci.nsIX509CertDB.FLAG_LOCAL_ONLY
-    );
-    Services.prefs.clearUserPref("security.pki.crlite_ct_merge_delay_seconds");
-  }
-);
-
-add_task(
-  {
-    skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
-  },
-  async function test_crlite_filters_avoid_reprocessing_filters() {
-    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
-
-    let result = await syncAndDownload([
-      { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
+  result = await syncAndDownload(
+    [
       {
-        timestamp: "2019-01-01T06:00:00Z",
+        timestamp: "2020-10-17T03:00:00Z",
         type: "diff",
         id: "0001",
         parent: "0000",
       },
+    ],
+    false
+  );
+  equal(
+    result,
+    "finished;2020-10-17T03:00:00Z-diff",
+    "Should have downloaded the expected CRLite filters"
+  );
+
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStashCert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "stokedmoto.com",
+    0
+  );
+
+  
+  let revokedInStash2Cert = constructCertFromFile(
+    "test_crlite_filters/revoked-in-stash-2.pem"
+  );
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStash2Cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "icsreps.com",
+    0
+  );
+
+  result = await syncAndDownload(
+    [
       {
-        timestamp: "2019-01-01T12:00:00Z",
+        timestamp: "2020-10-17T06:00:00Z",
         type: "diff",
         id: "0002",
         parent: "0001",
       },
-      {
-        timestamp: "2019-01-01T18:00:00Z",
-        type: "diff",
-        id: "0003",
-        parent: "0002",
-      },
-    ]);
-    let [status, filters] = result.split(";");
-    equal(status, "finished", "CRLite filter download should have run");
-    let filtersSplit = filters.split(",");
-    deepEqual(
-      filtersSplit,
-      [
-        "2019-01-01T00:00:00Z-full",
-        "2019-01-01T06:00:00Z-diff",
-        "2019-01-01T12:00:00Z-diff",
-        "2019-01-01T18:00:00Z-diff",
-      ],
-      "Should have downloaded the expected CRLite filters"
-    );
-    
-    
-    result = await syncAndDownload([], false);
-    equal(result, "finished;");
+    ],
+    false
+  );
+  equal(
+    result,
+    "finished;2020-10-17T06:00:00Z-diff",
+    "Should have downloaded the expected CRLite filters"
+  );
 
-    
-    result = await syncAndDownload(
-      [
-        {
-          timestamp: "2019-01-02T00:00:00Z",
-          type: "diff",
-          id: "0004",
-          parent: "0003",
-        },
-      ],
-      false
-    );
-    equal(result, "finished;2019-01-02T00:00:00Z-diff");
-  }
-);
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStash2Cert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "icsreps.com",
+    0
+  );
+
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    validCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "vpn.worldofspeed.org",
+    0
+  );
+
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedCert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "us-datarecovery.com",
+    0
+  );
+
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStashCert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "stokedmoto.com",
+    0
+  );
+
+  
+  
+  
+  
+  
+  let noSCTCert = constructCertFromFile("test_crlite_filters/no-sct.pem");
+  
+  
+  
+  Services.prefs.setCharPref("network.dns.localDomains", "ocsp.digicert.com");
+  Services.prefs.setBoolPref("security.OCSP.require", true);
+  Services.prefs.setIntPref("security.OCSP.enabled", 1);
+  await checkCertErrorGenericAtTime(
+    certdb,
+    noSCTCert,
+    SEC_ERROR_OCSP_SERVER_ERROR,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "mail233.messagelabs.com",
+    0
+  );
+  Services.prefs.clearUserPref("network.dns.localDomains");
+  Services.prefs.clearUserPref("security.OCSP.require");
+  Services.prefs.clearUserPref("security.OCSP.enabled");
+
+  
+  
+  
+  
+  
+  
+  Services.prefs.setIntPref(
+    "security.pki.crlite_ct_merge_delay_seconds",
+    60 * 60 * 24 * 60
+  );
+  
+  
+  
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "us-datarecovery.com",
+    Ci.nsIX509CertDB.FLAG_LOCAL_ONLY
+  );
+  Services.prefs.clearUserPref("security.pki.crlite_ct_merge_delay_seconds");
+});
+
+add_task(async function test_crlite_filters_avoid_reprocessing_filters() {
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+
+  let result = await syncAndDownload([
+    { timestamp: "2019-01-01T00:00:00Z", type: "full", id: "0000" },
+    {
+      timestamp: "2019-01-01T06:00:00Z",
+      type: "diff",
+      id: "0001",
+      parent: "0000",
+    },
+    {
+      timestamp: "2019-01-01T12:00:00Z",
+      type: "diff",
+      id: "0002",
+      parent: "0001",
+    },
+    {
+      timestamp: "2019-01-01T18:00:00Z",
+      type: "diff",
+      id: "0003",
+      parent: "0002",
+    },
+  ]);
+  let [status, filters] = result.split(";");
+  equal(status, "finished", "CRLite filter download should have run");
+  let filtersSplit = filters.split(",");
+  deepEqual(
+    filtersSplit,
+    [
+      "2019-01-01T00:00:00Z-full",
+      "2019-01-01T06:00:00Z-diff",
+      "2019-01-01T12:00:00Z-diff",
+      "2019-01-01T18:00:00Z-diff",
+    ],
+    "Should have downloaded the expected CRLite filters"
+  );
+  
+  
+  result = await syncAndDownload([], false);
+  equal(result, "finished;");
+
+  
+  result = await syncAndDownload(
+    [
+      {
+        timestamp: "2019-01-02T00:00:00Z",
+        type: "diff",
+        id: "0004",
+        parent: "0003",
+      },
+    ],
+    false
+  );
+  equal(result, "finished;2019-01-02T00:00:00Z-diff");
+});
 
 let server;
 
