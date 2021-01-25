@@ -579,6 +579,7 @@ function TypedArrayForEach(callbackfn) {
 
 
 
+
 function TypedArrayIndexOf(searchElement, fromIndex = 0) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -602,9 +603,20 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
     var n = ToInteger(fromIndex);
 
     
+    assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
+
+    
+    
+    len = TypedArrayLength(O);
+
+    assert(len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+           "TypedArrays with detached buffers have a length of zero");
+
+    
     if (n >= len)
         return -1;
 
+    
     
     var k;
     if (n >= 0) {
@@ -620,8 +632,11 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
     }
 
     
-    
     for (; k < len; k++) {
+        
+        assert(k in O, "unexpected missing element");
+
+        
         if (O[k] === searchElement)
             return k;
     }
