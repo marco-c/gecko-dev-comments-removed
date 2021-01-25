@@ -629,8 +629,7 @@ int NrSocket::create(nr_transport_addr* addr) {
       break;
     case IPPROTO_TCP:
       
-      
-      if (my_addr_.fqdn[0] != '\0') ABORT(R_INTERNAL);
+      if (my_addr_.tls_host[0] != '\0') ABORT(R_INTERNAL);
 
       if (!(fd_ = PR_OpenTCPSocket(naddr.raw.family))) {
         r_log(LOG_GENERIC, LOG_CRIT,

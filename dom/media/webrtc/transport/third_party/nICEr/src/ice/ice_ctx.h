@@ -53,8 +53,17 @@ extern "C" {
 #define NR_ICE_STUN_SERVER_TYPE_DNSNAME 2
 
 typedef struct nr_ice_stun_server_ {
-  nr_transport_addr addr;
+  int type;
+  union {
+    nr_transport_addr addr;
+    struct {
+      char host[256];  
+      UINT2 port;
+    } dnsname;
+  } u;
   int id;
+  int transport;
+  int tls; 
 } nr_ice_stun_server;
 
 typedef struct nr_ice_turn_server_ {

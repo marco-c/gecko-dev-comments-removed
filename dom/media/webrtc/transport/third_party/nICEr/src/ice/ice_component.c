@@ -253,12 +253,16 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         
         for(j=0;j<ctx->stun_server_ct;j++){
           
-          if (ctx->stun_servers[j].addr.protocol != IPPROTO_UDP) continue;
-
-          if (nr_transport_addr_check_compatibility(
-                  &addrs[i].addr, &ctx->stun_servers[j].addr)) {
-            r_log(LOG_ICE,LOG_INFO,"ICE(%s): Skipping STUN server because of address type mis-match",ctx->label);
+          if(ctx->stun_servers[j].transport!=IPPROTO_UDP)
             continue;
+
+          if (ctx->stun_servers[j].type == NR_ICE_STUN_SERVER_TYPE_ADDR) {
+            if (nr_transport_addr_check_compatibility(
+                  &addrs[i].addr,
+                  &ctx->stun_servers[j].u.addr)) {
+              r_log(LOG_ICE,LOG_INFO,"ICE(%s): Skipping STUN server because of link local mis-match",ctx->label);
+              continue;
+            }
           }
 
           
@@ -288,13 +292,16 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         nr_ice_candidate *srvflx_cand=0;
 
         
-        if (ctx->turn_servers[j].turn_server.addr.protocol != IPPROTO_UDP)
+        if (ctx->turn_servers[j].turn_server.transport != IPPROTO_UDP)
           continue;
 
-        if (nr_transport_addr_check_compatibility(
-                &addrs[i].addr, &ctx->turn_servers[j].turn_server.addr)) {
-          r_log(LOG_ICE,LOG_INFO,"ICE(%s): Skipping TURN server because of address type mis-match",ctx->label);
-          continue;
+        if (ctx->turn_servers[j].turn_server.type == NR_ICE_STUN_SERVER_TYPE_ADDR) {
+          if (nr_transport_addr_check_compatibility(
+                &addrs[i].addr,
+                &ctx->turn_servers[j].turn_server.u.addr)) {
+            r_log(LOG_ICE,LOG_INFO,"ICE(%s): Skipping TURN server because of link local mis-match",ctx->label);
+            continue;
+          }
         }
 
         if (!(ctx->flags & NR_ICE_CTX_FLAGS_RELAY_ONLY)) {
@@ -492,7 +499,8 @@ static int nr_ice_component_initialize_tcp(struct nr_ice_ctx_ *ctx,nr_ice_compon
 
         
         for(j=0;j<ctx->stun_server_ct;j++){
-          if (ctx->stun_servers[j].addr.protocol != IPPROTO_TCP) continue;
+          if (ctx->stun_servers[j].transport!=IPPROTO_TCP)
+            continue;
 
           if (isock_psv) {
             if(r=nr_ice_candidate_create(ctx,component,
@@ -526,7 +534,7 @@ static int nr_ice_component_initialize_tcp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         nr_ice_socket *turn_isock;
 
         
-        if (ctx->turn_servers[j].turn_server.addr.protocol != IPPROTO_TCP)
+        if (ctx->turn_servers[j].turn_server.transport != IPPROTO_TCP)
           continue;
 
         
@@ -534,10 +542,13 @@ static int nr_ice_component_initialize_tcp(struct nr_ice_ctx_ *ctx,nr_ice_compon
           ABORT(r);
         addr.protocol = IPPROTO_TCP;
 
-        if (nr_transport_addr_check_compatibility(
-                &addr, &ctx->turn_servers[j].turn_server.addr)) {
-          r_log(LOG_ICE,LOG_INFO,"ICE(%s): Skipping TURN server because of address type mis-match",ctx->label);
-          continue;
+        if (ctx->turn_servers[j].turn_server.type == NR_ICE_STUN_SERVER_TYPE_ADDR) {
+          if (nr_transport_addr_check_compatibility(
+                &addr,
+                &ctx->turn_servers[j].turn_server.u.addr)) {
+            r_log(LOG_ICE,LOG_INFO,"ICE(%s): Skipping TURN server because of link local mis-match",ctx->label);
+            continue;
+          }
         }
 
         if (!ice_tcp_disabled) {
@@ -563,9 +574,11 @@ static int nr_ice_component_initialize_tcp(struct nr_ice_ctx_ *ctx,nr_ice_compon
           }
         }
 
-        if (ctx->turn_servers[j].turn_server.addr.fqdn[0] != 0) {
-          
-          addr.tls = ctx->turn_servers[j].turn_server.addr.tls;
+        
+        if (ctx->turn_servers[j].turn_server.tls) {
+          strncpy(addr.tls_host,
+                  ctx->turn_servers[j].turn_server.u.dnsname.host,
+                  sizeof(addr.tls_host) - 1);
         }
 
         if ((r=nr_transport_addr_fmt_addr_string(&addr)))
