@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 
@@ -11,38 +9,7 @@ const Enzyme = require("enzyme");
 const Adapter = require("enzyme-adapter-react-16");
 Enzyme.configure({ adapter: new Adapter() });
 
-global.requestAnimationFrame = function(cb) {
-  cb();
-  return null;
-};
-
-
-
-let selection;
-const selectionObject = {
-  toString: () => selection,
-  get type() {
-    if (selection === undefined) {
-      return "None";
-    }
-    if (selection === "") {
-      return "Caret";
-    }
-    return "Range";
-  },
-  setMockSelection: str => {
-    selection = str;
-  },
-};
-
-global.getSelection = () => selectionObject;
-
-
-if (!Array.prototype.flatMap) {
-  
-  Array.prototype.flatMap = function(cb) {
-    return this.reduce((acc, x, i, arr) => {
-      return acc.concat(cb(x, i, arr));
-    }, []);
-  };
-}
+const {
+  setMocksInGlobal,
+} = require("devtools/client/shared/test-helpers/shared-node-helpers");
+setMocksInGlobal();
