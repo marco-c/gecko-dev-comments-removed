@@ -730,8 +730,10 @@ class ReactEventCollector extends MainEventCollector {
       handlerDO = handlerDO.boundTargetFunction;
     }
 
-    const introScript = handlerDO.script.source.introductionScript;
     const script = handlerDO.script;
+    
+    
+    const introScript = script?.source.introductionScript;
 
     
     
