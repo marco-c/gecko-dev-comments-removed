@@ -394,29 +394,45 @@ nsresult ScriptLoader::CheckContentPolicy(Document* aDocument,
 }
 
 
-bool ScriptLoader::IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest) {
-  
-  
-  if (!aRequest->TriggeringPrincipal()->GetIsContentPrincipal()) {
-    return false;
-  }
-  if (!aRequest->TriggeringPrincipal()->SchemeIs("about")) {
-    return false;
-  }
-  
-
-  
-  uint32_t aboutModuleFlags = 0;
-  nsresult rv =
-      aRequest->TriggeringPrincipal()->GetAboutModuleFlags(&aboutModuleFlags);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  if (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
-    return false;
-  }
-
+bool ScriptLoader::IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest,
+                                               Document* aDocument) {
   
   if (!aRequest->mURI->SchemeIs("chrome")) {
+    return false;
+  }
+
+  
+  
+  
+  
+  uint32_t aboutModuleFlags = 0;
+  nsresult rv = NS_OK;
+
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aRequest->TriggeringPrincipal();
+  if (triggeringPrincipal->GetIsContentPrincipal()) {
+    if (!triggeringPrincipal->SchemeIs("about")) {
+      return false;
+    }
+    rv = triggeringPrincipal->GetAboutModuleFlags(&aboutModuleFlags);
+    NS_ENSURE_SUCCESS(rv, false);
+  } else if (triggeringPrincipal->GetIsNullPrincipal()) {
+    nsCOMPtr<nsIURI> docURI = aDocument->GetDocumentURI();
+    if (!docURI->SchemeIs("about")) {
+      return false;
+    }
+
+    nsCOMPtr<nsIAboutModule> aboutModule;
+    rv = NS_GetAboutModule(docURI, getter_AddRefs(aboutModule));
+    if (NS_FAILED(rv) || !aboutModule) {
+      return false;
+    }
+    rv = aboutModule->GetURIFlags(docURI, &aboutModuleFlags);
+    NS_ENSURE_SUCCESS(rv, false);
+  } else {
+    return false;
+  }
+
+  if (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
     return false;
   }
 
@@ -1405,7 +1421,7 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
     
     
     
-    if (IsAboutPageLoadingChromeURI(aRequest)) {
+    if (IsAboutPageLoadingChromeURI(aRequest, mDocument)) {
       securityFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
     } else {
       securityFlags = nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT;

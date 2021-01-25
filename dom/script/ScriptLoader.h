@@ -534,7 +534,8 @@ class ScriptLoader final : public nsISupports {
 
 
 
-  static bool IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest);
+  static bool IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest,
+                                          Document* aDocument);
 
   
 
