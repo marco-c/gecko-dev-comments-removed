@@ -25,7 +25,7 @@ struct MemberInitializers;
 class GCMarker;
 
 namespace frontend {
-struct CompilationInfo;
+struct CompilationState;
 struct CompilationGCOutput;
 class ScopeStencil;
 }  
@@ -47,7 +47,7 @@ class AbstractScopePtr {
   
   struct Deferred {
     ScopeIndex index;
-    frontend::CompilationInfo& compilationInfo;
+    frontend::CompilationState& compilationState;
   };
 
   
@@ -66,8 +66,9 @@ class AbstractScopePtr {
 
   explicit AbstractScopePtr(Scope* scope) : scope_(HeapPtrScope(scope)) {}
 
-  AbstractScopePtr(frontend::CompilationInfo& compilationInfo, ScopeIndex scope)
-      : scope_(Deferred{scope, compilationInfo}) {}
+  AbstractScopePtr(frontend::CompilationState& compilationState,
+                   ScopeIndex scope)
+      : scope_(Deferred{scope, compilationState}) {}
 
   bool isNullptr() const {
     if (isScopeStencil()) {
@@ -86,7 +87,7 @@ class AbstractScopePtr {
 
   
   frontend::ScopeStencil& scopeData() const;
-  frontend::CompilationInfo& compilationInfo() const;
+  frontend::CompilationState& compilationState() const;
 
   
   

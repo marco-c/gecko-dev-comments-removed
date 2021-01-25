@@ -742,7 +742,7 @@ XDRResult XDRCompilationStencil(XDRState<mode>* xdr,
   
   
 
-  MOZ_TRY(XDRVector(xdr, stencil.scopeData));
+  MOZ_TRY(XDRSpanInitialized(xdr, stencil.scopeData));
   for (auto& entry : stencil.scopeData) {
     MOZ_TRY(StencilXDR::Scope(xdr, entry));
   }
