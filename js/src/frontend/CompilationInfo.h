@@ -69,6 +69,13 @@ struct ScopeContext {
 
   
   
+  
+  
+  
+  uint32_t enclosingThisEnvironmentHops = 0;
+
+  
+  
   mozilla::Maybe<MemberInitializers> memberInitializers = {};
 
   

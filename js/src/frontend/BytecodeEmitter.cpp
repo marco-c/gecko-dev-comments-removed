@@ -1566,6 +1566,34 @@ bool BytecodeEmitter::needsImplicitThis() {
   return false;
 }
 
+size_t BytecodeEmitter::countThisEnvironmentHops() {
+  unsigned numHops = 0;
+
+  for (BytecodeEmitter* current = this; current; current = current->parent) {
+    for (EmitterScope* es = current->innermostEmitterScope(); es;
+         es = es->enclosingInFrame()) {
+      if (es->scope(current).is<FunctionScope>()) {
+        if (!es->scope(current).isArrow()) {
+          
+          
+          MOZ_ASSERT(es->scope(current).hasEnvironment());
+          return numHops;
+        }
+      }
+      if (es->scope(current).hasEnvironment()) {
+        numHops++;
+      }
+    }
+  }
+
+  
+  
+  
+  MOZ_ASSERT(sc->allowSuperProperty());
+  numHops += compilationState.scopeContext.enclosingThisEnvironmentHops;
+  return numHops;
+}
+
 bool BytecodeEmitter::emitThisEnvironmentCallee() {
   
 
@@ -1575,20 +1603,7 @@ bool BytecodeEmitter::emitThisEnvironmentCallee() {
   }
 
   
-  unsigned numHops = 0;
-  for (AbstractScopePtrIter si(innermostScope()); si; si++) {
-    if (si.abstractScopePtr().is<FunctionScope>()) {
-      if (!si.abstractScopePtr().isArrow()) {
-        
-        
-        MOZ_ASSERT(si.abstractScopePtr().hasEnvironment());
-        break;
-      }
-    }
-    if (si.abstractScopePtr().hasEnvironment()) {
-      numHops++;
-    }
-  }
+  size_t numHops = countThisEnvironmentHops();
 
   static_assert(
       ENVCOORD_HOPS_LIMIT - 1 <= UINT8_MAX,
