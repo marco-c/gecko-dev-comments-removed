@@ -242,15 +242,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:mochitest/ssltunnel/ssltunnel.cpp\n"
 
          
-         "thread:NS_NewNamedThread\n"
-         "thread:nsThread::Init\n"
-         "thread:libglib-2\n"
-
          
          
          
-         
-         "thread:mozilla::layers::ImageBridgeChild\n"
          "race:mozilla::layers::ImageBridgeChild::ShutDown\n"
 
          
@@ -260,9 +254,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:IdentifyTextureHost\n"
          "race:GetCompositorBackendType\n"
          "race:SupportsTextureDirectMapping\n"
-
-         
-         "thread:StartupCache\n"
 
          
          "race:CamerasParent::ActorDestroy\n"
