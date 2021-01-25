@@ -102,6 +102,8 @@ extern "C" const char* __tsan_default_suppressions() {
          "deadlock:third_party/rust/rkv/src/env.rs\n"
          
          "deadlock:EncryptedClientHelloServer\n"
+         
+         "deadlock:nsDOMWindowUtils::CompareCanvases\n"
 
 
 
