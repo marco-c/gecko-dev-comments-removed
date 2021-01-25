@@ -1,12 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+ * The version used for mobile is located at
+ * toolkit/themes/mobile/global/aboutMemory.css.
+ * Desktop-specific stuff is at the bottom of this file.
+ */
 
 html {
   background: -moz-Dialog;
@@ -21,7 +21,7 @@ body {
   margin: auto;
 }
 
-
+/* The comment at the top of aboutMemory.xhtml explains this font choice. */
 pre {
   font-family: DejaVu Sans Mono, Liberation Mono, Fira Mono, monospace;
 }
@@ -66,7 +66,7 @@ div.sidebarItem {
   border-radius: 10px;
   background: Field;
   color: FieldText;
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 input.filterInput {
@@ -113,11 +113,11 @@ div.non-verbose pre.entries {
 h1 {
   padding: 0;
   margin: 0;
-  background: inherit; 
-  display: inline;  
-  position: sticky; 
+  background: inherit; /* When sticky give it the solid background of the parent */
+  display: inline;  /* allow subsequent text to the right of the heading */
+  position: sticky; /* Stay at the top of the page when scrolling */
   top: 0;
-  z-index: 1; 
+  z-index: 1; /* When sticky it should appear above the tree lines */
 }
 
 h2 {
@@ -125,21 +125,21 @@ h2 {
 }
 
 h3 {
-  display: inline;  
+  display: inline;  /* allow subsequent text to the right of the heading */
 }
 
 a.upDownArrow {
   font-size: 130%;
   text-decoration: none;
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 .accuracyWarning, .badInputWarning, .invalid {
-  
-
-
-
-
+  /*
+   * Technically this should be used with the default background colour,
+   * instead we're using the default field background colour,
+   * I hope this will be okay.
+   */
   color: -moz-activehyperlinktext;
 }
 
@@ -161,17 +161,17 @@ a.upDownArrow {
 }
 
 .noselect {
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 .option {
   font-size: 80%;
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 .legend {
   font-size: 80%;
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 .debug {
@@ -182,7 +182,7 @@ a.upDownArrow {
   display: none;
 }
 
-
+/* Desktop-specific parts go here. */
 
 .hasKids:hover {
   text-decoration: underline;
