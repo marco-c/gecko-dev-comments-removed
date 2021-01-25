@@ -29,6 +29,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "contentPromptSubDialog",
+  "prompts.contentPromptSubDialog",
+  false
+);
+
 
 
 
@@ -118,13 +125,14 @@ class PromptParent extends JSWindowActorParent {
     switch (message.name) {
       case "Prompt:Open": {
         if (
-          args.modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT ||
+          (args.modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT &&
+            !contentPromptSubDialog) ||
           (args.modalType === Ci.nsIPrompt.MODAL_TYPE_TAB &&
             !tabChromePromptSubDialog)
         ) {
           return this.openContentPrompt(args, id);
         }
-        return this.openChromePrompt(args);
+        return this.openPromptWithTabDialogBox(args);
       }
     }
 
@@ -236,7 +244,8 @@ class PromptParent extends JSWindowActorParent {
 
 
 
-  async openChromePrompt(args) {
+
+  async openPromptWithTabDialogBox(args) {
     const COMMON_DIALOG = "chrome://global/content/commonDialog.xhtml";
     const SELECT_DIALOG = "chrome://global/content/selectDialog.xhtml";
     let uri = args.promptType == "select" ? SELECT_DIALOG : COMMON_DIALOG;
@@ -271,13 +280,27 @@ class PromptParent extends JSWindowActorParent {
 
       let bag = PromptUtils.objectToPropBag(args);
 
-      if (args.modalType === Services.prompt.MODAL_TYPE_TAB) {
+      if (
+        args.modalType === Services.prompt.MODAL_TYPE_TAB ||
+        args.modalType === Services.prompt.MODAL_TYPE_CONTENT
+      ) {
         if (!browser) {
-          throw new Error("Cannot tab-prompt without a browser!");
+          let modal_type =
+            args.modalType === Services.prompt.MODAL_TYPE_TAB
+              ? "tab"
+              : "content";
+          throw new Error(`Cannot ${modal_type}-prompt without a browser!`);
         }
         
         let dialogBox = win.gBrowser.getTabDialogBox(browser);
-        await dialogBox.open(uri, { features: "resizable=no" }, bag);
+        await dialogBox.open(
+          uri,
+          {
+            features: "resizable=no",
+            modalType: args.modalType,
+          },
+          bag
+        );
       } else {
         
         Services.ww.openWindow(
