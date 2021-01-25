@@ -697,7 +697,7 @@ nsresult LoadInfoArgsToLoadInfo(
   if (XRE_IsParentProcess() &&
       (nsContentUtils::InternalContentPolicyTypeToExternal(
            loadInfoArgs.contentPolicyType()) !=
-       ExtContentPolicy::TYPE_DOCUMENT)) {
+       nsIContentPolicy::TYPE_DOCUMENT)) {
     
     
     RefPtr<BrowsingContext> parentBC =

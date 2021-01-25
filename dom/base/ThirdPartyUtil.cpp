@@ -313,7 +313,7 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel, nsIURI* aURI,
   if (!doForce) {
     parentIsThird = loadInfo->GetIsInThirdPartyContext();
     if (!parentIsThird && loadInfo->GetExternalContentPolicyType() !=
-                              ExtContentPolicy::TYPE_DOCUMENT) {
+                              nsIContentPolicy::TYPE_DOCUMENT) {
       
       
       loadingPrincipal = BasePrincipal::Cast(loadInfo->GetLoadingPrincipal());

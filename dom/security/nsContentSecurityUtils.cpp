@@ -696,11 +696,11 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
+  nsContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
   
   
-  if (contentType != ExtContentPolicy::TYPE_SUBDOCUMENT &&
-      contentType != ExtContentPolicy::TYPE_OBJECT) {
+  if (contentType != nsIContentPolicy::TYPE_SUBDOCUMENT &&
+      contentType != nsIContentPolicy::TYPE_OBJECT) {
     return NS_OK;
   }
 

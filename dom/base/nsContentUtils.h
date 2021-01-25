@@ -1355,8 +1355,19 @@ class nsContentUtils {
   
 
 
-  static inline ExtContentPolicyType InternalContentPolicyTypeToExternal(
+  static inline nsContentPolicyType InternalContentPolicyTypeToExternal(
       nsContentPolicyType aType);
+
+  
+
+
+
+
+
+
+
+  static inline nsContentPolicyType
+  InternalContentPolicyTypeToExternalOrPreload(nsContentPolicyType aType);
 
   
 
@@ -1372,7 +1383,7 @@ class nsContentUtils {
 
 
 
-  static bool IsUpgradableDisplayType(ExtContentPolicyType aType);
+  static bool IsUpgradableDisplayType(nsContentPolicyType aType);
 
   
 
@@ -3417,7 +3428,7 @@ class nsContentUtils {
   static uint32_t sInnerOrOuterWindowSerialCounter;
 };
 
- inline ExtContentPolicyType
+ inline nsContentPolicyType
 nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
   switch (aType) {
     case nsIContentPolicy::TYPE_INTERNAL_SCRIPT:
@@ -3432,46 +3443,46 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_INTERNAL_PAINTWORKLET:
     case nsIContentPolicy::TYPE_INTERNAL_CHROMEUTILS_COMPILED_SCRIPT:
     case nsIContentPolicy::TYPE_INTERNAL_FRAME_MESSAGEMANAGER_SCRIPT:
-      return ExtContentPolicy::TYPE_SCRIPT;
+      return nsIContentPolicy::TYPE_SCRIPT;
 
     case nsIContentPolicy::TYPE_INTERNAL_EMBED:
     case nsIContentPolicy::TYPE_INTERNAL_OBJECT:
-      return ExtContentPolicy::TYPE_OBJECT;
+      return nsIContentPolicy::TYPE_OBJECT;
 
     case nsIContentPolicy::TYPE_INTERNAL_FRAME:
     case nsIContentPolicy::TYPE_INTERNAL_IFRAME:
-      return ExtContentPolicy::TYPE_SUBDOCUMENT;
+      return nsIContentPolicy::TYPE_SUBDOCUMENT;
 
     case nsIContentPolicy::TYPE_INTERNAL_AUDIO:
     case nsIContentPolicy::TYPE_INTERNAL_VIDEO:
     case nsIContentPolicy::TYPE_INTERNAL_TRACK:
-      return ExtContentPolicy::TYPE_MEDIA;
+      return nsIContentPolicy::TYPE_MEDIA;
 
     case nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST:
     case nsIContentPolicy::TYPE_INTERNAL_EVENTSOURCE:
-      return ExtContentPolicy::TYPE_XMLHTTPREQUEST;
+      return nsIContentPolicy::TYPE_XMLHTTPREQUEST;
 
     case nsIContentPolicy::TYPE_INTERNAL_IMAGE:
     case nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD:
     case nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON:
-      return ExtContentPolicy::TYPE_IMAGE;
+      return nsIContentPolicy::TYPE_IMAGE;
 
     case nsIContentPolicy::TYPE_INTERNAL_STYLESHEET:
     case nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD:
-      return ExtContentPolicy::TYPE_STYLESHEET;
+      return nsIContentPolicy::TYPE_STYLESHEET;
 
     case nsIContentPolicy::TYPE_INTERNAL_DTD:
     case nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD:
-      return ExtContentPolicy::TYPE_DTD;
+      return nsIContentPolicy::TYPE_DTD;
 
     case nsIContentPolicy::TYPE_INTERNAL_FONT_PRELOAD:
-      return ExtContentPolicy::TYPE_FONT;
+      return nsIContentPolicy::TYPE_FONT;
 
     case nsIContentPolicy::TYPE_INTERNAL_FETCH_PRELOAD:
-      return ExtContentPolicy::TYPE_FETCH;
+      return nsIContentPolicy::TYPE_FETCH;
 
     default:
-      return static_cast<ExtContentPolicyType>(aType);
+      return aType;
   }
 }
 

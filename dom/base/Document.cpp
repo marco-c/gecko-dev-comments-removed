@@ -3571,7 +3571,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   if (loadInfo->GetExternalContentPolicyType() ==
-      ExtContentPolicy::TYPE_IMAGE) {
+      nsIContentPolicy::TYPE_IMAGE) {
     return NS_OK;
   }
 

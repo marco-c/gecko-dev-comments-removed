@@ -176,12 +176,12 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
+  nsContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
 
   
   
-  if (contentType != ExtContentPolicy::TYPE_SUBDOCUMENT &&
-      contentType != ExtContentPolicy::TYPE_OBJECT) {
+  if (contentType != nsIContentPolicy::TYPE_SUBDOCUMENT &&
+      contentType != nsIContentPolicy::TYPE_OBJECT) {
     return true;
   }
 
