@@ -45,9 +45,7 @@ inline void printf_stderr(const char* fmt, ...) MOZ_FORMAT_PRINTF(1, 2) {
   }
 #endif  
 
-  
-  
-  FILE* fp = _fdopen(_dup(_fileno(stderr)), "a");
+  FILE* fp = _fdopen(_dup(2), "a");
   if (!fp) return;
 
   va_list args;
