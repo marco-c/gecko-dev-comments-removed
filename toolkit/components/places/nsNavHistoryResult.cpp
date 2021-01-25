@@ -2257,9 +2257,6 @@ nsresult nsNavHistoryQueryResultNode::OnTitleChanged(
   return ChangeTitles(aURI, newTitle, true, onlyOneEntry);
 }
 
-NS_IMETHODIMP
-nsNavHistoryQueryResultNode::OnManyFrecenciesChanged() { return NS_OK; }
-
 
 
 
@@ -4213,9 +4210,6 @@ void nsNavHistoryResult::HandlePlacesEvent(const PlacesEventSequence& aEvents) {
     }
   }
 }
-
-NS_IMETHODIMP
-nsNavHistoryResult::OnManyFrecenciesChanged() { return NS_OK; }
 
 NS_IMETHODIMP
 nsNavHistoryResult::OnDeleteURI(nsIURI* aURI, const nsACString& aGUID,
