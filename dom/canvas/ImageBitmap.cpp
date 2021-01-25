@@ -881,13 +881,26 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
 
   
   RefPtr<layers::Image> data;
+
+  
+  
+  
+  size_t maxInline = JS_MaxMovableTypedArraySize();
+  uint8_t inlineDataBuffer[maxInline];
+  uint8_t* fixedData = array.FixedData(inlineDataBuffer, maxInline);
+
+  
+  
+  
+  array.Reset();
+
   if (NS_IsMainThread()) {
-    data = CreateImageFromRawData(imageSize, imageStride, FORMAT, array.Data(),
-                                  dataLength, aCropRect);
+    data = CreateImageFromRawData(imageSize, imageStride, FORMAT,
+                                  fixedData, dataLength, aCropRect);
   } else {
     RefPtr<CreateImageFromRawDataInMainThreadSyncTask> task =
         new CreateImageFromRawDataInMainThreadSyncTask(
-            array.Data(), dataLength, imageStride, FORMAT, imageSize, aCropRect,
+            fixedData, dataLength, imageStride, FORMAT, imageSize, aCropRect,
             getter_AddRefs(data));
     task->Dispatch(Canceling, aRv);
   }
