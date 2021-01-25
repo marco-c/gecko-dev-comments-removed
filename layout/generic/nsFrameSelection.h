@@ -239,11 +239,11 @@ class nsFrameSelection final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult HandleClick(nsIContent* aNewFocus,
-                                                   uint32_t aContentOffset,
-                                                   uint32_t aContentEndOffset,
-                                                   FocusMode aFocusMode,
-                                                   CaretAssociateHint aHint);
+  MOZ_CAN_RUN_SCRIPT nsresult HandleClick(nsIContent* aNewFocus,
+                                          uint32_t aContentOffset,
+                                          uint32_t aContentEndOffset,
+                                          FocusMode aFocusMode,
+                                          CaretAssociateHint aHint);
 
   
 
@@ -256,7 +256,6 @@ class nsFrameSelection final {
 
 
 
-  
   MOZ_CAN_RUN_SCRIPT void HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint);
 
   
