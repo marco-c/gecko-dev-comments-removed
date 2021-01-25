@@ -678,6 +678,7 @@ void MathMLTextRunFactory::RebuildTextRun(
     transformedChild->FinishSettingProperties(aRefDrawTarget, aMFR);
   }
 
+  aTextRun->ResetGlyphRuns();
   if (mergeNeeded) {
     
     NS_ASSERTION(charsToMergeArray.Length() == child->GetLength(),
@@ -690,7 +691,6 @@ void MathMLTextRunFactory::RebuildTextRun(
     
     
     
-    aTextRun->ResetGlyphRuns();
     aTextRun->CopyGlyphDataFrom(child, Range(child), 0);
   }
 }
