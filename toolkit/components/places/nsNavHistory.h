@@ -348,23 +348,7 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
-  void NotifyFrecencyChanged(const nsACString& aSpec, int32_t aNewFrecency,
-                             const nsACString& aGUID, bool aHidden,
-                             PRTime aLastVisitDate);
-
-  
-
-
   void NotifyManyFrecenciesChanged();
-
-  
-
-
-  void DispatchFrecencyChangedNotification(const nsACString& aSpec,
-                                           int32_t aNewFrecency,
-                                           const nsACString& aGUID,
-                                           bool aHidden,
-                                           PRTime aLastVisitDate) const;
 
   
 

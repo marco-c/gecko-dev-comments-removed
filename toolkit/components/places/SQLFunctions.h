@@ -328,43 +328,6 @@ class FixupURLFunction final : public mozIStorageFunction {
 
 
 
-
-
-
-
-
-
-
-
-class FrecencyNotificationFunction final : public mozIStorageFunction {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_MOZISTORAGEFUNCTION
-
-  
-
-
-
-
-
-  static nsresult create(mozIStorageConnection* aDBConn);
-
- private:
-  ~FrecencyNotificationFunction() = default;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
 class StoreLastInsertedIdFunction final : public mozIStorageFunction {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
