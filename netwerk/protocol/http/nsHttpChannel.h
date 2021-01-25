@@ -485,11 +485,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
 
 
-  void ProcessSecurityReport(nsresult status);
-
-  
-
-
 
 
   [[nodiscard]] nsresult ProcessSingleSecurityHeader(

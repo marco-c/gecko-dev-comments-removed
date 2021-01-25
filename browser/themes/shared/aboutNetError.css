@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://browser/skin/error-pages.css");
 
@@ -36,9 +36,9 @@ body.clockSkewError .title {
   display: none;
 }
 
-
-
-
+/* Pressing the retry button will cause the cursor to flicker from a pointer to
+ * not-allowed. Override the disabled cursor behaviour since we will never show
+ * the button disabled as the initial state. */
 button:disabled {
   cursor: pointer;
 }
@@ -112,7 +112,6 @@ body:not(.neterror) #advancedButton {
   display: block;
 }
 
-#certificateErrorReporting,
 #blockingErrorReporting {
   display: none;
   padding-bottom: 10px;
@@ -124,7 +123,7 @@ body:not(.neterror) #advancedButton {
 }
 
 .advanced-panel {
-  
+  /* Hidden until the link is clicked */
   display: none;
   background-color: var(--in-content-box-background);
   border: 1px solid var(--in-content-box-border-color);
@@ -148,13 +147,6 @@ body:not(.neterror) #advancedButton {
   font-weight: bold;
 }
 
-#automaticallyReportInFuture {
-  cursor: pointer;
-  
-
-  flex-shrink: 0;
-}
-
 #errorCode {
   cursor: pointer;
   white-space: nowrap;
@@ -168,10 +160,6 @@ body:not(.neterror) #advancedButton {
   margin: 3em 3em 1em;
   overflow: auto;
   white-space: pre-wrap;
-}
-
-#certificateErrorReporting {
-  display: none;
 }
 
 #certificateErrorDebugInformation {
@@ -257,9 +245,9 @@ body:not(.neterror) #advancedButton {
 
 @media only screen and (max-width: 959px) {
   #certificateErrorText {
-    
-
-
+    /* The encoded certificate chain looks better when we're not
+     * wrapping words on big screens, but at some point we need
+     * to wrap to avoid overflowing */
     word-wrap: anywhere;
   }
 }
@@ -274,7 +262,7 @@ body:not(.neterror) #advancedButton {
   }
 
   #errorCode {
-    
+    /* Break the error code to avoid long codes overflowing the screen */
     white-space: normal;
     word-wrap: anywhere;
   }
