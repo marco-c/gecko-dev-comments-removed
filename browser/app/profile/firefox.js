@@ -1354,6 +1354,14 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 pref("prompts.tabChromePromptSubDialog", true);
 
 
+
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("prompts.contentPromptSubDialog", true);
+#else
+  pref("prompts.contentPromptSubDialog", false);
+#endif
+
+
 pref("browser.newtab.preload", true);
 
 
