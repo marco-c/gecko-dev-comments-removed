@@ -34,8 +34,7 @@ use std::{mem, num};
 #[derive(MallocSizeOf)]
 struct LRUCacheEntry<T> {
     
-    
-    lru_index: Option<ItemIndex>,
+    lru_index: ItemIndex,
     
     value: T,
 }
@@ -73,8 +72,8 @@ impl<T, M> LRUCache<T, M> {
 
         
         let handle = self.entries.insert(LRUCacheEntry {
-            lru_index: None,
-            value,
+            lru_index: ItemIndex(num::NonZeroU32::new(1).unwrap()),
+            value
         });
 
         
@@ -83,20 +82,9 @@ impl<T, M> LRUCache<T, M> {
         
         
         let entry = self.entries.get_mut(&handle);
-        entry.lru_index = Some(self.lru.push_new(handle));
+        entry.lru_index = self.lru.push_new(handle);
 
         weak_handle
-    }
-
-    
-    
-    pub fn get(
-        &self,
-        handle: &FreeListHandle<M>,
-    ) -> &T {
-        &self.entries
-            .get(handle)
-            .value
     }
 
     
@@ -127,19 +115,15 @@ impl<T, M> LRUCache<T, M> {
 
     
     
-    
     pub fn peek_oldest(&self) -> Option<&T> {
         self.lru
             .peek_front()
             .map(|handle| {
                 let entry = self.entries.get(handle);
-                
-                debug_assert!(entry.lru_index.is_some());
                 &entry.value
             })
     }
 
-    
     
     
     pub fn pop_oldest(
@@ -149,8 +133,6 @@ impl<T, M> LRUCache<T, M> {
             .pop_front()
             .map(|handle| {
                 let entry = self.entries.free(handle);
-                
-                debug_assert!(entry.lru_index.is_some());
                 entry.value
             })
     }
@@ -190,43 +172,9 @@ impl<T, M> LRUCache<T, M> {
         self.entries
             .get_opt_mut(handle)
             .map(|entry| {
-                
-                if let Some(lru_index) = entry.lru_index {
-                    lru.mark_used(lru_index);
-                }
-
+                lru.mark_used(entry.lru_index);
                 &mut entry.value
             })
-    }
-
-    
-    
-    
-    #[must_use]
-    pub fn set_manual_eviction(
-        &mut self,
-        handle: &WeakFreeListHandle<M>,
-    ) -> Option<FreeListHandle<M>> {
-        let entry = self.entries
-            .get_opt_mut(handle)
-            .expect("bug: trying to set manual eviction on an invalid handle");
-
-        
-        
-        entry.lru_index.take().map(|lru_index| {
-            self.lru.remove(lru_index)
-        })
-    }
-
-    
-    
-    pub fn remove_manual_handle(
-        &mut self,
-        handle: FreeListHandle<M>,
-    ) -> T {
-        let entry = self.entries.free(handle);
-        debug_assert_eq!(entry.lru_index, None, "Must be manual eviction mode!");
-        entry.value
     }
 
     
@@ -445,8 +393,7 @@ impl<H> LRUTracker<H> where H: std::fmt::Debug {
     }
 
     
-    
-    
+    #[allow(dead_code)]
     fn remove(
         &mut self,
         index: ItemIndex,
@@ -684,40 +631,4 @@ fn test_lru_tracker_push_replace_get() {
     let mut empty_handle = WeakFreeListHandle::invalid();
     assert_eq!(cache.replace_or_insert(&mut empty_handle, 100), None);
     assert_eq!(cache.get_opt(&empty_handle), Some(&100));
-}
-
-#[test]
-fn test_lru_tracker_manual_evict() {
-    
-    
-    
-    struct CacheMarker;
-    const NUM_ELEMENTS: usize = 50;
-
-    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new();
-    let mut handles = Vec::new();
-    let mut manual_handles = Vec::new();
-    cache.validate();
-
-    for i in 0 .. NUM_ELEMENTS {
-        handles.push(cache.push_new(i));
-    }
-    cache.validate();
-
-    for i in 0 .. NUM_ELEMENTS/2 {
-        manual_handles.push(cache.set_manual_eviction(&handles[i*2]).unwrap());
-    }
-    cache.validate();
-
-    for i in 0 .. NUM_ELEMENTS/2 {
-        assert!(cache.pop_oldest() == Some(i*2 + 1));
-    }
-    cache.validate();
-
-    assert!(cache.pop_oldest().is_none());
-
-    for (i, manual_handle) in manual_handles.drain(..).enumerate() {
-        assert_eq!(*cache.get(&manual_handle), i*2);
-        assert_eq!(cache.remove_manual_handle(manual_handle), i*2);
-    }
 }
