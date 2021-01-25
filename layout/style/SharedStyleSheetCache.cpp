@@ -342,12 +342,6 @@ void SharedStyleSheetCache::LoadCompletedInternal(
       
       
       const bool needInsertIntoTree = [&] {
-        if (StaticPrefs::dom_expose_incomplete_stylesheets()) {
-          
-          
-          
-          return false;
-        }
         if (!data->mLoader->GetDocument()) {
           
           return false;
