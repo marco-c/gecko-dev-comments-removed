@@ -8,6 +8,7 @@
 #define js_HeapAPI_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/BitSet.h"
 
 #include <limits.h>
 #include <type_traits>
@@ -31,11 +32,16 @@ struct JSExternalStringCallbacks;
 
 namespace js {
 
+class NurseryDecommitTask;
+
 JS_FRIEND_API bool CurrentThreadCanAccessZone(JS::Zone* zone);
 
 namespace gc {
 
+class Arena;
 struct Cell;
+struct Chunk;
+class StoreBuffer;
 class TenuredCell;
 
 const size_t ArenaShift = 12;
@@ -55,39 +61,143 @@ const size_t CellAlignBytes = size_t(1) << CellAlignShift;
 const size_t CellAlignMask = CellAlignBytes - 1;
 
 const size_t CellBytesPerMarkBit = CellAlignBytes;
+const size_t MarkBitsPerCell = 2;
 
 
 
 
 
 
-const size_t ArenaCellIndexBytes = CellAlignBytes;
-const size_t MaxArenaCellIndex = ArenaSize / CellAlignBytes;
+const size_t ArenaBitmapBits = ArenaSize / CellBytesPerMarkBit;
+const size_t ArenaBitmapBytes = HowMany(ArenaBitmapBits, 8);
+const size_t ArenaBitmapWords = HowMany(ArenaBitmapBits, JS_BITS_PER_WORD);
 
+
+
+
+
+enum class ChunkLocation : uint32_t {
+  Invalid = 0,
+  Nursery = 1,
+  TenuredHeap = 2
+};
+
+
+
+class alignas(CellAlignBytes) ChunkHeader {
+ public:
+  
+  ChunkHeader(JSRuntime* rt, StoreBuffer* sb)
+      : location(ChunkLocation::Nursery), storeBuffer(sb), runtime(rt) {}
+
+  
+  explicit ChunkHeader(JSRuntime* rt)
+      : location(ChunkLocation::TenuredHeap),
+        storeBuffer(nullptr),
+        runtime(rt) {}
+
+  
+  ChunkLocation location;
+  uint32_t : 32;  
+
+  
+  
+  StoreBuffer* storeBuffer;
+
+  
+  JSRuntime* runtime;
+
+  
+};
+
+
+struct ChunkInfo {
+  void init() { next = prev = nullptr; }
+
+ private:
+  friend class ChunkPool;
+  friend class js::NurseryDecommitTask;
+  Chunk* next;
+  Chunk* prev;
+
+ public:
+  
+  Arena* freeArenasHead;
+
+#if JS_BITS_PER_WORD == 32
+  
+
+
+
+
+  char padding[24];
+#endif
+
+  
+
+
+
+
+  uint32_t lastDecommittedArenaOffset;
+
+  
+  uint32_t numArenasFree;
+
+  
+  uint32_t numArenasFreeCommitted;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const size_t BitsPerArenaWithHeaders =
+    (ArenaSize + ArenaBitmapBytes) * CHAR_BIT + 1;
+const size_t ChunkBitsAvailable =
+    (ChunkSize - sizeof(ChunkHeader) - sizeof(ChunkInfo)) * CHAR_BIT;
+const size_t ArenasPerChunk = ChunkBitsAvailable / BitsPerArenaWithHeaders;
+
+const size_t CalculatedChunkSizeRequired =
+    sizeof(ChunkHeader) + sizeof(ChunkInfo) +
+    RoundUp(ArenasPerChunk * ArenaBitmapBytes, sizeof(uintptr_t)) +
+    RoundUp(ArenasPerChunk, sizeof(uint32_t) * CHAR_BIT) / CHAR_BIT +
+    ArenasPerChunk * ArenaSize;
+static_assert(CalculatedChunkSizeRequired <= ChunkSize,
+              "Calculated ArenasPerChunk is too large");
+
+const size_t CalculatedChunkPadSize = ChunkSize - CalculatedChunkSizeRequired;
+static_assert(CalculatedChunkPadSize * CHAR_BIT < BitsPerArenaWithHeaders,
+              "Calculated ArenasPerChunk is too small");
 
 #ifdef JS_GC_SMALL_CHUNK_SIZE
-const size_t ChunkMarkBitmapOffset = 258104;
-const size_t ChunkMarkBitmapBits = 31744;
+static_assert(ArenasPerChunk == 62,
+              "Do not accidentally change our heap's density.");
 #else
-const size_t ChunkMarkBitmapOffset = 1032352;
-const size_t ChunkMarkBitmapBits = 129024;
+static_assert(ArenasPerChunk == 252,
+              "Do not accidentally change our heap's density.");
 #endif
-const size_t ChunkRuntimeOffset = ChunkSize - sizeof(void*);
-const size_t ChunkTrailerSize = 2 * sizeof(uintptr_t) + sizeof(uint64_t);
-const size_t ChunkLocationOffset = ChunkSize - ChunkTrailerSize;
-const size_t ChunkStoreBufferOffset =
-    ChunkSize - ChunkTrailerSize + sizeof(uint64_t);
-const size_t ArenaZoneOffset = sizeof(size_t);
-const size_t ArenaHeaderSize =
-    sizeof(size_t) + 2 * sizeof(uintptr_t) + sizeof(size_t) + sizeof(uintptr_t);
 
 
 
-const size_t CellFlagBitsReservedForGC = 3;
 
-
-
-const size_t JSClassAlignBytes = size_t(1) << CellFlagBitsReservedForGC;
+using MarkBitmapWord = mozilla::Atomic<uintptr_t, mozilla::Relaxed>;
 
 
 
@@ -103,13 +213,84 @@ enum class ColorBit : uint32_t { BlackBit = 0, GrayOrBlackBit = 1 };
 
 
 
+enum class MarkColor : uint8_t { Gray = 1, Black = 2 };
 
 
-enum class ChunkLocation : uint32_t {
-  Invalid = 0,
-  Nursery = 1,
-  TenuredHeap = 2
+struct ChunkBitmap {
+  static constexpr size_t WordCount = ArenaBitmapWords * ArenasPerChunk;
+  MarkBitmapWord bitmap[WordCount];
+
+  static inline void GetMarkWordAndMask(const TenuredCell* cell,
+                                        ColorBit colorBit,
+                                        MarkBitmapWord** wordp,
+                                        uintptr_t* maskp);
+
+  
+  inline bool markBit(const TenuredCell* cell, ColorBit colorBit);
+  inline bool isMarkedAny(const TenuredCell* cell);
+  inline bool isMarkedBlack(const TenuredCell* cell);
+  inline bool isMarkedGray(const TenuredCell* cell);
+  inline bool markIfUnmarked(const TenuredCell* cell, MarkColor color);
+  inline void markBlack(const TenuredCell* cell);
+  inline void copyMarkBit(TenuredCell* dst, const TenuredCell* src,
+                          ColorBit colorBit);
+  inline void unmark(const TenuredCell* cell);
+  inline void clear();
+  inline MarkBitmapWord* arenaBits(Arena* arena);
 };
+
+static_assert(ArenaBitmapBytes * ArenasPerChunk == sizeof(ChunkBitmap),
+              "Ensure our ChunkBitmap actually covers all arenas.");
+
+
+using PerArenaBitmap = mozilla::BitSet<ArenasPerChunk, uint32_t>;
+
+
+class ChunkBase {
+ public:
+  ChunkHeader header;
+  ChunkInfo info;
+  ChunkBitmap bitmap;
+  PerArenaBitmap decommittedArenas;
+};
+
+
+
+
+
+
+const size_t ArenaCellIndexBytes = CellAlignBytes;
+const size_t MaxArenaCellIndex = ArenaSize / CellAlignBytes;
+
+const size_t MarkBitmapWordBits = sizeof(MarkBitmapWord) * CHAR_BIT;
+
+constexpr size_t FirstArenaAdjustmentBits =
+    RoundUp(sizeof(gc::ChunkBase), ArenaSize) / gc::CellBytesPerMarkBit;
+
+static_assert((FirstArenaAdjustmentBits % MarkBitmapWordBits) == 0);
+constexpr size_t FirstArenaAdjustmentWords =
+    FirstArenaAdjustmentBits / MarkBitmapWordBits;
+
+const size_t ChunkRuntimeOffset =
+    offsetof(ChunkBase, header) + offsetof(ChunkHeader, runtime);
+const size_t ChunkLocationOffset =
+    offsetof(ChunkBase, header) + offsetof(ChunkHeader, location);
+const size_t ChunkStoreBufferOffset =
+    offsetof(ChunkBase, header) + offsetof(ChunkHeader, storeBuffer);
+const size_t ChunkMarkBitmapOffset = offsetof(ChunkBase, bitmap);
+
+
+const size_t ArenaZoneOffset = sizeof(size_t);
+const size_t ArenaHeaderSize =
+    sizeof(size_t) + 2 * sizeof(uintptr_t) + sizeof(size_t) + sizeof(uintptr_t);
+
+
+
+const size_t CellFlagBitsReservedForGC = 3;
+
+
+
+const size_t JSClassAlignBytes = size_t(1) << CellFlagBitsReservedForGC;
 
 #ifdef JS_DEBUG
 
@@ -120,6 +301,7 @@ inline void AssertGCThingHasType(js::gc::Cell* cell, JS::TraceKind kind) {}
 #endif
 
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const js::gc::Cell* cell);
+MOZ_ALWAYS_INLINE bool IsInsideNursery(const js::gc::TenuredCell* cell);
 
 } 
 } 
@@ -336,35 +518,29 @@ namespace js {
 namespace gc {
 
 
+MOZ_ALWAYS_INLINE void ChunkBitmap::GetMarkWordAndMask(const TenuredCell* cell,
+                                                       ColorBit colorBit,
+                                                       MarkBitmapWord** wordp,
+                                                       uintptr_t* maskp) {
+  
+  
 
+  MOZ_ASSERT(size_t(colorBit) < MarkBitsPerCell);
 
-using MarkBitmapWord = mozilla::Atomic<uintptr_t, mozilla::Relaxed>;
+  auto* chunk = reinterpret_cast<ChunkBase*>(uintptr_t(cell) & ~ChunkMask);
+  size_t offset = uintptr_t(cell) & ChunkMask;
+  const size_t bit = offset / CellBytesPerMarkBit + size_t(colorBit);
+  size_t word = bit / MarkBitmapWordBits - FirstArenaAdjustmentWords;
+  MOZ_ASSERT(word < WordCount);
+  *wordp = &chunk->bitmap.bitmap[word];
+  *maskp = uintptr_t(1) << (bit % MarkBitmapWordBits);
+}
 
 namespace detail {
 
-static MOZ_ALWAYS_INLINE MarkBitmapWord* GetGCThingMarkBitmap(
-    const uintptr_t addr) {
-  
-  
-  MOZ_ASSERT(addr);
-  const uintptr_t bmap_addr = (addr & ~ChunkMask) | ChunkMarkBitmapOffset;
-  return reinterpret_cast<MarkBitmapWord*>(bmap_addr);
-}
-
-static MOZ_ALWAYS_INLINE void GetGCThingMarkWordAndMask(const uintptr_t addr,
-                                                        ColorBit colorBit,
-                                                        MarkBitmapWord** wordp,
-                                                        uintptr_t* maskp) {
-  
-  
-  MOZ_ASSERT(addr);
-  const size_t bit = (addr & js::gc::ChunkMask) / js::gc::CellBytesPerMarkBit +
-                     static_cast<uint32_t>(colorBit);
-  MOZ_ASSERT(bit < js::gc::ChunkMarkBitmapBits);
-  MarkBitmapWord* bitmap = GetGCThingMarkBitmap(addr);
-  const uintptr_t nbits = sizeof(*bitmap) * CHAR_BIT;
-  *maskp = uintptr_t(1) << (bit % nbits);
-  *wordp = &bitmap[bit / nbits];
+static MOZ_ALWAYS_INLINE ChunkHeader* GetCellChunkHeader(const Cell* cell) {
+  MOZ_ASSERT(cell);
+  return reinterpret_cast<ChunkHeader*>(uintptr_t(cell) & ~ChunkMask);
 }
 
 static MOZ_ALWAYS_INLINE JS::Zone* GetTenuredGCThingZone(const uintptr_t addr) {
@@ -373,23 +549,23 @@ static MOZ_ALWAYS_INLINE JS::Zone* GetTenuredGCThingZone(const uintptr_t addr) {
   return *reinterpret_cast<JS::Zone**>(zone_addr);
 }
 
-static MOZ_ALWAYS_INLINE bool TenuredCellIsMarkedGray(const Cell* cell) {
+static MOZ_ALWAYS_INLINE bool TenuredCellIsMarkedGray(const TenuredCell* cell) {
   
   MOZ_ASSERT(cell);
   MOZ_ASSERT(!js::gc::IsInsideNursery(cell));
 
   MarkBitmapWord* grayWord;
   uintptr_t grayMask;
-  js::gc::detail::GetGCThingMarkWordAndMask(
-      uintptr_t(cell), js::gc::ColorBit::GrayOrBlackBit, &grayWord, &grayMask);
+  ChunkBitmap::GetMarkWordAndMask(cell, js::gc::ColorBit::GrayOrBlackBit,
+                                  &grayWord, &grayMask);
   if (!(*grayWord & grayMask)) {
     return false;
   }
 
   MarkBitmapWord* blackWord;
   uintptr_t blackMask;
-  js::gc::detail::GetGCThingMarkWordAndMask(
-      uintptr_t(cell), js::gc::ColorBit::BlackBit, &blackWord, &blackMask);
+  ChunkBitmap::GetMarkWordAndMask(cell, js::gc::ColorBit::BlackBit, &blackWord,
+                                  &blackMask);
   return !(*blackWord & blackMask);
 }
 
@@ -398,7 +574,7 @@ static MOZ_ALWAYS_INLINE bool CellIsMarkedGray(const Cell* cell) {
   if (js::gc::IsInsideNursery(cell)) {
     return false;
   }
-  return TenuredCellIsMarkedGray(cell);
+  return TenuredCellIsMarkedGray(reinterpret_cast<const TenuredCell*>(cell));
 }
 
 extern JS_PUBLIC_API bool CellIsMarkedGrayIfKnown(const Cell* cell);
@@ -409,18 +585,12 @@ extern JS_PUBLIC_API void AssertCellIsNotGray(const Cell* cell);
 extern JS_PUBLIC_API bool ObjectIsMarkedBlack(const JSObject* obj);
 #endif
 
-MOZ_ALWAYS_INLINE ChunkLocation GetCellLocation(const void* cell) {
-  uintptr_t addr = uintptr_t(cell);
-  addr &= ~js::gc::ChunkMask;
-  addr |= js::gc::ChunkLocationOffset;
-  return *reinterpret_cast<ChunkLocation*>(addr);
+MOZ_ALWAYS_INLINE ChunkLocation GetCellLocation(const Cell* cell) {
+  return GetCellChunkHeader(cell)->location;
 }
 
-MOZ_ALWAYS_INLINE bool NurseryCellHasStoreBuffer(const void* cell) {
-  uintptr_t addr = uintptr_t(cell);
-  addr &= ~js::gc::ChunkMask;
-  addr |= js::gc::ChunkStoreBufferOffset;
-  return *reinterpret_cast<void**>(addr) != nullptr;
+MOZ_ALWAYS_INLINE bool CellHasStoreBuffer(const Cell* cell) {
+  return GetCellChunkHeader(cell)->storeBuffer;
 }
 
 } 
@@ -436,8 +606,8 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const Cell* cell) {
 }
 
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const TenuredCell* cell) {
-  MOZ_ASSERT_IF(cell,
-                detail::GetCellLocation(cell) == ChunkLocation::TenuredHeap);
+  MOZ_ASSERT_IF(cell, detail::GetCellLocation(reinterpret_cast<const Cell*>(
+                          cell)) == ChunkLocation::TenuredHeap);
   return false;
 }
 
@@ -453,17 +623,18 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const JS::BigInt* bi) {
   return IsInsideNursery(reinterpret_cast<const Cell*>(bi));
 }
 
-MOZ_ALWAYS_INLINE bool IsCellPointerValid(const void* cell) {
-  auto addr = uintptr_t(cell);
+MOZ_ALWAYS_INLINE bool IsCellPointerValid(const void* ptr) {
+  auto addr = uintptr_t(ptr);
   if (addr < ChunkSize || addr % CellAlignBytes != 0) {
     return false;
   }
+  auto* cell = reinterpret_cast<const Cell*>(ptr);
   auto location = detail::GetCellLocation(cell);
   if (location == ChunkLocation::TenuredHeap) {
     return !!detail::GetTenuredGCThingZone(addr);
   }
   if (location == ChunkLocation::Nursery) {
-    return detail::NurseryCellHasStoreBuffer(cell);
+    return detail::CellHasStoreBuffer(cell);
   }
   return false;
 }
@@ -569,6 +740,8 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
     return;
   }
 
+  auto* cell = reinterpret_cast<TenuredCell*>(thing.asCell());
+
   
   
   if (thing.mayBeOwnedByOtherRuntime()) {
@@ -578,13 +751,11 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
   auto* zone = JS::shadow::Zone::from(JS::GetTenuredGCThingZone(thing));
   if (zone->needsIncrementalBarrier()) {
     PerformIncrementalReadBarrier(thing);
-  } else if (!zone->isGCPreparing() &&
-             detail::TenuredCellIsMarkedGray(thing.asCell())) {
+  } else if (!zone->isGCPreparing() && detail::TenuredCellIsMarkedGray(cell)) {
     MOZ_ALWAYS_TRUE(JS::UnmarkGrayGCThingRecursively(thing));
   }
 
-  MOZ_ASSERT_IF(!zone->isGCPreparing(),
-                !detail::TenuredCellIsMarkedGray(thing.asCell()));
+  MOZ_ASSERT_IF(!zone->isGCPreparing(), !detail::TenuredCellIsMarkedGray(cell));
 }
 
 template <typename T>

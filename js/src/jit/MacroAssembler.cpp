@@ -3801,26 +3801,32 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
   andPtr(Imm32(gc::ChunkMask), temp1);
   rshiftPtr(Imm32(3), temp1);
 
-  static const size_t nbits = sizeof(uintptr_t) * CHAR_BIT;
-  static_assert(nbits == JS_BITS_PER_WORD, "Calculation below relies on this");
+  static_assert(gc::MarkBitmapWordBits == JS_BITS_PER_WORD,
+                "Calculation below relies on this");
 
   
   
   
+
+  
+  
+  const size_t firstArenaAdjustment = gc::FirstArenaAdjustmentBits / CHAR_BIT;
+  const intptr_t offset =
+      intptr_t(gc::ChunkMarkBitmapOffset) - intptr_t(firstArenaAdjustment);
+
   movePtr(temp1, temp3);
 #if JS_BITS_PER_WORD == 64
   rshiftPtr(Imm32(6), temp1);
-  loadPtr(BaseIndex(temp2, temp1, TimesEight, gc::ChunkMarkBitmapOffset),
-          temp2);
+  loadPtr(BaseIndex(temp2, temp1, TimesEight, offset), temp2);
 #else
   rshiftPtr(Imm32(5), temp1);
-  loadPtr(BaseIndex(temp2, temp1, TimesFour, gc::ChunkMarkBitmapOffset), temp2);
+  loadPtr(BaseIndex(temp2, temp1, TimesFour, offset), temp2);
 #endif
 
   
   
   
-  andPtr(Imm32(nbits - 1), temp3);
+  andPtr(Imm32(gc::MarkBitmapWordBits - 1), temp3);
   move32(Imm32(1), temp1);
 #ifdef JS_CODEGEN_X64
   MOZ_ASSERT(temp3 == rcx);

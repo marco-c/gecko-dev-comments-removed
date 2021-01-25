@@ -434,7 +434,7 @@ class Nursery {
 
   
   static const size_t NurseryChunkUsableSize =
-      gc::ChunkSize - gc::ChunkTrailerSize;
+      gc::ChunkSize - sizeof(gc::ChunkHeader);
 
   void joinDecommitTask() { decommitTask.join(); }
 
@@ -474,7 +474,6 @@ class Nursery {
   
   unsigned currentChunk_;
 
-  
   
   
   
@@ -659,7 +658,7 @@ class Nursery {
 
   
   
-  void poisonAndInitCurrentChunk(size_t extent = NurseryChunkUsableSize);
+  void poisonAndInitCurrentChunk(size_t extent = gc::ChunkSize);
 
   void setCurrentEnd();
   void setStartPosition();
