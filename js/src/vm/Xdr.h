@@ -822,7 +822,6 @@ class XDRIncrementalStencilEncoder : public XDRIncrementalEncoderBase {
   
   
   
-  
 
   
   
