@@ -18,7 +18,8 @@ base::SharedMemory* IdleSchedulerParent::sActiveChildCounter = nullptr;
 std::bitset<NS_IDLE_SCHEDULER_COUNTER_ARRAY_LENGHT>
     IdleSchedulerParent::sInUseChildCounters;
 LinkedList<IdleSchedulerParent> IdleSchedulerParent::sWaitingForIdle;
-Atomic<int32_t> IdleSchedulerParent::sCPUsForChildProcesses(-1);
+Atomic<int32_t> IdleSchedulerParent::sMaxConcurrentIdleTasksInChildProcesses(
+    -1);
 uint32_t IdleSchedulerParent::sChildProcessesRunningPrioritizedOperation = 0;
 uint32_t IdleSchedulerParent::sChildProcessesAlive = 0;
 nsITimer* IdleSchedulerParent::sStarvationPreventer = nullptr;
@@ -26,11 +27,11 @@ nsITimer* IdleSchedulerParent::sStarvationPreventer = nullptr;
 IdleSchedulerParent::IdleSchedulerParent() {
   sChildProcessesAlive++;
 
-  if (sCPUsForChildProcesses == -1) {
+  if (sMaxConcurrentIdleTasksInChildProcesses == -1) {
     
     
     
-    sCPUsForChildProcesses = 1;
+    sMaxConcurrentIdleTasksInChildProcesses = 1;
     nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
     nsCOMPtr<nsIRunnable> runnable =
         NS_NewRunnableFunction("cpucount getter", [thread]() {
@@ -40,14 +41,18 @@ IdleSchedulerParent::IdleSchedulerParent() {
           ProcessInfo processInfo = {};
           if (NS_SUCCEEDED(CollectProcessInfo(processInfo)) &&
               processInfo.cpuCount > 1) {
-            sCPUsForChildProcesses = processInfo.cpuCount - 1;
+            
+            
+            sMaxConcurrentIdleTasksInChildProcesses =
+                std::max(processInfo.cpuCount - 1, 1);
             
             nsCOMPtr<nsIRunnable> runnable =
                 NS_NewRunnableFunction("IdleSchedulerParent::Schedule", []() {
                   if (sActiveChildCounter && sActiveChildCounter->memory()) {
                     static_cast<Atomic<int32_t>*>(sActiveChildCounter->memory())
                         [NS_IDLE_SCHEDULER_INDEX_OF_CPU_COUNTER] =
-                            static_cast<int32_t>(sCPUsForChildProcesses);
+                            static_cast<int32_t>(
+                                sMaxConcurrentIdleTasksInChildProcesses);
                   }
                   IdleSchedulerParent::Schedule(nullptr);
                 });
@@ -120,7 +125,7 @@ IPCResult IdleSchedulerParent::RecvInitForIdleUse(
       static_cast<Atomic<int32_t>*>(
           sActiveChildCounter
               ->memory())[NS_IDLE_SCHEDULER_INDEX_OF_CPU_COUNTER] =
-          static_cast<int32_t>(sCPUsForChildProcesses);
+          static_cast<int32_t>(sMaxConcurrentIdleTasksInChildProcesses);
     } else {
       delete sActiveChildCounter;
       sActiveChildCounter = nullptr;
@@ -218,19 +223,15 @@ int32_t IdleSchedulerParent::ActiveCount() {
 
 bool IdleSchedulerParent::HasSpareCycles(int32_t aActiveCount) {
   
-  if (sCPUsForChildProcesses > 1 && sCPUsForChildProcesses <= aActiveCount) {
-    
-    return false;
-  }
-
-  if (sChildProcessesRunningPrioritizedOperation > 0 &&
-      sCPUsForChildProcesses / 2 <= aActiveCount) {
-    
-    
-    return false;
-  }
-
-  return true;
+  
+  
+  
+  
+  
+  MOZ_ASSERT(sMaxConcurrentIdleTasksInChildProcesses > 0);
+  return sChildProcessesRunningPrioritizedOperation
+             ? sMaxConcurrentIdleTasksInChildProcesses / 2 > aActiveCount
+             : sMaxConcurrentIdleTasksInChildProcesses > aActiveCount;
 }
 
 void IdleSchedulerParent::SendIdleTime() {

@@ -96,7 +96,7 @@ class IdleSchedulerParent final
   
   static LinkedList<IdleSchedulerParent> sWaitingForIdle;
 
-  static Atomic<int32_t> sCPUsForChildProcesses;
+  static Atomic<int32_t> sMaxConcurrentIdleTasksInChildProcesses;
 
   
   
