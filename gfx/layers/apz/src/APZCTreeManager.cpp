@@ -767,6 +767,10 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
                                          apzc->IsAsyncZooming());
     }
 
+    layerTranslation =
+        apzc->GetOverscrollTransform(AsyncPanZoomController::eForCompositing)
+            .TransformPoint(layerTranslation);
+
     
     
     
