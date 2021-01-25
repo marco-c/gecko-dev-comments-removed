@@ -2000,7 +2000,6 @@
       uriIsAboutBlank,
       userContextId,
       skipLoad,
-      initiallyActive,
     } = {}) {
       let b = document.createXULElement("browser");
       
@@ -2031,10 +2030,6 @@
       };
       for (let attribute in defaultBrowserAttributes) {
         b.setAttribute(attribute, defaultBrowserAttributes[attribute]);
-      }
-
-      if (!initiallyActive) {
-        b.setAttribute("initiallyactive", "false");
       }
 
       if (userContextId) {
