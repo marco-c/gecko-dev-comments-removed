@@ -67,31 +67,32 @@ function Readability(doc, options) {
                 this.FLAG_WEIGHT_CLASSES |
                 this.FLAG_CLEAN_CONDITIONALLY;
 
-  var logEl;
 
   
   if (this._debug) {
-    logEl = function(e) {
-      var rv = e.nodeName + " ";
-      if (e.nodeType == e.TEXT_NODE) {
-        return rv + '("' + e.textContent + '")';
+    let logNode = function(node) {
+      if (node.nodeType == node.TEXT_NODE) {
+        return `${node.nodeName} ("${node.textContent}")`;
       }
-      var classDesc = e.className && ("." + e.className.replace(/ /g, "."));
-      var elDesc = "";
-      if (e.id)
-        elDesc = "(#" + e.id + classDesc + ")";
-      else if (classDesc)
-        elDesc = "(" + classDesc + ")";
-      return rv + elDesc;
+      let attrPairs = Array.from(node.attributes || [], function(attr) {
+        return `${attr.name}="${attr.value}"`;
+      }).join(" ");
+      return `<${node.localName} ${attrPairs}>`;
     };
     this.log = function () {
       if (typeof dump !== "undefined") {
         var msg = Array.prototype.map.call(arguments, function(x) {
-          return (x && x.nodeName) ? logEl(x) : x;
+          return (x && x.nodeName) ? logNode(x) : x;
         }).join(" ");
         dump("Reader: (Readability) " + msg + "\n");
       } else if (typeof console !== "undefined") {
-        var args = ["Reader: (Readability) "].concat(arguments);
+        let args = Array.from(arguments, arg => {
+          if (arg && arg.nodeType == this.ELEMENT_NODE) {
+            return logNode(arg);
+          }
+          return arg;
+        });
+        args.unshift("Reader: (Readability)");
         console.log.apply(console, args);
       }
     };
@@ -131,7 +132,7 @@ Readability.prototype = {
     okMaybeItsACandidate: /and|article|body|column|content|main|shadow/i,
 
     positive: /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story/i,
-    negative: /hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|gdpr|masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,
+    negative: /-ad-|hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|gdpr|masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,
     extraneous: /print|archive|comment|discuss|e[\-]?mail|share|reply|all|login|sign|single|utility/i,
     byline: /byline|author|dateline|writtenby|p-author/i,
     replaceFonts: /<(\/?)font[^>]*>/gi,
@@ -140,8 +141,10 @@ Readability.prototype = {
     shareElements: /(\b|_)(share|sharedaddy)(\b|_)/i,
     nextLink: /(next|weiter|continue|>([^\|]|$)|»([^\|]|$))/i,
     prevLink: /(prev|earl|old|new|<|«)/i,
+    tokenize: /\W+/g,
     whitespace: /^\s*$/,
     hasContent: /\S$/,
+    hashUrl: /^#.+/,
     srcsetUrl: /(\S+)(\s+[\d.]+[xw])?(\s*(?:,|$))/g,
     b64DataUrl: /^data:\s*([^\s;,]+)\s*;\s*base64\s*,/i,
     
@@ -150,7 +153,7 @@ Readability.prototype = {
 
   UNLIKELY_ROLES: [ "menu", "menubar", "complementary", "navigation", "alert", "alertdialog", "dialog" ],
 
-  DIV_TO_P_ELEMS: [ "A", "BLOCKQUOTE", "DL", "DIV", "IMG", "OL", "P", "PRE", "TABLE", "UL", "SELECT" ],
+  DIV_TO_P_ELEMS: new Set([ "BLOCKQUOTE", "DL", "DIV", "IMG", "OL", "P", "PRE", "TABLE", "UL" ]),
 
   ALTER_TO_DIV_EXCEPTIONS: ["DIV", "ARTICLE", "SECTION", "P"],
 
@@ -237,8 +240,7 @@ Readability.prototype = {
     if (this._docJSDOMParser && nodeList._isLiveNodeList) {
       throw new Error("Do not pass live node lists to _replaceNodeTags");
     }
-    for (var i = nodeList.length - 1; i >= 0; i--) {
-      var node = nodeList[i];
+    for (const node of nodeList) {
       this._setNodeTag(node, newTagName);
     }
   },
@@ -559,7 +561,7 @@ Readability.prototype = {
 
 
 
-  _nextElement: function (node) {
+  _nextNode: function (node) {
     var next = node;
     while (next
         && (next.nodeType != this.ELEMENT_NODE)
@@ -587,7 +589,7 @@ Readability.prototype = {
       
       
       
-      while ((next = this._nextElement(next)) && (next.tagName == "BR")) {
+      while ((next = this._nextNode(next)) && (next.tagName == "BR")) {
         replaced = true;
         var brSibling = next.nextSibling;
         next.parentNode.removeChild(next);
@@ -605,7 +607,7 @@ Readability.prototype = {
         while (next) {
           
           if (next.tagName == "BR") {
-            var nextElem = this._nextElement(next.nextSibling);
+            var nextElem = this._nextNode(next.nextSibling);
             if (nextElem && nextElem.tagName == "BR")
               break;
           }
@@ -682,7 +684,6 @@ Readability.prototype = {
     this._cleanConditionally(articleContent, "fieldset");
     this._clean(articleContent, "object");
     this._clean(articleContent, "embed");
-    this._clean(articleContent, "h1");
     this._clean(articleContent, "footer");
     this._clean(articleContent, "link");
     this._clean(articleContent, "aside");
@@ -698,25 +699,6 @@ Readability.prototype = {
       });
     });
 
-    
-    
-    
-    var h2 = articleContent.getElementsByTagName("h2");
-    if (h2.length === 1) {
-      var lengthSimilarRate = (h2[0].textContent.length - this._articleTitle.length) / this._articleTitle.length;
-      if (Math.abs(lengthSimilarRate) < 0.5) {
-        var titlesMatch = false;
-        if (lengthSimilarRate > 0) {
-          titlesMatch = h2[0].textContent.includes(this._articleTitle);
-        } else {
-          titlesMatch = this._articleTitle.includes(h2[0].textContent);
-        }
-        if (titlesMatch) {
-          this._clean(articleContent, "h2");
-        }
-      }
-    }
-
     this._clean(articleContent, "iframe");
     this._clean(articleContent, "input");
     this._clean(articleContent, "textarea");
@@ -731,6 +713,9 @@ Readability.prototype = {
     this._cleanConditionally(articleContent, "div");
 
     
+    this._replaceNodeTags(this._getAllNodesWithTag(articleContent, ["h1"]), "h2");
+
+    
     this._removeNodes(this._getAllNodesWithTag(articleContent, ["p"]), function (paragraph) {
       var imgCount = paragraph.getElementsByTagName("img").length;
       var embedCount = paragraph.getElementsByTagName("embed").length;
@@ -743,7 +728,7 @@ Readability.prototype = {
     });
 
     this._forEachNode(this._getAllNodesWithTag(articleContent, ["br"]), function(br) {
-      var next = this._nextElement(br.nextSibling);
+      var next = this._nextNode(br.nextSibling);
       if (next && next.tagName == "P")
         br.parentNode.removeChild(br);
     });
@@ -839,6 +824,21 @@ Readability.prototype = {
     return node && node.nextElementSibling;
   },
 
+  
+  
+  
+  
+  _textSimilarity: function(textA, textB) {
+    var tokensA = textA.toLowerCase().split(this.REGEXPS.tokenize).filter(Boolean);
+    var tokensB = textB.toLowerCase().split(this.REGEXPS.tokenize).filter(Boolean);
+    if (!tokensA.length || !tokensB.length) {
+      return 0;
+    }
+    var uniqTokensB = tokensB.filter(token => !tokensA.includes(token));
+    var distanceB = uniqTokensB.join(" ").length / tokensB.join(" ").length;
+    return 1 - distanceB;
+  },
+
   _checkByline: function(node, matchString) {
     if (this._articleByline) {
       return false;
@@ -879,7 +879,7 @@ Readability.prototype = {
   _grabArticle: function (page) {
     this.log("**** grabArticle ****");
     var doc = this._doc;
-    var isPaging = (page !== null ? true: false);
+    var isPaging = page !== null;
     page = page ? page : this._doc.body;
 
     
@@ -891,6 +891,7 @@ Readability.prototype = {
     var pageCacheHtml = page.innerHTML;
 
     while (true) {
+      this.log("Starting grabArticle loop");
       var stripUnlikelyCandidates = this._flagIsActive(this.FLAG_STRIP_UNLIKELYS);
 
       
@@ -898,6 +899,8 @@ Readability.prototype = {
       
       var elementsToScore = [];
       var node = this._doc.documentElement;
+
+      let shouldRemoveTitleHeader = true;
 
       while (node) {
         var matchString = node.className + " " + node.id;
@@ -914,11 +917,19 @@ Readability.prototype = {
           continue;
         }
 
+        if (shouldRemoveTitleHeader && this._headerDuplicatesTitle(node)) {
+          this.log("Removing header: ", node.textContent.trim(), this._articleTitle.trim());
+          shouldRemoveTitleHeader = false;
+          node = this._removeAndGetNext(node);
+          continue;
+        }
+
         
         if (stripUnlikelyCandidates) {
           if (this.REGEXPS.unlikelyCandidates.test(matchString) &&
               !this.REGEXPS.okMaybeItsACandidate.test(matchString) &&
               !this._hasAncestorTag(node, "table") &&
+              !this._hasAncestorTag(node, "code") &&
               node.tagName !== "BODY" &&
               node.tagName !== "A") {
             this.log("Removing unlikely candidate - " + matchString);
@@ -1453,13 +1464,11 @@ Readability.prototype = {
       if (elementProperty) {
         matches = elementProperty.match(propertyPattern);
         if (matches) {
-          for (var i = matches.length - 1; i >= 0; i--) {
-            
-            
-            name = matches[i].toLowerCase().replace(/\s/g, "");
-            
-            values[name] = content.trim();
-          }
+          
+          
+          name = matches[0].toLowerCase().replace(/\s/g, "");
+          
+          values[name] = content.trim();
         }
       }
       if (!matches && elementName && namePattern.test(elementName)) {
@@ -1661,7 +1670,7 @@ Readability.prototype = {
 
   _hasChildBlockElement: function (element) {
     return this._someNode(element.childNodes, function(node) {
-      return this.DIV_TO_P_ELEMS.indexOf(node.tagName) !== -1 ||
+      return this.DIV_TO_P_ELEMS.has(node.tagName) ||
              this._hasChildBlockElement(node);
     });
   },
@@ -1755,7 +1764,9 @@ Readability.prototype = {
 
     
     this._forEachNode(element.getElementsByTagName("a"), function(linkNode) {
-      linkLength += this._getInnerText(linkNode).length;
+      var href = linkNode.getAttribute("href");
+      var coefficient = href && this.REGEXPS.hashUrl.test(href) ? 0.3 : 1;
+      linkLength += this._getInnerText(linkNode).length * coefficient;
     });
 
     return linkLength / textLength;
@@ -2007,6 +2018,17 @@ Readability.prototype = {
     });
   },
 
+  _getTextDensity: function(e, tags) {
+    var textLength = this._getInnerText(e, true).length;
+    if (textLength === 0) {
+      return 0;
+    }
+    var childrenLength = 0;
+    var children = this._getAllNodesWithTag(e, tags);
+    this._forEachNode(children, (child) => childrenLength += this._getInnerText(child, true).length);
+    return childrenLength / textLength;
+  },
+
   
 
 
@@ -2016,8 +2038,6 @@ Readability.prototype = {
   _cleanConditionally: function(e, tag) {
     if (!this._flagIsActive(this.FLAG_CLEAN_CONDITIONALLY))
       return;
-
-    var isList = tag === "ul" || tag === "ol";
 
     
     
@@ -2030,6 +2050,14 @@ Readability.prototype = {
         return t._readabilityDataTable;
       };
 
+      var isList = tag === "ul" || tag === "ol";
+      if (!isList) {
+        var listLength = 0;
+        var listNodes = this._getAllNodesWithTag(node, ["ul", "ol"]);
+        this._forEachNode(listNodes, (list) => listLength += this._getInnerText(list).length);
+        isList = listLength / this._getInnerText(node).length > 0.9;
+      }
+
       if (tag === "table" && isDataTable(node)) {
         return false;
       }
@@ -2039,10 +2067,15 @@ Readability.prototype = {
         return false;
       }
 
+      if (this._hasAncestorTag(node, "code")) {
+        return false;
+      }
+
       var weight = this._getClassWeight(node);
-      var contentScore = 0;
 
       this.log("Cleaning Conditionally", node);
+
+      var contentScore = 0;
 
       if (weight + contentScore < 0) {
         return true;
@@ -2056,6 +2089,7 @@ Readability.prototype = {
         var img = node.getElementsByTagName("img").length;
         var li = node.getElementsByTagName("li").length - 100;
         var input = node.getElementsByTagName("input").length;
+        var headingDensity = this._getTextDensity(node, ["h1", "h2", "h3", "h4", "h5", "h6"]);
 
         var embedCount = 0;
         var embeds = this._getAllNodesWithTag(node, ["object", "embed", "iframe"]);
@@ -2083,7 +2117,7 @@ Readability.prototype = {
           (img > 1 && p / img < 0.5 && !this._hasAncestorTag(node, "figure")) ||
           (!isList && li > p) ||
           (input > Math.floor(p/3)) ||
-          (!isList && contentLength < 25 && (img === 0 || img > 2) && !this._hasAncestorTag(node, "figure")) ||
+          (!isList && headingDensity < 0.9 && contentLength < 25 && (img === 0 || img > 2) && !this._hasAncestorTag(node, "figure")) ||
           (!isList && weight < 25 && linkDensity > 0.2) ||
           (weight >= 25 && linkDensity > 0.5) ||
           ((embedCount === 1 && contentLength < 75) || embedCount > 1);
@@ -2119,9 +2153,30 @@ Readability.prototype = {
 
 
   _cleanHeaders: function(e) {
-    this._removeNodes(this._getAllNodesWithTag(e, ["h1", "h2"]), function (header) {
-      return this._getClassWeight(header) < 0;
+    let headingNodes = this._getAllNodesWithTag(e, ["h1", "h2"]);
+    this._removeNodes(headingNodes, function(node) {
+      let shouldRemove = this._getClassWeight(node) < 0;
+      if (shouldRemove) {
+        this.log("Removing header with low class weight:", node);
+      }
+      return shouldRemove;
     });
+  },
+
+  
+
+
+
+
+
+
+  _headerDuplicatesTitle: function(node) {
+    if (node.tagName != "H1" && node.tagName != "H2") {
+      return false;
+    }
+    var heading = this._getInnerText(node, false);
+    this.log("Evaluating similarity of header:", heading, this._articleTitle);
+    return this._textSimilarity(this._articleTitle, heading) > 0.75;
   },
 
   _flagIsActive: function(flag) {
