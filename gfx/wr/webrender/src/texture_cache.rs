@@ -68,6 +68,8 @@ enum EntryDetails {
         origin: DeviceIntPoint,
         
         alloc_id: AllocId,
+        
+        allocated_size_in_bytes: usize,
     },
 }
 
@@ -94,6 +96,8 @@ pub enum CacheEntryMarker {}
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct CacheEntry {
+    
+    
     
     size: DeviceIntSize,
     
@@ -1142,7 +1146,7 @@ impl TextureCache {
                 
                 self.pending_updates.push_free(entry.texture_id);
             }
-            EntryDetails::Cache { origin, alloc_id, .. } => {
+            EntryDetails::Cache { origin, alloc_id, allocated_size_in_bytes } => {
                 let allocator_list = self.shared_textures.select(
                     entry.input_format,
                     entry.filter,
@@ -1151,12 +1155,7 @@ impl TextureCache {
 
                 allocator_list.deallocate(entry.texture_id, alloc_id);
 
-                let bpp = allocator_list
-                    .texture_parameters()
-                    .formats
-                    .internal
-                    .bytes_per_pixel();
-                self.shared_bytes_allocated -= (entry.size.area() * bpp) as usize;
+                self.shared_bytes_allocated -= allocated_size_in_bytes;
 
                 if self.debug_flags.contains(
                     DebugFlags::TEXTURE_CACHE_DBG |
@@ -1224,7 +1223,8 @@ impl TextureCache {
         };
 
         let bpp = formats.internal.bytes_per_pixel();
-        self.shared_bytes_allocated += (allocated_rect.size.area() * bpp) as usize;
+        let allocated_size_in_bytes = (allocated_rect.size.area() * bpp) as usize;
+        self.shared_bytes_allocated += allocated_size_in_bytes;
 
         CacheEntry {
             size: params.descriptor.size,
@@ -1233,6 +1233,7 @@ impl TextureCache {
             details: EntryDetails::Cache {
                 origin: allocated_rect.origin,
                 alloc_id,
+                allocated_size_in_bytes,
             },
             uv_rect_handle: GpuCacheHandle::new(),
             input_format: params.descriptor.format,
