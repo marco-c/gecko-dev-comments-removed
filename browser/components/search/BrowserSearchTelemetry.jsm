@@ -43,9 +43,9 @@ class BrowserSearchTelemetryHandler {
 
 
 
-  shouldRecordSearchCount(tabbrowser) {
+  shouldRecordSearchCount(browser) {
     return (
-      !PrivateBrowsingUtils.isWindowPrivate(tabbrowser.ownerGlobal) ||
+      !PrivateBrowsingUtils.isWindowPrivate(browser.ownerGlobal) ||
       !Services.prefs.getBoolPref("browser.engagement.search_counts.pbm", false)
     );
   }
@@ -181,9 +181,9 @@ class BrowserSearchTelemetryHandler {
 
 
 
-  recordSearch(tabbrowser, engine, source, details = {}) {
+  recordSearch(browser, engine, source, details = {}) {
     try {
-      if (!this.shouldRecordSearchCount(tabbrowser)) {
+      if (!this.shouldRecordSearchCount(browser)) {
         return;
       }
       if (!KNOWN_SEARCH_SOURCES.includes(source)) {

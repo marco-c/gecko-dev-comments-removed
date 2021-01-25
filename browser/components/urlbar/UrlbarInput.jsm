@@ -2155,7 +2155,7 @@ class UrlbarInput {
     const isOneOff = this.view.oneOffSearchButtons.eventTargetIsAOneOff(event);
 
     BrowserSearchTelemetry.recordSearch(
-      this.window.gBrowser,
+      this.window.gBrowser.selectedBrowser,
       engine,
       
       
