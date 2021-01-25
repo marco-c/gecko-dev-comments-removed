@@ -277,6 +277,10 @@ class GlobalObject : public NativeObject {
   bool shouldSplicePrototype();
 
   
+  static bool splicePrototype(JSContext* cx, Handle<GlobalObject*> global,
+                              Handle<TaggedProto> proto);
+
+  
 
 
 
