@@ -649,9 +649,6 @@ class ScriptStencil {
   uint32_t gcThingsLength = 0;
 
   
-  SourceExtent extent = {};
-
-  
   
   
   
