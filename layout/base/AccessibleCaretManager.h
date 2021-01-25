@@ -231,14 +231,6 @@ class AccessibleCaretManager {
 
   enum class Terminated : bool { No, Yes };
 
-  
-  
-  
-  
-  
-  
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Terminated MaybeFlushLayout();
-
   static dom::Element* GetEditingHostForFrame(const nsIFrame* aFrame);
   dom::Selection* GetSelection() const;
   already_AddRefed<nsFrameSelection> GetFrameSelection() const;
@@ -335,12 +327,27 @@ class AccessibleCaretManager {
   
   bool mIsScrollStarted = false;
 
-  
-  bool mFlushingLayout = false;
+  class LayoutFlusher final {
+   public:
+    
+    
+    
+    
+    
+    
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Terminated
+    MaybeFlush(const AccessibleCaretManager& aAccessibleCaretManager);
 
-  
-  
-  bool mAllowFlushingLayout = true;
+    
+    bool mFlushing = false;
+
+    
+    
+    
+    bool mAllowFlushing = true;
+  };
+
+  LayoutFlusher mLayoutFlusher;
 
   
   bool mIsCaretPositionChanged = false;
