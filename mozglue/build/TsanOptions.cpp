@@ -218,9 +218,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsSocketTransport::OpenOutputStream\n"
 
          
-         "race:gXPCOMThreadsShutDown\n"
-
-         
          "race:CacheFileMetadata::SetHash\n"
          "race:CacheFileMetadata::OnDataWritten\n"
 
