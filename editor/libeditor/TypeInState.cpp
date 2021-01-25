@@ -168,9 +168,10 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
   
 
   const bool causedByFrameSelectionMoveCaret =
-      !!(aReason & (nsISelectionListener::KEYPRESS_REASON |
-                    nsISelectionListener::COLLAPSETOSTART_REASON |
-                    nsISelectionListener::COLLAPSETOEND_REASON));
+      (aReason & (nsISelectionListener::KEYPRESS_REASON |
+                  nsISelectionListener::COLLAPSETOSTART_REASON |
+                  nsISelectionListener::COLLAPSETOEND_REASON)) &&
+      !(aReason & nsISelectionListener::JS_REASON);
 
   Command lastSelectionCommand = mLastSelectionCommand;
   if (causedByFrameSelectionMoveCaret) {
@@ -276,6 +277,10 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
         
         
         unlink = !mouseEventFiredInLinkElement;
+      } else if (aReason & nsISelectionListener::JS_REASON) {
+        
+        
+        unlink = true;
       }
     } else if (mLastSelectionPoint == selectionStartPoint) {
       return;
