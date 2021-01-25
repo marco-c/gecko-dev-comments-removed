@@ -331,6 +331,13 @@ this.tabs = class extends ExtensionAPI {
             }
           }
 
+          cookieStoreId = getUserContextIdForCookieStoreId(
+            extension,
+            cookieStoreId,
+            false 
+          );
+          cookieStoreId = cookieStoreId ? cookieStoreId.toString() : undefined;
+
           const nativeTab = await GeckoViewTabBridge.createNewTab({
             extensionId: context.extension.id,
             createProperties: {
