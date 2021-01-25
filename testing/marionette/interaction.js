@@ -469,23 +469,6 @@ interaction.isKeyboardInteractable = function(el) {
     return true;
   }
 
-  
-  const menuPopup = el.closest("menupopup");
-  if (menuPopup) {
-    if (menuPopup.state !== "open") {
-      
-      return false;
-    }
-
-    const menuItem = el.closest("menuitem");
-    if (menuItem) {
-      
-      return !menuItem.disabled && !menuItem.hidden;
-    }
-
-    return true;
-  }
-
   el.focus();
   return el === win.document.activeElement;
 };
