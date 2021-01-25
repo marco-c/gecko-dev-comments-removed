@@ -149,12 +149,20 @@ class MockCubebStream {
   cubeb_devid GetOutputDeviceID() const;
 
   uint32_t InputChannels() const;
+  uint32_t OutputChannels() const;
   uint32_t InputSampleRate() const;
   uint32_t InputFrequency() const;
 
   void SetDriftFactor(float aDriftFactor);
   void ForceError();
   void Thaw();
+
+  
+  
+  void SetOutputRecordingEnabled(bool aEnabled);
+  
+  
+  nsTArray<AudioDataValue>&& TakeRecordedOutput();
 
   MediaEventSource<uint32_t>& FramesProcessedEvent();
   MediaEventSource<uint32_t>& FramesVerifiedEvent();
@@ -178,6 +186,10 @@ class MockCubebStream {
   bool mFrozenStart;
   
   std::atomic_bool mStreamStop{true};
+  
+  
+  
+  std::atomic_bool mOutputRecordingEnabled{false};
   
   AudioDataValue mOutputBuffer[NUM_OF_CHANNELS * 1920] = {};
   AudioDataValue mInputBuffer[NUM_OF_CHANNELS * 1920] = {};
@@ -204,6 +216,9 @@ class MockCubebStream {
   MediaEventProducer<uint32_t> mFramesVerifiedEvent;
   MediaEventProducer<Tuple<uint64_t, float, uint32_t>> mOutputVerificationEvent;
   MediaEventProducer<void> mErrorForcedEvent;
+  
+  
+  nsTArray<AudioDataValue> mRecordedOutput;
 };
 
 class SmartMockCubebStream
