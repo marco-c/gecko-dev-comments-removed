@@ -469,7 +469,7 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
 }
 
 static void GetPrintCanvasElementsInFrame(
-    nsIFrame* aFrame, nsTArray<RefPtr<HTMLCanvasElement> >* aArr) {
+    nsIFrame* aFrame, nsTArray<RefPtr<HTMLCanvasElement>>* aArr) {
   if (!aFrame) {
     return;
   }
@@ -500,6 +500,24 @@ static void GetPrintCanvasElementsInFrame(
       
       
       GetPrintCanvasElementsInFrame(child, aArr);
+    }
+  }
+}
+
+
+
+static void GetPrintCanvasElementsInSheet(
+    PrintedSheetFrame* aSheetFrame, nsTArray<RefPtr<HTMLCanvasElement>>* aArr) {
+  MOZ_ASSERT(aSheetFrame, "Caller should've null-checked for us already");
+  for (nsIFrame* child : aSheetFrame->PrincipalChildList()) {
+    
+    
+    
+    MOZ_ASSERT(child->IsPageFrame(),
+               "PrintedSheetFrame's children must all be nsPageFrames");
+    auto* pageFrame = static_cast<nsPageFrame*>(child);
+    if (!pageFrame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE)) {
+      GetPrintCanvasElementsInFrame(pageFrame, aArr);
     }
   }
 }
@@ -539,7 +557,7 @@ nsresult nsPageSequenceFrame::PrePrintNextSheet(nsITimerCallback* aCallback,
   
   if (!mCurrentCanvasListSetup) {
     mCurrentCanvasListSetup = true;
-    GetPrintCanvasElementsInFrame(currentSheet, &mCurrentCanvasList);
+    GetPrintCanvasElementsInSheet(currentSheet, &mCurrentCanvasList);
 
     if (!mCurrentCanvasList.IsEmpty()) {
       nsresult rv = NS_OK;
