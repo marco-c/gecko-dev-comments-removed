@@ -26,6 +26,9 @@ const ADDON_NAME = "test-devtools-webextension";
 add_task(async function testWebExtensionsToolboxWebConsole() {
   await enableExtensionDebugging();
 
+  
+  await pushPref("devtools.command-button-errorcount.enabled", false);
+
   is(
     Services.prefs.getBoolPref("ui.popup.disable_autohide"),
     false,
