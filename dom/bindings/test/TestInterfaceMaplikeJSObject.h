@@ -1,0 +1,55 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_TestInterfaceMaplikeJSObject_h
+#define mozilla_dom_TestInterfaceMaplikeJSObject_h
+
+#include "nsWrapperCache.h"
+#include "nsCOMPtr.h"
+
+class nsPIDOMWindowInner;
+
+namespace mozilla {
+
+class ErrorResult;
+
+namespace dom {
+
+class GlobalObject;
+
+
+
+class TestInterfaceMaplikeJSObject final : public nsISupports,
+                                           public nsWrapperCache {
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TestInterfaceMaplikeJSObject)
+
+  explicit TestInterfaceMaplikeJSObject(nsPIDOMWindowInner* aParent);
+  nsPIDOMWindowInner* GetParentObject() const;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+  static already_AddRefed<TestInterfaceMaplikeJSObject> Constructor(
+      const GlobalObject& aGlobal, ErrorResult& rv);
+
+  
+  void SetInternal(JSContext* aCx, const nsAString& aKey,
+                   JS::Handle<JSObject*> aObject);
+  void ClearInternal();
+  bool DeleteInternal(const nsAString& aKey);
+  bool HasInternal(const nsAString& aKey);
+  void GetInternal(JSContext* aCx, const nsAString& aKey,
+                   JS::MutableHandle<JSObject*> aRetVal, ErrorResult& aRv);
+
+ private:
+  virtual ~TestInterfaceMaplikeJSObject() = default;
+  nsCOMPtr<nsPIDOMWindowInner> mParent;
+};
+
+}  
+}  
+
+#endif  

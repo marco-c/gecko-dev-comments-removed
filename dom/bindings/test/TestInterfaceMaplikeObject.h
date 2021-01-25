@@ -19,6 +19,7 @@ class ErrorResult;
 namespace dom {
 
 class GlobalObject;
+class TestInterfaceMaplike;
 
 
 
@@ -40,6 +41,8 @@ class TestInterfaceMaplikeObject final : public nsISupports,
   void ClearInternal();
   bool DeleteInternal(const nsAString& aKey);
   bool HasInternal(const nsAString& aKey);
+  already_AddRefed<TestInterfaceMaplike> GetInternal(const nsAString& aKey,
+                                                     ErrorResult& aRv);
 
  private:
   virtual ~TestInterfaceMaplikeObject() = default;
