@@ -566,14 +566,12 @@ SearchService.prototype = {
 
 
 
-
-
-  async _loadEngines(settings, isReload) {
+  async _loadEngines(settings) {
     logConsole.debug("_loadEngines: start");
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
     this._setDefaultAndOrdersFromSelector(engines, privateDefault);
 
-    let newEngines = await this._loadEnginesFromConfig(engines, isReload);
+    let newEngines = await this._loadEnginesFromConfig(engines);
     for (let engine of newEngines) {
       this._addEngineToStore(engine);
     }
@@ -609,14 +607,12 @@ SearchService.prototype = {
 
 
 
-
-
-  async _loadEnginesFromConfig(engineConfigs, isReload = false) {
+  async _loadEnginesFromConfig(engineConfigs) {
     logConsole.debug("_loadEnginesFromConfig");
     let engines = [];
     for (let config of engineConfigs) {
       try {
-        let engine = await this.makeEngineFromConfig(config, isReload);
+        let engine = await this.makeEngineFromConfig(config);
         engines.push(engine);
       } catch (ex) {
         console.error(
@@ -627,41 +623,6 @@ SearchService.prototype = {
       }
     }
     return engines;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async ensureBuiltinExtension(
-    id,
-    locales = [SearchUtils.DEFAULT_TAG],
-    isReload = false
-  ) {
-    logConsole.debug("ensureBuiltinExtension: ", id);
-    try {
-      let policy = await this._getExtensionPolicy(id);
-      await this._installExtensionEngine(
-        policy.extension,
-        locales,
-        false,
-        isReload
-      );
-      logConsole.debug("ensureBuiltinExtension: ", id, " installed.");
-    } catch (err) {
-      Cu.reportError(
-        "Failed to install engine: " + err.message + "\n" + err.stack
-      );
-    }
   },
 
   
@@ -803,7 +764,7 @@ SearchService.prototype = {
     
     for (let engine of configEngines) {
       try {
-        let newEngine = await this.makeEngineFromConfig(engine, false);
+        let newEngine = await this.makeEngineFromConfig(engine);
         this._addEngineToStore(newEngine, true);
       } catch (ex) {
         logConsole.warn(
@@ -1576,8 +1537,6 @@ SearchService.prototype = {
 
 
 
-
-
   async _createAndAddEngine({
     extensionID,
     extensionBaseURI,
@@ -1585,7 +1544,6 @@ SearchService.prototype = {
     manifest,
     locale = SearchUtils.DEFAULT_TAG,
     initEngine = false,
-    isReload = false,
   }) {
     if (!extensionID) {
       throw Components.Exception(
@@ -1605,7 +1563,7 @@ SearchService.prototype = {
       await this.init();
     }
     let existingEngine = this._engines.get(name);
-    if (!isReload && existingEngine) {
+    if (existingEngine) {
       if (
         extensionID &&
         existingEngine._loadPath.startsWith(
@@ -1634,9 +1592,6 @@ SearchService.prototype = {
       manifest,
       locale
     );
-    if (isReload && this._engines.has(newEngine.name)) {
-      newEngine._engineToUpdate = this._engines.get(newEngine.name);
-    }
 
     this._addEngineToStore(newEngine);
     if (isCurrent) {
@@ -1735,9 +1690,7 @@ SearchService.prototype = {
 
 
 
-
-
-  async makeEngineFromConfig(config, isReload = false) {
+  async makeEngineFromConfig(config) {
     logConsole.debug("makeEngineFromConfig:", config);
     let policy = await this._getExtensionPolicy(config.webExtension.id);
     let locale =
@@ -1762,18 +1715,10 @@ SearchService.prototype = {
       locale,
       config
     );
-    if (isReload && this._engines.has(engine.name)) {
-      engine._engineToUpdate = this._engines.get(engine.name);
-    }
     return engine;
   },
 
-  async _installExtensionEngine(
-    extension,
-    locales,
-    initEngine = false,
-    isReload = false
-  ) {
+  async _installExtensionEngine(extension, locales, initEngine = false) {
     logConsole.debug("installExtensionEngine:", extension.id);
 
     let installLocale = async locale => {
@@ -1785,8 +1730,7 @@ SearchService.prototype = {
         extension,
         manifest,
         locale,
-        initEngine,
-        isReload
+        initEngine
       );
     };
 
@@ -1807,8 +1751,7 @@ SearchService.prototype = {
     extension,
     manifest,
     locale = SearchUtils.DEFAULT_TAG,
-    initEngine = false,
-    isReload
+    initEngine = false
   ) {
     
     
@@ -1834,7 +1777,6 @@ SearchService.prototype = {
       manifest,
       locale,
       initEngine,
-      isReload,
     });
   },
 
