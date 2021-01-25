@@ -12,6 +12,7 @@ import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.app.Service;
+import android.content.ComponentCallbacks2;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Bundle;
@@ -23,7 +24,12 @@ import android.util.Log;
 
 public class GeckoServiceChildProcess extends Service {
     private static final String LOGTAG = "ServiceChildProcess";
+    
+    private static final long LOW_MEMORY_ONGOING_RESET_TIME_MS = 10000;
+
     private static IProcessManager sProcessManager;
+
+    private long lastLowMemoryNotificationTime = 0;
 
     @WrapForJNI(calledFrom = "gecko")
     private static void getEditableParent(final IGeckoEditableChild child,
@@ -136,5 +142,37 @@ public class GeckoServiceChildProcess extends Service {
         stopSelf();
         Process.killProcess(Process.myPid());
         return false;
+    }
+
+    @Override
+    public void onTrimMemory(final int level) {
+        Log.i(LOGTAG, "onTrimMemory(" + level + ")");
+
+        
+        super.onTrimMemory(level);
+
+        if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+            
+            return;
+        }
+
+        
+        String observerArg = null;
+
+        final long currentNotificationTime = System.currentTimeMillis();
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE ||
+            (currentNotificationTime - lastLowMemoryNotificationTime) >= LOW_MEMORY_ONGOING_RESET_TIME_MS) {
+            
+            observerArg = "low-memory";
+            lastLowMemoryNotificationTime = currentNotificationTime;
+        } else {
+            
+            
+            
+            
+            observerArg = "low-memory-ongoing";
+        }
+
+        GeckoAppShell.notifyObservers("memory-pressure", observerArg);
     }
 }
