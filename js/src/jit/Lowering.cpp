@@ -3256,7 +3256,7 @@ void LIRGenerator::visitArrayPush(MArrayPush* ins) {
       BoundsCheckNeedsSpectreTemp() ? temp() : LDefinition::BogusTemp();
 
   auto* lir = new (alloc())
-      LArrayPushV(object, useBox(ins->value()), temp(), spectreTemp);
+      LArrayPush(object, useBox(ins->value()), temp(), spectreTemp);
   
   assignSnapshot(lir, ins->bailoutKind());
   define(lir, ins);
