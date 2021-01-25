@@ -144,37 +144,44 @@ macro_rules! _cssparser_internal_to_lowercase {
 
 #[doc(hidden)]
 #[allow(non_snake_case)]
+#[inline]
 pub fn _cssparser_internal_to_lowercase<'a>(
     buffer: &'a mut [MaybeUninit<u8>],
     input: &'a str,
 ) -> Option<&'a str> {
-    if let Some(buffer) = buffer.get_mut(..input.len()) {
-        if let Some(first_uppercase) = input.bytes().position(|byte| matches!(byte, b'A'..=b'Z')) {
-            unsafe {
-                
-                
-                let input_bytes = &*(input.as_bytes() as *const [u8] as *const [MaybeUninit<u8>]);
+    let buffer = buffer.get_mut(..input.len())?;
 
-                buffer.copy_from_slice(&*input_bytes);
-
-                
-                let buffer = &mut *(buffer as *mut [MaybeUninit<u8>] as *mut [u8]);
-
-                buffer[first_uppercase..].make_ascii_lowercase();
-                
-                
-                
-                Some(::std::str::from_utf8_unchecked(buffer))
-            }
-        } else {
+    #[cold]
+    fn make_ascii_lowercase<'a>(
+        buffer: &'a mut [MaybeUninit<u8>],
+        input: &'a str,
+        first_uppercase: usize,
+    ) -> &'a str {
+        unsafe {
             
-            Some(input)
+            
+            let input_bytes = &*(input.as_bytes() as *const [u8] as *const [MaybeUninit<u8>]);
+
+            buffer.copy_from_slice(&*input_bytes);
+
+            
+            let buffer = &mut *(buffer as *mut [MaybeUninit<u8>] as *mut [u8]);
+
+            buffer[first_uppercase..].make_ascii_lowercase();
+            
+            
+            
+            ::std::str::from_utf8_unchecked(buffer)
         }
-    } else {
-        
-        
-        None
     }
+
+    Some(
+        match input.bytes().position(|byte| matches!(byte, b'A'..=b'Z')) {
+            Some(first_uppercase) => make_ascii_lowercase(buffer, input, first_uppercase),
+            
+            None => input,
+        },
+    )
 }
 
 #[cfg(feature = "dummy_match_byte")]
