@@ -509,6 +509,15 @@ impl ReftestManifest {
             let reference = paths.pop().unwrap();
             let test = paths;
 
+            if environment.platform == "android" {
+                
+                
+                
+                
+                fuzziness.retain(|fuzzy| fuzzy.max_difference > 2);
+                fuzziness.push(RefTestFuzzy { max_difference: 2, num_differences: std::usize::MAX });
+            }
+
             
             
             
