@@ -4351,11 +4351,6 @@ pref("media.default_volume", "1.0");
 
 pref("dom.maxHardwareConcurrency", 16);
 
-
-#if !defined(RELEASE_OR_BETA)
-  pref("osfile.reset_worker_delay", 30000);
-#endif
-
 pref("dom.storageManager.prompt.testing", false);
 pref("dom.storageManager.prompt.testing.allow", false);
 
