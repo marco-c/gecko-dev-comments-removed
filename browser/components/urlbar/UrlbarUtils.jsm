@@ -168,6 +168,18 @@ var UrlbarUtils = {
   
   
   
+  
+  KEYWORD_OFFER: {
+    SHOW: 1,
+    HIDE: 2,
+  },
+
+  
+  
+  
+  
+  
+  
   TITLE_TAGS_SEPARATOR: "\x1F",
 
   
@@ -1064,11 +1076,11 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       keyword: {
         type: "string",
       },
+      keywordOffer: {
+        type: "number", 
+      },
       lowerCaseSuggestion: {
         type: "string",
-      },
-      providesSearchMode: {
-        type: "boolean",
       },
       query: {
         type: "string",

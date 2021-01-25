@@ -589,7 +589,7 @@ function makeSearchResult(
     uri,
     query,
     engineIconUri,
-    providesSearchMode,
+    keywordOffer,
     providerName,
     inPrivateWindow,
     isPrivateEngine,
@@ -617,7 +617,7 @@ function makeSearchResult(
     tailOffsetIndex,
     keyword: [
       alias,
-      providesSearchMode
+      keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW
         ? UrlbarUtils.HIGHLIGHT.TYPED
         : UrlbarUtils.HIGHLIGHT.NONE,
     ],
@@ -627,7 +627,7 @@ function makeSearchResult(
       UrlbarUtils.HIGHLIGHT.TYPED,
     ],
     icon: engineIconUri,
-    providesSearchMode,
+    keywordOffer,
     inPrivateWindow,
     isPrivateEngine,
   };
