@@ -38,11 +38,32 @@ bool OSPreferences::ReadRegionalPrefsLocales(nsTArray<nsCString>& aLocaleList) {
   return ReadSystemLocales(aLocaleList);
 }
 
+
+
+
+
+
 bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
                                         DateTimeFormatStyle aTimeStyle,
                                         const nsACString& aLocale,
                                         nsACString& aRetVal) {
-  return false;
+  if (!mozilla::jni::IsAvailable()) {
+    return false;
+  }
+
+  nsAutoCString skeleton;
+  if (!GetDateTimeSkeletonForStyle(aDateStyle, aTimeStyle, aLocale, skeleton)) {
+    return false;
+  }
+
+  
+  OverrideSkeletonHourCycle(java::GeckoAppShell::GetIs24HourFormat(), skeleton);
+
+  if (!GetPatternForSkeleton(skeleton, aLocale, aRetVal)) {
+    return false;
+  }
+
+  return true;
 }
 
 void OSPreferences::RemoveObservers() {}
