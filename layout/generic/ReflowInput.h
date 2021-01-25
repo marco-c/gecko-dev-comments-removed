@@ -49,15 +49,6 @@ NumericType NS_CSS_MINMAX(NumericType aValue, NumericType aMinValue,
   return result;
 }
 
-
-
-
-typedef uint32_t nsCSSFrameType;
-
-#define NS_CSS_FRAME_TYPE_UNKNOWN 0
-
-#define NS_FRAME_GET_TYPE(_ft) (_ft)
-
 namespace mozilla {
 
 
@@ -225,10 +216,6 @@ struct ReflowInput : public SizeComputationInput {
   
   
   const ReflowInput* mCBReflowInput = nullptr;
-
-  
-  
-  nsCSSFrameType mFrameType = NS_CSS_FRAME_TYPE_UNKNOWN;
 
   
   
@@ -847,7 +834,6 @@ struct ReflowInput : public SizeComputationInput {
 #endif
 
  protected:
-  void InitFrameType(LayoutFrameType aFrameType);
   void InitCBReflowInput();
   void InitResizeFlags(nsPresContext* aPresContext,
                        mozilla::LayoutFrameType aFrameType);
