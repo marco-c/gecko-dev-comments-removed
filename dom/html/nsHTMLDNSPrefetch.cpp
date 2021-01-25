@@ -161,7 +161,14 @@ nsresult nsHTMLDNSPrefetch::Prefetch(
     return rv;
   }
 
-  
+  if (StaticPrefs::network_dns_upgrade_with_https_rr() ||
+      StaticPrefs::network_dns_use_https_rr_as_altsvc()) {
+    Unused << sDNSService->AsyncResolveNative(
+        NS_ConvertUTF16toUTF8(hostname), nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
+        flags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
+        nullptr, aPartitionedPrincipalOriginAttributes,
+        getter_AddRefs(tmpOutstanding));
+  }
 
   return NS_OK;
 }
@@ -247,7 +254,14 @@ nsresult nsHTMLDNSPrefetch::CancelPrefetch(
       nullptr,  
       sDNSListener, aReason, aPartitionedPrincipalOriginAttributes);
 
-  
+  if (StaticPrefs::network_dns_upgrade_with_https_rr() ||
+      StaticPrefs::network_dns_use_https_rr_as_altsvc()) {
+    Unused << sDNSService->CancelAsyncResolveNative(
+        NS_ConvertUTF16toUTF8(hostname), nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
+        flags | nsIDNSService::RESOLVE_SPECULATE,
+        nullptr,  
+        sDNSListener, aReason, aPartitionedPrincipalOriginAttributes);
+  }
   return rv;
 }
 
@@ -393,6 +407,15 @@ void nsHTMLDNSPrefetch::nsDeferrals::SubmitQueue() {
                 nullptr, sDNSListener, nullptr, oa,
                 getter_AddRefs(tmpOutstanding));
             
+            if (NS_SUCCEEDED(rv) &&
+                (StaticPrefs::network_dns_upgrade_with_https_rr() ||
+                 StaticPrefs::network_dns_use_https_rr_as_altsvc())) {
+              sDNSService->AsyncResolveNative(
+                  hostName, nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
+                  mEntries[mTail].mFlags | nsIDNSService::RESOLVE_SPECULATE,
+                  nullptr, sDNSListener, nullptr, oa,
+                  getter_AddRefs(tmpOutstanding));
+            }
 
             
             if (NS_SUCCEEDED(rv)) link->OnDNSPrefetchRequested();
