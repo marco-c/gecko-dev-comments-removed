@@ -5698,6 +5698,12 @@
           
           
           
+          
+          browser.docShellIsActive = this.shouldActivateDocShell(browser);
+
+          
+          
+          
           let listener = new TabProgressListener(
             tab,
             browser,
