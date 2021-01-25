@@ -79,9 +79,6 @@
 
 
 
-#[macro_use]
-extern crate rental;
-
 use intl_memoizer::{IntlLangMemoizer, Memoizable};
 use unic_langid::LanguageIdentifier;
 

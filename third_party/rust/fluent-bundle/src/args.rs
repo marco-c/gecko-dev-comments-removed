@@ -6,6 +6,7 @@ use crate::types::FluentValue;
 
 
 
+#[derive(Debug, Default)]
 pub struct FluentArgs<'args>(Vec<(Cow<'args, str>, FluentValue<'args>)>);
 
 impl<'args> FluentArgs<'args> {
