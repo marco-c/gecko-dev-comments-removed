@@ -17,7 +17,7 @@ namespace a11y {
 namespace utils {
 
 
-NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
+NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
   NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
 
   
@@ -34,7 +34,7 @@ NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
 
 
 
-NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
+NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
   NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
 
   

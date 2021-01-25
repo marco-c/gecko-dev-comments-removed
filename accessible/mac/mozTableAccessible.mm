@@ -481,11 +481,21 @@ using namespace mozilla::a11y;
   
   
 
+  mozAccessible* disclosingRow = nil;
   
   
-  NSArray<mozAccessible*>* disclosingRows =
-      [self getRelationsByType:RelationType::NODE_CHILD_OF];
-  mozAccessible* disclosingRow = [disclosingRows firstObject];
+  if (mGeckoAccessible.IsAccessible()) {
+    Relation rel = mGeckoAccessible.AsAccessible()->RelationByType(
+        RelationType::NODE_CHILD_OF);
+    Accessible* maybeParent = rel.Next();
+    disclosingRow =
+        maybeParent ? GetNativeFromGeckoAccessible(maybeParent) : nil;
+  } else {
+    nsTArray<ProxyAccessible*> accs =
+        mGeckoAccessible.AsProxy()->RelationByType(RelationType::NODE_CHILD_OF);
+    disclosingRow =
+        accs.Length() > 0 ? GetNativeFromGeckoAccessible(accs[0]) : nil;
+  }
 
   if (disclosingRow) {
     
@@ -497,7 +507,6 @@ using namespace mozilla::a11y;
 
     return disclosingRow;
   }
-
   mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
   
   
@@ -530,10 +539,24 @@ using namespace mozilla::a11y;
   
   
 
+  NSMutableArray* disclosedRows = [[NSMutableArray alloc] init];
   
   
-  if (NSArray* disclosedRows =
-          [self getRelationsByType:RelationType::NODE_PARENT_OF]) {
+  if (mGeckoAccessible.IsAccessible()) {
+    Relation rel = mGeckoAccessible.AsAccessible()->RelationByType(
+        RelationType::NODE_PARENT_OF);
+    Accessible* acc = nullptr;
+    while ((acc = rel.Next())) {
+      [disclosedRows addObject:GetNativeFromGeckoAccessible(acc)];
+    }
+  } else {
+    nsTArray<ProxyAccessible*> accs =
+        mGeckoAccessible.AsProxy()->RelationByType(
+            RelationType::NODE_PARENT_OF);
+    disclosedRows = utils::ConvertToNSArray(accs);
+  }
+
+  if (disclosedRows) {
     
     return disclosedRows;
   }
