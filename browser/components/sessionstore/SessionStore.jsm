@@ -99,18 +99,6 @@ const MESSAGES = [
   
   
   "SessionStore:addSHistoryListener",
-
-  
-  
-  "SessionStore:removeRestoreListener",
-
-  
-  
-  "SessionStore:restoreSHistoryInParent",
-
-  
-  
-  "SessionStore:reloadCurrentEntry",
 ];
 
 
@@ -554,6 +542,10 @@ var SessionStoreInternal = {
 
   
   _browserSHistoryListenerForRestore: new WeakMap(),
+
+  
+  
+  _browserProgressListenerForRestore: new WeakMap(),
 
   
   _shistoryToRestore: new WeakMap(),
@@ -1042,6 +1034,9 @@ var SessionStoreInternal = {
           this.browser.browsingContext.sessionHistory.removeSHistoryListener(
             this
           );
+          SessionStoreInternal._browserSHistoryListener.delete(
+            this.browser.permanentKey
+          );
         }
       },
 
@@ -1096,12 +1091,14 @@ var SessionStoreInternal = {
 
 
 
-  addSHistoryListenerForRestore(aBrowser) {
-    function SHistoryListener(browser) {
-      browser.frameLoader.browsingContext.sessionHistory.addSHistoryListener(
-        this
-      );
+  addSHistoryListenerForRestore(aBrowser, aCallbacks) {
+    if (!Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should only be used with SHIP");
+    }
+    function SHistoryListener(browser, callbacks) {
+      browser.browsingContext.sessionHistory.addSHistoryListener(this);
       this.browser = browser;
+      this.callbacks = callbacks;
     }
     SHistoryListener.prototype = {
       QueryInterface: ChromeUtils.generateQI([
@@ -1110,10 +1107,13 @@ var SessionStoreInternal = {
       ]),
 
       uninstall() {
-        let shistory = this.browser.frameLoader.browsingContext.sessionHistory;
+        let shistory = this.browser.browsingContext?.sessionHistory;
         if (shistory) {
           shistory.removeSHistoryListener(this);
         }
+        SessionStoreInternal._browserSHistoryListenerForRestore.delete(
+          this.browser.permanentKey
+        );
       },
 
       OnHistoryGotoIndex() {},
@@ -1132,36 +1132,95 @@ var SessionStoreInternal = {
           return;
         }
 
-        
-        this.browser.messageManager.sendAsyncMessage(
-          "SessionStore:OnHistoryNewEntry",
-          { uri: newURI.spec }
-        );
+        if (this.callbacks.onHistoryNewEntry) {
+          this.callbacks.onHistoryNewEntry(newURI);
+        }
       },
 
       OnHistoryReload() {
-        
-        this.browser.messageManager.sendAsyncMessage(
-          "SessionStore:OnHistoryReload"
-        );
-        
+        if (this.callbacks.onHistoryReload) {
+          return this.callbacks.onHistoryReload();
+        }
         return false;
       },
     };
 
-    if (
-      !aBrowser.frameLoader ||
-      !aBrowser.frameLoader.browsingContext ||
-      !aBrowser.frameLoader.browsingContext.sessionHistory
-    ) {
-      return;
+    
+    if (!aBrowser.browsingContext?.sessionHistory) {
+      throw new Error("no SessionHistory object");
     }
 
-    let listener = new SHistoryListener(aBrowser);
+    
+    if (this._browserSHistoryListenerForRestore.has(aBrowser.permanentKey)) {
+      this._browserSHistoryListenerForRestore
+        .get(aBrowser.permanentKey)
+        .uninstall();
+    }
+
+    let listener = new SHistoryListener(aBrowser, aCallbacks);
     this._browserSHistoryListenerForRestore.set(
       aBrowser.permanentKey,
       listener
     );
+  },
+
+  addProgressListenerForRestore(browser, callbacks) {
+    if (!Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should only be used with SHIP");
+    }
+    class ProgressListener {
+      constructor() {
+        browser.addProgressListener(
+          this,
+          Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
+        );
+      }
+      uninstall() {
+        browser.removeProgressListener(this);
+        SessionStoreInternal._browserProgressListenerForRestore.delete(
+          browser.permanentKey
+        );
+      }
+      onStateChange(webProgress, request, stateFlags, status) {
+        if (
+          !webProgress.isTopLevel ||
+          !(stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW)
+        ) {
+          return;
+        }
+
+        if (
+          callbacks.onStartRequest &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_START
+        ) {
+          callbacks.onStartRequest();
+          this.uninstall();
+        }
+
+        if (
+          callbacks.onStopRequest &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_STOP
+        ) {
+          callbacks.onStopRequest();
+          this.uninstall();
+        }
+      }
+    }
+
+    ProgressListener.prototype.QueryInterface = ChromeUtils.generateQI([
+      "nsIWebProgressListener",
+      "nsISupportsWeakReference",
+    ]);
+
+    
+    if (this._browserProgressListenerForRestore.has(browser.permanentKey)) {
+      this._browserProgressListenerForRestore
+        .get(browser.permanentKey)
+        .uninstall();
+    }
+
+    let listener = new ProgressListener();
+    this._browserProgressListenerForRestore.set(browser.permanentKey, listener);
   },
 
   updateSessionStoreFromTablistener(aBrowser, aBrowsingContext, aData) {
@@ -1288,31 +1347,6 @@ var SessionStoreInternal = {
       case "SessionStore:addSHistoryListener":
         this.addSHistoryListener(browser);
         break;
-      case "SessionStore:restoreSHistoryInParent":
-        if (
-          browser.frameLoader &&
-          browser.frameLoader.browsingContext &&
-          browser.frameLoader.browsingContext.sessionHistory
-        ) {
-          let tabData = this._shistoryToRestore.get(browser.permanentKey);
-          if (tabData) {
-            this._shistoryToRestore.delete(browser.permanentKey);
-            SessionHistory.restoreFromParent(
-              browser.frameLoader.browsingContext.sessionHistory,
-              tabData
-            );
-          }
-          this.addSHistoryListenerForRestore(browser);
-        } else {
-          debug(
-            "receive SessionStore:restoreSHistoryInParent: but cannot find sessionHistory from bc."
-          );
-        }
-        browser.messageManager.sendAsyncMessage(
-          "SessionStore:finishRestoreHistory"
-        );
-        break;
-
       case "SessionStore:update":
         
         
@@ -1324,26 +1358,6 @@ var SessionStoreInternal = {
         
         if (frameLoader != aMessage.targetFrameLoader) {
           return;
-        }
-
-        if (aMessage.data.isFinal) {
-          
-          
-          
-          
-          TabStateFlusher.resolveAll(browser);
-          let listener = this._browserSHistoryListener.get(
-            browser.permanentKey
-          );
-          if (listener) {
-            listener.uninstall();
-            this._browserSHistoryListener.delete(browser.permanentKey);
-          }
-        } else if (aMessage.data.flushID) {
-          
-          
-          
-          TabStateFlusher.resolve(browser, aMessage.data.flushID);
         }
 
         
@@ -1394,169 +1408,39 @@ var SessionStoreInternal = {
             }
           }
         }
-        break;
-      case "SessionStore:restoreHistoryComplete": {
-        
-        let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+        if (aMessage.data.isFinal) {
+          
+          
+          
+          
+          TabStateFlusher.resolveAll(browser);
 
-        
-        
-        let activePageData = tabData.entries[tabData.index - 1] || null;
-        let uri = activePageData ? activePageData.url || null : null;
-        
-        
-        
-        
-        
-        
-        
-        
-        if (
-          !browser.userTypedValue &&
-          uri &&
-          !data.isRemotenessUpdate &&
-          !win.gInitialPages.includes(uri)
-        ) {
-          browser.userTypedValue = uri;
-        }
-
-        
-        this.updateTabLabelAndIcon(tab, tabData);
-
-        let event = win.document.createEvent("Events");
-        event.initEvent("SSTabRestoring", true, false);
-        tab.dispatchEvent(event);
-        break;
-      }
-      case "SessionStore:removeRestoreListener":
-        let listener = this._browserSHistoryListenerForRestore.get(
-          browser.permanentKey
-        );
-        if (listener) {
-          listener.uninstall();
-          this._browserSHistoryListenerForRestore.delete(browser.permanentKey);
-        }
-        break;
-      case "SessionStore:reloadCurrentEntry":
-        let fL =
-          browser.frameLoader ||
-          this._lastKnownFrameLoader.get(browser.permanentKey);
-        if (fL) {
-          if (fL.browsingContext) {
-            if (fL.browsingContext.sessionHistory) {
-              fL.browsingContext.sessionHistory.reloadCurrentEntry();
-            } else {
-              debug(
-                "receive SessionStore:reloadCurrentEntry browser.fL.bC.sessionHistory is null."
-              );
-            }
-          } else {
-            debug(
-              "receive SessionStore:reloadCurrentEntry browser.fL.browsingContext is null."
-            );
-          }
-        } else {
-          debug(
-            "receive SessionStore:reloadCurrentEntry browser.frameLoader is null."
-          );
-        }
-        break;
-      case "SessionStore:restoreTabContentStarted": {
-        let initiatedBySessionStore =
-          TAB_STATE_FOR_BROWSER.get(browser) != TAB_STATE_NEEDS_RESTORE;
-        let isNavigateAndRestore =
-          data.reason == RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let cacheState = TabStateCache.get(browser);
-        if (cacheState.searchMode) {
-          if (!initiatedBySessionStore || isNavigateAndRestore) {
-            TabStateCache.update(browser, {
-              searchMode: null,
-              userTypedValue: null,
-            });
-          }
-          break;
-        }
-
-        if (!initiatedBySessionStore) {
-          
-          
-          this.markTabAsRestoring(tab);
-        } else if (!isNavigateAndRestore) {
-          
-          
-          
-          
-          
-          
-          
-          
-          let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
-          if (
-            tabData.userTypedValue &&
-            !tabData.userTypedClear &&
-            !browser.userTypedValue
-          ) {
-            browser.userTypedValue = tabData.userTypedValue;
-            if (tab.selected) {
-              win.gURLBar.setURI();
+          for (let wm of [
+            this._browserSHistoryListener,
+            this._browserSHistoryListenerForRestore,
+            this._browserProgressListenerForRestore,
+          ]) {
+            let listener = wm.get(browser.permanentKey);
+            if (listener) {
+              listener.uninstall();
             }
           }
-
+        } else if (aMessage.data.flushID) {
           
-          TabStateCache.update(browser, {
-            userTypedValue: null,
-            userTypedClear: null,
-          });
+          
+          
+          TabStateFlusher.resolve(browser, aMessage.data.flushID);
         }
         break;
-      }
-      case "SessionStore:restoreTabContentComplete": {
-        
-        
-        let cacheState = TabStateCache.get(browser);
-        if (cacheState.searchMode) {
-          win.gURLBar.setSearchMode(cacheState.searchMode, browser);
-          browser.userTypedValue = cacheState.userTypedValue;
-          if (tab.selected) {
-            win.gURLBar.setURI();
-          }
-          TabStateCache.update(browser, {
-            searchMode: null,
-            userTypedValue: null,
-          });
-        }
-
-        
-        
-        if (gDebuggingEnabled) {
-          Services.obs.notifyObservers(browser, NOTIFY_TAB_RESTORED);
-        }
-
-        SessionStoreInternal._resetLocalTabRestoringState(tab);
-        SessionStoreInternal.restoreNextTab();
-
-        this._sendTabRestoredNotification(tab, data.isRemotenessUpdate);
-
-        Services.obs.notifyObservers(
-          null,
-          "sessionstore-one-or-no-tab-restored"
-        );
+      case "SessionStore:restoreHistoryComplete":
+        this._restoreHistoryComplete(browser, data);
         break;
-      }
+      case "SessionStore:restoreTabContentStarted":
+        this._restoreTabContentStarted(browser, data);
+        break;
+      case "SessionStore:restoreTabContentComplete":
+        this._restoreTabContentComplete(browser, data);
+        break;
       case "SessionStore:crashedTabRevived":
         
         
@@ -2916,7 +2800,9 @@ var SessionStoreInternal = {
     
     if (TAB_STATE_FOR_BROWSER.has(browser)) {
       let tab = win.gBrowser.getTabForBrowser(browser);
-      this._resetLocalTabRestoringState(tab);
+      if (tab) {
+        this._resetLocalTabRestoringState(tab);
+      }
     }
   },
 
@@ -4792,7 +4678,7 @@ var SessionStoreInternal = {
       }
     }
 
-    browser.messageManager.sendAsyncMessage("SessionStore:restoreTabContent", {
+    this._sendRestoreTabContent(browser, {
       loadArguments,
       isRemotenessUpdate,
       reason:
@@ -5870,6 +5756,287 @@ var SessionStoreInternal = {
 
 
 
+  async _restoreTabState(browser, data) {
+    if (!Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should only be used with SHIP");
+    }
+
+    
+    browser.stop();
+
+    let win = browser.ownerGlobal;
+    let tab = win?.gBrowser.getTabForBrowser(browser);
+
+    browser.messageManager.sendAsyncMessage(
+      "SessionStore:restoreDocShellState",
+      {
+        epoch: data.epoch,
+        tabData: {
+          uri: data.tabData?.entries[data.tabData.index - 1]?.url ?? null,
+          disallow: data.tabData?.disallow,
+          storage: data.tabData?.storage,
+        },
+      }
+    );
+    
+    
+    
+    if (tab.linkedBrowser.docShell) {
+      SessionStoreUtils.restoreDocShellCapabilities(
+        tab.linkedBrowser.docShell,
+        data.tabData.disallow
+      );
+    }
+
+    if (data.tabData?.storage) {
+      delete data.tabData.storage;
+    }
+
+    this._shistoryToRestore.set(browser.permanentKey, data);
+
+    SessionHistory.restoreFromParent(
+      browser.browsingContext.sessionHistory,
+      data.tabData
+    );
+
+    this.addSHistoryListenerForRestore(browser, {
+      onHistoryReload: () => {
+        this._restoreTabContent(browser);
+        return false;
+      },
+    });
+  },
+
+  
+
+
+
+  _restoreTabContent(browser, options) {
+    if (!Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should only be used with SHIP");
+    }
+
+    let listener = this._browserProgressListenerForRestore.get(
+      browser.permanentKey
+    );
+    if (listener) {
+      listener.uninstall();
+    }
+
+    listener = this._browserSHistoryListenerForRestore.get(
+      browser.permanentKey
+    );
+    if (listener) {
+      listener.uninstall();
+    }
+
+    let restoreData = {
+      ...this._shistoryToRestore.get(browser.permanentKey),
+      ...options,
+    };
+    this._shistoryToRestore.delete(browser.permanentKey);
+
+    this._restoreTabContentStarted(browser, restoreData);
+
+    let { tabData } = restoreData;
+
+    let uri = "about:blank";
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
+
+    if (tabData?.userTypedValue && tabData?.userTypedClear) {
+      uri = tabData.userTypedValue;
+      loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+    } else if (tabData?.entries.length) {
+      uri = loadFlags = null;
+      browser.messageManager.sendAsyncMessage(
+        "SessionStore:setRestoringDocument",
+        {
+          entry: tabData.entries[tabData.index - 1] || {},
+          formdata: tabData.formdata || {},
+          scrollPositions: tabData.scroll || {},
+        }
+      );
+      browser.browsingContext.sessionHistory.reloadCurrentEntry();
+    }
+
+    if (uri && loadFlags) {
+      
+      
+      
+      
+      
+      
+      this.addProgressListenerForRestore(browser, {
+        onStopRequest: () => {
+          this._restoreTabContentComplete(browser, restoreData);
+        },
+      });
+
+      browser.browsingContext.loadURI(uri, {
+        loadFlags,
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      });
+    }
+  },
+
+  _sendRestoreTabContent(browser, options) {
+    if (Services.appinfo.sessionHistoryInParent) {
+      this._restoreTabContent(browser, options);
+    } else {
+      browser.messageManager.sendAsyncMessage(
+        "SessionStore:restoreTabContent",
+        options
+      );
+    }
+  },
+
+  _restoreHistoryComplete(browser, data) {
+    let win = browser.ownerGlobal;
+    let tab = win?.gBrowser.getTabForBrowser(browser);
+    if (!tab) {
+      return;
+    }
+
+    
+    let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+
+    
+    
+    let activePageData = tabData.entries[tabData.index - 1] || null;
+    let uri = activePageData ? activePageData.url || null : null;
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      !browser.userTypedValue &&
+      uri &&
+      !data.isRemotenessUpdate &&
+      !win.gInitialPages.includes(uri)
+    ) {
+      browser.userTypedValue = uri;
+    }
+
+    
+    this.updateTabLabelAndIcon(tab, tabData);
+
+    let event = win.document.createEvent("Events");
+    event.initEvent("SSTabRestoring", true, false);
+    tab.dispatchEvent(event);
+  },
+
+  _restoreTabContentStarted(browser, data) {
+    let win = browser.ownerGlobal;
+    let tab = win?.gBrowser.getTabForBrowser(browser);
+    if (!tab) {
+      return;
+    }
+
+    let initiatedBySessionStore =
+      TAB_STATE_FOR_BROWSER.get(browser) != TAB_STATE_NEEDS_RESTORE;
+    let isNavigateAndRestore =
+      data.reason == RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let cacheState = TabStateCache.get(browser);
+    if (cacheState.searchMode) {
+      if (!initiatedBySessionStore || isNavigateAndRestore) {
+        TabStateCache.update(browser, {
+          searchMode: null,
+          userTypedValue: null,
+        });
+      }
+      return;
+    }
+
+    if (!initiatedBySessionStore) {
+      
+      
+      this.markTabAsRestoring(tab);
+    } else if (!isNavigateAndRestore) {
+      
+      
+      
+      
+      
+      
+      
+      
+      let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+      if (
+        tabData.userTypedValue &&
+        !tabData.userTypedClear &&
+        !browser.userTypedValue
+      ) {
+        browser.userTypedValue = tabData.userTypedValue;
+        if (tab.selected) {
+          win.gURLBar.setURI();
+        }
+      }
+
+      
+      TabStateCache.update(browser, {
+        userTypedValue: null,
+        userTypedClear: null,
+      });
+    }
+  },
+
+  _restoreTabContentComplete(browser, data) {
+    let win = browser.ownerGlobal;
+    let tab = browser.ownerGlobal?.gBrowser.getTabForBrowser(browser);
+    if (!tab) {
+      return;
+    }
+    
+    
+    let cacheState = TabStateCache.get(browser);
+    if (cacheState.searchMode) {
+      win.gURLBar.setSearchMode(cacheState.searchMode, browser);
+      browser.userTypedValue = cacheState.userTypedValue;
+      if (tab.selected) {
+        win.gURLBar.setURI();
+      }
+      TabStateCache.update(browser, {
+        searchMode: null,
+        userTypedValue: null,
+      });
+    }
+
+    
+    
+    if (gDebuggingEnabled) {
+      Services.obs.notifyObservers(browser, NOTIFY_TAB_RESTORED);
+    }
+
+    SessionStoreInternal._resetLocalTabRestoringState(tab);
+    SessionStoreInternal.restoreNextTab();
+
+    this._sendTabRestoredNotification(tab, data.isRemotenessUpdate);
+
+    Services.obs.notifyObservers(null, "sessionstore-one-or-no-tab-restored");
+  },
+
+  
+
+
+
 
 
 
@@ -5901,15 +6068,14 @@ var SessionStoreInternal = {
       }
     }
 
-    if (this._shistoryInParent) {
-      
-      this._shistoryToRestore.set(browser.permanentKey, options.tabData);
+    if (Services.appinfo.sessionHistoryInParent) {
+      this._restoreTabState(browser, options);
+    } else {
+      browser.messageManager.sendAsyncMessage(
+        "SessionStore:restoreHistory",
+        options
+      );
     }
-
-    browser.messageManager.sendAsyncMessage(
-      "SessionStore:restoreHistory",
-      options
-    );
 
     if (browser && browser.frameLoader) {
       browser.frameLoader.requestEpochUpdate(options.epoch);

@@ -169,6 +169,12 @@ add_task(async function run_test() {
   Services.cookies.removeAll();
 
   
+  
+  
+  
+  await new Promise(resolve => win.setTimeout(resolve, 0));
+
+  
   await setWindowState(win, SESSION_DATA_OA, true);
 
   cookieCount = 0;
