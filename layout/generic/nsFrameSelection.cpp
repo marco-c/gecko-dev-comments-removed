@@ -1053,26 +1053,6 @@ nsresult nsFrameSelection::MaintainSelection(nsSelectionAmount aAmount) {
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void nsFrameSelection::BidiLevelFromMove(PresShell* aPresShell,
                                          nsIContent* aNode,
                                          uint32_t aContentOffset,
@@ -1109,13 +1089,6 @@ void nsFrameSelection::BidiLevelFromMove(PresShell* aPresShell,
       UndefineCaretBidiLevel();
   }
 }
-
-
-
-
-
-
-
 
 void nsFrameSelection::BidiLevelFromClick(nsIContent* aNode,
                                           uint32_t aContentOffset) {
