@@ -41,9 +41,7 @@ void PlatformInit() {}
 void PlatformShutdown() {}
 
 void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
-  ProxyAccessible* parent = aProxy->Parent();
-  if ((parent && nsAccUtils::MustPrune(parent)) ||
-      aProxy->Role() == roles::WHITESPACE) {
+  if (aProxy->Role() == roles::WHITESPACE) {
     
     
     
