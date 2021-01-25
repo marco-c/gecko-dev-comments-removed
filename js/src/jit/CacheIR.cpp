@@ -15,6 +15,7 @@
 #include "builtin/DataViewObject.h"
 #include "builtin/MapObject.h"
 #include "builtin/ModuleObject.h"
+#include "builtin/Object.h"
 #include "jit/BaselineCacheIRCompiler.h"
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRSpewer.h"
@@ -7466,6 +7467,40 @@ AttachDecision CallIRGenerator::tryAttachObjectIsPrototypeOf(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachObjectToString(HandleFunction callee) {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!ObjectClassToString(cx_, &thisval_.toObject())) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentDynamicSlot(ArgumentKind::This, argcId);
+  ObjOperandId thisObjId = writer.guardToObject(thisValId);
+
+  writer.objectToStringResult(thisObjId);
+  writer.returnFromIC();
+
+  trackAttached("ObjectToString");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachBigIntAsIntN(HandleFunction callee) {
   
   if (argc_ != 2 || !args_[0].isInt32() || !args_[1].isBigInt()) {
@@ -8652,7 +8687,7 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     case InlinableNative::ObjectIsPrototypeOf:
       return tryAttachObjectIsPrototypeOf(callee);
     case InlinableNative::ObjectToString:
-      return AttachDecision::NoAction;  
+      return tryAttachObjectToString(callee);
 
     
     case InlinableNative::IntrinsicGuardToSetObject:
