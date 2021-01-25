@@ -3,7 +3,6 @@
 
 
 use crate::builtins::{FluentDateTime, FluentDateTimeOptions, NumberFormat};
-use fluent::resolver::ResolverError;
 pub use fluent::{FluentArgs, FluentBundle, FluentError, FluentResource, FluentValue};
 use fluent_pseudo::transform_dom;
 pub use intl_memoizer::IntlLangMemoizer;
