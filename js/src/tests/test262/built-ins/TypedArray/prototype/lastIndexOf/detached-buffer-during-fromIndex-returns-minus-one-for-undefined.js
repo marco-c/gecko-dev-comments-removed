@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  const sample = new TA(1);
+  const fromIndex = {
+    valueOf() {
+      $DETACHBUFFER(sample.buffer);
+      return 0;
+    }
+  };
+
+  assert.sameValue(sample.lastIndexOf(undefined, fromIndex), -1);
+});
+
+reportCompare(0, 0);

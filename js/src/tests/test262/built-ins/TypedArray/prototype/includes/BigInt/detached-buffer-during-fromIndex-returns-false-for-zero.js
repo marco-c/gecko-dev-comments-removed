@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  const sample = new TA(1);
+  const fromIndex = {
+    valueOf() {
+      $DETACHBUFFER(sample.buffer);
+      return 0;
+    }
+  };
+
+  assert.sameValue(sample.includes(0n, fromIndex), false);
+});
+
+reportCompare(0, 0);

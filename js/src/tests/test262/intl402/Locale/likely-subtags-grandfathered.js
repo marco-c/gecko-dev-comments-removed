@@ -68,7 +68,7 @@ const regularGrandfathered = [
     },
     {
         tag: "cel-gaulish",
-        canonical: "xtg-x-cel-gaulish",
+        canonical: "xtg",
     },
     {
         tag: "zh-guoyu",
@@ -123,15 +123,15 @@ const extras = [
     "x-private",
 ];
 
-for (const {tag} of regularGrandfathered) {
+for (const {tag, canonical} of regularGrandfathered) {
     const priv = "-x-0";
-    const tagMax = new Intl.Locale(tag + priv).maximize().toString().slice(0, -priv.length);
-    const tagMin = new Intl.Locale(tag + priv).minimize().toString().slice(0, -priv.length);
+    const tagMax = new Intl.Locale(canonical + priv).maximize().toString().slice(0, -priv.length);
+    const tagMin = new Intl.Locale(canonical + priv).minimize().toString().slice(0, -priv.length);
 
     for (const extra of extras) {
         const loc = new Intl.Locale(tag + "-" + extra);
 
-        let canonical = tag + "-" + extra;
+        let canonicalWithExtra = canonical + "-" + extra;
         let canonicalMax = tagMax + "-" + extra;
         let canonicalMin = tagMin + "-" + extra;
 
@@ -139,7 +139,7 @@ for (const {tag} of regularGrandfathered) {
         if (/^[a-z0-9]{5,8}|[0-9][a-z0-9]{3}$/i.test(extra)) {
             const sorted = s => s.replace(/(-([a-z0-9]{5,8}|[0-9][a-z0-9]{3}))+$/i,
                                           m => m.split("-").sort().join("-"));
-            canonical = sorted(canonical);
+            canonicalWithExtra = sorted(canonicalWithExtra);
             canonicalMax = sorted(canonicalMax);
             canonicalMin = sorted(canonicalMin);
         }
@@ -184,10 +184,7 @@ for (const {tag} of regularGrandfathered) {
         
         
         
-        
-        
-        
-        assert.sameValue(loc.toString(), canonical);
+        assert.sameValue(loc.toString(), canonicalWithExtra);
 
         assert.sameValue(loc.maximize().toString(), canonicalMax);
         assert.sameValue(loc.maximize().maximize().toString(), canonicalMax);

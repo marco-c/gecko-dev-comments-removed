@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  const sample = new TA([1,2,3]);
+  const separator = {
+    toString() {
+      $DETACHBUFFER(sample.buffer);
+      return ',';
+    }
+  };
+
+  assert.sameValue(sample.join(separator), ',,');
+});
+
+reportCompare(0, 0);

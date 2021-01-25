@@ -39,7 +39,7 @@
 
 
 var canonicalizedTags = {
-  "ja-latn-hepburn-heploc": "ja-Latn-alalc97-hepburn",
+  "ja-latn-hepburn-heploc": "ja-Latn-alalc97",
 };
 
 

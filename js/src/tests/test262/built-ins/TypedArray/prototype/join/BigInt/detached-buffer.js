@@ -18,17 +18,16 @@
 
 
 
-
-var obj = {
-  toString: function() {
+let obj = {
+  toString() {
     throw new Test262Error();
   }
 };
 
 testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA(1);
+  let sample = new TA(1);
   $DETACHBUFFER(sample.buffer);
-  assert.throws(TypeError, function() {
+  assert.throws(TypeError, () => {
     sample.join(obj);
   });
 });
