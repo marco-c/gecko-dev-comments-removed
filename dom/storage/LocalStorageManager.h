@@ -37,10 +37,7 @@ class LocalStorageManager final : public nsIDOMStorageManager,
   LocalStorageManager();
 
   
-  static uint32_t GetOriginQuota();
-
-  
-  static uint32_t GetSiteQuota();
+  static uint32_t GetQuota();
 
   
   LocalStorageCache* GetCache(const nsACString& aOriginSuffix,
