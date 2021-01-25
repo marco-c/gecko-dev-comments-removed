@@ -4162,25 +4162,6 @@ class MToString : public MUnaryInstruction, public ToStringPolicy::Data {
   ALLOW_CLONE(MToString)
 };
 
-
-class MToObject : public MUnaryInstruction, public BoxInputsPolicy::Data {
-  explicit MToObject(MDefinition* def) : MUnaryInstruction(classOpcode, def) {
-    setResultType(MIRType::Object);
-    setGuard();  
-  }
-
- public:
-  INSTRUCTION_HEADER(ToObject)
-  TRIVIAL_NEW_WRAPPERS
-
-  AliasSet getAliasSet() const override {
-    
-    return AliasSet::Store(AliasSet::ExceptionState);
-  }
-
-  ALLOW_CLONE(MToObject)
-};
-
 class MBitNot : public MUnaryInstruction, public BitwisePolicy::Data {
  protected:
   explicit MBitNot(MDefinition* input) : MUnaryInstruction(classOpcode, input) {
