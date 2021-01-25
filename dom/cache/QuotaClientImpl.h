@@ -60,68 +60,60 @@ class CacheQuotaClient final : public quota::Client {
   nsresult UpgradeStorageFrom2_0To2_1(nsIFile* aDirectory) override;
 
   template <typename Callable>
-  nsresult MaybeUpdatePaddingFileInternal(nsIFile* aBaseDir,
-                                          mozIStorageConnection* aConn,
+  nsresult MaybeUpdatePaddingFileInternal(nsIFile& aBaseDir,
+                                          mozIStorageConnection& aConn,
                                           const int64_t aIncreaseSize,
                                           const int64_t aDecreaseSize,
-                                          Callable aCommitHook) {
+                                          Callable&& aCommitHook) {
     MOZ_ASSERT(!NS_IsMainThread());
-    MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
-    MOZ_DIAGNOSTIC_ASSERT(aConn);
     MOZ_DIAGNOSTIC_ASSERT(aIncreaseSize >= 0);
     MOZ_DIAGNOSTIC_ASSERT(aDecreaseSize >= 0);
 
-    nsresult rv;
-
     
     
-    bool temporaryPaddingFileExist =
-        mozilla::dom::cache::DirectoryPaddingFileExists(
-            *aBaseDir, DirPaddingFile::TMP_FILE);
+    const bool temporaryPaddingFileExist =
+        DirectoryPaddingFileExists(aBaseDir, DirPaddingFile::TMP_FILE);
 
     if (aIncreaseSize == aDecreaseSize && !temporaryPaddingFileExist) {
       
-      rv = aCommitHook();
-      Unused << NS_WARN_IF(NS_FAILED(rv));
-      return rv;
+      CACHE_TRY(aCommitHook());
+
+      return NS_OK;
     }
 
     {
       MutexAutoLock lock(mDirPaddingFileMutex);
-      rv = mozilla::dom::cache::LockedUpdateDirectoryPaddingFile(
-          *aBaseDir, *aConn, aIncreaseSize, aDecreaseSize,
-          temporaryPaddingFileExist);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        
-        
-        return rv;
-      }
 
-      rv = aCommitHook();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        
-        
-        return rv;
-      }
+      
+      
+      CACHE_TRY(LockedUpdateDirectoryPaddingFile(aBaseDir, aConn, aIncreaseSize,
+                                                 aDecreaseSize,
+                                                 temporaryPaddingFileExist));
 
-      rv = mozilla::dom::cache::LockedDirectoryPaddingFinalizeWrite(*aBaseDir);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        
-        Unused << mozilla::dom::cache::LockedDirectoryPaddingDeleteFile(
-            *aBaseDir, DirPaddingFile::FILE);
+      
+      
+      CACHE_TRY(aCommitHook());
 
-        
-        MOZ_ASSERT(mozilla::dom::cache::DirectoryPaddingFileExists(
-            *aBaseDir, DirPaddingFile::TMP_FILE));
+      CACHE_TRY(
+          ToResult(LockedDirectoryPaddingFinalizeWrite(aBaseDir))
+              .orElse([&aBaseDir](const nsresult) -> Result<Ok, nsresult> {
+                
+                Unused << LockedDirectoryPaddingDeleteFile(
+                    aBaseDir, DirPaddingFile::FILE);
 
-        
-        
-        
-        rv = NS_OK;
-      }
+                
+                
+                MOZ_ASSERT(DirectoryPaddingFileExists(
+                    aBaseDir, DirPaddingFile::TMP_FILE));
+
+                
+                
+                
+                return Ok{};
+              }));
     }
 
-    return rv;
+    return NS_OK;
   }
 
   nsresult RestorePaddingFileInternal(nsIFile* aBaseDir,
