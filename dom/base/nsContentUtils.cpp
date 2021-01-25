@@ -6987,17 +6987,22 @@ void nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   aOutEndOffset = endOffset;
 }
 
+
 HTMLEditor* nsContentUtils::GetHTMLEditor(nsPresContext* aPresContext) {
   if (!aPresContext) {
     return nullptr;
   }
+  return GetHTMLEditor(aPresContext->GetDocShell());
+}
 
-  nsCOMPtr<nsIDocShell> docShell(aPresContext->GetDocShell());
+
+HTMLEditor* nsContentUtils::GetHTMLEditor(nsDocShell* aDocShell) {
   bool isEditable;
-  if (!docShell || NS_FAILED(docShell->GetEditable(&isEditable)) || !isEditable)
+  if (!aDocShell || NS_FAILED(aDocShell->GetEditable(&isEditable)) ||
+      !isEditable) {
     return nullptr;
-
-  return docShell->GetHTMLEditor();
+  }
+  return aDocShell->GetHTMLEditor();
 }
 
 
@@ -7006,15 +7011,19 @@ TextEditor* nsContentUtils::GetActiveEditor(nsPresContext* aPresContext) {
     return nullptr;
   }
 
-  nsPIDOMWindowOuter* window = aPresContext->Document()->GetWindow();
-  if (!window) {
+  return GetActiveEditor(aPresContext->Document()->GetWindow());
+}
+
+
+TextEditor* nsContentUtils::GetActiveEditor(nsPIDOMWindowOuter* aWindow) {
+  if (!aWindow || !aWindow->GetExtantDoc()) {
     return nullptr;
   }
 
   
   
-  if (aPresContext->Document()->HasFlag(NODE_IS_EDITABLE)) {
-    return GetHTMLEditor(aPresContext);
+  if (aWindow->GetExtantDoc()->HasFlag(NODE_IS_EDITABLE)) {
+    return GetHTMLEditor(nsDocShell::Cast(aWindow->GetDocShell()));
   }
 
   
@@ -7022,7 +7031,7 @@ TextEditor* nsContentUtils::GetActiveEditor(nsPresContext* aPresContext) {
   
   nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
   if (Element* focusedElement = nsFocusManager::GetFocusedDescendant(
-          window, nsFocusManager::SearchRange::eOnlyCurrentWindow,
+          aWindow, nsFocusManager::SearchRange::eOnlyCurrentWindow,
           getter_AddRefs(focusedWindow))) {
     if (TextEditor* textEditor = focusedElement->GetTextEditorInternal()) {
       return textEditor;
@@ -7031,7 +7040,7 @@ TextEditor* nsContentUtils::GetActiveEditor(nsPresContext* aPresContext) {
 
   
   
-  return GetHTMLEditor(aPresContext);
+  return GetHTMLEditor(nsDocShell::Cast(aWindow->GetDocShell()));
 }
 
 

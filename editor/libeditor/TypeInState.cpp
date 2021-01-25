@@ -53,6 +53,7 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(TypeInState, Release)
 
 TypeInState::TypeInState()
     : mRelativeFontSize(0),
+      mLastSelectionCommand(Command::DoNothing),
       mMouseDownFiredInLinkElement(false),
       mMouseUpFiredInLinkElement(false) {
   Reset();
@@ -109,6 +110,10 @@ void TypeInState::PreHandleMouseEvent(const MouseEvent& aMouseDownOrUpEvent) {
       HTMLEditUtils::IsContentInclusiveDescendantOfLink(*targetContent);
 }
 
+void TypeInState::PreHandleSelectionChangeCommand(Command aCommand) {
+  mLastSelectionCommand = aCommand;
+}
+
 void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
   
   
@@ -119,6 +124,16 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
   
   
   
+
+  const bool causedByFrameSelectionMoveCaret =
+      !!(aReason & (nsISelectionListener::KEYPRESS_REASON |
+                    nsISelectionListener::COLLAPSETOSTART_REASON |
+                    nsISelectionListener::COLLAPSETOEND_REASON));
+
+  Command lastSelectionCommand = mLastSelectionCommand;
+  if (causedByFrameSelectionMoveCaret) {
+    mLastSelectionCommand = Command::DoNothing;
+  }
 
   bool mouseEventFiredInLinkElement = false;
   if (aReason & (nsISelectionListener::MOUSEDOWN_REASON |
@@ -144,57 +159,76 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
       return;
     }
 
+    if (mLastSelectionPoint == selectionStartPoint) {
+      
+      
+      if (AreAllStylesCleared() || IsLinkStyleSet()) {
+        return;
+      }
+      
+      
+      
+      if (AreSomeStylesSet() ||
+          (AreSomeStylesCleared() && !IsOnlyLinkStyleCleared())) {
+        resetAllStyles = false;
+      }
+    }
+
     RefPtr<Element> linkElement;
     if (HTMLEditUtils::IsPointAtEdgeOfLink(selectionStartPoint,
                                            getter_AddRefs(linkElement))) {
       
       
-      if (aReason == nsISelectionListener::KEYPRESS_REASON) {
+      if (causedByFrameSelectionMoveCaret) {
         MOZ_ASSERT(!(aReason & (nsISelectionListener::MOUSEDOWN_REASON |
                                 nsISelectionListener::MOUSEUP_REASON)));
-        if (mLastSelectionPoint == selectionStartPoint) {
-          
-          return;
-        }
-        if (mLastSelectionPoint.IsSet() && selectionStartPoint.IsInTextNode() &&
+        
+        
+        
+        
+        
+        switch (lastSelectionCommand) {
+          case Command::CharNext:
+          case Command::CharPrevious:
+          case Command::MoveLeft:
+          case Command::MoveLeft2:
+          case Command::MoveRight:
+          case Command::MoveRight2:
             
-            
-            mLastSelectionPoint.GetContainer() !=
-                selectionStartPoint.GetContainer()) {
-          
-          
-          bool maybeStartOfAnchor = selectionStartPoint.IsStartOfContainer();
-          for (EditorRawDOMPoint point(selectionStartPoint.GetContainer());
-               point.IsSet() && (maybeStartOfAnchor ? point.IsStartOfContainer()
-                                                    : point.IsAtLastContent());
-               point.Set(point.GetContainer())) {
-            
-            if (HTMLEditUtils::IsLink(point.GetContainer())) {
-              
-              unlink =
-                  !mLastSelectionPoint.GetContainer()->IsInclusiveDescendantOf(
-                      point.GetContainer());
+            if (!mLastSelectionPoint.IsSet()) {
+              unlink = true;
               break;
             }
-          }
+            
+            
+            
+            
+            
+            if (mLastSelectionPoint == selectionStartPoint) {
+              unlink = true;
+              break;
+            }
+            
+            
+            
+            
+            
+            
+            
+            unlink =
+                !mLastSelectionPoint.GetContainer()->IsInclusiveDescendantOf(
+                    linkElement);
+            break;
+          default:
+            
+            
+            
+            
+            unlink = true;
+            break;
         }
       } else if (aReason & (nsISelectionListener::MOUSEDOWN_REASON |
                             nsISelectionListener::MOUSEUP_REASON)) {
-        if (mLastSelectionPoint == selectionStartPoint) {
-          
-          
-          if (AreAllStylesCleared() || IsLinkStyleSet()) {
-            return;
-          }
-          
-          
-          
-          if (AreSomeStylesSet() ||
-              (AreSomeStylesCleared() && !IsOnlyLinkStyleCleared())) {
-            resetAllStyles = false;
-          }
-        }
-
         
         
         

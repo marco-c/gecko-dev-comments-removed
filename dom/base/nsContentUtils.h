@@ -71,6 +71,7 @@ class nsAttrValue;
 class nsAutoScriptBlockerSuppressNodeRemoved;
 class nsContentList;
 class nsCycleCollectionTraversalCallback;
+class nsDocShell;
 class nsGlobalWindowInner;
 class nsHtml5StringParser;
 class nsIArray;
@@ -2706,6 +2707,7 @@ class nsContentUtils {
 
 
   static mozilla::HTMLEditor* GetHTMLEditor(nsPresContext* aPresContext);
+  static mozilla::HTMLEditor* GetHTMLEditor(nsDocShell* aDocShell);
 
   
 
@@ -2716,6 +2718,7 @@ class nsContentUtils {
 
 
   static mozilla::TextEditor* GetActiveEditor(nsPresContext* aPresContext);
+  static mozilla::TextEditor* GetActiveEditor(nsPIDOMWindowOuter* aWindow);
 
   
 
