@@ -1800,8 +1800,9 @@ nsIFrame* nsFrameSelection::GetFrameToPageSelect() const {
       if (scrollStyles.mVertical == StyleOverflow::Hidden) {
         continue;
       }
-      uint32_t directions = scrollableFrame->GetAvailableScrollingDirections();
-      if (directions & nsIScrollableFrame::VERTICAL) {
+      layers::ScrollDirections directions =
+          scrollableFrame->GetAvailableScrollingDirections();
+      if (directions.contains(layers::ScrollDirection::eVertical)) {
         
         return frame;
       }

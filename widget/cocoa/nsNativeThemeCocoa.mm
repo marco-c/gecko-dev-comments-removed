@@ -3745,7 +3745,7 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFra
       
       nsIScrollableFrame* scrollFrame = do_QueryFrame(parentFrame);
       return (!nsLookAndFeel::UseOverlayScrollbars() && scrollFrame &&
-              scrollFrame->GetScrollbarVisibility());
+              (!scrollFrame->GetScrollbarVisibility().isEmpty()));
     }
 
     case StyleAppearance::FocusOutline:

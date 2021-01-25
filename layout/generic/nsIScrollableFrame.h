@@ -91,25 +91,24 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   virtual mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo()
       const = 0;
 
-  enum { HORIZONTAL = 0x01, VERTICAL = 0x02 };
   
 
 
 
 
-  virtual uint32_t GetScrollbarVisibility() const = 0;
+  virtual mozilla::layers::ScrollDirections GetScrollbarVisibility() const = 0;
   
 
 
 
-  uint32_t GetAvailableScrollingDirections() const;
+  mozilla::layers::ScrollDirections GetAvailableScrollingDirections() const;
   
 
 
 
 
-  virtual uint32_t GetAvailableScrollingDirectionsForUserInputEvents()
-      const = 0;
+  virtual mozilla::layers::ScrollDirections
+  GetAvailableScrollingDirectionsForUserInputEvents() const = 0;
   
 
 
