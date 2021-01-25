@@ -2300,6 +2300,7 @@ void HTMLMediaElement::AbortExistingLoads() {
     }
     ChangeNetworkState(NETWORK_EMPTY);
     RemoveMediaTracks();
+    UpdateOutputTrackSources();
     ChangeReadyState(HAVE_NOTHING);
 
     
