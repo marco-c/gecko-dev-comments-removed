@@ -1816,7 +1816,7 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
     mSpdySession = nullptr;
   }
 
-  if (!mTransaction && mTLSFilter && gHttpHandler->Bug1556491()) {
+  if (!mTransaction && mTLSFilter) {
     
     
     
