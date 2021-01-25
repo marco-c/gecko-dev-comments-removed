@@ -236,6 +236,7 @@ function makeChan(url) {
   let chan = NetUtil.newChannel({
     uri: url,
     loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
   }).QueryInterface(Ci.nsIHttpChannel);
   return chan;
 }
@@ -285,8 +286,13 @@ add_task(async function testConnectionWithIPHint() {
   );
 
   
-  let chan = makeChan(`https://test.iphint.com:8080/`);
+  let chan = makeChan(`http://test.iphint.com:8080/`);
+  
+  
+  
+  
   let [req] = await channelOpenPromise(chan);
+  req.QueryInterface(Ci.nsIHttpChannel);
   Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
 
   certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(

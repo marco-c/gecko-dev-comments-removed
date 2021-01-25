@@ -275,6 +275,14 @@ class StoragePrincipalHelper final {
   
   static bool GetOriginAttributesForHSTS(nsIChannel* aChannel,
                                          OriginAttributes& aAttributes);
+
+  
+  
+  
+  
+  
+  static bool GetOriginAttributesForHTTPSRR(nsIChannel* aChannel,
+                                            OriginAttributes& aAttributes);
 };
 
 }  
