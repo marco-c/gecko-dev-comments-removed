@@ -316,22 +316,30 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult OnMouseDown(int32_t aX, int32_t aY,
-                                          Element* aTarget,
-                                          dom::Event* aMouseEvent);
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult StartToDragResizerOrHandleDragGestureOnGrabber(
+      dom::MouseEvent& aMouseDownEvent, Element& aEventTargetElement);
 
   
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult OnMouseUp(int32_t aX, int32_t aY);
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  StopDraggingResizerOrGrabberAt(const CSSIntPoint& aClientPoint);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult OnMouseMove(dom::MouseEvent* aMouseEvent);
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  UpdateResizerOrGrabberPositionTo(const CSSIntPoint& aClientPoint);
 
   
 
