@@ -648,7 +648,7 @@ struct Texture {
       
       size_t max_stride = max(buf_stride, aligned_stride(buf_bpp * min_width));
       size_t size = max_stride * max(height, min_height) * max(depth, 1);
-      if (!buf || size > buf_size) {
+      if ((!buf && size > 0) || size > buf_size) {
         
         
         
