@@ -1342,6 +1342,12 @@ var PlacesUIUtils = {
     }
     let document = menupopup.ownerDocument;
     menupopup._view = this.getViewForNode(document.popupNode);
+    if (!menupopup._view) {
+      
+      
+      event.preventDefault();
+      return false;
+    }
     if (!this.openInTabClosesMenu) {
       document
         .getElementById("placesContext_open:newtab")
@@ -1551,6 +1557,15 @@ var PlacesUIUtils = {
     return this._defaultParentGuid;
   },
 };
+
+
+
+
+
+
+PlacesUIUtils.canLoadToolbarContentPromise = new Promise(resolve => {
+  PlacesUIUtils.unblockToolbars = resolve;
+});
 
 
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "PLACES_FLAVORS", () => {
