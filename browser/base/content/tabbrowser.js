@@ -1867,12 +1867,6 @@
       
       
       
-      
-      aBrowser.docShellIsActive = this.shouldActivateDocShell(aBrowser);
-
-      
-      
-      
       listener = new TabProgressListener(tab, aBrowser, true, false);
       this._tabListeners.set(tab, listener);
       filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
@@ -1976,6 +1970,7 @@
       uriIsAboutBlank,
       userContextId,
       skipLoad,
+      initiallyActive,
     } = {}) {
       let b = document.createXULElement("browser");
       
@@ -2006,6 +2001,10 @@
       };
       for (let attribute in defaultBrowserAttributes) {
         b.setAttribute(attribute, defaultBrowserAttributes[attribute]);
+      }
+
+      if (!initiallyActive) {
+        b.setAttribute("initiallyactive", "false");
       }
 
       if (userContextId) {
