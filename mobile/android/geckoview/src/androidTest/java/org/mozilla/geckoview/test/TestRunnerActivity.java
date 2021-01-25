@@ -329,7 +329,7 @@ public class TestRunnerActivity extends Activity {
         
         final Uri uri = intent.getData();
         if (uri != null) {
-            mSession.loadUri(uri);
+            mSession.loadUri(uri.toString());
         }
 
         mView = new GeckoView(this);
