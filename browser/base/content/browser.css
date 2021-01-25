@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
@@ -18,7 +18,7 @@ body {
   min-height: 95px;
   min-width: 95px;
 
-  
+  /* variables */
   --panelui-subview-transition-duration: 150ms;
   --lwt-additional-images: none;
   --lwt-background-alignment: right top;
@@ -60,7 +60,7 @@ body {
   min-width: -moz-fit-content;
 }
 
-
+/* Prevent shrinking the page content to 0 height and width */
 .browserStack {
   min-height: 25px;
   min-width: 25px;
@@ -72,7 +72,7 @@ body {
   -moz-box-flex: 1;
 }
 
-
+/* Set additional backgrounds alignment relative to toolbox */
 
 #navigator-toolbox:-moz-lwtheme {
   background-image: var(--lwt-additional-images);
@@ -119,7 +119,7 @@ panelview:not([visible]) {
   visibility: collapse;
 }
 
-
+/* Hide the header when a subview is reused as a main view. */
 panelview[mainview] > .panel-header {
   display: none;
 }
@@ -146,11 +146,11 @@ panelview[mainview] > .panel-header {
 
 @supports -moz-bool-pref("layout.css.emulate-moz-box-with-flex") {
   #tabbrowser-tabs {
-    
+    /* Without this, the tabs container width extends beyond the window width */
     width: 0;
   }
   .tab-stack {
-    
+    /* Without this, pinned tabs get a bit too tall when the tabstrip overflows. */
     vertical-align: top;
   }
 }
@@ -160,7 +160,7 @@ panelview[mainview] > .panel-header {
     display: none;
   }
   #tabbrowser-tabs:not([overflow="true"])[using-closing-tabs-spacer] ~ #alltabs-button {
-    
+    /* temporary space to keep a tab's close button under the cursor */
     display: -moz-box;
     visibility: hidden;
   }
@@ -183,7 +183,7 @@ panelview[mainview] > .panel-header {
 }
 
 :root[uidensity=touch] .tabbrowser-tab:not([pinned]) {
-  
+  /* Touch mode needs additional space for the close button. */
   min-width: calc(var(--tab-min-width) + 10px);
 }
 
@@ -197,7 +197,7 @@ panelview[mainview] > .panel-header {
 .tab-close-button[fadein],
 .tabbrowser-tab[fadein]::after,
 .tab-background[fadein] {
-  
+  /* This transition is only wanted for opening tabs. */
   transition: visibility 0ms 25ms;
 }
 
@@ -231,7 +231,7 @@ panelview[mainview] > .panel-header {
 #tabbrowser-tabs[movingtab] > #tabbrowser-arrowscrollbox > .tabbrowser-tab[multiselected] {
   position: relative;
   z-index: 2;
-  pointer-events: none; 
+  pointer-events: none; /* avoid blocking dragover events on scroll buttons */
 }
 
 .tabbrowser-tab[tab-grouping],
@@ -243,7 +243,7 @@ panelview[mainview] > .panel-header {
   z-index: 2;
 }
 
-
+/* Make it easier to drag tabs by expanding the drag area downwards. */
 #tabbrowser-tabs[movingtab] {
   padding-bottom: 15px;
   margin-bottom: -15px;
@@ -253,7 +253,7 @@ panelview[mainview] > .panel-header {
   pointer-events: none;
 }
 
-
+/* Allow dropping a tab on buttons with associated drop actions. */
 #navigator-toolbox[movingtab] > #nav-bar > #nav-bar-customization-target > #personal-bookmarks,
 #navigator-toolbox[movingtab] > #nav-bar > #nav-bar-customization-target > #home-button,
 #navigator-toolbox[movingtab] > #nav-bar > #nav-bar-customization-target > #downloads-button,
@@ -261,13 +261,13 @@ panelview[mainview] > .panel-header {
   pointer-events: auto;
 }
 
-
-
-
+/* The address bar needs to be able to render outside of the toolbar, but as
+ * long as it's within the toolbar's bounds we can clip the toolbar so that the
+ * rendering pipeline doesn't reserve an enormous texture for it. */
 #nav-bar:not([urlbar-exceeds-toolbar-bounds]),
-
-
-
+/* When customizing, overflowable toolbars move automatically moved items back
+ * from the overflow menu, but we still don't want to render them outside of
+ * the customization target. */
 toolbar[overflowable][customizing] > .customization-target {
   overflow: clip;
 }
@@ -287,9 +287,9 @@ toolbar[customizing] #whats-new-menu-button {
   display: -moz-box;
 }
 
-
-
-
+/* The ids are ugly, but this should be reasonably performant, and
+ * using a tagname as the last item would be less so.
+ */
 #widget-overflow-list:empty + #widget-overflow-fixed-separator,
 #widget-overflow:not([hasfixeditems]) #widget-overflow-fixed-separator {
   display: none;
@@ -378,12 +378,12 @@ toolbarpaletteitem {
   -moz-default-appearance: -moz-mac-fullscreen-button;
 }
 
-
-
-
-
-
-
+/**
+ * On macOS, the window caption buttons are on the left side of the window titlebar,
+ * even when using the RTL UI direction. Similarly, the fullscreen button is on the
+ * right side of the window titlebar, even when using the RTL UI direction. These
+ * next rules enforce that ordering.
+ */
 #titlebar-secondary-buttonbox:-moz-locale-dir(ltr) {
   -moz-box-ordinal-group: 1000;
 }
@@ -407,7 +407,7 @@ toolbarpaletteitem {
   transition: 0.8s margin-top ease-out;
 }
 
-
+/* Rules to help integrate WebExtension buttons */
 
 .webextension-browser-action > .toolbarbutton-badge-stack > .toolbarbutton-icon {
   height: 16px;
@@ -528,48 +528,48 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   display: none;
 }
 
-
-
-
-
+/* The reload-button is only disabled temporarily when it becomes visible
+   to prevent users from accidentally clicking it. We don't however need
+   to show this disabled state, as the flicker that it generates is short
+   enough to be visible but not long enough to explain anything to users. */
 #reload-button[disabled]:not(:-moz-window-inactive) > .toolbarbutton-icon {
   opacity: 1 !important;
 }
 
-
+/* Ensure stop-button and reload-button are displayed correctly when in the overflow menu */
 .widget-overflow-list > #stop-reload-button > .toolbarbutton-1 {
   -moz-box-flex: 1;
 }
 
 %ifdef XP_MACOSX
 :root[inFullscreen="true"] {
-  padding-top: 0; 
+  padding-top: 0; /* override drawintitlebar="true" */
 }
 %endif
 
-
+/* Hide menu elements intended for keyboard access support */
 #main-menubar[openedwithkey=false] .show-only-for-keyboard {
   display: none;
 }
 
-
+/* ::::: location bar & search bar ::::: */
 
 #urlbar,
 #searchbar {
-  
-
+  /* Setting a width and min-width to let the location & search bars maintain
+     a constant width in case they haven't be resized manually. (bug 965772) */
   width: 1px;
   min-width: 1px;
 }
 
-
+/* Align URLs to the right in RTL mode. */
 #urlbar-input:-moz-locale-dir(rtl) {
   text-align: right !important;
 }
 
-
-
-
+/* Make sure that the location bar's alignment changes according
+   to the input box direction if the user switches the text direction using
+   cmd_switchTextDirection (which applies a dir attribute to the <input>). */
 #urlbar-input[dir=ltr]:-moz-locale-dir(rtl) {
   text-align: left !important;
 }
@@ -578,13 +578,13 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   text-align: right !important;
 }
 
-
-
-
-
-
-
-
+/*
+ * Display visual cue that browser is under remote control.
+ * This is to help users visually distinguish a user agent session that
+ * is under remote control from those used for normal browsing sessions.
+ *
+ * Attribute is controlled by browser.js:/gRemoteControl.
+ */
 :root[remotecontrol] #urlbar-background {
   background: repeating-linear-gradient(
     -45deg,
@@ -596,7 +596,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   color: black;
 }
 
-
+/* Show the url scheme in a static box when overflowing to the left */
 .urlbar-input-box {
   position: relative;
   direction: ltr;
@@ -621,9 +621,9 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   unicode-bidi: embed;
 }
 
-
-
-
+/* The following rules apply overflow masks to the unfocused urlbar
+   This mask may be overriden when a Contextual Feature Recommendation is shown,
+   see browser/themes/shared/urlbar-searchbar.inc.css for details */
 
 #urlbar:not([focused])[textoverflow="both"] > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
   mask-image: linear-gradient(to right, transparent, black 3ch, black calc(100% - 3ch), transparent);
@@ -635,8 +635,8 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   mask-image: linear-gradient(to right, transparent, black 3ch);
 }
 
-
-
+/* The protocol is visible if there is an RTL domain and we overflow to the left.
+   Uses the required-valid trick to check if it contains a value */
 #urlbar:not([focused])[textoverflow="left"][domaindir="rtl"] > #urlbar-input-container > .urlbar-input-box > #urlbar-scheme:valid {
   visibility: visible;
 }
@@ -644,7 +644,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
 }
 
-
+/* Apply crisp rendering for favicons at exactly 2dppx resolution */
 @media (resolution: 2dppx) {
   .searchbar-engine-image {
     image-rendering: -moz-crisp-edges;
@@ -666,16 +666,16 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   color: FieldText;
   min-height: 2.6666em;
   border-top: 1px solid rgba(38,38,38,.15);
-  background-color: hsla(0,0%,80%,.35); ;
+  background-color: hsla(0,0%,80%,.35); /* match arrowpanel-dimmed */;
 }
 
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="loginsFooter"]:hover,
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="loginsFooter"][selected] {
-  background-color: hsla(0,0%,80%,.5); 
+  background-color: hsla(0,0%,80%,.5); /* match arrowpanel-dimmed-further */
 }
 
-
-
+/* Define the minimum width based on the style of result rows.
+   The order of the min-width rules below must be in increasing order. */
 #PopupAutoComplete[resultstyles~="loginsFooter"],
 #PopupAutoComplete[resultstyles~="insecureWarning"] {
   min-width: 17em;
@@ -718,12 +718,12 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   -moz-user-focus: normal;
 }
 
-
-
-
-
-
-
+/* We leave 350px plus whatever space the download button will need when it
+ * appears. Normally this should be 16px for the icon, plus 2 * 2px padding
+ * plus the toolbarbutton-inner-padding. We're adding 4px to ensure things
+ * like rounding on hidpi don't accidentally result in the button going
+ * into overflow.
+ */
  #urlbar-container {
   min-width: calc(350px + 24px + 2 * var(--toolbarbutton-inner-padding));
 }
@@ -732,8 +732,8 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   min-width: 350px;
 }
 
-
-
+/* Customize mode is difficult to use at moderate window width if the Urlbar
+   remains 350px wide. */
 :root[customizing] #urlbar-container {
   min-width: 280px;
 }
@@ -755,18 +755,18 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   #identity-box {
     max-width: 80px;
   }
-  
-
+  /* Contenxtual identity labels are user-customizable and can be very long,
+     so we only show the colored icon when the window gets small. */
   #userContext-label {
     display: none;
   }
 }
-
-
-
+/* 680px is just below half of popular 1366px wide screens, so when putting two
+   browser windows next to each other on such a screen, they'll be above this
+   threshold. */
 @media (max-width: 680px) {
-  
-
+  /* Page action buttons are duplicated in the page action menu so we can
+     safely hide them in small windows. */
   #pageActionSeparator,
   #pageActionButton ~ .urlbar-page-action {
     display: none;
@@ -787,7 +787,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   }
 }
 
-
+/* Flexible spacer sizing (gets overridden in the navbar) */
 toolbarpaletteitem[place=toolbar][id^=wrapper-customizableui-special-spring],
 toolbarspring {
   -moz-box-flex: 1;
@@ -798,9 +798,9 @@ toolbarspring {
 #nav-bar toolbarpaletteitem[id^=wrapper-customizableui-special-spring],
 #nav-bar toolbarspring {
   -moz-box-flex: 80;
-  
-
-
+  /* We shrink the flexible spacers, but not to nothing so they can be
+   * manipulated in customize mode; the next rule shrinks them further
+   * outside customize mode. */
   min-width: 10px;
 }
 
@@ -812,18 +812,18 @@ toolbarspring {
   display: none;
 }
 
-
+/* ::::: Unified Back-/Forward Button ::::: */
 .unified-nav-current {
   font-weight: bold;
 }
 
 .bookmark-item > label {
-  
-
+  /* ensure we use the direction of the bookmarks label instead of the
+   * browser locale */
   unicode-bidi: plaintext;
 }
 
-
+/* Apply crisp rendering for favicons at exactly 2dppx resolution */
 @media (resolution: 2dppx) {
   .menuitem-with-favicon > .menu-iconic-left > .menu-iconic-icon {
     image-rendering: -moz-crisp-edges;
@@ -839,7 +839,7 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   display: none;
 }
 
-
+/* Hide extension toolbars that neglected to set the proper class */
 :root[chromehidden~="location"][chromehidden~="toolbar"] toolbar:not(.chromeclass-menubar) {
   display: none;
 }
@@ -849,7 +849,7 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   min-width: 1px;
 }
 
-
+/* History Swipe Animation */
 
 #historySwipeAnimationContainer {
   overflow: hidden;
@@ -866,14 +866,14 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   transform: rotate(180deg);
 }
 
-
+/* Pocket */
 :root[pocketdisabled=true] #context-pocket,
 :root[pocketdisabled=true] #context-savelinktopocket,
 :root[pocketdisabled=true] #appMenu-library-pocket-button {
   display: none;
 }
 
-
+/*  Full Screen UI */
 
 #fullscr-toggler {
   top: 0;
@@ -897,8 +897,8 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   z-index: 2147483647 !important;
   visibility: visible;
   transition: transform 300ms ease-in;
-  
-
+  /* To center the warning box horizontally,
+     we use left: 50% with translateX(-50%). */
   top: 0; left: 50%;
   transform: translate(-50%, -100%);
   box-sizing: border-box;
@@ -914,7 +914,7 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   transform: translate(-50%, 50px);
 }
 .pointerlockfswarning[ontop] {
-  
+  /* Use -10px to hide the border and border-radius on the top */
   transform: translate(-50%, -10px);
 }
 :root[OSXLionFullscreen] .pointerlockfswarning[ontop] {
@@ -924,7 +924,7 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
 .pointerlockfswarning-domain-text,
 .pointerlockfswarning-generic-text {
   word-wrap: break-word;
-  
+  /* We must specify a min-width, otherwise word-wrap:break-word doesn't work. Bug 630864. */
   min-width: 1px
 }
 .pointerlockfswarning-domain-text:not([hidden]) + .pointerlockfswarning-generic-text {
@@ -935,8 +935,8 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   pointer-events: auto;
 }
 
-
-
+/* notification anchors should only be visible when their associated
+   notifications are */
 #nav-bar:not([keyNav=true]) .notification-anchor-icon {
   -moz-user-focus: normal;
 }
@@ -951,7 +951,7 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
 }
 
 .popup-anchor {
-  
+  /* should occupy space but not be visible */
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -961,7 +961,7 @@ browser[tabmodalPromptShowing], browser[tabDialogShowing] {
   -moz-user-focus: none !important;
 }
 
-
+/* Status panel */
 
 #statuspanel {
   display: block;
@@ -1014,11 +1014,11 @@ browser[tabmodalPromptShowing], browser[tabDialogShowing] {
   -moz-box-align: end;
 }
 
+/*** Visibility of downloads indicator controls ***/
 
-
-
-
-
+/* Bug 924050: If we've loaded the indicator, for now we hide it in the menu panel,
+   and just show the icon. This is a hack to side-step very weird layout bugs that
+   seem to be caused by the indicator stack interacting with the menu panel. */
 #downloads-button[indicator]:not([cui-areatype="menu-panel"]) > .toolbarbutton-badge-stack > image.toolbarbutton-icon,
 #downloads-button[indicator][cui-areatype="menu-panel"] > .toolbarbutton-badge-stack > #downloads-indicator-anchor {
   display: none;
@@ -1032,10 +1032,10 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
   display: none;
 }
 
-
+/* Combobox dropdown renderer */
 #ContentSelectDropdown > menupopup {
-  
-
+  /* The menupopup itself should always be rendered LTR to ensure the scrollbar aligns with
+   * the dropdown arrow on the dropdown widget. If a menuitem is RTL, its style will be set accordingly */
   direction: ltr;
 }
 
@@ -1043,31 +1043,31 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
   scrollbar-width: var(--content-select-scrollbar-width, auto);
 }
 
-
+/* Indent options in optgroups */
 .contentSelectDropdown-ingroup .menu-iconic-text {
   padding-inline-start: 2em;
 }
 
-
+/* Give this menupopup an arrow panel styling */
 #BMB_bookmarksPopup {
   appearance: none;
   background: transparent;
   border: none;
-  
+  /* The popup inherits -moz-image-region from the button, must reset it */
   -moz-image-region: auto;
 }
 
 @supports -moz-bool-pref("xul.panel-animations.enabled") {
 @media (prefers-reduced-motion: no-preference) {
 %ifdef MOZ_WIDGET_COCOA
-  
-
-
-
-
-
-
-
+  /* On Mac, use the properties "-moz-window-transform" and "-moz-window-opacity"
+     instead of "transform" and "opacity" for these animations.
+     The -moz-window* properties apply to the whole window including the window's
+     shadow, and they don't affect the window's "shape", so the system doesn't
+     have to recompute the shadow shape during the animation. This makes them a
+     lot faster. In fact, Gecko no longer triggers shadow shape recomputations
+     for repaints.
+     These properties are not implemented on other platforms. */
   #BMB_bookmarksPopup:not([animate="false"]) {
     transition-property: -moz-window-transform, -moz-window-opacity;
     transition-duration: 0.18s, 0.18s;
@@ -1075,8 +1075,8 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
       var(--animation-easing-function), ease-out;
   }
 
-  
-
+  /* Only do the fade-in animation on pre-Big Sur to avoid missing shadows on
+   * Big Sur, see bug 1672091. */
   @media (-moz-mac-big-sur-theme: 0) {
     #BMB_bookmarksPopup:not([animate="false"]) {
       -moz-window-opacity: 0;
@@ -1088,8 +1088,8 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
     -moz-window-transform: translateY(70px);
   }
 
-  
-
+  /* [animate] is here only so that this rule has greater specificity than the
+   * rule right above */
   #BMB_bookmarksPopup[animate][animate="open"] {
     -moz-window-opacity: 1.0;
     transition-duration: 0.18s, 0.18s;
@@ -1116,8 +1116,8 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
     transform: translateY(70px);
   }
 
-  
-
+  /* [animate] is here only so that this rule has greater specificity than the
+   * rule right above */
   #BMB_bookmarksPopup[animate][animate="open"] {
     opacity: 1.0;
     transition-duration: 0.18s, 0.18s;
@@ -1133,7 +1133,7 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
 }
 }
 
-
+/* Apply crisp rendering for favicons at exactly 2dppx resolution */
 @media (resolution: 2dppx) {
   .PanelUI-remotetabs-clientcontainer > toolbarbutton > .toolbarbutton-icon,
   #PanelUI-recentlyClosedWindows > toolbarbutton > .toolbarbutton-icon,
@@ -1149,15 +1149,15 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
 }
 
 #customization-container:not([hidden]) {
-  
-
+  /* In a separate rule to avoid 'display:flex' causing the node to be
+   * displayed while the container is still hidden. */
   display: flex;
 }
 
 #customization-content-container {
   display: flex;
-  flex-grow: 1; 
-  min-height: 0; 
+  flex-grow: 1; /* Grow so there isn't empty space below the footer */
+  min-height: 0; /* Allow this to shrink so the footer doesn't get pushed out. */
 }
 
 #customization-panelHolder {
@@ -1166,7 +1166,7 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
 }
 
 #customization-panelHolder > #widget-overflow-fixed-list {
-  flex: 1 1 auto; 
+  flex: 1 1 auto; /* Grow within the available space, and allow ourselves to shrink */
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -1183,8 +1183,8 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
 
 #customization-panelWrapper {
   flex: 1 1 auto;
-  height: 0; 
-  align-items: end; 
+  height: 0; /* Don't let my contents affect ancestors' content-based sizing */
+  align-items: end; /* align to the end on the cross-axis (affects arrow) */
 }
 
 #customization-panelWrapper,
@@ -1235,7 +1235,7 @@ toolbarpaletteitem[place="palette"] {
   -moz-box-orient: vertical;
   width: 7em;
   max-width: 7em;
-  
+  /* icon (16) + margin (9 + 12) + 3 lines of text: */
   height: calc(39px + 3em);
   margin-bottom: 5px;
   margin-inline-end: 24px;
@@ -1250,7 +1250,7 @@ toolbarpaletteitem[place="palette"][hidden] {
 
 toolbarpaletteitem > toolbarbutton,
 toolbarpaletteitem > toolbaritem {
-  
+  /* Prevent children from getting events */
   pointer-events: none;
   -moz-box-pack: center;
 }
@@ -1260,7 +1260,7 @@ toolbarpaletteitem > toolbaritem {
   display: none;
 }
 
-
+/* UI Tour */
 
 @keyframes uitour-wobble {
   from {
@@ -1325,7 +1325,7 @@ toolbarpaletteitem > toolbaritem {
   animation-duration: 2s;
 }
 
-
+/* Combined context-menu items */
 #context-navigation > .menuitem-iconic > .menu-iconic-text,
 #context-navigation > .menuitem-iconic > .menu-accel-container {
   display: none;
@@ -1349,13 +1349,13 @@ toolbarpaletteitem > toolbaritem {
   -moz-window-shadow: none;
 }
 
-
+/* Page action panel */
 #pageAction-panel-sendToDevice-subview-body:not([state="notready"]) > .pageAction-sendToDevice-notReady,
 #pageAction-urlbar-sendToDevice-subview-body:not([state="notready"]) > .pageAction-sendToDevice-notReady {
   display: none;
 }
 
-
+/* Page action buttons */
 .pageAction-panel-button > .toolbarbutton-icon {
   list-style-image: var(--pageAction-image-16px, inherit);
 }
@@ -1371,7 +1371,7 @@ toolbarpaletteitem > toolbaritem {
   }
 }
 
-
+/* Page action context menu */
 #pageActionContextMenu > .pageActionContextMenuItem {
   visibility: collapse;
 }
@@ -1382,7 +1382,7 @@ toolbarpaletteitem > toolbaritem {
   visibility: visible;
 }
 
-
+/* Print pending */
 .printSettingsBrowser {
   width: 250px !important;
 }
@@ -1448,7 +1448,7 @@ printpreview-pagination:focus-within,
   }
 }
 
-
+/* WebExtension Sidebars */
 #sidebar-box[sidebarcommand$="-sidebar-action"] > #sidebar-header > #sidebar-switcher-target > #sidebar-icon {
   list-style-image: var(--webextension-menuitem-image, inherit);
   -moz-context-properties: fill;
@@ -1467,7 +1467,7 @@ toolbar[keyNav=true]:not([collapsed=true], [customizing=true]) toolbartabstop {
   -moz-user-focus: normal;
 }
 
-
+/* Frame used for rendering the DevTools inspector highlighters */
 :root > iframe.devtools-highlighter-renderer {
   border: none;
   pointer-events: none;
@@ -1479,19 +1479,19 @@ toolbar[keyNav=true]:not([collapsed=true], [customizing=true]) toolbartabstop {
   z-index: 2;
 }
 
-
-
-
+/**
+ * Tab Dialogs
+ */
 
 .dialogStack {
-  
-
+  /* Should outrank the z-index values of other UI elements, particularly the devtools
+     splitter element. */
   z-index: 2;
 }
 
 .dialogStack.temporarilyHidden {
-  
-
+  /* For some printing use cases we need to visually hide the dialog before
+   * actually closing it / make it disappear from the frame tree. */
   visibility: hidden;
 }
 
@@ -1509,7 +1509,7 @@ toolbar[keyNav=true]:not([collapsed=true], [customizing=true]) toolbartabstop {
   box-shadow: 0 2px 6px 0 rgba(0,0,0,0.3);
   display: -moz-box;
   margin: 0;
-  
+  /* Make dialogs overlap with upper chrome UI */
   margin-top: -5px;
   padding: 0;
   overflow-x: auto;
@@ -1564,10 +1564,15 @@ toolbar[keyNav=true]:not([collapsed=true], [customizing=true]) toolbartabstop {
 .dialogFrame {
   margin: 0;
   -moz-box-flex: 1;
-  
+  /* Default dialog dimensions */
   width: 66ch;
 }
 
+.content-prompt-dialog > .dialogOverlay {
+  display: grid;
+  place-content: center;
+}
 
-
-
+/**
+ * End Tab Dialogs
+ */
