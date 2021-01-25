@@ -2096,7 +2096,9 @@ void TextControlState::SetSelectionRange(
         handlingSetSelectionRange.IsTextControlStateDestroyed()) {
       return;
     }
-    if (aScroll == ScrollAfterSelection::Yes) {
+    if (aScroll == ScrollAfterSelection::Yes && mBoundFrame) {
+      
+      
       mBoundFrame->ScrollSelectionIntoViewAsync();
     }
     
