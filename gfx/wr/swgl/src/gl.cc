@@ -3740,26 +3740,39 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
 template <XYZW AXIS>
 static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
                      Interpolants* outInterp) {
+  
+  enum SIDE { POSITIVE = 1, NEGATIVE = 2 };
   int numClip = 0;
   Point3D prev = p[nump - 1];
   Interpolants prevInterp = interp[nump - 1];
   float prevCoord = prev.select(AXIS);
   
   
-  int prevSide = prevCoord < -prev.w ? -1 : (prevCoord > prev.w ? 1 : 0);
+  
+  
+  
+  
+  
+  
+  int prevMask = (prevCoord < -prev.w ? NEGATIVE : 0) |
+                 (prevCoord > prev.w ? POSITIVE : 0);
   
   
   for (int i = 0; i < nump; i++) {
     Point3D cur = p[i];
     Interpolants curInterp = interp[i];
     float curCoord = cur.select(AXIS);
-    int curSide = curCoord < -cur.w ? -1 : (curCoord > cur.w ? 1 : 0);
+    int curMask =
+        (curCoord < -cur.w ? NEGATIVE : 0) | (curCoord > cur.w ? POSITIVE : 0);
     
-    if (curSide != prevSide) {
+    
+    
+    
+    if (!(curMask & prevMask)) {
       
       
       
-      if (prevSide) {
+      if (prevMask) {
         
         
         
@@ -3769,6 +3782,22 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
           assert(false);
           return 0;
         }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        float prevSide =
+            (prevMask & NEGATIVE) && (!(prevMask & POSITIVE) ||
+                                      prevCoord * (cur.w - prev.w) <
+                                          prev.w * (curCoord - prevCoord))
+                ? -1
+                : 1;
         float prevDist = prevCoord - prevSide * prev.w;
         float curDist = curCoord - prevSide * cur.w;
         
@@ -3787,7 +3816,7 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
         outInterp[numClip] = prevInterp + (curInterp - prevInterp) * k;
         numClip++;
       }
-      if (curSide) {
+      if (curMask) {
         
         
         
@@ -3795,6 +3824,17 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
           assert(false);
           return 0;
         }
+        
+        
+        
+        
+        
+        float curSide =
+            (curMask & POSITIVE) && (!(curMask & NEGATIVE) ||
+                                     prevCoord * (cur.w - prev.w) <
+                                         prev.w * (curCoord - prevCoord))
+                ? 1
+                : -1;
         float prevDist = prevCoord - curSide * prev.w;
         float curDist = curCoord - curSide * cur.w;
         
@@ -3812,7 +3852,7 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
         numClip++;
       }
     }
-    if (!curSide) {
+    if (!curMask) {
       
       if (numClip >= nump + 2) {
         assert(false);
@@ -3825,7 +3865,7 @@ static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
     prev = cur;
     prevInterp = curInterp;
     prevCoord = curCoord;
-    prevSide = curSide;
+    prevMask = curMask;
   }
   return numClip;
 }
