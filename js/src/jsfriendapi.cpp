@@ -120,14 +120,6 @@ JS_FRIEND_API bool JS_SplicePrototype(JSContext* cx, HandleObject obj,
   CHECK_THREAD(cx);
   cx->check(obj, proto);
 
-  if (!obj->isSingleton()) {
-    
-
-
-
-    return JS_SetPrototype(cx, obj, proto);
-  }
-
   Rooted<TaggedProto> tagged(cx, TaggedProto(proto));
   return JSObject::splicePrototype(cx, obj, tagged);
 }

@@ -78,11 +78,6 @@ void ObjectGroup::setProtoUnchecked(TaggedProto proto) {
                 proto_.toObject()->isDelegate());
 }
 
-void ObjectGroup::setProto(TaggedProto proto) {
-  MOZ_ASSERT(singleton());
-  setProtoUnchecked(proto);
-}
-
 
 
 
@@ -97,21 +92,11 @@ bool GlobalObject::shouldSplicePrototype() {
 
 bool JSObject::splicePrototype(JSContext* cx, HandleObject obj,
                                Handle<TaggedProto> proto) {
-  MOZ_ASSERT(cx->compartment() == obj->compartment());
-
-  
-
-
-
-
-  MOZ_ASSERT(obj->isSingleton());
+  MOZ_ASSERT(obj->is<GlobalObject>());
+  MOZ_ASSERT(cx->realm() == obj->nonCCWRealm());
 
   
   MOZ_ASSERT_IF(proto.isObject(), !IsWindow(proto.toObject()));
-
-#ifdef DEBUG
-  const JSClass* oldClass = obj->getClass();
-#endif
 
   if (proto.isObject()) {
     RootedObject protoObj(cx, proto.toObject());
@@ -120,9 +105,12 @@ bool JSObject::splicePrototype(JSContext* cx, HandleObject obj,
     }
   }
 
-  MOZ_ASSERT(obj->group()->clasp() == oldClass,
-             "splicing a prototype doesn't change a group's class");
-  obj->group()->setProto(proto);
+  ObjectGroup* group = MakeGroup(cx, obj->getClass(), proto);
+  if (!group) {
+    return false;
+  }
+
+  obj->setGroupRaw(group);
   return true;
 }
 
