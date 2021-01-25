@@ -46,14 +46,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void copySlots(MBasicBlock* from);
   [[nodiscard]] bool inherit(TempAllocator& alloc, size_t stackDepth,
                              MBasicBlock* maybePred, uint32_t popped);
-  [[nodiscard]] bool inheritResumePoint(MBasicBlock* pred);
-  void assertUsesAreNotWithin(MUseIterator use, MUseIterator end);
 
   
   bool unreachable_;
-
-  
-  bool specialized_;
 
   
   void pushVariable(uint32_t slot) { push(slots_[slot]); }
@@ -116,10 +111,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   static MBasicBlock* NewPopN(MIRGraph& graph, const CompileInfo& info,
                               MBasicBlock* pred, BytecodeSite* site, Kind kind,
                               uint32_t popn);
-  static MBasicBlock* NewWithResumePoint(MIRGraph& graph,
-                                         const CompileInfo& info,
-                                         MBasicBlock* pred, BytecodeSite* site,
-                                         MResumePoint* resumePoint);
   static MBasicBlock* NewPendingLoopHeader(MIRGraph& graph,
                                            const CompileInfo& info,
                                            MBasicBlock* pred,
@@ -292,21 +283,12 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void setLoopHeader(MBasicBlock* newBackedge);
 
   
-  void inheritPhis(MBasicBlock* header);
-
-  
   [[nodiscard]] bool inheritPhisFromBackedge(MBasicBlock* backedge);
-
-  
-  [[nodiscard]] bool specializePhis(TempAllocator& alloc);
 
   void insertBefore(MInstruction* at, MInstruction* ins);
   void insertAfter(MInstruction* at, MInstruction* ins);
 
   void insertAtEnd(MInstruction* ins);
-
-  
-  void addFromElsewhere(MInstruction* ins);
 
   
   void moveBefore(MInstruction* at, MInstruction* ins);
