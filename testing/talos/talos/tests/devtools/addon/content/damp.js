@@ -19,7 +19,6 @@ const Services = require("Services");
 const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
 
 const DampLoadParentModule = require("damp-test/actors/DampLoadParent.jsm");
-const dampTestHead = require("damp-test/tests/head.js");
 const DAMP_TESTS = require("damp-test/damp-tests.js");
 
 const env = Cc["@mozilla.org/process/environment;1"].getService(
@@ -245,9 +244,6 @@ Damp.prototype = {
   
   _currentTest: null,
 
-  
-  _done: false,
-
   _runNextTest() {
     clearTimeout(this._timeout);
 
@@ -339,6 +335,7 @@ Damp.prototype = {
   },
 
   _doneInternal() {
+    
     
     if (this._done) {
       return;
@@ -438,8 +435,8 @@ Damp.prototype = {
     });
 
     try {
-      dump("Initialize the head file with a reference to this DAMP instance\n");
-      dampTestHead.initialize(this);
+      
+      this._done = false;
 
       this._registerDampLoadActors();
 
@@ -538,4 +535,4 @@ Damp.prototype = {
   },
 };
 
-exports.Damp = Damp;
+exports.damp = new Damp();
