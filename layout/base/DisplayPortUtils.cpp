@@ -551,9 +551,13 @@ static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
     result = GetDisplayPortFromRectData(aContent, rectData, aMultiplier);
   } else if (isDisplayportSuppressed ||
              nsLayoutUtils::ShouldDisableApzForElement(aContent)) {
-    DisplayPortMarginsPropertyData noMargins(
-        DisplayPortMargins::Empty(aContent), 1,
-        false);
+    
+    
+    
+    
+    
+    DisplayPortMarginsPropertyData noMargins = *marginsData;
+    noMargins.mMargins.mMargins = ScreenMargin();
     result = GetDisplayPortFromMarginsData(aContent, &noMargins, aMultiplier,
                                            aOptions);
   } else {
