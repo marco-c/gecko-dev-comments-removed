@@ -571,7 +571,7 @@ class ScriptStencil {
   
   ImmutableScriptFlags immutableFlags;
 
-  mozilla::Maybe<MemberInitializers> memberInitializers;
+  uint32_t memberInitializers_ = 0;
 
   
   
@@ -621,9 +621,16 @@ class ScriptStencil {
   bool hasSharedData : 1;
 
   
+  
+  bool hasMemberInitializers : 1;
+
+  
 
   ScriptStencil()
-      : wasFunctionEmitted(false), allowRelazify(false), hasSharedData(false) {}
+      : wasFunctionEmitted(false),
+        allowRelazify(false),
+        hasSharedData(false),
+        hasMemberInitializers(false) {}
 
   bool isFunction() const {
     bool result = functionFlags.toRaw() != 0x0000;
@@ -642,6 +649,16 @@ class ScriptStencil {
 
   mozilla::Span<TaggedScriptThingIndex> gcthings(
       CompilationStencil& stencil) const;
+
+  void setMemberInitializers(MemberInitializers member) {
+    memberInitializers_ = member.serialize();
+    hasMemberInitializers = true;
+  }
+
+  MemberInitializers memberInitializers() const {
+    MOZ_ASSERT(hasMemberInitializers);
+    return MemberInitializers(memberInitializers_);
+  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
