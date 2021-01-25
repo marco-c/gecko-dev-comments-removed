@@ -650,13 +650,6 @@ struct ReflowInput : public SizeComputationInput {
   
 
 
-
-  nscoord GetContainingBlockContentISize(
-      mozilla::WritingMode aWritingMode) const;
-
-  
-
-
   nscoord CalcLineHeight() const;
 
   
