@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
