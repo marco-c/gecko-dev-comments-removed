@@ -115,10 +115,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableSink, true);
 
   
-  
-  SET_DEFAULT(disableOptimizationLevels, true);
-
-  
   SET_DEFAULT(baselineInterpreter, true);
 
   
@@ -180,11 +176,6 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   SET_DEFAULT(normalIonWarmUpThreshold, 1500);
-
-  
-  
-  
-  SET_DEFAULT(fullIonWarmUpThreshold, 100'000);
 
   
   
@@ -330,7 +321,6 @@ void DefaultJitOptions::setEagerBaselineCompilation() {
 void DefaultJitOptions::setEagerIonCompilation() {
   setEagerBaselineCompilation();
   normalIonWarmUpThreshold = 0;
-  fullIonWarmUpThreshold = 0;
 }
 
 void DefaultJitOptions::setFastWarmUp() {
@@ -339,7 +329,6 @@ void DefaultJitOptions::setFastWarmUp() {
   trialInliningWarmUpThreshold = 14;
   trialInliningInitialWarmUpCount = 12;
   normalIonWarmUpThreshold = 30;
-  fullIonWarmUpThreshold = 65;
 
   inliningEntryThreshold = 2;
   smallFunctionMaxBytecodeLength = 2000;
@@ -347,28 +336,11 @@ void DefaultJitOptions::setFastWarmUp() {
 
 void DefaultJitOptions::setNormalIonWarmUpThreshold(uint32_t warmUpThreshold) {
   normalIonWarmUpThreshold = warmUpThreshold;
-
-  if (fullIonWarmUpThreshold < normalIonWarmUpThreshold) {
-    fullIonWarmUpThreshold = normalIonWarmUpThreshold;
-  }
-}
-
-void DefaultJitOptions::setFullIonWarmUpThreshold(uint32_t warmUpThreshold) {
-  fullIonWarmUpThreshold = warmUpThreshold;
-
-  if (normalIonWarmUpThreshold > fullIonWarmUpThreshold) {
-    setNormalIonWarmUpThreshold(fullIonWarmUpThreshold);
-  }
 }
 
 void DefaultJitOptions::resetNormalIonWarmUpThreshold() {
   jit::DefaultJitOptions defaultValues;
   setNormalIonWarmUpThreshold(defaultValues.normalIonWarmUpThreshold);
-}
-
-void DefaultJitOptions::resetFullIonWarmUpThreshold() {
-  jit::DefaultJitOptions defaultValues;
-  setFullIonWarmUpThreshold(defaultValues.fullIonWarmUpThreshold);
 }
 
 }  

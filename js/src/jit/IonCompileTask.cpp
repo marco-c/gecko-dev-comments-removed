@@ -64,11 +64,8 @@ void IonCompileTask::trace(JSTracer* trc) {
   snapshot_->trace(trc);
 }
 
-IonCompileTask::IonCompileTask(MIRGenerator& mirGen, bool scriptHasIonScript,
-                               WarpSnapshot* snapshot)
-    : mirGen_(mirGen),
-      snapshot_(snapshot),
-      scriptHasIonScript_(scriptHasIonScript) {}
+IonCompileTask::IonCompileTask(MIRGenerator& mirGen, WarpSnapshot* snapshot)
+    : mirGen_(mirGen), snapshot_(snapshot) {}
 
 size_t IonCompileTask::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
   
@@ -188,12 +185,6 @@ void jit::FinishOffThreadTask(JSRuntime* runtime, IonCompileTask* task,
   
   if (task->isInList()) {
     runtime->jitRuntime()->ionLazyLinkListRemove(runtime, task);
-  }
-
-  
-  
-  if (script->hasIonScript()) {
-    script->ionScript()->clearRecompiling();
   }
 
   

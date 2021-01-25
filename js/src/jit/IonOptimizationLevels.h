@@ -17,31 +17,7 @@
 namespace js {
 namespace jit {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class OptimizationLevel : uint8_t {
-  Normal,
-  Full,
-  Wasm,
-  Count,
-  DontCompile
-};
+enum class OptimizationLevel : uint8_t { Normal, Wasm, Count, DontCompile };
 
 #ifdef JS_JITSPEW
 inline const char* OptimizationLevelString(OptimizationLevel level) {
@@ -50,8 +26,6 @@ inline const char* OptimizationLevelString(OptimizationLevel level) {
       return "Optimization_DontCompile";
     case OptimizationLevel::Normal:
       return "Optimization_Normal";
-    case OptimizationLevel::Full:
-      return "Optimization_Full";
     case OptimizationLevel::Wasm:
       return "Optimization_Wasm";
     case OptimizationLevel::Count:;
@@ -101,65 +75,14 @@ class OptimizationInfo {
   bool sink_;
 
   
-  IonRegisterAllocator registerAllocator_;
-
-  
-  
-  
-  uint32_t inlineMaxBytecodePerCallSiteHelperThread_;
-  uint32_t inlineMaxBytecodePerCallSiteMainThread_;
-
-  
-  
-  uint16_t inlineMaxCalleeInlinedBytecodeLength_;
-
-  
-  uint32_t inlineMaxTotalBytecodeLength_;
-
-  
-  
-  uint32_t inliningMaxCallerBytecodeLength_;
-
-  
-  uint32_t maxInlineDepth_;
-
-  
   bool scalarReplacement_;
 
   
-  
-  
-  
-  
-  
-  uint32_t smallFunctionMaxInlineDepth_;
-
-  
-  
-  double inliningWarmUpThresholdFactor_;
-
-  
-  
-  
-  uint32_t inliningRecompileThresholdFactor_;
+  IonRegisterAllocator registerAllocator_;
 
   uint32_t baseCompilerWarmUpThreshold() const {
-    switch (level_) {
-      case OptimizationLevel::Normal:
-        return JitOptions.normalIonWarmUpThreshold;
-      case OptimizationLevel::Full:
-        if (!JitOptions.disableOptimizationLevels) {
-          return JitOptions.fullIonWarmUpThreshold;
-        }
-        
-        
-        return JitOptions.normalIonWarmUpThreshold;
-      case OptimizationLevel::DontCompile:
-      case OptimizationLevel::Wasm:
-      case OptimizationLevel::Count:
-        break;
-    }
-    MOZ_CRASH("Unexpected optimization level");
+    MOZ_ASSERT(level_ == OptimizationLevel::Normal);
+    return JitOptions.normalIonWarmUpThreshold;
   }
 
  public:
@@ -177,20 +100,10 @@ class OptimizationInfo {
         reordering_(false),
         autoTruncate_(false),
         sink_(false),
-        registerAllocator_(RegisterAllocator_Backtracking),
-        inlineMaxBytecodePerCallSiteHelperThread_(0),
-        inlineMaxBytecodePerCallSiteMainThread_(0),
-        inlineMaxCalleeInlinedBytecodeLength_(0),
-        inlineMaxTotalBytecodeLength_(0),
-        inliningMaxCallerBytecodeLength_(0),
-        maxInlineDepth_(0),
         scalarReplacement_(false),
-        smallFunctionMaxInlineDepth_(0),
-        inliningWarmUpThresholdFactor_(0.0),
-        inliningRecompileThresholdFactor_(0) {}
+        registerAllocator_(RegisterAllocator_Backtracking) {}
 
   void initNormalOptimizationInfo();
-  void initFullOptimizationInfo();
   void initWasmOptimizationInfo();
 
   OptimizationLevel level() const { return level_; }
@@ -245,38 +158,6 @@ class OptimizationInfo {
   bool scalarReplacementEnabled() const {
     return scalarReplacement_ && !JitOptions.disableScalarReplacement;
   }
-
-  uint32_t smallFunctionMaxInlineDepth() const {
-    return smallFunctionMaxInlineDepth_;
-  }
-
-  uint32_t maxInlineDepth() const { return maxInlineDepth_; }
-
-  uint32_t inlineMaxBytecodePerCallSite(bool offThread) const {
-    return (offThread || !JitOptions.limitScriptSize)
-               ? inlineMaxBytecodePerCallSiteHelperThread_
-               : inlineMaxBytecodePerCallSiteMainThread_;
-  }
-
-  uint16_t inlineMaxCalleeInlinedBytecodeLength() const {
-    return inlineMaxCalleeInlinedBytecodeLength_;
-  }
-
-  uint32_t inlineMaxTotalBytecodeLength() const {
-    return inlineMaxTotalBytecodeLength_;
-  }
-
-  uint32_t inliningMaxCallerBytecodeLength() const {
-    return inliningMaxCallerBytecodeLength_;
-  }
-
-  uint32_t inliningWarmUpThreshold() const {
-    return baseCompilerWarmUpThreshold() * inliningWarmUpThresholdFactor_;
-  }
-
-  uint32_t inliningRecompileThreshold() const {
-    return inliningWarmUpThreshold() * inliningRecompileThresholdFactor_;
-  }
 };
 
 class OptimizationLevelInfo {
@@ -292,9 +173,6 @@ class OptimizationLevelInfo {
     return &infos_[level];
   }
 
-  OptimizationLevel nextLevel(OptimizationLevel level) const;
-  OptimizationLevel firstLevel() const;
-  bool isLastLevel(OptimizationLevel level) const;
   OptimizationLevel levelForScript(JSScript* script,
                                    jsbytecode* pc = nullptr) const;
 };

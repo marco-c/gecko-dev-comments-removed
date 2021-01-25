@@ -1777,20 +1777,6 @@ static bool IonCompileTaskHasHigherPriority(jit::IonCompileTask* first,
   
 
   
-  jit::OptimizationLevel firstLevel =
-      first->mirGen().optimizationInfo().level();
-  jit::OptimizationLevel secondLevel =
-      second->mirGen().optimizationInfo().level();
-  if (firstLevel != secondLevel) {
-    return firstLevel < secondLevel;
-  }
-
-  
-  if (first->scriptHasIonScript() != second->scriptHasIonScript()) {
-    return !first->scriptHasIonScript();
-  }
-
-  
   jit::JitScript* firstJitScript = first->script()->jitScript();
   jit::JitScript* secondJitScript = second->script()->jitScript();
   return firstJitScript->warmUpCount() / first->script()->length() >

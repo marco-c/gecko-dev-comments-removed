@@ -14,13 +14,13 @@
 
 #include "jstypes.h"
 
-#include "gc/Barrier.h"  
-#include "jit/IonOptimizationLevels.h"  
-#include "jit/IonTypes.h"               
-#include "jit/JitCode.h"                
-#include "js/TypeDecls.h"               
-#include "util/TrailingArray.h"         
-#include "vm/TraceLogging.h"            
+#include "gc/Barrier.h"          
+#include "jit/IonTypes.h"        
+#include "jit/JitCode.h"         
+#include "jit/JitOptions.h"      
+#include "js/TypeDecls.h"        
+#include "util/TrailingArray.h"  
+#include "vm/TraceLogging.h"     
 
 namespace js {
 namespace jit {
@@ -112,9 +112,6 @@ class alignas(8) IonScript final : public TrailingArray {
   bool hasProfilingInstrumentation_ = false;
 
   
-  uint32_t recompiling_ = 0;
-
-  
   uint32_t frameSlots_ = 0;
 
   
@@ -129,9 +126,6 @@ class alignas(8) IonScript final : public TrailingArray {
 
   
   IonCompilationId compilationId_;
-
-  
-  OptimizationLevel optimizationLevel_;
 
   
   
@@ -286,8 +280,7 @@ class alignas(8) IonScript final : public TrailingArray {
 
  private:
   IonScript(IonCompilationId compilationId, uint32_t frameSlots,
-            uint32_t argumentSlots, uint32_t frameSize,
-            OptimizationLevel optimizationLevel);
+            uint32_t argumentSlots, uint32_t frameSize);
 
  public:
   static IonScript* New(JSContext* cx, IonCompilationId compilationId,
@@ -297,8 +290,7 @@ class alignas(8) IonScript final : public TrailingArray {
                         size_t bailoutEntries, size_t constants,
                         size_t nurseryObjects, size_t safepointIndices,
                         size_t osiIndices, size_t icEntries, size_t runtimeSize,
-                        size_t safepointsSize,
-                        OptimizationLevel optimizationLevel);
+                        size_t safepointsSize);
 
   static void Destroy(JSFreeOp* fop, IonScript* script);
 
@@ -306,9 +298,6 @@ class alignas(8) IonScript final : public TrailingArray {
 
   static inline size_t offsetOfInvalidationCount() {
     return offsetof(IonScript, invalidationCount_);
-  }
-  static inline size_t offsetOfRecompiling() {
-    return offsetof(IonScript, recompiling_);
   }
 
  public:
@@ -442,15 +431,8 @@ class alignas(8) IonScript final : public TrailingArray {
     }
   }
   IonCompilationId compilationId() const { return compilationId_; }
-  OptimizationLevel optimizationLevel() const { return optimizationLevel_; }
   uint32_t incrOsrPcMismatchCounter() { return ++osrPcMismatchCounter_; }
   void resetOsrPcMismatchCounter() { osrPcMismatchCounter_ = 0; }
-
-  void setRecompiling() { recompiling_ = true; }
-
-  bool isRecompiling() const { return recompiling_; }
-
-  void clearRecompiling() { recompiling_ = false; }
 
   size_t allocBytes() const { return allocBytes_; }
 

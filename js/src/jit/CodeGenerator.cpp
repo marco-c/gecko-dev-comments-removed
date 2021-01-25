@@ -39,7 +39,6 @@
 #include "jit/InlineScriptTree.h"
 #include "jit/Invalidation.h"
 #include "jit/IonIC.h"
-#include "jit/IonOptimizationLevels.h"
 #include "jit/IonScript.h"
 #include "jit/JitcodeMap.h"
 #include "jit/JitFrames.h"
@@ -11913,21 +11912,12 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   JS::AutoAssertNoGC nogc(cx);
 
   RootedScript script(cx, gen->outerInfo().script());
-  OptimizationLevel optimizationLevel = gen->optimizationInfo().level();
+  MOZ_ASSERT(!script->hasIonScript());
 
   
   
   const JitRealm* jr = gen->realm->jitRealm();
   jr->performStubReadBarriers(realmStubsToReadBarrier_);
-
-  
-  
-  if (script->hasIonScript()) {
-    MOZ_ASSERT(script->ionScript()->isRecompiling());
-    
-    
-    Invalidate(cx, script,  false,  false);
-  }
 
   if (scriptCounts_ && !script->hasScriptCounts() &&
       !script->initScriptCounts(cx)) {
@@ -11985,7 +11975,7 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
       snapshots_.listSize(), snapshots_.RVATableSize(), recovers_.size(),
       bailouts_.length(), graph.numConstants(), numNurseryObjects,
       safepointIndices_.length(), osiIndices_.length(), icList_.length(),
-      runtimeData_.length(), safepoints_.size(), optimizationLevel);
+      runtimeData_.length(), safepoints_.size());
   if (!ionScript) {
     return false;
   }
@@ -14825,51 +14815,6 @@ void CodeGenerator::visitIncrementWarmUpCounter(LIncrementWarmUpCounter* ins) {
       AbsoluteAddress(ins->mir()->script()->jitScript())
           .offset(JitScript::offsetOfWarmUpCount());
   incrementWarmUpCounter(warmUpCount, ins->mir()->script(), tmp);
-}
-
-void CodeGenerator::visitRecompileCheck(LRecompileCheck* ins) {
-  Label done;
-  Register tmp = ToRegister(ins->scratch());
-
-  OutOfLineCode* ool = nullptr;
-  if (ins->mir()->checkCounter()) {
-    using Fn = bool (*)(JSContext*);
-    if (ins->mir()->forceInvalidation()) {
-      ool =
-          oolCallVM<Fn, IonForcedInvalidation>(ins, ArgList(), StoreNothing());
-    } else if (ins->mir()->forceRecompilation()) {
-      ool = oolCallVM<Fn, IonForcedRecompile>(ins, ArgList(), StoreNothing());
-    } else {
-      ool = oolCallVM<Fn, IonRecompile>(ins, ArgList(), StoreNothing());
-    }
-  }
-
-  AbsoluteAddress warmUpCount =
-      AbsoluteAddress(ins->mir()->script()->jitScript())
-          .offset(JitScript::offsetOfWarmUpCount());
-  if (ins->mir()->increaseWarmUpCounter()) {
-    incrementWarmUpCounter(warmUpCount, ins->mir()->script(), tmp);
-
-    
-    if (ins->mir()->checkCounter()) {
-      masm.branch32(Assembler::BelowOrEqual, warmUpCount,
-                    Imm32(ins->mir()->recompileThreshold()), &done);
-    }
-  } else {
-    masm.branch32(Assembler::BelowOrEqual, warmUpCount,
-                  Imm32(ins->mir()->recompileThreshold()), &done);
-  }
-
-  
-  if (ins->mir()->checkCounter()) {
-    CodeOffset label = masm.movWithPatch(ImmWord(uintptr_t(-1)), tmp);
-    masm.propagateOOM(ionScriptLabels_.append(label));
-    masm.branch32(Assembler::Equal,
-                  Address(tmp, IonScript::offsetOfRecompiling()), Imm32(0),
-                  ool->entry());
-    masm.bind(ool->rejoin());
-    masm.bind(&done);
-  }
 }
 
 void CodeGenerator::visitLexicalCheck(LLexicalCheck* ins) {
