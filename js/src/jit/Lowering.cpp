@@ -4059,13 +4059,6 @@ void LIRGenerator::visitGuardObjectGroup(MGuardObjectGroup* ins) {
   }
 }
 
-void LIRGenerator::visitGuardString(MGuardString* ins) {
-  
-  
-  MOZ_ASSERT(ins->input()->type() == MIRType::String);
-  redefine(ins, ins->input());
-}
-
 void LIRGenerator::visitGuardValue(MGuardValue* ins) {
   MOZ_ASSERT(ins->value()->type() == MIRType::Value);
   auto* lir = new (alloc()) LGuardValue(useBox(ins->value()));
