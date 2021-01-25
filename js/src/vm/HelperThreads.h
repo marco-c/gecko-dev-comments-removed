@@ -234,6 +234,11 @@ bool StartOffThreadDecodeMultiScripts(JSContext* cx,
 
 void EnqueuePendingParseTasksAfterGC(JSRuntime* rt);
 
+
+
+
+
+
 void WaitForAllHelperThreads();
 void WaitForAllHelperThreads(AutoLockHelperThreadState& lock);
 
