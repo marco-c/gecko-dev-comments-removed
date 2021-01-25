@@ -1390,6 +1390,7 @@ _SetCanonicalName($TypedArrayValues, "values");
 
 
 
+
 function TypedArrayIncludes(searchElement, fromIndex = 0) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -1412,6 +1413,10 @@ function TypedArrayIncludes(searchElement, fromIndex = 0) {
     
     var n = ToInteger(fromIndex);
 
+    
+    assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
+
+    
     
     var k;
     if (n >= 0) {
