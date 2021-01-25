@@ -177,7 +177,22 @@ async function webdriverClickElement(el, a11y) {
   } else {
     
     let clicked = interaction.flushEventLoop(containerEl);
+
+    
+    event.synthesizeMouseAtPoint(
+      clickPoint.x,
+      clickPoint.y,
+      {
+        type: "mousemove",
+        
+        buttons: 0,
+      },
+      win
+    );
+
+    
     event.synthesizeMouseAtPoint(clickPoint.x, clickPoint.y, {}, win);
+
     await clicked;
   }
 
