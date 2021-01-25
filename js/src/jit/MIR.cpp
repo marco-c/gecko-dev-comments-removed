@@ -1615,8 +1615,10 @@ MDefinition* MUnbox::foldsTo(TempAllocator& alloc) {
     
     
     if (type() == MIRType::Int32 && unboxed->type() == MIRType::Double) {
-      return MToNumberInt32::New(alloc, unboxed,
-                                 IntConversionInputKind::NumbersOnly);
+      auto* folded = MToNumberInt32::New(alloc, unboxed,
+                                         IntConversionInputKind::NumbersOnly);
+      folded->setGuard();
+      return folded;
     }
   }
 
