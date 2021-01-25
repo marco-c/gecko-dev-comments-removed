@@ -5310,9 +5310,9 @@ static bool DumpAST(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
   }
 
   
-  MOZ_ASSERT(compilationInfo.stencil.scriptData.length() ==
+  MOZ_ASSERT(compilationState.scriptData.length() ==
              CompilationInfo::TopLevelIndex);
-  if (!compilationInfo.stencil.scriptData.emplaceBack()) {
+  if (!compilationState.scriptData.emplaceBack()) {
     ReportOutOfMemory(cx);
     return false;
   }

@@ -327,6 +327,8 @@ class SuspendableContext : public SharedContext {
 class FunctionBox : public SuspendableContext {
   friend struct GCThingList;
 
+  CompilationState& compilationState_;
+
   
   
   
@@ -411,7 +413,8 @@ class FunctionBox : public SuspendableContext {
   
 
   FunctionBox(JSContext* cx, SourceExtent extent,
-              CompilationInfo& compilationInfo, Directives directives,
+              CompilationInfo& compilationInfo,
+              CompilationState& compilationState, Directives directives,
               GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
               const ParserAtom* atom, FunctionFlags flags, ScriptIndex index);
 

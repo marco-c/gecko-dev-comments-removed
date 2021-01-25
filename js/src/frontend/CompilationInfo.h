@@ -233,6 +233,7 @@ struct MOZ_RAII CompilationState {
   
   
   Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
+  Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
 
   
   ParserAtomsTable parserAtoms;
@@ -296,7 +297,7 @@ struct CompilationStencil {
   
   
   
-  Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
+  mozilla::Span<ScriptStencil> scriptData;
   SharedDataContainer sharedData;
 
   Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
@@ -322,13 +323,17 @@ struct CompilationStencil {
   const ParserAtom* getParserAtomAt(JSContext* cx,
                                     TaggedParserAtomIndex taggedIndex) const;
 
-  bool prepareStorageFor(JSContext* cx, size_t nonLazyFunctionCount) {
-    size_t nonLazyScriptCount = nonLazyFunctionCount;
-    if (!scriptData[0].isFunction()) {
+  bool prepareStorageFor(JSContext* cx, CompilationState& compilationState) {
+    
+    
+    
+    MOZ_ASSERT(scriptData.empty());
+    size_t allScriptCount = compilationState.scriptData.length();
+    size_t nonLazyScriptCount = compilationState.nonLazyFunctionCount;
+    if (!compilationState.scriptData[0].isFunction()) {
       nonLazyScriptCount++;
     }
-    return sharedData.prepareStorageFor(cx, nonLazyScriptCount,
-                                        scriptData.length());
+    return sharedData.prepareStorageFor(cx, nonLazyScriptCount, allScriptCount);
   }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -386,7 +391,7 @@ class ScriptStencilIterable {
     Iterator(const CompilationStencil& stencil, CompilationGCOutput& gcOutput,
              size_t index)
         : index_(index), stencil_(stencil), gcOutput_(gcOutput) {
-      MOZ_ASSERT(index == stencil.scriptData.length());
+      MOZ_ASSERT(index == stencil.scriptData.size());
     }
 
    public:
@@ -403,19 +408,19 @@ class ScriptStencilIterable {
     }
 
     void next() {
-      MOZ_ASSERT(index_ < stencil_.scriptData.length());
+      MOZ_ASSERT(index_ < stencil_.scriptData.size());
       index_++;
     }
 
     void assertFunction() {
-      if (index_ < stencil_.scriptData.length()) {
+      if (index_ < stencil_.scriptData.size()) {
         MOZ_ASSERT(stencil_.scriptData[index_].isFunction());
       }
     }
 
     void skipTopLevelNonFunction() {
       MOZ_ASSERT(index_ == 0);
-      if (stencil_.scriptData.length()) {
+      if (stencil_.scriptData.size()) {
         if (!stencil_.scriptData[0].isFunction()) {
           next();
           assertFunction();
@@ -436,7 +441,7 @@ class ScriptStencilIterable {
 
     static Iterator end(const CompilationStencil& stencil,
                         CompilationGCOutput& gcOutput) {
-      return Iterator(stencil, gcOutput, stencil.scriptData.length());
+      return Iterator(stencil, gcOutput, stencil.scriptData.size());
     }
   };
 
@@ -474,12 +479,14 @@ struct CompilationInfo {
   
   
   struct RewindToken {
+    
     size_t scriptDataLength = 0;
+
     size_t asmJSCount = 0;
   };
 
-  RewindToken getRewindToken();
-  void rewind(const RewindToken& pos);
+  RewindToken getRewindToken(CompilationState& state);
+  void rewind(CompilationState& state, const RewindToken& pos);
 
   
   CompilationInfo(JSContext* cx, const JS::ReadOnlyCompileOptions& options)

@@ -6,7 +6,8 @@
 
 #include "frontend/StencilXdr.h"  
 
-#include "mozilla/Variant.h"  
+#include "mozilla/OperatorNewExtensions.h"  
+#include "mozilla/Variant.h"                
 
 #include <stddef.h>     
 #include <stdint.h>     
@@ -249,14 +250,8 @@ static XDRResult XDRVector(XDRState<mode>* xdr, VecType& vec) {
 }
 
 template <XDRMode mode, typename T>
-static XDRResult XDRSpanContent(XDRState<mode>* xdr, mozilla::Span<T>& span) {
-#ifdef __cpp_lib_has_unique_object_representations
-  static_assert(std::has_unique_object_representations<T>(),
-                "span item structure must be fully packed");
-#endif
-
-  uint32_t size;
-
+static XDRResult XDRSpanUninitialized(XDRState<mode>* xdr,
+                                      mozilla::Span<T>& span, uint32_t& size) {
   if (mode == XDR_ENCODE) {
     MOZ_ASSERT(span.size() <= UINT32_MAX);
     size = span.size();
@@ -276,6 +271,33 @@ static XDRResult XDRSpanContent(XDRState<mode>* xdr, mozilla::Span<T>& span) {
     }
   }
 
+  return Ok();
+}
+
+template <XDRMode mode, typename T>
+static XDRResult XDRSpanInitialized(XDRState<mode>* xdr,
+                                    mozilla::Span<T>& span) {
+  uint32_t size;
+  MOZ_TRY(XDRSpanUninitialized(xdr, span, size));
+
+  if (mode == XDR_DECODE) {
+    for (size_t i = 0; i < size; i++) {
+      new (mozilla::KnownNotNull, &span[i]) T();
+    }
+  }
+
+  return Ok();
+}
+
+template <XDRMode mode, typename T>
+static XDRResult XDRSpanContent(XDRState<mode>* xdr, mozilla::Span<T>& span) {
+#ifdef __cpp_lib_has_unique_object_representations
+  static_assert(std::has_unique_object_representations<T>(),
+                "span item structure must be fully packed");
+#endif
+
+  uint32_t size;
+  MOZ_TRY(XDRSpanUninitialized(xdr, span, size));
   MOZ_TRY(xdr->codeBytes(span.data(), sizeof(T) * size));
 
   return Ok();
@@ -741,7 +763,7 @@ XDRResult XDRCompilationStencil(XDRState<mode>* xdr,
 
   
 
-  MOZ_TRY(XDRVector(xdr, stencil.scriptData));
+  MOZ_TRY(XDRSpanInitialized(xdr, stencil.scriptData));
   for (auto& entry : stencil.scriptData) {
     MOZ_TRY(StencilXDR::Script(xdr, entry));
   }

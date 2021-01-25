@@ -257,12 +257,12 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     GeneratorKind generatorKind, FunctionAsyncKind asyncKind) {
   MOZ_ASSERT(funNode);
 
-  ScriptIndex index = ScriptIndex(compilationInfo_.stencil.scriptData.length());
+  ScriptIndex index = ScriptIndex(compilationState_.scriptData.length());
   if (uint32_t(index) >= TaggedScriptThingIndex::IndexLimit) {
     ReportAllocationOverflow(cx_);
     return nullptr;
   }
-  if (!compilationInfo_.stencil.scriptData.emplaceBack()) {
+  if (!compilationState_.scriptData.emplaceBack()) {
     js::ReportOutOfMemory(cx_);
     return nullptr;
   }
@@ -279,8 +279,8 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
 
 
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
-      cx_, extent, compilationInfo_, inheritedDirectives, generatorKind,
-      asyncKind, explicitName, flags, index);
+      cx_, extent, compilationInfo_, compilationState_, inheritedDirectives,
+      generatorKind, asyncKind, explicitName, flags, index);
   if (!funbox) {
     ReportOutOfMemory(cx_);
     return nullptr;
@@ -2951,7 +2951,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
 
   Position start(tokenStream);
   CompilationInfo::RewindToken startObj =
-      this->compilationInfo_.getRewindToken();
+      this->compilationInfo_.getRewindToken(this->compilationState_);
 
   
   
@@ -2977,7 +2977,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
 
     
     tokenStream.rewind(start);
-    this->compilationInfo_.rewind(startObj);
+    this->compilationInfo_.rewind(this->compilationState_, startObj);
 
     
     
@@ -3029,7 +3029,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
 
     UsedNameTracker::RewindToken token = usedNames_.getRewindToken();
     CompilationInfo::RewindToken startObj =
-        this->compilationInfo_.getRewindToken();
+        this->compilationInfo_.getRewindToken(this->compilationState_);
 
     
     
@@ -3067,7 +3067,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
         
         syntaxParser->clearAbortedSyntaxParse();
         usedNames_.rewind(token);
-        this->compilationInfo_.rewind(startObj);
+        this->compilationInfo_.rewind(this->compilationState_, startObj);
         MOZ_ASSERT_IF(!syntaxParser->cx_->isHelperThreadContext(),
                       !syntaxParser->cx_->isExceptionPending());
         break;
@@ -11586,19 +11586,20 @@ template class Parser<SyntaxParseHandler, Utf8Unit>;
 template class Parser<FullParseHandler, char16_t>;
 template class Parser<SyntaxParseHandler, char16_t>;
 
-CompilationInfo::RewindToken CompilationInfo::getRewindToken() {
-  return RewindToken{stencil.scriptData.length(), stencil.asmJS.count()};
+CompilationInfo::RewindToken CompilationInfo::getRewindToken(
+    CompilationState& state) {
+  return RewindToken{state.scriptData.length(), stencil.asmJS.count()};
 }
 
-void CompilationInfo::rewind(const CompilationInfo::RewindToken& pos) {
+void CompilationInfo::rewind(CompilationState& state,
+                             const CompilationInfo::RewindToken& pos) {
   if (stencil.asmJS.count() != pos.asmJSCount) {
-    for (size_t i = pos.scriptDataLength; i < stencil.scriptData.length();
-         i++) {
+    for (size_t i = pos.scriptDataLength; i < state.scriptData.length(); i++) {
       stencil.asmJS.remove(ScriptIndex(i));
     }
     MOZ_ASSERT(stencil.asmJS.count() == pos.asmJSCount);
   }
-  stencil.scriptData.shrinkTo(pos.scriptDataLength);
+  state.scriptData.shrinkTo(pos.scriptDataLength);
 }
 
 }  
