@@ -511,6 +511,13 @@ var E10SUtils = {
 
         return NOT_REMOTE;
 
+      case "imap":
+      case "mailbox":
+      case "news":
+      case "nntp":
+      case "snews":
+        return NOT_REMOTE;
+
       default:
         
         
