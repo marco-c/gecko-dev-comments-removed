@@ -156,6 +156,7 @@ var PrintUtils = {
         userContextId: browsingContext.originAttributes.userContextId,
         initialBrowsingContextGroupId: browsingContext.group.id,
         skipLoad: true,
+        initiallyActive: true,
       });
       browser.addEventListener("DOMWindowClose", function(e) {
         
