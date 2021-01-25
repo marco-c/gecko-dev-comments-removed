@@ -5761,10 +5761,31 @@ PopupBlocker::PopupControlState nsGlobalWindowOuter::RevisePopupAbuseLevel(
 
   
   
+  
+  
+  
+  
+  auto ConsumeTransientUserActivationForMultiplePopupBlocking = [&]() -> bool {
+    if (mDoc->ConsumeTransientUserGestureActivation()) {
+      return true;
+    }
+    if (!mDoc->IsInitialDocument()) {
+      return false;
+    }
+    Document* parentDoc = mDoc->GetInProcessParentDocument();
+    if (!parentDoc ||
+        !parentDoc->NodePrincipal()->Equals(mDoc->NodePrincipal())) {
+      return false;
+    }
+    return parentDoc->ConsumeTransientUserGestureActivation();
+  };
+
+  
+  
   if ((abuse == PopupBlocker::openAllowed ||
        abuse == PopupBlocker::openControlled) &&
       StaticPrefs::dom_block_multiple_popups() && !IsPopupAllowed() &&
-      !mDoc->ConsumeTransientUserGestureActivation()) {
+      !ConsumeTransientUserActivationForMultiplePopupBlocking()) {
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns, mDoc,
                                     nsContentUtils::eDOM_PROPERTIES,
                                     "MultiplePopupsBlockedNoUserActivation");
