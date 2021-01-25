@@ -231,6 +231,10 @@ struct MOZ_RAII CompilationState {
   LifoAllocScope& allocScope;
 
   
+  
+  Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
+
+  
   ParserAtomsTable parserAtoms;
 
   
@@ -285,7 +289,7 @@ struct SharedDataContainer {
 struct CompilationStencil {
   
   
-  Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
+  mozilla::Span<RegExpStencil> regExpData;
   Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
   Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
 
