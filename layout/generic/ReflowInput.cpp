@@ -775,20 +775,8 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
   NS_ASSERTION(
       mFrame->StyleDisplay()->IsFloatingStyle() == disp->IsFloatingStyle(),
       "Unexpected float style");
-  if (mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-    if (disp->IsAbsolutelyPositioned(mFrame)) {
-      frameType = NS_CSS_FRAME_TYPE_ABSOLUTE;
-      
-      
-      
-      if (mFrame->GetPrevInFlow()) frameType = NS_CSS_FRAME_TYPE_BLOCK;
-    } else {
-      NS_ASSERTION(disp->IsFloating(mFrame) ||
-                   disp->mDisplay == StyleDisplay::MozPopup,
-                   "unknown out of flow frame type");
-      frameType = NS_CSS_FRAME_TYPE_UNKNOWN;
-    }
-  } else {
+  frameType = NS_CSS_FRAME_TYPE_UNKNOWN;
+  if (!mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
     switch (disp->DisplayOutside()) {
       case StyleDisplayOutside::Block:
       case StyleDisplayOutside::TableCaption:
@@ -2058,12 +2046,10 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     cbSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   }
 
-  
-  
-  if (NS_FRAME_GET_TYPE(mFrameType) == NS_CSS_FRAME_TYPE_ABSOLUTE ||
-      (mFrame->IsTableFrame() &&
-       mFrame->IsAbsolutelyPositioned(mStyleDisplay) &&
-       mFrame->GetParent()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW))) {
+  if ((mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) ||
+       (mFrame->IsTableFrame() &&
+        mFrame->GetParent()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW))) &&
+      mStyleDisplay->IsAbsolutelyPositioned(mFrame)) {
     
     const auto computedPadding = aContainingBlockRI->ComputedLogicalPadding(wm);
     if (NS_FRAME_GET_TYPE(aContainingBlockRI->mFrameType) ==
@@ -2334,8 +2320,12 @@ void ReflowInput::InitConstraints(
       
       ComputedMinISize() = ComputedMinBSize() = 0;
       ComputedMaxISize() = ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
-    } else if (NS_FRAME_GET_TYPE(mFrameType) == NS_CSS_FRAME_TYPE_ABSOLUTE) {
-      
+
+    } else if (mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
+               mStyleDisplay->IsAbsolutelyPositionedStyle() &&
+               
+               
+               !mFrame->GetPrevInFlow()) {
       InitAbsoluteConstraints(aPresContext, cbri,
                               cbSize.ConvertTo(cbri->GetWritingMode(), wm),
                               aFrameType);
