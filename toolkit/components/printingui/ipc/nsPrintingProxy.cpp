@@ -91,6 +91,12 @@ nsPrintingProxy::ShowPrintDialog(mozIDOMWindowProxy* parent,
   rv = printSettingsSvc->SerializeToPrintData(printSettings, &inSettings);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsCOMPtr<nsIPrintSession> session;
+  rv = printSettings->GetPrintSession(getter_AddRefs(session));
+  if (NS_SUCCEEDED(rv) && session) {
+    inSettings.remotePrintJobChild() = session->GetRemotePrintJob();
+  }
+
   
   
   
