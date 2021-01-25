@@ -55,6 +55,12 @@ Simulator::Simulator(Decoder* decoder, FILE* stream)
   , oom_(false)
 {
     this->init(decoder, stream);
+
+    
+    
+    if (getenv("VIXL_TRACE")) {
+        set_trace_parameters(LOG_DISASM);
+    }
 }
 
 
