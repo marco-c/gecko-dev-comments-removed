@@ -384,8 +384,7 @@ async function attachTestTab(client, title) {
 
 
 
-
-async function attachTestThread(client, title, callback = () => {}) {
+async function attachTestThread(client, title) {
   const targetFront = await attachTestTab(client, title);
   const threadFront = await targetFront.getFront("thread");
   const onPaused = threadFront.once("paused");
@@ -396,18 +395,15 @@ async function attachTestThread(client, title, callback = () => {}) {
   Assert.equal(threadFront.state, "paused", "Thread client is paused");
   Assert.ok("why" in response);
   Assert.equal(response.why.type, "attached");
-  callback(response, targetFront, threadFront);
   return { targetFront, threadFront };
 }
 
 
 
 
-
-async function attachTestTabAndResume(client, title, callback = () => {}) {
+async function attachTestTabAndResume(client, title) {
   const { targetFront, threadFront } = await attachTestThread(client, title);
-  const response = await threadFront.resume();
-  callback(response, targetFront, threadFront);
+  await threadFront.resume();
   return { targetFront, threadFront };
 }
 
