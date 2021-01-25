@@ -36,6 +36,7 @@ pub const GRAY_SIGNATURE: u32 = 0x47524159;
 pub const XYZ_SIGNATURE: u32 = 0x58595A20;
 pub const LAB_SIGNATURE: u32 = 0x4C616220;
 
+
 #[repr(C)]
 #[derive(Default)]
 pub struct Profile {
@@ -123,6 +124,7 @@ pub struct XYZNumber {
 }
 
 
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct qcms_CIE_xyY {
@@ -130,6 +132,7 @@ pub struct qcms_CIE_xyY {
     pub y: f64,
     pub Y: f64,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone)]

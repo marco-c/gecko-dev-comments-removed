@@ -1,3 +1,6 @@
+
+
+
 #![allow(dead_code)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
@@ -59,7 +62,7 @@ mod transform;
 pub use iccread::qcms_CIE_xyY as CIE_xyY;
 pub use iccread::qcms_CIE_xyYTRIPLE as CIE_xyYTRIPLE;
 pub use iccread::Profile;
-pub use transform::DataType as DataType;
+pub use transform::DataType;
 pub use transform::Transform;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod transform_avx;

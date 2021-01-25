@@ -1338,13 +1338,14 @@ pub fn transform_create(
     debug_assert!(transform.transform_fn.is_some());
     Some(transform)
 }
-
+ 
 pub struct Transform {
     ty: DataType,
     xfm: Box<qcms_transform>,
 }
 
 impl Transform {
+    
     pub fn new(
         input: &Profile,
         output: &Profile,
@@ -1354,6 +1355,7 @@ impl Transform {
         transform_create(input, ty, output, ty, intent).map(|xfm| Transform { ty, xfm })
     }
 
+    
     pub fn apply(&self, data: &mut [u8]) {
         if data.len() % self.ty.bytes_per_pixel() != 0 {
             panic!(
