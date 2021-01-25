@@ -742,6 +742,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   FrameStatistics* GetFrameStatistics() const override;
 
+  void DispatchAsyncTestingEvent(const nsAString& aName) override;
+
   AbstractThread* AbstractMainThread() const final;
 
   

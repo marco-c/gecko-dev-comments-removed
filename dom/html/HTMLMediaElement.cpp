@@ -7137,6 +7137,13 @@ FrameStatistics* HTMLMediaElement::GetFrameStatistics() const {
   return mDecoder ? &(mDecoder->GetFrameStatistics()) : nullptr;
 }
 
+void HTMLMediaElement::DispatchAsyncTestingEvent(const nsAString& aName) {
+  if (!StaticPrefs::media_testing_only_events()) {
+    return;
+  }
+  DispatchAsyncEvent(aName);
+}
+
 void HTMLMediaElement::AudioCaptureTrackChange(bool aCapture) {
   
   if (!HasAudio()) {
