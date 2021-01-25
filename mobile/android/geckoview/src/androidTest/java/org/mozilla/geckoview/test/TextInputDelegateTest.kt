@@ -647,6 +647,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     
     @WithDisplay(width = 512, height = 512) 
     @Test fun inputConnection_bug1209465() {
+        
+        
+        sessionRule.setPrefsUntilTestEnd(mapOf("gfx.font_rendering.fallback.async" to false))
+
         setupContent("")
 
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
