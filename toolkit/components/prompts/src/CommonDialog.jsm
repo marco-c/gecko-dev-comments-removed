@@ -230,7 +230,7 @@ CommonDialog.prototype = {
     
     
     try {
-      if (commonDialogEl && this.soundID) {
+      if (commonDialogEl && this.soundID && !this.args.openedWithTabDialog) {
         Cc["@mozilla.org/sound;1"]
           .createInstance(Ci.nsISound)
           .playEventSound(this.soundID);
