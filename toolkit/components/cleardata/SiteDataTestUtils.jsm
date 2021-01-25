@@ -122,7 +122,7 @@ var SiteDataTestUtils = {
       principal,
       ""
     );
-    storage.setItem(key, value);
+    storage.setItem("key", "value");
   },
 
   
@@ -132,9 +132,7 @@ var SiteDataTestUtils = {
 
 
 
-
-
-  hasLocalStorage(origin, testEntries) {
+  hasLocalStorage(origin) {
     let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       origin
     );
@@ -144,16 +142,7 @@ var SiteDataTestUtils = {
       principal,
       ""
     );
-    if (!storage.length) {
-      return false;
-    }
-    if (!testEntries) {
-      return true;
-    }
-    return (
-      storage.length >= testEntries.length &&
-      testEntries.every(({ key, value }) => storage.getItem(key) == value)
-    );
+    return !!storage.length;
   },
 
   
@@ -191,37 +180,22 @@ var SiteDataTestUtils = {
     });
   },
 
-  hasCookies(origin, testEntries) {
+  hasCookies(origin) {
     let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       origin
     );
-
-    let filterFn = cookie => {
-      return (
+    for (let cookie of Services.cookies.cookies) {
+      if (
         ChromeUtils.isOriginAttributesEqual(
           principal.originAttributes,
           cookie.originAttributes
-        ) && cookie.host.includes(principal.host)
-      );
-    };
-
-    
-    if (!testEntries) {
-      return Services.cookies.cookies.some(filterFn);
+        ) &&
+        cookie.host.includes(principal.host)
+      ) {
+        return true;
+      }
     }
-
-    
-    let cookies = Services.cookies.cookies.filter(filterFn);
-
-    if (cookies.length < testEntries.length) {
-      return false;
-    }
-
-    
-    
-    return testEntries.every(({ key, value }) =>
-      cookies.some(cookie => cookie.name == key && cookie.value == value)
-    );
+    return false;
   },
 
   hasIndexedDB(origin) {
