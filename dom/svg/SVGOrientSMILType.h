@@ -24,12 +24,6 @@
 
 
 
-
-
-
-
-
-
 namespace mozilla {
 
 class SMILValue;
