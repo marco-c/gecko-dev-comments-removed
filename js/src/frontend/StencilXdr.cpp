@@ -480,7 +480,7 @@ template XDRResult XDRSharedDataContainer(XDRState<XDR_DECODE>* xdr,
 template <XDRMode mode>
 XDRResult XDRBaseCompilationStencil(XDRState<mode>* xdr,
                                     BaseCompilationStencil& stencil) {
-  MOZ_TRY(xdr->codeUint64(&stencil.functionKey));
+  MOZ_TRY(xdr->codeUint32(&stencil.functionKey));
 
   
   

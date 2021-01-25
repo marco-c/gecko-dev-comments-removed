@@ -830,7 +830,7 @@ class XDRIncrementalStencilEncoder : public XDRIncrementalEncoderBase {
   
   
   
-  using FunctionKey = uint64_t;
+  using FunctionKey = uint32_t;
   HashSet<FunctionKey> encodedFunctions_;
 
  public:
