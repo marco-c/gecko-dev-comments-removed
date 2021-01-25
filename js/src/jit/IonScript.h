@@ -94,19 +94,12 @@ class alignas(8) IonScript final : public TrailingArray {
   uint32_t invalidateEpilogueDataOffset_ = 0;
 
   
-  
-  uint16_t numFixableBailouts_ = 0;
+  uint32_t numBailouts_ = 0;
 
   
   
-  uint16_t numUnfixableBailouts_ = 0;
-
- public:
-  enum class LICMState : uint8_t { NeverBailed, Bailed, BailedAndHitFallback };
-
- private:
   
-  LICMState licmState_ = LICMState::NeverBailed;
+  bool hadLICMBailout_ = false;
 
   
   bool hasProfilingInstrumentation_ = false;
@@ -139,11 +132,6 @@ class alignas(8) IonScript final : public TrailingArray {
 
   
   TraceLoggerEventVector traceLoggerEvents_;
-
-#ifdef DEBUG
-  
-  mozilla::HashNumber icHash_ = 0;
-#endif
 
   
 
@@ -350,28 +338,13 @@ class alignas(8) IonScript final : public TrailingArray {
     MOZ_ASSERT(invalidateEpilogueDataOffset_);
     return invalidateEpilogueDataOffset_;
   }
-
-  void incNumFixableBailouts() { numFixableBailouts_++; }
-  void incNumUnfixableBailouts() { numUnfixableBailouts_++; }
-
-  bool shouldInvalidate() const {
-    return numFixableBailouts_ >= JitOptions.frequentBailoutThreshold;
-  }
-  bool shouldInvalidateAndDisable() const {
-    return numUnfixableBailouts_ >= JitOptions.frequentBailoutThreshold * 5;
+  void incNumBailouts() { numBailouts_++; }
+  bool bailoutExpected() const {
+    return numBailouts_ >= JitOptions.frequentBailoutThreshold;
   }
 
-  LICMState licmState() const { return licmState_; }
-  void setHadLICMBailout() {
-    if (licmState_ == LICMState::NeverBailed) {
-      licmState_ = LICMState::Bailed;
-    }
-  }
-  void noteBaselineFallback() {
-    if (licmState_ == LICMState::Bailed) {
-      licmState_ = LICMState::BailedAndHitFallback;
-    }
-  }
+  void setHadLICMBailout() { hadLICMBailout_ = true; }
+  bool hadLICMBailout() const { return hadLICMBailout_; }
 
   void setHasProfilingInstrumentation() { hasProfilingInstrumentation_ = true; }
   void clearHasProfilingInstrumentation() {
@@ -455,11 +428,6 @@ class alignas(8) IonScript final : public TrailingArray {
   size_t allocBytes() const { return allocBytes_; }
 
   static void preWriteBarrier(Zone* zone, IonScript* ionScript);
-
-#ifdef DEBUG
-  mozilla::HashNumber icHash() const { return icHash_; }
-  void setICHash(mozilla::HashNumber hash) { icHash_ = hash; }
-#endif
 };
 
 
@@ -631,4 +599,4 @@ struct DeletePolicy<js::jit::IonScript> {
 
 }  
 
-#endif
+#endif 

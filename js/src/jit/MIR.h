@@ -3978,13 +3978,13 @@ class MBuiltinInt64ToFloatingPoint : public MAryInstruction<2>,
 
 
 class MToNumberInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
-  bool needsNegativeZeroCheck_;
+  bool canBeNegativeZero_;
   IntConversionInputKind conversion_;
 
   explicit MToNumberInt32(MDefinition* def, IntConversionInputKind conversion =
                                                 IntConversionInputKind::Any)
       : MUnaryInstruction(classOpcode, def),
-        needsNegativeZeroCheck_(true),
+        canBeNegativeZero_(true),
         conversion_(conversion) {
     setResultType(MIRType::Int32);
     setMovable();
@@ -4006,9 +4006,9 @@ class MToNumberInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
   
   void analyzeEdgeCasesBackward() override;
 
-  bool needsNegativeZeroCheck() const { return needsNegativeZeroCheck_; }
-  void setNeedsNegativeZeroCheck(bool needsCheck) {
-    needsNegativeZeroCheck_ = needsCheck;
+  bool canBeNegativeZero() const { return canBeNegativeZero_; }
+  void setCanBeNegativeZero(bool negativeZero) {
+    canBeNegativeZero_ = negativeZero;
   }
 
   IntConversionInputKind conversion() const { return conversion_; }

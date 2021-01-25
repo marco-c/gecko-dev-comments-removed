@@ -37,7 +37,6 @@
 using namespace js;
 using namespace js::jit;
 
-using mozilla::DebugOnly;
 using mozilla::Maybe;
 
 
@@ -1625,6 +1624,9 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
           "  Reading from snapshot offset %u size %zu", iter.snapshotOffset(),
           iter.ionScript()->snapshotsListSize());
 
+  if (!excInfo) {
+    iter.ionScript()->incNumBailouts();
+  }
   iter.script()->updateJitCodeRaw(cx->runtime());
 
   
@@ -1825,13 +1827,6 @@ static bool CopyFromRematerializedFrame(JSContext* cx, JitActivation* act,
   return true;
 }
 
-enum class BailoutAction {
-  InvalidateImmediately,
-  InvalidateIfFrequent,
-  DisableIfFrequent,
-  NoAction
-};
-
 bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
   JitSpew(JitSpew_BaselineBailouts, "  Done restoring frames");
 
@@ -1982,14 +1977,10 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
           innerScript->lineno(), innerScript->column(),
           innerScript->getWarmUpCount(), (unsigned)bailoutKind);
 
-  BailoutAction action = BailoutAction::InvalidateImmediately;
-  DebugOnly<bool> saveFailedICHash = false;
   switch (bailoutKind) {
     case BailoutKind::TranspiledCacheIR:
       
       
-      action = BailoutAction::InvalidateIfFrequent;
-      saveFailedICHash = true;
       break;
 
     case BailoutKind::SpeculativePhi:
@@ -2002,7 +1993,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     case BailoutKind::TypePolicy:
       
       
-      action = BailoutAction::DisableIfFrequent;
       break;
 
     case BailoutKind::LICM:
@@ -2013,23 +2003,13 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       
       
       
-      
       MOZ_ASSERT(!outerScript->hadLICMInvalidation());
       if (outerScript->hasIonScript()) {
-        switch (outerScript->ionScript()->licmState()) {
-          case IonScript::LICMState::NeverBailed:
-            outerScript->ionScript()->setHadLICMBailout();
-            action = BailoutAction::NoAction;
-            break;
-          case IonScript::LICMState::Bailed:
-            outerScript->setHadLICMInvalidation();
-            InvalidateAfterBailout(cx, outerScript, "LICM failure");
-            break;
-          case IonScript::LICMState::BailedAndHitFallback:
-            
-            
-            action = BailoutAction::InvalidateIfFrequent;
-            break;
+        if (outerScript->ionScript()->hadLICMBailout()) {
+          outerScript->setHadLICMInvalidation();
+          InvalidateAfterBailout(cx, outerScript, "LICM failure");
+        } else {
+          outerScript->ionScript()->setHadLICMBailout();
         }
       }
       break;
@@ -2053,29 +2033,18 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     case BailoutKind::TooManyArguments:
       
       
-      action = BailoutAction::DisableIfFrequent;
-      break;
-
-    case BailoutKind::DuringVMCall:
-      if (cx->isExceptionPending()) {
-        
-        
-        action = BailoutAction::DisableIfFrequent;
-      }
       break;
 
     case BailoutKind::Inevitable:
+    case BailoutKind::DuringVMCall:
     case BailoutKind::Debugger:
       
-      action = BailoutAction::NoAction;
       break;
 
     case BailoutKind::FirstExecution:
       
       
       
-      action = BailoutAction::InvalidateIfFrequent;
-      saveFailedICHash = true;
       break;
 
     case BailoutKind::NotOptimizedArgumentsGuard:
@@ -2095,47 +2064,12 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
 
     case BailoutKind::OnStackInvalidation:
       
-      action = BailoutAction::NoAction;
       break;
 
     default:
       MOZ_CRASH("Unknown bailout kind!");
   }
 
-#ifdef DEBUG
-  if (MOZ_UNLIKELY(cx->runtime()->jitRuntime()->ionBailAfterEnabled())) {
-    action = BailoutAction::NoAction;
-  }
-#endif
-
-  if (outerScript->hasIonScript()) {
-    IonScript* ionScript = outerScript->ionScript();
-    switch (action) {
-      case BailoutAction::InvalidateImmediately:
-        MOZ_CRASH("The IonScript should already have been invalidated.");
-        break;
-      case BailoutAction::InvalidateIfFrequent:
-        ionScript->incNumFixableBailouts();
-        if (ionScript->shouldInvalidate()) {
-#ifdef DEBUG
-          if (saveFailedICHash) {
-            outerScript->jitScript()->setFailedICHash(ionScript->icHash());
-          }
-#endif
-          InvalidateAfterBailout(cx, outerScript, "fixable bailouts");
-        }
-        break;
-      case BailoutAction::DisableIfFrequent:
-        ionScript->incNumUnfixableBailouts();
-        if (ionScript->shouldInvalidateAndDisable()) {
-          InvalidateAfterBailout(cx, outerScript, "unfixable bailouts");
-          outerScript->disableIon();
-        }
-        break;
-      case BailoutAction::NoAction:
-        break;
-    }
-  }
-
+  CheckFrequentBailouts(cx, outerScript, bailoutKind);
   return true;
 }
