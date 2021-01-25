@@ -5778,6 +5778,9 @@ JS_PUBLIC_API JS::TranscodeResult JS::DecodeScriptMaybeStencil(
     return JS::DecodeScript(cx, options, buffer, scriptp, cursorIndex);
   }
 
+  MOZ_ASSERT(JS::IsTranscodingBytecodeAligned(buffer.begin()));
+  MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(cursorIndex));
+
   
 
   Rooted<frontend::CompilationInfoVector> compilationInfos(

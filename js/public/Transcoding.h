@@ -54,10 +54,45 @@ enum TranscodeResult : uint8_t {
   TranscodeResult_Throw = 0x20
 };
 
+static constexpr size_t BytecodeOffsetAlignment = 4;
+static_assert(BytecodeOffsetAlignment <= alignof(std::max_align_t),
+              "Alignment condition requires a custom allocator.");
+
+
+inline size_t AlignTranscodingBytecodeOffset(size_t offset) {
+  size_t extra = offset % BytecodeOffsetAlignment;
+  if (extra == 0) {
+    return offset;
+  }
+  size_t padding = BytecodeOffsetAlignment - extra;
+  return offset + padding;
+}
+
+inline bool IsTranscodingBytecodeOffsetAligned(size_t offset) {
+  return offset % BytecodeOffsetAlignment == 0;
+}
+
+inline bool IsTranscodingBytecodeAligned(void* offset) {
+  return IsTranscodingBytecodeOffsetAligned(size_t(offset));
+}
+
+
+
+
+
+
+
+
+
+
 
 extern JS_PUBLIC_API TranscodeResult EncodeScript(JSContext* cx,
                                                   TranscodeBuffer& buffer,
                                                   Handle<JSScript*> script);
+
+
+
+
 
 
 extern JS_PUBLIC_API TranscodeResult
@@ -65,9 +100,18 @@ DecodeScript(JSContext* cx, const ReadOnlyCompileOptions& options,
              TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
              size_t cursorIndex = 0);
 
+
+
+
+
+
 extern JS_PUBLIC_API TranscodeResult
 DecodeScript(JSContext* cx, const ReadOnlyCompileOptions& options,
              const TranscodeRange& range, MutableHandle<JSScript*> scriptp);
+
+
+
+
 
 
 
@@ -92,10 +136,23 @@ extern JS_PUBLIC_API TranscodeResult DecodeScriptMaybeStencil(
 
 
 
+
+
+
+
 extern JS_PUBLIC_API TranscodeResult DecodeScriptAndStartIncrementalEncoding(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
     size_t cursorIndex = 0);
+
+
+
+
+
+
+
+
+
 
 
 

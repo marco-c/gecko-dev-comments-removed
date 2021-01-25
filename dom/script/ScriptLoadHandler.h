@@ -13,6 +13,7 @@
 
 #include "nsIIncrementalStreamLoader.h"
 #include "nsISupports.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 
@@ -84,7 +85,9 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
 
 
 
-  nsresult MaybeDecodeSRI();
+
+
+  nsresult MaybeDecodeSRI(uint32_t* sriLength);
 
   
   nsresult EnsureKnownDataType(nsIIncrementalStreamLoader* aLoader);
