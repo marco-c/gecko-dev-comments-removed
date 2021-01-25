@@ -3686,6 +3686,9 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
     mOutputStreams.RemoveElementAt(i);
     if (mOutputStreams.IsEmpty()) {
       mTracksCaptured = nullptr;
+      
+      
+      return;
     }
   }
 
