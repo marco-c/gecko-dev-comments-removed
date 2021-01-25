@@ -45,7 +45,7 @@ add_task(async function() {
   ok(index !== -1, "There must be one WS connection request");
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[index]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[index]);
 
   info("Waiting for WS frames...");
 
