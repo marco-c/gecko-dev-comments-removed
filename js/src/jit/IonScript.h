@@ -96,10 +96,12 @@ class alignas(8) IonScript final : public TrailingArray {
   
   uint32_t numBailouts_ = 0;
 
+ public:
+  enum class LICMState : uint8_t { NeverBailed, Bailed, BailedAndHitFallback };
+
+ private:
   
-  
-  
-  bool hadLICMBailout_ = false;
+  LICMState licmState_ = LICMState::NeverBailed;
 
   
   bool hasProfilingInstrumentation_ = false;
@@ -343,8 +345,17 @@ class alignas(8) IonScript final : public TrailingArray {
     return numBailouts_ >= JitOptions.frequentBailoutThreshold;
   }
 
-  void setHadLICMBailout() { hadLICMBailout_ = true; }
-  bool hadLICMBailout() const { return hadLICMBailout_; }
+  LICMState licmState() const { return licmState_; }
+  void setHadLICMBailout() {
+    if (licmState_ == LICMState::NeverBailed) {
+      licmState_ = LICMState::Bailed;
+    }
+  }
+  void noteBaselineFallback() {
+    if (licmState_ == LICMState::Bailed) {
+      licmState_ = LICMState::BailedAndHitFallback;
+    }
+  }
 
   void setHasProfilingInstrumentation() { hasProfilingInstrumentation_ = true; }
   void clearHasProfilingInstrumentation() {
@@ -599,4 +610,4 @@ struct DeletePolicy<js::jit::IonScript> {
 
 }  
 
-#endif 
+#endif

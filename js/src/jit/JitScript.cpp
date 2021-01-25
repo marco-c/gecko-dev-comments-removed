@@ -419,11 +419,8 @@ void ICScript::purgeOptimizedStubs(Zone* zone) {
 
     while (stub != lastStub) {
       if (!stub->toCacheIRStub()->allocatedInFallbackSpace()) {
-        
-        
-        lastStub->toFallbackStub()->clearUsedByTranspiler();
-        lastStub->toFallbackStub()->unlinkStubDontInvalidateWarp(
-            zone, prev, stub->toCacheIRStub());
+        lastStub->toFallbackStub()->unlinkStub(zone, prev,
+                                               stub->toCacheIRStub());
         stub = stub->toCacheIRStub()->next();
         continue;
       }

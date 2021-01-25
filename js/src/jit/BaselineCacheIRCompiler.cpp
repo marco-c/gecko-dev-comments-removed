@@ -2004,11 +2004,6 @@ ICCacheIRStub* js::jit::AttachBaselineCacheIRStub(
   JitZone* jitZone = cx->zone()->jitZone();
 
   
-  JSScript* invalidationScript = icScript->isInlined()
-                                     ? icScript->inliningRoot()->owningScript()
-                                     : outerScript;
-
-  
   CacheIRStubInfo* stubInfo;
   CacheIRStubKey::Lookup lookup(kind, ICStubEngine::Baseline,
                                 writer.codeStart(), writer.codeLength());
@@ -2085,8 +2080,6 @@ ICCacheIRStub* js::jit::AttachBaselineCacheIRStub(
   
   
   ResetEnteredCounts(stub);
-
-  stub->maybeInvalidateWarp(cx, invalidationScript);
 
   switch (stub->trialInliningState()) {
     case TrialInliningState::Initial:
