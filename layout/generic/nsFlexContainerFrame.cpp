@@ -425,6 +425,27 @@ class nsFlexContainerFrame::FlexItem final {
   
   
   
+  StyleSize StyleMainSize() const {
+    nscoord mainSize = MainSize();
+    if (Frame()->StylePosition()->mBoxSizing == StyleBoxSizing::Border) {
+      mainSize += BorderPaddingSizeInMainAxis();
+    }
+    return StyleSize::LengthPercentage(
+        LengthPercentage::FromAppUnits(mainSize));
+  }
+
+  StyleSize StyleCrossSize() const {
+    nscoord crossSize = CrossSize();
+    if (Frame()->StylePosition()->mBoxSizing == StyleBoxSizing::Border) {
+      crossSize += BorderPaddingSizeInCrossAxis();
+    }
+    return StyleSize::LengthPercentage(
+        LengthPercentage::FromAppUnits(crossSize));
+  }
+
+  
+  
+  
   
   
   
@@ -4635,45 +4656,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   }
 }
 
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoFlexItemMainSizeOverride final {
- public:
-  explicit AutoFlexItemMainSizeOverride(FlexItem& aItem)
-      : mItemFrame(aItem.Frame()) {
-    MOZ_ASSERT(!mItemFrame->HasProperty(nsIFrame::FlexItemMainSizeOverride()),
-               "FlexItemMainSizeOverride prop shouldn't be set already; "
-               "it should only be set temporarily (& not recursively)");
-    NS_ASSERTION(aItem.HasAspectRatio(),
-                 "This should only be needed for items with an aspect ratio");
-
-    nscoord mainSizeOverrideVal = aItem.MainSize();
-    
-    
-    
-    
-    if (aItem.Frame()->StylePosition()->mBoxSizing == StyleBoxSizing::Border) {
-      mainSizeOverrideVal += aItem.BorderPaddingSizeInMainAxis();
-    }
-
-    mItemFrame->SetProperty(nsIFrame::FlexItemMainSizeOverride(),
-                            mainSizeOverrideVal);
-  }
-
-  ~AutoFlexItemMainSizeOverride() {
-    mItemFrame->RemoveProperty(nsIFrame::FlexItemMainSizeOverride());
-  }
-
- private:
-  nsIFrame* mItemFrame;
-};
-
 void nsFlexContainerFrame::CalculatePackingSpace(
     uint32_t aNumThingsToPack, const StyleContentDistribution& aAlignVal,
     nscoord* aFirstSubjectOffset, uint32_t* aNumPackingSpacesRemaining,
@@ -5023,35 +5005,21 @@ void nsFlexContainerFrame::DoFlexLayout(
       
       
       if (item.CanMainSizeInfluenceCrossSize()) {
-        Maybe<AutoFlexItemMainSizeOverride> sizeOverride;
-        if (item.HasAspectRatio()) {
-          
-          
-          
-          
-          
-          
-          
-          sizeOverride.emplace(item);
+        StyleSizeOverrides sizeOverrides;
+        if (item.IsInlineAxisMainAxis()) {
+          sizeOverrides.mStyleISize.emplace(item.StyleMainSize());
+        } else {
+          sizeOverrides.mStyleBSize.emplace(item.StyleMainSize());
         }
 
-        WritingMode wm = item.Frame()->GetWritingMode();
+        const WritingMode wm = item.GetWritingMode();
         LogicalSize availSize = aReflowInput.ComputedSize(wm);
         availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
         ReflowInput childReflowInput(PresContext(), aReflowInput, item.Frame(),
-                                     availSize);
+                                     availSize, Nothing(), {}, sizeOverrides);
         childReflowInput.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
-        if (!sizeOverride) {
-          
-          if (item.IsInlineAxisMainAxis()) {
-            childReflowInput.SetComputedISize(item.MainSize());
-          } else {
-            childReflowInput.SetComputedBSize(item.MainSize());
-            childReflowInput.mFlags.mBSizeIsSetByAspectRatio = false;
-            if (item.TreatBSizeAsIndefinite()) {
-              childReflowInput.mFlags.mTreatBSizeAsIndefinite = true;
-            }
-          }
+        if (item.IsBlockAxisMainAxis() && item.TreatBSizeAsIndefinite()) {
+          childReflowInput.mFlags.mTreatBSizeAsIndefinite = true;
         }
 
         SizeItemInCrossAxis(childReflowInput, item);
