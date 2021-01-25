@@ -1305,18 +1305,18 @@ using MutableHandleValVector = MutableHandle<ValVector>;
 
 
 
-extern MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType targetType,
-                                      HandleValue v,
-                                      MutableHandleFunction fnval,
-                                      MutableHandleAnyRef refval);
+[[nodiscard]] extern bool CheckRefType(JSContext* cx, RefType targetType,
+                                       HandleValue v,
+                                       MutableHandleFunction fnval,
+                                       MutableHandleAnyRef refval);
 
 
-extern MOZ_MUST_USE bool CheckFuncRefValue(JSContext* cx, HandleValue v,
-                                           MutableHandleFunction fun);
+[[nodiscard]] extern bool CheckFuncRefValue(JSContext* cx, HandleValue v,
+                                            MutableHandleFunction fun);
 
 
-extern MOZ_MUST_USE bool CheckEqRefValue(JSContext* cx, HandleValue v,
-                                         MutableHandleAnyRef vp);
+[[nodiscard]] extern bool CheckEqRefValue(JSContext* cx, HandleValue v,
+                                          MutableHandleAnyRef vp);
 class NoDebug;
 class DebugCodegenVal;
 

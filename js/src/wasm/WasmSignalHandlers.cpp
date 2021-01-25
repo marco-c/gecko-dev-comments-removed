@@ -692,9 +692,9 @@ static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
 }
 #endif
 
-static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
-                                    bool isUnalignedSignal = false,
-                                    JSContext* assertCx = nullptr) {
+[[nodiscard]] static bool HandleTrap(CONTEXT* context,
+                                     bool isUnalignedSignal = false,
+                                     JSContext* assertCx = nullptr) {
   MOZ_ASSERT(sAlreadyHandlingTrap.get());
 
   uint8_t* pc = ContextToPC(context);
