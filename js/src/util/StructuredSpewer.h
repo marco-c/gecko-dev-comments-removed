@@ -123,7 +123,7 @@ class StructuredSpewer {
  public:
   StructuredSpewer()
       : outputInitializationAttempted_(false),
-        spewingEnabled_(false),
+        spewingEnabled_(0),
         json_(mozilla::Nothing()),
         selectedChannel_() {
     if (getenv("SPEW")) {
@@ -131,11 +131,21 @@ class StructuredSpewer {
     }
   }
 
-  ~StructuredSpewer() { finishSpew(); }
+  ~StructuredSpewer() {
+    if (json_.isSome()) {
+      json_->endList();
+      output_.flush();
+      output_.finish();
+      json_.reset();
+    }
+  }
 
-  void enableSpewing() { spewingEnabled_ = true; }
+  void enableSpewing() { spewingEnabled_++; }
 
-  void disableSpewing() { spewingEnabled_ = false; }
+  void disableSpewing() {
+    MOZ_ASSERT(spewingEnabled_ > 0);
+    spewingEnabled_--;
+  }
 
   
   
@@ -167,7 +177,9 @@ class StructuredSpewer {
   
   bool outputInitializationAttempted_;
 
-  bool spewingEnabled_;
+  
+  
+  size_t spewingEnabled_;
 
   Fprinter output_;
   mozilla::Maybe<JSONPrinter> json_;
@@ -197,23 +209,11 @@ class StructuredSpewer {
 
   
   bool enabled(SpewChannel channel) {
-    return (spewingEnabled_ && selectedChannel_.enabled(channel));
+    return (spewingEnabled_ > 0 && selectedChannel_.enabled(channel));
   }
 
   
   void startObject(JSContext* cx, const JSScript* script, SpewChannel channel);
-
-  void finishSpew() {
-    if (json_.isSome()) {
-      json_->endList();
-      output_.flush();
-      output_.finish();
-      json_.reset();
-    }
-
-    spewingEnabled_ = false;
-    outputInitializationAttempted_ = false;
-  }
 
   friend class AutoSpewChannel;
   friend class AutoStructuredSpewer;
