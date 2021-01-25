@@ -413,11 +413,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     
-    
-    
-    this.conn.send({ from: this.actorID });
-
-    
     this._setupForBreaking();
 
     
