@@ -14,12 +14,6 @@
 
 NS_IMPL_ISUPPORTS(nsMacSharingService, nsIMacSharingService)
 
-
-
-
-NSArray* filteredProviderNames =
-    @[ @"com.apple.share.System.add-to-safari-reading-list", @"com.apple.share.Mail.compose" ];
-
 NSString* const remindersServiceName = @"com.apple.reminders.RemindersShareExtension";
 
 
@@ -35,6 +29,13 @@ NSString* const openSharingSubpaneProtocolValue = @"com.apple.share-services";
 @interface NSSharingService (ExposeName)
 - (id)name;
 @end
+
+
+
+static bool ShouldIgnoreProvider(NSString* aProviderName) {
+  return [aProviderName isEqualToString:@"com.apple.share.System.add-to-safari-reading-list"] ||
+         [aProviderName isEqualToString:@"com.apple.share.Mail.compose"];
+}
 
 
 @interface SharingServiceDelegate : NSObject <NSSharingServiceDelegate> {
@@ -108,7 +109,7 @@ nsresult nsMacSharingService::GetSharingProviders(const nsAString& aPageUrl, JSC
   int32_t serviceCount = 0;
 
   for (NSSharingService* currentService in sharingService) {
-    if ([filteredProviderNames containsObject:[currentService name]]) {
+    if (ShouldIgnoreProvider([currentService name])) {
       continue;
     }
     JS::Rooted<JSObject*> obj(aCx, JS_NewPlainObject(aCx));
