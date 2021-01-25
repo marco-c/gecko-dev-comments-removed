@@ -1640,6 +1640,13 @@ class Element : public FragmentOrElement {
   already_AddRefed<nsIBrowser> AsBrowser();
   already_AddRefed<nsIAutoCompletePopup> AsAutoCompletePopup();
 
+  
+
+
+
+  enum PresContextFor { eForComposedDoc, eForUncomposedDoc };
+  nsPresContext* GetPresContext(PresContextFor aFor);
+
  protected:
   
 

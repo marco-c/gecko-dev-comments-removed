@@ -575,12 +575,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
   static void MapScrollingAttributeInto(const nsMappedAttributes* aAttributes,
                                         mozilla::MappedDeclarations&);
-  
-
-
-
-  enum PresContextFor { eForComposedDoc, eForUncomposedDoc };
-  nsPresContext* GetPresContext(PresContextFor aFor);
 
   
   
