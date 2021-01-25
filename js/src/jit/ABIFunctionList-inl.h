@@ -16,6 +16,7 @@
 #include "builtin/Array.h"      
 #include "builtin/MapObject.h"  
                                 
+#include "builtin/Object.h"     
 #include "builtin/RegExp.h"     
                                 
 
@@ -153,6 +154,7 @@ namespace jit {
   _(js::NativeObject::growSlotsPure)                                  \
   _(js::NumberMod)                                                    \
   _(js::NumberToStringPure)                                           \
+  _(js::ObjectClassToString)                                          \
   _(js::powi)                                                         \
   _(js::ProxyGetProperty)                                             \
   _(js::RegExpInstanceOptimizableRaw)                                 \
