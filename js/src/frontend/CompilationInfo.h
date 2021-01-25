@@ -45,26 +45,6 @@ namespace frontend {
 struct ScopeContext {
   
   
-  bool allowNewTarget = false;
-  bool allowSuperProperty = false;
-  bool allowSuperCall = false;
-  bool allowArguments = true;
-
-  
-  
-  ThisBinding thisBinding = ThisBinding::Global;
-
-  
-  
-  bool inWith = false;
-
-  
-  bool inClass = false;
-
-  
-  
-  mozilla::Maybe<MemberInitializers> memberInitializers = {};
-
   
   
   
@@ -74,22 +54,39 @@ struct ScopeContext {
   
   JS::Rooted<Scope*> effectiveScope;
 
+  
+  
+  
+  
+  ThisBinding thisBinding = ThisBinding::Global;
+
+  
+  
+  bool allowNewTarget = false;
+  bool allowSuperProperty = false;
+  bool allowSuperCall = false;
+  bool allowArguments = true;
+
+  
+  
+  mozilla::Maybe<MemberInitializers> memberInitializers = {};
+
+  
+  bool inClass = false;
+  bool inWith = false;
+
   explicit ScopeContext(JSContext* cx, Scope* scope,
                         JSObject* enclosingEnv = nullptr)
       : effectiveScope(cx, determineEffectiveScope(scope, enclosingEnv)) {
-    computeAllowSyntax(scope);
     computeThisBinding(effectiveScope);
-    computeInWith(scope);
-    computeExternalInitializers(scope);
-    computeInClass(scope);
+    computeThisEnvironment(scope);
+    computeInScope(scope);
   }
 
  private:
-  void computeAllowSyntax(Scope* scope);
   void computeThisBinding(Scope* scope);
-  void computeInWith(Scope* scope);
-  void computeExternalInitializers(Scope* scope);
-  void computeInClass(Scope* scope);
+  void computeThisEnvironment(Scope* scope);
+  void computeInScope(Scope* scope);
 
   static Scope* determineEffectiveScope(Scope* scope, JSObject* environment);
 };
