@@ -136,6 +136,10 @@ class RenderCompositor {
                           const wr::CompositorSurfaceTransform& aTransform,
                           wr::DeviceIntRect aClipRect,
                           wr::ImageRendering aImageRendering) {}
+  
+  
+  virtual void StartCompositing(const wr::DeviceIntRect* aDirtyRects,
+                                size_t aNumDirtyRects) {}
   virtual void EnableNativeCompositor(bool aEnable) {}
   virtual void DeInit() {}
   virtual CompositorCapabilities GetCompositorCapabilities() = 0;
