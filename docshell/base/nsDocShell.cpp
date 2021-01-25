@@ -8894,10 +8894,15 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       MOZ_LOG(gSHLog, LogLevel::Debug,
               ("Creating an active entry on nsDocShell %p to %s", this,
                aLoadState->URI()->GetSpecOrDefault().get()));
-      mActiveEntry = MakeUnique<SessionHistoryInfo>(
-          mActiveEntry.get(), aLoadState->URI(), HistoryID(),
-          newURITriggeringPrincipal, newURIPrincipalToInherit,
-          newURIPartitionedPrincipalToInherit, newCsp, mContentTypeHint);
+      if (mActiveEntry) {
+        mActiveEntry =
+            MakeUnique<SessionHistoryInfo>(*mActiveEntry, aLoadState->URI());
+      } else {
+        mActiveEntry = MakeUnique<SessionHistoryInfo>(
+            aLoadState->URI(), newURITriggeringPrincipal,
+            newURIPrincipalToInherit, newURIPartitionedPrincipalToInherit,
+            newCsp, mContentTypeHint);
+      }
 
       
       
@@ -11624,12 +11629,9 @@ void nsDocShell::UpdateActiveEntry(
   if (mActiveEntry) {
     
     mActiveEntry = MakeUnique<SessionHistoryInfo>(*mActiveEntry, aURI);
-    
-    
   } else {
     mActiveEntry = MakeUnique<SessionHistoryInfo>(
-        nullptr, aURI, HistoryID(), aTriggeringPrincipal, nullptr, nullptr,
-        aCsp, mContentTypeHint);
+        aURI, aTriggeringPrincipal, nullptr, nullptr, aCsp, mContentTypeHint);
   }
   mActiveEntry->SetOriginalURI(aOriginalURI);
   mActiveEntry->SetTitle(aTitle);
