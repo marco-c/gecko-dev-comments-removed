@@ -145,12 +145,6 @@ bool RenderCompositorEGL::Resume() {
   if (kIsAndroid) {
     
     DestroyEGLSurface();
-    mEGLSurface = CreateEGLSurface();
-    if (mEGLSurface == EGL_NO_SURFACE) {
-      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-      return false;
-    }
-    gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
 
 #ifdef MOZ_WIDGET_ANDROID
     
@@ -163,6 +157,24 @@ bool RenderCompositorEGL::Resume() {
         ANativeWindow_fromSurface(env, reinterpret_cast<jobject>(window));
     const int32_t width = ANativeWindow_getWidth(nativeWindow);
     const int32_t height = ANativeWindow_getHeight(nativeWindow);
+
+    GLint maxTextureSize = 0;
+    gl()->fGetIntegerv(LOCAL_GL_MAX_TEXTURE_SIZE, (GLint*)&maxTextureSize);
+
+    
+    if (maxTextureSize < width || maxTextureSize < height) {
+      gfxCriticalNote << "Too big ANativeWindow size(" << width << ", "
+                      << height << ") MaxTextureSize " << maxTextureSize;
+      return false;
+    }
+
+    mEGLSurface = CreateEGLSurface();
+    if (mEGLSurface == EGL_NO_SURFACE) {
+      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
+      return false;
+    }
+    gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
+
     mEGLSurfaceSize = LayoutDeviceIntSize(width, height);
     ANativeWindow_release(nativeWindow);
 #endif  
