@@ -25,6 +25,7 @@
 #include "nsCOMPtr.h"
 
 #ifdef XP_WIN
+#  include "freestanding/SharedSection.h"
 #  include "LauncherProcessWin.h"
 #  include "mozilla/WindowsDllBlocklist.h"
 
@@ -320,6 +321,12 @@ int main(int argc, char* argv[], char* envp[]) {
 #endif
 
 #if defined(XP_WIN)
+  
+  
+  
+  mozilla::freestanding::gSharedSection.ConvertToReadOnly();
+  ::RtlRunOnceInitialize(&mozilla::freestanding::gK32ExportsResolveOnce);
+
   mozilla::CreateAndStorePreXULSkeletonUI(GetModuleHandle(nullptr), argc, argv);
 #endif
 
