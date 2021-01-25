@@ -19,7 +19,6 @@ var { getScriptGlobals } = require("./utils");
 
 
 const simpleTestFiles = [
-  "AccessibilityUtils.js",
   "ExtensionTestUtils.js",
   "EventUtils.js",
   "MockObjects.js",

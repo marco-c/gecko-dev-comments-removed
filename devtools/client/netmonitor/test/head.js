@@ -977,7 +977,7 @@ async function hideColumn(monitor, column) {
   const { document } = monitor.panelWin;
 
   info(`Clicking context-menu item for ${column}`);
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "contextmenu" },
     document.querySelector(".requests-list-headers")
   );
@@ -1000,7 +1000,7 @@ async function showColumn(monitor, column) {
   const { document } = monitor.panelWin;
 
   info(`Clicking context-menu item for ${column}`);
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "contextmenu" },
     document.querySelector(".requests-list-headers")
   );
@@ -1031,7 +1031,7 @@ async function selectIndexAndWaitForSourceEditor(monitor, index) {
   );
   
   
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "mousedown" },
     document.querySelectorAll(".request-list-item")[index]
   );
@@ -1273,7 +1273,7 @@ async function waitForDOMIfNeeded(target, selector, expectedLength = 1) {
 
 
 async function toggleBlockedUrl(element, monitor, store, action = "block") {
-  await EventUtils.sendMouseEvent({ type: "contextmenu" }, element);
+  EventUtils.sendMouseEvent({ type: "contextmenu" }, element);
   const contextMenuId = `request-list-context-${action}-url`;
   const contextBlockToggle = getContextMenuItem(monitor, contextMenuId);
   const onRequestComplete = waitForDispatch(
@@ -1340,23 +1340,3 @@ function compareValues(first, second) {
   }
   return first > second ? 1 : -1;
 }
-
-
-
-
-
-
-
-
-const clickOnSidebarTab = async (doc, name) => {
-  AccessibilityUtils.setEnv({
-    
-    
-    nonNegativeTabIndexRule: false,
-  });
-  await EventUtils.sendMouseEvent(
-    { type: "click" },
-    doc.querySelector(`#${name}-tab`)
-  );
-  AccessibilityUtils.resetEnv();
-};

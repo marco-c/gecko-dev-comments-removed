@@ -54,16 +54,10 @@ add_task(async function() {
   );
 
   
-  AccessibilityUtils.setEnv({
-    
-    
-    mustHaveAccessibleRule: false,
-  });
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "click" },
     document.querySelector(".search-panel-content .treeRow .treeIcon")
   );
-  AccessibilityUtils.resetEnv();
 
   
   const matches = document.querySelectorAll(

@@ -37,10 +37,13 @@ add_task(async function() {
   const wait = waitForDOM(document, "#messages-view .truncated-message");
 
   
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  await clickOnSidebarTab(document, "response");
+  EventUtils.sendMouseEvent(
+    { type: "click" },
+    document.querySelector("#response-tab")
+  );
   await wait;
 
   

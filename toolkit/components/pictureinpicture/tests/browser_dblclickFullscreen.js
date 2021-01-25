@@ -19,7 +19,7 @@ add_task(async () => {
       let controls = pipWin.document.getElementById("controls");
 
       await promiseFullscreenEntered(pipWin, async () => {
-        await EventUtils.sendMouseEvent(
+        EventUtils.sendMouseEvent(
           {
             type: "dblclick",
           },
@@ -38,7 +38,7 @@ add_task(async () => {
       
 
       await promiseFullscreenExited(pipWin, async () => {
-        await EventUtils.sendMouseEvent(
+        EventUtils.sendMouseEvent(
           {
             type: "dblclick",
           },
@@ -55,7 +55,7 @@ add_task(async () => {
       
 
       await promiseFullscreenEntered(pipWin, async () => {
-        await EventUtils.sendMouseEvent(
+        EventUtils.sendMouseEvent(
           {
             type: "dblclick",
           },

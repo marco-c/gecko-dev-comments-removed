@@ -46,23 +46,23 @@ const either = (value, a, b, message) => {
 };
 
 
-const click = async (node, win = window) => {
-  await EventUtils.sendMouseEvent({ type: "click" }, node, win);
+const click = (node, win = window) => {
+  EventUtils.sendMouseEvent({ type: "click" }, node, win);
 };
 
 
-const dblclick = async (node, win = window) => {
-  await EventUtils.sendMouseEvent({ type: "dblclick" }, node, win);
+const dblclick = (node, win = window) => {
+  EventUtils.sendMouseEvent({ type: "dblclick" }, node, win);
 };
 
 
-const mousedown = async (node, win = window) => {
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, node, win);
+const mousedown = (node, win = window) => {
+  EventUtils.sendMouseEvent({ type: "mousedown" }, node, win);
 };
 
 
-const rightMousedown = async (node, win = window) => {
-  await EventUtils.sendMouseEvent({ type: "mousedown", button: 2 }, node, win);
+const rightMousedown = (node, win = window) => {
+  EventUtils.sendMouseEvent({ type: "mousedown", button: 2 }, node, win);
 };
 
 

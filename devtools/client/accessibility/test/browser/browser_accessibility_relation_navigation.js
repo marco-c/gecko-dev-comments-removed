@@ -68,9 +68,7 @@ const tests = [
   },
   {
     desc: "Select second tree node.",
-    setup: async ({ doc }) => {
-      await selectRow(doc, 1);
-    },
+    setup: async ({ doc }) => selectRow(doc, 1),
     expected: {
       sidebar: {
         name: "Top level header",
@@ -95,32 +93,20 @@ const tests = [
     desc: "Select containing document.",
     setup: async ({ doc, win }) => {
       const relations = await selectProperty(doc, "/relations");
-      AccessibilityUtils.setEnv({
-        
-        
-        mustHaveAccessibleRule: false,
-      });
-      await EventUtils.sendMouseEvent(
+      EventUtils.sendMouseEvent(
         { type: "click" },
         relations.querySelector(".arrow"),
         win
       );
-      AccessibilityUtils.resetEnv();
       const containingDocRelation = await selectProperty(
         doc,
         "/relations/containing document"
       );
-      AccessibilityUtils.setEnv({
-        
-        
-        nonNegativeTabIndexRule: false,
-      });
-      await EventUtils.sendMouseEvent(
+      EventUtils.sendMouseEvent(
         { type: "click" },
         containingDocRelation.querySelector(".open-accessibility-inspector"),
         win
       );
-      AccessibilityUtils.resetEnv();
     },
     expected: {
       sidebar: {

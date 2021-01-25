@@ -27,18 +27,10 @@ add_task(async function() {
   
   await performRequests(monitor, tab, 2);
 
-  AccessibilityUtils.setEnv({
-    
-    
-    actionCountRule: false,
-    interactiveRule: false,
-    labelRule: false,
-  });
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "click" },
     document.querySelectorAll(".request-list-item")[0]
   );
-  AccessibilityUtils.resetEnv();
 
   testShowLearnMore(getSortedRequests(store.getState())[0]);
 

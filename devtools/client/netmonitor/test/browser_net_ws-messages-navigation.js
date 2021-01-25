@@ -44,10 +44,13 @@ add_task(async function() {
   );
 
   
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  await clickOnSidebarTab(document, "response");
+  EventUtils.sendMouseEvent(
+    { type: "click" },
+    document.querySelector("#response-tab")
+  );
   await wait;
 
   
@@ -65,7 +68,7 @@ add_task(async function() {
     
     `.message-list-item:nth-child(${2}).selected`
   );
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, frames[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, frames[0]);
   await waitForSelected;
 
   const checkSelected = messageRowNumber => {

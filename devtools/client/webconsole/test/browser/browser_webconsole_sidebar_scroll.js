@@ -26,14 +26,7 @@ add_task(async function() {
   const onSidebarShown = waitFor(() =>
     hud.ui.document.querySelector(".sidebar")
   );
-  AccessibilityUtils.setEnv({
-    
-    
-    focusableRule: false,
-    interactiveRule: false,
-    labelRule: false,
-  });
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     {
       type: "click",
       [isMacOS ? "metaKey" : "ctrlKey"]: true,
@@ -41,7 +34,6 @@ add_task(async function() {
     object,
     hud.ui.window
   );
-  AccessibilityUtils.resetEnv();
   await onSidebarShown;
   const sidebarContents = hud.ui.document.querySelector(".sidebar-contents");
 

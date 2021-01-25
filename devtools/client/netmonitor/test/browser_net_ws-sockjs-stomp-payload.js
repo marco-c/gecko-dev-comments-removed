@@ -42,10 +42,13 @@ add_task(async function() {
   );
 
   
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  await clickOnSidebarTab(document, "response");
+  EventUtils.sendMouseEvent(
+    { type: "click" },
+    document.querySelector("#response-tab")
+  );
   await wait;
 
   
@@ -60,7 +63,7 @@ add_task(async function() {
   await waitForTick();
   const waitForData = waitForDOM(document, "#message-formattedData");
   const [, responseFrame] = frames;
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, responseFrame);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, responseFrame);
 
   await waitForData;
 

@@ -131,12 +131,7 @@ add_task(async function() {
 async function getButtonAndMenuInfo(toolbox, menuButton) {
   const { doc, topDoc } = toolbox;
   info("Show popup menu with click event.");
-  AccessibilityUtils.setEnv({
-    
-    
-    nonNegativeTabIndexRule: false,
-  });
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     {
       type: "click",
       screenX: 1,
@@ -144,7 +139,6 @@ async function getButtonAndMenuInfo(toolbox, menuButton) {
     menuButton,
     doc.defaultView
   );
-  AccessibilityUtils.resetEnv();
 
   let menuPopup;
   let menuType;
