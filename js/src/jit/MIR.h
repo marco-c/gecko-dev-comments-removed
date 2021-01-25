@@ -798,10 +798,6 @@ class MDefinition : public MNode {
 
   
   
-  void justReplaceAllUsesWithExcept(MDefinition* dom);
-
-  
-  
   
   [[nodiscard]] bool optimizeOutAllUses(TempAllocator& alloc);
 
