@@ -10430,6 +10430,11 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
+  
+  nsJSContext::MaybeRunNextCollectorSlice(this, JS::GCReason::DOCSHELL);
+
+  
   cleanupInitialClient.release();
 
   return NS_OK;
