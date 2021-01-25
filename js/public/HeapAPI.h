@@ -98,7 +98,6 @@ class alignas(CellAlignBytes) ChunkHeader {
 
   
   ChunkLocation location;
-  uint32_t : 32;  
 
   
   
@@ -123,15 +122,6 @@ struct ChunkInfo {
  public:
   
   Arena* freeArenasHead;
-
-#if JS_BITS_PER_WORD == 32
-  
-
-
-
-
-  char padding[24];
-#endif
 
   
 
@@ -186,13 +176,20 @@ const size_t CalculatedChunkPadSize = ChunkSize - CalculatedChunkSizeRequired;
 static_assert(CalculatedChunkPadSize * CHAR_BIT < BitsPerArenaWithHeaders,
               "Calculated ArenasPerChunk is too small");
 
+
+
 #ifdef JS_GC_SMALL_CHUNK_SIZE
-static_assert(ArenasPerChunk == 62,
-              "Do not accidentally change our heap's density.");
+# if JS_BITS_PER_WORD == 32
+#  define EXPECTED_ARENA_COUNT 63
+# else
+#  define EXPECTED_ARENA_COUNT 62
+# endif
 #else
-static_assert(ArenasPerChunk == 252,
-              "Do not accidentally change our heap's density.");
+# define EXPECTED_ARENA_COUNT 252
 #endif
+static_assert(ArenasPerChunk == EXPECTED_ARENA_COUNT,
+              "Do not accidentally change our heap's density.");
+#undef EXPECTED_ARENA_COUNT
 
 
 
