@@ -462,11 +462,12 @@ function TypedArrayFilter(callbackfn) {
 }
 
 
+
+
 function TypedArrayFind(predicate) {
     
     var O = this;
 
-    
     
     var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
@@ -485,16 +486,15 @@ function TypedArrayFind(predicate) {
     if (!IsCallable(predicate))
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
 
-    
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var thisArg = arguments.length > 1 ? arguments[1] : void 0;
 
-    
     
     for (var k = 0; k < len; k++) {
         
         var kValue = O[k];
+
         
-        if (callContentFunction(predicate, T, kValue, k, O))
+        if (callContentFunction(predicate, thisArg, kValue, k, O))
             return kValue;
     }
 
