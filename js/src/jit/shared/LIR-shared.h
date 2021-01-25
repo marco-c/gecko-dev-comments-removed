@@ -5188,22 +5188,6 @@ class LLoadDynamicSlotV : public LInstructionHelper<BOX_PIECES, 1, 0> {
 };
 
 
-
-
-class LLoadDynamicSlotT : public LInstructionHelper<1, 1, 0> {
- public:
-  LIR_HEADER(LoadDynamicSlotT)
-
-  explicit LLoadDynamicSlotT(const LAllocation& slots)
-      : LInstructionHelper(classOpcode) {
-    setOperand(0, slots);
-  }
-  const LAllocation* slots() { return getOperand(0); }
-  const LDefinition* output() { return this->getDef(0); }
-  const MLoadDynamicSlot* mir() const { return mir_->toLoadDynamicSlot(); }
-};
-
-
 class LStoreDynamicSlotV : public LInstructionHelper<0, 1 + BOX_PIECES, 0> {
  public:
   LIR_HEADER(StoreDynamicSlotV)
