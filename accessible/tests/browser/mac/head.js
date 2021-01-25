@@ -11,6 +11,9 @@
 
 
 
+
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -31,6 +34,17 @@ const AXTextStateChangeTypeSelectionExtend = 3;
 
 const AXTextEditTypeDelete = 1;
 const AXTextEditTypeTyping = 3;
+
+
+const AXTextSelectionDirectionUnknown = 0;
+const AXTextSelectionDirectionPrevious = 3;
+const AXTextSelectionDirectionNext = 4;
+const AXTextSelectionDirectionDiscontiguous = 5;
+
+
+const AXTextSelectionGranularityUnknown = 0;
+const AXTextSelectionGranularityCharacter = 1;
+const AXTextSelectionGranularityWord = 2;
 
 function getNativeInterface(accDoc, id) {
   return findAccessibleChildByID(accDoc, id).nativeInterface.QueryInterface(
