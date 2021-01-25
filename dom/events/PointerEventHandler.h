@@ -73,7 +73,7 @@ class PointerEventHandler final {
   
   
   static void UpdateActivePointerState(WidgetMouseEvent* aEvent,
-                                       nsIContent* aTargetContent);
+                                       nsIContent* aTargetContent = nullptr);
 
   
   static void RequestPointerCaptureById(uint32_t aPointerId,
