@@ -701,6 +701,9 @@ nsresult XULContentSinkImpl::OpenScript(const char16_t** aAttributes,
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      
+      
+      
       if (nsContentUtils::IsJavascriptMIMEType(mimeType)) {
         isJavaScript = true;
 

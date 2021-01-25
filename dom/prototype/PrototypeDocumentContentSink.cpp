@@ -394,11 +394,39 @@ nsresult PrototypeDocumentContentSink::InsertXMLStylesheetPI(
   return NS_OK;
 }
 
-void PrototypeDocumentContentSink::CloseElement(Element* aElement) {
+void PrototypeDocumentContentSink::CloseElement(Element* aElement,
+                                                bool aHadChildren) {
   if (nsIContent::RequiresDoneAddingChildren(
           aElement->NodeInfo()->NamespaceID(),
           aElement->NodeInfo()->NameAtom())) {
     aElement->DoneAddingChildren(false);
+  }
+
+  if (!aHadChildren) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (aElement->IsHTMLElement(nsGkAtoms::script) ||
+      aElement->IsSVGElement(nsGkAtoms::script)) {
+    nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(aElement);
+    MOZ_ASSERT(sele, "Node didn't QI to script.");
+    if (sele->GetScriptIsModule()) {
+      DebugOnly<bool> block = sele->AttemptToExecute();
+      MOZ_ASSERT(!block, "<script type=module> shouldn't block the parser");
+    }
+  }
+
+  if (aElement->IsHTMLElement(nsGkAtoms::style) ||
+      aElement->IsSVGElement(nsGkAtoms::style)) {
+    auto* linkStyle = LinkStyle::FromNode(*aElement);
+    NS_ASSERTION(linkStyle,
+                 "<html:style> doesn't implement "
+                 "nsIStyleSheetLinkingElement?");
+    Unused << linkStyle->UpdateStyleSheet(nullptr);
   }
 }
 
@@ -447,18 +475,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalkInternal() {
       if (indx >= (int32_t)proto->mChildren.Length()) {
         if (element) {
           
-          CloseElement(element->AsElement());
-          if (element->NodeInfo()->Equals(nsGkAtoms::style,
-                                          kNameSpaceID_XHTML) ||
-              element->NodeInfo()->Equals(nsGkAtoms::style, kNameSpaceID_SVG)) {
-            
-            
-            auto* linkStyle = LinkStyle::FromNode(*element);
-            NS_ASSERTION(linkStyle,
-                         "<html:style> doesn't implement "
-                         "nsIStyleSheetLinkingElement?");
-            Unused << linkStyle->UpdateStyleSheet(nullptr);
-          }
+          CloseElement(element->AsElement(),  true);
         }
         
         
@@ -506,7 +523,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalkInternal() {
             if (NS_FAILED(rv)) return rv;
           } else {
             
-            CloseElement(child);
+            CloseElement(child,  false);
           }
         } break;
 
@@ -1036,9 +1053,19 @@ nsresult PrototypeDocumentContentSink::CreateElementFromPrototype(
     if (isScript) {
       nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(result);
       MOZ_ASSERT(sele, "Node didn't QI to script.");
+
+      sele->FreezeExecutionAttrs(doc);
       
       
-      sele->PreventExecution();
+      
+      
+      
+      
+      
+      
+      if (!sele->GetScriptIsModule()) {
+        sele->PreventExecution();
+      }
     }
   }
 
