@@ -383,27 +383,6 @@ extern JS_FRIEND_API void* JS_GetArrayBufferViewData(
 
 
 
-
-
-
-
-
-
-extern JS_FRIEND_API uint8_t* JS_GetArrayBufferViewFixedData(
-    JSObject* obj, uint8_t* buffer, size_t bufSize);
-
-
-
-
-
-
-extern JS_FRIEND_API size_t JS_MaxMovableTypedArraySize();
-
-
-
-
-
-
 extern JS_FRIEND_API JSObject* JS_GetArrayBufferViewBuffer(
     JSContext* cx, JS::Handle<JSObject*> obj, bool* isSharedMemory);
 

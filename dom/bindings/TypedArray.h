@@ -115,18 +115,6 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
     return mData;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  inline T* FixedData(uint8_t* buffer, size_t bufSize) const {
-    MOZ_ASSERT(mComputed);
-    return JS_GetArrayBufferViewFixedData(mImplObj, buffer, bufSize);
-  }
-
   inline uint32_t Length() const {
     MOZ_ASSERT(mComputed);
     return mLength;
