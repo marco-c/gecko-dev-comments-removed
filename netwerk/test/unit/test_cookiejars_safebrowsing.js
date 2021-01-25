@@ -126,9 +126,6 @@ function run_test() {
 
 
 add_test(function test_safebrowsing_update() {
-  var dbservice = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(
-    Ci.nsIUrlClassifierDBService
-  );
   var streamUpdater = Cc[
     "@mozilla.org/url-classifier/streamupdater;1"
   ].getService(Ci.nsIUrlClassifierStreamUpdater);

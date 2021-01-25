@@ -96,7 +96,7 @@ _observer.prototype = {
 
 function do_close_profile(generator) {
   
-  let obs = new _observer(generator, "cookie-db-closed");
+  new _observer(generator, "cookie-db-closed");
 
   
   let service = Services.cookies.QueryInterface(Ci.nsIObserver);
@@ -152,7 +152,7 @@ function promise_load_profile() {
 
 function do_load_profile(generator) {
   
-  let obs = new _observer(generator, "cookie-db-read");
+  new _observer(generator, "cookie-db-read");
 
   
   let service = Services.cookies.QueryInterface(Ci.nsIObserver);

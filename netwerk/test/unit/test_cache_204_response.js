@@ -51,9 +51,7 @@ add_task(async function() {
   httpserver.registerPathHandler("/testdir", test_handler);
   httpserver.start(-1);
   const PORT = httpserver.identity.primaryPort;
-  const URI = `http:
-
-  let response;
+  const URI = `http://localhost:${PORT}/testdir`;
 
   await get_response(make_channel(URI, "GET"), false);
   await get_response(make_channel(URI, "GET"), true);

@@ -6,7 +6,7 @@ function run_test() {
   
   Assert.throws(
     () => {
-      var chan = NetUtil.newChannel({
+      NetUtil.newChannel({
         uri: "http://localhost:80000/",
         loadUsingSystemPrincipal: true,
       });

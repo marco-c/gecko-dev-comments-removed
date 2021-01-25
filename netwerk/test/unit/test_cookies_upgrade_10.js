@@ -42,7 +42,7 @@ add_task(async function() {
 
     
     
-    let cookies = Services.cookies.cookies;
+    Services.cookies.cookies;
 
     
     

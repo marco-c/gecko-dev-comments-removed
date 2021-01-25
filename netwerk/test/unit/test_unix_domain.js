@@ -269,7 +269,7 @@ function test_address_in_use() {
   socketName.append("socket-in-use");
 
   
-  let server = new UnixServerSocket(socketName, allPermissions, -1);
+  new UnixServerSocket(socketName, allPermissions, -1);
 
   
   do_check_throws_nsIException(

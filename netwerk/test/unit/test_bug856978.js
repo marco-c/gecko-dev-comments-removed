@@ -61,7 +61,7 @@ RequestObserver.prototype = {
         do_throw(notification + " observed a non-HTTP channel.");
       }
       try {
-        let authHeader = subject.getRequestHeader("Authorization");
+        subject.getRequestHeader("Authorization");
       } catch (e) {
         
         

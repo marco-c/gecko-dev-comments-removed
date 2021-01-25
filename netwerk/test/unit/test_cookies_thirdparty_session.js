@@ -9,7 +9,7 @@
 
 add_task(async () => {
   
-  let profile = do_get_profile();
+  do_get_profile();
 
   
   Services.prefs.setBoolPref(

@@ -56,7 +56,7 @@ function test_stream(stream) {
     dump("Trying to read " + avail + " bytes\n");
     
     
-    var data = binstream.readByteArray(avail);
+    binstream.readByteArray(avail);
 
     numread += avail;
   }

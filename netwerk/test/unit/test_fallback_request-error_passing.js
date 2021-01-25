@@ -102,7 +102,7 @@ function run_test() {
     observe() {
       dump("got offline-cache-update-completed\n");
       
-      var _x = randomURI; 
+      randomURI; 
       httpServer.stop(function() {
         
         var chan = make_channel(randomURI);
