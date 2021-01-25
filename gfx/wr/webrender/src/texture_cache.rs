@@ -907,12 +907,14 @@ impl TextureCache {
 
         
         
+        
+        
         self.evict_items_from_cache_if_required();
+        self.expire_old_picture_cache_tiles();
     }
 
     pub fn end_frame(&mut self, profile: &mut TransactionProfile) {
         debug_assert!(self.now.is_valid());
-        self.expire_old_picture_cache_tiles();
         self.picture_textures.gc(
             &mut self.pending_updates,
         );
@@ -1233,15 +1235,7 @@ impl TextureCache {
                 
                 
                 
-                
-                
-                
-                
-                
-                let mut entry_frame_id = entry.last_access.frame_id();
-                entry_frame_id.advance();
-
-                entry_frame_id < self.now.frame_id()
+                entry.last_access.frame_id() < self.now.frame_id() - 1
             };
 
             if evict {
