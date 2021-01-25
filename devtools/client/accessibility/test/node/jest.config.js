@@ -5,20 +5,14 @@
 "use strict";
 
 
+const sharedJestConfig = require(`${__dirname}/../../../shared/test-helpers/shared-jest.config`);
 
 module.exports = {
-  verbose: true,
+  ...sharedJestConfig,
   moduleNameMapper: {
     
-    "^devtools/client/shared/link": `${__dirname}/fixtures/stub`,
-    "^devtools/shared/flags": `${__dirname}/fixtures/stub`,
     "^devtools/shared/event-emitter": `${__dirname}/node_modules/devtools-modules/src/utils/event-emitter`,
-    "^devtools/shared/layout/utils": `${__dirname}/fixtures/stub`,
-    "^devtools/shared/DevToolsUtils": `${__dirname}/fixtures/devtools-utils`,
-    "^devtools/client/shared/components/tree/TreeView": `${__dirname}/fixtures/stub`,
-    "^Services": `${__dirname}/fixtures/Services`,
-    
-    "^devtools\\/(.*)": `${__dirname}/../../../../$1`,
+    ...sharedJestConfig.moduleNameMapper,
   },
   setupFiles: ["<rootDir>setup.js"],
   snapshotSerializers: ["enzyme-to-json/serializer"],

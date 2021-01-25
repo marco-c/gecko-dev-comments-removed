@@ -1,3 +1,9 @@
+
+
+
+
+"use strict";
+
 function generateUUID() {
   return `${Date.now()}-${Math.round(Math.random() * 100)}`;
 }

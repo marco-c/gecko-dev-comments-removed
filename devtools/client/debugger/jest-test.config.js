@@ -2,6 +2,8 @@
 
 
 
+const sharedJestConfig = require(`${__dirname}/../shared/test-helpers/shared-jest.config`);
+
 const { resolve } = require("path");
 const rootDir = resolve(__dirname);
 module.exports = {
@@ -41,16 +43,8 @@ module.exports = {
     "enzyme-to-json/serializer",
   ],
   moduleNameMapper: {
+    ...sharedJestConfig.moduleNameMapper,
     "\\.css$": "<rootDir>/src/test/__mocks__/styleMock.js",
     "\\.svg$": "<rootDir>/src/test/__mocks__/svgMock.js",
-    "devtools-services": "<rootDir>/src/test/fixtures/Services",
-    "^Services": "<rootDir>/src/test/fixtures/Services",
-    "^chrome": "<rootDir>/src/test/fixtures/Chrome",
-    "^ChromeUtils": "<rootDir>/src/test/fixtures/ChromeUtils",
-    "\\/plural-form$": "<rootDir>/src/test/fixtures/plural-form",
-    "shared\\/telemetry$": "<rootDir>/src/test/fixtures/telemetry",
-    "\\/unicode-url$": "<rootDir>/src/test/fixtures/unicode-url",
-    
-    "^devtools\\/(.*)": "<rootDir>/../../$1",
   },
 };

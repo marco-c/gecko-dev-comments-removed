@@ -5,16 +5,9 @@
 
 
 
+const sharedJestConfig = require(`${__dirname}/../../../shared/test-helpers/shared-jest.config`);
+
 module.exports = {
-  verbose: true,
-  moduleNameMapper: {
-    
-    "^chrome": `${__dirname}/fixtures/Chrome`,
-    "^Services": `${__dirname}/fixtures/Services`,
-    "^devtools/shared/DevToolsUtils": `${__dirname}/fixtures/devtools-utils`,
-    "^devtools/shared/generate-uuid": `${__dirname}/fixtures/generate-uuid`,
-    
-    "^devtools\\/(.*)": `${__dirname}/../../../../$1`,
-  },
+  ...sharedJestConfig,
   setupFiles: ["<rootDir>setup.js"],
 };

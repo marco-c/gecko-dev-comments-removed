@@ -5,18 +5,10 @@
 
 
 
+const sharedJestConfig = require(`${__dirname}/../../../shared/test-helpers/shared-jest.config`);
+
 module.exports = {
-  verbose: true,
-  moduleNameMapper: {
-    
-    "^devtools/client/shared/link": `${__dirname}/fixtures/stub`,
-    "^chrome": `${__dirname}/fixtures/Chrome`,
-    "^Services": `${__dirname}/fixtures/Services`,
-    "^devtools/client/shared/fluent-l10n/fluent-l10n$": `${__dirname}/fixtures/fluent-l10n`,
-    "^devtools/client/shared/unicode-url": `${__dirname}/fixtures/unicode-url`,
-    
-    "^devtools\\/(.*)": `${__dirname}/../../../../$1`,
-  },
+  ...sharedJestConfig,
   setupFiles: ["<rootDir>setup.js"],
   snapshotSerializers: ["enzyme-to-json/serializer"],
 };
