@@ -19,6 +19,23 @@ using namespace layers;
 
 namespace wr {
 
+RenderCompositorD3D11SWGL::UploadMode
+RenderCompositorD3D11SWGL::GetUploadMode() {
+  int mode = StaticPrefs::gfx_webrender_software_d3d11_upload_mode();
+  switch (mode) {
+    case 1:
+      return Upload_Immediate;
+    case 2:
+      return Upload_Staging;
+    case 3:
+      return Upload_StagingNoBlock;
+    case 4:
+      return Upload_StagingPooled;
+    default:
+      return Upload_Staging;
+  }
+}
+
 UniquePtr<RenderCompositor> RenderCompositorD3D11SWGL::Create(
     RefPtr<widget::CompositorWidget>&& aWidget, nsACString& aError) {
   void* ctx = wr_swgl_create_context();
@@ -69,6 +86,7 @@ bool RenderCompositorD3D11SWGL::BeginFrame() {
     return false;
   }
   mInFrame = true;
+  mUploadMode = GetUploadMode();
   return true;
 }
 
@@ -248,17 +266,86 @@ bool RenderCompositorD3D11SWGL::MapTile(wr::NativeTileId aId,
 
   auto layerCursor = surface.mTiles.find(TileKey(aId.x, aId.y));
   MOZ_RELEASE_ASSERT(layerCursor != surface.mTiles.end());
+
+  
+  
+  
+  if (mUploadMode == Upload_Immediate) {
+    if (layerCursor->second.mStagingTexture) {
+      MOZ_ASSERT(!layerCursor->second.mSurface);
+      layerCursor->second.mStagingTexture = nullptr;
+      layerCursor->second.mSurface = CreateStagingSurface(surface.TileSize());
+    }
+  } else {
+    if (layerCursor->second.mSurface) {
+      MOZ_ASSERT(!layerCursor->second.mStagingTexture);
+      layerCursor->second.mSurface = nullptr;
+      layerCursor->second.mStagingTexture =
+          CreateStagingTexture(surface.TileSize());
+    }
+  }
+
   mCurrentTile = layerCursor->second;
+  mCurrentTileId = aId;
   mCurrentTileDirty = IntRect(aDirtyRect.origin.x, aDirtyRect.origin.y,
                               aDirtyRect.size.width, aDirtyRect.size.height);
+
+  if (mUploadMode == Upload_Immediate) {
+    DataSourceSurface::MappedSurface map;
+    if (!mCurrentTile.mSurface->Map(DataSourceSurface::READ_WRITE, &map)) {
+      return false;
+    }
+
+    *aData =
+        map.mData + aValidRect.origin.y * map.mStride + aValidRect.origin.x * 4;
+    *aStride = map.mStride;
+    layerCursor->second.mValidRect =
+        gfx::Rect(aValidRect.origin.x, aValidRect.origin.y,
+                  aValidRect.size.width, aValidRect.size.height);
+    return true;
+  }
 
   RefPtr<ID3D11DeviceContext> context;
   mCompositor->GetDevice()->GetImmediateContext(getter_AddRefs(context));
 
   D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-  DebugOnly<HRESULT> hr =
-      context->Map(mCurrentTile.mStagingTexture, 0, D3D11_MAP_READ_WRITE, 0,
-                   &mappedSubresource);
+
+  bool shouldBlock = mUploadMode == Upload_Staging;
+
+  HRESULT hr = context->Map(
+      mCurrentTile.mStagingTexture, 0, D3D11_MAP_READ_WRITE,
+      shouldBlock ? 0 : D3D11_MAP_FLAG_DO_NOT_WAIT, &mappedSubresource);
+  if (hr == DXGI_ERROR_WAS_STILL_DRAWING) {
+    
+    
+    
+    
+    
+
+    
+    mCurrentTile.mIsTemp = true;
+
+    
+    if (mUploadMode == Upload_StagingPooled && surface.mStagingPool.Length()) {
+      mCurrentTile.mStagingTexture = surface.mStagingPool.ElementAt(0);
+      surface.mStagingPool.RemoveElementAt(0);
+      hr = context->Map(mCurrentTile.mStagingTexture, 0, D3D11_MAP_READ_WRITE,
+                        D3D11_MAP_FLAG_DO_NOT_WAIT, &mappedSubresource);
+
+      
+      if (hr == DXGI_ERROR_WAS_STILL_DRAWING) {
+        surface.mStagingPool.AppendElement(mCurrentTile.mStagingTexture);
+      }
+    }
+
+    
+    
+    if (hr == DXGI_ERROR_WAS_STILL_DRAWING) {
+      mCurrentTile.mStagingTexture = CreateStagingTexture(surface.TileSize());
+      hr = context->Map(mCurrentTile.mStagingTexture, 0, D3D11_MAP_READ_WRITE,
+                        0, &mappedSubresource);
+    }
+  }
   MOZ_ASSERT(SUCCEEDED(hr));
 
   
@@ -277,6 +364,19 @@ bool RenderCompositorD3D11SWGL::MapTile(wr::NativeTileId aId,
 }
 
 void RenderCompositorD3D11SWGL::UnmapTile() {
+  if (mCurrentTile.mSurface) {
+    MOZ_ASSERT(mUploadMode == Upload_Immediate);
+    mCurrentTile.mSurface->Unmap();
+    nsIntRegion dirty(mCurrentTileDirty);
+    
+    
+    
+    
+    
+    mCurrentTile.mTexture->Update(mCurrentTile.mSurface, &dirty);
+    return;
+  }
+
   RefPtr<ID3D11DeviceContext> context;
   mCompositor->GetDevice()->GetImmediateContext(getter_AddRefs(context));
 
@@ -293,6 +393,20 @@ void RenderCompositorD3D11SWGL::UnmapTile() {
   context->CopySubresourceRegion(mCurrentTile.mTexture->GetD3D11Texture(), 0,
                                  mCurrentTileDirty.x, mCurrentTileDirty.y, 0,
                                  mCurrentTile.mStagingTexture, 0, &box);
+
+  
+  
+  if (mCurrentTile.mIsTemp && mUploadMode == Upload_StagingPooled) {
+    auto surfaceCursor = mSurfaces.find(mCurrentTileId.surface_id);
+    MOZ_RELEASE_ASSERT(surfaceCursor != mSurfaces.end());
+    Surface& surface = surfaceCursor->second;
+
+    static const uint32_t kMaxPoolSize = 5;
+    if (surface.mStagingPool.Length() < kMaxPoolSize) {
+      surface.mStagingPool.AppendElement(mCurrentTile.mStagingTexture);
+    }
+  }
+  mCurrentTile.mStagingTexture = nullptr;
 }
 
 void RenderCompositorD3D11SWGL::CreateSurface(wr::NativeSurfaceId aId,
@@ -317,12 +431,46 @@ void RenderCompositorD3D11SWGL::DestroySurface(NativeSurfaceId aId) {
   mSurfaces.erase(surfaceCursor);
 }
 
+already_AddRefed<ID3D11Texture2D>
+RenderCompositorD3D11SWGL::CreateStagingTexture(const gfx::IntSize aSize) {
+  CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_B8G8R8A8_UNORM, aSize.width,
+                             aSize.height, 1, 1);
+
+  desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
+  desc.Usage = D3D11_USAGE_STAGING;
+  desc.BindFlags = 0;
+
+  RefPtr<ID3D11Texture2D> cpuTexture;
+  DebugOnly<HRESULT> hr = mCompositor->GetDevice()->CreateTexture2D(
+      &desc, nullptr, getter_AddRefs(cpuTexture));
+  MOZ_ASSERT(SUCCEEDED(hr));
+  return cpuTexture.forget();
+}
+
+already_AddRefed<DataSourceSurface>
+RenderCompositorD3D11SWGL::CreateStagingSurface(const gfx::IntSize aSize) {
+  return Factory::CreateDataSourceSurface(aSize, SurfaceFormat::B8G8R8A8);
+}
+
 void RenderCompositorD3D11SWGL::CreateTile(wr::NativeSurfaceId aId, int32_t aX,
                                            int32_t aY) {
   auto surfaceCursor = mSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(surfaceCursor != mSurfaces.end());
   Surface& surface = surfaceCursor->second;
   MOZ_RELEASE_ASSERT(!surface.mIsExternal);
+
+  if (mUploadMode == Upload_Immediate) {
+    RefPtr<DataTextureSourceD3D11> source =
+        new DataTextureSourceD3D11(gfx::SurfaceFormat::B8G8R8A8, mCompositor,
+                                   layers::TextureFlags::NO_FLAGS);
+    RefPtr<DataSourceSurface> surf = CreateStagingSurface(surface.TileSize());
+    surface.mTiles.insert({TileKey(aX, aY), Tile{source, nullptr, surf}});
+    return;
+  }
+
+  MOZ_ASSERT(mUploadMode == Upload_Staging ||
+             mUploadMode == Upload_StagingNoBlock ||
+             mUploadMode == Upload_StagingPooled);
 
   CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_B8G8R8A8_UNORM,
                              surface.mTileSize.width, surface.mTileSize.height,
@@ -336,16 +484,8 @@ void RenderCompositorD3D11SWGL::CreateTile(wr::NativeSurfaceId aId, int32_t aX,
   RefPtr<DataTextureSourceD3D11> source = new DataTextureSourceD3D11(
       mCompositor->GetDevice(), gfx::SurfaceFormat::B8G8R8A8, texture);
 
-  desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
-  desc.Usage = D3D11_USAGE_STAGING;
-  desc.BindFlags = 0;
-
-  RefPtr<ID3D11Texture2D> cpuTexture;
-  hr = mCompositor->GetDevice()->CreateTexture2D(&desc, nullptr,
-                                                 getter_AddRefs(cpuTexture));
-  MOZ_ASSERT(SUCCEEDED(hr));
-
-  surface.mTiles.insert({TileKey(aX, aY), Tile{source, cpuTexture}});
+  RefPtr<ID3D11Texture2D> cpuTexture = CreateStagingTexture(surface.TileSize());
+  surface.mTiles.insert({TileKey(aX, aY), Tile{source, cpuTexture, nullptr}});
 }
 
 void RenderCompositorD3D11SWGL::DestroyTile(wr::NativeSurfaceId aId, int32_t aX,
