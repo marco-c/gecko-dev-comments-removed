@@ -234,9 +234,12 @@ struct MOZ_RAII CompilationState {
 
   
   
+  
+  
   Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
   Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
   Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
+  Vector<BaseParserScopeData*, 0, js::SystemAllocPolicy> scopeNames;
   Vector<TaggedScriptThingIndex, 0, js::SystemAllocPolicy> gcThingData;
 
   
@@ -317,7 +320,10 @@ struct CompilationStencil {
   SharedDataContainer sharedData;
   mozilla::Span<TaggedScriptThingIndex> gcThingData;
 
+  
+  
   mozilla::Span<ScopeStencil> scopeData;
+  mozilla::Span<BaseParserScopeData*> scopeNames;
 
   
   mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
