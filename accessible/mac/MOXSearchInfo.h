@@ -30,6 +30,8 @@ using namespace mozilla::a11y;
 
   
   BOOL mImmediateDescendantsOnly;
+
+  NSString* mSearchText;
 }
 
 - (id)initWithParameters:(NSDictionary*)params andRoot:(MOXAccessibleBase*)root;
