@@ -4718,6 +4718,12 @@ nsresult XREMain::XRE_mainRun() {
   
   nsCOMPtr<nsIAppStartup> appStartup;
   {
+#ifdef XP_MACOSX
+    
+    
+    mozilla::MacAutoreleasePool pool;
+#endif
+
 #if defined(XP_WIN)
     RefPtr<mozilla::DllServices> dllServices(mozilla::DllServices::Get());
     dllServices->StartUntrustedModulesProcessor();
