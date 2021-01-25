@@ -576,4 +576,16 @@ using namespace mozilla::a11y;
   return nsCocoaUtils::ToNSString(title);
 }
 
+- (void)stateChanged:(uint64_t)state isEnabled:(BOOL)enabled {
+  [super stateChanged:state isEnabled:enabled];
+
+  if (state == states::EXPANDED) {
+    
+    
+    [self moxPostNotification:(enabled
+                                   ? NSAccessibilityRowExpandedNotification
+                                   : NSAccessibilityRowCollapsedNotification)];
+  }
+}
+
 @end
