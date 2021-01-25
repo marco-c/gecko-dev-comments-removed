@@ -13,20 +13,22 @@
 #include "mozilla/CORSMode.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
-#include "nsIFrame.h"
-#include "nsIReflowCallback.h"
+#include "nsRect.h"
 #include "nsTArray.h"
-#include "imgIRequest.h"
-#include "imgINotificationObserver.h"
 #include "mozilla/Attributes.h"
 
+class nsIFrame;
 class imgIContainer;
+class imgIRequest;
+class imgRequestProxy;
 class nsPresContext;
 class nsIURI;
 class nsIPrincipal;
+class nsIRequest;
 
 namespace mozilla {
 struct MediaFeatureChange;
+struct StyleComputedUrl;
 namespace dom {
 class Document;
 }
@@ -73,8 +75,8 @@ class ImageLoader final {
   void ClearFrames(nsPresContext* aPresContext);
 
   
-  static already_AddRefed<imgRequestProxy> LoadImage(
-      const StyleComputedImageUrl&, dom::Document&);
+  static already_AddRefed<imgRequestProxy> LoadImage(const StyleComputedUrl&,
+                                                     dom::Document&);
 
   
   
@@ -94,21 +96,7 @@ class ImageLoader final {
  private:
   
   void DeregisterImageRequest(imgIRequest*, nsPresContext*);
-
-  
-  
-  struct ImageReflowCallback final : public nsIReflowCallback {
-    RefPtr<ImageLoader> mLoader;
-    WeakFrame mFrame;
-    nsCOMPtr<imgIRequest> const mRequest;
-
-    ImageReflowCallback(ImageLoader* aLoader, nsIFrame* aFrame,
-                        imgIRequest* aRequest)
-        : mLoader(aLoader), mFrame(aFrame), mRequest(aRequest) {}
-
-    bool ReflowFinished() override;
-    void ReflowCallbackCanceled() override;
-  };
+  struct ImageReflowCallback;
 
   ~ImageLoader() = default;
 

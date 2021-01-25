@@ -14,6 +14,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ImageTracker.h"
 #include "nsContentUtils.h"
+#include "nsIReflowCallback.h"
 #include "nsLayoutUtils.h"
 #include "nsError.h"
 #include "nsCanvasFrame.h"
@@ -21,6 +22,7 @@
 #include "nsIFrameInlines.h"
 #include "FrameLayerBuilder.h"
 #include "imgIContainer.h"
+#include "imgINotificationObserver.h"
 #include "Image.h"
 #include "GeckoProfiler.h"
 #include "mozilla/PresShell.h"
@@ -590,6 +592,48 @@ void ImageLoader::RequestReflowIfNeeded(FrameSet* aFrameSet,
   }
 }
 
+
+
+struct ImageLoader::ImageReflowCallback final : public nsIReflowCallback {
+  RefPtr<ImageLoader> mLoader;
+  WeakFrame mFrame;
+  nsCOMPtr<imgIRequest> const mRequest;
+
+  ImageReflowCallback(ImageLoader* aLoader, nsIFrame* aFrame,
+                      imgIRequest* aRequest)
+      : mLoader(aLoader), mFrame(aFrame), mRequest(aRequest) {}
+
+  bool ReflowFinished() override;
+  void ReflowCallbackCanceled() override;
+};
+
+bool ImageLoader::ImageReflowCallback::ReflowFinished() {
+  
+  
+  
+  if (mFrame.IsAlive()) {
+    mLoader->UnblockOnloadIfNeeded(mFrame, mRequest);
+  }
+
+  
+  delete this;
+
+  
+  return false;
+}
+
+void ImageLoader::ImageReflowCallback::ReflowCallbackCanceled() {
+  
+  
+  
+  if (mFrame.IsAlive()) {
+    mLoader->UnblockOnloadIfNeeded(mFrame, mRequest);
+  }
+
+  
+  delete this;
+}
+
 void ImageLoader::RequestReflowOnFrame(FrameWithFlags* aFwf,
                                        imgIRequest* aRequest) {
   nsIFrame* frame = aFwf->mFrame;
@@ -769,33 +813,6 @@ void ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
       }
     }
   }
-}
-
-bool ImageLoader::ImageReflowCallback::ReflowFinished() {
-  
-  
-  
-  if (mFrame.IsAlive()) {
-    mLoader->UnblockOnloadIfNeeded(mFrame, mRequest);
-  }
-
-  
-  delete this;
-
-  
-  return false;
-}
-
-void ImageLoader::ImageReflowCallback::ReflowCallbackCanceled() {
-  
-  
-  
-  if (mFrame.IsAlive()) {
-    mLoader->UnblockOnloadIfNeeded(mFrame, mRequest);
-  }
-
-  
-  delete this;
 }
 
 }  
