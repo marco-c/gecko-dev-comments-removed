@@ -6120,8 +6120,9 @@ bool GeneralParser<ParseHandler, Unit>::matchInOrOf(bool* isForInp,
 
 template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::forHeadStart(
-    YieldHandling yieldHandling, ParseNodeKind* forHeadKind,
-    Node* forInitialPart, Maybe<ParseContext::Scope>& forLoopLexicalScope,
+    YieldHandling yieldHandling, IteratorKind iterKind,
+    ParseNodeKind* forHeadKind, Node* forInitialPart,
+    Maybe<ParseContext::Scope>& forLoopLexicalScope,
     Node* forInOrOfExpression) {
   MOZ_ASSERT(anyChars.isCurrentTokenType(TokenKind::LeftParen));
 
@@ -6155,8 +6156,13 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
   
   
   
+  
+  
+  
+  
   bool parsingLexicalDeclaration = false;
   bool letIsIdentifier = false;
+  bool startsWithForOf = false;
   if (tt == TokenKind::Const) {
     parsingLexicalDeclaration = true;
     tokenStream.consumeKnownToken(tt, TokenStream::SlashIsRegExp);
@@ -6177,6 +6183,18 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
       anyChars.ungetToken();
       letIsIdentifier = true;
     }
+  } else if (tt == TokenKind::Async && iterKind == IteratorKind::Sync) {
+    tokenStream.consumeKnownToken(TokenKind::Async, TokenStream::SlashIsRegExp);
+
+    TokenKind next;
+    if (!tokenStream.peekToken(&next)) {
+      return false;
+    }
+
+    if (next == TokenKind::Of) {
+      startsWithForOf = true;
+    }
+    anyChars.ungetToken();
   }
 
   if (parsingLexicalDeclaration) {
@@ -6242,7 +6260,14 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
   
   
   if (isForOf && letIsIdentifier) {
-    errorAt(exprOffset, JSMSG_LET_STARTING_FOROF_LHS);
+    errorAt(exprOffset, JSMSG_BAD_STARTING_FOROF_LHS, "let");
+    return false;
+  }
+
+  
+  
+  if (isForOf && startsWithForOf) {
+    errorAt(exprOffset, JSMSG_BAD_STARTING_FOROF_LHS, "async of");
     return false;
   }
 
@@ -6356,8 +6381,8 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::forStatement(
   
   
   
-  if (!forHeadStart(yieldHandling, &headKind, &startNode, forLoopLexicalScope,
-                    &iteratedExpr)) {
+  if (!forHeadStart(yieldHandling, iterKind, &headKind, &startNode,
+                    forLoopLexicalScope, &iteratedExpr)) {
     return null();
   }
 
