@@ -1939,7 +1939,7 @@ class JSScript : public js::BaseScript {
   
   static JSScript* fromStencil(JSContext* cx,
                                js::frontend::CompilationInput& input,
-                               js::frontend::BaseCompilationStencil& stencil,
+                               js::frontend::CompilationStencil& stencil,
                                js::frontend::CompilationGCOutput& gcOutput,
                                const js::frontend::ScriptIndex scriptIndex);
 
