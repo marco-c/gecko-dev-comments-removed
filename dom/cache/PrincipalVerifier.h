@@ -39,17 +39,17 @@ class PrincipalVerifier final : public Runnable {
   };
 
   static already_AddRefed<PrincipalVerifier> CreateAndDispatch(
-      Listener* aListener, mozilla::ipc::PBackgroundParent* aActor,
+      Listener& aListener, mozilla::ipc::PBackgroundParent* aActor,
       const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
-  void AddListener(Listener* aListener);
+  void AddListener(Listener& aListener);
 
   
   
-  void RemoveListener(Listener* aListener);
+  void RemoveListener(Listener& aListener);
 
  private:
-  PrincipalVerifier(Listener* aListener,
+  PrincipalVerifier(Listener& aListener,
                     mozilla::ipc::PBackgroundParent* aActor,
                     const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
   virtual ~PrincipalVerifier();
@@ -60,7 +60,7 @@ class PrincipalVerifier final : public Runnable {
   void DispatchToInitiatingThread(nsresult aRv);
 
   
-  nsTObserverArray<Listener*> mListenerList;
+  nsTObserverArray<NotNull<Listener*>> mListenerList;
 
   
   
