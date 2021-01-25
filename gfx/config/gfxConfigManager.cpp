@@ -401,16 +401,6 @@ void gfxConfigManager::ConfigureWebRender() {
   if (mWrPartialPresent) {
     if (mFeatureWr->IsEnabled()) {
       mFeatureWrPartial->EnableByDefault();
-
-      nsString adapter;
-      mGfxInfo->GetAdapterDeviceID(adapter);
-      
-      
-      if (adapter.Find("Mali-G",  true) >= 0) {
-        mFeatureWrPartial->Disable(FeatureStatus::Blocked,
-                                   "Partial present blocked on Mali-Gxx",
-                                   "FEATURE_FAILURE_PARTIAL_PRESENT_MALI"_ns);
-      }
     }
   }
 }

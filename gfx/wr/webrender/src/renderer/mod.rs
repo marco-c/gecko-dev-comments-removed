@@ -3563,6 +3563,17 @@ impl Renderer {
         self.device.enable_depth_write();
 
         
+        
+        
+        
+        
+        if let Some(partial_present) = self.compositor_config.partial_present() {
+            if let Some(PartialPresentMode::Single { dirty_rect }) = partial_present_mode {
+                partial_present.set_buffer_damage_region(&[dirty_rect.to_i32()]);
+            }
+        }
+
+        
         let clear_color = self.clear_color.map(|color| color.to_array());
 
         match partial_present_mode {
@@ -4353,10 +4364,6 @@ impl Renderer {
                 partial_present_mode = Some(PartialPresentMode::Single {
                     dirty_rect: total_dirty_rect,
                 });
-
-                if let Some(partial_present) = self.compositor_config.partial_present() {
-                    partial_present.set_buffer_damage_region(&[total_dirty_rect.to_i32()]);
-                }
             } else {
                 
                 
