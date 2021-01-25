@@ -20,7 +20,7 @@ export function prepareSourcePayload(
   threadFront: ThreadFront,
   source: SourcePayload
 ): GeneratedSourceData {
-  const { isServiceWorker } = threadFront.parentFront;
+  const { isWorkerTarget } = threadFront.parentFront;
 
   
   
@@ -28,7 +28,7 @@ export function prepareSourcePayload(
   
   clientCommands.registerSourceActor(
     source.actor,
-    makeSourceId(source, isServiceWorker)
+    makeSourceId(source, isWorkerTarget)
   );
 
   source = { ...source };
@@ -44,7 +44,11 @@ export function prepareSourcePayload(
     delete (source: any).introductionUrl;
   }
 
-  return { thread: threadFront.actor, isServiceWorker, source };
+  return {
+    thread: threadFront.actor,
+    isWorkerTarget,
+    source,
+  };
 }
 
 export function createFrame(
@@ -77,13 +81,12 @@ export function createFrame(
   };
 }
 
-export function makeSourceId(source: SourcePayload, isServiceWorker: boolean) {
+export function makeSourceId(source: SourcePayload, isWorkerTarget: boolean) {
   
   
   
   
-  
-  return source.url && !isServiceWorker
+  return source.url && !isWorkerTarget
     ? `sourceURL-${source.url}`
     : `source-${source.actor}`;
 }
