@@ -746,7 +746,7 @@ public abstract class MetaScanner {
         stateSave  = state;
     }
 
-    private void handleCharInAttributeValue(int c) {
+    private void handleCharInAttributeValue(int c) throws SAXException {
         if (metaState == A) {
             if (contentIndex == CONTENT.length || charsetIndex == CHARSET.length) {
                 addToBuffer(c);
@@ -771,9 +771,10 @@ public abstract class MetaScanner {
 
 
 
-    private void addToBuffer(int c) {
+
+    private void addToBuffer(int c) throws SAXException {
         if (strBufLen == strBuf.length) {
-            char[] newBuf = new char[strBuf.length + (strBuf.length << 1)];
+            char[] newBuf = new char[Portability.checkedAdd(strBuf.length, (strBuf.length << 1))];
             System.arraycopy(strBuf, 0, newBuf, 0, strBuf.length);
             strBuf = newBuf;
         }

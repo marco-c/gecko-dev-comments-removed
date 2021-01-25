@@ -1054,8 +1054,8 @@ public class Tokenizer implements Locator, Locator2 {
         
     }
 
-    private void appendStrBuf(@NoLength char[] buffer, int offset, int length) {
-        int newLen = strBufLen + length;
+    private void appendStrBuf(@NoLength char[] buffer, int offset, int length) throws SAXException {
+        int newLen = Portability.checkedAdd(strBufLen, length);
         
         
         
@@ -1069,7 +1069,7 @@ public class Tokenizer implements Locator, Locator2 {
     
 
 
-    @Inline private void appendCharRefBufToStrBuf() {
+    @Inline private void appendCharRefBufToStrBuf() throws SAXException {
         appendStrBuf(charRefBuf, 0, charRefBufLen);
         charRefBufLen = 0;
     }
