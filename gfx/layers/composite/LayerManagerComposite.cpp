@@ -542,6 +542,10 @@ void LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
   mInTransaction = false;
   mRenderStartTime = TimeStamp::Now();
 
+  
+  
+  TextureSourceProvider::AutoReadUnlockTextures unlock(mCompositor);
+
   if (!mIsCompositorReady) {
     return;
   }
