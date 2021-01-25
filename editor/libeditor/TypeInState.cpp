@@ -9,6 +9,7 @@
 
 #include "HTMLEditUtils.h"
 #include "mozilla/EditorBase.h"
+#include "mozilla/HTMLEditor.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/MouseEvent.h"
@@ -112,6 +113,47 @@ void TypeInState::PreHandleMouseEvent(const MouseEvent& aMouseDownOrUpEvent) {
 
 void TypeInState::PreHandleSelectionChangeCommand(Command aCommand) {
   mLastSelectionCommand = aCommand;
+}
+
+void TypeInState::PostHandleSelectionChangeCommand(
+    const HTMLEditor& aHTMLEditor, Command aCommand) {
+  if (mLastSelectionCommand != aCommand) {
+    return;
+  }
+
+  
+  
+  if (!aHTMLEditor.SelectionRefPtr()->IsCollapsed() ||
+      !aHTMLEditor.SelectionRefPtr()->RangeCount()) {
+    return;
+  }
+
+  EditorRawDOMPoint caretPoint(
+      EditorBase::GetStartPoint(*aHTMLEditor.SelectionRefPtr()));
+  if (NS_WARN_IF(!caretPoint.IsSet())) {
+    return;
+  }
+
+  if (!HTMLEditUtils::IsPointAtEdgeOfLink(caretPoint)) {
+    return;
+  }
+
+  
+  
+  if (AreAllStylesCleared() || IsLinkStyleSet()) {
+    return;
+  }
+  
+  
+  
+  if (AreSomeStylesSet() ||
+      (AreSomeStylesCleared() && !IsOnlyLinkStyleCleared())) {
+    ClearProp(nsGkAtoms::a, nullptr);
+    return;
+  }
+
+  Reset();
+  ClearProp(nsGkAtoms::a, nullptr);
 }
 
 void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {

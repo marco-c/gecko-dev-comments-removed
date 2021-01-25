@@ -134,6 +134,10 @@ class HTMLEditor final : public TextEditor,
 
   HTMLEditor();
 
+  static HTMLEditor* GetFrom(EditorBase* aEditorBase) {
+    return aEditorBase ? aEditorBase->AsHTMLEditor() : nullptr;
+  }
+
   MOZ_CAN_RUN_SCRIPT virtual void PreDestroy(bool aDestroyingFrames) override;
 
   bool GetReturnInParagraphCreatesNewParagraph();
@@ -177,7 +181,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
   void PreHandleSelectionChangeCommand(Command aCommand);
+  void PostHandleSelectionChangeCommand(Command aCommand);
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult HandleKeyPressEvent(
       WidgetKeyboardEvent* aKeyboardEvent) override;

@@ -724,6 +724,18 @@ void HTMLEditor::PreHandleSelectionChangeCommand(Command aCommand) {
   }
 }
 
+void HTMLEditor::PostHandleSelectionChangeCommand(Command aCommand) {
+  if (!mTypeInState) {
+    return;
+  }
+
+  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+  if (!editActionData.CanHandle()) {
+    return;
+  }
+  mTypeInState->PostHandleSelectionChangeCommand(*this, aCommand);
+}
+
 nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   
   
