@@ -92,7 +92,28 @@ bool CanRecordProduct(SupportedProduct aProducts);
 
 
 
+
 nsresult MsSinceProcessStart(double* aResult);
+
+
+
+
+
+
+
+
+
+nsresult MsSinceProcessStartIncludingSuspend(double* aResult);
+
+
+
+
+
+
+
+
+
+nsresult MsSinceProcessStartExcludingSuspend(double* aResult);
 
 
 
