@@ -144,7 +144,7 @@ function initialize(toggleProfilerKeyShortcuts) {
 
   const item = {
     id: WIDGET_ID,
-    type: "view",
+    type: "button-and-view",
     viewId,
     tooltiptext: "profiler-button.tooltiptext",
 
@@ -231,29 +231,31 @@ function initialize(toggleProfilerKeyShortcuts) {
 
 
 
-    onCreated: buttonElement => {
-      const window = buttonElement?.ownerDocument?.defaultView;
+    onCreated: node => {
+      const window = node.ownerDocument?.defaultView;
       if (!window) {
         console.error(
-          "Unable to find the window of the profiler button element."
+          "Unable to find the window of the profiler toolbar item."
+        );
+        return;
+      }
+
+      const firstButton = node.firstElementChild;
+      if (!firstButton) {
+        console.error(
+          "Unable to find the button element inside the profiler toolbar item."
         );
         return;
       }
 
       
       
-      buttonElement.classList.add("subviewbutton-nav");
+      
+      const buttonElement = firstButton;
 
       
       
-      
-      buttonElement.setAttribute("wantdropmarker", "true");
-      
-      
-      buttonElement.addEventListener("click", item);
-      
-      
-      buttonElement.addEventListener("keydown", item);
+      buttonElement.classList.add("subviewbutton-nav");
 
       function setButtonActive() {
         buttonElement.setAttribute(
@@ -295,79 +297,20 @@ function initialize(toggleProfilerKeyShortcuts) {
         Services.obs.removeObserver(setButtonActive, "profiler-started");
         Services.obs.removeObserver(setButtonInactive, "profiler-stopped");
         Services.obs.removeObserver(setButtonPaused, "profiler-paused");
-        buttonElement.removeEventListener("click", item);
-        buttonElement.removeEventListener("keydown", item);
       });
     },
 
     
-    handleEvent: event => {
-      function startOrCapture() {
-        if (Services.profiler.IsPaused()) {
-          
-          return;
-        }
-        const { startProfiler, captureProfile } = lazy.Background();
-        if (Services.profiler.IsActive()) {
-          captureProfile("aboutprofiling");
-        } else {
-          startProfiler("aboutprofiling");
-        }
+    onCommand: event => {
+      if (Services.profiler.IsPaused()) {
+        
+        return;
       }
-
-      if (event.type == "click") {
-        
-        if (event.button != 0) {
-          return;
-        }
-
-        const button = event.target;
-
-        
-        if (button.getAttribute("cui-anchorid") == "nav-bar-overflow-button") {
-          return;
-        }
-
-        
-        
-        
-        const win = button.ownerGlobal;
-        const iconBounds = win.windowUtils.getBoundsWithoutFlushing(
-          button.icon
-        );
-        if (
-          win.RTL_UI ? event.x >= iconBounds.left : event.x <= iconBounds.right
-        ) {
-          startOrCapture();
-          event.stopPropagation();
-          event.preventDefault();
-        }
-      } else if (event.type == "keydown") {
-        if (event.key == " " || event.key == "Enter") {
-          startOrCapture();
-          event.stopPropagation();
-          event.preventDefault();
-          return;
-        }
-        if (event.key == "ArrowDown") {
-          
-          const button = event.target;
-          const cmdEvent = button.ownerDocument.createEvent("xulcommandevent");
-          cmdEvent.initCommandEvent(
-            "command",
-            true,
-            true,
-            button.ownerGlobal,
-            0,
-            event.ctrlKey,
-            event.altKey,
-            event.shiftKey,
-            event.metaKey,
-            null,
-            event.mozInputSource
-          );
-          event.currentTarget.dispatchEvent(cmdEvent);
-        }
+      const { startProfiler, captureProfile } = lazy.Background();
+      if (Services.profiler.IsActive()) {
+        captureProfile("aboutprofiling");
+      } else {
+        startProfiler("aboutprofiling");
       }
     },
   };
