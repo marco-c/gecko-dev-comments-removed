@@ -2868,19 +2868,7 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
 
     
     
-    
-    
-    
-    
-    
-    Compare_Boolean,
-
-    
-    
     Compare_Int32,
-    Compare_Int32MaybeCoerceBoth,
-    Compare_Int32MaybeCoerceLHS,
-    Compare_Int32MaybeCoerceRHS,
 
     
     Compare_UInt32,
@@ -2902,15 +2890,6 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
 
     
     Compare_Symbol,
-
-    
-    
-    
-    
-    
-    
-    
-    Compare_StrictString,
 
     
     Compare_Object,
@@ -2981,12 +2960,7 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
                               bool* filtersUndefined, bool* filtersNull);
 
   CompareType compareType() const { return compareType_; }
-  bool isInt32Comparison() const {
-    return compareType() == Compare_Int32 ||
-           compareType() == Compare_Int32MaybeCoerceBoth ||
-           compareType() == Compare_Int32MaybeCoerceLHS ||
-           compareType() == Compare_Int32MaybeCoerceRHS;
-  }
+  bool isInt32Comparison() const { return compareType() == Compare_Int32; }
   bool isDoubleComparison() const { return compareType() == Compare_Double; }
   bool isFloat32Comparison() const { return compareType() == Compare_Float32; }
   bool isNumericComparison() const {

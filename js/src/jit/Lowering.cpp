@@ -755,17 +755,6 @@ void LIRGenerator::visitTest(MTest* test) {
     }
 
     
-    if (comp->compareType() == MCompare::Compare_Boolean) {
-      MOZ_ASSERT(left->type() == MIRType::Value);
-      MOZ_ASSERT(right->type() == MIRType::Boolean);
-
-      LCompareBAndBranch* lir = new (alloc()) LCompareBAndBranch(
-          comp, useBox(left), useRegisterOrConstant(right), ifTrue, ifFalse);
-      add(lir, test);
-      return;
-    }
-
-    
     if (comp->isInt32Comparison() ||
         comp->compareType() == MCompare::Compare_UInt32 ||
         comp->compareType() == MCompare::Compare_Object ||
@@ -954,18 +943,6 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   }
 
   
-  if (comp->compareType() == MCompare::Compare_StrictString) {
-    MOZ_ASSERT(left->type() == MIRType::Value);
-    MOZ_ASSERT(right->type() == MIRType::String);
-
-    LCompareStrictS* lir = new (alloc())
-        LCompareStrictS(useBox(left), useRegister(right), tempToUnbox());
-    define(lir, comp);
-    assignSafepoint(lir, comp);
-    return;
-  }
-
-  
   if (comp->compareType() == MCompare::Compare_BigInt) {
     auto* lir = new (alloc()) LCompareBigInt(
         useRegister(left), useRegister(right), temp(), temp(), temp());
@@ -1041,17 +1018,6 @@ void LIRGenerator::visitCompare(MCompare* comp) {
 
     LIsNullOrLikeUndefinedV* lir =
         new (alloc()) LIsNullOrLikeUndefinedV(useBox(left), tmp, tmpToUnbox);
-    define(lir, comp);
-    return;
-  }
-
-  
-  if (comp->compareType() == MCompare::Compare_Boolean) {
-    MOZ_ASSERT(left->type() == MIRType::Value);
-    MOZ_ASSERT(right->type() == MIRType::Boolean);
-
-    LCompareB* lir =
-        new (alloc()) LCompareB(useBox(left), useRegisterOrConstant(right));
     define(lir, comp);
     return;
   }
