@@ -120,53 +120,35 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
     return;
   }
 
+  nsCOMPtr<nsINode> textControl;
+  if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
+    if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
+      textControl = root->GetClosestNativeAnonymousSubtreeRoot();
+    }
+  }
+
+  if (textControl && !(aReason & (nsISelectionListener::MOUSEUP_REASON |
+                                  nsISelectionListener::KEYPRESS_REASON |
+                                  nsISelectionListener::DRAG_REASON))) {
+    RefPtr<AsyncEventDispatcher> asyncDispatcher =
+        new AsyncEventDispatcher(textControl, eFormSelect, CanBubble::eYes);
+    asyncDispatcher->PostDOMEvent();
+  }
+
   
   
   
   
-  if (StaticPrefs::dom_select_events_textcontrols_enabled()) {
-    nsCOMPtr<nsINode> target;
+  if (textControl && !StaticPrefs::dom_select_events_textcontrols_enabled()) {
+    return;
+  }
 
-    
-    
-    
-    
-    
-    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
-      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
-        while (root && root->IsInNativeAnonymousSubtree()) {
-          root = root->GetParent();
-        }
+  nsCOMPtr<nsINode> target = textControl ? textControl : aDoc;
 
-        target = std::move(root);
-      }
-    }
-
-    
-    
-    if (!target) {
-      target = aDoc;
-    }
-
-    if (target) {
-      RefPtr<AsyncEventDispatcher> asyncDispatcher =
-          new AsyncEventDispatcher(target, eSelectionChange, CanBubble::eNo);
-      asyncDispatcher->PostDOMEvent();
-    }
-  } else {
-    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
-      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
-        if (root->IsInNativeAnonymousSubtree()) {
-          return;
-        }
-      }
-    }
-
-    if (aDoc) {
-      RefPtr<AsyncEventDispatcher> asyncDispatcher =
-          new AsyncEventDispatcher(aDoc, eSelectionChange, CanBubble::eNo);
-      asyncDispatcher->PostDOMEvent();
-    }
+  if (target) {
+    RefPtr<AsyncEventDispatcher> asyncDispatcher =
+        new AsyncEventDispatcher(target, eSelectionChange, CanBubble::eNo);
+    asyncDispatcher->PostDOMEvent();
   }
 }
 

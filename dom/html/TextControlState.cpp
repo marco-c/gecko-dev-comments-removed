@@ -2101,15 +2101,6 @@ void TextControlState::SetSelectionRange(
       
       mBoundFrame->ScrollSelectionIntoViewAsync();
     }
-    
-    
-    
-    
-
-    
-    
-    
-    changed = true;
   }
 
   if (changed) {
