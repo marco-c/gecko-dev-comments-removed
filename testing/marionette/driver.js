@@ -1840,10 +1840,8 @@ GeckoDriver.prototype.switchToParentFrame = async function() {
 
 
 
-
-
 GeckoDriver.prototype.switchToFrame = async function(cmd) {
-  const { element: el, focus = false, id } = cmd.parameters;
+  const { element: el, id } = cmd.parameters;
 
   if (typeof id == "number") {
     assert.unsignedShort(id, `Expected id to be unsigned short, got ${id}`);
@@ -1917,10 +1915,6 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
 
     const frameWindow = browsingContext.window;
     await checkLoad(frameWindow);
-
-    if (focus) {
-      frameWindow.focus();
-    }
   } else if (this.context == Context.Content) {
     cmd.commandID = cmd.id;
     await this.listener.switchToFrame(cmd.parameters);

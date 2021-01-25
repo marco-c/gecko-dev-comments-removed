@@ -768,10 +768,8 @@ function switchToParentFrame(msg) {
 
 
 
-
-
 function switchToFrame({ json }) {
-  let { commandID, element, focus, id } = json;
+  let { commandID, element, id } = json;
 
   let foundFrame;
   let wantedFrame = null;
@@ -792,10 +790,6 @@ function switchToFrame({ json }) {
     sendSyncMessage("Marionette:switchedToFrame", {
       browsingContextId: curContainer.id,
     });
-
-    if (focus) {
-      curContainer.frame.focus();
-    }
 
     sendOk(commandID);
     return;
@@ -858,10 +852,6 @@ function switchToFrame({ json }) {
               browsingContextId: curContainer.id,
             });
 
-            if (focus) {
-              curContainer.frame.focus();
-            }
-
             sendOk(commandID);
             return;
           }
@@ -892,10 +882,6 @@ function switchToFrame({ json }) {
   sendSyncMessage("Marionette:switchedToFrame", {
     browsingContextId: curContainer.id,
   });
-
-  if (focus) {
-    curContainer.frame.focus();
-  }
 
   sendOk(commandID);
 }
