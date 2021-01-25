@@ -29,12 +29,27 @@ use std::{mem, num};
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 struct LRUCacheEntry<T> {
     
+    partition_index: u8,
+
+    
+    
     lru_index: ItemIndex,
+
     
     value: T,
 }
@@ -47,15 +62,16 @@ pub struct LRUCache<T, M> {
     
     entries: FreeList<LRUCacheEntry<T>, M>,
     
-    lru: LRUTracker<FreeListHandle<M>>,
+    lru: Vec<LRUTracker<FreeListHandle<M>>>,
 }
 
 impl<T, M> LRUCache<T, M> {
     
-    pub fn new() -> Self {
+    pub fn new(lru_partition_count: usize) -> Self {
+        assert!(lru_partition_count <= u8::MAX as usize + 1);
         LRUCache {
             entries: FreeList::new(),
-            lru: LRUTracker::new(),
+            lru: (0..lru_partition_count).map(|_| LRUTracker::new()).collect(),
         }
     }
 
@@ -64,6 +80,7 @@ impl<T, M> LRUCache<T, M> {
     
     pub fn push_new(
         &mut self,
+        partition_index: u8,
         value: T,
     ) -> WeakFreeListHandle<M> {
         
@@ -72,6 +89,7 @@ impl<T, M> LRUCache<T, M> {
 
         
         let handle = self.entries.insert(LRUCacheEntry {
+            partition_index: 0,
             lru_index: ItemIndex(num::NonZeroU32::new(1).unwrap()),
             value
         });
@@ -82,7 +100,9 @@ impl<T, M> LRUCache<T, M> {
         
         
         let entry = self.entries.get_mut(&handle);
-        entry.lru_index = self.lru.push_new(handle);
+        let lru_index = self.lru[partition_index as usize].push_new(handle);
+        entry.partition_index = partition_index;
+        entry.lru_index = lru_index;
 
         weak_handle
     }
@@ -115,8 +135,8 @@ impl<T, M> LRUCache<T, M> {
 
     
     
-    pub fn peek_oldest(&self) -> Option<&T> {
-        self.lru
+    pub fn peek_oldest(&self, partition_index: u8) -> Option<&T> {
+        self.lru[partition_index as usize]
             .peek_front()
             .map(|handle| {
                 let entry = self.entries.get(handle);
@@ -128,8 +148,9 @@ impl<T, M> LRUCache<T, M> {
     
     pub fn pop_oldest(
         &mut self,
+        partition_index: u8,
     ) -> Option<T> {
-        self.lru
+        self.lru[partition_index as usize]
             .pop_front()
             .map(|handle| {
                 let entry = self.entries.free(handle);
@@ -146,14 +167,22 @@ impl<T, M> LRUCache<T, M> {
     pub fn replace_or_insert(
         &mut self,
         handle: &mut WeakFreeListHandle<M>,
+        partition_index: u8,
         data: T,
     ) -> Option<T> {
         match self.entries.get_opt_mut(handle) {
             Some(entry) => {
+                if entry.partition_index != partition_index {
+                    
+                    let strong_handle = self.lru[entry.partition_index as usize].remove(entry.lru_index);
+                    let lru_index = self.lru[partition_index as usize].push_new(strong_handle);
+                    entry.partition_index = partition_index;
+                    entry.lru_index = lru_index;
+                }
                 Some(mem::replace(&mut entry.value, data))
             }
             None => {
-                *handle = self.push_new(data);
+                *handle = self.push_new(partition_index, data);
                 None
             }
         }
@@ -165,14 +194,14 @@ impl<T, M> LRUCache<T, M> {
     
     pub fn touch(
         &mut self,
-        handle: &WeakFreeListHandle<M>
+        handle: &WeakFreeListHandle<M>,
     ) -> Option<&mut T> {
         let lru = &mut self.lru;
 
         self.entries
             .get_opt_mut(handle)
             .map(|entry| {
-                lru.mark_used(entry.lru_index);
+                lru[entry.partition_index as usize].mark_used(entry.lru_index);
                 &mut entry.value
             })
     }
@@ -180,7 +209,9 @@ impl<T, M> LRUCache<T, M> {
     
     #[cfg(test)]
     fn validate(&self) {
-        self.lru.validate();
+        for lru in &self.lru {
+            lru.validate();
+        }
     }
 }
 
@@ -393,7 +424,7 @@ impl<H> LRUTracker<H> where H: std::fmt::Debug {
     }
 
     
-    #[allow(dead_code)]
+    
     fn remove(
         &mut self,
         index: ItemIndex,
@@ -504,21 +535,21 @@ fn test_lru_tracker_push_peek() {
     struct CacheMarker;
     const NUM_ELEMENTS: usize = 50;
 
-    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new();
+    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new(1);
     cache.validate();
 
-    assert_eq!(cache.peek_oldest(), None);
+    assert_eq!(cache.peek_oldest(0), None);
 
     for i in 0 .. NUM_ELEMENTS {
-        cache.push_new(i);
+        cache.push_new(0, i);
     }
     cache.validate();
 
-    assert_eq!(cache.peek_oldest(), Some(&0));
-    assert_eq!(cache.peek_oldest(), Some(&0));
+    assert_eq!(cache.peek_oldest(0), Some(&0));
+    assert_eq!(cache.peek_oldest(0), Some(&0));
 
-    cache.pop_oldest();
-    assert_eq!(cache.peek_oldest(), Some(&1));
+    cache.pop_oldest(0);
+    assert_eq!(cache.peek_oldest(0), Some(&1));
 }
 
 #[test]
@@ -529,20 +560,20 @@ fn test_lru_tracker_push_pop() {
     struct CacheMarker;
     const NUM_ELEMENTS: usize = 50;
 
-    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new();
+    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new(1);
     cache.validate();
 
     for i in 0 .. NUM_ELEMENTS {
-        cache.push_new(i);
+        cache.push_new(0, i);
     }
     cache.validate();
 
     for i in 0 .. NUM_ELEMENTS {
-        assert_eq!(cache.pop_oldest(), Some(i));
+        assert_eq!(cache.pop_oldest(0), Some(i));
     }
     cache.validate();
 
-    assert_eq!(cache.pop_oldest(), None);
+    assert_eq!(cache.pop_oldest(0), None);
 }
 
 #[test]
@@ -553,12 +584,12 @@ fn test_lru_tracker_push_touch_pop() {
     struct CacheMarker;
     const NUM_ELEMENTS: usize = 50;
 
-    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new();
+    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new(1);
     let mut handles = Vec::new();
     cache.validate();
 
     for i in 0 .. NUM_ELEMENTS {
-        handles.push(cache.push_new(i));
+        handles.push(cache.push_new(0, i));
     }
     cache.validate();
 
@@ -568,15 +599,15 @@ fn test_lru_tracker_push_touch_pop() {
     cache.validate();
 
     for i in 0 .. NUM_ELEMENTS/2 {
-        assert_eq!(cache.pop_oldest(), Some(i*2+1));
+        assert_eq!(cache.pop_oldest(0), Some(i*2+1));
     }
     cache.validate();
     for i in 0 .. NUM_ELEMENTS/2 {
-        assert_eq!(cache.pop_oldest(), Some(i*2));
+        assert_eq!(cache.pop_oldest(0), Some(i*2));
     }
     cache.validate();
 
-    assert_eq!(cache.pop_oldest(), None);
+    assert_eq!(cache.pop_oldest(0), None);
 }
 
 #[test]
@@ -586,12 +617,12 @@ fn test_lru_tracker_push_get() {
     struct CacheMarker;
     const NUM_ELEMENTS: usize = 50;
 
-    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new();
+    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new(1);
     let mut handles = Vec::new();
     cache.validate();
 
     for i in 0 .. NUM_ELEMENTS {
-        handles.push(cache.push_new(i));
+        handles.push(cache.push_new(0, i));
     }
     cache.validate();
 
@@ -609,17 +640,17 @@ fn test_lru_tracker_push_replace_get() {
     struct CacheMarker;
     const NUM_ELEMENTS: usize = 50;
 
-    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new();
+    let mut cache: LRUCache<usize, CacheMarker> = LRUCache::new(1);
     let mut handles = Vec::new();
     cache.validate();
 
     for i in 0 .. NUM_ELEMENTS {
-        handles.push(cache.push_new(i));
+        handles.push(cache.push_new(0, i));
     }
     cache.validate();
 
     for i in 0 .. NUM_ELEMENTS {
-        assert_eq!(cache.replace_or_insert(&mut handles[i], i * 2), Some(i));
+        assert_eq!(cache.replace_or_insert(&mut handles[i], 0, i * 2), Some(i));
     }
     cache.validate();
 
@@ -629,6 +660,6 @@ fn test_lru_tracker_push_replace_get() {
     cache.validate();
 
     let mut empty_handle = WeakFreeListHandle::invalid();
-    assert_eq!(cache.replace_or_insert(&mut empty_handle, 100), None);
+    assert_eq!(cache.replace_or_insert(&mut empty_handle, 0, 100), None);
     assert_eq!(cache.get_opt(&empty_handle), Some(&100));
 }
