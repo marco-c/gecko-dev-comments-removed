@@ -1659,6 +1659,9 @@ impl RenderBackend {
         }
 
         (*report) += self.resource_cache.report_memory(op);
+        report.texture_cache_structures = self.resource_cache
+            .texture_cache
+            .report_memory(ops);
 
         
         

@@ -31,6 +31,7 @@ use std::{mem, num};
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(MallocSizeOf)]
 struct LRUCacheEntry<T> {
     
     
@@ -42,6 +43,7 @@ struct LRUCacheEntry<T> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(MallocSizeOf)]
 pub struct LRUCache<T, M> {
     
     entries: FreeList<LRUCacheEntry<T>, M>,
@@ -237,7 +239,7 @@ impl<T, M> LRUCache<T, M> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, MallocSizeOf)]
 struct ItemIndex(num::NonZeroU32);
 
 impl ItemIndex {
@@ -252,7 +254,7 @@ impl ItemIndex {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 struct Item<H> {
     prev: Option<ItemIndex>,
     next: Option<ItemIndex>,
@@ -262,6 +264,7 @@ struct Item<H> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(MallocSizeOf)]
 struct LRUTracker<H> {
     
     head: Option<ItemIndex>,
