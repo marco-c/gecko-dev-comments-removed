@@ -413,13 +413,6 @@ class Perftest(object):
     def run_test_teardown(self, test):
         self.check_for_crashes()
 
-        
-        if self.config["gecko_profile"]:
-            self.gecko_profiler.symbolicate()
-            
-            LOG.info("cleaning up after gecko profiling")
-            self.gecko_profiler.clean()
-
     def process_results(self, tests, test_names):
         
         
@@ -429,7 +422,16 @@ class Perftest(object):
 
         self.config["raptor_json_path"] = raptor_json_path
         self.config["artifact_dir"] = self.artifact_dir
-        return self.results_handler.summarize_and_output(self.config, tests, test_names)
+        res = self.results_handler.summarize_and_output(self.config, tests, test_names)
+
+        
+        if self.config["gecko_profile"]:
+            self.gecko_profiler.symbolicate()
+            
+            LOG.info("cleaning up after gecko profiling")
+            self.gecko_profiler.clean()
+
+        return res
 
     @abstractmethod
     def set_browser_test_prefs(self):
