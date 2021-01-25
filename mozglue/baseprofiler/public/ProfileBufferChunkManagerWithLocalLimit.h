@@ -145,11 +145,29 @@ class ProfileBufferChunkManagerWithLocalLimit final
         mReleasedChunks = std::move(aChunk);
       } else {
         
-        
-        MOZ_ASSERT(mReleasedChunks->Last()->ChunkHeader().mDoneTimeStamp <
-                       aChunk->ChunkHeader().mDoneTimeStamp,
-                   "Chunks must be released in increasing timestamps");
-        mReleasedChunks->SetLast(std::move(aChunk));
+        const TimeStamp& releasedChunkDoneTimeStamp =
+            aChunk->ChunkHeader().mDoneTimeStamp;
+        if (releasedChunkDoneTimeStamp <
+            mReleasedChunks->ChunkHeader().mDoneTimeStamp) {
+          
+          aChunk->SetLast(std::move(mReleasedChunks));
+          mReleasedChunks = std::move(aChunk);
+        } else {
+          
+          
+          ProfileBufferChunk* chunk = mReleasedChunks.get();
+          for (;;) {
+            ProfileBufferChunk* const nextChunk = chunk->GetNext();
+            if (!nextChunk || releasedChunkDoneTimeStamp <
+                                  nextChunk->ChunkHeader().mDoneTimeStamp) {
+              
+              
+              chunk->InsertNext(std::move(aChunk));
+              break;
+            }
+            chunk = nextChunk;
+          }
+        }
       }
 
       return Update(mUnreleasedBufferBytes, mReleasedBufferBytes,
