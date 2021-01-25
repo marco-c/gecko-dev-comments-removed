@@ -5,6 +5,7 @@
 
 #include "RemoteDecoderManagerChild.h"
 
+#include "PDMFactory.h"
 #include "RemoteAudioDecoder.h"
 #include "RemoteMediaDataDecoder.h"
 #include "RemoteVideoDecoder.h"
@@ -44,6 +45,11 @@ static StaticRefPtr<RemoteDecoderManagerChild>
 static StaticRefPtr<RemoteDecoderManagerChild>
     sRemoteDecoderManagerChildForGPUProcess;
 static UniquePtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
+
+static StaticDataMutex<Maybe<PDMFactory::MediaCodecsSupported>> sGPUSupported(
+    "RDMC::sGPUSupported");
+static StaticDataMutex<Maybe<PDMFactory::MediaCodecsSupported>> sRDDSupported(
+    "RDMC::sRDDSupported");
 
 class ShutdownObserver final : public nsIObserver {
  public:
@@ -190,18 +196,35 @@ nsISerialEventTarget* RemoteDecoderManagerChild::GetManagerThread() {
 bool RemoteDecoderManagerChild::Supports(
     RemoteDecodeIn aLocation, const SupportDecoderParams& aParams,
     DecoderDoctorDiagnostics* aDiagnostics) {
-  RefPtr<PDMFactory> pdm;
+  Maybe<PDMFactory::MediaCodecsSupported> supported;
   switch (aLocation) {
-    case RemoteDecodeIn::RddProcess:
-      pdm = PDMFactory::PDMFactoryForRdd();
+    case RemoteDecodeIn::RddProcess: {
+      auto supportedRDD = sRDDSupported.Lock();
+      supported = *supportedRDD;
       break;
-    case RemoteDecodeIn::GpuProcess:
-      pdm = PDMFactory::PDMFactoryForGpu();
+    }
+    case RemoteDecodeIn::GpuProcess: {
+      auto supportedGPU = sGPUSupported.Lock();
+      supported = *supportedGPU;
       break;
+    }
     default:
       return false;
   }
-  return pdm->Supports(aParams, aDiagnostics);
+  if (!supported) {
+    
+    
+    if (aLocation == RemoteDecodeIn::RddProcess) {
+      
+      
+      LaunchRDDProcessIfNeeded();
+    }
+    return true;
+  }
+
+  
+  
+  return PDMFactory::SupportsMimeType(aParams.MimeType(), *supported);
 }
 
 
@@ -572,6 +595,25 @@ void RemoteDecoderManagerChild::DeallocateSurfaceDescriptor(
 
 void RemoteDecoderManagerChild::HandleFatalError(const char* aMsg) const {
   dom::ContentChild::FatalErrorIfNotUsingGPUProcess(aMsg, OtherPid());
+}
+
+void RemoteDecoderManagerChild::SetSupported(
+    RemoteDecodeIn aLocation,
+    const PDMFactory::MediaCodecsSupported& aSupported) {
+  switch (aLocation) {
+    case RemoteDecodeIn::GpuProcess: {
+      auto supported = sGPUSupported.Lock();
+      *supported = Some(aSupported);
+      break;
+    }
+    case RemoteDecodeIn::RddProcess: {
+      auto supported = sRDDSupported.Lock();
+      *supported = Some(aSupported);
+      break;
+    }
+    default:
+      MOZ_CRASH("Not to be used for any other process");
+  }
 }
 
 }  
