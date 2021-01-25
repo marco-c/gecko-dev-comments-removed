@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-
+<!-- vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: -->
 <html>
 <head>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -31,6 +31,9 @@
   }
 
   async function runTest() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["dom.input_events.canSuspendInBCG.enabled", true]]
+    });
     subTab = window.open("file_sync_xhr_nested_helper.html");
     await new Promise((r) => {
       subTab.addEventListener("load", r);
