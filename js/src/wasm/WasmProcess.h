@@ -58,7 +58,7 @@ void UnregisterCodeSegment(const CodeSegment* cs);
 
 bool IsHugeMemoryEnabled();
 
-MOZ_MUST_USE bool DisableHugeMemory();
+[[nodiscard]] bool DisableHugeMemory();
 
 
 

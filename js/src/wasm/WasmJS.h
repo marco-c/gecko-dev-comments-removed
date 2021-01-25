@@ -167,17 +167,17 @@ bool ExceptionsAvailable(JSContext* cx);
 
 
 
-MOZ_MUST_USE bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
-                       HandleObject importObj,
-                       MutableHandleWasmInstanceObject instanceObj);
+[[nodiscard]] bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
+                        HandleObject importObj,
+                        MutableHandleWasmInstanceObject instanceObj);
 
 
 
 
 
 struct ImportValues;
-MOZ_MUST_USE bool GetImports(JSContext* cx, const Module& module,
-                             HandleObject importObj, ImportValues* imports);
+[[nodiscard]] bool GetImports(JSContext* cx, const Module& module,
+                              HandleObject importObj, ImportValues* imports);
 
 
 
@@ -185,11 +185,11 @@ MOZ_MUST_USE bool GetImports(JSContext* cx, const Module& module,
 
 
 
-MOZ_MUST_USE bool CompileAndSerialize(const ShareableBytes& bytecode,
-                                      Bytes* serialized);
+[[nodiscard]] bool CompileAndSerialize(const ShareableBytes& bytecode,
+                                       Bytes* serialized);
 
-MOZ_MUST_USE bool DeserializeModule(JSContext* cx, const Bytes& serialized,
-                                    MutableHandleObject module);
+[[nodiscard]] bool DeserializeModule(JSContext* cx, const Bytes& serialized,
+                                     MutableHandleObject module);
 
 
 

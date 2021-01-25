@@ -29,19 +29,19 @@ namespace wasm {
 #ifdef ENABLE_WASM_CRANELIFT
 
 
-MOZ_MUST_USE bool CraneliftPlatformSupport();
+[[nodiscard]] bool CraneliftPlatformSupport();
 
 
-MOZ_MUST_USE bool CraneliftCompileFunctions(
+[[nodiscard]] bool CraneliftCompileFunctions(
     const ModuleEnvironment& moduleEnv, const CompilerEnvironment& compilerEnv,
     LifoAlloc& lifo, const FuncCompileInputVector& inputs, CompiledCode* code,
     UniqueChars* error);
 
 void CraneliftFreeReusableData(void* data);
 #else
-MOZ_MUST_USE inline bool CraneliftPlatformSupport() { return false; }
+[[nodiscard]] inline bool CraneliftPlatformSupport() { return false; }
 
-MOZ_MUST_USE inline bool CraneliftCompileFunctions(
+[[nodiscard]] inline bool CraneliftCompileFunctions(
     const ModuleEnvironment& moduleEnv, const CompilerEnvironment& compilerEnv,
     LifoAlloc& lifo, const FuncCompileInputVector& inputs, CompiledCode* code,
     UniqueChars* error) {

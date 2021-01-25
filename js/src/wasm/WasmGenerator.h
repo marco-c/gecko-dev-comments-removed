@@ -78,9 +78,9 @@ struct CompiledCode {
   StackMaps stackMaps;
   CraneliftReusableData craneliftReusableData;
 
-  MOZ_MUST_USE bool swap(jit::MacroAssembler& masm);
-  MOZ_MUST_USE bool swapCranelift(jit::MacroAssembler& masm,
-                                  CraneliftReusableData& craneliftData);
+  [[nodiscard]] bool swap(jit::MacroAssembler& masm);
+  [[nodiscard]] bool swapCranelift(jit::MacroAssembler& masm,
+                                   CraneliftReusableData& craneliftData);
 
   void clear() {
     bytes.clear();
@@ -238,21 +238,21 @@ class MOZ_STACK_CLASS ModuleGenerator {
                   CompilerEnvironment* compilerEnv,
                   const Atomic<bool>* cancelled, UniqueChars* error);
   ~ModuleGenerator();
-  MOZ_MUST_USE bool init(
+  [[nodiscard]] bool init(
       Metadata* maybeAsmJSMetadata = nullptr,
       JSTelemetrySender telemetrySender = JSTelemetrySender());
 
   
   
 
-  MOZ_MUST_USE bool compileFuncDef(
+  [[nodiscard]] bool compileFuncDef(
       uint32_t funcIndex, uint32_t lineOrBytecode, const uint8_t* begin,
       const uint8_t* end, Uint32Vector&& callSiteLineNums = Uint32Vector());
 
   
   
 
-  MOZ_MUST_USE bool finishFuncDefs();
+  [[nodiscard]] bool finishFuncDefs();
 
   
   
@@ -261,7 +261,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   SharedModule finishModule(
       const ShareableBytes& bytecode,
       JS::OptimizedEncodingListener* maybeTier2Listener = nullptr);
-  MOZ_MUST_USE bool finishTier2(const Module& module);
+  [[nodiscard]] bool finishTier2(const Module& module);
 };
 
 }  

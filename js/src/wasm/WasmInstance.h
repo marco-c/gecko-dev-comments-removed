@@ -139,8 +139,8 @@ class Instance {
   
   
 
-  MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t funcIndex,
-                               CallArgs args);
+  [[nodiscard]] bool callExport(JSContext* cx, uint32_t funcIndex,
+                                CallArgs args);
 
   
   
@@ -156,9 +156,9 @@ class Instance {
   
   
 
-  MOZ_MUST_USE bool initElems(uint32_t tableIndex, const ElemSegment& seg,
-                              uint32_t dstOffset, uint32_t srcOffset,
-                              uint32_t len);
+  [[nodiscard]] bool initElems(uint32_t tableIndex, const ElemSegment& seg,
+                               uint32_t dstOffset, uint32_t srcOffset,
+                               uint32_t len);
 
   
 

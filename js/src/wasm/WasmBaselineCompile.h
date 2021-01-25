@@ -27,10 +27,10 @@ namespace wasm {
 
 
 
-MOZ_MUST_USE bool BaselinePlatformSupport();
+[[nodiscard]] bool BaselinePlatformSupport();
 
 
-MOZ_MUST_USE bool BaselineCompileFunctions(
+[[nodiscard]] bool BaselineCompileFunctions(
     const ModuleEnvironment& moduleEnv, const CompilerEnvironment& compilerEnv,
     LifoAlloc& lifo, const FuncCompileInputVector& inputs, CompiledCode* code,
     UniqueChars* error);
