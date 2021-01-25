@@ -14,6 +14,9 @@
 namespace mozilla {
 
 struct ModuleLoadInfo final {
+  
+  
+  
   enum class Status : uint32_t {
     Loaded = 0,
     Blocked,
