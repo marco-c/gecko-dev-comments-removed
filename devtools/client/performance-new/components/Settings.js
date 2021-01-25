@@ -67,7 +67,6 @@ const {
   h3,
   section,
   p,
-  em,
 } = require("devtools/client/shared/vendor/react-dom-factories");
 const Range = createFactory(
   require("devtools/client/performance-new/components/Range")
@@ -87,6 +86,9 @@ const selectors = require("devtools/client/performance-new/store/selectors");
 const {
   openFilePickerForObjdir,
 } = require("devtools/client/performance-new/browser");
+const Localized = createFactory(
+  require("devtools/client/shared/vendor/fluent-react").Localized
+);
 
 
 const PROFILE_ENTRY_SIZE = 8;
@@ -101,69 +103,68 @@ const threadColumns = [
     {
       name: "GeckoMain",
       id: "gecko-main",
-      title:
-        "The main processes for both the parent process, and content processes",
+      
+      
+      l10nId: "perftools-thread-gecko-main",
     },
     {
       name: "Compositor",
       id: "compositor",
-      title: "Composites together different painted elements on the page.",
+      l10nId: "perftools-thread-compositor",
     },
     {
       name: "DOM Worker",
       id: "dom-worker",
-      title: "This handle both web workers and service workers",
+      l10nId: "perftools-thread-dom-worker",
     },
     {
       name: "Renderer",
       id: "renderer",
-      title: "When WebRender is enabled, the thread that executes OpenGL calls",
+      l10nId: "perftools-thread-renderer",
     },
   ],
   [
     {
       name: "RenderBackend",
       id: "render-backend",
-      title: "The WebRender RenderBackend thread",
+      l10nId: "perftools-thread-render-backend",
     },
     {
       name: "PaintWorker",
       id: "paint-worker",
-      title:
-        "When off-main-thread painting is enabled, the thread on which " +
-        "painting happens",
+      l10nId: "perftools-thread-paint-worker",
     },
     {
       name: "StyleThread",
       id: "style-thread",
-      title: "Style computation is split into multiple threads",
+      l10nId: "perftools-thread-style-thread",
     },
     {
       name: "Socket Thread",
       id: "socket-thread",
-      title: "The thread where networking code runs any blocking socket calls",
+      l10nId: "perftools-thread-socket-thread",
     },
   ],
   [
     {
       name: "StreamTrans",
       id: "stream-trans",
-      title: "TODO",
+      l10nId: "pref-thread-stream-trans",
     },
     {
       name: "ImgDecoder",
       id: "img-decoder",
-      title: "Image decoding threads",
+      l10nId: "perftools-thread-dns-resolver",
     },
     {
       name: "DNS Resolver",
       id: "dns-resolver",
-      title: "DNS resolution happens on this thread",
+      l10nId: "perftools-thread-dns-resolver",
     },
     {
       name: "JS Helper",
       id: "js-helper",
-      title: "JS engine background work such as off-main-thread compiles",
+      l10nId: "perftools-thread-js-helper",
     },
   ],
 ];
@@ -277,35 +278,37 @@ class Settings extends PureComponent {
     const { threads } = this.props;
     return div(
       { className: "perf-settings-thread-column", key: index },
-      threadDisplay.map(({ name, title, id }) =>
-        label(
-          {
-            className:
-              "perf-settings-checkbox-label perf-settings-thread-label",
-            key: name,
-            title,
-          },
-          input({
-            className: "perf-settings-checkbox",
-            id: `perf-settings-thread-checkbox-${id}`,
-            type: "checkbox",
-            value: name,
-            checked: threads.includes(name),
-            onChange: this._handleThreadCheckboxChange,
-          }),
-          name
+      threadDisplay.map(({ name, id, l10nId }) =>
+        Localized(
+          
+          { id: l10nId, attrs: { title: true }, key: name },
+          label(
+            {
+              className:
+                "perf-settings-checkbox-label perf-settings-thread-label",
+            },
+            input({
+              className: "perf-settings-checkbox",
+              id: `perf-settings-thread-checkbox-${id}`,
+              type: "checkbox",
+              
+              value: name,
+              checked: threads.includes(name),
+              onChange: this._handleThreadCheckboxChange,
+            }),
+            name
+          )
         )
       )
     );
   }
-
   _renderThreads() {
     const { temporaryThreadText } = this.state;
     const { threads } = this.props;
 
     return renderSection(
       "perf-settings-threads-summary",
-      "Threads",
+      Localized({ id: "perftools-heading-threads" }, "Threads"),
       div(
         null,
         div(
@@ -326,35 +329,35 @@ class Settings extends PureComponent {
               checked: threads.includes("*"),
               onChange: this._handleThreadCheckboxChange,
             }),
-            "Bypass selections above and record ",
-            em(null, "all"),
-            " registered threads"
+            Localized({ id: "perftools-record-all-registered-threads" })
           )
         ),
         div(
           { className: "perf-settings-row" },
-          label(
-            {
-              className: "perf-settings-text-label",
-              title:
-                "These thread names are a comma separated list that is used to " +
-                "enable profiling of the threads in the profiler. The name needs to " +
-                "be only a partial match of the thread name to be included. It " +
-                "is whitespace sensitive.",
-            },
-            div(null, "Add custom threads by name:"),
-            input({
-              className: "perf-settings-text-input",
-              id: "perf-settings-thread-text",
-              type: "text",
-              value:
-                temporaryThreadText === null
-                  ? threads.join(",")
-                  : temporaryThreadText,
-              onBlur: this._handleThreadTextCleanup,
-              onFocus: this._setThreadTextFromInput,
-              onChange: this._setThreadTextFromInput,
-            })
+          Localized(
+            { id: "perftools-tools-threads-input-label" },
+            label(
+              { className: "perf-settings-text-label" },
+              div(
+                null,
+                Localized(
+                  { id: "perftools-custom-threads-label" },
+                  "Add custom threads by name:"
+                )
+              ),
+              input({
+                className: "perf-settings-text-input",
+                id: "perftools-settings-thread-text",
+                type: "text",
+                value:
+                  temporaryThreadText === null
+                    ? threads.join(",")
+                    : temporaryThreadText,
+                onBlur: this._handleThreadTextCleanup,
+                onFocus: this._setThreadTextFromInput,
+                onChange: this._setThreadTextFromInput,
+              })
+            )
           )
         )
       )
@@ -370,6 +373,11 @@ class Settings extends PureComponent {
     if (features.length === 0) {
       return null;
     }
+
+    
+    
+    
+
     return div(
       null,
       h3(null, sectionTitle),
@@ -445,13 +453,34 @@ class Settings extends PureComponent {
       div(
         null,
         this._renderFeatureSection(
-          "Features (Recommended on by default)",
+          Localized(
+            { id: "perftools-heading-features-default" },
+            "Features (Recommended on by default)"
+          ),
           recommended,
           true
         ),
-        this._renderFeatureSection("Features", supported, true),
-        this._renderFeatureSection("Experimental", experimental, true),
-        this._renderFeatureSection("Disabled Features", unsupported, false)
+        this._renderFeatureSection(
+          Localized({ id: "perftools-heading-features" }, "Features"),
+          supported,
+          true
+        ),
+        this._renderFeatureSection(
+          Localized(
+            { id: "perftools-heading-features-experimental" },
+            "Experimental"
+          ),
+          experimental,
+          true
+        ),
+        this._renderFeatureSection(
+          Localized(
+            { id: "perftools-heading-features-disabled" },
+            "Disabled Features"
+          ),
+          unsupported,
+          false
+        )
       )
     );
   }
@@ -460,15 +489,10 @@ class Settings extends PureComponent {
     const { objdirs } = this.props;
     return renderSection(
       "perf-settings-local-build-summary",
-      "Local build",
+      Localized({ id: "perftools-heading-local-build" }),
       div(
         null,
-        p(
-          null,
-          `If you're profiling a build that you have compiled yourself, on this
-          machine, please add your build's objdir to the list below so that
-          it can be used to look up symbol information.`
-        ),
+        p(null, Localized({ id: "perftools-description-local-build" })),
         DirectoryPicker({
           dirs: objdirs,
           onAdd: this._handleAddObjdir,
@@ -481,10 +505,13 @@ class Settings extends PureComponent {
   render() {
     return section(
       { className: "perf-settings" },
-      h1(null, "Full Settings"),
-      h2({ className: "perf-settings-title" }, "Buffer Settings"),
+      h1(null, Localized({ id: "perftools-heading-settings" })),
+      h2(
+        { className: "perf-settings-title" },
+        Localized({ id: "perftools-heading-buffer" })
+      ),
       Range({
-        label: "Sampling interval:",
+        label: Localized({ id: "perftools-range-interval-label" }),
         value: this.props.interval,
         id: "perf-range-interval",
         scale: this._intervalExponentialScale,
@@ -492,7 +519,7 @@ class Settings extends PureComponent {
         onChange: this.props.changeInterval,
       }),
       Range({
-        label: "Buffer size:",
+        label: Localized({ id: "perftools-range-entries-label" }),
         value: this.props.entries,
         id: "perf-range-entries",
         scale: this._entriesExponentialScale,
@@ -529,7 +556,10 @@ function _threadTextToList(threads) {
 
 
 function _intervalTextDisplay(value) {
-  return `${value} ms`;
+  return Localized({
+    id: "perftools-range-interval-milliseconds",
+    $interval: value,
+  });
 }
 
 

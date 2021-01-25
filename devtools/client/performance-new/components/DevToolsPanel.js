@@ -50,8 +50,6 @@ const selectors = require("devtools/client/performance-new/store/selectors");
 
 
 
-
-
 class DevToolsPanel extends PureComponent {
   render() {
     const { isSupportedPlatform } = this.props;
