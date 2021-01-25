@@ -290,6 +290,19 @@ const POSTPROCESSORS = {
     context.logError(context.makeError(msg));
     throw new Error(msg);
   },
+
+  manifestVersionCheck(value, context) {
+    if (
+      value == 2 ||
+      (value == 3 &&
+        Services.prefs.getBoolPref("extensions.manifestV3.enabled", false))
+    ) {
+      return value;
+    }
+    const msg = `Unsupported manifest version: ${value}`;
+    context.logError(context.makeError(msg));
+    throw new Error(msg);
+  },
 };
 
 
@@ -1092,7 +1105,7 @@ const FORMATS = {
       
       
       context.logError(`Error processing ${context.currentTarget}: ${error}`);
-      throw new SyntaxError(error);
+      return null;
     }
     return string;
   },

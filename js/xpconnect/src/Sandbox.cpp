@@ -1128,6 +1128,11 @@ nsresult ApplyAddonContentScriptCSP(nsISupports* prinOrSop) {
   if (!addonPolicy) {
     return NS_OK;
   }
+  
+  
+  if (addonPolicy->ManifestVersion() < 3) {
+    return NS_OK;
+  }
 
   nsString url;
   MOZ_TRY_VAR(url, addonPolicy->GetURL(u""_ns));
@@ -1135,9 +1140,7 @@ nsresult ApplyAddonContentScriptCSP(nsISupports* prinOrSop) {
   nsCOMPtr<nsIURI> selfURI;
   MOZ_TRY(NS_NewURI(getter_AddRefs(selfURI), url));
 
-  nsAutoString baseCSP;
-  MOZ_ALWAYS_SUCCEEDS(
-      ExtensionPolicyService::GetSingleton().GetBaseCSP(baseCSP));
+  const nsAString& baseCSP = addonPolicy->BaseCSP();
 
   
   auto expanded = basePrin->As<ExpandedPrincipal>();
@@ -1166,10 +1169,6 @@ nsresult ApplyAddonContentScriptCSP(nsISupports* prinOrSop) {
   bool reportOnly = StaticPrefs::extensions_content_script_csp_report_only();
 
   MOZ_TRY(csp->AppendPolicy(baseCSP, reportOnly, false));
-
-  
-  const nsAString& contentScriptCSP = addonPolicy->ContentScriptCSP();
-  MOZ_TRY(csp->AppendPolicy(contentScriptCSP, reportOnly, false));
 
   expanded->SetCsp(csp);
   return NS_OK;
