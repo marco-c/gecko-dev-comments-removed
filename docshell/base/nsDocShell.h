@@ -327,6 +327,8 @@ class nsDocShell final : public nsDocLoader,
 
   const mozilla::Encoding* GetForcedCharset() { return mForcedCharset; }
 
+  bool GetForcedAutodetection() { return mForcedAutodetection; }
+
   mozilla::HTMLEditor* GetHTMLEditorInternal();
   nsresult SetHTMLEditorInternal(mozilla::HTMLEditor* aHTMLEditor);
 
@@ -1270,6 +1272,10 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool mSuspendMediaWhenInactive : 1;
+
+  
+  
+  bool mForcedAutodetection : 1;
 };
 
 #endif 

@@ -28,6 +28,7 @@ ChromeUtils.defineModuleGetter(
 
 const kEncodings = new Set([
   
+  "_autodetect_all", 
   "UTF-8",
   "windows-1252",
   
@@ -78,7 +79,7 @@ const kEncodings = new Set([
 ]);
 
 
-const kPinned = ["UTF-8", "windows-1252"];
+const kPinned = ["_autodetect_all", "UTF-8", "windows-1252"];
 
 kPinned.forEach(x => kEncodings.delete(x));
 
