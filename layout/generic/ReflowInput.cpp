@@ -346,6 +346,8 @@ void ReflowInput::Init(nsPresContext* aPresContext,
     return;
   }
 
+  mFlags.mIsReplaced = mFrame->IsFrameOfType(nsIFrame::eReplaced) ||
+                       mFrame->IsFrameOfType(nsIFrame::eReplacedContainsBlock);
   InitFrameType(type);
   InitConstraints(aPresContext, aContainingBlockSize, aBorder, aPadding, type);
 
@@ -821,13 +823,6 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
     }
   }
 
-  
-  if (mFrame->IsFrameOfType(nsIFrame::eReplacedContainsBlock)) {
-    frameType = NS_FRAME_REPLACED_CONTAINS_BLOCK(frameType);
-  } else if (mFrame->IsFrameOfType(nsIFrame::eReplaced)) {
-    frameType = NS_FRAME_REPLACED(frameType);
-  }
-
   mFrameType = frameType;
 }
 
@@ -1211,7 +1206,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   const auto& styleISize = mStylePosition->ISize(wm);
   bool isAutoISize = styleISize.IsAuto();
   Maybe<nsSize> intrinsicSize;
-  if (NS_FRAME_IS_REPLACED(mFrameType) && isAutoISize) {
+  if (mFlags.mIsReplaced && isAutoISize) {
     
     intrinsicSize = mFrame->GetIntrinsicSize().ToSize();
   }
@@ -1220,8 +1215,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   nscoord boxISize;
   bool knowBoxISize = false;
-  if (mStyleDisplay->IsOriginalDisplayInlineOutside() &&
-      !NS_FRAME_IS_REPLACED(mFrameType)) {
+  if (mStyleDisplay->IsOriginalDisplayInlineOutside() && !mFlags.mIsReplaced) {
     
     
     
@@ -1237,7 +1231,7 @@ void ReflowInput::CalculateHypotheticalPosition(
     CalculateBorderPaddingMargin(eLogicalAxisInline, blockContentSize.ISize(wm),
                                  &insideBoxSizing, &outsideBoxSizing);
 
-    if (NS_FRAME_IS_REPLACED(mFrameType) && isAutoISize) {
+    if (mFlags.mIsReplaced && isAutoISize) {
       
       
       if (intrinsicSize) {
@@ -1425,7 +1419,7 @@ void ReflowInput::CalculateHypotheticalPosition(
     nscoord boxBSize;
     const auto& styleBSize = mStylePosition->BSize(wm);
     if (styleBSize.BehavesLikeInitialValueOnBlockAxis()) {
-      if (NS_FRAME_IS_REPLACED(mFrameType) && intrinsicSize) {
+      if (mFlags.mIsReplaced && intrinsicSize) {
         
         
         boxBSize = LogicalSize(wm, *intrinsicSize).BSize(wm) +
@@ -2236,9 +2230,7 @@ void ReflowInput::InitConstraints(
         
         
         
-        if (NS_FRAME_REPLACED(NS_CSS_FRAME_TYPE_INLINE) == mFrameType ||
-            NS_FRAME_REPLACED_CONTAINS_BLOCK(NS_CSS_FRAME_TYPE_INLINE) ==
-                mFrameType) {
+        if (mFlags.mIsReplaced && NS_CSS_FRAME_TYPE_INLINE == mFrameType) {
           
           NS_ASSERTION(nullptr != cbri, "no containing block");
           
@@ -2295,7 +2287,7 @@ void ReflowInput::InitConstraints(
     
     
 
-    if (NS_CSS_FRAME_TYPE_INTERNAL_TABLE == mFrameType) {
+    if (NS_CSS_FRAME_TYPE_INTERNAL_TABLE == mFrameType && !mFlags.mIsReplaced) {
       
       
       bool rowOrRowGroup = false;
@@ -2967,7 +2959,7 @@ void ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize) {
     if (mFlags.mIsFlexContainerMeasuringBSize) {
       return true;
     }
-    if (mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE) {
+    if (mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE && !mFlags.mIsReplaced) {
       return aBSize.HasLengthAndPercentage();
     }
     return false;

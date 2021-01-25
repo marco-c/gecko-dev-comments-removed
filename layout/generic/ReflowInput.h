@@ -61,45 +61,7 @@ typedef uint32_t nsCSSFrameType;
 #define NS_CSS_FRAME_TYPE_INTERNAL_TABLE \
   5 /* row group frame, row frame, cell frame, ... */
 
-
-
-
-
-#define NS_CSS_FRAME_TYPE_REPLACED 0x08000
-
-
-
-
-
-
-
-#define NS_CSS_FRAME_TYPE_REPLACED_CONTAINS_BLOCK 0x10000
-
-
-
-
-#define NS_FRAME_IS_REPLACED_NOBLOCK(_ft) \
-  (NS_CSS_FRAME_TYPE_REPLACED == ((_ft)&NS_CSS_FRAME_TYPE_REPLACED))
-
-#define NS_FRAME_IS_REPLACED(_ft)       \
-  (NS_FRAME_IS_REPLACED_NOBLOCK(_ft) || \
-   NS_FRAME_IS_REPLACED_CONTAINS_BLOCK(_ft))
-
-#define NS_FRAME_REPLACED(_ft) (NS_CSS_FRAME_TYPE_REPLACED | (_ft))
-
-#define NS_FRAME_IS_REPLACED_CONTAINS_BLOCK(_ft) \
-  (NS_CSS_FRAME_TYPE_REPLACED_CONTAINS_BLOCK ==  \
-   ((_ft)&NS_CSS_FRAME_TYPE_REPLACED_CONTAINS_BLOCK))
-
-#define NS_FRAME_REPLACED_CONTAINS_BLOCK(_ft) \
-  (NS_CSS_FRAME_TYPE_REPLACED_CONTAINS_BLOCK | (_ft))
-
-
-
-
-#define NS_FRAME_GET_TYPE(_ft) \
-  ((_ft) &                     \
-   ~(NS_CSS_FRAME_TYPE_REPLACED | NS_CSS_FRAME_TYPE_REPLACED_CONTAINS_BLOCK))
+#define NS_FRAME_GET_TYPE(_ft) (_ft)
 
 namespace mozilla {
 
@@ -436,6 +398,10 @@ struct ReflowInput : public SizeComputationInput {
 
   struct Flags {
     Flags() { memset(this, 0, sizeof(*this)); }
+
+    
+    
+    bool mIsReplaced : 1;
 
     
     
