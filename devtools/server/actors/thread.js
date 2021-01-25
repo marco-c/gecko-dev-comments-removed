@@ -1905,13 +1905,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return { skip };
   },
 
+  
+  
   pauseOnExceptions(pauseOnExceptions, ignoreCaughtExceptions) {
-    this._options = {
-      ...this._options,
+    this.reconfigure({
       pauseOnExceptions,
       ignoreCaughtExceptions,
-    };
-    this.maybePauseOnExceptions();
+    });
     return {};
   },
 
