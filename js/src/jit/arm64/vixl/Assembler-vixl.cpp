@@ -479,6 +479,15 @@ Assembler::Assembler(PositionIndependentCodeOption pic)
 {
   
   cpu_features_.Combine(CPUFeatures::InferFromOS());
+
+  
+#ifndef MOZ_AARCH64_JSCVT
+#  error "MOZ_AARCH64_JSCVT must be defined."
+#elif MOZ_AARCH64_JSCVT >= 1
+  
+  
+  cpu_features_.Combine(CPUFeatures::kJSCVT);
+#endif
 }
 
 

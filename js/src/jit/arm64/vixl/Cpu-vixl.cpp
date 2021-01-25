@@ -203,6 +203,7 @@ CPUFeatures CPU::InferCPUFeaturesFromOS(
   static const size_t kFeatureBitCount =
       sizeof(kFeatureBits) / sizeof(kFeatureBits[0]);
 
+  
 #ifdef JS_SIMULATOR_ARM64
   unsigned long auxv = ~(0UL);  
 #else
