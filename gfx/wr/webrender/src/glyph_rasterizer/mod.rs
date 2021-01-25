@@ -766,16 +766,11 @@ impl GlyphFormat {
 
     
     pub fn image_format(&self) -> ImageFormat {
-        match *self {
-            
-            
-            
-            GlyphFormat::Alpha | GlyphFormat::TransformedAlpha => ImageFormat::R8,
-            GlyphFormat::Subpixel |
-            GlyphFormat::TransformedSubpixel |
-            GlyphFormat::Bitmap |
-            GlyphFormat::ColorBitmap => ImageFormat::BGRA8,
-        }
+        
+        
+        
+        
+        ImageFormat::BGRA8
     }
 }
 
