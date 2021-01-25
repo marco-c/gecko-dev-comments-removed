@@ -30,20 +30,6 @@ struct Statistics;
 }  
 }  
 
-typedef enum JSGCMode {
-  
-  JSGC_MODE_GLOBAL = 0,
-
-  
-  JSGC_MODE_ZONE = 1,
-
-  
-  JSGC_MODE_INCREMENTAL = 2,
-
-  
-  JSGC_MODE_ZONE_INCREMENTAL = 3,
-} JSGCMode;
-
 
 
 
@@ -92,8 +78,15 @@ typedef enum JSGCParamKey {
 
 
 
+  JSGC_INCREMENTAL_GC_ENABLED = 5,
 
-  JSGC_MODE = 6,
+  
+
+
+
+
+
+  JSGC_PER_ZONE_GC_ENABLED = 6,
 
   
   JSGC_UNUSED_CHUNKS = 7,
@@ -633,7 +626,6 @@ extern JS_PUBLIC_API void SkipZoneForGC(JSContext* cx, Zone* zone);
 extern JS_PUBLIC_API void NonIncrementalGC(JSContext* cx,
                                            JSGCInvocationKind gckind,
                                            GCReason reason);
-
 
 
 

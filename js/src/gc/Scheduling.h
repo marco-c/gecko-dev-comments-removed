@@ -393,7 +393,10 @@ static const uint32_t MaxEmptyChunkCount = 30;
 static const int64_t DefaultTimeBudgetMS = SliceBudget::UnlimitedTimeBudget;
 
 
-static const JSGCMode Mode = JSGC_MODE_ZONE_INCREMENTAL;
+static const bool IncrementalGCEnabled = false;
+
+
+static const bool PerZoneGCEnabled = false;
 
 
 static const bool CompactingEnabled = true;
