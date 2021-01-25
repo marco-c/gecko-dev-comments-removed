@@ -44,7 +44,9 @@ const ContentBlockingAllowList = {
   },
 
   _basePrincipalForAntiTrackingCommon(browser) {
-    let principal = browser.contentBlockingAllowListPrincipal;
+    let principal =
+      browser.browsingContext.currentWindowGlobal
+        ?.contentBlockingAllowListPrincipal;
     
     if (!principal || !principal.isContentPrincipal) {
       return null;

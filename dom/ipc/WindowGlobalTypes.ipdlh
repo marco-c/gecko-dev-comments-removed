@@ -24,7 +24,6 @@ struct WindowGlobalInit
 
   
   nsIPrincipal principal;
-  nsIPrincipal contentBlockingAllowListPrincipal;
   nsIURI documentURI;
 
   bool blockAllMixedContent;

@@ -652,10 +652,6 @@ class Document : public nsINode,
 
   void ClearActiveStoragePrincipal() { mActiveStoragePrincipal = nullptr; }
 
-  nsIPrincipal* GetContentBlockingAllowListPrincipal() const {
-    return mContentBlockingAllowListPrincipal;
-  }
-
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
   EventListenerManager* GetOrCreateListenerManager() override;
@@ -898,12 +894,8 @@ class Document : public nsINode,
 
 
 
-
-
-
   void SetPrincipals(nsIPrincipal* aPrincipal,
-                     nsIPrincipal* aPartitionedPrincipal,
-                     bool aSetContentBlockingAllowListPrincipal = true);
+                     nsIPrincipal* aPartitionedPrincipal);
 
   
 
@@ -5147,9 +5139,6 @@ class Document : public nsINode,
   
   
   mutable nsCOMPtr<nsIPrincipal> mActiveStoragePrincipal;
-
-  
-  nsCOMPtr<nsIPrincipal> mContentBlockingAllowListPrincipal;
 
   
   int32_t mNextFormNumber;

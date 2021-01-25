@@ -1,9 +1,26 @@
+
+
+
+"use strict";
+
+const TEST_SANDBOX_URL =
+  "https://example.com/browser/toolkit/components/antitracking/test/browser/sandboxed.html";
+
+
+
+
+
+
+
+
 function checkAllowListPrincipal(
   browser,
   type,
   origin = browser.contentPrincipal.origin
 ) {
-  let principal = browser.contentBlockingAllowListPrincipal;
+  let principal =
+    browser.browsingContext.currentWindowGlobal
+      .contentBlockingAllowListPrincipal;
   ok(principal, "Principal is set");
 
   if (type == "content") {
@@ -19,7 +36,58 @@ function checkAllowListPrincipal(
     throw new Error("Unexpected principal type");
   }
 
-  is(origin, principal.origin, "Correct origin");
+  is(principal.origin, origin, "Correct origin");
+}
+
+
+
+
+
+
+async function runTestInNormalAndPrivateMode(initialUrl, testCallback) {
+  for (let i = 0; i < 2; i++) {
+    let isPrivateBrowsing = !!i;
+    info("Running test. Private browsing: " + !!i);
+    let win = await BrowserTestUtils.openNewBrowserWindow({
+      private: isPrivateBrowsing,
+    });
+    let tab = BrowserTestUtils.addTab(win.gBrowser, initialUrl);
+    let browser = tab.linkedBrowser;
+
+    await BrowserTestUtils.browserLoaded(browser);
+
+    await testCallback(browser, isPrivateBrowsing);
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function createFrame(browser, src, id, sandboxAttr) {
+  return SpecialPowers.spawn(
+    browser,
+    [{ page: src, frameId: id, sandboxAttr }],
+    async function(obj) {
+      await new content.Promise(resolve => {
+        let frame = content.document.createElement("iframe");
+        frame.src = obj.page;
+        frame.id = obj.frameId;
+        if (obj.sandboxAttr) {
+          frame.setAttribute("sandbox", obj.sandboxAttr);
+        }
+        frame.addEventListener("load", resolve, { once: true });
+        content.document.body.appendChild(frame);
+      });
+    }
+  );
 }
 
 
@@ -27,7 +95,7 @@ function checkAllowListPrincipal(
 
 
 add_task(async test_contentPrincipalHTTPS => {
-  await BrowserTestUtils.withNewTab("https://example.com", browser => {
+  await runTestInNormalAndPrivateMode("https://example.com", browser => {
     checkAllowListPrincipal(browser, "content");
   });
 });
@@ -37,13 +105,17 @@ add_task(async test_contentPrincipalHTTPS => {
 
 
 add_task(async test_contentPrincipalHTTP => {
-  await BrowserTestUtils.withNewTab("http://example.net", browser => {
-    ok(
-      browser.contentPrincipal.isContentPrincipal,
-      "Should have content principal"
-    );
-    checkAllowListPrincipal(browser, "content", "https://example.net");
-  });
+  await runTestInNormalAndPrivateMode(
+    "http://example.net",
+    (browser, isPrivateBrowsing) => {
+      checkAllowListPrincipal(
+        browser,
+        "content",
+        "https://example.net" +
+          (isPrivateBrowsing ? "^privateBrowsingId=1" : "")
+      );
+    }
+  );
 });
 
 
@@ -51,11 +123,7 @@ add_task(async test_contentPrincipalHTTP => {
 
 
 add_task(async test_systemPrincipal => {
-  await BrowserTestUtils.withNewTab("about:preferences", browser => {
-    ok(
-      browser.contentPrincipal.isSystemPrincipal,
-      "Should have system principal"
-    );
+  await runTestInNormalAndPrivateMode("about:preferences", browser => {
     checkAllowListPrincipal(browser, "system");
   });
 });
@@ -64,35 +132,92 @@ add_task(async test_systemPrincipal => {
 
 
 
-add_task(async test_privateBrowsing => {
-  let win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
-  let tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
-  let browser = tab.linkedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser);
-
-  ok(
-    browser.contentPrincipal.isContentPrincipal,
-    "Should have content principal"
+add_task(async test_TopLevelSandbox => {
+  await runTestInNormalAndPrivateMode(
+    TEST_SANDBOX_URL,
+    (browser, isPrivateBrowsing) => {
+      ok(
+        browser.contentPrincipal.isNullPrincipal,
+        "Top level sandboxed page should have null principal"
+      );
+      checkAllowListPrincipal(
+        browser,
+        "content",
+        "https://example.com" +
+          (isPrivateBrowsing ? "^privateBrowsingId=1" : "")
+      );
+    }
   );
-  checkAllowListPrincipal(browser, "content");
-
-  await BrowserTestUtils.closeWindow(win);
 });
 
 
 
 
 
-add_task(async test_TopLevelSandbox => {
-  await BrowserTestUtils.withNewTab(
-    "https://example.com/browser/toolkit/components/antitracking/test/browser/sandboxed.html",
-    browser => {
-      ok(
-        browser.contentPrincipal.isNullPrincipal,
-        "Top level sandboxed page should have null principal"
+add_task(async test_windowOpen => {
+  await runTestInNormalAndPrivateMode("https://example.com", async browser => {
+    checkAllowListPrincipal(browser, "content");
+
+    let promiseTabOpened = BrowserTestUtils.waitForNewTab(
+      browser.ownerGlobal.gBrowser,
+      "https://example.org/",
+      true
+    );
+
+    
+    await SpecialPowers.spawn(browser, [], async function() {
+      content.open("https://example.org/");
+    });
+
+    let tab = await promiseTabOpened;
+
+    checkAllowListPrincipal(tab.linkedBrowser, "content");
+
+    BrowserTestUtils.removeTab(tab);
+  });
+});
+
+
+
+
+
+add_task(async test_windowOpenFromSandboxedFrame => {
+  await runTestInNormalAndPrivateMode(
+    "https://example.com",
+    async (browser, isPrivateBrowsing) => {
+      checkAllowListPrincipal(browser, "content");
+
+      
+      await createFrame(
+        browser,
+        "https://example.com",
+        "sandboxedIframe",
+        "allow-popups"
       );
-      checkAllowListPrincipal(browser, "content", "https://example.com");
+      
+      let [frameBrowsingContext] = browser.browsingContext.children;
+
+      let promiseTabOpened = BrowserTestUtils.waitForNewTab(
+        browser.ownerGlobal.gBrowser,
+        "https://example.org/",
+        true
+      );
+
+      
+      await SpecialPowers.spawn(frameBrowsingContext, [], async function() {
+        content.open("https://example.org/");
+      });
+
+      let tab = await promiseTabOpened;
+
+      checkAllowListPrincipal(
+        tab.linkedBrowser,
+        "content",
+        "https://example.org" +
+          (isPrivateBrowsing ? "^privateBrowsingId=1" : "")
+      );
+
+      BrowserTestUtils.removeTab(tab);
     }
   );
 });

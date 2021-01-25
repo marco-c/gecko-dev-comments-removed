@@ -103,10 +103,6 @@ class WindowGlobalParent final : public WindowContext,
   
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
-  nsIPrincipal* ContentBlockingAllowListPrincipal() {
-    return mDocContentBlockingAllowListPrincipal;
-  }
-
   
   
   
@@ -285,6 +281,7 @@ class WindowGlobalParent final : public WindowContext,
   
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
+  
   nsCOMPtr<nsIPrincipal> mDocContentBlockingAllowListPrincipal;
   nsCOMPtr<nsIURI> mDocumentURI;
   nsString mDocumentTitle;
