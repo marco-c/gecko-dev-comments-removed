@@ -1739,19 +1739,8 @@ bool BrowsingContext::RemoveRootFromBFCacheSync() {
 
 nsresult BrowsingContext::CheckSandboxFlags(nsDocShellLoadState* aLoadState) {
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
-  if (sourceBC.IsNull()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  
-  BrowsingContext* bc = sourceBC.GetMaybeDiscarded();
-  if (!bc || bc->IsSandboxedFrom(this)) {
-    return NS_ERROR_DOM_SECURITY_ERR;
+  if (sourceBC.IsDiscarded() || (sourceBC && sourceBC->IsSandboxedFrom(this))) {
+    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
   return NS_OK;
 }
