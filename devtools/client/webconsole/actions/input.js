@@ -167,9 +167,18 @@ function onExpressionEvaluated(response) {
 }
 
 function handleHelperResult(response) {
+  
   return async ({ dispatch, hud, toolbox, webConsoleUI }) => {
     const { result, helperResult } = response;
     const helperHasRawOutput = !!helperResult?.rawOutput;
+    const hasNetworkResourceWatcherSupport = hud.resourceWatcher.hasResourceWatcherSupport(
+      hud.resourceWatcher.TYPES.NETWORK_EVENT
+    );
+    let networkFront = null;
+    
+    if (hasNetworkResourceWatcherSupport) {
+      networkFront = await hud.resourceWatcher.watcherFront.getNetworkParentActor();
+    }
 
     if (helperResult?.type) {
       switch (helperResult.type) {
@@ -212,7 +221,14 @@ function handleHelperResult(response) {
           break;
         case "blockURL":
           const blockURL = helperResult.args.url;
-
+          
+          
+          
+          
+          
+          if (hasNetworkResourceWatcherSupport && networkFront) {
+            await networkFront.blockRequest({ url: blockURL });
+          }
           toolbox
             .getPanel("netmonitor")
             ?.panelWin.store.dispatch(
@@ -233,6 +249,10 @@ function handleHelperResult(response) {
           break;
         case "unblockURL":
           const unblockURL = helperResult.args.url;
+          
+          if (hasNetworkResourceWatcherSupport && networkFront) {
+            await networkFront.unblockRequest({ url: unblockURL });
+          }
           toolbox
             .getPanel("netmonitor")
             ?.panelWin.store.dispatch(

@@ -119,6 +119,28 @@ const NetworkParentActor = ActorClassWithSpec(networkParentSpec, {
     }
     return this.networkEventWatcher.getBlockedUrls();
   },
+
+  
+
+
+
+  blockRequest(filters) {
+    if (!this.networkEventWatcher) {
+      throw new Error("Not listening for network events");
+    }
+    this.networkEventWatcher.blockRequest(filters);
+  },
+
+  
+
+
+
+  unblockRequest(filters) {
+    if (!this.networkEventWatcher) {
+      throw new Error("Not listening for network events");
+    }
+    this.networkEventWatcher.unblockRequest(filters);
+  },
 });
 
 exports.NetworkParentActor = NetworkParentActor;

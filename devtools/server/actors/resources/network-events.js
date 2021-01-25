@@ -71,6 +71,22 @@ class NetworkEventWatcher {
 
 
 
+  blockRequest(filters) {
+    this.listener.blockRequest(filters);
+  }
+
+  
+
+
+
+  unblockRequest(filters) {
+    this.listener.unblockRequest(filters);
+  }
+
+  
+
+
+
 
 
 
