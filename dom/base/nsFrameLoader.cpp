@@ -2534,6 +2534,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
       
       
       
+      
+      
       nsIURI* parentURI = parentWin->GetDocumentURI();
       if (!parentURI) {
         return false;
@@ -2547,6 +2549,9 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
       if (!(specIgnoringRef.EqualsLiteral("about:addons") ||
             specIgnoringRef.EqualsLiteral(
                 "chrome://mozapps/content/extensions/aboutaddons.html") ||
+#ifdef MOZ_THUNDERBIRD
+            specIgnoringRef.EqualsLiteral("about:preferences") ||
+#endif
             specIgnoringRef.EqualsLiteral(
                 "chrome://browser/content/webext-panels.xhtml"))) {
         return false;
