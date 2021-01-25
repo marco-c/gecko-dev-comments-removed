@@ -99,6 +99,7 @@ class VsyncSource {
     VsyncId mVsyncId;
     VsyncId mLastVsyncIdSentToMainThread;     
     VsyncId mLastMainThreadProcessedVsyncId;  
+    bool mHasGenericObservers;                
   };
 
   void EnableCompositorVsyncDispatcher(
