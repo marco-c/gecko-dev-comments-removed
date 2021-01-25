@@ -127,6 +127,11 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   RefPtr<nsWindow> mPendingWindow;
   mozilla::LayoutDeviceIntPoint mPendingWindowPoint;
   RefPtr<GdkDragContext> mPendingDragContext;
+
+  
+  
+  nsDataHashtable<nsCStringHashKey, nsTArray<uint8_t>> mCachedData;
+
 #ifdef MOZ_WAYLAND
   RefPtr<nsWaylandDragContext> mPendingWaylandDragContext;
 #endif
