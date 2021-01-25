@@ -721,6 +721,7 @@ function TypedArrayKeys() {
 
 
 
+
 function TypedArrayLastIndexOf(searchElement) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -748,11 +749,21 @@ function TypedArrayLastIndexOf(searchElement) {
     var n = arguments.length > 1 ? ToInteger(arguments[1]) : len - 1;
 
     
+    
+    len = TypedArrayLength(O);
+
+    assert(len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+           "TypedArrays with detached buffers have a length of zero");
+
+    
     var k = n >= 0 ? std_Math_min(n, len - 1) : len + n;
 
     
-    
     for (; k >= 0; k--) {
+        
+        assert(k in O, "unexpected missing element");
+
+        
         if (O[k] === searchElement)
             return k;
     }
