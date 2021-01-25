@@ -15,4 +15,7 @@ ULONGLONG GetCurrentTimestamp();
 
 ULONGLONG SecondsPassedSince(ULONGLONG initialTime, ULONGLONG currentTime = 0);
 
+using FilePathResult = mozilla::WindowsErrorResult<std::wstring>;
+FilePathResult GenerateUUIDStr();
+
 #endif  
