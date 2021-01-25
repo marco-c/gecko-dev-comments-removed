@@ -45,6 +45,26 @@ namespace frontend {
 struct ScopeContext {
   
   
+  bool allowNewTarget = false;
+  bool allowSuperProperty = false;
+  bool allowSuperCall = false;
+  bool allowArguments = true;
+
+  
+  
+  ThisBinding thisBinding = ThisBinding::Global;
+
+  
+  
+  bool inWith = false;
+
+  
+  bool inClass = false;
+
+  
+  
+  mozilla::Maybe<MemberInitializers> memberInitializers = {};
+
   
   
   
@@ -54,48 +74,22 @@ struct ScopeContext {
   
   JS::Rooted<Scope*> effectiveScope;
 
-  
-  
-  
-  
-  ThisBinding thisBinding = ThisBinding::Global;
-
-  
-  
-  bool allowNewTarget = false;
-  bool allowSuperProperty = false;
-  bool allowSuperCall = false;
-  bool allowArguments = true;
-
-  
-  
-  
-  
-  
-  uint32_t enclosingThisEnvironmentHops = 0;
-
-  
-  
-  mozilla::Maybe<MemberInitializers> memberInitializers = {};
-
-  
-  bool inClass = false;
-  bool inWith = false;
-
-  explicit ScopeContext(JSContext* cx, InheritThis inheritThis, Scope* scope,
+  explicit ScopeContext(JSContext* cx, Scope* scope,
                         JSObject* enclosingEnv = nullptr)
       : effectiveScope(cx, determineEffectiveScope(scope, enclosingEnv)) {
-    if (inheritThis == InheritThis::Yes) {
-      computeThisBinding(effectiveScope);
-      computeThisEnvironment(scope);
-    }
-    computeInScope(scope);
+    computeAllowSyntax(scope);
+    computeThisBinding(effectiveScope);
+    computeInWith(scope);
+    computeExternalInitializers(scope);
+    computeInClass(scope);
   }
 
  private:
+  void computeAllowSyntax(Scope* scope);
   void computeThisBinding(Scope* scope);
-  void computeThisEnvironment(Scope* scope);
-  void computeInScope(Scope* scope);
+  void computeInWith(Scope* scope);
+  void computeExternalInitializers(Scope* scope);
+  void computeInClass(Scope* scope);
 
   static Scope* determineEffectiveScope(Scope* scope, JSObject* environment);
 };
@@ -243,7 +237,6 @@ struct MOZ_RAII CompilationState {
   CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
                    const JS::ReadOnlyCompileOptions& options,
                    CompilationInfo& compilationInfo,
-                   InheritThis inheritThis = InheritThis::No,
                    Scope* enclosingScope = nullptr,
                    JSObject* enclosingEnv = nullptr);
 };

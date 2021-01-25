@@ -1576,26 +1576,16 @@ bool BytecodeEmitter::emitThisEnvironmentCallee() {
 
   
   unsigned numHops = 0;
-  EmitterScope* es = innermostEmitterScope();
-  for (; es; es = es->enclosingInFrame()) {
-    if (es->scope(this).is<FunctionScope>()) {
-      if (!es->scope(this).isArrow()) {
-        
-        
-        MOZ_ASSERT(es->scope(this).hasEnvironment());
+  for (AbstractScopePtrIter si(innermostScope()); si; si++) {
+    if (si.hasSyntacticEnvironment() &&
+        si.abstractScopePtr().is<FunctionScope>()) {
+      if (!si.abstractScopePtr().isArrow()) {
         break;
       }
     }
-    if (es->scope(this).hasEnvironment()) {
+    if (si.abstractScopePtr().hasEnvironment()) {
       numHops++;
     }
-  }
-  if (!es) {
-    
-    
-    
-    MOZ_ASSERT(sc->allowSuperProperty());
-    numHops += compilationState.scopeContext.enclosingThisEnvironmentHops;
   }
 
   static_assert(
