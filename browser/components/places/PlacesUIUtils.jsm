@@ -1563,8 +1563,16 @@ var PlacesUIUtils = {
 
 
 
+
+
+
 PlacesUIUtils.canLoadToolbarContentPromise = new Promise(resolve => {
-  PlacesUIUtils.unblockToolbars = resolve;
+  PlacesUIUtils.unblockToolbars = () => {
+    resolve("waited-for-session-idle");
+    
+    
+    PlacesUIUtils.canLoadToolbarContentPromise = Promise.resolve("immediate");
+  };
 });
 
 
